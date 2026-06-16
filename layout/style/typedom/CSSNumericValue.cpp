@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/CSSNumericValue.h"
 
+#include "TypedOMUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
@@ -21,6 +22,7 @@ namespace mozilla::dom {
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
+      mNumericType(WrapMovingNotNull(MakeUnique<StyleNumericType>())),
       mNumericValueType(aNumericValueType) {}
 
 
@@ -186,7 +188,32 @@ already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
   return mathSum.forget();
 }
 
-void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
+
+
+void CSSNumericValue::Type(CSSNumericType& aRetVal) {
+  
+
+  
+  
+  
+  
+  
+  for (size_t index = 0; index < StyleNUMERIC_BASE_TYPE_COUNT; index++) {
+    auto baseType = StyleALL_NUMERIC_BASE_TYPES[index];
+
+    if (auto power = mNumericType->Exponent(baseType)) {
+      (aRetVal.*CSSNUMERIC_TYPE_FIELDS[index]).Construct(power);
+    }
+  }
+
+  
+  if (const auto& percentHint = mNumericType->percent_hint) {
+    
+    
+    aRetVal.mPercentHint.Construct(
+        static_cast<CSSNumericBaseType>(*percentHint));
+  }
+}
 
 
 
