@@ -32,10 +32,16 @@ class MappedFileReader {
 
   bool HasError() { return !error_.empty() || !buffer_.IsValid(); }
   const std::string& error() { return error_; }
+#if defined(MOZ_ZUCCHINI)
+  bool error_is_oom() const { return error_is_oom_; }
+#endif  
 
  private:
   std::string error_;
   base::MemoryMappedFile buffer_;
+#if defined(MOZ_ZUCCHINI)
+  bool error_is_oom_ = false;
+#endif  
 };
 
 
@@ -69,6 +75,9 @@ class MappedFileWriter {
 
   bool HasError() { return !error_.empty() || !buffer_.IsValid(); }
   const std::string& error() { return error_; }
+#if defined(MOZ_ZUCCHINI)
+  bool error_is_oom() const { return error_is_oom_; }
+#endif  
 
   
   
@@ -92,6 +101,9 @@ class MappedFileWriter {
   base::File file_handle_;
   base::MemoryMappedFile buffer_;
   OnCloseDeleteBehavior delete_behavior_;
+#if defined(MOZ_ZUCCHINI)
+  bool error_is_oom_ = false;
+#endif  
 };
 
 }  
