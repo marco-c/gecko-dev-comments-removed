@@ -463,7 +463,7 @@ void RetrievalContextWayland::RegisterNewDataOffer(
 
 void RetrievalContextWayland::SetClipboardDataOffer(wl_data_offer* aDataOffer) {
   MOZ_CLIPBOARD_LOG(
-      "RetrievalContextWayland::SetClipboardDataOffer (wl_data_offer) %p\n",
+      "RetrievalContextWayland::SetClipboardDataOffer (wl_data_offer) %p",
       aDataOffer);
 
   
@@ -733,34 +733,31 @@ RetrievalContextWayland::RetrievalContextWayland(void) {
 }
 
 ClipboardTargets RetrievalContextWayland::GetTargets(int32_t aWhichClipboard) {
-  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetTargets()\n");
-
   RefPtr<DataOffer> dataOffer =
       GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY
           ? mPrimaryOffer
           : mClipboardOffer;
   if (!dataOffer) {
-    MOZ_CLIPBOARD_LOG("  Failed: DataOffer is missing!");
+    MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetTargets(): Failed: DataOffer is missing.");
     return {};
   }
 
+  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetTargets() clipboard %s offer [%p]", (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection", dataOffer.get());
   return dataOffer->GetTargets();
 }
 
 ClipboardData RetrievalContextWayland::GetClipboardData(
     const char* aMimeType, int32_t aWhichClipboard) {
-  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetClipboardData() mime %s\n",
-                    aMimeType);
-
   RefPtr<DataOffer> dataOffer =
       (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY)
           ? mPrimaryOffer
           : mClipboardOffer;
   if (!dataOffer) {
-    MOZ_CLIPBOARD_LOG("  Failed: DataOffer is missing!");
+    MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetClipboardData(): Failed: DataOffer is missing.");
     return {};
   }
 
+  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetClipboardData() clipboard %s offer [%p] mime %s ", (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection", dataOffer.get(), aMimeType);
   if (!dataOffer->HasTarget(aMimeType)) {
     MOZ_CLIPBOARD_LOG("  Failed: DataOffer does not contain %s MIME!",
                       aMimeType);
@@ -774,10 +771,6 @@ GUniquePtr<char> RetrievalContextWayland::GetClipboardText(
     int32_t aWhichClipboard) {
   GdkAtom selection = GetSelectionAtom(aWhichClipboard);
 
-  MOZ_CLIPBOARD_LOG(
-      "RetrievalContextWayland::GetClipboardText(), clipboard %s\n",
-      (selection == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection");
-
   RefPtr<DataOffer> dataOffer =
       (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY)
           ? mPrimaryOffer
@@ -786,6 +779,11 @@ GUniquePtr<char> RetrievalContextWayland::GetClipboardText(
     MOZ_CLIPBOARD_LOG("  Failed: DataOffer is missing!");
     return {};
   }
+
+  MOZ_CLIPBOARD_LOG(
+      "RetrievalContextWayland::GetClipboardText(), clipboard %s offer [%p]",
+      (selection == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection",
+      dataOffer.get());
 
   for (const auto* mimeType : sTextMimeTypes) {
     if (dataOffer->HasTarget(mimeType)) {
