@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MediaSession.h"
 
 #include "mozilla/EnumeratedArrayCycleCollection.h"
@@ -15,9 +13,9 @@
 
 
 #undef LOG
-#define LOG(msg, ...)                        \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
-          ("MediaSession=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                     \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, "MediaSession={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -80,6 +78,13 @@ MediaSession::MediaSession(nsPIDOMWindowInner* aParent)
   }
 }
 
+MediaSession::~MediaSession() { DisconnectRequestAndListener(); }
+
+void MediaSession::DisconnectRequestAndListener() {
+  mLoadingArtworkRequest.DisconnectIfExists();
+  mMetadataChangeListener.DisconnectIfExists();
+}
+
 void MediaSession::Shutdown() {
   if (mDoc) {
     mDoc->UnregisterActivityObserver(this);
@@ -87,13 +92,12 @@ void MediaSession::Shutdown() {
   if (mParent) {
     SetMediaSessionDocStatus(SessionDocStatus::eInactive);
   }
-  mLoadingArtworkRequest.DisconnectIfExists();
-  mMetadataChangeListener.DisconnectIfExists();
+  DisconnectRequestAndListener();
 }
 
 void MediaSession::NotifyOwnerDocumentActivityChanged() {
   const bool isDocActive = mDoc->IsCurrentActiveDocument();
-  LOG("Document activity changed, isActive=%d", isDocActive);
+  LOG("Document activity changed, isActive={}", isDocActive);
   if (isDocActive) {
     SetMediaSessionDocStatus(SessionDocStatus::eActive);
   } else {
@@ -121,7 +125,12 @@ MediaMetadata* MediaSession::GetMetadata() const { return mMediaMetadata; }
 void MediaSession::SetMetadata(MediaMetadata* aMetadata) {
   mMetadataChangeListener.DisconnectIfExists();
   mMediaMetadata = aMetadata;
-  if (mMediaMetadata) {
+  
+  
+  
+  
+  
+  if (mMediaMetadata && mSessionDocState != SessionDocStatus::eInactive) {
     mMetadataChangeListener = mMediaMetadata->MetadataChangeEvent().Connect(
         AbstractThread::MainThread(), this,
         &MediaSession::NotifyMetadataUpdated);
@@ -260,8 +269,8 @@ bool MediaSession::IsActive() const {
   if (!activeSessionContextId) {
     return false;
   }
-  LOG("session context Id=%" PRIu64 ", active session context Id=%" PRIu64,
-      currentBC->Id(), *activeSessionContextId);
+  LOG("session context Id={}, active session context Id={}", currentBC->Id(),
+      *activeSessionContextId);
   return *activeSessionContextId == currentBC->Id();
 }
 
