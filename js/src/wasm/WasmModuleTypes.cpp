@@ -113,6 +113,17 @@ bool CacheableName::fromUTF8Chars(const char* utf8Chars, CacheableName* name) {
   return true;
 }
 
+
+bool CacheableName::fromUTF8Bytes(mozilla::Span<const char> utf8Bytes,
+                                  CacheableName* name) {
+  UTF8Bytes bytes;
+  if (!bytes.append(utf8Bytes.data(), utf8Bytes.Length())) {
+    return false;
+  }
+  *name = CacheableName(std::move(bytes));
+  return true;
+}
+
 MOZ_RUNINIT BranchHintVector BranchHintCollection::invalidVector_;
 
 JSString* CacheableName::toJSString(JSContext* cx) const {
@@ -195,7 +206,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
 
   const ValTypeVector& args = argTypes();
   
-  if (!argOffsets_.resize(args.length())) {
+  if (!exceptionArgOffsets_.resize(args.length())) {
     return false;
   }
 
@@ -205,7 +216,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
     if (!offset.isValid()) {
       return false;
     }
-    argOffsets_[i] = offset.value();
+    exceptionArgOffsets_[i] = offset.value();
   }
 
   
@@ -219,7 +230,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
 }
 
 size_t TagType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
-  return argOffsets_.sizeOfExcludingThis(mallocSizeOf);
+  return exceptionArgOffsets_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 size_t TagDesc::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {

@@ -92,6 +92,7 @@ wasmFailValidateText(`
 
 
 
+
 wasmValidateText(`
 (component
   (core module)
@@ -156,6 +157,8 @@ wasmFailValidateText(`
 
 
 
+
+
 wasmValidateText(`
 (component
   (type (func (param "a" s32) (param "b" s32) (result s32)))
@@ -183,3 +186,46 @@ wasmValidateText(`
   (export "sub" (func 1))
 )
 `);
+
+
+
+
+
+
+wasmValidateText(`(component
+  (type s32)
+  (export "t" (type 0)) ;; no identifier, no explicit externdesc
+  (type f32)
+
+  ;; There are three types defined now (one by the export), so this is valid
+  (type (func (param "x" 2)))
+
+  ;; Validate that the types are what we think they are
+  (core module $M
+    (func (export "foo") (param f32))
+  )
+  (core instance $I (instantiate $M))
+  (func (type 3) (canon lift (core func $I "foo")))
+)`);
+
+
+
+
+
+
+
+
+wasmValidateText(`(component
+  (type s32)
+  (import "f" (func $f (param "x" 0)))
+  (import "g" (func $g (param "x" s32)))
+
+  (export "f" (func $f) (func (param "x" s32)))
+  (export "g" (func $g) (func (param "x" 0)))
+)`);
+
+wasmValidateText(`(component
+  (type s32)
+  (type s32)
+  (export "t" (type 0) (type (eq 1)))
+)`);
