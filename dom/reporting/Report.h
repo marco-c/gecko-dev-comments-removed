@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Report_h
 #define mozilla_dom_Report_h
 
@@ -24,7 +22,7 @@ class ReportBody;
 
 class Report final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Report)
 
   Report(nsIGlobalObject* aGlobal, const nsAString& aType,
@@ -37,8 +35,9 @@ class Report final : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
-  void GetType(nsAString& aType) const;
+  const nsString& Type() const;
 
+  void GetType(nsAString& aType) const;
   void GetUrl(nsAString& aURL) const;
 
   ReportBody* GetBody() const;
@@ -48,8 +47,8 @@ class Report final : public nsISupports, public nsWrapperCache {
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
-  const nsString mType;
-  const nsString mURL;
+  nsString mType;
+  nsString mURL;
   RefPtr<ReportBody> mBody;
 };
 
