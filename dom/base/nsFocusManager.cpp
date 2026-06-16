@@ -983,22 +983,14 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   MOZ_ASSERT(aDocument);
   MOZ_ASSERT(aContent);
 
-  if (auto* startingPoint = aDocument->GetFocusNavigationStartingPoint()) {
-    bool isFlatTreeAncestor = false;
-    for (nsIContent* ancestor :
-         startingPoint->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
-      if (ancestor == aContent) {
-        isFlatTreeAncestor = true;
-        break;
-      }
-    }
+  if (auto* prevFocused = aDocument->GetPreviouslyFocusedContent()) {
     
     
     
     
-    if (isFlatTreeAncestor &&
-        (!aInfo.mNewParent || aDocument->WasFocusedElementRemoved())) {
-      aDocument->SetFocusNavigationStartingPoint(aContent, true);
+    if ((!aInfo.mNewParent || aDocument->WasFocusedElementRemoved()) &&
+        prevFocused->IsInclusiveFlatTreeDescendantOf(aContent)) {
+      aDocument->SetPreviouslyFocusedContent(aContent, true);
     }
   }
 
@@ -1143,7 +1135,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   if (!newFocusedElement) {
     
     
-    aDocument->SetFocusNavigationStartingPoint(aContent, true);
+    aDocument->SetPreviouslyFocusedContent(aContent, true);
     NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                             false, false);
   } else {
@@ -2522,9 +2514,12 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   bool sendBlurEvent =
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
-    
-    
-    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
+    if (!aIsLeavingDocument) {
+      
+      
+      
+      element->OwnerDoc()->SetPreviouslyFocusedContent(element);
+    }
     if (sendBlurEvent) {
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
@@ -2849,6 +2844,15 @@ void nsFocusManager::Focus(
     }
     return aElement;
   }();
+
+  if (elementToFocus) {
+    
+    
+    Document* doc = elementToFocus->OwnerDoc();
+    doc->SetPreviouslyFocusedContent(nullptr);
+    doc->SetSelectionMoreRecentThanFocus(false);
+  }
+
   if (elementToFocus && !mFocusedElement &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
     mFocusedElement = elementToFocus;
@@ -2940,12 +2944,6 @@ void nsFocusManager::Focus(
     RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
-  }
-
-  if (mFocusedElement) {
-    
-    
-    mFocusedElement->OwnerDoc()->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 
@@ -3507,6 +3505,48 @@ static nsIContent* GetFlatTreeNextNonDescendant(nsIContent& aContent) {
   return nullptr;
 }
 
+void nsFocusManager::GetSequentialFocusNavigationStartingPoint(
+    Document* aDocument, nsIContent* aFocusedContent, bool aForward,
+    nsIContent** aStartContent, bool* aConsiderStartContent) {
+  *aConsiderStartContent = true;
+  
+  if (nsIContent* content = aDocument->GetPreviouslyFocusedContent()) {
+    if (aDocument->WasFocusedElementRemoved()) {
+      content = GetFlatTreeNextNonDescendant(*content);
+      *aConsiderStartContent = aForward;
+    } else {
+      *aConsiderStartContent = false;
+    }
+    if (content) {
+      NS_ADDREF(*aStartContent = content);
+      return;
+    }
+  }
+  if (aFocusedContent && !aDocument->IsSelectionMoreRecentThanFocus()) {
+    
+    
+    NS_ADDREF(*aStartContent = aFocusedContent);
+    return;
+  }
+  
+  RefPtr<nsIContent> selectionStart, selectionEnd;
+  GetSelectionLocation(aDocument, aDocument->GetPresShell(),
+                       getter_AddRefs(selectionStart),
+                       getter_AddRefs(selectionEnd));
+  if (selectionStart) {
+    
+    
+    if (!aFocusedContent ||
+        selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent)) {
+      NS_ADDREF(*aStartContent = selectionStart);
+      return;
+    }
+  }
+  
+  
+  NS_IF_ADDREF(*aStartContent = aFocusedContent);
+}
+
 nsresult nsFocusManager::DetermineElementToMoveFocus(
     nsPIDOMWindowOuter* aWindow, nsIContent* aStartContent, int32_t aType,
     bool aNoParentTraversal, bool aNavigateByKey, nsIContent** aNextContent) {
@@ -3599,11 +3639,32 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   nsIFrame* popupFrame = nullptr;
 
   int32_t tabIndex = forward ? 1 : 0;
+  nsCOMPtr<nsIContent> focusedContent = startContent;
   if (startContent) {
     nsIFrame* frame = startContent->GetPrimaryFrame();
     tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
                    ? frame->IsFocusable().mTabIndex
                    : startContent->IsFocusableWithoutStyle().mTabIndex;
+
+    if (!aStartContent &&
+        (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD)) {
+      bool considerStartingPoint = false;
+      GetSequentialFocusNavigationStartingPoint(doc, focusedContent, forward,
+                                                getter_AddRefs(startContent),
+                                                &considerStartingPoint);
+      
+      MOZ_ASSERT(startContent);
+      if (focusedContent != startContent) {
+        
+        ignoreTabIndex = true;
+        if (considerStartingPoint && startContent->IsElement() &&
+            startContent->GetPrimaryFrame() &&
+            startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
+          NS_ADDREF(*aNextContent = startContent);
+          return NS_OK;
+        }
+      }
+    }
 
     
     
@@ -3669,19 +3730,13 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       
       nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
       if (docShell && docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
-        startContent = doc->GetFocusNavigationStartingPoint();
-        bool considerStartContent = true;
-        if (aType != MOVEFOCUS_CARET && !forDocumentNavigation &&
-            startContent) {
-          if (doc->WasFocusedElementRemoved()) {
-            startContent = GetFlatTreeNextNonDescendant(*startContent);
-            considerStartContent = forward;
-          } else {
-            considerStartContent = false;
-          }
-        }
-        nsCOMPtr<nsIContent> endSelectionContent;
-        if (!startContent) {
+        bool considerStartContent = false;
+        RefPtr<nsIContent> endSelectionContent;
+        if (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD) {
+          GetSequentialFocusNavigationStartingPoint(
+              doc, nullptr, forward, getter_AddRefs(startContent),
+              &considerStartContent);
+        } else {
           GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
                                getter_AddRefs(endSelectionContent));
         }
@@ -3788,6 +3843,22 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
       
       if (nextFocus) {
+        if (nextFocus == focusedContent) {
+          
+          
+          
+          
+          
+          
+          if (nextFocus != startContent) {
+            if (tabIndex >= 0) {
+              ignoreTabIndex = false;
+            }
+            startContent = nextFocus;
+            continue;
+          }
+        }
+
         LOGCONTENTNAVIGATION("Next Content: %s", nextFocus.get());
 
         

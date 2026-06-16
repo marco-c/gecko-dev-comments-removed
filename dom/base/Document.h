@@ -3629,12 +3629,18 @@ class Document : public nsINode,
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
 
-  void SetFocusNavigationStartingPoint(nsIContent* aContent,
-                                       bool aWillBeRemoved = false);
-  nsIContent* GetFocusNavigationStartingPoint() const {
-    return mFocusNavigationStartingPoint;
+  void SetPreviouslyFocusedContent(nsIContent* aContent,
+                                   bool aWillBeRemoved = false);
+  nsIContent* GetPreviouslyFocusedContent() const {
+    return mPreviouslyFocusedContent;
   }
   bool WasFocusedElementRemoved() const { return mWasFocusedElementRemoved; }
+  void SetSelectionMoreRecentThanFocus(bool aValue) {
+    mSelectionMoreRecentThanFocus = aValue;
+  }
+  bool IsSelectionMoreRecentThanFocus() const {
+    return mSelectionMoreRecentThanFocus;
+  }
 
   
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
@@ -4989,7 +4995,7 @@ class Document : public nsINode,
   
   
   
-  RefPtr<nsIContent> mFocusNavigationStartingPoint;
+  RefPtr<nsIContent> mPreviouslyFocusedContent;
 
   
   
@@ -5337,7 +5343,12 @@ class Document : public nsINode,
   
   
   
+  
   bool mWasFocusedElementRemoved : 1;
+
+  
+  
+  bool mSelectionMoreRecentThanFocus : 1;
 
   
   
