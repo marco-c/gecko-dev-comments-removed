@@ -6,6 +6,7 @@
 #include "WinCompositorWindowThread.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/SynchronousTask.h"
+#include "mozilla/StaticMonitor.h"
 #include "mozilla/StaticPtr.h"
 #include "transport/runnable_utils.h"
 #include "mozilla/StaticPrefs_apz.h"
@@ -14,6 +15,9 @@ namespace mozilla {
 namespace widget {
 
 static StaticRefPtr<WinCompositorWindowThread> sWinCompositorWindowThread;
+
+static StaticMonitor sShutdownMonitor;
+static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
 
 
 
@@ -52,7 +56,7 @@ static LRESULT CALLBACK InputEventRejectingWindowProc(HWND window, UINT msg,
 }
 
 WinCompositorWindowThread::WinCompositorWindowThread(base::Thread* aThread)
-    : mThread(aThread), mMonitor("WinCompositorWindowThread") {}
+    : mThread(aThread) {}
 
 
 WinCompositorWindowThread* WinCompositorWindowThread::Get() {
@@ -109,13 +113,13 @@ void WinCompositorWindowThread::ShutDown() {
   
   
   
-  CVStatus status;
+  bool shutdownComplete = false;
   {
     
     
     
     
-    MonitorAutoLock lock(sWinCompositorWindowThread->mMonitor);
+    StaticMonitorAutoLock lock(sShutdownMonitor);
 
     static const TimeDuration TIMEOUT = TimeDuration::FromSeconds(2.0);
     RefPtr<Runnable> runnable =
@@ -133,21 +137,23 @@ void WinCompositorWindowThread::ShutDown() {
     
     TimeStamp timeStart = TimeStamp::NowLoRes();
     do {
-      status = sWinCompositorWindowThread->mMonitor.Wait(TIMEOUT);
-    } while ((status == CVStatus::Timeout) &&
+      sShutdownMonitor.Wait(TIMEOUT);
+    } while (!(shutdownComplete = sShutdownComplete) &&
              ((TimeStamp::NowLoRes() - timeStart) < TIMEOUT));
   }
 
-  if (status == CVStatus::NoTimeout) {
+  if (shutdownComplete) {
     sWinCompositorWindowThread = nullptr;
   }
 }
 
 void WinCompositorWindowThread::ShutDownTask() {
-  MonitorAutoLock lock(mMonitor);
+  StaticMonitorAutoLock lock(sShutdownMonitor);
 
   MOZ_ASSERT(IsInCompositorWindowThread());
-  mMonitor.NotifyAll();
+
+  sShutdownComplete = true;
+  sShutdownMonitor.NotifyAll();
 }
 
 

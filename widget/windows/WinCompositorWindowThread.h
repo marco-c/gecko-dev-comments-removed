@@ -7,7 +7,6 @@
 
 #include "base/thread.h"
 #include "base/message_loop.h"
-#include "mozilla/Monitor.h"
 
 namespace mozilla {
 namespace widget {
@@ -52,7 +51,6 @@ class WinCompositorWindowThread final {
   void ShutDownTask();
 
   UniquePtr<base::Thread> const mThread;
-  Monitor mMonitor;
 
   
   

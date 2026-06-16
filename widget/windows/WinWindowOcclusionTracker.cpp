@@ -19,6 +19,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/StaticMonitor.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIWidget.h"
 #include "nsWindow.h"
@@ -27,6 +28,9 @@
 #include "WinUtils.h"
 
 namespace mozilla::widget {
+
+static StaticMonitor sShutdownMonitor;
+static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
 
 
 LazyLogModule gWinOcclusionTrackerLog("WinOcclusionTracker");
@@ -384,13 +388,13 @@ void WinWindowOcclusionTracker::ShutDown() {
   
   
   
-  CVStatus status;
+  bool shutdownComplete = false;
   {
     
     
     
     
-    MonitorAutoLock lock(sTracker->mMonitor);
+    StaticMonitorAutoLock lock(sShutdownMonitor);
 
     static const TimeDuration TIMEOUT = TimeDuration::FromSeconds(2.0);
     RefPtr<Runnable> runnable =
@@ -408,12 +412,12 @@ void WinWindowOcclusionTracker::ShutDown() {
     
     TimeStamp timeStart = TimeStamp::NowLoRes();
     do {
-      status = sTracker->mMonitor.Wait(TIMEOUT);
-    } while ((status == CVStatus::Timeout) &&
+      sShutdownMonitor.Wait(TIMEOUT);
+    } while (!(shutdownComplete = sShutdownComplete) &&
              ((TimeStamp::NowLoRes() - timeStart) < TIMEOUT));
   }
 
-  if (status == CVStatus::NoTimeout) {
+  if (shutdownComplete) {
     WindowOcclusionCalculator::ClearInstance();
     sTracker = nullptr;
   }
@@ -499,7 +503,7 @@ void WinWindowOcclusionTracker::OnWindowVisibilityChanged(nsIWidget* aWindow,
 
 WinWindowOcclusionTracker::WinWindowOcclusionTracker(
     UniquePtr<base::Thread> aThread)
-    : mThread(std::move(aThread)), mMonitor("WinWindowOcclusionTracker") {
+    : mThread(std::move(aThread)) {
   MOZ_ASSERT(NS_IsMainThread());
   LOG(LogLevel::Info, "WinWindowOcclusionTracker::WinWindowOcclusionTracker()");
 
@@ -824,8 +828,7 @@ StaticRefPtr<WinWindowOcclusionTracker::WindowOcclusionCalculator>
     WinWindowOcclusionTracker::WindowOcclusionCalculator::sCalculator;
 
 WinWindowOcclusionTracker::WindowOcclusionCalculator::
-    WindowOcclusionCalculator()
-    : mMonitor(WinWindowOcclusionTracker::Get()->mMonitor) {
+    WindowOcclusionCalculator() {
   MOZ_ASSERT(NS_IsMainThread());
   LOG(LogLevel::Info, "WindowOcclusionCalculator()");
 
@@ -864,10 +867,10 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::Initialize() {
 }
 
 void WinWindowOcclusionTracker::WindowOcclusionCalculator::Shutdown() {
-  MonitorAutoLock lock(mMonitor);
-
   MOZ_ASSERT(IsInWinWindowOcclusionThread());
   CALC_LOG(LogLevel::Info, "Shutdown()");
+
+  StaticMonitorAutoLock lock(sShutdownMonitor);
 
   UnregisterEventHooks();
   if (mOcclusionUpdateRunnable) {
@@ -876,7 +879,8 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::Shutdown() {
   }
   mVirtualDesktopManager = nullptr;
 
-  mMonitor.NotifyAll();
+  sShutdownComplete = true;
+  sShutdownMonitor.NotifyAll();
 }
 
 void WinWindowOcclusionTracker::WindowOcclusionCalculator::

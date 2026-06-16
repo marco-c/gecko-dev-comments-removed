@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "nsIWeakReferenceUtils.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
 #include "Units.h"
@@ -244,10 +243,6 @@ class WinWindowOcclusionTracker final {
     
     RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;
 
-    
-    
-    Monitor& mMonitor;
-
     friend class OcclusionUpdateRunnable;
   };
 
@@ -288,7 +283,6 @@ class WinWindowOcclusionTracker final {
 
   
   UniquePtr<base::Thread> mThread;
-  Monitor mMonitor;
 
   
   
