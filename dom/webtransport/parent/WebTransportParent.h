@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_WEBTRANSPORT_PARENT_WEBTRANSPORTPARENT_H_
 #define DOM_WEBTRANSPORT_PARENT_WEBTRANSPORTPARENT_H_
 
@@ -35,8 +33,8 @@ class WebTransportParent : public PWebTransportParent,
 
   void Create(const nsAString& aURL, nsIPrincipal* aPrincipal,
               const uint64_t& aBrowsingContextID,
-              const mozilla::Maybe<IPCClientInfo>& aClientInfo,
-              const bool& aDedicated, const bool& aRequireUnreliable,
+              const IPCClientInfo& aClientInfo, const bool& aDedicated,
+              const bool& aRequireUnreliable,
               const uint32_t& aCongestionControl,
               nsTArray<WebTransportHash>&& aServerCertHashes,
               Endpoint<PWebTransportParent>&& aParentEndpoint,
