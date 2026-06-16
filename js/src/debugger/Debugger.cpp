@@ -110,6 +110,7 @@
 #include "wasm/WasmInstance.h"    
 #include "wasm/WasmJS.h"          
 #include "wasm/WasmRealm.h"       
+#include "wasm/WasmStacks.h"      
 #include "wasm/WasmTypeDecls.h"   
 
 #include "debugger/DebugAPI-inl.h"
@@ -2558,35 +2559,55 @@ void DebugAPI::onNewScript(JSContext* cx, HandleScript script) {
       });
 }
 
+#ifdef ENABLE_WASM_JSPI
 
-void DebugAPI::onSuspendWasmFrame(JSContext* cx, wasm::DebugFrame* debugFrame) {
-  AbstractFramePtr frame = AbstractFramePtr(debugFrame);
-  JS::AutoAssertNoGC nogc;
-  for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers(nogc)) {
-    Debugger* dbg = entry.dbg;
-    if (Debugger::FrameMap::Ptr p = dbg->frames.lookup(frame)) {
-      DebuggerFrame* frameObj = p->value();
-      frameObj->suspendWasmFrame(cx->gcContext());
-    }
+
+static bool ContStackChainHasAddress(wasm::ContStack* resumeBase,
+                                     uintptr_t addr) {
+  if (resumeBase->hasStackAddress(addr)) {
+    return true;
   }
-}
-
-
-void DebugAPI::onResumeWasmFrame(JSContext* cx, const FrameIter& iter) {
-  AbstractFramePtr frame = iter.abstractFramePtr();
-  MOZ_RELEASE_ASSERT(frame.isWasmDebugFrame());
-  JS::AutoAssertNoGC nogc;
-  for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers(nogc)) {
-    Debugger* dbg = entry.dbg;
-    if (Debugger::FrameMap::Ptr p = dbg->frames.lookup(frame)) {
-      DebuggerFrame* frameObj = p->value();
-      AutoEnterOOMUnsafeRegion oomUnsafe;
-      if (!frameObj->resume(iter)) {
-        oomUnsafe.crash("DebugAPI::onResumeWasmFrame");
+  
+  
+  
+  wasm::ContStack* resumeTargetStack = resumeBase->resumeTargetStack();
+  if (resumeTargetStack) {
+    for (wasm::Handlers* h = resumeTargetStack->handlers(); h;
+         h = h->self->handlers()) {
+      if (h->child && h->child->hasStackAddress(addr)) {
+        return true;
       }
     }
   }
+  return false;
 }
+
+
+void DebugAPI::onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase) {
+  JS::GCContext* gcx = cx->gcContext();
+  JSRuntime* rt = cx->runtime();
+  for (Debugger* dbg = rt->debuggerList().getFirst(); dbg;
+       dbg = dbg->getNext()) {
+    for (auto iter = dbg->frames.modIter(); !iter.done(); iter.next()) {
+      DebuggerFrame* frameObj = iter.get().value();
+      JS::Value slot =
+          frameObj->getReservedSlot(DebuggerFrame::WASM_CONT_FRAME_PTR_SLOT);
+      if (slot.isUndefined()) {
+        continue;
+      }
+      AbstractFramePtr fp = AbstractFramePtr::fromRaw(slot.toPrivate());
+      if (!fp.isWasmDebugFrame()) {
+        continue;
+      }
+      uintptr_t addr = reinterpret_cast<uintptr_t>(fp.asWasmDebugFrame());
+      if (!ContStackChainHasAddress(resumeBase, addr)) {
+        continue;
+      }
+      Debugger::terminateDebuggerFrame(gcx, dbg, frameObj, fp, &iter, nullptr);
+    }
+  }
+}
+#endif  
 
 void DebugAPI::slowPathOnNewWasmInstance(
     JSContext* cx, Handle<WasmInstanceObject*> wasmInstance) {

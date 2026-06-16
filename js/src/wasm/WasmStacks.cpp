@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "builtin/Promise.h"
+#include "debugger/DebugAPI.h"
 #include "gc/Memory.h"
 #include "jit/Assembler.h"
 #include "jit/MacroAssembler.h"
@@ -1058,10 +1059,13 @@ const ClassExtension ContObject::classExt_ = {};
 
 
 void ContObject::finalize(JS::GCContext* gcx, JSObject* obj) {
+  JSContext* cx = gcx->runtimeFromAnyThread()->mainContextFromAnyThread();
   ContObject& cont = obj->as<ContObject>();
 
-  
   if (UniqueContStack resumeBase = cont.takeResumeBase()) {
+    
+    
+    DebugAPI::onLeaveWasmCont(cx, resumeBase.get());
     ContStack::freeSuspended(std::move(resumeBase));
   }
 }

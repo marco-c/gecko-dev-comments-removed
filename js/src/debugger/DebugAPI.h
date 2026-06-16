@@ -24,6 +24,10 @@ namespace gc {
 class AutoSuppressGC;
 }  
 
+namespace wasm {
+class ContStack;
+}  
+
 
 
 
@@ -220,10 +224,9 @@ class DebugAPI {
                                                  AbstractFramePtr frame);
 
   
-  static void onSuspendWasmFrame(JSContext* cx, wasm::DebugFrame* debugFrame);
-
   
-  static void onResumeWasmFrame(JSContext* cx, const FrameIter& iter);
+  
+  static void onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase);
 
   static inline NativeResumeMode onNativeCall(JSContext* cx,
                                               const CallArgs& args,
