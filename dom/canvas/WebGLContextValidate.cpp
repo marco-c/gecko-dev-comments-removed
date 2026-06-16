@@ -239,6 +239,12 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
   if (webgl.IsWebGL2() ||
       limits.supportedExtensions[WebGLExtensionID::WEBGL_draw_buffers]) {
     gl.GetUIntegerv(LOCAL_GL_MAX_DRAW_BUFFERS, &limits.maxColorDrawBuffers);
+    
+    
+    
+    
+    limits.maxColorDrawBuffers =
+        std::min(limits.maxColorDrawBuffers, uint32_t{webgl::kMaxDrawBuffers});
   }
 
   if (limits.supportedExtensions[WebGLExtensionID::EXT_disjoint_timer_query]) {
