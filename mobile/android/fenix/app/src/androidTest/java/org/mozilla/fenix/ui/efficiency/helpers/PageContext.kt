@@ -38,6 +38,7 @@ import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsPasswordsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsPrivateBrowsingPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSavePasswordsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSavedPasswordsPage
+import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSearchDefaultSearchEnginePage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSearchPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSiteSettingsExceptionsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSiteSettingsPage
@@ -47,6 +48,7 @@ import org.mozilla.fenix.ui.efficiency.pageObjects.ShareOverlayPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ShortcutsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.TabDrawerPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ToolbarComponent
+import org.mozilla.fenix.ui.efficiency.pageObjects.UnifiedTrustPanelPage
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) {
@@ -84,6 +86,7 @@ class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     val settingsSavePasswords = SettingsSavePasswordsPage(composeRule)
     val settingsSavedPasswords = SettingsSavedPasswordsPage(composeRule)
     val settingsSearch = SettingsSearchPage(composeRule)
+    val settingsSearchDefaultSearchEngine = SettingsSearchDefaultSearchEnginePage(composeRule)
     val settingsSiteSettings = SettingsSiteSettingsPage(composeRule)
     val settingsSiteSettingsExceptions = SettingsSiteSettingsExceptionsPage(composeRule)
     val settingsTabs = SettingsTabsPage(composeRule)
@@ -92,6 +95,7 @@ class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     val shortcuts = ShortcutsPage(composeRule)
     val tabDrawer = TabDrawerPage(composeRule)
     val toolbar = ToolbarComponent(composeRule)
+    val unifiedTrustPanel = UnifiedTrustPanelPage(composeRule)
 
     fun initTestRule(
         skipOnboarding: Boolean = true,

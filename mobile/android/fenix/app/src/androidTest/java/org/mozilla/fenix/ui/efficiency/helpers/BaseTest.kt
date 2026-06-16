@@ -50,6 +50,9 @@ abstract class BaseTest(
     private val skipOnboarding: Boolean = true,
     private val isMenuRedesignCFREnabled: Boolean = false,
     private val isPageLoadTranslationsPromptEnabled: Boolean = false,
+    private val isPocketEnabled: Boolean = true,
+    private val isRecentlyVisitedFeatureEnabled: Boolean = true,
+    private val isUnifiedTrustPanelEnabled: Boolean = true,
 ) {
 
     @get:Rule(order = 0)
@@ -77,6 +80,9 @@ abstract class BaseTest(
                             skipOnboarding = skipOnboarding,
                             isMenuRedesignCFREnabled = isMenuRedesignCFREnabled,
                             isPageLoadTranslationsPromptEnabled = isPageLoadTranslationsPromptEnabled,
+                            isPocketEnabled = isPocketEnabled,
+                            isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled,
+                            isUnifiedTrustPanelEnabled = isUnifiedTrustPanelEnabled,
                         ),
                     ) { it.activity }
                     try {
