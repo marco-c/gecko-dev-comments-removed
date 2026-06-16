@@ -760,6 +760,9 @@ DEFINE_BARRIERED_PTR(PreBarriered, gc::BarrierOption_PreWriteBarrier);
 
 DEFINE_BARRIERED_PTR(GCPtr, gc::BarrierOption_PreWriteBarrier |
                                 gc::BarrierOption_PostWriteBarrier |
+#ifdef JS_GC_CONCURRENT_MARKING
+                                gc::BarrierOption_AtomicWrites |
+#endif
                                 gc::BarrierOption_HasGCLifetime);
 
 
@@ -869,7 +872,11 @@ class GCBuffer : public BarrieredBase<T> {
     this->unbarrieredSet(ptr);
   }
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  void unbarrieredSet(T ptr) { this->unbarrieredAtomicSet(ptr); }
+#else
   using Base::unbarrieredSet;
+#endif
 
   T get() const { return this->unbarrieredGet(); }
   operator T() const { return get(); }
@@ -913,6 +920,8 @@ DEFINE_BARRIERED_PTR(UnsafeBarePtr, gc::BarrierOption_None);
 
 class HeapSlot : public BarrieredBase<Value>,
                  public WrappedPtrOperations<Value, HeapSlot> {
+  using Base = BarrieredBase<Value>;
+
  public:
   enum Kind { Slot = 0, Element = 1 };
 
@@ -932,9 +941,19 @@ class HeapSlot : public BarrieredBase<Value>,
   
   const Value& get() const { return this->unbarrieredGet(); }
 
+#if JS_BITS_PER_WORD == 64
+  using Base::unbarrieredAtomicGet;
+#endif
+
   
   
-  using BarrieredBase<Value>::unbarrieredSet;
+#ifdef JS_GC_CONCURRENT_MARKING
+  void unbarrieredSet(const Value& newValue) {
+    this->unbarrieredAtomicSet(newValue);
+  }
+#else
+  using Base::unbarrieredSet;
+#endif
 
   
   static void preWriteBarrier(const Value& v) {

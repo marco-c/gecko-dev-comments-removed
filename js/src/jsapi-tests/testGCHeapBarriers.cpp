@@ -176,6 +176,9 @@ BEGIN_TEST(testGCHeapPostBarriers) {
   CHECK(TestHeapPostBarriersForType<JSObject*>());
   CHECK(TestHeapPostBarriersForType<JSFunction*>());
   CHECK(TestHeapPostBarriersForType<JS::Uint8Array>());
+  CHECK((TestHeapPostBarriersForWrapper<js::GCPtr, JSObject*>()));
+  CHECK((TestHeapPostBarriersForWrapper<js::GCPtr, JSFunction*>()));
+
   
 
   return true;
@@ -195,7 +198,7 @@ BEGIN_TEST(testGCHeapPostBarriers) {
 
 template <typename T>
 [[nodiscard]] bool TestHeapPostBarriersForType() {
-  CHECK((TestHeapPostBarriersForWrapper<js::GCPtr, T>()));
+  
   CHECK((TestHeapPostBarriersForMovableWrapper<JS::Heap, T>()));
   CHECK((TestHeapPostBarriersForMovableWrapper<js::HeapPtr, T>()));
   CHECK((TestHeapPostBarriersForMovableWrapper<js::WeakHeapPtr, T>()));
