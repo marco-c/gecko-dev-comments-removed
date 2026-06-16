@@ -37,60 +37,48 @@ namespace TestThreadPoolIdleTimeout {
 
 
 
+
+
 template <uint32_t ms, size_t repeats>
 class ScopedTimingChecker {
-  Mutex mMutex{"ScopedTimingCheckMutex"};
-  CondVar mWaitForTimer MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsISerialEventTarget> mTarget MOZ_GUARDED_BY(mMutex);
-  TimeStamp mLastStart MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsITimer> mTimer MOZ_GUARDED_BY(mMutex);
-  AutoTArray<TimeDuration, repeats> mEffectiveMS MOZ_GUARDED_BY(mMutex);
   double& mDeviationPerc;
-
-  void TimerFn() {
-    MutexAutoLock lock(mMutex);
-    TimeDuration delta = TimeStamp::Now() - mLastStart;
-    mEffectiveMS.AppendElement(delta);
-    if (mEffectiveMS.Length() < repeats) {
-      mLastStart = TimeStamp::Now();
-      auto ret = NS_NewTimerWithCallback(
-          [self = this](nsITimer* t) { self->TimerFn(); },
-          TimeDuration::FromMilliseconds(ms), nsITimer::TYPE_ONE_SHOT,
-          "TimingChecker"_ns, mTarget);
-      MOZ_ASSERT(ret.isOk());
-      mTimer = ret.unwrap();
-    } else {
-      mWaitForTimer.Notify();
-    }
-  };
+  nsCOMPtr<nsIThread> mThread;
 
  public:
-  ScopedTimingChecker(nsCOMPtr<nsISerialEventTarget> aTarget,
-                      double& aDeviationPerc)
-      : mWaitForTimer(mMutex, "WaitForPeak"),
-        mTarget(std::move(aTarget)),
-        mDeviationPerc(aDeviationPerc) {
-    MutexAutoLock lock(mMutex);
-    mLastStart = TimeStamp::Now();
-    auto ret = NS_NewTimerWithCallback(
-        [self = this](nsITimer* t) { self->TimerFn(); },
-        TimeDuration::FromMilliseconds(ms), nsITimer::TYPE_ONE_SHOT,
-        "TimingChecker"_ns, mTarget);
-    MOZ_ASSERT(ret.isOk());
-    mTimer = ret.unwrap();
+  explicit ScopedTimingChecker(double& aDeviationPerc)
+      : mDeviationPerc(aDeviationPerc) {
+    NS_NewNamedThread(
+        "TimingCheck", getter_AddRefs(mThread),
+        NS_NewRunnableFunction("TimingCheckRun", [this]() {
+          Mutex mutex{"ScopedTimingCheckMutex"};
+          CondVar condVar(mutex, "ScopedTimingCheckCondVar");
+          double maxDeviation = 0.0;
+          for (size_t i = 0; i < repeats; i++) {
+            TimeStamp before = TimeStamp::Now();
+            TimeStamp deadline = before + TimeDuration::FromMilliseconds(ms);
+            {
+              MutexAutoLock lock(mutex);
+              
+              
+              
+              
+              
+              
+              
+              for (TimeStamp now = before; now < deadline;
+                   now = TimeStamp::Now()) {
+                condVar.Wait(deadline - now);
+              }
+            }
+            double elapsed = (TimeStamp::Now() - before).ToMilliseconds();
+            maxDeviation = std::max(maxDeviation, std::abs(elapsed - ms));
+          }
+          mDeviationPerc = 100.0 * (maxDeviation / ms);
+        }));
   }
 
   ~ScopedTimingChecker() {
-    MutexAutoLock lock(mMutex);
-    if (mEffectiveMS.Length() < repeats) {
-      mWaitForTimer.Wait();
-    }
-    double maxDeviation = 0.0;
-    for (size_t i = 0; i < repeats; i++) {
-      maxDeviation = std::max(maxDeviation,
-                              std::abs(mEffectiveMS[i].ToMilliseconds() - ms));
-    }
-    mDeviationPerc = 100.0 * (maxDeviation / ms);
+    mThread->Shutdown();
     printf("ScopedTimingChecker calculated %.2f %% deviation.\n",
            mDeviationPerc);
   }
@@ -166,7 +154,8 @@ TEST(ThreadPoolIdleTimeout, Test)
   TimeStamp execStart = TimeStamp::Now();
   Atomic<uint32_t> numberOfThreads(0);
   Atomic<uint32_t> numberOfThreadsCreated(0);
-  Atomic<uint32_t> numberOfActiviationRunnables(0);
+  Atomic<uint32_t> numberOfActivationRunnables(0);
+  bool peakReached = false;
 
   nsCOMPtr<nsIThreadPool> pool = new nsThreadPool();
 
@@ -200,10 +189,12 @@ TEST(ThreadPoolIdleTimeout, Test)
   auto activateThreads = [&](uint32_t aNumThreads) MOZ_REQUIRES(waitMutex) {
     
     
-    MOZ_ASSERT(!numberOfActiviationRunnables);
+    MOZ_ASSERT(!numberOfActivationRunnables);
     printf("%u Activate %u threads.\n",
            (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
            (uint32_t)aNumThreads);
+
+    peakReached = false;
 
     
     
@@ -211,15 +202,18 @@ TEST(ThreadPoolIdleTimeout, Test)
       nsCOMPtr<nsIRunnable> runnable =
           NS_NewRunnableFunction("TestRunnable", [&]() {
             MutexAutoLock lock(waitMutex);
-            numberOfActiviationRunnables++;
-            if (numberOfActiviationRunnables >= aNumThreads) {
+            numberOfActivationRunnables++;
+            if (numberOfActivationRunnables >= aNumThreads) {
+              peakReached = true;
               waitForPeak.NotifyAll();
             } else {
               
-              waitForPeak.Wait();
+              while (!peakReached) {
+                waitForPeak.Wait();
+              }
             }
-            numberOfActiviationRunnables--;
-            if (numberOfActiviationRunnables == 0) {
+            numberOfActivationRunnables--;
+            if (numberOfActivationRunnables == 0) {
               waitForIdleAfterPeak.NotifyAll();
             }
           });
@@ -229,8 +223,10 @@ TEST(ThreadPoolIdleTimeout, Test)
       ASSERT_NS_SUCCEEDED(rv);
     }
     
-    waitForPeak.Wait();
-    if (numberOfActiviationRunnables > 0) {
+    while (!peakReached) {
+      waitForPeak.Wait();
+    }
+    while (numberOfActivationRunnables) {
       waitForIdleAfterPeak.Wait();
     }
   };
@@ -243,7 +239,7 @@ TEST(ThreadPoolIdleTimeout, Test)
     TimeDuration graceTime;
     {
       ScopedTimingChecker<IDLE_THREAD_GRACE_TIMEOUT / 5, 5> checker(
-          helperTarget, deviationPerc);
+          deviationPerc);
       {
         MutexAutoLock lock(waitMutex);
         activateThreads(NUMBER_OF_MAX_THREADS);
@@ -261,7 +257,9 @@ TEST(ThreadPoolIdleTimeout, Test)
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForGrace.Wait();
+        while (numberOfThreads > NUMBER_OF_IDLE_THREADS) {
+          waitForGrace.Wait();
+        }
       }
       printf("%u Found %u threads alive.\n",
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
@@ -285,12 +283,14 @@ TEST(ThreadPoolIdleTimeout, Test)
     {
       ScopedTimingChecker<
           (IDLE_THREAD_MAX_TIMEOUT - IDLE_THREAD_GRACE_TIMEOUT) / 5, 5>
-          checker(helperTarget, deviationPerc);
+          checker(deviationPerc);
       printf("%u Wait for maximum timeout...\n",
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForMaximum.Wait();
+        while (numberOfThreads > 0) {
+          waitForMaximum.Wait();
+        }
       }
     }
     printf("%u Found %u threads alive.\n",
@@ -315,6 +315,7 @@ TEST(ThreadPoolIdleTimeout, Test)
   
   TimeStamp started = TimeStamp::Now();
   CondVar waitForRepeats(waitMutex, "WaitForRepeats");
+  bool repeatsDone = false;
   {
     numberOfThreadsCreated = 0;
 
@@ -325,6 +326,7 @@ TEST(ThreadPoolIdleTimeout, Test)
           activateThreads(NUMBER_OF_MAX_THREADS);
           if (TimeStamp::Now() - started >
               TimeDuration::FromMilliseconds(2.0 * IDLE_THREAD_GRACE_TIMEOUT)) {
+            repeatsDone = true;
             waitForRepeats.Notify();
           }
         },
@@ -338,7 +340,9 @@ TEST(ThreadPoolIdleTimeout, Test)
            (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
     {
       MutexAutoLock lock(waitMutex);
-      waitForRepeats.Wait();
+      while (!repeatsDone) {
+        waitForRepeats.Wait();
+      }
       timer->Cancel();
     }
 
@@ -366,12 +370,13 @@ TEST(ThreadPoolIdleTimeout, Test)
     double deviationPerc = 0.0;
     {
       ScopedTimingChecker<IDLE_THREAD_GRACE_TIMEOUT / 5, 5> checker(
-          helperTarget, deviationPerc);
+          deviationPerc);
 
       
       
-      numberOfActiviationRunnables = 0;
+      numberOfActivationRunnables = 0;
       started = TimeStamp::Now();
+      repeatsDone = false;
       CondVar waitForRepeatExecutions(waitMutex, "waitForRepeatExecutions");
       Atomic<uint32_t> numberOfNoiseRunnables(0);
 
@@ -381,6 +386,7 @@ TEST(ThreadPoolIdleTimeout, Test)
             if (TimeStamp::Now() - started >
                 TimeDuration::FromMilliseconds(2.5 *
                                                IDLE_THREAD_GRACE_TIMEOUT)) {
+              repeatsDone = true;
               waitForRepeats.Notify();
             } else {
               
@@ -421,9 +427,11 @@ TEST(ThreadPoolIdleTimeout, Test)
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForRepeats.Wait();
+        while (!repeatsDone) {
+          waitForRepeats.Wait();
+        }
         timer->Cancel();
-        if (numberOfNoiseRunnables) {
+        while (numberOfNoiseRunnables) {
           printf("%u Runnables in flight after cancel: %u, wait...\n",
                  (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
                  (uint32_t)numberOfNoiseRunnables);
