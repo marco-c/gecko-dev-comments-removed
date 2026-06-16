@@ -72,7 +72,7 @@ function test_idl_setter(element_creation_method, test_name_suffix, referencing_
       referencing_element[reflected_property] = host;
       
       
-      assert_equals(referencing_element[reflected_property], null);
+      assert_equals(referencing_element[reflected_property], host);
     } else if (expected_behavior === Behavior.ReflectsHostReadOnly) {
       referencing_element[reflected_property] = host;
       
@@ -81,7 +81,7 @@ function test_idl_setter(element_creation_method, test_name_suffix, referencing_
       referencing_element[reflected_property] = [ host ];
       
       
-      assert_array_equals(referencing_element[reflected_property], []);
+      assert_array_equals(referencing_element[reflected_property], [host]);
     } else if (expected_behavior === Behavior.IsNull) {
       referencing_element[reflected_property] = host;
       assert_equals(referencing_element[reflected_property], null);
