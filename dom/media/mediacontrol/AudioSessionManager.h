@@ -62,6 +62,28 @@ class AudioSessionManager final {
   Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
 
   
+  
+  void UpdateSelectedAudioSession();
+
+  
+  
+  void InactivateAudioSession(uint64_t aBrowsingContextId);
+
+  
+  
+  void TryActivateAudioSession(uint64_t aBrowsingContextId);
+
+  
+  
+  void SetAudioSessionState(uint64_t aBrowsingContextId,
+                            AudioSessionState aNewState);
+
+  
+  
+  
+  void RemoveRecordIfEmpty(uint64_t aBrowsingContextId);
+
+  
   void MaybeFireEffectiveTypeChanged();
 
   
@@ -70,6 +92,11 @@ class AudioSessionManager final {
 
   
   nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
+
+  
+  
+  
+  Maybe<uint64_t> mSelectedAudioSessionBcId;
 
   
   AudioSessionType mLastDispatchedEffectiveType = AudioSessionType::Auto;

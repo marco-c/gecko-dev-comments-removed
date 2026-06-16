@@ -66,18 +66,27 @@ class AudioSessionRecord {
   
   Maybe<int64_t> GetAudibleAtMs() const { return mAudibleAtMs; }
 
+  
+  
+  
+  
+  AudioSessionState GetState() const { return mState; }
+
   bool IsEmpty() const {
-    return mTypeOverride.isNothing() && mAudibleAtMs.isNothing();
+    return mTypeOverride.isNothing() && mAudibleAtMs.isNothing() &&
+           mState == AudioSessionState::Inactive;
   }
 
   void SetTypeOverride(uint64_t aBcId, Maybe<AudioSessionType> aTypeOverride);
   void SetAudibleAtMs(uint64_t aBcId, Maybe<int64_t> aAudibleAtMs);
+  void SetState(uint64_t aBcId, AudioSessionState aState);
 
  private:
   void LogState(uint64_t aBcId) const;
 
   Maybe<AudioSessionType> mTypeOverride;
   Maybe<int64_t> mAudibleAtMs;
+  AudioSessionState mState = AudioSessionState::Inactive;
 };
 
 }  

@@ -23,37 +23,118 @@ AudioSessionManager::AudioSessionManager(MediaController* aController)
 void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
                                           AudioSessionType aType) {
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mAudioSessions.LookupOrInsert(aBrowsingContextId)
       .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
                                                ? Nothing()
                                                : Some(aType));
+  UpdateSelectedAudioSession();
+  
+  
+  
+  RemoveRecordIfEmpty(aBrowsingContextId);
   MaybeFireEffectiveTypeChanged();
 }
 
 void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
-  AudioSessionRecord& record =
-      mAudioSessions.LookupOrInsert(aBrowsingContextId);
-  const bool bcWasAudible = record.GetAudibleAtMs().isSome();
   const bool bcIsAudibleNow = mController->IsBcAudible(aBrowsingContextId);
+  auto existing = mAudioSessions.Lookup(aBrowsingContextId);
+  const bool bcWasAudible =
+      existing && existing.Data().GetAudibleAtMs().isSome();
   if (!bcWasAudible && bcIsAudibleNow) {
-    record.SetAudibleAtMs(
-        aBrowsingContextId,
-        Some(static_cast<int64_t>(mozilla::ProcessUptimeMs().valueOr(0))));
+    
+    
+    
+    Maybe<int64_t> uptime = mozilla::ProcessUptimeMs();
+    MOZ_DIAGNOSTIC_ASSERT(uptime.isSome(),
+                          "ProcessUptimeMs should always have a value "
+                          "during audibility transitions");
+    mAudioSessions.LookupOrInsert(aBrowsingContextId)
+        .SetAudibleAtMs(aBrowsingContextId, Some(*uptime));
   } else if (bcWasAudible && !bcIsAudibleNow) {
-    record.SetAudibleAtMs(aBrowsingContextId, Nothing());
+    existing.Data().SetAudibleAtMs(aBrowsingContextId, Nothing());
   }
-  if (record.IsEmpty()) {
-    LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
-    mAudioSessions.Remove(aBrowsingContextId);
+  
+  
+  
+  
+  if (bcIsAudibleNow) {
+    TryActivateAudioSession(aBrowsingContextId);
+  } else {
+    InactivateAudioSession(aBrowsingContextId);
   }
+  UpdateSelectedAudioSession();
   MaybeFireEffectiveTypeChanged();
 }
 
 void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("NotifyBcDiscarded bc=%" PRIu64, aBrowsingContextId);
+    UpdateSelectedAudioSession();
     MaybeFireEffectiveTypeChanged();
   }
+}
+
+void AudioSessionManager::InactivateAudioSession(uint64_t aBrowsingContextId) {
+  
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry || entry.Data().GetState() == AudioSessionState::Inactive) {
+    
+    LOG("Inactivate bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "already inactive");
+    return;
+  }
+  SetAudioSessionState(aBrowsingContextId, AudioSessionState::Inactive);
+}
+
+void AudioSessionManager::TryActivateAudioSession(uint64_t aBrowsingContextId) {
+  
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  MOZ_ASSERT(entry, "TryActivate called without an existing record");
+  if (!entry || entry.Data().GetState() == AudioSessionState::Active) {
+    
+    LOG("TryActivate bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "already active");
+    return;
+  }
+  SetAudioSessionState(aBrowsingContextId, AudioSessionState::Active);
+}
+
+void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
+                                               AudioSessionState aNewState) {
+  
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  MOZ_ASSERT(entry, "SetAudioSessionState called without an existing record");
+  if (!entry || entry.Data().GetState() == aNewState) {
+    LOG("SetAudioSessionState bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "state unchanged");
+    return;
+  }
+  entry.Data().SetState(aBrowsingContextId, aNewState);
+  
+  
+  
+  
+  RemoveRecordIfEmpty(aBrowsingContextId);
+}
+
+void AudioSessionManager::RemoveRecordIfEmpty(uint64_t aBrowsingContextId) {
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry || !entry.Data().IsEmpty()) {
+    LOG("RemoveRecordIfEmpty bc=%" PRIu64 " skipped: %s", aBrowsingContextId,
+        !entry ? "no record" : "record still occupied");
+    return;
+  }
+  LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
+  mAudioSessions.Remove(aBrowsingContextId);
 }
 
 AudioSessionType AudioSessionManager::EffectiveTypeForBc(
@@ -70,53 +151,63 @@ AudioSessionType AudioSessionManager::EffectiveTypeForBc(
 
 Maybe<AudioSessionType> AudioSessionManager::GetSelectedAudioSessionType()
     const {
+  if (!mSelectedAudioSessionBcId) {
+    return Nothing();
+  }
+  return Some(EffectiveTypeForBc(*mSelectedAudioSessionBcId));
+}
+
+void AudioSessionManager::UpdateSelectedAudioSession() {
   
   
   
   
-  
-  
-  
-  AutoTArray<const AudioSessionRecord*, 4> activeAudioSessions;
-  AutoTArray<AudioSessionType, 4> activeEffectiveTypes;
+  AutoTArray<uint64_t, 4> activeBcIds;
   for (const auto& entry : mAudioSessions) {
     const AudioSessionRecord& record = entry.GetData();
-    if (record.GetAudibleAtMs().isNothing()) {
+    if (record.GetState() != AudioSessionState::Active) {
       continue;
     }
     const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
     if (!IsExclusiveAudioSessionType(type)) {
       continue;
     }
-    activeAudioSessions.AppendElement(&record);
-    activeEffectiveTypes.AppendElement(type);
+    activeBcIds.AppendElement(entry.GetKey());
   }
 
   
-  if (activeAudioSessions.IsEmpty()) {
-    return Nothing();
-  }
-
-  
-  
-  if (activeAudioSessions.Length() == 1) {
-    return Some(activeEffectiveTypes[0]);
+  if (activeBcIds.IsEmpty()) {
+    LOG("Selected audio session: <none>");
+    mSelectedAudioSessionBcId = Nothing();
+    return;
   }
 
   
   
+  if (activeBcIds.Length() == 1) {
+    LOG("Selected audio session: bc=%" PRIu64, activeBcIds[0]);
+    mSelectedAudioSessionBcId = Some(activeBcIds[0]);
+    return;
+  }
+
   
-  size_t winner = 0;
-  for (size_t i = 1; i < activeAudioSessions.Length(); ++i) {
-    if (*activeAudioSessions[i]->GetAudibleAtMs() >
-        *activeAudioSessions[winner]->GetAudibleAtMs()) {
-      winner = i;
+  
+  
+  uint64_t winnerBcId = activeBcIds[0];
+  int64_t winnerAt = *mAudioSessions.Lookup(winnerBcId).Data().GetAudibleAtMs();
+  for (size_t i = 1; i < activeBcIds.Length(); ++i) {
+    const int64_t at =
+        *mAudioSessions.Lookup(activeBcIds[i]).Data().GetAudibleAtMs();
+    if (at > winnerAt) {
+      winnerBcId = activeBcIds[i];
+      winnerAt = at;
     }
   }
 
   
   
-  return Some(activeEffectiveTypes[winner]);
+  LOG("Selected audio session: bc=%" PRIu64, winnerBcId);
+  mSelectedAudioSessionBcId = Some(winnerBcId);
 }
 
 AudioSessionType AudioSessionManager::GetEffectiveType() const {

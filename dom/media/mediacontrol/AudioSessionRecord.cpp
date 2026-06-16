@@ -12,9 +12,9 @@ void AudioSessionRecord::LogState(uint64_t aBcId) const {
   MOZ_LOG(
       gMediaControlLog, LogLevel::Debug,
       ("AudioSessionRecord bc=%" PRIu64
-       ", typeOverride=%s, audibleAtMs=%" PRId64,
+       ", typeOverride=%s, audibleAtMs=%" PRId64 ", state=%s",
        aBcId, mTypeOverride ? GetEnumString(*mTypeOverride).get() : "<none>",
-       mAudibleAtMs.valueOr(-1)));
+       mAudibleAtMs.valueOr(-1), GetEnumString(mState).get()));
 }
 
 void AudioSessionRecord::SetTypeOverride(
@@ -27,6 +27,20 @@ void AudioSessionRecord::SetAudibleAtMs(uint64_t aBcId,
                                         Maybe<int64_t> aAudibleAtMs) {
   mAudibleAtMs = aAudibleAtMs;
   LogState(aBcId);
+}
+
+void AudioSessionRecord::SetState(uint64_t aBcId, AudioSessionState aState) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(aState == AudioSessionState::Active, mAudibleAtMs.isSome());
+  mState = aState;
+  LogState(aBcId);
+  
+  
+  
 }
 
 }  

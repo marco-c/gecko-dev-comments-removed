@@ -349,8 +349,14 @@ TEST(MediaController, AudioSessionOverride_StoresValueAndIsKeyedByBc)
   EXPECT_EQ(*b->GetTypeOverride(), AudioSessionType::Playback);
 }
 
-TEST(MediaController, AudioSessionOverride_AutoClearsTypeButKeepsRecord)
+TEST(MediaController, AudioSessionOverride_AutoClearAndAudibilityLifecycle)
 {
+  
+  
+  
+  
+  
+  
   constexpr AudioSessionType kOverrides[] = {
       AudioSessionType::Ambient,         AudioSessionType::Transient,
       AudioSessionType::Transient_solo,  AudioSessionType::Playback,
@@ -364,12 +370,33 @@ TEST(MediaController, AudioSessionOverride_AutoClearsTypeButKeepsRecord)
     ASSERT_NE(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
 
     
-    
     controller->SetAudioSessionTypeOverride(kFrame, AudioSessionType::Auto);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
+
+    
+    
+    
+    controller->SetAudioSessionTypeOverride(kFrame, override);
+    controller->NotifyMediaAudibleChanged(kFrame, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
     const AudioSessionRecord* rec =
         controller->GetAudioSessionRecordForTesting(kFrame);
     ASSERT_NE(rec, nullptr);
-    EXPECT_TRUE(rec->GetTypeOverride().isNothing());
+    EXPECT_EQ(rec->GetState(), AudioSessionState::Active);
+
+    controller->NotifyMediaAudibleChanged(kFrame, MediaAudibleState::eInaudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
+    rec = controller->GetAudioSessionRecordForTesting(kFrame);
+    ASSERT_NE(rec, nullptr);
+    EXPECT_EQ(rec->GetState(), AudioSessionState::Inactive);
+    EXPECT_TRUE(rec->GetAudibleAtMs().isNothing());
+
+    
+    
+    controller->SetAudioSessionTypeOverride(kFrame, AudioSessionType::Auto);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
   }
 }
 
@@ -617,4 +644,41 @@ TEST(MediaController,
                                           ControlType::eUncontrollable, src);
     EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src);
   }
+}
+
+TEST(MediaController, AudioSessionState_DefaultIsInactive)
+{
+  
+  
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBc = 11;
+  controller->SetAudioSessionTypeOverride(kBc, AudioSessionType::Playback);
+  const AudioSessionRecord* rec =
+      controller->GetAudioSessionRecordForTesting(kBc);
+  ASSERT_NE(rec, nullptr);
+  EXPECT_EQ(rec->GetState(), AudioSessionState::Inactive);
+}
+
+TEST(MediaController, AudioSessionState_AudibilityDrivesActiveAndCleansUp)
+{
+  
+  
+  
+  
+  
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBc = 21;
+
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  const AudioSessionRecord* rec =
+      controller->GetAudioSessionRecordForTesting(kBc);
+  ASSERT_NE(rec, nullptr);
+  EXPECT_EQ(rec->GetState(), AudioSessionState::Active);
+
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eInaudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kBc), nullptr);
 }
