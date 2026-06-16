@@ -16,6 +16,7 @@
 
 #include "builtin/JSON.h"  
 #include "builtin/ModuleObject.h"
+#include "builtin/Number.h"  
 #include "builtin/Promise.h"  
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
@@ -2744,43 +2745,53 @@ static bool EvaluateDynamicImportOptions(
     }
 
     
-    if (key.isString()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      bool supported = key.isAtom(cx->names().type);
-      if (!supported) {
-        UniqueChars printableKey = AtomToPrintableString(cx, key.toAtom());
-        if (!printableKey) {
-          return false;
-        }
-        JS_ReportErrorNumberASCII(
-            cx, GetErrorMessage, nullptr,
-            JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
-            printableKey.get());
-        return false;
-      }
+    
+    
+    
+    MOZ_ASSERT(key.isString() || key.isInt());
 
-      
-      if (!value.isString()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_NOT_EXPECTED_TYPE, "import", "string",
-                                  InformalValueTypeName(value));
-        return false;
-      }
-
-      
-      
-      keyAtom = key.toAtom();
-      valueString = value.toString();
-      attributesArrayArg.infallibleEmplaceBack(keyAtom, valueString);
-      ++numberOfValidAttributes;
+    
+    if (!value.isString()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_NOT_EXPECTED_TYPE, "import", "string",
+                                InformalValueTypeName(value));
+      return false;
     }
+
+    if (key.isInt()) {
+      keyAtom = Int32ToAtom(cx, key.toInt());
+      if (!keyAtom) {
+        return false;
+      }
+    } else {
+      keyAtom = key.toAtom();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (keyAtom != cx->names().type) {
+      UniqueChars printableKey = AtomToPrintableString(cx, keyAtom);
+      if (!printableKey) {
+        return false;
+      }
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+          printableKey.get());
+      return false;
+    }
+
+    
+    
+    valueString = value.toString();
+    attributesArrayArg.infallibleEmplaceBack(keyAtom, valueString);
+    ++numberOfValidAttributes;
   }
 
   if (numberOfValidAttributes == 0) {
