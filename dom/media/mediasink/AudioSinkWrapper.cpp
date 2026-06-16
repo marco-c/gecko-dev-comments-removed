@@ -14,9 +14,9 @@
 
 mozilla::LazyLogModule gAudioSinkWrapperLog("AudioSinkWrapper");
 #define LOG(...) \
-  MOZ_LOG(gAudioSinkWrapperLog, mozilla::LogLevel::Debug, (__VA_ARGS__));
+  MOZ_LOG_FMT(gAudioSinkWrapperLog, mozilla::LogLevel::Debug, __VA_ARGS__);
 #define LOGV(...) \
-  MOZ_LOG(gAudioSinkWrapperLog, mozilla::LogLevel::Verbose, (__VA_ARGS__));
+  MOZ_LOG_FMT(gAudioSinkWrapperLog, mozilla::LogLevel::Verbose, __VA_ARGS__);
 
 namespace mozilla {
 
@@ -53,18 +53,19 @@ TimeUnit AudioSinkWrapper::GetEndTime(TrackType aType) const {
 
   if (mAudioSink && mAudioSink->AudioStreamCallbackStarted()) {
     auto time = mAudioSink->GetEndTime();
-    LOGV("%p: GetEndTime return %lf from sink", this, time.ToSeconds());
+    LOGV("{}: GetEndTime return {} from sink", fmt::ptr(this),
+         time.ToSeconds());
     return time;
   }
 
   RefPtr<const AudioData> audio = mAudioQueue.PeekBack();
   if (audio) {
-    LOGV("%p: GetEndTime return %lf from queue", this,
+    LOGV("{}: GetEndTime return {} from queue", fmt::ptr(this),
          audio->GetEndTime().ToSeconds());
     return audio->GetEndTime();
   }
 
-  LOGV("%p: GetEndTime return %lf from last packet", this,
+  LOGV("{}: GetEndTime return {} from last packet", fmt::ptr(this),
        mLastPacketEndTime.ToSeconds());
   return mLastPacketEndTime;
 }
@@ -97,18 +98,19 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
       
       
       mAudioSink->UpdateStartTime(switchTime);
-      LOGV("%p: switching to audio clock at media time %lf", this,
+      LOGV("{}: switching to audio clock at media time {}", fmt::ptr(this),
            switchTime.ToSeconds());
     }
     
     pos = mAudioSink->GetPosition();
-    LOGV("%p: Getting position from the Audio Sink %lf", this, pos.ToSeconds());
+    LOGV("{}: Getting position from the Audio Sink {}", fmt::ptr(this),
+         pos.ToSeconds());
     mLastClockSource = ClockSource::AudioStream;
   } else if (!mClockStartTime.IsNull()) {
     
     
     pos = GetSystemClockPosition(t);
-    LOGV("%p: Getting position from the system clock %lf", this,
+    LOGV("{}: Getting position from the system clock {}", fmt::ptr(this),
          pos.ToSeconds());
     if (mAudioQueue.GetSize() > 0) {
       
@@ -132,7 +134,8 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
   } else {
     
     pos = mPositionAtClockStart;
-    LOGV("%p: Getting static position, not playing %lf", this, pos.ToSeconds());
+    LOGV("{}: Getting static position, not playing {}", fmt::ptr(this),
+         pos.ToSeconds());
     mLastClockSource = ClockSource::Paused;
   }
 
@@ -168,8 +171,8 @@ void AudioSinkWrapper::DropAudioPacketsIfNeeded(
     if (audio) {
       mLastPacketEndTime = audio->GetEndTime();
       LOGV(
-          "Dropping audio packets: media position: %lf, "
-          "packet dropped: [%lf, %lf] (%u so far).\n",
+          "Dropping audio packets: media position: {}, "
+          "packet dropped: [{}, {}] ({} so far).\n",
           aMediaPosition.ToSeconds(), audio->mTime.ToSeconds(),
           (audio->GetEndTime()).ToSeconds(), dropped);
     }
@@ -179,10 +182,11 @@ void AudioSinkWrapper::DropAudioPacketsIfNeeded(
 
 void AudioSinkWrapper::OnMuted(bool aMuted) {
   AssertOwnerThread();
-  LOG("%p: AudioSinkWrapper::OnMuted(%s)", this, aMuted ? "true" : "false");
+  LOG("{}: AudioSinkWrapper::OnMuted({})", fmt::ptr(this),
+      aMuted ? "true" : "false");
   
   if (mAudioEnded) {
-    LOG("%p: AudioSinkWrapper::OnMuted, but no audio track", this);
+    LOG("{}: AudioSinkWrapper::OnMuted, but no audio track", fmt::ptr(this));
     return;
   }
   if (aMuted) {
@@ -191,8 +195,8 @@ void AudioSinkWrapper::OnMuted(bool aMuted) {
       ShutDownAudioSink();
     }
   } else {
-    LOG("%p: AudioSinkWrapper unmuted, maybe re-creating an AudioStream.",
-        this);
+    LOG("{}: AudioSinkWrapper unmuted, maybe re-creating an AudioStream.",
+        fmt::ptr(this));
     MaybeAsyncCreateAudioSink(mAudioDevice);
   }
 }
@@ -252,7 +256,8 @@ void AudioSinkWrapper::SetPreservesPitch(bool aPreservesPitch) {
 
 void AudioSinkWrapper::SetPlaying(bool aPlaying) {
   AssertOwnerThread();
-  LOG("%p: AudioSinkWrapper::SetPlaying %s", this, aPlaying ? "true" : "false");
+  LOG("{}: AudioSinkWrapper::SetPlaying {}", fmt::ptr(this),
+      aPlaying ? "true" : "false");
 
   
   if (!mIsStarted) {
@@ -268,7 +273,8 @@ void AudioSinkWrapper::SetPlaying(bool aPlaying) {
     TimeUnit switchTime = GetPosition();
     mClockStartTime = TimeStamp::Now();
     if (!mAudioSink && NeedAudioSink()) {
-      LOG("%p: AudioSinkWrapper::SetPlaying : starting an AudioSink", this);
+      LOG("{}: AudioSinkWrapper::SetPlaying : starting an AudioSink",
+          fmt::ptr(this));
       DropAudioPacketsIfNeeded(switchTime);
       SyncCreateAudioSink(switchTime);
     }
@@ -293,7 +299,7 @@ double AudioSinkWrapper::PlaybackRate() const {
 
 nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
                                  const MediaInfo& aInfo) {
-  LOG("%p AudioSinkWrapper::Start", this);
+  LOG("{} AudioSinkWrapper::Start", fmt::ptr(this));
   AssertOwnerThread();
   MOZ_ASSERT(!mIsStarted, "playback already started.");
 
@@ -353,15 +359,15 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
   AssertOwnerThread();
   UniquePtr<AudioSink> audioSink;
   if (NeedAudioSink() && (!mAudioSink || aDevice != mAudioDevice)) {
-    LOG("%p: AudioSinkWrapper::MaybeAsyncCreateAudioSink: AudioSink needed",
-        this);
+    LOG("{}: AudioSinkWrapper::MaybeAsyncCreateAudioSink: AudioSink needed",
+        fmt::ptr(this));
     if (mAudioSink) {
       ShutDownAudioSink();
     }
     audioSink = mSinkCreator();
   } else {
-    LOG("%p: AudioSinkWrapper::MaybeAsyncCreateAudioSink: no AudioSink change",
-        this);
+    LOG("{}: AudioSinkWrapper::MaybeAsyncCreateAudioSink: no AudioSink change",
+        fmt::ptr(this));
     
   }
   mAudioDevice = std::move(aDevice);
@@ -468,7 +474,7 @@ nsresult AudioSinkWrapper::SyncCreateAudioSink(const TimeUnit& aStartTime) {
   MOZ_ASSERT(!mAudioSink);
   MOZ_ASSERT(!mAudioSinkEndedRequest.Exists());
 
-  LOG("%p: AudioSinkWrapper::SyncCreateAudioSink(%lf)", this,
+  LOG("{}: AudioSinkWrapper::SyncCreateAudioSink({})", fmt::ptr(this),
       aStartTime.ToSeconds());
 
   UniquePtr<AudioSink> audioSink = mSinkCreator();
@@ -510,7 +516,7 @@ void AudioSinkWrapper::Stop() {
   AssertOwnerThread();
   MOZ_ASSERT(mIsStarted, "playback not started.");
 
-  LOG("%p: AudioSinkWrapper::Stop", this);
+  LOG("{}: AudioSinkWrapper::Stop", fmt::ptr(this));
 
   mIsStarted = false;
   mClockStartTime = TimeStamp();
@@ -541,7 +547,8 @@ void AudioSinkWrapper::OnAudioEnded(
   
   
   MOZ_ASSERT(!mEndedPromiseHolder.IsEmpty());
-  LOG("%p: AudioSinkWrapper::OnAudioEnded %i", this, aValue.IsResolve());
+  LOG("{}: AudioSinkWrapper::OnAudioEnded {}", fmt::ptr(this),
+      aValue.IsResolve());
   mAudioSinkEndedRequest.Complete();
   ShutDownAudioSink();
   
