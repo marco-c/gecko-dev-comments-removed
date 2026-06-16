@@ -415,7 +415,7 @@ pub trait TElement:
     + Copy
     + Clone
     + SelectorsElement<Impl = SelectorImpl>
-    + AttributeProvider
+    + ElementContext
 {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
@@ -1015,7 +1015,7 @@ pub trait TElement:
 }
 
 
-pub trait AttributeProvider {
+pub trait ElementContext {
     
     fn get_attr(&self, attr: &LocalName, namespace: &Namespace) -> Option<String>;
 }
@@ -1026,16 +1026,16 @@ pub type AttributeReferences = Option<Box<PrecomputedHashMap<LocalName, SmallVec
 
 pub struct AttributeTracker<'a> {
     
-    pub provider: &'a dyn AttributeProvider,
+    pub context: &'a dyn ElementContext,
     
     pub references: AttributeReferences,
 }
 
 impl<'a> AttributeTracker<'a> {
     
-    pub fn new(provider: &'a dyn AttributeProvider) -> Self {
+    pub fn new(context: &'a dyn ElementContext) -> Self {
         Self {
-            provider,
+            context,
             references: None,
         }
     }
@@ -1043,7 +1043,7 @@ impl<'a> AttributeTracker<'a> {
     
     pub fn new_dummy() -> Self {
         Self {
-            provider: &DummyAttributeProvider {},
+            context: &DummyElementContext {},
             references: None,
         }
     }
@@ -1065,15 +1065,15 @@ impl<'a> AttributeTracker<'a> {
             .entry(name.clone())
             .or_default()
             .push(namespace.clone());
-        self.provider.get_attr(name, namespace)
+        self.context.get_attr(name, namespace)
     }
 }
 
 
 #[derive(Clone, Debug, PartialEq)]
-struct DummyAttributeProvider;
+struct DummyElementContext;
 
-impl AttributeProvider for DummyAttributeProvider {
+impl ElementContext for DummyElementContext {
     fn get_attr(&self, _attr: &LocalName, _namespace: &Namespace) -> Option<String> {
         None
     }
