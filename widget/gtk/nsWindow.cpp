@@ -1657,7 +1657,15 @@ void nsWindow::RecomputeBounds(bool aScaleChange) {
   mPendingBoundsChange = false;
 
   auto* toplevel = GetToplevelGdkWindow();
-  if (!toplevel || mIsDestroyed) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!toplevel || mIsDestroyed || !mIsMapped) {
     return;
   }
 
