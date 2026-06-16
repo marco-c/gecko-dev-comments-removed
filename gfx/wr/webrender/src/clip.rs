@@ -108,7 +108,7 @@ use crate::render_task::RenderTask;
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::scene_builder_thread::Interners;
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::util::{extract_inner_rect_safe, project_rect, MatrixHelpers, MaxRect, ScaleOffset};
 use euclid::approxeq::ApproxEq;
 use std::{iter, ops, u32, mem};
@@ -122,17 +122,34 @@ pub struct ClipTreeNode {
     pub spatial_node_index: SpatialNodeIndex,
     
     
+    
     pub unsnapped_clip_rect: LayoutRect,
-    
-    
-    
-    pub snapped_clip_rect: LayoutRect,
     pub parent: ClipNodeId,
 
     children: FastHashMap<ClipEntry, ClipNodeId>,
 
     
     
+}
+
+impl ClipTreeNode {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn snapped_clip_rect(
+        &self,
+        snapper: &mut SpaceSnapper,
+        spatial_tree: &SpatialTree,
+    ) -> LayoutRect {
+        debug_assert!(self.spatial_node_index != SpatialNodeIndex::INVALID);
+        snapper.set_target_spatial_node(self.spatial_node_index, spatial_tree);
+        snapper.snap_rect(&self.unsnapped_clip_rect)
+    }
 }
 
 
@@ -207,7 +224,6 @@ impl ClipTree {
                     handle: ClipDataHandle::INVALID,
                     spatial_node_index: SpatialNodeIndex::INVALID,
                     unsnapped_clip_rect: LayoutRect::zero(),
-                    snapped_clip_rect: LayoutRect::zero(),
                     children: FastHashMap::default(),
                     parent: ClipNodeId::NONE,
                 }
@@ -225,7 +241,6 @@ impl ClipTree {
             handle: ClipDataHandle::INVALID,
             spatial_node_index: SpatialNodeIndex::INVALID,
             unsnapped_clip_rect: LayoutRect::zero(),
-            snapped_clip_rect: LayoutRect::zero(),
             children: FastHashMap::default(),
             parent: ClipNodeId::NONE,
         });
@@ -264,7 +279,6 @@ impl ClipTree {
                         handle: key.handle,
                         spatial_node_index: key.spatial_node_index,
                         unsnapped_clip_rect: key.clip_rect.into(),
-                        snapped_clip_rect: LayoutRect::zero(),
                         children: FastHashMap::default(),
                         parent: id,
                     });
@@ -336,12 +350,6 @@ impl ClipTree {
     
     pub fn get_leaf(&self, id: ClipLeafId) -> &ClipTreeLeaf {
         &self.leaves[id.0 as usize]
-    }
-
-    
-    
-    pub fn nodes_mut(&mut self) -> &mut [ClipTreeNode] {
-        &mut self.nodes
     }
 
     
@@ -1433,9 +1441,11 @@ impl ClipStore {
 
         
         
-        
         let mut local_clip_rect = clip_leaf.snapped_local_clip_rect;
         let mut current = clip_leaf.node_id;
+
+        let root = spatial_tree.root_reference_frame_index();
+        let mut snapper = SpaceSnapper::new(root, RasterPixelScale::new(1.0));
 
         while current != clip_root && current != ClipNodeId::NONE {
             let node = clip_tree.get_node(current);
@@ -1443,7 +1453,7 @@ impl ClipStore {
             if !add_clip_node_to_current_chain(
                 node.handle,
                 node.spatial_node_index,
-                node.snapped_clip_rect,
+                node.snapped_clip_rect(&mut snapper, spatial_tree),
                 prim_spatial_node_index,
                 pic_spatial_node_index,
                 visibility_spatial_node_index,
