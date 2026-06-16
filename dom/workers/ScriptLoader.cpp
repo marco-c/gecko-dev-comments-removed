@@ -42,6 +42,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocShellCID.h"
 #include "nsError.h"
@@ -57,7 +58,6 @@
 #include "nsIOutputStream.h"
 #include "nsIPipe.h"
 #include "nsIPrincipal.h"
-#include "nsIProtocolHandler.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIStreamListenerTee.h"
@@ -365,14 +365,10 @@ nsresult GetCommonSecFlags(bool aIsMainScript, nsIURI* uri,
 
   if (aWorkerScriptType == DebuggerScript) {
     
-    bool isUIResource = false;
-    nsresult rv = NS_URIChainHasFlags(
-        uri, nsIProtocolHandler::URI_IS_UI_RESOURCE, &isUIResource);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    if (!isUIResource) {
+    
+    
+    
+    if (!nsContentSecurityUtils::IsTrustedScheme(uri)) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 

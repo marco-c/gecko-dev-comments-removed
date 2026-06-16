@@ -15,12 +15,12 @@
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsIBrowserChild.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsICookieJarSettings.h"
 #include "nsINetworkInterceptController.h"
-#include "nsIProtocolHandler.h"
 #include "nsIReferrerInfo.h"
 #include "nsNetUtil.h"
 #include "nsScriptSecurityManager.h"
@@ -198,12 +198,9 @@ nsresult WorkerLoadInfo::GetPrincipalsAndLoadGroupFromChannel(
       
       
       
-      bool isResource;
-      rv = NS_URIChainHasFlags(finalURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                               &isResource);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      if (isResource) {
+      
+      
+      if (nsContentSecurityUtils::IsTrustedScheme(finalURI)) {
         
         
         channelPrincipal = mLoadingPrincipal;
@@ -294,17 +291,13 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
   NS_ENSURE_SUCCESS(rv, false);
 
   
+  
   if (mPrincipal->IsSystemPrincipal()) {
     if (scheme == "blob"_ns) {
       return true;
     }
 
-    bool isResource = false;
-    nsresult rv = NS_URIChainHasFlags(
-        mBaseURI, nsIProtocolHandler::URI_IS_UI_RESOURCE, &isResource);
-    NS_ENSURE_SUCCESS(rv, false);
-
-    return isResource;
+    return nsContentSecurityUtils::IsTrustedScheme(mBaseURI);
   }
 
   
