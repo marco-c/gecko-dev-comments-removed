@@ -20,12 +20,13 @@
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsIURI.h"
+#include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"  
 #include "nsServiceManagerUtils.h"
 #include "nsStringFwd.h"
 
 
 #include "mozilla/dom/Document.h"
-#include "nsPIDOMWindow.h"
 
 #define NS_CONTENTPOLICY_CONTRACTID "@mozilla.org/layout/content-policy;1"
 #define NS_CONTENTPOLICY_CATEGORY "content-policy"

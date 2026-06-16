@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_UIEvent_h_
 #define mozilla_dom_UIEvent_h_
 
@@ -15,6 +13,7 @@
 #include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsIContent.h"
+#include "nsPIDOMWindowInlines.h"  
 #include "nsPresContext.h"
 
 class nsINode;

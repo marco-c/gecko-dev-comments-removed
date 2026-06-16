@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebTransport.h"
 
 #include "WebTransportBidirectionalStream.h"
@@ -28,6 +26,7 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsIURL.h"
 #include "nsIWebTransportStream.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsUTF8Utils.h"
 
 using namespace mozilla::ipc;

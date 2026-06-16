@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_TIMEEVENT_H_
 #define DOM_SMIL_TIMEEVENT_H_
 
@@ -12,6 +10,7 @@
 #include "mozilla/dom/TimeEventBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsDocShell.h"
+#include "nsPIDOMWindowInlines.h"  
 
 class nsGlobalWindowInner;
 

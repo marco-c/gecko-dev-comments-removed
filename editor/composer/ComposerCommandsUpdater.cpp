@@ -17,6 +17,7 @@
 #include "nsIInterfaceRequestorUtils.h"  
 #include "nsLiteralString.h"             
 #include "nsPIDOMWindow.h"               
+#include "nsPIDOMWindowInlines.h"        
 
 class nsITransaction;
 

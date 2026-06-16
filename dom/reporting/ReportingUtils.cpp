@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ReportingUtils.h"
 
 #include "mozilla/dom/CSPViolationReportBody.h"
@@ -16,6 +14,7 @@
 #include "nsIGlobalObject.h"
 #include "nsIURIMutator.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/JSWindowActorChild.h"
 
 #include "JSIPCValueUtils.h"
@@ -17,6 +15,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 
