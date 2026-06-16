@@ -28,11 +28,7 @@ namespace webrtc {
 class Call;
 class RtpPacketReceived;
 class VideoBitrateAllocatorFactory;
-class VideoChannel;
-class VoiceChannel;
-}  
 
-namespace webrtc {
 
 
 
@@ -58,9 +54,6 @@ class ChannelInterface {
  public:
   virtual ~ChannelInterface() = default;
   virtual MediaType media_type() const = 0;
-
-  virtual VideoChannel* AsVideoChannel() = 0;
-  virtual VoiceChannel* AsVoiceChannel() = 0;
 
   virtual MediaSendChannelInterface* media_send_channel() = 0;
   
