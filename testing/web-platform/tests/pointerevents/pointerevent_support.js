@@ -505,6 +505,22 @@ function getEvent(event_type, target, test) {
 
 
 
+function loadFrameAndExcecuteScript(frame, src) {
+  return new Promise(async resolve => {
+    const ready =  getMessageData('subframe-ready', frame.contentWindow);
+    frame.src = src;
+    await ready;
+    
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+
+
+
+
+
+
 function getMessageData(message_data_type, source, test) {
   return new Promise(resolve => {
     const listener = e => {
