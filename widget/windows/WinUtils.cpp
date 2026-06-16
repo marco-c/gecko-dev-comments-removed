@@ -476,7 +476,7 @@ HWND WinUtils::GetTopLevelHWND(HWND aWnd, bool aStopIfNotChild,
 
 
 
-MOZ_RUNINIT static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
+constinit static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
 
 
 void WinUtils::SetNSWindowPtr(HWND aWnd, nsWindow* aWindow) {
@@ -1271,12 +1271,16 @@ bool WinUtils::IsIMEEnabled(IMEEnabled aIMEState) {
 
 void WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
                                          uint32_t aModifiers, UINT aMessage) {
-  MOZ_ASSERT(!(aModifiers & nsIWidget::ALTGRAPH) ||
-             !(aModifiers & (nsIWidget::CTRL_L | nsIWidget::ALT_R)));
+  MOZ_ASSERT(
+      !(aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) ||
+      !(aModifiers & static_cast<uint32_t>(nsIWidget::NativeModifiers::CTRL_L |
+                                           nsIWidget::NativeModifiers::ALT_R)));
   if (aMessage == WM_KEYUP) {
     
     
-    if (aModifiers & nsIWidget::ALTGRAPH) {
+    if (aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
@@ -1296,7 +1300,8 @@ void WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
     }
     
     
-    if (aModifiers & nsIWidget::ALTGRAPH) {
+    if (aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
