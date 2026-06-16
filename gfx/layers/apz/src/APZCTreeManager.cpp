@@ -60,6 +60,11 @@
 #include "UnitTransforms.h"        
 
 mozilla::LazyLogModule mozilla::layers::APZCTreeManager::sLog("apz.manager");
+
+
+
+
+static mozilla::LazyLogModule sApzFastPathLog("apz.fastpath");
 #define APZCTM_LOG(...) \
   MOZ_LOG(APZCTreeManager::sLog, LogLevel::Debug, (__VA_ARGS__))
 #define APZCTM_LOGV(...) \
@@ -367,6 +372,26 @@ void APZCTreeManager::NotifyLayerTreeRemoved(LayersId aLayersId) {
   {  
     MutexAutoLock lock(mTestDataLock);
     mTestData.erase(aLayersId);
+  }
+
+  {  
+    MutexAutoLock lock(mMapLock);
+    size_t removed = 0;
+    for (auto it = mFastPathApzAwareGuids.begin();
+         it != mFastPathApzAwareGuids.end();) {
+      if (it->mLayersId == aLayersId) {
+        it = mFastPathApzAwareGuids.erase(it);
+        ++removed;
+      } else {
+        ++it;
+      }
+    }
+    if (removed > 0) {
+      MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
+              ("APZCTreeManager: NotifyLayerTreeRemoved layersId=%" PRIu64
+               " cleared %zu fast-path entries",
+               uint64_t(aLayersId), removed));
+    }
   }
 }
 
@@ -1195,6 +1220,26 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
     const AncestorTransform& aAncestorTransform, HitTestingTreeNode* aParent,
     HitTestingTreeNode* aNextSibling, TreeBuildingState& aState) {
   mTreeLock.AssertCurrentThreadIn();  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   bool needsApzc = true;
   if (!aMetrics.IsScrollable()) {
     needsApzc = false;
@@ -3161,6 +3206,48 @@ void APZCTreeManager::SetLongTapEnabled(bool aLongTapEnabled) {
 
   APZThreadUtils::AssertOnControllerThread();
   GestureEventListener::SetLongTapEnabled(aLongTapEnabled);
+}
+
+void APZCTreeManager::NotifyApzAwareListenerAdded(
+    const ScrollableLayerGuid& aGuid) {
+  MutexAutoLock lock(mMapLock);
+  auto result = mFastPathApzAwareGuids.insert(aGuid);
+  MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
+          ("APZCTreeManager: %s fast-path entry for layersId=%" PRIu64
+           " scrollId=%" PRIu64 " (set size=%zu)",
+           result.second ? "added" : "already had", uint64_t(aGuid.mLayersId),
+           aGuid.mScrollId, mFastPathApzAwareGuids.size()));
+}
+
+bool APZCTreeManager::ChainHasFastPathApzAwareListener(
+    const ScrollableLayerGuid& aHitGuid) {
+  MutexAutoLock lock(mMapLock);
+  if (mFastPathApzAwareGuids.empty()) {
+    return false;
+  }
+  ScrollableLayerGuid current = aHitGuid;
+  while (true) {
+    if (mFastPathApzAwareGuids.find(current) != mFastPathApzAwareGuids.end()) {
+      MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
+              ("APZCTreeManager: hit-test matched fast-path entry "
+               "layersId=%" PRIu64 " scrollId=%" PRIu64
+               " (hit was layersId=%" PRIu64 " scrollId=%" PRIu64 ")",
+               uint64_t(current.mLayersId), current.mScrollId,
+               uint64_t(aHitGuid.mLayersId), aHitGuid.mScrollId));
+      return true;
+    }
+    auto it = mApzcMap.find(current);
+    if (it == mApzcMap.end() || it->second.parent.isNothing()) {
+      return false;
+    }
+    const ScrollableLayerGuid& parent = *it->second.parent;
+    if (parent.mLayersId != aHitGuid.mLayersId) {
+      
+      
+      return false;
+    }
+    current = parent;
+  }
 }
 
 void APZCTreeManager::AddInputBlockCallback(uint64_t aInputBlockId,
