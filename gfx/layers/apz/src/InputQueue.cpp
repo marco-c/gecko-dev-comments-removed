@@ -200,29 +200,13 @@ APZEventResult InputQueue::ReceiveTouchInput(
     result.SetStatusForFastFling(*block, aFlags, consumableFlags, target);
   } else {  
     bool consumable = consumableFlags.IsConsumable();
-    const bool wasInSlop = block->IsInSlop();
+    TouchBlockState::InSlop wasInSlop = block->IsInSlop();
     if (block->UpdateSlopState(aEvent, consumable)) {
       INPQ_LOG("dropping event due to block %p being in %sslop\n", block.get(),
                consumable ? "" : "mini-");
       result.SetStatusAsConsumeNoDefault();
     } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (wasInSlop && aEvent.mType == MultiTouchInput::MULTITOUCH_MOVE &&
-          (block->WasLongTapProcessed() || block->IsWaitingLongTapResult()) &&
-          !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
+      if (block->NeedsContentResponseAfterLongTap(aEvent, wasInSlop)) {
         INPQ_LOG(
             "bailing out from in-stop state in block %p after a long-tap "
             "happened\n",
@@ -247,8 +231,9 @@ APZEventResult InputQueue::ReceiveTouchInput(
   int32_t longTapTimeout = StaticPrefs::ui_click_hold_context_menus_delay();
   int32_t contentTimeout = StaticPrefs::apz_content_response_timeout();
   if (waitingForContentResponse && longTapTimeout < contentTimeout &&
-      block->IsInSlop() && GestureEventListener::IsLongTapEnabled()) {
-    MOZ_ASSERT(aEvent.mType == MultiTouchInput::MULTITOUCH_START);
+      bool(block->IsInSlop()) && GestureEventListener::IsLongTapEnabled()) {
+    MOZ_ASSERT(aEvent.mType == MultiTouchInput::MULTITOUCH_START ||
+               aInitialTouchMove == InitialTouchMove::Yes);
     MOZ_ASSERT(!block->IsDuringFastFling());
     RefPtr<Runnable> maybeLongTap = NewRunnableMethod<uint64_t>(
         "layers::InputQueue::MaybeLongTapTimeout", this,
@@ -865,7 +850,8 @@ void InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
     NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
-    if (inputBlock->AsTouchBlock() && inputBlock->AsTouchBlock()->IsInSlop()) {
+    if (inputBlock->AsTouchBlock() &&
+        bool(inputBlock->AsTouchBlock()->IsInSlop())) {
       
       
       
@@ -888,7 +874,7 @@ void InputQueue::MaybeLongTapTimeout(uint64_t aInputBlockId) {
 
   InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
   MOZ_ASSERT(!inputBlock || inputBlock->AsTouchBlock());
-  if (inputBlock && inputBlock->AsTouchBlock()->IsInSlop()) {
+  if (inputBlock && bool(inputBlock->AsTouchBlock()->IsInSlop())) {
     
     
     
