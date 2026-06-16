@@ -1032,13 +1032,15 @@ TEST_F(RtpTransceiverTestWithFakeCall,
       [] {});
 
   EXPECT_FALSE(transceiver->HasChannel());
-  ScopedOperationsBatcher network_batcher(context()->network_thread());
+  ScopedOperationsBatcher worker_tasks(context()->worker_thread());
+  ScopedOperationsBatcher network_tasks(context()->network_thread());
   transceiver->CreateChannel(
       "0", call_.get(), MediaConfig(), false, CryptoOptions(),
       audio_options, VideoOptions(), nullptr,
       [](absl::string_view) -> RtpTransportInternal* { return nullptr; },
-      network_batcher);
-  EXPECT_TRUE(network_batcher.Run().ok());
+      worker_tasks, network_tasks);
+  EXPECT_TRUE(worker_tasks.Run().ok());
+  EXPECT_TRUE(network_tasks.Run().ok());
 
   ASSERT_TRUE(transceiver->HasChannel());
   auto* voice_channel = transceiver->voice_media_send_channel();

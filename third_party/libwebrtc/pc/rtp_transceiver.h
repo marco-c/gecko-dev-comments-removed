@@ -150,6 +150,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
   RtpTransceiver& operator=(RtpTransceiver&&) = delete;
 
   
+  
+  
   void CreateChannel(
       absl::string_view mid,
       Call* call_ptr,
@@ -161,7 +163,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
       VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
       absl::AnyInvocable<RtpTransportInternal*(absl::string_view) &&>
           transport_lookup,
-      ScopedOperationsBatcher& network_batcher);
+      ScopedOperationsBatcher& worker_tasks,
+      ScopedOperationsBatcher& network_tasks);
 
   
   
