@@ -870,11 +870,12 @@ static void global_registry_handler(void* data, wl_registry* registry,
   } else if (iface.EqualsLiteral("wl_fixes")) {
     
     
+    
     static auto* sWlFixesInterface =
         (wl_interface*)dlsym(RTLD_DEFAULT, "wl_fixes_interface");
     if (sWlFixesInterface) {
-      auto* fixes = WaylandRegistryBind<wl_fixes>(
-          registry, id, sWlFixesInterface, MIN(version, 2));
+      auto* fixes =
+          WaylandRegistryBind<wl_fixes>(registry, id, sWlFixesInterface, 1);
       display->SetFixes(fixes);
     } else {
       LOG("wl_fixes_interface is missing!");
