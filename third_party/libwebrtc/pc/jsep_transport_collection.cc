@@ -40,9 +40,8 @@ void BundleManager::Update(const SessionDescription* description,
   
   
   
-  
   if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle ||
-      type == SdpType::kAnswer) {
+      type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
     
     
     bundle_groups_changed = true;
