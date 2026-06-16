@@ -1505,6 +1505,9 @@ bool CacheIRWriter::stubDataEqualsIgnoringShapeAndOffset(
       
     } else if (offsetFieldOffset.isSome() && offset == *offsetFieldOffset) {
       
+      
+      
+      MOZ_RELEASE_ASSERT(&field == &stubFields_.back());
       continue;
     } else {
       if (field.sizeIsWord()) {
