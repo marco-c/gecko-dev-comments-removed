@@ -59,8 +59,6 @@ namespace mozilla {
 
 
 
-
-
 #ifdef MALLOC_STATIC_PAGESIZE
 
 #  if defined(__powerpc64__)
@@ -70,7 +68,7 @@ static const size_t gRealPageSize = 16_KiB;
 #  else
 static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gPageSize = 4_KiB;
+static const size_t gPageSize = gRealPageSize;
 #else
 
 
