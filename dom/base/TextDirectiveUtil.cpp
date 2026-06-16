@@ -145,6 +145,12 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
   if (!aNode.IsElement()) {
     return false;
   }
+  
+  
+  
+  if (aNode.IsHTMLElement(nsGkAtoms::br)) {
+    return true;
+  }
   const Element* nodeAsElement = Element::FromNode(aNode);
   const RefPtr<const ComputedStyle> computedStyle =
       nsComputedDOMStyle::GetComputedStyleNoFlush(nodeAsElement);
