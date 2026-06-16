@@ -21,18 +21,15 @@ const {
 const { getRecentChats } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/MemoriesChatSource.sys.mjs"
 );
-const {
-  DEFAULT_ENGINE_ID,
-  MODEL_FEATURES,
-  openAIEngine,
-  SERVICE_TYPES,
-  PURPOSES,
-} = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-);
+const { MODEL_FEATURES, openAIEngine, SERVICE_TYPES, PURPOSES } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+
+const TEST_MODEL = "test-model";
 
 const {
   renderRecentHistoryForPrompt,
@@ -257,9 +254,6 @@ Tell me a joke about my favorite animals.`.trim(),
 
     
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `[
@@ -280,12 +274,13 @@ Tell me a joke about my favorite animals.`.trim(),
       .stub(openAIEngine, "_createEngine")
       .resolves(fakeEngine);
 
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
 
     Assert.ok(engineStub.calledOnce, "_createEngine should be called once");
 
@@ -324,9 +319,6 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
 
 
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `[
@@ -367,12 +359,13 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
 
     
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const [domainItems, titleItems, searchItems] =
@@ -441,9 +434,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `[]`,
@@ -453,12 +443,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const [domainItems, titleItems, searchItems] =
@@ -483,9 +474,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `testing`,
@@ -495,12 +483,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const [domainItems, titleItems, searchItems] =
@@ -525,9 +514,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `["testing1", "testing2", ["testing3"]]`,
@@ -537,12 +523,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const [domainItems, titleItems, searchItems] =
@@ -570,9 +557,6 @@ add_task(
       
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `[
@@ -625,12 +609,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const [domainItems, titleItems, searchItems] =
@@ -666,9 +651,6 @@ add_task(async function test_deduplicateMemoriesList_happy_path() {
 
 
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -701,12 +683,13 @@ add_task(async function test_deduplicateMemoriesList_happy_path() {
 
     
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const dedupedMemoriesList = await deduplicateMemories(
@@ -754,9 +737,6 @@ add_task(async function test_deduplicateMemoriesList_sad_path_empty_output() {
   try {
     
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -768,12 +748,13 @@ add_task(async function test_deduplicateMemoriesList_sad_path_empty_output() {
 
     
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const dedupedMemoriesList = await deduplicateMemories(
@@ -798,9 +779,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `testing`,
@@ -810,12 +788,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const dedupedMemoriesList = await deduplicateMemories(
@@ -845,9 +824,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -859,12 +835,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const dedupedMemoriesList = await deduplicateMemories(
@@ -894,9 +871,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -908,12 +882,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const dedupedMemoriesList = await deduplicateMemories(
@@ -943,9 +918,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -978,12 +950,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const dedupedMemoriesList = await deduplicateMemories(
@@ -1013,9 +986,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -1040,12 +1010,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const dedupedMemoriesList = await deduplicateMemories(
@@ -1082,9 +1053,6 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
 
 
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -1100,12 +1068,13 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
 
     
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1144,9 +1113,6 @@ add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
   try {
     
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -1158,12 +1124,13 @@ add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
 
     
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1194,9 +1161,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `testing`,
@@ -1206,12 +1170,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1243,9 +1208,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -1257,12 +1219,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1294,9 +1257,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -1310,12 +1270,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1347,9 +1308,6 @@ add_task(
     try {
       
       const fakeEngine = {
-        loadPrompt() {
-          return "fake prompt";
-        },
         run() {
           return {
             finalOutput: `{
@@ -1365,12 +1323,13 @@ add_task(
 
       
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        DEFAULT_ENGINE_ID,
-        SERVICE_TYPES.MEMORIES,
-        PURPOSES.MEMORY_GENERATION
-      );
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
       const nonSensitiveMemoriesList = await filterSensitiveMemories(
@@ -1409,9 +1368,6 @@ add_task(async function test_applyQualityFilter_happy_path() {
 
 
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -1426,12 +1382,13 @@ add_task(async function test_applyQualityFilter_happy_path() {
     };
 
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
@@ -1466,9 +1423,6 @@ add_task(async function test_applyQualityFilter_drops_reworded_memories() {
   try {
     
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -1482,12 +1436,13 @@ add_task(async function test_applyQualityFilter_drops_reworded_memories() {
     };
 
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      DEFAULT_ENGINE_ID,
-      SERVICE_TYPES.MEMORIES,
-      PURPOSES.MEMORY_GENERATION
-    );
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.MEMORIES,
+      purpose: PURPOSES.MEMORY_GENERATION,
+      flowId: null,
+      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+    });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
     const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
