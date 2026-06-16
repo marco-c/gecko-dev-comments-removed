@@ -191,7 +191,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
     
     
     if (aInitialTouchMove == InitialTouchMove::Yes &&
-        aFlags.mDispatchToContent &&
+        aFlags.IsFastPathApzAwareDispatchToContent() &&
         !block->IsDuringFastFling() &&
         (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
       block->ResetContentResponseTimerExpired();

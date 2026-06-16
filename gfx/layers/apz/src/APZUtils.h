@@ -109,16 +109,21 @@ inline AsyncTransformMatrix CompleteAsyncTransform(
       aMatrix, PixelCastJustification::MultipleAsyncTransforms);
 }
 
+enum class FastPathApzAwareListener : bool { No, Yes };
+
 struct TargetConfirmationFlags final {
   explicit TargetConfirmationFlags(bool aTargetConfirmed)
       : mTargetConfirmed(aTargetConfirmed),
         mRequiresTargetConfirmation(false),
         mHitScrollbar(false),
         mHitScrollThumb(false),
-        mDispatchToContent(false) {}
+        mDispatchToContent(false),
+        mFastPathApzAwareListener(false) {}
 
   explicit TargetConfirmationFlags(
-      const gfx::CompositorHitTestInfo& aHitTestInfo)
+      const gfx::CompositorHitTestInfo& aHitTestInfo,
+      FastPathApzAwareListener aFastPathApzAwareListener =
+          FastPathApzAwareListener::No)
       : mTargetConfirmed(
             (aHitTestInfo != gfx::CompositorHitTestInvisibleToHit) &&
             (aHitTestInfo & gfx::CompositorHitTestDispatchToContent).isEmpty()),
@@ -130,10 +135,16 @@ struct TargetConfirmationFlags final {
             gfx::CompositorHitTestFlags::eScrollbarThumb)),
         mDispatchToContent(
             !(aHitTestInfo & gfx::CompositorHitTestDispatchToContent)
-                 .isEmpty()) {}
+                 .isEmpty()),
+        mFastPathApzAwareListener(aFastPathApzAwareListener ==
+                                  FastPathApzAwareListener::Yes) {}
 
   DispatchToContent NeedDispatchToContent() const {
     return mDispatchToContent ? DispatchToContent::Yes : DispatchToContent::No;
+  }
+
+  bool IsFastPathApzAwareDispatchToContent() const {
+    return mDispatchToContent && mFastPathApzAwareListener;
   }
 
   bool mTargetConfirmed : 1;
@@ -141,6 +152,7 @@ struct TargetConfirmationFlags final {
   bool mHitScrollbar : 1;
   bool mHitScrollThumb : 1;
   bool mDispatchToContent : 1;
+  bool mFastPathApzAwareListener : 1;
 };
 
 enum class AsyncTransformComponent { eLayout, eVisual };
@@ -185,10 +197,28 @@ namespace apz {
 
 
 
-bool IsCloseToHorizontal(float aAngle, float aThreshold);
+inline bool IsCloseToHorizontal(const ParentLayerPoint& aVector,
+                                float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
+    return false;
+  }
+  float angle = float(fabs(atan2(aVector.y, aVector.x)));
+  return angle < aThreshold || angle > (M_PI - aThreshold);
+}
 
 
-bool IsCloseToVertical(float aAngle, float aThreshold);
+
+
+
+
+inline bool IsCloseToVertical(const ParentLayerPoint& aVector,
+                              float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
+    return false;
+  }
+  float angle = float(fabs(atan2(aVector.y, aVector.x)));
+  return fabs(angle - float(M_PI / 2)) < aThreshold;
+}
 
 
 
