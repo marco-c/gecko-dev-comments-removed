@@ -285,19 +285,24 @@ const STATE_ORDER = [
 ];
 
 const getLayerString = () => {
-  const defaultLayers = [
-    "tokens-foundation",
-    "tokens-prefers-contrast",
-    "tokens-forced-colors",
-    "tokens-browser-theme",
+  const themeLayers = ["tokens-foundation", "tokens-browser-theme"];
+  const a11yLayers = ["tokens-prefers-contrast", "tokens-forced-colors"];
+
+  const themeLayersWithOverrides = [
+    ...themeLayers,
+    ...OVERRIDE_IDENTIFIERS.flatMap(({ name }) =>
+      themeLayers.map(layer => `${layer}-${name}`)
+    ),
   ];
 
-  const layersWithOverrides = defaultLayers.flatMap(layer => [
+  const a11yLayersWithOverrides = a11yLayers.flatMap(layer => [
     layer,
     ...OVERRIDE_IDENTIFIERS.map(({ name }) => `${layer}-${name}`),
   ]);
 
-  return `@layer ${layersWithOverrides.join(", ").trim()};\n\n`;
+  const layers = [...themeLayersWithOverrides, ...a11yLayersWithOverrides];
+
+  return `@layer ${layers.join(", ")};\n\n`;
 };
 
 
@@ -723,28 +728,60 @@ ${formattedVars}
 
 
 
+function getLightDarkPair(layerValue) {
+  if (layerValue?.light && layerValue?.dark) {
+    return `light-dark(${layerValue.light}, ${layerValue.dark})`;
+  }
+  return undefined;
+}
+
+
+
+
+
+
+
 
 
 
 function getOriginalTokenValue(token, prop, surface) {
   const { value } = token.original;
-  if (surface) {
-    return value[surface]?.[prop];
-  }
+
   
   if (typeof value !== "object") {
     return prop === "default" ? value : undefined;
   }
+
+  
+  const layer = surface ? value[surface] : value;
+  if (!layer || typeof layer !== "object") {
+    return undefined;
+  }
+
+  
+  
   
   if (prop === "default") {
-    return value.nativeTheme ?? value.default;
+    return (
+      layer.nativeTheme ??
+      layer.default ??
+      (!surface ? getLightDarkPair(layer) : undefined)
+    );
   }
+
   
   
   if (prop === "browserTheme") {
-    return value.nativeTheme ? value.default : undefined;
+    const browserThemeValue = layer.default ?? getLightDarkPair(layer);
+    if (!browserThemeValue) {
+      return undefined;
+    }
+    return layer.nativeTheme || value.nativeTheme
+      ? browserThemeValue
+      : undefined;
   }
-  return value[prop];
+
+  return layer[prop];
 }
 
 
@@ -786,29 +823,37 @@ function transformToken({ token, originalVal, dictionary, surface }) {
 const createLightDarkTransform = surface => {
   let name = `lightDarkTransform/${surface}`;
 
+  const getLayerValue = token =>
+    surface === "shared" ? token.original.value : token.original.value[surface];
+
   
   
   let matcher = token => {
-    if (surface != "shared") {
-      return (
-        token.original.value[surface]?.light &&
-        token.original.value[surface]?.dark
-      );
+    const layerValue = getLayerValue(token);
+    if (
+      !layerValue ||
+      typeof layerValue !== "object" ||
+      layerValue.nativeTheme ||
+      layerValue.default ||
+      !layerValue.light ||
+      !layerValue.dark
+    ) {
+      return false;
     }
-    return token.original.value.light && token.original.value.dark;
+    return !(surface !== "shared" && token.original.value.nativeTheme);
   };
 
   
   
   let transformer = token => {
+    const layerValue = getLayerValue(token);
+    const lightDarkVal = getLightDarkPair(layerValue);
     if (surface != "shared") {
-      let lightDarkVal = `light-dark(${token.original.value[surface].light}, ${token.original.value[surface].dark})`;
       token.original.value[surface].default = lightDarkVal;
       return token.value;
     }
-    let value = `light-dark(${token.original.value.light}, ${token.original.value.dark})`;
-    token.original.value.default = value;
-    return value;
+    token.original.value.default = lightDarkVal;
+    return lightDarkVal;
   };
 
   StyleDictionary.registerTransform({
