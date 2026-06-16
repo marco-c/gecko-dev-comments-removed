@@ -31,8 +31,8 @@ export class Meta {
 
 
     constructor(data?: object | undefined, meta?: object | undefined);
-    data: any;
-    meta: any;
+    data: object | undefined;
+    meta: object | undefined;
 }
 
 
