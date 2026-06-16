@@ -11,6 +11,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Sprintf.h"
 
 #include "nsCOMPtr.h"
@@ -25,6 +26,11 @@
 
 #ifdef XP_DARWIN
 #  include <CoreFoundation/CoreFoundation.h>
+#endif
+
+#ifdef MOZ_ENABLE_FREETYPE
+#  include "ft2build.h"
+#  include FT_FREETYPE_H
 #endif
 
 #define LOG(log, args) MOZ_LOG(gfxPlatform::GetLog(log), LogLevel::Debug, args)
@@ -410,11 +416,12 @@ nsresult gfxFontUtils::ReadCMAPTableFormat14(const uint8_t* aBuf,
     (((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDMicrosoft && !(k)) || \
      ((p) == PLATFORM_ID_UNICODE))
 
-#  define acceptableUCS4Encoding(p, e, k)           \
-    (((p) == PLATFORM_ID_MICROSOFT &&               \
-      (e) == EncodingIDUCS4ForMicrosoftPlatform) && \
-         (k) != 12 ||                               \
-     ((p) == PLATFORM_ID_UNICODE && ((e) != EncodingIDUVSForUnicodePlatform)))
+#  define acceptableUCS4Encoding(p, e, k)                                     \
+    (((p) == PLATFORM_ID_MICROSOFT &&                                         \
+      (e) == EncodingIDUCS4ForMicrosoftPlatform) &&                           \
+         (k) != 12 ||                                                         \
+     ((p) == PLATFORM_ID_UNICODE && (e) != EncodingIDUVSForUnicodePlatform && \
+      (e) != EncodingIDFullRepertoireForUnicodePlatform))
 #else
 #  define acceptableFormat4(p, e, k)                                 \
     (((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDMicrosoft) || \
@@ -424,9 +431,35 @@ nsresult gfxFontUtils::ReadCMAPTableFormat14(const uint8_t* aBuf,
     ((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDUCS4ForMicrosoftPlatform)
 #endif
 
+#ifndef MOZ_ENABLE_FREETYPE
+static inline bool CheckFullFormat13Support() {
+  
+  
+  return true;
+}
+#else
+static inline bool CheckFullFormat13Support() {
+  
+  
+  
+  FT_Int major, minor, patch;
+  FT_Library_Version(gfx::Factory::GetFTLibrary(), &major, &minor, &patch);
+  return major * 1000000 + minor * 1000 + patch > 2014001;
+}
+#endif
+
 #define acceptablePlatform(p) \
   ((p) == PLATFORM_ID_UNICODE || (p) == PLATFORM_ID_MICROSOFT)
 #define isSymbol(p, e) ((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDSymbol)
+#define acceptableFormat13(p, e) \
+  ((p) == PLATFORM_ID_UNICODE && \
+   (e) == EncodingIDFullRepertoireForUnicodePlatform)
+
+
+
+
+#define acceptableFormat13Compatible(p, e) \
+  ((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDUCS4ForMicrosoftPlatform)
 #define isUVSEncoding(p, e) \
   ((p) == PLATFORM_ID_UNICODE && (e) == EncodingIDUVSForUnicodePlatform)
 
@@ -453,6 +486,7 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
     EncodingIDDefaultForUnicodePlatform = 0,
     EncodingIDUCS4ForUnicodePlatform = 3,
     EncodingIDUVSForUnicodePlatform = 5,
+    EncodingIDFullRepertoireForUnicodePlatform = 6,
     EncodingIDUCS4ForMicrosoftPlatform = 10
   };
 
@@ -504,7 +538,7 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
                acceptableFormat4(platformID, encodingID, keepFormat)) {
       keepFormat = format;
       *aTableOffset = offset;
-    } else if ((format == 10 || format == 12 || format == 13) &&
+    } else if ((format == 10 || format == 12) &&
                acceptableUCS4Encoding(platformID, encodingID, keepFormat)) {
       keepFormat = format;
       *aTableOffset = offset;
@@ -513,6 +547,15 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
         break;  
                 
       }
+    } else if (format == 13 &&
+               (acceptableFormat13Compatible(platformID, encodingID) ||
+                (acceptableFormat13(platformID, encodingID) &&
+                 CheckFullFormat13Support()))) {
+      keepFormat = format;
+      *aTableOffset = offset;
+      
+      
+      break;
     } else if (format == 14 && isUVSEncoding(platformID, encodingID) &&
                aUVSTableOffset) {
       *aUVSTableOffset = offset;
@@ -1242,7 +1285,7 @@ nsresult gfxFontUtils::GetFullNameFromTable(hb_blob_t* aNameTable,
   nsresult rv = gfxFontUtils::ReadCanonicalName(
       aNameTable, gfxFontUtils::NAME_ID_FULL, name);
   if (NS_SUCCEEDED(rv) && !name.IsEmpty()) {
-    aFullName = name;
+    aFullName = std::move(name);
     return NS_OK;
   }
   rv = gfxFontUtils::ReadCanonicalName(aNameTable, gfxFontUtils::NAME_ID_FAMILY,
@@ -1254,7 +1297,7 @@ nsresult gfxFontUtils::GetFullNameFromTable(hb_blob_t* aNameTable,
     if (NS_SUCCEEDED(rv) && !styleName.IsEmpty()) {
       name.Append(' ');
       name.Append(styleName);
-      aFullName = name;
+      aFullName = std::move(name);
     }
     return NS_OK;
   }
@@ -1268,7 +1311,7 @@ nsresult gfxFontUtils::GetFamilyNameFromTable(hb_blob_t* aNameTable,
   nsresult rv = gfxFontUtils::ReadCanonicalName(
       aNameTable, gfxFontUtils::NAME_ID_FAMILY, name);
   if (NS_SUCCEEDED(rv) && !name.IsEmpty()) {
-    aFamilyName = name;
+    aFamilyName = std::move(name);
     return NS_OK;
   }
   return NS_ERROR_NOT_AVAILABLE;
@@ -2053,6 +2096,8 @@ double WeightDistance(const mozilla::WeightRange& aRange,
 }
 
 #undef acceptablePlatform
+#undef acceptableFormat13
+#undef acceptableFormat13Compatible
 #undef isSymbol
 #undef isUVSEncoding
 #undef LOG
