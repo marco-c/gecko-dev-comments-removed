@@ -754,7 +754,7 @@ class gfxShapedText {
 
   class CompressedGlyph {
    public:
-    enum {
+    enum Flags : uint32_t {
       
       
       
@@ -770,12 +770,12 @@ class gfxShapedText {
       
       FLAGS_CAN_BREAK_BEFORE = 0x60000000U,
 
-      FLAGS_CAN_BREAK_SHIFT = 29,
-      FLAG_BREAK_TYPE_NONE = 0,
-      FLAG_BREAK_TYPE_NORMAL = 1,
-      FLAG_BREAK_TYPE_HYPHEN = 2,
+      FLAGS_CAN_BREAK_SHIFT = 29U,
+      FLAG_BREAK_TYPE_NONE = 0U,
+      FLAG_BREAK_TYPE_NORMAL = 1U,
+      FLAG_BREAK_TYPE_HYPHEN = 2U,
       
-      FLAG_BREAK_TYPE_EMERGENCY_WRAP = 3,
+      FLAG_BREAK_TYPE_EMERGENCY_WRAP = 3U,
 
       FLAG_CHAR_IS_SPACE = 0x10000000U,
 
@@ -797,27 +797,27 @@ class gfxShapedText {
       
       
       
-      FLAG_NOT_MISSING = 0x010000,
-      FLAG_NOT_CLUSTER_START = 0x020000,
-      FLAG_NOT_LIGATURE_GROUP_START = 0x040000,
+      FLAG_NOT_MISSING = 0x010000U,
+      FLAG_NOT_CLUSTER_START = 0x020000U,
+      FLAG_NOT_LIGATURE_GROUP_START = 0x040000U,
       
 
       
       
       
       
-      CHAR_TYPE_FLAGS_MASK = 0xF00000,
-      FLAG_CHAR_IS_TAB = 0x100000,
-      FLAG_CHAR_IS_NEWLINE = 0x200000,
+      CHAR_TYPE_FLAGS_MASK = 0xF00000U,
+      FLAG_CHAR_IS_TAB = 0x100000U,
+      FLAG_CHAR_IS_NEWLINE = 0x200000U,
       
       
       
       
-      FLAG_CHAR_NO_EMPHASIS_MARK = 0x400000,
+      FLAG_CHAR_NO_EMPHASIS_MARK = 0x400000U,
       
       
       
-      FLAG_CHAR_IS_FORMATTING_CONTROL = 0x800000,
+      FLAG_CHAR_IS_FORMATTING_CONTROL = 0x800000U,
 
       
     };
@@ -846,6 +846,11 @@ class gfxShapedText {
     uint32_t GetSimpleGlyph() const {
       MOZ_ASSERT(IsSimpleGlyph());
       return mValue & GLYPH_MASK;
+    }
+
+    bool IsSimpleGlyphNoBreakBefore() const {
+      return (mValue & (FLAG_IS_SIMPLE_GLYPH | FLAGS_CAN_BREAK_BEFORE)) ==
+             FLAG_IS_SIMPLE_GLYPH;
     }
 
     bool IsMissing() const {
