@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef TIME_UNITS_H
 #define TIME_UNITS_H
 
@@ -42,13 +40,12 @@ static const int64_t NSECS_PER_S = 1000000000;
 namespace media {
 
 #ifndef PROCESS_DECODE_LOG
-#  define PROCESS_DECODE_LOG(sample)                                   \
-    MOZ_LOG(sPDMLog, mozilla::LogLevel::Verbose,                       \
-            ("ProcessDecode: mDuration=%" PRIu64 "µs ; mTime=%" PRIu64 \
-             "µs ; mTimecode=%" PRIu64 "µs",                           \
-             (sample)->mDuration.ToMicroseconds(),                     \
-             (sample)->mTime.ToMicroseconds(),                         \
-             (sample)->mTimecode.ToMicroseconds()))
+#  define PROCESS_DECODE_LOG(sample)                                           \
+    MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Verbose,                           \
+                "ProcessDecode: mDuration={}µs ; mTime={}µs ; mTimecode={}µs", \
+                (sample)->mDuration.ToMicroseconds(),                          \
+                (sample)->mTime.ToMicroseconds(),                              \
+                (sample)->mTimecode.ToMicroseconds())
 #endif  
 
 
