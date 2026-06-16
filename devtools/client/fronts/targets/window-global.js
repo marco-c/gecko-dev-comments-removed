@@ -124,21 +124,6 @@ class WindowGlobalTargetFront extends TargetMixin(
     this._title = title;
   }
 
-  
-
-
-
-
-  setIsErrorPage(isErrorPage) {
-    this.isErrorPage = isErrorPage;
-  }
-
-  
-
-
-
-  isErrorPage = false;
-
   async detach() {
     
     
