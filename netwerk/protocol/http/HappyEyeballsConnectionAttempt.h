@@ -182,6 +182,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   void DnsLookupTimings(TimeStamp& aStart, TimeStamp& aEnd) const;
 
+  
+  
+  
+  void FillConnectTimings(bool aIsQuic, TimingStruct& aTimings) const;
+
   void MaybeSendTransportStatus(nsresult aStatus,
                                 nsITransport* aTransport = nullptr,
                                 int64_t aProgress = 0);
@@ -285,6 +290,16 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
+
+  
+  
+  
+  
+  
+  
+  TimeStamp mFirstTcpConnectEnd;
+  TimeStamp mFirstSecureConnectionStart;
+  TimeStamp mFirstConnectEnd;
 };
 
 }  

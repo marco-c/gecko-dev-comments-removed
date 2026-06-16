@@ -379,6 +379,20 @@ void HappyEyeballsConnectionAttempt::DnsLookupTimings(TimeStamp& aStart,
   aEnd = mFirstConnectionStart;
 }
 
+void HappyEyeballsConnectionAttempt::FillConnectTimings(
+    bool aIsQuic, TimingStruct& aTimings) const {
+  aTimings.connectStart = mFirstConnectionStart;
+  aTimings.connectEnd = mFirstConnectEnd;
+  if (aIsQuic) {
+    
+    
+    aTimings.secureConnectionStart = mFirstConnectionStart;
+  } else {
+    aTimings.tcpConnectEnd = mFirstTcpConnectEnd;
+    aTimings.secureConnectionStart = mFirstSecureConnectionStart;
+  }
+}
+
 nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
@@ -551,6 +565,16 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
 
 void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
     nsresult aStatus, nsITransport* aTransport, int64_t aProgress) {
+  
+  
+  
+  if (aStatus == NS_NET_STATUS_CONNECTED_TO && mFirstTcpConnectEnd.IsNull()) {
+    mFirstTcpConnectEnd = TimeStamp::Now();
+  } else if (aStatus == NS_NET_STATUS_TLS_HANDSHAKE_STARTING &&
+             mFirstSecureConnectionStart.IsNull()) {
+    mFirstSecureConnectionStart = TimeStamp::Now();
+  }
+
   if (!mSentTransportStatuses.EnsureInserted(static_cast<uint32_t>(aStatus)) ||
       !mTransaction) {
     return;
@@ -754,6 +778,8 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  
+  mFirstConnectEnd = TimeStamp::Now();
   
   establisher->ClearResultConnection();
 
@@ -968,6 +994,8 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   
+  mFirstConnectEnd = TimeStamp::Now();
+  
   establisher->ClearResultConnection();
 
   ProcessConnectionResult(addr, NS_OK, aId);
@@ -1085,9 +1113,11 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
        aTransactionAlreadyOnConn));
 
   if (!mFirstConnectionStart.IsNull()) {
-    TimeStamp now = TimeStamp::Now();
-    aConn->SetConnectBootstrapTimings(mFirstConnectionStart, TimeStamp(),
-                                      mFirstConnectionStart, now);
+    TimingStruct connectTimings;
+    FillConnectTimings( true, connectTimings);
+    aConn->SetConnectBootstrapTimings(
+        connectTimings.connectStart, connectTimings.tcpConnectEnd,
+        connectTimings.secureConnectionStart, connectTimings.connectEnd);
 
     if (aTransactionAlreadyOnConn) {
       
@@ -1098,9 +1128,7 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       if (trans) {
         TimingStruct timings;
         DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-        timings.connectStart = mFirstConnectionStart;
-        timings.secureConnectionStart = mFirstConnectionStart;
-        timings.connectEnd = now;
+        FillConnectTimings( true, timings);
         trans->BootstrapTimings(timings);
       }
     }
@@ -1164,7 +1192,10 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   if (mOutputTrans && mTransaction) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
-      TimingStruct timings = mOutputTrans->Timings();
+      RefPtr<nsHttpConnection> tcpConn = do_QueryObject(mOutputConn);
+      TimingStruct timings;
+      DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
+      FillConnectTimings( !tcpConn, timings);
       timings.transactionPending = realTransaction->GetPendingTime();
       realTransaction->BootstrapTimings(timings);
     }
