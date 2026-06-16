@@ -1123,23 +1123,7 @@ void Animation::SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
 
 
 void Animation::Tick(AnimationTimeline::TickState& aTickState) {
-  
-  
-  AutoAlignStartTime();
-
-  if (Pending()) {
-    if (!mPendingReadyTime.IsNull() || HasFiniteTimeline()) {
-      
-      
-      
-      TryTriggerNow();
-    } else if (MOZ_LIKELY(mTimeline)) {
-      
-      
-      mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
-    }
-  }
-
+  MakeReadyAndMaybeTrigger();
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
 
   
@@ -1160,6 +1144,27 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
       PlayState() == AnimationPlayState::Finished) {
     PostUpdate();
   }
+}
+
+bool Animation::MakeReadyAndMaybeTrigger() {
+  
+  
+  AutoAlignStartTime();
+  if (!Pending()) {
+    return false;
+  }
+  
+  
+  
+  if (mPendingReadyTime.IsNull() && !HasFiniteTimeline()) {
+    if (MOZ_LIKELY(mTimeline)) {
+      
+      
+      mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
+    }
+    return false;
+  }
+  return TryTriggerNow();
 }
 
 bool Animation::TryTriggerNow() {

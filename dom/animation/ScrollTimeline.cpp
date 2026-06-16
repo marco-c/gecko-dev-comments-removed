@@ -265,9 +265,7 @@ bool ScrollTimeline::UpdateIfStale() {
   
   
   
-  if (MOZ_LIKELY(!UpdateCachedCurrentTime())) {
-    return false;
-  }
+  const bool currentTimeUpdated = UpdateCachedCurrentTime();
 
   if (mAnimations.IsEmpty()) {
     return false;
@@ -276,8 +274,12 @@ bool ScrollTimeline::UpdateIfStale() {
   
   
   
-  for (const auto& animation : mAnimations) {
-    animation->PostUpdate();
+  for (const auto& animation :
+       ToTArray<AutoTArray<RefPtr<Animation>, 32>>(mAnimationOrder)) {
+    const bool triggered = animation->MakeReadyAndMaybeTrigger();
+    if (currentTimeUpdated || triggered) {
+      animation->PostUpdate();
+    }
   }
   return true;
 }
