@@ -15,7 +15,7 @@ const separator = ["", ""].toLocaleString();
 
 for (let constructor of typedArrayConstructors) {
     let typedArray = new constructor(42);
-    $262.detachArrayBuffer(typedArray.buffer);
+    $DETACHBUFFER(typedArray.buffer);
     assert.throws(TypeError, () => typedArray.toLocaleString());
 }
 
@@ -24,7 +24,7 @@ for (let constructor of typedArrayConstructors) {
     Number.prototype.toLocaleString = function() {
         "use strict";
         if (!detached) {
-            $262.detachArrayBuffer(typedArray.buffer);
+            $DETACHBUFFER(typedArray.buffer);
             detached = true;
         }
         return this;

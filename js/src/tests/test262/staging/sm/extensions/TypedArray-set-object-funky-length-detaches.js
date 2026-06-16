@@ -10,6 +10,7 @@
 
 
 
+
 var ctors = [Int8Array, Uint8Array, Uint8ClampedArray,
              Int16Array, Uint16Array,
              Int32Array, Uint32Array,
@@ -32,7 +33,7 @@ ctors.forEach(function(TypedArray) {
         9: 0,
         get length()
         {
-          $262.detachArrayBuffer(buf);
+          $DETACHBUFFER(buf);
           return 10;
         }
       };

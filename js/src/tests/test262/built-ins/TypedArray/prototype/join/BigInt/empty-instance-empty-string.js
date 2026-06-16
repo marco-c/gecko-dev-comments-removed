@@ -21,11 +21,11 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA();
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(0));
 
   assert.sameValue(sample.join(), "");
   assert.sameValue(sample.join("test262"), "");
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

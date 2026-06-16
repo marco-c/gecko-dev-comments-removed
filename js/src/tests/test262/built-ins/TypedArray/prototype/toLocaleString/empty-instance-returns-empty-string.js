@@ -20,9 +20,9 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA();
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(0));
   assert.sameValue(sample.toLocaleString(), "");
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

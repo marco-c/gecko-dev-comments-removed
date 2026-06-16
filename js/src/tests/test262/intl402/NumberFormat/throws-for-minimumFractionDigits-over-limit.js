@@ -15,6 +15,7 @@
 
 
 
+
 let wontThrow = new Intl.NumberFormat(undefined, {minimumFractionDigits: 100});
 
 assert.throws(RangeError, function () {

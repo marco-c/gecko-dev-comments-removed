@@ -6,14 +6,7 @@
 
 
 
-const nativeErrors = [
-    EvalError,
-    RangeError,
-    ReferenceError,
-    SyntaxError,
-    TypeError,
-    URIError
-];
+
 
 const ownKeys = Reflect.ownKeys(Error.prototype);
 for (const expected of ["constructor", "message", "name", "toString"]) {

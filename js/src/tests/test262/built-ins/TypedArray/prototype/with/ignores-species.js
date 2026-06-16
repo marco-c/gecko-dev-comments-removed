@@ -38,6 +38,6 @@ testWithTypedArrayConstructors((TA, makeCtorArg) => {
     }
   });
   ta.with(0, 2);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyPrimordialAccessorProperty(Error.prototype, 'stack', {
+  get: { name: 'get stack', length: 0 },
+  set: { name: 'set stack', length: 1 },
+}, { label: 'Error.prototype.stack' });
+
+reportCompare(0, 0);

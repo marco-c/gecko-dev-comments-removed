@@ -6,14 +6,7 @@
 
 
 
-const nativeErrors = [
-    EvalError,
-    RangeError,
-    ReferenceError,
-    SyntaxError,
-    TypeError,
-    URIError
-];
+
 
 assert.sameValue(Reflect.getPrototypeOf(Error.prototype), Object.prototype)
 

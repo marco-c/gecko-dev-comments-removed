@@ -11,6 +11,7 @@
 
 
 
+
 var ab = new ArrayBuffer(200);
 var a = new Uint8Array(ab);
 var a_2 = new Uint8Array(10);
@@ -28,7 +29,7 @@ var src = [ 10, 20, 30, 40,
             ];
 Object.defineProperty(src, 4, {
   get: function () {
-    $262.detachArrayBuffer(ab);
+    $DETACHBUFFER(ab);
     $262.gc();
     return 200;
   }

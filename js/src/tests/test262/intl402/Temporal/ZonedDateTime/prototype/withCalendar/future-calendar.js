@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+const okDate = new Temporal.ZonedDateTime(0n, "UTC");
+
+for (const calendar of TemporalHelpers.NotYetSupportedCalendars) {
+  assert.throws(RangeError, function () {
+    okDate.withCalendar(calendar);
+  }, `${calendar} is not yet supported`);
+}
+
+reportCompare(0, 0);

@@ -7,6 +7,9 @@
 
 
 
+
+
+
 const intArrayConstructors = [
   Int32Array,
   Int16Array,
@@ -19,7 +22,7 @@ const intArrayConstructors = [
 function badValue(ta) {
   return {
     valueOf() {
-      $262.detachArrayBuffer(ta.buffer);
+      $DETACHBUFFER(ta.buffer);
       return 0;
     }
   };
@@ -96,6 +99,5 @@ for (let TA of intArrayConstructors) {
   assert.throws(TypeError, () => Atomics.xor(ta, badValue(ta), 0));
   assert.throws(TypeError, () => Atomics.xor(ta, 0, badValue(ta)));
 }
-
 
 reportCompare(0, 0);

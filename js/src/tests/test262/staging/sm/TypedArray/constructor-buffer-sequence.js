@@ -10,12 +10,13 @@
 
 
 
+
 const otherGlobal = $262.createRealm().global;
 
 function* createBuffers(lengths = [0, 8]) {
     for (let length of lengths) {
         let buffer = new ArrayBuffer(length);
-        yield {buffer, detach: () => $262.detachArrayBuffer(buffer)};
+        yield {buffer, detach: () => $DETACHBUFFER(buffer)};
     }
 
     for (let length of lengths) {

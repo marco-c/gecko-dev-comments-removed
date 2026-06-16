@@ -23,7 +23,7 @@ for (let constructor of typedArrayConstructors) {
 
     let beginIndex = {
         valueOf() {
-            $262.detachArrayBuffer(buffer);
+            $DETACHBUFFER(buffer);
             return 0;
         }
     };

@@ -6,6 +6,7 @@
 
 
 
+
 const EMPTY = 0;
 const INLINE_STORAGE = 10;
 const NON_INLINE_STORAGE = 1024;
@@ -13,7 +14,7 @@ const NON_INLINE_STORAGE = 1024;
 class DetachedInt32Array extends Int32Array {
     constructor(...args) {
         super(...args);
-        $262.detachArrayBuffer(this.buffer);
+        $DETACHBUFFER(this.buffer);
     }
 }
 

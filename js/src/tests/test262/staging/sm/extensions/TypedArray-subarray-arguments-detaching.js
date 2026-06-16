@@ -10,6 +10,7 @@
 
 
 
+
 function testBegin()
 {
   var ab = new ArrayBuffer(0x1000);
@@ -18,7 +19,7 @@ function testBegin()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         return 0x800;
       }
     };
@@ -40,7 +41,7 @@ function testBeginWithEnd()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         return 0x800;
       }
     };
@@ -62,7 +63,7 @@ function testEnd()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         return 0x1000;
       }
     };

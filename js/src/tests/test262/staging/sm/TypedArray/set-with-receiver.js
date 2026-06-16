@@ -23,7 +23,7 @@ for (var constructor of anyTypedArrayConstructors) {
 
     
     if (!isSharedConstructor(constructor)) {
-        $262.detachArrayBuffer(ta.buffer)
+        $DETACHBUFFER(ta.buffer)
 
         assert.sameValue(ta[0], undefined);
         assert.sameValue(Reflect.set(ta, 0, 42, receiver), true);

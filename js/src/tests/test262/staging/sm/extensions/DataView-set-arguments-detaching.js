@@ -11,6 +11,7 @@
 
 
 
+
 function testIndex()
 {
   var ab = new ArrayBuffer(0x1000);
@@ -21,7 +22,7 @@ function testIndex()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         $262.gc();
         return 0xFFF;
       }
@@ -44,7 +45,7 @@ function testValue()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         $262.gc();
         return 0x42;
       }

@@ -21,7 +21,7 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var ta;
   function detachAndReturnIndex(){
       $DETACHBUFFER(ta.buffer);
@@ -31,10 +31,10 @@ testWithTypedArrayConstructors(function(TA) {
   var array = [];
   array.length = 10000; 
   array.fill(7, 0);
-  ta = new TA(array);
+  ta = new TA(makeCtorArg(array));
   assert.throws(TypeError, function(){
     ta.copyWithin(0, 100, {valueOf : detachAndReturnIndex});
   }, "should throw TypeError as array is detached");
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -23,7 +23,7 @@ for (let len of [0, 1, 10]) {
     assert.compareArray(Object.values(ta), Object.values(array));
     assertSameEntries(Object.entries(ta), Object.entries(array));
 
-    $262.detachArrayBuffer(ta.buffer);
+    $DETACHBUFFER(ta.buffer);
 
     assert.compareArray(Object.keys(ta), []);
     assert.compareArray(Object.values(ta), []);

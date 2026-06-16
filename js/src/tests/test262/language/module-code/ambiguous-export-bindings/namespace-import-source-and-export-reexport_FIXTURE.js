@@ -1,0 +1,5 @@
+
+
+
+export * from './namespace-import-source-and-export-1_FIXTURE.js';
+export * from './namespace-import-source-and-export-2_FIXTURE.js';

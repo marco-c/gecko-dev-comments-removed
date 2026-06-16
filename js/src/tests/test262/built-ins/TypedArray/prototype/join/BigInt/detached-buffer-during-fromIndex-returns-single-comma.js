@@ -29,8 +29,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  const sample = new TA([1n,2n,3n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  const sample = new TA(makeCtorArg([1n,2n,3n]));
   const separator = {
     toString() {
       $DETACHBUFFER(sample.buffer);
@@ -39,6 +39,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   };
 
   assert.sameValue(sample.join(separator), ',,');
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

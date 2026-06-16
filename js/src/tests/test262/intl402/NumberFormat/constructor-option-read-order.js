@@ -10,47 +10,37 @@
 
 let optionKeys = [
     
-    "localeMatcher",
-    "numberingSystem",
+    "get options.localeMatcher",
+    "get options.numberingSystem",
     
-        "style",
-        "currency",
-        "currencyDisplay",
-        "currencySign",
-        "unit",
-        "unitDisplay",
-    
-    
-    "notation",
-    
-        "minimumIntegerDigits",
-        "minimumFractionDigits",
-        "maximumFractionDigits",
-        "minimumSignificantDigits",
-        "maximumSignificantDigits",
-        "roundingIncrement",
-        "roundingMode",
-        "roundingPriority",
-        "trailingZeroDisplay",
+        "get options.style",
+        "get options.currency",
+        "get options.currencyDisplay",
+        "get options.currencySign",
+        "get options.unit",
+        "get options.unitDisplay",
     
     
-    "compactDisplay",
-    "useGrouping",
-    "signDisplay"
+    "get options.notation",
+    
+        "get options.minimumIntegerDigits",
+        "get options.minimumFractionDigits",
+        "get options.maximumFractionDigits",
+        "get options.minimumSignificantDigits",
+        "get options.maximumSignificantDigits",
+        "get options.roundingIncrement",
+        "get options.roundingMode",
+        "get options.roundingPriority",
+        "get options.trailingZeroDisplay",
+    
+    
+    "get options.compactDisplay",
+    "get options.useGrouping",
+    "get options.signDisplay"
 ];
 
-
-
-let reads = new Array();
-let options = {};
-optionKeys.forEach((key) => {
-    Object.defineProperty(options, key, {
-        get() {
-            reads.push(key);
-            return undefined;
-        },
-    });
-});
+let reads = [];
+let options = TemporalHelpers.propertyBagObserver(reads, {}, "options");
 new Intl.NumberFormat(undefined, options);
 assert.compareArray(reads, optionKeys, "Intl.NumberFormat options read order");
 

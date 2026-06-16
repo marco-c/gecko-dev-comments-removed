@@ -18,9 +18,6 @@
 
 
 
-
-
-
 var colExpected = new Intl.Collator("de-u-attrval-co-phonebk");
 var colActual = new Intl.Collator("de-u-co-phonebk");
 

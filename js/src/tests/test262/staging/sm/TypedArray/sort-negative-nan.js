@@ -8,6 +8,7 @@
 
 
 
+
 const floatConstructors = anyTypedArrayConstructors.filter(isFloatConstructor);
 
 
@@ -136,6 +137,5 @@ for (const [TA, taLength] of prod(floatConstructors, typedArrayLengths)) {
         assert.sameValue(fta[nanOffset + i], NaN, `At offset: ${nanOffset + i}`);
     }
 }
-
 
 reportCompare(0, 0);

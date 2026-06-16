@@ -1,0 +1,5 @@
+
+
+
+export * from './instn-star-iee-single-cycle-same-name-b_FIXTURE.js';
+export * from './instn-star-iee-single-cycle-same-name-c_FIXTURE.js';

@@ -8,10 +8,11 @@
 
 
 
+
 function DetachArrayBufferValue(buffer, value) {
     return {
         valueOf() {
-            $262.detachArrayBuffer(buffer);
+            $DETACHBUFFER(buffer);
             return value;
         }
     };
@@ -20,7 +21,7 @@ function DetachArrayBufferValue(buffer, value) {
 function DetachTypedArrayValue(ta, value) {
     return {
         valueOf() {
-            $262.detachArrayBuffer(ta.buffer);
+            $DETACHBUFFER(ta.buffer);
             return value;
         }
     };

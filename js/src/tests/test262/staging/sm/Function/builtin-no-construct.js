@@ -9,6 +9,7 @@
 
 
 
+
 function checkMethod(method) {
     assert.throws(TypeError, function() {
         new method();
@@ -33,9 +34,8 @@ checkMethods(Math);
 checkMethods(Proxy);
 
 var builtin_ctors = [
-    Object, Function, Array, String, Boolean, Number, Date, RegExp, Error,
-    EvalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError,
-];
+    Object, Function, Array, String, Boolean, Number, Date, RegExp
+].concat(nativeErrors);
 
 for (var i = 0; i < builtin_ctors.length; i++) {
     checkMethods(builtin_ctors[i]);

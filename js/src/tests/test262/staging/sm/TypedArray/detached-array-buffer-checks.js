@@ -9,9 +9,10 @@
 
 
 
+
 let buffer = new ArrayBuffer(32);
 let array  = new Int32Array(buffer);
-$262.detachArrayBuffer(buffer);
+$DETACHBUFFER(buffer);
 
 
 

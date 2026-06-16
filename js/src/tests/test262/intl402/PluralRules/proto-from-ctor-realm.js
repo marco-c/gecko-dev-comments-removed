@@ -27,7 +27,6 @@
 
 
 
-
 var other = $262.createRealm().global;
 var newTarget = new other.Function();
 var pr;

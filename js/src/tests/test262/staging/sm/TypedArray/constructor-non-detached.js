@@ -9,11 +9,11 @@
 
 for (var constructor of typedArrayConstructors) {
     var buf = new constructor();
-    $262.detachArrayBuffer(buf.buffer);
+    $DETACHBUFFER(buf.buffer);
     assert.throws(TypeError, () => new constructor(buf));
 
     var buffer = new ArrayBuffer();
-    $262.detachArrayBuffer(buffer);
+    $DETACHBUFFER(buffer);
     assert.throws(TypeError, () => new constructor(buffer));
 }
 

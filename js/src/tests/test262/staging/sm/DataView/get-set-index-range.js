@@ -7,6 +7,7 @@
 
 
 
+
 var buffer = new ArrayBuffer(2);
 var view = new DataView(buffer);
 
@@ -31,7 +32,7 @@ for (let fun of ['getInt8', 'getInt16']) {
 
 
 
-$262.detachArrayBuffer(buffer);
+$DETACHBUFFER(buffer);
 
 check(view);
 

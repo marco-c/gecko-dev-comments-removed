@@ -6,11 +6,12 @@
 
 
 
+
 let ta = new BigInt64Array(10);
 
 let obj = {
   get length() {
-    $262.detachArrayBuffer(ta.buffer);
+    $DETACHBUFFER(ta.buffer);
     return 1;
   },
   0: {

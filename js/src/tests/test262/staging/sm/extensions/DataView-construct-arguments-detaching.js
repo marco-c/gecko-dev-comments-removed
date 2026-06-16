@@ -11,6 +11,7 @@
 
 
 
+
 function testByteOffset()
 {
   var ab = new ArrayBuffer(0x1000);
@@ -19,7 +20,7 @@ function testByteOffset()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         $262.gc();
         return 0x800;
       }
@@ -40,7 +41,7 @@ function testByteLength()
     {
       valueOf: function()
       {
-        $262.detachArrayBuffer(ab);
+        $DETACHBUFFER(ab);
         $262.gc();
         return 0x800;
       }

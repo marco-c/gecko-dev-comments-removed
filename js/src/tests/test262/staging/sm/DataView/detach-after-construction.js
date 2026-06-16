@@ -7,10 +7,11 @@
 
 
 
+
 var buf = new ArrayBuffer([1,2]);
 var bufView = new DataView(buf);
 
-$262.detachArrayBuffer(buf);
+$DETACHBUFFER(buf);
 
 assert.throws(TypeError, () => bufView.getInt8(0));
 

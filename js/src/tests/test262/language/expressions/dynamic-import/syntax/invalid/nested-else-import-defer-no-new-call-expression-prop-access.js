@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+if (false) {
+
+} else {
+  new import.defer('./empty_FIXTURE.js').prop;
+}

@@ -1,0 +1,4 @@
+
+
+
+export { foo } from './instn-star-iee-multi-cycle-same-name-a_FIXTURE.js';

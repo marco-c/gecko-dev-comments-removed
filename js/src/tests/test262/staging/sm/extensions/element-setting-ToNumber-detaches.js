@@ -10,8 +10,9 @@
 
 
 
+
 var ab = new ArrayBuffer(64);
 var ta = new Uint32Array(ab);
-ta[4] = { valueOf() { $262.detachArrayBuffer(ab); return 5; } };
+ta[4] = { valueOf() { $DETACHBUFFER(ab); return 5; } };
 
 reportCompare(0, 0);

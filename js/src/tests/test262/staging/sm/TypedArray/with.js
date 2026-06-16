@@ -7,6 +7,7 @@
 
 
 
+
 class Err {}
 
 const indices = [
@@ -29,7 +30,7 @@ for (let index of indices) {
 
   let value = {
     valueOf() {
-      $262.detachArrayBuffer(ta.buffer);
+      $DETACHBUFFER(ta.buffer);
       return 0;
     }
   };

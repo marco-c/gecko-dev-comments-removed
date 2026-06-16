@@ -7,6 +7,8 @@
 
 
 
+
+
 const otherGlobal = $262.createRealm().global;
 
 const intArrayConstructors = [
@@ -111,6 +113,5 @@ for (let TA of intArrayConstructors) {
   assert.sameValue(val, 3);
   assert.sameValue(ta[0], 2);
 }
-
 
 reportCompare(0, 0);
