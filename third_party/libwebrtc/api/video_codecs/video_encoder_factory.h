@@ -22,12 +22,13 @@
 #include "api/video/render_resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
 
-class VideoEncoderFactory {
+class RTC_EXPORT VideoEncoderFactory {
  public:
   struct CodecSupport {
     bool is_supported = false;
@@ -89,16 +90,7 @@ class VideoEncoderFactory {
   
   virtual CodecSupport QueryCodecSupport(
       const SdpVideoFormat& format,
-      std::optional<std::string> scalability_mode) const {
-    
-    
-    
-    CodecSupport codec_support;
-    if (!scalability_mode) {
-      codec_support.is_supported = format.IsCodecInList(GetSupportedFormats());
-    }
-    return codec_support;
-  }
+      std::optional<std::string> scalability_mode) const;
 
   
   virtual std::unique_ptr<VideoEncoder> Create(
