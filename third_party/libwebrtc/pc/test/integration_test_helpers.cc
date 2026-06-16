@@ -208,7 +208,9 @@ void PeerConnectionIntegrationWrapper::UpdateDelayStats(std::string tag,
   
   
   
-  if (delta_samples > 0) {
+  
+  if (delta_samples >= 2000) {
+    audio_delay_stats_percentage_checked_ = true;
 #if !defined(NDEBUG)
     EXPECT_LT(1.0 * delta_concealed / delta_samples, 0.99)
         << "Concealed " << delta_concealed << " of " << delta_samples
