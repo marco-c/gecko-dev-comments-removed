@@ -12,13 +12,8 @@ use crate::{lang, logging::LogTarget, std};
 use anyhow::Context;
 use once_cell::sync::Lazy;
 
-
-const MINIDUMP_PRUNE_SAVE_COUNT: usize = 10;
-
 #[cfg(test)]
 pub mod test {
-    pub const MINIDUMP_PRUNE_SAVE_COUNT: usize = super::MINIDUMP_PRUNE_SAVE_COUNT;
-
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use crate::std::{mock, env, fs::MockFS, fs::MockFiles};
@@ -432,70 +427,6 @@ impl Config {
                 log::warn!("failed to remove {}: {e}", file.display());
             }
         }
-    }
-
-    
-    pub fn prune_files(&self) -> anyhow::Result<()> {
-        log::info!("pruning minidump files to the {MINIDUMP_PRUNE_SAVE_COUNT} most recent");
-        let Some(file) = &self.dump_file else {
-            anyhow::bail!("no dump file")
-        };
-        let Some(dir) = file.parent() else {
-            anyhow::bail!("no parent directory for dump file")
-        };
-        log::debug!("pruning {} directory", dir.display());
-        let read_dir = dir.read_dir().with_context(|| {
-            format!(
-                "failed to read dump file parent directory {}",
-                dir.display()
-            )
-        })?;
-
-        let mut minidump_files = Vec::new();
-        for entry in read_dir {
-            match entry {
-                Err(e) => log::error!(
-                    "error while iterating over {} directory entry: {e}",
-                    dir.display()
-                ),
-                Ok(e) if e.path().extension() == Some("dmp".as_ref()) => {
-                    
-                    
-                    let meta = e.metadata().with_context(|| {
-                        format!("failed to read metadata for {}", e.path().display())
-                    })?;
-                    if meta.is_file() {
-                        let modified_time =
-                            meta.modified().expect(
-                                "file modification time should be available on all crashreporter platforms",
-                            );
-                        minidump_files.push((modified_time, e.path()));
-                    }
-                }
-                _ => (),
-            }
-        }
-
-        
-        
-        minidump_files.sort_unstable_by(|a, b| a.cmp(b).reverse());
-
-        
-        for dump_file in minidump_files
-            .into_iter()
-            .skip(MINIDUMP_PRUNE_SAVE_COUNT)
-            .map(|v| v.1)
-        {
-            log::debug!("pruning {} and related files", dump_file.display());
-            if let Err(e) = std::fs::remove_file(&dump_file) {
-                log::warn!("failed to delete {}: {e}", dump_file.display());
-            }
-
-            
-            let _ = std::fs::remove_file(extra_file_for_dump_file(dump_file.clone()));
-            let _ = std::fs::remove_file(memory_file_for_dump_file(dump_file));
-        }
-        Ok(())
     }
 
     

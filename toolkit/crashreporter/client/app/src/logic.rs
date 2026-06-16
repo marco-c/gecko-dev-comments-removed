@@ -9,11 +9,11 @@ use crate::std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering::Relaxed},
-        Arc, Mutex, Weak,
+        Arc,
     },
 };
 use crate::{
-    async_task::AsyncTask,
+    async_task::{async_scoped_thread, block_on, AsyncTask},
     config::Config,
     memory_test::child::Memtest,
     net,
@@ -32,7 +32,7 @@ pub struct ReportCrash {
     extra: serde_json::Value,
     settings_file: PathBuf,
     attempted_to_send: AtomicBool,
-    ui: Option<Arc<AsyncTask<ReportCrashUIState>>>,
+    ui: Option<AsyncTask<ReportCrashUIState>>,
     memtest: RefCell<Option<Memtest>>,
 }
 
@@ -115,7 +115,10 @@ impl ReportCrash {
         if !self.config.auto_submit {
             self.run_ui();
         } else {
-            anyhow::ensure!(self.try_send().unwrap_or(false), "failed to send report");
+            anyhow::ensure!(
+                block_on(self.try_send()).unwrap_or(false),
+                "failed to send report"
+            );
         }
 
         Ok(self.attempted_to_send.load(Relaxed))
@@ -393,37 +396,26 @@ impl ReportCrash {
         use crate::std::{sync::mpsc, thread};
 
         let (logic_send, logic_recv) = mpsc::channel();
-        
-        
-        
-        
-        let logic_send = Arc::new(Mutex::new(logic_send));
-
-        let weak_logic_send = Arc::downgrade(&logic_send);
         let logic_remote_queue = AsyncTask::new(move |f| {
-            if let Some(logic_send) = weak_logic_send.upgrade() {
-                
-                let _ = logic_send.lock().unwrap().send(f);
-            }
+            
+            let _ = logic_send.send(f);
         });
 
         let crash_ui = ReportCrashUI::new(
             &*self.settings.borrow(),
             self.config.clone(),
-            logic_remote_queue,
+            logic_remote_queue.weak(),
         );
 
         
-        let crash_ui_async_task = Arc::new(crash_ui.async_task());
-        struct PanicHandler(Weak<AsyncTask<ReportCrashUIState>>);
+        let crash_ui_async_task = crash_ui.async_task();
+        struct PanicHandler(AsyncTask<ReportCrashUIState>);
         impl Drop for PanicHandler {
             fn drop(&mut self) {
-                if let Some(ui) = self.0.upgrade() {
-                    ui.push(|_| panic!("logic thread panicked"));
-                }
+                self.0.push(|_| panic!("logic thread panicked"));
             }
         }
-        let logic_panic_handler = PanicHandler(Arc::downgrade(&crash_ui_async_task));
+        let logic_panic_handler = PanicHandler(crash_ui_async_task.weak());
         self.ui = Some(crash_ui_async_task);
 
         
@@ -437,15 +429,13 @@ impl ReportCrash {
             
             
             
-            let _logic_send = logic_send;
+            let _logic_remote_queue = logic_remote_queue;
             s.spawn(move || {
                 let _logic_panic_handler = logic_panic_handler;
                 barrier.wait();
                 while let Ok(f) = logic_recv.recv() {
                     f(self);
                 }
-                
-                self.save_settings();
 
                 
                 
@@ -524,23 +514,23 @@ impl ReportCrash {
     }
 
     
-    pub fn restart(&self) {
+    pub async fn restart(&self) {
         
         self.restart_process();
-        let result = self.try_send();
-        self.close_window(result.is_some());
+        let result = self.try_send().await;
+        self.close_window(result.is_some()).await;
     }
 
     
-    pub fn quit(&self) {
-        let result = self.try_send();
-        self.close_window(result.is_some());
+    pub async fn quit(&self) {
+        let result = self.try_send().await;
+        self.close_window(result.is_some()).await;
     }
 
-    fn close_window(&self, report_sent: bool) {
+    async fn close_window(&self, report_sent: bool) {
         if report_sent && !self.config.auto_submit && !cfg!(test) {
             
-            std::thread::sleep(std::time::Duration::from_secs(5));
+            async_scoped_thread(|| std::thread::sleep(std::time::Duration::from_secs(5))).await;
         }
 
         self.ui().push(|r| r.close_window.fire(&()));
@@ -553,7 +543,7 @@ impl ReportCrash {
     
     
     
-    fn try_send(&self) -> Option<bool> {
+    async fn try_send(&self) -> Option<bool> {
         
         
         
@@ -627,14 +617,13 @@ impl ReportCrash {
             url,
         };
 
-        
-        
-        
-        
-        let report_response = report.send().map(Some).unwrap_or_else(|e| {
-            log::error!("failed to send report: {e:#}");
-            None
-        });
+        let report_response = async_scoped_thread(|| report.send())
+            .await
+            .map(Some)
+            .unwrap_or_else(|e| {
+                log::error!("failed to send report: {e:#}");
+                None
+            });
 
         let report_received = report_response.is_some();
         let crash_id = report_response.and_then(|response| {
@@ -645,16 +634,10 @@ impl ReportCrash {
                 })
         });
 
-        if report_received {
-            
-            
-            if crash_id.is_some() {
-                self.config.delete_files();
-            } else {
-                if let Err(e) = self.config.prune_files() {
-                    log::warn!("failed to prune files: {e}");
-                }
-            }
+        
+        
+        if crash_id.is_some() {
+            self.config.delete_files();
         }
 
         if let Err(e) = self.write_submission_event(crash_id) {
