@@ -36,6 +36,8 @@ class VCMTiming {
     static constexpr TimeDelta kDefaultRenderDelay = TimeDelta::Millis(10);
 
     void Reset();
+    TimeDelta TargetDelay() const;
+    TimeDelta StatsTargetDelay() const;
     
     
     bool UseLowLatencyRendering() const;
@@ -130,11 +132,6 @@ class VCMTiming {
   void SetLastDecodeScheduledTimestamp(Timestamp last_decode_scheduled);
 
  private:
-  TimeDelta EstimatedMaxDecodeTime() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  TimeDelta TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  TimeDelta StatsTargetDelayInternal() const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-
   mutable Mutex mutex_;
   Clock* const clock_;
   const std::unique_ptr<TimestampExtrapolator> ts_extrapolator_
