@@ -10,8 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import "RTCVideoCodecInfo.h"
 #import "RTCVideoEncoder.h"
 #import "sdk/objc/base/RTCMacros.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
 @interface RTC_OBJC_TYPE (RTCVideoEncoderVP9) : NSObject
@@ -25,8 +28,14 @@ RTC_OBJC_EXPORT
 
 
 
-+ (nonnull NSArray<NSString*>*)supportedScalabilityModes;
++ (NSArray<NSString *> *)supportedScalabilityModes;
+
+
+
++ (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs;
 
 + (bool)isSupported;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -240,8 +240,17 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::Create(
       [encoder_factory_ createEncoder:info];
   if ([encoder conformsToProtocol:@protocol(RTC_OBJC_TYPE(
                                       RTCNativeVideoEncoderBuilder))]) {
-    return
-        [((id<RTC_OBJC_TYPE(RTCNativeVideoEncoderBuilder)>)encoder) build:env];
+    id<RTC_OBJC_TYPE(RTCNativeVideoEncoderBuilder)> builder =
+        (id<RTC_OBJC_TYPE(RTCNativeVideoEncoderBuilder)>)encoder;
+    if ([builder respondsToSelector:@selector(buildWithEnvironment:format:)]) {
+      return [builder buildWithEnvironment:env format:format];
+    }
+    
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return [builder build:env];
+#pragma clang diagnostic pop
   } else {
     return std::make_unique<ObjCVideoEncoder>(encoder);
   }
