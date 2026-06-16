@@ -112,7 +112,8 @@ class DummyDtmfObserver : public DtmfSenderObserverInterface {
   DummyDtmfObserver() : completed_(false) {}
 
   
-  void OnToneChange(const std::string& tone) override {
+  void OnToneChange(const std::string& tone,
+                    const std::string& ) override {
     tones_.push_back(tone);
     if (tone.empty()) {
       completed_ = true;
