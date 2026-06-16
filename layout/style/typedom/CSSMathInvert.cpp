@@ -5,15 +5,22 @@
 #include "mozilla/dom/CSSMathInvert.h"
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathInvertBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathInvert::CSSMathInvert(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathInvert::CSSMathInvert(nsCOMPtr<nsISupports> aParent,
+                             RefPtr<CSSNumericValue> aValue)
+    : CSSMathValue(std::move(aParent), MathValueType::MathInvert),
+      mValue(std::move(aValue)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathInvert, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathInvert, CSSMathValue, mValue)
 
 JSObject* CSSMathInvert::WrapObject(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {
@@ -23,16 +30,45 @@ JSObject* CSSMathInvert::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSMathInvert> CSSMathInvert::Constructor(
     const GlobalObject& aGlobal, const CSSNumberish& aArg) {
-  return MakeAndAddRef<CSSMathInvert>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+  RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, aArg);
+
+  
+  return MakeAndAddRef<CSSMathInvert>(std::move(global), std::move(value));
 }
 
-CSSNumericValue* CSSMathInvert::GetValue(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+CSSNumericValue* CSSMathInvert::Value() const { return mValue; }
+
+
+
+void CSSMathInvert::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                          bool aNested,
+                                          nsACString& aDest) const {
+  aDest.Append(aNested ? "("_ns : "calc("_ns);
+
+  aDest.Append("1 / "_ns);
+
+  mValue->ToCssTextWithProperty(aPropertyId,  true, aDest);
+
+  aDest.Append(")"_ns);
 }
 
+const CSSMathInvert& CSSMathValue::GetAsCSSMathInvert() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathInvert);
 
+  return *static_cast<const CSSMathInvert*>(this);
+}
+
+CSSMathInvert& CSSMathValue::GetAsCSSMathInvert() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathInvert);
+
+  return *static_cast<CSSMathInvert*>(this);
+}
 
 }  
