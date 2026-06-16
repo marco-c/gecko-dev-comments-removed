@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerInterceptController.h"
 
 #include "ServiceWorkerManager.h"
@@ -90,17 +88,20 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       registration->MaybeScheduleTimeCheckAndUpdate();
     }
 
-    RefPtr<net::HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
-
     RequestMode requestMode =
         InternalRequest::MapChannelToRequestMode(aChannel);
 
-    if (httpChannel &&
+    
+    
+    
+    RefPtr<net::HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
+    if (requestMode == RequestMode::No_cors && loadInfo->GetIsMediaRequest() &&
+        httpChannel &&
         httpChannel->GetRequestHead()->HasHeader(net::nsHttp::Range)) {
       bool mayLoad = nsContentUtils::CheckMayLoad(
           loadInfo->GetLoadingPrincipal(), aChannel,
            false);
-      if (requestMode == RequestMode::No_cors && !mayLoad) {
+      if (!mayLoad) {
         *aShouldIntercept = false;
       }
     }
