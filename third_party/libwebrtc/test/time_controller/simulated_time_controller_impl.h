@@ -114,6 +114,7 @@ class TokenTaskQueue : public TaskQueueBase {
   
   using CurrentTaskQueueSetter = TaskQueueBase::CurrentTaskQueueSetter;
 
+  absl::string_view queue_name() const override { return "Token"; }
   void Delete() override { RTC_DCHECK_NOTREACHED(); }
   void PostTaskImpl(absl::AnyInvocable<void() &&> task,
                     const PostTaskTraits& traits,
