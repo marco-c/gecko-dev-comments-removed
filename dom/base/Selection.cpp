@@ -3953,8 +3953,7 @@ void Selection::NotifySelectionListeners() {
     if (mSelectionType == SelectionType::eNormal && RangeCount() && doc) {
       
       
-      doc->SetPreviouslyFocusedContent(nullptr);
-      doc->SetSelectionMoreRecentThanFocus(true);
+      doc->SetFocusNavigationStartingPoint(nullptr);
     }
   }
 

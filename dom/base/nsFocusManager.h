@@ -584,19 +584,6 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void GetSequentialFocusNavigationStartingPoint(Document* aDocument,
-                                                 nsIContent* aFocusedContent,
-                                                 bool aForward,
-                                                 nsIContent** aStartContent,
-                                                 bool* aConsiderStartContent);
-
-  
-
-
-
-
-
-
 
 
 
