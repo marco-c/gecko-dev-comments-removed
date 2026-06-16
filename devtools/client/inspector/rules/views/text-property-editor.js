@@ -1578,12 +1578,9 @@ class TextPropertyEditor {
     
     
     if ((value.trim() || isVariable) && isValueUnchanged) {
-      const onPropertySet = this.prop.setValue(
-        val.value,
-        val.priority,
-        false,
-        !commit
-      );
+      const onPropertySet = this.prop.setValue(val.value, val.priority, {
+        reverting: !commit,
+      });
       this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       return onPropertySet;
     }
@@ -1598,12 +1595,9 @@ class TextPropertyEditor {
     this.telemetry.recordEvent("edit_rule", "ruleview");
 
     
-    const onPropertySet = this.prop.setValue(
-      val.value,
-      val.priority,
-      false,
-      !commit
-    );
+    const onPropertySet = this.prop.setValue(val.value, val.priority, {
+      reverting: !commit,
+    });
 
     if (!this.prop.enabled) {
       this.prop.setEnabled(true);
@@ -1732,7 +1726,7 @@ class TextPropertyEditor {
 
     const val = parseSingleValue(this.cssProperties.isKnown, value);
     
-    this.prop.setValue(val.value, val.priority, false, reverting);
+    this.prop.setValue(val.value, val.priority, { reverting });
   };
 
   
@@ -1900,12 +1894,9 @@ class TextPropertyEditor {
 
   #draggingOnKeydown = event => {
     if (event.key == "Escape") {
-      this.prop.setValue(
-        this.committed.value,
-        this.committed.priority,
-        false,
-        true
-      );
+      this.prop.setValue(this.committed.value, this.committed.priority, {
+        reverting: true,
+      });
       this.#onStopDragging();
       event.preventDefault();
     }

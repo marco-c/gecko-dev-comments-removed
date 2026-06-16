@@ -218,21 +218,14 @@ class TextProperty {
 
 
 
-
-
-  async setValue(value, priority, force = false, reverting = false) {
-    if (
-      value === this.value &&
-      priority == this.priority &&
-      !force &&
-      !reverting
-    ) {
+  async setValue(value, priority, { reverting = false } = {}) {
+    if (value === this.value && priority === this.priority && !reverting) {
       return;
     }
 
     if (reverting) {
       this.userProperties.clearProperty(this.rule.domRule, this.name);
-    } else {
+    } else if (value !== this.value || priority !== this.priority) {
       this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
 
