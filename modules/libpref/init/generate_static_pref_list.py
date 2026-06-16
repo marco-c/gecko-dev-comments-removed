@@ -22,6 +22,7 @@ VALID_KEYS = {
     "include",
     "rust",
     "set_spidermonkey_pref",
+    "fuzzing_safe",
 }
 
 
@@ -235,6 +236,20 @@ def check_pref_list(pref_list):
                 error(
                     "`rust` uselessly set with `mirror` value `never` for "
                     "pref `{}`".format(pref["name"])
+                )
+
+        
+        if "fuzzing_safe" in pref:
+            fuzzing_safe = pref["fuzzing_safe"]
+            if type(fuzzing_safe) is not bool:
+                error(
+                    f"non-boolean `fuzzing_safe` value `{fuzzing_safe}` for pref "
+                    f"`{name}`"
+                )
+            if not pref.get("set_spidermonkey_pref"):
+                error(
+                    "`fuzzing_safe` is only valid for prefs with "
+                    f"`set_spidermonkey_pref` for pref `{name}`"
                 )
 
         prev_pref = pref

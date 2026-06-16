@@ -79,11 +79,25 @@
 
 
 
+
+
+
+
+
+
+
 namespace JS {
 
 class Prefs {
   
   JS_PREF_CLASS_FIELDS;
+
+  
+  
+  static bool fuzzingSafe_;
+  static bool reportIgnoredFuzzingUnsafePrefs_;
+
+  static void reportIgnoredFuzzingUnsafePref(const char* name);
 
 #ifdef DEBUG
   static void assertCanSetStartupPref();
@@ -92,12 +106,24 @@ class Prefs {
 #endif
 
  public:
+  static void setFuzzingSafe(bool fuzzingSafe) { fuzzingSafe_ = fuzzingSafe; }
+  static bool fuzzingSafe() { return fuzzingSafe_; }
+
+  static void setReportIgnoredFuzzingUnsafePrefs(bool report) {
+    reportIgnoredFuzzingUnsafePrefs_ = report;
+  }
+
   
-#define DEF_GETSET(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
+#define DEF_GETSET(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, \
+                   FUZZING_SAFE)                                  \
   static TYPE CPP_NAME() { return CPP_NAME##_; }                  \
   static void SETTER(TYPE value) {                                \
     if (IS_STARTUP_PREF) {                                        \
       assertCanSetStartupPref();                                  \
+    }                                                             \
+    if (fuzzingSafe_ && !FUZZING_SAFE) {                          \
+      reportIgnoredFuzzingUnsafePref(NAME);                       \
+      return;                                                     \
     }                                                             \
     CPP_NAME##_ = value;                                          \
   }

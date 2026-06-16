@@ -4,11 +4,23 @@
 
 #include "js/Prefs.h"
 
+#include <stdio.h>
+
 #include "js/Initialization.h"
 #include "vm/Runtime.h"
 
 
 JS_PREF_CLASS_FIELDS_INIT;
+
+bool JS::Prefs::fuzzingSafe_ = false;
+bool JS::Prefs::reportIgnoredFuzzingUnsafePrefs_ = false;
+
+
+void JS::Prefs::reportIgnoredFuzzingUnsafePref(const char* name) {
+  if (reportIgnoredFuzzingUnsafePrefs_) {
+    fprintf(stderr, "Warning: ignoring pref %s with --fuzzing-safe\n", name);
+  }
+}
 
 #ifdef DEBUG
 

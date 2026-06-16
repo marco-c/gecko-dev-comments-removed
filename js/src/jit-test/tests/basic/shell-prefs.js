@@ -21,6 +21,11 @@ setPrefValue("tests.uint32-pref", 54321);
 assertEq(getPrefValue("tests.uint32-pref"), 54321);
 
 
+assertEq(getPrefValue("tests.fuzzing-unsafe-pref"), false);
+setPrefValue("tests.fuzzing-unsafe-pref", true);
+assertEq(getPrefValue("tests.fuzzing-unsafe-pref"), true);
+
+
 assertErrorMessage(() => setPrefValue("site_based_pretenuring", true),
     Error, /startup pref/);
 assertEq(getPrefValue("site_based_pretenuring"), false);

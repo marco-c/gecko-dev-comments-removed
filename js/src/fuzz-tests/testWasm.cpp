@@ -39,7 +39,8 @@ size_t gluesmith(uint8_t* data, size_t size, uint8_t* out, size_t maxsize);
 
 
 struct PrefsSetters {
-#define JS_PREF_SETTER(NAME, CPP_NAME, TYPE, SETTER_NAME, IS_STARTUP) \
+#define JS_PREF_SETTER(NAME, CPP_NAME, TYPE, SETTER_NAME, IS_STARTUP, \
+                       FUZZING_SAFE)                                  \
   template <typename T>                                               \
   static void set_##CPP_NAME(T value) {                               \
     if constexpr (!IS_STARTUP) {                                      \
