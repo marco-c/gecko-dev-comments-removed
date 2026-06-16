@@ -16543,17 +16543,35 @@ const SportsMatchRow_USER_ACTION_TYPES = {
 
 
 const TBD_PLACEHOLDER = "--";
-const STATUS_L10N_MAP = {
+
+
+
+
+
+const UPCOMING_STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
   postponed: "newtab-sports-widget-postponed",
   suspended: "newtab-sports-widget-suspended",
-  cancelled: "newtab-sports-widget-cancelled"
+  cancelled: "newtab-sports-widget-cancelled",
+  canceled: "newtab-sports-widget-cancelled"
+};
+
+
+
+
+const LIVE_STATUS_L10N_MAP = {
+  halftime: "newtab-sports-widget-match-halftime",
+  "extra time": "newtab-sports-widget-match-extra-time"
+};
+const RESULTS_STATUS_L10N_MAP = {
+  final: "newtab-sports-widget-match-full-time"
 };
 const UPCOMING_STATUS_ARIA_L10N_MAP = {
   delayed: "newtab-sports-widget-match-aria-label-upcoming-delayed",
   postponed: "newtab-sports-widget-match-aria-label-upcoming-postponed",
   suspended: "newtab-sports-widget-match-aria-label-upcoming-suspended",
-  cancelled: "newtab-sports-widget-match-aria-label-upcoming-cancelled"
+  cancelled: "newtab-sports-widget-match-aria-label-upcoming-cancelled",
+  canceled: "newtab-sports-widget-match-aria-label-upcoming-cancelled"
 };
 function ScorePill({
   homeScore,
@@ -16720,7 +16738,7 @@ function SportsMatchRow({
     }
     
     
-    const upcomingId = UPCOMING_STATUS_ARIA_L10N_MAP[status_type] || "newtab-sports-widget-match-aria-label-upcoming";
+    const upcomingId = UPCOMING_STATUS_ARIA_L10N_MAP[status_type?.toLowerCase()] || "newtab-sports-widget-match-aria-label-upcoming";
     return {
       id: upcomingId,
       args: {
@@ -16733,13 +16751,34 @@ function SportsMatchRow({
   function renderMiddle() {
     switch (variant) {
       case "now":
-        return external_React_default().createElement(ScorePill, {
-          homeScore: displayHomeScore,
-          awayScore: displayAwayScore,
-          variant: "now"
-        });
+        {
+          const liveStatusL10nId = LIVE_STATUS_L10N_MAP[status_type?.toLowerCase()];
+          if (!liveStatusL10nId) {
+            return external_React_default().createElement(ScorePill, {
+              homeScore: displayHomeScore,
+              awayScore: displayAwayScore,
+              variant: "now"
+            });
+          }
+          return external_React_default().createElement("div", {
+            className: "sports-match-live"
+          }, external_React_default().createElement(ScorePill, {
+            homeScore: displayHomeScore,
+            awayScore: displayAwayScore,
+            variant: "now"
+          }), external_React_default().createElement("div", {
+            className: "sports-match-live-footer"
+          }, external_React_default().createElement("span", {
+            "data-l10n-id": liveStatusL10nId
+          })));
+        }
       case "results":
         {
+          
+          
+          
+          
+          const resultsStatusL10nId = RESULTS_STATUS_L10N_MAP[status_type?.toLowerCase()] || "newtab-sports-widget-match-full-time";
           return external_React_default().createElement("div", {
             className: "sports-match-result"
           }, external_React_default().createElement(ScorePill, {
@@ -16751,7 +16790,7 @@ function SportsMatchRow({
           }), external_React_default().createElement("div", {
             className: "sports-match-result-footer"
           }, external_React_default().createElement("span", {
-            "data-l10n-id": "newtab-sports-widget-match-full-time"
+            "data-l10n-id": resultsStatusL10nId
           }), hasPenalties && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
             "aria-hidden": "true"
           }, "\u2022"), external_React_default().createElement("span", {
@@ -16761,7 +16800,7 @@ function SportsMatchRow({
       
       default:
         {
-          const statusL10nId = STATUS_L10N_MAP[status_type];
+          const statusL10nId = UPCOMING_STATUS_L10N_MAP[status_type?.toLowerCase()];
           const dateArgs = JSON.stringify({
             date: dateTimestamp
           });
