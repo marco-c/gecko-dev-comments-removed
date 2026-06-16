@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 #define DOM_SVG_SVGANIMATEDTRANSFORMLIST_H_
 
@@ -149,8 +147,8 @@ class SVGAnimatedTransformList {
    protected:
     static void ParseValue(const nsAString& aSpec, const nsAtom* aTransformType,
                            SMILValue& aResult);
-    static int32_t ParseParameterList(const nsAString& aSpec, float* aVars,
-                                      int32_t aNVars);
+    static int32_t ParseParameterList(
+        const nsAString& aSpec, SVGTransformSMILData::SimpleParams& aParams);
 
     
     
