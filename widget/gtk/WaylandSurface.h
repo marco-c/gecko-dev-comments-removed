@@ -32,11 +32,7 @@ class WaylandSurface final {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandSurface);
 
-  WaylandSurface();
-
-  
-  
-  void Init(RefPtr<WaylandSurface> aRootLayer = nullptr);
+  explicit WaylandSurface(RefPtr<WaylandSurface> aParent);
 
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
@@ -106,8 +102,6 @@ class WaylandSurface final {
   
   bool IsVisible() const { return mIsVisible; }
 
-  bool IsToplevelSurface() const { return !mParent; }
-
   
   void VisibleCallbackHandler();
 
@@ -138,8 +132,6 @@ class WaylandSurface final {
   
   
   
-  
-  
   void SetMapCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(WaylandSurfaceLock& aProofOfLock)>& aMapCB);
@@ -149,12 +141,16 @@ class WaylandSurface final {
   
   
   
-  
-  
   void SetUnmapCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
                               const std::function<void(void)>& aUnmapCB);
   void ClearUnmapCallbackLocked(const WaylandSurfaceLock& aProofOfLock);
   void RunUnmapCallback();
+
+  
+  
+  
+  bool CreateViewportLocked(const WaylandSurfaceLock& aProofOfLock,
+                            bool aFollowsSizeChanges);
 
   
   
@@ -194,8 +190,6 @@ class WaylandSurface final {
                         WaylandSurfaceLock& aLowerSurfaceLock);
   void MoveLocked(const WaylandSurfaceLock& aProofOfLock,
                   DesktopIntPoint aPosition);
-  void SetViewportFollowsSizeChangesLocked(
-      const WaylandSurfaceLock& aProofOfLock);
   void SetViewPortSourceRectLocked(const WaylandSurfaceLock& aProofOfLock,
                                    const DesktopIntRect& aRect);
   void SetViewPortDestLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -218,85 +212,35 @@ class WaylandSurface final {
                               const gfx::IntRegion& aInvalidRegion);
   void InvalidateLocked(const WaylandSurfaceLock& aProofOfLock);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum class ScaleType {
-    Disabled,
-    Ceiled,
-    Fractional,
-    Coordinates,
-  };
+  bool EnableFractionalScaleLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      std::function<void(void)> aFractionalScaleCallback, bool aManageViewport);
+  bool EnableCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock);
+  bool EnableCoordinatesScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
-  void SetScaleTypeLocked(const WaylandSurfaceLock& aProofOfLock,
-                          ScaleType aScaleType, bool aSetHandler);
-  bool IsCoordinatesScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
-    MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-    return mScaleType == ScaleType::Coordinates;
+  bool IsCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
+    return mScaleType == ScaleType::Ceiled;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  enum ScaleCallbackType {
-    Widget = 0,
-    Layers = 1,
-    CallbackNum = 2,
-  };
-  void SetScaleCallbackLocked(const WaylandSurfaceLock& aProofOfLock,
-                              ScaleCallbackType aCallbackType,
-                              std::function<void(void)> aScaleCallback);
-  bool HasScaleCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
-  void ClearScaleCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
 
   
   
   static constexpr const double sNoScale = -1;
   double GetScale() const;
-  uint32_t GetCoordinatesScale() const { return mCoordinatesScale; }
-  double GetCoordinatesScaleRounded() const {
-    return ((double)mCoordinatesScale) / (1 << 24);
-  }
-  bool HasCoordinatesScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
-    return !!mCoordinatesScaleManager;
-  }
+  double GetCoordinatesScale() const;
+  bool HasCoordinatesScale() const { return !!mCoordinatesScaleManager; }
 
   
   
   void SetCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock,
                             int aScreenCeiledScale);
+
   
-  bool SetCoordinatesScaleLocked(const WaylandSurfaceLock& aProofOfLock,
-                                 uint32_t scale_8_24);
+  static void FractionalScaleHandler(void* data,
+                                     struct wp_fractional_scale_v1* info,
+                                     uint32_t wire_scale);
+  static void CoordinatesScaleHandler(
+      void* data, struct xx_fractional_scale_v2* xx_fractional_scale_v2,
+      uint32_t scale_8_24);
 
   static void AfterPaintHandler(GdkFrameClock* aClock, void* aData);
 
@@ -389,17 +333,7 @@ class WaylandSurface final {
   bool IsEmulatedVSyncEnabledLocked(const WaylandSurfaceLock& aProofOfLock);
   void RequestEmulatedVSyncLocked(const WaylandSurfaceLock& aProofOfLock);
 
-  
-  
-  
-  
-  
-  bool ConfigureScaleLocked(const WaylandSurfaceLock& aProofOfLock,
-                            ScaleType aScaleType, bool aSetProtocolHandler);
-  bool ConfigureCoordinateScaleLocked(const WaylandSurfaceLock& aProofOfLock,
-                                      bool aSetProtocolHandler);
-  bool ConfigureFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock,
-                                      bool aSetProtocolHandler);
+  void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
   
   
@@ -471,7 +405,7 @@ class WaylandSurface final {
 
   mozilla::Atomic<wl_egl_window*, mozilla::Relaxed> mEGLWindow{nullptr};
 
-  bool mViewportFollowsSizeChanges = false;
+  bool mViewportFollowsSizeChanges = true;
   wp_viewport* mViewport = nullptr;
   DesktopIntRect mViewportSourceRect{-1, -1, -1, -1};
   DesktopIntSize mViewportDestinationSize{-1, -1};
@@ -518,30 +452,52 @@ class WaylandSurface final {
   static void (*sGdkWaylandWindowRemoveCallbackSurface)(GdkWindow*,
                                                         struct wl_surface*);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class ScaleType {
+    Disabled,
+    Ceiled,
+    Fractional,
+  };
+
   ScaleType mScaleType = ScaleType::Disabled;
 
   
   
   mozilla::Atomic<double, mozilla::Relaxed> mScreenScale{sNoScale};
-  
-  
-  mozilla::Atomic<uint32_t, mozilla::Relaxed> mCoordinatesScale{1 << 24};
+  mozilla::Atomic<double, mozilla::Relaxed> mCoordinatesScale{sNoScale};
 
-  
-  
-  
-  
-  
-  
-  
   wp_fractional_scale_v1* mFractionalScaleListener = nullptr;
   xx_fractional_scale_v2* mCoordinatesScaleManager = nullptr;
 
   
   
-  
-  std::function<void(void)> mScaleCallbacks[ScaleCallbackType::CallbackNum] = {
-      nullptr, nullptr};
+  std::function<void(void)> mFractionalScaleCallback = []() {};
 
   bool mUseDMABufFormats = false;
   

@@ -1269,17 +1269,10 @@ void nsWaylandDisplay::Init() {
 
   
   
-  
   MOZ_RELEASE_ASSERT(GetShm(), "We're missing shm interface!");
   MOZ_RELEASE_ASSERT(GetCompositor(), "We're missing compositor interface!");
   MOZ_RELEASE_ASSERT(GetSubcompositor(),
                      "We're missing subcompositor interface!");
-  if (!GetViewporter()) {
-    NS_WARNING("Missing viewporter wayland protocol!");
-  }
-  if (!GetFractionalScaleManager()) {
-    NS_WARNING("Missing wp_fractional_scale_v1 wayland protocol!");
-  }
 }
 
 }  
