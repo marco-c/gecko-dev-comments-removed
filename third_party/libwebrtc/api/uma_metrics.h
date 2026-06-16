@@ -258,6 +258,7 @@ enum SdpBandwidthCategory {
   kSdpBandwidthZero = 2,
   kSdpBandwidthSmall = 3,  
   kSdpBandwidthLarge = 4,  
+  kSdpBandwidthNegative = 5,
   kSdpBandwidthMax
 };
 
