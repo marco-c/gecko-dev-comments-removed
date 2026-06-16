@@ -25,7 +25,6 @@
 #include "NSSCertDBTrustDomain.h"
 #include "pk11pub.h"
 #include "mozilla/Logging.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozpkix/pkixnss.h"
 #include "ScopedNSSTypes.h"
 #include "secerr.h"
@@ -52,9 +51,6 @@ static SECStatus DigestLength(UniquePK11Context& context, uint32_t length) {
 
   return PK11_DigestOp(context.get(), array, std::size(array));
 }
-
-
-
 
 
 
@@ -109,40 +105,21 @@ static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
     return rv;
   }
 
-  auto populateOriginAttributesKey = [&context](const nsString& aKey) {
-    NS_ConvertUTF16toUTF8 key(aKey);
-
-    if (key.IsEmpty()) {
-      return SECSuccess;
-    }
-
-    SECStatus rv = DigestLength(context, key.Length());
-    if (rv != SECSuccess) {
-      return rv;
-    }
-
-    return PK11_DigestOp(context.get(),
-                         BitwiseCast<const unsigned char*>(key.get()),
-                         key.Length());
-  };
-
-  
-  
-  rv = populateOriginAttributesKey(originAttributes.mFirstPartyDomain);
+  nsAutoCString suffix;
+  originAttributes.CreateSuffix(suffix);
+  rv = DigestLength(context, suffix.Length());
   if (rv != SECSuccess) {
     return rv;
   }
-
-  bool isolateByPartitionKey =
-      originAttributes.IsPrivateBrowsing()
-          ? StaticPrefs::privacy_partition_network_state_ocsp_cache_pbmode()
-          : StaticPrefs::privacy_partition_network_state_ocsp_cache();
-  if (isolateByPartitionKey) {
-    rv = populateOriginAttributesKey(originAttributes.mPartitionKey);
+  if (!suffix.IsEmpty()) {
+    rv = PK11_DigestOp(context.get(),
+                       BitwiseCast<const unsigned char*>(suffix.get()),
+                       suffix.Length());
     if (rv != SECSuccess) {
       return rv;
     }
   }
+
   uint32_t outLen = 0;
   rv = PK11_DigestFinal(context.get(), buf, &outLen, SHA384_LENGTH);
   if (outLen != SHA384_LENGTH) {
@@ -195,11 +172,10 @@ bool OCSPCache::FindInternal(const CertID& aCertID,
 
 static inline void LogWithCertID(const char* aMessage, const CertID& aCertID,
                                  const OriginAttributes& aOriginAttributes) {
-  nsAutoString info = u"firstPartyDomain: "_ns +
-                      aOriginAttributes.mFirstPartyDomain +
-                      u", partitionKey: "_ns + aOriginAttributes.mPartitionKey;
+  nsAutoCString originAttributesSuffix;
+  aOriginAttributes.CreateSuffix(originAttributesSuffix);
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          (aMessage, &aCertID, NS_ConvertUTF16toUTF8(info).get()));
+          (aMessage, &aCertID, originAttributesSuffix.get()));
 }
 
 void OCSPCache::MakeMostRecentlyUsed(size_t aIndex,

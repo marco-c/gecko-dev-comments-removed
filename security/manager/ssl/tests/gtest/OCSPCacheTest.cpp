@@ -305,11 +305,6 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
 
   
   
-  
-
-  
-  mozilla::Preferences::SetBool("privacy.partition.network_state.ocsp_cache",
-                                true);
 
   SCOPED_TRACE("");
   OriginAttributes attrs;
@@ -318,11 +313,19 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
 
   Result resultOut;
   Time timeOut(Time::uninitialized);
+
+  
   attrs.mFirstPartyDomain.AssignLiteral("bar.com");
   ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
 
   
   attrs.mUserContextId = 1;
+  attrs.mFirstPartyDomain.AssignLiteral("foo.com");
+  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  
+  attrs.mUserContextId = 0;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
   ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
 
@@ -345,11 +348,19 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
   
   attrs.mUserContextId = 1;
   attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
-  ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
+  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
 
   
   attrs.mUserContextId = 0;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
   attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
+  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  attrs.mUserContextId = 0;
+  attrs.mFirstPartyDomain.Truncate();
+  attrs.mPartitionKey.Truncate();
+  PutAndGet(cache, certID, Success, now, attrs);
+  attrs.mPrivateBrowsingId = 1;
   ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
 }
