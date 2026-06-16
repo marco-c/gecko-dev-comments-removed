@@ -120,7 +120,7 @@ class ExtensionStreamGetter final : public nsICancelable {
   
   
   ExtensionStreamGetter(nsIURI* aURI, nsILoadInfo* aLoadInfo,
-                        already_AddRefed<nsIJARChannel>&& aJarChannel,
+                        already_AddRefed<nsIJARChannel> aJarChannel,
                         nsIFile* aJarFile)
       : mURI(aURI),
         mLoadInfo(aLoadInfo),

@@ -25,7 +25,7 @@ class NeckoTargetHolder {
   
   
   nsresult Dispatch(
-      already_AddRefed<nsIRunnable>&& aRunnable,
+      already_AddRefed<nsIRunnable> aRunnable,
       nsIEventTarget::DispatchFlags aDispatchFlags = NS_DISPATCH_NORMAL);
 
   
