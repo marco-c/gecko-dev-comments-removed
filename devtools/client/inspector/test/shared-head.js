@@ -1083,20 +1083,17 @@ function getTextProperty(ruleView, ruleIndex, declaration) {
 
 
 
+
+
+
+
 async function setProperty(
   ruleView,
   textProp,
   value,
-  { blurNewProperty = true } = {}
+  { blurNewProperty = true, flushCount = 1 } = {}
 ) {
   info("Set property to: " + value);
-  const previousValue = textProp.value;
-  const wasImportant = !!textProp.priority;
-  
-  
-  
-  const willBeUpdated =
-    previousValue != value || wasImportant != value?.endsWith("!important");
   const editor = await focusEditableField(ruleView, textProp.editor.valueSpan);
 
   
@@ -1104,13 +1101,13 @@ async function setProperty(
   
   
   
-  let startedCounter = 0;
-  const onStartSet = () => startedCounter++;
-  ruleView.on("start-set-property-value", onStartSet);
+  let previewStartedCounter = 0;
+  const onStartPreview = () => previewStartedCounter++;
+  ruleView.on("start-preview-property-value", onStartPreview);
 
-  let changedCounter = 0;
-  const onChanged = () => changedCounter++;
-  ruleView.on("ruleview-changed", onChanged);
+  let previewCounter = 0;
+  const onPreviewApplied = () => previewCounter++;
+  ruleView.on("ruleview-changed", onPreviewApplied);
 
   if (value === null) {
     const onPopupOpened = once(ruleView.popup, "popup-opened");
@@ -1126,17 +1123,28 @@ async function setProperty(
     EventUtils.sendString(value, ruleView.styleWindow);
   }
 
-  info(`Flush debounced ruleview methods`);
+  info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
   ruleView.debounce.flush();
-  await waitFor(() => changedCounter >= startedCounter);
+  await waitFor(() => previewCounter >= previewStartedCounter);
 
-  ruleView.off("start-set-property-value", onStartSet);
-  ruleView.off("ruleview-changed", onChanged);
+  flushCount--;
 
-  const onValueDone = ruleView.once(
-    willBeUpdated ? "ruleview-changed" : "property-value-updated"
-  );
+  while (flushCount > 0) {
+    
+    
+    await wait(100);
 
+    info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
+    ruleView.debounce.flush();
+    await waitFor(() => previewCounter >= previewStartedCounter);
+
+    flushCount--;
+  }
+
+  ruleView.off("start-preview-property-value", onStartPreview);
+  ruleView.off("ruleview-changed", onPreviewApplied);
+
+  const onValueDone = ruleView.once("ruleview-changed");
   
   let onPopupClosed;
   if (ruleView.popup?.isOpen) {
@@ -1157,22 +1165,8 @@ async function setProperty(
     ruleView.styleWindow
   );
 
-  
-  
-  
-  
-  
-  if (
-    willBeUpdated &&
-    (startedCounter == 0 ||
-      textProp.value + (textProp.priority ? " !important" : "") != value)
-  ) {
-    info("Waiting for another ruleview-changed after setting property");
-    await onValueDone;
-  } else if (!willBeUpdated) {
-    info("Waiting for another property value update after setting property");
-    await onValueDone;
-  }
+  info("Waiting for another ruleview-changed after setting property");
+  await onValueDone;
 
   const focusNextOnEnter = Services.prefs.getBoolPref(
     "devtools.inspector.rule-view.focusNextOnEnter"

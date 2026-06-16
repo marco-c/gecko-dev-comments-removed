@@ -58,8 +58,8 @@ async function testLivePreviewData(data, ruleView, selector) {
   ruleView.debounce.flush();
   await onPreviewDone;
 
+  const onValueDone = ruleView.once("ruleview-changed");
   if (data.escape) {
-    const onValueDone = ruleView.once("ruleview-changed");
     
     await waitFor(() => ruleView.popup && ruleView.popup.isOpen);
     ok(true, "Popup was opened");
@@ -70,10 +70,10 @@ async function testLivePreviewData(data, ruleView, selector) {
 
     
     EventUtils.synthesizeKey("KEY_Escape");
-    await onValueDone;
   } else {
     EventUtils.synthesizeKey("KEY_Enter");
   }
+  await onValueDone;
 
   
   

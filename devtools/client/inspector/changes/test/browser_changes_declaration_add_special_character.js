@@ -45,14 +45,17 @@ add_task(async function addWithSpecialCharacter() {
   info(`Change the CSS declaration value to ${newValue}`);
   const prop = getTextProperty(ruleView, 1, { [PROPERTY_NAME]: INITIAL_VALUE });
   onTrackChange = waitForDispatch(store, "TRACK_CHANGE");
-  await setProperty(ruleView, prop, newValue);
+  
+  await setProperty(ruleView, prop, newValue, { flushCount: 2 });
   await onTrackChange;
   await assertAddedDeclaration(doc, EXPECTED_PROPERTY_NAME, newValue);
 
   newValue = "123";
   info(`Change the CSS declaration value to ${newValue}`);
   onTrackChange = waitForDispatch(store, "TRACK_CHANGE");
-  await setProperty(ruleView, prop, newValue);
+  
+  
+  await setProperty(ruleView, prop, newValue, { flushCount: 2 });
   await onTrackChange;
   await assertAddedDeclaration(doc, EXPECTED_PROPERTY_NAME, newValue);
 });

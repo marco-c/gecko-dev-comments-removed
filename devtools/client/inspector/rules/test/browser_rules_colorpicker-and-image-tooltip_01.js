@@ -52,7 +52,9 @@ async function testImageTooltipAfterColorChange(swatch, url, ruleView) {
   const spectrum = picker.spectrum;
   const onHidden = picker.tooltip.once("hidden");
 
-  const onModifications = ruleView.once("property-value-updated");
+  
+  
+  const onModifications = waitForNEvents(ruleView, "ruleview-changed", 2);
   focusAndSendKey(spectrum.element.ownerDocument.defaultView, "RETURN");
   await onHidden;
   await onModifications;

@@ -1548,9 +1548,6 @@ async function deleteNodeWithContextMenu(node, inspector) {
 
 
 
-
-
-
 function reflowContentPage() {
   return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     return new Promise(resolve => {

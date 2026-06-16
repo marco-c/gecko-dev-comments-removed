@@ -38,9 +38,10 @@ add_task(async function () {
   ok(true, "Changes previewed on the element");
 
   info("Press RETURN to commit changes");
-  const onModifications = view.once("property-value-updated");
+  
+  onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
   EventUtils.sendKey("RETURN", widget.styleWindow);
-  await onModifications;
+  await onRuleViewChanged;
 
   is(
     await getComputedStyleProperty("body", null, "filter"),

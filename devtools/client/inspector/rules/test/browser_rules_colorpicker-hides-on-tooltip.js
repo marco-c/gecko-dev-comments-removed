@@ -43,10 +43,10 @@ add_task(async function () {
   info("Now showing the image preview tooltip to hide the color picker");
   const onHidden = colorPicker.tooltip.once("hidden");
   
-  const onModifications = view.once("property-value-updated");
+  const onRuleViewChanged = view.once("ruleview-changed");
   const previewTooltip = await assertShowPreviewTooltip(view, uriSpan);
   await onHidden;
-  await onModifications;
+  await onRuleViewChanged;
 
   await assertTooltipHiddenOnMouseOut(previewTooltip, uriSpan);
 

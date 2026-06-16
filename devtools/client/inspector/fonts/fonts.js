@@ -1072,7 +1072,7 @@ class FontInspector {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     
     textProperty.rule
-      .setPropertyValue(textProperty, value, "")
+      .previewPropertyValue(textProperty, value, "")
       .catch(console.error);
 
     

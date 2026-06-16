@@ -58,6 +58,11 @@ const ITERATIONS = {
       value: '"ar',
       add: { value: '"ar"' },
       remove: { value: '"courier"' },
+      
+      
+      
+      
+      needsExtraFlush: true,
     },
     
     {
@@ -116,15 +121,15 @@ add_task(async function () {
 
 async function assertEditValue(ruleView, doc, store, prop, iterations) {
   let onTrackChange;
-  for (const { value, add, remove } of iterations) {
+  for (const { value, add, needsExtraFlush, remove } of iterations) {
     onTrackChange = waitForDispatch(store, "TRACK_CHANGE");
 
     info(`Change the CSS declaration value to ${value}`);
-    await setProperty(ruleView, prop, value);
-    if (prop.value != value) {
-      info("Wait for the change to be tracked");
-      await onTrackChange;
-    }
+    await setProperty(ruleView, prop, value, {
+      flushCount: needsExtraFlush ? 2 : 1,
+    });
+    info("Wait for the change to be tracked");
+    await onTrackChange;
 
     if (add) {
       await waitFor(() => {

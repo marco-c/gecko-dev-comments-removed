@@ -35,10 +35,10 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(
 
 
 async function hideTooltipAndWaitForRuleViewChanged(editorTooltip, view) {
-  const onModifications = view.once("property-value-updated");
+  const onModified = view.once("ruleview-changed");
   const onHidden = editorTooltip.tooltip.once("hidden");
   editorTooltip.hide();
-  await onModifications;
+  await onModified;
   await onHidden;
 }
 
@@ -335,6 +335,10 @@ var addProperty = async function (
   if (editor.cssProperties.getValues(name).length) {
     info("Wait for the popup to open");
     await waitFor(() => editor.popup.isOpen);
+    const onPreview = view.once("ruleview-changed");
+    
+    view.debounce.flush();
+    await onPreview;
   }
 
   info(`Setting the value for "${name}": "${value}"`);
@@ -353,7 +357,6 @@ var addProperty = async function (
     const onPreview = view.once("ruleview-changed");
     
     view.debounce.flush();
-    info("Waiting for rule view updates after setting the value");
     await onPreview;
   }
 
@@ -361,10 +364,9 @@ var addProperty = async function (
     return textProp;
   }
 
-  const onModifications = view.once("property-value-updated");
+  const onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey(commitValueWith, {}, view.styleWindow);
-  info("Waiting for property value update after commit key is pressed");
-  await onModifications;
+  await onRuleViewChanged;
 
   info(
     "Waiting for DOM mutations in case the property was added to the element style"
@@ -415,8 +417,9 @@ var renameProperty = async function (view, textProp, name) {
   
   
   
-  const onValueDone = view.once("property-value-updated");
+  const onValueDone = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
+  info("Wait for property value.");
   await onValueDone;
 };
 
@@ -1270,7 +1273,6 @@ function getRuleViewAncestorRulesDataTextByIndex(view, ruleIndex) {
 async function runIncrementTest(propertyEditor, view, tests) {
   propertyEditor.valueSpan.scrollIntoView();
   const editor = await focusEditableField(view, propertyEditor.valueSpan);
-  const initialValue = editor.property.value;
 
   for (const testIndex in tests) {
     await testIncrement(editor, view, tests[testIndex], testIndex);
@@ -1278,11 +1280,7 @@ async function runIncrementTest(propertyEditor, view, tests) {
 
   
   
-  const onRuleViewChanged = view.once(
-    initialValue !== editor.property.value
-      ? "ruleview-changed"
-      : "property-value-updated"
-  );
+  const onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
   view.debounce.flush();
   await onRuleViewChanged;
