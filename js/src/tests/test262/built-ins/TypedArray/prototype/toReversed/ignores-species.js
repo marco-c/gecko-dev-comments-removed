@@ -20,24 +20,24 @@
 
 
 
-testWithTypedArrayConstructors((TA, makeCtorArg) => {
-  var ta = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(TA => {
+  var ta = new TA();
   ta.constructor = TA === Uint8Array ? Int32Array : Uint8Array;
   assert.sameValue(Object.getPrototypeOf(ta.toReversed()), TA.prototype);
 
-  ta = new TA(makeCtorArg(0));
+  ta = new TA();
   ta.constructor = {
     [Symbol.species]: TA === Uint8Array ? Int32Array : Uint8Array,
   };
   assert.sameValue(Object.getPrototypeOf(ta.toReversed()), TA.prototype);
 
-  ta = new TA(makeCtorArg(0));
+  ta = new TA();
   Object.defineProperty(ta, "constructor", {
     get() {
       throw new Test262Error("Should not get .constructor");
     }
   });
   ta.toReversed();
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

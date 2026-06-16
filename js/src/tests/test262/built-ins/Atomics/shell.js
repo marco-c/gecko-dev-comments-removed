@@ -190,6 +190,10 @@ var allTypedArrayConstructors = typedArrayConstructors.concat(bigIntArrayConstru
 
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
+function isPrimitive(val) {
+  return !val || (typeof val !== "object" && typeof val !== "function");
+}
+
 function makePassthrough(TA, primitiveOrIterable) {
   return primitiveOrIterable;
 }
@@ -229,7 +233,7 @@ function makeArrayBuffer(TA, primitiveOrIterable) {
   return new TA(arr).buffer;
 }
 
-var makeResizableArrayBuffer, makeGrownArrayBuffer, makeShrunkArrayBuffer, makeImmutableArrayBuffer;
+var makeResizableArrayBuffer, makeGrownArrayBuffer, makeShrunkArrayBuffer;
 if (ArrayBuffer.prototype.resize) {
   var copyIntoArrayBuffer = function(destBuffer, srcBuffer) {
     var destView = new Uint8Array(destBuffer);
@@ -279,17 +283,6 @@ if (ArrayBuffer.prototype.resize) {
     return shrunk;
   };
 }
-if (ArrayBuffer.prototype.transferToImmutable) {
-  makeImmutableArrayBuffer = function makeImmutableArrayBuffer(TA, primitiveOrIterable) {
-    if (isPrimitive(primitiveOrIterable)) {
-      var n = Number(primitiveOrIterable) * TA.BYTES_PER_ELEMENT;
-      if (!(n >= 0 && n < 9007199254740992)) return primitiveOrIterable;
-      return (new ArrayBuffer(n)).transferToImmutable();
-    }
-    var mutable = makeArrayBuffer(TA, primitiveOrIterable);
-    return mutable.transferToImmutable();
-  };
-}
 
 var typedArrayCtorArgFactories = [makePassthrough, makeArray, makeArrayLike];
 if (makeIterable) typedArrayCtorArgFactories.push(makeIterable);
@@ -297,7 +290,6 @@ typedArrayCtorArgFactories.push(makeArrayBuffer);
 if (makeResizableArrayBuffer) typedArrayCtorArgFactories.push(makeResizableArrayBuffer);
 if (makeGrownArrayBuffer) typedArrayCtorArgFactories.push(makeGrownArrayBuffer);
 if (makeShrunkArrayBuffer) typedArrayCtorArgFactories.push(makeShrunkArrayBuffer);
-if (makeImmutableArrayBuffer) typedArrayCtorArgFactories.push(makeImmutableArrayBuffer);
 
 
 
@@ -328,8 +320,7 @@ function ctorArgFactoryMatchesSome(argFactory, features) {
           argFactory === makeArrayBuffer ||
           argFactory === makeResizableArrayBuffer ||
           argFactory === makeGrownArrayBuffer ||
-          argFactory === makeShrunkArrayBuffer ||
-          argFactory === makeImmutableArrayBuffer
+          argFactory === makeShrunkArrayBuffer
         ) {
           return true;
         }
@@ -342,9 +333,6 @@ function ctorArgFactoryMatchesSome(argFactory, features) {
         ) {
           return true;
         }
-        break;
-      case "immutable":
-        if (argFactory === makeImmutableArrayBuffer) return true;
         break;
       default:
         throw Test262Error("unknown feature: " + features[i]);
@@ -461,18 +449,8 @@ var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Ui
 
 
 
-
-
-
-
-
-function testWithNonAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories, excludeArgFactories) {
-  testWithAllTypedArrayConstructors(
-    f,
-    nonAtomicsFriendlyTypedArrayConstructors,
-    includeArgFactories,
-    excludeArgFactories
-  );
+function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, nonAtomicsFriendlyTypedArrayConstructors);
 }
 
 
@@ -481,25 +459,15 @@ function testWithNonAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories
 
 
 
-
-
-
-
-
-function testWithAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories, excludeArgFactories) {
-  testWithAllTypedArrayConstructors(
-    f,
-    [
-      Int32Array,
-      Int16Array,
-      Int8Array,
-      Uint32Array,
-      Uint16Array,
-      Uint8Array,
-    ],
-    includeArgFactories,
-    excludeArgFactories
-  );
+function testWithAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Int32Array,
+    Int16Array,
+    Int8Array,
+    Uint32Array,
+    Uint16Array,
+    Uint8Array,
+  ]);
 }
 
 
@@ -526,7 +494,7 @@ function testTypedArrayConversions(byteConversionValues, fn) {
       }
       fn(TA, value, exp, initial);
     });
-  }, null, ["passthrough"]);
+  });
 }
 
 

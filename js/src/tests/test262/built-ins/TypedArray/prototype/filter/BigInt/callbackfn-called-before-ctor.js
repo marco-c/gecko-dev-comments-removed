@@ -17,9 +17,9 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithBigIntTypedArrayConstructors(function(TA) {
   var length = 42;
-  var sample = new TA(makeCtorArg(length));
+  var sample = new TA(length);
   var calls = 0;
   var before = false;
 

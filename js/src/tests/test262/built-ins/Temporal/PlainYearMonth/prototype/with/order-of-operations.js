@@ -9,7 +9,7 @@
 
 
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   
   "get fields.calendar",
   "get fields.timeZone",
@@ -23,13 +23,11 @@ const expectedOpsForPrimitiveOptions = [
   "get fields.year",
   "get fields.year.valueOf",
   "call fields.year.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat([
   
   "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
-]);
+];
 const actual = [];
 
 const instance = new Temporal.PlainYearMonth(2000, 5);
@@ -47,13 +45,5 @@ const options = TemporalHelpers.propertyBagObserver(actual, {
 
 instance.with(fields, options);
 assert.compareArray(actual, expected, "order of operations");
-
-actual.splice(0); 
-
-assert.throws(TypeError, () => instance.with(fields, null));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "argument fields are read before TypeError is thrown for primitive options");
-
-actual.splice(0); 
 
 reportCompare(0, 0);

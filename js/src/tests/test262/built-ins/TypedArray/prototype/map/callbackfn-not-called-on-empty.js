@@ -17,14 +17,14 @@
 
 
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithTypedArrayConstructors(function(TA) {
   var called = 0;
 
-  new TA(makeCtorArg(0)).map(function() {
+  new TA().map(function() {
     called++;
   });
 
   assert.sameValue(called, 0);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -234,17 +234,6 @@ inline bool PutProperty(JSContext* cx, JS::Handle<JSObject*> obj,
 
 
 
-
-
-extern bool SetterThatIgnoresPrototypeProperties(JSContext* cx,
-                                                 JS::Handle<JS::Value> thisv,
-                                                 JS::Handle<JSObject*> home,
-                                                 JS::Handle<jsid> prop,
-                                                 JS::Handle<JS::Value> value);
-
-
-
-
 inline bool DeleteProperty(JSContext* cx, JS::Handle<JSObject*> obj,
                            JS::Handle<jsid> id, JS::ObjectOpResult& result);
 

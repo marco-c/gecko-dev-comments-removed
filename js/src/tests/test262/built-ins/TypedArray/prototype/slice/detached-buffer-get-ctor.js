@@ -15,14 +15,14 @@
 
 
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithTypedArrayConstructors(function(TA) {
   let counter = 0;
-  let sample = new TA(makeCtorArg(1));
+  let sample = new TA(1);
 
   Object.defineProperty(sample, "constructor", {
     get() {
-      $DETACHBUFFER(sample.buffer);
       counter++;
+      $DETACHBUFFER(sample.buffer);
     }
   });
   assert.throws(TypeError, function() {
@@ -31,6 +31,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   }, '`sample.slice()` throws TypeError');
 
   assert.sameValue(counter, 2, 'The value of `counter` is 2');
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

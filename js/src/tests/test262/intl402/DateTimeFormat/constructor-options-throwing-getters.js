@@ -6,29 +6,18 @@
 
 
 
-
-
-
-
-
 function CustomError() {}
 
 const options = [
   "weekday", "year", "month", "day",
-  "dayPeriod",
   "hour", "minute", "second",
-  "fractionalSecondDigits",
   "localeMatcher",
-  "calendar",
-  "numberingSystem",
   "hour12",
   "hourCycle",
   "timeZone",
   "era",
   "timeZoneName",
   "formatMatcher",
-  "dateStyle",
-  "timeStyle",
 ];
 
 for (const option of options) {

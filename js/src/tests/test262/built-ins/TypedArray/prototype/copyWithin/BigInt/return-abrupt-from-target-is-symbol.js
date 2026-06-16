@@ -27,11 +27,11 @@
 
 var s = Symbol(1);
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.throws(TypeError, function() {
     sample.copyWithin(s, 0);
   });
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

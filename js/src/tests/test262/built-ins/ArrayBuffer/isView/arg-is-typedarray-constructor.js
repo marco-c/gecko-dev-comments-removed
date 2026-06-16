@@ -15,7 +15,7 @@
 
 
 
-testWithAllTypedArrayConstructors(function(ctor) {
+testWithTypedArrayConstructors(function(ctor) {
   assert.sameValue(ArrayBuffer.isView(ctor), false);
 }, null, ["passthrough"]);
 

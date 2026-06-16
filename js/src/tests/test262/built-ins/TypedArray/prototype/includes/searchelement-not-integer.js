@@ -20,7 +20,12 @@
 
 testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var sample = new TA(makeCtorArg(10));
-  assert.sameValue(sample.includes({ valueOf: Test262Error.thrower }), false);
+  function throwFunc(){
+    throw Test262Error()
+    return 0;
+  }
+
+    assert.sameValue(sample.includes({valueOf : throwFunc}), false);
 });
 
 reportCompare(0, 0);

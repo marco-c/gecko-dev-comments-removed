@@ -1616,49 +1616,6 @@ bool js::GetOwnPropertyDescriptor(
   return NativeGetOwnPropertyDescriptor(cx, obj.as<NativeObject>(), id, desc);
 }
 
-
-bool js::SetterThatIgnoresPrototypeProperties(JSContext* cx,
-                                              Handle<Value> thisv,
-                                              Handle<JSObject*> home,
-                                              Handle<PropertyKey> prop,
-                                              Handle<Value> value) {
-  
-  Rooted<JSObject*> thisObj(cx,
-                            RequireObject(cx, JSMSG_OBJECT_REQUIRED, thisv));
-  if (!thisObj) {
-    return false;
-  }
-
-  
-  if (thisObj == home) {
-    UniqueChars propName =
-        IdToPrintableUTF8(cx, prop, IdToPrintableBehavior::IdIsPropertyKey);
-    if (!propName) {
-      return false;
-    }
-
-    
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_READ_ONLY,
-                              propName.get());
-    return false;
-  }
-
-  
-  Rooted<Maybe<PropertyDescriptor>> desc(cx);
-  if (!GetOwnPropertyDescriptor(cx, thisObj, prop, &desc)) {
-    return false;
-  }
-
-  
-  if (desc.isNothing()) {
-    
-    return DefineDataProperty(cx, thisObj, prop, value, JSPROP_ENUMERATE);
-  }
-
-  
-  return SetProperty(cx, thisObj, prop, value);
-}
-
 bool js::DefineProperty(JSContext* cx, HandleObject obj, HandleId id,
                         Handle<PropertyDescriptor> desc) {
   ObjectOpResult result;

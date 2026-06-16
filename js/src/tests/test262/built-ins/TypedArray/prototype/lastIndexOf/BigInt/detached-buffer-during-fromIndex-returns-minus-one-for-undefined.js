@@ -33,8 +33,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  const sample = new TA(makeCtorArg(1));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  const sample = new TA(1);
   const fromIndex = {
     valueOf() {
       $DETACHBUFFER(sample.buffer);
@@ -43,6 +43,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   };
 
   assert.sameValue(sample.lastIndexOf(undefined, fromIndex), -1);
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);
