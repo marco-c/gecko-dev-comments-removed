@@ -123,6 +123,9 @@ void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
   
   UpdateAllAudioSessionStates(aBrowsingContextId);
   
+  
+  entry.Data().DispatchStateChange(aBrowsingContextId);
+  
   RemoveRecordIfEmpty(aBrowsingContextId);
 }
 

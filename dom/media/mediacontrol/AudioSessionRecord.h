@@ -81,6 +81,10 @@ class AudioSessionRecord {
   void SetAudibleAtMs(uint64_t aBcId, Maybe<int64_t> aAudibleAtMs);
   void SetState(uint64_t aBcId, AudioSessionState aState);
 
+  
+  
+  void DispatchStateChange(uint64_t aBcId) const;
+
  private:
   void LogState(uint64_t aBcId) const;
 
