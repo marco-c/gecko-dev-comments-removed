@@ -1680,6 +1680,29 @@ void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
       callerFP_ = fp->rawCaller();
       AssertMatchesCallSite(callerPC_, callerFP_);
       break;
+#ifdef ENABLE_WASM_JSPI
+    case CodeRange::ContBaseFrame: {
+      
+      
+      
+      
+      category_ = Category::Other;
+      Frame* baseFrame = fp->wasmCaller();
+      
+      
+      
+      
+      ContStack* stack = ContStack::fromBaseFrameFP(baseFrame);
+      Handlers* handlers = stack->handlers();
+      MOZ_ASSERT(handlers);
+      stackAddress_ = handlers->returnTarget.stackPointer;
+      callerPC_ = handlers->returnTarget.resumePC;
+      AssertMatchesCallSite(callerPC_, baseFrame->rawCaller());
+      callerFP_ =
+          reinterpret_cast<uint8_t*>(handlers->returnTarget.framePointer);
+      break;
+    }
+#endif
     case CodeRange::ImportJitExit:
     case CodeRange::ImportInterpExit:
     case CodeRange::BuiltinThunk:
@@ -1687,9 +1710,6 @@ void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
     case CodeRange::DebugStub:
     case CodeRange::RequestTierUpStub:
     case CodeRange::UpdateCallRefMetricsStub:
-#ifdef ENABLE_WASM_JSPI
-    case CodeRange::ContBaseFrame:
-#endif
     case CodeRange::Throw:
     case CodeRange::FarJumpIsland:
       MOZ_CRASH("Unexpected CodeRange kind");
