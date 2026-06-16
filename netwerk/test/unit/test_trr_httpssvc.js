@@ -152,7 +152,7 @@ add_task(async function testHTTPSSVC() {
   Assert.equal(
     answer[1].values[3].QueryInterface(Ci.nsISVCParamIPv6Hint).ipv6Hint[1]
       .address,
-    "fe80::794f:6d2c:3d5e:7836",
+    "2001:db8::1",
     "got correct answer"
   );
   Assert.equal(
@@ -163,6 +163,14 @@ add_task(async function testHTTPSSVC() {
   Assert.equal(answer[2].priority, 3);
   Assert.equal(answer[2].name, "hello");
   Assert.equal(answer[2].values.length, 0);
+
+  
+  
+  if (!inChildProcess()) {
+    Services.fog.initializeFOG();
+    let doh = Glean.dns.httpsRrLookupTime.doh.testGetValue();
+    Assert.ok(doh, "https_rr_lookup_time(doh) was recorded");
+  }
 });
 
 add_task(async function test_aliasform() {
