@@ -35,6 +35,8 @@ module.exports = {
     
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/passwordmgr/content/**/*.stories.mjs`,
+    
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
     
     `${projectRoot}/toolkit/components/satchel/autocomplete-row-item/**/*.stories.@(mjs|md)`,

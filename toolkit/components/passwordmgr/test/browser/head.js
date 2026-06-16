@@ -558,25 +558,7 @@ async function updateDoorhangerInputValues(
 
 
 async function selectDoorhangerUsername(text) {
-  await _selectDoorhanger(
-    text,
-    "#password-notification-username",
-    "#password-notification-username-dropmarker"
-  );
-}
-
-
-
-
-
-
-
-async function selectDoorhangerPassword(text) {
-  await _selectDoorhanger(
-    text,
-    "#password-notification-password",
-    "#password-notification-password-dropmarker"
-  );
+  await _selectDoorhanger(text, "#password-notification-username", null);
 }
 
 async function _selectDoorhanger(text, inputSelector, dropmarkerSelector) {
@@ -587,7 +569,9 @@ async function _selectDoorhanger(text, inputSelector, dropmarkerSelector) {
   info("Opening doorhanger suggestion popup");
 
   let doorhangerPopup = document.getElementById("password-notification");
-  let dropmarker = doorhangerPopup.querySelector(dropmarkerSelector);
+  let dropmarker = dropmarkerSelector
+    ? doorhangerPopup.querySelector(dropmarkerSelector)
+    : doorhangerPopup.querySelector(inputSelector).dropmarkerEl;
 
   let autocompletePopup = document.getElementById("PopupAutoComplete");
   let popupShown = BrowserTestUtils.waitForEvent(
