@@ -123,6 +123,12 @@ impl SumValue {
                 
                 Ok(SumValue(values))
             },
+
+            
+            NumericValue::Math(MathValue::Min(_math_min)) => {
+                
+                Err(())
+            },
         }
     }
 

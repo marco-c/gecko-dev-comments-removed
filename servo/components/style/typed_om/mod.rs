@@ -123,6 +123,13 @@ pub type MathSum = ThinVec<NumericValue>;
 
 
 
+
+pub type MathMin = ThinVec<NumericValue>;
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum MathValue {
@@ -130,6 +137,11 @@ pub enum MathValue {
     
     
     Sum(MathSum),
+
+    
+    
+    
+    Min(MathMin),
 }
 
 
