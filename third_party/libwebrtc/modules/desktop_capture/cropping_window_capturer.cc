@@ -10,8 +10,7 @@
 
 #include "modules/desktop_capture/cropping_window_capturer.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <memory>
 #include <utility>
 
@@ -48,7 +47,10 @@ void CroppingWindowCapturer::SetSharedMemoryFactory(
 
 void CroppingWindowCapturer::CaptureFrame() {
   if (ShouldUseScreenCapturer()) {
-    if (!screen_capturer_.get()) {
+    
+    
+    last_window_rect_ = GetWindowRectInVirtualScreen();
+    if (!screen_capturer_) {
       screen_capturer_ = DesktopCapturer::CreateRawScreenCapturer(options_);
       if (excluded_window_) {
         screen_capturer_->SetExcludedWindow(excluded_window_);
@@ -63,7 +65,7 @@ void CroppingWindowCapturer::CaptureFrame() {
 
 void CroppingWindowCapturer::SetExcludedWindow(WindowId window) {
   excluded_window_ = window;
-  if (screen_capturer_.get()) {
+  if (screen_capturer_) {
     screen_capturer_->SetExcludedWindow(window);
   }
 }
@@ -75,6 +77,7 @@ bool CroppingWindowCapturer::GetSourceList(SourceList* sources) {
 bool CroppingWindowCapturer::SelectSource(SourceId id) {
   if (window_capturer_->SelectSource(id)) {
     selected_window_ = id;
+    last_window_rect_ = {};
     return true;
   }
   return false;
@@ -99,15 +102,14 @@ void CroppingWindowCapturer::OnCaptureResult(
     return;
   }
 
-  DesktopRect window_rect = GetWindowRectInVirtualScreen();
-  if (window_rect.is_empty()) {
+  if (last_window_rect_.is_empty()) {
     RTC_LOG(LS_WARNING) << "Window rect is empty";
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
 
   std::unique_ptr<DesktopFrame> cropped_frame =
-      CreateCroppedDesktopFrame(std::move(screen_frame), window_rect);
+      CreateCroppedDesktopFrame(std::move(screen_frame), last_window_rect_);
 
   if (!cropped_frame) {
     RTC_LOG(LS_WARNING) << "Window is outside of the captured display";

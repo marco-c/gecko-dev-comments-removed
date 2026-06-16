@@ -77,6 +77,11 @@ class RTC_EXPORT CroppingWindowCapturer : public DesktopCapturer,
   std::unique_ptr<DesktopCapturer> screen_capturer_;
   SourceId selected_window_;
   WindowId excluded_window_;
+
+  
+  
+  
+  DesktopRect last_window_rect_;
 };
 
 }  
