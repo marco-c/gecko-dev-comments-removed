@@ -5,6 +5,7 @@
 #ifndef CacheFileChunk_h_
 #define CacheFileChunk_h_
 
+#include "CacheCrypto.h"
 #include "CacheFileIOManager.h"
 #include "CacheStorageService.h"
 #include "CacheHashUtils.h"
@@ -144,6 +145,12 @@ class CacheFileChunk final : public CacheFileIOListener,
   CacheHash::Hash16_t Hash() const;
   uint32_t DataSize() const;
 
+  
+  
+  
+  
+  void SetEncrypted();
+
   NS_IMETHOD OnFileOpened(CacheFileHandle* aHandle, nsresult aResult) override;
   NS_IMETHOD OnDataWritten(CacheFileHandle* aHandle, const char* aBuf,
                            nsresult aResult) override;
@@ -215,6 +222,17 @@ class CacheFileChunk final : public CacheFileIOListener,
 
   
   UniquePtr<CacheFileChunkReadHandle> mWritingStateHandle;
+
+  
+  
+  
+  
+  
+  
+  
+  bool mEncrypted{false};
+  UniquePtr<uint8_t[]> mEncryptedReadBuf;
+  UniquePtr<uint8_t[]> mEncryptedWriteBuf;
 
   
   
