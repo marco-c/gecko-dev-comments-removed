@@ -2,16 +2,16 @@
 
 
 
-
-
 #ifndef mozilla_dom_MediaError_h
 #define mozilla_dom_MediaError_h
 
-#include "mozilla/dom/HTMLMediaElement.h"
 #include "nsISupports.h"
+#include "nsString.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
+
+class HTMLMediaElement;
 
 class MediaError final : public nsISupports, public nsWrapperCache {
   ~MediaError() = default;
@@ -21,7 +21,7 @@ class MediaError final : public nsISupports, public nsWrapperCache {
              const nsACString& aMessage = nsCString());
 
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaError)
 
   HTMLMediaElement* GetParentObject() const { return mParent; }

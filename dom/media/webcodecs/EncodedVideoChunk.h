@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_EncodedVideoChunk_h
 #define mozilla_dom_EncodedVideoChunk_h
 
@@ -59,7 +57,7 @@ class EncodedVideoChunk final : public EncodedVideoChunkData,
                                 public nsISupports,
                                 public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(EncodedVideoChunk)
 
  public:

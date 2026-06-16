@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SpeechRecognitionResult_h
 #define mozilla_dom_SpeechRecognitionResult_h
 
@@ -21,7 +19,7 @@ class SpeechRecognitionResult final : public nsISupports,
  public:
   explicit SpeechRecognitionResult(SpeechRecognition* aParent);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(SpeechRecognitionResult)
 
   nsISupports* GetParentObject() const;

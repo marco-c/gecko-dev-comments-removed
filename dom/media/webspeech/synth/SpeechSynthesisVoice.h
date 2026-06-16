@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SpeechSynthesisVoice_h
 #define mozilla_dom_SpeechSynthesisVoice_h
 
@@ -24,7 +22,7 @@ class SpeechSynthesisVoice final : public nsISupports, public nsWrapperCache {
  public:
   SpeechSynthesisVoice(nsISupports* aParent, const nsAString& aUri);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(SpeechSynthesisVoice)
 
   nsISupports* GetParentObject() const;

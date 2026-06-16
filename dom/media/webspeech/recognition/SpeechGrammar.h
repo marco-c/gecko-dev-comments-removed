@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SpeechGrammar_h
 #define mozilla_dom_SpeechGrammar_h
 
@@ -24,7 +22,7 @@ class SpeechGrammar final : public nsISupports, public nsWrapperCache {
  public:
   explicit SpeechGrammar(nsISupports* aParent);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(SpeechGrammar)
 
   nsISupports* GetParentObject() const;
