@@ -11,6 +11,7 @@
 #ifndef VIDEO_VIDEO_RECEIVE_STREAM2_H_
 #define VIDEO_VIDEO_RECEIVE_STREAM2_H_
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -363,11 +364,23 @@ class VideoReceiveStream2
   std::vector<std::unique_ptr<EncodedFrame>> buffered_encoded_frames_
       RTC_GUARDED_BY(decode_sequence_checker_);
 
-  std::unique_ptr<FrameInstrumentationEvaluation> frame_evaluator_
-      RTC_GUARDED_BY(decode_callback_race_checker_);
+  std::unique_ptr<FrameInstrumentationEvaluation> frame_evaluator_;
 
   
   ScopedTaskSafety task_safety_;
+
+  
+  
+  
+  
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> post_decode_queue_;
+
+  
+  
+  
+  
+  
+  std::atomic<int> pending_post_decode_frames_ = 0;
 
   
   

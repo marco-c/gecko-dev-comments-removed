@@ -54,12 +54,12 @@ class FrameInstrumentationEvaluationImpl
   void OnInstrumentedFrame(FrameInstrumentationData data,
                            const VideoFrame& frame,
                            VideoContentType frame_type) override {
+    frame_sampler_.SetCurrentIndex(data.sequence_index());
     if (data.sample_values().empty()) {
       
       return;
     }
 
-    frame_sampler_.SetCurrentIndex(data.sequence_index());
     std::vector<HaltonFrameSampler::Coordinates> sample_coordinates =
         frame_sampler_.GetSampleCoordinatesForFrame(
             data.sample_values().size());
@@ -89,6 +89,11 @@ class FrameInstrumentationEvaluationImpl
         data.chroma_error_threshold());
 
     observer_->OnCorruptionScore(score, frame_type);
+  }
+
+  void OnSkippedInstrumentedFrame(FrameInstrumentationData data) override {
+    
+    frame_sampler_.SetCurrentIndex(data.sequence_index());
   }
 
  private:
