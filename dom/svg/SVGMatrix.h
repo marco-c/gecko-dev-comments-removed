@@ -32,8 +32,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGMATRIX_H_
 #define DOM_SVG_SVGMATRIX_H_
 
@@ -103,7 +101,7 @@ class SVGMatrix final : public nsWrapperCache {
   ~SVGMatrix() = default;
 
   const gfxMatrix& GetMatrix() const {
-    return mTransform ? mTransform->Matrixgfx() : mMatrix;
+    return mTransform ? mTransform->Transform().GetMatrix() : mMatrix;
   }
 
   void SetMatrix(const gfxMatrix& aMatrix) {
