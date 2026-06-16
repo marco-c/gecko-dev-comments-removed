@@ -195,8 +195,6 @@ def setup_zed(command_context, interactive):
 
     
     new_settings["languages"] = {"C": {"tab_size": 2}, "C++": {"tab_size": 2}}
-    
-    
     new_settings["file_types"] = {
         "Python": [
             "**/moz.build",
