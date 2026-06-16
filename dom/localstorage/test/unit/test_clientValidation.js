@@ -9,7 +9,7 @@
 
 
 add_task(async function testSteps() {
-  const principal = getDefaultPrincipal();
+  const principal = getPrincipal("http://example.com");
 
   info("Setting prefs");
 
