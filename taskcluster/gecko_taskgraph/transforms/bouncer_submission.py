@@ -123,12 +123,6 @@ def make_task_worker(config, jobs):
             item_name=job["name"],
             **{"release-level": release_level(config.params)},
         )
-        resolve_keyed_by(
-            job,
-            "bouncer-products",
-            item_name=job["name"],
-            **{"release-type": config.params["release_type"]},
-        )
 
         
         
