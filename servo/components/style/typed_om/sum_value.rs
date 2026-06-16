@@ -250,9 +250,34 @@ impl SumValue {
             },
 
             
-            NumericValue::Math(MathValue::Max(_math_max)) => {
+            NumericValue::Math(MathValue::Max(math_max)) => {
                 
-                Err(())
+                let mut args = Vec::new();
+
+                for item in math_max {
+                    let values = SumValue::try_from_numeric_value(item)?;
+
+                    if values.0.len() > 1 {
+                        return Err(());
+                    }
+
+                    args.push(values);
+                }
+                debug_assert!(!args.is_empty());
+
+                
+                if !args.iter().map(|arg| &arg.0[0].unit_map).all_equal() {
+                    return Err(());
+                }
+
+                
+                let max = args
+                    .into_iter()
+                    .map(|arg| arg.0.into_iter().next().unwrap())
+                    .max_by(|a, b| a.value.total_cmp(&b.value))
+                    .ok_or(())?;
+
+                Ok(Self(vec![max]))
             },
 
             
