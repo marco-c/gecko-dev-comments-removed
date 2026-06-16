@@ -268,6 +268,8 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   uint8_t* data = arrayObj.data_;
 
+  
+  
   if (!data) {
     MOZ_ASSERT(arrayObj.numElements_ == 0);
     return;
