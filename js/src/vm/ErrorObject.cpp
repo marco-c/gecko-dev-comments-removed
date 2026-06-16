@@ -741,43 +741,6 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   return copy.release();
 }
 
-static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
-                                         MutableHandleObject result) {
-  
-  
-  
-  
-  
-  
-  
-  
-
-  RootedObject curr(cx, obj);
-  RootedObject target(cx);
-  do {
-    target = CheckedUnwrapStatic(curr);
-    if (!target) {
-      ReportAccessDenied(cx);
-      return false;
-    }
-    if (IsErrorProtoKey(StandardProtoKeyOrNull(target))) {
-      result.set(target);
-      return true;
-    }
-
-    if (!GetPrototype(cx, curr, &curr)) {
-      return false;
-    }
-  } while (curr);
-
-  
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
-                            obj->getClass()->name);
-  return false;
-}
-
 static MOZ_ALWAYS_INLINE bool IsObject(HandleValue v) { return v.isObject(); }
 
 
@@ -789,23 +752,27 @@ bool js::ErrorObject::getStack(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
+  
   RootedObject thisObj(cx, &args.thisv().toObject());
 
-  RootedObject obj(cx);
-  if (!FindErrorInstanceOrPrototype(cx, thisObj, &obj)) {
-    return false;
-  }
+  
+  
 
-  if (!obj->is<ErrorObject>()) {
-    args.rval().setString(cx->runtime()->emptyString);
+  
+  
+  if (!thisObj->is<ErrorObject>()) {
+    args.rval().setUndefined();
     return true;
   }
 
   
   
-  JSPrincipals* principals = obj->as<ErrorObject>().realm()->principals();
 
-  RootedObject savedFrameObj(cx, obj->as<ErrorObject>().stack());
+  
+  
+  JSPrincipals* principals = thisObj->as<ErrorObject>().realm()->principals();
+
+  RootedObject savedFrameObj(cx, thisObj->as<ErrorObject>().stack());
   RootedString stackString(cx);
   if (!BuildStackString(cx, principals, savedFrameObj, &stackString)) {
     return false;
@@ -843,13 +810,36 @@ bool js::ErrorObject::setStack(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::ErrorObject::setStack_impl(JSContext* cx, const CallArgs& args) {
-  RootedObject thisObj(cx, &args.thisv().toObject());
+  
+  
+  
 
+  
   if (!args.requireAtLeast(cx, "(set stack)", 1)) {
     return false;
   }
+  if (!args[0].isString()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ERROR_STACK_NOT_STRING);
+    return false;
+  }
 
-  return DefineDataProperty(cx, thisObj, cx->names().stack, args[0]);
+  
+  
+  Rooted<JSObject*> home(
+      cx, GlobalObject::getOrCreateErrorPrototype(cx, cx->global()));
+  if (!home) {
+    return false;
+  }
+  RootedId id(cx, NameToId(cx->names().stack));
+  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), home, id,
+                                            args[0])) {
+    return false;
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
 }
 
 void js::ErrorObject::setFromWasmTrap() {
