@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_gamepad_GamepadLightIndicator_h
 #define mozilla_dom_gamepad_GamepadLightIndicator_h
 
@@ -18,7 +16,7 @@ class GamepadLightIndicator final : public nsISupports, public nsWrapperCache {
   GamepadLightIndicator(nsISupports* aParent, GamepadHandle aGamepadHandle,
                         uint32_t aIndex);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(GamepadLightIndicator)
 
   static GamepadLightIndicatorType DefaultType() {

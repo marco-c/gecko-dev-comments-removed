@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_gamepad_Gamepad_h
 #define mozilla_dom_gamepad_Gamepad_h
 
@@ -47,7 +45,7 @@ class Gamepad final : public nsISupports, public nsWrapperCache {
           uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
           uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Gamepad)
 
   void SetConnected(bool aConnected);
