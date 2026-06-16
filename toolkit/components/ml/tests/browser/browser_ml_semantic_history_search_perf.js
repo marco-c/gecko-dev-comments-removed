@@ -38,10 +38,18 @@ const perfMetadata = {
 };
 
 requestLongerTimeout(45);
+
+
+
+
+const CUSTOM_EMBEDDER_MODEL = "Xenova/all-MiniLM-L6-v2";
+const CUSTOM_EMBEDDER_DIM = 384;
+
 const CUSTOM_EMBEDDER_OPTIONS = {
   taskName: "feature-extraction",
   featureId: "simple-text-embedder",
-  modelId: "Xenova/all-MiniLM-L6-v2",
+  modelId: CUSTOM_EMBEDDER_MODEL,
+  embeddingDimension: CUSTOM_EMBEDDER_DIM,
   dtype: "q8",
   modelRevision: "main",
   numThreads: 2,
@@ -229,6 +237,9 @@ async function prepareSemanticSearchTest({
       ["browser.ml.modelHubRootUrl", modelHubRootUrl],
       ["javascript.options.wasm_lazy_tiering", true],
       ["browser.ml.logLevel", "Info"],
+      ["places.semanticHistory.embeddingType", "contextual"],
+      ["browser.ml.embedGen.textEmbeddingSize", CUSTOM_EMBEDDER_DIM],
+      ["browser.ml.embedGen.textEmbeddingFeatureModel", CUSTOM_EMBEDDER_MODEL],
     ],
   });
 
@@ -256,6 +267,7 @@ async function prepareSemanticSearchTest({
     canUseSemanticStub.restore();
   });
 
+  
   semanticManager.embedder.options = CUSTOM_EMBEDDER_OPTIONS;
   await semanticManager.embedder.ensureEngine();
 
