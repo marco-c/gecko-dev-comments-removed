@@ -35,7 +35,6 @@ class HTMLCollection;
 class HTMLElementOrLong;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
-class HTMLSelectedContentElement;
 
 
 
@@ -159,7 +158,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   using IgnoredOptionList = Span<RefPtr<HTMLOptionElement>>;
   HTMLOptionElement* GetSelectedOption(IgnoredOptionList = {}) const;
-  void SetSelectedIndex(int32_t aIdx);
+  void SetSelectedIndex(int32_t aIdx) { SetSelectedIndexInternal(aIdx, true); }
   void GetValue(nsAString& aValue) const;
   void SetValue(const nsAString& aValue);
 
@@ -192,7 +191,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   bool RestoreState(PresState* aState) override;
 
   
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Reset() override;
+  NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
 
   void FieldSetDisabledChanged(bool aNotify) override;
@@ -303,35 +302,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   void SelectedContentTextMightHaveChanged(bool aNotify = true,
                                            IgnoredOptionList = {});
 
-  
-  
-  
-  
-  void RunSelectednessSettingAlgorithm(bool aNotify = true,
-                                       bool aInsertionOrRemovalSteps = false,
-                                       IgnoredOptionList aIgnored = {});
-
-  
-  
-  void ScheduleSelectedContentUpdate();
-  
-  
-  
-  
-  
-  
-  
-  void ScheduleSelectedContentUpdateScriptRunner(bool aForceUpdate = false);
-
-  
-  MOZ_CAN_RUN_SCRIPT void UpdateDescendantSelectedContentElements();
-  
-  MOZ_CAN_RUN_SCRIPT void UpdateSelectedContentElement(
-      HTMLSelectedContentElement* aSelectedContent);
-  
-  MOZ_CAN_RUN_SCRIPT void CloneOptionIntoSelectedContent(
-      HTMLOptionElement* aOption, HTMLSelectedContentElement* aSelectedContent);
-
  protected:
   virtual ~HTMLSelectElement();
 
@@ -348,6 +318,13 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
   void FindSelectedIndex(int32_t aStartIndex, bool aNotify);
+  
+
+
+
+
+
+  bool TrySelectSomething(bool aNotify, IgnoredOptionList aIgnore = {});
   
 
 
@@ -466,19 +443,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;
   bool mControlSelectMode : 1 = false;
-  
-
-
-
-
-  bool mSelectedContentUpdatePending : 1 = false;
-  
-
-
-
-
-
-  bool mIsUpdatingSelectedContent : 1 = false;
   
 
 
