@@ -166,7 +166,7 @@ void ClearInactiveStateStart();
 void SetInactiveStateStart();
 
 nsresult SetRestartArgs(int argc, char** argv);
-nsresult SetupExtraData(nsIFile* aAppDataDirectory, const nsACString& aBuildID);
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory);
 
 nsresult RegisterAppMemory(void* ptr, size_t length);
 nsresult UnregisterAppMemory(void* ptr);
@@ -269,6 +269,17 @@ bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
 #if defined(XP_WIN)
 bool ChildProcessProxyRendezvous(GeckoChildID aID, DWORD aPid, HANDLE aHandle);
 #endif  
+
+
+
+
+
+
+
+
+
+
+
 
 
 MOZ_EXPORT bool SetRemoteExceptionHandler(int& aArgc, char** aArgv);

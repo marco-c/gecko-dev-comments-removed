@@ -353,12 +353,14 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   bool exceptionHandlerIsSet = false;
   if (!CrashReporter::IsDummy()) {
-    exceptionHandlerIsSet =
-        CrashReporter::SetRemoteExceptionHandler(aArgc, aArgv);
+    if (geckoargs::sCrashReporter.IsPresent(aArgc, aArgv)) {
+      exceptionHandlerIsSet =
+          CrashReporter::SetRemoteExceptionHandler(aArgc, aArgv);
 
-    if (!exceptionHandlerIsSet) {
-      
-      NS_WARNING("Could not setup crash reporting");
+      if (!exceptionHandlerIsSet) {
+        
+        NS_WARNING("Could not setup crash reporting");
+      }
     } else {
       
       

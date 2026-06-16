@@ -2170,15 +2170,6 @@ static nsresult GetOrInit(nsIFile* aDir, const nsACString& filename,
 }
 
 
-
-static nsresult InitInstallTime(nsACString& aInstallTime) {
-  time_t t = time(nullptr);
-  aInstallTime = nsPrintfCString("%" PRIu64, static_cast<uint64_t>(t));
-
-  return NS_OK;
-}
-
-
 static nsresult EnsureDirectoryExists(nsIFile* dir) {
   nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0700);
 
@@ -2229,8 +2220,7 @@ static nsresult SetupCrashReporterDirectory(nsIFile* aAppDataDirectory,
 
 
 
-nsresult SetupExtraData(nsIFile* aAppDataDirectory,
-                        const nsACString& aBuildID) {
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory) {
   nsCOMPtr<nsIFile> dataDirectory;
   nsresult rv =
       SetupCrashReporterDirectory(aAppDataDirectory, "Crash Reports",
@@ -2248,10 +2238,17 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
     return rv;
   }
 
-  nsAutoCString data;
-  if (NS_SUCCEEDED(GetOrInit(dataDirectory, "InstallTime"_ns + aBuildID, data,
-                             InitInstallTime))) {
-    RecordAnnotationNSCString(Annotation::InstallTime, data);
+  nsAutoString xreDirPath;
+#if defined(MOZ_WIDGET_ANDROID)
+  aXreDirectory->GetPath(xreDirPath);
+#endif  
+
+  uint64_t install_time = get_install_time(
+      xreDirPath.IsEmpty()
+          ? nullptr
+          : mozilla::BitwiseCast<const BreakpadChar*>(xreDirPath.get()));
+  if (install_time != 0) {
+    RecordAnnotationU64(Annotation::InstallTime, install_time);
   }
 
   
@@ -2259,8 +2256,10 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
   
   
   
-  if (NS_SUCCEEDED(GetOrInit(dataDirectory, "LastCrash"_ns, data, nullptr))) {
-    lastCrashTime = (time_t)atol(data.get());
+  nsAutoCString last_crash_time;
+  if (NS_SUCCEEDED(
+          GetOrInit(dataDirectory, "LastCrash"_ns, last_crash_time, nullptr))) {
+    lastCrashTime = (time_t)atol(last_crash_time.get());
   }
 
   
@@ -3344,17 +3343,6 @@ bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
                              GeckoChildID aID) {
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   if (gCrashHelperClient) {
-    auto childNotificationPipe = CrashReporter::GetChildNotificationPipe();
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
-    geckoargs::sCrashReporter.Put(childNotificationPipe, aArgs);
-#else
-    if (!childNotificationPipe) {
-      NS_WARNING("Could not create the child crash notification pipe");
-      return false;
-    }
-    geckoargs::sCrashReporter.Put(std::move(childNotificationPipe), aArgs);
-#endif  
-
     RawIPCConnector connector = {};
     if (!register_child_ipc_channel(gCrashHelperClient, aID, &connector)) {
       return false;
@@ -3385,6 +3373,18 @@ bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
 
     geckoargs::sCrashHelper.Put(std::move(endpoint), aArgs);
 #endif
+
+    auto childNotificationPipe = CrashReporter::GetChildNotificationPipe();
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
+    geckoargs::sCrashReporter.Put(childNotificationPipe, aArgs);
+#else
+    if (!childNotificationPipe) {
+      NS_WARNING("Could not create the child crash notification pipe");
+      return false;
+    }
+    geckoargs::sCrashReporter.Put(std::move(childNotificationPipe), aArgs);
+#endif  
+
     return true;
   }
 
@@ -3405,35 +3405,23 @@ bool ChildProcessProxyRendezvous(GeckoChildID aID, DWORD aPid, HANDLE aHandle) {
 
 bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
-  auto crash_pipe = geckoargs::sCrashReporter.Get(aArgc, aArgv);
-
-  if (crash_pipe.isNothing()) {
-    return false;
-  }
+  auto crash_pipe = geckoargs::sCrashReporter.Get(aArgc, aArgv).extract();
 
 #if defined(XP_DARWIN)
-  auto send_right = geckoargs::sCrashHelperSend.Get(aArgc, aArgv);
-  auto recv_right = geckoargs::sCrashHelperRecv.Get(aArgc, aArgv);
-
-  if (send_right.isNothing() || recv_right.isNothing()) {
-    return false;
-  }
+  auto send_right = geckoargs::sCrashHelperSend.Get(aArgc, aArgv).extract();
+  auto recv_right = geckoargs::sCrashHelperRecv.Get(aArgc, aArgv).extract();
 
   RawIPCConnector raw_connector = {
-      .send = send_right->release(),
-      .recv = recv_right->release(),
+      .send = send_right.release(),
+      .recv = recv_right.release(),
   };
 #else
-  auto endpoint = geckoargs::sCrashHelper.Get(aArgc, aArgv);
-
-  if (endpoint.isNothing()) {
-    return false;
-  }
+  auto endpoint = geckoargs::sCrashHelper.Get(aArgc, aArgv).extract();
 
 #  if defined(XP_WIN)
-  RawIPCConnector raw_connector = {.handle = endpoint->release()};
+  RawIPCConnector raw_connector = {.handle = endpoint.release()};
 #  else
-  RawIPCConnector raw_connector = {.socket = endpoint->release()};
+  RawIPCConnector raw_connector = {.socket = endpoint.release()};
 #  endif  
 #endif    
 
@@ -3462,7 +3450,7 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
       nullptr,  
       nullptr,  
       google_breakpad::ExceptionHandler::HANDLER_ALL, GetMinidumpType(),
-      (const wchar_t*)NS_ConvertUTF8toUTF16(*crash_pipe).get(),
+      (const wchar_t*)NS_ConvertUTF8toUTF16(crash_pipe).get(),
       nullptr  
   );
   gExceptionHandler->set_handle_debug_exceptions(true);
@@ -3479,14 +3467,14 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
                                             nullptr,  
                                             nullptr,  
                                             true,     
-                                            crash_pipe->release());
+                                            crash_pipe.release());
 #elif defined(XP_MACOSX)
   gExceptionHandler =
       new google_breakpad::ExceptionHandler("", ChildFilter,
                                             nullptr,  
                                             nullptr,  
                                             true,     
-                                            *crash_pipe);
+                                            crash_pipe);
 #endif
 
   RecordMainThreadId();
