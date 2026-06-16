@@ -252,6 +252,17 @@ enum class SdpMungingOutcome {
 
 
 
+enum SdpBandwidthCategory {
+  kSdpBandwidthParseFailure = 0,
+  kSdpBandwidthNegativeOne = 1,
+  kSdpBandwidthZero = 2,
+  kSdpBandwidthSmall = 3,  
+  kSdpBandwidthLarge = 4,  
+  kSdpBandwidthMax
+};
+
+
+
 
 
 }  
