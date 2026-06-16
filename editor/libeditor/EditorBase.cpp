@@ -1287,7 +1287,10 @@ void EditorBase::EndPlaceholderTransaction(
       if (!mComposition) {
         NotifyEditorObservers(eNotifyEditorObserversOfEnd);
       }
-    } else {
+    } else if (!mComposition) {
+      
+      
+      
       NotifyEditorObservers(eNotifyEditorObserversOfCancel);
     }
   }
@@ -7064,8 +7067,12 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent(
   }
   OwningNonNull<EditorBase> editorBase = mEditorBase;
   EditorInputType inputType = ToInputType(mEditAction);
-  if (targetElement->IsHTMLElement(nsGkAtoms::canvas) &&
-      targetElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+  if (targetElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT) &&
+      (targetElement->IsHTMLElement(nsGkAtoms::canvas) ||
+       mEditAction == EditAction::eUpdateComposition ||
+       mEditAction == EditAction::eUpdateCompositionToCommit)) {
+    
+    
     
     mTargetRanges.Clear();
   } else if (editorBase->IsHTMLEditor() && mTargetRanges.IsEmpty()) {
