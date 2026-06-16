@@ -251,11 +251,6 @@ constexpr T RoundUp(T x) {
   return RoundDown<m, T>(static_cast<T>(x + (m - 1)));
 }
 
-
-
-template <typename... Args>
-void USE([[maybe_unused]] Args&&...) {};
-
 namespace base {
 
 
@@ -265,6 +260,21 @@ using uc16 = char16_t;
 using uc32 = uint32_t;
 
 constexpr int kUC16Size = sizeof(base::uc16);
+
+
+
+
+
+
+struct Use {
+  template <typename T>
+  Use(T&&) {}  
+};
+#define USE(...)                                                   \
+  do {                                                             \
+    ::v8::base::Use unused_tmp_array_for_use_macro[]{__VA_ARGS__}; \
+    (void)unused_tmp_array_for_use_macro;                          \
+  } while (false)
 
 
 
