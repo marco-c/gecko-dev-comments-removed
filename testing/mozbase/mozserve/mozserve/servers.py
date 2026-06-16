@@ -96,23 +96,26 @@ class Http3Server:
                 )
             self._http3ServerProc["http3Server"] = process
 
-            
-            
-            msg = process.stdout.readline()
-            self._log.info("mozserve | http3 server msg: %s" % msg)
             name = "http3server"
-            t1 = Thread(
-                target=self.read_streams,
-                args=(name, process, process.stdout),
-                daemon=True,
-            )
-            t1.start()
+            
+            
+            
             t2 = Thread(
                 target=self.read_streams,
                 args=(name, process, process.stderr),
                 daemon=True,
             )
             t2.start()
+            
+            
+            msg = process.stdout.readline()
+            self._log.info("mozserve | http3 server msg: %s" % msg)
+            t1 = Thread(
+                target=self.read_streams,
+                args=(name, process, process.stdout),
+                daemon=True,
+            )
+            t1.start()
             if "server listening" in msg:
                 searchObj = re.search(
                     r"HTTP3 server listening on ports ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+) and ([0-9]+)."
