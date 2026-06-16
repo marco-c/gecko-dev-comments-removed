@@ -399,12 +399,11 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-
-  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
-                                const nsACString& aFontName,
-                                const WeightRange& aWeightForEntry,
-                                const StretchRange& aStretchForEntry,
-                                const SlantStyleRange& aStyleForEntry);
+  already_AddRefed<gfxFontEntry> LookupLocalFont(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry);
 
   
 

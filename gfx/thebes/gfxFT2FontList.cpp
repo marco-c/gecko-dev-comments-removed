@@ -1846,7 +1846,7 @@ gfxFontEntry* gfxFT2FontList::CreateFontEntry(fontlist::Face* aFace,
 
 
 
-gfxFontEntry* gfxFT2FontList::LookupLocalFont(
+already_AddRefed<gfxFontEntry> gfxFT2FontList::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
@@ -1903,7 +1903,7 @@ searchDone:
     return nullptr;
   }
 
-  FT2FontEntry* fe = FT2FontEntry::CreateFontEntry(
+  RefPtr<gfxFontEntry> fe = FT2FontEntry::CreateFontEntry(
       fontEntry->Name(), fontEntry->mFilename.get(), fontEntry->mFTFontIndex,
       nullptr);
   if (fe) {
@@ -1913,7 +1913,7 @@ searchDone:
     fe->mIsLocalUserFont = true;
   }
 
-  return fe;
+  return fe.forget();
 }
 
 FontFamily gfxFT2FontList::GetDefaultFontForPlatform(
