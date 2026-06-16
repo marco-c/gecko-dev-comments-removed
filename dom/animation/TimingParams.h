@@ -78,9 +78,10 @@ struct TimingParams {
   
   
   
-  template <class DoubleOrString>
-  static Maybe<StickyTimeDuration> ParseDuration(DoubleOrString& aDuration,
-                                                 ErrorResult& aRv) {
+  
+  template <class DoubleOrCSSNumericValueOrString>
+  static Maybe<StickyTimeDuration> CheckedDuration(
+      DoubleOrCSSNumericValueOrString& aDuration, ErrorResult& aRv) {
     Maybe<StickyTimeDuration> result;
     if (aDuration.IsUnrestrictedDouble()) {
       double durationInMs = aDuration.GetAsUnrestrictedDouble();
@@ -90,6 +91,10 @@ struct TimingParams {
         nsPrintfCString err("Duration (%g) must be nonnegative", durationInMs);
         aRv.ThrowTypeError(err);
       }
+    } else if (aDuration.IsCSSNumericValue()) {
+      
+      
+      aRv.ThrowTypeError("Duration is not settable as a CSSNumericValue.");
     } else if (!aDuration.GetAsString().EqualsLiteral("auto")) {
       aRv.ThrowTypeError<dom::MSG_INVALID_DURATION_ERROR>(
           NS_ConvertUTF16toUTF8(aDuration.GetAsString()));

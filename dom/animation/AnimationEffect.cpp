@@ -8,8 +8,10 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationEffectBinding.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MutationObservers.h"
+#include "mozilla/dom/ScrollTimeline.h"  
 #include "nsDOMMutationObserver.h"
 
 namespace mozilla::dom {
@@ -317,6 +319,8 @@ void AnimationEffect::GetTiming(EffectTiming& aRetVal) const {
   GetEffectTimingDictionary(SpecifiedTiming(), aRetVal);
 }
 
+
+
 void AnimationEffect::GetComputedTimingAsDict(
     ComputedEffectTiming& aRetVal) const {
   
@@ -332,13 +336,39 @@ void AnimationEffect::GetComputedTimingAsDict(
   ComputedTiming computedTiming = GetComputedTimingAt(
       currentTime, NormalizedTiming(), playbackRate, progressTimelinePosition);
 
-  aRetVal.mDuration.SetAsUnrestrictedDouble() =
-      computedTiming.mDuration.ToMilliseconds();
+  const bool hasProgressTimeline =
+      mAnimation && mAnimation->AcceptsPercentageBasedTime();
+  
+  auto* progressGlobal =
+      hasProgressTimeline ? mAnimation->GetParentObject() : nullptr;
+
+  if (progressGlobal) {
+    aRetVal.mDuration.SetAsCSSNumericValue() = MakeRefPtr<CSSUnitValue>(
+        progressGlobal,
+        computedTiming.mDuration.ToMilliseconds() /
+            static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0,
+        "percent"_ns);
+  } else {
+    aRetVal.mDuration.SetAsUnrestrictedDouble() =
+        computedTiming.mDuration.ToMilliseconds();
+  }
+  
   aRetVal.mFill = computedTiming.mFill;
-  aRetVal.mActiveDuration = computedTiming.mActiveDuration.ToMilliseconds();
-  aRetVal.mEndTime = computedTiming.mEndTime.ToMilliseconds();
-  aRetVal.mLocalTime =
-      AnimationUtils::TimeDurationToDouble(currentTime, mRTPCallerType);
+  AnimationUtils::DoubleToCSSNumberish(
+      computedTiming.mActiveDuration.ToMilliseconds(), hasProgressTimeline,
+      progressGlobal, aRetVal.mActiveDuration.Construct());
+  AnimationUtils::DoubleToCSSNumberish(computedTiming.mEndTime.ToMilliseconds(),
+                                       hasProgressTimeline, progressGlobal,
+                                       aRetVal.mEndTime.Construct());
+  Nullable<OwningCSSNumberish>& localTime = aRetVal.mLocalTime.Construct();
+  if (currentTime.IsNull()) {
+    localTime.SetNull();
+  } else {
+    AnimationUtils::DoubleToCSSNumberish(
+        AnimationUtils::TimeDurationToDouble(currentTime, mRTPCallerType)
+            .Value(),
+        hasProgressTimeline, progressGlobal, localTime.SetValue());
+  }
   aRetVal.mProgress = computedTiming.mProgress;
 
   if (!aRetVal.mProgress.IsNull()) {

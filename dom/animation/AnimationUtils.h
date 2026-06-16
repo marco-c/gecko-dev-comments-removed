@@ -69,6 +69,13 @@ class AnimationUtils {
   
   
   
+  static void DoubleToCSSNumberish(double aMs, bool aProgressBased,
+                                   nsIGlobalObject* aGlobal,
+                                   dom::OwningCSSNumberish& aRetVal);
+
+  
+  
+  
   
   
   static void DurationToCSSNumberish(

@@ -78,7 +78,7 @@ TimingParams TimingParams::FromEffectTiming(
   TimingParams result;
 
   Maybe<StickyTimeDuration> duration =
-      TimingParams::ParseDuration(aEffectTiming.mDuration, aRv);
+      TimingParams::CheckedDuration(aEffectTiming.mDuration, aRv);
   if (aRv.Failed()) {
     return result;
   }
@@ -123,7 +123,7 @@ TimingParams TimingParams::MergeOptionalEffectTiming(
   Maybe<StickyTimeDuration> duration;
   if (aEffectTiming.mDuration.WasPassed()) {
     duration =
-        TimingParams::ParseDuration(aEffectTiming.mDuration.Value(), aRv);
+        TimingParams::CheckedDuration(aEffectTiming.mDuration.Value(), aRv);
     if (aRv.Failed()) {
       return result;
     }
@@ -221,14 +221,8 @@ bool TimingParams::operator==(const TimingParams& aOther) const {
 
 
 
-
-
-
 TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {
-  MOZ_ASSERT(aTimelineDuration,
-             "the timeline duration of scroll-timeline is always non-zero now");
-
   TimingParams normalizedTiming(*this);
 
   
@@ -238,9 +232,6 @@ TimingParams TimingParams::Normalize(
     
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    
-    
-    
     normalizedTiming.mDuration.emplace(aTimelineDuration);
     normalizedTiming.Update();
     return normalizedTiming;
