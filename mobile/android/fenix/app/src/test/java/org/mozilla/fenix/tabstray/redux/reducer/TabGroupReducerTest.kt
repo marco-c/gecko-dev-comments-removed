@@ -22,6 +22,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class TabGroupReducerTest {
     @Test
@@ -614,13 +615,22 @@ class TabGroupReducerTest {
     }
 
     @Test
-    fun `WHEN the user completes a drag and drop action then the state is unchanged`() {
-        val initialState = TabsTrayState()
+    fun `WHEN the user completes a drag and drop action THEN the normal tabs page focus indicator is re-enabled`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                itemFocusIndicatorEnabled = false,
+            ),
+        )
+        val expectedState = initialState.copy(
+            normalTabsState = initialState.normalTabsState.copy(
+                itemFocusIndicatorEnabled = true,
+            ),
+        )
         val resultState = TabGroupActionReducer.reduce(
             state = TabsTrayState(),
             action = TabGroupAction.DragAndDropCompleted(sourceId = "54321", destinationId = "12345"),
         )
-        assertEquals(expected = initialState, actual = resultState)
+        assertEquals(expected = expectedState, actual = resultState)
     }
 
     @Test
@@ -649,5 +659,19 @@ class TabGroupReducerTest {
             action = TabGroupAction.DragAndDropTwoTabs(sourceTabId = draggedId, destinationTabId = destinationId),
         )
         assertEquals(expected = expectedState, actual = resultState)
+    }
+
+    @Test
+    fun `WHEN OnboardingDismissed THEN tab group onboarding is disabled in the config`() {
+        val initialState = TabsTrayState(
+            config = TabsTrayState.TabsTrayConfig(tabGroupsOnboardingEnabled = true),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.OnboardingDismissed,
+        )
+
+        assertFalse(resultState.config.tabGroupsOnboardingEnabled)
     }
 }
