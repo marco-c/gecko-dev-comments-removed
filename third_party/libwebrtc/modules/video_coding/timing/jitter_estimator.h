@@ -132,13 +132,7 @@ class JitterEstimator {
 
   
   
-  
-  
-  
-  
-  
-  TimeDelta GetJitterEstimate(double rtt_multiplier,
-                              std::optional<TimeDelta> rtt_mult_add_cap);
+  TimeDelta GetEstimate();
 
   
   void FrameNacked();
