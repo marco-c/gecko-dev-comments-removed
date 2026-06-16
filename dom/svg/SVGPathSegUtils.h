@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGPATHSEGUTILS_H_
 #define DOM_SVG_SVGPATHSEGUTILS_H_
 
@@ -45,14 +43,6 @@ struct MOZ_STACK_CLASS SVGPathTraversalState {
 
   enum class TraversalMode { UpdateAll, UpdateOnlyStartAndCurrentPos };
 
-  SVGPathTraversalState()
-      : start(0.0, 0.0),
-        pos(0.0, 0.0),
-        cp1(0.0, 0.0),
-        cp2(0.0, 0.0),
-        length(0.0),
-        mode(TraversalMode::UpdateAll) {}
-
   bool ShouldUpdateLengthAndControlPoints() const {
     return mode == TraversalMode::UpdateAll;
   }
@@ -69,9 +59,11 @@ struct MOZ_STACK_CLASS SVGPathTraversalState {
               
               
 
-  float length;  
+  
+  double length = 0.0;
 
-  TraversalMode mode;  
+  
+  TraversalMode mode = TraversalMode::UpdateAll;
 };
 
 
@@ -98,21 +90,22 @@ class SVGPathSegUtils {
 
   static void TraversePathSegment(const StylePathCommand&,
                                   SVGPathTraversalState&);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<gfx::Rect> SVGPathToAxisAlignedRect(
+      Span<const StylePathCommand>);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand>);
 
 }  
 
