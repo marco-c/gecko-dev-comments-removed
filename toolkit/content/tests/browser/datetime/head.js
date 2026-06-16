@@ -109,6 +109,22 @@ class DateTimeTestHelper {
 
 
 
+  getSpinnerOptions(element) {
+    return [
+      ...new Set(
+        helper
+          .getChildren(element)
+          .filter(item => !item.classList.contains("disabled"))
+          .map(item => item.textContent)
+      ),
+    ];
+  }
+
+  
+
+
+
+
   click(element) {
     EventUtils.synthesizeMouseAtCenter(element, {}, this.frame.contentWindow);
   }

@@ -19,9 +19,34 @@
 
 
 
+
+
+
 function TimeKeeper(props) {
   this.props = props;
   this.state = { time: new Date(0), ranges: {} };
+  if (this.props.type == "datetime-local") {
+    if (
+      this.props.year !== undefined &&
+      this.props.month !== undefined &&
+      this.props.day !== undefined
+    ) {
+      this.setState({
+        year: this.props.year,
+        month: this.props.month,
+        day: this.props.day,
+      });
+      return;
+    }
+    
+    
+    const today = new Date();
+    this.setState({
+      year: today.getFullYear(),
+      month: today.getMonth(),
+      day: today.getDate(),
+    });
+  }
 }
 
 {
@@ -85,9 +110,25 @@ function TimeKeeper(props) {
 
 
 
+
+
+
     setState(timeState) {
       const { type, min, max } = this.props;
-      const { hour, minute, second, millisecond } = timeState;
+      const { year, month, day, hour, minute, second, millisecond } = timeState;
+      let dateChanged;
+
+      if (year !== undefined && month !== undefined && day !== undefined) {
+        dateChanged =
+          this.state.time.getUTCFullYear() != year ||
+          this.state.time.getUTCMonth() != month ||
+          this.state.time.getUTCDate() != day;
+        if (dateChanged) {
+          this.state.time.setUTCFullYear(year);
+          this.state.time.setUTCMonth(month);
+          this.state.time.setUTCDate(day);
+        }
+      }
 
       if (hour != undefined) {
         this.state.time.setUTCHours(hour);
@@ -111,7 +152,13 @@ function TimeKeeper(props) {
           : this.state.time < min || this.state.time > max;
       this.state.isInvalid = this.state.isOutOfRange || this.state.isOffStep;
 
-      this._setRanges(this.dayPeriod, this.hour, this.minute, this.second);
+      this._setRanges(
+        this.dayPeriod,
+        this.hour,
+        this.minute,
+        this.second,
+        dateChanged
+      );
     },
 
     
@@ -176,26 +223,33 @@ function TimeKeeper(props) {
 
 
 
-    _setRanges(dayPeriod, hour, minute, second) {
-      this.state.ranges.dayPeriod =
-        this.state.ranges.dayPeriod || this._getDayPeriodRange();
 
-      if (this.state.dayPeriod != dayPeriod) {
+    _setRanges(dayPeriod, hour, minute, second, dateChanged = false) {
+      if (this.state.ranges.dayPeriod === undefined || dateChanged) {
+        this.state.ranges.dayPeriod = this._getDayPeriodRange();
+      }
+
+      if (this.state.dayPeriod != dayPeriod || dateChanged) {
         this.state.ranges.hours = this._getHoursRange(dayPeriod);
       }
 
-      if (this.state.hour != hour) {
+      if (this.state.hour != hour || dateChanged) {
         this.state.ranges.minutes = this._getMinutesRange(hour);
       }
 
-      if (this.state.hour != hour || this.state.minute != minute) {
+      if (
+        this.state.hour != hour ||
+        this.state.minute != minute ||
+        dateChanged
+      ) {
         this.state.ranges.seconds = this._getSecondsRange(hour, minute);
       }
 
       if (
         this.state.hour != hour ||
         this.state.minute != minute ||
-        this.state.second != second
+        this.state.second != second ||
+        dateChanged
       ) {
         this.state.ranges.milliseconds = this._getMillisecondsRange(
           hour,
@@ -312,11 +366,24 @@ function TimeKeeper(props) {
 
     _getSteps(startValue, endValue, minStep, formatter) {
       const { type, min, max, step } = this.props;
+      const { time: currentTime } = this.state;
       
       
       
       const timeStep = Math.max(minStep, step);
 
+      if (type == "datetime-local") {
+        
+        
+        
+        const currentDate = Date.UTC(
+          currentTime.getUTCFullYear(),
+          currentTime.getUTCMonth(),
+          currentTime.getUTCDate()
+        );
+        startValue += currentDate;
+        endValue += currentDate;
+      }
       
       let time =
         min.valueOf() +

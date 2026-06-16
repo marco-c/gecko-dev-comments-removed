@@ -14,10 +14,19 @@ function TimePicker(context) {
 
 {
   const DAY_PERIOD_IN_HOURS = 12,
-    DAY_IN_MS = 86400000;
+    DAY_IN_MS = 86400000,
+    
+    
+    MIN_DATE = -62135596800000,
+    
+    
+    MAX_DATE = 8640000000000000;
 
   TimePicker.prototype = {
     
+
+
+
 
 
 
@@ -76,15 +85,25 @@ function TimePicker(context) {
 
 
     _setDefaultState() {
-      const { type, hour, minute, min, max, step, format } = this.props;
+      const { type, year, month, day, hour, minute, min, max, step, format } =
+        this.props;
       const now = new Date();
 
       let timerHour = hour == undefined ? now.getHours() : hour;
       let timerMinute = minute == undefined ? now.getMinutes() : minute;
+      let defaultMin = 0;
+      let defaultMax = DAY_IN_MS - 1;
+      if (type == "datetime-local") {
+        defaultMin = MIN_DATE;
+        defaultMax = MAX_DATE;
+      }
       let timeKeeper = new TimeKeeper({
         type,
-        min: new Date(Number.isNaN(min) ? 0 : min),
-        max: new Date(Number.isNaN(max) ? DAY_IN_MS - 1 : max),
+        year,
+        month,
+        day,
+        min: new Date(Number.isNaN(min) ? defaultMin : min),
+        max: new Date(Number.isNaN(max) ? defaultMax : max),
         step,
         format: format || "12",
       });
@@ -357,6 +376,27 @@ function TimePicker(context) {
       switch (event.data.name) {
         case "PickerInit": {
           this.init(event.data.detail);
+          break;
+        }
+        case "PickerPopupChanged": {
+          
+          
+          if (this.props?.type != "datetime-local") {
+            break;
+          }
+          if (
+            event.data.detail?.year === undefined ||
+            event.data.detail?.month === undefined ||
+            event.data.detail?.day === undefined
+          ) {
+            break;
+          }
+          this.state.timeKeeper?.setState({
+            year: event.data.detail.year,
+            month: event.data.detail.month,
+            day: event.data.detail.day,
+          });
+          this._setComponentStates();
           break;
         }
       }
