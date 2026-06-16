@@ -122,6 +122,37 @@ function getRequestPriorityAsText(priority) {
   return "Lowest";
 }
 
+
+
+
+
+
+
+
+
+function getRequestPriorityAsNumber(priority) {
+  switch (priority) {
+    case "Highest":
+      return Ci.nsISupportsPriority.PRIORITY_HIGHEST;
+    case "VeryHigh": 
+      return Ci.nsISupportsPriority.PRIORITY_HIGHEST;
+    case "High":
+      return Ci.nsISupportsPriority.PRIORITY_HIGH;
+    case "Normal":
+      return Ci.nsISupportsPriority.PRIORITY_NORMAL;
+    case "Medium": 
+      return Ci.nsISupportsPriority.PRIORITY_NORMAL;
+    case "Low":
+      return Ci.nsISupportsPriority.PRIORITY_LOW;
+    case "Lowest":
+      return Ci.nsISupportsPriority.PRIORITY_LOWEST;
+    case "VeryLow": 
+      return Ci.nsISupportsPriority.PRIORITY_LOWEST;
+    default:
+      return null;
+  }
+}
+
 module.exports = {
   getFormattedIPAndPort,
   getFormattedSize,
@@ -129,4 +160,5 @@ module.exports = {
   getSizeWithDecimals,
   getTimeWithDecimals,
   getRequestPriorityAsText,
+  getRequestPriorityAsNumber,
 };
