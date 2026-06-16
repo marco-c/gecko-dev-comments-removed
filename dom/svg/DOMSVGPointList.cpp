@@ -284,7 +284,7 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::InsertItemBefore(
   
   MaybeInsertNullInAnimValListAt(aIndex);
 
-  InternalList().InsertItem(aIndex, domItem->ToSVGPoint());
+  InternalList().InsertItem(aIndex, domItem->ToPoint());
   MOZ_ALWAYS_TRUE(mItems.InsertElementAt(aIndex, domItem, fallible));
 
   
@@ -321,7 +321,7 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::ReplaceItem(
     mItems[aIndex]->RemovingFromList();
   }
 
-  InternalList()[aIndex] = domItem->ToSVGPoint();
+  InternalList()[aIndex] = domItem->ToPoint();
   mItems[aIndex] = domItem;
 
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGPointList.h"
 
 #include "SVGContentUtils.h"
@@ -28,7 +26,7 @@ void SVGPointList::GetValueAsString(nsAString& aValue) const {
     
     
     nsTextFormatter::snprintf(buf, std::size(buf), u"%g,%g",
-                              double(mItems[i].mX), double(mItems[i].mY));
+                              double(mItems[i].X()), double(mItems[i].Y()));
     
     aValue.Append(buf);
     if (i != last) {
@@ -38,14 +36,8 @@ void SVGPointList::GetValueAsString(nsAString& aValue) const {
 }
 
 nsresult SVGPointList::SetValueFromString(const nsAString& aValue) {
-  
-  
-  
-  
-
-  nsresult rv = NS_OK;
-
   SVGPointList temp;
+  bool oddNumberOfValues = false;
 
   nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace,
                                    nsTokenizerFlags::SeparatorOptional>
@@ -58,38 +50,36 @@ nsresult SVGPointList::SetValueFromString(const nsAString& aValue) {
     token.BeginReading(iter);
     token.EndReading(end);
 
-    float x;
+    float x, y;
     if (!SVGContentUtils::ParseNumber(iter, end, x)) {
-      rv = NS_ERROR_DOM_SYNTAX_ERR;
-      break;
+      return NS_ERROR_DOM_SYNTAX_ERR;
     }
 
-    float y;
     if (iter == end) {
-      if (!tokenizer.hasMoreTokens() ||
-          !SVGContentUtils::ParseNumber(tokenizer.nextToken(), y)) {
-        rv = NS_ERROR_DOM_SYNTAX_ERR;
-        break;
+      if (tokenizer.hasMoreTokens()) {
+        if (!SVGContentUtils::ParseNumber(tokenizer.nextToken(), y)) {
+          return NS_ERROR_DOM_SYNTAX_ERR;
+        }
+        temp.AppendItem(Point(x, y));
+      } else {
+        
+        oddNumberOfValues = true;
       }
     } else {
       
       
       const nsAString& leftOver = Substring(iter, end);
       if (leftOver[0] != '-' || !SVGContentUtils::ParseNumber(leftOver, y)) {
-        rv = NS_ERROR_DOM_SYNTAX_ERR;
-        break;
+        return NS_ERROR_DOM_SYNTAX_ERR;
       }
+      temp.AppendItem(Point(x, y));
     }
-    temp.AppendItem(SVGPoint(x, y));
   }
-  if (tokenizer.separatorAfterCurrentToken()) {
-    rv = NS_ERROR_DOM_SYNTAX_ERR;  
+  if (!oddNumberOfValues && tokenizer.separatorAfterCurrentToken()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;  
   }
-  nsresult rv2 = CopyFrom(temp);
-  if (NS_FAILED(rv2)) {
-    return rv2;  
-  }
-  return rv;
+  mItems = std::move(temp.mItems);
+  return NS_OK;
 }
 
 }  

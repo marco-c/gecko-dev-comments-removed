@@ -6,7 +6,6 @@
 #define DOM_SVG_DOMSVGPOINT_H_
 
 #include "DOMSVGPointList.h"
-#include "SVGPoint.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCycleCollectionParticipant.h"
@@ -62,12 +61,12 @@ class DOMSVGPoint final : public nsWrapperCache {
         mIsTranslatePoint(false),
         mIsInTearoffTable(false) {
     
-    mVal = new SVGPoint(aPt.x, aPt.y);
+    mVal = new Point(aPt);
   }
 
  private:
   
-  DOMSVGPoint(SVGPoint* aPt, SVGSVGElement* aSVGSVGElement)
+  DOMSVGPoint(Point* aPt, SVGSVGElement* aSVGSVGElement)
       : mVal(aPt),
         mOwner(ToSupports(aSVGSVGElement)),
         mListIndex(0),
@@ -82,7 +81,7 @@ class DOMSVGPoint final : public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGPoint)
 
   static already_AddRefed<DOMSVGPoint> GetTranslateTearOff(
-      SVGPoint* aVal, SVGSVGElement* aSVGSVGElement);
+      Point* aVal, SVGSVGElement* aSVGSVGElement);
 
   bool IsInList() const { return HasOwner() && !IsTranslatePoint(); }
 
@@ -127,7 +126,7 @@ class DOMSVGPoint final : public nsWrapperCache {
 
   void RemovingFromList();
 
-  SVGPoint ToSVGPoint() { return InternalItem(); }
+  Point ToPoint() { return InternalItem(); }
 
   
   float X();
@@ -168,9 +167,9 @@ class DOMSVGPoint final : public nsWrapperCache {
 
 
 
-  SVGPoint& InternalItem();
+  Point& InternalItem();
 
-  SVGPoint* mVal;              
+  Point* mVal;                 
                                
   RefPtr<nsISupports> mOwner;  
                                
