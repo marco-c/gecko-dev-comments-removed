@@ -2,14 +2,12 @@
 
 
 
-
-
-
 #include "mozilla/Range.h"  
 #include "mozilla/Span.h"   
 #include "mozilla/Utf8.h"   
 
 #include "js/CharacterEncoding.h"
+#include "js/Vector.h"
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testUTF8_badUTF8) {
@@ -229,3 +227,34 @@ BEGIN_TEST(testUTF8_LossyConversion) {
   return true;
 }
 END_TEST(testUTF8_LossyConversion)
+
+
+
+
+BEGIN_TEST(testUTF8_TwoByteInflateShrink) {
+  static constexpr size_t kRepeats = 600;
+  
+  static constexpr char16_t kCh = 0x4E2D;
+  static constexpr char kUtf8Seq[] = "\xE4\xB8\xAD";
+
+  js::Vector<char, 0, js::SystemAllocPolicy> utf8;
+  CHECK(utf8.reserve(kRepeats * 3));
+  for (size_t i = 0; i < kRepeats; i++) {
+    CHECK(utf8.append(kUtf8Seq, 3));
+  }
+
+  size_t len;
+  JS::TwoByteCharsZ utf16 = JS::UTF8CharsToNewTwoByteCharsZ(
+      cx, JS::UTF8Chars(utf8.begin(), utf8.length()), &len,
+      js::StringBufferArena);
+  CHECK(utf16);
+  CHECK(len == kRepeats);
+  char16_t* raw = utf16.get();
+  for (size_t i = 0; i < kRepeats; i++) {
+    CHECK(raw[i] == kCh);
+  }
+  CHECK(raw[kRepeats] == 0);
+  js_free(raw);
+  return true;
+}
+END_TEST(testUTF8_TwoByteInflateShrink)
