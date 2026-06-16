@@ -373,7 +373,8 @@ var SidebarController = {
   get sidebarContainer() {
     if (!this._sidebarContainer) {
       
-      this._sidebarContainer = document.getElementById("sidebar-container");
+      
+      this._sidebarContainer = document.getElementById("sidebar-main");
     }
     return this._sidebarContainer;
   },
@@ -879,7 +880,7 @@ var SidebarController = {
     [...browser.children].forEach((node, i, children) => {
       node.style.order = this._positionStart ? i + 1 : children.length - i;
     });
-    let sidebarContainer = document.getElementById("sidebar-container");
+    let sidebarContainer = document.getElementById("sidebar-main");
     let sidebarMain = document.querySelector("sidebar-main");
 
     
@@ -1200,7 +1201,7 @@ var SidebarController = {
     return Promise.allSettled(tasks);
   },
 
-  async _animateSidebarContainer() {
+  async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
     let animatingElements;
     let expandOnHoverEnabled = document.documentElement.hasAttribute(
@@ -1440,7 +1441,7 @@ var SidebarController = {
     }
 
     if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
+      this._animateSidebarMain();
     }
 
     if (expandOnToggle) {
@@ -1575,7 +1576,7 @@ var SidebarController = {
       
       if (this._state.launcherExpanded && !isHovered) {
         if (this._animationEnabled && !window.gReduceMotion) {
-          this._animateSidebarContainer();
+          this._animateSidebarMain();
         }
         this._state.launcherExpanded = false;
         await this.waitUntilStable();
@@ -2411,7 +2412,7 @@ var SidebarController = {
     contentArea.toggleAttribute("sidebar-launcher-hovered", true);
     this._state.launcherHoverActive = true;
     if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
+      this._animateSidebarMain();
     }
     this._state.launcherExpanded = true;
     this._mouseEnterDeferred.resolve();
@@ -2425,7 +2426,7 @@ var SidebarController = {
     contentArea.toggleAttribute("sidebar-launcher-hovered", false);
     this._state.launcherHoverActive = false;
     if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
+      this._animateSidebarMain();
     }
     this._state.launcherExpanded = false;
   },
@@ -2753,7 +2754,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
           !window.gReduceMotion &&
           newValue !== "expand-on-hover"
         ) {
-          SidebarController._animateSidebarContainer();
+          SidebarController._animateSidebarMain();
         }
 
         
