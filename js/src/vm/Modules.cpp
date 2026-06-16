@@ -2156,6 +2156,11 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
                                   MutableHandle<ModuleVector> stack,
                                   size_t index, size_t* indexOut) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   
   if (!module->hasCyclicModuleFields()) {
     
