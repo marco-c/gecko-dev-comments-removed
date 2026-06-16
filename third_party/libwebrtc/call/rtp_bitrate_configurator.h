@@ -14,7 +14,6 @@
 #include <optional>
 
 #include "api/transport/bitrate_settings.h"
-#include "api/units/data_rate.h"
 
 namespace webrtc {
 
@@ -49,9 +48,6 @@ class RtpBitrateConfigurator {
   std::optional<BitrateConstraints> UpdateWithClientPreferences(
       const BitrateSettings& bitrate_mask);
 
-  
-  std::optional<BitrateConstraints> UpdateWithRelayCap(DataRate cap);
-
  private:
   
   
@@ -69,9 +65,6 @@ class RtpBitrateConfigurator {
   
   
   BitrateConstraints base_bitrate_config_;
-
-  
-  DataRate max_bitrate_over_relay_ = DataRate::PlusInfinity();
 };
 }  
 
