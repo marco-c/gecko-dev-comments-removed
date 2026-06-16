@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_EventListenerManager_h_
 #define mozilla_EventListenerManager_h_
 
@@ -628,7 +626,7 @@ class EventListenerManager final : public EventListenerManagerBase {
   EventMessage GetEventMessageAndAtomForListener(const nsAString& aType,
                                                  nsAtom** aAtom);
 
-  void ProcessApzAwareEventListenerAdd();
+  void ProcessApzAwareEventListenerAdd(nsAtom* aEvent);
 
   
 
