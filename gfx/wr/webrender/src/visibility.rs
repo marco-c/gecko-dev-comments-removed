@@ -27,7 +27,6 @@ use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceInde
 use crate::prim_store::backdrop::BackdropRenderScratch;
 use crate::prim_store::borders::{ImageBorderScratch, NormalBorderScratch};
 use crate::prim_store::image::ImageScratch;
-use crate::prim_store::line_dec::LineDecorationScratch;
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
 use crate::render_backend::{DataStores, ScratchBuffer};
@@ -124,7 +123,6 @@ pub enum DrawState {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum KindScratchHandle {
     None,
-    LineDecoration(storage::Index<LineDecorationScratch>),
     NormalBorder(storage::Index<NormalBorderScratch>),
     ImageBorder(storage::Index<ImageBorderScratch>),
     Image(storage::Index<ImageScratch>),
@@ -137,13 +135,7 @@ impl KindScratchHandle {
     
     
     
-    pub fn unwrap_line_decoration(&self) -> storage::Index<LineDecorationScratch> {
-        match *self {
-            KindScratchHandle::LineDecoration(h) => h,
-            _ => panic!("kind_scratch mismatch: expected LineDecoration, got {:?}", self),
-        }
-    }
-    pub fn unwrap_normal_border(&self) -> storage::Index<NormalBorderScratch> {
+   pub fn unwrap_normal_border(&self) -> storage::Index<NormalBorderScratch> {
         match *self {
             KindScratchHandle::NormalBorder(h) => h,
             _ => panic!("kind_scratch mismatch: expected NormalBorder, got {:?}", self),
