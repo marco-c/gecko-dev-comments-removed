@@ -3,6 +3,7 @@
 
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -31,6 +32,9 @@ generated_header = """
 """
 
 
+RESPONSE_FILE_NAME_FLAG = "{{response_file_name}}"
+
+
 class MozbuildWriter:
     def __init__(self, fh):
         self._fh = fh
@@ -52,13 +56,15 @@ class MozbuildWriter:
             return raw.replace("\n", "\n" + self.indent)
         if isinstance(v, bool):
             return repr(v)
-        return f'"{v}"'
+        return json.dumps(v)
 
     def finalize(self):
         if self._library_name:
             self.write("\n")
             if self._shared_library:
-                self.write_ln(f"SharedLibrary({self.mb_serialize(self._library_name)})")
+                self.write_ln(
+                    f"GeckoSharedLibrary({self.mb_serialize(self._library_name)})"
+                )
             else:
                 self.write_ln(f"Library({self.mb_serialize(self._library_name)})")
 
@@ -82,6 +88,21 @@ class MozbuildWriter:
 
     def write_mozbuild_list(self, key, value):
         if value:
+            if key == "GeneratedFiles":
+                for generated_file in value:
+                    self.write("\n")
+                    self.write_ln("GeneratedFile(")
+                    self.indent += " " * self._indent_increment
+                    for o in generated_file["outputs"]:
+                        self.write_ln(f"{self.mb_serialize(o)},")
+                    for k, v in sorted(generated_file.items()):
+                        if k == "outputs":
+                            continue
+                        self.write_ln(f"{k}={self.mb_serialize(v)},")
+                    self.indent = self.indent[self._indent_increment :]
+                    self.write_ln(")")
+                return
+
             self.write("\n")
             self.write(self.indent + key)
             self.write(" += [\n    " + self.indent)
@@ -114,18 +135,6 @@ class MozbuildWriter:
         )
         if value:
             self.write("\n")
-            if key == "GeneratedFile":
-                self.write_ln("GeneratedFile(")
-                self.indent += " " * self._indent_increment
-                for o in value["outputs"]:
-                    self.write_ln(f"{self.mb_serialize(o)},")
-                for k, v in sorted(value.items()):
-                    if k == "outputs":
-                        continue
-                    self.write_ln(f"{k}={self.mb_serialize(v)},")
-                self.indent = self.indent[self._indent_increment :]
-                self.write_ln(")")
-                return
             for k in sorted(value.keys()):
                 v = value[k]
                 subst_vals = key, self.mb_serialize(k), self.mb_serialize(v)
@@ -157,6 +166,22 @@ class MozbuildWriter:
     def terminate_condition(self):
         assert len(self.indent) >= self._indent_increment
         self.indent = self.indent[self._indent_increment :]
+
+
+def select_gn_target(gn_target_config, target_os):
+    if isinstance(gn_target_config, str):
+        return gn_target_config
+
+    if target_os in gn_target_config:
+        return gn_target_config[target_os]
+
+    if "*" in gn_target_config:
+        return gn_target_config["*"]
+
+    raise Exception(
+        f'No gn_target configured for target_os="{target_os}". '
+        'Expected a string or a dict containing "*" and target_os overrides.'
+    )
 
 
 def find_deps(all_targets, target):
@@ -215,6 +240,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
                 "args",
                 "script",
                 "outputs",
+                "response_file_contents",
             ):
                 spec[spec_attr] = raw_spec.get(spec_attr, [])
                 if spec_attr == "outputs":
@@ -224,6 +250,14 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
                         mozpath.relpath(d, path) for d in spec[spec_attr]
                     ]
             gn_out["targets"][target_fullname] = spec
+            continue
+
+        if raw_spec["type"] == "group":
+            gn_out["targets"][target_fullname] = {
+                "type": "group",
+                "deps": raw_spec.get("deps", []),
+            }
+            continue
 
         
         if raw_spec["type"] not in ("static_library", "shared_library", "source_set"):
@@ -242,6 +276,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
             "cflags_objcc",
             "deps",
             "libs",
+            "output_name",
         ):
             spec[spec_attr] = raw_spec.get(spec_attr, [])
             if spec_attr == "defines":
@@ -267,6 +302,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
 
 def process_gn_config(
     gn_config,
+    gn_config_dir,
     topsrcdir,
     srcdir,
     non_unified_sources,
@@ -288,11 +324,47 @@ def process_gn_config(
     non_unified_sources = set([mozpath.normpath(s) for s in non_unified_sources])
 
     def target_info(fullname):
-        path, name = target_fullname.split(":")
+        path, name = fullname.split(":")
         
         
         
         return path.lstrip("//"), name + "_gn"
+
+    def get_lib_name(target_name):
+        if target_name.startswith("lib"):
+            return target_name[3:]
+        return target_name
+
+    
+    def find_lib_deps(fullname):
+        libs = []
+        seen_targets = set()
+
+        def visit(dep):
+            if dep in seen_targets:
+                return
+            seen_targets.add(dep)
+
+            dep_spec = targets.get(dep)
+            if not dep_spec:
+                return
+
+            dep_type = dep_spec["type"]
+
+            if dep_type in ("static_library", "shared_library", "source_set"):
+                _, name = target_info(dep)
+                libs.append(get_lib_name(name))
+                return
+
+            if dep_type == "group":
+                for child in dep_spec.get("deps", []):
+                    visit(child)
+
+        spec = targets[fullname]
+        for dep in spec.get("deps", []):
+            visit(dep)
+
+        return libs
 
     def resolve_path(path):
         
@@ -304,17 +376,35 @@ def process_gn_config(
         return path
 
     
+    
+    
+    def encode_response_file_content_path(path):
+        path = mozpath.normpath(mozpath.join(str(gn_config_dir), path))
+        if mozpath.basedir(path, [str(topsrcdir)]):
+            return "/" + mozpath.relpath(path, str(topsrcdir))
+        if mozpath.basedir(path, [str(gn_config_dir)]):
+            return "!/" + mozpath.join(
+                project_relsrcdir, mozpath.relpath(path, str(gn_config_dir))
+            )
+        raise Exception(
+            f'Path "{path}" is not under topsrcdir "{topsrcdir}" '
+            f'or GN config dir "{gn_config_dir}"'
+        )
+
+    
     for target_fullname, spec in targets.items():
         target_path, target_name = target_info(target_fullname)
+        target_relsrcdir = mozpath.join(project_relsrcdir, target_path, target_name)
         context_attrs = {}
+        extra_files = {}
 
-        
-        
-        name = target_name
         if spec["type"] in ("static_library", "shared_library", "source_set", "action"):
-            if name.startswith("lib"):
-                name = name[3:]
-            context_attrs["LIBRARY_NAME"] = str(name)
+            
+            
+            context_attrs["LIBRARY_NAME"] = get_lib_name(target_name)
+        elif spec["type"] == "group":
+            
+            continue
         else:
             raise Exception(
                 "The following GN target type is not currently "
@@ -326,17 +416,126 @@ def process_gn_config(
         if spec["type"] == "shared_library":
             context_attrs["FORCE_SHARED_LIB"] = True
 
+            
+            
+            
+            
+            output_name = spec.get("output_name")
+            if output_name:
+                
+                
+                
+                
+                if gn_config["mozbuild_args"]["OS_TARGET"] != "WINNT":
+                    output_name = get_lib_name(output_name)
+                context_attrs["SHARED_LIBRARY_NAME"] = output_name
+
         if spec["type"] == "action" and "script" in spec:
-            flags = [
-                resolve_path(spec["script"]),
-                resolve_path(""),
-            ] + spec.get("args", [])
-            context_attrs["GeneratedFile"] = {
-                "script": "/python/mozbuild/mozbuild/action/file_generate_wrapper.py",
-                "entry_point": "action",
-                "outputs": [resolve_path(f) for f in spec["outputs"]],
-                "flags": flags,
-            }
+            generated_files = []
+
+            if spec.get("response_file_contents"):
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                if RESPONSE_FILE_NAME_FLAG not in spec.get("args", []):
+                    raise Exception(
+                        f"{target_fullname} has response_file_contents without "
+                        f"{RESPONSE_FILE_NAME_FLAG} in args."
+                    )
+
+                input_response_file_contents = "\n".join(
+                    encode_response_file_content_path(d)
+                    for d in spec["response_file_contents"]
+                )
+
+                
+                
+                
+                
+                digest = hashlib.sha256(
+                    input_response_file_contents.encode("utf-8")
+                ).hexdigest()[:16]
+                input_response_file = (
+                    f"{mozpath.basename(spec['outputs'][0])}-{digest}.rsp.in"
+                )
+                extra_files[input_response_file] = input_response_file_contents
+
+                output_response_file = resolve_path(f"{spec['outputs'][0]}.rsp")
+
+                
+                
+                
+                
+                
+                
+                
+                
+                generated_files.append({
+                    "script": "/python/mozbuild/mozbuild/action/write_path_list.py",
+                    "entry_point": "write_paths",
+                    "outputs": [output_response_file],
+                    "inputs": [input_response_file],
+                })
+
+                args = [
+                    f"{spec['outputs'][0]}.rsp"
+                    if arg == RESPONSE_FILE_NAME_FLAG
+                    else arg
+                    for arg in spec.get("args", [])
+                ]
+                flags = [
+                    resolve_path(spec["script"]),
+                    resolve_path(""),
+                ] + args
+                generated_files.append({
+                    "script": "/python/mozbuild/mozbuild/action/file_generate_wrapper.py",
+                    "entry_point": "action",
+                    "outputs": [resolve_path(f) for f in spec["outputs"]],
+                    "extra_deps": ["!" + output_response_file],
+                    "flags": flags,
+                })
+
+            else:
+                flags = [
+                    resolve_path(spec["script"]),
+                    resolve_path(""),
+                ] + spec.get("args", [])
+                generated_files.append({
+                    "script": "/python/mozbuild/mozbuild/action/file_generate_wrapper.py",
+                    "entry_point": "action",
+                    "outputs": [resolve_path(f) for f in spec["outputs"]],
+                    "flags": flags,
+                })
+
+            context_attrs["GeneratedFiles"] = generated_files
 
         sources = []
         unified_sources = []
@@ -347,10 +546,12 @@ def process_gn_config(
             ext = mozpath.splitext(f)[-1]
             extensions.add(ext)
             src = f"{project_relsrcdir}/{f}"
-            if ext in {".h", ".inc"}:
+            if ext in {".h", ".hpp", ".inc"}:
                 continue
             elif ext == ".def":
-                context_attrs["SYMBOLS_FILE"] = src
+                context_attrs["DEFFILE"] = f"/{src}"
+            elif ext == ".rc":
+                context_attrs["RCFILE"] = f"/{src}"
             elif ext != ".S" and src not in non_unified_sources:
                 unified_sources.append(f"/{src}")
             else:
@@ -415,6 +616,9 @@ def process_gn_config(
                 else:
                     context_attrs.setdefault(var, []).extend(f)
 
+        if "FINAL_LIBRARY" not in sandbox_vars:
+            context_attrs["USE_LIBS"] = find_lib_deps(target_fullname)
+
         context_attrs["OS_LIBS"] = []
         for lib in spec.get("libs", []):
             lib_name = os.path.splitext(lib)[0]
@@ -452,8 +656,7 @@ def process_gn_config(
             else:
                 context_attrs[key] = value
 
-        target_relsrcdir = mozpath.join(project_relsrcdir, target_path, target_name)
-        mozbuild_attrs["dirs"][target_relsrcdir] = context_attrs
+        mozbuild_attrs["dirs"][target_relsrcdir] = (context_attrs, extra_files)
 
     return mozbuild_attrs
 
@@ -584,6 +787,11 @@ def write_mozbuild(topsrcdir, write_mozbuild_variables, relsrcdir, configs):
                 mb.write('    CXXFLAGS += CONFIG["MOZ_SYSTEM_LIBAOM_CFLAGS"]\n')
         except KeyError:
             pass
+        try:
+            if relsrcdir in write_mozbuild_variables["INCLUDE_GECKO_ZLIB_HANDLING"]:
+                mb.write('USE_LIBS += [ "zlib" ]\n')
+        except KeyError:
+            pass
 
         all_args = [args for args, _ in configs]
 
@@ -634,18 +842,33 @@ def write_mozbuild_files(
     
     
     configs_by_dir = defaultdict(list)
+    extra_files_by_dir = defaultdict(dict)
     for config_attrs in all_mozbuild_results:
         mozbuild_args = config_attrs["mozbuild_args"]
         dirs = config_attrs["dirs"]
-        for d, build_data in dirs.items():
+        for d, (build_data, dir_extra_files) in dirs.items():
             configs_by_dir[d].append((mozbuild_args, build_data))
+            for filename, contents in dir_extra_files.items():
+                existing = extra_files_by_dir[d].get(filename)
+                if existing is not None and existing != contents:
+                    raise Exception(f"Conflicting contents for {d}/{filename}")
+                extra_files_by_dir[d][filename] = contents
 
     mozbuilds = set()
+    extra_files = set()
+
     
     for relsrcdir, configs in sorted(configs_by_dir.items()):
         mozbuilds.add(
             write_mozbuild(topsrcdir, write_mozbuild_variables, relsrcdir, configs)
         )
+
+    for relsrcdir, files in sorted(extra_files_by_dir.items()):
+        for filename, contents in sorted(files.items()):
+            path = mozpath.join(topsrcdir, relsrcdir, filename)
+            extra_files.add(path)
+            with open(path, "w") as fh:
+                fh.write(contents)
 
     
     dirs_mozbuild = mozpath.join(srcdir, "moz.build")
@@ -666,6 +889,7 @@ def write_mozbuild_files(
         for attrs in (
             (),
             ("OS_TARGET",),
+            ("OS_TARGET", "MOZ_DEBUG"),
             ("OS_TARGET", "TARGET_CPU"),
             ("OS_TARGET", "TARGET_CPU", "MOZ_X11"),
         ):
@@ -696,9 +920,17 @@ def write_mozbuild_files(
 
     
     for root, dirs, files in os.walk(srcdir):
-        if "moz.build" in files:
-            file = os.path.join(root, "moz.build")
-            if file not in mozbuilds:
+        if mozpath.normpath(root) == mozpath.normpath(srcdir):
+            
+            continue
+        if "moz.build" not in files:
+            
+            
+            continue
+
+        for filename in files:
+            file = mozpath.join(root, filename)
+            if file not in mozbuilds | extra_files:
                 os.unlink(file)
 
 
@@ -709,7 +941,7 @@ def generate_gn_config(
     gn_binary,
     input_variables,
     sandbox_variables,
-    gn_target,
+    gn_target_config,
     moz_build_flag,
     non_unified_sources,
     mozilla_flags,
@@ -722,6 +954,7 @@ def generate_gn_config(
 
     build_root_dir = topsrcdir / build_root_dir
     srcdir = build_root_dir / target_dir
+    gn_target = select_gn_target(gn_target_config, input_variables["target_os"])
 
     input_variables = input_variables.copy()
     input_variables.update({
@@ -764,8 +997,9 @@ def generate_gn_config(
         gn_config_file = resolved_tempdir / "project.json"
         with open(gn_config_file) as fh:
             raw_json = fh.read()
-            raw_json = raw_json.replace(f"{target_dir}/", "")
-            raw_json = raw_json.replace(f"{target_dir}:", ":")
+            raw_json = raw_json.replace(f"//{target_dir}/", "//")
+            raw_json = raw_json.replace(f"//{target_dir}:", "//:")
+            raw_json = raw_json.replace(f"gen/{target_dir}", "gen")
             gn_config = mozfile_json.loads(raw_json)
             gn_config = filter_gn_config(
                 resolved_tempdir,
@@ -776,6 +1010,7 @@ def generate_gn_config(
             )
             gn_config = process_gn_config(
                 gn_config,
+                resolved_tempdir,
                 topsrcdir,
                 srcdir,
                 non_unified_sources,
@@ -821,6 +1056,11 @@ def main():
                     "target_cpu": target_cpu,
                     "target_os": target_os,
                 }
+
+                config_args = config.get("gn_args", {})
+                vars.update(config_args.get("*", {}))
+                vars.update(config_args.get(target_os, {}))
+
                 if target_os == "linux":
                     for enable_x11 in (True, False):
                         vars["ozone_platform_x11"] = enable_x11
