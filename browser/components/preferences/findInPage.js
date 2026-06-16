@@ -434,6 +434,14 @@ var gSearchResultsPane = {
         for (let anchorNode of this.listSearchTooltips) {
           this.createSearchTooltip(anchorNode, this.query);
         }
+        
+        
+        
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        if (query !== this.query) {
+          return;
+        }
+        this._recomputeTooltipPositions();
       }
     } else {
       noResultsEl.hidden = true;
