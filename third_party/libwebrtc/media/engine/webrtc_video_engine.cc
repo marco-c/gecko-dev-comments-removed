@@ -1017,9 +1017,7 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
         vp9_settings.interLayerPred = InterLayerPredMode::kOnKeyPic;
       }
 
-      
-      vp9_settings.flexibleMode =
-          !env_.field_trials().IsDisabled("WebRTC-Video-Vp9FlexibleMode");
+      vp9_settings.flexibleMode = true;
     } else {
       
       vp9_settings.flexibleMode = vp9_settings.numberOfSpatialLayers > 1;
