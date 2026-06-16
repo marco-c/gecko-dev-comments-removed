@@ -771,6 +771,17 @@ void MarkingTracerT<opts>::markEphemeronEdges(EphemeronEdgeVector& edges,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (srcColor == MarkColor::Black && markColor() == MarkColor::Black) {
     edges.eraseIf([](auto& edge) { return edge.color() == MarkColor::Black; });
   }
@@ -816,11 +827,15 @@ void MarkingTracerT<opts>::markImplicitEdges(T* markedThing) {
   
   AutoClearTracingSource acts(this);
 
-  MarkColor thingColor = markColor();
-  MOZ_ASSERT(CellColor(thingColor) ==
-             gc::detail::GetEffectiveColor(gcMarker(), markedThing));
+  
+  
+  
+  
+  MOZ_ASSERT(CellColor(markColor()) <= markedThing->color());
 
-  markEphemeronEdges(edges, thingColor);
+  
+  
+  markEphemeronEdges(edges, AsMarkColor(markedThing->color()));
 
   if (edges.empty()) {
     ephemeronTable.remove(p);
@@ -3141,8 +3156,9 @@ struct AssertNonGrayTracer final : public JS::CallbackTracer {
   
   explicit AssertNonGrayTracer(JSRuntime* rt)
       : JS::CallbackTracer(rt, JS::TracerKind::UnmarkGray) {}
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     MOZ_ASSERT(!thing.asCell()->isMarkedGray());
+    return true;
   }
 };
 #endif
@@ -3184,12 +3200,12 @@ class js::gc::UnmarkGrayTracer final
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy>& stack;
 
   template <typename T>
-  void onChild(T* thing);
+  bool onChild(T* thing);
 
   template <typename T>
   bool onEdge(T** thingp, const char* name) {
     if (T* thing = *thingp) {
-      onChild(thing);
+      return onChild(thing);
     }
     return true;
   }
@@ -3198,7 +3214,7 @@ class js::gc::UnmarkGrayTracer final
 
 template <uint32_t opts>
 template <typename T>
-void UnmarkGrayTracer<opts>::onChild(T* thing) {
+bool UnmarkGrayTracer<opts>::onChild(T* thing) {
   
   
   if (!TraceKindCanBeGray<T>::value || !thing->isTenured()) {
@@ -3207,7 +3223,7 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
     AssertNonGrayTracer nongray(this->runtime());
     thing->traceChildren(&nongray);
 #endif
-    return;
+    return true;
   }
 
   TenuredCell& tenured = thing->asTenured();
@@ -3227,12 +3243,12 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
   
   
   if (zone->isGCPreparing()) {
-    return;
+    return true;
   }
 
   
   if (tenured.isMarkedBlack()) {
-    return;
+    return true;
   }
 
   if (zone->isGCMarking()) {
@@ -3264,6 +3280,7 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
   }
 
   unmarkedAny = true;
+  return true;
 }
 
 template <uint32_t opts>
