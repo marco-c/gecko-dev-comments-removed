@@ -1054,11 +1054,56 @@ pub struct Texture {
     mip_level_count: u32,
     sample_count: u32,
     allocation: suballocation::Allocation,
+    
+    
+    
+    
+    plane_slice_override: Option<u32>,
 }
 
 impl Texture {
     pub unsafe fn raw_resource(&self) -> &Direct3D12::ID3D12Resource {
         &self.resource
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_plane_slice(mut self, plane_slice: u32) -> Self {
+        debug_assert!(
+            !self.format.is_multi_planar_format(),
+            "`with_plane_slice` expects a single-plane format wrapping a \
+             multi-plane DXGI resource; got planar format `{:?}`",
+            self.format,
+        );
+        self.plane_slice_override = Some(plane_slice);
+        self
+    }
+
+    pub(super) fn plane_slice_override(&self) -> Option<u32> {
+        self.plane_slice_override
     }
 }
 
@@ -1088,14 +1133,18 @@ impl Texture {
     }
 
     fn calc_subresource_for_copy(&self, base: &crate::TextureCopyBase) -> u32 {
-        let plane = match base.aspect {
-            crate::FormatAspects::COLOR
-            | crate::FormatAspects::DEPTH
-            | crate::FormatAspects::PLANE_0 => 0,
-            crate::FormatAspects::STENCIL | crate::FormatAspects::PLANE_1 => 1,
-            crate::FormatAspects::PLANE_2 => 2,
-            _ => unreachable!(),
-        };
+        
+        
+        let plane = self
+            .plane_slice_override
+            .unwrap_or_else(|| match base.aspect {
+                crate::FormatAspects::COLOR
+                | crate::FormatAspects::DEPTH
+                | crate::FormatAspects::PLANE_0 => 0,
+                crate::FormatAspects::STENCIL | crate::FormatAspects::PLANE_1 => 1,
+                crate::FormatAspects::PLANE_2 => 2,
+                _ => unreachable!(),
+            });
         self.calc_subresource(base.mip_level, base.array_layer, plane)
     }
 }
@@ -1650,6 +1699,7 @@ impl crate::Surface for Surface {
                 suballocation::AllocationType::Texture,
                 sc.format.theoretical_memory_footprint(sc.size),
             ),
+            plane_slice_override: None,
         };
         Ok(crate::AcquiredSurfaceTexture {
             texture,

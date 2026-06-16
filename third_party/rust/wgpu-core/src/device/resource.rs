@@ -2991,17 +2991,27 @@ impl Device {
         
         assert_eq!(bb.offset % wgt::COPY_BUFFER_ALIGNMENT, 0);
 
-        
-        
-        
-        
-        let bounds_check_alignment =
-            binding_model::buffer_binding_type_bounds_check_alignment(&self.alignments, binding_ty);
-        let visible_size = align_to(bind_size, bounds_check_alignment);
+        let init_range = if dynamic {
+            
+            
+            0..buffer.size
+        } else {
+            
+            
+            
+            
+            let bounds_check_alignment = binding_model::buffer_binding_type_bounds_check_alignment(
+                &self.alignments,
+                binding_ty,
+            );
+            let visible_size = align_to(bind_size, bounds_check_alignment);
+
+            bb.offset..bb.offset + visible_size
+        };
 
         buffer_init_actions.extend(buffer.initialization_status.read().create_action(
             buffer,
-            bb.offset..bb.offset + visible_size,
+            init_range,
             MemoryInitKind::NeedsInitializedMemory,
         ));
 

@@ -3015,6 +3015,8 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                         ctx.expressions.append(expr, span)
                     };
 
+                    emitter.start(ctx.expressions);
+
                     
                     
                     
@@ -3034,8 +3036,6 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
                             },
                         );
                     }
-
-                    emitter.start(ctx.expressions);
 
                     
                     let stmt = crate::Statement::Atomic {

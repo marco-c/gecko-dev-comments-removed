@@ -90,10 +90,6 @@ impl<I: Copy + Ord, T: Copy + PartialEq> RangedStates<I, T> {
     
     
     pub fn isolate(&mut self, index: &Range<I>, default: T) -> &mut [(Range<I>, T)] {
-        
-        
-        
-
         let mut start_pos = match self.ranges.iter().position(|pair| pair.0.end > index.start) {
             Some(pos) => pos,
             None => {

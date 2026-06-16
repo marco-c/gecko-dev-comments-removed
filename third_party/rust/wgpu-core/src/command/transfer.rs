@@ -725,15 +725,12 @@ fn handle_dst_texture_init(
     
     
     
-    let dst_init_kind = if has_copy_partial_init_tracker_coverage(
-        copy_size,
-        destination.mip_level,
-        &texture.desc,
-    ) {
-        MemoryInitKind::NeedsInitializedMemory
-    } else {
-        MemoryInitKind::ImplicitlyInitialized
-    };
+    let dst_init_kind =
+        if has_copy_partial_init_tracker_coverage(copy_size, destination, &texture.desc) {
+            MemoryInitKind::NeedsInitializedMemory
+        } else {
+            MemoryInitKind::ImplicitlyInitialized
+        };
 
     handle_texture_init(state, dst_init_kind, destination, copy_size, texture)?;
     Ok(())
@@ -1374,8 +1371,22 @@ pub(super) fn copy_texture_to_texture(
 
     
     
-    if src_texture.desc.format.remove_srgb_suffix() != dst_texture.desc.format.remove_srgb_suffix()
-    {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let src_fmt_no_srgb = src_texture.desc.format.remove_srgb_suffix();
+    let dst_fmt_no_srgb = dst_texture.desc.format.remove_srgb_suffix();
+    let planar_split_ok = src_fmt_no_srgb.is_multi_planar_format()
+        && src_fmt_no_srgb.aspect_specific_format(source.aspect) == Some(dst_fmt_no_srgb);
+    if src_fmt_no_srgb != dst_fmt_no_srgb && !planar_split_ok {
         return Err(TransferError::TextureFormatsNotCopyCompatible {
             src_format: src_texture.desc.format,
             dst_format: dst_texture.desc.format,
@@ -1392,6 +1403,45 @@ pub(super) fn copy_texture_to_texture(
         copy_size,
     )?;
 
+    
+    
+    
+    
+    
+    if planar_split_ok {
+        
+        
+        let plane = source.aspect.to_plane().expect("planar_split_ok aspect");
+        let plane_extent = src_texture
+            .desc
+            .compute_render_extent(source.mip_level, Some(plane));
+        let check = |dimension, start: u32, size: u32, plane_size: u32| {
+            if start > plane_size || plane_size - start < size {
+                Err(TransferError::TextureOverrun {
+                    start_offset: start,
+                    end_offset: start.wrapping_add(size),
+                    texture_size: plane_size,
+                    dimension,
+                    side: CopySide::Source,
+                })
+            } else {
+                Ok(())
+            }
+        };
+        check(
+            TextureErrorDimension::X,
+            source.origin.x,
+            copy_size.width,
+            plane_extent.width,
+        )?;
+        check(
+            TextureErrorDimension::Y,
+            source.origin.y,
+            copy_size.height,
+            plane_extent.height,
+        )?;
+    }
+
     if Arc::as_ptr(src_texture) == Arc::as_ptr(dst_texture) {
         validate_copy_within_same_texture(
             source,
@@ -1405,7 +1455,8 @@ pub(super) fn copy_texture_to_texture(
     let (dst_range, dst_tex_base) = extract_texture_selector(destination, copy_size, dst_texture)?;
     let src_texture_aspects = hal::FormatAspects::from(src_texture.desc.format);
     let dst_texture_aspects = hal::FormatAspects::from(dst_texture.desc.format);
-    if src_tex_base.aspect != src_texture_aspects {
+    
+    if src_tex_base.aspect != src_texture_aspects && !planar_split_ok {
         return Err(TransferError::CopySrcMissingAspects.into());
     }
     if dst_tex_base.aspect != dst_texture_aspects {

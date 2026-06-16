@@ -3,7 +3,7 @@ use super::{
     CreateIndirectValidationPipelineError,
 };
 use crate::{
-    command::RenderPassErrorInner,
+    command::{get_src_stride_of_indirect_args, RenderPassErrorInner},
     device::{queue::TempResource, Device, DeviceError},
     hal_label,
     lock::{rank, Mutex},
@@ -63,7 +63,14 @@ impl Draw {
         required_features: &wgt::Features,
         instance_flags: wgt::InstanceFlags,
         backend: wgt::Backend,
+        limits: &Limits,
     ) -> Result<Self, CreateIndirectValidationPipelineError> {
+        
+        
+        
+        
+        assert!(limits.max_buffer_size <= u32::MAX as u64);
+
         let module = create_validation_module(device, instance_flags)?;
 
         let metadata_bind_group_layout = create_bind_group_layout(
@@ -437,7 +444,7 @@ impl Draw {
                     pipeline_layout,
                     1,
                     src_bind_group,
-                    &[batch.src_dynamic_offset as u32],
+                    &[u64_offset_to_u32_offset(batch.src_dynamic_offset)],
                 );
             }
 
@@ -447,7 +454,7 @@ impl Draw {
             }
 
             unsafe {
-                encoder.dispatch([(batch.entries.len() as u32).div_ceil(64), 1, 1]);
+                encoder.dispatch_workgroups([(batch.entries.len() as u32).div_ceil(64), 1, 1]);
             }
         }
 
@@ -673,43 +680,52 @@ fn calculate_src_buffer_binding_size(buffer_size: u64, limits: &Limits) -> u64 {
 }
 
 
-fn calculate_src_offsets(buffer_size: u64, limits: &Limits, offset: u64) -> (u64, u64) {
+fn calculate_src_offsets(
+    buffer_size: u64,
+    limits: &Limits,
+    offset: u64,
+    data_size: u64,
+) -> (u64, u64) {
+    const MAX_DATA_SIZE: u64 = 20; 
     let binding_size = calculate_src_buffer_binding_size(buffer_size, limits);
-
     let min_storage_buffer_offset_alignment = limits.min_storage_buffer_offset_alignment as u64;
 
-    let chunk_adjustment = match min_storage_buffer_offset_alignment {
-        
-        4 => 0,
-        
-        
-        
-        8 => 2,
-        
-        
-        
-        16.. => 1,
-        _ => unreachable!(),
-    };
+    assert!([16, MAX_DATA_SIZE].contains(&data_size));
+    assert!([32, 64, 128, 256].contains(&min_storage_buffer_offset_alignment));
+    assert!(buffer_size >= data_size);
+    assert!(offset <= buffer_size - data_size);
+    assert!(binding_size <= buffer_size);
 
-    let chunks = binding_size / min_storage_buffer_offset_alignment;
-    let dynamic_offset_stride =
-        chunks.saturating_sub(chunk_adjustment) * min_storage_buffer_offset_alignment;
+    
+    
+    
+    
+    
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let dynamic_offset_stride = binding_size.saturating_sub(MAX_DATA_SIZE)
+        / min_storage_buffer_offset_alignment
+        * min_storage_buffer_offset_alignment;
     if dynamic_offset_stride == 0 {
         return (0, offset);
     }
 
     let max_dynamic_offset = buffer_size - binding_size;
-    let max_dynamic_offset_index = max_dynamic_offset / dynamic_offset_stride;
+    let out_dynamic_offset =
+        max_dynamic_offset.min(offset / dynamic_offset_stride * dynamic_offset_stride);
+    let out_offset = offset - out_dynamic_offset;
 
-    let src_dynamic_offset_index = offset / dynamic_offset_stride;
-
-    let src_dynamic_offset =
-        src_dynamic_offset_index.min(max_dynamic_offset_index) * dynamic_offset_stride;
-    let src_offset = offset - src_dynamic_offset;
-
-    (src_dynamic_offset, src_offset)
+    (out_dynamic_offset, out_offset)
 }
 
 #[derive(Debug)]
@@ -892,11 +908,7 @@ impl MetadataEntry {
     ) -> Self {
         const U32_MAX_AS_U64: u64 = u32::MAX as u64;
 
-        
-        assert!(src_offset <= U32_MAX_AS_U64);
-        assert!(dst_offset <= U32_MAX_AS_U64);
-
-        let src_offset = src_offset as u32;
+        let src_offset = u64_offset_to_u32_offset(src_offset);
         let src_offset = src_offset / 4; 
 
         
@@ -914,7 +926,7 @@ impl MetadataEntry {
         let instance_limit_bit_32 = (instance_limit >> 32) as u32; 
         let instance_limit = instance_limit as u32; 
 
-        let dst_offset = dst_offset as u32;
+        let dst_offset = u64_offset_to_u32_offset(dst_offset);
         let dst_offset = dst_offset / 4; 
 
         
@@ -984,20 +996,16 @@ impl DrawBatcher {
         vertex_or_index_limit: u64,
         instance_limit: u64,
     ) -> Result<(usize, u64), DeviceError> {
-        
-        let extra = if device.backend() == wgt::Backend::Dx12 {
-            3 * size_of::<u32>() as u64
-        } else {
-            0
-        };
-        let stride = extra + crate::command::get_stride_of_indirect_args(family);
+        let stride = crate::command::get_dst_stride_of_indirect_args(device.backend(), family);
 
         let (dst_resource_index, dst_offset) = indirect_draw_validation_resources
             .get_dst_subrange(stride, &mut self.current_dst_entry)?;
 
         let buffer_size = src_buffer.size;
         let limits = device.adapter.limits();
-        let (src_dynamic_offset, src_offset) = calculate_src_offsets(buffer_size, &limits, offset);
+        let data_size = get_src_stride_of_indirect_args(family);
+        let (src_dynamic_offset, src_offset) =
+            calculate_src_offsets(buffer_size, &limits, offset, data_size);
 
         let src_buffer_tracker_index = src_buffer.tracker_index();
 
@@ -1034,5 +1042,100 @@ impl DrawBatcher {
         }
 
         Ok((dst_resource_index, dst_offset))
+    }
+}
+
+
+
+
+fn u64_offset_to_u32_offset(offset: u64) -> u32 {
+    offset.try_into().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculate_src_offsets_test() {
+        const MBUS: u64 = 256 << 20; 
+        const MBIS: u64 = 128 << 20; 
+
+        #[rustfmt::skip]
+        let cases: &[(u64, u64, u32, u64, u64, u64, u64)] = &[
+            
+
+            
+            (MBUS, MBIS, 32,  16, 0, 0, 0),
+            
+            (MBUS, MBIS, 32,  16, MBUS - 16, MBIS, MBIS - 16),
+            
+            (MBUS + 4, MBUS, 32, 16, MBUS + 4 - 16, 32, MBUS - 32 + 4 - 16),
+            
+            
+            
+            (512, 256, 32,  16, 240, 224, 16), 
+            (512, 256, 32,  16, 248, 224, 24), 
+            (512, 256, 32,  16, 256, 224, 32), 
+            
+            (512, 256, 64,  16, 240, 192, 48), 
+            (512, 256, 64,  16, 248, 192, 56), 
+            (512, 256, 64,  16, 256, 192, 64), 
+            
+            (512, 256, 128, 16, 240, 128, 112), 
+            (512, 256, 128, 16, 248, 128, 120), 
+            (512, 256, 128, 16, 256, 256, 0), 
+            
+            
+            (512, 256, 32,  20, 236, 224, 12), 
+            (512, 256, 32,  20, 244, 224, 20), 
+            (512, 256, 32,  20, 252, 224, 28), 
+            
+            (512, 256, 64,  20, 236, 192, 44), 
+            (512, 256, 64,  20, 244, 192, 52), 
+            (512, 256, 64,  20, 252, 192, 60), 
+            
+            (512, 256, 128, 20, 236, 128, 108), 
+            (512, 256, 128, 20, 244, 128, 116), 
+            (512, 256, 128, 20, 252, 128, 124), 
+        ];
+
+        for &(
+            buffer_size,
+            max_storage_buffer_binding_size,
+            min_storage_buffer_offset_alignment,
+            data_size,
+            offset,
+            expected_out_dynamic_offset,
+            expected_out_offset,
+        ) in cases
+        {
+            let limits = Limits {
+                max_storage_buffer_binding_size,
+                min_storage_buffer_offset_alignment,
+                ..Limits::default()
+            };
+            let (out_dynamic_offset, out_offset) =
+                calculate_src_offsets(buffer_size, &limits, offset, data_size);
+            let binding_size = calculate_src_buffer_binding_size(buffer_size, &limits);
+            
+            assert_eq!(out_dynamic_offset + out_offset, offset);
+            assert_eq!(
+                out_dynamic_offset % min_storage_buffer_offset_alignment as u64,
+                0
+            );
+            assert!(out_dynamic_offset + binding_size <= buffer_size);
+            assert!(out_offset + data_size <= binding_size);
+            
+            assert_eq!(
+                (out_dynamic_offset, out_offset),
+                (expected_out_dynamic_offset, expected_out_offset),
+                "buffer_size={buffer_size} \
+                 max_binding_size={max_storage_buffer_binding_size} \
+                 offset_alignment={min_storage_buffer_offset_alignment} \
+                 data_size={data_size} \
+                 offset={offset}"
+            );
+        }
     }
 }
