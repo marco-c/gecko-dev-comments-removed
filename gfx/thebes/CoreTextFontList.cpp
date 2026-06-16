@@ -1850,12 +1850,9 @@ void CoreTextFontList::ReadFaceNamesForFamily(
     
     
     
-    auto fe = MakeUnique<CTFontEntry>(name, WeightRange(FontWeight::NORMAL),
-                                      false, 16.0);
-    if (!fe) {
-      continue;
-    }
-    gfxFontEntry::AutoTable nameTable(fe.get(), kNAME);
+    RefPtr fe = MakeRefPtr<CTFontEntry>(name, WeightRange(FontWeight::NORMAL),
+                                        false, 16.0);
+    gfxFontEntry::AutoTable nameTable(fe, kNAME);
     if (!nameTable) {
       continue;
     }
