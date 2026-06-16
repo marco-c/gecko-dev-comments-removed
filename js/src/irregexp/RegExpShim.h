@@ -264,9 +264,16 @@ constexpr int kUC16Size = sizeof(base::uc16);
 
 
 
-#define USE(...)                                                          \
-  do {                                                                    \
-    [[maybe_unused]] auto unused_tmp_array_for_use_macro = (__VA_ARGS__); \
+
+
+struct Use {
+  template <typename T>
+  Use(T&&) {}  
+};
+#define USE(...)                                                   \
+  do {                                                             \
+    ::v8::base::Use unused_tmp_array_for_use_macro[]{__VA_ARGS__}; \
+    (void)unused_tmp_array_for_use_macro;                          \
   } while (false)
 
 
