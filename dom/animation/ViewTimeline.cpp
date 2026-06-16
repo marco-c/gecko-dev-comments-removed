@@ -209,7 +209,8 @@ void ViewTimeline::ReplacePropertiesWith(
     MOZ_ASSERT(anim->GetTimeline() == this);
     MOZ_ASSERT(anim->GetTimelineName() == aName);
     
-    anim->SetTimeline(this, aName);
+    
+    anim->SetTimeline(this, aName, Animation::FromJS::No);
   }
 }
 

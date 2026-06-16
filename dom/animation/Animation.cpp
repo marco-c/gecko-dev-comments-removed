@@ -178,7 +178,7 @@ already_AddRefed<Animation> Animation::Constructor(
 
   RefPtr<Animation> animation = new Animation(global);
   
-  animation->SetTimelineNoUpdate(timeline, nullptr);
+  animation->SetTimelineNoUpdate(timeline, nullptr, FromJS::Yes);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -296,15 +296,30 @@ void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
   animationManager->RemoveNamedTimelineAnimation(aName, AsCSSAnimation());
 }
 
-void Animation::SetTimeline(AnimationTimeline* aTimeline,
-                            const nsAtom* aTimelineName) {
-  SetTimelineNoUpdate(aTimeline, aTimelineName);
+void Animation::SetTimelineFromJS(AnimationTimeline* aTimeline) {
+  TimelineWillSetFromJS();
+  
+  const auto prevTimelineName = GetTimelineName();
+  SetTimeline(aTimeline, nullptr, FromJS::Yes);
+  if (prevTimelineName) {
+    RemovedNamedTimelineReferenceFromJS(prevTimelineName);
+  }
+}
+
+bool Animation::SetTimeline(AnimationTimeline* aTimeline,
+                            const nsAtom* aTimelineName, FromJS aFromJS) {
+  const auto updated = SetTimelineNoUpdate(aTimeline, aTimelineName, aFromJS);
   PostUpdate();
+  return updated;
 }
 
 
-void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                                    const nsAtom* aTimelineName) {
+bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                                    const nsAtom* aTimelineName,
+                                    FromJS aFromJS) {
+  if (aFromJS == FromJS::No && TimelineOverridenByJS()) {
+    return false;
+  }
   
   
   
@@ -313,7 +328,8 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     if (mTimelineName != aTimelineName) {
       mTimelineName = aTimelineName;
     }
-    return;
+    
+    return false;
   }
 
   
@@ -437,6 +453,7 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
 
   
   
+  return true;
 }
 
 void Animation::SetTimelineRange(AnimationRange&& aRange) {
