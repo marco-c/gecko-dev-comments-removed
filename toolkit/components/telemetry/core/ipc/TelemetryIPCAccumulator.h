@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryIPCAccumulator_h_
 #define TelemetryIPCAccumulator_h_
 
@@ -48,7 +47,7 @@ void IPCTimerFired(nsITimer* aTimer, void* aClosure);
 
 void DeInitializeGlobalState();
 
-void DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent);
+void DispatchToMainThread(already_AddRefed<nsIRunnable> aEvent);
 
 }  
 }  
