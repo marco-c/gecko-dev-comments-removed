@@ -103,6 +103,9 @@ class ScriptLoadRequest : public nsISupports,
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
+  bool IsSpeculationRulesRequest() const {
+    return mKind == ScriptKind::eSpeculationRules;
+  }
 
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
@@ -339,6 +342,7 @@ class ScriptLoadRequest : public nsISupports,
  public:
   
 
+  
   
   const ScriptKind mKind;
 

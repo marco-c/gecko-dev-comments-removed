@@ -88,7 +88,8 @@ mozilla::dom::ReferrerPolicy nsIScriptElement::GetReferrerPolicy() {
 void nsIScriptElement::DetermineKindFromType(
     const mozilla::dom::Document* aOwnerDoc) {
   MOZ_ASSERT((mKind != ScriptKind::eModule) &&
-             (mKind != ScriptKind::eImportMap) && !mAsync && !mDefer &&
+             (mKind != ScriptKind::eImportMap) &&
+             (mKind != ScriptKind::eSpeculationRules) && !mAsync && !mDefer &&
              !mExternal);
 
   nsAutoString type;
@@ -105,6 +106,13 @@ void nsIScriptElement::DetermineKindFromType(
     
     if (type.LowerCaseEqualsASCII("importmap")) {
       mKind = ScriptKind::eImportMap;
+    }
+
+    
+    
+    
+    if (type.LowerCaseEqualsASCII("speculationrules")) {
+      mKind = ScriptKind::eSpeculationRules;
     }
   }
 }

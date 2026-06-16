@@ -255,7 +255,8 @@ bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
   if (!type.IsEmpty()) {
     if (!nsContentUtils::IsJavascriptMIMEType(type) &&
         !type.LowerCaseEqualsASCII("module") &&
-        !type.LowerCaseEqualsASCII("importmap")) {
+        !type.LowerCaseEqualsASCII("importmap") &&
+        !type.LowerCaseEqualsASCII("speculationrules")) {
 #ifdef DEBUG
       
       
