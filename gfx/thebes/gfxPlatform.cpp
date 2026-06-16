@@ -254,9 +254,9 @@ bool CrashStatsLogForwarder::UpdateStringsVectorInternal(
   
   LoggingRecordEntry newEntry(mIndex, aString, tStamp);
   if (index >= static_cast<int32_t>(mBuffer.size())) {
-    mBuffer.push_back(newEntry);
+    mBuffer.push_back(std::move(newEntry));
   } else {
-    mBuffer[index] = newEntry;
+    mBuffer[index] = std::move(newEntry);
   }
   return true;
 }
@@ -3828,9 +3828,10 @@ void gfxPlatform::GetDisplayInfo(mozilla::widget::InfoObject& aObj) {
   for (auto& screen : screens) {
     const LayoutDeviceIntRect rect = screen->GetRect();
     nsPrintfCString value(
-        "%dx%d@%dHz scales:%f|%f %s", rect.width, rect.height,
+        "%dx%d@%dHz scales:%f|%f desktop:%s:video:%s", rect.width, rect.height,
         screen->GetRefreshRate(), screen->GetContentsScaleFactor(),
-        screen->GetDefaultCSSScaleFactor(), screen->GetIsHDR() ? "HDR" : "SDR");
+        screen->GetDefaultCSSScaleFactor(), screen->GetIsHDR() ? "HDR" : "SDR",
+        screen->GetIsVideoHDR() ? "HDR" : "SDR");
 
     aObj.DefineProperty(nsPrintfCString("Display%zu", i++).get(),
                         NS_ConvertUTF8toUTF16(value));
