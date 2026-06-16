@@ -536,10 +536,42 @@ already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
     gfxWarning() << "Fontconfig font descriptor is truncated.";
     return nullptr;
   }
-  const char* path = reinterpret_cast<const char*>(aData);
-  RefPtr<UnscaledFont> unscaledFont =
-      new UnscaledFontFontconfig(std::string(path, aDataLength), aIndex);
-  return unscaledFont.forget();
+  nsCString path((const char*)aData, aDataLength);
+
+  
+  
+  FcPattern* pattern = FcPatternCreate();
+  FcPatternAddString(pattern, FC_FILE, (const FcChar8*)path.BeginReading());
+  FcPatternAddInteger(pattern, FC_INDEX, aIndex);
+  FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
+  FcResult result = FcResultMatch;
+  FcPattern* match = FcFontMatch(nullptr, pattern, &result);
+  FcPatternDestroy(pattern);
+  if (!match || result != FcResultMatch) {
+    gfxWarning() << "FcFontMatch failed.";
+    return nullptr;
+  }
+
+  
+  
+  char* file = nullptr;
+  int index = 0;
+  result = FcPatternGetString(match, FC_FILE, 0, (FcChar8**)&file);
+  if (result == FcResultMatch && !path.Equals(file)) {
+    gfxWarning() << "Font path " << path.get() << " invalid, using " << file;
+    path = file;
+  }
+  result = FcPatternGetInteger(match, FC_INDEX, 0, &index);
+  
+  
+  
+  if (result == FcResultMatch && (uint32_t)index != (aIndex & 0xffff)) {
+    gfxWarning() << "Font index " << aIndex << " invalid, using " << index;
+    aIndex = index;
+  }
+
+  return MakeAndAddRef<UnscaledFontFontconfig>(path.BeginReading(), aIndex);
 }
 
 }  
