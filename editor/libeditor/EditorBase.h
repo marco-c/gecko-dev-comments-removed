@@ -243,6 +243,9 @@ class EditorBase : public nsIEditor,
   Element* GetExposedRoot() const;
 
   
+  virtual dom::EditContext* GetEditContext() const { return nullptr; }
+
+  
 
 
 
@@ -2657,8 +2660,6 @@ class EditorBase : public nsIEditor,
   };
   MOZ_CAN_RUN_SCRIPT void NotifyEditorObservers(
       NotificationForEditorObservers aNotification);
-
-  virtual dom::EditContext* GetEditContext() const { return nullptr; }
 
   
 
