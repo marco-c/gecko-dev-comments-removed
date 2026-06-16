@@ -1,0 +1,28 @@
+
+
+
+
+#ifndef _nsClipboardX11_h_
+#define _nsClipboardX11_h_
+
+#include <gtk/gtk.h>
+
+#include "nsClipboard.h"
+
+class nsRetrievalContextX11 : public nsRetrievalContext {
+ public:
+  ClipboardData GetClipboardData(const char* aMimeType,
+                                 int32_t aWhichClipboard) override;
+  mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
+  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) override;
+
+  nsRetrievalContextX11();
+
+ private:
+  
+  ClipboardData WaitForClipboardData(ClipboardDataType aDataType,
+                                     int32_t aWhichClipboard,
+                                     const char* aMimeType = nullptr);
+};
+
+#endif 

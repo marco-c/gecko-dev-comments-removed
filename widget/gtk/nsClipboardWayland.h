@@ -1,0 +1,25 @@
+
+
+
+
+#ifndef _nsClipboardWayland_h_
+#define _nsClipboardWayland_h_
+
+#include "mozilla/Mutex.h"
+#include "nsClipboard.h"
+
+class nsRetrievalContextWayland final : public nsRetrievalContext {
+ public:
+  nsRetrievalContextWayland();
+
+  ClipboardData GetClipboardData(const char* aMimeType,
+                                 int32_t aWhichClipboard) override;
+  mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
+  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) override;
+
+ private:
+  ClipboardData WaitForClipboardData(ClipboardDataType, int32_t aWhichClipboard,
+                                     const char* aMimeType = nullptr);
+};
+
+#endif 
