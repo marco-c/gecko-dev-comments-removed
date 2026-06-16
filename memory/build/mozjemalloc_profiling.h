@@ -22,6 +22,7 @@ struct PurgeStats {
   size_t pages_dirty = 0;
 
   
+  
   size_t pages_total = 0;
 
   

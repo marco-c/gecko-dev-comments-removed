@@ -1307,7 +1307,6 @@ ArenaPurgeResult arena_t::Purge(
   arena_chunk_t* chunk = nullptr;
 
   
-  
   {
     MaybeMutexAutoLock lock(mLock);
 
