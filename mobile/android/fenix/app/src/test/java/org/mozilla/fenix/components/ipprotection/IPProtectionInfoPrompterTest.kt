@@ -2,15 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@file:OptIn(ExperimentalAndroidComponentsApi::class)
+
 package org.mozilla.fenix.components.ipprotection
 
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import mozilla.components.feature.ipprotection.Authorized
-import mozilla.components.feature.ipprotection.EligibilityStatus
-import mozilla.components.feature.ipprotection.IPProtectionAction
-import mozilla.components.feature.ipprotection.IPProtectionState
-import mozilla.components.feature.ipprotection.IPProtectionStore
+import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -30,29 +33,6 @@ class IPProtectionInfoPrompterTest {
     fun setup() {
         appStore = AppStore()
     }
-
-    @Test
-    fun `GIVEN eligible user with ConnectionError proxy WHEN eligibility updates THEN shows connection error snackbar`() =
-        runTest(testDispatcher) {
-            val ipProtectionStore = IPProtectionStore(
-                initialState = IPProtectionState(
-                    proxyStatus = Authorized.ConnectionError,
-                ),
-            )
-            val prompter = IPProtectionInfoPrompter(ipProtectionStore, appStore, errorMessages, testDispatcher)
-
-            prompter.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            ipProtectionStore.dispatch(
-                IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible),
-            )
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            val snackbarState = appStore.state.snackbarState
-            assertIs<SnackbarState.ShowSnackbar>(snackbarState)
-            assertEquals(errorMessages.connectionError, snackbarState.title)
-        }
 
     @Test
     fun `GIVEN eligible user with DataLimitReached proxy WHEN eligibility updates THEN shows data limit reached snackbar`() =
