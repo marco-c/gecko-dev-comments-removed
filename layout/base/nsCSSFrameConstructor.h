@@ -877,7 +877,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     FrameConstructionItem* AppendItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle> aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
       FrameConstructionItem* item = new (aFCtor)
           FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
@@ -891,7 +891,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     FrameConstructionItem* PrependItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle> aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
       FrameConstructionItem* item = new (aFCtor)
           FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
@@ -1110,7 +1110,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
                           nsIContent* aContent,
-                          already_AddRefed<ComputedStyle>&& aComputedStyle,
+                          already_AddRefed<ComputedStyle> aComputedStyle,
                           bool aSuppressWhiteSpaceOptimizations)
         : mFCData(aFCData),
           mContent(aContent),

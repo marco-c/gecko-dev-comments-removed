@@ -59,14 +59,14 @@ class SheetLoadData final
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*, const nsAString& aNonce,
       dom::FetchPriority aFetchPriority,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   
   SheetLoadData(
       css::Loader*, nsIURI*, StyleSheet*, SheetLoadData* aParentData,
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   
   SheetLoadData(
@@ -75,7 +75,7 @@ class SheetLoadData final
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*, const nsAString& aNonce,
       dom::FetchPriority aFetchPriority,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 
