@@ -906,19 +906,39 @@ var vectors = [
   },
   {
     data: "<svg><use href='http://example.com/test.svg'></svg>",
-    flags: 1, 
+    flags: 0,
     sanitized: "<html><head></head><body><svg><use></use></svg></body></html>",
   },
   {
     
     data: "<svg><use href='#x'></svg>",
-    flags: 1, 
+    flags: 0,
     sanitized:
       '<html><head></head><body><svg><use href="#x"></use></svg></body></html>',
   },
   {
     data: '<svg><use xlink:href="http://example/#baz"/></svg>',
-    flags: 1, 
+    flags: 0,
     sanitized: "<html><head></head><body><svg><use></use></svg></body></html>",
+  },
+  {
+    
+    
+    data: '<svg><a xlink:arcrole="foo">bar</a></svg>',
+    flags: 0,
+    sanitized: "<html><head></head><body><svg><a>bar</a></svg></body></html>",
+  },
+  {
+    
+    data: '<svg><a xlink:role="foo">bar</a></svg>',
+    flags: 0,
+    sanitized: "<html><head></head><body><svg><a>bar</a></svg></body></html>",
+  },
+  {
+    
+    data: '<svg><a xlink:title="foo">bar</a></svg>',
+    flags: 0,
+    sanitized:
+      '<html><head></head><body><svg><a xlink:title="foo">bar</a></svg></body></html>',
   },
 ];
