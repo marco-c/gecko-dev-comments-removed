@@ -179,6 +179,16 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
 
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
+  return openAIWindowSidebar(win);
+}
+
+
+
+
+
+
+
+async function openAIWindowSidebar(win) {
   BrowserTestUtils.startLoadingURIString(
     win.gBrowser.selectedBrowser,
     "about:blank"
