@@ -968,7 +968,8 @@ class nsFlexContainerFrame::FlexLine final {
   explicit FlexLine(nscoord aMainGapSize) : mMainGapSize(aMainGapSize) {}
 
   nscoord SumOfGaps() const {
-    return NumItems() > 0 ? (NumItems() - 1) * mMainGapSize : 0;
+    return mNumNonCollapsedItems ? (mNumNonCollapsedItems - 1) * mMainGapSize
+                                 : 0;
   }
 
   
@@ -1016,14 +1017,17 @@ class nsFlexContainerFrame::FlexLine final {
       mNumFrozenItems++;
     }
 
+    
+    
+    if (!lastItem.IsStrut()) {
+      if (mNumNonCollapsedItems) {
+        mTotalOuterHypotheticalMainSize += mMainGapSize;
+      }
+      mNumNonCollapsedItems++;
+    }
+
     mTotalItemMBP += lastItem.MarginBorderPaddingSizeInMainAxis();
     mTotalOuterHypotheticalMainSize += lastItem.OuterMainSize();
-
-    
-    
-    if (NumItems() >= 2) {
-      mTotalOuterHypotheticalMainSize += mMainGapSize;
-    }
   }
 
   
@@ -1114,6 +1118,8 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   uint32_t mNumFrozenItems = 0;
+  
+  uint32_t mNumNonCollapsedItems = 0;
 
   
   nscoord mTotalItemMBP = 0;
@@ -4536,7 +4542,13 @@ void FlexLine::PositionItemsInMainAxis(
     nscoord aContentBoxMainSize, const FlexboxAxisTracker& aAxisTracker) {
   MainAxisPositionTracker mainAxisPosnTracker(
       aAxisTracker, this, aJustifyContent, aContentBoxMainSize);
+  bool hadItemBefore = false;
   for (FlexItem& item : Items()) {
+    const bool strut = item.IsStrut();
+    if (hadItemBefore && !strut) {
+      mainAxisPosnTracker.TraverseGap(mMainGapSize);
+    }
+
     nscoord itemMainBorderBoxSize =
         item.MainSize() + item.BorderPaddingSizeInMainAxis();
 
@@ -4553,9 +4565,7 @@ void FlexLine::PositionItemsInMainAxis(
     mainAxisPosnTracker.ExitChildFrame(itemMainBorderBoxSize);
     mainAxisPosnTracker.ExitMargin(item.Margin());
     mainAxisPosnTracker.TraversePackingSpace();
-    if (&item != &Items().LastElement()) {
-      mainAxisPosnTracker.TraverseGap(mMainGapSize);
-    }
+    hadItemBefore |= !strut;
   }
 }
 
@@ -6492,8 +6502,6 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
                                                     NS_UNCONSTRAINEDSIZE);
   }
 
-  const bool useMozBoxCollapseBehavior =
-      StyleVisibility()->UseLegacyCollapseBehavior();
   const bool isSingleLine = IsSingleLine(this, stylePos);
   const auto flexWM = GetWritingMode();
 
@@ -6507,9 +6515,7 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
       continue;
     }
 
-    if (useMozBoxCollapseBehavior &&
-        childFrame->StyleVisibility()->IsCollapse()) {
-      
+    if (childFrame->StyleVisibility()->IsCollapse()) {
       
       continue;
     }
