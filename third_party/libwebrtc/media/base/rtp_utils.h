@@ -16,7 +16,6 @@
 #include <span>
 
 #include "absl/strings/string_view.h"
-#include "rtc_base/async_packet_socket.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -58,19 +57,6 @@ absl::string_view RtpPacketTypeToString(RtpPacketType packet_type);
 
 bool RTC_EXPORT ValidateRtpHeader(std::span<const uint8_t> rtp,
                                   size_t* header_length);
-
-
-bool UpdateRtpAbsSendTimeExtension(std::span<uint8_t> rtp,
-                                   int extension_id,
-                                   uint64_t time_us);
-
-
-
-bool RTC_EXPORT
-ApplyPacketOptions(std::span<uint8_t> data,
-                   const PacketTimeUpdateParams& packet_time_params,
-                   uint64_t time_us);
-
 }  
 
 

@@ -12,35 +12,30 @@
 
 #include <cstdint>
 #include <cstring>
-#include <vector>
 
 #include "media/base/fake_rtp.h"
-#include "rtc_base/async_packet_socket.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
-static const uint8_t kInvalidPacket[] = {0x80, 0x00};
+namespace {
+const uint8_t kInvalidPacket[] = {0x80, 0x00};
 
 
 
-static const uint8_t kNonCompoundRtcpPliFeedbackPacket[] = {
+const uint8_t kNonCompoundRtcpPliFeedbackPacket[] = {
     0x81, 0xCE, 0x00, 0x0C, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00, 0x11, 0x11};
 
 
 
-static const uint8_t kNonCompoundRtcpAppPacket[] = {0x81, 0xCC, 0x00, 0x0C,
-                                                    0x00, 0x00, 0x11, 0x11};
+const uint8_t kNonCompoundRtcpAppPacket[] = {0x81, 0xCC, 0x00, 0x0C,
+                                             0x00, 0x00, 0x11, 0x11};
 
 
-static const uint8_t kNonCompoundRtcpSDESPacket[] = {0x80, 0xCA, 0x00, 0x00};
-
-static uint8_t kFakeTag[4] = {0xba, 0xdd, 0xba, 0xdd};
-static uint8_t kTestKey[] = "12345678901234567890";
-static uint8_t kTestAstValue[3] = {0xaa, 0xbb, 0xcc};
+const uint8_t kNonCompoundRtcpSDESPacket[] = {0x80, 0xCA, 0x00, 0x00};
 
 
-static uint8_t kRtpMsgWith2ByteExtnHeader[] = {
+uint8_t kRtpMsgWith2ByteExtnHeader[] = {
     
     
   0x90, 0x00, 0x00, 0x00,
@@ -53,23 +48,19 @@ static uint8_t kRtpMsgWith2ByteExtnHeader[] = {
 
 
 
-static uint8_t kRtpMsgWithOneByteAbsSendTimeExtension[] = {
+uint8_t kRtpMsgWithOneByteAbsSendTimeExtension[] = {
     0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0xBE, 0xDE, 0x00, 0x02, 0x22, 0x00, 0x02, 0x1c, 0x32, 0xaa, 0xbb, 0xcc,
 };
 
 
 
-static uint8_t kRtpMsgWithTwoByteAbsSendTimeExtension[] = {
+uint8_t kRtpMsgWithTwoByteAbsSendTimeExtension[] = {
     0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x10, 0x00, 0x00, 0x02, 0x02, 0x01, 0x02, 0x03, 0x03, 0xaa, 0xbb, 0xcc,
 };
 
-
-
-static const int kAstIndexInOneByteRtpMsg = 21;
-
-static const int kAstIndexInTwoByteRtpMsg = 21;
+}  
 
 TEST(RtpUtilsTest, GetRtcp) {
   int pt;
@@ -85,6 +76,12 @@ TEST(RtpUtilsTest, GetRtcp) {
                           sizeof(kNonCompoundRtcpAppPacket), &ssrc));
   EXPECT_FALSE(GetRtcpSsrc(kNonCompoundRtcpSDESPacket,
                            sizeof(kNonCompoundRtcpSDESPacket), &ssrc));
+}
+
+TEST(RtpUtilsTest, InferRtpPacketType) {
+  EXPECT_EQ(RtpPacketType::kRtp, InferRtpPacketType(kPcmuFrame));
+  EXPECT_EQ(RtpPacketType::kRtcp, InferRtpPacketType(kRtcpReport));
+  EXPECT_EQ(RtpPacketType::kUnknown, InferRtpPacketType(kInvalidPacket));
 }
 
 
@@ -125,156 +122,4 @@ TEST(RtpUtilsTest, ValidRtpPacketWithTwoByteAbsSendTimeExtension) {
   EXPECT_TRUE(ValidateRtpHeader(kRtpMsgWithTwoByteAbsSendTimeExtension,
                                 nullptr));
 }
-
-
-TEST(RtpUtilsTest, UpdateAbsSendTimeExtensionInTurnSendIndication) {
-  
-  
-  uint8_t message_without_extension[] = {
-      
-      
-      0x00, 0x16, 0x00, 0x18,  
-      0x21, 0x12, 0xA4, 0x42,  
-      '0',  '1',  '2',  '3',   
-      '4',  '5',  '6',  '7',
-      '8',  '9',  'a',  'b',
-      0x00, 0x20, 0x00, 0x04,  
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x13, 0x00, 0x0C,  
-      0x80, 0x00, 0x00, 0x00,  
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      
-  };
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(message_without_extension, 3, 0));
-
-  
-  
-  uint8_t message[] = {
-      
-      
-      0x00, 0x16, 0x00, 0x24,  
-      0x21, 0x12, 0xA4, 0x42,  
-      '0',  '1',  '2',  '3',   
-      '4',  '5',  '6',  '7',
-      '8',  '9',  'a',  'b',
-      0x00, 0x20, 0x00, 0x04,  
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x13, 0x00, 0x18,  
-      0x90, 0x00, 0x00, 0x00,  
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0xDE,
-      0x00, 0x02, 0x22, 0xaa, 0xbb, 0xcc, 0x32, 0xaa, 0xbb, 0xcc,
-      
-  };
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(message, 3, 0));
-}
-
-
-
-TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
-  PacketTimeUpdateParams packet_time_params;
-  std::vector<uint8_t> rtp_packet(
-      kRtpMsgWithOneByteAbsSendTimeExtension,
-      kRtpMsgWithOneByteAbsSendTimeExtension +
-          sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
-  rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 0));
-
-  
-  EXPECT_EQ(0,
-            memcmp(&rtp_packet[sizeof(kRtpMsgWithOneByteAbsSendTimeExtension)],
-                   kFakeTag, 4));
-
-  
-  EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInOneByteRtpMsg], kTestAstValue,
-                      sizeof(kTestAstValue)));
-}
-
-
-TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParams) {
-  PacketTimeUpdateParams packet_time_params;
-  packet_time_params.srtp_auth_key.assign(kTestKey,
-                                          kTestKey + sizeof(kTestKey));
-  packet_time_params.srtp_auth_tag_len = 4;
-
-  std::vector<uint8_t> rtp_packet(
-      kRtpMsgWithOneByteAbsSendTimeExtension,
-      kRtpMsgWithOneByteAbsSendTimeExtension +
-          sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
-  rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 0));
-
-  uint8_t kExpectedTag[] = {0xc1, 0x7a, 0x8c, 0xa0};
-  EXPECT_EQ(0,
-            memcmp(&rtp_packet[sizeof(kRtpMsgWithOneByteAbsSendTimeExtension)],
-                   kExpectedTag, sizeof(kExpectedTag)));
-
-  
-  EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInOneByteRtpMsg], kTestAstValue,
-                      sizeof(kTestAstValue)));
-}
-
-
-TEST(RtpUtilsTest, UpdateOneByteAbsSendTimeExtensionInRtpPacket) {
-  std::vector<uint8_t> rtp_packet(
-      kRtpMsgWithOneByteAbsSendTimeExtension,
-      kRtpMsgWithOneByteAbsSendTimeExtension +
-          sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
-
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(rtp_packet, 3, 51183266));
-
-  
-  const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
-  EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInOneByteRtpMsg], kExpectedTimestamp,
-                      sizeof(kExpectedTimestamp)));
-}
-
-
-TEST(RtpUtilsTest, UpdateTwoByteAbsSendTimeExtensionInRtpPacket) {
-  std::vector<uint8_t> rtp_packet(
-      kRtpMsgWithTwoByteAbsSendTimeExtension,
-      kRtpMsgWithTwoByteAbsSendTimeExtension +
-          sizeof(kRtpMsgWithTwoByteAbsSendTimeExtension));
-
-  EXPECT_TRUE(UpdateRtpAbsSendTimeExtension(rtp_packet, 3, 51183266));
-
-  
-  const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
-  EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInTwoByteRtpMsg], kExpectedTimestamp,
-                      sizeof(kExpectedTimestamp)));
-}
-
-
-TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
-  PacketTimeUpdateParams packet_time_params;
-  packet_time_params.srtp_auth_key.assign(kTestKey,
-                                          kTestKey + sizeof(kTestKey));
-  packet_time_params.srtp_auth_tag_len = 4;
-  packet_time_params.rtp_sendtime_extension_id = 3;
-  
-
-  std::vector<uint8_t> rtp_packet(
-      kRtpMsgWithOneByteAbsSendTimeExtension,
-      kRtpMsgWithOneByteAbsSendTimeExtension +
-          sizeof(kRtpMsgWithOneByteAbsSendTimeExtension));
-  rtp_packet.insert(rtp_packet.end(), kFakeTag, kFakeTag + sizeof(kFakeTag));
-  EXPECT_TRUE(ApplyPacketOptions(rtp_packet, packet_time_params, 51183266));
-
-  const uint8_t kExpectedTag[] = {0x81, 0xd1, 0x2c, 0x0e};
-  EXPECT_EQ(0,
-            memcmp(&rtp_packet[sizeof(kRtpMsgWithOneByteAbsSendTimeExtension)],
-                   kExpectedTag, sizeof(kExpectedTag)));
-
-  
-  const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
-  EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInOneByteRtpMsg], kExpectedTimestamp,
-                      sizeof(kExpectedTimestamp)));
-}
-
-TEST(RtpUtilsTest, InferRtpPacketType) {
-  EXPECT_EQ(RtpPacketType::kRtp, InferRtpPacketType(kPcmuFrame));
-  EXPECT_EQ(RtpPacketType::kRtcp, InferRtpPacketType(kRtcpReport));
-  EXPECT_EQ(RtpPacketType::kUnknown, InferRtpPacketType(kInvalidPacket));
-}
-
 }  
