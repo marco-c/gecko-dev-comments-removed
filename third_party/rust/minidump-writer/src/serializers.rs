@@ -4,6 +4,17 @@
 use serde::Serializer;
 
 
+
+pub fn serialize_debug_string<S: Serializer, D: std::fmt::Debug>(
+    d: &D,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let dbg = format!("{d:#?}");
+    serializer.serialize_str(&dbg)
+}
+
+
+
 pub fn serialize_generic_error<S: Serializer, E: std::error::Error>(
     error: &E,
     serializer: S,
@@ -11,8 +22,7 @@ pub fn serialize_generic_error<S: Serializer, E: std::error::Error>(
     
     
     
-    let dbg = format!("{error:#?}");
-    serializer.serialize_str(&dbg)
+    serialize_debug_string(error, serializer)
 }
 
 pub fn serialize_io_error<S: Serializer>(

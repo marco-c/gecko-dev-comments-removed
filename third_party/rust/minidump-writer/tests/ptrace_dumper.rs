@@ -6,7 +6,7 @@ use {
     error_graph::ErrorList,
     minidump_writer::minidump_writer::MinidumpWriterConfig,
     nix::{
-        sys::mman::{mmap, MapFlags, ProtFlags},
+        sys::mman::{MapFlags, ProtFlags, mmap},
         sys::signal::Signal,
     },
     std::{
@@ -38,12 +38,12 @@ macro_rules! assert_no_soft_errors(($n: ident, $e: expr) => {{
 }});
 
 #[test]
-fn test_setup() {
+fn setup() {
     spawn_child("setup", &[]);
 }
 
 #[test]
-fn test_thread_list_from_child() {
+fn thread_list_from_child() {
     
 
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
@@ -82,7 +82,7 @@ fn test_thread_list_from_child() {
         }
 
         act.sa_flags = libc::SA_SIGINFO;
-        act.sa_sigaction = on_sig as usize;
+        act.sa_sigaction = on_sig as *const () as _;
 
         
         if libc::sigaction(libc::SIGHUP, &act, std::ptr::null_mut()) != 0 {
@@ -101,7 +101,7 @@ fn test_thread_list_from_child() {
 }
 
 #[test]
-fn test_thread_list_from_parent() {
+fn thread_list_from_parent() {
     let num_of_threads = 5;
     let mut child = start_child_and_wait_for_threads(num_of_threads);
     let pid = child.id() as i32;
@@ -157,8 +157,6 @@ fn test_thread_list_from_parent() {
 
 
 
-
-
     }
     drop(dumper);
     child.kill().expect("Failed to kill process");
@@ -175,22 +173,21 @@ fn test_thread_list_from_parent() {
     
 }
 
-
-#[cfg(not(target_arch = "mips"))]
+#[cfg(not(target_os = "android"))]
 #[test]
 
-fn test_mappings_include_linux_gate() {
+fn mappings_include_linux_gate() {
     spawn_child("mappings_include_linux_gate", &[]);
 }
 
 #[test]
-fn test_linux_gate_mapping_id() {
+fn linux_gate_mapping_id() {
     disabled_on_ci_and_android!();
     spawn_child("linux_gate_mapping_id", &[]);
 }
 
 #[test]
-fn test_merged_mappings() {
+fn merges_mappings() {
     let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE).unwrap();
     let page_size = std::num::NonZeroUsize::new(page_size.unwrap() as usize).unwrap();
     let map_size = std::num::NonZeroUsize::new(3 * page_size.get()).unwrap();
@@ -238,15 +235,16 @@ fn test_merged_mappings() {
     );
 }
 
-#[test]
 
-fn test_file_id() {
+#[test]
+fn file_id() {
     disabled_on_ci_and_android!();
     spawn_child("file_id", &[]);
 }
 
+#[cfg(not(target_os = "android"))]
 #[test]
-fn test_find_mapping() {
+fn finds_mappings() {
     spawn_child(
         "find_mappings",
         &[
@@ -257,7 +255,7 @@ fn test_find_mapping() {
 }
 
 #[test]
-fn test_copy_from_process_self() {
+fn copies_from_process_self() {
     disabled_on_ci_and_android!();
 
     let stack_var: libc::c_long = 0x11223344;
@@ -271,8 +269,9 @@ fn test_copy_from_process_self() {
     );
 }
 
+
 #[test]
-fn test_sanitize_stack_copy() {
+fn sanitizes_stack_copies() {
     let num_of_threads = 1;
     let mut child = start_child_and_return(&["spawn_alloc_wait"]);
     let pid = child.id() as i32;
@@ -363,8 +362,6 @@ fn test_sanitize_stack_copy() {
 
     
 
-    
-    
     
     
     

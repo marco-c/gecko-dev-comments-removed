@@ -33,6 +33,9 @@ pub use schedstat::*;
 mod smaps_rollup;
 pub use smaps_rollup::*;
 
+mod syscall;
+pub use syscall::*;
+
 mod pagemap;
 pub use pagemap::*;
 
@@ -489,12 +492,24 @@ pub struct MemoryMaps(pub Vec<MemoryMap>);
 
 impl crate::FromBufRead for MemoryMaps {
     
-    fn from_buf_read<R: BufRead>(reader: R) -> ProcResult<Self> {
-        let mut memory_maps = Vec::new();
-
-        let mut line_iter = reader.lines().map(|r| r.map_err(|_| ProcError::Incomplete(None)));
+    fn from_buf_read<R: BufRead>(mut reader: R) -> ProcResult<Self> {
+        let mut memory_maps = Vec::with_capacity(10);
         let mut current_memory_map: Option<MemoryMap> = None;
-        while let Some(line) = line_iter.next().transpose()? {
+        let mut line = String::with_capacity(100);
+
+        loop {
+            line.clear();
+            match reader.read_line(&mut line) {
+                
+                Ok(0) => break,
+                Ok(_) => {}
+                Err(_) => return Err(ProcError::Incomplete(None)),
+            }
+
+            if line.is_empty() {
+                break;
+            }
+
             
             
             if line.starts_with(|c: char| c.is_ascii_uppercase()) {
@@ -687,7 +702,7 @@ impl crate::FromBufRead for Io {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub enum FDTarget {
     
@@ -702,6 +717,8 @@ pub enum FDTarget {
     MemFD(String),
     
     Other(String, u64),
+    
+    Unknown(String, String),
 }
 
 impl FromStr for FDTarget {
@@ -721,7 +738,7 @@ impl FromStr for FDTarget {
         }
 
         if !s.starts_with('/') && s.contains(':') {
-            let mut s = s.split(':');
+            let mut s = s.splitn(2, ':');
             let fd_type = expect!(s.next());
             match fd_type {
                 "socket" => {
@@ -743,8 +760,14 @@ impl FromStr for FDTarget {
                 "" => Err(ProcError::Incomplete(None)),
                 x => {
                     let inode = expect!(s.next(), "other inode");
-                    let inode = expect!(u64::from_str_radix(strip_first_last(inode)?, 10));
-                    Ok(FDTarget::Other(x.to_string(), inode))
+                    
+                    
+                    if inode.starts_with('[') && inode.ends_with(']') {
+                        if let Ok(inode) = u64::from_str_radix(strip_first_last(inode)?, 10) {
+                            return Ok(FDTarget::Other(x.to_string(), inode));
+                        }
+                    }
+                    Ok(FDTarget::Unknown(x.to_string(), inode.to_string()))
                 }
             }
         } else if let Some(s) = s.strip_prefix("/memfd:") {

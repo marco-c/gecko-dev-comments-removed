@@ -1,7 +1,9 @@
+use {
+    super::{Pid, serializers::*},
+    std::sync::OnceLock,
+};
 
-
-use super::{minidump_writer::MinidumpWriter, serializers::*, Pid};
-
+#[derive(Debug)]
 enum Style {
     
     
@@ -39,15 +41,23 @@ pub struct CopyFromProcessError {
     pub source: nix::Error,
 }
 
-pub struct MemReader {
-    
-    pid: nix::unistd::Pid,
-    style: Option<Style>,
+#[derive(Debug, thiserror::Error, serde::Serialize)]
+pub enum FindModuleError {
+    #[error("Module not found")]
+    ModuleNotFound,
+    #[error("Failed to read process module mappings")]
+    MappingError(#[from] super::maps_reader::MapsReaderError),
 }
 
-impl std::fmt::Debug for MemReader {
+pub struct ProcessReader {
+    
+    pid: nix::unistd::Pid,
+    style: OnceLock<Style>,
+}
+
+impl std::fmt::Debug for ProcessReader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match &self.style {
+        let s = match self.style.get() {
             Some(Style::VirtualMem) => "process_vm_readv",
             Some(Style::File(_)) => "/proc/<pid>/mem",
             Some(Style::Ptrace) => "PTRACE_PEEKDATA",
@@ -64,60 +74,51 @@ impl std::fmt::Debug for MemReader {
     }
 }
 
-impl MemReader {
+impl ProcessReader {
     
     
     #[inline]
-    pub fn new(pid: i32) -> Self {
+    pub(super) fn new(pid: libc::pid_t) -> Self {
         Self {
             pid: nix::unistd::Pid::from_raw(pid),
-            style: None,
+            style: OnceLock::default(),
         }
     }
 
     #[inline]
     #[doc(hidden)]
-    pub fn for_virtual_mem(pid: i32) -> Self {
+    pub(super) fn for_virtual_mem(pid: libc::pid_t) -> Self {
         Self {
             pid: nix::unistd::Pid::from_raw(pid),
-            style: Some(Style::VirtualMem),
+            style: OnceLock::from(Style::VirtualMem),
         }
     }
 
     #[inline]
     #[doc(hidden)]
-    pub fn for_file(pid: i32) -> std::io::Result<Self> {
+    pub(super) fn for_file(pid: libc::pid_t) -> std::io::Result<Self> {
         let file = std::fs::File::open(format!("/proc/{pid}/mem"))?;
 
         Ok(Self {
             pid: nix::unistd::Pid::from_raw(pid),
-            style: Some(Style::File(file)),
+            style: OnceLock::from(Style::File(file)),
         })
     }
 
     #[inline]
     #[doc(hidden)]
-    pub fn for_ptrace(pid: i32) -> Self {
+    pub(super) fn for_ptrace(pid: libc::pid_t) -> Self {
         Self {
             pid: nix::unistd::Pid::from_raw(pid),
-            style: Some(Style::Ptrace),
+            style: OnceLock::from(Style::Ptrace),
         }
     }
 
-    #[inline]
-    pub fn read_to_vec(
-        &mut self,
-        src: usize,
-        length: std::num::NonZeroUsize,
-    ) -> Result<Vec<u8>, CopyFromProcessError> {
-        let mut output = vec![0u8; length.into()];
-        let bytes_read = self.read(src, &mut output)?;
-        output.truncate(bytes_read);
-        Ok(output)
-    }
-
-    pub fn read(&mut self, src: usize, dst: &mut [u8]) -> Result<usize, CopyFromProcessError> {
-        if let Some(rs) = &mut self.style {
+    
+    
+    
+    pub fn read(&self, src: usize, dst: &mut [u8]) -> Result<usize, CopyFromProcessError> {
+        if let Some(rs) = self.style.get() {
             let res = match rs {
                 Style::VirtualMem => Self::vmem(self.pid, src, dst).map_err(|s| (s, 0)),
                 Style::File(file) => Self::file(file, src, dst).map_err(|s| (s, 0)),
@@ -134,19 +135,21 @@ impl MemReader {
             });
         }
 
+        const DOUBLE_INIT_MSG: &str = "somehow MemReader initialized twice";
+
         
         let vmem = match Self::vmem(self.pid, src, dst) {
             Ok(len) => {
-                self.style = Some(Style::VirtualMem);
+                self.style.set(Style::VirtualMem).expect(DOUBLE_INIT_MSG);
                 return Ok(len);
             }
             Err(err) => err,
         };
 
         let file = match std::fs::File::open(format!("/proc/{}/mem", self.pid)) {
-            Ok(mut file) => match Self::file(&mut file, src, dst) {
+            Ok(file) => match Self::file(&file, src, dst) {
                 Ok(len) => {
-                    self.style = Some(Style::File(file));
+                    self.style.set(Style::File(file)).expect(DOUBLE_INIT_MSG);
                     return Ok(len);
                 }
                 Err(err) => err,
@@ -158,13 +161,15 @@ impl MemReader {
 
         let ptrace = match Self::ptrace(self.pid, src, dst) {
             Ok(len) => {
-                self.style = Some(Style::Ptrace);
+                self.style.set(Style::Ptrace).expect(DOUBLE_INIT_MSG);
                 return Ok(len);
             }
             Err((err, _)) => err,
         };
 
-        self.style = Some(Style::Unavailable { vmem, file, ptrace });
+        self.style
+            .set(Style::Unavailable { vmem, file, ptrace })
+            .expect(DOUBLE_INIT_MSG);
         Err(CopyFromProcessError {
             child: self.pid.as_raw(),
             src,
@@ -184,7 +189,7 @@ impl MemReader {
     }
 
     #[inline]
-    fn file(file: &mut std::fs::File, src: usize, dst: &mut [u8]) -> Result<usize, nix::Error> {
+    fn file(file: &std::fs::File, src: usize, dst: &mut [u8]) -> Result<usize, nix::Error> {
         use std::os::unix::fs::FileExt;
 
         file.read_exact_at(dst, src as u64).map_err(|err| {
@@ -223,30 +228,5 @@ impl MemReader {
         }
 
         Ok(dst.len())
-    }
-}
-
-impl MinidumpWriter {
-    
-    
-    #[inline]
-    pub fn copy_from_process(
-        pid: Pid,
-        src: usize,
-        length: usize,
-    ) -> Result<Vec<u8>, CopyFromProcessError> {
-        let length = std::num::NonZeroUsize::new(length).ok_or(CopyFromProcessError {
-            src,
-            child: pid,
-            offset: 0,
-            length,
-            
-            
-            
-            source: nix::errno::Errno::EINVAL,
-        })?;
-
-        let mut mem = MemReader::new(pid);
-        mem.read_to_vec(src, length)
     }
 }

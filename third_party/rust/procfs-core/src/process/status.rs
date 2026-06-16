@@ -53,7 +53,7 @@ pub struct Status {
     
     pub fdsize: u32,
     
-    pub groups: Vec<i32>,
+    pub groups: Vec<u32>,
     
     
     

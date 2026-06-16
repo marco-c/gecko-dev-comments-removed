@@ -40,17 +40,19 @@ pub struct PressureRecord {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct CpuPressure {
+    
     pub some: PressureRecord,
+    
+    
+    
+    
+    pub full: PressureRecord,
 }
 
 impl super::FromBufRead for CpuPressure {
     fn from_buf_read<R: std::io::BufRead>(mut r: R) -> ProcResult<Self> {
-        let mut some = String::new();
-        r.read_line(&mut some)?;
-
-        Ok(CpuPressure {
-            some: parse_pressure_record(&some)?,
-        })
+        let (some, full) = get_pressure(r)?;
+        Ok(CpuPressure { some, full })
     }
 }
 
@@ -104,7 +106,14 @@ fn get_total(map: &HashMap<&str, &str>) -> ProcResult<u64> {
     )
 }
 
-fn parse_pressure_record(line: &str) -> ProcResult<PressureRecord> {
+
+
+
+
+
+
+
+pub fn parse_pressure_record(line: &str) -> ProcResult<PressureRecord> {
     let mut parsed = HashMap::new();
 
     if !line.starts_with("some") && !line.starts_with("full") {
@@ -129,7 +138,16 @@ fn parse_pressure_record(line: &str) -> ProcResult<PressureRecord> {
     })
 }
 
-fn get_pressure<R: std::io::BufRead>(mut r: R) -> ProcResult<(PressureRecord, PressureRecord)> {
+
+
+
+
+
+
+
+
+
+pub fn get_pressure<R: std::io::BufRead>(mut r: R) -> ProcResult<(PressureRecord, PressureRecord)> {
     let mut some = String::new();
     r.read_line(&mut some)?;
     let mut full = String::new();

@@ -329,7 +329,7 @@ mod test {
 
     
     
-    extern "C" {
+    unsafe extern "C" {
         fn getsegmentdata(
             header: *const libc::mach_header,
             segname: *const u8,

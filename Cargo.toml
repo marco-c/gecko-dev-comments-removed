@@ -289,9 +289,6 @@ utf16_iter = { path = "third_party/rust/utf16_iter" }
 icu_properties = { path = "third_party/rust/icu_properties" }
 icu_properties_data = { path = "third_party/rust/icu_properties_data" }
 
-# Patch nix 0.29 to 0.30+
-nix = { path = "build/rust/nix" }
-
 # Patch autocfg to hide rustc output. Workaround for https://github.com/cuviper/autocfg/issues/30
 autocfg = { path = "third_party/rust/autocfg" }
 
@@ -300,6 +297,9 @@ goblin = { path = "build/rust/goblin" }
 
 # Implement getrandom 0.2 in terms of 0.3
 getrandom = { path = "build/rust/getrandom" }
+
+# Implement procfs-core 0.17.0 in terms of 0.18.0
+procfs-core = { path = "build/rust/procfs-core" }
 
 # Patch rustc-hash 1.1.0 to 2.1.1
 rustc-hash = { path = "build/rust/rustc-hash" }
@@ -355,6 +355,9 @@ moz_asserts = { path = "mozglue/static/rust/moz_asserts" }
 # builds.
 # Workaround for https://github.com/rust-lang/cargo/issues/11232
 rure = { path = "third_party/rust/rure" }
+
+# Patch zlib-rs to test a workaround for crashes on Intel Raptor Lake CPU.
+zlib-rs = { path = "third_party/rust/zlib-rs" }
 
 # To-be-published changes.
 unicode-bidi = { git = "https://github.com/servo/unicode-bidi", rev = "ca612daf1c08c53abe07327cb3e6ef6e0a760f0c" }
