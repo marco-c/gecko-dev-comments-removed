@@ -1461,18 +1461,6 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
 
   
   
-  
-  
-  if ((aEvent->mMessage == eTouchEnd ||
-       (aEvent->mMessage == ePointerUp &&
-        aEvent->AsPointerEvent()->mInputSource ==
-            MouseEvent_Binding::MOZ_SOURCE_TOUCH)) &&
-      IsEventOutsideDragThreshold(*aEvent->AsInputEvent())) {
-    return;
-  }
-
-  
-  
   if (StaticPrefs::dom_user_activation_ignore_scrollbars() &&
       (aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp) &&
       aTargetContent->IsInNativeAnonymousSubtree()) {
