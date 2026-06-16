@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RetrievalContextX11_h_
-#define _RetrievalContextX11_h_
+#ifndef RetrievalContextX11_h
+#define RetrievalContextX11_h
 
 #include <gtk/gtk.h>
 #include "nsClipboard.h"

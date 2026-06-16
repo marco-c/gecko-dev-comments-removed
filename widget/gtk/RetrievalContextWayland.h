@@ -2,8 +2,8 @@
 
 
 
-#ifndef _RetrievalContextWayland_h_
-#define _RetrievalContextWayland_h_
+#ifndef RetrievalContextWayland_h
+#define RetrievalContextWayland_h
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"
@@ -92,7 +92,7 @@ class PrimaryDataOffer : public DataOffer {
 
 class RetrievalContextWayland : public RetrievalContext {
  public:
-  RetrievalContextWayland();
+  explicit RetrievalContextWayland(bool aIsDragContext);
 
   virtual ClipboardData GetClipboardData(const char* aMimeType,
                                          int32_t aWhichClipboard) override;
