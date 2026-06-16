@@ -181,11 +181,7 @@ class nsAttrValue {
 
   void SetTo(const nsAttrValue& aOther);
   void SetTo(const nsAString& aValue);
-  
-  
-  void SetToAssumeUnset(already_AddRefed<mozilla::StringBuffer> aValue);
   void SetTo(nsAtom* aValue);
-  void SetToAssumeUnset(already_AddRefed<nsAtom> aValue);
   void SetTo(int16_t aInt);
   void SetTo(int32_t aInt, const nsAString* aSerialized);
   void SetTo(double aValue, const nsAString* aSerialized);
