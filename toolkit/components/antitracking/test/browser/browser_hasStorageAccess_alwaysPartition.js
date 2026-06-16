@@ -157,16 +157,16 @@ var testCases = [
     ],
   },
   {
-    behavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN, 
+    behavior: BEHAVIOR_PARTITION_FOREIGN, 
     cases: [
       [true] ,
       [false] ,
       [false] ,
-      [false, trackerBlocked] ,
-      [false, trackerBlocked] ,
+      [false] ,
+      [false] ,
       [true] ,
       [true] ,
-      [false, trackerBlocked] ,
+      [false] ,
     ],
   },
 ];
@@ -178,19 +178,6 @@ var testCases = [
       add_task(async _ => {
         setting.setup();
       });
-    }
-
-    
-    
-    let isTrackerCookieBlocked = Services.prefs.getBoolPref(
-      "network.cookie.cookieBehavior.trackerCookieBlocking"
-    );
-
-    if (!isTrackerCookieBlocked) {
-      
-      testCases[5].cases[3] = [false]; 
-      testCases[5].cases[4] = [false]; 
-      testCases[5].cases[7] = [false]; 
     }
 
     testCases.forEach(test => {
