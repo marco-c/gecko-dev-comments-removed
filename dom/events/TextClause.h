@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TextClause_h
 #define mozilla_dom_TextClause_h
 
@@ -17,7 +15,7 @@ namespace mozilla::dom {
 
 class TextClause final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TextClause)
 
   nsPIDOMWindowInner* GetParentObject() const { return mOwner; }

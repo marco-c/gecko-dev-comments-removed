@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TouchEvent_h_
 #define mozilla_dom_TouchEvent_h_
 
@@ -19,7 +17,7 @@ namespace mozilla::dom {
 
 class TouchList final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TouchList)
 
   explicit TouchList(nsISupports* aParent) : mParent(aParent) {

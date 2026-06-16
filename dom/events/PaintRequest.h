@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_PaintRequest_h_
 #define mozilla_dom_PaintRequest_h_
 
@@ -20,7 +18,7 @@ class PaintRequest final : public nsISupports, public nsWrapperCache {
  public:
   explicit PaintRequest(Event* aParent) : mParent(aParent) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PaintRequest)
 
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -44,7 +42,7 @@ class PaintRequestList final : public nsISupports, public nsWrapperCache {
  public:
   explicit PaintRequestList(Event* aParent) : mParent(aParent) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PaintRequestList)
 
   virtual JSObject* WrapObject(JSContext* aCx,

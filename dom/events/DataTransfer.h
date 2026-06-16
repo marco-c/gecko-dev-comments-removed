@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_DataTransfer_h
 #define mozilla_dom_DataTransfer_h
 
@@ -54,7 +52,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
  public:
   NS_INLINE_DECL_STATIC_IID(NS_DATATRANSFER_IID)
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
 
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(DataTransfer)
 
