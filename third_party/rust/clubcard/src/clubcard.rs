@@ -51,15 +51,15 @@ pub type ClubcardIndex = BTreeMap< Vec<u8>, ClubcardIndexEntry>;
 #[derive(Serialize, Deserialize)]
 pub struct Clubcard<const W: usize, UniverseMetadata, PartitionMetadata> {
     
-    pub(crate) universe: UniverseMetadata,
+    pub universe: UniverseMetadata,
     
-    pub(crate) partition: PartitionMetadata,
+    pub partition: PartitionMetadata,
     
-    pub(crate) index: ClubcardIndex,
+    pub index: ClubcardIndex,
     
-    pub(crate) approx_filter: Vec<Vec<u64>>,
+    pub approx_filter: Vec<Vec<u64>>,
     
-    pub(crate) exact_filter: Vec<u64>,
+    pub exact_filter: Vec<u64>,
 }
 
 impl<const W: usize, UniverseMetadata, PartitionMetadata> fmt::Display
