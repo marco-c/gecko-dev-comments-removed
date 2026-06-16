@@ -22,8 +22,6 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
-template <class T>
-class Maybe;
 struct StyleMathValue;
 
 namespace dom {
@@ -115,9 +113,7 @@ class CSSMathValue : public CSSNumericValue {
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
 
-  
-  
-  Maybe<StyleMathValue> ToStyleMathValue() const;
+  StyleMathValue ToStyleMathValue() const;
 
  protected:
   virtual ~CSSMathValue() = default;

@@ -21,8 +21,6 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
-template <class T>
-class Maybe;
 template <typename T>
 struct StyleBox;
 struct StyleNumericValue;
@@ -59,9 +57,7 @@ class CSSMathInvert final : public CSSMathValue {
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
 
-  
-  
-  Maybe<StyleMathInvert> ToStyleMathInvert() const;
+  StyleMathInvert ToStyleMathInvert() const;
 
  private:
   virtual ~CSSMathInvert() = default;

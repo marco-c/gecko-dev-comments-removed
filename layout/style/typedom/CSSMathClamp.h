@@ -22,8 +22,6 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-template <class T>
-class Maybe;
 struct StyleNumericValue;
 template <typename T, size_t N>
 struct StyleOwnedArray;
@@ -68,9 +66,7 @@ class CSSMathClamp final : public CSSMathValue {
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
 
-  
-  
-  Maybe<StyleMathClamp> ToStyleMathClamp() const;
+  StyleMathClamp ToStyleMathClamp() const;
 
  private:
   virtual ~CSSMathClamp() = default;
