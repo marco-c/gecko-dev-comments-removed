@@ -116,6 +116,7 @@ import org.mozilla.fenix.home.bookmarks.BookmarksFeature
 import org.mozilla.fenix.home.bookmarks.controller.DefaultBookmarksController
 import org.mozilla.fenix.home.ext.showWallpaperOnboardingDialog
 import org.mozilla.fenix.home.logo.LogoController
+import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.controller.DefaultPocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.DefaultPrivateBrowsingController
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabFeature
@@ -278,7 +279,11 @@ class HomeFragment : Fragment() {
         ViewBoundFeatureWrapper()
     private val lensLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
+            lensFeature?.get()?.handleCameraActivityResult(
+                result.resultCode,
+                result.data,
+                qrScanFenixFeature?.get(),
+            )
         }
     private val lensCameraPermissionLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -1214,6 +1219,7 @@ class HomeFragment : Fragment() {
         )
     }
 
+    @Suppress("LongMethod")
     private fun initInteractor() {
         _sessionControlInteractor = SessionControlInteractor(
             controller = sessionControlController,
@@ -1271,6 +1277,9 @@ class HomeFragment : Fragment() {
             topSiteController = buildTopSitesController(),
             privacyNoticeBannerController = DefaultPrivacyNoticeBannerController(
                 privacyNoticeBannerStore = privacyNoticeBannerStore,
+            ),
+            trackingProtectionController = TrackingProtectionController(
+                navController = findNavController(),
             ),
             logoController = LogoController(
                 longFoxFeature = requireComponents.core.longFoxFeature,
