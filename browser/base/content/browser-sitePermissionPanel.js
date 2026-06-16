@@ -374,9 +374,12 @@ var gPermissionPanel = {
     
     
     
+    
+    
     if (
       !this._sharingState &&
-      gURLBar.getAttribute("pageproxystate") != "valid"
+      gURLBar.getAttribute("pageproxystate") != "valid" &&
+      !gURLBar.hasAttribute("persistsearchterms")
     ) {
       return;
     }
@@ -744,6 +747,13 @@ var gPermissionPanel = {
       block.setAttribute("class", "permission-popup-permission-item-container");
       menulist.setAttribute("sizetopopup", "none");
       menulist.setAttribute("id", "permission-popup-menulist");
+
+      if (
+        idNoSuffix == "popup" &&
+        Services.prefs.prefIsLocked("dom.disable_open_during_load")
+      ) {
+        menulist.setAttribute("disabled", "true");
+      }
 
       for (let state of SitePermissions.getAvailableStates(idNoSuffix)) {
         let menuitem = document.createXULElement("menuitem");
