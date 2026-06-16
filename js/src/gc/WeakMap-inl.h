@@ -198,7 +198,7 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
                                   bool populateWeakKeysTable) {
 #ifdef DEBUG
   MOZ_ASSERT(isMarked());
-  if (marker->isParallelMarkingMultipleThreads()) {
+  if (marker->isParallelMarking()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif
@@ -317,9 +317,7 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
     
     mozilla::Maybe<AutoLockGC> lock;
     if (marker->isParallelMarking()) {
-      if (marker->isParallelMarkingMultipleThreads()) {
-        lock.emplace(marker->runtime());
-      }
+      lock.emplace(marker->runtime());
     }
 
     if (!memberOf) {
@@ -389,7 +387,7 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
       marker->incrementalWeakMapMarkingEnabled || marker->isWeakMarking();
 
 #ifdef DEBUG
-  if (populateWeakKeysTable && marker->isParallelMarkingMultipleThreads()) {
+  if (populateWeakKeysTable && marker->isParallelMarking()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif
