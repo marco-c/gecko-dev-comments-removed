@@ -5,6 +5,8 @@
 #ifndef jit_riscv64_Architecture_riscv64_h
 #define jit_riscv64_Architecture_riscv64_h
 
+#include "mozilla/EnumSet.h"
+
 #include <algorithm>
 #include <bit>
 
@@ -514,23 +516,86 @@ static const uint32_t SpillSlotSize =
     std::max(sizeof(Registers::RegisterContent),
              sizeof(FloatRegisters::RegisterContent));
 
-class RVFlags final {
- public:
-  static void Init();
+enum class RVExtension : uint32_t {
+  
+  Initialized,
 
-  static bool FlagsHaveBeenComputed() { return sComputed; }
+  
+  Zba,
 
-  static bool HasZbaExtension() { return sZbaExtension; }
+  
+  Zbb,
 
-  static bool HasZbbExtension() { return sZbbExtension; }
+  
+  Zbs,
 
- private:
-  static inline bool sZbaExtension = false;
-  static inline bool sZbbExtension = false;
-  static inline bool sComputed = false;
+  
+  Zfhmin,
+
+  
+  Zfa,
+
+  
+  Zicond,
 };
 
-inline uint32_t GetRISCV64Flags() { return 0; }
+using RVExtensions = mozilla::EnumSet<RVExtension>;
+
+class RVFlags final {
+  
+  
+  
+  static inline RVExtensions extensions{};
+
+ public:
+  RVFlags() = delete;
+
+  
+  
+  static void Init();
+
+  static bool IsInitialized() {
+    return extensions.contains(RVExtension::Initialized);
+  }
+
+  static uint32_t GetFlags() {
+    MOZ_ASSERT(IsInitialized());
+    return extensions.serialize();
+  }
+
+  static bool HasZbaExtension() {
+    return extensions.contains(RVExtension::Zba);
+  }
+
+  static bool HasZbbExtension() {
+    return extensions.contains(RVExtension::Zbb);
+  }
+
+  static bool HasZbsExtension() {
+    return extensions.contains(RVExtension::Zbs);
+  }
+
+  static bool HasZfhminExtension() {
+    return extensions.contains(RVExtension::Zfhmin);
+  }
+
+  static bool HasZfaExtension() {
+    return extensions.contains(RVExtension::Zfa);
+  }
+
+  static bool HasZicondExtension() {
+    return extensions.contains(RVExtension::Zicond);
+  }
+};
+
+
+
+
+
+void SetRISCV64ExtensionsString(const char* extensions);
+
+
+inline uint32_t GetRISCV64Flags() { return RVFlags::GetFlags(); }
 
 }  
 }  
