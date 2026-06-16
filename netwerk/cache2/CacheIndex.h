@@ -64,20 +64,12 @@ using CacheIndexHeader = struct {
   
   
   uint32_t mKBWritten;
-
-  
-  
-  
-  
-  
-  uint32_t mIsEncrypted;
 };
 
 static_assert(sizeof(CacheIndexHeader::mVersion) +
                       sizeof(CacheIndexHeader::mTimeStamp) +
                       sizeof(CacheIndexHeader::mIsDirty) +
-                      sizeof(CacheIndexHeader::mKBWritten) +
-                      sizeof(CacheIndexHeader::mIsEncrypted) ==
+                      sizeof(CacheIndexHeader::mKBWritten) ==
                   sizeof(CacheIndexHeader),
               "Unexpected sizeof(CacheIndexHeader)!");
 

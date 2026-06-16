@@ -33,26 +33,13 @@ static const uint32_t kCacheEntryIsPinned = 1 << 0;
 
 
 
-static const uint32_t kCacheEntryIsEncrypted = 1 << 1;
-
-
-
-
-
 
 #define FRECENCY2INT(aFrecency) \
   ((uint32_t)((aFrecency) * CacheObserver::HalfLifeSeconds()))
 #define INT2FRECENCY(aInt) \
   ((double)(aInt) / (double)CacheObserver::HalfLifeSeconds())
 
-
-
-
-
-
-
-
-#define kCacheEntryVersion 4
+#define kCacheEntryVersion 3
 
 #pragma pack(push)
 #pragma pack(1)
@@ -119,7 +106,9 @@ class CacheFileMetadataHeader {
     static_assert(
         (sizeof(mVersion) + sizeof(mFetchCount) + sizeof(mLastFetched) +
          sizeof(mLastModified) + sizeof(mFrecency) + sizeof(mExpirationTime) +
-         sizeof(mKeySize) + sizeof(mFlags)) == sizeof(CacheFileMetadataHeader),
+         sizeof(mKeySize)) +
+                sizeof(mFlags) ==
+            sizeof(CacheFileMetadataHeader),
         "Unexpected sizeof(CacheFileMetadataHeader)!");
   }
 };
@@ -168,13 +157,6 @@ class CacheFileMetadata final : public CacheFileIOListener,
     return mOriginAttributes;
   }
   bool Pinned() const { return !!(mMetaHdr.mFlags & kCacheEntryIsPinned); }
-  bool IsEncrypted() const {
-    return !!(mMetaHdr.mFlags & kCacheEntryIsEncrypted);
-  }
-  
-  
-  
-  void SetEncrypted() { AddFlags(kCacheEntryIsEncrypted); }
 
   const char* GetElement(const char* aKey);
   void HandleCorruptMetaData() const;
@@ -227,18 +209,8 @@ class CacheFileMetadata final : public CacheFileIOListener,
  private:
   virtual ~CacheFileMetadata();
 
-  
-  
-  
-  
-  
-  
-  nsresult NormalizeMetadataBuf(uint32_t aBlockOffset, uint32_t aTrailerWords,
-                                bool aEncrypted);
-  
-  
-  
-  nsresult ParseMetadata(uint32_t aLogicalDataSize, bool aHaveKey);
+  nsresult ParseMetadata(uint32_t aMetaOffset, uint32_t aBufOffset,
+                         bool aHaveKey);
   nsresult CheckElements(const char* aBuf, uint32_t aSize);
   nsresult EnsureBuffer(uint32_t aSize);
   nsresult ParseKey(const nsACString& aKey);

@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "CacheCrypto.h"
 #include "CacheFileChunk.h"
 #include "CacheFileInputStream.h"
 #include "CacheFileOutputStream.h"
@@ -562,10 +561,6 @@ nsresult CacheFile::OnFileOpened(CacheFileHandle* aHandle, nsresult aResult) {
         mMetadata->SetHandle(mHandle);
 
         
-        
-        SetupEncryption();
-
-        
         for (auto iter = mCachedChunks.Iter(); !iter.Done(); iter.Next()) {
           uint32_t idx = iter.Key();
           RefPtr<CacheFileChunk>& chunk = iter.Data();
@@ -653,12 +648,6 @@ nsresult CacheFile::OnMetadataRead(nsresult aResult) {
         } else {
           PreloadChunks(0);
         }
-      }
-
-      if (isNew) {
-        
-        
-        SetupEncryption();
       }
 
       InitIndexEntry();
@@ -1509,9 +1498,6 @@ nsresult CacheFile::GetChunkLocked(uint32_t aIndex, ECallerType aCaller,
          chunk.get(), this));
 
     
-    if (mMetadata->IsEncrypted()) {
-      chunk->SetEncrypted();
-    }
     rv = chunk->Read(mHandle,
                      std::min(static_cast<uint32_t>(mDataSize - off),
                               static_cast<uint32_t>(kChunkSize)),
@@ -1787,9 +1773,6 @@ nsresult CacheFile::DeactivateChunk(CacheFileChunk* aChunk) {
 
       mDataIsDirty = true;
 
-      if (mMetadata->IsEncrypted()) {
-        chunk->SetEncrypted();
-      }
       rv = chunk->Write(mHandle, this);
       if (NS_FAILED(rv)) {
         LOG(
@@ -2525,36 +2508,6 @@ void CacheFile::SetError(nsresult aStatus) {
       CacheFileIOManager::DoomFile(mHandle, nullptr);
     }
   }
-}
-
-void CacheFile::SetupEncryption() {
-  AssertOwnsLock();
-
-  
-  
-  
-  
-  
-  if (mMemoryOnly || !mMetadata || mMetadata->IsEncrypted() || mDataSize != 0) {
-    return;
-  }
-
-  if (!CacheCrypto::IsActive()) {
-    if (CacheCrypto::IsEnabled()) {
-      
-      
-      
-      LOG(
-          ("CacheFile::SetupEncryption() - encryption enabled but no cipher "
-           "available, failing entry [this=%p]",
-           this));
-      SetError(NS_ERROR_NOT_AVAILABLE);
-    }
-    
-    return;
-  }
-
-  mMetadata->SetEncrypted();
 }
 
 nsresult CacheFile::InitIndexEntry() {

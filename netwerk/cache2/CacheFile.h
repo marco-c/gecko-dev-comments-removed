@@ -204,10 +204,6 @@ class MOZ_CAPABILITY("mutex") CacheFile final
 
   nsresult InitIndexEntry();
 
-  
-  
-  void SetupEncryption() MOZ_REQUIRES(this);
-
   bool mOpeningFile MOZ_GUARDED_BY(this){false};
   bool mReady MOZ_GUARDED_BY(this){false};
   bool mMemoryOnly MOZ_GUARDED_BY(this){false};

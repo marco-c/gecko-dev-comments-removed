@@ -4,7 +4,6 @@
 
 #include "CacheIndex.h"
 
-#include "CacheCrypto.h"
 #include "CacheLog.h"
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
@@ -20,12 +19,14 @@
 #include "nsNetUtil.h"
 #include "mozilla/AutoRestore.h"
 #include <algorithm>
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
 
+#define kMinUnwrittenChanges 300
+#define kMinDumpInterval 20000  // in milliseconds
 #define kMaxBufSize 16384
-#define kIndexVersion 0x0000000C
+#define kIndexVersion 0x0000000B
+#define kUpdateIndexStartDelay 50000  // in milliseconds
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 
 #define INDEX_NAME "index"
@@ -1742,12 +1743,11 @@ bool CacheIndex::WriteIndexToDiskIfNeeded(
 
   if (!mLastDumpTime.IsNull() &&
       (TimeStamp::NowLoRes() - mLastDumpTime).ToMilliseconds() <
-          StaticPrefs::browser_cache_disk_index_min_dump_interval_ms()) {
+          kMinDumpInterval) {
     return false;
   }
 
-  if (mIndexStats.Dirty() <
-      StaticPrefs::browser_cache_disk_index_min_unwritten_changes()) {
+  if (mIndexStats.Dirty() < kMinUnwrittenChanges) {
     return false;
   }
 
@@ -1803,13 +1803,6 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
   
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
                              static_cast<uint32_t>(mTotalBytesWritten >> 10));
-  mRWBufPos += sizeof(uint32_t);
-  
-  
-  
-  
-  NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
-                             CacheCrypto::IsActive() ? 1 : 0);
   mRWBufPos += sizeof(uint32_t);
 
   mSkipEntries = 0;
@@ -2289,24 +2282,6 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
     pos += sizeof(uint32_t);
     dataWritten <<= 10;
     mTotalBytesWritten += dataWritten;
-
-    bool wasEncrypted = !!NetworkEndian::readUint32(mRWBuf + pos);
-    pos += sizeof(uint32_t);
-    bool nowEncrypted = CacheCrypto::IsActive();
-    if (wasEncrypted != nowEncrypted) {
-      
-      
-      
-      
-      
-      
-      LOG(
-          ("CacheIndex::ParseRecords() - Encryption setting changed "
-           "[wasEncrypted=%d, nowEncrypted=%d], purging cache",
-           wasEncrypted, nowEncrypted));
-      CacheFileIOManager::EvictAll();
-      return;
-    }
   }
 
   uint32_t hashOffset = pos;
@@ -3021,14 +2996,12 @@ void CacheIndex::StartUpdatingIndex(bool aRebuild,
   }
 
   uint32_t elapsed = (TimeStamp::NowLoRes() - mStartTime).ToMilliseconds();
-  uint32_t startDelay =
-      StaticPrefs::browser_cache_disk_index_update_start_delay_ms();
-  if (elapsed < startDelay) {
+  if (elapsed < kUpdateIndexStartDelay) {
     LOG(
         ("CacheIndex::StartUpdatingIndex() - %u ms elapsed since startup, "
          "scheduling timer to fire in %u ms.",
-         elapsed, startDelay - elapsed));
-    rv = ScheduleUpdateTimer(startDelay - elapsed);
+         elapsed, kUpdateIndexStartDelay - elapsed));
+    rv = ScheduleUpdateTimer(kUpdateIndexStartDelay - elapsed);
     if (NS_SUCCEEDED(rv)) {
       return;
     }
