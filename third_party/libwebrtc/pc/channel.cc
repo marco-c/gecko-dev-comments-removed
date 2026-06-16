@@ -212,8 +212,7 @@ BaseChannel::~BaseChannel() {
   
   alive_->SetNotAlive();
   
-  
-  
+  RTC_DCHECK(rtp_transport_ == nullptr);
 }
 
 std::string BaseChannel::ToString() const {
