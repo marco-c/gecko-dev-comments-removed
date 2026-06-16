@@ -154,7 +154,11 @@ class SwatchBasedEditorTooltip extends EventEmitter {
 
 
 
-  addSwatch(swatchEl, callbacks = {}) {
+
+
+
+
+  addSwatch(swatchEl, callbacks = {}, previousSwatchEl) {
     if (!callbacks.onShow) {
       callbacks.onShow = function () {};
     }
@@ -168,6 +172,21 @@ class SwatchBasedEditorTooltip extends EventEmitter {
       callbacks.onCommit = function () {};
     }
 
+    
+    
+    
+    
+    
+    if (previousSwatchEl) {
+      this.swatches.delete(previousSwatchEl);
+
+      previousSwatchEl.removeEventListener("click", this._onSwatchClick);
+      previousSwatchEl.removeEventListener("keydown", this._onSwatchKeyDown);
+
+      if (this.activeSwatch == previousSwatchEl) {
+        this.activeSwatch = swatchEl;
+      }
+    }
     this.swatches.set(swatchEl, {
       callbacks,
     });

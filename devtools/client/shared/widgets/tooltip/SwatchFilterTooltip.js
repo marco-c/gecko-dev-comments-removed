@@ -103,10 +103,21 @@ class SwatchFilterTooltip extends SwatchBasedEditorTooltip {
 
 
 
-  addSwatch(swatchEl, callbacks, parser, options) {
-    super.addSwatch(swatchEl, callbacks);
+
+
+  addSwatch(swatchEl, callbacks, parser, options, previousSwatchEl) {
+    super.addSwatch(swatchEl, callbacks, previousSwatchEl);
     this._parser = parser;
     this._options = options;
+
+    
+    
+    if (
+      previousSwatchEl &&
+      this.currentFilterValue == previousSwatchEl.nextSibling
+    ) {
+      this.currentFilterValue = swatchEl.nextSibling;
+    }
   }
 }
 
