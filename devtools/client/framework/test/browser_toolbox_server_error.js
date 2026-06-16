@@ -33,15 +33,37 @@ add_task(async function () {
   );
 
   is(
+    events[0].extra.descriptor_type,
+    "tab",
+    "toolboxServerError event has the expected descriptor_type"
+  );
+  is(
     events[0].extra.error_name,
     "Error",
     "toolboxServerError event has the expected error name"
+  );
+  is(
+    events[0].extra.host_type,
+    "bottom",
+    "toolboxServerError event has the expected host_type"
   );
   is(
     events[0].extra.is_destroying,
     
     "false",
     "toolboxServerError event has the expected is_destroying flag"
+  );
+  is(
+    events[0].extra.is_local_tab,
+    
+    "true",
+    "toolboxServerError event has the expected is_local_tab flag"
+  );
+  is(
+    events[0].extra.is_window_closed,
+    
+    "false",
+    "toolboxServerError event has the expected is_window_closed flag"
   );
   is(
     events[0].extra.packet_error,
