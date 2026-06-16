@@ -142,11 +142,12 @@ void IMEStateManager::Shutdown() {
 
 void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                                                   BrowserParent* aFocus) {
-  MOZ_ASSERT(aBlur != aFocus);
+  RefPtr<BrowserParent> blur(aBlur);
+  MOZ_ASSERT(blur != aFocus);
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (sPendingFocusedBrowserSwitchingData.isSome()) {
-    MOZ_ASSERT(aBlur ==
+    MOZ_ASSERT(blur ==
                sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused);
     
     
@@ -158,9 +159,9 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                "moves between browsers"));
       return;
     }
-    aBlur = sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
+    blur = sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
     sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused = aFocus;
-    MOZ_ASSERT(aBlur != aFocus);
+    MOZ_ASSERT(blur != aFocus);
   }
 
   
@@ -170,11 +171,11 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
   
   
   
-  if (aBlur && !aFocus && !sIsActive && sTextInputHandlingWidget &&
+  if (blur && !aFocus && !sIsActive && sTextInputHandlingWidget &&
       sTextCompositions &&
       sTextCompositions->GetCompositionFor(sTextInputHandlingWidget)) {
     if (sPendingFocusedBrowserSwitchingData.isNothing()) {
-      sPendingFocusedBrowserSwitchingData.emplace(aBlur, aFocus);
+      sPendingFocusedBrowserSwitchingData.emplace(blur, aFocus);
     }
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), put off to handle it until "
@@ -207,12 +208,12 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
   
   
   
-  if (aBlur && (!aFocus || (aBlur->Manager() != aFocus->Manager()))) {
+  if (blur && (!aFocus || (blur->Manager() != aFocus->Manager()))) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), notifying previous "
              "focused child process of parent process or another child process "
              "getting focus"));
-    aBlur->StopIMEStateManagement();
+    blur->StopIMEStateManagement();
   }
 
   if (sActiveIMEContentObserver) {
@@ -224,8 +225,8 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
     
     
     
-    MOZ_ASSERT(!sFocusedIMEBrowserParent || !aBlur ||
-               (sFocusedIMEBrowserParent == aBlur));
+    MOZ_ASSERT(!sFocusedIMEBrowserParent || !blur ||
+               (sFocusedIMEBrowserParent == blur));
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), notifying IME of blur"));
     NotifyIME(NOTIFY_IME_OF_BLUR, sFocusedIMEWidget, sFocusedIMEBrowserParent);
