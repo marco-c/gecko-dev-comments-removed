@@ -130,6 +130,13 @@ pub type MathMin = ThinVec<NumericValue>;
 
 
 
+
+pub type MathMax = ThinVec<NumericValue>;
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum MathValue {
@@ -142,6 +149,11 @@ pub enum MathValue {
     
     
     Min(MathMin),
+
+    
+    
+    
+    Max(MathMax),
 }
 
 

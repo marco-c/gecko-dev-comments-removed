@@ -129,6 +129,12 @@ impl SumValue {
                 
                 Err(())
             },
+
+            
+            NumericValue::Math(MathValue::Max(_math_max)) => {
+                
+                Err(())
+            },
         }
     }
 

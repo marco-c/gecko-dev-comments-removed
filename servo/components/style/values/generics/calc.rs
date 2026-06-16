@@ -2479,24 +2479,23 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 ))));
                 Ok(())
             },
-            Self::MinMax(ref children, op) => match op {
-                MinMaxOp::Min => {
-                    let mut values = ThinVec::new();
+            Self::MinMax(ref children, op) => {
+                let mut values = ThinVec::new();
 
-                    for child in &**children {
-                        if let Some(inner) =
-                            CalcNodeWithLevel::argument_root(child).to_numeric_value()
-                        {
-                            values.push(inner);
-                        }
+                for child in &**children {
+                    if let Some(inner) = CalcNodeWithLevel::argument_root(child).to_numeric_value()
+                    {
+                        values.push(inner);
                     }
+                }
 
-                    dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Min(
-                        values,
-                    ))));
-                    Ok(())
-                },
-                MinMaxOp::Max => Err(()),
+                let math_value = match op {
+                    MinMaxOp::Min => MathValue::Min(values),
+                    MinMaxOp::Max => MathValue::Max(values),
+                };
+
+                dest.push(TypedValue::Numeric(NumericValue::Math(math_value)));
+                Ok(())
             },
             _ => Err(()),
         }
