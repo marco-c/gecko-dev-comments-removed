@@ -331,11 +331,9 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-
-  static nsresult GetFlatTextLengthInRange(
+  static Result<uint32_t, nsresult> GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
-      const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength);
+      const RawNodePosition& aEndPosition, const Element* aRootElement);
 
   
   
@@ -380,8 +378,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   template <typename SimpleRangeType>
-  nsresult GetStartOffset(const SimpleRangeType& aSimpleRange,
-                          uint32_t* aOffset);
+  Result<uint32_t, nsresult> GetStartOffset(
+      const SimpleRangeType& aSimpleRange) const;
   
   
   

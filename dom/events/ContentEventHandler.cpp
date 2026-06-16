@@ -496,12 +496,13 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
         return NS_ERROR_FAILURE;
       }
     } else {
-      uint32_t selectionStart = 0;
-      rv = GetStartOffset(mFirstSelectedSimpleRange, &selectionStart);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      const Result<uint32_t, nsresult> selectionStartOrError =
+          GetStartOffset(mFirstSelectedSimpleRange);
+      if (NS_WARN_IF(selectionStartOrError.isErr())) {
         return NS_ERROR_FAILURE;
       }
-      if (NS_WARN_IF(!aEvent->mInput.MakeOffsetAbsolute(selectionStart))) {
+      if (NS_WARN_IF(!aEvent->mInput.MakeOffsetAbsolute(
+              selectionStartOrError.inspect()))) {
         return NS_ERROR_FAILURE;
       }
     }
@@ -1366,9 +1367,9 @@ nsresult ContentEventHandler::OnQuerySelectedText(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  uint32_t startOffset = 0;
-  if (NS_WARN_IF(
-          NS_FAILED(GetStartOffset(firstSelectedSimpleRange, &startOffset)))) {
+  const Result<uint32_t, nsresult> startOffsetOrError =
+      GetStartOffset(firstSelectedSimpleRange);
+  if (NS_WARN_IF(startOffsetOrError.isErr())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1409,7 +1410,8 @@ nsresult ContentEventHandler::OnQuerySelectedText(
                                                      selectedString)))) {
       return NS_ERROR_FAILURE;
     }
-    aEvent->mReply->mOffsetAndData.emplace(startOffset, selectedString,
+    aEvent->mReply->mOffsetAndData.emplace(startOffsetOrError.inspect(),
+                                           selectedString,
                                            OffsetAndDataFor::SelectedString);
   } else {
     NS_ASSERTION(anchorRef == focusRef,
@@ -1417,7 +1419,8 @@ nsresult ContentEventHandler::OnQuerySelectedText(
                  "mFirstSelectedRawRange must be collapsed");
 
     aEvent->mReply->mReversed = false;
-    aEvent->mReply->mOffsetAndData.emplace(startOffset, EmptyString(),
+    aEvent->mReply->mOffsetAndData.emplace(startOffsetOrError.inspect(),
+                                           EmptyString(),
                                            OffsetAndDataFor::SelectedString);
   }
 
@@ -2682,10 +2685,12 @@ nsresult ContentEventHandler::OnQueryCaretRect(
     nsRect caretRect;
     nsIFrame* caretFrame = nsCaret::GetGeometry(mSelection, &caretRect);
     if (caretFrame) {
-      uint32_t offset;
-      rv = GetStartOffset(mFirstSelectedSimpleRange, &offset);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (offset == aEvent->mInput.mOffset) {
+      Result<uint32_t, nsresult> offsetOrError =
+          GetStartOffset(mFirstSelectedSimpleRange);
+      if (NS_WARN_IF(offsetOrError.isErr())) {
+        return offsetOrError.unwrapErr();
+      }
+      if (offsetOrError.inspect() == aEvent->mInput.mOffset) {
         rv = ConvertToRootRelativeOffset(caretFrame, caretRect);
         NS_ENSURE_SUCCESS(rv, rv);
         nsPresContext* presContext = caretFrame->PresContext();
@@ -2825,15 +2830,16 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
     return NS_OK;
   }
 
-  uint32_t tentativeCaretOffset = 0;
-  if (NS_WARN_IF(NS_FAILED(
-          GetFlatTextLengthInRange(RawNodePosition(mRootElement, 0u),
-                                   RawNodePosition(tentativeCaretOffsets),
-                                   mRootElement, &tentativeCaretOffset)))) {
-    return NS_ERROR_FAILURE;
+  Result<uint32_t, nsresult> tentativeCaretOffsetOrError =
+      GetFlatTextLengthInRange(RawNodePosition(mRootElement, 0u),
+                               RawNodePosition(tentativeCaretOffsets),
+                               mRootElement);
+  if (NS_WARN_IF(tentativeCaretOffsetOrError.isErr())) {
+    return tentativeCaretOffsetOrError.unwrapErr();
   }
 
-  aEvent->mReply->mTentativeCaretOffset.emplace(tentativeCaretOffset);
+  aEvent->mReply->mTentativeCaretOffset.emplace(
+      tentativeCaretOffsetOrError.inspect());
   if (!targetFrame->IsTextFrame()) {
     
     MOZ_ASSERT(aEvent->Succeeded());
@@ -2844,17 +2850,17 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
   nsIFrame::ContentOffsets contentOffsets =
       textframe->GetCharacterOffsetAtFramePoint(ptInTarget);
   NS_ENSURE_TRUE(contentOffsets.content, NS_ERROR_FAILURE);
-  uint32_t offset = 0;
-  if (NS_WARN_IF(NS_FAILED(GetFlatTextLengthInRange(
-          RawNodePosition(mRootElement, 0u), RawNodePosition(contentOffsets),
-          mRootElement, &offset)))) {
-    return NS_ERROR_FAILURE;
+  Result<uint32_t, nsresult> offsetOrError =
+      GetFlatTextLengthInRange(RawNodePosition(mRootElement, 0u),
+                               RawNodePosition(contentOffsets), mRootElement);
+  if (NS_WARN_IF(offsetOrError.isErr())) {
+    return offsetOrError.unwrapErr();
   }
 
   WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect,
                                              aEvent->mWidget);
   WidgetQueryContentEvent::Options options(*aEvent);
-  queryTextRectEvent.InitForQueryTextRect(offset, 1, options);
+  queryTextRectEvent.InitForQueryTextRect(offsetOrError.inspect(), 1, options);
   if (NS_WARN_IF(NS_FAILED(OnQueryTextRect(&queryTextRectEvent))) ||
       NS_WARN_IF(queryTextRectEvent.Failed())) {
     return NS_ERROR_FAILURE;
@@ -2937,17 +2943,16 @@ nsresult ContentEventHandler::OnQueryDropTargetHittest(
 }
 
 
-nsresult ContentEventHandler::GetFlatTextLengthInRange(
+Result<uint32_t, nsresult> ContentEventHandler::GetFlatTextLengthInRange(
     const RawNodePosition& aStartPosition, const RawNodePosition& aEndPosition,
-    const Element* aRootElement, uint32_t* aLength) {
+    const Element* aRootElement) {
   if (NS_WARN_IF(!aRootElement) || NS_WARN_IF(!aStartPosition.IsSet()) ||
-      NS_WARN_IF(!aEndPosition.IsSet()) || NS_WARN_IF(!aLength)) {
-    return NS_ERROR_INVALID_ARG;
+      NS_WARN_IF(!aEndPosition.IsSet())) {
+    return Err(NS_ERROR_INVALID_ARG);
   }
 
   if (aStartPosition == aEndPosition) {
-    *aLength = 0;
-    return NS_OK;
+    return 0u;
   }
 
   MOZ_ASSERT(!aStartPosition.GetContainer()->IsBeingRemoved());
@@ -2962,7 +2967,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
   SimpleRange prevSimpleRange;
   nsresult rv = prevSimpleRange.SetStart(aStartPosition.AsRaw());
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    return Err(rv);
   }
 
   
@@ -2975,17 +2980,17 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       nsIContent* const firstChild =
           endPosition.GetContainer()->GetFirstChild();
       if (NS_WARN_IF(!firstChild)) {
-        return NS_ERROR_FAILURE;
+        return Err(NS_ERROR_FAILURE);
       }
       endPosition = RawNodePosition::Before(*firstChild);
     } else {
       
       if (NS_WARN_IF(!endPosition.GetContainer()->IsContent())) {
-        return NS_ERROR_FAILURE;
+        return Err(NS_ERROR_FAILURE);
       }
       nsIContent* const parentContent = endPosition.GetContainer()->GetParent();
       if (NS_WARN_IF(!parentContent)) {
-        return NS_ERROR_FAILURE;
+        return Err(NS_ERROR_FAILURE);
       }
       endPosition =
           RawNodePosition::After(*endPosition.GetContainer()->AsContent());
@@ -2994,79 +2999,76 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
   if (endPosition.IsSetAndValid()) {
     
-    rv = prevSimpleRange.SetEnd(endPosition.AsRaw());
+    nsresult rv = prevSimpleRange.SetEnd(endPosition.AsRaw());
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
     rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
                            prevSimpleRange.End().AsRaw());
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
   } else if (endPosition.GetContainer() != aRootElement) {
     
-    rv = prevSimpleRange.SetEndAfter(
+    nsresult rv = prevSimpleRange.SetEndAfter(
         nsIContent::FromNode(endPosition.GetContainer()));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
     rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
                            prevSimpleRange.End().AsRaw());
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
   } else {
     
-    rv = preOrderIter.Init(const_cast<Element*>(aRootElement));
+    nsresult rv = preOrderIter.Init(const_cast<Element*>(aRootElement));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
   }
 
-  *aLength = 0;
+  uint32_t length = 0;
   for (; !preOrderIter.IsDone(); preOrderIter.Next()) {
-    nsINode* node = preOrderIter.GetCurrentNode();
-    if (NS_WARN_IF(!node)) {
-      break;
-    }
-    if (!node->IsContent()) {
+    nsIContent* const content =
+        nsIContent::FromNode(preOrderIter.GetCurrentNode());
+    if (!content) [[unlikely]] {
       continue;
     }
-    nsIContent* content = node->AsContent();
-
     if (const Text* textNode = Text::FromNode(content)) {
       
-      if (node == endPosition.GetContainer()) {
+      if (content == endPosition.GetContainer()) {
         
         
-        *aLength += GetTextLength(
+        length += GetTextLength(
             *textNode,
             *endPosition.Offset(
                 RawNodePosition::OffsetFilter::kValidOrInvalidOffsets));
       } else {
-        *aLength += GetTextLength(*textNode);
+        length += GetTextLength(*textNode);
       }
     } else if (ShouldBreakLineBefore(*content, aRootElement)) {
       
       
-      if (node == aStartPosition.GetContainer() &&
+      if (content == aStartPosition.GetContainer() &&
           !aStartPosition.IsBeforeOpenTag()) {
         continue;
       }
       
       
-      if (node == endPosition.GetContainer() && endPosition.IsBeforeOpenTag()) {
+      if (content == endPosition.GetContainer() &&
+          endPosition.IsBeforeOpenTag()) {
         continue;
       }
-      *aLength += kBRLength;
+      length += kBRLength;
     }
   }
-  return NS_OK;
+  return length;
 }
 
 template <typename SimpleRangeType>
-nsresult ContentEventHandler::GetStartOffset(
-    const SimpleRangeType& aSimpleRange, uint32_t* aOffset) {
+Result<uint32_t, nsresult> ContentEventHandler::GetStartOffset(
+    const SimpleRangeType& aSimpleRange) const {
   
   
   
@@ -3090,7 +3092,7 @@ nsresult ContentEventHandler::GetStartOffset(
   RawNodePosition startPos(startNode, aSimpleRange.StartOffset());
   startPos.mAfterOpenTag = startIsContainer;
   return GetFlatTextLengthInRange(RawNodePosition(mRootElement, 0u), startPos,
-                                  mRootElement, aOffset);
+                                  mRootElement);
 }
 
 nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
