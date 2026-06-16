@@ -1,0 +1,88 @@
+
+
+
+
+
+
+
+
+
+
+
+function measure(installResolution) {
+  const {promise} = Promise.withResolvers();
+
+  let ticksAtFulfill = -1;
+  let tick = 0;
+  promise.then(() => { ticksAtFulfill = tick; });
+
+  installResolution(promise);
+
+  let pending = Promise.resolve();
+  for (let i = 0; i < 6; i++) {
+    pending = pending.then(() => { tick++; });
+  }
+  drainJobQueue();
+  assertEq(ticksAtFulfill >= 0, true, "reaction fired at some tick");
+  return ticksAtFulfill;
+}
+
+
+
+function measureNormal() {
+  const {promise, resolve} = Promise.withResolvers();
+
+  let ticksAtFulfill = -1;
+  let tick = 0;
+  promise.then(() => { ticksAtFulfill = tick; });
+
+  resolve({ then(onFulfilled) { onFulfilled("normal"); } });
+
+  let pending = Promise.resolve();
+  for (let i = 0; i < 6; i++) {
+    pending = pending.then(() => { tick++; });
+  }
+  drainJobQueue();
+  assertEq(ticksAtFulfill >= 0, true, "reaction fired at some tick");
+  return ticksAtFulfill;
+}
+
+
+{
+  const baseline = measureNormal();
+  const safe = measure(p => {
+    safeResolvePromise(p, { then(onFulfilled) { onFulfilled("safe"); } });
+  });
+  assertEq(safe, baseline,
+           "SafeResolve(thenable) settles at the same tick as resolve(thenable)");
+}
+
+
+{
+  let baseTick;
+  {
+    const {promise, resolve} = Promise.withResolvers();
+    let ticksAtFulfill = -1, tick = 0;
+    promise.then(() => { ticksAtFulfill = tick; });
+    resolve(Promise.resolve("inner"));
+    let pending = Promise.resolve();
+    for (let i = 0; i < 7; i++) pending = pending.then(() => { tick++; });
+    drainJobQueue();
+    baseTick = ticksAtFulfill;
+  }
+
+  let safeTick;
+  {
+    const {promise} = Promise.withResolvers();
+    let ticksAtFulfill = -1, tick = 0;
+    promise.then(() => { ticksAtFulfill = tick; });
+    safeResolvePromise(promise, Promise.resolve("inner"));
+    let pending = Promise.resolve();
+    for (let i = 0; i < 7; i++) pending = pending.then(() => { tick++; });
+    drainJobQueue();
+    safeTick = ticksAtFulfill;
+  }
+
+  assertEq(safeTick, baseTick,
+           "promise-with-promise via SafeResolve settles at the same tick");
+}
