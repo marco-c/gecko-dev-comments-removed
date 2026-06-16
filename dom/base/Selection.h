@@ -159,7 +159,7 @@ class Selection final : public nsSupportsWeakReference,
   using IsUnlinking = AbstractRange::IsUnlinking;
 
  protected:
-  virtual ~Selection();
+  ~Selection();
 
  public:
   
@@ -168,7 +168,7 @@ class Selection final : public nsSupportsWeakReference,
   explicit Selection(SelectionType aSelectionType,
                      nsFrameSelection* aFrameSelection);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Selection)
 
   
@@ -338,6 +338,12 @@ class Selection final : public nsSupportsWeakReference,
   
   
   const nsRange* GetAnchorFocusRange() const { return mAnchorFocusRange; }
+
+  
+
+
+
+  void SetAnchorFocusRange(size_t aIndex);
 
   void GetDirection(nsAString& aDirection) const;
 
@@ -949,11 +955,6 @@ class Selection final : public nsSupportsWeakReference,
     ScrollFlags mFlags;
   };
 
-  
-
-
-
-  void SetAnchorFocusRange(size_t aIndex);
   void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
 

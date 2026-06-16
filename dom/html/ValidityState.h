@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ValidityState_h
 #define mozilla_dom_ValidityState_h
 
@@ -18,7 +16,7 @@ class ValidityState final : public nsISupports, public nsWrapperCache {
   ~ValidityState() = default;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ValidityState)
 
   friend class ::nsIConstraintValidation;
@@ -27,8 +25,8 @@ class ValidityState final : public nsISupports, public nsWrapperCache {
     return mConstraintValidation;
   }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   bool ValueMissing() const {
