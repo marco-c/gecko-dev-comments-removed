@@ -11,7 +11,7 @@ use api::channel::{Sender, unbounded_channel};
 use api::{DebugFlags, TextureCacheCategory};
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
 use api::debugger::{FrameLogMessage, InitProfileCountersMessage, ProfileCounterId};
-use api::debugger::{CompositorDebugInfo, CompositorDebugTile, RenderDocReply};
+use api::debugger::{CompositorDebugInfo, CompositorDebugTile};
 use std::thread;
 use base64::prelude::*;
 use sha1::{Sha1, Digest};
@@ -302,29 +302,6 @@ async fn handle_request(
                 DebugCommand::GenerateFrame
             );
             Ok(status_response(200))
-        }
-        "/renderdoc-capture" => {
-            
-            
-            let (tx, rx) = unbounded_channel();
-            
-            
-            
-            
-            api.send_debug_cmd(
-                DebugCommand::CaptureRenderDoc(tx)
-            );
-            
-            
-            
-            
-            
-            
-            let reply = match rx.recv() {
-                Ok(reply) => reply,
-                Err(..) => RenderDocReply::Error("No response received from WR".into()),
-            };
-            Ok(string_response(serde_json::to_string(&reply).unwrap()))
         }
         "/query" => {
             

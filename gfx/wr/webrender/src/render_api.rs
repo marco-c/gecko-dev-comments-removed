@@ -990,10 +990,6 @@ pub enum DebugCommand {
     #[cfg(feature = "debugger")]
     
     AddDebugClient(DebuggerClient),
-    #[cfg(feature = "debugger")]
-    
-    
-    CaptureRenderDoc(Sender<crate::api::debugger::RenderDocReply>),
 }
 
 
