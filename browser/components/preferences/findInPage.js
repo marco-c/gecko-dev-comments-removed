@@ -664,7 +664,11 @@ var gSearchResultsPane = {
     ) {
       result = await this.searchWithinNode(child, searchPhrase);
       
-      if (result && nodeObject.localName === "menulist") {
+      if (
+        result &&
+        (nodeObject.localName === "menulist" ||
+          nodeObject.localName === "moz-select")
+      ) {
         this.listSearchTooltips.add(nodeObject);
       }
 
@@ -808,7 +812,14 @@ var gSearchResultsPane = {
     
     
     
-    let anchorRect = anchorNode.getBoundingClientRect();
+    let positioningNode = anchorNode;
+    if (anchorNode.localName == "moz-select") {
+      
+      
+      positioningNode =
+        anchorNode.shadowRoot?.querySelector(".select-wrapper") ?? anchorNode;
+    }
+    let anchorRect = positioningNode.getBoundingClientRect();
     let tooltipContainerRect =
       this.searchTooltipContainer.getBoundingClientRect();
     let tooltipRect = searchTooltip.getBoundingClientRect();
