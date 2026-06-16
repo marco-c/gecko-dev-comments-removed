@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "PlatformEncoderModule.h"
 
 #include "H264.h"
@@ -13,48 +11,9 @@
 namespace mozilla {
 
 extern LazyLogModule sPEMLog;
-#define LOGD(fmt, ...)                       \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Debug, \
-          ("PEM: %s: " fmt, __func__, ##__VA_ARGS__))
-
-
-const char* GetCodecTypeString(const CodecType& aCodecType) {
-  switch (aCodecType) {
-    case CodecType::_BeginVideo_:
-      return "_BeginVideo_";
-    case CodecType::H264:
-      return "H264";
-    case CodecType::H265:
-      return "H265";
-    case CodecType::VP8:
-      return "VP8";
-    case CodecType::VP9:
-      return "VP9";
-    case CodecType::AV1:
-      return "AV1";
-    case CodecType::_EndVideo_:  
-      return "_EndVideo_/_BeginAudio_";
-    case CodecType::Opus:
-      return "Opus";
-    case CodecType::Vorbis:
-      return "Vorbis";
-    case CodecType::Flac:
-      return "Flac";
-    case CodecType::AAC:
-      return "AAC";
-    case CodecType::PCM:
-      return "PCM";
-      break;
-    case CodecType::G722:
-      return "G722";
-    case CodecType::_EndAudio_:
-      return "_EndAudio_";
-    case CodecType::Unknown:
-      return "Unknown";
-  }
-  MOZ_ASSERT_UNREACHABLE("undefined codec type");
-  return "Undefined";
-}
+#define LOGD(fmt, ...)                                                      \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Debug, "PEM: {}: " fmt, __func__, \
+              ##__VA_ARGS__)
 
 RefPtr<PlatformEncoderModule::CreateEncoderPromise>
 PlatformEncoderModule::AsyncCreateEncoder(const EncoderConfig& aEncoderConfig,
@@ -159,30 +118,31 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width % 2 || !width) {
-      LOGD("Invalid width of %d for h264", width);
+      LOGD("Invalid width of {} for h264", width);
       return false;
     }
     if (height % 2 || !height) {
-      LOGD("Invalid height of %d for h264", height);
+      LOGD("Invalid height of {} for h264", height);
       return false;
     }
     if (specific.mProfile != H264_PROFILE_BASE &&
         specific.mProfile != H264_PROFILE_MAIN &&
         specific.mProfile != H264_PROFILE_HIGH) {
-      LOGD("Invalid profile of %x for h264", specific.mProfile);
+      LOGD("Invalid profile of {:x} for h264",
+           static_cast<int>(specific.mProfile));
       return false;
     }
     
     
     if ((specific.mLevel >= H264_LEVEL::H264_LEVEL_6) &&
         (width > 2 * 4096 || height > 2 * 4096)) {
-      LOGD("Invalid size of %dx%d for h264", width, height);
+      LOGD("Invalid size of {}x{} for h264", width, height);
       return false;
     }
     
     if (specific.mLevel < H264_LEVEL::H264_LEVEL_6 &&
         (width > 4096 || height > 4096)) {
-      LOGD("Invalid size of %dx%d for h264", width, height);
+      LOGD("Invalid size of {}x{} for h264", width, height);
       return false;
     }
   }
@@ -190,7 +150,7 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width > 2 << 13 || height > 2 << 13) {
-      LOGD("Invalid size of %dx%d for VP8", width, height);
+      LOGD("Invalid size of {}x{} for VP8", width, height);
       return false;
     }
   }
@@ -198,7 +158,7 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width > 2 << 15 || height > 2 << 15) {
-      LOGD("Invalid size of %dx%d for VP9", width, height);
+      LOGD("Invalid size of {}x{} for VP9", width, height);
       return false;
     }
   }
