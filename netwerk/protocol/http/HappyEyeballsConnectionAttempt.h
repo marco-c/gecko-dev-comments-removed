@@ -207,8 +207,14 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   
+  
   already_AddRefed<HappyEyeballsTransaction> CreateAttemptTransaction(
-      nsHttpConnectionInfo* aInfo);
+      nsHttpConnectionInfo* aInfo, uint64_t aEstablisherId);
+
+  
+  
+  void OnClientAuthCertificateRequested(uint64_t aEstablisherId);
+  void OnClientAuthCertificateSelected(uint64_t aEstablisherId);
 
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
@@ -300,6 +306,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   TimeStamp mFirstTcpConnectEnd;
   TimeStamp mFirstSecureConnectionStart;
   TimeStamp mFirstConnectEnd;
+
+  
+  
+  bool mPausedForClientAuth = false;
+  uint64_t mClientAuthHolderId = 0;
 };
 
 }  

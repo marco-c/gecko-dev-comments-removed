@@ -127,6 +127,11 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   
   
+  void OnClientAuthCertificateRequested();
+  void OnClientAuthCertificateSelected();
+
+  
+  
   const nsACString& CachedRetryEchConfig() const { return mRetryEchConfig; }
 
   friend class HttpConnectionForceIO;

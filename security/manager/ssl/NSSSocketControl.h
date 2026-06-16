@@ -156,26 +156,6 @@ class NSSSocketControl final : public CommonSocketControl {
     return mEchExtensionStatus;
   }
 
-  void WillSendMlkemShare() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mSentMlkemShare = true;
-  }
-
-  bool SentMlkemShare() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mSentMlkemShare;
-  }
-
-  void SetHasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mHasTls13HandshakeSecrets = true;
-  }
-
-  bool HasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mHasTls13HandshakeSecrets;
-  }
-
   bool GetJoined() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mJoined;
@@ -300,6 +280,10 @@ class NSSSocketControl final : public CommonSocketControl {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mClientAuthCertificateRequest.emplace(ClientAuthCertificateRequest{
         std::move(serverCertificate), std::move(caNames)});
+    
+    if (mTlsHandshakeCallback) {
+      (void)mTlsHandshakeCallback->ClientAuthCertificateRequested();
+    }
   }
 
   void MaybeSelectClientAuthCertificate();
@@ -328,8 +312,6 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mIsFullHandshake;
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  
-  bool mSentMlkemShare;
-  bool mHasTls13HandshakeSecrets;
 
   
   

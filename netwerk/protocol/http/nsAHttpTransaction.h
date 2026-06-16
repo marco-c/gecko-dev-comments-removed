@@ -239,6 +239,11 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void OnProxyConnectComplete(const nsHttpResponseHead& aResponseHead) {
   }
 
+  
+  
+  virtual void OnClientAuthCertificateRequested() {}
+  virtual void OnClientAuthCertificateSelected() {}
+
   virtual nsresult FetchHTTPSRR() { return NS_ERROR_NOT_IMPLEMENTED; }
   virtual nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,
                                       nsISVCBRecord* aHighestPriorityRecord,
