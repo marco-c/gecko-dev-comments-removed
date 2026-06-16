@@ -1211,7 +1211,7 @@ void nsWindow::SetUserTimeAndStartupTokenForActivatedWindow() {
     return;
   }
 
-  mWindowActivationTokenFromEnv = toolkit->GetStartupToken();
+  mWindowActivationTokenFromEnv = toolkit->GetActivationToken();
   if (!mWindowActivationTokenFromEnv.IsEmpty()) {
     if (!GdkIsWaylandDisplay()) {
       gtk_window_set_startup_id(GTK_WINDOW(mShell),
@@ -1232,7 +1232,7 @@ void nsWindow::SetUserTimeAndStartupTokenForActivatedWindow() {
   
   
   toolkit->SetFocusTimestamp(0);
-  toolkit->SetStartupToken(""_ns);
+  toolkit->SetActivationToken(""_ns);
 }
 
 
@@ -1328,7 +1328,7 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
         
         if (GdkIsX11Display()) {
           nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
-          const auto& startupToken = toolkit->GetStartupToken();
+          const auto& startupToken = toolkit->GetActivationToken();
           if (!startupToken.IsEmpty()) {
             return static_cast<uint32_t>(GDK_CURRENT_TIME);
           }

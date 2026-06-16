@@ -29,8 +29,11 @@ class nsGTKToolkit final {
 
 
 
-  void SetStartupToken(const nsACString& aToken) { mStartupToken = aToken; }
-  const nsCString& GetStartupToken() const { return mStartupToken; }
+
+  void SetActivationToken(const nsACString& aToken) {
+    mActivationToken = aToken;
+  }
+  const nsCString& GetActivationToken() const { return mActivationToken; }
 
   
 
@@ -42,7 +45,7 @@ class nsGTKToolkit final {
  private:
   static nsGTKToolkit* gToolkit;
 
-  nsCString mStartupToken;
+  nsCString mActivationToken;
   uint32_t mFocusTimestamp = 0;
 };
 
