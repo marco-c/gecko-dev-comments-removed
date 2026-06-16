@@ -250,6 +250,14 @@ document.addEventListener("DOMContentLoaded", function () {
     window.PrivateBrowsingRecordClick("InfoLink");
   });
 
+  if (RPMGetBoolPref("browser.nova.enabled", false)) {
+    document.getElementById("info-title").hidden = true;
+    document.l10n.setAttributes(
+      document.getElementById("info-body"),
+      "about-private-browsing-nova-info-body"
+    );
+  }
+
   
   
   setupMessageConfig();
