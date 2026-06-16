@@ -25,7 +25,8 @@
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/StaticPtr.h"  
 #include "mozilla/TimeStamp.h"  
-#include "nsTHashMap.h"         
+#include "mozilla/WritingModes.h"
+#include "nsTHashMap.h"  
 #include "nsString.h"
 #include "PLDHashTable.h"  
 
@@ -41,6 +42,19 @@ struct ParamTraits;
 
 namespace mozilla {
 namespace layers {
+
+
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+  ScrollOffsetUpdateType, uint8_t, (
+    None,          
+    MainThread,    
+    Restore        
+                   
+                   
+                   
+                   
+));
+
 
 
 
@@ -67,19 +81,6 @@ struct FrameMetrics {
   typedef ScrollableLayerGuid::ViewID ViewID;
 
  public:
-  
-  MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
-    ScrollOffsetUpdateType, uint8_t, (
-      eNone,          
-      eMainThread,    
-      eRestore        
-                      
-                      
-                      
-                      
-  ));
-  
-
   FrameMetrics()
       : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID),
         mPresShellResolution(1),
@@ -93,7 +94,7 @@ struct FrameMetrics {
         mPresShellId(-1),
         mLayoutViewport(0, 0, 0, 0),
         mVisualDestination(0, 0),
-        mVisualScrollUpdateType(eNone),
+        mVisualScrollUpdateType(ScrollOffsetUpdateType::None),
         mInteractiveWidget(
             dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
         mIsRootContent(false),
@@ -828,7 +829,8 @@ struct ScrollMetadata {
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
-           mScrollUpdates == aOther.mScrollUpdates;
+           mScrollUpdates == aOther.mScrollUpdates &&
+           mWritingMode == aOther.mWritingMode;
   }
 
   bool operator!=(const ScrollMetadata& aOther) const {
@@ -941,6 +943,11 @@ struct ScrollMetadata {
     return mScrollUpdates;
   }
 
+  void SetWritingMode(const WritingMode aWritingMode) {
+    mWritingMode = aWritingMode;
+  }
+  const WritingMode GetWritingMode() const { return mWritingMode; }
+
   void UpdatePendingScrollInfo(nsTArray<ScrollPositionUpdate>&& aUpdates) {
     MOZ_ASSERT(!aUpdates.IsEmpty());
     mMetrics.UpdatePendingScrollInfo(aUpdates.LastElement());
@@ -1045,6 +1052,9 @@ struct ScrollMetadata {
   
   
   CopyableTArray<ScrollPositionUpdate> mScrollUpdates;
+
+  
+  WritingMode mWritingMode;
 
   
   

@@ -10,7 +10,6 @@
 #include <stdio.h>  
 
 #include "DepthOrderedFrameList.h"
-#include "FrameMetrics.h"
 #include "LayoutConstants.h"
 #include "TouchManager.h"
 #include "Units.h"
@@ -123,6 +122,7 @@ class SourceSurface;
 namespace layers {
 class LayerManager;
 struct LayersId;
+enum class ScrollOffsetUpdateType : uint8_t;
 }  
 
 namespace layout {
@@ -159,6 +159,7 @@ class PresShell final : public nsStubDocumentObserver,
   typedef gfx::SourceSurface SourceSurface;
   typedef layers::FocusTarget FocusTarget;
   typedef layers::FrameMetrics FrameMetrics;
+  typedef layers::ScrollOffsetUpdateType ScrollOffsetUpdateType;
   typedef layers::LayerManager LayerManager;
 
   
@@ -1259,7 +1260,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   struct VisualScrollUpdate {
     nsPoint mVisualScrollOffset;
-    FrameMetrics::ScrollOffsetUpdateType mUpdateType;
+    ScrollOffsetUpdateType mUpdateType;
     bool mAcknowledged = false;
   };
 
@@ -1281,8 +1282,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   void ScrollToVisual(const nsPoint& aVisualViewportOffset,
-                      FrameMetrics::ScrollOffsetUpdateType aUpdateType,
-                      ScrollMode aMode);
+                      ScrollOffsetUpdateType aUpdateType, ScrollMode aMode);
   void AcknowledgePendingVisualScrollUpdate();
   void ClearPendingVisualScrollUpdate();
   const Maybe<VisualScrollUpdate>& GetPendingVisualScrollUpdate() const {
@@ -1601,11 +1601,7 @@ class PresShell final : public nsStubDocumentObserver,
   void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
   void SetNeedsWindowPropertiesSync();
-  nsSize GetVisualViewportSize() {
-    NS_ASSERTION(mVisualViewportSizeSet,
-                 "asking for visual viewport size when its not set?");
-    return mVisualViewportSize;
-  }
+  nsSize GetVisualViewportSize() const;
 
   nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
 
@@ -1996,9 +1992,8 @@ class PresShell final : public nsStubDocumentObserver,
   void CancelPostedReflowCallbacks();
   void FlushPendingScrollAnchorAdjustments();
 
-  void SetPendingVisualScrollUpdate(
-      const nsPoint& aVisualViewportOffset,
-      FrameMetrics::ScrollOffsetUpdateType aUpdateType);
+  void SetPendingVisualScrollUpdate(const nsPoint& aVisualViewportOffset,
+                                    ScrollOffsetUpdateType aUpdateType);
 
 #ifdef MOZ_REFLOW_PERF
   UniquePtr<ReflowCountMgr> mReflowCountMgr;

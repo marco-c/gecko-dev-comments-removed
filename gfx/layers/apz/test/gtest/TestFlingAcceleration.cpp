@@ -21,8 +21,7 @@ class APZCFlingAccelerationTester : public APZCTreeManagerTester {
     
     
     ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
-      aMetrics.SetVisualScrollUpdateType(
-          FrameMetrics::ScrollOffsetUpdateType::eMainThread);
+      aMetrics.SetVisualScrollUpdateType(ScrollOffsetUpdateType::MainThread);
       aMetrics.SetVisualDestination(CSSPoint(0, 25000));
     });
 

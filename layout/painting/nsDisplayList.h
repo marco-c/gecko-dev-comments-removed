@@ -16,9 +16,7 @@
 
 #include "DisplayItemClipChain.h"
 #include "DisplayListClipState.h"
-#include "FrameMetrics.h"
 #include "HitTestInfo.h"
-#include "ImgDrawResult.h"
 #include "RetainedDisplayListHelpers.h"
 #include "Units.h"
 #include "gfxContext.h"
@@ -1590,37 +1588,6 @@ class nsDisplayListBuilder {
     return mCurrentContainerASR;
   }
 
-  
-
-
-
-
-  bool AddToWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
-
-  
-
-
-
-
-
-  bool IsInWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
-
-  
-
-
-
-  void ClearWillChangeBudgetStatus(nsIFrame* aFrame);
-
-  
-
-
-  void RemoveFromWillChangeBudgets(const nsIFrame* aFrame);
-
-  
-
-
-  void ClearWillChangeBudgets();
-
   void EnterSVGEffectsContents(nsIFrame* aEffectsFrame,
                                nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
@@ -1870,19 +1837,6 @@ class nsDisplayListBuilder {
 
   void AddSizeOfExcludingThis(nsWindowSizes&) const;
 
-  struct FrameWillChangeBudget {
-    FrameWillChangeBudget() : mPresContext(nullptr), mUsage(0) {}
-
-    FrameWillChangeBudget(const nsPresContext* aPresContext, uint32_t aUsage)
-        : mPresContext(aPresContext), mUsage(aUsage) {}
-
-    const nsPresContext* mPresContext;
-    uint32_t mUsage;
-  };
-
-  
-  typedef uint32_t DocumentWillChangeBudget;
-
   nsIFrame* const mReferenceFrame;
   nsIFrame* mIgnoreScrollFrame;
 
@@ -1923,14 +1877,6 @@ class nsDisplayListBuilder {
                    nsTArray<nsIWidget::ThemeGeometry>>
       mThemeGeometries;
   DisplayListClipState mClipState;
-  nsTHashMap<nsPtrHashKey<const nsPresContext>, DocumentWillChangeBudget>
-      mDocumentWillChangeBudgets;
-
-  
-  
-  nsTHashMap<nsPtrHashKey<const nsIFrame>, FrameWillChangeBudget>
-      mFrameWillChangeBudgets;
-
   nsTHashSet<nsCString> mDestinations;  
 
   
@@ -2318,24 +2264,11 @@ class nsDisplayItem {
   
 
 
-  bool IsReused() const { return mItemFlags.contains(ItemFlag::ReusedItem); }
-
-  void SetReused(bool aReused) { SetItemFlag(ItemFlag::ReusedItem, aReused); }
-
-  
-
-
   bool CanBeReused() const {
     return !mItemFlags.contains(ItemFlag::CantBeReused);
   }
 
   void SetCantBeReused() { mItemFlags += ItemFlag::CantBeReused; }
-
-  bool CanBeCached() const {
-    return !mItemFlags.contains(ItemFlag::CantBeCached);
-  }
-
-  void SetCantBeCached() { mItemFlags += ItemFlag::CantBeCached; }
 
   bool IsOldItem() const { return !!mOldList; }
 
@@ -2458,21 +2391,6 @@ class nsDisplayItem {
  public:
   nsDisplayItem() = delete;
   nsDisplayItem(const nsDisplayItem&) = delete;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void InvalidateItemCacheEntry() {}
 
   struct HitTestState {
     explicit HitTestState() = default;
@@ -2837,11 +2755,7 @@ class nsDisplayItem {
   }
 
   
-
-
-  virtual bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
-    return false;
-  }
+  virtual bool CanUseAsyncAnimations() { return false; }
 
   virtual bool SupportsOptimizingToImage() const { return false; }
 
@@ -2972,10 +2886,8 @@ class nsDisplayItem {
  private:
   enum class ItemFlag : uint16_t {
     CantBeReused,
-    CantBeCached,
     DeletedFrame,
     ModifiedFrame,
-    ReusedItem,
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     MergedItem,
     PreProcessedItem,
@@ -3076,20 +2988,6 @@ class nsPaintedDisplayItem : public nsDisplayItem {
 
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) = 0;
 
-  
-
-
-
-
-  Maybe<uint16_t>& CacheIndex() { return mCacheIndex; }
-
-  void InvalidateItemCacheEntry() override {
-    
-    
-    
-    mCacheIndex = Nothing();
-  }
-
   const HitTestInfo& GetHitTestInfo() final { return mHitTestInfo; }
   void InitializeHitTestInfo(nsDisplayListBuilder* aBuilder) {
     mHitTestInfo.Initialize(aBuilder, Frame());
@@ -3111,7 +3009,6 @@ class nsPaintedDisplayItem : public nsDisplayItem {
 
  protected:
   HitTestInfo mHitTestInfo;
-  Maybe<uint16_t> mCacheIndex;
 };
 
 template <typename T>
@@ -4156,17 +4053,13 @@ class nsDisplaySolidColor final : public nsPaintedDisplayItem {
   }
 
   nsDisplaySolidColor(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      const nsRect& aBounds, nscolor aColor,
-                      bool aCanBeReused = true)
+                      const nsRect& aBounds, nscolor aColor)
       : nsPaintedDisplayItem(aBuilder, aFrame),
         mColor(aColor),
         mBounds(aBounds) {
     NS_ASSERTION(NS_GET_A(aColor) > 0,
                  "Don't create invisible nsDisplaySolidColors!");
     MOZ_COUNT_CTOR(nsDisplaySolidColor);
-    if (!aCanBeReused) {
-      SetCantBeReused();
-    }
   }
 
   MOZ_COUNTED_DTOR_FINAL(nsDisplaySolidColor)
@@ -4664,7 +4557,7 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
 
   void WriteDebugInfo(std::stringstream& aStream) override;
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
 
  protected:
   const nsRect mBackgroundRect;
@@ -4702,9 +4595,7 @@ class nsDisplayTableBackgroundColor final : public nsDisplayBackgroundColor {
     nsDisplayBackgroundColor::RemoveFrame(aFrame);
   }
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override {
-    return false;
-  }
+  bool CanUseAsyncAnimations() override { return false; }
 
  protected:
   nsIFrame* mAncestorFrame;
@@ -5292,10 +5183,11 @@ class nsDisplayOpacity final : public nsDisplayWrapList {
     return mChildOpacityState == ChildOpacityState::Applied;
   }
 
-  static bool NeedsActiveLayer(nsDisplayListBuilder* aBuilder,
-                               nsIFrame* aFrame);
+  static bool NeedsActiveLayer(nsIFrame* aFrame);
+  bool NeedsActiveLayer() const { return mNeedsActiveLayer; }
+
   void WriteDebugInfo(std::stringstream& aStream) override;
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -6026,8 +5918,7 @@ class nsDisplayAsyncZoom final : public nsDisplayOwnLayer {
   nsDisplayAsyncZoom(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList,
                      const ActiveScrolledRoot* aActiveScrolledRoot,
-                     ContainerASRType aContainerASRType,
-                     layers::FrameMetrics::ViewID aViewID);
+                     ContainerASRType aContainerASRType, ViewID aViewID);
   nsDisplayAsyncZoom(nsDisplayListBuilder* aBuilder,
                      const nsDisplayAsyncZoom& aOther)
       : nsDisplayOwnLayer(aBuilder, aOther), mViewID(aOther.mViewID) {
@@ -6044,7 +5935,7 @@ class nsDisplayAsyncZoom final : public nsDisplayOwnLayer {
                         layers::WebRenderLayerScrollData* aLayerData) override;
 
  protected:
-  layers::FrameMetrics::ViewID mViewID;
+  ViewID mViewID;
 };
 
 
@@ -6597,7 +6488,7 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
   static PrerenderInfo ShouldPrerenderTransformedContent(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect);
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder) const;
 

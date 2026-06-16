@@ -3128,10 +3128,10 @@ void ScrollContainerFrame::ScrollToImpl(
         
         
         
-        bool shouldClobber =
-            aOrigin == ScrollOrigin::Other ||
-            (aOrigin == ScrollOrigin::Restore &&
-             visualScrollUpdate->mUpdateType == FrameMetrics::eRestore);
+        bool shouldClobber = aOrigin == ScrollOrigin::Other ||
+                             (aOrigin == ScrollOrigin::Restore &&
+                              visualScrollUpdate->mUpdateType ==
+                                  ScrollOffsetUpdateType::Restore);
         if (shouldClobber) {
           ps->AcknowledgePendingVisualScrollUpdate();
           ps->ClearPendingVisualScrollUpdate();
@@ -5378,7 +5378,8 @@ void ScrollContainerFrame::ScrollToRestoredPosition() {
         return;
       }
       if (mIsRoot) {
-        PresShell()->ScrollToVisual(visualScrollToPos, FrameMetrics::eRestore,
+        PresShell()->ScrollToVisual(visualScrollToPos,
+                                    ScrollOffsetUpdateType::Restore,
                                     ScrollMode::Instant);
       }
       if (state == LoadingState::Loading || IsSubtreeDirty()) {
@@ -8232,8 +8233,8 @@ bool ScrollContainerFrame::CanApzScrollInTheseDirections(
 }
 
 bool ScrollContainerFrame::SmoothScrollVisual(
-    const nsPoint& aVisualViewportOffset,
-    FrameMetrics::ScrollOffsetUpdateType aUpdateType, ScrollMode aMode) {
+    const nsPoint& aVisualViewportOffset, ScrollOffsetUpdateType aUpdateType,
+    ScrollMode aMode) {
   MOZ_ASSERT(aMode == ScrollMode::Smooth || aMode == ScrollMode::SmoothMsd);
 
   bool canDoApzSmoothScroll =
@@ -8263,7 +8264,7 @@ bool ScrollContainerFrame::SmoothScrollVisual(
   UniquePtr<ScrollSnapTargetIds> snapTargetIds;
   
   ApzSmoothScrollTo(mDestination, aMode,
-                    aUpdateType == FrameMetrics::eRestore
+                    aUpdateType == ScrollOffsetUpdateType::Restore
                         ? ScrollOrigin::Restore
                         : ScrollOrigin::Other,
                     ScrollTriggeredByScript::No, std::move(snapTargetIds),

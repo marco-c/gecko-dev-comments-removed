@@ -5971,7 +5971,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
     
     if (nsLayoutUtils::CanScrollOriginClobberApz(scrollUpdate.GetOrigin()) &&
         aLayerMetrics.GetVisualScrollUpdateType() !=
-            FrameMetrics::eMainThread) {
+            ScrollOffsetUpdateType::MainThread) {
       ignoreVisualUpdate = true;
     }
 
@@ -6141,8 +6141,8 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
   
   bool visualScrollOffsetUpdated =
       !ignoreVisualUpdate &&
-      (isDefault ||
-       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone);
+      (isDefault || aLayerMetrics.GetVisualScrollUpdateType() !=
+                        ScrollOffsetUpdateType::None);
 
   if (visualScrollOffsetUpdated) {
     APZC_LOG("%p updating visual scroll offset from %s to %s (updateType %d)\n",
@@ -6157,7 +6157,8 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
     
     
     
-    if (aLayerMetrics.GetVisualScrollUpdateType() == FrameMetrics::eNone &&
+    if (aLayerMetrics.GetVisualScrollUpdateType() ==
+            ScrollOffsetUpdateType::None &&
         !offsetChanged) {
       visualScrollOffsetUpdated = false;
     }
@@ -6192,7 +6193,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
     
     needContentRepaint = true;
     if (aLayerMetrics.GetVisualScrollUpdateType() ==
-        FrameMetrics::eMainThread) {
+        ScrollOffsetUpdateType::MainThread) {
       contentRepaintType = RepaintUpdateType::eVisualUpdate;
     }
     ScheduleComposite();

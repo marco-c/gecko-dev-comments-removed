@@ -2,6 +2,7 @@
 
 
 
+#include "FrameMetrics.h"
 #include "js/Array.h"  
 #include "js/JSON.h"
 #include "js/Object.h"
@@ -222,7 +223,7 @@ void SessionStoreUtils::RestoreScrollPosition(
         
         presContext->PresShell()->ScrollToVisual(
             CSSPoint::ToAppUnits(CSSPoint(pos_X, pos_Y)),
-            layers::FrameMetrics::eMainThread, ScrollMode::Instant);
+            layers::ScrollOffsetUpdateType::MainThread, ScrollMode::Instant);
       }
     }
   }
