@@ -340,6 +340,19 @@ class RtpTransceiver : public RtpTransceiverInterface {
       RtpTransceiverDirection new_direction) override;
   std::optional<RtpTransceiverDirection> current_direction() const override;
   std::optional<RtpTransceiverDirection> fired_direction() const override;
+  
+  
+  
+  
+  
+  RTCError TryToEnableSframe();
+  
+  
+  
+  
+  void ApplySframeEnabled(bool sframe_enabled);
+  
+  std::optional<bool> SframeEnabled() const override;
   bool receptive() const override;
   RTCError StopStandard() override;
   void StopInternal() override;
@@ -490,6 +503,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kInactive;
   std::optional<RtpTransceiverDirection> current_direction_;
   std::optional<RtpTransceiverDirection> fired_direction_;
+  std::optional<bool> sframe_enabled_ RTC_GUARDED_BY(thread_) = std::nullopt;
   std::optional<std::string> mid_;
   std::optional<std::string> transport_name_ RTC_GUARDED_BY(thread_) =
       std::nullopt;
@@ -556,6 +570,7 @@ PROXY_CONSTMETHOD0(std::vector<RtpHeaderExtensionCapability>,
 PROXY_METHOD1(RTCError,
               SetHeaderExtensionsToNegotiate,
               std::span<const RtpHeaderExtensionCapability>)
+PROXY_CONSTMETHOD0(std::optional<bool>, SframeEnabled)
 END_PROXY_MAP(RtpTransceiver)
 
 }  

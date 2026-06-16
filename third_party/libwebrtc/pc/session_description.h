@@ -250,6 +250,12 @@ class MediaContentDescription {
   }
 
   
+  bool sframe_enabled() const { return sframe_enabled_; }
+  void set_sframe_enabled(bool sframe_enabled) {
+    sframe_enabled_ = sframe_enabled;
+  }
+
+  
   const std::vector<Codec>& codecs() const { return codecs_; }
   void set_codecs(const std::vector<Codec>& codecs) { codecs_ = codecs; }
   virtual bool has_codecs() const { return !codecs_.empty(); }
@@ -297,6 +303,7 @@ class MediaContentDescription {
 
   SimulcastDescription simulcast_;
   std::vector<RidDescription> receive_rids_;
+  bool sframe_enabled_ = false;
 
   
   
