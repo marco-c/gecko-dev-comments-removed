@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MultiInstanceLock.h"
 
 #include "commonupdatedir.h"  
@@ -214,17 +212,35 @@ bool IsOtherInstanceRunning(MultiInstLockHandle lock, bool* aResult) {
     return false;
   }
   
+  
+  
+  
+  
+  
+  
+  constexpr int kMaxAttempts = 5;
   bool rv = false;
-  if (::LockFileEx(lock, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY, 0,
-                   1, 0, &o)) {
+  for (int attempt = 0; attempt < kMaxAttempts; ++attempt) {
+    if (::LockFileEx(lock, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY,
+                     0, 1, 0, &o)) {
+      
+      ::UnlockFileEx(lock, 0, 1, 0, &o);
+      *aResult = false;
+      rv = true;
+      break;
+    }
+    if (::GetLastError() != ERROR_LOCK_VIOLATION) {
+      
+      
+      break;
+    }
     
-    ::UnlockFileEx(lock, 0, 1, 0, &o);
-    *aResult = false;
-    rv = true;
-  } else if (::GetLastError() == ERROR_LOCK_VIOLATION) {
     
     *aResult = true;
     rv = true;
+    if (attempt + 1 < kMaxAttempts) {
+      ::Sleep(10);
+    }
   }
   
   if (!::LockFileEx(lock, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &o)) {
