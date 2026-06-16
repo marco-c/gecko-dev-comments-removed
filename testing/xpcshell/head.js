@@ -846,7 +846,8 @@ function _wrap_with_quotes_if_necessary(val) {
 
 
 function info(msg, data) {
-  ChromeUtils.addProfilerMarker("INFO", { category: "Test" }, msg);
+  
+  ChromeUtils.addProfilerMarker("INFO", { category: "Test" }, String(msg));
   msg = _wrap_with_quotes_if_necessary(msg);
   data = data ? data : null;
   _testLogger.info(msg, data);
