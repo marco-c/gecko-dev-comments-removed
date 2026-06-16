@@ -3930,6 +3930,148 @@ Result<bool, nsresult> QuotaManager::DoesClientDirectoryExist(
   QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(directory, Exists));
 }
 
+struct RenameAndInitInfo {
+  nsCOMPtr<nsIFile> mOriginDirectory;
+  FullOriginMetadata mFullOriginMetadata;
+};
+
+template <typename OriginFunc>
+Result<Ok, nsresult> QuotaManager::InitializeOriginDirectory(
+    const nsCOMPtr<nsIFile>& aChildDirectory, const nsAutoString& aLeafName,
+    PersistenceType aPersistenceType,
+    nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
+    OriginFunc&& aOriginFunc) {
+  QM_TRY_UNWRAP(auto maybeMetadata,
+                QM_OR_ELSE_WARN_IF(
+                    
+                    LoadFullOriginMetadataWithRestore(aChildDirectory)
+                        .map([](auto metadata) -> Maybe<FullOriginMetadata> {
+                          return Some(std::move(metadata));
+                        }),
+                    
+                    IsSpecificError<NS_ERROR_MALFORMED_URI>,
+                    
+                    ErrToDefaultOk<Maybe<FullOriginMetadata>>));
+
+  if (!maybeMetadata) {
+    
+    
+    UNKNOWN_FILE_WARNING(aLeafName);
+    return Ok{};
+  }
+
+  auto metadata = maybeMetadata.extract();
+
+  MOZ_ASSERT(metadata.mPersistenceType == aPersistenceType);
+
+  const auto extraInfo = ScopedLogExtraInfo{
+      ScopedLogExtraInfo::kTagStorageOriginTainted, metadata.mStorageOrigin};
+
+  
+  
+  
+  
+  const auto originSanitized = MakeSanitizedOriginCString(metadata.mOrigin);
+
+  NS_ConvertUTF16toUTF8 utf8LeafName(aLeafName);
+  if (!originSanitized.Equals(utf8LeafName)) {
+    QM_WARNING(
+        "The name of the origin directory (%s) doesn't "
+        "match the sanitized origin string (%s) in the "
+        "metadata file!",
+        utf8LeafName.get(), originSanitized.get());
+
+    
+    
+    if (originSanitized.Equals(utf8LeafName + "."_ns)) {
+      aRenameAndInitInfos.AppendElement(
+          RenameAndInitInfo{std::move(aChildDirectory), std::move(metadata)});
+      return Ok{};
+    }
+
+    
+    
+    
+    
+  }
+
+  if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
+    std::forward<OriginFunc>(aOriginFunc)(metadata);
+
+    AddTemporaryOrigin(metadata);
+    QM_LOG(("Temporary origin added: %s, accessed: %d", metadata.mOrigin.get(),
+            metadata.mAccessed));
+
+    if (StaticPrefs::dom_quotaManager_loadQuotaFromSecondaryCache() &&
+        metadata.mQuotaVersion == kCurrentQuotaVersion && !metadata.mAccessed) {
+      QM_LOG(("Initializing quota for: %s", metadata.mOrigin.get()));
+      InitQuotaForOrigin(metadata);
+
+      return Ok{};
+    }
+  }
+  QM_LOG(("Using secondary cache for: %s", metadata.mOrigin.get()));
+
+  QM_TRY(QM_OR_ELSE_WARN_IF(
+      
+      MOZ_TO_RESULT(InitializeOrigin(aChildDirectory, metadata)),
+      
+      IsDatabaseCorruptionError,
+      
+      ([&aChildDirectory, &metadata,
+        this](const nsresult rv) -> Result<Ok, nsresult> {
+        
+        
+        
+        
+
+        QM_TRY(MOZ_TO_RESULT(aChildDirectory->Remove(true)));
+
+        RemoveTemporaryOrigin(metadata);
+
+        return Ok{};
+      })));
+
+  return Ok{};
+}
+
+template <typename OriginFunc>
+Result<Ok, nsresult> QuotaManager::ResolveRepositoryEntry(
+    const nsCOMPtr<nsIFile>& aChildDirectory, PersistenceType aPersistenceType,
+    nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
+    OriginFunc&& aOriginFunc) {
+  QM_TRY_INSPECT(const auto& leafName,
+                 MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                     nsAutoString, aChildDirectory, GetLeafName));
+
+  QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*aChildDirectory));
+
+  switch (dirEntryKind) {
+    case nsIFileKind::ExistsAsDirectory: {
+      QM_TRY(InitializeOriginDirectory(aChildDirectory, leafName,
+                                       aPersistenceType, aRenameAndInitInfos,
+                                       std::forward<OriginFunc>(aOriginFunc)));
+      break;
+    }
+    case nsIFileKind::ExistsAsFile:
+      if (IsOSMetadata(leafName) || IsDotFile(leafName)) {
+        break;
+      }
+
+      
+      
+      UNKNOWN_FILE_WARNING(leafName);
+      break;
+
+    case nsIFileKind::DoesNotExist:
+      
+      
+      break;
+  }
+
+  return Ok{};
+}
+
 template <typename OriginFunc>
 nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                                             OriginFunc&& aOriginFunc) {
@@ -3959,150 +4101,25 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
     RECORD_IN_NIGHTLY(statusKeeper, rv);
   };
 
-  struct RenameAndInitInfo {
-    nsCOMPtr<nsIFile> mOriginDirectory;
-    FullOriginMetadata mFullOriginMetadata;
-  };
   nsTArray<RenameAndInitInfo> renameAndInitInfos;
 
   QM_TRY(([&]() -> Result<Ok, nsresult> {
     QM_TRY(
         CollectEachFile(
             *directory,
-            [&](nsCOMPtr<nsIFile>&& childDirectory) -> Result<Ok, nsresult> {
+            [&](nsCOMPtr<nsIFile>&& aChildDirectory) -> Result<Ok, nsresult> {
               if (NS_WARN_IF(IsShuttingDown())) {
                 RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
               }
 
+              nsCOMPtr<nsIFile> childDirectory = std::move(aChildDirectory);
+
               QM_TRY(
                   ([this, &iterations, &childDirectory, &renameAndInitInfos,
                     aPersistenceType, &aOriginFunc]() -> Result<Ok, nsresult> {
-                    QM_TRY_INSPECT(
-                        const auto& leafName,
-                        MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                            nsAutoString, childDirectory, GetLeafName));
-
-                    QM_TRY_INSPECT(const auto& dirEntryKind,
-                                   GetDirEntryKind(*childDirectory));
-
-                    switch (dirEntryKind) {
-                      case nsIFileKind::ExistsAsDirectory: {
-                        QM_TRY_UNWRAP(
-                            auto maybeMetadata,
-                            QM_OR_ELSE_WARN_IF(
-                                
-                                LoadFullOriginMetadataWithRestore(
-                                    childDirectory)
-                                    .map([](auto metadata)
-                                             -> Maybe<FullOriginMetadata> {
-                                      return Some(std::move(metadata));
-                                    }),
-                                
-                                IsSpecificError<NS_ERROR_MALFORMED_URI>,
-                                
-                                ErrToDefaultOk<Maybe<FullOriginMetadata>>));
-
-                        if (!maybeMetadata) {
-                          
-                          
-                          UNKNOWN_FILE_WARNING(leafName);
-                          break;
-                        }
-
-                        auto metadata = maybeMetadata.extract();
-
-                        MOZ_ASSERT(metadata.mPersistenceType ==
-                                   aPersistenceType);
-
-                        const auto extraInfo = ScopedLogExtraInfo{
-                            ScopedLogExtraInfo::kTagStorageOriginTainted,
-                            metadata.mStorageOrigin};
-
-                        
-                        
-                        
-                        
-                        const auto originSanitized =
-                            MakeSanitizedOriginCString(metadata.mOrigin);
-
-                        NS_ConvertUTF16toUTF8 utf8LeafName(leafName);
-                        if (!originSanitized.Equals(utf8LeafName)) {
-                          QM_WARNING(
-                              "The name of the origin directory (%s) doesn't "
-                              "match the sanitized origin string (%s) in the "
-                              "metadata file!",
-                              utf8LeafName.get(), originSanitized.get());
-
-                          
-                          
-                          if (originSanitized.Equals(utf8LeafName + "."_ns)) {
-                            renameAndInitInfos.AppendElement(
-                                RenameAndInitInfo{std::move(childDirectory),
-                                                  std::move(metadata)});
-                            break;
-                          }
-
-                          
-                          
-                          
-                          
-                        }
-
-                        if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
-                          std::forward<OriginFunc>(aOriginFunc)(metadata);
-
-                          AddTemporaryOrigin(metadata);
-
-                          if (StaticPrefs::
-                                  dom_quotaManager_loadQuotaFromSecondaryCache() &&
-                              metadata.mQuotaVersion == kCurrentQuotaVersion &&
-                              !metadata.mAccessed) {
-                            InitQuotaForOrigin(metadata);
-
-                            break;
-                          }
-                        }
-
-                        QM_TRY(QM_OR_ELSE_WARN_IF(
-                            
-                            MOZ_TO_RESULT(
-                                InitializeOrigin(childDirectory, metadata)),
-                            
-                            IsDatabaseCorruptionError,
-                            
-                            ([&childDirectory, &metadata,
-                              this](const nsresult rv) -> Result<Ok, nsresult> {
-                              
-                              
-                              
-                              
-
-                              QM_TRY(
-                                  MOZ_TO_RESULT(childDirectory->Remove(true)));
-
-                              RemoveTemporaryOrigin(metadata);
-
-                              return Ok{};
-                            })));
-
-                        break;
-                      }
-
-                      case nsIFileKind::ExistsAsFile:
-                        if (IsOSMetadata(leafName) || IsDotFile(leafName)) {
-                          break;
-                        }
-
-                        
-                        
-                        UNKNOWN_FILE_WARNING(leafName);
-                        break;
-
-                      case nsIFileKind::DoesNotExist:
-                        
-                        
-                        break;
-                    }
+                    QM_TRY(ResolveRepositoryEntry(
+                        childDirectory, aPersistenceType, renameAndInitInfos,
+                        std::forward<OriginFunc>(aOriginFunc)));
 
                     iterations++;
 
