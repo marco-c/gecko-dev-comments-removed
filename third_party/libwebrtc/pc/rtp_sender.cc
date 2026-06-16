@@ -48,6 +48,7 @@
 #include "media/base/media_engine.h"
 #include "pc/dtmf_sender.h"
 #include "pc/legacy_stats_collector_interface.h"
+#include "pc/scoped_operations_batcher.h"
 #include "pc/simulcast_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crypto_random.h"
@@ -837,6 +838,99 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
     
     cached_parameters_ = std::move(current_parameters);
   }
+}
+
+ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
+    uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  if (stopped_ || ssrc == ssrc_) {
+    return nullptr;
+  }
+
+  cached_parameters_.reset();
+
+  
+  if (can_send_track()) {
+    ClearSend();
+    RemoveTrackFromStats();
+  }
+  ssrc_ = ssrc;
+  if (can_send_track()) {
+    SetSend();
+    AddTrackToStats();
+  }
+
+  return [this, ssrc]() mutable
+             -> RTCErrorOr<ScopedOperationsBatcher::FinalizerTask> {
+    RTC_DCHECK_RUN_ON(worker_thread_);
+
+    RtpParameters current_parameters;
+    bool params_modified = false;
+
+    if (!init_parameters_.encodings.empty() ||
+        init_parameters_.degradation_preference.has_value()) {
+      if (ssrc != 0) {
+        RTC_DCHECK(media_channel_);
+        
+        
+        
+        
+        
+        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
+        
+        
+        RTC_CHECK_GE(current_parameters.encodings.size(),
+                     init_parameters_.encodings.size());
+        for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
+          init_parameters_.encodings[i].ssrc =
+              current_parameters.encodings[i].ssrc;
+          init_parameters_.encodings[i].rid =
+              current_parameters.encodings[i].rid;
+          current_parameters.encodings[i] = init_parameters_.encodings[i];
+        }
+        current_parameters.degradation_preference =
+            init_parameters_.degradation_preference;
+        params_modified =
+            media_channel_
+                ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
+                .ok();
+        if (params_modified) {
+          
+          current_parameters = media_channel_->GetRtpSendParameters(ssrc);
+        }
+      }
+      
+      
+      
+      
+      
+      init_parameters_.encodings.clear();
+      init_parameters_.degradation_preference = std::nullopt;
+    }
+
+    
+    
+    if (frame_encryptor_ != nullptr) {
+      media_channel_->SetFrameEncryptor(ssrc, frame_encryptor_);
+    }
+    if (frame_transformer_ != nullptr) {
+      media_channel_->SetEncoderToPacketizerFrameTransformer(
+          ssrc, frame_transformer_);
+    }
+    if (encoder_selector_ != nullptr) {
+      media_channel_->SetEncoderSelector(ssrc, encoder_selector_);
+    }
+
+    if (params_modified) {
+      return ScopedOperationsBatcher::FinalizerTask(
+          [this, current_parameters = std::move(current_parameters)]() mutable {
+            RTC_DCHECK_RUN_ON(signaling_thread_);
+            cached_parameters_ = std::move(current_parameters);
+          });
+    } else {
+      return ScopedOperationsBatcher::FinalizerTask();
+    }
+  };
 }
 
 void RtpSenderBase::Stop() {
