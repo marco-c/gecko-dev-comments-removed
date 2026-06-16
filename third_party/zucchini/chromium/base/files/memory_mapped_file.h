@@ -115,6 +115,8 @@ class BASE_EXPORT MemoryMappedFile {
   bool IsValid() const;
 
 #if defined(MOZ_ZUCCHINI)
+  bool is_mapping_oom() const { return is_mapping_oom_; }
+
   
   
   bool Flush();
@@ -154,6 +156,10 @@ class BASE_EXPORT MemoryMappedFile {
 #if BUILDFLAG(IS_WIN)
   win::ScopedHandle file_mapping_;
 #endif
+
+#if defined(MOZ_ZUCCHINI)
+  bool is_mapping_oom_ = false;
+#endif  
 };
 
 }  
