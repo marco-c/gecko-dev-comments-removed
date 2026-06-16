@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/win/wgc_capturer_win.h"
 
 #include <DispatcherQueue.h>
+#include <dxgi1_4.h>
 #include <windows.foundation.metadata.h>
 #include <windows.graphics.capture.h>
 
@@ -287,8 +288,25 @@ void WgcCapturerWin::Start(Callback* callback) {
   
   
   
-  HRESULT hr = D3D11CreateDevice(
-      nullptr, D3D_DRIVER_TYPE_HARDWARE,
+  
+  HRESULT hr;
+  ComPtr<IDXGIAdapter> adapter;
+  const LUID luid = options_.d3d_device_luid();
+  if (luid.LowPart != 0 || luid.HighPart != 0) {
+    ComPtr<IDXGIFactory4> factory4;
+    hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory4));
+    if (SUCCEEDED(hr)) {
+      hr = factory4->EnumAdapterByLuid(luid, IID_PPV_ARGS(&adapter));
+    }
+    if (FAILED(hr)) {
+      RTC_LOG(LS_WARNING) << "Failed to get adapter by LUID, "
+                          << "falling back to default adapter: " << hr;
+    }
+  }
+
+  hr = D3D11CreateDevice(
+      adapter.Get(),
+      adapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
       nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
       nullptr, 0, D3D11_SDK_VERSION,
       &d3d11_device_, nullptr, nullptr);
