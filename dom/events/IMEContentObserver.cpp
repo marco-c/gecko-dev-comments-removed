@@ -1217,8 +1217,7 @@ void IMEContentObserver::ContentWillBeRemoved(nsIContent* aChild,
   }
 
   const Result<uint32_t, nsresult> textLengthOrError =
-      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement,
-                                                ForRemoval::Yes);
+      FlatTextCache::ComputeTextLengthOfContent(*aChild, mRootElement);
   if (NS_WARN_IF(textLengthOrError.isErr())) {
     mEndOfAddedTextCache.Clear(__FUNCTION__);
     mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
@@ -1243,7 +1242,7 @@ void IMEContentObserver::ContentWillBeRemoved(nsIContent* aChild,
 
   Maybe<uint32_t> offset =
       mStartOfRemovingTextRangeCache.GetFlatTextLengthBeforeContent(
-          *aChild, mRootElement, ForRemoval::Yes);
+          *aChild, mRootElement);
   nsIContent* const prevSibling = aChild->GetPreviousSibling();
   if (offset.isSome()) {
     
@@ -2444,8 +2443,7 @@ void IMEContentObserver::FlatTextCache::CacheFlatTextLengthBeforeFirstContent(
 
 Maybe<uint32_t>
 IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
-    const nsIContent& aContent, const dom::Element* aRootElement,
-    ForRemoval aForRemoval) const {
+    const nsIContent& aContent, const dom::Element* aRootElement) const {
   MOZ_ASSERT(aRootElement);
   if (!mContainerNode) {
     return Nothing();
@@ -2480,8 +2478,7 @@ IMEContentObserver::FlatTextCache::GetFlatTextLengthBeforeContent(
   
   if (mContent == &aContent) {
     const Result<uint32_t, nsresult> textLength =
-        FlatTextCache::ComputeTextLengthOfContent(aContent, aRootElement,
-                                                  aForRemoval);
+        FlatTextCache::ComputeTextLengthOfContent(aContent, aRootElement);
     if (NS_WARN_IF(textLength.isErr()) ||
         NS_WARN_IF(mFlatTextLength < textLength.inspect())) {
       return Nothing();
@@ -2554,34 +2551,11 @@ Maybe<uint32_t> IMEContentObserver::FlatTextCache::GetFlatTextOffsetOnInsertion(
 
 Result<uint32_t, nsresult>
 IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
-    const nsIContent& aContent, const dom::Element* aRootElement,
-    ForRemoval aForRemoval) {
+    const nsIContent& aContent, const dom::Element* aRootElement) {
   MOZ_ASSERT(aRootElement);
 
   if (const Text* textNode = Text::FromNode(aContent)) {
     return ContentEventHandler::GetNativeTextLength(*textNode);
-  }
-
-  if (aForRemoval == ForRemoval::Yes) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    uint32_t textLength = 0;
-    RawNodePosition start(const_cast<nsIContent*>(&aContent), 0u);
-    start.mAfterOpenTag = false;
-    nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-        start, RawNodePosition::AtEndOf(aContent), aRootElement, &textLength,
-         true);
-    if (NS_FAILED(rv)) {
-      return Err(rv);
-    }
-    return textLength;
   }
 
   return ComputeTextLengthStartOfContentToEndOfContent(aContent, aContent,
@@ -2761,7 +2735,7 @@ void IMEContentObserver::FlatTextCache::ContentAdded(
       return false;  
     }
     Result<uint32_t, nsresult> lengthOrError =
-        ComputeTextLengthOfContent(aFirstContent, aRootElement, ForRemoval::No);
+        ComputeTextLengthOfContent(aFirstContent, aRootElement);
     return lengthOrError.isOk() && !lengthOrError.unwrap();
   }();
   if (addingEmptyNode) {

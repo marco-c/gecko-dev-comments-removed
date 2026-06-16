@@ -48,7 +48,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
   using IMENotificationRequest = widget::IMENotificationRequest;
   using IMENotificationRequests = widget::IMENotificationRequests;
   using IMEMessage = widget::IMEMessage;
-  enum class ForRemoval : bool { No, Yes };
 
   IMEContentObserver();
 
@@ -601,10 +600,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-
     [[nodiscard]] static Result<uint32_t, nsresult> ComputeTextLengthOfContent(
-        const nsIContent& aContent, const dom::Element* aRootElement,
-        ForRemoval = ForRemoval::No);
+        const nsIContent& aContent, const dom::Element* aRootElement);
 
     
 
@@ -680,8 +677,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
     [[nodiscard]] Maybe<uint32_t> GetFlatTextLengthBeforeContent(
-        const nsIContent& aContent, const dom::Element* aRootElement,
-        ForRemoval = ForRemoval::No) const;
+        const nsIContent& aContent, const dom::Element* aRootElement) const;
 
     
 

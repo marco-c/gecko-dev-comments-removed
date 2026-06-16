@@ -332,17 +332,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-
-
-
-
-
-
-
   static nsresult GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
       const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength, bool aIsRemovingNode = false);
+      uint32_t* aLength);
 
   
   
