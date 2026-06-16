@@ -406,7 +406,10 @@ class JS_PUBLIC_API LSprinter final : public GenericPrinter {
 
  public:
   explicit LSprinter(LifoAlloc* lifoAlloc);
-  ~LSprinter();
+
+  
+  
+  ~LSprinter() = default;
 
   
   
