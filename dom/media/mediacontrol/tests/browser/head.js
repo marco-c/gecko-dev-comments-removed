@@ -8,6 +8,24 @@
 
 
 
+function GetTestWebBasedURL(fileName, { crossOrigin = false } = {}) {
+  const origin = crossOrigin ? "https://example.org" : "https://example.com";
+  return (
+    getRootDirectory(gTestPath).replace("chrome://mochitests/content", origin) +
+    fileName
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
