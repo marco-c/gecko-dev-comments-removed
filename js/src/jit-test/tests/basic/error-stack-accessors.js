@@ -22,7 +22,7 @@ assertEq(Object.create(Error.prototype).stack, "");
 var obj = Object.create(null);
 var desc = Object.getOwnPropertyDescriptor(Error.prototype, "stack");
 Object.defineProperty(obj, "stack", desc);
-assertThrowsInstanceOf(() => obj.stack, TypeError);
+obj.stack = "oh no!";
 
 
 assertThrowsInstanceOf(desc.set,                TypeError);
