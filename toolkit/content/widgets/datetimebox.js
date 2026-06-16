@@ -377,18 +377,18 @@ this.DateTimeBoxWidget = class {
       field.setAttribute("maxlength", aMaxLength);
       
       field.setAttribute("role", "spinbutton");
-
-      if (this.mIsRTL) {
-        
-        
-        
-        
-        field.style.unicodeBidi = "embed";
-        field.style.direction = "ltr";
-      }
     } else {
       
       field.setAttribute("role", "textbox");
+    }
+
+    if (this.mIsRTL) {
+      
+      
+      
+      
+      field.style.unicodeBidi = "embed";
+      field.style.direction = "ltr";
     }
 
     return field;
