@@ -17654,7 +17654,7 @@ function SportsWidget_SportsWidget({
   }, external_React_default().createElement("h2", {
     className: "sports-intro-title",
     "data-l10n-id": "newtab-sports-widget-keep-tabs"
-  }), external_React_default().createElement("p", {
+  }), displaySize === "large" && external_React_default().createElement("p", {
     className: "sports-intro-lede",
     "data-l10n-id": "newtab-sports-widget-get-updates"
   })), widgetState === WIDGET_STATES.FOLLOW_TEAMS ? external_React_default().createElement("button", {
