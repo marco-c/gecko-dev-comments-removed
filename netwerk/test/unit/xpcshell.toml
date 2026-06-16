@@ -538,6 +538,9 @@ skip-if = [
 
 ["test_content_decoding_error_telemetry.js"]
 run-sequentially = ["true"]
+skip-if = [
+  "artifact", # Bug 2040417 - known limitation of FOG ping testing APIs
+]
 
 ["test_content_encoding_gzip.js"]
 
@@ -720,6 +723,13 @@ skip-if = [
 ["test_h2proxy_connection_limit.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_happy_eyeballs_0rtt_abandoned_requeueed.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_happy_eyeballs_0rtt_fallback.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
 skip-if = [
@@ -728,13 +738,6 @@ skip-if = [
 ]
 
 ["test_happy_eyeballs_0rtt_h1_reject.js"]
-run-sequentially = ["true"] # TlsServer listens to the same port
-skip-if = [
-  "os == 'android'",
-  "os == 'win'",
-]
-
-["test_happy_eyeballs_0rtt_abandoned_requeueed.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
 skip-if = [
   "os == 'android'",
@@ -759,9 +762,15 @@ skip-if = [
 
 ["test_happy_eyeballs_h1_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'win' && appname == 'thunderbird' && msix", # Bug 2038668
+]
 
 ["test_happy_eyeballs_h2_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'win' && appname == 'thunderbird' && msix", # Bug 2038668
+]
 
 ["test_happy_eyeballs_h2_fallback.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
