@@ -3730,16 +3730,17 @@ static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
 }
 
 nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
-    RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+    already_AddRefed<nsAtom> aName, nsHtml5String& aValue,
     bool& aIsPendingMappedAttributeEvaluation) {
-  MOZ_ASSERT(aName);
   MOZ_ASSERT(aValue);
   MOZ_ASSERT(IsHTMLElement());
   MOZ_ASSERT(!GetParentNode());
+  RefPtr<nsAtom> nameRef = aName;
+  MOZ_ASSERT(nameRef);
   
   
   
-  nsAtom* namePtr = aName.get();
+  nsAtom* namePtr = nameRef.get();
   
   
   
@@ -3882,7 +3883,7 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
   
 
   const nsAttrValue* valuePtr =
-      mAttrs.AddNewAttributeAssumeAvailableSlot(aName, value);
+      mAttrs.AddNewAttributeAssumeAvailableSlot(nameRef, value);
   UpdateSubtreeBloomFilterForAttribute(namePtr);
   if (!aIsPendingMappedAttributeEvaluation && IsAttributeMapped(namePtr)) {
     aIsPendingMappedAttributeEvaluation = true;
