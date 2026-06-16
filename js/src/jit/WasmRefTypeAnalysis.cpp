@@ -300,6 +300,9 @@ static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
         if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
           
           
+          if (!graph.alloc().ensureBallast()) {
+            return;
+          }
           auto* replacement = MConstant::NewInt32(graph.alloc(), 1);
           refTest->block()->insertBefore(refTest->toInstruction(), replacement);
           refTest->replaceAllUsesWith(replacement);
