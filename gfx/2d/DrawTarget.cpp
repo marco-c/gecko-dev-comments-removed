@@ -228,8 +228,7 @@ already_AddRefed<SourceSurface> DrawTarget::IntoLuminanceSource(
   }
 
   
-  RefPtr<SourceSurfaceAlignedRawData> destMaskSurface =
-      new SourceSurfaceAlignedRawData;
+  RefPtr destMaskSurface = MakeRefPtr<SourceSurfaceAlignedRawData>();
   if (!destMaskSurface->Init(size, SurfaceFormat::A8, false, 0)) {
     return nullptr;
   }
