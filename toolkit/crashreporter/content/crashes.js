@@ -203,7 +203,6 @@ async function clearUnsubmittedReports() {
   }
 
   await enqueueCleanup(() => cleanupFolder(CrashReports.pendingDir.path));
-  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListUnsubmitted").classList.add("hidden");
 }
 
@@ -242,7 +241,6 @@ async function clearSubmittedReports() {
       async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
     )
   );
-  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListSubmitted").classList.add("hidden");
   document.getElementById("noSubmittedReports").classList.remove("hidden");
 }

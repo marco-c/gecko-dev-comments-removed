@@ -2831,6 +2831,11 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 
+
+pref("browser.crashReports.cleanupCheck.enabled", true);
+
+
+
 pref("services.sync.engine.creditcards.available", true);
 
 
