@@ -5,15 +5,22 @@
 #include "mozilla/dom/CSSMathNegate.h"
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathNegateBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathNegate::CSSMathNegate(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathNegate::CSSMathNegate(nsCOMPtr<nsISupports> aParent,
+                             RefPtr<CSSNumericValue> aValue)
+    : CSSMathValue(std::move(aParent), MathValueType::MathNegate),
+      mValue(std::move(aValue)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathNegate, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathNegate, CSSMathValue, mValue)
 
 JSObject* CSSMathNegate::WrapObject(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {
@@ -23,16 +30,46 @@ JSObject* CSSMathNegate::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSMathNegate> CSSMathNegate::Constructor(
     const GlobalObject& aGlobal, const CSSNumberish& aArg) {
-  return MakeAndAddRef<CSSMathNegate>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+  RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, aArg);
+
+  
+
+  return MakeAndAddRef<CSSMathNegate>(std::move(global), std::move(value));
 }
 
-CSSNumericValue* CSSMathNegate::GetValue(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+CSSNumericValue* CSSMathNegate::Value() const { return mValue; }
+
+
+
+void CSSMathNegate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                          bool aNested,
+                                          nsACString& aDest) const {
+  aDest.Append(aNested ? "("_ns : "calc("_ns);
+
+  aDest.Append("-"_ns);
+
+  mValue->ToCssTextWithProperty(aPropertyId,  true, aDest);
+
+  aDest.Append(")"_ns);
 }
 
+const CSSMathNegate& CSSMathValue::GetAsCSSMathNegate() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathNegate);
 
+  return *static_cast<const CSSMathNegate*>(this);
+}
+
+CSSMathNegate& CSSMathValue::GetAsCSSMathNegate() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathNegate);
+
+  return *static_cast<CSSMathNegate*>(this);
+}
 
 }  
