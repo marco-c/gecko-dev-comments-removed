@@ -349,7 +349,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  gfxFloat GetMinAdvanceWidth(Range aRange);
+  gfxFloat GetMinAdvanceWidth(Range aRange) const;
 
   
 
