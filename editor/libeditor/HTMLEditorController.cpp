@@ -40,9 +40,6 @@ void HTMLEditorController::RegisterEditorDocStateCommands(
 void HTMLEditorController::RegisterHTMLEditorCommands(
     nsControllerCommandTable* aCommandTable) {
   
-  NS_REGISTER_COMMAND(PasteNoFormattingCommand, "cmd_pasteNoFormatting");
-
-  
   NS_REGISTER_COMMAND(IndentCommand, "cmd_indent");
   NS_REGISTER_COMMAND(OutdentCommand, "cmd_outdent");
 
