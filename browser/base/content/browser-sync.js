@@ -654,21 +654,12 @@ var gSync = {
     
     
     
-    const novaFxaLabel = PanelMultiView.getViewNode(
-      document,
-      "appMenu-nova-fxa-label"
-    );
-    const [headerDesc, headerText, novaSignIn] =
-      this.fluentStrings.formatValuesSync([
-        "appmenu-fxa-signed-in-label",
-        "appmenu-fxa-sync-and-save-data2",
-        "appmenu-nova-fxa-sign-in",
-      ]);
+    const [headerDesc, headerText] = this.fluentStrings.formatValuesSync([
+      "appmenu-fxa-signed-in-label",
+      "appmenu-fxa-sync-and-save-data2",
+    ]);
     appMenuHeaderDescription.value = headerDesc;
     appMenuHeaderText.textContent = headerText;
-    if (novaFxaLabel) {
-      novaFxaLabel.label = novaSignIn;
-    }
 
     for (let topic of this._obs) {
       Services.obs.addObserver(this, topic, true);
@@ -1164,10 +1155,7 @@ var gSync = {
     if (fxaStatus == "not_configured") {
       
       
-      if (
-        anchor.id == "appMenu-fxa-label2" ||
-        anchor.id == "appMenu-nova-fxa-label"
-      ) {
+      if (anchor.id == "appMenu-fxa-label2") {
         this.openFxAEmailFirstPageFromFxaMenu(anchor);
         PanelUI.hide();
         return;
@@ -2944,9 +2932,7 @@ var gSync = {
     
     if (
       !this.FXA_CTA_MENU_ENABLED ||
-      (anchor &&
-        (anchor.id === "appMenu-fxa-label2" ||
-          anchor.id === "appMenu-nova-fxa-label"))
+      (anchor && anchor.id === "appMenu-fxa-label2")
     ) {
       
       
