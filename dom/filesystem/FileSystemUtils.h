@@ -35,7 +35,7 @@ class FileSystemUtils {
 
 
   static nsresult DispatchRunnable(nsIGlobalObject* aGlobal,
-                                   already_AddRefed<nsIRunnable>&& aRunnable);
+                                   already_AddRefed<nsIRunnable> aRunnable);
 };
 
 }  

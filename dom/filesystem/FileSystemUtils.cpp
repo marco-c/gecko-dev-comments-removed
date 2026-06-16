@@ -48,7 +48,7 @@ bool FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
 
 
 nsresult FileSystemUtils::DispatchRunnable(
-    nsIGlobalObject* aGlobal, already_AddRefed<nsIRunnable>&& aRunnable) {
+    nsIGlobalObject* aGlobal, already_AddRefed<nsIRunnable> aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = aRunnable;
 
   nsCOMPtr<nsIEventTarget> target;
