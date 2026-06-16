@@ -29,6 +29,9 @@ class nsIReferrerInfo;
 struct HTTPSFirstDowngradeData;
 namespace mozilla {
 class OriginAttributes;
+namespace net {
+class DocumentLoadListener;
+}
 namespace dom {
 class FormData;
 class DocShellLoadStateInit;
@@ -352,11 +355,9 @@ class nsDocShellLoadState final {
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
 
-  void SetChannelInitialized(bool aInitilized) {
-    mChannelInitialized = aInitilized;
-  }
-
-  bool GetChannelInitialized() const { return mChannelInitialized; }
+  void SetSpeculativeListener(mozilla::net::DocumentLoadListener* aListener);
+  already_AddRefed<mozilla::net::DocumentLoadListener>
+  TakeSpeculativeListener();
 
   void SetIsMetaRefresh(bool aMetaRefresh) { mIsMetaRefresh = aMetaRefresh; }
 
@@ -727,7 +728,12 @@ class nsDocShellLoadState final {
 
   
   
-  bool mChannelInitialized;
+  
+  RefPtr<mozilla::net::DocumentLoadListener> mSpeculativeListener;
+
+  
+  
+  bool mHasSpeculativeListener = false;
 
   
   bool mIsMetaRefresh;

@@ -189,17 +189,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  
-  static void CleanupParentLoadAttempt(uint64_t aLoadIdent);
-
-  
-  static RefPtr<OpenPromise> ClaimParentLoad(DocumentLoadListener** aListener,
-                                             uint64_t aLoadIdent,
-                                             Maybe<uint64_t> aChannelId);
+  void CleanupParentLoadAttempt();
 
   
   
-  void Abort();
+  RefPtr<OpenPromise> ClaimParentLoad(Maybe<uint64_t> aChannelId);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -338,10 +332,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus,
                            bool aContinueNavigating = false);
-
-  
-  
-  void NotifyDocumentChannelFailed();
 
   
   
