@@ -4311,9 +4311,11 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
     
     
     
+    
+    
+    
     MaybeHandleLocallyRejectedTransceiver(source, new_session, update.content,
-                                          std::move(update.transceiver),
-                                          worker_tasks);
+                                          update.transceiver, worker_tasks);
   }
 
   error = network_teardown_tasks.Run();
