@@ -166,7 +166,7 @@ class Virtualenv:
 
         
         
-        call(self.pip_path, "install", "--prefer-binary", *requirements)
+        call(self.pip_path, "--disable-pip-version-check", "install", "--prefer-binary", *requirements)
 
     def install_requirements(self, *requirements_paths):
         install = []
@@ -183,7 +183,7 @@ class Virtualenv:
         if install:
             
             
-            cmd = [self.pip_path, "install", "--prefer-binary"]
+            cmd = [self.pip_path, "--disable-pip-version-check", "install", "--prefer-binary"]
             for path in install:
                 cmd.extend(["-r", path])
             call(*cmd)
