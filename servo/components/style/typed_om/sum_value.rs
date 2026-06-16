@@ -91,7 +91,7 @@ impl SumValue {
                 let mut values: Vec<SumValueItem> = Vec::new();
 
                 
-                for item in &math_sum.values {
+                for item in math_sum {
                     
                     let value = SumValue::try_from_numeric_value(item)?;
 

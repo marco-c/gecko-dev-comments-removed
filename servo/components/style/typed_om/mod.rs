@@ -117,12 +117,7 @@ pub struct UnitValue {
 
 
 
-#[derive(Clone, Debug)]
-#[repr(C)]
-pub struct MathSum {
-    
-    pub values: ThinVec<NumericValue>,
-}
+pub type MathSum = ThinVec<NumericValue>;
 
 
 
