@@ -17159,11 +17159,8 @@ function SportsWidget_SportsWidget({
   const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames = liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
-  
-  
-  
-  
-  const tournamentStarted = hasLiveGames || hasPreviousResults;
+  const hasUpcomingMatches = sportsWidgetData?.data?.matches?.next?.length > 0;
+  const tournamentStarted = hasLiveGames || hasPreviousResults || hasUpcomingMatches;
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
   
   
