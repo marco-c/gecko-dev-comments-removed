@@ -127,6 +127,13 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
  public:
   NetworkManager() = default;
   
+  struct NetworksChangedCallback {
+    const void* removal_tag;
+    absl::AnyInvocable<void()> callback;
+  };
+
+  explicit NetworkManager(NetworksChangedCallback callback);
+  
   enum EnumerationPermission {
     ENUMERATION_ALLOWED,  
                           
@@ -480,6 +487,7 @@ class RTC_EXPORT Network {
 class RTC_EXPORT NetworkManagerBase : public NetworkManager {
  public:
   NetworkManagerBase();
+  explicit NetworkManagerBase(NetworksChangedCallback callback);
 
   std::vector<const Network*> GetNetworks() const override;
   std::vector<const Network*> GetAnyAddressNetworks() override;
@@ -553,6 +561,12 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   BasicNetworkManager(
       const Environment& env,
       SocketFactory* absl_nonnull socket_factory,
+      NetworkMonitorFactory* absl_nullable network_monitor_factory = nullptr);
+
+  BasicNetworkManager(
+      const Environment& env,
+      SocketFactory* absl_nonnull socket_factory,
+      NetworksChangedCallback callback,
       NetworkMonitorFactory* absl_nullable network_monitor_factory = nullptr);
 
   ~BasicNetworkManager() override;

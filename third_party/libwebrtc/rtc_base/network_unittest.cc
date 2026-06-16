@@ -426,8 +426,8 @@ TEST_F(NetworkTest, DISABLED_TestCreateNetworks) {
 
 TEST_F(NetworkTest, TestUpdateNetworks) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this] { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this] { OnNetworksChanged(); }});
   EXPECT_EQ(NetworkManager::ENUMERATION_ALLOWED,
             manager.enumeration_permission());
   manager.StartUpdating();
@@ -572,8 +572,8 @@ void SetupNetworks(std::vector<std::unique_ptr<Network>>* list) {
 
 TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }});
   std::vector<std::unique_ptr<Network>> networks;
   SetupNetworks(&networks);
   std::vector<const Network*> original_list = CopyNetworkPointers(networks);
@@ -593,8 +593,8 @@ TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
 
 TEST_F(NetworkTest, TestNoChangeMerge) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }});
   std::vector<std::unique_ptr<Network>> networks;
   SetupNetworks(&networks);
   std::vector<const Network*> original_list = CopyNetworkPointers(networks);
@@ -623,8 +623,8 @@ TEST_F(NetworkTest, TestNoChangeMerge) {
 
 TEST_F(NetworkTest, MergeWithChangedIP) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }});
   std::vector<std::unique_ptr<Network>> original_list;
   SetupNetworks(&original_list);
   
@@ -658,8 +658,8 @@ TEST_F(NetworkTest, MergeWithChangedIP) {
 
 TEST_F(NetworkTest, TestMultipleIPMergeNetworkList) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }});
   std::vector<std::unique_ptr<Network>> original_list;
   SetupNetworks(&original_list);
   const Network* const network_ptr = original_list[2].get();
@@ -710,8 +710,8 @@ TEST_F(NetworkTest, TestMultipleIPMergeNetworkList) {
 
 TEST_F(NetworkTest, TestMultiplePublicNetworksOnOneInterfaceMerge) {
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }});
   std::vector<std::unique_ptr<Network>> original_list;
   SetupNetworks(&original_list);
   bool changed = false;
@@ -1244,8 +1244,9 @@ TEST_F(NetworkTest, TestGetBestIPWithPreferGlobalIPv6ToLinkLocalEnabled) {
 TEST_F(NetworkTest, TestNetworkMonitoring) {
   FakeNetworkMonitorFactory factory;
   PhysicalSocketServer socket_server;
-  BasicNetworkManager manager(env_, &socket_server, &factory);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  BasicNetworkManager manager(env_, &socket_server,
+                              {this, [this]() { OnNetworksChanged(); }},
+                              &factory);
   manager.StartUpdating();
   FakeNetworkMonitor* network_monitor = GetNetworkMonitor(manager);
   EXPECT_TRUE(network_monitor && network_monitor->started());
@@ -1275,8 +1276,9 @@ TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   IPAddress ip;
   FakeNetworkMonitorFactory factory;
   PhysicalSocketServer socket_server;
-  TestBasicNetworkManager manager(env_, &socket_server, &factory);
-  manager.SubscribeNetworksChanged(this, [this]() { OnNetworksChanged(); });
+  TestBasicNetworkManager manager(env_, &socket_server,
+                                  {this, [this]() { OnNetworksChanged(); }},
+                                  &factory);
   manager.StartUpdating();
   EXPECT_THAT(WaitUntil([&] { return callback_called_; }, IsTrue()), IsRtcOk());
 

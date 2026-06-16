@@ -176,6 +176,12 @@ class CallbackList {
   CallbackList& operator=(CallbackList&&) = delete;
 
   
+  template <typename F>
+  CallbackList(const void* removal_tag, F&& f) {
+    AddReceiver(removal_tag, std::forward<F>(f));
+  }
+
+  
   
   
   
