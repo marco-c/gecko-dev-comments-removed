@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WMF_H_
 #define WMF_H_
 
@@ -145,6 +143,10 @@ class MediaFoundationInitializer final {
   static inline Atomic<bool> sIsShutdown{false};
   const bool mHasInitialized;
 };
+
+
+
+inline StaticMutex sMFTEnumShutdownMutex MOZ_UNANNOTATED;
 
 
 
