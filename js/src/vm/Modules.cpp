@@ -114,6 +114,7 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   
   
   
@@ -126,6 +127,7 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
                               JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
     return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
   }
+#endif
 
   if (referrer && referrer->isModule()) {
     
@@ -339,6 +341,7 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModule(
 JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
@@ -372,6 +375,13 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
   }
 
   return moduleObject;
+#else
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_COMPILE_ERROR,
+                           "Compilation of wasm modules not enabled.");
+
+  return nullptr;
+#endif
 }
 
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
@@ -490,7 +500,11 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
   auto& module = moduleRecord->as<ModuleObject>();
 
   
-  if (module.hasSyntheticModuleFields() || module.isSourcePhaseModule()) {
+  if (module.hasSyntheticModuleFields()
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+      || module.isSourcePhaseModule()
+#endif
+  ) {
     return nullptr;
   }
 
@@ -1429,8 +1443,12 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     if (!importedModule) {
       return false;
     }
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking ||
                moduleRequest->phase() == ImportPhase::Source);
+#else
+    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking);
+#endif
 
     localName = in.localName();
     importName = in.importName();
@@ -1450,7 +1468,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       
       InitNamespaceOrSourceBinding(cx, env, localName, ObjectValue(*ns));
-    } else if (moduleRequest->phase() == ImportPhase::Source) {
+    }
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    else if (moduleRequest->phase() == ImportPhase::Source) {
       
       
       
@@ -1471,7 +1491,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       InitNamespaceOrSourceBinding(cx, env, localName,
                                    ObjectValue(*moduleSourceObject));
-    } else {
+    }
+#endif
+    else {
       
       
       
@@ -1623,9 +1645,12 @@ static bool InnerModuleLoading(JSContext* cx,
         
         
         
-        LoadType innerLoadType = moduleRequest->phase() == ImportPhase::Source
-                                     ? LoadType::Single
-                                     : LoadType::RecursiveLoad;
+        LoadType innerLoadType = LoadType::RecursiveLoad;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+        if (moduleRequest->phase() == ImportPhase::Source) {
+          innerLoadType = LoadType::Single;
+        }
+#endif
         
         recordModule = record->value();
         if (!InnerModuleLoading(cx, state, recordModule, innerLoadType)) {
@@ -1705,8 +1730,12 @@ static bool ContinueModuleLoading(JSContext* cx,
   if (moduleCompletion) {
     
     
-    LoadType loadType = phase == ImportPhase::Source ? LoadType::Single
-                                                     : LoadType::RecursiveLoad;
+    LoadType loadType = LoadType::RecursiveLoad;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    if (phase == ImportPhase::Source) {
+      loadType = LoadType::Single;
+    }
+#endif
     
     
     return InnerModuleLoading(cx, state, moduleCompletion, loadType);
@@ -2805,9 +2834,12 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                        HandleValue optionsArg,
                                        ImportPhase phase) {
   RootedObject promise(cx);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (phase == ImportPhase::Source) {
     promise = PromiseObject::createSkippingExecutor(cx);
-  } else {
+  } else
+#endif
+  {
     
     promise = JS::NewPromiseObject(cx, nullptr);
   }
@@ -2842,13 +2874,16 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
   }
 
   RootedObject moduleRequest(cx);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (phase == ImportPhase::Source) {
     
     
     
     moduleRequest = ModuleRequestObject::create(
         cx, specifierAtom, JS::ModuleType::JavaScriptOrWasm, phase);
-  } else {
+  } else
+#endif
+  {
     MOZ_ASSERT(phase == ImportPhase::Evaluation);
     Rooted<ImportAttributeVector> attributes(cx);
     if (!EvaluateDynamicImportOptions(cx, optionsArg, &attributes)) {
@@ -3016,6 +3051,7 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
 
   
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   
   
   if (phase == ImportPhase::Source) {
@@ -3042,6 +3078,7 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
     
     return true;
   }
+#endif
 
   
   
