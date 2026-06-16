@@ -157,6 +157,15 @@ void nsWindowWayland::MoveToWorkspace(const nsAString& workspaceIDStr) {
 
 
 
+
+
+
+
+
+
+
+
+
 void nsWindowWayland::WaylandDragWorkaround(GdkEventButton* aEvent) {
   
   
