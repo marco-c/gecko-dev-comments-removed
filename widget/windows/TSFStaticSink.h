@@ -106,6 +106,7 @@ class TSFStaticSink final : public ITfInputProcessorProfileActivationSink {
   [[nodiscard]] static bool IsGoogleJapaneseInputActive();
   [[nodiscard]] static bool IsATOKActive();
   [[nodiscard]] static bool IsSogouActive();
+  [[nodiscard]] static bool IsWeChatIMEActive();
 
   
   
