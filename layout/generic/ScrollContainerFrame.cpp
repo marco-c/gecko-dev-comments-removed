@@ -6353,8 +6353,14 @@ bool ScrollContainerFrame::ReflowFinished() {
         manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
       }
     }
+  }
+
+  
+  
+  AutoScrolledRectCache scrolledRectCache(this, nullptr);
 
 #if defined(MOZ_WIDGET_ANDROID)
+  if (mIsRoot) {
     const bool hasVerticalOverflow =
         GetOverflowAxes().contains(PhysicalAxis::Vertical) &&
         GetScrollStyles().mVertical != StyleOverflow::Hidden;
@@ -6364,8 +6370,8 @@ bool ScrollContainerFrame::ReflowFinished() {
     }
 
     mHasVerticalOverflowForDynamicToolbar = hasVerticalOverflow;
-#endif  
   }
+#endif  
 
   bool doScroll = true;
   if (IsSubtreeDirty()) {
