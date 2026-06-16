@@ -300,6 +300,12 @@ class nsLayoutUtils {
   
 
 
+  static mozilla::dom::Element* GetCheckmarkPseudo(const nsIContent* aContent);
+  static nsIFrame* GetCheckmarkFrame(const nsIContent* aContent);
+
+  
+
+
   static void AppendGeneratedContentPseudos(
       const mozilla::dom::Element* aElement, nsTArray<nsIContent*>& aPseudos);
 
