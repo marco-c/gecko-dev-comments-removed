@@ -75,16 +75,6 @@ nsresult StringToUsage(const nsString& aUsage, CryptoKey::KeyUsage& aUsageOut) {
 
 
 
-static void DestroyPrivateKeyWithoutDestroyingPKCS11Object(
-    SECKEYPrivateKey* key) {
-  PK11_FreeSlot(key->pkcs11Slot);
-  PORT_FreeArena(key->arena, PR_TRUE);
-}
-
-
-
-
-
 UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
     CK_ATTRIBUTE* aTemplate, CK_ULONG aTemplateSize) {
   
@@ -105,10 +95,7 @@ UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
   if (preexistingKey) {
     
     
-    
-    
-    
-    DestroyPrivateKeyWithoutDestroyingPKCS11Object(preexistingKey);
+    SECKEY_DestroyPrivateKey(preexistingKey);
     
     rv = PK11_GenerateRandomOnSlot(slot.get(), objID->data, objID->len);
     if (rv != SECSuccess) {
@@ -116,7 +103,7 @@ UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
     }
     preexistingKey = PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr);
     if (preexistingKey) {
-      DestroyPrivateKeyWithoutDestroyingPKCS11Object(preexistingKey);
+      SECKEY_DestroyPrivateKey(preexistingKey);
       return nullptr;
     }
   }
@@ -148,8 +135,15 @@ UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
   }
 
   
-  return UniqueSECKEYPrivateKey(
+  
+  
+  
+  UniqueSECKEYPrivateKey privKey(
       PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr));
+  if (privKey) {
+    SECKEYPRIVATEKEY_SET_OWNED(privKey.get(), PR_TRUE);
+  }
+  return privKey;
 }
 
 CryptoKey::CryptoKey(nsIGlobalObject* aGlobal)
