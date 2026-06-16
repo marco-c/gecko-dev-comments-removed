@@ -119,6 +119,11 @@ PER_PROJECT_PARAMETERS = {
         
         "target_tasks_method": "firefox_pull_request_tasks",
     },
+    "firefox-dev": {
+        "enable_always_target": True,
+        "target_tasks_method": "try_tasks",
+        "release_type": "nightly",
+    },
     "staging-firefox": {
         "target_tasks_method": "default",
     },
