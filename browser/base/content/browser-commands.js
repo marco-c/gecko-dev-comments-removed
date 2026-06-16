@@ -100,10 +100,6 @@ var BrowserCommands = {
     gBrowser.selectedTab = newTab;
   },
 
-  separateTabSplitView() {
-    gBrowser.selectedTab?.splitview?.unsplitTabs("keyboard_shortcut");
-  },
-
   duplicateTab() {
     duplicateTabIn(gBrowser.selectedTab, "tab");
   },
