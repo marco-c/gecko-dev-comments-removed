@@ -2471,21 +2471,40 @@ class Toolbox extends EventEmitter {
   
 
 
-  updateToolboxButtonsVisibility() {
+
+
+
+
+  updateToolboxButtonsVisibility({ fromWillNavigate = false } = {}) {
     const inspectorFront = this.target.getCachedFront("inspector");
 
-    this.toolbarButtons.forEach(button => {
+    let hasHighlighters = false;
+    for (const button of this.toolbarButtons) {
       button.isVisible = this._commandIsVisible(button);
 
-      if (!button.isVisible && inspectorFront) {
+      if (
+        inspectorFront &&
         
         
-        button.highlighterTypes?.forEach(type => {
-          inspectorFront.destroyHighlighterByType(type);
-        });
+        
+        (!button.isVisible || fromWillNavigate)
+      ) {
+        if (!button.highlighterTypes) {
+          continue;
+        }
+
+        for (const type of button.highlighterTypes) {
+          if (inspectorFront.getKnownHighlighter(type)?.isShown()) {
+            inspectorFront.destroyHighlighterByType(type);
+            hasHighlighters = true;
+          }
+        }
       }
-    });
-    this._renderToolboxButtons();
+    }
+
+    if (hasHighlighters || !fromWillNavigate) {
+      this._renderToolboxButtons();
+    }
   }
 
   
@@ -3458,7 +3477,7 @@ class Toolbox extends EventEmitter {
       this._updateFrames({ destroyAll: true });
     }
 
-    this.updateToolboxButtonsVisibility();
+    this.updateToolboxButtonsVisibility({ fromWillNavigate: true });
 
     const toolId = this.currentToolId;
     
