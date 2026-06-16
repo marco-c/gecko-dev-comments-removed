@@ -1,17 +1,14 @@
 use crate::{Equivalent, TryReserveError};
+use core::cell::UnsafeCell;
+use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FusedIterator};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Sub, SubAssign};
-use core::{fmt, mem};
-use map::make_hash;
 
 use super::map::{self, HashMap, Keys};
-use crate::raw::{Allocator, Global, RawExtractIf};
 use crate::DefaultHashBuilder;
-
-
-
-
+use crate::alloc::{Allocator, Global};
+use crate::raw::RawExtractIf;
 
 
 
@@ -151,7 +148,7 @@ impl<T> HashSet<T, DefaultHashBuilder> {
     
     
     
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn new() -> Self {
         Self {
@@ -182,7 +179,7 @@ impl<T> HashSet<T, DefaultHashBuilder> {
     
     
     
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -215,7 +212,7 @@ impl<T: Hash + Eq, A: Allocator> HashSet<T, DefaultHashBuilder, A> {
     
     
     
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn new_in(alloc: A) -> Self {
         Self {
@@ -246,7 +243,7 @@ impl<T: Hash + Eq, A: Allocator> HashSet<T, DefaultHashBuilder, A> {
     
     
     
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn with_capacity_in(capacity: usize, alloc: A) -> Self {
         Self {
@@ -462,8 +459,7 @@ impl<T, S> HashSet<T, S, Global> {
     
     
     
-    
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     #[cfg_attr(feature = "rustc-dep-of-std", rustc_const_stable_indirect)]
     pub const fn with_hasher(hasher: S) -> Self {
@@ -501,8 +497,7 @@ impl<T, S> HashSet<T, S, Global> {
     
     
     
-    
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
         Self {
@@ -550,8 +545,7 @@ where
     
     
     
-    
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     #[cfg_attr(feature = "rustc-dep-of-std", rustc_const_stable_indirect)]
     pub const fn with_hasher_in(hasher: S, alloc: A) -> Self {
@@ -589,8 +583,7 @@ where
     
     
     
-    
-    
+    #[must_use]
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn with_capacity_and_hasher_in(capacity: usize, hasher: S, alloc: A) -> Self {
         Self {
@@ -598,8 +591,6 @@ where
         }
     }
 
-    
-    
     
     
     
@@ -624,7 +615,6 @@ where
     S: BuildHasher,
     A: Allocator,
 {
-    
     
     
     
@@ -856,8 +846,6 @@ where
     
     
     
-    
-    
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn contains<Q>(&self, value: &Q) -> bool
     where
@@ -866,8 +854,6 @@ where
         self.map.contains_key(value)
     }
 
-    
-    
     
     
     
@@ -912,12 +898,12 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn get_or_insert(&mut self, value: T) -> &T {
-        let hash = make_hash(&self.map.hash_builder, &value);
-        let bucket = match self.map.find_or_find_insert_index(hash, &value) {
-            Ok(bucket) => bucket,
-            Err(index) => unsafe { self.map.table.insert_at_index(hash, index, (value, ())) },
-        };
-        unsafe { &bucket.as_ref().0 }
+        match self.map.entry(value) {
+            map::Entry::Occupied(entry) => entry,
+            map::Entry::Vacant(entry) => entry.insert_entry(()),
+        }
+        .into_entry()
+        .0
     }
 
     
@@ -951,16 +937,12 @@ where
         Q: Hash + Equivalent<T> + ?Sized,
         F: FnOnce(&Q) -> T,
     {
-        let hash = make_hash(&self.map.hash_builder, value);
-        let bucket = match self.map.find_or_find_insert_index(hash, value) {
-            Ok(bucket) => bucket,
-            Err(index) => {
-                let new = f(value);
-                assert!(value.equivalent(&new), "new value is not equivalent");
-                unsafe { self.map.table.insert_at_index(hash, index, (new, ())) }
-            }
-        };
-        unsafe { &bucket.as_ref().0 }
+        match self.map.entry_ref(value) {
+            map::EntryRef::Occupied(entry) => entry,
+            map::EntryRef::Vacant(entry) => entry.insert_entry_with_key(f(value), ()),
+        }
+        .into_entry()
+        .0
     }
 
     
@@ -1118,7 +1100,7 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub unsafe fn insert_unique_unchecked(&mut self, value: T) -> &T {
-        self.map.insert_unique_unchecked(value, ()).0
+        unsafe { self.map.insert_unique_unchecked(value, ()).0 }
     }
 
     
@@ -1138,20 +1120,24 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn replace(&mut self, value: T) -> Option<T> {
-        let hash = make_hash(&self.map.hash_builder, &value);
-        match self.map.find_or_find_insert_index(hash, &value) {
-            Ok(bucket) => Some(mem::replace(unsafe { &mut bucket.as_mut().0 }, value)),
-            Err(index) => {
+        let value = UnsafeCell::new(value);
+        
+        match self.map.entry_ref(unsafe { &*value.get() }) {
+            map::EntryRef::Occupied(mut entry) => {
+                
+                
+                Some(unsafe { entry.replace_key_unchecked(value.into_inner()) })
+            }
+            map::EntryRef::Vacant(entry) => {
+                
                 unsafe {
-                    self.map.table.insert_at_index(hash, index, (value, ()));
+                    entry.insert_with_key_unchecked(value.into_inner(), ());
                 }
                 None
             }
         }
     }
 
-    
-    
     
     
     
@@ -1179,8 +1165,6 @@ where
         self.map.remove(value).is_some()
     }
 
-    
-    
     
     
     
@@ -1585,16 +1569,13 @@ where
     
     fn bitxor_assign(&mut self, rhs: &HashSet<T, S, A>) {
         for item in rhs {
-            let hash = make_hash(&self.map.hash_builder, item);
-            match self.map.find_or_find_insert_index(hash, item) {
-                Ok(bucket) => unsafe {
-                    self.map.table.remove(bucket);
-                },
-                Err(index) => unsafe {
-                    self.map
-                        .table
-                        .insert_at_index(hash, index, (item.clone(), ()));
-                },
+            match self.map.entry_ref(item) {
+                map::EntryRef::Occupied(entry) => {
+                    entry.remove();
+                }
+                map::EntryRef::Vacant(entry) => {
+                    entry.insert(());
+                }
             }
         }
     }
@@ -1643,11 +1624,9 @@ where
 
 
 
-
 pub struct Iter<'a, K> {
     iter: Keys<'a, K, ()>,
 }
-
 
 
 
@@ -1665,11 +1644,9 @@ pub struct IntoIter<K, A: Allocator = Global> {
 
 
 
-
 pub struct Drain<'a, K, A: Allocator = Global> {
     iter: map::Drain<'a, K, (), A>,
 }
-
 
 
 
@@ -1682,7 +1659,6 @@ pub struct ExtractIf<'a, K, F, A: Allocator = Global> {
     f: F,
     inner: RawExtractIf<'a, (K, ()), A>,
 }
-
 
 
 
@@ -1703,7 +1679,6 @@ pub struct Intersection<'a, T, S, A: Allocator = Global> {
 
 
 
-
 pub struct Difference<'a, T, S, A: Allocator = Global> {
     
     iter: Iter<'a, T>,
@@ -1717,11 +1692,9 @@ pub struct Difference<'a, T, S, A: Allocator = Global> {
 
 
 
-
 pub struct SymmetricDifference<'a, T, S, A: Allocator = Global> {
     iter: Chain<Difference<'a, T, S, A>, Difference<'a, T, S, A>>,
 }
-
 
 
 
@@ -2217,7 +2190,6 @@ where
 
 
 
-
 pub enum Entry<'a, T, S, A = Global>
 where
     A: Allocator,
@@ -2296,8 +2268,6 @@ impl<T: fmt::Debug, S, A: Allocator> fmt::Debug for Entry<'_, T, S, A> {
 
 
 
-
-
 pub struct OccupiedEntry<'a, T, S, A: Allocator = Global> {
     inner: map::OccupiedEntry<'a, T, (), S, A>,
 }
@@ -2309,8 +2279,6 @@ impl<T: fmt::Debug, S, A: Allocator> fmt::Debug for OccupiedEntry<'_, T, S, A> {
             .finish()
     }
 }
-
-
 
 
 
@@ -2537,7 +2505,7 @@ impl<'a, T, S, A: Allocator> VacantEntry<'a, T, S, A> {
     }
 }
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 fn assert_covariance() {
     fn set<'new>(v: HashSet<&'static str>) -> HashSet<&'new str> {
         v
@@ -2575,8 +2543,9 @@ fn assert_covariance() {
 
 #[cfg(test)]
 mod test_set {
-    use super::{make_hash, Equivalent, HashSet};
+    use super::{Equivalent, HashSet};
     use crate::DefaultHashBuilder;
+    use crate::map::make_hash;
     use std::vec::Vec;
 
     #[test]
@@ -2925,7 +2894,7 @@ mod test_set {
         use core::hash;
 
         #[derive(Debug)]
-        #[allow(dead_code)]
+        #[expect(dead_code)]
         struct Foo(&'static str, i32);
 
         impl PartialEq for Foo {
@@ -2954,7 +2923,6 @@ mod test_set {
     }
 
     #[test]
-    #[allow(clippy::needless_borrow)]
     fn test_extend_ref() {
         let mut a = HashSet::new();
         a.insert(1);
