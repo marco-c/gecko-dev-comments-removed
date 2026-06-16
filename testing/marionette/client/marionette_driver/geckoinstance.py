@@ -182,6 +182,8 @@ class GeckoInstance:
         
         "services.settings.loglevel": "off",
         
+        "security.webauthn.related_origin_requests_mode": 1,
+        
         "services.settings.server": "data:,#remote-settings-dummy/v1",
         
         
