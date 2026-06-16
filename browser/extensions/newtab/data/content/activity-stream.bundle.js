@@ -12904,7 +12904,233 @@ function MoveSubmenu({
   }))));
 }
 ;
+
+
+
+
+
+
+
+const IMPRESSION_THRESHOLD = 0.3;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const useWidgetTelemetry = ({
+  dispatch,
+  widget,
+  widgetSize,
+  legacyImpressionTypes,
+  legacyUserEventType
+}) => {
+  const {
+    telemetryName
+  } = widget;
+  const sizeRef = (0,external_React_namespaceObject.useRef)(widgetSize);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    sizeRef.current = widgetSize;
+  }, [widgetSize]);
+
+  
+  
+  const legacyImpressionTypesRef = (0,external_React_namespaceObject.useRef)(legacyImpressionTypes);
+  const legacyUserEventTypeRef = (0,external_React_namespaceObject.useRef)(legacyUserEventType);
+  const buildPayload = (0,external_React_namespaceObject.useCallback)(({
+    size,
+    rest
+  } = {}) => ({
+    widget_name: telemetryName,
+    widget_size: size ?? sizeRef.current,
+    ...rest
+  }), [telemetryName]);
+  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+  const fireImpression = (0,external_React_namespaceObject.useCallback)(size => {
+    if (impressionFired.current) {
+      return;
+    }
+    impressionFired.current = true;
+    const data = buildPayload({
+      size
+    });
+    const legacyTypes = legacyImpressionTypesRef.current;
+    if (legacyTypes && legacyTypes.length) {
+      (0,external_ReactRedux_namespaceObject.batch)(() => {
+        
+        
+        for (const type of legacyTypes) {
+          dispatch(actionCreators.AlsoToMain({
+            type
+          }));
+        }
+        dispatch(actionCreators.AlsoToMain({
+          type: actionTypes.WIDGETS_IMPRESSION,
+          data
+        }));
+      });
+    } else {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_IMPRESSION,
+        data
+      }));
+    }
+  }, [dispatch, buildPayload]);
+
+  
+  
+  
+  const observerRef = (0,external_React_namespaceObject.useRef)(null);
+  const observedEl = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(entries => {
+      
+      
+      if (entries.some(e => e.isIntersecting && e.target === observedEl.current)) {
+        fireImpression();
+        observer.disconnect();
+      }
+    }, {
+      threshold: IMPRESSION_THRESHOLD
+    });
+    observerRef.current = observer;
+    if (observedEl.current && !impressionFired.current) {
+      observer.observe(observedEl.current);
+    }
+    return () => {
+      observer.disconnect();
+      observerRef.current = null;
+    };
+  }, [fireImpression]);
+  const impressionRef = (0,external_React_namespaceObject.useCallback)(el => {
+    if (observedEl.current === el) {
+      return;
+    }
+    const observer = observerRef.current;
+    if (observedEl.current && observer) {
+      observer.unobserve(observedEl.current);
+    }
+    observedEl.current = el;
+    if (el && observer && !impressionFired.current) {
+      observer.observe(el);
+    }
+  }, []);
+  const recordImpression = (0,external_React_namespaceObject.useCallback)(({
+    size
+  } = {}) => {
+    fireImpression(size);
+  }, [fireImpression]);
+  const recordUserAction = (0,external_React_namespaceObject.useCallback)((userAction, {
+    source,
+    value,
+    size,
+    alsoToMain,
+    legacy
+  } = {}) => {
+    const route = alsoToMain ? actionCreators.AlsoToMain : actionCreators.OnlyToMain;
+    const rest = {
+      widget_source: source,
+      user_action: userAction
+    };
+    if (value !== undefined) {
+      rest.action_value = value;
+    }
+    const data = buildPayload({
+      size,
+      rest
+    });
+    const main = route({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data
+    });
+    const legacyType = legacy ? legacyUserEventTypeRef.current : null;
+    if (legacyType) {
+      
+      
+      const legacyAction = route({
+        type: legacyType,
+        data: {
+          userAction
+        }
+      });
+      (0,external_ReactRedux_namespaceObject.batch)(() => {
+        dispatch(legacyAction);
+        dispatch(main);
+      });
+    } else {
+      dispatch(main);
+    }
+  }, [dispatch, buildPayload]);
+  const recordEnabled = (0,external_React_namespaceObject.useCallback)((enabled, {
+    source,
+    size
+  } = {}) => {
+    const data = buildPayload({
+      size,
+      rest: {
+        widget_source: source,
+        enabled
+      }
+    });
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_ENABLED,
+      data
+    }));
+  }, [dispatch, buildPayload]);
+  const recordError = (0,external_React_namespaceObject.useCallback)((errorType, {
+    size
+  } = {}) => {
+    const data = buildPayload({
+      size,
+      rest: {
+        error_type: errorType
+      }
+    });
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_ERROR,
+      data
+    }));
+  }, [dispatch, buildPayload]);
+  return {
+    impressionRef,
+    recordImpression,
+    recordUserAction,
+    recordEnabled,
+    recordError
+  };
+};
+;
 function Lists_extends() { return Lists_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Lists_extends.apply(null, arguments); }
+
 
 
 
@@ -13053,7 +13279,6 @@ function Lists({
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const reorderListRef = (0,external_React_namespaceObject.useRef)(null);
   const widgetRef = (0,external_React_namespaceObject.useRef)(null);
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const {
     celebrationFrame,
     celebrationId,
@@ -13061,6 +13286,21 @@ function Lists({
     isCelebrating,
     triggerCelebration
   } = useWidgetCelebration(widgetRef);
+
+  
+  
+  const telemetrySize = widgetsMayBeMaximized ? widgetSize : "medium";
+  const {
+    impressionRef,
+    recordUserAction,
+    recordEnabled
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: listsWidget,
+    widgetSize: telemetrySize,
+    legacyImpressionTypes: [actionTypes.WIDGETS_LISTS_USER_IMPRESSION],
+    legacyUserEventType: actionTypes.WIDGETS_LISTS_USER_EVENT
+  });
   const handleListInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("lists"), [handleUserInteraction]);
   const handleSelectList = (0,external_React_namespaceObject.useCallback)(listId => {
     setIsEditing(false);
@@ -13074,26 +13314,6 @@ function Lists({
 
   
   const isValidUrl = (0,external_React_namespaceObject.useCallback)(str => URL.canParse(str), []);
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_LISTS_USER_IMPRESSION
-      }));
-      const telemetryData = {
-        widget_name: "lists",
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-      };
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_IMPRESSION,
-        data: telemetryData
-      }));
-    });
-  }, [dispatch, widgetsMayBeMaximized, widgetSize]);
-  const listsRef = useIntersectionObserver(handleIntersection);
   const reorderLists = (0,external_React_namespaceObject.useCallback)((draggedElement, targetElement, before = false) => {
     const draggedIndex = selectedList.tasks.findIndex(({
       id
@@ -13194,22 +13414,10 @@ function Lists({
             lists: updatedLists
           }
         }));
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction: USER_ACTION_TYPES.TASK_CREATE
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.TASK_CREATE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
+        recordUserAction(USER_ACTION_TYPES.TASK_CREATE, {
+          source: "widget",
+          legacy: true
+        });
       });
       setNewTask("");
     }
@@ -13268,22 +13476,11 @@ function Lists({
         }
       }));
       if (userAction) {
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: userAction,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
+        recordUserAction(userAction, {
+          source: "widget",
+          legacy: true,
+          alsoToMain: true
+        });
       }
     });
     handleListInteraction();
@@ -13307,22 +13504,10 @@ function Lists({
           lists: updatedLists
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-        data: {
-          userAction: USER_ACTION_TYPES.TASK_DELETE
-        }
-      }));
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "widget",
-        user_action: USER_ACTION_TYPES.TASK_DELETE,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-      };
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: telemetryData
-      }));
+      recordUserAction(USER_ACTION_TYPES.TASK_DELETE, {
+        source: "widget",
+        legacy: true
+      });
     });
     handleListInteraction();
   }
@@ -13367,22 +13552,10 @@ function Lists({
           type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
           data: id
         }));
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction: USER_ACTION_TYPES.LIST_CREATE
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_CREATE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
+        recordUserAction(USER_ACTION_TYPES.LIST_CREATE, {
+          source: "widget",
+          legacy: true
+        });
       });
       handleListInteraction();
       return;
@@ -13402,22 +13575,10 @@ function Lists({
             lists: updatedLists
           }
         }));
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction: USER_ACTION_TYPES.LIST_EDIT
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_EDIT,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
+        recordUserAction(USER_ACTION_TYPES.LIST_EDIT, {
+          source: "widget",
+          legacy: true
+        });
       });
       setIsEditing(false);
       handleListInteraction();
@@ -13464,22 +13625,10 @@ function Lists({
           type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
           data: key
         }));
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction: USER_ACTION_TYPES.LIST_DELETE
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_DELETE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
+        recordUserAction(USER_ACTION_TYPES.LIST_DELETE, {
+          source: "widget",
+          legacy: true
+        });
       });
     }
     handleListInteraction();
@@ -13493,16 +13642,9 @@ function Lists({
           value: false
         }
       }));
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "context_menu",
-        enabled: false,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-      };
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_ENABLED,
-        data: telemetryData
-      }));
+      recordEnabled(false, {
+        source: "context_menu"
+      });
     });
   }
   function handleCopyListToClipboard() {
@@ -13525,23 +13667,9 @@ function Lists({
     } catch (err) {
       console.error("Copy failed", err);
     }
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-        data: {
-          userAction: USER_ACTION_TYPES.LIST_COPY
-        }
-      }));
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "widget",
-        user_action: USER_ACTION_TYPES.LIST_COPY,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-      };
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: telemetryData
-      }));
+    recordUserAction(USER_ACTION_TYPES.LIST_COPY, {
+      source: "widget",
+      legacy: true
     });
     handleListInteraction();
   }
@@ -13564,18 +13692,13 @@ function Lists({
           value: size
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "lists",
-          widget_source: "context_menu",
-          user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: size,
-          widget_size: size
-        }
-      }));
+      recordUserAction(USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: "context_menu",
+        value: size,
+        size
+      });
     });
-  }, [dispatch]);
+  }, [dispatch, recordUserAction]);
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   (0,external_React_namespaceObject.useEffect)(() => {
     setIsAddingTask(false);
@@ -13646,7 +13769,7 @@ function Lists({
     className: `lists widget ${novaEnabled ? "col-4" : ""} ${listsSizeClass} ${isMaximized ? "is-maximized" : ""}${showEmptyState ? " is-empty" : ""}${hasVisibleTasks ? " has-visible-tasks" : ""}${isAddingTask ? " is-adding-task" : ""}${isCelebrating ? " is-celebrating" : ""}`,
     ref: el => {
       widgetRef.current = el;
-      listsRef.current = [el];
+      impressionRef(el);
     }
   }, isCelebrating && celebrationFrame ? external_React_default().createElement(WidgetCelebration, {
     classNamePrefix: "lists-celebration",
