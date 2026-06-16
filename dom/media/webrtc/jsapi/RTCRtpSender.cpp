@@ -1604,8 +1604,8 @@ already_AddRefed<dom::Promise> RTCRtpSender::ReplaceTrack(
 
   
   
-  RefPtr<PeerConnectionImpl::Operation> op =
-      new ReplaceTrackOperation(mPc, mTransceiver, aWithTrack, aError);
+  RefPtr op =
+      MakeRefPtr<ReplaceTrackOperation>(mPc, mTransceiver, aWithTrack, aError);
   if (aError.Failed()) {
     return nullptr;
   }

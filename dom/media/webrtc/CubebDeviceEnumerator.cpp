@@ -227,7 +227,7 @@ static RefPtr<AudioDeviceSet> GetDeviceCollection(Side aSide) {
           if (device.max_channels == 0) {
             continue;
           }
-          RefPtr<AudioDeviceInfo> info = new AudioDeviceInfo(
+          RefPtr info = MakeRefPtr<AudioDeviceInfo>(
               device.devid, NS_ConvertUTF8toUTF16(device.friendly_name),
               NS_ConvertUTF8toUTF16(device.group_id),
               NS_ConvertUTF8toUTF16(device.vendor_name),
@@ -306,7 +306,7 @@ RefPtr<const AudioDeviceSet> CubebDeviceEnumerator::EnumerateAudioDevices(
   
   
   
-  RefPtr<AudioDeviceInfo> info = new AudioDeviceInfo(
+  RefPtr info = MakeRefPtr<AudioDeviceInfo>(
       nullptr, name, u""_ns, u""_ns, type, CUBEB_DEVICE_STATE_ENABLED,
       CUBEB_DEVICE_PREF_ALL, CUBEB_DEVICE_FMT_ALL, CUBEB_DEVICE_FMT_S16NE,
       channels, 44100, 44100, 44100, 441, 128);
