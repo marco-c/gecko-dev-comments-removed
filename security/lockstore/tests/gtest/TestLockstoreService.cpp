@@ -79,7 +79,7 @@ class LockstoreServiceTest : public ::testing::Test {
     
     
     RunOnBackground([&]() {
-      auto k1 = mService->DoCreateKek("local"_ns, ""_ns,
+      auto k1 = mService->DoCreateKek("local"_ns, ""_ns, ""_ns,
                                       0);
       ASSERT_TRUE(k1.isOk())
       << "DoCreateKek(local) must succeed";
@@ -87,7 +87,7 @@ class LockstoreServiceTest : public ::testing::Test {
       ASSERT_FALSE(mLocalKek.IsEmpty())
       << "DoCreateKek(local) must mint a non-empty kek_ref";
 
-      auto k2 = mService->DoCreateKek("local"_ns, ""_ns,
+      auto k2 = mService->DoCreateKek("local"_ns, ""_ns, ""_ns,
                                       0);
       ASSERT_TRUE(k2.isOk())
       << "DoCreateKek(local) must succeed";
