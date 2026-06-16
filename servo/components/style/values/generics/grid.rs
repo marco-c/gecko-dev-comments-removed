@@ -213,6 +213,23 @@ impl Parse for GridLine<specified::Integer> {
 }
 
 
+pub struct FlexUnit;
+
+impl FlexUnit {
+    
+    #[inline]
+    pub fn matches(unit: &str) -> bool {
+        unit.eq_ignore_ascii_case("fr")
+    }
+
+    
+    #[inline]
+    pub fn name() -> &'static str {
+        "fr"
+    }
+}
+
+
 
 
 #[derive(
@@ -237,7 +254,7 @@ impl ToCss for Flex {
         W: Write,
     {
         self.0.to_css(dest)?;
-        dest.write_str("fr")
+        dest.write_str(FlexUnit::name())
     }
 }
 
