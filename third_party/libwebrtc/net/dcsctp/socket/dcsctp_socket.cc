@@ -1036,6 +1036,8 @@ TimeDelta DcSctpSocket::OnCookieTimerExpiry() {
 }
 
 TimeDelta DcSctpSocket::OnShutdownTimerExpiry() {
+  RTC_DCHECK(state_ == State::kShutdownSent ||
+             state_ == State::kShutdownAckSent);
   RTC_DLOG(LS_VERBOSE) << log_prefix() << "Timer " << t2_shutdown_->name()
                        << " has expired: " << t2_shutdown_->expiration_count()
                        << "/"
@@ -1058,10 +1060,19 @@ TimeDelta DcSctpSocket::OnShutdownTimerExpiry() {
     return TimeDelta::Zero();
   }
 
-  
-  
-  
-  SendShutdown();
+  if (state_ == State::kShutdownAckSent) {
+    
+    
+    
+    
+    SendShutdownAck();
+  } else {
+    
+    
+    
+    
+    SendShutdown();
+  }
   RTC_DCHECK(IsConsistent());
   return tcb_->current_rto();
 }
