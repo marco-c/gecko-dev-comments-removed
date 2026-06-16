@@ -1136,27 +1136,23 @@ class Toolbox extends EventEmitter {
 
       this.emit("ready");
       this._resolveIsOpen();
-    } catch (exception) {
+    } catch (error) {
       console.error(
         "Exception while opening the toolbox",
-        String(exception),
-        exception
+        String(error),
+        error
       );
       
       
-      dump(exception.stack + "\n");
-      if (exception.clientPacket) {
+      dump(error.stack + "\n");
+      if (error.clientPacket) {
         dump(
-          "Client packet:" +
-            JSON.stringify(exception.clientPacket, null, 2) +
-            "\n"
+          "Client packet:" + JSON.stringify(error.clientPacket, null, 2) + "\n"
         );
       }
-      if (exception.serverPacket) {
+      if (error.serverPacket) {
         dump(
-          "Server packet:" +
-            JSON.stringify(exception.serverPacket, null, 2) +
-            "\n"
+          "Server packet:" + JSON.stringify(error.serverPacket, null, 2) + "\n"
         );
       }
 
@@ -1168,7 +1164,7 @@ class Toolbox extends EventEmitter {
         
         
         if (this._appBoundary && !this._appBoundary.state.errorInfo) {
-          this._appBoundary.handleException(exception, this, true);
+          this._appBoundary.toolboxDidCatch(error, this);
         }
       } catch (e) {
         
