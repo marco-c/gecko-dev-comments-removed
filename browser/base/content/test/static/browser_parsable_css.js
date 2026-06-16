@@ -165,6 +165,13 @@ let propNameAllowlist = [
 
   
   
+  {
+    propName: "--panel-background-color-dimmed-further",
+    isFromDevTools: false,
+  },
+
+  
+  
   { propName: /^--content-search-handoff-ui-/, isFromDevTools: false },
 
   
