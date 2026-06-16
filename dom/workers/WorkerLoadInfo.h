@@ -144,6 +144,11 @@ struct WorkerLoadInfoData {
   
   nsCString mLanguageOverrideLocale;
   nsTArray<nsString> mLanguageOverride;
+  
+  
+  
+  
+  nsString mTimezoneOverride;
 
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   OriginTrials mTrials;

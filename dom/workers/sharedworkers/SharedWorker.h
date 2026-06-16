@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_sharedworker_h_
 #define mozilla_dom_workers_sharedworker_h_
 
@@ -82,6 +80,11 @@ class SharedWorker final : public DOMEventTargetHelper {
   void Freeze();
 
   void Thaw();
+
+  void UpdateLanguageOverride(const nsACString& aLanguageOverride,
+                              const nsTArray<nsString>& aLanguages);
+
+  void UpdateTimezoneOverride(const nsAString& aTimezoneOverride);
 
  private:
   MOZ_CAN_RUN_SCRIPT static already_AddRefed<SharedWorker> Constructor(

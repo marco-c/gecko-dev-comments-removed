@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_dom_SharedWorkerParent_h
 #define mozilla_dom_dom_SharedWorkerParent_h
 
@@ -50,6 +48,12 @@ class SharedWorkerParent final
   mozilla::ipc::IPCResult RecvFreeze();
 
   mozilla::ipc::IPCResult RecvThaw();
+
+  mozilla::ipc::IPCResult RecvSetLocaleOverride(
+      const nsCString& aLanguageOverride, nsTArray<nsString>&& aLanguages);
+
+  mozilla::ipc::IPCResult RecvUpdateTimezoneOverride(
+      const nsString& aTimezoneOverride);
 
   bool IsSuspended() const { return mSuspended; }
 

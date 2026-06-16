@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedWorkerManager.h"
 
 #include "SharedWorkerParent.h"
@@ -235,6 +233,24 @@ void SharedWorkerManager::UpdateFrozen() {
   } else {
     mFrozen = false;
     mRemoteWorkerController->Thaw();
+  }
+}
+
+void SharedWorkerManager::SetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  if (mRemoteWorkerController) {
+    mRemoteWorkerController->SetLocaleOverride(aLanguageOverride, aLanguages);
+  }
+}
+
+void SharedWorkerManager::UpdateTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  if (mRemoteWorkerController) {
+    mRemoteWorkerController->UpdateTimezoneOverride(aTimezoneOverride);
   }
 }
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_dom_SharedWorkerChild_h
 #define mozilla_dom_dom_SharedWorkerChild_h
 
@@ -37,6 +35,11 @@ class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild {
   void SendFreeze();
 
   void SendThaw();
+
+  void SendSetLocaleOverride(const nsACString& aLanguageOverride,
+                             const nsTArray<nsString>& aLanguages);
+
+  void SendUpdateTimezoneOverride(const nsAString& aTimezoneOverride);
 
  private:
   ~SharedWorkerChild();

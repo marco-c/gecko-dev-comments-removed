@@ -778,7 +778,9 @@ nsresult ServiceWorkerPrivate::Initialize() {
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
       remoteType.unwrap(),
       
-      ""_ns, nsTArray<nsString>());
+      ""_ns, nsTArray<nsString>(),
+      
+      u""_ns);
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>(nullptr);
 

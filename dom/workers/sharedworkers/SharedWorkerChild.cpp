@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SharedWorkerChild.h"
 
 #include "mozilla/dom/ErrorEvent.h"
@@ -63,6 +61,20 @@ void SharedWorkerChild::SendFreeze() {
 void SharedWorkerChild::SendThaw() {
   if (mActive) {
     PSharedWorkerChild::SendThaw();
+  }
+}
+
+void SharedWorkerChild::SendSetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  if (mActive) {
+    PSharedWorkerChild::SendSetLocaleOverride(aLanguageOverride, aLanguages);
+  }
+}
+
+void SharedWorkerChild::SendUpdateTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  if (mActive) {
+    PSharedWorkerChild::SendUpdateTimezoneOverride(nsString(aTimezoneOverride));
   }
 }
 

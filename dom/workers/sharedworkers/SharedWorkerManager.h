@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SharedWorkerManager_h
 #define mozilla_dom_SharedWorkerManager_h
 
@@ -116,6 +114,11 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
   void UpdateSuspend();
 
   void UpdateFrozen();
+
+  void SetLocaleOverride(const nsACString& aLanguageOverride,
+                         const nsTArray<nsString>& aLanguages);
+
+  void UpdateTimezoneOverride(const nsAString& aTimezoneOverride);
 
   bool IsSecureContext() const;
 

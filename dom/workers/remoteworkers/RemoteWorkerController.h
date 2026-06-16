@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_RemoteWorkerController_h
 #define mozilla_dom_RemoteWorkerController_h
 
@@ -150,6 +148,11 @@ class RemoteWorkerController final {
 
   void Thaw();
 
+  void SetLocaleOverride(const nsACString& aLanguageOverride,
+                         const nsTArray<nsString>& aLanguages);
+
+  void UpdateTimezoneOverride(const nsAString& aTimezoneOverride);
+
   RefPtr<ServiceWorkerOpPromise> ExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs);
 
@@ -252,12 +255,19 @@ class RemoteWorkerController final {
       ePortIdentifier,
       eAddWindowID,
       eRemoveWindowID,
+      eSetLocaleOverride,
+      eUpdateTimezoneOverride,
     };
 
     explicit PendingSharedWorkerOp(Type aType, uint64_t aWindowID = 0);
 
     explicit PendingSharedWorkerOp(
         const MessagePortIdentifier& aPortIdentifier);
+
+    PendingSharedWorkerOp(const nsACString& aLanguageOverride,
+                          const nsTArray<nsString>& aLanguages);
+
+    PendingSharedWorkerOp(Type aType, const nsAString& aTimezoneOverride);
 
     ~PendingSharedWorkerOp();
 
@@ -269,6 +279,9 @@ class RemoteWorkerController final {
     const Type mType;
     const MessagePortIdentifier mPortIdentifier;
     const uint64_t mWindowID = 0;
+    const nsCString mLanguageOverride;
+    const CopyableTArray<nsString> mLanguages;
+    const nsString mTimezoneOverride;
     bool mCompleted = false;
   };
 

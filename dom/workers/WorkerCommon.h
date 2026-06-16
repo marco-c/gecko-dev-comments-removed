@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_WorkerCommon_h
 #define mozilla_dom_workers_WorkerCommon_h
 
@@ -50,6 +48,9 @@ void ResumeWorkersForWindow(const nsPIDOMWindowInner& aWindow);
 
 void PropagateStorageAccessPermissionGrantedToWorkers(
     const nsPIDOMWindowInner& aWindow);
+
+void UpdateTimezoneOverrideForWorkers(const nsPIDOMWindowInner& aWindow,
+                                      const nsAString& aTimezone);
 
 
 
