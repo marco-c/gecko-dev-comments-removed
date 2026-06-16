@@ -5,15 +5,24 @@
 #include "mozilla/dom/CSSMathMax.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathMaxBinding.h"
+#include "mozilla/dom/CSSNumericArray.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathMax::CSSMathMax(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathMax::CSSMathMax(nsCOMPtr<nsISupports> aParent,
+                       RefPtr<CSSNumericArray> aValues)
+    : CSSMathValue(std::move(aParent), MathValueType::MathMax),
+      mValues(std::move(aValues)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathMax, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathMax, CSSMathValue, mValues)
 
 JSObject* CSSMathMax::WrapObject(JSContext* aCx,
                                  JS::Handle<JSObject*> aGivenProto) {
@@ -23,17 +32,70 @@ JSObject* CSSMathMax::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSMathMax> CSSMathMax::Constructor(
     const GlobalObject& aGlobal, const Sequence<OwningCSSNumberish>& aArgs,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSMathMax>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  for (const OwningCSSNumberish& arg : aArgs) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, arg);
+
+    values.AppendElement(std::move(value));
+  }
+
+  
+
+  if (values.IsEmpty()) {
+    aRv.ThrowSyntaxError("Arguments can't be empty");
+    return nullptr;
+  }
+
+  
+
+  
+
+  auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
+
+  return MakeAndAddRef<CSSMathMax>(global, std::move(array));
 }
 
-CSSNumericArray* CSSMathMax::GetValues(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+CSSNumericArray* CSSMathMax::Values() const { return mValues; }
+
+
+
+void CSSMathMax::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                       bool aNested, nsACString& aDest) const {
+  aDest.Append("max("_ns);
+
+  bool first = true;
+  for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
+    if (!first) {
+      aDest.Append(", "_ns);
+    }
+
+    value->ToCssTextWithProperty(aPropertyId,  true, aDest);
+    first = false;
+  }
+
+  aDest.Append(")"_ns);
 }
 
+const CSSMathMax& CSSMathValue::GetAsCSSMathMax() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathMax);
 
+  return *static_cast<const CSSMathMax*>(this);
+}
+
+CSSMathMax& CSSMathValue::GetAsCSSMathMax() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathMax);
+
+  return *static_cast<CSSMathMax*>(this);
+}
 
 }  
