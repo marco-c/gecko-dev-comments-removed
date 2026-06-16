@@ -5,283 +5,376 @@
 #include "mutators.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <random>
 #include <vector>
 
 #include "tls_parser.h"
 
 
-class Record {
- public:
-  static std::unique_ptr<Record> Create(const uint8_t *data, size_t size,
-                                        size_t remaining) {
-    return std::unique_ptr<Record>(new Record(data, size, remaining));
-  }
 
-  void insert_before(const std::unique_ptr<Record> &other) {
-    assert(data_ && size_ > 0);
 
-    
-    std::vector<uint8_t> buf(size_);
-    memcpy(buf.data(), data_, size_);
+constexpr size_t kHeaderBytes = 5 + EXTRA_HEADER_BYTES;
+constexpr size_t kLengthOffset = 3 + EXTRA_HEADER_BYTES;
 
-    uint8_t *dest = const_cast<uint8_t *>(other->data());
-    
-    memmove(dest + size_, other->data(), other->size() + other->remaining());
-    
-    memcpy(dest, buf.data(), size_);
-  }
 
-  void truncate(size_t length) {
-    assert(length >= 5 + EXTRA_HEADER_BYTES);
-    uint8_t *dest = const_cast<uint8_t *>(data_);
-    size_t l = length - (5 + EXTRA_HEADER_BYTES);
-    dest[3] = (l >> 8) & 0xff;
-    dest[4] = l & 0xff;
-    memmove(dest + length, data_ + size_, remaining_);
-  }
 
-  void drop() {
-    uint8_t *dest = const_cast<uint8_t *>(data_);
-    memmove(dest, data_ + size_, remaining_);
-  }
 
-  const uint8_t *data() { return data_; }
-  size_t remaining() { return remaining_; }
-  size_t size() { return size_; }
+constexpr uint8_t kContentTypes[] = {20, 21, 22, 23, 24, 25, 26};
 
- private:
-  Record(const uint8_t *data, size_t size, size_t remaining)
-      : data_(data), remaining_(remaining), size_(size) {}
+struct Record {
+  uint8_t* data;
+  size_t size;
+  size_t remaining;
 
-  const uint8_t *data_;
-  size_t remaining_;
-  size_t size_;
+  uint8_t contentType() { return data[0]; }
 };
 
-
-std::vector<std::unique_ptr<Record>> ParseRecords(const uint8_t *data,
-                                                  size_t size) {
-  std::vector<std::unique_ptr<Record>> records;
+static std::vector<Record> ParseRecords(uint8_t* data, size_t size) {
+  std::vector<Record> records;
   nss_test::TlsParser parser(data, size);
 
   while (parser.remaining()) {
     size_t offset = parser.consumed();
 
+    if (!parser.Skip(kLengthOffset)) {
+      break;
+    }
+
     
-    if (!parser.Skip(3 + EXTRA_HEADER_BYTES)) {
+    if (!parser.SkipVariable(2)) {
       break;
     }
 
-    nss_test::DataBuffer fragment;
-    if (!parser.ReadVariable(&fragment, 2)) {
-      break;
-    }
-
-    records.push_back(Record::Create(data + offset,
-                                     fragment.len() + 5 + EXTRA_HEADER_BYTES,
-                                     parser.remaining()));
+    records.push_back(
+        {data + offset, parser.consumed() - offset, parser.remaining()});
   }
 
   return records;
 }
 
-namespace TlsMutators {
-
-
-size_t DropRecord(uint8_t *data, size_t size, size_t maxSize,
-                  unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  auto records = ParseRecords(data, size);
+static size_t DropRecord(uint8_t* data, size_t size, size_t maxSize,
+                         std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
   if (records.empty()) {
     return 0;
   }
 
-  
   std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
-  auto &rec = records.at(dist(rng));
+  Record& record = records.at(dist(rng));
 
-  
-  rec->drop();
-
-  
-  return size - rec->size();
+  memmove(record.data, record.data + record.size, record.remaining);
+  return size - record.size;
 }
 
-
-size_t ShuffleRecords(uint8_t *data, size_t size, size_t maxSize,
-                      unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  auto records = ParseRecords(data, size);
-  if (records.empty()) {
+static size_t SwapRecords(uint8_t* data, size_t size, size_t maxSize,
+                          std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.size() < 2) {
     return 0;
   }
 
-  
-  std::vector<uint8_t> buf(size);
-  memcpy(buf.data(), data, size);
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  size_t i = dist(rng);
+  size_t j;
+  do {
+    j = dist(rng);
+  } while (j == i);
 
   
-  uint8_t *dest = const_cast<uint8_t *>(records.at(0)->data());
-
   
-  std::shuffle(records.begin(), records.end(), rng);
+  std::vector<uint8_t> buf(data, data + size);
+  std::swap(records.at(i), records.at(j));
 
-  
-  for (auto &rec : records) {
-    memcpy(dest, buf.data() + (rec->data() - data), rec->size());
-    dest += rec->size();
+  uint8_t* dest = data;
+  for (Record& rec : records) {
+    memcpy(dest, buf.data() + (rec.data - data), rec.size);
+    dest += rec.size;
   }
 
-  
   return size;
 }
 
 
-size_t DuplicateRecord(uint8_t *data, size_t size, size_t maxSize,
+static size_t DuplicateRecord(uint8_t* data, size_t size, size_t maxSize,
+                              std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  Record& record = records.at(dist(rng));
+
+  if (size + record.size > maxSize) {
+    return 0;
+  }
+
+  Record& other = records.at(dist(rng));
+
+  memmove(other.data + record.size, other.data, other.size + other.remaining);
+
+  uint8_t* src =
+      (record.data < other.data) ? record.data : record.data + record.size;
+  memcpy(other.data, src, record.size);
+
+  return size + record.size;
+}
+
+
+static size_t TruncateRecord(uint8_t* data, size_t size, size_t maxSize,
+                             std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  Record& record = records.at(dist(rng));
+
+  if (record.size <= kHeaderBytes) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist2(kHeaderBytes, record.size - 1);
+  size_t length = dist2(rng);
+
+  size_t payloadLength = length - kHeaderBytes;
+  record.data[kLengthOffset] = (payloadLength >> 8) & 0xff;
+  record.data[kLengthOffset + 1] = payloadLength & 0xff;
+
+  memmove(record.data + length, record.data + record.size, record.remaining);
+
+  return size + length - record.size;
+}
+
+
+
+
+
+
+static size_t FragmentRecord(uint8_t* data, size_t size, size_t maxSize,
+                             std::mt19937& rng) {
+  if (size + kHeaderBytes > maxSize) {
+    return 0;
+  }
+
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  Record& record = records.at(dist(rng));
+  size_t contentLength = record.size - kHeaderBytes;
+
+  if (contentLength < 2) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist2(1, contentLength - 1);
+  size_t firstLength = dist2(rng);
+  size_t secondLength = contentLength - firstLength;
+
+  
+  record.data[kLengthOffset] = (firstLength >> 8) & 0xff;
+  record.data[kLengthOffset + 1] = firstLength & 0xff;
+
+  
+  uint8_t* second = record.data + kHeaderBytes + firstLength;
+  memmove(second + kHeaderBytes, second, record.remaining + secondLength);
+
+  
+  memcpy(second, record.data, kLengthOffset);
+  second[kLengthOffset] = (secondLength >> 8) & 0xff;
+  second[kLengthOffset + 1] = secondLength & 0xff;
+
+  return size + kHeaderBytes;
+}
+
+
+
+
+static size_t InjectEmptyRecord(uint8_t* data, size_t size, size_t maxSize,
+                                std::mt19937& rng) {
+  if (size + kHeaderBytes > maxSize) {
+    return 0;
+  }
+
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  Record& record = records.at(dist(rng));
+
+  uint8_t* dest = record.data;
+  memmove(dest + kHeaderBytes, dest, record.size + record.remaining);
+
+  
+  
+  memcpy(dest + 1, dest + kHeaderBytes + 1, kLengthOffset - 1);
+
+  std::uniform_int_distribution<size_t> dist2(0, sizeof(kContentTypes) - 1);
+  dest[0] = kContentTypes[dist2(rng)];
+
+  dest[kLengthOffset] = 0;
+  dest[kLengthOffset + 1] = 0;
+
+  return size + kHeaderBytes;
+}
+
+
+
+
+static size_t MergeRecords(uint8_t* data, size_t size, size_t maxSize,
+                           std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.size() < 2) {
+    return 0;
+  }
+
+  std::vector<size_t> candidates;
+  for (size_t i = 0; i + 1 < records.size(); i++) {
+    if (records[i].contentType() == records[i + 1].contentType()) {
+      candidates.push_back(i);
+    }
+  }
+
+  if (candidates.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+  size_t idx = candidates.at(dist(rng));
+
+  Record& first = records.at(idx);
+  Record& second = records.at(idx + 1);
+
+  size_t combinedPayload =
+      (first.size - kHeaderBytes) + (second.size - kHeaderBytes);
+
+  
+  
+  if (combinedPayload > 0xffff) {
+    return 0;
+  }
+
+  first.data[kLengthOffset] = (combinedPayload >> 8) & 0xff;
+  first.data[kLengthOffset + 1] = combinedPayload & 0xff;
+
+  uint8_t* secondHeader = second.data;
+  memmove(secondHeader, secondHeader + kHeaderBytes,
+          second.size - kHeaderBytes + second.remaining);
+
+  return size - kHeaderBytes;
+}
+
+
+
+
+static size_t ExtendRecord(uint8_t* data, size_t size, size_t maxSize,
+                           std::mt19937& rng) {
+  std::vector<Record> records = ParseRecords(data, size);
+  if (records.empty()) {
+    return 0;
+  }
+
+  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
+  Record& record = records.at(dist(rng));
+
+  size_t available = maxSize - size;
+  if (available == 0) {
+    return 0;
+  }
+
+  size_t currentPayload = record.size - kHeaderBytes;
+  if (currentPayload >= 0xffff) {
+    return 0;
+  }
+
+  size_t maxExtend = std::min(available, (size_t)0xffff - currentPayload);
+  std::uniform_int_distribution<size_t> dist2(1, maxExtend);
+  size_t extendBy = dist2(rng);
+
+  
+  uint8_t* insertPoint = record.data + record.size;
+  memmove(insertPoint + extendBy, insertPoint, record.remaining);
+
+  
+  std::uniform_int_distribution<uint8_t> dist3(0, 255);
+  for (size_t i = 0; i < extendBy; ++i) {
+    insertPoint[i] = dist3(rng);
+  }
+
+  
+  size_t newPayload = currentPayload + extendBy;
+  record.data[kLengthOffset] = (newPayload >> 8) & 0xff;
+  record.data[kLengthOffset + 1] = newPayload & 0xff;
+
+  return size + extendBy;
+}
+
+using Mutator = size_t (*)(uint8_t*, size_t, size_t, std::mt19937&);
+
+constexpr Mutator kMutators[] = {
+    DropRecord,     SwapRecords,       DuplicateRecord, TruncateRecord,
+    FragmentRecord, InjectEmptyRecord, MergeRecords,    ExtendRecord,
+};
+
+namespace TlsMutators {
+
+extern "C" size_t LLVMFuzzerMutate(uint8_t* data, size_t size, size_t maxSize);
+
+
+size_t CustomMutator(uint8_t* data, size_t size, size_t maxSize,
+                     unsigned int seed) {
+  std::mt19937 rng(seed);
+  std::bernoulli_distribution coin;
+
+  if (coin(rng)) {
+    std::uniform_int_distribution<size_t> dist(
+        0, (sizeof(kMutators) / sizeof(kMutators[0])) - 1);
+    return kMutators[dist(rng)](data, size, maxSize, rng);
+  }
+
+  return LLVMFuzzerMutate(data, size, maxSize);
+}
+
+
+
+size_t CustomCrossOver(const uint8_t* data1, size_t size1, const uint8_t* data2,
+                       size_t size2, uint8_t* out, size_t maxOutSize,
                        unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  const auto records = ParseRecords(data, size);
-  if (records.empty()) {
-    return 0;
-  }
-
-  
-  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
-  auto &rec = records.at(dist(rng));
-  if (size + rec->size() > maxSize) {
-    return 0;
-  }
-
-  
-  rec->insert_before(records.at(dist(rng)));
-
-  
-  return size + rec->size();
-}
-
-
-size_t TruncateRecord(uint8_t *data, size_t size, size_t maxSize,
-                      unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  const auto records = ParseRecords(data, size);
-  if (records.empty()) {
-    return 0;
-  }
-
-  
-  std::uniform_int_distribution<size_t> dist(0, records.size() - 1);
-  auto &rec = records.at(dist(rng));
-
-  
-  if (rec->size() <= 5 + EXTRA_HEADER_BYTES) {
-    return 0;
-  }
-
-  
-  std::uniform_int_distribution<size_t> dist2(5 + EXTRA_HEADER_BYTES,
-                                              rec->size() - 1);
-  size_t new_length = dist2(rng);
-  rec->truncate(new_length);
-
-  
-  return size + new_length - rec->size();
-}
-
-
-size_t FragmentRecord(uint8_t *data, size_t size, size_t maxSize,
-                      unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  if (EXTRA_HEADER_BYTES > 0) {
-    return 0;
-  }
-
-  if (size + 5 > maxSize) {
-    return 0;
-  }
-
-  
-  const auto records = ParseRecords(data, size);
-  if (records.empty()) {
-    return 0;
-  }
-
-  
-  std::uniform_int_distribution<size_t> rand_record(0, records.size() - 1);
-  auto &rec = records.at(rand_record(rng));
-  uint8_t *rdata = const_cast<uint8_t *>(rec->data());
-  size_t length = rec->size();
-  size_t content_length = length - 5;
-
-  if (content_length < 2) {
-    return 0;
-  }
-
-  
-  std::uniform_int_distribution<size_t> rand_size(1, content_length - 1);
-  size_t first_length = rand_size(rng);
-  size_t second_length = content_length - first_length;
-  rdata[3] = (first_length >> 8) & 0xff;
-  rdata[4] = first_length & 0xff;
-  uint8_t *second_record = rdata + 5 + first_length;
-
-  
-  memmove(second_record + 5, second_record,
-          rec->remaining() + content_length - first_length);
-
-  
-  memcpy(second_record, rdata, 3);
-  second_record[3] = (second_length >> 8) & 0xff;
-  second_record[4] = second_length & 0xff;
-
-  return size + 5;
-}
-
-
-size_t CrossOver(const uint8_t *data1, size_t size1, const uint8_t *data2,
-                 size_t size2, uint8_t *out, size_t maxOutSize,
-                 unsigned int seed) {
-  std::mt19937 rng(seed);
-
-  
-  auto records1 = ParseRecords(data1, size1);
+  std::vector<Record> records1 =
+      ParseRecords(const_cast<uint8_t*>(data1), size1);
   if (records1.empty()) {
     return 0;
   }
 
-  {  
-    auto records2 = ParseRecords(data2, size2);
-    if (records2.empty()) {
-      return 0;
-    }
-    std::move(records2.begin(), records2.end(), std::back_inserter(records1));
+  std::vector<Record> records2 =
+      ParseRecords(const_cast<uint8_t*>(data2), size2);
+  if (records2.empty()) {
+    return 0;
   }
 
   
+  std::move(records2.begin(), records2.end(), std::back_inserter(records1));
+
+  std::mt19937 rng(seed);
   std::shuffle(records1.begin(), records1.end(), rng);
 
   size_t total = 0;
-  for (auto &rec : records1) {
-    size_t length = rec->size();
+  for (Record& record : records1) {
+    size_t length = record.size;
     if (total + length > maxOutSize) {
       break;
     }
 
-    
-    memcpy(out + total, rec->data(), length);
+    memcpy(out + total, record.data, length);
     total += length;
   }
 

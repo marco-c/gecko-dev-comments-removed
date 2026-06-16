@@ -62,7 +62,6 @@ void DoHandshake(PRFileDesc* fd, bool isServer) {
     uint8_t block[1024];
     int32_t nb;
 
-    
     while ((nb = PR_Read(fd, block, sizeof(block))) > 0) {
       PR_Write(fd, block, nb);
     }

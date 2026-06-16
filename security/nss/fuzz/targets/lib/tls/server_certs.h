@@ -2,14 +2,14 @@
 
 
 
-#ifndef TLS_SERVER_CERT_H_
-#define TLS_SERVER_CERT_H_
+#ifndef TLS_SERVER_CERTS_H_
+#define TLS_SERVER_CERTS_H_
 
 #include "prio.h"
 
-namespace TlsServer {
+namespace TlsServerCerts {
 
-void InstallServerCertificates(PRFileDesc* fd);
+void InstallCertificates(PRFileDesc* fd);
 
 }  
 

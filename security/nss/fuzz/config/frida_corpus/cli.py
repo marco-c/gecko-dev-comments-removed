@@ -38,6 +38,23 @@ def on_SEC_ASN1DecodeItem_Util(payload):
 
 
 
+def on_DSAU_DecodeDerSig(payload):
+    if not "data" in payload:
+        return
+
+    store_for_target("dsau", bytes(payload["data"].values()))
+
+
+def on_DSAU_DecodeDerSigToLen(payload):
+    if not "data" in payload:
+        return
+
+    store_for_target("dsau", bytes(payload["data"].values()))
+
+
+
+
+
 def on_CERT_AsciiToName(payload):
     if not "data" in payload:
         return
@@ -103,6 +120,16 @@ def on_NSS_CMSDecoder_Update(payload):
         return
 
     store_for_target("smime", bytes(payload["data"].values()))
+
+
+
+
+
+def on_PK11_PubDeriveWithKDF(payload):
+    if not "data" in payload:
+        return
+
+    store_for_target("ec-derive", bytes(payload["data"].values()))
 
 
 

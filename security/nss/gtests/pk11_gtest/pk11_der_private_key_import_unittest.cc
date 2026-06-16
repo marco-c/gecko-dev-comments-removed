@@ -73,6 +73,31 @@ const std::vector<uint8_t> kInvalidLengthKey = {
     0x00  
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+const std::vector<uint8_t> kEd25519WithNonEmptyAlgorithmParams = {
+    0x30, 0x30,                    
+    0x02, 0x01, 0x00,              
+    0x30, 0x07,                    
+    0x06, 0x03, 0x2b, 0x65, 0x70,  
+    0x05, 0x00,  
+    0x04, 0x22,  
+    0x04, 0x20,  
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 const std::vector<uint8_t> kInvalidZeroLengthKey = {
     0x30, 0x1a,        
     0x02, 0x01, 0x00,  
@@ -198,6 +223,18 @@ TEST_F(DERPrivateKeyImportTest, ImportPrivateRSAKey) {
   EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
 }
 
+TEST_F(DERPrivateKeyImportTest, ImportRSAPSSKey) {
+  
+  
+  
+  
+  std::vector<uint8_t> pss_key = kValidRSAKey;
+  ASSERT_EQ(pss_key[19], 0x01);  
+  pss_key[19] = 0x0a;            
+  EXPECT_TRUE(ParsePrivateKey(pss_key, true));
+  EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
+}
+
 TEST_F(DERPrivateKeyImportTest, ImportEcdsaKey) {
   EXPECT_TRUE(ParsePrivateKey(kValidP256Key, true));
   EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
@@ -216,6 +253,11 @@ TEST_F(DERPrivateKeyImportTest, ImportZeroLengthPrivateKey) {
 TEST_F(DERPrivateKeyImportTest, ImportZeroLengthMLDSAPrivateKey) {
   EXPECT_EQ(BuildPrivateKeyInfoAndImportIt(SEC_OID_ML_DSA_44), SECFailure);
   EXPECT_EQ(PORT_GetError(), SEC_ERROR_BAD_KEY);
+}
+
+TEST_F(DERPrivateKeyImportTest, ImportEd25519WithNonEmptyAlgorithmParams) {
+  EXPECT_FALSE(ParsePrivateKey(kEd25519WithNonEmptyAlgorithmParams, false));
+  EXPECT_EQ(PORT_GetError(), SEC_ERROR_UNSUPPORTED_KEYALG);
 }
 
 }  
