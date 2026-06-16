@@ -134,8 +134,7 @@ prefs.cursorBlinkRate = Services.prefs.getIntPref("ui.caretBlinkTime", 530);
 
 
 prefs.styleSheetTransitions = Services.prefs.getBoolPref(
-  "devtools.styleeditor.transitions",
-  true
+  "devtools.styleeditor.transitions"
 );
 
 export const features = new PrefsHelper("devtools.debugger.features", {
