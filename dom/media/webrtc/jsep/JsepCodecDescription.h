@@ -531,7 +531,7 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
     } else if (mName == "telephone-event") {
       if (!aFmtp) {
         
-        aFmtp.reset(new SdpFmtpAttributeList::TelephoneEventParameters);
+        aFmtp = MakeUnique<SdpFmtpAttributeList::TelephoneEventParameters>();
       }
     }
   };
