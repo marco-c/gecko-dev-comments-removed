@@ -8,6 +8,7 @@
 #include <cstdint>
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/RefPtr.h"
@@ -135,6 +136,45 @@ class ContentClassifierResult {
   nsTArray<ContentClassifierEngineResult> mEngineResults;
 };
 
+
+
+
+
+
+
+struct EnginesPrefsSnapshot {
+  EnginesPrefsSnapshot() {
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.protection.engines", mCancel);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.protection.engines.pbmode",
+        mCancelPBM);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.annotation.engines", mAnnotate);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.annotation.engines.pbmode",
+        mAnnotatePBM);
+  }
+
+  static void AppendFeatureNamesFromPref(const char* aPref,
+                                         nsTArray<nsCString>& aOut) {
+    nsAutoCString value;
+    Preferences::GetCString(aPref, value);
+    for (const auto& part : value.Split(',')) {
+      nsAutoCString name(part);
+      name.Trim("\b\t\r\n ");
+      if (!name.IsEmpty() && !aOut.Contains(name)) {
+        aOut.AppendElement(name);
+      }
+    }
+  }
+
+  nsTArray<nsCString> mCancel;
+  nsTArray<nsCString> mCancelPBM;
+  nsTArray<nsCString> mAnnotate;
+  nsTArray<nsCString> mAnnotatePBM;
+};
+
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
                                        public nsIContentClassifierService {
  public:
@@ -173,8 +213,6 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
 
   void Init();
   static void OnPrefChange(const char* aPref, void* aData);
-  void LoadFilterLists();
-  void RebuildEnginesFromStoredData();
   void InitRSClient();
   void ShutdownRSClient();
   void RemoveBlocker();
@@ -192,19 +230,57 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   
   
-  static nsTArray<nsCString> ActiveFeatureNames();
+  
+  void ProcessListChanges(const nsTArray<nsCString>& aUpdated,
+                          const nsTArray<nsCString>& aRemoved);
 
   
   
-  void RefreshActiveEngineLists() MOZ_REQUIRES(mLock);
+  
+  
+  void UpdateFeatures(
+      const nsTArray<const ContentClassifierFeature*>& aFeatures,
+      EnginesPrefsSnapshot aPreferenceSnapshot);
 
   
   
   
-  
-  void PopulateEngineListFromPref(
-      const char* aPref, nsTArray<RefPtr<ContentClassifierEngine>>& aOut)
+  nsresult InstallEngine(const nsACString& aFeatureName,
+                         RefPtr<ContentClassifierEngine>&& aEngine)
       MOZ_REQUIRES(mLock);
+
+  
+  
+  void PopulateAllActiveEnginesFromPreferenceSnapshot(
+      const EnginesPrefsSnapshot& aPreferenceSnapshot) MOZ_REQUIRES(mLock);
+
+  
+  void PopulateActiveEngineListFromFeatureNames(
+      const nsTArray<nsCString>& aFeatureNames,
+      nsTArray<RefPtr<ContentClassifierEngine>>& aEngineList)
+      MOZ_REQUIRES(mLock);
+
+  
+  
+  void PruneInactiveEngines(const EnginesPrefsSnapshot& aPreferenceSnapshot)
+      MOZ_REQUIRES(mLock);
+
+  
+  nsTHashSet<nsCString> ActiveFeatureNames(
+      const EnginesPrefsSnapshot& aPreferenceSnapshot);
+
+  
+  using EngineRulesPromise = MozPromise<nsTArray<nsCString>, nsresult,
+                                         true>;
+  
+  
+  RefPtr<EngineRulesPromise> FetchEngineDataForFeature(
+      const ContentClassifierFeature& aFeature);
+
+  
+  
+  RefPtr<EngineRulesPromise> FetchEngineDataForTestFeature(
+      const ContentClassifierFeature& aFeature);
 
   static StaticRefPtr<ContentClassifierService> sInstance;
   static bool sEnabled;
@@ -228,12 +304,6 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEngines
       MOZ_GUARDED_BY(mLock);
   nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEnginesPBM
-      MOZ_GUARDED_BY(mLock);
-
-  
-  
-  
-  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mFilterListData
       MOZ_GUARDED_BY(mLock);
 
   
