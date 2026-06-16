@@ -125,6 +125,10 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   nsresult HandshakeError() const { return mHandshakeError; }
 
+  
+  
+  const nsACString& CachedRetryEchConfig() const { return mRetryEchConfig; }
+
   friend class HttpConnectionForceIO;
   friend class TlsHandshaker;
 
@@ -350,6 +354,10 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   
   nsresult mHandshakeError{NS_OK};
+
+  
+  
+  nsCString mRetryEchConfig;
 
   
   
