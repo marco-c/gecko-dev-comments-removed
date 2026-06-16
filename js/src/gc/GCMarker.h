@@ -465,6 +465,10 @@ class GCMarker {
     ParallelMarking,
 
     
+    
+    ParallelMarkingSingleThread,
+
+    
     ConcurrentMarking,
 
     
@@ -513,7 +517,12 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const { return state == ParallelMarking; }
+  bool isParallelMarking() const {
+    return state == ParallelMarking || state == ParallelMarkingSingleThread;
+  }
+  bool isParallelMarkingMultipleThreads() const {
+    return state == ParallelMarking;
+  }
   bool isWeakMarking() const { return state == WeakMarking; }
   bool isConcurrentMarking() const { return state == ConcurrentMarking; }
 
@@ -550,6 +559,11 @@ class GCMarker {
 
   void enterConcurrentMarkingMode();
   void leaveConcurrentMarkingMode();
+
+  
+  
+  void enterSingleThreadedMode();
+  void leaveSingleThreadedMode();
 
   
   
