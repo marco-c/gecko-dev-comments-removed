@@ -1272,7 +1272,7 @@ void Decoder::DecodeRFPType(Instruction* instr) {
       }
       break;
     }
-    case RO_FMV: {  
+    case RO_FMV_X_W: {  
       if (instr->Rs2Value() != 0b00000) {
         UNSUPPORTED_RISCV();
       }
