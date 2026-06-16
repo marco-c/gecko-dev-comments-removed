@@ -1697,9 +1697,6 @@ int FromZucchiniStatus(zucchini::status::Code code) {
     case zucchini::status::kStatusInvalidNewImage:
       result = CRC_ERROR;
       break;
-    case zucchini::status::kStatusOutOfMemory:
-      result = BSPATCH_MEM_ERROR;
-      break;
     case zucchini::status::kStatusInvalidParam:
     case zucchini::status::kStatusDiskFull:
     case zucchini::status::kStatusIoError:
@@ -2087,10 +2084,6 @@ int PatchFile::Execute() {
   rv = mPatchFileDecoder->Apply(mBuf.get(), mBufSize, ofile);
 
   
-  
-  
-  
-  mPatchFileDecoder.reset();
   
   
 #ifdef XP_WIN
@@ -5255,16 +5248,6 @@ int DoUpdate() {
   NS_tchar* rb = buf;
 
 #if defined(MOZ_ZUCCHINI)
-#  if defined(TEST_UPDATER) && defined(XP_WIN)
-  
-  
-  zucchini::mozilla::TestOptions options;
-  options.logDestructorMarker = EnvHasValue("MOZ_TEST_ZUCCHINI_DTOR_MARKER");
-  options.triggerBadAlloc = EnvHasValue("MOZ_TEST_ZUCCHINI_BAD_ALLOC");
-  options.triggerCheckFailure = EnvHasValue("MOZ_TEST_ZUCCHINI_CHECK_FAILURE");
-  zucchini::mozilla::SetTestOptions(options);
-#  endif  
-
   zucchini::mozilla::SetLogFunction(LogZucchiniMessage);
 #endif  
 
