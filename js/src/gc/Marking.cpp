@@ -1481,15 +1481,15 @@ bool MarkingTracerT<opts>::markCurrentColor(SliceBudget& budget) {
 }
 
 void GCMarker::markDeferredWeakMapChildren(WeakMapList& deferred) {
-  mozilla::Maybe<AutoLockGC> lock;
-  if (isParallelMarking()) {
-    lock.emplace(runtime());
-  }
+  
+  
+  enterSingleThreadedMode();
   while (js::WeakMapBase* map = deferred.popFirst()) {
     (void)map->markEntries(this);
     MOZ_ASSERT(!map->isSystem());
     map->zone()->gcMarkedUserWeakMaps().pushBack(map);
   }
+  leaveSingleThreadedMode();
 }
 
 bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
@@ -2665,6 +2665,20 @@ void GCMarker::enterConcurrentMarkingMode() {
 
 void GCMarker::leaveConcurrentMarkingMode() {
   setMarkingStateAndTracer<MarkingTracer>(ConcurrentMarking, RegularMarking);
+}
+
+void GCMarker::enterSingleThreadedMode() {
+  if (state == ParallelMarking) {
+    setMarkingStateAndTracer<ParallelMarkingTracer>(
+        ParallelMarking, ParallelMarkingSingleThread);
+  }
+}
+
+void GCMarker::leaveSingleThreadedMode() {
+  if (state == ParallelMarkingSingleThread) {
+    setMarkingStateAndTracer<ParallelMarkingTracer>(ParallelMarkingSingleThread,
+                                                    ParallelMarking);
+  }
 }
 
 
