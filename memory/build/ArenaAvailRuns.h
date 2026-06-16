@@ -21,15 +21,20 @@ struct ArenaAvailTreeTrait {
   }
 };
 
-
 class ArenaAvailRunsSize {
  private:
+  using RunList =
+      mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait>;
   
   
   
   
   
-  mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait> mRuns;
+  
+  
+  
+  RunList mRuns;
+  arena_chunk_map_t* mFirstFreshRun = nullptr;
 
   
   
@@ -76,12 +81,36 @@ class ArenaAvailRunsSize {
     unsigned bits = CategoriseRun(aElem);
     if (bits & CHUNK_MAP_DIRTY) {
       mRuns.pushFront(aElem);
+#ifndef XP_LINUX
+    } else if (bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
+      mRuns.pushBack(aElem);
+      if (!mFirstFreshRun) {
+        
+        mFirstFreshRun = aElem;
+      }
+    } else {
+      
+      
+      mRuns.insertBefore(RunList::Iterator(mFirstFreshRun), aElem);
+      mFirstFreshRun = aElem;
+    }
+#else
     } else {
       mRuns.pushBack(aElem);
     }
+#endif
   }
 
-  void Remove(arena_chunk_map_t* aElem) { mRuns.remove(aElem); }
+  void Remove(arena_chunk_map_t* aElem) {
+    MOZ_ASSERT(aElem);
+    if (aElem == mFirstFreshRun) {
+      
+      
+      
+      mFirstFreshRun = &(*(++RunList::Iterator(aElem)));
+    }
+    mRuns.remove(aElem);
+  }
 };
 
 class ArenaAvailRuns {
