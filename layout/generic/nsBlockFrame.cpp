@@ -1341,6 +1341,7 @@ static nsRect ComputeInlineAbsoluteCBRect(const nsInlineFrame* aInlineFrame) {
 void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
     nsPresContext* aPresContext, const ReflowInput& aReflowInput,
     ReflowOutput& aReflowOutput, nsReflowStatus& aStatus) {
+  bool foundAbspos = false;
   for (auto& line : Lines()) {
     if (line.IsBlock()) {
       
@@ -1354,6 +1355,7 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
     for (nsIFrame* kid : line.ChildFrames()) {
       if (auto kidOverflow = WalkInlineDescendantsToReflowAbsoluteFrames(
               kid, aPresContext, aReflowInput, aStatus)) {
+        foundAbspos = true;
         lineAbsposOverflow.UnionWithAbsoluteOverflowAreas(*kidOverflow +
                                                           kid->GetPosition());
       }
@@ -1371,6 +1373,12 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
       aReflowOutput.mOverflowAreas.UnionWithAbsoluteOverflowAreas(
           lineAbsposOverflow);
     }
+  }
+
+  if (!foundAbspos) {
+    
+    
+    RemoveStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT);
   }
 }
 
@@ -1804,7 +1812,17 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      HasAnyStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT) &&
       !aReflowInput.WillReflowAgainForClearance() &&
       !aPresContext->HasPendingInterrupt()) {
     ReflowAbsoluteDescendantsInInlineFrame(aPresContext, aReflowInput, aMetrics,
@@ -8321,7 +8339,8 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   constexpr nsFrameState NS_BLOCK_FLAGS_MASK =
       NS_BLOCK_BFC | NS_BLOCK_HAS_FIRST_LETTER_STYLE |
-      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER;
+      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER |
+      NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT;
 
   
   

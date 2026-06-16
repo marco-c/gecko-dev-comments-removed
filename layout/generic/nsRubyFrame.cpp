@@ -175,6 +175,8 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
     
     
     ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  } else {
+    MarkBlockAncestorHavingAbsoluteDescendants(aReflowInput);
   }
 }
 

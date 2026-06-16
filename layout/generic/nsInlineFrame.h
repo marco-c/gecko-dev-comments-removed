@@ -158,6 +158,12 @@ class nsInlineFrame : public nsContainerFrame {
   virtual void PushFrames(nsPresContext* aPresContext, nsIFrame* aFromChild,
                           nsIFrame* aPrevSibling, InlineReflowInput& aState);
 
+  
+  
+  
+  void MarkBlockAncestorHavingAbsoluteDescendants(
+      const ReflowInput& aReflowInput) const;
+
  private:
   explicit nsInlineFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsInlineFrame(aStyle, aPresContext, kClassID) {}
