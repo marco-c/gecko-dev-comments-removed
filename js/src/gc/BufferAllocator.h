@@ -420,6 +420,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   
   
   MainThreadOrGCTaskData<bool> majorStartedWhileMinorSweeping;
+  MainThreadOrGCTaskData<bool> majorSweepingStartedWhileMinorSweeping;
 
   
   
@@ -458,6 +459,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void finishMajorCollection(const AutoLock& lock);
   void clearMarkStateAfterBarrierVerification();
   void clearChunkMarkBits(BufferChunk* chunk);
+  void clearMarkBitsInStolenChunks();
 
   bool isEmpty() const;
 
@@ -569,6 +571,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void setAllocated(void* alloc, size_t bytes, bool nurseryOwned, bool inGC);
   void setChunkHasNurseryAllocs(BufferChunk* chunk);
   void recommitRegion(FreeRegion* region);
+  bool stealOrAllocNewChunk(size_t sizeClass, bool inGC);
   bool allocNewChunk(bool inGC);
   bool sweepChunk(BufferChunk* chunk, SweepKind sweepKind, bool shouldDecommit);
   void addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
