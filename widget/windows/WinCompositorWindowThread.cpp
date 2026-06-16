@@ -138,8 +138,12 @@ void WinCompositorWindowThread::ShutDown() {
     TimeStamp timeStart = TimeStamp::NowLoRes();
     do {
       sShutdownMonitor.Wait(TIMEOUT);
-    } while (!(shutdownComplete = sShutdownComplete) &&
+    } while (!sShutdownComplete &&
              ((TimeStamp::NowLoRes() - timeStart) < TIMEOUT));
+
+    
+    
+    shutdownComplete = sShutdownComplete;
   }
 
   if (shutdownComplete) {
