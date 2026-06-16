@@ -42,88 +42,111 @@ add_task(async function () {
   );
 
   const tabpanel = document.querySelector("#security-panel");
-  const textboxes = tabpanel.querySelectorAll(".security-info-value");
+  const securityInfoNames = [
+    ...tabpanel.querySelectorAll(".treeLabelCell .treeLabel"),
+  ]
+    
+    .filter(el => {
+      const ignoreList = [
+        "Connection:",
+        "Host example.com:",
+        "Certificate:",
+        "Issued To",
+        "Issued By",
+        "Period of Validity",
+        "Fingerprints",
+      ];
+      return !ignoreList.includes(el.innerText);
+    });
 
+  const securtyInfoValues = [
+    ...tabpanel.querySelectorAll(".security-info-value"),
+  ];
   
   
-  
-  const protocol = textboxes[0].textContent;
-  ok(protocol.startsWith('"TLS'), "The protocol " + protocol + " seems valid.");
+  const securityValues = [
+    
+    
+    
+    { name: "Protocol version:", startsWith: '"TLS' }, 
+    { name: "Cipher suite:", startsWith: '"TLS_' }, 
+    
+    { name: "Key Exchange Group:", checkIsNotEmpty: true }, 
+    { name: "Signature Scheme:", checkIsNotEmpty: true }, 
 
-  
-  
-  
-  const suite = textboxes[1].textContent;
-  ok(suite.startsWith('"TLS_'), "The suite " + suite + " seems valid.");
+    { name: "Used Encrypted Client Hello (ECH):", value: "false" },
+    { name: "Used Delegated Credentials:", value: "false" },
+    { name: "Used Online Certificate Status Protocol (OCSP):", value: "false" },
+    { name: "Used Private DNS:", value: "false" },
+    
+    
+    { name: "HTTP Strict Transport Security:", value: '\"Disabled\"' },
+    { name: "Public Key Pinning:", value: '\"Disabled\"' },
+    
+    
+    
+    { name: "Common Name (CN):", value: '"example.com"' },
+    { name: "Organization (O):", value: '"<Not Available>"' },
+    { name: "Organizational Unit (OU):", value: '"<Not Available>"' },
+    
+    { name: "Common Name (CN):", value: '"Temporary Certificate Authority"' },
+    { name: "Organization (O):", value: '"Mozilla Testing"' },
+    {
+      name: "Organizational Unit (OU):",
+      value: '"Profile Guided Optimization"',
+    },
+    
+    
+    
+    { name: "Begins On:", checkIsNotEmpty: true }, 
+    { name: "Expires On:", checkIsNotEmpty: true }, 
+    
+    
+    { name: "SHA-256 Fingerprint:", checkIsNotEmpty: true }, 
+    { name: "SHA1 Fingerprint:", checkIsNotEmpty: true }, 
+    
+    { name: "Transparency:", checkIsNotEmpty: true }, 
+    
+  ];
+
+  for (const [index, item] of securityValues.entries()) {
+    const actualName = securityInfoNames[index].textContent;
+    const actualValue = securtyInfoValues[index].textContent;
+    is(
+      actualName,
+      item.name,
+      "The security property name `" + actualName + "` is correct"
+    );
+    if (item.checkIsNotEmpty) {
+      isnot(
+        actualValue,
+        "",
+        "The value of `" + actualValue + "` is not empty."
+      );
+    } else if (item.startsWith) {
+      ok(
+        actualValue.startsWith(item.startsWith),
+        "The `" +
+          actualValue +
+          "` starts with the value `" +
+          item.startsWith +
+          "` which is valid."
+      );
+    } else if (item.value) {
+      is(
+        actualValue,
+        item.value,
+        "The " + actualName + " has the expected value."
+      );
+    }
+  }
 
   
   is(
     tabpanel.querySelectorAll(".treeLabel.objectLabel")[1].textContent,
     "Host example.com:",
-    "Label has the expected value."
+    "The 'Host' label has the expected value."
   );
-  
-  Assert.notStrictEqual(
-    textboxes[2].textContent,
-    "",
-    "Label value is not empty."
-  );
-  Assert.notStrictEqual(
-    textboxes[3].textContent,
-    "",
-    "Label value is not empty."
-  );
-  is(textboxes[4].textContent, '"Disabled"', "Label has the expected value.");
-  is(textboxes[5].textContent, '"Disabled"', "Label has the expected value.");
-
-  
-  is(
-    textboxes[6].textContent,
-    '"example.com"',
-    "Label has the expected value."
-  );
-  is(
-    textboxes[7].textContent,
-    '"<Not Available>"',
-    "Label has the expected value."
-  );
-  is(
-    textboxes[8].textContent,
-    '"<Not Available>"',
-    "Label has the expected value."
-  );
-
-  is(
-    textboxes[9].textContent,
-    '"Temporary Certificate Authority"',
-    "Label has the expected value."
-  );
-  is(
-    textboxes[10].textContent,
-    '"Mozilla Testing"',
-    "Label has the expected value."
-  );
-  is(
-    textboxes[11].textContent,
-    '"Profile Guided Optimization"',
-    "Label has the expected value."
-  );
-
-  
-  
-
-  
-  isnot(textboxes[12].textContent, "", "Label was not empty.");
-  
-  isnot(textboxes[13].textContent, "", "Label was not empty.");
-
-  
-  isnot(textboxes[14].textContent, "", "Label was not empty.");
-  
-  isnot(textboxes[15].textContent, "", "Label was not empty.");
-
-  
-  isnot(textboxes[16].textContent, "", "Label was not empty.");
 
   await teardown(monitor);
 });
