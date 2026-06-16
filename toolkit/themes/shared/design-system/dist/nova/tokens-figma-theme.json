@@ -309,6 +309,11 @@
     "dark": "{Theme$button/text/color/hover}",
     "forcedColors": "{Theme$button/text/color/primary}"
   },
+  "button/text/color/menu/selected": {
+    "light": "{Theme$button/text/color/ghost/selected}",
+    "dark": "{Theme$button/text/color/selected}",
+    "forcedColors": "{Theme$button/text/color/primary/selected}"
+  },
   "button/text/color/primary": {
     "light": "{Colors$color/white}",
     "dark": "{Colors$color/gray/70}",
@@ -372,7 +377,7 @@
   "link/color/visited": {
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
-    "forcedColors": "{HCM Theme$VisitedText}"
+    "forcedColors": "{Theme$link/color}"
   },
   "panel/background/color": {
     "light": "{Theme$background/color/box}",
@@ -473,6 +478,11 @@
     "light": "{Theme$toolbarbutton/outline/color/active}",
     "dark": "{Theme$toolbarbutton/outline/color/active}",
     "forcedColors": "{Theme$toolbarbutton/outline/color/active}"
+  },
+  "toolbox/background/color/inactive": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "transparent"
   },
   "toolbox/text/color": {
     "light": "{Theme$text/color}",
