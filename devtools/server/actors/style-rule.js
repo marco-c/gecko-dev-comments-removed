@@ -426,6 +426,9 @@ class StyleRuleActor extends Actor {
         
         
         canSetRuleText: this.canSetRuleText,
+        
+        
+        hasGetCssExplainersData: true,
       },
     };
 
@@ -1661,6 +1664,30 @@ class StyleRuleActor extends Actor {
       
       this.emit("rule-updated", this);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getCssExplainersData(expression, pseudo, inheritedNode) {
+    return InspectorUtils.getComputationSteps(
+      expression,
+      inheritedNode?.rawNode || this.currentlySelectedElement,
+      pseudo
+    );
   }
 }
 exports.StyleRuleActor = StyleRuleActor;
