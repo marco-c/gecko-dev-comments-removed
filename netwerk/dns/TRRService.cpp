@@ -1040,16 +1040,27 @@ bool TRRService::IsTemporarilyBlocked(const nsACString& aHost,
   return false;
 }
 
-bool TRRService::IsExcludedFromTRR(const nsACString& aHost) {
+bool TRRService::IsExcludedFromTRR(const nsACString& aHost,
+                                   nsIRequest::TRRMode aRequestMode) {
   
   
   
   MutexAutoLock lock(mLock);
 
-  return IsExcludedFromTRR_unlocked(aHost);
+  return IsExcludedFromTRR_unlocked(aHost, aRequestMode);
 }
 
-bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost) {
+bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost,
+                                            nsIRequest::TRRMode aRequestMode) {
+  
+  
+  
+  const bool trrOnly = aRequestMode == nsIRequest::TRR_ONLY_MODE ||
+                       (aRequestMode == nsIRequest::TRR_DEFAULT_MODE &&
+                        mMode == nsIDNSService::MODE_TRRONLY);
+  const bool checkDNSSuffix =
+      !trrOnly || StaticPrefs::network_trr_exclude_dns_suffix_in_mode_trronly();
+
   int32_t dot = 0;
   
   while (dot < static_cast<int32_t>(aHost.Length())) {
@@ -1062,7 +1073,7 @@ bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost) {
            nsPromiseFlatCString(aHost).get()));
       return true;
     }
-    if (mDNSSuffixDomains.Contains(subdomain)) {
+    if (checkDNSSuffix && mDNSSuffixDomains.Contains(subdomain)) {
       LOG(
           ("Subdomain [%s] of host [%s] Is Excluded From TRR via DNSSuffix "
            "domains\n",
@@ -1332,6 +1343,7 @@ void TRRService::ConfirmationContext::RequestCompleted(
 
 void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
                                                            TRR* aTRRRequest) {
+  bool confirmOK;
   {
     MutexAutoLock lock(OwningObject()->mLock);
     
@@ -1359,7 +1371,12 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
       HandleEvent(ConfirmationEvent::ConfirmFail, lock);
     }
 
-    if (State() == CONFIRM_OK) {
+    
+    
+    
+    
+    confirmOK = (State() == CONFIRM_OK);
+    if (confirmOK) {
       
       RecordEvent("success", lock);
     }
@@ -1367,18 +1384,15 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
          OwningObject()->mPrivateURI.get(), State(), (unsigned int)aStatus));
   }
 
-  if (State() == CONFIRM_OK) {
+  if (confirmOK) {
     
     
     auto bl = OwningObject()->mTRRBLStorage.Lock();
     bl->Clear();
-  } else {
-    MOZ_ASSERT(State() == CONFIRM_FAILED);
   }
 
   glean::dns::trr_ns_verfified
-      .Get(TRRService::ProviderKey(),
-           (State() == CONFIRM_OK) ? "true"_ns : "false"_ns)
+      .Get(TRRService::ProviderKey(), confirmOK ? "true"_ns : "false"_ns)
       .Add();
 }
 
