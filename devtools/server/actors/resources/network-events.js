@@ -198,6 +198,10 @@ class NetworkEventWatcher {
     this.listener.removeOverride(url);
   }
 
+  setLocalModeMappings(mappings) {
+    this.listener.setLocalModeMappings(mappings);
+  }
+
   
 
 
