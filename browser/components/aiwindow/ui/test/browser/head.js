@@ -44,7 +44,7 @@ let gRemoteClientStub;
 
 
 const MOCK_RS_RECORDS = [
-  ["chat", 5],
+  ["chat", 6],
   ["title-generation", 1],
   ["conversation-starters-sidebar-system", 1],
   ["conversation-suggestions-sidebar-starter", 2],
@@ -87,7 +87,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v5.0",
+      version: "v6.0",
     },
     {
       feature: "chat",
@@ -97,7 +97,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v5.0",
+      version: "v6.0",
     },
     {
       feature: "chat",
@@ -107,7 +107,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v5.0",
+      version: "v6.0",
     },
   ]);
 
