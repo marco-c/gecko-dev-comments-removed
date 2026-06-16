@@ -17,6 +17,7 @@
 #include "nsIWebProgress.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIHttpChannel.h"
+#include "nsIHttpProtocolHandler.h"
 #include "nsIURL.h"
 #include "nsISupportsPriority.h"
 #include "nsNetUtil.h"
@@ -133,6 +134,21 @@ nsresult nsPrefetchNode::OpenChannel() {
     success =
         httpChannel->SetRequestHeader("Sec-Purpose"_ns, "prefetch"_ns, false);
     MOZ_ASSERT(NS_SUCCEEDED(success));
+
+    
+    
+    
+    nsCOMPtr<nsIHttpProtocolHandler> httpHandler(
+        do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http"));
+    if (httpHandler) {
+      nsAutoCString documentAcceptHeader;
+      success = httpHandler->GetDocumentAcceptHeader(documentAcceptHeader);
+      MOZ_ASSERT(NS_SUCCEEDED(success));
+
+      success = httpChannel->SetRequestHeader("Accept"_ns, documentAcceptHeader,
+                                              false);
+      MOZ_ASSERT(NS_SUCCEEDED(success));
+    }
   }
 
   
@@ -437,7 +453,7 @@ void nsPrefetchService::DispatchEvent(nsPrefetchNode* node, bool aSuccess) {
       
       
       
-      RefPtr<AsyncEventDispatcher> dispatcher = new AsyncEventDispatcher(
+      RefPtr dispatcher = MakeRefPtr<AsyncEventDispatcher>(
           domNode, aSuccess ? u"load"_ns : u"error"_ns, CanBubble::eNo);
       dispatcher->RequireNodeInDocument();
       dispatcher->PostDOMEvent();
@@ -466,8 +482,8 @@ nsresult nsPrefetchService::EnqueueURI(nsIURI* aURI,
                                        nsIReferrerInfo* aReferrerInfo,
                                        nsINode* aSource,
                                        nsPrefetchNode** aNode) {
-  RefPtr<nsPrefetchNode> node = new nsPrefetchNode(
-      this, aURI, aReferrerInfo, aSource, nsIContentPolicy::TYPE_OTHER, false);
+  RefPtr node = MakeRefPtr<nsPrefetchNode>(this, aURI, aReferrerInfo, aSource,
+                                           nsIContentPolicy::TYPE_OTHER, false);
   mPrefetchQueue.push_back(node);
   node.forget(aNode);
   return NS_OK;
