@@ -1665,7 +1665,12 @@ impl DisplayListBuilder {
         filters: &[di::FilterOp],
         filter_datas: &[di::FilterData],
     ) {
-        self.push_filters_normalized(filters, filter_datas, common.spatial_id);
+        
+        
+        
+        
+        
+        self.push_filters(filters, filter_datas);
 
         let (common, _offset) = self.normalize_common(common);
         let item = di::DisplayItem::BackdropFilter(di::BackdropFilterDisplayItem {
