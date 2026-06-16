@@ -14,8 +14,9 @@ function computedVar(className, varName) {
 
 
 
+
 add_task(async function container_color_codes_match_css() {
-  const SKIP = new Set(["toolbar"]);
+  const SKIP = new Set(["gray"]);
   for (const color of ContextualIdentityService.containerColors) {
     if (SKIP.has(color)) {
       continue;
