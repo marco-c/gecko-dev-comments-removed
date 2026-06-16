@@ -450,6 +450,16 @@ impl AbsoluteColor {
     }
 
     
+    pub fn with_alpha(&self, alpha: impl Into<ComponentDetails>) -> Self {
+        let mut result = *self;
+        let alpha_details = alpha.into();
+        result.alpha = alpha_details.value;
+        result.flags.set(ColorFlags::ALPHA_IS_NONE, alpha_details.is_none);
+        result.flags.remove(ColorFlags::IS_LEGACY_SRGB);
+        result
+    }
+
+    
     
     #[inline]
     #[must_use]
