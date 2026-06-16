@@ -957,9 +957,13 @@ class PageStyleActor extends Actor {
         
         
         return false;
-      case "::-webkit-scrollbar":
-      case "::checkmark":
+      case "::picker-icon":
+      case "::picker":
         
+        return !isInherited && node.nodeName == "SELECT";
+      case "::checkmark":
+        return !isInherited && node.nodeName == "OPTION";
+      case "::-webkit-scrollbar":
         return false;
       default:
         console.error("Unhandled pseudo-element " + pseudo);
