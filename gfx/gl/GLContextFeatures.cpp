@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "GLContext.h"
 #include "nsPrintfCString.h"
@@ -11,7 +11,7 @@ namespace gl {
 const size_t kMAX_EXTENSION_GROUP_SIZE = 5;
 
 enum class GLVersion : uint32_t {
-  NONE = 0,  // Feature is not supported natively by GL
+  NONE = 0,  
   GL1_2 = 120,
   GL1_3 = 130,
   GL2 = 200,
@@ -27,41 +27,41 @@ enum class GLVersion : uint32_t {
 };
 
 enum class GLESVersion : uint32_t {
-  NONE = 0,  // Feature is not support natively by GL ES
+  NONE = 0,  
   ES2 = 200,
   ES3 = 300,
   ES3_1 = 310,
   ES3_2 = 320,
 };
 
-// ARB_ES2_compatibility is natively supported in OpenGL 4.1.
+
 static const GLVersion kGLCoreVersionForES2Compat = GLVersion::GL4_1;
 
-// ARB_ES3_compatibility is natively supported in OpenGL 4.3.
+
 static const GLVersion kGLCoreVersionForES3Compat = GLVersion::GL4_3;
 
 struct FeatureInfo {
   const char* mName;
 
-  /* The (desktop) OpenGL version that provides this feature */
+  
   GLVersion mOpenGLVersion;
 
-  /* The OpenGL ES version that provides this feature */
+  
   GLESVersion mOpenGLESVersion;
 
-  /* If there is an ARB extension, and its function symbols are
-   * not decorated with an ARB suffix, then its extension ID should go
-   * here, and NOT in mExtensions.  For example, ARB_vertex_array_object
-   * functions do not have an ARB suffix, because it is an extension that
-   * was created to match core GL functionality and will never differ.
-   * Some ARB extensions do have a suffix, if they were created before
-   * a core version of the functionality existed.
-   *
-   * If there is no such ARB extension, pass 0 (GLContext::Extension_None)
-   */
+  
+
+
+
+
+
+
+
+
+
   GLContext::GLExtensions mARBExtensionWithoutARBSuffix;
 
-  /* Extensions that also provide this feature */
+  
   GLContext::GLExtensions mExtensions[kMAX_EXTENSION_GROUP_SIZE];
 };
 
@@ -94,6 +94,11 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLESVersion::ES3_2,
      GLContext::ARB_copy_image,
      {GLContext::Extensions_End}},
+    {"debug",
+     GLVersion::GL4_3,
+     GLESVersion::ES3_2,
+     GLContext::Extension_None,
+     {GLContext::KHR_debug, GLContext::Extensions_End}},
     {"depth_clamp",
      GLVersion::GL3_2,
      GLESVersion::NONE,
@@ -105,8 +110,8 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLESVersion::ES3,
      GLContext::Extension_None,
      {GLContext::ARB_depth_texture, GLContext::OES_depth_texture,
-      // Intentionally avoid putting ANGLE_depth_texture here,
-      // it does not offer quite the same functionality.
+      
+      
       GLContext::Extensions_End}},
     {"draw_buffers",
      GLVersion::GL2,
@@ -133,20 +138,20 @@ static const FeatureInfo sFeatureInfoArr[] = {
      {GLContext::OES_element_index_uint, GLContext::Extensions_End}},
     {"ES2_compatibility",
      kGLCoreVersionForES2Compat,
-     GLESVersion::ES2,                  // OpenGL ES version
-     GLContext::ARB_ES2_compatibility,  // no suffix on ARB extension
+     GLESVersion::ES2,                  
+     GLContext::ARB_ES2_compatibility,  
      {GLContext::Extensions_End}},
     {"ES3_compatibility",
      kGLCoreVersionForES3Compat,
-     GLESVersion::ES3,                  // OpenGL ES version
-     GLContext::ARB_ES3_compatibility,  // no suffix on ARB extension
+     GLESVersion::ES3,                  
+     GLContext::ARB_ES3_compatibility,  
      {GLContext::Extensions_End}},
     {"EXT_color_buffer_float",
      GLVersion::GL3,
      GLESVersion::ES3_2,
      GLContext::Extension_None,
      {GLContext::EXT_color_buffer_float, GLContext::Extensions_End}},
-    {// Removes clamping for float color outputs from frag shaders.
+    {
      "frag_color_float",
      GLVersion::GL3,
      GLESVersion::ES3,
@@ -159,16 +164,16 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLESVersion::ES3,
      GLContext::Extension_None,
      {GLContext::EXT_frag_depth, GLContext::Extensions_End}},
-    {// Check for just the blit framebuffer blit part of
-     // ARB_framebuffer_object
+    {
+     
      "framebuffer_blit",
      GLVersion::GL3,
      GLESVersion::ES3,
      GLContext::ARB_framebuffer_object,
      {GLContext::ANGLE_framebuffer_blit, GLContext::EXT_framebuffer_blit,
       GLContext::NV_framebuffer_blit, GLContext::Extensions_End}},
-    {// Check for just the multisample renderbuffer part of
-     // ARB_framebuffer_object
+    {
+     
      "framebuffer_multisample",
      GLVersion::GL3,
      GLESVersion::ES3,
@@ -178,13 +183,13 @@ static const FeatureInfo sFeatureInfoArr[] = {
       GLContext::EXT_framebuffer_multisample,
       GLContext::EXT_multisampled_render_to_texture,
       GLContext::Extensions_End}},
-    {// ARB_framebuffer_object support
+    {
      "framebuffer_object",
      GLVersion::GL3,
      GLESVersion::ES3,
      GLContext::ARB_framebuffer_object,
      {GLContext::Extensions_End}},
-    {// EXT_framebuffer_object/OES_framebuffer_object support
+    {
      "framebuffer_object_EXT_OES",
      GLVersion::GL3,
      GLESVersion::ES2,
@@ -213,10 +218,10 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLESVersion::NONE,
         GLContext::Extension_None,
         {GLContext::Extensions_End}
-        /*
-         * XXX_get_query_object_iv only provide GetQueryObjectiv provided by
-         * ARB_occlusion_query (added by OpenGL 2.0).
-         */
+        
+
+
+
     },
     {"gpu_shader4",
      GLVersion::GL3,
@@ -235,11 +240,11 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLESVersion::ES3,
         GLContext::Extension_None,
         {GLContext::ARB_instanced_arrays, GLContext::Extensions_End}
-        /* This is an expanded version of `instanced_arrays` that allows for all
-         * enabled active attrib arrays to have non-zero divisors.
-         * ANGLE_instanced_arrays and NV_instanced_arrays forbid this, but GLES3
-         * has no such restriction.
-         */
+        
+
+
+
+
     },
     {"internalformat_query",
      GLVersion::GL4_2,
@@ -268,8 +273,8 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLESVersion::NONE,
         GLContext::Extension_None,
         {GLContext::Extensions_End}
-        // XXX_occlusion_query depend on ARB_occlusion_query (added in
-        // OpenGL 2.0)
+        
+        
     },
     {
         "occlusion_query_boolean",
@@ -277,12 +282,12 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLESVersion::ES3,
         GLContext::ARB_ES3_compatibility,
         {GLContext::EXT_occlusion_query_boolean, GLContext::Extensions_End}
-        /*
-         * XXX_occlusion_query_boolean provide ANY_SAMPLES_PASSED_CONSERVATIVE,
-         * but EXT_occlusion_query_boolean is only a OpenGL ES extension. But
-         * it is supported on desktop if ARB_ES3_compatibility because
-         * EXT_occlusion_query_boolean (added in OpenGL ES 3.0).
-         */
+        
+
+
+
+
+
     },
     {
         "occlusion_query2",
@@ -291,12 +296,12 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLContext::Extension_None,
         {GLContext::ARB_occlusion_query2, GLContext::ARB_ES3_compatibility,
          GLContext::EXT_occlusion_query_boolean, GLContext::Extensions_End}
-        /*
-         * XXX_occlusion_query2 (add in OpenGL 3.3) provide ANY_SAMPLES_PASSED,
-         * which is provided by ARB_occlusion_query2,
-         * EXT_occlusion_query_boolean (added in OpenGL ES 3.0) and
-         * ARB_ES3_compatibility
-         */
+        
+
+
+
+
+
     },
     {"packed_depth_stencil",
      GLVersion::GL3,
@@ -308,7 +313,7 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLVersion::GL3_1,
      GLESVersion::NONE,
      GLContext::Extension_None,
-     {// GLContext::NV_primitive_restart, // Has different enum values.
+     {
       GLContext::Extensions_End}},
     {"prim_restart_fixed",
      kGLCoreVersionForES3Compat,
@@ -326,8 +331,8 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLESVersion::NONE,
      GLContext::ARB_timer_query,
      {GLContext::ANGLE_timer_query, GLContext::EXT_disjoint_timer_query,
-      // EXT_timer_query does NOT support GL_TIMESTAMP retrieval with
-      // QueryCounter.
+      
+      
       GLContext::Extensions_End}},
     {
         "query_objects",
@@ -336,12 +341,12 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLContext::Extension_None,
         {GLContext::ANGLE_timer_query, GLContext::EXT_disjoint_timer_query,
          GLContext::EXT_occlusion_query_boolean, GLContext::Extensions_End}
-        /*
-         * XXX_query_objects only provide entry points commonly supported by
-         * ARB_occlusion_query (added in OpenGL 2.0),
-         * EXT_occlusion_query_boolean (added in OpenGL ES 3.0), and
-         * ARB_timer_query (added in OpenGL 3.3)
-         */
+        
+
+
+
+
+
     },
     {"query_time_elapsed",
      GLVersion::GL3_3,
@@ -400,7 +405,7 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLContext::Extension_None,
      {GLContext::ARB_shader_texture_lod, GLContext::EXT_shader_texture_lod,
       GLContext::Extensions_End}},
-    {// Do we have separate DRAW and READ framebuffer bind points?
+    {
      "split_framebuffer",
      GLVersion::GL3,
      GLESVersion::ES3,
@@ -466,14 +471,14 @@ static const FeatureInfo sFeatureInfoArr[] = {
         GLContext::Extension_None,
         {GLContext::ARB_half_float_pixel, GLContext::ARB_texture_float,
          GLContext::NV_half_float, GLContext::Extensions_End}
-        /**
-         * We are not including OES_texture_half_float in this feature, because:
-         *   GL_HALF_FLOAT     = 0x140B
-         *   GL_HALF_FLOAT_ARB = 0x140B == GL_HALF_FLOAT
-         *   GL_HALF_FLOAT_NV  = 0x140B == GL_HALF_FLOAT
-         *   GL_HALF_FLOAT_OES = 0x8D61 != GL_HALF_FLOAT
-         * WebGL handles this specifically with an OES_texture_half_float check.
-         */
+        
+
+
+
+
+
+
+
     },
     {"texture_half_float_linear",
      GLVersion::GL3_1,
@@ -502,11 +507,11 @@ static const FeatureInfo sFeatureInfoArr[] = {
      GLVersion::GL4_2,
      GLESVersion::ES3,
      GLContext::ARB_texture_storage,
-     {/*
-       * Not including GL_EXT_texture_storage here because it
-       * doesn't guarantee glTexStorage3D, which is required for
-       * WebGL 2.
-       */
+     {
+
+
+
+
       GLContext::Extensions_End}},
     {"texture_swizzle",
      GLVersion::GL3_3,
@@ -531,7 +536,7 @@ static const FeatureInfo sFeatureInfoArr[] = {
     {"vertex_array_object",
      GLVersion::GL3,
      GLESVersion::ES3,
-     GLContext::ARB_vertex_array_object,  // ARB extension
+     GLContext::ARB_vertex_array_object,  
      {GLContext::OES_vertex_array_object, GLContext::APPLE_vertex_array_object,
       GLContext::Extensions_End}}};
 
@@ -563,10 +568,10 @@ static bool IsFeaturePartOfProfileVersion(GLFeature feature,
                                           unsigned int version) {
   unsigned int profileVersion = ProfileVersionForFeature(feature, profile);
 
-  /**
-   * if `profileVersion` is zero, it means that no version of the profile
-   * added support for the feature.
-   */
+  
+
+
+
   return profileVersion && version >= profileVersion;
 }
 
@@ -648,5 +653,5 @@ void GLContext::MarkUnsupported(GLFeature feature) {
           .get());
 }
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 
