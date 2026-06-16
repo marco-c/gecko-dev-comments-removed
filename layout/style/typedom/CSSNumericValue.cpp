@@ -4,7 +4,6 @@
 
 #include "mozilla/dom/CSSNumericValue.h"
 
-#include "TypedOMUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
@@ -22,15 +21,6 @@ namespace mozilla::dom {
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
-      mNumericType(WrapMovingNotNull(MakeUnique<StyleNumericType>())),
-      mNumericValueType(aNumericValueType) {}
-
-CSSNumericValue::CSSNumericValue(
-    nsCOMPtr<nsISupports> aParent,
-    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
-    NumericValueType aNumericValueType)
-    : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
-      mNumericType(std::move(aNumericType)),
       mNumericValueType(aNumericValueType) {}
 
 
@@ -135,11 +125,8 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) const {
   
-  StyleNumericType numericType;
-  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
-    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
-    return nullptr;
-  }
+  
+  
 
   
   auto styleNumericValue = ToStyleNumericValue();
@@ -168,13 +155,8 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   
-  for (const auto& unit : aUnits) {
-    StyleNumericType numericType;
-    if (!Servo_NumericType_Create(&unit, &numericType)) {
-      aRv.ThrowSyntaxError("Invalid unit: "_ns + unit);
-      return nullptr;
-    }
-  }
+  
+  
 
   
   
@@ -204,32 +186,7 @@ already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
   return mathSum.forget();
 }
 
-
-
-void CSSNumericValue::Type(CSSNumericType& aRetVal) {
-  
-
-  
-  
-  
-  
-  
-  for (size_t index = 0; index < StyleNUMERIC_BASE_TYPE_COUNT; index++) {
-    auto baseType = StyleALL_NUMERIC_BASE_TYPES[index];
-
-    if (auto power = mNumericType->Exponent(baseType)) {
-      (aRetVal.*CSSNUMERIC_TYPE_FIELDS[index]).Construct(power);
-    }
-  }
-
-  
-  if (const auto& percentHint = mNumericType->percent_hint) {
-    
-    
-    aRetVal.mPercentHint.Construct(
-        static_cast<CSSNumericBaseType>(*percentHint));
-  }
-}
+void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
 
 
 
