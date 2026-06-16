@@ -6,6 +6,7 @@
 
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::{ToTyped, TypedValue};
 use crate::values::computed::border::BorderSideWidth as ComputedBorderSideWidth;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::border::{
@@ -21,6 +22,7 @@ use app_units::Au;
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
+use thin_vec::ThinVec;
 
 
 
@@ -71,6 +73,12 @@ impl BorderStyle {
 
 pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
+impl ToTyped for BorderImageWidth {
+    fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        return Err(());
+    }
+}
+
 
 pub type BorderImageSideWidth =
     GenericBorderImageSideWidth<NonNegativeLengthPercentage, NonNegativeNumber>;
@@ -100,7 +108,6 @@ impl BorderImageSlice {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 pub enum LineWidth {
     
     Thin,
@@ -169,7 +176,6 @@ impl ToComputedValue for LineWidth {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 pub struct BorderSideWidth(LineWidth);
 
 impl BorderSideWidth {
@@ -237,7 +243,6 @@ impl ToComputedValue for BorderSideWidth {
 #[derive(
     Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub struct BorderSideOffset(Length);
 
 impl ToComputedValue for BorderSideOffset {
@@ -373,6 +378,7 @@ pub enum BorderImageRepeatKeyword {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct BorderImageRepeat(pub BorderImageRepeatKeyword, pub BorderImageRepeatKeyword);
 
 impl ToCss for BorderImageRepeat {
