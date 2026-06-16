@@ -575,7 +575,7 @@ void EventListenerManager::AddEventListenerInternal(
   }
 
   if (mIsMainThreadELM && !aFlags.mPassive && IsApzAwareEvent(aTypeAtom)) {
-    ProcessApzAwareEventListenerAdd();
+    ProcessApzAwareEventListenerAdd(aTypeAtom);
   }
 
   if (mTarget) {
@@ -588,7 +588,7 @@ void EventListenerManager::AddEventListenerInternal(
   }
 }
 
-void EventListenerManager::ProcessApzAwareEventListenerAdd() {
+void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
   Document* doc = nullptr;
 
   
@@ -660,7 +660,10 @@ void EventListenerManager::ProcessApzAwareEventListenerAdd() {
   }
 
   if (StaticPrefs::apz_fastpath_apz_aware_listener_enabled()) {
-    if (scrollId != layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
+    
+    
+    if (aEvent == nsGkAtoms::ontouchmove &&
+        scrollId != layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
       
       
       
