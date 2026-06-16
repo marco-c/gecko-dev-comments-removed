@@ -12,6 +12,21 @@ use style_traits::CssString;
 type UnitMap = HashMap<String, i32>;
 
 
+fn product_of_two_unit_maps(s: &UnitMap, other: &UnitMap) -> UnitMap {
+    
+    let mut result = s.clone();
+
+    
+    for (unit, power) in other {
+        
+        *result.entry(unit.clone()).or_insert(0) += power;
+    }
+
+    
+    result
+}
+
+
 #[derive(Clone, Debug)]
 struct SumValueItem {
     value: f32,
@@ -121,13 +136,48 @@ impl SumValue {
                 
 
                 
-                Ok(SumValue(values))
+                Ok(Self(values))
             },
 
             
-            NumericValue::Math(MathValue::Product(_math_product)) => {
+            NumericValue::Math(MathValue::Product(math_product)) => {
                 
-                Err(())
+                let mut values = vec![SumValueItem {
+                    value: 1.0,
+                    unit_map: Default::default(),
+                }];
+
+                
+                for item in math_product {
+                    
+                    let new_values = SumValue::try_from_numeric_value(item)?;
+
+                    let mut temp = Vec::new();
+
+                    
+                    for item1 in &values {
+                        
+                        for item2 in &new_values.0 {
+                            
+                            let mut unit_map =
+                                product_of_two_unit_maps(&item1.unit_map, &item2.unit_map);
+                            unit_map.retain(|_, power| *power != 0);
+                            let item = SumValueItem {
+                                value: item1.value * item2.value,
+                                unit_map,
+                            };
+
+                            
+                            temp.push(item);
+                        }
+                    }
+
+                    
+                    values = temp;
+                }
+
+                
+                Ok(Self(values))
             },
 
             
