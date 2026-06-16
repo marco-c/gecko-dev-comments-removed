@@ -354,45 +354,62 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
       RTC_LOG(LS_INFO) << "old_route = " << kv->second.DebugString();
     }
   }
-
   if (inserted) {
     transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
     
     return;
   }
-
   const NetworkRoute old_route = kv->second;
   kv->second = network_route;
 
   
   
-  if (IsRelevantRouteChange(old_route, network_route)) {
+  bool restart_bwe = IsRelevantRouteChange(old_route, network_route);
+
+  
+  
+  
+  
+  
+  bool is_controller_supporting_ecn = rfc_8888_feedback_negotiated_ &&
+                                      controller_ &&
+                                      controller_->SupportsEcnAdaptation();
+
+  if (!restart_bwe && !is_controller_supporting_ecn) {
+    
+    return;
+  }
+
+  if (restart_bwe) {
     BitrateConstraints bitrate_config = bitrate_configurator_.GetConfig();
     RTC_LOG(LS_INFO) << "Reset bitrates to min: "
                      << bitrate_config.min_bitrate_bps
                      << " bps, start: " << bitrate_config.start_bitrate_bps
                      << " bps,  max: " << bitrate_config.max_bitrate_bps
                      << " bps.";
-    RTC_DCHECK_GT(bitrate_config.start_bitrate_bps, 0);
-
-    env_.event_log().Log(std::make_unique<RtcEventRouteChange>(
-        network_route.connected, network_route.packet_overhead));
-
-    NetworkRouteChange msg;
-    msg.at_time = env_.clock().CurrentTime();
-    msg.constraints = ConvertConstraints(bitrate_config, &env_.clock());
-    transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
-    transport_feedback_adapter_.SetNetworkRoute(network_route);
-    if (controller_) {
-      PostUpdates(controller_->OnNetworkRouteChange(msg));
-    } else {
-      UpdateInitialConstraints(msg.constraints);
-    }
-    is_congested_ = false;
-    pacer_.SetCongested(false);
   }
-  if (rfc_8888_feedback_negotiated_ && !sending_packets_as_ect1_ &&
-      controller_ && controller_->SupportsEcnAdaptation()) {
+
+  env_.event_log().Log(std::make_unique<RtcEventRouteChange>(
+      network_route.connected, network_route.packet_overhead));
+  transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
+  transport_feedback_adapter_.SetNetworkRoute(network_route);
+
+  
+  is_congested_ = false;
+  pacer_.SetCongested(false);
+
+  NetworkRouteChange msg;
+  msg.at_time = env_.clock().CurrentTime();
+  msg.constraints =
+      ConvertConstraints(bitrate_configurator_.GetConfig(), &env_.clock());
+  msg.restart_bwe = restart_bwe;
+  if (controller_) {
+    PostUpdates(controller_->OnNetworkRouteChange(msg));
+  } else {
+    UpdateInitialConstraints(msg.constraints);
+  }
+
+  if (is_controller_supporting_ecn && !sending_packets_as_ect1_) {
     RTC_LOG(LS_INFO)
         << "Enabling sending packets as ECT1 again after route change. ";
     sending_packets_as_ect1_ = true;
@@ -401,6 +418,7 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
         sending_packets_as_ect1_);
   }
 }
+
 void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_LOG(LS_VERBOSE) << "SignalNetworkState "

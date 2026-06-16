@@ -88,6 +88,9 @@ struct RTC_EXPORT NetworkRouteChange {
   
   
   TargetRateConstraints constraints;
+  
+  
+  bool restart_bwe = true;
 };
 
 struct RTC_EXPORT PacedPacketInfo {
