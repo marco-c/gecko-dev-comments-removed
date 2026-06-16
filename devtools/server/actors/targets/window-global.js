@@ -1453,6 +1453,17 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       this.emit("use-simple-highlighters-updated");
     }
 
+    if (
+      this.isRootActor &&
+      typeof options.animationsPlayBackRateMultiplier !== "undefined"
+    ) {
+      
+      
+      
+      this.browsingContext.top.animationsPlayBackRateMultiplier =
+        options.animationsPlayBackRateMultiplier;
+    }
+
     if (!this.isTopLevelTarget) {
       
       
@@ -1489,6 +1500,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
   _restoreTargetConfiguration() {
+    if (!this.browsingContext) {
+      return;
+    }
+
     if (this._restoreFocus && this.browsingContext?.isActive && this.window) {
       try {
         this.window.focus();
@@ -1498,6 +1513,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
           throw e;
         }
       }
+    }
+
+    if (this.isRootActor && !this.browsingContext.isDiscarded) {
+      this.browsingContext.top.animationsPlayBackRateMultiplier = 1;
     }
   }
 
