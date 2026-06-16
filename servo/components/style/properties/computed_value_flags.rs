@@ -177,6 +177,12 @@ impl ComputedValueFlags {
     }
 
     
+    #[inline]
+    pub fn tree_counting_function_flags() -> Self {
+        Self::USES_SIBLING_COUNT | Self::USES_SIBLING_INDEX
+    }
+
+    
     
     
     #[inline]
