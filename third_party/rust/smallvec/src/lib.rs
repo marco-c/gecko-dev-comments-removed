@@ -602,7 +602,7 @@ where
 
         unsafe {
             
-            let needs_move = mem::size_of::<T>() != 0;
+            let needs_move = mem::size_of::<T::Item>() != 0;
 
             if needs_move && this.idx < this.old_len && this.del > 0 {
                 let ptr = this.vec.as_mut_ptr();
@@ -650,6 +650,19 @@ impl<A: Array> SmallVecData<A> {
         SmallVecData {
             inline: core::mem::ManuallyDrop::new(inline),
         }
+    }
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn empty() -> SmallVecData<A> {
+        
+        
+        SmallVecData { inline: unsafe { MaybeUninit::uninit().assume_init() } }
     }
     #[inline]
     unsafe fn into_inline(self) -> MaybeUninit<A> {
@@ -712,6 +725,13 @@ impl<A: Array> SmallVecData<A> {
     #[inline]
     fn from_inline(inline: MaybeUninit<A>) -> SmallVecData<A> {
         SmallVecData::Inline(inline)
+    }
+    
+    #[inline]
+    fn empty() -> SmallVecData<A> {
+        
+        
+        SmallVecData::Inline(unsafe { MaybeUninit::uninit().assume_init() })
     }
     #[inline]
     unsafe fn into_inline(self) -> MaybeUninit<A> {
@@ -789,7 +809,7 @@ impl<A: Array> SmallVec<A> {
         );
         SmallVec {
             capacity: 0,
-            data: SmallVecData::from_inline(MaybeUninit::uninit()),
+            data: SmallVecData::empty(),
         }
     }
 
@@ -831,7 +851,7 @@ impl<A: Array> SmallVec<A> {
             
             
             unsafe {
-                let mut data = SmallVecData::<A>::from_inline(MaybeUninit::uninit());
+                let mut data = SmallVecData::<A>::empty();
                 let len = vec.len();
                 vec.set_len(0);
                 ptr::copy_nonoverlapping(vec.as_ptr(), data.inline_mut().as_ptr(), len);
@@ -1183,7 +1203,7 @@ impl<A: Array> SmallVec<A> {
                 if unspilled {
                     return Ok(());
                 }
-                self.data = SmallVecData::from_inline(MaybeUninit::uninit());
+                self.data = SmallVecData::empty();
                 ptr::copy_nonoverlapping(ptr.as_ptr(), self.data.inline_mut().as_ptr(), len);
                 self.capacity = len;
                 deallocate(ptr, cap);
@@ -1283,7 +1303,7 @@ impl<A: Array> SmallVec<A> {
         if self.inline_size() >= len {
             unsafe {
                 let (ptr, len) = self.data.heap();
-                self.data = SmallVecData::from_inline(MaybeUninit::uninit());
+                self.data = SmallVecData::empty();
                 ptr::copy_nonoverlapping(ptr.as_ptr(), self.data.inline_mut().as_ptr(), len);
                 deallocate(ptr.0, self.capacity);
                 self.capacity = len;
