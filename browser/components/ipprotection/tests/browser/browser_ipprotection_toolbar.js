@@ -119,6 +119,14 @@ add_task(async function toolbar_icon_status() {
     button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show connected status"
   );
+  
+  
+  
+  let onImage = getComputedStyle(button).listStyleImage;
+  Assert.ok(
+    onImage.includes("ipprotection-states.svg#on"),
+    `On state should reference the sprite fragment, got: ${onImage}`
+  );
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
     "IPPProxyManager:StateChanged",
@@ -132,6 +140,11 @@ add_task(async function toolbar_icon_status() {
   Assert.ok(
     !button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show disconnected status"
+  );
+  let offImage = getComputedStyle(button).listStyleImage;
+  Assert.ok(
+    offImage.includes("ipprotection-states.svg#off"),
+    `Off state should reference the sprite fragment, got: ${offImage}`
   );
 
   cleanupService();
