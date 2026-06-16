@@ -59,6 +59,12 @@ known_errors = [
         
         "message": "toggleSidebarKb",
     },
+    {
+        
+        
+        
+        "message": 'JavaScript Warning: "Window.fullScreen attribute is deprecated and will be removed in the future."',
+    },
 ]
 
 
