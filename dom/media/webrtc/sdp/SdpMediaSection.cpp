@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "sdp/SdpMediaSection.h"
 
 namespace mozilla {
@@ -40,7 +38,7 @@ void SdpMediaSection::SetFmtp(const SdpFmtpAttributeList::Fmtp& fmtpToSet) {
     fmtps->mFmtps.push_back(fmtpToSet);
   }
 
-  GetAttributeList().SetAttribute(fmtps.release());
+  GetAttributeList().SetAttribute(std::move(fmtps));
 }
 
 void SdpMediaSection::RemoveFmtp(const std::string& pt) {
@@ -58,7 +56,7 @@ void SdpMediaSection::RemoveFmtp(const std::string& pt) {
     }
   }
 
-  attrList.SetAttribute(fmtps.release());
+  attrList.SetAttribute(std::move(fmtps));
 }
 
 const SdpRtpmapAttributeList::Rtpmap* SdpMediaSection::FindRtpmap(
@@ -112,7 +110,7 @@ bool SdpMediaSection::GetMaxMessageSize(uint32_t* size) const {
 }
 
 bool SdpMediaSection::HasRtcpFb(const std::string& pt,
-                                SdpRtcpFbAttributeList::Type type,
+                                const SdpRtcpFbAttributeList::Type type,
                                 const std::string& subType) const {
   const SdpAttributeList& attrs(GetAttributeList());
 
@@ -147,7 +145,7 @@ void SdpMediaSection::SetRtcpFbs(const SdpRtcpFbAttributeList& rtcpfbs) {
     return;
   }
 
-  GetAttributeList().SetAttribute(new SdpRtcpFbAttributeList(rtcpfbs));
+  GetAttributeList().SetAttribute(MakeUnique<SdpRtcpFbAttributeList>(rtcpfbs));
 }
 
 void SdpMediaSection::SetSsrcs(const std::vector<uint32_t>& ssrcs,
@@ -166,7 +164,7 @@ void SdpMediaSection::SetSsrcs(const std::vector<uint32_t>& ssrcs,
     ssrcAttr->PushEntry(ssrc, cnameAttr);
   }
 
-  GetAttributeList().SetAttribute(ssrcAttr.release());
+  GetAttributeList().SetAttribute(std::move(ssrcAttr));
 }
 
 void SdpMediaSection::AddMsid(const std::string& id,
@@ -176,7 +174,7 @@ void SdpMediaSection::AddMsid(const std::string& id,
     msids->mMsids = GetAttributeList().GetMsid().mMsids;
   }
   msids->PushEntry(id, appdata);
-  GetAttributeList().SetAttribute(msids.release());
+  GetAttributeList().SetAttribute(std::move(msids));
 }
 
 const SdpRidAttributeList::Rid* SdpMediaSection::FindRid(
