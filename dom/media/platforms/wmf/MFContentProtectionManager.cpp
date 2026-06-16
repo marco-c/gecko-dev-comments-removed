@@ -14,10 +14,9 @@ namespace mozilla {
 
 using Microsoft::WRL::ComPtr;
 
-#define LOG(msg, ...)                                                \
-  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,                    \
-              "MFContentProtectionManager={}, " msg, fmt::ptr(this), \
-              ##__VA_ARGS__)
+#define LOG(msg, ...)                         \
+  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
+          ("MFContentProtectionManager=%p, " msg, this, ##__VA_ARGS__))
 
 MFContentProtectionManager::MFContentProtectionManager() {
   MOZ_COUNT_CTOR(MFContentProtectionManager);
@@ -79,7 +78,6 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
     
     
     
-    
     auto result = NS_NewTimerWithFuncCallback(
         &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
         nsITimer::TYPE_ONE_SHOT, "MFContentProtectionManager::WaitingForKey"_ns,
@@ -102,7 +100,7 @@ HRESULT MFContentProtectionManager::EndEnableContent(
   if (FAILED(hr)) {
     
     
-    LOG("Content enabling failed. hr={:x}", hr);
+    LOG("Content enabling failed. hr=%lx", hr);
   } else {
     LOG("Content enabling succeeded");
   }

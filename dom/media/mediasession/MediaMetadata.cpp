@@ -15,9 +15,9 @@ extern mozilla::LazyLogModule gMediaControlLog;
 
 
 #undef LOG
-#define LOG(msg, ...)                                                   \
-  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, "MediaMetadata, " msg, \
-              ##__VA_ARGS__)
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
+          ("MediaMetadata, " msg, ##__VA_ARGS__))
 
 namespace mozilla::dom {
 
@@ -152,7 +152,7 @@ RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
   if (!aPrincipal || aIndex >= aMetadata.mArtwork.Length()) {
     
     
-    LOG("FetchArtwork loaded no image, aPrincipal={}.", fmt::ptr(aPrincipal));
+    LOG("FetchArtwork loaded no image, aPrincipal=%p.", aPrincipal);
     return MediaMetadataBasePromise::CreateAndResolve(aMetadata, __func__);
   }
 

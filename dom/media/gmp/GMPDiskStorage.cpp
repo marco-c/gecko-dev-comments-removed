@@ -16,9 +16,9 @@
 
 namespace mozilla::gmp {
 
-#define LOG(msg, ...)                                                  \
-  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Debug, "GMPDiskStorage={}, " msg, \
-              fmt::ptr(this), ##__VA_ARGS__)
+#define LOG(msg, ...)                   \
+  MOZ_LOG(GetGMPLog(), LogLevel::Debug, \
+          ("GMPDiskStorage=%p, " msg, this, ##__VA_ARGS__))
 
 
 
@@ -76,7 +76,7 @@ class GMPDiskStorage : public GMPStorage {
  public:
   explicit GMPDiskStorage(const nsACString& aNodeId, const nsAString& aGMPName)
       : mNodeId(aNodeId), mGMPName(aGMPName) {
-    LOG("Created GMPDiskStorage, nodeId={}, gmpName={}", mNodeId.get(),
+    LOG("Created GMPDiskStorage, nodeId=%s, gmpName=%s", mNodeId.get(),
         NS_ConvertUTF16toUTF8(mGMPName).get());
   }
 

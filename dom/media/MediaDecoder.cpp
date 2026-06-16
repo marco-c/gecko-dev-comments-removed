@@ -103,7 +103,7 @@ constexpr TimeUnit MediaDecoder::DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED;
 void MediaDecoder::InitStatics() {
   MOZ_ASSERT(NS_IsMainThread());
   
-  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Info, "MediaDecoder::InitStatics");
+  MOZ_LOG(gMediaDecoderLog, LogLevel::Info, ("MediaDecoder::InitStatics"));
 
   if (XRE_IsParentProcess()) {
     

@@ -176,7 +176,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       int result =
           speex_resampler_set_rate(mResampler, mBufferSampleRate, aOutRate);
       if (result != RESAMPLER_ERR_SUCCESS) {
-        WEB_AUDIO_API_LOG("speex_resampler_set_rate failed: {}", result);
+        WEB_AUDIO_API_LOG("speex_resampler_set_rate failed: %i", result);
         
         
         

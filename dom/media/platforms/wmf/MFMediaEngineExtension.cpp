@@ -13,15 +13,14 @@
 
 namespace mozilla {
 
-#define LOG(msg, ...)                                            \
-  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,                \
-              "MFMediaEngineExtension={}, " msg, fmt::ptr(this), \
-              ##__VA_ARGS__)
+#define LOG(msg, ...)                         \
+  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
+          ("MFMediaEngineExtension=%p, " msg, this, ##__VA_ARGS__))
 
 using Microsoft::WRL::ComPtr;
 
 void MFMediaEngineExtension::SetMediaSource(IMFMediaSource* aMediaSource) {
-  LOG("SetMediaSource={}", fmt::ptr(aMediaSource));
+  LOG("SetMediaSource=%p", aMediaSource);
   mMediaSource = aMediaSource;
 }
 
