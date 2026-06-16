@@ -1682,6 +1682,11 @@ RTCError PeerConnection::SetConfiguration(
   
   
   std::vector<IceParameters> pooled_credentials;
+  
+  
+  
+  
+  flat_map<std::string, JsepTransportController::TransportState> new_states;
   if (!network_thread()->BlockingCall([&] {
         RTC_DCHECK_RUN_ON(network_thread());
         
@@ -1700,12 +1705,14 @@ RTCError PeerConnection::SetConfiguration(
             modified_config.stun_candidate_keepalive_interval,
             has_local_description);
         pooled_credentials = port_allocator_->GetPooledIceCredentials();
+        new_states = transport_controller_n()->GetTransportStates_n();
         return result;
       })) {
     return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
                      << "Failed to apply configuration to PortAllocator.");
   }
 
+  transport_controller_s()->SetTransportStates(std::move(new_states));
   sdp_handler_->UpdateCachedIceCredentials(std::move(pooled_credentials));
   configuration_ = modified_config;
   return RTCError::OK();

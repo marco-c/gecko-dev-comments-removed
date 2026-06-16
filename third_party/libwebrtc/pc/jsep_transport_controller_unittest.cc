@@ -523,6 +523,8 @@ TEST_F(JsepTransportControllerTest, NeedIceRestart) {
   
   
   transport_controller_->SetNeedsIceRestartFlag();
+  transport_controller_->SetTransportStates(
+      transport_controller_->GetTransportStates_n());
   EXPECT_TRUE(transport_controller_->NeedsIceRestart(kAudioMid1));
   EXPECT_TRUE(transport_controller_->NeedsIceRestart(kVideoMid1));
   
