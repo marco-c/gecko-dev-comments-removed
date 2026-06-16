@@ -61,7 +61,24 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   
   
   if (forOfDisposalEmitter_.isSome()) {
-    if (!forOfDisposalEmitter_->emitEnd()) {
+    
+    if (!bce->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+    if (!bce->emit1(JSOp::True)) {
+      
+      return false;
+    }
+    if (!forOfDisposalEmitter_->prepareForForOfIteratorClose()) {
+      
+      return false;
+    }
+    if (!bce->emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+    if (!bce->emit1(JSOp::Swap)) {
       
       return false;
     }
@@ -109,6 +126,22 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
       
       return false;
     }
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+    if (forOfDisposalEmitter_.isSome()) {
+      if (!bce->emit1(JSOp::Swap)) {
+        
+        return false;
+      }
+      if (!forOfDisposalEmitter_->prepareForForOfIteratorClose()) {
+        
+        return false;
+      }
+      if (!bce->emit1(JSOp::Swap)) {
+        
+        return false;
+      }
+    }
+#endif
     if (!bce->emitDupAt(slotFromTop + 1)) {
       
       return false;
@@ -187,6 +220,8 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
+  *tryNoteStart = bce->bytecodeSection().offset();
+
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   
   
@@ -205,7 +240,6 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-  *tryNoteStart = bce->bytecodeSection().offset();
   if (!emitIteratorCloseInScope(bce, currentScope, CompletionKind::Normal)) {
     
     return false;
