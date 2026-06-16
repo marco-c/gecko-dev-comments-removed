@@ -451,7 +451,7 @@ class nsDocShell final : public nsDocLoader,
       bool* aSkippedUnknownProtocolNavigation = nullptr);
 
   
-  static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
+  static void MaybeNotifyKeywordSearchLoading(const nsString& aProviderId,
                                               const nsString& aKeyword);
 
   nsDocShell* GetInProcessChildAt(int32_t aIndex);
@@ -924,7 +924,7 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
 
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
   
   static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
