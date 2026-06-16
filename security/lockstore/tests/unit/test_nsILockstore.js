@@ -26,22 +26,12 @@ function str(arr) {
   return new TextDecoder().decode(new Uint8Array(arr));
 }
 
-async function mintLocalKek(identifier = "") {
-  return getService().createKek(
-    "local",
-    identifier,
-    "",
-     0
-  );
+async function mintLocalKek() {
+  return getService().createKek("local", "",  0);
 }
 
 async function mintPasswordKek(password) {
-  return getService().createKek(
-    "password",
-     "",
-    password,
-     0
-  );
+  return getService().createKek("password", password,  0);
 }
 
 
