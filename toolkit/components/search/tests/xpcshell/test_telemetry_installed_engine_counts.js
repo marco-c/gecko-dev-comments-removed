@@ -29,6 +29,10 @@ add_setup(async function () {
   Services.fog.initializeFOG();
   Region._setHomeRegion("US", false);
 
+  
+  
+  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
+
   let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
     Ci.nsIObserver
   );
