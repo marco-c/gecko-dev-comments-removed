@@ -171,6 +171,27 @@ size_t RangeSizeEstimate(
   return aRange.Count();
 }
 
+
+
+
+
+template <class EntryType, bool = EntryType::ALLOW_MEMMOVE>
+struct MOZ_NEEDS_MEMMOVABLE_TYPE CheckAllowMemmove : std::true_type {};
+template <class EntryType>
+struct CheckAllowMemmove<EntryType, false> : std::false_type {};
+
+
+
+
+
+
+
+template <size_t N>
+static void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
+                                PLDHashEntryHdr* aTo) {
+  memcpy(aTo, aFrom, N);
+}
+
 }  
 
 
@@ -234,18 +255,19 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
  public:
   
   
-  nsTHashtable()
-      : mTable(Ops(), sizeof(EntryType), PLDHashTable::kDefaultInitialLength) {}
+  constexpr nsTHashtable()
+      : mTable(&sOps, sizeof(EntryType), PLDHashTable::kDefaultInitialLength) {}
   explicit nsTHashtable(uint32_t aInitLength)
-      : mTable(Ops(), sizeof(EntryType), aInitLength) {}
+      : mTable(&sOps, sizeof(EntryType), aInitLength) {}
 
   
 
 
   ~nsTHashtable() = default;
 
-  nsTHashtable(nsTHashtable<EntryType>&& aOther);
-  nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>&& aOther);
+  nsTHashtable(nsTHashtable<EntryType>&& aOther) = default;
+  nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>&& aOther) =
+      default;
 
   nsTHashtable(const nsTHashtable<EntryType>&) = delete;
   nsTHashtable& operator=(const nsTHashtable<EntryType>&) = delete;
@@ -555,6 +577,13 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
 
 
 
+  void ClearAndRetainStorage() { mTable.ClearAndRetainStorage(); }
+
+  
+
+
+
+
 
 
 
@@ -623,80 +652,28 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
   
   nsTHashtable(nsTHashtable<EntryType>& aToCopy) = delete;
 
-  
-
-
-  static const PLDHashTableOps* Ops();
+  static constexpr PLDHashTableOps sOps{
+      .hashKey = s_HashKey,
+      .matchEntry = s_MatchEntry,
+      
+      
+      .moveEntry = ::detail::CheckAllowMemmove<EntryType>::value
+                       ? ::detail::FixedSizeEntryMover<sizeof(EntryType)>
+                       : s_CopyEntry,
+      
+      
+      .clearEntry =
+          std::is_trivially_destructible_v<EntryType> ? nullptr : s_ClearEntry,
+      
+      
+      
+      
+      .initEntry = nullptr};
 
   
   nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>& aToEqual) =
       delete;
 };
-
-namespace mozilla {
-namespace detail {
-
-
-
-
-
-
-
-template <size_t N>
-static void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
-                                PLDHashEntryHdr* aTo) {
-  memcpy(aTo, aFrom, N);
-}
-
-
-
-
-
-template <class EntryType, bool = EntryType::ALLOW_MEMMOVE>
-struct MOZ_NEEDS_MEMMOVABLE_TYPE CheckAllowMemmove : std::true_type {};
-template <class EntryType>
-struct CheckAllowMemmove<EntryType, false> : std::false_type {};
-
-}  
-}  
-
-
-
-
-
-template <class EntryType>
-nsTHashtable<EntryType>::nsTHashtable(nsTHashtable<EntryType>&& aOther)
-    : mTable(std::move(aOther.mTable)) {}
-
-template <class EntryType>
-nsTHashtable<EntryType>& nsTHashtable<EntryType>::operator=(
-    nsTHashtable<EntryType>&& aOther) {
-  mTable = std::move(aOther.mTable);
-  return *this;
-}
-
-template <class EntryType>
- const PLDHashTableOps* nsTHashtable<EntryType>::Ops() {
-  
-  
-  
-  static const PLDHashTableOps sOps = {
-      s_HashKey, s_MatchEntry,
-      
-      
-      mozilla::detail::CheckAllowMemmove<EntryType>::value
-          ? mozilla::detail::FixedSizeEntryMover<sizeof(EntryType)>
-          : s_CopyEntry,
-      
-      
-      std::is_trivially_destructible_v<EntryType> ? nullptr : s_ClearEntry,
-      
-      
-      
-      
-      nullptr};
-  return &sOps;
-}
 
 
 

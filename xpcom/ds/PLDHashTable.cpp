@@ -9,7 +9,6 @@
 #include "PLDHashTable.h"
 #include "nsDebug.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/ScopeExit.h"
 #include "nsAlgorithm.h"
@@ -111,14 +110,6 @@ static const PLDHashTableOps gStubOps = {
   return &gStubOps;
 }
 
-static bool SizeOfEntryStore(uint32_t aCapacity, uint32_t aEntrySize,
-                             uint32_t* aNbytes) {
-  uint32_t slotSize = aEntrySize + sizeof(PLDHashNumber);
-  uint64_t nbytes64 = uint64_t(aCapacity) * uint64_t(slotSize);
-  *aNbytes = aCapacity * slotSize;
-  return uint64_t(*aNbytes) == nbytes64;  
-}
-
 
 
 
@@ -132,66 +123,6 @@ static inline uint32_t MaxLoadOnGrowthFailure(uint32_t aCapacity) {
 }
 static inline uint32_t MinLoad(uint32_t aCapacity) {
   return aCapacity >> 2;  
-}
-
-
-
-
-
-
-static inline void BestCapacity(uint32_t aLength, uint32_t* aCapacityOut,
-                                uint32_t* aLog2CapacityOut) {
-  
-  MOZ_ASSERT(aLength <= PLDHashTable::kMaxInitialLength);
-
-  
-  
-  uint32_t capacity = (aLength * 4 + (3 - 1)) / 3;  
-  if (capacity < PLDHashTable::kMinCapacity) {
-    capacity = PLDHashTable::kMinCapacity;
-  }
-
-  
-  uint32_t log2 = CeilingLog2(capacity);
-  capacity = 1u << log2;
-  MOZ_ASSERT(capacity <= PLDHashTable::kMaxCapacity);
-
-  *aCapacityOut = capacity;
-  *aLog2CapacityOut = log2;
-}
-
- MOZ_ALWAYS_INLINE uint32_t
-PLDHashTable::HashShift(uint32_t aEntrySize, uint32_t aLength) {
-  if (aLength > kMaxInitialLength) {
-    MOZ_CRASH("Initial length is too large");
-  }
-
-  uint32_t capacity, log2;
-  BestCapacity(aLength, &capacity, &log2);
-
-  uint32_t nbytes;
-  if (!SizeOfEntryStore(capacity, aEntrySize, &nbytes)) {
-    MOZ_CRASH("Initial entry store size is too large");
-  }
-
-  
-  return kPLDHashNumberBits - log2;
-}
-
-PLDHashTable::PLDHashTable(const PLDHashTableOps* aOps, uint32_t aEntrySize,
-                           uint32_t aLength)
-    : mOps(aOps),
-      mGeneration(0),
-      mHashShift(HashShift(aEntrySize, aLength)),
-      mEntrySize(aEntrySize),
-      mEntryCount(0),
-      mRemovedCount(0) {
-  
-  
-  
-  if (aEntrySize != uint32_t(mEntrySize)) {
-    MOZ_CRASH("Entry size is too large");
-  }
 }
 
 PLDHashTable& PLDHashTable::operator=(PLDHashTable&& aOther) {
@@ -307,6 +238,37 @@ void PLDHashTable::ClearAndPrepareForLength(uint32_t aLength) {
 }
 
 void PLDHashTable::Clear() { ClearAndPrepareForLength(kDefaultInitialLength); }
+
+void PLDHashTable::ClearAndRetainStorage() {
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
+  AutoWriteOp op(mChecker);
+#endif
+
+  if (!mEntryStore.IsAllocated()) {
+    return;
+  }
+
+  uint32_t capacity = Capacity();
+
+  
+  
+  if (mOps->clearEntry) {
+    mEntryStore.ForEachSlot(capacity, mEntrySize, [&](const Slot& aSlot) {
+      if (aSlot.IsLive()) {
+        mOps->clearEntry(this, aSlot.ToEntry());
+      }
+    });
+  }
+
+  
+  
+  
+  memset(mEntryStore.Get(), 0, capacity * sizeof(PLDHashNumber));
+
+  mEntryCount = 0;
+  mRemovedCount = 0;
+  mGeneration++;
+}
 
 
 
@@ -589,7 +551,7 @@ void PLDHashTable::ShrinkIfAppropriate() {
   if (mRemovedCount >= capacity >> 2 ||
       (capacity > kMinCapacity && mEntryCount <= MinLoad(capacity))) {
     uint32_t log2;
-    BestCapacity(mEntryCount, &capacity, &log2);
+    std::tie(capacity, log2) = BestCapacity(mEntryCount);
 
     int32_t deltaLog2 = log2 - (kPLDHashNumberBits - mHashShift);
     MOZ_ASSERT(deltaLog2 <= 0);

@@ -1000,6 +1000,15 @@ class nsBaseHashtable
 
 
 
+  void ClearAndRetainStorage() {
+    nsTHashtable<EntryType>::ClearAndRetainStorage();
+  }
+
+  
+
+
+
+
 
 
   size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {

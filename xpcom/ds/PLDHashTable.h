@@ -507,6 +507,13 @@ class PLDHashTable {
   
   
   
+  void ClearAndRetainStorage();
+
+  
+  
+  
+  
+  
   
   
   
