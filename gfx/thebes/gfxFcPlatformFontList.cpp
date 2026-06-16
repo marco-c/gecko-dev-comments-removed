@@ -300,8 +300,8 @@ static already_AddRefed<FcPattern> CreatePatternForFace(FT_Face aFace) {
   
   
   
-  RefPtr<FcPattern> pattern =
-      dont_AddRef(FcFreeTypeQueryFace(aFace, ToFcChar8Ptr(""), 0, nullptr));
+  RefPtr<FcPattern> pattern = dont_AddRef(
+      FcFreeTypeQueryFace(aFace, ToFcChar8Ptr("(webfont)"), 0, nullptr));
   
   if (!pattern) {
     pattern = dont_AddRef(FcPatternCreate());
@@ -2326,7 +2326,7 @@ gfxFontEntry* gfxFcPlatformFontList::LookupLocalFont(
                                     aStretchForEntry, aStyleForEntry);
 }
 
-gfxFontEntry* gfxFcPlatformFontList::MakePlatformFont(
+already_AddRefed<gfxFontEntry> gfxFcPlatformFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
@@ -2335,9 +2335,9 @@ gfxFontEntry* gfxFcPlatformFontList::MakePlatformFont(
   if (!face) {
     return nullptr;
   }
-  return new gfxFontconfigFontEntry(aFontName, aWeightForEntry,
-                                    aStretchForEntry, aStyleForEntry,
-                                    std::move(face));
+  return MakeAndAddRef<gfxFontconfigFontEntry>(aFontName, aWeightForEntry,
+                                               aStretchForEntry, aStyleForEntry,
+                                               std::move(face));
 }
 
 static bool UseCustomFontconfigLookupsForLocale(const Locale& aLocale) {
@@ -2643,7 +2643,7 @@ void gfxFcPlatformFontList::AddGenericFonts(
         usePrefFontList = true;
       } else {
         
-        genericToLookup = fontlistValue;
+        genericToLookup = std::move(fontlistValue);
       }
     }
   }
@@ -2925,9 +2925,9 @@ void gfxFcPlatformFontList::GetSampleLangForGroup(nsAtom* aLanguage,
   if (aLanguage != nsGkAtoms::x_math ||
       StaticPrefs::mathml_font_family_math_enabled()) {
     
-    for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
-      if (aLanguage == MozLangGroups[i].mozLangGroup) {
-        mozLangGroup = &MozLangGroups[i];
+    for (const auto& MozLangGroup : MozLangGroups) {
+      if (aLanguage == MozLangGroup.mozLangGroup) {
+        mozLangGroup = &MozLangGroup;
         break;
       }
     }

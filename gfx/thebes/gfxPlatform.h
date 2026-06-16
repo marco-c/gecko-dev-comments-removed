@@ -413,12 +413,11 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-
-  gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 const WeightRange& aWeightForEntry,
-                                 const StretchRange& aStretchForEntry,
-                                 const SlantStyleRange& aStyleForEntry,
-                                 const uint8_t* aFontData, uint32_t aLength);
+  already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry, const uint8_t* aFontData,
+      uint32_t aLength);
 
   
 

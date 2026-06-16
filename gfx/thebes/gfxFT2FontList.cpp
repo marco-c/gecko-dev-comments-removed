@@ -3,6 +3,7 @@
 
 
 #include "mozilla/Base64.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "mozilla/dom/ContentChild.h"
@@ -1929,18 +1930,16 @@ FontFamily gfxFT2FontList::GetDefaultFontForPlatform(
   return ff;
 }
 
-gfxFontEntry* gfxFT2FontList::MakePlatformFont(const nsACString& aFontName,
-                                               WeightRange aWeightForEntry,
-                                               StretchRange aStretchForEntry,
-                                               SlantStyleRange aStyleForEntry,
-                                               const uint8_t* aFontData,
-                                               uint32_t aLength) {
+already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
+    const nsACString& aFontName, WeightRange aWeightForEntry,
+    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+    const uint8_t* aFontData, uint32_t aLength) {
   
   
   
-  return FT2FontEntry::CreateFontEntry(aFontName, aWeightForEntry,
-                                       aStretchForEntry, aStyleForEntry,
-                                       aFontData, aLength);
+  return do_AddRef(FT2FontEntry::CreateFontEntry(
+      aFontName, aWeightForEntry, aStretchForEntry, aStyleForEntry, aFontData,
+      aLength));
 }
 
 gfxFontFamily* gfxFT2FontList::CreateFontFamily(
