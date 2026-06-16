@@ -69,7 +69,6 @@ class RTC_EXPORT EncodedImageCallback {
   
   
   
-  
   enum class DropReason : uint8_t {
     kDroppedByMediaOptimizations,
     kDroppedByEncoder
@@ -80,8 +79,7 @@ class RTC_EXPORT EncodedImageCallback {
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info) = 0;
 
-  
-  
+  [[deprecated("bugs.webrtc.org/467444018 -Use OnFrameDropped instead.")]]
   virtual void OnDroppedFrame(DropReason ) {}
 
   

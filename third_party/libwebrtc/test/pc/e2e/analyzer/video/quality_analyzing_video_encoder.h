@@ -88,8 +88,6 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   EncodedImageCallback::Result OnEncodedImage(
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info) override;
-  
-  void OnDroppedFrame(DropReason reason) override;
   void OnFrameDropped(uint32_t rtp_timestamp,
                       int spatial_id,
                       bool is_end_of_temporal_unit) override;
