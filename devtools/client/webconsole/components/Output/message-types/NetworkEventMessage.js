@@ -103,12 +103,7 @@ function NetworkEventMessage({
 
   let statusCode, statusInfo;
 
-  if (
-    httpVersion &&
-    status &&
-    statusText !== undefined &&
-    totalTime !== undefined
-  ) {
+  if (httpVersion && status && statusText !== undefined) {
     const statusCodeDocURL = getHTTPStatusCodeURL(
       status.toString(),
       "webconsole"
@@ -130,7 +125,10 @@ function NetworkEventMessage({
       { className: "status-info" },
       `[${httpVersion} `,
       statusCode,
-      ` ${statusText} ${totalTime}ms]`
+      ` ${statusText}${
+        
+        typeof totalTime === "number" ? ` ${totalTime}ms` : ""
+      }]`
     );
   }
 
@@ -169,10 +167,17 @@ function NetworkEventMessage({
     unicodeURL
   );
   const statusBody = statusInfo
-    ? dom.a({ className: "status" }, statusInfo)
+    ? dom.span({ className: "status" }, statusInfo)
     : null;
 
-  const messageBody = [xhr, requestMethod, requestUrl, statusBody];
+  const messageBody = [
+    xhr,
+    
+    xhr ? " " : null,
+    requestMethod,
+    requestUrl,
+    statusBody,
+  ];
 
   
   
