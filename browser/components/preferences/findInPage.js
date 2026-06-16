@@ -345,11 +345,12 @@ var gSearchResultsPane = {
         
         
         if (child.localName === "setting-pane") {
-          let groupSelector =
+          const BASE_SELECTOR =
             "setting-group:not([data-hidden-from-search]):not([hidden]):not([data-hidden-by-setting-group])";
-          if (subQuery) {
-            groupSelector += ":not(.visually-hidden)";
-          }
+          let groupSelector = subQuery
+            ? `${BASE_SELECTOR}:not(.visually-hidden)`
+            : BASE_SELECTOR;
+
           let groups = child.querySelectorAll(groupSelector);
           let anyGroupMatched = false;
           for (let group of groups) {
@@ -367,7 +368,8 @@ var gSearchResultsPane = {
             if (paneMatched) {
               
               
-              for (let group of groups) {
+              
+              for (let group of child.querySelectorAll(BASE_SELECTOR)) {
                 group.classList.remove("visually-hidden");
               }
             }
