@@ -2,12 +2,8 @@
 
 
 
-
-
 #ifndef mozilla_dom_simpledb_SDBRequest_h
 #define mozilla_dom_simpledb_SDBRequest_h
-
-#include <cstdint>
 
 #include "ErrorList.h"
 #include "mozilla/RefPtr.h"
@@ -52,7 +48,7 @@ class SDBRequest final : public nsISDBRequest {
 
   void FireCallback();
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSISDBREQUEST
   NS_DECL_CYCLE_COLLECTION_CLASS(SDBRequest)
 };
