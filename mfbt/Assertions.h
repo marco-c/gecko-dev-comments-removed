@@ -113,7 +113,7 @@ MOZ_BEGIN_EXTERN_C
 
 
 static inline const char* MOZ_StripRelativeComponents(const char* aPath) {
-  if (*aPath == '/' || *aPath == '\\') {
+  if (!aPath || *aPath == '/' || *aPath == '\\') {
     
     return aPath;
   }
