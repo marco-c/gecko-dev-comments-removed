@@ -7,7 +7,10 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/HTMLEditor.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -20,6 +23,7 @@
 #include "nsFocusManager.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
+#include "nsFrameSelection.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIContent.h"
 #include "nsIController.h"
@@ -110,9 +114,74 @@ void nsWindowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   
   aVisitor.mItemData = static_cast<nsISupports*>(mWindow);
   aVisitor.SetParentTarget(mParent, false);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aVisitor.mEvent->IsTrusted() && (aVisitor.mEvent->mMessage == eFocus ||
+                                       aVisitor.mEvent->mMessage == eBlur)) {
+    aVisitor.mWantsPreHandleEvent = true;
+  }
 }
 
-nsresult nsWindowRoot::PostHandleEvent(EventChainPostVisitor& aVisitor) {
+nsresult nsWindowRoot::PreHandleEvent(EventChainVisitor& aVisitor) {
+  MOZ_ASSERT(aVisitor.mEvent->mMessage == eFocus ||
+             aVisitor.mEvent->mMessage == eBlur);
+  MOZ_ASSERT(aVisitor.mEvent->IsTrusted());
+
+  const nsCOMPtr<nsINode> targetNode = nsINode::FromEventTargetOrNull(
+      aVisitor.mEvent->GetOriginalDOMEventTarget());
+  if (!targetNode) {
+    return NS_OK;
+  }
+
+  const RefPtr<PresShell> presShell = targetNode->OwnerDoc()->GetPresShell();
+  if (!presShell) [[unlikely]] {
+    return NS_OK;
+  }
+
+  
+  
+  if (Document* const targetDocument = Document::FromNodeOrNull(targetNode)) {
+    if (aVisitor.mEvent->mMessage == eFocus) {
+      nsFrameSelection::WillFocusDocument(*presShell, *targetDocument);
+    } else {
+      nsFrameSelection::WillBlurDocument(*presShell, *targetDocument);
+    }
+  }
+  
+  
+  
+  
+  
+  if (aVisitor.mEvent->mMessage == eFocus) {
+    HTMLEditor::WillFocusNode(*presShell, targetNode);
+  }
+  
+  
+  
+  else {
+    HTMLEditor::WillBlurNode(*presShell, targetNode);
+  }
+
+  
+  
+  if (auto* const targetTextControlElement =
+          TextControlElement::FromNodeOrNull(targetNode)) {
+    if (targetTextControlElement->IsSingleLineTextControlOrTextArea()) {
+      if (aVisitor.mEvent->mMessage == eFocus) {
+        MOZ_KnownLive(targetTextControlElement)->WillFocus(*aVisitor.mEvent);
+      } else {
+        MOZ_KnownLive(targetTextControlElement)->WillBlur(*aVisitor.mEvent);
+      }
+    }
+  }
   return NS_OK;
 }
 

@@ -32,9 +32,15 @@ class nsWindowRoot final : public nsPIWindowRoot {
       mozilla::dom::Event& aEvent, mozilla::dom::CallerType aCallerType,
       mozilla::ErrorResult& aRv) override;
 
-  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
+  void GetEventTargetParent(mozilla::EventChainPreVisitor&) override;
 
-  nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PreHandleEvent(mozilla::EventChainVisitor&) override;
+  
+  
+  nsresult PostHandleEvent(mozilla::EventChainPostVisitor&) override {
+    return NS_OK;
+  }
 
   
 
