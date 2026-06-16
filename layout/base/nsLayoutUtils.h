@@ -306,6 +306,12 @@ class nsLayoutUtils {
   
 
 
+  static mozilla::dom::Element* GetPickerIconPseudo(const nsIContent* aContent);
+  static nsIFrame* GetPickerIconFrame(const nsIContent* aContent);
+
+  
+
+
   static void AppendGeneratedContentPseudos(
       const mozilla::dom::Element* aElement, nsTArray<nsIContent*>& aPseudos);
 
