@@ -21,13 +21,14 @@ add_task(async function () {
 
   info("Set the popupNode to the node that contains the uri");
   let { editor } = await getContainerForSelector("link", inspector);
-  openContextMenuAndGetAllItems(inspector, {
-    target: editor.attrElements.get("href").querySelector(".link"),
-  });
+  let contextMenuItem = openContextMenuAndGetLinkFollowItem(
+    inspector,
+    editor.attrElements.get("href").querySelector(".link")
+  );
 
   info("Follow the link and wait for the style-editor to open");
   const onStyleEditorReady = toolbox.once("styleeditor-ready");
-  inspector.markup.contextMenu._onFollowLink();
+  contextMenuItem.click();
   await onStyleEditorReady;
 
   
@@ -42,12 +43,13 @@ add_task(async function () {
 
   info("Set the popupNode to the node that contains the uri");
   ({ editor } = await getContainerForSelector("script", inspector));
-  openContextMenuAndGetAllItems(inspector, {
-    target: editor.attrElements.get("src").querySelector(".link"),
-  });
+  contextMenuItem = openContextMenuAndGetLinkFollowItem(
+    inspector,
+    editor.attrElements.get("src").querySelector(".link")
+  );
 
   info("Follow the link and wait for the debugger to open");
-  inspector.markup.contextMenu._onFollowLink();
+  contextMenuItem.click();
 
   
   await toolbox.getPanelWhenReady("jsdebugger");
@@ -58,3 +60,10 @@ add_task(async function () {
   
   ok(true, "The debugger was open");
 });
+
+function openContextMenuAndGetLinkFollowItem(inspector, target) {
+  const items = openContextMenuAndGetAllItems(inspector, {
+    target,
+  });
+  return items.find(({ id }) => id == "node-menu-link-follow");
+}
