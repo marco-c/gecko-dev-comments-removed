@@ -228,18 +228,12 @@ var gSearchResultsPane = {
           }
         }
       }
-      try {
-        let range = document.createRange();
-        range.setStart(startNode, startValue);
-        range.setEnd(endNode, endValue);
-        this.getFindSelection(startNode.documentGlobal).addRange(range);
+      let range = document.createRange();
+      range.setStart(startNode, startValue);
+      range.setEnd(endNode, endValue);
+      this.getFindSelection(startNode.documentGlobal).addRange(range);
 
-        this.searchResultsHighlighted = true;
-      } catch (ex) {
-        
-        
-        
-      }
+      this.searchResultsHighlighted = true;
     }
 
     return !!indices.length;
