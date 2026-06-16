@@ -44,7 +44,7 @@ add_task(async function test_sessions_get_recently_closed() {
     background,
   });
 
-  
+  // Open and close a window that will be ignored, to prove that we are removing previous entries
   await openAndCloseWindow();
 
   await extension.startup();
@@ -65,7 +65,7 @@ add_task(async function test_sessions_get_recently_closed() {
   await openAndCloseWindow("about:config", ["about:robots", "about:mozilla"]);
   extension.sendMessage("check-sessions");
   recentlyClosed = await extension.awaitMessage("recentlyClosed");
-  
+  // Check for multiple tabs in most recently closed window
   is(
     recentlyClosed[0].window.tabs.length,
     3,
@@ -101,7 +101,7 @@ add_task(async function test_sessions_get_recently_closed() {
   isnot(finalResult[4].window, undefined, "fifth item is a window");
   is(finalResult[4].tab, undefined, "fifth item is not a tab");
 
-  
+  // test with filter
   extension.sendMessage("check-sessions", { maxResults: 2 });
   recentlyClosed = await extension.awaitMessage("recentlyClosed");
   checkRecentlyClosed(
@@ -139,7 +139,7 @@ add_task(async function test_sessions_get_recently_closed_navigated() {
     background,
   });
 
-  
+  // Test with a window with navigation history.
   let win = await BrowserTestUtils.openNewBrowserWindow();
   for (let url of ["about:robots", "about:mozilla", "https://example.com/"]) {
     BrowserTestUtils.startLoadingURIString(win.gBrowser.selectedBrowser, url);
@@ -172,7 +172,7 @@ add_task(
           );
           browser.test.assertFalse(
             "url" in win.tabs[1],
-            "The second tab with empty.xpi has no url field due to empty history."
+            "The second tab with HTTP 204 has no url field due to empty history."
           );
           browser.test.assertEq(
             "https://example.com/",
@@ -190,14 +190,14 @@ add_task(
       background,
     });
 
-    
+    // Test with a window with empty history.
     let xpi =
-      "https://example.com/browser/browser/components/extensions/test/browser/empty.xpi";
+      "https://example.com/browser/browser/components/extensions/test/browser/204.sjs";
     let newWin = await BrowserTestUtils.openNewBrowserWindow();
     await BrowserTestUtils.openNewForegroundTab({
       gBrowser: newWin.gBrowser,
       url: xpi,
-      
+      // A tab with broken xpi file doesn't finish loading.
       waitForLoad: false,
     });
     await BrowserTestUtils.openNewForegroundTab({
