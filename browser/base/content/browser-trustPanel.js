@@ -105,8 +105,8 @@ const SMARTBLOCK_EMBED_INFO = [
   },
   {
     matchPatterns: ["https://www.tiktok.com/*"],
-    shimId: "TiktokEmbed",
-    displayName: "Tiktok",
+    shimId: "TikTokEmbed",
+    displayName: "TikTok",
   },
   {
     matchPatterns: ["https://platform.twitter.com/*"],
@@ -137,6 +137,8 @@ class TrustPanel {
 
   #qwac = null;
 
+  #breachedStatus = null;
+
   
 
 
@@ -152,9 +154,6 @@ class TrustPanel {
   #popupToggleDelayTimer = null;
   #openingReason = null;
 
-  #breaches = [];
-  #breachesPromise = null;
-
   #blockers = {
     SocialTracking,
     ThirdPartyCookies,
@@ -169,8 +168,6 @@ class TrustPanel {
         blocker.init();
       }
     }
-
-    void this.#ensureBreachesLoaded();
 
     
     Services.obs.addObserver(this, "smartblock:open-protections-panel");
@@ -200,30 +197,6 @@ class TrustPanel {
 
     Services.obs.removeObserver(this, "smartblock:open-protections-panel");
     Services.obs.removeObserver(this, "fxaccounts:onlogout");
-  }
-
-  
-  
-  
-  #ensureBreachesLoaded() {
-    if (this.#breaches.length) {
-      return Promise.resolve();
-    }
-    if (this.#breachesPromise) {
-      return this.#breachesPromise;
-    }
-    this.#breachesPromise = RemoteSettings("fxmonitor-breaches")
-      .get()
-      .then(breaches => {
-        this.#breaches = breaches ?? [];
-        if (this.#uri) {
-          this.#updateUrlbarIcon();
-        }
-      })
-      .finally(() => {
-        this.#breachesPromise = null;
-      });
-    return this.#breachesPromise;
   }
 
   get #popup() {
@@ -362,8 +335,13 @@ class TrustPanel {
     });
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
+    const hasMonitorAccountOrStoredPasswords =
+      await this.#hasMonitorAccountOrStoredPasswords();
     Glean.trustpanel.opened.record({
-      breach_status: await this.#breachedStatus(applicableBreaches),
+      breach_status: getBreachedStatus({
+        breaches: applicableBreaches,
+        hasMonitorAccountOrStoredPasswords,
+      }),
     });
   }
 
@@ -393,8 +371,41 @@ class TrustPanel {
     this.#qwac = null;
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-    void this.#ensureBreachesLoaded();
+    this.#breachedStatus = null;
+    
     this.#updateUrlbarIcon();
+
+    
+    
+    
+    
+    
+    
+    
+    void this.#checkForBreaches(uri);
+  }
+
+  
+  async #checkForBreaches(uri) {
+    const capturedUri = uri;
+    const [applicableBreaches, hasMonitorAccountOrStoredPasswords] =
+      await Promise.all([
+        this.#getApplicableBreaches(this.#host),
+        this.#hasMonitorAccountOrStoredPasswords(),
+      ]);
+
+    
+    if (this.#uri !== capturedUri) {
+      return;
+    }
+    const breachedStatus = getBreachedStatus({
+      breaches: applicableBreaches,
+      hasMonitorAccountOrStoredPasswords,
+    });
+    this.#breachedStatus = breachedStatus;
+    if (breachedStatus !== "disabled" && breachedStatus !== "not-breached") {
+      this.#updateUrlbarIcon();
+    }
   }
 
   
@@ -416,7 +427,7 @@ class TrustPanel {
     let targetClasses = new Set();
     targetClasses.add(this.#isSecurePage() ? "secure" : "insecure");
 
-    if (this.#isSecurePage() && this.#breachedStatusSync() === "breached") {
+    if (this.#isSecurePage() && this.#breachedStatus === "breached") {
       targetClasses.add("breached");
     }
     if (!this.#trackingProtectionEnabled) {
@@ -469,11 +480,16 @@ class TrustPanel {
     );
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
-    const breachStatus = await this.#breachedStatus(applicableBreaches);
-    if (breachStatus !== "disabled" && breachStatus !== "not-breached") {
+    const hasMonitorAccountOrStoredPasswords =
+      await this.#hasMonitorAccountOrStoredPasswords();
+    const breachedStatus = getBreachedStatus({
+      breaches: applicableBreaches,
+      hasMonitorAccountOrStoredPasswords,
+    });
+    if (breachedStatus !== "disabled" && breachedStatus !== "not-breached") {
       graphicSection.hidden = true;
       breachAlertGraphicSection.hidden = false;
-      breachAlertGraphicSection.breachStatus = breachStatus;
+      breachAlertGraphicSection.breachStatus = breachedStatus;
       breachAlertGraphicSection.breachNames = applicableBreaches.map(
         breach => breach.Name
       );
@@ -607,29 +623,6 @@ class TrustPanel {
       return "warning";
     }
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
-  }
-
-  async #breachedStatus(breaches) {
-    if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
-      return "disabled";
-    }
-
-    if (await this.#hasMonitorAccountOrPasswords()) {
-      
-      
-      
-      return "disabled";
-    }
-
-    
-    
-    
-    
-    if (breaches.length) {
-      return "breached";
-    }
-
-    return "not-breached";
   }
 
   #updateSecurityInformationSubview() {
@@ -806,7 +799,7 @@ class TrustPanel {
     }
   }
 
-  async #hasMonitorAccountOrPasswords() {
+  async #hasMonitorAccountOrStoredPasswords() {
     return (
       (await this.#hasMonitorAccount()) || (await this.#hasStoredPasswords())
     );
@@ -1697,39 +1690,6 @@ class TrustPanel {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  #getBreachForSiteSync(site) {
-    if (!site || !this.#breaches.length) {
-      return null;
-    }
-
-    return this.#breaches.find(breach => {
-      return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
-    });
-  }
-
-  #breachedStatusSync() {
-    if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
-      return "disabled";
-    }
-
-    return this.#getBreachForSiteSync(this.#host) ? "breached" : "not-breached";
-  }
-
-  
-
-
-  resetBreachCacheForTest() {
-    this.#breachesPromise = null;
-    this.#breaches = [];
-  }
-
   async #getApplicableBreaches(site) {
     const breaches = await this.#getBreachedWebsites();
 
@@ -1774,10 +1734,12 @@ class TrustPanel {
       }));
       const breachAlertStorage = await this.#getBreachAlertStorage();
       await breachAlertStorage.setBreachAlertDismissals(dismissals);
+      this.#breachedStatus = "disabled";
     } catch (ex) {
       console.error("Failed to store breach dismissal:", ex);
     }
     this.#updateMainView();
+    this.#updateUrlbarIcon();
   }
 }
 
@@ -1794,6 +1756,30 @@ function isRecentBreach(breach) {
   const oneYearAgo = currentDate.subtract({ years: 1 });
   
   return Temporal.PlainDate.compare(breachedDate, oneYearAgo) !== -1;
+}
+
+function getBreachedStatus(inputData) {
+  const { breaches, hasMonitorAccountOrStoredPasswords } = inputData;
+  if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
+    return "disabled";
+  }
+
+  if (hasMonitorAccountOrStoredPasswords) {
+    
+    
+    
+    return "disabled";
+  }
+
+  
+  
+  
+  
+  if (breaches.length) {
+    return "breached";
+  }
+
+  return "not-breached";
 }
 
 var gTrustPanelHandler = new TrustPanel();
