@@ -4,6 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
@@ -741,36 +742,58 @@ class TabBase {
 
 
 
-  async queryContent(message, options) {
-    let { frameIds } = options;
+
+
+
+
+  async queryContent(message, { documentIds, frameIds, ...options }) {
+    if (documentIds && frameIds) {
+      
+      throw new Error("frameIds and documentIds are mutually exclusive");
+    }
 
     
     let byProcess = new DefaultMap(() => []);
-    
-    
-    
-    let frameIdsSet = new Set(frameIds);
 
-    
-    function visit(bc) {
-      let win = bc.currentWindowGlobal;
-      let frameId = bc.parent ? bc.id : 0;
-
-      if (win?.domProcess && (!frameIds || frameIdsSet.has(frameId))) {
+    if (documentIds) {
+      const topBrowsingContext = this.browsingContext;
+      for (const documentId of new Set(documentIds)) {
+        let bc =
+          ExtensionDocumentId.getBrowsingContextForDocumentId(documentId);
+        if (!bc || bc.top !== topBrowsingContext) {
+          throw new ExtensionError(`Invalid documentId: ${documentId}`);
+        }
+        
+        const win = bc.currentWindowGlobal;
         byProcess.get(win.domProcess).push(win.innerWindowId);
-        frameIdsSet.delete(frameId);
       }
+    } else {
+      
+      
+      
+      let frameIdsSet = new Set(frameIds);
 
-      if (!frameIds || frameIdsSet.size > 0) {
-        bc.children.forEach(visit);
+      
+      function visit(bc) {
+        let win = bc.currentWindowGlobal;
+        let frameId = bc.parent ? bc.id : 0;
+
+        if (win?.domProcess && (!frameIds || frameIdsSet.has(frameId))) {
+          byProcess.get(win.domProcess).push(win.innerWindowId);
+          frameIdsSet.delete(frameId);
+        }
+
+        if (!frameIds || frameIdsSet.size > 0) {
+          bc.children.forEach(visit);
+        }
       }
-    }
-    visit(this.browsingContext);
+      visit(this.browsingContext);
 
-    if (frameIdsSet.size > 0) {
-      throw new ExtensionError(
-        `Invalid frame IDs: [${Array.from(frameIdsSet).join(", ")}].`
-      );
+      if (frameIdsSet.size > 0) {
+        throw new ExtensionError(
+          `Invalid frame IDs: [${Array.from(frameIdsSet).join(", ")}].`
+        );
+      }
     }
 
     let promises = Array.from(byProcess.entries(), ([proc, windows]) =>
@@ -789,6 +812,8 @@ class TabBase {
     results = results.flat();
 
     if (!results.length) {
+      
+      
       let errorMessage = "Missing host permission for the tab";
       if (!frameIds || frameIds.length > 1 || frameIds[0] !== 0) {
         errorMessage += " or frames";
