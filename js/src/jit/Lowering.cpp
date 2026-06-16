@@ -8935,20 +8935,10 @@ void LIRGenerator::visitWasmMulI64WideHI64(MWasmMulI64WideHI64* ins) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   LWasmMulI64WideHI64* lir = new (alloc())
-      LWasmMulI64WideHI64(useFixed(ins->lhs(), rax), useRegister(ins->rhs()),
-                          tempFixed(rdx), ins->isSigned());
-  defineFixed(lir, ins, LAllocation(AnyRegister(rax)));
+      LWasmMulI64WideHI64(useFixed(ins->lhs(), rax), useFixed(ins->rhs(), rdx),
+                          temp(), temp(), ins->isSigned());
+  define(lir, ins);
 #elif defined(JS_64BIT)
   
   LWasmMulI64WideHI64* lir = new (alloc()) LWasmMulI64WideHI64(

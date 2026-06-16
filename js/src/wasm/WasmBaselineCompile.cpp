@@ -7280,38 +7280,27 @@ bool BaseCompiler::emitI64MulWide(bool isSigned) {
 #ifdef JS_CODEGEN_X64
   
   
-  
-  
   need2xI64(specific_.rax, specific_.rdx);
   RegI64 y = popI64ToSpecific(specific_.rdx);
   RegI64 x = popI64ToSpecific(specific_.rax);
-  RegI64 temp = needI64();
-  MOZ_ASSERT(temp.reg != x.reg && temp.reg != y.reg);
+  RegI64 temp0 = needI64();
+  RegI64 temp1 = needI64();
+  RegI64 temp2 = needI64();
 
   
-  
-  masm.move64(x, temp);
-  masm.mul64(y, temp);
-  pushI64(temp);  
+  masm.move64(x, temp0);
+  masm.mul64(y, temp0);
+  pushI64(temp0);  
 
-  temp = needI64();
-  MOZ_ASSERT(x.reg == rax);
-  MOZ_ASSERT(y.reg == rdx);
-  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
-  masm.move64(y, temp);
+  temp0 = needI64();
+  masm.wasmMulI64WideHI64(x.reg, y.reg, temp1.reg, temp2.reg, temp0.reg,
+                          isSigned);
+  pushI64(temp0);  
 
-  
-  
-  
-  masm.wasmMulI64WideHI64(temp.reg, isSigned);
-  free(temp);
-  temp = needI64();
-  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
-  masm.move64(x , temp);
-  pushI64(temp);  
-
-  free(y);
+  free(temp1);
+  free(temp2);
   free(x);
+  free(y);
 
 #elif JS_64BIT
   

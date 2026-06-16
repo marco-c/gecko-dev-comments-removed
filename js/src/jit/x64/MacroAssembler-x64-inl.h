@@ -1139,17 +1139,21 @@ void MacroAssembler::wasmAddSubI128HI64(Register lhsLo, Register lhsHi,
   }
 }
 
-
-
-
-void MacroAssembler::wasmMulI64WideHI64(Register rhs, bool isSigned) {
-  MOZ_RELEASE_ASSERT(rhs != rax && rhs != rdx);
-  if (isSigned) {
-    imulq(rhs);
-  } else {
-    umulq(rhs);
+void MacroAssembler::wasmMulI64WideHI64(Register lhs, Register rhs,
+                                        Register temp0, Register temp1,
+                                        Register output, bool isSigned) {
+  
+  const Register regs[5] = {lhs, rhs, temp0, temp1, output};
+  for (uint32_t i = 0; i < 5; i++) {
+    for (uint32_t j = 0; j < i; j++) {
+      MOZ_RELEASE_ASSERT(regs[i] != regs[j]);
+    }
   }
   
+  MOZ_RELEASE_ASSERT(lhs == rax);
+  MOZ_RELEASE_ASSERT(rhs == rdx);
+  
+
   
   
   
@@ -1157,7 +1161,38 @@ void MacroAssembler::wasmMulI64WideHI64(Register rhs, bool isSigned) {
   
   
   
-  movq(rdx, rax);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  movq(rax, temp0);
+  movq(rdx, temp1);
+  if (isSigned) {
+    imulq(rdx);
+  } else {
+    umulq(rdx);
+  }
+  movq(rdx, output);
+  movq(temp0, rax);
+  movq(temp1, rdx);
 }
 
 
