@@ -49,6 +49,8 @@ async function assertSectionDisabled(win) {
     "Disabled notice is visible when both settings are not Firefox Home"
   );
 
+  
+  const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
     "weather",
@@ -57,6 +59,7 @@ async function assertSectionDisabled(win) {
     "stories",
     "supportFirefox",
     "recentActivity",
+    ...(novaEnabled ? ["firefoxLogo"] : []),
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(

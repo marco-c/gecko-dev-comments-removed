@@ -43,6 +43,8 @@ async function assertSectionEnabled(win) {
     "Message bar is hidden when New windows is Firefox Home"
   );
 
+  
+  const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
     "weather",
@@ -51,6 +53,7 @@ async function assertSectionEnabled(win) {
     "stories",
     "supportFirefox",
     "recentActivity",
+    ...(novaEnabled ? ["firefoxLogo"] : []),
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(
