@@ -13,6 +13,8 @@
 
 #include <stddef.h>
 
+#include <cstdint>
+#include <span>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -70,6 +72,12 @@ size_t ComputeDigest(absl::string_view alg,
                      size_t in_len,
                      void* output,
                      size_t out_len);
+inline size_t ComputeDigest(absl::string_view alg,
+                            std::span<const uint8_t> input,
+                            std::span<uint8_t> output) {
+  return ComputeDigest(alg, input.data(), input.size(), output.data(),
+                       output.size());
+}
 
 
 std::string ComputeDigest(MessageDigest* digest, absl::string_view input);
@@ -111,6 +119,20 @@ size_t ComputeHmac(absl::string_view alg,
                    size_t in_len,
                    void* output,
                    size_t out_len);
+inline size_t ComputeHmac(absl::string_view alg,
+                          std::span<const uint8_t> key,
+                          std::span<const uint8_t> input,
+                          std::span<uint8_t> output) {
+  return ComputeHmac(alg, key.data(), key.size(), input.data(), input.size(),
+                     output.data(), output.size());
+}
+inline size_t ComputeHmac(absl::string_view alg,
+                          absl::string_view key,
+                          std::span<const uint8_t> input,
+                          std::span<uint8_t> output) {
+  return ComputeHmac(alg, key.data(), key.size(), input.data(), input.size(),
+                     output.data(), output.size());
+}
 
 
 std::string ComputeHmac(MessageDigest* digest,
@@ -130,23 +152,5 @@ bool ComputeHmac(absl::string_view alg,
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::ComputeDigest;
-using ::webrtc::ComputeHmac;
-using ::webrtc::DIGEST_MD5;
-using ::webrtc::DIGEST_SHA_1;
-using ::webrtc::DIGEST_SHA_224;
-using ::webrtc::DIGEST_SHA_256;
-using ::webrtc::DIGEST_SHA_384;
-using ::webrtc::DIGEST_SHA_512;
-using ::webrtc::IsFips180DigestAlgorithm;
-using ::webrtc::MD5;
-using ::webrtc::MessageDigest;
-using ::webrtc::MessageDigestFactory;
-}  
-#endif  
 
 #endif  

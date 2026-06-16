@@ -18,6 +18,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -188,6 +189,13 @@ class RTC_EXPORT Port : public PortInterface {
   
   IceRole GetIceRole() const override;
   void SetIceRole(IceRole role) override;
+
+  
+
+
+
+
+
 
   void SetIceTiebreaker(uint64_t tiebreaker) override;
   uint64_t IceTiebreaker() const override;
@@ -434,19 +442,21 @@ class RTC_EXPORT Port : public PortInterface {
                             const std::string& rf,
                             bool port_muxed) override;
 
-  [[deprecated("Use SubscribeReadPacket(const void* tag, ...)")]]
-  void SubscribeReadPacket(
+  
+  
+  [[deprecated("Use tagged version with span")]] void SubscribeReadPacket(
       absl::AnyInvocable<
           void(PortInterface*, const char*, size_t, const SocketAddress&)>
           callback) override;
+
   void SubscribeReadPacket(
       const void* tag,
-      absl::AnyInvocable<
-          void(PortInterface*, const char*, size_t, const SocketAddress&)>
-          callback) override;
+      absl::AnyInvocable<void(PortInterface*,
+                              std::span<const uint8_t>,
+                              const SocketAddress&)> callback) override;
+
   void NotifyReadPacket(PortInterface* prot,
-                        const char* data,
-                        size_t size,
+                        std::span<const uint8_t> data,
                         const SocketAddress& remote_address) override;
 
   [[deprecated("Use SubscribeSentPacket(const void* tag, ...)")]]
@@ -497,12 +507,10 @@ class RTC_EXPORT Port : public PortInterface {
   
   
   
-  bool GetStunMessage(const char* data,
-                      size_t size,
+  bool GetStunMessage(std::span<const uint8_t> data,
                       const SocketAddress& addr,
                       std::unique_ptr<IceMessage>* out_msg,
                       std::string* out_username) override;
-
   
   bool IsCompatibleAddress(const SocketAddress& addr);
 
@@ -622,7 +630,7 @@ class RTC_EXPORT Port : public PortInterface {
                const std::string&,
                bool>
       unknown_address_callbacks_;
-  CallbackList<PortInterface*, const char*, size_t, const SocketAddress&>
+  CallbackList<PortInterface*, std::span<const uint8_t>, const SocketAddress&>
       read_packet_callbacks_;
   CallbackList<const SentPacketInfo&> sent_packet_callbacks_;
 

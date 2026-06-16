@@ -16,9 +16,12 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
@@ -32,6 +35,7 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/span_helpers.h"
 
 namespace webrtc {
 
@@ -48,7 +52,7 @@ class PortInterface {
   virtual ~PortInterface();
 
   virtual IceCandidateType Type() const = 0;
-  virtual const ::webrtc::Network* Network() const = 0;
+  virtual const Network* Network() const = 0;
 
   
   virtual void SetIceRole(IceRole role) = 0;
@@ -87,11 +91,33 @@ class PortInterface {
 
   
   
-  virtual int SendTo(const void* data,
-                     size_t size,
+  virtual int SendTo(std::span<const uint8_t> data,
                      const SocketAddress& addr,
                      const AsyncSocketPacketOptions& options,
-                     bool payload) = 0;
+                     bool payload) {
+    
+    
+    
+    
+    
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return SendTo(data.data(), data.size(), addr, options, payload);
+#pragma clang diagnostic pop
+  }
+
+  
+  
+  [[deprecated("Use version with span")]] virtual int SendTo(
+      const void* data,
+      size_t size,
+      const SocketAddress& addr,
+      const AsyncSocketPacketOptions& options,
+      bool payload) {
+    return SendTo(AsUint8Span(std::span(static_cast<const char*>(data), size)),
+                  addr, options, payload);
+  }
 
   
   
@@ -143,20 +169,36 @@ class PortInterface {
   
   
   virtual void EnablePortPackets() = 0;
-  [[deprecated("Use SubscribeReadPacket(const void* tag, ...)")]]
+  virtual void SubscribeReadPacket(
+      const void* tag,
+      absl::AnyInvocable<void(PortInterface*,
+                              std::span<const uint8_t>,
+                              const SocketAddress&)> callback) = 0;
+
+  ABSL_DEPRECATE_AND_INLINE()
   virtual void SubscribeReadPacket(
       absl::AnyInvocable<
           void(PortInterface*, const char*, size_t, const SocketAddress&)>
-          callback) = 0;
+          callback) {
+    SubscribeReadPacket(nullptr, std::move(callback));
+  }
+
+  ABSL_DEPRECATE_AND_INLINE()
   virtual void SubscribeReadPacket(
       const void* tag,
       absl::AnyInvocable<
           void(PortInterface*, const char*, size_t, const SocketAddress&)>
-          callback) = 0;
+          callback) {
+    SubscribeReadPacket(
+        tag, [cb = std::move(callback)](PortInterface* port,
+                                        std::span<const uint8_t> data,
+                                        const SocketAddress& addr) mutable {
+          cb(port, AsCharSpan(data).data(), data.size(), addr);
+        });
+  }
   virtual void NotifyReadPacket(PortInterface* port_interface,
-                                const char*,
-                                size_t,
-                                const SocketAddress&) = 0;
+                                std::span<const uint8_t> data,
+                                const SocketAddress& addr) = 0;
 
   
   [[deprecated("Use SubscribeSentPacket(const void* tag, ...)")]]
@@ -208,8 +250,7 @@ class PortInterface {
   
   
   
-  virtual bool GetStunMessage(const char* data,
-                              size_t size,
+  virtual bool GetStunMessage(std::span<const uint8_t> data,
                               const SocketAddress& addr,
                               std::unique_ptr<IceMessage>* out_msg,
                               std::string* out_username) = 0;
