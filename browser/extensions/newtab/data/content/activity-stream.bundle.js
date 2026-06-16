@@ -22698,7 +22698,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     }, external_React_default().createElement("label", {
       "data-l10n-id": "newtab-customize-panel-icon-button-label"
     }), external_React_default().createElement("div", null, external_React_default().createElement("img", {
-      role: "presentation",
+      alt: "",
       src: "chrome://global/skin/icons/edit-outline.svg"
     })))), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.dialogRef,
