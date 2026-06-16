@@ -1328,21 +1328,6 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
 
   
   
-  
-  
-  
-  if ((response->GetUnfilteredStatus() == 206 ||
-       response->GetUnfilteredStatus() == 416) &&
-      mRequest->GetResponseTainting() == LoadTainting::Opaque) {
-    IgnoredErrorResult rv;
-    if (!mRequest->Headers()->Has("Range"_ns, rv)) {
-      FailWithNetworkError(NS_ERROR_UNEXPECTED);
-      return NS_ERROR_UNEXPECTED;
-    }
-  }
-
-  
-  
   mResponse =
       BeginAndGetFilteredResponse(std::move(response), foundOpaqueRedirect);
   if (NS_WARN_IF(!mResponse)) {
