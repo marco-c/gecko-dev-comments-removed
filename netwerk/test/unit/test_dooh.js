@@ -254,7 +254,7 @@ add_task(async function retryConfigOnConnectivityChange() {
   );
   [, status] = await configPromise;
   equal(status, "success");
-
+  Services.dns.clearCache(true);
   await new TRRDNSListener("example3.com", "2.2.2.2");
 
   
