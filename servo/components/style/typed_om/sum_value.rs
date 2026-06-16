@@ -181,9 +181,17 @@ impl SumValue {
             },
 
             
-            NumericValue::Math(MathValue::Negate(_math_negate)) => {
+            NumericValue::Math(MathValue::Negate(math_negate)) => {
                 
-                Err(())
+                let mut values = SumValue::try_from_numeric_value(math_negate)?.0;
+
+                
+                for item in &mut values {
+                    item.value = -item.value;
+                }
+
+                
+                Ok(Self(values))
             },
 
             
