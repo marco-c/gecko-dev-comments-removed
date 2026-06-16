@@ -678,6 +678,23 @@ private:
       return cast<FunctionDecl>(Decl)->getNameAsString();
     }
 
+#if CLANG_VERSION_MAJOR >= 21
+    
+    
+    
+    
+    if (const CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(Decl)) {
+      if (MD->getParent()->isLambda()) {
+        for (const DeclContext *DC = MD->getParent()->getDeclContext(); DC;
+             DC = DC->getParent()) {
+          if (DC->isRequiresExprBody()) {
+            return std::string("L_") + mangleLocation(Decl->getLocation());
+          }
+        }
+      }
+    }
+#endif
+
     if (isa<FunctionDecl>(Decl) || isa<VarDecl>(Decl)) {
       const DeclContext *DC = Decl->getDeclContext();
       if (isa<TranslationUnitDecl>(DC) || isa<NamespaceDecl>(DC) ||
@@ -1579,7 +1596,11 @@ public:
       QualType CanonicalFieldType = FieldType.getCanonicalType();
       LangOptions langOptions;
       PrintingPolicy Policy(langOptions);
+#if CLANG_VERSION_MAJOR >= 21
+      Policy.PrintAsCanonical = true;
+#else
       Policy.PrintCanonicalTypes = true;
+#endif
       J.attribute("type", typeToString(CanonicalFieldType, Policy));
 
       const TagDecl *tagDecl = CanonicalFieldType->getAsTagDecl();
