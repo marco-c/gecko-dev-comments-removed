@@ -396,10 +396,10 @@ class WaylandSurface final {
   
   bool ConfigureScaleLocked(const WaylandSurfaceLock& aProofOfLock,
                             ScaleType aScaleType, bool aSetProtocolHandler);
-  bool ConfigureCoordinateScaleLocked(
-      const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler);
-  bool ConfigureFractionalScaleLocked(
-      const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler);
+  bool ConfigureCoordinateScaleLocked(const WaylandSurfaceLock& aProofOfLock,
+                                      bool aSetProtocolHandler);
+  bool ConfigureFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock,
+                                      bool aSetProtocolHandler);
 
   
   
