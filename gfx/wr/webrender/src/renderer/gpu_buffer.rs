@@ -10,12 +10,13 @@
 use std::i32;
 
 use crate::gpu_types::UvRectKind;
-use crate::internal_types::{FrameId, FrameMemory, FrameVec};
+use crate::internal_types::{FrameId, FrameMemory, FrameVec, TextureSource, TextureSourceExternal};
 use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use crate::util::ScaleOffset;
 use api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceRect, LayoutRect, PictureRect};
 use api::{PremultipliedColorF, ImageFormat};
 use crate::device::Texel;
+use crate::render_task::{RenderTaskLocation, StaticRenderTaskSurface};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
 
 pub struct GpuBufferBuilder {
@@ -486,8 +487,38 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
         
         
         
+        let mut deferred_uv_copies = Vec::new();
         for block in self.deferred.drain(..) {
             let render_task = &render_tasks[block.task_id];
+
+            
+            
+            
+            
+            
+            if let RenderTaskLocation::Static {
+                surface: StaticRenderTaskSurface::ReadOnly {
+                    source: TextureSource::External(TextureSourceExternal { normalized_uvs, .. }),
+                },
+                ..
+            } = render_task.location {
+                
+                
+                
+                let uv_scale = if normalized_uvs {
+                    let size = render_task.get_target_rect().size();
+                    [size.width as f32, size.height as f32]
+                } else {
+                    [1.0, 1.0]
+                };
+                deferred_uv_copies.push(DeferredUvCopy {
+                    src: render_task.get_texture_address().as_u32(),
+                    dst: block.index as u32,
+                    uv_scale,
+                });
+                continue;
+            }
+
             let mut target_rect = render_task.get_target_rect();
             if block.task_id.has_sub_rect() {
                 let sub = &render_tasks.sub_rects[block.task_id.sub_rect_index as usize];
@@ -523,6 +554,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
             data: self.data,
             size: DeviceIntSize::new(MAX_VERTEX_TEXTURE_WIDTH as i32, (len / MAX_VERTEX_TEXTURE_WIDTH) as i32),
             format: T::image_format(),
+            deferred_uv_copies,
             epoch: self.epoch,
         }
     }
@@ -584,13 +616,54 @@ fn finish_row<T: Default>(data: &mut FrameVec<T>) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, Copy, Debug)]
+pub struct DeferredUvCopy {
+    pub src: u32,
+    pub dst: u32,
+    
+    
+    
+    
+    pub uv_scale: [f32; 2],
+}
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBuffer<T> {
     pub data: FrameVec<T>,
     pub size: DeviceIntSize,
     pub format: ImageFormat,
+    pub deferred_uv_copies: Vec<DeferredUvCopy>,
     epoch: u32,
+}
+
+impl GpuBuffer<GpuBufferBlockF> {
+    
+    
+    pub fn apply_deferred_uv_copies(&mut self) {
+        for i in 0 .. self.deferred_uv_copies.len() {
+            let copy = self.deferred_uv_copies[i];
+            
+            let mut uv = self.data[copy.src as usize].data;
+            uv[0] *= copy.uv_scale[0];
+            uv[1] *= copy.uv_scale[1];
+            uv[2] *= copy.uv_scale[0];
+            uv[3] *= copy.uv_scale[1];
+            self.data[copy.dst as usize] = uv.into();
+        }
+    }
 }
 
 impl<T> GpuBuffer<T> {
