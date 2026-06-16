@@ -3138,13 +3138,12 @@ toolbar#nav-bar {
             )
 
             expected = None
-            if crashAsPass or crash_count > 0:
+            if crashAsPass:
                 
                 if self.message_logger.is_test_running:
                     
                     expected = "CRASH"
-                if crashAsPass:
-                    status = 0
+                status = 0
             elif crash_count or zombieProcesses:
                 if self.message_logger.is_test_running:
                     expected = "PASS"
