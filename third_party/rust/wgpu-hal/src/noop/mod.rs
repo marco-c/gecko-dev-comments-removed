@@ -262,7 +262,7 @@ impl crate::Queue for Context {
         &self,
         command_buffers: &[&CommandBuffer],
         surface_textures: &[&Resource],
-        (fence, fence_value): (&mut Fence, crate::FenceValue),
+        (fence, fence_value): (&Fence, crate::FenceValue),
     ) -> DeviceResult<()> {
         
         for cb in command_buffers {
@@ -285,6 +285,10 @@ impl crate::Queue for Context {
 
     unsafe fn get_timestamp_period(&self) -> f32 {
         1.0
+    }
+
+    unsafe fn wait_for_idle(&self) -> Result<(), crate::DeviceError> {
+        Ok(())
     }
 }
 

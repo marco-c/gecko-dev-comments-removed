@@ -220,8 +220,6 @@
     
     clippy::vec_init_then_push,
     
-    clippy::non_send_fields_in_send_ty,
-    
     clippy::missing_safety_doc,
     
     clippy::pattern_type_mismatch,
@@ -636,6 +634,9 @@ pub trait Api: Clone + fmt::Debug + Sized + WasmNotSendSync + 'static {
     
     
     
+    
+    
+    
     type Fence: DynFence;
 
     type BindGroupLayout: DynBindGroupLayout;
@@ -692,6 +693,8 @@ pub trait Surface: WasmNotSendSync {
     
     unsafe fn unconfigure(&self, device: &<Self::A as Api>::Device);
 
+    
+    
     
     
     
@@ -1247,7 +1250,7 @@ pub trait Queue: WasmNotSendSync {
         &self,
         command_buffers: &[&<Self::A as Api>::CommandBuffer],
         surface_textures: &[&<Self::A as Api>::SurfaceTexture],
-        signal_fence: (&mut <Self::A as Api>::Fence, FenceValue),
+        signal_fence: (&<Self::A as Api>::Fence, FenceValue),
     ) -> Result<(), DeviceError>;
     
     

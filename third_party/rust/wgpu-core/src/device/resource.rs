@@ -41,7 +41,7 @@ use crate::{
         TextureInitTrackerAction,
     },
     instance::{Adapter, RequestDeviceError},
-    lock::{rank, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard},
+    lock::{rank, Mutex, RwLock},
     pipeline::{self, ColorStateError},
     pool::ResourcePool,
     present,
@@ -229,9 +229,7 @@ pub struct Device {
     
     pub(crate) last_successful_submission_index: hal::AtomicFenceValue,
 
-    
-    
-    pub(crate) fence: RwLock<ManuallyDrop<Box<dyn hal::DynFence>>>,
+    pub(crate) fence: ManuallyDrop<Box<dyn hal::DynFence>>,
     pub(crate) snatchable_lock: SnatchLock,
 
     
@@ -288,9 +286,6 @@ pub struct Device {
     pub(crate) trace: Mutex<Option<Box<dyn trace::Trace + Send + Sync + 'static>>>,
 }
 
-pub(crate) type FenceReadGuard<'a> = RwLockReadGuard<'a, ManuallyDrop<Box<dyn hal::DynFence>>>;
-pub(crate) type FenceWriteGuard<'a> = RwLockWriteGuard<'a, ManuallyDrop<Box<dyn hal::DynFence>>>;
-
 pub(crate) enum DeferredDestroy {
     TextureViews(WeakVec<TextureView>),
     BindGroups(WeakVec<BindGroup>),
@@ -321,7 +316,7 @@ impl Drop for Device {
         let default_external_texture_params_buffer =
             unsafe { ManuallyDrop::take(&mut self.default_external_texture_params_buffer) };
         
-        let fence = unsafe { ManuallyDrop::take(&mut self.fence.write()) };
+        let fence = unsafe { ManuallyDrop::take(&mut self.fence) };
         if let Some(indirect_validation) = self.indirect_validation.take() {
             indirect_validation.dispose(self.raw.as_ref());
         }
@@ -541,7 +536,7 @@ impl Device {
                 },
             ),
             last_successful_submission_index: AtomicU64::new(0),
-            fence: RwLock::new(rank::DEVICE_FENCE, ManuallyDrop::new(fence)),
+            fence: ManuallyDrop::new(fence),
             snatchable_lock: unsafe { SnatchLock::new(rank::DEVICE_SNATCHABLE_LOCK) },
             valid: AtomicBool::new(true),
             device_lost_closure: Mutex::new(rank::DEVICE_LOST_CLOSURE, None),
@@ -799,8 +794,7 @@ impl Device {
         poll_type: wgt::PollType<crate::SubmissionIndex>,
     ) -> (UserClosures, Result<wgt::PollStatus, WaitIdleError>) {
         let snatch_guard = self.snatchable_lock.read();
-        let fence = self.fence.read();
-        let maintain_result = self.maintain(fence, poll_type, snatch_guard);
+        let maintain_result = self.maintain(poll_type, snatch_guard);
 
         self.lose_if_oom();
 
@@ -830,7 +824,6 @@ impl Device {
     
     pub(crate) fn maintain<'this>(
         &'this self,
-        fence: FenceReadGuard<'_>,
         poll_type: wgt::PollType<crate::SubmissionIndex>,
         snatch_guard: SnatchGuard,
     ) -> (UserClosures, Result<wgt::PollStatus, WaitIdleError>) {
@@ -882,7 +875,7 @@ impl Device {
 
             let wait_result = unsafe {
                 self.raw()
-                    .wait(fence.as_ref(), target_submission_index, wait_timeout)
+                    .wait(self.fence.as_ref(), target_submission_index, wait_timeout)
             };
 
             
@@ -895,7 +888,7 @@ impl Device {
 
         
         
-        let fence_value_result = unsafe { self.raw().get_fence_value(fence.as_ref()) };
+        let fence_value_result = unsafe { self.raw().get_fence_value(self.fence.as_ref()) };
         let current_finished_submission = match fence_value_result {
             Ok(fence_value) => fence_value,
             Err(e) => {
@@ -903,6 +896,15 @@ impl Device {
                 return (user_closures, Err(hal_error));
             }
         };
+
+        
+        let command_indices = self.command_indices.read();
+        
+        
+        
+        
+        let device_valid = self.is_valid();
+        drop(command_indices);
 
         
         
@@ -974,7 +976,7 @@ impl Device {
         
         
         let mut should_release_gpu_resource = false;
-        if !self.is_valid() && queue_empty {
+        if !device_valid && queue_empty {
             
             
             should_release_gpu_resource = true;
@@ -991,9 +993,6 @@ impl Device {
                     });
             }
         }
-
-        
-        drop(fence);
 
         if should_release_gpu_resource {
             self.release_gpu_resources();
@@ -4965,13 +4964,11 @@ impl Device {
         &self,
         submission_index: crate::SubmissionIndex,
     ) -> Result<(), DeviceError> {
-        let fence = self.fence.read();
-        let last_done_index = unsafe { self.raw().get_fence_value(fence.as_ref()) }
+        let last_done_index = unsafe { self.raw().get_fence_value(self.fence.as_ref()) }
             .map_err(|e| self.handle_hal_error(e))?;
         if last_done_index < submission_index {
-            unsafe { self.raw().wait(fence.as_ref(), submission_index, None) }
+            unsafe { self.raw().wait(self.fence.as_ref(), submission_index, None) }
                 .map_err(|e| self.handle_hal_error(e))?;
-            drop(fence);
             if let Some(queue) = self.get_queue() {
                 let closures = queue.lock_life().triage_submissions(submission_index);
                 assert!(
@@ -5224,11 +5221,10 @@ impl Device {
 
                 
                 let snatch_guard = self.snatchable_lock.read();
-                let fence = self.fence.read();
 
                 let maintain_result;
                 (user_callbacks, maintain_result) =
-                    self.maintain(fence, wgt::PollType::wait_indefinitely(), snatch_guard);
+                    self.maintain(wgt::PollType::wait_indefinitely(), snatch_guard);
 
                 match maintain_result {
                     

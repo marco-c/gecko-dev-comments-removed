@@ -26,6 +26,21 @@ pub struct BlasTriangleGeometrySizeDescriptor {
     pub flags: AccelerationStructureGeometryFlags,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+
+
+
+pub struct BlasAABBGeometrySizeDescriptor {
+    
+    pub primitive_count: u32,
+    
+    pub flags: AccelerationStructureGeometryFlags,
+}
+
+
+pub const AABB_GEOMETRY_MIN_STRIDE: crate::BufferAddress = 24;
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 
@@ -34,6 +49,11 @@ pub enum BlasGeometrySizeDescriptors {
     Triangles {
         
         descriptors: Vec<BlasTriangleGeometrySizeDescriptor>,
+    },
+    
+    AABBs {
+        
+        descriptors: Vec<BlasAABBGeometrySizeDescriptor>,
     },
 }
 
@@ -66,7 +86,7 @@ pub struct CreateBlasDescriptor<L> {
 
 impl<L> CreateBlasDescriptor<L> {
     
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CreateBlasDescriptor<K> {
+    pub fn map_label<'a, K>(&'a self, fun: impl FnOnce(&'a L) -> K) -> CreateBlasDescriptor<K> {
         CreateBlasDescriptor {
             label: fun(&self.label),
             flags: self.flags,
@@ -92,7 +112,7 @@ pub struct CreateTlasDescriptor<L> {
 
 impl<L> CreateTlasDescriptor<L> {
     
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CreateTlasDescriptor<K> {
+    pub fn map_label<'a, K>(&'a self, fun: impl FnOnce(&'a L) -> K) -> CreateTlasDescriptor<K> {
         CreateTlasDescriptor {
             label: fun(&self.label),
             flags: self.flags,

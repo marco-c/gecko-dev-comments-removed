@@ -4,13 +4,12 @@ use alloc::sync::Arc;
 use hal::DynResource;
 
 use crate::{
-    device::Device,
     global::Global,
     id::{
         AdapterId, BlasId, BufferId, CommandEncoderId, DeviceId, QueueId, SurfaceId, TextureId,
         TextureViewId, TlasId,
     },
-    lock::{RankData, RwLockReadGuard},
+    lock::RankData,
     resource::RawResourceAccess,
     snatch::SnatchGuard,
 };
@@ -154,73 +153,6 @@ where
 {
 }
 
-
-struct FenceGuard<Fence> {
-    device: Arc<Device>,
-    fence_lock_rank_data: ManuallyDrop<RankData>,
-    ptr: *const Fence,
-}
-
-impl<Fence> FenceGuard<Fence>
-where
-    Fence: 'static,
-{
-    
-    
-    
-    
-    pub fn new(device: Arc<Device>) -> Option<Self> {
-        
-        let fence_guard = device.fence.read();
-
-        
-        
-        let ptr: *const Fence = fence_guard.as_any().downcast_ref::<Fence>()?;
-
-        
-        
-        let fence_lock_rank_data = RwLockReadGuard::forget(fence_guard);
-
-        
-        
-        Some(Self {
-            device,
-            fence_lock_rank_data: ManuallyDrop::new(fence_lock_rank_data),
-            ptr,
-        })
-    }
-}
-
-impl<Fence> Deref for FenceGuard<Fence> {
-    type Target = Fence;
-
-    fn deref(&self) -> &Self::Target {
-        
-        
-        
-        unsafe { &*self.ptr }
-    }
-}
-
-impl<Fence> Drop for FenceGuard<Fence> {
-    fn drop(&mut self) {
-        
-        
-        let data = unsafe { ManuallyDrop::take(&mut self.fence_lock_rank_data) };
-
-        
-        
-        
-        
-        unsafe {
-            self.device.fence.force_unlock_read(data);
-        };
-    }
-}
-
-unsafe impl<Fence> Send for FenceGuard<Fence> where Fence: Send {}
-unsafe impl<Fence> Sync for FenceGuard<Fence> where Fence: Sync {}
-
 impl Global {
     
     
@@ -312,7 +244,7 @@ impl Global {
 
         let device = self.hub.devices.get(id);
 
-        FenceGuard::new(device)
+        SimpleResourceGuard::new(device, move |device| device.fence.as_any().downcast_ref())
     }
 
     

@@ -141,7 +141,10 @@ pub struct ExternalTextureDescriptor<L> {
 impl<L> ExternalTextureDescriptor<L> {
     
     #[must_use]
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> ExternalTextureDescriptor<K> {
+    pub fn map_label<'a, K>(
+        &'a self,
+        fun: impl FnOnce(&'a L) -> K,
+    ) -> ExternalTextureDescriptor<K> {
         ExternalTextureDescriptor {
             label: fun(&self.label),
             width: self.width,

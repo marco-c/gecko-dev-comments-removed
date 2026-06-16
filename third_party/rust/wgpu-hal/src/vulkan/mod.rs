@@ -1164,12 +1164,27 @@ pub enum Fence {
     
     
     
-    FencePool {
-        last_completed: crate::FenceValue,
-        
-        active: Vec<(crate::FenceValue, vk::Fence)>,
-        free: Vec<vk::Fence>,
-    },
+    
+    
+    
+    
+    FencePool(RwLock<FencePool>),
+}
+
+
+
+
+
+
+pub(super) type SynchronizedFence = Arc<vk::Fence>;
+
+#[derive(Debug)]
+pub struct FencePool {
+    last_completed: crate::FenceValue,
+    
+    active: Vec<(crate::FenceValue, SynchronizedFence)>,
+    
+    free: Vec<vk::Fence>,
 }
 
 impl crate::DynFence for Fence {}
@@ -1186,13 +1201,15 @@ impl Fence {
     fn check_active(
         device: &ash::Device,
         mut last_completed: crate::FenceValue,
-        active: &[(crate::FenceValue, vk::Fence)],
+        active: &[(crate::FenceValue, SynchronizedFence)],
     ) -> Result<crate::FenceValue, crate::DeviceError> {
-        for &(value, raw) in active.iter() {
+        for &(value, ref raw) in active.iter() {
             unsafe {
                 if value > last_completed
                     && device
-                        .get_fence_status(raw)
+                        
+                        
+                        .get_fence_status(**raw)
                         .map_err(map_host_device_oom_and_lost_err)?
                 {
                     last_completed = value;
@@ -1221,11 +1238,14 @@ impl Fence {
                         .map_err(map_host_device_oom_and_lost_err)?,
                 })
             },
-            Self::FencePool {
-                last_completed,
-                ref active,
-                free: _,
-            } => Self::check_active(device, last_completed, active),
+            Self::FencePool(ref pool) => {
+                let FencePool {
+                    last_completed,
+                    ref active,
+                    free: _,
+                } = *pool.read();
+                Self::check_active(device, last_completed, active)
+            }
         }
     }
 
@@ -1241,23 +1261,35 @@ impl Fence {
     
     
     
-    fn maintain(&mut self, device: &ash::Device) -> Result<(), crate::DeviceError> {
+    fn maintain(&self, device: &ash::Device) -> Result<(), crate::DeviceError> {
         match *self {
             Self::TimelineSemaphore(_) => {}
-            Self::FencePool {
-                ref mut last_completed,
-                ref mut active,
-                ref mut free,
-            } => {
-                let latest = Self::check_active(device, *last_completed, active)?;
+            Self::FencePool(ref pool) => {
+                let FencePool {
+                    ref mut last_completed,
+                    ref mut active,
+                    ref mut free,
+                } = *pool.write();
+
                 let base_free = free.len();
-                for &(value, raw) in active.iter() {
-                    if value <= latest {
-                        free.push(raw);
+                let latest = Self::check_active(device, *last_completed, active)?;
+
+                active.retain_mut(|&mut (value, ref mut fence)| {
+                    if value > latest {
+                        true
+                    } else if let Some(fence) = Arc::get_mut(fence) {
+                        
+                        
+                        free.push(*fence);
+                        false
+                    } else {
+                        
+                        
+                        true
                     }
-                }
+                });
+
                 if free.len() != base_free {
-                    active.retain(|&(value, _)| value > latest);
                     unsafe { device.reset_fences(&free[base_free..]) }
                         .map_err(map_device_oom_err)?
                 }
@@ -1275,7 +1307,7 @@ impl crate::Queue for Queue {
         &self,
         command_buffers: &[&CommandBuffer],
         surface_textures: &[&SurfaceTexture],
-        (signal_fence, signal_value): (&mut Fence, crate::FenceValue),
+        (signal_fence, signal_value): (&Fence, crate::FenceValue),
     ) -> Result<(), crate::DeviceError> {
         let mut fence_raw = vk::Fence::null();
 
@@ -1343,25 +1375,33 @@ impl crate::Queue for Queue {
 
         
         signal_fence.maintain(&self.device.raw)?;
+        
+        
+        
+        let shared_fence;
         match *signal_fence {
             Fence::TimelineSemaphore(raw) => {
                 signal_semaphores.push_signal(SemaphoreType::Timeline(raw, signal_value));
             }
-            Fence::FencePool {
-                ref mut active,
-                ref mut free,
-                ..
-            } => {
-                fence_raw = match free.pop() {
-                    Some(raw) => raw,
+            Fence::FencePool(ref pool) => {
+                let FencePool {
+                    ref mut active,
+                    ref mut free,
+                    ..
+                } = *pool.write();
+                shared_fence = match free.pop() {
+                    Some(raw) => Arc::new(raw),
                     None => unsafe {
-                        self.device
+                        let fence = self
+                            .device
                             .raw
                             .create_fence(&vk::FenceCreateInfo::default(), None)
-                            .map_err(map_host_device_oom_err)?
+                            .map_err(map_host_device_oom_err)?;
+                        Arc::new(fence)
                     },
                 };
-                active.push((signal_value, fence_raw));
+                fence_raw = *shared_fence;
+                active.push((signal_value, shared_fence.clone()));
             }
         }
 

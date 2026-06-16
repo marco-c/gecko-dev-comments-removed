@@ -24,7 +24,7 @@ use crate::{
         CommandAllocator, CommandBuffer, CommandEncoder, CommandEncoderError, CopySide,
         TransferError,
     },
-    device::{DeviceError, FenceReadGuard, FenceWriteGuard, WaitIdleError},
+    device::{DeviceError, WaitIdleError},
     get_lowest_common_denom,
     global::Global,
     hal_label,
@@ -227,6 +227,13 @@ impl Queue {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn maintain(
         &self,
         submission_index: u64,
@@ -575,7 +582,6 @@ impl WebGpuError for QueueSubmitError {
 pub(crate) struct PendingSubmission<'a> {
     queue: &'a Queue,
     snatch_guard: SnatchGuard<'a>,
-    fence: FenceWriteGuard<'a>,
     command_index_guard: RwLockWriteGuard<'a, CommandIndices>,
     
     pub executions: Vec<EncoderInFlight>,
@@ -587,7 +593,6 @@ pub(crate) struct PendingSubmission<'a> {
 }
 
 pub(crate) struct SubmissionResult<'a> {
-    pub fence: FenceReadGuard<'a>,
     pub snatch_guard: SnatchGuard<'a>,
 }
 
@@ -1494,10 +1499,7 @@ impl Queue {
 
             let pending_writes = self.pending_writes.lock();
 
-            let SubmissionResult {
-                fence,
-                snatch_guard,
-            } = match submission.submit(pending_writes) {
+            let SubmissionResult { snatch_guard } = match submission.submit(pending_writes) {
                 Ok(result) => result,
                 Err(e) => break 'error Err(e.into()),
             };
@@ -1507,9 +1509,7 @@ impl Queue {
             
             
             
-            let (closures, result) = self
-                .device
-                .maintain(fence, wgt::PollType::Poll, snatch_guard);
+            let (closures, result) = self.device.maintain(wgt::PollType::Poll, snatch_guard);
             match result {
                 Ok(status) => {
                     debug_assert!(matches!(
@@ -1568,10 +1568,6 @@ impl Queue {
         &'a self,
         snatch_guard: SnatchGuard<'a>,
     ) -> Result<PendingSubmission<'a>, (SubmissionIndex, DeviceError)> {
-        
-        
-        let fence = self.device.fence.write();
-
         let mut command_index_guard = self.device.command_indices.write();
         command_index_guard.active_submission_index += 1;
         let index = command_index_guard.active_submission_index;
@@ -1583,7 +1579,6 @@ impl Queue {
         let submission = PendingSubmission {
             queue: self,
             snatch_guard,
-            fence,
             command_index_guard,
             executions: Vec::new(),
             surface_textures: FastHashMap::default(),
@@ -1608,7 +1603,6 @@ impl Queue {
     
     
     
-    
     fn submit_pending_submission<'a>(
         &self,
         mut pending_writes: MutexGuard<'_, PendingWrites>,
@@ -1617,7 +1611,6 @@ impl Queue {
         let PendingSubmission {
             queue: _,
             snatch_guard,
-            mut fence,
             command_index_guard,
             mut executions,
             mut surface_textures,
@@ -1688,7 +1681,7 @@ impl Queue {
                 self.raw().submit(
                     &hal_command_buffers,
                     &submit_surface_textures,
-                    (fence.as_mut(), submit_index),
+                    (self.device.fence.as_ref(), submit_index),
                 )
             }
             .map_err(|e| self.device.handle_hal_error(e))?;
@@ -1697,7 +1690,6 @@ impl Queue {
             
             
             drop(pending_writes);
-            drop(command_index_guard);
 
             
             self.device
@@ -1708,10 +1700,14 @@ impl Queue {
         
         self.lock_life().track_submission(submit_index, executions);
 
-        Ok(SubmissionResult {
-            fence: RwLockWriteGuard::downgrade(fence),
-            snatch_guard,
-        })
+        
+        
+        
+        
+        
+        drop(command_index_guard);
+
+        Ok(SubmissionResult { snatch_guard })
     }
 
     pub fn get_timestamp_period(&self) -> f32 {
