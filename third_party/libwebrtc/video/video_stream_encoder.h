@@ -98,7 +98,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       std::unique_ptr<FrameCadenceAdapterInterface> frame_cadence_adapter,
       std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue,
       BitrateAllocationCallbackType allocation_cb_type,
-      VideoEncoderFactory::EncoderSelectorInterface* encoder_selector = nullptr,
+      scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+          encoder_selector = nullptr,
       EncoderSwitchRequestCallback encoder_switch_request_callback = nullptr);
   ~VideoStreamEncoder() override;
 
@@ -311,13 +312,10 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   const BitrateAllocationCallbackType allocation_cb_type_;
   const RateControlSettings rate_control_settings_;
 
-  VideoEncoderFactory::EncoderSelectorInterface* const
-      encoder_selector_from_constructor_;
-  std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface> const
-      encoder_selector_from_factory_;
   
   
-  VideoEncoderFactory::EncoderSelectorInterface* const encoder_selector_;
+  const scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+      encoder_selector_;
 
   VideoStreamEncoderObserver* const encoder_stats_observer_;
   

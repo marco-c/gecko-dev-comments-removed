@@ -229,11 +229,10 @@ class MediaSendChannelInterface {
       uint32_t ssrc,
       scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
 
-  
-  
   virtual void SetEncoderSelector(
       uint32_t ,
-      VideoEncoderFactory::EncoderSelectorInterface* ) {}
+      scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+      ) {}
   virtual RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
   
   

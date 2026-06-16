@@ -210,8 +210,8 @@ class VideoSendStream {
 
     
     
-    
-    VideoEncoderFactory::EncoderSelectorInterface* encoder_selector = nullptr;
+    scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+        encoder_selector;
 
     
     CryptoOptions crypto_options;

@@ -128,9 +128,21 @@ class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
 
   
   
+  [[deprecated(
+      "Use SetEncoderSelector with Ref Counted EncoderSelectorInterface")]]
   virtual void SetEncoderSelector(
       std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
-          encoder_selector) = 0;
+          encoder_selector) {
+    SetEncoderSelector(
+        scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>(
+            encoder_selector.release()));
+  }
+
+  virtual void SetEncoderSelector(
+      scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+          encoder_selector) {
+    RTC_DCHECK_NOTREACHED();
+  }
 
   
   

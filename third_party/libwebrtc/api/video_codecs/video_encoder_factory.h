@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/environment/environment.h"
+#include "api/ref_counted_base.h"
 #include "api/units/data_rate.h"
 #include "api/video/render_resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -38,9 +39,13 @@ class VideoEncoderFactory {
   
   
   
-  class EncoderSelectorInterface {
+  
+  
+  class EncoderSelectorInterface : public RefCountedBase {
    public:
-    virtual ~EncoderSelectorInterface() {}
+    
+    
+    virtual ~EncoderSelectorInterface() = default;
 
     
     
