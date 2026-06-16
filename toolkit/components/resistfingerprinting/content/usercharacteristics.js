@@ -528,14 +528,24 @@ async function populateVoiceList() {
 
     const timeout = new Promise(resolve => {
       setTimeout(() => {
-        resolve([]);
+        
+        
+        
+        
+        
+        
+        resolve(null);
       }, 5000);
     });
 
     return Promise.race([promise, timeout]);
   }
 
-  return fetchVoices().then(processVoices);
+  return fetchVoices().then(result => {
+    
+    
+    return result === null ? {} : processVoices(result);
+  });
 }
 
 async function populateMediaCapabilities() {
