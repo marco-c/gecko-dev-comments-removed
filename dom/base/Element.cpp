@@ -1458,7 +1458,25 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   
   
   
-  
+  Maybe<CustomElementRegistry*> registry;
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    CustomElementRegistry* docRegistry = OwnerDoc()->GetCustomElementRegistry();
+    if (aInit.mCustomElementRegistry.WasPassed()) {
+      CustomElementRegistry* passedRegistry =
+          aInit.mCustomElementRegistry.Value();
+      if (passedRegistry && !passedRegistry->IsScoped() &&
+          passedRegistry != docRegistry) {
+        aError.ThrowNotSupportedError(
+            "Must use a scoped CustomElementRegistry or the document's "
+            "registry");
+        return nullptr;
+      }
+      registry = Some(passedRegistry);
+    } else {
+      registry = Some(docRegistry);
+    }
+  }
+
   
   
   if (!CanAttachShadowDOM()) {
@@ -1493,13 +1511,14 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
   
   
-  return AttachShadowWithoutNameChecks(aInit);
+  return AttachShadowWithoutNameChecks(aInit, registry, CustomSlotDispatch::No,
+                                       true);
 }
 
 
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    const ShadowRootInit& aInit, bool aNotify,
-    CustomSlotDispatch aCustomSlotDispatch) {
+    const ShadowRootInit& aInit, const Maybe<CustomElementRegistry*>& aRegistry,
+    CustomSlotDispatch aCustomSlotDispatch, bool aNotify) {
   nsAutoScriptBlocker scriptBlocker;
 
   auto* nim = NodeInfoManager();
@@ -1520,13 +1539,12 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   
   
   
+  
   RefPtr<ShadowRoot> shadowRoot = new (nim) ShadowRoot(
       this, aInit.mMode, DelegatesFocus(aInit.mDelegatesFocus),
       aInit.mSlotAssignment, ShadowRootClonable(aInit.mClonable),
       ShadowRootSerializable(aInit.mSerializable), ShadowRootDeclarative::No,
-      aCustomSlotDispatch, nodeInfo.forget());
-  
-  
+      aCustomSlotDispatch, aRegistry, nodeInfo.forget());
   if (aInit.mReferenceTarget.WasPassed()) {
     shadowRoot->SetReferenceTarget(aInit.mReferenceTarget.Value());
   }
@@ -1588,8 +1606,8 @@ void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
     ShadowRootInit init;
     init.mMode = ShadowRootMode::Closed;
     init.mDelegatesFocus = aDelegatesFocus == DelegatesFocus::Yes;
-    RefPtr<ShadowRoot> shadowRoot =
-        AttachShadowWithoutNameChecks(init, aNotify, aCustomSlotDispatch);
+    RefPtr<ShadowRoot> shadowRoot = AttachShadowWithoutNameChecks(
+        init, Nothing(), aCustomSlotDispatch, aNotify);
     shadowRoot->SetIsUAWidget();
   }
 

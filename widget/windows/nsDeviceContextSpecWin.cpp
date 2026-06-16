@@ -17,6 +17,14 @@
 #include <windef.h>
 #include <winspool.h>
 
+
+
+#undef AddForm
+#undef DeleteForm
+#undef EnumForms
+#undef GetForm
+#undef SetForm
+
 #include "nsIWidget.h"
 
 #include "nsTArray.h"

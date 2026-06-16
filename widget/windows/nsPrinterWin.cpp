@@ -8,6 +8,14 @@
 #include <windows.h>
 #include <winspool.h>
 
+
+
+#undef AddForm
+#undef DeleteForm
+#undef EnumForms
+#undef GetForm
+#undef SetForm
+
 #include "mozilla/Array.h"
 #include "mozilla/dom/Promise.h"
 #include "nsPaper.h"

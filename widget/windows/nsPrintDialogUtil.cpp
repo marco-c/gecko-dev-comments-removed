@@ -45,6 +45,14 @@
 
 
 
+#undef AddForm
+#undef DeleteForm
+#undef EnumForms
+#undef GetForm
+#undef SetForm
+
+
+
 
 #include "nsNativeCharsetUtils.h"
 
