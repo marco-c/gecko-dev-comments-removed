@@ -1035,6 +1035,11 @@ nsFrameSelection::CreatePeekOffsetOptionsForCaretMove(
   if (static_cast<bool>(aForceEditableRegion)) {
     options += PeekOffsetOption::ForceEditableRegion;
   }
+  
+  
+  
+  
+  options += PeekOffsetOption::ForCaretMove;
   return options;
 }
 

@@ -109,6 +109,20 @@ enum class PeekOffsetOption : uint16_t {
   
   
   ForceEditableRegion,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ForCaretMove,
 };
 
 using PeekOffsetOptions = EnumSet<PeekOffsetOption>;
