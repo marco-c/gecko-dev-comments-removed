@@ -17,6 +17,10 @@
 #include <X11/extensions/Xfixes.h>
 #include <X11/extensions/Xrandr.h>
 
+
+
+#undef CurrentTime
+
 #include <memory>
 
 #include "modules/desktop_capture/desktop_capture_options.h"

@@ -13,6 +13,10 @@
 
 #include <X11/X.h>
 
+
+
+#undef CurrentTime
+
 #include <memory>
 
 #include "api/scoped_refptr.h"
