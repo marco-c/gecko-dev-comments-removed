@@ -354,6 +354,14 @@ class AnyRef {
   uintptr_t rawValue() const { return value_; }
 
   
+  AnyRef atomicGet() const {
+    return AnyRef(__atomic_load_n(&value_, __ATOMIC_RELAXED));
+  }
+  void atomicSet(const AnyRef& other) {
+    __atomic_store_n(&value_, other.value_, __ATOMIC_RELAXED);
+  }
+
+  
   static const JSClass* valueBoxClass();
   static size_t valueBoxOffsetOfValue();
 };
@@ -375,6 +383,7 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
   bool isI31() const { return value().isI31(); }
   bool isJSObject() const { return value().isJSObject(); }
   bool isJSString() const { return value().isJSString(); }
+  JS::Value toJSValue() const { return value().toJSValue(); }
   JSObject& toJSObject() const { return value().toJSObject(); }
   JSString* toJSString() const { return value().toJSString(); }
 };
