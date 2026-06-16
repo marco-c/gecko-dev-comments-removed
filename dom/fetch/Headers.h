@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_Headers_h
 #define mozilla_dom_Headers_h
 
@@ -31,7 +29,7 @@ class OwningByteStringSequenceSequenceOrByteStringByteStringRecord;
 
 
 class Headers final : public nsISupports, public nsWrapperCache {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Headers)
 
   friend class Request;
