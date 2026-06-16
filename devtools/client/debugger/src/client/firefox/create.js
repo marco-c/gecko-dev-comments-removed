@@ -210,6 +210,10 @@ export function makeScriptSourceId(sourceResource) {
   return `source-actor-${sourceResource.actor}`;
 }
 
+export function makeStyleSheetSourceId(sourceResource) {
+  return `source-url-${sourceResource.href}`;
+}
+
 
 
 
@@ -221,15 +225,38 @@ export function makeScriptSourceId(sourceResource) {
 
 
 export function createGeneratedSource(sourceResource) {
-  return createSourceObject({
-    id: makeScriptSourceId(sourceResource),
-    url: sourceResource.url,
-    extensionName: sourceResource.extensionName,
+  return {
+    ...createSourceObject({
+      id: makeScriptSourceId(sourceResource),
+      url: sourceResource.url,
+      extensionName: sourceResource.extensionName,
+      isExtension:
+        (sourceResource.url && isUrlExtension(sourceResource.url)) || false,
+    }),
+    
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
-    isExtension:
-      (sourceResource.url && isUrlExtension(sourceResource.url)) || false,
     isHTML: !!sourceResource.isInlineSource,
-  });
+    type: ResourceCommand.TYPES.SOURCE,
+  };
+}
+
+
+
+
+
+
+
+
+export function createStyleSheet(stylesheetResource) {
+  return {
+    ...createSourceObject({
+      id: makeStyleSheetSourceId(stylesheetResource),
+      url: stylesheetResource.href,
+    }),
+    
+    isStyleSheet: true,
+    type: ResourceCommand.TYPES.STYLESHEET,
+  };
 }
 
 
@@ -247,7 +274,9 @@ function createSourceObject({
   isPrettyPrinted = false,
   isOriginal = false,
   isHTML = false,
+  isStyleSheet = false,
   generatedSource = null,
+  type,
 }) {
   
   const displayURL = getDisplayURL(
@@ -308,10 +337,13 @@ function createSourceObject({
     isOriginal,
 
     
+    isStyleSheet,
+
+    
     generatedSource,
 
     
-    type: ResourceCommand.TYPES.SOURCE,
+    type,
   };
 }
 
@@ -330,12 +362,15 @@ function createSourceObject({
 
 
 export function createSourceMapOriginalSource(id, url, generatedSource) {
-  return createSourceObject({
-    id,
-    url,
-    isOriginal: true,
-    generatedSource,
-  });
+  return {
+    ...createSourceObject({
+      id,
+      url,
+      isOriginal: true,
+      generatedSource,
+    }),
+    type: ResourceCommand.TYPES.SOURCE,
+  };
 }
 
 
@@ -354,13 +389,16 @@ export function createSourceMapOriginalSource(id, url, generatedSource) {
 
 
 export function createPrettyPrintOriginalSource(id, url, generatedSource) {
-  return createSourceObject({
-    id,
-    url,
-    isOriginal: true,
-    isPrettyPrinted: true,
-    generatedSource,
-  });
+  return {
+    ...createSourceObject({
+      id,
+      url,
+      isOriginal: true,
+      isPrettyPrinted: true,
+      generatedSource,
+    }),
+    type: ResourceCommand.TYPES.SOURCE,
+  };
 }
 
 
@@ -381,7 +419,9 @@ export function createScriptSourceActor(sourceResource, sourceObject) {
     actor: actorId,
     
     
+    
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
+    target: sourceResource.targetFront.actorID,
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
@@ -389,6 +429,33 @@ export function createScriptSourceActor(sourceResource, sourceObject) {
     sourceStartLine: sourceResource.sourceStartLine,
     sourceStartColumn: sourceResource.sourceStartColumn,
     sourceLength: sourceResource.sourceLength,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+export function createStyleSheetActor(stylesheetResource, styleSheetObject) {
+  return {
+    id: stylesheetResource.resourceId,
+    actor: stylesheetResource.resourceId,
+    target: stylesheetResource.targetFront.actorID,
+    
+    thread: stylesheetResource.targetFront.getCachedFront("thread").actorID,
+    
+    source: makeStyleSheetSourceId(stylesheetResource),
+    sourceObject: styleSheetObject,
+    sourceMapBaseURL: stylesheetResource.sourceMapBaseURL,
+    sourceMapURL: stylesheetResource.sourceMapURL,
+    
+    url: stylesheetResource.href,
   };
 }
 

@@ -12,7 +12,9 @@ import {
   makeScriptSourceId,
   createGeneratedSource,
   createSourceMapOriginalSource,
+  createStyleSheet,
   createScriptSourceActor,
+  createStyleSheetActor,
 } from "../../client/firefox/create";
 import { toggleBlackBox } from "./blackbox";
 import { syncPendingBreakpoint } from "../breakpoints/index";
@@ -351,7 +353,8 @@ export function newGeneratedSources(sourceResources) {
       for (const sourceActor of newSourceActors) {
         if (
           selectedLocation?.source == sourceActor.sourceObject &&
-          sourceActor.sourceObject.isHTML
+          sourceActor.sourceObject.isHTML &&
+          !sourceActor.sourceObject.isStyleSheet
         ) {
           await dispatch(
             setBreakableLines(
@@ -372,6 +375,39 @@ export function newGeneratedSources(sourceResources) {
     })();
 
     return resultIds.map(id => getSourceFromId(getState(), id));
+  };
+}
+
+export function newStyleSheetSources(styleSheetResources) {
+  return async ({ dispatch }) => {
+    if (!styleSheetResources.length) {
+      return;
+    }
+    const styleSheets = [];
+    const styleSheetActors = [];
+    for (const styleSheetResource of styleSheetResources) {
+      
+      
+      
+      
+      if (
+        styleSheetResource.targetFront.isDestroyed() ||
+        
+        styleSheetResource.href == null
+      ) {
+        continue;
+      }
+      const stylesheet = createStyleSheet(styleSheetResource);
+      styleSheets.push(stylesheet);
+      styleSheetActors.push(
+        createStyleSheetActor(styleSheetResource, stylesheet)
+      );
+    }
+    if (!styleSheets.length) {
+      return;
+    }
+    dispatch({ type: "ADD_SOURCES", sources: styleSheets });
+    dispatch(insertSourceActors(styleSheetActors));
   };
 }
 
