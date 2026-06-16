@@ -4088,5 +4088,31 @@ TEST_F(PortTest, TestAddConnectionWithSameAddress) {
   EXPECT_TRUE(port->GetConnection(address) != nullptr);
 }
 
+
+
+class TestPortWrapper : public TurnPort {
+  TestPortWrapper()
+      : TurnPort(args_,
+                 nullptr,
+                 my_server_address_,
+                 credentials_,
+                 1,
+                 {"alpn"},
+                 {"ecc"},
+                 nullptr,
+                 nullptr) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    SubscribeReadPacket([](PortInterface* port, const char* data, size_t size,
+                           const SocketAddress& addr) {});
+#pragma clang diagnostic pop
+  }
+
+ private:
+  PortParametersRef args_{.env = CreateTestEnvironment()};
+  ProtocolAddress my_server_address_{kLocalAddr1, PROTO_UDP};
+  RelayCredentials credentials_;
+};
+
 }  
 }  
