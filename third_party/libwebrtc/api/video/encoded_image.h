@@ -211,16 +211,6 @@ class RTC_EXPORT EncodedImage {
 
   
   
-  [[deprecated]] bool IsAtTargetQuality() const { return at_target_quality_; }
-
-  
-  
-  [[deprecated]] void SetAtTargetQuality(bool at_target_quality) {
-    at_target_quality_ = at_target_quality;
-  }
-
-  
-  
   bool IsSteadyStateRefreshFrame() const {
     return is_steady_state_refresh_frame_;
   }
@@ -317,8 +307,6 @@ class RTC_EXPORT EncodedImage {
   
   RtpPacketInfos packet_infos_;
   bool retransmission_allowed_ = true;
-  
-  bool at_target_quality_ = false;
   
   
   bool is_steady_state_refresh_frame_ = false;
