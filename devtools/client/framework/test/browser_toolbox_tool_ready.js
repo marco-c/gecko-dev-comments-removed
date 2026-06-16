@@ -3,6 +3,17 @@
 
 "use strict";
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
+
 requestLongerTimeout(5);
 
 async function performChecks(tab) {

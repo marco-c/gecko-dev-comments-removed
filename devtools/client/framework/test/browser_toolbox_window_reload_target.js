@@ -13,8 +13,14 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 
-
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Page has navigated/);
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
 
 const TEST_URL =
   "data:text/html;charset=utf-8," +

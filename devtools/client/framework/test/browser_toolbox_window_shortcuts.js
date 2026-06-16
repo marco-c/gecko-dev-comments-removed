@@ -7,6 +7,16 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 var { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
 
 var gToolbox,
   toolIDs,

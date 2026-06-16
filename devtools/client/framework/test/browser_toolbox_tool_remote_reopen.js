@@ -6,6 +6,16 @@
 const {
   DevToolsServer,
 } = require("resource://devtools/server/devtools-server.js");
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
 
 
 requestLongerTimeout(2);
