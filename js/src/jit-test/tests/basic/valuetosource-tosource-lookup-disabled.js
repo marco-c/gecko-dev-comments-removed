@@ -3,7 +3,6 @@
 
 
 
-
 function testPlain() {
   var toSourceCalled = false;
   var obj = {

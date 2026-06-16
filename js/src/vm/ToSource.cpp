@@ -16,7 +16,6 @@
 #include "js/Class.h"               
 #include "js/friend/StackLimits.h"  
 #include "js/Object.h"              
-#include "js/Prefs.h"               
 #include "js/Printer.h"             
 #include "js/Symbol.h"              
 #include "js/TypeDecls.h"  
@@ -162,8 +161,7 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
       
       
       RootedObject obj(cx, &v.toObject());
-      if (JS::Prefs::legacy_tosource_lookup() ||
-          cx->realm()->creationOptions().getToSourceEnabled()) {
+      if (cx->realm()->creationOptions().getToSourceEnabled()) {
         RootedValue fval(cx);
         if (!GetProperty(cx, obj, obj, cx->names().toSource, &fval)) {
           return nullptr;
