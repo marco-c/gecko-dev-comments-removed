@@ -750,6 +750,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitPropLHS(PropertyAccess* prop);
   [[nodiscard]] bool emitPropIncDec(UnaryNode* incDec, ValueUsage valueUsage);
 
+  
+  
+  
+  [[nodiscard]] bool emitArgumentsLength();
+
   [[nodiscard]] bool emitComputedPropertyName(UnaryNode* computedPropName);
 
   

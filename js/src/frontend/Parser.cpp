@@ -11653,6 +11653,14 @@ bool GeneralParser<ParseHandler, Unit>::checkDestructuringAssignmentTarget(
   
   
   
+  
+  if (handler_.isArgumentsLength(expr)) {
+    pc_->sc()->setIneligibleForArgumentsLength();
+  }
+
+  
+  
+  
   if (!possibleError || handler_.isPropertyOrPrivateMemberAccess(expr)) {
     return exprPossibleError->checkForExpressionError();
   }
