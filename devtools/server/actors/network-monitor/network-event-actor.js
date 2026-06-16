@@ -215,6 +215,8 @@ class NetworkEventActor extends Actor {
       blockedReason = "unknown";
     }
 
+    const priority = lazy.NetworkUtils.getChannelPriority(channel);
+
     const resource = {
       resourceId: this._channelId,
       resourceType: NETWORK_EVENT,
@@ -231,7 +233,7 @@ class NetworkEventActor extends Actor {
         lazy.NetworkUtils.isThirdPartyTrackingResource(channel),
       isXHR,
       method,
-      priority: lazy.NetworkUtils.getChannelPriority(channel),
+      priority,
       private: lazy.NetworkUtils.isChannelPrivate(channel),
       referrerPolicy: lazy.NetworkUtils.getReferrerPolicy(channel),
       stacktraceResourceId,
@@ -662,6 +664,8 @@ class NetworkEventActor extends Actor {
       proxyInfo = proxyResponseRawHeaders.split("\r\n")[0].split(" ");
     }
 
+    const priority = lazy.NetworkUtils.getChannelPriority(channel);
+
     this._onEventUpdate(lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_START, {
       httpVersion: isDataOrFile
         ? null
@@ -675,6 +679,7 @@ class NetworkEventActor extends Actor {
       earlyHintsStatus: earlyHintsResponseRawHeaders ? "103" : "",
       waitingTime,
       isResolvedByTRR: channel.isResolvedByTRR,
+      priority,
       proxyHttpVersion: proxyInfo[0],
       proxyStatus: proxyInfo[1],
       proxyStatusText: proxyInfo[2],
@@ -705,18 +710,29 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseContentComplete({ blockedReason, extension }) {
+  addResponseContentComplete({ blockedReason, extension, channel }) {
     
     if (this.isDestroyed()) {
       return;
     }
 
+    const changed = {
+      blockedReason,
+      extension,
+    };
+
+    if (channel) {
+      
+      const priority = lazy.NetworkUtils.getChannelPriority(channel);
+
+      if (Number.isInteger(priority) && priority != this._resource.priority) {
+        changed.priority = priority;
+      }
+    }
+
     this._onEventUpdate(
       lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE,
-      {
-        blockedReason,
-        extension,
-      }
+      changed
     );
   }
 

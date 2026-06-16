@@ -13,6 +13,9 @@ const {
   parseQueryString,
 } = require("resource://devtools/client/netmonitor/src/utils/request-utils.js");
 const {
+  getRequestPriorityAsText,
+} = require("resource://devtools/client/netmonitor/src/utils/format-utils.js");
+const {
   buildHarLog,
 } = require("resource://devtools/client/netmonitor/src/har/har-builder-utils.js");
 const L10N = new LocalizationHelper("devtools/client/locales/har.properties");
@@ -204,6 +207,11 @@ class HarBuilder {
     
     
     entry._securityState = networkEvent.securityState;
+
+    
+    if (Number.isInteger(networkEvent.priority)) {
+      entry._priority = getRequestPriorityAsText(networkEvent.priority);
+    }
 
     if (networkEvent.remoteAddress) {
       entry.serverIPAddress = networkEvent.remoteAddress;
