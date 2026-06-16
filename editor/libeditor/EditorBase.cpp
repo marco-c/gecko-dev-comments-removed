@@ -81,6 +81,7 @@
 #include "mozilla/dom/Document.h"          
 #include "mozilla/dom/DocumentInlines.h"   
 #include "mozilla/dom/DragEvent.h"         
+#include "mozilla/dom/EditContext.h"       
 #include "mozilla/dom/Element.h"           
 #include "mozilla/dom/EventTarget.h"       
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -4152,6 +4153,19 @@ nsresult EditorBase::OnCompositionChange(
 
     if (caret) {
       caret->SetSelection(&SelectionRef());
+    }
+  }
+
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    RefPtr<TextRangeArray> ranges = mComposition->GetRanges();
+    editContext->FireTextFormatUpdate(ranges,
+                                      mComposition->XPOffsetInTextNode());
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
   }
 
