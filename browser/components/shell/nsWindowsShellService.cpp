@@ -459,13 +459,21 @@ nsWindowsShellService::CanSetDefaultBrowserUserChoice(bool* aResult) {
 
 class __declspec(novtable) IOpenWithLauncher : public IUnknown {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
   virtual HRESULT STDMETHODCALLTYPE Launch(HWND hWndParent, LPCWSTR lpszPath,
                                            int flags) = 0;
 };
 
 NS_IMETHODIMP
-nsWindowsShellService::LaunchOpenWithDefaultPickerForFileType(
-    const nsAString& aFileType) {
+nsWindowsShellService::LaunchSetDefaultAppPicker(const nsAString& aTarget,
+                                                 int32_t aFlags) {
   static constexpr GUID IID_IOpenWithLauncher = {
       0x6a283fe2,
       0xecfa,
@@ -500,10 +508,7 @@ nsWindowsShellService::LaunchOpenWithDefaultPickerForFileType(
   
   CoAllowSetForegroundWindow(pOWL, nullptr);
 
-  
-  
-  int flag = mozilla::IsWin11OrLater() ? 0x84 : 0x2004;
-  hr = pOWL->Launch(nullptr, aFileType.Data(), flag);
+  hr = pOWL->Launch(nullptr, PromiseFlatString(aTarget).get(), aFlags);
 
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }
