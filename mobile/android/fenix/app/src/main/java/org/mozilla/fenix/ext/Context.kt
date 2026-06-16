@@ -63,8 +63,6 @@ fun Context.getPreferenceKey(
 fun Context.getRootView(): View? =
     asActivity()?.window?.decorView?.findViewById<View>(android.R.id.content) as? ViewGroup
 
-fun Context.settings() = components.settings
-
 /**
  * Used to catch IllegalArgumentException that is thrown when
  * a string's placeholder is incorrectly formatted in a translation
@@ -219,6 +217,7 @@ fun Context.isToolbarAtBottom() =
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
 fun Context.pixelSizeFor(
     @DimenRes resId: Int,
 ) = resources.getDimensionPixelSize(resId)

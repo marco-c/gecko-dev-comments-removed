@@ -14,7 +14,7 @@ import androidx.core.content.withStyledAttributes
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 
 /**
  * A custom [Preference] that displays two mutually exclusive radio button options within a single
@@ -35,6 +35,15 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
     private var trueOptionIconRes: Int = 0
     private var falseOptionIconRes: Int = 0
 
+    private var onToggleChanged: ((Boolean) -> Unit)? = null
+
+    /**
+     * Registers a listener that is invoked whenever the toggle selection changes.
+     */
+    fun setOnToggleChanged(listener: (Boolean) -> Unit) {
+        onToggleChanged = listener
+    }
+
     init {
         layoutResource = R.layout.preference_widget_toggle_radio_button
         isSelectable = false
@@ -51,7 +60,7 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
-        val preferences = context.settings().preferences
+        val preferences = context.components.settings.preferences
         val selected = preferences.getBoolean(sharedKey, false)
 
         val optionTrueView = holder.findViewById(R.id.option_true)
@@ -82,6 +91,7 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
             optionFalseIconView.isSelected = false
             preferences.edit { putBoolean(sharedKey, true) }
             notifyChanged()
+            onToggleChanged?.invoke(true)
         }
 
         optionFalseView.setOnClickListener {
@@ -89,6 +99,7 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
             optionFalseIconView.isSelected = true
             preferences.edit { putBoolean(sharedKey, false) }
             notifyChanged()
+            onToggleChanged?.invoke(false)
         }
     }
 

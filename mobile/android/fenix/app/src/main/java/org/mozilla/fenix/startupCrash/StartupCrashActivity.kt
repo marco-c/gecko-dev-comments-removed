@@ -9,14 +9,11 @@ import android.os.Process
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import mozilla.components.lib.crash.CrashReporter
 import org.mozilla.fenix.R
-import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -36,11 +33,9 @@ class StartupCrashActivity : AppCompatActivity() {
                         initialState = StartupCrashState(UiState.Idle),
                         middleware = listOf(
                             StartupCrashMiddleware(
-                                settings = LocalContext.current.settings(),
+                                settings = components.settings,
                                 crashReporter = installCrashReporter(),
                                 restartHandler = ::restartFenix,
-                                startupCrashCanaryCache =
-                                    StartupCrashCanary.build(applicationContext),
                             ),
                         ),
                     ),
