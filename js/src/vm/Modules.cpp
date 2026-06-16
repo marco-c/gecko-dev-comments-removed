@@ -747,6 +747,11 @@ static bool ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleSet> exportStarSet,
     MutableHandle<ExportNameVector> exportedNames) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   
   MOZ_ASSERT(exportedNames.empty());
 
