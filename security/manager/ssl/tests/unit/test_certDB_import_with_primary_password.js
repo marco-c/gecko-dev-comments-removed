@@ -110,7 +110,7 @@ function run_test() {
     Ci.nsIPKCS11Token
   );
   token.changePassword("", "password");
-  token.logoutSimple();
+  token.logout();
 
   
   equal(

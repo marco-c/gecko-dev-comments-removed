@@ -170,7 +170,7 @@ function enableButtons() {
       if (selected_token.canHavePassword) {
         pw_toggle = false;
         if (selected_token.hasPassword) {
-          if (selected_token.isLoggedIn()) {
+          if (selected_token.isLoggedIn) {
             logout_toggle = false;
           } else {
             login_toggle = false;
@@ -333,9 +333,9 @@ function doLogin() {
   
   var selected_token = selected_slot.getToken();
   try {
-    selected_token.login(false);
+    selected_token.login();
     var tok_status = document.getElementById("tok_status");
-    if (selected_token.isLoggedIn()) {
+    if (selected_token.isLoggedIn) {
       document.l10n.setAttributes(tok_status, "devinfo-status-logged-in");
     } else {
       document.l10n.setAttributes(tok_status, "devinfo-status-not-logged-in");
@@ -349,12 +349,14 @@ function doLogin() {
 
 function doLogout() {
   getSelectedItem();
-  
   var selected_token = selected_slot.getToken();
   try {
-    selected_token.logoutAndDropAuthenticatedResources();
+    selected_token.logout();
+    
+    let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+    nssComponent.clearTLSCacheAndCancelAllConnections();
     var tok_status = document.getElementById("tok_status");
-    if (selected_token.isLoggedIn()) {
+    if (selected_token.isLoggedIn) {
       document.l10n.setAttributes(tok_status, "devinfo-status-logged-in");
     } else {
       document.l10n.setAttributes(tok_status, "devinfo-status-not-logged-in");

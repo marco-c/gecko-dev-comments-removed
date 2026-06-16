@@ -70,7 +70,7 @@ function run_test() {
     Ci.nsIPKCS11Token
   );
   token.changePassword("", "password");
-  token.logoutSimple();
+  token.logout();
 
   
   let cert = findCertByCommonName(CERT_COMMON_NAME);
@@ -83,7 +83,7 @@ function run_test() {
   notEqual(cert, null, "cert should be found now");
 
   
-  token.logoutSimple();
+  token.logout();
 
   
   
@@ -96,7 +96,7 @@ function run_test() {
   output.remove(false );
 
   
-  token.logoutSimple();
+  token.logout();
 
   
   

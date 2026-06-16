@@ -307,8 +307,7 @@ SecretDecoderRing::LogoutAndTeardown() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  nsresult rv = nssComponent->LogoutAuthenticatedPK11();
+  nsresult rv = nssComponent->ClearTLSCacheAndCancelAllConnections();
   if (NS_FAILED(rv)) {
     return rv;
   }
