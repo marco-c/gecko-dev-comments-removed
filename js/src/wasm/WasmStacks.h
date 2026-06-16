@@ -30,6 +30,7 @@
 #include "util/TrailingArray.h"
 #include "vm/NativeObject.h"
 #include "wasm/WasmAnyRef.h"
+#include "wasm/WasmCode.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmFrame.h"
 
@@ -199,6 +200,9 @@ class ContStack {
   
   SwitchTarget initialResumeTarget_{};
   HeapPtr<JSFunction*> initialResumeCallee_;
+  
+  
+  SharedCode initialResumeCode_;
 
   
   StackTarget target_{};
@@ -240,7 +244,7 @@ class ContStack {
   
   
   void prepare(Handle<ContObject*> continuation, Handle<JSFunction*> target,
-               void* contBaseFrameStub);
+               void* contBaseFrameStub, const Code* creatorCode);
   
   
   void reset();
@@ -436,7 +440,8 @@ class ContStackArena {
   
   
   UniqueContStack allocate(Handle<ContObject*> continuation,
-                           Handle<JSFunction*> target, void* contBaseFrameStub);
+                           Handle<JSFunction*> target, void* contBaseFrameStub,
+                           const Code* creatorCode);
 
   
   ContStack* findForAddress(uintptr_t address) const;
@@ -513,7 +518,8 @@ class ContStackAllocator {
   
   
   UniqueContStack allocate(JSContext* cx, Handle<ContObject*> continuation,
-                           Handle<JSFunction*> target, void* contBaseFrameStub);
+                           Handle<JSFunction*> target, void* contBaseFrameStub,
+                           const Code* creatorCode);
 
   
   ContStack* findForAddress(uintptr_t address) const;
@@ -552,7 +558,7 @@ class ContObject : public NativeObject {
   
   
   static ContObject* create(JSContext* cx, Handle<JSFunction*> target,
-                            void* contBaseFrameStub);
+                            void* contBaseFrameStub, const Code* creatorCode);
   
   static ContObject* createEmpty(JSContext* cx);
 
