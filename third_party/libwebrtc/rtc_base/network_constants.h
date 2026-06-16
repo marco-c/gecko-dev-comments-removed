@@ -15,6 +15,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace webrtc {
 
 constexpr uint16_t kNetworkCostMax = 999;
@@ -84,6 +86,18 @@ constexpr AdapterType kAllAdapterTypes[] = {
     ADAPTER_TYPE_CELLULAR_3G, ADAPTER_TYPE_CELLULAR_4G,
     ADAPTER_TYPE_CELLULAR_5G,
 };
+
+
+
+
+
+
+enum class NetworkSlice {
+  NO_SLICE = 0,
+  UNIFIED_COMMUNICATIONS = 1,
+};
+
+absl::string_view NetworkSliceToString(NetworkSlice network_slice);
 
 }  
 

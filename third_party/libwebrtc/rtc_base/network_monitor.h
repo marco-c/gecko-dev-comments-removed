@@ -36,18 +36,7 @@ enum class NetworkPreference {
   NOT_PREFERRED = -1,
 };
 
-
-
-
-
-
-enum class NetworkSlice {
-  NO_SLICE = 0,
-  UNIFIED_COMMUNICATIONS = 1,
-};
-
 absl::string_view NetworkPreferenceToString(NetworkPreference preference);
-absl::string_view NetworkSliceToString(NetworkSlice network_slice);
 
 
 
