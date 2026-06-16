@@ -8,8 +8,7 @@ def pid_from(capabilities):
         return capabilities["goog:processID"], "chrome"
     if capabilities["browserName"] == "firefox":
         return capabilities["moz:processID"], "firefox"
-    if capabilities["browserName"] == "servo":
-        return 0, "servo"
+    return 0, capabilities["browserName"]
 
 
 @pytest.fixture
