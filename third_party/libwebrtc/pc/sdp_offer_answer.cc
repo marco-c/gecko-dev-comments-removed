@@ -3962,9 +3962,15 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
 
   
   error = ValidateBundledPayloadTypes(*sdesc->description());
-  
   RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidBundledPayloadTypes",
                         error.ok());
+  if (!error.ok()) {
+    RTC_LOG(LS_ERROR) << "Bundled payload type collision: " << error.message();
+    if (env_.field_trials().IsEnabled(
+            "WebRTC-SdpBundlePayloadTypeCollisionCheck")) {
+      return error;
+    }
+  }
 
   
   error = ValidateBundledRtpHeaderExtensions(*sdesc->description());
