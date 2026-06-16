@@ -339,6 +339,10 @@ pub struct AuthenticatorInfo {
     pub certifications: Option<BTreeMap<String, u64>>,
     pub remaining_discoverable_credentials: Option<u64>,
     pub vendor_prototype_config_commands: Option<Vec<u64>>,
+    
+    pub attestation_formats: Option<Vec<String>>,
+    pub uv_count_since_last_pin_entry: Option<u64>,
+    pub long_touch_for_reset: Option<bool>,
 }
 
 impl AuthenticatorInfo {
@@ -420,6 +424,9 @@ impl<'de> Deserialize<'de> for AuthenticatorInfo {
                 let mut certifications = None;
                 let mut remaining_discoverable_credentials = None;
                 let mut vendor_prototype_config_commands = None;
+                let mut attestation_formats = None;
+                let mut uv_count_since_last_pin_entry = None;
+                let mut long_touch_for_reset = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         0x01 => {
@@ -456,7 +463,34 @@ impl<'de> Deserialize<'de> for AuthenticatorInfo {
                             parse_next_optional_value!(transports, map);
                         }
                         0x0a => {
-                            parse_next_optional_value!(algorithms, map);
+                            if algorithms.is_some() {
+                                return Err(serde::de::Error::duplicate_field("algorithms"));
+                            }
+                            
+                            
+                            
+                            
+                            
+                            let raw: Vec<Value> = map.next_value()?;
+                            let parsed = raw
+                                .into_iter()
+                                .filter_map(|v| {
+                                    match serde_cbor::value::from_value::<
+                                        PublicKeyCredentialParameters,
+                                    >(v)
+                                    {
+                                        Ok(p) => Some(p),
+                                        Err(e) => {
+                                            warn!(
+                                                "GetInfo: ignoring unsupported algorithm: {:?}",
+                                                e
+                                            );
+                                            None
+                                        }
+                                    }
+                                })
+                                .collect();
+                            algorithms = Some(parsed);
                         }
                         0x0b => {
                             parse_next_optional_value!(max_ser_large_blob_array, map);
@@ -490,6 +524,15 @@ impl<'de> Deserialize<'de> for AuthenticatorInfo {
                         }
                         0x15 => {
                             parse_next_optional_value!(vendor_prototype_config_commands, map);
+                        }
+                        0x16 => {
+                            parse_next_optional_value!(attestation_formats, map);
+                        }
+                        0x17 => {
+                            parse_next_optional_value!(uv_count_since_last_pin_entry, map);
+                        }
+                        0x18 => {
+                            parse_next_optional_value!(long_touch_for_reset, map);
                         }
                         k => {
                             warn!("GetInfo: unexpected key: {:?}", k);
@@ -537,6 +580,9 @@ impl<'de> Deserialize<'de> for AuthenticatorInfo {
                         certifications,
                         remaining_discoverable_credentials,
                         vendor_prototype_config_commands,
+                        attestation_formats,
+                        uv_count_since_last_pin_entry,
+                        long_touch_for_reset,
                     })
                 } else {
                     Err(M::Error::custom("No AAGuid specified".to_string()))
@@ -812,6 +858,9 @@ pub mod tests {
             certifications: None,
             remaining_discoverable_credentials: None,
             vendor_prototype_config_commands: None,
+            attestation_formats: None,
+            uv_count_since_last_pin_entry: None,
+            long_touch_for_reset: None,
         };
 
         assert_eq!(authenticator_info, expected);
@@ -822,7 +871,7 @@ pub mod tests {
         broken_payload[0] += 1;
         
         broken_payload.extend_from_slice(&[
-            0x17, 
+            0x27, 
             0x6B, 
             0x69, 0x6E, 0x76, 0x61, 0x6C, 0x69, 0x64, 0x5F, 0x6B, 0x65, 0x79, 
         ]);
@@ -899,6 +948,9 @@ pub mod tests {
             certifications: None,
             remaining_discoverable_credentials: Some(24),
             vendor_prototype_config_commands: None,
+            attestation_formats: None,
+            uv_count_since_last_pin_entry: None,
+            long_touch_for_reset: None,
         };
 
         assert_eq!(authenticator_info, expected);
@@ -992,6 +1044,9 @@ pub mod tests {
             certifications: None,
             remaining_discoverable_credentials: None,
             vendor_prototype_config_commands: None,
+            attestation_formats: None,
+            uv_count_since_last_pin_entry: None,
+            long_touch_for_reset: None,
         };
 
         assert_eq!(result, &expected);
@@ -1101,6 +1156,58 @@ pub mod tests {
                 aaguid: AAGuid(AAGUID_RAW),
                 ..Default::default()
             },
+        );
+    }
+
+    #[test]
+    fn parse_authenticator_info_unknown_algorithm() {
+        
+        
+        
+        
+        
+        use std::collections::BTreeMap;
+        let alg_entry = |alg: i128| {
+            let mut m = BTreeMap::new();
+            m.insert(Value::Text("alg".to_string()), Value::Integer(alg));
+            m.insert(
+                Value::Text("type".to_string()),
+                Value::Text("public-key".to_string()),
+            );
+            Value::Map(m)
+        };
+        let mut info = BTreeMap::new();
+        info.insert(
+            Value::Integer(0x01),
+            Value::Array(vec![Value::Text("FIDO_2_0".to_string())]),
+        );
+        info.insert(Value::Integer(0x03), Value::Bytes(AAGUID_RAW.to_vec()));
+        info.insert(
+            Value::Integer(0x0a),
+            
+            Value::Array(vec![
+                alg_entry(-7),
+                alg_entry(-8),
+                alg_entry(-19),
+                alg_entry(-20),
+            ]),
+        );
+        let payload = serde_cbor::to_vec(&Value::Map(info)).unwrap();
+
+        let parsed = from_slice::<AuthenticatorInfo>(&payload).unwrap();
+        assert_eq!(
+            parsed.algorithms,
+            Some(vec![
+                PublicKeyCredentialParameters {
+                    alg: COSEAlgorithm::ES256
+                },
+                PublicKeyCredentialParameters {
+                    alg: COSEAlgorithm::EDDSA
+                },
+                PublicKeyCredentialParameters {
+                    alg: COSEAlgorithm::Ed25519
+                },
+            ]),
         );
     }
 

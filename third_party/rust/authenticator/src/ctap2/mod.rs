@@ -28,7 +28,8 @@ use crate::ctap2::commands::make_credentials::{
 };
 use crate::ctap2::commands::reset::Reset;
 use crate::ctap2::commands::{
-    repackage_pin_errors, CommandError, PinUvAuthCommand, PinUvAuthResult, RequestCtap2, StatusCode,
+    large_blobs, repackage_pin_errors, CommandError, PinUvAuthCommand, PinUvAuthResult,
+    RequestCtap2, StatusCode,
 };
 use crate::ctap2::preflight::{
     do_credential_list_filtering_ctap1, do_credential_list_filtering_ctap2,
@@ -48,6 +49,7 @@ use std::thread;
 use std::time::Duration;
 
 use self::commands::get_info::AuthenticatorVersion;
+use self::commands::large_blobs::LargeBlobArrayElement;
 
 macro_rules! unwrap_option {
     ($item: expr, $callback: expr) => {
@@ -184,6 +186,25 @@ fn ask_user_for_pin(
     }
     match rx.recv() {
         Ok(pin) => Ok(pin),
+        Err(RecvError) => {
+            
+            info!("Callback dropped the channel. Aborting.");
+            Err(AuthenticatorError::CancelledByUser)
+        }
+    }
+}
+
+fn ask_user_for_large_blob(
+    status: &Sender<StatusUpdate>,
+    key: &[u8],
+) -> Result<LargeBlobArrayElement, AuthenticatorError> {
+    info!(
+        "Make credentials was successful. Now asking the user for the additional large blob data"
+    );
+    let (tx, rx) = channel();
+    send_status(status, crate::StatusUpdate::LargeBlobData(tx, key.to_vec()));
+    match rx.recv() {
+        Ok(elem) => Ok(elem),
         Err(RecvError) => {
             
             info!("Callback dropped the channel. Aborting.");
@@ -455,7 +476,7 @@ pub fn register<Dev: FidoDevice>(
     
     let dev_supports_cred_protect = dev
         .get_authenticator_info()
-        .map_or(false, |info| info.supports_cred_protect());
+        .is_some_and(|info| info.supports_cred_protect());
     if args.extensions.enforce_credential_protection_policy == Some(true)
         && args.extensions.credential_protection_policy
             != Some(CredentialProtectionPolicy::UserVerificationOptional)
@@ -466,6 +487,7 @@ pub fn register<Dev: FidoDevice>(
         )));
         return false;
     }
+    let has_large_blob = args.extensions.large_blob_key == Some(true);
 
     let mut makecred = MakeCredentials::new(
         ClientDataHash(args.client_data_hash),
@@ -482,8 +504,11 @@ pub fn register<Dev: FidoDevice>(
     while alive() {
         
         
-        let permissions =
+        let mut permissions =
             PinUvAuthTokenPermission::MakeCredential | PinUvAuthTokenPermission::GetAssertion;
+        if has_large_blob {
+            permissions |= PinUvAuthTokenPermission::LargeBlobWrite;
+        }
 
         let pin_uv_auth_result = unwrap_result!(
             determine_puap_if_needed(
@@ -536,6 +561,22 @@ pub fn register<Dev: FidoDevice>(
         let resp = dev.send_msg_cancellable(&makecred, alive);
         match resp {
             Ok(result) => {
+                if has_large_blob && result.large_blob_key.is_some() {
+                    
+                    if let Ok(blob) =
+                        ask_user_for_large_blob(&status, result.large_blob_key.as_ref().unwrap())
+                    {
+                        if let Err(e) = large_blobs::add_large_blob(
+                            dev,
+                            alive,
+                            blob,
+                            pin_uv_auth_result.get_pin_uv_auth_token(),
+                        ) {
+                            
+                            warn!("Failed to write large blob: {e:?}");
+                        }
+                    }
+                }
                 callback.call(Ok(result));
                 return true;
             }
@@ -589,6 +630,7 @@ pub fn sign<Dev: FidoDevice>(
         }
     }
 
+    let has_large_blob = args.extensions.large_blob_key == Some(true);
     let mut get_assertion = GetAssertion::new(
         client_data_hash,
         rp_id,
@@ -681,8 +723,25 @@ pub fn sign<Dev: FidoDevice>(
                 handle_errors!(e, status, callback, pin_uv_auth_result, skip_uv);
             }
         };
+        
+        
+        
+        let large_blob_array =
+            if has_large_blob && results.iter().any(|f| f.large_blob_key.is_some()) {
+                match large_blobs::read_large_blob_array(dev, alive) {
+                    Ok(x) => Some(x.large_blob_array),
+                    Err(e) => {
+                        warn!("Failed to read large blob array: {e:?}");
+                        None
+                    }
+                }
+            } else {
+                None
+            };
         if results.len() == 1 {
-            callback.call(Ok(results.swap_remove(0)));
+            let mut result = results.swap_remove(0);
+            result.large_blob_array = large_blob_array;
+            callback.call(Ok(result));
             return true;
         }
         let (tx, rx) = channel();
@@ -696,7 +755,9 @@ pub fn sign<Dev: FidoDevice>(
         );
         match rx.recv() {
             Ok(Some(index)) if index < results.len() => {
-                callback.call(Ok(results.swap_remove(index)));
+                let mut result = results.swap_remove(index);
+                result.large_blob_array = large_blob_array;
+                callback.call(Ok(result));
                 return true;
             }
             _ => {

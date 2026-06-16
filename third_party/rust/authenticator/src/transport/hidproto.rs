@@ -47,6 +47,7 @@ pub enum Data {
     Usage { data: u32 },
     Input,
     Output,
+    #[allow(dead_code)] 
     ReportCount { data: u32 },
 }
 

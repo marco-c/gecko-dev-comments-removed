@@ -1,3 +1,4 @@
+use super::server::AuthenticatorExtensionsCredBlob;
 use super::utils::{from_slice_stream, read_be_u16, read_be_u32, read_byte};
 use crate::crypto::{COSEAlgorithm, CryptoError, SharedSecret};
 use crate::ctap2::server::{CredentialProtectionPolicy, HMACGetSecretOutput, RpIdHash};
@@ -119,11 +120,16 @@ pub struct Extension {
     pub hmac_secret: Option<HmacSecretResponse>,
     #[serde(rename = "minPinLength", skip_serializing_if = "Option::is_none")]
     pub min_pin_length: Option<u64>,
+    #[serde(rename = "credBlob", skip_serializing_if = "Option::is_none")]
+    pub cred_blob: Option<AuthenticatorExtensionsCredBlob>,
 }
 
 impl Extension {
     pub fn has_some(&self) -> bool {
-        self.min_pin_length.is_some() || self.hmac_secret.is_some() || self.cred_protect.is_some()
+        self.min_pin_length.is_some()
+            || self.hmac_secret.is_some()
+            || self.cred_protect.is_some()
+            || self.cred_blob.is_some()
     }
 }
 
@@ -563,12 +569,27 @@ pub struct AttestationObject {
 }
 
 impl AttestationObject {
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn anonymize(&mut self) {
-        
-        self.att_stmt = AttestationStatement::None;
-        if let Some(credential_data) = self.auth_data.credential_data.as_mut() {
-            credential_data.aaguid = AAGuid::default();
+        if let AttestationStatement::Packed(ref packed) = self.att_stmt {
+            if packed.attestation_cert.is_empty()
+                && self
+                    .auth_data
+                    .credential_data
+                    .as_ref()
+                    .is_some_and(|d| d.aaguid == AAGuid::default())
+            {
+                return;
+            }
         }
+        self.att_stmt = AttestationStatement::None;
     }
 }
 
@@ -1052,19 +1073,19 @@ pub mod test {
     fn test_anonymize_att_obj() {
         
         
+        
         let mut att_obj = create_attestation_obj();
 
         
         assert_ne!(att_obj.att_stmt, AttestationStatement::None);
-        assert_ne!(
-            att_obj
-                .auth_data
-                .credential_data
-                .as_ref()
-                .expect("credential_data should be Some")
-                .aaguid,
-            AAGuid::default()
-        );
+        let original_aaguid = att_obj
+            .auth_data
+            .credential_data
+            .as_ref()
+            .expect("credential_data should be Some")
+            .aaguid
+            .clone();
+        assert_ne!(original_aaguid, AAGuid::default());
 
         att_obj.anonymize();
 
@@ -1075,6 +1096,47 @@ pub mod test {
             from_slice(&encoded_att_obj).expect("could not deserialize anonymized att_obj");
 
         assert_eq!(att_obj.att_stmt, AttestationStatement::None);
+        assert_eq!(
+            att_obj
+                .auth_data
+                .credential_data
+                .as_ref()
+                .expect("credential_data should be Some")
+                .aaguid,
+            original_aaguid
+        );
+    }
+
+    #[test]
+    fn test_anonymize_self_attestation_is_noop() {
+        
+        
+        let mut att_obj = create_attestation_obj();
+
+        
+        att_obj
+            .auth_data
+            .credential_data
+            .as_mut()
+            .expect("credential_data should be Some")
+            .aaguid = AAGuid::default();
+        let self_att = AttestationStatement::Packed(AttestationStatementPacked {
+            alg: COSEAlgorithm::ES256,
+            sig: Signature(vec![0x01, 0x02, 0x03, 0x04]),
+            attestation_cert: vec![],
+        });
+        att_obj.att_stmt = self_att;
+
+        let expected_att_stmt = AttestationStatement::Packed(AttestationStatementPacked {
+            alg: COSEAlgorithm::ES256,
+            sig: Signature(vec![0x01, 0x02, 0x03, 0x04]),
+            attestation_cert: vec![],
+        });
+
+        att_obj.anonymize();
+
+        
+        assert_eq!(att_obj.att_stmt, expected_att_stmt);
         assert_eq!(
             att_obj
                 .auth_data

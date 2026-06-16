@@ -354,6 +354,35 @@ impl<'de> Deserialize<'de> for CredentialProtectionPolicy {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum AuthenticatorExtensionsCredBlob {
+    
+    
+    
+    AsBool(bool),
+    
+    
+    
+    #[serde(serialize_with = "vec_to_bytebuf", deserialize_with = "bytebuf_to_vec")]
+    AsBytes(Vec<u8>),
+}
+
+fn vec_to_bytebuf<S>(data: &[u8], s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    ByteBuf::from(data).serialize(s)
+}
+
+fn bytebuf_to_vec<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let bytes = <ByteBuf>::deserialize(deserializer)?;
+    Ok(bytes.to_vec())
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct AuthenticationExtensionsClientInputs {
     pub app_id: Option<String>,
@@ -364,6 +393,12 @@ pub struct AuthenticationExtensionsClientInputs {
     pub hmac_get_secret: Option<HMACGetSecretInput>,
     pub min_pin_length: Option<bool>,
     pub prf: Option<AuthenticationExtensionsPRFInputs>,
+    
+    
+    pub cred_blob: Option<AuthenticatorExtensionsCredBlob>,
+    pub large_blob_key: Option<bool>,
+    
+    pub third_party_payment: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -495,6 +530,9 @@ pub struct AuthenticationExtensionsClientOutputs {
     pub hmac_create_secret: Option<bool>,
     pub hmac_get_secret: Option<HMACGetSecretOutput>,
     pub prf: Option<AuthenticationExtensionsPRFOutputs>,
+    
+    
+    pub cred_blob: Option<AuthenticatorExtensionsCredBlob>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

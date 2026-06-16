@@ -136,6 +136,10 @@ pub struct CredentialManagementResponse {
     pub cred_protect: Option<u64>,
     
     pub large_blob_key: Option<Vec<u8>>,
+
+    
+    
+    pub third_party_payment: Option<bool>,
 }
 
 impl CtapResponse for CredentialManagementResponse {}
@@ -215,6 +219,7 @@ impl<'de> Deserialize<'de> for CredentialManagementResponse {
                 let mut total_credentials = None; 
                 let mut cred_protect = None; 
                 let mut large_blob_key = None; 
+                let mut third_party_payment = None; 
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -294,7 +299,12 @@ impl<'de> Deserialize<'de> for CredentialManagementResponse {
                             
                             large_blob_key = Some(map.next_value::<ByteBuf>()?.into_vec());
                         }
-
+                        0x0C => {
+                            if third_party_payment.is_some() {
+                                return Err(SerdeError::duplicate_field("third_party_payment"));
+                            }
+                            third_party_payment = Some(map.next_value()?);
+                        }
                         k => {
                             warn!("ClientPinResponse: unexpected key: {:?}", k);
                             let _ = map.next_value::<IgnoredAny>()?;
@@ -315,6 +325,7 @@ impl<'de> Deserialize<'de> for CredentialManagementResponse {
                     total_credentials,
                     cred_protect,
                     large_blob_key,
+                    third_party_payment,
                 })
             }
         }

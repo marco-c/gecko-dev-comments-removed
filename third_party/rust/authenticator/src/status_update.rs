@@ -5,6 +5,7 @@ use crate::{
             authenticator_config::{AuthConfigCommand, AuthConfigResult},
             bio_enrollment::BioTemplateId,
             get_info::AuthenticatorInfo,
+            large_blobs::LargeBlobArrayElement,
             PinUvAuthResult,
         },
         server::{PublicKeyCredentialDescriptor, PublicKeyCredentialUserEntity},
@@ -107,6 +108,9 @@ pub enum StatusUpdate {
     InteractiveManagement(InteractiveUpdate),
     
     SelectResultNotice(Sender<Option<usize>>, Vec<PublicKeyCredentialUserEntity>),
+    
+    
+    LargeBlobData(Sender<LargeBlobArrayElement>, Vec<u8>),
 }
 
 pub(crate) fn send_status(status: &Sender<StatusUpdate>, msg: StatusUpdate) {

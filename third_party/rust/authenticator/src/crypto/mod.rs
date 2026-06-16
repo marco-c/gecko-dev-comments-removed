@@ -517,6 +517,9 @@ pub enum COSEAlgorithm {
     RS512 = -259,                      
     RS384 = -258,                      
     RS256 = -257,                      
+    Ed448 = -53,                       
+    ESP512 = -52,                      
+    ESP384 = -51,                      
     ES256K = -47,                      
     HSS_LMS = -46,                     
     SHAKE256 = -45,                    
@@ -540,6 +543,7 @@ pub enum COSEAlgorithm {
     ECDH_SS_HKDF256 = -27,             
     ECDH_ES_HKDF512 = -26,             
     ECDH_ES_HKDF256 = -25,             
+    Ed25519 = -19,                     
     SHAKE128 = -18,                    
     SHA512_256 = -17,                  
     SHA256 = -16,                      
@@ -549,6 +553,7 @@ pub enum COSEAlgorithm {
     Direct_HKDF_AES128 = -12,          
     Direct_HKDF_SHA512 = -11,          
     Direct_HKDF_SHA256 = -10,          
+    ESP256 = -9,                       
     EDDSA = -8,                        
     ES256 = -7,                        
     Direct = -6,                       
@@ -622,6 +627,9 @@ impl TryFrom<i64> for COSEAlgorithm {
             i if i == COSEAlgorithm::RS512 as i64 => Ok(COSEAlgorithm::RS512),
             i if i == COSEAlgorithm::RS384 as i64 => Ok(COSEAlgorithm::RS384),
             i if i == COSEAlgorithm::RS256 as i64 => Ok(COSEAlgorithm::RS256),
+            i if i == COSEAlgorithm::Ed448 as i64 => Ok(COSEAlgorithm::Ed448),
+            i if i == COSEAlgorithm::ESP512 as i64 => Ok(COSEAlgorithm::ESP512),
+            i if i == COSEAlgorithm::ESP384 as i64 => Ok(COSEAlgorithm::ESP384),
             i if i == COSEAlgorithm::ES256K as i64 => Ok(COSEAlgorithm::ES256K),
             i if i == COSEAlgorithm::HSS_LMS as i64 => Ok(COSEAlgorithm::HSS_LMS),
             i if i == COSEAlgorithm::SHAKE256 as i64 => Ok(COSEAlgorithm::SHAKE256),
@@ -651,6 +659,7 @@ impl TryFrom<i64> for COSEAlgorithm {
             i if i == COSEAlgorithm::ECDH_SS_HKDF256 as i64 => Ok(COSEAlgorithm::ECDH_SS_HKDF256),
             i if i == COSEAlgorithm::ECDH_ES_HKDF512 as i64 => Ok(COSEAlgorithm::ECDH_ES_HKDF512),
             i if i == COSEAlgorithm::ECDH_ES_HKDF256 as i64 => Ok(COSEAlgorithm::ECDH_ES_HKDF256),
+            i if i == COSEAlgorithm::Ed25519 as i64 => Ok(COSEAlgorithm::Ed25519),
             i if i == COSEAlgorithm::SHAKE128 as i64 => Ok(COSEAlgorithm::SHAKE128),
             i if i == COSEAlgorithm::SHA512_256 as i64 => Ok(COSEAlgorithm::SHA512_256),
             i if i == COSEAlgorithm::SHA256 as i64 => Ok(COSEAlgorithm::SHA256),
@@ -668,6 +677,7 @@ impl TryFrom<i64> for COSEAlgorithm {
             i if i == COSEAlgorithm::Direct_HKDF_SHA256 as i64 => {
                 Ok(COSEAlgorithm::Direct_HKDF_SHA256)
             }
+            i if i == COSEAlgorithm::ESP256 as i64 => Ok(COSEAlgorithm::ESP256),
             i if i == COSEAlgorithm::EDDSA as i64 => Ok(COSEAlgorithm::EDDSA),
             i if i == COSEAlgorithm::ES256 as i64 => Ok(COSEAlgorithm::ES256),
             i if i == COSEAlgorithm::Direct as i64 => Ok(COSEAlgorithm::Direct),
@@ -1132,7 +1142,7 @@ pub struct U2FRegisterAnswer<'a> {
 }
 
 
-pub fn parse_u2f_der_certificate(data: &[u8]) -> Result<U2FRegisterAnswer, CryptoError> {
+pub fn parse_u2f_der_certificate(data: &[u8]) -> Result<U2FRegisterAnswer<'_>, CryptoError> {
     
     if data.len() < 4 {
         return Err(CryptoError::MalformedInput);
