@@ -887,17 +887,6 @@ nsIFrame* nsLayoutUtils::GetBackdropFrame(const nsIContent* aContent) {
 }
 
 
-Element* nsLayoutUtils::GetCheckmarkPseudo(const nsIContent* aContent) {
-  return GetPseudo(aContent, nsGkAtoms::checkmarkPseudoProperty);
-}
-
-
-nsIFrame* nsLayoutUtils::GetCheckmarkFrame(const nsIContent* aContent) {
-  Element* pseudo = GetCheckmarkPseudo(aContent);
-  return pseudo ? pseudo->GetPrimaryFrame() : nullptr;
-}
-
-
 void nsLayoutUtils::AppendGeneratedContentPseudos(
     const Element* aElement, nsTArray<nsIContent*>& aPseudos) {
   if (aElement->HasProperties()) {
@@ -906,9 +895,6 @@ void nsLayoutUtils::AppendGeneratedContentPseudos(
     }
     if (auto* marker = nsLayoutUtils::GetMarkerPseudo(aElement)) {
       aPseudos.AppendElement(marker);
-    }
-    if (auto* checkmark = nsLayoutUtils::GetCheckmarkPseudo(aElement)) {
-      aPseudos.AppendElement(checkmark);
     }
     if (auto* before = nsLayoutUtils::GetBeforePseudo(aElement)) {
       aPseudos.AppendElement(before);
