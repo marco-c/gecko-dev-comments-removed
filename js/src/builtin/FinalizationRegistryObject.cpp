@@ -253,8 +253,12 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc,
                                            bool* hasSymbolRegistrations) {
   
   
+  MOZ_ASSERT(recordsWithoutToken());
   MOZ_ASSERT(registrations());
   MOZ_ASSERT(hasSymbolRegistrations);
+
+  recordsWithoutToken()->mutableEraseIf(
+      [](FinalizationRecordObject* record) { return !record->isRegistered(); });
 
   for (auto iter = registrations()->modIter(); !iter.done(); iter.next()) {
     auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
@@ -267,8 +271,19 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc,
         oomUnsafe.crash("FinalizationRegistryObject::traceWeak");
       }
       iter.remove();
-    } else if (result.finalTarget().isSymbol()) {
-      *hasSymbolRegistrations = true;
+    } else {
+      if (result.finalTarget().isSymbol()) {
+        *hasSymbolRegistrations = true;
+      }
+
+      FinalizationRecordVector& records = iter.get().value();
+      records.mutableEraseIf([](FinalizationRecordObject* record) {
+        return !record->isRegistered();
+      });
+
+      if (records.empty()) {
+        iter.remove();
+      }
     }
   }
 
