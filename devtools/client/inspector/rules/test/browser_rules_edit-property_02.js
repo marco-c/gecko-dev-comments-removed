@@ -78,7 +78,11 @@ async function testEditProperty(inspector, ruleView) {
   
   
   for (const ch of "red;") {
-    const onPreviewDone = ruleView.once("ruleview-changed");
+    
+    
+    const onPreviewDone = ruleView.once(
+      ch == ";" ? "property-value-updated" : "ruleview-changed"
+    );
     EventUtils.sendChar(ch, ruleView.styleWindow);
     ruleView.debounce.flush();
     await onPreviewDone;

@@ -60,11 +60,9 @@ async function testPressingEnterCommitsChanges(swatch, ruleView) {
   );
 
   info("Sending RETURN key within the tooltip document");
-  
-  
-  const onRuleViewChanged = waitForNEvents(ruleView, "ruleview-changed", 2);
+  const onModifications = ruleView.once("property-value-updated");
   focusAndSendKey(widget.parent.ownerDocument.defaultView, "RETURN");
-  await onRuleViewChanged;
+  await onModifications;
 
   const style = await getComputedStyleProperty(
     "body",

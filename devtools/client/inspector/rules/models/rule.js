@@ -474,41 +474,12 @@ class Rule {
     property.value = value;
     property.priority = priority;
 
+    this.elementStyle.ruleView.emitForTests("start-set-property-value");
+
     const index = this.textProps.indexOf(property);
     return this.applyProperties(modifications => {
       modifications.setProperty(index, property.name, value, priority);
     });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  async previewPropertyValue(property, value, priority) {
-    this.elementStyle.ruleView.emitForTests("start-preview-property-value");
-    const modifications = this.domRule.startModifyingProperties(
-      this.inspector.panelWin,
-      this.cssProperties
-    );
-    modifications.setProperty(
-      this.textProps.indexOf(property),
-      property.name,
-      value,
-      priority
-    );
-    await modifications.apply();
-
-    
-    
-    this.elementStyle.notifyChanged();
   }
 
   

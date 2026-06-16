@@ -33,7 +33,7 @@ add_task(async function () {
   
   
   const onValueFocus = once(ruleEditor.element, "focus", true);
-  let onRuleViewChanged = ruleEditor.ruleView.once("ruleview-changed");
+  const onRuleViewChanged = ruleEditor.ruleView.once("ruleview-changed");
   const onMutation = inspector.once("markupmutation");
   EventUtils.sendString("background-color:", ruleEditor.doc.defaultView);
   await onValueFocus;
@@ -56,7 +56,7 @@ add_task(async function () {
 
   
   
-  onRuleViewChanged = view.once("ruleview-changed");
+  const onModifications = view.once("property-value-updated");
   EventUtils.synthesizeKey("KEY_Escape");
-  await onRuleViewChanged;
+  await onModifications;
 });

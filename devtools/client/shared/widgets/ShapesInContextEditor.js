@@ -230,7 +230,6 @@ class ShapesInContextEditor extends EventEmitter {
 
 
   onShapeChange(data) {
-    this.preview(data.value);
     this.commit(data.value);
   }
 
@@ -308,31 +307,14 @@ class ShapesInContextEditor extends EventEmitter {
 
 
 
-  preview(value) {
-    if (!this.textProperty) {
-      return;
-    }
-    
-    this.textProperty.rule.previewPropertyValue(this.textProperty, value);
-    
-    
-    this.swatch.nextSibling.textContent = value;
-  }
-
-  
-
-
-
-
-
 
 
   commit(value) {
     if (!this.textProperty) {
       return;
     }
-
-    this.textProperty.setValue(value);
+    
+    this.rule.setPropertyValue(this.textProperty, value);
   }
 
   destroy() {
