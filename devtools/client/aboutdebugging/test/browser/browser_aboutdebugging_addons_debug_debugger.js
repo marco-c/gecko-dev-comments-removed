@@ -29,9 +29,7 @@ add_task(async function testOpenDebuggerReload() {
 
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
-  const isStylesheetsInDebuggerEnabled = Services.prefs.getBoolPref(
-    "devtools.debugger.features.stylesheets-in-debugger"
-  );
+
   await installTemporaryExtensionFromXPI(
     {
       background() {
@@ -56,7 +54,6 @@ add_task(async function testOpenDebuggerReload() {
   );
   const toolbox = getToolbox(devtoolsWindow);
   const { panelWin } = toolbox.getCurrentPanel();
-  const dbg = createDebuggerContext(toolbox);
 
   info("Check the state of redux");
   ok(
@@ -100,11 +97,7 @@ add_task(async function testOpenDebuggerReload() {
   synthesizeKeyShortcut(L10N.getStr("toolbox.reload.key"), toolbox.win);
 
   await onDomCompleteResource;
-  if (isStylesheetsInDebuggerEnabled) {
-    
-    
-    await clickElement(dbg, "sourceDirectoryLabel", 5);
-  }
+
   info("Wait until a new background log message is logged");
   await waitFor(() => {
     
@@ -145,9 +138,6 @@ add_task(async function testAddAndRemoveBreakpoint() {
     window,
     EXTENSION_NAME
   );
-  const isStylesheetsInDebuggerEnabled = Services.prefs.getBoolPref(
-    "devtools.debugger.features.stylesheets-in-debugger"
-  );
   const toolbox = getToolbox(devtoolsWindow);
   const dbg = createDebuggerContext(toolbox);
 
@@ -155,11 +145,11 @@ add_task(async function testAddAndRemoveBreakpoint() {
   const sourceTreeThreads = findAllElements(dbg, "sourceTreeThreads");
   is(
     sourceTreeThreads.length,
-    isStylesheetsInDebuggerEnabled ? 2 : 1,
-    "There are two threads with source in the Source Tree"
+    1,
+    "There is only one thread with source in the Source Tree"
   );
   is(
-    sourceTreeThreads[sourceTreeThreads.length - 1].textContent,
+    sourceTreeThreads[0].textContent,
     "/_generated_background_page.html",
     "That thread is the background page"
   );
@@ -173,10 +163,7 @@ add_task(async function testAddAndRemoveBreakpoint() {
   
   
   const displayedSources = dbg.selectors.getDisplayedSourcesList();
-  const backgroundScriptRegex = /source-url-moz-extension:\/\/.+\.js/g;
-  const backgroundScript = displayedSources.find(source =>
-    backgroundScriptRegex.test(source.id)
-  );
+  const backgroundScript = displayedSources[0];
   await selectSource(dbg, backgroundScript);
   await addBreakpoint(dbg, backgroundScript, 3);
 
