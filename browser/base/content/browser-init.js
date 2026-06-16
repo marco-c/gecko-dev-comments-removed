@@ -643,6 +643,22 @@ var gBrowserInit = {
     window.addEventListener("mouseout", MousePosTracker);
     window.addEventListener("dragover", MousePosTracker);
 
+    
+    
+    
+    
+    
+    let htmlTooltip = document.getElementById("aHTMLTooltip");
+    htmlTooltip.addEventListener("popupshowing", () => {
+      let browser =
+        htmlTooltip.triggerNode?.documentGlobal.browsingContext.top
+          .embedderElement;
+      htmlTooltip.toggleAttribute(
+        "contenttooltip",
+        browser?.getTabBrowser() == gBrowser
+      );
+    });
+
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
     gNavToolbox.addEventListener("aftercustomization", CustomizationHandler);
 
