@@ -13,10 +13,8 @@
 #include <set>
 #include <vector>
 
-#include "api/rtp_parameters.h"
 #include "media/base/codec.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 
 namespace webrtc {
 template <typename IdStruct>
@@ -123,76 +121,6 @@ class UsedPayloadTypes : public UsedIds<Codec> {
   static const int kLastDynamicPayloadTypeUpperRange = 127;
 };
 
-
-
-class UsedRtpHeaderExtensionIds : public UsedIds<RtpExtension> {
- public:
-  enum class IdDomain {
-    
-    kOneByteOnly,
-    
-    
-    kTwoByteAllowed,
-  };
-
-  explicit UsedRtpHeaderExtensionIds(IdDomain id_domain)
-      : UsedIds<RtpExtension>(RtpExtension::kMinId,
-                              id_domain == IdDomain::kTwoByteAllowed
-                                  ? RtpExtension::kMaxId
-                                  : RtpExtension::kOneByteHeaderExtensionMaxId),
-        id_domain_(id_domain),
-        next_extension_id_(RtpExtension::kOneByteHeaderExtensionMaxId) {}
-
- private:
-  
-  
-  
-  
-  
-  int FindUnusedId() override {
-    if (next_extension_id_ <= RtpExtension::kOneByteHeaderExtensionMaxId) {
-      
-      
-      while (IsIdUsed(next_extension_id_) &&
-             next_extension_id_ >= min_allowed_id_) {
-        --next_extension_id_;
-      }
-    }
-
-    if (id_domain_ == IdDomain::kTwoByteAllowed) {
-      if (next_extension_id_ < min_allowed_id_) {
-        
-        
-        
-        next_extension_id_ = RtpExtension::kOneByteHeaderExtensionMaxId + 2;
-      }
-
-      if (next_extension_id_ > RtpExtension::kOneByteHeaderExtensionMaxId) {
-        while (IsIdUsed(next_extension_id_) &&
-               next_extension_id_ <= max_allowed_id_) {
-          ++next_extension_id_;
-        }
-      }
-    }
-    RTC_DCHECK(next_extension_id_ >= min_allowed_id_);
-    RTC_DCHECK(next_extension_id_ <= max_allowed_id_);
-    return next_extension_id_;
-  }
-
-  const IdDomain id_domain_;
-  int next_extension_id_;
-};
-
 }  
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::UsedIds;
-using ::webrtc::UsedPayloadTypes;
-using ::webrtc::UsedRtpHeaderExtensionIds;
-}  
-#endif  
 
 #endif  

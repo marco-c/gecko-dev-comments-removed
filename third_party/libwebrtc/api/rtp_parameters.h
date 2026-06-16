@@ -287,6 +287,14 @@ struct RTC_EXPORT RtpCodecCapability : public RtpCodec {
   }
 };
 
+enum class RtpTransceiverIdDomain {
+  
+  kOneByteOnly,
+  
+  
+  kTwoByteAllowed,
+};
+
 
 
 

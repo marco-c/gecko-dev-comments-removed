@@ -15,6 +15,7 @@
 #include "absl/strings/string_view.h"
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "media/base/codec.h"
 
 namespace webrtc {
@@ -36,6 +37,20 @@ class PayloadTypeSuggester {
   virtual RTCError AddLocalMapping(absl::string_view mid,
                                    PayloadType payload_type,
                                    const Codec& codec) = 0;
+
+  
+  
+  
+  virtual RTCErrorOr<int> SuggestRtpHeaderExtensionId(
+      absl::string_view mid,
+      const RtpExtension& extension,
+      RtpTransceiverIdDomain id_domain) = 0;
+  
+  
+  [[nodiscard]] virtual RTCError AddRtpHeaderExtensionMapping(
+      absl::string_view mid,
+      const RtpExtension& extension,
+      bool local) = 0;
 };
 
 }  
