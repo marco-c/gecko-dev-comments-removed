@@ -504,10 +504,8 @@ BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools) {
   
   uint32_t poolLoad[] = {Instr::PoolLoadUninit(0)};
   uint32_t poolData[] = {0xdddd0000, 0xdddd0001, 0xdddd0002, 0xdddd0003};
-  AsmBufWithPool::PoolEntry pe;
   BufferOffset load =
-      ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-  CHECK_EQUAL(pe.index(), 0u);
+      ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData);
   CHECK_EQUAL(load.getOffset(), 0);
 
   
@@ -540,8 +538,7 @@ BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools) {
   poolLoad[0] = Instr::PoolLoadUninit(0);
 
   
-  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-  CHECK_EQUAL(pe.index(), 1u);  
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData);
   CHECK_EQUAL(load.getOffset(), 24);
   CHECK_EQUAL(*ab.getInst(load),
               Instr::PoolLoadIndex(0));  
@@ -556,15 +553,13 @@ BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools) {
 
   
   poolLoad[0] = Instr::PoolLoadUninit(0);
-  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-  CHECK_EQUAL(pe.index(), 2u);  
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData);
   CHECK_EQUAL(load.getOffset(), 48);
   CHECK_EQUAL(*ab.getInst(load),
               Instr::PoolLoadIndex(0));  
 
   poolLoad[0] = Instr::PoolLoadUninit(0);
-  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)(poolData + 1), &pe);
-  CHECK_EQUAL(pe.index(), 3u);  
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)(poolData + 1));
   CHECK_EQUAL(load.getOffset(), 52);
   CHECK_EQUAL(*ab.getInst(load),
               Instr::PoolLoadIndex(1));  
@@ -587,16 +582,13 @@ BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools) {
   
   
   poolLoad[0] = Instr::PoolLoadUninit(0);
-  load = ab.allocEntry(1, 2, (uint8_t*)poolLoad, (uint8_t*)(poolData + 2), &pe);
-  CHECK_EQUAL(pe.index(), 4u);  
+  load = ab.allocEntry(1, 2, (uint8_t*)poolLoad, (uint8_t*)(poolData + 2));
   CHECK_EQUAL(load.getOffset(), 76);
   CHECK_EQUAL(*ab.getInst(load),
               Instr::PoolLoadIndex(0));  
 
   poolLoad[0] = Instr::PoolLoadUninit(0);
-  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-  CHECK_EQUAL(pe.index(),
-              6u);  
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData);
   CHECK_EQUAL(load.getOffset(), 96);
   CHECK_EQUAL(*ab.getInst(load),
               Instr::PoolLoadIndex(0));  
