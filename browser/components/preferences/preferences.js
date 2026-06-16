@@ -733,7 +733,16 @@ async function gotoPref(
     if (
       !(!document.location.hash && category == kDefaultCategoryInternalName)
     ) {
-      document.location.hash = friendlyName;
+      let targetHash = "#" + friendlyName;
+      if (document.location.hash != targetHash) {
+        if (aShowReason == "Click") {
+          
+          history.pushState(category, document.title, targetHash);
+        } else {
+          
+          history.replaceState(category, document.title, targetHash);
+        }
+      }
     }
   }
   
