@@ -259,6 +259,17 @@ pref("browser.uidensity", 0);
 
 pref("browser.touchmode.auto", true);
 
+
+
+
+
+
+
+
+
+
+pref("browser.compactmode.auto.threshold", "0.05");
+
 pref("browser.compactmode.show", false);
 
 

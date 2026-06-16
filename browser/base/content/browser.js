@@ -3178,19 +3178,62 @@ var gUIDensity = {
   MODE_TOUCH: 2,
   uiDensityPref: "browser.uidensity",
   autoTouchModePref: "browser.touchmode.auto",
-  knownPrefs: new Set(["browser.uidensity", "browser.touchmode.auto"]),
+  autoCompactThresholdPref: "browser.compactmode.auto.threshold",
+  knownPrefs: new Set([
+    "browser.uidensity",
+    "browser.touchmode.auto",
+    "browser.compactmode.auto.threshold",
+  ]),
+
+  
+  
+  
+  AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT: 40,
+
+  
+  
+  
+  
+  
+  AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH: 56,
 
   init() {
     this.update();
     Services.obs.addObserver(this, "tablet-mode-change");
     Services.prefs.addObserver(this.uiDensityPref, this);
     Services.prefs.addObserver(this.autoTouchModePref, this);
+    Services.prefs.addObserver(this.autoCompactThresholdPref, this);
+    window.addEventListener("resize", this);
+
+    
+    
+    
+    let sidebarMainContainer = document.getElementById("sidebar-main");
+    if (sidebarMainContainer) {
+      this._sidebarStateObserver = new MutationObserver(() => this.update());
+      this._sidebarStateObserver.observe(sidebarMainContainer, {
+        attributes: true,
+        attributeFilter: ["hidden", "sidebar-launcher-expanded"],
+      });
+    }
   },
 
   uninit() {
     Services.obs.removeObserver(this, "tablet-mode-change");
     Services.prefs.removeObserver(this.uiDensityPref, this);
     Services.prefs.removeObserver(this.autoTouchModePref, this);
+    Services.prefs.removeObserver(this.autoCompactThresholdPref, this);
+    window.removeEventListener("resize", this);
+    if (this._sidebarStateObserver) {
+      this._sidebarStateObserver.disconnect();
+      this._sidebarStateObserver = null;
+    }
+  },
+
+  handleEvent(event) {
+    if (event.type == "resize") {
+      this.update();
+    }
   },
 
   observe(aSubject, aTopic, aPrefName) {
@@ -3210,6 +3253,44 @@ var gUIDensity = {
     this.update();
   },
 
+  _shouldAutoCompact() {
+    const threshold = parseFloat(
+      Services.prefs.getCharPref(this.autoCompactThresholdPref, "0.05")
+    );
+    if (!(threshold > 0)) {
+      return false;
+    }
+    if (
+      window.innerHeight &&
+      this.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / window.innerHeight >
+        threshold
+    ) {
+      return true;
+    }
+    if (
+      window.innerWidth &&
+      this._isSidebarLauncherCollapsed() &&
+      this.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH / window.innerWidth >
+        threshold
+    ) {
+      return true;
+    }
+    return false;
+  },
+
+  
+  
+  _isSidebarLauncherCollapsed() {
+    if (!Services.prefs.getBoolPref("sidebar.revamp", false)) {
+      return false;
+    }
+    if (!SidebarController.initialized) {
+      return false;
+    }
+    const state = SidebarController._state;
+    return Boolean(state && state.launcherVisible && !state.launcherExpanded);
+  },
+
   getCurrentDensity() {
     
     
@@ -3219,6 +3300,15 @@ var gUIDensity = {
       if (inTablet && Services.prefs.getBoolPref(this.autoTouchModePref)) {
         return { mode: this.MODE_TOUCH, overridden: true };
       }
+    }
+    
+    
+    if (
+      Services.prefs.getBoolPref("browser.nova.enabled", false) &&
+      !Services.prefs.prefHasUserValue(this.uiDensityPref) &&
+      this._shouldAutoCompact()
+    ) {
+      return { mode: this.MODE_COMPACT, overridden: true };
     }
     return {
       mode: Services.prefs.getIntPref(this.uiDensityPref),
@@ -3232,10 +3322,16 @@ var gUIDensity = {
     }
 
     let docs = [document.documentElement];
-    let shouldUpdateSidebar =
-      SidebarController.initialized && SidebarController.isOpen;
-    if (shouldUpdateSidebar) {
-      docs.push(SidebarController.browser.contentDocument.documentElement);
+    
+    
+    
+    
+    let sidebarContentDoc =
+      SidebarController.initialized && SidebarController.isOpen
+        ? SidebarController.browser.contentDocument
+        : null;
+    if (sidebarContentDoc?.documentElement) {
+      docs.push(sidebarContentDoc.documentElement);
     }
     for (let doc of docs) {
       switch (mode) {
@@ -3250,10 +3346,8 @@ var gUIDensity = {
           break;
       }
     }
-    if (shouldUpdateSidebar) {
-      let tree = SidebarController.browser.contentDocument.querySelector(
-        ".sidebar-placesTree"
-      );
+    if (sidebarContentDoc) {
+      let tree = sidebarContentDoc.querySelector(".sidebar-placesTree");
       if (tree) {
         
         
