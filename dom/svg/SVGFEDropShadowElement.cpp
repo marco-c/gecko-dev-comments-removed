@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGFEDropShadowElement.h"
 
 #include "mozilla/SVGFilterInstance.h"
@@ -105,7 +103,7 @@ bool SVGFEDropShadowElement::OutputIsTainted(
     const nsTArray<bool>& aInputsAreTainted,
     nsIPrincipal* aReferencePrincipal) {
   if (const auto* frame = GetPrimaryFrame()) {
-    if (frame->Style()->StyleSVGReset()->mFloodColor.IsCurrentColor()) {
+    if (frame->Style()->StyleSVGReset()->mFloodColor.DependsOnCurrentColor()) {
       return true;
     }
   }
