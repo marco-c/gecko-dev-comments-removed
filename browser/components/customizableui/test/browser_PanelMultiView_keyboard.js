@@ -740,3 +740,15 @@ add_task(async function testTabbingThroughNonDelegatingShadowRoots() {
 
   await hidePopup();
 });
+
+
+add_task(async function testTabbingThroughNonDelegatingShadowRoots() {
+  await openPopup();
+  await showSubView(gNonDelegatingComponentView);
+
+  gNonDelegatingShadowRoot.focus();
+  gNonDelegatingShadowRootInput.focus();
+  await expectFocusAfterKey("Tab", gNonDelegatingShadowRootButton);
+
+  await hidePopup();
+});
