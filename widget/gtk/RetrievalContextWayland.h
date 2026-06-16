@@ -2,8 +2,8 @@
 
 
 
-#ifndef _nsClipboardWayland_h_
-#define _nsClipboardWayland_h_
+#ifndef _RetrievalContextWayland_h_
+#define _RetrievalContextWayland_h_
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"

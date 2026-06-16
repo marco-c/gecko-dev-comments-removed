@@ -2,7 +2,7 @@
 
 
 
-#include "nsClipboardWayland.h"
+#include "RetrievalContextWayland.h"
 
 #include "AsyncClipboardRequest.h"
 #include "mozilla/TimeStamp.h"
