@@ -6445,6 +6445,11 @@ EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
     const EditorDOMPointBase<PT, CT>& aPointAtCaret) {
   MOZ_ASSERT(aEditorBase.IsEditActionDataAvailable());
 
+  if (aEditorBase.GetEditContext()) {
+    
+    
+    return;
+  }
   nsPresContext* presContext = aEditorBase.GetPresContext();
   if (NS_WARN_IF(!presContext)) {
     mFailed = true;

@@ -58,6 +58,10 @@ class EditContext final : public DOMEventTargetHelper {
   }
 
   
+  nsGenericHTMLElement& TextContainer() { return *mTextContainer; }
+  nsTextNode& TextNode() { return *mText; }
+
+  
   MOZ_CAN_RUN_SCRIPT void Deactivate();
 
   IMPL_EVENT_HANDLER(characterboundsupdate);

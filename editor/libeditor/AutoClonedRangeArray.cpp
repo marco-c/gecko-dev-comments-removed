@@ -18,6 +18,7 @@
 #include "mozilla/PresShell.h"                
 #include "mozilla/dom/CharacterDataBuffer.h"  
 #include "mozilla/dom/Document.h"             
+#include "mozilla/dom/EditContext.h"          
 #include "mozilla/dom/HTMLBRElement.h"        
 #include "mozilla/dom/Selection.h"            
 #include "mozilla/dom/Text.h"                 
@@ -121,6 +122,14 @@ bool AutoClonedRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
 
   
   nsINode* commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
+  if (aEditingHost.HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+    EditContext* editContext =
+        nsGenericHTMLElement::FromNode(aEditingHost)->GetEditContext();
+    MOZ_ASSERT(editContext);
+    if (commonAncestor == &editContext->TextNode()) {
+      return true;
+    }
+  }
   return commonAncestor && commonAncestor->IsContent() &&
          commonAncestor->IsInclusiveDescendantOf(&aEditingHost);
 }
