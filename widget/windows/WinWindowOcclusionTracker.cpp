@@ -1411,6 +1411,28 @@ bool WinWindowOcclusionTracker::WindowOcclusionCalculator::
 
 Maybe<bool> WinWindowOcclusionTracker::WindowOcclusionCalculator::
     IsWindowOnCurrentVirtualDesktop(HWND aHwnd) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BOOL isCloaked = FALSE;
+  if (FAILED(::DwmGetWindowAttribute(aHwnd, DWMWA_CLOAKED, &isCloaked,
+                                     sizeof(isCloaked))) ||
+      !isCloaked) {
+    return Some(true);
+  }
+
   if (!mVirtualDesktopManager) {
     return Some(true);
   }
