@@ -4,6 +4,7 @@
 
 #include "CacheIndex.h"
 
+#include "CacheCrypto.h"
 #include "CacheLog.h"
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
@@ -25,7 +26,7 @@
 #define kMinUnwrittenChanges 300
 #define kMinDumpInterval 20000  // in milliseconds
 #define kMaxBufSize 16384
-#define kIndexVersion 0x0000000A
+#define kIndexVersion 0x0000000C
 #define kUpdateIndexStartDelay 50000  // in milliseconds
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 
@@ -1804,6 +1805,13 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
                              static_cast<uint32_t>(mTotalBytesWritten >> 10));
   mRWBufPos += sizeof(uint32_t);
+  
+  
+  
+  
+  NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
+                             CacheCrypto::IsActive() ? 1 : 0);
+  mRWBufPos += sizeof(uint32_t);
 
   mSkipEntries = 0;
 }
@@ -2282,6 +2290,24 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
     pos += sizeof(uint32_t);
     dataWritten <<= 10;
     mTotalBytesWritten += dataWritten;
+
+    bool wasEncrypted = !!NetworkEndian::readUint32(mRWBuf + pos);
+    pos += sizeof(uint32_t);
+    bool nowEncrypted = CacheCrypto::IsActive();
+    if (wasEncrypted != nowEncrypted) {
+      
+      
+      
+      
+      
+      
+      LOG(
+          ("CacheIndex::ParseRecords() - Encryption setting changed "
+           "[wasEncrypted=%d, nowEncrypted=%d], purging cache",
+           wasEncrypted, nowEncrypted));
+      CacheFileIOManager::EvictAll();
+      return;
+    }
   }
 
   uint32_t hashOffset = pos;

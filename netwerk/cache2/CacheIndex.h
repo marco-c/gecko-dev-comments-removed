@@ -64,12 +64,20 @@ using CacheIndexHeader = struct {
   
   
   uint32_t mKBWritten;
+
+  
+  
+  
+  
+  
+  uint32_t mIsEncrypted;
 };
 
 static_assert(sizeof(CacheIndexHeader::mVersion) +
                       sizeof(CacheIndexHeader::mTimeStamp) +
                       sizeof(CacheIndexHeader::mIsDirty) +
-                      sizeof(CacheIndexHeader::mKBWritten) ==
+                      sizeof(CacheIndexHeader::mKBWritten) +
+                      sizeof(CacheIndexHeader::mIsEncrypted) ==
                   sizeof(CacheIndexHeader),
               "Unexpected sizeof(CacheIndexHeader)!");
 
@@ -253,6 +261,14 @@ class CacheIndexEntry : public PLDHashEntryHdr {
     return !!(mRec->Get()->mFlags & kHasAltDataMask);
   }
 
+  void SetHasNoVarySearch(bool aVal) {
+    aVal ? mRec->Get()->mFlags |= kHasNoVarySearchMask
+         : mRec->Get()->mFlags &= ~kHasNoVarySearchMask;
+  }
+  bool HasNoVarySearch() const {
+    return !!(mRec->Get()->mFlags & kHasNoVarySearchMask);
+  }
+
   void SetOnStartTime(uint16_t aTime) { mRec->Get()->mOnStartTime = aTime; }
   uint16_t GetOnStartTime() const { return mRec->Get()->mOnStartTime; }
 
@@ -394,7 +410,11 @@ class CacheIndexEntry : public PLDHashEntryHdr {
   static const uint32_t kDictionaryMask = 0x01000000;
 
   
-  static const uint32_t kFileSizeMask = 0x00FFFFFF;
+  
+  static const uint32_t kHasNoVarySearchMask = 0x00800000;
+
+  
+  static const uint32_t kFileSizeMask = 0x007FFFFF;
 
   RefPtr<CacheIndexRecordWrapper> mRec;
 };
