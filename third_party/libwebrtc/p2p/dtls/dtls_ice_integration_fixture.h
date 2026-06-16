@@ -537,6 +537,14 @@ class Base {
         ep.client ? "client_transport" : "server_transport",
          0, std::move(init));
     ep.ice_transport = make_ref_counted<FakeIceTransport>(std::move(channel));
+
+    
+    
+    IceConfig config;
+    config.continual_gathering_policy = GATHER_CONTINUALLY;
+    config.dtls_handshake_in_stun = ep.config.dtls_in_stun;
+    ep.ice()->SetIceConfig(config);
+
     
     if (ep.config.ice_lite && ep.config.ice_role == ICEROLE_CONTROLLING) {
       ep.ice()->SetRemoteIceMode(ICEMODE_LITE);
@@ -554,13 +562,6 @@ class Base {
     if (ice_lite_agent) {
       ep.dtls->SetFakeIceLite();
     }
-
-    
-    
-    IceConfig config;
-    config.continual_gathering_policy = GATHER_CONTINUALLY;
-    config.dtls_handshake_in_stun = ep.config.dtls_in_stun;
-    ep.ice()->SetIceConfig(config);
 
     
     ep.ice()->SetIceParameters(ep.client ? client_ice_parameters_

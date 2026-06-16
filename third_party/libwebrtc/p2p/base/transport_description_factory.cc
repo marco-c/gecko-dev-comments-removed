@@ -10,8 +10,6 @@
 
 #include "p2p/base/transport_description_factory.h"
 
-#include <stddef.h>
-
 #include <memory>
 #include <string>
 
@@ -48,6 +46,12 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
   desc->AddOption(ICE_OPTION_TRICKLE);
   if (options.enable_ice_renomination) {
     desc->AddOption(ICE_OPTION_RENOMINATION);
+  }
+
+  if (field_trials_.IsEnabled("WebRTC-IceHandshakeDtls") &&
+      (!current_description ||
+       current_description->HasOption(ICE_OPTION_GOOG_SPED_V1))) {
+    desc->AddOption(ICE_OPTION_GOOG_SPED_V1);
   }
 
   
@@ -92,13 +96,20 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
   if (options.enable_ice_renomination) {
     desc->AddOption(ICE_OPTION_RENOMINATION);
   }
+  if (field_trials_.IsEnabled("WebRTC-IceHandshakeDtls") &&
+      offer->HasOption(ICE_OPTION_GOOG_SPED_V1) &&
+      (current_description == nullptr ||
+       current_description->HasOption(ICE_OPTION_GOOG_SPED_V1))) {
+    desc->AddOption(ICE_OPTION_GOOG_SPED_V1);
+  }
+
   
   
   
-  if ((!certificate_ || !offer->identity_fingerprint.get()) && insecure()) {
+  if ((!certificate_ || !offer->identity_fingerprint) && insecure()) {
     return desc;
   }
-  if (!offer->identity_fingerprint.get()) {
+  if (!offer->identity_fingerprint) {
     if (require_transport_attributes) {
       
       RTC_LOG(LS_WARNING) << "Failed to create TransportDescription answer "

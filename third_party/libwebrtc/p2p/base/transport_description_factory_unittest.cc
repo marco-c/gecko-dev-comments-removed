@@ -10,13 +10,13 @@
 
 #include "p2p/base/transport_description_factory.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/field_trials.h"
 #include "api/scoped_refptr.h"
 #include "p2p/base/ice_credentials_iterator.h"
 #include "p2p/base/p2p_constants.h"
@@ -27,21 +27,22 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/ssl_identity.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/scoped_key_value_config.h"
+
+namespace webrtc {
+namespace {
 
 using ::testing::Contains;
 using ::testing::Not;
 using ::testing::NotNull;
-using ::webrtc::TransportDescription;
-using ::webrtc::TransportDescriptionFactory;
-using ::webrtc::TransportOptions;
 
 class TransportDescriptionFactoryTest : public ::testing::Test {
  public:
   TransportDescriptionFactoryTest()
-      : ice_credentials_({}),
+      : field_trials_(CreateTestFieldTrials()),
+        ice_credentials_({}),
         f1_(field_trials_),
         f2_(field_trials_),
         cert1_(
@@ -143,12 +144,12 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
     
     std::unique_ptr<TransportDescription> offer =
         f1_.CreateOffer(options, nullptr, &ice_credentials_);
-    ASSERT_TRUE(offer);
+    ASSERT_THAT(offer, NotNull());
     EXPECT_THAT(offer->transport_options, Not(Contains("renomination")));
 
     std::unique_ptr<TransportDescription> answer = f2_.CreateAnswer(
         offer.get(), options, true, nullptr, &ice_credentials_);
-    ASSERT_TRUE(answer);
+    ASSERT_THAT(answer, NotNull());
     EXPECT_THAT(answer->transport_options, Not(Contains("renomination")));
 
     options.enable_ice_renomination = true;
@@ -179,7 +180,7 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
     f2_.set_certificate(nullptr);
   }
 
-  webrtc::test::ScopedKeyValueConfig field_trials_;
+  FieldTrials field_trials_;
   webrtc::IceCredentialsIterator ice_credentials_;
   TransportDescriptionFactory f1_;
   TransportDescriptionFactory f2_;
@@ -341,6 +342,118 @@ TEST_F(TransportDescriptionFactoryTest, AddsTrickleIceOption) {
   EXPECT_TRUE(answer->HasOption("trickle"));
 }
 
+TEST_F(TransportDescriptionFactoryTest, AddsGoogSpedV1OptionWhenEnabled) {
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-IceHandshakeDtls/Enabled/");
+  TransportDescriptionFactory f1(field_trials);
+  TransportDescriptionFactory f2(field_trials);
+  f1.set_certificate(cert1_);
+  f2.set_certificate(cert2_);
+
+  webrtc::TransportOptions options;
+  std::unique_ptr<TransportDescription> offer =
+      f1.CreateOffer(options, nullptr, &ice_credentials_);
+  ASSERT_THAT(offer, NotNull());
+  EXPECT_TRUE(offer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  std::unique_ptr<TransportDescription> answer =
+      f2.CreateAnswer(offer.get(), options, true, nullptr, &ice_credentials_);
+  ASSERT_THAT(answer, NotNull());
+  EXPECT_TRUE(answer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+}
+
+TEST_F(TransportDescriptionFactoryTest,
+       DoesNotAddGoogSpedV1OptionWhenDisabled) {
+  webrtc::TransportOptions options;
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, nullptr, &ice_credentials_);
+  ASSERT_THAT(offer, NotNull());
+  EXPECT_FALSE(offer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  std::unique_ptr<TransportDescription> answer =
+      f2_.CreateAnswer(offer.get(), options, true, nullptr, &ice_credentials_);
+  ASSERT_THAT(answer, NotNull());
+  EXPECT_FALSE(answer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+}
+
+TEST_F(TransportDescriptionFactoryTest,
+       DoesNotAddGoogSpedV1OptionToAnswerIfMissingInOffer) {
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-IceHandshakeDtls/Enabled/");
+  TransportDescriptionFactory f2(field_trials);  
+  f2.set_certificate(cert2_);
+
+  FieldTrials disabled_trials = CreateTestFieldTrials();  
+  TransportDescriptionFactory f1_disabled(disabled_trials);
+  f1_disabled.set_certificate(cert1_);
+
+  webrtc::TransportOptions options;
+  std::unique_ptr<TransportDescription> offer =
+      f1_disabled.CreateOffer(options, nullptr, &ice_credentials_);
+  ASSERT_THAT(offer, NotNull());
+  EXPECT_FALSE(offer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  std::unique_ptr<TransportDescription> answer =
+      f2.CreateAnswer(offer.get(), options, true, nullptr, &ice_credentials_);
+  ASSERT_THAT(answer, NotNull());
+  EXPECT_FALSE(answer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+}
+
+TEST_F(TransportDescriptionFactoryTest,
+       DoesNotAddGoogSpedV1OptionToOfferDuringRenegotiationIfMissingInCurrent) {
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-IceHandshakeDtls/Enabled/");
+  TransportDescriptionFactory f1(field_trials);
+  f1.set_certificate(cert1_);
+
+  webrtc::TransportOptions options;
+
+  FieldTrials disabled_trials = CreateTestFieldTrials();
+  TransportDescriptionFactory f1_disabled(disabled_trials);
+  f1_disabled.set_certificate(cert1_);
+  std::unique_ptr<TransportDescription> current_desc =
+      f1_disabled.CreateOffer(options, nullptr, &ice_credentials_);
+  ASSERT_THAT(current_desc, NotNull());
+  ASSERT_FALSE(current_desc->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  std::unique_ptr<TransportDescription> new_offer =
+      f1.CreateOffer(options, current_desc.get(), &ice_credentials_);
+  ASSERT_THAT(new_offer, NotNull());
+  EXPECT_FALSE(new_offer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+}
+
+TEST_F(
+    TransportDescriptionFactoryTest,
+    DoesNotAddGoogSpedV1OptionToAnswerDuringRenegotiationIfMissingInCurrent) {
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-IceHandshakeDtls/Enabled/");
+  TransportDescriptionFactory f1(field_trials);
+  TransportDescriptionFactory f2(field_trials);
+  f1.set_certificate(cert1_);
+  f2.set_certificate(cert2_);
+
+  webrtc::TransportOptions options;
+
+  std::unique_ptr<TransportDescription> offer =
+      f1.CreateOffer(options, nullptr, &ice_credentials_);
+  ASSERT_THAT(offer, NotNull());
+  ASSERT_TRUE(offer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  FieldTrials disabled_trials = CreateTestFieldTrials();
+  TransportDescriptionFactory f2_disabled(disabled_trials);
+  f2_disabled.set_certificate(cert2_);
+  std::unique_ptr<TransportDescription> current_answer =
+      f2_disabled.CreateAnswer(offer.get(), options, true, nullptr,
+                               &ice_credentials_);
+  ASSERT_THAT(current_answer, NotNull());
+  ASSERT_FALSE(current_answer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+
+  std::unique_ptr<TransportDescription> new_answer = f2.CreateAnswer(
+      offer.get(), options, true, current_answer.get(), &ice_credentials_);
+  ASSERT_THAT(new_answer, NotNull());
+  EXPECT_FALSE(new_answer->HasOption(ICE_OPTION_GOOG_SPED_V1));
+}
+
 
 TEST_F(TransportDescriptionFactoryTest, CreateOfferIceCredentialsIterator) {
   std::vector<webrtc::IceParameters> credentials = {
@@ -399,3 +512,6 @@ TEST_F(TransportDescriptionFactoryTest, CreateAnswerToDtlsPassiveOffer) {
       f2_.CreateAnswer(offer.get(), options, false, nullptr, &ice_credentials_);
   EXPECT_EQ(answer->connection_role, webrtc::CONNECTIONROLE_ACTIVE);
 }
+
+}  
+}  
