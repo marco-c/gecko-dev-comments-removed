@@ -2,10 +2,8 @@
 
 
 
-
-
-#ifndef SDPPARSER_H_
-#define SDPPARSER_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDPPARSER_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDPPARSER_H_
 
 #include <string>
 #include <vector>
@@ -26,8 +24,11 @@ class SdpParser {
     typedef std::vector<Anomaly> AnomalyVec;
     virtual ~Results() = default;
     UniquePtr<mozilla::Sdp>& Sdp() { return mSdp; }
+    const UniquePtr<mozilla::Sdp>& Sdp() const { return mSdp; }
     AnomalyVec& Errors() { return mErrors; }
+    const AnomalyVec& Errors() const { return mErrors; }
     AnomalyVec& Warnings() { return mWarnings; }
+    const AnomalyVec& Warnings() const { return mWarnings; }
     virtual const std::string& ParserName() const = 0;
     bool Ok() const { return mErrors.empty(); }
 
@@ -54,17 +55,16 @@ class SdpParser {
 
     void SetSdp(UniquePtr<mozilla::Sdp>&& aSdp) { mSdp = std::move(aSdp); }
 
-    void AddParseError(size_t line, const std::string& message) {
-      MOZ_LOG(SdpLog, LogLevel::Error,
-              ("%s: parser error %s, at line %zu", mParserName.c_str(),
-               message.c_str(), line));
+    void AddParseError(const size_t line, const std::string& message) {
+      MOZ_LOG_FMT(SdpLog, LogLevel::Error, "{}: parser error {}, at line {}",
+                  mParserName.c_str(), message.c_str(), line);
       mErrors.push_back(std::make_pair(line, message));
     }
 
-    void AddParseWarning(size_t line, const std::string& message) {
-      MOZ_LOG(SdpLog, LogLevel::Warning,
-              ("%s: parser warning %s, at line %zu", mParserName.c_str(),
-               message.c_str(), line));
+    void AddParseWarning(const size_t line, const std::string& message) {
+      MOZ_LOG_FMT(SdpLog, LogLevel::Warning,
+                  "{}: parser warning {}, at line {}", mParserName.c_str(),
+                  message.c_str(), line);
       mWarnings.push_back(std::make_pair(line, message));
     }
 
