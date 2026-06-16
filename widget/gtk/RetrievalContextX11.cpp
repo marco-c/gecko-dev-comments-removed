@@ -3,7 +3,7 @@
 
 
 #include "AsyncClipboardRequest.h"
-#include "nsClipboardX11.h"
+#include "RetrievalContextX11.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WidgetUtilsGtk.h"
 

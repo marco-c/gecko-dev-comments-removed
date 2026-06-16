@@ -2,16 +2,16 @@
 
 
 
-#ifndef _nsClipboardGtk_h_
-#define _nsClipboardGtk_h_
+#ifndef _RetrievalContextX11_h_
+#define _RetrievalContextX11_h_
 
-#include "mozilla/Mutex.h"
+#include <gtk/gtk.h>
 #include "nsClipboard.h"
 
-class RetrievalContextGtk final : public RetrievalContext {
- public:
-  RetrievalContextGtk();
+namespace mozilla::widget {
 
+class RetrievalContextX11 : public RetrievalContext {
+ public:
   ClipboardData GetClipboardData(const char* aMimeType,
                                  int32_t aWhichClipboard) override;
   mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
@@ -19,14 +19,22 @@ class RetrievalContextGtk final : public RetrievalContext {
 
   void ClearCachedTargets(int32_t aWhichClipboard) override;
 
+  RetrievalContextX11();
+
  private:
+  ~RetrievalContextX11();
+
   ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard);
 
-  ClipboardData WaitForClipboardData(ClipboardDataType, int32_t aWhichClipboard,
+  
+  ClipboardData WaitForClipboardData(ClipboardDataType aDataType,
+                                     int32_t aWhichClipboard,
                                      const char* aMimeType = nullptr);
 
   static ClipboardTargets sClipboardTargets;
   static ClipboardTargets sPrimaryTargets;
 };
+
+};  
 
 #endif 
