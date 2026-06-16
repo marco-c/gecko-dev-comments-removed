@@ -12,7 +12,6 @@
 #include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/SelectionManager.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPtr.h"
 
 #include "nsAtomHashKeys.h"
 #include "nsIContent.h"
@@ -493,15 +492,13 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  static mozilla::StaticRefPtr<nsAccessibilityService> gAccessibilityService;
+  static nsAccessibilityService* gAccessibilityService;
 
   
 
 
-  static mozilla::StaticRefPtr<mozilla::a11y::ApplicationAccessible>
-      gApplicationAccessible;
-  static mozilla::StaticRefPtr<mozilla::a11y::xpcAccessibleApplication>
-      gXPCApplicationAccessible;
+  static mozilla::a11y::ApplicationAccessible* gApplicationAccessible;
+  static mozilla::a11y::xpcAccessibleApplication* gXPCApplicationAccessible;
 
   
 

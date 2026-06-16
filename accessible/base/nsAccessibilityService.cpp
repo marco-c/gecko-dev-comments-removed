@@ -101,7 +101,7 @@ using namespace mozilla::dom;
 
 
 
-static already_AddRefed<LocalAccessible> MaybeCreateSpecificARIAAccessible(
+static LocalAccessible* MaybeCreateSpecificARIAAccessible(
     const nsRoleMapEntry* aRoleMapEntry, const LocalAccessible* aContext,
     nsIContent* aContent, DocAccessible* aDocument) {
   if (aRoleMapEntry && aRoleMapEntry->accTypes & eTableCell) {
@@ -132,7 +132,7 @@ static already_AddRefed<LocalAccessible> MaybeCreateSpecificARIAAccessible(
       }
     }
     if (parent->IsTable()) {
-      return MakeAndAddRef<ARIAGridCellAccessible>(aContent, aDocument);
+      return new ARIAGridCellAccessible(aContent, aDocument);
     }
   }
   return nullptr;
@@ -308,7 +308,7 @@ static bool MustSVGElementBeAccessible(nsIContent* aContent,
 
 
 
-static already_AddRefed<LocalAccessible> MaybeCreateSVGAccessible(
+static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
     nsIContent* aContent, DocAccessible* aDocument) {
   if (aContent->IsSVGGeometryElement() ||
       aContent->IsSVGElement(nsGkAtoms::image)) {
@@ -318,25 +318,24 @@ static already_AddRefed<LocalAccessible> MaybeCreateSVGAccessible(
       
       
       
-      return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::GRAPHIC>>(
-          aContent, aDocument);
+      return new EnumRoleHyperTextAccessible<roles::GRAPHIC>(aContent,
+                                                             aDocument);
     }
   } else if (aContent->IsSVGElement(nsGkAtoms::text)) {
-    return MakeAndAddRef<HyperTextAccessible>(aContent->AsElement(), aDocument);
+    return new HyperTextAccessible(aContent->AsElement(), aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::svg)) {
     
     
     
     
-    return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::DIAGRAM>>(
-        aContent, aDocument);
+    return new EnumRoleHyperTextAccessible<roles::DIAGRAM>(aContent, aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::g) &&
              MustSVGElementBeAccessible(aContent, aDocument)) {
     
-    return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::GROUPING>>(
-        aContent, aDocument);
+    return new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent,
+                                                            aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::a)) {
-    return MakeAndAddRef<HTMLLinkAccessible>(aContent, aDocument);
+    return new HTMLLinkAccessible(aContent, aDocument);
   }
   return nullptr;
 }
@@ -446,12 +445,10 @@ static const XULMarkupMapInfo sXULMarkupMapList[] = {
 
 
 
-StaticRefPtr<nsAccessibilityService>
-    nsAccessibilityService::gAccessibilityService;
-StaticRefPtr<ApplicationAccessible>
-    nsAccessibilityService::gApplicationAccessible;
-StaticRefPtr<xpcAccessibleApplication>
-    nsAccessibilityService::gXPCApplicationAccessible;
+nsAccessibilityService* nsAccessibilityService::gAccessibilityService = nullptr;
+ApplicationAccessible* nsAccessibilityService::gApplicationAccessible = nullptr;
+xpcAccessibleApplication* nsAccessibilityService::gXPCApplicationAccessible =
+    nullptr;
 uint32_t nsAccessibilityService::gConsumers = 0;
 uint64_t nsAccessibilityService::gCacheDomains =
     nsAccessibilityService::kDefaultCacheDomains;
@@ -1339,7 +1336,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         !roleMapEntry->Is(nsGkAtoms::none);
     if (!newAcc &&
         (hasNonPresentationalARIARole || MustBeAccessible(content, document))) {
-      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+      newAcc = new HyperTextAccessible(content, document);
     }
 
     
@@ -1347,7 +1344,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     if (!newAcc && markupMap &&
         (!roleMapEntry || hasNonPresentationalARIARole)) {
-      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+      newAcc = new HyperTextAccessible(content, document);
     }
 
     if (newAcc) {
@@ -1463,7 +1460,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       return nullptr;
     }
 
-    newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+    newAcc = new HyperTextAccessible(content, document);
     document->BindToDocument(newAcc, aria::GetRoleMap(content->AsElement()));
     return newAcc;
   }
@@ -1482,8 +1479,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       
       
       roleMapEntry = nullptr;
-      newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
-          content, document);
+      newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
+                                                                      document);
     } else {
       return nullptr;
     }
@@ -1570,7 +1567,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       
       if (frameType == LayoutFrameType::FlexContainer ||
           frameType == LayoutFrameType::ScrollContainer) {
-        newAcc = MakeRefPtr<XULTabpanelAccessible>(content, document);
+        newAcc = new XULTabpanelAccessible(content, document);
       }
     }
   }
@@ -1591,11 +1588,11 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
               nsGkAtoms::annotation, nsGkAtoms::annotation_xml,
               nsGkAtoms::mpadded, nsGkAtoms::mphantom, nsGkAtoms::maligngroup,
               nsGkAtoms::malignmark, nsGkAtoms::mspace, nsGkAtoms::semantics)) {
-        newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+        newAcc = new HyperTextAccessible(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
       if (aContext->IsHTMLListItem()) {
-        newAcc = MakeRefPtr<HTMLListBulletAccessible>(content, document);
+        newAcc = new HTMLListBulletAccessible(content, document);
       }
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
@@ -1608,7 +1605,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       
       
       
-      newAcc = MakeRefPtr<TextLeafAccessible>(content, document);
+      newAcc = new TextLeafAccessible(content, document);
       nsAutoString text;
       cssAlt.AppendToString(text);
       newAcc->AsTextLeaf()->SetText(text);
@@ -1630,10 +1627,10 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     
-    newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+    newAcc = new HyperTextAccessible(content, document);
   } else if (!newAcc && MustBeGenericAccessible(content, document)) {
-    newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
-        content, document);
+    newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
+                                                                    document);
   }
 
   if (newAcc) {
@@ -1701,13 +1698,15 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains, uint32_t aConsumer) {
 #endif
 
   gAccessibilityService = this;
+  NS_ADDREF(gAccessibilityService);  
 
   if (XRE_IsParentProcess()) {
-    gApplicationAccessible = MakeRefPtr<ApplicationAccessibleWrap>();
+    gApplicationAccessible = new ApplicationAccessibleWrap();
   } else {
-    gApplicationAccessible = MakeRefPtr<ApplicationAccessible>();
+    gApplicationAccessible = new ApplicationAccessible();
   }
 
+  NS_ADDREF(gApplicationAccessible);  
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::Accessibility, "Active");
 
@@ -1793,7 +1792,10 @@ void nsAccessibilityService::Shutdown() {
   if (XRE_IsParentProcess()) PlatformShutdown();
 
   gApplicationAccessible->Shutdown();
+  NS_RELEASE(gApplicationAccessible);
   gApplicationAccessible = nullptr;
+
+  NS_IF_RELEASE(gXPCApplicationAccessible);
   gXPCApplicationAccessible = nullptr;
 
 #if defined(ANDROID)
@@ -1801,6 +1803,7 @@ void nsAccessibilityService::Shutdown() {
   
   MonitorAutoLock mal(GetAndroidMonitor());
 #endif
+  NS_RELEASE(gAccessibilityService);
   gAccessibilityService = nullptr;
 
   if (observerService) {
@@ -1821,77 +1824,77 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eNoType:
       return nullptr;
     case eHTMLBRType:
-      newAcc = MakeRefPtr<HTMLBRAccessible>(aContent, document);
+      newAcc = new HTMLBRAccessible(aContent, document);
       break;
     case eHTMLButtonType:
-      newAcc = MakeRefPtr<HTMLButtonAccessible>(aContent, document);
+      newAcc = new HTMLButtonAccessible(aContent, document);
       break;
     case eHTMLCanvasType:
-      newAcc = MakeRefPtr<HTMLCanvasAccessible>(aContent, document);
+      newAcc = new HTMLCanvasAccessible(aContent, document);
       break;
     case eHTMLCaptionType:
       if (aContext->IsTable() &&
           aContext->GetContent() == aContent->GetParent()) {
-        newAcc = MakeRefPtr<HTMLCaptionAccessible>(aContent, document);
+        newAcc = new HTMLCaptionAccessible(aContent, document);
       }
       break;
     case eHTMLCheckboxType:
-      newAcc = MakeRefPtr<CheckboxAccessible>(aContent, document);
+      newAcc = new CheckboxAccessible(aContent, document);
       break;
     case eHTMLComboboxType:
-      newAcc = MakeRefPtr<HTMLComboboxAccessible>(aContent, document);
+      newAcc = new HTMLComboboxAccessible(aContent, document);
       break;
     case eHTMLFileInputType:
-      newAcc = MakeRefPtr<HTMLFileInputAccessible>(aContent, document);
+      newAcc = new HTMLFileInputAccessible(aContent, document);
       break;
     case eHTMLGroupboxType:
-      newAcc = MakeRefPtr<HTMLGroupboxAccessible>(aContent, document);
+      newAcc = new HTMLGroupboxAccessible(aContent, document);
       break;
     case eHTMLHRType:
-      newAcc = MakeRefPtr<HTMLHRAccessible>(aContent, document);
+      newAcc = new HTMLHRAccessible(aContent, document);
       break;
     case eHTMLImageMapType:
-      newAcc = MakeRefPtr<HTMLImageMapAccessible>(aContent, document);
+      newAcc = new HTMLImageMapAccessible(aContent, document);
       break;
     case eHTMLLiType:
       if (aContext->IsList() &&
           aContext->GetContent() == aContent->GetParent()) {
-        newAcc = MakeRefPtr<HTMLLIAccessible>(aContent, document);
+        newAcc = new HTMLLIAccessible(aContent, document);
       } else {
         
-        newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
+        newAcc = new HyperTextAccessible(aContent, document);
       }
       break;
     case eHTMLSelectListType:
-      newAcc = MakeRefPtr<HTMLSelectListAccessible>(aContent, document);
+      newAcc = new HTMLSelectListAccessible(aContent, document);
       break;
     case eHTMLMediaType:
       
       
       
-      newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::GROUPING>>(
-          aContent, document);
+      newAcc =
+          new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent, document);
       break;
     case eHTMLRadioButtonType:
-      newAcc = MakeRefPtr<HTMLRadioButtonAccessible>(aContent, document);
+      newAcc = new HTMLRadioButtonAccessible(aContent, document);
       break;
     case eHTMLRangeType:
-      newAcc = MakeRefPtr<HTMLRangeAccessible>(aContent, document);
+      newAcc = new HTMLRangeAccessible(aContent, document);
       break;
     case eHTMLSpinnerType:
-      newAcc = MakeRefPtr<HTMLSpinnerAccessible>(aContent, document);
+      newAcc = new HTMLSpinnerAccessible(aContent, document);
       break;
     case eHTMLTableType:
     case eHTMLTableCellType:
       
       
-      newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
+      newAcc = new HyperTextAccessible(aContent, document);
       break;
     case eHTMLTableRowType:
       
       break;
     case eHTMLTextFieldType:
-      newAcc = MakeRefPtr<HTMLTextFieldAccessible>(aContent, document);
+      newAcc = new HTMLTextFieldAccessible(aContent, document);
       break;
     case eHyperTextType: {
       if (aContext->IsTable() || aContext->IsTableRow()) {
@@ -1903,21 +1906,21 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::dt, nsGkAtoms::dd,
                                          nsGkAtoms::div, nsGkAtoms::thead,
                                          nsGkAtoms::tfoot, nsGkAtoms::tbody)) {
-        newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
+        newAcc = new HyperTextAccessible(aContent, document);
       }
       break;
     }
     case eImageType:
       if (aContent->IsElement() &&
           ShouldCreateImgAccessible(aContent->AsElement(), document)) {
-        newAcc = MakeRefPtr<ImageAccessible>(aContent, document);
+        newAcc = new ImageAccessible(aContent, document);
       }
       break;
     case eOuterDocType:
-      newAcc = MakeRefPtr<OuterDocAccessible>(aContent, document);
+      newAcc = new OuterDocAccessible(aContent, document);
       break;
     case eTextLeafType:
-      newAcc = MakeRefPtr<TextLeafAccessible>(aContent, document);
+      newAcc = new TextLeafAccessible(aContent, document);
       break;
     default:
       MOZ_ASSERT(false);
@@ -2220,8 +2223,9 @@ xpcAccessibleApplication* XPCApplicationAcc() {
   if (!nsAccessibilityService::gXPCApplicationAccessible &&
       nsAccessibilityService::gApplicationAccessible) {
     nsAccessibilityService::gXPCApplicationAccessible =
-        MakeRefPtr<xpcAccessibleApplication>(
+        new xpcAccessibleApplication(
             nsAccessibilityService::gApplicationAccessible);
+    NS_ADDREF(nsAccessibilityService::gXPCApplicationAccessible);
   }
 
   return nsAccessibilityService::gXPCApplicationAccessible;
