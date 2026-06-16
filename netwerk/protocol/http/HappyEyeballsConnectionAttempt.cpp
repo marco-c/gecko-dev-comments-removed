@@ -102,10 +102,13 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   
   
   
+  
+  
   happy_eyeballs::HttpVersions httpVersions{
        true,
        StaticPrefs::network_http_http2_enabled(),
-       nsHttpHandler::IsHttp3Enabled(),
+       nsHttpHandler::IsHttp3Enabled() &&
+          !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
   LOG(
@@ -1130,7 +1133,29 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   bool isHttp2 = connTCP->UsingSpdy();
 
-  if (!aTransactionAlreadyOnConn) {
+  nsHttpTransaction* realTrans =
+      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+  
+  
+  
+  bool deferExtendedConnect =
+      isHttp2 && realTrans &&
+      (realTrans->IsWebsocketUpgrade() || realTrans->IsForWebTransport());
+
+  if (!aTransactionAlreadyOnConn && deferExtendedConnect) {
+    LOG(
+        ("ProcessTCPConn deferring extended CONNECT upgrade trans=%p to "
+         "ProcessPendingQ\n",
+         realTrans));
+
+    RefPtr<PendingTransactionInfo> existing =
+        gHttpHandler->ConnMgr()->FindTransactionHelper(
+             false, entry, realTrans);
+    if (!existing) {
+      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
+    }
+    mTransaction = nullptr;
+  } else if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
                                                        mTransaction);
