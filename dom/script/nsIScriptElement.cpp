@@ -111,7 +111,8 @@ void nsIScriptElement::DetermineKindFromType(
     
     
     
-    if (type.LowerCaseEqualsASCII("speculationrules")) {
+    if (mozilla::StaticPrefs::dom_speculation_rules_enabled() &&
+        type.LowerCaseEqualsASCII("speculationrules")) {
       mKind = ScriptKind::eSpeculationRules;
     }
   }
