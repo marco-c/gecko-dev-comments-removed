@@ -3567,6 +3567,8 @@ impl<'a> SceneBuilder<'a> {
             
             
             
+            let dl_prim_origin = prim_info.rect.min.to_vector() - offset;
+
             
             
             
@@ -3576,13 +3578,19 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            let prim_origin = prim_info.rect.min.to_vector();
+            
+            let first_glyph_origin = glyph_range
+                .iter()
+                .next()
+                .map(|g| g.point.to_vector())
+                .unwrap_or_else(LayoutVector2D::zero);
+            let run_origin = first_glyph_origin - dl_prim_origin;
             let glyphs = glyph_range
                 .iter()
                 .map(|glyph| {
                     GlyphInstance {
                         index: glyph.index,
-                        point: glyph.point + offset - prim_origin,
+                        point: glyph.point - first_glyph_origin,
                     }
                 })
                 .collect();
@@ -3597,6 +3605,7 @@ impl<'a> SceneBuilder<'a> {
             TextRun {
                 glyphs,
                 font,
+                run_origin,
                 shadow: false,
                 requested_raster_space,
             }

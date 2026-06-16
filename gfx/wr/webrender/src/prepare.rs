@@ -404,6 +404,7 @@ fn prepare_interned_prim_for_render(
     
     
     let prim_info = scratch.frame.draws[prim_instance_index.0 as usize];
+    let unsnapped_prim_rect_min = prim_instance.unsnapped_prim_rect.min;
 
     match &mut prim_instance.kind {
         PrimitiveKind::BoxShadow { data_handle, .. } => {
@@ -695,11 +696,8 @@ fn prepare_interned_prim_for_render(
         }
         PrimitiveKind::TextRun { data_handle } => {
             profile_scope!("TextRun");
-
             let prim_data = &data_stores.text_run[*data_handle];
 
-            
-            
             
             
             let transform = frame_context.spatial_tree
@@ -708,12 +706,15 @@ fn prepare_interned_prim_for_render(
                     pic_context.raster_spatial_node_index,
                 )
                 .into_fast_transform();
-
             
             
             
             
-            let local_rect = prim_instance.unsnapped_prim_rect;
+            
+            
+            
+            let prim_offset = unsnapped_prim_rect_min.to_vector()
+                + prim_data.run_origin_offset;
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
@@ -747,7 +748,7 @@ fn prepare_interned_prim_for_render(
             };
 
             let text_run_handle = prim_data.request_resources(
-                local_rect,
+                prim_offset,
                 &transform.to_transform().with_destination::<_>(),
                 surface,
                 prim_spatial_node_index,
