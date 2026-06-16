@@ -56,6 +56,11 @@ known_errors = [
     {
         
         
+        "message": "viewOpenTabsSidebarKb",
+    },
+    {
+        
+        
         
         "message": "toggleSidebarKb",
     },
