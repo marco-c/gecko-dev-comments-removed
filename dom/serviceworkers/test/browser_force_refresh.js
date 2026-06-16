@@ -53,7 +53,7 @@ function test() {
       ForceRefreshParent.done = done;
 
       
-      let windowActorOptions = {
+      ChromeUtils.registerWindowActor("ForceRefresh", {
         parent: {
           esModuleURI:
             getRootDirectory(gTestPath) + "ForceRefreshParent.sys.mjs",
@@ -70,10 +70,7 @@ function test() {
           },
         },
         allFrames: true,
-      };
-
-      
-      ChromeUtils.registerWindowActor("ForceRefresh", windowActorOptions);
+      });
 
       
       var url = gTestRoot + "browser_base_force_refresh.html";
