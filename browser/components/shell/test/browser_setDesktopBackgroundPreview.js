@@ -12,82 +12,85 @@ add_setup(async function () {
   });
 });
 
-add_task(async function () {
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: getRootDirectory(gTestPath) + "large.png",
-    },
-    async () => {
-      const dialogLoad = BrowserTestUtils.domWindowOpened(null, async win => {
-        await BrowserTestUtils.waitForEvent(win, "load");
-        Assert.equal(
-          win.document.documentElement.getAttribute("windowtype"),
-          "Shell:SetDesktopBackground",
-          "Opened correct window"
-        );
-        return true;
-      });
-
-      const image = content.document.images[0];
-      EventUtils.synthesizeMouseAtCenter(image, { type: "contextmenu" });
-
-      const menu = document.getElementById("contentAreaContextMenu");
-      await BrowserTestUtils.waitForPopupEvent(menu, "shown");
-      const menuClosed = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
-
-      const menuItem = document.getElementById("context-setDesktopBackground");
-      try {
-        menu.activateItem(menuItem);
-      } catch (ex) {
-        ok(
-          menuItem.hidden,
-          "should only fail to activate when menu item is hidden"
-        );
-        ok(
-          !ShellService.canSetDesktopBackground,
-          "Should only hide when not able to set the desktop background"
-        );
-        is(
-          AppConstants.platform,
-          "linux",
-          "Should always be able to set desktop background on non-linux platforms"
-        );
-        todo(false, "Skipping test on this configuration");
-
-        menu.hidePopup();
-        await menuClosed;
-        return;
-      }
-
-      await menuClosed;
-
-      const win = await dialogLoad;
-
-      
-
-
-      await TestUtils.waitForTick();
-
-      const canvas = win.document.getElementById("screen");
-      const screenRatio = screen.width / screen.height;
-      const previewRatio = canvas.clientWidth / canvas.clientHeight;
-
-      info(`Screen dimensions are ${screen.width}x${screen.height}`);
-      info(`Screen's raw ratio is ${screenRatio}`);
-      info(
-        `Preview dimensions are ${canvas.clientWidth}x${canvas.clientHeight}`
+async function testPreview(url, targetSelector) {
+  await BrowserTestUtils.withNewTab({ gBrowser, url }, async browser => {
+    const dialogLoad = BrowserTestUtils.domWindowOpened(null, async win => {
+      await BrowserTestUtils.waitForEvent(win, "load");
+      Assert.equal(
+        win.document.documentElement.getAttribute("windowtype"),
+        "Shell:SetDesktopBackground",
+        "Opened correct window"
       );
-      info(`Preview's raw ratio is ${previewRatio}`);
+      return true;
+    });
 
-      Assert.ok(
-        previewRatio < screenRatio + 0.01 && previewRatio > screenRatio - 0.01,
-        "Preview's aspect ratio is within ±.01 of screen's"
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      targetSelector,
+      { type: "contextmenu" },
+      browser
+    );
+
+    const menu = document.getElementById("contentAreaContextMenu");
+    await BrowserTestUtils.waitForPopupEvent(menu, "shown");
+    const menuClosed = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+
+    const menuItem = document.getElementById("context-setDesktopBackground");
+    try {
+      menu.activateItem(menuItem);
+    } catch (ex) {
+      ok(
+        menuItem.hidden,
+        "should only fail to activate when menu item is hidden"
       );
+      ok(
+        !ShellService.canSetDesktopBackground,
+        "Should only hide when not able to set the desktop background"
+      );
+      is(
+        AppConstants.platform,
+        "linux",
+        "Should always be able to set desktop background on non-linux platforms"
+      );
+      todo(false, "Skipping test on this configuration");
 
-      win.close();
-
+      menu.hidePopup();
       await menuClosed;
+      return;
     }
-  );
+
+    await menuClosed;
+
+    const win = await dialogLoad;
+
+    
+
+
+    await TestUtils.waitForTick();
+
+    const canvas = win.document.getElementById("screen");
+    const screenRatio = screen.width / screen.height;
+    const previewRatio = canvas.clientWidth / canvas.clientHeight;
+
+    info(`Screen dimensions are ${screen.width}x${screen.height}`);
+    info(`Screen's raw ratio is ${screenRatio}`);
+    info(`Preview dimensions are ${canvas.clientWidth}x${canvas.clientHeight}`);
+    info(`Preview's raw ratio is ${previewRatio}`);
+
+    Assert.ok(
+      previewRatio < screenRatio + 0.01 && previewRatio > screenRatio - 0.01,
+      "Preview's aspect ratio is within ±.01 of screen's"
+    );
+
+    win.close();
+
+    await menuClosed;
+  });
+}
+
+add_task(async function test_image() {
+  await testPreview(getRootDirectory(gTestPath) + "large.png", "img");
+});
+
+add_task(async function test_canvas() {
+  await testPreview(getRootDirectory(gTestPath) + "canvas.html", "canvas");
 });
