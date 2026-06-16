@@ -69,6 +69,13 @@ add_setup(async function setup() {
 
 add_task(async function testHTTPSSVC() {
   
+  
+  
+  if (!inChildProcess()) {
+    Services.fog.initializeFOG();
+  }
+
+  
   await setTRRURI("https://foo.example.com:" + h2Port + "/doh?httpssvc=1");
 
   let { inRecord } = await new TRRDNSListener("test.httpssvc.com", {
@@ -167,7 +174,6 @@ add_task(async function testHTTPSSVC() {
   
   
   if (!inChildProcess()) {
-    Services.fog.initializeFOG();
     let doh = Glean.dns.httpsRrLookupTime.doh.testGetValue();
     Assert.ok(doh, "https_rr_lookup_time(doh) was recorded");
   }
