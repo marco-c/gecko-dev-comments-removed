@@ -18,16 +18,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export class LoginManagerStorage extends LoginManagerStorage_json {
   static #storage = null;
+  static #initializationPromise = null;
 
-  static create(callback) {
-    if (!LoginManagerStorage.#storage) {
+  static create() {
+    if (!LoginManagerStorage.#initializationPromise) {
       LoginManagerStorage.#storage = new LoginManagerStorage();
-      LoginManagerStorage.#storage.initialize().then(callback);
-    } else if (callback) {
-      callback();
+      LoginManagerStorage.#initializationPromise = LoginManagerStorage.#storage
+        .initialize()
+        .then(() => LoginManagerStorage.#storage);
     }
 
-    return LoginManagerStorage.#storage;
+    return LoginManagerStorage.#initializationPromise;
   }
 
   get _crypto() {
@@ -213,6 +214,10 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
   }
 
   countLogins(_origin, _formActionOrigin, _httpRealm) {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
+
+  async countLoginsAsync(_origin, _formActionOrigin, _httpRealm) {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
