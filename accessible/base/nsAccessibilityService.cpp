@@ -2050,6 +2050,13 @@ void nsAccessibilityService::SetCacheDomains(uint64_t aCacheDomains) {
   if (newDomains != CacheDomain::None) {
     for (const RefPtr<DocAccessible>& doc : mDocAccessibleCache.Values()) {
       MOZ_ASSERT(doc, "DocAccessible in cache is null!");
+      if (doc->EffectiveCacheDomains() != gCacheDomains) {
+        
+        
+        
+        MOZ_ASSERT(doc->IsPrintDoc());
+        continue;
+      }
       doc->QueueCacheUpdate(doc.get(), newDomains, true);
       Pivot pivot(doc.get());
       LocalAccInSameDocRule rule;
