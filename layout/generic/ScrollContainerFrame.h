@@ -149,7 +149,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                     nsFrameList&& aFrameList) final;
   void RemoveFrame(DestroyContext&, ChildListID, nsIFrame*) final;
 
-  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) final;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void Destroy(DestroyContext&) override;
 
@@ -170,14 +170,20 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   
-  nsresult CreateAnonymousContent(nsTArray<ContentInfo>&) final;
-  void AppendAnonymousContentTo(nsTArray<nsIContent*>&, uint32_t aFilter) final;
+  nsresult CreateAnonymousContent(nsTArray<ContentInfo>&) override;
+  void AppendAnonymousContentTo(nsTArray<nsIContent*>&,
+                                uint32_t aFilter) override;
 
   
 
 
 
   nsIFrame* GetScrolledFrame() const { return mScrolledFrame; }
+
+  
+  
+  
+  virtual nsIFrame* GetButtonBoxFrame() const { return nullptr; }
 
   
 
@@ -203,7 +209,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   };
 
   static PerAxisScrollDirections ComputePerAxisScrollDirections(
-      const nsIFrame* aScrolledFrame);
+      const nsIFrame* aScrolledFrame, bool aForTextInput = false);
+
+  PerAxisScrollDirections ComputePerAxisScrollDirections() const {
+    return ComputePerAxisScrollDirections(mScrolledFrame, IsTextInputFrame());
+  }
 
   
 
@@ -1100,6 +1110,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   void LayoutScrollbars(ScrollReflowInput& aState,
                         const nsRect& aInsideBorderArea,
                         const nsRect& aOldScrollPort);
+  void LayoutButtonBox(const ScrollReflowInput& aState, nsIFrame* aButtonBox);
 
   void LayoutScrollbarPartAtRect(const ScrollReflowInput&,
                                  ReflowInput& aKidReflowInput, const nsRect&);
@@ -1263,7 +1274,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool HasPerspective() const { return ChildrenHavePerspective(); }
   bool HasBgAttachmentLocal() const;
   StyleDirection GetScrolledFrameDir() const;
-  static StyleDirection GetScrolledFrameDir(const nsIFrame*);
 
   
   
@@ -1282,6 +1292,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   void RemoveObservers();
 
  private:
+  static StyleDirection GetScrolledFrameDir(const nsIFrame*,
+                                            bool aForTextInput);
+
   class AsyncScroll;
   class AsyncSmoothMSDScroll;
   class AutoMinimumScaleSizeChangeDetector;
@@ -1348,7 +1361,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
-  ScrollOrigin mLastScrollOrigin;
+  
+  
+  nsExpirationState mActivityExpirationState;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   MainThreadScrollGeneration mScrollGeneration;
   APZScrollGeneration mScrollGenerationOnApz;
@@ -1392,8 +1407,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   nsPoint mApzScrollPos;
 
-  nsExpirationState mActivityExpirationState;
-
   nsCOMPtr<nsITimer> mScrollActivityTimer;
 
   
@@ -1418,19 +1431,25 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   
+  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
+
+  
+  
+  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+
+  
+  
+  
+
+  
+  
   
   
   
   
   APZScrollAnimationType mCurrentAPZScrollAnimationType;
 
-  
-  
-  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
-
-  
-  
-  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+  ScrollOrigin mLastScrollOrigin;
 
   
   

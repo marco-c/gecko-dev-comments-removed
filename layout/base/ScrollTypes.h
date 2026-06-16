@@ -55,7 +55,7 @@ enum class ScrollUnit { DEVICE_PIXELS, LINES, PAGES, WHOLE };
 
 
 
-enum class APZScrollAnimationType {
+enum class APZScrollAnimationType : uint8_t {
   No,                   
   TriggeredByScript,    
   TriggeredByUserInput  

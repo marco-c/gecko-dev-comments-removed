@@ -139,12 +139,6 @@ class ScrollAnchorContainer final {
   
   nsIFrame* mAnchorNode = nullptr;
 
-  
-  
-  
-  
-  nscoord mLastAnchorOffset = 0;
-
   struct DisablingHeuristic {
     
     
@@ -162,6 +156,12 @@ class ScrollAnchorContainer final {
     bool AdjustmentMade(const ScrollAnchorContainer&, nscoord aAdjustment);
     void Reset();
   } mHeuristic;
+
+  
+  
+  
+  
+  nscoord mLastAnchorOffset = 0;
 
   
   

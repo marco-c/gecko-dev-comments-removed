@@ -249,7 +249,6 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
       mReferenceFrameDuringPainting(nullptr),
       mAsyncScroll(nullptr),
       mAsyncSmoothMSDScroll(nullptr),
-      mLastScrollOrigin(ScrollOrigin::None),
       mDestination(0, 0),
       mRestorePos(-1, -1),
       mLastPos(-1, -1),
@@ -257,8 +256,9 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
       mLastUpdateFramesPos(-1, -1),
       mScrollParentID(mozilla::layers::ScrollableLayerGuid::NULL_SCROLL_ID),
       mAnchor(this),
-      mCurrentAPZScrollAnimationType(APZScrollAnimationType::No),
       mIsFirstScrollableFrameSequenceNumber(Nothing()),
+      mCurrentAPZScrollAnimationType(APZScrollAnimationType::No),
+      mLastScrollOrigin(ScrollOrigin::None),
       mInScrollingGesture(InScrollingGesture::No),
       mAllowScrollOriginDowngrade(false),
       mHadDisplayPortAtLastFrameUpdate(false),
@@ -1308,6 +1308,11 @@ nscoord ScrollContainerFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
     }
     return mScrolledFrame->IntrinsicISize(aInput, aType);
   }();
+
+  if (nsIFrame* button = GetButtonBoxFrame()) {
+    result =
+        NSCoordSaturatingAdd(result, button->IntrinsicISize(aInput, aType));
+  }
 
   return NSCoordSaturatingAdd(result,
                               IntrinsicScrollbarGutterSizeAtInlineEdges());
