@@ -24,12 +24,10 @@
 #include "p2p/base/transport_description.h"
 #include "p2p/test/mock_ice_agent.h"
 #include "p2p/test/mock_ice_controller.h"
-#include "rtc_base/event.h"
-#include "rtc_base/fake_clock.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/run_loop.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
 namespace {
@@ -55,9 +53,10 @@ const std::vector<const Connection*> kEmptyConnsList =
 constexpr TimeDelta kTick = TimeDelta::Millis(1);
 
 TEST(WrappingActiveIceControllerTest, CreateLegacyIceControllerFromFactory) {
-  test::RunLoop main;
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
   MockIceAgent agent;
-  IceControllerFactoryArgs args = {.env = CreateTestEnvironment()};
+  IceControllerFactoryArgs args = {
+      .env = CreateTestEnvironment({.time = &time_controller})};
   MockIceControllerFactory legacy_controller_factory;
   EXPECT_CALL(legacy_controller_factory, RecordIceControllerCreated()).Times(1);
   WrappingActiveIceController controller(&agent, &legacy_controller_factory,
@@ -65,7 +64,7 @@ TEST(WrappingActiveIceControllerTest, CreateLegacyIceControllerFromFactory) {
 }
 
 TEST(WrappingActiveIceControllerTest, PassthroughIceControllerInterface) {
-  test::RunLoop main;
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
   MockIceAgent agent;
   auto will_move = std::make_unique<MockIceController>();
   MockIceController* wrapped = will_move.get();
@@ -100,8 +99,7 @@ TEST(WrappingActiveIceControllerTest, PassthroughIceControllerInterface) {
 }
 
 TEST(WrappingActiveIceControllerTest, HandlesImmediateSwitchRequest) {
-  test::RunLoop main;
-  ScopedFakeClock clock;
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
   NiceMock<MockIceAgent> agent;
   auto will_move = std::make_unique<NiceMockIceController>();
   NiceMockIceController* wrapped = will_move.get();
@@ -129,7 +127,7 @@ TEST(WrappingActiveIceControllerTest, HandlesImmediateSwitchRequest) {
   EXPECT_TRUE(controller.OnImmediateSwitchRequest(reason, kConnection));
 
   
-  clock.AdvanceTime(TimeDelta::Millis(recheck_delay_ms - 1));
+  time_controller.AdvanceTime(TimeDelta::Millis(recheck_delay_ms - 1));
 
   
   Sequence recheck_sort;
@@ -140,12 +138,11 @@ TEST(WrappingActiveIceControllerTest, HandlesImmediateSwitchRequest) {
       .WillOnce(Return(IceControllerInterface::SwitchResult{}));
   EXPECT_CALL(agent, ForgetLearnedStateForConnections(IsEmpty()));
 
-  clock.AdvanceTime(kTick);
+  time_controller.AdvanceTime(kTick);
 }
 
 TEST(WrappingActiveIceControllerTest, HandlesImmediateSortAndSwitchRequest) {
-  test::RunLoop main;
-  ScopedFakeClock clock;
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
   NiceMock<MockIceAgent> agent;
   auto will_move = std::make_unique<NiceMockIceController>();
   NiceMockIceController* wrapped = will_move.get();
@@ -177,7 +174,7 @@ TEST(WrappingActiveIceControllerTest, HandlesImmediateSortAndSwitchRequest) {
   controller.OnImmediateSortAndSwitchRequest(reason);
 
   
-  clock.AdvanceTime(TimeDelta::Millis(recheck_delay_ms - 1));
+  time_controller.AdvanceTime(TimeDelta::Millis(recheck_delay_ms - 1));
 
   
   Sequence recheck_sort;
@@ -191,17 +188,11 @@ TEST(WrappingActiveIceControllerTest, HandlesImmediateSortAndSwitchRequest) {
       .WillOnce(Return(kEmptyConnsList));
   EXPECT_CALL(agent, PruneConnections(IsEmpty())).InSequence(recheck_sort);
 
-  clock.AdvanceTime(kTick);
+  time_controller.AdvanceTime(kTick);
 }
 
 TEST(WrappingActiveIceControllerTest, HandlesSortAndSwitchRequest) {
-  test::RunLoop main;
-  ScopedFakeClock clock;
-
-  
-  Event init;
-  TimeDelta init_delay = TimeDelta::Millis(10);
-  main.PostTask([&init, &init_delay] { init.Wait(init_delay); });
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
 
   NiceMock<MockIceAgent> agent;
   auto will_move = std::make_unique<NiceMockIceController>();
@@ -235,17 +226,11 @@ TEST(WrappingActiveIceControllerTest, HandlesSortAndSwitchRequest) {
       .InSequence(sort_and_switch);
 
   
-  clock.AdvanceTime(init_delay);
+  time_controller.AdvanceTime(TimeDelta::Zero());
 }
 
 TEST(WrappingActiveIceControllerTest, StartPingingAfterSortAndSwitch) {
-  test::RunLoop main;
-  ScopedFakeClock clock;
-
-  
-  Event init;
-  TimeDelta init_delay = TimeDelta::Millis(10);
-  main.PostTask([&init, &init_delay] { init.Wait(init_delay); });
+  GlobalSimulatedTimeController time_controller{Timestamp::Zero()};
 
   NiceMock<MockIceAgent> agent;
   auto will_move = std::make_unique<NiceMockIceController>();
@@ -265,7 +250,7 @@ TEST(WrappingActiveIceControllerTest, StartPingingAfterSortAndSwitch) {
   EXPECT_CALL(agent, OnStartedPinging()).Times(0);
 
   
-  clock.AdvanceTime(init_delay);
+  time_controller.AdvanceTime(TimeDelta::Zero());
 
   TimeDelta recheck_delay = TimeDelta::Millis(10);
   IceControllerInterface::PingResult ping_result(kConnection, recheck_delay);
@@ -285,17 +270,17 @@ TEST(WrappingActiveIceControllerTest, StartPingingAfterSortAndSwitch) {
   EXPECT_CALL(agent, SendPingRequest(kConnection)).InSequence(start_pinging);
 
   controller.OnSortAndSwitchRequest(IceSwitchReason::DATA_RECEIVED);
-  clock.AdvanceTime(kTick);
+  time_controller.AdvanceTime(kTick);
 
   
   
   EXPECT_CALL(agent, GetLastPingSent).WillOnce(Return(Timestamp::Millis(456)));
   EXPECT_CALL(*wrapped, GetConnectionToPing(Timestamp::Millis(456)))
       .WillOnce(Return(IceControllerInterface::PingResult(
-           nullptr, recheck_delay)));
+          nullptr, recheck_delay)));
   EXPECT_CALL(agent, SendPingRequest(kConnection)).Times(0);
 
-  clock.AdvanceTime(recheck_delay);
+  time_controller.AdvanceTime(recheck_delay);
 }
 
 }  
