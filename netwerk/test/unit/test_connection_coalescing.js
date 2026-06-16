@@ -19,7 +19,10 @@ const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
 let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
-addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
+
+add_setup(async function setup() {
+  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
+});
 
 async function createServer() {
   let server = new NodeHTTP2Server();
@@ -75,8 +78,9 @@ add_task(async function test_dontCoalesce() {
   override.clearOverrides();
   Services.dns.clearCache(true);
 
+  
+  
   override.addIPOverride("foo.example.com", IP1);
-  override.addIPOverride("foo.example.com", IP2);
   override.addIPOverride("alt1.example.com", IP2);
 
   let { addr: addr1 } = await openChan(
@@ -113,34 +117,61 @@ add_task(async function test_doCoalesce() {
   await server.stop();
 });
 
-add_task(async function test_doCoalesceAggresive() {
-  let server = await createServer();
 
-  Services.prefs.setBoolPref("network.http.http2.aggressive_coalescing", true);
-  override.clearOverrides();
-  Services.dns.clearCache(true);
 
-  override.addIPOverride("foo.example.com", IP1);
-  override.addIPOverride("foo.example.com", IP2);
-  override.addIPOverride("alt1.example.com", IP2);
-
-  let { port: port1, addr: addr1 } = await openChan(
-    `https://foo.example.com:${server.port()}/`
-  );
-  let { port: port2, addr: addr2 } = await openChan(
-    `https://alt1.example.com:${server.port()}/`
-  );
-
-  Assert.equal(addr1, addr2);
-  Assert.equal(port1, port2);
-  await server.stop();
-});
 
 
 
 
 add_task(
-  { skip_if: () => AppConstants.platform == "android" },
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
+  },
+  async function test_doCoalesceAggresive() {
+    let server = await createServer();
+
+    Services.prefs.setBoolPref(
+      "network.http.http2.aggressive_coalescing",
+      true
+    );
+    override.clearOverrides();
+    Services.dns.clearCache(true);
+
+    override.addIPOverride("foo.example.com", IP1);
+    override.addIPOverride("foo.example.com", IP2);
+    override.addIPOverride("alt1.example.com", IP2);
+
+    let { port: port1, addr: addr1 } = await openChan(
+      `https://foo.example.com:${server.port()}/`
+    );
+    let { port: port2, addr: addr2 } = await openChan(
+      `https://alt1.example.com:${server.port()}/`
+    );
+
+    Assert.equal(addr1, addr2);
+    Assert.equal(port1, port2);
+    await server.stop();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(
+  {
+    skip_if: () =>
+      AppConstants.platform == "android" ||
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
+  },
   async function test_doCoalesceAggresive421() {
     let server = await createServer();
 

@@ -270,6 +270,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   RefPtr<HappyEyeballsTransaction> mOutputTrans;
   uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
+  
+  
+  nsCOMPtr<nsIDNSAddrRecord> mWinnerAddrRecord;
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
