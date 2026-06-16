@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptElement.h"
 
 #include "ScriptLoader.h"
@@ -90,6 +88,9 @@ ScriptElement::ScriptEvaluated(nsresult aResult, nsIScriptElement* aElement,
 
 void ScriptElement::CharacterDataChanged(nsIContent* aContent,
                                          const CharacterDataChangeInfo& aInfo) {
+  if (!nsContentUtils::IsInSameAnonymousTree(GetAsContent(), aContent)) {
+    return;
+  }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
   MaybeProcessScript(nullptr );
 }
@@ -97,6 +98,9 @@ void ScriptElement::CharacterDataChanged(nsIContent* aContent,
 void ScriptElement::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                                      nsAtom* aAttribute, AttrModType aModType,
                                      const nsAttrValue* aOldValue) {
+  if (aElement != GetAsContent()) {
+    return;
+  }
   
   
   
@@ -112,28 +116,44 @@ void ScriptElement::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
       (aNameSpaceID != kNameSpaceID_None || aAttribute != nsGkAtoms::src)) {
     return;
   }
-  if (mParserCreated == NOT_FROM_PARSER && aModType == AttrModType::Addition) {
-    auto* cont = GetAsContent();
-    if (cont->IsInComposedDoc()) {
-      MaybeProcessScript(nullptr );
-    }
+  if (mParserCreated == NOT_FROM_PARSER && aModType == AttrModType::Addition &&
+      aElement->IsInComposedDoc()) {
+    MaybeProcessScript(nullptr );
   }
 }
 
 void ScriptElement::ContentAppended(nsIContent* aFirstNewContent,
                                     const ContentAppendInfo& aInfo) {
+  if (!nsContentUtils::IsInSameAnonymousTree(GetAsContent(),
+                                             aFirstNewContent)) {
+    return;
+  }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
+  
+  if (aInfo.mOldParent) {
+    return;
+  }
   MaybeProcessScript(nullptr );
 }
 
 void ScriptElement::ContentInserted(nsIContent* aChild,
                                     const ContentInsertInfo& aInfo) {
+  if (!nsContentUtils::IsInSameAnonymousTree(GetAsContent(), aChild)) {
+    return;
+  }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
+  
+  if (aInfo.mOldParent) {
+    return;
+  }
   MaybeProcessScript(nullptr );
 }
 
 void ScriptElement::ContentWillBeRemoved(nsIContent* aChild,
                                          const ContentRemoveInfo& aInfo) {
+  if (!nsContentUtils::IsInSameAnonymousTree(GetAsContent(), aChild)) {
+    return;
+  }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
 }
 
