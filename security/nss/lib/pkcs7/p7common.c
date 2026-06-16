@@ -606,15 +606,20 @@ SEC_PKCS7DecryptContents(PLArenaPool *poolp,
     rv = PK11_CipherOp((PK11Context *)cx, dest->data, (int *)(&dest->len),
                        (int)(src->len + 64), src->data, (int)src->len);
     PK11_DestroyContext((PK11Context *)cx, PR_TRUE);
+    
+
+    if (rv != SECSuccess) {
+        goto loser;
+    }
 
     bs = PK11_GetBlockSize(cryptoMechType, c_param);
     if (bs) {
         
 
-
-        if (((int)dest->data[dest->len - 1] <= bs) &&
-            ((int)dest->data[dest->len - 1] > 0)) {
-            dest->len -= (int)dest->data[dest->len - 1];
+        unsigned int pad = dest->data[dest->len - 1];
+        if ((dest->len >= (unsigned int)bs) &&
+            pad >= 1 && pad <= (unsigned int)bs) {
+            dest->len -= pad;
         } else {
             rv = SECFailure;
             

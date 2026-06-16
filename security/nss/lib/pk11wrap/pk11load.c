@@ -562,7 +562,9 @@ secmod_InitializeModuleAndGetSlotInfo(SECMODModule *mod, SECMODModule **oldModul
     
 
 
-    mod->isThreadSafe = !PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
+
+    const char *forceTokenLock = PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
+    mod->isThreadSafe = !(forceTokenLock && *forceTokenLock);
 
     
     rv = secmod_ModuleInit(mod, oldModule, &alreadyLoaded);

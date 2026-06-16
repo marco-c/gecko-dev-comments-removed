@@ -253,6 +253,14 @@ PrepareBitStringForEncoding(SECItem *bitsmap, SECItem *value)
     unsigned int i, len = 0;
 
     
+
+    if (value->len == 0) {
+        bitsmap->data = NULL;
+        bitsmap->len = 0;
+        return;
+    }
+
+    
     onebyte = '\0';
     
     for (i = 0; i < (value->len) * 8; ++i) {

@@ -87,4 +87,24 @@ TEST_F(B64EncodeDecodeTest, DISABLED_LongFakeEncDecTest2) {
   EXPECT_FALSE(TestFakeEncode(0x40000000));
 }
 
+
+
+
+
+TEST_F(B64EncodeDecodeTest, OverflowingUpdateSizeIsRejected) {
+  NSSBase64Decoder *ctx = NSSBase64Decoder_Create(
+      [](void *, const unsigned char *, PRInt32) { return 0; }, nullptr);
+  ASSERT_TRUE(ctx);
+
+  
+  const char first[] = "AAA";
+  EXPECT_EQ(SECSuccess, NSSBase64Decoder_Update(ctx, first, 3));
+
+  
+  const char second[] = "A";
+  EXPECT_EQ(SECFailure, NSSBase64Decoder_Update(ctx, second, PR_UINT32_MAX));
+
+  NSSBase64Decoder_Destroy(ctx, false);
+}
+
 }  

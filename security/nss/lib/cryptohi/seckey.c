@@ -1122,6 +1122,13 @@ SECKEY_ECParamsToKeySize(const SECItem *encodedParams)
     
 
 
+    if (!encodedParams || !encodedParams->data ||
+        encodedParams->len < 2 ||
+        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
+        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return 0;
+    }
     oid.len = encodedParams->data[1];
     oid.data = encodedParams->data + 2;
     if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)
@@ -1256,6 +1263,13 @@ SECKEY_ECParamsToBasePointOrderLen(const SECItem *encodedParams)
     
 
 
+    if (!encodedParams || !encodedParams->data ||
+        encodedParams->len < 2 ||
+        encodedParams->data[0] != SEC_ASN1_OBJECT_ID ||
+        (unsigned)encodedParams->data[1] > encodedParams->len - 2) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        return 0;
+    }
     oid.len = encodedParams->data[1];
     oid.data = encodedParams->data + 2;
     if ((tag = SECOID_FindOIDTag(&oid)) == SEC_OID_UNKNOWN)

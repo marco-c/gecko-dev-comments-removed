@@ -680,6 +680,12 @@ nssCKFWObject_SetAttribute(
         NSSCKFWObject *newFwObject;
         NSSCKFWObject swab;
 
+        
+
+        if (sizeof(CK_BBOOL) != value->size || (CK_VOID_PTR)NULL == value->data) {
+            return CKR_ATTRIBUTE_VALUE_INVALID;
+        }
+
         a.type = CKA_TOKEN;
         a.pValue = value->data;
         a.ulValueLen = value->size;

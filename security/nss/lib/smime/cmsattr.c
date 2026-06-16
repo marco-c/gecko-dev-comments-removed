@@ -412,7 +412,17 @@ NSS_CMSAttributeArray_SetAttr(PLArenaPool *poolp, NSSCMSAttribute ***attrs,
     } else {
         
         
+        if (attr->values == NULL || attr->values[0] == NULL) {
+            
+
+
+            SECItem **values = PORT_ArenaZNewArray(poolp, SECItem *, 2);
+            if (values == NULL)
+                goto loser;
+            attr->values = values;
+        }
         attr->values[0] = value;
+        attr->values[1] = NULL;
         attr->encoded = encoded;
     }
 

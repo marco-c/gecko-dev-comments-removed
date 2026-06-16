@@ -470,6 +470,16 @@ sftk_ike_prf(CK_SESSION_HANDLE hSession, const SFTKAttribute *inKey,
     CK_RV crv = CKR_OK;
     prfContext context;
 
+    
+
+
+
+
+
+    if (params->ulNiLen > 0xffff || params->ulNrLen > 0xffff) {
+        return CKR_MECHANISM_PARAM_INVALID;
+    }
+
     crv = prf_setup(&context, params->prfMechanism);
     if (crv != CKR_OK) {
         return crv;
@@ -779,6 +789,12 @@ sftk_ike1_appendix_b_prf(CK_SESSION_HANDLE hSession, const SFTKAttribute *inKey,
     }
 
     outKeySize = PR_ROUNDUP(keySize, macSize);
+    
+
+    if (outKeySize < keySize) {
+        crv = CKR_KEY_SIZE_RANGE;
+        goto fail;
+    }
     outKeyData = PORT_Alloc(outKeySize);
     if (outKeyData == NULL) {
         crv = CKR_HOST_MEMORY;
@@ -921,6 +937,12 @@ sftk_ike_prf_plus_raw(CK_SESSION_HANDLE hSession,
         goto fail;
     }
     macSize = prf_length(&context);
+    
+
+    if (keySize > 255 * macSize) {
+        crv = CKR_KEY_SIZE_RANGE;
+        goto fail;
+    }
     outKeySize = PR_ROUNDUP(keySize, macSize);
     outKeyData = PORT_Alloc(outKeySize);
     if (outKeyData == NULL) {

@@ -119,6 +119,12 @@ NSS_CMSArray_Sort(void **primary, int (*compare)(void *, void *), void **seconda
 
     PORT_Assert(secondary == NULL || NSS_CMSArray_Count(secondary) == n);
     PORT_Assert(tertiary == NULL || NSS_CMSArray_Count(tertiary) == n);
+    
+
+    if (secondary && NSS_CMSArray_Count(secondary) != n)
+        secondary = NULL;
+    if (tertiary && NSS_CMSArray_Count(tertiary) != n)
+        tertiary = NULL;
 
     if (n <= 1) 
         return;

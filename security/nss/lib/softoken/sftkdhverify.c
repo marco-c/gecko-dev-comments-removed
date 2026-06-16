@@ -6840,6 +6840,13 @@ sftk_IsSafePrime(const SECItem *dhPrime, const SECItem *dhSubPrime, PRBool *isSa
     *isSafe = PR_FALSE;
 
     
+
+    if (dhPrime->len == 0 || dhSubPrime->len == 0) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    
     if (((dhPrime->data[dhPrime->len - 1] & 0x1) != 1) && ((dhSubPrime->data[dhSubPrime->len - 1] & 0x1) != 1)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;

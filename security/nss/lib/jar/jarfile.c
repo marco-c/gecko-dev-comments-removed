@@ -843,6 +843,10 @@ jar_listtar(JAR *jar, JAR_FILE fp)
         if (JAR_FREAD(fp, &tarball, sizeof tarball) < sizeof tarball)
             break;
 
+        
+
+        tarball.val.filename[sizeof tarball.val.filename - 1] = 0;
+
         if (!*tarball.val.filename)
             break;
 

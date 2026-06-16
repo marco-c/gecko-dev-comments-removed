@@ -197,6 +197,13 @@ MD2_Update(MD2Context *cx, const unsigned char *input, unsigned int inputLen)
     PRUint32 bytesToConsume;
 
     
+
+    if (cx->unusedBuffer > MD2_BUFSIZE) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return;
+    }
+
+    
     if (cx->unusedBuffer != MD2_BUFSIZE) {
         bytesToConsume = PR_MIN(inputLen, cx->unusedBuffer);
         memcpy(&cx->X[MD2_INPUT + (MD2_BUFSIZE - cx->unusedBuffer)],
@@ -228,6 +235,12 @@ MD2_End(MD2Context *cx, unsigned char *digest,
     PRUint8 padStart;
     if (maxDigestLen < MD2_BUFSIZE) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return;
+    }
+    
+
+    if (cx->unusedBuffer > MD2_BUFSIZE) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return;
     }
     padStart = MD2_BUFSIZE - cx->unusedBuffer;

@@ -43,6 +43,7 @@ is_string_attribute(
     switch (aType) {
         case CKA_LABEL:
         case CKA_NSS_EMAIL:
+        case CKA_NSS_URL:
             isString = PR_TRUE;
             break;
         default:
@@ -248,6 +249,11 @@ nss_cert_type_from_ck_attrib(CK_ATTRIBUTE_PTR attrib)
     if (!attrib->pValue) {
         
         return NSSCertificateType_PKIX;
+    }
+    
+
+    if (attrib->ulValueLen != sizeof(CK_CERTIFICATE_TYPE)) {
+        return NSSCertificateType_Unknown;
     }
     ckCertType = *((CK_ULONG *)attrib->pValue);
     switch (ckCertType) {

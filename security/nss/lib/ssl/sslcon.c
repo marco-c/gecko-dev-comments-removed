@@ -164,6 +164,12 @@ ssl_BeginClientHandshake(sslSocket *ss)
             ss->sec.localCert = CERT_DupCertificate(sid->localCert);
         } else {
             ssl_UncacheSessionID(ss);
+            if (ss->sec.ci.sid == sid) {
+                
+
+
+                ss->sec.ci.sid = NULL;
+            }
             ssl_FreeSID(sid);
             sid = NULL;
         }
