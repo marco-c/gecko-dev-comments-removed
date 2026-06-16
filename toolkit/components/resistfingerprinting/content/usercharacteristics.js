@@ -897,13 +897,28 @@ async function populateCSSSystemColors() {
   ];
 
   const rgbToHex = rgb => {
-    const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const match = rgb.match(
+      /rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/
+    );
     if (!match) {
       return rgb;
     }
-    const [, r, g, b] = match;
-    return [r, g, b]
-      .map(x => parseInt(x, 10).toString(16).padStart(2, "0"))
+    const r = parseInt(match[1], 10);
+    const g = parseInt(match[2], 10);
+    const b = parseInt(match[3], 10);
+    const a =
+      match[4] === undefined ? 255 : Math.round(parseFloat(match[4]) * 255);
+    return [r, g, b, a]
+      .map(x => x.toString(16).padStart(2, "0"))
       .join("")
       .toUpperCase();
   };
