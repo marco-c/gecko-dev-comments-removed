@@ -45,15 +45,6 @@ pub enum DebuggerMessage {
     UpdateFrameLog(FrameLogMessage),
 }
 
-
-
-
-#[derive(Serialize, Deserialize)]
-pub enum RenderDocReply {
-    Path(String),
-    Error(String),
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct CompositorDebugTile {
     pub local_rect: PictureRect,
