@@ -130,6 +130,13 @@ pub type MathNegate = Box<NumericValue>;
 
 
 
+pub type MathInvert = Box<NumericValue>;
+
+
+
+
+
+
 pub type MathMin = ThinVec<NumericValue>;
 
 
@@ -164,6 +171,11 @@ pub enum MathValue {
     
     
     Negate(MathNegate),
+
+    
+    
+    
+    Invert(MathInvert),
 
     
     

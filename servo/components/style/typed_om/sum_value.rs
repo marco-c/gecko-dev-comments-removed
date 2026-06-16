@@ -131,6 +131,12 @@ impl SumValue {
             },
 
             
+            NumericValue::Math(MathValue::Invert(_math_invert)) => {
+                
+                Err(())
+            },
+
+            
             NumericValue::Math(MathValue::Min(_math_min)) => {
                 
                 Err(())
