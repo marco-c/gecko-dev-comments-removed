@@ -105,6 +105,21 @@ class FluentEntity(Entity):
     def equals(self, other):
         return self.entry.equals(other.entry, ignored_fields=self.ignored_fields)
 
+    def id_position(self):
+        
+        
+        
+        return self.ctx.linecol(self.key_span[0])
+
+    def line_offset(self):
+        
+        
+        
+        
+        end_lineno, _ = self.position(-1)
+        id_lineno, _ = self.id_position()
+        return end_lineno - id_lineno
+
     
     
     def value_position(self, offset=None):

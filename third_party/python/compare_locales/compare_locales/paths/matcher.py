@@ -9,7 +9,6 @@ from compare_locales import mozpath
 
 
 
-
 ANDROID_LEGACY_MAP = {"he": "iw", "id": "in", "yi": "ji"}
 ANDROID_STANDARD_MAP = {
     legacy: standard for standard, legacy in ANDROID_LEGACY_MAP.items()
