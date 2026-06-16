@@ -17157,7 +17157,10 @@ function SportsWidget_SportsWidget({
   
   
   
-  const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] || prefs.trainhopConfig?.sports?.liveEnabled;
+  
+  
+  
+  const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetLiveEnabled || prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   
   
