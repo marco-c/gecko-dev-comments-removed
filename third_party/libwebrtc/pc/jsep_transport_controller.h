@@ -231,7 +231,7 @@ class JsepTransportController final {
   
   
   
-  void MaybeStartGathering();
+  std::vector<IceParameters> MaybeStartGathering();
   RTCError AddRemoteCandidates(absl::string_view mid,
                                const std::vector<Candidate>& candidates);
   

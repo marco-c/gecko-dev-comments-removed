@@ -174,12 +174,7 @@ RTCError MergeCodecs(const CodecList& reference_codecs,
                      absl::string_view mid,
                      CodecList& offered_codecs,
                      PayloadTypeSuggester& pt_suggester) {
-  
-  
-  
-  
-  RTC_LOG_THREAD_BLOCK_COUNT();
-
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   
   
   
@@ -752,11 +747,7 @@ RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
     const std::vector<Codec> codecs_from_offer,
     PayloadTypeSuggester& pt_suggester) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  
-  
-  
-  
-  RTC_LOG_THREAD_BLOCK_COUNT();
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   CodecList codecs;
   std::string mid = media_description_options.mid;
   if (current_content && current_content->mid() == mid &&
