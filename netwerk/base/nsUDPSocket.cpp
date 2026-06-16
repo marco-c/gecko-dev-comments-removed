@@ -1333,18 +1333,15 @@ nsresult nsUDPSocket::SetSocketOption(const PRSocketOptionData& aOpt) {
   mSts->IsOnCurrentThread(&onSTSThread);
 
   if (!onSTSThread) {
-    if (mAttached) {
-      
-      nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
-      nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      return NS_OK;
+    
+    
+    
+    nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
+    nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
-    
-    
-    
+    return NS_OK;
   }
 
   if (NS_WARN_IF(!mFD)) {
