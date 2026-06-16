@@ -6,6 +6,7 @@
 
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/dom/HTMLOptGroupElementBinding.h"
+#include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
@@ -59,11 +60,19 @@ void HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
       
       
-      for (nsIContent* child = nsINode::GetFirstChild(); child;
-           child = child->GetNextSibling()) {
-        if (auto optElement = HTMLOptionElement::FromNode(child)) {
-          optElement->OptGroupDisabledChanged(true);
+      
+      for (nsIContent* node = GetFirstChild(); node;) {
+        if (auto* opt = HTMLOptionElement::FromNode(node)) {
+          opt->OptGroupDisabledChanged(true);
+          node = node->GetNextNonChildNode(this);
+          continue;
         }
+        if (HTMLOptionElement::IsOptionListBoundary(*node) ||
+            node->IsHTMLElement(nsGkAtoms::optgroup)) {
+          node = node->GetNextNonChildNode(this);
+          continue;
+        }
+        node = node->GetNextNode(this);
       }
     }
   }

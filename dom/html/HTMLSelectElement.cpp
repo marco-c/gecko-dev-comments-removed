@@ -789,20 +789,14 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
 
   
   
+  
   for (Element* node = aOption->GetParentElement(); node;
        node = node->GetParentElement()) {
-    
-    if (node->IsHTMLElement(nsGkAtoms::select)) {
+    if (HTMLOptionElement::IsOptionListBoundary(*node)) {
       return false;
     }
-    auto* optGroupElement = HTMLOptGroupElement::FromNode(node);
-    if (!optGroupElement) {
-      
-      
-      return false;
-    }
-    if (optGroupElement->Disabled()) {
-      return true;
+    if (auto* optGroupElement = HTMLOptGroupElement::FromNode(node)) {
+      return optGroupElement->Disabled();
     }
   }
   return false;

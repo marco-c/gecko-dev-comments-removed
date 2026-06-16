@@ -115,6 +115,14 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   HTMLSelectElement* GetSelect() const;
 
   
+  
+  
+  static bool IsOptionListBoundary(const nsINode& aNode) {
+    return aNode.IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::hr,
+                                     nsGkAtoms::option, nsGkAtoms::datalist);
+  }
+
+  
   HTMLSelectElement* ComputeNearestAncestorSelect() const;
 
   
