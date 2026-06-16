@@ -1,16 +1,16 @@
-use crate::alloc::{Allocator, Global};
-use crate::raw::{Bucket, RawIter, RawIterRange, RawTable};
+use crate::raw::Bucket;
+use crate::raw::{Allocator, Global, RawIter, RawIterRange, RawTable};
 use crate::scopeguard::guard;
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr::NonNull;
 use rayon::iter::{
-    ParallelIterator,
     plumbing::{self, Folder, UnindexedConsumer, UnindexedProducer},
+    ParallelIterator,
 };
 
 
-pub(crate) struct RawParIter<T> {
+pub struct RawParIter<T> {
     iter: RawIterRange<T>,
 }
 
@@ -75,14 +75,14 @@ impl<T> UnindexedProducer for ParIterProducer<T> {
 }
 
 
-pub(crate) struct RawIntoParIter<T, A: Allocator = Global> {
+pub struct RawIntoParIter<T, A: Allocator = Global> {
     table: RawTable<T, A>,
 }
 
 impl<T, A: Allocator> RawIntoParIter<T, A> {
     #[cfg_attr(feature = "inline-more", inline)]
     pub(super) unsafe fn par_iter(&self) -> RawParIter<T> {
-        unsafe { self.table.par_iter() }
+        self.table.par_iter()
     }
 }
 
@@ -108,7 +108,7 @@ impl<T: Send, A: Allocator + Send> ParallelIterator for RawIntoParIter<T, A> {
 }
 
 
-pub(crate) struct RawParDrain<'a, T, A: Allocator = Global> {
+pub struct RawParDrain<'a, T, A: Allocator = Global> {
     
     
     table: NonNull<RawTable<T, A>>,
@@ -120,7 +120,7 @@ unsafe impl<T: Send, A: Allocator> Send for RawParDrain<'_, T, A> {}
 impl<T, A: Allocator> RawParDrain<'_, T, A> {
     #[cfg_attr(feature = "inline-more", inline)]
     pub(super) unsafe fn par_iter(&self) -> RawParIter<T> {
-        unsafe { self.table.as_ref().par_iter() }
+        self.table.as_ref().par_iter()
     }
 }
 
@@ -206,24 +206,22 @@ impl<T> Drop for ParDrainProducer<T> {
 impl<T, A: Allocator> RawTable<T, A> {
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub(crate) unsafe fn par_iter(&self) -> RawParIter<T> {
-        unsafe {
-            RawParIter {
-                iter: self.iter().iter,
-            }
+    pub unsafe fn par_iter(&self) -> RawParIter<T> {
+        RawParIter {
+            iter: self.iter().iter,
         }
     }
 
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub(crate) fn into_par_iter(self) -> RawIntoParIter<T, A> {
+    pub fn into_par_iter(self) -> RawIntoParIter<T, A> {
         RawIntoParIter { table: self }
     }
 
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub(crate) fn par_drain(&mut self) -> RawParDrain<'_, T, A> {
+    pub fn par_drain(&mut self) -> RawParDrain<'_, T, A> {
         RawParDrain {
             table: NonNull::from(self),
             marker: PhantomData,

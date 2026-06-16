@@ -1,14 +1,14 @@
-use core::{fmt, iter::FusedIterator, marker::PhantomData, ptr::NonNull};
+use core::{fmt, iter::FusedIterator, marker::PhantomData};
 
 use crate::{
-    TryReserveError,
-    alloc::{Allocator, Global},
     control::Tag,
     raw::{
-        Bucket, FullBucketsIndices, RawDrain, RawExtractIf, RawIntoIter, RawIter, RawIterHash,
-        RawIterHashIndices, RawTable,
+        Allocator, Bucket, FullBucketsIndices, Global, RawDrain, RawExtractIf, RawIntoIter,
+        RawIter, RawIterHash, RawIterHashIndices, RawTable,
     },
+    TryReserveError,
 };
+
 
 
 
@@ -66,7 +66,6 @@ impl<T> HashTable<T, Global> {
     
     
     
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             raw: RawTable::new(),
@@ -86,7 +85,6 @@ impl<T> HashTable<T, Global> {
     
     
     
-    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             raw: RawTable::with_capacity(capacity),
@@ -135,7 +133,6 @@ where
     
     
     
-    #[must_use]
     pub const fn new_in(alloc: A) -> Self {
         Self {
             raw: RawTable::new_in(alloc),
@@ -184,7 +181,6 @@ where
     
     
     
-    #[must_use]
     pub fn with_capacity_in(capacity: usize, alloc: A) -> Self {
         Self {
             raw: RawTable::with_capacity_in(capacity, alloc),
@@ -516,7 +512,7 @@ where
     #[inline]
     pub unsafe fn get_bucket_entry_unchecked(&mut self, index: usize) -> OccupiedEntry<'_, T, A> {
         OccupiedEntry {
-            bucket: unsafe { self.raw.bucket(index) },
+            bucket: self.raw.bucket(index),
             table: self,
         }
     }
@@ -592,7 +588,7 @@ where
     
     #[inline]
     pub unsafe fn get_bucket_unchecked(&self, index: usize) -> &T {
-        unsafe { self.raw.bucket(index).as_ref() }
+        self.raw.bucket(index).as_ref()
     }
 
     
@@ -670,7 +666,7 @@ where
     
     #[inline]
     pub unsafe fn get_bucket_unchecked_mut(&mut self, index: usize) -> &mut T {
-        unsafe { self.raw.bucket(index).as_mut() }
+        self.raw.bucket(index).as_mut()
     }
 
     
@@ -767,7 +763,7 @@ where
     
     
     pub fn shrink_to_fit(&mut self, hasher: impl Fn(&T) -> u64) {
-        self.raw.shrink_to(self.len(), hasher);
+        self.raw.shrink_to(self.len(), hasher)
     }
 
     
@@ -842,8 +838,9 @@ where
     
     
     
+    
     pub fn reserve(&mut self, additional: usize, hasher: impl Fn(&T) -> u64) {
-        self.raw.reserve(additional, hasher);
+        self.raw.reserve(additional, hasher)
     }
 
     
@@ -921,7 +918,7 @@ where
     
     
     pub fn num_buckets(&self) -> usize {
-        self.raw.num_buckets()
+        self.raw.buckets()
     }
 
     
@@ -1069,29 +1066,6 @@ where
     
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
-            inner: unsafe { self.raw.iter() },
-            marker: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn unsafe_iter(&mut self) -> UnsafeIter<'_, T> {
-        UnsafeIter {
             inner: unsafe { self.raw.iter() },
             marker: PhantomData,
         }
@@ -1550,7 +1524,7 @@ where
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
     ) -> [Option<&'_ mut T>; N] {
-        unsafe { self.raw.get_disjoint_unchecked_mut(hashes, eq) }
+        self.raw.get_disjoint_unchecked_mut(hashes, eq)
     }
 
     
@@ -1561,7 +1535,7 @@ where
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
     ) -> [Option<&'_ mut T>; N] {
-        unsafe { self.raw.get_disjoint_unchecked_mut(hashes, eq) }
+        self.raw.get_disjoint_unchecked_mut(hashes, eq)
     }
 
     
@@ -1634,10 +1608,6 @@ where
             raw: self.raw.clone(),
         }
     }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.raw.clone_from(&source.raw);
-    }
 }
 
 impl<T, A> fmt::Debug for HashTable<T, A>
@@ -1649,6 +1619,7 @@ where
         f.debug_set().entries(self.iter()).finish()
     }
 }
+
 
 
 
@@ -1949,15 +1920,9 @@ where
             Entry::Vacant(entry) => Entry::Vacant(entry),
         }
     }
-
-    
-    pub fn into_table(self) -> &'a mut HashTable<T, A> {
-        match self {
-            Entry::Occupied(entry) => entry.table,
-            Entry::Vacant(entry) => entry.table,
-        }
-    }
 }
+
+
 
 
 
@@ -2277,80 +2242,9 @@ where
     pub fn bucket_index(&self) -> usize {
         unsafe { self.table.raw.bucket_index(&self.bucket) }
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn replace_entry_with<F>(self, f: F) -> Entry<'a, T, A>
-    where
-        F: FnOnce(T) -> Option<T>,
-    {
-        unsafe {
-            match self.table.raw.replace_bucket_with(self.bucket.clone(), f) {
-                None => Entry::Occupied(self),
-                Some(tag) => Entry::Vacant(VacantEntry {
-                    tag,
-                    index: self.bucket_index(),
-                    table: self.table,
-                }),
-            }
-        }
-    }
 }
+
+
 
 
 
@@ -2532,6 +2426,7 @@ where
 
 
 
+
 pub struct Iter<'a, T> {
     inner: RawIter<T>,
     marker: PhantomData<&'a T>,
@@ -2604,19 +2499,10 @@ impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
 
 
 
+
 pub struct IterMut<'a, T> {
     inner: RawIter<T>,
     marker: PhantomData<&'a mut T>,
-}
-impl<'a, T> IterMut<'a, T> {
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            inner: self.inner.clone(),
-            marker: PhantomData,
-        }
-    }
 }
 
 impl<T> Default for IterMut<'_, T> {
@@ -2666,125 +2552,12 @@ where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub struct UnsafeIter<'a, T> {
-    inner: RawIter<T>,
-    marker: PhantomData<&'a ()>,
-}
-impl<'a, T> UnsafeIter<'a, T> {
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            inner: self.inner.clone(),
-            marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Default for UnsafeIter<'_, T> {
-    #[cfg_attr(feature = "inline-more", inline)]
-    fn default() -> Self {
-        UnsafeIter {
-            inner: Default::default(),
-            marker: PhantomData,
-        }
-    }
-}
-impl<'a, T> Iterator for UnsafeIter<'a, T> {
-    type Item = NonNull<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        
-        match self.inner.next() {
-            Some(bucket) => Some(unsafe { NonNull::new_unchecked(bucket.as_ptr()) }),
-            None => None,
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-
-    fn fold<B, F>(self, init: B, mut f: F) -> B
-    where
-        Self: Sized,
-        F: FnMut(B, Self::Item) -> B,
-    {
-        self.inner.fold(init, |acc, bucket| unsafe {
-            f(acc, NonNull::new_unchecked(bucket.as_ptr()))
-        })
-    }
-}
-
-impl<T> ExactSizeIterator for UnsafeIter<'_, T> {
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-impl<T> FusedIterator for UnsafeIter<'_, T> {}
-
-impl<T> fmt::Debug for UnsafeIter<'_, T>
-where
-    T: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.clone(),
+                marker: PhantomData,
+            })
+            .finish()
     }
 }
 
@@ -2857,6 +2630,7 @@ impl<T> fmt::Debug for IterBuckets<'_, T> {
 
 
 
+
 pub struct IterHash<'a, T> {
     inner: RawIterHash<T>,
     marker: PhantomData<&'a T>,
@@ -2914,6 +2688,7 @@ where
         f.debug_list().entries(self.clone()).finish()
     }
 }
+
 
 
 
@@ -3028,24 +2803,13 @@ impl<T> fmt::Debug for IterHashBuckets<'_, T> {
 
 
 
+
+
 pub struct IntoIter<T, A = Global>
 where
     A: Allocator,
 {
     inner: RawIntoIter<T, A>,
-}
-impl<T, A> IntoIter<T, A>
-where
-    A: Allocator,
-{
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            inner: self.inner.iter(),
-            marker: PhantomData,
-        }
-    }
 }
 
 impl<T, A: Allocator> Default for IntoIter<T, A> {
@@ -3097,9 +2861,15 @@ where
     A: Allocator,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.iter(),
+                marker: PhantomData,
+            })
+            .finish()
     }
 }
+
 
 
 
@@ -3109,16 +2879,6 @@ where
 
 pub struct Drain<'a, T, A: Allocator = Global> {
     inner: RawDrain<'a, T, A>,
-}
-impl<'a, T, A: Allocator> Drain<'a, T, A> {
-    
-    #[cfg_attr(feature = "inline-more", inline)]
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            inner: self.inner.iter(),
-            marker: PhantomData,
-        }
-    }
 }
 
 impl<T, A: Allocator> Iterator for Drain<'_, T, A> {
@@ -3151,7 +2911,12 @@ impl<T, A: Allocator> FusedIterator for Drain<'_, T, A> {}
 
 impl<T: fmt::Debug, A: Allocator> fmt::Debug for Drain<'_, T, A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        f.debug_list()
+            .entries(Iter {
+                inner: self.inner.iter(),
+                marker: PhantomData,
+            })
+            .finish()
     }
 }
 

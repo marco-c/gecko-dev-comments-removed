@@ -9,21 +9,40 @@
 
 
 
-#![cfg_attr(not(doc), no_std)]
+#![no_std]
 #![cfg_attr(
     feature = "nightly",
     feature(
+        test,
         core_intrinsics,
         dropck_eyepatch,
         min_specialization,
+        trivial_clone,
         extend_one,
         allocator_api,
+        slice_ptr_get,
+        maybe_uninit_array_assume_init,
         strict_provenance_lints
     )
 )]
-#![cfg_attr(feature = "nightly", warn(fuzzy_provenance_casts))]
 #![cfg_attr(feature = "rustc-dep-of-std", feature(rustc_attrs))]
-#![cfg_attr(feature = "nightly", expect(internal_features))]
+#![allow(
+    clippy::doc_markdown,
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
+    clippy::option_if_let_else,
+    clippy::redundant_else,
+    clippy::manual_map,
+    clippy::missing_safety_doc,
+    clippy::missing_errors_doc
+)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+#![cfg_attr(feature = "nightly", warn(fuzzy_provenance_casts))]
+#![cfg_attr(
+    feature = "nightly",
+    allow(clippy::incompatible_msrv, internal_features)
+)]
 #![cfg_attr(
     all(feature = "nightly", target_arch = "loongarch64"),
     feature(stdarch_loongarch)
@@ -39,16 +58,15 @@ extern crate std;
 
 #[cfg_attr(test, macro_use)]
 #[cfg_attr(feature = "rustc-dep-of-std", allow(unused_extern_crates))]
-extern crate alloc as stdalloc;
+extern crate alloc;
 
-#[cfg(feature = "nightly")]
+#[doc = include_str!("../README.md")]
 #[cfg(doctest)]
-doc_comment::doctest!("../README.md");
+pub struct ReadmeDoctests;
 
 #[macro_use]
 mod macros;
 
-mod alloc;
 mod control;
 mod hasher;
 mod raw;
@@ -167,22 +185,6 @@ pub enum TryReserveError {
     
     AllocError {
         
-        layout: stdalloc::alloc::Layout,
+        layout: alloc::alloc::Layout,
     },
 }
-
-
-impl core::fmt::Display for TryReserveError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("memory allocation failed")?;
-        let reason = match self {
-            TryReserveError::CapacityOverflow => {
-                " because the computed capacity exceeded the collection's maximum"
-            }
-            TryReserveError::AllocError { .. } => " because the memory allocator returned an error",
-        };
-        f.write_str(reason)
-    }
-}
-
-impl core::error::Error for TryReserveError {}

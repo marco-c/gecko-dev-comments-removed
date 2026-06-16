@@ -1,11 +1,12 @@
 
 
 use super::map;
-use crate::HashSet;
-use crate::alloc::{Allocator, Global};
+use crate::hash_set::HashSet;
+use crate::raw::{Allocator, Global};
 use core::hash::{BuildHasher, Hash};
 use rayon::iter::plumbing::UnindexedConsumer;
 use rayon::iter::{FromParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
+
 
 
 
@@ -36,6 +37,7 @@ impl<T: Send, A: Allocator + Send> ParallelIterator for IntoParIter<T, A> {
 
 
 
+
 pub struct ParDrain<'a, T, A: Allocator = Global> {
     inner: map::ParDrain<'a, T, (), A>,
 }
@@ -59,6 +61,7 @@ impl<T: Send, A: Allocator + Send + Sync> ParallelIterator for ParDrain<'_, T, A
 
 
 
+
 pub struct ParIter<'a, T> {
     inner: map::ParKeys<'a, T, ()>,
 }
@@ -73,6 +76,7 @@ impl<'a, T: Sync> ParallelIterator for ParIter<'a, T> {
         self.inner.drive_unindexed(consumer)
     }
 }
+
 
 
 
@@ -113,6 +117,7 @@ where
 
 
 
+
 pub struct ParSymmetricDifference<'a, T, S, A: Allocator = Global> {
     a: &'a HashSet<T, S, A>,
     b: &'a HashSet<T, S, A>,
@@ -144,6 +149,7 @@ where
 
 
 
+
 pub struct ParIntersection<'a, T, S, A: Allocator = Global> {
     a: &'a HashSet<T, S, A>,
     b: &'a HashSet<T, S, A>,
@@ -167,6 +173,7 @@ where
             .drive_unindexed(consumer)
     }
 }
+
 
 
 
@@ -377,7 +384,7 @@ where
     
     
     
-    let reserve = if set.is_empty() { len } else { len.div_ceil(2) };
+    let reserve = if set.is_empty() { len } else { (len + 1) / 2 };
     set.reserve(reserve);
     for vec in list {
         set.extend(vec);
@@ -386,12 +393,12 @@ where
 
 #[cfg(test)]
 mod test_par_set {
+    use alloc::vec::Vec;
     use core::sync::atomic::{AtomicUsize, Ordering};
-    use stdalloc::vec::Vec;
 
     use rayon::prelude::*;
 
-    use crate::HashSet;
+    use crate::hash_set::HashSet;
 
     #[test]
     fn test_disjoint() {

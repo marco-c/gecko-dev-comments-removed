@@ -1,10 +1,9 @@
-#![expect(missing_docs)] 
 #![cfg(feature = "serde")]
 
 use core::hash::BuildHasherDefault;
 use fnv::FnvHasher;
 use hashbrown::{HashMap, HashSet};
-use serde_test::{Token, assert_tokens};
+use serde_test::{assert_tokens, Token};
 
 
 type FnvHashMap<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;

@@ -32,6 +32,7 @@ impl Tag {
 
     
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub(crate) const fn full(hash: u64) -> Tag {
         
         const MIN_HASH_LEN: usize = if mem::size_of::<usize>() < mem::size_of::<u64>() {
@@ -70,10 +71,10 @@ pub(crate) trait TagSliceExt {
     
     #[inline]
     fn fill_empty(&mut self) {
-        self.fill_tag(Tag::EMPTY);
+        self.fill_tag(Tag::EMPTY)
     }
 }
-impl TagSliceExt for [mem::MaybeUninit<Tag>] {
+impl TagSliceExt for [Tag] {
     #[inline]
     fn fill_tag(&mut self, tag: Tag) {
         

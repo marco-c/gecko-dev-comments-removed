@@ -1,4 +1,6 @@
-use super::group::{BITMASK_ITER_MASK, BITMASK_STRIDE, BitMaskWord, NonZeroBitMaskWord};
+use super::group::{
+    BitMaskWord, NonZeroBitMaskWord, BITMASK_ITER_MASK, BITMASK_MASK, BITMASK_STRIDE,
+};
 
 
 
@@ -19,8 +21,16 @@ use super::group::{BITMASK_ITER_MASK, BITMASK_STRIDE, BitMaskWord, NonZeroBitMas
 #[derive(Copy, Clone)]
 pub(crate) struct BitMask(pub(crate) BitMaskWord);
 
-#[expect(clippy::use_self)]
+#[allow(clippy::use_self)]
 impl BitMask {
+    
+    #[inline]
+    #[must_use]
+    #[allow(dead_code)]
+    pub(crate) fn invert(self) -> Self {
+        BitMask(self.0 ^ BITMASK_MASK)
+    }
+
     
     #[inline]
     #[must_use]

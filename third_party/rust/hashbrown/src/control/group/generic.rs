@@ -24,7 +24,8 @@ pub(crate) type BitMaskWord = GroupWord;
 pub(crate) type NonZeroBitMaskWord = NonZeroGroupWord;
 pub(crate) const BITMASK_STRIDE: usize = 8;
 
-const BITMASK_MASK: BitMaskWord = u64::from_ne_bytes([Tag::DELETED.0; 8]) as GroupWord;
+#[allow(clippy::cast_possible_truncation, clippy::unnecessary_cast)]
+pub(crate) const BITMASK_MASK: BitMaskWord = u64::from_ne_bytes([Tag::DELETED.0; 8]) as GroupWord;
 pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 
 
@@ -44,7 +45,7 @@ pub(crate) struct Group(GroupWord);
 
 
 
-#[expect(clippy::use_self)]
+#[allow(clippy::use_self)]
 impl Group {
     
     pub(crate) const WIDTH: usize = mem::size_of::<Self>();
@@ -69,26 +70,27 @@ impl Group {
 
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)] 
     pub(crate) unsafe fn load(ptr: *const Tag) -> Self {
-        unsafe { Group(ptr::read_unaligned(ptr.cast())) }
+        Group(ptr::read_unaligned(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn load_aligned(ptr: *const Tag) -> Self {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe { Group(ptr::read(ptr.cast())) }
+        Group(ptr::read(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn store_aligned(self, ptr: *mut Tag) {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe {
-            ptr::write(ptr.cast(), self.0);
-        }
+        ptr::write(ptr.cast(), self.0);
     }
 
     
@@ -130,7 +132,7 @@ impl Group {
     
     #[inline]
     pub(crate) fn match_full(self) -> BitMask {
-        BitMask(self.match_empty_or_deleted().0 ^ BITMASK_MASK)
+        self.match_empty_or_deleted().invert()
     }
 
     

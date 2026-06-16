@@ -7,6 +7,7 @@ use core::arch::loongarch64::*;
 pub(crate) type BitMaskWord = u16;
 pub(crate) type NonZeroBitMaskWord = NonZeroU16;
 pub(crate) const BITMASK_STRIDE: usize = 1;
+pub(crate) const BITMASK_MASK: BitMaskWord = 0xffff;
 pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 
 
@@ -17,7 +18,7 @@ pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 pub(crate) struct Group(m128i);
 
 
-#[expect(clippy::use_self)]
+#[allow(clippy::use_self)]
 impl Group {
     
     pub(crate) const WIDTH: usize = mem::size_of::<Self>();
@@ -27,6 +28,7 @@ impl Group {
     
     
     #[inline]
+    #[allow(clippy::items_after_statements)]
     pub(crate) const fn static_empty() -> &'static [Tag; Group::WIDTH] {
         #[repr(C)]
         struct AlignedTags {
@@ -42,26 +44,27 @@ impl Group {
 
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)] 
     pub(crate) unsafe fn load(ptr: *const Tag) -> Self {
-        unsafe { Group(lsx_vld::<0>(ptr.cast())) }
+        Group(lsx_vld::<0>(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn load_aligned(ptr: *const Tag) -> Self {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe { Group(lsx_vld::<0>(ptr.cast())) }
+        Group(lsx_vld::<0>(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn store_aligned(self, ptr: *mut Tag) {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe {
-            lsx_vst::<0>(self.0, ptr.cast());
-        }
+        lsx_vst::<0>(self.0, ptr.cast());
     }
 
     
@@ -117,8 +120,9 @@ impl Group {
         
         
         unsafe {
-            let special = lsx_vslti_b::<0>(self.0);
-            Group(lsx_vori_b::<{ Tag::DELETED.0 as u32 }>(special))
+            let zero = lsx_vreplgr2vr_b(0);
+            let special = lsx_vslt_b(self.0, zero);
+            Group(lsx_vor_v(special, lsx_vreplgr2vr_b(Tag::DELETED.0 as i32)))
         }
     }
 }

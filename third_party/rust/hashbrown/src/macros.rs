@@ -1,5 +1,5 @@
 
-#[expect(unused_macro_rules)]
+#[allow(unused_macro_rules)]
 macro_rules! cfg_if {
     
     ($(

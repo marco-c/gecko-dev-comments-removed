@@ -10,6 +10,7 @@ use core::arch::x86_64 as x86;
 pub(crate) type BitMaskWord = u16;
 pub(crate) type NonZeroBitMaskWord = NonZeroU16;
 pub(crate) const BITMASK_STRIDE: usize = 1;
+pub(crate) const BITMASK_MASK: BitMaskWord = 0xffff;
 pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 
 
@@ -20,7 +21,7 @@ pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 pub(crate) struct Group(x86::__m128i);
 
 
-#[expect(clippy::use_self)]
+#[allow(clippy::use_self)]
 impl Group {
     
     pub(crate) const WIDTH: usize = mem::size_of::<Self>();
@@ -30,6 +31,7 @@ impl Group {
     
     
     #[inline]
+    #[allow(clippy::items_after_statements)]
     pub(crate) const fn static_empty() -> &'static [Tag; Group::WIDTH] {
         #[repr(C)]
         struct AlignedTags {
@@ -45,33 +47,34 @@ impl Group {
 
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)] 
     pub(crate) unsafe fn load(ptr: *const Tag) -> Self {
-        unsafe { Group(x86::_mm_loadu_si128(ptr.cast())) }
+        Group(x86::_mm_loadu_si128(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn load_aligned(ptr: *const Tag) -> Self {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe { Group(x86::_mm_load_si128(ptr.cast())) }
+        Group(x86::_mm_load_si128(ptr.cast()))
     }
 
     
     
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn store_aligned(self, ptr: *mut Tag) {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe {
-            x86::_mm_store_si128(ptr.cast(), self.0);
-        }
+        x86::_mm_store_si128(ptr.cast(), self.0);
     }
 
     
     
     #[inline]
     pub(crate) fn match_tag(self, tag: Tag) -> BitMask {
-        #[expect(
+        #[allow(
             clippy::cast_possible_wrap, 
             
             
@@ -96,7 +99,7 @@ impl Group {
     
     #[inline]
     pub(crate) fn match_empty_or_deleted(self) -> BitMask {
-        #[expect(
+        #[allow(
             
             
             
@@ -112,7 +115,7 @@ impl Group {
     
     #[inline]
     pub(crate) fn match_full(&self) -> BitMask {
-        BitMask(!self.match_empty_or_deleted().0)
+        self.match_empty_or_deleted().invert()
     }
 
     
@@ -128,7 +131,7 @@ impl Group {
         
         
         
-        #[expect(
+        #[allow(
             clippy::cast_possible_wrap, 
         )]
         unsafe {

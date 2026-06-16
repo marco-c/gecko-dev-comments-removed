@@ -1,5 +1,3 @@
-#![expect(missing_docs)] 
-
 use hashbrown::Equivalent;
 use hashbrown::HashMap;
 

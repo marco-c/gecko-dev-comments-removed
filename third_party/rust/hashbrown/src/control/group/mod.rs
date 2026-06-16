@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 cfg_if! {
     // Use the SSE2 implementation if possible: it allows us to scan 16 buckets
     // at once instead of 8. We don't bother with AVX since it would require
@@ -45,4 +38,6 @@ cfg_if! {
     }
 }
 pub(crate) use self::imp::Group;
-pub(super) use self::imp::{BITMASK_ITER_MASK, BITMASK_STRIDE, BitMaskWord, NonZeroBitMaskWord};
+pub(super) use self::imp::{
+    BitMaskWord, NonZeroBitMaskWord, BITMASK_ITER_MASK, BITMASK_MASK, BITMASK_STRIDE,
+};
