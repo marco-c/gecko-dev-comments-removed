@@ -1428,6 +1428,12 @@ void InspectorUtils::GetAnchorNamesFor(GlobalObject& aGlobalObject,
 }
 
 
+void InspectorUtils::GetComputationStepsSupportedCSSFunctions(
+    GlobalObject& aGlobalObject, nsTArray<nsCString>& aResult) {
+  Servo_GetComputationStepsSupportedCSSFunctions(&aResult);
+}
+
+
 void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
                                          const nsAString& aExpression,
                                          Element& aElement,

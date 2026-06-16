@@ -68,34 +68,9 @@ const BASIC_SHAPE_FUNCTIONS = new Set([
   "inset",
 ]);
 
-const CSS_EXPLAINERS_SUPPORTED_FUNCTIONS = new Set([
-  "abs",
-  "acos",
-  "asin",
-  "atan",
-  "atan2",
-  "attr",
-  "calc",
-  "clamp",
-  "cos",
-  "env",
-  "exp",
-  "hypot",
-  "log",
-  "max",
-  "min",
-  "mod",
-  "pow",
-  
-  "progress",
-  "rem",
-  "round",
-  "sign",
-  "sin",
-  "sqrt",
-  "tan",
-  "var",
-]);
+const CSS_EXPLAINERS_SUPPORTED_FUNCTIONS = new Set(
+  InspectorUtils.getComputationStepsSupportedCSSFunctions()
+);
 
 const BACKDROP_FILTER_ENABLED = Services.prefs.getBoolPref(
   "layout.css.backdrop-filter.enabled"
@@ -1859,9 +1834,9 @@ class OutputParser {
     
     
 
-    
-    const varComputedOrSubstitutedValue =
-      varComputedValue ?? varSubstitutedValue;
+    const varComputedOrSubstitutedValue = options.inStartingStyleRule
+      ? varSubstitutedValue
+      : (varComputedValue ?? varSubstitutedValue);
 
     
     stackEntry.substitutedText = varComputedOrSubstitutedValue;
