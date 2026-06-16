@@ -65,17 +65,17 @@ def get_external_commits():
         month_key = date_str[:7]
 
         
+        if email.startswith('webrtc-version-updater') or email.startswith(
+                'chromium-webrtc-autoroll'):
+            continue
+
+        
         monthly_all_summary[month_key] += 1
 
         
         domain = email.split('@')[-1] if '@' in email else ''
         if any(domain == d or domain.endswith('.' + d)
                for d in corporate_domains):
-            continue
-
-        
-        if email.startswith('webrtc-version-updater') or email.startswith(
-                'chromium-webrtc-autoroll'):
             continue
 
         
