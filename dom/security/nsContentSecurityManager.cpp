@@ -281,8 +281,7 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   
   if (aLoadInfo->InternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_INTERNAL_DTD &&
-      mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
+      nsIContentPolicy::TYPE_INTERNAL_DTD) {
     RefPtr<Document> doc;
     aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
     bool allowed = false;
@@ -296,8 +295,7 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   
   if (aLoadInfo->InternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
-      mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
+      nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD) {
     return NS_OK;
   }
 
