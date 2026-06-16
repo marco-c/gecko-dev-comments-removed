@@ -19,6 +19,8 @@ import {
 import { createLocation } from "../../utils/location";
 import { getDisplayURL } from "../../utils/sources-tree/getURL";
 
+const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
+
 let store;
 
 
@@ -173,7 +175,7 @@ export async function waitForSourceToBeRegisteredInStore(sourceId) {
 
 
 
-export function makeSourceId(sourceResource) {
+export function makeScriptSourceId(sourceResource) {
   
   if ("mockedJestID" in sourceResource) {
     return sourceResource.mockedJestID;
@@ -220,7 +222,7 @@ export function makeSourceId(sourceResource) {
 
 export function createGeneratedSource(sourceResource) {
   return createSourceObject({
-    id: makeSourceId(sourceResource),
+    id: makeScriptSourceId(sourceResource),
     url: sourceResource.url,
     extensionName: sourceResource.extensionName,
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
@@ -307,6 +309,9 @@ function createSourceObject({
 
     
     generatedSource,
+
+    
+    type: ResourceCommand.TYPES.SOURCE,
   };
 }
 
@@ -368,7 +373,7 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
 
 
 
-export function createSourceActor(sourceResource, sourceObject) {
+export function createScriptSourceActor(sourceResource, sourceObject) {
   const actorId = sourceResource.actor;
 
   return {
