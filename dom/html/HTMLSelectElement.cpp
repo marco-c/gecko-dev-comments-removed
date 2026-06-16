@@ -1580,12 +1580,20 @@ void HTMLSelectElement::ContentWillBeRemoved(nsIContent* aChild,
   }
   if (IsInComposedDoc() && IsCombobox()) {
     OptionValueMightHaveChanged(aChild);
-    if (anySelected || InsideSelectedOption(aChild, this)) {
+    if (anySelected) {
       
       
       
       
       SelectedContentTextMightHaveChanged(true, options);
+    } else if (InsideSelectedOption(aChild, this)) {
+      
+      
+      nsContentUtils::AddScriptRunner(
+          NewRunnableMethod<bool, Span<RefPtr<HTMLOptionElement>>>(
+              "SelectedContentTextMightHaveChangedAfterRemoval", this,
+              &HTMLSelectElement::SelectedContentTextMightHaveChanged, true,
+              Span<RefPtr<HTMLOptionElement>>{}));
     }
   }
   if (!options.IsEmpty()) {
