@@ -32,6 +32,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/RustCell.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/AtomAttributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/DOMTokenListSupportedTokens.h"
@@ -50,6 +51,7 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
+#include "nsHtml5String.h"
 #include "nsLiteralString.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
@@ -919,6 +921,41 @@ class Element : public FragmentOrElement {
   
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                          nsAttrValue& aParsedValue, bool aNotify);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetNoNameSpaceAttrOnNewlyCreatedElement(
+      RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+      bool& aIsPendingMappedAttributeEvaluation);
+
   
 
 
@@ -2126,7 +2163,7 @@ class Element : public FragmentOrElement {
 
 
 
-  void TryReserveAttributeCount(uint32_t aAttributeCount);
+  void ReserveAttributeCount(uint32_t aAttributeCount);
 
   void SetParserHadDuplicateAttributeError() {
     SetFlags(ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR);
@@ -2316,6 +2353,11 @@ class Element : public FragmentOrElement {
                               nsAttrValue& aResult);
 
   
+
+
+
+
+
 
 
 

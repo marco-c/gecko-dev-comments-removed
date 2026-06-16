@@ -3729,12 +3729,189 @@ static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
   }
 }
 
+nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
+    RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+    bool& aIsPendingMappedAttributeEvaluation) {
+  MOZ_ASSERT(aName);
+  MOZ_ASSERT(aValue);
+  MOZ_ASSERT(IsHTMLElement());
+  MOZ_ASSERT(!GetParentNode());
+  
+  
+  
+  nsAtom* namePtr = aName.get();
+  
+  
+  
+  
+  
+  
+  nsAttrValue value;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (aValue.IsAtom()) {
+    if (NS_IS_ATOM_ARRAY_ATTRIBUTE(namePtr) ||
+        NS_IS_ATOM_ARRAY_ATTRIBUTE_HTML(namePtr) ||
+        (namePtr == nsGkAtoms::_for && IsHTMLElement(nsGkAtoms::output))) {
+      value.ParseAtomArray(aValue.AsAtom());
+      if (namePtr == nsGkAtoms::_class) {
+        SetMayHaveClass();
+        UpdateSubtreeBloomFilterForClass(&value);
+      }
+    } else {
+      RefPtr<nsAtom> valueAtom = aValue.ForgetAtom();
+      if (namePtr == nsGkAtoms::id) {
+        
+        SetHasID();
+        
+      } else if (namePtr == nsGkAtoms::contenteditable) {
+        
+        
+        
+        SetMayHaveContentEditableAttr();
+      } else {
+        
+        
+        
+        
+        if (valueAtom->GetLength() == 1) {
+          
+          
+          
+          
+          if (namePtr != nsGkAtoms::data_priority) {
+            char16_t c = valueAtom->GetUTF16String()[0];
+            if (c >= u'0' && c <= u'9') {
+              nsString str;  
+              valueAtom->ToString(str);
+              
+              
+              
+              if (ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr,
+                                 value)) {
+                valueAtom = nullptr;
+              } else if (namePtr == nsGkAtoms::selected &&
+                         IsHTMLElement(nsGkAtoms::option)) {
+                
+                
+                
+                
+                
+                SetStates(ElementState::CHECKED, true, false);
+              }
+            }
+          }
+        } else {
+          MOZ_ASSERT(NS_IS_ATOM_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE_HTML(namePtr));
+        }
+      }
+      if (valueAtom) {
+        value.SetToAssumeUnset(valueAtom.forget());
+      }  
+    }
+  } else {
+    if (namePtr == nsGkAtoms::style) {
+      SetMayHaveStyle();
+      
+      
+      
+      
+      
+      
+    }
+    nsString str;          
+    aValue.ToString(str);  
+    if (!ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr, value)) {
+      if (aValue.IsStringBuffer()) {
+        MOZ_ASSERT(!(NS_IS_ATOM_ARRAY_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ARRAY_ATTRIBUTE_HTML(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE_HTML(namePtr)));
+        value.SetToAssumeUnset(aValue.ForgetStringBuffer());
+      }  
+      if (namePtr == nsGkAtoms::selected && IsHTMLElement(nsGkAtoms::option)) {
+        
+        
+        
+        
+        SetStates(ElementState::CHECKED, true, false);
+      }
+    } else if (namePtr == nsGkAtoms::contenteditable) {
+      
+      
+      
+      SetMayHaveContentEditableAttr();
+    }
+  }
+
+  
+  
+  
+
+  const nsAttrValue* valuePtr =
+      mAttrs.AddNewAttributeAssumeAvailableSlot(aName, value);
+  UpdateSubtreeBloomFilterForAttribute(namePtr);
+  if (!aIsPendingMappedAttributeEvaluation && IsAttributeMapped(namePtr)) {
+    aIsPendingMappedAttributeEvaluation = true;
+    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
+    
+  }
+
+  
+  
+
+  
+  
+  
+
+  AfterSetAttr(kNameSpaceID_None, namePtr, valuePtr, nullptr, nullptr, false);
+
+  
+  
+  return NS_OK;
+}
+
 nsresult Element::SetAttrAndNotify(
     int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
     nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aNotify,
     bool aCallAfterSetAttr, Document* aComposedDocument,
     const mozAutoDocUpdate& aGuard) {
+  
+  
   nsMutationGuard::DidMutate();
 
   
@@ -3842,8 +4019,10 @@ nsresult Element::SetAttrAndNotify(
   return NS_OK;
 }
 
-void Element::TryReserveAttributeCount(uint32_t aAttributeCount) {
-  (void)mAttrs.GrowTo(aAttributeCount);
+void Element::ReserveAttributeCount(uint32_t aAttributeCount) {
+  if (!mAttrs.GrowTo(aAttributeCount)) {
+    MOZ_CRASH("Could not allocate memory for attributes.");
+  }
 }
 
 bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -3861,16 +4040,7 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
   }
 
   if (aNamespaceID == kNameSpaceID_None) {
-    if (aAttribute == nsGkAtoms::_class || aAttribute == nsGkAtoms::part ||
-        aAttribute == nsGkAtoms::aria_actions ||
-        aAttribute == nsGkAtoms::aria_controls ||
-        aAttribute == nsGkAtoms::aria_describedby ||
-        aAttribute == nsGkAtoms::aria_details ||
-        aAttribute == nsGkAtoms::aria_errormessage ||
-        aAttribute == nsGkAtoms::aria_flowto ||
-        aAttribute == nsGkAtoms::aria_labelledby ||
-        aAttribute == nsGkAtoms::aria_owns || aAttribute == nsGkAtoms::_for ||
-        aAttribute == nsGkAtoms::headers) {
+    if (NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)) {
       aResult.ParseAtomArray(aValue);
       return true;
     }
@@ -3895,8 +4065,9 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       aResult.ParseAtom(aValue);
       return true;
     }
+    MOZ_ASSERT(!(NS_IS_ATOM_ATTRIBUTE(aAttribute) ||
+                 NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)));
   }
-
   return false;
 }
 
@@ -3968,6 +4139,8 @@ void Element::PostIdMaybeChange(int32_t aNamespaceID, nsAtom* aName,
   if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::id) {
     return;
   }
+
+  
 
   
   

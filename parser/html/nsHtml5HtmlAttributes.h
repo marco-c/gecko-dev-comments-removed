@@ -57,6 +57,10 @@ class nsHtml5HtmlAttributes {
   AutoTArray<nsHtml5AttributeEntry, 5> mStorage;
   int32_t mMode;
   bool mDuplicateAttributeError = false;
+#ifdef DEBUG
+  bool mMovedFrom = false;
+#endif
+
   void AddEntry(nsHtml5AttributeEntry&& aEntry);
 
  public:
@@ -67,14 +71,31 @@ class nsHtml5HtmlAttributes {
   bool getDuplicateAttributeError() { return mDuplicateAttributeError; }
 
   
+  
+  nsHtml5AttributeEntry* begin() { return mStorage.Elements(); }
+
+  nsHtml5AttributeEntry* end() {
+    return mStorage.Elements() + mStorage.Length();
+  }
+
+#ifdef DEBUG
+  void MarkAsMovedFrom() {
+    
+    MOZ_ASSERT(!mStorage.IsEmpty());
+    mMovedFrom = true;
+  }
+#endif
+
+  
   int32_t getIndex(nsHtml5AttributeName* aName);
 
   nsHtml5String getValue(nsHtml5AttributeName* aName);
   int32_t getLength();
   nsAtom* getLocalNameNoBoundsCheck(int32_t aIndex);
+  RefPtr<nsAtom>& getLocalNameRefNoBoundsCheck(int32_t aIndex);
   int32_t getURINoBoundsCheck(int32_t aIndex);
   nsAtom* getPrefixNoBoundsCheck(int32_t aIndex);
-  nsHtml5String getValueNoBoundsCheck(int32_t aIndex);
+  nsHtml5String& getValueNoBoundsCheck(int32_t aIndex);
   nsHtml5AttributeName* getAttributeNameNoBoundsCheck(int32_t aIndex);
   int32_t getLineNoBoundsCheck(int32_t aIndex);
   void addAttribute(nsHtml5AttributeName* aName, nsHtml5String aValue,
