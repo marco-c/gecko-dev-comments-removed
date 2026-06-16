@@ -2,11 +2,9 @@
 
 
 
-
-
 #include "MP3FrameParser.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #include <algorithm>
 
@@ -18,11 +16,12 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
 
-#define MP3LOG(msg, ...) \
-  MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, ("MP3Demuxer " msg, ##__VA_ARGS__))
-#define MP3LOGV(msg, ...)                      \
-  MOZ_LOG(gMediaDemuxerLog, LogLevel::Verbose, \
-          ("MP3Demuxer " msg, ##__VA_ARGS__))
+#define MP3LOG(msg, ...)                                            \
+  MOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Debug, "MP3Demuxer " msg, \
+              ##__VA_ARGS__)
+#define MP3LOGV(msg, ...)                                             \
+  MOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Verbose, "MP3Demuxer " msg, \
+              ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -111,13 +110,13 @@ Result<bool, nsresult> FrameParser::Parse(BufferReader* aReader,
         
         
         MP3LOGV(
-            "ID3v2 tag detected, size=%d,"
-            " needing to skip %zu bytes past the current buffer",
+            "ID3v2 tag detected, size={},"
+            " needing to skip {} bytes past the current buffer",
             tagSize, skipSize - aReader->Remaining());
         *aBytesToSkip = skipSize - aReader->Remaining();
         return false;
       }
-      MP3LOGV("ID3v2 tag detected, size=%d", tagSize);
+      MP3LOGV("ID3v2 tag detected, size={}", tagSize);
       aReader->Read(skipSize);
     } else {
       
@@ -366,7 +365,7 @@ int64_t FrameParser::VBRHeader::Offset(media::TimeUnit aTime,
     }
   }
   
-  MP3LOG("VBRHeader::Offset (%s): %f is at byte %" PRId64 "",
+  MP3LOG("VBRHeader::Offset ({}): {} is at byte {}",
          mType == XING ? "XING" : "VBRI", aTime.ToSeconds(), offset);
 
   return offset;
@@ -460,8 +459,7 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseXing(BufferReader* aReader,
     mEncoderDelay += DEFAULT_DECODER_DELAY + aFrameSize;  
     mEncoderPadding -= std::min(mEncoderPadding, DEFAULT_DECODER_DELAY);
 
-    MP3LOG("VBRHeader::ParseXing: LAME encoder delay section: delay: %" PRIu16
-           " frames, padding: %" PRIu16 " frames",
+    MP3LOG("VBRHeader::ParseXing: LAME encoder delay section: delay: {} frames, padding: {} frames",
            mEncoderDelay, mEncoderPadding);
   }
 
@@ -529,7 +527,7 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
           readFunc = &readAndConvertToInt<int64_t>;
           break;
         default:
-          MP3LOG("Unhandled vbriSeekOffsetsBytesPerEntry size of %hd",
+          MP3LOG("Unhandled vbriSeekOffsetsBytesPerEntry size of {}",
                  vbriSeekOffsetsBytesPerEntry);
           break;
       }
@@ -538,15 +536,15 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
         mTOC.push_back(entry * vbriSeekOffsetsScaleFactor);
       }
       MP3LOG(
-          "Header::Parse found valid  header: EncoderVersion=%hu "
-          "EncoderDelay=%hu "
-          "Quality=%hu "
-          "Bytes=%u "
-          "Frames=%u "
-          "SeekOffsetsTableSize=%u "
-          "SeekOffsetsScaleFactor=%hu "
-          "SeekOffsetsBytesPerEntry=%hu "
-          "SeekOffsetsFramesPerEntry=%hu",
+          "Header::Parse found valid  header: EncoderVersion={} "
+          "EncoderDelay={} "
+          "Quality={} "
+          "Bytes={} "
+          "Frames={} "
+          "SeekOffsetsTableSize={} "
+          "SeekOffsetsScaleFactor={} "
+          "SeekOffsetsBytesPerEntry={} "
+          "SeekOffsetsFramesPerEntry={}",
           vbriEncoderVersion, vbriEncoderDelay, vbriQuality, vbriBytes,
           vbriFrames, vbriSeekOffsetsTableSize, vbriSeekOffsetsScaleFactor,
           vbriSeekOffsetsBytesPerEntry, vbriSeekOffsetsFramesPerEntry);
@@ -561,7 +559,7 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
       mVBRISeekOffsetsFramesPerEntry = vbriSeekOffsetsFramesPerEntry;
       MP3LOG("TOC:");
       for (auto entry : mTOC) {
-        MP3LOG("%" PRId64, entry);
+        MP3LOG("{}", entry);
       }
 
       mType = VBRI;
@@ -572,13 +570,16 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
 }
 
 bool FrameParser::VBRHeader::Parse(BufferReader* aReader, size_t aFrameSize) {
-  auto res = std::make_pair(ParseVBRI(aReader), ParseXing(aReader, aFrameSize));
-  const bool rv = (res.first.isOk() && res.first.unwrap()) ||
-                  (res.second.isOk() && res.second.unwrap());
+  auto xing = ParseXing(aReader, aFrameSize);
+  bool rv = xing.isOk() && xing.unwrap();
+  if (!rv) {
+    auto vbri = ParseVBRI(aReader);
+    rv = vbri.isOk() && vbri.unwrap();
+  }
   if (rv) {
     MP3LOG(
-        "VBRHeader::Parse found valid VBR/CBR header: type=%s"
-        " NumAudioFrames=%u NumBytes=%u Scale=%u TOC-size=%zu Delay=%u",
+        "VBRHeader::Parse found valid VBR/CBR header: type={}"
+        " NumAudioFrames={} NumBytes={} Scale={} TOC-size={} Delay={}",
         vbr_header::TYPE_STR[Type()], NumAudioFrames().valueOr(0),
         NumBytes().valueOr(0), Scale().valueOr(0), mTOC.size(), mEncoderDelay);
   }
