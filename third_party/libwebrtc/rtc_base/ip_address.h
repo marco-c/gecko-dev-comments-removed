@@ -117,6 +117,9 @@ class RTC_EXPORT IPAddress {
   IPAddress Normalized() const;
 
   
+  IPAddress NormalizeWithCheckForEmbeddedIPv4Address() const;
+
+  
   
   IPAddress AsIPv6Address() const;
 
@@ -213,7 +216,9 @@ size_t HashIP(const IPAddress& ip);
 
 bool IPIs6Bone(const IPAddress& ip);
 bool IPIs6To4(const IPAddress& ip);
+bool IPIsIsatap(const IPAddress& ip);
 RTC_EXPORT bool IPIsMacBased(const IPAddress& ip);
+bool IPIsNat64(const IPAddress& ip);
 bool IPIsSiteLocal(const IPAddress& ip);
 bool IPIsTeredo(const IPAddress& ip);
 bool IPIsULA(const IPAddress& ip);

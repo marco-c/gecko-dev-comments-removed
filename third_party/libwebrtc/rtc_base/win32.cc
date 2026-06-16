@@ -218,40 +218,6 @@ int inet_pton_v6(const char* src, void* dst) {
   bool seencompressed = false;
 
   
-  
-  
-  if (*readcursor == ':' && *(readcursor + 1) == ':' &&
-      *(readcursor + 2) != 0) {
-    
-    const char* addrstart = readcursor + 2;
-    if (strchr(addrstart, '.')) {
-      const char* colon = strchr(addrstart, ':');
-      if (colon) {
-        uint16_t a_short;
-        int bytesread = 0;
-        if (sscanf(addrstart, "%hx%n", &a_short, &bytesread) != 1 ||
-            a_short != 0xFFFF || bytesread != 4) {
-          
-          return 0;
-        } else {
-          an_addr.s6_addr[10] = 0xFF;
-          an_addr.s6_addr[11] = 0xFF;
-          addrstart = colon + 1;
-        }
-      }
-      struct in_addr v4;
-      if (inet_pton_v4(addrstart, &v4.s_addr)) {
-        memcpy(&an_addr.s6_addr[12], &v4, sizeof(v4));
-        memcpy(dst, &an_addr, sizeof(an_addr));
-        return 1;
-      } else {
-        
-        return 0;
-      }
-    }
-  }
-
-  
   while (*readcursor != 0 && addr_cursor < addr_end) {
     if (*readcursor == ':') {
       if (*(readcursor + 1) == ':') {
@@ -268,25 +234,43 @@ int inet_pton_v6(const char* src, void* dst) {
           
           addr_cursor = addr_end;
         } else {
+          bool has_dot = false;
           while (*coloncounter) {
             if (*coloncounter == ':') {
               ++coloncount;
+            } else if (*coloncounter == '.') {
+              has_dot = true;
             }
             ++coloncounter;
           }
           
           
           
-          if (coloncount + 1 > addr_end - addr_cursor) {
+          int expected_shorts = coloncount + 1;
+          if (has_dot) {
+            expected_shorts++;
+          }
+          
+          
+          if (expected_shorts > addr_end - addr_cursor) {
             return 0;
           }
-          addr_cursor = addr_end - (coloncount + 1);
+          addr_cursor = addr_end - expected_shorts;
           seencompressed = true;
         }
       } else {
         ++readcursor;
       }
     } else {
+      if (strchr(readcursor, '.') && addr_cursor + 2 <= addr_end) {
+        struct in_addr v4;
+        if (inet_pton_v4(readcursor, &v4.s_addr)) {
+          memcpy(addr_cursor, &v4, sizeof(v4));
+          addr_cursor += 2;
+          readcursor += strlen(readcursor);
+          break;
+        }
+      }
       uint16_t word;
       int bytesread = 0;
       if (sscanf(readcursor, "%4hx%n", &word, &bytesread) != 1) {
