@@ -79,6 +79,11 @@ var WindowListener = {
       "resource://gre/modules/Console.sys.mjs"
     );
     win.console = new ConsoleAPI();
+    
+    
+    win.console.createInstance = win.nativeConsole.createInstance.bind(
+      win.nativeConsole
+    );
   },
 
   tearDownWindow(win) {
