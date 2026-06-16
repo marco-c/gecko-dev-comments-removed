@@ -83,6 +83,9 @@ const ALT_URL_SECURED = ALT_ORIGIN_SECURED + ":443/" + PATH;
 
 const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
 
+const getExtensionStorageUniqueKey = (area, name) =>
+  name + SEPARATOR_GUID + area;
+
 var gToolbox, gPanelWindow, gUI;
 
 
