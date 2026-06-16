@@ -9,6 +9,7 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   MatchURLFilters: "resource://gre/modules/MatchURLFilters.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   WebNavigation: "resource://gre/modules/WebNavigation.sys.mjs",
@@ -266,7 +267,42 @@ this.webNavigation = class extends ExtensionAPIPersistent {
           let frames = WebNavigationFrames.getAllFrames(tab.browsingContext);
           return frames.map(fd => ({ tabId, ...fd }));
         },
-        getFrame({ tabId, frameId }) {
+        getFrame({ tabId, frameId, documentId }) {
+          if (documentId != null) {
+            const bc =
+              ExtensionDocumentId.getBrowsingContextForDocumentId(documentId);
+            if (!bc) {
+              
+              return null;
+            }
+            const browser = bc.top.embedderElement;
+            const tab = browser && tabTracker.getTabForBrowser(browser);
+            if (!tab || !tabManager.canAccessTab(tab)) {
+              
+              
+              return null;
+            }
+            const fd = {
+              tabId: tabTracker.getId(tab),
+              ...WebNavigationFrames.getFrameDetail(bc),
+            };
+            if (
+              
+              (tabId != null && fd.tabId != tabId) ||
+              (frameId != null && fd.frameId != frameId)
+            ) {
+              
+              
+              
+              
+              return null;
+            }
+            return fd;
+          } else if (tabId == null || frameId == null) {
+            throw new ExtensionError(
+              "Either documentId or both tabId and frameId must be specified."
+            );
+          }
           let tab = tabManager.get(tabId);
           if (tab.discarded) {
             return null;
