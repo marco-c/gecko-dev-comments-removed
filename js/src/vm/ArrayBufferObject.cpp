@@ -3034,14 +3034,28 @@ ArrayBufferObject::createFromWasmObject<ResizableArrayBufferObject>(
         MOZ_ASSERT(byteLength <= maxByteLength);
 
         if (byteLength < maxByteLength) {
-          auto newData = ReallocateArrayBufferContents(
-              cx, stolenData, maxByteLength, byteLength);
-          if (!newData) {
-            
-            
-            return nullptr;
+          
+          
+          
+          
+          
+          ArrayBufferContents newData;
+          if (byteLength > 0) {
+            newData = ReallocateArrayBufferContents(cx, stolenData,
+                                                    maxByteLength, byteLength);
+            if (!newData) {
+              return nullptr;
+            }
+          } else {
+            newData =
+                AllocateUninitializedArrayBufferContents(cx,  0);
+            if (!newData) {
+              return nullptr;
+            }
+            js_free(stolenData);
           }
 
+          
           
           
 
