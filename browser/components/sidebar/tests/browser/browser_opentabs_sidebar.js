@@ -236,3 +236,32 @@ add_task(async function test_pinned_tabs_show_as_icons_above_regular_list() {
   BrowserTestUtils.removeTab(tabToPin);
   SidebarController.hide();
 });
+
+add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
+  
+  SidebarController.hide();
+  Assert.ok(!SidebarController.isOpen, "Sidebar starts closed.");
+
+  
+  EventUtils.synthesizeKey("l", { accelKey: true, shiftKey: true });
+
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      SidebarController.isOpen &&
+      SidebarController.currentID === "viewOpenTabsSidebar",
+    "Ctrl+Shift+L opens the Open Tabs sidebar panel."
+  );
+  Assert.equal(
+    SidebarController.currentID,
+    "viewOpenTabsSidebar",
+    "Open Tabs panel is the active sidebar."
+  );
+
+  
+  EventUtils.synthesizeKey("l", { accelKey: true, shiftKey: true });
+  await BrowserTestUtils.waitForCondition(
+    () => !SidebarController.isOpen,
+    "Pressing Ctrl+Shift+L again closes the sidebar."
+  );
+  Assert.ok(!SidebarController.isOpen, "Sidebar is closed.");
+});

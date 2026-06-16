@@ -2,7 +2,6 @@
 
 
 
-
 document.addEventListener(
   "MozBeforeInitialXULLayout",
   () => {
@@ -170,6 +169,9 @@ document.addEventListener(
           case "Browser:ReloadSkipCache":
             BrowserCommands.reloadSkipCache();
             break;
+          case "Browser:DuplicateTab":
+            BrowserCommands.duplicateTab();
+            break;
           case "Browser:NextTab":
             gBrowser.tabContainer.advanceSelectedTab(1, true);
             break;
@@ -298,6 +300,9 @@ document.addEventListener(
           break;
         case "viewBookmarksSidebarKb":
           SidebarController.toggle("viewBookmarksSidebar");
+          break;
+        case "viewOpenTabsSidebarKb":
+          SidebarController.toggle("viewOpenTabsSidebar");
           break;
         case "viewBookmarksToolbarKb":
           BookmarkingUI.toggleBookmarksToolbar("shortcut");
