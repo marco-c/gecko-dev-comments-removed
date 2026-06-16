@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_ENCODING_TEXTDECODERSTREAM_H_
 #define DOM_ENCODING_TEXTDECODERSTREAM_H_
 
@@ -39,7 +37,7 @@ class TextDecoderStream final : public nsISupports,
                                 public nsWrapperCache,
                                 public TextDecoderCommon {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TextDecoderStream)
 
  public:

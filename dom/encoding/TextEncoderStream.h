@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_ENCODING_TEXTENCODERSTREAM_H_
 #define DOM_ENCODING_TEXTENCODERSTREAM_H_
 
@@ -34,7 +32,7 @@ namespace mozilla::dom {
 
 class TextEncoderStream final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TextEncoderStream)
 
  public:
