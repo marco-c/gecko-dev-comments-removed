@@ -13,7 +13,16 @@ use thin_vec::ThinVec;
 pub type NonNegativeLengthOrNumberRect = Rect<NonNegativeLengthOrNumber>;
 
 impl ToTyped for NonNegativeLengthOrNumberRect {
-    fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        return Err(());
+    
+    
+    
+    
+    
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if !self.all_sides_equal() {
+            return Err(());
+        }
+
+        self.0.to_typed(dest)
     }
 }

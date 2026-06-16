@@ -49,6 +49,15 @@ where
     }
 
     
+    #[inline]
+    pub fn all_sides_equal(&self) -> bool
+    where
+        T: PartialEq,
+    {
+        self.0 == self.1 && self.1 == self.2 && self.2 == self.3
+    }
+
+    
     pub fn parse_with<'i, 't, Parse>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
