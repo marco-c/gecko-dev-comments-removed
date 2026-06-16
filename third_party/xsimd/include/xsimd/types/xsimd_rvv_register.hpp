@@ -13,8 +13,9 @@
 #ifndef XSIMD_RVV_REGISTER_HPP
 #define XSIMD_RVV_REGISTER_HPP
 
-#include "xsimd_common_arch.hpp"
-#include "xsimd_register.hpp"
+#include "../utils/xsimd_type_traits.hpp"
+#include "./xsimd_common_arch.hpp"
+#include "./xsimd_register.hpp"
 
 #if XSIMD_WITH_RVV
 #include <riscv_vector.h>
@@ -290,15 +291,6 @@ namespace xsimd
             
             
             
-            using rvv_char_t = std::conditional_t<std::is_signed<char>::value, int8_t, uint8_t>;
-            template <class T>
-            using rvv_fix_char_t = std::conditional_t<
-                std::is_same<char, std::decay_t<T>>::value,
-                rvv_char_t, T>;
-
-            
-            
-            
             
             enum rvv_bitcast_flag
             {
@@ -334,7 +326,7 @@ namespace xsimd
                 operator register_type() const noexcept { return value.get(); }
             };
             template <class T, size_t Width = XSIMD_RVV_BITS>
-            using rvv_reg_t = std::conditional_t<!std::is_void<T>::value, rvv_reg<rvv_fix_char_t<T>, Width>, void>;
+            using rvv_reg_t = std::conditional_t<!std::is_void<T>::value, rvv_reg<map_to_sized_type_t<T>, Width>, void>;
 
             
             
@@ -396,7 +388,7 @@ namespace xsimd
 
             template <class T, size_t Width = XSIMD_RVV_BITS>
             using rvv_bool_t = std::enable_if_t < !std::is_void<T>::value,
-                  rvv_bool<rvv_fix_char_t<T>, Width<rvv_width_m1 ? rvv_width_m1 : Width>>;
+                  rvv_bool<map_to_sized_type_t<T>, Width<rvv_width_m1 ? rvv_width_m1 : Width>>;
 
             template <size_t S>
             struct rvv_vector_type_impl;

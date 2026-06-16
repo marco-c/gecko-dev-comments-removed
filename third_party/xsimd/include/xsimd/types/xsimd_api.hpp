@@ -12,14 +12,16 @@
 #ifndef XSIMD_API_HPP
 #define XSIMD_API_HPP
 
+#include "../arch/xsimd_isa.hpp"
+#include "../types/xsimd_batch.hpp"
+#include "../types/xsimd_traits.hpp"
+#include "../utils/xsimd_type_traits.hpp"
+
 #include <complex>
 #include <cstddef>
 #include <limits>
 #include <ostream>
-
-#include "../arch/xsimd_isa.hpp"
-#include "../types/xsimd_batch.hpp"
-#include "../types/xsimd_traits.hpp"
+#include <utility>
 
 namespace xsimd
 {
@@ -1116,6 +1118,37 @@ namespace xsimd
 
 
 
+    template <size_t I, class T, class A>
+    XSIMD_INLINE T get(batch<T, A> const& b) noexcept
+    {
+        static_assert(I < batch<T, A>::size, "index out of bounds");
+        detail::static_check_supported_config<T, A>();
+        return kernel::get(b, index<I> {}, A {});
+    }
+
+    template <size_t I, class T, class A>
+    XSIMD_INLINE bool get(batch_bool<T, A> const& b) noexcept
+    {
+        static_assert(I < batch_bool<T, A>::size, "index out of bounds");
+        detail::static_check_supported_config<T, A>();
+        return kernel::get(b, index<I> {}, A {});
+    }
+
+    template <size_t I, class T, class A>
+    XSIMD_INLINE typename batch<std::complex<T>, A>::value_type get(batch<std::complex<T>, A> const& b) noexcept
+    {
+        static_assert(I < batch<std::complex<T>, A>::size, "index out of bounds");
+        detail::static_check_supported_config<T, A>();
+        return kernel::get(b, index<I> {}, A {});
+    }
+
+    
+
+
+
+
+
+
 
 
     template <class T, class A>
@@ -1710,6 +1743,54 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return x * y;
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    XSIMD_INLINE batch<T, A> mul_lo(batch<T, A> const& x, batch<T, A> const& y) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return x * y;
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    XSIMD_INLINE batch<T, A> mul_hi(batch<T, A> const& x, batch<T, A> const& y) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::mul_hi<A>(x, y, A {});
+    }
+
+    
+
+
+
+
+
+
+
+    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    XSIMD_INLINE std::pair<batch<T, A>, batch<T, A>>
+    mul_hilo(batch<T, A> const& x, batch<T, A> const& y) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::mul_hilo<A>(x, y, A {});
     }
 
     

@@ -12,20 +12,18 @@
 #ifndef XSIMD_BATCH_HPP
 #define XSIMD_BATCH_HPP
 
+#include "../config/xsimd_arch.hpp"
+#include "../config/xsimd_config.hpp"
+#include "../config/xsimd_macros.hpp"
+#include "../memory/xsimd_alignment.hpp"
+#include "./xsimd_batch_fwd.hpp"
+#include "./xsimd_utils.hpp"
+
 #include <cassert>
 #include <complex>
 
-#include "../config/xsimd_arch.hpp"
-#include "../memory/xsimd_alignment.hpp"
-#include "./xsimd_utils.hpp"
-
 namespace xsimd
 {
-    template <typename T, class A, bool... Values>
-    struct batch_bool_constant;
-    template <class T, class A = default_arch>
-    class batch;
-
     namespace types
     {
         template <class T, class A>
@@ -131,6 +129,27 @@ namespace xsimd
         XSIMD_INLINE batch(T val0, T val1, Ts... vals) noexcept;
         XSIMD_INLINE explicit batch(batch_bool_type const& b) noexcept;
         XSIMD_INLINE batch(register_type reg) noexcept;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        XSIMD_INLINE operator register_type() const noexcept
+        {
+            return this->data;
+        }
 
         template <class U>
         XSIMD_NO_DISCARD static XSIMD_INLINE batch broadcast(U val) noexcept;
@@ -286,7 +305,7 @@ namespace xsimd
         XSIMD_INLINE batch logical_or(batch const& other) const noexcept;
     };
 
-#if __cplusplus < 201703L
+#if XSIMD_CPP_VERSION < 201703L
     template <class T, class A>
     constexpr std::size_t batch<T, A>::size;
 #endif
@@ -300,7 +319,7 @@ namespace xsimd
 
 
 
-    template <class T, class A = default_arch>
+    template <class T, class A>
     class batch_bool : public types::get_bool_simd_register_t<T, A>
     {
         using base_type = types::get_bool_simd_register_t<T, A>;
@@ -366,7 +385,7 @@ namespace xsimd
         static XSIMD_INLINE register_type make_register(std::index_sequence<>, V... v) noexcept;
     };
 
-#if __cplusplus < 201703L
+#if XSIMD_CPP_VERSION < 201703L
     template <class T, class A>
     constexpr std::size_t batch_bool<T, A>::size;
 #endif
@@ -512,7 +531,7 @@ namespace xsimd
         real_batch m_imag;
     };
 
-#if __cplusplus < 201703L
+#if XSIMD_CPP_VERSION < 201703L
     template <class T, class A>
     constexpr std::size_t batch<std::complex<T>, A>::size;
 #endif
