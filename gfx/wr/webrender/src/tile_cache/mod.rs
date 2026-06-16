@@ -66,6 +66,10 @@ pub use api::units::TileRange as TileRect;
 pub const MAX_COMPOSITOR_SURFACES: usize = 4;
 
 
+
+pub const MAX_COMPOSITOR_UNDERLAY_SURFACES: usize = 5;
+
+
 pub const TILE_SIZE_DEFAULT: DeviceIntSize = DeviceIntSize {
     width: 1024,
     height: 512,
@@ -1533,7 +1537,7 @@ impl TileCacheInstance {
         data_stores: &DataStores,
         clip_store: &ClipStore,
         composite_state: &CompositeState,
-        force: bool,
+        color_depth: Option<ColorDepth>,
     ) -> Result<CompositorSurfaceKind, SurfacePromotionFailure> {
         use SurfacePromotionFailure::*;
 
@@ -1583,6 +1587,10 @@ impl TileCacheInstance {
             }
             CompositorSurfaceKind::Underlay => {
                 
+                
+                let force_for_hdr = matches!(color_depth, Some(color_depth) if color_depth.bit_depth() > 8);
+
+                
                 if prim_clip_chain.needs_mask {
                     
                     
@@ -1590,7 +1598,7 @@ impl TileCacheInstance {
                     if !self.backdrop.opaque_rect.contains_box(&pic_coverage_rect) {
                         let result = Err(UnderlayAlphaBackdrop);
                         
-                        if !force {
+                        if !force_for_hdr {
                             return result;
                         }
 
@@ -1598,9 +1606,14 @@ impl TileCacheInstance {
                         self.report_promotion_failure(result, pic_coverage_rect, true);
                     }
 
-                    
                     if !self.underlays.is_empty() {
-                        return Err(UnderlaySurfaceLimit);
+                        
+                        
+                        
+                        
+                        if !force_for_hdr || self.underlays.len() > MAX_COMPOSITOR_UNDERLAY_SURFACES {
+                            return Err(UnderlaySurfaceLimit);
+                        }
                     }
                 }
 
@@ -1609,7 +1622,7 @@ impl TileCacheInstance {
                 if self.overlay_region.intersects(&pic_coverage_rect) {
                     let result = Err(UnderlayIntersectsOverlay);
                     
-                    if !force {
+                    if !force_for_hdr {
                         return result;
                     }
 
@@ -2381,7 +2394,7 @@ impl TileCacheInstance {
                                                           data_stores,
                                                           clip_store,
                                                           composite_state,
-                                                          false);
+                                                          None);
                     }
 
                     
@@ -2457,10 +2470,6 @@ impl TileCacheInstance {
                         self.yuv_images_remaining -= 1;
                     }
 
-                    
-                    
-                    let force = prim_data.kind.color_depth.bit_depth() > 8;
-
                     let promotion_attempts =
                         [CompositorSurfaceKind::Overlay, CompositorSurfaceKind::Underlay];
 
@@ -2478,7 +2487,7 @@ impl TileCacheInstance {
                                                     data_stores,
                                                     clip_store,
                                                     composite_state,
-                                                    force);
+                                                    Some(prim_data.kind.color_depth));
                         if promotion_result.is_ok() {
                             break;
                         }
