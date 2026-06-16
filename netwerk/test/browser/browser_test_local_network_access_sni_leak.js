@@ -212,7 +212,7 @@ add_task(async function test_lna_block_no_sni_leak() {
   let notification = popup?.owner?.panel?.childNodes?.[0];
   ok(notification, "Notification popup element is available");
   let fetchDone = waitForFetchComplete(gServer.port());
-  notification.secondaryButton.doCommand();
+  notification.secondaryButton.click();
   await fetchDone;
 
   Assert.equal(
@@ -272,7 +272,7 @@ add_task(async function test_lna_accept_receives_sni() {
   
   let notification = popup?.owner?.panel?.childNodes?.[0];
   ok(notification, "Notification popup element is available for accept");
-  notification.button.doCommand();
+  notification.button.click();
 
   
   
@@ -452,7 +452,7 @@ async function runPromptShownAgainstServer(server) {
     let fetchDone = observeStopRequest(ctx.targetURL);
     let notification = popup.owner.panel.childNodes[0];
     ok(notification, `[${ctx.label}] Notification popup element is available`);
-    notification.secondaryButton.doCommand();
+    notification.secondaryButton.click();
     let status = await fetchDone;
 
     Assert.equal(

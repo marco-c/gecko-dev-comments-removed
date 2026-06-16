@@ -121,12 +121,13 @@ function makeMockPermissionRequest(browser) {
 
 
 
-function clickMainAction() {
+async function clickMainAction() {
   let removePromise = BrowserTestUtils.waitForEvent(
     PopupNotifications.panel,
     "popuphidden"
   );
   let popupNotification = getPopupNotificationNode();
+  await popupNotification.button.updateComplete;
   popupNotification.button.click();
   return removePromise;
 }
@@ -161,7 +162,11 @@ function clickSecondaryAction(actionIndex) {
       popupNotification.menupopup,
       "popupshown"
     );
-    await EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
+    await popupNotification.secondaryButton.updateComplete;
+    await EventUtils.synthesizeMouseAtCenter(
+      popupNotification.secondaryButton.chevronButtonEl,
+      {}
+    );
     await dropdownPromise;
 
     
@@ -173,7 +178,7 @@ function clickSecondaryAction(actionIndex) {
     if (popupNotification.menupopup.isNativeMenu) {
       popupNotification.menupopup.activateItem(actionMenuItem);
     } else {
-      await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+      EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
     }
     await removePromise;
   })();
