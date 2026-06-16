@@ -100,7 +100,7 @@ class DOMSVGLength final : public nsWrapperCache {
 
 
 
-  DOMSVGLength* Copy();
+  already_AddRefed<DOMSVGLength> Copy();
 
   
 

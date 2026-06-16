@@ -148,7 +148,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::Initialize(DOMSVGNumber& aItem,
   
   
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ?
+    aItem.Clone() : do_AddRef(&aItem);
 
   Clear(aRv);
   MOZ_ASSERT(!aRv.Failed());
@@ -190,7 +191,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::InsertItemBefore(
   }
 
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ?
+    aItem.Clone() : do_AddRef(&aItem);
 
   
   if (!mItems.SetCapacity(mItems.Length() + 1, fallible) ||
@@ -238,7 +240,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::ReplaceItem(
   }
 
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ?
+    aItem.Clone() : do_AddRef(&aItem);
 
   AutoChangeNumberListNotifier notifier(this);
   if (mItems[index]) {

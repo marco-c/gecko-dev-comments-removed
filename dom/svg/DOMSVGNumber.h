@@ -70,10 +70,10 @@ class DOMSVGNumber final : public nsWrapperCache {
   
 
 
-  DOMSVGNumber* Clone() {
-    DOMSVGNumber* clone = new DOMSVGNumber(mParent);
+  already_AddRefed<DOMSVGNumber> Clone() {
+    RefPtr clone = new DOMSVGNumber(mParent);
     clone->mValue = ToSVGNumber();
-    return clone;
+    return clone.forget();
   }
 
   bool IsInList() const { return !!mList; }

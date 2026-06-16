@@ -59,10 +59,9 @@ class DOMSVGTransform final : public nsWrapperCache {
   
 
 
-
-  DOMSVGTransform* Clone() {
+  already_AddRefed<DOMSVGTransform> Clone() {
     NS_ASSERTION(mList, "unexpected caller");
-    return new DOMSVGTransform(InternalItem());
+    return MakeAndAddRef<DOMSVGTransform>(InternalItem());
   }
 
   bool IsInList() const { return !!mList; }
