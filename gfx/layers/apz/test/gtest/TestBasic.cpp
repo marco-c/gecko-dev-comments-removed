@@ -87,8 +87,8 @@ TEST_F(APZCBasicTester, ComplexTransform) {
   
   
 
-  RefPtr<TestAsyncPanZoomController> childApzc =
-      new TestAsyncPanZoomController(LayersId{0}, mcc, tm);
+  RefPtr childApzc =
+      mozilla::MakeRefPtr<TestAsyncPanZoomController>(LayersId{0}, mcc, tm);
 
   const char* treeShape = "x(x)";
   

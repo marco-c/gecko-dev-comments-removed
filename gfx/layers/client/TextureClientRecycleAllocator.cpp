@@ -169,8 +169,8 @@ TextureClientRecycleAllocator::CreateOrRecycle(
       if (!textureHolder->GetTextureClient()->GetAllocator()->IPCOpen() ||
           !aHelper.IsCompatible(textureHolder->GetTextureClient())) {
         
-        RefPtr<Runnable> task =
-            new TextureClientReleaseTask(textureHolder->GetTextureClient());
+        RefPtr task = MakeRefPtr<TextureClientReleaseTask>(
+            textureHolder->GetTextureClient());
         textureHolder->ClearTextureClient();
         textureHolder = nullptr;
         mKnowsCompositor->GetTextureForwarder()->GetThread()->Dispatch(

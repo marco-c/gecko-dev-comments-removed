@@ -183,8 +183,7 @@ void SharedSurfacesParent::AddSameProcess(const wr::ExternalImageId& aId,
   
   
   
-  RefPtr<SourceSurfaceSharedDataWrapper> surface =
-      new SourceSurfaceSharedDataWrapper();
+  RefPtr surface = MakeRefPtr<SourceSurfaceSharedDataWrapper>();
   surface->Init(aSurface);
 
   uint64_t id = wr::AsUint64(aId);
@@ -236,8 +235,12 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MOZ_ASSERT(aPid != base::GetCurrentProcId());
 
-  RefPtr<SourceSurfaceSharedDataWrapper> surface =
-      new SourceSurfaceSharedDataWrapper();
+  if (aDesc.format() != SurfaceFormat::B8G8R8X8 &&
+      aDesc.format() != SurfaceFormat::B8G8R8A8) {
+    return;
+  }
+
+  RefPtr surface = MakeRefPtr<SourceSurfaceSharedDataWrapper>();
 
   
   
