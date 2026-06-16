@@ -305,6 +305,7 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
 
   
   
+  
 
   SCOPED_TRACE("");
   OriginAttributes attrs;
@@ -313,19 +314,11 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
 
   Result resultOut;
   Time timeOut(Time::uninitialized);
-
-  
   attrs.mFirstPartyDomain.AssignLiteral("bar.com");
   ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
 
   
   attrs.mUserContextId = 1;
-  attrs.mFirstPartyDomain.AssignLiteral("foo.com");
-  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
-
-  
-  
-  attrs.mUserContextId = 0;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
   ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
 
@@ -348,55 +341,11 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
   
   attrs.mUserContextId = 1;
   attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
-  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
+  ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
 
   
   attrs.mUserContextId = 0;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
   attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
   ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
-
-  
-  attrs.mUserContextId = 0;
-  attrs.mFirstPartyDomain.Truncate();
-  attrs.mPartitionKey.Truncate();
-  PutAndGet(cache, certID, Success, now, attrs);
-  attrs.mPrivateBrowsingId = 1;
-  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
-}
-
-TEST_F(psm_OCSPCacheTest, TestClearPrivateBrowsing) {
-  
-  
-  CertID certID0(fakeIssuer1, fakeKey000, LiteralInput("s0"));
-  CertID certID1(fakeIssuer1, fakeKey000, LiteralInput("s1"));
-  CertID certID2(fakeIssuer1, fakeKey000, LiteralInput("s2"));
-  CertID certID3(fakeIssuer1, fakeKey000, LiteralInput("s3"));
-
-  OriginAttributes normalAttrs;
-  OriginAttributes pbAttrs;
-  pbAttrs.mPrivateBrowsingId = 1;
-
-  SCOPED_TRACE("");
-  PutAndGet(cache, certID0, Success, now, pbAttrs);
-  PutAndGet(cache, certID0, Success, now, normalAttrs);
-  PutAndGet(cache, certID1, Success, now, pbAttrs);
-  PutAndGet(cache, certID2, Success, now, pbAttrs);
-  PutAndGet(cache, certID1, Success, now, normalAttrs);
-  PutAndGet(cache, certID3, Success, now, pbAttrs);
-
-  cache.ClearPrivateBrowsing();
-
-  Result resultOut;
-  Time timeOut(Time::uninitialized);
-
-  
-  ASSERT_TRUE(cache.Get(certID0, normalAttrs, resultOut, timeOut));
-  ASSERT_TRUE(cache.Get(certID1, normalAttrs, resultOut, timeOut));
-
-  
-  ASSERT_FALSE(cache.Get(certID0, pbAttrs, resultOut, timeOut));
-  ASSERT_FALSE(cache.Get(certID1, pbAttrs, resultOut, timeOut));
-  ASSERT_FALSE(cache.Get(certID2, pbAttrs, resultOut, timeOut));
-  ASSERT_FALSE(cache.Get(certID3, pbAttrs, resultOut, timeOut));
 }
