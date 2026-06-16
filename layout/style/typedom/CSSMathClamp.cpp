@@ -5,15 +5,28 @@
 #include "mozilla/dom/CSSMathClamp.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathClampBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathClamp::CSSMathClamp(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathClamp::CSSMathClamp(nsCOMPtr<nsISupports> aParent,
+                           RefPtr<CSSNumericValue> aLower,
+                           RefPtr<CSSNumericValue> aValue,
+                           RefPtr<CSSNumericValue> aUpper)
+    : CSSMathValue(std::move(aParent), MathValueType::MathClamp),
+      mLower(std::move(aLower)),
+      mValue(std::move(aValue)),
+      mUpper(std::move(aUpper)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathClamp, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathClamp, CSSMathValue, mLower, mValue,
+                                   mUpper)
 
 JSObject* CSSMathClamp::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
@@ -23,27 +36,62 @@ JSObject* CSSMathClamp::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSMathClamp> CSSMathClamp::Constructor(
     const GlobalObject& aGlobal, const CSSNumberish& aLower,
     const CSSNumberish& aValue, const CSSNumberish& aUpper, ErrorResult& aRv) {
-  return MakeAndAddRef<CSSMathClamp>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  
+  RefPtr<CSSNumericValue> lower = CSSNumericValue::Create(global, aLower);
+  RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, aValue);
+  RefPtr<CSSNumericValue> upper = CSSNumericValue::Create(global, aUpper);
+
+  
+
+  
+
+  return MakeAndAddRef<CSSMathClamp>(std::move(global), std::move(lower),
+                                     std::move(value), std::move(upper));
 }
 
-CSSNumericValue* CSSMathClamp::GetLower(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+CSSNumericValue* CSSMathClamp::Lower() const { return mLower; }
+
+CSSNumericValue* CSSMathClamp::Value() const { return mValue; }
+
+CSSNumericValue* CSSMathClamp::Upper() const { return mUpper; }
+
+
+
+void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                         bool aNested,
+                                         nsACString& aDest) const {
+  
+
+  aDest.Append("clamp("_ns);
+
+  mLower->ToCssTextWithProperty(aPropertyId,  true, aDest);
+  aDest.Append(", "_ns);
+
+  mValue->ToCssTextWithProperty(aPropertyId,  true, aDest);
+  aDest.Append(", "_ns);
+
+  mUpper->ToCssTextWithProperty(aPropertyId,  true, aDest);
+
+  aDest.Append(")"_ns);
 }
 
-CSSNumericValue* CSSMathClamp::GetValue(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+const CSSMathClamp& CSSMathValue::GetAsCSSMathClamp() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathClamp);
+
+  return *static_cast<const CSSMathClamp*>(this);
 }
 
-CSSNumericValue* CSSMathClamp::GetUpper(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+CSSMathClamp& CSSMathValue::GetAsCSSMathClamp() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathClamp);
+
+  return *static_cast<CSSMathClamp*>(this);
 }
-
-
 
 }  
