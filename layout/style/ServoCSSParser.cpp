@@ -20,6 +20,11 @@ bool ServoCSSParser::IsValidCSSColor(const nsACString& aValue) {
 }
 
 
+bool ServoCSSParser::IsValidCSSImage(const nsACString& aValue) {
+  return Servo_IsValidCSSImage(&aValue);
+}
+
+
 bool ServoCSSParser::ComputeColor(const StylePerDocumentStyleData* aStyleData,
                                   nscolor aCurrentColor,
                                   const nsACString& aValue,

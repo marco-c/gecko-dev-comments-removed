@@ -144,6 +144,10 @@ class InspectorUtils {
                               const nsACString& aColorString);
 
   
+  static bool IsValidCSSImage(GlobalObject& aGlobal,
+                              const nsACString& aImageString);
+
+  
 
   
   

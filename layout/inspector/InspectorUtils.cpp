@@ -859,6 +859,12 @@ bool InspectorUtils::IsValidCSSColor(GlobalObject& aGlobalObject,
 }
 
 
+bool InspectorUtils::IsValidCSSImage(GlobalObject& aGlobalObject,
+                                     const nsACString& aImageString) {
+  return ServoCSSParser::IsValidCSSImage(aImageString);
+}
+
+
 bool InspectorUtils::SetContentState(GlobalObject& aGlobalObject,
                                      Element& aElement, uint64_t aState,
                                      ErrorResult& aRv) {

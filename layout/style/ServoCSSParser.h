@@ -70,6 +70,12 @@ class ServoCSSParser {
 
 
 
+  static bool IsValidCSSImage(const nsACString& aValue);
+
+  
+
+
+
 
 
 
