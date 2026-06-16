@@ -226,7 +226,7 @@ var didUnknownRst = false;
 var illegalheader_conn = null;
 
 
-function handleRequest(req, res) {
+function handleRequestImpl(req, res) {
   var u = "";
   if (req.url != undefined) {
     u = url.parse(req.url, true);
@@ -247,6 +247,12 @@ function handleRequest(req, res) {
     res.writeHead(200);
     res.end("ok");
     process.exit();
+  }
+
+  if (u.pathname === "/exception-test") {
+    
+    
+    throw new Error("Intentional test exception from /exception-test");
   }
 
   if (req.method == "CONNECT") {
@@ -690,6 +696,43 @@ function handleRequest(req, res) {
   res.writeHead(200);
   res.end(content);
 }
+
+
+
+
+
+
+
+
+
+
+
+function handleRequest(req, res) {
+  try {
+    handleRequestImpl(req, res);
+  } catch (e) {
+    console.error("moz-http2: Unhandled exception in request handler:", e);
+    try {
+      
+      
+      res.writeHead(500, "Internal Server Error", {
+        "content-type": "text/plain",
+      });
+      res.end("moz-http2 handler exception: " + e.message);
+    } catch (_) {
+      
+    }
+  }
+}
+
+
+
+
+
+
+process.on("uncaughtException", function (err) {
+  console.error("moz-http2: Uncaught exception (server continuing):", err);
+});
 
 
 
