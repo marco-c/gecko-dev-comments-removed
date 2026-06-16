@@ -1296,10 +1296,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForOffer(
           current_content->media_description()->as_sctp();
       RTC_DCHECK(current_data_description);
       data->set_sctp_init(current_data_description->sctp_init());
-    }
-    if (!data->sctp_init().has_value()) {
-      
-      
+    } else {
       data->set_sctp_init(sctp_factory_->GenerateConnectionToken(env_));
     }
   }
@@ -1547,8 +1544,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
           RTC_DCHECK(current_data_description);
           data_answer->as_sctp()->set_sctp_init(
               current_data_description->sctp_init());
-        }
-        if (!data_answer->as_sctp()->sctp_init().has_value()) {
+        } else {
           data_answer->as_sctp()->set_sctp_init(
               sctp_factory_->GenerateConnectionToken(env_));
         }
