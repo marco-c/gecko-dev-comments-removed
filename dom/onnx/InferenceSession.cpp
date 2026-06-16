@@ -38,18 +38,37 @@ namespace mozilla::dom {
 static OrtEnv* sEnv = nullptr;
 static OrtApi* sAPI = nullptr;
 
+
+
+
 class AutoOrtStatus {
  public:
   MOZ_IMPLICIT AutoOrtStatus(OrtStatus* aStatus = nullptr) : mStatus(aStatus) {
     MOZ_ASSERT(sAPI);
   }
-  ~AutoOrtStatus() {
-    if (mStatus) {
-      sAPI->ReleaseStatus(mStatus);
+  
+  AutoOrtStatus(const AutoOrtStatus&) = delete;
+  AutoOrtStatus& operator=(const AutoOrtStatus&) = delete;
+  
+  AutoOrtStatus(AutoOrtStatus&& aOther) noexcept
+      : mStatus(std::exchange(aOther.mStatus, nullptr)) {}
+  AutoOrtStatus& operator=(AutoOrtStatus&& aOther) noexcept {
+    if (this != &aOther) {
+      Release();
+      mStatus = std::exchange(aOther.mStatus, nullptr);
     }
+    return *this;
   }
+  ~AutoOrtStatus() { Release(); }
   explicit operator bool() const { return !!mStatus; }
   const char* Message() const { return sAPI->GetErrorMessage(mStatus); }
+  void Release() {
+    if (mStatus) {
+      sAPI->ReleaseStatus(mStatus);
+      mStatus = nullptr;
+    }
+  }
+
   OrtStatus* mStatus;
 };
 
@@ -294,7 +313,13 @@ void InferenceSession::Init(const RefPtr<Promise>& aPromise,
     sAPI = GetOrtAPI();
     if (!sAPI) {
       LOGD("Couldn't get ahold of ORT API");
-      aPromise->MaybeReject(NS_ERROR_FAILURE);
+      
+      
+      
+      
+      
+      aPromise->MaybeRejectWithNotSupportedError(
+          "onnxruntime shared library could not be loaded");
       return;
     }
     OrtThreadingOptions* threadingOptions;
