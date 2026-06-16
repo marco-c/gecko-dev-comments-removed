@@ -1168,4 +1168,7 @@ struct outparam_as_pointer<nsGetterAddRefs<T>> {
 };
 }  
 
+template <typename T>
+struct fmt::formatter<nsCOMPtr<T>> : fmt::ostream_formatter {};
+
 #endif  
