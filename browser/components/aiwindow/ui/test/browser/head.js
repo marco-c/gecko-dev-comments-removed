@@ -177,6 +177,21 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
 
 
 
+async function waitForSidebarReady(win) {
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await BrowserTestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Sidebar ai-window should be loaded"
+  );
+  return sidebarBrowser;
+}
+
+
+
+
+
+
+
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
   return openAIWindowSidebar(win);
@@ -200,11 +215,7 @@ async function openAIWindowSidebar(win) {
     info("Opening sidebar");
     AIWindowUI.toggleSidebar(win);
   }
-  const sidebarBrowser = win.document.getElementById("ai-window-browser");
-  await BrowserTestUtils.waitForCondition(
-    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
-    "Sidebar ai-window should be loaded"
-  );
+  const sidebarBrowser = await waitForSidebarReady(win);
   return { win, sidebarBrowser };
 }
 
