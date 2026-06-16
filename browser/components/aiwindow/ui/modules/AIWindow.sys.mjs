@@ -29,7 +29,7 @@ const PREF_SEMANTIC_HISTORY_SMARTWINDOW_FEATURE_GATE =
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   getAllModelsData:
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   AIWindowTabStatesManager:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowTabStatesManager.sys.mjs",
   AIWindowAccountAuth:
@@ -841,21 +841,11 @@ export const AIWindow = {
 
     this.toggleAIWindow(win, true, trigger);
 
-    const triggeringPrincipal =
-      Services.scriptSecurityManager.getSystemPrincipal();
-
     if (!lazy.hasFirstrunCompleted) {
-      win.gBrowser.loadURI(FIRSTRUN_URI, { triggeringPrincipal });
-    } else if (trigger === "startup") {
-      // Startup navigation to about:newtab may still be pending when
-      // _reconcileNewTabPages runs. Redirect any affected tabs to the
-      // AI window URL to ensure they open as Smart Windows.
-      const aiWindowURI = Services.io.newURI(AIWINDOW_URL);
-      for (const tab of win.gBrowser.tabs) {
-        if (tab.linkedBrowser?.currentURI?.spec === "about:blank") {
-          tab.linkedBrowser.loadURI(aiWindowURI, { triggeringPrincipal });
-        }
-      }
+      win.gBrowser.loadURI(FIRSTRUN_URI, {
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      });
     }
 
     return true;
