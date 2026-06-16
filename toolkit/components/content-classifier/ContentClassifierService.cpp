@@ -32,6 +32,7 @@
 #include "nsIWebProgressListener.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -405,6 +406,13 @@ void ContentClassifierService::Init() {
       return;
     }
 
+    rv = NS_CreateBackgroundTaskQueue("ContentClassifier",
+                                      getter_AddRefs(mBuildThread));
+    if (NS_FAILED(rv)) {
+      mInitPhase = InitPhase::InitFailed;
+      return;
+    }
+
     mInitPhase = InitPhase::InitSucceeded;
   }
 
@@ -513,38 +521,62 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
   
   ShutdownRSClient();
 
-  MutexAutoLock lock(mLock);
+  nsCOMPtr<nsISerialEventTarget> buildThread;
+  {
+    MutexAutoLock lock(mLock);
 
-  mInitPhase = InitPhase::ShutdownStarted;
+    mInitPhase = InitPhase::ShutdownStarted;
+    
+    
+    
+    buildThread = std::move(mBuildThread);
 
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.protection.enabled"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.annotation.enabled"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.protection.test_list_urls"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.annotation.test_list_urls"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.protection.engines"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.annotation.engines"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.protection.engines.pbmode"_ns);
-  Preferences::UnregisterCallback(
-      &ContentClassifierService::OnPrefChange,
-      "privacy.trackingprotection.content.annotation.engines.pbmode"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.protection.enabled"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.annotation.enabled"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.protection.test_list_urls"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.annotation.test_list_urls"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.protection.engines"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.annotation.engines"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.protection.engines.pbmode"_ns);
+    Preferences::UnregisterCallback(
+        &ContentClassifierService::OnPrefChange,
+        "privacy.trackingprotection.content.annotation.engines.pbmode"_ns);
 
-  content_classifier_teardown_domain_resolver();
+    content_classifier_teardown_domain_resolver();
 
-  RemoveBlocker();
+    if (!buildThread) {
+      RemoveBlocker();
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
+  
+  RefPtr<ContentClassifierService> self = this;
+  buildThread->Dispatch(NS_NewRunnableFunction(
+      "ContentClassifierService::ShutdownFence", [self]() {
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "ContentClassifierService::FinishShutdown", [self]() {
+              MutexAutoLock lock(self->mLock);
+              self->RemoveBlocker();
+            }));
+      }));
 
   return NS_OK;
 }
@@ -989,56 +1021,160 @@ void ContentClassifierService::UpdateFeatures(
     fetches.AppendElement(FetchEngineDataForFeature(*feature));
   }
 
-  if (features.IsEmpty()) {
-    MutexAutoLock lock(mLock);
-    PopulateAllActiveEnginesFromPreferenceSnapshot(aPreferenceSnapshot);
-    PruneInactiveEngines(aPreferenceSnapshot);
+  
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> buildThread = mBuildThread;
+  if (!buildThread) {
     return;
   }
 
-  RefPtr<ContentClassifierService> self = this;
-  EngineRulesPromise::AllSettled(GetMainThreadSerialEventTarget(), fetches)
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [self, features = std::move(features),
-              snapshot = std::move(aPreferenceSnapshot)](
-                 const EngineRulesPromise::AllSettledPromiseType::
-                     ResolveOrRejectValue& aValue) mutable {
-               
-               
-               
-               
-               nsTArray<RefPtr<ContentClassifierEngine>> builtEngines;
-               builtEngines.SetLength(features.Length());
-               if (aValue.IsResolve()) {
-                 const auto& settled = aValue.ResolveValue();
-                 MOZ_ASSERT(settled.Length() == features.Length());
-                 for (size_t i = 0; i < settled.Length(); ++i) {
-                   if (settled[i].IsReject()) {
-                     MOZ_LOG_FMT(
-                         gContentClassifierLog, LogLevel::Warning,
-                         "UpdateFeatures - fetch rejected for feature \"{}\"",
-                         features[i]->mName);
-                     continue;
-                   }
-                   RefPtr<ContentClassifierEngine> engine;
-                   nsresult rv = BuildEngineFromRules(
-                       *features[i], settled[i].ResolveValue(), engine);
-                   if (NS_FAILED(rv)) {
-                     continue;
-                   }
-                   builtEngines[i] = std::move(engine);
-                 }
-               }
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<uint64_t> featureVersions;
+  featureVersions.SetCapacity(features.Length());
+  uint64_t generation;
+  {
+    MutexAutoLock lock(mLock);
+    generation = ++mUpdateGeneration;
+    for (const auto* feature : features) {
+      uint64_t& v = mFeatureVersions.LookupOrInsert(feature->mName);
+      featureVersions.AppendElement(++v);
+    }
+  }
 
-               MutexAutoLock lock(self->mLock);
-               for (size_t i = 0; i < builtEngines.Length(); ++i) {
-                 self->InstallEngine(features[i]->mName,
-                                     std::move(builtEngines[i]));
-               }
-               self->PopulateAllActiveEnginesFromPreferenceSnapshot(snapshot);
-               self->PruneInactiveEngines(snapshot);
-               NotifyListsLoadedForTesting();
-             });
+  RefPtr<ContentClassifierService> self = this;
+
+  if (features.IsEmpty()) {
+    
+    
+    
+    
+    
+    buildThread->Dispatch(NS_NewRunnableFunction(
+        "ContentClassifierService::UpdateFeaturesNoFetch",
+        [self, snapshot = std::move(aPreferenceSnapshot), generation]() {
+          {
+            MutexAutoLock lock(self->mLock);
+            if (self->mInitPhase != InitPhase::InitSucceeded) {
+              return;
+            }
+            if (self->mUpdateGeneration != generation) {
+              return;
+            }
+            self->PopulateAllActiveEnginesFromPreferenceSnapshot(snapshot);
+            self->PruneInactiveEngines(snapshot);
+          }
+          NS_DispatchToMainThread(NS_NewRunnableFunction(
+              "ContentClassifierService::NotifyListsLoaded",
+              [self]() { NotifyListsLoadedForTesting(); }));
+        }));
+    return;
+  }
+
+  EngineRulesPromise::AllSettled(GetMainThreadSerialEventTarget(), fetches)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self, features = std::move(features),
+           featureVersions = std::move(featureVersions),
+           snapshot = std::move(aPreferenceSnapshot),
+           buildThread = std::move(buildThread), generation](
+              EngineRulesPromise::AllSettledPromiseType::ResolveOrRejectValue&&
+                  aValue) mutable {
+            MOZ_ASSERT(NS_IsMainThread());
+
+            
+            
+            nsTArray<nsTArray<nsCString>> perFeatureRules;
+            perFeatureRules.SetLength(features.Length());
+            if (aValue.IsResolve()) {
+              auto& settled = aValue.ResolveValue();
+              MOZ_ASSERT(settled.Length() == features.Length());
+              for (size_t i = 0; i < settled.Length(); ++i) {
+                if (settled[i].IsReject()) {
+                  MOZ_LOG_FMT(
+                      gContentClassifierLog, LogLevel::Warning,
+                      "UpdateFeatures - fetch rejected for feature \"{}\"",
+                      features[i]->mName);
+                  continue;
+                }
+                perFeatureRules[i] = std::move(settled[i].ResolveValue());
+              }
+            }
+
+            buildThread->Dispatch(NS_NewRunnableFunction(
+                "ContentClassifierService::UpdateFeaturesBuild",
+                [self, features = std::move(features),
+                 featureVersions = std::move(featureVersions),
+                 perFeatureRules = std::move(perFeatureRules),
+                 snapshot = std::move(snapshot), generation]() mutable {
+                  MOZ_ASSERT(!NS_IsMainThread());
+
+                  
+                  
+                  
+                  
+                  nsTArray<RefPtr<ContentClassifierEngine>> builtEngines;
+                  builtEngines.SetLength(features.Length());
+                  for (size_t i = 0; i < features.Length(); ++i) {
+                    if (perFeatureRules[i].IsEmpty()) {
+                      continue;
+                    }
+                    RefPtr<ContentClassifierEngine> engine;
+                    if (NS_FAILED(BuildEngineFromRules(
+                            *features[i], perFeatureRules[i], engine))) {
+                      continue;
+                    }
+                    builtEngines[i] = std::move(engine);
+                  }
+
+                  bool didFullWork = false;
+                  {
+                    MutexAutoLock lock(self->mLock);
+                    if (self->mInitPhase != InitPhase::InitSucceeded) {
+                      
+                      return;
+                    }
+                    
+                    for (size_t i = 0; i < builtEngines.Length(); ++i) {
+                      uint64_t current =
+                          self->mFeatureVersions.Get(features[i]->mName);
+                      if (current != featureVersions[i]) {
+                        MOZ_LOG_FMT(
+                            gContentClassifierLog, LogLevel::Debug,
+                            "UpdateFeatures - skipping stale install for "
+                            "feature \"{}\" (have v{}, current v{})",
+                            features[i]->mName, featureVersions[i], current);
+                        continue;
+                      }
+                      self->InstallEngine(features[i]->mName,
+                                          std::move(builtEngines[i]));
+                    }
+                    
+                    
+                    
+                    
+                    if (self->mUpdateGeneration == generation) {
+                      self->PopulateAllActiveEnginesFromPreferenceSnapshot(
+                          snapshot);
+                      self->PruneInactiveEngines(snapshot);
+                      didFullWork = true;
+                    }
+                  }
+
+                  if (didFullWork) {
+                    NS_DispatchToMainThread(NS_NewRunnableFunction(
+                        "ContentClassifierService::NotifyListsLoaded",
+                        [self]() { NotifyListsLoadedForTesting(); }));
+                  }
+                }));
+          });
 }
 
 class FilterListLoader final : public nsIStreamLoaderObserver {

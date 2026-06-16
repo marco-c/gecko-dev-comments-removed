@@ -26,6 +26,8 @@
 
 #include "mozilla/ContentClassifierEngine.h"
 
+class nsISerialEventTarget;
+
 namespace mozilla {
 
 enum class ClassifyMode { Annotate, Cancel };
@@ -297,6 +299,24 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   
   
+  
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, uint64_t> mFeatureVersions MOZ_GUARDED_BY(mLock);
+
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mUpdateGeneration MOZ_GUARDED_BY(mLock) = 0;
+
+  
+  
+  
   nsTArray<RefPtr<ContentClassifierEngine>> mCancelEngines
       MOZ_GUARDED_BY(mLock);
   nsTArray<RefPtr<ContentClassifierEngine>> mCancelEnginesPBM
@@ -309,6 +329,12 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   
   nsCOMPtr<nsIContentClassifierRemoteSettingsClient> mRSClient;
+
+  
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mBuildThread;
 };
 
 }  
