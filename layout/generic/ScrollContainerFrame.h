@@ -1552,6 +1552,14 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   
   
+  bool mInactiveWithActiveDescendantScrollFrames : 1;
+
+  
+  
+  bool mScrollPortOrScrolledAreaBoundsChanged : 1;
+
+  
+  
   
   
   
