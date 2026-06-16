@@ -9,7 +9,7 @@ add_task(async function testSteps() {
   data.value = "value1";
   data.usage = data.key.length + data.value.length;
 
-  const principal = getPrincipal("http://example.com");
+  const principal = getDefaultPrincipal();
 
   info("Setting prefs");
 
@@ -28,9 +28,9 @@ add_task(async function testSteps() {
 
   storage.setItem(data.key, data.value);
 
-  info("Resetting origin");
+  info("Resetting client");
 
-  let request = resetOrigin(principal);
+  let request = resetClient(principal);
   await requestFinished(request);
 
   info("Getting usage");
@@ -55,9 +55,9 @@ add_task(async function testSteps() {
 
   storage.removeItem(data.key);
 
-  info("Resetting origin");
+  info("Resetting client");
 
-  request = resetOrigin(principal);
+  request = resetClient(principal);
   await requestFinished(request);
 
   info("Getting usage");
