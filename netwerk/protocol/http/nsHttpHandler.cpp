@@ -1144,6 +1144,17 @@ void nsHttpHandler::InitUserAgentComponents() {
   
   
   
+  int32_t dotIdx = androidVersion.FindChar(u'.');
+  if (dotIdx >= 0) {
+    androidVersion.Truncate(dotIdx);
+  }
+
+  
+  
+  
+  
+  
+  
   mPlatform += " ";
   if (NS_SUCCEEDED(rv) && androidVersion.Length() >= 2 &&
       std::isdigit(androidVersion[0]) && std::isdigit(androidVersion[1])) {

@@ -16,6 +16,9 @@ let expectedResults;
 
 const osVersion = Services.sysinfo.get("version");
 
+
+
+
 const DEFAULT_APPVERSION = {
   linux: "5.0 (X11)",
   win: "5.0 (Windows)",
