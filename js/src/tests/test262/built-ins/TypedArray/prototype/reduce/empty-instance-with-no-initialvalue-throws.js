@@ -21,11 +21,12 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
+  var ta = new TA(makeCtorArg(0));
   assert.throws(TypeError, function() {
-    new TA().reduce(function() {
+    ta.reduce(function() {
       called++;
     });
   });

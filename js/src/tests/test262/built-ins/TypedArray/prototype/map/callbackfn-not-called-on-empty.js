@@ -17,10 +17,10 @@
 
 
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
-  new TA().map(function() {
+  new TA(makeCtorArg(0)).map(function() {
     called++;
   });
 

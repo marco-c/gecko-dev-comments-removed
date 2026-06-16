@@ -40,8 +40,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var typedArray = new TA(2);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(2));
   typedArray.set(['', '1'])
 
   assert.sameValue(typedArray[0], 0n);
@@ -63,6 +63,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     typedArray.set(["1e7"]);
   }, "Replace the StrUnsignedDecimalLiteral production with DecimalDigits to not allow... exponents...");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

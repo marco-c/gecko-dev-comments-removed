@@ -29,10 +29,10 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
-  new TA().reduceRight(function() {
+  new TA(makeCtorArg(0)).reduceRight(function() {
     called++;
   }, undefined);
 

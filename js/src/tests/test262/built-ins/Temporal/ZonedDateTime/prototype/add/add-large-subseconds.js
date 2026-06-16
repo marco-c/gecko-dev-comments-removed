@@ -9,7 +9,7 @@
 
 
 
-const zdt1 = new Temporal.ZonedDateTime(1582966647747612578n, "America/Los_Angeles");
+const zdt1 = new Temporal.ZonedDateTime(1582966647747612578n, "UTC");
 
 assert.sameValue(zdt1.add(Temporal.Duration.from({nanoseconds: Number.MAX_SAFE_INTEGER})).epochNanoseconds,
                  1591973847002353569n);

@@ -6,6 +6,7 @@
 
 
 
+
 function CustomError() {}
 
 const options = [
@@ -14,12 +15,22 @@ const options = [
   "style",
   "currency",
   "currencyDisplay",
+  "currencySign",
+  "unit",
+  "unitDisplay",
+  "notation",
   "minimumIntegerDigits",
   "minimumFractionDigits",
   "maximumFractionDigits",
   "minimumSignificantDigits",
   "maximumSignificantDigits",
+  "roundingIncrement",
+  "roundingMode",
+  "roundingPriority",
+  "trailingZeroDisplay",
   "useGrouping",
+  "compactDisplay",
+  "signDisplay",
 ];
 
 for (const option of options) {

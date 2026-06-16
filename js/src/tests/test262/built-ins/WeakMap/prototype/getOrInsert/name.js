@@ -12,7 +12,7 @@
 
 
 
-verifyProperty(Map.prototype.getOrInsert, "name", {
+verifyProperty(WeakMap.prototype.getOrInsert, "name", {
   value: "getOrInsert",
   writable: false,
   enumerable: false,

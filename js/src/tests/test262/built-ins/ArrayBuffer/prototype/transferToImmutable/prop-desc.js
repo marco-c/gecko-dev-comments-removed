@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyPrimordialCallableProperty(
+  ArrayBuffer.prototype,
+  "transferToImmutable",
+  "transferToImmutable",
+  0
+);
+
+reportCompare(0, 0);

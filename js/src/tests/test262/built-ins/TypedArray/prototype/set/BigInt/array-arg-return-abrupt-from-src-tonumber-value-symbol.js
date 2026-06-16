@@ -22,7 +22,7 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var obj = {
       length: 4,
       "0": 42n,
@@ -31,7 +31,7 @@ testWithBigIntTypedArrayConstructors(function(TA) {
       "3": 44n
   };
 
-  var sample = new TA([1n, 2n, 3n, 4n]);
+  var sample = new TA(makeCtorArg([1n, 2n, 3n, 4n]));
 
   assert.throws(TypeError, function() {
     sample.set(obj);
@@ -41,6 +41,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     compareArray(sample, [42n, 43n, 3n, 4n]),
     "values are set until exception"
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

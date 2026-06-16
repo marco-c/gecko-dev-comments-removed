@@ -21,8 +21,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA(2);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(2));
   var calledOffset = 0;
   var obj = {
     valueOf: function() {
@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   });
 
   assert.sameValue(calledOffset, 1);
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

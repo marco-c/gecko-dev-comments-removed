@@ -31,9 +31,9 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = false;
-  var result = new TA().reduceRight(function() {
+  var result = new TA(makeCtorArg(0)).reduceRight(function() {
     called = true;
   }, 42);
 

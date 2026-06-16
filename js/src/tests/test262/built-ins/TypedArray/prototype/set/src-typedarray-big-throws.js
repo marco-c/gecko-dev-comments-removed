@@ -22,11 +22,11 @@
 var bigTypedArray;
 var littleTypedArray;
 
-testWithBigIntTypedArrayConstructors(function(BTA) {
+testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
 
-  bigTypedArray = new BTA([1n]);
+  bigTypedArray = new BTA(makeCtorArg([1n]));
 
-  testWithTypedArrayConstructors(function(TA) {
+  testWithTypedArrayConstructors(function(TA, makeCtorArg) {
 
     littleTypedArray = new TA(1);
     assert.throws(TypeError, function() {
@@ -34,6 +34,6 @@ testWithBigIntTypedArrayConstructors(function(BTA) {
     });
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

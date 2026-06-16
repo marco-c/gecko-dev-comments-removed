@@ -60,8 +60,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var typedArray = new TA(1);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var typedArray = new TA(makeCtorArg(1));
   typedArray[0] = '';
   assert.sameValue(typedArray[0], 0n, 'The value of typedArray[0] is 0n');
   typedArray[0] = '1';
@@ -82,6 +82,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(SyntaxError, function() {
     typedArray[0] = '1e7';
   }, '`typedArray[0] = "1e7"` throws SyntaxError');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

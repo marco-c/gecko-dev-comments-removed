@@ -7,6 +7,8 @@
 
 
 
+
+
 function CustomError() {}
 
 const options = [
@@ -16,6 +18,7 @@ const options = [
   "variants",
   "calendar",
   "collation",
+  "firstDayOfWeek",
   "hourCycle",
   "caseFirst",
   "numeric",

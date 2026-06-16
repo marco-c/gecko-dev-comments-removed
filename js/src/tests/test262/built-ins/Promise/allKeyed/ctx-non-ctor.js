@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.allKeyed.call(eval);
+});
+
+reportCompare(0, 0);

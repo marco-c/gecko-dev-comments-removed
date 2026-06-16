@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(function() {
+  return assert.throwsAsync(TypeError, function() {
+    return Promise.allSettledKeyed(0n);
+  }, 'BigInt');
+});

@@ -25,8 +25,8 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([42n, 43n, 44n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([42n, 43n, 44n]));
 
   sample.some(function(v, i) {
     if (i < sample.length - 1) {
@@ -37,6 +37,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
       v, 42n, "method does not cache values before callbackfn calls"
     );
   });
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

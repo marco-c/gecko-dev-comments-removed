@@ -30,15 +30,15 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   let counter = 0;
-  let sample = new TA(1);
+  let sample = new TA(makeCtorArg(1));
 
   sample.constructor = {};
   sample.constructor[Symbol.species] = function(count) {
     let other = new TA(count);
-    counter++;
     $DETACHBUFFER(other.buffer);
+    counter++;
     return other;
   };
 
@@ -48,6 +48,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   }, '`sample.slice()` throws TypeError');
 
   assert.sameValue(counter, 2, 'The value of `counter` is 2');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

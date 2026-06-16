@@ -14,14 +14,14 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
-  var sample = new TA([2n, 1n]);
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([2n, 1n]));
   var result = sample.sort();
 
   assert.sameValue(sample, result, "without comparefn");
 
   result = sample.sort(function() { return 0; });
   assert.sameValue(sample, result, "with comparefn");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

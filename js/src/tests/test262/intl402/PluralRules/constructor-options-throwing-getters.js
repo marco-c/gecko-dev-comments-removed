@@ -6,17 +6,25 @@
 
 
 
+
+
+
 function CustomError() {}
 
 const options = [
   "localeMatcher",
   "type",
   "notation",
+  "compactDisplay",
   "minimumIntegerDigits",
   "minimumFractionDigits",
   "maximumFractionDigits",
   "minimumSignificantDigits",
   "maximumSignificantDigits",
+  "roundingIncrement",
+  "roundingMode",
+  "roundingPriority",
+  "trailingZeroDisplay",
 ];
 
 for (const option of options) {

@@ -25,10 +25,10 @@
 
 
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
-  new TA().some(function() {
+  new TA(makeCtorArg(0)).some(function() {
     called++;
   });
 
