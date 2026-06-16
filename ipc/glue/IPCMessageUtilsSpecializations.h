@@ -467,7 +467,7 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
     
     
     static constexpr size_t Idx = N - 1;
-    using T = mozilla::detail::Nth<Idx, Ts...>;
+    using T = typename mozilla::detail::Nth<Idx, Ts...>::Type;
 
     static ReadResult<paramType> Read(MessageReader* reader, Tag tag) {
       if (tag == Idx) {
