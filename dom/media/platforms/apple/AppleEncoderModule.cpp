@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AppleEncoderModule.h"
 
 #include "AppleUtils.h"
@@ -16,12 +14,12 @@ using mozilla::media::EncodeSupportSet;
 namespace mozilla {
 
 extern LazyLogModule sPEMLog;
-#define LOGE(fmt, ...)                       \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Error, \
-          ("[AppleEncoderModule] %s: " fmt, __func__, ##__VA_ARGS__))
-#define LOGD(fmt, ...)                       \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Debug, \
-          ("[AppleEncoderModule] %s: " fmt, __func__, ##__VA_ARGS__))
+#define LOGE(fmt, ...)                           \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Error, \
+              "[AppleEncoderModule] {}: " fmt, __func__, ##__VA_ARGS__)
+#define LOGD(fmt, ...)                           \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Debug, \
+              "[AppleEncoderModule] {}: " fmt, __func__, ##__VA_ARGS__)
 
 EncodeSupportSet AppleEncoderModule::SupportsCodec(CodecType aCodec) const {
   if (aCodec != CodecType::H264) {
@@ -36,6 +34,7 @@ EncodeSupportSet AppleEncoderModule::Supports(
   if (!CanLikelyEncode(aConfig)) {
     return EncodeSupportSet{};
   }
+  
   
   if (aConfig.mScalabilityMode == ScalabilityMode::L1T3 ||
       (aConfig.mScalabilityMode != ScalabilityMode::None && !OSSupportsSVC())) {
