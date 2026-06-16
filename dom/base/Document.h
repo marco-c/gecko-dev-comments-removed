@@ -5002,7 +5002,8 @@ class Document : public nsINode,
 
   RefPtr<Promise> mReadyForIdle;
 
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  
+  mutable RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
   
   
