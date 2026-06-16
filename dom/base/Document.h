@@ -3066,7 +3066,7 @@ class Document : public nsINode,
 
   void ForceEnableXULXBL() { mAllowXULXBL = eTriTrue; }
 
-  void ForceSkipDTDSecurityChecks() { mSkipDTDSecurityChecks = true; }
+  void ForceSkipDTDSecurityChecks();
 
   
 
