@@ -1046,6 +1046,8 @@ home-prefs-search-header2 =
 home-prefs-shortcuts-header =
     .label = Shortcuts
 home-prefs-shortcuts-description = Sites you save or visit
+home-prefs-shortcuts-select =
+    .aria-label = Shortcuts
 home-prefs-shortcuts-by-option-sponsored =
     .label = Sponsored shortcuts
 
@@ -1077,6 +1079,8 @@ home-prefs-highlights-option-most-recent-download =
 home-prefs-recent-activity-header =
     .label = Recent activity
 home-prefs-recent-activity-description = A selection of recent sites and content
+home-prefs-recent-activity-select =
+    .aria-label = Recent activity
 home-prefs-weather-header =
   .label = Weather
 home-prefs-weather-description = Today’s forecast at a glance
@@ -1794,14 +1798,6 @@ autofill-addresses-manage-addresses-title =
 # This message is displayed when no addresses are stored in Firefox
 addresses-no-addresses-stored-message =
     .label = No addresses added
-
-# These values are displayed for each address record listed on the "Manage addresses and more" subpage.
-# Variables:
-#   $name (string) - The name associated with the address
-#   $address (string) - The address
-address-moz-box-item =
-  .label = { $name }
-  .description = { $address }
 
 pane-passwords-autofill-title2 = Passwords and autofill
   .title = Passwords and autofill
