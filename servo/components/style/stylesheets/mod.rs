@@ -639,6 +639,14 @@ impl CssRuleTypes {
         Self(CssRuleType::PositionTry.bit() | CssRuleType::Keyframe.bit());
 
     
+    pub const WITHOUT_ELEMENT_CONTEXT: Self = Self(
+        CssRuleType::CounterStyle.bit()
+            | CssRuleType::FontFace.bit()
+            | CssRuleType::FontFeatureValues.bit()
+            | CssRuleType::Page.bit(),
+    );
+
+    
     #[inline]
     pub fn contains(self, ty: CssRuleType) -> bool {
         self.0 & ty.bit() != 0
