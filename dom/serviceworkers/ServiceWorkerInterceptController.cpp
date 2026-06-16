@@ -88,40 +88,22 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       registration->MaybeScheduleTimeCheckAndUpdate();
     }
 
+    RefPtr<net::HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
+
     RequestMode requestMode =
         InternalRequest::MapChannelToRequestMode(aChannel);
 
-    
-    
-    
-    RefPtr<net::HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
-    if (requestMode == RequestMode::No_cors && loadInfo->GetIsMediaRequest() &&
-        httpChannel &&
+    if (httpChannel &&
         httpChannel->GetRequestHead()->HasHeader(net::nsHttp::Range)) {
+      RequestMode requestMode =
+          InternalRequest::MapChannelToRequestMode(aChannel);
       bool mayLoad = nsContentUtils::CheckMayLoad(
           loadInfo->GetLoadingPrincipal(), aChannel,
            false);
-      if (!mayLoad) {
+      if (requestMode == RequestMode::No_cors && !mayLoad) {
         *aShouldIntercept = false;
       }
-    }
-
-    RequestDestination requestDest =
-        InternalRequest::MapContentPolicyTypeToRequestDestination(
-            loadInfo->GetExternalContentPolicyType());
-    
-    if (requestMode == RequestMode::No_cors &&
-        requestDest == RequestDestination::Style) {
-      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-      (void)loadInfo->GetTriggeringPrincipal(
-          getter_AddRefs(triggeringPrincipal));
-      MOZ_ASSERT(triggeringPrincipal);
-      bool mayLoad = nsContentUtils::CheckMayLoad(
-          triggeringPrincipal, aChannel,  false);
-      if (!mayLoad) {
-        *aShouldIntercept = false;
-      }
-    }
+    } 
 
     return NS_OK;
   }
