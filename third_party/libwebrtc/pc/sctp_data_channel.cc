@@ -348,15 +348,13 @@ SctpDataChannel::SctpDataChannel(
       negotiated_(config.negotiated),
       ordered_(config.ordered),
       observer_(nullptr),
-      controller_(std::move(controller)) {
+      controller_(std::move(controller)),
+      connected_to_transport_(connected_to_transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
   
   
   RTC_UNUSED(network_thread_);
   RTC_DCHECK(config.IsValid());
-
-  if (connected_to_transport)
-    network_safety_->SetAlive();
 
   switch (config.open_handshake_role) {
     case InternalDataChannelInit::kNone:  
@@ -615,14 +613,17 @@ void SctpDataChannel::SendAsync(
   
   
   
-  network_thread_->PostTask(SafeTask(
-      network_safety_, [this, buffer = std::move(buffer),
-                        on_complete = std::move(on_complete)]() mutable {
-        RTC_DCHECK_RUN_ON(network_thread_);
-        RTCError err = SendImpl(std::move(buffer));
-        if (on_complete)
-          std::move(on_complete)(err);
-      }));
+  scoped_refptr<SctpDataChannel> me(this);
+  network_thread_->PostTask([me = std::move(me), buffer = std::move(buffer),
+                             on_complete = std::move(on_complete)]() mutable {
+    RTC_DCHECK_RUN_ON(me->network_thread_);
+    if (!me->connected_to_transport()) {
+      return;
+    }
+    RTCError err = me->SendImpl(std::move(buffer));
+    if (on_complete)
+      std::move(on_complete)(err);
+  });
 }
 
 void SctpDataChannel::SetSctpSid_n(StreamId sid) {
@@ -665,7 +666,7 @@ void SctpDataChannel::OnClosingProcedureComplete() {
 
 void SctpDataChannel::OnTransportChannelCreated() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  network_safety_->SetAlive();
+  connected_to_transport_ = true;
 }
 
 void SctpDataChannel::OnTransportChannelClosed(RTCError error) {
@@ -786,7 +787,7 @@ void SctpDataChannel::CloseAbruptlyWithError(RTCError error) {
     return;
   }
 
-  network_safety_->SetNotAlive();
+  connected_to_transport_ = false;
 
   
   
