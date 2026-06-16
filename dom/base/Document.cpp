@@ -21302,4 +21302,9 @@ void Document::RegisterSpeculationRulesFromScript(
                                              std::move(aSpeculationRules));
 }
 
+
+void Document::UnregisterSpeculationRules(nsIScriptElement* aScriptElement) {
+  mSpeculationRulesFromScript.Remove(aScriptElement);
+}
+
 }  
