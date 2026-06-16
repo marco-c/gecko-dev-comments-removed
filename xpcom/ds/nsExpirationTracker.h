@@ -24,6 +24,7 @@
 #include "mozilla/RefCountType.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticMutex.h"
 #include "nsExpirationState.h"
 
 
@@ -62,6 +63,25 @@
 
 
 
+namespace detail {
+
+class PlaceholderLock {
+ public:
+  void Lock() {}
+  void Unlock() {}
+};
+
+class PlaceholderAutoLock {
+ public:
+  explicit PlaceholderAutoLock(PlaceholderLock&) {}
+  ~PlaceholderAutoLock() = default;
+};
+
+template <typename T>
+concept PlaceholderOrStaticMutex =
+    std::same_as<T, PlaceholderLock> || std::same_as<T, mozilla::StaticMutex>;
+
+}  
 
 
 
@@ -75,8 +95,18 @@
 
 
 
-template <typename T, uint32_t K, typename Mutex, typename AutoLock>
+
+template <typename T, uint32_t K, ::detail::PlaceholderOrStaticMutex Mutex>
 class ExpirationTrackerImpl {
+  using Self = ExpirationTrackerImpl<T, K, Mutex>;
+  using AutoLock =
+      std::conditional_t<std::same_as<Mutex, ::detail::PlaceholderLock>,
+                         ::detail::PlaceholderAutoLock,
+                         mozilla::StaticMutexAutoLock>;
+
+ protected:
+  class ExpirationTrackerObserver;
+
  public:
   
 
@@ -98,21 +128,27 @@ class ExpirationTrackerImpl {
         mEventTarget(aEventTarget) {
     static_assert(K >= 2 && K <= nsExpirationState::NOT_TRACKED,
                   "Unsupported number of generations (must be 2 <= K <= 15)");
-    
-    
-    if (NS_IsMainThread()) {
-      mObserver = new ExpirationTrackerObserver();
-      mObserver->Init(this);
-    }
   }
 
   virtual ~ExpirationTrackerImpl() {
     if (mTimer) {
       mTimer->Cancel();
     }
+  }
+
+  void InitLocked(const AutoLock& aAutoLock) {
+    MOZ_ASSERT(!mObserver);
+    mObserver = CreateObserver();
     if (mObserver) {
-      MOZ_ASSERT(NS_IsMainThread());
-      mObserver->Destroy();
+      mObserver->InitLocked(this, &GetMutex(), aAutoLock);
+    } else {
+      MOZ_DIAGNOSTIC_CRASH("Observer creation must succeed!");
+    }
+  }
+
+  void DestroyLocked(const AutoLock& aAutoLock) {
+    if (mObserver) {
+      mObserver->DestroyLocked(aAutoLock);
     }
   }
 
@@ -260,13 +296,12 @@ class ExpirationTrackerImpl {
 
   class Iterator {
    private:
-    ExpirationTrackerImpl<T, K, Mutex, AutoLock>* mTracker;
+    Self* mTracker;
     uint32_t mGeneration;
     uint32_t mIndex;
 
    public:
-    Iterator(ExpirationTrackerImpl<T, K, Mutex, AutoLock>* aTracker,
-             AutoLock& aAutoLock)
+    Iterator(Self* aTracker, AutoLock& aAutoLock)
         : mTracker(aTracker), mGeneration(0), mIndex(0) {}
 
     T* Next() {
@@ -351,17 +386,13 @@ class ExpirationTrackerImpl {
 
   virtual void NotifyHandlerEndLocked(const AutoLock&) {};
 
-  
-
-
-
-
-  virtual void NotifyHandlerEnd() {};
-
   virtual Mutex& GetMutex() = 0;
 
+  virtual already_AddRefed<ExpirationTrackerObserver> CreateObserver() {
+    return mozilla::MakeAndAddRef<ExpirationTrackerObserver>();
+  }
+
  private:
-  class ExpirationTrackerObserver;
   RefPtr<ExpirationTrackerObserver> mObserver;
   nsTArray<T*> mGenerations[K];
   nsCOMPtr<nsITimer> mTimer;
@@ -371,98 +402,164 @@ class ExpirationTrackerImpl {
   const nsCString mName;  
   const nsCOMPtr<nsIEventTarget> mEventTarget;
 
+ protected:
   
 
 
 
-  class ExpirationTrackerObserver final : public nsIObserver {
+  class ExpirationTrackerObserver : public nsIObserver,
+                                    public nsITimerCallback {
    public:
-    void Init(ExpirationTrackerImpl<T, K, Mutex, AutoLock>* aObj) {
-      mOwner = aObj;
-      nsCOMPtr<nsIObserverService> obs =
-          mozilla::services::GetObserverService();
-      if (obs) {
+    NS_DECL_THREADSAFE_ISUPPORTS
+
+    ExpirationTrackerObserver() = default;
+
+    void InitLocked(Self* aOwner, Mutex* aMutex, const AutoLock&) {
+      mOwner = aOwner;
+      mMutex = aMutex;
+
+      if (!NS_IsMainThread()) {
+        
+        
+        return;
+      }
+
+      if (nsCOMPtr<nsIObserverService> obs =
+              mozilla::services::GetObserverService()) {
+        mObserving = true;
         obs->AddObserver(this, "memory-pressure", false);
       }
     }
-    void Destroy() {
+
+    void DestroyLocked(const AutoLock&) {
       mOwner = nullptr;
-      nsCOMPtr<nsIObserverService> obs =
-          mozilla::services::GetObserverService();
-      if (obs) {
+      if (!mObserving) {
+        return;
+      }
+
+      mObserving = false;
+      if (NS_IsMainThread()) {
+        DestroyObserver();
+        return;
+      }
+
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "ExpirationTrackerObserver::Destroy",
+          [self = RefPtr{this}]() { self->DestroyObserver(); }));
+    }
+
+    NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                       const char16_t* aData) final {
+      (void)aSubject;
+      (void)aData;
+      if (!strcmp(aTopic, "memory-pressure")) {
+        HandleLowMemory();
+      }
+      return NS_OK;
+    }
+
+    NS_IMETHOD Notify(nsITimer* aTimer) final {
+      (void)aTimer;
+      {
+        AutoLock lock(*mMutex);
+        if (!mOwner) {
+          return NS_OK;
+        }
+        mOwner->HandleTimeoutLocked(lock);
+      }
+      NotifyHandlerEnd();
+      return NS_OK;
+    }
+
+    
+
+
+
+
+
+    virtual void NotifyHandlerEnd() {};
+
+   protected:
+    virtual ~ExpirationTrackerObserver() = default;
+
+   private:
+    void DestroyObserver() {
+      MOZ_ASSERT(NS_IsMainThread());
+      if (nsCOMPtr<nsIObserverService> obs =
+              mozilla::services::GetObserverService()) {
         obs->RemoveObserver(this, "memory-pressure");
       }
     }
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
-   private:
-    ExpirationTrackerImpl<T, K, Mutex, AutoLock>* mOwner;
+
+    void HandleLowMemory() {
+      {
+        AutoLock lock(*mMutex);
+        if (!mOwner) {
+          return;
+        }
+
+        MOZ_ASSERT(mObserving);
+
+        if (mOwner->mEventTarget &&
+            !mOwner->mEventTarget->IsOnCurrentThread()) {
+          mOwner->mEventTarget->Dispatch(NS_NewRunnableFunction(
+              "ExpirationTrackerObserver::HandleLowMemory",
+              [self = RefPtr{this}]() { self->HandleLowMemory(); }));
+          return;
+        }
+
+        mOwner->HandleLowMemoryLocked(lock);
+      }
+      NotifyHandlerEnd();
+    }
+
+    Self* mOwner = nullptr;
+    Mutex* mMutex = nullptr;
+    bool mObserving = false;
   };
 
-  void HandleLowMemory() {
-    {
-      AutoLock lock(GetMutex());
-      AgeAllGenerationsLocked(lock);
-      NotifyHandlerEndLocked(lock);
-    }
-    NotifyHandlerEnd();
+ private:
+  void HandleLowMemoryLocked(const AutoLock& aAutoLock) {
+    AgeAllGenerationsLocked(aAutoLock);
+    NotifyHandlerEndLocked(aAutoLock);
   }
 
-  void HandleTimeout() {
-    {
-      AutoLock lock(GetMutex());
-      AgeOneGenerationLocked(lock);
-      
-      if (IsEmptyLocked(lock)) {
-        mTimer->Cancel();
-        mTimer = nullptr;
-      }
-      NotifyHandlerEndLocked(lock);
+  void HandleTimeoutLocked(const AutoLock& aAutoLock) {
+    AgeOneGenerationLocked(aAutoLock);
+    
+    if (IsEmptyLocked(aAutoLock)) {
+      mTimer->Cancel();
+      mTimer = nullptr;
     }
-    NotifyHandlerEnd();
-  }
-
-  static void TimerCallback(nsITimer* aTimer, void* aThis) {
-    ExpirationTrackerImpl* tracker = static_cast<ExpirationTrackerImpl*>(aThis);
-    tracker->HandleTimeout();
+    NotifyHandlerEndLocked(aAutoLock);
   }
 
   nsresult CheckStartTimerLocked(const AutoLock& aAutoLock) {
+    MOZ_ASSERT(mObserver);
+
     if (mTimer || !mTimerPeriod) {
       return NS_OK;
     }
 
-    return NS_NewTimerWithFuncCallback(
-        getter_AddRefs(mTimer), TimerCallback, this, mTimerPeriod,
-        nsITimer::TYPE_REPEATING_SLACK_LOW_PRIORITY, mName, mEventTarget);
+    return NS_NewTimerWithCallback(
+        getter_AddRefs(mTimer), mObserver, mTimerPeriod,
+        nsITimer::TYPE_REPEATING_SLACK_LOW_PRIORITY, mEventTarget);
   }
 };
 
 namespace detail {
 
-class PlaceholderLock {
- public:
-  void Lock() {}
-  void Unlock() {}
-};
-
-class PlaceholderAutoLock {
- public:
-  explicit PlaceholderAutoLock(PlaceholderLock&) {}
-  ~PlaceholderAutoLock() = default;
-};
-
 template <typename T, uint32_t K>
 using SingleThreadedExpirationTracker =
-    ExpirationTrackerImpl<T, K, PlaceholderLock, PlaceholderAutoLock>;
+    ExpirationTrackerImpl<T, K, PlaceholderLock>;
 
 }  
 
 template <typename T, uint32_t K>
 class nsExpirationTracker
     : protected ::detail::SingleThreadedExpirationTracker<T, K> {
-  typedef ::detail::PlaceholderLock Lock;
-  typedef ::detail::PlaceholderAutoLock AutoLock;
+  using Lock = ::detail::PlaceholderLock;
+  using AutoLock = ::detail::PlaceholderAutoLock;
 
   Lock mLock;
 
@@ -480,14 +577,6 @@ class nsExpirationTracker
     NotifyExpired(aObject);
   }
 
-  
-
-
-
-
-  void NotifyHandlerEndLocked(const AutoLock&) final {}
-  void NotifyHandlerEnd() final {}
-
  protected:
   NS_DECL_OWNINGTHREAD
 
@@ -497,10 +586,13 @@ class nsExpirationTracker
   nsExpirationTracker(uint32_t aTimerPeriod, const nsACString& aName,
                       nsIEventTarget* aEventTarget = nullptr)
       : ::detail::SingleThreadedExpirationTracker<T, K>(aTimerPeriod, aName,
-                                                        aEventTarget) {}
+                                                        aEventTarget) {
+    this->InitLocked(FakeLock());
+  }
 
   virtual ~nsExpirationTracker() {
     NS_ASSERT_OWNINGTHREAD(nsExpirationTracker);
+    this->DestroyLocked(FakeLock());
   }
 
   nsresult AddObject(T* aObj) {
@@ -518,7 +610,7 @@ class nsExpirationTracker
   class Iterator {
    private:
     AutoLock mAutoLock;
-    typename ExpirationTrackerImpl<T, K, Lock, AutoLock>::Iterator mIterator;
+    typename ExpirationTrackerImpl<T, K, Lock>::Iterator mIterator;
 
    public:
     explicit Iterator(nsExpirationTracker<T, K>* aTracker)
@@ -532,52 +624,36 @@ class nsExpirationTracker
   bool IsEmpty() { return this->IsEmptyLocked(FakeLock()); }
 };
 
-template <typename T, uint32_t K, typename Mutex, typename AutoLock>
-NS_IMETHODIMP ExpirationTrackerImpl<T, K, Mutex, AutoLock>::
-    ExpirationTrackerObserver::Observe(nsISupports* aSubject,
-                                       const char* aTopic,
-                                       const char16_t* aData) {
-  if (!strcmp(aTopic, "memory-pressure") && mOwner) {
-    mOwner->HandleLowMemory();
-  }
-  return NS_OK;
-}
-
-template <class T, uint32_t K, typename Mutex, typename AutoLock>
+template <class T, uint32_t K, ::detail::PlaceholderOrStaticMutex Mutex>
 NS_IMETHODIMP_(MozExternalRefCountType)
-ExpirationTrackerImpl<T, K, Mutex, AutoLock>::ExpirationTrackerObserver::AddRef(
-    void) {
+ExpirationTrackerImpl<T, K, Mutex>::ExpirationTrackerObserver::AddRef() {
   MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-  NS_ASSERT_OWNINGTHREAD(ExpirationTrackerObserver);
-  ++mRefCnt;
-  NS_LOG_ADDREF(this, mRefCnt, "ExpirationTrackerObserver", sizeof(*this));
-  return mRefCnt;
+  nsrefcnt count = ++mRefCnt;
+  NS_LOG_ADDREF(this, count, "ExpirationTrackerObserver", sizeof(*this));
+  return count;
 }
 
-template <class T, uint32_t K, typename Mutex, typename AutoLock>
+template <class T, uint32_t K, ::detail::PlaceholderOrStaticMutex Mutex>
 NS_IMETHODIMP_(MozExternalRefCountType)
-ExpirationTrackerImpl<T, K, Mutex,
-                      AutoLock>::ExpirationTrackerObserver::Release(void) {
+ExpirationTrackerImpl<T, K, Mutex>::ExpirationTrackerObserver::Release() {
   MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");
-  NS_ASSERT_OWNINGTHREAD(ExpirationTrackerObserver);
-  --mRefCnt;
-  NS_LOG_RELEASE(this, mRefCnt, "ExpirationTrackerObserver");
-  if (mRefCnt == 0) {
-    NS_ASSERT_OWNINGTHREAD(ExpirationTrackerObserver);
+  nsrefcnt count = --mRefCnt;
+  NS_LOG_RELEASE(this, count, "ExpirationTrackerObserver");
+  if (count == 0) {
     mRefCnt = 1; 
     delete (this);
     return 0;
   }
-  return mRefCnt;
+  return count;
 }
 
-template <class T, uint32_t K, typename Mutex, typename AutoLock>
-NS_IMETHODIMP ExpirationTrackerImpl<T, K, Mutex, AutoLock>::
-    ExpirationTrackerObserver::QueryInterface(REFNSIID aIID,
-                                              void** aInstancePtr) {
+template <class T, uint32_t K, ::detail::PlaceholderOrStaticMutex Mutex>
+NS_IMETHODIMP
+ExpirationTrackerImpl<T, K, Mutex>::ExpirationTrackerObserver::QueryInterface(
+    REFNSIID aIID, void** aInstancePtr) {
   NS_ASSERTION(aInstancePtr, "QueryInterface requires a non-NULL destination!");
   nsresult rv = NS_ERROR_FAILURE;
-  NS_INTERFACE_TABLE(ExpirationTrackerObserver, nsIObserver)
+  NS_INTERFACE_TABLE(ExpirationTrackerObserver, nsIObserver, nsITimerCallback)
   return rv;
 }
 

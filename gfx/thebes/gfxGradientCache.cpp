@@ -2,12 +2,11 @@
 
 
 
-
 #include "gfxGradientCache.h"
 
 #include "MainThreadUtils.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/DataMutex.h"
+#include "mozilla/StaticMutex.h"
 #include "nsTArray.h"
 #include "PLDHashTable.h"
 #include "nsExpirationTracker.h"
@@ -102,49 +101,33 @@ struct GradientCacheData {
 
 
 
-class GradientCache;
-using GradientCacheMutex = StaticDataMutex<UniquePtr<GradientCache>>;
-class MOZ_RAII LockedInstance {
- public:
-  explicit LockedInstance(GradientCacheMutex& aDataMutex)
-      : mAutoLock(aDataMutex.Lock()) {}
-  UniquePtr<GradientCache>& operator->() const& { return mAutoLock.ref(); }
-  UniquePtr<GradientCache>& operator->() const&& = delete;
-  UniquePtr<GradientCache>& operator*() const& { return mAutoLock.ref(); }
-  UniquePtr<GradientCache>& operator*() const&& = delete;
-  explicit operator bool() const { return !!mAutoLock.ref(); }
-
- private:
-  GradientCacheMutex::AutoLock mAutoLock;
-};
-
 class GradientCache final
-    : public ExpirationTrackerImpl<GradientCacheData, 4, GradientCacheMutex,
-                                   LockedInstance> {
+    : public ExpirationTrackerImpl<GradientCacheData, 4, StaticMutex> {
  public:
   GradientCache()
-      : ExpirationTrackerImpl<GradientCacheData, 4, GradientCacheMutex,
-                              LockedInstance>(MAX_GENERATION_MS,
-                                              "GradientCache"_ns) {}
+      : ExpirationTrackerImpl<GradientCacheData, 4, StaticMutex>(
+            MAX_GENERATION_MS, "GradientCache"_ns) {}
+
   static bool EnsureInstance() {
-    LockedInstance lockedInstance(sInstanceMutex);
-    return EnsureInstanceLocked(lockedInstance);
+    StaticMutexAutoLock lock(sInstanceMutex);
+    return EnsureInstanceLocked(lock);
   }
 
   static void DestroyInstance() {
-    LockedInstance lockedInstance(sInstanceMutex);
-    if (lockedInstance) {
-      *lockedInstance = nullptr;
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (sInstance) {
+      sInstance->DestroyLocked(lock);
+      sInstance = nullptr;
     }
   }
 
   static void AgeAllGenerations() {
-    LockedInstance lockedInstance(sInstanceMutex);
-    if (!lockedInstance) {
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (!sInstance) {
       return;
     }
-    lockedInstance->AgeAllGenerationsLocked(lockedInstance);
-    lockedInstance->NotifyHandlerEndLocked(lockedInstance);
+    sInstance->AgeAllGenerationsLocked(lock);
+    sInstance->NotifyHandlerEndLocked(lock);
   }
 
   template <typename CreateFunc>
@@ -153,20 +136,20 @@ class GradientCache final
     RefPtr<GradientStops> stops;
     bool onMaxEntriesBreached = false;
     {
-      LockedInstance lockedInstance(sInstanceMutex);
-      if (!EnsureInstanceLocked(lockedInstance)) {
+      StaticMutexAutoLock lock(sInstanceMutex);
+      if (!EnsureInstanceLocked(lock)) {
         return aCreateFunc();
       }
 
-      GradientCacheData* gradientData = lockedInstance->mHashEntries.Get(aKey);
+      GradientCacheData* gradientData = sInstance->mHashEntries.Get(aKey);
       if (gradientData) {
         if (gradientData->mStops && gradientData->mStops->IsValid()) {
-          lockedInstance->MarkUsedLocked(gradientData, lockedInstance);
+          sInstance->MarkUsedLocked(gradientData, lock);
           return do_AddRef(gradientData->mStops);
         }
 
-        lockedInstance->NotifyExpiredLocked(gradientData, lockedInstance);
-        lockedInstance->NotifyHandlerEndLocked(lockedInstance);
+        sInstance->NotifyExpiredLocked(gradientData, lock);
+        sInstance->NotifyHandlerEndLocked(lock);
       }
 
       stops = aCreateFunc();
@@ -175,7 +158,7 @@ class GradientCache final
       }
 
       auto data = MakeUnique<GradientCacheData>(stops, GradientCacheKey(&aKey));
-      nsresult rv = lockedInstance->AddObjectLocked(data.get(), lockedInstance);
+      nsresult rv = sInstance->AddObjectLocked(data.get(), lock);
       if (NS_FAILED(rv)) {
         
         
@@ -184,10 +167,10 @@ class GradientCache final
         
         return stops.forget();
       }
-      lockedInstance->mHashEntries.InsertOrUpdate(aKey, std::move(data));
-      if (lockedInstance->mHashEntries.Count() > MAX_ENTRIES &&
-          !lockedInstance->mRemovingEntries) {
-        lockedInstance->mRemovingEntries = true;
+      sInstance->mHashEntries.InsertOrUpdate(aKey, std::move(data));
+      if (sInstance->mHashEntries.Count() > MAX_ENTRIES &&
+          !sInstance->mRemovingEntries) {
+        sInstance->mRemovingEntries = true;
         onMaxEntriesBreached = true;
       }
     }
@@ -196,36 +179,36 @@ class GradientCache final
       
       NS_DispatchToMainThread(
           NS_NewRunnableFunction("GradientCache::OnMaxEntriesBreached", [] {
-            LockedInstance lockedInstance(sInstanceMutex);
-            if (!lockedInstance) {
+            StaticMutexAutoLock lock(sInstanceMutex);
+            if (!sInstance) {
               return;
             }
-            if (lockedInstance->mHashEntries.Count() < MAX_ENTRIES) {
-              lockedInstance->mRemovingEntries = false;
+            if (sInstance->mHashEntries.Count() < MAX_ENTRIES) {
+              sInstance->mRemovingEntries = false;
               return;
             }
             while (true) {
-              uint32_t remainingEntries = lockedInstance->mHashEntries.Count();
-              lockedInstance->AgeOneGenerationLocked(lockedInstance);
-              if (lockedInstance->mHashEntries.Count() >= remainingEntries) {
+              uint32_t remainingEntries = sInstance->mHashEntries.Count();
+              sInstance->AgeOneGenerationLocked(lock);
+              if (sInstance->mHashEntries.Count() >= remainingEntries) {
                 
                 break;
               }
             }
-            lockedInstance->NotifyHandlerEndLocked(lockedInstance);
-            lockedInstance->mRemovingEntries = false;
+            sInstance->NotifyHandlerEndLocked(lock);
+            sInstance->mRemovingEntries = false;
           }));
     }
 
     return stops.forget();
   }
 
-  GradientCacheMutex& GetMutex() final { return sInstanceMutex; }
+  StaticMutex& GetMutex() final { return sInstanceMutex; }
 
   void NotifyExpiredLocked(GradientCacheData* aObject,
-                           const LockedInstance& aLockedInstance) final {
+                           const StaticMutexAutoLock& aAutoLock) final {
     
-    RemoveObjectLocked(aObject, aLockedInstance);
+    RemoveObjectLocked(aObject, aAutoLock);
 
     
     
@@ -236,7 +219,7 @@ class GradientCache final
     }
   }
 
-  void NotifyHandlerEndLocked(const LockedInstance&) final {
+  void NotifyHandlerEndLocked(const StaticMutexAutoLock&) final {
     NS_DispatchToMainThread(
         NS_NewRunnableFunction("GradientCache::DestroyRemovedGradientStops",
                                [stops = std::move(mRemovedGradientData)] {}));
@@ -248,17 +231,19 @@ class GradientCache final
   
   
   static const uint32_t MAX_ENTRIES = 4000;
-  static GradientCacheMutex sInstanceMutex;
+  static StaticAutoPtr<GradientCache> sInstance MOZ_GUARDED_BY(sInstanceMutex);
+  static StaticMutex sInstanceMutex;
 
   [[nodiscard]] static bool EnsureInstanceLocked(
-      LockedInstance& aLockedInstance) {
-    if (!aLockedInstance) {
+      const StaticMutexAutoLock& aAutoLock) MOZ_REQUIRES(sInstanceMutex) {
+    if (!sInstance) {
       
       if (!NS_IsMainThread()) {
         
         return false;
       }
-      *aLockedInstance = MakeUnique<GradientCache>();
+      sInstance = new GradientCache();
+      sInstance->InitLocked(aAutoLock);
     }
     return true;
   }
@@ -272,7 +257,8 @@ class GradientCache final
   bool mRemovingEntries = false;
 };
 
-MOZ_RUNINIT GradientCacheMutex GradientCache::sInstanceMutex("GradientCache");
+StaticAutoPtr<GradientCache> GradientCache::sInstance;
+StaticMutex GradientCache::sInstanceMutex;
 
 void gfxGradientCache::Init() {
   MOZ_RELEASE_ASSERT(GradientCache::EnsureInstance(),
