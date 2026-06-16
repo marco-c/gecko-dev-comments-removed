@@ -3573,6 +3573,53 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
   return true;
 }
 
+
+
+
+static bool CheckBuiltinImportsHaveMemory(Decoder& d, CodeMetadata* codeMeta) {
+  
+  if (codeMeta->features().builtinModules.hasNone()) {
+#ifdef DEBUG
+    for (BuiltinModuleFuncId& id : codeMeta->knownFuncImports) {
+      MOZ_ASSERT(id == BuiltinModuleFuncId::None);
+    }
+#endif
+    return true;
+  }
+
+  for (size_t i = 0; i < codeMeta->knownFuncImports.length(); i++) {
+    BuiltinModuleFuncId builtinFuncId = codeMeta->knownFuncImports[i];
+    if (builtinFuncId == BuiltinModuleFuncId::None) {
+      continue;
+    }
+
+    const BuiltinModuleFunc& builtinModuleFunc =
+        BuiltinModuleFuncs::getFromId(builtinFuncId);
+    if (builtinModuleFunc.usesMemory()) {
+      if (codeMeta->memories.length() == 0) {
+        return d.failf("func %zu is a builtin function that requires a memory",
+                       i);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (codeMeta->memories[0].isShared()) {
+        return d.fail("builtin funcs are not compatible with shared memories");
+      }
+    }
+  }
+
+  return true;
+}
+
 static bool DecodeImportSection(Decoder& d, CodeMetadata* codeMeta,
                                 ModuleMetadata* moduleMeta) {
   MaybeBytecodeRange range;
@@ -4367,6 +4414,10 @@ bool wasm::DecodeModuleEnvironment(Decoder& d, CodeMetadata* codeMeta,
   }
 
   if (!DecodeMemorySection(d, codeMeta)) {
+    return false;
+  }
+
+  if (!CheckBuiltinImportsHaveMemory(d, codeMeta)) {
     return false;
   }
 
