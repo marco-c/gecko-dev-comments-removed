@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
 
 #include "DOMSVGPoint.h"
 #include "SVGAnimatedNumberList.h"
@@ -178,14 +179,14 @@ static nsIContent* GetFirstNonAAncestor(nsIContent* aContent) {
 
 
 
-static bool IsTextContentElement(nsIContent* aContent) {
+static bool IsTextContentElement(const nsIContent* aContent) {
   if (aContent->IsSVGElement(nsGkAtoms::text)) {
-    nsIContent* parent = GetFirstNonAAncestor(aContent->GetParent());
+    const nsIContent* parent = GetFirstNonAAncestor(aContent->GetParent());
     return !parent || !IsTextContentElement(parent);
   }
 
   if (aContent->IsSVGElement(nsGkAtoms::textPath)) {
-    nsIContent* parent = GetFirstNonAAncestor(aContent->GetParent());
+    const nsIContent* parent = GetFirstNonAAncestor(aContent->GetParent());
     return parent && parent->IsSVGElement(nsGkAtoms::text);
   }
 
@@ -196,8 +197,8 @@ static bool IsTextContentElement(nsIContent* aContent) {
 
 
 
-static bool IsNonEmptyTextFrame(nsIFrame* aFrame) {
-  nsTextFrame* textFrame = do_QueryFrame(aFrame);
+static bool IsNonEmptyTextFrame(const nsIFrame* aFrame) {
+  const nsTextFrame* textFrame = do_QueryFrame(aFrame);
   if (!textFrame) {
     return false;
   }
@@ -244,7 +245,7 @@ static bool GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
 
 
 
-static bool IsGlyphPositioningAttribute(nsAtom* aAttribute) {
+static bool IsGlyphPositioningAttribute(const nsAtom* aAttribute) {
   return aAttribute == nsGkAtoms::x || aAttribute == nsGkAtoms::y ||
          aAttribute == nsGkAtoms::dx || aAttribute == nsGkAtoms::dy ||
          aAttribute == nsGkAtoms::rotate;
@@ -1481,7 +1482,7 @@ class MOZ_STACK_CLASS TextFrameIterator {
 
 
 
-  TextFrameIterator(SVGTextFrame* aRoot, nsIContent* aSubtree)
+  TextFrameIterator(SVGTextFrame* aRoot, const nsIContent* aSubtree)
       : mRootFrame(aRoot), mCurrentFrame(aRoot) {
     Init(aRoot && aSubtree && aSubtree != aRoot->GetContent()
              ? aSubtree->GetPrimaryFrame()
@@ -3527,8 +3528,8 @@ static uint32_t GetTextContentLength(nsIContent* aContent) {
 }
 
 int32_t SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
-    int32_t aIndex, nsIContent* aContent) {
-  CharIterator it(this, CharIterator::CharacterFilter::Original, aContent);
+    int32_t aIndex, dom::SVGTextContentElement* aElement) {
+  CharIterator it(this, CharIterator::CharacterFilter::Original, aElement);
   if (!it.AdvanceToSubtree()) {
     return -1;
   }
@@ -3554,7 +3555,7 @@ int32_t SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
 
 
 
-uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
+uint32_t SVGTextFrame::GetNumberOfChars(dom::SVGTextContentElement* aElement) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3565,7 +3566,7 @@ uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
   UpdateGlyphPositioning();
 
   uint32_t n = 0;
-  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (it.AdvanceToSubtree()) {
     while (!it.AtEnd() && it.IsWithinSubtree()) {
       n++;
@@ -3579,7 +3580,8 @@ uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
 
 
 
-float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
+float SVGTextFrame::GetComputedTextLength(
+    dom::SVGTextContentElement* aElement) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3597,9 +3599,10 @@ float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
 
   nscoord length = 0;
   TextRenderedRunIterator it(
-      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aContent);
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aElement);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    length += run.GetAdvanceWidth();
+    length +=
+        run.GetAdvanceWidth() / run.mFrame->Style()->EffectiveZoom().ToFloat();
   }
 
   return PresContext()->AppUnitsToGfxUnits(length) * cssPxPerDevPx *
@@ -3610,8 +3613,9 @@ float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
 
 
 
-void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
-                                   uint32_t nchars, ErrorResult& aRv) {
+void SVGTextFrame::SelectSubString(dom::SVGTextContentElement* aElement,
+                                   uint32_t charnum, uint32_t nchars,
+                                   ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3630,7 +3634,7 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
     
     
     CharIterator chit(this, CharIterator::CharacterFilter::Addressable,
-                      aContent);
+                      aElement);
     if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
         chit.IsAfterSubtree()) {
       aRv.ThrowIndexSizeError("Character index out of range");
@@ -3682,10 +3686,9 @@ bool SVGTextFrame::RequiresSlowFallbackForSubStringLength() {
 
 
 
-float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
-                                               uint32_t charnum,
-                                               uint32_t nchars,
-                                               ErrorResult& aRv) {
+float SVGTextFrame::GetSubStringLengthFastPath(
+    dom::SVGTextContentElement* aElement, uint32_t charnum, uint32_t nchars,
+    ErrorResult& aRv) {
   MOZ_ASSERT(!RequiresSlowFallbackForSubStringLength());
 
   
@@ -3694,7 +3697,7 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
 
   
   
-  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aContent,
+  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aElement,
                      false);
   if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
@@ -3762,7 +3765,8 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
       Range range = ConvertOriginalToSkipped(it, offset, trimmedLength);
 
       
-      textLength += textRun->GetAdvanceWidth(range, &provider);
+      textLength += textRun->GetAdvanceWidth(range, &provider) /
+                    frame->Style()->EffectiveZoom().ToFloat();
     }
 
     
@@ -3777,15 +3781,14 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
          mFontSizeScaleFactor;
 }
 
-float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
-                                                   uint32_t charnum,
-                                                   uint32_t nchars,
-                                                   ErrorResult& aRv) {
+float SVGTextFrame::GetSubStringLengthSlowFallback(
+    dom::SVGTextContentElement* aElement, uint32_t charnum, uint32_t nchars,
+    ErrorResult& aRv) {
   UpdateGlyphPositioning();
 
   
   
-  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
@@ -3831,7 +3834,8 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
       Range range = ConvertOriginalToSkipped(it, offset, length);
 
       
-      textLength += textRun->GetAdvanceWidth(range, &provider);
+      textLength += textRun->GetAdvanceWidth(range, &provider) /
+                    run.mFrame->Style()->EffectiveZoom().ToFloat();
     }
 
     run = runIter.Next();
@@ -3849,7 +3853,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 
 
 
-int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
+int32_t SVGTextFrame::GetCharNumAtPosition(dom::SVGTextContentElement* aElement,
                                            const gfx::Point& aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
@@ -3862,12 +3866,12 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   nsPresContext* context = PresContext();
 
-  gfxPoint p = ThebesPoint(aPoint);
+  gfxPoint p = ThebesPoint(aPoint) * dom::UserSpaceMetrics::GetZoom(aElement);
 
   int32_t result = -1;
 
   TextRenderedRunIterator it(
-      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aContent);
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aElement);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     
     int32_t index = run.GetCharNumAtPosition(context, p);
@@ -3880,7 +3884,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
     return result;
   }
 
-  return ConvertTextElementCharIndexToAddressableIndex(result, aContent);
+  return ConvertTextElementCharIndexToAddressableIndex(result, aElement);
 }
 
 
@@ -3888,7 +3892,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
 
 already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
-    nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv) {
+    dom::SVGTextContentElement* aElement, uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3899,7 +3903,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -3908,7 +3912,9 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
   
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
 
-  return MakeAndAddRef<DOMSVGPoint>(ToPoint(mPositions[startIndex].mPosition));
+  return MakeAndAddRef<DOMSVGPoint>(
+      ToPoint(mPositions[startIndex].mPosition) /
+      it.GetTextFrame()->Style()->EffectiveZoom().ToFloat());
 }
 
 
@@ -3919,12 +3925,13 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
 
 
 
-static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
+static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame,
+                                dom::SVGTextContentElement* aElement,
                                 uint32_t aTextElementCharIndex,
                                 CharIterator* aIterator) {
   MOZ_ASSERT(!aIterator || (aIterator->Filter() ==
                                 CharIterator::CharacterFilter::Addressable &&
-                            aIterator->GetSubtree() == aContent &&
+                            aIterator->GetSubtree() == aElement &&
                             aIterator->GlyphStartTextElementCharIndex() ==
                                 aTextElementCharIndex),
              "Invalid aIterator");
@@ -3933,9 +3940,9 @@ static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
   CharIterator* it = aIterator;
   if (!it) {
     newIterator.emplace(aFrame, CharIterator::CharacterFilter::Addressable,
-                        aContent);
+                        aElement);
     if (!newIterator->AdvanceToSubtree()) {
-      MOZ_ASSERT_UNREACHABLE("Invalid aContent");
+      MOZ_ASSERT_UNREACHABLE("Invalid aElement");
       return 0.0;
     }
     it = newIterator.ptr();
@@ -3972,7 +3979,7 @@ static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
 
 
 already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
-    nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv) {
+    dom::SVGTextContentElement* aElement, uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -3983,7 +3990,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -3991,10 +3998,11 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
 
   
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
+  float zoom = it.GetTextFrame()->Style()->EffectiveZoom().ToFloat();
 
   
   gfxFloat advance =
-      GetGlyphAdvance(this, aContent, startIndex,
+      GetGlyphAdvance(this, aElement, startIndex,
                       it.IsClusterAndLigatureGroupStart() ? &it : nullptr) /
       mFontSizeScaleFactor;
   const gfxTextRun* textRun = it.TextRun();
@@ -4008,16 +4016,15 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
   Matrix m = Matrix::Rotation(mPositions[startIndex].mAngle) *
              Matrix::Translation(ToPoint(mPositions[startIndex].mPosition));
 
-  return MakeAndAddRef<DOMSVGPoint>(m.TransformPoint(p));
+  return MakeAndAddRef<DOMSVGPoint>(m.TransformPoint(p) / zoom);
 }
 
 
 
 
 
-already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
-                                                        uint32_t aCharNum,
-                                                        ErrorResult& aRv) {
+already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(
+    dom::SVGTextContentElement* aElement, uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -4029,7 +4036,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   
-  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -4045,7 +4052,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   
   gfxFloat advance =
-      GetGlyphAdvance(this, aContent, startIndex,
+      GetGlyphAdvance(this, aElement, startIndex,
                       it.IsClusterAndLigatureGroupStart() ? &it : nullptr);
   gfxFloat x = textRun->IsInlineReversed() ? -advance : 0.0;
 
@@ -4077,16 +4084,17 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   
   gfxRect r = m.TransformBounds(glyphRect);
+  r.Scale(1 / textFrame->Style()->EffectiveZoom().ToFloat());
 
-  return MakeAndAddRef<SVGRect>(aContent, ToRect(r));
+  return MakeAndAddRef<SVGRect>(aElement, ToRect(r));
 }
 
 
 
 
 
-float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
-                                      ErrorResult& aRv) {
+float SVGTextFrame::GetRotationOfChar(dom::SVGTextContentElement* aElement,
+                                      uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     
@@ -4097,7 +4105,7 @@ float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aElement);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return 0;
@@ -4496,7 +4504,7 @@ static void ShiftAnchoredChunk(nsTArray<CharPosition>& aCharPositions,
       shift -= aVisIStartEdge;
       break;
     case TextAnchorSide::Middle:
-      shift -= (aVisIStartEdge + aVisIEndEdge) / 2;
+      shift -= std::midpoint(aVisIStartEdge, aVisIEndEdge);
       break;
     case TextAnchorSide::Right:
       shift -= aVisIEndEdge;
