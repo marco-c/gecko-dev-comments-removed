@@ -1503,16 +1503,9 @@ async function populateMathML() {
     el => el.getBoundingClientRect().width
   );
 
-  
-  const firstMathElement = document.querySelector("math");
-  const mathmlFontFamily = firstMathElement
-    ? getComputedStyle(firstMathElement).fontFamily
-    : "";
-
   return {
     ...oldMetrics,
     mathmlDiagValues: mathmlValues,
-    mathmlDiagFontFamily: mathmlFontFamily,
   };
 }
 
