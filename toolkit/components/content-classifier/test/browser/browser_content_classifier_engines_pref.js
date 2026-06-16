@@ -548,34 +548,35 @@ add_task(async function test_allowlist_skips_multifeature_blocking() {
     Services.perms.ALLOW_ACTION,
     { url: topLevelOrigin }
   );
-  registerCleanupFunction(() =>
-    SpecialPowers.removePermission("trackingprotection", {
+
+  try {
+    let tab = await openTestTab();
+    let browser = tab.linkedBrowser;
+    await syncAndWaitForLists(client, records);
+
+    await assertImageLoaded(
+      browser,
+      TEST_BLOCKED_3RD_PARTY_DOMAIN,
+      "allowlisted top-level page should not cancel example.org"
+    );
+
+    await assertLacksBlockingState(
+      browser,
+      TEST_BLOCKED_3RD_PARTY_DOMAIN,
+      Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+      "no STATE_BLOCKED_TRACKING_CONTENT for allowlisted page"
+    );
+    await assertLacksBlockingState(
+      browser,
+      TEST_BLOCKED_3RD_PARTY_DOMAIN,
+      Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT,
+      "no STATE_BLOCKED_FINGERPRINTING_CONTENT for allowlisted page"
+    );
+  } finally {
+    await SpecialPowers.removePermission("trackingprotection", {
       url: topLevelOrigin,
-    })
-  );
-
-  let tab = await openTestTab();
-  let browser = tab.linkedBrowser;
-  await syncAndWaitForLists(client, records);
-
-  await assertImageLoaded(
-    browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN,
-    "allowlisted top-level page should not cancel example.org"
-  );
-
-  await assertLacksBlockingState(
-    browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN,
-    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
-    "no STATE_BLOCKED_TRACKING_CONTENT for allowlisted page"
-  );
-  await assertLacksBlockingState(
-    browser,
-    TEST_BLOCKED_3RD_PARTY_DOMAIN,
-    Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT,
-    "no STATE_BLOCKED_FINGERPRINTING_CONTENT for allowlisted page"
-  );
+    });
+  }
 });
 
 
@@ -632,4 +633,114 @@ add_task(async function test_major_exceptions_allows_blocker() {
     exceptionFeature: "major-exceptions",
     exceptionListName: "mozilla-major-exceptions",
   });
+});
+
+
+
+
+
+add_task(async function test_exception_before_blocker_does_not_unblock() {
+  let client = getRSClient();
+  let records = await populateMultipleRS(client.db, [
+    {
+      id: "exception",
+      name: "mozilla-minor-exceptions",
+      rules: ["@@||example.com^"],
+    },
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.com^"],
+    },
+  ]);
+
+  await pushEnginePrefs({ protection: "minor-exceptions,trackers" });
+
+  let tab = await openTestTab();
+  let browser = tab.linkedBrowser;
+  await syncAndWaitForLists(client, records);
+
+  await assertImageBlocked(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "exception-first ordering does not unblock (matched_rule not propagated)"
+  );
+
+  await assertHasBlockingState(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+    "trailing blocker still fires when listed after an exception feature"
+  );
+});
+
+
+
+
+add_task(async function test_exception_only_engine_no_block_loads() {
+  let client = getRSClient();
+  let records = await populateMultipleRS(client.db, [
+    {
+      id: "exception",
+      name: "mozilla-minor-exceptions",
+      rules: ["@@||example.com^"],
+    },
+  ]);
+
+  await pushEnginePrefs({ protection: "minor-exceptions" });
+
+  let tab = await openTestTab();
+  let browser = tab.linkedBrowser;
+  await syncAndWaitForLists(client, records);
+
+  await assertImageLoaded(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "exception-only engine without an upstream blocker is a no-op"
+  );
+
+  await assertLacksBlockingState(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+    "no STATE_BLOCKED_TRACKING_CONTENT when only an exception engine runs"
+  );
+});
+
+
+
+
+add_task(async function test_important_block_overrides_exception() {
+  let client = getRSClient();
+  let records = await populateMultipleRS(client.db, [
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.com^$important"],
+    },
+    {
+      id: "exception",
+      name: "mozilla-minor-exceptions",
+      rules: ["@@||example.com^"],
+    },
+  ]);
+
+  await pushEnginePrefs({ protection: "trackers,minor-exceptions" });
+
+  let tab = await openTestTab();
+  let browser = tab.linkedBrowser;
+  await syncAndWaitForLists(client, records);
+
+  await assertImageBlocked(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    "$important block survives a later exception engine"
+  );
+
+  await assertHasBlockingState(
+    browser,
+    TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+    "important block carries STATE_BLOCKED_TRACKING_CONTENT"
+  );
 });

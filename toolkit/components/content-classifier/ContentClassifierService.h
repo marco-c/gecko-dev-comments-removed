@@ -67,6 +67,11 @@ struct ContentClassifierFeature {
   
   
   nsresult mBlockingErrorCode;
+
+  
+  
+  
+  bool mExceptionOnly;
 };
 
 enum class InitPhase {
@@ -175,9 +180,14 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   void RemoveBlocker();
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
+  
+  
+  
+  
+  
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
 
   
   
