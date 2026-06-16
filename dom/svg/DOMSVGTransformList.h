@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_DOMSVGTRANSFORMLIST_H_
 #define DOM_SVG_DOMSVGTRANSFORMLIST_H_
 
@@ -77,7 +75,7 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
   }
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGTransformList)
 
   DOMSVGTransformList(dom::DOMSVGAnimatedTransformList* aAList,
