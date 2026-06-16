@@ -52,6 +52,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsThreadUtils.h"
 #include "nsMenuBarX.h"
+#include "nsMenuGroupOwnerX.h"
 #include "nsMenuUtilsX.h"
 #include "nsStyleConsts.h"
 #include "nsLayoutUtils.h"
@@ -8155,8 +8156,28 @@ static NSImage* GetMenuMaskImage() {
 - (NSTouchBar*)makeTouchBar {
   [mTouchBar release];
   mTouchBar = [[nsTouchBar alloc] init];
-  if (mTouchBar) {
+  if (mTouchBar && !sTouchBarIsInitialized) {
     sTouchBarIsInitialized = YES;
+    
+    
+    
+    
+    if (sApplicationMenu) {
+      NSMenuItem* touchBarItem =
+          [sApplicationMenu itemWithTag:eCommand_ID_TouchBar];
+      if (touchBarItem) {
+        [touchBarItem setHidden:NO];
+        NSInteger touchBarIndex = [sApplicationMenu indexOfItem:touchBarItem];
+        NSInteger separatorIndex = touchBarIndex + 1;
+        BOOL hasSeparator = separatorIndex < [sApplicationMenu numberOfItems] &&
+                            [[sApplicationMenu
+                                itemAtIndex:separatorIndex] isSeparatorItem];
+        if (touchBarIndex != -1 && !hasSeparator) {
+          [sApplicationMenu insertItem:[NSMenuItem separatorItem]
+                               atIndex:separatorIndex];
+        }
+      }
+    }
   }
   return mTouchBar;
 }
