@@ -1715,8 +1715,7 @@ void DcSctpSocket::HandleShutdown(
     SendShutdownAck();
     SetState(State::kShutdownAckSent, "SHUTDOWN received");
   } else if (state_ == State::kShutdownAckSent) {
-    
-    
+    SendShutdownAck();
     return;
   } else if (state_ != State::kShutdownReceived) {
     RTC_DLOG(LS_VERBOSE) << log_prefix()
