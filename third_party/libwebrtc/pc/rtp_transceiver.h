@@ -187,7 +187,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  RTCError SetChannel(
+  RTCError SetChannelForTest(
       std::unique_ptr<ChannelInterface> channel,
       absl::AnyInvocable<RtpTransportInternal*(const std::string&) &&>
           transport_lookup);
