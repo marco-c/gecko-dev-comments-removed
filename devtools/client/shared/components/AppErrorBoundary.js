@@ -223,19 +223,20 @@ class AppErrorBoundary extends Component {
   }
 
   
-  toolboxDidCatch(error, toolbox) {
-    const errorMessage = error.toString();
-    const clientPacket = error.clientPacket || {};
-    const serverPacket = error.serverPacket || {};
+  
+  handleException(exception, toolbox, showToolboxCloseButton = false) {
+    const errorMessage = exception.toString();
+    const clientPacket = exception.clientPacket || {};
+    const serverPacket = exception.serverPacket || {};
 
     this.setState({
       errorMsg: errorMessage,
-      errorStack: error.stack,
+      errorStack: exception.stack,
       errorInfo: {
         clientPacket,
         serverPacket,
       },
-      
+      showToolboxCloseButton,
       toolbox,
     });
 
@@ -247,7 +248,7 @@ class AppErrorBoundary extends Component {
 
     const extras = Telemetry.sanitizeEventExtras(
       {
-        error_name: error.name,
+        error_name: exception.name,
         is_destroying: toolbox.isDestroying(),
         packet_error: serverPacket.error,
         packet_target: serverPacket.from,
@@ -255,7 +256,7 @@ class AppErrorBoundary extends Component {
         server_stack: serverPacket.stack || "",
         server_content_process_stack: serverPacket.contentProcessStack || "",
         session_id: toolbox.sessionId,
-        stack: error.stack || "",
+        stack: exception.stack || "",
       },
       "devtoolsMain.toolboxServerError",
       
@@ -326,7 +327,7 @@ class AppErrorBoundary extends Component {
           },
           FILE_BUG_BUTTON
         ),
-        this.state.toolbox
+        this.state.showToolboxCloseButton
           ? button({
               className: "devtools-tabbar-button error-panel-close",
               onClick: () => {
