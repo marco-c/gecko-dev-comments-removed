@@ -4,7 +4,6 @@
 
 #include "gc/BufferAllocator-inl.h"
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/ScopeExit.h"
 
@@ -29,8 +28,6 @@
 
 using namespace js;
 using namespace js::gc;
-
-using mozilla::DebugOnly;
 
 namespace js::gc {
 
@@ -1221,52 +1218,6 @@ static void PushLargeAllocToFree(LargeAllocToFree** listHead,
   *listHead = alloc;
 }
 
-void BufferAllocator::pushSweptChunkBucketed(BufferChunkList& list,
-                                             SweptChunkBucketTails& bucketTails,
-                                             BufferChunk* chunk,
-                                             const AutoLock& lock) {
-  
-  
-  
-  
-  
-  if (list.isEmpty()) {
-    for (auto& tail : bucketTails) {
-      tail = nullptr;
-    }
-  }
-
-  size_t bucket = sweptChunkBucket(chunk);
-
-  
-  
-  
-  BufferChunk* insertAfter = nullptr;
-  for (size_t i = bucket + 1; i > 0; i--) {
-    if (bucketTails[i - 1]) {
-      insertAfter = bucketTails[i - 1];
-      break;
-    }
-  }
-
-  if (insertAfter) {
-    list.insertAfter(insertAfter, chunk);
-  } else {
-    list.pushFront(chunk);
-  }
-  bucketTails[bucket] = chunk;
-}
-
-
-size_t BufferAllocator::sweptChunkBucket(BufferChunk* chunk) {
-  constexpr size_t BucketWidth = ChunkSize / NumSweptChunkBuckets;
-  size_t freeBytes = size_t(chunk->freeBytesAfterSweep);
-  MOZ_ASSERT(freeBytes < ChunkSize);
-  size_t bucket = freeBytes / BucketWidth;
-  MOZ_ASSERT(bucket < NumSweptChunkBuckets);
-  return bucket;
-}
-
 static void FreeLargeAllocs(LargeAllocToFree* listHead) {
   while (listHead) {
     LargeAllocToFree* alloc = listHead;
@@ -1301,14 +1252,12 @@ void BufferAllocator::sweepForMinorCollection() {
     unregisterLarge(buffer, true, lock);
   }
 
-  SweptChunkBucketTails sweptMixedTails{};
   while (!mixedChunksToSweep.ref().isEmpty()) {
     BufferChunk* chunk = mixedChunksToSweep.ref().popFirst();
     if (sweepChunk(chunk, SweepKind::Nursery, false)) {
       {
         AutoLock lock(runtime());
-        pushSweptChunkBucketed(sweptMixedChunks.ref(), sweptMixedTails, chunk,
-                               lock);
+        sweptMixedChunks.ref().pushBack(chunk);
       }
 
       
@@ -1431,14 +1380,12 @@ void BufferAllocator::sweepForMajorCollection(bool shouldDecommit) {
     }
   }
 
-  SweptChunkBucketTails sweptTenuredTails{};
   while (!tenuredChunksToSweep.ref().isEmpty()) {
     BufferChunk* chunk = tenuredChunksToSweep.ref().popFirst();
     if (sweepChunk(chunk, SweepKind::Tenured, shouldDecommit)) {
       {
         AutoLock lock(runtime());
-        pushSweptChunkBucketed(sweptTenuredChunks.ref(), sweptTenuredTails,
-                               chunk, lock);
+        sweptTenuredChunks.ref().pushBack(chunk);
       }
 
       
@@ -1599,19 +1546,10 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
   
   
   
-  
-  
-  
-  DebugOnly<size_t> lastMixedChunkBucket = NumSweptChunkBuckets;
   while (!sweptMixedChunks.ref().isEmpty()) {
     BufferChunk* chunk = sweptMixedChunks.ref().popLast();
-
     MOZ_ASSERT(chunk->ownsFreeLists);
     MOZ_ASSERT(chunk->hasNurseryOwnedAllocs);
-    DebugOnly<size_t> bucket = sweptChunkBucket(chunk);
-    MOZ_ASSERT(bucket <= lastMixedChunkBucket);
-    lastMixedChunkBucket = bucket;
-
     chunk->hasNurseryOwnedAllocs = chunk->hasNurseryOwnedAllocsAfterSweep;
 
     MOZ_ASSERT_IF(
@@ -1632,21 +1570,14 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
   }
 
   
-  
-  
-  
-  DebugOnly<size_t> lastTenuredChunkBucket = NumSweptChunkBuckets;
-  while (BufferChunk* chunk = sweptTenuredChunks.ref().popLast()) {
 #ifdef DEBUG
-    MOZ_ASSERT(chunk->ownsFreeLists);
+  for (BufferChunk* chunk : sweptTenuredChunks.ref()) {
     MOZ_ASSERT(!chunk->hasNurseryOwnedAllocs);
     MOZ_ASSERT(!chunk->hasNurseryOwnedAllocsAfterSweep);
     MOZ_ASSERT(!chunk->allocatedDuringCollection);
-    size_t bucket = sweptChunkBucket(chunk);
-    MOZ_ASSERT(bucket <= lastTenuredChunkBucket);
-    lastTenuredChunkBucket = bucket;
+  }
 #endif
-
+  while (BufferChunk* chunk = sweptTenuredChunks.ref().popFirst()) {
     size_t sizeClass = chunk->sizeClassForAvailableLists();
     availableTenuredChunks.ref().pushFront(sizeClass, chunk);
   }
@@ -2608,6 +2539,11 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
   
   
 
+  
+  
+  
+  
+
   MOZ_ASSERT_IF(sweepKind == SweepKind::Tenured,
                 !chunk->allocatedDuringCollection);
   MOZ_ASSERT_IF(sweepKind == SweepKind::Tenured, chunk->ownsFreeLists);
@@ -2617,7 +2553,6 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, SweepKind sweepKind,
   
   freeLists.clear();
   chunk->ownsFreeLists = true;
-  chunk->freeBytesAfterSweep = 0;
 
   
   bool sweptAny = false;
@@ -2732,7 +2667,6 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   FreeRegion* region =
       makeFreeRegion(freeStart, bytes, anyDecommitted, expectUnchanged);
   pushFreeRegionBack(&freeLists, region, SizeKind::Medium);
-  chunk->freeBytesAfterSweep += bytes;
 }
 
 bool BufferAllocator::sweepSmallBufferRegion(BufferChunk* chunk,
@@ -2827,7 +2761,6 @@ void BufferAllocator::addSweptRegion(SmallBufferRegion* region,
       makeFreeRegion(freeStart, bytes, false, expectUnchanged);
   if (freeRegion) {
     pushFreeRegionBack(&freeLists, freeRegion, SizeKind::Small);
-    BufferChunk::from(region)->freeBytesAfterSweep += bytes;
   }
 }
 

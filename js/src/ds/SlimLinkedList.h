@@ -269,16 +269,6 @@ class SlimLinkedList {
 
 
 
-  void insertAfter(ElementPtr existing, ElementPtr newElement) {
-    checkContains(existing);
-    MOZ_ASSERT(!newElement->isInList());
-    existing->insertAfter(newElement);
-  }
-
-  
-
-
-
   void append(SlimLinkedList<T>&& other) {
     MOZ_ASSERT(this != &other);
     if (other.isEmpty()) {
@@ -387,8 +377,6 @@ class SlimLinkedList {
 
   void checkContains(ElementPtr element) {
 #ifdef DEBUG
-    MOZ_ASSERT(element);
-    MOZ_ASSERT(element->isInList());
     size_t i = 0;
     for (const auto& e : *this) {
       if (e == element) {
