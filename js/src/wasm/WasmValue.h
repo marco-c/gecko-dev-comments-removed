@@ -308,6 +308,10 @@ class MOZ_NON_PARAM Val : public LitVal {
     MOZ_ASSERT(isAnyRef());
     return cell_.ref_;
   }
+  AnyRef* anyRefPtr() {
+    MOZ_ASSERT(isAnyRef() || isInvalid());
+    return &cell_.ref_;
+  }
 
   
   void initFromRootedLocation(ValType type, const void* loc);
@@ -331,7 +335,7 @@ class MOZ_NON_PARAM Val : public LitVal {
   void trace(JSTracer* trc) const;
 };
 
-using GCPtrVal = GCPtr<Val>;
+using HeapPtrVal = HeapPtr<Val>;
 using RootedVal = Rooted<Val>;
 using HandleVal = Handle<Val>;
 using MutableHandleVal = MutableHandle<Val>;
@@ -491,14 +495,13 @@ struct InternalBarrierMethods<wasm::Val> {
     
     
     MOZ_ASSERT_IF(next.isAnyRef(), prev.isAnyRef() || prev.isInvalid());
-    MOZ_ASSERT_IF(prev.isAnyRef(), next.isAnyRef());
+    MOZ_ASSERT_IF(prev.isAnyRef(), next.isAnyRef() || next.isInvalid());
 
-    if (next.isAnyRef()) {
+    if (prev.isAnyRef() || next.isAnyRef()) {
       InternalBarrierMethods<wasm::AnyRef>::postBarrier(
-          &vp->toAnyRef(),
+          vp->anyRefPtr(),
           prev.isAnyRef() ? prev.toAnyRef() : wasm::AnyRef::null(),
-          next.toAnyRef());
-      return;
+          next.isAnyRef() ? next.toAnyRef() : wasm::AnyRef::null());
     }
   }
 
