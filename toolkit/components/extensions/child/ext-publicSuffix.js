@@ -4,20 +4,114 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "idn",
+  "@mozilla.org/network/idn-service;1",
+  Ci.nsIIDNService
+);
+
+var { ExtensionError } = ExtensionUtils;
+
+const invalidHostnameError = hostname =>
+  new ExtensionError(`Invalid hostname: ${hostname}`);
+
+const removeIPv6Brackets = hostname =>
+  hostname.startsWith("[") && hostname.endsWith("]") && hostname.includes(":")
+    ? hostname.slice(1, -1)
+    : hostname;
+
+
+function ensureValidHostname(hostname) {
+  
+  if (hostname && !hostname.includes("*")) {
+    try {
+      return idn.domainToASCII(hostname);
+    } catch {}
+  }
+  throw invalidHostnameError(hostname);
+}
+
 this.publicSuffix = class extends ExtensionAPI {
   getAPI() {
     return {
       publicSuffix: {
-        isKnownSuffix: function (_hostname) {
-          
+        isKnownSuffix: function (hostname) {
+          try {
+            const suffix = Services.eTLD.getKnownPublicSuffixFromHost(hostname);
+            if (suffix) {
+              return suffix === idn.convertUTF8toACE(hostname);
+            }
+          } catch {}
+          return false;
         },
 
-        getKnownSuffix: function (_hostname) {
+        getKnownSuffix: function (hostname) {
+          let suffix;
+          try {
+            suffix =
+              Services.eTLD.getKnownPublicSuffixFromHost(
+                removeIPv6Brackets(hostname)
+              ) || null;
+          } catch (e) {
+            if (e.result === Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
+              if (hostname.includes(":") && !hostname.startsWith("[")) {
+                
+                throw invalidHostnameError(hostname);
+              }
+              return null;
+            }
+            if (e.result !== Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+              throw invalidHostnameError(hostname);
+            }
+          }
+
           
+          
+          ensureValidHostname(hostname);
+
+          return suffix || null;
         },
 
-        getDomain: function (_hostname, _options) {
+        getDomain: function (hostname, options) {
+          let domain;
+          try {
+            
+            domain =
+              Services.eTLD.getBaseDomainFromHost(
+                removeIPv6Brackets(hostname)
+              ) || null;
+          } catch (e) {
+            if (e.result === Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
+              if (hostname.includes(":") && !hostname.startsWith("[")) {
+                
+                throw invalidHostnameError(hostname);
+              }
+              return options.allowIPAddress ? hostname : null;
+            }
+            if (e.result !== Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+              throw invalidHostnameError(hostname);
+            }
+          }
+
           
+          
+          const ascii = ensureValidHostname(hostname);
+          if (!domain) {
+            if (!options.allowPlainSuffix) {
+              return null;
+            }
+            domain = ascii;
+          } else if (
+            !options.allowUnknownSuffix &&
+            !Services.eTLD.hasKnownPublicSuffixFromHost(domain)
+          ) {
+            return null;
+          }
+          if (options.encoding === "unicode") {
+            domain = idn.domainToDisplay(domain);
+          }
+          return domain;
         },
       },
     };
