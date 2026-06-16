@@ -2,15 +2,11 @@
 
 
 
-
-
-
 #ifndef _nsDBusRemoteServer_h_
 #define _nsDBusRemoteServer_h_
 
 #include "nsRemoteServer.h"
 #include "nsUnixRemoteServer.h"
-#include "mozilla/DBusHelpers.h"
 #include "mozilla/Span.h"
 
 #include <gio/gio.h>

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DBusRemoteClient_h_
 #define DBusRemoteClient_h_
 
@@ -11,7 +10,6 @@
 #  include "mozilla/GRefPtr.h"
 #endif
 #include "nsRemoteClient.h"
-#include "mozilla/DBusHelpers.h"
 #include "nsString.h"
 #include "nscore.h"
 

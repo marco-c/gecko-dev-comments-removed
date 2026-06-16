@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "nsDBusRemoteServer.h"
 
 #include "nsCOMPtr.h"
@@ -16,7 +13,7 @@
 #include "nsPrintfCString.h"
 #include "nsGTKToolkit.h"
 
-#include <dlfcn.h>
+#include <dbus/dbus.h>
 
 using namespace mozilla;
 
@@ -132,11 +129,8 @@ static const GDBusInterfaceVTable gInterfaceVTable = {
 
 void nsDBusRemoteServer::OnBusAcquired(GDBusConnection* aConnection) {
   mPathName = nsPrintfCString("/org/mozilla/%s/Remote", mAppName.get());
-  static auto sDBusValidatePathName = (bool (*)(const char*, DBusError*))dlsym(
-      RTLD_DEFAULT, "dbus_validate_path");
-  if (!sDBusValidatePathName ||
-      !sDBusValidatePathName(mPathName.get(), nullptr)) {
-    g_warning("nsDBusRemoteServer: dbus_validate_path() failed!");
+  if (!g_variant_is_object_path(mPathName.get())) {
+    g_warning("nsDBusRemoteServer: object path is not valid");
     return;
   }
 
@@ -211,20 +205,12 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
     busName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
   }
 
-  static auto sDBusValidateBusName = (bool (*)(const char*, DBusError*))dlsym(
-      RTLD_DEFAULT, "dbus_validate_bus_name");
-  if (!sDBusValidateBusName) {
-    g_warning("nsDBusRemoteServer: dbus_validate_bus_name() is missing!");
-    return NS_ERROR_FAILURE;
-  }
-
   
-  if (!sDBusValidateBusName(busName.get(), nullptr)) {
+  if (!g_dbus_is_name(busName.get())) {
     busName = nsPrintfCString("org.mozilla.%s.%s", mAppName.get(), "default");
-    if (!sDBusValidateBusName(busName.get(), nullptr)) {
+    if (!g_dbus_is_name(busName.get())) {
       
-      
-      g_warning("nsDBusRemoteServer: dbus_validate_bus_name() failed!");
+      g_warning("nsDBusRemoteServer: couldn't get a valid bus name!");
       return NS_ERROR_FAILURE;
     }
   }
