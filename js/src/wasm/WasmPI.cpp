@@ -457,14 +457,13 @@ class PromisingFunctionModuleFactory {
     ParamsTypeIndex = 0,
     ResultsTypeIndex = 1,
     
+    TrampolineFuncTypeIndex = 3,
     
-    TrampolineFuncTypeIndex = 4,
+    ContTypeIndex = 5,
+    TagFuncTypeIndex = 6,
+    SuspendBlockTypeIndex = 7,
     
-    ContTypeIndex = 6,
-    TagFuncTypeIndex = 7,
-    SuspendBlockTypeIndex = 8,
-    
-    Count = 10,
+    Count = 9,
   };
 
   enum TagIdx {
@@ -864,10 +863,11 @@ class PromisingFunctionModuleFactory {
   }
 
  public:
-  SharedModule build(JSContext* cx, HandleFunction fn, ValTypeVector&& params,
-                     ValTypeVector&& results) {
+  SharedModule build(JSContext* cx, HandleFunction fn) {
     const FuncType& fnType = fn->wasmTypeDef()->funcType();
-    size_t paramsSize = params.length();
+    size_t paramsSize = fnType.args().length();
+    uint32_t funcTypeIndex =
+        fn->wasmInstance().codeMeta().funcs[fn->wasmFuncIndex()].typeIndex;
 
     FeatureOptions options;
     
@@ -909,7 +909,7 @@ class PromisingFunctionModuleFactory {
 
     
     StructType boxedParamsStruct;
-    if (!StructType::createImmutable(params, &boxedParamsStruct)) {
+    if (!StructType::createImmutable(fnType.args(), &boxedParamsStruct)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -918,17 +918,9 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
-    ValTypeVector paramsForWrapper, resultsForWrapper;
-    if (!paramsForWrapper.append(fnType.args().begin(), fnType.args().end()) ||
-        !resultsForWrapper.append(fnType.results().begin(),
-                                  fnType.results().end())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-
     
     StructType boxedResultType;
-    if (!StructType::createImmutable(resultsForWrapper, &boxedResultType)) {
+    if (!StructType::createImmutable(fnType.results(), &boxedResultType)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -939,9 +931,11 @@ class PromisingFunctionModuleFactory {
 
     
     
+    
+    MOZ_ASSERT(funcTypeIndex < baseTypeIndex_);
+    MOZ_ASSERT((*codeMeta->types)[funcTypeIndex].isFuncType());
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsForWrapper),
-                                    std::move(resultsForWrapper))) {
+    if (!moduleMeta->addDefinedFuncWithType(funcTypeIndex)) {
       return nullptr;
     }
 
@@ -949,10 +943,16 @@ class PromisingFunctionModuleFactory {
 
     
     
+    ValTypeVector exportedParams, exportedResults;
+    if (!exportedParams.append(fnType.args().begin(), fnType.args().end()) ||
+        !exportedResults.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
     MOZ_ASSERT(codeMeta->funcs.length() == ExportedFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(params), std::move(results),
-                                     true,
-                                    mozilla::Some(CacheableName()))) {
+    if (!moduleMeta->addDefinedFunc(
+            std::move(exportedParams), std::move(exportedResults),
+             true, mozilla::Some(CacheableName()))) {
       return nullptr;
     }
 
@@ -1139,24 +1139,9 @@ static bool WasmPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
 JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   RootedFunction wrappedWasmFunc(cx, &func->as<JSFunction>());
   MOZ_ASSERT(wrappedWasmFunc->isWasm());
-  const FuncType& wrappedWasmFuncType =
-      wrappedWasmFunc->wasmTypeDef()->funcType();
-
-  ValTypeVector results;
-  if (!results.append(RefType::extern_())) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-  ValTypeVector params;
-  if (!params.append(wrappedWasmFuncType.args().begin(),
-                     wrappedWasmFuncType.args().end())) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
 
   PromisingFunctionModuleFactory moduleFactory;
-  SharedModule module = moduleFactory.build(
-      cx, wrappedWasmFunc, std::move(params), std::move(results));
+  SharedModule module = moduleFactory.build(cx, wrappedWasmFunc);
   if (!module) {
     return nullptr;
   }
