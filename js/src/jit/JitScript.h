@@ -362,7 +362,8 @@ class alignas(uintptr_t) JitScript final
   
   
   
-  mozilla::Maybe<HeapPtr<EnvironmentObject*>> templateEnv_;
+  
+  HeapPtr<EnvironmentObject*> templateEnv_;
 
   
   Offset endOffset_ = 0;
@@ -375,6 +376,7 @@ class alignas(uintptr_t) JitScript final
     
     bool hadIonOSR : 1;
     bool ranBytecodeAnalysis : 1;
+    bool initializedTemplateEnv : 1;
   };
   Flags flags_ = {};  
 
@@ -486,7 +488,10 @@ class alignas(uintptr_t) JitScript final
 
   size_t allocBytes() const { return endOffset(); }
 
-  EnvironmentObject* templateEnvironment() const { return templateEnv_.ref(); }
+  EnvironmentObject* templateEnvironment() const {
+    MOZ_ASSERT(flags_.initializedTemplateEnv);
+    return templateEnv_;
+  }
 
   std::pair<CallObject*, NamedLambdaObject*> functionEnvironmentTemplates(
       JSFunction* fun) const;
