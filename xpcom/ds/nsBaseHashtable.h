@@ -233,6 +233,14 @@ class nsBaseHashtableET : public KeyClass {
     return mozilla::detail::PtrGetWeak(GetData());
   }
 
+  
+  
+  
+  
+  
+  
+  ~nsBaseHashtableET() = default;
+
  private:
   DataType mData;
   friend class nsTHashtable<nsBaseHashtableET<KeyClass, DataType>>;
@@ -248,7 +256,6 @@ class nsBaseHashtableET : public KeyClass {
   template <typename... Args>
   explicit nsBaseHashtableET(KeyTypePointer aKey, Args&&... aArgs);
   nsBaseHashtableET(nsBaseHashtableET<KeyClass, DataType>&& aToMove) = default;
-  ~nsBaseHashtableET() = default;
 };
 
 
@@ -295,6 +302,19 @@ class nsBaseHashtable
  public:
   typedef typename KeyClass::KeyType KeyType;
   typedef nsBaseHashtableET<KeyClass, DataType> EntryType;
+
+  
+  
+  
+  
+  
+  
+  
+  static_assert(!(std::is_trivially_destructible_v<KeyClass> &&
+                  std::is_trivially_destructible_v<DataType>) ||
+                    std::is_trivially_destructible_v<EntryType>,
+                "trivially-destructible key and data must yield a "
+                "trivially-destructible entry");
 
   using nsTHashtable<EntryType>::Contains;
   using nsTHashtable<EntryType>::GetGeneration;
