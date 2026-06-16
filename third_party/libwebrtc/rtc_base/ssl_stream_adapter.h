@@ -129,7 +129,7 @@ class SSLStreamAdapter : public StreamInterface {
   static std::unique_ptr<SSLStreamAdapter> Create(
       std::unique_ptr<StreamInterface> stream,
       absl::AnyInvocable<void(SSLHandshakeError)> handshake_error,
-      nullptr_t ) {
+      std::nullptr_t ) {
     return Create(std::move(stream), std::move(handshake_error));
   }
 
