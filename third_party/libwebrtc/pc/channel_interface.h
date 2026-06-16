@@ -36,6 +36,15 @@ namespace webrtc {
 
 
 
+struct ChannelCallbacks {
+  absl::AnyInvocable<void(const RtpPacketReceived&) &&>
+      on_first_packet_received;
+  absl::AnyInvocable<void() &&> on_first_packet_sent;
+  absl::AnyInvocable<void(const RtpPacketReceived&)> on_packet_received;
+};
+
+
+
 
 
 
