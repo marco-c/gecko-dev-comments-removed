@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_NavigationTransition_h_
 #define mozilla_dom_NavigationTransition_h_
 
@@ -24,7 +22,7 @@ class Promise;
 
 class NavigationTransition final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationTransition)
 
   NavigationTransition(nsIGlobalObject* aGlobalObject,
