@@ -68,6 +68,10 @@ class MockRtpReceiverInternal : public RtpReceiverInternal {
 
   
   MOCK_METHOD(void, Stop, (), (override));
+  MOCK_METHOD(MediaReceiveChannelInterface*,
+              media_channel,
+              (),
+              (const, override));
   MOCK_METHOD(void,
               SetMediaChannel,
               (webrtc::MediaReceiveChannelInterface*),
