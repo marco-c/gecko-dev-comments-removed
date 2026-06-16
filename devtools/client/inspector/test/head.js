@@ -1011,6 +1011,24 @@ async function assertTooltipHiddenOnMouseOut(tooltip, target) {
 
 
 
+async function assertTooltipHiddenOnEscape(tooltip, view) {
+  const onTooltipHidden = tooltip.once("hidden");
+  EventUtils.sendKey("ESCAPE", view.inspector.toolbox.win);
+  await onTooltipHidden;
+
+  ok(!tooltip.isVisible(), "The tooltip is hidden on Escape");
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1037,6 +1055,7 @@ async function assertVariableTooltipForProperty(
   ruleSelector,
   propertyName,
   {
+    closeWithEscape = false,
     computed,
     computedClasses = ["theme-fg-color1"],
     header,
@@ -1071,7 +1090,7 @@ async function assertVariableTooltipForProperty(
       `CSS variable #${index} for ${propertyName} in ${ruleSelector} is unmatched`
     );
   }
-
+  variableEl.scrollIntoView();
   const previewTooltip = await assertShowPreviewTooltip(view, variableEl);
   const valueEl = previewTooltip.panel.querySelector(".variable-value");
   const computedValueEl = previewTooltip.panel.querySelector(".computed div");
@@ -1161,7 +1180,11 @@ async function assertVariableTooltipForProperty(
     );
   }
 
-  await assertTooltipHiddenOnMouseOut(previewTooltip, variableEl);
+  if (closeWithEscape) {
+    await assertTooltipHiddenOnEscape(previewTooltip, view);
+  } else {
+    await assertTooltipHiddenOnMouseOut(previewTooltip, variableEl);
+  }
 }
 
 

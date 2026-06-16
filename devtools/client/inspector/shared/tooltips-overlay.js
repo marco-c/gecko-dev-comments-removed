@@ -118,6 +118,10 @@ class TooltipsOverlay {
     return false;
   }
 
+  get instances() {
+    return this.#instances;
+  }
+
   
 
 
