@@ -50,13 +50,15 @@
 
 #include <errno.h>
 
-#include <atomic>
 #include <cstdint>
+#include <memory>
 #include <optional>
+#include <span>
 #include <sstream>  
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/has_absl_stringify.h"
 #include "absl/strings/str_cat.h"
@@ -191,6 +193,74 @@ class LogSink {
   LoggingSeverity min_severity_;
 #endif
 };
+
+class LoggingConfig {
+ public:
+  LoggingConfig();
+  LoggingConfig(const LoggingConfig&) = delete;
+  LoggingConfig& operator=(const LoggingConfig&) = delete;
+  LoggingConfig(LoggingConfig&&);
+  LoggingConfig& operator=(LoggingConfig&&);
+  ~LoggingConfig();
+
+  LoggingSeverity min_severity() const { return min_severity_; }
+  void set_min_severity(LoggingSeverity severity) { min_severity_ = severity; }
+
+  LoggingSeverity debug_severity() const { return debug_severity_; }
+  void set_debug_severity(LoggingSeverity severity) {
+    debug_severity_ = severity;
+  }
+
+  bool log_thread() const { return log_thread_; }
+  void set_log_thread(bool log_thread) { log_thread_ = log_thread; }
+
+  bool log_timestamp() const { return log_timestamp_; }
+  void set_log_timestamp(bool log_timestamp) { log_timestamp_ = log_timestamp; }
+
+  bool log_queue_name() const { return log_queue_name_; }
+  void set_log_queue_name(bool log_queue_name) {
+    log_queue_name_ = log_queue_name;
+  }
+
+  bool log_to_stderr() const { return log_to_stderr_; }
+  void set_log_to_stderr(bool log_to_stderr) { log_to_stderr_ = log_to_stderr; }
+
+  absl::string_view log_prefix() const { return log_prefix_; }
+  void set_log_prefix(absl::string_view log_prefix) {
+    log_prefix_ = std::string(log_prefix);
+  }
+
+  void AddSink(std::unique_ptr<LogSink> sink) {
+    sinks_.push_back(std::move(sink));
+  }
+  std::span<const std::unique_ptr<LogSink>> sinks() const { return sinks_; }
+
+ private:
+  LoggingSeverity min_severity_ = LS_INFO;
+  LoggingSeverity debug_severity_ = LS_INFO;
+  bool log_thread_ = false;
+  bool log_timestamp_ = false;
+  bool log_queue_name_ = false;
+  bool log_to_stderr_ = true;
+  std::string log_prefix_;
+  std::vector<std::unique_ptr<LogSink>> sinks_;
+};
+
+#if RTC_LOG_ENABLED()
+
+
+
+
+bool InitializeLogging(LoggingConfig config);
+
+
+const LoggingConfig& GetLoggingConfig();
+#else
+inline bool InitializeLogging(LoggingConfig config) {
+  return false;
+}
+const LoggingConfig& GetLoggingConfig();
+#endif
 
 namespace webrtc_logging_impl {
 
@@ -483,20 +553,14 @@ class LogMessage {
   
   
   static int64_t LogStartTime();
-  static absl::string_view LogPrefix();
   
   
   static uint32_t WallClockStartTime();
   
   
   
+  [[deprecated("Use InitializeLogging instead.")]]
   static bool LogThreads(bool enabled = true);
-  
-  
-  
-  
-  
-  static void SetLogPrefix(absl::string_view prefix);
 
   
   
@@ -530,7 +594,10 @@ class LogMessage {
   
   static int GetMinLogSeverity();
   
+  static void UpdateMinLogSeverity();
   
+  
+  [[deprecated("Use InitializeLogging instead.")]]
   static void ConfigureLogging(absl::string_view params);
   
   
@@ -561,9 +628,11 @@ class LogMessage {
   inline StringBuilder& stream() { return print_stream_; }
   inline static int64_t LogStartTime() { return 0; }
   inline static uint32_t WallClockStartTime() { return 0; }
-  inline static bool LogThreads(bool enabled = true) { return false; }
-  inline static void SetLogPrefix(absl::string_view prefix) {}
-  inline static bool SetLogQueueNames(bool enabled) { return false; }
+  [[deprecated("Use InitializeLogging instead.")]]
+  inline static bool LogThreads(bool enabled = true) {
+    return false;
+  }
+  inline static bool SetLogQueueNames(bool enable) { return false; }
 
   inline static void LogTimestamps(bool on = true) {}
   inline static void LogToDebug(LoggingSeverity min_sev) {}
@@ -575,6 +644,7 @@ class LogMessage {
   inline static void RemoveLogToStream(LogSink* stream) {}
   inline static int GetLogToStream(LogSink* stream = nullptr) { return 0; }
   inline static int GetMinLogSeverity() { return 0; }
+  [[deprecated("Use InitializeLogging instead.")]]
   inline static void ConfigureLogging(absl::string_view params) {}
   static constexpr bool IsNoop(LoggingSeverity severity) { return true; }
   template <LoggingSeverity S>
@@ -594,9 +664,6 @@ class LogMessage {
 
 #if RTC_LOG_ENABLED()
   
-  static void UpdateMinLogSeverity();
-
-  
   static void OutputToDebug(const LogLineRef& log_line_ref);
 
   
@@ -613,15 +680,8 @@ class LogMessage {
   static LogSink* streams_;
 
   
-  
-  
-  
-  static std::atomic<bool> streams_empty_;
-
-  
   static bool log_thread_;
   static bool log_timestamp_;
-  static absl::string_view log_prefix_;
   static bool log_queue_name_;
 
   

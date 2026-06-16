@@ -140,14 +140,31 @@ class TestMainImpl : public TestMain {
 
     
     
-    if (LogMessage::GetLogToDebug() > LS_INFO)
-      LogMessage::LogToDebug(LS_INFO);
+    
+    
+    bool do_logging_init = true;
 
-    if (absl::GetFlag(FLAGS_verbose))
-      LogMessage::LogToDebug(LS_VERBOSE);
+    const char* skip_logging_init_env = getenv("WEBRTC_TEST_SKIP_LOGGING_INIT");
+    if (skip_logging_init_env != nullptr &&
+        std::string(skip_logging_init_env) == "1") {
+      do_logging_init = false;
+    }
 
-    LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs) ||
+    if (do_logging_init) {
+      LoggingConfig config;
+      config.set_min_severity(LS_INFO);
+      config.set_debug_severity(LS_INFO);
+
+      if (absl::GetFlag(FLAGS_verbose)) {
+        config.set_min_severity(LS_VERBOSE);
+        config.set_debug_severity(LS_VERBOSE);
+      }
+
+      config.set_log_to_stderr(absl::GetFlag(FLAGS_logs) ||
                                absl::GetFlag(FLAGS_verbose));
+
+      InitializeLogging(std::move(config));
+    }
 
     metrics::Enable();
 

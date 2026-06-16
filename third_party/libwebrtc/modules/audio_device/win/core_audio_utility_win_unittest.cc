@@ -60,11 +60,6 @@ class CoreAudioUtilityWinTest : public ::testing::Test {
     
     
     EXPECT_TRUE(com_init_.Succeeded());
-
-    
-    webrtc::LogMessage::LogToDebug(webrtc::LS_INFO);
-    webrtc::LogMessage::LogTimestamps();
-    webrtc::LogMessage::LogThreads();
   }
 
   virtual ~CoreAudioUtilityWinTest() {}
