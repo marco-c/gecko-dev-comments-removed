@@ -39,7 +39,7 @@ void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
   UpdateSelectedAudioSession();
   
   
-  
+  UpdateAllAudioSessionStates(aBrowsingContextId);
   RemoveRecordIfEmpty(aBrowsingContextId);
   MaybeFireEffectiveTypeChanged();
 }
@@ -121,7 +121,7 @@ void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
   entry.Data().SetState(aBrowsingContextId, aNewState);
   
   
-  
+  UpdateAllAudioSessionStates(aBrowsingContextId);
   
   RemoveRecordIfEmpty(aBrowsingContextId);
 }
