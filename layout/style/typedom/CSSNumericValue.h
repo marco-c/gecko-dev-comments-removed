@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
+#include "mozilla/dom/CSSMathValueBindingFwd.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
@@ -35,12 +36,9 @@ class Sequence;
 class CSSNumericValue : public CSSStyleValue {
  public:
   enum class NumericValueType {
-    Uninitialized,  
     UnitValue,
-    MathSum,
+    MathValue,
   };
-
-  explicit CSSNumericValue(nsCOMPtr<nsISupports> aParent);
 
   CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                   NumericValueType aNumericValueType);
@@ -108,13 +106,13 @@ class CSSNumericValue : public CSSStyleValue {
   
   CSSUnitValue& GetAsCSSUnitValue();
 
-  bool IsCSSMathSum() const;
+  bool IsCSSMathValue() const;
 
   
-  const CSSMathSum& GetAsCSSMathSum() const;
+  const CSSMathValue& GetAsCSSMathValue() const;
 
   
-  CSSMathSum& GetAsCSSMathSum();
+  CSSMathValue& GetAsCSSMathValue();
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;

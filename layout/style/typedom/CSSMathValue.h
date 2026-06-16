@@ -5,7 +5,9 @@
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 
+#include "mozilla/dom/CSSMathSumBindingFwd.h"
 #include "mozilla/dom/CSSNumericValue.h"
+#include "nsStringFwd.h"
 
 template <class T>
 class nsCOMPtr;
@@ -13,16 +15,28 @@ class nsISupports;
 
 namespace mozilla {
 
+struct CSSPropertyId;
+template <class T>
+class Maybe;
+struct StyleMathValue;
+
 namespace dom {
 
 enum class CSSMathOperator : uint8_t;
 
 class CSSMathValue : public CSSNumericValue {
  public:
+  enum class MathValueType {
+    Uninitialized,  
+    MathSum,
+  };
+
   explicit CSSMathValue(nsCOMPtr<nsISupports> aParent);
 
-  CSSMathValue(nsCOMPtr<nsISupports> aParent,
-               NumericValueType aNumericValueType);
+  CSSMathValue(nsCOMPtr<nsISupports> aParent, MathValueType aMathValueType);
+
+  static RefPtr<CSSMathValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     const StyleMathValue& aMathValue);
 
   
 
@@ -30,8 +44,28 @@ class CSSMathValue : public CSSNumericValue {
 
   
 
+  MathValueType GetMathValueType() const { return mMathValueType; }
+
+  bool IsCSSMathSum() const;
+
+  
+  const CSSMathSum& GetAsCSSMathSum() const;
+
+  
+  CSSMathSum& GetAsCSSMathSum();
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
+  
+  
+  Maybe<StyleMathValue> ToStyleMathValue() const;
+
  protected:
   virtual ~CSSMathValue() = default;
+
+  
+  const MathValueType mMathValueType;
 };
 
 }  
