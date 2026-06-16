@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+this.publicSuffix = class extends ExtensionAPI {
+  getAPI() {
+    return {
+      publicSuffix: {
+        isKnownSuffix: function (_hostname) {
+          
+        },
+
+        getKnownSuffix: function (_hostname) {
+          
+        },
+
+        getDomain: function (_hostname, _options) {
+          
+        },
+      },
+    };
+  }
+};
