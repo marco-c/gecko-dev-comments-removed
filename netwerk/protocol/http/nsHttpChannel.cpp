@@ -1207,7 +1207,13 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
     
     
-    DisallowHTTPSRR(mCaps);
+    
+    
+    
+    
+    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
+      DisallowHTTPSRR(mCaps);
+    }
   }
 
   if (LoadIsTRRServiceChannel()) {
