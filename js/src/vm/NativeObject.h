@@ -243,10 +243,11 @@ class ObjectElements {
 
   
   
-  static const size_t NumShiftedElementsBits = 11;
-  static const size_t MaxShiftedElements = (1 << NumShiftedElementsBits) - 1;
-  static const size_t NumShiftedElementsShift = 32 - NumShiftedElementsBits;
-  static const size_t FlagsMask = (1 << NumShiftedElementsShift) - 1;
+  static constexpr size_t NumShiftedElementsBits = 11;
+  static constexpr size_t MaxShiftedElements =
+      (1 << NumShiftedElementsBits) - 1;
+  static constexpr size_t NumShiftedElementsShift = 32 - NumShiftedElementsBits;
+  static constexpr size_t FlagsMask = (1 << NumShiftedElementsShift) - 1;
   static_assert(MaxShiftedElements == 2047,
                 "MaxShiftedElements should match the comment");
 
@@ -266,7 +267,7 @@ class ObjectElements {
   
   
   
-  uint32_t flags;
+  GCData<uint32_t> flags;
 
   
 
@@ -274,7 +275,7 @@ class ObjectElements {
 
 
 
-  uint32_t initializedLength;
+  GCData<uint32_t> initializedLength;
 
   
   uint32_t capacity;
@@ -452,9 +453,9 @@ static_assert(ObjectElements::VALUES_PER_HEADER * sizeof(HeapSlot) ==
 
 
 class alignas(HeapSlot) ObjectSlots {
-  uint32_t capacity_;
-  uint32_t dictionarySlotSpan_;
-  uint64_t maybeUniqueId_;
+  GCData<uint32_t> capacity_;
+  GCData<uint32_t> dictionarySlotSpan_;
+  GCData<uint64_t> maybeUniqueId_;
 
  public:
   
@@ -671,10 +672,10 @@ inline bool IsNativeObjectDynamicElements(HeapSlot* elements) {
 class NativeObject : public JSObject {
  protected:
   
-  js::HeapSlot* slots_;
+  GCData<HeapSlot*> slots_;
 
   
-  js::HeapSlot* elements_;
+  GCData<HeapSlot*> elements_;
 
   friend class ::JSObject;
 
@@ -1463,6 +1464,8 @@ class NativeObject : public JSObject {
   ObjectElements* getElementsHeader() const {
     return ObjectElements::fromElements(elements_);
   }
+
+  Value* unbarrieredElements() { return elements_->unbarrieredAddress(); }
 
   
   inline HeapSlot* unshiftedElements() const {

@@ -361,8 +361,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     SMALL_SLOTSPAN_MASK = uint32_t(SMALL_SLOTSPAN_MAX << SMALL_SLOTSPAN_SHIFT),
   };
 
-  uint32_t immutableFlags;   
-  ObjectFlags objectFlags_;  
+  GCData<uint32_t> immutableFlags;  
+  ObjectFlags objectFlags_;         
 
   
   ShapeCachePtr cache_;
