@@ -458,7 +458,17 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
 
 Maybe<SymbolLoader> GLLibraryEGL::GetSymbolLoader() const {
   auto ret = SymbolLoader(mSymbols.fGetProcAddress);
-  ret.mLib = mGLLibrary;
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!IsANGLE()) {
+    ret.mLib = mGLLibrary;
+  }
   return Some(ret);
 }
 

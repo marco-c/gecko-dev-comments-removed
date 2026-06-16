@@ -26,8 +26,8 @@ class SymbolLoader final {
  public:
   typedef PRFuncPtr(GLAPIENTRY* GetProcAddressT)(const char*);
 
+  PRLibrary* mLib = nullptr;       
   GetProcAddressT mPfn = nullptr;  
-  PRLibrary* mLib = nullptr;
 
   explicit SymbolLoader(void*(GLAPIENTRY* pfn)(const char*))
       : mPfn(GetProcAddressT(pfn)) {
