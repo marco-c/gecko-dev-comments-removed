@@ -136,6 +136,19 @@ class IAPZCTreeManager {
 
 
 
+
+
+
+  virtual void NotifyApzAwareListenerAdded(
+      const ScrollableLayerGuid& aGuid) = 0;
+
+  
+
+
+
+
+
+
   virtual APZInputBridge* InputBridge() = 0;
 
  protected:
