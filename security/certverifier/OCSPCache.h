@@ -87,6 +87,9 @@ class OCSPCache {
   
   void Clear();
 
+  
+  void ClearPrivateBrowsing();
+
  private:
   class Entry {
    public:
@@ -101,6 +104,7 @@ class OCSPCache {
     mozilla::pkix::Result mResult;
     mozilla::pkix::Time mThisUpdate;
     mozilla::pkix::Time mValidThrough;
+    bool mIsPrivateBrowsing = false;
     
     
     
