@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MediaMetadata_h
 #define mozilla_dom_MediaMetadata_h
 
@@ -96,7 +94,8 @@ class MediaMetadata final : public nsISupports,
   
   
   
-  RefPtr<MediaMetadataBasePromise> LoadMetadataArtwork();
+  
+  RefPtr<MediaMetadataBasePromise> LoadMetadataArtwork(Document* aDoc);
 
   
   
@@ -115,8 +114,7 @@ class MediaMetadata final : public nsISupports,
                           ErrorResult& aRv);
 
   static RefPtr<MediaMetadataBasePromise> FetchArtwork(
-      const MediaMetadataBase& aMetadata, nsIPrincipal* aPrincipal,
-      const size_t aIndex);
+      const MediaMetadataBase& aMetadata, Document* aDoc, const size_t aIndex);
 
   nsCOMPtr<nsIGlobalObject> mParent;
   MediaEventProducer<void> mMetadataChangeEvent;
