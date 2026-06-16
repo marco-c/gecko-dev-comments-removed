@@ -9,6 +9,7 @@
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGGeometryFrame.h"
 #include "mozilla/SVGImageFrame.h"
 #include "mozilla/UniquePtr.h"
@@ -2740,9 +2741,18 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   bool sameScale = gfx::FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
                    gfx::FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
 
-  LayerIntRect itemRect =
-      LayerIntRect::FromUnknownRect(bounds.ScaleToOutsidePixels(
-          scale.xScale, scale.yScale, appUnitsPerDevPixel));
+  
+  
+  
+  
+  
+  
+  LayerIntRect itemRect = LayerIntRect::FromUnknownRect(
+      StaticPrefs::layout_disable_pixel_alignment()
+          ? bounds.ScaleToNearestPixels(scale.xScale, scale.yScale,
+                                        appUnitsPerDevPixel)
+          : bounds.ScaleToOutsidePixels(scale.xScale, scale.yScale,
+                                        appUnitsPerDevPixel));
 
   LayerIntRect visibleRect =
       LayerIntRect::FromUnknownRect(
@@ -2755,7 +2765,21 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   }
 
   LayoutDeviceToLayerScale2D layerScale(scale.xScale, scale.yScale);
-  LayoutDeviceRect imageRect = LayerRect(visibleRect) / layerScale;
+
+  
+  
+  
+  
+  
+  
+  
+  LayoutDeviceRect imageRect;
+  if (StaticPrefs::layout_disable_pixel_alignment()) {
+    imageRect = LayoutDeviceRect::FromAppUnits(
+        bounds.Intersect(aMaskItem->GetBuildingRect()), appUnitsPerDevPixel);
+  } else {
+    imageRect = LayerRect(visibleRect) / layerScale;
+  }
 
   nsPoint maskOffset = aMaskItem->ToReferenceFrame() - bounds.TopLeft();
 
