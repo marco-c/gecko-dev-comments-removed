@@ -6,11 +6,6 @@ import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
-import {
-  WIDGET_REGISTRY,
-  isWidgetToggleVisible,
-  isWidgetsContainerVisible,
-} from "resource://newtab/common/WidgetsRegistry.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -1171,32 +1166,8 @@ export class AboutPreferences {
   }
 
   /** @param {Window} window */
-  // eslint-disable-next-line max-statements
   _setupHomeGroup(window) {
     const { Preferences } = window;
-
-    // A widget toggle is shown when its system pref is on OR a trainhop (Nimbus)
-    // config enables it. The system-pref half reads the live dep value so the
-    // toggle reacts to pref changes without a page refresh; the trainhopConfig
-    // half is a snapshot (Nimbus sets it at load, it doesn't change live). The
-    // dep id matches the registry trainhopEnabledKey by convention.
-    const widgetPrefs = this.store.getState()?.Prefs?.values ?? {};
-    const widgetToggleVisible = registryId => {
-      const widget = WIDGET_REGISTRY.find(w => w.id === registryId);
-      // Resolve via the shared registry helper, but feed the LIVE system-pref
-      // value from deps so the toggle still reacts to about:config changes
-      // without a page refresh; the trainhop/widgetsSettings terms are a snapshot.
-      return deps =>
-        isWidgetToggleVisible(widget, {
-          ...widgetPrefs,
-          [widget.systemEnabledPref]: deps[widget.trainhopEnabledKey]?.value,
-        });
-    };
-
-    // Build-time snapshot of whether the Widgets container is shown, used only
-    // to decide Weather's placement in the items list below. The Widgets group's
-    // own visibility is resolved reactively inline.
-    const widgetsSystemEnabled = isWidgetsContainerVisible(widgetPrefs);
 
     // The Firefox Home section should be disabled when neither "New windows"
     // nor "New tabs" is set to Firefox Home.
@@ -1254,7 +1225,7 @@ export class AboutPreferences {
         id: "weather",
         pref: "browser.newtabpage.activity-stream.widgets.weather.enabled",
         deps: ["weatherEnabled", ...firefoxHomeDeps],
-        visible: widgetToggleVisible("weather"),
+        visible: ({ weatherEnabled }) => weatherEnabled.value,
         disabled: deps => !firefoxHomeActive(deps),
       });
     } else {
@@ -1282,11 +1253,7 @@ export class AboutPreferences {
       id: "widgets",
       pref: "browser.newtabpage.activity-stream.widgets.enabled",
       deps: ["widgetsEnabled", ...firefoxHomeDeps],
-      visible: ({ widgetsEnabled }) =>
-        isWidgetsContainerVisible({
-          ...widgetPrefs,
-          "widgets.system.enabled": widgetsEnabled.value,
-        }),
+      visible: ({ widgetsEnabled }) => widgetsEnabled.value,
       disabled: deps => !firefoxHomeActive(deps),
     });
 
@@ -1300,7 +1267,7 @@ export class AboutPreferences {
       id: "lists",
       pref: "browser.newtabpage.activity-stream.widgets.lists.enabled",
       deps: ["listsEnabled"],
-      visible: widgetToggleVisible("lists"),
+      visible: ({ listsEnabled }) => listsEnabled.value,
     });
 
     // Widgets: timer
@@ -1313,7 +1280,7 @@ export class AboutPreferences {
       id: "timer",
       pref: "browser.newtabpage.activity-stream.widgets.focusTimer.enabled",
       deps: ["timerEnabled"],
-      visible: widgetToggleVisible("focusTimer"),
+      visible: ({ timerEnabled }) => timerEnabled.value,
     });
 
     // Widgets: sports
@@ -1326,7 +1293,7 @@ export class AboutPreferences {
       id: "sportsWidget",
       pref: "browser.newtabpage.activity-stream.widgets.sportsWidget.enabled",
       deps: ["sportsWidgetEnabled"],
-      visible: widgetToggleVisible("sportsWidget"),
+      visible: ({ sportsWidgetEnabled }) => sportsWidgetEnabled.value,
     });
 
     Preferences.addSetting({
@@ -1338,7 +1305,7 @@ export class AboutPreferences {
       id: "clocks",
       pref: "browser.newtabpage.activity-stream.widgets.clocks.enabled",
       deps: ["clocksEnabled"],
-      visible: widgetToggleVisible("clocks"),
+      visible: ({ clocksEnabled }) => clocksEnabled.value,
     });
 
     // Shortcuts
@@ -1491,16 +1458,6 @@ export class AboutPreferences {
       },
     });
 
-    // Base shape used when Weather is nested inside the Widgets group, where it
-    // matches its sibling widget checkboxes (no explicit control). The
-    // standalone row below adds control: "moz-toggle" to render as a top-level
-    // toggle like the other Firefox Home rows.
-    const weatherItem = {
-      id: "weather",
-      subcategory: "weather",
-      l10nId: "home-prefs-weather-header-srd",
-    };
-
     return {
       inProgress: true,
       headingLevel: 2,
@@ -1522,21 +1479,16 @@ export class AboutPreferences {
           l10nId: "home-prefs-search-header2",
           control: "moz-toggle",
         },
-        // Weather nests inside the Widgets group only when that group is shown
-        // (Nova + the resolved widgets container gate, the same gate the group's
-        // visibility uses). When the container is off but weather is
-        // independently enabled (the current default), keep Weather as its own
-        // row so it stays reachable.
-        ...(novaEnabled && widgetsSystemEnabled
-          ? []
-          : [{ ...weatherItem, control: "moz-toggle" }]),
+        {
+          id: "weather",
+          subcategory: "weather",
+          l10nId: "home-prefs-weather-header-srd",
+          control: "moz-toggle",
+        },
         {
           id: "widgets",
           l10nId: "home-prefs-widgets-header",
           control: "moz-toggle",
-          // Bug 2046503: this hardcoded widget list should be generated
-          // dynamically from WIDGET_REGISTRY (WidgetsRegistry.mjs) so new
-          // widgets appear here automatically.
           items: [
             {
               id: "lists",
@@ -1554,7 +1506,6 @@ export class AboutPreferences {
               id: "clocks",
               l10nId: "home-prefs-clocks-header",
             },
-            ...(novaEnabled && widgetsSystemEnabled ? [weatherItem] : []),
           ],
         },
         {
