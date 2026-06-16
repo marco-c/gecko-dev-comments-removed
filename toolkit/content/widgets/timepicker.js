@@ -31,6 +31,7 @@ function TimePicker(context) {
 
 
 
+
     init(props) {
       if (props.type == "date") {
         return;
@@ -75,12 +76,13 @@ function TimePicker(context) {
 
 
     _setDefaultState() {
-      const { hour, minute, min, max, step, format } = this.props;
+      const { type, hour, minute, min, max, step, format } = this.props;
       const now = new Date();
 
       let timerHour = hour == undefined ? now.getHours() : hour;
       let timerMinute = minute == undefined ? now.getMinutes() : minute;
       let timeKeeper = new TimeKeeper({
+        type,
         min: new Date(Number.isNaN(min) ? 0 : min),
         max: new Date(Number.isNaN(max) ? DAY_IN_MS - 1 : max),
         step,
