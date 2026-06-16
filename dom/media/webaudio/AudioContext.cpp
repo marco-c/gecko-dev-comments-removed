@@ -836,7 +836,7 @@ class OnStateChangeTask final : public Runnable {
   RefPtr<AudioContext> mAudioContext;
 };
 
-void AudioContext::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) {
+void AudioContext::Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
   MOZ_ASSERT(NS_IsMainThread());
   
   

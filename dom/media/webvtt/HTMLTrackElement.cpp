@@ -37,7 +37,7 @@ extern mozilla::LazyLogModule gTextTrackLog;
 
 
 nsGenericHTMLElement* NS_NewHTMLTrackElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -111,7 +111,7 @@ NS_IMPL_ISUPPORTS(WindowDestroyObserver, nsIObserver);
 
 
 HTMLTrackElement::HTMLTrackElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)),
       mLoadResourceDispatched(false),
       mWindowDestroyObserver(nullptr) {

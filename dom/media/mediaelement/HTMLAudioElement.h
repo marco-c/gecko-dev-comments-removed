@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLAudioElement_h
 #define mozilla_dom_HTMLAudioElement_h
 
@@ -20,7 +18,7 @@ class HTMLAudioElement final : public HTMLMediaElement {
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLAudioElement, audio)
 
-  explicit HTMLAudioElement(already_AddRefed<NodeInfo>&& aNodeInfo);
+  explicit HTMLAudioElement(already_AddRefed<NodeInfo> aNodeInfo);
 
   
   virtual bool IsInteractiveHTMLContent() const override;

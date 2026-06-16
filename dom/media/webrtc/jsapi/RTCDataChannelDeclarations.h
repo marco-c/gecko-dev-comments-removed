@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef RTCDataChannelDeclarations_h
 #define RTCDataChannelDeclarations_h
 
@@ -22,7 +20,7 @@ class DataChannel;
 namespace dom {
 class RTCDataChannel;
 
-nsresult NS_NewDOMDataChannel(already_AddRefed<DataChannel>&& aDataChannel,
+nsresult NS_NewDOMDataChannel(already_AddRefed<DataChannel> aDataChannel,
                               const nsACString& aLabel,
                               const nsAString& aOrigin, bool aOrdered,
                               Nullable<uint16_t> aMaxLifeTime,

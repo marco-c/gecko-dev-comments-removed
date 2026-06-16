@@ -112,7 +112,7 @@ class BrowserChildMessageManager : public ContentFrameMessageManager,
   }
 
   
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const;
 
   RefPtr<BrowserChild> mBrowserChild;
 
