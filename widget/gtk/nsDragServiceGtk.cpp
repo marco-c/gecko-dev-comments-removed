@@ -5,6 +5,7 @@
 #include "nsDragService.h"
 #include "nsDragServiceGtk.h"
 #include "nsWindow.h"
+#include "WidgetUtilsGtk.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -96,8 +97,32 @@ void nsDragSessionGtk::UpdateDragAction(GdkDragContext* aDragContext) {
   
   
   LOGDRAGSERVICE("nsDragSession::UpdateDragAction(%p)", aDragContext);
-  SetDragActionGtk(aDragContext ? gdk_drag_context_get_actions(aDragContext)
-                                : GDK_ACTION_DEFAULT);
+
+  GdkDragAction gdkAction = GDK_ACTION_DEFAULT;
+  if (aDragContext) {
+    gdkAction = gdk_drag_context_get_actions(aDragContext);
+    LOGDRAGSERVICE("  gdk_drag_context_get_actions() returns 0x%X", gdkAction);
+
+    
+    
+    
+
+    
+    
+    
+    
+    if (widget::GdkIsWaylandDisplay()) {
+      GdkDragAction gdkActionSelected =
+          gdk_drag_context_get_selected_action(aDragContext);
+      LOGDRAGSERVICE("  gdk_drag_context_get_selected_action() returns 0x%X",
+                     gdkActionSelected);
+      if (gdkActionSelected) {
+        gdkAction = gdkActionSelected;
+      }
+    }
+  }
+
+  SetDragActionGtk(gdkAction);
 }
 
 
