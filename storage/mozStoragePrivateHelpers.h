@@ -10,6 +10,7 @@
 
 
 #include "sqlite3.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "nsISerialEventTarget.h"
 #include "nsIVariant.h"
 #include "nsError.h"
@@ -72,7 +73,8 @@ void checkAndLogStatementPerformance(sqlite3_stmt* aStatement);
 
 
 
-nsIVariant* convertJSValToVariant(JSContext* aCtx, const JS::Value& aValue);
+already_AddRefed<nsIVariant> convertJSValToVariant(JSContext* aCtx,
+                                                   const JS::Value& aValue);
 
 
 
@@ -82,7 +84,8 @@ nsIVariant* convertJSValToVariant(JSContext* aCtx, const JS::Value& aValue);
 
 
 
-Variant_base* convertVariantToStorageVariant(nsIVariant* aVariant);
+already_AddRefed<Variant_base> convertVariantToStorageVariant(
+    nsIVariant* aVariant);
 
 
 
