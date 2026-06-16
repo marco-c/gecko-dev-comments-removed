@@ -26,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 308
+#define ANGLE_SH_VERSION 309
 
 enum ShShaderSpec
 {
@@ -414,6 +414,10 @@ struct ShCompileOptions
     
     uint64_t passHighpToPackUnormSnormBuiltins : 1;
 
+    
+    
+    uint64_t validatePerStageMaxUniformBlocks : 1;
+
     ShCompileOptionsMetal metal;
     ShCompileOptionsPLS pls;
 };
@@ -511,6 +515,12 @@ struct ShBuiltInResources
     int MaxFragmentInputVectors;
     int MinProgramTexelOffset;
     int MaxProgramTexelOffset;
+
+    
+    int MaxFragmentUniformBlocks;
+
+    
+    int MaxVertexUniformBlocks;
 
     
 
@@ -619,6 +629,9 @@ struct ShBuiltInResources
     float MaxPointSize;
 
     
+    int MaxComputeUniformBlocks;
+
+    
     int MaxGeometryUniformComponents;
     int MaxGeometryUniformBlocks;
     int MaxGeometryInputComponents;
@@ -641,6 +654,7 @@ struct ShBuiltInResources
     int MaxTessControlImageUniforms;
     int MaxTessControlAtomicCounters;
     int MaxTessControlAtomicCounterBuffers;
+    int MaxTessControlUniformBlocks;
 
     int MaxTessPatchComponents;
     int MaxPatchVertices;
@@ -653,6 +667,7 @@ struct ShBuiltInResources
     int MaxTessEvaluationImageUniforms;
     int MaxTessEvaluationAtomicCounters;
     int MaxTessEvaluationAtomicCounterBuffers;
+    int MaxTessEvaluationUniformBlocks;
 
     
     int SubPixelBits;

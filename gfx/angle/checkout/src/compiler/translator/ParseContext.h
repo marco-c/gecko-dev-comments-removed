@@ -757,6 +757,13 @@ class TParseContext : angle::NonCopyable
     sh::WorkGroupSize mComputeShaderLocalSize;
     
     int mNumViews;
+
+    
+    
+    unsigned int mMaxUniformBlocks;
+    
+    unsigned int mNumUniformBlocks;
+
     int mMaxNumViews;
     int mMaxImageUnits;
     int mMaxCombinedTextureImageUnits;
