@@ -97,6 +97,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.ContentBlockingController
 import org.mozilla.geckoview.ContentBlockingController.Event
+import org.mozilla.geckoview.ContentBlockingController.LogEntry.BlockingData
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
@@ -265,6 +266,22 @@ class GeckoEngine(
         runtime.contentBlockingController.trackingDbEarliestRecordedDate.then(
             { date ->
                 onSuccess(if (date == 0L) null else date)
+                GeckoResult<Void>()
+            },
+            { throwable ->
+                onError(throwable)
+                GeckoResult<Void>()
+            },
+        )
+    }
+
+    override fun clearTrackingProtectionData(
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit,
+    ) {
+        runtime.contentBlockingController.clearTrackingDb().then(
+            {
+                onSuccess()
                 GeckoResult<Void>()
             },
             { throwable ->
@@ -562,12 +579,19 @@ class GeckoEngine(
             }
 
             override fun onReady(extension: org.mozilla.geckoview.WebExtension) {
-                webExtensionDelegate.onReady(
-                    GeckoWebExtension(
-                        nativeExtension = extension,
-                        runtime = runtime,
-                    ),
+                val readyExtension = GeckoWebExtension(
+                    nativeExtension = extension,
+                    runtime = runtime,
                 )
+                webExtensionDelegate.onReady(readyExtension)
+
+                // registerTabHandler() must be called again in order to get
+                // its onOpenOptionsPage handler to pick up the optionsPageUrl
+                // that is only available at onReady (bug 2046177).
+                // registerActionHandler() is not strictly necessary at the
+                // time of writing, but also called to mirror onInstalled.
+                readyExtension.registerActionHandler(webExtensionActionHandler)
+                readyExtension.registerTabHandler(webExtensionTabHandler, defaultSettings)
             }
 
             override fun onUninstalled(extension: org.mozilla.geckoview.WebExtension) {
