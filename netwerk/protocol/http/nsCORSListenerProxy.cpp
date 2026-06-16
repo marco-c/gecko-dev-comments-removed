@@ -353,26 +353,38 @@ bool CORSCacheEntry::CheckDNSCache() {
     return false;
   }
 
-  nsCOMPtr<nsIDNSRecord> record;
-  nsresult rv = dns->ResolveNative(host, nsIDNSService::RESOLVE_OFFLINE, mOA,
-                                   getter_AddRefs(record));
-  if (NS_FAILED(rv) || !record) {
-    return false;
+  
+  
+  
+  
+  
+  const nsIDNSService::DNSFlags familyFlags[] = {
+      nsIDNSService::RESOLVE_DEFAULT_FLAGS,  
+      nsIDNSService::RESOLVE_DISABLE_IPV6,   
+      nsIDNSService::RESOLVE_DISABLE_IPV4,   
+  };
+
+  bool foundRecord = false;
+  for (const auto& flags : familyFlags) {
+    nsCOMPtr<nsIDNSRecord> record;
+    nsresult rv =
+        dns->ResolveNative(host, nsIDNSService::RESOLVE_OFFLINE | flags, mOA,
+                           getter_AddRefs(record));
+    nsCOMPtr<nsIDNSAddrRecord> addrRec = do_QueryInterface(record);
+    if (NS_FAILED(rv) || !addrRec) {
+      continue;
+    }
+
+    foundRecord = true;
+    TimeStamp lastUpdate;
+    (void)addrRec->GetLastUpdate(&lastUpdate);
+    if (lastUpdate > mCreationTime) {
+      
+      return false;
+    }
   }
 
-  nsCOMPtr<nsIDNSAddrRecord> addrRec = do_QueryInterface(record);
-  if (!addrRec) {
-    return false;
-  }
-
-  TimeStamp lastUpdate;
-  (void)addrRec->GetLastUpdate(&lastUpdate);
-
-  if (lastUpdate > mCreationTime) {
-    return false;
-  }
-
-  return true;
+  return foundRecord;
 }
 
 bool CORSCacheEntry::CheckRequest(const nsCString& aMethod,

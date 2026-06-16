@@ -482,7 +482,10 @@ function dohHandler(req, res) {
       responseIP = "none";
       if (packet.questions[0].type == "HTTPS") {
         let priority = 1;
-        if (packet.questions[0].name === "foo.notexisted.com") {
+        
+        
+        
+        if (packet.questions[0].name.endsWith("foo.notexisted.com")) {
           priority = 0;
         }
         answers.push({

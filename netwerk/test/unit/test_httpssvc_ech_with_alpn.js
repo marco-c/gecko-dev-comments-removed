@@ -26,6 +26,10 @@ add_setup(async function setup() {
   Services.prefs.setBoolPref("network.dns.http3_echconfig.enabled", false);
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
+  
+  
+  
+  Services.prefs.setBoolPref("network.dns.disableIPv6", true);
 
   
   Services.env.set("MOZ_TLS_ECH_ALPN_FLAG", 1);
@@ -48,6 +52,7 @@ registerCleanupFunction(async () => {
     "network.dns.echconfig.fallback_to_origin_when_all_failed"
   );
   Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
+  Services.prefs.clearUserPref("network.dns.disableIPv6");
   Services.prefs.clearUserPref("network.dns.port_prefixed_qname_https_rr");
   Services.env.set("MOZ_TLS_ECH_ALPN_FLAG", "");
   if (trrServer) {
