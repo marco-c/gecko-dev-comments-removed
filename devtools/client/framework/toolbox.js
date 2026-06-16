@@ -226,6 +226,9 @@ loader.lazyGetter(this, "ProfilerBackground", () => {
   );
 });
 
+const DEVTOOLS_STYLESHEETS_IN_DEBUGGER =
+  "devtools.debugger.features.stylesheets-in-debugger";
+
 const BOOLEAN_CONFIGURATION_PREFS = {
   "devtools.cache.disabled": {
     name: "cacheDisabled",
@@ -4658,7 +4661,7 @@ class Toolbox extends EventEmitter {
 
 
 
-  async viewGeneratedSourceInStyleEditor(url) {
+  async viewStyleGeneratedSource(url) {
     if (typeof url !== "string") {
       console.warn("Failed to open generated source, no url given");
       return false;
@@ -4667,7 +4670,9 @@ class Toolbox extends EventEmitter {
     
     
     
-    return viewSource.viewSourceInStyleEditor(this, url, 1);
+    
+    
+    return this.viewStyleSourceByURL(url, 1);
   }
 
   
@@ -4676,7 +4681,8 @@ class Toolbox extends EventEmitter {
 
 
 
-  async viewSourceInStyleEditorByURL(url, line, column) {
+
+  async viewStyleSourceByURL(url, line, column) {
     if (typeof url !== "string") {
       console.warn("Failed to open source, no url given");
       return false;
@@ -4692,6 +4698,11 @@ class Toolbox extends EventEmitter {
       column = null;
     }
 
+    
+    if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      return viewSource.viewSourceInDebugger(this, url, line, column, null);
+    }
+
     return viewSource.viewSourceInStyleEditor(this, url, line, column);
   }
 
@@ -4700,7 +4711,7 @@ class Toolbox extends EventEmitter {
 
 
 
-  async viewSourceInStyleEditorByResource(stylesheetResource, line, column) {
+  async viewStyleSourceByResource(stylesheetResource, line, column) {
     if (!stylesheetResource || typeof stylesheetResource !== "object") {
       console.warn("Failed to open source, no stylesheet given");
       return false;
@@ -4714,6 +4725,17 @@ class Toolbox extends EventEmitter {
       
       line = 1;
       column = null;
+    }
+
+    
+    if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      return viewSource.viewSourceInDebugger(
+        this,
+        stylesheetResource.href,
+        line,
+        column,
+        stylesheetResource.resourceId
+      );
     }
 
     return viewSource.viewSourceInStyleEditor(
