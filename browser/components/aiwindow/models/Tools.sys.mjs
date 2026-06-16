@@ -337,6 +337,8 @@ export async function getOpenTabs(conversation) {
   // No security check needed. The security checks prevent data exfiltration,
   // which requires external communication. This tool makes no external requests.
 
+  const startTime = ChromeUtils.now();
+
   /** @type {Array<TabInfo>} */
   const tabs = [];
 
@@ -372,6 +374,12 @@ export async function getOpenTabs(conversation) {
   lazy.console.log("[Tool] getOpenTabs", recentTabs);
 
   conversation.addSeenUrls(recentTabs.map(({ url }) => url));
+
+  ChromeUtils.addProfilerMarker(
+    "SmartWindow",
+    { startTime },
+    `Tool:get_open_tabs(${recentTabs.length})`
+  );
 
   return recentTabs;
 }
@@ -582,6 +590,15 @@ export class RunSearch {
       RunSearch.#showSearchingIndicator(win, false, null);
     }
 
+    // Mark the SERP entry as having user interaction so Back doesn't skip it
+    // (browser.navigation.requireUserInteraction). The user asked for this
+    // navigation via the assistant even if they never gesture on the SERP.
+    const sh = originalBrowser.browsingContext?.sessionHistory;
+    const entry = sh && sh.index >= 0 ? sh.getEntryAtIndex(sh.index) : null;
+    if (entry) {
+      entry.hasUserInteraction = true;
+    }
+
     conversation.securityProperties.setPrivateData();
     conversation.securityProperties.setUntrustedInput();
 
@@ -737,7 +754,7 @@ export class GetPageContent {
 
     // Sanitize the inputs from the language model:
     if (!Array.isArray(url_list)) {
-      throw new Error("The url list must be an array of stirngs");
+      return "Error: the url_list argument must be an array of strings.";
     }
 
     // Collect these one time before the loop below since it must iterate through
@@ -749,11 +766,17 @@ export class GetPageContent {
         if (!isAllowedURL(url)) {
           return "This URL is not allowed: " + url;
         }
+        const startTime = ChromeUtils.now();
         try {
           const text = await GetPageContent.#getPageContentsForSingleURL(
             url,
             mentionedUrls,
             conversation
+          );
+          ChromeUtils.addProfilerMarker(
+            "SmartWindow",
+            { startTime },
+            `Tool:get_page_content(${url})`
           );
           return text;
         } catch (error) {
@@ -763,6 +786,7 @@ export class GetPageContent {
       })
     );
     lazy.console.log("[Tool] getPageContent", results);
+
     return results;
   }
 
