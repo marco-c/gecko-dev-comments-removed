@@ -141,7 +141,7 @@ SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
       mPartitionPrincipal(aLoadData.mLoader->PartitionedPrincipal()),
       mEncodingGuess(aLoadData.mGuessedEncoding),
       mCORSMode(aLoadData.mSheet->GetCORSMode()),
-      mParsingMode(aLoadData.mSheet->ParsingMode()),
+      mOrigin(aLoadData.mSheet->GetOrigin()),
       mCompatMode(aLoadData.mCompatMode),
       mIsLinkRelPreloadOrEarlyHint(aLoadData.IsLinkRelPreloadOrEarlyHint()) {
   MOZ_COUNT_CTOR(SheetLoadDataHashKey);
@@ -161,8 +161,8 @@ bool SheetLoadDataHashKey::KeyEquals(const SheetLoadDataHashKey& aKey) const {
 
   LOG_URI("KeyEquals(%s)\n", mURI);
 
-  if (mParsingMode != aKey.mParsingMode) {
-    LOG((" > Parsing mode mismatch\n"));
+  if (mOrigin != aKey.mOrigin) {
+    LOG((" > Cascade origin mismatch\n"));
     return false;
   }
 
@@ -902,8 +902,8 @@ bool Loader::MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData) {
 std::tuple<RefPtr<StyleSheet>, Loader::SheetState,
            RefPtr<SubResourceNetworkMetadataHolder>>
 Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
-                    nsIPrincipal* aTriggeringPrincipal,
-                    css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
+                    nsIPrincipal* aTriggeringPrincipal, StyleOrigin aOrigin,
+                    CORSMode aCORSMode,
                     const Encoding* aPreloadOrParentDataEncoding,
                     const nsAString& aIntegrity, bool aSyncLoad,
                     StylePreloadKind aPreloadKind) {
@@ -926,7 +926,7 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
     SheetLoadDataHashKey key(aURI, LoaderPrincipal(), PartitionedPrincipal(),
                              GetFallbackEncoding(*this, aLinkingContent,
                                                  aPreloadOrParentDataEncoding),
-                             aCORSMode, aParsingMode, CompatMode(aPreloadKind),
+                             aCORSMode, aOrigin, CompatMode(aPreloadKind),
                              sriMetadata, aPreloadKind);
     auto cacheResult = mSheets->Lookup(*this, key, aSyncLoad);
     if (cacheResult.mState != CachedSubResourceState::Miss) {
@@ -948,7 +948,7 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
       return {std::move(sheet), sheetState, std::move(networkMetadata)};
     }
   }
-  auto sheet = MakeRefPtr<StyleSheet>(aParsingMode, aCORSMode, sriMetadata);
+  auto sheet = MakeRefPtr<StyleSheet>(aOrigin, aCORSMode, sriMetadata);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateForExternalCSSResources(sheet, aURI);
   
@@ -1061,7 +1061,6 @@ void Loader::InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet) {
 }
 
 nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
-                                      CORSMode aCorsMode,
                                       UsePreload aUsePreload,
                                       UseLoadGroup aUseLoadGroup,
                                       nsIChannel** aOutChannel) {
@@ -1085,7 +1084,8 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
     triggeringClassificationFlags = mDocument->GetScriptTrackingFlags();
   }
 
-  nsSecurityFlags securityFlags = ComputeSecurityFlags(aCorsMode);
+  nsSecurityFlags securityFlags =
+      ComputeSecurityFlags(aLoadData.mSheet->GetCORSMode());
 
   nsContentPolicyType contentPolicyType =
       ComputeContentPolicyType(aLoadData.mPreloadKind);
@@ -1146,12 +1146,9 @@ nsresult Loader::LoadSheetSyncInternal(SheetLoadData& aLoadData,
   
   auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
 
-  
-  
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv =
-      NewStyleSheetChannel(aLoadData, CORSMode::CORS_NONE, UsePreload::Yes,
-                           UseLoadGroup::No, getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(aLoadData, UsePreload::Yes,
+                                     UseLoadGroup::No, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     LOG_ERROR(("  Failed to create channel"));
     streamLoader->ChannelOpenFailed(rv);
@@ -1367,9 +1364,8 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
 #endif
 
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NewStyleSheetChannel(aLoadData, aLoadData.mSheet->GetCORSMode(),
-                                     UsePreload::No, UseLoadGroup::Yes,
-                                     getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(
+      aLoadData, UsePreload::No, UseLoadGroup::Yes, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     LOG_ERROR(("  Failed to create channel"));
     SheetComplete(aLoadData, rv);
@@ -1591,7 +1587,8 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
       observer->StyleSheetLoaded(aData.mSheet, aData.ShouldDefer(), aStatus);
     }
 
-    for (nsCOMPtr<nsICSSLoaderObserver> obs : mObservers.ForwardRange()) {
+    for (const auto& obsRef : mObservers.ForwardRange()) {
+      nsCOMPtr<nsICSSLoaderObserver> obs{obsRef};
       LOG(("  Notifying global observer %p for data %p.  deferred: %d",
            obs.get(), &aData, aData.ShouldDefer()));
       obs->StyleSheetLoaded(aData.mSheet, aData.ShouldDefer(), aStatus);
@@ -1803,7 +1800,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
       LookupInlineSheetInCache(aBuffer, sheetPrincipal, baseURI);
   const bool isSheetFromCache = !!sheet;
   if (!isSheetFromCache) {
-    sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
+    sheet = MakeRefPtr<StyleSheet>(StyleOrigin::Author, aInfo.mCORSMode,
                                    SRIMetadata{});
     
     
@@ -1948,8 +1945,8 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
   
   
   auto isAlternate = IsAlternateSheet(aInfo.mTitle, aInfo.mHasAlternateRel);
-  auto [sheet, state, networkMetadata] = CreateSheet(
-      aInfo, eAuthorSheetFeatures, syncLoad, StylePreloadKind::None);
+  auto [sheet, state, networkMetadata] =
+      CreateSheet(aInfo, StyleOrigin::Author, syncLoad, StylePreloadKind::None);
 
   LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
@@ -2095,7 +2092,7 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
   } else {
     
     std::tie(sheet, state, networkMetadata) = CreateSheet(
-        aURL, nullptr, principal, aParentSheet.ParsingMode(), CORS_NONE,
+        aURL, nullptr, principal, aParentSheet.GetOrigin(), CORS_NONE,
         aParentData ? aParentData->mEncoding : nullptr,
         u""_ns,  
         aParentData && aParentData->mSyncLoad, StylePreloadKind::None);
@@ -2144,23 +2141,22 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
 }
 
 Result<RefPtr<StyleSheet>, nsresult> Loader::LoadSheetSync(
-    nsIURI* aURL, SheetParsingMode aParsingMode,
-    UseSystemPrincipal aUseSystemPrincipal) {
+    nsIURI* aURL, StyleOrigin aOrigin, UseSystemPrincipal aUseSystemPrincipal) {
   LOG(("css::Loader::LoadSheetSync"));
   nsCOMPtr<nsIReferrerInfo> referrerInfo = MakeAndAddRef<ReferrerInfo>(nullptr);
   return InternalLoadNonDocumentSheet(
-      aURL, StylePreloadKind::None, aParsingMode, aUseSystemPrincipal, nullptr,
+      aURL, StylePreloadKind::None, aOrigin, aUseSystemPrincipal, nullptr,
       referrerInfo, nullptr, CORS_NONE, u""_ns, u""_ns, 0, FetchPriority::Auto);
 }
 
 Result<RefPtr<StyleSheet>, nsresult> Loader::LoadSheet(
-    nsIURI* aURI, SheetParsingMode aParsingMode,
-    UseSystemPrincipal aUseSystemPrincipal, nsICSSLoaderObserver* aObserver) {
+    nsIURI* aURI, StyleOrigin aOrigin, UseSystemPrincipal aUseSystemPrincipal,
+    nsICSSLoaderObserver* aObserver) {
   nsCOMPtr<nsIReferrerInfo> referrerInfo = MakeAndAddRef<ReferrerInfo>(nullptr);
-  return InternalLoadNonDocumentSheet(
-      aURI, StylePreloadKind::None, aParsingMode, aUseSystemPrincipal, nullptr,
-      referrerInfo, aObserver, CORS_NONE, u""_ns, u""_ns, 0,
-      FetchPriority::Auto);
+  return InternalLoadNonDocumentSheet(aURI, StylePreloadKind::None, aOrigin,
+                                      aUseSystemPrincipal, nullptr,
+                                      referrerInfo, aObserver, CORS_NONE,
+                                      u""_ns, u""_ns, 0, FetchPriority::Auto);
 }
 
 Result<RefPtr<StyleSheet>, nsresult> Loader::LoadSheet(
@@ -2171,13 +2167,13 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::LoadSheet(
     FetchPriority aFetchPriority) {
   LOG(("css::Loader::LoadSheet(aURL, aObserver) api call"));
   return InternalLoadNonDocumentSheet(
-      aURL, aPreloadKind, eAuthorSheetFeatures, UseSystemPrincipal::No,
+      aURL, aPreloadKind, StyleOrigin::Author, UseSystemPrincipal::No,
       aPreloadEncoding, aReferrerInfo, aObserver, aCORSMode, aNonce, aIntegrity,
       aEarlyHintPreloaderId, aFetchPriority);
 }
 
 Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
-    nsIURI* aURL, StylePreloadKind aPreloadKind, SheetParsingMode aParsingMode,
+    nsIURI* aURL, StylePreloadKind aPreloadKind, StyleOrigin aOrigin,
     UseSystemPrincipal aUseSystemPrincipal, const Encoding* aPreloadEncoding,
     nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
     CORSMode aCORSMode, const nsAString& aNonce, const nsAString& aIntegrity,
@@ -2205,7 +2201,7 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
 
   bool syncLoad = !aObserver;
   auto [sheet, state, networkMetadata] =
-      CreateSheet(aURL, nullptr, triggeringPrincipal, aParsingMode, aCORSMode,
+      CreateSheet(aURL, nullptr, triggeringPrincipal, aOrigin, aCORSMode,
                   aPreloadEncoding, aIntegrity, syncLoad, aPreloadKind);
 
   PrepareSheet(*sheet, u""_ns, u""_ns, nullptr, IsAlternate::No,
@@ -2264,9 +2260,8 @@ void Loader::NotifyObserversForCachedSheet(SheetLoadData& aLoadData) {
   }
 
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NewStyleSheetChannel(aLoadData, aLoadData.mSheet->GetCORSMode(),
-                                     UsePreload::No, UseLoadGroup::No,
-                                     getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(aLoadData, UsePreload::No,
+                                     UseLoadGroup::No, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     return;
   }

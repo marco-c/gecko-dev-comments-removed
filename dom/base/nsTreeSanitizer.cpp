@@ -1124,9 +1124,8 @@ static void SanitizeStyleSheet(const nsAString& aOriginal,
       Servo_StyleSheet_FromUTF8Bytes(
            nullptr,
            nullptr,
-           nullptr, &style,
-          css::SheetParsingMode::eAuthorSheetFeatures, extraData.get(),
-          aDocument->GetCompatibilityMode(),
+           nullptr, &style, StyleOrigin::Author,
+          extraData.get(), aDocument->GetCompatibilityMode(),
            nullptr, StyleAllowImportRules::Yes,
           aSanitizationKind, &aSanitized)
           .Consume();

@@ -56,7 +56,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(aKey->mPartitionPrincipal),
         mEncodingGuess(aKey->mEncodingGuess),
         mCORSMode(aKey->mCORSMode),
-        mParsingMode(aKey->mParsingMode),
+        mOrigin(aKey->mOrigin),
         mCompatMode(aKey->mCompatMode),
         mSRIMetadata(aKey->mSRIMetadata),
         mIsLinkRelPreloadOrEarlyHint(aKey->mIsLinkRelPreloadOrEarlyHint) {
@@ -66,7 +66,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   SheetLoadDataHashKey(nsIURI* aURI, nsIPrincipal* aLoaderPrincipal,
                        nsIPrincipal* aPartitionPrincipal,
                        NotNull<const Encoding*> aEncodingGuess,
-                       CORSMode aCORSMode, css::SheetParsingMode aParsingMode,
+                       CORSMode aCORSMode, StyleOrigin aOrigin,
                        nsCompatibility aCompatMode,
                        const dom::SRIMetadata& aSRIMetadata,
                        css::StylePreloadKind aPreloadKind)
@@ -75,7 +75,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(aPartitionPrincipal),
         mEncodingGuess(aEncodingGuess),
         mCORSMode(aCORSMode),
-        mParsingMode(aParsingMode),
+        mOrigin(aOrigin),
         mCompatMode(aCompatMode),
         mSRIMetadata(aSRIMetadata),
         mIsLinkRelPreloadOrEarlyHint(
@@ -91,7 +91,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(std::move(toMove.mPartitionPrincipal)),
         mEncodingGuess(std::move(toMove.mEncodingGuess)),
         mCORSMode(std::move(toMove.mCORSMode)),
-        mParsingMode(std::move(toMove.mParsingMode)),
+        mOrigin(std::move(toMove.mOrigin)),
         mCompatMode(std::move(toMove.mCompatMode)),
         mSRIMetadata(std::move(toMove.mSRIMetadata)),
         mIsLinkRelPreloadOrEarlyHint(
@@ -125,7 +125,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   nsIPrincipal* LoaderPrincipal() const { return mLoaderPrincipal; }
   nsIPrincipal* PartitionPrincipal() const { return mPartitionPrincipal; }
 
-  css::SheetParsingMode ParsingMode() const { return mParsingMode; }
+  StyleOrigin Origin() const { return mOrigin; }
 
   enum { ALLOW_MEMMOVE = true };
 
@@ -138,7 +138,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   
   const NotNull<const Encoding*> mEncodingGuess;
   const CORSMode mCORSMode;
-  const css::SheetParsingMode mParsingMode;
+  const StyleOrigin mOrigin;
   const nsCompatibility mCompatMode;
   dom::SRIMetadata mSRIMetadata;
   const bool mIsLinkRelPreloadOrEarlyHint;
@@ -329,9 +329,8 @@ class Loader final {
 
 
 
-  Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(
-      nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
-      UseSystemPrincipal = UseSystemPrincipal::No);
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(nsIURI*, StyleOrigin,
+                                                     UseSystemPrincipal);
 
   
 
@@ -367,7 +366,7 @@ class Loader final {
 
 
 
-  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, SheetParsingMode,
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, StyleOrigin,
                                                  UseSystemPrincipal,
                                                  nsICSSLoaderObserver*);
 
@@ -470,7 +469,7 @@ class Loader final {
   enum class UsePreload : bool { No, Yes };
   enum class UseLoadGroup : bool { No, Yes };
 
-  nsresult NewStyleSheetChannel(SheetLoadData& aLoadData, CORSMode aCorsMode,
+  nsresult NewStyleSheetChannel(SheetLoadData& aLoadData,
                                 UsePreload aUsePreload,
                                 UseLoadGroup aUseLoadGroup,
                                 nsIChannel** aOutChannel);
@@ -527,13 +526,13 @@ class Loader final {
  private:
   std::tuple<RefPtr<StyleSheet>, SheetState,
              RefPtr<SubResourceNetworkMetadataHolder>>
-  CreateSheet(const SheetInfo& aInfo, css::SheetParsingMode aParsingMode,
-              bool aSyncLoad, css::StylePreloadKind aPreloadKind) {
+  CreateSheet(const SheetInfo& aInfo, StyleOrigin aOrigin, bool aSyncLoad,
+              css::StylePreloadKind aPreloadKind) {
     nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
                                             ? aInfo.mTriggeringPrincipal.get()
                                             : LoaderPrincipal();
-    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal,
-                       aParsingMode, aInfo.mCORSMode,
+    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal, aOrigin,
+                       aInfo.mCORSMode,
                         nullptr,
                        aInfo.mIntegrity, aSyncLoad, aPreloadKind);
   }
@@ -544,8 +543,8 @@ class Loader final {
   std::tuple<RefPtr<StyleSheet>, SheetState,
              RefPtr<SubResourceNetworkMetadataHolder>>
   CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
-              nsIPrincipal* aTriggeringPrincipal, css::SheetParsingMode,
-              CORSMode, const Encoding* aPreloadOrParentDataEncoding,
+              nsIPrincipal* aTriggeringPrincipal, StyleOrigin, CORSMode,
+              const Encoding* aPreloadOrParentDataEncoding,
               const nsAString& aIntegrity, bool aSyncLoad, StylePreloadKind);
 
   
@@ -560,10 +559,10 @@ class Loader final {
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
   Result<RefPtr<StyleSheet>, nsresult> InternalLoadNonDocumentSheet(
-      nsIURI* aURL, StylePreloadKind, SheetParsingMode aParsingMode,
-      UseSystemPrincipal, const Encoding* aPreloadEncoding,
-      nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
-      CORSMode aCORSMode, const nsAString& aNonce, const nsAString& aIntegrity,
+      nsIURI* aURL, StylePreloadKind, StyleOrigin aOrigin, UseSystemPrincipal,
+      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
+      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode,
+      const nsAString& aNonce, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
   RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*,
