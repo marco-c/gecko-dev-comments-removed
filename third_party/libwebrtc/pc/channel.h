@@ -66,9 +66,6 @@ namespace webrtc {
 
 
 
-class VideoChannel;
-class VoiceChannel;
-
 class BaseChannel : public ChannelInterface,
                     public MediaChannelNetworkInterface,
                     public RtpPacketSinkInterface {
@@ -352,43 +349,6 @@ class BaseChannel : public ChannelInterface,
   UniqueRandomIdGenerator* const ssrc_generator_;
 };
 
-
-
-class VoiceChannel : public BaseChannel {
- public:
-  VoiceChannel(
-      TaskQueueBase* worker_thread,
-      Thread* network_thread,
-      TaskQueueBase* signaling_thread,
-      std::unique_ptr<VoiceMediaSendChannelInterface> send_channel_impl,
-      std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel_impl,
-      absl::string_view mid,
-      bool srtp_required,
-      CryptoOptions crypto_options,
-      UniqueRandomIdGenerator* ssrc_generator,
-      ChannelCallbacks callbacks = {});
-
-  ~VoiceChannel() override = default;
-};
-
-
-class VideoChannel : public BaseChannel {
- public:
-  VideoChannel(
-      TaskQueueBase* worker_thread,
-      Thread* network_thread,
-      TaskQueueBase* signaling_thread,
-      std::unique_ptr<VideoMediaSendChannelInterface> media_send_channel,
-      std::unique_ptr<VideoMediaReceiveChannelInterface> media_receive_channel,
-      absl::string_view mid,
-      bool srtp_required,
-      CryptoOptions crypto_options,
-      UniqueRandomIdGenerator* ssrc_generator,
-      ChannelCallbacks callbacks = {});
-  ~VideoChannel() override = default;
-};
-
 }  
-
 
 #endif  
