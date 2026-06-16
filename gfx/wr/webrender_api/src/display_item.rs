@@ -31,10 +31,6 @@ use std::hash::{Hash, Hasher};
 
 pub type ItemTag = (u64, u16);
 
-
-
-pub type ItemKey = u16;
-
 #[repr(C)]
 #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash, Deserialize, MallocSizeOf, Serialize, PeekPoke)]
 pub struct PrimitiveFlags(u8);
@@ -130,26 +126,6 @@ impl SpaceAndClipInfo {
     }
 }
 
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke, Default, Eq, Hash)]
-pub struct SpatialTreeItemKey {
-    key0: u64,
-    key1: u64,
-}
-
-impl SpatialTreeItemKey {
-    pub fn new(key0: u64, key1: u64) -> Self {
-        SpatialTreeItemKey {
-            key0,
-            key1,
-        }
-    }
-}
-
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum SpatialTreeItem {
@@ -200,9 +176,6 @@ pub enum DisplayItem {
     PopReferenceFrame,
     PopStackingContext,
     PopAllShadows,
-
-    ReuseItems(ItemKey),
-    RetainedItems(ItemKey),
 
     
     DebugMarker(u32),
@@ -324,9 +297,6 @@ pub struct StickyFrameDescriptor {
     pub previously_applied_offset: LayoutVector2D,
 
     
-    pub key: SpatialTreeItemKey,
-
-    
     pub transform: Option<PropertyBinding<LayoutTransform>>,
 }
 
@@ -350,8 +320,6 @@ pub struct ScrollFrameDescriptor {
     pub scroll_offset_generation: APZScrollGeneration,
     
     pub has_scroll_linked_effect: HasScrollLinkedEffect,
-    
-    pub key: SpatialTreeItemKey,
 }
 
 
@@ -865,8 +833,6 @@ pub struct ReferenceFrame {
     
     pub transform: ReferenceTransformBinding,
     pub id: SpatialId,
-    
-    pub key: SpatialTreeItemKey,
 }
 
 
@@ -1729,6 +1695,73 @@ pub enum FilterOp {
         base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32, seed: u32},
 }
 
+impl FilterOp {
+    
+    
+    
+    
+    
+    
+    pub fn svgfe_node_mut(&mut self) -> Option<&mut FilterOpGraphNode> {
+        match self {
+            FilterOp::SVGFEBlendColor { node, .. } |
+            FilterOp::SVGFEBlendColorBurn { node, .. } |
+            FilterOp::SVGFEBlendColorDodge { node, .. } |
+            FilterOp::SVGFEBlendDarken { node, .. } |
+            FilterOp::SVGFEBlendDifference { node, .. } |
+            FilterOp::SVGFEBlendExclusion { node, .. } |
+            FilterOp::SVGFEBlendHardLight { node, .. } |
+            FilterOp::SVGFEBlendHue { node, .. } |
+            FilterOp::SVGFEBlendLighten { node, .. } |
+            FilterOp::SVGFEBlendLuminosity { node, .. } |
+            FilterOp::SVGFEBlendMultiply { node, .. } |
+            FilterOp::SVGFEBlendNormal { node, .. } |
+            FilterOp::SVGFEBlendOverlay { node, .. } |
+            FilterOp::SVGFEBlendSaturation { node, .. } |
+            FilterOp::SVGFEBlendScreen { node, .. } |
+            FilterOp::SVGFEBlendSoftLight { node, .. } |
+            FilterOp::SVGFEColorMatrix { node, .. } |
+            FilterOp::SVGFEComponentTransfer { node, .. } |
+            FilterOp::SVGFECompositeArithmetic { node, .. } |
+            FilterOp::SVGFECompositeATop { node, .. } |
+            FilterOp::SVGFECompositeIn { node, .. } |
+            FilterOp::SVGFECompositeLighter { node, .. } |
+            FilterOp::SVGFECompositeOut { node, .. } |
+            FilterOp::SVGFECompositeOver { node, .. } |
+            FilterOp::SVGFECompositeXOR { node, .. } |
+            FilterOp::SVGFEConvolveMatrixEdgeModeDuplicate { node, .. } |
+            FilterOp::SVGFEConvolveMatrixEdgeModeNone { node, .. } |
+            FilterOp::SVGFEConvolveMatrixEdgeModeWrap { node, .. } |
+            FilterOp::SVGFEDiffuseLightingDistant { node, .. } |
+            FilterOp::SVGFEDiffuseLightingPoint { node, .. } |
+            FilterOp::SVGFEDiffuseLightingSpot { node, .. } |
+            FilterOp::SVGFEDisplacementMap { node, .. } |
+            FilterOp::SVGFEDropShadow { node, .. } |
+            FilterOp::SVGFEFlood { node, .. } |
+            FilterOp::SVGFEGaussianBlur { node, .. } |
+            FilterOp::SVGFEIdentity { node, .. } |
+            FilterOp::SVGFEImage { node, .. } |
+            FilterOp::SVGFEMorphologyDilate { node, .. } |
+            FilterOp::SVGFEMorphologyErode { node, .. } |
+            FilterOp::SVGFEOffset { node, .. } |
+            FilterOp::SVGFEOpacity { node, .. } |
+            FilterOp::SVGFESourceAlpha { node, .. } |
+            FilterOp::SVGFESourceGraphic { node, .. } |
+            FilterOp::SVGFESpecularLightingDistant { node, .. } |
+            FilterOp::SVGFESpecularLightingPoint { node, .. } |
+            FilterOp::SVGFESpecularLightingSpot { node, .. } |
+            FilterOp::SVGFETile { node, .. } |
+            FilterOp::SVGFEToAlpha { node, .. } |
+            FilterOp::SVGFETurbulenceWithFractalNoiseWithNoStitching { node, .. } |
+            FilterOp::SVGFETurbulenceWithFractalNoiseWithStitching { node, .. } |
+            FilterOp::SVGFETurbulenceWithTurbulenceNoiseWithNoStitching { node, .. } |
+            FilterOp::SVGFETurbulenceWithTurbulenceNoiseWithStitching { node, .. }
+ => Some(node),
+            _ => None,
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize, PeekPoke)]
 pub enum ComponentTransferFuncType {
@@ -2280,8 +2313,6 @@ impl DisplayItem {
             DisplayItem::RadialGradient(..) => "radial_gradient",
             DisplayItem::Rectangle(..) => "rectangle",
             DisplayItem::SetGradientStops => "set_gradient_stops",
-            DisplayItem::ReuseItems(..) => "reuse_item",
-            DisplayItem::RetainedItems(..) => "retained_items",
             DisplayItem::Text(..) => "text",
             DisplayItem::YuvImage(..) => "yuv_image",
             DisplayItem::BackdropFilter(..) => "backdrop_filter",

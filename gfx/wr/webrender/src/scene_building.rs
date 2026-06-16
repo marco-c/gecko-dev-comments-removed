@@ -55,7 +55,7 @@ use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
 use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
 use crate::gpu_types::BlurEdgeMode;
 use crate::segment::EdgeMask;
-use crate::spatial_tree::{SceneSpatialTree, SpatialNodeContainer, SpatialNodeIndex, get_external_scroll_offset};
+use crate::spatial_tree::{SceneSpatialTree, SpatialNodeContainer, SpatialNodeIndex};
 use crate::frame_builder::FrameBuilderConfig;
 use glyph_rasterizer::{FontInstance, SharedFontResources};
 use crate::hit_test::HitTestingScene;
@@ -98,38 +98,6 @@ use std::sync::Arc;
 use crate::util::{VecHelper, MaxRect};
 use crate::filterdata::{SFilterDataComponent, SFilterData, SFilterDataKey};
 use log::Level;
-
-
-
-pub struct ScrollOffsetMapper {
-    pub current_spatial_node: SpatialNodeIndex,
-    pub current_offset: LayoutVector2D,
-}
-
-impl ScrollOffsetMapper {
-    fn new() -> Self {
-        ScrollOffsetMapper {
-            current_spatial_node: SpatialNodeIndex::INVALID,
-            current_offset: LayoutVector2D::zero(),
-        }
-    }
-
-    
-    
-    
-    fn external_scroll_offset(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-        spatial_tree: &SceneSpatialTree,
-    ) -> LayoutVector2D {
-        if spatial_node_index != self.current_spatial_node {
-            self.current_spatial_node = spatial_node_index;
-            self.current_offset = get_external_scroll_offset(spatial_tree, spatial_node_index);
-        }
-
-        self.current_offset
-    }
-}
 
 
 
@@ -487,9 +455,6 @@ pub struct SceneBuilder<'a> {
     pub interners: &'a mut Interners,
 
     
-    external_scroll_mapper: ScrollOffsetMapper,
-
-    
     
     iframe_size: Vec<LayoutSize>,
 
@@ -580,7 +545,6 @@ impl<'a> SceneBuilder<'a> {
             prim_store: mem::take(&mut recycler.prim_store),
             clip_store: mem::take(&mut recycler.clip_store),
             interners,
-            external_scroll_mapper: ScrollOffsetMapper::new(),
             iframe_size: mem::take(&mut recycler.iframe_size),
             root_iframe_clip: None,
             quality_settings: view.quality_settings,
@@ -869,19 +833,6 @@ impl<'a> SceneBuilder<'a> {
         pictures[pic_index.0].prim_list = prim_list;
     }
 
-    
-    fn current_external_scroll_offset(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-    ) -> LayoutVector2D {
-        
-        self.external_scroll_mapper
-            .external_scroll_offset(
-                spatial_node_index,
-                self.spatial_tree,
-            )
-    }
-
     fn build_spatial_tree_for_display_list(
         &mut self,
         dl: &BuiltDisplayList,
@@ -1104,10 +1055,8 @@ impl<'a> SceneBuilder<'a> {
         info: &StickyFrameDescriptor,
         parent_node_index: SpatialNodeIndex,
     ) {
-        let external_scroll_offset = self.current_external_scroll_offset(parent_node_index);
-
         let sticky_frame_info = StickyFrameInfo::new(
-            info.bounds.translate(external_scroll_offset),
+            info.bounds,
             info.margins,
             info.vertical_offset_bounds,
             info.horizontal_offset_bounds,
@@ -1194,8 +1143,6 @@ impl<'a> SceneBuilder<'a> {
             info.origin
         };
 
-        let external_scroll_offset = self.current_external_scroll_offset(parent_space);
-
         self.push_reference_frame(
             info.reference_frame.id,
             parent_space,
@@ -1203,7 +1150,7 @@ impl<'a> SceneBuilder<'a> {
             info.reference_frame.transform_style,
             transform,
             info.reference_frame.kind,
-            (origin + external_scroll_offset).to_vector(),
+            origin.to_vector(),
             false,
         );
     }
@@ -1218,14 +1165,13 @@ impl<'a> SceneBuilder<'a> {
         
         
         let content_size = info.content_rect.size();
-        let external_scroll_offset = self.current_external_scroll_offset(parent_node_index);
 
         self.add_scroll_frame(
             info.scroll_frame_id,
             parent_node_index,
             info.external_id,
             pipeline_id,
-            &info.frame_rect.translate(external_scroll_offset),
+            &info.frame_rect,
             &content_size,
             ScrollFrameKind::Explicit,
             info.external_scroll_offset,
@@ -1261,10 +1207,7 @@ impl<'a> SceneBuilder<'a> {
 
         self.id_to_index_mapper_stack.push(NodeIdToIndexMapper::default());
 
-        let bounds = self.normalize_rect_scroll_offset(
-            &info.bounds,
-            spatial_node_index,
-        );
+        let bounds = info.bounds;
 
         
         
@@ -1355,14 +1298,11 @@ impl<'a> SceneBuilder<'a> {
         let spatial_node_index = self.get_space(common.spatial_id);
 
         
-        let mut clip_rect = common.clip_rect;
-        let mut prim_rect = bounds.unwrap_or(clip_rect);
         
         
         
-        
-        prim_rect = self.normalize_rect_scroll_offset(&prim_rect, spatial_node_index);
-        clip_rect = self.normalize_rect_scroll_offset(&clip_rect, spatial_node_index);
+        let clip_rect = common.clip_rect;
+        let prim_rect = bounds.unwrap_or(clip_rect);
         let unsnapped_rect = prim_rect;
 
 
@@ -1394,19 +1334,6 @@ impl<'a> SceneBuilder<'a> {
             common,
             Some(bounds),
         )
-    }
-
-    
-    
-    
-    fn normalize_rect_scroll_offset(
-        &mut self,
-        rect: &LayoutRect,
-        spatial_node_index: SpatialNodeIndex,
-    ) -> LayoutRect {
-        let current_offset = self.current_external_scroll_offset(spatial_node_index);
-
-        rect.translate(current_offset)
     }
 
     
@@ -1550,10 +1477,7 @@ impl<'a> SceneBuilder<'a> {
 
                 let spatial_node_index = self.get_space(info.spatial_id);
 
-                let rect = self.normalize_rect_scroll_offset(
-                    &info.rect,
-                    spatial_node_index,
-                );
+                let rect = info.rect;
 
                 let layout = LayoutPrimitiveInfo {
                     rect,
@@ -2648,15 +2572,12 @@ impl<'a> SceneBuilder<'a> {
 
         let has_filters = stacking_context.composite_ops.has_valid_filters();
 
-        let spatial_node_context_offset =
-            self.current_external_scroll_offset(stacking_context.spatial_node_index);
         source = self.wrap_prim_with_filters(
             source,
             stacking_context.clip_node_id,
             stacking_context.composite_ops.filters,
             stacking_context.composite_ops.filter_datas,
             false,
-            spatial_node_context_offset,
         );
 
         
@@ -2825,10 +2746,7 @@ impl<'a> SceneBuilder<'a> {
     ) {
         let spatial_node_index = self.get_space(spatial_id);
 
-        let snapped_mask_rect = self.normalize_rect_scroll_offset(
-            &image_mask.rect,
-            spatial_node_index,
-        );
+        let mask_rect = image_mask.rect;
 
         let points: Vec<LayoutPoint> = points_range.iter().collect();
 
@@ -2861,7 +2779,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            snapped_mask_rect,
+            mask_rect,
         );
     }
 
@@ -2874,10 +2792,7 @@ impl<'a> SceneBuilder<'a> {
     ) {
         let spatial_node_index = self.get_space(spatial_id);
 
-        let snapped_clip_rect = self.normalize_rect_scroll_offset(
-            clip_rect,
-            spatial_node_index,
-        );
+        let clip_rect = *clip_rect;
 
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rectangle(ClipMode::Clip),
@@ -2895,7 +2810,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            snapped_clip_rect,
+            clip_rect,
         );
     }
 
@@ -2907,10 +2822,7 @@ impl<'a> SceneBuilder<'a> {
     ) {
         let spatial_node_index = self.get_space(spatial_id);
 
-        let snapped_region_rect = self.normalize_rect_scroll_offset(
-            &clip.rect,
-            spatial_node_index,
-        );
+        let region_rect = clip.rect;
 
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rounded_rect(
@@ -2932,7 +2844,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            snapped_region_rect,
+            region_rect,
         );
     }
 
@@ -3526,8 +3438,6 @@ impl<'a> SceneBuilder<'a> {
         glyph_range: ItemRange<GlyphInstance>,
         glyph_options: Option<GlyphOptions>,
     ) {
-        let offset = self.current_external_scroll_offset(spatial_node_index);
-
         let text_run = {
             let shared_key = self.fonts.instance_keys.map_key(font_instance_key);
             let font_instance = match self.fonts.instances.get_font_instance(shared_key) {
@@ -3573,16 +3483,13 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            
-            
-            
             let prim_origin = prim_info.rect.min.to_vector();
             let glyphs = glyph_range
                 .iter()
                 .map(|glyph| {
                     GlyphInstance {
                         index: glyph.index,
-                        point: glyph.point + offset - prim_origin,
+                        point: glyph.point - prim_origin,
                     }
                 })
                 .collect();
@@ -3770,7 +3677,6 @@ impl<'a> SceneBuilder<'a> {
             filters,
             filter_datas,
             true,
-            LayoutVector2D::zero(),
         );
 
         
@@ -3867,7 +3773,6 @@ impl<'a> SceneBuilder<'a> {
         mut filter_ops: Vec<Filter>,
         filter_datas: Vec<FilterData>,
         is_backdrop_filter: bool,
-        context_offset: LayoutVector2D,
     ) -> PictureChainBuilder {
         
         let mut current_filter_data_index = 0;
@@ -3934,8 +3839,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         
-                        let clip_region = parsenode.subregion
-                            .translate(context_offset);
+                        let clip_region = parsenode.subregion;
 
                         let mut newnode = FilterGraphNode {
                             kept_by_optimizer: false,
