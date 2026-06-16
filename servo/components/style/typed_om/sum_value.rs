@@ -326,7 +326,7 @@ impl SumValue {
 
     
     
-    pub fn resolve_to_unit(&self, unit: &str) -> Result<UnitValue, ()> {
+    pub fn to_unit(&self, unit: &str) -> Result<UnitValue, ()> {
         if self.0.len() != 1 {
             return Err(());
         }
