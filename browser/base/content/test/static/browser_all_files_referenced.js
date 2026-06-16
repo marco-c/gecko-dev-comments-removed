@@ -239,6 +239,8 @@ var allowlist = [
 
   
   
+  { file: "resource://app/modules/PermissionPromptTargeting.sys.mjs" },
+  
   {
     file: "chrome://browser/locale/taskbar.properties",
     platforms: ["linux", "macosx"],
