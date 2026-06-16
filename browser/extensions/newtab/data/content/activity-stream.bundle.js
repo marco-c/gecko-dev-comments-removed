@@ -16975,6 +16975,15 @@ function LivePagination({
 
 
 
+function safeStreamUrl(url) {
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol) ? url : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+
 
 const ENTITLEMENT_L10N_IDS = {
   free: "newtab-sports-widget-watch-stream-free",
@@ -17010,10 +17019,12 @@ function StreamRow({
   };
   return external_React_default().createElement("li", {
     className: "watch-live-modal-row"
-  }, external_React_default().createElement(SafeAnchor, {
+  }, external_React_default().createElement("a", {
     className: "watch-live-modal-row-link",
-    url: stream.url,
-    onLinkClick: handleClick
+    href: safeStreamUrl(stream.url),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: handleClick
   }, external_React_default().createElement("span", {
     className: "watch-live-modal-row-text"
   }, external_React_default().createElement("span", {
