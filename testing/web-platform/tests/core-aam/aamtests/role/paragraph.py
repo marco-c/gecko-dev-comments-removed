@@ -1,0 +1,32 @@
+
+
+TEST_HTML = "<div role='paragraph' id='test'>content</div>"
+
+def test_atspi(atspi, session, inline):
+    session.url = inline(TEST_HTML)
+
+    
+    
+
+    node = atspi.find_node("test", session.url)
+    assert atspi.Accessible.get_role(node) == atspi.Role.PARAGRAPH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
