@@ -3421,17 +3421,63 @@ template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildNodes(
     const nsINode* aChild1, const nsINode* aChild2,
     NodeIndexCache* aIndexCache ) {
-  if (MOZ_UNLIKELY(
-          (aChild1 && (NS_WARN_IF(aChild1->IsRootOfNativeAnonymousSubtree()) ||
-                       NS_WARN_IF(aChild1->IsDocumentFragment()))) ||
-          (aChild2 && (NS_WARN_IF(aChild2->IsRootOfNativeAnonymousSubtree()) ||
-                       NS_WARN_IF(aChild2->IsDocumentFragment()))))) {
+  
+  if (MOZ_UNLIKELY((aChild1 && NS_WARN_IF(aChild1->IsDocumentFragment())) ||
+                   (aChild2 && NS_WARN_IF(aChild2->IsDocumentFragment())))) {
     return Nothing();
   }
   if (MOZ_UNLIKELY(aChild1 == aChild2)) {
     return Some(0);
   }
   MOZ_ASSERT(aChild1 || aChild2);
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY((aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
+                   (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree()))) {
+    const nsINode& parent = aChild1
+                                ? *GetParentFuncForComparison<aKind>(aChild1)
+                                : *GetParentFuncForComparison<aKind>(aChild2);
+    
+    
+    
+    
+    
+    
+    
+    
+    const int32_t regularCount =
+        aKind == TreeKind::Flat
+            ? int32_t(FlattenedChildIterator::GetLength(&parent))
+            : int32_t(parent.GetChildCount());
+    const auto indexOf = [&](const nsINode* aChild) -> Maybe<int32_t> {
+      if (!aChild) {
+        return Some(regularCount);
+      }
+      return aIndexCache ? aIndexCache->ComputeIndexOf<aKind>(&parent, aChild)
+                         : GetIndexInParent<aKind>(&parent, aChild);
+    };
+    const Maybe<int32_t> child1Index = indexOf(aChild1);
+    const Maybe<int32_t> child2Index = indexOf(aChild2);
+    if (MOZ_LIKELY(child1Index.isSome() && child2Index.isSome())) {
+      if (*child1Index != *child2Index) {
+        return Some(*child1Index < *child2Index ? -1 : 1);
+      }
+      
+      
+      
+      if (!aChild1) {
+        return Some(-1);
+      }
+      if (!aChild2) {
+        return Some(1);
+      }
+    }
+    
+    return Some(1);
+  }
   if (!aChild1) {  
     MOZ_ASSERT_IF(aKind == TreeKind::DOM, aChild2->GetParentNode());
     MOZ_ASSERT_IF(aKind != TreeKind::DOM, aChild2->GetParentOrShadowHostNode());
@@ -3572,10 +3618,8 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
     }
   }
   
-  if (MOZ_UNLIKELY((aChild1 && (aChild1->IsRootOfNativeAnonymousSubtree() ||
-                                aChild1->IsDocumentFragment())) ||
-                   (aChild2 && (aChild2->IsRootOfNativeAnonymousSubtree() ||
-                                aChild2->IsDocumentFragment())))) {
+  if (MOZ_UNLIKELY((aChild1 && aChild1->IsDocumentFragment()) ||
+                   (aChild2 && aChild2->IsDocumentFragment()))) {
     
     
     return Some(1);
@@ -3591,16 +3635,24 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
     return Some(1);
   }
   MOZ_ASSERT_IF(!*comp, aChild1 == aChild2);
-  MOZ_ASSERT_IF(*comp < 0 && !AreNodesInSameSlot(aChild1, aChild2),
-                (aChild1 ? *aChild1->ComputeIndexInParentNode()
-                         : aParent.GetChildCount()) <
-                    (aChild2 ? *aChild2->ComputeIndexInParentNode()
-                             : aParent.GetChildCount()));
-  MOZ_ASSERT_IF(*comp > 0 && !AreNodesInSameSlot(aChild1, aChild2),
-                (aChild2 ? *aChild2->ComputeIndexInParentNode()
-                         : aParent.GetChildCount()) <
-                    (aChild1 ? *aChild1->ComputeIndexInParentNode()
-                             : aParent.GetChildCount()));
+  
+  
+  
+  const DebugOnly<bool> eitherIsNAC =
+      (aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
+      (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree());
+  MOZ_ASSERT_IF(
+      !eitherIsNAC && *comp < 0 && !AreNodesInSameSlot(aChild1, aChild2),
+      (aChild1 ? *aChild1->ComputeIndexInParentNode()
+               : aParent.GetChildCount()) <
+          (aChild2 ? *aChild2->ComputeIndexInParentNode()
+                   : aParent.GetChildCount()));
+  MOZ_ASSERT_IF(
+      !eitherIsNAC && *comp > 0 && !AreNodesInSameSlot(aChild1, aChild2),
+      (aChild2 ? *aChild2->ComputeIndexInParentNode()
+               : aParent.GetChildCount()) <
+          (aChild1 ? *aChild1->ComputeIndexInParentNode()
+                   : aParent.GetChildCount()));
   return comp;
 }
 
@@ -3609,12 +3661,26 @@ template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
     uint32_t aOffset1, const nsINode& aChild2,
     NodeIndexCache* aIndexCache ) {
-  if (NS_WARN_IF(aChild2.IsRootOfNativeAnonymousSubtree()) ||
-      NS_WARN_IF(aChild2.IsDocumentFragment())) {
+  if (NS_WARN_IF(aChild2.IsDocumentFragment())) {
     return Nothing();
   }
   const nsINode* parentNode = GetParentFuncForComparison<aKind>(&aChild2);
   MOZ_ASSERT(parentNode);
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(aChild2.IsRootOfNativeAnonymousSubtree())) {
+    const Maybe<int32_t> child2Index =
+        aIndexCache ? aIndexCache->ComputeIndexOf<aKind>(parentNode, &aChild2)
+                    : GetIndexInParent<aKind>(parentNode, &aChild2);
+    if (NS_WARN_IF(child2Index.isNothing())) {
+      
+      return Some(1);
+    }
+    return Some(int32_t(aOffset1) <= *child2Index ? -1 : 1);
+  }
 
   const uint32_t parentNodeChildCount = [parentNode]() -> uint32_t {
     if constexpr (aKind == TreeKind::Flat) {
@@ -3741,9 +3807,7 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
     }
 
     
-    if (MOZ_UNLIKELY(
-            closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
-            closestCommonAncestorChild2->IsDocumentFragment())) {
+    if (MOZ_UNLIKELY(closestCommonAncestorChild2->IsDocumentFragment())) {
       
       return Some(1);
     }
@@ -3779,9 +3843,7 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
   }
 
   
-  if (MOZ_UNLIKELY(
-          closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
-          closestCommonAncestorChild1->IsDocumentFragment())) {
+  if (MOZ_UNLIKELY(closestCommonAncestorChild1->IsDocumentFragment())) {
     
     return Some(-1);
   }
@@ -3941,9 +4003,7 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
     MOZ_ASSERT(closestCommonAncestorChild2->GetParentOrShadowHostNode() ==
                aBoundary1.GetContainer());
     
-    if (MOZ_UNLIKELY(
-            closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
-            closestCommonAncestorChild2->IsDocumentFragment())) {
+    if (MOZ_UNLIKELY(closestCommonAncestorChild2->IsDocumentFragment())) {
       
       return Some(1);
     }
@@ -3966,10 +4026,16 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
                  *aBoundary1.Offset(kValidOrInvalidOffsets1));
       return Some(-1);
     }
-    MOZ_ASSERT_IF(*comp < 0,
+    
+    
+    
+    
+    const DebugOnly<bool> child2IsNAC =
+        closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree();
+    MOZ_ASSERT_IF(!child2IsNAC && *comp < 0,
                   *aBoundary1.Offset(kValidOrInvalidOffsets1) <
                       *closestCommonAncestorChild2->ComputeIndexInParentNode());
-    MOZ_ASSERT_IF(*comp > 0,
+    MOZ_ASSERT_IF(!child2IsNAC && *comp > 0,
                   *closestCommonAncestorChild2->ComputeIndexInParentNode() <
                       *aBoundary1.Offset(kValidOrInvalidOffsets1));
     return comp;
@@ -3979,9 +4045,7 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   MOZ_ASSERT(closestCommonAncestorChild1->GetParentOrShadowHostNode() ==
              aBoundary2.GetContainer());
   
-  if (MOZ_UNLIKELY(
-          closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
-          closestCommonAncestorChild1->IsDocumentFragment())) {
+  if (MOZ_UNLIKELY(closestCommonAncestorChild1->IsDocumentFragment())) {
     
     return Some(-1);
   }
@@ -4002,10 +4066,15 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
                *aBoundary2.Offset(kValidOrInvalidOffsets2));
     return Some(1);
   }
-  MOZ_ASSERT_IF(*comp < 0,
+  
+  
+  
+  const DebugOnly<bool> child1IsNAC =
+      closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree();
+  MOZ_ASSERT_IF(!child1IsNAC && *comp < 0,
                 *closestCommonAncestorChild1->ComputeIndexInParentNode() <
                     *aBoundary2.Offset(kValidOrInvalidOffsets2));
-  MOZ_ASSERT_IF(*comp > 0,
+  MOZ_ASSERT_IF(!child1IsNAC && *comp > 0,
                 *aBoundary2.Offset(kValidOrInvalidOffsets2) <
                     *closestCommonAncestorChild1->ComputeIndexInParentNode());
   return comp;
@@ -12981,9 +13050,13 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
 
   AutoTArray<nsIContent*, 8> anonKids;
 
-  int32_t siblingCount = aKind == TreeKind::DOM
-                             ? aParent->GetChildCount()
-                             : FlattenedChildIterator::GetLength(aParent);
+  
+  
+  
+  
+  int32_t siblingCount = aKind == TreeKind::Flat
+                             ? FlattenedChildIterator::GetLength(aParent)
+                             : aParent->GetChildCount();
 
   MOZ_ASSERT(aParent->MayHaveAnonymousChildren());
   MOZ_ASSERT(aParent->IsContent());
