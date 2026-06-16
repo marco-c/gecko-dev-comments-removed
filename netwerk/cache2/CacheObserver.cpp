@@ -4,6 +4,7 @@
 
 #include "CacheObserver.h"
 
+#include "CacheCrypto.h"
 #include "CacheStorageService.h"
 #include "CacheFileIOManager.h"
 #include "LoadContextInfo.h"
@@ -71,6 +72,8 @@ nsresult CacheObserver::Shutdown() {
   if (!sSelf) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+
+  CacheCrypto::Shutdown();
 
   sSelf = nullptr;
   return NS_OK;
@@ -206,6 +209,10 @@ CacheObserver::Observe(nsISupports* aSubject, const char* aTopic,
   if (!strcmp(aTopic, "profile-do-change")) {
     AttachToPreferences();
     CacheFileIOManager::Init();
+    
+    
+    
+    CacheCrypto::Init();
     CacheFileIOManager::OnProfile();
     return NS_OK;
   }
