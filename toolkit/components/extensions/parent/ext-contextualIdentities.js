@@ -179,6 +179,20 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
           return identities;
         },
 
+        async getSupportedColors() {
+          return ContextualIdentityService.containerColors.map(color => ({
+            color,
+            colorCode: getContainerColor(color),
+          }));
+        },
+
+        async getSupportedIcons() {
+          return ContextualIdentityService.containerIcons.map(icon => ({
+            icon,
+            iconUrl: getContainerIcon(icon),
+          }));
+        },
+
         async create(details) {
           
           getContainerIcon(details.icon);
