@@ -208,6 +208,12 @@ class AttrArray {
     SetTaggedBloom(0x1ULL);
   }
 
+  
+  
+  
+  const nsAttrValue* AddNewAttributeAssumeAvailableSlot(RefPtr<nsAtom>& aName,
+                                                        nsAttrValue& aValue);
+
  private:
   
   

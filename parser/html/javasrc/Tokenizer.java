@@ -989,23 +989,15 @@ public class Tokenizer implements Locator, Locator2 {
         strBuf[strBufLen++] = c;
     }
 
-    
-
-
-
-
-
-
-
     @Inline protected String strBufToString() {
-        
-        
-        
-        
-        
-        
-        
-        
+        String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen
+            
+        );
+        clearStrBufAfterUse();
+        return str;
+    }
+
+    @Inline protected String strBufToAttributeValueString() {
         
         
         
@@ -1397,7 +1389,7 @@ public class Tokenizer implements Locator, Locator2 {
         }
         
         if (attributeName != null) {
-            String val = strBufToString(); 
+            String val = strBufToAttributeValueString(); 
             
             
             
