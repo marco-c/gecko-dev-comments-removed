@@ -799,10 +799,17 @@ class MarkerSchema {
 
     
     
+    
+    
+    
+    
+    
+    
     Duration,
     
     
     Time,
+    
     
     
     Seconds,       
@@ -1100,6 +1107,28 @@ struct StreamPayloadHelper<Flow, aFormat> {
   static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
                      const Span<const char> aKey, const Flow& aPayload) {
     aWriter.FlowProperty(aKey, aPayload);
+  }
+};
+
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<TimeDuration, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey,
+                     const TimeDuration& aDuration) {
+    using MS = MarkerSchema;
+    static_assert(aFormat == MS::Format::Milliseconds ||
+                      aFormat == MS::Format::Duration ||
+                      aFormat == MS::Format::Seconds ||
+                      aFormat == MS::Format::Microseconds ||
+                      aFormat == MS::Format::Nanoseconds,
+                  "Wrong MarkerSchema::Format for TimeDuration");
+    if constexpr (aFormat == MS::Format::Microseconds) {
+      aWriter.DoubleProperty(aKey, aDuration.ToMicroseconds());
+    } else if constexpr (aFormat == MS::Format::Nanoseconds) {
+      aWriter.DoubleProperty(aKey, aDuration.ToMicroseconds() * 1000.0);
+    } else {
+      aWriter.DoubleProperty(aKey, aDuration.ToMilliseconds());
+    }
   }
 };
 
