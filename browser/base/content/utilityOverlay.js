@@ -3,7 +3,6 @@
 
 
 
-
 var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -183,6 +182,7 @@ function createUserContextMenu(
     excludeUserContextId = 0,
     showDefaultTab = false,
     useAccessKeys = true,
+    showManageContainers = true,
   } = {}
 ) {
   while (event.target.hasChildNodes()) {
@@ -196,10 +196,11 @@ function createUserContextMenu(
   if (excludeUserContextId || showDefaultTab) {
     let menuitem = document.createXULElement("menuitem");
     if (useAccessKeys) {
-      document.l10n.setAttributes(menuitem, "user-context-none");
+      document.l10n.setAttributes(menuitem, "user-context-new-tab");
     } else {
-      const label =
-        ContextualIdentityService.formatContextLabel("user-context-none");
+      const label = ContextualIdentityService.formatContextLabel(
+        "user-context-new-tab"
+      );
       menuitem.setAttribute("label", label);
     }
     menuitem.setAttribute("data-usercontextid", "0");
@@ -243,7 +244,7 @@ function createUserContextMenu(
     docfrag.appendChild(menuitem);
   });
 
-  if (!isContextMenu) {
+  if (showManageContainers) {
     docfrag.appendChild(document.createXULElement("menuseparator"));
 
     let menuitem = document.createXULElement("menuitem");
@@ -373,7 +374,8 @@ function openAboutDialog() {
     features += "centerscreen,dependent,dialog=no";
   }
 
-  window.openDialog("chrome://browser/content/aboutDialog.xhtml", "", features);
+  var win = BrowserWindowTracker.getTopWindow() || window;
+  win.openDialog("chrome://browser/content/aboutDialog.xhtml", "", features);
 }
 
 async function openPreferences(paneID, extraArgs) {
