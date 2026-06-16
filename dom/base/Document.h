@@ -4110,7 +4110,7 @@ class Document : public nsINode,
   void UpdateLastRememberedSizes();
 
   
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const;
 
   
   

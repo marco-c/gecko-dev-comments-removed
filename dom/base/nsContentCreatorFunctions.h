@@ -27,47 +27,47 @@ struct CustomElementDefinition;
 }  
 
 nsresult NS_NewElement(mozilla::dom::Element** aResult,
-                       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                        mozilla::dom::FromParser aFromParser,
                        const nsAString* aIs);
 
 nsresult NS_NewElement(
     mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
 nsresult NS_NewXMLElement(mozilla::dom::Element** aResult,
-                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 nsresult NS_NewHTMLElement(
     mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
 
 
 already_AddRefed<nsGenericHTMLElement> CreateHTMLElement(
-    uint32_t aNodeType, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    uint32_t aNodeType, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser);
 
 nsresult NS_NewMathMLElement(
     mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 nsresult NS_NewXULElement(
     mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
 void NS_TrustedNewXULElement(
     mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
-                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                           mozilla::dom::FromParser aFromParser);
 
 #endif  

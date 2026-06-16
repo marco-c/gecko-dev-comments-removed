@@ -142,7 +142,7 @@ class nsIGlobalObject : public nsISupports {
   bool HasJSGlobal() const { return GetGlobalJSObjectPreserveColor(); }
 
   virtual nsISerialEventTarget* SerialEventTarget() const = 0;
-  virtual nsresult Dispatch(already_AddRefed<nsIRunnable>&&) const = 0;
+  virtual nsresult Dispatch(already_AddRefed<nsIRunnable>) const = 0;
 
   
   nsIPrincipal* PrincipalOrNull() const;
@@ -254,6 +254,7 @@ class nsIGlobalObject : public nsISupports {
   
   
   nsPIDOMWindowInner* GetAsInnerWindow();
+  bool IsInnerWindow() const { return mIsInnerWindow; }
 
   virtual void TriggerUpdateCCFlag() {}
 

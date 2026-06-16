@@ -83,7 +83,7 @@ class FragmentOrElement : public nsIContent {
   explicit FragmentOrElement(
       already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
   explicit FragmentOrElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   
