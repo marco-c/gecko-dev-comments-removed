@@ -5,10 +5,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 var h3Port;
@@ -16,7 +12,6 @@ var host;
 
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("network.dns.localDomains");
-  Services.prefs.clearUserPref("network.webtransport.enabled");
   Services.prefs.clearUserPref("network.webtransport.redirect.enabled");
 });
 
@@ -45,7 +40,6 @@ function addCertFromFile(certdb, filename, trustString) {
 
 add_setup(async function setup() {
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
-  Services.prefs.setBoolPref("network.webtransport.enabled", true);
   Services.prefs.setBoolPref("network.webtransport.redirect.enabled", true);
 
   h3Port = Services.env.get("MOZHTTP3_PORT");
@@ -68,7 +62,7 @@ add_setup(async function setup() {
 
 
 async function read_stream_as_string(readable_stream) {
-  const decoder = new TextDecoderStream();
+  const decoder = new (webTransportWindow().TextDecoderStream)();
   const decode_stream = readable_stream.pipeThrough(decoder);
   const reader = decode_stream.getReader();
 
@@ -86,7 +80,7 @@ async function read_stream_as_string(readable_stream) {
 
 add_task(async function test_wt_incoming_unidi_stream() {
   
-  let wt = new WebTransport(
+  let wt = newWebTransport(
     "https://" + host + "/create_unidi_stream_and_hello"
   );
   await wt.ready;
@@ -104,7 +98,7 @@ add_task(async function test_wt_incoming_unidi_stream() {
 add_task(async function test_wt_incoming_and_outgoing_unidi_stream() {
   
   
-  let wt = new WebTransport("https://" + host + "/create_unidi_stream");
+  let wt = newWebTransport("https://" + host + "/create_unidi_stream");
   await wt.ready;
 
   
@@ -112,7 +106,7 @@ add_task(async function test_wt_incoming_and_outgoing_unidi_stream() {
   let writableStream = await wt.createUnidirectionalStream(); 
   let wsDefaultWriter = writableStream.getWriter();
   await wsDefaultWriter.ready;
-  let data = new TextEncoder().encode(expected);
+  let data = new (webTransportWindow().TextEncoder)().encode(expected);
   await wsDefaultWriter.write(data); 
   await wsDefaultWriter.close();
   wsDefaultWriter.releaseLock();
@@ -130,7 +124,7 @@ add_task(async function test_wt_incoming_and_outgoing_unidi_stream() {
 });
 
 add_task(async function test_wt_outgoing_bidi_stream() {
-  let wt = new WebTransport("https://" + host + "/success");
+  let wt = newWebTransport("https://" + host + "/success");
   await wt.ready;
 
   
@@ -139,7 +133,7 @@ add_task(async function test_wt_outgoing_bidi_stream() {
   let wsDefaultWriter = writableStream.getWriter();
   await wsDefaultWriter.ready;
   let expected = "xyzhello";
-  let data = new TextEncoder().encode(expected);
+  let data = new (webTransportWindow().TextEncoder)().encode(expected);
   await wsDefaultWriter.write(data);
   await wsDefaultWriter.close();
   wsDefaultWriter.releaseLock();
@@ -152,9 +146,7 @@ add_task(async function test_wt_outgoing_bidi_stream() {
 });
 
 add_task(async function test_wt_incoming_bidi_stream() {
-  let wt = new WebTransport(
-    "https://" + host + "/create_bidi_stream_and_hello"
-  );
+  let wt = newWebTransport("https://" + host + "/create_bidi_stream_and_hello");
   
 
   const stream_reader = wt.incomingBidirectionalStreams.getReader();
@@ -168,7 +160,7 @@ add_task(async function test_wt_incoming_bidi_stream() {
 });
 
 add_task(async function test_wt_incoming_bidi_stream_huge_data() {
-  let wt = new WebTransport(
+  let wt = newWebTransport(
     "https://" + host + "/create_bidi_stream_and_large_data"
   );
   

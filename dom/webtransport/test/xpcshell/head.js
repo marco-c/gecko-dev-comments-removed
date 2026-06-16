@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+
+
+let gWebTransportBrowser = Services.appShell.createWindowlessBrowser(true);
+
+function webTransportWindow() {
+  return gWebTransportBrowser.document.defaultView;
+}
+
+function newWebTransport(...args) {
+  let win = webTransportWindow();
+  return new win.WebTransport(...args);
+}
+
+registerCleanupFunction(() => {
+  gWebTransportBrowser.close();
+  gWebTransportBrowser = null;
+});
