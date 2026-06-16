@@ -1223,15 +1223,6 @@ var gSync = {
     }
   },
 
-  _shouldShowSyncOffIndicator() {
-    
-    
-    return !Services.prefs.getBoolPref(
-      "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
-      false
-    );
-  },
-
   updateFxAPanel(state = {}) {
     const expandedSignInCopy =
       NimbusFeatures.expandSignInButton.getVariable("ctaCopyVariant");
@@ -1416,12 +1407,8 @@ var gSync = {
           cadButtonEl.removeAttribute("hidden");
           syncSetupEl.setAttribute("hidden", "true");
         } else {
-          if (this._shouldShowSyncOffIndicator()) {
-            fxaToolbarMenuButton?.setAttribute("badge-status", "sync-disabled");
-          }
           syncSetupEl.removeAttribute("hidden");
         }
-
         if (state.syncEnabled) {
           cadButtonEl.removeAttribute("hidden");
           syncSetupSeparator.removeAttribute("hidden");
