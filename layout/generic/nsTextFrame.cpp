@@ -1034,14 +1034,15 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
 
   ClearObserversFromTextRun(aTextRun);
 
-  nsTArray<gfxFont*> fontsWithAnimatedGlyphs;
+  AutoTArray<gfxFont*, 4> fontsWithAnimatedGlyphs;
   uint32_t numGlyphRuns;
-  const gfxTextRun::GlyphRun* glyphRuns = aTextRun->GetGlyphRuns(&numGlyphRuns);
-  for (uint32_t i = 0; i < numGlyphRuns; ++i) {
-    gfxFont* font = glyphRuns[i].mFont;
+  const gfxTextRun::GlyphRun* run = aTextRun->GetGlyphRuns(&numGlyphRuns);
+  while (numGlyphRuns--) {
+    gfxFont* font = run->mFont;
     if (font->GlyphsMayChange() && !fontsWithAnimatedGlyphs.Contains(font)) {
       fontsWithAnimatedGlyphs.AppendElement(font);
     }
+    run++;
   }
   if (fontsWithAnimatedGlyphs.IsEmpty()) {
     
@@ -1124,6 +1125,9 @@ class BuildTextRunsScanner {
     ResetRunInfo();
   }
   ~BuildTextRunsScanner() {
+    for (auto& run : mCreatedTextRuns) {
+      CreateObserversForAnimatedGlyphs(run);
+    }
     NS_ASSERTION(mBreakSinks.IsEmpty(), "Should have been cleared");
     NS_ASSERTION(mLineBreakBeforeFrames.IsEmpty(), "Should have been cleared");
     NS_ASSERTION(mMappedFlows.IsEmpty(), "Should have been cleared");
@@ -1247,10 +1251,6 @@ class BuildTextRunsScanner {
             static_cast<nsTransformedTextRun*>(mTextRun.get());
         transformedTextRun->FinishSettingProperties(mDrawTarget, aMFR);
       }
-      
-      
-      
-      CreateObserversForAnimatedGlyphs(mTextRun);
     }
 
     RefPtr<gfxTextRun> mTextRun;
@@ -1262,6 +1262,7 @@ class BuildTextRunsScanner {
   AutoTArray<MappedFlow, 10> mMappedFlows;
   AutoTArray<nsTextFrame*, 50> mLineBreakBeforeFrames;
   AutoTArray<UniquePtr<BreakSink>, 10> mBreakSinks;
+  AutoTArray<RefPtr<gfxTextRun>, 10> mCreatedTextRuns;
   nsLineBreaker mLineBreaker;
   RefPtr<gfxTextRun> mCurrentFramesAllSameTextRun;
   DrawTarget* mDrawTarget;
@@ -1812,14 +1813,18 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
         return;
       }
       textRun = BuildTextRunForFrames(buffer.Elements());
+      if (textRun) {
+        if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
+          
+          
+          mCreatedTextRuns.AppendElement(textRun);
+        }
+      }
     }
   }
 
   if (aFlushLineBreaks) {
     FlushLineBreaks(aSuppressTrailingBreak ? nullptr : textRun.get());
-    if (!mDoLineBreaking && textRun) {
-      CreateObserversForAnimatedGlyphs(textRun.get());
-    }
   }
 
   mCanStopOnThisLine = true;
@@ -10163,36 +10168,70 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
   
   
   
-  uint32_t loopStart =
+  const uint32_t loopStart =
       (preformatNewlines || preformatTabs) ? start : flowEndInTextRun;
-  for (uint32_t i = loopStart, lineStart = start; i <= flowEndInTextRun; ++i) {
+  const auto* glyphs = textRun->GetCharacterGlyphs();
+  const auto* limit = glyphs + flowEndInTextRun;
+  const bool canUseSimpleAdvance = loopStart == start && !provider.HasSpacing();
+  uint32_t lineStart = start;
+  nscoord runAdvance = 0;
+  for (const auto* g = glyphs + loopStart; g <= limit; ++g) {
+    
+    
+    while (g < limit && g->IsSimpleGlyph()) {
+      runAdvance += g->GetSimpleAdvance();
+      ++g;
+    }
+
+    
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (i < flowEndInTextRun) {
+    if (g < limit) {
       
       
       
-      NS_ASSERTION(preformatNewlines || preformatTabs,
-                   "We can't be here unless newlines are "
-                   "hard breaks or there are tabs");
-      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
-      preformattedTab = preformatTabs && textRun->CharIsTab(i);
+      MOZ_ASSERT(preformatNewlines || preformatTabs,
+                 "We can't be here unless newlines are "
+                 "hard breaks or there are tabs");
+      MOZ_ASSERT(!g->IsSimpleGlyph(), "should have been skipped");
+      preformattedNewline = preformatNewlines && g->CharIsNewline();
+      preformattedTab = preformatTabs && g->CharIsTab();
+      
+      
+      if (canUseSimpleAdvance) {
+        if (uint32_t count = g->GetGlyphCount()) {
+          const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
+          while (count--) {
+            runAdvance += details->mAdvance;
+            ++details;
+          }
+        }
+      }
       if (!preformattedNewline && !preformattedTab) {
         
         continue;
       }
     }
 
-    if (i > lineStart) {
-      nscoord width = NSToCoordCeilClamped(
-          textRun->GetAdvanceWidth(Range(lineStart, i), &provider));
+    uint32_t lineEnd = g - glyphs;
+    if (lineEnd > lineStart) {
+      
+      
+      
+      nscoord width = canUseSimpleAdvance &&
+                              (glyphs + lineStart)->IsLigatureGroupStart() &&
+                              (lineEnd == flowEndInTextRun ||
+                               (glyphs + lineEnd)->IsLigatureGroupStart())
+                          ? runAdvance
+                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
+                                Range(lineStart, lineEnd), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mLineIsEmpty = false;
 
       if (collapseWhitespace) {
         uint32_t trimStart = GetEndOfTrimmedText(characterDataBuffer, textStyle,
-                                                 lineStart, i, &iter);
+                                                 lineStart, lineEnd, &iter);
         if (trimStart == start) {
           
           
@@ -10201,17 +10240,18 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
           
           
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, lineEnd), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
         aData->mTrailingWhitespace = 0;
       }
     }
+    runAdvance = 0;
 
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(i, i + 1), &spacing);
+      provider.GetSpacing(Range(lineEnd, lineEnd + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -10220,10 +10260,10 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
       aData->mLineIsEmpty = false;
-      lineStart = i + 1;
+      lineStart = lineEnd + 1;
     } else if (preformattedNewline) {
       aData->ForceBreak();
-      lineStart = i;
+      lineStart = lineEnd;
     }
   }
 
