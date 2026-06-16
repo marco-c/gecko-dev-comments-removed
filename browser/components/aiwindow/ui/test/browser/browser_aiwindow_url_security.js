@@ -59,12 +59,8 @@ add_task(async function test_fail_closed_default() {
 
       const elJS = el.wrappedJSObject || el;
 
-      
-      
-      
-      
-      
-      el.setAttribute("data-message-role", "assistant");
+      elJS.role = "assistant";
+      el.setAttribute("role", "assistant");
       elJS.messageId = "test-fail-closed";
       el.setAttribute("data-message-id", "test-fail-closed");
       elJS.message =
@@ -150,9 +146,8 @@ add_task(async function test_trusted_and_untrusted_links() {
 
         
         elJS.seenUrls = Cu.cloneInto(new Set([seen]), content);
-        
-        
-        el.setAttribute("data-message-role", "assistant");
+        elJS.role = "assistant";
+        el.setAttribute("role", "assistant");
         elJS.messageId = "test-trusted-untrusted";
         el.setAttribute("data-message-id", "test-trusted-untrusted");
         elJS.message = `Visit [Trusted](${seen}) or [Untrusted](${unseen}).`;
@@ -245,9 +240,8 @@ add_task(async function test_trust_update_triggers_rerender() {
       const elJS = el.wrappedJSObject || el;
 
       
-      
-      
-      el.setAttribute("data-message-role", "assistant");
+      elJS.role = "assistant";
+      el.setAttribute("role", "assistant");
       elJS.messageId = "test-trust-update";
       el.setAttribute("data-message-id", "test-trust-update");
       elJS.message = `Read this [Article](${url}).`;
