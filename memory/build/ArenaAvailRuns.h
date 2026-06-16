@@ -24,14 +24,62 @@ struct ArenaAvailTreeTrait {
 
 class ArenaAvailRunsSize {
  private:
+  
+  
+  
+  
+  
   mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait> mRuns;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static unsigned CategoriseRun(arena_chunk_map_t* aMapElm) {
+    arena_chunk_t* chunk = mozilla::GetChunkForPtr(aMapElm);
+    size_t pageind = (uintptr_t(aMapElm) - uintptr_t(chunk->mPageMap)) /
+                     sizeof(arena_chunk_map_t);
+    size_t num_pages =
+        (aMapElm->bits & ~mozilla::gPageSizeMask) >> mozilla::gPageSize2Pow;
+    
+    for (unsigned i = pageind; i < pageind + std::min(num_pages, size_t(4));
+         i++) {
+      unsigned bits = chunk->mPageMap[i].bits & mozilla::gPageSizeMask;
+      if (bits & (CHUNK_MAP_DIRTY | CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED |
+                  CHUNK_MAP_FRESH)) {
+        return bits;
+      }
+    }
+
+    return 0;
+  }
 
  public:
   arena_chunk_map_t* Search() { return &(*mRuns.begin()); }
 
   bool IsEmpty() const { return mRuns.isEmpty(); }
 
-  void Insert(arena_chunk_map_t* aElem) { mRuns.pushFront(aElem); }
+  void Insert(arena_chunk_map_t* aElem) {
+    unsigned bits = CategoriseRun(aElem);
+    if (bits & CHUNK_MAP_DIRTY) {
+      mRuns.pushFront(aElem);
+    } else {
+      mRuns.pushBack(aElem);
+    }
+  }
 
   void Remove(arena_chunk_map_t* aElem) { mRuns.remove(aElem); }
 };
