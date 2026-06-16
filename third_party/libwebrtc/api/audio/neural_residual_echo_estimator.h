@@ -55,9 +55,6 @@ class NeuralResidualEchoEstimator {
                         std::span<std::array<float, 65>> R2_unbounded) = 0;
 
   
-  virtual EchoCanceller3Config GetConfiguration(bool multi_channel) const = 0;
-
-  
   
   virtual EchoCanceller3Config::Suppressor AdjustConfig(
       const EchoCanceller3Config::Suppressor& config) const = 0;
