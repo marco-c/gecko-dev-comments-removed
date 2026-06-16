@@ -327,7 +327,12 @@ void nsWindowX11::CreateNative() {
 #pragma GCC diagnostic pop
 
   mSurfaceProvider.Initialize(GetX11Window());
+}
 
+void nsWindowX11::ConfigureToplevelWindowNative() {
+  
+  
+  
   
   
   
