@@ -75,9 +75,6 @@ enum class StyleGeometryBox : uint8_t {
   PaddingBox,  
   BorderBox,
   MarginBox,   
-               
-               
-               
   FillBox,     
   StrokeBox,   
   ViewBox,     
