@@ -182,6 +182,20 @@ this.userScripts = class extends ExtensionAPI {
             return usm.getWorldConfigurations();
           });
         },
+
+        execute: async injection => {
+          ensureValidWorldId(injection.worldId);
+          let { promise, resolve } = Promise.withResolvers();
+          await usm.runReadTask(async () => {
+            
+            
+            
+            
+            
+            resolve(usm.executeScript(context, injection));
+          });
+          return promise;
+        },
       },
     };
   }
