@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -25,17 +24,15 @@
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/test/rtc_error_matchers.h"
+#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/port_allocator.h"
-#include "p2p/base/port_interface.h"
 #include "p2p/test/stun_server.h"
-#include "p2p/test/test_stun_server.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
-#include "rtc_base/fake_clock.h"
-#include "rtc_base/fake_network.h"
 #include "rtc_base/firewall_socket_server.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/net_helper.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/test_certificate_verifier.h"
 #include "test/gmock.h"
@@ -52,44 +49,6 @@ class PeerConnectionIntegrationTest
  protected:
   PeerConnectionIntegrationTest()
       : PeerConnectionIntegrationBaseTest(GetParam()) {}
-};
-
-
-
-
-
-
-
-class FakeClockForTest : public ScopedFakeClock {
- protected:
-  FakeClockForTest() {
-    
-    
-    
-    AdvanceTime(TimeDelta::Seconds(1000));
-  }
-
-  
-  ScopedFakeClock& FakeClock() { return *this; }
-};
-
-
-class PeerConnectionIntegrationTestWithFakeClock
-    : public FakeClockForTest,
-      public PeerConnectionIntegrationTest {};
-
-class PeerConnectionIntegrationTestPlanB
-    : public PeerConnectionIntegrationBaseTest {
- protected:
-  PeerConnectionIntegrationTestPlanB()
-      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB_DEPRECATED) {}
-};
-
-class PeerConnectionIntegrationTestUnifiedPlan
-    : public PeerConnectionIntegrationBaseTest {
- protected:
-  PeerConnectionIntegrationTestUnifiedPlan()
-      : PeerConnectionIntegrationBaseTest(SdpSemantics::kUnifiedPlan) {}
 };
 
 
@@ -266,68 +225,13 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
 
 
-class PeerConnectionIntegrationIceStatesTest
-    : public PeerConnectionIntegrationBaseTest,
-      public ::testing::WithParamInterface<
-          std::tuple<SdpSemantics, std::tuple<std::string, uint32_t>>> {
- protected:
-  PeerConnectionIntegrationIceStatesTest()
-      : PeerConnectionIntegrationBaseTest(std::get<0>(GetParam())) {
-    port_allocator_flags_ = std::get<1>(std::get<1>(GetParam()));
-  }
+using PeerConnectionIntegrationIceStatesTest =
+    PeerConnectionIntegrationIceStatesTestBase<
+        PeerConnectionIntegrationBaseTest>;
 
-  void StartStunServer(const SocketAddress& server_address) {
-    stun_server_ = TestStunServer::Create(env_, server_address, *firewall(),
-                                          *network_thread());
-  }
-
-  bool TestIPv6() {
-    return (port_allocator_flags_ & PORTALLOCATOR_ENABLE_IPV6);
-  }
-
-  std::vector<SocketAddress> CallerAddresses() {
-    std::vector<SocketAddress> addresses;
-    addresses.push_back(SocketAddress("1.1.1.1", 0));
-    if (TestIPv6()) {
-      addresses.push_back(SocketAddress("1111:0:a:b:c:d:e:f", 0));
-    }
-    return addresses;
-  }
-
-  std::vector<SocketAddress> CalleeAddresses() {
-    std::vector<SocketAddress> addresses;
-    addresses.push_back(SocketAddress("2.2.2.2", 0));
-    if (TestIPv6()) {
-      addresses.push_back(SocketAddress("2222:0:a:b:c:d:e:f", 0));
-    }
-    return addresses;
-  }
-
-  void SetUpNetworkInterfaces() {
-    
-    caller()->network_manager()->RemoveInterface(kDefaultLocalAddress);
-    callee()->network_manager()->RemoveInterface(kDefaultLocalAddress);
-
-    
-    for (const auto& caller_address : CallerAddresses()) {
-      caller()->network_manager()->AddInterface(caller_address);
-    }
-    for (const auto& callee_address : CalleeAddresses()) {
-      callee()->network_manager()->AddInterface(callee_address);
-    }
-  }
-
-  uint32_t port_allocator_flags() const { return port_allocator_flags_; }
-
- private:
-  uint32_t port_allocator_flags_;
-  TestStunServer::StunServerPtr stun_server_;
-};
-
-
-class PeerConnectionIntegrationIceStatesTestWithFakeClock
-    : public FakeClockForTest,
-      public PeerConnectionIntegrationIceStatesTest {};
+using PeerConnectionIntegrationIceStatesTestWithFakeClock =
+    PeerConnectionIntegrationIceStatesTestBase<
+        PeerConnectionIntegrationTestWithSimulatedTime>;
 
 #if !defined(THREAD_SANITIZER)
 
@@ -372,12 +276,12 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
   ASSERT_THAT(
       WaitUntil([&] { return caller()->ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
-                {.clock = &FakeClock()}),
+                {.clock = time_controller_.get()}),
       IsRtcOk());
   ASSERT_THAT(
       WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
-                {.clock = &FakeClock()}),
+                {.clock = time_controller_.get()}),
       IsRtcOk());
 
   
@@ -403,18 +307,18 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
     firewall()->AddRule(false, FP_ANY, FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied";
-  ScopedFakeClock& fake_clock = FakeClock();
+  TimeController* fake_clock = time_controller_.get();
   ASSERT_THAT(
       WaitUntil(
           [&] { return caller()->ice_connection_state(); },
           ::testing::Eq(PeerConnectionInterface::kIceConnectionDisconnected),
-          {.timeout = TimeDelta::Seconds(10), .clock = &fake_clock}),
+          {.timeout = TimeDelta::Seconds(10), .clock = fake_clock}),
       IsRtcOk());
   ASSERT_THAT(
       WaitUntil(
           [&] { return caller()->standardized_ice_connection_state(); },
           ::testing::Eq(PeerConnectionInterface::kIceConnectionDisconnected),
-          {.timeout = TimeDelta::Seconds(10), .clock = &fake_clock}),
+          {.timeout = TimeDelta::Seconds(10), .clock = fake_clock}),
       IsRtcOk());
 
   
@@ -423,12 +327,12 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
   ASSERT_THAT(
       WaitUntil([&] { return caller()->ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
-                {.clock = &fake_clock}),
+                {.clock = fake_clock}),
       IsRtcOk());
   ASSERT_THAT(
       WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionCompleted),
-                {.clock = &fake_clock}),
+                {.clock = fake_clock}),
       IsRtcOk());
 
   
@@ -442,12 +346,12 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
   ASSERT_THAT(
       WaitUntil([&] { return caller()->ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionFailed),
-                {.timeout = kConsentTimeout, .clock = &fake_clock}),
+                {.timeout = kConsentTimeout, .clock = fake_clock}),
       IsRtcOk());
   ASSERT_THAT(
       WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
                 ::testing::Eq(PeerConnectionInterface::kIceConnectionFailed),
-                {.timeout = kConsentTimeout, .clock = &fake_clock}),
+                {.timeout = kConsentTimeout, .clock = fake_clock}),
       IsRtcOk());
 }
 #endif

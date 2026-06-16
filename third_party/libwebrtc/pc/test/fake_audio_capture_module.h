@@ -45,6 +45,10 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   static const size_t kNumberBytesPerSample = sizeof(Sample);
 
   
+  static webrtc::scoped_refptr<FakeAudioCaptureModule> Create(
+      std::unique_ptr<webrtc::Thread> process_thread);
+
+  
   static webrtc::scoped_refptr<FakeAudioCaptureModule> Create();
 
   
@@ -157,7 +161,9 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   
   
   
-  FakeAudioCaptureModule();
+  explicit FakeAudioCaptureModule(
+      std::unique_ptr<webrtc::Thread> process_thread);
+
   
   
   ~FakeAudioCaptureModule() override;
