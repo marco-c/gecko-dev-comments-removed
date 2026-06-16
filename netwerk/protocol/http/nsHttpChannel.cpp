@@ -1207,13 +1207,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
     
     
-    
-    
-    
-    
-    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
-      DisallowHTTPSRR(mCaps);
-    }
+    DisallowHTTPSRR(mCaps);
   }
 
   if (LoadIsTRRServiceChannel()) {
@@ -1243,7 +1237,6 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
   mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
   mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
-  mConnectionInfo->SetHttp3Disabled(mCaps & NS_HTTP_DISALLOW_HTTP3);
   mConnectionInfo->SetAnonymousAllowClientCert(
       (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) != 0);
 
@@ -8074,17 +8067,11 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    
-    if ((mUpgradeProtocolCallback || mWebTransportSessionEventListener) &&
-        !StaticPrefs::network_http_happy_eyeballs_upgrade_enabled()) {
+    if (mWebTransportSessionEventListener) {
       return false;
     }
 
-    
-    
-    
-    
-    if (mCaps & NS_HTTP_CONNECT_ONLY) {
+    if (mUpgradeProtocolCallback) {
       return false;
     }
 

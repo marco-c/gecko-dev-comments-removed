@@ -102,13 +102,10 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   
   
   
-  
-  
   happy_eyeballs::HttpVersions httpVersions{
        true,
        StaticPrefs::network_http_http2_enabled(),
-       nsHttpHandler::IsHttp3Enabled() &&
-          !(mCaps & NS_HTTP_DISALLOW_HTTP3),
+       nsHttpHandler::IsHttp3Enabled(),
   };
 
   LOG(
@@ -116,32 +113,24 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
        "connectionAttemptDelay=%u",
        static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
 
-  
-  
-  
-  
-  
-  
-  if (mConnInfo->IsHttp3()) {
-    LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
-    nsTArray<happy_eyeballs::AltSvc> altSvcArray;
-    happy_eyeballs::AltSvc altsvc{};
-    altsvc.http_version = happy_eyeballs::HttpVersion::H3;
-    altsvc.port = mConnInfo->GetRoutedHost().IsEmpty()
-                      ? static_cast<uint16_t>(mConnInfo->OriginPort())
-                      : static_cast<uint16_t>(mConnInfo->RoutedPort());
-    altSvcArray.AppendElement(altsvc);
-    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                               static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &altSvcArray, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
-  }
-
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
     nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
                                &emptyAltSvc, ipPref, httpVersions,
+                               resolutionDelay, connectionAttemptDelay);
+  }
+
+  if (mConnInfo->IsHttp3()) {
+    LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
+    nsTArray<happy_eyeballs::AltSvc> altSvcArray;
+    happy_eyeballs::AltSvc altsvc{};
+    altsvc.http_version = happy_eyeballs::HttpVersion::H3;
+    altsvc.port = static_cast<uint16_t>(mConnInfo->RoutedPort());
+    altSvcArray.AppendElement(altsvc);
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
+                               &altSvcArray, ipPref, httpVersions,
                                resolutionDelay, connectionAttemptDelay);
   }
 
@@ -1141,29 +1130,7 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   bool isHttp2 = connTCP->UsingSpdy();
 
-  nsHttpTransaction* realTrans =
-      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-  
-  
-  
-  bool deferExtendedConnect =
-      isHttp2 && realTrans &&
-      (realTrans->IsWebsocketUpgrade() || realTrans->IsForWebTransport());
-
-  if (!aTransactionAlreadyOnConn && deferExtendedConnect) {
-    LOG(
-        ("ProcessTCPConn deferring extended CONNECT upgrade trans=%p to "
-         "ProcessPendingQ\n",
-         realTrans));
-
-    RefPtr<PendingTransactionInfo> existing =
-        gHttpHandler->ConnMgr()->FindTransactionHelper(
-             false, entry, realTrans);
-    if (!existing) {
-      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
-    }
-    mTransaction = nullptr;
-  } else if (!aTransactionAlreadyOnConn) {
+  if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
                                                        mTransaction);
