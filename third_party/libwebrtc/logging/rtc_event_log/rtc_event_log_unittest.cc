@@ -54,7 +54,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/random.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
@@ -65,6 +64,7 @@
 #include "test/logging/memory_log_writer.h"
 #include "test/near_matcher.h"
 #include "test/testsupport/file_utils.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
 
@@ -138,12 +138,12 @@ class RtcEventLogSession
         clock_(Timestamp::Micros(prng_.Rand<uint32_t>())),
         gen_(seed_ * 880001UL, &clock_),
         verifier_(encoding_type_),
+        time_controller_(Timestamp::Micros(prng_.Rand<uint32_t>())),
         log_storage_(),
         log_output_factory_(log_storage_.CreateFactory()) {
     
     
     
-    utc_clock_.SetTime(Timestamp::Micros(prng_.Rand<uint32_t>()));
     
     
     auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -226,7 +226,7 @@ class RtcEventLogSession
   SimulatedClock clock_;
   test::EventGenerator gen_;
   test::EventVerifier verifier_;
-  ScopedFakeClock utc_clock_;
+  GlobalSimulatedTimeController time_controller_;
   std::string temp_filename_;
   MemoryLogStorage log_storage_;
   std::unique_ptr<LogWriterFactoryInterface> log_output_factory_;
@@ -885,8 +885,7 @@ INSTANTIATE_TEST_SUITE_P(
                           RtcEventLog::EncodingType::NewFormat)));
 
 class RtcEventLogCircularBufferTest
-    : public ::testing::TestWithParam<RtcEventLog::EncodingType> {
-};
+    : public ::testing::TestWithParam<RtcEventLog::EncodingType> {};
 
 TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   
@@ -903,8 +902,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
 
   
   
-  ScopedFakeClock utc_clock;
-  utc_clock.SetTime(kUtcTime);
+  GlobalSimulatedTimeController time_controller(kUtcTime);
   const RtcEventLog::EncodingType encoding_type = GetParam();
   MemoryLogStorage log_storage;
   SimulatedClock clock(Timestamp::Seconds(1));
