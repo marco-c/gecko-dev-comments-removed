@@ -18,14 +18,9 @@
 #include <optional>
 #include <vector>
 
-#include "api/field_trials_view.h"
+#include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "modules/include/module_common_types_public.h"
-#include "rtc_base/gtest_prod_util.h"
-
-
-
-
 
 
 
@@ -54,24 +49,15 @@ namespace webrtc {
 class NackTracker {
  public:
   
-  static const size_t kNackListSizeLimit = 500;  
-                                                 
-  explicit NackTracker(const FieldTrialsView& field_trials);
+  
+  
+  explicit NackTracker(size_t max_nack_list_size);
+
   ~NackTracker();
 
   
   
-  
-  
-  
-  void SetMaxNackListSize(size_t max_nack_list_size);
-
-  
-  
   void UpdateSampleRate(int sample_rate_hz);
-
-  
-  void UpdateLastDecodedPacket(uint32_t timestamp);
 
   
   
@@ -85,57 +71,9 @@ class NackTracker {
   std::vector<uint16_t> GetNackList(std::optional<TimeDelta> round_trip_time);
 
   
-  
   void Reset();
 
-  
-  uint32_t GetPacketLossRateForTest() { return packet_loss_rate_; }
-
  private:
-  
-  FRIEND_TEST_ALL_PREFIXES(NackTrackerTest, EstimateTimestampAndTimeToPlay);
-
-  
-  struct Config {
-    explicit Config(const FieldTrialsView& field_trials);
-
-    
-    double packet_loss_forget_factor = 0.996;
-    
-    
-    int ms_per_loss_percent = 20;
-    
-    bool never_nack_multiple_times = false;
-    
-    bool require_valid_rtt = false;
-    
-    int default_rtt_ms = 100;
-    
-    double max_loss_rate = 1.0;
-    
-    
-    
-    std::optional<TimeDelta> fixed_delay = TimeDelta::Seconds(1);
-  };
-
-  struct NackElement {
-    NackElement(int64_t initial_time_to_play_ms, uint32_t initial_timestamp)
-        : time_to_play_ms(initial_time_to_play_ms),
-          estimated_timestamp(initial_timestamp) {}
-
-    
-    
-    int64_t time_to_play_ms;
-
-    
-    
-    
-    
-    
-    
-    uint32_t estimated_timestamp;
-  };
-
   class NackListCompare {
    public:
     bool operator()(uint16_t sequence_number_old,
@@ -144,11 +82,8 @@ class NackTracker {
     }
   };
 
-  typedef std::map<uint16_t, NackElement, NackListCompare> NackList;
-
   
-  
-  NackList GetNackList() const;
+  typedef std::map<uint16_t, uint32_t, NackListCompare> NackList;
 
   
   
@@ -170,40 +105,22 @@ class NackTracker {
   
   uint32_t EstimateTimestamp(uint16_t sequence_number, int samples_per_packet);
 
-  
-  int64_t TimeToPlay(uint32_t timestamp) const;
+  bool Nack(uint32_t timestamp, TimeDelta round_trip_time);
 
   
-  void UpdatePacketLossRate(int packets_lost);
-
-  bool Nack(const NackElement& packet, int64_t round_trip_time_ms);
-
-  const Config config_;
+  
+  const size_t max_nack_list_size_;
 
   
-  uint16_t sequence_num_last_received_rtp_;
-  uint32_t timestamp_last_received_rtp_;
-  bool any_rtp_received_;  
+  std::optional<uint16_t> sequence_num_last_received_rtp_;
+  std::optional<uint32_t> timestamp_last_received_rtp_;
 
-  
-  uint32_t timestamp_last_decoded_rtp_;
-  bool any_rtp_decoded_;  
-
-  int sample_rate_khz_;  
+  Frequency sample_rate_;
 
   
   
   
   NackList nack_list_;
-
-  
-  
-  size_t max_nack_list_size_;
-
-  
-  uint32_t packet_loss_rate_ = 0;
-
-  int max_wait_ms_ = 0;
 };
 
 }  
