@@ -45,7 +45,13 @@ constexpr const char* stateFlags[] = {
   "WP:CPSF ",
 };
 
-CompositorCrashHandler WaylandProxy::sCompositorCrashHandler = nullptr;
+ThreadCallback WaylandProxy::sThreadStartCallback = nullptr;
+ThreadCallback WaylandProxy::sThreadStopCallback = nullptr;
+CompositorUnavailableHandler WaylandProxy::sCompositorUnavailableHandler =
+    nullptr;
+CompositorSilentDisconnectHandler
+    WaylandProxy::sCompositorSilentDisconnectHandler = nullptr;
+std::atomic<bool> WaylandProxy::sCompositorGone = false;
 std::atomic<unsigned> WaylandProxy::sProxyStateFlags = 0;
 
 
@@ -112,6 +118,12 @@ class ProxiedConnection {
   
   bool Process();
   bool ProcessFailure();
+
+  
+  
+  
+  
+  bool DrainApplicationSocket();
 
   void PrintConnectionInfo();
 
@@ -199,6 +211,8 @@ void WaylandMessage::Read(int aSocket) {
       case EAGAIN:
       case EINTR:
         
+        
+        mData.clear();
         Print("WaylandMessage::Read() failed %s\n", strerror(errno));
         return;
       default:
@@ -326,9 +340,13 @@ bool ProxiedConnection::Init(int aApplicationSocket, char* aWaylandDisplay) {
 
 struct pollfd* ProxiedConnection::AddToPollFd(struct pollfd* aPfds) {
   
+  
+  
   aPfds->fd = mApplicationSocket;
   aPfds->events = POLLIN;
-
+  if (WaylandProxy::IsCompositorGone()) {
+    return aPfds + 1;
+  }
   
   
   if (mCompositorConnected && !mToApplicationQueue.empty()) {
@@ -356,6 +374,9 @@ struct pollfd* ProxiedConnection::LoadPollFd(struct pollfd* aPfds) {
   }
   mApplicationFlags = aPfds->revents;
   aPfds++;
+  if (WaylandProxy::IsCompositorGone()) {
+    return aPfds;
+  }
   mCompositorFlags = aPfds->revents;
   aPfds++;
   return aPfds;
@@ -487,19 +508,17 @@ void ProxiedConnection::PrintConnectionInfo() {
 }
 
 bool ProxiedConnection::Process() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mApplicationFailed || mCompositorFailed) {
+  if (mApplicationFailed) {
+    return false;
+  }
+  if (mCompositorFailed) {
+    
+    
+    
+    
+    
+    FlushQueue(mApplicationSocket, mApplicationFlags, mToApplicationQueue,
+               mStatSentToClientLater);
     return false;
   }
 
@@ -570,11 +589,26 @@ bool ProxiedConnection::Process() {
   return !mApplicationFailed && !mCompositorFailed;
 }
 
-bool ProxiedConnection::ProcessFailure() {
-  if (!mCompositorFailed && !mApplicationFailed) {
-    return false;
-  }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool ProxiedConnection::ProcessFailure() {
   if (mCompositorFailed) {
     double time = (double)(clock() - mFailureTime);
     if (time < sFailureTimeout) {
@@ -583,16 +617,37 @@ bool ProxiedConnection::ProcessFailure() {
 
     struct stat buffer;
     if (stat(mWaylandDisplay, &buffer) < 0) {
-      Print("ProxiedConnection(): compositor crashed!\n");
-      WaylandProxy::CompositorCrashed();
+      Print(
+          "ProxiedConnection(): compositor unavailable, scheduling graceful "
+          "quit.\n");
+      WaylandProxy::CompositorUnavailable();
     } else {
       Print("ProxiedConnection(): compositor fails to read/write events!\n");
+      WaylandProxy::CompositorSilentDisconnect(mFailureTime);
     }
   } else if (mApplicationFailed) {
     Print("ProxiedConnection(): application fails to read/write events!\n");
   }
 
   return true;
+}
+
+bool ProxiedConnection::DrainApplicationSocket() {
+  if (mApplicationFlags & (POLLHUP | POLLERR)) {
+    return false;  
+  }
+  if (!(mApplicationFlags & POLLIN)) {
+    return true;
+  }
+  while (true) {
+    WaylandMessage msg(mApplicationSocket);
+    if (!msg.Loaded()) {
+      
+      
+      return !msg.Failed();
+    }
+    
+  }
 }
 
 bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
@@ -763,7 +818,10 @@ bool WaylandProxy::IsChildAppTerminated() {
 }
 
 bool WaylandProxy::PollConnections() {
-  int nfds_max = mConnections.size() * 2 + 1;
+  
+  
+  int fds_per_connection = sCompositorGone ? 1 : 2;
+  int nfds_max = mConnections.size() * fds_per_connection + 1;
 
   struct pollfd pollfds[nfds_max];
   struct pollfd* addedPollfd = pollfds;
@@ -775,8 +833,11 @@ bool WaylandProxy::PollConnections() {
 
   
   
-  bool addNewConnection = mConnections.empty() ||
-                          mConnections.back()->IsConnected();
+  
+  
+  bool addNewConnection = !sCompositorGone &&
+                          (mConnections.empty() ||
+                           mConnections.back()->IsConnected());
   if (addNewConnection) {
     addedPollfd->fd = mProxyServerSocket;
     addedPollfd->events = POLLIN;
@@ -844,17 +905,45 @@ bool WaylandProxy::PollConnections() {
 }
 
 bool WaylandProxy::ProcessConnections() {
+  
+  
+  
+  if (sCompositorGone) {
+    for (auto connection = mConnections.begin();
+         connection != mConnections.end();) {
+      if (!(*connection)->DrainApplicationSocket()) {
+        
+        
+        WaylandProxy::AddState(WAYLAND_PROXY_CONNECTION_REMOVED);
+        connection = mConnections.erase(connection);
+      } else {
+        connection++;
+      }
+    }
+    
+    return !mConnections.empty();
+  }
+
   std::vector<std::unique_ptr<ProxiedConnection>>::iterator connection;
   for (connection = mConnections.begin(); connection != mConnections.end();) {
     if (!(*connection)->Process()) {
       WaylandProxy::AddState(WAYLAND_PROXY_CONNECTION_REMOVED);
       if ((*connection)->ProcessFailure()) {
+        
+        
+        if (sCompositorGone) {
+          return true;
+        }
         connection = mConnections.erase(connection);
         if (mConnections.empty()) {
           
           Info("removed last connection, quit\n");
           return false;
         }
+      } else {
+        
+        
+        connection++;
       }
     } else {
       connection++;
@@ -899,7 +988,13 @@ void* WaylandProxy::RunProxyThread(WaylandProxy* aProxy) {
 #if defined(__linux__) || defined(__FreeBSD__)
   pthread_setname_np(pthread_self(), "WaylandProxy");
 #endif
+  if (sThreadStartCallback) {
+    sThreadStartCallback();
+  }
   aProxy->Run();
+  if (sThreadStopCallback) {
+    sThreadStopCallback();
+  }
   Print("[%d] WaylandProxy [%p]: thread exited.\n", getpid(), aProxy);
   return nullptr;
 }
@@ -968,6 +1063,14 @@ bool WaylandProxy::RunThread() {
 
 void WaylandProxy::SetVerbose(bool aVerbose) { sPrintInfo = aVerbose; }
 
+void WaylandProxy::SetThreadStartCallback(ThreadCallback aCallback) {
+  sThreadStartCallback = aCallback;
+}
+
+void WaylandProxy::SetThreadStopCallback(ThreadCallback aCallback) {
+  sThreadStopCallback = aCallback;
+}
+
 void WaylandProxy::Info(const char* aFormat, ...) {
   if (!sPrintInfo) {
     return;
@@ -997,13 +1100,26 @@ void WaylandProxy::ErrorPlain(const char* aFormat, ...) {
   va_end(args);
 }
 
-void WaylandProxy::SetCompositorCrashHandler(CompositorCrashHandler aCrashHandler) {
-  sCompositorCrashHandler = aCrashHandler;
+void WaylandProxy::SetCompositorUnavailableHandler(
+    CompositorUnavailableHandler aHandler) {
+  sCompositorUnavailableHandler = aHandler;
 }
 
-void WaylandProxy::CompositorCrashed() {
-  if (sCompositorCrashHandler) {
-    sCompositorCrashHandler();
+void WaylandProxy::CompositorUnavailable() {
+  sCompositorGone = true;
+  if (sCompositorUnavailableHandler) {
+    sCompositorUnavailableHandler();
+  }
+}
+
+void WaylandProxy::SetCompositorSilentDisconnectHandler(
+    CompositorSilentDisconnectHandler aHandler) {
+  sCompositorSilentDisconnectHandler = aHandler;
+}
+
+void WaylandProxy::CompositorSilentDisconnect(clock_t aFailureTime) {
+  if (sCompositorSilentDisconnectHandler) {
+    sCompositorSilentDisconnectHandler(aFailureTime);
   }
 }
 

@@ -7,6 +7,7 @@
 #define _wayland_proxy_h_
 
 #include <poll.h>
+#include <time.h>
 #include <vector>
 #include <fcntl.h>
 #include <atomic>
@@ -14,7 +15,13 @@
 
 class ProxiedConnection;
 
-typedef void (*CompositorCrashHandler)();
+typedef void (*ThreadCallback)();
+typedef void (*CompositorUnavailableHandler)();
+
+
+
+
+typedef void (*CompositorSilentDisconnectHandler)(clock_t aFailureTime);
 
 #define WAYLAND_PROXY_ENABLED                       (1 << 0)
 #define WAYLAND_PROXY_DISABLED                      (1 << 1)
@@ -44,8 +51,15 @@ class WaylandProxy {
   void RestoreWaylandDisplay();
 
   static void SetVerbose(bool aVerbose);
-  static void SetCompositorCrashHandler(CompositorCrashHandler aCrashHandler);
-  static void CompositorCrashed();
+  static void SetThreadStartCallback(ThreadCallback aCallback);
+  static void SetThreadStopCallback(ThreadCallback aCallback);
+  static void SetCompositorUnavailableHandler(
+      CompositorUnavailableHandler aHandler);
+  static void CompositorUnavailable();
+  static void SetCompositorSilentDisconnectHandler(
+      CompositorSilentDisconnectHandler aHandler);
+  static void CompositorSilentDisconnect(clock_t aFailureTime);
+  static bool IsCompositorGone() { return sCompositorGone; }
   static void AddState(unsigned aState);
   static const char* GetState();
 
@@ -88,7 +102,15 @@ class WaylandProxy {
   
   char mWaylandProxy[sMaxDisplayNameLen];
 
-  static CompositorCrashHandler sCompositorCrashHandler;
+  static ThreadCallback sThreadStartCallback;
+  static ThreadCallback sThreadStopCallback;
+  static CompositorUnavailableHandler sCompositorUnavailableHandler;
+  static CompositorSilentDisconnectHandler sCompositorSilentDisconnectHandler;
+  
+  
+  
+  
+  static std::atomic<bool> sCompositorGone;
   static std::atomic<unsigned> sProxyStateFlags;
 };
 
