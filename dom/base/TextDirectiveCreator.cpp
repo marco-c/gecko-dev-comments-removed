@@ -551,11 +551,15 @@ RangeBasedTextDirectiveCreator::FindAllMatchingCandidates() {
   if (mWatchdog && mWatchdog->IsDone()) {
     return Ok();
   }
-  TEXT_FRAGMENT_LOG(
-      "Searching all occurrences of last word of end content ({}) in the "
-      "partial document from beginning of the target range to the end of the "
-      "target range, excluding the last word.",
-      NS_ConvertUTF16toUTF8(mLastWordOfEndContent));
+  
+  
+  
+  
+  
+  
+  auto searchStart =
+      TextDirectiveUtil::FindWordBoundary<TextScanDirection::Right>(
+          mRange->StartRef(), TextDirectiveUtil::BreakOnPunctuation::No);
 
   auto searchEnd =
       TextDirectiveUtil::FindNextNonWhitespacePosition<TextScanDirection::Left>(
@@ -563,9 +567,14 @@ RangeBasedTextDirectiveCreator::FindAllMatchingCandidates() {
   searchEnd = TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(
       searchEnd, TextDirectiveUtil::BreakOnPunctuation::No);
 
-  const nsTArray<RefPtr<AbstractRange>> endContentRanges =
-      MOZ_TRY(FindAllMatchingRanges(mLastWordOfEndContent, mRange->StartRef(),
-                                    searchEnd));
+  TEXT_FRAGMENT_LOG(
+      "Searching all occurrences of last word of end content ({}) in the "
+      "partial document from after the first word of the start content to "
+      "the end of the target range, excluding the last word.",
+      NS_ConvertUTF16toUTF8(mLastWordOfEndContent));
+
+  const nsTArray<RefPtr<AbstractRange>> endContentRanges = MOZ_TRY(
+      FindAllMatchingRanges(mLastWordOfEndContent, searchStart, searchEnd));
   FindEndMatchCommonSubstringLengths(endContentRanges);
   return Ok();
 }
