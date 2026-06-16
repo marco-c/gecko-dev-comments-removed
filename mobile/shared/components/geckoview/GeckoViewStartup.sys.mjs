@@ -75,7 +75,6 @@ const JSWINDOWACTORS = {
       esModuleURI: "resource:///actors/GeckoViewPromptChild.sys.mjs",
       events: {
         click: { capture: false, mozSystemGroup: true },
-        contextmenu: { capture: false, mozSystemGroup: true },
         mozshowdropdown: {},
         "mozshowdropdown-sourcetouch": {},
         MozOpenDateTimePicker: {},
@@ -141,6 +140,7 @@ export class GeckoViewStartup {
             "GeckoView:TrackingDB:GetEventsByDateRange",
             "GeckoView:TrackingDB:SumAllEvents",
             "GeckoView:TrackingDB:GetEarliestRecordedDate",
+            "GeckoView:TrackingDB:ClearAll",
           ],
         });
 
