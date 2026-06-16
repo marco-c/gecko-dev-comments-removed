@@ -462,9 +462,11 @@ nsINode* SheetLoadData::GetRequestingNode() const {
   return mLoader->GetDocument();
 }
 
+LoaderReusableStyleSheets::~LoaderReusableStyleSheets() = default;
 
-
-
+void LoaderReusableStyleSheets::AddReusableSheet(StyleSheet* aSheet) {
+  mReusableSheets.AppendElement(aSheet);
+}
 
 bool LoaderReusableStyleSheets::FindReusableStyleSheet(
     nsIURI* aURL, RefPtr<StyleSheet>& aResult) {
@@ -898,6 +900,19 @@ bool Loader::MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData) {
 
 
 
+
+std::tuple<RefPtr<StyleSheet>, Loader::SheetState,
+           RefPtr<SubResourceNetworkMetadataHolder>>
+Loader::CreateSheet(const SheetInfo& aInfo, StyleOrigin aOrigin, bool aSyncLoad,
+                    css::StylePreloadKind aPreloadKind) {
+  nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
+                                          ? aInfo.mTriggeringPrincipal.get()
+                                          : LoaderPrincipal();
+  return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal, aOrigin,
+                     aInfo.mCORSMode,
+                      nullptr,
+                     aInfo.mIntegrity, aSyncLoad, aPreloadKind);
+}
 
 std::tuple<RefPtr<StyleSheet>, Loader::SheetState,
            RefPtr<SubResourceNetworkMetadataHolder>>

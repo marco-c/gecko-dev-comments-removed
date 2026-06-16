@@ -17,7 +17,6 @@
 #include "mozilla/PendingStyles.h"       
 #include "mozilla/RangeBoundary.h"       
 #include "mozilla/SelectionState.h"      
-#include "mozilla/StyleSheet.h"          
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/WeakPtr.h"             
 #include "mozilla/dom/DataTransfer.h"    
