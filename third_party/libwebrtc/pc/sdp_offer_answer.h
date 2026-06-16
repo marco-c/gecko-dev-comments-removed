@@ -72,6 +72,8 @@
 
 namespace webrtc {
 
+class ScopedOperationsBatcher;
+
 
 
 
@@ -575,7 +577,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   void UpdatePayloadTypeDemuxingState(
       ContentSource source,
-      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid);
+      const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid,
+      ScopedOperationsBatcher& worker_tasks);
 
   
   void SetSessionError(SessionError error, const std::string& error_desc);

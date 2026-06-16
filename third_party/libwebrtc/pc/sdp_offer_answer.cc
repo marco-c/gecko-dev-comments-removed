@@ -56,6 +56,7 @@
 #include "api/video/video_codec_constants.h"
 #include "media/base/codec.h"
 #include "media/base/codec_comparators.h"
+#include "media/base/media_channel.h"
 #include "media/base/media_constants.h"
 #include "media/base/media_engine.h"
 #include "media/base/rid_description.h"
@@ -5167,8 +5168,11 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
 
   if (ConfiguredForMedia()) {
     
+    ScopedOperationsBatcher batcher(context_->worker_thread());
+
     
-    UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid);
+    
+    UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid, batcher);
 
     
     auto rtp_transceivers = transceivers()->ListInternal();
@@ -5214,9 +5218,6 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
       RTC_LOG(LS_ERROR) << "Warning: Inconsistent congestion control feedback "
                            "types, ignoring all.";
     }
-
-    
-    ScopedOperationsBatcher batcher(context_->worker_thread());
 
     for (const auto& [transceiver, content] : channels) {
       if (source == CS_LOCAL) {
@@ -5770,7 +5771,8 @@ SdpOfferAnswerHandler::GetMediaDescriptionOptionsForRejectedData(
 
 void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
     ContentSource source,
-    const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid) {
+    const flat_map<std::string, const ContentGroup*>& bundle_groups_by_mid,
+    ScopedOperationsBatcher& worker_tasks) {
   TRACE_EVENT0("webrtc",
                "SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState");
   RTC_DCHECK_RUN_ON(signaling_thread());
@@ -5939,10 +5941,6 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
   
   
   
-  
-  
-  
-  
   for (RtpTransceiver* transceiver : transceivers()->ListInternal()) {
     const ContentInfo* content =
         FindMediaSectionForTransceiver(transceiver, sdesc);
@@ -5951,13 +5949,17 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
     }
     auto it = transports_to_update.find(content->mid());
     if (it != transports_to_update.end() && !it->second) {
-      
-      
-      
-      
-      
-      
-      transceiver->ResetUnsignaledRecvStream();
+      if (MediaReceiveChannelInterface* receive_channel =
+              transceiver->media_receive_channel()) {
+        
+        
+        
+        
+        
+        
+        worker_tasks.Add(
+            receive_channel->GetResetUnsignaledRecvStreamCallback());
+      }
     }
   }
 }

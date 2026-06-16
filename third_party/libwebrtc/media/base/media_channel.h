@@ -277,6 +277,11 @@ class MediaReceiveChannelInterface {
   
   virtual void ResetUnsignaledRecvStream() = 0;
   
+  
+  
+  virtual absl::AnyInvocable<void() &&>
+  GetResetUnsignaledRecvStreamCallback() = 0;
+  
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
   
   virtual void OnPacketReceived(RtpPacketReceived packet) = 0;
