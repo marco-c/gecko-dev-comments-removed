@@ -832,7 +832,8 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     uint16_t redPt, ulpfecPt, redRtxPt;
     if (!SdpHelper::GetPtAsInt(redPayloadType, &redPt) ||
         !SdpHelper::GetPtAsInt(ulpfecPayloadType, &ulpfecPt) ||
-        !SdpHelper::GetPtAsInt(redRtxPayloadType, &redRtxPt)) {
+        (!redRtxPayloadType.empty() &&
+         !SdpHelper::GetPtAsInt(redRtxPayloadType, &redRtxPt))) {
       return;
     }
 
