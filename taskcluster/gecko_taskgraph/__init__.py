@@ -13,13 +13,13 @@ from taskgraph.transforms.task import payload_builders
 from taskgraph.util import docker, schema
 from taskgraph.util import taskcluster as tc_util
 
-from gecko_taskgraph.config import graph_config_schema
+from gecko_taskgraph.config import GraphConfigSchema
 
 GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..")))
 TEST_CONFIGS = os.path.join(GECKO, "taskcluster", "test_configs")
 
 
-taskgraph_config.graph_config_schema = graph_config_schema
+taskgraph_config.graph_config_schema = GraphConfigSchema
 
 
 
@@ -74,6 +74,7 @@ def register(graph_config):
         target_tasks,  
     )
     from gecko_taskgraph.parameters import register_parameters
+    from gecko_taskgraph import task_context  
     from gecko_taskgraph.util import (
         dependencies,  
     )
