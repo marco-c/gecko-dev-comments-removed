@@ -2335,6 +2335,32 @@ for (let [elemTy, valueTy, src, exp1, exp2] of ARRAY_COPY_TESTS) {
     assertErrorMessage(() => {
         arrayCopy(exp1TO, 1, exp2TO, 9, 0);
     },WebAssembly.RuntimeError, /index out of bounds/);
+
+    
+    arrayCopy(exp1TO, 6, exp2TO, 1, 0);
+
+    
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 7, exp2TO, 1, 0);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    
+    arrayCopy(exp1TO, 1, exp2TO, 6, 0);
+
+    
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 1, exp2TO, 7, 0);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, -4, exp2TO, 1, 4);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 1, exp2TO, -4, 4);
+    },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -2473,6 +2499,40 @@ assertErrorMessage(() => wasmEvalText(`(module
     )
   )`).exports;
   arrayFill();
+}
+
+
+{
+  const { arrayFill } = wasmEvalText(`(module
+    (type $a (array (mut i32)))
+    (func (export "arrayFill")
+      (array.new_default $a (i32.const 8))
+      i32.const 9
+      i32.const 123
+      i32.const 0
+      array.fill $a
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    arrayFill();
+  }, WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+{
+  const { arrayFill } = wasmEvalText(`(module
+    (type $a (array (mut i32)))
+    (func (export "arrayFill")
+      (array.new_default $a (i32.const 8))
+      i32.const -4
+      i32.const 123
+      i32.const 4
+      array.fill $a
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    arrayFill();
+  }, WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 

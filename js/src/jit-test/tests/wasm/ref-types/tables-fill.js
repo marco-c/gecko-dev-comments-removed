@@ -126,6 +126,10 @@ function testTableFill(tbl_type, val_type, obj) {
                      WebAssembly.RuntimeError, /index out of bounds/);
 
   
+  assertErrorMessage(() => ins.exports.fill1(-4, null, 4),
+                     WebAssembly.RuntimeError, /index out of bounds/);
+
+  
   check_table0();
 }
 
