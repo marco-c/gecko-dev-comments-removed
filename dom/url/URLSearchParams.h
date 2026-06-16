@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_URLSearchParams_h
 #define mozilla_dom_URLSearchParams_h
 
@@ -52,7 +50,7 @@ class URLSearchParams final : public nsISupports, public nsWrapperCache {
   ~URLSearchParams();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(URLSearchParams)
 
   explicit URLSearchParams(nsISupports* aParent,
