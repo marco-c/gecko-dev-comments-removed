@@ -410,7 +410,8 @@ class BufferQueueStream : public StreamInterface {
   BufferQueue buffer_;
 };
 
-constexpr int kBufferCapacity = 1;
+
+constexpr int kBufferCapacity = 2;
 constexpr size_t kDefaultBufferSize = 2048;
 
 class SSLStreamAdapterTestBase : public ::testing::Test {

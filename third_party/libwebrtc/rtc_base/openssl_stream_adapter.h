@@ -266,11 +266,6 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   
   int dtls_mtu_ = 1200;
 
-  
-  
-  
-  const int force_dtls_13_ = 0;
-
   int retransmission_count_ = 0;
 
   

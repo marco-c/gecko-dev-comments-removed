@@ -1517,7 +1517,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface : public RefCountInterface {
     
     
     
-    SSLProtocolVersion ssl_max_version = SSL_PROTOCOL_DTLS_12;
+    SSLProtocolVersion ssl_max_version = SSL_PROTOCOL_DTLS_13;
   };
 
   
