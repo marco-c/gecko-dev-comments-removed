@@ -18,6 +18,9 @@ add_setup(async () => {
 registerCleanupFunction(async () => {
   await SidebarController.toggleExpandOnHover(false);
   await SidebarController.waitUntilStable();
+  
+  
+  Services.prefs.clearUserPref(SIDEBAR_VISIBILITY_PREF);
   await SpecialPowers.popPrefEnv();
 });
 
