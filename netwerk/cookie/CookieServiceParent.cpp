@@ -279,24 +279,6 @@ IPCResult CookieServiceParent::RecvGetCookieList(
 
   
   
-  if (aStorageAccessPermissionGranted) {
-    for (const auto& attrs : aAttrsList) {
-      if (attrs.mPartitionKey.IsEmpty()) {
-        nsAutoCString baseDomain;
-        bool requireHostMatch = false;
-        nsresult rv = CookieCommons::GetBaseDomain(
-            mTLDService, aHost, baseDomain, requireHostMatch);
-        if (NS_SUCCEEDED(rv)) {
-          mCookieService->EvictPartitionedCookiesShadowingHttpOnly(baseDomain,
-                                                                   attrs);
-        }
-        break;
-      }
-    }
-  }
-
-  
-  
   for (const auto& attrs : aAttrsList) {
     UpdateCookieInContentList(aHost, attrs);
   }
