@@ -820,13 +820,21 @@ void SandboxBroker::ThreadMain(void) {
       
       pathLen2 = strnlen(pathBuf2, kMaxPathLen);
       if (pathLen2 > 0) {
+        if (OperationPaths(req.mOp) < 2) {
+          SANDBOX_LOG("extra path for op %s from pid %d",
+                      OperationDescription(req.mOp), mChildPid);
+          shutdown(mFileDesc, SHUT_RD);
+          break;
+        }
         
         pathBuf2[pathLen2] = '\0';
         pathLen2 = ConvertRelativePath(pathBuf2, sizeof(pathBuf2), pathLen2);
         int perms2 = mPolicy->Lookup(nsDependentCString(pathBuf2, pathLen2));
 
         
-        perms &= perms2;
+        
+        constexpr int kNegPerms = FORCE_DENY | CRASH_INSTEAD;
+        perms = (perms & perms2) | ((perms | perms2) & kNegPerms);
       }
     } else {
       
