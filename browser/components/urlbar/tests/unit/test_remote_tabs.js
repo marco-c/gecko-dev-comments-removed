@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 const { Weave } = ChromeUtils.importESModule(
@@ -580,7 +577,7 @@ add_task(async function test_restrictionCharacter() {
   await addOpenPages(uri, 1);
 
   
-  let query = UrlbarTokenizer.RESTRICT.OPENPAGE;
+  let query = UrlbarShared.RESTRICT_TOKENS.OPENPAGE;
   let context = createContext(query, { isPrivate: false });
   await check_results({
     context,
@@ -646,7 +643,7 @@ add_task(async function test_duplicate_remote_tabs() {
   ]);
 
   
-  let query = UrlbarTokenizer.RESTRICT.OPENPAGE;
+  let query = UrlbarShared.RESTRICT_TOKENS.OPENPAGE;
   let context = createContext(query, { isPrivate: false });
   await check_results({
     context,

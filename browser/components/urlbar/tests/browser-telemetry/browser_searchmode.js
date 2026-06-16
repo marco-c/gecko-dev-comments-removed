@@ -567,7 +567,9 @@ add_task(async function test_touchbar() {
   });
   
   
-  TouchBarHelper.insertRestrictionInUrlbar(UrlbarTokenizer.RESTRICT.HISTORY);
+  TouchBarHelper.insertRestrictionInUrlbar(
+    UrlbarShared.RESTRICT_TOKENS.HISTORY
+  );
   await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     entry: "touchbar",
