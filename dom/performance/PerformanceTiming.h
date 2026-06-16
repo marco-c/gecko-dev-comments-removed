@@ -40,16 +40,16 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
  public:
   PerformanceTimingData() = default;  
   
-  static PerformanceTimingData* Create(nsITimedChannel* aChannel,
-                                       nsIHttpChannel* aHttpChannel,
-                                       DOMHighResTimeStamp aZeroTime,
-                                       nsAString& aInitiatorType,
-                                       nsAString& aEntryName);
+  static UniquePtr<PerformanceTimingData> Create(nsITimedChannel* aChannel,
+                                                 nsIHttpChannel* aHttpChannel,
+                                                 DOMHighResTimeStamp aZeroTime,
+                                                 nsAString& aInitiatorType,
+                                                 nsAString& aEntryName);
 
   PerformanceTimingData(nsITimedChannel* aChannel, nsIHttpChannel* aHttpChannel,
                         DOMHighResTimeStamp aZeroTime);
 
-  static PerformanceTimingData* Create(
+  static UniquePtr<PerformanceTimingData> Create(
       const CacheablePerformanceTimingData& aCachedData,
       DOMHighResTimeStamp aZeroTime, TimeStamp aStartTime, TimeStamp aEndTime,
       RenderBlockingStatusType aRenderBlockingStatus);

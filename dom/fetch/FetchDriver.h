@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FetchDriver_h
 #define mozilla_dom_FetchDriver_h
 
@@ -133,8 +131,8 @@ class FetchDriver final : public nsIChannelEventSink,
     mOriginStack = std::move(aOriginStack);
   }
 
-  PerformanceTimingData* GetPerformanceTimingData(nsAString& aInitiatorType,
-                                                  nsAString& aEntryName);
+  UniquePtr<PerformanceTimingData> GetPerformanceTimingData(
+      nsAString& aInitiatorType, nsAString& aEntryName);
 
   
   void RunAbortAlgorithm() override;
