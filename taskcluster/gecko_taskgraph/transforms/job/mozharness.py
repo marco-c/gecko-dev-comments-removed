@@ -23,7 +23,6 @@ from gecko_taskgraph.transforms.job.common import (
     get_expiration,
     setup_secrets,
 )
-from gecko_taskgraph.util.attributes import is_try
 
 
 class MozharnessRunSchema(Schema, kw_only=True):
@@ -178,9 +177,6 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     if "job-script" in run:
         env["JOB_SCRIPT"] = run["job-script"]
 
-    if is_try(config.params):
-        env["TRY_COMMIT_MSG"] = config.params["message"]
-
     
     
     
@@ -255,13 +251,6 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     extra_config = run.pop("extra-config", {})
     extra_config["objdir"] = "obj-build"
     env["EXTRA_MOZHARNESS_CONFIG"] = json.dumps(extra_config, sort_keys=True)
-
-    
-    
-    
-    
-    if is_try(config.params):
-        env["TRY_COMMIT_MSG"] = config.params["message"] or "no commit message"
 
     if not job["attributes"]["build_platform"].startswith(("win", "macosx")):
         raise Exception(
