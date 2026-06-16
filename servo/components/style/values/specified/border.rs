@@ -74,8 +74,16 @@ impl BorderStyle {
 pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 impl ToTyped for BorderImageWidth {
-    fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        return Err(());
+    
+    
+    
+    
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if !self.all_sides_equal() {
+            return Err(());
+        }
+
+        self.0.to_typed(dest)
     }
 }
 
