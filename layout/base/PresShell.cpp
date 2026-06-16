@@ -1406,7 +1406,8 @@ bool PresShell::FixUpFocus() {
   }
   if (auto* element = fm->GetFocusedElement()) {
     
-    element->OwnerDoc()->SetPreviouslyFocusedContent(element);
+    
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
   }
   fm->ClearFocus(window);
   return true;
