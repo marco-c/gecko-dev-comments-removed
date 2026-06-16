@@ -747,5 +747,30 @@ TEST_F(OutstandingDataTest, NackBetweenAckBlocksDoesNotAccessOutOfBounds) {
                   false);
 }
 
+TEST_F(OutstandingDataTest, HandlesSacksWithOutOfBoundsTsns) {
+  
+  for (int i = 0; i < 7; ++i) {
+    buf_.Insert(kMessageId, gen_.Ordered({1}, ""), kNow);
+  }
+
+  
+  SackChunk::GapAckBlock sack1[] = {{2, 2},   
+                                    {4, 4},   
+                                    {6, 6}};  
+  buf_.HandleSack(unwrapper_.Unwrap(TSN(10)), sack1,
+                  false);
+  EXPECT_EQ(buf_.unacked_items(), 3u);  
+
+  
+  
+  SackChunk::GapAckBlock sack2[] = {{1, 1},          
+                                    {1000, 60000}};  
+
+  buf_.HandleSack(unwrapper_.Unwrap(TSN(11)), sack2,
+                  true);
+  
+  EXPECT_EQ(buf_.unacked_items(), 2u);  
+}
+
 }  
 }  
