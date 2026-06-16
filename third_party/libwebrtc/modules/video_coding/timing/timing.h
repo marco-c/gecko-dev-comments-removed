@@ -76,7 +76,7 @@ class VCMTiming {
 
   
   
-  void SetJitterDelay(TimeDelta required_delay);
+  void SetMinimumDelay(TimeDelta minimum_delay);
 
   
   TimeDelta min_playout_delay() const;
@@ -97,13 +97,11 @@ class VCMTiming {
 
   
   
-  virtual void IncomingTimestamp(uint32_t rtp_timestamp,
-                                 Timestamp last_packet_time);
+  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp, Timestamp now);
 
   
   
-  
-  virtual Timestamp RenderTime(uint32_t frame_timestamp, Timestamp now) const;
+  virtual Timestamp RenderTime(uint32_t rtp_timestamp, Timestamp now) const;
 
   
   
