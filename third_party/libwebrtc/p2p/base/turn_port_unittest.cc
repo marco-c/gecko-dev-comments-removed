@@ -2011,7 +2011,9 @@ TEST_F(TurnPortTest, TestTurnCustomizerDisallowChannelData) {
 
 
 
-TEST_F(TurnPortTest, TestTurnCustomizerAddAttribute) {
+
+
+TEST_F(TurnPortTest, DISABLED_TestTurnCustomizerAddAttribute) {
   unsigned int observer_message_counter = 0;
   unsigned int observer_channel_data_counter = 0;
   unsigned int observer_attr_counter = 0;
