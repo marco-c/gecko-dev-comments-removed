@@ -15,6 +15,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILTimeContainer.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DOMMatrix.h"
@@ -433,6 +434,67 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
   return LengthPercentage::FromPixels(rawSize);
 }
 
+AspectRatio SVGSVGElement::GetIntrinsicRatio() {
+  
+  
+  
+
+  const SVGAnimatedLength& width = mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
+  const SVGAnimatedLength& height =
+      mLengthAttributes[SVGSVGElement::ATTR_HEIGHT];
+  if (!width.IsPercentage() && !height.IsPercentage()) {
+    SVGElementMetrics metrics(this);
+    
+    
+    
+    
+    
+    
+    
+    const float w = width.GetAnimValueWithZoom(metrics);
+    const float h = height.GetAnimValueWithZoom(metrics);
+    if (w > 0.0f && h > 0.0f) {
+      return AspectRatio::FromSize(w, h);
+    }
+  }
+
+  if (const auto& viewBox = GetViewBoxInternal(); viewBox.HasRect()) {
+    float zoom = UserSpaceMetrics::GetZoom(this);
+    const auto& anim = viewBox.GetAnimValue() * zoom;
+    return AspectRatio::FromSize(anim.width, anim.height);
+  }
+
+  return AspectRatio();
+}
+
+gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
+  auto intrinsicWidth = GetIntrinsicWidth();
+  auto intrinsicHeight = GetIntrinsicHeight();
+  bool hasWidth = intrinsicWidth.IsLength();
+  bool hasHeight = intrinsicHeight.IsLength();
+  gfx::Size size;
+  if (hasWidth) {
+    size.width = intrinsicWidth.AsLength().ToCSSPixels();
+  }
+  if (hasHeight) {
+    size.height = intrinsicHeight.AsLength().ToCSSPixels();
+  }
+  if (hasWidth && hasHeight) {
+    return size;
+  }
+  SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame());
+  AspectRatio ratio = osf ? osf->GetIntrinsicRatio() : GetIntrinsicRatio();
+  if (!hasWidth) {
+    size.width = ratio && hasHeight ? CSSIntCoord(ratio.ApplyTo(size.height))
+                                    : kFallbackIntrinsicWidthInPixels;
+  }
+  if (!hasHeight) {
+    size.height = ratio ? CSSIntCoord(ratio.Inverted().ApplyTo(size.width))
+                        : kFallbackIntrinsicHeightInPixels;
+  }
+  return size;
+}
+
 
 
 
@@ -474,14 +536,42 @@ bool SVGSVGElement::WillBeOutermostSVG(nsINode& aParent) const {
   return true;
 }
 
-void SVGSVGElement::DidChangeSVGView() {
-  InvalidateTransformNotifyFrame();
+void SVGSVGElement::SetCurrentView(const nsAString& aCurrentViewID) {
+  if (mCurrentViewID == aCurrentViewID) {
+    return;
+  }
+
+  if (mSVGView) {
+    
+    
+    if (!IsPendingMappedAttributeEvaluation() &&
+        mAttrs.MarkAsPendingPresAttributeEvaluation()) {
+      OwnerDoc()->ScheduleForPresAttrEvaluation(this);
+    }
+
+    InvalidateTransformNotifyFrame();
+  }
+
+  mCurrentViewID = aCurrentViewID;
+  mSVGView = nullptr;
+}
+
+void SVGSVGElement::SetViewSpec(std::unique_ptr<SVGView> aSVGView) {
+  if (!mSVGView && !aSVGView) {
+    return;
+  }
+
   
   
   if (!IsPendingMappedAttributeEvaluation() &&
       mAttrs.MarkAsPendingPresAttributeEvaluation()) {
     OwnerDoc()->ScheduleForPresAttrEvaluation(this);
   }
+
+  mSVGView = std::move(aSVGView);
+  mCurrentViewID = VoidString();
+
+  InvalidateTransformNotifyFrame();
 }
 
 void SVGSVGElement::InvalidateTransformNotifyFrame() {
