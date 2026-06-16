@@ -47,7 +47,7 @@ class CSSMathNegate final : public CSSMathValue {
   
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             nsACString& aDest) const;
+                             bool aParenLess, nsACString& aDest) const;
 
  private:
   virtual ~CSSMathNegate() = default;

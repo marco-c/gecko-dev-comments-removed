@@ -56,7 +56,7 @@ class CSSMathSum final : public CSSMathValue {
   
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             nsACString& aDest) const;
+                             bool aParenLess, nsACString& aDest) const;
 
   StyleMathSum ToStyleMathSum() const;
 

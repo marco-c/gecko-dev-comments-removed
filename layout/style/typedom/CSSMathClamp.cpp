@@ -71,13 +71,16 @@ void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 
   aDest.Append("clamp("_ns);
 
-  mLower->ToCssTextWithProperty(aPropertyId,  true, aDest);
+  mLower->ToCssTextWithProperty(aPropertyId,  true,
+                                 true, aDest);
   aDest.Append(", "_ns);
 
-  mValue->ToCssTextWithProperty(aPropertyId,  true, aDest);
+  mValue->ToCssTextWithProperty(aPropertyId,  true,
+                                 true, aDest);
   aDest.Append(", "_ns);
 
-  mUpper->ToCssTextWithProperty(aPropertyId,  true, aDest);
+  mUpper->ToCssTextWithProperty(aPropertyId,  true,
+                                 true, aDest);
 
   aDest.Append(")"_ns);
 }

@@ -79,7 +79,8 @@ void CSSMathMax::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       aDest.Append(", "_ns);
     }
 
-    value->ToCssTextWithProperty(aPropertyId,  true, aDest);
+    value->ToCssTextWithProperty(aPropertyId,  true,
+                                  true, aDest);
     first = false;
   }
 

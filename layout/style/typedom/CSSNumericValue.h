@@ -120,6 +120,9 @@ class CSSNumericValue : public CSSStyleValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
                              nsACString& aDest) const;
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
+                             bool aParenLess, nsACString& aDest) const;
+
   
   
   Maybe<StyleNumericValue> ToStyleNumericValue() const;
