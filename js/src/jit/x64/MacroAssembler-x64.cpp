@@ -623,8 +623,7 @@ void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
 
     
     Label upperBitsZeroed;
-    cmpPtr(scratch, scratch);
-    j(Assembler::Zero, &upperBitsZeroed);
+    asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &upperBitsZeroed);
     breakpoint();
     bind(&upperBitsZeroed);
   }
@@ -774,7 +773,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx, rcx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,
