@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsIScriptElement_h_
 #define nsIScriptElement_h_
 
@@ -121,6 +119,14 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   bool GetScriptIsImportMap() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mKind == JS::loader::ScriptKind::eImportMap;
+  }
+
+  
+
+
+  bool GetScriptIsSpeculationRules() {
+    MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
+    return mKind == JS::loader::ScriptKind::eSpeculationRules;
   }
 
   
