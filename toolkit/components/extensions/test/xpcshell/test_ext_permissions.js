@@ -814,6 +814,23 @@ add_task(async function test_permissions_have_localization_strings() {
 });
 
 
+
+
+
+
+add_task(async function test_permission_names_match_policy_schema() {
+  const VALID_PERM = /^[a-z][a-zA-Z0-9._]*$/;
+  let names = Schemas.getPermissionNames();
+  ok(names.length, "Got permission names from API schemas");
+  for (let name of names) {
+    ok(
+      VALID_PERM.test(name),
+      `API permission name "${name}" matches enterprise policy schema regex`
+    );
+  }
+});
+
+
 add_task(async function test_optional_all_urls() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

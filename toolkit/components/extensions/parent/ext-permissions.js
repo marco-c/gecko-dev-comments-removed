@@ -147,6 +147,21 @@ this.permissions = class extends ExtensionAPIPersistent {
             }
           }
 
+          
+          
+          
+          
+          
+          if (
+            Services.policies
+              ?.getExtensionSettings(extension.id)
+              ?.blocked_permissions?.some(p => permissions.includes(p))
+          ) {
+            throw new ExtensionError(
+              "Permissions are blocked by enterprise policy."
+            );
+          }
+
           if (promptsEnabled) {
             permissions = permissions.filter(
               perm => !context.extension.hasPermission(perm)
