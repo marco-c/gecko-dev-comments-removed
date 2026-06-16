@@ -2932,8 +2932,6 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 pref("browser.toolbars.share-button.enabled", true);
 
-
-pref("browser.privatebrowsing.felt-privacy-v1", true);
 pref("security.certerrors.felt-privacy-v1", true);
 
 

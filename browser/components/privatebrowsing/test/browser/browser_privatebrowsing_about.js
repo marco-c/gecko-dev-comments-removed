@@ -139,9 +139,6 @@ add_task(async function test_search_icon_legacy() {
 
 
 add_task(async function test_search_icon() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.privatebrowsing.felt-privacy-v1", true]],
-  });
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await SpecialPowers.spawn(tab, [], async function () {
@@ -158,7 +155,6 @@ add_task(async function test_search_icon() {
   });
 
   await BrowserTestUtils.closeWindow(win);
-  await SpecialPowers.popPrefEnv();
 });
 
 

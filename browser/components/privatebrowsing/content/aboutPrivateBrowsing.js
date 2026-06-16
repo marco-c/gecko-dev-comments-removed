@@ -24,58 +24,6 @@ function translateElements(items) {
   });
 }
 
-function renderInfo({
-  infoEnabled,
-  infoTitle,
-  infoTitleEnabled,
-  infoBody,
-  infoLinkText,
-  infoLinkUrl,
-  infoIcon,
-} = {}) {
-  const container = document.querySelector(".info");
-  if (infoEnabled === false) {
-    container.hidden = true;
-    return;
-  }
-  container.hidden = false;
-
-  const titleEl = document.getElementById("info-title");
-  const bodyEl = document.getElementById("info-body");
-  const linkEl = document.getElementById("private-browsing-myths");
-
-  let feltPrivacyEnabled = RPMGetBoolPref(
-    "browser.privatebrowsing.felt-privacy-v1",
-    false
-  );
-
-  if (infoIcon && !feltPrivacyEnabled) {
-    container.style.backgroundImage = `url(${infoIcon})`;
-  }
-
-  if (feltPrivacyEnabled) {
-    
-    window.FeltPrivacyExposureTelemetry();
-
-    infoTitleEnabled = true;
-    infoTitle = "fluent:about-private-browsing-felt-privacy-v1-info-header";
-    infoBody = "fluent:about-private-browsing-felt-privacy-v1-info-body";
-    infoLinkText = "fluent:about-private-browsing-felt-privacy-v1-info-link";
-  }
-
-  titleEl.hidden = !infoTitleEnabled;
-
-  translateElements([
-    [titleEl, infoTitle],
-    [bodyEl, infoBody],
-    [linkEl, infoLinkText],
-  ]);
-
-  if (infoLinkUrl) {
-    linkEl.setAttribute("href", infoLinkUrl);
-  }
-}
-
 async function renderPromo({
   messageId = null,
   promoEnabled = false,
@@ -257,7 +205,6 @@ async function setupMessageConfig(config = null) {
     } catch (e) {}
   }
 
-  renderInfo(config);
   let hasRendered = await renderPromo(config);
   if (hasRendered && message) {
     recordOnceVisible(message);
@@ -351,55 +298,4 @@ document.addEventListener("DOMContentLoaded", function () {
   };
   openSearchOptions.addEventListener("click", openSearchOptionsEvtHandler);
   openSearchOptions.addEventListener("keypress", openSearchOptionsEvtHandler);
-
-  
-  let btn = document.getElementById("search-handoff-button");
-
-  let editable = document.getElementById("fake-editable");
-  let DISABLE_SEARCH_TOPIC = "DisableSearch";
-  let SHOW_SEARCH_TOPIC = "ShowSearch";
-  let SEARCH_HANDOFF_TOPIC = "SearchHandoff";
-
-  function showSearch() {
-    btn.classList.remove("focused");
-    btn.classList.remove("disabled");
-    RPMRemoveMessageListener(SHOW_SEARCH_TOPIC, showSearch);
-  }
-
-  function disableSearch() {
-    btn.classList.add("disabled");
-  }
-
-  function handoffSearch(text) {
-    RPMSendAsyncMessage(SEARCH_HANDOFF_TOPIC, { text });
-    RPMAddMessageListener(SHOW_SEARCH_TOPIC, showSearch);
-    if (text) {
-      disableSearch();
-    } else {
-      btn.classList.add("focused");
-      RPMAddMessageListener(DISABLE_SEARCH_TOPIC, disableSearch);
-    }
-  }
-  btn.addEventListener("focus", function () {
-    handoffSearch();
-  });
-  btn.addEventListener("click", function () {
-    handoffSearch();
-  });
-
-  
-  editable.addEventListener("drop", function (ev) {
-    ev.preventDefault();
-    let text = ev.dataTransfer.getData("text");
-    if (text) {
-      handoffSearch(text);
-    }
-  });
-  editable.addEventListener("paste", function (ev) {
-    ev.preventDefault();
-    handoffSearch(ev.clipboardData.getData("Text"));
-  });
-
-  
-  new window.ContentSearchHandoffUIController();
 });

@@ -226,7 +226,6 @@
   "gAddonAbuseReportEnabled",
   "gMiddleClickNewTabUsesPasteboard",
   "gPrintEnabled",
-  "gUseFeltPrivacyUI",
   "gReduceMotion",
   "gFindBar",
   "gFindBarInitialized",
@@ -235,5 +234,6 @@
   "ActionsProviderContextualSearch",
   "ToolbarDropHandler",
   "ProfilesDatastoreService",
-  "gTrustPanelHandler"
+  "gTrustPanelHandler",
+  "ContentSharingUtils"
 ]
