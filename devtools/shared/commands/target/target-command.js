@@ -735,6 +735,9 @@ class TargetCommand extends EventEmitter {
         if (resource.url !== undefined && targetFront?.setUrl) {
           targetFront.setUrl(resource.url);
         }
+        if (resource.name == "dom-loading" && targetFront?.setIsErrorPage) {
+          targetFront.setIsErrorPage(!!resource.isErrorPage);
+        }
         if (
           !resource.isFrameSwitching &&
           
