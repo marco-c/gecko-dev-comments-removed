@@ -1386,6 +1386,7 @@ Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
   
   
   OverflowAreas absposOverflow;
+  bool foundAbspos = false;
 
   
   
@@ -1394,6 +1395,7 @@ Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
     if (auto absposOverflowFromKid =
             WalkInlineDescendantsToReflowAbsoluteFrames(
                 kid, aPresContext, aReflowInput, aStatus)) {
+      foundAbspos = true;
       absposOverflow.UnionWithAbsoluteOverflowAreas(*absposOverflowFromKid +
                                                     kid->GetPosition());
     }
@@ -1404,21 +1406,24 @@ Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
     
     if (auto absposOverflowFromInlineFrame = ReflowAbsoluteFramesInInlineFrame(
             inlineFrame, aPresContext, aReflowInput, aStatus)) {
+      foundAbspos = true;
       absposOverflow.UnionWithAbsoluteOverflowAreas(
           *absposOverflowFromInlineFrame);
     }
   }
 
-  if (absposOverflow == OverflowAreas()) {
+  if (!foundAbspos) {
     return Nothing();
   }
 
-  
-  
-  
-  OverflowAreas frameOverflow = aFrame->GetOverflowAreas();
-  frameOverflow.UnionWithAbsoluteOverflowAreas(absposOverflow);
-  aFrame->FinishAndStoreOverflow(frameOverflow, aFrame->GetSize());
+  if (absposOverflow != OverflowAreas()) {
+    
+    
+    
+    OverflowAreas frameOverflow = aFrame->GetOverflowAreas();
+    frameOverflow.UnionWithAbsoluteOverflowAreas(absposOverflow);
+    aFrame->FinishAndStoreOverflow(frameOverflow, aFrame->GetSize());
+  }
 
   return Some(absposOverflow);
 }
