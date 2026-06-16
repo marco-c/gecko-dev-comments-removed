@@ -2013,38 +2013,36 @@ static StyleGeometryBox ComputeBoxValueForOrigin(nsIFrame* aForFrame,
   return aBox;
 }
 
-static StyleGeometryBox ComputeBoxValueForClip(const nsIFrame* aForFrame,
-                                               StyleGeometryBox aBox) {
-  
-  
-  if (aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    
-    
-    
-    switch (aBox) {
-      case StyleGeometryBox::ContentBox:
-      case StyleGeometryBox::PaddingBox:
-        return StyleGeometryBox::FillBox;
-      case StyleGeometryBox::BorderBox:
-      case StyleGeometryBox::MarginBox:
-        return StyleGeometryBox::StrokeBox;
-      default:
-        return aBox;
-    }
-  }
 
+
+
+static StyleGeometryBox ComputeBoxValueForClip(const nsIFrame* aForFrame,
+                                               StyleBackgroundClip aClip) {
   
   
   
-  switch (aBox) {
-    case StyleGeometryBox::FillBox:
-      return StyleGeometryBox::ContentBox;
-    case StyleGeometryBox::StrokeBox:
-    case StyleGeometryBox::ViewBox:
-      return StyleGeometryBox::BorderBox;
-    default:
-      return aBox;
+  
+  const bool svg = aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
+  switch (aClip) {
+    case StyleBackgroundClip::ContentBox:
+    case StyleBackgroundClip::FillBox:
+      return svg ? StyleGeometryBox::FillBox : StyleGeometryBox::ContentBox;
+    case StyleBackgroundClip::PaddingBox:
+      return svg ? StyleGeometryBox::FillBox : StyleGeometryBox::PaddingBox;
+    case StyleBackgroundClip::BorderBox:
+    case StyleBackgroundClip::StrokeBox:
+      return svg ? StyleGeometryBox::StrokeBox : StyleGeometryBox::BorderBox;
+    case StyleBackgroundClip::ViewBox:
+      return svg ? StyleGeometryBox::ViewBox : StyleGeometryBox::BorderBox;
+    case StyleBackgroundClip::NoClip:
+      return StyleGeometryBox::NoClip;
+    case StyleBackgroundClip::Text:
+      return StyleGeometryBox::Text;
+    case StyleBackgroundClip::BorderArea:
+      return StyleGeometryBox::BorderArea;
   }
+  MOZ_ASSERT_UNREACHABLE("Unknown background-clip/mask-clip value");
+  return StyleGeometryBox::BorderBox;
 }
 
 bool nsCSSRendering::ImageLayerClipState::IsValid() const {
@@ -2179,8 +2177,12 @@ void nsCSSRendering::GetImageLayerClip(
   MOZ_ASSERT(layerClip != StyleGeometryBox::MarginBox,
              "StyleGeometryBox::MarginBox rendering is not supported yet.\n");
 
+  
+  
+  
   if (layerClip != StyleGeometryBox::BorderBox &&
-      layerClip != StyleGeometryBox::Text) {
+      layerClip != StyleGeometryBox::Text &&
+      layerClip != StyleGeometryBox::BorderArea) {
     nsMargin border = aForFrame->GetUsedBorder();
     if (layerClip == StyleGeometryBox::MozAlmostPadding) {
       
@@ -2566,7 +2568,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
       aParams.frame, aParams.borderArea, skipSides, &aBorder);
 
   ImgDrawResult result = ImgDrawResult::SUCCESS;
-  StyleGeometryBox currentBackgroundClip = StyleGeometryBox::BorderBox;
+  StyleBackgroundClip currentBackgroundClip = StyleBackgroundClip::BorderBox;
   const bool drawAllLayers = (aParams.layer < 0);
   uint32_t count = drawAllLayers
                        ? layers.mImageCount  

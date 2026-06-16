@@ -7,7 +7,7 @@
 use crate::values::computed::length::NonNegativeLengthPercentage;
 use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
 
-pub use crate::values::specified::background::BackgroundRepeat;
+pub use crate::values::specified::background::{BackgroundClip, BackgroundRepeat};
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthPercentage>;

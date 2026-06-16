@@ -74,22 +74,23 @@ enum class StyleGeometryBox : uint8_t {
   ContentBox,  
   PaddingBox,  
   BorderBox,
-  MarginBox,  
-              
-              
-              
-  FillBox,    
-  StrokeBox,  
-  ViewBox,    
-  NoClip,     
-  Text,       
-  NoBox,      
-              
-              
-              
-              
-              
-              
+  MarginBox,   
+               
+               
+               
+  FillBox,     
+  StrokeBox,   
+  ViewBox,     
+  NoClip,      
+  Text,        
+  BorderArea,  
+  NoBox,  
+          
+          
+          
+          
+          
+          
   MozAlmostPadding = 127  
                           
                           
