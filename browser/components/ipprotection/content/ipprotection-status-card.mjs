@@ -111,6 +111,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
       <moz-button
         class="toolbarbutton"
         slot="location-action"
+        ?disabled=${this.isActivating}
         closemenu="none"
         @click=${this.handleLocationButtonClick}
       >
@@ -182,27 +183,27 @@ export default class IPProtectionStatusCard extends MozLitElement {
 
   render() {
     let type = "disconnected";
-    let headerL10nId = "ipprotection-connection-status-disconnected";
+    let headerL10nId = "ipprotection-connection-status-disconnected-1";
     let buttonL10nId = "ipprotection-button-turn-vpn-on";
     let buttonDisabled = false;
     let iconSrc = null;
 
     if (this.isActivating) {
       type = "connecting";
-      headerL10nId = "ipprotection-connection-status-connecting";
+      headerL10nId = "ipprotection-connection-status-connecting-1";
       buttonL10nId = "ipprotection-button-connecting";
       iconSrc =
         "chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg";
       buttonDisabled = true;
     } else if (this.hasExclusion && this.protectionEnabled) {
       type = "excluded";
-      headerL10nId = "ipprotection-connection-status-excluded";
+      headerL10nId = "ipprotection-connection-status-excluded-1";
       buttonL10nId = "ipprotection-button-turn-vpn-off-excluded-site";
       iconSrc =
         "chrome://browser/content/ipprotection/assets/states/ipprotection-excluded.svg";
     } else if (this.protectionEnabled) {
       type = "connected";
-      headerL10nId = "ipprotection-connection-status-connected";
+      headerL10nId = "ipprotection-connection-status-connected-1";
       buttonL10nId = "ipprotection-button-turn-vpn-off";
       iconSrc =
         "chrome://browser/content/ipprotection/assets/states/ipprotection-on.svg";
