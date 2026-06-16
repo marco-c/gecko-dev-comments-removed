@@ -1168,7 +1168,23 @@ void DocAccessibleParent::Destroy() {
   if (IsTopLevel()) {
     GetAccService()->RemoteDocShutdown(this);
   } else {
+    RemoteAccessible* outerDoc = RemoteParent();
     Unbind();
+    if (outerDoc) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      outerDoc->Document()->FireEvent(outerDoc,
+                                      nsIAccessibleEvent::EVENT_REORDER);
+    }
   }
 }
 

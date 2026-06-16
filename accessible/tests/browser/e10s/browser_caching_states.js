@@ -414,7 +414,10 @@ addAccessibleTask(
     
     
     
-    let reordered = waitForEvent(EVENT_REORDER, iframe);
+    let reordered = waitForEvent(
+      EVENT_REORDER,
+      event => event.accessible === iframe && event.accessible.firstChild
+    );
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("iframe").src =
         'data:text/html,<img src="http://example.com/a11y/accessible/tests/mochitest/events/slow_image.sjs">';
