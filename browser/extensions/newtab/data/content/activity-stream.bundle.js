@@ -17467,6 +17467,10 @@ const SportsWidget_USER_ACTION_TYPES = {
 
 
 const LIVE_REFRESH_COOLDOWN_MS = 15000;
+
+
+
+const LIVE_REFRESH_MIN_SPIN_MS = 2000;
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
@@ -18338,6 +18342,7 @@ function SportsWidget_SportsWidget({
     current: sortedCurrent,
     next: sortedNext,
     liveIndex: liveIndex,
+    lastLiveUpdated: sportsWidgetData.lastLiveUpdated,
     handleInteraction: handleInteraction,
     selectedTeamsSet: selectedTeamsSet,
     tbdTeamName: tbdTeamName,
@@ -18447,12 +18452,14 @@ function SportsWidgetFollowTeams({
 
 
 
+
 function LiveRefreshButton({
   isCoolingDown,
+  isSpinning,
   onClick
 }) {
   return external_React_default().createElement("moz-button", {
-    className: "sports-live-refresh-button",
+    className: `sports-live-refresh-button${isSpinning ? " is-spinning" : ""}`,
     type: "icon ghost",
     size: "small",
     iconSrc: "chrome://browser/skin/sync.svg",
@@ -18501,6 +18508,7 @@ function SportsMatchesView({
   current,
   next,
   liveIndex,
+  lastLiveUpdated,
   handleInteraction,
   selectedTeamsSet,
   tbdTeamName,
@@ -18569,20 +18577,60 @@ function SportsMatchesView({
   
   
   const [liveRefreshCoolingDown, setLiveRefreshCoolingDown] = (0,external_React_namespaceObject.useState)(false);
+  
+  
+  
+  
+  const [liveRefreshSpinning, setLiveRefreshSpinning] = (0,external_React_namespaceObject.useState)(false);
   const liveRefreshTimerRef = (0,external_React_namespaceObject.useRef)(null);
+  
+  
+  
+  const liveRefreshSpinStartRef = (0,external_React_namespaceObject.useRef)(null);
+  const liveRefreshStopTimerRef = (0,external_React_namespaceObject.useRef)(null);
+  const stopLiveRefreshSpin = (0,external_React_namespaceObject.useCallback)(() => {
+    if (liveRefreshStopTimerRef.current) {
+      clearTimeout(liveRefreshStopTimerRef.current);
+      liveRefreshStopTimerRef.current = null;
+    }
+    liveRefreshSpinStartRef.current = null;
+    setLiveRefreshSpinning(false);
+  }, []);
   (0,external_React_namespaceObject.useEffect)(() => () => {
     if (liveRefreshTimerRef.current) {
       clearTimeout(liveRefreshTimerRef.current);
     }
+    if (liveRefreshStopTimerRef.current) {
+      clearTimeout(liveRefreshStopTimerRef.current);
+    }
   }, []);
+  
+  
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    
+    
+    if (liveRefreshSpinStartRef.current === null || liveRefreshStopTimerRef.current) {
+      return;
+    }
+    const remaining = LIVE_REFRESH_MIN_SPIN_MS - (Date.now() - liveRefreshSpinStartRef.current);
+    if (remaining <= 0) {
+      stopLiveRefreshSpin();
+    } else {
+      liveRefreshStopTimerRef.current = setTimeout(stopLiveRefreshSpin, remaining);
+    }
+  }, [lastLiveUpdated, stopLiveRefreshSpin]);
   const handleLiveRefreshClick = (0,external_React_namespaceObject.useCallback)(() => {
     if (liveRefreshCoolingDown) {
       return;
     }
     setLiveRefreshCoolingDown(true);
+    setLiveRefreshSpinning(true);
+    liveRefreshSpinStartRef.current = Date.now();
     liveRefreshTimerRef.current = setTimeout(() => {
       liveRefreshTimerRef.current = null;
       setLiveRefreshCoolingDown(false);
+      stopLiveRefreshSpin();
     }, LIVE_REFRESH_COOLDOWN_MS);
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -18599,7 +18647,7 @@ function SportsMatchesView({
       }));
     });
     handleInteraction?.();
-  }, [dispatch, handleInteraction, liveRefreshCoolingDown, widgetSize]);
+  }, [dispatch, handleInteraction, liveRefreshCoolingDown, stopLiveRefreshSpin, widgetSize]);
   return external_React_default().createElement("div", {
     className: "sports-matches-view"
   }, external_React_default().createElement("div", {
@@ -18654,6 +18702,7 @@ function SportsMatchesView({
     withLiveBadge: true
   }), external_React_default().createElement(LiveRefreshButton, {
     isCoolingDown: liveRefreshCoolingDown,
+    isSpinning: liveRefreshSpinning,
     onClick: handleLiveRefreshClick
   })), external_React_default().createElement("div", SportsWidget_extends({
     className: "match-highlight-view"
@@ -18676,6 +18725,7 @@ function SportsMatchesView({
     onClick: onWatchClick
   }), size === "medium" && external_React_default().createElement(LiveRefreshButton, {
     isCoolingDown: liveRefreshCoolingDown,
+    isSpinning: liveRefreshSpinning,
     onClick: handleLiveRefreshClick
   }), current.length >= 2 && external_React_default().createElement(LivePagination, {
     dispatch: dispatch,
