@@ -421,7 +421,7 @@ export function createScriptSourceActor(sourceResource, sourceObject) {
     
     
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
-    target: sourceResource.targetFront.actorID,
+    targetFront: sourceResource.targetFront,
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
@@ -446,7 +446,7 @@ export function createStyleSheetActor(stylesheetResource, styleSheetObject) {
   return {
     id: stylesheetResource.resourceId,
     actor: stylesheetResource.resourceId,
-    target: stylesheetResource.targetFront.actorID,
+    targetFront: stylesheetResource.targetFront,
     
     thread: stylesheetResource.targetFront.getCachedFront("thread").actorID,
     

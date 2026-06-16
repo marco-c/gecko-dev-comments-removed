@@ -59,11 +59,22 @@ export async function buildMappedScopes(
   if (frame.location.source.isWasm) {
     return null;
   }
-  const originalAstScopes = await parserWorker.getScopes(frame.location);
+  const { location, generatedLocation } = frame;
+  const originalAstScopes = await parserWorker.getScopes({
+    
+    
+    source: { id: location.source.id },
+    line: location.line,
+    column: location.column,
+  });
   updateLocationsInScopes(getState(), originalAstScopes);
-  const generatedAstScopes = await parserWorker.getScopes(
-    frame.generatedLocation
-  );
+  const generatedAstScopes = await parserWorker.getScopes({
+    
+    
+    source: { id: generatedLocation.source.id },
+    line: generatedLocation.line,
+    column: generatedLocation.column,
+  });
   updateLocationsInScopes(getState(), generatedAstScopes);
 
   if (!originalAstScopes || !generatedAstScopes) {
