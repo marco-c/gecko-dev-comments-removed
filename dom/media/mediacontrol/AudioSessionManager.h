@@ -84,6 +84,16 @@ class AudioSessionManager final {
   void RemoveRecordIfEmpty(uint64_t aBrowsingContextId);
 
   
+  
+  
+  
+  
+  void UpdateAllAudioSessionStates(uint64_t aUpdatedBcId);
+
+  
+  bool IsBcAutoTyped(uint64_t aBrowsingContextId) const;
+
+  
   void MaybeFireEffectiveTypeChanged();
 
   
