@@ -1065,6 +1065,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     
     
     
+    ReleaseEncoder();
     encoder_.reset();
 
     encoder_ = MaybeCreateFrameDumpingEncoderWrapper(
