@@ -947,12 +947,11 @@ add_task(async function dismissals_unmanaged_2() {
 });
 
 
-add_task(async function bestMatch() {
+
+add_task(async function topPicks() {
   UrlbarPrefs.set("quicksuggest.online.available", true);
   UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
-  
-  
   let provider = "top_picks";
   MerinoTestUtils.server.response.body.suggestions = [
     {
