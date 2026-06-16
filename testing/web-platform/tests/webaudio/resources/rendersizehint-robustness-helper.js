@@ -16,6 +16,39 @@ const ROBUSTNESS_TEST_CONFIGS = [
 
 
 
+const assertNoNaNOrInfinity = (renderedBuffer) => {
+  const data = renderedBuffer.getChannelData(0);
+  assert_false(data.includes(NaN), 'Output contains NaN');
+  assert_false(data.includes(Infinity), 'Output contains Infinity');
+  assert_false(data.includes(-Infinity), 'Output contains -Infinity');
+};
+
+
+
+
+
+
+
+
+const createImpulseResponse = (context, length) => {
+  const buffer = new AudioBuffer({
+    numberOfChannels: 1,
+    length: length,
+    sampleRate: context.sampleRate
+  });
+  const channelData = buffer.getChannelData(0);
+  channelData[0] = 1.0; 
+  return buffer;
+};
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39,10 +72,14 @@ const runQuantumRobustnessTest = (
     source.connect(node).connect(audioContext.destination);
     source.start();
 
-    await audioContext.startRendering();
+    const renderedBuffer = await audioContext.startRendering();
+
+    
+    
+    assertNoNaNOrInfinity(renderedBuffer);
 
     if (postRenderAssertFunc) {
-      postRenderAssertFunc(audioContext, t);
+      postRenderAssertFunc(audioContext, renderedBuffer, t);
     }
   }, testName);
 };
