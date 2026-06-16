@@ -466,7 +466,9 @@ void DcSctpSocket::Shutdown() {
     
     
     
-    if (state_ != State::kShutdownSent && state_ != State::kShutdownAckSent) {
+    if (state_ != State::kShutdownSent && state_ != State::kShutdownAckSent &&
+        state_ != State::kShutdownReceived &&
+        state_ != State::kShutdownPending) {
       SetState(State::kShutdownPending, "Shutdown called");
       t1_init_->Stop();
       t1_cookie_->Stop();
