@@ -4187,7 +4187,8 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
           
           
           if (!transceiver->internal()->stopping()) {
-            transceiver->internal()->StopStandard();
+            worker_tasks.AddWithFinalizer(
+                transceiver->internal()->StopStandardAsync());
           }
           RTC_DCHECK(transceiver->internal()->stopping());
         } else {

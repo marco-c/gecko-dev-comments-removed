@@ -55,6 +55,7 @@
 #include "pc/rtp_sender.h"
 #include "pc/rtp_sender_proxy.h"
 #include "pc/rtp_transport_internal.h"
+#include "pc/scoped_operations_batcher.h"
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/system/plan_b_only.h"
@@ -330,6 +331,11 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   [[nodiscard]] absl_nullable absl::AnyInvocable<void() &&>
   GetStopTransceiverProcedure();
+
+  
+  
+  
+  ScopedOperationsBatcher::BatchTaskWithFinalizer StopStandardAsync();
 
   
   MediaType media_type() const override;
