@@ -38,7 +38,12 @@ add_task(async function test_auxclick_bookmark_opens_in_new_tab() {
 
   info("Middle-click the bookmark row.");
   const promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser, FIRST_URL);
+  
+  
+  
+  AccessibilityUtils.setEnv({ focusableRule: false });
   EventUtils.synthesizeMouseAtCenter(row, { button: 1 }, contentWindow);
+  AccessibilityUtils.resetEnv();
   const tab = await promiseNewTab;
   Assert.equal(gBrowser.selectedTab, tab, "The new tab is active.");
 
