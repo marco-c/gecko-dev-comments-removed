@@ -1079,7 +1079,7 @@ TEST_P(WebRtcVoiceEngineTestFake, SetRecvCodecsWhilePlaying) {
   parameters.codecs.push_back(kPcmuCodec);
   parameters.codecs.push_back(kCn16000Codec);
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(parameters));
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(parameters));
 
   
@@ -1096,7 +1096,7 @@ TEST_P(WebRtcVoiceEngineTestFake, AddRecvCodecsWhilePlaying) {
   parameters.codecs.push_back(kPcmuCodec);
   parameters.codecs.push_back(kCn16000Codec);
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(parameters));
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
 
   parameters.codecs.push_back(kOpusCodec);
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(parameters));
@@ -2414,9 +2414,9 @@ TEST_P(WebRtcVoiceEngineTestFake, SendStateWhenStreamsAreRecreated) {
 TEST_P(WebRtcVoiceEngineTestFake, Playout) {
   EXPECT_TRUE(SetupRecvStream());
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(recv_parameters_));
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
   EXPECT_TRUE(GetRecvStream(kSsrcX).started());
-  receive_channel_->SetPlayout(false);
+  receive_channel_->SetReceive(false);
   EXPECT_FALSE(GetRecvStream(kSsrcX).started());
 }
 
@@ -2587,7 +2587,7 @@ TEST_P(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
 
   
   SetSenderParameters(send_parameters_);
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
 
   
   EXPECT_TRUE(AddRecvStream(kSsrcY));
@@ -2607,12 +2607,12 @@ TEST_P(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_FALSE(GetSendStream(kSsrcX).IsSending());
 
   
-  receive_channel_->SetPlayout(false);
+  receive_channel_->SetReceive(false);
   EXPECT_FALSE(GetRecvStream(kSsrcY).started());
   EXPECT_FALSE(GetRecvStream(kSsrcZ).started());
 
   
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
   EXPECT_TRUE(GetRecvStream(kSsrcY).started());
   EXPECT_TRUE(GetRecvStream(kSsrcZ).started());
 
@@ -3743,7 +3743,7 @@ TEST_P(WebRtcVoiceEngineTestFake,
 
 TEST_P(WebRtcVoiceEngineTestFake, PreservePlayoutWhenRecreateRecvStream) {
   SetupRecvStream();
-  receive_channel_->SetPlayout(true);
+  receive_channel_->SetReceive(true);
   EXPECT_TRUE(GetRecvStream(kSsrcX).started());
 
   

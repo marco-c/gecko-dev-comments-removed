@@ -214,6 +214,9 @@ class MediaSendChannelInterface {
   virtual bool ExtmapAllowMixed() const = 0;
 
   
+  virtual bool SetSend(bool send) = 0;
+
+  
   
   
   virtual void SetFrameEncryptor(
@@ -272,6 +275,8 @@ class MediaReceiveChannelInterface {
   
   
   virtual bool RemoveRecvStream(uint32_t ssrc) = 0;
+  
+  virtual void SetReceive(bool receive) = 0;
   
   
   virtual void ResetUnsignaledRecvStream() = 0;
@@ -908,8 +913,7 @@ struct AudioReceiverParameters : MediaChannelParameters {};
 class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
   virtual bool SetSenderParameters(const AudioSenderParameter& params) = 0;
-  
-  virtual void SetSend(bool send) = 0;
+
   
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,
@@ -944,8 +948,7 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   
   virtual RtpParameters GetDefaultRtpReceiveParameters() const = 0;
-  
-  virtual void SetPlayout(bool playout) = 0;
+
   
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
   
@@ -993,8 +996,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
       absl::AnyInvocable<void(EncoderSwitchRequestAction)>;
 
   virtual bool SetSenderParameters(const VideoSenderParameters& params) = 0;
-  
-  virtual bool SetSend(bool send) = 0;
+
   
   
   virtual bool SetVideoSend(uint32_t ssrc,
@@ -1028,8 +1030,7 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual bool SetReceiverParameters(const VideoReceiverParameters& params) = 0;
   
   virtual RtpParameters GetRtpReceiverParameters(uint32_t ssrc) const = 0;
-  
-  virtual void SetReceive(bool receive) = 0;
+
   
   
   virtual RtpParameters GetDefaultRtpReceiveParameters() const = 0;
