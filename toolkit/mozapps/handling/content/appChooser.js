@@ -170,8 +170,6 @@ let dialog = {
             }
           }
         }
-      } else if (app instanceof Ci.nsIDBusHandlerApp) {
-        elm.setAttribute("description", app.method);
       } else if (!(app instanceof Ci.nsIGIOMimeApp)) {
         
         throw new Error("unknown handler type");
