@@ -7,6 +7,7 @@
 
 #include "MemMoveAnnotation.h"
 #include "Utils.h"
+#include "llvm/Support/FileSystem.h"
 
 #if CLANG_VERSION_FULL >= 1300
 
@@ -94,6 +95,18 @@ AST_MATCHER(DeclaratorDecl, isNotSpiderMonkey) {
   return Path.find("js") == std::string::npos &&
          Path.find("xpc") == std::string::npos &&
          Path.find("XPC") == std::string::npos;
+}
+
+
+AST_MATCHER_P(Decl, isInPath, std::string, Substring) {
+  SourceManager &SM = Finder->getASTContext().getSourceManager();
+  std::string PresumedName =
+      SM.getPresumedLoc(Node.getBeginLoc()).getFilename();
+  llvm::SmallString<256> RealPath;
+  llvm::sys::fs::real_path(PresumedName, RealPath, false);
+  llvm::StringRef Path =
+      RealPath.empty() ? llvm::StringRef(PresumedName) : llvm::StringRef(RealPath);
+  return Path.find(Substring) != llvm::StringRef::npos;
 }
 
 
