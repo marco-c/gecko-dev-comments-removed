@@ -52,29 +52,6 @@ OPTIONAL_PACKAGES = [
 ]
 
 
-HARNESSES_NEEDING_CONDPROF = {
-    "awsy",
-    "condprof",
-    "mochitest",
-    "perftests",
-    "raptor",
-    "reftest",
-    "talos",
-    "web-platform",
-    "xpcshell",
-}
-
-
-
-
-
-
-HARNESSES_NEEDING_TRAINHOP = {
-    "mochitest",
-    "trainhop",
-}
-
-
 def parse_args():
     parser = ArgumentParser(
         description="Generate a test_packages.json file to tell automation which harnesses "
@@ -139,10 +116,8 @@ def generate_package_data(args):
         if pkg_name is None:
             continue
         harness_requirements[harness].append(pkg_name)
-        if harness in HARNESSES_NEEDING_CONDPROF:
-            harness_requirements[harness].append("target.condprof.tests.tar.zst")
-        if harness in HARNESSES_NEEDING_TRAINHOP:
-            harness_requirements[harness].append("target.trainhop.tests.tar.zst")
+        harness_requirements[harness].append("target.condprof.tests.tar.zst")
+        harness_requirements[harness].append("target.trainhop.tests.tar.zst")
     return harness_requirements
 
 
