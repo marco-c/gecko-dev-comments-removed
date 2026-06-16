@@ -37,6 +37,8 @@ class GroupInfo final {
 
   PersistenceType GetPersistenceType() const { return mPersistenceType; }
 
+  const nsCString& GetGroup() const;
+
  private:
   
   MOZ_COUNTED_DTOR(GroupInfo)
