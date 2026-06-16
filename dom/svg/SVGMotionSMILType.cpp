@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "SVGMotionSMILType.h"
 
 #include <math.h>
@@ -200,20 +198,7 @@ bool SVGMotionSMILType::IsEqual(const SMILValue& aLeft,
   const MotionSegmentArray& leftArr = ExtractMotionSegmentArray(aLeft);
   const MotionSegmentArray& rightArr = ExtractMotionSegmentArray(aRight);
 
-  
-  if (leftArr.Length() != rightArr.Length()) {
-    return false;
-  }
-
-  
-  uint32_t length = leftArr.Length();  
-  for (uint32_t i = 0; i < length; ++i) {
-    if (leftArr[i] != rightArr[i]) {
-      return false;
-    }
-  }
-
-  return true;  
+  return leftArr == rightArr;
 }
 
 

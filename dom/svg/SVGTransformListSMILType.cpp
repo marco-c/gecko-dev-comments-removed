@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGTransformListSMILType.h"
 
 #include <math.h>
@@ -63,21 +61,7 @@ bool SVGTransformListSMILType::IsEqual(const SMILValue& aLeft,
   const TransformArray& rightArr(
       *static_cast<const TransformArray*>(aRight.mU.mPtr));
 
-  
-  if (leftArr.Length() != rightArr.Length()) {
-    return false;
-  }
-
-  
-  uint32_t length = leftArr.Length();  
-  for (uint32_t i = 0; i < length; ++i) {
-    if (leftArr[i] != rightArr[i]) {
-      return false;
-    }
-  }
-
-  
-  return true;
+  return leftArr == rightArr;
 }
 
 nsresult SVGTransformListSMILType::Add(SMILValue& aDest,
