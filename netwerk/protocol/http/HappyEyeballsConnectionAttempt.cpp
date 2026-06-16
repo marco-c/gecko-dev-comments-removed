@@ -116,24 +116,32 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
        "connectionAttemptDelay=%u",
        static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
 
-  if (mConnInfo->GetRoutedHost().IsEmpty()) {
-    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
-    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                               static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &emptyAltSvc, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
-  }
-
+  
+  
+  
+  
+  
+  
   if (mConnInfo->IsHttp3()) {
     LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
     happy_eyeballs::AltSvc altsvc{};
     altsvc.http_version = happy_eyeballs::HttpVersion::H3;
-    altsvc.port = static_cast<uint16_t>(mConnInfo->RoutedPort());
+    altsvc.port = mConnInfo->GetRoutedHost().IsEmpty()
+                      ? static_cast<uint16_t>(mConnInfo->OriginPort())
+                      : static_cast<uint16_t>(mConnInfo->RoutedPort());
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
                                &altSvcArray, ipPref, httpVersions,
+                               resolutionDelay, connectionAttemptDelay);
+  }
+
+  if (mConnInfo->GetRoutedHost().IsEmpty()) {
+    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
+                               &emptyAltSvc, ipPref, httpVersions,
                                resolutionDelay, connectionAttemptDelay);
   }
 

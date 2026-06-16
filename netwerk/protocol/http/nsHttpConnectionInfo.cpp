@@ -463,6 +463,10 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
   clone->SetIPv6Disabled(GetIPv6Disabled());
   clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
+  
+  
+  
+  clone->SetWebTransportId(GetWebTransportId());
 
   
   return clone.forget();
