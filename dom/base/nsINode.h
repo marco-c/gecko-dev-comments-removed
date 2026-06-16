@@ -912,7 +912,26 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  friend std::ostream& operator<<(std::ostream& aStream, const nsINode& aNode);
+
+
+
+  void GetDebugDescription(nsACString& aOutput,
+                           const nsINode* aRoot = nullptr) const;
+
+  
+
+
+
+
+
+
+
+  nsCString FormatAs(const nsINode* aRoot) const;
+
+  friend std::ostream& operator<<(std::ostream&, const nsINode&);
+  friend nsCString format_as(const nsINode& aNode) {
+    return aNode.FormatAs(nullptr);
+  }
 
  protected:
   

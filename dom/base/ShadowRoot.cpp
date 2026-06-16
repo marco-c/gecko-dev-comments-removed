@@ -770,6 +770,19 @@ void ShadowRoot::MaybeReassignContent(nsIContent& aElementOrText) {
   }
 }
 
+bool ShadowRoot::IsUAShadowRootSlow() const {
+  if (IsUAWidget()) {
+    return true;  
+  }
+  Element* const host = GetHost();
+  if (!host) {
+    return false;
+  }
+  
+  
+  return !host->CanAttachShadowDOM();
+}
+
 Element* ShadowRoot::GetActiveElement() {
   return GetRetargetedFocusedElement();
 }
