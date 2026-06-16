@@ -10,26 +10,26 @@
 
 #include "modules/video_coding/timing/decode_time_percentile_filter.h"
 
+#include <algorithm>
 #include <cstdint>
 
 namespace webrtc {
-
 namespace {
 
 
-const int kIgnoredSampleCount = 5;
+constexpr int kIgnoredSampleCount = 5;
 
-const float kPercentile = 0.95f;
+constexpr float kPercentile = 0.95f;
 
-const int64_t kTimeLimitMs = 10000;
+constexpr int64_t kTimeLimitMs = 10000;
 
 }  
 
 DecodeTimePercentileFilter::DecodeTimePercentileFilter()
-    : ignored_sample_count_(0), filter_(kPercentile) {}
+    : filter_(kPercentile) {}
 DecodeTimePercentileFilter::~DecodeTimePercentileFilter() = default;
 
-void DecodeTimePercentileFilter::AddTiming(int64_t decode_time_ms,
+void DecodeTimePercentileFilter::AddSample(int64_t decode_time_ms,
                                            int64_t now_ms) {
   
   if (ignored_sample_count_ < kIgnoredSampleCount) {
@@ -38,8 +38,9 @@ void DecodeTimePercentileFilter::AddTiming(int64_t decode_time_ms,
   }
 
   
-  filter_.Insert(decode_time_ms);
-  history_.emplace(decode_time_ms, now_ms);
+  const int64_t capped_decode_ms = std::max(int64_t{0}, decode_time_ms);
+  filter_.Insert(capped_decode_ms);
+  history_.emplace(capped_decode_ms, now_ms);
 
   
   while (!history_.empty() &&
@@ -49,8 +50,7 @@ void DecodeTimePercentileFilter::AddTiming(int64_t decode_time_ms,
   }
 }
 
-
-int64_t DecodeTimePercentileFilter::RequiredDecodeTimeMs() const {
+int64_t DecodeTimePercentileFilter::GetPercentileMs() const {
   return filter_.GetPercentileValue();
 }
 

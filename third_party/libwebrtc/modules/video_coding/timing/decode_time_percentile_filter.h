@@ -21,18 +21,17 @@ namespace webrtc {
 
 
 
-
 class DecodeTimePercentileFilter {
  public:
   DecodeTimePercentileFilter();
   ~DecodeTimePercentileFilter();
 
   
-  void AddTiming(int64_t new_decode_time_ms, int64_t now_ms);
+  void AddSample(int64_t decode_time_ms, int64_t now_ms);
 
   
   
-  int64_t RequiredDecodeTimeMs() const;
+  int64_t GetPercentileMs() const;
 
  private:
   struct Sample {
@@ -42,7 +41,7 @@ class DecodeTimePercentileFilter {
   };
 
   
-  int ignored_sample_count_;
+  int ignored_sample_count_ = 0;
   
   std::queue<Sample> history_;
   
