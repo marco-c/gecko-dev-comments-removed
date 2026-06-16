@@ -2503,18 +2503,17 @@ void XMLHttpRequestMainThread::ChangeStateToDone(bool aWasSync) {
     
     nsLoadFlags loadFlags = 0;
     mChannel->GetLoadFlags(&loadFlags);
-    if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
-      nsPIDOMWindowInner* owner = GetOwnerWindow();
-      BrowsingContext* bc = owner ? owner->GetBrowsingContext() : nullptr;
-      bc = bc ? bc->Top() : nullptr;
-      if (bc && bc->IsLoading()) {
-        MOZ_ASSERT(!mDelayedDoneNotifier);
-        RefPtr<XMLHttpRequestDoneNotifier> notifier =
-            new XMLHttpRequestDoneNotifier(this);
-        mDelayedDoneNotifier = notifier;
-        bc->AddDeprioritizedLoadRunner(notifier);
-        return;
-      }
+    MOZ_DIAGNOSTIC_ASSERT(loadFlags & nsIRequest::LOAD_BACKGROUND);
+    nsPIDOMWindowInner* owner = GetOwnerWindow();
+    BrowsingContext* bc = owner ? owner->GetBrowsingContext() : nullptr;
+    bc = bc ? bc->Top() : nullptr;
+    if (bc && bc->IsLoading()) {
+      MOZ_ASSERT(!mDelayedDoneNotifier);
+      RefPtr<XMLHttpRequestDoneNotifier> notifier =
+          new XMLHttpRequestDoneNotifier(this);
+      mDelayedDoneNotifier = notifier;
+      bc->AddDeprioritizedLoadRunner(notifier);
+      return;
     }
   }
 
@@ -2756,19 +2755,6 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
       preload = nullptr;
     }
-  }
-
-  
-  
-  
-  
-  if (HasListenersFor(nsGkAtoms::onprogress) ||
-      (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress))) {
-    nsLoadFlags loadFlags;
-    mChannel->GetLoadFlags(&loadFlags);
-    loadFlags &= ~nsIRequest::LOAD_BACKGROUND;
-    loadFlags |= nsIRequest::LOAD_NORMAL;
-    mChannel->SetLoadFlags(loadFlags);
   }
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
