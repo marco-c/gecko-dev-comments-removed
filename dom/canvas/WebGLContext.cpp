@@ -317,10 +317,6 @@ bool WebGLContext::CreateAndInitGL(
       
       flags |= gl::CreateContextFlags::PREFER_EXACT_VERSION;
     }
-
-    if (!StaticPrefs::webgl_1_allow_core_profiles()) {
-      flags |= gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE;
-    }
   }
 
   {
