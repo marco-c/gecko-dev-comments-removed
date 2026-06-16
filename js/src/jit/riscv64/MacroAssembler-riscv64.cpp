@@ -3941,12 +3941,10 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
 void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
   
 
+  
   Instruction* instr = Instruction::At(call - 7 * kInstrSize);
-  Assembler::WriteLoad64Instructions(instr, SavedScratchRegister,
-                                     (uint64_t)target);
-  DEBUG_PRINTF("\tpatchNopToCall %" PRIu64 " %" PRIu64 "\n", (uint64_t)target,
-               ExtractLoad64Value(instr));
-  MOZ_ASSERT(ExtractLoad64Value(instr) == (uint64_t)target);
+  Assembler::WriteLiPtrInstructions(instr, SavedScratchRegister,
+                                    uintptr_t(target));
 
   Instruction* jalr = (instr + 6 * kInstrSize);
   jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);

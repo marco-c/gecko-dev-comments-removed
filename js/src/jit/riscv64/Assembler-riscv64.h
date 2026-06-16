@@ -402,8 +402,6 @@ class Assembler : public AssemblerShared,
                                Instruction* instruction2 = nullptr);
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
   uint32_t jumpChainUseNextLink(Label* label);
-  static uint64_t jumpChainTargetAddressAt(Instruction* pos);
-  static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
   
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
@@ -459,15 +457,14 @@ class Assembler : public AssemblerShared,
     
     
     
+
     
-    Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
-                                       (uint64_t)dest);
+    Assembler::WriteLiPtrInstructions(inst, SavedScratchRegister,
+                                      uintptr_t(dest));
 
     Instruction* jalr = (inst + 6 * kInstrSize);
     jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);
   }
-  static void WriteLoad64Instructions(Instruction* inst0, Register reg,
-                                      uint64_t value);
 
   static uint32_t PatchWrite_NearCallSize() { return 7 * kInstrSize; }
 
@@ -488,7 +485,7 @@ class Assembler : public AssemblerShared,
   void retarget(Label* label, Label* target);
   static uint32_t NopSize() { return kInstrSize; }
 
-  static uint64_t GetPointer(uint8_t* instPtr) {
+  static uintptr_t GetPointer(uint8_t* instPtr) {
     Instruction* inst = Instruction::At(instPtr);
     return Assembler::ExtractLoad64Value(inst);
   }
@@ -589,6 +586,36 @@ class Assembler : public AssemblerShared,
     slli(rd, rs, 32);
     srli(rd, rd, 32);
   }
+
+ protected:
+  
+  
+  
+  static uintptr_t LoadLiPtrInstructions(Instruction* instr);
+
+  
+  
+  
+  static void UpdateLiPtrInstructions(Instruction* instr, uintptr_t value);
+
+  
+  
+  
+  
+  
+  
+  static void WriteLiPtrInstructions(Instruction* instr, Register reg,
+                                     uintptr_t value);
+
+  
+  
+  
+  static int64_t LoadLiConstantInstructions(Instruction* instr);
+
+  
+  
+  
+  static void UpdateLiConstantInstructions(Instruction* instr, int64_t value);
 };
 
 class ABIArgGenerator : public ABIArgGeneratorShared {
