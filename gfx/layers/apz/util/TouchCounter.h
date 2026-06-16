@@ -23,11 +23,9 @@ class TouchCounter {
   void Update(const MultiTouchInput& aInput);
   void Update(const WidgetTouchEvent& aEvent);
   uint32_t GetActiveTouchCount() const;
-  bool HasSeenFirstMove() const { return mFirstMoveSeen; }
 
  private:
   uint32_t mActiveTouchCount;
-  bool mFirstMoveSeen;
 };
 
 }  

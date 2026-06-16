@@ -25,13 +25,10 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -58,7 +55,6 @@
 #include "nsIScriptGlobalObject.h"
 #include "nsISupports.h"
 #include "nsJSUtils.h"
-#include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
@@ -227,12 +223,6 @@ EventListenerManager::GetTargetAsInnerWindow() const {
 }
 
 static mozilla::LazyLogModule sSlowChromeLog("SlowChromeEvent");
-
-
-
-
-
-static mozilla::LazyLogModule sApzFastPathLog("apz.fastpath");
 
 static void LogForChromeEvent(nsPIDOMWindowInner* aWindow, const char* aMsg) {
   if (!MOZ_LOG_TEST(sSlowChromeLog, LogLevel::Info)) {
@@ -575,7 +565,7 @@ void EventListenerManager::AddEventListenerInternal(
   }
 
   if (mIsMainThreadELM && !aFlags.mPassive && IsApzAwareEvent(aTypeAtom)) {
-    ProcessApzAwareEventListenerAdd(aTypeAtom);
+    ProcessApzAwareEventListenerAdd();
   }
 
   if (mTarget) {
@@ -588,16 +578,16 @@ void EventListenerManager::AddEventListenerInternal(
   }
 }
 
-void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
+void EventListenerManager::ProcessApzAwareEventListenerAdd() {
   Document* doc = nullptr;
 
   
-  nsINode* node = nsINode::FromEventTargetOrNull(mTarget);
-  if (node) {
+  if (nsINode* node = nsINode::FromEventTargetOrNull(mTarget)) {
     node->SetMayBeApzAware();
     doc = node->OwnerDoc();
   }
 
+  
   if (!doc) {
     if (nsCOMPtr<nsPIDOMWindowInner> window = GetTargetAsInnerWindow()) {
       doc = window->GetExtantDoc();
@@ -611,93 +601,14 @@ void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
     }
   }
 
-  if (!doc || !gfxPlatform::AsyncPanZoomEnabled()) {
-    return;
-  }
-
-  PresShell* presShell = doc->GetPresShell();
-  if (!presShell) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  dom::Element* element = dom::Element::FromNodeOrNull(node);
-  nsIFrame* elementFrame = element ? element->GetPrimaryFrame() : nullptr;
-  layers::ScrollableLayerGuid::ViewID scrollId =
-      layers::ScrollableLayerGuid::NULL_SCROLL_ID;
-  ScrollContainerFrame* scrollFrame = nullptr;
-  if (element) {
-    if (elementFrame) {
-      
-      
-      
-      
-      scrollFrame = nsLayoutUtils::GetNearestScrollContainerFrame(
-          elementFrame, nsLayoutUtils::SCROLLABLE_ALWAYS_MATCH_ROOT |
-                            nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT);
-    }
-  } else {
-    scrollFrame = presShell->GetRootScrollContainerFrame();
-  }
-  if (scrollFrame) {
-    if (nsIFrame* scrolled = scrollFrame->GetScrolledFrame()) {
-      if (nsIContent* scrolledContent = scrolled->GetContent()) {
-        nsLayoutUtils::FindIDFor(scrolledContent, &scrollId);
+  if (doc && gfxPlatform::AsyncPanZoomEnabled()) {
+    PresShell* presShell = doc->GetPresShell();
+    if (presShell) {
+      nsIFrame* f = presShell->GetRootFrame();
+      if (f) {
+        f->SchedulePaint();
       }
     }
-  }
-
-  if (StaticPrefs::apz_fastpath_apz_aware_listener_enabled()) {
-    
-    
-    if (aEvent == nsGkAtoms::ontouchmove &&
-        scrollId != layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
-      
-      
-      
-      
-      
-      
-      nsIDocShell* docShell = doc->GetDocShell();
-      if (RefPtr<dom::BrowserChild> browserChild =
-              dom::BrowserChild::GetFrom(docShell)) {
-        MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
-                ("ELM: sending NotifyApzAwareListenerAdded scrollId=%" PRIu64
-                 " (targetIsElement=%d, doc=%p)",
-                 scrollId, element != nullptr, doc));
-        browserChild->NotifyApzAwareListenerAdded(scrollId);
-      } else {
-        MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
-                ("ELM: have scrollId=%" PRIu64
-                 " but no BrowserChild (chrome/non-e10s); skipping fast path",
-                 scrollId));
-      }
-    } else {
-      MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
-              ("ELM: no fast-path send (no scrollId; targetIsElement=%d "
-               "elementHasFrame=%d hasScrollContainerAncestor=%d)",
-               element != nullptr, elementFrame != nullptr,
-               scrollFrame != nullptr));
-    }
-  }
-
-  
-  
-  
-  if (nsIFrame* root = presShell->GetRootFrame()) {
-    root->SchedulePaint();
   }
 }
 

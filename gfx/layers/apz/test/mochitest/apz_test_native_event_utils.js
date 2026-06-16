@@ -2039,20 +2039,3 @@ async function getWindowProtocol() {
     }
   });
 }
-
-
-
-async function synthesizeNativeTouchForFastFling(aTarget, aX, aY, aType) {
-  
-  
-  
-  
-  await synthesizeNativeTouch(aTarget, aX, aY, aType);
-  
-  
-  
-  if (getPlatform() != "android") {
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-}
