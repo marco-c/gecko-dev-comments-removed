@@ -6,10 +6,7 @@
 
 
 add_task(async function test_profile_js_sources() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -104,10 +101,7 @@ add_task(async function test_profile_js_sources() {
 
 
 add_task(async function test_profile_js_sources_with_tracing() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   
   
@@ -166,10 +160,7 @@ add_task(async function test_profile_js_sources_with_tracing() {
 
 
 add_task(async function test_profile_js_sources_location_format() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {

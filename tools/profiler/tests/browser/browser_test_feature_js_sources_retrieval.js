@@ -6,10 +6,7 @@
 
 
 add_task(async function test_js_sources_in_profile_additional_info() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -75,10 +72,7 @@ add_task(async function test_js_sources_in_profile_additional_info() {
 
 
 add_task(async function test_js_sources_different_types() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -152,10 +146,7 @@ add_task(async function test_js_sources_different_types() {
 
 
 add_task(async function test_js_sources_external_scripts() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "page_with_external_js.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -244,10 +235,7 @@ add_task(async function test_js_sources_external_scripts() {
 
 
 add_task(async function test_js_sources_unavailable_are_omitted() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {

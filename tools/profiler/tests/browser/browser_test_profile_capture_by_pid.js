@@ -21,7 +21,7 @@ async function GetPidsWithSamplerThread() {
 
 
 async function test_with_filter(fnFilterWithContentId) {
-  Assert.ok(!Services.profiler.IsActive());
+  await ProfilerTestUtils.assertProfilerInactive();
   info("Clear the previous pages just in case we still some open tabs.");
   await Services.profiler.ClearAllPages();
 

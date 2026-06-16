@@ -10,10 +10,7 @@ requestLongerTimeout(10);
 
 
 add_task(async function test_profile_feature_jsallocations() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   await ProfilerTestUtils.startProfiler({ features: ["js", "jsallocations"] });
 
