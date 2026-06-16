@@ -41,7 +41,19 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
 
 
 
-CSSMathOperator CSSMathValue::Operator() const { return CSSMathOperator::Sum; }
+CSSMathOperator CSSMathValue::Operator() const {
+  
+
+  switch (GetMathValueType()) {
+    case MathValueType::MathSum:
+      return CSSMathOperator::Sum;
+
+    case MathValueType::Uninitialized:
+      
+      return CSSMathOperator::Sum;
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad math value type!");
+}
 
 
 
