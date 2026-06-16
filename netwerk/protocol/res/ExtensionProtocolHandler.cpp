@@ -648,16 +648,28 @@ Result<bool, nsresult> ExtensionProtocolHandler::DevRepoContains(
   if (!mAlreadyCheckedDevRepo) {
     mAlreadyCheckedDevRepo = true;
     MOZ_TRY(nsMacUtilsImpl::GetRepoDir(getter_AddRefs(mDevRepo)));
+    nsresult rv = nsMacUtilsImpl::GetObjDir(getter_AddRefs(mDevObjDir));
+    if (NS_FAILED(rv)) {
+      
+      
+      LOG("GetObjDir() failed: %x", static_cast<uint32_t>(rv));
+    }
     if (MOZ_LOG_TEST(gExtProtocolLog, LogLevel::Debug)) {
       nsAutoCString repoPath;
       (void)mDevRepo->GetNativePath(repoPath);
       LOG("Repo path: %s", repoPath.get());
+      nsAutoCString objdirPath;
+      (void)mDevObjDir->GetNativePath(objdirPath);
+      LOG("objdir path: %s", objdirPath.get());
     }
   }
 
   bool result = false;
   if (mDevRepo) {
     MOZ_TRY(mDevRepo->Contains(aRequestedFile, &result));
+  }
+  if (!result && mDevObjDir) {
+    MOZ_TRY(mDevObjDir->Contains(aRequestedFile, &result));
   }
   return result;
 }
@@ -673,6 +685,10 @@ Result<bool, nsresult> ExtensionProtocolHandler::AppDirContains(
   if (!mAlreadyCheckedAppDir) {
     mAlreadyCheckedAppDir = true;
     MOZ_TRY(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(mAppDir)));
+    nsresult rv = mAppDir->Normalize();
+    if (NS_FAILED(rv)) {
+      LOG("Failed to normalize AppDir: %x", static_cast<uint32_t>(rv));
+    }
     if (MOZ_LOG_TEST(gExtProtocolLog, LogLevel::Debug)) {
       nsAutoCString appDirPath;
       (void)mAppDir->GetNativePath(appDirPath);

@@ -182,6 +182,8 @@ class ExtensionProtocolHandler final : public nsISubstitutingProtocolHandler,
 
   
   nsCOMPtr<nsIFile> mDevRepo;
+  
+  nsCOMPtr<nsIFile> mDevObjDir;
 
   
   
