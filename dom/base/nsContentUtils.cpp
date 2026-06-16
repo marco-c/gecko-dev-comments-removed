@@ -13026,6 +13026,7 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   
   
   
+  
   if (NS_WARN_IF(!aNode->IsRootOfNativeAnonymousSubtree())) {
     
     return Nothing();
@@ -13037,10 +13038,14 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   }
 
   if (aNode->IsGeneratedContentContainerForBackdrop()) {
-    return Some(-4);
+    return Some(-5);
   }
 
   if (aNode->IsGeneratedContentContainerForMarker()) {
+    return Some(-4);
+  }
+
+  if (aNode->IsGeneratedContentContainerForCheckmark()) {
     return Some(-3);
   }
 
@@ -13066,6 +13071,11 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   if (aNode->IsGeneratedContentContainerForAfter()) {
     return Some(int32_t(siblingCount + anonKids.Length()));
   }
+
+  if (aNode->IsGeneratedContentContainerForPickerIcon()) {
+    return Some(int32_t(siblingCount + anonKids.Length()) + 1);
+  }
+
   auto index = anonKids.IndexOf(aNode);
   if (index == anonKids.NoIndex) {
     MOZ_ASSERT_UNREACHABLE(

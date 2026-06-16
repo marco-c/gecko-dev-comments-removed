@@ -1770,6 +1770,18 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
+  bool IsGeneratedContentContainerForCheckmark() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentcheckmark;
+  }
+
+  
+  bool IsGeneratedContentContainerForPickerIcon() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentpickericon;
+  }
+
+  
 
 
 
