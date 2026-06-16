@@ -325,13 +325,24 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
     columnNumber = JS::ColumnNumberOneOrigin(tmp.oneOriginValue());
   }
 
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, limit.valueOr(0))) {
     return nullptr;
   }
 
-  return ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
-                             columnNumber, nullptr, message, cause, proto);
+  Rooted<ErrorObject*> errObject(
+      cx,
+      ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
+                          columnNumber, nullptr, message, cause, proto));
+  if (!errObject) {
+    return nullptr;
+  }
+  if (limit.isNothing() && !DefineDataProperty(cx, errObject, cx->names().stack,
+                                               JS::UndefinedHandleValue)) {
+    return nullptr;
+  }
+  return errObject;
 }
 
 static bool Error(JSContext* cx, unsigned argc, Value* vp) {
@@ -1016,27 +1027,33 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static uint32_t GetStackTraceLimit(JSContext* cx) {
+
+
+
+mozilla::Maybe<uint32_t> js::GetStackTraceLimit(JSContext* cx) {
   if (!JS::Prefs::experimental_error_stack_trace_limit()) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
   }
   JSObject* errorCtor = cx->global()->maybeGetConstructor(JSProto_Error);
   if (!errorCtor) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
   }
   Value limitVal;
   if (!GetPropertyPure(cx, errorCtor, NameToId(cx->names().stackTraceLimit),
                        &limitVal)) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
+  }
+  if (limitVal.isUndefined()) {
+    return mozilla::Nothing();
   }
   if (!limitVal.isNumber()) {
-    return 0;
+    return mozilla::Some(uint32_t(0));
   }
   double d = limitVal.toNumber();
   if (std::isnan(d) || d < 0) {
-    return 0;
+    return mozilla::Some(uint32_t(0));
   }
-  return uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH)));
+  return mozilla::Some(uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH))));
 }
 
 
@@ -1093,29 +1110,32 @@ static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  RootedObject stack(cx);
-  const uint32_t limit = GetStackTraceLimit(cx);
-  if (limit > 0) {
-    if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(limit)),
-                             caller)) {
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
+  RootedValue stackVal(cx, UndefinedValue());
+  if (limit.isSome()) {
+    RootedObject stack(cx);
+    if (*limit > 0) {
+      if (!CaptureCurrentStack(
+              cx, &stack, JS::StackCapture(JS::MaxFrames(*limit)), caller)) {
+        return false;
+      }
+    }
+
+    RootedString stackString(cx);
+
+    
+    
+    JSPrincipals* principals = cx->realm()->principals();
+    if (!BuildStackString(cx, principals, stack, &stackString)) {
       return false;
     }
-  }
-
-  RootedString stackString(cx);
-
-  
-  
-  JSPrincipals* principals = cx->realm()->principals();
-  if (!BuildStackString(cx, principals, stack, &stackString)) {
-    return false;
+    stackVal.setString(stackString);
   }
 
   
   
   
-  RootedValue string(cx, StringValue(stackString));
-  if (!DefineDataProperty(cx, obj, cx->names().stack, string, 0)) {
+  if (!DefineDataProperty(cx, obj, cx->names().stack, stackVal, 0)) {
     return false;
   }
 
@@ -1273,8 +1293,8 @@ struct SuppressErrorsGuard {
   ~SuppressErrorsGuard() { JS::SetWarningReporter(cx, prevReporter); }
 };
 
-bool js::CaptureStack(JSContext* cx, MutableHandleObject stack) {
-  const uint32_t limit = GetStackTraceLimit(cx);
+bool js::CaptureStack(JSContext* cx, MutableHandleObject stack,
+                      uint32_t limit) {
   if (limit == 0) {
     return true;
   }
@@ -1285,7 +1305,7 @@ JSString* js::ComputeStackString(JSContext* cx) {
   SuppressErrorsGuard seg(cx);
 
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, MAX_REPORTED_STACK_DEPTH)) {
     return nullptr;
   }
 
@@ -1399,8 +1419,9 @@ bool js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   
   auto cause = JS::NothingHandleValue;
 
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, limit.valueOr(0))) {
     return false;
   }
 
@@ -1409,11 +1430,18 @@ bool js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
     return false;
   }
 
-  ErrorObject* errObject =
+  Rooted<ErrorObject*> errObject(
+      cx,
       ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
-                          columnNumber, std::move(report), messageStr, cause);
+                          columnNumber, std::move(report), messageStr, cause));
   if (!errObject) {
     return false;
+  }
+  if (limit.isNothing()) {
+    if (!DefineDataProperty(cx, errObject, cx->names().stack,
+                            JS::UndefinedHandleValue)) {
+      return false;
+    }
   }
 
   

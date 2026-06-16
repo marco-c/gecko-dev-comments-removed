@@ -1912,7 +1912,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   
   
   if (JS::Prefs::wasm_exception_force_stack_trace() &&
-      !CaptureStack(cx, &stack)) {
+      !CaptureStack(cx, &stack, MAX_REPORTED_STACK_DEPTH)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
