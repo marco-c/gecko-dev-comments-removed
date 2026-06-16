@@ -8068,11 +8068,8 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    if (mWebTransportSessionEventListener) {
-      return false;
-    }
-
-    if (mUpgradeProtocolCallback &&
+    
+    if ((mUpgradeProtocolCallback || mWebTransportSessionEventListener) &&
         !StaticPrefs::network_http_happy_eyeballs_upgrade_enabled()) {
       return false;
     }
