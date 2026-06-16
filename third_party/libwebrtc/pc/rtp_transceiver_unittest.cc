@@ -1017,7 +1017,9 @@ TEST_F(RtpTransceiverTestWithFakeCall,
   AudioOptions audio_options;
   audio_options.audio_network_adaptor = true;
 
-  auto transceiver = make_ref_counted<RtpTransceiver>(
+  scoped_refptr<RtpTransceiver> transceiver;
+  ScopedOperationsBatcher worker_tasks(context()->worker_thread());
+  transceiver = make_ref_counted<RtpTransceiver>(
       env(), call_.get(), MediaConfig(),
       "sender", "receiver", MediaType::AUDIO,
       nullptr,
@@ -1029,11 +1031,10 @@ TEST_F(RtpTransceiverTestWithFakeCall,
       nullptr,
       std::vector<RtpHeaderExtensionCapability>(),
       false,
-      std::vector<SimulcastLayer>(),
+      std::vector<SimulcastLayer>(), worker_tasks,
       [] {});
-
   EXPECT_FALSE(transceiver->HasChannel());
-  ScopedOperationsBatcher worker_tasks(context()->worker_thread());
+  EXPECT_TRUE(worker_tasks.Run().ok());
   ScopedOperationsBatcher network_tasks(context()->network_thread());
   transceiver->CreateChannel(
       "0", call_.get(), MediaConfig(), false, CryptoOptions(),
@@ -1049,8 +1050,9 @@ TEST_F(RtpTransceiverTestWithFakeCall,
   auto* fake_channel = static_cast<FakeVoiceMediaSendChannel*>(voice_channel);
   EXPECT_TRUE(fake_channel->options().audio_network_adaptor);
 
-  transceiver->ClearChannel();
-  transceiver->StopStandard();
+  network_tasks.Add(transceiver->GetClearChannelNetworkTask());
+  worker_tasks.Add(
+      transceiver->GetDeleteChannelWorkerTask(true));
 }
 
 
