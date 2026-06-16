@@ -388,24 +388,24 @@ async function openAboutTranslations({
 
 
   const resolveDownloads = async count => {
-    await Promise.all([
-      remoteClients.translationsWasm.resolvePendingDownloads(1),
-      remoteClients.translationModels.resolvePendingDownloads(
-        downloadedFilesPerLanguagePair() * count
-      ),
-    ]);
+    await remoteClients.translationsWasm.waitForPendingDownloads(1);
+    await remoteClients.translationsWasm.resolvePendingDownloads(1);
+    await remoteClients.translationModels.waitForPendingDownloads(
+      downloadedFilesPerLanguagePair() * count
+    );
+    await remoteClients.translationModels.resolvePendingDownloads(
+      downloadedFilesPerLanguagePair() * count
+    );
   };
 
   
 
 
   const rejectDownloads = async count => {
-    await Promise.all([
-      remoteClients.translationsWasm.rejectPendingDownloads(1),
-      remoteClients.translationModels.rejectPendingDownloads(
-        downloadedFilesPerLanguagePair() * count
-      ),
-    ]);
+    await remoteClients.translationsWasm.rejectPendingDownloads(1);
+    await remoteClients.translationModels.rejectPendingDownloads(
+      downloadedFilesPerLanguagePair() * count
+    );
   };
 
   const runInPage = (callback, data = {}) => {
@@ -592,10 +592,10 @@ class TranslationsSettingsTestUtils {
   }
 
   async openTranslationsSubpageFromDocument() {
-    const manageButton = await waitForCondition(() => {
-      const button = this.document.getElementById("translationsManageButton");
-      return button && BrowserTestUtils.isVisible(button) ? button : null;
-    }, "Waiting for translationsManageButton");
+    const manageButton = await waitForCondition(
+      () => this.document.getElementById("translationsManageButton"),
+      "Waiting for translationsManageButton"
+    );
     manageButton.scrollIntoView({ behavior: "instant", block: "center" });
 
     await this.assertEvents(
@@ -624,10 +624,10 @@ class TranslationsSettingsTestUtils {
       });
 
     const document = gBrowser.selectedBrowser.contentDocument;
-    const manageButton = await waitForCondition(() => {
-      const button = document.getElementById("translationsManageButton");
-      return button && BrowserTestUtils.isVisible(button) ? button : null;
-    }, "Waiting for translationsManageButton");
+    const manageButton = await waitForCondition(
+      () => document.getElementById("translationsManageButton"),
+      "Waiting for translationsManageButton"
+    );
     manageButton.scrollIntoView({ behavior: "instant", block: "center" });
 
     await translationsSettingsTestUtils.assertEvents(
@@ -1155,6 +1155,9 @@ class TranslationsSettingsTestUtils {
 
     const modelNames =
       TranslationsSettingsTestUtils.getLanguageModelNames(langTag);
+    await remoteClients.translationModels.waitForPendingDownloads(
+      modelNames.length
+    );
     await remoteClients.translationModels.rejectPendingDownloads(
       modelNames.length
     );
@@ -2595,17 +2598,13 @@ async function createAndMockRemoteSettings({
   }
 
   const remoteClients = {
-    translationModels: await createTranslationModelsRemoteClient({
-      collectionName: "test-translation-models",
-      uniquePerTestRun: true,
+    translationModels: await createTranslationModelsRemoteClient(
       autoDownloadFromRemoteSettings,
-      languagePairs,
-    }),
-    translationsWasm: await createTranslationsWasmRemoteClient({
-      collectionName: "test-translation-wasm",
-      uniquePerTestRun: true,
-      autoDownloadFromRemoteSettings,
-    }),
+      languagePairs
+    ),
+    translationsWasm: await createTranslationsWasmRemoteClient(
+      autoDownloadFromRemoteSettings
+    ),
   };
 
   
@@ -3252,88 +3251,29 @@ async function autoTranslatePage(options) {
 
 
 
+
+
 function createAttachmentMock(
   client,
   mockedCollectionName,
   autoDownloadFromRemoteSettings
 ) {
   const pendingDownloads = [];
-  const pendingDownloadWaiters = [];
-  const downloadedById = new Set();
-
-  client.sync = async () => {
-    info(
-      `Skipping network sync for mocked Remote Settings collection "${client.collectionName}"`
-    );
-    return { ok: true };
-  };
-
-  const realGet = client.get.bind(client);
-  client.get = async opts => {
-    const records = await realGet(opts);
-    for (const record of records) {
-      if (!record.attachment) {
-        record.attachment = {};
-      }
-      record.attachment.isDownloaded = downloadedById.has(record.id);
-    }
-    return records;
-  };
-
-  function markIsDownloaded(record, value) {
-    if (!record.attachment) {
-      record.attachment = {};
-    }
-    record.attachment.isDownloaded = value;
-    if (record.id != null) {
-      if (value) {
-        downloadedById.add(record.id);
-      } else {
-        downloadedById.delete(record.id);
-      }
-    }
-  }
-
-  client.attachments.isDownloaded = async record => {
-    const isDownloaded = !!record?.id && downloadedById.has(record.id);
-    if (record) {
-      markIsDownloaded(record, isDownloaded);
-    }
-    return isDownloaded;
-  };
 
   client.attachments.download = record =>
     new Promise((resolve, reject) => {
-      info(
-        `Download requested: ${client.collectionName}, ${record.name} v${record.version}`
-      );
+      console.log("Download requested:", client.collectionName, record.name);
       if (autoDownloadFromRemoteSettings) {
         const encoder = new TextEncoder();
         const { buffer } = encoder.encode(
           `Mocked download: ${mockedCollectionName} ${record.name} ${record.version}`
         );
-        markIsDownloaded(record, true);
+
         resolve({ buffer });
       } else {
-        pendingDownloads.push({
-          record,
-          resolve: result => {
-            markIsDownloaded(record, true);
-            resolve(result);
-          },
-          reject,
-        });
-        notifyPendingDownloadsChanged();
+        pendingDownloads.push({ record, resolve, reject });
       }
     });
-
-  client.attachments.deleteDownloaded = async record => {
-    markIsDownloaded(record, false);
-  };
-
-  client.attachments.deleteAll = async () => {
-    downloadedById.clear();
-  };
 
   function resolvePendingDownloads(expectedDownloadCount) {
     info(
@@ -3365,24 +3305,18 @@ function createAttachmentMock(
 
     
     while (names.length < expectedDownloadCount) {
-      if (!pendingDownloads.length) {
-        try {
-          await waitForPendingDownloads(1, {
-            interval: 100,
-            maxTries: 50,
-          });
-        } catch (error) {
+      try {
+        await waitForPendingDownloads(names.length + 1);
+        while (names.length < expectedDownloadCount && rejectNext()) {
           
-          
-          info(
-            `Timeout or error waiting for download ${names.length + 1}: ${error.message}`
-          );
-          break;
         }
-      }
-
-      while (names.length < expectedDownloadCount && rejectNext()) {
+      } catch (error) {
         
+        
+        info(
+          `Timeout or error waiting for download ${names.length + 1}: ${error.message}`
+        );
+        break;
       }
     }
 
@@ -3413,18 +3347,15 @@ function createAttachmentMock(
       if (!pendingDownloads.length) {
         try {
           await waitForPendingDownloads(1, {
-            interval: 100,
+            interval: 10,
             maxTries: 50,
           });
-        } catch (error) {
-          info(
-            `Stopped resolving downloads for "${client.collectionName}" after resolving ${names.length} of ${expectedDownloadCount}: ${error.message}`
-          );
+        } catch {
           break;
         }
       }
 
-      const download = pendingDownloads.shift();
+      let download = pendingDownloads.shift();
       console.log(`Handling download:`, client.collectionName);
       action(download);
       names.push(download.record.name);
@@ -3452,47 +3383,16 @@ function createAttachmentMock(
     );
   }
 
-  function notifyPendingDownloadsChanged() {
-    for (let i = pendingDownloadWaiters.length - 1; i >= 0; i--) {
-      const waiter = pendingDownloadWaiters[i];
-      if (pendingDownloads.length >= waiter.expectedCount) {
-        pendingDownloadWaiters.splice(i, 1);
-        waiter.resolve();
-      }
-    }
-  }
-
   function waitForPendingDownloads(
     expectedCount,
-    { interval = 100, maxTries = 50 } = {}
+    { interval = 100, maxTries = 10 } = {}
   ) {
-    if (pendingDownloads.length >= expectedCount) {
-      return Promise.resolve();
-    }
-
-    const { promise, resolve, reject } = Promise.withResolvers();
-    let timeoutId;
-    const waiter = {
-      expectedCount,
-      resolve: () => {
-        clearTimeout(timeoutId);
-        resolve();
-      },
-    };
-    timeoutId = setTimeout(() => {
-      const waiterIndex = pendingDownloadWaiters.indexOf(waiter);
-      if (waiterIndex >= 0) {
-        pendingDownloadWaiters.splice(waiterIndex, 1);
-      }
-      reject(
-        new Error(
-          `Timed out waiting for ${expectedCount} pending downloads for "${client.collectionName}". Current pending downloads: ${pendingDownloads.length}`
-        )
-      );
-    }, interval * maxTries);
-
-    pendingDownloadWaiters.push(waiter);
-    return promise;
+    return waitForCondition(
+      () => pendingDownloads.length >= expectedCount,
+      `Waiting for ${expectedCount} pending downloads for "${client.collectionName}"`,
+      interval,
+      maxTries
+    );
   }
 
   return {
@@ -3528,29 +3428,9 @@ function downloadedFilesPerLanguagePair(splitVocab = false) {
     : expectedRecords - 1;
 }
 
-
-
-
-
-
-
-
-
-
-
-function createRecordsForLanguagePair({
-  sourceLanguage,
-  targetLanguage,
-  splitVocab = false,
-  majorVersion = TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX,
-}) {
-  if (!sourceLanguage || !targetLanguage) {
-    throw new Error(
-      "Both sourceLanguage and targetLanguage must be provided to createRecordsForLanguagePair."
-    );
-  }
+function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
   const records = [];
-  const lang = sourceLanguage + targetLanguage;
+  const lang = fromLang + toLang;
   const models = [
     { fileType: "model", name: `model.${lang}.intgemm.alphas.bin` },
     { fileType: "lex", name: `lex.50.50.${lang}.s2t.bin` },
@@ -3585,10 +3465,10 @@ function createRecordsForLanguagePair({
     records.push({
       id: crypto.randomUUID(),
       name,
-      sourceLanguage,
-      targetLanguage,
+      sourceLanguage: fromLang,
+      targetLanguage: toLang,
       fileType,
-      version: `${majorVersion}.0`,
+      version: TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX + ".0",
       last_modified: Date.now(),
       schema: Date.now(),
       attachment: JSON.parse(JSON.stringify(attachment)), 
@@ -3602,21 +3482,13 @@ function createRecordsForLanguagePair({
 
 
 
-
-
-function createWasmRecord(
-  majorVersion = TranslationsParent.BERGAMOT_MAJOR_VERSION
-) {
+function createWasmRecord() {
   return {
     id: crypto.randomUUID(),
     name: "bergamot-translator",
-    version: majorVersion + ".0",
+    version: TranslationsParent.BERGAMOT_MAJOR_VERSION + ".0",
     last_modified: Date.now(),
     schema: Date.now(),
-    attachment: {
-      size: 123,
-      isDownloaded: false,
-    },
   };
 }
 
@@ -3633,48 +3505,29 @@ let _remoteSettingsMockId = 0;
 
 
 
-
-
-
-
-async function createTranslationModelsRemoteClient({
-  collectionName,
-  uniquePerTestRun = false,
-  autoDownloadFromRemoteSettings = false,
-  languagePairs = [],
-  majorVersion = TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX,
-}) {
+async function createTranslationModelsRemoteClient(
+  autoDownloadFromRemoteSettings,
+  langPairs
+) {
   const records = [];
-  for (const pair of languagePairs) {
-    const {
-      fromLang,
-      toLang,
-      sourceLanguage = fromLang,
-      targetLanguage = toLang,
-    } = pair;
-    records.push(
-      ...createRecordsForLanguagePair({
-        sourceLanguage,
-        targetLanguage,
-        majorVersion,
-      })
-    );
+  for (const { fromLang, toLang } of langPairs) {
+    records.push(...createRecordsForLanguagePair(fromLang, toLang));
   }
 
   const { RemoteSettings } = ChromeUtils.importESModule(
     "resource://services-settings/remote-settings.sys.mjs"
   );
-  const clientCollectionName = uniquePerTestRun
-    ? `${collectionName}-${_remoteSettingsMockId++}`
-    : collectionName;
-  const client = RemoteSettings(clientCollectionName);
+  const mockedCollectionName = "test-translation-models";
+  const client = RemoteSettings(
+    `${mockedCollectionName}-${_remoteSettingsMockId++}`
+  );
   const metadata = {};
   await client.db.clear();
   await client.db.importChanges(metadata, Date.now(), records);
 
   return createAttachmentMock(
     client,
-    collectionName,
+    mockedCollectionName,
     autoDownloadFromRemoteSettings
   );
 }
@@ -3685,31 +3538,24 @@ async function createTranslationModelsRemoteClient({
 
 
 
-
-
-
-
-async function createTranslationsWasmRemoteClient({
-  collectionName = "test-translation-wasm",
-  uniquePerTestRun = true,
-  autoDownloadFromRemoteSettings = false,
-  majorVersion = TranslationsParent.BERGAMOT_MAJOR_VERSION,
-} = {}) {
-  const records = [createWasmRecord(majorVersion)];
+async function createTranslationsWasmRemoteClient(
+  autoDownloadFromRemoteSettings
+) {
+  const records = [createWasmRecord()];
   const { RemoteSettings } = ChromeUtils.importESModule(
     "resource://services-settings/remote-settings.sys.mjs"
   );
-  const clientCollectionName = uniquePerTestRun
-    ? `${collectionName}-${_remoteSettingsMockId++}`
-    : collectionName;
-  const client = RemoteSettings(clientCollectionName);
+  const mockedCollectionName = "test-translation-wasm";
+  const client = RemoteSettings(
+    `${mockedCollectionName}-${_remoteSettingsMockId++}`
+  );
   const metadata = {};
   await client.db.clear();
   await client.db.importChanges(metadata, Date.now(), records);
 
   return createAttachmentMock(
     client,
-    collectionName,
+    mockedCollectionName,
     autoDownloadFromRemoteSettings
   );
 }
@@ -3976,7 +3822,6 @@ async function setupAboutPreferences(
       
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
-      ["identity.fxaccounts.account.device.name", ""],
       [USE_LEXICAL_SHORTLIST_PREF, false],
       ["browser.settings-redesign.enabled", true],
       ...prefs,
