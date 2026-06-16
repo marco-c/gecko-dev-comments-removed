@@ -53,6 +53,8 @@ class DocumentEventWatcher {
         hasNativeConsoleAPI,
         
         newURI,
+        
+        isErrorPage,
       } = {}
     ) => {
       
@@ -84,6 +86,8 @@ class DocumentEventWatcher {
           
           hasNativeConsoleAPI:
             name == "dom-complete" ? hasNativeConsoleAPI : null,
+          
+          isErrorPage: isErrorPage || undefined,
         },
       ]);
     };

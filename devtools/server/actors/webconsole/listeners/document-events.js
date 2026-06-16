@@ -63,7 +63,10 @@ class DocumentEventsListener extends EventEmitter {
       
       
       
-      if (this.targetActor.window.document.readyState != "complete") {
+      if (
+        !Cu.isRemoteProxy(this.targetActor.window) &&
+        this.targetActor.window.document.readyState != "complete"
+      ) {
         this.webProgress = this.targetActor.docShell
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIWebProgress);
@@ -115,16 +118,20 @@ class DocumentEventsListener extends EventEmitter {
 
     const time = this._getPerformanceTiming(window, "navigationStart");
 
+    const isErrorPage =
+      window.docShell.currentDocumentChannel?.loadInfo.loadErrorPage;
+
     this.emit("dom-loading", {
       time,
       isFrameSwitching,
+      isErrorPage,
     });
 
     
     
     
     
-    if (window.docShell.currentDocumentChannel?.loadInfo.loadErrorPage) {
+    if (isErrorPage) {
       this.onContentLoaded({ target: window.document }, isFrameSwitching);
       this.onLoad({ target: window.document }, isFrameSwitching);
       return;
