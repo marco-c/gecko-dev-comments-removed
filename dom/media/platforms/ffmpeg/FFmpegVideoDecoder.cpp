@@ -2542,16 +2542,19 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
   
   
   
+  
+  
+  
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   if (IsHardwareAccelerated()) {
-    mLib->av_buffer_unref(&mVAAPIDeviceContext);
-    mLib->av_buffer_unref(&mVulkanDeviceContext);
 #  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
     if (mVulkanDecoder.mDevice) {
       mVulkanDecoder.Cleanup();
     }
 #  endif
+    mLib->av_buffer_unref(&mVAAPIDeviceContext);
+    mLib->av_buffer_unref(&mVulkanDeviceContext);
   }
 #endif
 #ifdef MOZ_ENABLE_D3D11VA
