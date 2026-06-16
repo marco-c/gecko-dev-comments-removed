@@ -987,8 +987,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  virtual gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                          FontVisibility aVisibility) const = 0;
+  virtual already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const = 0;
 
   
 
