@@ -377,12 +377,9 @@ export function createSourceActor(sourceResource, sourceObject) {
     
     
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
-    
-    source: makeSourceId(sourceResource),
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
-    url: sourceResource.url,
     introductionType: sourceResource.introductionType,
     sourceStartLine: sourceResource.sourceStartLine,
     sourceStartColumn: sourceResource.sourceStartColumn,
