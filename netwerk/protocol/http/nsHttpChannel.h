@@ -308,8 +308,13 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  ProxyDNSStrategy GetProxyDNSStrategy();
+  nsIHttpChannelInternal::ProxyDNSStrategy ComputeProxyDNSStrategy();
 
+ public:
+  NS_IMETHOD GetProxyDNSStrategy(
+      nsIHttpChannelInternal::ProxyDNSStrategy* aStrategy) override;
+
+ private:
   
   void AddStorageAccessHeadersToRequest();
   bool DispatchRelease();
@@ -652,7 +657,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  TimeDuration mSuspendTotalTime{0};
+  TimeDuration mSuspendTotalTime{nullptr};
 
   friend class AutoRedirectVetoNotifier;
   friend class HttpAsyncAborter<nsHttpChannel>;
