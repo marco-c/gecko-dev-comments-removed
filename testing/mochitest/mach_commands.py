@@ -314,10 +314,6 @@ def run_mochitest_general(
     from mozlog.handlers import ResourceHandler, StreamHandler
     from moztest.resolve import get_suite_definition
 
-    
-    
-    command_context.activate_virtualenv()
-
     buildapp = None
     for app in SUPPORTED_APPS:
         if conditions.is_buildapp_in(command_context, apps=[app]):
