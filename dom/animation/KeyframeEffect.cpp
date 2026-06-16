@@ -1376,6 +1376,32 @@ KeyframeEffect::OverflowRegionRefreshInterval() {
   return kOverflowRegionRefreshInterval;
 }
 
+static bool OpacityAnimationsAreFinishedAndFilling(const nsIFrame* aFrame) {
+  EffectSet* effects =
+      EffectSet::GetForFrame(aFrame, nsCSSPropertyIDSet::OpacityProperties());
+  if (!effects) {
+    return false;
+  }
+
+  bool hasOpacityAnimation = false;
+  for (const KeyframeEffect* effect : *effects) {
+    const Animation* animation = effect->GetAnimation();
+    if (!animation || !animation->IsRelevant() || !effect->HasOpacityChange()) {
+      continue;
+    }
+    hasOpacityAnimation = true;
+
+    
+    
+    if (animation->PlayState() != AnimationPlayState::Finished ||
+        effect->GetComputedTiming().mProgress.IsNull()) {
+      return false;
+    }
+  }
+
+  return hasOpacityAnimation;
+}
+
 static bool CanOptimizeAwayDueToOpacity(const KeyframeEffect& aEffect,
                                         const nsIFrame& aFrame) {
   if (!aFrame.Style()->IsInOpacityZeroSubtree()) {
@@ -1394,11 +1420,14 @@ static bool CanOptimizeAwayDueToOpacity(const KeyframeEffect& aEffect,
 
   MOZ_ASSERT(root && root->Style()->IsInOpacityZeroSubtree());
 
+  if (root == &aFrame && aEffect.HasOpacityChange()) {
+    return false;
+  }
   
   
   
-  return (root != &aFrame || !aEffect.HasOpacityChange()) &&
-         !root->HasAnimationOfOpacity();
+  return !root->HasAnimationOfOpacity() ||
+         OpacityAnimationsAreFinishedAndFilling(root);
 }
 
 bool KeyframeEffect::CanThrottleIfNotVisible(nsIFrame& aFrame) const {
