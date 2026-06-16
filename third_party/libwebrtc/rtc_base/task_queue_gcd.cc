@@ -100,7 +100,7 @@ TaskQueueGcd::TaskQueueGcd(absl::string_view queue_name, int gcd_priority)
 TaskQueueGcd::~TaskQueueGcd() = default;
 
 void TaskQueueGcd::Delete() {
-  RTC_DCHECK(!IsCurrent());
+  
   
   
   
@@ -108,9 +108,14 @@ void TaskQueueGcd::Delete() {
   
   
 
-  
-  
-  dispatch_sync_f(queue_, this, &SetNotActive);
+  if (IsCurrent()) {
+    SetNotActive(this);
+  } else {
+    
+    
+    dispatch_sync_f(queue_, this, &SetNotActive);
+  }
+
   dispatch_release(queue_);
 }
 
