@@ -58,7 +58,6 @@ function Spinner(props, context) {
 
       this.state = {
         items: [],
-        isScrolling: false,
       };
       this.props = {
         setValue,
@@ -151,7 +150,7 @@ function Spinner(props, context) {
       }
 
       
-      if ((isValueSet && !isInvalid) || this.state.index) {
+      if ((isValueSet && !isInvalid) || this.state.index !== undefined) {
         this._updateSelection();
       } else {
         this._removeSelection();
@@ -189,10 +188,17 @@ function Spinner(props, context) {
           this.state.index > itemsView.length - viewportSize
         ) {
           this._scrollTo(this.state.value, true);
+          
+          
+          this._updateSelection();
         }
       }
-
-      this.elements.spinner.classList.add("scrolling");
+      if (this.elements.spinner.scrollTop != this.state.lastScrollTop) {
+        
+        
+        this.state.lastScrollTop = this.elements.spinner.scrollTop;
+        this.elements.spinner.classList.add("scrolling");
+      }
     },
 
     
