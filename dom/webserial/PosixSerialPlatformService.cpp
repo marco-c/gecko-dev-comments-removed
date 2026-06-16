@@ -14,6 +14,8 @@
 
 #include "SerialLogging.h"
 #include "mozilla/AsyncPlatformPipes.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "mozilla/SyncRunnable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
@@ -60,28 +62,31 @@ constexpr size_t kDeviceNameBufferSize = 256;
 
 
 
-static bool IsRealSerialPort(const char* aDevpath) {
+static Result<Ok, int> IsRealSerialPort(const char* aDevpath) {
   int fd = open(aDevpath, O_RDWR | O_NONBLOCK | O_NOCTTY);
   if (fd < 0) {
+    int openErrno = errno;
     MOZ_LOG(gWebSerialLog, LogLevel::Debug,
             ("IsRealSerialPort: open(%s, O_RDWR|O_NONBLOCK|O_NOCTTY) failed: "
              "errno=%d (%s)",
-             aDevpath, errno, strerror(errno)));
-    return false;
+             aDevpath, openErrno, strerror(openErrno)));
+    return Err(openErrno);
   }
   int status;
   bool isReal = ioctl(fd, TIOCMGET, &status) == 0;
+  
+  int ioctlErrno = errno;
+  close(fd);
   if (isReal) {
     MOZ_LOG(gWebSerialLog, LogLevel::Debug,
             ("IsRealSerialPort: %s accepted (TIOCMGET status=0x%x)", aDevpath,
              status));
-  } else {
-    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-            ("IsRealSerialPort: TIOCMGET on %s failed: errno=%d (%s)", aDevpath,
-             errno, strerror(errno)));
+    return Ok();
   }
-  close(fd);
-  return isReal;
+  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+          ("IsRealSerialPort: TIOCMGET on %s failed: errno=%d (%s)", aDevpath,
+           ioctlErrno, strerror(ioctlErrno)));
+  return Err(ioctlErrno);
 }
 
 #ifdef XP_MACOSX
@@ -184,7 +189,7 @@ void PosixSerialPlatformService::Shutdown() {
 }
 
 nsresult PosixSerialPlatformService::EnumeratePortsImpl(
-    SerialPortList& aPorts) {
+    SerialPortList& aPorts, bool* aLikelyAccessDenied) {
   aPorts.Clear();
 
   MOZ_LOG(
@@ -235,6 +240,17 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
   IOObjectRelease(serialPortIterator);
 
 #elif defined(XP_LINUX)
+  
+  
+  
+  
+  enum ErrorKind : uint8_t {
+    eNone = 0,
+    eAccessDenied = 1 << 0,
+    eOther = 1 << 1
+  };
+  ErrorKind errors = ErrorKind::eNone;
+
   
   [&]() {
     if (!mUdevLib) {
@@ -303,7 +319,21 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
         continue;
       }
 
-      if (!IsRealSerialPort(devnode)) {
+      auto isReal = IsRealSerialPort(devnode);
+      if (isReal.isErr()) {
+        int err = isReal.unwrapErr();
+        
+        
+        
+        if (err != ENOTTY) {
+          errors = static_cast<ErrorKind>(
+              errors |
+              ((err == EACCES) ? ErrorKind::eAccessDenied : ErrorKind::eOther));
+        }
+        MOZ_LOG(gWebSerialLog, LogLevel::Verbose,
+                ("PosixSerialPlatformService[%p]::EnumeratePorts "
+                 "rejecting device devnode=%s, errors=%d",
+                 this, devnode, static_cast<int>(errors)));
         MOZ_LOG(gWebSerialLog, LogLevel::Debug,
                 ("PosixSerialPlatformService[%p]::EnumeratePorts "
                  "rejecting device devnode=%s (not a real serial port)",
@@ -348,7 +378,7 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
         continue;
       }
 
-      if (!IsRealSerialPort(devpath.get())) {
+      if (IsRealSerialPort(devpath.get()).isErr()) {
         continue;
       }
 
@@ -378,6 +408,15 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
       }
       aPorts.AppendElement(info);
     }
+  }
+
+  
+  
+  
+  
+  if (aLikelyAccessDenied) {
+    *aLikelyAccessDenied =
+        aPorts.IsEmpty() && (errors == ErrorKind::eAccessDenied);
   }
 #endif
 
@@ -646,7 +685,7 @@ nsresult PosixSerialPlatformService::OpenImpl(
 
   
   
-  if (!IsRealSerialPort(NS_ConvertUTF16toUTF8(aPortId).get())) {
+  if (IsRealSerialPort(NS_ConvertUTF16toUTF8(aPortId).get()).isErr()) {
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
             ("PosixSerialPlatformService[%p]::Open rejected invalid portId "
              "'%s': not a serial device path",
