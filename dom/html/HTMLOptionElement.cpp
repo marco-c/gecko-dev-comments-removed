@@ -4,7 +4,9 @@
 
 #include "mozilla/dom/HTMLOptionElement.h"
 
+#include "BindContext.h"
 #include "HTMLOptGroupElement.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/HTMLOptionElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
@@ -238,33 +240,94 @@ nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
   
   UpdateDisabledState(false);
 
+  
+  
+  
+  UpdateNearestAncestorSelect();
+
+  
+  
+  
+  
+  
+
+  
+  
+  if (aContext.InComposedDoc() && mCachedNearestAncestorSelect && Selected()) {
+    mCachedNearestAncestorSelect->ScheduleSelectedContentUpdateScriptRunner();
+  }
+
   return NS_OK;
 }
 
 void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {
+  
+  
+  
+  
+  RefPtr<HTMLSelectElement> oldSelect = mCachedNearestAncestorSelect;
+
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
   
+  UpdateNearestAncestorSelect();
+
+  
+  
+  
+  
+  if (oldSelect && oldSelect != mCachedNearestAncestorSelect && Selected()) {
+    oldSelect->ScheduleSelectedContentUpdate();
+  }
+
   UpdateDisabledState(false);
 }
 
 
+HTMLSelectElement* HTMLOptionElement::ComputeNearestAncestorSelect() const {
+  HTMLOptGroupElement* ancestorOptgroup = nullptr;
+  
+  for (nsINode* ancestor : Ancestors(*this)) {
+    
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::datalist, nsGkAtoms::hr,
+                                      nsGkAtoms::option)) {
+      return nullptr;
+    }
+    
+    if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+      
+      if (ancestorOptgroup) {
+        return nullptr;
+      }
+      
+      ancestorOptgroup = optgroup;
+      continue;
+    }
+    
+    if (auto* select = HTMLSelectElement::FromNode(ancestor)) {
+      return select;
+    }
+  }
+  
+  return nullptr;
+}
+
+
+void HTMLOptionElement::UpdateNearestAncestorSelect() {
+  
+  
+  
+  mCachedNearestAncestorSelect = ComputeNearestAncestorSelect();
+  
+  
+  
+  
+  
+}
+
+
 HTMLSelectElement* HTMLOptionElement::GetSelect() const {
-  nsIContent* parent = GetParent();
-  if (!parent) {
-    return nullptr;
-  }
-
-  HTMLSelectElement* select = HTMLSelectElement::FromNode(parent);
-  if (select) {
-    return select;
-  }
-
-  if (!parent->IsHTMLElement(nsGkAtoms::optgroup)) {
-    return nullptr;
-  }
-
-  return HTMLSelectElement::FromNodeOrNull(parent->GetParent());
+  return mCachedNearestAncestorSelect;
 }
 
 already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(

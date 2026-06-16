@@ -151,7 +151,7 @@ class nsIFormControl : public nsISupports {
 
 
 
-  NS_IMETHOD Reset() = 0;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Reset() = 0;
 
   
 

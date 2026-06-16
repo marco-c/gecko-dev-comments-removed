@@ -114,12 +114,25 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
 
   HTMLSelectElement* GetSelect() const;
 
+  
+  HTMLSelectElement* ComputeNearestAncestorSelect() const;
+
+  
+  
+  
+  void UpdateNearestAncestorSelect();
+
  protected:
   virtual ~HTMLOptionElement();
 
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
+
+  
+  
+  
+  HTMLSelectElement* mCachedNearestAncestorSelect = nullptr;
 };
 
 }  

@@ -4,6 +4,10 @@
 
 #include "HTMLSelectedContentElement.h"
 
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/HTMLOptionElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSelectedContentElementBinding.h"
 #include "nsGenericHTMLElement.h"
 
@@ -32,6 +36,72 @@ NS_IMPL_ELEMENT_CLONE(HTMLSelectedContentElement)
 JSObject* HTMLSelectedContentElement::WrapNode(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return HTMLSelectedContentElement_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+
+void HTMLSelectedContentElement::ClearContent() {
+  
+  if (mDisabled) {
+    return;
+  }
+  
+  ReplaceChildren(nullptr, IgnoreErrors());
+}
+
+
+nsresult HTMLSelectedContentElement::BindToTree(BindContext& aContext,
+                                                nsINode& aParent) {
+  nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+
+  
+  HTMLSelectElement* nearestSelectAncestor = nullptr;
+
+  
+  SetDisabled(false);
+
+  
+  for (nsINode* ancestor = &aParent; ancestor;
+       ancestor = ancestor->GetParent()) {
+    
+    if (auto* select = HTMLSelectElement::FromNode(ancestor)) {
+      
+      
+      if (!nearestSelectAncestor) {
+        nearestSelectAncestor = select;
+        continue;
+      }
+      
+      SetDisabled(true);
+      break;
+    }
+
+    
+    
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::option,
+                                      nsGkAtoms::selectedcontent)) {
+      SetDisabled(true);
+      break;
+    }
+  }
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  if (aContext.InComposedDoc() && nearestSelectAncestor && !mDisabled &&
+      !nearestSelectAncestor->Multiple()) {
+    nearestSelectAncestor->ScheduleSelectedContentUpdateScriptRunner();
+  }
+
+  return NS_OK;
 }
 
 }  
