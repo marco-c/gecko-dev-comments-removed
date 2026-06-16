@@ -62,9 +62,18 @@ void HTMLOptionElement::UpdateDisabledState(bool aNotify) {
   bool isDisabled = HasAttr(nsGkAtoms::disabled);
 
   if (!isDisabled) {
-    nsIContent* parent = GetParent();
-    if (auto optGroupElement = HTMLOptGroupElement::FromNodeOrNull(parent)) {
-      isDisabled = optGroupElement->IsDisabled();
+    
+    
+    
+    for (nsINode* ancestor = GetParent(); ancestor;
+         ancestor = ancestor->GetParentNode()) {
+      if (IsOptionListBoundary(*ancestor)) {
+        break;
+      }
+      if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+        isDisabled = optgroup->IsDisabled();
+        break;
+      }
     }
   }
 
