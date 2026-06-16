@@ -54,7 +54,15 @@ async function testEditableFieldFocus(
   for (const textProp of ruleEditor.rule.textProps.toReversed()) {
     const propEditor = textProp.editor;
 
+    const anchorNamesUpdated = view.inspector.once("anchor-names-updated");
     await focusNextField(view, ruleEditor, commitKey, options);
+    
+    
+    
+    
+    if (textProp.name == "margin") {
+      await anchorNamesUpdated;
+    }
     await assertEditor(
       view,
       propEditor.valueSpan,
@@ -94,9 +102,9 @@ async function focusNextFieldAndExpectChange(
   commitKey,
   options
 ) {
-  const onRuleViewChanged = view.once("ruleview-changed");
+  const onModifications = view.once("property-value-updated");
   await focusNextField(view, ruleEditor, commitKey, options);
-  await onRuleViewChanged;
+  await onModifications;
 }
 
 async function focusNextField(view, ruleEditor, commitKey, options) {

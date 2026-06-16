@@ -142,6 +142,10 @@ class TextPropertyEditor {
   #draggingValueCache = null;
 
   
+  
+  #initialValue = null;
+
+  
 
 
   get editing() {
@@ -952,6 +956,7 @@ class TextPropertyEditor {
     if (this.expander) {
       this.expander.hidden = true;
     }
+    this.#initialValue = this.prop.value;
   };
 
   get #shouldShowComputedExpander() {
@@ -1573,10 +1578,11 @@ class TextPropertyEditor {
     
     
     if ((value.trim() || isVariable) && isValueUnchanged) {
-      const onPropertySet = this.rule.previewPropertyValue(
-        this.prop,
+      const onPropertySet = this.prop.setValue(
         val.value,
-        val.priority
+        val.priority,
+        false,
+        !commit
       );
       this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       return onPropertySet;
@@ -1592,7 +1598,12 @@ class TextPropertyEditor {
     this.telemetry.recordEvent("edit_rule", "ruleview");
 
     
-    const onPropertySet = this.prop.setValue(val.value, val.priority);
+    const onPropertySet = this.prop.setValue(
+      val.value,
+      val.priority,
+      false,
+      !commit
+    );
 
     if (!this.prop.enabled) {
       this.prop.setEnabled(true);
@@ -1645,7 +1656,7 @@ class TextPropertyEditor {
 
 
   #onSwatchRevert = () => {
-    this.#previewValue(this.prop.value, true);
+    this.#previewValue(this.#initialValue, true);
     this.update();
   };
 
@@ -1720,7 +1731,8 @@ class TextPropertyEditor {
     }
 
     const val = parseSingleValue(this.cssProperties.isKnown, value);
-    this.rule.previewPropertyValue(this.prop, val.value, val.priority);
+    
+    this.prop.setValue(val.value, val.priority, false, reverting);
   };
 
   
@@ -1888,7 +1900,12 @@ class TextPropertyEditor {
 
   #draggingOnKeydown = event => {
     if (event.key == "Escape") {
-      this.prop.setValue(this.committed.value, this.committed.priority);
+      this.prop.setValue(
+        this.committed.value,
+        this.committed.priority,
+        false,
+        true
+      );
       this.#onStopDragging();
       event.preventDefault();
     }

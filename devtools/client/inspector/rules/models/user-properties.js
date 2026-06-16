@@ -70,6 +70,34 @@ class UserProperties {
 
 
 
+  clearProperty(style, name) {
+    const key = this.getKey(style, name);
+    const entry = this.map.get(key, null);
+
+    if (entry) {
+      delete entry[name];
+    }
+
+    let anotherRuleHasProperty = false;
+    for (const ent of this.map.values()) {
+      if (ent[name]) {
+        anotherRuleHasProperty = true;
+        break;
+      }
+    }
+    if (!anotherRuleHasProperty) {
+      this.#propertyNames.delete(name);
+    }
+  }
+
+  
+
+
+
+
+
+
+
   contains(style, name) {
     const key = this.getKey(style, name);
     const entry = this.map.get(key, null);

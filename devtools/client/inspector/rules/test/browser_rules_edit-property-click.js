@@ -38,23 +38,17 @@ async function testEditPropertyAndCancel(inspector, view) {
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
 
   info("Test editor is created when clicking on property value");
+  let anchorNamesUpdated = inspector.once("anchor-names-updated");
   await focusEditableField(view, propEditor.valueSpan);
+  await anchorNamesUpdated;
   ok(propEditor.valueSpan.inplaceEditor, "Editor created for property value");
-  
-  
-  
-  let onRuleviewChanged = view.once("ruleview-changed");
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
-  await onRuleviewChanged;
 
   info("Test editor is created when clicking on ';' next to property value");
   const valueRect = propEditor.valueSpan.getBoundingClientRect();
+  anchorNamesUpdated = inspector.once("anchor-names-updated");
   await focusEditableField(view, propEditor.valueSpan, valueRect.width + 1);
+  await anchorNamesUpdated;
   ok(propEditor.valueSpan.inplaceEditor, "Editor created for property value");
-  
-  
-  
-  onRuleviewChanged = view.once("ruleview-changed");
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["ESCAPE"]);
-  await onRuleviewChanged;
 }
