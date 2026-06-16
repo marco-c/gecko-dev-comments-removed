@@ -155,22 +155,14 @@ PKCS11Token::GetTokenSerialNumber( nsACString& tokenSerialNum) {
 NS_IMETHODIMP
 PKCS11Token::IsLoggedIn(bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_IsLoggedIn(mSlot.get(), 0);
+  *_retval = PK11_IsLoggedIn(mSlot.get(), nullptr);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 PKCS11Token::Login(bool force) {
-  bool test;
-  nsresult rv = this->NeedsLogin(&test);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (test && force) {
-    rv = this->LogoutSimple();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+  if (force) {
+    (void)this->LogoutSimple();
   }
 
   return mozilla::MapSECStatus(
@@ -201,80 +193,63 @@ PKCS11Token::LogoutAndDropAuthenticatedResources() {
 
 NS_IMETHODIMP
 PKCS11Token::Reset() {
-  return mozilla::MapSECStatus(PK11_ResetToken(mSlot.get(), nullptr));
-}
-
-NS_IMETHODIMP
-PKCS11Token::GetNeedsUserInit(bool* aNeedsUserInit) {
-  NS_ENSURE_ARG_POINTER(aNeedsUserInit);
-  *aNeedsUserInit = PK11_NeedUserInit(mSlot.get());
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-PKCS11Token::CheckPassword(const nsACString& password, bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  SECStatus srv =
-      PK11_CheckUserPassword(mSlot.get(), PromiseFlatCString(password).get());
-  if (srv != SECSuccess) {
-    *_retval = false;
-    PRErrorCode error = PR_GetError();
-    if (error != SEC_ERROR_BAD_PASSWORD) {
-      
-      return mozilla::psm::GetXPCOMFromNSSError(error);
+  SECStatus rv = PK11_ResetToken(mSlot.get(), nullptr);
+  if (rv != SECSuccess) {
+    return mozilla::MapSECStatus(rv);
+  }
+  
+  
+  if (mIsInternalKeyToken) {
+    rv = PK11_InitPin(mSlot.get(), nullptr, nullptr);
+    if (rv != SECSuccess) {
+      return mozilla::MapSECStatus(rv);
     }
-  } else {
-    *_retval = true;
   }
   return NS_OK;
-}
-
-NS_IMETHODIMP
-PKCS11Token::InitPassword(const nsACString& initialPassword) {
-  const nsCString& passwordCStr = PromiseFlatCString(initialPassword);
-  
-  
-  
-  
-  bool hasPassword;
-  nsresult rv = GetHasPassword(&hasPassword);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!PK11_NeedUserInit(mSlot.get()) && !hasPassword) {
-    return mozilla::MapSECStatus(
-        PK11_ChangePW(mSlot.get(), "", passwordCStr.get()));
-  }
-  return mozilla::MapSECStatus(
-      PK11_InitPin(mSlot.get(), "", passwordCStr.get()));
 }
 
 NS_IMETHODIMP
 PKCS11Token::ChangePassword(const nsACString& oldPassword,
                             const nsACString& newPassword) {
-  
-  
-  
-  
-  return mozilla::MapSECStatus(PK11_ChangePW(
-      mSlot.get(),
-      oldPassword.IsVoid() ? nullptr : PromiseFlatCString(oldPassword).get(),
-      newPassword.IsVoid() ? nullptr : PromiseFlatCString(newPassword).get()));
+  if (oldPassword.IsEmpty() && PK11_NeedUserInit(mSlot.get())) {
+    return mozilla::MapSECStatus(
+        PK11_InitPin(mSlot.get(), "", PromiseFlatCString(newPassword).get()));
+  }
+  SECStatus rv = PK11_CheckUserPassword(mSlot.get(),
+                                        PromiseFlatCString(oldPassword).get());
+  if (rv != SECSuccess) {
+    return mozilla::MapSECStatus(rv);
+  }
+  return mozilla::MapSECStatus(
+      PK11_ChangePW(mSlot.get(), PromiseFlatCString(oldPassword).get(),
+                    PromiseFlatCString(newPassword).get()));
 }
 
+
+
+
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
-PKCS11Token::GetHasPassword(bool* hasPassword) {
-  NS_ENSURE_ARG_POINTER(hasPassword);
+PKCS11Token::GetCanHavePassword(bool* canHavePassword) {
   
   
-  
-  *hasPassword = PK11_NeedLogin(mSlot.get()) && !PK11_NeedUserInit(mSlot.get());
+  *canHavePassword =
+      PK11_NeedLogin(mSlot.get()) || !PK11_NeedUserInit(mSlot.get());
+  ;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PKCS11Token::NeedsLogin(bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_NeedLogin(mSlot.get());
+PKCS11Token::GetHasPassword(bool* hasPassword) {
+  
+  
+  *hasPassword = PK11_NeedLogin(mSlot.get()) && !PK11_NeedUserInit(mSlot.get());
   return NS_OK;
 }
