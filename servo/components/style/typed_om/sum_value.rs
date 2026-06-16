@@ -125,6 +125,12 @@ impl SumValue {
             },
 
             
+            NumericValue::Math(MathValue::Product(_math_product)) => {
+                
+                Err(())
+            },
+
+            
             NumericValue::Math(MathValue::Negate(_math_negate)) => {
                 
                 Err(())

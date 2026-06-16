@@ -2448,6 +2448,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
         level: ArgumentLevel,
     ) -> Result<(), ()> {
         
+        
         match *self {
             Self::Leaf(ref l) => match l.to_typed_value() {
                 Some(TypedValue::Numeric(inner)) => {
@@ -2533,6 +2534,20 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Sum(
+                    values,
+                ))));
+                Ok(())
+            },
+            Self::Product(ref children) => {
+                let mut values = ThinVec::new();
+
+                for child in &**children {
+                    if let Some(inner) = CalcNodeWithLevel::nested(child).to_numeric_value() {
+                        values.push(inner);
+                    }
+                }
+
+                dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Product(
                     values,
                 ))));
                 Ok(())

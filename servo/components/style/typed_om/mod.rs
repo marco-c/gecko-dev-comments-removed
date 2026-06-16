@@ -123,6 +123,13 @@ pub type MathSum = ThinVec<NumericValue>;
 
 
 
+
+pub type MathProduct = ThinVec<NumericValue>;
+
+
+
+
+
 pub type MathNegate = Box<NumericValue>;
 
 
@@ -166,6 +173,11 @@ pub enum MathValue {
     
     
     Sum(MathSum),
+
+    
+    
+    
+    Product(MathProduct),
 
     
     
