@@ -106,6 +106,7 @@ class MemoryReport;
 class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
+class ParentProcessChannelHandle;
 class RemoteWorkerDebuggerManagerParent;
 class RemoteWorkerManager;
 class RemoteWorkerServiceParent;
@@ -463,6 +464,12 @@ class ContentParent final : public PContentParent,
   already_AddRefed<nsDocShellLoadState> TakePendingLoadStateForId(
       uint64_t aLoadIdentifier);
   void StorePendingLoadState(nsDocShellLoadState* aLoadState);
+
+  
+  
+  nsID AddParentProcessChannelHandle(ParentProcessChannelHandle* aHandle);
+  already_AddRefed<ParentProcessChannelHandle> ReadParentProcessChannelHandle(
+      const nsID& aUuid);
 
   
 
@@ -1433,6 +1440,8 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvKillGPUProcess();
 #endif
 
+  mozilla::ipc::IPCResult RecvDropParentProcessChannelHandle(const nsID& aUuid);
+
  public:
   void SendGetFilesResponseAndForget(const nsID& aID,
                                      const GetFilesResponseResult& aResult);
@@ -1642,6 +1651,13 @@ class ContentParent final : public PContentParent,
   
   
   nsTHashMap<uint64_t, RefPtr<nsDocShellLoadState>> mPendingLoadStates;
+
+  
+  
+  
+  
+  nsTHashMap<nsID, RefPtr<ParentProcessChannelHandle>>
+      mPendingParentProcessChannelHandles;
 
   
   uint64_t mBrowsingContextFieldEpoch = 0;

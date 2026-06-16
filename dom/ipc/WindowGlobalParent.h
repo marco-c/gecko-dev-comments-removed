@@ -178,7 +178,7 @@ class WindowGlobalParent final : public WindowContext,
       bool aResetScrollPosition, mozilla::ErrorResult& aRv);
 
   static already_AddRefed<WindowGlobalParent> CreateDisconnected(
-      const WindowGlobalInit& aInit);
+      const WindowGlobalInit& aInit, ContentParent* aForProcess);
 
   
   
@@ -260,6 +260,13 @@ class WindowGlobalParent final : public WindowContext,
   void SetShouldReportHasBlockedOpaqueResponse(
       nsContentPolicyType aContentPolicy);
 
+  
+  already_AddRefed<nsIChannel> GetDocumentChannel();
+
+  
+  
+  already_AddRefed<nsIChannel> GetFailedChannel();
+
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,
@@ -300,6 +307,9 @@ class WindowGlobalParent final : public WindowContext,
   }
   mozilla::ipc::IPCResult RecvUpdateDocumentSecurityInfo(
       nsITransportSecurityInfo* aSecurityInfo);
+  mozilla::ipc::IPCResult RecvUpdateChannels(
+      ParentProcessChannelHandle* aDocumentHandle,
+      ParentProcessChannelHandle* aFailedHandle);
   mozilla::ipc::IPCResult RecvSetClientInfo(
       const IPCClientInfo& aIPCClientInfo);
   mozilla::ipc::IPCResult RecvDestroy();
@@ -417,6 +427,8 @@ class WindowGlobalParent final : public WindowContext,
   nsCOMPtr<nsIURI> mDocumentURI;
   Maybe<nsString> mDocumentTitle;
 
+  RefPtr<WindowGlobalParent> mStaticCloneOf;
+
   Maybe<bool> mIsInitialDocument;
 
   bool mIsUncommittedInitialDocument;
@@ -435,6 +447,14 @@ class WindowGlobalParent final : public WindowContext,
   
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
+
+  
+  
+  nsCOMPtr<nsIChannel> mDocumentChannel;
+
+  
+  
+  nsCOMPtr<nsIChannel> mFailedChannel;
 
   uint32_t mSandboxFlags;
 

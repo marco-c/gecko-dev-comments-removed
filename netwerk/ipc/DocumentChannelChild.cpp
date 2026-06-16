@@ -336,6 +336,14 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   }
 
   
+  if (aArgs.channelHandle()) {
+    rv = newChannel->SetParentProcessChannelHandle(aArgs.channelHandle());
+    if (NS_FAILED(rv)) {
+      return IPC_OK();
+    }
+  }
+
+  
   nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(newChannel);
   if (childChannel) {
     rv = childChannel->ConnectParent(

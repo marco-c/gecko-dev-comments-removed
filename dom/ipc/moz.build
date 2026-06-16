@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Content Processes")
@@ -73,6 +71,7 @@ EXPORTS.mozilla.dom += [
     "NativeThreadId.h",
     "NavigationAPIIPCUtils.h",
     "PageLoadEventUtils.h",
+    "ParentProcessChannelHandle.h",
     "PermissionMessageUtils.h",
     "PolicyContainerMessageUtils.h",
     "ProcessActor.h",
@@ -136,6 +135,7 @@ UNIFIED_SOURCES += [
     "MemMapSnapshot.cpp",
     "MemoryReportRequest.cpp",
     "MMPrinter.cpp",
+    "ParentProcessChannelHandle.cpp",
     "PermissionMessageUtils.cpp",
     "PolicyContainerMessageUtils.cpp",
     "PreallocatedProcessManager.cpp",
@@ -159,7 +159,7 @@ UNIFIED_SOURCES += [
     "WindowGlobalParent.cpp",
 ]
 
-
+# ContentChild.cpp cannot be compiled in unified mode on  linux due to Time conflict
 SOURCES += [
     "ContentChild.cpp",
     "ProcessHangMonitor.cpp",
@@ -279,5 +279,5 @@ XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell.toml"]
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
-
+# Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

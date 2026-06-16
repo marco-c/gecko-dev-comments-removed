@@ -32,6 +32,7 @@
 namespace mozilla {
 namespace dom {
 class CanonicalBrowsingContext;
+class ParentProcessChannelHandle;
 struct NavigationIsolationOptions;
 }  
 namespace net {
@@ -588,6 +589,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   bool mSupportsRedirectToRealChannel = true;
+
+  
+  
+  
+  RefPtr<dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
 
   Maybe<nsCString> mRemoteTypeOverride;
 
