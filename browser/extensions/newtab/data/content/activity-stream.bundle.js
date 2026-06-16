@@ -315,7 +315,9 @@ for (const type of [
   "WIDGETS_SPORTS_LIVE_HIDDEN",
   "WIDGETS_SPORTS_LIVE_UPDATE",
   "WIDGETS_SPORTS_LIVE_VISIBLE",
+  "WIDGETS_SPORTS_MARK_CELEBRATED",
   "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
+  "WIDGETS_SPORTS_SET_CELEBRATIONS",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_SET_LIVE_INDEX",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
@@ -6815,6 +6817,10 @@ const INITIAL_STATE = {
     lastLiveUpdated: null,
     
     liveIndex: 0,
+    
+    
+    
+    celebrations: { endedAt: {}, celebrated: [] },
   },
 };
 
@@ -7840,6 +7846,8 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
     }
     case actionTypes.WIDGETS_SPORTS_SET_LIVE_INDEX:
       return { ...prevState, liveIndex: action.data };
+    case actionTypes.WIDGETS_SPORTS_SET_CELEBRATIONS:
+      return { ...prevState, celebrations: action.data };
     default:
       return prevState;
   }
@@ -17253,7 +17261,43 @@ function groupMatchesBySection(matches) {
 }
 
 ;
+
+
+
+
+
+
+
+const getMatchWinnerKey = match => {
+  if (!match) {
+    return null;
+  }
+  const homeScore = (match.home_score || 0) + (match.home_extra || 0);
+  const awayScore = (match.away_score || 0) + (match.away_extra || 0);
+  if (homeScore > awayScore) {
+    return match.home_team.key;
+  }
+  if (awayScore > homeScore) {
+    return match.away_team.key;
+  }
+  
+  
+  const hasPenalties =
+    match.home_penalty !== null &&
+    match.home_penalty !== undefined &&
+    match.away_penalty !== null &&
+    match.away_penalty !== undefined;
+  if (hasPenalties && match.home_penalty !== match.away_penalty) {
+    return match.home_penalty > match.away_penalty
+      ? match.home_team.key
+      : match.away_team.key;
+  }
+  return null;
+};
+
+;
 function SportsWidget_extends() { return SportsWidget_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsWidget_extends.apply(null, arguments); }
+
 
 
 
@@ -17284,52 +17328,6 @@ const MATCHES_TABS = {
   UPCOMING: "upcoming"
 };
 const SPORTS_CELEBRATION_ILLUSTRATION = "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg";
-
-
-
-const DEBUG_TEAM_COLORS = ["#006847", "#ffffff", "#ce1126"];
-
-
-
-
-const DEBUG_MOCK_SPORTS_DATA = {
-  teams: [{
-    key: "MEX",
-    name: "Mexico",
-    colors: ["#006847", "#ce1126"]
-  }, {
-    key: "RSA",
-    name: "South Africa",
-    colors: ["#007749", "#ffb612"]
-  }],
-  matches: {
-    previous: [{
-      home_team: {
-        key: "MEX",
-        name: "Mexico",
-        group: "Group L"
-      },
-      away_team: {
-        key: "RSA",
-        name: "South Africa",
-        group: "Group L"
-      },
-      date: "2026-06-12T17:00:00+00:00",
-      status_type: "ended",
-      home_score: 2,
-      away_score: 1,
-      home_extra: null,
-      away_extra: null,
-      home_penalty: null,
-      away_penalty: null,
-      stage: "Group Stage",
-      query: "Mexico vs South Africa"
-    }],
-    current: [],
-    next: []
-  },
-  live: []
-};
 function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
   return Object.values(MATCHES_TABS)
   
@@ -17357,6 +17355,8 @@ const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
 
 const PREF_SPORTS_CELEBRATIONS_ENABLED = "widgets.sportsWidget.celebrations.enabled";
+const PREF_SPORTS_CELEBRATIONS_WINDOW_MS = "widgets.sportsWidget.celebrations.windowMs";
+const DEFAULT_CELEBRATION_WINDOW_MS = 86400000; 
 
 
 
@@ -17627,7 +17627,11 @@ function SportsWidget_SportsWidget({
   
   
   
-  const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.sports?.celebrationsEnabled;
+  
+  
+  
+  
+  const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled || prefs.trainhopConfig?.sports?.celebrationsEnabled;
   const celebrate = (0,external_React_namespaceObject.useCallback)((kind, colors = null) => {
     if (!celebrationsEnabled) {
       return;
@@ -17635,20 +17639,74 @@ function SportsWidget_SportsWidget({
     setCelebrationColors(kind === "followed" ? colors : null);
     triggerCelebration();
   }, [triggerCelebration, celebrationsEnabled]);
+
   
   
   
   
-  const seedMockMatch = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch({
-      type: actionTypes.WIDGETS_SPORTS_SET_MATCHES_TAB,
-      data: MATCHES_TABS.RESULTS
-    });
-    dispatch({
-      type: actionTypes.WIDGETS_SPORTS_WIDGET_SET,
-      data: DEBUG_MOCK_SPORTS_DATA
-    });
-  }, [dispatch]);
+  
+  const {
+    celebrations
+  } = sportsWidgetData;
+  
+  
+  
+  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
+  const celebratedRef = (0,external_React_namespaceObject.useRef)(new Set());
+  const [isPageVisible, setIsPageVisible] = (0,external_React_namespaceObject.useState)(typeof document === "undefined" || document.visibilityState === "visible");
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const onVisibility = () => setIsPageVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!celebrationsEnabled || !isPageVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
+      return;
+    }
+    const [match] = sortedPrevious;
+    const id = match?.global_event_id;
+    if (id === null || id === undefined) {
+      return;
+    }
+    const endedAt = celebrations?.endedAt?.[id];
+    if (!endedAt || Date.now() - endedAt >= celebrationWindowMs || celebrations?.celebrated?.includes(id) || celebratedRef.current.has(id)) {
+      return;
+    }
+    const winnerKey = getMatchWinnerKey(match);
+    const homeKey = match.home_team.key;
+    const awayKey = match.away_team.key;
+    
+    
+    
+    
+    const homeFollowed = selectedTeams.includes(homeKey);
+    const awayFollowed = selectedTeams.includes(awayKey);
+    let followedKey = null;
+    if (homeFollowed && awayFollowed) {
+      
+      followedKey = winnerKey || homeKey;
+    } else if (homeFollowed) {
+      followedKey = homeKey;
+    } else if (awayFollowed) {
+      followedKey = awayKey;
+    }
+    
+    
+    celebratedRef.current.add(id);
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_SPORTS_MARK_CELEBRATED,
+      data: id
+    }));
+    
+    if (followedKey && winnerKey && winnerKey !== followedKey) {
+      return;
+    }
+    if (followedKey) {
+      celebrate("followed", teamColorsByKey.get(followedKey));
+    } else {
+      celebrate("generic");
+    }
+  }, [celebrationsEnabled, isPageVisible, widgetState, activeTab, showResultsList, sortedPrevious, celebrations, celebrationWindowMs, selectedTeams, teamColorsByKey, celebrate, dispatch]);
 
   
   
@@ -18052,13 +18110,7 @@ function SportsWidget_SportsWidget({
     "data-l10n-id": "newtab-sports-widget-menu-view-results",
     onClick: handleViewResults,
     disabled: !hasPreviousResults
-  }), external_React_default().createElement("panel-item", {
-    onClick: seedMockMatch
-  }, "Debug: seed mock match"), external_React_default().createElement("panel-item", {
-    onClick: () => celebrate("followed", DEBUG_TEAM_COLORS)
-  }, "Debug: followed celebration"), external_React_default().createElement("panel-item", {
-    onClick: () => celebrate("generic")
-  }, "Debug: generic celebration"), widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
+  }), widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
     submenu: "sports-size-submenu"
   }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
