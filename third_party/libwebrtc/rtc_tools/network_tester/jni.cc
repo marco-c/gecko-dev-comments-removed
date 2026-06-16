@@ -9,13 +9,16 @@
 
 
 #include <jni.h>
-#undef JNIEXPORT
-#define JNIEXPORT __attribute__((visibility("default")))
+
+#include <cstdint>
 #include <string>
 
-#include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "rtc_tools/network_tester/test_controller.h"
+#include "test/create_test_environment.h"
+
+#undef JNIEXPORT
+#define JNIEXPORT __attribute__((visibility("default")))
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_google_media_networktester_NetworkTester_CreateTestController(
@@ -23,7 +26,8 @@ Java_com_google_media_networktester_NetworkTester_CreateTestController(
     jclass) {
   webrtc::ThreadManager::Instance()->WrapCurrentThread();
   return reinterpret_cast<intptr_t>(new webrtc::TestController(
-      0, 0, "/mnt/sdcard/network_tester_client_config.dat",
+      webrtc::CreateTestEnvironment(), 0, 0,
+      "/mnt/sdcard/network_tester_client_config.dat",
       "/mnt/sdcard/network_tester_client_packet_log.dat"));
 }
 
