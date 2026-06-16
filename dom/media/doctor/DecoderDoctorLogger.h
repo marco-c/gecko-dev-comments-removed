@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DecoderDoctorLogger_h_
 #define DecoderDoctorLogger_h_
 
@@ -146,8 +144,8 @@ class DecoderDoctorLogger {
     Log(aSubjectTypeName, aSubjectPointer, CategoryForMozLogLevel(aLogLevel),
         aLogModule->Name(),  
         DDLogValue{nsCString{aString}});
-    MOZ_LOG(aLogModule, aLogLevel,
-            ("%s[%p] %s", aSubjectTypeName, aSubjectPointer, aString));
+    MOZ_LOG_FMT(aLogModule, aLogLevel, "{}[{}] {}", aSubjectTypeName,
+                fmt::ptr(aSubjectPointer), aString);
   }
 
   template <typename... Args>
@@ -159,8 +157,8 @@ class DecoderDoctorLogger {
     Log(aSubjectTypeName, aSubjectPointer, CategoryForMozLogLevel(aLogLevel),
         aLogModule->Name(),  
         DDLogValue{printed});
-    MOZ_LOG(aLogModule, aLogLevel,
-            ("%s[%p] %s", aSubjectTypeName, aSubjectPointer, printed.get()));
+    MOZ_LOG_FMT(aLogModule, aLogLevel, "{}[{}] {}", aSubjectTypeName,
+                fmt::ptr(aSubjectPointer), printed.get());
   }
 
   template <typename Subject>
