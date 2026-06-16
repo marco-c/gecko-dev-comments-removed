@@ -108,9 +108,30 @@ class PerformanceMainThread final : public Performance,
 
   static constexpr uint32_t kMaxLargestContentfulPaintBufferSize = 150;
 
+  static constexpr size_t kMaxInteractionDurations = 2048;
+
+  
+  static constexpr double kInpEventDurationThreshold = 40.0;
+
   class EventCounts* EventCounts() override;
 
   uint64_t InteractionCount() override;
+
+  
+  
+  struct InteractionTelemetry {
+    uint32_t inpLongest = 0;
+    uint32_t keypressMaxDuration = 0;
+    uint32_t mouseClick = 0;
+
+    
+    
+    
+    nsTArray<uint16_t> interactionEventDurations;
+  };
+  const InteractionTelemetry& GetInteractionTelemetry() const {
+    return mInteractionTelemetry;
+  }
 
   bool IsGlobalObjectWindow() const override { return true; };
 
@@ -210,6 +231,10 @@ class PerformanceMainThread final : public Performance,
   
   
   TextFrameUnions mTextFrameUnions;
+
+  
+  void UpdateInteractionTelemetry(PerformanceEventTiming* aEntry);
+  InteractionTelemetry mInteractionTelemetry;
 };
 
 inline void ImplCycleCollectionTraverse(
