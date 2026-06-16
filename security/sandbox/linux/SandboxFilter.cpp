@@ -2044,6 +2044,14 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case __NR_getrusage:
         return Allow();
 
+      
+      case __NR_get_mempolicy:
+        return Allow();
+
+      
+      case __NR_set_mempolicy:
+        return Error(ENOSYS);
+
       case __NR_ioctl: {
         Arg<unsigned long> request(1);
         auto shifted_type = request & kIoctlTypeMask;
@@ -2107,6 +2115,7 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case __NR_eventfd2:
         return Allow();
 
+        
         
         
         
