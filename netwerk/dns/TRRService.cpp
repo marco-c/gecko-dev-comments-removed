@@ -804,6 +804,16 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
       return;
     }
 
+    if (StaticPrefs::network_trr_start_confirmation_in_failed_state()) {
+      
+      
+      
+      
+      LOG(("mConfirmation.mState -> CONFIRM_FAILED"));
+      SetState(CONFIRM_FAILED);
+      return;
+    }
+
     
     LOG(("mConfirmation.mState -> CONFIRM_OK"));
     SetState(CONFIRM_OK);
