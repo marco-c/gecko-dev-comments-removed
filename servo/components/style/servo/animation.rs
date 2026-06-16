@@ -697,57 +697,102 @@ impl Animation {
         
         
         let old_started_at = self.started_at;
+        let old_delay = self.delay;
         let old_duration = self.duration;
         let old_direction = self.current_direction;
         let old_state = self.state.clone();
         let old_iteration_state = self.iteration_state.clone();
 
         *self = other.clone();
-
-        self.started_at = old_started_at;
         self.current_direction = old_direction;
 
-        
-        
-        
-        match (&mut self.iteration_state, old_iteration_state) {
-            (
-                &mut KeyframesIterationState::Finite(ref mut iters, _),
-                KeyframesIterationState::Finite(old_iters, _),
-            ) => *iters = old_iters,
-            _ => {},
-        }
+        if self.delay != old_delay {
+            
+            
+            self.started_at = old_started_at + (self.delay - old_delay);
 
-        
-        
-        let new_state = std::mem::replace(&mut self.state, Running);
-        if old_state == Finished && self.has_ended(now) {
-            self.state = Finished;
+            match old_state {
+                Paused(old_progress) => {
+                    let mut progress = old_progress + (old_delay - self.delay) / self.duration;
+                    while progress > 1. && !self.on_last_iteration() {
+                        self.iterate();
+                        progress -= 1.;
+                    }
+                    self.state = Paused(progress);
+                },
+                Finished => {
+                    if self.has_ended(now) {
+                        self.state = Finished;
+                    } else if self.started_at <= now {
+                        self.state = Running;
+                    } else {
+                        self.state = Pending;
+                    }
+                },
+                _ => {
+                    
+                    
+                    let mut starting_progress = (now - self.started_at) / self.duration;
+                    match self.iteration_state {
+                        KeyframesIterationState::Finite(ref mut current, _) => *current = 0.0,
+                        _ => {},
+                    }
+                    while starting_progress > 1. && !self.on_last_iteration() {
+                        self.iterate();
+                        starting_progress -= 1.;
+                    }
+                },
+            }
+
+            
+            if self.state == Pending && self.started_at <= now {
+                self.state = Running;
+            }
         } else {
-            self.state = new_state;
-        }
+            self.started_at = old_started_at;
 
-        
-        
-        
-        
-        
-        
-        match (&mut self.state, &old_state) {
-            (&mut Pending, &Paused(progress)) => {
-                self.started_at = now - (self.duration * progress);
-            },
-            (&mut Paused(ref mut new), &Paused(old)) => *new = old,
-            (&mut Paused(ref mut progress), &Running) => {
-                *progress = (now - old_started_at) / old_duration
-            },
-            _ => {},
-        }
+            
+            
+            
+            match (&mut self.iteration_state, old_iteration_state) {
+                (
+                    &mut KeyframesIterationState::Finite(ref mut iters, _),
+                    KeyframesIterationState::Finite(old_iters, _),
+                ) => *iters = old_iters,
+                _ => {},
+            }
 
-        
-        
-        if self.state == Pending && self.started_at <= now && old_state != Pending {
-            self.state = Running;
+            
+            
+            let new_state = std::mem::replace(&mut self.state, Running);
+            if old_state == Finished && self.has_ended(now) {
+                self.state = Finished;
+            } else {
+                self.state = new_state;
+            }
+
+            
+            
+            
+            
+            
+            
+            match (&mut self.state, &old_state) {
+                (&mut Pending, &Paused(progress)) => {
+                    self.started_at = now - (self.duration * progress);
+                },
+                (&mut Paused(ref mut new), &Paused(old)) => *new = old,
+                (&mut Paused(ref mut progress), &Running) => {
+                    *progress = (now - old_started_at) / old_duration
+                },
+                _ => {},
+            }
+
+            
+            
+            if self.state == Pending && self.started_at <= now && old_state != Pending {
+                self.state = Running;
+            }
         }
     }
 
