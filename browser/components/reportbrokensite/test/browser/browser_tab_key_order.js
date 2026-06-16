@@ -112,6 +112,7 @@ async function checkDetailsPanel(
 async function checkPreviewPanel(rbs, { expectedSummaries }) {
   return ensureTabOrder(rbs, [
     ".preview-basic summary",
+    ".data",
     ...expectedSummaries.map(name => `.preview-${name} summary`),
     [
       
