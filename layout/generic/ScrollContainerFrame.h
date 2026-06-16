@@ -312,6 +312,43 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class MOZ_RAII AutoScrolledRectCache {
+   public:
+    AutoScrolledRectCache(ScrollContainerFrame* aFrame,
+                          const nsIFrame* aReferenceFrame);
+    ~AutoScrolledRectCache();
+
+   private:
+    friend class ScrollContainerFrame;
+    const nsRect& GetOrCompute();
+
+    ScrollContainerFrame* const mFrame;
+    const nsIFrame* const mReferenceFrame;
+    nsRect mScrolledRect;
+    bool mComputed = false;
+  };
+
+  
+
+
+
+
   nsRect GetScrollPortRect() const { return mScrollPort; }
   nsRect GetScrollPortRectAccountingForDynamicToolbar() const {
     auto rect = mScrollPort;
@@ -1007,6 +1044,15 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsRect GetUnsnappedScrolledRectInternal(const nsRect& aScrolledOverflowArea,
                                           const nsSize& aScrollPortSize) const;
 
+  
+
+
+
+
+
+
+  nsRect ComputeScrolledRect(const nsIFrame* aReferenceFrame) const;
+
   bool IsPhysicalLTR() const { return GetWritingMode().IsPhysicalLTR(); }
   bool IsBidiLTR() const { return GetWritingMode().IsBidiLTR(); }
 
@@ -1357,7 +1403,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsIFrame* mScrolledFrame;
   nsIFrame* mScrollCornerBox;
   nsIFrame* mResizerBox;
-  const nsIFrame* mReferenceFrameDuringPainting;
+  
+  
+  AutoScrolledRectCache* mScrolledRectCache;
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;

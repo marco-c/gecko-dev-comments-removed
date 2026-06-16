@@ -246,7 +246,7 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
       mScrolledFrame(nullptr),
       mScrollCornerBox(nullptr),
       mResizerBox(nullptr),
-      mReferenceFrameDuringPainting(nullptr),
+      mScrolledRectCache(nullptr),
       mAsyncScroll(nullptr),
       mAsyncSmoothMSDScroll(nullptr),
       mDestination(0, 0),
@@ -3903,8 +3903,8 @@ class nsDisplayListFocus final : public nsPaintedDisplayItem {
 
 void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
-  SetAndNullOnExit<const nsIFrame> tmpBuilder(
-      mReferenceFrameDuringPainting, aBuilder->GetCurrentReferenceFrame());
+  AutoScrolledRectCache scrolledRectCache(this,
+                                          aBuilder->GetCurrentReferenceFrame());
   if (aBuilder->IsForFrameVisibility()) {
     NotifyApproximateFrameVisibilityUpdate(false);
   }
@@ -6946,7 +6946,8 @@ static nscoord SnapCoord(nscoord aCoord, double aRes,
                                  aRes);
 }
 
-nsRect ScrollContainerFrame::GetScrolledRect() const {
+nsRect ScrollContainerFrame::ComputeScrolledRect(
+    const nsIFrame* aReferenceFrame) const {
   nsRect result = GetUnsnappedScrolledRectInternal(
       mScrolledFrame->ScrollableOverflowRect(), mScrollPort.Size());
 
@@ -6973,10 +6974,9 @@ nsRect ScrollContainerFrame::GetScrolledRect() const {
   
   nsSize visualViewportSize = GetVisualViewportSize();
   const nsIFrame* referenceFrame =
-      mReferenceFrameDuringPainting
-          ? mReferenceFrameDuringPainting
-          : nsLayoutUtils::GetReferenceFrame(
-                const_cast<ScrollContainerFrame*>(this));
+      aReferenceFrame ? aReferenceFrame
+                      : nsLayoutUtils::GetReferenceFrame(
+                            const_cast<ScrollContainerFrame*>(this));
   nsPoint toReferenceFrame = GetOffsetToCrossDoc(referenceFrame);
   nsRect scrollPort(mScrollPort.TopLeft() + toReferenceFrame,
                     visualViewportSize);
@@ -7029,6 +7029,50 @@ nsRect ScrollContainerFrame::GetScrolledRect() const {
   }
 
   return result;
+}
+
+nsRect ScrollContainerFrame::GetScrolledRect() const {
+  if (mScrolledRectCache) {
+    return mScrolledRectCache->GetOrCompute();
+  }
+  return ComputeScrolledRect(nullptr);
+}
+
+ScrollContainerFrame::AutoScrolledRectCache::AutoScrolledRectCache(
+    ScrollContainerFrame* aFrame, const nsIFrame* aReferenceFrame)
+    : mFrame(aFrame), mReferenceFrame(aReferenceFrame) {
+  MOZ_ASSERT(!mFrame->mScrolledRectCache,
+             "Nested AutoScrolledRectCache for the same frame?");
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mReferenceFrame ||
+                 mReferenceFrame == nsLayoutUtils::GetReferenceFrame(mFrame) ||
+                 nsLayoutUtils::IsProperAncestorFrameCrossDocInProcess(
+                     nsLayoutUtils::GetReferenceFrame(mFrame), mReferenceFrame),
+             "AutoScrolledRectCache's reference frame should be the computed "
+             "reference "
+             "frame or a descendant of it");
+  mFrame->mScrolledRectCache = this;
+}
+
+ScrollContainerFrame::AutoScrolledRectCache::~AutoScrolledRectCache() {
+  mFrame->mScrolledRectCache = nullptr;
+}
+
+const nsRect& ScrollContainerFrame::AutoScrolledRectCache::GetOrCompute() {
+  if (!mComputed) {
+    mScrolledRect = mFrame->ComputeScrolledRect(mReferenceFrame);
+    mComputed = true;
+  } else {
+    MOZ_ASSERT(mFrame->ComputeScrolledRect(mReferenceFrame)
+                   .IsEqualEdges(mScrolledRect),
+               "The scrolled rect changed during an operation that assumed it "
+               "would remain constant");
+  }
+  return mScrolledRect;
 }
 
 nsRect ScrollContainerFrame::GetScrollPortRectAccountingForMaxDynamicToolbar()
