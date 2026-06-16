@@ -57,9 +57,6 @@
 
 
 
-static constexpr size_t kMinLargeClass = 4_KiB;
-
-
 
 
 
@@ -73,6 +70,7 @@ static constexpr size_t kMinLargeClass = 4_KiB;
 
 static constexpr size_t kMinQuantumClass = 16;
 static constexpr size_t kMinQuantumWideClass = 512;
+static constexpr size_t kMinSubPageClass = 4_KiB;
 
 
 static constexpr size_t kQuantum = 16;
@@ -81,7 +79,7 @@ static constexpr size_t kQuantumWide = 256;
 static constexpr size_t kQuantumWideMask = kQuantumWide - 1;
 
 static constexpr size_t kMaxQuantumClass = kMinQuantumWideClass - kQuantum;
-static constexpr size_t kMaxQuantumWideClass = kMinLargeClass - kQuantumWide;
+static constexpr size_t kMaxQuantumWideClass = kMinSubPageClass - kQuantumWide;
 
 
 static_assert(std::has_single_bit(kQuantum), "kQuantum is not a power of two");
@@ -94,6 +92,8 @@ static_assert(kMaxQuantumWideClass % kQuantumWide == 0,
               "kMaxQuantumWideClass is not a multiple of kQuantumWide");
 static_assert(kQuantum < kQuantumWide,
               "kQuantum must be smaller than kQuantumWide");
+static_assert(std::has_single_bit(kMinSubPageClass),
+              "kMinSubPageClass is not a power of two");
 
 
 

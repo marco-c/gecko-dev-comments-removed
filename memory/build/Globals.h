@@ -118,7 +118,8 @@ void DefineGlobals();
 #endif
 
 
-#define gMaxBinClass (kMaxQuantumWideClass)
+#define gMaxBinClass \
+  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
 
 
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -132,7 +133,11 @@ void DefineGlobals();
   (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
 
 
-#define NUM_SMALL_CLASSES (kNumQuantumClasses + kNumQuantumWideClasses)
+#define SUBPAGE_CEILING(a) (std::bit_ceil(a))
+
+
+#define NUM_SMALL_CLASSES \
+  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
 
 
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {

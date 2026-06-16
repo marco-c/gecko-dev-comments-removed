@@ -103,6 +103,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -2173,6 +2181,10 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
       bin = &mBins[kNumQuantumClasses + (aSize / kQuantumWide) -
                    (kMinQuantumWideClass / kQuantumWide)];
       break;
+    case SizeClass::SubPage:
+      bin = &mBins[kNumQuantumClasses + kNumQuantumWideClasses +
+                   (FloorLog2(aSize) - LOG2(kMinSubPageClass))];
+      break;
     default:
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
   }
@@ -3727,7 +3739,7 @@ inline void MozJemalloc::jemalloc_stats_internal(
   aStats->quantum_max = kMaxQuantumClass;
   aStats->quantum_wide = kQuantumWide;
   aStats->quantum_wide_max = kMaxQuantumWideClass;
-  aStats->unused = kMaxQuantumWideClass;
+  aStats->subpage_max = gMaxSubPageClass;
   aStats->large_max = gMaxLargeClass;
   aStats->chunksize = kChunkSize;
   aStats->page_size = gPageSize;
