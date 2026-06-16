@@ -5,10 +5,11 @@
 
 
 use crate::typed_om::numeric_values::NoCalcNumeric;
-use crate::typed_om::{MathValue, NumericValue, UnitValue};
+use crate::typed_om::{MathSum, MathValue, NumericValue, UnitValue};
 use itertools::Itertools;
 use std::collections::HashMap;
 use style_traits::CssString;
+use thin_vec::ThinVec;
 
 type UnitMap = HashMap<String, i32>;
 
@@ -298,6 +299,8 @@ impl SumValue {
             
             
             
+            
+            
             NumericValue::Math(MathValue::Clamp(math_clamp)) => {
                 
                 let lower = SumValue::try_from_numeric_value(&math_clamp[0])?;
@@ -346,5 +349,64 @@ impl SumValue {
         };
 
         Ok(item)
+    }
+
+    
+    
+    pub fn to_units(&self, units: &[&str]) -> Result<MathSum, ()> {
+        
+        let mut values = self
+            .0
+            .iter()
+            .map(|item| item.to_unit_value())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        
+        if units.is_empty() {
+            values.sort_by(|a, b| a.unit.cmp(&b.unit));
+            return Ok(values.into_iter().map(NumericValue::Unit).collect());
+        }
+
+        
+        let mut result = ThinVec::new();
+
+        for unit in units {
+            
+            let mut temp = UnitValue {
+                value: 0.0,
+                unit: CssString::from(*unit),
+            };
+
+            
+            let mut i = 0;
+            while i < values.len() {
+                let value = &values[i];
+
+                
+                let value_unit = value.unit_str();
+
+                
+                let numeric = NoCalcNumeric::parse_unit_value(value.value, &value_unit)?;
+                if let Ok(converted) = numeric.to(unit) {
+                    
+                    temp.value += converted.unitless_value();
+
+                    
+                    values.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+
+            
+            result.push(NumericValue::Unit(temp));
+        }
+
+        
+        if !values.is_empty() {
+            return Err(());
+        }
+
+        Ok(result)
     }
 }
