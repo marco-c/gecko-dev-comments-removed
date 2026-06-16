@@ -279,8 +279,7 @@ class MediaReceiveChannelInterface {
   
   
   
-  virtual absl::AnyInvocable<void() &&>
-  GetResetUnsignaledRecvStreamCallback() = 0;
+  virtual absl::AnyInvocable<void() &&> GetResetUnsignaledRecvStreamTask() = 0;
   
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
   
@@ -931,7 +930,7 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   virtual absl::AnyInvocable<std::optional<VoiceMediaSendInfo>()>
-  GetStatsCallback() = 0;
+  GetStatsTask() = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
   virtual bool SetOptions(const AudioOptions& options) = 0;
@@ -963,7 +962,7 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   
   virtual absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()>
-  GetStatsCallback(bool reset_legacy) = 0;
+  GetStatsTask(bool reset_legacy) = 0;
   virtual enum RtcpMode RtcpMode() const = 0;
   virtual void SetRtcpMode(enum RtcpMode mode) = 0;
   virtual void SetReceiveNackEnabled(bool enabled) = 0;
@@ -1013,7 +1012,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   virtual absl::AnyInvocable<std::optional<VideoMediaSendInfo>()>
-  GetStatsCallback() = 0;
+  GetStatsTask() = 0;
   
   
   
@@ -1057,7 +1056,7 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   
   
   virtual absl::AnyInvocable<std::optional<VideoMediaReceiveInfo>()>
-  GetStatsCallback() = 0;
+  GetStatsTask() = 0;
   virtual bool AddDefaultRecvStreamForTesting(const StreamParams& sp) = 0;
 };
 

@@ -5957,8 +5957,7 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
         
         
         
-        worker_tasks.Add(
-            receive_channel->GetResetUnsignaledRecvStreamCallback());
+        worker_tasks.Add(receive_channel->GetResetUnsignaledRecvStreamTask());
       }
     }
   }
