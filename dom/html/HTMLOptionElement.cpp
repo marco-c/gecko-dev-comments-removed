@@ -159,6 +159,7 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (!select) {
     
     
+    
     SetStates(ElementState::CHECKED, !!aValue, aNotify);
     return;
   }
