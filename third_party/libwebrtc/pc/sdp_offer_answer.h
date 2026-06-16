@@ -384,11 +384,12 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  RTCError UpdateTransceiverChannel(
+  void UpdateTransceiverChannel(
       scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       const ContentInfo& content,
-      const ContentGroup* bundle_group) RTC_RUN_ON(signaling_thread());
+      const ContentGroup* bundle_group,
+      ScopedOperationsBatcher& network_tasks) RTC_RUN_ON(signaling_thread());
 
   
   

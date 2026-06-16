@@ -150,7 +150,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   RtpTransceiver& operator=(RtpTransceiver&&) = delete;
 
   
-  RTCError CreateChannel(
+  void CreateChannel(
       absl::string_view mid,
       Call* call_ptr,
       const MediaConfig& media_config,
@@ -160,7 +160,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
       const VideoOptions& video_options,
       VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
       absl::AnyInvocable<RtpTransportInternal*(absl::string_view) &&>
-          transport_lookup);
+          transport_lookup,
+      ScopedOperationsBatcher& network_batcher);
 
   
   
