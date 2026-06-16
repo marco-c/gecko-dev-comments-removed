@@ -1912,14 +1912,9 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     return nsIWebBrowserChrome::CHROME_ALL;
   }
 
-  int32_t unused;
-  if (IsWindowOpenLocationModified(aModifiers, &unused)) {
-    
-    
-    
-    return nsIWebBrowserChrome::CHROME_ALL;
-  }
-
+  
+  
+  
   
   *aIsPopupRequested = true;
   return nsIWebBrowserChrome::CHROME_MINIMAL_POPUP;
