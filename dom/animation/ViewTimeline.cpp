@@ -152,8 +152,14 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
       subject ? ScrollerInfo::Type::Nearest : ScrollerInfo::Type::Provided,
       subject, PseudoStyleRequest::NotPseudo());
 
-  return MakeAndAddRef<ViewTimeline>(doc, scroller, axis, subject,
-                                     PseudoStyleType::NotPseudo, inset);
+  RefPtr<ViewTimeline> result = MakeAndAddRef<ViewTimeline>(
+      doc, scroller, axis, subject, PseudoStyleType::NotPseudo, inset);
+  if (subject) {
+    
+    result->UpdateCachedCurrentTime();
+  }
+
+  return result.forget();
 }
 
 already_AddRefed<CSSNumericValue> ViewTimeline::GetStartOffset(
