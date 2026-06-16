@@ -279,8 +279,6 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
       mUpdateScrollbarAttributes(false),
       mHasBeenScrolledRecently(false),
       mWillBuildScrollableLayer(false),
-      mInactiveWithActiveDescendantScrollFrames(false),
-      mScrollPortOrScrolledAreaBoundsChanged(false),
       mIsParentToActiveScrollFrames(false),
       mHasBeenScrolled(false),
       mIgnoreMomentumScroll(false),
@@ -1578,16 +1576,14 @@ void ScrollContainerFrame::Reflow(nsPresContext* aPresContext,
   const nsRect& newScrollPort = ScrollPort();
   nsRect newScrolledAreaBounds =
       mScrolledFrame->ScrollableOverflowRectRelativeToParent();
-  mScrollPortOrScrolledAreaBoundsChanged =
-      !oldScrollPort.IsEqualEdges(newScrollPort) ||
-      !oldScrolledAreaBounds.IsEqualEdges(newScrolledAreaBounds);
   if (mSkippedScrollbarLayout || reflowHScrollbar || reflowVScrollbar ||
       reflowScrollCorner || HasAnyStateBits(NS_FRAME_IS_DIRTY) ||
       didHaveHScrollbar != state.mShowHScrollbar ||
       didHaveVScrollbar != state.mShowVScrollbar ||
       didOnlyHScrollbar != mOnlyNeedHScrollbarToScrollVVInsideLV ||
       didOnlyVScrollbar != mOnlyNeedVScrollbarToScrollVVInsideLV ||
-      mScrollPortOrScrolledAreaBoundsChanged) {
+      !oldScrollPort.IsEqualEdges(newScrollPort) ||
+      !oldScrolledAreaBounds.IsEqualEdges(newScrolledAreaBounds)) {
     mSkippedScrollbarLayout = false;
     ScrollContainerFrame::SetScrollbarVisibility(mHScrollbarBox,
                                                  state.mShowHScrollbar);
@@ -3918,9 +3914,6 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  const uint32_t numActiveScrollframesBefore =
-      aBuilder->GetNumActiveScrollframesEncountered();
-
   const bool isRootContent =
       mIsRoot && PresContext()->IsRootContentDocumentCrossProcess();
 
@@ -4377,13 +4370,6 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   AppendScrollPartsTo(aBuilder, set, createLayersForScrollbars, true);
 
   set.MoveTo(aLists);
-
-  if (aBuilder->IsPaintingToWindow()) {
-    mInactiveWithActiveDescendantScrollFrames =
-        !mWillBuildScrollableLayer &&
-        aBuilder->GetNumActiveScrollframesEncountered() >
-            numActiveScrollframesBefore;
-  }
 }
 
 nsRect ScrollContainerFrame::RestrictToRootDisplayPort(
@@ -4564,10 +4550,6 @@ bool ScrollContainerFrame::DecideScrollableLayerEnsureDisplayport(
 bool ScrollContainerFrame::DecideScrollableLayer(
     nsDisplayListBuilder* aBuilder, nsRect* aVisibleRect, nsRect* aDirtyRect,
     bool aSetBase, bool* aDirtyRectHasBeenOverriden) {
-#ifdef DEBUG
-  const bool wasBuildingScrollableLayer = mWillBuildScrollableLayer;
-#endif
-
   if (aBuilder->IsInViewTransitionCapture()) {
     
     
@@ -4684,20 +4666,6 @@ bool ScrollContainerFrame::DecideScrollableLayer(
   
   
   mWillBuildScrollableLayer = hasDisplayPort || mZoomableByAPZ;
-
-#ifdef DEBUG
-  
-  
-  
-  if (aBuilder->IsPaintingToWindow() && aBuilder->IsPartialUpdate() &&
-      !wasBuildingScrollableLayer && mWillBuildScrollableLayer &&
-      mInactiveWithActiveDescendantScrollFrames) {
-    MOZ_ASSERT(IsFrameModified() || aBuilder->InInvalidSubtree(),
-               "activating scroll frame with active descendant scroll frames "
-               "during a partial update should be marked modified");
-  }
-#endif
-
   return mWillBuildScrollableLayer;
 }
 
@@ -6467,20 +6435,6 @@ bool ScrollContainerFrame::ReflowFinished() {
       
       mDestination = GetScrollPosition();
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mScrollPortOrScrolledAreaBoundsChanged &&
-      mInactiveWithActiveDescendantScrollFrames && !IsFrameModified() &&
-      !DisplayPortUtils::HasDisplayPort(GetContent()) && WantAsyncScroll()) {
-    MarkNeedsDisplayItemRebuild();
   }
 
   if (!mUpdateScrollbarAttributes) {
