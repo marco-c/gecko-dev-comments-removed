@@ -461,17 +461,6 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
           mFrame->ComputeSelectionStyle(selectionStatus)) {
     mSelectionPseudoStyle = std::move(style);
 
-    
-    
-    
-    if (!mFrame->PresContext()->Document()->ChromeRulesEnabled()) {
-      mSelectionBGColor = mSelectionPseudoStyle->GetVisitedDependentColor(
-          &nsStyleBackground::mBackgroundColor);
-      mSelectionTextColor =
-          mSelectionPseudoStyle->GetVisitedDependentColor(&nsStyleText::mColor);
-      return true;
-    }
-
     if (nscolor bgColor = mSelectionPseudoStyle->GetVisitedDependentColor(
             &nsStyleBackground::mBackgroundColor);
         mSelectionPseudoStyle->HasAuthorSpecifiedTextColor() ||
