@@ -383,6 +383,15 @@ pub trait MatrixHelpers<Src, Dst> {
     fn is_simple_2d_translation(&self) -> bool;
     fn is_2d_scale_translation(&self) -> bool;
     
+    
+    
+    
+    
+    
+    
+    
+    fn as_grid_aligned_rotation(&self) -> Option<(ScaleOffset, bool)>;
+    
     fn determinant_2d(&self) -> f32;
     
     
@@ -501,6 +510,32 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
             self.m21.abs() < NEARLY_ZERO && self.m23.abs() < NEARLY_ZERO && self.m24.abs() < NEARLY_ZERO &&
             self.m31.abs() < NEARLY_ZERO && self.m32.abs() < NEARLY_ZERO && self.m34.abs() < NEARLY_ZERO &&
             self.m43.abs() < NEARLY_ZERO
+    }
+
+    fn as_grid_aligned_rotation(&self) -> Option<(ScaleOffset, bool)> {
+        let is_zero = |v: f32| v.abs() < NEARLY_ZERO;
+        let is_one = |v: f32| (v - 1.0).abs() < NEARLY_ZERO;
+        let is_unit = |v: f32| (v.abs() - 1.0).abs() < NEARLY_ZERO;
+
+        
+        
+        if !(is_zero(self.m13) && is_zero(self.m14) && is_zero(self.m23) && is_zero(self.m24) &&
+            is_zero(self.m31) && is_zero(self.m32) && is_one(self.m33) && is_zero(self.m34) &&
+            is_zero(self.m43) && is_one(self.m44)) {
+            return None;
+        }
+
+        
+        
+        
+        
+        if is_unit(self.m11) && is_unit(self.m22) && is_zero(self.m12) && is_zero(self.m21) {
+            Some((ScaleOffset::new(self.m11, self.m22, self.m41, self.m42), false))
+        } else if is_unit(self.m12) && is_unit(self.m21) && is_zero(self.m11) && is_zero(self.m22) {
+            Some((ScaleOffset::new(self.m21, self.m12, self.m41, self.m42), true))
+        } else {
+            None
+        }
     }
 
     fn determinant_2d(&self) -> f32 {

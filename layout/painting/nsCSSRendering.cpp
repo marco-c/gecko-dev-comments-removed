@@ -26,6 +26,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -4048,7 +4049,20 @@ void nsCSSRendering::PaintDecorationLine(
   NS_ASSERTION(aParams.style != StyleTextDecorationStyle::None,
                "aStyle is none");
 
-  Rect rect = ToRect(GetTextDecorationRectInternal(aParams.pt, aParams));
+  mozilla::layout::TextDrawTarget* textDrawer = nullptr;
+  if (aDrawTarget.GetBackendType() == BackendType::WEBRENDER_TEXT) {
+    textDrawer = static_cast<mozilla::layout::TextDrawTarget*>(&aDrawTarget);
+  }
+
+  
+  
+  
+  
+  const bool snapToPixels =
+      !StaticPrefs::layout_disable_pixel_alignment() || !textDrawer;
+
+  Rect rect =
+      ToRect(GetTextDecorationRectInternal(aParams.pt, aParams, snapToPixels));
   if (rect.IsEmpty() || !rect.Intersects(aParams.dirtyRect)) {
     return;
   }
@@ -4459,7 +4473,9 @@ Rect nsCSSRendering::DecorationLineToPath(
 
   Rect path;  
 
-  Rect rect = ToRect(GetTextDecorationRectInternal(aParams.pt, aParams));
+  Rect rect =
+      ToRect(GetTextDecorationRectInternal(aParams.pt, aParams,
+                                            true));
   if (rect.IsEmpty() || !rect.Intersects(aParams.dirtyRect)) {
     return path;
   }
@@ -4497,7 +4513,8 @@ nsRect nsCSSRendering::GetTextDecorationRect(
   NS_ASSERTION(aParams.style != StyleTextDecorationStyle::None,
                "aStyle is none");
 
-  gfxRect rect = GetTextDecorationRectInternal(Point(0, 0), aParams);
+  gfxRect rect = GetTextDecorationRectInternal(Point(0, 0), aParams,
+                                                true);
   
   nsRect r;
   r.x = aPresContext->GfxUnitsToAppUnits(rect.X());
@@ -4508,7 +4525,8 @@ nsRect nsCSSRendering::GetTextDecorationRect(
 }
 
 gfxRect nsCSSRendering::GetTextDecorationRectInternal(
-    const Point& aPt, const DecorationRectParams& aParams) {
+    const Point& aPt, const DecorationRectParams& aParams,
+    bool aSnapToDevicePixels) {
   NS_ASSERTION(aParams.style <= StyleTextDecorationStyle::Wavy,
                "Invalid aStyle value");
 
@@ -4525,8 +4543,20 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   
   
   
-  const gfxFloat left = floor(iCoord + 0.5),
-                 right = floor(iCoord + aParams.lineSize.width + 0.5);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool snapToPixels = aSnapToDevicePixels;
+  const gfxFloat left = snapToPixels ? floor(iCoord + 0.5) : iCoord,
+                 right = snapToPixels
+                             ? floor(iCoord + aParams.lineSize.width + 0.5)
+                             : iCoord + aParams.lineSize.width;
 
   
   
@@ -4594,7 +4624,8 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
     }
   }
 
-  gfxFloat baseline = floor(bCoord + aParams.ascent + 0.5);
+  gfxFloat baseline = snapToPixels ? floor(bCoord + aParams.ascent + 0.5)
+                                   : bCoord + aParams.ascent;
 
   
   

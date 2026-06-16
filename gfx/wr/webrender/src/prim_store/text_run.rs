@@ -491,7 +491,6 @@ impl TextRunTemplate {
 
         
         let anchor_world = transform.transform_point2d(local_rect.min);
-        let reference_world = transform.transform_point2d(LayoutPoint::zero());
 
         let mut glyph_offsets: Vec<DeviceVector2D> = Vec::new();
         let glyph_keys_range = if local_raster {
@@ -509,7 +508,7 @@ impl TextRunTemplate {
                 glyph_offsets.push(snapped.to_vector());
                 GlyphKey::new(src.index, raster_pos, subpx_dir)
             }))
-        } else if let (Some(anchor_world), Some(reference_world)) = (anchor_world, reference_world) {
+        } else if let Some(anchor_world) = anchor_world {
             
             let anchor_device = anchor_world * dps;
 
@@ -524,8 +523,25 @@ impl TextRunTemplate {
             
             
             
-            let reference_device = reference_world * dps;
-            let snap_shift = reference_device.round() - reference_device;
+            
+            
+            
+            
+            
+            
+            
+            let root_index = spatial_tree.root_reference_frame_index();
+            let snap_shift = match spatial_tree
+                .get_relative_transform(spatial_node_index, root_index)
+                .into_transform()
+                .transform_point2d(LayoutPoint::zero())
+            {
+                Some(p) => {
+                    let reference_device = DevicePoint::new(p.x * dps.0, p.y * dps.0);
+                    reference_device.round() - reference_device
+                }
+                None => DeviceVector2D::zero(),
+            };
             glyph_offsets.reserve(self.glyphs.len());
 
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
