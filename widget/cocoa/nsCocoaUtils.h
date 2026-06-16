@@ -420,7 +420,7 @@ class nsCocoaUtils {
 
 
   static NSEventModifierFlags ConvertWidgetModifiersToMacModifierFlags(
-      nsIWidget::Modifiers aNativeModifiers);
+      nsIWidget::NativeModifiers aNativeModifiers);
 
   
 

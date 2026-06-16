@@ -17,6 +17,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Rect.h"
@@ -1590,9 +1591,7 @@ class nsIWidget : public nsSupportsWeakReference {
       mozilla::WidgetInputEvent* aEvent,
       const mozilla::layers::APZEventResult& aApzResult);
 
-  
-  
-  enum Modifiers : uint32_t {
+  enum class NativeModifiers : uint32_t {
     NO_MODIFIERS = 0x00000000,
     CAPS_LOCK = 0x00000001,  
     NUM_LOCK = 0x00000002,   
@@ -1610,8 +1609,13 @@ class nsIWidget : public nsSupportsWeakReference {
                             
                             
     FUNCTION = 0x00100000,
-    NUMERIC_KEY_PAD = 0x01000000  
+    NUMERIC_KEY_PAD = 0x01000000,  
+
+    ALL_BITS = CAPS_LOCK | NUM_LOCK | SHIFT_L | SHIFT_R | CTRL_L | CTRL_R |
+               ALT_L | ALT_R | COMMAND_L | COMMAND_R | HELP | ALTGRAPH |
+               FUNCTION | NUMERIC_KEY_PAD
   };
+
   
 
 
@@ -1672,7 +1676,7 @@ class nsIWidget : public nsSupportsWeakReference {
   };
   virtual nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+      mozilla::MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
       nsISynthesizedEventCallback* aCallback) {
     mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(aCallback);
     return NS_ERROR_UNEXPECTED;
@@ -2483,5 +2487,7 @@ class nsIWidget : public nsSupportsWeakReference {
   CreateCompositorSession(int aWidth, int aHeight,
                           mozilla::layers::CompositorOptions* aOptionsOut);
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIWidget::NativeModifiers)
 
 #endif  
