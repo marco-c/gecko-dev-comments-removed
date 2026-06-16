@@ -4978,24 +4978,37 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
     return false;
   }
 
+  
+  
+  
+  
   if (!mustMatchToken(TokenKind::LeftCurly, JSMSG_CURLY_AFTER_WITH)) {
     return false;
   }
 
-  
-  TokenKind token;
-  if (!tokenStream.getToken(&token)) {
+  js::HashSet<TaggedParserAtomIndex, TaggedParserAtomIndexHasher,
+              js::SystemAllocPolicy>
+      usedAttributeKeys;
+
+  bool empty;
+  if (!tokenStream.matchToken(&empty, TokenKind::RightCurly)) {
     return false;
   }
-  if (token == TokenKind::RightCurly) {
+  if (empty) {
+    
     return true;
   }
 
-  js::HashSet<TaggedParserAtomIndex, TaggedParserAtomIndexHasher,
-              js::SystemAllocPolicy>
-      usedAssertionKeys;
-
+  
+  
+  
+  
   for (;;) {
+    TokenKind token;
+    if (!tokenStream.getToken(&token)) {
+      return false;
+    }
+
     TaggedParserAtomIndex keyName;
     if (TokenKindIsPossibleIdentifierName(token)) {
       keyName = anyChars.currentName();
@@ -5006,7 +5019,7 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
       return false;
     }
 
-    auto p = usedAssertionKeys.lookupForAdd(keyName);
+    auto p = usedAttributeKeys.lookupForAdd(keyName);
     if (p) {
       UniqueChars str = this->parserAtoms().toPrintableString(keyName);
       if (!str) {
@@ -5016,7 +5029,7 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
       error(JSMSG_DUPLICATE_ATTRIBUTE_KEY, str.get());
       return false;
     }
-    if (!usedAssertionKeys.add(p, keyName)) {
+    if (!usedAttributeKeys.add(p, keyName)) {
       ReportOutOfMemory(this->fc_);
       return false;
     }
@@ -5038,23 +5051,32 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
     MOZ_TRY_VAR_OR_RETURN(importAttributeNode,
                           handler_.newImportAttribute(keyNode, valueNode),
                           false);
-
     handler_.addList(attributesSet, importAttributeNode);
 
-    if (!tokenStream.getToken(&token)) {
+    bool hasComma;
+    if (!tokenStream.matchToken(&hasComma, TokenKind::Comma)) {
       return false;
     }
-    if (token == TokenKind::Comma) {
-      if (!tokenStream.getToken(&token)) {
-        return false;
-      }
-    }
-    if (token == TokenKind::RightCurly) {
+    if (!hasComma) {
+      
       break;
     }
+    
+    
+    
+    TokenKind next;
+    if (!tokenStream.peekToken(&next)) {
+      return false;
+    }
+    if (next == TokenKind::RightCurly) {
+      
+      break;
+    }
+    
   }
 
-  return true;
+  return mustMatchToken(TokenKind::RightCurly,
+                        JSMSG_RC_AFTER_IMPORT_ATTRIBUTE_LIST);
 }
 
 template <class ParseHandler, typename Unit>
