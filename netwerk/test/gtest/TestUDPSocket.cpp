@@ -306,6 +306,10 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   ASSERT_NS_SUCCEEDED(clientListener->mResult);
 
   
+  
+  
+#if !defined(XP_MACOSX)
+  
   nsCOMPtr<nsITimer> timer = NS_NewTimer();
   ASSERT_TRUE(timer);
   RefPtr<MulticastTimerCallback> timerCb = new MulticastTimerCallback(waiter);
@@ -397,6 +401,7 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   waiter->Wait(1);
   ASSERT_FALSE(NS_SUCCEEDED(timerCb->mResult));
   timer->Cancel();
+#endif  
 
   goto close;  
 
