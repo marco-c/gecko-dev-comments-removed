@@ -167,6 +167,30 @@ fn cancel_prompts(tid: u64) -> Result<(), nsresult> {
     Ok(())
 }
 
+
+
+
+
+
+
+
+fn attestation_is_identifying(att_obj: &AttestationObject) -> bool {
+    if let AttestationStatement::Packed(ref packed) = att_obj.att_stmt {
+        
+        
+        if packed.attestation_cert.is_empty()
+            && att_obj
+                .auth_data
+                .credential_data
+                .as_ref()
+                .is_some_and(|d| d.aaguid == AAGuid::default())
+        {
+            return false;
+        }
+    }
+    att_obj.att_stmt != AttestationStatement::None
+}
+
 #[xpcom(implement(nsIWebAuthnRegisterResult), atomic)]
 pub struct WebAuthnRegisterResult {
     
@@ -182,7 +206,8 @@ impl WebAuthnRegisterResult {
     xpcom_method!(get_attestation_object => GetAttestationObject() -> ThinVec<u8>);
     fn get_attestation_object(&self) -> Result<ThinVec<u8>, nsresult> {
         let mut out = ThinVec::new();
-        serde_cbor_2::to_writer(&mut out, &self.result.borrow().att_obj).or(Err(NS_ERROR_FAILURE))?;
+        serde_cbor_2::to_writer(&mut out, &self.result.borrow().att_obj)
+            .or(Err(NS_ERROR_FAILURE))?;
         Ok(out)
     }
 
@@ -288,13 +313,7 @@ impl WebAuthnRegisterResult {
 
     xpcom_method!(has_identifying_attestation => HasIdentifyingAttestation() -> bool);
     fn has_identifying_attestation(&self) -> Result<bool, nsresult> {
-        if self.result.borrow().att_obj.att_stmt != AttestationStatement::None {
-            return Ok(true);
-        }
-        if let Some(data) = &self.result.borrow().att_obj.auth_data.credential_data {
-            return Ok(data.aaguid != AAGuid::default());
-        }
-        Ok(false)
+        Ok(attestation_is_identifying(&self.result.borrow().att_obj))
     }
 
     xpcom_method!(anonymize => Anonymize());
@@ -346,13 +365,7 @@ impl WebAuthnAttObj {
 
     xpcom_method!(is_identifying => IsIdentifying() -> bool);
     fn is_identifying(&self) -> Result<bool, nsresult> {
-        if self.att_obj.att_stmt != AttestationStatement::None {
-            return Ok(true);
-        }
-        if let Some(data) = &self.att_obj.auth_data.credential_data {
-            return Ok(data.aaguid != AAGuid::default());
-        }
-        Ok(false)
+        Ok(attestation_is_identifying(&self.att_obj))
     }
 }
 
