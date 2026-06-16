@@ -190,8 +190,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   RTCError SetChannel(
       std::unique_ptr<ChannelInterface> channel,
       absl::AnyInvocable<RtpTransportInternal*(const std::string&) &&>
-          transport_lookup,
-      bool set_media_channels = true);
+          transport_lookup);
 
   
   void ClearChannel();
@@ -419,13 +418,11 @@ class RtpTransceiver : public RtpTransceiverInterface {
                         scoped_refptr<PendingTaskSafetyFlag> safety)
       RTC_RUN_ON(context()->network_thread());
   void OnFirstPacketSent();
+
   
   
   [[nodiscard]] absl_nonnull absl::AnyInvocable<void() &&>
   GetStopSendingAndReceiving();
-  
-  
-  void PushNewMediaChannel();
 
   void SetMediaChannels(MediaSendChannelInterface* send,
                         MediaReceiveChannelInterface* receive)
