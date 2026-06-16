@@ -779,8 +779,7 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
   }
   
   
-  if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
-      type == PseudoStyleType::Checkmark) {
+  if (type == PseudoStyleType::Before || type == PseudoStyleType::After) {
     if (!aPseudoStyle.StyleContent()->mContent.IsItems()) {
       return false;
     }
@@ -788,8 +787,7 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
                "IsItems() implies we have at least one item");
   }
   if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
-      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop ||
-      type == PseudoStyleType::Checkmark) {
+      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop) {
     
     if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
       return false;
