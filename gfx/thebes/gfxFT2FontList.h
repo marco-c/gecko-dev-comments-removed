@@ -39,15 +39,19 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   const nsCString& GetName() const { return Name(); }
 
   
-  static FT2FontEntry* CreateFontEntry(
+  static already_AddRefed<FT2FontEntry> CreateFontEntry(
       const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
       SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength);
 
   
   
   
+  
+  
   static FT2FontEntry* CreateFontEntry(const FontListEntry& aFLE);
 
+  
+  
   
   
   

@@ -246,20 +246,20 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
 }
 
 
-FT2FontEntry* FT2FontEntry::CreateFontEntry(
+already_AddRefed<FT2FontEntry> FT2FontEntry::CreateFontEntry(
     const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
     SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength) {
   
   
   
-  RefPtr<FTUserFontData> ufd = new FTUserFontData(aFontData, aLength);
+  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData, aLength);
   RefPtr<SharedFTFace> face = ufd->CloneFace();
   if (!face) {
     return nullptr;
   }
   
   
-  FT2FontEntry* fe =
+  RefPtr<FT2FontEntry> fe =
       FT2FontEntry::CreateFontEntry(aFontName, nullptr, 0, nullptr);
   if (fe) {
     fe->mFTFace = face.forget().take();  
@@ -268,7 +268,7 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(
     fe->mStretchRange = aStretch;
     fe->mIsDataUserFont = true;
   }
-  return fe;
+  return fe.forget();
 }
 
 
@@ -1937,9 +1937,9 @@ already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
   
   
   
-  return do_AddRef(FT2FontEntry::CreateFontEntry(
-      aFontName, aWeightForEntry, aStretchForEntry, aStyleForEntry, aFontData,
-      aLength));
+  return FT2FontEntry::CreateFontEntry(aFontName, aWeightForEntry,
+                                       aStretchForEntry, aStyleForEntry,
+                                       aFontData, aLength);
 }
 
 already_AddRefed<gfxFontFamily> gfxFT2FontList::CreateFontFamily(
