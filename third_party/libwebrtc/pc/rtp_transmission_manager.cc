@@ -511,7 +511,8 @@ PLAN_B_ONLY void RtpTransmissionManager::CreateVideoReceiverPlanB(
   
   
   auto video_receiver = make_ref_counted<VideoRtpReceiver>(
-      worker_thread(), remote_sender_info.sender_id, streams);
+      worker_thread(), remote_sender_info.sender_id, streams,
+      nullptr);
 
   auto task = video_receiver->GetSetupForMediaChannel(
       remote_sender_info.sender_id == kDefaultVideoSenderId

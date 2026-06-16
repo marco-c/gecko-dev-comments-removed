@@ -3974,6 +3974,7 @@ TEST_P(RTCStatsCollectorTest,
   scoped_refptr<AudioRtpSender> sender = AudioRtpSender::Create(
       env_, pc_->signaling_thread(), pc_->worker_thread(), "sender_id",
       nullptr, nullptr,
+      nullptr,
       nullptr);
 
   {
