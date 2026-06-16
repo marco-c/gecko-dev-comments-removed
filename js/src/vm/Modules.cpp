@@ -947,6 +947,10 @@ static bool CyclicModuleResolveExport(JSContext* cx,
     if (entry.module() == module && entry.exportName() == exportName) {
       
       
+      
+      
+      
+      
       result.setNull();
       if (errorInfoOut) {
         errorInfoOut->setCircularImport(cx, module);
@@ -1031,6 +1035,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
   
   Rooted<ResolvedBindingObject*> starResolution(cx);
+  bool hadCircular = false;
 
   
   Rooted<Value> resolution(cx);
@@ -1050,16 +1055,31 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
     
     
+    
+    
+    
+    
+    
+    ModuleErrorInfo localErrorInfo{e.lineNumber(), e.columnNumber()};
     if (!ModuleResolveExportWithResolveSet(cx, importedModule, exportName,
                                            resolveSet, &resolution,
-                                           errorInfoOut)) {
+                                           &localErrorInfo)) {
       return false;
     }
 
     
     if (resolution == StringValue(cx->names().ambiguous)) {
       result.set(resolution);
+      if (errorInfoOut) {
+        errorInfoOut->imported = localErrorInfo.imported;
+        errorInfoOut->entry1 = localErrorInfo.entry1;
+        errorInfoOut->entry2 = localErrorInfo.entry2;
+      }
       return true;
+    }
+
+    if (resolution.isNull() && localErrorInfo.isCircular) {
+      hadCircular = true;
     }
 
     
@@ -1105,7 +1125,11 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   
   result.setObjectOrNull(starResolution);
   if (!starResolution && errorInfoOut) {
-    errorInfoOut->setImportedModule(cx, module);
+    if (hadCircular) {
+      errorInfoOut->setCircularImport(cx, module);
+    } else {
+      errorInfoOut->setImportedModule(cx, module);
+    }
   }
   return true;
 }
@@ -1267,9 +1291,8 @@ void ModuleErrorInfo::setImportedModule(JSContext* cx,
   imported = importedModule->filename();
 }
 
-void ModuleErrorInfo::setCircularImport(JSContext* cx,
-                                        ModuleObject* importedModule) {
-  setImportedModule(cx, importedModule);
+void ModuleErrorInfo::setCircularImport(ModuleObject* importedModule) {
+  setImportedModule(importedModule);
   isCircular = true;
 }
 
