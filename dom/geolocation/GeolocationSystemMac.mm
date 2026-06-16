@@ -208,16 +208,22 @@ SystemGeolocationPermissionBehavior GetGeolocationPermissionBehavior() {
         
         
         
-        if (StaticPrefs::geo_prompt_macos_use_not_determined()) {
-          LOGI(
-              "%s | kCLAuthorizationStatusNotDetermined.  SystemWillPromptUser",
-              __func__);
-          return SystemGeolocationPermissionBehavior::SystemWillPromptUser;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         LOGI("%s | kCLAuthorizationStatusNotDetermined.  SystemWillPromptUser "
-             "overridden as GeckoWillPromptUser.",
+             "overridden as NoPrompt.",
              __func__);
-        return SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
+        return SystemGeolocationPermissionBehavior::NoPrompt;
       case kCLAuthorizationStatusAuthorized:
         
         
