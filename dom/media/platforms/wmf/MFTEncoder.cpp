@@ -427,6 +427,10 @@ static Result<Ok, nsCString> IsSupported(
     const MFTEncoder::Factory& aFactory, const GUID& aSubtype,
     const gfx::IntSize& aFrameSize,
     const EncoderConfig::CodecSpecific& aCodecSpecific) {
+  if (aFactory.mProvider == MFTEncoder::Factory::Provider::SW) {
+    return Ok();
+  }
+
   bool isH264HighProfile = IsEqualGUID(aSubtype, MFVideoFormat_H264) &&
                            aCodecSpecific.is<H264Specific>() &&
                            aCodecSpecific.as<H264Specific>().mProfile ==
@@ -438,13 +442,21 @@ static Result<Ok, nsCString> IsSupported(
   
   
   
-  if (aFactory.mProvider != MFTEncoder::Factory::Provider::SW &&
-      isH264HighProfile && isFrameSizeGreaterThan4K) {
+  if (isH264HighProfile && isFrameSizeGreaterThan4K) {
     return Err(nsFmtCString(
         "{} encoder {} does not support H.264 high profile for 4K+ video",
         MFTEncoder::Factory::EnumValueToString(aFactory.mProvider),
         aFactory.mName.get()));
   }
+
+  
+  if (aFrameSize.width < 128 || aFrameSize.height < 128) {
+    return Err(nsFmtCString(
+        "{} encoder {} may not support videos smaller than 128x128",
+        MFTEncoder::Factory::EnumValueToString(aFactory.mProvider),
+        aFactory.mName.get()));
+  }
+
   
   return Ok();
 }
