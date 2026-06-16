@@ -37,8 +37,7 @@ const {
   mapFilteredMemoriesToInitialList,
   generateInitialMemoriesList,
   deduplicateMemories,
-  filterSensitiveMemories,
-  applyQualityFilter,
+  applyQualityAndSensitivityFilter,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs"
 );
@@ -1045,7 +1044,7 @@ add_task(
 
 
 
-add_task(async function test_filterSensitiveMemories_happy_path() {
+add_task(async function test_applyQualityAndSensitivityFilter_happy_path() {
   const sb = sinon.createSandbox();
   try {
     
@@ -1056,7 +1055,7 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
       run() {
         return {
           finalOutput: `{
-  "non_sensitive_memories": [
+  "kept_memories": [
     "Loves hiking and camping",
     "Reads science fiction novels",
     "Likes both dogs and cats"
@@ -1066,7 +1065,6 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
       },
     };
 
-    
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build({
       model: TEST_MODEL,
@@ -1077,75 +1075,27 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
     });
     Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
-    const nonSensitiveMemoriesList = await filterSensitiveMemories(
+    const keptMemoriesList = await applyQualityAndSensitivityFilter(
       engine,
       NEW_MEMORIES
     );
 
-    
     Assert.equal(
-      nonSensitiveMemoriesList.length,
+      keptMemoriesList.length,
       3,
-      "Non-sensitive memories list should contain 3 memories"
+      "Kept memories list should contain 3 memories"
     );
     Assert.ok(
-      nonSensitiveMemoriesList.includes("Loves hiking and camping"),
-      "Non-sensitive memories should include 'Loves hiking and camping'"
+      keptMemoriesList.includes("Loves hiking and camping"),
+      "Kept memories should include 'Loves hiking and camping'"
     );
     Assert.ok(
-      nonSensitiveMemoriesList.includes("Reads science fiction novels"),
-      "Non-sensitive memories should include 'Reads science fiction novels'"
+      keptMemoriesList.includes("Reads science fiction novels"),
+      "Kept memories should include 'Reads science fiction novels'"
     );
     Assert.ok(
-      nonSensitiveMemoriesList.includes("Likes both dogs and cats"),
-      "Non-sensitive memories should include 'Likes both dogs and cats'"
-    );
-  } finally {
-    sb.restore();
-  }
-});
-
-
-
-
-add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
-  const sb = sinon.createSandbox();
-  try {
-    
-    const fakeEngine = {
-      run() {
-        return {
-          finalOutput: `{
-  "non_sensitive_memories": []
-}`,
-        };
-      },
-    };
-
-    
-    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build({
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.MEMORIES,
-      purpose: PURPOSES.MEMORY_GENERATION,
-      flowId: null,
-      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-    });
-    Assert.ok(stub.calledOnce, "_createEngine should be called once");
-
-    const nonSensitiveMemoriesList = await filterSensitiveMemories(
-      engine,
-      NEW_MEMORIES
-    );
-
-    Assert.ok(
-      Array.isArray(nonSensitiveMemoriesList),
-      "Should return an array"
-    );
-    Assert.equal(
-      nonSensitiveMemoriesList.length,
-      0,
-      "Should return an empty array"
+      keptMemoriesList.includes("Likes both dogs and cats"),
+      "Kept memories should include 'Likes both dogs and cats'"
     );
   } finally {
     sb.restore();
@@ -1156,10 +1106,49 @@ add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
 
 
 add_task(
-  async function test_filterSensitiveMemories_sad_path_wrong_data_type() {
+  async function test_applyQualityAndSensitivityFilter_sad_path_empty_output() {
     const sb = sinon.createSandbox();
     try {
-      
+      const fakeEngine = {
+        run() {
+          return {
+            finalOutput: `{
+  "kept_memories": []
+}`,
+          };
+        },
+      };
+
+      const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+      const engine = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.MEMORIES,
+        purpose: PURPOSES.MEMORY_GENERATION,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
+      Assert.ok(stub.calledOnce, "_createEngine should be called once");
+
+      const keptMemoriesList = await applyQualityAndSensitivityFilter(
+        engine,
+        NEW_MEMORIES
+      );
+
+      Assert.ok(Array.isArray(keptMemoriesList), "Should return an array");
+      Assert.equal(keptMemoriesList.length, 0, "Should return an empty array");
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+
+
+
+add_task(
+  async function test_applyQualityAndSensitivityFilter_sad_path_wrong_data_type() {
+    const sb = sinon.createSandbox();
+    try {
       const fakeEngine = {
         run() {
           return {
@@ -1168,7 +1157,6 @@ add_task(
         },
       };
 
-      
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build({
         model: TEST_MODEL,
@@ -1179,20 +1167,13 @@ add_task(
       });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
-      const nonSensitiveMemoriesList = await filterSensitiveMemories(
+      const keptMemoriesList = await applyQualityAndSensitivityFilter(
         engine,
         NEW_MEMORIES
       );
 
-      Assert.ok(
-        Array.isArray(nonSensitiveMemoriesList),
-        "Should return an array"
-      );
-      Assert.equal(
-        nonSensitiveMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
+      Assert.ok(Array.isArray(keptMemoriesList), "Should return an array");
+      Assert.equal(keptMemoriesList.length, 0, "Should return an empty array");
     } finally {
       sb.restore();
     }
@@ -1203,21 +1184,19 @@ add_task(
 
 
 add_task(
-  async function test_filterSensitiveMemories_sad_path_wrong_inner_data_type() {
+  async function test_applyQualityAndSensitivityFilter_sad_path_wrong_inner_data_type() {
     const sb = sinon.createSandbox();
     try {
-      
       const fakeEngine = {
         run() {
           return {
             finalOutput: `{
-  "non_sensitive_memories": "testing"
+  "kept_memories": "testing"
 }`,
           };
         },
       };
 
-      
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build({
         model: TEST_MODEL,
@@ -1228,20 +1207,13 @@ add_task(
       });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
-      const nonSensitiveMemoriesList = await filterSensitiveMemories(
+      const keptMemoriesList = await applyQualityAndSensitivityFilter(
         engine,
         NEW_MEMORIES
       );
 
-      Assert.ok(
-        Array.isArray(nonSensitiveMemoriesList),
-        "Should return an array"
-      );
-      Assert.equal(
-        nonSensitiveMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
+      Assert.ok(Array.isArray(keptMemoriesList), "Should return an array");
+      Assert.equal(keptMemoriesList.length, 0, "Should return an empty array");
     } finally {
       sb.restore();
     }
@@ -1252,15 +1224,14 @@ add_task(
 
 
 add_task(
-  async function test_filterSensitiveMemories_sad_path_wrong_outer_schema() {
+  async function test_applyQualityAndSensitivityFilter_sad_path_wrong_outer_schema() {
     const sb = sinon.createSandbox();
     try {
-      
       const fakeEngine = {
         run() {
           return {
             finalOutput: `{
-  "these_are_non_sensitive_memories": [
+  "these_are_kept_memories": [
     "testing1", "testing2", "testing3"
   ]
 }`,
@@ -1268,7 +1239,6 @@ add_task(
         },
       };
 
-      
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build({
         model: TEST_MODEL,
@@ -1279,20 +1249,13 @@ add_task(
       });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
-      const nonSensitiveMemoriesList = await filterSensitiveMemories(
+      const keptMemoriesList = await applyQualityAndSensitivityFilter(
         engine,
         NEW_MEMORIES
       );
 
-      Assert.ok(
-        Array.isArray(nonSensitiveMemoriesList),
-        "Should return an array"
-      );
-      Assert.equal(
-        nonSensitiveMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
+      Assert.ok(Array.isArray(keptMemoriesList), "Should return an array");
+      Assert.equal(keptMemoriesList.length, 0, "Should return an empty array");
     } finally {
       sb.restore();
     }
@@ -1303,7 +1266,7 @@ add_task(
 
 
 add_task(
-  async function test_filterSensitiveMemories_sad_path_some_correct_inner_schema() {
+  async function test_applyQualityAndSensitivityFilter_drops_reworded_memories() {
     const sb = sinon.createSandbox();
     try {
       
@@ -1311,17 +1274,15 @@ add_task(
         run() {
           return {
             finalOutput: `{
-  "non_sensitive_memories": [
-    "correct",
-    12345,
-    {"bad": "schema"}
+  "kept_memories": [
+    "Loves hiking and camping",
+    "Reads sci-fi novels"
   ]
 }`,
           };
         },
       };
 
-      
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build({
         model: TEST_MODEL,
@@ -1332,135 +1293,26 @@ add_task(
       });
       Assert.ok(stub.calledOnce, "_createEngine should be called once");
 
-      const nonSensitiveMemoriesList = await filterSensitiveMemories(
+      const keptMemoriesList = await applyQualityAndSensitivityFilter(
         engine,
         NEW_MEMORIES
       );
 
-      Assert.ok(
-        Array.isArray(nonSensitiveMemoriesList),
-        "Should return an array"
-      );
       Assert.equal(
-        nonSensitiveMemoriesList.length,
+        keptMemoriesList.length,
         1,
-        "Should return an array with one valid memory"
+        "Only the verbatim memory should be kept"
       );
       Assert.equal(
-        nonSensitiveMemoriesList[0],
-        "correct",
-        "Should return the single valid memory"
+        keptMemoriesList[0],
+        "Loves hiking and camping",
+        "Reworded memory should be dropped"
       );
     } finally {
       sb.restore();
     }
   }
 );
-
-
-
-
-add_task(async function test_applyQualityFilter_happy_path() {
-  const sb = sinon.createSandbox();
-  try {
-    
-
-
-
-    const fakeEngine = {
-      run() {
-        return {
-          finalOutput: `{
-  "good_memories": [
-    "Loves hiking and camping",
-    "Reads science fiction novels",
-    "Likes both dogs and cats"
-  ]
-}`,
-        };
-      },
-    };
-
-    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build({
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.MEMORIES,
-      purpose: PURPOSES.MEMORY_GENERATION,
-      flowId: null,
-      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-    });
-    Assert.ok(stub.calledOnce, "_createEngine should be called once");
-
-    const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
-
-    Assert.equal(
-      goodMemoriesList.length,
-      3,
-      "Good memories list should contain 3 memories"
-    );
-    Assert.ok(
-      goodMemoriesList.includes("Loves hiking and camping"),
-      "Good memories should include 'Loves hiking and camping'"
-    );
-    Assert.ok(
-      goodMemoriesList.includes("Reads science fiction novels"),
-      "Good memories should include 'Reads science fiction novels'"
-    );
-    Assert.ok(
-      goodMemoriesList.includes("Likes both dogs and cats"),
-      "Good memories should include 'Likes both dogs and cats'"
-    );
-  } finally {
-    sb.restore();
-  }
-});
-
-
-
-
-add_task(async function test_applyQualityFilter_drops_reworded_memories() {
-  const sb = sinon.createSandbox();
-  try {
-    
-    const fakeEngine = {
-      run() {
-        return {
-          finalOutput: `{
-  "good_memories": [
-    "Loves hiking and camping",
-    "Reads sci-fi novels"
-  ]
-}`,
-        };
-      },
-    };
-
-    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build({
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.MEMORIES,
-      purpose: PURPOSES.MEMORY_GENERATION,
-      flowId: null,
-      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-    });
-    Assert.ok(stub.calledOnce, "_createEngine should be called once");
-
-    const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
-
-    Assert.equal(
-      goodMemoriesList.length,
-      1,
-      "Only the verbatim memory should be kept"
-    );
-    Assert.equal(
-      goodMemoriesList[0],
-      "Loves hiking and camping",
-      "Reworded memory should be dropped"
-    );
-  } finally {
-    sb.restore();
-  }
-});
 
 
 
