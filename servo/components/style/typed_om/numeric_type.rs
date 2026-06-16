@@ -87,37 +87,77 @@ impl NumericType {
     }
 
     
+    pub fn number() -> Self {
+        Self::empty()
+    }
+
+    
+    pub fn percent() -> Self {
+        Self::with_base_type(NumericBaseType::Percent)
+    }
+
+    
+    pub fn length() -> Self {
+        Self::with_base_type(NumericBaseType::Length)
+    }
+
+    
+    pub fn angle() -> Self {
+        Self::with_base_type(NumericBaseType::Angle)
+    }
+
+    
+    pub fn time() -> Self {
+        Self::with_base_type(NumericBaseType::Time)
+    }
+
+    
+    pub fn frequency() -> Self {
+        Self::with_base_type(NumericBaseType::Frequency)
+    }
+
+    
+    pub fn resolution() -> Self {
+        Self::with_base_type(NumericBaseType::Resolution)
+    }
+
+    
+    pub fn flex() -> Self {
+        Self::with_base_type(NumericBaseType::Flex)
+    }
+
+    
     pub fn try_from_unit(unit: &str) -> Result<Self, ()> {
         if unit.eq_ignore_ascii_case("number") {
-            return Ok(Self::empty());
+            return Ok(Self::number());
         }
 
         if unit.eq_ignore_ascii_case("percent") {
-            return Ok(Self::with_base_type(NumericBaseType::Percent));
+            return Ok(Self::percent());
         }
 
         if LengthUnit::from_str(unit).is_ok() {
-            return Ok(Self::with_base_type(NumericBaseType::Length));
+            return Ok(Self::length());
         }
 
         if AngleUnit::from_str(unit).is_ok() {
-            return Ok(Self::with_base_type(NumericBaseType::Angle));
+            return Ok(Self::angle());
         }
 
         if TimeUnit::from_str(unit).is_ok() {
-            return Ok(Self::with_base_type(NumericBaseType::Time));
+            return Ok(Self::time());
         }
 
         if FrequencyUnit::from_str(unit).is_ok() {
-            return Ok(Self::with_base_type(NumericBaseType::Frequency));
+            return Ok(Self::frequency());
         }
 
         if ResolutionUnit::from_str(unit).is_ok() {
-            return Ok(Self::with_base_type(NumericBaseType::Resolution));
+            return Ok(Self::resolution());
         }
 
         if FlexUnit::matches(unit) {
-            return Ok(Self::with_base_type(NumericBaseType::Flex));
+            return Ok(Self::flex());
         }
 
         Err(())
