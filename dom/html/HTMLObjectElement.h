@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLObjectElement_h
 #define mozilla_dom_HTMLObjectElement_h
 
@@ -22,9 +20,8 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
                                 public nsObjectLoadingContent,
                                 public ConstraintValidation {
  public:
-  explicit HTMLObjectElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLObjectElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser = NOT_FROM_PARSER);
 
   
   NS_DECL_ISUPPORTS_INHERITED

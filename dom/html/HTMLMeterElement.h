@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLMeterElement_h
 #define mozilla_dom_HTMLMeterElement_h
 
@@ -15,8 +13,7 @@ namespace mozilla::dom {
 
 class HTMLMeterElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLMeterElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLMeterElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

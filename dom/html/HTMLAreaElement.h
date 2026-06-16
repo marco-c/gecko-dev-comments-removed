@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLAreaElement_h
 #define mozilla_dom_HTMLAreaElement_h
 
@@ -19,8 +17,7 @@ namespace dom {
 
 class HTMLAreaElement final : public nsGenericHTMLElement, public Link {
  public:
-  explicit HTMLAreaElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLAreaElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED

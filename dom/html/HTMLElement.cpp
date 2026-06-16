@@ -18,7 +18,7 @@
 
 namespace mozilla::dom {
 
-HTMLElement::HTMLElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+HTMLElement::HTMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                          FromParser aFromParser)
     : nsGenericHTMLFormElement(std::move(aNodeInfo)) {
   if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
@@ -460,7 +460,7 @@ void HTMLElement::UpdateBarredFromConstraintValidation() {
 
 
 nsGenericHTMLElement* NS_NewHTMLElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -470,7 +470,7 @@ nsGenericHTMLElement* NS_NewHTMLElement(
 
 
 nsGenericHTMLElement* NS_NewCustomElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLEmbedElement_h
 #define mozilla_dom_HTMLEmbedElement_h
 
@@ -18,7 +16,7 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
                                public nsObjectLoadingContent {
  public:
   explicit HTMLEmbedElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       mozilla::dom::FromParser aFromParser = mozilla::dom::NOT_FROM_PARSER);
 
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLMenuElement_h
 #define mozilla_dom_HTMLMenuElement_h
 
@@ -13,8 +11,7 @@ namespace mozilla::dom {
 
 class HTMLMenuElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLMenuElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLMenuElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLMenuElement, menu)
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLSharedElement_h
 #define mozilla_dom_HTMLSharedElement_h
 
@@ -15,8 +13,7 @@ namespace mozilla::dom {
 
 class HTMLSharedElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLSharedElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLSharedElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     if (mNodeInfo->Equals(nsGkAtoms::head) ||
         mNodeInfo->Equals(nsGkAtoms::html)) {

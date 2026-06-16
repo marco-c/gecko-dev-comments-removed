@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLMetaElement_h
 #define mozilla_dom_HTMLMetaElement_h
 
@@ -13,8 +11,7 @@ namespace mozilla::dom {
 
 class HTMLMetaElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLMetaElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLMetaElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLMetaElement, nsGenericHTMLElement)

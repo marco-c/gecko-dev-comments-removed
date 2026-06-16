@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLTableColElement_h
 #define mozilla_dom_HTMLTableColElement_h
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 class HTMLTableColElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLTableColElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     SetHasWeirdParserInsertionMode();
   }

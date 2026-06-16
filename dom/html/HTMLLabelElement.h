@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef HTMLLabelElement_h
 #define HTMLLabelElement_h
 
@@ -19,8 +17,7 @@ namespace dom {
 
 class HTMLLabelElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLLabelElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLLabelElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)), mHandlingEvent(false) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLLabelElement, label)

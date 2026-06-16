@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLMenuElement.h"
 
 #include "mozilla/dom/HTMLMenuElementBinding.h"
@@ -13,7 +11,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Menu)
 namespace mozilla::dom {
 
 HTMLMenuElement::HTMLMenuElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLMenuElement::~HTMLMenuElement() = default;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLHRElement_h
 #define mozilla_dom_HTMLHRElement_h
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 
 class HTMLHRElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLHRElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLHRElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLHRElement, nsGenericHTMLElement)

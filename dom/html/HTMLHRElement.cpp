@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLHRElement.h"
 
 #include "mozilla/MappedDeclarationsBuilder.h"
@@ -15,8 +13,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(HR)
 
 namespace mozilla::dom {
 
-HTMLHRElement::HTMLHRElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+HTMLHRElement::HTMLHRElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLHRElement::~HTMLHRElement() = default;

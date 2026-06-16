@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLButtonElement.h"
 
 #include "HTMLFormSubmissionConstants.h"
@@ -77,8 +75,7 @@ static constexpr const nsAttrValue::EnumTableEntry* kButtonSubmitType =
 
 
 HTMLButtonElement::HTMLButtonElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElementWithState(
           std::move(aNodeInfo), aFromParser,
           FormControlType(kButtonSubmitType->value)),
@@ -145,8 +142,7 @@ const nsAttrValue::EnumTableEntry* HTMLButtonElement::ResolveAutoState() const {
   
   
   
-  if (StaticPrefs::dom_element_commandfor_enabled() &&
-      (HasAttr(nsGkAtoms::commandfor) || HasAttr(nsGkAtoms::command))) {
+  if (HasAttr(nsGkAtoms::commandfor) || HasAttr(nsGkAtoms::command)) {
     return kButtonButtonType;
   }
   return kButtonSubmitType;
@@ -186,15 +182,12 @@ bool HTMLButtonElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (aAttribute == nsGkAtoms::formenctype) {
       return aResult.ParseEnumValue(aValue, kFormEnctypeTable, false);
     }
-
-    if (StaticPrefs::dom_element_commandfor_enabled()) {
-      if (aAttribute == nsGkAtoms::command) {
-        return aResult.ParseEnumValue(aValue, kButtonCommandTable, false);
-      }
-      if (aAttribute == nsGkAtoms::commandfor) {
-        aResult.ParseAtom(aValue);
-        return true;
-      }
+    if (aAttribute == nsGkAtoms::command) {
+      return aResult.ParseEnumValue(aValue, kButtonCommandTable, false);
+    }
+    if (aAttribute == nsGkAtoms::commandfor) {
+      aResult.ParseAtom(aValue);
+      return true;
     }
   }
 
@@ -506,8 +499,7 @@ void HTMLButtonElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
     
     
-    if (StaticPrefs::dom_element_commandfor_enabled() &&
-        (aName == nsGkAtoms::command || aName == nsGkAtoms::commandfor)) {
+    if (aName == nsGkAtoms::command || aName == nsGkAtoms::commandfor) {
       if (InAutoState()) {
         mType = FormControlType(ResolveAutoState()->value);
       }
@@ -612,17 +604,11 @@ Element::Command HTMLButtonElement::GetCommand() const {
 }
 
 Element* HTMLButtonElement::GetCommandForElementForBindings() const {
-  if (StaticPrefs::dom_element_commandfor_enabled()) {
-    return GetAttrAssociatedElementForBindings(nsGkAtoms::commandfor);
-  }
-  return nullptr;
+  return GetAttrAssociatedElementForBindings(nsGkAtoms::commandfor);
 }
 
 Element* HTMLButtonElement::GetCommandForElementInternal() const {
-  if (StaticPrefs::dom_element_commandfor_enabled()) {
-    return GetAttrAssociatedElementInternal(nsGkAtoms::commandfor);
-  }
-  return nullptr;
+  return GetAttrAssociatedElementInternal(nsGkAtoms::commandfor);
 }
 
 void HTMLButtonElement::SetCommandForElementForBindings(Element* aElement) {

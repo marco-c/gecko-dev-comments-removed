@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLTableCaptionElement_h
 #define mozilla_dom_HTMLTableCaptionElement_h
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 class HTMLTableCaptionElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLTableCaptionElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     SetHasWeirdParserInsertionMode();
   }

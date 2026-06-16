@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLScriptElement_h
 #define mozilla_dom_HTMLScriptElement_h
 
@@ -29,7 +27,7 @@ class HTMLScriptElement final : public nsGenericHTMLElement,
  public:
   using Element::GetCharacterDataBuffer;
 
-  HTMLScriptElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  HTMLScriptElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                     FromParser aFromParser);
 
   

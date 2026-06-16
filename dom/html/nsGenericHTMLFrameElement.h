@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsGenericHTMLFrameElement_h
 #define nsGenericHTMLFrameElement_h
 
@@ -32,9 +30,8 @@ class XULFrameElement;
 class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
                                   public nsFrameLoaderOwner {
  public:
-  nsGenericHTMLFrameElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      mozilla::dom::FromParser aFromParser)
+  nsGenericHTMLFrameElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                            mozilla::dom::FromParser aFromParser)
       : nsGenericHTMLElement(std::move(aNodeInfo)),
         mSrcLoadHappened(false),
         mNetworkCreated(aFromParser == mozilla::dom::FROM_PARSER_NETWORK) {}

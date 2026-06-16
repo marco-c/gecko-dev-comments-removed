@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLParagraphElement_h
 #define mozilla_dom_HTMLParagraphElement_h
 
@@ -14,7 +12,7 @@ namespace mozilla::dom {
 class HTMLParagraphElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLParagraphElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   

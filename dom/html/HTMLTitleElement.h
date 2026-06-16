@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLTITLEElement_h_
 #define mozilla_dom_HTMLTITLEElement_h_
 
@@ -20,8 +18,7 @@ class HTMLTitleElement final : public nsGenericHTMLElement,
  public:
   using Element::GetCharacterDataBuffer;
 
-  explicit HTMLTitleElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLTitleElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED

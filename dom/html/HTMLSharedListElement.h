@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLSharedListElement_h
 #define mozilla_dom_HTMLSharedListElement_h
 
@@ -14,7 +12,7 @@ namespace mozilla::dom {
 class HTMLSharedListElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLSharedListElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   

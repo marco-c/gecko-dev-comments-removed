@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLTableCellElement_h
 #define mozilla_dom_HTMLTableCellElement_h
 
@@ -15,7 +13,7 @@ class HTMLTableElement;
 class HTMLTableCellElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLTableCellElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     SetHasWeirdParserInsertionMode();
   }

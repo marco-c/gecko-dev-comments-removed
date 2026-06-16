@@ -20,7 +20,7 @@ namespace mozilla::dom {
 
 
 HTMLOptGroupElement::HTMLOptGroupElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   
   AddStatesSilently(ElementState::ENABLED);

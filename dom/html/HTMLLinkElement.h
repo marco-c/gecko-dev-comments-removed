@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLLinkElement_h
 #define mozilla_dom_HTMLLinkElement_h
 
@@ -25,8 +23,7 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
                               public LinkStyle,
                               public SupportsDNSPrefetch {
  public:
-  explicit HTMLLinkElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLLinkElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED

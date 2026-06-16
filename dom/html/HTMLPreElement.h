@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLPreElement_h
 #define mozilla_dom_HTMLPreElement_h
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 
 class HTMLPreElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLPreElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLPreElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   

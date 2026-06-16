@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLStyleElement_h
 #define mozilla_dom_HTMLStyleElement_h
 
@@ -19,8 +17,7 @@ class HTMLStyleElement final : public nsGenericHTMLElement,
                                public LinkStyle,
                                public nsStubMutationObserver {
  public:
-  explicit HTMLStyleElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLStyleElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLIFrameElement_h
 #define mozilla_dom_HTMLIFrameElement_h
 
@@ -21,9 +19,8 @@ class FeaturePolicy;
 
 class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
  public:
-  explicit HTMLIFrameElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLIFrameElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser = NOT_FROM_PARSER);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLIFrameElement, iframe)
 

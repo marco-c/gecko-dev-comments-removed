@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLObjectElement.h"
 
 #include "mozilla/dom/BindContext.h"
@@ -26,8 +24,7 @@
 namespace mozilla::dom {
 
 HTMLObjectElement::HTMLObjectElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElement(std::move(aNodeInfo),
                                       FormControlType::Object),
       mIsDoneAddingChildren(!aFromParser) {

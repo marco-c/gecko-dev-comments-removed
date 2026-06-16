@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef HTMLFontElement_h_
 #define HTMLFontElement_h_
 
@@ -12,7 +10,7 @@ namespace mozilla::dom {
 
 class HTMLFontElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLFontElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLFontElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   void GetColor(DOMString& aColor) { GetHTMLAttr(nsGkAtoms::color, aColor); }

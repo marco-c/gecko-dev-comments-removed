@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLElement_h
 #define mozilla_dom_HTMLElement_h
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 
 class HTMLElement final : public nsGenericHTMLFormElement {
  public:
-  explicit HTMLElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  explicit HTMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                        FromParser aFromParser = NOT_FROM_PARSER);
 
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/HTMLIFrameElement.h"
 
 #include "mozilla/MappedDeclarationsBuilder.h"
@@ -55,8 +53,7 @@ const DOMTokenListSupportedToken HTMLIFrameElement::sSupportedSandboxTokens[] =
         nullptr};
 
 HTMLIFrameElement::HTMLIFrameElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {
   
   mFeaturePolicy = new mozilla::dom::FeaturePolicy(this);

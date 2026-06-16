@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLProgressElement_h
 #define mozilla_dom_HTMLProgressElement_h
 
@@ -16,7 +14,7 @@ namespace mozilla::dom {
 class HTMLProgressElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLProgressElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

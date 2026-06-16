@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_HTMLPictureElement_h
 #define mozilla_dom_HTMLPictureElement_h
 
@@ -16,7 +14,7 @@ namespace dom {
 class HTMLPictureElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLPictureElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLPictureElement, nsGenericHTMLElement)
