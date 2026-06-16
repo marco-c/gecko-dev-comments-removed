@@ -538,54 +538,151 @@ assertErrorMessage(() => wasmEvalText(`(module
 
 
 {
-    let { newData } = wasmEvalText(`(module
-        (memory 1)
-        (type $a (array i8))
-        (data $d (offset (i32.const 0)) "1337")
-        (func (export "newData") (result eqref)
-                (; offset=0 into data ;) i32.const 0
-                (; size=4 into data ;) i32.const 4
-                array.new_data $a $d
-        )
-        )`).exports;
-    assertErrorMessage(() => {
-        newData();
-    },WebAssembly.RuntimeError, /index out of bounds/);
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "newData") (result eqref)
+      (; offset=0 into data ;) i32.const 0
+      (; size=0 into data ;) i32.const 0
+      array.new_data $a $d
+    )
+  )`).exports;
+  let arr = newData();
+  assertEq(wasmGcArrayLength(arr), 0);
 }
 
 
 
 {
-    let { newData } = wasmEvalText(`(module
-        (memory 1)
-        (type $a (array i8))
-        (data $d (offset (i32.const 0)) "1337")
-        (func (export "newData") (result eqref)
-                (; offset=4 into data ;) i32.const 4
-                (; size=0 into data ;) i32.const 0
-                array.new_data $a $d
-        )
-        )`).exports;
-    assertErrorMessage(() => {
-        newData();
-    },WebAssembly.RuntimeError, /index out of bounds/);
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "newData") (result eqref)
+      (; offset=0 into data ;) i32.const 0
+      (; size=4 into data ;) i32.const 4
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
 
 {
-    let { newData } = wasmEvalText(`(module
-        (memory 1)
-        (type $a (array i8))
-        (data $d (offset (i32.const 0)) "1337")
-        (func (export "newData") (result eqref)
-                (; offset=0 into data ;) i32.const 0
-                (; size=0 into data ;) i32.const 0
-                array.new_data $a $d
-        )
-        )`).exports;
-    let arr = newData();
-    assertEq(wasmGcArrayLength(arr), 0);
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "newData") (result eqref)
+      (; offset=4 into data ;) i32.const 4
+      (; size=0 into data ;) i32.const 0
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "newData") (result eqref)
+      (; offset=2**32-4 into data ;) i32.const -4
+      (; size=4 into data ;) i32.const 4
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d "1337")
+    (func (export "newData") (result eqref)
+      data.drop $d
+
+      (; offset=0 into data ;) i32.const 0
+      (; size=0 into data ;) i32.const 0
+      array.new_data $a $d
+    )
+  )`).exports;
+  let arr = newData();
+  assertEq(wasmGcArrayLength(arr), 0);
+}
+
+
+
+{
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d "1337")
+    (func (export "newData") (result eqref)
+      data.drop $d
+
+      (; offset=0 into data ;) i32.const 0
+      (; size=4 into data ;) i32.const 4
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d "1337")
+    (func (export "newData") (result eqref)
+      data.drop $d
+
+      (; offset=4 into data ;) i32.const 4
+      (; size=0 into data ;) i32.const 0
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array i8))
+    (data $d "1337")
+    (func (export "newData") (result eqref)
+      data.drop $d
+
+      (; offset=2**32-4 into data ;) i32.const -4
+      (; size=4 into data ;) i32.const 4
+      array.new_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -765,66 +862,262 @@ assertErrorMessage(() => wasmEvalText(`(module
 
 
 {
-    let { newElem } = wasmEvalText(`(module
-        (table 4 funcref)
-        (type $a (array funcref))
-        (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
-        (func $f1 (export "f1"))
-        (func $f2 (export "f2"))
-        (func $f3 (export "f3"))
-        (func $f4 (export "f4"))
-        (func (export "newElem") (result eqref)
-                (; offset=0 into elem ;) i32.const 0
-                (; size=4 into elem ;) i32.const 4
-                array.new_elem $a $e
-        )
-        )`).exports;
-    assertErrorMessage(() => {
-        newElem();
-    }, WebAssembly.RuntimeError, /index out of bounds/);
+  let { newElem } = wasmEvalText(`(module
+    (table 4 funcref)
+    (type $a (array funcref))
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=0 into elem ;) i32.const 0
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  let arr = newElem();
+  assertEq(wasmGcArrayLength(arr), 0);
 }
 
 
 
 {
-    let { newElem } = wasmEvalText(`(module
-        (table 4 funcref)
-        (type $a (array funcref))
-        (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
-        (func $f1 (export "f1"))
-        (func $f2 (export "f2"))
-        (func $f3 (export "f3"))
-        (func $f4 (export "f4"))
-        (func (export "newElem") (result eqref)
-                (; offset=4 into elem ;) i32.const 4
-                (; size=0 into elem ;) i32.const 0
-                array.new_elem $a $e
-        )
-        )`).exports;
-    assertErrorMessage(() => {
-        newElem();
-    }, WebAssembly.RuntimeError, /index out of bounds/);
+  let { newElem } = wasmEvalText(`(module
+    (table 4 funcref)
+    (type $a (array funcref))
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=0 into elem ;) i32.const 0
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
 
 {
-    let { newElem } = wasmEvalText(`(module
-        (table 4 funcref)
-        (type $a (array funcref))
-        (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
-        (func $f1 (export "f1"))
-        (func $f2 (export "f2"))
-        (func $f3 (export "f3"))
-        (func $f4 (export "f4"))
-        (func (export "newElem") (result eqref)
-                (; offset=0 into elem ;) i32.const 0
-                (; size=0 into elem ;) i32.const 0
-                array.new_elem $a $e
-        )
-        )`).exports;
-    let arr = newElem();
-    assertEq(wasmGcArrayLength(arr), 0);
+  let { newElem } = wasmEvalText(`(module
+    (table 4 funcref)
+    (type $a (array funcref))
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=4 into elem ;) i32.const 4
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (table 4 funcref)
+    (type $a (array funcref))
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=2**32-4 into elem ;) i32.const -4
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      elem.drop $e
+
+      (; offset=0 into elem ;) i32.const 0
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  let arr = newElem();
+  assertEq(wasmGcArrayLength(arr), 0);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      elem.drop $e
+
+      (; offset=0 into elem ;) i32.const 0
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      elem.drop $e
+
+      (; offset=4 into elem ;) i32.const 4
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      elem.drop $e
+
+      (; offset=2**32-4 into elem ;) i32.const -4
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e declare func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=0 into elem ;) i32.const 0
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  let arr = newElem();
+  assertEq(wasmGcArrayLength(arr), 0);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e declare func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=0 into elem ;) i32.const 0
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e declare func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=4 into elem ;) i32.const 4
+      (; size=0 into elem ;) i32.const 0
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { newElem } = wasmEvalText(`(module
+    (type $a (array funcref))
+    (elem $e declare func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "newElem") (result eqref)
+      (; offset=2**32-4 into elem ;) i32.const -4
+      (; size=4 into elem ;) i32.const 4
+      array.new_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    newElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -1006,7 +1299,6 @@ assertErrorMessage(() => wasmEvalText(`(module
     (; size=4 elements ;)     i32.const 4
     array.init_data $a 1  ;; 1 is the lowest invalid dseg index
   )
-  (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
 )`), WebAssembly.CompileError, /segment index is out of range/);
 
 
@@ -1021,7 +1313,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=4 elements ;)     i32.const 4
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1039,10 +1330,27 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
       (; offset=0 into data ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
+      array.init_data $a $d
+    )
+  )`).exports;
+  initData();
+}
+
+
+
+{
+  let { initData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array (mut i8)))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "initData")
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=0 into array ;) i32.const 0
+      (; offset=0 into data ;)  i32.const 0
       (; size=4 elements ;)     i32.const 4
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1063,7 +1371,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=0 elements ;)     i32.const 0
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1079,12 +1386,50 @@ assertErrorMessage(() => wasmEvalText(`(module
     (data $d (offset (i32.const 0)) "1337")
     (func (export "initData")
       (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=4 into array ;) i32.const 4
+      (; offset=0 into data ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
+      array.init_data $a $d
+    )
+  )`).exports;
+  initData();
+}
+
+
+
+{
+  let { initData } = wasmEvalText(`(module
+    (memory 1)
+    (type $a (array (mut i8)))
+    (data $d (offset (i32.const 0)) "1337")
+    (func (export "initData")
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=5 into array ;) i32.const 5
+      (; offset=0 into data ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
+      array.init_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    initData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { initData } = wasmEvalText(`(module
+    (type $a (array (mut i8)))
+    (data $d "1337")
+    (func (export "initData")
+      data.drop $d
+
+      (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
       (; offset=0 into data ;)  i32.const 0
       (; size=0 elements ;)     i32.const 0
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   initData();
 }
@@ -1104,7 +1449,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=4 elements ;)     i32.const 4
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1122,13 +1466,14 @@ assertErrorMessage(() => wasmEvalText(`(module
 
       (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
-      (; offset=0 into data ;)  i32.const 0
+      (; offset=4 into data ;)  i32.const 4
       (; size=0 elements ;)     i32.const 0
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
-  initData();
+  assertErrorMessage(() => {
+    initData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -1147,9 +1492,29 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=0 elements ;)     i32.const 0
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   initData();
+}
+
+
+
+{
+  let { initData } = wasmEvalText(`(module
+    (type $a (array (mut i8)))
+    (data $d "1337")
+    (func (export "initData")
+      data.drop $d
+
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=5 into array ;) i32.const 5
+      (; offset=0 into data ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
+      array.init_data $a $d
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    initData();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -1164,7 +1529,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=4 elements ;)     i32.const 4
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1183,7 +1547,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=2 elements ;)     i32.const 2 ;; still 4 bytes
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1202,7 +1565,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=4 elements ;)     i32.const 4
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1221,7 +1583,6 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; size=4 elements ;)     i32.const 2
       array.init_data $a $d
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   assertErrorMessage(() => {
     initData();
@@ -1245,7 +1606,6 @@ assertErrorMessage(() => wasmEvalText(`(module
 
       local.get $arr
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   let arr = initData();
   assertEq(wasmGcArrayLength(arr), 0);
@@ -1269,7 +1629,6 @@ assertErrorMessage(() => wasmEvalText(`(module
 
       local.get $arr
     )
-    (func data.drop 0) ;; force write of data count section, see https://github.com/bytecodealliance/wasm-tools/pull/1194
   )`).exports;
   let arr = initData();
   assertEq(wasmGcArrayLength(arr), 6);
@@ -1441,7 +1800,29 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
       (; offset=0 into elem ;)  i32.const 0
-      (; size=4 into elem ;)    i32.const 4
+      (; size=0 elements ;)     i32.const 0
+      array.init_elem $a $e
+    )
+  )`).exports;
+  initElem();
+}
+
+
+
+{
+  let { initElem } = wasmEvalText(`(module
+    (table 4 funcref)
+    (type $a (array (mut funcref)))
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "initElem")
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=0 into array ;) i32.const 0
+      (; offset=0 into elem ;)  i32.const 0
+      (; size=4 elements ;)     i32.const 4
       array.init_elem $a $e
     )
   )`).exports;
@@ -1465,13 +1846,13 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
       (; offset=4 into elem ;)  i32.const 4
-      (; size=0 into elem ;)    i32.const 0
+      (; size=0 elements ;)     i32.const 0
       array.init_elem $a $e
     )
   )`).exports;
   assertErrorMessage(() => {
     initElem();
-  }, WebAssembly.RuntimeError, /index out of bounds/);
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
@@ -1487,9 +1868,9 @@ assertErrorMessage(() => wasmEvalText(`(module
     (func $f4 (export "f4"))
     (func (export "initElem")
       (; array to init ;)       (array.new_default $a (i32.const 4))
-      (; offset=0 into array ;) i32.const 0
+      (; offset=4 into array ;) i32.const 4
       (; offset=0 into elem ;)  i32.const 0
-      (; size=0 into elem ;)    i32.const 0
+      (; size=0 elements ;)     i32.const 0
       array.init_elem $a $e
     )
   )`).exports;
@@ -1500,19 +1881,18 @@ assertErrorMessage(() => wasmEvalText(`(module
 
 {
   let { initElem } = wasmEvalText(`(module
+    (table 4 funcref)
     (type $a (array (mut funcref)))
-    (elem $e func $f1 $f2 $f3 $f4)
+    (elem $e (offset (i32.const 0)) func $f1 $f2 $f3 $f4)
     (func $f1 (export "f1"))
     (func $f2 (export "f2"))
     (func $f3 (export "f3"))
     (func $f4 (export "f4"))
     (func (export "initElem")
-      elem.drop $e
-
       (; array to init ;)       (array.new_default $a (i32.const 4))
-      (; offset=0 into array ;) i32.const 0
+      (; offset=5 into array ;) i32.const 5
       (; offset=0 into elem ;)  i32.const 0
-      (; size=4 into elem ;)    i32.const 4
+      (; size=0 elements ;)     i32.const 0
       array.init_elem $a $e
     )
   )`).exports;
@@ -1537,7 +1917,7 @@ assertErrorMessage(() => wasmEvalText(`(module
       (; array to init ;)       (array.new_default $a (i32.const 4))
       (; offset=0 into array ;) i32.const 0
       (; offset=0 into elem ;)  i32.const 0
-      (; size=4 into elem ;)    i32.const 0
+      (; size=0 elements ;)     i32.const 0
       array.init_elem $a $e
     )
   )`).exports;
@@ -1558,13 +1938,88 @@ assertErrorMessage(() => wasmEvalText(`(module
       elem.drop $e
 
       (; array to init ;)       (array.new_default $a (i32.const 4))
-      (; offset=0 into array ;) i32.const 4
+      (; offset=0 into array ;) i32.const 0
       (; offset=0 into elem ;)  i32.const 0
-      (; size=4 into elem ;)    i32.const 0
+      (; size=4 elements ;)     i32.const 4
+      array.init_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    initElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { initElem } = wasmEvalText(`(module
+    (type $a (array (mut funcref)))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "initElem")
+      elem.drop $e
+
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=0 into array ;) i32.const 0
+      (; offset=4 into elem ;)  i32.const 4
+      (; size=0 elements ;)     i32.const 0
+      array.init_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    initElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+
+
+{
+  let { initElem } = wasmEvalText(`(module
+    (type $a (array (mut funcref)))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "initElem")
+      elem.drop $e
+
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=4 into array ;) i32.const 4
+      (; offset=0 into elem ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
       array.init_elem $a $e
     )
   )`).exports;
   initElem();
+}
+
+
+
+{
+  let { initElem } = wasmEvalText(`(module
+    (type $a (array (mut funcref)))
+    (elem $e func $f1 $f2 $f3 $f4)
+    (func $f1 (export "f1"))
+    (func $f2 (export "f2"))
+    (func $f3 (export "f3"))
+    (func $f4 (export "f4"))
+    (func (export "initElem")
+      elem.drop $e
+
+      (; array to init ;)       (array.new_default $a (i32.const 4))
+      (; offset=5 into array ;) i32.const 5
+      (; offset=0 into elem ;)  i32.const 0
+      (; size=0 elements ;)     i32.const 0
+      array.init_elem $a $e
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    initElem();
+  },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 
