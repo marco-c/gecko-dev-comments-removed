@@ -3330,9 +3330,13 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
   MOZ_ASSERT(val.valueReg() != scratch);
 
   
-  
-  slli(temp, val.valueReg(), 1);
-  srli(temp, temp, 1);
+  if (HasZbsExtension()) {
+    bclri(temp, val.valueReg(), 63);
+  } else {
+    
+    slli(temp, val.valueReg(), 1);
+    srli(temp, temp, 1);
+  }
 
   
   static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
@@ -5294,12 +5298,36 @@ void MacroAssemblerRiscv64::ma_sub64(Register rd, Register rs, Imm64 rt) {
   }
 }
 
+
+
+
+
+static std::pair<uint32_t, uint64_t> SingleBitInstructionParts(uint64_t imm) {
+  MOZ_ASSERT(!is_int12(imm));
+  uint32_t bit = 63 - std::countl_zero(imm);
+  uint64_t rest = imm & ~(uint64_t(1) << bit);
+  return {bit, rest};
+}
+
 void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     andi(rd, rs, rt.value);
   } else {
     int shift = std::bit_width(uint64_t(rt.value));
     if (shift < 64 && (uint64_t(1) << shift) - 1 == uint64_t(rt.value)) {
+      if (HasZbbExtension()) {
+        if (rt.value == 0xffff) {
+          zext_h(rd, rs);
+          return;
+        }
+      }
+      if (HasZbaExtension()) {
+        if (rt.value == 0xffff'ffff) {
+          zext_w(rd, rs);
+          return;
+        }
+      }
+
       
       
       slli(rd, rs, 64 - shift);
@@ -5313,6 +5341,32 @@ void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Imm64 rt) {
       srli(rd, rs, 63);
       slli(rd, rd, 63);
     } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (HasZbsExtension()) {
+        auto [bit, rest] = SingleBitInstructionParts(~rt.value);
+        if (rest == 0 || std::has_single_bit(rest) || is_int12(~rest)) {
+          bclri(rd, rs, bit);
+          if (rest) {
+            if (std::has_single_bit(rest)) {
+              bclri(rd, rd, 63 - std::countl_zero(rest));
+            } else {
+              andi(rd, rd, ~rest);
+            }
+          }
+          return;
+        }
+      }
+
       UseScratchRegisterScope temps(this);
       Register scratch = temps.Acquire();
       ma_li(scratch, rt);
@@ -5325,6 +5379,32 @@ void MacroAssemblerRiscv64::ma_or(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     ori(rd, rs, rt.value);
   } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (HasZbsExtension()) {
+      auto [bit, rest] = SingleBitInstructionParts(rt.value);
+      if (std::has_single_bit(rest) || is_int12(rest)) {
+        bseti(rd, rs, bit);
+        if (rest) {
+          if (std::has_single_bit(rest)) {
+            bseti(rd, rd, 63 - std::countl_zero(rest));
+          } else {
+            ori(rd, rd, rest);
+          }
+        }
+        return;
+      }
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, rt);
@@ -5336,6 +5416,32 @@ void MacroAssemblerRiscv64::ma_xor(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     xori(rd, rs, rt.value);
   } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (HasZbsExtension()) {
+      auto [bit, rest] = SingleBitInstructionParts(rt.value);
+      if (std::has_single_bit(rest) || is_int12(rest)) {
+        binvi(rd, rs, bit);
+        if (rest) {
+          if (std::has_single_bit(rest)) {
+            binvi(rd, rd, 63 - std::countl_zero(rest));
+          } else {
+            xori(rd, rd, rest);
+          }
+        }
+        return;
+      }
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, rt);
