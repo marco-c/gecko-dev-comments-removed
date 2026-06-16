@@ -1918,22 +1918,26 @@ impl DisplayListBuilder {
         
         transform: Option<PropertyBinding<LayoutTransform>>
     ) -> di::SpatialId {
+        
+        
+        
+        
         let parent_offset = self.accumulated_scroll_offset(parent_spatial_id);
+        let node_offset = parent_offset - previously_applied_offset;
         let id = self.generate_spatial_index();
 
         let descriptor = di::SpatialTreeItem::StickyFrame(di::StickyFrameDescriptor {
             parent_spatial_id,
             id,
-            bounds: self.normalize_rect(frame_rect, parent_spatial_id),
+            bounds: frame_rect.translate(node_offset),
             margins,
             vertical_offset_bounds,
             horizontal_offset_bounds,
-            previously_applied_offset,
             transform,
         });
 
         self.push_spatial_tree_item(&descriptor);
-        self.record_scroll_offset(id, parent_offset - previously_applied_offset);
+        self.record_scroll_offset(id, node_offset);
         id
     }
 

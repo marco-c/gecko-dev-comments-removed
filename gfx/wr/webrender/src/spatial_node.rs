@@ -546,6 +546,8 @@ impl SpatialNode {
         
         
         
+        
+        
         let mut sticky_rect = info.frame_rect.translate(*viewport_scroll_offset);
 
         let mut sticky_offset = LayoutVector2D::zero();
@@ -555,26 +557,11 @@ impl SpatialNode {
                 
                 
                 sticky_offset.y = top_viewport_edge - sticky_rect.min.y;
-            } else if info.previously_applied_offset.y > 0.0 &&
-                sticky_rect.min.y > top_viewport_edge {
-                
-                
-                
-                
-                
-                
-                
-                sticky_offset.y = top_viewport_edge - sticky_rect.min.y;
-                sticky_offset.y = sticky_offset.y.max(-info.previously_applied_offset.y);
             }
         }
 
         
-        
-        
-        
-        
-        if sticky_offset.y + info.previously_applied_offset.y <= 0.0 {
+        if sticky_offset.y <= 0.0 {
             if let Some(margin) = info.margins.bottom {
                 
                 
@@ -586,15 +573,9 @@ impl SpatialNode {
 
                 
                 
-                
-                
                 let bottom_viewport_edge = viewport_rect.max.y - margin;
                 if sticky_rect.max.y > bottom_viewport_edge {
                     sticky_offset.y += bottom_viewport_edge - sticky_rect.max.y;
-                } else if info.previously_applied_offset.y < 0.0 &&
-                    sticky_rect.max.y < bottom_viewport_edge {
-                    sticky_offset.y += bottom_viewport_edge - sticky_rect.max.y;
-                    sticky_offset.y = sticky_offset.y.min(-info.previously_applied_offset.y);
                 }
             }
         }
@@ -604,46 +585,29 @@ impl SpatialNode {
             let left_viewport_edge = viewport_rect.min.x + margin;
             if sticky_rect.min.x < left_viewport_edge {
                 sticky_offset.x = left_viewport_edge - sticky_rect.min.x;
-            } else if info.previously_applied_offset.x > 0.0 &&
-                sticky_rect.min.x > left_viewport_edge {
-                sticky_offset.x = left_viewport_edge - sticky_rect.min.x;
-                sticky_offset.x = sticky_offset.x.max(-info.previously_applied_offset.x);
             }
         }
 
-        if sticky_offset.x + info.previously_applied_offset.x <= 0.0 {
+        if sticky_offset.x <= 0.0 {
             if let Some(margin) = info.margins.right {
                 sticky_rect.min.x += sticky_offset.x;
                 sticky_rect.max.x += sticky_offset.x;
                 let right_viewport_edge = viewport_rect.max.x - margin;
                 if sticky_rect.max.x > right_viewport_edge {
                     sticky_offset.x += right_viewport_edge - sticky_rect.max.x;
-                } else if info.previously_applied_offset.x < 0.0 &&
-                    sticky_rect.max.x < right_viewport_edge {
-                    sticky_offset.x += right_viewport_edge - sticky_rect.max.x;
-                    sticky_offset.x = sticky_offset.x.min(-info.previously_applied_offset.x);
                 }
             }
         }
 
         
         
-        
-        
-        let clamp_adjusted = |value: f32, adjust: f32, bounds: &StickyOffsetBounds| {
-            (value + adjust).max(bounds.min).min(bounds.max) - adjust
+        let clamp = |value: f32, bounds: &StickyOffsetBounds| {
+            value.max(bounds.min).min(bounds.max)
         };
-        sticky_offset.y = clamp_adjusted(sticky_offset.y,
-                                         info.previously_applied_offset.y,
-                                         &info.vertical_offset_bounds);
-        sticky_offset.x = clamp_adjusted(sticky_offset.x,
-                                         info.previously_applied_offset.x,
-                                         &info.horizontal_offset_bounds);
+        sticky_offset.y = clamp(sticky_offset.y, &info.vertical_offset_bounds);
+        sticky_offset.x = clamp(sticky_offset.x, &info.horizontal_offset_bounds);
 
-        
-        
-        
-        sticky_offset + info.previously_applied_offset
+        sticky_offset
     }
 
     pub fn prepare_state_for_children(&self, state: &mut TransformUpdateState) {
@@ -864,7 +828,6 @@ pub struct StickyFrameInfo {
   pub frame_rect: LayoutRect,
     pub vertical_offset_bounds: StickyOffsetBounds,
     pub horizontal_offset_bounds: StickyOffsetBounds,
-    pub previously_applied_offset: LayoutVector2D,
     pub current_offset: LayoutVector2D,
     pub transform: Option<PropertyBinding<LayoutTransform>>,
 }
@@ -875,7 +838,6 @@ impl StickyFrameInfo {
         margins: SideOffsets2D<Option<f32>, LayoutPixel>,
         vertical_offset_bounds: StickyOffsetBounds,
         horizontal_offset_bounds: StickyOffsetBounds,
-        previously_applied_offset: LayoutVector2D,
         transform: Option<PropertyBinding<LayoutTransform>>,
     ) -> StickyFrameInfo {
         StickyFrameInfo {
@@ -883,7 +845,6 @@ impl StickyFrameInfo {
             margins,
             vertical_offset_bounds,
             horizontal_offset_bounds,
-            previously_applied_offset,
             current_offset: LayoutVector2D::zero(),
             transform,
         }
