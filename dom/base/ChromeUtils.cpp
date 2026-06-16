@@ -375,9 +375,12 @@ void ChromeUtils::AddProfilerMarker(
 
         
         
-        js::ESClass cls = js::ESClass::Other;
-        NS_ENSURE_TRUE_VOID(JS::GetBuiltinClass(cx, obj, &cls));
-        if (cls != js::ESClass::Object) {
+        
+        JS::Rooted<JSObject*> unwrapped(cx, js::CheckedUnwrapStatic(obj));
+
+        if (!unwrapped || !JS::IsPlainObject(unwrapped)) {
+          
+          
           JS::Rooted<JS::Value> objValue(cx, JS::ObjectValue(*obj));
           JS::Rooted<JSString*> str(cx, JS::ToString(cx, objValue));
           nsAutoCString text;
@@ -400,8 +403,14 @@ void ChromeUtils::AddProfilerMarker(
           return true;
         };
 
-        if (!JS::ToJSONMaybeSafely(cx, obj, callback, &jsonString)) {
-          return;
+        
+        
+        {
+          JSAutoRealm ar(cx, unwrapped);
+          if (!JS::ToJSONMaybeSafely(cx, unwrapped, callback, &jsonString)) {
+            JS_ClearPendingException(cx);
+            return;
+          }
         }
 
         NS_ConvertUTF16toUTF8 jsonUTF8(jsonString);

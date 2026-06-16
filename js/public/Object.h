@@ -47,6 +47,14 @@ extern JS_PUBLIC_API bool GetBuiltinClass(JSContext* cx, Handle<JSObject*> obj,
 
 
 
+extern JS_PUBLIC_API bool IsPlainObject(JSObject* obj);
+
+
+
+
+
+
+
 
 static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
   Realm* realm = reinterpret_cast<shadow::Object*>(obj)->shape->base->realm;
