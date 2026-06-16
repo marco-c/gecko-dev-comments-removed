@@ -916,7 +916,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     display: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("identity.fxaccounts.toolbar.defaultVisible") {
     /* Hide the FxA toolbar button when its in the nav-bar, until in use */
     &[fxastatus="not_configured"] #widget-overflow-list > #fxa-toolbar-menu-button,
@@ -2136,13 +2135,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   display: none;
 }
 
-.panel-viewcontainer:has(.report-broken-site-view[visible]) {
-  min-height: auto !important;
-}
-
 .report-broken-site-view {
-  min-height: fit-content !important;
-  max-height: fit-content !important;
+  max-height: 80vh;
 
   &.wrong-tab-info {
     .favicon,
