@@ -1,9 +1,10 @@
 use core::{fmt, iter::FusedIterator, marker::PhantomData};
 
 use crate::{
+    control::Tag,
     raw::{
-        Allocator, Bucket, Global, InsertSlot, RawDrain, RawExtractIf, RawIntoIter, RawIter,
-        RawIterHash, RawTable,
+        Allocator, Bucket, FullBucketsIndices, Global, RawDrain, RawExtractIf, RawIntoIter,
+        RawIter, RawIterHash, RawIterHashIndices, RawTable,
     },
     TryReserveError,
 };
@@ -303,11 +304,59 @@ where
     ) -> Result<OccupiedEntry<'_, T, A>, AbsentEntry<'_, T, A>> {
         match self.raw.find(hash, eq) {
             Some(bucket) => Ok(OccupiedEntry {
-                hash,
                 bucket,
                 table: self,
             }),
             None => Err(AbsentEntry { table: self }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn find_bucket_index(&self, hash: u64, eq: impl FnMut(&T) -> bool) -> Option<usize> {
+        match self.raw.find(hash, eq) {
+            Some(bucket) => Some(unsafe { self.raw.bucket_index(&bucket) }),
+            None => None,
         }
     }
 
@@ -362,18 +411,262 @@ where
         eq: impl FnMut(&T) -> bool,
         hasher: impl Fn(&T) -> u64,
     ) -> Entry<'_, T, A> {
-        match self.raw.find_or_find_insert_slot(hash, eq, hasher) {
+        match self.raw.find_or_find_insert_index(hash, eq, hasher) {
             Ok(bucket) => Entry::Occupied(OccupiedEntry {
-                hash,
                 bucket,
                 table: self,
             }),
-            Err(insert_slot) => Entry::Vacant(VacantEntry {
-                hash,
-                insert_slot,
+            Err(insert_index) => Entry::Vacant(VacantEntry {
+                tag: Tag::full(hash),
+                index: insert_index,
                 table: self,
             }),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_bucket_entry(
+        &mut self,
+        index: usize,
+    ) -> Result<OccupiedEntry<'_, T, A>, AbsentEntry<'_, T, A>> {
+        match self.raw.checked_bucket(index) {
+            Some(bucket) => Ok(OccupiedEntry {
+                bucket,
+                table: self,
+            }),
+            None => Err(AbsentEntry { table: self }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn get_bucket_entry_unchecked(&mut self, index: usize) -> OccupiedEntry<'_, T, A> {
+        OccupiedEntry {
+            bucket: self.raw.bucket(index),
+            table: self,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_bucket(&self, index: usize) -> Option<&T> {
+        self.raw.get_bucket(index)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn get_bucket_unchecked(&self, index: usize) -> &T {
+        self.raw.bucket(index).as_ref()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_bucket_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.raw.get_bucket_mut(index)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn get_bucket_unchecked_mut(&mut self, index: usize) -> &mut T {
+        self.raw.bucket(index).as_mut()
     }
 
     
@@ -409,7 +702,6 @@ where
     ) -> OccupiedEntry<'_, T, A> {
         let bucket = self.raw.insert(hash, value, hasher);
         OccupiedEntry {
-            hash,
             bucket,
             table: self,
         }
@@ -600,6 +892,44 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn num_buckets(&self) -> usize {
+        self.raw.buckets()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn capacity(&self) -> usize {
         self.raw.capacity()
     }
@@ -770,6 +1100,42 @@ where
     
     
     
+    pub fn iter_buckets(&self) -> IterBuckets<'_, T> {
+        IterBuckets {
+            inner: unsafe { self.raw.full_buckets_indices() },
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -829,6 +1195,47 @@ where
     pub fn iter_hash_mut(&mut self, hash: u64) -> IterHashMut<'_, T> {
         IterHashMut {
             inner: unsafe { self.raw.iter_hash(hash) },
+            marker: PhantomData,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn iter_hash_buckets(&self, hash: u64) -> IterHashBuckets<'_, T> {
+        IterHashBuckets {
+            inner: unsafe { self.raw.iter_hash_buckets(hash) },
             marker: PhantomData,
         }
     }
@@ -1038,12 +1445,22 @@ where
     
     
     
+    pub fn get_disjoint_mut<const N: usize>(
+        &mut self,
+        hashes: [u64; N],
+        eq: impl FnMut(usize, &T) -> bool,
+    ) -> [Option<&'_ mut T>; N] {
+        self.raw.get_disjoint_mut(hashes, eq)
+    }
+
+    
+    #[deprecated(note = "use `get_disjoint_mut` instead")]
     pub fn get_many_mut<const N: usize>(
         &mut self,
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
     ) -> [Option<&'_ mut T>; N] {
-        self.raw.get_many_mut(hashes, eq)
+        self.raw.get_disjoint_mut(hashes, eq)
     }
 
     
@@ -1102,12 +1519,23 @@ where
     
     
     
+    pub unsafe fn get_disjoint_unchecked_mut<const N: usize>(
+        &mut self,
+        hashes: [u64; N],
+        eq: impl FnMut(usize, &T) -> bool,
+    ) -> [Option<&'_ mut T>; N] {
+        self.raw.get_disjoint_unchecked_mut(hashes, eq)
+    }
+
+    
+    
+    #[deprecated(note = "use `get_disjoint_unchecked_mut` instead")]
     pub unsafe fn get_many_unchecked_mut<const N: usize>(
         &mut self,
         hashes: [u64; N],
         eq: impl FnMut(usize, &T) -> bool,
     ) -> [Option<&'_ mut T>; N] {
-        self.raw.get_many_unchecked_mut(hashes, eq)
+        self.raw.get_disjoint_unchecked_mut(hashes, eq)
     }
 
     
@@ -1548,7 +1976,6 @@ pub struct OccupiedEntry<'a, T, A = Global>
 where
     A: Allocator,
 {
-    hash: u64,
     bucket: Bucket<T>,
     table: &'a mut HashTable<T, A>,
 }
@@ -1617,12 +2044,12 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn remove(self) -> (T, VacantEntry<'a, T, A>) {
-        let (val, slot) = unsafe { self.table.raw.remove(self.bucket) };
+        let (val, index, tag) = unsafe { self.table.raw.remove_tagged(self.bucket) };
         (
             val,
             VacantEntry {
-                hash: self.hash,
-                insert_slot: slot,
+                tag,
+                index,
                 table: self.table,
             },
         )
@@ -1768,6 +2195,53 @@ where
     pub fn into_table(self) -> &'a mut HashTable<T, A> {
         self.table
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bucket_index(&self) -> usize {
+        unsafe { self.table.raw.bucket_index(&self.bucket) }
+    }
 }
 
 
@@ -1813,8 +2287,8 @@ pub struct VacantEntry<'a, T, A = Global>
 where
     A: Allocator,
 {
-    hash: u64,
-    insert_slot: InsertSlot,
+    tag: Tag,
+    index: usize,
     table: &'a mut HashTable<T, A>,
 }
 
@@ -1864,10 +2338,9 @@ where
         let bucket = unsafe {
             self.table
                 .raw
-                .insert_in_slot(self.hash, self.insert_slot, value)
+                .insert_tagged_at_index(self.tag, self.index, value)
         };
         OccupiedEntry {
-            hash: self.hash,
             bucket,
             table: self.table,
         }
@@ -1879,6 +2352,7 @@ where
         self.table
     }
 }
+
 
 
 
@@ -2095,6 +2569,68 @@ where
 
 
 
+pub struct IterBuckets<'a, T> {
+    inner: FullBucketsIndices,
+    marker: PhantomData<&'a T>,
+}
+
+impl<T> Clone for IterBuckets<'_, T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Default for IterBuckets<'_, T> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Iterator for IterBuckets<'_, T> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<T> ExactSizeIterator for IterBuckets<'_, T> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl<T> FusedIterator for IterBuckets<'_, T> {}
+
+impl<T> fmt::Debug for IterBuckets<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+
+
+
+
+
+
+
 pub struct IterHash<'a, T> {
     inner: RawIterHash<T>,
     marker: PhantomData<&'a T>,
@@ -2210,6 +2746,52 @@ where
                 marker: PhantomData,
             })
             .finish()
+    }
+}
+
+
+
+
+
+pub struct IterHashBuckets<'a, T> {
+    inner: RawIterHashIndices,
+    marker: PhantomData<&'a T>,
+}
+
+impl<T> Clone for IterHashBuckets<'_, T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Default for IterHashBuckets<'_, T> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            inner: Default::default(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Iterator for IterHashBuckets<'_, T> {
+    type Item = usize;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<T> FusedIterator for IterHashBuckets<'_, T> {}
+
+impl<T> fmt::Debug for IterHashBuckets<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
     }
 }
 
