@@ -52,6 +52,8 @@ const EXPECTATION_BASIC_FETCH = {
   canModify: true,
   frameId: 0, 
   parentFrameId: -1,
+  documentInnerWindowId: EXPECT_TRUTHY,
+  parentDocumentInnerWindowId: 0, 
   browserElement: EXPECT_TRUTHY,
   frameAncestors: [], 
   urlClassification: {
@@ -109,6 +111,8 @@ const EXPECTATION_INVALID_CHANNEL = {
   canModify: false,
   frameId: 0,
   parentFrameId: -1,
+  documentInnerWindowId: 0,
+  parentDocumentInnerWindowId: 0,
   browserElement: EXPECT_FALSEY,
   frameAncestors: null,
   urlClassification: {
@@ -403,6 +407,8 @@ add_task(async function ChannelWrapper_https_url() {
     documentURL: "", 
     originURI: null,
     documentURI: null,
+    documentInnerWindowId: 0, 
+    parentDocumentInnerWindowId: 0,
     browserElement: null, 
     frameAncestors: null, 
   });
