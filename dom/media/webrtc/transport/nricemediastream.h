@@ -203,6 +203,10 @@ class NrIceMediaStream {
   
   const std::string& GetId() const { return id_; }
 
+  
+  
+  std::string GetUfrag() const;
+
   bool AllGenerationsDoneGathering() const;
   bool AnyGenerationIsConnected() const;
 
