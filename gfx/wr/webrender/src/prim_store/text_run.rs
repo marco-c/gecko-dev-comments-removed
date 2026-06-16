@@ -3,21 +3,20 @@
 
 
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow, GlyphIndex};
-use api::units::{LayoutToWorldTransform, LayoutVector2D, RasterPixelScale, DevicePixelScale};
+use api::units::{LayoutToWorldTransform, DevicePixelScale};
 use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
-use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
+use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, SubpixelDirection, FONT_SIZE_LIMIT};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::picture::SurfaceInfo;
-use crate::prim_store::{PrimitiveScratchBuffer, VectorKey};
+use crate::prim_store::PrimitiveScratchBuffer;
 use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonData};
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveKind, LayoutPointAu};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::space::SpaceSnapper;
 use std::ops;
 
 use super::storage;
@@ -39,8 +38,6 @@ pub struct TextRunKey {
     pub font: FontInstance,
     
     
-    
-    pub run_origin: VectorKey,
     
     
     
@@ -68,7 +65,6 @@ impl TextRunKey {
         TextRunKey {
             common: info.into(),
             font: text_run.font,
-            run_origin: text_run.run_origin.into(),
             glyphs,
             shadow: text_run.shadow,
             requested_raster_space: text_run.requested_raster_space,
@@ -88,12 +84,6 @@ pub struct TextRunTemplate {
     
     
     
-    
-    
-    
-    
-    
-    pub run_origin_offset: LayoutVector2D,
     
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
@@ -130,7 +120,6 @@ impl From<TextRunKey> for TextRunTemplate {
         TextRunTemplate {
             common,
             font: item.font,
-            run_origin_offset: item.run_origin.into(),
             glyphs,
             shadow: item.shadow,
             requested_raster_space: item.requested_raster_space,
@@ -139,32 +128,37 @@ impl From<TextRunKey> for TextRunTemplate {
 }
 
 impl TextRunTemplate {
+    
+    
+    
+    
+    
     fn write_prim_gpu_blocks(
         &self,
+        glyph_offsets: &[DeviceVector2D],
         gpu_buffer: &mut GpuBufferBuilderF,
     ) -> GpuBufferAddress {
-        
-        let num_blocks = (self.glyphs.len() + 1) / 2 + 1;
+        let num_blocks = (glyph_offsets.len() + 1) / 2 + 1;
         assert!(num_blocks <= MAX_VERTEX_TEXTURE_WIDTH);
         let mut writer = gpu_buffer.write_blocks(num_blocks);
         writer.push_one(ColorF::from(self.font.color).premultiplied());
 
         let mut gpu_block = [0.0; 4];
-        for (i, src) in self.glyphs.iter().enumerate() {
+        for (i, src) in glyph_offsets.iter().enumerate() {
             
             if (i & 1) == 0 {
-                gpu_block[0] = src.point.x;
-                gpu_block[1] = src.point.y;
+                gpu_block[0] = src.x;
+                gpu_block[1] = src.y;
             } else {
-                gpu_block[2] = src.point.x;
-                gpu_block[3] = src.point.y;
+                gpu_block[2] = src.x;
+                gpu_block[3] = src.y;
                 writer.push_one(gpu_block);
             }
         }
 
         
         
-        if (self.glyphs.len() & 1) != 0 {
+        if (glyph_offsets.len() & 1) != 0 {
             writer.push_one(gpu_block);
         }
 
@@ -180,8 +174,6 @@ pub type TextRunDataHandle = intern::Handle<TextRun>;
 pub struct TextRun {
     pub font: FontInstance,
     
-    
-    pub run_origin: LayoutVector2D,
     
     pub glyphs: Vec<GlyphInstance>,
     pub shadow: bool,
@@ -240,7 +232,6 @@ impl CreateShadow for TextRun {
 
         TextRun {
             font,
-            run_origin: self.run_origin,
             glyphs: self.glyphs.clone(),
             shadow: true,
             requested_raster_space,
@@ -268,30 +259,36 @@ pub struct TextRunScratch {
     
     pub glyph_keys_range: storage::Range<GlyphKey>,
     
-    pub snapped_reference_frame_relative_offset: LayoutVector2D,
     
-    pub raster_scale: f32,
+    
+    
+    
+    pub local_rect: LayoutRect,
+    
     
     
     
     
     
     pub gpu_address: GpuBufferAddress,
+    
+    
+    
+    pub raster_scale: f32,
+    
+    pub local_raster: bool,
 }
 
 impl TextRunTemplate {
     
     
-    
     fn compute_font_instance(
         specified_font: &FontInstance,
         surface: &SurfaceInfo,
-        spatial_node_index: SpatialNodeIndex,
         transform: &LayoutToWorldTransform,
         allow_subpixel: bool,
         raster_space: RasterSpace,
-        spatial_tree: &SpatialTree,
-    ) -> (FontInstance, f32, LayoutVector2D) {
+    ) -> (FontInstance, f32) {
         
         
         
@@ -348,33 +345,6 @@ impl TextRunTemplate {
             FontTransform::identity()
         };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        let snapped_offset = if transform_glyphs {
-            LayoutVector2D::zero()
-        } else {
-            
-            
-            
-            let raster_pixel_scale = RasterPixelScale::new(surface.device_pixel_scale.0);
-
-            
-            
-            let snap_to_device = SpaceSnapper::new_with_target(
-                surface.raster_spatial_node_index,
-                spatial_node_index,
-                raster_pixel_scale,
-                spatial_tree,
-            );
-            snap_to_device.snap_point(&LayoutPoint::zero()).to_vector()
-        };
-
         let mut flags = specified_font.flags;
         if transform_glyphs {
             flags |= FontInstanceFlags::TRANSFORM_GLYPHS;
@@ -405,7 +375,7 @@ impl TextRunTemplate {
             }
         }
 
-        (used_font, raster_scale, snapped_offset)
+        (used_font, raster_scale)
     }
 
     
@@ -459,7 +429,7 @@ impl TextRunTemplate {
 
     pub fn request_resources(
         &self,
-        prim_offset: LayoutVector2D,
+        local_rect: LayoutRect,
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -477,32 +447,110 @@ impl TextRunTemplate {
             spatial_tree,
         );
 
-        let (used_font, raster_scale, snapped_offset) = Self::compute_font_instance(
+        let (used_font, raster_scale) = Self::compute_font_instance(
             &self.font,
             surface,
-            spatial_node_index,
             transform,
             allow_subpixel,
             raster_space,
-            spatial_tree,
         );
 
-        
-        
         let subpx_dir = used_font.get_subpx_dir();
+        let dps = surface.device_pixel_scale;
 
-        let dps = surface.device_pixel_scale.0;
-        let glyph_transform = match raster_space {
-            RasterSpace::Local(scale) => FontTransform::new(scale * dps, 0.0, 0.0, scale * dps),
-            RasterSpace::Screen => used_font.transform.scale(dps),
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let local_raster = raster_space != RasterSpace::Screen
+            || used_font.flags.contains(FontInstanceFlags::TEXTURE_PADDING);
+
+        let snap_bias = match subpx_dir {
+            SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
+            SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
+            SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
         };
 
-        let glyph_keys_range = scratch.frame.glyph_keys.extend(
-            self.glyphs.iter().map(|src| {
-                let src_point = src.point + prim_offset;
-                let device_offset = glyph_transform.transform(&src_point);
-                GlyphKey::new(src.index, device_offset, subpx_dir)
-            }));
+        
+        let anchor_world = transform.transform_point2d(local_rect.min);
+        let reference_world = transform.transform_point2d(LayoutPoint::zero());
+
+        let mut glyph_offsets: Vec<DeviceVector2D> = Vec::new();
+        let glyph_keys_range = if local_raster {
+            
+            
+            
+            
+            let glyph_raster_scale = raster_scale * dps.0;
+            glyph_offsets.reserve(self.glyphs.len());
+
+            scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
+                let pos = local_rect.min + src.point.to_vector();
+                let raster_pos = DevicePoint::new(pos.x * glyph_raster_scale, pos.y * glyph_raster_scale);
+                let snapped = (raster_pos + snap_bias).floor();
+                glyph_offsets.push(snapped.to_vector());
+                GlyphKey::new(src.index, raster_pos, subpx_dir)
+            }))
+        } else if let (Some(anchor_world), Some(reference_world)) = (anchor_world, reference_world) {
+            
+            let anchor_device = anchor_world * dps;
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let reference_device = reference_world * dps;
+            let snap_shift = reference_device.round() - reference_device;
+            glyph_offsets.reserve(self.glyphs.len());
+
+            scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
+                
+                
+                let glyph_world = transform
+                    .transform_point2d(local_rect.min + src.point.to_vector())
+                    .unwrap_or(anchor_world);
+                let device_pen = glyph_world * dps + snap_shift;
+
+                
+                
+                
+                let snapped = (device_pen + snap_bias).floor();
+                glyph_offsets.push(snapped - anchor_device);
+
+                
+                
+                
+                GlyphKey::new(src.index, device_pen, subpx_dir)
+            }))
+        } else {
+            
+            scratch.frame.glyph_keys.extend(std::iter::empty())
+        };
 
         resource_cache.request_glyphs(
             used_font.clone(),
@@ -510,14 +558,15 @@ impl TextRunTemplate {
             gpu_buffer,
         );
 
-        let gpu_address = self.write_prim_gpu_blocks(gpu_buffer);
+        let gpu_address = self.write_prim_gpu_blocks(&glyph_offsets, gpu_buffer);
 
         scratch.frame.text_runs.push(TextRunScratch {
             used_font,
             glyph_keys_range,
-            snapped_reference_frame_relative_offset: snapped_offset,
-            raster_scale,
+            local_rect,
             gpu_address,
+            raster_scale,
+            local_raster,
         })
     }
 }
@@ -533,7 +582,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 88, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 80, "TextRunKey size changed");
 }
