@@ -314,7 +314,7 @@ class MediaDecoderStateMachine
   
   void UpdatePlaybackPositionPeriodically();
 
-  already_AddRefed<MediaSink> CreateAudioSink();
+  MediaSink* CreateAudioSink();
 
   
   

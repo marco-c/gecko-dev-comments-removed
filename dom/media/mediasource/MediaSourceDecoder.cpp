@@ -36,8 +36,8 @@ MediaSourceDecoder::MediaSourceDecoder(MediaDecoderInit& aInit)
   mExplicitDuration.emplace(UnspecifiedNaN<double>());
 }
 
-already_AddRefed<MediaDecoderStateMachineBase>
-MediaSourceDecoder::CreateStateMachine(bool aDisableExternalEngine) {
+MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
+    bool aDisableExternalEngine) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
@@ -83,10 +83,10 @@ MediaSourceDecoder::CreateStateMachine(bool aDisableExternalEngine) {
       !!mOwner->GetCDMProxy() && !mOwner->GetCDMProxy()->AsWMFCDMProxy();
   if (StaticPrefs::media_wmf_media_engine_enabled() && !isCDMNotSupported &&
       !aDisableExternalEngine) {
-    return MakeAndAddRef<ExternalEngineStateMachine>(this, mReader);
+    return new ExternalEngineStateMachine(this, mReader);
   }
 #endif
-  return MakeAndAddRef<MediaDecoderStateMachine>(this, mReader);
+  return new MediaDecoderStateMachine(this, mReader);
 }
 
 nsresult MediaSourceDecoder::Load(nsIPrincipal* aPrincipal) {

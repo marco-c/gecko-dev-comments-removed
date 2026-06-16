@@ -318,8 +318,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void SetLoadInBackground(bool aLoadInBackground) {}
 
   MediaDecoderStateMachineBase* GetStateMachine() const;
-  void SetStateMachine(
-      already_AddRefed<MediaDecoderStateMachineBase> aStateMachine);
+  void SetStateMachine(MediaDecoderStateMachineBase* aStateMachine);
 
   
   
@@ -486,8 +485,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  virtual already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
-      bool aDisableExternalEngine) = 0;
+  virtual MediaDecoderStateMachineBase* CreateStateMachine(
+      bool aDisableExternalEngine) MOZ_NONNULL_RETURN = 0;
 
   void SetStateMachineParameters();
 
