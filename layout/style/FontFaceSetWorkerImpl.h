@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_FontFaceSetWorkerImpl_h
 #define mozilla_dom_FontFaceSetWorkerImpl_h
 
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/FontFaceSetImpl.h"
 
 namespace mozilla::dom {
@@ -59,6 +60,10 @@ class FontFaceSetWorkerImpl final : public FontFaceSetImpl {
   RefPtr<ThreadSafeWorkerRef> mWorkerRef MOZ_GUARDED_BY(mMutex);
 
   RefPtr<URLExtraData> mURLExtraData MOZ_GUARDED_BY(mMutex);
+
+  
+  
+  Maybe<ClientInfo> mClientInfo MOZ_GUARDED_BY(mMutex);
 };
 
 }  
