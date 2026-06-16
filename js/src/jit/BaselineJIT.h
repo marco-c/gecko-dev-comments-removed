@@ -221,9 +221,6 @@ class alignas(uintptr_t) BaselineScript final
     
     
     HAS_DEBUG_INSTRUMENTATION = 1 << 0,
-
-    
-    PROFILER_INSTRUMENTATION_ON = 1 << 1,
   };
 
   
@@ -359,7 +356,7 @@ class alignas(uintptr_t) BaselineScript final
 
   void toggleProfilerInstrumentation(bool enable);
   bool isProfilerInstrumentationOn() const {
-    return flags_ & PROFILER_INSTRUMENTATION_ON;
+    return method_->isProfilerInstrumented();
   }
 
   static size_t offsetOfResumeEntriesOffset() {
