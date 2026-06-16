@@ -411,7 +411,15 @@ WebAuthnService::Cancel(uint64_t aTransactionId) {
     RejectActiveRegisterPromise();
     ActiveService()->Cancel(aTransactionId);
     mActiveTransaction.reset();
+    return NS_OK;
   }
+
+  
+  
+  
+  
+  
+  AuthrsService()->Cancel(aTransactionId);
   return NS_OK;
 }
 
