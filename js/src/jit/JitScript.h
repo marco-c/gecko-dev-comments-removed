@@ -346,7 +346,7 @@ class alignas(uintptr_t) JitScript final
   
   const char* profileString_ = nullptr;
 
-  HeapPtr<JSScript*> owningScript_;
+  GCPtr<JSScript*> owningScript_;
 
   
   
@@ -363,7 +363,7 @@ class alignas(uintptr_t) JitScript final
   
   
   
-  HeapPtr<EnvironmentObject*> templateEnv_;
+  GCPtr<EnvironmentObject*> templateEnv_;
 
   
   Offset endOffset_ = 0;
