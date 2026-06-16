@@ -642,7 +642,11 @@ void ElementInternals::GetAttrElements(
   
   auto elements = getAttrAssociatedElements();
 
-  if (elements == cachedAttrElements) {
+  
+  
+  
+  
+  if (aUseCachedValue && elements == cachedAttrElements) {
     
     
     
