@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef ChannelMediaDecoder_h_
 #define ChannelMediaDecoder_h_
 
@@ -130,7 +128,7 @@ class ChannelMediaDecoder
   void DownloadProgressed();
 
   
-  MediaDecoderStateMachineBase* CreateStateMachine(
+  already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
       bool aDisableExternalEngine) override;
 
   nsresult Load(BaseMediaResource* aOriginal);

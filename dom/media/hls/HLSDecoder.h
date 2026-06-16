@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef HLSDecoder_h_
 #define HLSDecoder_h_
 
@@ -54,7 +52,7 @@ class HLSDecoder final : public MediaDecoder {
 
   explicit HLSDecoder(MediaDecoderInit& aInit);
   ~HLSDecoder();
-  MediaDecoderStateMachineBase* CreateStateMachine(
+  already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
       bool aDisableExternalEngine) override;
 
   bool CanPlayThroughImpl() final {

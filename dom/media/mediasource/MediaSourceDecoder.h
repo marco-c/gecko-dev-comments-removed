@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_MEDIASOURCEDECODER_H_
 #define MOZILLA_MEDIASOURCEDECODER_H_
 
@@ -75,7 +73,7 @@ class MediaSourceDecoder : public MediaDecoder,
   void NotifyDataArrived();
 
  private:
-  MediaDecoderStateMachineBase* CreateStateMachine(
+  already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
       bool aDisableExternalEngine) override;
 
   template <typename IntervalType>
