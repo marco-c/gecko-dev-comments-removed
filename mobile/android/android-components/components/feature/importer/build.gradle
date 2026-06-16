@@ -18,7 +18,9 @@ android {
 }
 
 dependencies {
+    implementation platform(libs.androidx.compose.bom)
     implementation project(':components:lib-state')
+    api project(':components:concept-bookmarks-file')
 
     implementation libs.androidx.activity.compose
     implementation libs.androidx.compose.foundation

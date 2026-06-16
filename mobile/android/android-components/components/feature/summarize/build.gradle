@@ -24,7 +24,9 @@ android {
 }
 
 dependencies {
+    implementation platform(libs.androidx.compose.bom)
     implementation project(':components:compose-base')
+    implementation project(':components:concept-ai-controls')
     implementation project(':components:concept-llm')
     implementation project(':components:lib-state')
     implementation project(':components:ui-icons')
@@ -41,6 +43,7 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.tooling
 
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
 
     testImplementation project(':components:support-test-fakes')
