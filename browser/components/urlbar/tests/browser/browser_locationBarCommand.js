@@ -100,7 +100,7 @@ add_task(async function shift_accel_left_click_test() {
   
   info("URL should be loaded in a new background tab");
   is(gURLBar.value, "", "Urlbar reverted to original value");
-  ok(!gURLBar.focused, "Urlbar is no longer focused after urlbar command");
+  ok(gURLBar.focused, "Urlbar keeps focus after opening in a background tab");
   is(gBrowser.selectedTab, tab, "Focus did not change to the new tab");
 
   
