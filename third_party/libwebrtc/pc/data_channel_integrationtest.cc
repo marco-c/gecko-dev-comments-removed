@@ -42,7 +42,6 @@
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/crypto_random.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/socket_address.h"
@@ -102,25 +101,6 @@ class DataChannelIntegrationTest
  private:
   
   const bool allow_media_;
-};
-
-
-
-
-
-
-
-class FakeClockForTest : public ScopedFakeClock {
- protected:
-  FakeClockForTest() {
-    
-    
-    
-    AdvanceTime(TimeDelta::Seconds(1));
-  }
-
-  
-  ScopedFakeClock& FakeClock() { return *this; }
 };
 
 class DataChannelIntegrationTestPlanB
