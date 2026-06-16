@@ -18,13 +18,20 @@ add_task(async function () {
     );
 
   info("Button front checks");
-  await checkNameAndRole(walker, "#button", a11yWalker, "Accessible Button");
+  await checkNameAndRole(
+    walker,
+    "#button",
+    a11yWalker,
+    "button",
+    "Accessible Button"
+  );
 
   info("Front with long name checks");
   await checkNameAndRole(
     walker,
     "#h1",
     a11yWalker,
+    "heading (level 1)",
     "Lorem ipsum dolor sit ame" + "\u2026" + "e et dolore magna aliqua."
   );
 
@@ -46,22 +53,29 @@ add_task(async function () {
 
 
 
+
+
 async function checkNameAndRole(
   walker,
   querySelector,
   a11yWalker,
+  expectedRole,
   expectedName
 ) {
   const node = await walker.querySelector(walker.rootNode, querySelector);
   const accessibleFront = await a11yWalker.getAccessibleFor(node);
 
-  const { name, role } = accessibleFront;
+  const { name } = accessibleFront;
   const onHighlightEvent = a11yWalker.once("highlighter-event");
 
   await a11yWalker.highlightAccessible(accessibleFront);
   const { options } = await onHighlightEvent;
   is(options.name, name, "Accessible highlight has correct name option");
-  is(options.role, role, "Accessible highlight has correct role option");
+  is(
+    options.role,
+    expectedRole,
+    "Accessible highlight has correct role option"
+  );
 
   is(
     `"${truncateString(name, MAX_STRING_LENGTH)}"`,
