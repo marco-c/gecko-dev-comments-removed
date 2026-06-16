@@ -36,8 +36,7 @@ constexpr int kPacketSize = 15'000;
 class LossBasedBweV2Test : public ::testing::TestWithParam<bool> {
  protected:
   FieldTrials Config(bool enabled, bool valid) {
-    char buffer[1024];
-    SimpleStringBuilder config_string(buffer);
+    StringBuilder config_string;
 
     config_string << "WebRTC-Bwe-LossBasedBweV2/";
 
@@ -77,8 +76,7 @@ class LossBasedBweV2Test : public ::testing::TestWithParam<bool> {
   }
 
   FieldTrials ShortObservationConfig(std::string custom_config) {
-    char buffer[1024];
-    SimpleStringBuilder config_string(buffer);
+    StringBuilder config_string;
 
     config_string << "WebRTC-Bwe-LossBasedBweV2/"
                      "MinNumObservations:1,ObservationWindowSize:2,";
@@ -1793,5 +1791,30 @@ TEST_F(LossBasedBweV2Test,
       kStartBitrate);
 }
 
+TEST_F(LossBasedBweV2Test, SelectHigherCandidateIfHavingSameObjective) {
+  FieldTrials key_value_config = ShortObservationConfig("");
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+  const DataRate kStartBitrate = DataRate::KilobitsPerSec(1000);
+  loss_based_bandwidth_estimator.SetBandwidthEstimate(kStartBitrate);
+  std::vector<PacketResult> enough_feedback_01 =
+      CreatePacketResultsWithReceivedPackets(
+          Timestamp::Zero());
+  std::vector<PacketResult> enough_feedback_02 =
+      CreatePacketResultsWithReceivedPackets(
+          Timestamp::Zero() +
+          kObservationDurationLowerBound);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(enough_feedback_01,
+                                                         kStartBitrate,
+                                                         false);
+  DataRate delay_based_estimate =
+      DataRate::BytesPerSec(kStartBitrate.bytes_per_sec() * 1.02 + 1);
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(enough_feedback_02,
+                                                         delay_based_estimate,
+                                                         false);
+
+  EXPECT_EQ(
+      loss_based_bandwidth_estimator.GetLossBasedResult().bandwidth_estimate,
+      delay_based_estimate);
+}
 }  
 }  

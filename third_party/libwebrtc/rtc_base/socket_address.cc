@@ -20,8 +20,6 @@
 #if defined(OPENBSD)
 #include <netinet/in_systm.h>
 #endif
-#if !defined(__native_client__)
-#endif
 #endif
 
 #include "absl/strings/string_view.h"
@@ -159,25 +157,22 @@ std::string SocketAddress::PortAsString() const {
 }
 
 std::string SocketAddress::ToString() const {
-  char buf[1024];
-  SimpleStringBuilder sb(buf);
+  StringBuilder sb;
   sb << HostAsURIString() << ":" << port();
-  return sb.str();
+  return sb.Release();
 }
 
 std::string SocketAddress::ToSensitiveString() const {
-  char buf[1024];
-  SimpleStringBuilder sb(buf);
+  StringBuilder sb;
   sb << HostAsSensitiveURIString() << ":" << port();
-  return sb.str();
+  return sb.Release();
 }
 
 std::string SocketAddress::ToSensitiveNameAndAddressString() const {
   if (IsUnresolvedIP() || literal_ || hostname_.empty()) {
     return ToSensitiveString();
   }
-  char buf[1024];
-  SimpleStringBuilder sb(buf);
+  StringBuilder sb;
   sb << HostAsSensitiveURIString() << ":" << port();
   sb << " (";
   if (ip_.family() == AF_INET6) {
@@ -187,7 +182,7 @@ std::string SocketAddress::ToSensitiveNameAndAddressString() const {
   }
   sb << ":" << port() << ")";
 
-  return sb.str();
+  return sb.Release();
 }
 
 bool SocketAddress::FromString(absl::string_view str) {

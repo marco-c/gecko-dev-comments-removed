@@ -50,8 +50,6 @@ SimpleStringBuilder& SimpleStringBuilder::operator<<(absl::string_view str) {
 
 
 
-
-
 SimpleStringBuilder& SimpleStringBuilder::operator<<(int i) {
   return AppendFormat("%d", i);
 }

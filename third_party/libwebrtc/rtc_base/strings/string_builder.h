@@ -27,7 +27,7 @@ namespace webrtc {
 
 
 
-class SimpleStringBuilder {
+class [[deprecated("Use webrtc::StringBuilder instead")]] SimpleStringBuilder {
  public:
   explicit SimpleStringBuilder(std::span<char> buffer);
   SimpleStringBuilder(const SimpleStringBuilder&) = delete;
@@ -72,18 +72,9 @@ class SimpleStringBuilder {
     return size_ <= buffer_.size() - 1 && buffer_[size_] == '\0';
   }
 
-  
-  
-  
-  
   const std::span<char> buffer_;
-
-  
-  
   size_t size_ = 0;
 };
-
-
 
 
 
@@ -100,7 +91,10 @@ class StringBuilder {
     return *this;
   }
 
-  StringBuilder& operator<<(char c) = delete;
+  StringBuilder& operator<<(char c) {
+    str_ += c;
+    return *this;
+  }
 
   StringBuilder& operator<<(int i) {
     str_ += absl::StrCat(i);
@@ -172,4 +166,4 @@ class StringBuilder {
 }  
 
 
-#endif  
+#endif
