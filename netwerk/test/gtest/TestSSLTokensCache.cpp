@@ -15,6 +15,7 @@
 #include "nsServiceManagerUtils.h"
 #include "prtime.h"
 #include "sslproto.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/ssl_tokens_cache.h"
 
 static already_AddRefed<CommonSocketControl> createDummySocketControl() {
@@ -59,14 +60,17 @@ static auto MakeTestData(const size_t aDataSize) {
   return data;
 }
 
-static void putToken(const nsACString& aKey, uint32_t aSize) {
+static void putTokenWithExpiry(const nsACString& aKey, uint32_t aSize,
+                               PRTime aExpiry) {
   RefPtr<CommonSocketControl> socketControl = createDummySocketControl();
   nsTArray<uint8_t> token = MakeTestData(aSize);
-  PRTime now = PR_Now();
-  nsresult rv = mozilla::net::SSLTokensCache::Put(
-      aKey, token.Elements(), aSize, socketControl,
-      now + (aSize * PR_USEC_PER_SEC));
+  nsresult rv = mozilla::net::SSLTokensCache::Put(aKey, token.Elements(), aSize,
+                                                  socketControl, aExpiry);
   ASSERT_EQ(rv, NS_OK);
+}
+
+static void putToken(const nsACString& aKey, uint32_t aSize) {
+  putTokenWithExpiry(aKey, aSize, PR_Now() + PRTime(aSize) * PR_USEC_PER_SEC);
 }
 
 static void ClearAll() { mozilla::net::SSLTokensCache::Clear(); }
@@ -149,7 +153,7 @@ TEST(TestTokensCache, RemoveAll)
 
 TEST(TestTokensCache, Eviction)
 {
-  mozilla::net::SSLTokensCache::Clear();
+  ClearAll();
 
   
   
@@ -159,26 +163,11 @@ TEST(TestTokensCache, Eviction)
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  putToken("anon:evict-old.com:443"_ns, 10000);
-  putToken("anon:evict-new.com:443"_ns, 20000);
+  putToken("anon:evict-old.com:443"_ns, 2000);
+  putToken("anon:evict-new.com:443"_ns, 4000);
 
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 25);
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 5);
 
-  
   
   
   putToken("anon:evict-trigger.com:443"_ns, 10);
@@ -192,7 +181,48 @@ TEST(TestTokensCache, Eviction)
   ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-new.com:443"_ns,
                                               result, unused),
             NS_OK)
-      << "evict-new.com should survive: it fits within the 25 KB capacity";
+      << "evict-new.com should survive: it fits within the 5 KB capacity";
+}
+
+
+
+
+TEST(TestTokensCache, EvictionCountsOnlyValidTokens)
+{
+  ClearAll();
+
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
+                               10);
+
+  
+  
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 3);
+
+  auto evictionCount = []() {
+    return mozilla::glean::network::ssl_token_cache_evictions.TestGetValue()
+        .unwrap()
+        .valueOr(0);
+  };
+
+  PRTime now = PR_Now();
+  int32_t before = evictionCount();
+
+  
+  putTokenWithExpiry("anon:evict-expired.com:443"_ns, 2000,
+                     now - PRTime(PR_USEC_PER_SEC));
+
+  
+  
+  putTokenWithExpiry("anon:evict-valid1.com:443"_ns, 2000,
+                     now + PRTime(2000) * PR_USEC_PER_SEC);
+
+  
+  
+  putTokenWithExpiry("anon:evict-valid2.com:443"_ns, 2000,
+                     now + PRTime(4000) * PR_USEC_PER_SEC);
+
+  
+  ASSERT_EQ(evictionCount() - before, 1);
 }
 
 static nsCString GetTempCachePath(const char* aName) {
