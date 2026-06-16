@@ -232,13 +232,6 @@ class nsSocketTransport final : public nsASocketHandler,
   uint32_t mTlsFlags{0};
   bool mReuseAddrPort{false};
 
-  
-  
-  
-  
-  
-  OriginAttributes mOriginAttributes;
-
   uint16_t SocketPort() {
     return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort;
   }

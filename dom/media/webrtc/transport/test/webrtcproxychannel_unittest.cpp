@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 #include <mutex>
 
@@ -123,10 +121,6 @@ class FakeSocketTransportProvider : public nsISocketTransport {
     return NS_OK;
   }
   NS_IMETHOD SetConnectionFlags(uint32_t aConnectionFlags) override {
-    MOZ_ASSERT(false);
-    return NS_OK;
-  }
-  NS_IMETHOD SetIsPrivate(bool) override {
     MOZ_ASSERT(false);
     return NS_OK;
   }
