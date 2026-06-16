@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_NavigationPreloadManager_h
 #define mozilla_dom_NavigationPreloadManager_h
 
@@ -23,7 +21,7 @@ class Promise;
 class NavigationPreloadManager final : public nsISupports,
                                        public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationPreloadManager)
 
   static bool IsValidHeader(const nsACString& aHeader);
