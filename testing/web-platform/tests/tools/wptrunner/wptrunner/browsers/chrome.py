@@ -153,6 +153,8 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
         "WebSpeechRecognitionContext",
     ]))
     
+    chrome_options["args"].append("--enable-features=WebAppInstallation,InstallElement")
+    
     chrome_options["args"].append("--enable-unsafe-extension-debugging")
     
     
