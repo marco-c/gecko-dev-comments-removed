@@ -363,7 +363,7 @@ function add_tests() {
     "ocsp-stapling-none.example.com",
     PRErrorCodeSuccess,
     [],
-    "Noted OCSP server failure (userContextId = 1) -> a " +
+    "Cached response (userContextId = 1) -> a " +
       "fetch should not have been attempted",
     { userContextId: 1 }
   );
@@ -372,9 +372,9 @@ function add_tests() {
   add_ocsp_test(
     "ocsp-stapling-none.example.com",
     PRErrorCodeSuccess,
-    [],
-    "Noted OCSP server failure (userContextId = 2) -> a " +
-      "fetch should not have been attempted",
+    [respondWithGoodOCSP],
+    "No stapled response (userContextId = 2) -> a " +
+      "fetch should have been attempted",
     { userContextId: 2 }
   );
 
@@ -387,14 +387,6 @@ function add_tests() {
   });
 
   
-
-  add_test(function () {
-    Services.prefs.setBoolPref(
-      "privacy.partition.network_state.ocsp_cache",
-      true
-    );
-    run_next_test();
-  });
 
   
   add_ocsp_test(
@@ -430,7 +422,6 @@ function add_tests() {
 
   
   add_test(function () {
-    Services.prefs.clearUserPref("privacy.partition.network_state.ocsp_cache");
     clearOCSPCache();
     run_next_test();
   });

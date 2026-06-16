@@ -72,9 +72,6 @@ static SECStatus DigestLength(UniquePK11Context& context, uint32_t length) {
 
 
 
-
-
-
 static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
                             const OriginAttributes& originAttributes) {
   UniquePK11Context context(PK11_CreateDigestContext(SEC_OID_SHA384));
@@ -108,34 +105,21 @@ static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
     return rv;
   }
 
-  auto populateOriginAttributesKey = [&context](const nsString& aKey) {
-    NS_ConvertUTF16toUTF8 key(aKey);
-
-    if (key.IsEmpty()) {
-      return SECSuccess;
-    }
-
-    SECStatus rv = DigestLength(context, key.Length());
+  nsAutoCString suffix;
+  originAttributes.CreateSuffix(suffix);
+  rv = DigestLength(context, suffix.Length());
+  if (rv != SECSuccess) {
+    return rv;
+  }
+  if (!suffix.IsEmpty()) {
+    rv = PK11_DigestOp(context.get(),
+                       BitwiseCast<const unsigned char*>(suffix.get()),
+                       suffix.Length());
     if (rv != SECSuccess) {
       return rv;
     }
-
-    return PK11_DigestOp(context.get(),
-                         BitwiseCast<const unsigned char*>(key.get()),
-                         key.Length());
-  };
-
-  
-  
-  rv = populateOriginAttributesKey(originAttributes.mFirstPartyDomain);
-  if (rv != SECSuccess) {
-    return rv;
   }
 
-  rv = populateOriginAttributesKey(originAttributes.mPartitionKey);
-  if (rv != SECSuccess) {
-    return rv;
-  }
   uint32_t outLen = 0;
   rv = PK11_DigestFinal(context.get(), buf, &outLen, SHA384_LENGTH);
   if (outLen != SHA384_LENGTH) {
@@ -188,11 +172,10 @@ bool OCSPCache::FindInternal(const CertID& aCertID,
 
 static inline void LogWithCertID(const char* aMessage, const CertID& aCertID,
                                  const OriginAttributes& aOriginAttributes) {
-  nsAutoString info = u"firstPartyDomain: "_ns +
-                      aOriginAttributes.mFirstPartyDomain +
-                      u", partitionKey: "_ns + aOriginAttributes.mPartitionKey;
+  nsAutoCString originAttributesSuffix;
+  aOriginAttributes.CreateSuffix(originAttributesSuffix);
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          (aMessage, &aCertID, NS_ConvertUTF16toUTF8(info).get()));
+          (aMessage, &aCertID, originAttributesSuffix.get()));
 }
 
 void OCSPCache::MakeMostRecentlyUsed(size_t aIndex,

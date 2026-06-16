@@ -63,15 +63,11 @@ class OCSPCache {
   
   
   
-  
-  
   bool Get(const mozilla::pkix::CertID& aCertID,
            const OriginAttributes& aOriginAttributes,
             mozilla::pkix::Result& aResult,
             mozilla::pkix::Time& aValidThrough);
 
-  
-  
   
   
   

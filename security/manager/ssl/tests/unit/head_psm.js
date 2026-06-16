@@ -572,7 +572,6 @@ function add_tls_server_setup(serverBinName, certsPath, addDefaultRoot = true) {
 
 
 
-
 function add_connection_test(
   aHost,
   aExpectedResult,
@@ -899,11 +898,21 @@ function startOCSPResponder(
       info("got request for: " + aRequest.path);
       let basePath = aRequest.path.slice(1).split("/")[0];
       if (expectedBasePaths.length >= 1) {
-        Assert.equal(
-          basePath,
-          expectedBasePaths.shift(),
-          "Actual and expected base path should match"
-        );
+        if (basePath !== expectedBasePaths[0]) {
+          info(
+            "OCSP responder ignoring unexpected request for: " +
+              aRequest.path +
+              ", still expecting: " +
+              expectedBasePaths[0]
+          );
+          aResponse.setStatusLine(
+            aRequest.httpVersion,
+            500,
+            "Internal Server Error"
+          );
+          return;
+        }
+        expectedBasePaths.shift();
       }
       Assert.greaterOrEqual(
         expectedCertNames.length,
