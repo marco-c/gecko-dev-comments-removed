@@ -92,8 +92,10 @@ class JsepCodecPreferences {
   }
 };
 
-#define JSEP_CODEC_CLONE(T) \
-  UniquePtr<JsepCodecDescription> Clone() const override { return MakeUnique<T>(*this); }
+#define JSEP_CODEC_CLONE(T)                                \
+  UniquePtr<JsepCodecDescription> Clone() const override { \
+    return MakeUnique<T>(*this);                           \
+  }
 
 
 class JsepCodecDescription {
