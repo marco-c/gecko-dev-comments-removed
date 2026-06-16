@@ -6,6 +6,7 @@
 
 
 use crate::dom::TElement;
+use crate::values::computed::Context;
 
 
 #[derive(Clone, Copy, Debug)]
@@ -47,7 +48,24 @@ impl<'a> TreeCountingInfo<'a> {
     }
 
     
-    pub fn resolve(&mut self) -> TreeCountingResult {
+    pub fn resolve(&mut self, context: &Context) -> TreeCountingResult {
+        
+        
+        
+        
+        
+        
+        if context
+            .current_scope()
+            .shadow_order()
+            .is_in_same_or_containing_tree()
+        {
+            return TreeCountingResult {
+                sibling_count: 0,
+                sibling_index: 0,
+            };
+        }
+
         match self {
             TreeCountingInfo::NotEvaluated(lookup) => {
                 let info = lookup();

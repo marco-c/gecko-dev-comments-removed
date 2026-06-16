@@ -462,12 +462,13 @@ impl<'a> Context<'a> {
 
     
     
+    
     pub fn query_sibling_count(&self) -> u32 {
         self.builder
             .add_flags(ComputedValueFlags::USES_SIBLING_COUNT);
 
         if let Some(info) = &self.tree_counting_info {
-            info.borrow_mut().resolve().sibling_count
+            info.borrow_mut().resolve(self).sibling_count
         } else {
             debug_assert!(
                 false,
@@ -479,13 +480,14 @@ impl<'a> Context<'a> {
 
     
     
+    
     pub fn query_sibling_index(&self) -> u32 {
         self.builder
             .add_flags(ComputedValueFlags::USES_SIBLING_INDEX);
         self.rule_cache_conditions.borrow_mut().set_uncacheable();
 
         if let Some(info) = &self.tree_counting_info {
-            info.borrow_mut().resolve().sibling_index
+            info.borrow_mut().resolve(self).sibling_index
         } else {
             debug_assert!(
                 false,
