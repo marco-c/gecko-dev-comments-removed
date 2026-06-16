@@ -5,74 +5,26 @@
 
 
 
-use crate::dom::TElement;
-use crate::values::computed::Context;
-
 
 #[derive(Clone, Copy, Debug)]
 pub struct TreeCountingResult {
     
-    pub sibling_count: u32,
-    
     pub sibling_index: u32,
+    
+    pub sibling_count: u32,
 }
 
-
-pub enum TreeCountingInfo<'a> {
+impl TreeCountingResult {
     
-    NotEvaluated(Box<dyn Fn() -> TreeCountingResult + 'a>),
-    
-    Evaluated(TreeCountingResult),
-}
-
-impl<'a> TreeCountingInfo<'a> {
-    
-    
-    pub fn for_element<E>(element: E) -> Option<Self>
-    where
-        E: TElement + 'a,
-    {
-        if !static_prefs::pref!("layout.css.tree-counting-functions.enabled") {
-            return None;
+    pub fn new(sibling_index: u32, sibling_count: u32) -> Self {
+        TreeCountingResult {
+            sibling_index,
+            sibling_count,
         }
-
-        
-        
-        Some(Self::NotEvaluated(Box::new(move || {
-            let (sibling_index, sibling_count) = element.tree_counting_info();
-            TreeCountingResult {
-                sibling_count,
-                sibling_index,
-            }
-        })))
     }
 
     
-    pub fn resolve(&mut self, context: &Context) -> TreeCountingResult {
-        
-        
-        
-        
-        
-        
-        if context
-            .current_scope()
-            .shadow_order()
-            .is_in_same_or_containing_tree()
-        {
-            return TreeCountingResult {
-                sibling_count: 0,
-                sibling_index: 0,
-            };
-        }
-
-        match self {
-            TreeCountingInfo::NotEvaluated(lookup) => {
-                let info = lookup();
-                *self = TreeCountingInfo::Evaluated(info);
-                info
-            },
-            TreeCountingInfo::Evaluated(info) => *info,
-        }
+    pub fn default() -> Self {
+        TreeCountingResult::new(0, 0)
     }
 }

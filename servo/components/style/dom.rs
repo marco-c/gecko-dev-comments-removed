@@ -8,9 +8,9 @@
 #![deny(missing_docs)]
 
 use crate::applicable_declarations::ApplicableDeclarationBlock;
-use crate::context::SharedStyleContext;
 #[cfg(feature = "gecko")]
 use crate::context::UpdateAnimationsTasks;
+use crate::context::{SharedStyleContext, TreeCountingCaches};
 use crate::data::{ElementData, ElementDataMut, ElementDataRef};
 use crate::device::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
@@ -19,7 +19,7 @@ use crate::selector_parser::{AttrValue, Lang, PseudoElement, RestyleDamage, Sele
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylesheets::scope_rule::ImplicitScopeRoot;
 use crate::stylist::CascadeData;
-use crate::values::computed::Display;
+use crate::values::computed::{Display, TreeCountingResult};
 use crate::values::AtomIdent;
 use crate::{LocalName, Namespace, WeakAtom};
 use dom::ElementState;
@@ -833,34 +833,6 @@ pub trait TElement:
     
     
     
-    fn tree_counting_info(&self) -> (u32, u32) {
-        let target = self.ultimate_originating_element();
-        let Some(parent) = target.as_node().parent_node() else {
-            return (1, 1);
-        };
-
-        let mut curr = parent.first_child();
-        let mut index = 0u32;
-        let mut count = 0u32;
-        while let Some(node) = curr {
-            if let Some(element) = node.as_element() {
-                count += 1;
-                if element == target {
-                    index = count;
-                }
-            }
-            curr = node.next_sibling();
-        }
-        debug_assert!(index != 0, "Element was not a child of its parent?");
-        (index, count)
-    }
-
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1017,7 +989,18 @@ pub trait TElement:
 
 pub trait ElementContext {
     
+    fn opaque_element(&self) -> Option<OpaqueElement>;
+
+    
+    fn opaque_parent(&self) -> Option<OpaqueNode>;
+
+    
     fn get_attr(&self, attr: &LocalName, namespace: &Namespace) -> Option<String>;
+
+    
+    
+    
+    fn get_tree_counting_result(&self, caches: &mut TreeCountingCaches) -> TreeCountingResult;
 }
 
 
@@ -1071,11 +1054,23 @@ impl<'a> AttributeTracker<'a> {
 
 
 #[derive(Clone, Debug, PartialEq)]
-struct DummyElementContext;
+pub struct DummyElementContext;
 
 impl ElementContext for DummyElementContext {
     fn get_attr(&self, _attr: &LocalName, _namespace: &Namespace) -> Option<String> {
         None
+    }
+
+    fn opaque_element(&self) -> Option<OpaqueElement> {
+        None
+    }
+
+    fn opaque_parent(&self) -> Option<OpaqueNode> {
+        None
+    }
+
+    fn get_tree_counting_result(&self, _: &mut TreeCountingCaches) -> TreeCountingResult {
+        TreeCountingResult::default()
     }
 }
 

@@ -15,10 +15,12 @@ use super::generics::{self, GreaterThanOrEqualToOne, NonNegative, ZeroToOne};
 use super::specified;
 use super::{CSSFloat, CSSInteger};
 use crate::computed_value_flags::ComputedValueFlags;
-use crate::context::QuirksMode;
+use crate::context::{QuirksMode, TreeCountingCaches};
 use crate::custom_properties::ComputedCustomProperties;
 use crate::derives::*;
 use crate::device::Device;
+use crate::dom::DummyElementContext;
+use crate::dom::ElementContext;
 use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 #[cfg(feature = "gecko")]
 use crate::properties;
@@ -123,7 +125,7 @@ pub use self::text::{
 pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, Transform, TransformBox, TransformOperation};
 pub use self::transform::{TransformOrigin, TransformStyle, Translate};
-pub use self::tree_counting::TreeCountingInfo;
+pub use self::tree_counting::TreeCountingResult;
 #[cfg(feature = "gecko")]
 pub use self::ui::CursorImage;
 pub use self::ui::{
@@ -235,7 +237,10 @@ pub struct Context<'a> {
 
     
     
-    tree_counting_info: Option<RefCell<TreeCountingInfo<'a>>>,
+    element_context: &'a dyn ElementContext,
+
+    
+    pub tree_counting_caches: RefCell<&'a mut TreeCountingCaches>,
 }
 
 impl<'a> Context<'a> {
@@ -253,6 +258,7 @@ impl<'a> Context<'a> {
         F: FnOnce(&Context) -> R,
     {
         let mut conditions = RuleCacheConditions::default();
+        let mut tree_counting_caches = TreeCountingCaches::default();
         let context = Context {
             builder: StyleBuilder::for_inheritance(device, None, None, None),
             cached_system_font: None,
@@ -266,7 +272,8 @@ impl<'a> Context<'a> {
             scope: CascadeLevel::same_tree_author_normal(),
             included_cascade_flags: RuleCascadeFlags::empty(),
             container_size_query: RefCell::new(ContainerSizeQuery::none()),
-            tree_counting_info: None,
+            element_context: &DummyElementContext {},
+            tree_counting_caches: RefCell::new(&mut tree_counting_caches),
         };
         f(&context)
     }
@@ -278,13 +285,14 @@ impl<'a> Context<'a> {
         stylist: Option<&Stylist>,
         container_info_and_style: Option<(ContainerInfo, Arc<ComputedValues>)>,
         container_size_query: ContainerSizeQuery,
-        tree_counting_info: Option<TreeCountingInfo>,
+        element_context: &dyn ElementContext,
         f: F,
     ) -> R
     where
         F: FnOnce(&Context) -> R,
     {
         let mut conditions = RuleCacheConditions::default();
+        let mut tree_counting_caches = TreeCountingCaches::default();
 
         let (container_info, style) = match container_info_and_style {
             Some((ci, s)) => (Some(ci), Some(s)),
@@ -306,7 +314,8 @@ impl<'a> Context<'a> {
             scope: CascadeLevel::same_tree_author_normal(),
             included_cascade_flags: RuleCascadeFlags::empty(),
             container_size_query: RefCell::new(container_size_query),
-            tree_counting_info: tree_counting_info.map(RefCell::new),
+            element_context,
+            tree_counting_caches: RefCell::new(&mut tree_counting_caches),
         };
 
         f(&context)
@@ -319,7 +328,8 @@ impl<'a> Context<'a> {
         rule_cache_conditions: &'a mut RuleCacheConditions,
         container_size_query: ContainerSizeQuery<'a>,
         mut included_cascade_flags: RuleCascadeFlags,
-        tree_counting_info: Option<TreeCountingInfo<'a>>,
+        element_context: &'a dyn ElementContext,
+        tree_counting_caches: &'a mut TreeCountingCaches,
     ) -> Self {
         if builder
             .flags()
@@ -340,7 +350,8 @@ impl<'a> Context<'a> {
             scope: CascadeLevel::same_tree_author_normal(),
             included_cascade_flags,
             container_size_query: RefCell::new(container_size_query),
-            tree_counting_info: tree_counting_info.map(RefCell::new),
+            element_context,
+            tree_counting_caches: RefCell::new(tree_counting_caches),
         }
     }
 
@@ -350,7 +361,8 @@ impl<'a> Context<'a> {
         quirks_mode: QuirksMode,
         rule_cache_conditions: &'a mut RuleCacheConditions,
         container_size_query: ContainerSizeQuery<'a>,
-        tree_counting_info: Option<TreeCountingInfo<'a>>,
+        element_context: &'a dyn ElementContext,
+        tree_counting_caches: &'a mut TreeCountingCaches,
     ) -> Self {
         Self {
             builder,
@@ -365,7 +377,8 @@ impl<'a> Context<'a> {
             scope: CascadeLevel::same_tree_author_normal(),
             included_cascade_flags: RuleCascadeFlags::empty(),
             container_size_query: RefCell::new(container_size_query),
-            tree_counting_info: tree_counting_info.map(RefCell::new),
+            element_context,
+            tree_counting_caches: RefCell::new(tree_counting_caches),
         }
     }
 
@@ -373,6 +386,7 @@ impl<'a> Context<'a> {
     pub fn new_for_initial_at_property_value(
         stylist: &'a Stylist,
         rule_cache_conditions: &'a mut RuleCacheConditions,
+        tree_counting_caches: &'a mut TreeCountingCaches,
     ) -> Self {
         Self {
             builder: StyleBuilder::new(stylist.device(), Some(stylist), None, None, None, false),
@@ -390,7 +404,8 @@ impl<'a> Context<'a> {
             scope: CascadeLevel::same_tree_author_normal(),
             included_cascade_flags: RuleCascadeFlags::empty(),
             container_size_query: RefCell::new(ContainerSizeQuery::none()),
-            tree_counting_info: None,
+            element_context: &DummyElementContext {},
+            tree_counting_caches: RefCell::new(tree_counting_caches),
         }
     }
 
@@ -460,41 +475,41 @@ impl<'a> Context<'a> {
             .au_viewport_size_for_viewport_unit_resolution(variant)
     }
 
-    
+    fn resolve_tree_counting_result(&self) -> TreeCountingResult {
+        
+        
+        
+        
+        
+        
+        if self
+            .current_scope()
+            .shadow_order()
+            .is_in_same_or_containing_tree()
+        {
+            return TreeCountingResult::default();
+        }
+
+        self.tree_counting_caches
+            .borrow_mut()
+            .get_or_compute(self.element_context)
+    }
+
     
     
     pub fn query_sibling_count(&self) -> u32 {
         self.builder
             .add_flags(ComputedValueFlags::USES_SIBLING_COUNT);
-
-        if let Some(info) = &self.tree_counting_info {
-            info.borrow_mut().resolve(self).sibling_count
-        } else {
-            debug_assert!(
-                false,
-                "Element context should be available if sibling-count() successfully parsed"
-            );
-            1u32
-        }
+        self.resolve_tree_counting_result().sibling_count
     }
 
-    
     
     
     pub fn query_sibling_index(&self) -> u32 {
         self.builder
             .add_flags(ComputedValueFlags::USES_SIBLING_INDEX);
         self.rule_cache_conditions.borrow_mut().set_uncacheable();
-
-        if let Some(info) = &self.tree_counting_info {
-            info.borrow_mut().resolve(self).sibling_index
-        } else {
-            debug_assert!(
-                false,
-                "Element context should be available if sibling-index() successfully parsed"
-            );
-            1u32
-        }
+        self.resolve_tree_counting_result().sibling_index
     }
 
     

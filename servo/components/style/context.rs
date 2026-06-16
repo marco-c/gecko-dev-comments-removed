@@ -10,7 +10,7 @@ use crate::bloom::StyleBloom;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::data::{EagerPseudoStyles, ElementData};
 use crate::derives::*;
-use crate::dom::{SendElement, TElement};
+use crate::dom::{ElementContext, SendElement, TElement};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs;
 use crate::parallel::{STACK_SAFETY_MARGIN_KB, STYLE_THREAD_STACK_SIZE_KB};
@@ -26,17 +26,19 @@ use crate::stylist::Stylist;
 use crate::thread_state::{self, ThreadState};
 use crate::traversal::DomTraversal;
 use crate::traversal_flags::TraversalFlags;
+use crate::values::computed::TreeCountingResult;
 use app_units::Au;
 use euclid::default::Size2D;
 use euclid::Scale;
-#[cfg(feature = "servo")]
 use rustc_hash::FxHashMap;
 use selectors::context::SelectorCaches;
+use selectors::OpaqueElement;
 #[cfg(feature = "gecko")]
 use servo_arc::Arc;
 use std::fmt;
 use std::ops;
 use std::time::{Duration, Instant};
+use style_traits::dom::OpaqueNode;
 use style_traits::CSSPixel;
 use style_traits::DevicePixel;
 #[cfg(feature = "servo")]
@@ -598,6 +600,43 @@ impl StackLimitChecker {
 
 
 
+#[derive(Default)]
+pub struct TreeCountingCaches {
+    
+    pub sibling_index: FxHashMap<OpaqueElement, u32>,
+    
+    pub sibling_count: FxHashMap<OpaqueNode, u32>,
+}
+
+impl TreeCountingCaches {
+    
+    
+    pub fn get_or_compute(&mut self, element_context: &dyn ElementContext) -> TreeCountingResult {
+        let (Some(target), Some(parent)) = (
+            element_context.opaque_element(),
+            element_context.opaque_parent(),
+        ) else {
+            return TreeCountingResult::default();
+        };
+
+        
+        let cached_index = self.sibling_index.get(&target).copied();
+        let cached_count = self.sibling_count.get(&parent).copied();
+        if let (Some(index), Some(count)) = (cached_index, cached_count) {
+            return TreeCountingResult::new(index, count);
+        }
+
+        
+        
+        element_context.get_tree_counting_result(self)
+    }
+}
+
+
+
+
+
+
 pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub sharing_cache: StyleSharingCache<E>,
@@ -620,6 +659,8 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     pub stack_limit_checker: StackLimitChecker,
     
     pub selector_caches: SelectorCaches,
+    
+    pub tree_counting_caches: TreeCountingCaches,
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {
@@ -635,6 +676,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
                 (STYLE_THREAD_STACK_SIZE_KB - STACK_SAFETY_MARGIN_KB) * 1024,
             ),
             selector_caches: SelectorCaches::default(),
+            tree_counting_caches: TreeCountingCaches::default(),
         }
     }
 }
