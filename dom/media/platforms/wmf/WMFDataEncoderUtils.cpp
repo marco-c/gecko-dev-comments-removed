@@ -15,9 +15,9 @@ using mozilla::media::EncodeSupportSet;
 
 namespace mozilla {
 
-#define WMF_ENC_LOG(arg, ...)                         \
-  MOZ_LOG(mozilla::sPEMLog, mozilla::LogLevel::Error, \
-          ("WMFDataEncoderUtils::%s: " arg, __func__, ##__VA_ARGS__))
+#define WMF_ENC_LOG(arg, ...)                             \
+  MOZ_LOG_FMT(mozilla::sPEMLog, mozilla::LogLevel::Error, \
+              "WMFDataEncoderUtils::{}: " arg, __func__, ##__VA_ARGS__)
 
 GUID CodecToSubtype(CodecType aCodec) {
   switch (aCodec) {
@@ -56,6 +56,7 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
       return;
     }
     
+    
     if (aConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
       if (CanUseWMFHwEncoder(aConfig.mCodec)) {
         auto hwEnc =
@@ -65,7 +66,7 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
           supports += EncodeSupport::HardwareEncode;
         }
       } else {
-        WMF_ENC_LOG("HW encoder is disabled for %s",
+        WMF_ENC_LOG("HW encoder is disabled for {}",
                     EnumValueToString(aConfig.mCodec));
       }
     }
@@ -80,7 +81,7 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     }
 
     WMF_ENC_LOG(
-        "%s encoder support for %s",
+        "{} encoder support for {}",
         supports.contains(EncodeSupportSet(EncodeSupport::HardwareEncode,
                                            EncodeSupport::SoftwareEncode))
             ? "HW | SW"
@@ -121,23 +122,23 @@ already_AddRefed<IMFMediaType> CreateInputType(EncoderConfig& aConfig) {
   RefPtr<IMFMediaType> type;
   HRESULT hr = wmf::MFCreateMediaType(getter_AddRefs(type));
   if (FAILED(hr)) {
-    WMF_ENC_LOG("MFCreateMediaType (input) error: %lx", hr);
+    WMF_ENC_LOG("MFCreateMediaType (input) error: {:x}", hr);
     return nullptr;
   }
   hr = type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create input type: SetGUID (major type) error: %lx", hr);
+    WMF_ENC_LOG("Create input type: SetGUID (major type) error: {:x}", hr);
     return nullptr;
   }
   
   hr = type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create input type: SetGUID (subtype) error: %lx", hr);
+    WMF_ENC_LOG("Create input type: SetGUID (subtype) error: {:x}", hr);
     return nullptr;
   }
   hr = type->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create input type: interlace mode (input) error: %lx", hr);
+    WMF_ENC_LOG("Create input type: interlace mode (input) error: {:x}", hr);
     return nullptr;
   }
   
@@ -148,14 +149,14 @@ already_AddRefed<IMFMediaType> CreateInputType(EncoderConfig& aConfig) {
   if (aConfig.mFramerate) {
     hr = MFSetAttributeRatio(type, MF_MT_FRAME_RATE, aConfig.mFramerate, 1);
     if (FAILED(hr)) {
-      WMF_ENC_LOG("Create input type: frame rate (input) error: %lx", hr);
+      WMF_ENC_LOG("Create input type: frame rate (input) error: {:x}", hr);
       return nullptr;
     }
   }
   hr = MFSetAttributeSize(type, MF_MT_FRAME_SIZE, aConfig.mSize.width,
                           aConfig.mSize.height);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create input type: frame size (input) error: %lx", hr);
+    WMF_ENC_LOG("Create input type: frame size (input) error: {:x}", hr);
     return nullptr;
   }
   return type.forget();
@@ -165,19 +166,20 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
   RefPtr<IMFMediaType> type;
   HRESULT hr = wmf::MFCreateMediaType(getter_AddRefs(type));
   if (FAILED(hr)) {
-    WMF_ENC_LOG("MFCreateMediaType (output) error: %lx", hr);
+    WMF_ENC_LOG("MFCreateMediaType (output) error: {:x}", hr);
     return nullptr;
   }
   hr = type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create output type: set major type error: %lx", hr);
+    WMF_ENC_LOG("Create output type: set major type error: {:x}", hr);
     return nullptr;
   }
   hr = type->SetGUID(MF_MT_SUBTYPE, CodecToSubtype(aConfig.mCodec));
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create output type: set subtype error: %lx", hr);
+    WMF_ENC_LOG("Create output type: set subtype error: {:x}", hr);
     return nullptr;
   }
+  
   
   
   size_t longDimension = std::max(aConfig.mSize.width, aConfig.mSize.height);
@@ -193,20 +195,21 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
   
   hr = type->SetUINT32(MF_MT_AVG_BITRATE, aConfig.mBitrate);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create output type: set bitrate error: %lx", hr);
+    WMF_ENC_LOG("Create output type: set bitrate error: {:x}", hr);
     return nullptr;
   }
   hr = type->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create output type set interlave mode error: %lx", hr);
+    WMF_ENC_LOG("Create output type set interlave mode error: {:x}", hr);
     return nullptr;
   }
+  
   
   MOZ_ASSERT(aConfig.mFramerate);
   if (aConfig.mFramerate) {
     hr = MFSetAttributeRatio(type, MF_MT_FRAME_RATE, aConfig.mFramerate, 1);
     if (FAILED(hr)) {
-      WMF_ENC_LOG("Create output type set frame rate error: %lx", hr);
+      WMF_ENC_LOG("Create output type set frame rate error: {:x}", hr);
       return nullptr;
     }
   }
@@ -214,7 +217,7 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
   hr = MFSetAttributeSize(type, MF_MT_FRAME_SIZE, aConfig.mSize.width,
                           aConfig.mSize.height);
   if (FAILED(hr)) {
-    WMF_ENC_LOG("Create output type set frame size error: %lx", hr);
+    WMF_ENC_LOG("Create output type set frame size error: {:x}", hr);
     return nullptr;
   }
 
@@ -224,7 +227,7 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
         MF_MT_MPEG2_PROFILE,
         GetProfile(aConfig.mCodecSpecific.as<H264Specific>().mProfile));
     if (FAILED(hr)) {
-      WMF_ENC_LOG("Create output type set profile error: %lx", hr);
+      WMF_ENC_LOG("Create output type set profile error: {:x}", hr);
       return nullptr;
     }
   }
@@ -232,14 +235,15 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
   
   
   
+  
   uint32_t interval = SaturatingCast<uint32_t>(aConfig.mKeyframeInterval);
   if (interval > 0) {
     hr = type->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, interval);
     if (FAILED(hr)) {
-      WMF_ENC_LOG("Create output type set keyframe interval error: %lx", hr);
+      WMF_ENC_LOG("Create output type set keyframe interval error: {:x}", hr);
       return nullptr;
     }
-    WMF_ENC_LOG("Set MAX_KEYFRAME_SPACING to %u", interval);
+    WMF_ENC_LOG("Set MAX_KEYFRAME_SPACING to {}", interval);
   }
 
   return type.forget();

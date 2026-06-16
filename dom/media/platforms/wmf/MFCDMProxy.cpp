@@ -13,13 +13,13 @@ namespace mozilla {
 
 using Microsoft::WRL::ComPtr;
 
-#define LOG(msg, ...)                         \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
-          ("MFCDMProxy=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                    \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug, "MFCDMProxy={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 MFCDMProxy::MFCDMProxy(IMFContentDecryptionModule* aCDM, uint64_t aCDMParentId)
     : mCDM(aCDM), mCDMParentId(aCDMParentId) {
-  LOG("MFCDMProxy created, created by %" PRId64 " MFCDMParent", mCDMParentId);
+  LOG("MFCDMProxy created, created by {} MFCDMParent", mCDMParentId);
 }
 
 MFCDMProxy::~MFCDMProxy() { LOG("MFCDMProxy destroyed"); }
@@ -54,7 +54,7 @@ HRESULT MFCDMProxy::GetInputTrustAuthority(uint32_t aStreamId,
     }
     RETURN_IF_FAILED(mCDM->CreateTrustedInput(
         aContentInitData, aContentInitDataSize, &mTrustedInput));
-    LOG("Created a trust input for stream %u", aStreamId);
+    LOG("Created a trust input for stream {}", aStreamId);
   }
 
   
@@ -90,6 +90,7 @@ void MFCDMProxy::ResetTrustedInput() {
 
 void MFCDMProxy::OnHardwareContextReset() {
   LOG("OnHardwareContextReset");
+  
   
   
   
