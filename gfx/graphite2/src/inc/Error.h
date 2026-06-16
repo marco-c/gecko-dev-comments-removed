@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #pragma once
 
 
@@ -38,7 +15,7 @@ public:
     operator bool() { return (_e != 0); }
     int error() { return _e; }
     void error(int e) { _e = e; }
-    bool test(bool pr, int err) { return (_e = int(pr) * err); }
+    bool test(bool pr, int err) { return (_e = pr ? err : 0); }
 
 private:
     int _e;
@@ -56,7 +33,7 @@ enum errcontext {
     EC_ARULEMAP = 9         
 };
 
-enum errors {
+enum error {
     E_OUTOFMEM = 1,         
     E_NOGLYPHS = 2,         
     E_BADUPEM = 3,          
@@ -125,7 +102,7 @@ enum errors {
     E_BADJUMPCODE = 65,     
     E_CODEBADARGS = 66,     
     E_CODENORETURN = 67,    
-    E_CODENESTEDCTXT = 68,   
+    E_CODENESTEDCTXT = 68,  
 
     E_BADSCHEME = 69,
     E_SHRINKERFAILED = 70,

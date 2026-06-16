@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "graphite2/Segment.h"
 #include "inc/Segment.h"
 #include "inc/Slot.h"

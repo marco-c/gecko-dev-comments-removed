@@ -2,29 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "inc/Segment.h"
 #include "graphite2/Font.h"
 #include "inc/debug.h"

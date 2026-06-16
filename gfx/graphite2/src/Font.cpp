@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "inc/Face.h"
 #include "inc/Font.h"
 #include "inc/GlyphCache.h"

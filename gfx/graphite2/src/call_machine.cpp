@@ -9,29 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <cassert>
 #include <cstring>
 #include <graphite2/Segment.h>

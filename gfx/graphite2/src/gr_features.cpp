@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "graphite2/Font.h"
 #include "inc/Face.h"
 #include "inc/FeatureMap.h"

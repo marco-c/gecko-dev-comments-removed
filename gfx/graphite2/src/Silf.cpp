@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <cstdlib>
 #include "graphite2/Segment.h"
 #include "inc/debug.h"

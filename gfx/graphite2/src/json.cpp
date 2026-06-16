@@ -4,29 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if !defined GRAPHITE2_NTRACING
 
 #include <cstdio>

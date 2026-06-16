@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <cstring>
 #include "graphite2/Segment.h"
 #include "inc/CmapCache.h"

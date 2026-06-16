@@ -1,29 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <cassert>
 #include "graphite2/Segment.h"
 #include "inc/CharInfo.h"

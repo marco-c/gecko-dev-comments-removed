@@ -2,29 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "inc/Main.h"
 #include "inc/CmapCache.h"
 #include "inc/Face.h"
