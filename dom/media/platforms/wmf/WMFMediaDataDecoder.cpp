@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WMFMediaDataDecoder.h"
 
 #include "VideoUtils.h"
@@ -14,7 +12,7 @@
 #include "mozilla/TaskQueue.h"
 #include "nsTArray.h"
 
-#define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#define LOG(...) MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 
 namespace mozilla {
 
@@ -62,7 +60,7 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessError(
       "WMFMediaDataDecoder::ProcessError for decoder with description %s with "
       "reason: %s",
       GetDescriptionName().get(), aReason);
-  LOG("%s", markerString.get());
+  LOG("{}", markerString.get());
   PROFILER_MARKER_TEXT("WMFDecoder Error", MEDIA_PLAYBACK, {}, markerString);
 
   
@@ -79,7 +77,7 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
   AUTO_PROFILER_LABEL("WMFMediaDataDecoder::ProcessDecode", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   DecodedData results;
-  LOG("ProcessDecode, type=%s, sample=%" PRId64 ", duration=%" PRId64,
+  LOG("ProcessDecode, type={}, sample={}, duration={}",
       TrackTypeToStr(mMFTManager->GetType()), aSample->mTime.ToMicroseconds(),
       aSample->mDuration.ToMicroseconds());
   HRESULT hr = mMFTManager->Input(aSample);
@@ -147,8 +145,8 @@ WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
   while (SUCCEEDED(hr = mMFTManager->Output(mLastStreamOffset, output))) {
     MOZ_ASSERT(output.get(), "Upon success, we must receive an output");
     if (ShouldGuardAgaintIncorrectFirstSample(output)) {
-      LOG("Discarding sample with time %" PRId64
-          " because of ShouldGuardAgaintIncorrectFirstSample check",
+      LOG("Discarding sample with time {} because of "
+          "ShouldGuardAgaintIncorrectFirstSample check",
           output->mTime.ToMicroseconds());
       continue;
     }
@@ -175,7 +173,7 @@ RefPtr<MediaDataDecoder::FlushPromise> WMFMediaDataDecoder::ProcessFlush() {
   if (mMFTManager) {
     mMFTManager->Flush();
   }
-  LOG("ProcessFlush, type=%s", TrackTypeToStr(mMFTManager->GetType()));
+  LOG("ProcessFlush, type={}", TrackTypeToStr(mMFTManager->GetType()));
   mDrainStatus = DrainStatus::DRAINED;
   mSamplesCount = 0;
   mOutputsCount = 0;

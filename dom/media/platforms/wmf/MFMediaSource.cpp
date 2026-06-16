@@ -19,9 +19,9 @@
 
 namespace mozilla {
 
-#define LOG(msg, ...)                         \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
-          ("MFMediaSource=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                       \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug, "MFMediaSource={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 using Microsoft::WRL::ComPtr;
 
@@ -143,10 +143,10 @@ IFACEMETHODIMP MFMediaSource::CreatePresentationDescriptor(
     RETURN_IF_FAILED(presentationDescriptor->SelectStream(idx));
     DWORD streamId;
     streamDescriptor->GetStreamIdentifier(&streamId);
-    LOG("  Select stream (id=%lu)", streamId);
+    LOG("  Select stream (id={})", streamId);
   }
 
-  LOG("Created a presentation descriptor (a=%lu,v=%lu)", audioDescriptorId,
+  LOG("Created a presentation descriptor (a={},v={})", audioDescriptorId,
       videoDescriptorId);
   *aPresentationDescriptor = presentationDescriptor.Detach();
   return S_OK;
@@ -167,6 +167,7 @@ IFACEMETHODIMP MFMediaSource::Start(
 
   
   
+  
   const bool isSeeking =
       IsSeekable() && ((mState == State::Started || mState == State::Paused) &&
                        aStartPosition->vt != VT_EMPTY);
@@ -176,7 +177,7 @@ IFACEMETHODIMP MFMediaSource::Start(
   } else if (aStartPosition->vt == VT_EMPTY) {
     startPosition.AppendLiteral("empty");
   }
-  LOG("Start, start position=%s, isSeeking=%d", startPosition.get(), isSeeking);
+  LOG("Start, start position={}, isSeeking={}", startPosition.get(), isSeeking);
 
   
   DWORD streamDescCount = 0;
@@ -205,6 +206,7 @@ IFACEMETHODIMP MFMediaSource::Start(
       RETURN_IF_FAILED(mMediaEventQueue->QueueEventParamUnk(
           stream->IsSelected() ? MEUpdatedStream : MENewStream, GUID_NULL, S_OK,
           stream.Get()));
+      
       
       stream->SetSelected(true);
       if (isSeeking) {
@@ -335,7 +337,7 @@ IFACEMETHODIMP MFMediaSource::QueueEvent(MediaEventType aType,
                                          REFGUID aExtendedType, HRESULT aStatus,
                                          const PROPVARIANT* aValue) {
   MOZ_ASSERT(mMediaEventQueue);
-  LOG("Queued event %s", MediaEventTypeToStr(aType));
+  LOG("Queued event {}", MediaEventTypeToStr(aType));
   PROFILER_MARKER_TEXT("MFMediaSource::QueueEvent", MEDIA_PLAYBACK, {},
                        nsPrintfCString("%s", MediaEventTypeToStr(aType)));
   RETURN_IF_FAILED(mMediaEventQueue->QueueEventParamVar(aType, aExtendedType,
@@ -376,7 +378,7 @@ void MFMediaSource::HandleStreamEnded(TrackInfo::TrackType aType) {
     return;
   }
 
-  LOG("Handle %s stream ended", TrackTypeToStr(aType));
+  LOG("Handle {} stream ended", TrackTypeToStr(aType));
   if (aType == TrackInfo::TrackType::kAudioTrack) {
     mIsAudioEnded = true;
   } else if (aType == TrackInfo::TrackType::kVideoTrack) {
@@ -385,7 +387,7 @@ void MFMediaSource::HandleStreamEnded(TrackInfo::TrackType aType) {
     MOZ_ASSERT_UNREACHABLE("Incorrect track type!");
   }
   mPresentationEnded = mIsAudioEnded && mIsVideoEnded;
-  LOG("PresentationEnded=%d, audioEnded=%d, videoEnded=%d",
+  LOG("PresentationEnded={}, audioEnded={}, videoEnded={}",
       !!mPresentationEnded, mIsAudioEnded, mIsVideoEnded);
   PROFILER_MARKER_TEXT(
       " MFMediaSource::HandleStreamEnded", MEDIA_PLAYBACK, {},
@@ -497,14 +499,14 @@ IFACEMETHODIMP MFMediaSource::SetRate(BOOL aSupportsThinning, float aRate) {
 
   HRESULT hr = IsRateSupported(aSupportsThinning, aRate, &mPlaybackRate);
   if (FAILED(hr)) {
-    LOG("Unsupported playback rate %f, error=%lX", aRate, hr);
+    LOG("Unsupported playback rate {}, error={:X}", aRate, hr);
     return hr;
   }
 
   PROPVARIANT varRate;
   varRate.vt = VT_R4;
   varRate.fltVal = mPlaybackRate;
-  LOG("Set playback rate %f", mPlaybackRate);
+  LOG("Set playback rate {}", mPlaybackRate);
   return QueueEvent(MESourceRateChanged, GUID_NULL, S_OK, &varRate);
 }
 
@@ -536,6 +538,7 @@ HRESULT MFMediaSource::GetInputTrustAuthority(DWORD aStreamId, REFIID aRiid,
     return MF_E_NOT_PROTECTED;
   }
 
+  
   
   ComPtr<MFMediaEngineStream> stream = GetStreamByIndentifier(aStreamId);
   if (!stream) {
@@ -600,6 +603,7 @@ void MFMediaSource::AssertOnManagerThread() const {
 }
 
 void MFMediaSource::AssertOnMFThreadPool() const {
+  
   
   
   
