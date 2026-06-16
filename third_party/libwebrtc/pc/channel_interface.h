@@ -86,16 +86,6 @@ class ChannelInterface {
   virtual void Enable(bool enable) = 0;
 
   
-  virtual void SetFirstPacketReceivedCallback_n(
-      absl::AnyInvocable<void(const RtpPacketReceived&) &&> callback) = 0;
-  virtual void SetFirstPacketSentCallback_n(
-      absl::AnyInvocable<void() &&> callback) = 0;
-
-  
-  virtual void SetPacketReceivedCallback_n(
-      absl::AnyInvocable<void(const RtpPacketReceived&)> callback) = 0;
-
-  
   virtual RTCError SetLocalContent(const MediaContentDescription* content,
                                    SdpType type) = 0;
   virtual RTCError SetRemoteContent(const MediaContentDescription* content,
