@@ -485,6 +485,8 @@ pub struct Loss {
     
     
     fast_pto: u8,
+    
+    pending_timer_type: Option<qlog::LossTimerType>,
 }
 
 impl Loss {
@@ -497,6 +499,7 @@ impl Loss {
             qlog: Qlog::default(),
             stats,
             fast_pto,
+            pending_timer_type: None,
         }
     }
 
@@ -788,6 +791,25 @@ impl Loss {
     }
 
     
+    
+    
+    pub(crate) fn note_timeout_type(&mut self, path: &Path, now: Instant) {
+        if self.qlog.is_enabled() && self.pending_timer_type.is_none() {
+            self.pending_timer_type = self.expired_timer_type(path.rtt(), now);
+        }
+    }
+
+    fn expired_timer_type(&self, rtt: &RttEstimate, now: Instant) -> Option<qlog::LossTimerType> {
+        if self.earliest_loss_time(rtt).is_some_and(|t| t <= now) {
+            Some(qlog::LossTimerType::Ack)
+        } else if self.earliest_pto(rtt).is_some_and(|t| t <= now) {
+            Some(qlog::LossTimerType::Pto)
+        } else {
+            None
+        }
+    }
+
+    
     fn earliest_loss_time(&self, rtt: &RttEstimate) -> Option<Instant> {
         self.spaces
             .iter()
@@ -939,18 +961,13 @@ impl Loss {
         has_handshake_keys: bool,
     ) -> Vec<sent::Packet> {
         qtrace!("[{self}] timeout {now:?}");
-        let timer_type = {
-            let path = primary_path.borrow();
-            if self
-                .earliest_loss_time(path.rtt())
-                .is_some_and(|t| t <= now)
-            {
-                qlog::LossTimerType::Ack
-            } else {
-                qlog::LossTimerType::Pto
-            }
-        };
-        qlog::loss_timer_expired(&mut self.qlog, timer_type, now);
+        if let Some(timer_type) = self
+            .pending_timer_type
+            .take()
+            .or_else(|| self.expired_timer_type(primary_path.borrow().rtt(), now))
+        {
+            qlog::loss_timer_expired(&mut self.qlog, timer_type, now);
+        }
 
         let loss_delay = primary_path.borrow().rtt().loss_delay();
         let confirmed = self.confirmed();
@@ -1086,6 +1103,10 @@ mod tests {
 
         pub fn timeout(&mut self, now: Instant) -> Vec<sent::Packet> {
             self.lr.timeout(&self.path, now, true)
+        }
+
+        pub fn note_timeout_type(&mut self, now: Instant) {
+            self.lr.note_timeout_type(&self.path.borrow(), now);
         }
 
         pub fn next_timeout(&self) -> Option<Instant> {
@@ -2118,6 +2139,38 @@ mod tests {
         assert!(
             log.contains(r#""event_type":"cancelled""#),
             "Expected loss_timer_updated Cancelled event in qlog: {log}"
+        );
+    }
+
+    #[test]
+    fn note_timeout_type_survives_ack() {
+        let (log, contents) = test_fixture::new_neqo_qlog();
+        let mut lr = Fixture::default();
+        lr.lr.set_qlog(log);
+
+        pace(&mut lr, 3);
+
+        
+        
+        ack(&mut lr, 0, TEST_RTT);
+        ack(&mut lr, 2, TEST_RTT);
+        lr.timeout(pn_time(2) + TEST_RTT);
+
+        let pn1_loss_time = pn_time(1) + (TEST_RTT * 9 / 8);
+        assert_eq!(lr.next_timeout(), Some(pn1_loss_time));
+
+        
+        lr.note_timeout_type(pn1_loss_time);
+        ack(&mut lr, 1, TEST_RTT * 9 / 8);
+
+        
+        lr.timeout(pn1_loss_time);
+        drop(lr);
+
+        let log = contents.to_string();
+        assert!(
+            log.contains(r#""timer_type":"ack""#),
+            "Expected timer_type ack from snapshot, got: {log}"
         );
     }
 }

@@ -18,7 +18,7 @@ use enum_map::EnumMap;
 use neqo_common::{Dscp, Ecn, qdebug};
 use strum::IntoEnumIterator as _;
 
-use crate::{ecn, packet};
+use crate::{ecn, packet, version::Version};
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct FrameStats {
@@ -159,6 +159,14 @@ pub struct CongestionEventStats {
 }
 
 
+
+#[derive(Default, Clone, PartialEq, Eq)]
+pub struct SearchResetStats {
+    pub count: usize,
+    pub max_passed_bins: Option<usize>,
+}
+
+
 #[derive(Default, Clone, PartialEq)]
 pub struct CongestionControlStats {
     
@@ -179,6 +187,31 @@ pub struct CongestionControlStats {
     pub hystart_css_rounds_finished: usize,
     
     
+    pub search_empty_buffer_target: Option<u64>,
+    
+    
+    pub search_full_buffer_target: Option<u64>,
+    
+    
+    
+    pub search_lookback_bins_needed: Option<usize>,
+    
+    
+    
+    pub search_max_norm_diff: Option<usize>,
+    
+    pub search_reset: SearchResetStats,
+    
+    
+    pub search_zero_sent_bytes: usize,
+    
+    
+    pub search_first_rtt: Option<Duration>,
+    
+    
+    pub search_second_rtt: Option<Duration>,
+    
+    
     
     
     pub w_max: Option<f64>,
@@ -186,6 +219,7 @@ pub struct CongestionControlStats {
     
     pub cwnd: Option<usize>,
 }
+
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct EcnCount(EnumMap<packet::Type, ecn::Count>);
@@ -289,6 +323,10 @@ pub struct Stats {
     pub info: String,
 
     
+    
+    pub version: Version,
+
+    
     pub packets_rx: usize,
     
     pub dups_rx: usize,
@@ -328,6 +366,8 @@ pub struct Stats {
     pub rtt: Duration,
     
     pub rttvar: Duration,
+    
+    pub min_rtt: Duration,
     
     pub rtt_init_guess: bool,
 
@@ -413,6 +453,7 @@ impl Stats {
 impl Debug for Stats {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "stats for {}", self.info)?;
+        writeln!(f, "  version: {:?}", self.version)?;
         writeln!(
             f,
             "  rx: {} drop {} dup {} saved {}",
@@ -538,6 +579,7 @@ fn debug() {
     assert_eq!(
         format!("{stats:?}"),
         "stats for\u{0020}
+  version: Version1
   rx: 0 drop 0 dup 0 saved 0
   tx: 0 lost 0 lateack 0 ptoack 0 unackdrop 0
   cc:

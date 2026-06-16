@@ -40,7 +40,7 @@ impl Pacer {
     
     
     
-    const SPEEDUP: usize = 2;
+    const SPEEDUP: u64 = 2;
 
     
     
@@ -86,49 +86,54 @@ impl Pacer {
 
         
         
-        let r = rtt.as_nanos();
-        let deficit =
-            u128::try_from(packet - self.c).expect("packet is larger than current credit");
-        let d = r.saturating_mul(deficit);
-        let divisor = u128::try_from(cwnd)
-            .expect("usize fits into u128")
-            .saturating_mul(u128::try_from(Self::SPEEDUP).expect("usize fits into u128"));
-        let add = d / divisor;
-        let w = u64::try_from(add).map_or(rtt, Duration::from_nanos);
+        
+        
+        
+        
+        let Ok(deficit) = u64::try_from(packet - self.c) else {
+            qtrace!("[{self}] next {cwnd}/{rtt:?} deficit overflow");
+            return self.t;
+        };
+        let rtt_ns = u64::try_from(rtt.as_nanos()).unwrap_or(u64::MAX);
+        let divisor = (cwnd as u64).saturating_mul(Self::SPEEDUP);
+        let w_ns = rtt_ns.saturating_mul(deficit) / divisor;
 
         
-        if w < GRANULARITY {
-            qtrace!("[{self}] next {cwnd}/{rtt:?} below granularity ({w:?})");
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "GRANULARITY is 1ms, fits in u64"
+        )]
+        if w_ns < GRANULARITY.as_nanos() as u64 {
+            qtrace!("[{self}] next {cwnd}/{rtt:?} below granularity ({w_ns}ns)");
             return self.t;
         }
 
-        let nxt = self.t + w;
-        qtrace!("[{self}] next {cwnd}/{rtt:?} wait {w:?} = {nxt:?}");
+        let nxt = self.t + Duration::from_nanos(w_ns);
+        qtrace!("[{self}] next {cwnd}/{rtt:?} wait {w_ns}ns = {nxt:?}");
         nxt
     }
 
     
     
-    #[allow(
-        clippy::allow_attributes,
-        clippy::unwrap_in_result,
-        reason = "Check if this can be removed with MSRV > 1.90"
-    )]
-    fn bytes_for(cwnd: usize, rtt: Duration, elapsed: Duration) -> Option<u128> {
-        let factor = u128::try_from(cwnd)
-            .expect("usize fits into u128")
-            .saturating_mul(u128::try_from(Self::SPEEDUP).expect("usize fits into u128"));
-        elapsed
-            .as_nanos()
-            .saturating_mul(factor)
-            .checked_div(rtt.as_nanos())
+    
+    
+    
+    
+    
+    
+    
+    fn bytes_for(cwnd: usize, rtt: Duration, elapsed: Duration) -> Option<u64> {
+        let rtt_ns = u64::try_from(rtt.as_nanos()).unwrap_or(u64::MAX);
+        let elapsed_ns = u64::try_from(elapsed.as_nanos()).unwrap_or(u64::MAX);
+        let factor = (cwnd as u64).saturating_mul(Self::SPEEDUP);
+        elapsed_ns.saturating_mul(factor).checked_div(rtt_ns)
     }
 
     
     
     
     pub(crate) fn rate(cwnd: usize, rtt: Duration) -> Option<u64> {
-        u64::try_from(Self::bytes_for(cwnd, rtt, Duration::from_secs(1))?).ok()
+        Self::bytes_for(cwnd, rtt, Duration::from_secs(1))
     }
 
     
@@ -137,11 +142,10 @@ impl Pacer {
     
     
     
-    
-    pub fn spend(&mut self, now: Instant, rtt: Duration, cwnd: usize, count: usize) {
+    pub fn spend(&mut self, now: Instant, rtt: Duration, cwnd: usize, count: usize) -> bool {
         if !self.enabled {
             self.t = now;
-            return;
+            return false;
         }
 
         qtrace!("[{self}] spend {count} over {cwnd}, {rtt:?}");
@@ -159,6 +163,7 @@ impl Pacer {
                 .saturating_sub(isize::try_from(count).unwrap_or(isize::MAX)),
         );
         self.t = now;
+        self.next(rtt, cwnd) > now
     }
 }
 
@@ -192,7 +197,7 @@ mod tests {
         let n = now();
         let mut p = Pacer::new(true, n, PACKET, PACKET);
         assert_eq!(p.next(RTT, CWND), n);
-        p.spend(n, RTT, CWND, PACKET);
+        assert!(p.spend(n, RTT, CWND, PACKET));
         assert_eq!(p.next(RTT, CWND), n + (RTT / 20));
     }
 
@@ -202,7 +207,7 @@ mod tests {
         let mut p = Pacer::new(true, n + RTT, PACKET, PACKET);
         assert_eq!(p.next(RTT, CWND), n + RTT);
         
-        p.spend(n, RTT, CWND, PACKET);
+        assert!(p.spend(n, RTT, CWND, PACKET));
         assert_eq!(p.next(RTT, CWND), n + (RTT / 20));
     }
 
@@ -211,7 +216,7 @@ mod tests {
         let n = now();
         let mut p = Pacer::new(false, n, PACKET, PACKET);
         assert_eq!(p.next(RTT, CWND), n);
-        p.spend(n, RTT, CWND, PACKET);
+        assert!(!p.spend(n, RTT, CWND, PACKET));
         assert_eq!(p.next(RTT, CWND), n);
     }
 
@@ -221,11 +226,9 @@ mod tests {
         let n = now();
         let mut p = Pacer::new(true, n, PACKET, PACKET);
         assert_eq!(p.next(SHORT_RTT, CWND), n);
-        p.spend(n, SHORT_RTT, CWND, PACKET);
-        assert_eq!(
-            p.next(SHORT_RTT, CWND),
-            n,
-            "Expect packet to be sent immediately, instead of being paced below timer granularity"
+        assert!(
+            !p.spend(n, SHORT_RTT, CWND, PACKET),
+            "sub-granularity delay should not be pacing-limited"
         );
     }
 
@@ -275,12 +278,9 @@ mod tests {
         const CWND_AT_GRANULARITY: usize = 5000; 
         let n = now();
         let mut p = Pacer::new(true, n, PACKET, PACKET);
-        p.spend(n, SHORT_RTT, CWND_AT_GRANULARITY, PACKET);
-        
-        assert_ne!(
-            p.next(SHORT_RTT, CWND_AT_GRANULARITY),
-            n,
-            "at exactly GRANULARITY should not send immediately"
+        assert!(
+            p.spend(n, SHORT_RTT, CWND_AT_GRANULARITY, PACKET),
+            "at exactly GRANULARITY should be pacing-limited"
         );
     }
 

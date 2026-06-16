@@ -76,10 +76,7 @@ where
     
     
     
-    
-    
-    
-    blocked_at: u64,
+    blocked_at: Option<u64>,
     
     blocked_frame: bool,
 }
@@ -94,7 +91,7 @@ where
             subject,
             limit: initial,
             used: 0,
-            blocked_at: 0,
+            blocked_at: None,
             blocked_frame: false,
         }
     }
@@ -102,7 +99,6 @@ where
     
     
     pub fn update(&mut self, limit: u64) -> Option<usize> {
-        debug_assert!(limit < u64::MAX);
         (limit > self.limit).then(|| {
             self.limit = limit;
             self.blocked_frame = false;
@@ -130,10 +126,13 @@ where
     
     
     pub const fn blocked(&mut self) {
-        if self.limit >= self.blocked_at {
-            self.blocked_at = self.limit + 1;
-            self.blocked_frame = true;
+        if let Some(block) = self.blocked_at
+            && self.limit <= block
+        {
+            return;
         }
+        self.blocked_at = Some(self.limit);
+        self.blocked_frame = true;
     }
 
     
@@ -141,7 +140,8 @@ where
     
     
     fn blocked_needed(&self) -> Option<u64> {
-        (self.blocked_frame && self.limit < self.blocked_at).then(|| self.blocked_at - 1)
+        self.blocked_at
+            .filter(|&l| self.blocked_frame && self.limit <= l)
     }
 
     
@@ -153,7 +153,9 @@ where
     
     
     pub const fn frame_lost(&mut self, limit: u64) {
-        if self.blocked_at == limit + 1 {
+        if let Some(block) = self.blocked_at
+            && block == limit
+        {
             self.blocked_frame = true;
         }
     }
@@ -751,7 +753,7 @@ mod test {
     };
 
     use neqo_common::{Encoder, Role, qdebug};
-    use neqo_crypto::random;
+    use nss::random;
 
     use super::{
         AutoTuneSubject, LocalStreamLimits, ReceiverFlowControl, RemoteStreamLimits,
