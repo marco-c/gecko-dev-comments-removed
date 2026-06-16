@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGDescElement.h"
 
 #include "mozilla/dom/SVGDescElementBinding.h"
@@ -21,7 +19,7 @@ JSObject* SVGDescElement::WrapNode(JSContext* aCx,
 
 
 SVGDescElement::SVGDescElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGDescElementBase(std::move(aNodeInfo)) {}
 
 

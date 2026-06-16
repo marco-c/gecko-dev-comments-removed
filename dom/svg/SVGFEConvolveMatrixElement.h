@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFECONVOLVEMATRIXELEMENT_H_
 #define DOM_SVG_SVGFECONVOLVEMATRIXELEMENT_H_
 
@@ -17,7 +15,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEConvolveMatrixElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 class DOMSVGAnimatedNumberList;
@@ -28,11 +26,11 @@ using SVGFEConvolveMatrixElementBase = SVGFilterPrimitiveElement;
 class SVGFEConvolveMatrixElement final : public SVGFEConvolveMatrixElementBase {
   friend nsresult(::NS_NewSVGFEConvolveMatrixElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGFEConvolveMatrixElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFEConvolveMatrixElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

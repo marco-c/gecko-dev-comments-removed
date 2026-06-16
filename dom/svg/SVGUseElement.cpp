@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGUseElement.h"
 
 #include "SVGGeometryProperty.h"
@@ -76,8 +74,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGUseElement, SVGUseElementBase,
 
 
 
-SVGUseElement::SVGUseElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+SVGUseElement::SVGUseElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGUseElementBase(std::move(aNodeInfo)), mReferencedElementTracker(this) {
   SetEnabledCallbacks(kCharacterDataChanged | kAttributeChanged |
                       kContentAppended | kContentInserted |

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGTSpanElement.h"
 
 #include "mozilla/dom/SVGTSpanElementBinding.h"
@@ -21,7 +19,7 @@ JSObject* SVGTSpanElement::WrapNode(JSContext* aCx,
 
 
 SVGTSpanElement::SVGTSpanElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGTSpanElementBase(std::move(aNodeInfo)) {}
 
 SVGElement::EnumAttributesInfo SVGTSpanElement::GetEnumInfo() {

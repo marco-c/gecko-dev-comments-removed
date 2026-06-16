@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
 #define DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
 
@@ -12,7 +10,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEColorMatrixElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -23,11 +21,11 @@ using SVGFEColorMatrixElementBase = SVGFilterPrimitiveElement;
 class SVGFEColorMatrixElement final : public SVGFEColorMatrixElementBase {
   friend nsresult(::NS_NewSVGFEColorMatrixElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGFEColorMatrixElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFEColorMatrixElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

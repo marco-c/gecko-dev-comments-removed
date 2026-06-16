@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGMPATHELEMENT_H_
 #define DOM_SVG_SVGMPATHELEMENT_H_
 
@@ -11,7 +9,7 @@
 #include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGMPathElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 class SVGGeometryElement;
@@ -22,9 +20,8 @@ class SVGMPathElement final : public SVGMPathElementBase {
  protected:
   friend nsresult(::NS_NewSVGMPathElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGMPathElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGMPathElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGMPathElement() = default;
 
   JSObject* WrapNode(JSContext* aCx,

@@ -10,9 +10,9 @@
 #include "mozilla/SVGImageContext.h"
 #include "nsString.h"
 
-nsresult NS_NewSVGSVGElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    mozilla::dom::FromParser aFromParser);
+nsresult NS_NewSVGSVGElement(nsIContent** aResult,
+                             already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             mozilla::dom::FromParser aFromParser);
 
 
 #define MOZILLA_SVGSVGELEMENT_IID \
@@ -53,14 +53,13 @@ class SVGSVGElement final : public SVGSVGElementBase {
   friend class mozilla::dom::SVGView;
 
  protected:
-  SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                 FromParser aFromParser);
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
 
   friend nsresult(::NS_NewSVGSVGElement(
-      nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       mozilla::dom::FromParser aFromParser));
 
   ~SVGSVGElement() = default;

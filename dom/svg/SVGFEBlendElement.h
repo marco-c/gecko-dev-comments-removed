@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFEBLENDELEMENT_H_
 #define DOM_SVG_SVGFEBLENDELEMENT_H_
 
@@ -11,7 +9,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEBlendElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 namespace mozilla::dom {
 
 using SVGFEBlendElementBase = SVGFilterPrimitiveElement;
@@ -19,11 +17,10 @@ using SVGFEBlendElementBase = SVGFilterPrimitiveElement;
 class SVGFEBlendElement final : public SVGFEBlendElementBase {
   friend nsresult(::NS_NewSVGFEBlendElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
-  explicit SVGFEBlendElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit SVGFEBlendElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFEBlendElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 

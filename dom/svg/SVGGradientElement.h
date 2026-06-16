@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGGRADIENTELEMENT_H_
 #define DOM_SVG_SVGGRADIENTELEMENT_H_
 
@@ -16,9 +14,9 @@
 #include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGLinearGradientElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 nsresult NS_NewSVGRadialGradientElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGGradientFrame;
@@ -38,7 +36,7 @@ class SVGGradientElement : public SVGGradientElementBase {
 
  protected:
   explicit SVGGradientElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override = 0;
 
@@ -86,11 +84,11 @@ class SVGLinearGradientElement final : public SVGLinearGradientElementBase {
   friend class mozilla::SVGLinearGradientFrame;
   friend nsresult(::NS_NewSVGLinearGradientElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGLinearGradientElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
@@ -119,11 +117,11 @@ class SVGRadialGradientElement final : public SVGRadialGradientElementBase {
   friend class mozilla::SVGRadialGradientFrame;
   friend nsresult(::NS_NewSVGRadialGradientElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGRadialGradientElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 

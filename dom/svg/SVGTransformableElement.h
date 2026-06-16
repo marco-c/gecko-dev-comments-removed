@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTRANSFORMABLEELEMENT_H_
 #define DOM_SVG_SVGTRANSFORMABLEELEMENT_H_
 
@@ -24,7 +22,7 @@ struct SVGBoundingBoxOptions;
 
 class SVGTransformableElement : public SVGElement {
  public:
-  explicit SVGTransformableElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+  explicit SVGTransformableElement(already_AddRefed<dom::NodeInfo> aNodeInfo)
       : SVGElement(std::move(aNodeInfo)) {}
   virtual ~SVGTransformableElement() = default;
 

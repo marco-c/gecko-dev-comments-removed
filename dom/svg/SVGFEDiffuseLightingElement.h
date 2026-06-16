@@ -2,15 +2,13 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFEDIFFUSELIGHTINGELEMENT_H_
 #define DOM_SVG_SVGFEDIFFUSELIGHTINGELEMENT_H_
 
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEDiffuseLightingElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -20,11 +18,11 @@ class SVGFEDiffuseLightingElement final
     : public SVGFEDiffuseLightingElementBase {
   friend nsresult(::NS_NewSVGFEDiffuseLightingElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGFEDiffuseLightingElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFEDiffuseLightingElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

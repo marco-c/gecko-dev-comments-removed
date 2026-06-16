@@ -2,15 +2,13 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTSPANELEMENT_H_
 #define DOM_SVG_SVGTSPANELEMENT_H_
 
 #include "mozilla/dom/SVGTextPositioningElement.h"
 
 nsresult NS_NewSVGTSpanElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -20,9 +18,8 @@ class SVGTSpanElement final : public SVGTSpanElementBase {
  protected:
   friend nsresult(::NS_NewSVGTSpanElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGTSpanElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGTSpanElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

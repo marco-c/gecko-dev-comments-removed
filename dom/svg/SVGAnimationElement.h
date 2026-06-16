@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATIONELEMENT_H_
 #define DOM_SVG_SVGANIMATIONELEMENT_H_
 
@@ -19,7 +17,7 @@ using SVGAnimationElementBase = SVGElement;
 class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
  protected:
   explicit SVGAnimationElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   nsresult Init();
   virtual ~SVGAnimationElement() = default;
 

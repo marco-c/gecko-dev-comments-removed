@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGAElement.h"
 
 #include "mozilla/EventDispatcher.h"
@@ -45,7 +43,7 @@ NS_IMPL_RELEASE_INHERITED(SVGAElement, SVGAElementBase)
 
 
 
-SVGAElement::SVGAElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+SVGAElement::SVGAElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGAElementBase(std::move(aNodeInfo)), Link(this) {}
 
 already_AddRefed<DOMSVGAnimatedString> SVGAElement::Href() {

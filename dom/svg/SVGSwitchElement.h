@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGSWITCHELEMENT_H_
 #define DOM_SVG_SVGSWITCHELEMENT_H_
 
@@ -11,7 +9,7 @@
 #include "nsCOMPtr.h"
 
 nsresult NS_NewSVGSwitchElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class ErrorResult;
@@ -23,9 +21,8 @@ class SVGSwitchElement final : public SVGSwitchElementBase {
  protected:
   friend nsresult(::NS_NewSVGSwitchElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGSwitchElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGSwitchElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGSwitchElement() = default;
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

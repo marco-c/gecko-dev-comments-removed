@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGPolylineElement.h"
 
 #include "mozilla/dom/SVGAnimatedLength.h"
@@ -25,7 +23,7 @@ JSObject* SVGPolylineElement::WrapNode(JSContext* aCx,
 
 
 SVGPolylineElement::SVGPolylineElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolylineElementBase(std::move(aNodeInfo)) {}
 
 

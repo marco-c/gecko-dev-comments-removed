@@ -34,7 +34,7 @@ SVGElement::LengthInfo SVGCircleElement::sLengthInfo[3] = {
 
 
 SVGCircleElement::SVGCircleElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGCircleElementBase(std::move(aNodeInfo)) {}
 
 bool SVGCircleElement::IsAttributeMapped(const nsAtom* aAttribute) const {

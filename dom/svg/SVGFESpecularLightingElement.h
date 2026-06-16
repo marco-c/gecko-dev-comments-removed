@@ -2,15 +2,13 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFESPECULARLIGHTINGELEMENT_H_
 #define DOM_SVG_SVGFESPECULARLIGHTINGELEMENT_H_
 
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFESpecularLightingElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -22,11 +20,11 @@ class SVGFESpecularLightingElement final
     : public SVGFESpecularLightingElementBase {
   friend nsresult(::NS_NewSVGFESpecularLightingElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGFESpecularLightingElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFESpecularLightingElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

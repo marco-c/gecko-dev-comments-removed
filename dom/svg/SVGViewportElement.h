@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGVIEWPORTELEMENT_H_
 #define DOM_SVG_SVGVIEWPORTELEMENT_H_
 
@@ -33,7 +31,7 @@ class SVGViewportElement : public SVGGraphicsElement {
 
  protected:
   explicit SVGViewportElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGViewportElement() = default;
 
  public:

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTITLEELEMENT_H_
 #define DOM_SVG_SVGTITLEELEMENT_H_
 
@@ -11,7 +9,7 @@
 #include "nsStubMutationObserver.h"
 
 nsresult NS_NewSVGTitleElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 namespace mozilla::dom {
 
 using SVGTitleElementBase = SVGElement;
@@ -21,9 +19,8 @@ class SVGTitleElement final : public SVGTitleElementBase,
  protected:
   friend nsresult(::NS_NewSVGTitleElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGTitleElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGTitleElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGTitleElement() = default;
 
   JSObject* WrapNode(JSContext* aCx,

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGMARKERELEMENT_H_
 #define DOM_SVG_SVGMARKERELEMENT_H_
 
@@ -18,7 +16,7 @@
 #include "mozilla/dom/SVGMarkerElementBinding.h"
 
 nsresult NS_NewSVGMarkerElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 
@@ -38,9 +36,8 @@ class SVGMarkerElement final : public SVGMarkerElementBase {
  protected:
   friend nsresult(::NS_NewSVGMarkerElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGMarkerElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGMarkerElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGMetadataElement.h"
 
 #include "mozilla/dom/SVGMetadataElementBinding.h"
@@ -21,7 +19,7 @@ JSObject* SVGMetadataElement::WrapNode(JSContext* aCx,
 
 
 SVGMetadataElement::SVGMetadataElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGMetadataElementBase(std::move(aNodeInfo)) {}
 
 nsresult SVGMetadataElement::Init() { return NS_OK; }

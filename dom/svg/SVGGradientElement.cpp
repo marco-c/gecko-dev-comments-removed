@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGGradientElement.h"
 
 #include "DOMSVGAnimatedTransformList.h"
@@ -45,7 +43,7 @@ SVGElement::StringInfo SVGGradientElement::sStringInfo[2] = {
 
 
 SVGGradientElement::SVGGradientElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGradientElementBase(std::move(aNodeInfo)) {}
 
 
@@ -104,7 +102,7 @@ SVGElement::LengthInfo SVGLinearGradientElement::sLengthInfo[4] = {
 
 
 SVGLinearGradientElement::SVGLinearGradientElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGLinearGradientElementBase(std::move(aNodeInfo)) {}
 
 
@@ -172,7 +170,7 @@ SVGElement::LengthInfo SVGRadialGradientElement::sLengthInfo[6] = {
 
 
 SVGRadialGradientElement::SVGRadialGradientElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGRadialGradientElementBase(std::move(aNodeInfo)) {}
 
 

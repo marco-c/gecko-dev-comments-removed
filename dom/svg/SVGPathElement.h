@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGPATHELEMENT_H_
 #define DOM_SVG_SVGPATHELEMENT_H_
 
@@ -13,7 +11,7 @@
 #include "mozilla/gfx/2D.h"
 
 nsresult NS_NewSVGPathElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -29,9 +27,9 @@ class SVGPathElement final : public SVGPathElementBase {
  protected:
   friend nsresult(::NS_NewSVGPathElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
-  explicit SVGPathElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGPathElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   void GetAsSimplePath(SimplePath* aSimplePath) override;
 

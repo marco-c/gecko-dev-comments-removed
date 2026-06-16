@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGDefsElement.h"
 
 #include "mozilla/dom/SVGDefsElementBinding.h"
@@ -21,7 +19,7 @@ JSObject* SVGDefsElement::WrapNode(JSContext* aCx,
 
 
 SVGDefsElement::SVGDefsElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 

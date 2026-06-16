@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGViewportElement.h"
 
 #include <algorithm>
@@ -46,7 +44,7 @@ SVGElement::LengthInfo SVGViewportElement::sLengthInfo[4] = {
 
 
 SVGViewportElement::SVGViewportElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 

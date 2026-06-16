@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGMASKELEMENT_H_
 #define DOM_SVG_SVGMASKELEMENT_H_
 
@@ -12,7 +10,7 @@
 #include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGMaskElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGMaskFrame;
@@ -29,8 +27,8 @@ class SVGMaskElement final : public SVGMaskElementBase {
  protected:
   friend nsresult(::NS_NewSVGMaskElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGMaskElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGMaskElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

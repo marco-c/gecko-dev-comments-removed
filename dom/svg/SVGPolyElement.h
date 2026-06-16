@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGPOLYELEMENT_H_
 #define DOM_SVG_SVGPOLYELEMENT_H_
 
@@ -18,7 +16,7 @@ using SVGPolyElementBase = SVGGeometryElement;
 
 class SVGPolyElement : public SVGPolyElementBase {
  protected:
-  explicit SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   virtual ~SVGPolyElement() = default;
 

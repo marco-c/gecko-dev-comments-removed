@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTEXTCONTENTELEMENT_H_
 #define DOM_SVG_SVGTEXTCONTENTELEMENT_H_
 
@@ -52,7 +50,7 @@ class SVGTextContentElement : public SVGTextContentElementBase {
 
  protected:
   explicit SVGTextContentElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGTextContentElementBase(std::move(aNodeInfo)) {}
 
   MOZ_CAN_RUN_SCRIPT SVGTextFrame* GetSVGTextFrame();

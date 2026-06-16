@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGAnimationElement.h"
 
 #include "mozilla/SMILAnimationController.h"
@@ -36,7 +34,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(SVGAnimationElement, SVGAnimationElementBase,
 
 
 SVGAnimationElement::SVGAnimationElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGAnimationElementBase(std::move(aNodeInfo)), mHrefTarget(this) {}
 
 nsresult SVGAnimationElement::Init() {

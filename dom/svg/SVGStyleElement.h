@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGSTYLEELEMENT_H_
 #define DOM_SVG_SVGSTYLEELEMENT_H_
 
@@ -12,7 +10,7 @@
 #include "nsStubMutationObserver.h"
 
 nsresult NS_NewSVGStyleElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -24,9 +22,8 @@ class SVGStyleElement final : public SVGStyleElementBase,
  protected:
   friend nsresult(::NS_NewSVGStyleElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGStyleElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGStyleElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGStyleElement() = default;
 
   JSObject* WrapNode(JSContext* aCx,

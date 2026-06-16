@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGFilterElement.h"
 
 #include "mozilla/AlreadyAddRefed.h"
@@ -48,7 +46,7 @@ SVGElement::StringInfo SVGFilterElement::sStringInfo[2] = {
 
 
 SVGFilterElement::SVGFilterElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGFilterElementBase(std::move(aNodeInfo)) {}
 
 

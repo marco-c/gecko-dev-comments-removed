@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGPolygonElement.h"
 
 #include "SVGContentUtils.h"
@@ -26,7 +24,7 @@ JSObject* SVGPolygonElement::WrapNode(JSContext* aCx,
 
 
 SVGPolygonElement::SVGPolygonElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolygonElementBase(std::move(aNodeInfo)) {}
 
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGTextPathElement.h"
 
 #include "SVGElement.h"
@@ -66,7 +64,7 @@ SVGElement::StringInfo SVGTextPathElement::sStringInfo[2] = {
 
 
 SVGTextPathElement::SVGTextPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGTextPathElementBase(std::move(aNodeInfo)) {}
 
 void SVGTextPathElement::HrefAsString(nsAString& aHref) {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGPatternElement.h"
 
 #include "DOMSVGAnimatedTransformList.h"
@@ -51,7 +49,7 @@ SVGElement::StringInfo SVGPatternElement::sStringInfo[2] = {
 
 
 SVGPatternElement::SVGPatternElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPatternElementBase(std::move(aNodeInfo)) {}
 
 

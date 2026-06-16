@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTEXTPOSITIONINGELEMENT_H_
 #define DOM_SVG_SVGTEXTPOSITIONINGELEMENT_H_
 
@@ -30,7 +28,7 @@ class SVGTextPositioningElement : public SVGTextPositioningElementBase {
 
  protected:
   explicit SVGTextPositioningElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGTextPositioningElementBase(std::move(aNodeInfo)) {}
 
   LengthListAttributesInfo GetLengthListInfo() override;

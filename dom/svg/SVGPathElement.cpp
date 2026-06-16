@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/SVGPathElement.h"
 
 #include <algorithm>
@@ -64,7 +62,7 @@ JSObject* SVGPathElement::WrapNode(JSContext* aCx,
 
 
 SVGPathElement::SVGPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPathElementBase(std::move(aNodeInfo)) {}
 
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGFILTERS_H_
 #define DOM_SVG_SVGFILTERS_H_
 
@@ -46,7 +44,7 @@ class SVGFilterPrimitiveElement : public SVGFilterPrimitiveElementBase {
   using FilterPrimitiveDescription = mozilla::gfx::FilterPrimitiveDescription;
 
   explicit SVGFilterPrimitiveElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFilterPrimitiveElementBase(std::move(aNodeInfo)) {}
   virtual ~SVGFilterPrimitiveElement() = default;
 
@@ -144,7 +142,7 @@ class SVGFilterPrimitiveChildElement
     : public SVGFilterPrimitiveChildElementBase {
  protected:
   explicit SVGFilterPrimitiveChildElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFilterPrimitiveChildElementBase(std::move(aNodeInfo)) {}
 
  public:
@@ -168,7 +166,7 @@ using SVGFELightingElementBase = SVGFilterPrimitiveElement;
 class SVGFELightingElement : public SVGFELightingElementBase {
  protected:
   explicit SVGFELightingElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFELightingElementBase(std::move(aNodeInfo)) {}
 
   virtual ~SVGFELightingElement() = default;
@@ -222,8 +220,7 @@ using SVGFELightElementBase = SVGFilterPrimitiveChildElement;
 
 class SVGFELightElement : public SVGFELightElementBase {
  protected:
-  explicit SVGFELightElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit SVGFELightElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFELightElementBase(std::move(aNodeInfo)) {}
 
  public:

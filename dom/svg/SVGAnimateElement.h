@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGANIMATEELEMENT_H_
 #define DOM_SVG_SVGANIMATEELEMENT_H_
 
@@ -11,19 +9,19 @@
 #include "mozilla/dom/SVGAnimationElement.h"
 
 nsresult NS_NewSVGAnimateElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
 class SVGAnimateElement final : public SVGAnimationElement {
  protected:
   explicit SVGAnimateElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   SMILAnimationFunction mAnimationFunction;
   friend nsresult(::NS_NewSVGAnimateElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

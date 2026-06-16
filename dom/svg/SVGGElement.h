@@ -2,25 +2,23 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGGELEMENT_H_
 #define DOM_SVG_SVGGELEMENT_H_
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 
-nsresult NS_NewSVGGElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewSVGGElement(nsIContent** aResult,
+                           already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
 class SVGGElement final : public SVGGraphicsElement {
  protected:
-  explicit SVGGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGGElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
-  friend nsresult(::NS_NewSVGGElement(
-      nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+  friend nsresult(
+      ::NS_NewSVGGElement(nsIContent** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  public:
   

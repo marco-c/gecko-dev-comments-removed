@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGELEMENTFACTORY_H_
 #define DOM_SVG_SVGELEMENTFACTORY_H_
 
@@ -24,28 +22,28 @@ class SVGElementFactory {
 };
 
 using SVGContentCreatorFunction = nsresult (*)(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser);
 
 }  
 
-#define SVG_TAG(_tag, _classname)                           \
-  nsresult NS_NewSVG##_classname##Element(                  \
-      nsIContent** aResult,                                 \
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, \
+#define SVG_TAG(_tag, _classname)                         \
+  nsresult NS_NewSVG##_classname##Element(                \
+      nsIContent** aResult,                               \
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, \
       mozilla::dom::FromParser aFromParser);
 
-#define SVG_FROM_PARSER_TAG(_tag, _classname)               \
-  nsresult NS_NewSVG##_classname##Element(                  \
-      nsIContent** aResult,                                 \
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, \
+#define SVG_FROM_PARSER_TAG(_tag, _classname)             \
+  nsresult NS_NewSVG##_classname##Element(                \
+      nsIContent** aResult,                               \
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, \
       mozilla::dom::FromParser aFromParser);
 #include "mozilla/SVGTagList.inc"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
 
 nsresult NS_NewSVGUnknownElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser);
 
 #endif  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGLINEELEMENT_H_
 #define DOM_SVG_SVGLINEELEMENT_H_
 
@@ -11,7 +9,7 @@
 #include "SVGGeometryElement.h"
 
 nsresult NS_NewSVGLineElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -19,11 +17,11 @@ using SVGLineElementBase = SVGGeometryElement;
 
 class SVGLineElement final : public SVGLineElementBase {
  protected:
-  explicit SVGLineElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGLineElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
   friend nsresult(::NS_NewSVGLineElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   
   
   

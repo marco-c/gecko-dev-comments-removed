@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGPolyElement.h"
 
 #include "DOMSVGPointList.h"
@@ -19,7 +17,7 @@ namespace mozilla::dom {
 
 
 SVGPolyElement::SVGPolyElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolyElementBase(std::move(aNodeInfo)) {}
 
 already_AddRefed<DOMSVGPointList> SVGPolyElement::Points() {

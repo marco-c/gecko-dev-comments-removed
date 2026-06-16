@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGGEOMETRYELEMENT_H_
 #define DOM_SVG_SVGGEOMETRYELEMENT_H_
 
@@ -59,7 +57,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
  public:
   explicit SVGGeometryElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HELPER(SVGGeometryElement, IsSVGGeometryElement())
 
