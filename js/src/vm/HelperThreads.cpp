@@ -14,6 +14,7 @@
 #include "gc/GC.h"
 #include "gc/Zone.h"
 #include "jit/BaselineCompileTask.h"
+#include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "jit/IonCompileTask.h"
 #include "jit/JitRuntime.h"
@@ -941,12 +942,31 @@ static bool JitDataStructuresExist(const CompilationSelector& selector) {
   return selector.match(Matcher());
 }
 
+static bool MayHaveOffThreadIonCompileTask(JSScript* script) {
+  jit::JitScript* jitScript = script->maybeJitScript();
+  if (!jitScript) {
+    return false;
+  }
+  if (jitScript->isIonCompilingOffThread()) {
+    return true;
+  }
+  return jitScript->hasBaselineScript() &&
+         jitScript->baselineScript()->hasPendingIonCompileTask();
+}
+
 void js::CancelOffThreadIonCompile(const CompilationSelector& selector) {
   if (!JitDataStructuresExist(selector)) {
     return;
   }
 
   if (jit::IsPortableBaselineInterpreterEnabled()) {
+    return;
+  }
+
+  
+  
+  if (selector.is<JSScript*>() &&
+      !MayHaveOffThreadIonCompileTask(selector.as<JSScript*>())) {
     return;
   }
 
