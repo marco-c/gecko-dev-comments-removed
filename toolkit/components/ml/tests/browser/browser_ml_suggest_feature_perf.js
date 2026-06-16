@@ -72,6 +72,8 @@ const runInference2 = async () => {
     prefs: [
       ["browser.ml.modelHubRootUrl", modelHubRootUrl],
       ["javascript.options.wasm_lazy_tiering", true],
+      
+      ["network.dns.disableIPv6", true],
     ],
   });
 
