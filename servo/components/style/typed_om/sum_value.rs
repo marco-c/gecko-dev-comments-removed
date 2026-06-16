@@ -195,9 +195,25 @@ impl SumValue {
             },
 
             
-            NumericValue::Math(MathValue::Invert(_math_invert)) => {
+            NumericValue::Math(MathValue::Invert(math_invert)) => {
                 
-                Err(())
+                let mut values = SumValue::try_from_numeric_value(math_invert)?.0;
+
+                
+                if values.len() != 1 {
+                    return Err(());
+                }
+
+                let item = &mut values[0];
+
+                
+                item.value = 1.0 / item.value;
+                for power in item.unit_map.values_mut() {
+                    *power = -*power;
+                }
+
+                
+                Ok(Self(values))
             },
 
             
