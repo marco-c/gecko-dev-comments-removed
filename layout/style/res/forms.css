@@ -874,7 +874,6 @@ textarea:autofill {
   color: FieldText !important;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("layout.css.appearance-base.enabled") {
   /* https://drafts.csswg.org/css-forms/#basic-appearance-stylesheet */
   /* See https://github.com/w3c/csswg-drafts/pull/13658 for divergences.
@@ -963,6 +962,17 @@ textarea:autofill {
     input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):disabled,
     input[type="file"]:disabled::file-selector-button {
       color: color-mix(currentColor 50%, transparent);
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select option::checkmark {
+      content: "\2713" / "";
+      pointer-events: none;
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select option:not(:checked)::checkmark {
+      visibility: hidden;
     }
   }
 }

@@ -300,6 +300,12 @@ class nsLayoutUtils {
   
 
 
+  static mozilla::dom::Element* GetCheckmarkPseudo(const nsIContent* aContent);
+  static nsIFrame* GetCheckmarkFrame(const nsIContent* aContent);
+
+  
+
+
   static void AppendGeneratedContentPseudos(
       const mozilla::dom::Element* aElement, nsTArray<nsIContent*>& aPseudos);
 
@@ -2638,7 +2644,7 @@ class nsLayoutUtils {
 
   static bool InvalidationDebuggingIsEnabled() {
     return mozilla::StaticPrefs::nglayout_debug_invalidation() ||
-           getenv("MOZ_DUMP_INVALIDATION") != 0;
+           getenv("MOZ_DUMP_INVALIDATION") != nullptr;
   }
 
   static void Initialize();
