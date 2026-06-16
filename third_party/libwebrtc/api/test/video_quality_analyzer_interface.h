@@ -22,7 +22,6 @@
 #include "api/test/stats_observer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
-#include "api/video_codecs/video_encoder.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -113,12 +112,6 @@ class VideoQualityAnalyzerInterface
   
   
   virtual void OnFrameDropped(absl::string_view ) {}
-  
-  [[deprecated("Use callback without DropReason parameter")]]
-  virtual void OnFrameDropped(absl::string_view peer_name,
-                              EncodedImageCallback::DropReason ) {
-    OnFrameDropped(peer_name);
-  }
   
   
   virtual void OnFramePreDecode(absl::string_view ,
