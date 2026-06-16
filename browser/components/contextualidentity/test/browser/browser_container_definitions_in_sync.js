@@ -15,10 +15,11 @@ function computedVar(className, varName) {
 
 
 
+
 add_task(async function container_color_codes_match_css() {
-  const SKIP = new Set(["gray"]);
+  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
   for (const color of ContextualIdentityService.containerColors) {
-    if (SKIP.has(color)) {
+    if (color === "gray" && !novaEnabled) {
       continue;
     }
     let cssColor = computedVar(
