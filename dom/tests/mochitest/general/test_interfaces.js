@@ -1167,9 +1167,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Permissions", insecureContext: true },
   
-  { name: "PictureInPictureEvent", insecureContext: true },
+  { name: "PictureInPictureEvent", insecureContext: true, android: false },
   
-  { name: "PictureInPictureWindow", insecureContext: true },
+  { name: "PictureInPictureWindow", insecureContext: true, android: false },
   
   { name: "Plugin", insecureContext: true },
   
