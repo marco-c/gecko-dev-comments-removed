@@ -306,6 +306,8 @@
 
 
 
+
+
 namespace js {
 
 class NativeObject;
@@ -378,6 +380,17 @@ struct AtomicMethods<T*> {
     return __atomic_load_n(vp, __ATOMIC_RELAXED);
   }
   static void atomicSet(T** vp, T* v) {
+    __atomic_store_n(vp, v, __ATOMIC_RELAXED);
+  }
+};
+
+template <typename T>
+  requires std::integral<T> && (!std::same_as<T, bool>)
+struct AtomicMethods<T> {
+  static T atomicGet(T const* vp) {
+    return __atomic_load_n(vp, __ATOMIC_RELAXED);
+  }
+  static void atomicSet(T* vp, T v) {
     __atomic_store_n(vp, v, __ATOMIC_RELAXED);
   }
 };
@@ -513,12 +526,12 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
 
  protected:
   
-  explicit BarrieredBase(const T& v) : value(v) {}
-  BarrieredBase(const BarrieredBase<T>& other) = default;
+  explicit constexpr BarrieredBase(const T& v) : value(v) {}
+  constexpr BarrieredBase(const BarrieredBase<T>& other) = default;
 
   
   
-  const T& unbarrieredGet() const { return value; }
+  constexpr const T& unbarrieredGet() const { return value; }
   void unbarrieredSet(const T& newValue) { value = newValue; }
 
 #if JS_BITS_PER_WORD == 64
@@ -536,6 +549,65 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   
   
   T* unbarrieredAddress() const { return const_cast<T*>(&value); }
+};
+
+
+
+
+template <typename T>
+class GCData : public BarrieredBase<T> {
+  using Base = BarrieredBase<T>;
+  using Self = GCData<T>;
+
+ public:
+  constexpr GCData() : Base(defaultValue()) {}
+
+  explicit constexpr GCData(const T& value) : Base(value) {}
+  Self& operator=(const T& newValue) {
+    set(newValue);
+    return *this;
+  }
+
+  void set(const T& newValue) {
+#ifdef JS_GC_CONCURRENT_MARKING
+    this->unbarrieredAtomicSet(newValue);
+#else
+    this->unbarrieredSet(newValue);
+#endif
+  }
+
+  constexpr T get() const { return this->unbarrieredGet(); }
+
+#if JS_BITS_PER_WORD == 64
+  void atomicSet(const T& newValue) { this->unbarrieredAtomicSet(newValue); }
+  T atomicGet() const { return this->unbarrieredAtomicGet(); }
+#endif
+
+  constexpr operator T() const { return get(); }
+  constexpr T operator->() const { return get(); }
+
+  template <typename U>
+  Self& operator+=(const U& rhs) {
+    set(get() + rhs);
+    return *this;
+  }
+  template <typename U>
+  Self& operator-=(const U& rhs) {
+    set(get() - rhs);
+    return *this;
+  }
+  template <typename U>
+  Self& operator&=(const U& rhs) {
+    set(get() & rhs);
+    return *this;
+  }
+  template <typename U>
+  Self& operator|=(const U& rhs) {
+    set(get() | rhs);
+    return *this;
+  }
+
+  static T defaultValue() { return JS::SafelyInitialized<T>::create(); }
 };
 
 namespace gc {
