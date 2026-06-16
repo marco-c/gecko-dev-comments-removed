@@ -28,15 +28,7 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
-
-constexpr uint16_t kMaxSctpStreams = 1024;
+constexpr uint16_t kMaxSctpStreams = 65535;
 constexpr uint16_t kMaxSctpSid = kMaxSctpStreams - 1;
 constexpr uint16_t kMinSctpSid = 0;
 

@@ -228,7 +228,7 @@ constexpr char kSdpSctpDataChannelString[] =
     "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB\r\n"
 
     "a=mid:data_content_name\r\n"
-    "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
+    "a=sctpmap:5000 webrtc-datachannel 65535\r\n";
 
 
 
@@ -272,7 +272,7 @@ constexpr char kSdpSctpDataChannelWithCandidatesString[] =
     "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB\r\n"
 
     "a=mid:data_content_name\r\n"
-    "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
+    "a=sctpmap:5000 webrtc-datachannel 65535\r\n";
 
 
 
