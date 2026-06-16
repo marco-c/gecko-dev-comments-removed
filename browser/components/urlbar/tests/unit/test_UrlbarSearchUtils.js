@@ -54,10 +54,6 @@ add_setup(async function () {
 
   
   
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-
-  
-  
   Services.prefs.setCharPref("browser.search.region", "US");
 
   SearchTestUtils.setRemoteSettingsConfig(SEARCH_CONFIG);

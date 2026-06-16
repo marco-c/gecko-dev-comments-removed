@@ -35,14 +35,6 @@ let goButton;
 let engine;
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      
-      ["browser.settings-redesign.enabled", false],
-    ],
-  });
-
   searchbar = await gCUITestUtils.addSearchBar();
   textbox = searchbar.textbox;
   searchIcon = searchbar.querySelector(".searchbar-search-button");

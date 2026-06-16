@@ -36,9 +36,6 @@ add_setup(async function () {
       ["browser.search.separatePrivateDefault.ui.enabled", false],
       ["browser.urlbar.suggest.quickactions", false],
       ["browser.urlbar.scotchBonnet.enableOverride", false],
-      
-      
-      ["browser.settings-redesign.enabled", false],
     ],
   });
 
