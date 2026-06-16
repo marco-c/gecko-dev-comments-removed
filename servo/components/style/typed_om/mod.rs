@@ -112,6 +112,22 @@ pub struct UnitValue {
     pub unit: CssString,
 }
 
+impl UnitValue {
+    
+    #[inline]
+    pub fn unit_str(&self) -> &str {
+        #[cfg(feature = "gecko")]
+        unsafe {
+            self.unit.as_str_unchecked()
+        }
+
+        #[cfg(feature = "servo")]
+        {
+            &self.unit
+        }
+    }
+}
+
 
 
 
