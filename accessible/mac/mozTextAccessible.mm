@@ -147,7 +147,12 @@ static GeckoTextMarkerRange GetTextMarkerRangeFromRange(mozAccessible* aObj,
       GetTextMarkerRangeFromRange(self, selectedTextRange);
 
   if (markerRange.IsValid()) {
-    markerRange.Select();
+    
+    
+    
+    
+    
+    markerRange.Select( true);
   }
 }
 
