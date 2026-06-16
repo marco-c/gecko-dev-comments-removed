@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GPU_CanvasContext_H_
 #define GPU_CanvasContext_H_
 
@@ -31,7 +30,7 @@ class CanvasContext final : public nsICanvasRenderingContextInternal,
 
  public:
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CanvasContext)
 
   CanvasContext();
