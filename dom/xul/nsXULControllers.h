@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef nsXULControllers_h_
 #define nsXULControllers_h_
 
@@ -35,7 +34,7 @@ class nsXULControllers final : public nsIControllers {
  public:
   nsXULControllers();
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsXULControllers, nsIControllers)
   NS_DECL_NSICONTROLLERS
 

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsXULPrototypeDocument_h_
 #define nsXULPrototypeDocument_h_
 
@@ -38,7 +37,7 @@ class nsXULPrototypeDocument final : public nsISerializable {
   using Callback = std::function<void()>;
 
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
 
   
   NS_DECL_NSISERIALIZABLE
