@@ -949,6 +949,11 @@ static bool CyclicModuleResolveExport(JSContext* cx,
                                       MutableHandle<ResolveSet> resolveSet,
                                       MutableHandle<Value> result,
                                       ModuleErrorInfo* errorInfoOut) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   
   for (const auto& entry : resolveSet) {
     
