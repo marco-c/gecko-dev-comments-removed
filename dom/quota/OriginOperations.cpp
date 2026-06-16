@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "OriginOperations.h"
 
 #include <algorithm>
@@ -3694,7 +3692,7 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
       aQuotaManager.AddTemporaryOrigin(fullOriginMetadata);
     }
 
-    QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
+    QM_TRY(MOZ_TO_RESULT(aQuotaManager.CreateDirectoryMetadata2(
         *directory, fullOriginMetadata)));
 
     
