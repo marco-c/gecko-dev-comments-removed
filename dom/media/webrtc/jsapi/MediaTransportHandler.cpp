@@ -871,7 +871,7 @@ void MediaTransportHandlerSTS::RemoveTransportsExcept(
         for (auto it = mTransports.begin(); it != mTransports.end();) {
           const std::string transportId(it->first);
           if (!aTransportIds.count(transportId)) {
-            OnStateChange(transportId, TransportLayer::TS_CLOSED);
+            OnStateChange(transportId, TransportLayer::TS_CLOSED, {});
             OnRtcpStateChange(transportId, TransportLayer::TS_CLOSED);
             
             
@@ -1015,13 +1015,14 @@ void MediaTransportHandler::OnEncryptedSending(const std::string& aTransportId,
   mEncryptedSending.Notify(aTransportId, std::move(aPacket));
 }
 
-void MediaTransportHandler::OnStateChange(const std::string& aTransportId,
-                                          TransportLayer::State aState) {
+void MediaTransportHandler::OnStateChange(
+    const std::string& aTransportId, TransportLayer::State aState,
+    nsTArray<nsTArray<uint8_t>>&& aRemoteCerts) {
   {
     MutexAutoLock lock(mStateCacheMutex);
     mStateCache[aTransportId] = aState;
   }
-  mStateChange.Notify(aTransportId, aState);
+  mStateChange.Notify(aTransportId, aState, std::move(aRemoteCerts));
 }
 
 void MediaTransportHandler::OnRtcpStateChange(const std::string& aTransportId,
@@ -1575,15 +1576,18 @@ void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
 
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
                                              TransportLayer::State aState) {
+  nsTArray<nsTArray<uint8_t>> remoteCerts;
   if (aState == TransportLayer::TS_OPEN) {
     MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
     TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
     OnAlpnNegotiated(dtlsLayer->GetNegotiatedAlpn());
+    remoteCerts = dtlsLayer->GetPeerCertChainDer();
   }
 
   
   
-  MediaTransportHandler::OnStateChange(aLayer->flow_id(), aState);
+  MediaTransportHandler::OnStateChange(aLayer->flow_id(), aState,
+                                       std::move(remoteCerts));
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
