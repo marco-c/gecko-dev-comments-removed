@@ -1081,6 +1081,11 @@ pref("browser.tabs.tabMinWidth", 76);
 pref("browser.tabs.selectOwnerOnClose", true);
 
 
+
+
+pref("browser.tabs.selectMRUOnClose", false);
+
+
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
 
