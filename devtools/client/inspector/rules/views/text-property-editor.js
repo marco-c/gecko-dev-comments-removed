@@ -642,7 +642,11 @@ class TextPropertyEditor {
       },
       inStartingStyleRule: this.rule.isInStartingStyle(),
       isValid: this.isValid(),
-      cssExplainersEnabled: this.ruleView.cssExplainersEnabled,
+      cssExplainersEnabled:
+        this.ruleView.cssExplainersEnabled &&
+        
+        
+        this.rule.domRule.supportsCssExplainers,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
