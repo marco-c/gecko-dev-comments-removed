@@ -226,6 +226,22 @@ static CanonicalElement CanonicalizeElement(const SanitizerElement& aElement) {
 }
 
 
+template <typename SanitizerPI>
+static already_AddRefed<nsAtom> CanonicalizeProcessingInstruction(
+    const SanitizerPI& aPI) {
+  
+  if (aPI.IsString()) {
+    RefPtr<nsAtom> piAtom = NS_AtomizeMainThread(aPI.GetAsString());
+    return piAtom.forget();
+  }
+
+  
+  
+  const auto& pi = GetAsDictionary(aPI);
+  return NS_AtomizeMainThread(pi.mTarget);
+}
+
+
 template <typename SanitizerAttribute>
 static CanonicalAttribute CanonicalizeAttribute(
     const SanitizerAttribute& aAttribute) {
@@ -342,9 +358,9 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
 }
 
 
-void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
-                                          bool aAllowCommentsAndDataAttributes,
-                                          ErrorResult& aRv) {
+void Sanitizer::CanonicalizeConfiguration(
+    const SanitizerConfig& aConfig, bool aAllowCommentsPIsAndDataAttributes,
+    ErrorResult& aRv) {
   
   AssertNoLists();
 
@@ -364,15 +380,29 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   }
 
   
+  
+  if (!aConfig.mProcessingInstructions.WasPassed() &&
+      !aConfig.mRemoveProcessingInstructions.WasPassed()) {
+    
+    
+    if (aAllowCommentsPIsAndDataAttributes) {
+      mRemoveProcessingInstructions.emplace();
+    } else {
+      
+      
+      mProcessingInstructions.emplace();
+    }
+  }
+
+  
   if (aConfig.mElements.WasPassed()) {
     
     CanonicalElementMap elements;
 
     nsAutoCString errorMsg;
     
+    
     for (const auto& element : aConfig.mElements.Value()) {
-      
-      
       CanonicalElement elementName = CanonicalizeElement(element);
       if (elements.Contains(elementName)) {
         aRv.ThrowTypeError(
@@ -395,14 +425,11 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   }
 
   
+  
+  
   if (aConfig.mRemoveElements.WasPassed()) {
-    
     CanonicalElementSet elements;
-
-    
     for (const auto& element : aConfig.mRemoveElements.Value()) {
-      
-      
       CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
@@ -410,21 +437,47 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
         return;
       }
     }
-
-    
     mRemoveElements = Some(std::move(elements));
   }
 
   
-  if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
-    
-    CanonicalElementSet elements;
+  
+  
+  if (aConfig.mAttributes.WasPassed()) {
+    CanonicalAttributeSet attributes;
+    for (const auto& attribute : aConfig.mAttributes.Value()) {
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
+      if (!attributes.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(
+            nsFmtCString("Duplicate attribute {} in 'attributes'.", canonical));
+        return;
+      }
+    }
+    mAttributes = Some(std::move(attributes));
+  }
 
-    
-    
+  
+  
+  
+  if (aConfig.mRemoveAttributes.WasPassed()) {
+    CanonicalAttributeSet attributes;
+    for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
+      if (!attributes.EnsureInserted(canonical)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            "Duplicate attribute {} in 'removeAttributes'.", canonical));
+        return;
+      }
+    }
+    mRemoveAttributes = Some(std::move(attributes));
+  }
+
+  
+  
+  
+  if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
+    CanonicalElementSet elements;
     for (const auto& element : aConfig.mReplaceWithChildrenElements.Value()) {
-      
-      
       CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
@@ -433,51 +486,47 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
         return;
       }
     }
-
-    
     mReplaceWithChildrenElements = Some(std::move(elements));
   }
 
   
-  if (aConfig.mAttributes.WasPassed()) {
-    
-    CanonicalAttributeSet attributes;
-
-    
-    for (const auto& attribute : aConfig.mAttributes.Value()) {
-      
-      
-      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
-      if (!attributes.EnsureInserted(canonical)) {
+  
+  
+  if (aConfig.mProcessingInstructions.WasPassed()) {
+    CanonicalPISet pis;
+    for (const auto& pi : aConfig.mProcessingInstructions.Value()) {
+      RefPtr<nsAtom> canonical = CanonicalizeProcessingInstruction(pi);
+      if (!pis.EnsureInserted(canonical)) {
+        nsAutoCString name;
+        canonical->ToUTF8String(name);
         aRv.ThrowTypeError(
-            nsFmtCString("Duplicate attribute {} in 'attributes'.", canonical));
+            nsFmtCString("Duplicate processing instruction \"{}\" in "
+                         "'processingInstructions'.",
+                         name));
         return;
       }
     }
-
-    
-    mAttributes = Some(std::move(attributes));
+    mProcessingInstructions = Some(std::move(pis));
   }
 
   
-  if (aConfig.mRemoveAttributes.WasPassed()) {
-    
-    CanonicalAttributeSet attributes;
-
-    
-    for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
-      
-      
-      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
-      if (!attributes.EnsureInserted(canonical)) {
-        aRv.ThrowTypeError(nsFmtCString(
-            "Duplicate attribute {} in 'removeAttributes'.", canonical));
+  
+  
+  if (aConfig.mRemoveProcessingInstructions.WasPassed()) {
+    CanonicalPISet pis;
+    for (const auto& pi : aConfig.mRemoveProcessingInstructions.Value()) {
+      RefPtr<nsAtom> canonical = CanonicalizeProcessingInstruction(pi);
+      if (!pis.EnsureInserted(canonical)) {
+        nsAutoCString name;
+        canonical->ToUTF8String(name);
+        aRv.ThrowTypeError(
+            nsFmtCString("Duplicate processing instruction \"{}\" in "
+                         "'removeProcessingInstructions'.",
+                         name));
         return;
       }
     }
-
-    
-    mRemoveAttributes = Some(std::move(attributes));
+    mRemoveProcessingInstructions = Some(std::move(pis));
   }
 
   
@@ -486,7 +535,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
     
     mComments = aConfig.mComments.Value();
   } else {
-    mComments = aAllowCommentsAndDataAttributes;
+    mComments = aAllowCommentsPIsAndDataAttributes;
   }
 
   
@@ -496,7 +545,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
     
     mDataAttributes = Some(aConfig.mDataAttributes.Value());
   } else if (aConfig.mAttributes.WasPassed()) {
-    mDataAttributes = Some(aAllowCommentsAndDataAttributes);
+    mDataAttributes = Some(aAllowCommentsPIsAndDataAttributes);
   }
 }
 
@@ -518,6 +567,18 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   if (mElements && mRemoveElements) {
     aRv.ThrowTypeError(
         "'elements' and 'removeElements' are not allowed at the same time.");
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(mProcessingInstructions || mRemoveProcessingInstructions);
+  
+  
+  if (mProcessingInstructions && mRemoveProcessingInstructions) {
+    aRv.ThrowTypeError(
+        "'processingInstructions' and 'removeProcessingInstructions' are not "
+        "allowed at the same time.");
     return;
   }
 
@@ -752,10 +813,10 @@ void Sanitizer::AssertIsValid() {
 
 
 void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
-                          bool aAllowCommentsAndDataAttributes,
+                          bool aAllowCommentsPIsAndDataAttributes,
                           ErrorResult& aRv) {
   
-  CanonicalizeConfiguration(aConfig, aAllowCommentsAndDataAttributes, aRv);
+  CanonicalizeConfiguration(aConfig, aAllowCommentsPIsAndDataAttributes, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -766,7 +827,6 @@ void Sanitizer::SetConfig(const SanitizerConfig& aConfig,
     return;
   }
 
-  
   
   
 }
@@ -816,6 +876,8 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
   insertElements(Span(kDefaultSVGElements), nsGkAtoms::nsuri_svg,
                  kSVGElementWithAttributes);
   mElements = Some(std::move(elements));
+
+  mProcessingInstructions = Some(CanonicalPISet{});
 
   CanonicalAttributeSet attributes;
   for (nsStaticAtom* name : kDefaultAttributes) {
@@ -885,6 +947,32 @@ void Sanitizer::Get(SanitizerConfig& aConfig) {
     }
     aConfig.mReplaceWithChildrenElements.Construct(
         std::move(replaceWithChildrenElements));
+  }
+
+  if (mProcessingInstructions) {
+    nsTArray<OwningStringOrSanitizerProcessingInstruction>
+        processingInstructions;
+    for (const RefPtr<nsAtom>& canonical : *mProcessingInstructions) {
+      SanitizerProcessingInstruction pi;
+      canonical->ToString(pi.mTarget);
+      OwningStringOrSanitizerProcessingInstruction owning;
+      owning.SetAsSanitizerProcessingInstruction() = pi;
+      processingInstructions.InsertElementSorted(owning, PIComparator());
+    }
+    aConfig.mProcessingInstructions.Construct(
+        std::move(processingInstructions));
+  } else {
+    nsTArray<OwningStringOrSanitizerProcessingInstruction>
+        removeProcessingInstructions;
+    for (const RefPtr<nsAtom>& canonical : *mRemoveProcessingInstructions) {
+      SanitizerProcessingInstruction pi;
+      canonical->ToString(pi.mTarget);
+      OwningStringOrSanitizerProcessingInstruction owning;
+      owning.SetAsSanitizerProcessingInstruction() = pi;
+      removeProcessingInstructions.InsertElementSorted(owning, PIComparator());
+    }
+    aConfig.mRemoveProcessingInstructions.Construct(
+        std::move(removeProcessingInstructions));
   }
 
   
@@ -1221,6 +1309,71 @@ bool Sanitizer::ReplaceElementWithChildren(
 
   
   return true;
+}
+
+
+bool Sanitizer::AllowProcessingInstruction(
+    const StringOrSanitizerProcessingInstruction& aPI) {
+  
+  
+  MaybeMaterializeDefaultConfig();
+
+  
+  RefPtr<nsAtom> pi = CanonicalizeProcessingInstruction(aPI);
+
+  
+  if (mProcessingInstructions) {
+    
+    
+    
+    
+    
+    
+    return mProcessingInstructions->EnsureInserted(pi);
+  }
+
+  
+  
+  if (mRemoveProcessingInstructions->Contains(pi)) {
+    
+    mRemoveProcessingInstructions->Remove(pi);
+    
+    return true;
+  }
+
+  
+  return false;
+}
+
+
+bool Sanitizer::RemoveProcessingInstruction(
+    const StringOrSanitizerProcessingInstruction& aPI) {
+  
+  
+  MaybeMaterializeDefaultConfig();
+
+  
+  RefPtr<nsAtom> pi = CanonicalizeProcessingInstruction(aPI);
+
+  
+  if (mProcessingInstructions) {
+    
+    if (mProcessingInstructions->Contains(pi)) {
+      
+      mProcessingInstructions->Remove(pi);
+      
+      return true;
+    }
+
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  return mRemoveProcessingInstructions->EnsureInserted(pi);
 }
 
 
@@ -1667,16 +1820,12 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
 
     
     
+    
     MOZ_ASSERT(child->IsText() || child->IsComment() || child->IsElement() ||
                child->NodeType() == nsINode::DOCUMENT_TYPE_NODE);
 
     
-    if (child->NodeType() == nsINode::DOCUMENT_TYPE_NODE) {
-      continue;
-    }
-
-    
-    if (child->IsText()) {
+    if (child->NodeType() == nsINode::DOCUMENT_TYPE_NODE || child->IsText()) {
       continue;
     }
 
@@ -1687,8 +1836,13 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
       if (!mComments) {
         child->Remove();
       }
+      
       continue;
     }
+
+    
+    
+    
 
     
     MOZ_ASSERT(child->IsElement());
