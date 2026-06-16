@@ -81,6 +81,33 @@ void HappyEyeballsTransaction::OnTransportStatus(nsITransport* aTransport,
   }
 }
 
+bool HappyEyeballsTransaction::Do0RTT(bool aCanSendEarlyData) {
+  if (!mZeroRttHandle) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (nsHttpTransaction* real = mZeroRttHandle->RealTxn()) {
+    if (real->IsWebsocketUpgrade() || real->IsForWebTransport()) {
+      nsAHttpConnection* handle = Connection();
+      RefPtr<HttpConnectionBase> base =
+          handle ? handle->HttpConnection() : nullptr;
+      if (base && (base->UsingSpdy() || base->UsingHttp3())) {
+        return false;
+      }
+    }
+  }
+
+  return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
+}
+
 nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
                                                 uint32_t aCount,
                                                 uint32_t* aCountRead) {
