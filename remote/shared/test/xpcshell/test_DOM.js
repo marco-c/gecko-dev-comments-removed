@@ -523,6 +523,25 @@ add_task(function test_isDetached() {
   ok(dom.isDetached(detachedShadowRoot));
 });
 
+add_task(function test_getFirstNonZeroRect() {
+  const makeRect = (width, height) => ({ width, height });
+
+  
+  deepEqual(
+    dom.getFirstNonZeroRect([makeRect(0, 0), makeRect(32, 32), makeRect(0, 0)]),
+    makeRect(32, 32)
+  );
+
+  
+  deepEqual(
+    dom.getFirstNonZeroRect([makeRect(0, 0), makeRect(0, 0)]),
+    makeRect(0, 0)
+  );
+
+  
+  deepEqual(dom.getFirstNonZeroRect([makeRect(10, 20)]), makeRect(10, 20));
+});
+
 add_task(function test_isStale() {
   const { childEl, iframeEl } = setupTest();
 
