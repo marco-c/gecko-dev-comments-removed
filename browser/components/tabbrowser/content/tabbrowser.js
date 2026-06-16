@@ -9836,44 +9836,6 @@
       return null;
     },
 
-    
-
-
-
-
-
-
-
-
-    _handleUriInChrome(aBrowser, aUri) {
-      if (aUri.scheme == "file") {
-        try {
-          let mimeType = Cc["@mozilla.org/mime;1"]
-            .getService(Ci.nsIMIMEService)
-            .getTypeFromURI(aUri);
-          if (mimeType == "application/x-xpinstall") {
-            let systemPrincipal =
-              Services.scriptSecurityManager.getSystemPrincipal();
-            AddonManager.getInstallForURL(aUri.spec, {
-              telemetryInfo: { source: "file-url" },
-            }).then(install => {
-              AddonManager.installAddonFromWebpage(
-                mimeType,
-                aBrowser,
-                systemPrincipal,
-                install
-              );
-            });
-            return true;
-          }
-        } catch (e) {
-          return false;
-        }
-      }
-
-      return false;
-    },
-
     _updateTriggerMetadataForLoad(
       browser,
       uriString,
@@ -9946,11 +9908,6 @@
       if (!uri) {
         
         uri = this._fixupURIString(browser, uriString, loadURIOptions);
-      }
-
-      if (uri && this._handleUriInChrome(browser, uri)) {
-        
-        return;
       }
 
       this._updateTriggerMetadataForLoad(
