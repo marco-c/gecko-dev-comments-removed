@@ -366,6 +366,30 @@ JSONToken JSONTokenizer<CharT, ParserT>::readString() {
 
 
   CharPtr start = current;
+  {
+    const CharT* cur = current.get();
+    size_t remaining = end - current;
+    
+    
+    
+    
+    
+    
+    while (remaining >= 4 &&
+           MOZ_LIKELY(
+            (cur[0] != '\\') & (cur[1] != '\\') &
+            (cur[2] != '\\') & (cur[3] != '\\') &
+            (cur[0] != '"') & (cur[1] != '"') &
+            (cur[2] != '"') & (cur[3] != '"') &
+            (cur[0] > 0x1f) & (cur[1] > 0x1f) &
+            (cur[2] > 0x1f) & (cur[3] > 0x1f)
+          )) {
+      cur += 4;
+      remaining -= 4;
+    }
+    
+    current = cur;
+  }
   for (; current < end; current++) {
     if (*current == '"') {
       size_t length = current - start;
