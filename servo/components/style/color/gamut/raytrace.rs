@@ -167,8 +167,6 @@ impl AbsoluteColor {
     
     
     fn cast_ray(start: &ColorComponents, end: &ColorComponents) -> Option<ColorComponents> {
-        const MAGIC_EPSILON: f32 = 1.0e-12;
-
         
         
         
@@ -207,7 +205,13 @@ impl AbsoluteColor {
             
             
             
-            if d.abs() > MAGIC_EPSILON {
+            
+            
+            
+            
+            
+            const MIN_THRESHOLD: f32 = 1e-6;
+            if d.abs() > MIN_THRESHOLD {
                 
                 let inv_d = 1.0 / d;
 
