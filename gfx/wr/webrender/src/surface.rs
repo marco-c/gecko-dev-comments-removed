@@ -100,6 +100,12 @@ pub struct SurfaceInfo {
     
     pub is_opaque: bool,
     
+    
+    
+    
+    
+    
+    
     pub allow_snapping: bool,
     
     pub force_scissor_rect: bool,

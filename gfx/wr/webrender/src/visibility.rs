@@ -33,7 +33,7 @@ use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::util::MaxRect;
 
 pub struct FrameVisibilityContext<'a> {
@@ -224,7 +224,6 @@ pub struct PrimitiveDrawHeader {
     
     
     
-    
     pub snapped_local_rect: LayoutRect,
 }
 
@@ -329,6 +328,15 @@ pub fn update_prim_visibility(
     );
     let visibility_spatial_node_index = surface.visibility_spatial_node_index;
 
+    
+    
+    
+    
+    
+    
+    let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+    let mut clip_snapper = snapper.clone();
+
     for cluster in &pic.prim_list.clusters {
         profile_scope!("cluster");
 
@@ -360,7 +368,29 @@ pub fn update_prim_visibility(
             frame_context.spatial_tree,
         );
 
+        
+        
+        
+        snapper.set_target_spatial_node(cluster.spatial_node_index, frame_context.spatial_tree);
+
         for prim_instance_index in cluster.prim_range() {
+            let snapped_local_rect = snapper.snap_rect(
+                &frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect,
+            );
+            frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect =
+                snapped_local_rect;
+
+            
+            
+            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
+            let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
+            if leaf.unsnapped_local_clip_rect == LayoutRect::max_rect() {
+                leaf.snapped_local_clip_rect = leaf.unsnapped_local_clip_rect;
+            } else {
+                let unsnapped = leaf.unsnapped_local_clip_rect;
+                leaf.snapped_local_clip_rect = snapper.snap_rect(&unsnapped);
+            }
+
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
                 if !store.pictures[pic_index.0].is_visible(frame_context.spatial_tree) {
                     continue;
@@ -420,6 +450,7 @@ pub fn update_prim_visibility(
                 cluster.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
                 visibility_spatial_node_index,
+                &mut clip_snapper,
                 prim_instance.clip_leaf_id,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,

@@ -120,7 +120,7 @@ use crate::render_task::{RenderTask, RenderTaskLocation};
 use crate::render_task::{StaticRenderTaskSurface, RenderTaskKind};
 use crate::renderer::GpuBufferAddress;
 use crate::resource_cache::ResourceCache;
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::scene::SceneProperties;
 use crate::spatial_tree::CoordinateSystemId;
 use crate::surface::{SurfaceDescriptor, SurfaceTileDescriptor, get_surface_rects};
@@ -325,11 +325,6 @@ pub struct PrimitiveCluster {
     
     pub unsnapped_bounding_rect: LayoutRect,
     
-    
-    
-    
-    pub snapped_bounding_rect: LayoutRect,
-    
     pub prim_range: Range<usize>,
     
     pub flags: ClusterFlags,
@@ -344,7 +339,6 @@ impl PrimitiveCluster {
     ) -> Self {
         PrimitiveCluster {
             unsnapped_bounding_rect: LayoutRect::zero(),
-            snapped_bounding_rect: LayoutRect::zero(),
             spatial_node_index,
             flags,
             prim_range: first_instance_index..first_instance_index
@@ -1201,7 +1195,10 @@ impl PictureInstance {
 
                 
                 
-                let (device_pixel_scale, raster_spatial_node_index, local_scale, world_scale_factors) = match composite_mode {
+                
+                
+                
+                let (device_pixel_scale, raster_spatial_node_index, surface_snaps, local_scale, world_scale_factors) = match composite_mode {
                     PictureCompositeMode::TileCache { slice_id } => {
                         let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
 
@@ -1246,15 +1243,15 @@ impl PictureInstance {
 
                         let device_pixel_scale = Scale::new(scaling_factor);
 
-                        (device_pixel_scale, surface_spatial_node_index, (1.0, 1.0), world_scale_factors)
+                        
+                        (device_pixel_scale, surface_spatial_node_index, true, (1.0, 1.0), world_scale_factors)
                     }
                     _ => {
                         let surface_spatial_node = frame_context.spatial_tree.get_spatial_node(surface_spatial_node_index);
 
                         let enable_snapping =
                             allow_snapping &&
-                            surface_spatial_node.coordinate_system_id == CoordinateSystemId::root() &&
-                            surface_spatial_node.snapping_transform.is_some();
+                            surface_spatial_node.coordinate_system_id == CoordinateSystemId::root();
 
                         if enable_snapping {
                             let raster_spatial_node_index = frame_context.spatial_tree.root_reference_frame_index();
@@ -1268,7 +1265,8 @@ impl PictureInstance {
 
                             let local_scale = local_to_raster_transform.scale_factors();
 
-                            (Scale::new(1.0), raster_spatial_node_index, local_scale, (1.0, 1.0))
+                            
+                            (Scale::new(1.0), raster_spatial_node_index, true, local_scale, (1.0, 1.0))
                         } else {
                             
                             
@@ -1281,7 +1279,10 @@ impl PictureInstance {
                                 world_scale_factors.0.max(world_scale_factors.1).min(max_scale)
                             );
 
-                            (device_pixel_scale, surface_spatial_node_index, (1.0, 1.0), world_scale_factors)
+                            
+                            
+                            
+                            (device_pixel_scale, surface_spatial_node_index, false, (1.0, 1.0), world_scale_factors)
                         }
                     }
                 };
@@ -1294,7 +1295,7 @@ impl PictureInstance {
                     device_pixel_scale,
                     world_scale_factors,
                     local_scale,
-                    allow_snapping,
+                    surface_snaps,
                     force_scissor_rect,
                 );
 
@@ -1328,14 +1329,12 @@ impl PictureInstance {
     ) {
         let surface = &mut surfaces[surface_index.0];
 
+        
+        
+        let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+
         for cluster in &mut self.prim_list.clusters {
             cluster.flags.remove(ClusterFlags::IS_VISIBLE);
-
-            
-            
-            
-            
-            
 
             
             if !cluster.flags.contains(ClusterFlags::IS_BACKFACE_VISIBLE) {
@@ -1372,7 +1371,15 @@ impl PictureInstance {
             
             
             cluster.flags.insert(ClusterFlags::IS_VISIBLE);
-            if let Some(cluster_rect) = surface.map_local_to_picture.map(&cluster.snapped_bounding_rect) {
+
+            
+            
+            
+            
+            
+            snapper.set_target_spatial_node(cluster.spatial_node_index, frame_context.spatial_tree);
+            let snapped_bounding_rect = snapper.snap_rect(&cluster.unsnapped_bounding_rect);
+            if let Some(cluster_rect) = surface.map_local_to_picture.map(&snapped_bounding_rect) {
                 surface.unclipped_local_rect = surface.unclipped_local_rect.union(&cluster_rect);
             }
         }
