@@ -37,8 +37,6 @@ class CTFontEntry final : public gfxFontEntry {
               WeightRange aWeight, StretchRange aStretch,
               SlantStyleRange aStyle, bool aIsDataUserFont, bool aIsLocal);
 
-  virtual ~CTFontEntry() { ::CGFontRelease(mFontRef); }
-
   gfxFontEntry* Clone() const override;
 
   
@@ -83,6 +81,9 @@ class CTFontEntry final : public gfxFontEntry {
   }
 
  protected:
+  
+  virtual ~CTFontEntry() { ::CGFontRelease(mFontRef); }
+
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   bool HasFontTable(uint32_t aTableTag) override;
