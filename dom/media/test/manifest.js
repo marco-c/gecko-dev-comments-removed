@@ -400,6 +400,8 @@ var gPlayTests = [
     contentDuration: 0.267,
   },
   
+  { name: "two-colr.mp4", type: "video/mp4", duration: 0.512 },
+  
   
   { name: "bipbop-lateaudio.mp4", type: "video/mp4" },
   
