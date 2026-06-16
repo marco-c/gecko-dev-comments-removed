@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_SYSTEM_ASM_DEFINES_H_
 #define RTC_BASE_SYSTEM_ASM_DEFINES_H_
 
+#ifdef __ASSEMBLER__
+
 
 
 
@@ -68,5 +70,7 @@ strheq \reg1, \reg2, \num
 .text
 
 
+
+#endif  
 
 #endif  

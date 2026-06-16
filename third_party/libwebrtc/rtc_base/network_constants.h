@@ -44,13 +44,15 @@ constexpr int16_t kNetworkCostSlice = -2;
 
 
 constexpr uint16_t kNetworkCostCellular5GSlice =  
-    kNetworkCostCellular5G + kNetworkCostSlice;
+    static_cast<uint16_t>(kNetworkCostCellular5G + kNetworkCostSlice);
 constexpr uint16_t kNetworkCostCellular5GVpnSlice =  
-    kNetworkCostCellular5G + kNetworkCostVpn + kNetworkCostSlice;
+    static_cast<uint16_t>(kNetworkCostCellular5G + kNetworkCostVpn +
+                          kNetworkCostSlice);
 constexpr uint16_t kNetworkCostCellularSlice =  
-    kNetworkCostCellular + kNetworkCostSlice;
+    static_cast<uint16_t>(kNetworkCostCellular + kNetworkCostSlice);
 constexpr uint16_t kNetworkCostCellularVpnSlice =  
-    kNetworkCostCellular + kNetworkCostVpn + kNetworkCostSlice;
+    static_cast<uint16_t>(kNetworkCostCellular + kNetworkCostVpn +
+                          kNetworkCostSlice);
 
 
 constexpr uint16_t kNetworkCostHigh = kNetworkCostCellular;

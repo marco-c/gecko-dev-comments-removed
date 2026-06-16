@@ -17,6 +17,9 @@
 
 #include <stdint.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wasm-operand-widths"
+
 
 
 
@@ -134,5 +137,7 @@ static __inline int16_t WebRtcSpl_SatW32ToW16(int32_t value32) {
 
   return (int16_t)out;
 }
+
+#pragma clang diagnostic pop
 
 #endif  
