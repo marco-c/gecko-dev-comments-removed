@@ -97,7 +97,6 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     )
                 },
                 onGetStartedClick = {
-                    Vpn.getStartedTapped.record()
                     requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                 },
                 showDebugAction = requireComponents.settings.showSecretDebugMenuThisSession,
