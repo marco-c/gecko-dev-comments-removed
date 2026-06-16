@@ -160,6 +160,16 @@ assertErrorMessage(
 );
 
 
+{
+  const inst = wasmEvalText(`(module
+    (global (export "g") (mut nullexnref) (ref.null noexn))
+  )`);
+  const g = inst.exports.g;
+  assertErrorMessage(() => g.value, TypeError, /cannot pass value to or from JS/);
+  assertErrorMessage(() => { g.value = null; }, TypeError, /cannot pass value to or from JS/);
+}
+
+
 var inst = wasmEvalText(`
 (module
   (func (export "f") (result nullexnref)
