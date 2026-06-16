@@ -5772,9 +5772,13 @@ fn read_video_sample_entry<T: Read>(
             }
             BoxType::ColourInformationBox => {
                 if colour_info.is_some() {
+                    
+                    
+                    
+                    
                     warn!("Multiple colr boxes in video sample entry, keeping first");
                     fail_with_status_if(
-                        strictness != ParseStrictness::Permissive,
+                        strictness == ParseStrictness::Strict,
                         Status::ColrBadQuantityBMFF,
                     )?;
                     skip_box_content(&mut b)?;
