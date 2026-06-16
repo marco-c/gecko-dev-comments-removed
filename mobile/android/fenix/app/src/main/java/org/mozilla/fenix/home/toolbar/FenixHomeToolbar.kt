@@ -4,17 +4,17 @@
 
 package org.mozilla.fenix.home.toolbar
 
-import android.view.View
-import mozilla.components.browser.state.state.BrowserState
+import androidx.compose.runtime.Composable
 
 /**
  * Home screen toolbar.
  */
 interface FenixHomeToolbar {
     /**
-     * The root view of the toolbar.
+     * Renders the toolbar content.
      */
-    val layout: View
+    @Composable
+    fun Content()
 
     /**
      * Setups the home screen toolbar.
@@ -23,13 +23,6 @@ interface FenixHomeToolbar {
      * should be invisible.
      */
     fun build(middleSearchEnabled: Boolean)
-
-    /**
-     * Updates the visibility of the tab counter and menu buttons.
-     *
-     * @param browserState [BrowserState] is used to update tab counter's state.
-     */
-    fun updateButtonVisibility(browserState: BrowserState)
 
     /**
      * Updates the visibility of the address bar.
