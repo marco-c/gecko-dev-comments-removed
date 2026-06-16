@@ -23,6 +23,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsITimer.h"
+#include "nsTArray.h"
 #include "ssl.h"
 #include "sslproto.h"
 #include "transportlayer.h"
@@ -89,6 +90,10 @@ class TransportLayerDtls final : public TransportLayer {
 
   nsresult GetCipherSuite(uint16_t* cipherSuite) const;
   nsresult GetChannelInfo(SSLChannelInfo* info) const;
+
+  
+  
+  nsTArray<nsTArray<uint8_t>> GetPeerCertChainDer() const;
 
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
