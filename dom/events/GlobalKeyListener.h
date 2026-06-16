@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_GlobalKeyListener_h_
 #define mozilla_GlobalKeyListener_h_
 
@@ -69,9 +67,6 @@ class GlobalKeyListener : public nsIDOMEventListener {
     bool mReservedHandlerForChromeFound = false;
     
     bool mDisabledHandlerFound = false;
-    
-    
-    bool mRelevantHandlerFound = false;
   };
 
   

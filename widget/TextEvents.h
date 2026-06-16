@@ -316,24 +316,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
     if (IsModifierKeyEvent()) {
       return false;
     }
-
-    if (mFlags.mIsShortcutKey) {
-      
-      return mKeyCode == NS_VK_SPACE ||
-             
-             
-             
-             
-             
-             
-             
-             ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_F5) &&
-              IsAccel());
-    }
-
     
     
     
