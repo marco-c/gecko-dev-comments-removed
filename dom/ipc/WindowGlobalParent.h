@@ -239,8 +239,6 @@ class WindowGlobalParent final : public WindowContext,
   void AddSecurityState(uint32_t aStateFlags);
   uint32_t GetSecurityFlags() { return mSecurityState; }
 
-  nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
-
   const nsACString& GetRemoteType() const override;
   void GetRemoteType(nsACString& aRemoteType) const;
 
@@ -305,8 +303,6 @@ class WindowGlobalParent final : public WindowContext,
     mIsUncommittedInitialDocument = false;
     return IPC_OK();
   }
-  mozilla::ipc::IPCResult RecvUpdateDocumentSecurityInfo(
-      nsITransportSecurityInfo* aSecurityInfo);
   mozilla::ipc::IPCResult RecvUpdateChannels(
       ParentProcessChannelHandle* aDocumentHandle,
       ParentProcessChannelHandle* aFailedHandle);
@@ -446,7 +442,6 @@ class WindowGlobalParent final : public WindowContext,
   Maybe<ClientInfo> mClientInfo;
   
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
-  nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
 
   
   

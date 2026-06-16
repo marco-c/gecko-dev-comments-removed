@@ -61,24 +61,26 @@ void nsSecureBrowserUI::RecomputeSecurityFlags() {
   
   nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   if (win && win->GetIsSecure()) {
-    securityInfo = win->GetSecurityInfo();
-    if (securityInfo) {
-      MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
-              ("  we have a security info %p", securityInfo.get()));
-
-      nsresult rv = securityInfo->GetSecurityState(&mState);
-
-      
-      
-      if (NS_SUCCEEDED(rv) &&
-          mState != nsIWebProgressListener::STATE_IS_INSECURE) {
+    if (nsCOMPtr<nsIChannel> chan = win->GetDocumentChannel()) {
+      nsresult rv = chan->GetSecurityInfo(getter_AddRefs(securityInfo));
+      if (NS_SUCCEEDED(rv) && securityInfo) {
         MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
-                ("  set mTopLevelSecurityInfo"));
-        bool isEV;
-        rv = securityInfo->GetIsExtendedValidation(&isEV);
-        if (NS_SUCCEEDED(rv) && isEV) {
-          MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug, ("  is EV"));
-          mState |= nsIWebProgressListener::STATE_IDENTITY_EV_TOPLEVEL;
+                ("  we have a security info %p", securityInfo.get()));
+
+        rv = securityInfo->GetSecurityState(&mState);
+
+        
+        
+        if (NS_SUCCEEDED(rv) &&
+            mState != nsIWebProgressListener::STATE_IS_INSECURE) {
+          MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+                  ("  set mTopLevelSecurityInfo"));
+          bool isEV;
+          rv = securityInfo->GetIsExtendedValidation(&isEV);
+          if (NS_SUCCEEDED(rv) && isEV) {
+            MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug, ("  is EV"));
+            mState |= nsIWebProgressListener::STATE_IDENTITY_EV_TOPLEVEL;
+          }
         }
       }
     }
@@ -150,10 +152,12 @@ nsSecureBrowserUI::GetSecInfo(nsITransportSecurityInfo** result) {
   NS_ENSURE_ARG_POINTER(result);
 
   if (WindowGlobalParent* parent = GetCurrentWindow()) {
-    *result = parent->GetSecurityInfo();
+    if (nsCOMPtr<nsIChannel> chan = parent->GetDocumentChannel()) {
+      return chan->GetSecurityInfo(result);
+    }
   }
-  NS_IF_ADDREF(*result);
 
+  *result = nullptr;
   return NS_OK;
 }
 
