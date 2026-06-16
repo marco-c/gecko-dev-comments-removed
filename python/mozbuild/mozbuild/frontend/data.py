@@ -1289,6 +1289,20 @@ class MozSrcFiles(FinalTargetFiles):
         return mozpath.join("dist/bin/moz-src", self._context.relsrcdir)
 
 
+class JsShellArchive(ContextDerived):
+    """Sandbox container object for JS_SHELL_ARCHIVE_FILES.
+
+    Holds the list of basenames (relative to $(DIST)/bin) that the build
+    backend should pack into the JS shell zip archive.
+    """
+
+    __slots__ = ("files",)
+
+    def __init__(self, context, files):
+        ContextDerived.__init__(self, context)
+        self.files = tuple(files)
+
+
 class ObjdirFiles(FinalTargetFiles):
     """Sandbox container object for OBJDIR_FILES, which is a
     HierarchicalStringList.
@@ -1379,7 +1393,9 @@ class GeneratedFile(ContextDerived):
                 for f in self.outputs
                 if f.endswith((".java", ".kt"))
                 or mozpath.match(f, "**/AndroidManifest*.xml")
-                or mozpath.match(f, "**/webcompat_addon_run.js")
+                
+                
+                or mozpath.match(f, "**/webcompat_addon_generated_files/**")
             ]
         else:
             self.required_before_export = False
