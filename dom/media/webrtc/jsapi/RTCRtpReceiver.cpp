@@ -799,10 +799,10 @@ void RTCRtpReceiver::UpdateVideoConduit() {
   
   
   if (!GetJsepTransceiver().mRecvTrack.GetSsrcs().empty()) {
-    MOZ_LOG(gReceiverLog, LogLevel::Debug,
-            ("%s[%s]: %s Setting remote SSRC %u", mPc->GetHandle().c_str(),
-             GetMid().c_str(), __FUNCTION__,
-             GetJsepTransceiver().mRecvTrack.GetSsrcs().front()));
+    MOZ_LOG_FMT(gReceiverLog, LogLevel::Debug,
+                "{}[{}]: {} Setting remote SSRC {}", mPc->GetHandle().c_str(),
+                GetMid().c_str(), __FUNCTION__,
+                GetJsepTransceiver().mRecvTrack.GetSsrcs().front());
     uint32_t rtxSsrc =
         GetJsepTransceiver().mRecvTrack.GetRtxSsrcs().empty()
             ? 0
@@ -846,9 +846,9 @@ void RTCRtpReceiver::UpdateVideoConduit() {
       
       
       
-      MOZ_LOG(gReceiverLog, LogLevel::Error,
-              ("%s[%s]: %s  No video codecs were negotiated (recv).",
-               mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
+      MOZ_LOG_FMT(gReceiverLog, LogLevel::Error,
+                  "{}[{}]: {}  No video codecs were negotiated (recv).",
+                  mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__);
       return;
     }
 
@@ -862,10 +862,10 @@ void RTCRtpReceiver::UpdateAudioConduit() {
       *mPipeline->mConduit->AsAudioSessionConduit();
 
   if (!GetJsepTransceiver().mRecvTrack.GetSsrcs().empty()) {
-    MOZ_LOG(gReceiverLog, LogLevel::Debug,
-            ("%s[%s]: %s Setting remote SSRC %u", mPc->GetHandle().c_str(),
-             GetMid().c_str(), __FUNCTION__,
-             GetJsepTransceiver().mRecvTrack.GetSsrcs().front()));
+    MOZ_LOG_FMT(gReceiverLog, LogLevel::Debug,
+                "{}[{}]: {} Setting remote SSRC {}", mPc->GetHandle().c_str(),
+                GetMid().c_str(), __FUNCTION__,
+                GetJsepTransceiver().mRecvTrack.GetSsrcs().front());
     mSsrc = GetJsepTransceiver().mRecvTrack.GetSsrcs().front();
 
     
@@ -893,9 +893,9 @@ void RTCRtpReceiver::UpdateAudioConduit() {
       
       
       
-      MOZ_LOG(gReceiverLog, LogLevel::Error,
-              ("%s[%s]: %s No audio codecs were negotiated (recv)",
-               mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
+      MOZ_LOG_FMT(gReceiverLog, LogLevel::Error,
+                  "{}[{}]: {} No audio codecs were negotiated (recv)",
+                  mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__);
       return;
     }
 
