@@ -9901,63 +9901,35 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
     }
   }
 
-  const auto* glyphs = textRun->GetCharacterGlyphs();
-  const auto* limit = glyphs + flowEndInTextRun;
-  const bool hasSpacing = provider.HasSpacing();
-  nscoord wordAdvance = 0;
-  uint32_t wordStart = start;
-  for (const auto* g = glyphs + start; g <= limit; ++g) {
-    if (!hyphenating) {
-      while (g < limit && g->IsSimpleGlyphNoBreakBefore()) {
-        wordAdvance += g->GetSimpleAdvance();
-        ++g;
-      }
-    }
-
+  for (uint32_t i = start, wordStart = start; i <= flowEndInTextRun; ++i) {
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (g < limit) {
+    if (i < flowEndInTextRun) {
       
       
       
-      preformattedNewline = preformatNewlines && g->CharIsNewline();
-      preformattedTab = preformatTabs && g->CharIsTab();
-      if (!g->CanBreakBefore() && !preformattedNewline && !preformattedTab &&
-          (!hyphenating || !gfxTextRun::IsOptionalHyphenBreak(
-                               hyphBuffer[g - glyphs - start]))) {
+      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
+      preformattedTab = preformatTabs && textRun->CharIsTab(i);
+      if (!textRun->CanBreakLineBefore(i) && !preformattedNewline &&
+          !preformattedTab &&
+          (!hyphenating ||
+           !gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start]))) {
         
-        if (g->IsSimpleGlyph()) {
-          wordAdvance += g->GetSimpleAdvance();
-        } else if (!hasSpacing) {
-          if (uint32_t count = g->GetGlyphCount()) {
-            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-            while (count--) {
-              wordAdvance += details->mAdvance;
-              ++details;
-            }
-          }
-        }
         continue;
       }
     }
 
-    uint32_t wordEnd = g - glyphs;
-    if (wordEnd > wordStart) {
-      nscoord width = !hasSpacing &&
-                              (glyphs + wordStart)->IsLigatureGroupStart() &&
-                              (wordEnd == flowEndInTextRun ||
-                               (glyphs + wordEnd)->IsLigatureGroupStart())
-                          ? wordAdvance
-                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
-                                Range(wordStart, wordEnd), &provider));
+    if (i > wordStart) {
+      nscoord width = NSToCoordCeilClamped(
+          textRun->GetAdvanceWidth(Range(wordStart, i), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mAtStartOfLine = false;
 
       if (collapseWhitespace || whitespaceCanHang) {
         uint32_t trimStart =
-            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart,
-                                wordEnd, &iter, whitespaceCanHang);
+            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart, i,
+                                &iter, whitespaceCanHang);
         if (trimStart == start) {
           
           
@@ -9966,7 +9938,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
           
           
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, wordEnd), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
@@ -9974,26 +9946,9 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       }
     }
 
-    if (g < limit) {
-      if (g->IsSimpleGlyph()) {
-        wordAdvance = g->GetSimpleAdvance();
-      } else {
-        wordAdvance = 0;
-        if (!preformattedNewline && !preformattedTab && !hasSpacing) {
-          if (uint32_t count = g->GetGlyphCount()) {
-            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-            while (count--) {
-              wordAdvance += details->mAdvance;
-              ++details;
-            }
-          }
-        }
-      }
-    }
-
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(wordEnd, wordEnd + 1), &spacing);
+      provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -10001,26 +9956,25 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       gfxFloat afterTab = AdvanceToNextTab(aData->mCurrentLine, tabWidth,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
-      wordStart = wordEnd + 1;
-    } else if (wordEnd < flowEndInTextRun ||
-               (wordEnd == textRun->GetLength() &&
+      wordStart = i + 1;
+    } else if (i < flowEndInTextRun ||
+               (i == textRun->GetLength() &&
                 (textRun->GetFlags2() &
                  nsTextFrameUtils::Flags::HasTrailingBreak))) {
       if (preformattedNewline) {
         aData->ForceBreak();
-      } else if (wordEnd < flowEndInTextRun && hyphenating &&
-                 gfxTextRun::IsOptionalHyphenBreak(
-                     hyphBuffer[wordEnd - start])) {
+      } else if (i < flowEndInTextRun && hyphenating &&
+                 gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start])) {
         aData->OptionallyBreak(NSToCoordRound(provider.GetHyphenWidth()));
       } else {
         aData->OptionallyBreak();
       }
       if (aData->mSkipWhitespace) {
-        iter.SetSkippedOffset(wordEnd);
+        iter.SetSkippedOffset(i);
         wordStart = FindStartAfterSkippingWhitespace(
             &provider, aData, textStyle, &iter, flowEndInTextRun);
       } else {
-        wordStart = wordEnd;
+        wordStart = i;
       }
       provider.SetStartOfLine(iter);
     }
@@ -10214,70 +10168,36 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
   
   
   
-  const uint32_t loopStart =
+  uint32_t loopStart =
       (preformatNewlines || preformatTabs) ? start : flowEndInTextRun;
-  const auto* glyphs = textRun->GetCharacterGlyphs();
-  const auto* limit = glyphs + flowEndInTextRun;
-  const bool canUseSimpleAdvance = loopStart == start && !provider.HasSpacing();
-  uint32_t lineStart = start;
-  nscoord runAdvance = 0;
-  for (const auto* g = glyphs + loopStart; g <= limit; ++g) {
-    
-    
-    while (g < limit && g->IsSimpleGlyph()) {
-      runAdvance += g->GetSimpleAdvance();
-      ++g;
-    }
-
-    
+  for (uint32_t i = loopStart, lineStart = start; i <= flowEndInTextRun; ++i) {
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (g < limit) {
+    if (i < flowEndInTextRun) {
       
       
       
-      MOZ_ASSERT(preformatNewlines || preformatTabs,
-                 "We can't be here unless newlines are "
-                 "hard breaks or there are tabs");
-      MOZ_ASSERT(!g->IsSimpleGlyph(), "should have been skipped");
-      preformattedNewline = preformatNewlines && g->CharIsNewline();
-      preformattedTab = preformatTabs && g->CharIsTab();
-      
-      
-      if (canUseSimpleAdvance) {
-        if (uint32_t count = g->GetGlyphCount()) {
-          const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-          while (count--) {
-            runAdvance += details->mAdvance;
-            ++details;
-          }
-        }
-      }
+      NS_ASSERTION(preformatNewlines || preformatTabs,
+                   "We can't be here unless newlines are "
+                   "hard breaks or there are tabs");
+      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
+      preformattedTab = preformatTabs && textRun->CharIsTab(i);
       if (!preformattedNewline && !preformattedTab) {
         
         continue;
       }
     }
 
-    uint32_t lineEnd = g - glyphs;
-    if (lineEnd > lineStart) {
-      
-      
-      
-      nscoord width = canUseSimpleAdvance &&
-                              (glyphs + lineStart)->IsLigatureGroupStart() &&
-                              (lineEnd == flowEndInTextRun ||
-                               (glyphs + lineEnd)->IsLigatureGroupStart())
-                          ? runAdvance
-                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
-                                Range(lineStart, lineEnd), &provider));
+    if (i > lineStart) {
+      nscoord width = NSToCoordCeilClamped(
+          textRun->GetAdvanceWidth(Range(lineStart, i), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mLineIsEmpty = false;
 
       if (collapseWhitespace) {
         uint32_t trimStart = GetEndOfTrimmedText(characterDataBuffer, textStyle,
-                                                 lineStart, lineEnd, &iter);
+                                                 lineStart, i, &iter);
         if (trimStart == start) {
           
           
@@ -10286,18 +10206,17 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
           
           
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, lineEnd), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
         aData->mTrailingWhitespace = 0;
       }
     }
-    runAdvance = 0;
 
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(lineEnd, lineEnd + 1), &spacing);
+      provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -10306,10 +10225,10 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
       aData->mLineIsEmpty = false;
-      lineStart = lineEnd + 1;
+      lineStart = i + 1;
     } else if (preformattedNewline) {
       aData->ForceBreak();
-      lineStart = lineEnd;
+      lineStart = i;
     }
   }
 
