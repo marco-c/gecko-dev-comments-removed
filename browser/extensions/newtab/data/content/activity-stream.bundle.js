@@ -12228,7 +12228,7 @@ const WIDGET_REGISTRY = [
     enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
     sizePref: PREF_WEATHER_SIZE,
     defaultSize: "small",
-    validSizes: ["mini", "small", "medium", "large"],
+    validSizes: ["small", "medium", "large"],
     hasSidebar: true,
     systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
     trainhopEnabledKey: "weatherEnabled",
@@ -19851,7 +19851,14 @@ function Widgets() {
 
   
   
-  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "small" : "medium";
+  
+  
+  
+  
+  
+  
+  
+  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "medium" : "large";
 
   
   const prevTimerEnabledRef = (0,external_React_namespaceObject.useRef)(timerEnabled);
@@ -19921,7 +19928,7 @@ function Widgets() {
   }
   function toggleMaximize() {
     const newMaximizedState = !isMaximized;
-    const newWidgetSize = widgetsMayBeMaximized && !newMaximizedState ? "small" : "medium";
+    const newWidgetSize = widgetsMayBeMaximized && !newMaximizedState ? "medium" : "large";
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
 
@@ -21840,6 +21847,7 @@ const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(stat
 
 
 
+
 function WidgetsManagementPanel({
   onSubpanelToggle,
   togglePanel,
@@ -21851,10 +21859,9 @@ function WidgetsManagementPanel({
   mayHaveListsWidget,
   mayHaveSportsWidget,
   mayHaveClocksWidget,
-  mayHaveWeatherForecast,
-  weatherDisplay,
   setPref
 }) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
   const panelRef = (0,external_React_namespaceObject.useRef)(null);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
@@ -21902,20 +21909,8 @@ function WidgetsManagementPanel({
           break;
       }
       if (widgetName) {
-        const {
-          widgetsMaximized,
-          widgetsMayBeMaximized
-        } = enabledWidgets;
-        let widgetSize;
-        if (widgetName === "weather") {
-          if (mayHaveWeatherForecast && weatherDisplay === "detailed") {
-            widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-          } else {
-            widgetSize = "mini";
-          }
-        } else {
-          widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-        }
+        const widget = WIDGET_REGISTRY.find(w => w.telemetryName === widgetName);
+        const widgetSize = resolveWidgetSize(widget, prefs);
         dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WIDGETS_ENABLED,
           data: {
@@ -22087,12 +22082,12 @@ class ContentSection extends (external_React_default()).PureComponent {
         let widgetSize;
         if (widgetName === "weather") {
           if (this.props.mayHaveWeatherForecast && this.props.weatherDisplay === "detailed") {
-            widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+            widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
           } else {
-            widgetSize = "mini";
+            widgetSize = "small";
           }
         } else {
-          widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+          widgetSize = widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
         }
         const data = {
           widget_name: widgetName,
