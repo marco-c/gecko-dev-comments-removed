@@ -12,29 +12,83 @@
 
 namespace mozilla::color {
 
-
-
-float TfFromLinear(const PiecewiseGammaDesc& desc, const float linear) {
-  if (linear < desc.b) {
-    return linear * desc.k;
+float TfFromLinear(const TransferFunctionDesc& desc, const float linear) {
+  float sign = linear < 0.0f ? -1.0f : 1.0f;
+  float l = std::abs(linear);
+  float ret;
+  switch (desc.tfType) {
+    case TransferFunctionDescType::PiecewiseGamma:
+      
+      
+      
+      
+      ret = (l < desc.b) ? (l * desc.k)
+                         : (desc.a * powf(l, 1.0f / desc.g) - (desc.a - 1));
+      break;
+    case TransferFunctionDescType::HLG:
+      
+      
+      
+      
+      ret = l < 1.0f ? 0.5f * sqrtf(l)
+                     : (0.17883277f * logf(l - 0.28466892f) + 0.55991073f);
+      break;
+    case TransferFunctionDescType::PQ: {
+      
+      
+      
+      
+      float y = l * (Rec2100ReferenceDisplayWhite / 10000.0f);
+      const float m1 = 0.1593017578125f;  
+      const float m2 = 78.84375f;         
+      const float c1 = 0.8359375f;        
+      const float c2 = 18.8515625f;       
+      const float c3 = 18.6875f;          
+      ret = (c1 + c2 * y * m1) / (1.0f + c3 * y * m1) * m2;
+      break;
+    }
   }
-  float ret = linear;
-  ret = powf(ret, 1.0f / desc.g);
-  ret *= desc.a;
-  ret -= (desc.a - 1);
-  return ret;
+  return ret * sign;
 }
 
-float LinearFromTf(const PiecewiseGammaDesc& desc, const float tf) {
-  const auto linear_if_low = tf / desc.k;
-  if (linear_if_low < desc.b) {
-    return linear_if_low;
+float LinearFromTf(const TransferFunctionDesc& desc, const float tf) {
+  float sign = tf < 0.0f ? -1.0f : 1.0f;
+  float t = std::abs(tf);
+  float ret;
+  switch (desc.tfType) {
+    case TransferFunctionDescType::PiecewiseGamma:
+      
+      
+      ret = (t / desc.k < desc.b) ? (t / desc.k)
+                                  : powf((t + (desc.a - 1)) / desc.a, desc.g);
+      break;
+    case TransferFunctionDescType::HLG:
+      
+      
+      
+      
+      ret = t < 0.5f ? 4.0f * (t * t)
+                     : (expf((t - 0.55991073f) / 0.17883277f) + 0.28466892f);
+      break;
+    case TransferFunctionDescType::PQ: {
+      
+      
+      
+      
+      const float linearHdrHeadroom = 10000.0f / Rec2100ReferenceDisplayWhite;
+      const float m1 = 0.1593017578125f;  
+      const float m2 = 78.84375f;         
+      const float c1 = 0.8359375f;        
+      const float c2 = 18.8515625f;       
+      const float c3 = 18.6875f;          
+      ret =
+          linearHdrHeadroom *
+          (std::max(0.0f, t * (1.0f / m2) - c1) / (c2 - c3 * t * (1.0f / m2))) *
+          (1.0f / m1);
+      break;
+    }
   }
-  float ret = tf;
-  ret += (desc.a - 1);
-  ret /= desc.a;
-  ret = powf(ret, 1.0f * desc.g);
-  return ret;
+  return ret * sign;
 }
 
 
