@@ -1238,7 +1238,8 @@ PeerConnection::AddTransceiver(MediaType media_type,
       sdp_handler_->video_options(), configuration_.crypto_options,
       sdp_handler_->video_bitrate_allocator_factory(), media_type, track,
       init.stream_ids, parameters.encodings,
-      {}, sender_id);
+      {},
+      false, {}, sender_id);
   transceiver->internal()->set_direction(init.direction);
 
   if (update_negotiation_needed) {
@@ -1290,7 +1291,9 @@ scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
     auto video_sender = VideoRtpSender::Create(
         env_, signaling_thread(), worker_thread(), CreateRandomUuid(), nullptr,
-        rtp_manager()->video_media_send_channel());
+        rtp_manager()->video_media_send_channel(),
+        {}, false,
+        {});
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), video_sender);
     rtp_manager()->GetVideoTransceiver()->internal()->AddSenderPlanB(
