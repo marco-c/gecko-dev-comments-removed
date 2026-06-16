@@ -190,6 +190,11 @@ bool GMPVideoi420FrameImpl::CheckFrameData(
   }
 
   
+  if (aFrameData.mUPlane().mStride() != aFrameData.mVPlane().mStride()) {
+    return false;
+  }
+
+  
   auto y_plane_end = CheckedInt<int32_t>(aFrameData.mYPlane().mOffset()) +
                      aFrameData.mYPlane().mSize();
   auto u_plane_end = CheckedInt<int32_t>(aFrameData.mUPlane().mOffset()) +
