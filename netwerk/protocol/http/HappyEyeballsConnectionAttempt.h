@@ -177,6 +177,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       ConnectionEstablisher* aEstablisher, nsresult aStatus);
 
   nsresult ProcessHappyEyeballsOutput();
+
+  
+  
+  void DnsLookupTimings(TimeStamp& aStart, TimeStamp& aEnd) const;
+
   void MaybeSendTransportStatus(nsresult aStatus,
                                 nsITransport* aTransport = nullptr,
                                 int64_t aProgress = 0);
@@ -275,8 +280,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   DnsMetadata mDnsMetadata;
   bool mTRRInfoForwarded = false;
 
-  TimeStamp mDomainLookupStart;
-  TimeStamp mDomainLookupEnd;
+  
+  
+  
+  TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
 };
 
