@@ -7,6 +7,7 @@
 
 #include "nsHttpHeaderArray.h"
 #include "nsHttp.h"
+#include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RecursiveMutex.h"
@@ -256,6 +257,27 @@ class nsHttpResponseHead {
   bool mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){false};
 
   friend struct IPC::ParamTraits<nsHttpResponseHead>;
+};
+
+
+
+
+
+class ProxyConnectResponseHead final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProxyConnectResponseHead)
+
+  explicit ProxyConnectResponseHead(const nsHttpResponseHead& aHead)
+      : mHead(aHead) {}
+  explicit ProxyConnectResponseHead(nsHttpResponseHead&& aHead)
+      : mHead(std::move(aHead)) {}
+
+  const nsHttpResponseHead& Head() const { return mHead; }
+
+ private:
+  ~ProxyConnectResponseHead() = default;
+
+  const nsHttpResponseHead mHead;
 };
 
 }  

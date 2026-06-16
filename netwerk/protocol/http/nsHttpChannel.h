@@ -876,7 +876,9 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  Maybe<nsHttpResponseHead> mProxyConnectResponseHead;
+  
+  
+  RefPtr<ProxyConnectResponseHead> mProxyConnectResponseHead;
 
   
   

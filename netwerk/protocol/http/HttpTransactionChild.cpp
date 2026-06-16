@@ -465,8 +465,13 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  Maybe<nsHttpResponseHead> proxyConnectResponseHead =
+  
+  
+  
+  RefPtr<ProxyConnectResponseHead> connectHead =
       mTransaction->GetProxyConnectResponseHead();
+  Maybe<nsHttpResponseHead> proxyConnectResponseHead =
+      connectHead ? Some(connectHead->Head()) : Nothing();
 
   nsIRequest::TRRMode mode = nsIRequest::TRR_DEFAULT_MODE;
   TRRSkippedReason reason = nsITRRSkipReason::TRR_UNSET;
