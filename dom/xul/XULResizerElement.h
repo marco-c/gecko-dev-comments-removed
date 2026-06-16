@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XULResizerElement_h
 #define mozilla_dom_XULResizerElement_h
 
@@ -13,11 +11,11 @@
 namespace mozilla::dom {
 
 nsXULElement* NS_NewXULResizerElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 class XULResizerElement final : public nsXULElement {
  public:
-  explicit XULResizerElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+  explicit XULResizerElement(already_AddRefed<dom::NodeInfo> aNodeInfo)
       : nsXULElement(std::move(aNodeInfo)) {}
 
   MOZ_CAN_RUN_SCRIPT

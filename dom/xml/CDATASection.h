@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CDATASection_h
 #define mozilla_dom_CDATASection_h
 
@@ -21,7 +19,7 @@ class CDATASection final : public Text {
   virtual ~CDATASection();
 
  public:
-  explicit CDATASection(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit CDATASection(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : Text(std::move(aNodeInfo)) {
     Init();
   }

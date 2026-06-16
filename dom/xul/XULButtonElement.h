@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef dom_xul_XULButtonElement_h_
 #define dom_xul_XULButtonElement_h_
 
@@ -24,8 +22,7 @@ class XULMenuParentElement;
 
 class XULButtonElement : public nsXULElement {
  public:
-  explicit XULButtonElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit XULButtonElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   ~XULButtonElement() override;
 

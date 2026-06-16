@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XULResizerElement.h"
 
 #include "mozilla/EventDispatcher.h"
@@ -22,7 +20,7 @@
 namespace mozilla::dom {
 
 nsXULElement* NS_NewXULResizerElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
   return new (nim) XULResizerElement(nodeInfo.forget());

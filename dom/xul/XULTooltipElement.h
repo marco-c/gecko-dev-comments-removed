@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XULTooltipElement_h_
 #define XULTooltipElement_h_
 
@@ -12,12 +10,11 @@
 namespace mozilla::dom {
 
 nsXULElement* NS_NewXULTooltipElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 class XULTooltipElement final : public XULPopupElement {
  public:
-  explicit XULTooltipElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit XULTooltipElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : XULPopupElement(std::move(aNodeInfo)) {}
   nsresult Init();
 

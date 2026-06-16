@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XULFrameElement_h_
 #define XULFrameElement_h_
 
@@ -29,7 +27,7 @@ class BrowsingContext;
 
 class XULFrameElement final : public nsXULElement, public nsFrameLoaderOwner {
  public:
-  explicit XULFrameElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit XULFrameElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsXULElement(std::move(aNodeInfo)) {}
 
   NS_DECL_ISUPPORTS_INHERITED

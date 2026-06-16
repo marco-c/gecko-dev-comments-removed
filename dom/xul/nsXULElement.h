@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef nsXULElement_h_
 #define nsXULElement_h_
 
@@ -338,7 +337,7 @@ class nsXULElement : public nsStyledElement {
   using Document = mozilla::dom::Document;
 
   
-  explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
  public:
   using Element::Blur;
@@ -349,7 +348,7 @@ class nsXULElement : public nsStyledElement {
 
   
   static nsXULElement* Construct(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE(nsXULElement, kNameSpaceID_XUL)
 
@@ -505,7 +504,7 @@ class nsXULElement : public nsStyledElement {
   void RegUnRegAccessKey(bool aDoReg) override;
 
   friend nsXULElement* NS_NewBasicXULElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   friend nsresult NS_NewXULElement(mozilla::dom::Element** aResult,
                                    mozilla::dom::NodeInfo* aNodeInfo,

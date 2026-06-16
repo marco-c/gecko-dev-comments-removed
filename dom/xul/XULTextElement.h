@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef XULTextElement_h_
 #define XULTextElement_h_
 
@@ -13,7 +11,7 @@ namespace mozilla::dom {
 
 class XULTextElement final : public nsXULElement {
  public:
-  explicit XULTextElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit XULTextElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsXULElement(std::move(aNodeInfo)) {}
 
   bool Disabled() { return IsDisabled(); }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ProcessingInstruction_h
 #define mozilla_dom_ProcessingInstruction_h
 
@@ -21,7 +19,7 @@ namespace dom {
 
 class ProcessingInstruction : public CharacterData {
  public:
-  ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                         const nsAString& aData);
 
   virtual already_AddRefed<CharacterData> CloneDataNode(
