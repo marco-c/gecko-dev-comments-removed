@@ -695,22 +695,30 @@ void js::TraceManuallyBarrieredGCCellPtr(JSTracer* trc, JS::GCCellPtr* thingp,
 
 template <typename T>
 inline bool TraceTaggedPtrEdge(JSTracer* trc, T* thingp, const char* name) {
+  T thing;
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+  thing = thingp->atomicGet();
+#else
+  thing = *thingp;
+#endif
+
   
   bool ret = true;
-  auto thing = MapGCThingTyped(*thingp, [&](auto thing) {
-    if (!TraceEdgeInternal(trc, &thing, name)) {
+  auto result = MapGCThingTyped(thing, [&](auto ptr) {
+    if (!TraceEdgeInternal(trc, &ptr, name)) {
       ret = false;
       return TaggedPtr<T>::empty();
     }
 
-    return TaggedPtr<T>::wrap(thing);
+    return TaggedPtr<T>::wrap(ptr);
   });
 
   
   
   
-  if (thing.isSome() && thing.value() != *thingp) {
-    *thingp = thing.value();
+  if (result.isSome() && result.value() != thing) {
+    *thingp = result.value();
   }
 
   return ret;
@@ -881,7 +889,13 @@ static inline void MaybeUnmarkGraySymbol(JSRuntime* runtime,
 template <uint32_t opts>
 template <typename T>
 bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
-  T* thing = *thingp;
+  T* thing;
+  if constexpr (bool(opts & MarkingOptions::ConcurrentMarking)) {
+    thing = __atomic_load_n(thingp, __ATOMIC_RELAXED);
+  } else {
+    thing = *thingp;
+  }
+
   if (!thing) {
     return true;
   }
