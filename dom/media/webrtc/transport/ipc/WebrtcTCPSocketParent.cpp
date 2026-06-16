@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebrtcTCPSocketParent.h"
 
 #include "WebrtcTCPSocket.h"
@@ -70,7 +68,7 @@ WebrtcTCPSocketParent::WebrtcTCPSocketParent(const Maybe<dom::TabId>& aTabId) {
 
   LOG(("WebrtcTCPSocketParent::WebrtcTCPSocketParent %p\n", this));
 
-  mChannel = new WebrtcTCPSocket(this);
+  mChannel = MakeRefPtr<WebrtcTCPSocket>(this);
   if (aTabId.isSome()) {
     mChannel->SetTabId(*aTabId);
   }

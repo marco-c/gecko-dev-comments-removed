@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "RTCRtpScriptTransform.h"
 
@@ -46,16 +46,16 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The spec currently fails to describe what to do when the worker is closing
+  // or closed; the following placeholder text can be found in the spec at:
+  // https://w3c.github.io/webrtc-encoded-transform/#dom-rtcrtpscripttransform-rtcrtpscripttransform
+  //
+  // > FIXME: Describe error handling (worker closing flag true at
+  // > RTCRtpScriptTransform creation time. And worker being terminated while
+  // > transform is processing data).
+  //
+  // Because our worker runnables do not like to be pointed at a nonexistant
+  // worker, we throw in this case.
   if (!aWorker.IsEligibleForMessaging()) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -82,7 +82,7 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
 }
 
 RTCRtpScriptTransform::RTCRtpScriptTransform(nsPIDOMWindowInner* aWindow)
-    : mWindow(aWindow), mProxy(new FrameTransformerProxy) {}
+    : mWindow(aWindow), mProxy(MakeRefPtr<FrameTransformerProxy>()) {}
 
 RTCRtpScriptTransform::~RTCRtpScriptTransform() {
   mProxy->ReleaseScriptTransformer();
@@ -93,6 +93,6 @@ JSObject* RTCRtpScriptTransform::WrapObject(JSContext* aCx,
   return RTCRtpScriptTransform_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
+}  // namespace mozilla::dom
 
 #undef LOGTAG
