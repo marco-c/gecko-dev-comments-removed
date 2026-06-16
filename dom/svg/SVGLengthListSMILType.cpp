@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGLengthListSMILType.h"
 
 #include <math.h>
@@ -268,7 +266,7 @@ nsresult SVGLengthListSMILType::Interpolate(const SMILValue& aStartVal,
       s = start[i].GetValueInCurrentUnits();
       e = end[i].GetValueInSpecifiedUnit(unit, start.Element(), start.Axis());
     }
-    result[i].SetValueAndUnit(s + (e - s) * aUnitDistance, unit);
+    result[i].SetValueAndUnit(std::lerp(s, e, aUnitDistance), unit);
   }
 
   

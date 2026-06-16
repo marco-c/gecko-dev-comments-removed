@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGPOINTLIST_H_
 #define DOM_SVG_SVGPOINTLIST_H_
 
@@ -63,6 +61,13 @@ class SVGPointList {
   uint32_t Length() const { return mItems.Length(); }
 
   const SVGPoint& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
+
+  [[nodiscard]] FallibleTArray<SVGPoint>::const_iterator begin() const {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<SVGPoint>::const_iterator end() const {
+    return mItems.end();
+  }
 
   bool operator==(const SVGPointList& rhs) const {
     
@@ -135,6 +140,12 @@ class SVGPointList {
   }
 
  protected:
+  [[nodiscard]] FallibleTArray<SVGPoint>::iterator begin() {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<SVGPoint>::iterator end() {
+    return mItems.end();
+  }
   
 
 
@@ -190,18 +201,11 @@ class SVGPointListAndInfo : public SVGPointList {
 
 
 
-  nsresult CopyFrom(const SVGPointList& rhs) {
-    return SVGPointList::CopyFrom(rhs);
-  }
-  const SVGPoint& operator[](uint32_t aIndex) const {
-    return SVGPointList::operator[](aIndex);
-  }
-  SVGPoint& operator[](uint32_t aIndex) {
-    return SVGPointList::operator[](aIndex);
-  }
-  bool SetLength(uint32_t aNumberOfItems) {
-    return SVGPointList::SetLength(aNumberOfItems);
-  }
+  using SVGPointList::CopyFrom;
+  using SVGPointList::operator[];
+  using SVGPointList::begin;
+  using SVGPointList::end;
+  using SVGPointList::SetLength;
 
  private:
   

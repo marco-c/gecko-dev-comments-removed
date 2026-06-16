@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGNUMBERLIST_H_
 #define DOM_SVG_SVGNUMBERLIST_H_
 
@@ -94,6 +92,10 @@ class SVGNumberList {
   void SwapWith(SVGNumberList& aRhs) { mNumbers.SwapElements(aRhs.mNumbers); }
 
   float& operator[](uint32_t aIndex) { return mNumbers[aIndex]; }
+  [[nodiscard]] FallibleTArray<float>::iterator begin() {
+    return mNumbers.begin();
+  }
+  [[nodiscard]] FallibleTArray<float>::iterator end() { return mNumbers.end(); }
 
   
 
@@ -179,18 +181,11 @@ class SVGNumberListAndInfo : public SVGNumberList {
 
 
 
-  nsresult CopyFrom(const SVGNumberList& rhs) {
-    return SVGNumberList::CopyFrom(rhs);
-  }
-  const float& operator[](uint32_t aIndex) const {
-    return SVGNumberList::operator[](aIndex);
-  }
-  float& operator[](uint32_t aIndex) {
-    return SVGNumberList::operator[](aIndex);
-  }
-  bool SetLength(uint32_t aNumberOfItems) {
-    return SVGNumberList::SetLength(aNumberOfItems);
-  }
+  using SVGNumberList::CopyFrom;
+  using SVGNumberList::operator[];
+  using SVGNumberList::begin;
+  using SVGNumberList::end;
+  using SVGNumberList::SetLength;
 
  private:
   

@@ -327,13 +327,6 @@ nsresult SVGMotionSMILType::ComputeDistance(const SMILValue& aFrom,
   return NS_OK;
 }
 
-
-static inline float InterpolateFloat(const float& aStartFlt,
-                                     const float& aEndFlt,
-                                     const double& aUnitDistance) {
-  return aStartFlt + aUnitDistance * (aEndFlt - aStartFlt);
-}
-
 nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
                                         const SMILValue& aEndVal,
                                         double aUnitDistance,
@@ -394,7 +387,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
 
   
   float resultDist =
-      InterpolateFloat(startDist, endParams.mDistToPoint, aUnitDistance);
+      std::lerp(startDist, endParams.mDistToPoint, aUnitDistance);
 
   
   

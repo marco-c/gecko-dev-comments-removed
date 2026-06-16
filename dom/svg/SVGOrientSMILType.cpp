@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGOrientSMILType.h"
 
 #include <math.h>
@@ -125,9 +123,8 @@ nsresult SVGOrientSMILType::Interpolate(const SMILValue& aStartVal,
     return NS_ERROR_FAILURE;
   }
 
-  float start = ValueInDegrees(aStartVal);
-  float end = ValueInDegrees(aEndVal);
-  float result = (start + (end - start) * aUnitDistance);
+  float result = std::lerp(ValueInDegrees(aStartVal), ValueInDegrees(aEndVal),
+                           aUnitDistance);
 
   
   if (aUnitDistance > 0.5) {
