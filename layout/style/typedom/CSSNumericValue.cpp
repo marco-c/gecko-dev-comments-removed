@@ -151,10 +151,39 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
   return unitValue.forget();
 }
 
+
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  
+  
+
+  
+  
+
+  
+  auto styleNumericValue = ToStyleNumericValue();
+
+  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
+  if (!sumValue) {
+    aRv.ThrowTypeError("Failed to create a sum value");
+    return nullptr;
+  }
+
+  
+  auto styleMathSum = StyleOptional<StyleMathSum>::None();
+  Servo_SumValue_ToUnits(sumValue.get(),
+                         &static_cast<const nsTArray<nsCString>&>(aUnits),
+                         &styleMathSum);
+  if (styleMathSum.IsNone()) {
+    aRv.ThrowTypeError("Failed to convert to requested units");
+    return nullptr;
+  }
+
+  
+  RefPtr<CSSMathSum> mathSum =
+      CSSMathSum::Create(mParent, styleMathSum.AsSome());
+  return mathSum.forget();
 }
 
 void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
