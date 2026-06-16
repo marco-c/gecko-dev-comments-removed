@@ -1,6 +1,7 @@
 use self::RustcEntry::*;
-use crate::map::{make_hash, Drain, HashMap, IntoIter, Iter, IterMut};
-use crate::raw::{Allocator, Bucket, Global, RawTable};
+use crate::alloc::{Allocator, Global};
+use crate::map::{Drain, HashMap, IntoIter, Iter, IterMut, make_hash, make_hasher};
+use crate::raw::{Bucket, RawTable};
 use core::fmt::{self, Debug};
 use core::hash::{BuildHasher, Hash};
 use core::mem;
@@ -51,8 +52,73 @@ where
             })
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn rustc_try_insert(
+        &mut self,
+        key: K,
+        value: V,
+    ) -> Result<&mut V, RustcOccupiedError<'_, K, V, A>> {
+        let hash = make_hash(&self.hash_builder, &key);
+        if let Some(elem) = self.table.find(hash, |q| q.0.eq(&key)) {
+            let entry = RustcOccupiedEntry {
+                elem,
+                table: &mut self.table,
+            };
+            Err(RustcOccupiedError { entry, key, value })
+        } else {
+            let hasher = make_hasher(&self.hash_builder);
+            let entry = self.table.insert_entry(hash, (key, value), hasher);
+            Ok(&mut entry.1)
+        }
+    }
 }
 
+
+
+
+
+#[non_exhaustive]
+pub struct RustcOccupiedError<'a, K, V, A = Global>
+where
+    A: Allocator,
+{
+    
+    pub entry: RustcOccupiedEntry<'a, K, V, A>,
+    
+    pub key: K,
+    
+    pub value: V,
+}
 
 
 
@@ -78,8 +144,6 @@ impl<K: Debug, V: Debug, A: Allocator> Debug for RustcEntry<'_, K, V, A> {
         }
     }
 }
-
-
 
 
 
@@ -114,8 +178,6 @@ impl<K: Debug, V: Debug, A: Allocator> Debug for RustcOccupiedEntry<'_, K, V, A>
             .finish()
     }
 }
-
-
 
 
 

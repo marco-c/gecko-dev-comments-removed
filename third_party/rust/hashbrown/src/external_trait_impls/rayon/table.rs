@@ -1,13 +1,12 @@
 
 
 use super::raw::{RawIntoParIter, RawParDrain, RawParIter};
-use crate::hash_table::HashTable;
-use crate::raw::{Allocator, Global};
+use crate::HashTable;
+use crate::alloc::{Allocator, Global};
 use core::fmt;
 use core::marker::PhantomData;
 use rayon::iter::plumbing::UnindexedConsumer;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
 
 
 
@@ -61,7 +60,6 @@ impl<T: fmt::Debug> fmt::Debug for ParIter<'_, T> {
 
 
 
-
 pub struct ParIterMut<'a, T> {
     inner: RawParIter<T>,
     marker: PhantomData<&'a mut T>,
@@ -99,7 +97,6 @@ impl<T: fmt::Debug> fmt::Debug for ParIterMut<'_, T> {
 
 
 
-
 pub struct IntoParIter<T, A: Allocator = Global> {
     inner: RawIntoParIter<T, A>,
 }
@@ -125,7 +122,6 @@ impl<T: fmt::Debug, A: Allocator> fmt::Debug for IntoParIter<T, A> {
         .fmt(f)
     }
 }
-
 
 
 
@@ -210,12 +206,12 @@ impl<'a, T: Send, A: Allocator> IntoParallelIterator for &'a mut HashTable<T, A>
 
 #[cfg(test)]
 mod test_par_table {
-    use alloc::vec::Vec;
     use core::sync::atomic::{AtomicUsize, Ordering};
+    use stdalloc::vec::Vec;
 
     use rayon::prelude::*;
 
-    use crate::{hash_map::make_hash, hash_table::HashTable, DefaultHashBuilder};
+    use crate::{DefaultHashBuilder, hash_map::make_hash, hash_table::HashTable};
 
     #[test]
     fn test_iterate() {
