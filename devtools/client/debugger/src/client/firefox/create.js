@@ -19,8 +19,6 @@ import {
 import { createLocation } from "../../utils/location";
 import { getDisplayURL } from "../../utils/sources-tree/getURL";
 
-const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
-
 let store;
 
 
@@ -175,7 +173,7 @@ export async function waitForSourceToBeRegisteredInStore(sourceId) {
 
 
 
-export function makeScriptSourceId(sourceResource) {
+export function makeSourceId(sourceResource) {
   
   if ("mockedJestID" in sourceResource) {
     return sourceResource.mockedJestID;
@@ -222,7 +220,7 @@ export function makeScriptSourceId(sourceResource) {
 
 export function createGeneratedSource(sourceResource) {
   return createSourceObject({
-    id: makeScriptSourceId(sourceResource),
+    id: makeSourceId(sourceResource),
     url: sourceResource.url,
     extensionName: sourceResource.extensionName,
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
@@ -309,9 +307,6 @@ function createSourceObject({
 
     
     generatedSource,
-
-    
-    type: ResourceCommand.TYPES.SOURCE,
   };
 }
 
@@ -373,7 +368,7 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
 
 
 
-export function createScriptSourceActor(sourceResource, sourceObject) {
+export function createSourceActor(sourceResource, sourceObject) {
   const actorId = sourceResource.actor;
 
   return {
@@ -382,9 +377,12 @@ export function createScriptSourceActor(sourceResource, sourceObject) {
     
     
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
+    
+    source: makeSourceId(sourceResource),
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
+    url: sourceResource.url,
     introductionType: sourceResource.introductionType,
     sourceStartLine: sourceResource.sourceStartLine,
     sourceStartColumn: sourceResource.sourceStartColumn,

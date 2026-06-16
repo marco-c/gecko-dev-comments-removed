@@ -382,7 +382,7 @@ function removeSourcesAndActors(state, action) {
   }
 
   for (const removedActor of action.actors) {
-    const sourceId = removedActor.sourceObject.id;
+    const sourceId = removedActor.source;
     const actorsForSource = mutableSourceActors.get(sourceId);
     
     if (!actorsForSource) {
@@ -419,7 +419,7 @@ function insertSourceActors(state, action) {
   
   
   for (const sourceActor of sourceActors) {
-    const sourceId = sourceActor.sourceObject.id;
+    const sourceId = sourceActor.source;
     
     
     
