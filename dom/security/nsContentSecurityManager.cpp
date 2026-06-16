@@ -1332,25 +1332,6 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  nsAutoCString triggeringRemoteType;
-  nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
-          loadInfo->PrincipalToInherit(), triggeringRemoteType,
-          {ValidatePrincipalOptions::AllowNullPtr})) {
-    if (MOZ_LOG_TEST(sUELLog, LogLevel::Warning)) {
-      nsAutoCString origin;
-      loadInfo->PrincipalToInherit()->GetOrigin(origin);
-      MOZ_LOG(sUELLog, LogLevel::Warning,
-              ("Unexpected PrincipalToInherit %s for remote %s", origin.get(),
-               triggeringRemoteType.get()));
-    }
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
-
   
   
   
@@ -1364,6 +1345,10 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(),
                         "Unexpected off-the-main-thread call to "
                         "CheckAllowLoadByTriggeringRemoteType");
+
+  nsAutoCString triggeringRemoteType;
+  nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
