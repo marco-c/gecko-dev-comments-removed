@@ -112,7 +112,7 @@ toolbar[inactive="true"] .urlbar,
 /* When rich suggestions are enabled the urlbar identity icon is given extra padding to
  * align the results and urlbar text */
 @media -moz-pref("browser.urlbar.richSuggestions.featureGate") {
-  #identity-box[pageproxystate="invalid"] > .identity-box-button {
+  #urlbar[pageproxystate="invalid"]:not([persistsearchterms]) > .identity-box-button {
     padding-inline: calc(6px + var(--urlbar-icon-padding));
   }
 }
@@ -1255,6 +1255,7 @@ toolbar[inactive="true"] .urlbar,
 .searchmode-switcher {
   margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
   height: auto;
+  --button-border: none;
   --button-padding: 0 var(--space-small);
   --button-min-height: 100%;
   --button-font-weight: normal;
@@ -1429,11 +1430,12 @@ toolbar[inactive="true"] .urlbar,
   }
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    #urlbar[pageproxystate="invalid"] {
-      #identity-box,
-      #tracking-protection-icon-container {
-        display: none;
-      }
+    #urlbar[pageproxystate="invalid"] #tracking-protection-icon-container {
+      display: none;
+    }
+
+    #urlbar[pageproxystate="invalid"]:not([persistsearchterms]) #identity-box {
+      display: none;
     }
   }
 }
