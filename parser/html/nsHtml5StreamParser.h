@@ -479,7 +479,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  nsresult DispatchToMain(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult DispatchToMain(already_AddRefed<nsIRunnable> aRunnable);
 
   
 
