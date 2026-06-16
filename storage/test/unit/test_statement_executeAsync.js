@@ -957,13 +957,6 @@ function run_next_test() {
 }
 
 function run_test() {
-  
-  
-  Services.prefs.setBoolPref(
-    "toolkit.telemetry.testing.overrideProductsCheck",
-    true
-  );
-
   cleanup();
 
   do_test_pending();
