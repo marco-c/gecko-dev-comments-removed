@@ -635,12 +635,19 @@ EditorSpellCheck::SetCurrentDictionaries(
       } else {
         anonymousDivOrEditingHost = mEditor->GetRoot();
       }
-      RefPtr<Document> ownerDoc = anonymousDivOrEditingHost->OwnerDoc();
-      Document* parentDoc = ownerDoc->GetInProcessParentDocument();
-      if (parentDoc) {
-        parentDoc->SetHeaderData(
-            nsGkAtoms::headerContentLanguage,
-            NS_ConvertUTF8toUTF16(DictionariesToString(aDictionaries)));
+      
+      
+      
+      
+      
+      if (anonymousDivOrEditingHost) {
+        RefPtr<Document> ownerDoc = anonymousDivOrEditingHost->OwnerDoc();
+        Document* parentDoc = ownerDoc->GetInProcessParentDocument();
+        if (parentDoc) {
+          parentDoc->SetHeaderData(
+              nsGkAtoms::headerContentLanguage,
+              NS_ConvertUTF8toUTF16(DictionariesToString(aDictionaries)));
+        }
       }
     }
   }
