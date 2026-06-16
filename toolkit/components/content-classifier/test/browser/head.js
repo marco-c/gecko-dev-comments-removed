@@ -106,12 +106,36 @@ async function populateRS(db, id, name, rules) {
   return record;
 }
 
+
+
+
+
+
+
+
+
+async function waitForListsSettled(quietMs = 200) {
+  return new Promise(resolve => {
+    let timer;
+    let observer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(done, quietMs);
+    };
+    function done() {
+      Services.obs.removeObserver(observer, LISTS_LOADED_TOPIC);
+      resolve();
+    }
+    Services.obs.addObserver(observer, LISTS_LOADED_TOPIC);
+    timer = setTimeout(done, quietMs);
+  });
+}
+
 async function syncAndWaitForLists(client, records) {
-  let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
+  let settled = waitForListsSettled();
   await client.emit("sync", {
     data: { created: records, updated: [], deleted: [] },
   });
-  await listsLoaded;
+  await settled;
 }
 
 
@@ -208,6 +232,12 @@ async function pushEnginePrefs({
       ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
     ],
   });
+  
+  
+  
+  
+  
+  await waitForListsSettled();
 }
 
 
