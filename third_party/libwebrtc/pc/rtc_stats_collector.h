@@ -54,6 +54,7 @@ namespace webrtc {
 
 class RtpSenderInternal;
 class RtpReceiverInternal;
+class ScopedOperationsBatcher;
 
 
 
@@ -123,8 +124,8 @@ class RTCStatsCollector {
   
   
   void CancelPendingRequestAndGetShutdownTasks(
-      std::vector<absl::AnyInvocable<void() &&>>& network_tasks,
-      std::vector<absl::AnyInvocable<void() &&>>& worker_tasks);
+      ScopedOperationsBatcher& network_tasks,
+      ScopedOperationsBatcher& worker_tasks);
 
   
   void OnSctpDataChannelStateChanged(int channel_id,

@@ -69,6 +69,7 @@
 #include "pc/peer_connection_internal.h"
 #include "pc/rtp_sender.h"
 #include "pc/rtp_transceiver.h"
+#include "pc/scoped_operations_batcher.h"
 #include "pc/sctp_data_channel.h"
 #include "pc/stream_collection.h"
 #include "pc/test/fake_audio_track.h"
@@ -4229,8 +4230,8 @@ TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestReturnsImmediately) {
   
   
   wrapper.stats_collector().GetStatsReport(callback);
-  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
-  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
+  ScopedOperationsBatcher network_tasks(worker_and_network.get());
+  ScopedOperationsBatcher worker_tasks(worker_and_network.get());
 
   
   
@@ -4239,20 +4240,11 @@ TEST(RTCStatsCollectorSafetyTest, CancelPendingRequestReturnsImmediately) {
       network_tasks, worker_tasks);
 
   
-  EXPECT_EQ(network_tasks.size(), 1u);
-  EXPECT_EQ(worker_tasks.size(), 1u);
-
-  
   blocker.Set();
 
   
-  auto quit = loop.QuitClosure();
-  worker_and_network->PostTask([&]() {
-    std::move(network_tasks[0])();
-    std::move(worker_tasks[0])();
-    loop.task_queue()->PostTask([&]() { quit(); });
-  });
-  loop.Run();
+  network_tasks.Run();
+  worker_tasks.Run();
 }
 
 
@@ -4269,16 +4261,14 @@ TEST(RTCStatsCollectorSafetyTest, NetworkThreadSafetyPreventsCallback) {
   EXPECT_CALL(*callback, OnStatsDelivered(_)).Times(0);
   
   
-  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
-  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
+  ScopedOperationsBatcher network_tasks(pc->network_thread());
+  ScopedOperationsBatcher worker_tasks(pc->worker_thread());
   wrapper.stats_collector().CancelPendingRequestAndGetShutdownTasks(
       network_tasks, worker_tasks);
   
   
-  ASSERT_EQ(network_tasks.size(), 1u);
-  ASSERT_EQ(worker_tasks.size(), 1u);
-  std::move(network_tasks[0])();
-  std::move(worker_tasks[0])();
+  network_tasks.Run();
+  worker_tasks.Run();
   
   
   wrapper.stats_collector().GetStatsReport(callback);
