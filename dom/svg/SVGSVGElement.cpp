@@ -470,27 +470,25 @@ AspectRatio SVGSVGElement::GetIntrinsicRatio() {
 gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
   auto intrinsicWidth = GetIntrinsicWidth();
   auto intrinsicHeight = GetIntrinsicHeight();
-  bool hasWidth = intrinsicWidth.IsLength();
-  bool hasHeight = intrinsicHeight.IsLength();
-  gfx::Size size;
-  if (hasWidth) {
-    size.width = intrinsicWidth.AsLength().ToCSSPixels();
-  }
-  if (hasHeight) {
-    size.height = intrinsicHeight.AsLength().ToCSSPixels();
-  }
-  if (hasWidth && hasHeight) {
+  gfx::Size size(
+      intrinsicWidth.IsLength() ? intrinsicWidth.AsLength().ToCSSPixels()
+                                : kFallbackIntrinsicWidthInPixels,
+      intrinsicHeight.IsLength() ? intrinsicHeight.AsLength().ToCSSPixels()
+                                 : kFallbackIntrinsicHeightInPixels);
+  if (intrinsicWidth.IsLength() && intrinsicHeight.IsLength()) {
     return size;
   }
   SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame());
   AspectRatio ratio = osf ? osf->GetIntrinsicRatio() : GetIntrinsicRatio();
-  if (!hasWidth) {
-    size.width = ratio && hasHeight ? CSSIntCoord(ratio.ApplyTo(size.height))
-                                    : kFallbackIntrinsicWidthInPixels;
-  }
-  if (!hasHeight) {
-    size.height = ratio ? CSSIntCoord(ratio.Inverted().ApplyTo(size.width))
-                        : kFallbackIntrinsicHeightInPixels;
+  if (ratio) {
+    if (!intrinsicHeight.IsLength()) {
+      
+      
+      size.height = ratio.Inverted().ApplyTo(size.width);
+    } else if (!intrinsicWidth.IsLength()) {
+      
+      size.width = ratio.ApplyTo(size.height);
+    }
   }
   return size;
 }
