@@ -435,6 +435,11 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
 }
 
 AspectRatio SVGSVGElement::GetIntrinsicRatio() {
+  if (SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame())) {
+    if (osf->ContainSizeAxesIfApplicable().IsAny()) {
+      return AspectRatio();
+    }
+  }
   
   
   
@@ -478,9 +483,7 @@ gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
   if (intrinsicWidth.IsLength() && intrinsicHeight.IsLength()) {
     return size;
   }
-  SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame());
-  AspectRatio ratio = osf ? osf->GetIntrinsicRatio() : GetIntrinsicRatio();
-  if (ratio) {
+  if (AspectRatio ratio = GetIntrinsicRatio()) {
     if (!intrinsicHeight.IsLength()) {
       
       

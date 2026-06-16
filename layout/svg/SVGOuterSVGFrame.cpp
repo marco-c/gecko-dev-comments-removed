@@ -47,20 +47,6 @@ SVGOuterSVGFrame::SVGOuterSVGFrame(ComputedStyle* aStyle,
 }
 
 
-
-
-
-
-
-static inline ContainSizeAxes ContainSizeAxesIfApplicable(
-    const SVGOuterSVGFrame* aFrame) {
-  if (!aFrame->GetContent()->GetParent()) {
-    return ContainSizeAxes(false, false);
-  }
-  return aFrame->GetContainSizeAxes();
-}
-
-
 float SVGOuterSVGFrame::ComputeFullZoom() const {
   MOZ_ASSERT(mIsRootContent);
   MOZ_ASSERT(!mIsInIframe);
@@ -158,7 +144,7 @@ nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
   if (Maybe<nscoord> containISize =
-          ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
+          ContainSizeAxesIfApplicable().ContainIntrinsicISize(*this)) {
     result = *containISize;
   } else if (isize.IsPercentage()) {
     
@@ -192,7 +178,7 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
   
   
 
-  const auto containAxes = ContainSizeAxesIfApplicable(this);
+  const auto containAxes = ContainSizeAxesIfApplicable();
   if (containAxes.IsBoth()) {
     
     
@@ -223,13 +209,8 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
 }
 
 AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
-  if (ContainSizeAxesIfApplicable(this).IsAny()) {
-    return AspectRatio();
-  }
-
-  auto* element = static_cast<SVGSVGElement*>(GetContent());
-  AspectRatio ratio = element->GetIntrinsicRatio();
-  if (ratio) {
+  if (AspectRatio ratio =
+          static_cast<SVGSVGElement*>(GetContent())->GetIntrinsicRatio()) {
     return ratio;
   }
   return SVGDisplayContainerFrame::GetIntrinsicRatio();
