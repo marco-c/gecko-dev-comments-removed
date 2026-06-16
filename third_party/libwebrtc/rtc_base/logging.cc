@@ -19,10 +19,11 @@
 #include <cstring>
 #include <ctime>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
@@ -102,8 +103,10 @@ Mutex& GetLoggingLock() {
 
 }  
 
+LogLineRef::LogLineRef() = default;
+
 std::string LogLineRef::DefaultLogLine() const {
-  StringBuilder log_output;
+  StringBuilder log_output(LogMessage::LogPrefix());
   if (timestamp_ != Timestamp::MinusInfinity()) {
     
     char timestamp[50];  
@@ -113,8 +116,19 @@ std::string LogLineRef::DefaultLogLine() const {
     RTC_DCHECK_LT(len, sizeof(timestamp));
     log_output << timestamp;
   }
+  
+  
+  
+  
+  
   if (thread_id_.has_value()) {
-    log_output << "[" << *thread_id_ << "] ";
+    log_output << "[" << *thread_id_;
+    if (!queue_name_.empty()) {
+      log_output << ":" << queue_name_.substr(0, 10);
+    }
+    log_output << "] ";
+  } else if (!queue_name_.empty()) {
+    log_output << "[" << queue_name_.substr(0, 10) << "] ";
   }
   if (!filename_.empty()) {
 #if defined(WEBRTC_ANDROID)
@@ -137,13 +151,15 @@ bool LogMessage::log_to_stderr_ = false;
 
 
 
-ABSL_CONST_INIT LogSink* LogMessage::streams_ RTC_GUARDED_BY(GetLoggingLock()) =
+constinit LogSink* LogMessage::streams_ RTC_GUARDED_BY(GetLoggingLock()) =
     nullptr;
-ABSL_CONST_INIT std::atomic<bool> LogMessage::streams_empty_ = {true};
+constinit std::atomic<bool> LogMessage::streams_empty_ = {true};
 
 
-ABSL_CONST_INIT bool LogMessage::log_thread_ = false;
-ABSL_CONST_INIT bool LogMessage::log_timestamp_ = false;
+constinit bool LogMessage::log_thread_ = false;
+constinit bool LogMessage::log_timestamp_ = false;
+constinit absl::string_view LogMessage::log_prefix_ = "";
+constinit bool LogMessage::log_queue_name_ = false;
 
 LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev)
     : LogMessage(file, line, sev, ERRCTX_NONE, 0) {}
@@ -167,6 +183,12 @@ LogMessage::LogMessage(const char* file,
 
   if (log_thread_) {
     log_line_.set_thread_id(CurrentThreadId());
+  }
+
+  if (log_queue_name_) {
+    if (TaskQueueBase* tq = TaskQueueBase::Current(); tq != nullptr) {
+      log_line_.set_queue_name(tq->queue_name());
+    }
   }
 
   if (file != nullptr) {
@@ -263,8 +285,20 @@ uint32_t LogMessage::WallClockStartTime() {
   return g_start_wallclock;
 }
 
-void LogMessage::LogThreads(bool on) {
-  log_thread_ = on;
+absl::string_view LogMessage::LogPrefix() {
+  return log_prefix_;
+}
+
+bool LogMessage::LogThreads(bool enabled) {
+  return std::exchange(log_thread_, enabled);
+}
+
+void LogMessage::SetLogPrefix(absl::string_view prefix) {
+  log_prefix_ = prefix;
+}
+
+bool LogMessage::SetLogQueueNames(bool enabled) {
+  return std::exchange(log_queue_name_, enabled);
 }
 
 void LogMessage::LogTimestamps(bool on) {

@@ -132,6 +132,7 @@ class LogLineRef {
 
  private:
   friend class LogMessage;
+  LogLineRef();
   void set_message(std::string message) { message_ = std::move(message); }
   void set_filename(absl::string_view filename) { filename_ = filename; }
   void set_line(int line) { line_ = line; }
@@ -141,9 +142,18 @@ class LogLineRef {
   void set_timestamp(Timestamp timestamp) { timestamp_ = timestamp; }
   void set_tag(absl::string_view tag) { tag_ = tag; }
   void set_severity(LoggingSeverity severity) { severity_ = severity; }
+  void set_queue_name(absl::string_view queue_name) {
+    queue_name_ = queue_name;
+  }
 
   std::string message_;
   absl::string_view filename_;
+  
+  
+  
+  
+  absl::string_view queue_name_;
+
   int line_ = 0;
   std::optional<PlatformThreadId> thread_id_;
   Timestamp timestamp_ = Timestamp::MinusInfinity();
@@ -473,11 +483,27 @@ class LogMessage {
   
   
   static int64_t LogStartTime();
+  static absl::string_view LogPrefix();
   
   
   static uint32_t WallClockStartTime();
   
-  static void LogThreads(bool on = true);
+  
+  
+  static bool LogThreads(bool enabled = true);
+  
+  
+  
+  
+  
+  static void SetLogPrefix(absl::string_view prefix);
+
+  
+  
+  
+  
+  static bool SetLogQueueNames(bool enabled);
+
   
   static void LogTimestamps(bool on = true);
   
@@ -535,7 +561,10 @@ class LogMessage {
   inline StringBuilder& stream() { return print_stream_; }
   inline static int64_t LogStartTime() { return 0; }
   inline static uint32_t WallClockStartTime() { return 0; }
-  inline static void LogThreads(bool on = true) {}
+  inline static bool LogThreads(bool enabled = true) { return false; }
+  inline static void SetLogPrefix(absl::string_view prefix) {}
+  inline static bool SetLogQueueNames(bool enabled) { return false; }
+
   inline static void LogTimestamps(bool on = true) {}
   inline static void LogToDebug(LoggingSeverity min_sev) {}
   inline static LoggingSeverity GetLogToDebug() {
@@ -592,6 +621,8 @@ class LogMessage {
   
   static bool log_thread_;
   static bool log_timestamp_;
+  static absl::string_view log_prefix_;
+  static bool log_queue_name_;
 
   
   static bool log_to_stderr_;
@@ -681,9 +712,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define RTC_LOG_GLE(sev) RTC_LOG_GLE_EX(sev, static_cast<int>(GetLastError()))
 #define RTC_LOG_ERR_EX(sev, err) RTC_LOG_GLE_EX(sev, err)
 #define RTC_LOG_ERR(sev) RTC_LOG_GLE(sev)
-#elif defined(__native_client__) && __native_client__
-#define RTC_LOG_ERR_EX(sev, err) RTC_LOG(sev)
-#define RTC_LOG_ERR(sev) RTC_LOG(sev)
 #elif defined(WEBRTC_POSIX)
 #define RTC_LOG_ERR_EX(sev, err) RTC_LOG_ERRNO_EX(sev, err)
 #define RTC_LOG_ERR(sev) RTC_LOG_ERRNO(sev)
@@ -738,20 +766,5 @@ inline const char* AdaptString(const std::string& str) {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::LoggingSeverity;
-using ::webrtc::LogLineRef;
-using ::webrtc::LogMessage;
-using ::webrtc::LogSink;
-using ::webrtc::LS_ERROR;
-using ::webrtc::LS_INFO;
-using ::webrtc::LS_NONE;
-using ::webrtc::LS_VERBOSE;
-using ::webrtc::LS_WARNING;
-}  
-#endif  
 
 #endif  
