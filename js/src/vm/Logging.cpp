@@ -7,7 +7,7 @@
 
  bool js::LogModule::initializeAll(
     const JS::LoggingInterface iface) {
-#define INITIALIZE_MODULE(X) X##Module.initialize(iface);
+#define INITIALIZE_MODULE(X, HELP) X##Module.initialize(iface);
 
   FOR_EACH_JS_LOG_MODULE(INITIALIZE_MODULE)
 

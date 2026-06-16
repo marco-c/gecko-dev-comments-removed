@@ -33,8 +33,10 @@ using mozilla::LogLevel;
 
 class LogModule {
  public:
-  explicit constexpr LogModule(const char* name) : name(name) {
+  explicit constexpr LogModule(const char* name, const char* help)
+      : name(name), help(help) {
     MOZ_ASSERT(name);
+    MOZ_ASSERT(help);
   }
 
   
@@ -60,6 +62,10 @@ class LogModule {
   
   const char* name{};
 
+  
+  
+  const char* help{};
+
  private:
   
   inline bool isSetup() const { return interface.isComplete() && logger; }
@@ -82,21 +88,22 @@ class LogModule {
   mutable mozilla::AtomicLogLevel* levelPtr{};
 };
 
-#define FOR_EACH_JS_LOG_MODULE(_)                                            \
-  _(debug)                /* A predefined log module for casual debugging */ \
-  _(wasmPerf)             /* Wasm performance statistics */                  \
-  _(wasmApi)              /* Wasm JS-API tracing */                          \
-  _(fuseInvalidation)     /* Invalidation triggered by a fuse  */            \
-  _(thenable)             /* Thenable on standard proto*/                    \
-  _(startup)              /* engine startup logging */                       \
-  _(teleporting)          /* Shape Teleporting */                            \
-  _(selfHosted)           /* self-hosted script logging */                   \
-  _(gc)                   /* The garbage collector */                        \
-  _(mtq)                  /* MicroTask queue */                              \
+
+#define FOR_EACH_JS_LOG_MODULE(_)                          \
+  _(debug, "A predefined log module for casual debugging") \
+  _(wasmPerf, "Wasm performance statistics")               \
+  _(wasmApi, "Wasm JS-API tracing")                        \
+  _(fuseInvalidation, "Invalidation triggered by a fuse")  \
+  _(thenable, "Thenable on standard proto")                \
+  _(startup, "Engine startup logging")                     \
+  _(teleporting, "Shape Teleporting")                      \
+  _(selfHosted, "Self-hosted script logging")              \
+  _(gc, "The garbage collector")                           \
+  _(mtq, "MicroTask queue")                                \
   JITSPEW_CHANNEL_LIST(_) /* A module for each JitSpew channel. */
 
 
-#define DECLARE_MODULE(X) inline constexpr LogModule X##Module(#X);
+#define DECLARE_MODULE(X, HELP) inline constexpr LogModule X##Module(#X, HELP);
 
 FOR_EACH_JS_LOG_MODULE(DECLARE_MODULE);
 
