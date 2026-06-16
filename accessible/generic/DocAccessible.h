@@ -434,6 +434,12 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
+  bool IsPrintDoc() const;
+
+  
+
+
+
   uint64_t EffectiveCacheDomains() const;
 
  protected:

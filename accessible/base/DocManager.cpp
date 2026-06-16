@@ -116,8 +116,7 @@ void DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
   RemoveFromXPCDocumentCache(aDocument);
   mDocAccessibleCache.Remove(aDOMDocument);
 
-  auto* shutdownBC = aDOMDocument->GetBrowsingContext();
-  if (shutdownBC && shutdownBC->Top()->GetIsPrinting()) {
+  if (aDocument->IsPrintDoc()) {
     
     
     
@@ -125,10 +124,7 @@ void DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
     bool anyPrintDocsRemain = false;
     for (const auto& entry : mDocAccessibleCache) {
       DocAccessible* doc = entry.GetWeak();
-      auto* docBC = doc && doc->DocumentNode()
-                        ? doc->DocumentNode()->GetBrowsingContext()
-                        : nullptr;
-      if (docBC && docBC->Top()->GetIsPrinting()) {
+      if (doc->IsPrintDoc()) {
         anyPrintDocsRemain = true;
         break;
       }
