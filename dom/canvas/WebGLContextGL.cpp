@@ -655,7 +655,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_FLOAT_MAT4x2:
       case LOCAL_GL_FLOAT_MAT4x3:
         gl->fGetUniformfv(prog.mGLName, loc,
-                          reinterpret_cast<float*>(ret.data));
+                          reinterpret_cast<float*>(ret.data.data()));
         break;
 
       case LOCAL_GL_INT:
@@ -682,7 +682,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_BOOL_VEC3:
       case LOCAL_GL_BOOL_VEC4:
         gl->fGetUniformiv(prog.mGLName, loc,
-                          reinterpret_cast<int32_t*>(ret.data));
+                          reinterpret_cast<int32_t*>(ret.data.data()));
         break;
 
       case LOCAL_GL_UNSIGNED_INT:
@@ -690,7 +690,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_UNSIGNED_INT_VEC3:
       case LOCAL_GL_UNSIGNED_INT_VEC4:
         gl->fGetUniformuiv(prog.mGLName, loc,
-                           reinterpret_cast<uint32_t*>(ret.data));
+                           reinterpret_cast<uint32_t*>(ret.data.data()));
         break;
 
       default:
@@ -857,7 +857,15 @@ bool WebGLContext::DoReadPixelsAndConvert(
   const auto& x = desc.srcOffset.x;
   const auto& y = desc.srcOffset.y;
   const auto size = *ivec2::From(desc.size);
-  const auto& pi = desc.pi;
+  auto pi = desc.pi;
+
+  
+  
+  
+  if (!IsWebGL2() && gl->IsGLES() && gl->Version() < 300 &&
+      pi.type == LOCAL_GL_HALF_FLOAT) {
+    pi.type = LOCAL_GL_HALF_FLOAT_OES;
+  }
 
   
   
