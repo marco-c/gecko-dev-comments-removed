@@ -169,7 +169,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 
 static UniquePtr<NrIceCandidate> MakeNrIceCandidate(
     const nr_ice_candidate& candc) {
-  UniquePtr<NrIceCandidate> out(new NrIceCandidate());
+  auto out = MakeUnique<NrIceCandidate>();
 
   if (!ToNrIceCandidate(candc, out.get())) {
     return nullptr;
