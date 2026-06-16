@@ -10,6 +10,7 @@ import signal
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import wait as futures_wait
 from concurrent.futures.process import _python_exit as futures_atexit
 from itertools import chain
 from math import ceil
@@ -27,7 +28,7 @@ from mozversioncontrol import (
 
 from .errors import LintersNotConfigured, NoValidLinter
 from .parser import Parser
-from .pathutils import findobject
+from .pathutils import filterpaths, findobject
 from .result import ResultSummary
 from .types import supported_types
 
@@ -73,11 +74,6 @@ def _run_worker(config, paths, **lintargs):
         "code_review_warnings", True
     ):
         lintargs["show_warnings"] = True
-
-    
-    
-    if config.get("include_thirdparty", False):
-        lintargs["include_thirdparty"] = True
 
     func = supported_types[config["type"]]
     start_time = time.monotonic()
@@ -178,7 +174,15 @@ class LintRoller:
         50  
     )
 
-    def __init__(self, root, exclude=None, setupargs=None, **lintargs):
+    def __init__(
+        self,
+        root,
+        exclude=None,
+        third_party_exclude=None,
+        include_thiry_party=False,
+        setupargs=None,
+        **lintargs,
+    ):
         self.parse = Parser(root)
         try:
             self.vcs = get_repository_object(root)
@@ -199,6 +203,8 @@ class LintRoller:
 
         self.root = root
         self.exclude = exclude or []
+        self.third_party_exclude = third_party_exclude or []
+        self.include_third_party = include_thiry_party
 
         _setup_logger(log, lintargs.get("show_verbose"))
 
@@ -214,7 +220,13 @@ class LintRoller:
             
             linter["local_exclude"] = linter.get("exclude", [])[:]
             
-            linter.setdefault("exclude", []).extend(self.exclude)
+            exclude = linter.setdefault("exclude", [])
+            exclude.extend(self.exclude)
+            
+            if not self.include_third_party and not linter.get(
+                "include_third_party", False
+            ):
+                exclude.extend(self.third_party_exclude)
             self.linters.append(linter)
 
     def setup(self, virtualenv_manager=None):
@@ -311,6 +323,18 @@ class LintRoller:
                 lpaths = paths.union(vcs_paths)
 
             lpaths = list(lpaths) or __get_current_paths(os.getcwd())
+            if self.lintargs.get("use_filters", True):
+                lpaths, _ = filterpaths(
+                    self.root,
+                    lpaths,
+                    include=linter["include"],
+                    exclude=linter.get("exclude", []),
+                    extensions=linter.get("extensions", []),
+                    exclude_extensions=linter.get("exclude_extensions", []),
+                )
+                if not lpaths:
+                    continue
+
             chunk_size = (
                 min(self.MAX_PATHS_PER_JOB, int(ceil(len(lpaths) / num_procs))) or 1
             )
@@ -419,11 +443,12 @@ class LintRoller:
         
         
         
+        
+        
+        
+        
+        
         futures = []
-        for job in jobs:
-            future = executor.submit(_run_worker, *job, **self.lintargs)
-            future.add_done_callback(self._collect_results)
-            futures.append(future)
 
         def _parent_sigint_handler(signum, frame):
             """Sigint handler for the parent process.
@@ -439,6 +464,32 @@ class LintRoller:
             signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         signal.signal(signal.SIGINT, _parent_sigint_handler)
+
+        if self.lintargs.get("fix"):
+            groups = []  
+            for job in jobs:
+                job_paths = set(job[1])
+                for group_jobs, group_paths in groups:
+                    if not job_paths.intersection(group_paths):
+                        group_jobs.append(job)
+                        group_paths.update(job_paths)
+                        break
+                else:
+                    groups.append(([job], job_paths))
+
+            for group_jobs, _ in groups:
+                group_futures = []
+                for job in group_jobs:
+                    future = executor.submit(_run_worker, *job, **self.lintargs)
+                    future.add_done_callback(self._collect_results)
+                    futures.append(future)
+                    group_futures.append(future)
+                futures_wait(group_futures)
+        else:
+            for job in jobs:
+                future = executor.submit(_run_worker, *job, **self.lintargs)
+                future.add_done_callback(self._collect_results)
+                futures.append(future)
         executor.shutdown()
         signal.signal(signal.SIGINT, orig_sigint)
         return self.result
