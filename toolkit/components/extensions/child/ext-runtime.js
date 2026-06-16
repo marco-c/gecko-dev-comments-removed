@@ -4,8 +4,34 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
 });
+
+const EMBEDDER_ELEMENT_TYPES = [
+  "HTMLIFrameElement",
+  "HTMLFrameElement",
+  "HTMLEmbedElement",
+  "HTMLObjectElement",
+];
+
+
+function getBrowsingContextForTarget(target) {
+  let bc = WebNavigationFrames.getBrowsingContextFromWindow(target);
+  if (bc) {
+    return bc;
+  }
+  if (
+    target &&
+    typeof target === "object" &&
+    EMBEDDER_ELEMENT_TYPES.includes(Cu.getClassName(target, true))
+  ) {
+    return target.browsingContext;
+  }
+  throw new ExtensionUtils.ExtensionError(
+    "Invalid argument: target is not a valid window or frame element."
+  );
+}
 
 
 
@@ -110,35 +136,24 @@ this.runtime = class extends ExtensionAPI {
           return extension.getURL(url);
         },
 
-        getFrameId(target) {
-          let frameId = WebNavigationFrames.getFromWindow(target);
-          if (frameId >= 0) {
-            return frameId;
-          }
+        getDocumentId(target) {
+          let bc = getBrowsingContextForTarget(target);
           
-
-          let type;
-          try {
-            type = Cu.getClassName(target, true);
-          } catch (e) {
-            
+          let innerWindowId = bc?.currentWindowContext?.innerWindowId;
+          if (!innerWindowId) {
+            throw new ExtensionUtils.ExtensionError(
+              "Could not determine document for target."
+            );
           }
+          return ExtensionDocumentId.getDocumentId(innerWindowId);
+        },
 
-          const embedderTypes = [
-            "HTMLIFrameElement",
-            "HTMLFrameElement",
-            "HTMLEmbedElement",
-            "HTMLObjectElement",
-          ];
-
-          if (embedderTypes.includes(type)) {
-            if (!target.browsingContext) {
-              return -1;
-            }
-            return WebNavigationFrames.getFrameId(target.browsingContext);
+        getFrameId(target) {
+          let bc = getBrowsingContextForTarget(target);
+          if (!bc) {
+            return -1;
           }
-
-          throw new ExtensionUtils.ExtensionError("Invalid argument");
+          return WebNavigationFrames.getFrameId(bc);
         },
       },
     };
