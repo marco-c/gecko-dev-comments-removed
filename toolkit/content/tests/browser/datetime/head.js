@@ -44,12 +44,8 @@ class DateTimeTestHelper {
     if (openMethod === "click") {
       await SpecialPowers.spawn(bc, [], () => {
         const input = content.document.querySelector("input");
-        if (input.type == "time") {
-          input.click();
-        } else {
-          const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
-          shadowRoot.getElementById("calendar-button").click();
-        }
+        const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
+        shadowRoot.getElementById("picker-button").click();
       });
     } else if (openMethod === "showPicker") {
       await SpecialPowers.spawn(bc, [], function () {
@@ -263,7 +259,7 @@ function testAttributeL10n(el, attr, id, args = null) {
 
 
 
-async function testCalendarBtnAttribute(attr, val, presenceOnly = false) {
+async function testPickerBtnAttribute(attr, val, presenceOnly = false) {
   let browser = helper.tab.linkedBrowser;
 
   await SpecialPowers.spawn(
@@ -272,18 +268,18 @@ async function testCalendarBtnAttribute(attr, val, presenceOnly = false) {
     (attr, val, presenceOnly) => {
       const input = content.document.querySelector("input");
       const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
-      const calendarBtn = shadowRoot.getElementById("calendar-button");
+      const pickerBtn = shadowRoot.getElementById("picker-button");
 
       if (presenceOnly) {
         Assert.ok(
-          calendarBtn.hasAttribute(attr),
-          `Calendar button has ${attr} attribute`
+          pickerBtn.hasAttribute(attr),
+          `Picker button has ${attr} attribute`
         );
       } else {
         Assert.equal(
-          calendarBtn.getAttribute(attr),
+          pickerBtn.getAttribute(attr),
           val,
-          `Calendar button has ${attr} attribute set to ${val}`
+          `Picker button has ${attr} attribute set to ${val}`
         );
       }
     }
