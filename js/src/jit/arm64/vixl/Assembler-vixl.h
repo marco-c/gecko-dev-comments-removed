@@ -4223,22 +4223,6 @@ class Assembler : public MozBaseAssembler {
 
  protected:
   
-  
-  class AutoBlockLiteralPool {
-    ARMBuffer* armbuffer_;
-
-   public:
-    AutoBlockLiteralPool(Assembler* assembler, size_t maxInst)
-      : armbuffer_(&assembler->armbuffer_) {
-      armbuffer_->enterNoPool(maxInst);
-    }
-    ~AutoBlockLiteralPool() {
-      armbuffer_->leaveNoPool();
-    }
-  };
-
- protected:
-  
   PositionIndependentCodeOption pic_;
 
   CPUFeatures cpu_features_;
