@@ -3006,10 +3006,7 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       }
       fun = &obj->as<JSFunction>();
 
-      
-      if (!fun->isInterpreted()) {
-        continue;
-      }
+      MOZ_ASSERT(fun->isInterpreted());
 
       
       

@@ -159,27 +159,6 @@ bool FunctionEmitter::emitAgain() {
   return true;
 }
 
-bool FunctionEmitter::emitAsmJSModule() {
-  MOZ_ASSERT(state_ == State::Start);
-
-  MOZ_ASSERT(!funbox_->wasEmittedByEnclosingScript());
-  MOZ_ASSERT(funbox_->isAsmJSModule());
-
-  
-
-  funbox_->setWasEmittedByEnclosingScript(true);
-
-  if (!emitFunction()) {
-    
-    return false;
-  }
-
-#ifdef DEBUG
-  state_ = State::End;
-#endif
-  return true;
-}
-
 bool FunctionEmitter::emitFunction() {
   
   GCThingIndex index;

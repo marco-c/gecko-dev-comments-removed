@@ -162,13 +162,9 @@ void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
     if (IsConstructorKind(kind)) {
       
       
-      
-      
       auto classStmt =
           enclosing->findInnermostStatement<ParseContext::ClassStatement>();
       MOZ_ASSERT(classStmt);
-      MOZ_ASSERT(classStmt->constructorBox == nullptr ||
-                 classStmt->constructorBox->functionNode == this->functionNode);
       classStmt->constructorBox = this;
     }
 
@@ -262,25 +258,6 @@ void FunctionBox::setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex) {
   if (isFunctionFieldCopiedToStencil) {
     copyUpdatedEnclosingScopeIndex();
   }
-}
-
-bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
-  MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
-
-  MOZ_ASSERT(flags_.kind() == FunctionFlags::NormalFunction);
-
-  
-  flags_.clearBaseScript();
-  flags_.setIsExtended();
-  flags_.setKind(FunctionFlags::AsmJS);
-
-  
-  
-  if (!compilationState_.asmJS->moduleMap.putNew(index(), module)) {
-    js::ReportOutOfMemory(fc_);
-    return false;
-  }
-  return true;
 }
 
 ModuleSharedContext::ModuleSharedContext(

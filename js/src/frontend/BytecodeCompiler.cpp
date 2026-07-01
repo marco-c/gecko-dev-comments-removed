@@ -1093,37 +1093,29 @@ bool StandaloneFunctionCompiler<Unit>::compile(
 
   FunctionBox* funbox = parsedFunction->funbox();
 
-  if (funbox->isInterpreted()) {
-    Maybe<BytecodeEmitter> emitter;
-    if (!emplaceEmitter(emitter, funbox)) {
-      return false;
-    }
-
-    if (!emitter->emitFunctionScript(parsedFunction)) {
-      return false;
-    }
-
-    
-    
-    
-    
-    const auto& options = compilationState_.input.options;
-    compilationState_.scriptExtra[CompilationStencil::TopLevelIndex].extent =
-        SourceExtent{ 0,
-                     sourceBuffer_.length(),
-                     funbox->extent().toStringStart,
-                     funbox->extent().toStringEnd,
-                     options.lineno,
-                     JS::LimitedColumnNumberOneOrigin::fromUnlimited(
-                         JS::ColumnNumberOneOrigin(options.column))};
-  } else {
-    
-    
-    MOZ_ASSERT(funbox->isAsmJSModule());
-    MOZ_ASSERT(compilationState_.asmJS->moduleMap.has(funbox->index()));
-    MOZ_ASSERT(compilationState_.scriptData[CompilationStencil::TopLevelIndex]
-                   .functionFlags.isAsmJSNative());
+  MOZ_ASSERT(funbox->isInterpreted());
+  Maybe<BytecodeEmitter> emitter;
+  if (!emplaceEmitter(emitter, funbox)) {
+    return false;
   }
+
+  if (!emitter->emitFunctionScript(parsedFunction)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  const auto& options = compilationState_.input.options;
+  compilationState_.scriptExtra[CompilationStencil::TopLevelIndex].extent =
+      SourceExtent{ 0,
+                   sourceBuffer_.length(),
+                   funbox->extent().toStringStart,
+                   funbox->extent().toStringEnd,
+                   options.lineno,
+                   JS::LimitedColumnNumberOneOrigin::fromUnlimited(
+                       JS::ColumnNumberOneOrigin(options.column))};
 
   return true;
 }
@@ -1708,17 +1700,15 @@ static JSFunction* CompileStandaloneFunction(
 
     fun = gcOutput.get().getFunctionNoBaseIndex(
         CompilationStencil::TopLevelIndex);
-    MOZ_ASSERT(fun->hasBytecode() || fun->isAsmJSNative());
+    MOZ_ASSERT(fun->hasBytecode());
 
     
     if (!source->tryCompressOffThread(cx)) {
       return nullptr;
     }
 
-    
-    
-    
-    if (gcOutput.get().script) {
+    MOZ_ASSERT(gcOutput.get().script);
+    {
       if (parameterListEnd) {
         source->setParameterListEnd(*parameterListEnd);
       }

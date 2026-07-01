@@ -1617,7 +1617,6 @@ CodeOffset MacroAssembler::call(Label* label) {
 
 void MacroAssembler::call(ImmPtr imm) {
   
-  
   syncStackPtr();
   vixl::UseScratchRegisterScope temps(this);
   const Register scratch = temps.AcquireX().asUnsized();

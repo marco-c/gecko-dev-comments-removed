@@ -667,7 +667,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     
     
     
-    
     syncStackPtr();
     BufferOffset loc =
         b(-1,

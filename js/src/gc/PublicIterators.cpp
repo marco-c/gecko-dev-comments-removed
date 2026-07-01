@@ -99,12 +99,7 @@ static void TraverseInnerLazyScriptsForLazyScript(
                "All objects in lazy scripts should be functions");
     JSFunction* fun = &obj->as<JSFunction>();
 
-    if (!fun->hasBaseScript()) {
-      
-      continue;
-    }
-    MOZ_ASSERT(fun->baseScript());
-    if (!fun->baseScript()) {
+    if (!fun->hasBaseScript() || !fun->baseScript()) {
       
       continue;
     }

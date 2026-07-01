@@ -128,7 +128,6 @@ uint64_t WasmReservedBytes();
 
 
 
-
 class ArrayBufferObjectMaybeShared;
 
 wasm::AddressType WasmArrayBufferAddressType(
@@ -168,7 +167,6 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   }
   size_t wasmMappedSize() const { return WasmArrayBufferMappedSize(this); }
 
-  inline bool isPreparedForAsmJS() const;
   inline bool isWasm() const;
 };
 
@@ -287,11 +285,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     RESIZABLE = 0b1'0000,
 
     
-    
-    
-    
-    
-    FOR_ASMJS = 0b10'0000,
 
     
     
@@ -615,21 +608,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   bool isDetached() const { return flags() & DETACHED; }
   bool isResizable() const { return flags() & RESIZABLE; }
   bool isLengthPinned() const { return flags() & PINNED_LENGTH; }
-  bool isPreparedForAsmJS() const { return flags() & FOR_ASMJS; }
   bool isImmutable() const { return flags() & IMMUTABLE; }
 
   
   
   
-  bool hasDefinedDetachKey() const { return isWasm() || isPreparedForAsmJS(); }
+  bool hasDefinedDetachKey() const { return isWasm(); }
 
   
-
-  
-
-
-
-  [[nodiscard]] bool prepareForAsmJS();
 
   size_t wasmMappedSize() const;
 
@@ -677,13 +663,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     MOZ_ASSERT(!isLengthPinned());
     MOZ_ASSERT(!isImmutable());
     setFlags(flags() | DETACHED);
-  }
-  void setIsPreparedForAsmJS() {
-    MOZ_ASSERT(!isWasm());
-    MOZ_ASSERT(!hasUserOwnedData());
-    MOZ_ASSERT(!isInlineData());
-    MOZ_ASSERT(isMalloced() || isMapped() || isExternal());
-    setFlags(flags() | FOR_ASMJS);
   }
 
   void initialize(size_t byteLength, BufferContents contents) {

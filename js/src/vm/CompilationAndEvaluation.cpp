@@ -119,14 +119,6 @@ static bool StartCollectingDelazifications(
     return true;
   }
 
-  
-  
-  
-  if (stencil->getInitial()->hasAsmJS()) {
-    result = JS::CollectDelazificationsResult::NotSupported;
-    return true;
-  }
-
   result = JS::CollectDelazificationsResult::NewlyStarted;
 
   if (!sso->maybeGetStencils()) {

@@ -1008,7 +1008,6 @@ class ScriptStencil {
   
   
   
-  
 
   
   
@@ -1061,8 +1060,7 @@ class ScriptStencil {
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;
-    MOZ_ASSERT_IF(
-        result, functionFlags.isAsmJSNative() || functionFlags.hasBaseScript());
+    MOZ_ASSERT_IF(result, functionFlags.hasBaseScript());
     return result;
   }
 

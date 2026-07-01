@@ -54,11 +54,6 @@ class FunctionBox;
 
 
 
-
-
-
-
-
 class MOZ_STACK_CLASS FunctionEmitter {
  public:
   enum class IsHoisted { No, Yes };
@@ -75,10 +70,6 @@ class MOZ_STACK_CLASS FunctionEmitter {
   IsHoisted isHoisted_;
 
 #ifdef DEBUG
-  
-  
-  
-  
   
   
   
@@ -123,8 +114,6 @@ class MOZ_STACK_CLASS FunctionEmitter {
   [[nodiscard]] bool emitLazy();
 
   [[nodiscard]] bool emitAgain();
-
-  [[nodiscard]] bool emitAsmJSModule();
 
  private:
   

@@ -383,9 +383,6 @@ class FunctionBox : public SuspendableContext {
 
  public:
   
-  FunctionNode* functionNode = nullptr;
-
-  
   
   bool emitBytecode : 1;
 
@@ -478,9 +475,6 @@ class FunctionBox : public SuspendableContext {
       copyUpdatedWasEmitted();
     }
   }
-
-  [[nodiscard]] bool setAsmJSModule(const JS::WasmModule* module);
-  bool isAsmJSModule() const { return flags_.isAsmJSNative(); }
 
   bool hasEnclosingScopeIndex() const { return enclosingScopeIndex_.isSome(); }
   ScopeIndex getEnclosingScopeIndex() const { return *enclosingScopeIndex_; }

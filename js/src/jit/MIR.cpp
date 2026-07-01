@@ -2811,7 +2811,6 @@ MDefinition* MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc) {
 MDefinition* MBinaryBitwiseInstruction::foldUnnecessaryBitop() {
   
   
-  
 
   if (type() != MIRType::Int32) {
     return this;
@@ -3066,7 +3065,6 @@ MDefinition* MRsh::foldsTo(TempAllocator& alloc) {
   MDefinition* lhs = getOperand(0);
   MDefinition* rhs = getOperand(1);
 
-  
   
   
 

@@ -194,13 +194,6 @@ class JSFunction : public js::NativeObject {
   }
 
   
-  bool isAsmJSNative() const { return flags().isAsmJSNative(); }
-
-  
-  
-  
-  
-  
   
   bool isWasm() const { return flags().isWasm(); }
   bool isWasmWithJitEntry() const { return flags().isWasmWithJitEntry(); }
@@ -877,9 +870,6 @@ class FunctionExtended : public JSFunction {
   static const uint32_t WASM_STV_SLOT = 2;
 
   
-  static const uint32_t ASMJS_MODULE_SLOT = 0;
-
-  
   static const uint32_t MODULE_SLOT = 0;
 
   static inline size_t offsetOfExtendedSlot(uint32_t which) {
@@ -931,7 +921,7 @@ inline const js::Value& JSFunction::getExtendedSlot(uint32_t which) const {
 }
 
 inline js::wasm::Instance& JSFunction::wasmInstance() const {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   MOZ_ASSERT(
       !getExtendedSlot(js::FunctionExtended::WASM_INSTANCE_SLOT).isUndefined());
   return *static_cast<js::wasm::Instance*>(

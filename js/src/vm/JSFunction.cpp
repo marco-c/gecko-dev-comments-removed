@@ -144,7 +144,6 @@ static bool IsSloppyNormalFunction(JSFunction* fun) {
 
 
 
-
 static bool ArgumentsRestrictions(JSContext* cx, HandleFunction fun) {
   
   
@@ -220,7 +219,6 @@ static bool ArgumentsSetter(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsFunction, ArgumentsSetterImpl>(cx, args);
 }
-
 
 
 
@@ -337,7 +335,7 @@ static const JSPropertySpec function_properties[] = {
 static bool ResolveInterpretedFunctionPrototype(JSContext* cx,
                                                 HandleFunction fun,
                                                 HandleId id) {
-  MOZ_ASSERT(fun->isInterpreted() || fun->isAsmJSNative());
+  MOZ_ASSERT(fun->isInterpreted());
   MOZ_ASSERT(id == NameToId(cx->names().prototype));
 
   
@@ -439,7 +437,7 @@ bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
 }
 
 uint32_t JSFunction::wasmFuncIndex() const {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   if (!isNativeWithJitEntry()) {
     uintptr_t tagged = uintptr_t(nativeJitInfoOrInterpretedScript());
     MOZ_ASSERT(tagged & 1);
@@ -451,7 +449,7 @@ uint32_t JSFunction::wasmFuncIndex() const {
 void JSFunction::initWasm(uint32_t funcIndex, wasm::Instance* instance,
                           const wasm::SuperTypeVector* superTypeVector,
                           void* uncheckedCallEntry) {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   MOZ_ASSERT(!isWasmWithJitEntry());
   MOZ_ASSERT(!nativeJitInfoOrInterpretedScript());
 
@@ -789,7 +787,7 @@ inline void JSFunction::trace(JSTracer* trc) {
   }
   
   
-  if (isAsmJSNative() || isWasm()) {
+  if (isWasm()) {
     const Value& v = getExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT);
     if (!v.isUndefined()) {
       auto* instance = static_cast<wasm::Instance*>(v.toPrivate());

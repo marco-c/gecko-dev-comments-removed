@@ -1557,7 +1557,6 @@ class PendingSourceCompressionEntry {
 
 
 
-
 class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   friend class js::gc::CellAllocator;
 
