@@ -530,7 +530,11 @@ function formatNovaNewtabTokens({ mediaQuery, args }) {
       return;
     }
 
-    let originalVal = getOriginalTokenValue(token, prop);
+    
+    
+    let originalVal =
+      getOriginalTokenValue(token, prop, "brand") ??
+      getOriginalTokenValue(token, prop);
     if (originalVal != undefined) {
       let formattedToken = transformToken({ token, originalVal, dictionary });
       tokens.push(formattedToken);
