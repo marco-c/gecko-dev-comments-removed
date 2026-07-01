@@ -482,6 +482,7 @@ impl<'a> Context<'a> {
         
         
         
+        
         if self
             .current_scope()
             .shadow_order()
