@@ -799,6 +799,22 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       DebuggerWeakMap<AbstractGeneratorObject, DebuggerFrame>;
   GeneratorWeakMap generatorFrames;
 
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using WasmContFrameKeys = Vector<AbstractFramePtr, 0, ZoneAllocPolicy>;
+  WasmContFrameKeys wasmContFrames;
+#endif
+
   
   using ScriptWeakMap = DebuggerWeakMap<BaseScript, DebuggerScript>;
   ScriptWeakMap scripts;

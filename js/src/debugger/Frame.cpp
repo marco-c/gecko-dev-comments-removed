@@ -351,6 +351,10 @@ bool js::DebuggerFrame::isSuspendedGeneratorFrame() const {
          generatorInfo()->unwrappedGenerator().isSuspended();
 }
 
+bool js::DebuggerFrame::isWasmContFrame() const {
+  return !getReservedSlot(WASM_CONT_FRAME_PTR_SLOT).isUndefined();
+}
+
 js::AbstractGeneratorObject& js::DebuggerFrame::unwrappedGenerator() const {
   return generatorInfo()->unwrappedGenerator();
 }
@@ -429,13 +433,7 @@ void DebuggerFrame::terminate(JS::GCContext* gcx, AbstractFramePtr frame) {
     if (onStepHandler()) {
       AbstractFramePtr referent = AbstractFramePtr::fromRaw(
           getReservedSlot(WASM_CONT_FRAME_PTR_SLOT).toPrivate());
-      
-      
-      
-      wasm::Instance* inst = referent.asWasmDebugFrame()->instance();
-      if (!gc::IsAboutToBeFinalizedUnbarriered(inst->objectUnbarriered())) {
-        decrementStepperCounter(gcx, referent);
-      }
+      decrementStepperCounter(gcx, referent);
     }
     setReservedSlot(WASM_CONT_FRAME_PTR_SLOT, JS::UndefinedValue());
   }

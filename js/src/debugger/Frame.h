@@ -206,6 +206,10 @@ class DebuggerFrame : public NativeObject {
 
   
   
+  bool isWasmContFrame() const;
+
+  
+  
   
   
   bool isSuspendedGeneratorFrame() const;
