@@ -959,14 +959,14 @@ where
         settings_list.sort_by_key(|k| k.tag().0);
         
         
-        let mut prev_tag = settings_list.last().unwrap().tag();
-        for i in (0..settings_list.len() - 1).rev() {
-            let cur_tag = settings_list[i].tag();
-            if cur_tag == prev_tag {
-                settings_list.remove(i);
+        settings_list.dedup_by(|a, b| {
+            if a.tag() == b.tag() {
+                std::mem::swap(a, b);
+                true
+            } else {
+                false
             }
-            prev_tag = cur_tag;
-        }
+        });
     }
 }
 
