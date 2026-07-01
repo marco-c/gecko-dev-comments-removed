@@ -5,6 +5,8 @@
 import os
 import sys
 
+from marionette_harness import skip_if_no_window_manager
+
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -26,6 +28,9 @@ class TestSwitchWindowChrome(TestSwitchToWindowContent):
         
         pass
 
+    @skip_if_no_window_manager(
+        "Bug 2048072 - races on window activation without a window manager"
+    )
     def test_switch_tabs_for_new_background_window_without_focus_change(self):
         
         
