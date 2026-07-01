@@ -159,6 +159,7 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
   }
 
   mParameters.mCodecs.Construct();
+  UpdateParametersRtcp();
 
   if (mDtmf) {
     mWatchManager.Watch(mTransmitting, &RTCRtpSender::UpdateDtmfSender);
@@ -487,6 +488,8 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
             local.mPliCount.Construct(
                 streamStats->rtcp_packet_type_counts.pli_packets);
             local.mFramesEncoded.Construct(streamStats->frames_encoded);
+            local.mKeyFramesEncoded.Construct(
+                streamStats->frame_counts.key_frames);
             if (streamStats->qp_sum) {
               local.mQpSum.Construct(*streamStats->qp_sum);
             }
@@ -805,9 +808,21 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     return codecs;
   };
 
-  
-  
-  
+  if (mLastReturnedParameters.isSome() &&
+      paramsCopy.mTransactionId.WasPassed()) {
+    
+    
+    
+
+    
+    
+
+    if (oldParams->mRtcp != paramsCopy.mRtcp) {
+      p->MaybeRejectWithInvalidModificationError(
+          "RTCRtpParameters.rtcp is a read-only parameter");
+      return p.forget();
+    }
+  }
 
   
   
@@ -1317,13 +1332,7 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
   
   
 
-  
-  
-  
-  
-  aParameters.mRtcp.Construct();
-  aParameters.mRtcp.Value().mCname.Construct();
-  aParameters.mRtcp.Value().mReducedSize.Construct(false);
+  aParameters.mRtcp.Construct(mParameters.mRtcp.Value());
   if (mParameters.mDegradationPreference.WasPassed()) {
     aParameters.mDegradationPreference.Construct(
         mParameters.mDegradationPreference.Value());
@@ -1353,6 +1362,11 @@ bool operator==(const RTCRtpEncodingParameters& a1,
          a1.mMaxFramerate == a2.mMaxFramerate && a1.mPriority == a2.mPriority &&
          a1.mRid == a2.mRid &&
          a1.mScaleResolutionDownBy == a2.mScaleResolutionDownBy;
+}
+
+bool operator==(const RTCRtcpParameters& a1, const RTCRtcpParameters& a2) {
+  
+  return a1.mCname == a2.mCname && a1.mReducedSize == a2.mReducedSize;
 }
 
 
@@ -1795,6 +1809,16 @@ void RTCRtpSender::UpdateParametersCodecs() {
   }
 }
 
+void RTCRtpSender::UpdateParametersRtcp() {
+  mParameters.mRtcp.Reset();
+  mParameters.mRtcp.Construct();
+
+  mParameters.mRtcp.Value().mCname.Construct(
+      NS_ConvertUTF8toUTF16(GetJsepTransceiver().mSendTrack.GetCNAME()));
+  
+  mParameters.mRtcp.Value().mReducedSize.Construct(false);
+}
+
 void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
   if (!mSimulcastEnvelopeSet) {
     
@@ -1821,6 +1845,7 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
     }
   }
   UpdateParametersCodecs();
+  UpdateParametersRtcp();
 
   MaybeUpdateConduit();
 }
