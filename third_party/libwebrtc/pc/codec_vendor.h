@@ -17,6 +17,7 @@
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/field_trials_view.h"
+#include "api/media_types.h"
 #include "api/rtc_error.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/sequence_checker.h"
@@ -104,13 +105,25 @@ class CodecVendor {
       const RtpTransceiverDirection& offer,
       const RtpTransceiverDirection& answer) const;
 
+  RTCError MergeCodecsByDirection(MediaType type,
+                                  RtpTransceiverDirection direction,
+                                  absl::string_view mid,
+                                  CodecList& codecs_out,
+                                  PayloadTypeSuggester& pt_suggester,
+                                  bool pick_from_top_of_range,
+                                  bool favor_send_order = false);
+
   
   
   
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
 
+  const FieldTrialsView& trials_;
+
   const TypedCodecVendor audio_send_codecs_;
   const TypedCodecVendor audio_recv_codecs_;
+
+  const bool payload_types_in_transport_;
 
   
   
@@ -132,6 +145,7 @@ class CodecLookupHelper {
   
   virtual CodecVendor* GetCodecVendor() = 0;
 };
+
 
 
 
