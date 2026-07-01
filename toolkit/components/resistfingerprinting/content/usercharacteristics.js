@@ -1605,9 +1605,17 @@ function getCanvasSources() {
 
 
 
+
+
+
+
+
+
+
 const LocalFiraSans = new FontFace(
   "LocalFiraSans",
-  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')"
+  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')",
+  { style: "italic" }
 );
 
 if (document.readyState === "loading") {
