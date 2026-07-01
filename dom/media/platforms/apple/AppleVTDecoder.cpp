@@ -247,6 +247,21 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 
   VTDecodeFrameFlags decodeFlags =
       kVTDecodeFrame_EnableAsynchronousDecompression;
+  
+  
+  
+  
+  
+  
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome() &&
+        (aSample->mTime + aSample->mDuration) < mSeekTargetThreshold.ref()) {
+      decodeFlags |= kVTDecodeFrame_DoNotOutputFrame;
+      LOG("seek skip: decoding pts %lld for reference only (no output)",
+          aSample->mTime.ToMicroseconds());
+    }
+  }
   rv = VTDecompressionSessionDecodeFrame(
       mSession, sample, decodeFlags, CreateAppleFrameRef(aSample), &infoFlags);
   if (infoFlags & kVTDecodeInfo_FrameDropped) {
