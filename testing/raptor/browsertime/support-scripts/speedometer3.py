@@ -19,6 +19,13 @@ class Speedometer3Support(BasePythonSupport):
         if args.extra_prefs.get("browser.nova.enabled", False):
             self.nova = True
 
+        if args.etw_profile:
+            test["etw_profile"] = True
+            test["browser_cycles"] = 20
+            test["browsertime_args"] = (
+                f"{test.get('browsertime_args', '')} --browsertime.post_startup_delay=2000".strip()
+            )
+
         if args.simpleperf:
             
             
@@ -142,7 +149,7 @@ class Speedometer3Support(BasePythonSupport):
         if self.platform == "Windows":
             suite["alertSeverity"] = "critical"
 
-        if test.get("simpleperf", False):
+        if test.get("simpleperf", False) or test.get("etw_profile", False):
             suite["shouldAlert"] = False
             for subtest in suite.get("subtests", []):
                 subtest["shouldAlert"] = False
