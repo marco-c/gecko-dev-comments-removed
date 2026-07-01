@@ -94,9 +94,6 @@ uint32_t FeasibilityDistance(int32_t candidate, int32_t requested) {
          std::max(candidate, requested);
 }
 
-class CamerasParent::VideoEngineArray
-    : public media::Refcountable<nsTArray<RefPtr<VideoEngine>>> {};
-
 
 
 
