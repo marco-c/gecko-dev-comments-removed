@@ -68,7 +68,10 @@ data class WebCompatReporterState(
             displayStringId = R.string.webcompat_reporter_reason_turn_off_adblocker,
         ),
         NotSupported(
-            displayStringId = R.string.webcompat_reporter_reason_notsupported,
+            displayStringId = R.string.webcompat_reporter_reason_notsupported_2,
+        ),
+        DeceptiveSite(
+            displayStringId = R.string.webcompat_reporter_reason_site_is_deceptive,
         ),
         Other(
             displayStringId = R.string.webcompat_reporter_reason_other,
@@ -97,16 +100,10 @@ data class WebCompatReporterState(
         get() = !isValidUrl(editedUrl)
 
     /**
-     * Whether the reason dropdown has an error.
-     */
-    val hasReasonDropdownError: Boolean
-        get() = reason == null
-
-    /**
      * Whether the submit button is enabled.
      */
     val isSubmitEnabled: Boolean
-        get() = !hasUrlTextError && !hasReasonDropdownError
+        get() = !hasUrlTextError && reason != null
 }
 
 /**
@@ -137,6 +134,11 @@ sealed class WebCompatReporterAction : Action {
      * @property newReason The updated broken site reason.
      */
     data class ReasonChanged(val newReason: WebCompatReporterState.BrokenSiteReason) : WebCompatReporterAction()
+
+    /**
+     * Dispatched when the user deselects their chosen reason to return to the list.
+     */
+    data object ReasonCleared : WebCompatReporterAction()
 
     /**
      * Dispatched when the ETP checkbox is toggled.
@@ -173,6 +175,11 @@ sealed class WebCompatReporterAction : Action {
      * Dispatched when the user requests to send the WebCompat report.
      */
     data object SendReportClicked : WebCompatReporterAction()
+
+    /**
+     * Dispatched when the user selects the "Deceptive site" reason.
+     */
+    data object DeceptiveSiteReportSelected : WebCompatReporterAction(), NavigationAction
 
     /**
      * Dispatched when the WebCompat report has been submitted.
@@ -247,8 +254,9 @@ private fun reduce(
     is WebCompatReporterAction.PreviewJSONUpdated -> state.copy(
         previewJSON = action.previewJSON,
     )
+    is WebCompatReporterAction.DeceptiveSiteReportSelected -> state
     is WebCompatReporterAction.NavigationAction -> state
-    WebCompatReporterAction.SendReportClicked -> state
+    WebCompatReporterAction.SendReportClicked -> state // UPDATED: Just return state here!
     WebCompatReporterAction.AddMoreInfoClicked -> state
     WebCompatReporterAction.LearnMoreClicked -> state
     is WebCompatReporterAction.IncludeEtpBlockedUrlsChanged -> state.copy(includeEtpBlockedUrls = action.include)
@@ -266,6 +274,7 @@ private fun reduce(
         showEditUrlDialog = false,
         enteredUrl = state.editedUrl,
     )
+    WebCompatReporterAction.ReasonCleared -> state.copy(reason = null)
 }
 
 /**
