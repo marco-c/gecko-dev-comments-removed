@@ -920,17 +920,8 @@ void PopulateTextAntiAliasing() {
     }
   }
   levels.AppendElement(value);
-#elif defined(MOZ_WIDGET_GTK)
-  nsAutoCString level;
-  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
-                                        "font-antialiasing"_ns, level);
-  if (level == "rgba") {  
-    levels.AppendElement(2);
-  } else if (level == "grayscale") {  
-    levels.AppendElement(1);
-  } else if (level == "none") {
-    levels.AppendElement(0);
-  }
+  
+  
 #endif
 
   for (const auto& level : levels) {
@@ -944,6 +935,59 @@ void PopulateTextAntiAliasing() {
   output.Append("]");
 
   glean::characteristics::text_anti_aliasing.Set(output);
+}
+
+
+
+
+
+
+void PopulateFontSmoothingType() {
+  int32_t type = -1;  
+
+#if defined(XP_WIN)
+  
+  
+#  ifndef SPI_GETFONTSMOOTHINGTYPE
+#    define SPI_GETFONTSMOOTHINGTYPE 0x200a
+#  endif
+#  ifndef FE_FONTSMOOTHINGCLEARTYPE
+#    define FE_FONTSMOOTHINGCLEARTYPE 2
+#  endif
+
+  BOOL fontSmoothing = FALSE;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0)) {
+    if (!fontSmoothing) {
+      type = 0;  
+    } else {
+      UINT smoothingType = 0;
+      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType, 0) &&
+          smoothingType == FE_FONTSMOOTHINGCLEARTYPE) {
+        type = 2;  
+      } else {
+        type = 1;  
+      }
+    }
+  }
+#elif defined(MOZ_WIDGET_GTK)
+  
+  
+  
+  nsAutoCString antialiasing;
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-antialiasing"_ns, antialiasing);
+  if (antialiasing == "rgba") {
+    type = 2;  
+  } else if (antialiasing == "grayscale") {
+    type = 1;  
+  } else if (antialiasing == "none") {
+    type = 0;  
+  }
+#endif
+
+  if (type >= 0) {
+    glean::characteristics::font_smoothing_type.Set(type);
+  }
 }
 
 void PopulateErrors(
@@ -1207,7 +1251,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 43;
+const int kSubmissionSchema = 44;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1404,6 +1448,7 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateKeyboardLayout();
     PopulateLanguages();
     PopulateTextAntiAliasing();
+    PopulateFontSmoothingType();
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);
