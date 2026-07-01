@@ -168,6 +168,11 @@ class GkSkWStream final : public SkWStream {
   explicit GkSkWStream(nsIOutputStream* aStream) : mStream(aStream) {
     MOZ_ASSERT(mStream);
   }
+  ~GkSkWStream() override {
+    
+    
+    (void)NS_WARN_IF(NS_FAILED(mStream->Close()));
+  }
   bool write(const void* aBuf, size_t aSize) override {
     const auto* data = reinterpret_cast<const char*>(aBuf);
     do {
