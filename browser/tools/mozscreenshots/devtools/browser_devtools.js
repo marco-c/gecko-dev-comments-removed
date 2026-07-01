@@ -10,6 +10,16 @@ const { require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
 const { gDevTools } = require("devtools/client/framework/devtools");
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
 
 add_task(async function capture() {
   if (!shouldCapture()) {

@@ -3,6 +3,12 @@
 
 "use strict";
 
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
+);
+
+add_setup(ProfilerTestUtils.assertProfilerInactive);
+
 
 
 
@@ -18,7 +24,7 @@ add_task(async function () {
   is(await front.isActive(), false, "The profiler is not active yet.");
 
   
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  const win = Services.wm.getMostRecentBrowserWindow();
   const activeTabID = win.gBrowser.selectedBrowser.browsingContext.browserId;
 
   front.once(
