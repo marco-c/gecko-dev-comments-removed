@@ -320,9 +320,6 @@ class DebugAPI {
   static bool debuggerObservesCoverage(GlobalObject* global);
 
   
-  static bool debuggerObservesAsmJS(GlobalObject* global);
-
-  
   static bool debuggerObservesWasm(GlobalObject* global);
 
   

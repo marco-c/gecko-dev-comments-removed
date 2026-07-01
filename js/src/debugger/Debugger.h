@@ -639,7 +639,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       debuggees; 
   JS::ZoneSet debuggeeZones; 
   HeapPtr<JSObject*> uncaughtExceptionHook; 
-  bool allowUnobservedAsmJS;
   bool allowUnobservedWasm;
 
   
@@ -1026,10 +1025,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   
   
-  IsObserving observesAsmJS() const;
-
-  
-  
   IsObserving observesWasm() const;
 
   
@@ -1053,7 +1048,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       JSContext* cx, IsObserving observing);
   [[nodiscard]] bool updateObservesCoverageOnDebuggees(JSContext* cx,
                                                        IsObserving observing);
-  void updateObservesAsmJSOnDebuggees(IsObserving observing);
   void updateObservesWasmOnDebuggees(IsObserving observing);
   void updateObservesNativeCallOnDebuggees(IsObserving observing);
 

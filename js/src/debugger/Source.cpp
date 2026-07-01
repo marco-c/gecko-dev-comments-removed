@@ -375,11 +375,8 @@ struct DebuggerSourceGetDisplayURLMatcher {
     return ss->hasDisplayURL() ? ss->displayURL() : nullptr;
   }
   ReturnType match(Handle<WasmInstanceObject*> wasmInstance) {
-    return wasmInstance->instance().codeMetaForAsmJS()
-               ? wasmInstance->instance()
-                     .codeMetaForAsmJS()
-                     ->displayURL()  
-               : nullptr;            
+    
+    return nullptr;
   }
 };
 
