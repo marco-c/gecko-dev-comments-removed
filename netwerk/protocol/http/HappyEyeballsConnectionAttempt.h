@@ -82,6 +82,19 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   uint32_t UnconnectedUDPConnsLength() const override;
 
   
+  void SetConnectionEstablisherFactoryForTesting(
+      ConnectionEstablisherFactory* aFactory) {
+    mEstablisherFactory = aFactory;
+  }
+  void SetConnMgrDelegateForTesting(HappyEyeballsConnMgrDelegate* aDelegate) {
+    mConnMgrDelegate = aDelegate;
+  }
+
+  
+  bool WasTransactionAdoptedForTesting() const { return mTransactionAdopted; }
+  ZeroRttHandle* ZeroRttHandleForTesting() const { return mZeroRttHandle; }
+
+  
   nsHttpTransaction* RealHttpTransaction() const {
     return mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   }
