@@ -132,9 +132,13 @@ class ClangdBackend(CompileDBBackend):
         if compiler_args is None:
             return None
 
-        ccache = self.environment.substs.get("CCACHE")
-        if len(compiler_args) and compiler_args[0] == ccache:
-            compiler_args.pop(0)
+        
+        
+        
+        
+        wrapper = list(self.environment.substs.get("COMPILER_WRAPPER", []))
+        if wrapper and compiler_args[: len(wrapper)] == wrapper:
+            del compiler_args[: len(wrapper)]
         return compiler_args
 
     def _build_cmd(self, cmd, filename, unified):
