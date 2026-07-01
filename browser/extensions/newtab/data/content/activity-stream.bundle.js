@@ -8066,6 +8066,111 @@ function TopSiteFormInput({
 
 
 
+
+
+function tilesToRows(tiles) {
+  const entries = tiles.map(el => ({
+    index: parseInt(el.dataset.index, 10),
+    rect: el.getBoundingClientRect()
+  })).sort((a, b) => a.index - b.index);
+  const rows = [];
+  for (const entry of entries) {
+    const row = rows.find(r => Math.abs(r[0].rect.top - entry.rect.top) < entry.rect.height / 2);
+    if (row) {
+      row.push(entry);
+    } else {
+      rows.push([entry]);
+    }
+  }
+  return rows;
+}
+
+
+function rowBounds(row) {
+  return {
+    top: Math.min(...row.map(e => e.rect.top)),
+    bottom: Math.max(...row.map(e => e.rect.bottom)),
+    left: Math.min(...row.map(e => e.rect.left)),
+    right: Math.max(...row.map(e => e.rect.right))
+  };
+}
+
+
+
+
+
+
+function computePinnedRowRects(tiles, containerEl) {
+  if (!tiles.length || !containerEl) {
+    return [];
+  }
+  const containerRect = containerEl.getBoundingClientRect();
+  return tilesToRows(tiles).map(row => {
+    const {
+      top: rowTop,
+      bottom,
+      left,
+      right
+    } = rowBounds(row);
+    return {
+      startAbsIdx: row[0].index,
+      top: rowTop - containerRect.top,
+      left: left - containerRect.left,
+      width: right - left,
+      height: bottom - rowTop
+    };
+  });
+}
+
+
+
+
+
+
+function PinnedAreaOverlay({
+  active,
+  revision
+}) {
+  const rootRef = (0,external_React_namespaceObject.useRef)(null);
+  const [rowRects, setRowRects] = (0,external_React_namespaceObject.useState)([]);
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const list = rootRef.current?.parentElement;
+    if (!list) {
+      return;
+    }
+    const cells = [...list.querySelectorAll(".top-site-outer.pinned-cell:not(.drag-ghost)")];
+    setRowRects(computePinnedRowRects(cells, list));
+  }, [active, revision]);
+  if (!active) {
+    return null;
+  }
+  return external_React_default().createElement("div", {
+    className: "pinned-drag-overlay",
+    ref: rootRef
+  }, rowRects.map((row, rowIdx) => external_React_default().createElement("div", {
+    key: row.startAbsIdx,
+    className: "pinned-drop-box",
+    style: {
+      top: `${row.top}px`,
+      left: `${row.left}px`,
+      width: `${row.width}px`,
+      height: `${row.height}px`
+    }
+  }, rowIdx === 0 && external_React_default().createElement("div", {
+    className: "pinned-area-label"
+  }, external_React_default().createElement("span", {
+    className: "icon icon-pin-small"
+  }), external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-shortcuts-pinned-area"
+  })))));
+}
+;
+
+
+
+
+
+
 const TopSiteImpressionWrapper_VISIBLE = "visible";
 const TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
@@ -8536,7 +8641,40 @@ function TopSite_extends() { return TopSite_extends = Object.assign ? Object.ass
 
 
 
+
 const NEWTAB_SOURCE = "newtab";
+
+
+const DRAG_GHOST_ROTATION_DEG = -7.5;
+
+const DRAG_GHOST_CURSOR_INSET = -12;
+
+
+
+
+
+
+
+function createDragGhost(e, el) {
+  const restingSize = Math.round(el.getBoundingClientRect().width);
+  const mountPoint = el.parentElement || document.body;
+  const clone = el.cloneNode(true);
+  clone.classList.add("drag-ghost", "active");
+  
+  clone.querySelector(".context-menu")?.remove();
+  
+  
+  clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:var(--col-width, ${restingSize}px);height:var(--col-width, ${restingSize}px);margin:0;pointer-events:none;transform:rotate(${DRAG_GHOST_ROTATION_DEG}deg)`;
+  mountPoint.appendChild(clone);
+
+  
+  e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, DRAG_GHOST_CURSOR_INSET);
+  return {
+    destroy() {
+      clone.remove();
+    }
+  };
+}
 class TopSiteLink extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -8553,7 +8691,15 @@ class TopSiteLink extends (external_React_default()).PureComponent {
 
 
   _allowDrop(e) {
-    return (this.dragged || !isSponsored(this.props.link) && !this.props.isAddButton) && e.dataTransfer.types.includes("text/topsite-index");
+    if (!e.dataTransfer.types.includes("text/topsite-index")) {
+      return false;
+    }
+    
+    
+    if (this.props.groupedPinsEnabled) {
+      return !!this.props.link.isPinned;
+    }
+    return this.dragged || !isSponsored(this.props.link) && !this.props.isAddButton;
   }
   onDragEvent(event) {
     switch (event.type) {
@@ -8572,9 +8718,15 @@ class TopSiteLink extends (external_React_default()).PureComponent {
         this.dragged = true;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/topsite-index", this.props.index);
+        if (this.props.groupedPinsEnabled) {
+          
+          this._dragGhost = createDragGhost(event, event.currentTarget);
+        }
         this.props.onDragEvent(event, this.props.index, this.props.link, this.props.title);
         break;
       case "dragend":
+        this._dragGhost?.destroy();
+        this._dragGhost = null;
         this.props.onDragEvent(event);
         break;
       case "dragenter":
@@ -8716,7 +8868,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       isAddButton,
       visibleTopSites
     } = this.props;
-    const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}${link.searchTopSite ? " search-shortcut" : ""}`;
+    const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}${link.isCollapsed ? " collapsed" : ""}${link.searchTopSite ? " search-shortcut" : ""}`;
     const [letterFallback] = title;
     const {
       showSmallFavicon,
@@ -8802,11 +8954,17 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     }
     return external_React_default().createElement("li", TopSite_extends({
       className: topSiteOuterClassName,
+      ref: this.props.setRef
+    }, this.props.groupedPinsEnabled && {
+      
+      "data-index": this.props.index
+    }, !this.props.dropsOnList && {
+      
+      
       onDrop: this.onDragEvent,
       onDragOver: this.onDragEvent,
       onDragEnter: this.onDragEvent,
-      onDragLeave: this.onDragEvent,
-      ref: this.props.setRef
+      onDragLeave: this.onDragEvent
     }, draggableProps), external_React_default().createElement("div", {
       className: "top-site-inner"
     }, external_React_default().createElement("a", TopSite_extends({
@@ -9123,6 +9281,17 @@ class TopSitePlaceholder extends (external_React_default()).PureComponent {
     }));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 class _TopSiteList extends (external_React_default()).PureComponent {
   static get DEFAULT_STATE() {
     return {
@@ -9191,8 +9360,14 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     const topSitesUI = [];
     const commonProps = {
       onDragEvent: this.props.onDragEvent,
-      dispatch: props.dispatch
+      dispatch: props.dispatch,
+      groupedPinsEnabled: this.props.groupedPinsEnabled,
+      
+      dropsOnList: !!this.props.listProps
     };
+    const {
+      decorations
+    } = this.props;
     
     
     
@@ -9205,6 +9380,17 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     const maxNarrowVisibleIndex = props.TopSitesRows * 6;
     const maxSmallVisibleIndex = props.TopSitesRows * 8;
     for (let i = 0, l = topSites.length; i < l; i++) {
+      
+      
+      if (decorations && i === decorations.zeroPinSlot) {
+        topSitesUI.push(external_React_default().createElement(TopSitePlaceholder, TopSite_extends({
+          key: "pinned-zero-drop",
+          index: i
+        }, commonProps, {
+          className: `zero-pin-placeholder pinned-cell${decorations.overZeroPin ? " over" : ""}`,
+          setRef: decorations.setZeroPinRef
+        })));
+      }
       const link = topSites[i] && Object.assign({}, topSites[i], {
         iconType: this.props.topSiteIconType(topSites[i])
       });
@@ -9223,6 +9409,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         slotProps.className = "hide-for-small";
       } else if (i >= maxNarrowVisibleIndex) {
         slotProps.className = "hide-for-narrow";
+      }
+      
+      
+      if (this.props.groupedPinsEnabled && link?.isPinned) {
+        slotProps.className = `${slotProps.className ? `${slotProps.className} ` : ""}pinned-cell`;
       }
       const {
         key: slotKey,
@@ -9277,19 +9468,24 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     }
     return external_React_default().createElement("div", {
       className: "top-sites-list-wrapper"
-    }, external_React_default().createElement("ul", {
+    }, external_React_default().createElement("ul", TopSite_extends({
       role: "group",
       "aria-label": "Shortcuts",
       onFocus: this.onWrapperFocus,
-      onBlur: this.onWrapperBlur,
+      onBlur: this.onWrapperBlur
+    }, this.props.listProps, {
       ref: el => {
         this.focusRef = el;
+        this.props.listRef?.(el);
       },
       className: `top-sites-list${this.props.draggedSite ? " dnd-active" : ""}`,
       style: {
         "--top-sites-max-per-row": this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW
       }
-    }, topSitesUI));
+    }), topSitesUI, this.props.groupedPinsEnabled && external_React_default().createElement(PinnedAreaOverlay, {
+      active: !!this.props.draggedSite,
+      revision: topSites
+    })));
   }
 }
 const TopSiteList = (0,external_ReactRedux_namespaceObject.connect)(state => ({
@@ -9599,7 +9795,9 @@ function useTopSitesDnD({
   isShiftable,
   
   onDragStart,
-  onReorder 
+  onReorder,
+  
+  pinInPlace 
 }) {
   const [draggedIndex, setDraggedIndex] = (0,external_React_namespaceObject.useState)(null);
   const [draggedSite, setDraggedSite] = (0,external_React_namespaceObject.useState)(null);
@@ -9668,14 +9866,17 @@ function useTopSitesDnD({
         }
         break;
       case "dragenter":
-        if (index === draggedIndex) {
+        
+        
+        
+        if (index === draggedIndex && !(pinInPlace && isMovable(draggedSite))) {
           setPreviewSites(null);
         } else {
           setPreviewSites(makeTopSitesPreview(index));
         }
         break;
       case "drop":
-        if (index !== draggedIndex) {
+        if (index !== draggedIndex || pinInPlace && isMovable(draggedSite)) {
           droppedRef.current = true;
           onReorder?.({
             site: draggedSite,
@@ -9686,14 +9887,18 @@ function useTopSitesDnD({
         }
         break;
     }
-  }, [draggedIndex, draggedSite, draggedTitle, makeTopSitesPreview, onDragStart, onReorder, resetDrag]);
+  }, [draggedIndex, draggedSite, draggedTitle, isMovable, pinInPlace, makeTopSitesPreview, onDragStart, onReorder, resetDrag]);
 
+  
+  
   
   
   const prevRowsRef = (0,external_React_namespaceObject.useRef)(rows);
   (0,external_React_namespaceObject.useLayoutEffect)(() => {
     const prevRows = prevRowsRef.current;
-    if (draggedSite && prevRows && prevRows[draggedIndex] && prevRows[draggedIndex].url === draggedSite.url && (!rows[draggedIndex] || rows[draggedIndex].url !== draggedSite.url)) {
+    const movedFromSlot = prevRows?.[draggedIndex]?.url === draggedSite?.url && rows[draggedIndex]?.url !== draggedSite?.url;
+    const committedInPlace = droppedRef.current && prevRows && prevRows !== rows;
+    if (draggedSite && (movedFromSlot || committedInPlace)) {
       resetDrag();
     }
     prevRowsRef.current = rows;
@@ -9811,7 +10016,262 @@ function TopSiteListContainer(props) {
   });
 }
 ;
+
+
+
+
+
+
+
+
+
+
+
+function useZeroPinDrop({
+  baseSites,
+  isSponsored,
+  
+  onDragStart,
+  onReorder 
+}) {
+  const [draggedIndex, setDraggedIndex] = (0,external_React_namespaceObject.useState)(null);
+  const [draggedSite, setDraggedSite] = (0,external_React_namespaceObject.useState)(null);
+  const [draggedTitle, setDraggedTitle] = (0,external_React_namespaceObject.useState)(null);
+  const [over, setOver] = (0,external_React_namespaceObject.useState)(false);
+  
+  
+  const droppedRef = (0,external_React_namespaceObject.useRef)(false);
+  const placeholderElRef = (0,external_React_namespaceObject.useRef)(null);
+  const setZeroPinRef = (0,external_React_namespaceObject.useCallback)(el => {
+    placeholderElRef.current = el;
+  }, []);
+
+  
+  
+  const slot = baseSites.findIndex(site => site && !isSponsored(site));
+  const insertIndex = slot === -1 ? 0 : slot;
+  const isOver = (0,external_React_namespaceObject.useCallback)(event => {
+    const rect = placeholderElRef.current?.getBoundingClientRect();
+    return !!rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  }, []);
+  const resetDrag = (0,external_React_namespaceObject.useCallback)(() => {
+    setDraggedIndex(null);
+    setDraggedSite(null);
+    setDraggedTitle(null);
+    setOver(false);
+  }, []);
+  const onDragEvent = (0,external_React_namespaceObject.useCallback)((event, index, link, title) => {
+    switch (event.type) {
+      case "dragstart":
+        droppedRef.current = false;
+        setDraggedIndex(index);
+        setDraggedSite(link);
+        setDraggedTitle(title);
+        onDragStart?.(index);
+        break;
+      case "dragend":
+        if (!droppedRef.current) {
+          resetDrag();
+        } else {
+          
+          setOver(false);
+        }
+        break;
+    }
+  }, [onDragStart, resetDrag]);
+  const onDragOver = (0,external_React_namespaceObject.useCallback)(event => {
+    if (!draggedSite) {
+      return;
+    }
+    const nowOver = isOver(event);
+    if (nowOver) {
+      event.preventDefault();
+    }
+    if (over !== nowOver) {
+      setOver(nowOver);
+    }
+  }, [draggedSite, isOver, over]);
+  const onDrop = (0,external_React_namespaceObject.useCallback)(event => {
+    if (!draggedSite || !isOver(event)) {
+      return;
+    }
+    event.preventDefault();
+    droppedRef.current = true;
+    onReorder?.({
+      site: draggedSite,
+      title: draggedTitle,
+      fromIndex: draggedIndex,
+      toIndex: insertIndex
+    });
+  }, [draggedSite, draggedTitle, draggedIndex, isOver, onReorder, insertIndex]);
+  const onDragLeave = (0,external_React_namespaceObject.useCallback)(event => {
+    if (event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    if (over) {
+      setOver(false);
+    }
+  }, [over]);
+
+  
+  
+  const sites = draggedSite ? baseSites.map(site => site && site.url === draggedSite.url ? {
+    ...site,
+    isCollapsed: true
+  } : site) : baseSites;
+  return {
+    sites,
+    draggedSite,
+    onDragEvent,
+    listProps: {
+      onDragOver,
+      onDrop,
+      onDragLeave
+    },
+    decorations: {
+      
+      
+      zeroPinSlot: draggedSite ? insertIndex : -1,
+      overZeroPin: over,
+      setZeroPinRef
+    }
+  };
+}
+;
+function GroupedTopSiteListContainer_extends() { return GroupedTopSiteListContainer_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, GroupedTopSiteListContainer_extends.apply(null, arguments); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const GroupedTopSiteListContainer_isMovable = site => !site.isPinned && !isSponsored(site) && !site.isAddButton;
+const GroupedTopSiteListContainer_isShiftable = site => !!site.isPinned;
+
+
+
+function useGroupedInsert() {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const onDragStart = (0,external_React_namespaceObject.useCallback)(index => dispatch(actionCreators.UserEvent({
+    event: "DRAG",
+    source: TOP_SITES_SOURCE,
+    action_position: index
+  })), [dispatch]);
+  const onReorder = (0,external_React_namespaceObject.useCallback)(({
+    site,
+    title,
+    fromIndex,
+    toIndex
+  }) => {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.TOP_SITES_INSERT,
+      data: {
+        site: {
+          url: site.url,
+          label: title,
+          customScreenshotURL: site.customScreenshotURL,
+          ...(site.searchTopSite && {
+            searchTopSite: true
+          })
+        },
+        index: toIndex,
+        draggedFromIndex: fromIndex
+      }
+    }));
+    dispatch(actionCreators.UserEvent({
+      event: "DROP",
+      source: TOP_SITES_SOURCE,
+      action_position: toIndex
+    }));
+  }, [dispatch]);
+  return {
+    onDragStart,
+    onReorder
+  };
+}
+function useBaseSites(props) {
+  return (0,external_React_namespaceObject.useMemo)(() => buildTopSitesList(props.TopSites.rows, props.TopSitesRows, props.topSitesMaxSitesPerRow), [props.TopSites.rows, props.TopSitesRows, props.topSitesMaxSitesPerRow]);
+}
+
+
+function ReorderTopSiteListContainer(props) {
+  const baseSites = useBaseSites(props);
+  const {
+    onDragStart,
+    onReorder
+  } = useGroupedInsert();
+  const {
+    previewSites,
+    onDragEvent,
+    draggedSite
+  } = useTopSitesDnD({
+    baseSites,
+    rows: props.TopSites.rows,
+    isMovable: GroupedTopSiteListContainer_isMovable,
+    isShiftable: GroupedTopSiteListContainer_isShiftable,
+    onDragStart,
+    onReorder,
+    pinInPlace: true
+  });
+  return external_React_default().createElement(TopSiteList, GroupedTopSiteListContainer_extends({}, props, {
+    sites: previewSites || baseSites,
+    onDragEvent: onDragEvent,
+    draggedSite: draggedSite,
+    groupedPinsEnabled: true
+  }));
+}
+
+
+function ZeroPinTopSiteListContainer(props) {
+  const baseSites = useBaseSites(props);
+  const {
+    onDragStart,
+    onReorder
+  } = useGroupedInsert();
+  const {
+    sites,
+    onDragEvent,
+    draggedSite,
+    listProps,
+    decorations
+  } = useZeroPinDrop({
+    baseSites,
+    isSponsored: isSponsored,
+    onDragStart,
+    onReorder
+  });
+  return external_React_default().createElement(TopSiteList, GroupedTopSiteListContainer_extends({}, props, {
+    sites: sites,
+    onDragEvent: onDragEvent,
+    draggedSite: draggedSite,
+    groupedPinsEnabled: true,
+    listProps: listProps,
+    decorations: decorations
+  }));
+}
+
+
+
+
+
+function GroupedTopSiteListContainer(props) {
+  const hasPins = props.TopSites.rows.some(site => site?.isPinned);
+  return hasPins ? external_React_default().createElement(ReorderTopSiteListContainer, props) : external_React_default().createElement(ZeroPinTopSiteListContainer, props);
+}
+;
 function TopSites_extends() { return TopSites_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSites_extends.apply(null, arguments); }
+
 
 
 
@@ -9947,6 +10407,7 @@ class _TopSites extends (external_React_default()).PureComponent {
     } = props.TopSites;
     let visibleTopSites;
     const colors = props.Prefs.values["newNewtabExperience.colors"];
+    const ListContainer = props.Prefs.values.topSitesGroupedPins ? GroupedTopSiteListContainer : TopSiteListContainer;
 
     
     if (!props.App.isForStartupCache.TopSites) {
@@ -9961,7 +10422,7 @@ class _TopSites extends (external_React_default()).PureComponent {
       "data-section-id": "topsites"
     }, external_React_default().createElement(ErrorBoundary, {
       className: "section-body-fallback"
-    }, external_React_default().createElement(TopSiteListContainer, {
+    }, external_React_default().createElement(ListContainer, {
       TopSites: props.TopSites,
       TopSitesRows: props.TopSitesRows,
       topSitesMaxSitesPerRow: props.TopSitesMaxSitesPerRow,
