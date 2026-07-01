@@ -46,7 +46,10 @@ use ash::{khr, vk};
 
 
 
-pub const MAX_BUFFER_SIZE: wgt::BufferAddress = 1u64 << 30u64;
+
+
+
+pub const MAX_BUFFER_SIZE: wgt::BufferAddress = (1u64 << 31) - 4;
 
 
 const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
