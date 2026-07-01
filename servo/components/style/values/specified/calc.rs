@@ -82,8 +82,10 @@ pub enum MathFunction {
     
     Sign,
     
+    #[strum(serialize = "sibling-count")]
     SiblingCount,
     
+    #[strum(serialize = "sibling-index")]
     SiblingIndex,
 }
 
