@@ -2,7 +2,7 @@
 
 
 
-use api::{PropertyBinding, ColorU, ColorF, Shadow, RasterSpace};
+use api::{PropertyBinding, ColorF, Shadow, RasterSpace};
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
@@ -28,12 +28,9 @@ pub struct RectangleScratch {
     pub opacity: PrimitiveOpacity,
 }
 
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct RectanglePrim {
-    pub color: PropertyBinding<ColorU>,
-}
+
+
+pub use api::interned_prims::RectanglePrim;
 
 pub type RectangleKey = PrimKey<RectanglePrim>;
 
