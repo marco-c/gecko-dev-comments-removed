@@ -263,6 +263,14 @@ void OriginAttributes::CreateSuffix(nsACString& aStr) const {
   aStr.Truncate();
 
   params.Serialize(value, true);
+  
+  
+  
+  
+  
+  
+  value.ReplaceSubstring("*"_ns, "%2A"_ns);
+
   if (!value.IsEmpty()) {
     aStr.AppendLiteral("^");
     aStr.Append(value);
