@@ -51,7 +51,9 @@ exports.LocalTabCommandsFactory = {
     commandsMap.set(tab, commands);
 
     commands.descriptorFront.once("descriptor-destroyed", () => {
-      commandsMap.delete(tab);
+      
+      
+      commandsMap.delete(commands.descriptorFront.localTab);
     });
     return commands;
   },
@@ -68,5 +70,19 @@ exports.LocalTabCommandsFactory = {
     
     
     return commandsMap.get(tab);
+  },
+
+  
+
+
+
+
+
+  swapTab(previousTab, newTab) {
+    const commands = commandsMap.get(previousTab);
+    if (commands) {
+      commandsMap.set(newTab, commands);
+      commandsMap.delete(previousTab);
+    }
   },
 };

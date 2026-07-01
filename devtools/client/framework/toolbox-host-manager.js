@@ -9,7 +9,6 @@ const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
-const { DOMHelpers } = require("resource://devtools/shared/dom-helpers.js");
 
 
 const WIDTH_CHEVRON_AND_MEATBALL = 50;
@@ -26,6 +25,12 @@ loader.lazyRequireGetter(
   this,
   "Hosts",
   "resource://devtools/client/framework/toolbox-hosts.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "LocalTabCommandsFactory",
+  "resource://devtools/client/framework/local-tab-commands-factory.js",
   true
 );
 
@@ -96,7 +101,8 @@ class ToolboxHostManager {
 
 
   async create(toolId, toolOptions) {
-    await this.host.create();
+    this.host.createElements();
+    await this.host.finalizeCreation();
     if (this.currentTab) {
       this.hostPerTab.set(this.currentTab, this.host);
     }
@@ -107,6 +113,12 @@ class ToolboxHostManager {
       this.#onMessage,
       { signal: this.eventController.signal }
     );
+    if (this.currentTab) {
+      this.currentTab.addEventListener("TabClose", this, {
+        capture: true,
+        signal: this.eventController.signal,
+      });
+    }
 
     const toolbox = new Toolbox({
       commands: this.commands,
@@ -270,17 +282,37 @@ class ToolboxHostManager {
     }
     const iframe = this.host.frame;
     const newHost = this.createHost(hostType);
-    const newIframe = await newHost.create();
+
+    
+    newHost.createElements();
+
+    let newIframe = newHost.frame;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (newIframe) {
+      newIframe.swapFrameLoaders(iframe);
+    }
+
+    
+    await newHost.finalizeCreation();
 
     
     
-    await new Promise(resolve => {
-      newIframe.setAttribute("src", "about:blank");
-      DOMHelpers.onceDOMReady(newIframe.contentWindow, resolve);
-    });
-
     
-    newIframe.swapFrameLoaders(iframe);
+    
+    
+    
+    if (!newIframe) {
+      newIframe = newHost.frame;
+      newIframe.swapFrameLoaders(iframe);
+    }
 
     
     
@@ -308,6 +340,12 @@ class ToolboxHostManager {
       this.#onMessage,
       { signal: this.eventController.signal }
     );
+    if (this.currentTab) {
+      this.currentTab.addEventListener("TabClose", this, {
+        capture: true,
+        signal: this.eventController.signal,
+      });
+    }
 
     this.setMinWidthWithZoom();
 
@@ -371,6 +409,59 @@ class ToolboxHostManager {
       name: "switched-host-to-tab",
       browsingContextID: tabBrowsingContextID,
     });
+  }
+
+  async handleEvent(event) {
+    if (event.type != "TabClose") {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const newTab = event.detail.adoptedBy;
+
+    
+    if (!newTab) {
+      return;
+    }
+
+    
+    this.currentTab.removeEventListener("TabClose", this);
+
+    
+    LocalTabCommandsFactory.swapTab(this.currentTab, newTab);
+    this.commands.descriptorFront.setLocalTab(newTab);
+
+    this.currentTab = newTab;
+
+    
+    if (
+      this.hostType !== Toolbox.HostType.LEFT &&
+      this.hostType !== Toolbox.HostType.RIGHT &&
+      this.hostType !== Toolbox.HostType.BOTTOM
+    ) {
+      return;
+    }
+
+    
+    
+    const pendingMessages = [];
+    this.collectPendingMessages = pendingMessages;
+    await this.switchHost(this.hostType);
+    this.collectPendingMessages = null;
+    for (const message of pendingMessages) {
+      this.#onMessage(message);
+    }
   }
 
   

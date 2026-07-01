@@ -40,6 +40,7 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
+
 class BaseInBrowserHost {
   
 
@@ -137,9 +138,7 @@ class BottomHost extends BaseInBrowserHost {
   
 
 
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
-
+  createElements() {
     const { ownerDocument } = this.hostTab;
     this.#splitter = ownerDocument.createXULElement("splitter");
     this.#splitter.setAttribute("class", "devtools-horizontal-splitter");
@@ -147,7 +146,6 @@ class BottomHost extends BaseInBrowserHost {
     this.#splitter.setAttribute("resizeafter", "sibling");
 
     this._createFrame();
-
     this.frame.style.height =
       Math.min(
         Services.prefs.getIntPref(this.heightPref),
@@ -156,10 +154,13 @@ class BottomHost extends BaseInBrowserHost {
 
     this._browserContainer.appendChild(this.#splitter);
     this._browserContainer.appendChild(this.frame);
+  }
+
+  async finalizeCreation() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
     this.frame.docShellIsActive = true;
 
     focusTab(this.hostTab);
-    return this.frame;
   }
 
   
@@ -203,9 +204,7 @@ class SidebarHost extends BaseInBrowserHost {
   
 
 
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
-
+  createElements() {
     this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
     const { ownerDocument } = this.hostTab;
 
@@ -213,7 +212,6 @@ class SidebarHost extends BaseInBrowserHost {
     this.#splitter.setAttribute("class", "devtools-side-splitter");
 
     this._createFrame();
-
     this.frame.style.width =
       Math.min(
         Services.prefs.getIntPref(this.widthPref),
@@ -237,10 +235,13 @@ class SidebarHost extends BaseInBrowserHost {
       this.#browserPanel.insertBefore(this.frame, this._browserContainer);
       this.#browserPanel.insertBefore(this.#splitter, this._browserContainer);
     }
+  }
+
+  async finalizeCreation() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
     this.frame.docShellIsActive = true;
 
     focusTab(this.hostTab);
-    return this.frame;
   }
 
   
@@ -305,7 +306,12 @@ class WindowHost extends EventEmitter {
   
 
 
-  create() {
+  createElements() {}
+
+  
+
+
+  async finalizeCreation() {
     return new Promise(resolve => {
       let flags = "chrome,centerscreen,resizable,dialog=no";
 
@@ -421,16 +427,17 @@ class BrowserToolboxHost extends EventEmitter {
 
   type = "browsertoolbox";
 
-  async create() {
+  createElements() {
     this.frame = createDevToolsFrame(
       this.doc,
       "devtools-toolbox-browsertoolbox-iframe"
     );
 
     this.doc.body.appendChild(this.frame);
-    this.frame.docShellIsActive = true;
+  }
 
-    return this.frame;
+  async finalizeCreation() {
+    this.frame.docShellIsActive = true;
   }
 
   
@@ -466,9 +473,8 @@ class PageHost {
 
   type = "page";
 
-  create() {
-    return Promise.resolve(this.frame);
-  }
+  createElements() {}
+  async finalizeCreation() {}
 
   
   raise() {
