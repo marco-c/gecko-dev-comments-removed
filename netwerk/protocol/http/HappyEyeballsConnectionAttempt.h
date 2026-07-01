@@ -14,6 +14,7 @@
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
 #include "ConnectionEstablisher.h"
+#include "HappyEyeballsConnMgrDelegate.h"
 #include "HappyEyeballsTransaction.h"
 
 namespace mozilla {
@@ -264,6 +265,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       mConnectionEstablisherTable;
   
   RefPtr<ConnectionEstablisherFactory> mEstablisherFactory;
+  
+  RefPtr<HappyEyeballsConnMgrDelegate> mConnMgrDelegate;
   RefPtr<HttpConnectionBase> mOutputConn;
   
   
