@@ -16,6 +16,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/scream/scream_feedback.h"
 #include "modules/congestion_controller/scream/scream_v2_parameters.h"
 #include "modules/congestion_controller/scream/test/cc_feedback_generator.h"
 #include "system_wrappers/include/clock.h"
@@ -53,7 +54,7 @@ TEST(DelayBasedCongestionControlTest,
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(send_rate, clock);
 
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
     EXPECT_EQ(delay_controller.rtt(), TimeDelta::Millis(58));
     EXPECT_EQ(delay_controller.queue_delay(), TimeDelta::Millis(0));
     EXPECT_FALSE(delay_controller.IsQueueDelayDetected());
@@ -77,7 +78,7 @@ TEST(DelayBasedCongestionControlTest, QueueDelayIncreaseIfSendRateIsHigh) {
     DataRate send_rate = DataRate::KilobitsPerSec(2000);
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(send_rate, clock);
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
   }
   EXPECT_GT(delay_controller.queue_delay(), TimeDelta::Millis(50));
   EXPECT_TRUE(delay_controller.IsQueueDelayDetected());
@@ -100,7 +101,7 @@ TEST(DelayBasedCongestionControlTest, ReferenceWindowNotChangedOnLowDelay) {
   DataSize ref_window = send_rate * TimeDelta::Millis(50);
   TransportPacketsFeedback feedback =
       feedback_generator.ProcessUntilNextFeedback(send_rate, clock);
-  delay_controller.OnTransportPacketsFeedback(feedback, false);
+  delay_controller.Update(ParseScreamFeedback(feedback), false);
 
   ASSERT_EQ(delay_controller.queue_delay(), TimeDelta::Millis(0));
   EXPECT_EQ(delay_controller.UpdateReferenceWindow(
@@ -127,7 +128,7 @@ TEST(DelayBasedCongestionControlTest, ReferenceWindowDecreasedOnHighDelay) {
     
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(send_rate, clock);
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
     smoothed_rtt = delay_controller.rtt();
   }
   DataSize ref_window = send_rate * smoothed_rtt;
@@ -155,7 +156,7 @@ TEST(DelayBasedCongestionControlTest, ReferenceWindowNotLowerThanSetMin) {
     
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(send_rate, clock);
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
     smoothed_rtt = delay_controller.rtt();
   }
   DataSize ref_window = send_rate * smoothed_rtt;
@@ -185,7 +186,7 @@ TEST(DelayBasedCongestionControlTest, ResetQueueDelay) {
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(
             DataRate::KilobitsPerSec(150), clock);
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
     last_smoothed_rtt = delay_controller.rtt();
   }
   TimeDelta queue_delay_before_reset = delay_controller.queue_delay();
@@ -198,7 +199,7 @@ TEST(DelayBasedCongestionControlTest, ResetQueueDelay) {
   TransportPacketsFeedback feedback =
       feedback_generator.ProcessUntilNextFeedback(DataRate::KilobitsPerSec(150),
                                                   clock);
-  delay_controller.OnTransportPacketsFeedback(feedback, false);
+  delay_controller.Update(ParseScreamFeedback(feedback), false);
   
   EXPECT_GE(delay_controller.rtt(), last_smoothed_rtt);
   
@@ -222,7 +223,7 @@ TEST(DelayBasedCongestionControlTest,
     TransportPacketsFeedback feedback =
         feedback_generator.ProcessUntilNextFeedback(
             DataRate::KilobitsPerSec(150), clock);
-    delay_controller.OnTransportPacketsFeedback(feedback, false);
+    delay_controller.Update(ParseScreamFeedback(feedback), false);
   }
   EXPECT_LT(clock.CurrentTime(), start_time + TimeDelta::Seconds(30));
   EXPECT_GT(clock.CurrentTime(), start_time + TimeDelta::Seconds(10));
@@ -252,7 +253,7 @@ TEST(DelayBasedCongestionControlTest,
           clock.CurrentTime() - TimeDelta::Millis(100) - qdelay;
       packet.sent_packet.sequence_number = i;
       msg.packet_feedbacks.push_back(packet);
-      delay_controller.OnTransportPacketsFeedback(msg, false);
+      delay_controller.Update(ParseScreamFeedback(msg), false);
     }
   };
 
@@ -310,7 +311,7 @@ TEST(DelayBasedCongestionControlTest,
 
       msg.packet_feedbacks.push_back(packet1);
       msg.packet_feedbacks.push_back(packet2);
-      delay_controller.OnTransportPacketsFeedback(msg, false);
+      delay_controller.Update(ParseScreamFeedback(msg), false);
     }
   };
 
@@ -358,7 +359,7 @@ TEST(DelayBasedCongestionControlTest, RttDecaysSlowerInAlr) {
     packet.sent_packet.send_time = clock.CurrentTime() - rtt;
     packet.sent_packet.sequence_number = 0;
     msg.packet_feedbacks.push_back(packet);
-    controller.OnTransportPacketsFeedback(msg, alr);
+    controller.Update(ParseScreamFeedback(msg), alr);
   };
 
   
@@ -402,7 +403,7 @@ TEST(DelayBasedCongestionControlTest, RttIncreasesSlowerInAlr) {
     packet.sent_packet.send_time = clock.CurrentTime() - rtt;
     packet.sent_packet.sequence_number = 0;
     msg.packet_feedbacks.push_back(packet);
-    controller.OnTransportPacketsFeedback(msg, alr);
+    controller.Update(ParseScreamFeedback(msg), alr);
   };
 
   

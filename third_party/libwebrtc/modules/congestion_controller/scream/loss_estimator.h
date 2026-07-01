@@ -12,9 +12,9 @@
 
 #include <stdint.h>
 
-#include "api/transport/network_types.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/scream/scream_feedback.h"
 #include "modules/congestion_controller/scream/scream_v2_parameters.h"
 
 namespace webrtc {
@@ -52,7 +52,7 @@ class LossEstimator {
 
   
   
-  bool Update(const TransportPacketsFeedback& msg, TimeDelta rtt);
+  bool Update(const ScreamFeedback& parsed, TimeDelta rtt);
 
   
   
