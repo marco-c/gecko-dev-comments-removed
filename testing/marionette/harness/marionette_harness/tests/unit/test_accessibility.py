@@ -2,6 +2,7 @@
 
 
 
+import subprocess
 import sys
 import unittest
 
@@ -13,6 +14,24 @@ from marionette_driver.errors import (
 )
 
 from marionette_harness import MarionetteTestCase
+
+
+def _is_macos_vm():
+    
+    
+    
+    if sys.platform != "darwin":
+        return False
+    try:
+        out = subprocess.check_output(
+            ["sysctl", "-n", "hw.model"], text=True, timeout=5
+        ).strip()
+        return out.startswith("VirtualMac")
+    except Exception:
+        return False
+
+
+_MACOS_VM = _is_macos_vm()
 
 
 class TestAccessibility(MarionetteTestCase):
@@ -121,6 +140,10 @@ class TestAccessibility(MarionetteTestCase):
         
         self.run_element_test(self.valid_elementIDs, lambda button: button.click())
 
+    @unittest.skipIf(
+        _MACOS_VM,
+        "Bug 2047574 - accessibility API depends on a real display",
+    )
     def test_click_raises_element_not_accessible(self):
         self.setup_accessibility()
         self.run_element_test(
