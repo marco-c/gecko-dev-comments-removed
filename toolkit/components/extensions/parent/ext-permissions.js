@@ -152,6 +152,8 @@ this.permissions = class extends ExtensionAPIPersistent {
           
           
           
+          
+          
           if (
             Services.policies
               ?.getExtensionSettings(extension.id)
