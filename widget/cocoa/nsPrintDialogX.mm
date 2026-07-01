@@ -215,7 +215,8 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
         
         
         
-        NSPrintInfo* result = [[NSPrintOperation currentOperation] printInfo];
+        
+        NSPrintInfo* result = printInfo;
         [NSPrintOperation setCurrentOperation:nil];
         [tmpView release];
 
