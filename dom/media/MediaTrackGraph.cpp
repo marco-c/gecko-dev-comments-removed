@@ -3396,7 +3396,7 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
       ,
       mMainThreadGraphTime(0, "MediaTrackGraphImpl::mMainThreadGraphTime"),
       mAudioOutputLatency(0.0),
-      mMaxOutputChannelCount(CubebUtils::MaxNumberOfChannels()) {
+      mMaxOutputChannelCount(0) {
 }
 
 void MediaTrackGraphImpl::Init(GraphDriverType aDriverRequested,
@@ -3405,6 +3405,10 @@ void MediaTrackGraphImpl::Init(GraphDriverType aDriverRequested,
   mSelfRef = this;
   mEndTime = aDriverRequested == OFFLINE_THREAD_DRIVER ? 0 : GRAPH_TIME_MAX;
   mRealtime = aDriverRequested != OFFLINE_THREAD_DRIVER;
+  
+  
+  
+  mMaxOutputChannelCount = aChannelCount;
   
   
   
