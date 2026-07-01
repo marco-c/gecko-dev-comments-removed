@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Iterator.prototype.windows), Function.prototype);
+
+reportCompare(0, 0);

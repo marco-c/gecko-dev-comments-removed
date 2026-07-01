@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let iter = Iterator.prototype.windows.call({ next: 0 }, 1);
+
+assert.throws(TypeError, function () {
+  iter.next();
+});
+
+reportCompare(0, 0);
