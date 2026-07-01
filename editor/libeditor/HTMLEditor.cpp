@@ -4920,6 +4920,13 @@ nsresult HTMLEditor::SelectAllInternal() {
     if (MOZ_UNLIKELY(!computedSelectionRootContent->IsElement())) {
       return computedSelectionRootContent;
     }
+    
+    
+    
+    if (ShadowRoot* const shadowRoot =
+            computedSelectionRootContent->GetShadowRootForSelection()) {
+      return shadowRoot;
+    }
     return GetBodyElementIfElementIsParentOfHTMLBody(
         *computedSelectionRootContent->AsElement());
   }();

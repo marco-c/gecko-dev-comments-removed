@@ -5,6 +5,7 @@
 #ifndef nsFrameSelection_h_
 #define nsFrameSelection_h_
 
+#include <fmt/format.h>
 #include <stdint.h>
 
 #include "WordMovementType.h"
@@ -254,12 +255,63 @@ enum class TableSelectionMode : uint32_t {
   AllCells, 
 };
 
+struct SelectionLimiters {
+  
+
+
+
+
+
+
+
+  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
+
+  
+
+
+
+
+
+
+  [[nodiscard]] bool RangeInLimiters(const dom::AbstractRange& aRange) const {
+    return NodeIsInLimiters(aRange.GetStartContainer()) &&
+           (aRange.GetStartContainer() == aRange.GetEndContainer() ||
+            NodeIsInLimiters(aRange.GetEndContainer()));
+  }
+
+  [[nodiscard]] bool HasLimiters() const {
+    return mIndependentSelectionRootElement || mAncestorLimiter;
+  }
+
+  friend inline std::string format_as(const SelectionLimiters& aLimiters) {
+    return fmt::format(
+        "{{ mIndependentSelectionRootElement={}, mAncestorLimiter={} }}",
+        ToString(aLimiters.mIndependentSelectionRootElement),
+        ToString(aLimiters.mAncestorLimiter));
+  }
+
+  friend inline std::ostream& operator<<(std::ostream& aStream,
+                                         const SelectionLimiters& aLimiters) {
+    return aStream << format_as(aLimiters);
+  }
+
+  
+  
+  RefPtr<dom::Element> mIndependentSelectionRootElement;
+  
+  
+  
+  RefPtr<dom::Element> mAncestorLimiter;
+};
+
 }  
 
 class nsFrameSelection final {
  public:
   friend std::ostream& operator<<(std::ostream&, const nsFrameSelection&);
 
+  using AllowRangeCrossShadowBoundary =
+      mozilla::dom::AllowRangeCrossShadowBoundary;
   using CaretAssociationHint = mozilla::CaretAssociationHint;
   using Element = mozilla::dom::Element;
 
@@ -575,12 +627,23 @@ class nsFrameSelection final {
 
 
 
-  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const;
+  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const {
+    return mLimiters.NodeIsInLimiters(aContainerNode);
+  }
 
-  [[nodiscard]] static bool NodeIsInLimiters(
-      const nsINode* aContainerNode,
-      const Element* aIndependentSelectionLimiterElement,
-      const Element* aSelectionAncestorLimiter);
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool RangeInLimiters(
+      const mozilla::dom::AbstractRange& aRange) const {
+    return mLimiters.RangeInLimiters(aRange);
+  }
 
   
 
@@ -863,6 +926,10 @@ class nsFrameSelection final {
   [[nodiscard]] bool MouseDownRecorded() const {
     return !GetDragState() && HasDelayedCaretData() &&
            GetClickCountInDelayedCaretData() < 2;
+  }
+
+  [[nodiscard]] const mozilla::SelectionLimiters& LimitersRef() const {
+    return mLimiters;
   }
 
   
@@ -1306,17 +1373,7 @@ class nsFrameSelection final {
 
   Batching mBatching;
 
-  struct Limiters {
-    
-    
-    RefPtr<Element> mIndependentSelectionRootElement;
-    
-    
-    
-    RefPtr<Element> mAncestorLimiter;
-  };
-
-  Limiters mLimiters;
+  mozilla::SelectionLimiters mLimiters;
 
   mozilla::PresShell* mPresShell = nullptr;
   
@@ -1413,7 +1470,8 @@ namespace mozilla {
 
 
 
-struct LimitersAndCaretData {
+
+struct LimitersAndCaretData : public SelectionLimiters {
   using Element = dom::Element;
 
   LimitersAndCaretData() = default;
@@ -1422,26 +1480,10 @@ struct LimitersAndCaretData {
   LimitersAndCaretData& operator=(const LimitersAndCaretData&) = default;
   LimitersAndCaretData& operator=(LimitersAndCaretData&&) = default;
   explicit LimitersAndCaretData(const nsFrameSelection& aFrameSelection)
-      : mIndependentSelectionRootElement(
-            aFrameSelection.GetIndependentSelectionRootElement()),
-        mAncestorLimiter(aFrameSelection.GetAncestorLimiter()),
+      : SelectionLimiters(aFrameSelection.LimitersRef()),
         mCaretAssociationHint(aFrameSelection.GetHint()),
         mCaretBidiLevel(aFrameSelection.GetCaretBidiLevel()) {}
 
-  [[nodiscard]] bool NodeIsInLimiters(const nsINode* aContainerNode) const {
-    return nsFrameSelection::NodeIsInLimiters(
-        aContainerNode, mIndependentSelectionRootElement, mAncestorLimiter);
-  }
-  [[nodiscard]] bool RangeInLimiters(const dom::AbstractRange& aRange) const {
-    return NodeIsInLimiters(aRange.GetStartContainer()) &&
-           (!aRange.IsPositionedAndSameContainer() ||
-            NodeIsInLimiters(aRange.GetEndContainer()));
-  }
-
-  
-  RefPtr<Element> mIndependentSelectionRootElement;
-  
-  RefPtr<Element> mAncestorLimiter;
   
   CaretAssociationHint mCaretAssociationHint = CaretAssociationHint::Before;
   

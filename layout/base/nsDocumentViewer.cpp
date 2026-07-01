@@ -1971,6 +1971,10 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::SelectAll() {
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  
   nsCOMPtr<nsINode> bodyNode;
   if (mDocument->IsHTMLOrXHTML()) {
     

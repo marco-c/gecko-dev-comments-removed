@@ -339,7 +339,7 @@ nsresult ContentEventHandler::InitBasic(bool aRequireFlush) {
   return NS_OK;
 }
 
-nsresult ContentEventHandler::InitRootContent(
+Result<nsRange*, nsresult> ContentEventHandler::InitRootContent(
     const Selection& aNormalSelection) {
   
   
@@ -347,22 +347,52 @@ nsresult ContentEventHandler::InitRootContent(
   
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  if (!aNormalSelection.RangeCount()) {
+  const auto SetRootElementWithNoRanges = [&]() -> Result<nsRange*, nsresult> {
     
     
     mRootElement = aNormalSelection.GetAncestorLimiter();
     if (!mRootElement) {
       mRootElement = mDocument->GetRootElement();
       if (NS_WARN_IF(!mRootElement)) {
-        return NS_ERROR_NOT_AVAILABLE;
+        return Err(NS_ERROR_NOT_AVAILABLE);
       }
     }
-    return NS_OK;
+    
+    
+    if (mRootElement->IsInComposedDoc() &&
+        NS_WARN_IF(mRootElement->GetComposedDoc() !=
+                   aNormalSelection.GetDocument())) [[unlikely]] {
+      mRootElement = nullptr;
+      return Err(NS_ERROR_FAILURE);
+    }
+    return nullptr;
+  };
+
+  if (!aNormalSelection.RangeCount()) {
+    return SetRootElementWithNoRanges();
   }
 
-  RefPtr<const nsRange> range(aNormalSelection.GetRangeAt(0));
-  if (NS_WARN_IF(!range)) {
-    return NS_ERROR_UNEXPECTED;
+  
+  
+  nsRange* const rangeInRootElement = [&]() MOZ_NEVER_INLINE_DEBUG -> nsRange* {
+    nsFrameSelection* const fs = aNormalSelection.GetFrameSelection();
+    if (NS_WARN_IF(!fs)) {
+      return nullptr;
+    }
+    for (const uint32_t i : IntegerRange(aNormalSelection.RangeCount())) {
+      nsRange* const range = aNormalSelection.GetRangeAt(i);
+      MOZ_ASSERT(range);
+      if (fs->RangeInLimiters(*range)) {
+        return range;
+      }
+      NS_WARNING(fmt::format("{} (index: {}) is not in the limiters {}",
+                             RefPtr{range}, i, fs->LimitersRef())
+                     .c_str());
+    }
+    return nullptr;
+  }();
+  if (!rangeInRootElement) {
+    return SetRootElementWithNoRanges();
   }
 
   
@@ -371,29 +401,27 @@ nsresult ContentEventHandler::InitRootContent(
   
   
   
-  nsCOMPtr<nsINode> startNode = range->GetStartContainer();
-  nsINode* endNode = range->GetEndContainer();
+  nsINode* const startNode = rangeInRootElement->GetStartContainer();
+  nsINode* const endNode = rangeInRootElement->GetEndContainer();
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   
   if (NS_WARN_IF(startNode->GetComposedDoc() != mDocument)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   NS_ASSERTION(startNode->GetComposedDoc() == endNode->GetComposedDoc(),
                "firstNormalSelectionRange crosses the document boundary");
 
-  RefPtr<PresShell> presShell = mDocument->GetPresShell();
   mRootElement = Element::FromNodeOrNull(startNode->GetSelectionRootContent(
-      presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+      mDocument->GetPresShell(), nsINode::IgnoreOwnIndependentSelection::Yes,
       nsINode::AllowCrossShadowBoundary::No));
   if (NS_WARN_IF(!mRootElement)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
-
-  return NS_OK;
+  return rangeInRootElement;
 }
 
 nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
@@ -431,21 +459,28 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
     MOZ_ASSERT(normalSelection);
   }
 
-  rv = InitRootContent(*normalSelection);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  Result<RefPtr<nsRange>, nsresult> firstRangeOrError =
+      InitRootContent(*normalSelection);
+  if (NS_WARN_IF(firstRangeOrError.isErr())) {
+    return firstRangeOrError.unwrapErr();
   }
 
-  if (mSelection->RangeCount()) {
-    mFirstSelectedSimpleRange.SetStartAndEnd(mSelection->GetRangeAt(0));
-    return NS_OK;
-  }
-
-  
-  
-  if (aSelectionType != SelectionType::eNormal ||
-      aEventMessage == eQuerySelectedText) {
-    MOZ_ASSERT(!mFirstSelectedSimpleRange.IsPositioned());
+  if (mSelection->Type() == SelectionType::eNormal) {
+    if (firstRangeOrError.inspect()) {
+      mFirstSelectedSimpleRange.SetStartAndEnd(firstRangeOrError.inspect());
+      return NS_OK;
+    }
+    
+    if (aEventMessage == eQuerySelectedText) {
+      return NS_OK;
+    }
+  } else {
+    if (mSelection->RangeCount()) {
+      mFirstSelectedSimpleRange.SetStartAndEnd(mSelection->GetRangeAt(0));
+      return NS_OK;
+    }
+    
+    
     return NS_OK;
   }
 
@@ -1350,7 +1385,6 @@ nsresult ContentEventHandler::OnQuerySelectedText(
 
   if (!mFirstSelectedSimpleRange.IsPositioned()) {
     MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
-    MOZ_ASSERT_IF(mSelection, !mSelection->RangeCount());
     
     
     

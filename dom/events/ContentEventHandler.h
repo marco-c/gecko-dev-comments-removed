@@ -192,8 +192,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  InitRootContent(const Selection& aNormalSelection);
+
+
+  MOZ_CAN_RUN_SCRIPT Result<nsRange*, nsresult> InitRootContent(
+      const Selection& aNormalSelection);
 
  public:
   

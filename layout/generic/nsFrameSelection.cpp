@@ -215,6 +215,7 @@ inline int8_t GetIndexFromSelectionType(SelectionType aSelectionType) {
   return kIndexOfSelections[static_cast<int8_t>(aSelectionType) + 1];
 }
 
+namespace mozilla {
 
 
 
@@ -228,16 +229,8 @@ inline int8_t GetIndexFromSelectionType(SelectionType aSelectionType) {
 
 
 
-bool nsFrameSelection::NodeIsInLimiters(const nsINode* aContainerNode) const {
-  return NodeIsInLimiters(aContainerNode, GetIndependentSelectionRootElement(),
-                          GetAncestorLimiter());
-}
 
-
-bool nsFrameSelection::NodeIsInLimiters(
-    const nsINode* aContainerNode,
-    const Element* aIndependentSelectionLimiterElement,
-    const Element* aSelectionAncestorLimiter) {
+bool SelectionLimiters::NodeIsInLimiters(const nsINode* aContainerNode) const {
   if (!aContainerNode) {
     return false;
   }
@@ -246,15 +239,14 @@ bool nsFrameSelection::NodeIsInLimiters(
   
   
   
-  if (aIndependentSelectionLimiterElement) {
-    MOZ_ASSERT(aIndependentSelectionLimiterElement->GetPseudoElementType() ==
+  if (mIndependentSelectionRootElement) {
+    MOZ_ASSERT(mIndependentSelectionRootElement->GetPseudoElementType() ==
                PseudoStyleType::MozTextControlEditingRoot);
-    MOZ_ASSERT(
-        aIndependentSelectionLimiterElement->IsHTMLElement(nsGkAtoms::div));
-    if (aIndependentSelectionLimiterElement == aContainerNode) {
+    MOZ_ASSERT(mIndependentSelectionRootElement->IsHTMLElement(nsGkAtoms::div));
+    if (mIndependentSelectionRootElement == aContainerNode) {
       return true;
     }
-    if (aIndependentSelectionLimiterElement == aContainerNode->GetParent()) {
+    if (mIndependentSelectionRootElement == aContainerNode->GetParent()) {
       NS_WARNING_ASSERTION(aContainerNode->IsText(),
                            ToString(*aContainerNode).c_str());
       MOZ_ASSERT(aContainerNode->IsText());
@@ -266,11 +258,10 @@ bool nsFrameSelection::NodeIsInLimiters(
   
   
   
-  return !aSelectionAncestorLimiter ||
-         aContainerNode->IsInclusiveDescendantOf(aSelectionAncestorLimiter);
+  return !mAncestorLimiter ||
+         aContainerNode->IsInclusiveDescendantOf(mAncestorLimiter);
 }
 
-namespace mozilla {
 struct MOZ_RAII AutoPrepareFocusRange {
   AutoPrepareFocusRange(Selection* aSelection,
                         const bool aMultiRangeSelection) {
@@ -3186,7 +3177,24 @@ void nsFrameSelection::SetAncestorLimiter(Element* aLimiter) {
     const Selection& sel = NormalSelection();
     LogSelectionAPI(&sel, __FUNCTION__, "aLimiter", aLimiter);
 
-    if (!NodeIsInLimiters(sel.GetFocusNode())) {
+    const bool hasOutOfBoundsRanges = [&]() {
+      if (!mLimiters.HasLimiters()) {
+        return false;
+      }
+      for (const uint32_t i : IntegerRange(sel.RangeCount())) {
+        const auto* range = sel.GetRangeAt(i);
+        MOZ_ASSERT(range);
+        if (!RangeInLimiters(*range)) {
+          NS_WARNING(fmt::format("{} (index: {}) is not in the limiters {}",
+                                 RefPtr{range}, i, mLimiters)
+                         .c_str());
+          return true;
+        }
+      }
+      return false;
+    }();
+
+    if (hasOutOfBoundsRanges) {
       ClearNormalSelection();
       if (mLimiters.mAncestorLimiter) {
         SetChangeReasons(nsISelectionListener::NO_REASON);

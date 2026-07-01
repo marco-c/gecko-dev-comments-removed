@@ -917,15 +917,19 @@ nsIContent* nsINode::GetSelectionRootContent(
     if (nsContentUtils::GetHTMLEditor(presContext)) {
       
       
-
+      
+      if (IsContent() && IsInComposedDoc() && !IsInDesignMode()) {
+        if (nsIContent* const editableContent =
+                AsContent()->GetInclusiveEditableAncestor()) {
+          return editableContent->GetEditingHost();
+        }
+      }
       
       
       
-      
-      
-      
-      if (!IsInComposedDoc() || IsInDesignMode() ||
-          !HasFlag(NODE_IS_EDITABLE)) {
+      else if (IsInDesignMode() || !IsInComposedDoc()) {
+        
+        
         Element* const bodyOrDocumentElement = [&]() -> Element* {
           if (Element* const bodyElement = OwnerDoc()->GetBodyElement()) {
             return bodyElement;
@@ -940,11 +944,6 @@ nsIContent* nsINode::GetSelectionRootContent(
       }
       
       
-      
-      MOZ_ASSERT(IsEditable());
-      MOZ_ASSERT(!IsInDesignMode());
-      MOZ_ASSERT(IsContent());
-      return AsContent()->GetEditingHost();
     }
   }
 
@@ -969,21 +968,28 @@ nsIContent* nsINode::GetSelectionRootContent(
   
   
   NS_ENSURE_TRUE(content, nullptr);
-  if (!nsContentUtils::IsInSameAnonymousTree(this, content)) {
-    content = GetRootForContentSubtree(AsContent());
-    
-    
-    if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(content)) {
-      content = shadowRoot->GetHost();
-      if (content && bool(aAllowCrossShadowBoundary)) {
-        content = content->GetSelectionRootContent(
-            aPresShell, aIgnoreOwnIndependentSelection,
-            aAllowCrossShadowBoundary);
-      }
-    }
+  if (nsContentUtils::IsInSameAnonymousTree(this, content)) {
+    return content;
   }
-
-  return content;
+  content = GetRootForContentSubtree(AsContent());
+  
+  
+  ShadowRoot* const shadowRoot = ShadowRoot::FromNode(content);
+  if (!shadowRoot) {
+    return content;
+  }
+  Element* const hostElement = shadowRoot->GetHost();
+  
+  
+  if (!hostElement) [[unlikely]] {
+    MOZ_ASSERT(shadowRoot->IsUAShadowRootSlow());
+    return content;
+  }
+  return bool(aAllowCrossShadowBoundary)
+             ? hostElement->GetSelectionRootContent(
+                   aPresShell, aIgnoreOwnIndependentSelection,
+                   aAllowCrossShadowBoundary)
+             : hostElement;
 }
 
 nsFrameSelection* nsINode::GetFrameSelection() const {

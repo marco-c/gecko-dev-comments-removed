@@ -1854,6 +1854,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
+
+
+
+
   nsIContent* GetSelectionRootContent(
       mozilla::PresShell* aPresShell,
       IgnoreOwnIndependentSelection aIgnoreOwnIndependentSelection,

@@ -551,6 +551,12 @@ class nsIContent : public nsINode {
 
   mozilla::dom::Element* GetEditingHost() const;
 
+  
+
+
+
+  nsIContent* GetInclusiveEditableAncestor() const;
+
   bool SupportsLangAttr() const {
     return IsHTMLElement() || IsSVGElement() || IsXULElement();
   }
