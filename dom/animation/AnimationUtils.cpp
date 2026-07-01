@@ -125,6 +125,16 @@ AnimationUtils::GetElementPseudoPair(const Element* aElementOrPseudo) {
             PseudoStyleRequest::Backdrop()};
   }
 
+  if (aElementOrPseudo->IsGeneratedContentContainerForCheckmark()) {
+    return {aElementOrPseudo->GetParent()->AsElement(),
+            PseudoStyleRequest(PseudoStyleType::Checkmark)};
+  }
+
+  if (aElementOrPseudo->IsGeneratedContentContainerForPickerIcon()) {
+    return {aElementOrPseudo->GetParent()->AsElement(),
+            PseudoStyleRequest(PseudoStyleType::PickerIcon)};
+  }
+
   const PseudoStyleType type = aElementOrPseudo->GetPseudoElementType();
   if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
     
