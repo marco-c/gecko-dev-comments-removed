@@ -78,10 +78,19 @@ class ProfileBufferGlobalController final {
                  const ProfileBufferControlledChunkManager::Update& aUpdate);
   void LogDeletion(base::ProcessId aProcessId, const TimeStamp& aTimeStamp);
 
+  struct ChunkToDestroy {
+    base::ProcessId mProcessId;
+    TimeStamp mTimeStamp;
+  };
+
+  
+  
+  
+  
   void HandleChunkManagerNonFinalUpdate(
       base::ProcessId aProcessId,
       ProfileBufferControlledChunkManager::Update&& aUpdate,
-      ProfileBufferControlledChunkManager& aParentChunkManager);
+      nsTArray<ChunkToDestroy>& aToDestroy);
 
   const size_t mMaximumBytes;
 
@@ -348,59 +357,94 @@ void ProfileBufferGlobalController::HandleChildChunkManagerUpdate(
   MOZ_ASSERT(!aUpdate.IsNotUpdate(),
              "HandleChildChunkManagerUpdate should not be given a non-update");
 
-  auto lockedParentChunkManagerAndPendingUpdate =
-      sParentChunkManagerAndPendingUpdate.Lock();
-  if (!lockedParentChunkManagerAndPendingUpdate->mChunkManager) {
-    
-    return;
-  }
+  
+  
+  nsTArray<ChunkToDestroy> toDestroy;
+  ProfileBufferControlledChunkManager* parentChunkManager = nullptr;
 
-  if (aUpdate.IsFinal()) {
-    
-    LogUpdate(aProcessId, aUpdate);
-    size_t index = mUnreleasedBytesByPid.BinaryIndexOf(aProcessId);
-    if (index != PidAndBytesArray::NoIndex) {
+  {
+    auto lockedParentChunkManagerAndPendingUpdate =
+        sParentChunkManagerAndPendingUpdate.Lock();
+    if (!lockedParentChunkManagerAndPendingUpdate->mChunkManager) {
       
-      PidAndBytes& pidAndBytes = mUnreleasedBytesByPid[index];
-      mUnreleasedTotalBytes -= pidAndBytes.mBytes;
-      mUnreleasedBytesByPid.RemoveElementAt(index);
+      return;
     }
 
-    size_t released = 0;
-    mReleasedChunksByTime.RemoveElementsBy(
-        [&released, aProcessId](const auto& chunk) {
-          const bool match = chunk.mProcessId == aProcessId;
-          if (match) {
-            released += chunk.mBytes;
-          }
-          return match;
-        });
-    if (released != 0) {
-      mReleasedTotalBytes -= released;
+    if (aUpdate.IsFinal()) {
+      
+      LogUpdate(aProcessId, aUpdate);
+      size_t index = mUnreleasedBytesByPid.BinaryIndexOf(aProcessId);
+      if (index != PidAndBytesArray::NoIndex) {
+        
+        PidAndBytes& pidAndBytes = mUnreleasedBytesByPid[index];
+        mUnreleasedTotalBytes -= pidAndBytes.mBytes;
+        mUnreleasedBytesByPid.RemoveElementAt(index);
+      }
+
+      size_t released = 0;
+      mReleasedChunksByTime.RemoveElementsBy(
+          [&released, aProcessId](const auto& chunk) {
+            const bool match = chunk.mProcessId == aProcessId;
+            if (match) {
+              released += chunk.mBytes;
+            }
+            return match;
+          });
+      if (released != 0) {
+        mReleasedTotalBytes -= released;
+      }
+
+      
+      return;
     }
+
+    parentChunkManager =
+        lockedParentChunkManagerAndPendingUpdate->mChunkManager;
 
     
-    return;
+
+    
+    
+    
+    if (!lockedParentChunkManagerAndPendingUpdate->mPendingUpdate
+             .IsNotUpdate()) {
+      MOZ_ASSERT(
+          !lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsFinal());
+      HandleChunkManagerNonFinalUpdate(
+          mParentProcessId,
+          std::move(lockedParentChunkManagerAndPendingUpdate->mPendingUpdate),
+          toDestroy);
+      lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.Clear();
+    }
+
+    HandleChunkManagerNonFinalUpdate(aProcessId, std::move(aUpdate), toDestroy);
   }
 
   
-
   
   
   
-  if (!lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsNotUpdate()) {
-    MOZ_ASSERT(
-        !lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsFinal());
-    HandleChunkManagerNonFinalUpdate(
-        mParentProcessId,
-        std::move(lockedParentChunkManagerAndPendingUpdate->mPendingUpdate),
-        *lockedParentChunkManagerAndPendingUpdate->mChunkManager);
-    lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.Clear();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const ChunkToDestroy& chunk : toDestroy) {
+    if (chunk.mProcessId == mParentProcessId) {
+      parentChunkManager->DestroyChunksAtOrBefore(chunk.mTimeStamp);
+    } else {
+      ProfilerParentTracker::ForChild(
+          chunk.mProcessId,
+          [timestamp = chunk.mTimeStamp](ProfilerParent* profilerParent) {
+            (void)profilerParent->SendDestroyReleasedChunksAtOrBefore(
+                timestamp);
+          });
+    }
   }
-
-  HandleChunkManagerNonFinalUpdate(
-      aProcessId, std::move(aUpdate),
-      *lockedParentChunkManagerAndPendingUpdate->mChunkManager);
 }
 
 
@@ -411,7 +455,7 @@ bool ProfileBufferGlobalController::IsLockedOnCurrentThread() {
 void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
     base::ProcessId aProcessId,
     ProfileBufferControlledChunkManager::Update&& aUpdate,
-    ProfileBufferControlledChunkManager& aParentChunkManager) {
+    nsTArray<ChunkToDestroy>& aToDestroy) {
   MOZ_ASSERT(!aUpdate.IsFinal());
   LogUpdate(aProcessId, aUpdate);
 
@@ -469,7 +513,6 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
   MOZ_ASSERT(mReleasedTotalBytes == totalReleased);
 #endif  
 
-  std::vector<ProfileBufferControlledChunkManager::ChunkMetadata> toDestroy;
   while (mUnreleasedTotalBytes + mReleasedTotalBytes > mMaximumBytes &&
          !mReleasedChunksByTime.IsEmpty()) {
     
@@ -477,16 +520,8 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
     const TimeStampAndBytesAndPid& oldest = mReleasedChunksByTime[0];
     LogDeletion(oldest.mProcessId, oldest.mTimeStamp);
     mReleasedTotalBytes -= oldest.mBytes;
-    if (oldest.mProcessId == mParentProcessId) {
-      aParentChunkManager.DestroyChunksAtOrBefore(oldest.mTimeStamp);
-    } else {
-      ProfilerParentTracker::ForChild(
-          oldest.mProcessId,
-          [timestamp = oldest.mTimeStamp](ProfilerParent* profilerParent) {
-            (void)profilerParent->SendDestroyReleasedChunksAtOrBefore(
-                timestamp);
-          });
-    }
+    aToDestroy.AppendElement(
+        ChunkToDestroy{oldest.mProcessId, oldest.mTimeStamp});
     mReleasedChunksByTime.RemoveElementAt(0);
   }
 }
