@@ -277,6 +277,9 @@ let propNameAllowlist = [
   { propName: "--tab-group-gray-text-invert", isFromDevTools: false },
 
   
+  { propName: "--radio-indicator-background-color", isFromDevTools: false },
+
+  
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
   
