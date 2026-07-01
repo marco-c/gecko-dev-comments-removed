@@ -1774,11 +1774,6 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
       return NS_ERROR_FAILURE;
     }
 
-    nsresult rv = CrashReporter::OOPInit(xreBinDirectory, true);
-    if (rv != NS_OK) {
-      return rv;
-    }
-
     return CrashReporter::SetExceptionHandler(xreBinDirectory, true);
   }
 
@@ -1787,14 +1782,7 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
     return NS_OK;
   }
 
-  nsresult rv = CrashReporter::UnsetExceptionHandler();
-#if !defined(MOZ_WIDGET_ANDROID)
-  
-  
-  
-  CrashReporter::OOPDeinit();
-#endif
-  return rv;
+  return CrashReporter::UnsetExceptionHandler();
 }
 
 NS_IMETHODIMP

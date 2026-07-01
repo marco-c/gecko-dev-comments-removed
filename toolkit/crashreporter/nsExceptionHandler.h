@@ -79,15 +79,10 @@ static inline bool IsDummy() {
 #endif
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory, bool force = false);
+nsresult OOPInit(nsIFile* aXREDirectory);
 void OOPDeinit();
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force = false);
 nsresult UnsetExceptionHandler();
-
-
-
-
-uint32_t GetCrashHelperPid();
 
 
 
