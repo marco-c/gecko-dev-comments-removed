@@ -220,7 +220,7 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
    public:
     virtual ~RangeNodeContext() = default;
 
-    virtual bool IncludeInContext(nsINode& aNode) const { return false; }
+    virtual bool IncludeInContext(nsINode& aNode) const;
 
     virtual int32_t GetImmediateContextCount(
         const nsTArray<nsINode*>& aAncestorArray) const {
@@ -1300,6 +1300,17 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
   }
 
   return NS_OK;
+}
+
+bool nsDocumentEncoder::RangeNodeContext::IncludeInContext(
+    nsINode& aNode) const {
+  
+  
+  
+  
+  const nsIContent* const content = nsIContent::FromNodeOrNull(&aNode);
+  return content && content->IsHTMLElement(nsGkAtoms::span) &&
+         content->AsElement()->HasAttr(nsGkAtoms::mozquote);
 }
 
 nsresult nsDocumentEncoder::RangeContextSerializer::SerializeRangeContextStart(
