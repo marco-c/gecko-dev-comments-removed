@@ -120,7 +120,6 @@
 #include "mozilla/net/CookieJarSettings.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsCCUncollectableMarker.h"
-#include "nsCharTraits.h"  
 #include "nsJSPrincipals.h"
 #include "nsLayoutStatics.h"
 

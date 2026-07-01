@@ -7,7 +7,7 @@
 
 #include <glib.h>
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
-#include "nsCharTraits.h"
+#include "mozilla/Utf16.h"
 #include "nsString.h"
 
 
@@ -40,10 +40,7 @@
 
 
 
-namespace mozilla {
-namespace a11y {
-
-namespace DOMtoATK {
+namespace mozilla::a11y::DOMtoATK {
 
 
 
@@ -126,29 +123,26 @@ inline gunichar ATKCharacter(HyperTextAccessibleBase* aAccessible,
   
   gunichar character = static_cast<gunichar>(aAccessible->CharAt(aOffset));
 
-  if (NS_IS_LOW_SURROGATE(character)) {
+  if (IsLowSurrogate(character)) {
     
     return 0xFEFF;
   }
 
-  if (NS_IS_HIGH_SURROGATE(character)) {
+  if (IsHighSurrogate(character)) {
     
     gunichar characterLow =
         static_cast<gunichar>(aAccessible->CharAt(aOffset + 1));
 
-    if (!NS_IS_LOW_SURROGATE(characterLow)) {
+    if (!IsLowSurrogate(characterLow)) {
       
       return 0xFFFD;
     }
-    return SURROGATE_TO_UCS4(character, characterLow);
+    return SurrogateToUCS4(character, characterLow);
   }
 
   return character;
 }
 
-}  
-
-}  
 }  
 
 #endif  

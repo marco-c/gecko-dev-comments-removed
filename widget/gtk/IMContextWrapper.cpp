@@ -23,6 +23,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/Utf16.h"
 
 
 
@@ -2320,7 +2321,7 @@ bool IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext) {
     NS_ConvertUTF8toUTF16 im(GetIMName());
     
     if (im.Length() > 72) {
-      if (NS_IS_SURROGATE_PAIR(im[72 - 2], im[72 - 1])) {
+      if (mozilla::IsSurrogatePair(im[72 - 2], im[72 - 1])) {
         im.Truncate(72 - 2);
       } else {
         im.Truncate(72 - 1);

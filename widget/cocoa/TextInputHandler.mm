@@ -18,6 +18,7 @@
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
+#include "mozilla/Utf16.h"
 
 #include "nsCocoaWindow.h"
 #include "nsObjCExceptions.h"
@@ -34,13 +35,13 @@ using namespace mozilla::widget;
 
 
 
-mozilla::LazyLogModule gIMELog("IMEHandler");
+LazyLogModule gIMELog("IMEHandler");
 
 
 
 
 
-mozilla::LazyLogModule gKeyLog("KeyboardHandler");
+LazyLogModule gKeyLog("KeyboardHandler");
 
 
 
@@ -3254,7 +3255,7 @@ void IMEInputHandler::OnCurrentTextInputSourceChange(
     }
     
     if (key.Length() > 72) {
-      if (NS_IS_SURROGATE_PAIR(key[72 - 2], key[72 - 1])) {
+      if (IsSurrogatePair(key[72 - 2], key[72 - 1])) {
         key.Truncate(72 - 2);
       } else {
         key.Truncate(72 - 1);
@@ -5152,7 +5153,7 @@ void IMEInputHandler::OnTextSubstitution(uint32_t aStartOffset) {
 
   NSString* str;
   if (!queryTextContentEvent.mReply->DataRef().IsEmpty() &&
-      NS_IS_LOW_SURROGATE(queryTextContentEvent.mReply->DataRef().CharAt(0))) {
+      IsLowSurrogate(queryTextContentEvent.mReply->DataRef().CharAt(0))) {
     str = nsCocoaUtils::ToNSString(
         Substring(queryTextContentEvent.mReply->DataRef(), 1));
   } else {

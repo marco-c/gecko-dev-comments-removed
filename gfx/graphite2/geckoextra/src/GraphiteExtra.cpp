@@ -5,6 +5,7 @@
 #include "graphite2/Font.h"
 #include "graphite2/Segment.h"
 #include "graphite2/GraphiteExtra.h"
+#include "mozilla/Utf16.h"
 
 #include <stdlib.h>
 #include <memory>
@@ -16,11 +17,6 @@
       return false;      \
     }                    \
   } while (false)
-
-
-#define NS_IS_HIGH_SURROGATE(u) ((uint32_t(u) & 0xFFFFFC00) == 0xD800)
-
-#define NS_IS_LOW_SURROGATE(u) ((uint32_t(u) & 0xFFFFFC00) == 0xDC00)
 
 #define IS_POWER_OF_2(n) (n & (n - 1)) == 0
 
@@ -71,8 +67,8 @@ static bool LoopThrough(gr_segment* aSegment, const uint32_t aLength,
     ++aClusters[aCIndex].nGlyphs;
 
     
-    if (NS_IS_HIGH_SURROGATE(aText[after]) && after < aLength - 1 &&
-        NS_IS_LOW_SURROGATE(aText[after + 1])) {
+    if (mozilla::IsHighSurrogate(aText[after]) && after < aLength - 1 &&
+        mozilla::IsLowSurrogate(aText[after + 1])) {
       after++;
     }
 
@@ -160,6 +156,4 @@ void gr_free_char_association(gr_glyph_to_char_association* aData) {
 }
 
 #undef CHECK
-#undef NS_IS_HIGH_SURROGATE
-#undef NS_IS_LOW_SURROGATE
 #undef IS_POWER_OF_2

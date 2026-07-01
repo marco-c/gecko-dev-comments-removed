@@ -18,6 +18,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/widget/AndroidVsync.h"
+#include "mozilla/Utf16.h"
 
 #include "AndroidBuild.h"
 #include "AndroidSystemFontIterator.h"
@@ -236,7 +237,7 @@ void gfxAndroidPlatform::GetCommonFallbackFonts(
     aFontList.AppendElement(kNotoColorEmoji);
   }
 
-  if (IS_IN_BMP(aCh)) {
+  if (mozilla::IsInBMP(aCh)) {
     
     
     uint8_t block = (aCh >> 8) & 0xff;

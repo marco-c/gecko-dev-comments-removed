@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "mozilla/dom/CSPViolationData.h"
 
 #include <utility>
 
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "nsCharTraits.h"
@@ -24,7 +23,7 @@ const nsDependentSubstring CSPViolationData::MaybeTruncateSample(
     
     
     
-    if (NS_IS_LOW_SURROGATE(aSample[maybeTruncatedLength])) {
+    if (mozilla::IsLowSurrogate(aSample[maybeTruncatedLength])) {
       maybeTruncatedLength++;
     }
   }

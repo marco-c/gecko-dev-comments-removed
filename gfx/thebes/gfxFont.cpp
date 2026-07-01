@@ -41,6 +41,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/Utf16.h"
 #include "gfxMathTable.h"
 #include "gfxSVGGlyphs.h"
 #include "gfx2DGlue.h"
@@ -723,8 +724,8 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
   
   
   uint32_t ch = aString[0];
-  if (aLength > 1 && NS_IS_SURROGATE_PAIR(ch, aString[1])) {
-    ch = SURROGATE_TO_UCS4(ch, aString[1]);
+  if (aLength > 1 && mozilla::IsSurrogatePair(ch, aString[1])) {
+    ch = mozilla::SurrogateToUCS4(ch, aString[1]);
   }
   if (IsClusterExtender(ch)) {
     glyphs[0] = extendCluster;
@@ -1700,9 +1701,9 @@ bool gfxFont::SupportsSubSuperscript(uint32_t aSubSuperscript,
   for (uint32_t i = 0; i < aLength; i++) {
     uint32_t ch = aString[i];
 
-    if (i + 1 < aLength && NS_IS_SURROGATE_PAIR(ch, aString[i + 1])) {
+    if (i + 1 < aLength && mozilla::IsSurrogatePair(ch, aString[i + 1])) {
       i++;
-      ch = SURROGATE_TO_UCS4(ch, aString[i]);
+      ch = mozilla::SurrogateToUCS4(ch, aString[i]);
     }
 
     hb_codepoint_t gid = shaper->GetNominalGlyph(ch);
@@ -3584,7 +3585,7 @@ bool gfxFont::ShapeFragmentWithoutWordCache(const T* aText, uint32_t aOffset,
           
           
           
-          if (NS_IS_SURROGATE_PAIR(aText[fragLen - 1], aText[fragLen])) {
+          if (mozilla::IsSurrogatePair(aText[fragLen - 1], aText[fragLen])) {
             --fragLen;
           }
         }
@@ -3921,8 +3922,8 @@ bool gfxFont::InitFakeSmallCapsRun(
     
     if (i < aLength) {
       uint32_t ch = aText[i];
-      if (i < aLength - 1 && NS_IS_SURROGATE_PAIR(ch, aText[i + 1])) {
-        ch = SURROGATE_TO_UCS4(ch, aText[i + 1]);
+      if (i < aLength - 1 && mozilla::IsSurrogatePair(ch, aText[i + 1])) {
+        ch = mozilla::SurrogateToUCS4(ch, aText[i + 1]);
         extraCodeUnits = 1;
       }
       
@@ -4004,13 +4005,13 @@ bool gfxFont::InitFakeSmallCapsRun(
           char16_t highSurrogate = 0;
           for (const char16_t* cp = convertedString.BeginReading();
                cp != convertedString.EndReading(); ++cp) {
-            if (NS_IS_HIGH_SURROGATE(*cp)) {
+            if (mozilla::IsHighSurrogate(*cp)) {
               highSurrogate = *cp;
               continue;
             }
             uint32_t ch = *cp;
-            if (NS_IS_LOW_SURROGATE(*cp) && highSurrogate) {
-              ch = SURROGATE_TO_UCS4(highSurrogate, *cp);
+            if (mozilla::IsLowSurrogate(*cp) && highSurrogate) {
+              ch = mozilla::SurrogateToUCS4(highSurrogate, *cp);
             }
             highSurrogate = 0;
             if (!f->HasCharacter(ch)) {

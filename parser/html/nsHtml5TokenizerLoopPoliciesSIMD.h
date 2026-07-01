@@ -7,6 +7,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/htmlaccel/htmlaccelNotInline.h"
+#include "mozilla/Utf16.h"
 
 
 
@@ -448,7 +449,7 @@ struct nsHtml5LineColPolicySIMD {
       aTokenizer->line++;
       aTokenizer->col = 1;
       aTokenizer->nextCharOnNewLine = false;
-    } else if (MOZ_LIKELY(!NS_IS_LOW_SURROGATE(c))) {
+    } else if (MOZ_LIKELY(!mozilla::IsLowSurrogate(c))) {
       
       
       

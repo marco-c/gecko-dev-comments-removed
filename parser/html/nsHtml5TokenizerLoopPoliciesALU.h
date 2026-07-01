@@ -5,6 +5,8 @@
 #ifndef nsHtml5TokenizerLoopPoliciesALU_h
 #define nsHtml5TokenizerLoopPoliciesALU_h
 
+#include "mozilla/Utf16.h"
+
 
 
 
@@ -165,7 +167,7 @@ struct nsHtml5LineColPolicyALU {
       aTokenizer->line++;
       aTokenizer->col = 1;
       aTokenizer->nextCharOnNewLine = false;
-    } else if (MOZ_LIKELY(!NS_IS_LOW_SURROGATE(c))) {
+    } else if (MOZ_LIKELY(!mozilla::IsLowSurrogate(c))) {
       
       
       
