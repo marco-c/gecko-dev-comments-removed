@@ -402,7 +402,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void RemoveAdopter(dom::DocumentOrShadowRoot& aAdopter) {
     
-    mAdopters.RemoveElement(&aAdopter);
+    mAdopters.UnorderedRemoveElement(&aAdopter);
   }
 
   const nsTArray<dom::DocumentOrShadowRoot*>& SelfOrAncestorAdopters() const {
