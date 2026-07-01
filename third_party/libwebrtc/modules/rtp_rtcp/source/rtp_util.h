@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_SOURCE_RTP_UTIL_H_
 
 #include <cstdint>
+#include <optional>
 #include <span>
 
 namespace webrtc {
@@ -24,6 +25,14 @@ bool IsRtpPacket(std::span<const uint8_t> packet);
 int ParseRtpPayloadType(std::span<const uint8_t> rtp_packet);
 uint16_t ParseRtpSequenceNumber(std::span<const uint8_t> rtp_packet);
 uint32_t ParseRtpSsrc(std::span<const uint8_t> rtp_packet);
+
+
+
+
+
+
+std::optional<uint16_t> ParseRtpExtensionProfile(
+    std::span<const uint8_t> rtp_packet);
 
 }  
 

@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -36,6 +37,9 @@
 #endif
 
 namespace webrtc {
+
+constexpr uint16_t kRtpOneByteHeaderExtensionProfile = 0xBEDE;
+constexpr uint16_t kRtpTwoByteHeaderExtensionProfile = 0x1000;
 
 namespace {
 class LibSrtpInitializer {
@@ -143,7 +147,7 @@ void LibSrtpInitializer::DecrementLibsrtpUsageCountAndMaybeDeinit() {
 
 
 
-constexpr int kSrtpErrorCodeBoundary = 28;
+constexpr int kSrtpErrorCodeBoundary = 29;
 
 SrtpSession::SrtpSession() {}
 
@@ -158,6 +162,23 @@ SrtpSession::~SrtpSession() {
   if (inited_) {
     LibSrtpInitializer::Get().DecrementLibsrtpUsageCountAndMaybeDeinit();
   }
+}
+
+bool SrtpSession::UseCryptex(bool enable, bool require, bool sending_session) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (session_) {
+    srtp_ssrc_t ssrc;
+    ssrc.type = sending_session ? ssrc_any_outbound : ssrc_any_inbound;
+    int err = srtp_set_stream_use_cryptex(session_, &ssrc, enable);
+    
+    RTC_DCHECK(err == srtp_err_status_ok);
+    if (err != srtp_err_status_ok) {
+      return false;
+    }
+  }
+  use_cryptex_ = enable;
+  require_cryptex_ = require;
+  return true;
 }
 
 bool SrtpSession::SetSend(int crypto_suite,
@@ -269,7 +290,22 @@ bool SrtpSession::UnprotectRtp(CopyOnWriteBuffer& buffer) {
   }
   int out_len = buffer.size();
 
+  std::optional<uint16_t> extension_profile;
+  if (require_cryptex_) {
+    
+    
+    
+    extension_profile = ParseRtpExtensionProfile(buffer);
+  }
   int err = srtp_unprotect(session_, buffer.MutableData<char>(), &out_len);
+  if (err == srtp_err_status_ok && require_cryptex_ &&
+      (extension_profile == kRtpOneByteHeaderExtensionProfile ||
+       extension_profile == kRtpTwoByteHeaderExtensionProfile)) {
+    
+    
+    
+    err = srtp_err_status_cryptex_err;
+  }
   if (err != srtp_err_status_ok) {
     
     
@@ -374,7 +410,10 @@ bool SrtpSession::DoSetKey(int type,
   
   policy.window_size = 1024;
   policy.allow_repeat_tx = 1;
-  if (!extension_ids.empty()) {
+  
+  
+  
+  if (!extension_ids.empty() && !use_cryptex_) {
     policy.enc_xtn_hdr = const_cast<int*>(&extension_ids[0]);
     policy.enc_xtn_hdr_count = static_cast<int>(extension_ids.size());
   }
@@ -394,6 +433,11 @@ bool SrtpSession::DoSetKey(int type,
       RTC_LOG(LS_ERROR) << "Failed to update SRTP session, err=" << err;
       return false;
     }
+  }
+  int err = srtp_set_stream_use_cryptex(session_, &policy.ssrc, use_cryptex_);
+  if (err != srtp_err_status_ok) {
+    RTC_LOG(LS_ERROR) << "Failed to update SRTP session cryptex, err=" << err;
+    return false;
   }
 
   rtp_auth_tag_len_ = policy.rtp.auth_tag_len;

@@ -45,6 +45,9 @@ class SrtpSession {
   SrtpSession& operator=(const SrtpSession&) = delete;
 
   
+  bool UseCryptex(bool enabled, bool require, bool sending_session);
+
+  
   
   bool SetSend(int crypto_suite,
                const ZeroOnFreeBuffer<uint8_t>& key,
@@ -120,6 +123,11 @@ class SrtpSession {
   bool inited_ RTC_GUARDED_BY(thread_checker_) = false;
   int last_send_seq_num_ RTC_GUARDED_BY(thread_checker_) = -1;
   int decryption_failure_count_ RTC_GUARDED_BY(thread_checker_) = 0;
+
+  
+  bool use_cryptex_ RTC_GUARDED_BY(thread_checker_) = false;
+  bool require_cryptex_ RTC_GUARDED_BY(thread_checker_) = false;
+
   const bool dump_plain_rtp_ = false;
 };
 

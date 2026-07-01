@@ -56,6 +56,9 @@ class SrtpTransport : public RtpTransport {
   bool IsWritable(bool rtcp) const override;
 
   
+  bool UseCryptex(bool enable, bool require);
+
+  
   
   
   bool SetRtpParams(int send_crypto_suite,
@@ -127,6 +130,9 @@ class SrtpTransport : public RtpTransport {
   bool writable_ = false;
 
   int decryption_failure_count_ = 0;
+
+  bool enable_cryptex_ = false;
+  bool require_cryptex_ = false;
 
   const FieldTrialsView& field_trials_;
 };
