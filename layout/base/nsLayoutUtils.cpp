@@ -1972,19 +1972,10 @@ void nsLayoutUtils::PostTranslate(Matrix4x4& aTransform, const nsPoint& aOrigin,
   aTransform.PostTranslate(gfxOrigin);
 }
 
-bool nsLayoutUtils::ShouldSnapToGrid(const nsIFrame* aFrame,
-                                     const nsDisplayListBuilder* aBuilder) {
+bool nsLayoutUtils::ShouldSnapToGrid(const nsIFrame* aFrame) {
   
-  if (StaticPrefs::layout_disable_pixel_alignment() && aBuilder &&
-      aBuilder->IsPaintingForWebRender()) {
-    
-    
-    
-    
-    
-    
-    
-    return false;
+  if (StaticPrefs::layout_disable_pixel_alignment()) {
+    return aFrame && aFrame->IsSVGOuterSVGAnonChildFrame();
   }
 
   return !aFrame || !aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||

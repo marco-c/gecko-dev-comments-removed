@@ -1030,14 +1030,7 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
-
-
-  static bool ShouldSnapToGrid(const nsIFrame* aFrame,
-                               const nsDisplayListBuilder* aBuilder = nullptr);
+  static bool ShouldSnapToGrid(const nsIFrame* aFrame);
 
   
 
