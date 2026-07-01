@@ -704,6 +704,10 @@ class nsWindow final : public nsIWidget {
   
   mozilla::Maybe<UINT> GetHiddenTaskbarEdge();
 
+  void SetNativeLockedRegion();
+  void ReleaseNativeLockedRegion();
+  void MaybeUpdateNativeLockedRegion();
+
   static bool sTouchInjectInitialized;
   static InjectTouchInputPtr sInjectTouchFuncPtr;
   static uint32_t sInstanceCount;
@@ -716,6 +720,7 @@ class nsWindow final : public nsIWidget {
   static bool sIsRestoringSession;
   static bool sIsNativePointLocked;
   static bool sIsUsingRawInputForMouseMove;
+  static nsWindow* sNativePointLockedWindow;
 
   
   
