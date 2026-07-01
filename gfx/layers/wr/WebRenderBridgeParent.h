@@ -545,6 +545,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   bool mReceivedDisplayList = false;
   bool mSkippedComposite = false;
   
+  
+  
+  
+  
+  
+  const bool mIsRootWebRenderBridgeParent;
+  
   DataMutex<nsClassHashtable<nsUint64HashKey, nsTArray<CompositionPayload>>>
       mPendingScrollPayloads{"WebRenderBridgeParent::mPendingScrollPayloads"};
 
