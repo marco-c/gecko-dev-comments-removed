@@ -945,6 +945,20 @@ bool RemoteAccessible::IsClipped() const {
   return false;
 }
 
+LayoutDeviceIntRect RemoteAccessible::ComputeBoundsFromContent() const {
+  ASSERT_DOMAINS_ACTIVE(CacheDomain::Style, this);
+  MOZ_ASSERT(mCachedFields);
+
+  LayoutDeviceIntRect result;
+  for (uint32_t i = 0, n = ChildCount(); i < n; i++) {
+    if (Accessible* child = ChildAt(i); child && child->IsRemote()) {
+      result =
+          result.Union(child->AsRemote()->BoundsWithOffset(Nothing(), false));
+    }
+  }
+  return result;
+}
+
 LayoutDeviceIntRect RemoteAccessible::BoundsWithOffset(
     Maybe<nsRect> aOffset, bool aBoundsAreForHittesting) const {
   if (mDoc->RequestDomainsIfInactive(kNecessaryBoundsDomains)) {
@@ -953,6 +967,17 @@ LayoutDeviceIntRect RemoteAccessible::BoundsWithOffset(
 
   Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
   if (maybeBounds) {
+    if (maybeBounds->IsEmpty() && aOffset.isNothing()) {
+      RefPtr<nsAtom> display = DisplayStyle();
+      RefPtr<nsAtom> contentsAtom = NS_Atomize("contents");
+      if (display == contentsAtom) {
+        
+        
+        
+        return ComputeBoundsFromContent();
+      }
+    }
+
     nsRect bounds = *maybeBounds;
     
     
