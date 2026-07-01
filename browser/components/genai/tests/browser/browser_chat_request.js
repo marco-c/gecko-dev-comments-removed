@@ -108,6 +108,38 @@ add_task(async function test_chat_default_query() {
 
 
 
+
+add_task(async function test_chat_no_query_when_auto_submit() {
+  const url = "http://mochi.test:8888/no-query-auto-submit";
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(GenAI, "chatProviders")
+    .value(new Map([[url, { supportAutoSubmit: true }]]));
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.provider", url],
+      ["browser.ml.chat.prompt.prefix", ""],
+      ["browser.ml.chat.sidebar", false],
+    ],
+  });
+
+  await GenAI.handleAskChat({ value: "hello world?" }, { window });
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
+  Assert.equal(
+    gBrowser.selectedBrowser.currentURI.query,
+    "",
+    "Prompt not passed via ?q= when provider supports auto-submit"
+  );
+
+  gBrowser.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+
+
+
 add_task(async function test_chat_auto_submit() {
   const ROOT = getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
