@@ -3268,11 +3268,12 @@ bool nsGenericHTMLFormControlElementWithState::RestoreFormControlState() {
   }
 
   
-  PresState* state = history->GetState(mStateKey);
+  
+  
+  
+  UniquePtr<PresState> state = history->TakeState(mStateKey);
   if (state) {
-    bool result = RestoreState(state);
-    history->RemoveState(mStateKey);
-    return result;
+    return RestoreState(state.get());
   }
 
   return false;
