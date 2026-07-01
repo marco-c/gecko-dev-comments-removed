@@ -285,9 +285,20 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
     return;
   }
 
+  
+  
+  
+  
+  uint32_t generation = ++mTRRConnectionInfoGeneration;
+
   rv = ProxyConfigLookup::Create(
-      [self = RefPtr{this}, uri(dnsURI)](nsIProxyInfo* aProxyInfo,
-                                         nsresult aStatus) mutable {
+      [self = RefPtr{this}, uri(dnsURI), generation](nsIProxyInfo* aProxyInfo,
+                                                     nsresult aStatus) mutable {
+        if (generation != self->mTRRConnectionInfoGeneration) {
+          
+          return;
+        }
+
         if (NS_FAILED(aStatus)) {
           self->SetDefaultTRRConnectionInfo(nullptr);
           return;

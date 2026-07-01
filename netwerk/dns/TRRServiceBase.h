@@ -87,6 +87,10 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
       nsIDNSService::MODE_NATIVEONLY};
   Atomic<bool, Relaxed> mURISetByDetection{false};
   Atomic<bool, Relaxed> mTRRConnectionInfoInited{false};
+  
+  
+  
+  Atomic<uint32_t, Relaxed> mTRRConnectionInfoGeneration{0};
   DataMutex<RefPtr<nsHttpConnectionInfo>> mDefaultTRRConnectionInfo;
   bool mNativeHTTPSQueryEnabled{false};
 
