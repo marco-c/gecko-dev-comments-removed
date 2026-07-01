@@ -1020,6 +1020,15 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
  public:
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   template <class... Args>
   inline void check(const Args&... args);
   template <class... Args>
