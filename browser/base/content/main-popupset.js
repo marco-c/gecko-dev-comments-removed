@@ -14,10 +14,6 @@ document.addEventListener(
     });
     let mainPopupSet = document.getElementById("mainPopupSet");
     
-    
-    let getContextTabGroupId = popup =>
-      popup.triggerNode?.closest("[data-tab-group-id]")?.dataset.tabGroupId;
-    
     mainPopupSet.addEventListener("command", event => {
       switch (event.target.id) {
         
@@ -163,14 +159,14 @@ document.addEventListener(
         
         case "open-tab-group-context-menu_moveToNewWindow":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             tabGroup.documentGlobal.gBrowser.replaceGroupWithWindow(tabGroup);
           }
           break;
         case "open-tab-group-context-menu_moveToThisWindow":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let otherTabGroup = gBrowser.getTabGroupById(tabGroupId);
             let adoptedTabGroup = gBrowser.adoptTabGroup(otherTabGroup, {
               tabIndex: gBrowser.tabs.length,
@@ -180,7 +176,7 @@ document.addEventListener(
           break;
         case "open-tab-group-context-menu_delete":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             
             
@@ -196,7 +192,7 @@ document.addEventListener(
         
         case "saved-tab-group-context-menu_openInThisWindow":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             SessionStore.openSavedTabGroup(tabGroupId, window, {
               source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
             });
@@ -205,7 +201,7 @@ document.addEventListener(
         case "saved-tab-group-context-menu_openInNewWindow":
           {
             
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window, {
               source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
             });
@@ -214,7 +210,7 @@ document.addEventListener(
           break;
         case "saved-tab-group-context-menu_delete":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             SessionStore.forgetSavedTabGroup(tabGroupId);
           }
           break;
@@ -613,7 +609,7 @@ document.addEventListener(
         if (event.target.id == "open-tab-group-context-menu") {
           
           
-          let tabGroupId = getContextTabGroupId(event.target);
+          let { tabGroupId } = event.target.triggerNode.dataset;
           let tabGroup = gBrowser.getTabGroupById(tabGroupId);
           let tabGroupIsInThisWindow = tabGroup.ownerDocument == document;
           event.target.querySelector(
