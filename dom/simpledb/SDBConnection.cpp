@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SDBConnection.h"
 
 
@@ -236,6 +234,12 @@ SDBConnection::Init(nsIPrincipal* aPrincipal,
                     const nsACString& aPersistenceType) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPrincipal);
+
+  if (!BackgroundChild::ValidatePrincipal(aPrincipal, {})) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Process is not allowed to access simpleDB for this principal");
+    return NS_ERROR_INVALID_ARG;
+  }
 
   UniquePtr<PrincipalInfo> principalInfo(new PrincipalInfo());
   nsresult rv = PrincipalToPrincipalInfo(aPrincipal, principalInfo.get());

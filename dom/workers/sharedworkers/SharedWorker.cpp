@@ -208,6 +208,14 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
     }
   }
 
+  
+  if (!BackgroundChild::ValidatePrincipal(loadInfo.mLoadingPrincipal, {})) {
+    MOZ_ASSERT_UNREACHABLE(
+        "ValidatePrincipal failure in SharedWorker::Constructor");
+    aRv.ThrowSecurityError("SharedWorker access not available.");
+    return nullptr;
+  }
+
   PrincipalInfo partitionedPrincipalInfo;
   if (loadInfo.mPrincipal->Equals(loadInfo.mPartitionedPrincipal)) {
     partitionedPrincipalInfo = principalInfo;

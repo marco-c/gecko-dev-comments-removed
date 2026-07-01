@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "StorageActivityService.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -188,6 +186,11 @@ void StorageActivityService::SendActivityToParent(nsIPrincipal* aPrincipal) {
   nsresult rv =
       mozilla::ipc::PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  if (!::mozilla::ipc::BackgroundChild::ValidatePrincipal(aPrincipal, {})) {
+    MOZ_ASSERT_UNREACHABLE("ValidatePrincipal failure in SendActivityToParent");
     return;
   }
 
