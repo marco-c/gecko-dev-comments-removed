@@ -33,13 +33,7 @@ AntiTracking.runTest(
   },
 
   
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData,
   [], 
   true, 
   true, 

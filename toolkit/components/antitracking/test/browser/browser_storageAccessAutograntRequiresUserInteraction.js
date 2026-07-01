@@ -16,10 +16,13 @@ async function setAutograntPreferences() {
   });
 }
 
-add_task(async function testPopupWithUserInteraction() {
+add_setup(async function () {
   await setPreferences();
   await setAutograntPreferences();
+  registerCleanupFunction(clearSiteTestData);
+});
 
+add_task(async function testPopupWithUserInteraction() {
   
   
   
@@ -51,7 +54,4 @@ add_task(async function testPopupWithUserInteraction() {
     TEST_3RD_PARTY_PAGE,
     requestStorageAccessAndExpectSuccess
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });

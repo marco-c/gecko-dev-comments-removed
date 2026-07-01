@@ -184,14 +184,7 @@ AntiTracking.runTest(
   },
 
   null, 
-  
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData, 
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 

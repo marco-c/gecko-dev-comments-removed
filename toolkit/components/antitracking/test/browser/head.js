@@ -232,6 +232,18 @@ async function remoteSettingsSync(
 
 
 
+function clearSiteTestData() {
+  return new Promise(resolve => {
+    Services.clearData.deleteData(
+      Ci.nsIClearDataService.CLEAR_COOKIES |
+        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+        Ci.nsIClearDataService.CLEAR_PERMISSIONS |
+        Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
+      resolve
+    );
+  });
+}
+
 async function setExceptions(entries, db, collectionName) {
   info("Set exceptions via RemoteSettings");
   if (!entries.length) {
