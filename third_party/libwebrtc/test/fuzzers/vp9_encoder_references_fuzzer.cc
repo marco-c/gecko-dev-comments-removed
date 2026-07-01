@@ -88,6 +88,10 @@ class FrameValidator : public EncodedImageCallback {
     return Result(Result::OK);
   }
 
+  void OnFrameDropped(uint32_t rtp_timestamp,
+                      int spatial_id,
+                      bool is_end_of_temporal_unit) override {}
+
  private:
   
   
