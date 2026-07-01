@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.util.ArrayList;
 import java.util.List;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.util.ThreadUtils;
 
 
@@ -50,7 +49,6 @@ public final class CompositorController {
 
 
 
-  @RobocopTarget
   public void addDrawCallback(final @NonNull Runnable callback) {
     ThreadUtils.assertOnUiThread();
 
@@ -68,7 +66,6 @@ public final class CompositorController {
 
 
 
-  @RobocopTarget
   public void removeDrawCallback(final @NonNull Runnable callback) {
     ThreadUtils.assertOnUiThread();
 

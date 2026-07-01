@@ -18,14 +18,12 @@ import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
 
 
-@RobocopTarget
 public final class GeckoBundle implements Parcelable {
   private static final String LOGTAG = "GeckoBundle";
   private static final boolean DEBUG = false;

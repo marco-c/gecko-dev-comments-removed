@@ -5,7 +5,6 @@
 package org.mozilla.gecko.util;
 
 import androidx.annotation.Nullable;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.geckoview.GeckoResult;
 
@@ -16,7 +15,6 @@ import org.mozilla.geckoview.GeckoResult;
 
 
 
-@RobocopTarget
 @WrapForJNI(calledFrom = "gecko")
 public interface EventCallback {
   
