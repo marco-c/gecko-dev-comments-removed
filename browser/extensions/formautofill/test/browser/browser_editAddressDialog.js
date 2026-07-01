@@ -65,12 +65,12 @@ add_task(async function test_saveAddress() {
     let doc = win.document;
     
     is(
-      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
+      doc.querySelector("#address-level1-container > .label-text").textContent,
       "State",
       "US address-level1 label should be 'State'"
     );
     is(
-      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
+      doc.querySelector("#postal-code-container > .label-text").textContent,
       "ZIP code",
       "US postal-code label should be 'ZIP code'"
     );
@@ -91,18 +91,23 @@ add_task(async function test_saveAddress() {
       "VK_TAB",
       TEST_ADDRESS_1["address-level1"],
       "VK_TAB",
-      
-      "VK_TAB",
       TEST_ADDRESS_1["postal-code"],
+      "VK_TAB",
+      
       "VK_TAB",
       TEST_ADDRESS_1.tel,
       "VK_TAB",
       TEST_ADDRESS_1.email,
       "VK_TAB",
     ];
+    if (AppConstants.platform != "win") {
+      keypresses.push("VK_TAB", "VK_RETURN");
+    } else {
+      keypresses.push("VK_RETURN");
+    }
     keypresses.forEach(keypress => {
       if (
-        doc.activeElement.localName == "moz-select" &&
+        doc.activeElement.localName == "select" &&
         !keypress.startsWith("VK_")
       ) {
         let field = doc.activeElement;
@@ -113,7 +118,6 @@ add_task(async function test_saveAddress() {
         EventUtils.synthesizeKey(keypress, {}, win);
       }
     });
-    doc.querySelector("#save").click();
   });
   let addresses = await getAddresses();
 
@@ -134,7 +138,7 @@ add_task(async function test_editAddress() {
 
       let stateSelect = win.document.querySelector("#address-level1");
       is(
-        stateSelect.value,
+        stateSelect.selectedOptions[0].value,
         TEST_ADDRESS_1["address-level1"],
         "address-level1 should be selected in the dropdown"
       );
@@ -172,7 +176,7 @@ add_task(
       win => {
         let stateSelect = win.document.querySelector("#address-level1");
         is(
-          stateSelect.value,
+          stateSelect.selectedOptions[0].value,
           "BC",
           "address-level1 should have 'BC' selected in the dropdown"
         );
@@ -233,18 +237,17 @@ add_task(async function test_saveAddressCA() {
 
     await TestUtils.waitForCondition(() => {
       return (
-        doc
-          .querySelector("#address-level1-container > *")
-          ?.getAttribute("label") == "Province"
+        doc.querySelector("#address-level1-container > .label-text")
+          .textContent == "Province"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
+      doc.querySelector("#address-level1-container > .label-text").textContent,
       "Province",
       "CA address-level1 label should be 'Province'"
     );
     is(
-      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
+      doc.querySelector("#postal-code-container > .label-text").textContent,
       "Postal Code",
       "CA postal-code label should be 'Postal Code'"
     );
@@ -272,17 +275,21 @@ add_task(async function test_saveAddressCA() {
       
       TEST_ADDRESS_CA_1["address-level1"],
       "VK_TAB",
-      
-      "VK_TAB",
       TEST_ADDRESS_CA_1["postal-code"],
+      "VK_TAB",
+      
       "VK_TAB",
       TEST_ADDRESS_CA_1.tel,
       "VK_TAB",
       TEST_ADDRESS_CA_1.email,
       "VK_TAB",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
-    doc.querySelector("#save").click();
   });
   let addresses = await getAddresses();
   for (let [fieldName, fieldValue] of Object.entries(TEST_ADDRESS_CA_1)) {
@@ -299,13 +306,12 @@ add_task(async function test_saveAddressDE() {
     EventUtils.synthesizeKey("Germany", {}, win);
     await TestUtils.waitForCondition(() => {
       return (
-        doc
-          .querySelector("#postal-code-container > *")
-          ?.getAttribute("label") == "Postal Code"
+        doc.querySelector("#postal-code-container > .label-text").textContent ==
+        "Postal Code"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
+      doc.querySelector("#postal-code-container > .label-text").textContent,
       "Postal Code",
       "DE postal-code label should be 'Postal Code'"
     );
@@ -341,8 +347,12 @@ add_task(async function test_saveAddressDE() {
       TEST_ADDRESS_DE_1.email,
       "VK_TAB",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
-    doc.querySelector("#save").click();
   });
   let addresses = await getAddresses();
   for (let [fieldName, fieldValue] of Object.entries(TEST_ADDRESS_DE_1)) {
@@ -359,23 +369,22 @@ add_task(async function test_saveAddressIE() {
     EventUtils.synthesizeKey("Ireland", {}, win);
     await TestUtils.waitForCondition(() => {
       return (
-        doc
-          .querySelector("#postal-code-container > *")
-          ?.getAttribute("label") == "Eircode"
+        doc.querySelector("#postal-code-container > .label-text").textContent ==
+        "Eircode"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
+      doc.querySelector("#postal-code-container > .label-text").textContent,
       "Eircode",
       "IE postal-code label should be 'Eircode'"
     );
     is(
-      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
+      doc.querySelector("#address-level1-container > .label-text").textContent,
       "County",
       "IE address-level1 should be 'County'"
     );
     is(
-      doc.querySelector("#address-level3-container > *")?.getAttribute("label"),
+      doc.querySelector("#address-level3-container > .label-text").textContent,
       "Townland",
       "IE address-level3 should be 'Townland'"
     );
@@ -399,17 +408,21 @@ add_task(async function test_saveAddressIE() {
       "VK_TAB",
       "Co. Dub", 
       "VK_TAB",
-      
-      "VK_TAB",
       TEST_ADDRESS_IE_1["postal-code"],
+      "VK_TAB",
+      
       "VK_TAB",
       TEST_ADDRESS_IE_1.tel,
       "VK_TAB",
       TEST_ADDRESS_IE_1.email,
       "VK_TAB",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
-    doc.querySelector("#save").click();
   });
 
   let addresses = await getAddresses();
@@ -424,10 +437,9 @@ add_task(async function test_countryAndStateFieldLabels() {
     const doc = win.document;
     for (let countryOption of doc.querySelector("#country").options) {
       
-      for (const el of doc.querySelectorAll(
-        "moz-input-text, moz-select, moz-textarea"
-      )) {
-        el.removeAttribute("label");
+      for (const labelEl of doc.querySelectorAll(".label-text")) {
+        delete labelEl.dataset["l10n-id"];
+        labelEl.textContent = "";
       }
 
       
@@ -438,9 +450,9 @@ add_task(async function test_countryAndStateFieldLabels() {
 
       await waitForFocusAndFormReady(win);
 
-      const allLabelsHaveText = [
-        ...doc.querySelectorAll("moz-input-text, moz-select, moz-textarea"),
-      ].every(el => el.getAttribute("label"));
+      const allLabelsHaveText = [...doc.querySelectorAll(".label-text")].every(
+        labelEl => labelEl.textContent
+      );
 
       ok(allLabelsHaveText, "All labels are rendered and have text content");
 
@@ -493,7 +505,7 @@ add_task(async function test_countryAndStateFieldLabels() {
             "Each State should be listed in alphabetical name order (key)"
           );
           is(
-            stateOptions[i].label,
+            stateOptions[i].text,
             names[i],
             "Each State should be listed in alphabetical name order (name)"
           );
@@ -613,11 +625,7 @@ add_task(async function test_countrySpecificFieldsGetRequiredness() {
     await waitForFocusAndFormReady(win);
     const stateField = doc.getElementById("address-level1");
 
-    is(
-      stateField.dataset.required,
-      "true",
-      "address-level1 should be marked as required"
-    );
+    ok(stateField.required, "address-level1 should be marked as required");
     ok(!stateField.disabled, "address-level1 should not be marked as disabled");
 
     
