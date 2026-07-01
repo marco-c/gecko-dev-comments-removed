@@ -453,11 +453,6 @@ this.PartitionedStorageHelper = {
       if (cleanupFunction) {
         await cleanupFunction();
       }
-
-      
-      
-      
-      forceGC();
     });
   },
 };
