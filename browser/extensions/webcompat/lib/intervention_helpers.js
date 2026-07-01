@@ -521,12 +521,42 @@ class ConsoleLoggingScript extends AbstractSpecialContentScriptKey {
   }
 }
 
+class InjectCSSKey extends AbstractSpecialContentScriptKey {
+  static jsonKey = "css";
+  static valuesKey = "which";
+  static metadataKey = "cssToInject";
+  static scriptFilename = "inject_css.js";
+
+  addRegs(regsBuilder) {
+    if (this.needed) {
+      regsBuilder.add("js", {
+        js: [this.constructor.scriptFilename],
+        isolated: true,
+        run_at: "document_start",
+        all_frames: this.needed_on_all_frames,
+        match_origin_as_fallback: this.must_match_origin_as_fallback,
+      });
+    }
+  }
+
+  addToMetadata(metadata, interventionConfig) {
+    if (this.needed) {
+      const sheets = interventionConfig.css;
+      const whichSheets = [...new Set(this.values.flat())];
+      metadata[this.constructor.metadataKey] = whichSheets
+        .map(name => sheets[name] ?? "")
+        .join("\n");
+    }
+  }
+}
+
 
 
 class SpecialContentScriptKeys {
   static #classes = [
     HideAlertsKey,
     HideMessagesKey,
+    InjectCSSKey,
     ModifyMetaViewportKey,
     ConsoleLoggingScript,
   ];
@@ -641,16 +671,8 @@ var InterventionHelpers = {
     replace_colon_in_rv_with_space: ua => {
       return ua.replace("rv:", "rv ");
     },
-    reduce_firefox_version_by_one: ua => {
-      const [head, fx, tail] = ua.split(/(firefox\/)/i);
-      if (!fx || !tail) {
-        return ua;
-      }
-      const major = parseInt(tail);
-      if (!major) {
-        return ua;
-      }
-      return `${head}${fx}${major - 1}${tail.slice(major.toString().length)}`;
+    browser_version: (ua, config) => {
+      return UAHelpers.changeBrowserVersion(ua, config);
     },
     add_Safari: (ua, config) => {
       config.withFirefox = true;
@@ -767,6 +789,7 @@ var InterventionHelpers = {
   nonCustomInterventionKeys: Object.freeze(
     new Set([
       "content_scripts",
+      "css",
       "enabled",
       "hide_alerts",
       "hide_messages",
