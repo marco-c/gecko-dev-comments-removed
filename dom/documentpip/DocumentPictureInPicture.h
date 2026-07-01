@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_documentpip_DocumentPictureInPicture_h
 #define mozilla_dom_documentpip_DocumentPictureInPicture_h
 
@@ -27,7 +25,8 @@ class DocumentPictureInPicture final : public DOMEventTargetHelper,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   already_AddRefed<Promise> RequestWindow(
-      const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv);
+      const DocumentPictureInPictureOptions& aOptions,
+      nsIPrincipal& aCallerPrincipal, ErrorResult& aRv);
 
   
   nsGlobalWindowInner* GetWindow() const;
