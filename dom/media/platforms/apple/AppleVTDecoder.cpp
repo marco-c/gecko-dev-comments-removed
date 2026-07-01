@@ -116,6 +116,24 @@ RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::Decode(
       p = mPromise.Ensure(__func__);
     }
     ProcessDecode(sample);
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      MonitorAutoLock mon(mMonitor);
+      if (mSeekTargetThreshold.isSome() && !mPromise.IsEmpty()) {
+        DecodedData results;
+        while (mReorderQueue.Length() > mMaxRefFrames) {
+          results.AppendElement(mReorderQueue.Pop());
+        }
+        mPromise.Resolve(std::move(results), __func__);
+      }
+    }
     return p;
   });
 }
