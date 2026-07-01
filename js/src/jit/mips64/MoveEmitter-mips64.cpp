@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/mips64/MoveEmitter-mips64.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -46,7 +44,7 @@ void MoveEmitterMIPS64::breakCycle(const MoveOperand& from,
         masm.store32(temp, cycleSlot(0));
       } else {
         
-        MOZ_ASSERT(to.reg() != spilledReg_);
+        MOZ_ASSERT(to.reg() != tempReg_);
         masm.store32(to.reg(), cycleSlot(0));
       }
       break;
@@ -57,7 +55,7 @@ void MoveEmitterMIPS64::breakCycle(const MoveOperand& from,
         masm.storePtr(temp, cycleSlot(0));
       } else {
         
-        MOZ_ASSERT(to.reg() != spilledReg_);
+        MOZ_ASSERT(to.reg() != tempReg_);
         masm.storePtr(to.reg(), cycleSlot(0));
       }
       break;
@@ -102,7 +100,7 @@ void MoveEmitterMIPS64::completeCycle(const MoveOperand& from,
         masm.store32(temp, getAdjustedAddress(to));
       } else {
         
-        MOZ_ASSERT(to.reg() != spilledReg_);
+        MOZ_ASSERT(to.reg() != tempReg_);
         masm.load32(cycleSlot(0), to.reg());
       }
       break;
@@ -114,7 +112,7 @@ void MoveEmitterMIPS64::completeCycle(const MoveOperand& from,
         masm.storePtr(temp, getAdjustedAddress(to));
       } else {
         
-        MOZ_ASSERT(to.reg() != spilledReg_);
+        MOZ_ASSERT(to.reg() != tempReg_);
         masm.loadPtr(cycleSlot(0), to.reg());
       }
       break;

@@ -13,7 +13,6 @@ namespace jit {
 
 class MoveEmitterMIPSShared {
  protected:
-  uint32_t inCycle_;
   MacroAssembler& masm;
 
   
@@ -22,19 +21,17 @@ class MoveEmitterMIPSShared {
   
   
   
-  int32_t pushedAtCycle_;
-  int32_t pushedAtSpill_;
+  int32_t pushedAtCycle_ = -1;
 
   
   
-  
-  Register spilledReg_;
-  FloatRegister spilledFloatReg_;
+  Register tempReg_ = InvalidReg;
+
+  uint32_t inCycle_ = 0;
 
   void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Register tempReg();
-  FloatRegister tempFloatReg();
-  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
+  Address cycleSlot(uint32_t slot) const;
   int32_t getAdjustedOffset(const MoveOperand& operand) const;
   Address getAdjustedAddress(const MoveOperand& operand) const;
 
@@ -51,13 +48,7 @@ class MoveEmitterMIPSShared {
 
  public:
   explicit MoveEmitterMIPSShared(MacroAssembler& masm)
-      : inCycle_(0),
-        masm(masm),
-        pushedAtStart_(masm.framePushed()),
-        pushedAtCycle_(-1),
-        pushedAtSpill_(-1),
-        spilledReg_(InvalidReg),
-        spilledFloatReg_(InvalidFloatReg) {}
+      : masm(masm), pushedAtStart_(masm.framePushed()) {}
   ~MoveEmitterMIPSShared() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();

@@ -17,7 +17,7 @@ struct Address;
 class MacroAssembler;
 
 class MoveEmitterARM {
-  uint32_t inCycle_;
+  uint32_t inCycle_ = 0;
   MacroAssembler& masm;
 
   
@@ -26,18 +26,16 @@ class MoveEmitterARM {
   
   
   
-  int32_t pushedAtCycle_;
-  int32_t pushedAtSpill_;
+  int32_t pushedAtCycle_ = -1;
+  int32_t pushedAtSpill_ = -1;
 
   
   
   
-  Register spilledReg_;
-  FloatRegister spilledFloatReg_;
+  Register spilledReg_ = InvalidReg;
 
   void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Register tempReg();
-  FloatRegister tempFloatReg();
   Address cycleSlot(uint32_t slot, uint32_t subslot) const;
   Address spillSlot() const;
   Address toAddress(const MoveOperand& operand) const;
