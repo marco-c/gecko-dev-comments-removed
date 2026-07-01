@@ -72,7 +72,7 @@ void HTMLScriptElement::UnbindFromTree(UnbindContext& aContext) {
   
   if (mFrozen && GetScriptIsSpeculationRules()) {
     if (auto* doc = GetComposedDoc()) {
-      doc->UnregisterSpeculationRules(this);
+      doc->UnregisterSpeculationRuleSet(this);
     }
   }
 
