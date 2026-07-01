@@ -415,10 +415,6 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
       ffi::wgpu_client_make_command_encoder_id(mChild->GetClient());
   RawId commandBufferId =
       ffi::wgpu_client_make_command_buffer_id(mChild->GetClient());
-  
-  
-  
-  mChild->FlushQueuedMessages();
   RefPtr<gfx::DataSourceSurface> snapshot = cm->GetSnapshot(
       cm->Id(), mChild->Id(), mRemoteTextureOwnerId, Some(commandEncoderId),
       Some(commandBufferId), snapshotFormat,  false,
