@@ -3945,8 +3945,6 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   aLine->ClearDirty();
   aLine->InvalidateCachedIsEmpty();
   aLine->ClearHadFloatPushed();
-  aLine->ClearTextBoxTrimStartApplied();
-  aLine->ClearTextBoxTrimEndApplied();
 
   
   
@@ -3959,11 +3957,6 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
       !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
     return false;
-  }
-
-  
-  if (aState.mFlags.mShouldApplyTextBoxTrimStart && aState.mLineNumber > 0) {
-    aState.mFlags.mShouldApplyTextBoxTrimStart = false;
   }
 
   
@@ -3995,15 +3988,6 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   }
 
   aLine->ClearMovedFragments();
-
-  
-  
-  if (aLine->TextBoxTrimStartApplied()) {
-    aState.mFlags.mShouldApplyTextBoxTrimStart = false;
-  }
-  if (aLine->TextBoxTrimEndApplied()) {
-    aState.mFlags.mShouldApplyTextBoxTrimEnd = false;
-  }
 
   return usedOverflowWrap;
 }
@@ -4606,20 +4590,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
     childReflowInput->mFlags.mColumnSetWrapperHasNoBSizeLeft =
         columnSetWrapperHasNoBSizeLeft;
-
-    
-    
-    
-    
-    const WritingMode childWM = frame->GetWritingMode();
-    const LogicalMargin childBP =
-        childReflowInput->ComputedLogicalBorderPadding(childWM);
-    childReflowInput->mFlags.mShouldApplyTextBoxTrimStart =
-        aState.mFlags.mShouldApplyTextBoxTrimStart &&
-        childBP.BStart(childWM) == 0 && aState.mLineNumber == 0;
-    childReflowInput->mFlags.mShouldApplyTextBoxTrimEnd =
-        aState.mFlags.mShouldApplyTextBoxTrimEnd &&
-        childBP.BEnd(childWM) == 0 && IsLastFormattedLine(aLine);
 
     if (aLine->MovedFragments()) {
       
@@ -5631,7 +5601,7 @@ void nsBlockFrame::SplitLine(BlockReflowState& aState,
   }
 }
 
-bool nsBlockFrame::IsLastInlineLine(LineIterator aLine) {
+bool nsBlockFrame::IsLastLine(BlockReflowState& aState, LineIterator aLine) {
   while (++aLine != LinesEnd()) {
     
     if (0 != aLine->GetChildCount()) {
@@ -5654,24 +5624,6 @@ bool nsBlockFrame::IsLastInlineLine(LineIterator aLine) {
   }
 
   
-  return true;
-}
-
-bool nsBlockFrame::IsLastFormattedLine(LineIterator aLine) {
-  for (LineIterator line = aLine.next(); line != LinesEnd(); ++line) {
-    if (line->GetChildCount() > 0 && (line->IsBlock() || !line->IsPhantom())) {
-      return false;
-    }
-  }
-  nsBlockFrame* nextInFlow = (nsBlockFrame*)GetNextInFlow();
-  while (nextInFlow) {
-    for (const auto& line : nextInFlow->Lines()) {
-      if (line.GetChildCount() > 0 && (line.IsBlock() || !line.IsPhantom())) {
-        return false;
-      }
-    }
-    nextInFlow = (nsBlockFrame*)nextInFlow->GetNextInFlow();
-  }
   return true;
 }
 
@@ -5711,13 +5663,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     aLineLayout.AddMarkerFrame(outsideMarker, metrics);
     addedMarker = true;
   }
-
-  
-  
-  
-  bool isLastFormattedLine =
-      aState.mFlags.mShouldApplyTextBoxTrimEnd && IsLastFormattedLine(aLine);
-  aLineLayout.VerticalAlignLine(&aFlowArea, isLastFormattedLine);
+  aLineLayout.VerticalAlignLine();
 
   
   
@@ -5812,12 +5758,12 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
 
 
 
-  const bool isLastInlineLine =
+  const bool isLastLine =
       !IsInSVGTextSubtree() &&
       styleText->TextAlignForLastLine() != styleText->mTextAlign &&
-      (aLineLayout.GetLineEndsInBR() || IsLastInlineLine(aLine));
+      (aLineLayout.GetLineEndsInBR() || IsLastLine(aState, aLine));
 
-  aLineLayout.TextAlignLine(aLine, isLastInlineLine);
+  aLineLayout.TextAlignLine(aLine, isLastLine);
 
   
   
