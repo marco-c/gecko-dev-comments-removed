@@ -830,7 +830,8 @@ struct ScrollMetadata {
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
            mScrollUpdates == aOther.mScrollUpdates &&
-           mWritingMode == aOther.mWritingMode;
+           mWritingMode == aOther.mWritingMode &&
+           mScrollGenerationOnApz == aOther.mScrollGenerationOnApz;
   }
 
   bool operator!=(const ScrollMetadata& aOther) const {
@@ -948,6 +949,13 @@ struct ScrollMetadata {
   }
   const WritingMode GetWritingMode() const { return mWritingMode; }
 
+  void SetScrollGenerationOnApz(const APZScrollGeneration& aGeneration) {
+    mScrollGenerationOnApz = aGeneration;
+  }
+  const APZScrollGeneration& GetScrollGenerationOnApz() const {
+    return mScrollGenerationOnApz;
+  }
+
   void UpdatePendingScrollInfo(nsTArray<ScrollPositionUpdate>&& aUpdates) {
     MOZ_ASSERT(!aUpdates.IsEmpty());
     mMetrics.UpdatePendingScrollInfo(aUpdates.LastElement());
@@ -1055,6 +1063,12 @@ struct ScrollMetadata {
 
   
   WritingMode mWritingMode;
+
+  
+  
+  
+  
+  APZScrollGeneration mScrollGenerationOnApz;
 
   
   
