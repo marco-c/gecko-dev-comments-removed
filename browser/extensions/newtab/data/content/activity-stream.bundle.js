@@ -17662,6 +17662,10 @@ function SportsMatchRow({
           
           
           const resultsStatusL10nId = RESULTS_STATUS_L10N_MAP[status_type?.toLowerCase()] || "newtab-sports-widget-match-full-time";
+          
+          
+          
+          const mediumPenaltiesOnly = hasPenalties && size === "medium";
           return external_React_default().createElement("div", {
             className: "sports-match-result"
           }, external_React_default().createElement(ScorePill, {
@@ -17673,8 +17677,8 @@ function SportsMatchRow({
           }), external_React_default().createElement("div", {
             className: "sports-match-result-footer"
           }, external_React_default().createElement("span", {
-            "data-l10n-id": resultsStatusL10nId
-          }), hasPenalties && size !== "list" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
+            "data-l10n-id": mediumPenaltiesOnly ? "newtab-sports-widget-match-penalties" : resultsStatusL10nId
+          }), hasPenalties && size === "large" && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
             "aria-hidden": "true"
           }, "\u2022"), external_React_default().createElement("span", {
             "data-l10n-id": "newtab-sports-widget-match-penalties"
