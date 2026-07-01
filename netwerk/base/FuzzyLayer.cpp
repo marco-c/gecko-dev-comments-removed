@@ -38,11 +38,14 @@ typedef struct {
 } NetworkFuzzingBuffer;
 
 
-MOZ_RUNINIT static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
+constinit static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 
-MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
+
+
+MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer>& gNetworkFuzzingBuffers =
+    *new nsDeque<NetworkFuzzingBuffer>();
 
 
 
