@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_SpeechSynthesisUtterance_h
 #define mozilla_dom_SpeechSynthesisUtterance_h
 
@@ -68,7 +66,7 @@ class SpeechSynthesisUtterance final : public DOMEventTargetHelper {
 
   void GetChosenVoiceURI(nsString& aResult) const;
 
-  bool IsPaused() { return mPaused; }
+  bool IsPaused() const { return mPaused; }
 
   bool ShouldResistFingerprinting() const {
     return mShouldResistFingerprinting;

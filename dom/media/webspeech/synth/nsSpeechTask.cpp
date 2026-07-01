@@ -123,6 +123,25 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     
   }
 
+  
+  
+  
+  
+  void SuspendForInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    const bool willPause = mTask.IsSpeaking() && !mTask.IsPaused();
+    MEDIA_CONTROL_LOG(
+        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, pause={}",
+        fmt::ptr(this), mBrowsingContextId, willPause);
+    mTask.PauseFromMediaControl();
+  }
+  void ResumeFromInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    MEDIA_CONTROL_LOG("MediaSharedKeysListener {} ResumeFromInterrupt in BC {}",
+                      fmt::ptr(this), mBrowsingContextId);
+    mTask.ResumeFromMediaControl();
+  }
+
  private:
   ~MediaSharedKeysListener() = default;
 
@@ -395,8 +414,16 @@ nsresult nsSpeechTask::DispatchMarkImpl(const nsAString& aName,
   return NS_OK;
 }
 
+bool nsSpeechTask::IsPaused() const {
+  return mUtterance && mUtterance->IsPaused();
+}
+
 void nsSpeechTask::Pause() {
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  
+  mPausedByMediaControl = false;
 
   RefPtr<nsSpeechTask> kungFuDeathGrip(this);
   if (mCallback) {
@@ -412,6 +439,13 @@ void nsSpeechTask::Pause() {
 void nsSpeechTask::Resume() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
+  
+  
+  
+  
+  
+  mPausedByMediaControl = false;
+
   RefPtr<nsSpeechTask> kungFuDeathGrip(this);
   if (mCallback) {
     DebugOnly<nsresult> rv = mCallback->OnResume();
@@ -423,6 +457,29 @@ void nsSpeechTask::Resume() {
     mPrePaused = false;
     nsSynthVoiceRegistry::GetInstance()->ResumeQueue();
   }
+}
+
+void nsSpeechTask::PauseFromMediaControl() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  const bool willPause = !mPausedByMediaControl && IsSpeaking() && !IsPaused();
+  MEDIA_CONTROL_LOG("nsSpeechTask {} PauseFromMediaControl, pause={}",
+                    fmt::ptr(this), willPause);
+  if (!willPause) {
+    return;
+  }
+  Pause();
+  mPausedByMediaControl = true;
+}
+
+void nsSpeechTask::ResumeFromMediaControl() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MEDIA_CONTROL_LOG("nsSpeechTask {} ResumeFromMediaControl, resume={}",
+                    fmt::ptr(this), mPausedByMediaControl);
+  if (!mPausedByMediaControl) {
+    return;
+  }
+  mPausedByMediaControl = false;
+  Resume();
 }
 
 void nsSpeechTask::Cancel() {
