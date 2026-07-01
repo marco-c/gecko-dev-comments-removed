@@ -17,11 +17,11 @@ add_task(async function test_processAUMID() {
   
   
   
-  await ShellService.pinToTaskbar();
+  await ShellService.checkPinCurrentAppToTaskbarAsync(false);
 
   is(
-    ShellService.checkCurrentProcessAUMIDForTesting(),
     processAUMID,
+    ShellService.checkCurrentProcessAUMIDForTesting(),
     "The process AUMID should not be changed"
   );
 });

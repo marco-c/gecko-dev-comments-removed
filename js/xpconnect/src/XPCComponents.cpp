@@ -2585,8 +2585,3 @@ ComponentsSH::PreCreate(nsISupports* nativeObj, JSContext* cx,
   *parentObj = self->GetScope()->GetGlobalForWrappedNatives();
   return NS_OK;
 }
-
-
-
-
-extern "C" bool Gecko_IsInAutomation() { return xpc::IsInAutomation(); }
