@@ -13,11 +13,11 @@
 
 
 
-function resetPrimaryPassword() {
+async function resetPrimaryPassword() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.reset();
+  await token.reset();
 }
 
 
@@ -30,7 +30,7 @@ add_task(async function test_logins_decrypt_failure() {
   await Services.logins.addLogins(logins);
 
   
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   
   let savedLogins = await Services.logins.getAllLogins();
@@ -143,7 +143,7 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   );
 
   
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   
   const result1 = await Services.logins.searchLoginsAsync({ guid: login.guid });
@@ -166,7 +166,7 @@ add_task(async function test_sync_metadata_with_decrypt_failure() {
   equal(await Services.logins.getLastSync(), 123);
 
   
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   
   equal(await Services.logins.getSyncID(), null);
