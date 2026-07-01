@@ -1881,7 +1881,7 @@ constexpr ContentAnalysisRequest::ParseTableT_ ContentAnalysisRequest::InternalG
       {::_pbi::TcParser::MiniParse, {}},
       
       {::_pbi::TcParser::FastEr0S2,
-       {408, 6, 7,
+       {408, 6, 8,
         PROTOBUF_FIELD_OFFSET(ContentAnalysisRequest, _impl_.reason_)}},
       {::_pbi::TcParser::MiniParse, {}},
       
@@ -1893,7 +1893,7 @@ constexpr ContentAnalysisRequest::ParseTableT_ ContentAnalysisRequest::InternalG
       {::_pbi::TcParser::MiniParse, {}},
       
       {::_pbi::TcParser::FastEr0S1,
-       {72, 5, 5,
+       {72, 5, 6,
         PROTOBUF_FIELD_OFFSET(ContentAnalysisRequest, _impl_.analysis_connector_)}},
       
       {::_pbi::TcParser::FastMtS1,
@@ -1957,8 +1957,8 @@ constexpr ContentAnalysisRequest::ParseTableT_ ContentAnalysisRequest::InternalG
         #else
         {::_pbi::FieldAuxMessageGlobals(), &::content_analysis::sdk::ContentAnalysisRequest_PrintData_globals_},
         #endif
-        {0, 5},
-        {0, 7},
+        {0, 6},
+        {0, 8},
     }},
     {{
     }},
@@ -2485,8 +2485,9 @@ static ::google::protobuf::internal::ExplicitlyConstructed<::std::string>
   return idx == -1 ? ::google::protobuf::internal::GetEmptyString() : ClientDownloadRequest_ResourceType_strings[idx].get();
 }
 PROTOBUF_CONSTINIT const uint32_t ContentAnalysisRequest_Reason_internal_data_[] = {
-    524288u, 0u, };
+    589824u, 0u, };
 static const char ContentAnalysisRequest_Reason_names[] = {
+    "CLIPBOARD_COPY"
     "CLIPBOARD_PASTE"
     "DRAG_AND_DROP"
     "FILE_PICKER_DIALOG"
@@ -2498,49 +2499,51 @@ static const char ContentAnalysisRequest_Reason_names[] = {
 };
 
 static const ::google::protobuf::internal::EnumEntry ContentAnalysisRequest_Reason_entries[] = {
-    {{&ContentAnalysisRequest_Reason_names[0], 15}, 1},
-    {{&ContentAnalysisRequest_Reason_names[15], 13}, 2},
-    {{&ContentAnalysisRequest_Reason_names[28], 18}, 3},
-    {{&ContentAnalysisRequest_Reason_names[46], 15}, 6},
-    {{&ContentAnalysisRequest_Reason_names[61], 19}, 4},
-    {{&ContentAnalysisRequest_Reason_names[80], 16}, 7},
-    {{&ContentAnalysisRequest_Reason_names[96], 19}, 5},
-    {{&ContentAnalysisRequest_Reason_names[115], 7}, 0},
+    {{&ContentAnalysisRequest_Reason_names[0], 14}, 8},
+    {{&ContentAnalysisRequest_Reason_names[14], 15}, 1},
+    {{&ContentAnalysisRequest_Reason_names[29], 13}, 2},
+    {{&ContentAnalysisRequest_Reason_names[42], 18}, 3},
+    {{&ContentAnalysisRequest_Reason_names[60], 15}, 6},
+    {{&ContentAnalysisRequest_Reason_names[75], 19}, 4},
+    {{&ContentAnalysisRequest_Reason_names[94], 16}, 7},
+    {{&ContentAnalysisRequest_Reason_names[110], 19}, 5},
+    {{&ContentAnalysisRequest_Reason_names[129], 7}, 0},
 };
 
 static const int ContentAnalysisRequest_Reason_entries_by_number[] = {
-    7,  
-    0,  
+    8,  
     1,  
     2,  
-    4,  
-    6,  
     3,  
     5,  
+    7,  
+    4,  
+    6,  
+    0,  
 };
 
 [[nodiscard]] bool ContentAnalysisRequest_Reason_Parse(::absl::string_view name,
                                   ContentAnalysisRequest_Reason* PROTOBUF_NONNULL value) {
   int int_value;
   bool success = ::google::protobuf::internal::LookUpEnumValue(
-      ContentAnalysisRequest_Reason_entries, 8, name, &int_value);
+      ContentAnalysisRequest_Reason_entries, 9, name, &int_value);
   if (success) {
     *value = static_cast<ContentAnalysisRequest_Reason>(int_value);
   }
   return success;
 }
 static ::google::protobuf::internal::ExplicitlyConstructed<::std::string>
-    ContentAnalysisRequest_Reason_strings[8] = {};
+    ContentAnalysisRequest_Reason_strings[9] = {};
 
 [[nodiscard]] const ::std::string& ContentAnalysisRequest_Reason_Name(ContentAnalysisRequest_Reason value) {
   static const bool kDummy = ::google::protobuf::internal::InitializeEnumStrings(
-      ContentAnalysisRequest_Reason_entries, ContentAnalysisRequest_Reason_entries_by_number, 8,
+      ContentAnalysisRequest_Reason_entries, ContentAnalysisRequest_Reason_entries_by_number, 9,
       ContentAnalysisRequest_Reason_strings);
   (void)kDummy;
 
   int idx = ::google::protobuf::internal::LookUpEnumName(ContentAnalysisRequest_Reason_entries,
                                   ContentAnalysisRequest_Reason_entries_by_number,
-                                  8, value);
+                                  9, value);
   return idx == -1 ? ::google::protobuf::internal::GetEmptyString() : ContentAnalysisRequest_Reason_strings[idx].get();
 }
 PROTOBUF_CONSTINIT const uint32_t ContentAnalysisResponse_Result_TriggeredRule_Action_internal_data_[] = {
@@ -2729,10 +2732,11 @@ static ::google::protobuf::internal::ExplicitlyConstructed<::std::string>
   return idx == -1 ? ::google::protobuf::internal::GetEmptyString() : ContentAnalysisAcknowledgement_FinalAction_strings[idx].get();
 }
 PROTOBUF_CONSTINIT const uint32_t AnalysisConnector_internal_data_[] = {
-    393216u, 0u, };
+    458752u, 0u, };
 static const char AnalysisConnector_names[] = {
     "ANALYSIS_CONNECTOR_UNSPECIFIED"
     "BULK_DATA_ENTRY"
+    "DATA_COPIED"
     "FILE_ATTACHED"
     "FILE_DOWNLOADED"
     "FILE_TRANSFER"
@@ -2742,43 +2746,45 @@ static const char AnalysisConnector_names[] = {
 static const ::google::protobuf::internal::EnumEntry AnalysisConnector_entries[] = {
     {{&AnalysisConnector_names[0], 30}, 0},
     {{&AnalysisConnector_names[30], 15}, 3},
-    {{&AnalysisConnector_names[45], 13}, 2},
-    {{&AnalysisConnector_names[58], 15}, 1},
-    {{&AnalysisConnector_names[73], 13}, 5},
-    {{&AnalysisConnector_names[86], 5}, 4},
+    {{&AnalysisConnector_names[45], 11}, 6},
+    {{&AnalysisConnector_names[56], 13}, 2},
+    {{&AnalysisConnector_names[69], 15}, 1},
+    {{&AnalysisConnector_names[84], 13}, 5},
+    {{&AnalysisConnector_names[97], 5}, 4},
 };
 
 static const int AnalysisConnector_entries_by_number[] = {
     0,  
-    3,  
-    2,  
-    1,  
-    5,  
     4,  
+    3,  
+    1,  
+    6,  
+    5,  
+    2,  
 };
 
 [[nodiscard]] bool AnalysisConnector_Parse(::absl::string_view name,
                                   AnalysisConnector* PROTOBUF_NONNULL value) {
   int int_value;
   bool success = ::google::protobuf::internal::LookUpEnumValue(
-      AnalysisConnector_entries, 6, name, &int_value);
+      AnalysisConnector_entries, 7, name, &int_value);
   if (success) {
     *value = static_cast<AnalysisConnector>(int_value);
   }
   return success;
 }
 static ::google::protobuf::internal::ExplicitlyConstructed<::std::string>
-    AnalysisConnector_strings[6] = {};
+    AnalysisConnector_strings[7] = {};
 
 [[nodiscard]] const ::std::string& AnalysisConnector_Name(AnalysisConnector value) {
   static const bool kDummy = ::google::protobuf::internal::InitializeEnumStrings(
-      AnalysisConnector_entries, AnalysisConnector_entries_by_number, 6,
+      AnalysisConnector_entries, AnalysisConnector_entries_by_number, 7,
       AnalysisConnector_strings);
   (void)kDummy;
 
   int idx = ::google::protobuf::internal::LookUpEnumName(AnalysisConnector_entries,
                                   AnalysisConnector_entries_by_number,
-                                  6, value);
+                                  7, value);
   return idx == -1 ? ::google::protobuf::internal::GetEmptyString() : AnalysisConnector_strings[idx].get();
 }
 
