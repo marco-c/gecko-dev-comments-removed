@@ -8,7 +8,6 @@ pub mod repeat;
 pub mod image;
 pub mod cutout;
 pub mod yuv;
-pub mod backdrop;
 
 use api::units::*;
 use api::ColorF;
@@ -46,11 +45,9 @@ pub enum PatternKind {
     YuvTextureExternalBT709 = 10,
     YuvTextureRect = 11,
     
-    Backdrop = 12,
-    
 }
 
-pub const NUM_PATTERNS: u32 = 13;
+pub const NUM_PATTERNS: u32 = 12;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {

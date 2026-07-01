@@ -37,7 +37,7 @@ pub mod interned;
 
 pub mod storage;
 
-use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
+use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle, BackdropRenderScratch};
 use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle, NormalBorderScratch};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
@@ -725,6 +725,11 @@ pub struct PrimitiveFrameScratch {
     
     
     
+    pub backdrop_render: storage::Storage<BackdropRenderScratch>,
+
+    
+    
+    
     
     pub pictures: storage::Storage<PictureScratch>,
 
@@ -797,6 +802,7 @@ impl Default for PrimitiveFrameScratch {
         PrimitiveFrameScratch {
             draws: Vec::new(),
             normal_border: storage::Storage::new(0),
+            backdrop_render: storage::Storage::new(0),
             pictures: storage::Storage::new(0),
             images: storage::Storage::new(0),
             visible_image_tiles: storage::Storage::new(0),
@@ -820,6 +826,7 @@ impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
         self.normal_border.recycle(recycler);
+        self.backdrop_render.recycle(recycler);
         self.pictures.recycle(recycler);
         self.images.recycle(recycler);
         self.visible_image_tiles.recycle(recycler);
@@ -838,6 +845,7 @@ impl PrimitiveFrameScratch {
 
     pub fn begin_frame(&mut self) {
         self.normal_border.clear();
+        self.backdrop_render.clear();
         self.pictures.clear();
         self.images.clear();
         self.visible_image_tiles.clear();

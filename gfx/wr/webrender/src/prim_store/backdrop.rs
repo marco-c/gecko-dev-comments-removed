@@ -8,7 +8,18 @@ use crate::prim_store::{
     InternablePrimitive, PrimitiveKind, PrimKey, PrimTemplate,
     PrimTemplateCommonData, PrimitiveStore, PictureIndex,
 };
+use crate::render_task_graph::RenderTaskId;
 use crate::scene_building::IsVisible;
+
+
+
+
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropRenderScratch {
+    pub src_task_id: RenderTaskId,
+}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
