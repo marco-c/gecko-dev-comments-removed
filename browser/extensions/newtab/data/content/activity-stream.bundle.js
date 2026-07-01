@@ -309,6 +309,7 @@ for (const type of [
   "WIDGETS_LISTS_USER_EVENT",
   "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_OPT_IN",
+  "WIDGETS_PRIVACY_UPDATE",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
@@ -6858,6 +6859,15 @@ const INITIAL_STATE = {
       results: { loading: false, exhausted: false, lastFetchedDate: null },
     },
   },
+  PrivacyWidget: {
+    initialized: false,
+    
+    trackersToday: 0,
+    
+    
+    sitesToday: 0,
+    lastUpdated: null,
+  },
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -7721,6 +7731,21 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
   }
 }
 
+function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
+  switch (action.type) {
+    case actionTypes.WIDGETS_PRIVACY_UPDATE:
+      return {
+        ...prevState,
+        trackersToday: action.data.trackersToday,
+        sitesToday: action.data.sitesToday,
+        lastUpdated: action.data.lastUpdated,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Ads(prevState = INITIAL_STATE.Ads, action) {
   switch (action.type) {
     case actionTypes.ADS_INIT:
@@ -7976,6 +8001,7 @@ const reducers = {
   Weather,
   ExternalComponents,
   SportsWidget,
+  PrivacyWidget,
 };
 
 ;
@@ -21065,17 +21091,48 @@ const Privacy_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size"
 };
 const PRIVACY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "privacy");
+const ICON_BASE_URL = "chrome://newtab/content/data/content/assets/";
+
+
+
+
+const privacyImage = filename => external_React_default().createElement("div", {
+  className: "privacy-image"
+}, external_React_default().createElement("img", {
+  className: "privacy-image-icon",
+  src: `${ICON_BASE_URL}${filename}`,
+  alt: ""
+}));
 function Privacy({
   dispatch,
   widgetsMayBeMaximized,
   widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const privacyData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PrivacyWidget);
 
   
   
   const widgetSize = resolveWidgetSize(PRIVACY_ENTRY, prefs);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+  const trackersToday = privacyData?.trackersToday ?? 0;
+  const sitesToday = privacyData?.sitesToday ?? 0;
+  
+  
+  
+  const initialized = privacyData?.initialized ?? false;
+  
+  const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
+
+  
+  
+  
+  const [preview, setPreview] = (0,external_React_namespaceObject.useState)("live");
+  const liveState = trackersToday === 0 ? "empty" : "tip";
+  const effectiveState = preview === "live" ? liveState : preview;
+  const isEmptyState = effectiveState === "empty";
+  const showTip = effectiveState === "tip";
+  const isLarge = widgetSize === "large";
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -21152,7 +21209,7 @@ function Privacy({
     });
   }
   return external_React_default().createElement("article", {
-    className: `privacy widget col-4 ${widgetSize}-widget`,
+    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEmptyState ? " is-empty" : ""}${initialized && showTip ? " has-tip-msg" : ""}`,
     ref: el => {
       widgetRef.current = [el];
     }
@@ -21190,9 +21247,47 @@ function Privacy({
   }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-privacy-menu-learn-more",
     onClick: handleLearnMore
-  })))), external_React_default().createElement("div", {
+  }), external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("live")
+  }, "Preview: Live (real count)"), external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("empty")
+  }, "Preview: Empty"), external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("default")
+  }, "Preview: Default (no tip)"), external_React_default().createElement("panel-item", {
+    onClick: () => setPreview("tip")
+  }, "Preview: Default (with tip)")))), external_React_default().createElement("div", {
     className: "privacy-body"
-  }));
+  }, initialized && (isEmptyState ? external_React_default().createElement("div", {
+    className: "privacy-empty"
+  }, privacyImage("widget-privacy-shield.svg"), external_React_default().createElement("p", {
+    className: "privacy-empty-message",
+    "data-l10n-id": "newtab-privacy-empty"
+  })) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    className: "privacy-count"
+  }, external_React_default().createElement("div", {
+    className: "privacy-count-number-wrapper"
+  }, !isLarge && privacyImage("widget-privacy-shield-check.svg"), external_React_default().createElement("span", {
+    className: "privacy-count-number"
+  }, displayCount)), external_React_default().createElement("span", {
+    className: "privacy-count-label",
+    "data-l10n-id": "newtab-privacy-trackers-blocked-today",
+    "data-l10n-args": JSON.stringify({
+      count: trackersToday
+    })
+  }), external_React_default().createElement("span", {
+    className: "privacy-count-sites",
+    "data-l10n-id": "newtab-privacy-across-sites",
+    "data-l10n-args": JSON.stringify({
+      count: sitesToday
+    })
+  })), showTip && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("hr", {
+    className: "privacy-divider"
+  }), external_React_default().createElement("div", {
+    className: "privacy-tip"
+  }, isLarge && privacyImage("widget-privacy-shield-check.svg"), external_React_default().createElement("p", {
+    className: "privacy-tip-message",
+    "data-l10n-id": "newtab-privacy-message-informed-5"
+  })))))));
 }
 
 ;
