@@ -174,8 +174,6 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
 
     
     
-    
-    
     if (std::has_single_bit(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
       auto lhs = useRegisterAtStart(div->lhs());
@@ -186,6 +184,16 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
       define(lir, div);
       return;
     }
+
+    
+    
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
   }
 
   LAllocation lhs, rhs;
@@ -237,6 +245,14 @@ void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
       define(lir, mod);
       return;
     }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
+    }
+    define(lir, mod);
+    return;
   }
 
   LAllocation lhs, rhs;
