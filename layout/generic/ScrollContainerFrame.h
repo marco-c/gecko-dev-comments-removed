@@ -501,7 +501,8 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
   void ScrollToCSSPixelsForApz(const CSSPoint& aScrollPosition,
-                               ScrollSnapTargetIds&& aLastSnapTargetIds);
+                               ScrollSnapTargetIds&& aLastSnapTargetIds,
+                               const APZScrollGeneration& aGenerationOnApz);
 
   
 
@@ -711,7 +712,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   enum class InScrollingGesture : bool { No, Yes };
   void ResetScrollInfoIfNeeded(const MainThreadScrollGeneration& aGeneration,
-                               const APZScrollGeneration& aGenerationOnApz,
                                APZScrollAnimationType aAPZScrollAnimationType,
                                InScrollingGesture aInScrollingGesture);
 
