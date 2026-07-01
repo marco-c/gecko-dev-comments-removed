@@ -740,19 +740,17 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
               : maxFramerate;
       const double targetFramerate = std::clamp(desiredFramerate, 0.01, 120.);
 
-      const auto targetInterval =
-          media::TimeUnit(1000, static_cast<int64_t>(1000 * targetFramerate));
+      
+      
+      const auto minInterval =
+          media::TimeUnit(1000, static_cast<int64_t>(1050 * targetFramerate));
       const auto frameTime =
           media::TimeUnit::FromMicroseconds(aVideoFrame.timestamp_us());
-      if (frameTime < stream->mNextFrameTime) {
+      const auto frameInterval = frameTime - stream->mLastFrameTime;
+      if (frameInterval < minInterval) {
         continue;
       }
-      if (stream->mNextFrameTime + targetInterval <= frameTime) {
-        
-        stream->mNextFrameTime = frameTime + targetInterval;
-      } else {
-        stream->mNextFrameTime += targetInterval;
-      }
+      stream->mLastFrameTime = frameTime;
       LOG_VERBOSE("CamerasParent::{} parent={}, id={}.", __func__,
                   fmt::ptr(stream->mParent), stream->mId);
       parentsAndIds.insert({stream->mParent, stream->mId});

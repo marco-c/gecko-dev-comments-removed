@@ -102,9 +102,7 @@ class AggregateCapturer final
     
     bool mActive{false};
     
-    
-    
-    media::TimeUnit mNextFrameTime{media::TimeUnit::FromNegativeInfinity()};
+    media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
   };
   
   const nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
