@@ -3,10 +3,9 @@
 
 
 use api::{BorderRadius, ClipMode, ColorF};
-use api::{ImageRendering, RepeatMode, PrimitiveFlags};
+use api::{ImageRendering, PrimitiveFlags};
 use api::{FillRule, POLYGON_CLIP_VERTEX_MAX};
 use api::units::*;
-use euclid::{SideOffsets2D, Size2D};
 use malloc_size_of::MallocSizeOf;
 use crate::clip::ClipLeafId;
 use crate::quad::QuadTileClassifier;
@@ -44,7 +43,7 @@ use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradient
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
 use line_dec::LineDecorationDataHandle;
 use picture::PictureDataHandle;
-use rectangle::RectangleDataHandle;
+use rectangle::{RectangleDataHandle, RectangleScratch};
 use text_run::{TextRunDataHandle, TextRunScratch};
 use crate::box_shadow::BoxShadowDataHandle;
 
@@ -231,191 +230,13 @@ impl PolygonKey {
 impl Eq for PolygonKey {}
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf, PartialEq)]
-pub struct SideOffsetsKey {
-    pub top: f32,
-    pub right: f32,
-    pub bottom: f32,
-    pub left: f32,
-}
-
-impl Eq for SideOffsetsKey {}
-
-impl hash::Hash for SideOffsetsKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.top.to_bits().hash(state);
-        self.right.to_bits().hash(state);
-        self.bottom.to_bits().hash(state);
-        self.left.to_bits().hash(state);
-    }
-}
-
-impl From<SideOffsetsKey> for LayoutSideOffsets {
-    fn from(key: SideOffsetsKey) -> LayoutSideOffsets {
-        LayoutSideOffsets::new(
-            key.top,
-            key.right,
-            key.bottom,
-            key.left,
-        )
-    }
-}
-
-impl<U> From<SideOffsets2D<f32, U>> for SideOffsetsKey {
-    fn from(offsets: SideOffsets2D<f32, U>) -> SideOffsetsKey {
-        SideOffsetsKey {
-            top: offsets.top,
-            right: offsets.right,
-            bottom: offsets.bottom,
-            left: offsets.left,
-        }
-    }
-}
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq)]
-pub struct SizeKey {
-    w: f32,
-    h: f32,
-}
-
-impl Eq for SizeKey {}
-
-impl hash::Hash for SizeKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.w.to_bits().hash(state);
-        self.h.to_bits().hash(state);
-    }
-}
-
-impl From<SizeKey> for LayoutSize {
-    fn from(key: SizeKey) -> LayoutSize {
-        LayoutSize::new(key.w, key.h)
-    }
-}
-
-impl<U> From<Size2D<f32, U>> for SizeKey {
-    fn from(size: Size2D<f32, U>) -> SizeKey {
-        SizeKey {
-            w: size.width,
-            h: size.height,
-        }
-    }
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Copy, Debug, Clone, MallocSizeOf, PartialEq)]
-pub struct VectorKey {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Eq for VectorKey {}
-
-impl hash::Hash for VectorKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.x.to_bits().hash(state);
-        self.y.to_bits().hash(state);
-    }
-}
-
-impl From<VectorKey> for LayoutVector2D {
-    fn from(key: VectorKey) -> LayoutVector2D {
-        LayoutVector2D::new(key.x, key.y)
-    }
-}
-
-impl From<VectorKey> for WorldVector2D {
-    fn from(key: VectorKey) -> WorldVector2D {
-        WorldVector2D::new(key.x, key.y)
-    }
-}
-
-impl From<LayoutVector2D> for VectorKey {
-    fn from(vec: LayoutVector2D) -> VectorKey {
-        VectorKey {
-            x: vec.x,
-            y: vec.y,
-        }
-    }
-}
-
-impl From<WorldVector2D> for VectorKey {
-    fn from(vec: WorldVector2D) -> VectorKey {
-        VectorKey {
-            x: vec.x,
-            y: vec.y,
-        }
-    }
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
-pub struct PointKey {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Eq for PointKey {}
-
-impl hash::Hash for PointKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.x.to_bits().hash(state);
-        self.y.to_bits().hash(state);
-    }
-}
-
-impl From<PointKey> for LayoutPoint {
-    fn from(key: PointKey) -> LayoutPoint {
-        LayoutPoint::new(key.x, key.y)
-    }
-}
-
-impl From<LayoutPoint> for PointKey {
-    fn from(p: LayoutPoint) -> PointKey {
-        PointKey {
-            x: p.x,
-            y: p.y,
-        }
-    }
-}
-
-impl From<PicturePoint> for PointKey {
-    fn from(p: PicturePoint) -> PointKey {
-        PointKey {
-            x: p.x,
-            y: p.y,
-        }
-    }
-}
-
-impl From<WorldPoint> for PointKey {
-    fn from(p: WorldPoint) -> PointKey {
-        PointKey {
-            x: p.x,
-            y: p.y,
-        }
-    }
-}
+pub use api::key_types::{PointKey, SizeKey, VectorKey};
 
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-pub struct PrimKeyCommonData {
-    pub flags: PrimitiveFlags,
-    pub aligned_aa_edges: EdgeMask,
-    pub transformed_aa_edges: EdgeMask,
-}
+pub use api::key_types::PrimKeyCommonData;
 
 impl From<&LayoutPrimitiveInfo> for PrimKeyCommonData {
     fn from(info: &LayoutPrimitiveInfo) -> Self {
@@ -442,12 +263,6 @@ pub struct PrimKey<T: MallocSizeOf> {
 pub struct PrimTemplateCommonData {
     pub flags: PrimitiveFlags,
     pub opacity: PrimitiveOpacity,
-    
-    
-    
-    
-    
-    pub gpu_buffer_address: GpuBufferAddress,
     pub aligned_aa_edges: EdgeMask,
     pub transformed_aa_edges: EdgeMask,
 }
@@ -456,7 +271,6 @@ impl PrimTemplateCommonData {
     pub fn with_key_common(common: PrimKeyCommonData) -> Self {
         PrimTemplateCommonData {
             flags: common.flags,
-            gpu_buffer_address: GpuBufferAddress::INVALID,
             opacity: PrimitiveOpacity::translucent(),
             aligned_aa_edges: common.aligned_aa_edges,
             transformed_aa_edges: common.transformed_aa_edges,
@@ -706,18 +520,7 @@ impl ClipData {
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct NinePatchDescriptor {
-    pub width: i32,
-    pub height: i32,
-    pub slice: DeviceIntSideOffsets,
-    pub fill: bool,
-    pub repeat_horizontal: RepeatMode,
-    pub repeat_vertical: RepeatMode,
-    pub widths: SideOffsetsKey,
-}
+pub use api::key_types::NinePatchDescriptor;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -910,6 +713,11 @@ pub struct PrimitiveFrameScratch {
     pub draws: Vec<PrimitiveDrawHeader>,
 
     
+    
+    
+    pub rectangle: storage::Storage<RectangleScratch>,
+
+    
     pub normal_border: storage::Storage<NormalBorderScratch>,
 
     
@@ -991,6 +799,7 @@ impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
         PrimitiveFrameScratch {
             draws: Vec::new(),
+            rectangle: storage::Storage::new(0),
             normal_border: storage::Storage::new(0),
             backdrop_render: storage::Storage::new(0),
             pictures: storage::Storage::new(0),
@@ -1015,6 +824,7 @@ impl Default for PrimitiveFrameScratch {
 impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
+        self.rectangle.recycle(recycler);
         self.normal_border.recycle(recycler);
         self.backdrop_render.recycle(recycler);
         self.pictures.recycle(recycler);
@@ -1034,6 +844,7 @@ impl PrimitiveFrameScratch {
     }
 
     pub fn begin_frame(&mut self) {
+        self.rectangle.clear();
         self.normal_border.clear();
         self.backdrop_render.clear();
         self.pictures.clear();

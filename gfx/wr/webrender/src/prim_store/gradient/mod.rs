@@ -2,9 +2,8 @@
 
 
 
-use api::{ColorF, ColorU, GradientStop};
+use api::{ColorF, GradientStop};
 use api::units::{LayoutRect, LayoutSize, LayoutVector2D};
-use std::hash;
 
 mod linear;
 mod radial;
@@ -15,31 +14,8 @@ pub use radial::*;
 pub use conic::*;
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
-pub struct GradientStopKey {
-    pub offset: f32,
-    pub color: ColorU,
-}
 
-impl GradientStopKey {
-    pub fn empty() -> Self {
-        GradientStopKey {
-            offset: 0.0,
-            color: ColorU::new(0, 0, 0, 0),
-        }
-    }
-}
-
-impl Into<GradientStopKey> for GradientStop {
-    fn into(self) -> GradientStopKey {
-        GradientStopKey {
-            offset: self.offset,
-            color: self.color.into(),
-        }
-    }
-}
+pub use api::key_types::GradientStopKey;
 
 
 
@@ -57,15 +33,6 @@ fn stops_and_min_alpha(stop_keys: &[GradientStopKey]) -> (Vec<GradientStop>, f32
     }).collect();
 
     (stops, min_alpha)
-}
-
-impl Eq for GradientStopKey {}
-
-impl hash::Hash for GradientStopKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.offset.to_bits().hash(state);
-        self.color.hash(state);
-    }
 }
 
 
@@ -126,7 +93,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<LinearGradient>(), 72, "LinearGradient size changed");
-    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 80, "LinearGradientTemplate size changed");
+    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 72, "LinearGradientTemplate size changed");
     assert_eq!(mem::size_of::<LinearGradientKey>(), 72, "LinearGradientKey size changed");
 
     assert_eq!(mem::size_of::<RadialGradient>(), 72, "RadialGradient size changed");

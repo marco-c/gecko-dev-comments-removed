@@ -5,7 +5,7 @@
 use api::{BorderStyle, NormalBorder, PremultipliedColorF, RasterSpace, Shadow};
 use api::units::*;
 use crate::border::{self, build_border_instances, get_max_scale_for_border};
-use crate::border::NormalBorderAu;
+use crate::border::{NormalBorderAu, NinePatchDescriptorExt};
 use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::render_backend::DataStores;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
@@ -552,7 +552,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<NormalBorderPrim>(), 100, "NormalBorderPrim size changed");
-    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 156, "NormalBorderTemplate size changed");
+    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 152, "NormalBorderTemplate size changed");
     assert_eq!(mem::size_of::<NormalBorderKey>(), 104, "NormalBorderKey size changed");
     assert_eq!(mem::size_of::<ImageBorder>(), 68, "ImageBorder size changed");
     assert_eq!(mem::size_of::<ImageBorderTemplate>(), 104, "ImageBorderTemplate size changed");
