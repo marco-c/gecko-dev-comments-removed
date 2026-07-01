@@ -3232,6 +3232,18 @@ var gUIDensity = {
 
   handleEvent(event) {
     if (event.type == "resize") {
+      
+      
+      
+      
+      
+      
+      if (
+        !this.novaEnabled ||
+        Services.prefs.prefHasUserValue(this.uiDensityPref)
+      ) {
+        return;
+      }
       this.update();
     }
   },
@@ -3304,7 +3316,7 @@ var gUIDensity = {
     
     
     if (
-      Services.prefs.getBoolPref("browser.nova.enabled", false) &&
+      this.novaEnabled &&
       !Services.prefs.prefHasUserValue(this.uiDensityPref) &&
       this._shouldAutoCompact()
     ) {
@@ -3372,6 +3384,13 @@ var gUIDensity = {
     window.dispatchEvent(new CustomEvent("uidensitychanged"));
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  gUIDensity,
+  "novaEnabled",
+  "browser.nova.enabled",
+  false
+);
 
 const DynamicShortcutTooltip = {
   nodeToTooltipMap: {
