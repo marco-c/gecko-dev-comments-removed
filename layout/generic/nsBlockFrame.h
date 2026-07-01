@@ -882,7 +882,12 @@ class nsBlockFrame : public nsContainerFrame {
   void MarkLineDirty(LineIterator aLine, const nsLineList* aLineList);
 
   
-  bool IsLastLine(BlockReflowState& aState, LineIterator aLine);
+  
+  bool IsLastInlineLine(LineIterator aLine);
+
+  
+  
+  bool IsLastFormattedLine(LineIterator aLine);
 
   void DeleteLine(BlockReflowState& aState, nsLineList::iterator aLine,
                   nsLineList::iterator aLineEnd);

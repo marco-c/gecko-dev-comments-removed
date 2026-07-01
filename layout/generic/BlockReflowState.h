@@ -35,7 +35,9 @@ class BlockReflowState {
           mHasLineAdjacentToTop(false),
           mBlockNeedsFloatManager(false),
           mIsLineLayoutEmpty(false),
-          mCanHaveOverflowMarkers(false) {}
+          mCanHaveOverflowMarkers(false),
+          mShouldApplyTextBoxTrimStart(false),
+          mShouldApplyTextBoxTrimEnd(false) {}
 
     
     
@@ -85,6 +87,11 @@ class BlockReflowState {
 
     
     bool mCanHaveOverflowMarkers : 1;
+
+    
+    
+    bool mShouldApplyTextBoxTrimStart : 1;
+    bool mShouldApplyTextBoxTrimEnd : 1;
   };
 
  public:
