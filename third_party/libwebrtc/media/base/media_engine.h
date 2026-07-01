@@ -119,12 +119,6 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   
-  [[deprecated]] inline const std::vector<Codec>& send_codecs() const {
-    return LegacySendCodecs();
-  }
-  [[deprecated]] inline const std::vector<Codec>& recv_codecs() const {
-    return LegacyRecvCodecs();
-  }
   virtual const std::vector<Codec>& LegacySendCodecs() const = 0;
   virtual const std::vector<Codec>& LegacyRecvCodecs() const = 0;
 
@@ -172,23 +166,11 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   
-  [[deprecated]] inline std::vector<Codec> send_codecs() const {
-    return LegacySendCodecs();
-  }
-  [[deprecated]] inline std::vector<Codec> recv_codecs() const {
-    return LegacyRecvCodecs();
-  }
   virtual std::vector<Codec> LegacySendCodecs() const = 0;
   virtual std::vector<Codec> LegacyRecvCodecs() const = 0;
   
-  [[deprecated]] inline std::vector<Codec> send_codecs(bool include_rtx) const {
-    return LegacySendCodecs(include_rtx);
-  }
   virtual std::vector<Codec> LegacySendCodecs(bool include_rtx) const = 0;
   virtual std::vector<Codec> LegacyRecvCodecs(bool include_rtx) const = 0;
-  [[deprecated]] inline std::vector<Codec> recv_codecs(bool include_rtx) const {
-    return LegacyRecvCodecs(include_rtx);
-  }
 
   virtual VideoEncoderFactory* encoder_factory() const = 0;
   virtual VideoDecoderFactory* decoder_factory() const = 0;

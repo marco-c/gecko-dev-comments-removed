@@ -30,8 +30,6 @@ class IvfFileWriter {
   
   
   
-  [[deprecated]] static std::unique_ptr<IvfFileWriter> Wrap(FileWrapper file,
-                                                            size_t byte_limit);
   static std::unique_ptr<IvfFileWriter> Wrap(absl::string_view filename,
                                              size_t byte_limit,
                                              int* error = nullptr);
