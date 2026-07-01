@@ -31,7 +31,6 @@
 
 
 
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -213,26 +212,8 @@ var { ScrollOffsets } = ChromeUtils.importESModule(
   }
 );
 
-var { FocusHistory } = ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/FocusHistory.mjs",
-  {
-    global: "current",
-  }
-);
-
 
 var scrollOffsets;
-
-
-var focusHistory = new FocusHistory();
-
-
-
-
-
-
-
-var gCurrentHistoryEntryId = null;
 
 
 
@@ -792,10 +773,6 @@ async function gotoPref(
   
   scrollOffsets.save();
   scrollOffsets.setView(historyEntryId);
-  if (gCurrentHistoryEntryId != null) {
-    focusHistory.save(gCurrentHistoryEntryId);
-  }
-  gCurrentHistoryEntryId = historyEntryId;
 
   
   
@@ -870,7 +847,6 @@ async function gotoPref(
 
   if (aShowReason != "Initial") {
     scrollOffsets.restore();
-    focusHistory.restore(historyEntryId);
   }
 
   
