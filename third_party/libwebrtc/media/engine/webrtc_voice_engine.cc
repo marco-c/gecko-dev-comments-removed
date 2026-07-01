@@ -2630,11 +2630,16 @@ void WebRtcVoiceReceiveChannel::OnPacketReceived(RtpPacketReceived packet) {
 bool WebRtcVoiceReceiveChannel::MaybeCreateDefaultReceiveStream(
     const RtpPacketReceived& packet) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  
-  
-  
   uint32_t ssrc = packet.Ssrc();
-  RTC_DCHECK(!absl::c_linear_search(unsignaled_recv_ssrcs_, ssrc));
+
+  if (absl::c_linear_search(unsignaled_recv_ssrcs_, ssrc)) {
+    RTC_LOG(LS_INFO) << "Unsignaled stream already exists for SSRC=" << ssrc;
+    return true;
+  }
+
+  
+  
+  
 
   
   StreamParams sp = unsignaled_stream_params_;

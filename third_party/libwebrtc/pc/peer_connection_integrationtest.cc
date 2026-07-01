@@ -77,6 +77,7 @@
 #include "pc/test/fake_periodic_video_source.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
+#include "rtc_base/event.h"
 #include "rtc_base/fake_mdns_responder.h"
 #include "rtc_base/firewall_socket_server.h"
 #include "rtc_base/logging.h"
@@ -2942,6 +2943,61 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesVideo) {
   EXPECT_EQ(receiver->GetParameters().encodings[0].ssrc,
             sources[0].source_id());
   EXPECT_EQ(RtpSourceType::SSRC, sources[0].source_type());
+}
+
+TEST_P(PeerConnectionIntegrationTest, ConcurrentUnsignaledSsrcPackets) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(WaitUntil([&] { return SignalingStateStable(); }, IsTrue()),
+              IsRtcOk());
+
+  
+  ASSERT_THAT(WaitUntil([&] { return DtlsConnected(); }, IsTrue()), IsRtcOk());
+
+  
+  
+  firewall()->AddRule(false);
+
+  
+  Event worker_blocked;
+  Event worker_continue;
+  callee()->pc_internal()->worker_thread()->PostTask(
+      [&worker_blocked, &worker_continue] {
+        worker_blocked.Set();
+        worker_continue.Wait(Event::kForever);
+      });
+  worker_blocked.Wait(Event::kForever);
+
+  uint32_t initial_sent = virtual_socket_server()->sent_packets();
+
+  
+  
+  
+  
+  firewall()->ClearRules();
+
+  
+  ASSERT_THAT(WaitUntil(
+                  [&] {
+                    return virtual_socket_server()->sent_packets() -
+                           initial_sent;
+                  },
+                  ::testing::Ge(2u)),
+              IsRtcOk());
+
+  
+  
+  
+  
+  worker_continue.Set();
+
+  
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudio(1);
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
 TEST_P(PeerConnectionIntegrationTest, UnsignaledSsrcGetSourcesAudio) {
