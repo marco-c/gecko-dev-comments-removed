@@ -38,12 +38,16 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
       uint32_t ssrc,
       RtpPacketSinkInterface* sink) override;
 
+  RtpPacketSinkInterface* ResolveSink(const RtpPacketReceived& packet);
+
   
   bool OnRtpPacket(const RtpPacketReceived& packet);
 
   
   
   void OnRecoveredPacket(const RtpPacketReceived& packet) override;
+
+  bool IsEmpty() const;
 
  private:
   class Receiver : public RtpStreamReceiverInterface {

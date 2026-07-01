@@ -140,6 +140,8 @@ class RtpDemuxer {
     use_payload_type_demuxing_ = enable;
   }
 
+  bool IsEmpty() const;
+
   
   
   
@@ -173,18 +175,18 @@ class RtpDemuxer {
 
   
   
+  
+  
+  RtpPacketSinkInterface* ResolveSink(const RtpPacketReceived& packet);
+
+  
+  
   bool OnRtpPacket(const RtpPacketReceived& packet);
 
  private:
   
   
   bool CriteriaWouldConflict(const RtpDemuxerCriteria& criteria) const;
-
-  
-  
-  
-  
-  RtpPacketSinkInterface* ResolveSink(const RtpPacketReceived& packet);
 
   
   RtpPacketSinkInterface* ResolveSinkByMid(absl::string_view mid,
