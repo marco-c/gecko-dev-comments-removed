@@ -22,6 +22,7 @@
 #include "api/call/bitrate_allocation.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
@@ -197,17 +198,18 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   
   
   struct ExtensionIds {
-    int audio_level = 0;
-    int abs_send_time = 0;
-    int abs_capture_time = 0;
-    int transport_sequence_number = 0;
-    int mid = 0;
-    int rid = 0;
-    int repaired_rid = 0;
+    RtpHeaderExtensionId audio_level = RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId abs_send_time = RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId abs_capture_time = RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId transport_sequence_number =
+        RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId mid = RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId rid = RtpHeaderExtensionId::NotSet();
+    RtpHeaderExtensionId repaired_rid = RtpHeaderExtensionId::NotSet();
   };
   static ExtensionIds FindExtensionIds(
       const std::vector<RtpExtension>& extensions);
-  static int TransportSeqNumId(const Config& config);
+  static RtpHeaderExtensionId TransportSeqNumId(const Config& config);
 
   
   size_t transport_overhead_per_packet_bytes_

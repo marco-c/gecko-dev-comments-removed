@@ -84,7 +84,6 @@ class RTC_EXPORT RtpReceiverInterface : public RefCountInterface,
 
   
   
-  
   virtual RtpParameters GetParameters() const = 0;
   
   

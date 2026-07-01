@@ -8,6 +8,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #ifndef API_RTP_PARAMETERS_H_
 #define API_RTP_PARAMETERS_H_
 
@@ -19,15 +28,18 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "api/media_types.h"
 #include "api/priority.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/video/resolution.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/strings/str_join.h"
+#include "rtc_base/strong_alias.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -35,25 +47,6 @@ class RTCError;
 class StringBuilder;
 
 using CodecParameterMap = std::map<std::string, std::string>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 enum class FecMechanism {
   RED,
@@ -113,6 +106,7 @@ void AbslStringify(Sink& sink, std::optional<RtcpFeedbackType> type) {
 
 enum class RtcpFeedbackMessageType {
   
+  
   GENERIC_NACK,
   PLI,  
   FIR,  
@@ -165,10 +159,6 @@ RTCError ParseFmtpParameterSet(absl::string_view line_params,
 struct RTC_EXPORT RtcpFeedback {
   RtcpFeedbackType type = RtcpFeedbackType::CCM;
 
-  
-  
-  
-  
   std::optional<RtcpFeedbackMessageType> message_type;
 
   
@@ -212,9 +202,6 @@ struct RTC_EXPORT RtpCodec {
   
   std::vector<RtcpFeedback> rtcp_feedback;
 
-  
-  
-  
   
   
   
@@ -298,21 +285,12 @@ enum class RtpTransceiverIdDomain {
 
 
 
-
-
-
-
-
-
-
-
-
 struct RTC_EXPORT RtpHeaderExtensionCapability {
   
   std::string uri;
 
   
-  std::optional<int> preferred_id;
+  std::optional<RtpHeaderExtensionId> preferred_id;
 
   
   bool preferred_encrypt = false;
@@ -325,6 +303,17 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
   
   RtpHeaderExtensionCapability();
   explicit RtpHeaderExtensionCapability(absl::string_view uri);
+  RtpHeaderExtensionCapability(absl::string_view uri,
+                               RtpHeaderExtensionId preferred_id);
+  RtpHeaderExtensionCapability(absl::string_view uri,
+                               RtpHeaderExtensionId preferred_id,
+                               RtpTransceiverDirection direction);
+  RtpHeaderExtensionCapability(absl::string_view uri,
+                               RtpHeaderExtensionId preferred_id,
+                               bool preferred_encrypt,
+                               RtpTransceiverDirection direction);
+  
+  
   RtpHeaderExtensionCapability(absl::string_view uri, int preferred_id);
   RtpHeaderExtensionCapability(absl::string_view uri,
                                int preferred_id,
@@ -370,6 +359,10 @@ struct RTC_EXPORT RtpExtension {
   };
 
   RtpExtension();
+  RtpExtension(absl::string_view uri, RtpHeaderExtensionId id);
+  RtpExtension(absl::string_view uri, RtpHeaderExtensionId id, bool encrypt);
+  
+  
   RtpExtension(absl::string_view uri, int id);
   RtpExtension(absl::string_view uri, int id, bool encrypt);
   ~RtpExtension();
@@ -500,22 +493,26 @@ struct RTC_EXPORT RtpExtension {
 
   
   
-  static constexpr int kMinId = 1;
-  static constexpr int kMaxId = 255;
+  ABSL_DEPRECATE_AND_INLINE()
+  static constexpr RtpHeaderExtensionId kMinId = RtpHeaderExtensionId::kMinId;
+  ABSL_DEPRECATE_AND_INLINE()
+  static constexpr RtpHeaderExtensionId kMaxId = RtpHeaderExtensionId::kMaxId;
   static constexpr int kMaxValueSize = 255;
-  static constexpr int kOneByteHeaderExtensionMaxId = 14;
+  ABSL_DEPRECATE_AND_INLINE()
+  static constexpr RtpHeaderExtensionId kOneByteHeaderExtensionMaxId =
+      RtpHeaderExtensionId::kOneByteHeaderExtensionMaxId;
   static constexpr int kOneByteHeaderExtensionMaxValueSize = 16;
 
   std::string uri;
-  int id = 0;
+  RtpHeaderExtensionId id = RtpHeaderExtensionId::NotSet();
   bool encrypt = false;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const RtpExtension& extension) {
     if (extension.encrypt) {
-      absl::Format(&sink, "[%d %s (encrypted)]", extension.id, extension.uri);
+      absl::Format(&sink, "[%v %s (encrypted)]", extension.id, extension.uri);
     } else {
-      absl::Format(&sink, "[%d %s]", extension.id, extension.uri);
+      absl::Format(&sink, "[%v %s]", extension.id, extension.uri);
     }
   }
 };
@@ -607,8 +604,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
-  
-  
   std::optional<int> max_bitrate_bps;
 
   
@@ -647,7 +642,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   bool active = true;
 
-  
   
   std::string rid;
   bool request_key_frame = false;
@@ -819,7 +813,6 @@ struct RTC_EXPORT RtpParameters {
 
   
   
-  
   std::string mid;
 
   std::vector<RtpCodecParameters> codecs;
@@ -828,9 +821,6 @@ struct RTC_EXPORT RtpParameters {
 
   std::vector<RtpEncodingParameters> encodings;
 
-  
-  
-  
   RtcpParameters rtcp;
 
   

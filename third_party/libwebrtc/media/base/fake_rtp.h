@@ -16,6 +16,10 @@
 #include <cstddef>  
 #include <vector>
 
+#include "api/rtp_header_extension_id.h"
+
+namespace webrtc {
+
 
 
 
@@ -37,7 +41,8 @@ static const unsigned char kPcmuFrame[] = {
     0xFF, 0xFF, 0xFF, 0xFF,
 };
 
-static const int kHeaderExtensionIDs[] = {1, 4};
+static const RtpHeaderExtensionId kHeaderExtensionIDs[] = {
+    RtpHeaderExtensionId(1), RtpHeaderExtensionId(4)};
 
 
 
@@ -256,7 +261,7 @@ static const unsigned char kPcmuFrameWithExtensions[] = {
 
 
 
-static const unsigned char kRtcpReport[] = {
+static const unsigned char kFakeRtcpReport[] = {
     0x80, 0xc9, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
     0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -291,11 +296,14 @@ static const unsigned char kDataPacket[] = {
 
 
 
-void CompareHeaderExtensions(const char* packet1,
-                             size_t packet1_size,
-                             const char* packet2,
-                             size_t packet2_size,
-                             const std::vector<int>& encrypted_headers,
-                             bool expect_equal);
+void CompareHeaderExtensions(
+    const char* packet1,
+    size_t packet1_size,
+    const char* packet2,
+    size_t packet2_size,
+    const std::vector<RtpHeaderExtensionId>& encrypted_headers,
+    bool expect_equal);
+
+}  
 
 #endif  
