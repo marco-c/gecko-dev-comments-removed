@@ -129,7 +129,7 @@ class GTEST_API_ Message {
                               int>::type = 0
 #endif  
       >
-  inline Message& operator<<(const T& val) {
+  Message& operator<<(const T& val) {
         
     
     
@@ -155,7 +155,7 @@ class GTEST_API_ Message {
   template <typename T,
             typename std::enable_if<absl::HasAbslStringify<T>::value,  
                                     int>::type = 0>
-  inline Message& operator<<(const T& val) {
+  Message& operator<<(const T& val) {
     
     
     using ::operator<<;
