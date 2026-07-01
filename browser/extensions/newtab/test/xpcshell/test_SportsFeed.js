@@ -1608,6 +1608,7 @@ add_task(
     const feed = makeLiveFeed({ visible: false });
     feed.pollingState = "LIVE";
     feed.pollTimer = 42; 
+    feed.lastFetchAt = Date.now(); 
     stubTimers(feed);
     const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -1630,6 +1631,7 @@ add_task(async function test_LIVE_VISIBLE_rapid_tabs_does_not_multifetch() {
   const feed = makeLiveFeed({ visible: false });
   feed.pollingState = "LIVE";
   feed.pollTimer = 7;
+  feed.lastFetchAt = Date.now(); 
   stubTimers(feed);
   const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -1643,6 +1645,169 @@ add_task(async function test_LIVE_VISIBLE_rapid_tabs_does_not_multifetch() {
     "no fetchNow fired for any of the three rapid new tabs"
   );
 });
+
+
+
+
+
+add_task(async function test_tick_updates_lastFetchAt_on_success() {
+  for (const state of ["IDLE", "MATCH_DAY", "LIVE"]) {
+    const feed = makeLiveFeed();
+    feed.pollingState = state;
+    stubTimers(feed);
+    sinon.stub(feed, "fetchAndDispatch").resolves(true);
+    feed.lastFetchAt = null;
+    feed.lastLiveUpdated = null;
+
+    await feed.tick();
+
+    Assert.equal(
+      typeof feed.lastFetchAt,
+      "number",
+      `lastFetchAt populated after successful tick in ${state}`
+    );
+  }
+});
+
+
+
+
+
+add_task(async function test_tick_leaves_lastLiveUpdated_alone_outside_LIVE() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "MATCH_DAY";
+  stubTimers(feed);
+  sinon.stub(feed, "fetchAndDispatch").resolves(true);
+  feed.lastFetchAt = null;
+  feed.lastLiveUpdated = null;
+
+  await feed.tick();
+
+  Assert.equal(
+    feed.lastLiveUpdated,
+    null,
+    "lastLiveUpdated stays null outside the LIVE branch (asymmetry pin)"
+  );
+});
+
+
+
+add_task(
+  async function test_resolveFreshnessThresholdMs_scales_with_polling_state() {
+    const feed = makeLiveFeed();
+
+    feed.pollingState = "LIVE";
+    Assert.equal(
+      feed.resolveFreshnessThresholdMs(),
+      60000,
+      "LIVE threshold is 1 min (3 min / 3)"
+    );
+
+    feed.pollingState = "MATCH_DAY";
+    Assert.equal(
+      feed.resolveFreshnessThresholdMs(),
+      600000,
+      "MATCH_DAY threshold is 10 min (30 min / 3)"
+    );
+
+    feed.pollingState = "IDLE";
+    Assert.equal(
+      feed.resolveFreshnessThresholdMs(),
+      7200000,
+      "IDLE threshold is 2 h (6 h / 3)"
+    );
+
+    
+    
+    feed.pollingState = "LIVE";
+    feed.store.state.Prefs.values[PREF_POLL_LIVE_MS] = 100;
+    Assert.equal(
+      feed.resolveFreshnessThresholdMs(),
+      10000,
+      "floor at MIN_POLL_INTERVAL_MS when interval is pathologically small"
+    );
+  }
+);
+
+
+
+
+
+add_task(async function test_LIVE_VISIBLE_resume_after_stale_data_fetches() {
+  const feed = makeLiveFeed({ visible: false });
+  feed.pollingState = "MATCH_DAY";
+  feed.pollTimer = 42;
+  feed.lastFetchAt = Date.now() - 15 * 60 * 1000; 
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-resume"));
+
+  Assert.ok(
+    fetchNowStub.calledOnce,
+    "stale data on resume triggers fetchNow even with a pending pollTimer"
+  );
+});
+
+
+
+
+add_task(async function test_LIVE_VISIBLE_resume_with_fresh_data_skips_fetch() {
+  const feed = makeLiveFeed({ visible: false });
+  feed.pollingState = "LIVE";
+  feed.pollTimer = 42;
+  feed.lastFetchAt = Date.now() - 10 * 1000; 
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-resume"));
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fresh data on resume does not trigger fetchNow; pending timer covers it"
+  );
+});
+
+
+
+
+add_task(async function test_LIVE_VISIBLE_null_lastFetchAt_always_fetches() {
+  const feed = makeLiveFeed({ visible: false });
+  feed.pollingState = "LIVE";
+  feed.pollTimer = 42;
+  feed.lastFetchAt = null;
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-first"));
+
+  Assert.ok(
+    fetchNowStub.calledOnce,
+    "null lastFetchAt forces fetchNow regardless of pollTimer"
+  );
+});
+
+
+
+
+
+add_task(
+  async function test_LIVE_VISIBLE_bootstrap_with_fresh_lastFetchAt_but_no_timer() {
+    const feed = makeLiveFeed({ visible: false });
+    feed.pollingState = "LIVE";
+    feed.pollTimer = null;
+    feed.lastFetchAt = Date.now() - 10 * 1000; 
+    stubTimers(feed);
+    const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+    await feed.onAction(liveVisibleAction("port-restart"));
+
+    Assert.ok(
+      fetchNowStub.calledOnce,
+      "fresh data with no scheduled poll still fetches to restart the loop"
+    );
+  }
+);
 
 add_task(async function test_stopLive_clears_timers_and_resets() {
   const feed = makeLiveFeed();
@@ -2355,6 +2520,7 @@ add_task(async function test_LIVE_VISIBLE_no_fetchNow_when_already_polling() {
   feed.visibleTabs = new Set(["port-already-visible"]);
   feed.pollingState = "LIVE";
   feed.pollTimer = 1; 
+  feed.lastFetchAt = Date.now(); 
   stubTimers(feed);
   const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -2375,6 +2541,8 @@ add_task(async function test_LIVE_VISIBLE_skips_fetchNow_when_ticking() {
   feed.visibleTabs = new Set();
   feed.pollingState = "LIVE";
   feed.ticking = true;
+  
+  
   stubTimers(feed);
   const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -2400,6 +2568,7 @@ add_task(
     feed.visibleTabs = new Set();
     feed.pollingState = "LIVE";
     feed.pollTimer = 42; 
+    feed.lastFetchAt = Date.now(); 
     stubTimers(feed);
     const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -2423,6 +2592,7 @@ add_task(
     feed.visibleTabs = new Set(["port-1"]);
     feed.pollingState = "LIVE";
     feed.pollTimer = 555; 
+    feed.lastFetchAt = Date.now(); 
     const { clearTimeoutStub } = stubTimers(feed);
     const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -2450,6 +2620,8 @@ add_task(
     feed.visibleTabs = new Set();
     feed.pollingState = "LIVE";
     feed.retryTimer = 99; 
+    
+    
     stubTimers(feed);
     const fetchNowStub = sinon.stub(feed, "fetchNow");
 
@@ -2461,6 +2633,7 @@ add_task(
     );
   }
 );
+
 
 
 
