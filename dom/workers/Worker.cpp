@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Worker.h"
 
 #include "EventWithOptionsRunnable.h"
@@ -108,7 +106,7 @@ JSObject* Worker::WrapObject(JSContext* aCx,
     
     
     
-    MOZ_ALWAYS_TRUE(TryPreserveWrapper(wrapper));
+    TryPreserveWrapper(wrapper);
   }
 
   return wrapper;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ChromeWorker.h"
 
 #include "WorkerPrivate.h"
@@ -75,7 +73,7 @@ JSObject* ChromeWorker::WrapObject(JSContext* aCx,
     
     
     
-    MOZ_ALWAYS_TRUE(TryPreserveWrapper(wrapper));
+    TryPreserveWrapper(wrapper);
   }
 
   return wrapper;

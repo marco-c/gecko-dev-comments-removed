@@ -1674,12 +1674,7 @@ inline void UpdateWrapper(T* p, void*, JSObject* obj, const JSObject* old) {
 
 
 
-
-
-
-
-
-bool TryPreserveWrapper(JS::Handle<JSObject*> obj);
+void TryPreserveWrapper(JS::Handle<JSObject*> obj);
 
 bool HasReleasedWrapper(JS::Handle<JSObject*> obj);
 
@@ -3049,7 +3044,7 @@ struct CreateGlobalOptionsGeneric {
     mozilla::dom::TraceProtoAndIfaceCache(aTrc, aObj);
   }
   static bool PostCreateGlobal(JSContext* aCx, JS::Handle<JSObject*> aGlobal) {
-    MOZ_ALWAYS_TRUE(TryPreserveWrapper(aGlobal));
+    TryPreserveWrapper(aGlobal);
 
     return true;
   }
