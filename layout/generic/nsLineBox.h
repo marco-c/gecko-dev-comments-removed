@@ -150,6 +150,20 @@ class nsLineBox final : public nsLineLink {
   void ClearMovedFragments() { mFlags.mMovedFragments = false; }
   bool MovedFragments() const { return mFlags.mMovedFragments; }
 
+  
+  void SetTextBoxTrimStartApplied() { mFlags.mTextBoxTrimStartApplied = true; }
+  void ClearTextBoxTrimStartApplied() {
+    mFlags.mTextBoxTrimStartApplied = false;
+  }
+  bool TextBoxTrimStartApplied() const {
+    return mFlags.mTextBoxTrimStartApplied;
+  }
+
+  
+  void SetTextBoxTrimEndApplied() { mFlags.mTextBoxTrimEndApplied = true; }
+  void ClearTextBoxTrimEndApplied() { mFlags.mTextBoxTrimEndApplied = false; }
+  bool TextBoxTrimEndApplied() const { return mFlags.mTextBoxTrimEndApplied; }
+
  private:
   
   static const uint32_t kMinChildCountForHashtable = 200;
@@ -494,6 +508,11 @@ class nsLineBox final : public nsLineLink {
   
   bool CachedIsEmpty();
 
+  
+  
+  
+  bool IsPhantom() const { return IsEmpty() && !HasForcedLineBreakAfter(); }
+
   void InvalidateCachedIsEmpty() { mFlags.mEmptyCacheValid = false; }
 
   
@@ -576,6 +595,10 @@ class nsLineBox final : public nsLineLink {
     
     
     bool mHasForcedLineBreakAfter : 1;
+    
+    
+    bool mTextBoxTrimStartApplied : 1;
+    bool mTextBoxTrimEndApplied : 1;
     
     
     mozilla::UsedClear mFloatClearType;
