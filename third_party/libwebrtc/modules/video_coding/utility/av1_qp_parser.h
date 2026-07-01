@@ -32,15 +32,18 @@ namespace webrtc {
 
 
 
-
-
-
-
 class Av1QpParser {
  public:
+  struct Settings {
+    Settings() : use_average_qp(false) {}
+    
+    
+    bool use_average_qp;
+  };
+
   virtual ~Av1QpParser() = default;
 
-  static std::unique_ptr<Av1QpParser> Create();
+  static std::unique_ptr<Av1QpParser> Create(Settings settings = Settings());
 
   
   
