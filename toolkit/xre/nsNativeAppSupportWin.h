@@ -28,6 +28,15 @@
 #endif
 
 
+
+
+
+
+
+
+#define IDI_CUSTOM_RETRO 1100
+
+
 #define IDS_STARTMENU_APPNAME 103
 
 #endif  
