@@ -4,8 +4,8 @@
 "use strict";
 
 
-const defaultRequestBodyLimit = Services.prefs.getIntPref(
-  "devtools.netmonitor.requestBodyLimit"
+const defaultBodyLimit = Services.prefs.getIntPref(
+  "devtools.netmonitor.bodyLimit"
 );
 
 
@@ -14,7 +14,7 @@ const defaultRequestBodyLimit = Services.prefs.getIntPref(
 
 
 add_task(async function () {
-  await pushPref("devtools.netmonitor.requestBodyLimit", 0);
+  await pushPref("devtools.netmonitor.bodyLimit", 0);
 
   await checkPostDataRequest(false);
 });
@@ -25,7 +25,7 @@ add_task(async function () {
 
 
 add_task(async function () {
-  await pushPref("devtools.netmonitor.requestBodyLimit", 1000);
+  await pushPref("devtools.netmonitor.bodyLimit", 1000);
 
   await checkPostDataRequest(true);
 });
@@ -37,15 +37,12 @@ add_task(async function () {
 
 add_task(async function () {
   
-  await pushPref(
-    "devtools.netmonitor.requestBodyLimit",
-    defaultRequestBodyLimit * 3
-  );
+  await pushPref("devtools.netmonitor.bodyLimit", defaultBodyLimit * 3);
   await checkPostDataRequest(false);
 });
 
 async function checkPostDataRequest(expectErrorDisplay) {
-  const { monitor, tab } = await initNetMonitor(POST_JSON_URL, {
+  const { monitor, tab, toolbox } = await initNetMonitor(POST_JSON_URL, {
     requestCount: 1,
   });
 
@@ -103,10 +100,10 @@ async function checkPostDataRequest(expectErrorDisplay) {
     "The Request Payload has the intended visibility."
   );
 
-  await pushPref(
-    "devtools.netmonitor.requestBodyLimit",
-    defaultRequestBodyLimit
-  );
+  const onConfigurationApplied = toolbox.once("new-configuration-applied");
+  await pushPref("devtools.netmonitor.bodyLimit", defaultBodyLimit);
+  await onConfigurationApplied;
+
   return teardown(monitor);
 }
 

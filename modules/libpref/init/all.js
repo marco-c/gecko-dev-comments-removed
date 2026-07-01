@@ -3941,8 +3941,7 @@ pref("devtools.debugger.force-local", true);
 
 
 
-pref("devtools.netmonitor.responseBodyLimit", 1048576);
-pref("devtools.netmonitor.requestBodyLimit", 1048576);
+pref("devtools.netmonitor.bodyLimit", 1048576);
 
 
 pref("devtools.netmonitor.msg.messageDataLimit", 100000);

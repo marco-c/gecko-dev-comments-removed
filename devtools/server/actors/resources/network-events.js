@@ -15,17 +15,6 @@ const Targets = require("resource://devtools/server/actors/targets/index.js");
 
 const lazy = {};
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs",
-  { global: "contextual" }
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "responseBodyLimit",
-  "devtools.netmonitor.responseBodyLimit",
-  0
-);
-
 ChromeUtils.defineESModuleGetters(
   lazy,
   {
@@ -69,11 +58,17 @@ class NetworkEventWatcher {
     this.onNetworkEventUpdated = onUpdated;
     
     this.persist = false;
+
+    
+    const targetConfigurationActor =
+      this.watcherActor.getTargetConfigurationActor();
+    const bodyLimit = targetConfigurationActor.getNetworkBodyLimit();
+
     this.listener = new lazy.NetworkObserver({
       
       
       decodeResponseBodies: false,
-      responseBodyLimit: lazy.responseBodyLimit,
+      bodyLimit,
       ignoreChannelFunction: this.shouldIgnoreChannel.bind(this),
       onNetworkEvent: this.onNetworkEvent.bind(this),
     });
@@ -200,6 +195,10 @@ class NetworkEventWatcher {
 
   setLocalModeMappings(mappings) {
     this.listener.setLocalModeMappings(mappings);
+  }
+
+  setBodyLimit(bodyLimit) {
+    this.listener.setBodyLimit(bodyLimit);
   }
 
   

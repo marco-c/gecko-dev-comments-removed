@@ -222,9 +222,7 @@ class RequestPanel extends Component {
     }
 
     
-    const limit = Services.prefs.getIntPref(
-      "devtools.netmonitor.requestBodyLimit"
-    );
+    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
 
     
     

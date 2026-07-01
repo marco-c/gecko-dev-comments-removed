@@ -251,6 +251,9 @@ const CONFIGURATION_PREFS = {
   "devtools.command-button-jstracer.enabled": {
     name: "isTracerFeatureEnabled",
   },
+  "devtools.netmonitor.bodyLimit": {
+    name: "networkBodyLimit",
+  },
 };
 exports.CONFIGURATION_PREFS = CONFIGURATION_PREFS;
 
@@ -2449,16 +2452,40 @@ class Toolbox extends EventEmitter {
     await this.commands.threadConfigurationCommand.updateConfiguration(
       threadConfiguration
     );
+
+    // @backward-compat { version 153 } Fx 153 unified the two following pref into a unique one.
+    // Migrate the value from old profiles.
+    const requestBodyLimit = Services.prefs.getIntPref(
+      "devtools.netmonitor.requestBodyLimit",
+      1048576
+    );
+    const responseBodyLimit = Services.prefs.getIntPref(
+      "devtools.netmonitor.responseBodyLimit",
+      1048576
+    );
+    if (responseBodyLimit != 1048576) {
+      Services.prefs.setIntPref(
+        "devtools.netmonitor.bodyLimit",
+        responseBodyLimit
+      );
+    } else if (requestBodyLimit != 1048576) {
+      Services.prefs.setIntPref(
+        "devtools.netmonitor.bodyLimit",
+        requestBodyLimit
+      );
+    }
+    Services.prefs.clearUserPref("devtools.netmonitor.requestBodyLimit");
+    Services.prefs.clearUserPref("devtools.netmonitor.responseBodyLimit");
   }
 
-  /**
-   * Helper to retrieve any preference value regardless of its type.
-   *
-   * @param {string} name
-   *        Preference name.
-   * @return {string|number|boolean}
-   *        Preference value
-   */
+  
+
+
+
+
+
+
+
   #getPrefValue(name) {
     const type = Services.prefs.getPrefType(name);
     switch (type) {
@@ -2473,16 +2500,16 @@ class Toolbox extends EventEmitter {
     }
   }
 
-  /**
-   * Called whenever a preference registered in CONFIGURATION_PREFS
-   * changes.
-   * This is used to communicate the new setting's value to the server.
-   *
-   * @param {string} subject
-   * @param {string} topic
-   * @param {string} prefName
-   *        The preference name which changed
-   */
+  
+
+
+
+
+
+
+
+
+
   #onConfigurationPrefChange = async (subject, topic, prefName) => {
     const { name, thread } = CONFIGURATION_PREFS[prefName];
     const value = this.#getPrefValue(prefName);
@@ -2494,17 +2521,17 @@ class Toolbox extends EventEmitter {
       [name]: value,
     });
 
-    // This event is only emitted for tests in order to know when the setting has been applied by the backend.
+    
     this.emitForTests("new-configuration-applied", prefName);
   };
 
-  /**
-   * Update the visibility of the buttons.
-   *
-   * @param {object} options
-   * @param {boolean} options.fromWillNavigate: true if this is called because the
-   *        page is going to navigate
-   */
+  
+
+
+
+
+
+
   updateToolboxButtonsVisibility({ fromWillNavigate = false } = {}) {
     const inspectorFront = this.target.getCachedFront("inspector");
 
@@ -2512,7 +2539,7 @@ class Toolbox extends EventEmitter {
     for (const button of this.toolbarButtons) {
       button.isVisible = this.#commandIsVisible(button);
 
-      // We want to hide highlighters when the toolbox button is disabled from the options panel
+      
       if (
         inspectorFront &&
         button.highlighterTypes &&
@@ -2529,12 +2556,12 @@ class Toolbox extends EventEmitter {
     }
   }
 
-  /**
-   * Visually update picker button.
-   * This function is called on every "select" event. Newly selected panel can
-   * update the visual state of the picker button such as disabled state,
-   * additional CSS classes (className), and tooltip (description).
-   */
+  
+
+
+
+
+
   updatePickerButton() {
     const button = this.pickerButton;
     const currentPanel = this.getCurrentPanel();
@@ -2542,44 +2569,44 @@ class Toolbox extends EventEmitter {
     if (currentPanel?.updatePickerButton) {
       currentPanel.updatePickerButton();
     } else {
-      // If the current panel doesn't define a custom updatePickerButton,
-      // revert the button to its default state
+      
+      
       button.description = this.#getPickerTooltip();
       button.className = this.#getPickerAdditionalClassName();
       button.disabled = null;
     }
   }
 
-  /**
-   * Update the visual state of the Frame picker button.
-   */
+  
+
+
   updateFrameButton() {
     if (this.isDestroying()) {
       return;
     }
 
     if (this.currentToolId === "options" && this.frameMap.size <= 1) {
-      // If the button is only visible because the user is on the Options panel, disable
-      // the button and set an appropriate description.
+      
+      
       this.frameButton.disabled = true;
       this.frameButton.description = L10N.getStr(
         "toolbox.frames.disabled.tooltip"
       );
     } else {
-      // Otherwise, enable the button and update the description.
+      
       this.frameButton.disabled = false;
       this.frameButton.description = L10N.getStr("toolbox.frames.tooltip");
     }
 
-    // Highlight the button when a child frame is selected and visible.
+    
     const selectedFrame = this.frameMap.get(this.selectedFrameId) || {};
 
-    // We need to do something a bit different to avoid some test failures. This function
-    // can be called from onWillNavigate, and the current target might have this `traits`
-    // property nullifed, which is unfortunate as that's what isToolSupported is checking,
-    // so it will throw.
-    // So here, we check first if the button isn't going to be visible anyway (it only checks
-    // for this.frameMap size) so we don't call #commandIsVisible.
+    
+    
+    
+    
+    
+    
     const isVisible = !this.frameButton.isCurrentlyVisible()
       ? false
       : this.#commandIsVisible(this.frameButton);
@@ -2597,10 +2624,10 @@ class Toolbox extends EventEmitter {
     this.errorCountButton.errorCount = this.#errorCount;
   }
 
-  /**
-   * Setup the #splitConsoleEnabled, reflecting the enabled/disabled state of the Enable Split
-   * Console setting, and close the split console if it's open and the setting is turned off
-   */
+  
+
+
+
   updateIsSplitConsoleEnabled() {
     this.#splitConsoleEnabled = Services.prefs.getBoolPref(
       SPLITCONSOLE_ENABLED_PREF,
@@ -2612,9 +2639,9 @@ class Toolbox extends EventEmitter {
     }
   }
 
-  /**
-   * Ensure the visibility of each toolbox button matches the preference value.
-   */
+  
+
+
   #commandIsVisible(button) {
     const { isToolSupported, isCurrentlyVisible, visibilityswitch } = button;
 
@@ -2633,12 +2660,12 @@ class Toolbox extends EventEmitter {
     return true;
   }
 
-  /**
-   * Build a panel for a tool definition.
-   *
-   * @param {string} toolDefinition
-   *        Tool definition of the tool to build a tab for.
-   */
+  
+
+
+
+
+
   #buildPanelForTool(toolDefinition) {
     if (!toolDefinition.isToolSupported(this)) {
       return;
@@ -2657,7 +2684,7 @@ class Toolbox extends EventEmitter {
     const panel = this.doc.createXULElement("vbox");
     panel.className = "toolbox-panel " + toolDefinition.bgTheme;
 
-    // There is already a container for the webconsole frame.
+    
     if (!this.doc.getElementById("toolbox-panel-" + id)) {
       panel.id = "toolbox-panel-" + id;
     }
@@ -2665,14 +2692,14 @@ class Toolbox extends EventEmitter {
     deck.appendChild(panel);
   }
 
-  /**
-   * Lazily created map of the additional tools registered to this toolbox.
-   *
-   * @returns {Map<string, object>}
-   *          a map of the tools definitions registered to this
-   *          particular toolbox (the key is the toolId string, the value
-   *          is the tool definition plain javascript object).
-   */
+  
+
+
+
+
+
+
+
   get additionalToolDefinitions() {
     if (!this.#additionalToolDefinitions) {
       this.#additionalToolDefinitions = new Map();
@@ -2681,12 +2708,12 @@ class Toolbox extends EventEmitter {
     return this.#additionalToolDefinitions;
   }
 
-  /**
-   * Retrieve the array of the additional tools registered to this toolbox.
-   *
-   * @return {Array<object>}
-   *         the array of additional tool definitions registered on this toolbox.
-   */
+  
+
+
+
+
+
   getAdditionalTools() {
     if (this.#additionalToolDefinitions) {
       return Array.from(this.additionalToolDefinitions.values());
@@ -2694,36 +2721,36 @@ class Toolbox extends EventEmitter {
     return [];
   }
 
-  /**
-   * Get the additional tools that have been registered and are visible.
-   *
-   * @return {Array<object>}
-   *         the array of additional tool definitions registered on this toolbox.
-   */
+  
+
+
+
+
+
   getVisibleAdditionalTools() {
     return this.visibleAdditionalTools.map(toolId =>
       this.additionalToolDefinitions.get(toolId)
     );
   }
 
-  /**
-   * Test the existence of a additional tools registered to this toolbox by tool id.
-   *
-   * @param {string} toolId
-   *        the id of the tool to test for existence.
-   *
-   * @return {boolean}
-   */
+  
+
+
+
+
+
+
+
   hasAdditionalTool(toolId) {
     return this.additionalToolDefinitions.has(toolId);
   }
 
-  /**
-   * Register and load an additional tool on this particular toolbox.
-   *
-   * @param {object} definition
-   *        the additional tool definition to register and add to this toolbox.
-   */
+  
+
+
+
+
+
   addAdditionalTool(definition) {
     if (!definition.id) {
       throw new Error("Tool definition id is missing");
@@ -2748,29 +2775,29 @@ class Toolbox extends EventEmitter {
     }
   }
 
-  /**
-   * Retrieve the registered inspector extension sidebars
-   * (used by the inspector panel during its deferred initialization).
-   */
+  
+
+
+
   get inspectorExtensionSidebars() {
     return this.#inspectorExtensionSidebars;
   }
 
-  /**
-   * Register an extension sidebar for the inspector panel.
-   *
-   * @param {string} id
-   *        An unique sidebar id
-   * @param {object} options
-   * @param {string} options.title
-   *        A title for the sidebar
-   */
+  
+
+
+
+
+
+
+
+
   async registerInspectorExtensionSidebar(id, options) {
     this.#inspectorExtensionSidebars.set(id, options);
 
-    // Defer the extension sidebar creation if the inspector
-    // has not been created yet (and do not create the inspector
-    // only to register an extension sidebar).
+    
+    
+    
     if (!this.target.getCachedFront("inspector")) {
       return;
     }
@@ -2783,16 +2810,16 @@ class Toolbox extends EventEmitter {
     inspector.addExtensionSidebar(id, options);
   }
 
-  /**
-   * Unregister an extension sidebar for the inspector panel.
-   *
-   * @param {string} id
-   *        An unique sidebar id
-   */
+  
+
+
+
+
+
   unregisterInspectorExtensionSidebar(id) {
-    // Unregister the sidebar from the toolbox if the toolbox is not already
-    // being destroyed (otherwise we would trigger a re-rendering of the
-    // inspector sidebar tabs while the toolbox is going away).
+    
+    
+    
     if (this.#destroyer) {
       return;
     }
@@ -2804,8 +2831,8 @@ class Toolbox extends EventEmitter {
 
     this.#inspectorExtensionSidebars.delete(id);
 
-    // Remove the created sidebar instance if the inspector panel
-    // has been already created.
+    
+    
     if (!this.target.getCachedFront("inspector")) {
       return;
     }
@@ -2814,14 +2841,14 @@ class Toolbox extends EventEmitter {
     inspector.removeExtensionSidebar(id);
   }
 
-  /**
-   * Unregister and unload an additional tool from this particular toolbox.
-   *
-   * @param {string} toolId
-   *        the id of the additional tool to unregister and remove.
-   */
+  
+
+
+
+
+
   removeAdditionalTool(toolId) {
-    // Early exit if the toolbox is already destroying itself.
+    
     if (this.#destroyer) {
       return;
     }
@@ -2839,14 +2866,14 @@ class Toolbox extends EventEmitter {
     this.unloadTool(toolId);
   }
 
-  /**
-   * Ensure the tool with the given id is loaded.
-   *
-   * @param {string} id
-   *        The id of the tool to load.
-   * @param {object} options
-   *        Object that will be passed to the panel `open` method.
-   */
+  
+
+
+
+
+
+
+
   loadTool(id, options) {
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
     if (iframe) {
@@ -2863,7 +2890,7 @@ class Toolbox extends EventEmitter {
     }
 
     return new Promise((resolve, reject) => {
-      // Retrieve the tool definition (from the global or the per-toolbox tool maps)
+      
       const definition = this.getToolDefinition(id);
 
       if (!definition) {

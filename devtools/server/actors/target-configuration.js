@@ -47,6 +47,9 @@ const SUPPORTED_OPTIONS = {
   
   javascriptEnabled: true,
   
+  
+  networkBodyLimit: true,
+  
   overrideDPPX: true,
   
   printSimulationEnabled: true,
@@ -252,6 +255,9 @@ class TargetConfigurationActor extends Actor {
     
     if ("tracerOptions" in configuration) {
       this._setTracerOptions(configuration.tracerOptions);
+    }
+    if ("networkBodyLimit" in configuration) {
+      this._setNetworkBodyLimit(configuration.networkBodyLimit);
     }
 
     if (!this._shouldHandleConfigurationInParentProcess()) {
@@ -580,6 +586,23 @@ class TargetConfigurationActor extends Actor {
       LOG_DISABLED
     );
     Services.prefs.setIntPref("logging.PageMessages", LOG_VERBOSE);
+  }
+
+  _setNetworkBodyLimit(networkBodyLimit) {
+    const networkParentActor =
+      this.watcherActor.getExistingNetworkParentActor();
+    if (networkParentActor) {
+      networkParentActor.setBodyLimit(networkBodyLimit);
+    }
+  }
+
+  
+
+
+
+
+  getNetworkBodyLimit() {
+    return this._getConfiguration().networkBodyLimit;
   }
 
   

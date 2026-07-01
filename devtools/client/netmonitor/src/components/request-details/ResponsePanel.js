@@ -173,9 +173,7 @@ class ResponsePanel extends Component {
 
 
   handleJSONResponse(mimeType, response) {
-    const limit = Services.prefs.getIntPref(
-      "devtools.netmonitor.responseBodyLimit"
-    );
+    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     

@@ -178,6 +178,15 @@ class NetworkParentActor extends Actor {
     }
     this.networkEventWatcher.setLocalModeMappings(mappings);
   }
+
+  setBodyLimit(bodyLimit) {
+    
+    
+    if (!this.networkEventWatcher) {
+      return;
+    }
+    this.networkEventWatcher.setBodyLimit(bodyLimit);
+  }
 }
 
 exports.NetworkParentActor = NetworkParentActor;
