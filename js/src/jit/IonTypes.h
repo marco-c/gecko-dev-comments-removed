@@ -796,6 +796,15 @@ enum class ResumeMode : uint8_t {
   ResumeAfterCheckProxyGetResult,
 
   
+  
+  
+  
+  
+  
+  
+  ResumeAfterObjectKeys,
+
+  
   ResumeAt,
 
   
@@ -826,6 +835,8 @@ inline const char* ResumeModeToString(ResumeMode mode) {
       return "ResumeAfterCheckIsObject";
     case ResumeMode::ResumeAfterCheckProxyGetResult:
       return "ResumeAfterCheckProxyGetResult";
+    case ResumeMode::ResumeAfterObjectKeys:
+      return "ResumeAfterObjectKeys";
   }
   MOZ_CRASH("Invalid mode");
 }
@@ -835,6 +846,7 @@ inline bool IsResumeAfter(ResumeMode mode) {
     case ResumeMode::ResumeAfter:
     case ResumeMode::ResumeAfterCheckIsObject:
     case ResumeMode::ResumeAfterCheckProxyGetResult:
+    case ResumeMode::ResumeAfterObjectKeys:
       return true;
     default:
       return false;
