@@ -1187,11 +1187,22 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
          "ProcessPendingQ\n",
          realTrans));
 
-    RefPtr<PendingTransactionInfo> existing =
-        gHttpHandler->ConnMgr()->FindTransactionHelper(
-             false, entry, realTrans);
-    if (!existing) {
-      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
+    
+    
+    
+    if (realTrans->Connection()) {
+      LOG(
+          ("ProcessTCPConn trans=%p already dispatched to a connection; not "
+           "re-queuing\n",
+           realTrans));
+    } else {
+      RefPtr<PendingTransactionInfo> existing =
+          gHttpHandler->ConnMgr()->FindTransactionHelper(
+               false, entry, realTrans);
+      if (!existing) {
+        gHttpHandler->ConnMgr()->AddTransaction(realTrans,
+                                                realTrans->Priority());
+      }
     }
     mTransaction = nullptr;
   } else if (!aTransactionAlreadyOnConn) {
@@ -1292,6 +1303,12 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
       if (trans && trans->IsDone()) {
         LOG(("ProcessUDPConn transaction already done, not activating"));
+      } else if (trans && trans->Connection()) {
+        
+        
+        LOG(
+            ("ProcessUDPConn transaction already dispatched to a connection, "
+             "not activating"));
       } else {
         rv = aConn->Activate(mTransaction, mCaps, 0);
         if (NS_SUCCEEDED(rv)) {
@@ -1369,13 +1386,18 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
         
         
         
-        RefPtr<PendingTransactionInfo> existing;
-        if (entry) {
-          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-              false, entry, trans);
-        }
-        if (!existing) {
-          gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+        
+        
+        
+        if (!trans->Connection()) {
+          RefPtr<PendingTransactionInfo> existing;
+          if (entry) {
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+                false, entry, trans);
+          }
+          if (!existing) {
+            gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+          }
         }
         restartedFallback0Rtt = true;
         mTransaction = nullptr;
@@ -1557,15 +1579,20 @@ void HappyEyeballsConnectionAttempt::EnterDone() {
             mTransaction->QueryHttpTransaction()) {
       if (!realTransaction->Closed()) {
         realTransaction->FinishAdopted0RTT(true);
-        RefPtr<ConnectionEntry> entry(mEntry);
-        RefPtr<PendingTransactionInfo> existing;
-        if (entry) {
-          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-              false, entry, realTransaction);
-        }
-        if (!existing) {
-          gHttpHandler->ConnMgr()->AddTransaction(realTransaction,
-                                                  realTransaction->Priority());
+        
+        
+        
+        if (!realTransaction->Connection()) {
+          RefPtr<ConnectionEntry> entry(mEntry);
+          RefPtr<PendingTransactionInfo> existing;
+          if (entry) {
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+                false, entry, realTransaction);
+          }
+          if (!existing) {
+            gHttpHandler->ConnMgr()->AddTransaction(
+                realTransaction, realTransaction->Priority());
+          }
         }
       }
     }
