@@ -19,6 +19,7 @@ import com.google.android.material.color.MaterialColors
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isWideWindow
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.utils.view.addToRadioGroup
 import com.google.android.material.R as materialR
 
@@ -46,6 +47,14 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     }
 
     protected abstract val options: List<ShortcutOption>
+
+    /**
+     * Returns whether [option] can be selected.
+     * A disabled option is still shown but greyed out and non-clickable.
+     * Defaults to `true`.
+     */
+    protected open fun isOptionEnabled(option: ShortcutOption): Boolean = true
+
     protected abstract fun readSelectedKey(): String
     protected abstract fun writeSelectedKey(key: String)
     protected abstract fun getToolbarType(): String
@@ -78,11 +87,11 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
         shortcutPreview?.updateLayoutParams<LinearLayout.LayoutParams> {
             if (context.isWideWindow()) {
                 gravity = Gravity.NO_GRAVITY
-                marginStart = context.resources.getDimensionPixelSize(R.dimen.top_bar_alignment_margin_start)
+                marginStart = context.pixelSizeFor(R.dimen.top_bar_alignment_margin_start)
                 marginEnd = 0
             } else {
                 gravity = Gravity.CENTER_HORIZONTAL
-                val horizontalMargin = context.resources.getDimensionPixelSize(
+                val horizontalMargin = context.pixelSizeFor(
                     R.dimen.radiobutton_preference_margin_start,
                 )
                 marginStart = horizontalMargin
@@ -119,6 +128,7 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     ): RadioButtonPreference = RadioButtonPreference(context).apply {
         key = newOption.key.value
         title = context.getString(newOption.label)
+        isEnabled = isOptionEnabled(newOption)
         setCheckedWithoutClickListener(newOption == selectedOption)
         onClickListener {
             CustomizationSettings.toolbarShortcutSelection.record(
