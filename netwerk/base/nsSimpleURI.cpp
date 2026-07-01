@@ -169,6 +169,8 @@ nsSimpleURI::GetSpec(nsACString& result) {
   return NS_OK;
 }
 
+uint32_t nsSimpleURI::SpecHash() { return CachedSpecHash(mSpec); }
+
 
 NS_IMETHODIMP
 nsSimpleURI::GetSpecIgnoringRef(nsACString& result) {
@@ -240,6 +242,7 @@ nsresult nsSimpleURI::SetSpecInternal(const nsACString& aSpec,
   
   
   mSpec = std::move(spec);
+  ResetSpecHash();
   mPathSep = mSpec.FindChar(':');
   MOZ_ASSERT(mPathSep != kNotFound, "A colon should be in this string");
   mQuerySep = kNotFound;

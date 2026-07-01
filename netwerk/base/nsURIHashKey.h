@@ -53,11 +53,10 @@ class nsURIHashKey : public PLDHashEntryHdr {
       
       return mozilla::HashString(""_ns);
     }
-    nsAutoCString spec;
     
     
-    (void)const_cast<nsIURI*>(aKey)->GetSpec(spec);
-    return mozilla::HashString(spec);
+    
+    return const_cast<nsIURI*>(aKey)->SpecHash();
   }
 
   enum { ALLOW_MEMMOVE = true };

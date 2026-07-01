@@ -77,10 +77,13 @@ void ImageCacheKey::EnsureHash() const {
 
   
   
-  nsAutoCString spec;
-  (void)mURI->GetSpec(spec);
+  
+  
+  
+  
+  
   mHash.emplace(
-      AddToHash(HashString(spec), mControlledDocument, mAppType, mCORSMode));
+      AddToHash(mURI->SpecHash(), mControlledDocument, mAppType, mCORSMode));
 }
 
 
