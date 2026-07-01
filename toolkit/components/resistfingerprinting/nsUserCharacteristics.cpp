@@ -990,6 +990,52 @@ void PopulateFontSmoothingType() {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+void PopulateFontRenderingSettings() {
+#if defined(MOZ_WIDGET_GTK)
+  nsAutoCString hinting;
+  if (mozilla::widget::GSettings::GetString(
+          "org.gnome.desktop.interface"_ns, "font-hinting"_ns, hinting) &&
+      !hinting.IsEmpty()) {
+    glean::characteristics::font_hinting.Set(hinting);
+  }
+#endif
+
+  nsAutoCString rgbaOrder;
+#if defined(MOZ_WIDGET_GTK)
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-rgba-order"_ns, rgbaOrder);
+#elif defined(XP_WIN)
+  
+  
+#  ifndef SPI_GETFONTSMOOTHINGORIENTATION
+#    define SPI_GETFONTSMOOTHINGORIENTATION 0x2012
+#  endif
+#  ifndef FE_FONTSMOOTHINGORIENTATIONRGB
+#    define FE_FONTSMOOTHINGORIENTATIONRGB 0x0001
+#  endif
+  UINT orientation = 0;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHINGORIENTATION, 0, &orientation,
+                           0)) {
+    
+    rgbaOrder.Assign(orientation == FE_FONTSMOOTHINGORIENTATIONRGB ? "rgb"
+                                                                   : "bgr");
+  }
+#endif
+  if (!rgbaOrder.IsEmpty()) {
+    glean::characteristics::font_rgba_order.Set(rgbaOrder);
+  }
+}
+
 void PopulateErrors(
     const PopulatePromise::AllSettledPromiseType::ResolveOrRejectValue&
         results) {
@@ -1251,7 +1297,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 44;
+const int kSubmissionSchema = 45;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1449,6 +1495,7 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateLanguages();
     PopulateTextAntiAliasing();
     PopulateFontSmoothingType();
+    PopulateFontRenderingSettings();
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);
