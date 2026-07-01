@@ -442,6 +442,60 @@ void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
   Divide64WithConstant(masm, ins);
 }
 
+void CodeGenerator::visitDivPowTwoI64(LDivPowTwoI64* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register dest = ToRegister(ins->output());
+  int32_t shift = ins->shift();
+  MOZ_ASSERT(0 <= shift && shift <= 63);
+  bool negativeDivisor = ins->negativeDivisor();
+  MDiv* mir = ins->mir();
+
+  if (shift != 0) {
+    UseScratchRegisterScope temps(masm);
+    Register tmp = temps.Acquire();
+
+    if (mir->isUnsigned()) {
+      
+      masm.srli(dest, lhs, shift);
+    } else {
+      if (mir->canBeNegativeDividend()) {
+        
+        
+        
+        if (shift > 1) {
+          masm.srai(tmp, lhs, 63);
+          masm.srli(tmp, tmp, (64 - shift));
+        } else {
+          masm.srli(tmp, lhs, (64 - shift));
+        }
+        masm.add(tmp, tmp, lhs);
+
+        
+        masm.srai(dest, tmp, shift);
+      } else {
+        
+        masm.srai(dest, lhs, shift);
+      }
+
+      if (negativeDivisor) {
+        masm.neg(dest, dest);
+      }
+    }
+  } else {
+    if (negativeDivisor) {
+      
+      Label ok;
+      masm.branch64(Assembler::NotEqual, Register64(lhs), Imm64(INT64_MIN),
+                    &ok);
+      masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+      masm.bind(&ok);
+      masm.neg(dest, lhs);
+    } else {
+      masm.mv(dest, lhs);
+    }
+  }
+}
+
 void CodeGenerator::visitModI64(LModI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -480,6 +534,44 @@ void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
   
   masm.ma_mul64(output, output, Imm64(d));
   masm.sub(output, lhs, output);
+}
+
+void CodeGenerator::visitModPowTwoI64(LModPowTwoI64* ins) {
+  Register in = ToRegister(ins->input());
+  Register out = ToRegister(ins->output());
+
+  int32_t shift = ins->shift();
+  bool canBeNegative =
+      !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
+
+  if (shift == 0) {
+    masm.mv(out, zero);
+    return;
+  }
+
+  Label negative;
+  if (canBeNegative) {
+    
+    
+    masm.ma_b(in, in, &negative, Assembler::Signed, ShortJump);
+  }
+
+  masm.ma_and(out, in, Imm64((int64_t(1) << shift) - 1));
+
+  if (canBeNegative) {
+    Label done;
+    masm.jump(&done);
+
+    
+    {
+      masm.bind(&negative);
+      masm.neg(out, in);
+      masm.ma_and(out, out, Imm64((int64_t(1) << shift) - 1));
+      masm.neg(out, out);
+    }
+
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitUDivI64(LUDivI64* ins) {
