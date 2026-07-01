@@ -6,7 +6,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  L10nCache: "chrome://browser/content/urlbar/L10nCache.mjs",
 });
 
 let gL10n;
