@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MediaSourceDemuxer.h"
 
 #include <stdint.h>
@@ -17,9 +15,9 @@
 
 extern mozilla::LogModule* GetMediaSourceLog();
 
-#define MSE_DEBUG(arg, ...)                                              \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define MSE_DEBUG(arg, ...)                                                  \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -399,8 +397,7 @@ RefPtr<MediaSourceTrackDemuxer::SeekPromise> MediaSourceTrackDemuxer::DoSeek(
                         TimeUnit::Zero());
   }
 
-  MSE_DEBUG("DoSeek, original target=%" PRId64 "%s, seekTime=%" PRId64
-            "%s, buffered=%s",
+  MSE_DEBUG("DoSeek, original target={}{}, seekTime={}{}, buffered={}",
             aTime.ToMicroseconds(), aTime.ToString().get(),
             seekTime.ToMicroseconds(), seekTime.ToString().get(),
             DumpTimeRanges(buffered).get());
@@ -420,10 +417,10 @@ RefPtr<MediaSourceTrackDemuxer::SeekPromise> MediaSourceTrackDemuxer::DoSeek(
     
     TimeIntervals::IndexType index = buffered.Find(aTime);
     MOZ_ASSERT(index != TimeIntervals::NoIndex);
-    MSE_DEBUG("Can't find seekTime %" PRId64
-              " in the buffer range, use the earliest time %" PRId64,
-              seekTime.ToMicroseconds(),
-              buffered[index].mStart.ToMicroseconds());
+    MSE_DEBUG(
+        "Can't find seekTime {} in the buffer range, use the earliest "
+        "time {}",
+        seekTime.ToMicroseconds(), buffered[index].mStart.ToMicroseconds());
     seekTime = buffered[index].mStart;
   }
   seekTime = mManager->Seek(mType, seekTime, MediaSourceDemuxer::EOS_FUZZ);
