@@ -297,9 +297,10 @@ export const AboutHomeStartupCacheChild = {
     let worker = this.getOrCreateWorker();
 
     let timerId = Glean.newtab.abouthomeCacheConstruction.start();
+    let direction = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
 
     let { page, script } = await worker
-      .post("construct", [state])
+      .post("construct", [state, direction])
       .finally(() => {
         Glean.newtab.abouthomeCacheConstruction.stopAndAccumulate(timerId);
       });
@@ -497,6 +498,7 @@ export class AboutNewTabRedirectorParent extends BaseAboutNewTabRedirector {
           pageshow: {},
           visibilitychange: {},
         },
+        observers: ["intl:l10n-sources-changed"],
       },
       // The wildcard on about:newtab is for the # parameter
       // that is used for the newtab devtools. The wildcard for about:home
