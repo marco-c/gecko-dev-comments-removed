@@ -29,9 +29,19 @@ namespace detail {
 
 
 
+
+template <typename Returned, typename Required>
+using CompatibleReturnType =
+    std::integral_constant<bool, std::is_void_v<Required> ||
+                                     std::is_convertible_v<Returned, Required>>;
+
+
+
 template <typename Func, typename Ret, typename... Params>
-constexpr bool EnableMatchingFunction =
-    std::is_invocable_r_v<Ret, Func, Params...>;
+using EnableMatchingFunction = std::enable_if_t<
+    CompatibleReturnType<
+        decltype(std::declval<Func&>()(std::declval<Params>()...)), Ret>::value,
+    int>;
 
 struct MatchingFunctionPointerTag {};
 struct MatchingFunctorTag {};
@@ -44,16 +54,15 @@ struct GetCallableTag {
   
   
   template <typename T>
-    requires(
-        EnableMatchingFunction<decltype(+std::declval<T&>()), Ret, Params...>)
-  static MatchingFunctionPointerTag test(int, T& obj);
+  static MatchingFunctionPointerTag test(
+      int, T& obj, EnableMatchingFunction<decltype(+obj), Ret, Params...> = 0);
 
   
   
   
   template <typename T>
-    requires(EnableMatchingFunction<T, Ret, Params...>)
-  static MatchingFunctorTag test(short, T& obj);
+  static MatchingFunctorTag test(short, T& obj,
+                                 EnableMatchingFunction<T, Ret, Params...> = 0);
 
   
   
@@ -65,14 +74,13 @@ struct GetCallableTag {
 
 
 template <typename Ret, typename... Params>
-struct GetCallableTag<std::nullptr_t, Ret, Params...> {
-  using Type = void;
-};
+struct GetCallableTag<std::nullptr_t, Ret, Params...> {};
 
 template <typename Result, typename Callable, typename Ret, typename... Params>
-constexpr bool EnableFunctionTag =
+using EnableFunctionTag = std::enable_if_t<
     std::is_same_v<typename GetCallableTag<Callable, Ret, Params...>::Type,
-                   Result>;
+                   Result>,
+    int>;
 
 }  
 
@@ -158,10 +166,12 @@ class MOZ_TEMPORARY_CLASS FunctionRef<Ret(Params...)> {
 
 
 
-  template <typename Callable>
-    requires(detail::EnableFunctionTag<detail::MatchingFunctorTag, Callable,
-                                       Ret, Params...> &&
-             !std::is_same_v<std::remove_cvref_t<Callable>, FunctionRef>)
+  template <typename Callable,
+            typename = detail::EnableFunctionTag<detail::MatchingFunctorTag,
+                                                 Callable, Ret, Params...>,
+            typename std::enable_if_t<!std::is_same_v<
+                std::remove_cv_t<std::remove_reference_t<Callable>>,
+                FunctionRef>>* = nullptr>
   MOZ_IMPLICIT FunctionRef(Callable&& aCallable MOZ_LIFETIME_BOUND) noexcept
       : mAdaptor([](const Payload& aPayload, Params... aParams) {
           auto& func = *static_cast<std::remove_reference_t<Callable>*>(
@@ -188,9 +198,9 @@ class MOZ_TEMPORARY_CLASS FunctionRef<Ret(Params...)> {
 
 
 
-  template <typename Callable>
-    requires(detail::EnableFunctionTag<detail::MatchingFunctionPointerTag,
-                                       Callable, Ret, Params...>)
+  template <typename Callable,
+            typename = detail::EnableFunctionTag<
+                detail::MatchingFunctionPointerTag, Callable, Ret, Params...>>
   MOZ_IMPLICIT FunctionRef(const Callable& aCallable) noexcept
       : FunctionRef(detail::MatchingFunctionPointerTag{}, +aCallable) {}
 

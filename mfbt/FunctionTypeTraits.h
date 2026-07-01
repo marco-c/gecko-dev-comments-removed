@@ -32,7 +32,6 @@ namespace mozilla {
 
 
 
-
 template <typename T>
 struct FunctionTypeTraits;
 
