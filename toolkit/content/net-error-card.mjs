@@ -91,14 +91,26 @@ export class NetErrorCard extends MozLitElement {
         : document.getNetErrorInfo();
     } catch {}
 
-    return (
-      resolveErrorID({
-        errorCodeString: errorInfo.errorCodeString,
-        gErrorCode,
-        noConnectivity: gNoConnectivity,
-        vpnActive: VPN_ACTIVE,
-      }) !== null
-    );
+    const resolvedErrorId = resolveErrorID({
+      errorCodeString: errorInfo.errorCodeString,
+      gErrorCode,
+      noConnectivity: gNoConnectivity,
+      vpnActive: VPN_ACTIVE,
+    });
+
+    // Bug 2038887: the felt privacy error page does not surface the DoH
+    // domain, learn-more link, exclude-domain button, or settings shortcut
+    // that the legacy page provides for TRR-only failures. Fall back to the
+    // legacy page until the felt privacy page supports this case.
+    if (
+      resolvedErrorId === "dnsNotFound" &&
+      !gNoConnectivity &&
+      RPMIsTRROnlyFailure()
+    ) {
+      return false;
+    }
+
+    return resolvedErrorId !== null;
   }
 
   constructor() {
@@ -167,6 +179,11 @@ export class NetErrorCard extends MozLitElement {
   init() {
     this.hostname = HOST_NAME;
     this.errorInfo = this.getErrorInfo();
+    if (!gIsCertError && !this.errorInfo.errorCodeString) {
+      this.errorInfo = Object.assign({}, this.errorInfo, {
+        errorCodeString: gErrorCode,
+      });
+    }
     // isSupported() gates component creation, so resolvedErrorId should never
     // be null here. getErrorConfig() guards against it defensively regardless.
     this.resolvedErrorId = resolveErrorID({
@@ -198,14 +215,10 @@ export class NetErrorCard extends MozLitElement {
 
     // nssFailure2 are TLS errors which are tracked by load_abouttlserror
     if (!gIsCertError && gErrorCode !== "nssFailure2" && !isCaptive()) {
-      let neterrorInfo = Object.assign({}, this.errorInfo);
-      if (!neterrorInfo.errorCodeString) {
-        neterrorInfo.errorCodeString = gErrorCode;
-      }
       recordSecurityUITelemetry(
         "securityUiNeterror",
         "loadAboutneterror",
-        neterrorInfo
+        this.errorInfo
       );
     }
 
@@ -665,9 +678,7 @@ export class NetErrorCard extends MozLitElement {
       whatCanYouDoItems: customNetError.whatCanYouDoItems,
       learnMoreL10nId: customNetError.learnMoreL10nId,
       learnMoreSupportPage: customNetError.learnMoreSupportPage,
-      errorCode:
-        this.errorInfo?.errorCodeString ||
-        (customNetError.showErrorCode ? config.errorCode : null),
+      errorCode: customNetError.showErrorCode ? config.errorCode : null,
       buttons: {
         tryAgain: config.buttons?.showTryAgain,
         goBack: config.buttons?.showGoBack && window.self === window.top,
@@ -1064,8 +1075,11 @@ export class NetErrorCard extends MozLitElement {
     }
 
     const { bodyTitleL10nId, image } = this.errorConfig;
-    const { src, alt, className } =
-      image ?? NET_ERROR_ILLUSTRATIONS.securityError;
+    const {
+      src,
+      alt = "",
+      className,
+    } = image ?? NET_ERROR_ILLUSTRATIONS.securityError;
     const title = bodyTitleL10nId ?? "fp-certerror-body-title";
 
     return html`<link
@@ -1078,12 +1092,7 @@ export class NetErrorCard extends MozLitElement {
         aria-describedby="error-intro whatCanYouDo"
       >
         <div class="img-container">
-          <img
-            src=${src}
-            class=${ifDefined(className)}
-            data-l10n-id=${alt}
-            data-l10n-attrs="alt"
-          />
+          <img src=${src} class=${ifDefined(className)} alt=${alt} />
         </div>
         <div class="container">
           ${this.showCustomNetErrorCard
