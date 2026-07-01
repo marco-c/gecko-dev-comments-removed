@@ -13,13 +13,13 @@ buildscript {
 }
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.google.devtools.ksp'
-apply plugin: 'kotlin-android'
 apply plugin: 'kotlinx-serialization'
+
+apply plugin: 'com.google.devtools.ksp'
 
 android {
     defaultConfig {
@@ -63,6 +63,7 @@ dependencies {
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
     testImplementation libs.kotlin.reflect
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
 
