@@ -371,11 +371,20 @@ RTCError MergeCodecsFromConfigurations(
     if (!error.ok()) {
       return error;
     }
+
+    
+    if (config.codec.type == Codec::Type::kAudio && config.resiliency.red) {
+      error = MergeRedCodec(config, primary_codec, mid, offered_codecs,
+                            pt_suggester, pick_from_top_of_range);
+      if (!error.ok()) {
+        return error;
+      }
+    }
   }
 
   
   for (const CodecConfiguration& config : configurations) {
-    if (!config.resiliency.red) {
+    if (!config.resiliency.red || config.codec.type == Codec::Type::kAudio) {
       continue;
     }
     
