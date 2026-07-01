@@ -269,10 +269,8 @@ nsresult nsWindowRoot::GetControllerForCommand(const char* aCommand,
         
         
         
-        BrowsingContext* focusedBC =
-            fm->GetActiveBrowsingContextInChrome()
-                ? fm->GetFocusedBrowsingContextInChrome()
-                : nullptr;
+        
+        BrowsingContext* focusedBC = fm->GetFocusedBrowsingContextInChrome();
         if (focusedBC) {
           
           
