@@ -3157,21 +3157,16 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageMediaCodec(
 
     ~CompositeListener() override { MaybeRelease( false); }
 
-    bool operator()(bool aRender) override { return MaybeRelease(aRender); }
+    void operator()(void) override { MaybeRelease( true); }
 
-    bool MaybeRelease(bool aRender) {
+    void MaybeRelease(bool aRender) {
       if (!mDecoder) {
-        return false;
+        return;
       }
-
       if (mDecoder->ReleaseFrameMediaCodec(this, aRender)) {
         mDecoder->QueueResumeDrain();
-        
-        mDecoder = nullptr;
-        return true;
       }
       mDecoder = nullptr;
-      return false;
     }
 
     RefPtr<FFmpegVideoDecoder<LIBAV_VER>> mDecoder;

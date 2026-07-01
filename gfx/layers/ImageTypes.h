@@ -100,8 +100,6 @@ enum class ImageFormat {
 
 
   DCOMP_SURFACE,
-
-  ANDROID_IMAGE_READER,
 };
 
 enum class StereoMode {
