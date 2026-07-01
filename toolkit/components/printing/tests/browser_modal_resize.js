@@ -111,7 +111,7 @@ add_task(async function testResizing() {
     
     
     
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       let width = window.screen.availWidth * 0.75;
       let height = window.screen.availHeight * 0.75;
       window.resizeTo(width, height);

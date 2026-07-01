@@ -38,7 +38,7 @@ add_task(async () => {
 
           
           try {
-            await BrowserTestUtils.waitForCondition(
+            await TestUtils.waitForCondition(
               () => pipWin.closed,
               "Player window closed.",
               10,

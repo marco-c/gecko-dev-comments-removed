@@ -69,7 +69,7 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   
-  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   await embedScriptFinished;
 
@@ -86,13 +86,13 @@ add_task(async function test_smartblock_embed_replaced() {
 
   await openProtectionsPanel(window);
 
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     document.getElementById("trustpanel-blocker-see-all"),
     {}
   );
 
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(
       tab.ownerDocument.getElementById("trustpanel-smartblock-toggle-container")
     );

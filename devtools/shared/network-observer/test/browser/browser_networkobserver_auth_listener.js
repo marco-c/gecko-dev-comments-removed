@@ -88,7 +88,7 @@ add_task(async function testAuthRequestWithoutListener() {
   });
 
   info("Wait for a network event to be created");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 1);
+  await TestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
 
   info("Wait for the auth prompt to be displayed");
@@ -138,7 +138,7 @@ add_task(async function testAuthRequestWithForwardingListener() {
   });
 
   info("Wait for a network event to be received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 1);
+  await TestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
 
   
@@ -189,10 +189,10 @@ add_task(async function testAuthRequestWithCancellingListener() {
   });
 
   info("Wait for a network event to be received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 1);
+  await TestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => events[0].hasResponseContent && events[0].hasSecurityInfo
   );
 
@@ -244,11 +244,11 @@ add_task(async function testAuthRequestWithWrongCredentialsListener() {
   });
 
   info("Wait for all network events to be received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 1);
+  await TestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
 
   
-  await BrowserTestUtils.waitForCondition(() => events[0].hasAuthPrompt);
+  await TestUtils.waitForCondition(() => events[0].hasAuthPrompt);
 
   
   
@@ -307,12 +307,12 @@ add_task(async function testAuthRequestWithCredentialsListener() {
   
   
   info("Wait for all network events to be received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 2);
+  await TestUtils.waitForCondition(() => events.length >= 2);
   is(events.length, 2, "Received the expected number of network events");
 
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => events[1].hasResponseContent && events[1].hasSecurityInfo
   );
 

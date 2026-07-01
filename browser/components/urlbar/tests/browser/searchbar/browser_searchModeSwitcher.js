@@ -22,7 +22,7 @@ add_task(async function test_keyword_disabled() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () =>
       SearchbarTestUtils.getSearchModeSwitcherIcon(win) ==
       (await SearchService.defaultEngine.getIconURL())

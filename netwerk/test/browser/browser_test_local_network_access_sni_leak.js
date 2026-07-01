@@ -277,7 +277,7 @@ add_task(async function test_lna_accept_receives_sni() {
 
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => !!(await gServer.sniValues()).length,
     "Waiting for SNI value after accepting the LNA prompt"
   );

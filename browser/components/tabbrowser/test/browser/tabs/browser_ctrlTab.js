@@ -244,7 +244,7 @@ add_task(async function () {
     
     
     
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         emptyImageData !==
         observedPreview._canvas.firstElementChild

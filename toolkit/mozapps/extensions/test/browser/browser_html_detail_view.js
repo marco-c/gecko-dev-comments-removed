@@ -199,7 +199,7 @@ async function hasPrivateAllowed(id) {
 }
 
 async function assertBackButtonIsDisabled(win) {
-  let backButton = await BrowserTestUtils.waitForCondition(async () => {
+  let backButton = await TestUtils.waitForCondition(async () => {
     let backButton = win.document.querySelector(".back-button");
 
     

@@ -1128,7 +1128,7 @@ async function performRemoveAll(store) {
   menuDeleteAll.click();
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getCellLength() === 0,
     `All items removed from ${storeName}`,
     500,

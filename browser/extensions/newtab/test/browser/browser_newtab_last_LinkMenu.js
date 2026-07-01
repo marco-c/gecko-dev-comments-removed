@@ -70,7 +70,7 @@ add_task(async function test_newtab_last_LinkMenu() {
   await waitForPreloaded(browser);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -81,20 +81,30 @@ add_task(async function test_newtab_last_LinkMenu() {
   );
 
   
-  await setSize(600, 450);
+  
+  
+  const novaEnabled = Services.prefs.getBoolPref(
+    "browser.newtabpage.activity-stream.nova.enabled",
+    false
+  );
+  const testWidth = novaEnabled ? 750 : 600;
+  const topSiteNthChild = novaEnabled ? "4n" : "2n";
 
   
-  await SpecialPowers.spawn(browser, [], async () => {
+  await setSize(testWidth, 450);
+
+  
+  await SpecialPowers.spawn(browser, [topSiteNthChild], async nthChild => {
     
     await ContentTaskUtils.waitForCondition(
       () =>
         content.document.querySelector(
-          ".top-site-outer:nth-child(2n) .context-menu-button"
+          `.top-site-outer:nth-child(${nthChild}) .context-menu-button`
         ),
       "Wait for the topsite card and button"
     );
     const topsiteOuter = content.document.querySelector(
-      ".top-site-outer:nth-child(2n)"
+      `.top-site-outer:nth-child(${nthChild})`
     );
     const topsiteContextMenuButton = topsiteOuter.querySelector(
       ".context-menu-button"

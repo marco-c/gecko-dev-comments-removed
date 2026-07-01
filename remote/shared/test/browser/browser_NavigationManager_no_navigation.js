@@ -2,9 +2,6 @@
 
 
 
-const { NavigationManager } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/NavigationManager.sys.mjs"
-);
 const { TabManager } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/TabManager.sys.mjs"
 );
@@ -22,9 +19,8 @@ add_task(async function testDocumentOpenWriteClose() {
 
   const url = "https://example.com/document-builder.sjs?html=test";
 
-  const tab = addTab(gBrowser, url);
+  const tab = await addTabAndWaitForNavigated(gBrowser, url);
   const browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
 
   navigationManager.startMonitoring();
   is(events.length, 0, "No event recorded");
@@ -61,7 +57,7 @@ add_task(async function testDocumentOpenWriteClose() {
   await loadURL(browser, url);
 
   info("Wait until 3 events have been received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 3);
+  await TestUtils.waitForCondition(() => events.length >= 3);
 
   is(events.length, 3, "Recorded 3 navigation events");
   is(

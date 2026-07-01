@@ -52,7 +52,7 @@ add_task(async function test_restore_defaults_deselects_extension() {
 
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tabsNativeSelect.value === "home",
     "New tabs dropdown reset to Firefox Home"
   );

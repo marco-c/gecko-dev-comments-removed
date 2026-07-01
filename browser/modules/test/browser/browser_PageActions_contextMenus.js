@@ -69,7 +69,7 @@ add_task(async function contextMenu() {
 
   
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   }, "Waiting for urlbar button to be added back");
 
@@ -94,7 +94,7 @@ add_task(async function contextMenu() {
 
   
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   }, "Waiting for urlbar button to be added back");
 

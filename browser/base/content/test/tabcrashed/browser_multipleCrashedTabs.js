@@ -126,7 +126,7 @@ add_task(async function test_multiple_tabcrashed_pages() {
   
   
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return snapshotCount(histogram.snapshot()) == 1;
   }, `Collected value should become 1.`);
 

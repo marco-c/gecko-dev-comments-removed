@@ -54,7 +54,7 @@ registerCleanupFunction(async () => {
 
 
 async function waitForReaderFlag(browser, expected) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => browser.isArticle === expected,
     `selectedBrowser.isArticle should be ${expected}`
   );
@@ -78,7 +78,7 @@ async function openPageAssistSidebar() {
   const pageAssistEl = sideBarEl.querySelector("page-assist");
   Assert.ok(pageAssistEl, "Page assist element should exist");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => pageAssistEl.shadowRoot,
     "Shadow root should exist"
   );
@@ -122,7 +122,7 @@ add_task(async function test_page_assist_sidebar_integration() {
     const sidebarEl = await openPageAssistSidebar();
 
     await waitForReaderFlag(browser,  true);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.isCurrentPageReaderable === true,
       "Sidebar should mirror browser.isArticle === true"
     );
@@ -153,7 +153,7 @@ add_task(async function test_page_assist_sidebar_integration() {
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     shadowRoot.querySelector("#submit-user-prompt-btn").click();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.aiResponse?.startsWith("STUBBED:"),
       "aiResponse should appear with stubbed content"
     );
@@ -168,14 +168,14 @@ add_task(async function test_page_assist_sidebar_integration() {
       "data:text/html," + encodeURIComponent(NON_READABLE_HTML);
     await loadAndAwaitReader(browser, nonReadableUrl,  false);
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.isCurrentPageReaderable === false,
       "Sidebar should mirror browser.isArticle === false"
     );
 
     
     await loadAndAwaitReader(browser, TEST_LINK_URL_EN,  true);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.isCurrentPageReaderable === true,
       "Sidebar should flip back to readerable"
     );
@@ -255,7 +255,7 @@ add_task(async function test_page_assist_component_fetch_data() {
 
     await sideBarEl._handleSubmit();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sideBarEl.aiResponse === "No page data",
       "Should show 'No page data' when fetch fails"
     );
@@ -278,7 +278,7 @@ add_task(async function test_page_assist_component_fetch_data() {
 add_task(async function test_page_assist_is_readerable() {
   
   await BrowserTestUtils.withNewTab(TEST_LINK_URL_EN, async browser => {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => browser.isArticle === true,
       "browser.isArticle should become true for a readable page"
     );
@@ -291,7 +291,7 @@ add_task(async function test_page_assist_is_readerable() {
   
   const dataUrl = "data:text/html," + encodeURIComponent(NON_READABLE_HTML);
   await BrowserTestUtils.withNewTab(dataUrl, async browser => {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         browser.currentURI?.spec.startsWith("data:") ||
         browser.isArticle === false,
@@ -317,12 +317,12 @@ add_task(async function test_page_assist_url_change_detection() {
     const sidebarEl = await openPageAssistSidebar();
 
     
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         typeof browser.isArticle === "boolean" && browser.isArticle === true,
       "Readable page should set browser.isArticle = true"
     );
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.isCurrentPageReaderable === true,
       "Sidebar should mirror isArticle = true"
     );
@@ -334,12 +334,12 @@ add_task(async function test_page_assist_url_change_detection() {
     await BrowserTestUtils.browserLoaded(browser);
 
     
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         typeof browser.isArticle === "boolean" && browser.isArticle === false,
       "After navigation, browser.isArticle should be false"
     );
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => sidebarEl.isCurrentPageReaderable === false,
       "Sidebar should mirror isArticle = false"
     );

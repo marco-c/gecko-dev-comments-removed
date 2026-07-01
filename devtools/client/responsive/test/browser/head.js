@@ -913,7 +913,7 @@ async function promiseRDMZoom(ui, browser, zoom) {
   
   
   
-  await BrowserTestUtils.waitForCondition(function () {
+  await TestUtils.waitForCondition(function () {
     return browser.getBoundingClientRect().width != width;
   });
 }

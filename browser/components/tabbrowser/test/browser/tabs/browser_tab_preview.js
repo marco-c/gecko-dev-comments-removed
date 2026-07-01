@@ -638,7 +638,7 @@ add_task(async function tabNotesTests() {
   tabNotePanel.querySelector("#tab-note-editor-button-save").click();
   await Promise.all([menuHidden, tabNoteCreated]);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Glean.tabNotes.added.testGetValue()?.length,
     "wait for event to be recorded"
   );
@@ -884,7 +884,7 @@ add_task(async function tabGroupPanelDoesNotAppearForExpandedTabGroups() {
     { type: "mouseover" },
     window
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return previewPanelComponent.activate.calledOnce;
   }, "Waiting for activate to be called");
 
@@ -986,7 +986,7 @@ add_task(async function moveBetweenTabGroupsTests() {
   );
 
   await openGroupPreview(group1);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => previewPanel.anchorNode.parentElement == group1,
     "Panel is anchored to group 1"
   );
@@ -997,7 +997,7 @@ add_task(async function moveBetweenTabGroupsTests() {
   );
 
   await openGroupPreview(group2);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => previewPanel.anchorNode.parentElement == group2,
     "Panel is anchored to group 2"
   );
@@ -1396,7 +1396,7 @@ add_task(async function testDragToCancelPreview() {
   );
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !previewElement.getAttribute("animating")
   );
 
@@ -1516,7 +1516,7 @@ add_task(async function panelSuppressionOnPanelTests() {
     { type: "mouseover" },
     window
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return previewComponent.activate.calledOnce;
   });
   Assert.equal(previewComponent.tabPanel.panelElement.state, "closed", "");
@@ -1533,7 +1533,7 @@ add_task(async function panelSuppressionOnPanelTests() {
     { type: "mouseover" },
     window
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return previewComponent.activate.calledOnce;
   });
   Assert.equal(previewComponent.tabPanel.panelElement.state, "closed", "");
@@ -1596,7 +1596,7 @@ add_task(async function panelSuppressionOnContextMenuTests() {
     { type: "mouseover" },
     window
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return previewComponent.activate.called;
   });
   Assert.equal(previewComponent.tabPanel.panelElement.state, "closed", "");
@@ -1614,7 +1614,7 @@ add_task(async function panelSuppressionOnContextMenuTests() {
     { type: "mouseover" },
     window
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return previewComponent.activate.called;
   });
   Assert.equal(previewComponent.tabPanel.panelElement.state, "closed", "");
@@ -1654,7 +1654,7 @@ add_task(async function panelSuppressionOnPanelLazyLoadTests() {
 
   EventUtils.synthesizeMouseAtCenter(fgTab, { type: "mouseover" }, fgWindow);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     
     
     return (
@@ -1732,7 +1732,7 @@ add_task(
     
     EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" });
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => previewComponent.panelOpener.execute.calledOnce,
       "panelOpener execute called"
     );
@@ -1747,7 +1747,7 @@ add_task(
     await popupShownEvent;
 
     
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return previewComponent.panelOpener._timer == null;
     }, "panelOpener timer finished");
     await TestUtils.waitForTick();
@@ -1949,11 +1949,11 @@ add_task(async function testTabGroupHoverPreviewTelemetry() {
 
   for (const tabGroup of tabGroups) {
     await openGroupPreview(tabGroup);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => previewPanel.anchorNode?.parentElement == tabGroup,
       "panel re-anchored to the next tab group"
     );
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         Glean.tabgroup.groupInteractions.hover_preview.testGetValue() ==
         interactionCount,

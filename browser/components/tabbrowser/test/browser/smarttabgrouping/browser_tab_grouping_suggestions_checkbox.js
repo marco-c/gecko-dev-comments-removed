@@ -132,7 +132,7 @@ add_task(async function test_smart_tab_group_suggestions_checkbox_selection() {
   suggestButton.click();
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       tabgroupPanel.querySelectorAll(".tab-group-suggestion-checkbox")
         .length === suggestedTabs.length,

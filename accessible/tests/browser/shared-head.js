@@ -606,7 +606,7 @@ function accessibleTask(doc, task, options = {}) {
           
           
           
-          await BrowserTestUtils.waitForCondition(() => {
+          await TestUtils.waitForCondition(() => {
             docAccessible = getAccessible(browser.contentWindow.document);
             if (!docAccessible) {
               return false;

@@ -28,7 +28,7 @@ add_task(async function test_new_chat_button_sidebar() {
     AIWindowUI.toggleSidebar(win);
 
     
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       const sidebarBrowser = win.document.getElementById("ai-window-browser");
       return sidebarBrowser && sidebarBrowser.contentDocument;
     }, "Sidebar browser should be loaded");
@@ -36,7 +36,7 @@ add_task(async function test_new_chat_button_sidebar() {
     const sidebarBrowser = win.document.getElementById("ai-window-browser");
 
     
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       const aiWindow =
         sidebarBrowser.contentDocument.querySelector("ai-window");
       return aiWindow && aiWindow.shadowRoot;
@@ -74,47 +74,36 @@ add_task(async function test_new_chat_button_sidebar() {
 
 
 
-add_task(async function test_new_chat_button_not_in_fullpage() {
+add_task(async function test_new_chat_button_in_fullpage() {
   const sb = this.sinon.createSandbox();
 
   try {
     sb.stub(this.openAIEngine, "build");
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.smartwindow.enabled", true],
-        ["browser.smartwindow.firstrun.hasCompleted", true],
-        ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
-      ],
-    });
-
     const aiWin = await openAIWindow();
     const browser = aiWin.gBrowser.selectedBrowser;
 
-    
     const result = await SpecialPowers.spawn(browser, [], async () => {
       const aiWindowElement = content.document.querySelector("ai-window");
 
-      
-      
-      
       await new Promise(resolve => content.setTimeout(resolve, 100));
 
-      
       await ContentTaskUtils.waitForCondition(
         () => aiWindowElement && aiWindowElement.shadowRoot,
         "Wait for AI Window to be rendered with shadow root"
       );
 
-      
       const mode = aiWindowElement.mode;
       const newChatButton = aiWindowElement.shadowRoot.querySelector(
         ".new-chat-icon-button"
       );
+      const fullpageHeader =
+        aiWindowElement.shadowRoot.querySelector(".fullpage-header");
 
       return {
         mode,
         hasButton: !!newChatButton,
+        hasFullpageHeader: !!fullpageHeader,
       };
     });
 
@@ -123,14 +112,60 @@ add_task(async function test_new_chat_button_not_in_fullpage() {
       "fullpage",
       "AI Window should be in fullpage mode"
     );
-    Assert.equal(
+    Assert.ok(
       result.hasButton,
-      false,
-      "New chat button should not exist in fullpage mode"
+      "New chat button should exist in fullpage mode"
+    );
+    Assert.ok(
+      result.hasFullpageHeader,
+      "Fullpage header container should exist in fullpage mode"
     );
 
     await BrowserTestUtils.closeWindow(aiWin);
-    await SpecialPowers.popPrefEnv();
+  } finally {
+    sb.restore();
+  }
+});
+
+
+
+
+
+add_task(async function test_new_chat_fullpage_stays_chat_active() {
+  const sb = this.sinon.createSandbox();
+
+  try {
+    sb.stub(this.openAIEngine, "build");
+
+    const aiWin = await openAIWindow();
+    const browser = aiWin.gBrowser.selectedBrowser;
+
+    const result = await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+
+      await ContentTaskUtils.waitForCondition(
+        () => aiWindowElement && aiWindowElement.shadowRoot,
+        "Wait for AI Window to be rendered with shadow root"
+      );
+
+      aiWindowElement.classList.add("chat-active");
+
+      Assert.ok(
+        aiWindowElement.classList.contains("chat-active"),
+        "chat-active class should be set before clicking new chat"
+      );
+
+      aiWindowElement.onCreateNewChatClick();
+
+      return aiWindowElement.classList.contains("chat-active");
+    });
+
+    Assert.ok(
+      result,
+      "chat-active class should be retained after new chat click in fullpage mode"
+    );
+
+    await BrowserTestUtils.closeWindow(aiWin);
   } finally {
     sb.restore();
   }

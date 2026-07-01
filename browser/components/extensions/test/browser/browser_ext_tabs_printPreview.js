@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function testPrintPreview() {
@@ -26,14 +24,14 @@ add_task(async function testPrintPreview() {
   await extension.startup();
 
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let preview = document.querySelector(".printPreviewBrowser");
     return preview && BrowserTestUtils.isVisible(preview);
   });
 
   gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !document.querySelector(".printPreviewBrowser")
   );
 

@@ -174,7 +174,7 @@ async function testRestoreCommon(isolateEverything) {
     let regular_browser = regular_tab.linkedBrowser;
 
     
-    let ready = BrowserTestUtils.waitForCondition(async () => {
+    let ready = TestUtils.waitForCondition(async () => {
       
       
       return SpecialPowers.spawn(regular_browser, [], () => {

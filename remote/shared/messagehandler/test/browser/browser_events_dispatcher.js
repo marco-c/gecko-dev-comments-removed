@@ -551,9 +551,7 @@ async function emitTestEvent(root, browsingContext, monitoringEvents) {
   
   
   info("Wait for the monitoring event");
-  await BrowserTestUtils.waitForCondition(
-    () => monitoringEvents.length >= count + 1
-  );
+  await TestUtils.waitForCondition(() => monitoringEvents.length >= count + 1);
   is(monitoringEvents.length, count + 1);
 }
 

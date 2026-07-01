@@ -30,7 +30,7 @@ add_task(
         
         await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
         
-        await BrowserTestUtils.waitForCondition(() => {
+        await TestUtils.waitForCondition(() => {
           return browser.autoCompletePopup.popupOpen;
         });
         
@@ -48,7 +48,7 @@ add_task(
         
         await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
         
-        await BrowserTestUtils.waitForCondition(() => {
+        await TestUtils.waitForCondition(() => {
           return browser.autoCompletePopup.popupOpen;
         });
 

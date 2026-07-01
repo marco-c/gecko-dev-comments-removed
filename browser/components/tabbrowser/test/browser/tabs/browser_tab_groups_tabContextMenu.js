@@ -1228,7 +1228,7 @@ add_task(
     );
 
     
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => gBrowser.tabs.length == 1,
       "Only one tab remains on the tab strip"
     );

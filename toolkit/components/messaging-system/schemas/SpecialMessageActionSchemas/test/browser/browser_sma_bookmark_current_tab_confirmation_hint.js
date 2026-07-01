@@ -64,14 +64,14 @@ add_task(async function test_BOOKMARK_CURRENT_TAB_WITHOUT_CONFIRMATION_HINT() {
   await SMATestUtils.validateAction(action);
   await SpecialMessageActions.handleAction(action, gBrowser);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => bookmarkCurrentTabSpy.calledOnce,
     "Expected 'bookmarkCurrentTab' to be called once"
   );
 
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => showConfirmationHintSpy.notCalled,
     "Expected 'showConfirmation' to not be called"
   );

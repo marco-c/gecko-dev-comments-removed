@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 async function promisePageActionPanelOpen(win = window, eventDict = {}) {
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     
     
     

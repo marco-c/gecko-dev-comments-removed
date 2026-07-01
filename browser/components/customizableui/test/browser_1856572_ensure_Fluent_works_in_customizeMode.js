@@ -52,7 +52,7 @@ add_task(async function test_data_l10n_customize_mode() {
 
 
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return (
         secondPageNavButton.textContent !== previousText &&
         secondPageNavButton.textContent === translatedText

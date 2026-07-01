@@ -208,7 +208,7 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
     
     try {
       
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           SpecialPowers.spawn(
             browser,

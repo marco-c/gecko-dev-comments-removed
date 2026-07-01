@@ -33,7 +33,7 @@ add_task(async function test_extension_url_label_updates_on_extension_unload() {
 
   let { doc, tab } = await openCustomHomepageSubpage();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => doc.querySelectorAll("moz-box-item[data-url]").length === 2,
     "Wait for both URLs to render"
   );
@@ -50,7 +50,7 @@ add_task(async function test_extension_url_label_updates_on_extension_unload() {
   
   await extension.unload();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       doc
         .querySelector('moz-box-item[data-url^="moz-extension://"]')

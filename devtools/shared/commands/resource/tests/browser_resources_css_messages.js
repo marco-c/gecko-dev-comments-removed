@@ -58,7 +58,7 @@ async function testWatchingCssMessages() {
   
   
   
-  await BrowserTestUtils.waitForCondition(() => receivedMessages.length === 1);
+  await TestUtils.waitForCondition(() => receivedMessages.length === 1);
 
   info("Trigger a CSS Warning");
   triggerCSSWarning(tab);

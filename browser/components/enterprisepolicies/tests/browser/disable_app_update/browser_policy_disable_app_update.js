@@ -26,10 +26,14 @@ add_task(async function test_updates_post_policy() {
 });
 
 add_task(async function test_update_preferences_ui() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:preferences"
+  let settingsRedesignEnabled = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled",
+    false
   );
+  let prefUrl = settingsRedesignEnabled
+    ? "about:preferences#about"
+    : "about:preferences";
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     let settingControl = content.document.getElementById(
@@ -54,7 +58,7 @@ add_task(async function test_update_about_ui() {
   let aboutDialog = await waitForAboutDialog();
   let panelId = "policyDisabled";
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => aboutDialog.gAppUpdater?.selectedPanel?.id == panelId,
     'Waiting for expected panel ID - expected "' + panelId + '"'
   );

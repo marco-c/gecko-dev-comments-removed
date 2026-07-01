@@ -71,7 +71,7 @@ add_task(async function test_updatePing() {
 
       
       
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async function () {
           
           

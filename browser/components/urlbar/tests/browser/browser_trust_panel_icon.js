@@ -14,8 +14,9 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const TEST_BREACH = {
-  AddedDate: "2018-12-20T23:56:26Z",
-  BreachDate: "2018-12-16",
+  
+  AddedDate: Temporal.Now.plainDateTimeISO().toString(),
+  BreachDate: Temporal.Now.plainDateISO().toString(),
   Domain: "example.org",
   Name: "TestBreach",
   PwnCount: 42,
@@ -44,13 +45,10 @@ add_setup(async function setup() {
   
   await new Promise(r => setTimeout(r, 500));
 
-  window.gTrustPanelHandler.resetBreachCacheForTest();
-
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
     await db.clear();
     await db.importChanges({}, Date.now());
-    window.gTrustPanelHandler.resetBreachCacheForTest();
   });
 });
 
@@ -59,7 +57,7 @@ function trustIconContainer() {
 }
 
 async function waitForTrustIconClass(className, message) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => trustIconContainer()?.classList.contains(className),
     message,
     100,
@@ -68,7 +66,7 @@ async function waitForTrustIconClass(className, message) {
 }
 
 async function waitForTrustIconWithoutClass(className, message) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !trustIconContainer()?.classList.contains(className),
     message,
     100,
@@ -161,8 +159,6 @@ add_task(async function test_breached_urlbar_icon_animation_logic() {
       { useRecordId: true }
     );
     await db.importChanges({}, Date.now());
-
-    window.gTrustPanelHandler.resetBreachCacheForTest();
 
     tab3 = await BrowserTestUtils.openNewForegroundTab({
       gBrowser,

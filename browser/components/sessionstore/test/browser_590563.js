@@ -51,7 +51,7 @@ async function middleClickTest(win) {
     browser.contentWindow
   );
   let tree = browser.contentDocument.getElementById("tabList");
-  await BrowserTestUtils.waitForCondition(() => !tree.hasAttribute("hidden"));
+  await TestUtils.waitForCondition(() => !tree.hasAttribute("hidden"));
   
   tree.getBoundingClientRect();
 

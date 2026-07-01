@@ -60,7 +60,7 @@ async function testTelemetry(
   let storageAccessGrantedHistogram;
 
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let histograms;
     if (aProbeInParent) {
       histograms = Services.telemetry.getSnapshotForHistograms(

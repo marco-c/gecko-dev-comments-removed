@@ -299,7 +299,7 @@ add_task(async function test_splitview_start_event_menu_add() {
   await closeTabContextMenu(menu);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tab1.splitview,
     "Waiting for split view to be created"
   );
@@ -682,7 +682,7 @@ add_task(async function test_splitview_end_event_icon_separate() {
   menu.activateItem(separateItem);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !tab1.splitview && !tab2.splitview,
     "Waiting for split view to be removed"
   );
@@ -740,7 +740,7 @@ add_task(async function test_splitview_end_event_footer_separate() {
   menu.activateItem(separateItem);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !tab1.splitview && !tab2.splitview,
     "Waiting for split view to be removed"
   );
@@ -950,7 +950,7 @@ add_task(async function test_splitview_reverse_event_icon() {
   menu.activateItem(reverseItem);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => splitView.tabs[0] !== originalFirstTab,
     "Waiting for tabs to be reversed"
   );
@@ -1013,7 +1013,7 @@ add_task(async function test_splitview_reverse_event_footer() {
   menu.activateItem(reverseItem);
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => splitView.tabs[0] !== originalFirstTab,
     "Waiting for tabs to be reversed"
   );
@@ -1073,7 +1073,7 @@ add_task(async function test_splitview_resize_event() {
   AccessibilityUtils.resetEnv();
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => leftPanel.hasAttribute("width"),
     "Left panel should have width attribute after resize"
   );

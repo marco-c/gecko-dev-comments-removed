@@ -95,7 +95,7 @@ add_setup(async function () {
   });
 
   
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "basic",

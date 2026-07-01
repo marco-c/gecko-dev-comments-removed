@@ -21,7 +21,7 @@ add_task(async function test() {
   
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => {
       return gBrowser.getIcon(tab) != null;
     },

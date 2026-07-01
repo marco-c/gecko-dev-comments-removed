@@ -201,7 +201,7 @@ addAccessibleTask(
     await reordered;
     const iframe = findAccessibleChildByID(docAcc, "iframe");
     
-    await BrowserTestUtils.waitForCondition(() => iframe.firstChild);
+    await TestUtils.waitForCondition(() => iframe.firstChild);
     iframeDoc = iframe.firstChild;
     ok(iframeDoc, "Got the iframe document after re-creation");
     const newX = {};

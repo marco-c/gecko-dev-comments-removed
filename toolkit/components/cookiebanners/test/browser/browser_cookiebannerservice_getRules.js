@@ -61,7 +61,7 @@ add_task(async function test_rules_getter_no_duplicates() {
   
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.cookieBanners.rules.length,
     "Waiting for test rules to be imported."
   );

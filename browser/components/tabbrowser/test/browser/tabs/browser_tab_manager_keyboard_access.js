@@ -6,7 +6,7 @@
 async function waitForAllTabsMenu(window = window) {
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => window.document.getElementById("customizationui-widget-panel") != null
   );
   let menu = window.document.getElementById("customizationui-widget-panel");

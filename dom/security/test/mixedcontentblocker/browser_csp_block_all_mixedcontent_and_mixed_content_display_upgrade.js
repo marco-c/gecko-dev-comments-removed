@@ -70,7 +70,7 @@ add_task(async function () {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(() => gExpectedMessages === 0);
+  await TestUtils.waitForCondition(() => gExpectedMessages === 0);
 
   
   Services.console.unregisterListener(onConsoleMessage);

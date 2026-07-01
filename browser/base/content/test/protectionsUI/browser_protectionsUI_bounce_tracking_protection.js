@@ -6,7 +6,7 @@
 let btp;
 
 async function assertProtectionsPanelCounter(value) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => (await TrackingDBService.sumAllEvents()) == value,
     "Waiting for TrackingDBService to record the tracker stats from the purge."
   );
@@ -55,6 +55,12 @@ add_setup(async function () {
 
   
   await TrackingDBService.clearAll();
+
+  registerCleanupFunction(async () => {
+    
+    
+    Services.prefs.clearUserPref("browser.protections_panel.infoMessage.seen");
+  });
 });
 
 add_task(
@@ -83,9 +89,25 @@ add_task(
     info("Run PurgeBounceTrackers");
     await btp.testRunPurgeBounceTrackers();
 
-    info("After purging test that the counter is showing and incremented.");
-    await assertProtectionsPanelCounter(BOUNCE_TRACKERS.length);
+    
+    
+    let expectedCount;
+    if (
+      Services.prefs.getIntPref("privacy.bounceTrackingProtection.mode") ==
+      Ci.nsIBounceTrackingProtection.MODE_ENABLED
+    ) {
+      info(
+        "After purging in enabled state test that the counter is showing and incremented."
+      );
+      expectedCount = BOUNCE_TRACKERS.length;
+    } else {
+      info(
+        "After purging in disabled state test that the counter is still 0 and hidden."
+      );
+      expectedCount = 0;
+    }
 
+    await assertProtectionsPanelCounter(expectedCount);
     registerCleanupFunction(async () => {
       
       btp.clearAll();

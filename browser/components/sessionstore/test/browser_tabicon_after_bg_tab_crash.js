@@ -32,7 +32,7 @@ add_task(async function test_tabicon_after_bg_tab_crash() {
       
       
       
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => {
           return gBrowser.getIcon() != null;
         },

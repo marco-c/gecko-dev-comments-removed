@@ -150,7 +150,7 @@ async function testListRecommendations({ type }) {
   installButton.click();
   await failPromise;
   
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return panel.children.length == 1 && panel.firstElementChild.id == popupId;
   });
 

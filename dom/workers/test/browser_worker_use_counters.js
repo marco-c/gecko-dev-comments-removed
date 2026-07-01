@@ -55,7 +55,7 @@ var check_use_counter_worker = async function (
   
   
   
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     await Services.fog.testFlushAllChildren();
     return (
       glean_before !=

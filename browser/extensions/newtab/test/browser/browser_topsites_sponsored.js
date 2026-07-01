@@ -31,7 +31,7 @@ async function newtabWithSponsoredTopsites(callback = () => {}) {
   );
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,

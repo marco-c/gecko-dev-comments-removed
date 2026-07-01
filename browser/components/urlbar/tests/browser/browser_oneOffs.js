@@ -746,7 +746,7 @@ add_task(async function avoidWillHideRace() {
   
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!oneOffSearchButtons._engineInfo,
     "_engineInfo is set."
   );

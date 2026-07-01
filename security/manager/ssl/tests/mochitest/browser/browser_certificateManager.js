@@ -22,7 +22,7 @@ async function checkServerCertificates(win, expectedValues = []) {
   
   
   if (expectedValues.length) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => labels[1].value || !!labels[1].textContent.length,
       "At least one label is populated"
     );

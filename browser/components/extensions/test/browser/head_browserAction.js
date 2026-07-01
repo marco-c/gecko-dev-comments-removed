@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 
@@ -19,7 +17,7 @@ function waitUntilValue({
   times = 1,
 } = {}) {
   let i = 0;
-  return BrowserTestUtils.waitForCondition(async () => {
+  return TestUtils.waitForCondition(async () => {
     const oldVal = await getValue();
     await delay(delayTime);
     const newVal = await getValue();

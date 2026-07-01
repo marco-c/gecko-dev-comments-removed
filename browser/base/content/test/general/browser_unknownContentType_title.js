@@ -76,7 +76,7 @@ add_task(async function unknownContentType_title_with_pref_disabled() {
   BrowserTestUtils.startLoadingURIString(browser, unknown_url);
   
   
-  let waitForPanelShown = BrowserTestUtils.waitForCondition(() => {
+  let waitForPanelShown = TestUtils.waitForCondition(() => {
     return DownloadsPanel.isPanelShowing;
   }).then(() => "panel-shown");
 

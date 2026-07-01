@@ -27,7 +27,7 @@ async function insertIFrame() {
   });
 
   
-  await BrowserTestUtils.waitForCondition(async function () {
+  await TestUtils.waitForCondition(async function () {
     return (
       bc.children.length == len + 1 && (await getColor(bc.children[len])) != ""
     );

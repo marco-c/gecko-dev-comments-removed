@@ -485,7 +485,7 @@ async function clearMessageCache(browser) {
 
 
 async function checkDoorhangerUsernamePassword(username, password) {
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       document.getElementById("password-notification-username").value ==
         username &&

@@ -17,7 +17,7 @@ add_task(async function () {
   await openPreferencesViaOpenPreferencesAPI("paneHome", { leaveOpen: true });
 
   
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     SpecialPowers.spawn(
       gBrowser.selectedTab.linkedBrowser,
       [],

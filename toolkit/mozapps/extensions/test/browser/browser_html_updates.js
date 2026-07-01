@@ -636,7 +636,7 @@ add_task(async function testAvailableUpdates() {
   );
 
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => AboutAddonsTestUtils.getCategoryBadgeCount(availableCat) === 3
   );
 

@@ -372,7 +372,7 @@ async function ensureData(prevSentinelValue = null) {
   
   
   
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     async () => {
       await Services.fog.testFlushAllChildren();
       return (

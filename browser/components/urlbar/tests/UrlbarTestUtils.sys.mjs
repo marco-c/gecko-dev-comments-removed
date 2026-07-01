@@ -433,7 +433,7 @@ class UrlbarInputTestUtils {
     // Now get the item.
     let menuitem;
     if (accesskey) {
-      await lazy.BrowserTestUtils.waitForCondition(() => {
+      await lazy.TestUtils.waitForCondition(() => {
         menuitem = this.#urlbar(window).view.resultMenu.querySelector(
           `menuitem[accesskey=${accesskey}]`
         );
@@ -792,7 +792,7 @@ class UrlbarInputTestUtils {
     if (!httpserver) {
       throw new Error("Must provide an http server");
     }
-    return lazy.BrowserTestUtils.waitForCondition(
+    return lazy.TestUtils.waitForCondition(
       () => httpserver.connectionNumber == count,
       "Waiting for speculative connection setup"
     );
@@ -977,7 +977,7 @@ class UrlbarInputTestUtils {
     );
 
     let results = this.#urlbar(window).querySelector(".urlbarView-results");
-    await lazy.BrowserTestUtils.waitForCondition(
+    await lazy.TestUtils.waitForCondition(
       () =>
         results.hasAttribute("actionmode") ==
         (this.#urlbar(window).searchMode?.source ==
@@ -1007,7 +1007,7 @@ class UrlbarInputTestUtils {
         expectedPlaceholder = { id: "urlbar-placeholder-keyword-disabled" };
       }
 
-      await lazy.BrowserTestUtils.waitForCondition(() => {
+      await lazy.TestUtils.waitForCondition(() => {
         let l10nAttributes = window.document.l10n.getAttributes(
           this.#urlbar(window).inputField
         );
@@ -1287,20 +1287,6 @@ class UrlbarInputTestUtils {
     { backspace, clickClose, waitForSearch = true } = {}
   ) {
     let urlbar = this.#urlbar(window);
-    // If the Urlbar is not extended, ignore the clickClose parameter. The close
-    // button is not clickable in this state. This state might be encountered on
-    // Linux, where prefers-reduced-motion is enabled in automation.
-    if (!urlbar.hasAttribute("breakout-extend") && clickClose) {
-      if (waitForSearch) {
-        let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-        urlbar.searchMode = null;
-        await searchPromise;
-      } else {
-        urlbar.searchMode = null;
-      }
-      return;
-    }
-
     if (!backspace && !clickClose) {
       backspace = true;
     }
@@ -1600,7 +1586,7 @@ class UrlbarInputTestUtils {
       await openFn();
     } else {
       button.focus();
-      await lazy.BrowserTestUtils.waitForCondition(
+      await lazy.TestUtils.waitForCondition(
         () => !button.hasAttribute("aria-hidden")
       );
       button.click();
@@ -1700,7 +1686,7 @@ class UrlbarInputTestUtils {
         {},
         menupopup.documentGlobal
       );
-      await lazy.BrowserTestUtils.waitForCondition(() => {
+      await lazy.TestUtils.waitForCondition(() => {
         let current = menupopup.querySelector("[_moz-menuactive]");
         if (selected != current) {
           selected = current;
