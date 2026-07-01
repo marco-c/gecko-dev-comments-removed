@@ -65,9 +65,6 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     let mut shaders = ShaderFeatures::new();
 
     
-    shaders.insert("cs_clip_rectangle", vec![String::new(), "FAST_PATH".to_string()]);
-
-    
     shaders.insert("cs_blur", vec!["ALPHA_TARGET".to_string(), "COLOR_TARGET".to_string()]);
 
     shaders.insert("ps_quad_mask", vec![String::new(), "FAST_PATH".to_string()]);
