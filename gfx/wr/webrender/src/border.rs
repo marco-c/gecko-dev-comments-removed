@@ -2,12 +2,12 @@
 
 
 
+use euclid::vec2;
 use api::{BorderRadius, BorderSide, BorderStyle, ColorF, ColorU};
 use api::{NormalBorder as ApiNormalBorder, RepeatMode};
 use api::units::*;
 use crate::clip::ClipNodeId;
 use crate::ellipse::Ellipse;
-use euclid::vec2;
 use crate::scene_building::SceneBuilder;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::gpu_types::{BorderInstance, BorderSegment, BrushFlags};
@@ -35,50 +35,9 @@ pub const MAX_DASH_COUNT: u32 = 2048;
 
 
 
-#[derive(Copy, Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct BorderRadiusAu {
-    pub top_left: LayoutSizeAu,
-    pub top_right: LayoutSizeAu,
-    pub bottom_left: LayoutSizeAu,
-    pub bottom_right: LayoutSizeAu,
 
-    pub shape_top_left: u32,
-    pub shape_top_right: u32,
-    pub shape_bottom_left: u32,
-    pub shape_bottom_right: u32,
-}
 
-impl From<BorderRadius> for BorderRadiusAu {
-    fn from(radius: BorderRadius) -> BorderRadiusAu {
-        BorderRadiusAu {
-            top_left: radius.top_left.to_au(),
-            top_right: radius.top_right.to_au(),
-            bottom_right: radius.bottom_right.to_au(),
-            bottom_left: radius.bottom_left.to_au(),
-            shape_top_left: radius.shape_top_left.to_bits(),
-            shape_top_right: radius.shape_top_right.to_bits(),
-            shape_bottom_left: radius.shape_bottom_left.to_bits(),
-            shape_bottom_right: radius.shape_bottom_right.to_bits(),
-        }
-    }
-}
-
-impl From<BorderRadiusAu> for BorderRadius {
-    fn from(radius: BorderRadiusAu) -> Self {
-        BorderRadius {
-            top_left: LayoutSize::from_au(radius.top_left),
-            top_right: LayoutSize::from_au(radius.top_right),
-            bottom_right: LayoutSize::from_au(radius.bottom_right),
-            bottom_left: LayoutSize::from_au(radius.bottom_left),
-            shape_top_left: f32::from_bits(radius.shape_top_left),
-            shape_top_right: f32::from_bits(radius.shape_top_right),
-            shape_bottom_left: f32::from_bits(radius.shape_bottom_left),
-            shape_bottom_right: f32::from_bits(radius.shape_bottom_right),
-        }
-    }
-}
+pub use api::key_types::BorderRadiusAu;
 
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -1316,8 +1275,20 @@ pub fn build_border_instances(
     instances
 }
 
-impl NinePatchDescriptor {
-    pub fn for_each_segment(
+
+
+
+pub trait NinePatchDescriptorExt {
+    fn for_each_segment(
+        &self,
+        rect: &LayoutRect,
+        add_segment: &mut dyn FnMut(&LayoutRect, &TexelRect, EdgeMask, RepeatMode, RepeatMode),
+    );
+    fn create_brush_segments(&self, size: LayoutSize) -> Vec<BrushSegment>;
+}
+
+impl NinePatchDescriptorExt for NinePatchDescriptor {
+    fn for_each_segment(
         &self,
         rect: &LayoutRect,
         add_segment: &mut dyn FnMut(
@@ -1463,7 +1434,7 @@ impl NinePatchDescriptor {
         }
     }
 
-    pub fn create_brush_segments(&self, size: LayoutSize) -> Vec<BrushSegment> {
+    fn create_brush_segments(&self, size: LayoutSize) -> Vec<BrushSegment> {
         
         let mut segments = Vec::new();
 
@@ -1564,7 +1535,9 @@ pub fn compute_border_repetition_1d(
         if repeat_mode == RepeatMode::Round {
             
             
-            stretch_size = segment_size.width / repetitions
+            
+            let round_repetitions = (segment_size.width / stretch_size).round().max(1.0);
+            stretch_size = segment_size.width / round_repetitions
         }
 
         if repeat_mode == RepeatMode::Space {
@@ -1580,7 +1553,10 @@ pub fn compute_border_repetition_1d(
             
             
             
-            *out_offset = (remaining_space - stretch_size) * 0.5;
+            
+            
+            let half_overflow = (segment_size.width - stretch_size) * 0.5;
+            *out_offset = half_overflow - (half_overflow / stretch_size).ceil() * stretch_size;
         }
     }
 
