@@ -296,6 +296,11 @@ static bool dontNeedEscape(uint16_t aChar, uint32_t aFlags) {
 }
 
 
+enum class EscapeAction : uint8_t {
+  Keep,    
+  Filter,  
+  Escape,  
+};
 
 
 
@@ -304,82 +309,102 @@ static bool dontNeedEscape(uint16_t aChar, uint32_t aFlags) {
 
 
 
+template <typename CharT>
+static MOZ_ALWAYS_INLINE bool EscapeCharIsKept(CharT aChar, uint32_t aFlags) {
+  const bool forced = !!(aFlags & esc_Forced);
+  const bool ignoreNonAscii = !!(aFlags & esc_OnlyASCII);
+  const bool ignoreAscii = !!(aFlags & esc_OnlyNonASCII);
+  const bool colon = !!(aFlags & esc_Colon);
+  const bool spaces = !!(aFlags & esc_Spaces);
+  return (dontNeedEscape(aChar, aFlags) || (aChar == HEX_ESCAPE && !forced) ||
+          (aChar > 0x7f && ignoreNonAscii) ||
+          (aChar >= 0x20 && aChar < 0x7f && ignoreAscii)) &&
+         !(aChar == ':' && colon) && !(aChar == ' ' && spaces);
+}
 
 
 
-
-
-template <class T>
-static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
-                            uint32_t aFlags, const ASCIIMaskArray* aFilterMask,
-                            T& aResult, bool& aDidAppend) {
-  typedef nsCharTraits<typename T::char_type> traits;
-  typedef typename traits::unsigned_char_type unsigned_char_type;
-  static_assert(sizeof(*aPart) == 1 || sizeof(*aPart) == 2,
-                "unexpected char type");
-
-  if (!aPart) {
-    MOZ_ASSERT_UNREACHABLE("null pointer");
-    return NS_ERROR_INVALID_ARG;
+template <typename CharT>
+static MOZ_ALWAYS_INLINE EscapeAction ClassifyEscapeChar(
+    CharT aChar, uint32_t aFlags, const ASCIIMaskArray* aFilterMask) {
+  if (aFilterMask && mozilla::ASCIIMask::IsMasked(*aFilterMask, aChar)) {
+    return EscapeAction::Filter;
   }
+  return EscapeCharIsKept(aChar, aFlags) ? EscapeAction::Keep
+                                         : EscapeAction::Escape;
+}
 
-  bool forced = !!(aFlags & esc_Forced);
-  bool ignoreNonAscii = !!(aFlags & esc_OnlyASCII);
-  bool ignoreAscii = !!(aFlags & esc_OnlyNonASCII);
-  bool writing = !!(aFlags & esc_AlwaysCopy);
-  bool colon = !!(aFlags & esc_Colon);
-  bool spaces = !!(aFlags & esc_Spaces);
+
+
+
+static void BuildEscapeActionTable(uint32_t aFlags,
+                                   const ASCIIMaskArray* aFilterMask,
+                                   EscapeAction (&aTable)[256]) {
+  for (size_t i = 0; i < 256; ++i) {
+    aTable[i] =
+        ClassifyEscapeChar(static_cast<unsigned char>(i), aFlags, aFilterMask);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class T, class Classify>
+static nsresult EscapeURLLoop(const typename T::char_type* aPart,
+                              size_t aPartLen, T& aResult, bool aWriting,
+                              bool& aDidAppend, Classify&& aClassify) {
+  using char_type = typename T::char_type;
+  using unsigned_char_type =
+      typename nsCharTraits<char_type>::unsigned_char_type;
 
   auto src = reinterpret_cast<const unsigned_char_type*>(aPart);
 
-  typename T::char_type tempBuffer[100];
+  bool writing = aWriting;
+  char_type tempBuffer[100];
   unsigned int tempBufferPos = 0;
 
   for (size_t i = 0; i < aPartLen; ++i) {
-    unsigned_char_type c = *src++;
-
-    
-    
-    
-    if (aFilterMask && mozilla::ASCIIMask::IsMasked(*aFilterMask, c)) {
-      if (!writing) {
-        if (!aResult.Append(aPart, i, mozilla::fallible)) {
-          return NS_ERROR_OUT_OF_MEMORY;
+    const unsigned_char_type c = src[i];
+    switch (aClassify(c)) {
+      case EscapeAction::Keep:
+        if (writing) {
+          tempBuffer[tempBufferPos++] = c;
         }
-        writing = true;
-      }
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if ((dontNeedEscape(c, aFlags) || (c == HEX_ESCAPE && !forced) ||
-         (c > 0x7f && ignoreNonAscii) ||
-         (c >= 0x20 && c < 0x7f && ignoreAscii)) &&
-        !(c == ':' && colon) && !(c == ' ' && spaces)) {
-      if (writing) {
-        tempBuffer[tempBufferPos++] = c;
-      }
-    } else { 
-      if (!writing) {
-        if (!aResult.Append(aPart, i, mozilla::fallible)) {
-          return NS_ERROR_OUT_OF_MEMORY;
+        break;
+      case EscapeAction::Filter:
+        
+        if (!writing) {
+          if (!aResult.Append(aPart, i, mozilla::fallible)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
+          writing = true;
         }
-        writing = true;
+        break;
+      case EscapeAction::Escape: {
+        if (!writing) {
+          if (!aResult.Append(aPart, i, mozilla::fallible)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
+          writing = true;
+        }
+        const uint32_t len = ::AppendPercentHex(tempBuffer + tempBufferPos, c);
+        tempBufferPos += len;
+        MOZ_ASSERT(len <= ENCODE_MAX_LEN, "potential buffer overflow");
+        break;
       }
-      uint32_t len = ::AppendPercentHex(tempBuffer + tempBufferPos, c);
-      tempBufferPos += len;
-      MOZ_ASSERT(len <= ENCODE_MAX_LEN, "potential buffer overflow");
     }
 
     
@@ -398,6 +423,41 @@ static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
   }
   aDidAppend = writing;
   return NS_OK;
+}
+
+template <class T>
+static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
+                            uint32_t aFlags, const ASCIIMaskArray* aFilterMask,
+                            T& aResult, bool& aDidAppend) {
+  static_assert(
+      sizeof(typename T::char_type) == 1 || sizeof(typename T::char_type) == 2,
+      "unexpected char type");
+
+  if (!aPart) {
+    MOZ_ASSERT_UNREACHABLE("null pointer");
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  const bool writing = !!(aFlags & esc_AlwaysCopy);
+
+  
+  
+  
+  
+  if constexpr (sizeof(typename T::char_type) == 1) {
+    constexpr size_t kFastPathMinLength = 256;
+    if (aPartLen >= kFastPathMinLength) {
+      EscapeAction actions[256];
+      BuildEscapeActionTable(aFlags, aFilterMask, actions);
+      return EscapeURLLoop(aPart, aPartLen, aResult, writing, aDidAppend,
+                           [&actions](unsigned char c) { return actions[c]; });
+    }
+  }
+
+  return EscapeURLLoop(aPart, aPartLen, aResult, writing, aDidAppend,
+                       [aFlags, aFilterMask](auto c) {
+                         return ClassifyEscapeChar(c, aFlags, aFilterMask);
+                       });
 }
 
 bool NS_EscapeURL(const char* aPart, int32_t aPartLen, uint32_t aFlags,
