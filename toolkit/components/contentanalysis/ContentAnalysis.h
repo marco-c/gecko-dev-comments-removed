@@ -13,7 +13,6 @@
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
-#include "nsIThreadPool.h"
 #include "nsITransferable.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
@@ -36,12 +35,6 @@ namespace mozilla::dom {
 class CanonicalBrowsingContext;
 class DataTransfer;
 class WindowGlobalParent;
-}  
-
-namespace content_analysis::sdk {
-class Client;
-class ContentAnalysisRequest;
-class ContentAnalysisResponse;
 }  
 
 namespace mozilla::contentanalysis {
@@ -267,6 +260,9 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
 
+  void HandleResponseFromAgent(ContentAnalysisResponse* aResponse,
+                               bool aAutoAcknowledge);
+
   
   
   
@@ -283,36 +279,22 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   
   
-  bool GetCreatingClientForTest() {
-    AssertIsOnMainThread();
-    return mCreatingClient;
-  }
+  bool GetCreatingClientForTest();
+
+  
+  bool IsShutDown();
+
+  
+  
+  
+  bool WasUserActionCanceled(const nsACString& aUserActionId);
+
+  
+  
+  bool IsRequestWaitingForWarnDialog(const nsACString& aRequestToken);
 
  private:
   virtual ~ContentAnalysis();
-  
-  
-  nsresult CreateContentAnalysisClient(nsCString&& aPipePathName,
-                                       nsString&& aClientSignatureSetting,
-                                       bool aIsPerUser);
-
-  
-  
-  nsCOMPtr<nsIThreadPool> mThreadPool;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename T, typename U>
-  RefPtr<MozPromise<T, nsresult, true>> CallClientWithRetry(
-      StaticString aMethodName, U&& aClientCallFunc);
-  void RecordConnectionSettingsTelemetry(const nsString& clientSignature);
 
   nsresult RunAnalyzeRequestTask(
       const nsCOMPtr<nsIContentAnalysisRequest>& aRequest,
@@ -321,28 +303,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
   nsresult RunAcknowledgeTask(
       nsIContentAnalysisAcknowledgement* aAcknowledgement,
       const nsACString& aRequestToken);
-  nsresult CreateClientIfNecessary(bool aForceCreate = false);
-
-  
-  
-  static Result<std::nullptr_t, nsresult> DoAnalyzeRequest(
-      nsCString&& aUserActionId,
-      content_analysis::sdk::ContentAnalysisRequest&& aRequest,
-      bool aAutoAcknowledge,
-      const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-      bool aTestOnlyIgnoreCanceled = false);
-
-  static void HandleResponseFromAgent(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse);
-
-  struct BasicRequestInfo final {
-    nsCString mUserActionId;
-    glean::TimerId mTimerId;
-    nsCString mAnalysisTypeStr;
-    bool mAutoAcknowledge;
-  };
-  DataMutex<nsTHashMap<nsCString, BasicRequestInfo>>
-      mRequestTokenToBasicRequestInfoMap;
 
   void IssueResponse(ContentAnalysisResponse* response,
                      nsCString&& aUserActionId, bool aAcknowledge,
@@ -356,9 +316,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   
   void Close();
-
-  
-  bool IsShutDown();
 
   
   
@@ -430,24 +387,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   Result<RefPtr<RequestsPromise>, nsresult> ExpandFolderRequest(
       nsIContentAnalysisRequest* aRequest, nsIFile* file);
-
-  using ClientPromise =
-      MozPromise<std::shared_ptr<content_analysis::sdk::Client>, nsresult,
-                 false>;
-  int64_t mRequestCount = 0;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ClientPromise::Private> mCaClientPromise
-      MOZ_GUARDED_BY(sMainThreadCapability);
-  bool mCreatingClient MOZ_GUARDED_BY(sMainThreadCapability) = false;
-  bool mHaveResolvedClientPromise MOZ_GUARDED_BY(sMainThreadCapability) = false;
 
   bool mSetByEnterprise;
 
@@ -536,28 +475,19 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse,
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
   void SetCancelError(CancelError aCancelError);
   void SetIsCachedResponse() { mIsCachedResponse = true; }
-  void SetIsSyntheticResponse(bool aIsSyntheticResponse) {
-    mIsSyntheticResponse = aIsSyntheticResponse;
-  }
   
   ContentAnalysisResponse(const ContentAnalysisResponse&) = delete;
   ContentAnalysisResponse& operator=(ContentAnalysisResponse&) = delete;
 
  private:
   virtual ~ContentAnalysisResponse() = default;
-  explicit ContentAnalysisResponse(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-      const nsCString& aUserActionId);
   ContentAnalysisResponse(Action aAction, const nsACString& aRequestToken,
-                          const nsACString& aUserActionId);
+                          const nsACString& aUserActionId,
+                          bool aIsSynthetic = false);
 
   
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
-
-  static already_AddRefed<ContentAnalysisResponse> FromProtobuf(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-      const nsCString& aUserActionId);
 
   void ResolveWarnAction(bool aAllowContent);
 
