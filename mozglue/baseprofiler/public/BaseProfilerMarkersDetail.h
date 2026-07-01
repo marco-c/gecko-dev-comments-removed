@@ -90,6 +90,9 @@ struct Streaming {
   };
 };
 
+template <typename T>
+concept HasStreamJSONMarkerData = requires { T::StreamJSONMarkerData; };
+
 
 
 template <typename T>
@@ -101,8 +104,7 @@ struct StreamFunctionTypeHelper;
 template <typename R, typename... As>
 struct StreamFunctionTypeHelper<R(baseprofiler::SpliceableJSONWriter&, As...)> {
   constexpr static size_t scArity = sizeof...(As);
-  using TupleType =
-      std::tuple<std::remove_cv_t<std::remove_reference_t<As>>...>;
+  using TupleType = std::tuple<std::remove_cvref_t<As>...>;
 
   
   
@@ -124,13 +126,47 @@ struct StreamFunctionTypeHelper<R(baseprofiler::SpliceableJSONWriter&, As...)> {
 
 
 
+
+template <typename T, typename TupleType = detail::PayloadFieldsTuple<T>>
+struct PayloadFieldsStreamHelper;
+
+template <typename T, typename... PayloadTypes>
+struct PayloadFieldsStreamHelper<T, std::tuple<PayloadTypes...>> {
+  constexpr static size_t scArity = sizeof...(PayloadTypes);
+  using TupleType = std::tuple<PayloadTypes...>;
+
+  
+  
+  static ProfileBufferBlockIndex Serialize(
+      ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
+      const MarkerCategory& aCategory, MarkerOptions&& aOptions,
+      Streaming::DeserializerTag aDeserializerTag, const PayloadTypes&... aTs) {
+    return aBuffer.PutObjects(ProfileBufferEntryKind::Marker, aOptions, aName,
+                              aCategory, aDeserializerTag,
+                              MarkerPayloadType::Cpp, aTs...);
+  }
+};
+
+
+
+template <typename T, bool = HasStreamJSONMarkerData<T>>
+struct StreamFunctionTypeSelector;
+template <typename T>
+struct StreamFunctionTypeSelector<T, true> {
+  using Type = StreamFunctionTypeHelper<decltype(T::StreamJSONMarkerData)>;
+};
+template <typename T>
+struct StreamFunctionTypeSelector<T, false> {
+  using Type = PayloadFieldsStreamHelper<T>;
+};
+
+
+
+
 template <typename MarkerType>
 struct MarkerTypeSerialization {
-  
-  
-  
   using StreamFunctionType =
-      StreamFunctionTypeHelper<decltype(MarkerType::StreamJSONMarkerData)>;
+      typename StreamFunctionTypeSelector<MarkerType>::Type;
   constexpr static size_t scStreamFunctionParameterCount =
       StreamFunctionType::scArity;
   using StreamFunctionUserParametersTuple =
@@ -175,6 +211,7 @@ struct MarkerTypeSerialization {
   
   
   
+  
   template <size_t i = 0, typename... Args>
   static void DeserializeArguments(ProfileBufferEntryReader& aEntryReader,
                                    baseprofiler::SpliceableJSONWriter& aWriter,
@@ -190,8 +227,11 @@ struct MarkerTypeSerialization {
       
       
       
-      
-      MarkerType::StreamJSONMarkerData(aWriter, aArgs...);
+      if constexpr (HasStreamJSONMarkerData<MarkerType>) {
+        MarkerType::StreamJSONMarkerData(aWriter, aArgs...);
+      } else {
+        MarkerType::StreamJSONMarkerDataImpl(aWriter, aArgs...);
+      }
     }
   }
 

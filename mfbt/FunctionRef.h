@@ -170,8 +170,7 @@ class MOZ_TEMPORARY_CLASS FunctionRef<Ret(Params...)> {
             typename = detail::EnableFunctionTag<detail::MatchingFunctorTag,
                                                  Callable, Ret, Params...>,
             typename std::enable_if_t<!std::is_same_v<
-                std::remove_cv_t<std::remove_reference_t<Callable>>,
-                FunctionRef>>* = nullptr>
+                std::remove_cvref_t<Callable>, FunctionRef>>* = nullptr>
   MOZ_IMPLICIT FunctionRef(Callable&& aCallable MOZ_LIFETIME_BOUND) noexcept
       : mAdaptor([](const Payload& aPayload, Params... aParams) {
           auto& func = *static_cast<std::remove_reference_t<Callable>*>(
