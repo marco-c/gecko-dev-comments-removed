@@ -4,14 +4,6 @@
 
 const table = document.getElementById("table");
 
-function setTextContent(element, content) {
-  if (content.startsWith("customkeys-")) {
-    element.setAttribute("data-l10n-id", content);
-  } else {
-    element.textContent = content;
-  }
-}
-
 function notifyUpdate() {
   window.dispatchEvent(new CustomEvent("CustomKeysUpdate"));
 }
@@ -19,65 +11,126 @@ function notifyUpdate() {
 async function buildTable() {
   const keys = await RPMSendQuery("CustomKeys:GetKeys");
   for (const category in keys) {
-    const tbody = document.createElement("tbody");
-    table.append(tbody);
-    let row = document.createElement("tr");
-    row.className = "category";
-    tbody.append(row);
-    let cell = document.createElement("td");
-    row.append(cell);
-    cell.setAttribute("colspan", 5);
-    const heading = document.createElement("h1");
-    setTextContent(heading, category);
-    cell.append(heading);
+    
+    const categoryCard = document.createElement("moz-card");
+    categoryCard.type = "accordion";
+    categoryCard.className = "category";
+    if (category.startsWith("customkeys-")) {
+      
+      categoryCard.setAttribute("data-l10n-id", category);
+    } else {
+      categoryCard.heading = category;
+    }
+    categoryCard.headingLevel = 2;
+    table.append(categoryCard);
+
+    
+    const boxGroup = document.createElement("moz-box-group");
+    categoryCard.append(boxGroup);
     const categoryKeys = keys[category];
+
     for (const keyId in categoryKeys) {
-      row = document.createElement("tr");
+      
+      const row = document.createElement("moz-box-item");
       row.className = "key";
-      tbody.append(row);
-      row.setAttribute("data-id", keyId);
-      cell = document.createElement("th");
       const key = categoryKeys[keyId];
-      setTextContent(cell, key.title);
-      row.append(cell);
-      cell = document.createElement("td");
-      cell.textContent = key.shortcut;
-      row.append(cell);
-      cell = document.createElement("td");
-      let button = document.createElement("button");
-      button.className = "change";
-      button.setAttribute("data-l10n-id", "customkeys-change");
-      cell.append(button);
-      let label = document.createElement("label");
-      label.className = "newLabel";
-      let span = document.createElement("span");
-      span.setAttribute("data-l10n-id", "customkeys-new-key");
-      label.append(span);
-      let input = document.createElement("input");
-      input.className = "new";
-      label.append(input);
-      cell.append(label);
-      row.append(cell);
-      cell = document.createElement("td");
-      button = document.createElement("button");
-      button.className = "clear";
-      button.setAttribute("data-l10n-id", "customkeys-clear");
-      cell.append(button);
-      row.append(cell);
-      cell = document.createElement("td");
-      button = document.createElement("button");
-      button.className = "reset";
-      button.setAttribute("data-l10n-id", "customkeys-reset");
-      cell.append(button);
-      row.append(cell);
+      row.dataset.id = keyId;
+
+      let keyLabelText = key.title;
+      if (key.title.startsWith("customkeys-")) {
+        
+        
+        keyLabelText = await document.l10n.formatValue(key.title);
+        row.dataset.label = keyLabelText;
+      }
+      row.role = "group";
+      row.ariaLabel = keyLabelText;
+
+      
+      
+      const keyContent = document.createElement("div");
+      keyContent.className = "key-content";
+
+      
+      const keyLabel = document.createElement("span");
+      keyLabel.className = "key-label";
+      keyLabel.textContent = keyLabelText;
+      keyContent.append(keyLabel);
+
+      
+      const keyActions = document.createElement("div");
+      keyActions.className = "key-actions";
+
+      
+      const inputCurrentKey = document.createElement("moz-input-text");
+      inputCurrentKey.className = "currentShortcut";
+      if (!key.shortcut) {
+        inputCurrentKey.setAttribute(
+          "data-l10n-id",
+          "customkeys-shortcut-unassigned"
+        );
+      }
+      inputCurrentKey.value = key.shortcut;
+      inputCurrentKey.ariaLabel = await document.l10n.formatValue(
+        "customkeys-shortcut-input",
+        { keyLabel: keyLabelText }
+      );
+      inputCurrentKey.readonly = true;
+      keyActions.append(inputCurrentKey);
+
+      
+      const buttonChange = document.createElement("moz-button");
+      buttonChange.className = "change";
+      buttonChange.setAttribute("data-l10n-id", "customkeys-key-edit");
+      buttonChange.type = "icon ghost";
+      buttonChange.iconSrc = "chrome://global/skin/icons/edit-outline.svg";
+      keyActions.append(buttonChange);
+
+      
+      const inputNewKey = document.createElement("moz-input-text");
+      inputNewKey.className = "newKey";
+      inputNewKey.setAttribute("data-l10n-id", "customkeys-key-new");
+      keyActions.append(inputNewKey);
+
+      
+      const buttonClear = document.createElement("moz-button");
+      buttonClear.className = "clear";
+      buttonClear.setAttribute("data-l10n-id", "customkeys-key-clear");
+      buttonClear.type = "icon ghost";
+      buttonClear.iconSrc = "chrome://global/skin/icons/close.svg";
+      keyActions.append(buttonClear);
+
+      
+      const buttonReset = document.createElement("moz-button");
+      buttonReset.className = "reset";
+      buttonReset.setAttribute("data-l10n-id", "customkeys-key-reset");
+      buttonReset.type = "icon ghost";
+      buttonReset.iconSrc =
+        "chrome://global/skin/icons/arrow-counterclockwise-16.svg";
+      keyActions.append(buttonReset);
+
+      keyContent.append(keyActions);
+
+      row.append(keyContent);
+      boxGroup.append(row);
       updateKey(row, key);
     }
   }
+  
+  table.querySelector("moz-card").expanded = true;
+
   notifyUpdate();
 }
 
 function updateKey(row, data) {
-  row.children[1].textContent = data.shortcut;
+  const input = row.querySelector(".currentShortcut");
+  input.value = data.shortcut;
+  if (!input.value) {
+    input.setAttribute("data-l10n-id", "customkeys-shortcut-unassigned");
+  } else {
+    input.removeAttribute("data-l10n-id");
+    input.removeAttribute("placeholder");
+  }
   row.classList.toggle("customized", data.isCustomized);
   row.classList.toggle("assigned", !!data.shortcut);
 }
@@ -85,7 +138,7 @@ function updateKey(row, data) {
 
 async function maybeHandleConflict(data) {
   for (const row of table.querySelectorAll(".key")) {
-    if (data.shortcut != row.children[1].textContent) {
+    if (data.shortcut != row.querySelector(".currentShortcut").value) {
       continue; 
     }
     const conflictId = row.dataset.id;
@@ -94,26 +147,40 @@ async function maybeHandleConflict(data) {
       
       return false;
     }
-    const conflictDesc = row.children[0].textContent;
+    const conflictDesc = row.ariaLabel;
+    const [title, body, buttonCancel, buttonConfirm] =
+      await document.l10n.formatValues([
+        { id: "customkeys-conflict-confirm-title" },
+        {
+          id: "customkeys-conflict-confirm-body",
+          args: { conflict: conflictDesc },
+        },
+        { id: "customkeys-conflict-confirm-button-cancel" },
+        { id: "customkeys-conflict-confirm-button-confirm" },
+      ]);
     if (
-      window.confirm(
-        await document.l10n.formatValue("customkeys-conflict-confirm", {
-          conflict: conflictDesc,
-        })
-      )
+      !(await RPMSendQuery("CustomKeys:Confirm", {
+        title,
+        body,
+        buttonCancel,
+        buttonConfirm,
+      }))
     ) {
-      
-      const newData = await RPMSendQuery("CustomKeys:ClearKey", conflictId);
-      updateKey(row, newData);
-      return true;
+      return false; 
     }
-    return false;
+    
+    const newData = await RPMSendQuery("CustomKeys:ClearKey", conflictId);
+    updateKey(row, newData);
+    return true;
   }
   return true;
 }
 
 async function onAction(event) {
-  const row = event.target.closest("tr");
+  const row = event.target.closest("moz-box-item");
+  if (!row) {
+    return; 
+  }
   const keyId = row.dataset.id;
   if (event.target.className == "reset") {
     Glean.browserCustomkeys.actions.reset.add();
@@ -121,6 +188,13 @@ async function onAction(event) {
     if (await maybeHandleConflict(data)) {
       const newData = await RPMSendQuery("CustomKeys:ResetKey", keyId);
       updateKey(row, newData);
+      if (newData.shortcut) {
+        row.querySelector(".clear").focus();
+      } else {
+        
+        
+        row.querySelector(".change").focus();
+      }
       notifyUpdate();
     }
   } else if (event.target.className == "change") {
@@ -131,29 +205,32 @@ async function onAction(event) {
     
     
     RPMSendAsyncMessage("CustomKeys:CaptureKey", true);
-    row.querySelector(".new").focus();
+    row.querySelector(".newKey").focus();
   } else if (event.target.className == "clear") {
     Glean.browserCustomkeys.actions.clear.add();
     const newData = await RPMSendQuery("CustomKeys:ClearKey", keyId);
     updateKey(row, newData);
+    row.querySelector(".reset").focus();
     notifyUpdate();
   }
 }
 
 async function onKey({ data }) {
   const input = document.activeElement;
-  const row = input.closest("tr");
+  const row = input.closest("moz-box-item");
   data.id = row.dataset.id;
   if (data.isModifier) {
     
     
     input.value = data.modifierString;
+    await input.updateComplete;
     
     input.select();
     return;
   }
   if (!data.isValid) {
     input.value = await document.l10n.formatValue("customkeys-key-invalid");
+    await input.updateComplete;
     input.select();
     return;
   }
@@ -168,26 +245,78 @@ async function onKey({ data }) {
 }
 
 function onFocusLost(event) {
-  if (event.target.className == "new") {
+  if (event.target.className == "newKey") {
     
     RPMSendAsyncMessage("CustomKeys:CaptureKey", false);
-    const row = event.target.closest("tr");
+    const row = event.target.closest("moz-box-item");
     row.classList.remove("editing");
     
     event.target.value = "";
   }
 }
 
+function clearSearchHighlights(row) {
+  const labelEl = row.querySelector(".key-label");
+  if (labelEl.querySelector(".search-highlight")) {
+    labelEl.textContent = row.ariaLabel;
+  }
+}
+
+function applySearchHighlights(query, row) {
+  const labelEl = row.querySelector(".key-label");
+  if (!labelEl) {
+    return;
+  }
+  const text = row.ariaLabel;
+  const lower = text.toLowerCase();
+  const frag = document.createDocumentFragment();
+  let lastIndex = 0;
+  let i = -1;
+  while ((i = lower.indexOf(query, lastIndex)) >= 0) {
+    if (i > lastIndex) {
+      frag.append(text.slice(lastIndex, i));
+    }
+    const mark = document.createElement("mark");
+    mark.className = "search-highlight";
+    mark.textContent = text.slice(i, i + query.length);
+    frag.append(mark);
+    lastIndex = i + query.length;
+  }
+  if (lastIndex < text.length) {
+    frag.append(text.slice(lastIndex));
+  }
+  labelEl.replaceChildren(frag);
+}
+
 function onSearchInput(event) {
   const query = event.target.value.toLowerCase();
+  const cards = table.querySelectorAll(".category");
+
   for (const row of table.querySelectorAll(".key")) {
-    row.hidden =
-      query && !row.children[0].textContent.toLowerCase().includes(query);
-  }
-  for (const tbody of table.tBodies) {
+    const isMatching = !query || row.ariaLabel.toLowerCase().includes(query);
+    row.hidden = !isMatching;
     
-    tbody.hidden = !tbody.querySelector(".key:not([hidden])");
+    row.classList.toggle("hidden", !isMatching);
+    if (query) {
+      applySearchHighlights(query, row);
+    } else {
+      clearSearchHighlights(row);
+    }
   }
+  for (const [i, card] of cards.entries()) {
+    
+    
+    const hasMatches = card.querySelector(".key:not([hidden])");
+    card.hidden = !hasMatches;
+    card.expanded = query ? hasMatches : i === 0;
+    
+    if (hasMatches) {
+      card.classList.remove("hidden");
+    } else {
+      card.classList.add("hidden");
+    }
+  }
+
   notifyUpdate();
 }
 
