@@ -1495,6 +1495,8 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     } else {
       
       
+      MOZ_ASSERT(importName);
+      
       
       ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
       if (!ModuleResolveExport(cx, importedModule, importName, &resolution,
