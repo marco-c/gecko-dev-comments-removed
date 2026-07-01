@@ -1723,33 +1723,6 @@ static bool CanReuseInlineSheet(SharedStyleSheetCache::InlineSheetEntry& aEntry,
   return true;
 }
 
-RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
-    const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal, nsIURI* aBaseURI) {
-  MOZ_ASSERT(mDocument);
-  MOZ_ASSERT(mSheets, "Document associated loader should have sheet cache");
-  auto result = mSheets->LookupInline(LoaderPrincipal(), aBuffer);
-  if (!result) {
-    return nullptr;
-  }
-  MOZ_ASSERT(!result.Data().IsEmpty());
-  const bool asImage = mDocument->IsBeingUsedAsImage();
-  for (auto& candidate : result.Data()) {
-    auto* sheet = candidate.mSheet.get();
-    MOZ_ASSERT(!sheet->HasModifiedRules(),
-               "How did we end up with a dirty sheet?");
-    if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
-      
-      
-      continue;
-    }
-    if (!CanReuseInlineSheet(candidate, aBaseURI, asImage)) {
-      continue;
-    }
-    return sheet->Clone(nullptr, nullptr);
-  }
-  return nullptr;
-}
-
 void Loader::MaybeNotifyPreloadUsed(SheetLoadData& aData) {
   if (!mDocument) {
     return;
@@ -1811,65 +1784,82 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     return LoaderPrincipal();
   }();
 
-  RefPtr<StyleSheet> sheet =
-      LookupInlineSheetInCache(aBuffer, sheetPrincipal, baseURI);
-  const bool isSheetFromCache = !!sheet;
-  if (!isSheetFromCache) {
-    sheet = MakeRefPtr<StyleSheet>(StyleOrigin::Author, aInfo.mCORSMode,
-                                   SRIMetadata{});
-    
-    
-    
-    sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
-  }
-  
-  
-  
-  
-  nsIReferrerInfo* referrerInfo =
-      aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-  sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
-
-  auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
-                              isAlternate, aInfo.mIsExplicitlyEnabled);
-  if (auto* linkStyle = LinkStyle::FromNode(*aInfo.mContent)) {
-    linkStyle->SetStyleSheet(sheet);
-  }
-  MOZ_ASSERT(sheet->IsComplete() == isSheetFromCache);
-
+  RefPtr<StyleSheet> sheet;
   Completed completed;
-  auto data = MakeRefPtr<SheetLoadData>(
-      this, aInfo.mTitle,  nullptr, sheet, SyncLoad::No,
-      aInfo.mContent, isAlternate, matched, StylePreloadKind::None, aObserver,
-      principal, aInfo.mReferrerInfo, aInfo.mNonce, aInfo.mFetchPriority,
-      nullptr);
-  MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
-  if (isSheetFromCache) {
-    MOZ_ASSERT(sheet->IsComplete());
-    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
-    completed = Completed::Yes;
-    InsertSheetInTree(*sheet);
-    NotifyOfCachedLoad(std::move(data));
-  } else {
-    
-    
-    
-    
-    
-    NS_ConvertUTF16toUTF8 utf8(aBuffer);
-    RefPtr<SheetLoadDataHolder> holder(
-        new nsMainThreadPtrHolder<css::SheetLoadData>(__func__, data.get(),
-                                                      true));
-    completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
-    if (completed == Completed::Yes) {
-      mSheets->InsertInline(
-          LoaderPrincipal(), aBuffer,
-          {data->ValueForCache(), mDocument->IsBeingUsedAsImage()});
-    } else {
-      data->mMustNotify = true;
+  MediaMatched matched;
+  mSheets->WithInlineEntryHandle(loadingPrincipal, aBuffer, [&](auto aHandle) {
+    const bool asImage = mDocument->IsBeingUsedAsImage();
+    if (aHandle) {
+      for (auto& candidate : aHandle.Data()) {
+        auto* cachedSheet = candidate.mSheet.get();
+        MOZ_ASSERT(!cachedSheet->HasModifiedRules(),
+                   "How did we end up with a dirty sheet?");
+        if (NS_WARN_IF(!cachedSheet->Principal()->Equals(sheetPrincipal))) {
+          
+          
+          continue;
+        }
+        if (!CanReuseInlineSheet(candidate, baseURI, asImage)) {
+          continue;
+        }
+        sheet = cachedSheet->Clone(nullptr, nullptr);
+        break;
+      }
     }
-  }
-
+    const bool isSheetFromCache = !!sheet;
+    if (!isSheetFromCache) {
+      sheet = MakeRefPtr<StyleSheet>(StyleOrigin::Author, aInfo.mCORSMode,
+                                     SRIMetadata{});
+      
+      
+      
+      sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
+    }
+    
+    
+    
+    
+    nsIReferrerInfo* referrerInfo =
+        aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
+    sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
+    matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
+                           isAlternate, aInfo.mIsExplicitlyEnabled);
+    if (auto* linkStyle = LinkStyle::FromNode(*aInfo.mContent)) {
+      linkStyle->SetStyleSheet(sheet);
+    }
+    MOZ_ASSERT(sheet->IsComplete() == isSheetFromCache);
+    auto data = MakeRefPtr<SheetLoadData>(
+        this, aInfo.mTitle,  nullptr, sheet, SyncLoad::No,
+        aInfo.mContent, isAlternate, matched, StylePreloadKind::None, aObserver,
+        principal, aInfo.mReferrerInfo, aInfo.mNonce, aInfo.mFetchPriority,
+        nullptr);
+    MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
+    if (isSheetFromCache) {
+      MOZ_ASSERT(sheet->IsComplete());
+      MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
+      completed = Completed::Yes;
+      InsertSheetInTree(*sheet);
+      NotifyOfCachedLoad(std::move(data));
+    } else {
+      
+      
+      
+      
+      
+      NS_ConvertUTF16toUTF8 utf8(aBuffer);
+      RefPtr<SheetLoadDataHolder> holder(
+          new nsMainThreadPtrHolder<css::SheetLoadData>(__func__, data.get(),
+                                                        true));
+      completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
+      if (completed == Completed::Yes) {
+        aHandle.OrInsert().AppendElement(
+            SharedStyleSheetCache::InlineSheetEntry{data->ValueForCache(),
+                                                    asImage});
+      } else {
+        data->mMustNotify = true;
+      }
+    }
+  });
   return LoadSheetResult{completed, isAlternate, matched};
 }
 

@@ -553,9 +553,6 @@ class Loader final {
       const nsAString& aNonce, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
-  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*,
-                                              nsIURI* aBaseURI);
-
   
   void NotifyOfCachedLoad(RefPtr<SheetLoadData>);
 
