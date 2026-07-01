@@ -36,7 +36,7 @@ class OverflowChangedTracker {
   OverflowChangedTracker() : mSubtreeRoot(nullptr) {}
 
   ~OverflowChangedTracker() {
-    MOZ_ASSERT(mEntries.IsEmpty(), "Need to flush before destroying!");
+    NS_ASSERTION(mEntries.empty(), "Need to flush before destroying!");
   }
 
   
@@ -54,24 +54,12 @@ class OverflowChangedTracker {
     MOZ_ASSERT(
         aFrame->FrameMaintainsOverflow(),
         "Why add a frame that doesn't maintain overflow to the tracker?");
-    uint32_t depth = aFrame->GetDepthInFrameTree();
-    
-    
-    
-    
-    if (NS_WARN_IF(!mEntries.EnsureLengthAtLeast(depth + 1, fallible))) {
-      return;  
-    }
-    auto* entriesForDepth = mEntries[depth].get();
-    if (!entriesForDepth) {
-      mEntries[depth] = MakeUnique<FrameChangedMap>();
-      entriesForDepth = mEntries[depth].get();
-    }
-    if (auto p = entriesForDepth->lookupForAdd(aFrame)) {
+    if (auto p = mEntries.lookupForAdd(aFrame)) {
       p->value() = std::max(p->value(), aChangeKind);
     } else {
       
-      (void)NS_WARN_IF(!entriesForDepth->add(p, aFrame, aChangeKind));
+      
+      (void)mEntries.add(p, aFrame, aChangeKind);
     }
   }
 
@@ -79,15 +67,9 @@ class OverflowChangedTracker {
 
 
   void RemoveFrame(nsIFrame* aFrame) {
-    uint32_t depth = aFrame->GetDepthInFrameTree();
-    if (depth >= mEntries.Length()) {
-      return;
+    if (!mEntries.empty()) {
+      mEntries.remove(aFrame);
     }
-    auto* entriesForDepth = mEntries[depth].get();
-    if (!entriesForDepth || entriesForDepth->empty()) {
-      return;
-    }
-    entriesForDepth->remove(aFrame);
   }
 
   
@@ -106,70 +88,84 @@ class OverflowChangedTracker {
 
 
   void Flush() {
-    while (!mEntries.IsEmpty()) {
-      
-      
-      UniquePtr deepestEntries = mEntries.PopLastElement();
-      if (!deepestEntries || deepestEntries->empty()) {
-        continue;
+    
+    
+
+    AutoTArray<Entry, 8> sortedEntries;
+    
+    
+    
+    
+    (void)sortedEntries.SetCapacity(mEntries.count(), fallible);
+    for (auto iter = mEntries.iter(); !iter.done(); iter.next()) {
+      nsIFrame* frame = iter.get().key();
+      uint32_t depth = frame->GetDepthInFrameTree();
+      ChangeKind kind = iter.get().value();
+      if (!sortedEntries.AppendElement(Entry(frame, depth, kind), fallible)) {
+        break;
       }
-      for (auto iter = deepestEntries->iter(); !iter.done(); iter.next()) {
-        nsIFrame* frame = iter.get().key();
-        ChangeKind kind = iter.get().value();
-        bool overflowChanged = false;
-        if (kind == CHILDREN_CHANGED) {
+    }
+    mEntries.clearAndCompact();
+    sortedEntries.Sort();
+
+    while (!sortedEntries.IsEmpty()) {
+      Entry entry = sortedEntries.PopLastElement();
+      nsIFrame* frame = entry.mFrame;
+
+      bool overflowChanged = false;
+      if (entry.mChangeKind == CHILDREN_CHANGED) {
+        
+        
+        overflowChanged = frame->UpdateOverflow();
+      } else {
+        
+        
+
+        NS_ASSERTION(
+            frame->GetProperty(nsIFrame::DebugInitialOverflowPropertyApplied()),
+            "InitialOverflowProperty must be set first.");
+
+        OverflowAreas* overflow =
+            frame->GetProperty(nsIFrame::InitialOverflowProperty());
+        if (overflow) {
           
           
-          overflowChanged = frame->UpdateOverflow();
+          OverflowAreas overflowCopy = *overflow;
+          frame->FinishAndStoreOverflow(overflowCopy, frame->GetSize());
         } else {
-          
-          
-          MOZ_ASSERT(frame->GetProperty(
-                         nsIFrame::DebugInitialOverflowPropertyApplied()),
-                     "InitialOverflowProperty must be set first.");
-
-          OverflowAreas* overflow =
-              frame->GetProperty(nsIFrame::InitialOverflowProperty());
-          if (overflow) {
-            
-            
-            OverflowAreas overflowCopy = *overflow;
-            frame->FinishAndStoreOverflow(overflowCopy, frame->GetSize());
-          } else {
-            nsRect bounds(nsPoint(0, 0), frame->GetSize());
-            OverflowAreas boundsOverflow;
-            boundsOverflow.SetAllTo(bounds);
-            frame->FinishAndStoreOverflow(boundsOverflow, bounds.Size());
-          }
-
-          
-          overflowChanged = true;
+          nsRect bounds(nsPoint(0, 0), frame->GetSize());
+          OverflowAreas boundsOverflow;
+          boundsOverflow.SetAllTo(bounds);
+          frame->FinishAndStoreOverflow(boundsOverflow, bounds.Size());
         }
 
         
-        
-        
-        
-        
-        if (overflowChanged) {
-          nsIFrame* parent = frame->GetParent();
+        overflowChanged = true;
+      }
 
-          
-          
-          if (parent && parent != mSubtreeRoot &&
-              parent->FrameMaintainsOverflow()) {
-            auto* entriesForParentDepth = mEntries.LastElement().get();
-            if (!entriesForParentDepth) {
-              mEntries.LastElement() = MakeUnique<FrameChangedMap>();
-              entriesForParentDepth = mEntries.LastElement().get();
-            }
-            if (auto p = entriesForParentDepth->lookupForAdd(parent)) {
-              p->value() = CHILDREN_CHANGED;
-            } else {
-              
-              (void)NS_WARN_IF(
-                  !entriesForParentDepth->add(p, parent, CHILDREN_CHANGED));
-            }
+      
+      
+      
+      if (overflowChanged) {
+        nsIFrame* parent = frame->GetParent();
+
+        
+        
+        if (parent && parent != mSubtreeRoot &&
+            parent->FrameMaintainsOverflow()) {
+          Entry parentEntry(parent, entry.mDepth - 1, CHILDREN_CHANGED);
+          auto index = sortedEntries.IndexOfFirstElementGt(parentEntry);
+          if (index > 0 && sortedEntries[index - 1] == parentEntry) {
+            
+            Entry& existing = sortedEntries[index - 1];
+            existing.mChangeKind =
+                std::max(existing.mChangeKind, CHILDREN_CHANGED);
+          } else {
+            
+            
+            
+            
+            (void)sortedEntries.InsertElementAt(index, parentEntry, fallible);
           }
         }
       }
@@ -177,11 +173,37 @@ class OverflowChangedTracker {
   }
 
  private:
-  typedef HashMap<nsIFrame*, ChangeKind> FrameChangedMap;
+  
+  struct Entry {
+    Entry(nsIFrame* aFrame, uint32_t aDepth,
+          ChangeKind aChangeKind = CHILDREN_CHANGED)
+        : mFrame(aFrame), mDepth(aDepth), mChangeKind(aChangeKind) {}
+
+    
+
+
+    bool operator==(const Entry& aOther) const {
+      return mFrame == aOther.mFrame;
+    }
+
+    
+
+
+    bool operator<(const Entry& aOther) const {
+      if (mDepth == aOther.mDepth) {
+        return mFrame < aOther.mFrame;
+      }
+      return mDepth < aOther.mDepth;
+    }
+
+    nsIFrame* mFrame;
+    
+    uint32_t mDepth;
+    ChangeKind mChangeKind;
+  };
 
   
-  
-  AutoTArray<UniquePtr<FrameChangedMap>, 32> mEntries;
+  HashMap<nsIFrame*, ChangeKind> mEntries;
 
   
   const nsIFrame* mSubtreeRoot;
