@@ -1008,13 +1008,17 @@ VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   
   
   
-  bool only_active_stream = true;
-  for (int i = 0; i < codec.numberOfSimulcastStreams; ++i) {
-    if (i != stream_idx && codec.simulcastStream[i].active) {
-      only_active_stream = false;
-      break;
+  bool only_active_stream = false;
+  if (stream_idx == 0 && codec.simulcastStream[0].active) {
+    only_active_stream = true;
+    for (int i = 1; i < codec.numberOfSimulcastStreams; ++i) {
+      if (codec.simulcastStream[i].active) {
+        only_active_stream = false;
+        break;
+      }
     }
   }
+
   if (codec.GetScalabilityMode().has_value() && only_active_stream) {
     scalability_mode = codec.GetScalabilityMode();
   }
