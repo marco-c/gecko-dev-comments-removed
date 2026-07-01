@@ -168,6 +168,13 @@ class JitRuntime {
       ionGenericCallStubOffset_;
 
   
+  WriteOnceData<uint32_t> megamorphicLoadStubOffset_{0};
+  
+  
+  
+  WriteOnceData<uint32_t> megamorphicLoadStubPermissiveOffset_{0};
+
+  
   mozilla::EnumeratedArray<DebugTrapHandlerKind, WriteOnceData<JitCode*>,
                            size_t(DebugTrapHandlerKind::Count)>
       debugTrapHandlers_;
@@ -266,6 +273,8 @@ class JitRuntime {
                                             Register scratch, Label* done);
   void generateIonGenericHandleUnderflow(MacroAssembler& masm,
                                          bool isConstructing, Label* vmCall);
+  void generateMegamorphicLoadStub(MacroAssembler& masm);
+  void generateMegamorphicLoadStubPermissive(MacroAssembler& masm);
 
   JitCode* generateDebugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 
@@ -302,6 +311,13 @@ class JitRuntime {
   }
 
  public:
+  
+  
+  
+  
+  static constexpr size_t MegamorphicLoadStubCacheHit = 1;
+  static constexpr size_t MegamorphicLoadStubCacheHitGetter = 2;
+
   JitCode* generateEntryTrampolineForScript(JSContext* cx, JSScript* script);
 
   JitRuntime() = default;
@@ -408,6 +424,12 @@ class JitRuntime {
 
   TrampolinePtr lazyLinkStub() const {
     return trampolineCode(lazyLinkStubOffset_);
+  }
+  TrampolinePtr megamorphicLoadStub() const {
+    return trampolineCode(megamorphicLoadStubOffset_);
+  }
+  TrampolinePtr megamorphicLoadStubPermissive() const {
+    return trampolineCode(megamorphicLoadStubPermissiveOffset_);
   }
   TrampolinePtr interpreterStub() const {
     return trampolineCode(interpreterStubOffset_);
