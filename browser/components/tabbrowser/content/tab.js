@@ -759,13 +759,13 @@
       if (browser.audioMuted) {
         if (this.linkedPanel) {
           
-          browser.unmute();
+          browser.browsingContext?.mediaController?.unmute();
         }
         this.removeAttribute("muted");
       } else {
         if (this.linkedPanel) {
           
-          browser.mute();
+          browser.browsingContext?.mediaController?.mute();
         }
         this.toggleAttribute("muted", true);
       }
