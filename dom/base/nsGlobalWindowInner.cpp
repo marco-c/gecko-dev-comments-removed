@@ -3421,7 +3421,9 @@ bool nsGlobalWindowInner::ResolveComponentsShim(
   
   nsCOMPtr<Document> doc = GetExtantDoc();
   if (doc) {
-    doc->WarnOnceAbout(DeprecatedOperations::eComponents,  true);
+    doc->WarnOnceAndReportAbout(
+        DeprecatedOperations::eComponents, 
+        true);
     
     doc->SetUseCounter(eUseCounter_custom_ComponentsShimResolved);
   }
@@ -3527,7 +3529,7 @@ bool nsGlobalWindowInner::DoResolve(
       !xpc::IsXrayWrapper(aObj) &&
       !nsContentUtils::ObjectPrincipal(aObj)->IsSystemPrincipal()) {
     if (GetExtantDoc()) {
-      GetExtantDoc()->WarnOnceAbout(
+      GetExtantDoc()->WarnOnceAndReportAbout(
           DeprecatedOperations::eWindow_Cc_ontrollers);
     }
     const JSClass* clazz;
