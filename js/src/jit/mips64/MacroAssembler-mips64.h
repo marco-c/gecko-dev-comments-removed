@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips64_MacroAssembler_mips64_h
 #define jit_mips64_MacroAssembler_mips64_h
 
@@ -138,11 +136,12 @@ class MacroAssemblerMIPS64 : public MacroAssemblerMIPSShared {
   FaultingCodeOffset ma_store(Register data, Address address,
                               LoadStoreSize size = SizeWord,
                               LoadStoreExtension extension = SignExtend);
-  void ma_store(ImmWord imm, const BaseIndex& dest,
-                LoadStoreSize size = SizeWord,
-                LoadStoreExtension extension = SignExtend);
-  void ma_store(ImmWord imm, Address address, LoadStoreSize size = SizeWord,
-                LoadStoreExtension extension = SignExtend);
+  FaultingCodeOffset ma_store(ImmWord imm, const BaseIndex& dest,
+                              LoadStoreSize size = SizeWord,
+                              LoadStoreExtension extension = SignExtend);
+  FaultingCodeOffset ma_store(ImmWord imm, Address address,
+                              LoadStoreSize size = SizeWord,
+                              LoadStoreExtension extension = SignExtend);
   
   
   void ma_daddu(Register rd, Register rs, Imm32 imm);
@@ -811,7 +810,7 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   }
 
   template <typename T>
-  void storePtr(ImmWord imm, T address);
+  FaultingCodeOffset storePtr(ImmWord imm, T address);
   template <typename T>
   void storePtr(ImmPtr imm, T address);
   template <typename T>
