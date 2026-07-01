@@ -37,6 +37,12 @@ add_setup(async function () {
   
   do_get_profile();
 
+  
+  let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
+    Ci.nsIObserver
+  );
+  policies.observe(null, "policies-startup", null);
+
   registerCleanupFunction(async () => {
     sinon.restore();
   });
