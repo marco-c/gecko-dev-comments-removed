@@ -1970,7 +1970,8 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
 
     
     
-    if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
+    if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot();
+        shadow && !shadow->IsUAWidget()) {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
     }
 
