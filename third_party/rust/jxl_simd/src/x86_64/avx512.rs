@@ -599,6 +599,21 @@ unsafe impl F32SimdVec for F32VecAvx512 {
         F32VecAvx512(_mm512_fnmadd_ps(this.0, mul.0, add.0), this.1)
     });
 
+    
+    
+    
+    
+    
+
+    #[rustversion::before(1.95)]
+    #[cfg(target_os = "macos")]
+    #[inline(always)]
+    fn splat(d: Self::Descriptor, v: f32) -> Self {
+        
+        unsafe { Self(_mm512_broadcastss_ps(_mm_set_ss(v)), d) }
+    }
+
+    #[rustversion::attr(before(1.95), cfg(not(target_os = "macos")))]
     #[inline(always)]
     fn splat(d: Self::Descriptor, v: f32) -> Self {
         
@@ -623,6 +638,21 @@ unsafe impl F32SimdVec for F32VecAvx512 {
         F32VecAvx512(_mm512_sqrt_ps(this.0), this.1)
     });
 
+    #[rustversion::before(1.95)]
+    #[cfg(target_os = "macos")]
+    fn_avx!(this: F32VecAvx512, fn neg() -> F32VecAvx512 {
+        static SIGN_MASK: [u32; 16] = [0x80000000; 16];
+        // SAFETY: avx512f is available from the safety invariant on `this.1`.
+        let mask = unsafe {
+            _mm512_loadu_si512(SIGN_MASK.as_ptr() as *const _)
+        };
+        F32VecAvx512(
+            _mm512_castsi512_ps(_mm512_xor_si512(mask, _mm512_castps_si512(this.0))),
+            this.1,
+        )
+    });
+
+    #[rustversion::attr(before(1.95), cfg(not(target_os = "macos")))]
     fn_avx!(this: F32VecAvx512, fn neg() -> F32VecAvx512 {
         F32VecAvx512(
             _mm512_castsi512_ps(_mm512_xor_si512(
@@ -633,6 +663,24 @@ unsafe impl F32SimdVec for F32VecAvx512 {
         )
     });
 
+    #[rustversion::before(1.95)]
+    #[cfg(target_os = "macos")]
+    fn_avx!(this: F32VecAvx512, fn copysign(sign: F32VecAvx512) -> F32VecAvx512 {
+        static SIGN_MASK: [u32; 16] = [0x80000000; 16];
+        // SAFETY: avx512f is available from the safety invariant on `this.1`.
+        let sign_mask = unsafe {
+            _mm512_loadu_si512(SIGN_MASK.as_ptr() as *const _)
+        };
+        F32VecAvx512(
+            _mm512_castsi512_ps(_mm512_or_si512(
+                _mm512_andnot_si512(sign_mask, _mm512_castps_si512(this.0)),
+                _mm512_and_si512(sign_mask, _mm512_castps_si512(sign.0)),
+            )),
+            this.1,
+        )
+    });
+
+    #[rustversion::attr(before(1.95), cfg(not(target_os = "macos")))]
     fn_avx!(this: F32VecAvx512, fn copysign(sign: F32VecAvx512) -> F32VecAvx512 {
         let sign_mask = _mm512_set1_epi32(i32::MIN);
         F32VecAvx512(
