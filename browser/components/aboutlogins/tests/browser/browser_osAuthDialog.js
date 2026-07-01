@@ -7,9 +7,16 @@
 requestLongerTimeout(2);
 
 const PAGE_PREFS = "about:preferences";
-const PAGE_PRIVACY = PAGE_PREFS + "#privacy";
+const srdEnabled = Services.prefs.getBoolPref(
+  "browser.settings-redesign.enabled",
+  false
+);
+const PAGE_PRIVACY =
+  PAGE_PREFS + (srdEnabled ? "#passwordsAutofill" : "#privacy");
 const SELECTORS = {
-  reauthCheckbox: "#osReauthCheckbox",
+  reauthCheckbox: srdEnabled
+    ? "#requireOSAuthForPasswords"
+    : "#osReauthCheckbox",
 };
 
 add_setup(async function () {
@@ -160,7 +167,7 @@ add_task(async function test_os_auth_and_prp() {
   
   
   
-  LoginTestUtils.primaryPassword.enable();
+  await LoginTestUtils.primaryPassword.enable();
   info("PrP has been enabled");
 
   
@@ -232,7 +239,7 @@ add_task(async function test_os_auth_and_prp() {
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  LoginTestUtils.primaryPassword.disable();
+  await LoginTestUtils.primaryPassword.disable();
 });
 
 
@@ -248,7 +255,7 @@ add_task(
     });
 
     
-    LoginTestUtils.primaryPassword.enable();
+    await LoginTestUtils.primaryPassword.enable();
     info("PrP has been enabled");
 
     
@@ -291,7 +298,7 @@ add_task(
     });
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
     LoginHelper.setOSAuthEnabled(osAuthWasEnabled);
   }
 );
