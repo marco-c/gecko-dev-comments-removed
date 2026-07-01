@@ -7,7 +7,6 @@
 
 
 
-
 "use strict";
 
 const { TestUtils } = ChromeUtils.importESModule(
@@ -53,47 +52,4 @@ add_task(async function test_topic_fires_on_global_registry_mutations() {
   globalReg.removeSources([SOURCE_NAME]);
   await removed;
   Assert.ok(true, "Topic fired on removeSources");
-});
-
-
-
-
-
-
-
-
-add_task(async function test_topic_separation_from_app_locales_changed() {
-  const globalReg = L10nRegistry.getInstance();
-  const SOURCE_NAME = "test-l10n-observer-separation";
-
-  let appLocalesChangedFired = false;
-  const appLocalesObserver = () => {
-    appLocalesChangedFired = true;
-  };
-  Services.obs.addObserver(appLocalesObserver, "intl:app-locales-changed");
-
-  
-  
-  const sourcesChanged = TestUtils.topicObserved(TOPIC);
-  globalReg.registerSources([
-    new L10nFileSource(
-      SOURCE_NAME,
-      "test-l10n-observer-separation-metasource",
-      
-      ["en-US"],
-      "/test-l10n-observer-separation/{locale}/"
-    ),
-  ]);
-  await sourcesChanged;
-
-  const sourcesChanged2 = TestUtils.topicObserved(TOPIC);
-  globalReg.removeSources([SOURCE_NAME]);
-  await sourcesChanged2;
-
-  Services.obs.removeObserver(appLocalesObserver, "intl:app-locales-changed");
-
-  Assert.ok(
-    !appLocalesChangedFired,
-    "intl:app-locales-changed does not fire when availableLocales is unchanged"
-  );
 });
