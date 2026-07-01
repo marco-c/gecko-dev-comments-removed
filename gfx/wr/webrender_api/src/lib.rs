@@ -51,6 +51,14 @@ mod display_list;
 mod font;
 mod gradient_builder;
 mod image;
+
+
+#[doc(hidden)]
+pub mod key_types;
+
+
+#[doc(hidden)]
+pub mod prim_geometry;
 mod tile_pool;
 pub mod units;
 
