@@ -177,6 +177,11 @@ static INLINE uint64_t xgetbv(void) {
 
 #define AVX512_BITS (BIT(16) | BIT(17) | BIT(28) | BIT(30) | BIT(31))
 
+
+
+#define AVX512_DL_BITS \
+  (BIT(1) | BIT(6) | BIT(8) | BIT(9) | BIT(10) | BIT(11) | BIT(12) | BIT(14))
+
 #define FEATURE_SET(reg, feature) \
   (((reg) & (feature##_BITS)) == (feature##_BITS))
 
@@ -218,7 +223,11 @@ static INLINE int x86_simd_caps(void) {
         flags |= FEATURE_SET(reg_ebx, AVX2) ? HAS_AVX2 : 0;
         if (FEATURE_SET(reg_ebx, AVX512)) {
           
-          if ((xgetbv() & 0xe6) == 0xe6) flags |= HAS_AVX512;
+          if ((xgetbv() & 0xe6) == 0xe6) {
+            
+            
+            flags |= FEATURE_SET(reg_ecx, AVX512_DL) ? HAS_AVX512 : 0;
+          }
         }
       }
     }

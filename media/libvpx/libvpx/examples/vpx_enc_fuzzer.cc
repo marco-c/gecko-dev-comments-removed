@@ -116,7 +116,8 @@ static int fuzz_vpx_img_read(vpx_image_t *img, const uint8_t *data,
     
     if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
     
-    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
 
     for (y = 0; y < h; ++y) {
       size_t nb = bytespp * w;

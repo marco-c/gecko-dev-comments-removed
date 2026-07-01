@@ -93,7 +93,8 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
     
     if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
     
-    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+    
+    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
     
 
 
@@ -235,7 +236,8 @@ void vpx_img_write(const vpx_image_t *img, FILE *file) {
     
     if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
     
-    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
 
     for (y = 0; y < h; ++y) {
       fwrite(buf, bytespp, w, file);
@@ -258,7 +260,8 @@ int vpx_img_read(vpx_image_t *img, FILE *file) {
     
     if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
     
-    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
+    
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
 
     for (y = 0; y < h; ++y) {
       if (fread(buf, bytespp, w, file) != (size_t)w) return 0;

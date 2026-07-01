@@ -220,9 +220,7 @@ TEST(EncodeAPI, InvalidUVStrides) {
                              buf.get()),
                 &img)
           << "Unable to wrap vpx_image for format: " << img_fmt;
-      const bool is_420 =
-          (img.x_chroma_shift == 1 && img.y_chroma_shift == 1) ||
-          img_fmt == VPX_IMG_FMT_NV12;
+      const bool is_420 = img.x_chroma_shift == 1 && img.y_chroma_shift == 1;
       
       
       
@@ -3368,6 +3366,29 @@ TEST(EncodeAPI, PerceptualAQKMeansHeapOverflow) {
 
   vpx_img_free(img);
   ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+
+
+
+
+TEST(EncodeAPI, VP9OssFuzz479149056) {
+  VP9Encoder encoder(3, 1, VPX_BITS_8, VPX_IMG_FMT_I422);
+  encoder.Configure(2, 33, 341, VPX_CBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(true);
+  encoder.Encode(false);
+  encoder.Encode(false);
+  encoder.Configure(14, 29, 177, VPX_VBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(false);
+  encoder.Configure(0, 33, 337, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Configure(0, 33, 341, VPX_VBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(false);
+  encoder.Encode(false);
+  encoder.Encode(false);
+  encoder.Encode(false);
 }
 #endif  
 

@@ -55,6 +55,15 @@ class IVFVideoSource : public CompressedVideoSource {
     ASSERT_EQ(kIvfFileHdrSize, fread(file_hdr, 1, kIvfFileHdrSize, input_file_))
         << "File header read failed.";
     
+    
+    
+    if (ferror(input_file_)) {
+      FAIL() << "File header read failed.";
+    }
+    if (feof(input_file_)) {
+      FAIL() << "Unexpected eof.";
+    }
+    
     ASSERT_TRUE(file_hdr[0] == 'D' && file_hdr[1] == 'K' &&
                 file_hdr[2] == 'I' && file_hdr[3] == 'F')
         << "Input is not an IVF file.";

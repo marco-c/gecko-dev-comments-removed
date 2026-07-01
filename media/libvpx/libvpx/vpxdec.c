@@ -696,12 +696,6 @@ static int main_loop(int argc, const char **argv_) {
     fprintf(stderr, "No input file specified!\n");
     usage_exit();
   }
-  
-  infile = strcmp(fn, "-") ? fopen(fn, "rb") : set_binary_mode(stdin);
-
-  if (!infile) {
-    fatal("Failed to open input file '%s'", strcmp(fn, "-") ? fn : "stdin");
-  }
 #if CONFIG_OS_SUPPORT
   
   if (!outfile_pattern && isatty(fileno(stdout)) && !do_md5 && !noblit) {
@@ -711,6 +705,13 @@ static int main_loop(int argc, const char **argv_) {
     return EXIT_FAILURE;
   }
 #endif
+
+  
+  infile = strcmp(fn, "-") ? fopen(fn, "rb") : set_binary_mode(stdin);
+
+  if (!infile) {
+    fatal("Failed to open input file '%s'", strcmp(fn, "-") ? fn : "stdin");
+  }
   input.vpx_input_ctx->file = infile;
   if (file_is_ivf(input.vpx_input_ctx))
     input.vpx_input_ctx->file_type = FILE_TYPE_IVF;
@@ -746,7 +747,7 @@ static int main_loop(int argc, const char **argv_) {
       fprintf(stderr,
               "YUV4MPEG2 not supported with output patterns,"
               " try --i420 or --yv12 or --rawvideo.\n");
-      return EXIT_FAILURE;
+      goto fail2;
     }
 
 #if CONFIG_WEBM_IO
@@ -755,7 +756,7 @@ static int main_loop(int argc, const char **argv_) {
         fprintf(stderr,
                 "Failed to guess framerate -- error parsing "
                 "webm file?\n");
-        return EXIT_FAILURE;
+        goto fail2;
       }
     }
 #endif
