@@ -20,10 +20,6 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
-#if defined(ANDROID) && (defined(__arm__) || defined(__aarch64__))
-#  include <android/api-level.h>
-#endif
-
 #include "jit/InlinableNatives.h"
 #include "js/Class.h"
 #include "js/ForOfIterator.h"
@@ -61,27 +57,6 @@ bool js::math_use_fdlibm_for_sin_cos_tan() {
 static inline bool UseFdlibmForSinCosTan(const CallArgs& args) {
   return math_use_fdlibm_for_sin_cos_tan() ||
          args.callee().nonCCWRealm()->creationOptions().alwaysUseFdlibm();
-}
-
-static MOZ_ALWAYS_INLINE double pow_libm_or_fdlibm(double x, double y) {
-#if defined(ANDROID) && (defined(__arm__) || defined(__aarch64__))
-  
-  
-  
-  
-  
-  
-  
-  
-  static const int sApiLevel = android_get_device_api_level();
-  if (sApiLevel <= 28) {
-    return fdlibm_pow(x, y);
-  }
-#endif
-  
-  
-  
-  return std::pow(x, y);
 }
 
 
@@ -492,12 +467,9 @@ double js::powi(double x, int32_t y) {
     }
 
     
-    
-    
   }
 
-  return pow_libm_or_fdlibm(x,
-                            static_cast<double>(y));  
+  return std::pow(x, static_cast<double>(y));  
 }
 
 double js::ecmaPow(double x, double y) {
@@ -529,8 +501,6 @@ double js::ecmaPow(double x, double y) {
 
 
 
-
-
   if (std::isfinite(x) && x != 0.0) {
     if (y == 0.5) {
       return std::sqrt(x);
@@ -539,7 +509,7 @@ double js::ecmaPow(double x, double y) {
       return 1.0 / std::sqrt(x);
     }
   }
-  return pow_libm_or_fdlibm(x, y);
+  return std::pow(x, y);
 }
 
 static bool math_pow(JSContext* cx, unsigned argc, Value* vp) {
