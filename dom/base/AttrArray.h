@@ -25,6 +25,10 @@ struct StyleLockedDeclarationBlock;
 namespace dom {
 class Element;
 class ElementInternals;
+
+
+
+enum class IsKnownNewAttr : bool { No, Yes };
 }  
 }  
 
@@ -98,7 +102,14 @@ class AttrArray {
   
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
-  const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
+  
+  
+  
+  
+  
+  
+  const nsAttrName* GetExistingAttrNameFromQName(
+      const nsAString& aName, RefPtr<nsAtom>* aOutAtom = nullptr) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID) const;
 
@@ -369,9 +380,11 @@ class AttrArray {
   
   
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue,
+                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue,
+                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
 
   
   

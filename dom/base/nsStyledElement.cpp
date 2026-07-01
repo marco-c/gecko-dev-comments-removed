@@ -106,7 +106,7 @@ nsresult nsStyledElement::SetInlineStyleDeclaration(
   return SetAttrAndNotify(kNameSpaceID_None, nsGkAtoms::style, nullptr,
                           aData.mOldValue.ptrOr(nullptr), attrValue, nullptr,
                           aData.mModType, true, kDontCallAfterSetAttr, document,
-                          updateBatch);
+                          updateBatch, mozilla::dom::IsKnownNewAttr::No);
 }
 
 
@@ -152,7 +152,8 @@ nsresult nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc) {
     
     
     bool oldValueSet;
-    nsresult rv = SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
+    nsresult rv = SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet,
+                                 mozilla::dom::IsKnownNewAttr::No);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
