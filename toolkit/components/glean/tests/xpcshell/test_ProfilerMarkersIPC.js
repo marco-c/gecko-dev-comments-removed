@@ -39,6 +39,7 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
+    false,
   ],
   
 ];
