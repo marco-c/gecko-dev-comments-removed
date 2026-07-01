@@ -1069,56 +1069,16 @@ enum class MozOp {
   
   
   
+  
 
   
   
-  TeeGlobal = 0x01,
-  I32Min,
-  I32Max,
-  I32Neg,
-  I32BitNot,
-  I32Abs,
-  F32TeeStoreF64,
-  F64TeeStoreF32,
-  I32TeeStore8,
-  I32TeeStore16,
-  I64TeeStore8,
-  I64TeeStore16,
-  I64TeeStore32,
-  I32TeeStore,
-  I64TeeStore,
-  F32TeeStore,
-  F64TeeStore,
-  F64Mod,
-  F64SinNative,
-  F64SinFdlibm,
-  F64CosNative,
-  F64CosFdlibm,
-  F64TanNative,
-  F64TanFdlibm,
-  F64Asin,
-  F64Acos,
-  F64Atan,
-  F64Exp,
-  F64Log,
-  F64Pow,
-  F64Atan2,
-
-  
-  OldCallDirect,
-  OldCallIndirect,
-
-  
-  LastAsmJSOp = OldCallIndirect,
+  CallBuiltinModuleFunc = 0x01,
 
 #ifdef ENABLE_WASM_JSPI
   
   GuardSuspending,
 #endif
-
-  
-  
-  CallBuiltinModuleFunc,
 
   Limit
 };
