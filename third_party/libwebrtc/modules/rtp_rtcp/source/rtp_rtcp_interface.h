@@ -195,10 +195,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
-  virtual void SetLocalSsrc(uint32_t ssrc) = 0;
-
-  
-  
   
 
   

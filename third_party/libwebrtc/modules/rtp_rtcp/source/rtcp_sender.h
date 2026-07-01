@@ -133,7 +133,6 @@ class RTCPSender final {
       RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
 
   uint32_t SSRC() const;
-  void SetSsrc(uint32_t ssrc);
 
   void SetRemoteSSRC(uint32_t ssrc) RTC_LOCKS_EXCLUDED(mutex_rtcp_sender_);
 
@@ -238,11 +237,7 @@ class RTCPSender final {
   const bool audio_;
   
   
-  
-  
-  
-  
-  uint32_t send_ssrc_ RTC_GUARDED_BY(mutex_rtcp_sender_);
+  const uint32_t send_ssrc_;
   
   
   
