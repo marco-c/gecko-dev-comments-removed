@@ -618,7 +618,8 @@ int16_t EventStateManager::sCurrentMouseBtn = MouseButton::eNotPressed;
 EventStateManager* EventStateManager::sActiveESM = nullptr;
 EventStateManager* EventStateManager::sCursorSettingManager = nullptr;
 constinit AutoWeakFrame EventStateManager::sLastDragOverFrame{};
-LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint = kInvalidRefPoint;
+LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint =
+    LayoutDeviceIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
 LayoutDeviceIntPoint EventStateManager::sLastRefPointOfRawUpdate =
     kInvalidRefPoint;
@@ -1204,7 +1205,9 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       UpdateCursor(aPresContext, mouseEvent, mCurrentTarget, aStatus);
 
       UpdateLastRefPointOfMouseEvent(mouseEvent);
-      ResetPointerToWindowCenterWhilePointerLocked(mouseEvent);
+      if (PointerLockManager::IsLocked()) {
+        ResetPointerToWindowCenterWhilePointerLocked(mouseEvent);
+      }
       UpdateLastPointerPosition(mouseEvent);
 
       GenerateMouseEnterExit(mouseEvent);
@@ -5679,16 +5682,15 @@ void EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
 
 
 
-static std::pair<LayoutDeviceIntSize, LayoutDeviceIntPoint>
-GetWindowClientSizeAndCenterPoint(nsIWidget* aWidget) {
-  MOZ_ASSERT(aWidget);
+static LayoutDeviceIntPoint GetWindowClientRectCenter(nsIWidget* aWidget) {
+  NS_ENSURE_TRUE(aWidget, LayoutDeviceIntPoint(0, 0));
 
-  LayoutDeviceIntSize size = aWidget->GetClientSize();
-  LayoutDeviceIntPoint point(size.width / 2, size.height / 2);
+  LayoutDeviceIntRect rect = aWidget->GetClientBounds();
+  LayoutDeviceIntPoint point(rect.width / 2, rect.height / 2);
   int32_t round = aWidget->RoundsWidgetCoordinatesTo();
   point.x = point.x / round * round;
   point.y = point.y / round * round;
-  return std::pair{size, point};
+  return point;
 }
 
 void EventStateManager::GeneratePointerEnterExit(EventMessage aMessage,
@@ -5715,12 +5717,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
   
   
   
-  
-  
-  
-  
-  if (PointerLockManager::ShouldResetPointer() && aMouseEvent->mWidget &&
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
+  if (PointerLockManager::IsLocked() && aMouseEvent->mWidget) {
     
     
     
@@ -5728,7 +5725,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
     
     
     aMouseEvent->mLastRefPoint =
-        GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget).second;
+        GetWindowClientRectCenter(aMouseEvent->mWidget);
 
   } else if (lastRefPoint == kInvalidRefPoint) {
     
@@ -5753,103 +5750,19 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
 }
 
 
-void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
-                                           nsPresContext* aPresContext,
-                                           bool aUnadjustedMovement) {
-  MOZ_ASSERT(aWidget);
-  MOZ_ASSERT(aPresContext);
-
-  if (!PointerLockManager::ShouldResetPointer()) {
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
-  MOZ_ASSERT(sPreLockScreenPoint == kInvalidRefPoint);
-  MOZ_ASSERT(sSynthCenteringPoint == kInvalidRefPoint);
-
-  
-  aWidget->LockNativePointer(aUnadjustedMovement
-                                 ? nsIWidget::NativePointerLockMode::Unadjusted
-                                 : nsIWidget::NativePointerLockMode::Regular);
-
-  
-  
-  sPreLockScreenPoint = LayoutDeviceIntPoint::Round(
-      sLastScreenPoint * aPresContext->CSSToDevPixelScale());
-
-  
-  
-  
-  sLastRefPoint = sLastRefPointOfRawUpdate =
-      GetWindowClientSizeAndCenterPoint(aWidget).second;
-
-  
-  
-  if (StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    sSynthCenteringPoint = sLastRefPoint;
-  }
-
-  aWidget->SynthesizeNativeMouseMove(
-      sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
-}
-
-
 void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     WidgetMouseEvent* aMouseEvent) {
-  MOZ_ASSERT(aMouseEvent);
-
-  if (!PointerLockManager::ShouldResetPointer()) {
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
-
+  MOZ_ASSERT(PointerLockManager::IsLocked());
   if ((aMouseEvent->mMessage != ePointerRawUpdate &&
        aMouseEvent->mMessage != eMouseMove &&
        aMouseEvent->mMessage != ePointerMove) ||
-      !aMouseEvent->mWidget || !aMouseEvent->IsReal()) {
+      !aMouseEvent->mWidget) {
     return;
   }
 
   
   
-  const bool updateSynthCenteringPoint = aMouseEvent->mMessage == eMouseMove;
-  const auto recenteringPoint = [&]() -> Maybe<LayoutDeviceIntPoint> {
-    if (!updateSynthCenteringPoint) {
-      return Nothing();
-    }
-
-    auto [size, center] =
-        GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget);
-    if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-      if (aMouseEvent->mRefPoint != center) {
-        return Some(center);
-      }
-      return Nothing();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    LayoutDeviceIntRect rect(size.Width() / 4, size.Height() / 4,
-                             size.Width() / 2, size.Height() / 2);
-    if (!rect.Contains(aMouseEvent->mRefPoint)) {
-      return Some(center);
-    }
-    return Nothing();
-  }();
+  bool updateSynthCenteringPoint = aMouseEvent->mMessage == eMouseMove;
 
   
   
@@ -5857,99 +5770,29 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
   
   
   
-  if (recenteringPoint) {
-    
-    
-    
-    
-    
-    sSynthCenteringPoint = *recenteringPoint;
+  LayoutDeviceIntPoint center = GetWindowClientRectCenter(aMouseEvent->mWidget);
 
+  if (aMouseEvent->mRefPoint != center && updateSynthCenteringPoint) {
+    
+    
+    
+    
+    
+    sSynthCenteringPoint = center;
     
     
     
     aMouseEvent->mWidget->SynthesizeNativeMouseMove(
-        sSynthCenteringPoint + aMouseEvent->mWidget->WidgetToScreenOffset(),
-        nullptr);
-    return;
-  }
-
-  if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
-      
-      
-      aMouseEvent->StopPropagation();
-      
-      
-      if (updateSynthCenteringPoint) {
-        sSynthCenteringPoint = kInvalidRefPoint;
-      }
-    }
-    return;
-  }
-
-  
-  
-  
-  if (sSynthCenteringPoint != kInvalidRefPoint) {
+        center + aMouseEvent->mWidget->WidgetToScreenOffset(), nullptr);
+  } else if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
     
     
+    aMouseEvent->StopPropagation();
     
-    
-    
-    
-    if (!aMouseEvent->mMovement) {
-      aMouseEvent->mMovement.emplace(aMouseEvent->mRefPoint -
-                                     sSynthCenteringPoint);
-    }
-
-    
-    
-    
-    
-    if (*aMouseEvent->mMovement == LayoutDeviceIntPoint(0, 0)) {
-      aMouseEvent->mFlags.mOnlySystemGroupDispatch = true;
-    }
-
     
     if (updateSynthCenteringPoint) {
       sSynthCenteringPoint = kInvalidRefPoint;
     }
-  }
-}
-
-
-void EventStateManager::ReleaseLockedPointer(nsIWidget* aWidget) {
-  if (sPreLockScreenPoint == kInvalidRefPoint) {
-    MOZ_ASSERT(sSynthCenteringPoint == kInvalidRefPoint);
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
-
-  
-  
-  sSynthCenteringPoint = kInvalidRefPoint;
-
-  LayoutDeviceIntPoint preLockScreenPoint = sPreLockScreenPoint;
-  sPreLockScreenPoint = kInvalidRefPoint;
-
-  if (aWidget) {
-    
-    aWidget->UnlockNativePointer();
-
-    
-    
-    
-    
-    sLastRefPoint = sLastRefPointOfRawUpdate =
-        preLockScreenPoint - aWidget->WidgetToScreenOffset();
-
-    aWidget->SynthesizeNativeMouseMove(preLockScreenPoint, nullptr);
   }
 }
 
@@ -6104,13 +5947,53 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     PointerEventHandler::ReleaseAllPointerCapture();
 
     
+    
+    sPreLockScreenPoint = LayoutDeviceIntPoint::Round(
+        sLastScreenPoint * aPresContext->CSSToDevPixelScale());
+
+    
+    
+    
+    
+    
+    
+    sLastRefPoint = sLastRefPointOfRawUpdate =
+        GetWindowClientRectCenter(aWidget);
+
+    
     if (dragService) {
       dragService->Suppress();
     }
 
-    RequestLockPointer(aWidget, aPresContext, aUnadjustedMovement);
+    
+    aWidget->LockNativePointer(
+        aUnadjustedMovement ? nsIWidget::NativePointerLockMode::Unadjusted
+                            : nsIWidget::NativePointerLockMode::Regular);
+
+    
+    aWidget->SynthesizeNativeMouseMove(
+        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
   } else {
-    ReleaseLockedPointer(aWidget);
+    if (aWidget) {
+      
+      aWidget->UnlockNativePointer();
+    }
+
+    
+    
+    sSynthCenteringPoint = kInvalidRefPoint;
+    if (aWidget) {
+      
+      
+      
+      
+      sLastRefPoint = sLastRefPointOfRawUpdate =
+          sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
+      
+      
+      
+      aWidget->SynthesizeNativeMouseMove(sPreLockScreenPoint, nullptr);
+    }
 
     
     if (dragService) {
