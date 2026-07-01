@@ -3265,6 +3265,11 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
         }
       }
     }
+    
+    
+    
+    
+    mDocument->SetFocusNavigationStartingPoint(nullptr);
 
     
     if (auto* animationElement = SVGAnimationElement::FromNode(target.get())) {
