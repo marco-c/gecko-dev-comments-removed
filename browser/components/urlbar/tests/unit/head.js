@@ -444,6 +444,14 @@ async function cleanupPlaces() {
 
 
 
+
+
+
+
+
+
+
+
 function makeBookmarkResult(
   queryContext,
   {
@@ -453,30 +461,40 @@ function makeBookmarkResult(
     tags = [],
     heuristic = false,
     source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    bookmarkDateMs = undefined,
+    lastVisit = undefined,
   }
 ) {
+  let payload = {
+    url: uri,
+    title,
+    tags,
+    
+    icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
+    isBlockable: source == UrlbarUtils.RESULT_SOURCE.HISTORY ? true : undefined,
+    blockL10n:
+      source == UrlbarUtils.RESULT_SOURCE.HISTORY
+        ? { id: "urlbar-result-menu-remove-from-history" }
+        : undefined,
+    helpUrl:
+      source == UrlbarUtils.RESULT_SOURCE.HISTORY
+        ? Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          "awesome-bar-result-menu"
+        : undefined,
+  };
+
+  if (bookmarkDateMs !== undefined) {
+    payload.bookmarkDateMs = bookmarkDateMs;
+  }
+  if (lastVisit !== undefined) {
+    payload.lastVisit = lastVisit;
+  }
+
   return new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.URL,
     source,
     heuristic,
-    payload: {
-      url: uri,
-      title,
-      tags,
-      
-      icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
-      isBlockable:
-        source == UrlbarUtils.RESULT_SOURCE.HISTORY ? true : undefined,
-      blockL10n:
-        source == UrlbarUtils.RESULT_SOURCE.HISTORY
-          ? { id: "urlbar-result-menu-remove-from-history" }
-          : undefined,
-      helpUrl:
-        source == UrlbarUtils.RESULT_SOURCE.HISTORY
-          ? Services.urlFormatter.formatURLPref("app.support.baseURL") +
-            "awesome-bar-result-menu"
-          : undefined,
-    },
+    payload,
   });
 }
 
@@ -566,21 +584,46 @@ function makeOmniboxResult(
 
 
 
+
+
+
+
+
+
+
+
 function makeTabSwitchResult(
   queryContext,
-  { uri, title, iconUri, userContextId, tabGroup }
+  {
+    uri,
+    title,
+    iconUri,
+    userContextId,
+    tabGroup,
+    bookmarkDateMs = undefined,
+    lastVisit = undefined,
+  }
 ) {
+  let payload = {
+    url: uri,
+    title,
+    
+    icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
+    userContextId: userContextId || 0,
+    tabGroup,
+  };
+
+  if (bookmarkDateMs !== undefined) {
+    payload.bookmarkDateMs = bookmarkDateMs;
+  }
+  if (lastVisit !== undefined) {
+    payload.lastVisit = lastVisit;
+  }
+
   return new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
-    payload: {
-      url: uri,
-      title,
-      
-      icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
-      userContextId: userContextId || 0,
-      tabGroup,
-    },
+    payload,
   });
 }
 
@@ -852,6 +895,14 @@ function makeSearchResult(
 
 
 
+
+
+
+
+
+
+
+
 function makeVisitResult(
   queryContext,
   {
@@ -863,6 +914,8 @@ function makeVisitResult(
     heuristic = false,
     source = UrlbarUtils.RESULT_SOURCE.HISTORY,
     isAutofillFallback = false,
+    bookmarkDateMs = undefined,
+    lastVisit = undefined,
   }
 ) {
   let payload = {
@@ -871,6 +924,12 @@ function makeVisitResult(
 
   if (title != undefined) {
     payload.title = title;
+  }
+  if (bookmarkDateMs !== undefined) {
+    payload.bookmarkDateMs = bookmarkDateMs;
+  }
+  if (lastVisit !== undefined) {
+    payload.lastVisit = lastVisit;
   }
 
   if (
@@ -1089,13 +1148,40 @@ async function check_results({
   
   
   
+  let optionalDateValidator = {
+    optional: true,
+    custom(resultIndex, actualResult, payloadKey) {
+      if (matches[resultIndex].payload[payloadKey] === 0) {
+        Assert.ok(
+          !actualResult.payload[payloadKey],
+          `result.payload.${payloadKey} should be falsey at result index ${resultIndex}`
+        );
+        return true;
+      }
+      return false;
+    },
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
   
   conditionalPayloadProperties = {
+    bookmarkDateMs: optionalDateValidator,
     frecency: { optional: true },
-    lastVisit: { optional: true },
+    lastVisit: optionalDateValidator,
     
     
     
@@ -1160,15 +1246,16 @@ async function check_results({
 
       for (let key of actualKeys.union(expectedKeys)) {
         let condition = conditionalPayloadProperties[key];
-        if (
-          condition?.ignore ||
-          (condition?.optional && !expected.hasOwnProperty(key))
-        ) {
+
+        if (condition?.custom?.(i, actual, key)) {
+          
           continue;
         }
 
-        if (condition?.custom?.(i, actual)) {
-          
+        if (
+          condition?.ignore ||
+          (condition?.optional && !expected.payload.hasOwnProperty(key))
+        ) {
           continue;
         }
 
