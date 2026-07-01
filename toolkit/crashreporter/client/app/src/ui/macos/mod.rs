@@ -32,7 +32,7 @@ use cocoa::{
     INSProgressIndicator, INSRunLoop, INSScrollView, INSStackView, INSText, INSTextContainer,
     INSTextField, INSTextView, INSView, INSWindow, NSApplication_NSEvent, NSArray_NSArrayCreation,
     NSAttributedString_NSExtendedAttributedString, NSDictionary_NSDictionaryCreation,
-    NSMutableParagraphStyle_, NSRunLoop_NSRunLoopConveniences, NSStackView_NSStackViewGravityAreas,
+    NSRunLoop_NSRunLoopConveniences, NSStackView_NSStackViewGravityAreas,
     NSString_NSStringExtensionMethods, NSTextField_NSTextFieldConvenience,
     NSView_NSConstraintBasedLayoutInstallingConstraints, NSView_NSConstraintBasedLayoutLayering,
     PNSObject,
@@ -1112,7 +1112,14 @@ fn render_element(
                 if rtl {
                     let ps = StrongRef::new(cocoa::NSMutableParagraphStyle::alloc());
                     ps.init();
-                    ps.setAlignment_(cocoa::NSTextAlignmentRight);
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let () = msg_send![*ps, setAlignment: cocoa::NSTextAlignmentRight];
                     
                     
                     cocoa::NSTextView_NSSharing::setDefaultParagraphStyle_(&*tv, (*ps).into());
