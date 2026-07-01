@@ -24,12 +24,6 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    packaging {
-        resources {
-            excludes += ['META-INF/LICENSE.md', 'META-INF/LICENSE-notice.md']
-        }
-    }
-
     buildFeatures {
         buildConfig = true
     }
@@ -74,6 +68,7 @@ dependencies {
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockwebserver
     testImplementation libs.mozilla.glean
@@ -86,6 +81,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.core
     androidTestImplementation libs.androidx.test.rules
     androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.kotlin.test
 }
 
 ext {
@@ -121,7 +117,7 @@ def getAppVersionWithoutMilestone() {
 def getVersionNumber() {
     def appVersion = getAppVersionWithoutMilestone()
     def parts = appVersion.split('\\.')
-    def version = parts[0] + "." + parts[1] + "." + getBuildId(gradle.mozconfig.topobjdir)
+    def version = parts[0] + "." + parts[1] + "." + getBuildId(gradle.mozconfig.topobjdir, providers.environmentVariable("MOZ_BUILD_DATE").getOrNull())
 
     if (!gradle.mozconfig.substs.MOZILLA_OFFICIAL && !gradle.mozconfig.substs.MOZ_ANDROID_FAT_AAR_ARCHITECTURES) {
         // Use -SNAPSHOT versions locally to enable the local GeckoView substitution flow.
