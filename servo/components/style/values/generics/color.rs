@@ -15,8 +15,9 @@ use style_traits::{owned_slice::OwnedSlice, CssWriter, ToCss};
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem, ToTyped)]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub enum GenericColor<Percentage> {
     
     Absolute(AbsoluteColor),
