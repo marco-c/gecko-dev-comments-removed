@@ -1419,15 +1419,36 @@ static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
 
 
 
-class CallbackNode {
+
+
+class CallbackData {
+ public:
+  CallbackData() = default;
+  CallbackData(PrefChangedFunc aFunc, void* aData)
+      : mFunc(aFunc), mData(aData) {}
+
+  PrefChangedFunc Func() const { return mFunc; }
+  void* Data() const { return mData; }
+  void ClearFunc() { mFunc = nullptr; }
+  void Fire(const char* aPrefName) const { mFunc(aPrefName, mData); }
+
+ protected:
+  
+  PrefChangedFunc mFunc = nullptr;
+  void* mData = nullptr;
+};
+
+
+
+
+class CallbackNode : public CallbackData {
  public:
   NS_INLINE_DECL_REFCOUNTING(CallbackNode)
 
   CallbackNode(const nsACString& aDomain, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
-      : mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
-        mFunc(aFunc),
-        mData(aData),
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
         mIsPrefix(aIsPrefix) {
 #ifdef DEBUG
     mRawDomain = aDomain;
@@ -1436,9 +1457,8 @@ class CallbackNode {
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
-      : mDomain(AsVariant(aDomains)),
-        mFunc(aFunc),
-        mData(aData),
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(aDomains)),
         mIsPrefix(aIsPrefix) {}
 
   const Variant<nsCString, const char* const*>& Domain() const {
@@ -1449,10 +1469,7 @@ class CallbackNode {
     return mDomain.is<nsCString>() ? mDomain.as<nsCString>().get() : "(multi)";
   }
 
-  PrefChangedFunc Func() const { return mFunc; }
-  void ClearFunc() { mFunc = nullptr; }
-
-  void* Data() const { return mData; }
+  
 
   bool IsPrefix() const { return mIsPrefix; }
 
@@ -1461,10 +1478,6 @@ class CallbackNode {
   
   
   const nsCString& RawDomain() const { return mRawDomain; }
-
-  
-  
-  bool IsPriority() const { return mIsPriority; }
 #endif
 
   bool DomainIs(const nsACString& aDomain) const {
@@ -1494,9 +1507,7 @@ class CallbackNode {
 #ifdef DEBUG
   
   
-  
   nsCString mRawDomain;
-  bool mIsPriority = false;
 #endif
 
  private:
@@ -1504,9 +1515,6 @@ class CallbackNode {
 
   Variant<nsCString, const char* const*> mDomain;
 
-  
-  PrefChangedFunc mFunc;
-  void* mData;
   bool mIsPrefix;
 };
 
@@ -1594,6 +1602,7 @@ struct CallbackTrieNode {
     }
   }
 };
+
 
 
 
@@ -1829,6 +1838,111 @@ class CallbackTrie {
   CallbackTrieNode mRoot;
 };
 
+
+
+
+
+
+
+
+
+
+
+class MirrorCallbackList {
+ public:
+  
+  
+  struct MirrorCallback : public CallbackData {
+    
+    
+    
+    
+    
+    
+    
+    
+    const char* mName;
+
+    MirrorCallback(PrefChangedFunc aFunc, void* aData, const char* aName)
+        : CallbackData(aFunc, aData), mName(aName) {}
+
+    nsDependentCString Name() const { return nsDependentCString(mName); }
+  };
+
+  void Register(PrefChangedFunc aFunc, const nsACString& aDomain, void* aData) {
+    MOZ_DIAGNOSTIC_ASSERT(aDomain.IsLiteral(),
+                          "mirror domains must be process-lifetime literals");
+    
+    
+    mEntries.EmplaceBack(aFunc, aData, aDomain.BeginReading());
+    mSorted = false;
+  }
+
+  
+  
+  
+  Maybe<CallbackData> FindForNotify(const nsCString& aPrefName) {
+    if (MirrorCallback* entry = Find(aPrefName)) {
+      return Some(static_cast<const CallbackData&>(*entry));  
+    }
+    return Nothing();
+  }
+
+  uint32_t Count() const { return mEntries.Length(); }
+
+  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                 uint32_t* aNodeCount = nullptr,
+                 size_t* aSegmentBytes = nullptr,
+                 uint32_t* aCallbackCount = nullptr) {
+    
+    
+    aSizes.mCallbacksObjects +=
+        mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    if (aCallbackCount) *aCallbackCount += mEntries.Length();
+    if (aNodeCount) *aNodeCount += mEntries.Length();
+  }
+
+  void Clear() {
+    mEntries.Clear();
+    mSorted = true;
+  }
+
+ private:
+  void EnsureSorted() {
+    if (mSorted) return;
+    
+    
+    
+    mEntries.Sort([](const MirrorCallback& aA, const MirrorCallback& aB) {
+      return Compare(aA.Name(), aB.Name());
+    });
+    mSorted = true;
+#ifdef DEBUG
+    
+    
+    
+    for (size_t i = 1; i < mEntries.Length(); ++i) {
+      MOZ_ASSERT(Compare(mEntries[i - 1].Name(), mEntries[i].Name()) != 0,
+                 "duplicate mirror pref name");
+    }
+#endif
+  }
+
+  
+  
+  MirrorCallback* Find(const nsACString& aName) {
+    EnsureSorted();
+    size_t idx = mEntries.BinaryIndexOf(
+        aName, [](const MirrorCallback& aEntry, const nsACString& aKey) {
+          return Compare(aEntry.Name(), aKey);
+        });
+    return idx == decltype(mEntries)::NoIndex ? nullptr : &mEntries[idx];
+  }
+
+  nsTArray<MirrorCallback> mEntries;
+  bool mSorted = true;
+};
+
 namespace mozilla {
 
 
@@ -1857,7 +1971,7 @@ class PreferencesImpl {
   nsCOMPtr<nsIPrefBranch> mRootBranch;
   nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
 
-  CallbackTrie mPriorityCallbacks;
+  MirrorCallbackList mMirrorCallbacks;
   CallbackTrie mCallbacks;
 #ifdef DEBUG
   bool mCallbacksInProgress = false;
@@ -1946,17 +2060,21 @@ class PreferencesImpl {
     }
   }
 
+  
+  
+  
   template <typename T>
-  static nsresult RegisterCallback(T* aMirror, const nsACString& aPref) {
-    return Preferences::RegisterCallback(UpdateMirror<T>, aPref, aMirror,
-                                          false,
-                                          true);
+  static nsresult RegisterMirror(T* aMirror, const nsACString& aPref) {
+    return RegisterMirrorCallback(UpdateMirror<T>, aPref, aMirror);
   }
+
+  static nsresult RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                         const nsACString& aPref,
+                                         void* aMirror);
 
   template <typename T>
   static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPrefNode,
-                                       void* aData, bool aIsPrefix = false,
-                                       bool aIsPriority = false);
+                                       void* aData, bool aIsPrefix = false);
 
   template <typename T>
   static nsresult UnregisterCallbackImpl(PrefChangedFunc aCallback,
@@ -3502,27 +3620,25 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
 void nsPrefBranch::ReapAndCompactCallbacks() {
   MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
 
+  
+  
   if (sPImpl->mShouldSweepWeakObservers) {
-    for (CallbackTrie* table :
-         {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-      table->ForEachCallback([&](CallbackNode* aNode) {
-        if (aNode->Func() == nsPrefBranch::NotifyObserver) {
-          auto* pCallback = static_cast<PrefCallback*>(aNode->Data());
-          if (pCallback->IsExpired()) {
-            pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
-            
-            
-            table->MarkDead(aNode);
-            sPImpl->mShouldCleanupDeadNodes = true;
-          }
+    sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+      if (aNode->Func() == nsPrefBranch::NotifyObserver) {
+        auto* pCallback = static_cast<PrefCallback*>(aNode->Data());
+        if (pCallback->IsExpired()) {
+          pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
+          
+          
+          sPImpl->mCallbacks.MarkDead(aNode);
+          sPImpl->mShouldCleanupDeadNodes = true;
         }
-      });
-    }
+      }
+    });
     sPImpl->mShouldSweepWeakObservers = false;
   }
 
   if (sPImpl->mShouldCleanupDeadNodes) {
-    sPImpl->mPriorityCallbacks.Compact();
     sPImpl->mCallbacks.Compact();
     sPImpl->mShouldCleanupDeadNodes = false;
   }
@@ -3757,10 +3873,19 @@ void PreferencesImpl::NotifyCallbacks(const nsCString& aPrefName,
 
   
   
-  AutoTArray<CallbackNode*, 16> toNotify;
-  mPriorityCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
-  mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
+  
+  
+  
+  
+  if (Maybe<CallbackData> mirror = mMirrorCallbacks.FindForNotify(aPrefName)) {
+    mirror->Fire(aPrefName.get());
+  }
 
+  
+  
+  
+  AutoTArray<CallbackNode*, 16> toNotify;
+  mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
   for (CallbackNode* node : toNotify) {
     if (PrefChangedFunc func = node->Func()) {
       MOZ_LOG(sPrefLog, LogLevel::Debug,
@@ -4049,7 +4174,7 @@ void Preferences::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 uint32_t Preferences::GetCallbackCount() {
-  return sPImpl->mPriorityCallbacks.Count() + sPImpl->mCallbacks.Count();
+  return sPImpl->mMirrorCallbacks.Count() + sPImpl->mCallbacks.Count();
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(PrefCallbackTrieMallocSizeOf)
@@ -4065,8 +4190,8 @@ Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
   uint32_t nodeCount = 0;
   size_t segmentBytes = 0;
   uint32_t callbackCount = 0;
-  sPImpl->mPriorityCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
-                                       &segmentBytes, &callbackCount);
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
+                                     &segmentBytes, &callbackCount);
   sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount, &segmentBytes,
                                &callbackCount);
   stats.mObjectBytes = sizes.mCallbacksObjects;
@@ -4115,7 +4240,7 @@ PreferenceServiceReporter::CollectReports(
 
   sizes.mPrefNameArena += PrefNameArena().SizeOfExcludingThis(mallocSizeOf);
 
-  sPImpl->mPriorityCallbacks.AddSizeOf(mallocSizeOf, sizes);
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes);
   sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes);
 
   if (gSharedMap) {
@@ -4487,7 +4612,7 @@ Preferences::~Preferences() {
 
   MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
 
-  sPImpl->mPriorityCallbacks.Clear();
+  sPImpl->mMirrorCallbacks.Clear();
   sPImpl->mCallbacks.Clear();
 
   delete HashTable();
@@ -5679,25 +5804,31 @@ static void WarnIfPrefixObserverDiverges(const nsACString& aRawDomain) {
 }
 #endif
 
+
+
+
+
+nsresult PreferencesImpl::RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                                 const nsACString& aPref,
+                                                 void* aMirror) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+  sPImpl->mMirrorCallbacks.Register(aCallback, aPref, aMirror);
+  return NS_OK;
+}
+
 template <typename T>
 nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                T& aPrefNode, void* aData,
-                                               bool aIsPrefix,
-                                               bool aIsPriority) {
+                                               bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
   NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   RefPtr<CallbackNode> node =
       MakeRefPtr<CallbackNode>(aPrefNode, aCallback, aData, aIsPrefix);
-#ifdef DEBUG
-  node->mIsPriority = aIsPriority;
-#endif
-  if (aIsPriority) {
-    sPImpl->mPriorityCallbacks.Register(node);
-  } else {
-    sPImpl->mCallbacks.Register(node);
-  }
+  sPImpl->mCallbacks.Register(node);
 
 #ifdef DEBUG
   static const bool sTriePrefAudit = !!getenv("MOZ_PREF_TRIE_AUDIT");
@@ -5731,18 +5862,13 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
   
   
   bool found = false;
-  for (CallbackTrie* table :
-       {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-    AutoTArray<CallbackNode*, 4> matches;
-    table->CollectMatchingForUnregister(aCallback, aPrefNode, aData, aIsPrefix,
-                                        matches);
-    for (CallbackNode* node : matches) {
-      MOZ_ASSERT(node->IsPriority() == (table == &sPImpl->mPriorityCallbacks),
-                 "callback found in a trie that disagrees with its priority");
-      table->MarkDead(node);
-      sPImpl->mShouldCleanupDeadNodes = true;
-      found = true;
-    }
+  AutoTArray<CallbackNode*, 4> matches;
+  sPImpl->mCallbacks.CollectMatchingForUnregister(aCallback, aPrefNode, aData,
+                                                  aIsPrefix, matches);
+  for (CallbackNode* node : matches) {
+    sPImpl->mCallbacks.MarkDead(node);
+    sPImpl->mShouldCleanupDeadNodes = true;
+    found = true;
   }
 
   if (!found) {
@@ -6410,9 +6536,9 @@ nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
 
 nsresult Preferences::RegisterCallback(PrefChangedFunc aCallback,
                                        const nsACString& aPrefNode, void* aData,
-                                       bool aPrefixMatch, bool aIsPriority) {
+                                       bool aPrefixMatch) {
   return PreferencesImpl::RegisterCallbackImpl(aCallback, aPrefNode, aData,
-                                               aPrefixMatch, aIsPriority);
+                                               aPrefixMatch);
 }
 
 
@@ -6461,21 +6587,19 @@ uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
     return 0;
   }
 
+  
+  
   uint32_t removedCount = 0;
-  for (CallbackTrie* table :
-       {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-    table->ForEachCallback([&](CallbackNode* aNode) {
-      
-      
-      if (aNode->Func() == nsPrefBranch::NotifyObserver &&
-          static_cast<PrefCallback*>(aNode->Data())->GetPrefBranch() ==
-              aBranch) {
-        ++removedCount;
-        table->MarkDead(aNode);
-        sPImpl->mShouldCleanupDeadNodes = true;
-      }
-    });
-  }
+  sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+    
+    
+    if (aNode->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(aNode->Data())->GetPrefBranch() == aBranch) {
+      ++removedCount;
+      sPImpl->mCallbacks.MarkDead(aNode);
+      sPImpl->mShouldCleanupDeadNodes = true;
+    }
+  });
   MaybeScheduleCallbackSweep();
   return removedCount;
 }
@@ -6484,7 +6608,7 @@ template <typename T>
 static void AddMirrorCallback(T* aMirror, const nsACString& aPref) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  PreferencesImpl::RegisterCallback<T>(aMirror, aPref);
+  PreferencesImpl::RegisterMirror<T>(aMirror, aPref);
 }
 
 
