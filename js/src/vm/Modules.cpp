@@ -998,21 +998,19 @@ static bool CyclicModuleResolveExport(JSContext* cx,
       }
       MOZ_ASSERT(importedModule->status() >= ModuleStatus::Unlinked);
 
+      name = e.importName();
       
-      if (!e.importName()) {
+      if (e.importName() == cx->names().star_namespace_star_) {
         
         
         
         
-        name = cx->names().star_namespace_star_;
         return CreateResolvedBindingObject(cx, importedModule, name, result);
       } else {
         
         
         
         
-        name = e.importName();
-
         return ModuleResolveExportWithResolveSet(
             cx, importedModule, name, resolveSet, result, errorInfoOut);
       }
@@ -1457,7 +1455,8 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     importName = in.importName();
 
     
-    if (!importName && moduleRequest->phase() == ImportPhase::Evaluation) {
+    if (importName == cx->names().star_namespace_star_ &&
+        moduleRequest->phase() == ImportPhase::Evaluation) {
       
       ModuleNamespaceObject* ns =
           GetOrCreateModuleNamespace(cx, importedModule);
@@ -1495,7 +1494,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     } else {
       
       
-      MOZ_ASSERT(importName);
+      MOZ_ASSERT(importName && importName != cx->names().star_namespace_star_);
       
       
       ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
