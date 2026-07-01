@@ -268,7 +268,7 @@ inline RTCError LogErrorImpl(RTCError error,
 
 
 
-#define LOG_ERROR(x) LogErrorImpl(x, LS_ERROR, __FILE__, __LINE__)
+#define RTC_LOG_ERROR(x) LogErrorImpl(x, LS_ERROR, __FILE__, __LINE__)
 
 
 
