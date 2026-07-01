@@ -85,12 +85,6 @@ import org.mozilla.gecko.process.GeckoServiceChildProcess;
       }
       sSurfaces.put(surface.getHandle(), surface);
 
-      if (!surface.inProcess()) {
-        final SyncConfig config = surface.initSyncSurface(width, height);
-        if (config != null) {
-          sAllocator.configureSync(config);
-        }
-      }
       return surface;
     } catch (final RemoteException e) {
       Log.w(LOGTAG, "Failed to acquire GeckoSurface", e);
@@ -123,18 +117,6 @@ import org.mozilla.gecko.process.GeckoServiceChildProcess;
       }
     } catch (final RemoteException e) {
       Log.w(LOGTAG, "Failed to release surface texture", e);
-    }
-  }
-
-  public static synchronized void sync(final long upstream) {
-    
-    
-    try {
-      if (sAllocator != null) {
-        sAllocator.sync(upstream);
-      }
-    } catch (final RemoteException e) {
-      Log.w(LOGTAG, "Failed to sync texture", e);
     }
   }
 }
