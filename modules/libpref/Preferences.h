@@ -444,6 +444,19 @@ class Preferences final : public nsIPrefService,
 
   static uint32_t GetCallbackCount();
 
+  
+  
+  struct CallbackTrieStats {
+    size_t mTotalBytes = 0;       
+    size_t mObjectBytes = 0;      
+    size_t mDomainBytes = 0;      
+    size_t mTrieBytes = 0;        
+    size_t mSegmentBytes = 0;     
+    uint32_t mNodeCount = 0;      
+    uint32_t mCallbackCount = 0;  
+  };
+  static CallbackTrieStats GetCallbackTrieStatsForTesting();
+
   static void HandleDirty();
 
   
