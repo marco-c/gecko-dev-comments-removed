@@ -275,6 +275,11 @@ class BranchDeadlineSet {
   }
 
   
+  size_t earliestRangeSize() const {
+    return listForRange(earliestDeadlineRange()).size();
+  }
+
+  
   BufferOffset earliestDeadline() const {
     MOZ_ASSERT(!empty());
     return earliest_;
@@ -363,6 +368,7 @@ class BranchDeadlineSet<0u> {
   bool empty() const { return true; }
   size_t size() const { return 0; }
   size_t maxRangeSize() const { return 0; }
+  size_t earliestRangeSize() const { return 0; }
   BufferOffset earliestDeadline() const { MOZ_CRASH(); }
   unsigned earliestDeadlineRange() const { MOZ_CRASH(); }
   void addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
@@ -666,6 +672,29 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static const unsigned OOM_FAIL = unsigned(-1);
   static const unsigned DUMMY_INDEX = unsigned(-2);
 
+  size_t sizeOfPrimaryVeneers(unsigned numNewDeadlines = 0) const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return (VeneerSize - 1) *
+           (branchDeadlines_.earliestRangeSize() + numNewDeadlines) * InstSize;
+  }
+
   size_t sizeOfSecondaryVeneers(unsigned numNewDeadlines = 0) const {
     
     
@@ -720,9 +749,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
                        numPoolEntries * sizeof(PoolAllocUnit);
+      size_t primaryVeneers = sizeOfPrimaryVeneers(numNewDeadlines);
       size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
 
-      if (deadline < poolEnd + secondaryVeneers) {
+      if (deadline < poolEnd + primaryVeneers + secondaryVeneers) {
         return false;
       }
     }
@@ -931,7 +961,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     size_t nextOffset = sizeExcludingCurrentPool();
     size_t poolOffset = nextOffset + (GuardSize + HeaderSize) * InstSize;
     mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
-    auto future = (poolOffset + sizeOfSecondaryVeneers()) + poolFreeSpace;
+    auto future =
+        (poolOffset + sizeOfPrimaryVeneers() + sizeOfSecondaryVeneers()) +
+        poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
