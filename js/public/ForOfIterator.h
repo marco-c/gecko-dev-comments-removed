@@ -63,19 +63,21 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
   
   
   
-  Rooted<JSObject*> iterator;
-  Rooted<Value> nextMethod;
+  
+  
+  
+  Rooted<JSObject*> iteratorOrArray_;
+  Rooted<Value> nextMethod_;
 
-  static constexpr uint32_t NOT_ARRAY = UINT32_MAX;
-
-  uint32_t index = NOT_ARRAY;
+  uint32_t arrayIndex_ = 0;
+  bool isOptimizedArray_ = false;
 
   ForOfIterator(const ForOfIterator&) = delete;
   ForOfIterator& operator=(const ForOfIterator&) = delete;
 
  public:
   explicit ForOfIterator(JSContext* cx)
-      : cx_(cx), iterator(cx), nextMethod(cx) {}
+      : cx_(cx), iteratorOrArray_(cx), nextMethod_(cx) {}
 
   enum NonIterableBehavior { ThrowOnNonIterable, AllowNonIterable };
 
@@ -105,7 +107,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
 
 
 
-  bool valueIsIterable() const { return iterator; }
+  bool valueIsIterable() const { return iteratorOrArray_ != nullptr; }
 
  private:
   inline bool nextFromOptimizedArray(MutableHandle<Value> val, bool* done);
