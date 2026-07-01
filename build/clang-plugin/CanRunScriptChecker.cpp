@@ -222,12 +222,9 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   
-  auto OptionalInvalidExplicitArg = anyOf(
+  auto OptionalInvalidExplicitArg = optionally(
       
-      hasAnyArgument(InvalidArg),
-
-      
-      anything());
+      hasAnyArgument(InvalidArg));
 
   
   
@@ -241,7 +238,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   
                   OptionalInvalidExplicitArg,
                   
-                  anyOf(on(InvalidArg), anything()), expr().bind("callExpr")),
+                  optionally(on(InvalidArg)), expr().bind("callExpr")),
               
               callExpr(
                   
@@ -251,12 +248,12 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   
                   OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
 
-          anyOf(
               
-              forFunction(functionDecl().bind("nonCanRunScriptParentFunction")),
+              optionally(forFunction(functionDecl().bind("nonCanRunScriptParentFunction"))),
 
               
-              anything())),
+              isFirstParty()
+              ),
       this);
 }
 
