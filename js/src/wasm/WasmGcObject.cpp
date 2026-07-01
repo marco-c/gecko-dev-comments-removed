@@ -177,13 +177,18 @@ bool WasmGcObject::loadValue(JSContext* cx, Handle<WasmGcObject*> obj, jsid id,
     return false;
   }
 
+#ifdef ENABLE_WASM_JSPI
   
   
   
   
-  if (type.isTypeRef()) {
-    type = RefType::fromTypeCode(TypeCode::EqRef, true);
+  if (type.isTypeRef() &&
+      type.refType().hierarchy() == RefTypeHierarchy::Cont) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_VAL_TYPE);
+    return false;
   }
+#endif
 
   if (!type.isExposable()) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
