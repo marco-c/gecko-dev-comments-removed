@@ -42,7 +42,12 @@ def resolve_ref(path, tokens, variant):
 
 
 
+
 def resolve_value(value, tokens, variant):
+    if isinstance(value, list):
+        return [resolve_value(item, tokens, variant) for item in value]
+    if not isinstance(value, str):
+        return value
     return re.sub(
         r"\{([^}]+)\}", lambda m: str(resolve_ref(m.group(1), tokens, variant)), value
     )
