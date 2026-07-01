@@ -5,13 +5,17 @@
 
 
 
+use crate::computed_value_flags::ComputedValueFlags;
+use crate::context::CascadeInputs;
 use crate::logical_geometry::WritingMode;
 use crate::properties::{ComputedValues, StyleBuilder};
-use crate::rule_tree::StrongRuleNode;
+use crate::rule_tree::{RuleCascadeFlags, StrongRuleNode};
 use crate::selector_parser::PseudoElement;
 use crate::shared_lock::StylesheetGuards;
-use crate::values::computed::{Context, NonNegativeLength, Zoom};
+use crate::values::computed::{Context, NonNegativeLength};
+use crate::values::generics::NonNegative;
 use crate::values::specified::color::ColorSchemeFlags;
+use crate::values::specified::FontSize;
 use rustc_hash::FxHashMap;
 use servo_arc::Arc;
 use smallvec::SmallVec;
@@ -29,6 +33,7 @@ pub struct RuleCacheConditions {
 impl RuleCacheConditions {
     
     pub fn set_font_size_dependency(&mut self, font_size: NonNegativeLength) {
+        let font_size = NonNegative(FontSize::quantize_font_size(font_size.0));
         debug_assert!(self.font_size.map_or(true, |f| f == font_size));
         self.font_size = Some(font_size);
     }
@@ -68,13 +73,22 @@ struct CachedConditions {
     line_height: Option<NonNegativeLength>,
     color_scheme: Option<ColorSchemeFlags>,
     writing_mode: Option<WritingMode>,
-    zoom: Zoom,
 }
 
 impl CachedConditions {
     
-    fn matches(&self, style: &StyleBuilder) -> bool {
-        if style.effective_zoom != self.zoom {
+    fn matches(&self, cached_style: &ComputedValues, style: &StyleBuilder) -> bool {
+        if cached_style.effective_zoom != style.effective_zoom {
+            return false;
+        }
+
+        if cached_style
+            .flags
+            .intersects(ComputedValueFlags::IS_IN_APPEARANCE_BASE_SUBTREE)
+            != style
+                .flags()
+                .intersects(ComputedValueFlags::IS_IN_APPEARANCE_BASE_SUBTREE)
+        {
             return false;
         }
 
@@ -94,16 +108,15 @@ impl CachedConditions {
             }
         }
 
-        if let Some(cs) = self.color_scheme {
-            if style.get_inherited_ui().color_scheme_bits() != cs {
-                return false;
-            }
+        if self
+            .color_scheme
+            .is_some_and(|cs| style.get_inherited_ui().color_scheme_bits() != cs)
+        {
+            return false;
         }
 
-        if let Some(wm) = self.writing_mode {
-            if style.writing_mode != wm {
-                return false;
-            }
+        if self.writing_mode.is_some_and(|wm| style.writing_mode != wm) {
+            return false;
         }
 
         true
@@ -175,7 +188,11 @@ impl RuleCache {
             return None;
         }
 
-        if !context.included_cascade_flags.is_empty() {
+        if context
+            .included_cascade_flags
+            .contains(RuleCascadeFlags::STARTING_STYLE)
+        {
+            
             return None;
         }
 
@@ -184,7 +201,7 @@ impl RuleCache {
         let cached_values = self.map.get(rules)?;
 
         for &(ref conditions, ref values) in cached_values.iter() {
-            if conditions.matches(&context.builder) {
+            if conditions.matches(values, &context.builder) {
                 debug!("Using cached reset style with conditions {:?}", conditions);
                 return Some(&**values);
             }
@@ -200,6 +217,7 @@ impl RuleCache {
         guards: &StylesheetGuards,
         style: &Arc<ComputedValues>,
         pseudo: Option<&PseudoElement>,
+        inputs: &CascadeInputs,
         conditions: &RuleCacheConditions,
     ) -> bool {
         if !conditions.cacheable() {
@@ -208,7 +226,16 @@ impl RuleCache {
 
         
         
+        
         if pseudo.and_then(|p| p.property_restriction()).is_some() {
+            return false;
+        }
+
+        
+        if inputs
+            .included_cascade_flags
+            .contains(RuleCascadeFlags::STARTING_STYLE)
+        {
             return false;
         }
 
@@ -227,7 +254,6 @@ impl RuleCache {
             font_size: conditions.font_size,
             line_height: conditions.line_height,
             color_scheme: conditions.color_scheme,
-            zoom: style.effective_zoom,
         };
         self.map
             .entry(rules)
