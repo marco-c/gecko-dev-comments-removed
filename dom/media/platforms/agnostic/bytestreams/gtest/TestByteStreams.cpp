@@ -2,6 +2,7 @@
 
 
 
+#include <cstring>
 #include <limits>
 
 #include "AnnexB.h"
@@ -141,7 +142,12 @@ static already_AddRefed<MediaByteBuffer> GetHvccExtraDataWithPrefixSEI(
     payloadSize -= 0xff;
   }
   seiNalu.AppendElement(static_cast<uint8_t>(payloadSize));
-  seiNalu.AppendElements(aPayloadSize);
+  
+  
+  
+  
+  uint8_t* payload = seiNalu.AppendElements(aPayloadSize);
+  memset(payload, 0xAA, aPayloadSize);
   seiNalu.AppendElement(0x80);
 
   nalus.AppendElement(H265NALU(seiNalu.Elements(), seiNalu.Length()));
