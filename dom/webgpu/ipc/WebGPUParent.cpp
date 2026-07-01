@@ -1078,19 +1078,25 @@ static void ReadbackPresentCallback(uint8_t* userdata,
       uint8_t* src = mapped.ptr;
       uint8_t* dst = mappedData.data;
 
-      const uint32_t dst_stride = mappedData.stride;
+      const size_t dst_stride = static_cast<size_t>(mappedData.stride);
       
       
       MOZ_RELEASE_ASSERT(dst_stride != 0);
 
-      
-      const uint32_t min_stride = std::min(data->mBufferStride, dst_stride);
+      const size_t src_stride = static_cast<size_t>(data->mBufferStride);
+      const size_t bytesPerRow =
+          static_cast<size_t>(data->mDesc.size().width) * 4;
+      MOZ_RELEASE_ASSERT(src_stride >= bytesPerRow);
+      MOZ_RELEASE_ASSERT(dst_stride >= bytesPerRow);
 
       
       
       for (auto row = 0; row < size.height; ++row) {
-        memcpy(dst, src, min_stride);
-        src += data->mBufferStride;
+        memcpy(dst, src, bytesPerRow);
+        if (bytesPerRow < dst_stride) {
+          memset(dst + bytesPerRow, 0, dst_stride - bytesPerRow);
+        }
+        src += src_stride;
         dst += dst_stride;
       }
       req->mRemoteTextureOwner->PushTexture(req->mTextureId, req->mOwnerId,
@@ -1176,13 +1182,17 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
   uint8_t* dst = req->mDestShmem.get<uint8_t>();
 
   const size_t src_stride = static_cast<size_t>(data->mBufferStride);
-  
-  const size_t min_stride = std::min(src_stride, req->mDestStride);
+  const size_t bytesPerRow = static_cast<size_t>(data->mDesc.size().width) * 4;
+  MOZ_RELEASE_ASSERT(src_stride >= bytesPerRow);
+  MOZ_RELEASE_ASSERT(req->mDestStride >= bytesPerRow);
 
   
   
   for (auto row = 0; row < data->mDesc.size().height; ++row) {
-    memcpy(dst, src, min_stride);
+    memcpy(dst, src, bytesPerRow);
+    if (bytesPerRow < req->mDestStride) {
+      memset(dst + bytesPerRow, 0, req->mDestStride - bytesPerRow);
+    }
     src += src_stride;
     dst += req->mDestStride;
   }
