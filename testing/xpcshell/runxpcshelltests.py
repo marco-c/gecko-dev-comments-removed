@@ -187,6 +187,9 @@ class XPCShellTestThread(Thread):
             
             
             self.retry = os.environ.get("MOZ_AUTOMATION") is not None
+        
+        
+        self.is_retry = kwargs.get("is_retry", False)
         self.verbose = verbose
         self.usingTSan = usingTSan
         self.usingCrashReporter = usingCrashReporter
@@ -453,6 +456,29 @@ class XPCShellTestThread(Thread):
         extra = None
         if self.timeout_factor > 1:
             extra = {"timeoutfactor": self.timeout_factor}
+
+        
+        
+        
+        
+        
+        
+        
+        
+        profile_name = self.timeout_profile_name
+        upload_dir = self.env.get("MOZ_UPLOAD_DIR")
+        if (
+            profile_name
+            and upload_dir
+            and os.path.isfile(os.path.join(upload_dir, profile_name))
+        ):
+            self.log.test_status(
+                self.test_object["id"],
+                "",
+                "FAIL",
+                expected="FAIL" if (self.retry or self.timeoutAsPass) else expected,
+                message=f"Test timed out; profile uploaded in {profile_name}",
+            )
 
         if self.retry:
             self.log.test_end(
@@ -990,10 +1016,40 @@ class XPCShellTestThread(Thread):
 
         testTimeoutInterval = self.harness_timeout * self.timeout_factor
 
+        self.timeout_profile_name = None
         if not self.interactive and not self.debuggerInfo and not self.jsDebuggerInfo:
             self.timer = Timer(testTimeoutInterval, lambda: self.testTimeout(proc))
             self.timer.start()
             self.env["MOZ_TEST_TIMEOUT_INTERVAL"] = str(testTimeoutInterval)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            upload_dir = self.env.get("MOZ_UPLOAD_DIR")
+            if (
+                upload_dir
+                and self.env.get("MOZ_PROFILER_STARTUP")
+                and "MOZ_PROFILER_SHUTDOWN" not in self.env
+            ):
+                root, ext = os.path.splitext(os.path.basename(name))
+                if self.is_retry:
+                    root += "_retry"
+                filename = f"profile_{root}{ext}.json"
+                i = 2
+                while os.path.exists(os.path.join(upload_dir, filename)):
+                    filename = f"profile_{root}-{i}{ext}.json"
+                    i += 1
+                self.timeout_profile_name = filename
+                self.env["MOZ_TEST_TIMEOUT_PROFILE_PATH"] = os.path.join(
+                    upload_dir, filename
+                )
 
         proc = None
         process_output = None
@@ -2568,6 +2624,7 @@ class XPCShellTests:
 
         try_again_kwargs = kwargs.copy()
         try_again_kwargs["retry"] = False
+        try_again_kwargs["is_retry"] = True
         for test_object in self.try_again_list:
             test = testClass(
                 test_object,
