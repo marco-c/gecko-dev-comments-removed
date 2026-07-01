@@ -24,10 +24,7 @@ with Files("android-components/**"):
 # before the following files are generated. However, mechanisms in `recurse.mk`
 # are used to pull the generated files into the `pre-export` tier, so do not
 # require an explicit dependency here.
-config_keys = (
-    "MOZ_ANDROID_CONTENT_SERVICE_COUNT",
-    "MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
-)
+config_keys = ("MOZ_ANDROID_CONTENT_SERVICE_COUNT",)
 flags = ["%s=%s" % (k, CONFIG[k] if CONFIG[k] else "") for k in config_keys]
 
 GeneratedFile(
@@ -67,14 +64,12 @@ GeneratedFile(
     inputs=["!/toolkit/crashreporter/annotations/validated.yaml"],
 )
 
-GeneratedFile(
-    "webcompat_addon_run.js",
-    script="/browser/extensions/webcompat/codegen.py",
-    entry_point="generate_run_js",
-    inputs=[
-        "/browser/extensions/webcompat/run.js",
-        "/browser/extensions/webcompat/data/interventions",
-    ],
+include("/browser/extensions/webcompat/generate_files.mozbuild")
+include("/browser/extensions/webcompat/preprocessed_intervention_files.mozbuild")
+GenerateWebCompatAddonFiles(
+    preprocessed_intervention_files,
+    "/browser/extensions/webcompat/",
+    "webcompat_addon_generated_files/",
 )
 
 CONFIGURE_SUBST_FILES += ["installer/Makefile"]
