@@ -35,6 +35,23 @@ inline double NumberMod(double a, double b) {
   if (b == 0) {
     return JS::GenericNaN();
   }
+
+  
+  int32_t ai, bi;
+  if (mozilla::NumberEqualsInt32(a, &ai) &&
+      mozilla::NumberEqualsInt32(b, &bi)) {
+    
+    if (bi != -1) {
+      int32_t m = ai % bi;
+      if (m != 0) {
+        return double(m);
+      }
+    }
+
+    
+    return mozilla::IsNegative(a) ? -0.0 : 0.0;
+  }
+
   double r = fmod(a, b);
 #if defined(XP_WIN)
   
