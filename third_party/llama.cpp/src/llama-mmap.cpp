@@ -657,7 +657,7 @@ struct llama_mlock::impl {
 
         char* errmsg = std::strerror(errno);
         bool suggest = (errno == ENOMEM);
-#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__)
+#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__) || defined(__sun__)
         
         
         suggest = false;
