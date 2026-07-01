@@ -34,6 +34,47 @@ add_setup(async () => {
 
 
 
+
+
+
+
+
+
+
+
+
+async function initializedBackupWidgets(browser) {
+  
+  
+  
+  await TestUtils.waitForCondition(
+    () => browser.contentDocument.querySelector("backup-settings"),
+    "Waiting for backup-settings element to be in the DOM"
+  );
+  let settings = browser.contentDocument.querySelector("backup-settings");
+
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupButtonEl,
+    "Waiting for restore from backup button to show up"
+  );
+
+  settings.restoreFromBackupButtonEl.click();
+
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupEl,
+    "Waiting for restore-from-backup element to show up"
+  );
+  let restoreFromBackup = settings.restoreFromBackupEl;
+  await restoreFromBackup.initializedPromise;
+  return {
+    restoreFromBackup,
+    settings,
+  };
+}
+
+
+
+
 add_task(async function test_backup_failure() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     const mockBackupFilePath = await IOUtils.createUniqueFile(
@@ -288,8 +329,6 @@ add_task(async function test_restore_in_progress() {
     let bs = getAndMaybeInitBackupService();
     bs.resetLastBackupInternalState();
 
-    sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves(null);
-
     let { promise: recoverPromise, resolve: recoverResolve } =
       Promise.withResolvers();
     let recoverFromBackupArchiveStub = sandbox
@@ -452,10 +491,6 @@ add_task(async function test_restore_from_backup_displays_invalid_backup() {
   const path = await IOUtils.createUniqueFile(TEST_PROFILE_PATH, "backup.html");
   await IOUtils.writeUTF8(path, "");
 
-  let sandbox = sinon.createSandbox();
-  let bs = getAndMaybeInitBackupService();
-  sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves(null);
-
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let { restoreFromBackup } = await initializedBackupWidgets(browser);
 
@@ -495,9 +530,8 @@ add_task(async function test_restore_from_backup_displays_invalid_backup() {
       "The path selected before should be used."
     );
   });
-
-  sandbox.restore();
 });
+
 
 
 
@@ -519,6 +553,27 @@ add_task(async function test_restore_from_backup_embedded_textarea() {
       textarea.getAttribute("rows"),
       "1",
       "Textarea should have rows=1"
+    );
+
+    
+    const initialHeight = textarea.clientHeight;
+    Assert.ok(initialHeight, "Textarea should have an initial height");
+
+    const longPath =
+      "/a/very/long/path/to/a/backup/file/that/would/wrap/multiple/lines.html";
+    restoreFromBackup.backupServiceState.backupFileToRestore = longPath;
+    restoreFromBackup.requestUpdate();
+    await restoreFromBackup.updateComplete;
+
+    Assert.greater(
+      textarea.clientHeight,
+      initialHeight,
+      "Textarea grew to accomodate the new content"
+    );
+    Assert.greaterOrEqual(
+      textarea.clientHeight,
+      textarea.scrollHeight,
+      "Textarea does not require any scrolling"
     );
   });
 });

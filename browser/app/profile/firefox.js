@@ -3518,8 +3518,13 @@ pref("browser.backup.enabled", true);
 pref("browser.backup.scheduled.enabled", false);
 
 
-pref("browser.backup.archive.enabled", true);
-pref("browser.backup.restore.enabled", true);
+#ifndef XP_MACOSX
+  pref("browser.backup.archive.enabled", true);
+  pref("browser.backup.restore.enabled", true);
+#else
+  pref("browser.backup.archive.enabled", false);
+  pref("browser.backup.restore.enabled", false);
+#endif
 
 
 pref("browser.backup.sqlite.pages_per_step", 50);
