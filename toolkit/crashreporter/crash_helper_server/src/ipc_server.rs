@@ -81,6 +81,7 @@ impl IPCServer {
         connector: IPCConnector,
         breakpad_data: BreakpadData,
         minidump_path: OsString,
+        build_id: String,
     ) -> Result<IPCServer> {
         
         
@@ -92,7 +93,10 @@ impl IPCServer {
                 .get_process_handle(),
         };
 
-        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(minidump_path.clone())));
+        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(
+            minidump_path.clone(),
+            build_id,
+        )));
 
         
         

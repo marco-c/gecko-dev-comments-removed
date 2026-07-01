@@ -56,7 +56,11 @@ public final class CrashHelper extends Service {
       
       
       CrashHelper.crash_generator(
-          browserPid, breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
+          BuildConfig.MOZ_APP_BUILDID,
+          browserPid,
+          breakpadFd.detachFd(),
+          minidumpPath,
+          serverFd.detachFd());
 
       return false;
     }
@@ -178,5 +182,5 @@ public final class CrashHelper extends Service {
   
 
   protected static native void crash_generator(
-      int clientPid, int breakpadFd, String minidumpPath, int serverFd);
+      String buildId, int clientPid, int breakpadFd, String minidumpPath, int serverFd);
 }

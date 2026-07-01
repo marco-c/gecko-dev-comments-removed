@@ -3,7 +3,7 @@
 
 
 use std::{
-    env, fs, io,
+    fs, io,
     path::PathBuf,
     time::{SystemTimeError, UNIX_EPOCH},
 };
@@ -22,10 +22,12 @@ pub(crate) mod windows;
 
 #[derive(Debug, Error)]
 pub enum AppInfoError {
-    #[error("Could not access the installation time information")]
-    InstallationTimeAccess(#[from] io::Error),
+    #[error("Could not access the current executable, installation time missing")]
+    CannotAccessExecutable(#[from] io::Error),
+    #[error("Could not access the current library, installation time missing")]
+    CannotAccessLibrary,
     #[error("Could not calculate the installation time")]
-    MissingInstallationTime(#[from] SystemTimeError),
+    InvalidInstallationTime(#[from] SystemTimeError),
 }
 
 
@@ -38,11 +40,10 @@ pub struct ApplicationInfo {
 }
 
 impl ApplicationInfo {
-    pub fn new(build_id: String, install_time: Option<u64>) -> ApplicationInfo {
+    pub fn new(build_id: String) -> ApplicationInfo {
         ApplicationInfo {
             build_id,
-            install_time: install_time
-                .unwrap_or_else(|| Self::compute_install_time(None).unwrap_or(0)),
+            install_time: Self::compute_install_time(None).unwrap_or(0),
         }
     }
 
@@ -63,7 +64,7 @@ impl ApplicationInfo {
     }
 
     pub fn compute_install_time(path: Option<PathBuf>) -> Result<u64, AppInfoError> {
-        let exe_path = path.unwrap_or(env::current_exe()?);
+        let exe_path = path.unwrap_or(Self::get_executable_path()?);
         let metadata = fs::metadata(exe_path)?;
         let mod_time = metadata.modified()?;
         let install_time = mod_time.duration_since(UNIX_EPOCH)?;
@@ -71,6 +72,60 @@ impl ApplicationInfo {
         Ok(install_time
             .as_secs()
             .saturating_sub(Self::get_user_id().unwrap_or(0)))
+    }
+
+    
+    
+    fn get_executable_path() -> Result<PathBuf, AppInfoError> {
+        #[cfg(not(target_os = "android"))]
+        {
+            Ok(std::env::current_exe()?)
+        }
+        #[cfg(target_os = "android")]
+        {
+            use nix::libc;
+            use std::{
+                ffi::{c_void, CStr, OsStr},
+                os::unix::ffi::OsStrExt,
+            };
+
+            let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
+            
+            
+            
+            let res = unsafe { libc::dladdr(Self::compute_install_time as *mut c_void, &mut info) };
+            if (res <= 0) || info.dli_fname.is_null() {
+                return Err(AppInfoError::CannotAccessLibrary);
+            }
+
+            
+            
+            let path = unsafe { CStr::from_ptr(info.dli_fname) }.to_bytes();
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let exclamation_mark = path
+                .iter()
+                .position(|&c| c == b'!')
+                .unwrap_or(path.iter().len());
+            let path = OsStr::from_bytes(&path[0..exclamation_mark]);
+            Ok(PathBuf::from(path))
+        }
     }
 
     pub fn get_release_channel(&self) -> &'static str {

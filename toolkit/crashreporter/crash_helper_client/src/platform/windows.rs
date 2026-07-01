@@ -8,7 +8,7 @@ use crash_helper_common::{
     IPCChannel, IPCConnector, IPCListener, Pid, ProcessHandle,
 };
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::{c_char, CStr, OsStr, OsString},
     mem::{size_of, zeroed},
     os::windows::{
         ffi::{OsStrExt, OsStringExt},
@@ -34,11 +34,23 @@ impl CrashHelperClient {
         program: *const BreakpadChar,
         breakpad_data: BreakpadData,
         minidump_path: *const BreakpadChar,
+        build_id: *const c_char,
     ) -> Result<CrashHelperClient> {
         
         let program = unsafe { <OsString as BreakpadString>::from_ptr(program) };
         
         let minidump_path = unsafe { <OsString as BreakpadString>::from_ptr(minidump_path) };
+        
+        
+        let build_id = unsafe { CStr::from_ptr(build_id) };
+        let build_id = OsString::from_wide(
+            build_id
+                .to_bytes()
+                .iter()
+                .map(|&c| c as u16)
+                .collect::<Vec<u16>>()
+                .as_ref(),
+        );
 
         let channel = IPCChannel::new()?;
         let (listener, server_endpoint, client_endpoint) = channel.deconstruct();
@@ -49,6 +61,7 @@ impl CrashHelperClient {
                 breakpad_data,
                 minidump_path,
                 server_endpoint,
+                build_id,
                 listener,
             )
         });
@@ -65,6 +78,7 @@ impl CrashHelperClient {
         breakpad_data: BreakpadData,
         minidump_path: OsString,
         endpoint: IPCConnector,
+        build_id: OsString,
         listener: IPCListener,
     ) -> Result<ProcessHandle> {
         
@@ -80,6 +94,8 @@ impl CrashHelperClient {
         cmd_line.push(escape_cmd_line_arg(&minidump_path));
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&endpoint.serialize()?));
+        cmd_line.push(" ");
+        cmd_line.push(escape_cmd_line_arg(&build_id));
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&listener.serialize()?));
         cmd_line.push(" ");
