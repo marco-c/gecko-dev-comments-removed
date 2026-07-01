@@ -94,7 +94,7 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   
   
   
-  nsCString mProfilePath;
+  void CacheProfilePathOnMainThread();
 
   
   
@@ -117,6 +117,14 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   
   
   bool mShutdown MOZ_GUARDED_BY(mMutex);
+
+  
+  
+  
+  
+  
+  
+  nsCString mProfilePath MOZ_GUARDED_BY(mMutex);
 };
 
 }  

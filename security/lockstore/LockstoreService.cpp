@@ -4,6 +4,7 @@
 
 #include "LockstoreService.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -22,6 +23,7 @@
 #include "nsThreadUtils.h"
 #include "xpcpublic.h"
 
+#include <cstring>
 #include <type_traits>
 #include <utility>
 
@@ -47,23 +49,65 @@ LockstoreService::~LockstoreService() {
 }
 
 nsresult LockstoreService::Init() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
+  
+  
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    MutexAutoLock lock(mMutex);
+    mShutdown = true;
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+  if (os) {
+    
+    
+    
+    
+    
+    os->AddObserver(this, "profile-do-change", false);
+    
+    
+    
+    os->AddObserver(this, "xpcom-will-shutdown", false);
+    os->AddObserver(this, "xpcom-shutdown", false);
+  }
+
+  
+  
+  
+  CacheProfilePathOnMainThread();
+  return NS_OK;
+}
+
+void LockstoreService::CacheProfilePathOnMainThread() {
+  MOZ_ASSERT(NS_IsMainThread());
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mProfilePath.IsEmpty()) {
+      
+      return;
+    }
+  }
   
   
   
   nsCOMPtr<nsIFile> profileDir;
-  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                 getter_AddRefs(profileDir)));
-  nsAutoString widePath;
-  MOZ_TRY(profileDir->GetPath(widePath));
-  CopyUTF16toUTF8(widePath, mProfilePath);
-
-  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-  if (os) {
-    os->AddObserver(this, "profile-before-change", false);
-    os->AddObserver(this, "xpcom-shutdown", false);
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                       getter_AddRefs(profileDir))) ||
+      !profileDir) {
+    
+    return;
   }
-  return NS_OK;
+  nsAutoString widePath;
+  if (NS_FAILED(profileDir->GetPath(widePath))) {
+    return;
+  }
+  MutexAutoLock lock(mMutex);
+  CopyUTF16toUTF8(widePath, mProfilePath);
 }
 
 
@@ -88,9 +132,13 @@ nsresult LockstoreService::EnsureOpenLocked() {
   if (mKeystore) {
     return NS_OK;
   }
-  
-  
-  MOZ_ASSERT(!mProfilePath.IsEmpty(), "Init() must have run first");
+  if (mProfilePath.IsEmpty()) {
+    
+    
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
+  }
   return keystore_open(&mProfilePath, &mKeystore);
 }
 
@@ -101,6 +149,14 @@ nsresult LockstoreService::EnsureOpenLocked() {
 NS_IMETHODIMP
 LockstoreService::Observe(nsISupports* aSubject, const char* aTopic,
                           const char16_t* aData) {
+  if (!strcmp(aTopic, "profile-do-change")) {
+    
+    
+    CacheProfilePathOnMainThread();
+    return NS_OK;
+  }
+
+  
   
   
   

@@ -4,6 +4,7 @@
 
 #include "mozilla/storage/SQLiteEncryption.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Hex.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
@@ -54,12 +55,11 @@ constexpr size_t kDekBytes = 32;
 
 
 
-static_assert(
-    kDekBytes ==
-        sizeof(mozilla::dom::quota::IPCStreamCipherStrategy::KeyType),
-    "kDekBytes must match the page-encryption cipher's KeyType size; "
-    "update kDekBytes (and the keystore_create_dek call sites that "
-    "pass it) in lockstep with any cipher key-length change.");
+static_assert(kDekBytes ==
+                  sizeof(mozilla::dom::quota::IPCStreamCipherStrategy::KeyType),
+              "kDekBytes must match the page-encryption cipher's KeyType size; "
+              "update kDekBytes (and the keystore_create_dek call sites that "
+              "pass it) in lockstep with any cipher key-length change.");
 
 mozilla::StaticMutex sStateMutex;
 KeystoreHandle* sHandle MOZ_GUARDED_BY(sStateMutex) = nullptr;
@@ -228,7 +228,12 @@ NS_IMETHODIMP ProfileObserver::Observe(nsISupports*, const char* aTopic,
   } else if (!strcmp(aTopic, "profile-after-change")) {
     EnsureProfilePathCached();
     MarkProfileEncryptedIfNeeded();
-  } else if (!strcmp(aTopic, "quit-application")) {
+  } else if (!strcmp(aTopic, "xpcom-will-shutdown")) {
+    
+    
+    
+    
+    
     
     
     
@@ -246,8 +251,21 @@ void InitEncryptionKeystore() {
   
   
   
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    StaticMutexAutoLock lock(sStateMutex);
+    sShuttingDown = true;
+    return;
+  }
+
+  
+  
+  
   EnsureProfilePathCached();
 
+  
+  
+  
+  
   
   
   
@@ -272,10 +290,10 @@ void InitEncryptionKeystore() {
   sObserver = new ProfileObserver();
   if (NS_FAILED(os->AddObserver(sObserver, "profile-do-change", false)) ||
       NS_FAILED(os->AddObserver(sObserver, "profile-after-change", false)) ||
-      NS_FAILED(os->AddObserver(sObserver, "quit-application", false))) {
+      NS_FAILED(os->AddObserver(sObserver, "xpcom-will-shutdown", false))) {
     os->RemoveObserver(sObserver, "profile-do-change");
     os->RemoveObserver(sObserver, "profile-after-change");
-    os->RemoveObserver(sObserver, "quit-application");
+    os->RemoveObserver(sObserver, "xpcom-will-shutdown");
     sObserver = nullptr;
   }
 }
@@ -504,7 +522,7 @@ void ShutdownEncryptionKeystore() {
     if (os) {
       os->RemoveObserver(observer, "profile-do-change");
       os->RemoveObserver(observer, "profile-after-change");
-      os->RemoveObserver(observer, "quit-application");
+      os->RemoveObserver(observer, "xpcom-will-shutdown");
     }
   }
 

@@ -136,6 +136,8 @@ struct ObfsFile {
 
 
 
+
+  bool aHasUriKey;
   u8 aKey[kKeyBytes];
 };
 
@@ -320,8 +322,6 @@ static int obfsClose(sqlite3_file* pFile) {
   delete p->decryptCipherStrategy;
   delete p->encryptCipherStrategy;
 
-  
-  
   
   
   ::memset(p->aKey, 0, sizeof(p->aKey));
@@ -605,10 +605,9 @@ static OnDiskHeader PeekOnDiskHeader(const char* zPath) {
   if (n != sizeof(hdr)) {
     return OnDiskHeader::TooShort;
   }
-  static const unsigned char kSQLiteMagic[16] = {'S', 'Q', 'L', 'i', 't',
-                                                 'e', ' ', 'f', 'o', 'r',
-                                                 'm', 'a', 't', ' ', '3',
-                                                 '\0'};
+  static const unsigned char kSQLiteMagic[16] = {'S', 'Q', 'L', 'i', 't', 'e',
+                                                 ' ', 'f', 'o', 'r', 'm', 'a',
+                                                 't', ' ', '3', '\0'};
   if (::memcmp(hdr, kSQLiteMagic, sizeof(kSQLiteMagic)) != 0) {
     
     
@@ -681,10 +680,6 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   int rc, i;
   const char* zKey;
   u8 aKey[kKeyBytes];
-  
-  
-  
-  bool keyReady = false;
   pSubVfs = ORIGVFS(pVfs);
   if (flags &
       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL)) {
@@ -692,6 +687,7 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   } else {
     zKey = nullptr;
   }
+  const bool keyFromUri = (zKey != nullptr);
 
   
   
@@ -703,17 +699,19 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   
   
   
+  bool keyReady = false;
   if (zKey == nullptr &&
       (flags & (SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL))) {
     sqlite3_file* pDbFile = sqlite3_database_file_object(zName);
     if (pDbFile && pDbFile->pMethods == &obfs_io_methods) {
       ObfsFile* pPartner = reinterpret_cast<ObfsFile*>(pDbFile);
-      ::memcpy(aKey, pPartner->aKey, sizeof(aKey));
-      keyReady = true;
-      MOZ_LOG(mozilla::storage::GetSQLiteEncryptionLog(),
-              mozilla::LogLevel::Verbose,
-              ("obfsOpen: inherited key from partner ObfsFile for %s",
-               zName));
+      if (pPartner->aHasUriKey) {
+        
+        
+        
+        ::memcpy(aKey, pPartner->aKey, sizeof(aKey));
+        keyReady = true;
+      }
     }
   }
 
@@ -723,8 +721,8 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   nsAutoCString policyKey;
 
   if (!keyReady && zKey == nullptr &&
-      (flags &
-       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL))) {
+      (flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL |
+                SQLITE_OPEN_MAIN_JOURNAL))) {
     
     
     
@@ -742,8 +740,7 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
 
     mozilla::storage::EncryptionStatus status =
         mozilla::storage::EncryptionStatus::Unset;
-    nsresult rv =
-        mozilla::storage::GetDatabaseEncryptionStatus(dbPath, status);
+    nsresult rv = mozilla::storage::GetDatabaseEncryptionStatus(dbPath, status);
     if (NS_FAILED(rv)) {
       MOZ_LOG(log, mozilla::LogLevel::Error,
               ("obfsOpen: policy lookup failed (0x%" PRIx32 ") for %s; "
@@ -883,9 +880,16 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
 
   p->encryptCipherStrategy = encryptCipherStrategy.release();
   p->decryptCipherStrategy = decryptCipherStrategy.release();
-  
-  
-  ::memcpy(p->aKey, aKey, sizeof(aKey));
+
+  if (keyFromUri) {
+    
+    
+    
+    
+    
+    p->aHasUriKey = true;
+    ::memcpy(p->aKey, aKey, sizeof(aKey));
+  }
 
   return SQLITE_OK;
 }
