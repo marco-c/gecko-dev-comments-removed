@@ -6,6 +6,10 @@
 
 
 
+const { HTTP3Server } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
+
 function makeChan(uri) {
   let chan = NetUtil.newChannel({
     uri,
@@ -32,11 +36,20 @@ add_setup(async function setup() {
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
 
-  h3Port = Services.env.get("MOZHTTP3_PORT");
-  Assert.notEqual(h3Port, null);
-  Assert.notEqual(h3Port, "");
+  let h3ServerPath = Services.env.get("MOZ_HTTP3_SERVER_PATH");
+  let h3DBPath = Services.env.get("MOZ_HTTP3_CERT_DB_PATH");
+
+  let server = new HTTP3Server();
+  await server.start(h3ServerPath, h3DBPath);
+  h3Port = server.port();
 
   Services.prefs.setBoolPref("network.http.http3.enable", true);
+  
+  
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    3000
+  );
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
   Services.prefs.setBoolPref("network.dns.disableIPv6", true);
   Services.prefs.setCharPref(
@@ -51,6 +64,13 @@ add_setup(async function setup() {
 
   let chan = makeChan(`https://localhost`);
   await channelOpenPromise(chan, CL_EXPECT_FAILURE);
+
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref(
+      "network.http.happy_eyeballs_connection_attempt_delay"
+    );
+    await server.stop();
+  });
 });
 
 

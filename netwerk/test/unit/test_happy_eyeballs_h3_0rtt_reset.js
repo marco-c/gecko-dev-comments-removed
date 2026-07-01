@@ -47,6 +47,12 @@ add_setup(async function () {
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
   Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
+  
+  
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    3000
+  );
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setBoolPref("network.http.http3.enable_0rtt", true);
   
@@ -71,6 +77,9 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
+    Services.prefs.clearUserPref(
+      "network.http.happy_eyeballs_connection_attempt_delay"
+    );
     Services.prefs.clearUserPref("network.http.http3.enable");
     Services.prefs.clearUserPref("network.http.http3.enable_0rtt");
     Services.prefs.clearUserPref("network.http.http3.use_nspr_for_io");

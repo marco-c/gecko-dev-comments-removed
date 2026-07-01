@@ -174,12 +174,6 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   }
 
   
-  uint32_t resolutionDelay = std::max(
-      10u, StaticPrefs::network_http_happy_eyeballs_resolution_delay());
-  uint32_t connectionAttemptDelay = std::max(
-      10u, StaticPrefs::network_http_happy_eyeballs_connection_attempt_delay());
-
-  
   
   
   
@@ -191,10 +185,7 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
           !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
-  LOG(
-      ("CreateHappyEyeballs ipPref=%d resolutionDelay=%u "
-       "connectionAttemptDelay=%u",
-       static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
+  LOG(("CreateHappyEyeballs ipPref=%d", static_cast<uint32_t>(ipPref)));
 
   
   
@@ -213,23 +204,20 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &altSvcArray, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
+                               &altSvcArray, ipPref, httpVersions);
   }
 
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
     nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &emptyAltSvc, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
+                               &emptyAltSvc, ipPref, httpVersions);
   }
 
   nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
   return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                              static_cast<uint16_t>(mConnInfo->RoutedPort()),
-                             &emptyAltSvc, ipPref, httpVersions,
-                             resolutionDelay, connectionAttemptDelay);
+                             &emptyAltSvc, ipPref, httpVersions);
 }
 
 nsresult HappyEyeballsConnectionAttempt::Init(ConnectionEntry* ent) {
