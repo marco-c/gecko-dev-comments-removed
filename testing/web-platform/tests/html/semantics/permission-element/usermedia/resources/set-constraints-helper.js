@@ -39,7 +39,7 @@ function runSetConstraintsTests(testCases) {
       const should_trigger = type !== null || video === true || audio === true;
 
       
-      await new Promise((r) => t.step_timeout(r, 600));
+      await new Promise((r) => t.step_timeout(r, PEPC_CLICK_DELAY));
 
       const expect_success = expVideo || expAudio;
       if (should_trigger) {

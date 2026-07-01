@@ -1,0 +1,4 @@
+
+
+
+const PEPC_CLICK_DELAY = 600;
