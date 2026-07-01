@@ -63,12 +63,10 @@ add_setup(async () => {
 });
 
 add_task(async function test_idb_autoreset_default() {
-  
-  
   Assert.equal(
     ExtensionStorageLocalIDB.disabledAutoResetOnCorrupted,
-    true,
-    "Expect auto-reset on corrupted IDB storage to be disabled by default"
+    false,
+    "Expect auto-reset on corrupted IDB storage to be enabled by default"
   );
 });
 
