@@ -1242,7 +1242,8 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
 
 
 static nsLiteralCString sStyleSrcDataAllowList[] = {
-    "about:preferences"_ns, "about:settings"_ns,
+    "about:preferences"_ns,
+    "about:settings"_ns,
     
 };
 
@@ -1405,7 +1406,8 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcHttpAllowList[] = {
-    "about:addons"_ns, "chrome://devtools/content/application/index.html"_ns,
+    "about:addons"_ns,
+    "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     
@@ -1419,7 +1421,8 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
-    "about:reader"_ns, "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "about:reader"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
     
 };
 
