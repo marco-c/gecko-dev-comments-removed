@@ -55,8 +55,17 @@ function renderMultistage(ready) {
         data.event === "CLICK_BUTTON" &&
         data.event_context.source === "primary_button"
       ) {
-        data.event_context.smart_window_user_feedback_data =
+        
+        
+        const { chatWithoutPageContent, ...feedbackDataToSend } =
           CONFIG.feedbackData;
+        if (
+          chatWithoutPageContent &&
+          data.event_context.contentToggleState === false
+        ) {
+          feedbackDataToSend.chat = chatWithoutPageContent;
+        }
+        data.event_context.smart_window_user_feedback_data = feedbackDataToSend;
       }
     }
     return telemetryMessageHandler(data);
