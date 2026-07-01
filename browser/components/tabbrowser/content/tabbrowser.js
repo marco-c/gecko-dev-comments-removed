@@ -358,9 +358,9 @@
 
     _lastRelatedTabMap = new WeakMap();
 
-    mProgressListeners = [];
+    _progressListeners = [];
 
-    mTabsProgressListeners = [];
+    _tabsProgressListeners = [];
 
     _tabListeners = new Map();
 
@@ -1340,13 +1340,13 @@
       aBrowser = aBrowser || this.selectedBrowser;
 
       if (aCallGlobalListeners && aBrowser == this.selectedBrowser) {
-        callListeners(this.mProgressListeners, aArguments);
+        callListeners(this._progressListeners, aArguments);
       }
 
       if (aCallTabsListeners) {
         aArguments.unshift(aBrowser);
 
-        callListeners(this.mTabsProgressListeners, aArguments);
+        callListeners(this._tabsProgressListeners, aArguments);
       }
 
       return rv;
@@ -1778,15 +1778,15 @@
       }
 
       let listener = this._tabListeners.get(newTab);
-      if (listener && listener.mStateFlags) {
+      if (listener && listener._stateFlags) {
         this._callProgressListeners(
           null,
           "onUpdateCurrentBrowser",
           [
-            listener.mStateFlags,
-            listener.mStatus,
-            listener.mMessage,
-            listener.mTotalProgress,
+            listener._stateFlags,
+            listener._status,
+            listener._message,
+            listener._totalProgress,
           ],
           true,
           false
@@ -6407,7 +6407,7 @@
       let otherTabListener = remoteBrowser._tabListeners.get(aOtherTab);
       let stateFlags = 0;
       if (otherTabListener) {
-        stateFlags = otherTabListener.mStateFlags;
+        stateFlags = otherTabListener._stateFlags;
       }
 
       
@@ -6732,21 +6732,21 @@
         );
       }
 
-      this.mProgressListeners.push(aListener);
+      this._progressListeners.push(aListener);
     }
 
     removeProgressListener(aListener) {
-      this.mProgressListeners = this.mProgressListeners.filter(
+      this._progressListeners = this._progressListeners.filter(
         l => l != aListener
       );
     }
 
     addTabsProgressListener(aListener) {
-      this.mTabsProgressListeners.push(aListener);
+      this._tabsProgressListeners.push(aListener);
     }
 
     removeTabsProgressListener(aListener) {
-      this.mTabsProgressListeners = this.mTabsProgressListeners.filter(
+      this._tabsProgressListeners = this._tabsProgressListeners.filter(
         l => l != aListener
       );
     }
@@ -9047,8 +9047,8 @@
         let oldListener = this._tabListeners.get(tab);
         browser.webProgress.removeProgressListener(filter);
         filter.removeProgressListener(oldListener);
-        let stateFlags = oldListener.mStateFlags;
-        let requestCount = oldListener.mRequestCount;
+        let stateFlags = oldListener._stateFlags;
+        let requestCount = oldListener._requestCount;
 
         
         oldListener.destroy();
@@ -9244,32 +9244,32 @@
           Ci.nsIWebProgressListener.STATE_IS_REQUEST;
       }
 
-      this.mTab = aTab;
-      this.mBrowser = aBrowser;
-      this.mBlank = aStartsBlank;
+      this._tab = aTab;
+      this._browser = aBrowser;
+      this._blank = aStartsBlank;
 
       
-      this.mStateFlags = stateFlags;
-      this.mStatus = 0;
-      this.mMessage = "";
-      this.mTotalProgress = 0;
+      this._stateFlags = stateFlags;
+      this._status = 0;
+      this._message = "";
+      this._totalProgress = 0;
 
       
-      this.mRequestCount = aOrigRequestCount || 0;
+      this._requestCount = aOrigRequestCount || 0;
     }
 
     destroy() {
-      delete this.mTab;
-      delete this.mBrowser;
+      delete this._tab;
+      delete this._browser;
     }
 
     _callProgressListeners(...args) {
-      args.unshift(this.mBrowser);
+      args.unshift(this._browser);
       return gBrowser._callProgressListeners.apply(gBrowser, args);
     }
 
     _shouldShowProgress(aRequest) {
-      if (this.mBlank) {
+      if (this._blank) {
         return false;
       }
 
@@ -9286,7 +9286,7 @@
     }
 
     _isForInitialAboutBlank(aWebProgress, aStateFlags, aLocation) {
-      if (!this.mBlank || !aWebProgress.isTopLevel) {
+      if (!this._blank || !aWebProgress.isTopLevel) {
         return false;
       }
 
@@ -9294,7 +9294,7 @@
       
       if (
         aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-        this.mRequestCount == 0 &&
+        this._requestCount == 0 &&
         !aLocation
       ) {
         return true;
@@ -9312,7 +9312,7 @@
       aCurTotalProgress,
       aMaxTotalProgress
     ) {
-      this.mTotalProgress = aMaxTotalProgress
+      this._totalProgress = aMaxTotalProgress
         ? aCurTotalProgress / aMaxTotalProgress
         : 0;
 
@@ -9320,9 +9320,9 @@
         return;
       }
 
-      if (this.mTotalProgress && this.mTab.hasAttribute("busy")) {
-        this.mTab.setAttribute("progress", "true");
-        gBrowser._tabAttrModified(this.mTab, ["progress"]);
+      if (this._totalProgress && this._tab.hasAttribute("busy")) {
+        this._tab.setAttribute("progress", "true");
+        gBrowser._tabAttrModified(this._tab, ["progress"]);
       }
 
       this._callProgressListeners("onProgressChange", [
@@ -9383,13 +9383,13 @@
         (ignoreBlank &&
           aStateFlags & STATE_STOP &&
           aStateFlags & STATE_IS_NETWORK) ||
-        (!ignoreBlank && this.mBlank)
+        (!ignoreBlank && this._blank)
       ) {
-        this.mBlank = false;
+        this._blank = false;
       }
 
       if (aStateFlags & STATE_START && aStateFlags & STATE_IS_NETWORK) {
-        this.mRequestCount++;
+        this._requestCount++;
 
         if (aWebProgress.isTopLevel) {
           
@@ -9400,10 +9400,10 @@
               originalLocation &&
               gInitialPages.includes(originalLocation.spec) &&
               originalLocation != "about:blank" &&
-              this.mBrowser.initialPageLoadedFromUserAction !=
+              this._browser.initialPageLoadedFromUserAction !=
                 originalLocation.spec &&
-              this.mBrowser.currentURI &&
-              this.mBrowser.currentURI.spec == "about:blank"
+              this._browser.currentURI &&
+              this._browser.currentURI.spec == "about:blank"
             )
           ) {
             
@@ -9417,7 +9417,7 @@
             
             
             
-            this.mBrowser.urlbarChangeTracker.startedLoad();
+            this._browser.urlbarChangeTracker.startedLoad();
 
             
             
@@ -9425,28 +9425,28 @@
             
             
             if (
-              this.mBrowser.browsingContext.sessionHistory?.count === 0 &&
-              (this.mBrowser.initiatedFromNonWebControlled ||
+              this._browser.browsingContext.sessionHistory?.count === 0 &&
+              (this._browser.initiatedFromNonWebControlled ||
                 BrowserUIUtils.checkEmptyPageOrigin(
-                  this.mBrowser,
+                  this._browser,
                   originalLocation
                 ))
             ) {
-              gBrowser.setInitialTabTitle(this.mTab, originalLocation.spec, {
+              gBrowser.setInitialTabTitle(this._tab, originalLocation.spec, {
                 isURL: true,
               });
 
-              this.mBrowser.browsingContext.nonWebControlledLoadingURI =
+              this._browser.browsingContext.nonWebControlledLoadingURI =
                 originalLocation;
-              if (this.mTab.selected && !gBrowser.userTypedValue) {
+              if (this._tab.selected && !gBrowser.userTypedValue) {
                 gURLBar.setURI();
               }
             }
           }
-          delete this.mBrowser.initialPageLoadedFromUserAction;
-          delete this.mBrowser.initiatedFromNonWebControlled;
+          delete this._browser.initialPageLoadedFromUserAction;
+          delete this._browser.initiatedFromNonWebControlled;
           
-          this.mTab.removeAttribute("crashed");
+          this._tab.removeAttribute("crashed");
         }
 
         if (this._shouldShowProgress(aRequest)) {
@@ -9455,23 +9455,23 @@
             aWebProgress &&
             aWebProgress.isTopLevel
           ) {
-            this.mTab.setAttribute("busy", "true");
-            gBrowser._tabAttrModified(this.mTab, ["busy"]);
-            this.mTab._notselectedsinceload = !this.mTab.selected;
+            this._tab.setAttribute("busy", "true");
+            gBrowser._tabAttrModified(this._tab, ["busy"]);
+            this._tab._notselectedsinceload = !this._tab.selected;
           }
 
-          if (this.mTab.selected) {
+          if (this._tab.selected) {
             gBrowser._isBusy = true;
           }
         }
       } else if (aStateFlags & STATE_STOP && aStateFlags & STATE_IS_NETWORK) {
         
         
-        this.mRequestCount = 0;
+        this._requestCount = 0;
 
         let modifiedAttrs = [];
-        if (this.mTab.hasAttribute("busy")) {
-          this.mTab.removeAttribute("busy");
+        if (this._tab.hasAttribute("busy")) {
+          this._tab.removeAttribute("busy");
           modifiedAttrs.push("busy");
 
           
@@ -9483,29 +9483,29 @@
             !gBrowser.tabAnimationsInProgress &&
             !gReduceMotion
           ) {
-            if (this.mTab._notselectedsinceload) {
-              this.mTab.setAttribute("notselectedsinceload", "true");
+            if (this._tab._notselectedsinceload) {
+              this._tab.setAttribute("notselectedsinceload", "true");
             } else {
-              this.mTab.removeAttribute("notselectedsinceload");
+              this._tab.removeAttribute("notselectedsinceload");
             }
 
-            this.mTab.setAttribute("bursting", "true");
+            this._tab.setAttribute("bursting", "true");
           }
         }
 
-        if (this.mTab.hasAttribute("progress")) {
-          this.mTab.removeAttribute("progress");
+        if (this._tab.hasAttribute("progress")) {
+          this._tab.removeAttribute("progress");
           modifiedAttrs.push("progress");
         }
 
         if (aWebProgress.isTopLevel) {
           let isSuccessful = Components.isSuccessCode(aStatus);
-          if (!isSuccessful && !this.mTab.isEmpty) {
+          if (!isSuccessful && !this._tab.isEmpty) {
             
             
             
 
-            this.mBrowser.userTypedValue = null;
+            this._browser.userTypedValue = null;
             
             
             
@@ -9517,16 +9517,16 @@
             
             
             
-            let isNavigating = this.mBrowser.isNavigating;
+            let isNavigating = this._browser.isNavigating;
             if (
-              this.mTab.selected &&
+              this._tab.selected &&
               aStatus != Cr.NS_BINDING_CANCELLED_OLD_LOAD &&
               !isNavigating
             ) {
               gURLBar.setURI();
             }
           } else if (isSuccessful) {
-            this.mBrowser.urlbarChangeTracker.finishedLoad();
+            this._browser.urlbarChangeTracker.finishedLoad();
           }
         }
 
@@ -9536,31 +9536,31 @@
         
         
         const shouldRemoveFavicon =
-          !this.mBrowser.mIconURL &&
+          !this._browser.mIconURL &&
           !ignoreBlank &&
           !(originalLocation.spec in FAVICON_DEFAULTS);
-        if (shouldRemoveFavicon && this.mTab.hasAttribute("image")) {
-          this.mTab.removeAttribute("image");
+        if (shouldRemoveFavicon && this._tab.hasAttribute("image")) {
+          this._tab.removeAttribute("image");
           modifiedAttrs.push("image");
         } else if (!shouldRemoveFavicon) {
           
           
           
           
-          gBrowser.setDefaultIcon(this.mTab, this.mBrowser.documentURI);
+          gBrowser.setDefaultIcon(this._tab, this._browser.documentURI);
         }
 
         
         if (location.scheme == "keyword") {
-          this.mBrowser.userTypedValue = null;
+          this._browser.userTypedValue = null;
         }
 
-        if (this.mTab.selected) {
+        if (this._tab.selected) {
           gBrowser._isBusy = false;
         }
 
         if (modifiedAttrs.length) {
-          gBrowser._tabAttrModified(this.mTab, modifiedAttrs);
+          gBrowser._tabAttrModified(this._tab, modifiedAttrs);
         }
       }
 
@@ -9588,11 +9588,11 @@
 
       if (aStateFlags & (STATE_START | STATE_STOP)) {
         
-        this.mMessage = "";
-        this.mTotalProgress = 0;
+        this._message = "";
+        this._totalProgress = 0;
       }
-      this.mStateFlags = aStateFlags;
-      this.mStatus = aStatus;
+      this._stateFlags = aStateFlags;
+      this._status = aStatus;
     }
     
 
@@ -9622,12 +9622,12 @@
         
         
         if (
-          this.mBrowser.didStartLoadSinceLastUserTyping() ||
+          this._browser.didStartLoadSinceLastUserTyping() ||
           (isErrorPage && aLocation.spec != "about:blank") ||
-          (isSameDocument && this.mBrowser.isNavigating) ||
-          (isSameDocument && !this.mBrowser.userTypedValue)
+          (isSameDocument && this._browser.isNavigating) ||
+          (isSameDocument && !this._browser.userTypedValue)
         ) {
-          this.mBrowser.userTypedValue = null;
+          this._browser.userTypedValue = null;
         }
 
         
@@ -9636,27 +9636,27 @@
         
         
         
-        if (isErrorPage && this.mTab.hasAttribute("busy")) {
-          this.mTab.removeAttribute("busy");
-          gBrowser._tabAttrModified(this.mTab, ["busy"]);
+        if (isErrorPage && this._tab.hasAttribute("busy")) {
+          this._tab.removeAttribute("busy");
+          gBrowser._tabAttrModified(this._tab, ["busy"]);
         }
 
         if (!isSameDocument) {
           
-          if (this.mTab.hasAttribute("soundplaying")) {
-            clearTimeout(this.mTab._soundPlayingAttrRemovalTimer);
-            this.mTab._soundPlayingAttrRemovalTimer = 0;
-            this.mTab.removeAttribute("soundplaying");
-            gBrowser._tabAttrModified(this.mTab, ["soundplaying"]);
+          if (this._tab.hasAttribute("soundplaying")) {
+            clearTimeout(this._tab._soundPlayingAttrRemovalTimer);
+            this._tab._soundPlayingAttrRemovalTimer = 0;
+            this._tab.removeAttribute("soundplaying");
+            gBrowser._tabAttrModified(this._tab, ["soundplaying"]);
           }
 
           
-          if (this.mTab.hasAttribute("muted")) {
-            this.mTab.linkedBrowser.mute();
+          if (this._tab.hasAttribute("muted")) {
+            this._tab.linkedBrowser.mute();
           }
 
-          if (gBrowser.isFindBarInitialized(this.mTab)) {
-            let findBar = gBrowser.getCachedFindBar(this.mTab);
+          if (gBrowser.isFindBarInitialized(this._tab)) {
+            let findBar = gBrowser.getCachedFindBar(this._tab);
 
             
             if (findBar.findMode != findBar.FIND_NORMAL) {
@@ -9669,7 +9669,7 @@
           
           
           if (!isReload) {
-            gBrowser.setTabTitle(this.mTab);
+            gBrowser.setTabTitle(this._tab);
           }
 
           
@@ -9680,18 +9680,18 @@
           
           
           if (
-            !this.mTab.hasAttribute("pending") &&
-            !this.mTab.hasAttribute("customizemode") &&
+            !this._tab.hasAttribute("pending") &&
+            !this._tab.hasAttribute("customizemode") &&
             aWebProgress.isLoadingDocument
           ) {
             
             
-            this.mBrowser.mIconURL = null;
+            this._browser.mIconURL = null;
           }
 
           if (!isReload && aWebProgress.isLoadingDocument) {
             let triggerer = gBrowser._getTriggeringPrincipalFromHistory(
-              this.mBrowser
+              this._browser
             );
             
             
@@ -9707,11 +9707,11 @@
             aRequest instanceof Ci.nsIChannel &&
             !isBlankPageURL(aRequest.originalURI.spec)
           ) {
-            this.mBrowser.originalURI = aRequest.originalURI;
+            this._browser.originalURI = aRequest.originalURI;
           }
 
           if (!gBrowser._allowTransparentBrowser) {
-            this.mBrowser.toggleAttribute(
+            this._browser.toggleAttribute(
               "transparent",
               AIWindow.isAIWindowActive(window) &&
                 AIWindow.isAIWindowContentPage(aLocation)
@@ -9719,44 +9719,44 @@
           }
         }
 
-        let userContextId = this.mBrowser.getAttribute("usercontextid") || 0;
-        if (this.mBrowser.registeredOpenURI) {
-          let uri = this.mBrowser.registeredOpenURI;
+        let userContextId = this._browser.getAttribute("usercontextid") || 0;
+        if (this._browser.registeredOpenURI) {
+          let uri = this._browser.registeredOpenURI;
           gBrowser.UrlbarProviderOpenTabs.unregisterOpenTab(
             uri.spec,
             userContextId,
-            this.mTab.group?.id,
+            this._tab.group?.id,
             PrivateBrowsingUtils.isWindowPrivate(window)
           );
-          delete this.mBrowser.registeredOpenURI;
+          delete this._browser.registeredOpenURI;
         }
         if (!isBlankPageURL(aLocation.spec)) {
           gBrowser.UrlbarProviderOpenTabs.registerOpenTab(
             aLocation.spec,
             userContextId,
-            this.mTab.group?.id,
+            this._tab.group?.id,
             PrivateBrowsingUtils.isWindowPrivate(window)
           );
-          this.mBrowser.registeredOpenURI = aLocation;
+          this._browser.registeredOpenURI = aLocation;
 
           
-          if (this.mTab.splitview && aLocation.spec !== "about:opentabs") {
-            const index = this.mTab.splitview.tabs.indexOf(this.mTab);
+          if (this._tab.splitview && aLocation.spec !== "about:opentabs") {
+            const index = this._tab.splitview.tabs.indexOf(this._tab);
             const label = String(index + 1); 
             Glean.splitview.uriCount[label].add(1);
           }
         }
 
-        if (this.mTab != gBrowser.selectedTab) {
-          let tabCacheIndex = gBrowser._tabLayerCache.indexOf(this.mTab);
+        if (this._tab != gBrowser.selectedTab) {
+          let tabCacheIndex = gBrowser._tabLayerCache.indexOf(this._tab);
           if (tabCacheIndex != -1) {
             gBrowser._tabLayerCache.splice(tabCacheIndex, 1);
-            gBrowser._getSwitcher().cleanUpTabAfterEviction(this.mTab);
+            gBrowser._getSwitcher().cleanUpTabAfterEviction(this._tab);
           }
         }
       }
 
-      if (!this.mBlank || this.mBrowser.hasContentOpener) {
+      if (!this._blank || this._browser.hasContentOpener) {
         this._callProgressListeners("onLocationChange", [
           aWebProgress,
           aRequest,
@@ -9776,13 +9776,13 @@
       }
 
       if (topLevel) {
-        this.mBrowser.lastURI = aLocation;
-        this.mBrowser.lastLocationChange = Date.now();
+        this._browser.lastURI = aLocation;
+        this._browser.lastLocationChange = Date.now();
       }
     }
 
     onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
-      if (this.mBlank) {
+      if (this._blank) {
         return;
       }
 
@@ -9793,7 +9793,7 @@
         aMessage,
       ]);
 
-      this.mMessage = aMessage;
+      this._message = aMessage;
     }
 
     onSecurityChange(aWebProgress, aRequest, aState) {
