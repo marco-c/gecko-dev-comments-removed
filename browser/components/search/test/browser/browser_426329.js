@@ -57,9 +57,8 @@ function checkMenuEntries(expectedValues) {
 function getMenuEntries() {
   
   
-  return Array.from(
-    searchBar.textbox.popup.richlistbox.itemChildren,
-    item => item.querySelector("autocomplete-row-item")?.value
+  return Array.from(searchBar.textbox.popup.richlistbox.itemChildren, item =>
+    item.getAttribute("ac-value")
   );
 }
 
