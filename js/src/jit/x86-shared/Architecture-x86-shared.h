@@ -165,7 +165,7 @@ class FloatRegisters {
   
   
 
-  enum ContentType {
+  enum ContentType : uint8_t {
     Single,   
     Double,   
     Simd128,  
@@ -291,7 +291,7 @@ struct FloatRegister {
   
   
   Codes::Encoding reg_ : 5;
-  Codes::ContentType type_ : 3;
+  Codes::ContentType type_ : 2;
   bool isInvalid_ : 1;
 
   
