@@ -54,9 +54,6 @@ nsresult nsDataChannel::OpenContentStream(bool async, nsIInputStream** result,
   nsresult rv;
 
   
-  dom::ContentChild::MaybeBecomeUntrusted();
-
-  
   
   
   

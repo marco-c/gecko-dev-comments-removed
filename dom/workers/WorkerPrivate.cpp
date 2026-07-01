@@ -3139,9 +3139,6 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
     }
   } else {
     AssertIsOnMainThread();
-
-    
-    ContentChild::MaybeBecomeUntrusted();
   }
 
   Maybe<WorkerLoadInfo> stackLoadInfo;

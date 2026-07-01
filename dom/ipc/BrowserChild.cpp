@@ -466,15 +466,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   MOZ_ASSERT(aInitialWindowChild->DocumentPrincipal() ==
              aOpenWindowInfo->PrincipalToInheritForAboutBlank());
 
-  
-  
-  
-  
-  
-  
-  auto markAsUntrustedGuard =
-      MakeScopeExit([&] { ContentChild::MaybeBecomeUntrusted(); });
-
   nsCOMPtr<nsIWidget> widget = nsIWidget::CreatePuppetWidget(this);
   mPuppetWidget = static_cast<PuppetWidget*>(widget.get());
   if (!mPuppetWidget) {

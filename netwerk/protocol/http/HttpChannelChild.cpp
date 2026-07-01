@@ -1921,9 +1921,6 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  ContentChild::MaybeBecomeUntrusted();
-
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
   
@@ -2486,9 +2483,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   if (cc->IsShuttingDown()) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  ContentChild::MaybeBecomeUntrusted();
 
   
   if (mLoadGroup) {
