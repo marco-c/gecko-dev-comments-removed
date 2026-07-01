@@ -2,6 +2,7 @@ import asyncio
 from urllib.parse import urlencode
 
 import pytest
+import pytest_asyncio
 
 from webdriver.bidi.modules.script import ContextTarget
 
@@ -20,6 +21,11 @@ from .. import (
 )
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def delete_cookies(bidi_session):
+    await bidi_session.storage.delete_cookies()
 
 
 async def test_subscribe_status(bidi_session, subscribe_events, top_context, wait_for_event, wait_for_future_safe, url, fetch):
@@ -88,6 +94,7 @@ async def test_iframe_load(
         expected_event={
             "request": {"url": test_page_same_origin_frame},
             "context": top_context["context"],
+            **({"userContext": top_context["userContext"]} if "userContext" in events[0] else {}),
         },
     )
 
@@ -96,7 +103,8 @@ async def test_iframe_load(
         expected_event={
             "request": {"url": test_page},
             "context": frame_context["context"],
-        },
+            **({"userContext": top_context["userContext"]} if "userContext" in events[1] else {}),
+        }
     )
 
 
@@ -243,7 +251,6 @@ async def test_request_cookies(
                 "httpOnly": False,
                 "name": "foo",
                 "path": "/",
-                "sameSite": "default",
                 "secure": False,
                 "size": 6,
                 "value": {"type": "string", "value": "bar"},
@@ -274,7 +281,6 @@ async def test_request_cookies(
                 "httpOnly": False,
                 "name": "foo",
                 "path": "/",
-                "sameSite": "default",
                 "secure": False,
                 "size": 6,
                 "value": {"type": "string", "value": "bar"},
@@ -283,7 +289,6 @@ async def test_request_cookies(
                 "httpOnly": False,
                 "name": "fuu",
                 "path": "/",
-                "sameSite": "default",
                 "secure": False,
                 "size": 6,
                 "value": {"type": "string", "value": "baz"},
@@ -296,8 +301,6 @@ async def test_request_cookies(
         events[1],
         expected_event={"request": expected_request, "redirectCount": 0},
     )
-
-    await bidi_session.storage.delete_cookies()
 
 
 async def test_request_cookie_same_name_different_host(
@@ -351,7 +354,6 @@ async def test_request_cookie_same_name_different_host(
                 "httpOnly": False,
                 "name": "foo",
                 "path": "/webdriver/tests/bidi/network/support",
-                "sameSite": "default",
                 "secure": False,
                 "size": 6,
                 "value": {"type": "string", "value": "bar"},
@@ -364,8 +366,6 @@ async def test_request_cookie_same_name_different_host(
         events[0],
         expected_event={"request": expected_request, "redirectCount": 0},
     )
-
-    await bidi_session.storage.delete_cookies()
 
 
 async def test_request_timing_info(
