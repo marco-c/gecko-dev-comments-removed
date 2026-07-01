@@ -16,7 +16,6 @@ class MoveResolver;
 struct Register;
 
 class MoveEmitterRiscv64 {
-  uint32_t inCycle_;
   MacroAssembler& masm;
 
   
@@ -25,15 +24,11 @@ class MoveEmitterRiscv64 {
   
   
   
-  int32_t pushedAtCycle_;
+  int32_t pushedAtCycle_ = -1;
 
-  
-  
-  
-  Register spilledReg_;
-  FloatRegister spilledFloatReg_;
+  bool inCycle_ = false;
 
-  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
+  void assertDone() { MOZ_ASSERT(!inCycle_); }
 
   void emit(const MoveOp& move);
   void emitMove(const MoveOperand& from, const MoveOperand& to);
@@ -41,23 +36,17 @@ class MoveEmitterRiscv64 {
   void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
 
-  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
+  Address cycleSlot() const;
   int32_t getAdjustedOffset(const MoveOperand& operand) const;
   Address getAdjustedAddress(const MoveOperand& operand) const;
 
-  void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                  MoveOp::Type type, uint32_t slotId);
+  void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& from, const MoveOperand& to,
-                     MoveOp::Type type, uint32_t slot);
+                     MoveOp::Type type);
 
  public:
   explicit MoveEmitterRiscv64(MacroAssembler& m)
-      : inCycle_(0),
-        masm(m),
-        pushedAtStart_(masm.framePushed()),
-        pushedAtCycle_(-1),
-        spilledReg_(InvalidReg),
-        spilledFloatReg_(InvalidFloatReg) {}
+      : masm(m), pushedAtStart_(masm.framePushed()) {}
   ~MoveEmitterRiscv64() { assertDone(); }
 
   void emit(const MoveResolver&);
