@@ -14,15 +14,19 @@
 #include <cstddef>
 #include <span>
 
+#include "absl/base/macros.h"
+
 namespace webrtc {
 
-template <typename T, size_t extent = std::dynamic_extent>
-using ArrayView = std::span<T, extent>;
 
+
+template <typename T, size_t... extent>
+using ArrayView ABSL_DEPRECATE_AND_INLINE() = std::span<T, extent...>;
 
 template <typename T>
-inline ArrayView<T> MakeArrayView(T* data, size_t size) {
-  return ArrayView<T>(data, size);
+ABSL_DEPRECATE_AND_INLINE()
+inline std::span<T> MakeArrayView(T* data, size_t size) {
+  return std::span(data, size);
 }
 
 }  
