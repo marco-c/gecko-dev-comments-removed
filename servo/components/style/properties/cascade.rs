@@ -1672,9 +1672,7 @@ impl<'a> Cascade<'a> {
             let stylist = self.stylist;
             let seen = std::mem::take(&mut self.seen.custom);
             let references = std::mem::take(&mut self.references_from_non_custom_properties);
-            let mut map = std::mem::take(&mut context.builder.substitution_functions);
             substitute_all(
-                &mut map,
                 &seen,
                 &references,
                 stylist,
@@ -1684,7 +1682,6 @@ impl<'a> Cascade<'a> {
                 shorthand_cache,
                 attribute_tracker,
             );
-            context.builder.substitution_functions = map;
         }
         
         if decls.has_prioritary_properties {
@@ -2094,7 +2091,6 @@ impl<'a> Cascade<'a> {
 }
 
 fn substitute_all(
-    substitution_function_map: &mut ComputedSubstitutionFunctions,
     seen: &SeenSubstitutionFunctions,
     references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
     stylist: &Stylist,
@@ -2164,11 +2160,6 @@ fn substitute_all(
         stack: SmallVec<[usize; 5]>,
         
         
-        
-        
-        map: &'a mut ComputedSubstitutionFunctions,
-        
-        
         stylist: &'a Stylist,
         
         
@@ -2192,6 +2183,14 @@ fn substitute_all(
             self.stack.clear();
         }
 
+        fn map(&self) -> &ComputedSubstitutionFunctions {
+            &self.computed_context.builder.substitution_functions
+        }
+
+        fn map_mut(&mut self) -> &mut ComputedSubstitutionFunctions {
+            &mut self.computed_context.builder.substitution_functions
+        }
+
         
         
         
@@ -2202,9 +2201,6 @@ fn substitute_all(
             id: PrioritaryPropertyId,
             attr_tracker: &mut AttributeTracker,
         ) {
-            
-            
-            self.computed_context.builder.substitution_functions = std::mem::take(&mut *self.map);
             self.cascade.ensure_prioritary_property(
                 self.computed_context,
                 self.decls,
@@ -2212,7 +2208,6 @@ fn substitute_all(
                 attr_tracker,
                 id,
             );
-            *self.map = std::mem::take(&mut self.computed_context.builder.substitution_functions);
         }
     }
 
@@ -2268,14 +2263,14 @@ fn substitute_all(
                     if !can_chain {
                         continue;
                     }
-                    if context.map.get_attr(&next.name).is_none() {
+                    if context.map().get_attr(&next.name).is_none() {
                         if let Ok(val) = get_attr_value_for_cycle_resolution(
                             &next.name,
                             &next.attribute_data,
                             url_data,
                             attribute_tracker,
                         ) {
-                            context.map.insert_attr(&next.name, val);
+                            context.map_mut().insert_attr(&next.name, val);
                         }
                     }
                     VarType::Attr(next.name.clone())
@@ -2300,9 +2295,9 @@ fn substitute_all(
                     SubstitutionFunctionKind::Var => {
                         let registration =
                             context.stylist.get_custom_property_registration(&next.name);
-                        context.map.get_var(registration, &next.name)
+                        context.map().get_var(registration, &next.name)
                     },
-                    SubstitutionFunctionKind::Attr => context.map.get_attr(&next.name),
+                    SubstitutionFunctionKind::Attr => context.map().get_attr(&next.name),
                     SubstitutionFunctionKind::Env => unreachable!("Handled above"),
                 };
                 
@@ -2395,20 +2390,20 @@ fn substitute_all(
         };
         let value = match var {
             VarType::Custom(ref name) | VarType::Attr(ref name) => {
-                let registration;
-                let value;
-                match kind {
-                    SubstitutionFunctionKind::Var => {
-                        registration = context.stylist.get_custom_property_registration(name);
-                        value = context.map.get_var(registration, name)?.as_universal()?;
-                    },
-                    SubstitutionFunctionKind::Attr => {
-                        
-                        registration = PropertyDescriptors::unregistered();
-                        value = context.map.get_attr(name)?.as_universal()?;
-                    },
-                    _ => unreachable!("Substitution kind must be var or attr for VarType::Custom."),
-                }
+                let map = &context.computed_context.builder.substitution_functions;
+                let (registration, value) = if matches!(var, VarType::Custom(_)) {
+                    let registration = context.stylist.get_custom_property_registration(name);
+                    (
+                        registration,
+                        map.get_var(registration, name)?.as_universal()?,
+                    )
+                } else {
+                    
+                    (
+                        PropertyDescriptors::unregistered(),
+                        map.get_attr(name)?.as_universal()?,
+                    )
+                };
                 let is_root = context.computed_context.is_root_element();
                 value_non_custom_refs = find_non_custom_references(registration, value, is_root);
                 registered = !registration.is_universal();
@@ -2433,7 +2428,6 @@ fn substitute_all(
                             name,
                             kind,
                             &value,
-                            &mut context.map,
                             context.stylist,
                             context.computed_context,
                             attribute_tracker,
@@ -2585,7 +2579,7 @@ fn substitute_all(
                 handle_invalid_at_computed_value_time(
                     name,
                     kind,
-                    &mut context.map,
+                    context.stylist.get_custom_property_registration(name),
                     context.computed_context,
                 );
             };
@@ -2652,7 +2646,6 @@ fn substitute_all(
                 &name,
                 kind,
                 v,
-                &mut context.map,
                 context.stylist,
                 context.computed_context,
                 attribute_tracker,
@@ -2668,7 +2661,6 @@ fn substitute_all(
         non_custom_index_map: NonCustomReferenceMap::default(),
         stack: SmallVec::new(),
         var_info: SmallVec::new(),
-        map: &mut *substitution_function_map,
         stylist,
         computed_context: &mut *computed_context,
         cascade: &mut *cascade,

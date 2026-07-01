@@ -2281,7 +2281,7 @@ pub struct StyleBuilder<'a> {
     
     
     
-    inherited_style: &'a ComputedValues,
+    pub inherited_style: &'a ComputedValues,
 
     
     reset_style: &'a ComputedValues,
