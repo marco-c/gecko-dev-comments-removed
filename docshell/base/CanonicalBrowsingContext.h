@@ -55,7 +55,6 @@ class BrowserBridgeParent;
 class FeaturePolicy;
 struct LoadURIOptions;
 class MediaController;
-enum class AudioFocusInterruptAction : uint8_t;
 struct LoadingSessionHistoryInfo;
 class SSCacheCopy;
 class WindowGlobalParent;
@@ -235,10 +234,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void UpdateMediaControlAction(const MediaControlAction& aAction);
-
-  
-  
-  void UpdateMediaSessionInterrupt(AudioFocusInterruptAction aAction);
 
   
   using BrowsingContext::LoadURI;

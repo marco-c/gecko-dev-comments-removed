@@ -39,12 +39,6 @@ class nsSpeechTask : public nsISpeechTask,
 
   virtual void Resume();
 
-  
-  
-  
-  void PauseFromMediaControl();
-  void ResumeFromMediaControl();
-
   virtual void Cancel();
 
   virtual void ForceEnd();
@@ -70,8 +64,6 @@ class nsSpeechTask : public nsISpeechTask,
   uint32_t GetState() const { return mState; }
 
   bool IsSpeaking() const { return mState == STATE_SPEAKING; }
-
-  bool IsPaused() const;
 
   bool IsPending() const { return mState == STATE_PENDING; }
 
@@ -108,10 +100,6 @@ class nsSpeechTask : public nsISpeechTask,
   bool mPrePaused;
 
   bool mPreCanceled;
-
-  
-  
-  bool mPausedByMediaControl = false;
 
  private:
   void End();

@@ -12,7 +12,6 @@
 namespace mozilla::dom {
 
 class MediaSession;
-enum class AudioFocusInterruptAction : uint8_t;
 
 
 
@@ -71,8 +70,6 @@ class ContentMediaControlKeyHandler {
  public:
   static void HandleMediaControlAction(BrowsingContext* aContext,
                                        const MediaControlAction& aAction);
-  static void HandleAudioFocusInterrupt(BrowsingContext* aContext,
-                                        AudioFocusInterruptAction aAction);
 };
 
 }  

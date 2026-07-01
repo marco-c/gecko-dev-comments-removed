@@ -229,11 +229,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   
-  void SuspendFromMediaControl();
-  
-  
-  
-  void ResumeFromMediaControl();
+  void SuspendByMediaControl();
   
   void OfflineClose();
 
@@ -440,11 +436,6 @@ class AudioContext final : public DOMEventTargetHelper,
   
   
   bool mSuspendedByChrome;
-  
-  
-  
-  
-  bool mSuspendedByMediaControl;
 
   
   

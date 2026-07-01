@@ -7,22 +7,13 @@
 
 #include "AudioSessionRecord.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "nsTHashMap.h"
-#include "nsTHashSet.h"
 
 namespace mozilla::dom {
 
 class MediaController;
-
-
-
-
-
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioSessionInterruptKind, uint8_t,
-                                             (Transient, Permanent));
 
 
 
@@ -48,14 +39,6 @@ class AudioSessionManager final {
   void SetTypeOverride(uint64_t aBrowsingContextId, AudioSessionType aType);
   void NotifyAudibilityChanged(uint64_t aBrowsingContextId);
   void NotifyBcDiscarded(uint64_t aBrowsingContextId);
-
-  
-  
-  
-  void InterruptAudioSessions(AudioSessionInterruptKind aKind);
-  
-  
-  void RestoreAudioSessions();
 
   
   
@@ -102,12 +85,6 @@ class AudioSessionManager final {
 
   
   
-  void AddInterruptedBcId(uint64_t aBrowsingContextId);
-  void RemoveInterruptedBcId(uint64_t aBrowsingContextId);
-  void ClearInterruptedBcIds();
-
-  
-  
   
   
   
@@ -133,10 +110,6 @@ class AudioSessionManager final {
 
   
   AudioSessionType mLastDispatchedEffectiveType = AudioSessionType::Auto;
-
-  
-  
-  nsTHashSet<uint64_t> mInterruptedBcIds;
 };
 
 }  

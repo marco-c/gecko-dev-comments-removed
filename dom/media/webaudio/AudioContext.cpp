@@ -59,7 +59,6 @@
 #include "mozilla/dom/GainNodeBinding.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/IIRFilterNodeBinding.h"
-#include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/MediaElementAudioSourceNodeBinding.h"
 #include "mozilla/dom/MediaStreamAudioSourceNodeBinding.h"
 #include "mozilla/dom/MediaStreamTrackAudioSourceNodeBinding.h"
@@ -85,9 +84,6 @@ extern mozilla::LazyLogModule gAutoplayPermissionLog;
 
 #define AUTOPLAY_LOG(msg, ...) \
   MOZ_LOG_FMT(gAutoplayPermissionLog, LogLevel::Debug, msg, ##__VA_ARGS__)
-
-#define MEDIA_CONTROL_LOG(msg, ...) \
-  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -176,8 +172,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
       mTracksAreSuspended(!aIsOffline),
       mWasAllowedToStart(true),
       mSuspendedByContent(false),
-      mSuspendedByChrome(nsGlobalWindowInner::Cast(aWindow)->IsSuspended()),
-      mSuspendedByMediaControl(false) {
+      mSuspendedByChrome(nsGlobalWindowInner::Cast(aWindow)->IsSuspended()) {
   bool mute = aWindow->AddAudioContext(this);
 
   
@@ -219,7 +214,7 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
   
   
   
-  if (isAllowedToPlay && !mSuspendedByContent && !mSuspendedByMediaControl) {
+  if (isAllowedToPlay && !mSuspendedByContent) {
     ResumeInternal();
   } else {
     ReportBlocked();
@@ -991,12 +986,6 @@ already_AddRefed<Promise> AudioContext::Suspend(ErrorResult& aRv) {
   }
 
   mSuspendedByContent = true;
-  if (mSuspendedByMediaControl) {
-    MEDIA_CONTROL_LOG(
-        "AudioContext {} page suspend() takes over an interruption suspend",
-        fmt::ptr(this));
-    mSuspendedByMediaControl = false;
-  }
   mPromiseGripArray.AppendElement(promise);
   SuspendInternal(promise, AudioContextOperationFlags::SendStateChange);
   return promise.forget();
@@ -1013,42 +1002,16 @@ void AudioContext::SuspendFromChrome() {
                                : AudioContextOperationFlags::None);
 }
 
-void AudioContext::SuspendFromMediaControl() {
+void AudioContext::SuspendByMediaControl() {
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mIsOffline);
   if (mIsShutDown || mCloseCalled) {
     return;
   }
-  MEDIA_CONTROL_LOG("AudioContext {} SuspendFromMediaControl", fmt::ptr(this));
   
-  
-  
-  
-  mSuspendedByMediaControl = true;
+  mSuspendedByContent = true;
   SuspendInternal(nullptr, AudioContextOperationFlags::SendStateChange);
-}
-
-void AudioContext::ResumeFromMediaControl() {
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mIsOffline);
-  if (mIsShutDown || mCloseCalled) {
-    return;
-  }
-  
-  
-  
-  
-  if (!mSuspendedByMediaControl) {
-    MEDIA_CONTROL_LOG(
-        "AudioContext {} ResumeFromMediaControl skipped: page owns the suspend",
-        fmt::ptr(this));
-    return;
-  }
-  MEDIA_CONTROL_LOG("AudioContext {} ResumeFromMediaControl", fmt::ptr(this));
-  mSuspendedByMediaControl = false;
-  ResumeInternal();
 }
 
 void AudioContext::SuspendInternal(void* aPromise,
@@ -1111,16 +1074,6 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
   }
 
   mSuspendedByContent = false;
-  
-  
-  
-  
-  if (mSuspendedByMediaControl) {
-    MEDIA_CONTROL_LOG(
-        "AudioContext {} page resume() takes over an interruption suspend",
-        fmt::ptr(this));
-    mSuspendedByMediaControl = false;
-  }
   mPendingResumePromises.AppendElement(promise);
 
   const bool isAllowedToPlay = media::AutoplayPolicy::IsAllowedToPlay(*this);
@@ -1140,8 +1093,7 @@ void AudioContext::ResumeInternal() {
   AUTOPLAY_LOG("Allow to resume AudioContext {}", fmt::ptr(this));
   mWasAllowedToStart = true;
 
-  if (mSuspendedByChrome || mSuspendedByContent || mSuspendedByMediaControl ||
-      mCloseCalled) {
+  if (mSuspendedByChrome || mSuspendedByContent || mCloseCalled) {
     MOZ_ASSERT(mTracksAreSuspended);
     return;
   }
