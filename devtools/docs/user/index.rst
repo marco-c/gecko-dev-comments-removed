@@ -193,6 +193,9 @@ These developer tools are also built into Firefox. Unlike the "Core Tools" above
   * - :doc:`JavaScript tracer <javascript_tracer/index>`
     - Live display all JavaScript function calls.
 
+  * - :doc:`Local Mode <local_mode/index>`
+    - Easily open local files through custom https:// URL.
+
 .. image:: logo-developer-quantum.png
     :class: center
 
@@ -202,6 +205,17 @@ These developer tools are also built into Firefox. Unlike the "Core Tools" above
 
   `Download Firefox Developer Edition <https://www.mozilla.org/en-US/firefox/developer/>`_
 
+
+
+AI Tools
+********
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 0
+
+   * - `Firefox DevTools MCP <https://github.com/mozilla/firefox-devtools-mcp>`_
+     - A Model Context Protocol (MCP) server that enables AI assistants to automate and interact with Firefox.
 
 
 Connecting the Developer Tools
