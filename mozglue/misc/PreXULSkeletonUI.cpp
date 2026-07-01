@@ -301,7 +301,7 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
   
   
   
-  uint32_t binPathHash = HashString(binPath.get());
+  uint32_t binPathHash = HashString(binPath.get(), wcslen(binPath.get()));
   swprintf(installHash.get(), hexHashSize, L"%08x", binPathHash);
 
   std::wstring lockFilePath;

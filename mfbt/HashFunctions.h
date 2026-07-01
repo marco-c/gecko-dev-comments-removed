@@ -46,11 +46,12 @@
 #define mozilla_HashFunctions_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Types.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <stdint.h>
+#include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 namespace mozilla {
@@ -239,92 +240,86 @@ template <typename... Args>
 
 
 
+constexpr HashNumber HashBytes(const uint8_t* aBytes, size_t aLength,
+                               HashNumber aStartingHash = 0) {
+  uint32_t hash = aStartingHash;
 
+  
+  size_t i = 0;
+  for (; i < aLength - (aLength % sizeof(uint32_t)); i += sizeof(uint32_t)) {
+    uint32_t data;
+    if (std::is_constant_evaluated()) {
+      data = uint32_t(aBytes[i]) | (uint32_t(aBytes[i + 1]) << 8) |
+             (uint32_t(aBytes[i + 2]) << 16) | (uint32_t(aBytes[i + 3]) << 24);
+      if constexpr (std::endian::native == std::endian::big) {
+        data = mozilla::byteswap(data);
+      }
+    } else {
+      
+      memcpy(&data, aBytes + i, sizeof(uint32_t));
+    }
+    hash = AddToHash(hash, data);
+  }
 
-
-
-
-template <typename Iterator>
-[[nodiscard]] constexpr HashNumber HashStringUntilZero(Iterator aIter) {
-  HashNumber hash = 0;
-  for (; auto c = *aIter; ++aIter) {
-    hash = AddToHash(hash, c);
+  
+  for (; i < aLength; i++) {
+    hash = AddToHash(hash, aBytes[i]);
   }
   return hash;
 }
 
-
-
-
-template <typename Iterator>
-[[nodiscard]] constexpr HashNumber HashStringKnownLength(Iterator aIter,
-                                                         size_t aLength) {
-  HashNumber hash = 0;
-  for (size_t i = 0; i < aLength; i++) {
-    hash = AddToHash(hash, aIter[i]);
-  }
-  return hash;
-}
-
-
-
-
-
-
-
-[[nodiscard]] inline HashNumber HashString(const char* aStr) {
-  
-  
-  return HashStringUntilZero(reinterpret_cast<const unsigned char*>(aStr));
+inline HashNumber HashBytes(const void* aBytes, size_t aLength,
+                            HashNumber aStartingHash = 0) {
+  return HashBytes(reinterpret_cast<const uint8_t*>(aBytes), aLength,
+                   aStartingHash);
 }
 
 [[nodiscard]] inline HashNumber HashString(const char* aStr, size_t aLength) {
-  
-  
-  return HashStringKnownLength(reinterpret_cast<const unsigned char*>(aStr),
-                               aLength);
+  return HashBytes(aStr, aLength);
+}
+
+template <size_t N>
+[[nodiscard]] inline HashNumber HashString(const char (&aStr)[N]) {
+  return HashString(aStr, N - 1);
 }
 
 [[nodiscard]] inline HashNumber HashString(const unsigned char* aStr,
                                            size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
+  return HashBytes(aStr, aLength);
 }
 
-[[nodiscard]] constexpr HashNumber HashString(const char16_t* aStr) {
-  return HashStringUntilZero(aStr);
+[[nodiscard]] constexpr HashNumber HashString(const char16_t* aStr,
+                                              size_t aLength) {
+  HashNumber hash = 0;
+  for (size_t i = 0; i < aLength; i++) {
+    hash = AddToHash(hash, aStr[i]);
+  }
+  return hash;
 }
 
-[[nodiscard]] inline HashNumber HashString(const char16_t* aStr,
-                                           size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
-}
-
-
-
-
-template <typename WCharT, typename = typename std::enable_if<
-                               std::is_same<WCharT, wchar_t>::value &&
-                               !std::is_same<wchar_t, char16_t>::value>::type>
-[[nodiscard]] inline HashNumber HashString(const WCharT* aStr) {
-  return HashStringUntilZero(aStr);
-}
-
-template <typename WCharT, typename = typename std::enable_if<
-                               std::is_same<WCharT, wchar_t>::value &&
-                               !std::is_same<wchar_t, char16_t>::value>::type>
+template <typename WCharT>
+  requires(std::is_same_v<WCharT, wchar_t> &&
+           !std::is_same_v<wchar_t, char16_t>)
 [[nodiscard]] inline HashNumber HashString(const WCharT* aStr, size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
+  static_assert(sizeof(WCharT) == sizeof(char16_t));
+  return HashString(reinterpret_cast<const char16_t*>(aStr), aLength);
+}
+
+template <size_t N>
+[[nodiscard]] constexpr HashNumber HashString(const char16_t (&aStr)[N]) {
+  return HashString(aStr, N - 1);
 }
 
 
 
-
-
-
-
-[[nodiscard]] extern MFBT_API HashNumber HashBytes(const void* bytes,
-                                                   size_t aLength,
-                                                   HashNumber startingHash = 0);
+[[nodiscard]] constexpr HashNumber HashLatin1AsUTF16(const unsigned char* aStr,
+                                                     size_t aLength) {
+  HashNumber hash = 0;
+  for (size_t i = 0; i < aLength; i++) {
+    hash = AddToHash(hash, char16_t(aStr[i]));
+  }
+  return hash;
+}
 
 
 

@@ -62,7 +62,8 @@ class AutoDestructorOp {
 
 
 PLDHashNumber PLDHashTable::HashStringKey(const void* aKey) {
-  return HashString(static_cast<const char*>(aKey));
+  auto* str = static_cast<const char*>(aKey);
+  return HashString(str, strlen(str));
 }
 
 
@@ -212,7 +213,7 @@ PLDHashTable::~PLDHashTable() {
   AutoDestructorOp op(mChecker);
 #endif
 
-  if (!mEntryStore.IsAllocated()) {
+  if (IsEmpty()) {
     return;
   }
 
@@ -452,7 +453,7 @@ PLDHashEntryHdr* PLDHashTable::Search(const void* aKey) const {
   AutoReadOp op(mChecker);
 #endif
 
-  if (!mEntryStore.IsAllocated()) {
+  if (IsEmpty()) {
     return nullptr;
   }
 
@@ -488,7 +489,7 @@ void PLDHashTable::Remove(const void* aKey) {
   AutoWriteOp op(mChecker);
 #endif
 
-  if (!mEntryStore.IsAllocated()) {
+  if (IsEmpty()) {
     return;
   }
 
