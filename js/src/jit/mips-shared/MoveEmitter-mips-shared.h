@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips_shared_MoveEmitter_mips_shared_h
 #define jit_mips_shared_MoveEmitter_mips_shared_h
 
@@ -63,8 +61,6 @@ class MoveEmitterMIPSShared {
   ~MoveEmitterMIPSShared() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
-
-  void setScratchRegister(Register reg) {}
 };
 
 }  

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_MoveEmitter_riscv64_h
 #define jit_riscv64_MoveEmitter_riscv64_h
 
@@ -51,7 +49,6 @@ class MoveEmitterRiscv64 {
   void emitDoubleMove(const MoveOperand& from, const MoveOperand& to);
   void finish();
   void assertDone();
-  void setScratchRegister(Register) { MOZ_CRASH("Unimplement on riscv"); }
   Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
   int32_t getAdjustedOffset(const MoveOperand& operand);
   Address getAdjustedAddress(const MoveOperand& operand);
