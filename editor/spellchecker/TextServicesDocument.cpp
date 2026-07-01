@@ -2385,7 +2385,7 @@ nsresult TextServicesDocument::GetFirstTextNodeInPrevBlock(
     nsIContent** aContent) {
   NS_ENSURE_TRUE(aContent, NS_ERROR_NULL_POINTER);
 
-  *aContent = 0;
+  *aContent = nullptr;
 
   
   
@@ -2417,7 +2417,7 @@ nsresult TextServicesDocument::GetFirstTextNodeInNextBlock(
     nsIContent** aContent) {
   NS_ENSURE_TRUE(aContent, NS_ERROR_NULL_POINTER);
 
-  *aContent = 0;
+  *aContent = nullptr;
 
   
   

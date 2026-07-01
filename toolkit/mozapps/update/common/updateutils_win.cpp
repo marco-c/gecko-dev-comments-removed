@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "updateutils_win.h"
 #include <errno.h>
 #include <shlwapi.h>
@@ -56,7 +54,7 @@ dirent* readdir(DIR* dir) {
       if (GetLastError() != ERROR_NO_MORE_FILES) {
         errno = ENOENT;
       }
-      return 0;
+      return nullptr;
     }
   } else {
     
@@ -67,7 +65,7 @@ dirent* readdir(DIR* dir) {
       } else {
         errno = EBADF;
       }
-      return 0;
+      return nullptr;
     }
   }
   size_t direntBufferLength =

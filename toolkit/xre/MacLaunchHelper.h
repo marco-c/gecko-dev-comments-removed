@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MacLaunchHelper_h_
 #define MacLaunchHelper_h_
 
@@ -25,9 +24,9 @@ extern "C" {
 
 
 
-void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = 0);
+void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = nullptr);
 void LaunchMacApp(int aArgc, char** aArgv);
-bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = 0);
+bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = nullptr);
 bool InstallPrivilegedHelper();
 void AbortElevatedUpdate();
 }

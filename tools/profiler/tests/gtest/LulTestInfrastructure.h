@@ -125,7 +125,7 @@ class Label {
 
   
   
-  bool IsKnownConstant(uint64_t* value_p = NULL) const;
+  bool IsKnownConstant(uint64_t* value_p = nullptr) const;
 
   
   
@@ -145,7 +145,8 @@ class Label {
   
   
   
-  bool IsKnownOffsetFrom(const Label& label, uint64_t* offset_p = NULL) const;
+  bool IsKnownOffsetFrom(const Label& label,
+                         uint64_t* offset_p = nullptr) const;
 
  private:
   
@@ -531,7 +532,7 @@ class CFISection : public Section {
         address_size_(address_size),
         eh_frame_(eh_frame),
         pointer_encoding_(lul::DW_EH_PE_absptr),
-        entry_length_(NULL),
+        entry_length_(nullptr),
         in_fde_(false) {
     
     

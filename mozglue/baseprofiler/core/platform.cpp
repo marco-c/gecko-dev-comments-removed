@@ -2079,7 +2079,7 @@ void SamplerThread::Run() {
 
   
   
-  TimeDuration lastSleepOvershoot = 0;
+  TimeDuration lastSleepOvershoot{};
   TimeStamp sampleStart = TimeStamp::Now();
 
   while (true) {

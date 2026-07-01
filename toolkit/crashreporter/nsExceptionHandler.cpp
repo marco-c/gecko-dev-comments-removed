@@ -264,7 +264,7 @@ static
 #elif defined(XP_WIN)  
     DWORD
 #endif                 
-        gMainThreadId = 0;
+        gMainThreadId;
 
 
 static Mutex* dumpSafetyLock;

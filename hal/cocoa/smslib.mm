@@ -435,9 +435,9 @@ int smsStartup(id logObject, SEL logSelector) {
     if (result) {
       LOG_ARG(@"    Failure testing device, with result 0x%x.\n", result);
       free(iRecord);
-      iRecord = 0;
+      iRecord = nullptr;
       free(oRecord);
-      oRecord = 0;
+      oRecord = nullptr;
       if (failure_result < SMS_FAIL_ACCESS) {
         failure_result = SMS_FAIL_ACCESS;
       }
@@ -700,7 +700,7 @@ static float prefFloatRead(NSString* prefName, BOOL* success) {
   CFPropertyListRef ref =
       CFPreferencesCopyAppValue((CFStringRef)prefName, APP_ID);
   
-  if (ref == NULL) {
+  if (ref == nullptr) {
     *success = NO;
     return result;
   }
@@ -761,7 +761,7 @@ static void prefIntWrite(NSString* prefName, int prefValue) {
 
 
 static void prefDelete(NSString* prefName) {
-  CFPreferencesSetAppValue((CFStringRef)prefName, NULL, APP_ID);
+  CFPreferencesSetAppValue((CFStringRef)prefName, nullptr, APP_ID);
 }
 
 
@@ -868,7 +868,7 @@ NSString* getModelName(void) {
   int name[2] = {CTL_HW, HW_MODEL};
   NSString* result;
 
-  if (sysctl(name, 2, &model, &len, NULL, 0) == 0) {
+  if (sysctl(name, 2, &model, &len, nullptr, 0) == 0) {
     result = [NSString stringWithFormat:@"%s", model];
   } else {
     result = @"";
