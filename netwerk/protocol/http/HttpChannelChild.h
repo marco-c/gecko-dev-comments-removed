@@ -178,8 +178,9 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   virtual void DoAsyncAbort(nsresult aStatus) override;
 
-  nsresult AsyncCall(void (HttpChannelChild::*funcPtr)(),
-                     CancelableRunnable** retval = nullptr) override {
+  nsresult AsyncCall(
+      void (HttpChannelChild::*funcPtr)(),
+      nsRunnableMethod<HttpChannelChild>** retval = nullptr) override {
     
     
     
@@ -213,7 +214,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsresult AsyncOpenInternal(nsIStreamListener* aListener);
 
   nsresult AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
-                         CancelableRunnable** retval);
+                         nsRunnableMethod<HttpChannelChild>** retval);
 
   
   

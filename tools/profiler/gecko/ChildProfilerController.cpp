@@ -44,7 +44,7 @@ void ChildProfilerController::Init(Endpoint<PProfilerChild>&& aEndpoint) {
     }
     
     newProfilerChildThread->Dispatch(
-        NewRunnableMethod<Endpoint<PProfilerChild>>(
+        NewRunnableMethod<Endpoint<PProfilerChild>&&>(
             "ChildProfilerController::SetupProfilerChild", this,
             &ChildProfilerController::SetupProfilerChild, std::move(aEndpoint)),
         NS_DISPATCH_NORMAL);

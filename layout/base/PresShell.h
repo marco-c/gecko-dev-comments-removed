@@ -3182,7 +3182,7 @@ class PresShell final : public nsStubDocumentObserver,
       VisibleFrames& aFrames,
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
-  nsRevocableEventPtr<CancelableRunnable>
+  nsRevocableEventPtr<nsRunnableMethod<PresShell>>
       mUpdateApproximateFrameVisibilityEvent;
 
   

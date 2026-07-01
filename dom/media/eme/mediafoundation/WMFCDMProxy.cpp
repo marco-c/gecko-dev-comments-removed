@@ -186,10 +186,10 @@ void WMFCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
     
     
     mMainThread->Dispatch(
-        NewRunnableMethod<PromiseId, CopyableErrorResult, nsCString>(
-            "WMFCDMProxy::RejectPromise", this,
-            &WMFCDMProxy::RejectPromiseOnMainThread, aId, std::move(aException),
-            aReason),
+        NewRunnableMethod<PromiseId, StoreCopyPassByRRef<CopyableErrorResult>,
+                          nsCString>("WMFCDMProxy::RejectPromise", this,
+                                     &WMFCDMProxy::RejectPromiseOnMainThread,
+                                     aId, std::move(aException), aReason),
         NS_DISPATCH_NORMAL);
     return;
   }
