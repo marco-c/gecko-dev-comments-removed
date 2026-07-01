@@ -83,7 +83,63 @@ class RtpHeaderExtensionQueryInterface {
       const FieldTrialsView* field_trials) const = 0;
 };
 
-class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
+
+
+
+
+
+class VoiceChannelFactoryInterface {
+ public:
+  virtual ~VoiceChannelFactoryInterface() = default;
+
+  
+  virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const CryptoOptions& crypto_options) = 0;
+
+  
+  virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
+  CreateReceiveChannel(const Environment& env,
+                       Call* call,
+                       const MediaConfig& config,
+                       const AudioOptions& options,
+                       const CryptoOptions& crypto_options) = 0;
+};
+
+
+
+
+
+
+class VideoChannelFactoryInterface {
+ public:
+  virtual ~VideoChannelFactoryInterface() = default;
+
+  
+  virtual std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const CryptoOptions& crypto_options,
+      VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
+      VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
+          video_encoder_switch_request_callback) = 0;
+
+  
+  virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
+  CreateReceiveChannel(const Environment& env,
+                       Call* call,
+                       const MediaConfig& config,
+                       const VideoOptions& options,
+                       const CryptoOptions& crypto_options) = 0;
+};
+
+class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface,
+                             public VoiceChannelFactoryInterface {
  public:
   VoiceEngineInterface() = default;
   ~VoiceEngineInterface() override = default;
@@ -100,19 +156,20 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   virtual scoped_refptr<AudioState> GetAudioState() const = 0;
 
-  virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
+  
+  std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
       const Environment& env,
       Call* call,
       const MediaConfig& config,
       const AudioOptions& options,
-      const CryptoOptions& crypto_options) = 0;
+      const CryptoOptions& crypto_options) override = 0;
 
-  virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
-  CreateReceiveChannel(const Environment& env,
-                       Call* call,
-                       const MediaConfig& config,
-                       const AudioOptions& options,
-                       const CryptoOptions& crypto_options) = 0;
+  std::unique_ptr<VoiceMediaReceiveChannelInterface> CreateReceiveChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const CryptoOptions& crypto_options) override = 0;
 
   
   
@@ -139,7 +196,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   virtual bool NeedsAuxiliaryCodecsAdded() const { return false; }
 };
 
-class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
+class VideoEngineInterface : public RtpHeaderExtensionQueryInterface,
+                             public VideoChannelFactoryInterface {
  public:
   VideoEngineInterface() = default;
   ~VideoEngineInterface() override = default;
@@ -147,7 +205,8 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   VideoEngineInterface(const VideoEngineInterface&) = delete;
   VideoEngineInterface& operator=(const VideoEngineInterface&) = delete;
 
-  virtual std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
+  
+  std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
       const Environment& env,
       Call* call,
       const MediaConfig& config,
@@ -155,14 +214,14 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
       const CryptoOptions& crypto_options,
       VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
       VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
-          video_encoder_switch_request_callback = nullptr) = 0;
+          video_encoder_switch_request_callback) override = 0;
 
-  virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
-  CreateReceiveChannel(const Environment& env,
-                       Call* call,
-                       const MediaConfig& config,
-                       const VideoOptions& options,
-                       const CryptoOptions& crypto_options) = 0;
+  std::unique_ptr<VideoMediaReceiveChannelInterface> CreateReceiveChannel(
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const CryptoOptions& crypto_options) override = 0;
 
   
   
