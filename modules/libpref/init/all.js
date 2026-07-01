@@ -3983,6 +3983,13 @@ pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false
 
 
 
+pref("security.storage.encryption.sqlite.enabled", false, locked);
+
+
+
+
+
+
 
 
 pref("extensions.formautofill.available", "detect");

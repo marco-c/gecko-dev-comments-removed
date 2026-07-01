@@ -22,6 +22,7 @@ IGNORE_PREFS = {
     "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",  
     "extensions.backgroundServiceWorker.enabled",  
     "general.smoothScroll",  
+    "security.storage.encryption.sqlite.enabled",  
 }
 
 
