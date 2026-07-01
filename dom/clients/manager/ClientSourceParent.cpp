@@ -163,7 +163,10 @@ IPCResult ClientSourceParent::Init() {
   
   
   
-  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
+  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(
+          mClientInfo.PrincipalInfo(),
+          mContentParentHandle ? mContentParentHandle->GetRemoteType()
+                               : NOT_REMOTE_TYPE))) {
     mService->ForgetFutureSource(mClientInfo.ToIPC());
     return IPC_FAIL(Manager(), "Invalid PrincipalInfo!");
   }

@@ -5,6 +5,7 @@
 #include "ClientValidation.h"
 
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/MozURL.h"
 
@@ -14,10 +15,21 @@ using mozilla::ipc::ContentPrincipalInfo;
 using mozilla::ipc::PrincipalInfo;
 using mozilla::net::MozURL;
 
-bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo) {
+bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
+                                const nsACString& aRemoteType) {
+  auto result = mozilla::ipc::PrincipalInfoToPrincipal(aPrincipalInfo);
+  if (NS_WARN_IF(result.isErr())) {
+    return false;
+  }
+
   
   
-  
+  if (NS_WARN_IF(!ValidatePrincipalCouldPotentiallyBeLoadedBy(
+          result.inspect(), aRemoteType,
+          {ValidatePrincipalOptions::AllowSystem}))) {
+    return false;
+  }
+
   
   
   switch (aPrincipalInfo.type()) {
