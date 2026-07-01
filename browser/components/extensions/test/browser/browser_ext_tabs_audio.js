@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function () {
@@ -208,7 +206,7 @@ add_task(async function () {
     background,
   });
 
-  extension.onMessage("change-tab", (tabId, attr, on) => {
+  extension.onMessage("change-tab", async (tabId, attr, on) => {
     const {
       Management: {
         global: { tabTracker },
@@ -225,12 +223,30 @@ add_task(async function () {
         tab.toggleMuteAudio();
       }
     } else if (attr == "audible") {
-      let browser = tab.linkedBrowser;
-      if (on) {
-        browser.audioPlaybackStarted();
-      } else {
-        browser.audioPlaybackStopped();
-      }
+      
+      
+      
+      
+      await SpecialPowers.spawn(tab.linkedBrowser, [on], shouldPlay => {
+        if (shouldPlay) {
+          const ac = new content.AudioContext();
+          const osc = ac.createOscillator();
+          osc.connect(ac.destination);
+          osc.start();
+          content.__tabsAudioTestCtx = ac;
+          content.__tabsAudioTestOsc = osc;
+        } else {
+          content.__tabsAudioTestOsc?.stop();
+          content.__tabsAudioTestCtx?.close();
+          content.__tabsAudioTestOsc = null;
+          content.__tabsAudioTestCtx = null;
+        }
+      });
+      await BrowserTestUtils.waitForMutationCondition(
+        tab,
+        { attributes: true, attributeFilter: ["soundplaying"] },
+        () => tab.hasAttribute("soundplaying") === on
+      );
     } else if (attr == "duplicate") {
       
       
