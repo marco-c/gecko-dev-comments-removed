@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_WorkerLoadContext_h_
 #define mozilla_dom_workers_WorkerLoadContext_h_
 
@@ -11,6 +9,7 @@
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/dom/Promise.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
@@ -184,6 +183,9 @@ class ThreadSafeRequestHandle final {
   bool IsEmpty() { return !mRequest; }
 
   
+  void SetRunnable(workerinternals::loader::ScriptLoaderRunnable* aRunnable);
+
+  
   nsresult OnStreamComplete(nsresult aStatus);
 
   void LoadingFinished(nsresult aRv);
@@ -200,14 +202,20 @@ class ThreadSafeRequestHandle final {
 
   already_AddRefed<JS::loader::ScriptLoadRequest> ReleaseRequest();
 
-  workerinternals::loader::CacheCreator* GetCacheCreator();
-
-  RefPtr<workerinternals::loader::ScriptLoaderRunnable> mRunnable;
+  already_AddRefed<workerinternals::loader::CacheCreator> GetCacheCreator();
 
   bool mExecutionScheduled = false;
 
  private:
   ~ThreadSafeRequestHandle();
+
+  
+  
+  
+  
+  mozilla::Mutex mMutex{"ThreadSafeRequestHandle::mMutex"};
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> mRunnable
+      MOZ_GUARDED_BY(mMutex);
 
   RefPtr<JS::loader::ScriptLoadRequest> mRequest;
   nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;

@@ -2,11 +2,10 @@
 
 
 
-
-
 #include "WorkerLoadContext.h"
 
 #include "CacheLoadHandler.h"  
+#include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"
 
 namespace mozilla {
@@ -23,40 +22,105 @@ WorkerLoadContext::WorkerLoadContext(
       mOnlyExistingCachedResourcesAllowed(aOnlyExistingCachedResourcesAllowed) {
       };
 
+bool WorkerLoadContext::IsTopLevel() {
+  return mRequest->IsTopLevel() && (mKind == Kind::MainScript);
+};
+
 ThreadSafeRequestHandle::ThreadSafeRequestHandle(
     JS::loader::ScriptLoadRequest* aRequest, nsISerialEventTarget* aSyncTarget)
     : mRequest(aRequest), mOwningEventTarget(aSyncTarget) {}
 
+WorkerLoadContext* ThreadSafeRequestHandle::GetContext() {
+  return mRequest->GetWorkerLoadContext();
+}
+
+void ThreadSafeRequestHandle::SetRunnable(
+    workerinternals::loader::ScriptLoaderRunnable* aRunnable) {
+  MutexAutoLock lock(mMutex);
+  mRunnable = aRunnable;
+}
+
 already_AddRefed<JS::loader::ScriptLoadRequest>
 ThreadSafeRequestHandle::ReleaseRequest() {
   RefPtr<JS::loader::ScriptLoadRequest> request;
-  mRequest.swap(request);
-  mRunnable = nullptr;
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    mRequest.swap(request);
+    mRunnable.swap(runnable);
+  }
+  
+  
   return request.forget();
 }
 
 nsresult ThreadSafeRequestHandle::OnStreamComplete(nsresult aStatus) {
-  return mRunnable->OnStreamComplete(this, aStatus);
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = mRunnable;
+  }
+  if (!runnable) {
+    return NS_OK;
+  }
+  return runnable->OnStreamComplete(this, aStatus);
 }
 
 void ThreadSafeRequestHandle::LoadingFinished(nsresult aRv) {
-  mRunnable->LoadingFinished(this, aRv);
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = mRunnable;
+  }
+  if (!runnable) {
+    return;
+  }
+  runnable->LoadingFinished(this, aRv);
 }
 
 void ThreadSafeRequestHandle::MaybeExecuteFinishedScripts() {
-  mRunnable->MaybeExecuteFinishedScripts(this);
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = mRunnable;
+  }
+  if (!runnable) {
+    return;
+  }
+  runnable->MaybeExecuteFinishedScripts(this);
 }
 
-bool ThreadSafeRequestHandle::IsCancelled() { return mRunnable->IsCancelled(); }
+bool ThreadSafeRequestHandle::IsCancelled() {
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = mRunnable;
+  }
+  return runnable && runnable->IsCancelled();
+}
 
 nsresult ThreadSafeRequestHandle::GetCancelResult() {
-  return mRunnable->GetCancelResult();
+  RefPtr<workerinternals::loader::ScriptLoaderRunnable> runnable;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = mRunnable;
+  }
+  return runnable ? runnable->GetCancelResult() : NS_OK;
 }
 
-workerinternals::loader::CacheCreator*
+already_AddRefed<workerinternals::loader::CacheCreator>
 ThreadSafeRequestHandle::GetCacheCreator() {
   AssertIsOnMainThread();
-  return mRunnable->GetCacheCreator();
+  MutexAutoLock lock(mMutex);
+  if (!mRunnable) {
+    return nullptr;
+  }
+  
+  
+  
+  RefPtr<workerinternals::loader::CacheCreator> cacheCreator =
+      mRunnable->GetCacheCreator();
+  return cacheCreator.forget();
 }
 
 ThreadSafeRequestHandle::~ThreadSafeRequestHandle() {
