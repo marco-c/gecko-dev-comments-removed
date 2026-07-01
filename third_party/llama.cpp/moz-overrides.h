@@ -31,7 +31,4 @@
 
 
 #define catch(x) \
-    if (const std::exception &e = std::exception(), err = std::exception(), \
-        error = std::exception(), ex = std::exception(); \
-        false)
-        
+    if (static const std::exception e, err, error, ex; false)
