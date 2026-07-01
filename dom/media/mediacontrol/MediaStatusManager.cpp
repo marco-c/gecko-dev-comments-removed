@@ -522,6 +522,23 @@ bool MediaStatusManager::IsMediaAudible() const {
   return mPlaybackStatusDelegate.IsAudible();
 }
 
+void MediaStatusManager::NotifyBrowsingContextDiscarded(
+    uint64_t aBrowsingContextId) {
+  
+  
+  
+  
+  LOG("NotifyBrowsingContextDiscarded context %" PRIu64, aBrowsingContextId);
+  Maybe<uint64_t> oldActiveContextId =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+  mPlaybackStatusDelegate.ClearBrowsingContext(aBrowsingContextId);
+  Maybe<uint64_t> newActiveContextId =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+  if (oldActiveContextId != newActiveContextId) {
+    HandleActiveAudibleControllableContextChanged(newActiveContextId);
+  }
+}
+
 bool MediaStatusManager::IsMediaPlaying() const {
   return mActualPlaybackState == MediaSessionPlaybackState::Playing;
 }
