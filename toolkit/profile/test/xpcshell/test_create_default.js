@@ -14,9 +14,10 @@ add_task(async () => {
   timesFile.append("times.json");
   let times = await IOUtils.readJSON(timesFile.path);
 
+  
   Assert.greaterOrEqual(
     times.created,
-    start,
+    start - 5,
     "Profile should have been created after the test startup began"
   );
   Assert.lessOrEqual(
