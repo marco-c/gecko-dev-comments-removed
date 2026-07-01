@@ -11,24 +11,24 @@
 
 
 
-const { readFileSync, rmSync } = require("fs");
+const { readFileSync, readdirSync, rmSync } = require("fs");
 const chalk = require("chalk");
 const path = require("path");
 const prettier = require("prettier");
 const StyleDictionary = require("style-dictionary");
 const config = require("../config/tokens-config.js");
 
-const TEST_BUILD_PATH = "tests/build/design-system/tokens/css/";
+
+
+
+
+const TEST_BUILD_PATH = "tests/build/toolkit/themes/shared/design-system/";
 const PROJECT_ROOT = path.resolve(__dirname, "../../../../../");
 
 function buildFilesWithTestConfig() {
   
   
   let testConfig = Object.assign({}, config);
-  testConfig.source = [
-    path.join(__dirname, "../src/tokens/**/*.json"),
-    path.join(PROJECT_ROOT, "toolkit/content/widgets/**/*.tokens.json"),
-  ];
   testConfig.platforms.css.buildPath = TEST_BUILD_PATH;
   testConfig.platforms.tables.buildPath = TEST_BUILD_PATH;
   testConfig.platforms.figma.buildPath = TEST_BUILD_PATH;
@@ -36,6 +36,22 @@ function buildFilesWithTestConfig() {
   
   
   StyleDictionary.extend(testConfig).buildAllPlatforms();
+}
+
+
+
+
+
+
+
+
+
+function getBuiltCSSFiles() {
+  return config.platforms.css.files.map(({ destination }) => ({
+    name: destination,
+    path: destination,
+    testPath: path.join(TEST_BUILD_PATH, destination),
+  }));
 }
 
 function logErrors(tool, errors) {
@@ -49,41 +65,6 @@ function logStart(name) {
   console.log(`TEST-START | ${name}`);
 }
 
-const FILE_PATHS = {
-  "tokens-brand.css": {
-    path: path.join("dist/tokens-brand.css"),
-    testPath: path.join(TEST_BUILD_PATH, "dist/tokens-brand.css"),
-  },
-  "tokens-platform.css": {
-    path: path.join("dist/tokens-platform.css"),
-    testPath: path.join(TEST_BUILD_PATH, "dist/tokens-platform.css"),
-  },
-  "tokens-shared.css": {
-    path: path.join("dist/tokens-shared.css"),
-    testPath: path.join(TEST_BUILD_PATH, "dist/tokens-shared.css"),
-  },
-  "moz-badge.tokens.css": {
-    path: path.join(
-      PROJECT_ROOT,
-      "toolkit/content/widgets/moz-badge/moz-badge.tokens.css"
-    ),
-    testPath: path.join(
-      TEST_BUILD_PATH,
-      "../../../content/widgets/moz-badge/moz-badge.tokens.css"
-    ),
-  },
-  "moz-toggle.tokens.css": {
-    path: path.join(
-      PROJECT_ROOT,
-      "toolkit/content/widgets/moz-toggle/moz-toggle.tokens.css"
-    ),
-    testPath: path.join(
-      TEST_BUILD_PATH,
-      "../../../content/widgets/moz-toggle/moz-toggle.tokens.css"
-    ),
-  },
-};
-
 const tests = {
   
   async buildCSS() {
@@ -91,10 +72,11 @@ const tests = {
 
     let errors = [];
     let currentCSS = {};
+    let cssFiles = getBuiltCSSFiles();
 
     
-    for (let [fileName, { path }] of Object.entries(FILE_PATHS)) {
-      currentCSS[fileName] = readFileSync(path, "utf8");
+    for (let { name, path: currentPath } of cssFiles) {
+      currentCSS[name] = readFileSync(currentPath, "utf8");
     }
 
     try {
@@ -108,16 +90,22 @@ const tests = {
     
     
     
-    for (let [fileName, { testPath }] of Object.entries(FILE_PATHS)) {
+    for (let { name, testPath } of cssFiles) {
       let builtCSS = readFileSync(testPath, "utf8");
-      let formattedCSS = await prettier.format(builtCSS, {
-        ...prettierConfig,
-        parser: "css",
-        printWidth: 160,
-      });
 
-      if (formattedCSS !== currentCSS[fileName]) {
-        errors.push(`${fileName} is out of date`);
+      
+      
+      
+      let comparison = name.endsWith(".css")
+        ? await prettier.format(builtCSS, {
+            ...prettierConfig,
+            parser: "css",
+            printWidth: 160,
+          })
+        : builtCSS;
+
+      if (comparison !== currentCSS[name]) {
+        errors.push(`${name} is out of date`);
       }
 
       if (builtCSS.includes("/** Unspecified **/")) {
@@ -125,6 +113,32 @@ const tests = {
           "Tokens present in the 'Unspecified' section. Please update TOKEN_SECTIONS in tokens-config.js"
         );
       }
+    }
+
+    
+    
+    
+    let builtComponentCSS = cssFiles.filter(({ name }) =>
+      name.endsWith(".tokens.css")
+    );
+    let componentSourceDirs = new Set(
+      builtComponentCSS.map(({ name }) => path.dirname(name))
+    );
+    let componentTokenCount = [...componentSourceDirs].reduce(
+      (count, dir) =>
+        count +
+        readdirSync(dir).filter(
+          f => f.endsWith(".tokens.json") && !f.endsWith(".nova.tokens.json")
+        ).length,
+      0
+    );
+
+    if (!builtComponentCSS.length) {
+      errors.push("No component CSS files were built");
+    } else if (builtComponentCSS.length !== componentTokenCount) {
+      errors.push(
+        `Built ${builtComponentCSS.length} component CSS files but found ${componentTokenCount} *.tokens.json source files`
+      );
     }
 
     logErrors("build CSS", errors);
