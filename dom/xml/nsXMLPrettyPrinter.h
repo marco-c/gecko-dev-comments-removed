@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsXMLPrettyPrinter_h_
 #define nsXMLPrettyPrinter_h_
 
@@ -30,8 +29,9 @@ class nsXMLPrettyPrinter : public nsStubDocumentObserver {
 
 
 
+
   nsresult PrettyPrint(mozilla::dom::Document* aDocument,
-                       bool* aDidPrettyPrint);
+                       bool aShowXSLTDisabledMessage, bool* aDidPrettyPrint);
 
   
 

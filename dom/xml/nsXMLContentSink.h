@@ -197,6 +197,8 @@ class nsXMLContentSink : public nsContentSink,
   bool mPrettyPrinting : 1 = false;
   
   bool mPreventScriptExecution : 1 = false;
+  
+  bool mXSLTIsDisabled : 1 = false;
 
   nsTArray<StackNode> mContentStack;
 
