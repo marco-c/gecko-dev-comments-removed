@@ -13,14 +13,23 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v154
+- Added [`Autofill.Node.getDatalist`][154.1] to expose predefined values by [`datalist`][154.2] elements for input fields.
+
+[154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
+[154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
+
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
   ([bug 1994860]({{bugzilla}}1994860))
-- Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485 ))
+- Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485))
+- Added  [`clearTrackingDb`][153.4] to ContentBlockingController to support clearing all data stored about blocked trackers in previous browsing sessions. ([bug 2042068]({{bugzilla}}2042068))
+- ⚠️ Removed deprecated [`GeckoRuntimeSettings.getDisableShip`] and [`GeckoRuntimeSettings.Builder.disableShip`].
 
 [153.1]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.SourceType.html
 [153.2]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html#source
 [153.3]: {{javadoc_uri}}/ContentBlockingController.Event.html#REPLACED_FINGERPRINTING_CONTENT
+[153.4]: {{javadoc_uri}}/ContentBlockingController.html#clearTrackingDb()
 
 ## v152
 - Added [`WebExtensionController.INSTALLATION_METHOD_RTAMO`][152.1], which should be used when a `WebExtension` is installed for the RTAMO feature. ([bug 2029607]({{bugzilla}}2029607))
@@ -1984,4 +1993,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 287123386e0959d87b67f37e757401cca32cf78a
+[api-version]: b00f7c23560c58a7684b4cd3ab7d2fdc4a16bde1

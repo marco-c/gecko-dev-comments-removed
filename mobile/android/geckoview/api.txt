@@ -54,7 +54,6 @@ import java.lang.Boolean;
 import java.lang.CharSequence;
 import java.lang.Class;
 import java.lang.Comparable;
-import java.lang.Deprecated;
 import java.lang.Double;
 import java.lang.Exception;
 import java.lang.Float;
@@ -93,7 +92,6 @@ import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ContentBlockingController;
 import org.mozilla.geckoview.CrashHandler;
 import org.mozilla.geckoview.CrashPullController;
-import org.mozilla.geckoview.DeprecationSchedule;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoPreferenceController;
@@ -424,6 +422,7 @@ package org.mozilla.geckoview {
     method @AnyThread @Nullable public String getAttribute(@NonNull String);
     method @AnyThread @NonNull public Map<String,String> getAttributes();
     method @AnyThread @NonNull public Collection<Autofill.Node> getChildren();
+    method @AnyThread @Nullable public String[] getDatalist();
     method @AnyThread @NonNull public String getDomain();
     method @AnyThread public boolean getEnabled();
     method @AnyThread public boolean getFocusable();
@@ -734,6 +733,7 @@ package org.mozilla.geckoview {
 
   @AnyThread public class ContentBlockingController {
     ctor public ContentBlockingController();
+    method @HandlerThread @NonNull public GeckoResult<Void> clearTrackingDb();
     method @NonNull @UiThread public GeckoResult<List<ContentBlockingController.LogEntry>> getLog(@NonNull GeckoSession);
     method @HandlerThread @NonNull public GeckoResult<Long> getTrackingDbEarliestRecordedDate();
     method @HandlerThread @NonNull public GeckoResult<List<ContentBlockingController.TrackingDbEvent>> getTrackingDbEventsByDateRange(long, long);
@@ -1096,7 +1096,6 @@ package org.mozilla.geckoview {
     method @Nullable public Class<? extends android.app.Service> getCrashHandler();
     method @NonNull public String getCrliteChannel();
     method @Nullable public String getDefaultRecursiveResolverUri();
-    method @Deprecated @DeprecationSchedule(id="disable-ship-removal",version=153) @Nullable public Boolean getDisableShip();
     method @Nullable public Float getDisplayDensityOverride();
     method @Nullable public Integer getDisplayDpiOverride();
     method public boolean getDohAutoselectEnabled();
@@ -1238,7 +1237,6 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings.Builder crashPullNeverShowAgain(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder debugLogging(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder defaultRecursiveResolverUri(@NonNull String);
-    method @Deprecated @DeprecationSchedule(id="disable-ship-removal",version=153) @NonNull public GeckoRuntimeSettings.Builder disableShip(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder displayDensityOverride(float);
     method @NonNull public GeckoRuntimeSettings.Builder displayDpiOverride(int);
     method @NonNull public GeckoRuntimeSettings.Builder doubleTapZoomingEnabled(boolean);
