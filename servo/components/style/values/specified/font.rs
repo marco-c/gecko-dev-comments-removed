@@ -1019,11 +1019,35 @@ impl FontSize {
                     }
                 },
             };
+        let size = NonNegative(Self::quantize_font_size(size));
         computed::FontSize {
-            computed_size: NonNegative(size),
-            used_size: NonNegative(size),
+            computed_size: size,
+            used_size: size,
             keyword_info: info,
         }
+    }
+
+    
+    
+    #[inline]
+    pub fn quantize_font_size(size: CSSPixelLength) -> CSSPixelLength {
+        
+        
+        
+        
+        
+        
+        
+        size_of_test!(CSSPixelLength, std::mem::size_of::<f32>());
+        const BITS_TO_DROP: u32 = 14; 
+        const SCALE_PLUS_ONE: f32 = ((1 << BITS_TO_DROP) + 1) as f32;
+        const LIMIT: f32 = f32::MAX / SCALE_PLUS_ONE;
+        if size.px() >= LIMIT {
+            return CSSPixelLength::new(LIMIT);
+        }
+        let d = size.px() * SCALE_PLUS_ONE;
+        let t = d - size.px();
+        CSSPixelLength::new(d - t)
     }
 }
 
