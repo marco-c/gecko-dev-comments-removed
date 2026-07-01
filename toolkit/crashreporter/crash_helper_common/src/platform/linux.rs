@@ -2,6 +2,7 @@
 
 
 
+use crate::platform::AsProcessReaderHandle;
 use nix::{
     errno::Errno,
     fcntl::{
@@ -25,6 +26,12 @@ pub struct ProcessHandle(pub crate::Pid);
 impl Clone for ProcessHandle {
     fn clone(&self) -> Self {
         ProcessHandle(self.0)
+    }
+}
+
+impl AsProcessReaderHandle for ProcessHandle {
+    fn as_handle(&self) -> process_reader::ProcessHandle {
+        self.0 as process_reader::ProcessHandle
     }
 }
 
