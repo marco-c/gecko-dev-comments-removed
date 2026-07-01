@@ -249,6 +249,7 @@ var SidebarController = {
           menuL10nId: "menu-view-open-tabs",
           revampL10nId: "sidebar-menu-open-tabs-label",
           iconUrl: "chrome://browser/content/firefoxview/view-opentabs.svg",
+          gleanClickEvent: Glean.sidebar.openTabsIconClick,
         }
       );
     }
@@ -457,6 +458,12 @@ var SidebarController = {
     this._pinnedTabsSplitter = document.getElementById(
       "vertical-pinned-tabs-splitter"
     );
+    if (!this._splitterAriaUpdateTask) {
+      this._splitterAriaUpdateTask = new DeferredTask(
+        () => this._updateSplitterAriaAttributes(),
+        0
+      );
+    }
     this._reversePositionButton = document.getElementById(
       "sidebar-reverse-position"
     );
@@ -638,6 +645,8 @@ var SidebarController = {
       this.sidebarMain.remove();
     }
     this._splitter.removeEventListener("command", this._browserResizeObserver);
+    this._splitterAriaUpdateTask.finalize();
+    this._splitterAriaUpdateTask = null;
     this._disableLauncherDragging();
     this._disablePinnedTabsDragging();
   },
@@ -1071,6 +1080,31 @@ var SidebarController = {
   _recordBrowserSize() {
     this._browserWidth = this.browser.getBoundingClientRect().width;
     Glean.sidebar.width.set(this._browserWidth);
+    this._splitterAriaUpdateTask.arm();
+  },
+
+  
+
+
+
+  _updateSplitterAriaAttributes() {
+    const splitter = this._splitter;
+    if (!this._state.panelOpen) {
+      splitter.removeAttribute("aria-valuemin");
+      splitter.removeAttribute("aria-valuemax");
+      splitter.removeAttribute("aria-valuenow");
+      return;
+    }
+    const style = window.getComputedStyle(this._box);
+    const minWidth = parseFloat(style.minWidth);
+    const maxWidth = parseFloat(style.maxWidth);
+    const currentWidth =
+      this._state.panelWidth ??
+      window.windowUtils.getBoundsWithoutFlushing(this._box).width;
+
+    splitter.setAttribute("aria-valuemin", Math.round(minWidth));
+    splitter.setAttribute("aria-valuemax", Math.round(maxWidth));
+    splitter.setAttribute("aria-valuenow", Math.round(currentWidth));
   },
 
   
@@ -2262,6 +2296,7 @@ var SidebarController = {
     this._box.removeAttribute("checked");
     this._box.removeAttribute("context");
     this._box.hidden = this._splitter.hidden = true;
+    this._splitterAriaUpdateTask.arm();
 
     let selBrowser = gBrowser.selectedBrowser;
     selBrowser.focus();
