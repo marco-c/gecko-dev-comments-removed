@@ -1384,8 +1384,7 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   EnumSet<ValidatePrincipalOptions> validationOptions = {};
   
   
-  
-  if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome") ||
+  if (docURI->SchemeIs("chrome") ||
       (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) && parentWgp &&
        parentWgp->Manager() == this &&
        parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
