@@ -442,9 +442,6 @@ class nsDocShellLoadState final {
   
   void SetSourceElement(mozilla::dom::Element* aElement);
   already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
-  bool HasSourceElement() const {
-    return mSourceElement && mSourceElement->IsAlive();
-  }
 
   
   nsIStructuredCloneContainer* GetNavigationAPIState() const;
@@ -489,13 +486,6 @@ class nsDocShellLoadState final {
 
   bool IsResumingInterceptedNavigation() const {
     return mIsResumingInterceptedNavigation;
-  }
-
-  bool HasComputedNamedTargetBrowsingContext() const {
-    return mHasComputedNamedTargetBrowsingContext;
-  }
-  void SetHasComputedNamedTargetBrowsingContext(bool aValue) {
-    mHasComputedNamedTargetBrowsingContext = aValue;
   }
 
  protected:
@@ -712,9 +702,6 @@ class nsDocShellLoadState final {
   
   
   bool mIsFromProcessingFrameAttributes;
-
-  
-  bool mHasComputedNamedTargetBrowsingContext = false;
 
   
   
