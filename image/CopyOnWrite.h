@@ -117,19 +117,20 @@ class CopyOnWrite final {
   typedef detail::CopyOnWriteValue<T> CopyOnWriteValue;
 
  public:
-  explicit CopyOnWrite(T* aValue) : mValue(new CopyOnWriteValue(aValue)) {}
+  explicit CopyOnWrite(T* aValue)
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(already_AddRefed<T>& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(already_AddRefed<T> aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(const RefPtr<T>& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(RefPtr<T>&& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   
   bool CanRead() const { return !mValue->HasWriter(); }
@@ -198,7 +199,7 @@ class CopyOnWrite final {
 
     
     if (mValue->HasReaders()) {
-      mValue = new CopyOnWriteValue(new T(*mValue->get()));
+      mValue = MakeRefPtr<CopyOnWriteValue>(MakeRefPtr<T>(*mValue->get()));
     }
 
     
