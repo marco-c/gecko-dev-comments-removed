@@ -38,17 +38,17 @@ MATCHER(HasConsistentVideoDelayTimings, "") {
   bool p3 = arg.render_delay >= TimeDelta::Zero();
   bool p4 = arg.min_playout_delay >= TimeDelta::Zero();
   bool p5 = arg.max_playout_delay >= TimeDelta::Zero();
-  bool p6 = arg.target_delay >= TimeDelta::Zero();
+  bool p6 = arg.stats_target_delay >= TimeDelta::Zero();
   bool p7 = arg.current_delay >= TimeDelta::Zero();
   *result_listener << "\np: " << p1 << p2 << p3 << p4 << p5 << p6 << p7;
   bool p = p1 && p2 && p3 && p4 && p5 && p6 && p7;
 
   
-  bool m1 = arg.minimum_delay <= arg.target_delay;
+  bool m1 = arg.minimum_delay <= arg.stats_target_delay;
   if (!m1) {
     *result_listener << "\nminimum_delay: " << ToString(arg.minimum_delay)
-                     << ", " << "target_delay: " << ToString(arg.target_delay)
-                     << "\n";
+                     << ", " << "stats_target_delay: "
+                     << ToString(arg.stats_target_delay) << "\n";
   }
   bool m2 = arg.minimum_delay <= arg.current_delay;
   if (!m2) {
@@ -56,9 +56,10 @@ MATCHER(HasConsistentVideoDelayTimings, "") {
                      << ", "
                      << "current_delay: " << ToString(arg.current_delay);
   }
-  bool m3 = arg.target_delay >= arg.min_playout_delay;
+  bool m3 = arg.stats_target_delay >= arg.min_playout_delay;
   if (!m3) {
-    *result_listener << "\ntarget_delay: " << ToString(arg.target_delay) << ", "
+    *result_listener << "\nstats_target_delay: "
+                     << ToString(arg.stats_target_delay) << ", "
                      << "min_playout_delay: " << ToString(arg.min_playout_delay)
                      << "\n";
   }
@@ -199,7 +200,7 @@ TEST(VCMTimingTest, InitialVideoDelayTimings) {
   EXPECT_EQ(timings.render_delay,
             VCMTiming::VideoDelayTimings::kDefaultRenderDelay);
   EXPECT_EQ(timings.min_playout_delay, TimeDelta::Zero());
-  EXPECT_EQ(timings.target_delay, TimeDelta::Zero());
+  EXPECT_EQ(timings.stats_target_delay, TimeDelta::Zero());
   EXPECT_EQ(timings.current_delay, TimeDelta::Zero());
   EXPECT_THAT(timings, HasConsistentVideoDelayTimings());
 }
@@ -238,7 +239,7 @@ TEST(VCMTimingTest, GetTimings) {
   EXPECT_EQ(timings.render_delay, render_delay);
   EXPECT_EQ(timings.min_playout_delay, min_playout_delay);
   EXPECT_EQ(timings.max_playout_delay, max_playout_delay);
-  EXPECT_EQ(timings.target_delay, minimum_delay);
+  EXPECT_EQ(timings.stats_target_delay, minimum_delay);
   EXPECT_EQ(timings.current_delay, minimum_delay);
   EXPECT_THAT(timings, HasConsistentVideoDelayTimings());
 }
@@ -274,7 +275,7 @@ TEST(VCMTimingTest, Reset) {
             VCMTiming::VideoDelayTimings::kDefaultRenderDelay);
   EXPECT_EQ(timings.min_playout_delay, TimeDelta::Zero());
   EXPECT_EQ(timings.max_playout_delay, max_playout_delay);
-  EXPECT_EQ(timings.target_delay, TimeDelta::Zero());
+  EXPECT_EQ(timings.stats_target_delay, TimeDelta::Zero());
   EXPECT_EQ(timings.current_delay, TimeDelta::Zero());
   EXPECT_THAT(timings, HasConsistentVideoDelayTimings());
 }

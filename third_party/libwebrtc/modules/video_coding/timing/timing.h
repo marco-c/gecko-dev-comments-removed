@@ -59,7 +59,7 @@ class VCMTiming {
     
     TimeDelta max_playout_delay = TimeDelta::Seconds(10);
     
-    TimeDelta target_delay = TimeDelta::Zero();
+    TimeDelta stats_target_delay = TimeDelta::Zero();
     
     TimeDelta current_delay = TimeDelta::Zero();
   };
