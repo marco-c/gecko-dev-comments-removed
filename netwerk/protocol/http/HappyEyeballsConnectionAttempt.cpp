@@ -503,6 +503,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         LOG(("connect to:[%s] ech_config_len=%zu",
              res.unwrap().ToString().get(), echConfig.Length()));
         bool isEchRetry = event.attempt_connection.is_ech_retry;
+
         if (event.attempt_connection.http_version ==
             happy_eyeballs::ConnectionAttemptHttpVersions::H3) {
           EstablishUDPConnection(res.unwrap(), event.attempt_connection.port,
@@ -926,13 +927,6 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
     bool aIsEchRetry) {
   
   
-  if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
-    ProcessConnectionResult(aAddr, lna, aId);
-    return NS_OK;
-  }
-
-  
-  
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H2OrH1);
   if (!aEchConfig.IsEmpty()) {
@@ -979,12 +973,6 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
     NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
     bool aIsEchRetry) {
-  
-  if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
-    ProcessConnectionResult(aAddr, lna, aId);
-    return NS_OK;
-  }
-
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H3);
   if (!aEchConfig.IsEmpty()) {

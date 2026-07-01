@@ -144,12 +144,13 @@ function waitForFetchComplete(port) {
 
 let gServer;
 
-const kExpectedConnsBeforePromptResponse = Services.prefs.getBoolPref(
-  "network.http.happy_eyeballs_enabled",
-  false
-)
-  ? 0
-  : 1;
+
+
+
+
+
+
+const kExpectedConnsBeforePromptResponse = 1;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
