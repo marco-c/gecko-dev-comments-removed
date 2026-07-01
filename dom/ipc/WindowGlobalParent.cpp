@@ -9,6 +9,7 @@
 #include "MMPrinter.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -2036,6 +2037,21 @@ IPCResult WindowGlobalParent::RecvSetCookies(
       LoneManagedOrNullAsserts(neckoParent->ManagedPCookieServiceParent());
   NS_ENSURE_TRUE(csParent, IPC_OK());
   auto* cs = static_cast<net::CookieServiceParent*>(csParent);
+
+  if (!aHost) {
+    return IPC_FAIL(this, "aHost must not be null");
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> principal =
+      BasePrincipal::CreateContentPrincipal(aHost, aOriginAttributes);
+  if (!cs->ContentProcessHasCookie(aBaseDomain, aOriginAttributes) &&
+      !contentParent->ValidatePrincipal(principal)) {
+    return IPC_FAIL(this,
+                    "Content process not authorized for this cookie domain");
+  }
 
   return cs->SetCookies(aBaseDomain, aOriginAttributes, aHost, aIsThirdParty,
                         aCookies, GetBrowsingContext());
