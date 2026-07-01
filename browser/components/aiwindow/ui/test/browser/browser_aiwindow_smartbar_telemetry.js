@@ -391,7 +391,7 @@ add_task(
     
     await SpecialPowers.spawn(
       browser,
-      [UrlbarUtils.RESULT_TYPE.SEARCH],
+      [UrlbarShared.RESULT_TYPE.SEARCH],
       async searchResultType => {
         const smartbar = content.document
           .querySelector("ai-window")

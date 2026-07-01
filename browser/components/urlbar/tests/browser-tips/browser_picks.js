@@ -67,7 +67,10 @@ add_task(async function mouse_insideTipButNotOnButtons() {
     row._buttons.get("0"),
     "The main button element should be selected initially"
   );
+  
+  AccessibilityUtils.setEnv({ labelRule: false });
   EventUtils.synthesizeMouseAtCenter(row, {});
+  AccessibilityUtils.resetEnv();
   
   await new Promise(r => setTimeout(r, 500));
   Assert.ok(gURLBar.view.isOpen, "The view should remain open");
@@ -153,7 +156,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
 
 function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     heuristic,
     payload: {

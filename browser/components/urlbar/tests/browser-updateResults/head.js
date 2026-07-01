@@ -73,7 +73,7 @@ class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
 
 function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     suggestedIndex,
     resultSpan,
@@ -118,7 +118,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
   let query = "test";
   let results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       heuristic: true,
       payload: {
@@ -132,10 +132,10 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
     for (let i = 0; i < specCount; i++) {
       let str = `${query} ${results.length}`;
       switch (specType) {
-        case UrlbarUtils.RESULT_TYPE.SEARCH:
+        case UrlbarShared.RESULT_TYPE.SEARCH:
           results.push(
             new UrlbarResult({
-              type: UrlbarUtils.RESULT_TYPE.SEARCH,
+              type: UrlbarShared.RESULT_TYPE.SEARCH,
               source: UrlbarUtils.RESULT_SOURCE.SEARCH,
               payload: {
                 query,
@@ -146,10 +146,10 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
             })
           );
           break;
-        case UrlbarUtils.RESULT_TYPE.URL:
+        case UrlbarShared.RESULT_TYPE.URL:
           results.push(
             new UrlbarResult({
-              type: UrlbarUtils.RESULT_TYPE.URL,
+              type: UrlbarShared.RESULT_TYPE.URL,
               source: UrlbarUtils.RESULT_SOURCE.HISTORY,
               payload: {
                 url: "http://example.com/" + i,

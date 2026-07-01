@@ -17,7 +17,7 @@ add_task(async function slowHeuristicSelected() {
   
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
@@ -53,12 +53,12 @@ add_task(async function slowHeuristicSelected() {
 
   
   let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(actualHeuristic.type, UrlbarShared.RESULT_TYPE.SEARCH);
   Assert.equal(UrlbarTestUtils.getSelectedElementIndex(win), 0);
 
   
   let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
-  Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.equal(actualNonHeuristic.type, UrlbarShared.RESULT_TYPE.TIP);
 
   await UrlbarTestUtils.promisePopupClose(win);
   providersManager.unregisterProvider(heuristicProvider);
@@ -75,7 +75,7 @@ add_task(async function oneOffRemainsSelected() {
   
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
@@ -121,11 +121,11 @@ add_task(async function oneOffRemainsSelected() {
 
   
   let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(actualHeuristic.type, UrlbarShared.RESULT_TYPE.SEARCH);
 
   
   let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
-  Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.equal(actualNonHeuristic.type, UrlbarShared.RESULT_TYPE.TIP);
 
   
   Assert.equal(UrlbarTestUtils.getSelectedElement(win), null);
@@ -145,7 +145,7 @@ add_task(async function oneOffRemainsSelected() {
 
 function makeTipResult({ suggestedIndex }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex,
     payload: {

@@ -130,6 +130,11 @@ async function checkBestMatchRow({ result, hasHelpUrl = false }) {
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   let { row } = details.element;
 
+  Assert.ok(
+    row.hasAttribute("is-top-pick"),
+    "Row should have is-top-pick attribute"
+  );
+
   let favicon = row._elements.get("favicon");
   Assert.ok(favicon, "Row has a favicon");
 
@@ -179,7 +184,7 @@ async function withProvider(result, callback) {
 
 function makeBestMatchResult(payloadExtra = {}) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     payload: {

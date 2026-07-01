@@ -141,7 +141,7 @@ async function openAddressBarAndCheckResults(
     if (!expectedTabSwitchUserContextIds.size) {
       
       Assert.notEqual(
-        UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        UrlbarShared.RESULT_TYPE.TAB_SWITCH,
         result.type,
         "Should not be a tab switch result."
       );
@@ -150,7 +150,7 @@ async function openAddressBarAndCheckResults(
 
     
     Assert.equal(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       result.type,
       "Should be a tab switch result."
     );
