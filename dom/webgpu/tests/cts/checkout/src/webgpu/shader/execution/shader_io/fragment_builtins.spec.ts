@@ -512,9 +512,17 @@ function computeFragmentFrontFacing({ frontFacing }: FragData) {
 
 
 
-function computeSampleMask({ sampleMask }: FragData) {
+function computeFullSampleCoverageMask({ sampleMask }: FragData) {
   return [sampleMask, 0, 0, 0];
 }
+
+
+
+
+function computeSingleSampleMask({ sampleIndex }: FragData) {
+  return [1 << sampleIndex, 0, 0, 0];
+}
+
 
 
 
@@ -700,6 +708,7 @@ function checkSampleRectsApproximatelyEqual({
   actual,
   expected,
   maxDiffULPsForFloatFormat,
+  alternativeExpected,
 }: {
   width: number;
   height: number;
@@ -707,6 +716,7 @@ function checkSampleRectsApproximatelyEqual({
   actual: Float32Array;
   expected: Float32Array;
   maxDiffULPsForFloatFormat: number;
+  alternativeExpected?: Float32Array;
 }) {
   const subrectOrigin = [0, 0, 0];
   const subrectSize = [width * sampleCount, height, 1];
@@ -728,12 +738,19 @@ function checkSampleRectsApproximatelyEqual({
     new Uint8Array(expected.buffer),
     areaDesc
   );
+  const altExpTexelView = alternativeExpected
+    ? TexelView.fromTextureDataByReference(
+        format,
+        new Uint8Array((alternativeExpected ?? new Float32Array()).buffer),
+        areaDesc
+      )
+    : undefined;
 
   const failedPixelsMessage = findFailedPixels(
     format,
     { x: 0, y: 0, z: 0 },
     { width: width * sampleCount, height, depthOrArrayLayers: 1 },
-    { actTexelView, expTexelView },
+    { actTexelView, expTexelView, altExpTexelView },
     { maxDiffULPsForFloatFormat }
   );
 
@@ -742,6 +759,7 @@ function checkSampleRectsApproximatelyEqual({
     return new ErrorWithExtra(msg, () => ({
       expTexelView,
       actTexelView,
+      altExpTexelView,
     }));
   }
 
@@ -1300,10 +1318,14 @@ g.test('inputs,sample_mask')
     Test fragment shader builtin(sample_mask) values.
 
     Draws various triangles that should trigger different sample_mask values.
-    Checks that sample_mask matches what's expected. Note: the triangles
-    are selected so they do not intersect sample points as we don't want
-    to test precision issues on whether or not a sample point is inside
-    or outside the triangle when right on the edge.
+    Checks that sample_mask matches what's expected. The expected sample mask
+    is either:
+    - the full coverage mask for the fragment, or
+    - only has 1 bit at the current sample index.
+
+    Note: the triangles are selected so they do not intersect sample points
+    as we don't want to test precision issues on whether or not a sample point
+    is inside or outside the triangle when right on the edge.
 
     Example: x=-1, y=2, it draws the following triangle
 
@@ -1423,6 +1445,7 @@ g.test('inputs,sample_mask')
       [ x + 0.2,  y, 0, 1],
     ];
 
+    
     const interStagePoints = [
       [13, 14, 15, 16],
       [17, 18, 19, 20],
@@ -1444,16 +1467,27 @@ g.test('inputs,sample_mask')
       outputCode: 'vec4f(f32(fin.sample_mask), 0, 0, 0)',
     });
 
-    const expected = generateFragmentInputs({
+    const expectedFullCoverageMask = generateFragmentInputs({
       width,
       height,
       nearFar,
       sampleCount,
       clipSpacePoints,
-      interpolateFn: computeSampleMask,
+      interpolateFn: computeFullSampleCoverageMask,
     });
 
-    showExpected(t, width, height, sampleCount, expected);
+    showExpected(t, width, height, sampleCount, expectedFullCoverageMask);
+
+    const expectedSingleSampleMask = generateFragmentInputs({
+      width,
+      height,
+      nearFar,
+      sampleCount,
+      clipSpacePoints,
+      interpolateFn: computeSingleSampleMask,
+    });
+
+    showExpected(t, width, height, sampleCount, expectedSingleSampleMask);
 
     t.expectOK(
       checkSampleRectsApproximatelyEqual({
@@ -1461,7 +1495,8 @@ g.test('inputs,sample_mask')
         height,
         sampleCount,
         actual,
-        expected,
+        expected: expectedFullCoverageMask,
+        alternativeExpected: expectedSingleSampleMask,
         maxDiffULPsForFloatFormat: 0,
       })
     );

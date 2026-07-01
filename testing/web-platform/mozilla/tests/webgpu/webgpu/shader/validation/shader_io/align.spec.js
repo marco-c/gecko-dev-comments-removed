@@ -15,8 +15,6 @@ const kTests = {
     src: '@align(1)',
     pass: false
     
-    
-    
   },
   four_a: {
     src: '@align(4)',
@@ -49,9 +47,6 @@ const kTests = {
   const_expr: {
     src: '@align(i_val + 4 - 6)',
     pass: false
-    
-    
-    
     
   },
   const_expr_2: {
@@ -148,14 +143,7 @@ const f_val: f32 = 4.2;
 struct B {
   ${src} a: i32,
 }
-
-@group(0) @binding(0)
-var<uniform> uniform_buffer: B;
-
-@fragment
-fn main() -> @location(0) vec4<f32> {
-  return vec4<f32>(.4, .2, .3, .1);
-}`;
+`;
   t.expectCompileResult(kTests[t.params.align].pass, code);
 });
 
@@ -163,9 +151,19 @@ g.test('required_alignment').
 desc('Test that the align with an invalid size is an error').
 params((u) =>
 u.
-combine('address_space', ['storage', 'uniform']).
+combine('decl', ['var', 'const', 'let']).
+combine('address_space', [
+'storage',
+'uniform',
+'workgroup',
+'function',
+'private',
+'immediate']
+).
 combine('align', [1, 2, 'alignment', 32]).
+beginSubcases().
 combine('type', [
+
 { name: 'i32', storage: 4, uniform: 4 },
 { name: 'u32', storage: 4, uniform: 4 },
 { name: 'f32', storage: 4, uniform: 4 },
@@ -197,20 +195,43 @@ combine('type', [
 { name: 'mat4x4<f16>', storage: 8, uniform: 8 },
 { name: 'array<vec2<i32>, 2>', storage: 8, uniform: 16 },
 { name: 'array<vec4<i32>, 2>', storage: 16, uniform: 16 },
-{ name: 'S', storage: 8, uniform: 16 }]
+{ name: 'S', storage: 8, uniform: 16 },
+{ name: 'array<u32>', storage: 4, uniform: 4 }]
 ).
-beginSubcases()
+filter((t) => {
+  if (t.decl === 'let' && t.address_space !== 'function') {
+    return false;
+  }
+  if (
+  t.decl === 'const' &&
+  !(t.address_space === 'private' || t.address_space === 'function'))
+  {
+    
+    return false;
+  }
+  if (t.type.name.startsWith('atomic')) {
+    if (t.address_space !== 'storage' && t.address_space !== 'workgroup') {
+      return false;
+    }
+    if (t.decl !== 'var') {
+      return false;
+    }
+  }
+  if (t.type.name === 'array<u32>' && t.address_space !== 'storage') {
+    return false;
+  }
+  return true;
+})
 ).
 fn((t) => {
-  
-  
-  const has_ubo_std_layout = t.hasLanguageFeature('uniform_buffer_standard_layout');
+  t.skipIf(
+    t.params.address_space === 'immediate' && !t.hasLanguageFeature('immediate_address_space'),
+    'Immediate address space not supported'
+  );
 
   
   
-  if (t.params.address_space === 'uniform' && t.params.type.name.startsWith('atomic')) {
-    t.skip('No atomics in uniform address space');
-  }
+  const has_ubo_std_layout = t.hasLanguageFeature('uniform_buffer_standard_layout');
 
   let code = '';
   if (t.params.type.name.includes('f16')) {
@@ -222,7 +243,7 @@ fn((t) => {
     code += `struct S {
         a: mat4x2<f32>,          // Align 8
         b: array<vec${
-    t.params.address_space === 'storage' || has_ubo_std_layout ? 2 : 4
+    t.params.address_space !== 'uniform' || has_ubo_std_layout ? 2 : 4
     }<i32>, 2>,  // Storage align 8, uniform 16
       }
       `;
@@ -230,28 +251,44 @@ fn((t) => {
 
   
   const min_align =
-  t.params.address_space === 'storage' || has_ubo_std_layout ?
+  t.params.address_space !== 'uniform' || has_ubo_std_layout ?
   `${t.params.type.storage}` :
   `${t.params.type.uniform}`;
   const align = t.params.align === 'alignment' ? min_align : t.params.align;
 
-  let address_space = 'uniform';
+  let address_space = t.params.address_space;
   if (t.params.address_space === 'storage') {
     
     address_space = 'storage, read_write';
   }
+  let decl = t.params.decl;
+  if (decl === 'var') {
+    decl = `var<${address_space}>`;
+  }
+  const init = t.params.decl === 'let' || t.params.decl === 'const' ? ' = MyStruct()' : '';
+
+  const module_decl =
+  t.params.address_space === 'function' ?
+  '' :
+  `${
+  t.params.decl === 'var' && (
+  t.params.address_space === 'uniform' || t.params.address_space === 'storage') ?
+  '@group(0) @binding(0)' :
+  ''
+  }
+    ${decl} a : MyStruct${init};`;
+
+  const func_decl = t.params.address_space === 'function' ? `${decl} a : MyStruct${init};` : '';
 
   code += `struct MyStruct {
       @align(${align}) a: ${t.params.type.name},
     }
 
-    @group(0) @binding(0)
-    var<${address_space}> a : MyStruct;`;
+    ${module_decl}`;
 
   code += `
-    @fragment
-    fn main() -> @location(0) vec4<f32> {
-      return vec4<f32>(.4, .2, .3, .1);
+    fn foo() {
+      ${func_decl}
     }`;
 
   let fails = align < min_align;
