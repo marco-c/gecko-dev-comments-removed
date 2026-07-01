@@ -365,21 +365,24 @@ void FontFaceSetImpl::UpdateUserFontEntry(gfxUserFontEntry* aEntry,
                                           gfxUserFontAttributes&& aAttr) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool resetFamilyName = !aEntry->mFamilyName.IsEmpty() &&
-                         aEntry->mFamilyName != aAttr.mFamilyName;
-  
-  
-  aEntry->UpdateAttributes(std::move(aAttr));
-  
-  
-  
+  nsCString familyName = aEntry->FamilyName();
+  bool resetFamilyName =
+      !familyName.IsEmpty() && familyName != aAttr.mFamilyName;
   if (resetFamilyName) {
-    RefPtr<gfxUserFontFamily> family = LookupFamily(aEntry->mFamilyName);
+    
+    
+    
+    AutoWriteLock lock(aEntry->mLock);
+    RefPtr<gfxUserFontFamily> family = LookupFamily(familyName);
     if (family) {
       family->RemoveFontEntry(aEntry);
     }
     aEntry->mFamilyName.Truncate(0);
   }
+
+  
+  
+  aEntry->UpdateAttributes(std::move(aAttr));
 }
 
 class FontFaceSetImpl::UpdateUserFontEntryRunnable final
