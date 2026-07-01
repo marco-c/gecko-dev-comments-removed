@@ -9145,7 +9145,10 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
 
     
-    let targetPosition = topSites.length - 1;
+    
+    
+    
+    let targetPosition = 0;
     for (let i = topSites.length - 1; i >= 0; i--) {
       if (topSites[i] && !topSites[i].isAddButton) {
         targetPosition = i + 1;
