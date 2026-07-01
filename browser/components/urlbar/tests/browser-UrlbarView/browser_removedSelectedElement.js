@@ -13,7 +13,7 @@ add_task(async function () {
   
   let result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: true,
     
     

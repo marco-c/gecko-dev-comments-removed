@@ -79,7 +79,7 @@ add_task(async function searchRestriction() {
   ok(gURLBar.hasAttribute("focused"), "url bar is focused");
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: UrlbarSearchUtils.getDefaultEngine().name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     
     entry: "other",
   });
@@ -95,7 +95,7 @@ add_task(async function historyRestriction() {
   );
   ok(gURLBar.hasAttribute("focused"), "url bar is focused");
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     entry: "other",
   });
   assertOneOffButtonsVisible(true);
@@ -114,7 +114,7 @@ add_task(async function historyRestrictionWithString() {
   );
   ok(gURLBar.hasAttribute("focused"), "url bar is focused");
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     entry: "other",
   });
   

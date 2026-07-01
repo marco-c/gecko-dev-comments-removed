@@ -57,7 +57,7 @@ add_task(async function basic() {
 
     
     await UrlbarTestUtils.enterSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
 
     Assert.equal(
@@ -109,7 +109,7 @@ add_task(async function autoOpen() {
 
     
     await UrlbarTestUtils.enterSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
     Assert.equal(
       UrlbarTestUtils.getResultCount(win),
@@ -124,7 +124,7 @@ add_task(async function autoOpen() {
     
     win.gURLBar.blur();
     await UrlbarTestUtils.assertSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       entry: "oneoff",
     });
 
@@ -180,7 +180,7 @@ add_task(async function backspaceRemainOpen() {
 
     
     await UrlbarTestUtils.enterSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
 
     
@@ -201,7 +201,7 @@ add_task(async function backspaceRemainOpen() {
     await searchPromise;
     Assert.ok(UrlbarTestUtils.isPopupOpen(win), "View remains open");
     await UrlbarTestUtils.assertSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       entry: "oneoff",
     });
     Assert.equal(

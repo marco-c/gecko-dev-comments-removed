@@ -51,7 +51,7 @@ add_task(async function searchHistoryFromHistoryPanel() {
   
   is(
     gURLBar.searchMode?.source,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    UrlbarShared.RESULT_SOURCE.HISTORY,
     "Addressbar in correct mode."
   );
   gURLBar.searchMode = null;
@@ -91,7 +91,7 @@ add_task(async function searchHistoryFromAppMenuHistoryButton() {
   
   is(
     gURLBar.searchMode?.source,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    UrlbarShared.RESULT_SOURCE.HISTORY,
     "Addressbar in correct mode."
   );
 });

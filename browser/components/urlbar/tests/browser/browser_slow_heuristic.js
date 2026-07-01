@@ -19,7 +19,7 @@ add_task(async function test_slow_heuristic() {
   
   let heuristicResult = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: true,
     payload: { url: "https://example.com/" },
   });
@@ -61,7 +61,7 @@ add_task(async function test_fast_heuristic() {
   
   let heuristicResult = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: true,
     payload: { url: "https://example.com/" },
   });

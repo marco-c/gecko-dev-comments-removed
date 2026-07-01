@@ -436,8 +436,8 @@ async function doTest({
 }) {
   
   let resultSourceByType = {
-    history: UrlbarUtils.RESULT_SOURCE.HISTORY,
-    bookmark: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    history: UrlbarShared.RESULT_SOURCE.HISTORY,
+    bookmark: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   };
 
   
