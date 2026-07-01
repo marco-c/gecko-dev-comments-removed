@@ -144,6 +144,29 @@ class ContentChild final : public PContentChild,
 
   bool IsShuttingDown() const;
 
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool IsUntrusted();
+
+  
+  static constexpr nsLiteralCString kBecameUntrustedTopic =
+      "content-process-became-untrusted"_ns;
+
+  
+
+
+
+  static void MaybeBecomeUntrusted();
+
   ipc::SharedMap* SharedData() { return mSharedData; };
 
   static void AppendProcessId(nsACString& aName);
