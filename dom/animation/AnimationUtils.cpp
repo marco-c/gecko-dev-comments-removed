@@ -150,8 +150,20 @@ AnimationUtils::GetElementPseudoPair(const Element* aElementOrPseudo) {
   return {aElementOrPseudo, PseudoStyleRequest::NotPseudo()};
 }
 
+static bool IsPercentUnit(const CSSNumericValue& aValue) {
+  
+  
+  if (RefPtr<CSSUnitValue> asPercent =
+          aValue.To("percent"_ns, IgnoreErrors())) {
+    return true;
+  }
+  return false;
+}
 
-static bool IsDurationUnits(const CSSNumericValue& aValue) {
+
+static bool IsDurationUnit(const CSSNumericValue& aValue) {
+  
+  
   if (RefPtr<CSSUnitValue> asMs = aValue.To("ms"_ns, IgnoreErrors())) {
     return true;
   }
@@ -175,16 +187,26 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
     return false;
   }
 
-  if (aProgressBased && !isCSSNumericValue) {
-    aRv.ThrowTypeError(
-        "Setting time using absolute time values is not supported for "
-        "progress-based animations.");
-    return false;
+  if (aProgressBased) {
+    if (!isCSSNumericValue) {
+      aRv.ThrowTypeError(
+          "Setting time using absolute time values is not supported for "
+          "progress-based animations.");
+      return false;
+    }
+
+    CSSNumericValue& numeric = aValue.GetAsCSSNumericValue();
+    if (!IsPercentUnit(numeric)) {
+      aRv.ThrowTypeError(
+          "CSSNumericValue must be a percentage for progress-based "
+          "animations.");
+      return false;
+    }
   }
 
   if (!aProgressBased && isCSSNumericValue) {
     CSSNumericValue& numeric = aValue.GetAsCSSNumericValue();
-    if (!IsDurationUnits(numeric)) {
+    if (!IsDurationUnit(numeric)) {
       aRv.ThrowTypeError(
           "CSSNumericValue must be a <time> for non-progress-based "
           "animations.");
