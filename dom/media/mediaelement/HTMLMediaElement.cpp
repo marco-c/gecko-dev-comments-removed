@@ -312,6 +312,21 @@ NS_INTERFACE_MAP_END
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class HTMLMediaElement::MediaControlKeyListener final
     : public ContentMediaControlKeyReceiver {
  public:
@@ -342,11 +357,21 @@ class HTMLMediaElement::MediaControlKeyListener final
       return;
     }
 
+    if (mControlType == ControlType::eUncontrollable) {
+      MEDIACONTROL_LOG("Non-controllable source; reporting audibility only");
+      if (mIsOwnerAudible) {
+        NotifyAudibleStateChanged(MediaAudibleState::eAudible);
+      }
+      return;
+    }
+
     NotifyPlaybackStateChanged(MediaPlaybackState::eStarted);
     
     
     
     if (!Owner()->Paused()) {
+      
+      mIsOwnerAudible = Owner()->IsAudible();
       NotifyMediaStartedPlaying();
     }
     if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
@@ -368,15 +393,22 @@ class HTMLMediaElement::MediaControlKeyListener final
       
       return;
     }
-    NotifyMediaStoppedPlaying();
-    NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
-
+    if (mControlType == ControlType::eUncontrollable) {
+      MEDIACONTROL_LOG("Stopping non-controllable source");
+      if (mIsOwnerAudible) {
+        NotifyAudibleStateChanged(MediaAudibleState::eInaudible);
+      }
+    } else {
+      MEDIACONTROL_LOG("Stopping controllable source");
+      NotifyMediaStoppedPlaying();
+      NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
+    }
     
-    mControlAgent->RemoveReceiver(this);
+    mControlAgent->RemoveReceiver(this, mControlType);
     mControlAgent = nullptr;
   }
 
-  bool IsStarted() const { return mState != MediaPlaybackState::eStopped; }
+  bool IsStarted() const { return mControlAgent != nullptr; }
 
   bool IsPlaying() const override {
     return Owner() ? !Owner()->Paused() : false;
@@ -450,13 +482,15 @@ class HTMLMediaElement::MediaControlKeyListener final
     mIsOwnerAudible = aIsOwnerAudible;
     MEDIACONTROL_LOG("Media becomes {}",
                      mIsOwnerAudible ? "audible" : "inaudible");
+    const MediaAudibleState newState = mIsOwnerAudible
+                                           ? MediaAudibleState::eAudible
+                                           : MediaAudibleState::eInaudible;
     
     
     
-    if (mState == MediaPlaybackState::ePlayed) {
-      NotifyAudibleStateChanged(mIsOwnerAudible
-                                    ? MediaAudibleState::eAudible
-                                    : MediaAudibleState::eInaudible);
+    if (mState == MediaPlaybackState::ePlayed ||
+        (IsStarted() && mControlType == ControlType::eUncontrollable)) {
+      NotifyAudibleStateChanged(newState);
     }
   }
 
@@ -584,9 +618,12 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
     MOZ_ASSERT(currentBC);
     mOwnerBrowsingContextId = currentBC->Id();
+    mControlType = Owner()->IsControllableMediaSource()
+                       ? ControlType::eControllable
+                       : ControlType::eUncontrollable;
     MEDIACONTROL_LOG("Init agent in browsing context {}",
                      mOwnerBrowsingContextId);
-    mControlAgent->AddReceiver(this);
+    mControlAgent->AddReceiver(this, mControlType);
     return true;
   }
 
@@ -617,7 +654,7 @@ class HTMLMediaElement::MediaControlKeyListener final
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
     mControlAgent->NotifyMediaAudibleChanged(mOwnerBrowsingContextId, aState,
-                                             ControlType::eControllable,
+                                             mControlType,
                                              AudioSessionType::Playback);
   }
 
@@ -626,6 +663,10 @@ class HTMLMediaElement::MediaControlKeyListener final
   RefPtr<ContentMediaAgent> mControlAgent;
   bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
+  
+  
+  
+  ControlType mControlType = ControlType::eControllable;
   MOZ_INIT_OUTSIDE_CTOR uint64_t mOwnerBrowsingContextId = 0;
   const nsID mElementId;
 };
@@ -3701,6 +3742,8 @@ void HTMLMediaElement::PauseInternal() {
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyPlayStateChanged();
   }
+  NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 
   
   ClearResumeDelayedMediaPlaybackAgentIfNeeded();
@@ -5117,6 +5160,8 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
   UpdatePreloadAction(JSCallingLocation::Get());
   UpdateSrcMediaStreamPlaying();
   StartMediaControlKeyListenerIfNeeded();
+  NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 
   
   
@@ -8081,7 +8126,10 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
   
-  const bool isAudible = IsAudible();
+  
+  
+  
+  const bool isAudible = !mPaused && IsAudible();
   if (isAudible && !mMediaControlKeyListener->IsStarted()) {
     StartMediaControlKeyListenerIfNeeded();
   }
@@ -8570,52 +8618,49 @@ bool HTMLMediaElement::IsPlayable() const {
   return (mDecoder || mSrcStream) && !HasError();
 }
 
-bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
+bool HTMLMediaElement::IsControllableMediaSource() const {
   if (!IsPlayable()) {
-    MEDIACONTROL_LOG("Not start listener because media is not playable");
+    MEDIACONTROL_LOG("Uncontrollable: media is not playable");
     return false;
   }
 
   if (mSrcStream) {
-    MEDIACONTROL_LOG("Not listening because media is real-time");
+    MEDIACONTROL_LOG("Uncontrollable: real-time stream source");
     return false;
   }
 
   if (IsBeingUsedInPictureInPictureMode()) {
-    MEDIACONTROL_LOG("Start listener because of being used in PiP mode");
+    MEDIACONTROL_LOG("Controllable: media is in picture-in-picture mode");
     return true;
   }
 
   if (IsInFullScreen()) {
-    MEDIACONTROL_LOG("Start listener because of being used in fullscreen");
+    MEDIACONTROL_LOG("Controllable: media is in fullscreen");
     return true;
   }
 
   
   
-  
-  if (Duration() <
-      StaticPrefs::media_mediacontrol_eligible_media_duration_s()) {
-    MEDIACONTROL_LOG("Not listening because media's duration {} is too short.",
-                     Duration());
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (!IsAudible() || ComputedVolume() == 0.0f) {
-    MEDIACONTROL_LOG("Not listening because media is inaudible");
-    return false;
-  }
-  return true;
+  const bool meetsThreshold =
+      Duration() >= StaticPrefs::media_mediacontrol_eligible_media_duration_s();
+  MEDIACONTROL_LOG("{}: duration {} vs threshold",
+                   meetsThreshold ? "Controllable" : "Uncontrollable",
+                   Duration());
+  return meetsThreshold;
 }
 
 void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
-  if (!ShouldStartMediaControlKeyListener()) {
+  if (!IsPlayable()) {
+    return;
+  }
+  
+  
+  
+  
+  if (IsControllableMediaSource() &&
+      (!IsAudible() || ComputedVolume() == 0.0f) &&
+      !IsBeingUsedInPictureInPictureMode() && !IsInFullScreen()) {
+    MEDIACONTROL_LOG("Delay starting: controllable source not yet audible");
     return;
   }
   mMediaControlKeyListener->Start();
