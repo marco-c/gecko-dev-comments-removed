@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef dtls_identity_h_
 #define dtls_identity_h_
 
@@ -83,6 +81,8 @@ class DtlsIdentity final {
 
   nsresult ComputeFingerprint(DtlsDigest* digest) const;
   static nsresult ComputeFingerprint(const UniqueCERTCertificate& cert,
+                                     DtlsDigest* digest);
+  static nsresult ComputeFingerprint(const uint8_t* aDerCert, size_t aDerLen,
                                      DtlsDigest* digest);
 
   static constexpr nsLiteralCString DEFAULT_HASH_ALGORITHM = "sha-256"_ns;
