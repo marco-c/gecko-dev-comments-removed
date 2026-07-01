@@ -11,6 +11,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "mozilla/security/lockstore/lockstore_ffi_generated.h"
 #include "ScopedNSSTypes.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -43,6 +44,22 @@ using mozilla::security::lockstore::keystore_open;
 using mozilla::security::lockstore::KeystoreHandle;
 
 constexpr size_t kDekBytes = 32;
+
+
+
+
+
+
+
+
+
+
+static_assert(
+    kDekBytes ==
+        sizeof(mozilla::dom::quota::IPCStreamCipherStrategy::KeyType),
+    "kDekBytes must match the page-encryption cipher's KeyType size; "
+    "update kDekBytes (and the keystore_create_dek call sites that "
+    "pass it) in lockstep with any cipher key-length change.");
 
 mozilla::StaticMutex sStateMutex;
 KeystoreHandle* sHandle MOZ_GUARDED_BY(sStateMutex) = nullptr;
@@ -384,7 +401,8 @@ nsresult GetEncryptionKey(const nsACString& aDatabasePath, OpenIntent aIntent,
       
       
       nsresult crv = keystore_create_dek(sHandle, &collection, &sKekRef,
-                                          true);
+                                          true,
+                                          kDekBytes);
       if (NS_FAILED(crv)) {
         MOZ_LOG(GetSQLiteEncryptionLog(), LogLevel::Debug,
                 ("create_dek returned 0x%" PRIx32 "; re-reading",

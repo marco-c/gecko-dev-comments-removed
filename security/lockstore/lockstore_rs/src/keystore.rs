@@ -78,12 +78,27 @@ struct WrappedDek {
     wrapped_dek: Vec<u8>,
 }
 
+fn default_key_size() -> usize {
+    
+    
+    
+    
+    DEFAULT_CIPHER_SUITE.key_size()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct DekMetadata {
     wrapped_deks: Vec<WrappedDek>,
     cipher_suite: CipherSuite,
     #[serde(default)]
     extractable: bool,
+    
+    
+    
+    
+    
+    #[serde(default = "default_key_size")]
+    key_size: usize,
 }
 
 
@@ -295,8 +310,15 @@ impl Keystore {
         collection_name: &str,
         kek_ref: &str,
         extractable: bool,
+        key_size: usize,
     ) -> Result<(), LockstoreError> {
-        self.create_dek_with_cipher(collection_name, kek_ref, extractable, DEFAULT_CIPHER_SUITE)
+        self.create_dek_with_cipher(
+            collection_name,
+            kek_ref,
+            extractable,
+            DEFAULT_CIPHER_SUITE,
+            key_size,
+        )
     }
 
     pub fn create_dek_with_cipher(
@@ -305,7 +327,20 @@ impl Keystore {
         kek_ref: &str,
         extractable: bool,
         cipher_suite: CipherSuite,
+        key_size: usize,
     ) -> Result<(), LockstoreError> {
+        
+        
+        
+        
+        
+        if key_size == 0 || key_size > 1024 {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "key_size {} is out of range (1..=1024 bytes)",
+                key_size
+            )));
+        }
+
         let kek_type = KekType::from_kek_ref(kek_ref)?;
 
         
@@ -324,7 +359,7 @@ impl Keystore {
             )));
         }
 
-        let new_dek = crypto::generate_random_key(cipher_suite);
+        let new_dek = crypto::generate_random_bytes(key_size);
         let kek = self.get_kek_symkey(cipher_suite, kek_ref)?;
         let wrapped = crypto::encrypt_with_symkey(&new_dek, &kek, cipher_suite)?;
 
@@ -336,6 +371,7 @@ impl Keystore {
             }],
             cipher_suite,
             extractable,
+            key_size,
         };
 
         conn.save_metadata(collection_name, &metadata)
@@ -401,6 +437,9 @@ impl Keystore {
             }],
             cipher_suite,
             extractable,
+            
+            
+            key_size: dek_bytes.len(),
         };
 
         conn.save_metadata(collection_name, &metadata)
@@ -432,6 +471,19 @@ impl Keystore {
 
         let kek = self.get_kek_symkey(metadata.cipher_suite, kek_ref)?;
         let dek = crypto::decrypt_with_symkey(&entry.wrapped_dek, &kek)?;
+
+        
+        
+        
+        
+        if dek.len() != metadata.key_size {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "DEK length {} does not match stored key_size {} for collection '{}'",
+                dek.len(),
+                metadata.key_size,
+                collection_name
+            )));
+        }
 
         Ok((dek, metadata.cipher_suite, metadata.extractable))
     }
