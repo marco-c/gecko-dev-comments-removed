@@ -103,8 +103,8 @@ void AnimationTimeline::GetDuration(
   
   
   OwningDoubleOrCSSNumericValue value;
-  value.SetAsCSSNumericValue() =
-      MakeRefPtr<CSSUnitValue>(GetParentObject(), 100.0, "percent"_ns);
+  value.SetAsCSSNumericValue() = MakeCSSUnitValue(
+      GetParentObject(), StyleNumericType::Percent(), 100.0, "percent"_ns);
   aRetVal.SetValue(std::move(value));
 }
 
