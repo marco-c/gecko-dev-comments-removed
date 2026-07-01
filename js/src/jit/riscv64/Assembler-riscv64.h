@@ -116,8 +116,9 @@ using Buffer =
     js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
                                               js::jit::AssemblerBufferSettings{
                                                   .instSize = kInstrSize,
-                                                  .guardSize = 2,
-                                                  .headerSize = 2,
+                                                  .guardSize = 1,
+                                                  .headerSize = 1,
+                                                  .veneerSize = 2,
                                                   .pcBias = 8,
                                                   .alignFillInst = kNopByte,
                                                   .nopFillInst = kNopByte,
@@ -140,20 +141,11 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZifencei {
   GeneralRegisterSet scratch_register_list_;
 
-  static constexpr int kInvalidSlotPos = -1;
-
 #ifdef JS_JITSPEW
   Sprinter* printer;
 #endif
-  bool enoughLabelCache_ = true;
 
  protected:
-  using LabelOffset = int32_t;
-  using LabelCache =
-      HashMap<LabelOffset, BufferOffset, js::DefaultHasher<LabelOffset>,
-              js::SystemAllocPolicy>;
-  LabelCache label_cache_;
-  void NoEnoughLabelCache() { enoughLabelCache_ = false; }
   CompactBufferWriter jumpRelocations_;
   CompactBufferWriter dataRelocations_;
   Buffer m_buffer;
@@ -387,15 +379,21 @@ class Assembler : public AssemblerShared,
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instruction* instr, bool enable_spew = false);
 #endif 
-  int jumpChainTargetAt(BufferOffset pos);
-  static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                               Instruction* instruction2 = nullptr);
+
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
-  uint32_t jumpChainUseNextLink(Label* label);
+
+  void jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
+
+ private:
+  int32_t branchOffset(Label* L, OffsetSize bits,
+                       BufferOffset next_instr_offset);
+
+ public:
   
-  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
-  int32_t branchOffsetHelper(Label* L, OffsetSize bits);
-  int32_t branchLongOffsetHelper(Label* L);
+  int32_t branchOffset(Label* L, OffsetSize bits);
+
+  
+  int32_t branchOffset(Label* L);
 
   void nopAlign(int m) { m_buffer.align(m); }
 
