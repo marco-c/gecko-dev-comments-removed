@@ -346,6 +346,9 @@ void MediaKeys::RejectPromise(PromiseId aId, ErrorResult&& aException,
 
   if (mCreatePromiseId == aId) {
     
+    
+    mCreatePromiseId = 0;
+    
     EME_LOG("MediaKeys[{}]::RejectPromise({}, 0x{:x}) calling Release()",
             fmt::ptr(this), aId, errorCodeAsInt);
     Release();
@@ -630,6 +633,9 @@ void MediaKeys::OnCDMCreated(PromiseId aId, const uint32_t aPluginId) {
 
   promise->MaybeResolve(keys);
   if (mCreatePromiseId == aId) {
+    
+    
+    mCreatePromiseId = 0;
     EME_LOG(
         "MediaKeys[{}]::OnCDMCreated(aId={}, aPluginId={}) calling Release()",
         fmt::ptr(this), aId, aPluginId);
