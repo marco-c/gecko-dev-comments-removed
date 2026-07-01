@@ -292,14 +292,19 @@ class VideoReceiveStream2
   
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
 
-  std::unique_ptr<VCMTiming> timing_;  
+  const std::unique_ptr<VCMTiming> timing_;  
   VideoReceiver2 video_receiver_;
   std::unique_ptr<VideoSinkInterface<VideoFrame>> incoming_video_stream_;
   RtpVideoStreamReceiver2 rtp_video_stream_receiver_;
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
-  std::unique_ptr<VideoStreamBufferController> buffer_;
+  
+  
+  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(packet_sequence_checker_);
+  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
+
+  const std::unique_ptr<VideoStreamBufferController> buffer_;
 
   
   
@@ -324,10 +329,6 @@ class VideoReceiveStream2
 
   std::optional<Timestamp> last_keyframe_request_
       RTC_GUARDED_BY(packet_sequence_checker_);
-
-  
-  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(packet_sequence_checker_);
-  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
@@ -373,7 +374,7 @@ class VideoReceiveStream2
   
   
   
-  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> post_decode_queue_;
+  const std::unique_ptr<TaskQueueBase, TaskQueueDeleter> post_decode_queue_;
 
   
   
@@ -386,7 +387,7 @@ class VideoReceiveStream2
   
   
   
-  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> decode_queue_;
+  const std::unique_ptr<TaskQueueBase, TaskQueueDeleter> decode_queue_;
 
   std::optional<uint32_t> last_decoded_rtp_timestamp_;
 };
