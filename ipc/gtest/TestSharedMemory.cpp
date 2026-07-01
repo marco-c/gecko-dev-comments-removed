@@ -2,6 +2,10 @@
 
 
 
+#include "IPCTestUtils.h"
+
+#include "chrome/common/ipc_message.h"
+#include "chrome/common/ipc_message_utils.h"
 #include "gtest/gtest.h"
 
 #include "mozilla/ipc/SharedMemoryCursor.h"
@@ -24,6 +28,14 @@
 #endif
 
 namespace mozilla::ipc {
+
+struct SharedMemoryInternalTest : public testing::Test {
+  
+  
+  void UnsafeSetSize(shared_memory::HandleBase& aHandle, uint64_t aSize) {
+    aHandle.SetSize(aSize);
+  }
+};
 
 #define ASSERT_SHMEM(handle, size)            \
   do {                                        \
@@ -586,6 +598,56 @@ TEST(IPCSharedMemory, CursorWriteRead)
   
   cursor.Seek(mapping.Size() - 3);
   ASSERT_FALSE(cursor.Write(data, std::size(data)));
+}
+
+
+TEST_F(SharedMemoryInternalTest, PlainRoundTrip) {
+  auto handle = shared_memory::Create(65537);
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  ASSERT_SHMEM(handle, 65537);
+  auto mapping = handle.Map();
+  EXPECT_TRUE(mapping.IsValid());
+}
+
+
+
+TEST_F(SharedMemoryInternalTest, SizeChangeMsg) {
+  
+  
+  static constexpr size_t kRealSize = 65536;
+  static constexpr size_t kFakeSize = 65537;
+
+  auto handle = shared_memory::Create(kRealSize);
+
+  
+  
+  UnsafeSetSize(handle, kFakeSize);
+  ASSERT_SHMEM(handle, kFakeSize);
+
+#if defined(XP_UNIX) && !defined(XP_DARWIN)
+  EXPECT_FALSE(SerializeAndDeserialize(std::move(handle), &handle));
+#else  
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  auto mapping = handle.Map();
+  EXPECT_FALSE(mapping.IsValid());
+#endif
+}
+
+
+
+
+TEST_F(SharedMemoryInternalTest, SizeChangeMsgDown) {
+  static constexpr size_t kRealSize = 65536;
+  static constexpr size_t kFakeSize = 12288;
+
+  auto handle = shared_memory::Create(kRealSize);
+  UnsafeSetSize(handle, kFakeSize);
+  ASSERT_SHMEM(handle, kFakeSize);
+
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  auto mapping = handle.Map();
+  ASSERT_TRUE(mapping.IsValid());
+  EXPECT_EQ(kFakeSize, mapping.Size());
 }
 
 }  
