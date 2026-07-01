@@ -9,14 +9,15 @@ use malloc_size_of_derive::MallocSizeOf;
 const MAX_RECOVERABLE_FAILURES: u32 = 3;
 const MAX_WAIT_ATTEMPTS: u32 = 3;
 const MAX_PING_BODY_SIZE: usize = 1024 * 1024; 
+const MAX_PENDING_PINGS_DIRECTORY_SIZE: u64 = 10 * 1024 * 1024; 
 
 
 
-const MAX_PENDING_PINGS_DIRECTORY_SIZE: u64 = 50 * 1024 * 1024;
 
 
 
-const MAX_PENDING_PINGS_COUNT: u64 = 500;
+
+const MAX_PENDING_PINGS_COUNT: u64 = 250;
 
 
 #[derive(Debug, MallocSizeOf)]
@@ -101,10 +102,12 @@ impl Policy {
         }
     }
 
+    #[cfg(test)]
     pub fn set_max_pending_pings_directory_size(&mut self, v: Option<u64>) {
         self.max_pending_pings_directory_size = v;
     }
 
+    #[cfg(test)]
     pub fn set_max_pending_pings_count(&mut self, v: Option<u64>) {
         self.max_pending_pings_count = v;
     }

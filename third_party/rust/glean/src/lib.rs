@@ -129,11 +129,6 @@ fn initialize_internal(cfg: Configuration, client_info: ClientInfoMetrics) -> Op
         ping_schedule: cfg.ping_schedule,
         ping_lifetime_threshold: cfg.ping_lifetime_threshold as u64,
         ping_lifetime_max_time: cfg.ping_lifetime_max_time.as_millis() as u64,
-        max_pending_pings_count: None,
-        max_pending_pings_directory_size: None,
-        session_mode: cfg.session_mode,
-        session_sample_rate: cfg.session_sample_rate,
-        session_inactivity_timeout_ms: cfg.session_inactivity_timeout.as_millis() as u64,
     };
 
     glean_core::glean_initialize(core_cfg, client_info.into(), callbacks);
@@ -143,22 +138,6 @@ fn initialize_internal(cfg: Configuration, client_info: ClientInfoMetrics) -> Op
 
 pub fn shutdown() {
     glean_core::shutdown()
-}
-
-
-
-
-
-pub fn session_start() {
-    glean_core::glean_session_start();
-}
-
-
-
-
-
-pub fn session_end(reason: Option<String>) {
-    glean_core::glean_session_end(reason);
 }
 
 
@@ -379,12 +358,6 @@ pub fn get_registered_ping_names() -> Vec<String> {
 
 
 
-pub fn clear_attribution() {
-    glean_core::glean_clear_attribution();
-}
-
-
-
 pub fn update_attribution(attribution: AttributionMetrics) {
     glean_core::glean_update_attribution(attribution);
 }
@@ -394,12 +367,6 @@ pub fn update_attribution(attribution: AttributionMetrics) {
 
 pub fn test_get_attribution() -> AttributionMetrics {
     glean_core::glean_test_get_attribution()
-}
-
-
-
-pub fn clear_distribution() {
-    glean_core::glean_clear_distribution();
 }
 
 

@@ -75,13 +75,6 @@ pub struct CommonMetricData {
     
     
     pub dynamic_label: Option<DynamicLabelType>,
-    
-    
-    
-    
-    
-    
-    pub in_session: bool,
 }
 
 
@@ -194,15 +187,6 @@ impl CommonMetricDataInternal {
         } else {
             base_identifier
         }
-    }
-
-    
-    
-    
-    
-    
-    pub fn in_session(&self) -> bool {
-        self.inner.in_session
     }
 
     

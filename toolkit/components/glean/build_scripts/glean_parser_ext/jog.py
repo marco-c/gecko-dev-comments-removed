@@ -24,7 +24,6 @@ RUNTIME_PING_BIT = PING_INDEX_BITS - 1
 
 
 
-
 common_metric_data_args = [
     "name",
     "category",
@@ -32,7 +31,6 @@ common_metric_data_args = [
     "lifetime",
     "disabled",
     "dynamic_label",
-    "in_session",
 ]
 
 
@@ -192,16 +190,15 @@ def output_file(objs, output_fd, options={}):
             return value.name
         if isinstance(value, Rate):  
             args = []
-            for arg_name in common_metric_data_args:
-                if arg_name == "dynamic_label":
-                    
-                    
-                    
-                    
-                    args.append(None)
-                    continue
+            for arg_name in common_metric_data_args[:-1]:
                 args.append(getattr(value, arg_name))
 
+            
+            
+            
+            
+            
+            args.append(None)
             return args
         return json.dumps(value)
 
@@ -209,9 +206,9 @@ def output_file(objs, output_fd, options={}):
         dict_cat = jog_data["metrics"].setdefault(category, [])
         for metric in metrics.values():
             metric_arg_list = [camel_to_snake(metric.__class__.__name__)]
-            for arg in common_metric_data_args:
-                if arg in ["category", "dynamic_label"]:
-                    continue
+            for arg in common_metric_data_args[:-1]:
+                if arg in ["category"]:
+                    continue  
                 metric_arg_list.append(getattr(metric, arg))
             extra = {}
             for arg in known_extra_args:

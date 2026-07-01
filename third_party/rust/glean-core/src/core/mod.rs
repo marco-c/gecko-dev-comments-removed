@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use chrono::{DateTime, FixedOffset, SecondsFormat};
+use chrono::{DateTime, FixedOffset};
 use malloc_size_of_derive::MallocSizeOf;
 use once_cell::sync::OnceCell;
 use uuid::Uuid;
@@ -27,7 +27,6 @@ use crate::metrics::{
     self, ExperimentMetric, Metric, MetricType, PingType, RecordedExperiment, RemoteSettingsConfig,
 };
 use crate::ping::PingMaker;
-use crate::session::{self, EventSessionContext, SessionManager, SessionMode, SessionState};
 use crate::storage::{StorageManager, INTERNAL_STORAGE};
 use crate::upload::{PingUploadManager, PingUploadTask, UploadResult, UploadTaskAction};
 use crate::util::{local_now_with_offset, sanitize_application_id};
@@ -161,11 +160,6 @@ where
 
 
 
-
-
-
-
-
 #[derive(Debug, MallocSizeOf)]
 pub struct Glean {
     upload_enabled: bool,
@@ -192,8 +186,6 @@ pub struct Glean {
     pub(crate) remote_settings_config: Arc<Mutex<RemoteSettingsConfig>>,
     pub(crate) with_timestamps: bool,
     pub(crate) ping_schedule: HashMap<String, Vec<String>>,
-    #[ignore_malloc_size_of = "TODO: Expose session memory allocations (bug 2043355)"]
-    pub(crate) session_manager: SessionManager,
 }
 
 impl Glean {
@@ -222,12 +214,6 @@ impl Glean {
             rate_limit.seconds_per_interval,
             rate_limit.pings_per_interval,
         );
-        if let Some(n) = cfg.max_pending_pings_count {
-            upload_manager.set_max_pending_pings_count(n);
-        }
-        if let Some(n) = cfg.max_pending_pings_directory_size {
-            upload_manager.set_max_pending_pings_directory_size(n);
-        }
 
         
         
@@ -262,18 +248,6 @@ impl Glean {
             remote_settings_config: Arc::new(Mutex::new(RemoteSettingsConfig::new())),
             with_timestamps: cfg.enable_event_timestamps,
             ping_schedule: cfg.ping_schedule.clone(),
-            
-            
-            
-            
-            
-            
-            
-            session_manager: SessionManager::new(
-                cfg.session_mode,
-                cfg.session_sample_rate,
-                std::time::Duration::from_millis(cfg.session_inactivity_timeout_ms),
-            ),
         };
 
         
@@ -306,8 +280,6 @@ impl Glean {
             ping_lifetime_threshold,
             ping_lifetime_max_time,
         )?);
-
-        glean.restore_session_state_from_storage();
 
         
         
@@ -568,11 +540,6 @@ impl Glean {
             ping_schedule: Default::default(),
             ping_lifetime_threshold: 0,
             ping_lifetime_max_time: 0,
-            max_pending_pings_count: None,
-            max_pending_pings_directory_size: None,
-            session_mode: SessionMode::Auto,
-            session_sample_rate: 1.0,
-            session_inactivity_timeout_ms: 1_800_000,
         };
 
         let mut glean = Self::new(cfg).unwrap();
@@ -957,11 +924,6 @@ impl Glean {
         &self.event_data_store
     }
 
-    
-    pub fn session_manager(&self) -> &SessionManager {
-        &self.session_manager
-    }
-
     pub(crate) fn with_timestamps(&self) -> bool {
         self.with_timestamps
     }
@@ -1178,34 +1140,6 @@ impl Glean {
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            remote_settings_config.session_sample_rate = cfg.session_sample_rate.map(|r| {
-                let clamped = r.clamp(0.0, 1.0);
-                if clamped != r {
-                    log::warn!(
-                        "session_sample_rate {} out of range, clamped to {}",
-                        r,
-                        clamped
-                    );
-                }
-                clamped
-            });
-
-            
-            
-            
             serde_json::to_value(&*remote_settings_config).unwrap()
         };
 
@@ -1369,387 +1303,8 @@ impl Glean {
     
     
     
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn restore_session_state_from_storage(&mut self) {
-        
-        self.session_manager.session_seq = session::read_session_seq(self);
-
-        
-        
-        
-        
-        if self.session_manager.mode != SessionMode::Auto {
-            if let Some(id_str) = session::read_session_id(self) {
-                log::info!(
-                    "Orphaned session {} found from a previous Auto-mode build; \
-                     emitting session_end(\"abandoned\") and clearing storage",
-                    id_str
-                );
-                let seq = self.session_manager.session_seq;
-                self.record_session_end_event(&id_str, seq, Some("abandoned"));
-                session::clear(self);
-            }
-            return;
-        }
-
-        
-        
-        if let Some(inactive_since) = session::read_inactive_since(self) {
-            if let Some(id_str) = session::read_session_id(self) {
-                if let Ok(id) = Uuid::parse_str(&id_str) {
-                    
-                    
-                    let sampled_in = session::uuid_to_sample_value(&id)
-                        < self.session_manager.configured_sample_rate;
-                    self.session_manager.session_id = Some(id);
-                    self.session_manager.inactive_since = Some(inactive_since);
-                    self.session_manager.sampled_in = sampled_in;
-                    self.session_manager.session_start_time =
-                        session::read_session_start_time(self);
-                    if self.session_manager.session_start_time.is_none() {
-                        log::warn!(
-                            "Resumed session {} has no persisted session_start_time; \
-                             events in this session will carry session_start_time: null",
-                            id
-                        );
-                    }
-                    
-                    
-                    
-                    self.session_manager
-                        .event_seq
-                        .store(session::read_session_event_seq(self), Ordering::Relaxed);
-                    self.session_manager.state = SessionState::Inactive;
-                }
-            }
-        }
-    }
-
-    
-    
-    
-    
-    fn maybe_inject_glean_timestamp(
-        &self,
-        extra: &mut std::collections::HashMap<String, String>,
-        timestamp_ms: u64,
-    ) {
-        if self.with_timestamps {
-            extra.insert("glean_timestamp".to_string(), timestamp_ms.to_string());
-        }
-    }
-
-    
-    fn record_session_start_event(
-        &self,
-        session_id: &str,
-        seq: u64,
-        start_time: DateTime<FixedOffset>,
-        sampled_in: bool,
-    ) {
-        let meta = CommonMetricData {
-            name: "session_start".into(),
-            category: "glean".into(),
-            send_in_pings: vec!["events".into()],
-            lifetime: Lifetime::Ping,
-            ..Default::default()
-        };
-        let timestamp = crate::get_timestamp_ms();
-        let mut extra = std::collections::HashMap::new();
-        extra.insert("session_id".to_string(), session_id.to_string());
-        extra.insert("session_seq".to_string(), seq.to_string());
-        extra.insert(
-            "session_start_time".to_string(),
-            start_time.to_rfc3339_opts(SecondsFormat::Millis, true),
-        );
-        extra.insert("sampled_in".to_string(), sampled_in.to_string());
-        self.maybe_inject_glean_timestamp(&mut extra, timestamp);
-        self.event_data_store.record(
-            self,
-            &meta.into(),
-            timestamp,
-            Some(extra),
-            EventSessionContext::OutOfSession,
-        );
-    }
-
-    
-    fn record_session_end_event(&self, session_id: &str, seq: u64, reason: Option<&str>) {
-        let meta = CommonMetricData {
-            name: "session_end".into(),
-            category: "glean".into(),
-            send_in_pings: vec!["events".into()],
-            lifetime: Lifetime::Ping,
-            ..Default::default()
-        };
-        let timestamp = crate::get_timestamp_ms();
-        let mut extra = std::collections::HashMap::new();
-        extra.insert("session_id".to_string(), session_id.to_string());
-        extra.insert("session_seq".to_string(), seq.to_string());
-        if let Some(r) = reason {
-            extra.insert("reason".to_string(), r.to_string());
-        }
-        self.maybe_inject_glean_timestamp(&mut extra, timestamp);
-        self.event_data_store.record(
-            self,
-            &meta.into(),
-            timestamp,
-            Some(extra),
-            EventSessionContext::OutOfSession,
-        );
-    }
-
-    
-    
-    
-    
-    pub fn session_start(&mut self) {
-        
-        if self.session_manager.is_active() {
-            self.session_end(Some("replaced"));
-        }
-
-        
-        let new_seq = self.session_manager.session_seq + 1;
-
-        
-        
-        
-        
-        
-        
-        let session_id = uuid::Uuid::new_v4();
-        let sample_rate = {
-            let remote = self.remote_settings_config.lock().unwrap();
-            remote
-                .session_sample_rate
-                .unwrap_or(self.session_manager.configured_sample_rate)
-        };
-        let sampled_in = session::uuid_to_sample_value(&session_id) < sample_rate;
-
-        
-        self.session_manager.sample_rate = sample_rate;
-        
-        
-        let start_time = {
-            let now = local_now_with_offset();
-            let millis = now.timestamp_millis();
-            DateTime::from_timestamp_millis(millis)
-                .expect("valid timestamp")
-                .with_timezone(now.offset())
-        };
-        self.session_manager.session_start_time = Some(start_time);
-        self.session_manager.session_id = Some(session_id);
-        self.session_manager.session_seq = new_seq;
-        self.session_manager.event_seq.store(0, Ordering::Relaxed);
-        self.session_manager.sampled_in = sampled_in;
-        self.session_manager.state = SessionState::Active;
-        self.session_manager.inactive_since = None;
-
-        
-        session::store_session_seq(self, new_seq);
-        session::persist_session_id(self, &session_id.to_string());
-        session::persist_session_start_time(self, start_time);
-        session::clear_inactive_since(self);
-
-        
-        self.additional_metrics.sessions_seen.add_sync(self, 1);
-
-        
-        self.record_session_start_event(&session_id.to_string(), new_seq, start_time, sampled_in);
-    }
-
-    
-    
-    
-    pub fn session_end(&mut self, reason: Option<&str>) -> Option<crate::session::SessionMetadata> {
-        if self.session_manager.state != SessionState::Active {
-            return None;
-        }
-
-        let session_id = self.session_manager.session_id?;
-        let seq = self.session_manager.session_seq;
-        let event_seq = self.session_manager.event_seq.load(Ordering::Relaxed);
-        let sample_rate = self.session_manager.sample_rate;
-        let start_time = self.session_manager.session_start_time;
-
-        
-        session::clear(self);
-
-        
-        self.session_manager.reset_state();
-
-        
-        self.record_session_end_event(&session_id.to_string(), seq, reason);
-
-        Some(crate::session::SessionMetadata {
-            session_id: session_id.to_string(),
-            session_seq: seq,
-            event_seq,
-            session_sample_rate: sample_rate,
-            session_start_time: start_time.map(|t| t.to_rfc3339_opts(SecondsFormat::Millis, true)),
-        })
-    }
-
-    
-    
-    
-    
-    pub(crate) fn session_transition_to_inactive(&mut self) {
-        if self.session_manager.state != SessionState::Active {
-            return;
-        }
-
-        let now = local_now_with_offset();
-        
-        let event_seq = self.session_manager.event_seq.load(Ordering::Relaxed);
-        self.session_manager.state = SessionState::Inactive;
-        self.session_manager.inactive_since = Some(now);
-
-        
-        
-        
-        
-        
-        
-        session::persist_inactive_since(self, now);
-        session::store_session_event_seq(self, event_seq);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn session_transition_to_active(&mut self) -> bool {
-        match self.session_manager.inactive_since {
-            None => {
-                
-                
-                
-                
-                self.session_start();
-                true
-            }
-            Some(inactive_since) => {
-                let now = local_now_with_offset();
-                let elapsed = (now - inactive_since).to_std().unwrap_or_default();
-
-                
-                if !self.session_manager.inactivity_timeout.is_zero()
-                    && elapsed >= self.session_manager.inactivity_timeout
-                {
-                    
-                    
-                    
-                    self.session_manager.state = SessionState::Active;
-                    self.session_end(Some("timeout"));
-                    self.session_start();
-                    true
-                } else {
-                    
-                    self.session_manager.state = SessionState::Active;
-                    self.session_manager.inactive_since = None;
-                    session::clear_inactive_since(self);
-                    false
-                }
-            }
-        }
-    }
-
-    
-    
-    
-    
-    pub(crate) fn recover_session_on_dirty_flag(&mut self) {
-        let persisted_id = match session::read_session_id(self) {
-            Some(id) => id,
-            None => return, 
-        };
-
-        let persisted_seq = self.session_manager.session_seq;
-        let inactive_since = session::read_inactive_since(self);
-
-        
-        let reason = if inactive_since.is_some() {
-            "abnormal_inactive"
-        } else {
-            "abnormal"
-        };
-
-        log::info!(
-            "Recovering abnormally terminated session: {} (seq={})",
-            persisted_id,
-            persisted_seq
-        );
-
-        
-        self.record_session_end_event(&persisted_id, persisted_seq, Some(reason));
-
-        
-        session::clear(self);
-
-        
-        self.session_manager.reset_state();
-    }
-
-    
-    
-    
-
-    
-    
-    
     
     pub fn handle_client_active(&mut self) {
-        match self.session_manager.mode {
-            SessionMode::Auto => {
-                if !self.session_manager.is_active() {
-                    if self.session_manager.inactive_since.is_some() {
-                        
-                        self.session_transition_to_active();
-                    } else {
-                        
-                        self.session_start();
-                    }
-                }
-            }
-            SessionMode::Lifecycle => {
-                
-                
-                
-                if !self.session_manager.is_active() {
-                    self.session_start();
-                }
-            }
-            SessionMode::Manual => {
-                
-            }
-        }
-
         if !self
             .internal_pings
             .baseline
@@ -1766,21 +1321,6 @@ impl Glean {
     
     
     pub fn handle_client_inactive(&mut self) {
-        match self.session_manager.mode {
-            SessionMode::Auto => {
-                
-                
-                self.session_transition_to_inactive();
-            }
-            SessionMode::Lifecycle => {
-                
-                self.session_end(Some("inactive"));
-            }
-            SessionMode::Manual => {
-                
-            }
-        }
-
         if !self
             .internal_pings
             .baseline
@@ -1827,29 +1367,6 @@ impl Glean {
     pub fn start_metrics_ping_scheduler(&self) {
         if self.schedule_metrics_pings {
             scheduler::schedule(self);
-        }
-    }
-
-    
-    
-    pub fn clear_attribution(&self) {
-        if let Some(data) = self.data_store.as_ref() {
-            [
-                &self.core_metrics.attribution_source,
-                &self.core_metrics.attribution_medium,
-                &self.core_metrics.attribution_campaign,
-                &self.core_metrics.attribution_term,
-                &self.core_metrics.attribution_content,
-            ]
-            .iter()
-            .for_each(|metric| {
-                let meta = metric.meta();
-                _ = data.remove_single_metric(
-                    meta.inner.lifetime,
-                    &meta.storage_names()[0],
-                    &meta.identifier(self),
-                );
-            });
         }
     }
 
@@ -1902,19 +1419,6 @@ impl Glean {
                 .core_metrics
                 .attribution_content
                 .get_value(self, Some("glean_client_info")),
-        }
-    }
-
-    
-    
-    pub fn clear_distribution(&self) {
-        if let Some(data) = self.data_store.as_ref() {
-            let meta = self.core_metrics.distribution_name.meta();
-            _ = data.remove_single_metric(
-                meta.inner.lifetime,
-                &meta.storage_names()[0],
-                &meta.identifier(self),
-            );
         }
     }
 

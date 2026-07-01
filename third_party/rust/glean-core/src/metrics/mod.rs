@@ -216,28 +216,6 @@ pub trait MetricType {
         
 
         
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if self.meta().in_session() && !glean.session_manager().is_sampled_in() {
-            return false;
-        }
-
-        
         
         let disabled_field = self.meta().disabled.load(Ordering::Relaxed);
         

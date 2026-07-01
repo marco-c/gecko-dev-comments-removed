@@ -15,8 +15,6 @@ pub struct ClientInfoMetrics {
     pub channel: Option<String>,
     
     pub locale: Option<String>,
-    
-    pub os_version: Option<String>,
 }
 
 impl ClientInfoMetrics {
@@ -27,7 +25,6 @@ impl ClientInfoMetrics {
             app_display_version: "Unknown".to_string(),
             channel: None,
             locale: None,
-            os_version: None,
         }
     }
 }
@@ -39,7 +36,7 @@ impl From<ClientInfoMetrics> for glean_core::ClientInfoMetrics {
             app_display_version: metrics.app_display_version,
             channel: metrics.channel,
             locale: metrics.locale,
-            os_version: metrics.os_version.unwrap_or_else(system::get_os_version),
+            os_version: system::get_os_version(),
             windows_build_number: system::get_windows_build_number(),
             architecture: system::ARCH.to_string(),
             ..Default::default()
