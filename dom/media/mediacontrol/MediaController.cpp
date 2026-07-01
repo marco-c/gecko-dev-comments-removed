@@ -5,6 +5,7 @@
 #include "MediaController.h"
 
 #include "AudioSessionManager.h"
+#include "ContentMediaController.h"
 #include "MediaControlKeySource.h"
 #include "MediaControlService.h"
 #include "MediaControlUtils.h"
@@ -130,6 +131,35 @@ void MediaController::Pause() {
   LOG("Pause");
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Pause));
+}
+
+void MediaController::PauseWithReason(AudioFocusLossReason aReason) {
+  LOG("PauseWithReason {}", GetEnumString(aReason).get());
+  switch (aReason) {
+    case AudioFocusLossReason::User:
+      
+      Pause();
+      return;
+    case AudioFocusLossReason::System_transient:
+      InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      UpdateMediaSessionInterruptToContentMediaIfNeeded(
+          AudioFocusInterruptAction::Suspend);
+      return;
+    case AudioFocusLossReason::System_permanent:
+      InterruptAudioSession(AudioSessionInterruptKind::Permanent);
+      UpdateMediaSessionInterruptToContentMediaIfNeeded(
+          AudioFocusInterruptAction::Suspend);
+      return;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown AudioFocusLossReason");
+  }
+}
+
+void MediaController::Resume() {
+  LOG("Resume");
+  RestoreAudioSession();
+  UpdateMediaSessionInterruptToContentMediaIfNeeded(
+      AudioFocusInterruptAction::Resume);
 }
 
 void MediaController::PrevTrack() {
@@ -282,6 +312,22 @@ void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
   } else {
     context->Canonical()->UpdateMediaControlAction(aAction);
   }
+}
+
+void MediaController::UpdateMediaSessionInterruptToContentMediaIfNeeded(
+    AudioFocusInterruptAction aAction) {
+  if (mShutdown) {
+    return;
+  }
+  
+  
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(Id());
+  if (!context || context->IsDiscarded()) {
+    return;
+  }
+  context->PreOrderWalk([&](BrowsingContext* bc) {
+    bc->Canonical()->UpdateMediaSessionInterrupt(aAction);
+  });
 }
 
 void MediaController::Shutdown() {

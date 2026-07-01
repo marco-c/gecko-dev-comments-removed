@@ -21,6 +21,7 @@
 namespace mozilla::dom {
 
 class BrowsingContext;
+enum class AudioFocusInterruptAction : uint8_t;
 
 
 
@@ -118,6 +119,16 @@ class MediaController final : public DOMEventTargetHelper,
   void Mute() override;
   void Unmute() override;
 
+  
+  
+  
+  
+  
+  
+  
+  void PauseWithReason(AudioFocusLossReason aReason);
+  void Resume();
+
   uint64_t Id() const override;
   bool IsAudible() const override;
   bool IsPlaying() const override;
@@ -197,6 +208,11 @@ class MediaController final : public DOMEventTargetHelper,
   void HandleActualPlaybackStateChanged();
   void UpdateMediaControlActionToContentMediaIfNeeded(
       const MediaControlAction& aAction);
+  
+  
+  
+  void UpdateMediaSessionInterruptToContentMediaIfNeeded(
+      AudioFocusInterruptAction aAction);
   void HandleSupportedMediaSessionActionsChanged(
       const nsTArray<MediaSessionAction>& aSupportedAction);
 

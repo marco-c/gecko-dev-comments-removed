@@ -44,6 +44,11 @@ class ContentMediaControlKeyReceiver {
   
   virtual void SuspendForInterrupt() {}
   virtual void ResumeFromInterrupt() {}
+
+  
+  
+  
+  virtual void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) {}
 };
 
 
@@ -126,7 +131,7 @@ class ContentMediaController final : public ContentMediaAgent,
 
   
   
-  void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction);
+  void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) override;
 
  private:
   ~ContentMediaController() = default;
