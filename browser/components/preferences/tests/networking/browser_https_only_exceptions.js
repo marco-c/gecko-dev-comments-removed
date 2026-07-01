@@ -1,6 +1,14 @@
 
 
 
+async function clickPermissionButton(button, urlField) {
+  if (urlField) {
+    urlField.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  await button.updateComplete;
+  button.click();
+}
+
 
 
 
@@ -11,7 +19,7 @@ add_task(async function testButtons() {
   await setHttpsFirstPref("off");
 
   
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
     leaveOpen: true,
   });
 
@@ -115,7 +123,7 @@ add_task(async function checkDialogFunctionality() {
   await setHttpsOnlyPref("everywhere");
 
   
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
     leaveOpen: true,
   });
   const preferencesDoc = gBrowser.contentDocument;
@@ -123,11 +131,11 @@ add_task(async function checkDialogFunctionality() {
   
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, []);
 
       elements.url.value = "test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
     },
@@ -145,11 +153,11 @@ add_task(async function checkDialogFunctionality() {
   
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "1.1.1.1:8080";
-      elements.btnAllowSession.doCommand();
+      await clickPermissionButton(elements.btnAllowSession, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -170,10 +178,10 @@ add_task(async function checkDialogFunctionality() {
   
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       while (elements.richlistbox.itemCount) {
         elements.richlistbox.selectedIndex = 0;
-        elements.btnRemove.doCommand();
+        await clickPermissionButton(elements.btnRemove);
       }
       assertListContents(elements, []);
     },
@@ -198,21 +206,21 @@ add_task(async function checkDialogFunctionality() {
   
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, []);
 
       elements.url.value = "http://test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "https://test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "https://test.org";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -220,7 +228,7 @@ add_task(async function checkDialogFunctionality() {
       ]);
 
       elements.url.value = "moz-extension://test";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -256,8 +264,8 @@ add_task(async function checkDialogFunctionality() {
   
   await runTest(
     preferencesDoc,
-    elements => {
-      elements.btnRemoveAll.doCommand();
+    async elements => {
+      await clickPermissionButton(elements.btnRemoveAll);
       assertListContents(elements, []);
     },
     elements => {
