@@ -231,7 +231,7 @@ int IPAddressPrecedence(const IPAddress& ip);
 
 RTC_EXPORT IPAddress TruncateIP(const IPAddress& ip, int length);
 
-IPAddress GetLoopbackIP(int family);
+RTC_EXPORT IPAddress GetLoopbackIP(int family);
 IPAddress GetAnyIP(int family);
 
 
