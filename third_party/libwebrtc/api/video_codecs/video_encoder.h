@@ -65,25 +65,10 @@ class RTC_EXPORT EncodedImageCallback {
   };
 
   
-  
-  
-  
-  
-  enum class DropReason : uint8_t {
-    kDroppedByMediaOptimizations,
-    kDroppedByEncoder
-  };
-
-  
   virtual Result OnEncodedImage(
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info) = 0;
 
-  [[deprecated("bugs.webrtc.org/467444018 -Use OnFrameDropped instead.")]]
-  virtual void OnDroppedFrame(DropReason ) {}
-
-  
-  
   
   
   
@@ -93,7 +78,7 @@ class RTC_EXPORT EncodedImageCallback {
   
   virtual void OnFrameDropped(uint32_t rtp_timestamp,
                               int spatial_id,
-                              bool is_end_of_temporal_unit) {}
+                              bool is_end_of_temporal_unit) = 0;
 };
 
 class RTC_EXPORT VideoEncoder {
