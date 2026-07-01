@@ -258,7 +258,7 @@ fn iter_declarations<'c, 'decls: 'c>(
     for (declaration, priority) in iter {
         if let PropertyDeclaration::Custom(ref declaration) = *declaration {
             if let Some((ref mut cascade, ref mut context)) = custom {
-                cascade.cascade_custom_property(context, declaration, priority, attribute_tracker);
+                cascade.cascade_custom_property(context, declaration, priority);
             }
         } else {
             let id = declaration.id().as_longhand().unwrap();
@@ -704,7 +704,9 @@ struct RevertedSet {
 
 #[derive(Default)]
 struct SeenSubstitutionFunctions<'a> {
-    var: PrecomputedHashSet<&'a Name>,
+    
+    
+    var: PrecomputedHashMap<&'a Name, bool>,
     attr: PrecomputedHashSet<&'a Name>,
 }
 
@@ -776,10 +778,9 @@ impl<'a> KeyframeCustomPropertiesBuilder<'a> {
         context: &mut computed::Context,
         declaration: &'a CustomDeclaration,
         priority: CascadePriority,
-        attribute_tracker: &mut AttributeTracker,
     ) {
         self.cascade
-            .cascade_custom_property(context, declaration, priority, attribute_tracker);
+            .cascade_custom_property(context, declaration, priority);
     }
 
     
@@ -1725,7 +1726,6 @@ impl<'a> Cascade<'a> {
         context: &mut computed::Context,
         declaration: &'a CustomDeclaration,
         priority: CascadePriority,
-        attribute_tracker: &mut AttributeTracker,
     ) {
         let CustomDeclaration {
             ref name,
@@ -1742,22 +1742,23 @@ impl<'a> Cascade<'a> {
             return;
         }
 
-        let was_already_present = !self.seen.custom.var.insert(name);
-        if was_already_present {
-            return;
-        }
+        let entry = match self.seen.custom.var.entry(name) {
+            Entry::Occupied(..) => return,
+            Entry::Vacant(v) => v,
+        };
 
-        if !self.value_may_affect_style(context, name, value) {
-            return;
-        }
-
-        let kind = SubstitutionFunctionKind::Var;
         let registration = self.stylist.get_custom_property_registration(&name);
-        match value {
+        let initial_values = self.stylist.get_custom_property_initial_values();
+        if !Self::value_may_affect_style(context, name, registration, initial_values, value) {
+            entry.insert(false);
+            return;
+        }
+
+        let has_references = match value {
             CustomDeclarationValue::Unparsed(unparsed_value) => {
                 
                 
-                let has_dependency = unparsed_value
+                unparsed_value
                     .references
                     .flags
                     .intersects(ReferenceFlags::ATTR | ReferenceFlags::VAR)
@@ -1766,25 +1767,22 @@ impl<'a> Cascade<'a> {
                         unparsed_value,
                         context.is_root_element(),
                     )
-                    .is_empty();
-                
-                
-                
-                if !has_dependency {
-                    let mut map = std::mem::take(&mut context.builder.substitution_functions);
-                    substitute_references_if_needed_and_apply(
-                        name,
-                        kind,
-                        unparsed_value,
-                        &mut map,
-                        self.stylist,
-                        context,
-                        attribute_tracker,
-                    );
-                    context.builder.substitution_functions = map;
-                    return;
-                }
-                self.may_have_custom_property_cycles = true;
+                    .is_empty()
+            },
+            
+            
+            
+            CustomDeclarationValue::Parsed(..) => false,
+            
+            
+            
+            CustomDeclarationValue::CSSWideKeyword(..) => false,
+        };
+        self.may_have_custom_property_cycles |= has_references;
+        entry.insert(has_references);
+
+        match value {
+            CustomDeclarationValue::Unparsed(unparsed_value) => {
                 let value = ComputedRegisteredValue::universal(Arc::clone(unparsed_value));
                 context
                     .builder
@@ -1918,12 +1916,12 @@ impl<'a> Cascade<'a> {
     }
 
     fn value_may_affect_style(
-        &self,
         context: &computed::Context,
         name: &Name,
+        registration: &PropertyDescriptors,
+        initial_values: &ComputedCustomProperties,
         value: &CustomDeclarationValue,
     ) -> bool {
-        let registration = self.stylist.get_custom_property_registration(&name);
         match *value {
             CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Inherit) => {
                 
@@ -2000,11 +1998,7 @@ impl<'a> Cascade<'a> {
                         debug_assert!(registration.inherits(), "Should've been handled earlier");
                         
                         
-                        if let Some(initial_value) = self
-                            .stylist
-                            .get_custom_property_initial_values()
-                            .get(registration, name)
-                        {
+                        if let Some(initial_value) = initial_values.get(registration, name) {
                             return existing_value != initial_value;
                         }
                     },
@@ -2146,6 +2140,13 @@ fn substitute_all(
         attr: PrecomputedHashMap<Name, usize>,
     }
 
+    impl OrderIndexMap {
+        fn clear(&mut self) {
+            self.var.clear();
+            self.attr.clear();
+        }
+    }
+
     
     
     struct Context<'a, 'b: 'a, 'c, 'd> {
@@ -2182,26 +2183,37 @@ fn substitute_all(
         cache: &'a mut ShorthandsWithPropertyReferencesCache,
     }
 
-    
-    
-    
-    
-    
-    fn apply_prioritary_property<'a, 'b, 'c, 'd>(
-        context: &mut Context<'a, 'b, 'c, 'd>,
-        id: PrioritaryPropertyId,
-        attr_tracker: &mut AttributeTracker,
-    ) {
+    impl<'a, 'b: 'a, 'c, 'd> Context<'a, 'b, 'c, 'd> {
+        fn reset(&mut self) {
+            self.count = 0;
+            self.index_map.clear();
+            self.non_custom_index_map = Default::default();
+            self.var_info.clear();
+            self.stack.clear();
+        }
+
         
-        context.computed_context.builder.substitution_functions = std::mem::take(&mut *context.map);
-        context.cascade.ensure_prioritary_property(
-            context.computed_context,
-            context.decls,
-            context.cache,
-            attr_tracker,
-            id,
-        );
-        *context.map = std::mem::take(&mut context.computed_context.builder.substitution_functions);
+        
+        
+        
+        
+        fn apply_prioritary_property(
+            &mut self,
+            id: PrioritaryPropertyId,
+            attr_tracker: &mut AttributeTracker,
+        ) {
+            
+            
+            self.computed_context.builder.substitution_functions = std::mem::take(&mut *self.map);
+            self.cascade.ensure_prioritary_property(
+                self.computed_context,
+                self.decls,
+                self.cache,
+                attr_tracker,
+                id,
+            );
+            *self.map = std::mem::take(&mut self.computed_context.builder.substitution_functions);
+        }
     }
 
     
@@ -2606,7 +2618,7 @@ fn substitute_all(
                                 .invalid_non_custom_properties
                                 .insert(id.to_longhand());
                         } else {
-                            apply_prioritary_property(context, id, attribute_tracker);
+                            context.apply_prioritary_property(id, attribute_tracker);
                         }
                         return None;
                     },
@@ -2650,36 +2662,44 @@ fn substitute_all(
         None
     }
 
-    let mut run = |make_var: fn(Name) -> VarType, seen: &PrecomputedHashSet<&Name>| {
-        for name in seen {
-            let mut context = Context {
-                count: 0,
-                index_map: OrderIndexMap::default(),
-                non_custom_index_map: NonCustomReferenceMap::default(),
-                stack: SmallVec::new(),
-                var_info: SmallVec::new(),
-                map: &mut *substitution_function_map,
-                stylist,
-                computed_context: &mut *computed_context,
-                cascade: &mut *cascade,
-                decls,
-                cache: &mut *shorthand_cache,
-            };
-
-            traverse(
-                make_var((*name).clone()),
-                references_from_non_custom_properties,
-                &mut context,
-                attr_tracker,
-            );
-        }
+    let mut context = Context {
+        count: 0,
+        index_map: OrderIndexMap::default(),
+        non_custom_index_map: NonCustomReferenceMap::default(),
+        stack: SmallVec::new(),
+        var_info: SmallVec::new(),
+        map: &mut *substitution_function_map,
+        stylist,
+        computed_context: &mut *computed_context,
+        cascade: &mut *cascade,
+        decls,
+        cache: &mut *shorthand_cache,
     };
-
+    let mut first = true;
+    let mut run_one = |var: VarType| {
+        if !first {
+            context.reset();
+        }
+        first = false;
+        traverse(
+            var,
+            references_from_non_custom_properties,
+            &mut context,
+            attr_tracker,
+        );
+    };
     
     
     
-    run(VarType::Custom, &seen.var);
+    for (var, has_refs) in &seen.var {
+        if !has_refs {
+            continue;
+        }
+        run_one(VarType::Custom((*var).clone()));
+    }
     
     
-    run(VarType::Attr, &seen.attr);
+    for attr in &seen.attr {
+        run_one(VarType::Attr((*attr).clone()));
+    }
 }
