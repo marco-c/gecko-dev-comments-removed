@@ -272,6 +272,13 @@ bool AddrHostRecord::HasUsableResultInternal(
     return false;
   }
 
+  
+  
+  if (negative &&
+      (queryFlags & nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE)) {
+    return false;
+  }
+
   if (CheckExpiration(now) == EXP_EXPIRED) {
     return false;
   }
@@ -508,6 +515,13 @@ TypeHostRecord::~TypeHostRecord() { mCallbacks.clear(); }
 
 bool TypeHostRecord::HasUsableResultInternal(
     const mozilla::TimeStamp& now, nsIDNSService::DNSFlags queryFlags) const {
+  
+  
+  if (negative &&
+      (queryFlags & nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE)) {
+    return false;
+  }
+
   if (CheckExpiration(now) == EXP_EXPIRED) {
     return false;
   }

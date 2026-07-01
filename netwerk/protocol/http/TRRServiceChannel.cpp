@@ -732,6 +732,12 @@ void TRRServiceChannel::MaybeStartDNSPrefetch() {
   if (mCaps & NS_HTTP_REFRESH_DNS) {
     dnsFlags |= nsIDNSService::RESOLVE_BYPASS_CACHE;
   }
+  
+  
+  
+  if (!StaticPrefs::network_dns_refresh_negative_addr_on_use()) {
+    dnsFlags |= nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE;
+  }
   nsresult rv = mDNSPrefetch->PrefetchHigh(dnsFlags);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
