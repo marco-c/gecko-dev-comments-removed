@@ -4,7 +4,8 @@ use common::*;
 use std::time::{Duration, Instant};
 
 use happy_eyeballs::{
-    AltSvc, ConnectionAttemptHttpVersions, HappyEyeballs, HttpVersion, Id, NetworkConfig, Output,
+    AltSvc, ConnectionAttemptHttpVersions, FailureReason, HappyEyeballs, HttpVersion, HttpVersions,
+    Id, NetworkConfig, Output,
 };
 
 #[test]
@@ -53,11 +54,9 @@ fn alt_svc_used_immediately() {
     let mut he = HappyEyeballs::new_with_network_config(HOSTNAME, PORT, config).unwrap();
 
     
+    expect_initial_dns_queries(&mut he, now);
     he.expect(
         vec![
-            (None, Some(out_send_dns_https(Id::from(0)))),
-            (None, Some(out_send_dns_aaaa(Id::from(1)))),
-            (None, Some(out_send_dns_a(Id::from(2)))),
             (
                 Some(in_dns_https_negative(Id::from(0))),
                 Some(out_resolution_delay()),
@@ -92,11 +91,9 @@ fn alt_svc_with_port() {
     };
     let (mut now, mut he) = setup_with_config(config);
 
+    expect_initial_dns_queries(&mut he, now);
     he.expect(
         vec![
-            (None, Some(out_send_dns_https(Id::from(0)))),
-            (None, Some(out_send_dns_aaaa(Id::from(1)))),
-            (None, Some(out_send_dns_a(Id::from(2)))),
             (
                 Some(in_dns_https_negative(Id::from(0))),
                 Some(out_resolution_delay()),
@@ -129,27 +126,81 @@ fn alt_svc_with_port() {
                 alt_port,
                 ConnectionAttemptHttpVersions::H3,
             ),
-            // Fallback bucket (port 443): V6:H3, V4:H3, V6:H2OrH1, V4:H2OrH1
+            // Fallback bucket (port 443): V6:H2OrH1, V4:H2OrH1
             out_attempt(
                 Id::from(5),
-                V6_ADDR.into(),
-                PORT,
-                ConnectionAttemptHttpVersions::H3,
-            ),
-            out_attempt(
-                Id::from(6),
-                V4_ADDR.into(),
-                PORT,
-                ConnectionAttemptHttpVersions::H3,
-            ),
-            out_attempt(
-                Id::from(7),
                 V6_ADDR.into(),
                 PORT,
                 ConnectionAttemptHttpVersions::H2OrH1,
             ),
             out_attempt(
-                Id::from(8),
+                Id::from(6),
+                V4_ADDR.into(),
+                PORT,
+                ConnectionAttemptHttpVersions::H2OrH1,
+            ),
+        ],
+    );
+
+    
+    for id in 3..=5 {
+        he.expect(
+            vec![(Some(in_connection_result_negative(Id::from(id))), None)],
+            now,
+        );
+    }
+    he.expect(
+        vec![(
+            Some(in_connection_result_negative(Id::from(6))),
+            Some(Output::Failed(FailureReason::Connection)),
+        )],
+        now,
+    );
+}
+
+
+
+
+
+
+
+#[test]
+fn ip_host_alt_svc_with_port() {
+    let mut now = Instant::now();
+    let config = NetworkConfig {
+        alt_svc: vec![AltSvc {
+            host: None,
+            port: Some(CUSTOM_PORT),
+            http_version: HttpVersion::H3,
+        }],
+        ..NetworkConfig::default()
+    };
+    let mut he =
+        HappyEyeballs::new_with_network_config(&V4_ADDR.to_string(), PORT, config).unwrap();
+
+    he.expect(
+        vec![
+            // Alt-svc bucket (port 8443): H3
+            (
+                None,
+                Some(out_attempt(
+                    Id::from(0),
+                    V4_ADDR.into(),
+                    CUSTOM_PORT,
+                    ConnectionAttemptHttpVersions::H3,
+                )),
+            ),
+            (None, Some(out_connection_attempt_delay())),
+        ],
+        now,
+    );
+
+    he.expect_connection_attempts(
+        &mut now,
+        vec![
+            // Fallback bucket (port 443): H2OrH1
+            out_attempt(
+                Id::from(1),
                 V4_ADDR.into(),
                 PORT,
                 ConnectionAttemptHttpVersions::H2OrH1,
@@ -171,19 +222,15 @@ fn custom_delays() {
         ..NetworkConfig::default()
     });
 
+    expect_initial_dns_queries(&mut he, now);
     he.expect(
-        vec![
-            (None, Some(out_send_dns_https(Id::from(0)))),
-            (None, Some(out_send_dns_aaaa(Id::from(1)))),
-            (None, Some(out_send_dns_a(Id::from(2)))),
-            (
-                Some(in_dns_a_positive(Id::from(2))),
-                // Should use the custom resolution delay, not the default 50ms.
-                Some(Output::Timer {
-                    duration: custom_resolution_delay,
-                }),
-            ),
-        ],
+        vec![(
+            Some(in_dns_a_positive(Id::from(2))),
+            // Should use the custom resolution delay, not the default 50ms.
+            Some(Output::Timer {
+                duration: custom_resolution_delay,
+            }),
+        )],
         now,
     );
 
@@ -202,4 +249,68 @@ fn custom_delays() {
         ],
         now,
     );
+}
+
+
+fn alt_svc_disabled_config(version: HttpVersion) -> NetworkConfig {
+    let http_versions = match version {
+        HttpVersion::H3 => HttpVersions {
+            h3: false,
+            ..Default::default()
+        },
+        HttpVersion::H2 => HttpVersions {
+            h2: false,
+            ..Default::default()
+        },
+        HttpVersion::H1 => HttpVersions {
+            h1: false,
+            ..Default::default()
+        },
+    };
+    NetworkConfig {
+        http_versions,
+        alt_svc: vec![AltSvc {
+            host: None,
+            port: None,
+            http_version: version,
+        }],
+        ..NetworkConfig::default()
+    }
+}
+
+fn assert_alt_svc_version_disabled(
+    version: HttpVersion,
+    expected_fallback: ConnectionAttemptHttpVersions,
+) {
+    let now = Instant::now();
+    let mut he = HappyEyeballs::new_with_network_config(
+        &V4_ADDR.to_string(),
+        PORT,
+        alt_svc_disabled_config(version),
+    )
+    .unwrap();
+    he.expect(
+        vec![(
+            None,
+            Some(out_attempt(
+                Id::from(0),
+                V4_ADDR.into(),
+                PORT,
+                expected_fallback,
+            )),
+        )],
+        now,
+    );
+}
+
+
+#[test]
+fn alt_svc_h2_disabled() {
+    assert_alt_svc_version_disabled(HttpVersion::H2, ConnectionAttemptHttpVersions::H1);
+}
+
+
+#[test]
+fn alt_svc_h1_disabled() {
+    assert_alt_svc_version_disabled(HttpVersion::H1, ConnectionAttemptHttpVersions::H2);
 }

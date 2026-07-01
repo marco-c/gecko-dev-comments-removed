@@ -316,7 +316,9 @@ impl ServiceInfo {
         
         
         ipv6_addrs: Option<&[Ipv6Addr]>,
-        http_versions: &HashSet<ConnectionAttemptHttpVersions>,
+        
+        
+        enabled_http_versions: &HttpVersions,
         ech_enabled: bool,
     ) -> Vec<Endpoint> {
         let port = self.port.unwrap_or(port);
@@ -341,11 +343,19 @@ impl ServiceInfo {
             Some(_) => &[],
         };
 
-        let hint_http_versions: HashSet<ConnectionAttemptHttpVersions> =
-            ConnectionAttemptHttpVersions::from_http_versions(&self.alpn_http_versions)
-                .intersection(http_versions)
-                .cloned()
-                .collect();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut versions = self.alpn_http_versions.clone();
+        enabled_http_versions.filter_disabled(&mut versions);
+        let http_versions = ConnectionAttemptHttpVersions::from_http_versions(&versions);
 
         let hints = hint_v6
             .iter()
@@ -355,13 +365,11 @@ impl ServiceInfo {
             .flat_map(|ip| {
                 
                 let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
-                hint_http_versions
-                    .iter()
-                    .map(move |&http_version| Endpoint {
-                        address: SocketAddr::new(ip, port),
-                        http_version,
-                        ech_config: ech_config.clone(),
-                    })
+                http_versions.iter().map(move |&http_version| Endpoint {
+                    address: SocketAddr::new(ip, port),
+                    http_version,
+                    ech_config: ech_config.clone(),
+                })
             });
 
         let addrs = ipv6_addrs
@@ -473,6 +481,21 @@ pub struct HttpVersions {
     pub h2: bool,
     
     pub h3: bool,
+}
+
+impl HttpVersions {
+    
+    fn filter_disabled(&self, versions: &mut HashSet<HttpVersion>) {
+        if !self.h3 {
+            versions.remove(&HttpVersion::H3);
+        }
+        if !self.h2 {
+            versions.remove(&HttpVersion::H2);
+        }
+        if !self.h1 {
+            versions.remove(&HttpVersion::H1);
+        }
+    }
 }
 
 impl Default for HttpVersions {
@@ -941,16 +964,7 @@ impl HappyEyeballs {
         let any_ech = self.any_ech();
 
         let target_names = self
-            .dns_queries
-            .iter()
-            .filter_map(|q| match &q.state {
-                DnsQueryState::Completed {
-                    response: DnsResult::Https(Ok(service_infos)),
-                    ..
-                } => Some(service_infos.iter()),
-                _ => None,
-            })
-            .flatten()
+            .completed_service_infos()
             
             .filter(move |i| !any_ech || i.ech_config.is_some())
             .map(|i| &i.target_name);
@@ -1199,16 +1213,7 @@ impl HappyEyeballs {
 
         
         let mut service_infos: Vec<&ServiceInfo> = self
-            .dns_queries
-            .iter()
-            .filter_map(|q| match &q.state {
-                DnsQueryState::Completed {
-                    response: DnsResult::Https(Ok(infos)),
-                    ..
-                } => Some(infos.as_slice()),
-                _ => None,
-            })
-            .flatten()
+            .completed_service_infos()
             
             
             .filter(|i| !any_ech || i.ech_config.is_some())
@@ -1216,7 +1221,6 @@ impl HappyEyeballs {
         service_infos.sort_by_key(|i| i.priority);
 
         
-        let http_versions = self.https_record_http_versions();
         let mut endpoints: Vec<Endpoint> = Vec::new();
         for info in &service_infos {
             let ipv4_addrs: Option<&[Ipv4Addr]> =
@@ -1243,7 +1247,7 @@ impl HappyEyeballs {
                 self.port,
                 ipv4_addrs,
                 ipv6_addrs,
-                &http_versions,
+                &self.network_config.http_versions,
                 self.network_config.ech,
             );
             bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
@@ -1305,17 +1309,26 @@ impl HappyEyeballs {
         )
     }
 
+    
+    fn completed_service_infos(&self) -> impl Iterator<Item = &ServiceInfo> {
+        self.dns_queries
+            .iter()
+            .filter_map(|q| match &q.state {
+                DnsQueryState::Completed {
+                    response: DnsResult::Https(Ok(infos)),
+                    ..
+                } => Some(infos.as_slice()),
+                _ => None,
+            })
+            .flatten()
+    }
+
     fn any_ech(&self) -> bool {
         if !self.network_config.ech {
             return false;
         }
-        self.dns_queries.iter().any(|q| match &q.state {
-            DnsQueryState::Completed {
-                response: DnsResult::Https(Ok(infos)),
-                ..
-            } => infos.iter().any(|i| i.ech_config.is_some()),
-            _ => false,
-        })
+        self.completed_service_infos()
+            .any(|i| i.ech_config.is_some())
     }
 
     
@@ -1323,40 +1336,9 @@ impl HappyEyeballs {
     
     fn ip_host_http_versions(&self) -> HashSet<ConnectionAttemptHttpVersions> {
         let mut http_versions = HashSet::from([HttpVersion::H2, HttpVersion::H1]);
-        self.filter_disabled_http_versions(&mut http_versions);
-        ConnectionAttemptHttpVersions::from_http_versions(&http_versions)
-    }
-
-    
-    
-    
-    
-    fn https_record_http_versions(&self) -> HashSet<ConnectionAttemptHttpVersions> {
-        let mut http_versions = HashSet::new();
-
-        http_versions.extend(
-            self.dns_queries
-                .iter()
-                .filter_map(|q| match &q.state {
-                    DnsQueryState::Completed {
-                        response: DnsResult::Https(Ok(infos)),
-                        ..
-                    } => Some(
-                        infos
-                            .iter()
-                            .flat_map(|i| i.alpn_http_versions.iter().cloned()),
-                    ),
-                    _ => None,
-                })
-                .flatten(),
-        );
-
-        if http_versions.is_empty() {
-            http_versions.insert(HttpVersion::H2);
-            http_versions.insert(HttpVersion::H1);
-        }
-
-        self.filter_disabled_http_versions(&mut http_versions);
+        self.network_config
+            .http_versions
+            .filter_disabled(&mut http_versions);
         ConnectionAttemptHttpVersions::from_http_versions(&http_versions)
     }
 
@@ -1396,18 +1378,6 @@ impl HappyEyeballs {
         }
 
         pairs
-    }
-
-    fn filter_disabled_http_versions(&self, http_versions: &mut HashSet<HttpVersion>) {
-        if !self.network_config.http_versions.h3 {
-            http_versions.remove(&HttpVersion::H3);
-        }
-        if !self.network_config.http_versions.h2 {
-            http_versions.remove(&HttpVersion::H2);
-        }
-        if !self.network_config.http_versions.h1 {
-            http_versions.remove(&HttpVersion::H1);
-        }
     }
 
     
