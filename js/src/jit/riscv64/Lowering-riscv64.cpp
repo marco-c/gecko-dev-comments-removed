@@ -171,15 +171,15 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
   
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
+
     
     
     
     
-    
-    if (rhs > 0 && std::has_single_bit(mozilla::Abs(rhs))) {
-      int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
-      auto* lir =
-          new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, rhs < 0);
       if (div->fallible()) {
         assignSnapshot(lir, div->bailoutKind());
       }
@@ -259,6 +259,22 @@ void LIRGeneratorRiscv64::lowerModI64(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    
+    uint32_t rhs = div->rhs()->toConstant()->toInt32();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, false);
+      if (div->fallible()) {
+        assignSnapshot(lir, div->bailoutKind());
+      }
+      define(lir, div);
+      return;
+    }
+  }
+
   LAllocation lhs, rhs;
   if (!div->canTruncateRemainder()) {
     lhs = useRegister(div->lhs());
