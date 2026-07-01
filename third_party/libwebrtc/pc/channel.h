@@ -265,8 +265,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  bool RegisterRtpDemuxerSink_w(bool clear_payload_types,
-                                std::optional<flat_set<uint32_t>> ssrcs)
+  bool RegisterRtpDemuxerSink_w(const MediaContentDescription* content)
       RTC_RUN_ON(worker_thread());
 
   
