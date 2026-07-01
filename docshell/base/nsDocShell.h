@@ -9,6 +9,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/Result.h"
 #include "mozilla/ScrollbarPreferences.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
@@ -240,22 +241,8 @@ class nsDocShell final : public nsDocLoader,
                        mozilla::dom::UserNavigationInvolvement aUserInvolvement,
                        nsIPrincipal* aTriggeringPrincipal,
                        nsIPolicyContainer* aPolicyContainer);
-  
-
-
-
-
-
-
-
-
-
-
-
-  nsresult OnLinkClickSync(nsIContent* aContent,
-                           nsDocShellLoadState* aLoadState,
-                           bool aNoOpenerImplied,
-                           nsIPrincipal* aTriggeringPrincipal);
+  nsresult OnFormSubmit(mozilla::dom::HTMLFormElement* aForm,
+                        nsDocShellLoadState* aLoadState);
 
   
 
@@ -587,6 +574,31 @@ class nsDocShell final : public nsDocLoader,
   nsresult SetupNewViewer(
       nsIDocumentViewer* aNewViewer,
       mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
+
+  
+  
+  nsresult ComputeNamedTargetBrowsingContext(nsDocShellLoadState* aLoadState);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult OnLinkClickSync(nsIContent* aContent,
+                           nsDocShellLoadState* aLoadState,
+                           bool aNoOpenerImplied,
+                           nsIPrincipal* aTriggeringPrincipal);
+  
+  mozilla::Result<RefPtr<OnLinkClickEvent>, nsresult> OnLinkClickWithLoadState(
+      nsIContent* aContent, nsDocShellLoadState* aLoadState,
+      bool aNoOpenerImplied, nsIPrincipal* aTriggeringPrincipal);
 
   
   
@@ -1157,6 +1169,8 @@ class nsDocShell final : public nsDocLoader,
 
   void SetCurrentURIInternal(nsIURI* aURI);
 
+  void StopPendingJavascriptURLNavigations();
+
   already_AddRefed<nsIWebProgressListener> BCWebProgressListener();
 
   
@@ -1241,6 +1255,16 @@ class nsDocShell final : public nsDocLoader,
   
   nsCOMPtr<nsIURI> mFailedURI;
   nsCOMPtr<nsIChannel> mFailedChannel;
+
+  
+
+
+
+
+
+
+
+  mozilla::WeakPtr<OnLinkClickEvent> mPlannedFormNavigation;
 
   mozilla::UniquePtr<mozilla::gfx::Matrix5x4> mColorMatrix;
 
