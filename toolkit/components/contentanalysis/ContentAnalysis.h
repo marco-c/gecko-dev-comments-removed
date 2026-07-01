@@ -45,6 +45,7 @@ class ContentAnalysisResponse;
 }  
 
 namespace mozilla::contentanalysis {
+class ContentAnalysisBackend;
 class ContentAnalysisCallback;
 
 enum class DefaultResult : uint8_t {
@@ -117,7 +118,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   
   Reason mReason = Reason::eUnknown;
 
-  RefPtr<nsITransferable> mTransferable;
+  nsCOMPtr<nsITransferable> mTransferable;
   RefPtr<dom::DataTransfer> mDataTransfer;
 
   
@@ -314,8 +315,9 @@ class ContentAnalysis final : public nsIContentAnalysis,
   void RecordConnectionSettingsTelemetry(const nsString& clientSignature);
 
   nsresult RunAnalyzeRequestTask(
-      const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
-      const RefPtr<nsIContentAnalysisCallback>& aCallback);
+      const nsCOMPtr<nsIContentAnalysisRequest>& aRequest,
+      bool aAutoAcknowledge,
+      const nsCOMPtr<nsIContentAnalysisCallback>& aCallback);
   nsresult RunAcknowledgeTask(
       nsIContentAnalysisAcknowledgement* aAcknowledgement,
       const nsACString& aRequestToken);
@@ -412,7 +414,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     void RemoveFromUserActionMap();
 
     WeakPtr<ContentAnalysis> mWeakContentAnalysis;
-    RefPtr<nsIContentAnalysisCallback> mCallback;
+    nsCOMPtr<nsIContentAnalysisCallback> mCallback;
     nsCString mUserActionId;
 
     
@@ -423,7 +425,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
   };
 
   Result<RefPtr<RequestsPromise::AllPromiseType>,
-         RefPtr<nsIContentAnalysisResult>>
+         nsCOMPtr<nsIContentAnalysisResult>>
   GetFinalRequestList(const ContentAnalysisRequestArray& aRequests);
 
   Result<RefPtr<RequestsPromise>, nsresult> ExpandFolderRequest(
@@ -449,8 +451,11 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   bool mSetByEnterprise;
 
+  
+  RefPtr<ContentAnalysisBackend> mBackend;
+
   struct UserActionData final {
-    RefPtr<nsIContentAnalysisCallback> mCallback;
+    nsCOMPtr<nsIContentAnalysisCallback> mCallback;
     nsTHashSet<nsCString> mRequestTokens;
     RefPtr<mozilla::CancelableRunnable> mTimeoutRunnable;
     bool mAutoAcknowledge;
