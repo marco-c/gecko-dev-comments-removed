@@ -195,7 +195,7 @@ using PackedRegisterMask = uint32_t;
 
 class FloatRegisters {
  public:
-  enum FPRegisterID {
+  enum FPRegisterID : uint8_t {
     f0 = 0,
     f1,
     f2,
@@ -452,9 +452,9 @@ struct FloatRegister {
   using Kind = Codes::Kind;
   
   
-  Encoding encoding_;  
-  Kind kind_;          
-  bool invalid_;
+  Encoding encoding_ : 5;  
+  Kind kind_ : 2;          
+  bool invalid_ : 1;
 
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
