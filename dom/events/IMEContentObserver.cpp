@@ -258,8 +258,9 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
     return false;
   }
 
+  mRootElement = ComputeRootElement(presShell);
+
   if (mEditorBase->IsTextEditor()) {
-    mRootElement = mEditorBase->GetRoot();  
     MOZ_ASSERT(mRootElement);
     MOZ_ASSERT(mRootElement->GetFirstChild());
     if (auto* text = Text::FromNodeOrNull(
@@ -267,32 +268,6 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
       mTextControlValueLength = ContentEventHandler::GetNativeTextLength(*text);
     }
     mIsTextControl = true;
-  } else if (const nsRange* selRange = selection->GetRangeAt(0)) {
-    MOZ_ASSERT(!mIsTextControl);
-    if (NS_WARN_IF(!selRange->GetStartContainer())) {
-      return false;
-    }
-
-    
-    
-    
-    
-    nsCOMPtr<nsINode> startContainer = selRange->GetStartContainer();
-    mRootElement =
-        Element::FromNodeOrNull(startContainer->GetSelectionRootContent(
-            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
-            nsINode::AllowCrossShadowBoundary::No));
-  } else {
-    MOZ_ASSERT(!mIsTextControl);
-    
-    
-    
-    const OwningNonNull<nsINode> rootEditableNode(
-        *mRootEditableNodeOrTextControlElement);
-    mRootElement =
-        Element::FromNodeOrNull(rootEditableNode->GetSelectionRootContent(
-            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
-            nsINode::AllowCrossShadowBoundary::No));
   }
   if (!mRootElement && mRootEditableNodeOrTextControlElement->IsDocument()) {
     
@@ -312,6 +287,58 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
   mDocumentObserver = new DocumentObserver(*this);
 
   return true;
+}
+
+Element* IMEContentObserver::ComputeRootElement(PresShell* aPresShell) const {
+  if (NS_WARN_IF(!aPresShell) ||
+      NS_WARN_IF(!mRootEditableNodeOrTextControlElement)) {
+    return nullptr;
+  }
+  Selection* const selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return nullptr;
+  }
+
+  if (mEditorBase->IsTextEditor()) {
+    return mEditorBase->GetRoot();  
+  }
+
+  
+  
+  if (const nsRange* selRange = selection->GetRangeAt(0)) {
+    MOZ_ASSERT(!mIsTextControl);
+    if (NS_WARN_IF(!selRange->GetStartContainer())) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    return Element::FromNodeOrNull(
+        selRange->GetStartContainer()->GetSelectionRootContent(
+            aPresShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+            nsINode::AllowCrossShadowBoundary::No));
+  }
+
+  
+  
+  if (mRootEditableNodeOrTextControlElement->IsInDesignMode()) {
+    MOZ_ASSERT(mRootEditableNodeOrTextControlElement->IsDocument());
+    Element* const bodyElement =
+        mRootEditableNodeOrTextControlElement->AsDocument()->GetBody();
+    if (bodyElement && bodyElement->IsEditable()) {
+      return bodyElement;
+    }
+    return mRootEditableNodeOrTextControlElement->AsDocument()
+        ->GetRootElement();
+  }
+
+  
+  return Element::FromNodeOrNull(
+      mRootEditableNodeOrTextControlElement->GetSelectionRootContent(
+          aPresShell, nsINode::IgnoreOwnIndependentSelection::Yes,
+          nsINode::AllowCrossShadowBoundary::No));
 }
 
 void IMEContentObserver::Clear() {
@@ -589,11 +616,19 @@ bool IMEContentObserver::IsObservingElement(const nsPresContext& aPresContext,
   }
   
   
+  if (mRootEditableNodeOrTextControlElement &&
+      mRootEditableNodeOrTextControlElement->IsInDesignMode()) {
+    return mRootElement && (!aElement || aElement->IsInDesignMode()) &&
+           mRootElement == ComputeRootElement(aPresContext.GetPresShell());
+  }
   
   
-  return mRootEditableNodeOrTextControlElement ==
-         IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
-             aPresContext, aElement);
+  
+  
+  return mRootEditableNodeOrTextControlElement &&
+         mRootEditableNodeOrTextControlElement ==
+             IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
+                 aPresContext, aElement);
 }
 
 
