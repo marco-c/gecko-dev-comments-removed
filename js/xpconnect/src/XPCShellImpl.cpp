@@ -1177,7 +1177,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
           aShellData->crashHelperSocket);
 #endif  
 
-      rv = CrashReporter::OOPInit(greBinDir);
+      rv = CrashReporter::OOPInit(greBinDir, true);
       if (NS_FAILED(rv)) {
         printf("CrashReporter::OOPInit(): could not launch the crash helper\n");
       }
