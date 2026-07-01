@@ -18,10 +18,10 @@
 namespace webrtc {
 namespace {
 
-TEST(EncoderSpeedExperimentTest, DisabledByDefault) {
+TEST(EncoderSpeedExperimentTest, EnabledByDefault) {
   FieldTrials field_trials("");
   EncoderSpeedExperiment config(field_trials);
-  EXPECT_FALSE(config.IsDynamicSpeedEnabled());
+  EXPECT_TRUE(config.IsDynamicSpeedEnabled());
 }
 
 TEST(EncoderSpeedExperimentTest, DynamicSpeedEnabled) {
@@ -37,14 +37,23 @@ TEST(EncoderSpeedExperimentTest, DynamicSpeedExplicitlyDisabled) {
 }
 
 TEST(EncoderSpeedExperimentTest, DefaultComplexity) {
-  FieldTrials field_trials("WebRTC-EncoderSpeed/dynamic_speed:true/");
-
+  FieldTrials field_trials("");
   EncoderSpeedExperiment config(field_trials);
 
-  EXPECT_EQ(config.GetComplexity(kVideoCodecVP8, false),
-            VideoCodecComplexity::kComplexityNormal);
+  
+  EXPECT_EQ(config.GetComplexity(kVideoCodecAV1, false),
+            VideoCodecComplexity::kComplexityHigh);
   EXPECT_EQ(config.GetComplexity(kVideoCodecAV1, true),
-            VideoCodecComplexity::kComplexityNormal);
+            VideoCodecComplexity::kComplexityLow);
+
+  
+  for (VideoCodecType codec :
+       {kVideoCodecVP8, kVideoCodecVP9, kVideoCodecH264, kVideoCodecH265}) {
+    EXPECT_EQ(config.GetComplexity(codec, false),
+              VideoCodecComplexity::kComplexityNormal);
+    EXPECT_EQ(config.GetComplexity(codec, true),
+              VideoCodecComplexity::kComplexityNormal);
+  }
 }
 
 TEST(EncoderSpeedExperimentTest, PerCodecComplexity) {
@@ -92,11 +101,11 @@ TEST(EncoderSpeedExperimentTest, PerCodecComplexityDynamicSpeedDisabled) {
 TEST(EncoderSpeedExperimentTest, InvalidCodecComplexityValue) {
   FieldTrials field_trials(
       "WebRTC-EncoderSpeed/"
-      "dynamic_speed:true,av1_camera:invalid,vp8_screenshare:max/");
+      "dynamic_speed:true,vp8_camera:invalid,vp8_screenshare:max/");
 
   EncoderSpeedExperiment config(field_trials);
   EXPECT_TRUE(config.IsDynamicSpeedEnabled());
-  EXPECT_EQ(config.GetComplexity(kVideoCodecAV1, false),
+  EXPECT_EQ(config.GetComplexity(kVideoCodecVP8, false),
             VideoCodecComplexity::kComplexityNormal);  
   EXPECT_EQ(config.GetComplexity(kVideoCodecVP8, true),
             VideoCodecComplexity::kComplexityMax);
@@ -105,7 +114,7 @@ TEST(EncoderSpeedExperimentTest, InvalidCodecComplexityValue) {
 TEST(EncoderSpeedExperimentTest, InvalidDynamicSpeedValue) {
   FieldTrials field_trials("WebRTC-EncoderSpeed/dynamic_speed:invalid/");
   EncoderSpeedExperiment config(field_trials);
-  EXPECT_FALSE(config.IsDynamicSpeedEnabled());  
+  EXPECT_TRUE(config.IsDynamicSpeedEnabled());  
 }
 
 TEST(EncoderSpeedExperimentTest, Vp9LowComplexityFallbackEnabled) {
@@ -124,7 +133,7 @@ TEST(EncoderSpeedExperimentTest, Vp9LowComplexityFallbackEnabled) {
     
     EXPECT_EQ(config.GetComplexity(kVideoCodecVP8, false),
               VideoCodecComplexity::kComplexityNormal);
-    EXPECT_EQ(config.GetComplexity(kVideoCodecAV1, false),
+    EXPECT_EQ(config.GetComplexity(kVideoCodecH264, false),
               VideoCodecComplexity::kComplexityNormal);
   }
 }
