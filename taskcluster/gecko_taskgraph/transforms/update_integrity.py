@@ -172,9 +172,9 @@ def add_additional_fetches_and_command(config, jobs):
             
             locale,
             
-            "nightly-try",
+            job["attributes"]["update-channel"],
             
-            "firefox",
+            job["attributes"]["shipping_product"],
             
             "/builds/worker/artifacts",
         ]
