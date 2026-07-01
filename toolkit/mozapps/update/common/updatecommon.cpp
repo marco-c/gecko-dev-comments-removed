@@ -2,7 +2,6 @@
 
 
 
-#include "updatedefines.h"
 #if defined(XP_WIN)
 #  include <windows.h>
 #  include <winioctl.h>  
@@ -10,10 +9,6 @@
 #  ifndef RRF_SUBKEY_WOW6464KEY
 #    define RRF_SUBKEY_WOW6464KEY 0x00010000
 #  endif
-#endif
-
-#if defined(XP_MACOSX)
-#  include <os/log.h>
 #endif
 
 #include <stdio.h>
@@ -68,10 +63,7 @@ void UpdateLog::Init(NS_tchar* logFilePath) {
   if (dstFilePathLen > 0 && dstFilePathLen < MAXPATHLEN - 1) {
     NS_tstrncpy(mDstFilePath, logFilePath, MAXPATHLEN);
 #if defined(XP_WIN) || defined(XP_MACOSX)
-    logFP = CreateAndOpenFile(mDstFilePath, false);
-    if (logFP == nullptr) {
-      LogToOS(NS_T("Failed to create FILE*"));
-    }
+    logFP = NS_tfopen(mDstFilePath, NS_T("w"));
 #else
     
     
@@ -95,11 +87,7 @@ void UpdateLog::Finish() {
   fflush(logFP);
   rewind(logFP);
 
-  FILE* updateLogFP = CreateAndOpenFile(mDstFilePath, true);
-  if (updateLogFP == nullptr) {
-    return;
-  }
-
+  FILE* updateLogFP = NS_tfopen(mDstFilePath, NS_T("wb+"));
   while (!feof(logFP)) {
     size_t read = fread(buffer, 1, blockSize, logFP);
     if (ferror(logFP)) {
@@ -200,64 +188,6 @@ void UpdateLog::WarnPrintf(const char* fmt, ...) {
   
   
   fflush(logFP);
-}
-
-
-
-
-
-
-
-
-
-FILE* CreateAndOpenFile(NS_tchar* filePath, bool binary) {
-#ifdef XP_WIN
-  return NS_tfopen(filePath, binary ? NS_T("wb+") : NS_T("w+"));
-#else
-  LogToOS(NS_T("Opening logfile"));
-  NS_tchar* lastSeperator = NS_tstrrchr(filePath, '/');
-  if (lastSeperator == NULL) {
-    
-    return nullptr;
-  }
-
-  const NS_tchar templateSuffix[] = NS_T("/temp.XXXXXX");
-  size_t templateLen = NS_tstrlen(templateSuffix);
-
-  long dirLength = lastSeperator - filePath;
-  
-  if (dirLength < 0 ||
-      (unsigned long)dirLength >= MAXPATHLEN - (templateLen + 1)) {
-    
-    return nullptr;
-  }
-
-  NS_tchar tmpFilePath[MAXPATHLEN] = {L'\0'};
-  
-  
-  
-  
-  memcpy(tmpFilePath, filePath, dirLength);
-  
-  
-  
-  NS_tstrncpy(tmpFilePath + dirLength, templateSuffix, MAXPATHLEN);
-
-  int fd = mkstemp(tmpFilePath);
-  if (fd == -1) {
-    LogToOS(NS_T("Failed to open tmp"));
-    return nullptr;
-  }
-
-  if (rename(tmpFilePath, filePath) == -1) {
-    LogToOS(NS_T("Failed to rename"));
-    close(fd);
-    return nullptr;
-  }
-
-  LogToOS(NS_T("Opening file*"));
-  return fdopen(fd, "w+");
-#endif
 }
 
 #ifdef XP_WIN
@@ -543,23 +473,4 @@ bool IsValidFullPath(NS_tchar* origFullPath) {
   }
 #endif
   return true;
-}
-
-#if defined(XP_MACOSX)
-
-MOZ_RUNINIT static os_log_t updaterLogger =
-    os_log_create("org.mozilla.updater", "Updater");
-#endif
-
-
-
-
-
-
-
-
-void LogToOS(const NS_tchar* message) {
-#if defined(XP_MACOSX)
-  os_log(updaterLogger, "%{public}s", message);
-#endif
 }
