@@ -3,6 +3,16 @@
 
 "use strict";
 
+add_setup(async function () {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.storage.encryption.sqlite.enabled", false]],
+  });
+});
+
 
 
 

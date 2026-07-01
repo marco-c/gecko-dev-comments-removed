@@ -29,6 +29,18 @@ class BackupTestBase(MarionetteTestCase):
         MarionetteTestCase.setUp(self)
         self.logger.info("Setting up test environment")
 
+        
+        
+        
+        
+        
+        
+        
+        if self.marionette.get_pref("security.storage.encryption.sqlite.enabled"):
+            self.skipTest(
+                "Profile backup is disabled when SQLite at-rest encryption is enabled"
+            )
+
         self.marionette.enforce_gecko_prefs({
             "browser.backup.enabled": True,
             "browser.backup.log": True,
