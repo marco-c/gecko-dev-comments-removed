@@ -42,6 +42,9 @@ const launchModernSettingsDialogDefaultAppsStub = sinon.stub();
 const shellStub = sinon.stub(ShellService, "shellService").value({
   setDefaultBrowser: setDefaultStub,
   queryCurrentDefaultHandlerFor: queryCurrentDefaultHandlerForStub,
+  
+  
+  isDefaultHandlerFor: sinon.stub(),
   launchSetDefaultAppPicker: launchSetDefaultAppPickerStub,
   launchModernSettingsDialogDefaultApps:
     launchModernSettingsDialogDefaultAppsStub,
