@@ -796,7 +796,9 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   
   
   
-  masm.Asr(output64, output64, rmc.shiftAmount);
+  if (rmc.shiftAmount > 0) {
+    masm.Asr(output64, output64, rmc.shiftAmount);
+  }
 
   
   
@@ -859,7 +861,9 @@ static void UnsignedDivide64WithConstant(MacroAssembler& masm,
     masm.Add(output64, output64, Operand(const64, vixl::LSR, 1));
     masm.Lsr(output64, output64, rmc.shiftAmount - 1);
   } else {
-    masm.Lsr(output64, output64, rmc.shiftAmount);
+    if (rmc.shiftAmount > 0) {
+      masm.Lsr(output64, output64, rmc.shiftAmount);
+    }
   }
 }
 
