@@ -1193,8 +1193,6 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
 
   if (L->bound()) {
     
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
     int32_t offset = L->offset() - next_instr_offset.getOffset();
     MOZ_ASSERT(is_intn(offset, bits));
     MOZ_ASSERT((offset & 1) == 0);
@@ -1217,8 +1215,6 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
   
   
   if (!L->used()) {
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
     L->use(next_instr_offset.getOffset());
     DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                  next_instr_offset.getOffset());
