@@ -19,28 +19,13 @@ use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
 
-use std::{hash, ops::{Deref, DerefMut}};
+use std::ops::{Deref, DerefMut};
 use super::{stops_and_min_alpha, GradientStopKey};
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf, PartialEq)]
-pub struct ConicGradientParams {
-    pub angle: f32, 
-    pub start_offset: f32,
-    pub end_offset: f32,
-}
 
-impl Eq for ConicGradientParams {}
 
-impl hash::Hash for ConicGradientParams {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.angle.to_bits().hash(state);
-        self.start_offset.to_bits().hash(state);
-        self.end_offset.to_bits().hash(state);
-    }
-}
+pub use api::key_types::ConicGradientParams;
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
