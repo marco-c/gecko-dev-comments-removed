@@ -520,6 +520,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080131
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyDesktopSiteModeOnOffIsEnabledTest"],
+        bug = 2048234,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyDesktopSiteModeOnOffIsEnabledTest() {
@@ -847,7 +852,6 @@ class MainMenuTest {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
             verifyWhatIsBrokenField(composeTestRule)
             verifySendButtonIsEnabled(isEnabled = false)
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             verifyChooseReasonErrorMessageIsNotDisplayed(composeTestRule)
             verifySendButtonIsEnabled(isEnabled = true)
@@ -865,7 +869,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             clickBrokenSiteFormCancelButton(composeTestRule)
         }.openThreeDotMenu {
@@ -886,7 +889,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
             clickBrokenSiteFormSendButton(composeTestRule)
@@ -915,7 +917,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
         }.closeWebCompatReporter {
@@ -941,7 +942,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(firstWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(
                 problemDescription = "Prolonged page loading time",
@@ -972,7 +972,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
         }
