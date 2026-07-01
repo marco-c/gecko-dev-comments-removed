@@ -580,6 +580,28 @@ class WinUtils {
 
   static void InvalidateWindowPreviews();
 
+  
+
+
+
+  using WriteFileZonePromise = MozPromise<bool, nsresult, true>;
+
+  
+
+
+
+
+
+
+
+  static RefPtr<WriteFileZonePromise> MaybeWriteFileZoneId(
+      nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
+      const Maybe<nsCString>& aReferrerSpec);
+
+  static Result<bool, nsresult> MaybeWriteFileZoneIdSync(
+      nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
+      const Maybe<nsCString>& aReferrerSpec);
+
  private:
   static WhitelistVec BuildWhitelist();
 
