@@ -3,7 +3,6 @@
 
 
 use error_support::{ErrorHandling, GetErrorHandling};
-use rc_crypto::hawk;
 use std::string;
 
 
@@ -189,9 +188,6 @@ pub enum Error {
 
     #[error("Sync15 error: {0}")]
     SyncError(#[from] sync15::Error),
-
-    #[error("HAWK error: {0}")]
-    HawkError(#[from] hawk::Error),
 
     #[error("Integer conversion error: {0}")]
     IntegerConversionError(#[from] std::num::TryFromIntError),

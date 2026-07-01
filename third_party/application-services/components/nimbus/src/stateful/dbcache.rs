@@ -9,9 +9,12 @@ use crate::enrollment::{
     EnrolledFeature, EnrolledFeatureConfig, ExperimentEnrollment, map_features_by_feature_id,
 };
 use crate::error::{NimbusError, Result, warn};
+use crate::evaluator::{ExperimentAvailable, is_experiment_available};
 use crate::stateful::enrollment::get_enrollments;
+use crate::stateful::firefox_labs::FirefoxLabsMetadata;
 use crate::stateful::gecko_prefs::GeckoPrefStore;
 use crate::stateful::persistence::{Database, StoreId, Writer};
+use crate::targeting::NimbusTargetingHelper;
 use crate::{EnrolledExperiment, Experiment};
 
 
@@ -49,12 +52,15 @@ impl DatabaseCache {
     
     
     
+    
+    
     pub fn commit_and_update(
         &self,
         db: &Database,
         writer: Writer,
         coenrolling_ids: &HashSet<&str>,
         gecko_pref_store: Option<Arc<GeckoPrefStore>>,
+        update_gecko_prefs: bool,
     ) -> Result<()> {
         
         
@@ -80,6 +86,7 @@ impl DatabaseCache {
                 &experiments,
                 &enrollments,
                 &experiments_by_slug,
+                update_gecko_prefs,
             )
         });
 
@@ -180,4 +187,115 @@ impl DatabaseCache {
             }
         })?
     }
+
+    pub fn check_for_feature_conflict(
+        &self,
+        slug: &str,
+        coenrolling_feature_ids: &[String],
+    ) -> Result<Option<bool>> {
+        self.get_data(|data| {
+            if data.experiments_by_slug.contains_key(slug) {
+                
+                return Some(false);
+            }
+
+            if let Some(experiment) = data.experiments.iter().find(|e| e.slug == slug) {
+                let coenrolling_feature_ids: HashSet<&str> =
+                    coenrolling_feature_ids.iter().map(|s| s.as_ref()).collect();
+
+                let enrolled_feature_ids =
+                    compute_enrolled_feature_ids(&data.experiments_by_slug, true);
+
+                Some(!features_available(
+                    experiment,
+                    &enrolled_feature_ids,
+                    &coenrolling_feature_ids,
+                ))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn get_available_firefox_labs_metadata(
+        &self,
+        targeting_helper: &NimbusTargetingHelper,
+        coenrolling_feature_ids: &[String],
+    ) -> Result<Vec<FirefoxLabsMetadata>> {
+        let mut all_labs: Vec<_> = self.get_data(|data| {
+            let enrolled_feature_ids =
+                compute_enrolled_feature_ids(&data.experiments_by_slug, true);
+
+            let coenrolling_feature_ids: HashSet<&str> =
+                coenrolling_feature_ids.iter().map(|s| s.as_ref()).collect();
+
+            data.experiments
+                .iter()
+                .filter_map(|experiment| {
+                    if !experiment.is_firefox_labs_opt_in {
+                        return None;
+                    }
+
+                    let enrolled = data.experiments_by_slug.contains_key(&experiment.slug);
+
+                    
+                    
+                    
+                    
+                    if is_experiment_available(targeting_helper, experiment, true)
+                        == ExperimentAvailable::Available
+                        && (enrolled
+                            || (features_available(
+                                experiment,
+                                &enrolled_feature_ids,
+                                &coenrolling_feature_ids,
+                            ) && !experiment.is_enrollment_paused))
+                    {
+                        experiment.get_firefox_labs_metadata(enrolled)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        })?;
+
+        
+        
+        all_labs.sort_by(|e1, e2| Ord::cmp(&e1.slug, &e2.slug));
+
+        Ok(all_labs)
+    }
+
+    #[cfg(test)]
+    pub fn get_experiment_enrollment(&self, slug: &str) -> Result<Option<ExperimentEnrollment>> {
+        self.get_data(|data| data.enrollments.iter().find(|e| e.slug == slug).cloned())
+    }
+}
+
+fn compute_enrolled_feature_ids(
+    experiments_by_slug: &HashMap<String, EnrolledExperiment>,
+    is_rollout: bool,
+) -> HashSet<&str> {
+    experiments_by_slug
+        .values()
+        .filter(|e| e.is_rollout == is_rollout)
+        .flat_map(|e| e.feature_ids.iter())
+        .map(|f| f.as_ref())
+        .collect()
+}
+
+fn features_available(
+    experiment: &Experiment,
+    enrolled_feature_ids: &HashSet<&str>,
+    coenrolling_feature_ids: &HashSet<&str>,
+) -> bool {
+    for feature_id in &experiment.feature_ids {
+        if enrolled_feature_ids.contains(&**feature_id)
+            && !coenrolling_feature_ids.contains(&**feature_id)
+        {
+            return false;
+        }
+    }
+
+    true
 }

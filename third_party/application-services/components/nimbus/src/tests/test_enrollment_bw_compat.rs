@@ -2,9 +2,21 @@
 
 
 
+#[cfg(feature = "stateful")]
+use rkv::StoreOptions;
 use serde_json::json;
 
 use crate::enrollment::*;
+
+cfg_if::cfg_if! {
+  if #[cfg(feature = "stateful")] {
+      use crate::error::Result;
+      use crate::metrics::DatabaseMigrationExtraDef;
+      use crate::tests::helpers::TestMetrics;
+      use crate::stateful::enrollment::v3;
+      use crate::stateful::persistence::{Database, SingleStore, StoreId, DB_KEY_DB_VERSION, DatabaseMigrationReason};
+  }
+}
 
 
 
@@ -57,18 +69,54 @@ fn test_experiment_schema_with_feature_ids() {
 
 
 #[test]
-fn test_not_enrolled_reason_schema_with_feature_conflict() {
+#[cfg(feature = "stateful")]
+fn test_not_enrolled_reason_schema_with_feature_conflict() -> Result<()> {
+    let tmp_dir = tempfile::tempdir()?;
+    let rkv = Database::open_rkv(&tmp_dir)?.0;
+    let meta_store = SingleStore::new(rkv.open_single("meta", StoreOptions::create())?);
+    let enrollment_store: SingleStore =
+        SingleStore::new(rkv.open_single("enrollments", StoreOptions::create())?);
+    let mut writer: rkv::Writer<rkv::backend::SafeModeRwTransaction<'_>> = rkv.write()?;
+
     
-    let non_enrollment: ExperimentEnrollment = serde_json::from_value(json!({
+    let non_enrollment: v3::LegacyExperimentEnrollment = serde_json::from_value(json!({
         "slug": "secure-gold",
         "status": {"NotEnrolled": {
             "reason": "FeatureConflict",
         }}
     }))
     .unwrap();
-    assert!(
-        matches!(non_enrollment.status, EnrollmentStatus::NotEnrolled{ ref reason, ..} if reason == &NotEnrolledReason::FeatureConflict)
+
+    meta_store.put(&mut writer, DB_KEY_DB_VERSION, &3)?;
+    enrollment_store.put(&mut writer, &non_enrollment.slug, &non_enrollment)?;
+    writer.commit()?;
+
+    let metrics = TestMetrics::new();
+    let db = Database::new(&tmp_dir, metrics.clone())?;
+
+    assert_eq!(
+        metrics.get_database_migration_events(),
+        [DatabaseMigrationExtraDef {
+            reason: DatabaseMigrationReason::Upgrade.to_string(),
+            from_version: 3,
+            to_version: 4,
+            error: None,
+        },]
     );
+
+    let enrollments: Vec<ExperimentEnrollment> =
+        db.collect_all::<ExperimentEnrollment>(StoreId::Enrollments)?;
+    assert!(matches!(
+        enrollments[0].status,
+        EnrollmentStatus::NotEnrolled {
+            reason: NotEnrolledReason::FeatureConflict {
+                conflict_slug: None
+            },
+            ..
+        }
+    ));
+
+    Ok(())
 }
 
 

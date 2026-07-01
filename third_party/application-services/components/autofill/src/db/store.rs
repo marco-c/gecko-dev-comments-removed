@@ -4,7 +4,10 @@
 
 use crate::db::models::address::{Address, UpdatableAddressFields};
 use crate::db::models::credit_card::{CreditCard, UpdatableCreditCardFields};
-use crate::db::{addresses, credit_cards, credit_cards::CreditCardsDeletionMetrics, AutofillDb};
+use crate::db::models::passport::{Passport, UpdatablePassportFields};
+use crate::db::{
+    addresses, credit_cards, credit_cards::CreditCardsDeletionMetrics, passports, AutofillDb,
+};
 use crate::error::*;
 use error_support::handle_error;
 use rusqlite::{
@@ -164,6 +167,53 @@ impl Store {
     }
 
     #[handle_error(Error)]
+    pub fn add_passport(&self, fields: UpdatablePassportFields) -> ApiResult<Passport> {
+        Ok(passports::add_passport(&self.db.lock().unwrap().writer, fields)?.into())
+    }
+
+    #[handle_error(Error)]
+    pub fn get_passport(&self, guid: String) -> ApiResult<Passport> {
+        Ok(passports::get_passport(&self.db.lock().unwrap().writer, &Guid::new(&guid))?.into())
+    }
+
+    #[handle_error(Error)]
+    pub fn get_all_passports(&self) -> ApiResult<Vec<Passport>> {
+        let passports = passports::get_all_passports(&self.db.lock().unwrap().writer)?
+            .into_iter()
+            .map(|x| x.into())
+            .collect();
+        Ok(passports)
+    }
+
+    #[handle_error(Error)]
+    pub fn count_all_passports(&self) -> ApiResult<i64> {
+        passports::count_all_passports(&self.db.lock().unwrap().writer)
+    }
+
+    #[handle_error(Error)]
+    pub fn update_passport(
+        &self,
+        guid: String,
+        passport: UpdatablePassportFields,
+    ) -> ApiResult<()> {
+        passports::update_passport(
+            &self.db.lock().unwrap().writer,
+            &Guid::new(&guid),
+            &passport,
+        )
+    }
+
+    #[handle_error(Error)]
+    pub fn delete_passport(&self, guid: String) -> ApiResult<bool> {
+        passports::delete_passport(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+    }
+
+    #[handle_error(Error)]
+    pub fn touch_passport(&self, guid: String) -> ApiResult<()> {
+        passports::touch(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+    }
+
+    #[handle_error(Error)]
     pub fn scrub_encrypted_data(self: Arc<Self>) -> ApiResult<()> {
         
         
@@ -254,7 +304,7 @@ mod tests {
     use super::*;
     use crate::db::test::new_mem_db;
     use crate::encryption::EncryptorDecryptor;
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
 
     #[test]
     fn test_autofill_meta() -> Result<()> {

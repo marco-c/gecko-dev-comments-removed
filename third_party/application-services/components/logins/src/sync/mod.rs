@@ -2,11 +2,13 @@
 
 
 
+mod bridge;
 mod engine;
 pub(crate) mod merge;
 mod payload;
 mod update_plan;
 
+pub use bridge::LoginsBridgedEngine;
 pub use engine::LoginsSyncEngine;
 use payload::{IncomingLogin, LoginPayload};
 

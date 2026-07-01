@@ -139,13 +139,23 @@ mod tests {
                         avatar: "https://foo.avatar".to_string(),
                         avatar_default: true,
                     },
-                    etag: None,
+                    etag: Some("123".to_string()),
                 }))
             });
         fxa.set_client(Arc::new(client));
 
         let p = fxa.get_profile(false).unwrap();
         assert_eq!(p.email, "foo@bar.com");
+        
+        
+        let p = fxa.get_profile(false).unwrap();
+        assert_eq!(p.email, "foo@bar.com");
+
+        
+        fxa.disconnect();
+        
+        
+        assert!(matches!(fxa.get_profile(false), Err(Error::NoSessionToken)));
     }
 
     #[test]

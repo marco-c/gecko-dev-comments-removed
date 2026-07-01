@@ -5,7 +5,6 @@ use crate::db::{LoginDb, LoginsDeletionMetrics};
 use crate::encryption::EncryptorDecryptor;
 use crate::error::*;
 use crate::login::{BulkResultEntry, EncryptedLogin, Login, LoginEntry, LoginEntryWithMeta};
-use crate::schema;
 use crate::LoginsSyncEngine;
 use parking_lot::Mutex;
 use sql_support::run_maintenance;
@@ -319,20 +318,13 @@ impl LoginStore {
     }
 
     #[handle_error(Error)]
-    pub fn set_checkpoint(&self, checkpoint: &str) -> ApiResult<()> {
-        self.lock_db()?
-            .put_meta(schema::CHECKPOINT_KEY, &checkpoint)
-    }
-
-    #[handle_error(Error)]
-    pub fn get_checkpoint(&self) -> ApiResult<Option<String>> {
-        self.lock_db()?.get_meta(schema::CHECKPOINT_KEY)
-    }
-
-    #[handle_error(Error)]
-    pub fn run_maintenance(&self) -> ApiResult<()> {
+    pub fn run_maintenance(&self, options: Option<RunMaintenanceOptions>) -> ApiResult<()> {
         let conn = self.lock_db()?;
+        let options = options.unwrap_or_default();
         run_maintenance(&conn)?;
+        if options.delete_undecryptable_records_for_remote_replacement {
+            conn.delete_undecryptable_records_for_remote_replacement(conn.encdec.as_ref())?;
+        }
         Ok(())
     }
 
@@ -364,13 +356,25 @@ impl LoginStore {
     }
 }
 
+pub struct RunMaintenanceOptions {
+    pub delete_undecryptable_records_for_remote_replacement: bool,
+}
+
+impl Default for RunMaintenanceOptions {
+    fn default() -> Self {
+        Self {
+            delete_undecryptable_records_for_remote_replacement: true,
+        }
+    }
+}
+
 #[cfg(not(feature = "keydb"))]
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::encryption::test_utils::TEST_ENCDEC;
     use crate::util;
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
     use std::cmp::Reverse;
     use std::time::SystemTime;
 
@@ -495,18 +499,9 @@ mod tests {
         assert!(b_after_update.time_created >= start_us);
         assert!(b_after_update.time_created <= now_us);
         assert!(b_after_update.time_password_changed >= now_us);
-        assert!(b_after_update.time_last_used >= now_us);
         
-        assert_eq!(b_after_update.times_used, 2);
-    }
-
-    #[test]
-    fn test_checkpoint() {
-        ensure_initialized();
-        let store = LoginStore::new_in_memory();
-        let checkpoint = "a-checkpoint";
-        store.set_checkpoint(checkpoint).ok();
-        assert_eq!(store.get_checkpoint().unwrap().unwrap(), checkpoint);
+        assert_eq!(b_after_update.time_last_used, b_from_db.time_last_used);
+        assert_eq!(b_after_update.times_used, 1);
     }
 
     #[test]
@@ -589,7 +584,7 @@ mod tests_keydb {
     use super::*;
     use crate::{ManagedEncryptorDecryptor, NSSKeyManager, PrimaryPasswordAuthenticator};
     use async_trait::async_trait;
-    use nss::ensure_initialized_with_profile_dir;
+    use nss_as::ensure_initialized_with_profile_dir;
     use std::path::PathBuf;
 
     struct MockPrimaryPasswordAuthenticator {

@@ -552,6 +552,7 @@ impl LoginDb {
 
     fn update_existing_login(&self, login: &EncryptedLogin) -> Result<()> {
         
+        let now_ms = util::system_time_ms_i64(SystemTime::now());
         let sql = format!(
             "UPDATE loginsL
              SET local_modified                           = :now_millis,
@@ -583,8 +584,7 @@ impl LoginDb {
                 ":time_password_changed": login.meta.time_password_changed,
                 ":sec_fields": login.sec_fields,
                 ":guid": &login.meta.id,
-                // time_last_used has been set to now.
-                ":now_millis": login.meta.time_last_used,
+                ":now_millis": now_ms,
             },
         )?;
         Ok(())
@@ -755,8 +755,9 @@ impl LoginDb {
                 id: existing.id,
                 time_created: existing.time_created,
                 time_password_changed,
-                time_last_used: now_ms,
-                times_used: existing.times_used + 1,
+                
+                time_last_used: existing.time_last_used,
+                times_used: existing.times_used,
                 time_last_breach_alert_dismissed: None,
             },
             fields: LoginFields {
@@ -1324,7 +1325,7 @@ mod tests {
     use crate::db::test_utils::{get_local_guids, get_mirror_guids};
     use crate::encryption::test_utils::TEST_ENCDEC;
     use crate::sync::merge::LocalLogin;
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
     use std::{thread, time};
 
     #[test]
@@ -1954,6 +1955,46 @@ mod tests {
         let login2 = db.get_by_id(&login.meta.id).unwrap().unwrap();
         assert!(login2.meta.time_last_used > login.meta.time_last_used);
         assert_eq!(login2.meta.times_used, login.meta.times_used + 1);
+    }
+
+    #[test]
+    fn test_update_does_not_count_as_use() {
+        
+        
+        
+        ensure_initialized();
+        let db = LoginDb::open_in_memory();
+        let login = db
+            .add(
+                LoginEntry {
+                    origin: "https://www.example.com".into(),
+                    http_realm: Some("https://www.example.com".into()),
+                    username: "user1".into(),
+                    password: "password1".into(),
+                    ..Default::default()
+                },
+                &*TEST_ENCDEC,
+            )
+            .unwrap();
+        
+        thread::sleep(time::Duration::from_millis(50));
+        db.update(
+            &login.meta.id,
+            LoginEntry {
+                origin: "https://www.example.com".into(),
+                http_realm: Some("https://www.example.com".into()),
+                username: "user1".into(),
+                password: "password2".into(),
+                ..Default::default()
+            },
+            &*TEST_ENCDEC,
+        )
+        .unwrap();
+        let updated = db.get_by_id(&login.meta.id).unwrap().unwrap();
+        
+        assert_eq!(updated.meta.times_used, login.meta.times_used);
+        
+        assert_eq!(updated.meta.time_last_used, login.meta.time_last_used);
     }
 
     #[test]

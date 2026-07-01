@@ -46,7 +46,35 @@ impl FirefoxAccount {
             .get("sessionToken")
             .and_then(|v| v.as_str())
             .ok_or(Error::NoSessionToken)?;
-        self.handle_session_token_change(token)
+        
+        
+        let old_device_info = match self.get_current_device() {
+            Ok(maybe_device) => maybe_device,
+            Err(err) => {
+                warn!(
+                    "Error fetching current device before password change: {:?}",
+                    err
+                );
+                None
+            }
+        };
+        self.handle_session_token_change(token)?;
+        if let Some(ref device_info) = old_device_info {
+            if let Err(err) = self.replace_device(
+                &device_info.display_name,
+                &device_info.device_type,
+                &device_info.push_subscription,
+                &device_info.available_commands,
+            ) {
+                warn!(
+                    "Device information restoration failed after password change: {:?}",
+                    err
+                );
+            } else {
+                info!("Restored device information with new refresh token");
+            }
+        }
+        Ok(())
     }
 
     
@@ -625,7 +653,7 @@ mod tests {
 
     #[test]
     fn test_oauth_flow_url() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::new_with_mock_well_known_fxa_client_configuration(
             "https://mock-fxa.example.com",
             "12345678",
@@ -697,7 +725,7 @@ mod tests {
 
     #[test]
     fn test_force_auth_url() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
         let email = "test@example.com";
@@ -716,7 +744,7 @@ mod tests {
 
     #[test]
     fn test_webchannel_context_url() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         const SCOPES: &[&str] = &["https://identity.mozilla.com/apps/oldsync"];
         let config = Config::new_with_mock_well_known_fxa_client_configuration(
             "https://mock-fxa.example.com",
@@ -736,7 +764,7 @@ mod tests {
 
     #[test]
     fn test_webchannel_pairing_context_url() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         const SCOPES: &[&str] = &["https://identity.mozilla.com/apps/oldsync"];
         const PAIRING_URL: &str = "https://accounts.firefox.com/pair#channel_id=658db7fe98b249a5897b884f98fb31b7&channel_key=1hIDzTj5oY2HDeSg_jA2DhcOcAn5Uqq0cAYlZRNUIo4";
 
@@ -763,7 +791,7 @@ mod tests {
 
     #[test]
     fn test_pairing_flow_url() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         const SCOPES: &[&str] = &["https://identity.mozilla.com/apps/oldsync"];
         const PAIRING_URL: &str = "https://accounts.firefox.com/pair#channel_id=658db7fe98b249a5897b884f98fb31b7&channel_key=1hIDzTj5oY2HDeSg_jA2DhcOcAn5Uqq0cAYlZRNUIo4";
         const EXPECTED_URL: &str = "https://accounts.firefox.com/pair/supp?client_id=12345678&redirect_uri=https%3A%2F%2Ffoo.bar&scope=https%3A%2F%2Fidentity.mozilla.com%2Fapps%2Foldsync&state=SmbAA_9EA5v1R2bgIPeWWw&code_challenge_method=S256&code_challenge=ZgHLPPJ8XYbXpo7VIb7wFw0yXlTa6MUOVfGiADt0JSM&access_type=offline&keys_jwk=eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6Ing5LUltQjJveDM0LTV6c1VmbW5sNEp0Ti14elV2eFZlZXJHTFRXRV9BT0kiLCJ5IjoiNXBKbTB3WGQ4YXdHcm0zREl4T1pWMl9qdl9tZEx1TWlMb1RkZ1RucWJDZyJ9#channel_id=658db7fe98b249a5897b884f98fb31b7&channel_key=1hIDzTj5oY2HDeSg_jA2DhcOcAn5Uqq0cAYlZRNUIo4";
@@ -838,7 +866,7 @@ mod tests {
 
     #[test]
     fn test_pairing_flow_origin_mismatch() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         static PAIRING_URL: &str = "https://bad.origin.com/pair#channel_id=foo&channel_key=bar";
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
@@ -864,7 +892,7 @@ mod tests {
 
     #[test]
     fn test_check_authorization_status() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
 
@@ -888,7 +916,7 @@ mod tests {
 
     #[test]
     fn test_check_authorization_status_circuit_breaker() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
 
@@ -937,7 +965,7 @@ mod tests {
 
     #[test]
     fn test_auth_code_pair_valid_not_allowed_scope() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
         fxa.set_session_token("session");
@@ -991,7 +1019,7 @@ mod tests {
 
     #[test]
     fn test_auth_code_pair_invalid_scope_not_allowed() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
         fxa.set_session_token("session");
@@ -1042,7 +1070,7 @@ mod tests {
 
     #[test]
     fn test_auth_code_pair_scope_not_in_state() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
         fxa.set_session_token("session");
@@ -1090,7 +1118,7 @@ mod tests {
 
     #[test]
     fn test_handle_web_channel_login_sets_session_token() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::stable_dev("12345678", "https://foo.bar");
         let mut fxa = FirefoxAccount::with_config(config);
         fxa.handle_web_channel_login(
@@ -1102,7 +1130,7 @@ mod tests {
 
     #[test]
     fn test_oauth_request_sent_with_session_when_available() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::new_with_mock_well_known_fxa_client_configuration(
             "mock-fxa.example.com",
             "12345678",
@@ -1182,7 +1210,7 @@ mod tests {
     
     #[test]
     fn test_complete_oauth_flow_merges_scopes_and_restores_device() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::new_with_mock_well_known_fxa_client_configuration(
             "mock-fxa.example.com",
             "12345678",
@@ -1293,7 +1321,7 @@ mod tests {
     
     #[test]
     fn test_complete_oauth_flow_no_merge_when_scopes_match() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let config = Config::new_with_mock_well_known_fxa_client_configuration(
             "mock-fxa.example.com",
             "12345678",

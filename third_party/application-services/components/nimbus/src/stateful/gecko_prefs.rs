@@ -125,6 +125,7 @@ pub fn create_feature_prop_pref_map(
     )
 }
 
+#[uniffi::trait_interface]
 pub trait GeckoPrefHandler: Send + Sync {
     
     fn get_prefs_with_state(&self) -> MapOfFeatureIdToPropertyNameToGeckoPrefState;
@@ -161,12 +162,12 @@ impl GeckoPrefStoreState {
 
 pub struct GeckoPrefStore {
     
-    pub handler: Arc<Box<dyn GeckoPrefHandler>>,
+    pub handler: Arc<dyn GeckoPrefHandler>,
     pub state: Mutex<GeckoPrefStoreState>,
 }
 
 impl GeckoPrefStore {
-    pub fn new(handler: Arc<Box<dyn GeckoPrefHandler>>) -> Self {
+    pub fn new(handler: Arc<dyn GeckoPrefHandler>) -> Self {
         Self {
             handler,
             state: Mutex::new(GeckoPrefStoreState::default()),
@@ -221,6 +222,8 @@ impl GeckoPrefStore {
         enrollments: &[ExperimentEnrollment],
         
         experiments_by_slug: &HashMap<String, EnrolledExperiment>,
+        
+        update_gecko_prefs: bool,
     ) -> HashMap<String, HashSet<String>> {
         struct RecipeData<'a> {
             experiment: &'a Experiment,
@@ -326,16 +329,19 @@ impl GeckoPrefStore {
         }
 
         
-        let mut set_state_list = Vec::new();
-        state.gecko_prefs_with_state.iter().for_each(|(_, props)| {
-            props.iter().for_each(|(_, pref_state)| {
-                if pref_state.enrollment_value.is_some() {
-                    set_state_list.push(pref_state.clone());
-                }
+        if update_gecko_prefs {
+            
+            let mut set_state_list = Vec::new();
+            state.gecko_prefs_with_state.iter().for_each(|(_, props)| {
+                props.iter().for_each(|(_, pref_state)| {
+                    if pref_state.enrollment_value.is_some() {
+                        set_state_list.push(pref_state.clone());
+                    }
+                });
             });
-        });
-        
-        self.handler.set_gecko_prefs_state(set_state_list);
+            
+            self.handler.set_gecko_prefs_state(set_state_list);
+        }
 
         results
     }

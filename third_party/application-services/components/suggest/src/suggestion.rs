@@ -5,7 +5,7 @@
 
 use chrono::Local;
 
-use crate::{db::DEFAULT_SUGGESTION_SCORE, geoname::Geoname};
+use crate::{db::DEFAULT_SUGGESTION_SCORE, geoname::Geoname, JsonValue};
 
 
 const TIMESTAMP_TEMPLATE: &str = "%YYYYMMDDHH%";
@@ -86,7 +86,7 @@ pub enum Suggestion {
     },
     Dynamic {
         suggestion_type: String,
-        data: Option<serde_json::Value>,
+        data: Option<JsonValue>,
         
         
         

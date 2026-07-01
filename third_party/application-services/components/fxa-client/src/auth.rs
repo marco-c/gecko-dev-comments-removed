@@ -317,6 +317,14 @@ pub enum FxaEvent {
     
     
     
+    
+    WebChannelPasswordChange { json_payload: String },
+    
+    
+    
+    
+    
+    
     CancelOAuthFlow,
     
     

@@ -15,7 +15,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, uniffi::Enum, PartialEq, Deserialize, Clone, Default)]
 #[serde(rename_all = "UPPERCASE")]
-pub(crate) enum JSONEngineMethod {
+pub enum JSONEngineMethod {
     Post = 2,
     #[serde(other)]
     #[default]
@@ -36,7 +36,7 @@ impl JSONEngineMethod {
 
 #[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct JSONEngineUrl {
+pub struct JSONEngineUrl {
     
     
     

@@ -195,6 +195,17 @@ impl GetErrorHandling for Error {
     }
 }
 
+
+
+
+impl From<anyhow::Error> for LoginsApiError {
+    fn from(value: anyhow::Error) -> Self {
+        LoginsApiError::UnexpectedLoginsApiError {
+            reason: value.to_string(),
+        }
+    }
+}
+
 impl From<uniffi::UnexpectedUniFFICallbackError> for LoginsApiError {
     fn from(error: uniffi::UnexpectedUniFFICallbackError) -> Self {
         LoginsApiError::UnexpectedLoginsApiError {
