@@ -53,15 +53,15 @@ add_task(async function test_monthyear_close_datetime() {
   ).contentDocument;
 
   
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 6 });
 
   
-  await testKeyOnSpinners("KEY_Enter", pickerDoc);
-  await testKeyOnSpinners(" ", pickerDoc);
+  await testKeyOnSpinners("KEY_Enter", pickerDoc, 1, true);
+  await testKeyOnSpinners(" ", pickerDoc, 1, true);
 
   
-  await testKeyOnSpinners("KEY_Enter", pickerDoc, 2);
-  await testKeyOnSpinners(" ", pickerDoc, 2);
+  await testKeyOnSpinners("KEY_Enter", pickerDoc, 2, true);
+  await testKeyOnSpinners(" ", pickerDoc, 2, true);
 
   await helper.tearDown();
 });
@@ -154,13 +154,13 @@ add_task(async function test_monthyear_escape_datetime() {
   ).contentDocument;
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 6 });
 
   
-  await testKeyOnSpinners("KEY_Escape", pickerDoc);
+  await testKeyOnSpinners("KEY_Escape", pickerDoc, 1, true);
 
   
-  await testKeyOnSpinners("KEY_Escape", pickerDoc, 2);
+  await testKeyOnSpinners("KEY_Escape", pickerDoc, 2, true);
 
   info(
     `Testing "KEY_Escape" behavior without any interaction with spinners
