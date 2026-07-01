@@ -818,7 +818,7 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
                                       "OptimizeSourceSurface")) {
       
       
-      MOZ_ASSERT(aSurface->GetType() == SurfaceType::RECORDING);
+      MOZ_ASSERT(aSurface->GetUnderlyingType() == SurfaceType::RECORDING);
       return do_AddRef(aSurface);
     }
 
