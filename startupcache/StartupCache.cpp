@@ -66,7 +66,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(StartupCacheMallocSizeOf)
 NS_IMETHODIMP
 StartupCache::CollectReports(nsIHandleReportCallback* aHandleReport,
                              nsISupports* aData, bool aAnonymize) {
-  MutexAutoLock lock(mTableLock);
+  AssertIsOnMainThread();
   MOZ_COLLECT_REPORT(
       "explicit/startup-cache/mapping", KIND_NONHEAP, UNITS_BYTES,
       mCacheData.nonHeapSizeOfExcludingThis(),
@@ -168,9 +168,10 @@ NS_IMPL_ISUPPORTS(StartupCache, nsIMemoryReporter)
 
 StartupCache::StartupCache()
     : mTableLock("StartupCache::mTableLock"),
-      mDirty(false),
-      mRegularWriteDone(false),
+      mIOLock("StartupCache::mIOLock"),
       mCurTableReferenced(false),
+      mTableDirty(false),
+      mRegularWriteDone(false),
       mRequestedCount(0),
       mCacheEntriesBaseOffset(0) {}
 
@@ -258,6 +259,7 @@ nsresult StartupCache::Init() {
 }
 
 void StartupCache::StartPrefetchMemory() {
+  AssertIsOnMainThread();
   {
     MonitorAutoLock lock(mPrefetchComplete);
     mPrefetchInProgress = true;
@@ -267,12 +269,11 @@ void StartupCache::StartPrefetchMemory() {
       mCacheData.get<uint8_t>().get(), mCacheData.size()));
 }
 
-
-
-
 Result<Ok, nsresult> StartupCache::LoadArchive() {
-  MOZ_ASSERT(NS_IsMainThread(), "Can only load startup cache on main thread");
-  if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
+  AssertIsOnMainThread();
+  if (gIgnoreDiskCache) {
+    return Err(NS_ERROR_FAILURE);
+  }
 
   MOZ_TRY(mCacheData.init(mFile));
   auto size = mCacheData.size();
@@ -312,6 +313,7 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
       return Err(NS_ERROR_UNEXPECTED);
     }
     auto cleanup = MakeScopeExit([&]() {
+      AssertIsOnMainThread();
       mTableLock.AssertCurrentThreadOwns();
       WaitOnPrefetch();
       mTable.clear();
@@ -350,9 +352,9 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
         return Err(NS_ERROR_UNEXPECTED);
       }
 
-      if (!mTable.add(
-              p, key,
-              StartupCacheEntry(offset, compressedSize, uncompressedSize))) {
+      if (!mTable.add(p, key,
+                      MakeRefPtr<StartupCacheEntry>(offset, compressedSize,
+                                                    uncompressedSize))) {
         return Err(NS_ERROR_UNEXPECTED);
       }
     }
@@ -396,7 +398,7 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto& value = p->value();
+  auto& value = *p->value();
   if (value.mData) {
     label = glean::startup_cache::RequestsLabel::eHitmemory;
   } else {
@@ -409,9 +411,6 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     
     
     
-    
-    
-
     size_t totalRead = 0;
     size_t totalWritten = 0;
     Span<const char> compressed = Span(
@@ -484,8 +483,9 @@ nsresult StartupCache::PutBuffer(const char* id, UniqueFreePtr<char[]>&& inbuf,
   
   
   
-  if (mTable.putNew(nsCString(id), StartupCacheEntry(std::move(inbuf), len,
-                                                     ++mRequestedCount))) {
+  if (mTable.putNew(nsCString(id),
+                    MakeRefPtr<StartupCacheEntry>(std::move(inbuf), len,
+                                                  ++mRequestedCount))) {
     return ResetStartupWriteTimer();
   }
   MOZ_DIAGNOSTIC_ASSERT(mTable.count() < STARTUP_CACHE_MAX_CAPACITY,
@@ -495,15 +495,15 @@ nsresult StartupCache::PutBuffer(const char* id, UniqueFreePtr<char[]>&& inbuf,
 
 size_t StartupCache::HeapSizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
+  MutexAutoLock l(mTableLock);
   
   
-
   size_t n = aMallocSizeOf(this);
 
   n += mTable.shallowSizeOfExcludingThis(aMallocSizeOf);
   for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
-    if (iter.get().value().mData) {
-      n += aMallocSizeOf(iter.get().value().mData.get());
+    if (iter.get().value()->mData) {
+      n += aMallocSizeOf(iter.get().value()->mData.get());
     }
     n += iter.get().key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
@@ -511,51 +511,69 @@ size_t StartupCache::HeapSizeOfIncludingThis(
   return n;
 }
 
+struct StartupCacheEntryWriteData {
+  nsCString key;
+  RefPtr<StartupCacheEntry> value;
+  uint32_t mHeaderOffsetInFile;
+  int32_t mRequestedOrder;
+};
 
+struct WriteDataComparator {
+  using Value = StartupCacheEntryWriteData;
 
+  bool Equals(const Value& a, const Value& b) const {
+    return a.mRequestedOrder == b.mRequestedOrder;
+  }
 
+  bool LessThan(const Value& a, const Value& b) const {
+    return a.mRequestedOrder < b.mRequestedOrder;
+  }
+};
 
 Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
-  if (!mDirty || mRegularWriteDone) {
+  if (!mTableDirty || mRegularWriteDone) {
     return Ok();
   }
-
-  if (!mFile) {
-    return Err(NS_ERROR_UNEXPECTED);
-  }
-
-  AutoFDClose raiiFd;
-  MOZ_TRY(mFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
-                                  0644, getter_Transfers(raiiFd)));
-  const auto fd = raiiFd.get();
-
-  nsTArray<StartupCacheEntry::KeyValuePair> entries(mTable.count());
-  for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
-    if (iter.get().value().mRequested) {
-      StartupCacheEntry::KeyValuePair kv(&iter.get().key(),
-                                         &iter.get().value());
-      entries.AppendElement(kv);
+  nsTArray<StartupCacheEntryWriteData> entries;
+  {
+    MutexAutoLock lock(mTableLock);
+    entries.SetCapacity(mTable.count());
+    for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
+      if (iter.get().value()->mRequested) {
+        entries.EmplaceBack(
+            StartupCacheEntryWriteData{iter.get().key(), iter.get().value(), 0,
+                                       iter.get().value()->mRequestedOrder});
+      }
     }
+    mTableDirty = false;
   }
 
   if (entries.IsEmpty()) {
     return Ok();
   }
+  MutexAutoLock ioLock(mIOLock);
+  AutoFDClose raiiFd;
+  if (!mFile) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  MOZ_TRY(mFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
+                                  0644, getter_Transfers(raiiFd)));
+  const auto fd = raiiFd.get();
 
-  entries.Sort(StartupCacheEntry::Comparator());
+  entries.Sort(WriteDataComparator());
   loader::OutputBuffer buf;
   for (auto& e : entries) {
-    auto* key = e.first;
-    auto* value = e.second;
+    auto& key = e.key;
+    auto& value = e.value;
     auto uncompressedSize = value->mUncompressedSize;
     
-    value->mHeaderOffsetInFile = buf.cursor();
+    e.mHeaderOffsetInFile = buf.cursor();
     
     
     buf.codeUint32(0);
     buf.codeUint32(0);
     buf.codeUint32(uncompressedSize);
-    buf.codeString(*key);
+    buf.codeString(key);
   }
 
   uint8_t headerSize[4];
@@ -579,7 +597,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   auto writeSpan = Span(writeBuffer.get(), writeBufLen);
 
   for (auto& e : entries) {
-    auto value = e.second;
+    auto& value = e.value;
     value->mOffset = offset;
     Span<const char> result =
         MOZ_TRY(ctx.BeginCompressing(writeSpan).mapErr(MapLZ4ErrorToNsresult));
@@ -603,8 +621,8 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   }
 
   for (auto& e : entries) {
-    auto value = e.second;
-    uint8_t* headerEntry = buf.Get() + value->mHeaderOffsetInFile;
+    auto& value = e.value;
+    uint8_t* headerEntry = buf.Get() + e.mHeaderOffsetInFile;
     LittleEndian::writeUint32(headerEntry, value->mOffset);
     LittleEndian::writeUint32(headerEntry + sizeof(value->mOffset),
                               value->mCompressedSize);
@@ -612,7 +630,6 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   MOZ_TRY(Seek(fd, headerStart));
   MOZ_TRY(Write(fd, buf.Get(), buf.cursor()));
 
-  mDirty = false;
   if (aWriteType == WriteType::RegularWrite) {
     mRegularWriteDone = true;
   }
@@ -620,13 +637,12 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   return Ok();
 }
 
-void StartupCache::InvalidateCache(bool memoryOnly) {
+void StartupCache::InvalidateCache(bool aMemoryOnly) {
+  AssertIsOnMainThread();
   WaitOnPrefetch();
-  
-  MutexAutoLock lock(mTableLock);
 
-  mRegularWriteDone = false;
-  if (memoryOnly) {
+  if (aMemoryOnly) {
+    mRegularWriteDone = false;
     
     auto writeResult = WriteToDisk(WriteType::RegularWrite);
     if (NS_WARN_IF(writeResult.isErr())) {
@@ -634,6 +650,13 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
       return;
     }
   }
+
+  
+  MutexAutoLock ioLock(mIOLock);
+  MutexAutoLock tableLock(mTableLock);
+
+  mRegularWriteDone = false;
+
   if (mCurTableReferenced) {
     
     
@@ -653,7 +676,7 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
     mTable.clear();
   }
   mRequestedCount = 0;
-  if (!memoryOnly) {
+  if (!aMemoryOnly) {
     mCacheData.reset();
     nsresult rv = mFile->Remove(false);
     if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
@@ -691,7 +714,7 @@ void StartupCache::MaybeKickOffShutdownWrite() {
 }
 
 void StartupCache::EnsureShutdownWriteComplete() {
-  MutexAutoLock lock(mTableLock);
+  AssertIsOnMainThread();
   
   
   if (mRegularWriteDone ||
@@ -702,9 +725,8 @@ void StartupCache::EnsureShutdownWriteComplete() {
   
 
   
-  
   WaitOnPrefetch();
-  mDirty = true;
+  mTableDirty = true;
   mCacheData.reset();
   
   
@@ -744,11 +766,11 @@ void StartupCache::ThreadedPrefetch(uint8_t* aStart, size_t aSize) {
   MMAP_FAULT_HANDLER_CATCH()
 }
 
-
 bool StartupCache::ShouldCompactCache() {
   
   
   
+  MutexAutoLock lock(mTableLock);
   CheckedInt<uint32_t> threshold = CheckedInt<uint32_t>(mTable.count()) * 4 / 5;
   MOZ_RELEASE_ASSERT(threshold.isValid(), "Runaway StartupCache size");
   return mRequestedCount < threshold.value();
@@ -775,29 +797,26 @@ void StartupCache::WriteTimeout(nsITimer* aTimer, void* aClosure) {
 
 void StartupCache::MaybeWriteOffMainThread(WriteType aWriteType,
                                            bool aUseLowPriorityIO) {
-  {
-    MutexAutoLock lock(mTableLock);
-    if (mRegularWriteDone ||
-        (mCacheData.initialized() && !ShouldCompactCache())) {
-      return;
-    }
+  AssertIsOnMainThread();
+  if (mRegularWriteDone) {
+    return;
+  }
+  if (mCacheData.initialized() && !ShouldCompactCache()) {
+    return;
   }
   
   WaitOnPrefetch();
-  {
-    MutexAutoLock lock(mTableLock);
-    mDirty = true;
-    mCacheData.reset();
-  }
 
-  RefPtr<StartupCache> self = this;
+  mTableDirty = true;
+  mCacheData.reset();
+
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-      "StartupCache::Write", [self, aWriteType, aUseLowPriorityIO]() mutable {
+      "StartupCache::Write",
+      [self = RefPtr{this}, aWriteType, aUseLowPriorityIO]() mutable {
         Maybe<nsAutoLowPriorityIO> lowPriority;
         if (aUseLowPriorityIO) {
           lowPriority.emplace();
         }
-        MutexAutoLock lock(self->mTableLock);
         auto result = self->WriteToDisk(aWriteType);
         (void)NS_WARN_IF(result.isErr());
       });
@@ -870,7 +889,7 @@ nsresult StartupCache::ResetStartupWriteTimerAndLock() {
 }
 
 nsresult StartupCache::ResetStartupWriteTimer() {
-  mDirty = true;
+  mTableDirty = true;
   nsresult rv = NS_OK;
   if (!mTimer)
     mTimer = NS_NewTimer();
@@ -887,8 +906,7 @@ nsresult StartupCache::ResetStartupWriteTimer() {
 
 bool StartupCache::StartupWriteComplete() {
   
-  MutexAutoLock lock(mTableLock);
-  return !mDirty && mRegularWriteDone;
+  return !mTableDirty && mRegularWriteDone;
 }
 
 
