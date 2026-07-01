@@ -159,6 +159,21 @@ const MultiStageUtils = {
   handleUserAction(action) {
     return window.AWSendToParent("SPECIAL_ACTION", action);
   },
+  handleImpressionAction(action, messageId, screenId) {
+    return Promise.resolve(
+      window.AWSendImpressionAction?.({
+        action,
+        message_id: messageId,
+        screen_id: screenId,
+      })
+    ).then(fired => {
+      
+      
+      if (fired) {
+        this.sendActionTelemetry(messageId, action.type, "IMPRESSION_ACTION");
+      }
+    });
+  },
   sendImpressionTelemetry(messageId, context = {}) {
     window.AWSendEventTelemetry?.({
       event: "IMPRESSION",
@@ -1282,7 +1297,7 @@ const SingleSelect = ({
   }, external_React_default().createElement("div", null, external_React_default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, external_React_default().createElement(Localized, {
-    text: content.subtitle
+    text: content.tiles?.subtitle || content.subtitle
   }, external_React_default().createElement("legend", {
     className: "sr-only"
   })), content.tiles.data.map(({
@@ -2252,7 +2267,61 @@ const PinnableSitesList = ({
   }));
 };
 ;
+
+
+
+
+
+
+const ContentToggle = ({
+  content,
+  toggled,
+  onToggle
+}) => {
+  const {
+    data
+  } = content.tiles;
+  const onChange = external_React_default().useCallback(e => onToggle?.(e.target.checked), [onToggle]);
+  if (!data.visible) {
+    return null;
+  }
+  return external_React_default().createElement("label", {
+    className: "content-toggle-label"
+  }, external_React_default().createElement("input", {
+    type: "checkbox",
+    checked: toggled,
+    onChange: onChange
+  }), external_React_default().createElement(Localized, {
+    text: data.label
+  }, external_React_default().createElement("span", null)));
+};
+;
+
+
+
+
+
+
+const TEXTBOX_STYLES = ["backgroundColor", "maxHeight"];
+const TextBoxTile = ({
+  content,
+  contentToggled
+}) => {
+  const {
+    data
+  } = content.tiles;
+  const activeContent = contentToggled ? data.content : data.alternateContent;
+  return external_React_default().createElement("div", {
+    className: "textbox-container"
+  }, external_React_default().createElement("div", {
+    className: "textbox-input",
+    style: MultiStageUtils.getValidStyle(data.style, TEXTBOX_STYLES)
+  }, activeContent ?? ""));
+};
+;
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+
+
 
 
 
@@ -2437,6 +2506,7 @@ const ContentTiles = props => {
       "aria-expanded": isExpanded,
       "aria-controls": `tile-content-${index}`
     };
+    const headerTitle = tile.type === "textbox" && props.contentToggleChecked === false ? header?.alternateTitle ?? header?.title : header?.title;
     return external_React_default().createElement("div", {
       key: index,
       className: `content-tile ${header ? "has-header" : ""}`,
@@ -2449,7 +2519,7 @@ const ContentTiles = props => {
     }), external_React_default().createElement("div", {
       className: "header-text-container"
     }, external_React_default().createElement(Localized, {
-      text: header.title
+      text: headerTitle
     }, external_React_default().createElement("span", {
       className: "header-title"
     })), header.subtitle && external_React_default().createElement(Localized, {
@@ -2543,6 +2613,17 @@ const ContentTiles = props => {
       tile: tile,
       messageId: props.messageId,
       handleAction: props.handleAction
+    }), tile.type === "content-toggle" && tile.data && external_React_default().createElement(ContentToggle, {
+      content: {
+        tiles: tile
+      },
+      toggled: props.contentToggleChecked,
+      onToggle: props.setContentToggleChecked
+    }), tile.type === "textbox" && tile.data && external_React_default().createElement(TextBoxTile, {
+      content: {
+        tiles: tile
+      },
+      contentToggled: props.contentToggleChecked
     })) : null);
   };
   const renderContentTiles = () => {
@@ -2726,6 +2807,8 @@ const MultiStageProtonScreen = props => {
     setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
     textInputs: props.textInputs,
     setTextInput: props.setTextInput,
+    contentToggleChecked: props.contentToggleChecked,
+    setContentToggleChecked: props.setContentToggleChecked,
     totalNumberOfScreens: props.totalNumberOfScreens,
     handleAction: props.handleAction,
     isFirstScreen: props.isFirstScreen,
@@ -3377,6 +3460,7 @@ const MultiStageAboutWelcome = props => {
   } = props;
   const didFilter = (0,external_React_namespaceObject.useRef)(false);
   const [didMount, setDidMount] = (0,external_React_namespaceObject.useState)(false);
+  const [contentToggleChecked, setContentToggleChecked] = (0,external_React_namespaceObject.useState)(true);
   const [screens, setScreens] = (0,external_React_namespaceObject.useState)(defaultScreens);
   const [index, setScreenIndex] = (0,external_React_namespaceObject.useState)(props.startScreen);
   const [previousOrder, setPreviousOrder] = (0,external_React_namespaceObject.useState)(props.startScreen - 1);
@@ -3433,6 +3517,13 @@ const MultiStageAboutWelcome = props => {
             screen_id: screen.id,
             screen_initials: screenInitials
           });
+
+          
+          
+          
+          if (screen.content?.impression_action) {
+            MultiStageUtils.handleImpressionAction(screen.content.impression_action, messageId, screen.id);
+          }
           window.AWAddScreenImpression?.(screen);
         }
       });
@@ -3674,6 +3765,8 @@ const MultiStageAboutWelcome = props => {
       setActiveSingleSelectSelection: setActiveSingleSelectSelection,
       textInputs: textInputs[currentScreen.id],
       setTextInput: setTextInput,
+      contentToggleChecked: contentToggleChecked,
+      setContentToggleChecked: setContentToggleChecked,
       negotiatedLanguage: negotiatedLanguage,
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: currentScreen.force_hide_steps_indicator,
@@ -3912,21 +4005,6 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       data
     });
   }
-  logTelemetry({
-    value,
-    event,
-    source,
-    props
-  }) {
-    MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name);
-
-    
-    
-    
-    if (value === "dismiss_button" && !event.name) {
-      MultiStageUtils.sendDismissTelemetry(props.messageId, source);
-    }
-  }
   async handleMigrationIfNeeded(action, props) {
     const hasMigrate = a => a.type === "SHOW_MIGRATION_WIZARD" || a.type === "MULTI_ACTION" && a.data?.actions?.some(hasMigrate);
     if (hasMigrate(action)) {
@@ -3990,15 +4068,15 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       console.error("Failed to resolve action");
       return actionResult;
     }
-
-    
-    this.logTelemetry({
-      value,
-      event,
-      source,
-      props
-    });
     action = JSON.parse(JSON.stringify(action));
+    const context = {};
+    if (action.collectContentToggleState) {
+      context.contentToggleState = props.contentToggleChecked;
+    }
+    MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name, context);
+    if (value === "dismiss_button" && !event.name) {
+      MultiStageUtils.sendDismissTelemetry(props.messageId, source);
+    }
     if (action.collectSelect) {
       this.setMultiSelectActions(action);
     }
@@ -4206,6 +4284,8 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       setActiveSingleSelectSelection: this.props.setActiveSingleSelectSelection,
       textInputs: this.props.textInputs,
       setTextInput: this.props.setTextInput,
+      contentToggleChecked: this.props.contentToggleChecked,
+      setContentToggleChecked: this.props.setContentToggleChecked,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
       appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
       negotiatedLanguage: this.props.negotiatedLanguage,
