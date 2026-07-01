@@ -69,6 +69,13 @@ struct RTC_EXPORT CryptoOptions {
     
     
     bool enable_encrypted_rtp_header_extensions = true;
+
+    
+    
+    
+    enum class CryptexPolicy { kDisabled, kNegotiate, kRequire };
+    
+    CryptexPolicy cryptex_policy = CryptexPolicy::kDisabled;
   } srtp;
 
   

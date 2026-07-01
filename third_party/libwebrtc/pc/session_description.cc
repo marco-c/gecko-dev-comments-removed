@@ -177,9 +177,13 @@ void SessionDescription::AddContent(
 }
 
 void SessionDescription::AddContent(ContentInfo&& content) {
+  
   if (extmap_allow_mixed()) {
-    
     content.media_description()->set_extmap_allow_mixed_level(
+        MediaContentDescription::AttributeLevel::kSession);
+  }
+  if (cryptex()) {
+    content.media_description()->set_cryptex_level(
         MediaContentDescription::AttributeLevel::kSession);
   }
   contents_.push_back(std::move(content));

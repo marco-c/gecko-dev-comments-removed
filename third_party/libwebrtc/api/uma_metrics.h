@@ -177,6 +177,17 @@ enum RtcpMuxPolicyUsage {
 
 
 
+enum CryptexPolicyUsage {
+  kCryptexPolicyUsageDisabled = 0,  
+  kCryptexPolicyUsageNegotiate = 1,
+  
+  kCryptexPolicyUsageNegotiated = 2,
+  kCryptexPolicyUsageRequire = 3,
+  kCryptexPolicyUsageMax
+};
+
+
+
 
 
 
@@ -210,6 +221,7 @@ enum SdpMungingType {
   kRtpHeaderExtensionRemoved = 40,
   kRtpHeaderExtensionAdded = 41,
   kRtpHeaderExtensionModified = 42,
+  kCryptex = 43,
   
   kAudioCodecsRemoved = 60,
   kAudioCodecsAdded = 61,

@@ -2043,7 +2043,9 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
       
       break;
   }
-  bool negotiated_sctp_snap = false;
+
+  
+  
   const SessionDescription* desc = nullptr;
   if (local_description()->GetType() == SdpType::kAnswer ||
       local_description()->GetType() == SdpType::kPrAnswer) {
@@ -2058,7 +2060,8 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
                      << ", remote=" << remote_description()->GetType();
     return;
   }
-  
+
+  bool negotiated_sctp_snap = false;
   const ContentInfo* sctp_content = GetFirstDataContent(desc);
   if (sctp_content && !sctp_content->rejected) {
     const SctpDataContentDescription* sctp_desc =
@@ -2069,6 +2072,7 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
   }
   RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.NegotiatedSctpSnap",
                         negotiated_sctp_snap);
+
   
   
   std::optional<RtcpFeedbackType> feedback_type;
@@ -2088,6 +2092,25 @@ void PeerConnection::ReportFirstConnectUsageMetrics() {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.NegotiatedFeedbackType",
                             static_cast<int>(*feedback_type),
                             static_cast<int>(RtcpFeedbackType::MAX));
+
+  CryptexPolicyUsage cryptex = kCryptexPolicyUsageMax;
+  switch (configuration_.crypto_options.srtp.cryptex_policy) {
+    case CryptoOptions::Srtp::CryptexPolicy::kDisabled:
+      cryptex = kCryptexPolicyUsageDisabled;
+      break;
+    case CryptoOptions::Srtp::CryptexPolicy::kNegotiate:
+      cryptex = kCryptexPolicyUsageNegotiate;
+      
+      if (desc->cryptex()) {
+        cryptex = kCryptexPolicyUsageNegotiated;
+      }
+      break;
+    case CryptoOptions::Srtp::CryptexPolicy::kRequire:
+      cryptex = kCryptexPolicyUsageRequire;
+      break;
+  }
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.CryptexUsage", cryptex,
+                            kCryptexPolicyUsageMax);
 }
 
 void PeerConnection::ReportCloseUsageMetrics() {

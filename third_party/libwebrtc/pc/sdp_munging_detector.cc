@@ -602,6 +602,13 @@ SdpMungingType DetermineContentsModification(
     }
 
     
+    if (last_created_media_description->cryptex() !=
+        media_description_to_set->cryptex()) {
+      RTC_LOG(LS_WARNING) << "SDP munging: cryptex changed at media level.";
+      return SdpMungingType::kCryptex;
+    }
+
+    
     if (last_created_media_description->bandwidth() !=
         media_description_to_set->bandwidth()) {
       RTC_LOG(LS_WARNING) << "SDP munging: modifying bandwidth in SLD does not "
@@ -701,6 +708,13 @@ SdpMungingType DetermineSdpMungingType(
   }
 
   
+  if (sdesc->description()->cryptex() !=
+      last_created_desc->description()->cryptex()) {
+    RTC_LOG(LS_WARNING) << "SDP munging: cryptex changed at session level.";
+    return SdpMungingType::kCryptex;
+  }
+
+  
   
   
   std::string serialized_description;
@@ -756,6 +770,8 @@ bool IsSdpMungingAllowed(SdpMungingType sdp_munging_type,
     case SdpMungingType::kSframe:
       return false;
     case SdpMungingType::kDataChannelSctpInit:
+      return false;
+    case SdpMungingType::kCryptex:
       return false;
     default:
       

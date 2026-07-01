@@ -321,6 +321,18 @@ class MediaContentDescription {
     }
   }
 
+  
+  void set_cryptex_level(AttributeLevel level) {
+    if (level == AttributeLevel::kMedia &&
+        cryptex_level_ == AttributeLevel::kSession) {
+      
+      return;
+    }
+    cryptex_level_ = level;
+  }
+  AttributeLevel cryptex_level() const { return cryptex_level_; }
+  bool cryptex() const { return cryptex_level_ != AttributeLevel::kNone; }
+
  protected:
   
   
@@ -352,6 +364,8 @@ class MediaContentDescription {
   virtual MediaContentDescription* CloneInternal() const = 0;
 
   std::vector<Codec> codecs_;
+
+  AttributeLevel cryptex_level_ = AttributeLevel::kNone;
 };
 
 class RtpMediaContentDescription : public MediaContentDescription {};
@@ -660,6 +674,21 @@ class SessionDescription {
   }
   bool extmap_allow_mixed() const { return extmap_allow_mixed_; }
 
+  void set_cryptex(bool supported) {
+    cryptex_ = supported;
+    MediaContentDescription::AttributeLevel media_level_setting =
+        supported ? MediaContentDescription::AttributeLevel::kSession
+                  : MediaContentDescription::AttributeLevel::kNone;
+    for (auto& content : contents_) {
+      
+      if (supported || content.media_description()->cryptex_level() !=
+                           MediaContentDescription::AttributeLevel::kMedia) {
+        content.media_description()->set_cryptex_level(media_level_setting);
+      }
+    }
+  }
+  bool cryptex() const { return cryptex_; }
+
  private:
   SessionDescription(const SessionDescription&);
 
@@ -668,6 +697,7 @@ class SessionDescription {
   ContentGroups content_groups_;
   int msid_signaling_ = kMsidSignalingMediaSection | kMsidSignalingSemantic;
   bool extmap_allow_mixed_ = true;
+  bool cryptex_ = false;
 };
 
 
