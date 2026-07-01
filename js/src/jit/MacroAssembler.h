@@ -3769,7 +3769,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
 
   void wasmBoundsCheck32(Condition cond, Register index,
                          Register boundsCheckLimit,

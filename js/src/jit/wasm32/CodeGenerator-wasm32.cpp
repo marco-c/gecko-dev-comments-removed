@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/wasm32/CodeGenerator-wasm32.h"
 
 #include "jit/CodeGenerator.h"
@@ -123,8 +121,6 @@ void CodeGenerator::visitWasmLoad(LWasmLoad* lir) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* lir) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmStore(LWasmStore* lir) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmStoreI64(LWasmStoreI64* lir) { MOZ_CRASH(); }
-void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) { MOZ_CRASH(); }
-void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmCompareExchangeHeap(
     LWasmCompareExchangeHeap* ins) {
   MOZ_CRASH();

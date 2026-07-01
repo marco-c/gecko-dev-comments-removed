@@ -12,7 +12,6 @@
 #include "gc/GCContext.h"
 #include "gc/PublicIterators.h"
 #include "jit/AliasAnalysis.h"
-#include "jit/AlignmentMaskAnalysis.h"
 #include "jit/AutoWritableJitCode.h"
 #include "jit/BacktrackingAllocator.h"
 #include "jit/BaselineFrame.h"
@@ -1149,19 +1148,6 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
-  if (mir->optimizationInfo().amaEnabled()) {
-    AlignmentMaskAnalysis ama(graph);
-    if (!ama.analyze()) {
-      return false;
-    }
-    mir->spewPass("Alignment Mask Analysis");
-    AssertExtendedGraphCoherency(graph);
-
-    if (mir->shouldCancel("Alignment Mask Analysis")) {
-      return false;
-    }
-  }
-
   ValueNumberer gvn(mir, graph);
 
   
@@ -1381,7 +1367,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   
   if (mir->compilingWasm() && mir->optimizationInfo().eaaEnabled()) {
-    EffectiveAddressAnalysis eaa(mir, graph);
+    EffectiveAddressAnalysis eaa(graph);
     JitSpew(JitSpew_EAA, "\n");
     if (!eaa.analyze()) {
       return false;
