@@ -967,14 +967,6 @@ class XPCShellTestThread(Thread):
                     self.profileDir, "profile_" + os.path.basename(name) + ".json"
                 )
                 self.env["MOZ_PROFILER_SHUTDOWN"] = profile_path
-                
-                
-                
-                
-                if "MOZ_PROFILER_STARTUP_FEATURES" not in os.environ:
-                    self.env["MOZ_PROFILER_STARTUP_FEATURES"] = "default"
-                if "MOZ_PROFILER_STARTUP_INTERVAL" not in os.environ:
-                    self.env.pop("MOZ_PROFILER_STARTUP_INTERVAL", None)
 
         if (
             self.test_object.get("headless", "true" if self.headless else None)
@@ -1470,33 +1462,6 @@ class XPCShellTests:
             self.env["MOZ_FORCE_USE_SOCKET_PROCESS"] = "1"
         else:
             self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
-
-        
-        
-        
-        
-        
-        if self.selfTest:
-            self.env.pop("MOZ_PROFILER_STARTUP", None)
-            return
-
-        
-        
-        
-        
-        
-        
-        
-        if not self.mozInfo.get("tsan"):
-            self.env.setdefault("MOZ_PROFILER_STARTUP", "1")
-            self.env.setdefault(
-                "MOZ_PROFILER_STARTUP_FEATURES",
-                "java,js,cpu,screenshots,processcpu,ipcmessages,memory",
-            )
-
-            
-            
-            self.env.setdefault("MOZ_PROFILER_STARTUP_INTERVAL", "10")
 
     def buildEnvironment(self):
         """
