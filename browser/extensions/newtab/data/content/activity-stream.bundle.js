@@ -18470,7 +18470,8 @@ function SportsWidget_SportsWidget({
         data: tab
       }));
     });
-  }, [dispatch, widgetSize, activeTab]);
+    handleInteraction();
+  }, [dispatch, widgetSize, activeTab, handleInteraction]);
 
   
   if (!prefs[SportsWidget_PREF_NOVA_ENABLED]) {
