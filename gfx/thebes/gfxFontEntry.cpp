@@ -111,6 +111,8 @@ gfxFontEntry::~gfxFontEntry() {
   MOZ_ASSERT(!mGrFaceInitialized);
 }
 
+
+
 void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
                                   const fontlist::Family* aFamily) {
   mShmemFace = aFace;
@@ -121,12 +123,7 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   mFixedPitch = aFace->mFixedPitch;
   mIsBadUnderlineFont = aFamily->IsBadUnderlineFamily();
   auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
-  
-  
-  
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
   mFamilyName = aFamily->DisplayName().AsString(list);
-  MOZ_POP_THREAD_SAFETY
   mHasCmapTable = TrySetShmemCharacterMap();
 }
 
