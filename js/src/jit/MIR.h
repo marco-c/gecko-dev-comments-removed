@@ -6009,9 +6009,6 @@ class MPhi final : public MDefinition,
   MDefinition* getLoopBackedgeOperand() const;
 
   
-  bool typeIncludes(MDefinition* def);
-
-  
   
   [[nodiscard]] static bool markIteratorPhis(const PhiVector& iterators);
 
