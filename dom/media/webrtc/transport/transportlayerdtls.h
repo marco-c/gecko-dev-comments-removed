@@ -95,10 +95,6 @@ class TransportLayerDtls final : public TransportLayer {
   
   nsTArray<nsTArray<uint8_t>> GetPeerCertChainDer() const;
 
-  
-  
-  nsTArray<uint8_t> GetLocalCertDer() const;
-
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
   static std::vector<uint16_t> GetDefaultSrtpCiphers();
