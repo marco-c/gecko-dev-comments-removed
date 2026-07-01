@@ -341,11 +341,7 @@ add_task(async function testSavePageInOfflineMode() {
 
     
     await fetch(`${TEST_IMAGE_URL}?result`);
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
+    await clearSiteTestData();
   }
 });
 

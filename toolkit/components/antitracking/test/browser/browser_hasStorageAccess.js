@@ -153,7 +153,7 @@ var testCases = [
     ],
   },
   {
-    behavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN, 
+    behavior: BEHAVIOR_PARTITION_FOREIGN, 
     hasStorageAccess: [
       true ,
       false ,
@@ -201,12 +201,6 @@ var testCases = [
       });
     });
 
-    add_task(async _ => {
-      await new Promise(resolve => {
-        Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-          resolve()
-        );
-      });
-    });
+    registerCleanupFunction(clearSiteTestData);
   });
 })();
