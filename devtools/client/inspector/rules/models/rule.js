@@ -82,6 +82,9 @@ class Rule {
     this.isSystem = appliedStyle.isSystem;
     this.isUnmatched = appliedStyle.isUnmatched || false;
     this.darkColorScheme = appliedStyle.darkColorScheme;
+    this.siblingCount = appliedStyle.siblingCount;
+    this.siblingIndex = appliedStyle.siblingIndex;
+
     this.inherited = appliedStyle.inherited || null;
     this.pseudoElement = appliedStyle.pseudoElement || "";
     this.keyframes = appliedStyle.keyframes || null;
@@ -614,6 +617,11 @@ class Rule {
     const colorSchemeChanged =
       this.darkColorScheme !== appliedStyle.darkColorScheme;
     this.darkColorScheme = appliedStyle.darkColorScheme;
+    const siblingCountChanged = this.siblingCount !== appliedStyle.siblingCount;
+    this.siblingCountChanged = appliedStyle.siblingCountChanged;
+    const siblingIndexChanged =
+      this.siblingIndexChanged !== appliedStyle.siblingIndexChanged;
+    this.siblingIndexChanged = appliedStyle.siblingIndexChanged;
 
     
     
@@ -664,7 +672,9 @@ class Rule {
           
           
           
-          prop.value.includes("attr("))
+          prop.value.includes("attr(") ||
+          (siblingCountChanged && prop.value.includes("sibling-count(")) ||
+          (siblingIndexChanged && prop.value.includes("sibling-index(")))
       ) {
         prop.updateEditor();
       }

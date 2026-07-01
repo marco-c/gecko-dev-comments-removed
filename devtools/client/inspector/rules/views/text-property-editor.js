@@ -647,6 +647,8 @@ class TextPropertyEditor {
         
         
         this.rule.domRule.supportsCssExplainers,
+      siblingCount: this.rule.siblingCount,
+      siblingIndex: this.rule.siblingIndex,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
