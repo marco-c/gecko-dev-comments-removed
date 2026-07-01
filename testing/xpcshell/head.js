@@ -786,6 +786,13 @@ function _execute_test() {
     _PromiseTestUtils.ensureDOMPromiseRejectionsProcessed();
     _PromiseTestUtils.assertNoUncaughtRejections();
     _PromiseTestUtils.assertNoMoreExpectedRejections();
+  } catch (e) {
+    
+    
+    
+    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+      throw e;
+    }
   } finally {
     
     _PromiseTestUtils.uninit();
