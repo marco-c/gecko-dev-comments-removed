@@ -1528,18 +1528,6 @@ class FoldVisitor : public RewritingParseNodeVisitor<FoldVisitor> {
            SimplifyCondition(info(), node.unsafeRightReference());
   }
 
-  bool visitFunction(ParseNode*& pn) {
-    FunctionNode& node = pn->as<FunctionNode>();
-
-    
-    
-    if (node.funbox()->useAsmOrInsideUseAsm()) {
-      return true;
-    }
-
-    return Base::visitFunction(pn);
-  }
-
   bool visitArrayExpr(ParseNode*& pn) {
     if (!Base::visitArrayExpr(pn)) {
       return false;

@@ -123,7 +123,6 @@ FunctionBox::FunctionBox(FrontendContext* fc, SourceExtent extent,
       emitBytecode(false),
       wasEmittedByEnclosingScript_(false),
       isAnnexB(false),
-      useAsm(false),
       hasParameterExprs(false),
       hasDestructuringArgs(false),
       hasDuplicateParameters(false),
@@ -150,7 +149,6 @@ void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
   SharedContext* sc = enclosing->sc();
 
   
-  useAsm = sc->isFunctionBox() && sc->asFunctionBox()->useAsmOrInsideUseAsm();
   setHasModuleGoal(sc->hasModuleGoal());
 
   
@@ -264,28 +262,6 @@ void FunctionBox::setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex) {
   if (isFunctionFieldCopiedToStencil) {
     copyUpdatedEnclosingScopeIndex();
   }
-}
-
-bool FunctionBox::setUseAsm() {
-  MOZ_ASSERT(!useAsm);
-
-  
-  useAsm = true;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (compilationState_.asmJS) {
-    return true;
-  }
-  compilationState_.asmJS = fc_->getAllocator()->new_<StencilAsmJSContainer>();
-  return !!compilationState_.asmJS;
 }
 
 bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {

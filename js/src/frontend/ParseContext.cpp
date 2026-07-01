@@ -314,10 +314,6 @@ static bool DeclarationKindIsCatchParameter(DeclarationKind kind) {
 
 bool ParseContext::Scope::addCatchParameters(ParseContext* pc,
                                              Scope& catchParamScope) {
-  if (pc->useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   for (auto iter = catchParamScope.declared_->iter(); !iter.done();
        iter.next()) {
     DeclarationKind kind = iter.get().value()->kind();
@@ -336,10 +332,6 @@ bool ParseContext::Scope::addCatchParameters(ParseContext* pc,
 
 void ParseContext::Scope::removeCatchParameters(ParseContext* pc,
                                                 Scope& catchParamScope) {
-  if (pc->useAsmOrInsideUseAsm()) {
-    return;
-  }
-
   for (auto iter = catchParamScope.declared_->iter(); !iter.done();
        iter.next()) {
     auto name = iter.get().key();
@@ -625,12 +617,6 @@ bool ParseContext::declareFunctionThis(const UsedNameTracker& usedNames,
                                        bool canSkipLazyClosedOverBindings) {
   
   
-  if (useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
-  
-  
   
   FunctionBox* funbox = functionBox();
   auto dotThis = TaggedParserAtomIndex::WellKnown::dot_this_();
@@ -748,12 +734,6 @@ bool ParseContext::declareFunctionArgumentsObject(
 
 bool ParseContext::declareNewTarget(const UsedNameTracker& usedNames,
                                     bool canSkipLazyClosedOverBindings) {
-  
-  
-  if (useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   FunctionBox* funbox = functionBox();
   auto dotNewTarget = TaggedParserAtomIndex::WellKnown::dot_newTarget_();
 

@@ -62,29 +62,22 @@ ParseNodeResult ParseNode::appendOrCreateList(ParseNodeKind kind,
   
   
   
-  if (!pc->useAsmOrInsideUseAsm()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (left->isKind(kind) &&
-        (kind == ParseNodeKind::PowExpr ? !left->isInParens()
-                                        : left->isBinaryOperation())) {
-      ListNode* list = &left->as<ListNode>();
+  
+  
+  
+  
+  
+  
+  
+  if (left->isKind(kind) &&
+      (kind == ParseNodeKind::PowExpr ? !left->isInParens()
+                                      : left->isBinaryOperation())) {
+    ListNode* list = &left->as<ListNode>();
 
-      list->append(right);
-      list->pn_pos.end = right->pn_pos.end;
+    list->append(right);
+    list->pn_pos.end = right->pn_pos.end;
 
-      return list;
-    }
+    return list;
   }
 
   ListNode* list = MOZ_TRY(handler->newResult<ListNode>(kind, left));

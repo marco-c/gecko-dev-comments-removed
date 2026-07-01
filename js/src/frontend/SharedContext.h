@@ -82,25 +82,20 @@ static inline bool StatementKindIsUnlabeledBreakTarget(StatementKind kind) {
 
 class Directives {
   bool strict_;
-  bool asmJS_;
 
  public:
-  explicit Directives(bool strict) : strict_(strict), asmJS_(false) {}
+  explicit Directives(bool strict) : strict_(strict) {}
   explicit Directives(ParseContext* parent);
 
   void setStrict() { strict_ = true; }
   bool strict() const { return strict_; }
 
-  void setAsmJS() { asmJS_ = true; }
-  bool asmJS() const { return asmJS_; }
-
   Directives& operator=(Directives rhs) {
     strict_ = rhs.strict_;
-    asmJS_ = rhs.asmJS_;
     return *this;
   }
   bool operator==(const Directives& rhs) const {
-    return strict_ == rhs.strict_ && asmJS_ == rhs.asmJS_;
+    return strict_ == rhs.strict_;
   }
   bool operator!=(const Directives& rhs) const { return !(*this == rhs); }
 };
@@ -403,10 +398,6 @@ class FunctionBox : public SuspendableContext {
   bool isAnnexB : 1;
 
   
-  
-  bool useAsm : 1;
-
-  
   bool hasParameterExprs : 1;
   bool hasDestructuringArgs : 1;
   bool hasDuplicateParameters : 1;
@@ -488,7 +479,6 @@ class FunctionBox : public SuspendableContext {
     }
   }
 
-  [[nodiscard]] bool setUseAsm();
   [[nodiscard]] bool setAsmJSModule(const JS::WasmModule* module);
   bool isAsmJSModule() const { return flags_.isAsmJSNative(); }
 
@@ -627,13 +617,6 @@ class FunctionBox : public SuspendableContext {
   bool hasMappedArgsObj() const {
     return !strict() && hasSimpleParameterList();
   }
-
-  
-  
-  
-  
-  
-  bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line,
                 JS::LimitedColumnNumberOneOrigin column) {

@@ -59,7 +59,6 @@
 #include "vm/JSScript.h"
 #include "vm/ModuleBuilder.h"  
 #include "vm/Scope.h"          
-#include "wasm/AsmJS.h"
 
 #include "frontend/ParseContext-inl.h"
 #include "frontend/SharedContext-inl.h"
@@ -608,12 +607,6 @@ template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
     TaggedParserAtomIndex name, DeclarationKind kind, TokenPos pos,
     ClosedOver isClosedOver) {
-  
-  
-  if (pc_->useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   switch (kind) {
     case DeclarationKind::Var:
     case DeclarationKind::BodyLevelFunction: {
@@ -879,12 +872,6 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
 bool ParserBase::noteUsedNameInternal(TaggedParserAtomIndex name,
                                       NameVisibility visibility,
                                       mozilla::Maybe<TokenPos> tokenPosition) {
-  
-  
-  if (pc_->useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   
   
   
@@ -1825,13 +1812,9 @@ Parser<FullParseHandler, Unit>::evalBody(EvalSharedContext* evalsc) {
   }
 
   ParseNode* node = body;
-  
-  
-  if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                       &handler_)) {
-      return errorResult();
-    }
+  if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
+                     &handler_)) {
+    return errorResult();
   }
   body = handler_.asLexicalScopeNode(node);
 
@@ -1890,13 +1873,9 @@ FullParseHandler::ListNodeResult Parser<FullParseHandler, Unit>::globalBody(
   }
 
   ParseNode* node = body;
-  
-  
-  if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                       &handler_)) {
-      return errorResult();
-    }
+  if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
+                     &handler_)) {
+    return errorResult();
   }
   body = &node->as<ListNode>();
 
@@ -2018,13 +1997,9 @@ FullParseHandler::ModuleNodeResult Parser<FullParseHandler, Unit>::moduleBody(
   }
 
   ParseNode* node = stmtList;
-  
-  
-  if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                       &handler_)) {
-      return errorResult();
-    }
+  if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
+                     &handler_)) {
+    return errorResult();
   }
   stmtList = &node->as<ListNode>();
 
@@ -2409,13 +2384,9 @@ Parser<FullParseHandler, Unit>::standaloneFunction(
   }
 
   ParseNode* node = funNode;
-  
-  
-  if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                       &handler_)) {
-      return errorResult();
-    }
+  if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
+                     &handler_)) {
+    return errorResult();
   }
   funNode = &node->as<FunctionNode>();
 
@@ -3111,7 +3082,6 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     
     
     MOZ_ASSERT_IF(directives.strict(), newDirectives.strict());
-    MOZ_ASSERT_IF(directives.asmJS(), newDirectives.asmJS());
     directives = newDirectives;
 
     
@@ -3437,13 +3407,9 @@ Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   }
 
   ParseNode* node = funNode;
-  
-  
-  if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
-                       &handler_)) {
-      return errorResult();
-    }
+  if (!FoldConstants(this->fc_, this->parserAtoms(), this->bigInts(), &node,
+                     &handler_)) {
+    return errorResult();
   }
   funNode = &node->as<FunctionNode>();
 
@@ -3823,86 +3789,6 @@ static inline bool IsUseStrictDirective(const TokenPos& pos,
   return atom == TaggedParserAtomIndex::WellKnown::use_strict_() &&
          pos.begin + useStrictLength == pos.end;
 }
-static inline bool IsUseAsmDirective(const TokenPos& pos,
-                                     TaggedParserAtomIndex atom) {
-  
-  static constexpr size_t useAsmLength = 9;
-  return atom == TaggedParserAtomIndex::WellKnown::use_asm_() &&
-         pos.begin + useAsmLength == pos.end;
-}
-
-template <typename Unit>
-bool Parser<SyntaxParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                             ListNodeType list) {
-  
-  
-  
-  
-  
-  
-  MOZ_ALWAYS_FALSE(abortIfSyntaxParser());
-  return false;
-}
-
-template <typename Unit>
-bool Parser<FullParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                           ListNodeType list) {
-  
-  disableSyntaxParser();
-
-  
-  
-  
-  
-  if (!pc_->newDirectives || pc_->newDirectives->asmJS()) {
-    return true;
-  }
-
-  
-  
-  if (ss == nullptr) {
-    return true;
-  }
-
-  
-  if (!pc_->functionBox()->setUseAsm()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  bool validated;
-  if (!CompileAsmJS(this->fc_, this->parserAtoms(), *this, list, &validated)) {
-    return false;
-  }
-
-  
-  
-  
-  if (!js::SupportDifferentialTesting() &&
-      JS::Prefs::warn_asmjs_deprecation()) {
-    if (!warningAt(directivePos.begin, JSMSG_USE_ASM_DEPRECATED)) {
-      return false;
-    }
-  }
-
-  
-  if (!validated) {
-    pc_->newDirectives->setAsmJS();
-    return false;
-  }
-
-  return true;
-}
-
-template <class ParseHandler, typename Unit>
-inline bool GeneralParser<ParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                                     ListNodeType list) {
-  return asFinalParser()->asmJS(directivePos, list);
-}
 
 
 
@@ -4014,11 +3900,6 @@ bool GeneralParser<ParseHandler, Unit>::maybeParseDirective(
 
       pc_->sc()->setStrictScript();
     }
-  } else if (IsUseAsmDirective(directivePos, directive)) {
-    if (pc_->isFunctionBox()) {
-      return asmJS(directivePos, list);
-    }
-    return warningAt(directivePos.begin, JSMSG_USE_ASM_DIRECTIVE_FAIL);
   }
   return true;
 }
@@ -9599,13 +9480,6 @@ GeneralParser<ParseHandler, Unit>::statementListItem(
     
     
     case TokenKind::String:
-      if (!canHaveDirectives &&
-          anyChars.currentToken().atom() ==
-              TaggedParserAtomIndex::WellKnown::use_asm_()) {
-        if (!warning(JSMSG_USE_ASM_DIRECTIVE_FAIL)) {
-          return errorResult();
-        }
-      }
       return expressionStatement(yieldHandling);
 
     case TokenKind::Yield: {

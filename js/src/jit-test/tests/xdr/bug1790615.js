@@ -16,4 +16,5 @@ return f
 `);
 let g80 = newGlobal({newCompartment: true});
 
-assertThrowsInstanceOf(() => g80.compileToStencilXDR(code, {}), g80.Error);
+
+g80.compileToStencilXDR(code, {});
