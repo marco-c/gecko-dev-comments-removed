@@ -114,6 +114,16 @@ static const uint32_t kInputIconSize = 16;
         [TouchBarInput searchPopoverIdentifier]
       ];
       self.defaultItemIdentifiers = defaultItemIdentifiers;
+
+      
+      
+      
+      
+      
+      
+      TouchBarInput* shareInput =
+          self.mappedLayoutItems[[TouchBarInput shareScrubberIdentifier]];
+      [self loadIconForInput:shareInput forItem:nil];
     } else {
       NSMutableArray* defaultItemIdentifiers =
           [NSMutableArray arrayWithCapacity:[aInputs count]];
@@ -542,7 +552,8 @@ static const uint32_t kInputIconSize = 16;
 }
 
 - (void)loadIconForInput:(TouchBarInput*)aInput forItem:(NSTouchBarItem*)aItem {
-  if (!aInput || ![aInput imageURI] || !aItem || !mTouchBarHelper) {
+  
+  if (!aInput || ![aInput imageURI] || !mTouchBarHelper) {
     return;
   }
 
@@ -554,9 +565,10 @@ static const uint32_t kInputIconSize = 16;
     if (NS_FAILED(rv) || !document) {
       return;
     }
-    icon = new nsTouchBarInputIcon(document, aInput, aItem);
+    icon = new nsTouchBarInputIcon(document);
     [aInput setIcon:icon];
   }
+  icon->SetItem(aInput, aItem);
   icon->SetupIcon([aInput imageURI]);
 }
 

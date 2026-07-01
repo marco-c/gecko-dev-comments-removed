@@ -26,8 +26,7 @@ class Document;
 
 class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
  public:
-  explicit nsTouchBarInputIcon(RefPtr<Document> aDocument,
-                               TouchBarInput* aInput, NSTouchBarItem* aItem);
+  explicit nsTouchBarInputIcon(RefPtr<Document> aDocument);
 
   NS_INLINE_DECL_REFCOUNTING(nsTouchBarInputIcon)
 
@@ -51,7 +50,15 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
 
   void ReleaseJSObjects();
 
+  
+  
+  
+  void SetItem(TouchBarInput* aInput, NSTouchBarItem* aItem);
+
  protected:
+  
+  void ApplyIcon(NSImage* aImage);
+
   RefPtr<Document> mDocument;
   bool mSetIcon;
   NSButton* mButton;
@@ -64,6 +71,13 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
   
   
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
+  
+  
+  
+  
+  NSImage* mIconImage;
+  
+  nsCOMPtr<nsIURI> mIconURI;
 };
 
 #endif  
