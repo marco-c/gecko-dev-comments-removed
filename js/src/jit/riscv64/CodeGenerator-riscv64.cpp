@@ -1055,33 +1055,51 @@ void CodeGenerator::visitModI(LModI* ins) {
 void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   Register in = ToRegister(ins->input());
   Register out = ToRegister(ins->output());
+
   MMod* mir = ins->mir();
-  Label negative, done;
+  int32_t shift = ins->shift();
+  bool canBeNegative = !mir->isUnsigned() && mir->canBeNegativeDividend();
 
-  
-  
-  masm.ma_b(in, in, &negative, Assembler::Signed, ShortJump);
-  {
-    masm.ma_and(out, in, Imm32((1 << ins->shift()) - 1));
+  if (shift == 0) {
+    if (canBeNegative && !mir->isTruncated()) {
+      bailoutTest32(Assembler::Signed, in, in, ins->snapshot());
+    }
+    masm.mv(out, zero);
+    return;
+  }
+
+  Label negative;
+  if (canBeNegative) {
+    
+    
+    masm.ma_b(in, in, &negative, Assembler::Signed, ShortJump);
+  }
+
+  masm.ma_and(out, in, Imm32((1 << shift) - 1));
+
+  if (canBeNegative) {
+    Label done;
     masm.jump(&done);
-  }
 
-  
-  {
-    masm.bind(&negative);
-    masm.negw(out, in);
-    masm.ma_and(out, out, Imm32((1 << ins->shift()) - 1));
-    masm.negw(out, out);
-  }
-  if (mir->canBeNegativeDividend()) {
+    
+    {
+      masm.bind(&negative);
+      masm.negw(out, in);
+      masm.ma_and(out, out, Imm32((1 << shift) - 1));
+      masm.negw(out, out);
+    }
+
+    
+    
     if (!mir->isTruncated()) {
       MOZ_ASSERT(mir->fallible());
       bailoutCmp32(Assembler::Equal, out, zero, ins->snapshot());
     } else {
       
     }
+
+    masm.bind(&done);
   }
-  masm.bind(&done);
 }
 
 void CodeGenerator::visitModMaskI(LModMaskI* ins) {
