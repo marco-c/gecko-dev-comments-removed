@@ -767,6 +767,14 @@ struct SubstitutionFunctionReference {
     substitution_kind: SubstitutionFunctionKind,
 }
 
+impl SubstitutionFunctionReference {
+    
+    fn is_attr_with_type(&self) -> bool {
+        self.substitution_kind == SubstitutionFunctionKind::Attr
+            && matches!(self.attribute_data.kind, AttributeType::Type(..))
+    }
+}
+
 
 
 #[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToShmem)]
@@ -1319,11 +1327,6 @@ fn get_attr_value_for_cycle_resolution(
     url_data: &UrlExtraData,
     attribute_tracker: &mut AttributeTracker,
 ) -> Result<ComputedRegisteredValue, ()> {
-    
-    
-    if !matches!(&attribute_data.kind, AttributeType::Type(_)) {
-        return Err(());
-    }
     #[cfg(feature = "gecko")]
     let local_name = LocalName::cast(name);
     #[cfg(feature = "servo")]
@@ -1754,7 +1757,7 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
     }
 
     
-    pub fn update_attributes_map(
+    fn update_attributes_map(
         &mut self,
         value: &'a VariableValue,
         attribute_tracker: &mut AttributeTracker,
@@ -1766,10 +1769,9 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
         self.may_have_cycles = true;
 
         for next in &refs.refs {
-            
-            if next.substitution_kind != SubstitutionFunctionKind::Attr
-                || !self.seen.attr.insert(&next.name)
-            {
+            if !next.is_attr_with_type() || !self.seen.attr.insert(&next.name) {
+                
+                
                 continue;
             }
             if let Ok(v) = get_attr_value_for_cycle_resolution(
@@ -2176,16 +2178,22 @@ fn substitute_all(
                     }
 
                     let next_var = if next.substitution_kind == SubstitutionFunctionKind::Attr {
+                        
+                        
+                        let can_chain =
+                            next.is_attr_with_type() || matches!(var, VarType::Attr(..));
+                        if !can_chain {
+                            continue;
+                        }
                         if context.map.get_attr(&next.name).is_none() {
-                            let Ok(val) = get_attr_value_for_cycle_resolution(
+                            if let Ok(val) = get_attr_value_for_cycle_resolution(
                                 &next.name,
                                 &next.attribute_data,
                                 &v.url_data,
                                 attribute_tracker,
-                            ) else {
-                                continue;
-                            };
-                            context.map.insert_attr(&next.name, val);
+                            ) {
+                                context.map.insert_attr(&next.name, val);
+                            }
                         }
                         VarType::Attr(next.name.clone())
                     } else {
