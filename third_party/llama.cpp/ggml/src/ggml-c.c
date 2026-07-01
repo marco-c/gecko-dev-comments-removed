@@ -7800,6 +7800,8 @@ void ggml_threadpool_params_init(struct ggml_threadpool_params * p, int n_thread
     p->poll       = 50;    
     p->strict_cpu = false; 
     p->paused     = false; 
+    p->thread_create_callback = 0;
+    p->thread_destroy_callback = 0;
     memset(p->cpumask, 0, GGML_MAX_N_THREADS); 
 }
 
