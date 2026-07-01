@@ -1044,28 +1044,39 @@ TEST(H264, RejectsInvalidPicHeightMapUnitsRegardlessOfFlag)
   EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
 }
 
-TEST(H264, AcceptsBoundaryPicWidth)
+TEST(H264, CheckBoundaryPicWidth)
 {
   
   
   
-  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
   SPSData spsdata;
   RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(kMaxMbs - 1);
   EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
   EXPECT_EQ(spsdata.pic_width, kMaxMbs * 16);
+
+  
+  
+  RefPtr<MediaByteBuffer> tooWide = BuildSPSWithRawWidthMBS(kMaxMbs);
+  EXPECT_FALSE(H264::DecodeSPS(tooWide, spsdata));
 }
 
-TEST(H264, AcceptsBoundaryPicHeight)
+TEST(H264, CheckBoundaryPicHeight)
 {
   
   
   
-  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
   SPSData spsdata;
   RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, kMaxMbs - 1, true);
   EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
   EXPECT_EQ(spsdata.pic_height, kMaxMbs * 16);
+
+  
+  
+  RefPtr<MediaByteBuffer> tooTall = BuildSPSWithRawFields(79, kMaxMbs, true);
+  EXPECT_FALSE(H264::DecodeSPS(tooTall, spsdata));
 }
 
 TEST(H265, HVCCParsingSuccess)
