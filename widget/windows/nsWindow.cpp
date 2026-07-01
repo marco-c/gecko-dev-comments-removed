@@ -1072,6 +1072,21 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       ::SetClassLongPtrW(mWnd, GCLP_WNDPROC,
                          reinterpret_cast<LONG_PTR>(
                              WinUtils::NonClientDpiScalingDefWindowProcW));
+      
+      
+      
+      SetCustomTitlebar(true);
+
+      
+      
+      
+      
+      
+      
+      
+      if (mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
+        TaskbarConcealer::OnWindowMaximized(this,  true);
+      }
     }
   }
 

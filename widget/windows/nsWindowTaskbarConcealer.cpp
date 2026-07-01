@@ -408,15 +408,19 @@ void nsWindow::TaskbarConcealer::OnFocusAcquired(nsWindow* aWin) {
   UpdateAllState();
 }
 
-void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin) {
+void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
+                                                   bool aForce) {
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
           ("==> OnWindowMaximized() for HWND %p on HMONITOR %p", aWin->mWnd,
            ::MonitorFromWindow(aWin->mWnd, MONITOR_DEFAULTTONULL)));
 
   
   
-  if (MOZ_LIKELY(TaskbarConcealerImpl::GetMarkingMethod() !=
-                 TaskbarConcealerImpl::MarkingMethod::PrepareFullScreen)) {
+  
+  const bool isPrepareFullScreenOnly =
+      TaskbarConcealerImpl::GetMarkingMethod() ==
+      TaskbarConcealerImpl::MarkingMethod::PrepareFullScreen;
+  if (!aForce && !isPrepareFullScreenOnly) {
     return;
   }
 
