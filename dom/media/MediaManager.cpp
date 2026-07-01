@@ -3024,11 +3024,11 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       case MediaSourceEnum::Window:
         
         
-        if (!Preferences::GetBool(
-                ((videoType == MediaSourceEnum::Browser)
+        if ((!Preferences::GetBool(
+                 ((videoType == MediaSourceEnum::Browser)
                      ? "media.getusermedia.browser.enabled"
                      : "media.getusermedia.screensharing.enabled"),
-                false) ||
+                false)) ||
             (!privileged && !aWindow->IsSecureContext())) {
           return StreamPromise::CreateAndReject(
               MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
@@ -3204,6 +3204,20 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   EnumerationFlags flags = EnumerationFlag::AllowPermissionRequest;
   if (forceFakes) {
     flags += EnumerationFlag::ForceFakes;
+  }
+  if (privileged && videoType == MediaSourceEnum::Browser &&
+      c.mVideo.IsMediaTrackConstraints() &&
+      c.mVideo.GetAsMediaTrackConstraints().mDeviceId.WasPassed()) {
+    
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(NS_NewRunnableFunction(
+        __func__, [self = RefPtr(this), this, videoType] {
+          if (mBackend) {
+            mBackend->InvalidateDesktopCaptureDeviceCache(videoType);
+          }
+        })));
   }
   RefPtr<MediaManager> self = this;
   return EnumerateDevicesImpl(
