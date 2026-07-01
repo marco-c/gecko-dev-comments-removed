@@ -3,42 +3,339 @@
 
 
 
-async function lsCheckFunc() {
-  let storage = content.localStorage;
 
-  if (storage.length) {
+
+
+
+
+
+
+
+
+
+
+
+class TabLocalStorage {
+  constructor(tab) {
+    this.browser = tab.linkedBrowser;
+  }
+
+  setItem(key, value) {
+    return SpecialPowers.spawn(this.browser, [key, value], (k, v) => {
+      content.localStorage.setItem(k, v);
+    });
+  }
+
+  getItem(key) {
+    return SpecialPowers.spawn(this.browser, [key], k => {
+      return content.localStorage.getItem(k);
+    });
+  }
+
+  removeItem(key) {
+    return SpecialPowers.spawn(this.browser, [key], k => {
+      content.localStorage.removeItem(k);
+    });
+  }
+
+  clear() {
+    return SpecialPowers.spawn(this.browser, [], () => {
+      content.localStorage.clear();
+    });
+  }
+
+  get length() {
+    return SpecialPowers.spawn(this.browser, [], () => {
+      return content.localStorage.length;
+    });
+  }
+}
+
+
+
+
+
+
+
+const DISK_POLL_INTERVAL_MS = 250;
+const DISK_POLL_MAX_TRIES = 120; 
+
+function privateStorageDir() {
+  let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  profileDir.append("storage");
+  profileDir.append("private");
+  return profileDir;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function looksEncrypted(bytes) {
+  if (bytes.length < 100) {
     return false;
   }
 
   
-  storage.setItem("foo", "úžasné");
+  for (let i = 72; i < 92; i++) {
+    if (bytes[i] !== 0) {
+      return true;
+    }
+  }
 
-  return true;
+  
+  const textEncoding =
+    (bytes[56] << 24) | (bytes[57] << 16) | (bytes[58] << 8) | bytes[59];
+  if (textEncoding < 1 || textEncoding > 3) {
+    return true;
+  }
+
+  return false;
 }
 
-function checkTabWindowLS(tab) {
-  return SpecialPowers.spawn(tab.linkedBrowser, [], lsCheckFunc);
+
+
+function isPrivateOriginDir(name) {
+  return /^uuid\+\+\+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    name
+  );
 }
 
-add_task(async function () {
+
+function findSQLiteFiles(dir) {
+  let results = [];
+  if (!dir.exists()) {
+    return results;
+  }
+  let entries = dir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    let entry = entries.nextFile;
+    if (entry.isDirectory()) {
+      results = results.concat(findSQLiteFiles(entry));
+    } else if (entry.leafName.endsWith(".sqlite")) {
+      results.push(entry);
+    }
+  }
+  return results;
+}
+
+async function waitForPrivateStorageCleanup() {
+  let storageDir = privateStorageDir();
+  if (storageDir.exists()) {
+    await TestUtils.waitForCondition(
+      () => !storageDir.exists(),
+      "Waiting for storage/private/ directory to be removed",
+      DISK_POLL_INTERVAL_MS,
+      DISK_POLL_MAX_TRIES
+    );
+  }
+}
+
+
+
+
+add_task(async function test_crud_and_cross_tab() {
   const pageUrl =
     "http://example.com/browser/dom/localstorage/test/page_private_ls.html";
 
-  for (let i = 0; i < 2; i++) {
-    let privateWin = await BrowserTestUtils.openNewBrowserWindow({
-      private: true,
-    });
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
 
-    let privateTab = await BrowserTestUtils.openNewForegroundTab(
-      privateWin.gBrowser,
-      pageUrl
-    );
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(
+    privateWin.gBrowser,
+    pageUrl
+  );
 
-    ok(
-      await checkTabWindowLS(privateTab),
-      "LS works correctly in a private-browsing page."
-    );
+  let storage1 = new TabLocalStorage(tab1);
 
-    await BrowserTestUtils.closeWindow(privateWin);
+  is(await storage1.length, 0, "Storage starts empty in new PB session");
+
+  
+  await storage1.setItem("foo", "bar");
+  await storage1.setItem("key2", "úžasné");
+  await storage1.setItem("toRemove", "temporary");
+
+  is(await storage1.getItem("foo"), "bar", "Can read back written value");
+  is(await storage1.length, 3, "Length is correct after writes");
+
+  
+  await storage1.removeItem("toRemove");
+  is(await storage1.getItem("toRemove"), null, "Removed item returns null");
+  is(await storage1.length, 2, "Length decremented after removeItem");
+
+  
+  await storage1.setItem("foo", "baz");
+  is(await storage1.getItem("foo"), "baz", "Overwritten value is updated");
+  is(await storage1.length, 2, "Length unchanged after overwrite");
+
+  
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(
+    privateWin.gBrowser,
+    pageUrl
+  );
+  let storage2 = new TabLocalStorage(tab2);
+
+  is(await storage2.getItem("foo"), "baz", "Updated value is visible in tab2");
+  is(
+    await storage2.getItem("key2"),
+    "úžasné",
+    "Non-ASCII data is visible in tab2"
+  );
+  is(await storage2.length, 2, "Length matches in tab2");
+
+  
+  await storage1.clear();
+  is(await storage1.length, 0, "Length is 0 after clear()");
+  is(await storage1.getItem("foo"), null, "Data gone after clear()");
+
+  
+  is(await storage2.length, 0, "clear() visible in tab2");
+
+  BrowserTestUtils.removeTab(tab2);
+  await BrowserTestUtils.closeWindow(privateWin);
+
+  await waitForPrivateStorageCleanup();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_disk_structure_and_encryption() {
+  const pageUrl =
+    "http://example.com/browser/dom/localstorage/test/page_private_ls.html";
+
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    privateWin.gBrowser,
+    pageUrl
+  );
+  let storage = new TabLocalStorage(tab);
+
+  
+  await storage.setItem("testKey", "testValue");
+
+  let storageDir = privateStorageDir();
+
+  
+  
+  
+  await TestUtils.waitForCondition(
+    () => storageDir.exists(),
+    "Waiting for storage/private/ directory to be created",
+    DISK_POLL_INTERVAL_MS,
+    DISK_POLL_MAX_TRIES
+  );
+
+  
+  let originDirs = [];
+  let entries = storageDir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    let entry = entries.nextFile;
+    if (entry.isDirectory()) {
+      originDirs.push(entry);
+    }
   }
+
+  Assert.greater(originDirs.length, 0, "At least one origin directory exists");
+
+  for (let dir of originDirs) {
+    ok(
+      isPrivateOriginDir(dir.leafName),
+      `Origin directory '${dir.leafName}' matches uuid+++<UUID> format`
+    );
+  }
+
+  
+  
+  
+  await TestUtils.waitForCondition(
+    () => findSQLiteFiles(storageDir).length,
+    "Waiting for the LS .sqlite file to be flushed to disk",
+    DISK_POLL_INTERVAL_MS,
+    DISK_POLL_MAX_TRIES
+  );
+  let sqliteFiles = findSQLiteFiles(storageDir);
+
+  for (let file of sqliteFiles) {
+    
+    
+    
+    let headBytes = await IOUtils.read(file.path, { maxBytes: 100 });
+    ok(
+      looksEncrypted(headBytes),
+      `Database file '${file.leafName}' has encrypted content`
+    );
+  }
+
+  await BrowserTestUtils.closeWindow(privateWin);
+
+  await waitForPrivateStorageCleanup();
+});
+
+
+
+
+add_task(async function test_session_isolation() {
+  const pageUrl =
+    "http://example.com/browser/dom/localstorage/test/page_private_ls.html";
+
+  
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    privateWin.gBrowser,
+    pageUrl
+  );
+  let storage = new TabLocalStorage(tab);
+
+  await storage.setItem("sessionData", "secret");
+  is(
+    await storage.getItem("sessionData"),
+    "secret",
+    "Data written in session 1"
+  );
+
+  await BrowserTestUtils.closeWindow(privateWin);
+
+  await waitForPrivateStorageCleanup();
+
+  
+  privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  tab = await BrowserTestUtils.openNewForegroundTab(
+    privateWin.gBrowser,
+    pageUrl
+  );
+  storage = new TabLocalStorage(tab);
+
+  is(await storage.length, 0, "Storage is empty in new PB session");
+  is(await storage.getItem("sessionData"), null, "Data from session 1 is gone");
+
+  await BrowserTestUtils.closeWindow(privateWin);
 });
