@@ -1338,7 +1338,23 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                         
                         
                         
-                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Socket will set max_gso_segments to 1. QUIC layer will retry.", dg.num_datagrams());
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Resending as individual datagrams.", dg.num_datagrams());
+                        let socket = conn.socket.as_mut().expect("non NSPR IO");
+                        for single in dg.iter() {
+                            let single = datagram::Batch::from(single.to_owned());
+                            if let Err(e) = socket.send(&single) {
+                                qwarn!("failed to resend datagram without GSO: {e}");
+                                break;
+                            }
+                        }
                     }
                     Err(e) => {
                         qwarn!("failed to send datagram: {}", e);
