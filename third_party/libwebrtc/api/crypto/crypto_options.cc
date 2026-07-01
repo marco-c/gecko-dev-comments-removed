@@ -33,8 +33,24 @@ CryptoOptions CryptoOptions::NoGcm() {
   return options;
 }
 
+
+CryptoOptions CryptoOptions::PreferGcm() {
+  CryptoOptions options;
+  options.srtp.enable_gcm_crypto_suites = true;
+  options.srtp.prefer_gcm_crypto_suites = true;
+  return options;
+}
+
 std::vector<int> CryptoOptions::GetSupportedDtlsSrtpCryptoSuites() const {
   std::vector<int> crypto_suites;
+  
+  
+  
+  if (srtp.prefer_gcm_crypto_suites && srtp.enable_gcm_crypto_suites) {
+    crypto_suites.push_back(kSrtpAeadAes256Gcm);
+    crypto_suites.push_back(kSrtpAeadAes128Gcm);
+  }
+
   
   
   
@@ -50,7 +66,7 @@ std::vector<int> CryptoOptions::GetSupportedDtlsSrtpCryptoSuites() const {
   
   
   
-  if (srtp.enable_gcm_crypto_suites) {
+  if (!srtp.prefer_gcm_crypto_suites && srtp.enable_gcm_crypto_suites) {
     crypto_suites.push_back(kSrtpAeadAes256Gcm);
     crypto_suites.push_back(kSrtpAeadAes128Gcm);
   }
@@ -62,6 +78,7 @@ bool CryptoOptions::operator==(const CryptoOptions& other) const {
   struct data_being_tested_for_equality {
     struct Srtp {
       bool enable_gcm_crypto_suites;
+      bool prefer_gcm_crypto_suites;
       bool enable_aes128_sha1_32_crypto_cipher;
       bool enable_aes128_sha1_80_crypto_cipher;
       bool enable_encrypted_rtp_header_extensions;
@@ -76,6 +93,7 @@ bool CryptoOptions::operator==(const CryptoOptions& other) const {
                 "update operator==?");
 
   return srtp.enable_gcm_crypto_suites == other.srtp.enable_gcm_crypto_suites &&
+         srtp.prefer_gcm_crypto_suites == other.srtp.prefer_gcm_crypto_suites &&
          srtp.enable_aes128_sha1_32_crypto_cipher ==
              other.srtp.enable_aes128_sha1_32_crypto_cipher &&
          srtp.enable_aes128_sha1_80_crypto_cipher ==

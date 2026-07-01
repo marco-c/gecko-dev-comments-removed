@@ -14,9 +14,17 @@
 #include <set>
 #include <vector>
 
-#include "rtc_base/openssl_stream_adapter.h"
+#include "api/field_trials.h"
+#include "rtc_base/openssl_stream_adapter.h"  
+#include "rtc_base/ssl_stream_adapter.h"
+#include "test/create_test_field_trials.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/scoped_key_value_config.h"
+
+namespace webrtc {
+namespace {
+
+using ::testing::ElementsAre;
 
 TEST(EphemeralKeyExchangeCipherGroupsTest, GetSupported) {
   std::set<uint16_t> expected = {
@@ -123,8 +131,8 @@ TEST(EphemeralKeyExchangeCipherGroupsTest, Update) {
   };
 
   webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups groups;
-  webrtc::test::ScopedKeyValueConfig field_trials(
-      "WebRTC-EnableDtlsPqc/Enabled/");
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-EnableDtlsPqc/Enabled/");
   groups.Update(&field_trials, &disable);
   EXPECT_EQ(groups.GetEnabled(), expected);
 }
@@ -139,3 +147,30 @@ TEST(EphemeralKeyExchangeCipherGroupsTest, CopyCryptoOptions) {
   EXPECT_EQ(options, copy1);
   EXPECT_EQ(options, copy2);
 }
+
+TEST(CryptoOptionsTest, GetSupportedDtlsSrtpCryptoSuitesDefault) {
+  CryptoOptions options;
+  EXPECT_THAT(options.GetSupportedDtlsSrtpCryptoSuites(),
+              ElementsAre(kSrtpAes128CmSha1_80, kSrtpAeadAes256Gcm,
+                          kSrtpAeadAes128Gcm));
+}
+
+TEST(CryptoOptionsTest, GetSupportedDtlsSrtpCryptoSuitesNoGcm) {
+  CryptoOptions options = CryptoOptions::NoGcm();
+  EXPECT_THAT(options.GetSupportedDtlsSrtpCryptoSuites(),
+              ElementsAre(kSrtpAes128CmSha1_80));
+}
+TEST(CryptoOptionsTest, GetSupportedDtlsSrtpCryptoSuitesPreferGcm) {
+  CryptoOptions options;
+  options.srtp.prefer_gcm_crypto_suites = true;
+  EXPECT_THAT(options.GetSupportedDtlsSrtpCryptoSuites(),
+              ElementsAre(kSrtpAeadAes256Gcm, kSrtpAeadAes128Gcm,
+                          kSrtpAes128CmSha1_80));
+
+  EXPECT_THAT(CryptoOptions::PreferGcm().GetSupportedDtlsSrtpCryptoSuites(),
+              ElementsAre(kSrtpAeadAes256Gcm, kSrtpAeadAes128Gcm,
+                          kSrtpAes128CmSha1_80));
+}
+
+}  
+}  
