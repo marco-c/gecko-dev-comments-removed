@@ -22,7 +22,7 @@ class nsIX509Cert;
 
 class nsPKCS12Blob {
  public:
-  nsPKCS12Blob();
+  nsPKCS12Blob() = default;
   ~nsPKCS12Blob() = default;
 
   
@@ -35,8 +35,6 @@ class nsPKCS12Blob {
                         const nsAString& password, uint32_t& error);
 
  private:
-  nsCOMPtr<nsIInterfaceRequestor> mUIContext;
-
   
   nsresult inputToDecoder(mozilla::UniqueSEC_PKCS12DecoderContext& dcx,
                           nsIFile* file, PRErrorCode& nssError);
