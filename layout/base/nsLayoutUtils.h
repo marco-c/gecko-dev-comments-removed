@@ -171,6 +171,7 @@ class nsLayoutUtils {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   using nsDisplayItem = mozilla::nsDisplayItem;
   using nsDisplayList = mozilla::nsDisplayList;
@@ -1858,10 +1859,13 @@ class nsLayoutUtils {
 
 
 
-  typedef void (*TextShadowCallback)(gfxContext* aCtx, nsPoint aShadowOffset,
+  typedef void (*TextShadowCallback)(gfxContext* aCtx,
+                                     imgDrawingParams& aImgParams,
+                                     const nsPoint& aShadowOffset,
                                      const nscolor& aShadowColor, void* aData);
 
   static void PaintTextShadow(const nsIFrame* aFrame, gfxContext* aContext,
+                              imgDrawingParams& aImgParams,
                               const nsRect& aTextRect, const nsRect& aDirtyRect,
                               const nscolor& aForegroundColor,
                               TextShadowCallback aCallback,

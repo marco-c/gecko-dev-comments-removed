@@ -289,7 +289,8 @@ class SVGUtils final {
 
 
   static gfxRect GetClipRectForFrame(const nsIFrame* aFrame, float aX, float aY,
-                                     float aWidth, float aHeight);
+                                     float aWidth, float aHeight,
+                                     SVGBBoxFlags aFlags = {});
 
   
 
@@ -489,7 +490,9 @@ class SVGUtils final {
 
 
 
-  static void PaintSVGGlyph(Element* aElement, gfxContext* aContext);
+
+  static void PaintSVGGlyph(Element* aElement, gfxContext* aContext,
+                            imgDrawingParams& aImgParams);
 
   
 

@@ -196,6 +196,7 @@ class gfxFontEntry {
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::StretchRange StretchRange;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
@@ -342,7 +343,8 @@ class gfxFontEntry {
   bool GetSVGGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphId,
                           gfxFloat aSize, gfxRect* aResult);
   void RenderSVGGlyph(gfxContext* aContext, uint32_t aGlyphId,
-                      mozilla::SVGContextPaint* aContextPaint);
+                      mozilla::SVGContextPaint* aContextPaint,
+                      imgDrawingParams& aImgParams);
   
   
   void NotifyGlyphsChanged();

@@ -104,6 +104,7 @@ class gfxTextRun : public gfxShapedText {
  public:
   typedef gfxFont::RunMetrics Metrics;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   
 
@@ -299,7 +300,7 @@ class gfxTextRun : public gfxShapedText {
 
 
   void Draw(const Range aRange, const mozilla::gfx::Point aPt,
-            const DrawParams& aParams) const;
+            const DrawParams& aParams, imgDrawingParams& aImgParams) const;
 
   
 
@@ -309,7 +310,8 @@ class gfxTextRun : public gfxShapedText {
   void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
                          gfxFloat aMarkAdvance, mozilla::gfx::Point aPt,
                          Range aRange, const PropertyProvider* aProvider,
-                         mozilla::gfx::PaletteCache& aPaletteCache) const;
+                         mozilla::gfx::PaletteCache& aPaletteCache,
+                         imgDrawingParams& aImgParams) const;
 
   
 
@@ -858,6 +860,7 @@ class gfxTextRun : public gfxShapedText {
                            mozilla::gfx::Point* aPt,
                            const PropertyProvider* aProvider,
                            TextRunDrawParams& aParams,
+                           imgDrawingParams& aImgParams,
                            mozilla::gfx::ShapedTextFlags aOrientation) const;
   
   
@@ -884,7 +887,7 @@ class gfxTextRun : public gfxShapedText {
   
   void DrawGlyphs(gfxFont* aFont, Range aRange, mozilla::gfx::Point* aPt,
                   const PropertyProvider* aProvider, Range aSpacingRange,
-                  TextRunDrawParams& aParams,
+                  TextRunDrawParams& aParams, imgDrawingParams& aImgParams,
                   mozilla::gfx::ShapedTextFlags aOrientation) const;
 
   
