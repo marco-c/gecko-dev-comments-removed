@@ -40,7 +40,7 @@ def is_release_promotion_available(parameters):
                 
                 "enum": [
                     "bump-main",
-                    "bump-esr140",
+                    "bump-esr153",
                     "early-to-late-beta",
                     "main-to-beta",
                     "beta-to-release",
