@@ -113,29 +113,7 @@ impl ImageScratch {
 
 
 
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, MallocSizeOf)]
-pub struct StretchSizeKey {
-    pub size: SizeKey,
-    pub fills_width: bool,
-    pub fills_height: bool,
-}
-
-impl StretchSizeKey {
-    
-    
-    pub fn fills_prim() -> Self {
-        StretchSizeKey {
-            size: LayoutSize::zero().into(),
-            fills_width: true,
-            fills_height: true,
-        }
-    }
-}
+pub use api::key_types::StretchSizeKey;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
