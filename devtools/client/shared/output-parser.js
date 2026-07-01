@@ -58,6 +58,8 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "oklch",
   "rgb",
   
+  "alpha",
+  
   "image",
 ]);
 
