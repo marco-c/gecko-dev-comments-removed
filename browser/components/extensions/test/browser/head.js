@@ -1090,21 +1090,19 @@ function roundCssPixcel(pixel, screen) {
 }
 
 function getCssAvailRect(screen) {
-  const availDeviceLeft = {};
-  const availDeviceTop = {};
-  const availDeviceWidth = {};
-  const availDeviceHeight = {};
-  screen.GetAvailRect(
-    availDeviceLeft,
-    availDeviceTop,
-    availDeviceWidth,
-    availDeviceHeight
-  );
-  const factor = screen.defaultCSSScaleFactor;
-  const left = Math.floor(availDeviceLeft.value / factor);
-  const top = Math.floor(availDeviceTop.value / factor);
-  const width = Math.floor(availDeviceWidth.value / factor);
-  const height = Math.floor(availDeviceHeight.value / factor);
+  const availLeft = {};
+  const availTop = {};
+  const availWidth = {};
+  const availHeight = {};
+  
+  
+  screen.GetAvailRectDisplayPix(availLeft, availTop, availWidth, availHeight);
+  const cssToDesktop =
+    screen.defaultCSSScaleFactor / screen.contentsScaleFactor;
+  const left = Math.floor(availLeft.value / cssToDesktop);
+  const top = Math.floor(availTop.value / cssToDesktop);
+  const width = Math.floor(availWidth.value / cssToDesktop);
+  const height = Math.floor(availHeight.value / cssToDesktop);
   return {
     left,
     top,
