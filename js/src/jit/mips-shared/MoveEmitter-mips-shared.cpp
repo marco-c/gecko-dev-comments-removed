@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/mips-shared/MoveEmitter-mips-shared.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -193,8 +191,6 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
       MOZ_CRASH("Unexpected move type");
   }
 }
-
-void MoveEmitterMIPSShared::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
 
 void MoveEmitterMIPSShared::finish() {
   assertDone();

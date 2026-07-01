@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "jit/x86-shared/MoveEmitter-x86-shared.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -197,8 +195,6 @@ void MoveEmitterX86::emit(const MoveResolver& moves) {
     }
   }
 }
-
-MoveEmitterX86::~MoveEmitterX86() { assertDone(); }
 
 Address MoveEmitterX86::cycleSlot() {
   if (pushedAtCycle_ == -1) {
@@ -510,8 +506,6 @@ void MoveEmitterX86::emitSimd128Move(const MoveOperand& from,
     masm.storeUnalignedSimd128(scratch, toAddress(to));
   }
 }
-
-void MoveEmitterX86::assertDone() { MOZ_ASSERT(!inCycle_); }
 
 void MoveEmitterX86::finish() {
   assertDone();
