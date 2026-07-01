@@ -112,19 +112,22 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-using Buffer =
-    js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
-                                              js::jit::AssemblerBufferSettings{
-                                                  .instSize = kInstrSize,
-                                                  .guardSize = 1,
-                                                  .headerSize = 0,
-                                                  .veneerSize = 2,
-                                                  .pcBias = 0,
-                                                  .alignFillInst = kNopByte,
-                                                  .nopFillInst = kNopByte,
-                                                  .numShortBranchRanges =
-                                                      NumShortBranchRangeTypes,
-                                              }>;
+using Buffer = js::jit::AssemblerBufferWithConstantPools<
+    Instruction, Assembler,
+    js::jit::AssemblerBufferSettings{
+        .instSize = kInstrSize,
+        
+        .guardSize = 1,
+        
+        .headerSize = 0,
+        
+        .veneerSize = 2,
+        
+        .pcBias = 0,
+        .alignFillInst = kNopByte,
+        .nopFillInst = kNopByte,
+        .numShortBranchRanges = NumShortBranchRangeTypes,
+    }>;
 
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
@@ -139,6 +142,13 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZicond,
                   public AssemblerRISCVZicsr,
                   public AssemblerRISCVZifencei {
+  
+  static constexpr size_t BufferMaxPoolOffset = 0;
+
+  
+  
+  static constexpr unsigned BufferNumDebugNopsToInsert = 0;
+
   GeneralRegisterSet scratch_register_list_;
 
 #ifdef JS_JITSPEW
@@ -193,12 +203,9 @@ class Assembler : public AssemblerShared,
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        m_buffer( GetPoolMaxOffset(),  0),
+        m_buffer(BufferMaxPoolOffset, BufferNumDebugNopsToInsert),
         isFinished(false) {
   }
-  static uint32_t NopFill;
-  static uint32_t AsmPoolMaxOffset;
-  static uint32_t GetPoolMaxOffset();
   bool reserve(size_t size);
   bool oom() const;
   void setPrinter(Sprinter* sp) {
