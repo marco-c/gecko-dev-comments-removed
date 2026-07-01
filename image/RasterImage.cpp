@@ -1684,7 +1684,9 @@ void RasterImage::NotifyDecodeComplete(
       
       
       
-      mAnimationState->NotifyDecodeComplete();
+      if (aStatus.mFinished && !aStatus.mHadError) {
+        mAnimationState->NotifyDecodeComplete();
+      }
 
       IntRect rect = mAnimationState->UpdateState(this, mSize.ToUnknownSize());
 
