@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(PlatformEncoderModule_h_)
 #  define PlatformEncoderModule_h_
 
@@ -65,13 +63,6 @@ class MediaDataEncoder {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  static bool IsVideo(const CodecType aCodec) {
-    return aCodec > CodecType::_BeginVideo_ && aCodec < CodecType::_EndVideo_;
-  }
-  static bool IsAudio(const CodecType aCodec) {
-    return aCodec > CodecType::_BeginAudio_ && aCodec < CodecType::_EndAudio_;
-  }
-
   using InitPromise = MozPromise<bool, MediaResult,  true>;
   using EncodedData = nsTArray<RefPtr<MediaRawData>>;
   using EncodePromise =
@@ -92,6 +83,17 @@ class MediaDataEncoder {
   
   
   virtual RefPtr<EncodePromise> Encode(const MediaData* aSample) = 0;
+
+  
+  
+  
+  virtual RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) {
+    MOZ_ASSERT_UNREACHABLE("Encode samples in a batch is not implemented");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_NOT_IMPLEMENTED,
+                    "Encode samples in a batch is not implemented"),
+        __func__);
+  }
 
   
   
@@ -151,6 +153,8 @@ class StrongTypedef {
   explicit StrongTypedef(T&& value) : mValue(std::move(value)) {}
   T& get() { return mValue; }
   T const& get() const { return mValue; }
+
+  auto MutTiedFields() { return std::tie(mValue); }
 
  private:
   T mValue{};

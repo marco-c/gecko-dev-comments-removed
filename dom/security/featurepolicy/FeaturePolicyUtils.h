@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_FeaturePolicyUtils_h
 #define mozilla_dom_FeaturePolicyUtils_h
 
@@ -78,6 +76,7 @@ struct ParamTraits;
 
 template <>
 struct ParamTraits<mozilla::dom::FeaturePolicyInfo> {
+  using paramType = mozilla::dom::FeaturePolicyInfo;
   static void Write(MessageWriter* aWriter,
                     const mozilla::dom::FeaturePolicyInfo& aParam);
   static bool Read(MessageReader* aReader,
