@@ -15,6 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
   SERPDomainToCategoriesMap:
     "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  Utils: "resource://services-settings/Utils.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -81,6 +82,18 @@ add_setup(async function () {
   await waitForIdle();
 
   await db.clear();
+
+  
+  
+  
+  
+  Services.prefs.setStringPref(
+    "services.settings.base_attachments_url",
+    `${Utils.SERVER_URL}|https://unreachable-cdn/`
+  );
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("services.settings.base_attachments_url");
+  });
 
   
   
