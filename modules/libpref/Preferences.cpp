@@ -1534,7 +1534,7 @@ struct CallbackTrieNode {
 
   
   
-  void AppendAll(nsTArray<CallbackNode*>& aOut) const {
+  void AppendAll(nsTArray<RefPtr<CallbackNode>>& aOut) const {
     for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
       if (node->Func()) aOut.AppendElement(node);
     }
@@ -1542,7 +1542,7 @@ struct CallbackTrieNode {
 
   
   
-  void AppendPrefix(nsTArray<CallbackNode*>& aOut) const {
+  void AppendPrefix(nsTArray<RefPtr<CallbackNode>>& aOut) const {
     for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
       if (node->Func() && node->IsPrefix()) aOut.AppendElement(node);
     }
@@ -1653,7 +1653,7 @@ class CallbackTrie {
   
   
   void CollectMatchingForNotify(const nsCString& aPrefName,
-                                nsTArray<CallbackNode*>& aOut) {
+                                nsTArray<RefPtr<CallbackNode>>& aOut) {
     mRoot.AppendPrefix(aOut);
     Walk(aPrefName,
          [&aOut](CallbackTrieNode* aNode, const nsACString& aSegment,
@@ -3618,8 +3618,6 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
 
 
 void nsPrefBranch::ReapAndCompactCallbacks() {
-  MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
-
   
   
   if (sPImpl->mShouldSweepWeakObservers) {
@@ -3884,9 +3882,9 @@ void PreferencesImpl::NotifyCallbacks(const nsCString& aPrefName,
   
   
   
-  AutoTArray<CallbackNode*, 16> toNotify;
+  AutoTArray<RefPtr<CallbackNode>, 16> toNotify;
   mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
-  for (CallbackNode* node : toNotify) {
+  for (const RefPtr<CallbackNode>& node : toNotify) {
     if (PrefChangedFunc func = node->Func()) {
       MOZ_LOG(sPrefLog, LogLevel::Debug,
               ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
