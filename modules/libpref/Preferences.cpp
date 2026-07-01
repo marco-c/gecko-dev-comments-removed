@@ -1424,7 +1424,11 @@ class CallbackNode {
       : mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
         mFunc(aFunc),
         mData(aData),
-        mIsPrefix(aIsPrefix) {}
+        mIsPrefix(aIsPrefix) {
+#ifdef DEBUG
+    mRawDomain = aDomain;
+#endif
+  }
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
@@ -1447,6 +1451,17 @@ class CallbackNode {
   void* Data() const { return mData; }
 
   bool IsPrefix() const { return mIsPrefix; }
+
+#ifdef DEBUG
+  
+  
+  
+  const nsCString& RawDomain() const { return mRawDomain; }
+
+  
+  
+  bool IsPriority() const { return mIsPriority; }
+#endif
 
   bool DomainIs(const nsACString& aDomain) const {
     if (!mDomain.is<nsCString>()) {
@@ -1471,6 +1486,14 @@ class CallbackNode {
           mDomain.as<nsCString>().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
   }
+
+#ifdef DEBUG
+  
+  
+  
+  nsCString mRawDomain;
+  bool mIsPriority = false;
+#endif
 
  private:
   ~CallbackNode() = default;
@@ -5497,6 +5520,53 @@ nsresult PreferencesImpl::GetSharedPrefValue(const char* aName, T* aResult) {
   return rv;
 }
 
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+
+
+
+static void WarnIfPrefixObserverDiverges(const nsACString& aRawDomain) {
+  if (aRawDomain.IsEmpty() || !HashTable()) {
+    
+    
+    return;
+  }
+  
+  
+  size_t segLen = aRawDomain.Length();
+  if (aRawDomain.CharAt(segLen - 1) == '.') {
+    --segLen;
+  }
+  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
+    nsDependentCString prefName(pref->Name());
+    
+    
+    
+    
+    if (!StringBeginsWith(prefName, aRawDomain)) {
+      continue;  
+    }
+    bool firesUnderTrie =
+        prefName.Length() == segLen || prefName.CharAt(segLen) == '.';
+    if (!firesUnderTrie) {
+      printf_stderr(
+          "[pref-trie-audit] prefix observer domain '%s' partial-matches "
+          "existing pref '%s': fired under the old StringBeginsWith rule but "
+          "not under the segment-bounded trie\n",
+          PromiseFlatCString(aRawDomain).get(), pref->Name());
+    }
+  }
+}
+#endif
+
 template <typename T>
 nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                T& aPrefNode, void* aData,
@@ -5508,11 +5578,28 @@ nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
 
   RefPtr<CallbackNode> node =
       MakeRefPtr<CallbackNode>(aPrefNode, aCallback, aData, aIsPrefix);
+#ifdef DEBUG
+  node->mIsPriority = aIsPriority;
+#endif
   if (aIsPriority) {
     sPImpl->mPriorityCallbacks.Register(node);
   } else {
     sPImpl->mCallbacks.Register(node);
   }
+
+#ifdef DEBUG
+  static const bool sTriePrefAudit = !!getenv("MOZ_PREF_TRIE_AUDIT");
+  if (aIsPrefix && sTriePrefAudit) {
+    if (node->Domain().is<nsCString>()) {
+      WarnIfPrefixObserverDiverges(node->RawDomain());
+    } else {
+      for (const char* const* p = node->Domain().as<const char* const*>(); *p;
+           ++p) {
+        WarnIfPrefixObserverDiverges(nsDependentCString(*p));
+      }
+    }
+  }
+#endif
 
   return NS_OK;
 }
@@ -5538,6 +5625,8 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
     table->CollectMatchingForUnregister(aCallback, aPrefNode, aData, aIsPrefix,
                                         matches);
     for (CallbackNode* node : matches) {
+      MOZ_ASSERT(node->IsPriority() == (table == &sPImpl->mPriorityCallbacks),
+                 "callback found in a trie that disagrees with its priority");
       table->MarkDead(node);
       sPImpl->mShouldCleanupDeadNodes = true;
       found = true;
