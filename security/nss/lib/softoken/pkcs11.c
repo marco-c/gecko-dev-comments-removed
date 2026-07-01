@@ -3454,12 +3454,67 @@ loser:
     return crv;
 }
 
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+
+
+
+
+static unsigned int
+sftk_countLiveSessionObjects(SFTKSlot *slot)
+{
+    unsigned int i;
+    unsigned int count = 0;
+
+    PR_Lock(slot->objectLock);
+    for (i = 0; i < slot->sessObjHashSize; i++) {
+        SFTKObject *object;
+        for (object = slot->sessObjHashTable[i]; object;
+             object = object->next) {
+            SFTKSessionObject *so = sftk_narrowToSessionObject(object);
+            if (so && so->session != &slot->moduleObjects) {
+                count++;
+            }
+        }
+    }
+    PR_Unlock(slot->objectLock);
+    return count;
+}
+#endif 
+
 CK_RV
 sftk_CloseAllSessions(SFTKSlot *slot, PRBool logout)
 {
     SFTKSession *session;
     unsigned int i;
     SFTKDBHandle *handle;
+
+#ifdef DEBUG
+    
+
+
+
+
+    if (logout && !parentForkedAfterC_Initialize &&
+        PR_GetEnvSecure("NSS_STRICT_SHUTDOWN")) {
+        unsigned int live = sftk_countLiveSessionObjects(slot);
+        if (live != 0) {
+            PR_fprintf(PR_STDERR,
+                       "NSS_STRICT_SHUTDOWN: slot %lu still has %u live "
+                       "session object(s) when closing all sessions\n",
+                       (unsigned long)slot->slotID, live);
+        }
+        PORT_Assert(live == 0);
+    }
+#endif
 
     
     

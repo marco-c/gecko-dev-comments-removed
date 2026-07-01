@@ -495,6 +495,18 @@ doRSAPopulateTest(unsigned int keySize, unsigned long exponent,
                 failed = 1;
             }
             SECITEM_FreeItem(&id, PR_FALSE);
+            
+
+
+
+            {
+                PK11SlotInfo *objSlot = NULL;
+                CK_OBJECT_HANDLE objID =
+                    PK11_GetObjectHandle(PK11_TypeGeneric, thisKey, &objSlot);
+                if (objID != CK_INVALID_HANDLE) {
+                    (void)PK11_DestroyObject(objSlot, objID);
+                }
+            }
         }
         PK11_DestroyGenericObjects(tstPrivKey);
     }
