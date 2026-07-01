@@ -5,25 +5,27 @@
 
 
 
+
+
+
 "use strict";
 
 
+
 add_task(
-  async function test_removing_shutdown_exception_permission_only_clears_cookie_permissions() {
+  async function test_removing_shutdown_exception_permission_only_clears_persist_data_on_shutdown() {
     let uri = Services.io.newURI("https://example.net");
     let principal = Services.scriptSecurityManager.createContentPrincipal(
       uri,
       {}
     );
 
-    
     Services.perms.addFromPrincipal(
       principal,
-      "cookie",
+      "persist-data-on-shutdown",
       Services.perms.ALLOW_ACTION
     );
 
-    
     Services.perms.addFromPrincipal(
       principal,
       "notcookie",
@@ -40,11 +42,13 @@ add_task(
       );
     });
 
-    
     Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+      Services.perms.testExactPermissionFromPrincipal(
+        principal,
+        "persist-data-on-shutdown"
+      ),
       Services.perms.UNKNOWN_ACTION,
-      "the cookie permission has been removed"
+      "the persist-data-on-shutdown permission has been removed"
     );
     Assert.equal(
       Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
@@ -57,22 +61,26 @@ add_task(
 );
 
 
+
+
 add_task(
-  async function test_removing_site_permissions_skips_cookie_permissions() {
+  async function test_removing_site_permissions_skips_persist_data_on_shutdown() {
     let uri = Services.io.newURI("https://example.net");
     let principal = Services.scriptSecurityManager.createContentPrincipal(
       uri,
       {}
     );
 
-    
+    Services.perms.addFromPrincipal(
+      principal,
+      "persist-data-on-shutdown",
+      Services.perms.ALLOW_ACTION
+    );
     Services.perms.addFromPrincipal(
       principal,
       "cookie",
       Services.perms.ALLOW_ACTION
     );
-
-    
     Services.perms.addFromPrincipal(
       principal,
       "notcookie",
@@ -89,11 +97,18 @@ add_task(
       );
     });
 
-    
+    Assert.equal(
+      Services.perms.testExactPermissionFromPrincipal(
+        principal,
+        "persist-data-on-shutdown"
+      ),
+      Services.perms.ALLOW_ACTION,
+      "persist-data-on-shutdown survives CLEAR_SITE_PERMISSIONS"
+    );
     Assert.equal(
       Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
-      Services.perms.ALLOW_ACTION,
-      "the cookie permission has not been removed"
+      Services.perms.UNKNOWN_ACTION,
+      "cookie permission is cleared by CLEAR_SITE_PERMISSIONS"
     );
     Assert.equal(
       Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
@@ -113,14 +128,11 @@ add_task(async function test_removing_all_permissions() {
     {}
   );
 
-  
   Services.perms.addFromPrincipal(
     principal,
-    "cookie",
+    "persist-data-on-shutdown",
     Services.perms.ALLOW_ACTION
   );
-
-  
   Services.perms.addFromPrincipal(
     principal,
     "notcookie",
@@ -137,11 +149,13 @@ add_task(async function test_removing_all_permissions() {
     );
   });
 
-  
   Assert.equal(
-    Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+    Services.perms.testExactPermissionFromPrincipal(
+      principal,
+      "persist-data-on-shutdown"
+    ),
     Services.perms.UNKNOWN_ACTION,
-    "the cookie permission has been removed"
+    "the persist-data-on-shutdown permission has been removed"
   );
   Assert.equal(
     Services.perms.testExactPermissionFromPrincipal(principal, "notcookie"),
@@ -171,18 +185,20 @@ add_task(async function test_removeBySiteAndOAPattern() {
       {}
     );
 
-  info("add 'cookie' (== clear on shutdown exception) permissions");
+  info(
+    "add persist-data-on-shutdown (== clear on shutdown exception) permissions"
+  );
   [principalRegular, principalRegularSub, principalUnrelated].forEach(
     principal => {
       Services.perms.addFromPrincipal(
         principal,
-        "cookie",
+        "persist-data-on-shutdown",
         Services.perms.ALLOW_ACTION
       );
     }
   );
 
-  info("Clear all permissions for schemeless site example.net");
+  info("Clear shutdown exceptions for schemeless site example.net");
   await new Promise(aResolve => {
     Services.clearData.deleteDataFromSite(
       "example.net",
@@ -198,17 +214,24 @@ add_task(async function test_removeBySiteAndOAPattern() {
 
   [principalRegular, principalRegularSub].forEach(principal => {
     Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+      Services.perms.testExactPermissionFromPrincipal(
+        principal,
+        "persist-data-on-shutdown"
+      ),
       Services.perms.UNKNOWN_ACTION,
-      "cookie permission has been removed for " + principal.origin
+      "persist-data-on-shutdown permission has been removed for " +
+        principal.origin
     );
   });
 
   [principalUnrelated].forEach(principal => {
     Assert.equal(
-      Services.perms.testExactPermissionFromPrincipal(principal, "cookie"),
+      Services.perms.testExactPermissionFromPrincipal(
+        principal,
+        "persist-data-on-shutdown"
+      ),
       Services.perms.ALLOW_ACTION,
-      "cookie permission still exists for " + principal.origin
+      "persist-data-on-shutdown permission still exists for " + principal.origin
     );
   });
 

@@ -39,6 +39,15 @@ add_task(async function subDomains1() {
   let originB = "https://mozilla.org";
   PermissionTestUtils.add(
     originB,
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
+  );
+  
+  
+  
+  
+  PermissionTestUtils.add(
+    originB,
     "cookie",
     Ci.nsICookiePermission.ACCESS_ALLOW
   );
@@ -79,6 +88,7 @@ add_task(async function subDomains1() {
   
   PermissionTestUtils.remove(originA, "cookie");
   PermissionTestUtils.remove(originB, "cookie");
+  PermissionTestUtils.remove(originB, "persist-data-on-shutdown");
 });
 
 
@@ -95,8 +105,8 @@ add_task(async function subDomains2() {
   let originA = "https://sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
 
   SiteDataTestUtils.addToCookies({ origin: originA });
@@ -138,7 +148,7 @@ add_task(async function subDomains2() {
   );
 
   
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });
 
 
@@ -158,8 +168,8 @@ add_task(async function subDomains3() {
   let originA = "https://sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
   SiteDataTestUtils.addToCookies({ origin: originA });
   await SiteDataTestUtils.addToIndexedDB(originA);
@@ -213,14 +223,16 @@ add_task(async function subDomains3() {
   );
 
   
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });
 
 
 
 
 add_task(async function subDomains4() {
-  info("Test subdomain cookie permission inheritance with two subdomains");
+  info(
+    "Test subdomain persist-data-on-shutdown permission inheritance with two subdomains"
+  );
 
   
   await new Promise(resolve => {
@@ -231,8 +243,8 @@ add_task(async function subDomains4() {
   let originA = "https://sub.sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
   SiteDataTestUtils.addToCookies({ origin: originA });
   await SiteDataTestUtils.addToIndexedDB(originA);
@@ -283,5 +295,5 @@ add_task(async function subDomains4() {
   );
 
   
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });
