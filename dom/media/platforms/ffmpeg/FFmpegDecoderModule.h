@@ -44,6 +44,9 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     }
 #  else
     if (!XRE_IsRDDProcess() && !XRE_IsUtilityProcess() &&
+#    ifdef MOZ_WIDGET_ANDROID
+        !XRE_IsGPUProcess() &&
+#    endif
         !(XRE_IsParentProcess() && PR_GetEnv("MOZ_RUN_GTEST"))) {
       return;
     }
@@ -168,6 +171,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
             CreateDecoderParams::Option::Output8BitPerChannel),
         aParams.mTrackingId, aParams.mCDM);
 
+#ifdef XP_WIN
     
     
     
@@ -184,11 +188,16 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         decoder = nullptr;
       }
     }
+#endif
     return decoder.forget();
   }
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) override {
+    if (XRE_IsGPUProcess()) {
+      
+      return nullptr;
+    }
     if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
       return nullptr;
     }
@@ -217,8 +226,15 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     
     
     
-    
     const auto& trackInfo = aParams.mConfig;
+    if (XRE_IsGPUProcess() && !trackInfo.GetAsVideoInfo()) {
+      return media::DecodeSupportSet{};
+    }
+
+    
+    
+    
+    
     const nsACString& mimeType = trackInfo.mMimeType;
     if (VPXDecoder::IsVPX(mimeType) && trackInfo.GetAsVideoInfo()->HasAlpha()) {
       MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
