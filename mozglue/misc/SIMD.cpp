@@ -4,11 +4,12 @@
 
 #include "mozilla/SIMD.h"
 
+#include <bit>
 #include <cstring>
 #include <stdint.h>
 #include <type_traits>
 
-#include "mozilla/EndianUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/SSE.h"
 
 #ifdef MOZILLA_PRESUME_SSE2
@@ -220,7 +221,7 @@ const TValue* Check2x2x16Bytes(__m128i needle1, __m128i needle2, uintptr_t a,
 template <typename TValue>
 const TValue* FindInBuffer(const TValue* ptr, TValue value, size_t length) {
   static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2);
-  static_assert(std::is_unsigned<TValue>::value);
+  static_assert(std::is_unsigned_v<TValue>);
   uint64_t splat64;
   if (sizeof(TValue) == 1) {
     splat64 = 0x0101010101010101llu;
@@ -327,7 +328,7 @@ const TValue* TwoElementLoop(uintptr_t start, uintptr_t end, TValue v1,
                       (static_cast<uint32_t>(v2) << (sizeof(TValue) * 8));
   while (cur < preEnd) {
     
-    static_assert(MOZ_LITTLE_ENDIAN());
+    static_assert(std::endian::native == std::endian::little);
     
     
     
@@ -351,7 +352,7 @@ template <typename TValue>
 const TValue* FindTwoInBuffer(const TValue* ptr, TValue v1, TValue v2,
                               size_t length) {
   static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2);
-  static_assert(std::is_unsigned<TValue>::value);
+  static_assert(std::is_unsigned_v<TValue>);
   uint64_t splat64;
   if (sizeof(TValue) == 1) {
     splat64 = 0x0101010101010101llu;

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemDataManager.h"
 
 #include "ErrorList.h"
@@ -55,9 +53,9 @@ namespace {
 
 
 using FileSystemDataManagerHashKey =
-    std::conditional<ReleaseAssertEnabled::value,
-                     quota::nsCStringHashKeyWithDisabledMemmove,
-                     nsCStringHashKey>::type;
+    std::conditional_t<ReleaseAssertEnabled::value,
+                       quota::nsCStringHashKeyWithDisabledMemmove,
+                       nsCStringHashKey>;
 
 
 

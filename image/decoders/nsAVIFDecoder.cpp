@@ -611,15 +611,14 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     return 0;
   }
 
-  static Dav1dResult GetPicture(Dav1dContext& aContext,
-                                const MediaRawData& aBytes,
+  static Dav1dResult GetPicture(Dav1dContext& aContext, MediaRawData& aBytes,
                                 Dav1dPicture* aPicture,
                                 bool aShouldSendTelemetry) {
     MOZ_ASSERT(aPicture);
 
     Dav1dData dav1dData;
     Dav1dResult r = dav1d_data_wrap(&dav1dData, aBytes.Data(), aBytes.Size(),
-                                    Dav1dFreeCallback_s, nullptr);
+                                    Dav1dFreeCallback_s, &aBytes);
 
     MOZ_LOG(
         sAVIFLog, r == 0 ? LogLevel::Verbose : LogLevel::Error,
@@ -629,12 +628,22 @@ class Dav1dDecoder final : AVIFDecoderInterface {
       return r;
     }
 
+    
+    
+    
+    
+    aBytes.AddRef();
+
     r = dav1d_send_data(&aContext, &dav1dData);
 
     MOZ_LOG(sAVIFLog, r == 0 ? LogLevel::Debug : LogLevel::Error,
             ("dav1d_send_data -> %d", r));
 
     if (r != 0) {
+      
+      
+      
+      dav1d_data_unref(&dav1dData);
       return r;
     }
 
@@ -658,10 +667,9 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     return r;
   }
 
-  
   static void Dav1dFreeCallback_s(const uint8_t* aBuf, void* aCookie) {
-    
-    
+    MOZ_ASSERT(aCookie);
+    static_cast<MediaRawData*>(aCookie)->Release();
   }
 
   static UniquePtr<AVIFDecodedData> Dav1dPictureToDecodedData(
@@ -999,8 +1007,8 @@ UniquePtr<AVIFDecodedData> Dav1dDecoder::Dav1dPictureToDecodedData(
     OwnedDav1dPicture aAlphaPlane, bool aPremultipliedAlpha) {
   MOZ_ASSERT(aPicture);
 
-  static_assert(std::is_same<int, decltype(aPicture->p.w)>::value);
-  static_assert(std::is_same<int, decltype(aPicture->p.h)>::value);
+  static_assert(std::is_same_v<int, decltype(aPicture->p.w)>);
+  static_assert(std::is_same_v<int, decltype(aPicture->p.h)>);
 
   UniquePtr<AVIFDecodedData> data = MakeUnique<AVIFDecodedData>();
 

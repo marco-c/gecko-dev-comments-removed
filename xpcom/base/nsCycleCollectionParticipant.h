@@ -541,7 +541,7 @@ class NS_NO_VTABLE nsXPCOMCycleCollectionParticipant
 
 
 
-template <typename T, bool IsXPCOM = std::is_base_of<nsISupports, T>::value>
+template <typename T, bool IsXPCOM = std::is_base_of_v<nsISupports, T>>
 struct DowncastCCParticipantImpl {};
 
 

@@ -29,7 +29,7 @@ MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> PromisifyAlgorithm(
   
   
   RefPtr<Promise> result;
-  if constexpr (!std::is_same<decltype(aFunc(aRv)), void>::value) {
+  if constexpr (!std::is_same_v<decltype(aFunc(aRv)), void>) {
     result = aFunc(aRv);
   } else {
     aFunc(aRv);

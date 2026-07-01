@@ -2832,9 +2832,9 @@ StaticAutoPtr<PrepareDatastoreOpArray> gPrepareDatastoreOps;
 
 
 
-using DatastoreHashKey = std::conditional<DiagnosticAssertEnabled::value,
-                                          nsCStringHashKeyWithDisabledMemmove,
-                                          nsCStringHashKey>::type;
+using DatastoreHashKey =
+    std::conditional_t<DiagnosticAssertEnabled::value,
+                       nsCStringHashKeyWithDisabledMemmove, nsCStringHashKey>;
 
 using DatastoreHashtable =
     nsBaseHashtable<DatastoreHashKey, NotNull<CheckedUnsafePtr<Datastore>>,

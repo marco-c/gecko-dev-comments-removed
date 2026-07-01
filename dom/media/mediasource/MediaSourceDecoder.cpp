@@ -126,7 +126,7 @@ IntervalType MediaSourceDecoder::GetSeekableImpl() {
       
       
       
-      if constexpr (std::is_same<IntervalType, TimeRanges>::value) {
+      if constexpr (std::is_same_v<IntervalType, TimeRanges>) {
         TimeRanges seekableRange = media::TimeRanges(
             TimeRange(unionRanges.GetStart(), unionRanges.GetEnd()));
         return seekableRange;
@@ -139,10 +139,10 @@ IntervalType MediaSourceDecoder::GetSeekableImpl() {
       seekable += media::TimeInterval(TimeUnit::Zero(), buffered.GetEnd());
     }
   } else {
-    if constexpr (std::is_same<IntervalType, TimeRanges>::value) {
+    if constexpr (std::is_same_v<IntervalType, TimeRanges>) {
       
       return TimeRanges(TimeRange(0, duration));
-    } else if constexpr (std::is_same<IntervalType, TimeIntervals>::value) {
+    } else if constexpr (std::is_same_v<IntervalType, TimeIntervals>) {
       seekable += media::TimeInterval(TimeUnit::Zero(),
                                       mDuration.match(DurationToTimeUnit()));
     } else {

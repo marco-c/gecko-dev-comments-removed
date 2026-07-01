@@ -841,16 +841,14 @@ namespace {
 
 
 template <typename T>
-typename std::enable_if_t<!std::is_same<std::string, std::decay_t<T>>::value,
-                          void>
+typename std::enable_if_t<!std::is_same_v<std::string, std::decay_t<T>>, void>
 LogWithMaxLength(std::stringstream& ss, T value, size_t maxLength) {
   ss << value;
 }
 
 
 template <typename T>
-typename std::enable_if_t<std::is_same<std::string, std::decay_t<T>>::value,
-                          void>
+typename std::enable_if_t<std::is_same_v<std::string, std::decay_t<T>>, void>
 LogWithMaxLength(std::stringstream& ss, T value, size_t maxLength) {
   if (!maxLength || value.length() < maxLength) {
     ss << value;
