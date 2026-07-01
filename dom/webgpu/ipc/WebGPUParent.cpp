@@ -124,6 +124,27 @@ extern int32_t wgpu_server_get_dma_buf_fd(WGPUWebGPUParentPtr aParent,
   
   return fd.release();
 }
+
+extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(
+    const uint64_t** aModifiers, uint32_t* aModifierCount) {
+  if (!aModifiers || !aModifierCount) {
+    return false;
+  }
+
+  *aModifiers = nullptr;
+  *aModifierCount = 0;
+
+  
+  
+  const auto& modifiers = mozilla::gfx::gfxVars::DMABufModifiersARGB();
+  if (modifiers.IsEmpty()) {
+    return false;
+  }
+
+  *aModifiers = modifiers.Elements();
+  *aModifierCount = static_cast<uint32_t>(modifiers.Length());
+  return true;
+}
 #endif
 
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
@@ -1224,6 +1245,10 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   if (data->mLastSubmittedTextureId.isNothing()) {
+    
+    
+    memset(shmem.get<uint8_t>(), 0, shmem.Size<uint8_t>());
+    setOutParams(std::move(shmem), size, stride);
     return IPC_OK();
   }
 
@@ -1288,10 +1313,6 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
     if (ForwardError(error)) {
       return IPC_OK();
     }
-  }
-
-  if (data->mLastSubmittedTextureId.isNothing()) {
-    return IPC_OK();
   }
 
   const ffi::WGPUTexelCopyTextureInfo texView = {
