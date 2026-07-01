@@ -425,6 +425,14 @@ function dohHandler(req, res) {
 
     let answers = [];
 
+    
+    
+    
+    
+    function svcbTargetName(name) {
+      return name.replace(/^_[^.]+\._https\./, "");
+    }
+
     if (u.query.httpssvc) {
       responseIP = "none";
       answers.push({
@@ -496,7 +504,7 @@ function dohHandler(req, res) {
           flush: false,
           data: {
             priority,
-            name: packet.questions[0].name,
+            name: svcbTargetName(packet.questions[0].name),
             values: [
               { key: "alpn", value: "h2" },
               { key: "port", value: global.serverPort },

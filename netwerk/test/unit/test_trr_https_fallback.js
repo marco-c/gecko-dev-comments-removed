@@ -852,6 +852,17 @@ add_task(async function testHttp3ExcludedList() {
 });
 
 add_task(async function testAllRecordsInHttp3ExcludedList() {
+  
+  
+  
+  
+  if (
+    Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false)
+  ) {
+    info("Skipping testAllRecordsInHttp3ExcludedList: not applicable to HE-v3");
+    return;
+  }
+
   trrServer = new TRRServer();
   await trrServer.start();
   Services.dns.clearCache(true);
