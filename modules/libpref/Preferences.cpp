@@ -1520,7 +1520,8 @@ struct CallbackTrieNode {
   };
   
   
-  AutoTArray<Child, 1> mChildren;
+  
+  nsTArray<Child> mChildren;
   nsTArray<RefPtr<CallbackNode>> mCallbacks;
 
   
