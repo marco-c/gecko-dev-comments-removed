@@ -3649,3 +3649,7 @@ pref("browser.contentsharing.enabled", false);
 
 
 pref("distribution.mozillaonline.ignore", true);
+
+#ifdef XP_MACOSX
+  pref("browser.macAppMenu.setAsDefaultShown", false);
+#endif
