@@ -1,5 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebMCP registerTool throws on invalid name</title>
+<link rel="author" href="mailto:dom@chromium.org">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+</head>
+<body>
+<script>
 test(() => {
-  
+  // Valid names
   const validNames = [
     'a',
     'A',
@@ -21,10 +31,10 @@ test(() => {
 }, 'Valid tool names are accepted.');
 
 test(() => {
-  
+  // Invalid names
   const invalidNames = [
-    '', 
-    'a'.repeat(129), 
+    '', // Empty
+    'a'.repeat(129), // Too long
     'name with space',
     'name@special',
     'name#special',
@@ -69,3 +79,6 @@ test(() => {
     );
   }
 }, 'Invalid tool names throw InvalidStateError.');
+</script>
+</body>
+</html>
