@@ -7001,23 +7001,7 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool keyOrMain = [mWindow isKeyWindow] || [mWindow isMainWindow];
-
-  
   bool newOcclusionState =
-      !keyOrMain &&
       !(mHasStartedNativeFullscreen ||
         ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
 
