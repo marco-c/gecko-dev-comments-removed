@@ -192,6 +192,7 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMetaElement.h"
 #include "mozilla/dom/HTMLObjectElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
@@ -16534,6 +16535,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
     
+    RefPtr<Element> invoker = popoverData->GetInvoker();
     popoverData->SetInvoker(nullptr);
 
     
@@ -16542,6 +16544,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
     popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
+
+    if (auto* select = HTMLSelectElement::FromNodeOrNull(invoker)) {
+      select->OnPopoverStateChanged(false);
+    }
   }
 
   
