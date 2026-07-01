@@ -2262,27 +2262,8 @@ nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
 #ifdef XP_WIN
   
   
-  
-  {
-    Maybe<nsCString> sourceUrl;
-    Maybe<nsCString> referrerSpec;
-    if (!mIsPrivate) {
-      nsAutoCString spec;
-      if (aSourceURI && NS_SUCCEEDED(aSourceURI->GetSpec(spec))) {
-        sourceUrl = Some(spec);
-      }
-      if (mReferrerInfo) {
-        nsAutoCString referrer;
-        if (NS_SUCCEEDED(mReferrerInfo->GetComputedReferrerSpec(referrer)) &&
-            !referrer.IsEmpty()) {
-          referrerSpec = Some(referrer);
-        }
-      }
-    }
-
-    (void)mozilla::widget::WinUtils::MaybeWriteFileZoneIdSync(aFile, sourceUrl,
-                                                              referrerSpec);
-  }
+  (void)mozilla::widget::WinUtils::MaybeWriteFileZoneIdSync(
+      aFile, aSourceURI, mReferrerInfo, !mIsPrivate);
 #endif
 
   rv = NS_NewBufferedOutputStream(aOutputStream, fileOutputStream.forget(),

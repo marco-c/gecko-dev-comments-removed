@@ -6,6 +6,7 @@
 #include "WinUtils.h"
 
 #include "nsStreamUtils.h"
+#include "mozilla/dom/ReferrerInfo.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -37,25 +38,23 @@ constexpr uint32_t ZONE_RESTRICTED = 4;
 
 
 constexpr auto kFallbackUrl = "about:internet"_ns;
-constexpr auto kFallbackReferrer = ""_ns;
+constexpr auto kNoReferrerLine = ""_ns;
 
 struct FileTestData {
-  
-  Maybe<nsCString> mSourceUrl;
-  
-  
-  Maybe<nsCString> mReferrerSpec;
+  nsCString mSourceUrl;
+  nsCString mReferrerSpec;
   
   Maybe<uint32_t> mExpectedZone;
   
   
   
-  
   Maybe<nsCString> mExpectedHostUrl = Nothing();
   Maybe<nsCString> mExpectedReferrer = Nothing();
+  
+  bool mShouldStoreUrls = true;
 };
 
-#define TestSuccess(_operation)                                \
+#define CheckSuccess(_operation)                               \
   {                                                            \
     nsresult rv = _operation;                                  \
     if (NS_FAILED(rv)) {                                       \
@@ -70,7 +69,7 @@ struct FileTestData {
 static nsresult VerifyZoneIdentifier(nsIFile* aSaveFile,
                                      const FileTestData& aData) {
   nsString savePath;
-  TestSuccess(aSaveFile->GetPath(savePath));
+  CheckSuccess(aSaveFile->GetPath(savePath));
   auto isSlash = [](char aCh) { return aCh == '/' || aCh == '\\'; };
   bool isUNC =
       savePath.Length() >= 2 && isSlash(savePath[0]) && isSlash(savePath[1]);
@@ -79,7 +78,7 @@ static nsresult VerifyZoneIdentifier(nsIFile* aSaveFile,
   adsPath += u":Zone.Identifier"_ns;
 
   nsCOMPtr<nsIFile> adsFile;
-  TestSuccess(NS_NewLocalFile(adsPath, getter_AddRefs(adsFile)));
+  CheckSuccess(NS_NewLocalFile(adsPath, getter_AddRefs(adsFile)));
 
   bool expectWritten =
       aData.mExpectedZone && *aData.mExpectedZone >= ZONE_INTERNET;
@@ -94,27 +93,29 @@ static nsresult VerifyZoneIdentifier(nsIFile* aSaveFile,
     return NS_OK;
   }
 
-  TestSuccess(openRv);
+  CheckSuccess(openRv);
 
   nsAutoCString actual;
-  TestSuccess(NS_ConsumeStream(stream, UINT32_MAX, actual));
+  CheckSuccess(NS_ConsumeStream(stream, UINT32_MAX, actual));
 
-  nsCString expectedHost = aData.mExpectedHostUrl.valueOr(aData.mSourceUrl.valueOr(""_ns));
+  nsCString expectedHost = aData.mExpectedHostUrl.valueOr(aData.mSourceUrl);
   nsCString expectedReferrer =
-      aData.mExpectedReferrer.valueOr(aData.mReferrerSpec.valueOr(""_ns));
+      aData.mExpectedReferrer.valueOr(aData.mReferrerSpec);
 
   nsAutoCString expected;
   expected.AppendLiteral("[ZoneTransfer]\r\n");
   expected.AppendPrintf("ZoneId=%u\r\n", *aData.mExpectedZone);
-  if (!expectedReferrer.IsEmpty()) {
-    expected.AppendLiteral("ReferrerUrl=");
-    expected.Append(expectedReferrer);
-    expected.AppendLiteral("\r\n");
-  }
-  if (!expectedHost.IsEmpty()) {
-    expected.AppendLiteral("HostUrl=");
-    expected.Append(expectedHost);
-    expected.AppendLiteral("\r\n");
+  if (aData.mShouldStoreUrls) {
+    if (!expectedReferrer.IsEmpty()) {
+      expected.AppendLiteral("ReferrerUrl=");
+      expected.Append(expectedReferrer);
+      expected.AppendLiteral("\r\n");
+    }
+    if (!expectedHost.IsEmpty()) {
+      expected.AppendLiteral("HostUrl=");
+      expected.Append(expectedHost);
+      expected.AppendLiteral("\r\n");
+    }
   }
 
   EXPECT_STREQ(expected.get(), actual.get())
@@ -124,31 +125,39 @@ static nsresult VerifyZoneIdentifier(nsIFile* aSaveFile,
 
 static nsresult SetAndTestFileZone(const FileTestData& aData) {
   SCOPED_TRACE(testing::Message()
-               << "source="
-               << (aData.mSourceUrl ? aData.mSourceUrl->get() : "(none)")
-               << " referrer="
-               << (aData.mReferrerSpec ? aData.mReferrerSpec->get() : "(none)")
+               << "source=" << aData.mSourceUrl.get()
+               << " referrer=" << aData.mReferrerSpec.get()
+               << " shouldStoreUrls=" << aData.mShouldStoreUrls
                << " expectedZone="
                << (aData.mExpectedZone ? std::to_string(*aData.mExpectedZone)
                                        : std::string("(none)")));
 
   nsCOMPtr<nsIFile> tmp;
-  TestSuccess(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmp)));
+  CheckSuccess(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tmp)));
   MOZ_ASSERT(tmp);
 
   nsID id = nsID::GenerateUUID();
-  TestSuccess(tmp->AppendNative("TestZones-"_ns +
-                                nsCString(id.ToString().get()) + ".txt"_ns));
+  CheckSuccess(tmp->AppendNative("TestZones-"_ns +
+                                 nsCString(id.ToString().get()) + ".txt"_ns));
   if (aData.mExpectedZone) {
-    TestSuccess(tmp->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0666));
+    CheckSuccess(tmp->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0666));
   } else {
     bool exists;
-    TestSuccess(tmp->Exists(&exists));
+    CheckSuccess(tmp->Exists(&exists));
     EXPECT_FALSE(exists);
   }
 
   bool done = false;
-  WinUtils::MaybeWriteFileZoneId(tmp, aData.mSourceUrl, aData.mReferrerSpec)
+  RefPtr<nsIURI> sourceURI;
+  CheckSuccess(NS_NewURI(getter_AddRefs(sourceURI), aData.mSourceUrl));
+  RefPtr<nsIReferrerInfo> referrerInfo;
+  if (!aData.mReferrerSpec.IsEmpty()) {
+    referrerInfo = MakeRefPtr<mozilla::dom::ReferrerInfo>(
+        nullptr, mozilla::dom::ReferrerPolicy::_empty, true,
+        Some(aData.mReferrerSpec));
+  }
+  WinUtils::MaybeWriteFileZoneId(tmp, sourceURI, referrerInfo,
+                                 aData.mShouldStoreUrls)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [&done, &aData, tmp](bool aResult) {
@@ -177,7 +186,7 @@ static nsresult SetAndTestFileZone(const FileTestData& aData) {
   
   if (aData.mExpectedZone) {
     uint32_t dummy;
-    TestSuccess(tmp->Remove(false, &dummy));
+    CheckSuccess(tmp->Remove(false, &dummy));
   }
   return NS_OK;
 }
@@ -186,89 +195,65 @@ TEST(WinUtils, MaybeWriteFileZoneId)
 {
   const FileTestData fileTestDatas[] = {
       
-      {Some("http://www.example.org/"_ns), Some(""_ns), Some(ZONE_INTERNET)},
-      {Some("about:blank"_ns), Some(""_ns), Some(ZONE_INTERNET),
+      {"http://www.example.org/"_ns, ""_ns, Some(ZONE_INTERNET)},
+      {"about:blank"_ns, ""_ns, Some(ZONE_INTERNET), Some(kFallbackUrl)},
+      {"about:srcdoc"_ns, ""_ns, Some(ZONE_INTERNET), Some(kFallbackUrl)},
+      {"data:text/html,foo"_ns, ""_ns, Some(ZONE_INTERNET), Some(kFallbackUrl)},
+      {"http://localhost:8080/"_ns, ""_ns, Some(ZONE_INTRANET)},
+      {"http://127.0.0.1/"_ns, ""_ns, Some(ZONE_INTERNET)},
+      {"file://C:/foo"_ns, ""_ns, Some(ZONE_MY_COMPUTER), Some(kFallbackUrl)},
+      {"file:///C:/foo"_ns, ""_ns, Some(ZONE_MY_COMPUTER), Some(kFallbackUrl)},
+      {"file://server/share/foo"_ns, ""_ns, Some(ZONE_INTRANET),
        Some(kFallbackUrl)},
-      {Some("about:srcdoc"_ns), Some(""_ns), Some(ZONE_INTERNET),
-       Some(kFallbackUrl)},
-      {Some("data:text/html,foo"_ns), Some(""_ns), Some(ZONE_INTERNET),
-       Some(kFallbackUrl)},
-      {Some("http://localhost:8080/"_ns), Some(""_ns), Some(ZONE_INTRANET)},
-      {Some("http://127.0.0.1/"_ns), Some(""_ns), Some(ZONE_INTERNET)},
-      {Some("file://C:/foo"_ns), Some(""_ns), Some(ZONE_MY_COMPUTER),
-       Some(kFallbackUrl)},
-      {Some("file:///C:/foo"_ns), Some(""_ns), Some(ZONE_MY_COMPUTER),
-       Some(kFallbackUrl)},
-      {Some("file://server/share/foo"_ns), Some(""_ns), Some(ZONE_INTRANET),
-       Some(kFallbackUrl)},
-      {Some("file:////server/share/foo"_ns), Some(""_ns), Some(ZONE_INTRANET),
+      {"file:////server/share/foo"_ns, ""_ns, Some(ZONE_INTRANET),
        Some(kFallbackUrl)},
 
       
-      {Some("http://www.example.org/"_ns), Nothing(), Some(ZONE_INTERNET)},
-      {Some("about:blank"_ns), Nothing(), Some(ZONE_INTERNET),
-       Some(kFallbackUrl)},
-      {Some("about:srcdoc"_ns), Nothing(), Some(ZONE_INTERNET),
-       Some(kFallbackUrl)},
-      {Some("data:text/html,foo"_ns), Nothing(), Some(ZONE_INTERNET),
-       Some(kFallbackUrl)},
-      {Some("http://localhost:8080/"_ns), Nothing(), Some(ZONE_INTRANET)},
-      {Some("http://127.0.0.1/"_ns), Nothing(), Some(ZONE_INTERNET)},
-      {Some("file://C:/foo"_ns), Nothing(), Some(ZONE_MY_COMPUTER),
-       Some(kFallbackUrl)},
-      {Some("file:///C:/foo"_ns), Nothing(), Some(ZONE_MY_COMPUTER),
-       Some(kFallbackUrl)},
-      {Some("file://server/share/foo"_ns), Nothing(), Some(ZONE_INTRANET),
-       Some(kFallbackUrl)},
-      {Some("file:////server/share/foo"_ns), Nothing(), Some(ZONE_INTRANET),
-       Some(kFallbackUrl)},
-
-      
-      {Some("http://www.example.org/"_ns), Some("http://www.example.com/"_ns),
+      {"http://www.example.org/"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTERNET)},
-      {Some("about:blank"_ns), Some("http://www.example.com/"_ns),
+      {"about:blank"_ns, "http://www.example.com/"_ns, Some(ZONE_INTERNET),
+       Some(kFallbackUrl)},
+      {"about:srcdoc"_ns, "http://www.example.com/"_ns, Some(ZONE_INTERNET),
+       Some(kFallbackUrl)},
+      {"data:text/html,foo"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTERNET), Some(kFallbackUrl)},
-      {Some("about:srcdoc"_ns), Some("http://www.example.com/"_ns),
-       Some(ZONE_INTERNET), Some(kFallbackUrl)},
-      {Some("data:text/html,foo"_ns), Some("http://www.example.com/"_ns),
-       Some(ZONE_INTERNET), Some(kFallbackUrl)},
-      {Some("http://localhost:8080/"_ns), Some("http://www.example.com/"_ns),
+      {"http://localhost:8080/"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTRANET)},
-      {Some("http://127.0.0.1/"_ns), Some("http://www.example.com/"_ns),
+      {"http://127.0.0.1/"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTERNET)},
-      {Some("file://C:/foo"_ns), Some("http://www.example.com/"_ns),
+      {"file://C:/foo"_ns, "http://www.example.com/"_ns, Some(ZONE_MY_COMPUTER),
+       Some(kFallbackUrl)},
+      {"file:///C:/foo"_ns, "http://www.example.com/"_ns,
        Some(ZONE_MY_COMPUTER), Some(kFallbackUrl)},
-      {Some("file:///C:/foo"_ns), Some("http://www.example.com/"_ns),
-       Some(ZONE_MY_COMPUTER), Some(kFallbackUrl)},
-      {Some("file://server/share/foo"_ns), Some("http://www.example.com/"_ns),
+      {"file://server/share/foo"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTRANET), Some(kFallbackUrl)},
-      {Some("file:////server/share/foo"_ns), Some("http://www.example.com/"_ns),
+      {"file:////server/share/foo"_ns, "http://www.example.com/"_ns,
        Some(ZONE_INTRANET), Some(kFallbackUrl)},
 
       
-      {Some("http://user:pw@www.example.org/"_ns), Some(""_ns),
-       Some(ZONE_INTERNET), Some("http://www.example.org/"_ns)},
-      {Some("http://www.example.org/"_ns),
-       Some("http://user:pw@www.example.com/"_ns), Some(ZONE_INTERNET),
-       Nothing() ,
+      {"http://user:pw@www.example.org/"_ns, ""_ns, Some(ZONE_INTERNET),
+       Some("http://www.example.org/"_ns)},
+      {"http://www.example.org/"_ns, "http://user:pw@www.example.com/"_ns,
+       Some(ZONE_INTERNET), Nothing() ,
        Some("http://www.example.com/"_ns) },
 
       
-      {Some("http://www.example.org/"_ns), Some("about:blank"_ns),
-       Some(ZONE_INTERNET), Nothing() ,
-       Some(kFallbackReferrer) },
+      {"http://www.example.org/"_ns, "about:blank"_ns, Some(ZONE_INTERNET),
+       Nothing() ,
+       Some(kNoReferrerLine) },
 
       
-      {Nothing(), Nothing(), Some(ZONE_INTERNET)},
+      
+      {"http://www.example.org/"_ns, "http://www.example.com/"_ns,
+       Some(ZONE_INTERNET), Nothing(), Nothing(),  false},
+      {"http://localhost:8080/"_ns, "http://www.example.com/"_ns,
+       Some(ZONE_INTRANET), Nothing(), Nothing(),  false},
+      {"file:///C:/foo"_ns, "http://www.example.com/"_ns,
+       Some(ZONE_MY_COMPUTER), Nothing(), Nothing(),
+        false},
 
       
-      {Some("http://www.example.org/"_ns), Some("http://www.example.com/"_ns),
-       Nothing()},
-      {Nothing(), Nothing(), Nothing()},
-
-      
-      {Some("\\\\server\\share\\foo"_ns), Some(""_ns), Some(ZONE_INTRANET),
-       Some(kFallbackUrl)},
+      {"http://www.example.org/"_ns, "http://www.example.com/"_ns, Nothing()},
   };
 
   for (auto& data : fileTestDatas) {
