@@ -2779,26 +2779,6 @@ bool Element::HasVisibleScrollbars() {
 
 
 
-static uint64_t HashForBloomFilter(const nsAtom* aAtom) {
-  if (!aAtom) {
-    return 1ULL;  
-  }
-  
-  
-  constexpr int kAttrBloomBits = sizeof(uintptr_t) == 4 ? 31 : 63;
-
-  uint32_t hash = aAtom->hash();
-  uint64_t filter = 1ULL;
-  
-  uint32_t bit1 = hash % kAttrBloomBits;
-  uint32_t bit2 = (hash >> 6) % kAttrBloomBits;
-  filter |= 1ULL << (1 + bit1);
-  filter |= 1ULL << (1 + bit2);
-  return filter;
-}
-
-
-
 void Element::PropagateBloomFilterToParents() {
   Element* toUpdate = this;
   Element* parent = GetParentElement();
@@ -2829,11 +2809,11 @@ static uint64_t HashClassesForBloom(const nsAttrValue* aValue) {
     const mozilla::AttrAtomArray* array = aValue->GetAtomArrayValue();
     if (array) {
       for (const RefPtr<nsAtom>& className : array->mArray) {
-        filter |= HashForBloomFilter(className);
+        filter |= AttrArray::HashForBloomFilter(className);
       }
     }
   } else if (aValue->Type() == nsAttrValue::eAtom) {
-    filter |= HashForBloomFilter(aValue->GetAtomValue());
+    filter |= AttrArray::HashForBloomFilter(aValue->GetAtomValue());
   }
 #ifdef DEBUG
   else {
@@ -2867,14 +2847,14 @@ void Element::VerifySubtreeBloomFilter() const {
     MOZ_ASSERT(attrName, "Attribute name should not be null");
     if (attrName->NamespaceEquals(kNameSpaceID_None)) {
       nsAtom* localName = attrName->LocalName();
-      expectedBloom |= HashForBloomFilter(localName);
+      expectedBloom |= AttrArray::HashForBloomFilter(localName);
 
       if (!localName->IsAsciiLowercase()) {
         Document* doc = OwnerDoc();
         if (!IsHTMLElement() && doc->IsHTMLDocument()) {
           RefPtr<nsAtom> lowercaseAttr(localName);
           ToLowerCaseASCII(lowercaseAttr);
-          expectedBloom |= HashForBloomFilter(lowercaseAttr);
+          expectedBloom |= AttrArray::HashForBloomFilter(lowercaseAttr);
         }
       }
     }
@@ -2907,7 +2887,7 @@ void Element::UpdateSubtreeBloomFilterForClass(const nsAttrValue* aClassValue) {
 
 void Element::UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute) {
   MOZ_ASSERT(aAttribute, "Attribute should not be null");
-  mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter(aAttribute));
+  mAttrs.UpdateSubtreeBloomFilter(AttrArray::HashForBloomFilter(aAttribute));
 
   
   
@@ -2916,7 +2896,8 @@ void Element::UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute) {
   if (!aAttribute->IsAsciiLowercase() && !IsHTMLElement()) {
     RefPtr<nsAtom> lowercaseAttr(aAttribute);
     ToLowerCaseASCII(lowercaseAttr);
-    mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter(lowercaseAttr));
+    mAttrs.UpdateSubtreeBloomFilter(
+        AttrArray::HashForBloomFilter(lowercaseAttr));
   }
 }
 

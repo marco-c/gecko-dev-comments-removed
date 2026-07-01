@@ -372,6 +372,10 @@ class AttrArray {
     return (bloom & aHash) == aHash;
   }
 
+  
+  
+  static uint64_t HashForBloomFilter(const nsAtom* aAtom);
+
  private:
   
   
