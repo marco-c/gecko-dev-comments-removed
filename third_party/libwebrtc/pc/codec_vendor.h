@@ -86,6 +86,16 @@ class CodecVendor {
   void ModifyVideoCodecs(const std::vector<std::pair<Codec, Codec>>& changes);
 
   
+  
+  
+  
+  void SetRawPacketization(const Codec& codec);
+
+  bool payload_types_in_transport() const {
+    return payload_types_in_transport_;
+  }
+
+  
   CodecList audio_sendrecv_codecs() const;
   const CodecList& audio_send_codecs() const;
   const CodecList& audio_recv_codecs() const;

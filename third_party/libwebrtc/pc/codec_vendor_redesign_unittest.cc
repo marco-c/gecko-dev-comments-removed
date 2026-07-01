@@ -27,6 +27,7 @@
 #include "api/rtp_transceiver_direction.h"
 #include "call/fake_payload_type_suggester.h"
 #include "media/base/codec.h"
+#include "media/base/codec_list.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/media_constants.h"
 #include "pc/codec_vendor.h"
@@ -432,6 +433,69 @@ TEST_F(CodecVendorRedesignTest, VideoOfferIncludesFecAndAssignsIds) {
   for (const auto& codec : codecs) {
     EXPECT_TRUE(codec.id.IsSet());
   }
+}
+
+TEST_F(CodecVendorRedesignTest, SetRawPacketizationAffectsSubsequentOffers) {
+  MediaDescriptionOptions options1(MediaType::VIDEO, "video1",
+                                   RtpTransceiverDirection::kSendRecv,
+                                   false);
+
+  RTCErrorOr<std::vector<Codec>> result1 = vendor_->GetNegotiatedCodecsForOffer(
+      options1, MediaSessionOptions(), nullptr,
+      pt_suggester_);
+
+  ASSERT_TRUE(result1.ok());
+
+  
+  auto vp8_it = absl::c_find_if(result1.value(),
+                                [](const Codec& c) { return c.name == "vp8"; });
+  ASSERT_NE(vp8_it, result1.value().end());
+
+  
+  
+  vendor_->SetRawPacketization(*vp8_it);
+
+  
+  MediaDescriptionOptions options2(MediaType::VIDEO, "video2",
+                                   RtpTransceiverDirection::kSendRecv,
+                                   false);
+
+  RTCErrorOr<std::vector<Codec>> result2 = vendor_->GetNegotiatedCodecsForOffer(
+      options2, MediaSessionOptions(), nullptr,
+      pt_suggester_);
+
+  ASSERT_TRUE(result2.ok());
+
+  
+  auto vp8_it2 = absl::c_find_if(
+      result2.value(), [](const Codec& c) { return c.name == "vp8"; });
+  ASSERT_NE(vp8_it2, result2.value().end());
+  EXPECT_EQ(vp8_it2->packetization, kPacketizationParamRaw);
+}
+
+TEST_F(CodecVendorRedesignTest, SetRawPacketizationUpdatesCodecs) {
+  std::vector<Codec> video_codecs = vendor_->video_send_codecs().codecs();
+  ASSERT_GE(video_codecs.size(), 2u);
+
+  Codec vp8_codec = video_codecs[0];
+  ASSERT_EQ(vp8_codec.name, "vp8");
+
+  Codec second_codec = video_codecs[1];
+
+  vendor_->SetRawPacketization(vp8_codec);
+
+  const CodecList& new_send_codecs = vendor_->video_send_codecs();
+  auto vp8_it = absl::c_find_if(new_send_codecs.codecs(),
+                                [](const Codec& c) { return c.name == "vp8"; });
+  ASSERT_NE(vp8_it, new_send_codecs.codecs().end());
+  EXPECT_EQ(vp8_it->packetization, kPacketizationParamRaw);
+
+  
+  auto second_it = absl::c_find_if(
+      new_send_codecs.codecs(),
+      [&second_codec](const Codec& c) { return c.name == second_codec.name; });
+  ASSERT_NE(second_it, new_send_codecs.codecs().end());
+  EXPECT_EQ(second_it->packetization, second_codec.packetization);
 }
 
 }  

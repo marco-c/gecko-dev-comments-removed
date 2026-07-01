@@ -2895,8 +2895,16 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   
   
   
-  codec_lookup_helper_->GetCodecVendor()->ModifyVideoCodecs(
-      codecs_mangled_to_raw);
+  
+  
+  if (codec_lookup_helper_->GetCodecVendor()->payload_types_in_transport()) {
+    for (const auto& change : codecs_mangled_to_raw) {
+      codec_lookup_helper_->GetCodecVendor()->SetRawPacketization(change.first);
+    }
+  } else {
+    codec_lookup_helper_->GetCodecVendor()->ModifyVideoCodecs(
+        codecs_mangled_to_raw);
+  }
 
   if (local_description()->GetType() == SdpType::kAnswer) {
     RemoveStoppedTransceivers();
