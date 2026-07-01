@@ -537,7 +537,7 @@ NS_IMETHODIMP BounceTrackingProtectionStorage::BlockShutdown(
   
   
   
-  NS_WARNING_ASSERTION(NS_FAILED(rv), "BlockShutdown: Init failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "BlockShutdown: Init failed");
 
   
   
