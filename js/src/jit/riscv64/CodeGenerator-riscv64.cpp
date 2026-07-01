@@ -379,6 +379,69 @@ void CodeGenerator::visitDivI64(LDivI64* ins) {
   masm.div(output, lhs, rhs);
 }
 
+template <class LDivOrMod>
+static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int64_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
+
+  
+  
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+
+  
+  masm.ma_li(temp, Imm64(uint64_t(rmc.multiplier)));
+  masm.mulh(output, lhs, temp);
+  if (rmc.multiplier > Int128(INT64_MAX)) {
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 64));
+
+    
+    
+    
+    
+    masm.add(output, output, lhs);
+  }
+
+  
+  
+  
+  if (rmc.shiftAmount > 0) {
+    masm.srai(output, output, rmc.shiftAmount);
+  }
+
+  
+  
+  if (mir->canBeNegativeDividend()) {
+    masm.srai(temp, lhs, 63);
+    masm.sub(output, output, temp);
+  }
+
+  
+  if (d < 0) {
+    masm.neg(output, output);
+  }
+}
+
+void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  
+  Divide64WithConstant(masm, ins);
+}
+
 void CodeGenerator::visitModI64(LModI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -400,6 +463,25 @@ void CodeGenerator::visitModI64(LModI64* ins) {
   masm.rem(output, lhs, rhs);
 }
 
+void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  
+  Divide64WithConstant(masm, ins);
+
+  
+  masm.ma_mul64(output, output, Imm64(d));
+  masm.sub(output, lhs, output);
+}
+
 void CodeGenerator::visitUDivI64(LUDivI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -411,6 +493,62 @@ void CodeGenerator::visitUDivI64(LUDivI64* ins) {
   masm.divu(output, lhs, rhs);
 }
 
+template <class LUDivOrUMod>
+static void UnsignedDivide64WithConstant(MacroAssembler& masm,
+                                         LUDivOrUMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  uint64_t d = ins->denominator();
+
+  UseScratchRegisterScope temps(masm);
+  Register temp = temps.Acquire();
+
+  
+  MOZ_ASSERT(!std::has_single_bit(d));
+
+  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
+
+  
+  masm.ma_li(temp, Imm64(uint64_t(rmc.multiplier)));
+  masm.mulhu(output, lhs, temp);
+  if (rmc.multiplier > Int128(UINT64_MAX)) {
+    
+    
+    
+    MOZ_ASSERT(rmc.shiftAmount > 0);
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 65));
+
+    
+    
+    
+    
+    
+    
+    
+
+    masm.sub(temp, lhs, output);
+    masm.srli(temp, temp, 1);
+    masm.add(output, output, temp);
+    masm.srli(output, output, rmc.shiftAmount - 1);
+  } else {
+    if (rmc.shiftAmount > 0) {
+      masm.srli(output, output, rmc.shiftAmount);
+    }
+  }
+}
+
+void CodeGenerator::visitUDivConstantI64(LUDivConstantI64* ins) {
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  
+  UnsignedDivide64WithConstant(masm, ins);
+}
+
 void CodeGenerator::visitUModI64(LUModI64* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -420,6 +558,25 @@ void CodeGenerator::visitUModI64(LUModI64* ins) {
   TrapIfDivideByZero(masm, ins, rhs);
 
   masm.remu(output, lhs, rhs);
+}
+
+void CodeGenerator::visitUModConstantI64(LUModConstantI64* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  
+  UnsignedDivide64WithConstant(masm, ins);
+
+  
+  masm.ma_mul64(output, output, Imm64(d));
+  masm.sub(output, lhs, output);
 }
 
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
