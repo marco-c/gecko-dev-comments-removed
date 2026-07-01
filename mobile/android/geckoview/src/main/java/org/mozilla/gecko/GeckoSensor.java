@@ -126,9 +126,20 @@ import org.mozilla.gecko.annotation.WrapForJNI;
           gGameRotationVectorSensor = sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         }
         if (gGameRotationVectorSensor != null) {
-          sm.registerListener(
-              sListeners, gGameRotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
-          break;
+          
+          
+          
+          if (gGyroscopeSensor == null) {
+            gGyroscopeSensor = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+          }
+          if (gGyroscopeSensor != null) {
+            sm.registerListener(
+                sListeners, gGameRotationVectorSensor, SensorManager.SENSOR_DELAY_FASTEST);
+            break;
+          }
+          
+          
+          gGameRotationVectorSensor = null;
         }
       
 
