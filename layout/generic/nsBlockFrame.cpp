@@ -1385,7 +1385,8 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
 Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
     nsIFrame* aFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
-  if (aFrame->IsBlockFrameOrSubclass()) {
+  if (!aFrame->IsLineParticipant() || aFrame->IsLeaf()) {
+    
     
     
     return Nothing();
