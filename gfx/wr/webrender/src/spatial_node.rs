@@ -73,6 +73,18 @@ pub struct SceneSpatialNode {
     pub is_root_coord_system: bool,
 }
 
+
+
+
+
+
+
+
+
+
+
+const REFERENCE_FRAME_ORIGIN_QUANTUM: f32 = 1.0 / 128.0;
+
 impl SceneSpatialNode {
     pub fn new_reference_frame(
         parent_index: Option<SpatialNodeIndex>,
@@ -84,6 +96,17 @@ impl SceneSpatialNode {
         is_root_coord_system: bool,
         is_pipeline_root: bool,
     ) -> Self {
+        
+        
+        
+        
+        let origin_in_parent_reference_frame = {
+            let q = REFERENCE_FRAME_ORIGIN_QUANTUM;
+            LayoutVector2D::new(
+                (origin_in_parent_reference_frame.x / q).round() * q,
+                (origin_in_parent_reference_frame.y / q).round() * q,
+            )
+        };
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
