@@ -548,6 +548,7 @@ Damp.prototype = {
       
       allFrames: false,
       includeChrome: false,
+      safeForUntrustedWebProcess: true,
     });
   },
 

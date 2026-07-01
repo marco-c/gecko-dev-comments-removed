@@ -115,6 +115,7 @@ add_task(async function () {
     },
     matches: [subframeURI],
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   });
 
   

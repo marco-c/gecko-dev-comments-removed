@@ -236,6 +236,7 @@ function doPageNavigation(params) {
       
       
       messageManagerGroups: ["browsers", "test", ""],
+      safeForUntrustedWebProcess: true,
     });
     DocShellHelpersParent.eventsToListenFor = eventsToListenFor;
     DocShellHelpersParent.observers = observers;
