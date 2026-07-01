@@ -397,7 +397,19 @@ nsresult nsSimpleURI::SetPathQueryRefInternal() {
   MOZ_ASSERT(mRefSep == kNotFound);
 
   
-  int32_t pathEnd = mSpec.FindCharInSet("?#", PathStart());
+  
+  
+  
+  const int32_t queryPos = mSpec.FindChar('?', PathStart());
+  const int32_t refPos = mSpec.FindChar('#', PathStart());
+  int32_t pathEnd;
+  if (queryPos == kNotFound) {
+    pathEnd = refPos;
+  } else if (refPos == kNotFound) {
+    pathEnd = queryPos;
+  } else {
+    pathEnd = queryPos < refPos ? queryPos : refPos;
+  }
   if (pathEnd != kNotFound) {
     if (mSpec.CharAt(pathEnd) == '?') {
       mQuerySep = pathEnd;
