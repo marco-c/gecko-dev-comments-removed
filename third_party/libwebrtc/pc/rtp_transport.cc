@@ -425,6 +425,12 @@ void RtpTransport::OnReadPacket(PacketTransportInternal* transport,
 
   
   
+  if (received_packet.decryption_info() == ReceivedIpPacket::kDtlsDecrypted) {
+    return;
+  }
+
+  
+  
   RtpPacketType packet_type = InferRtpPacketType(received_packet.payload());
   
   if (packet_type == RtpPacketType::kUnknown) {

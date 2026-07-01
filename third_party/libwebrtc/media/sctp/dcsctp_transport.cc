@@ -744,6 +744,7 @@ void DcSctpTransport::OnTransportReadPacket(
     PacketTransportInternal* ,
     const ReceivedIpPacket& packet) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  
   if (packet.decryption_info() != ReceivedIpPacket::kDtlsDecrypted) {
     
     return;
