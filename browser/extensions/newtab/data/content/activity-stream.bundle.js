@@ -16953,7 +16953,8 @@ function SportsMatchRow({
       case "now":
         {
           const liveStatusL10nId = LIVE_STATUS_L10N_MAP[status_type?.toLowerCase()];
-          if (!liveStatusL10nId) {
+          
+          if (!liveStatusL10nId || size !== "large") {
             return external_React_default().createElement(ScorePill, {
               homeScore: displayHomeScore,
               awayScore: displayAwayScore,
