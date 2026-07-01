@@ -4419,6 +4419,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (GdkIsWaylandDisplay()) {
     mSurface = new WaylandSurface();
     mSurface->Init();
+
+    
+    
+    if (parentnsWindow) {
+      WaylandSurfaceLock lock(mSurface);
+      mSurface->SetParentLocked(
+          lock, MOZ_WL_SURFACE(parentnsWindow->GetMozContainer()));
+    }
   }
   container = moz_container_new(this, mSurface);
 #else
