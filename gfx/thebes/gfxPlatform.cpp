@@ -908,6 +908,20 @@ void gfxPlatform::Init() {
     gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
     gfxVars::SetDXP010Blocked(IsDXP010Blocked());
     gfxVars::SetDXP016Blocked(IsDXP016Blocked());
+
+    
+    
+    
+    if (gfxInfo) {
+      nsString adapterVendorID, adapterDeviceID, adapterDriverVersion;
+      gfxInfo->GetAdapterVendorID(adapterVendorID);
+      gfxInfo->GetAdapterDeviceID(adapterDeviceID);
+      gfxInfo->GetAdapterDriverVersion(adapterDriverVersion);
+      gfxVars::SetAdapterVendorID(NS_ConvertUTF16toUTF8(adapterVendorID));
+      gfxVars::SetAdapterDeviceID(NS_ConvertUTF16toUTF8(adapterDeviceID));
+      gfxVars::SetAdapterDriverVersion(
+          NS_ConvertUTF16toUTF8(adapterDriverVersion));
+    }
   }
 
 #if defined(XP_WIN)
