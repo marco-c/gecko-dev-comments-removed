@@ -2927,6 +2927,31 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+  public void setupIPPAuthProvider(final @Nullable JSONObject options) {
+    webExtensionApiCall(
+        "SetupIPPAuthProvider",
+        args -> args.put("options", options != null ? options : new JSONObject()));
+  }
+
+  
+  public void simulateIPPSignIn(final boolean signedIn) {
+    webExtensionApiCall("SimulateIPPSignIn", args -> args.put("signedIn", signedIn));
+  }
+
+  
+
+
+
+  public void setIPPProxyPassError(final @Nullable String error) {
+    webExtensionApiCall("SetIPPProxyPassError", args -> args.put("error", error));
+  }
+
+  
+
+
+
+
+
 
   public JSONArray getWebExtensionsSchemaPermissionNames(
       final GeckoSession session, final String[] typeNames) {
