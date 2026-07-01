@@ -40,5 +40,9 @@ pub mod interfaces;
 pub mod components;
 
 
+mod xpc;
+pub use xpc::*;
+
+
 #[doc(hidden)]
 pub mod reexports;

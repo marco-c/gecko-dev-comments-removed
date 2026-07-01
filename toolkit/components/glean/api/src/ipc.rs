@@ -223,11 +223,7 @@ pub fn is_in_automation() -> bool {
 
 #[cfg(feature = "with_gecko")]
 pub fn is_in_automation() -> bool {
-    extern "C" {
-        fn FOG_IPCIsInAutomation() -> bool;
-    }
-    
-    unsafe { FOG_IPCIsInAutomation() }
+    xpcom::is_in_automation()
 }
 
 
