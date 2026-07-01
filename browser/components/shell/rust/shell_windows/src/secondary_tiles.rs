@@ -1,7 +1,7 @@
 
 
 
-use nserror::{NS_OK, NS_ERROR_INVALID_ARG, nsresult};
+use nserror::{NS_ERROR_INVALID_ARG, NS_OK, nsresult};
 use nsstring::{nsACString, nsAString, nsCString};
 use std::path::PathBuf;
 use thin_vec::ThinVec;
@@ -134,7 +134,7 @@ impl SecondaryTileService {
             .await?;
 
         
-        moz_task::spawn_blocking("SeconaryTile image deletion", async move {
+        moz_task::spawn_blocking("SecondaryTile image deletion", async move {
             Self::remove_images(&tile_id)
         })
         .await?;
