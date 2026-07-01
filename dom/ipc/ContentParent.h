@@ -443,6 +443,12 @@ class ContentParent final : public PContentParent,
   }
   bool IsDead() const { return mLifecycleState == LifecycleState::DEAD; }
 
+  
+
+
+
+  bool IsUntrusted() const { return mIsUntrusted; }
+
   bool IsForBrowser() const { return mIsForBrowser; }
 
   GeckoChildProcessHost* Process() const { return mSubprocess; }
@@ -1439,6 +1445,11 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvDropParentProcessChannelHandle(const nsID& aUuid);
 
+  mozilla::ipc::IPCResult RecvBecomeUntrusted() {
+    mIsUntrusted = true;
+    return IPC_OK();
+  }
+
  public:
   void SendGetFilesResponseAndForget(const nsID& aID,
                                      const GetFilesResponseResult& aResult);
@@ -1563,6 +1574,9 @@ class ContentParent final : public PContentParent,
   
   uint8_t mLaunchResolved : 1;
   uint8_t mLaunchResolvedOk : 1;
+
+  
+  uint8_t mIsUntrusted : 1;
 
   
   
