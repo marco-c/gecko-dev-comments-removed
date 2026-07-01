@@ -573,8 +573,12 @@ impl Document {
         let mut profile = TransactionProfile::new();
         self.stamp.advance();
 
-        let mut data_stores = DataStores::default();
-        data_stores.apply_updates(txn.interner_updates, &mut profile);
+        
+        
+        
+        
+        
+        
 
         let mut spatial_tree = SpatialTree::new();
         spatial_tree.apply_updates(txn.spatial_tree_updates);
@@ -596,7 +600,7 @@ impl Document {
             self.stamp, 
             self.view.scene.device_rect.min,
             &self.dynamic_properties,
-            &mut data_stores,
+            &self.data_stores,
             &mut self.scratch,
             debug_flags,
             &mut tile_caches,

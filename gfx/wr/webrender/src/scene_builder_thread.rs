@@ -79,7 +79,6 @@ pub struct BuiltTransaction {
 
 pub struct OffscreenBuiltScene {
     pub scene: BuiltScene,
-    pub interner_updates: InternerUpdates,
     pub spatial_tree_updates: SpatialTreeUpdates,
 }
 
@@ -601,7 +600,23 @@ impl SceneBuilderThread {
                     );
                 }
                 SceneMsg::RenderOffscreen(pipeline_id) => {
-                    let mut interners = Interners::default();
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     let mut spatial_tree = SceneSpatialTree::new();
                     let built = SceneBuilder::build(
                         &scene,
@@ -609,17 +624,15 @@ impl SceneBuilderThread {
                         self.fonts.clone(),
                         &doc.view,
                         &self.config,
-                        &mut interners,
+                        &mut doc.interners,
                         &mut spatial_tree,
                         &mut self.recycler,
                         &doc.stats,
                         self.debug_flags,
                     );
-                    let interner_updates = interners.end_frame_and_get_pending_updates();
                     let spatial_tree_updates = spatial_tree.end_frame_and_get_pending_updates();
                     offscreen_scenes.push(OffscreenBuiltScene {
                         scene: built,
-                        interner_updates,
                         spatial_tree_updates,
                     });
                 }
@@ -672,6 +685,16 @@ impl SceneBuilderThread {
 
             built_scene = Some(built);
         }
+
+        
+        
+        
+        
+        
+        debug_assert!(
+            offscreen_scenes.is_empty() || interner_updates.is_some(),
+            "RenderOffscreen without a main scene rebuild to flush its interned items",
+        );
 
         let scene_build_time_ms =
             profiler::ns_to_ms(zeitstempel::now() - scene_build_start);
