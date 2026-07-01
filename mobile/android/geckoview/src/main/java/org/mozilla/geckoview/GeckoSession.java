@@ -7263,6 +7263,13 @@ public class GeckoSession {
       
 
 
+
+
+      private final @Nullable String mRequestId;
+
+      
+
+
       protected ContentPermission() {
         this.uri = "";
         this.thirdPartyOrigin = null;
@@ -7271,12 +7278,14 @@ public class GeckoSession {
         this.value = VALUE_ALLOW;
         this.mPrincipal = "";
         this.contextId = null;
+        this.mRequestId = null;
       }
 
       private ContentPermission(final @NonNull GeckoBundle bundle) {
         this.uri = bundle.getString("uri");
         this.mPrincipal = bundle.getString("principal");
         this.privateMode = bundle.getBoolean("privateMode");
+        this.mRequestId = bundle.getString("requestId");
 
         final String permission = bundle.getString("perm");
         this.permission = convertType(permission);
@@ -7404,6 +7413,28 @@ public class GeckoSession {
           res.add(temp);
         }
         return res;
+      }
+
+      
+
+
+
+
+
+      @ExperimentalGeckoViewApi
+      @AnyThread
+      public void notifyShown() {
+        if (mRequestId == null) {
+          Log.w(
+              LOGTAG,
+              "Tried to notify the engine that a permission of type "
+                  + permission
+                  + " was shown, but found no request id generated. This is an unexpected state.");
+          return;
+        }
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putString("requestId", mRequestId);
+        EventDispatcher.getInstance().dispatch("GeckoView:ContentPermissionShown", data);
       }
 
        @NonNull
