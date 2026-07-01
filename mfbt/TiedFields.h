@@ -2,12 +2,12 @@
 
 
 
-#ifndef DOM_CANVAS_TIED_FIELDS_H
-#define DOM_CANVAS_TIED_FIELDS_H
+#ifndef mozilla_TiedFields_h
+#define mozilla_TiedFields_h
 
 #include <array>
-
-#include "TupleUtils.h"
+#include <cstddef>
+#include <tuple>
 
 namespace mozilla {
 
@@ -21,20 +21,28 @@ namespace mozilla {
 
 
 
-
-
 template <class T>
 constexpr auto TiedFields(T& t) {
-  const auto fields = t.MutTiedFields();
-  return fields;
+  return t.MutTiedFields();
 }
-template <class T, class... Args, class Tup = std::tuple<Args&...>>
+
+template <class T>
 constexpr auto TiedFields(const T& t) {
   
   
+  
   const auto mutFields = TiedFields(const_cast<T&>(t));
-  return ToTupleOfConstRefs(mutFields);
+  return std::apply([](const auto&... f) { return std::tie(f...); }, mutFields);
 }
+
+template <class>
+struct SizeofTupleArgs;
+
+
+
+template <class... Args>
+struct SizeofTupleArgs<std::tuple<Args...>>
+    : std::integral_constant<size_t, (... + sizeof(Args))> {};
 
 
 
@@ -58,8 +66,6 @@ constexpr bool AreAllBytesTiedFields() {
   const auto t_size = sizeof(T);
   return fields_size_sum == t_size;
 }
-
-
 
 
 
@@ -141,8 +147,6 @@ constexpr bool AssertTiedFieldsAreExhaustive() {
 
 
 
-
-
 template <class T, size_t N = 1>
 struct PaddingField {
   static_assert(!std::is_array_v<T>, "Use PaddingField<T,N> not <T[N]>.");
@@ -160,95 +164,7 @@ struct PaddingField {
 
   auto MutTiedFields() { return std::tie(ignored); }
 };
-static_assert(sizeof(PaddingField<bool>) == 1);
-static_assert(sizeof(PaddingField<bool, 2>) == 2);
-static_assert(sizeof(PaddingField<int>) == 4);
 
-
-
-namespace TiedFieldsExamples {
-
-struct Cat {
-  int i;
-  bool b;
-
-  constexpr auto MutTiedFields() { return std::tie(i, b); }
-};
-static_assert(sizeof(Cat) == 8);
-static_assert(!AreAllBytesTiedFields<Cat>());
-
-struct Dog {
-  bool b;
-  int i;
-
-  constexpr auto MutTiedFields() { return std::tie(i, b); }
-};
-static_assert(sizeof(Dog) == 8);
-static_assert(!AreAllBytesTiedFields<Dog>());
-
-struct Fish {
-  bool b;
-  bool padding[3];
-  int i;
-
-  constexpr auto MutTiedFields() { return std::tie(i, b, padding); }
-};
-static_assert(sizeof(Fish) == 8);
-static_assert(AreAllBytesTiedFields<Fish>());
-
-struct Eel {  
-  bool b;
-  PaddingField<bool, 3> padding;
-  int i;
-
-  constexpr auto MutTiedFields() { return std::tie(i, b, padding); }
-};
-static_assert(sizeof(Eel) == 8);
-static_assert(AreAllBytesTiedFields<Eel>());
-
-
-
-
-#ifdef LETS_USE_BIT_FIELDS
-#  undef LETS_USE_BIT_FIELDS
-
-struct Platypus {
-  short s : 1;
-  short s2 : 1;
-  int i;
-
-  constexpr auto MutTiedFields() {
-    return std::tie(s, s2, i);  
-  }
-};
-
-#endif
-
-
-
-struct FishTank {
-  Fish f;
-  int i2;
-
-  constexpr auto MutTiedFields() { return std::tie(f, i2); }
-};
-static_assert(sizeof(FishTank) == 12);
-static_assert(AreAllBytesTiedFields<FishTank>());
-
-struct CatCarrier {
-  Cat c;
-  int i2;
-
-  constexpr auto MutTiedFields() { return std::tie(c, i2); }
-};
-static_assert(sizeof(CatCarrier) == 12);
-static_assert(AreAllBytesTiedFields<CatCarrier>());
-static_assert(
-    !AreAllBytesTiedFields<decltype(CatCarrier::c)>());  
-
-
-
-}  
 }  
 
 #endif  

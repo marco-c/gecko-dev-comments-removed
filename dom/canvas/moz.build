@@ -46,13 +46,6 @@ EXPORTS += [
     "nsICanvasRenderingContextInternal.h",
 ]
 
-EXPORTS.mozilla += [
-    "ParamTraits_STL.h",
-    "ParamTraits_TiedFields.h",
-    "TiedFields.h",
-    "TupleUtils.h",
-]
-
 EXPORTS.mozilla.dom += [
     "CanvasGradient.h",
     "CanvasPath.h",
