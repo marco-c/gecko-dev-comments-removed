@@ -175,6 +175,11 @@ let propNameAllowlist = [
   { propName: /^--content-search-handoff-ui-/, isFromDevTools: false },
 
   
+  
+  
+  { propName: "--card-icon-bg", isFromDevTools: false },
+
+  
   {
     propName: "--scale-round-x",
     isFromDevTools: false,
