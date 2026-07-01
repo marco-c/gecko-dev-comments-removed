@@ -1493,7 +1493,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     } else {
       
       
-      MOZ_ASSERT(importName && importName != cx->names().star_namespace_star_);
+      MOZ_ASSERT(importName && importName != cx->names().star_namespace_star_ &&
+                 importName != cx->names().star_source_star_);
+
       
       
       ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
