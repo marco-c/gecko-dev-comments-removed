@@ -44,7 +44,7 @@ def _update_capabilities_if_extension_test(
             if arg not in args:
                 args.append(arg)
         
-        add_arg("--extension-browser-namespace-on-webpages")
+        add_arg("--enable-features=ExtensionBrowserNamespaceOnWebPages")
         
         add_arg("--extension-test-api-on-web-pages")
         
