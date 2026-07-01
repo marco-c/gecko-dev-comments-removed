@@ -599,9 +599,8 @@ const nsCString& VoidCString();
 
 
 
-
 int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
-                           const nsAString& aUTF16String, bool* aErr = nullptr);
+                           const nsAString& aUTF16String);
 
 void AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest);
 
