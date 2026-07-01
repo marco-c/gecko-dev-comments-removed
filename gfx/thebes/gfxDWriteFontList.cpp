@@ -1793,7 +1793,7 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
       
       for (const auto& face : faces) {
         
-        face->mFamilyName = gillSansMTFamily->Name();
+        face->SetFamilyName(gillSansMTFamily->Name());
         gillSansMTFamily->AddFontEntry(face);
 
         if (LOG_FONTLIST_ENABLED()) {
