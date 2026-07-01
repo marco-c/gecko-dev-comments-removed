@@ -17399,14 +17399,6 @@ const UPCOMING_STATUS_L10N_MAP = {
   cancelled: "newtab-sports-widget-cancelled",
   canceled: "newtab-sports-widget-cancelled"
 };
-
-
-
-
-const LIVE_STATUS_L10N_MAP = {
-  halftime: "newtab-sports-widget-match-halftime",
-  "extra time": "newtab-sports-widget-match-extra-time"
-};
 const RESULTS_STATUS_L10N_MAP = {
   final: "newtab-sports-widget-match-full-time"
 };
@@ -17417,6 +17409,31 @@ const UPCOMING_STATUS_ARIA_L10N_MAP = {
   cancelled: "newtab-sports-widget-match-aria-label-upcoming-cancelled",
   canceled: "newtab-sports-widget-match-aria-label-upcoming-cancelled"
 };
+
+
+
+
+function liveStatusL10nId({
+  period,
+  status: matchStatus,
+  home_penalty,
+  away_penalty
+}) {
+  const normalisedPeriod = (period || "").toLowerCase().replace(/\s+/g, "");
+  const inShootout = normalisedPeriod === "pen" || normalisedPeriod === "penaltyshootout" || home_penalty !== null && home_penalty !== undefined || away_penalty !== null && away_penalty !== undefined;
+  const isExtraTime = /et/i.test(period || "") || /extra/i.test(period || "");
+  const isHalftime = matchStatus?.toLowerCase() === "break";
+  if (inShootout) {
+    return "newtab-sports-widget-match-penalties";
+  }
+  if (isExtraTime) {
+    return "newtab-sports-widget-match-extra-time";
+  }
+  if (isHalftime) {
+    return "newtab-sports-widget-match-halftime";
+  }
+  return null;
+}
 function ScorePill({
   homeScore,
   awayScore,
@@ -17520,6 +17537,8 @@ function SportsMatchRow({
     away_team,
     date,
     status_type,
+    period,
+    status: matchStatus,
     home_score,
     away_score,
     home_extra,
@@ -17599,12 +17618,19 @@ function SportsMatchRow({
     switch (variant) {
       case "now":
         {
-          const liveStatusL10nId = LIVE_STATUS_L10N_MAP[status_type?.toLowerCase()];
+          const liveL10nId = liveStatusL10nId({
+            period,
+            status: matchStatus,
+            home_penalty,
+            away_penalty
+          });
           
-          if (!liveStatusL10nId || size !== "large") {
+          if (!liveL10nId || size !== "large") {
             return external_React_default().createElement(ScorePill, {
               homeScore: displayHomeScore,
               awayScore: displayAwayScore,
+              homePenalty: home_penalty,
+              awayPenalty: away_penalty,
               variant: "now"
             });
           }
@@ -17613,11 +17639,13 @@ function SportsMatchRow({
           }, external_React_default().createElement(ScorePill, {
             homeScore: displayHomeScore,
             awayScore: displayAwayScore,
+            homePenalty: home_penalty,
+            awayPenalty: away_penalty,
             variant: "now"
           }), external_React_default().createElement("div", {
             className: "sports-match-live-footer"
           }, external_React_default().createElement("span", {
-            "data-l10n-id": liveStatusL10nId
+            "data-l10n-id": liveL10nId
           })));
         }
       case "results":
