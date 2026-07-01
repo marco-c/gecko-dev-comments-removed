@@ -311,6 +311,13 @@ pref("browser.shell.focusSetDefaultBrowserButton", false);
 
 
 
+
+
+
+pref("browser.shell.displayKitImageBehindSetDefaultBrowserButton", "off");
+
+
+
 pref("browser.shell.setDefaultPDFHandler.useOpenWith", true);
 
 
