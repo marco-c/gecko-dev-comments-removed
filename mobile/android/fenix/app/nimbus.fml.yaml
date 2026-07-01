@@ -983,6 +983,24 @@ features:
       - channel: nightly
         value:
           enabled: false
+  tab-groups-live-reorder:
+    description: Control whether reorder happens live during a drag and drop action for Tab Groups.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable live reorder for tab groups drag and drop.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
 
   marketing-onboarding-card:
     description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.
@@ -1101,7 +1119,8 @@ features:
       allowed-regions:
         description: Country codes whose users are eligible for IP Protection.
         type: List<String>
-        default: ["US", "CA", "DE", "FR", "GB"]
+        default: [ "AU", "AT", "BE", "BG", "CA", "CL", "CO", "DK", "FI", "FR", "DE", "IE", "IT", "JP", "MY", "MX",
+                   "NL", "NZ", "NO", "PL", "PT", "SG", "ZA", "ES", "SE", "CH", "TH", "GB", "US" ]
       promo-deadline:
         description: The final date for the promotion to end. This needs to be an ISO 8601 formatted date (i.e. YYYY-MM-DD).
         type: String
@@ -1286,7 +1305,7 @@ features:
     defaults:
       - channel: nightly
         value:
-          enabled: false
+          enabled: true
       - channel: developer
         value:
           enabled: true
