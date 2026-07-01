@@ -77,73 +77,12 @@ nsresult StringToUsage(const nsString& aUsage, CryptoKey::KeyUsage& aUsageOut) {
 
 UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
     CK_ATTRIBUTE* aTemplate, CK_ULONG aTemplateSize) {
-  
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot) {
     return nullptr;
   }
-
-  
-  UniqueSECItem objID(::SECITEM_AllocItem(nullptr, nullptr, 20));
-  SECStatus rv = PK11_GenerateRandomOnSlot(slot.get(), objID->data, objID->len);
-  if (rv != SECSuccess) {
-    return nullptr;
-  }
-  
-  SECKEYPrivateKey* preexistingKey =
-      PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr);
-  if (preexistingKey) {
-    
-    
-    SECKEY_DestroyPrivateKey(preexistingKey);
-    
-    rv = PK11_GenerateRandomOnSlot(slot.get(), objID->data, objID->len);
-    if (rv != SECSuccess) {
-      return nullptr;
-    }
-    preexistingKey = PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr);
-    if (preexistingKey) {
-      SECKEY_DestroyPrivateKey(preexistingKey);
-      return nullptr;
-    }
-  }
-
-  CK_ATTRIBUTE* idAttributeSlot = nullptr;
-  for (CK_ULONG i = 0; i < aTemplateSize; i++) {
-    if (aTemplate[i].type == CKA_ID) {
-      if (aTemplate[i].pValue != nullptr || aTemplate[i].ulValueLen != 0) {
-        return nullptr;
-      }
-      idAttributeSlot = aTemplate + i;
-      break;
-    }
-  }
-  if (!idAttributeSlot) {
-    return nullptr;
-  }
-
-  idAttributeSlot->pValue = objID->data;
-  idAttributeSlot->ulValueLen = objID->len;
-  UniquePK11GenericObject obj(
-      PK11_CreateGenericObject(slot.get(), aTemplate, aTemplateSize, PR_FALSE));
-  
-  
-  idAttributeSlot->pValue = nullptr;
-  idAttributeSlot->ulValueLen = 0;
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  UniqueSECKEYPrivateKey privKey(
-      PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr));
-  if (privKey) {
-    SECKEYPRIVATEKEY_SET_OWNED(privKey.get(), PR_TRUE);
-  }
-  return privKey;
+  return UniqueSECKEYPrivateKey(PK11_CreatePrivateKeyFromTemplate(
+      slot.get(), aTemplate, aTemplateSize, nullptr));
 }
 
 CryptoKey::CryptoKey(nsIGlobalObject* aGlobal)
