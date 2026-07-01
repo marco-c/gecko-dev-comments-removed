@@ -109,9 +109,6 @@ class ZeroRttHandle {
   
   nsHttpTransaction* RealTxn() const;
 
-  
-  void SetAnyStartedForTesting() { mAny0RttStarted = true; }
-
   void Cleanup();
 
  private:
