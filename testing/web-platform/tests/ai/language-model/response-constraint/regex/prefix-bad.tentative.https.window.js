@@ -17,6 +17,6 @@ promise_test(async t => {
             {role: 'user', content: 'hello'},
             {role: 'assistant', content: badPrefix, prefix: true}
           ],
-          {responseConstraint: kValidResponseSchema}),
-      'Response constraint is not a supported json schema.');
-}, 'Prompt should reject if the prefix deviates from the json schema constraint.');
+          {responseConstraint: /^Greetings and salutations.*/}),
+      'The request is invalid - the input or options could not be processed.');
+}, 'Prompt should reject if the prefix deviates from the regex constraint.');
