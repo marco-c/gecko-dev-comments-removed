@@ -17,9 +17,9 @@
 #include <optional>
 #include <vector>
 
-#include "call/rtp_packet_sink_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 
@@ -51,8 +51,7 @@ class StreamStatistician {
   virtual uint32_t BitrateReceived() const = 0;
 };
 
-class ReceiveStatistics : public ReceiveStatisticsProvider,
-                          public RtpPacketSinkInterface {
+class ReceiveStatistics : public ReceiveStatisticsProvider {
  public:
   ~ReceiveStatistics() override = default;
 
@@ -62,6 +61,8 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
   
   static std::unique_ptr<ReceiveStatistics> CreateThreadCompatible(
       Clock* clock);
+
+  virtual void OnRtpPacket(const RtpPacketReceived& packet) = 0;
 
   
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
