@@ -8,7 +8,9 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
+#include "mozilla/net/PNeckoParent.h"
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozIThirdPartyUtil.h"
@@ -108,10 +110,10 @@ bool CookieServiceParent::ContentProcessHasCookie(const Cookie& cookie) {
 }
 
 bool CookieServiceParent::ContentProcessHasCookie(
-    const nsACString& aHost, const OriginAttributes& aOriginAttributes) {
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes) {
   nsCString baseDomain;
   if (NS_WARN_IF(NS_FAILED(CookieCommons::GetBaseDomainFromHost(
-          mTLDService, aHost, baseDomain)))) {
+          mTLDService, aBaseDomain, baseDomain)))) {
     return false;
   }
 
@@ -277,9 +279,21 @@ IPCResult CookieServiceParent::RecvGetCookieList(
     return IPC_FAIL(this, "aHost must not be null");
   }
 
-  
-  
+  auto* contentParent = static_cast<dom::ContentParent*>(Manager()->Manager());
+  if (!contentParent) {
+    return IPC_FAIL(this, "Missing ContentParent in GetCookieList");
+  }
+
   for (const auto& attrs : aAttrsList) {
+    nsCOMPtr<nsIPrincipal> principal =
+        BasePrincipal::CreateContentPrincipal(aHost, attrs);
+    if (!contentParent->ValidatePrincipal(principal)) {
+      return IPC_FAIL(this,
+                      "Content process not authorized for this cookie domain");
+    }
+
+    
+    
     UpdateCookieInContentList(aHost, attrs);
   }
 
