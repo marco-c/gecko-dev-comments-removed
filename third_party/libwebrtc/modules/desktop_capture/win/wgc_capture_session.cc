@@ -574,14 +574,6 @@ HRESULT WgcCaptureSession::ProcessFrame() {
     return hr;
   }
 
-  if (!mapped_texture_) {
-    hr = CreateMappedTexture(texture_2D);
-    if (FAILED(hr)) {
-      RecordGetFrameResult(GetFrameResult::kCreateMappedTextureFailed);
-      return hr;
-    }
-  }
-
   
   
   
@@ -598,17 +590,28 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   
   
   
-  if (SizeHasChanged(new_size, size_)) {
+  const bool needs_resize = SizeHasChanged(new_size, size_);
+
+  if (!mapped_texture_ || needs_resize) {
     hr = CreateMappedTexture(texture_2D, new_size.Width, new_size.Height);
     if (FAILED(hr)) {
-      RecordGetFrameResult(GetFrameResult::kResizeMappedTextureFailed);
+      RecordGetFrameResult(GetFrameResult::kCreateMappedTextureFailed);
       return hr;
     }
+  }
 
+  if (needs_resize) {
     hr = frame_pool_->Recreate(direct3d_device_.Get(), kPixelFormat,
                                num_buffers(), new_size);
     if (FAILED(hr)) {
       RecordGetFrameResult(GetFrameResult::kRecreateFramePoolFailed);
+      
+      
+      
+      
+      
+      
+      mapped_texture_.Reset();
       return hr;
     }
   }
@@ -723,7 +726,7 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   const int width_in_bytes =
       current_frame->size().width() * DesktopFrame::kBytesPerPixel;
   RTC_DCHECK_GE(current_frame->stride(), width_in_bytes);
-  RTC_DCHECK_GE(map_info.RowPitch, width_in_bytes);
+  RTC_CHECK_GE(map_info.RowPitch, width_in_bytes);
   const int middle_pixel_offset =
       (image_width / 2) * DesktopFrame::kBytesPerPixel;
   for (int i = 0; i < image_height; i++) {
