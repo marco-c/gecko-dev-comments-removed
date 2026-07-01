@@ -2166,7 +2166,70 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
 
 
 function IteratorJoin(separator) {
-	return false;
+  
+  var O = this;
+
+  
+  if (!IsObject(O)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, O === null ? "null" : typeof O);
+  }
+
+  
+  
+
+  
+  var sep;
+  if (separator === undefined) {
+    
+    sep = ",";
+  } else {
+    
+    
+    
+    try {
+      sep = ToString(separator);
+    } catch (e) {
+      try {
+        IteratorClose(O);
+      } catch {}
+      throw e;
+    }
+  }
+
+  
+  
+  var nextMethod = O.next;
+
+  
+  var R = "";
+
+  
+  var first = true;
+
+  
+  
+  for (var value of allowContentIterWithNext(O, nextMethod)) {
+    
+    if (first) {
+      
+      first = false;
+    } else {
+      
+      
+      R += sep;
+    }
+
+    
+    if (value !== undefined && value !== null) {
+      
+      
+      
+      R += ToString(value);
+    }
+  }
+
+  
+  return R;
 }
 
 
@@ -2214,6 +2277,16 @@ function IteratorIncludes(searchElement, skippedElements = undefined) {
       IteratorClose(O);
     } catch {}
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
+  }
+
+  
+  
+  
+  if (Number_isFinite(toSkip) && toSkip > (2 ** 53) - 1) {
+    try {
+      IteratorClose(O);
+    } catch {}
+    ThrowRangeError(JSMSG_SKIP_COUNT_TOO_LARGE);
   }
 
   
