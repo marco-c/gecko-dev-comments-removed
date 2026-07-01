@@ -31,8 +31,19 @@ RTC_OBJC_EXPORT
 
 
 
+@property(nonatomic, assign) BOOL srtpPreferGcmCryptoSuites;
+
+
+
+
+
 
 @property(nonatomic, assign) BOOL srtpEnableAes128Sha1_32CryptoCipher;
+
+
+
+
+@property(nonatomic, assign) BOOL srtpEnableAes128Sha1_80CryptoCipher;
 
 
 
@@ -52,8 +63,11 @@ RTC_OBJC_EXPORT
 
 - (instancetype)
          initWithSrtpEnableGcmCryptoSuites:(BOOL)srtpEnableGcmCryptoSuites
+                 srtpPreferGcmCryptoSuites:(BOOL)srtpPreferGcmCryptoSuites
        srtpEnableAes128Sha1_32CryptoCipher:
            (BOOL)srtpEnableAes128Sha1_32CryptoCipher
+       srtpEnableAes128Sha1_80CryptoCipher:
+           (BOOL)srtpEnableAes128Sha1_80CryptoCipher
     srtpEnableEncryptedRtpHeaderExtensions:
         (BOOL)srtpEnableEncryptedRtpHeaderExtensions
               sframeRequireFrameEncryption:(BOOL)sframeRequireFrameEncryption
