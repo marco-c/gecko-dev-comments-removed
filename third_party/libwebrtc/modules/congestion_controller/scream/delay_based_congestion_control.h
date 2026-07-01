@@ -34,19 +34,10 @@ class DelayBasedCongestionControl {
   void Update(const ScreamFeedback& feedback, bool alr);
 
   
-  
-  void SetMinDelayBasedBwe(DataRate min_delay_based_bwe) {
-    min_delay_based_bwe_ = min_delay_based_bwe;
-  }
-
-  
   bool IsQueueDelayDetected() const {
     return queue_delay_avg_.IsFinite() &&
            queue_delay_avg_ > params_.queue_delay_target.Get() / 2;
   }
-
-  DataSize UpdateReferenceWindow(DataSize rew_window,
-                                 double ref_window_mss_ratio) const;
 
   
   
@@ -93,8 +84,6 @@ class DelayBasedCongestionControl {
   void UpdateLatencyDifferenceAverage(TimeDelta packet_latency_diff);
 
   const ScreamV2Parameters params_;
-
-  DataRate min_delay_based_bwe_;
 
   
   
