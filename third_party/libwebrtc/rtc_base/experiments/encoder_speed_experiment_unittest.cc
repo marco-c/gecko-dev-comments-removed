@@ -8,6 +8,8 @@
 
 #include "rtc_base/experiments/encoder_speed_experiment.h"
 
+#include <string>
+
 #include "api/field_trials.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_codec.h"
@@ -104,6 +106,58 @@ TEST(EncoderSpeedExperimentTest, InvalidDynamicSpeedValue) {
   FieldTrials field_trials("WebRTC-EncoderSpeed/dynamic_speed:invalid/");
   EncoderSpeedExperiment config(field_trials);
   EXPECT_FALSE(config.IsDynamicSpeedEnabled());  
+}
+
+TEST(EncoderSpeedExperimentTest, Vp9LowComplexityFallbackEnabled) {
+  for (std::string trial : {"WebRTC-EncoderSpeed/dynamic_speed:true/",
+                            "WebRTC-EncoderSpeed/dynamic_speed:false/"}) {
+    FieldTrials field_trials(trial);
+    EncoderSpeedExperiment config(field_trials,
+                                  true);
+
+    
+    EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, false),
+              VideoCodecComplexity::kComplexityLow);
+    EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, true),
+              VideoCodecComplexity::kComplexityLow);
+
+    
+    EXPECT_EQ(config.GetComplexity(kVideoCodecVP8, false),
+              VideoCodecComplexity::kComplexityNormal);
+    EXPECT_EQ(config.GetComplexity(kVideoCodecAV1, false),
+              VideoCodecComplexity::kComplexityNormal);
+  }
+}
+
+TEST(EncoderSpeedExperimentTest,
+     FieldTrialsTakePrecedenceOverVP9LowComplexityFlag) {
+  for (std::string trial :
+       {"WebRTC-EncoderSpeed/"
+        "dynamic_speed:false,vp9_camera:high,vp9_screenshare:max/",
+        "WebRTC-EncoderSpeed/"
+        "dynamic_speed:true,vp9_camera:high,vp9_screenshare:max/"}) {
+    FieldTrials field_trials(trial);
+    EncoderSpeedExperiment config(field_trials,
+                                  true);
+
+    
+    EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, false),
+              VideoCodecComplexity::kComplexityHigh);
+    EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, true),
+              VideoCodecComplexity::kComplexityMax);
+  }
+}
+
+TEST(EncoderSpeedExperimentTest, Vp9LowComplexityFallbackDisabled) {
+  FieldTrials field_trials("WebRTC-EncoderSpeed/dynamic_speed:true/");
+  EncoderSpeedExperiment config(field_trials,
+                                false);
+
+  
+  EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, false),
+            VideoCodecComplexity::kComplexityNormal);
+  EXPECT_EQ(config.GetComplexity(kVideoCodecVP9, true),
+            VideoCodecComplexity::kComplexityNormal);
 }
 
 }  

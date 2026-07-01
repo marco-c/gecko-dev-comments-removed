@@ -9743,7 +9743,7 @@ TEST_F(VideoStreamEncoderTest, LowComplexityVP9WithTwoCores) {
 }
 
 TEST_F(VideoStreamEncoderTest,
-       NormalComplexityVP9WithDynamicSpeedDespiteLowTierOptimizations) {
+       LowComplexityVP9WithDynamicSpeedAndLowTierOptimizations) {
   FieldTrials trials(field_trials_);
   trials.Set("WebRTC-VP9-LowTierOptimizations", "Enabled");
   trials.Set("WebRTC-EncoderSpeed", "dynamic_speed:true");
@@ -9762,7 +9762,30 @@ TEST_F(VideoStreamEncoderTest,
       CreateFrame(1, 320, 180));
   WaitForEncodedFrame(1);
   EXPECT_EQ(fake_encoder_.LastEncoderComplexity(),
-            VideoCodecComplexity::kComplexityNormal);
+            VideoCodecComplexity::kComplexityLow);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, DynamicSpeedCanOverrideVp9LowComplexity) {
+  FieldTrials trials(field_trials_);
+  trials.Set("WebRTC-VP9-LowTierOptimizations", "Enabled");
+  trials.Set("WebRTC-EncoderSpeed", "dynamic_speed:true,vp9_camera:high");
+
+  ResetEncoder("VP9", 1, 1,
+               1,
+               false,
+               kDefaultFramerate, 
+               VideoStreamEncoder::BitrateAllocationCallbackType::
+                   kVideoBitrateAllocationWhenScreenSharing,
+               2, &trials);
+
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, 320, 180));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(fake_encoder_.LastEncoderComplexity(),
+            VideoCodecComplexity::kComplexityHigh);
   video_stream_encoder_->Stop();
 }
 
