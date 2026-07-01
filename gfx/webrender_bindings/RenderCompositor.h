@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_H
 
@@ -180,7 +178,6 @@ class RenderCompositor {
                                 size_t aNumDirtyRects,
                                 const wr::DeviceIntRect* aOpaqueRects,
                                 size_t aNumOpaqueRects) {}
-  virtual void EnableNativeCompositor(bool aEnable) {}
   virtual void DeInit() {}
   
   
@@ -238,7 +235,7 @@ class RenderCompositor {
 #ifdef MOZ_WIDGET_ANDROID
   virtual bool MaybeCaptureScreenPixels(
       const gfx::IntRect& aSourceRect,
-      RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) {
+      layers::AndroidHardwareBuffer* aHardwareBuffer) {
     return false;
   }
 #endif

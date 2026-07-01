@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_OGL_SWGL_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_OGL_SWGL_H
 
@@ -61,7 +59,7 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
 #ifdef MOZ_WIDGET_ANDROID
   bool MaybeCaptureScreenPixels(
       const gfx::IntRect& aSourceRect,
-      RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) override;
+      layers::AndroidHardwareBuffer* aHardwareBuffer) override;
 #endif
 
  private:
