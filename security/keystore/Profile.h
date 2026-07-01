@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef Profile_h
+#define Profile_h
+
+#include <nsString.h>
+
+namespace mozilla::storage::key {
+nsresult InitObserver();
+nsresult GetCurrentProfilePath(nsAString& aPath);
+}  
+
+#endif  

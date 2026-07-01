@@ -8,6 +8,7 @@
 #include "nsCOMPtr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "nsIPrefBranch.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 #include "nsIInterfaceRequestor.h"
@@ -108,6 +109,15 @@ class Connection final : public mozIStorageConnection,
 
 
   nsresult initialize(nsIFileURL* aFileURL);
+
+  
+
+
+
+
+
+
+  nsresult initializeSecure(nsIFile* aDatabaseFile);
 
   
 
@@ -516,6 +526,11 @@ class Connection final : public mozIStorageConnection,
 
 
   bool mConnectionClosed;
+
+  
+
+
+  bool mDatabaseEncrypted;
 
   
 
