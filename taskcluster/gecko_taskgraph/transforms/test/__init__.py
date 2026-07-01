@@ -360,6 +360,9 @@ class TestDescriptionSchema(Schema, kw_only=True):
     ] = None
     
     
+    index: TOptional[JobDescriptionSchema.__annotations__["index"]] = None  
+    
+    
     fetches: TOptional[object] = None
     
     dependencies: TOptional[object] = None
@@ -633,6 +636,17 @@ def make_job_description(config, tasks):
             jobdesc["expires-after"] = task["expires-after"]
 
         jobdesc["routes"] = task.get("routes", [])
+        
+        
+        if "index" in task and not task.get("confirm-failure"):
+            index = dict(task["index"])
+            
+            
+            
+            
+            platform = task["test-platform"].replace("/", "-")
+            index["job-name"] = "{}.{}".format(index["job-name"], platform)
+            jobdesc["index"] = index
         jobdesc["run-on-repo-type"] = sorted(task["run-on-repo-type"])
         jobdesc["run-on-projects"] = sorted(task["run-on-projects"])
         jobdesc["scopes"] = []
