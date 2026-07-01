@@ -1984,7 +1984,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  bool ShouldStartMediaControlKeyListener() const;
+  
+  bool IsControllableMediaSource() const;
 
   
   
