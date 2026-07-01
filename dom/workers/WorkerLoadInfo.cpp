@@ -293,10 +293,6 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
   
   
   if (mPrincipal->IsSystemPrincipal()) {
-    if (scheme == "blob"_ns) {
-      return true;
-    }
-
     return nsContentSecurityUtils::IsTrustedScheme(mBaseURI);
   }
 
