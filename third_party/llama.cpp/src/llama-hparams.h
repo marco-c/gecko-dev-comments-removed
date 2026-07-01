@@ -3,10 +3,11 @@
 #include "llama.h"
 
 #include <array>
+#include <cassert>
 
 
 #define LLAMA_MAX_LAYERS  512
-#define LLAMA_MAX_EXPERTS 384  // Kimi-K2
+#define LLAMA_MAX_EXPERTS 512 // Qwen3 Next
 
 enum llama_expert_gating_func_type {
     LLAMA_EXPERT_GATING_FUNC_TYPE_NONE           = 0,
@@ -16,10 +17,14 @@ enum llama_expert_gating_func_type {
 };
 
 enum llama_swa_type {
-    LLAMA_SWA_TYPE_NONE     = 0,
-    LLAMA_SWA_TYPE_STANDARD = 1,
-    LLAMA_SWA_TYPE_CHUNKED  = 2,
+    LLAMA_SWA_TYPE_NONE      = 0,
+    LLAMA_SWA_TYPE_STANDARD  = 1,
+    LLAMA_SWA_TYPE_CHUNKED   = 2,
+    LLAMA_SWA_TYPE_SYMMETRIC = 3,
 };
+
+
+enum llm_ffn_op_type : int;
 
 struct llama_hparams_posnet {
     uint32_t n_embd;
@@ -32,25 +37,40 @@ struct llama_hparams_convnext {
 };
 
 struct llama_hparams {
+    
+    
+
     bool vocab_only;
+    bool no_alloc;
     bool rope_finetuned;
     bool use_par_res;
     bool swin_norm;
+    bool norm_before_residual = false;
 
     uint32_t n_ctx_train; 
     uint32_t n_embd;
-    uint32_t n_embd_features = 0;
-    uint32_t n_layer;
-    uint32_t n_rot;
-    uint32_t n_embd_head_k; 
-    uint32_t n_embd_head_v; 
+    uint32_t n_layer_all;
+    uint32_t n_layer_nextn = 0;
     uint32_t n_expert = 0;
     uint32_t n_expert_used = 0;
     uint32_t n_rel_attn_bkts = 0;
 
     
-    uint32_t n_embd_head_k_mla = 0;
-    uint32_t n_embd_head_v_mla = 0;
+    int32_t  n_layer_kv_from_start = -1; 
+
+    
+    uint32_t n_embd_head_k_full; 
+    uint32_t n_embd_head_v_full; 
+    uint32_t n_embd_head_k_swa;
+    uint32_t n_embd_head_v_swa;
+
+    
+    uint32_t n_rot_full;
+    uint32_t n_rot_swa;
+
+    
+    uint32_t n_embd_head_k_mla_impl = 0;
+    uint32_t n_embd_head_v_mla_impl = 0;
 
     
     struct llama_hparams_posnet   posnet;
@@ -67,21 +87,27 @@ struct llama_hparams {
     uint32_t n_lora_kv          = 0;
     uint32_t n_ff_exp           = 0;
     uint32_t n_ff_shexp         = 0;
+    uint32_t n_ff_chexp         = 0;
     uint32_t n_expert_shared    = 0;
     uint32_t n_norm_groups      = 0;
+    uint32_t n_expert_groups    = 0;
+    uint32_t n_group_used       = 0;
+    uint32_t n_group_experts    = 0;
 
-    float    expert_weights_scale = 0.0;
+    float    expert_group_scale   = 0.05f;
+    float    expert_weights_scale = 0.0f;
     bool     expert_weights_norm  = false;
     uint32_t expert_gating_func   = LLAMA_EXPERT_GATING_FUNC_TYPE_NONE;
     uint32_t moe_every_n_layers   = 0;
-    uint32_t nextn_predict_layers = 0;
+    uint32_t moe_latent_size      = 0;
 
     float f_norm_eps;
     float f_norm_rms_eps;
     float f_norm_group_eps;
 
-    float f_attn_logit_softcapping  = 50.0f;
-    float f_final_logit_softcapping = 30.0f;
+    float f_attn_logit_softcapping   = 50.0f;
+    float f_router_logit_softcapping = 30.0f;
+    float f_final_logit_softcapping  = 30.0f;
 
     
     uint32_t rescale_every_n_layers = 0;
@@ -96,11 +122,18 @@ struct llama_hparams {
 
     float    rope_attn_factor = 1.0f;
     float    rope_freq_base_train;
-    float    rope_freq_base_train_swa;
+    float    rope_freq_base_train_swa  = 10000.0f;
     float    rope_freq_scale_train;
-    float    rope_freq_scale_train_swa;
+    float    rope_freq_scale_train_swa = 1.0f;
+    float    rope_scaling_alpha        = 0.0f;  
+
     uint32_t n_ctx_orig_yarn;
     float    rope_yarn_log_mul = 0.0f;
+
+    float    yarn_ext_factor  = -1.0f;
+    float    yarn_attn_factor =  1.0f;
+    float    yarn_beta_fast   = 32.0f;
+    float    yarn_beta_slow   =  1.0f;
 
     std::array<int, 4> rope_sections;
 
@@ -108,10 +141,15 @@ struct llama_hparams {
     llama_swa_type swa_type = LLAMA_SWA_TYPE_NONE;
     
     uint32_t n_swa = 0;
+
     
     
     
-    std::array<bool, LLAMA_MAX_LAYERS> swa_layers;
+    
+    std::array<uint32_t, LLAMA_MAX_LAYERS> is_swa_impl;
+
+    
+    std::array<uint32_t, LLAMA_MAX_LAYERS> is_recr_impl;
 
     
     uint32_t ssm_d_conv  = 0;
@@ -121,7 +159,7 @@ struct llama_hparams {
     uint32_t ssm_n_group = 0;
 
     
-    std::array<bool, LLAMA_MAX_LAYERS> recurrent_layer_arr;
+    uint32_t n_embd_head_kda = 0;
 
     bool ssm_dt_b_c_rms = false;
 
@@ -134,19 +172,32 @@ struct llama_hparams {
     float f_embedding_scale = 0.0f;
     float f_attention_scale = 0.0f;
 
+    
+    float    f_attn_out_scale = 0.0f;
+    uint32_t attn_temp_length = 0;
+
+    float    f_attn_value_scale = 0.0f;
+
     bool causal_attn   = true;
     bool use_alibi     = false;
     bool attn_soft_cap = false;
-    bool use_kq_norm   = true;
+    bool use_kq_norm   = false;
 
     
     uint32_t n_cls_out = 1;
 
     
+    uint32_t n_embd_inp_impl = 0;
+
+    
+    uint32_t n_embd_out_impl = 0;
+
+    
     uint32_t n_moe_layer_step        = 0;
     uint32_t n_no_rope_layer_step    = 4;
-    uint32_t n_attn_temp_floor_scale = 8192;
-    float    f_attn_temp_scale       = 0.1;
+    uint32_t n_attn_temp_floor_scale = 0;
+    float    f_attn_temp_scale       = 0.0f;
+    float    f_attn_temp_offset      = 0.0f; 
 
     
     uint32_t n_altup      = 4; 
@@ -155,12 +206,60 @@ struct llama_hparams {
     uint32_t n_embd_altup = 256;
 
     
+    uint32_t dense_2_feat_in  = 0;  
+    uint32_t dense_2_feat_out = 0;  
+    uint32_t dense_3_feat_in  = 0;  
+    uint32_t dense_3_feat_out = 0;  
+
+    
+    std::array<float, LLAMA_MAX_LAYERS> xielu_alpha_n;
+    std::array<float, LLAMA_MAX_LAYERS> xielu_alpha_p;
+    std::array<float, LLAMA_MAX_LAYERS> xielu_beta;
+    std::array<float, LLAMA_MAX_LAYERS> xielu_eps;
+
+    
+    uint32_t indexer_n_head    = 0;
+    uint32_t indexer_head_size = 0;
+    uint32_t indexer_top_k     = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    uint32_t n_deepstack_layers = 0;
+
+    
+    
+    
+    std::array<int32_t, LLAMA_MAX_LAYERS> deepstack_mapping_arr;
+
+    
+    uint32_t n_embd_per_layer = 0;
+
+    
     
     llama_token dec_start_token_id = LLAMA_TOKEN_NULL;
+    uint32_t    dec_n_layer        = 0;
 
     enum llama_pooling_type      pooling_type            = LLAMA_POOLING_TYPE_NONE;
     enum llama_rope_type         rope_type               = LLAMA_ROPE_TYPE_NONE;
     enum llama_rope_scaling_type rope_scaling_type_train = LLAMA_ROPE_SCALING_TYPE_NONE;
+
+
+    
+    
+    
+    
+    
+    
+    enum llm_ffn_op_type llm_ffn_op;
+
+    
+    std::array<float, LLAMA_MAX_LAYERS> swiglu_clamp_exp; 
+    std::array<float, LLAMA_MAX_LAYERS> swiglu_clamp_shexp; 
 
     
     
@@ -186,6 +285,13 @@ struct llama_hparams {
     
     bool is_swa_any() const;
 
+    bool is_swa(uint32_t il) const;
+
+    void set_recr_pattern(uint32_t n_pattern, bool dense_first = false);
+
+    
+    bool is_recr(uint32_t il) const;
+
     uint32_t n_head(uint32_t il = 0) const;
 
     uint32_t n_head_kv(uint32_t il = 0) const;
@@ -193,6 +299,18 @@ struct llama_hparams {
     uint32_t n_ff(uint32_t il = 0) const;
 
     uint32_t n_gqa(uint32_t il = 0) const;
+
+    uint32_t n_rot(uint32_t il = 0) const;
+
+    
+    uint32_t n_embd_inp() const;
+
+    
+    uint32_t n_embd_out() const;
+
+    
+    uint32_t n_embd_head_k(uint32_t il = 0) const;
+    uint32_t n_embd_head_v(uint32_t il = 0) const;
 
     
     uint32_t n_embd_k_gqa(uint32_t il = 0) const;
@@ -215,13 +333,61 @@ struct llama_hparams {
     
     uint32_t n_embd_s() const;
 
-    
-    bool is_recurrent(uint32_t il) const;
-
     uint32_t n_pos_per_embd() const;
 
-    bool is_swa(uint32_t il) const;
+    
+    bool is_mla() const;
+
+    uint32_t n_embd_head_k_mla() const;
+    uint32_t n_embd_head_v_mla() const;
+
+    bool has_kv(uint32_t il) const;
+
+    
+    uint32_t n_layer() const;
+
+    
+    
+    
+    
+    static bool is_masked_swa(uint32_t n_swa, llama_swa_type swa_type, llama_pos p0, llama_pos p1) {
+        assert(p0 >= 0 && p1 >= 0);
+
+        switch (swa_type) {
+            case LLAMA_SWA_TYPE_NONE:
+                {
+                } break;
+            case LLAMA_SWA_TYPE_STANDARD:
+                {
+                    if (p1 - p0 >= (int32_t) n_swa) {
+                        return true;
+                    }
+                } break;
+            case LLAMA_SWA_TYPE_CHUNKED:
+                {
+                    const llama_pos pos_chunk_start = (p1 / n_swa) * n_swa;
+
+                    if (p0 < pos_chunk_start) {
+                        return true;
+                    }
+                } break;
+            case LLAMA_SWA_TYPE_SYMMETRIC:
+                {
+                    const int32_t half_n_swa = (int32_t) n_swa / 2;
+                    const int32_t pos_diff = p1 - p0;
+
+                    
+                    if (pos_diff < -half_n_swa || pos_diff > half_n_swa) {
+                        return true;
+                    }
+                } break;
+        }
+
+        return false;
+    }
+
+
+    bool use_mrope() const;
 };
 
 static_assert(std::is_trivially_copyable<llama_hparams>::value, "llama_hparams must be trivially copyable");
-

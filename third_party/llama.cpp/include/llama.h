@@ -5,6 +5,7 @@
 #include "ggml-cpu.h"
 #include "ggml-backend.h"
 #include "ggml-opt.h"
+#include "gguf.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -64,8 +65,6 @@ extern "C" {
 
     typedef struct llama_memory_i * llama_memory_t;
 
-    struct llama_kv_cache; 
-
     typedef int32_t llama_pos;
     typedef int32_t llama_token;
     typedef int32_t llama_seq_id;
@@ -85,6 +84,7 @@ extern "C" {
         LLAMA_ROPE_TYPE_NORM   = 0,
         LLAMA_ROPE_TYPE_NEOX   = GGML_ROPE_TYPE_NEOX,
         LLAMA_ROPE_TYPE_MROPE  = GGML_ROPE_TYPE_MROPE,
+        LLAMA_ROPE_TYPE_IMROPE = GGML_ROPE_TYPE_IMROPE,
         LLAMA_ROPE_TYPE_VISION = GGML_ROPE_TYPE_VISION,
     };
 
@@ -153,6 +153,8 @@ extern "C" {
         LLAMA_FTYPE_MOSTLY_TQ1_0         = 36, 
         LLAMA_FTYPE_MOSTLY_TQ2_0         = 37, 
         LLAMA_FTYPE_MOSTLY_MXFP4_MOE     = 38, 
+        LLAMA_FTYPE_MOSTLY_NVFP4         = 39, 
+        LLAMA_FTYPE_MOSTLY_Q1_0          = 40, 
 
         LLAMA_FTYPE_GUESSED = 1024, 
     };
@@ -181,10 +183,24 @@ extern "C" {
         LLAMA_ATTENTION_TYPE_NON_CAUSAL  = 1,
     };
 
+    enum llama_flash_attn_type {
+        LLAMA_FLASH_ATTN_TYPE_AUTO     = -1,
+        LLAMA_FLASH_ATTN_TYPE_DISABLED = 0,
+        LLAMA_FLASH_ATTN_TYPE_ENABLED  = 1,
+    };
+
+    LLAMA_API const char * llama_flash_attn_type_name(enum llama_flash_attn_type flash_attn_type);
+
     enum llama_split_mode {
-        LLAMA_SPLIT_MODE_NONE  = 0, 
-        LLAMA_SPLIT_MODE_LAYER = 1, 
-        LLAMA_SPLIT_MODE_ROW   = 2, 
+        LLAMA_SPLIT_MODE_NONE   = 0, 
+        LLAMA_SPLIT_MODE_LAYER  = 1, 
+        LLAMA_SPLIT_MODE_ROW    = 2, 
+        LLAMA_SPLIT_MODE_TENSOR = 3,
+    };
+
+    enum llama_context_type {
+        LLAMA_CONTEXT_TYPE_DEFAULT = 0,
+        LLAMA_CONTEXT_TYPE_MTP     = 1,
     };
 
     
@@ -200,7 +216,7 @@ extern "C" {
         llama_token_data * data;
         size_t size;
         int64_t selected; 
-        bool sorted;
+        bool sorted;      
     } llama_token_data_array;
 
     typedef bool (*llama_progress_callback)(float progress, void * user_data);
@@ -237,6 +253,21 @@ extern "C" {
         LLAMA_KV_OVERRIDE_TYPE_FLOAT,
         LLAMA_KV_OVERRIDE_TYPE_BOOL,
         LLAMA_KV_OVERRIDE_TYPE_STR,
+    };
+
+    enum llama_model_meta_key {
+        LLAMA_MODEL_META_KEY_SAMPLING_SEQUENCE,
+        LLAMA_MODEL_META_KEY_SAMPLING_TOP_K,
+        LLAMA_MODEL_META_KEY_SAMPLING_TOP_P,
+        LLAMA_MODEL_META_KEY_SAMPLING_MIN_P,
+        LLAMA_MODEL_META_KEY_SAMPLING_XTC_PROBABILITY,
+        LLAMA_MODEL_META_KEY_SAMPLING_XTC_THRESHOLD,
+        LLAMA_MODEL_META_KEY_SAMPLING_TEMP,
+        LLAMA_MODEL_META_KEY_SAMPLING_PENALTY_LAST_N,
+        LLAMA_MODEL_META_KEY_SAMPLING_PENALTY_REPEAT,
+        LLAMA_MODEL_META_KEY_SAMPLING_MIROSTAT,
+        LLAMA_MODEL_META_KEY_SAMPLING_MIROSTAT_TAU,
+        LLAMA_MODEL_META_KEY_SAMPLING_MIROSTAT_ETA,
     };
 
     struct llama_model_kv_override {
@@ -287,9 +318,17 @@ extern "C" {
         
         bool vocab_only;      
         bool use_mmap;        
+        bool use_direct_io;   
         bool use_mlock;       
         bool check_tensors;   
         bool use_extra_bufts; 
+        bool no_host;         
+        bool no_alloc;        
+    };
+
+    struct llama_sampler_seq_config {
+        llama_seq_id           seq_id;
+        struct llama_sampler * sampler;
     };
 
     
@@ -299,12 +338,16 @@ extern "C" {
         uint32_t n_batch;           
         uint32_t n_ubatch;          
         uint32_t n_seq_max;         
+        uint32_t n_rs_seq;          
+        uint32_t n_outputs_max;     
         int32_t  n_threads;         
         int32_t  n_threads_batch;   
 
+        enum llama_context_type      ctx_type;          
         enum llama_rope_scaling_type rope_scaling_type; 
         enum llama_pooling_type      pooling_type;      
         enum llama_attention_type    attention_type;    
+        enum llama_flash_attn_type   flash_attn_type;   
 
         
         float    rope_freq_base;   
@@ -331,7 +374,6 @@ extern "C" {
         
         bool embeddings;  
         bool offload_kqv; 
-        bool flash_attn;  
         bool no_perf;     
         bool op_offload;  
         bool swa_full;    
@@ -340,23 +382,45 @@ extern "C" {
         bool kv_unified;  
                           
                           
+
+        
+        
+        
+        struct llama_sampler_seq_config * samplers;
+        size_t                            n_samplers;
+
+        
+        
+        struct llama_context * ctx_other;
+    };
+
+    struct llama_model_tensor_override {
+        const char * pattern;
+        enum ggml_type type;
+    };
+
+    struct llama_model_imatrix_data {
+        const char * name;
+        const float * data;
+        size_t size;
     };
 
     
     typedef struct llama_model_quantize_params {
-        int32_t nthread;                      
-        enum llama_ftype ftype;               
-        enum ggml_type output_tensor_type;    
-        enum ggml_type token_embedding_type;  
-        bool allow_requantize;                
-        bool quantize_output_tensor;          
-        bool only_copy;                       
-        bool pure;                            
-        bool keep_split;                      
-        void * imatrix;                       
-        void * kv_overrides;                  
-        void * tensor_types;                  
-        void * prune_layers;                  
+        int32_t nthread;                                            
+        enum llama_ftype ftype;                                     
+        enum ggml_type output_tensor_type;                          
+        enum ggml_type token_embedding_type;                        
+        bool allow_requantize;                                      
+        bool quantize_output_tensor;                                
+        bool only_copy;                                             
+        bool pure;                                                  
+        bool keep_split;                                            
+        bool dry_run;                                               
+        const struct llama_model_imatrix_data * imatrix;            
+        const struct llama_model_kv_override * kv_overrides;        
+        const struct llama_model_tensor_override * tt_overrides;    
+        const int32_t * prune_layers;                               
     } llama_model_quantize_params;
 
     typedef struct llama_logit_bias {
@@ -403,6 +467,17 @@ extern "C" {
 
     LLAMA_API void llama_detach_threadpool(struct llama_context * ctx);
 
+    typedef void (*llama_model_set_tensor_data_t)(struct ggml_tensor * tensor, void * userdata);
+
+    
+    
+    
+    LLAMA_API struct llama_model * llama_model_init_from_user(
+                    struct gguf_context * metadata,
+          llama_model_set_tensor_data_t   set_tensor_data,    
+                                   void * set_tensor_data_ud, 
+              struct llama_model_params   params);
+
     DEPRECATED(LLAMA_API struct llama_model * llama_load_model_from_file(
                              const char * path_model,
               struct llama_model_params   params),
@@ -416,25 +491,16 @@ extern "C" {
               struct llama_model_params   params);
 
     
+    LLAMA_API struct llama_model * llama_model_load_from_file_ptr(
+                                   FILE * file,
+              struct llama_model_params   params);
+
+    
     
     LLAMA_API struct llama_model * llama_model_load_from_splits(
                              const char ** paths,
                                  size_t    n_paths,
               struct llama_model_params    params);
-
-    
-    
-    LLAMA_API struct llama_model * llama_model_load_from_buffer(
-                            const void * buffer,
-                                size_t   buffer_size,
-              struct llama_model_params   params);
-
-    
-    
-    
-    LLAMA_API struct llama_model * llama_model_load_from_file_handle(
-                                  FILE * file,
-              struct llama_model_params   params);
 
     LLAMA_API void llama_model_save_to_file(
             const struct llama_model * model,
@@ -461,16 +527,22 @@ extern "C" {
 
     LLAMA_API size_t llama_max_devices(void);
     LLAMA_API size_t llama_max_parallel_sequences(void);
+    LLAMA_API size_t llama_max_tensor_buft_overrides(void);
 
     LLAMA_API bool llama_supports_mmap       (void);
     LLAMA_API bool llama_supports_mlock      (void);
     LLAMA_API bool llama_supports_gpu_offload(void);
     LLAMA_API bool llama_supports_rpc        (void);
 
+    
+    
+    
     LLAMA_API uint32_t llama_n_ctx      (const struct llama_context * ctx);
+    LLAMA_API uint32_t llama_n_ctx_seq  (const struct llama_context * ctx);
     LLAMA_API uint32_t llama_n_batch    (const struct llama_context * ctx);
     LLAMA_API uint32_t llama_n_ubatch   (const struct llama_context * ctx);
     LLAMA_API uint32_t llama_n_seq_max  (const struct llama_context * ctx);
+    LLAMA_API uint32_t llama_n_rs_seq   (const struct llama_context * ctx);
 
     DEPRECATED(LLAMA_API int32_t llama_n_ctx_train(const struct llama_model * model), "use llama_model_n_ctx_train instead");
     DEPRECATED(LLAMA_API int32_t llama_n_embd     (const struct llama_model * model), "use llama_model_n_embd instead");
@@ -483,13 +555,13 @@ extern "C" {
     LLAMA_API           llama_memory_t   llama_get_memory  (const struct llama_context * ctx);
     LLAMA_API  enum llama_pooling_type   llama_pooling_type(const struct llama_context * ctx); 
 
-    DEPRECATED(LLAMA_API struct llama_kv_cache * llama_get_kv_self(struct llama_context * ctx), "use llama_get_memory instead");
-
     LLAMA_API const struct llama_vocab * llama_model_get_vocab(const struct llama_model * model);
     LLAMA_API enum llama_rope_type       llama_model_rope_type(const struct llama_model * model);
 
     LLAMA_API int32_t llama_model_n_ctx_train(const struct llama_model * model);
     LLAMA_API int32_t llama_model_n_embd     (const struct llama_model * model);
+    LLAMA_API int32_t llama_model_n_embd_inp (const struct llama_model * model);
+    LLAMA_API int32_t llama_model_n_embd_out (const struct llama_model * model);
     LLAMA_API int32_t llama_model_n_layer    (const struct llama_model * model);
     LLAMA_API int32_t llama_model_n_head     (const struct llama_model * model);
     LLAMA_API int32_t llama_model_n_head_kv  (const struct llama_model * model);
@@ -520,6 +592,9 @@ extern "C" {
 
     
     LLAMA_API int32_t llama_model_meta_count(const struct llama_model * model);
+
+    
+    LLAMA_API const char * llama_model_meta_key_str(enum llama_model_meta_key key);
 
     
     LLAMA_API int32_t llama_model_meta_key_by_index(const struct llama_model * model, int32_t i, char * buf, size_t buf_size);
@@ -554,6 +629,9 @@ extern "C" {
     LLAMA_API bool llama_model_is_recurrent(const struct llama_model * model);
 
     
+    LLAMA_API bool llama_model_is_hybrid(const struct llama_model * model);
+
+    
     LLAMA_API bool llama_model_is_diffusion(const struct llama_model * model);
 
     
@@ -567,31 +645,45 @@ extern "C" {
     
 
     
+    
     LLAMA_API struct llama_adapter_lora * llama_adapter_lora_init(
             struct llama_model * model,
             const char * path_lora);
 
     
     
+    
+    
+    
+
+    
+    LLAMA_API int32_t llama_adapter_meta_val_str(const struct llama_adapter_lora * adapter, const char * key, char * buf, size_t buf_size);
+
+    
+    LLAMA_API int32_t llama_adapter_meta_count(const struct llama_adapter_lora * adapter);
+
+    
+    LLAMA_API int32_t llama_adapter_meta_key_by_index(const struct llama_adapter_lora * adapter, int32_t i, char * buf, size_t buf_size);
+
+    
+    LLAMA_API int32_t llama_adapter_meta_val_str_by_index(const struct llama_adapter_lora * adapter, int32_t i, char * buf, size_t buf_size);
+
+    
+    
     LLAMA_API void llama_adapter_lora_free(struct llama_adapter_lora * adapter);
 
     
+    LLAMA_API uint64_t            llama_adapter_get_alora_n_invocation_tokens(const struct llama_adapter_lora * adapter);
+    LLAMA_API const llama_token * llama_adapter_get_alora_invocation_tokens  (const struct llama_adapter_lora * adapter);
 
     
+
     
-    LLAMA_API int32_t llama_set_adapter_lora(
+    LLAMA_API int32_t llama_set_adapters_lora(
             struct llama_context * ctx,
-            struct llama_adapter_lora * adapter,
-            float scale);
-
-    
-    
-    LLAMA_API int32_t llama_rm_adapter_lora(
-            struct llama_context * ctx,
-            struct llama_adapter_lora * adapter);
-
-    
-    LLAMA_API void llama_clear_adapter_lora(struct llama_context * ctx);
+            struct llama_adapter_lora ** adapters,
+            size_t n_adapters,
+            float * scales);
 
     
     
@@ -599,7 +691,7 @@ extern "C" {
     
     
     
-    LLAMA_API int32_t llama_apply_adapter_cvec(
+    LLAMA_API int32_t llama_set_adapter_cvec(
             struct llama_context * ctx,
                      const float * data,
                           size_t   len,
@@ -680,111 +772,6 @@ extern "C" {
 
     
     LLAMA_API bool llama_memory_can_shift(llama_memory_t mem);
-
-    
-    
-    
-
-    
-    
-    DEPRECATED(LLAMA_API int32_t llama_kv_self_n_tokens(const struct llama_context * ctx),
-               "Use llama_kv_self_seq_pos_max() and llama_kv_self_seq_pos_min() instead (https:
-
-    
-    DEPRECATED(LLAMA_API int32_t llama_kv_self_used_cells(const struct llama_context * ctx),
-               "Use llama_kv_self_seq_pos_max() and llama_kv_self_seq_pos_min() instead (https:
-
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_clear(
-                struct llama_context * ctx),
-            "Use llama_memory_clear() instead");
-
-    
-    
-    
-    
-    
-    DEPRECATED(LLAMA_API bool llama_kv_self_seq_rm(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id,
-                       llama_pos   p0,
-                       llama_pos   p1),
-            "Use llama_memory_seq_rm() instead");
-
-    
-    
-    
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_seq_cp(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id_src,
-                    llama_seq_id   seq_id_dst,
-                       llama_pos   p0,
-                       llama_pos   p1),
-            "Use llama_memory_seq_cp() instead");
-
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_seq_keep(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id),
-            "Use llama_memory_seq_keep() instead");
-
-    
-    
-    
-    
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_seq_add(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id,
-                       llama_pos   p0,
-                       llama_pos   p1,
-                       llama_pos   delta),
-            "Use llama_memory_seq_add() instead");
-
-    
-    
-    
-    
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_seq_div(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id,
-                       llama_pos   p0,
-                       llama_pos   p1,
-                             int   d),
-            "Use llama_memory_seq_div() instead");
-
-    
-    
-    
-    
-    DEPRECATED(LLAMA_API llama_pos llama_kv_self_seq_pos_min(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id),
-            "Use llama_memory_seq_pos_min() instead");
-
-    
-    
-    
-    DEPRECATED(LLAMA_API llama_pos llama_kv_self_seq_pos_max(
-            struct llama_context * ctx,
-                    llama_seq_id   seq_id),
-            "Use llama_memory_seq_pos_max() instead");
-
-    
-    
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_defrag(struct llama_context * ctx),
-            "simply remove this call, the context will automatically decide when to do a defragmentation based on 'defrag_thold'");
-
-    
-    DEPRECATED(LLAMA_API bool llama_kv_self_can_shift(const struct llama_context * ctx),
-            "use llama_memory_can_shift() instead");
-
-    
-    DEPRECATED(LLAMA_API void llama_kv_self_update(struct llama_context * ctx),
-            "simply remove this call, updates are applied lazily on the next llama_decode()");
 
     
     
@@ -884,7 +871,17 @@ extern "C" {
                           size_t   n_token_capacity,
                           size_t * n_token_count_out);
 
+#define LLAMA_STATE_SEQ_FLAGS_NONE 0
+
+
 #define LLAMA_STATE_SEQ_FLAGS_SWA_ONLY 1
+
+
+#define LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY 1
+
+
+
+#define LLAMA_STATE_SEQ_FLAGS_ON_DEVICE 2
 
     typedef uint32_t llama_state_seq_flags;
 
@@ -983,7 +980,11 @@ extern "C" {
 
     
     
-    LLAMA_API void llama_set_warmup(struct llama_context * ctx, bool warmup);
+    
+    
+    
+    DEPRECATED(LLAMA_API void llama_set_warmup(struct llama_context * ctx, bool warmup),
+            "user code should do warmup runs manually [TAG_LLAMA_GRAPH_NO_WARMUP]");
 
     
     LLAMA_API void llama_set_abort_callback(struct llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data);
@@ -1028,6 +1029,32 @@ extern "C" {
     
     
     LLAMA_API float * llama_get_embeddings_seq(struct llama_context * ctx, llama_seq_id seq_id);
+
+    
+    
+    
+    
+
+    
+    
+    LLAMA_API llama_token llama_get_sampled_token_ith(struct llama_context * ctx, int32_t i);
+
+    
+    
+    
+    LLAMA_API float *  llama_get_sampled_probs_ith      (struct llama_context * ctx, int32_t i);
+    LLAMA_API uint32_t llama_get_sampled_probs_count_ith(struct llama_context * ctx, int32_t i);
+
+    
+    
+    LLAMA_API float *  llama_get_sampled_logits_ith      (struct llama_context * ctx, int32_t i);
+    LLAMA_API uint32_t llama_get_sampled_logits_count_ith(struct llama_context * ctx, int32_t i);
+
+    
+    
+    
+    LLAMA_API llama_token * llama_get_sampled_candidates_ith      (struct llama_context * ctx, int32_t i);
+    LLAMA_API uint32_t      llama_get_sampled_candidates_count_ith(struct llama_context * ctx, int32_t i);
 
     
     
@@ -1200,12 +1227,15 @@ extern "C" {
     
     
     
-    
-    
-    
-    
 
     typedef void * llama_sampler_context_t;
+
+    struct llama_sampler_data {
+        struct ggml_tensor * logits;
+        struct ggml_tensor * probs;
+        struct ggml_tensor * sampled;
+        struct ggml_tensor * candidates;
+    };
 
     
     struct llama_sampler_i {
@@ -1218,15 +1248,42 @@ extern "C" {
 
         
         
+
+        
+        
+        bool (*backend_init)(struct llama_sampler * smpl, ggml_backend_buffer_type_t buft);
+
+        
+        void (*backend_accept)(
+                struct llama_sampler * smpl,
+                struct ggml_context  * ctx,
+                struct ggml_cgraph   * gf,
+                struct ggml_tensor   * selected_token);
+
+        
+        void (*backend_apply)(
+                struct llama_sampler      * smpl,
+                struct ggml_context       * ctx,
+                struct ggml_cgraph        * gf,
+                struct llama_sampler_data * data);
+
+        
+        void (*backend_set_input)(struct llama_sampler * smpl);
     };
 
     struct llama_sampler {
-        const struct llama_sampler_i * iface;
-        llama_sampler_context_t        ctx;
+        struct llama_sampler_i * iface;
+
+        llama_sampler_context_t ctx;
     };
 
     
-    LLAMA_API struct llama_sampler * llama_sampler_init  (const struct llama_sampler_i * iface, llama_sampler_context_t ctx);
+    
+    
+    LLAMA_API bool llama_set_sampler(struct llama_context * ctx, llama_seq_id seq_id, struct llama_sampler * smpl);
+
+    
+    LLAMA_API struct llama_sampler * llama_sampler_init  (      struct llama_sampler_i * iface, llama_sampler_context_t ctx);
     LLAMA_API const char *           llama_sampler_name  (const struct llama_sampler * smpl);
     LLAMA_API void                   llama_sampler_accept(      struct llama_sampler * smpl, llama_token token);
     LLAMA_API void                   llama_sampler_apply (      struct llama_sampler * smpl, llama_token_data_array * cur_p);
@@ -1242,7 +1299,15 @@ extern "C" {
 
     
     LLAMA_API void                   llama_sampler_chain_add(      struct llama_sampler * chain, struct llama_sampler * smpl);
-    LLAMA_API struct llama_sampler * llama_sampler_chain_get(const struct llama_sampler * chain, int32_t i);
+
+    
+    
+    
+    
+    
+    LLAMA_API struct llama_sampler * llama_sampler_chain_get(      struct llama_sampler * chain, int32_t i);
+
+    
     LLAMA_API int                    llama_sampler_chain_n  (const struct llama_sampler * chain);
 
     
@@ -1251,12 +1316,9 @@ extern "C" {
     
 
     LLAMA_API struct llama_sampler * llama_sampler_init_greedy(void);
-    LLAMA_API struct llama_sampler * llama_sampler_init_dist  (uint32_t seed);
 
     
-    
-    DEPRECATED(LLAMA_API struct llama_sampler * llama_sampler_init_softmax    (void),
-        "will be removed in the future (see https:
+    LLAMA_API struct llama_sampler * llama_sampler_init_dist(uint32_t seed);
 
     
     
@@ -1357,6 +1419,33 @@ extern "C" {
                           const char ** seq_breakers,
                               size_t    num_breakers);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    LLAMA_API struct llama_sampler * llama_sampler_init_adaptive_p(
+                               float   target,
+                               float   decay,
+                            uint32_t   seed);
+
     LLAMA_API struct llama_sampler * llama_sampler_init_logit_bias(
                              int32_t   n_vocab,
                              int32_t   n_logit_bias,
@@ -1410,19 +1499,21 @@ extern "C" {
     
     
     
-    LLAMA_API int llama_split_path(char * split_path, size_t maxlen, const char * path_prefix, int split_no, int split_count);
+    LLAMA_API int32_t llama_split_path(char * split_path, size_t maxlen, const char * path_prefix, int32_t split_no, int32_t split_count);
 
     
     
     
-    LLAMA_API int llama_split_prefix(char * split_prefix, size_t maxlen, const char * split_path, int split_no, int split_count);
+    LLAMA_API int32_t llama_split_prefix(char * split_prefix, size_t maxlen, const char * split_path, int32_t split_no, int32_t split_count);
 
     
     LLAMA_API const char * llama_print_system_info(void);
 
     
     
-    LLAMA_API void llama_log_set(ggml_log_callback log_callback, void * user_data);
+    
+    LLAMA_API void llama_log_get(ggml_log_callback * log_callback, void ** user_data);
+    LLAMA_API void llama_log_set(ggml_log_callback   log_callback, void *  user_data);
 
     
     
@@ -1431,20 +1522,21 @@ extern "C" {
     
 
     struct llama_perf_context_data {
-        double t_start_ms;
-        double t_load_ms;
-        double t_p_eval_ms;
-        double t_eval_ms;
+        
+        double t_start_ms;  
+        double t_load_ms;   
+        double t_p_eval_ms; 
+        double t_eval_ms;   
 
-        int32_t n_p_eval;
-        int32_t n_eval;
-        int32_t n_reused; 
+        int32_t n_p_eval;   
+        int32_t n_eval;     
+        int32_t n_reused;   
     };
 
     struct llama_perf_sampler_data {
-        double t_sample_ms;
+        double t_sample_ms; 
 
-        int32_t n_sample;
+        int32_t n_sample;   
     };
 
     LLAMA_API struct llama_perf_context_data llama_perf_context      (const struct llama_context * ctx);

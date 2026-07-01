@@ -1,8 +1,11 @@
 #pragma once
 
 #include "llama.h"
+#include "llama-graph.h"
 
+#include <map>
 #include <memory>
+#include <functional>
 
 struct llama_ubatch;
 
@@ -18,6 +21,10 @@ struct llama_memory_params {
 
     
     bool swa_full;
+
+    llama_context_type ctx_type;
+
+    llama_memory_t mem_other;
 };
 
 enum llama_memory_status {
@@ -64,6 +71,15 @@ using llama_memory_context_ptr = std::unique_ptr<llama_memory_context_i>;
 
 
 struct llama_memory_i {
+    
+    using layer_filter_cb = std::function<bool(int32_t il)>;
+
+    
+    
+    using layer_reuse_cb = std::function<int32_t(int32_t il)>;
+
+    using layer_share_cb = std::function<int32_t(int32_t il)>;
+
     virtual ~llama_memory_i() = default;
 
     
@@ -100,6 +116,8 @@ struct llama_memory_i {
     virtual llama_pos seq_pos_min(llama_seq_id seq_id) const = 0;
     virtual llama_pos seq_pos_max(llama_seq_id seq_id) const = 0;
 
+    virtual std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const = 0;
+
     
     
     
@@ -109,8 +127,3 @@ struct llama_memory_i {
 };
 
 using llama_memory_ptr = std::unique_ptr<llama_memory_i>;
-
-
-struct llama_kv_cache : public llama_memory_i {
-    virtual ~llama_kv_cache() = default;
-};

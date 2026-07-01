@@ -39,6 +39,8 @@ private:
     std::vector<ggml_tensor *> tensors; 
 };
 
+using llama_adapter_cvec_ptr = std::shared_ptr<llama_adapter_cvec>;
+
 
 
 
@@ -59,6 +61,8 @@ struct llama_adapter_lora_weight {
 };
 
 struct llama_adapter_lora {
+    llama_model * model = nullptr;
+
     
     std::unordered_map<std::string, llama_adapter_lora_weight> ab_map;
 
@@ -67,10 +71,21 @@ struct llama_adapter_lora {
 
     float alpha;
 
-    llama_adapter_lora() = default;
+    
+    std::unordered_map<std::string, std::string> gguf_kv;
+
+    
+    std::vector<llama_token> alora_invocation_tokens;
+
+    explicit llama_adapter_lora(llama_model * model) : model(model) {}
     ~llama_adapter_lora() = default;
 
     llama_adapter_lora_weight * get_weight(ggml_tensor * w);
+
+    uint32_t get_n_nodes() const {
+        return ab_map.size() * 6u; 
+    }
 };
 
 using llama_adapter_loras = std::unordered_map<llama_adapter_lora *, float>;
+using llama_adapter_loras_ptr = std::unique_ptr<llama_adapter_loras>;

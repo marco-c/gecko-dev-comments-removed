@@ -68,7 +68,7 @@ extern "C" {
     GGML_API void                           ggml_backend_buffer_reset         (ggml_backend_buffer_t buffer);
 
     
-    GGML_API void ggml_backend_tensor_copy(struct ggml_tensor * src, struct ggml_tensor * dst);
+    GGML_API void ggml_backend_tensor_copy(const struct ggml_tensor * src, struct ggml_tensor * dst);
 
     
     
@@ -83,13 +83,17 @@ extern "C" {
     GGML_API size_t                     ggml_backend_get_alignment(ggml_backend_t backend);
     GGML_API size_t                     ggml_backend_get_max_size(ggml_backend_t backend);
 
-    GGML_API void ggml_backend_tensor_set_async(ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
-    GGML_API void ggml_backend_tensor_get_async(ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_set_async   (ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_get_async   (ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_set_2d_async(ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+    GGML_API void ggml_backend_tensor_get_2d_async(ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
 
     
-    GGML_API void ggml_backend_tensor_set(      struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
-    GGML_API void ggml_backend_tensor_get(const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
-    GGML_API void ggml_backend_tensor_memset(   struct ggml_tensor * tensor,     uint8_t value, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_set   (      struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_get   (const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
+    GGML_API void ggml_backend_tensor_set_2d(      struct ggml_tensor * tensor, const void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+    GGML_API void ggml_backend_tensor_get_2d(const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+    GGML_API void ggml_backend_tensor_memset(      struct ggml_tensor * tensor,     uint8_t value, size_t offset, size_t size);
 
     GGML_API void ggml_backend_synchronize(ggml_backend_t backend);
 
@@ -109,7 +113,7 @@ extern "C" {
     
     
     
-    GGML_API void ggml_backend_tensor_copy_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, struct ggml_tensor * src, struct ggml_tensor * dst);
+    GGML_API void ggml_backend_tensor_copy_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst);
 
     GGML_API ggml_backend_dev_t ggml_backend_get_device(ggml_backend_t backend);
 
@@ -133,7 +137,11 @@ extern "C" {
         
         GGML_BACKEND_DEVICE_TYPE_GPU,
         
-        GGML_BACKEND_DEVICE_TYPE_ACCEL
+        GGML_BACKEND_DEVICE_TYPE_IGPU,
+        
+        GGML_BACKEND_DEVICE_TYPE_ACCEL,
+        
+        GGML_BACKEND_DEVICE_TYPE_META,
     };
 
     
@@ -150,11 +158,21 @@ extern "C" {
 
     
     struct ggml_backend_dev_props {
+        
         const char * name;
+        
         const char * description;
+        
         size_t memory_free;
+        
         size_t memory_total;
+        
         enum ggml_backend_dev_type type;
+        
+        
+        
+        const char * device_id;
+        
         struct ggml_backend_dev_caps caps;
     };
 
@@ -185,6 +203,11 @@ extern "C" {
     
 
     
+    typedef void * (*ggml_backend_comm_init_t)(ggml_backend_t * backends, size_t n_backends);
+    typedef void   (*ggml_backend_comm_free_t)(void * comm_ctx);
+    typedef bool   (*ggml_backend_comm_allreduce_tensor_t)(void * comm_ctx, struct ggml_tensor ** tensors);
+
+    
     typedef ggml_backend_buffer_type_t   (*ggml_backend_split_buffer_type_t)(int main_device, const float * tensor_split);
     
     typedef void                         (*ggml_backend_set_n_threads_t)(ggml_backend_t backend, int n_threads);
@@ -202,6 +225,8 @@ extern "C" {
     
     
     
+
+    GGML_API void ggml_backend_register(ggml_backend_reg_t reg);
 
     GGML_API void ggml_backend_device_register(ggml_backend_dev_t device);
 
@@ -293,6 +318,7 @@ extern "C" {
     GGML_API void                 ggml_backend_sched_free(ggml_backend_sched_t sched);
 
     
+    GGML_API void                 ggml_backend_sched_reserve_size(ggml_backend_sched_t sched, struct ggml_cgraph * measure_graph, size_t * sizes);
     GGML_API bool                 ggml_backend_sched_reserve(ggml_backend_sched_t sched, struct ggml_cgraph * measure_graph); 
 
     GGML_API int                  ggml_backend_sched_get_n_backends(ggml_backend_sched_t sched);
@@ -302,10 +328,14 @@ extern "C" {
     GGML_API int                  ggml_backend_sched_get_n_splits(ggml_backend_sched_t sched);
     GGML_API int                  ggml_backend_sched_get_n_copies(ggml_backend_sched_t sched);
 
-    GGML_API size_t               ggml_backend_sched_get_buffer_size(ggml_backend_sched_t sched, ggml_backend_t backend);
+    GGML_API ggml_backend_buffer_type_t ggml_backend_sched_get_buffer_type(ggml_backend_sched_t sched, ggml_backend_t backend);
+    GGML_API size_t                     ggml_backend_sched_get_buffer_size(ggml_backend_sched_t sched, ggml_backend_t backend);
 
     GGML_API void                 ggml_backend_sched_set_tensor_backend(ggml_backend_sched_t sched, struct ggml_tensor * node, ggml_backend_t backend);
     GGML_API ggml_backend_t       ggml_backend_sched_get_tensor_backend(ggml_backend_sched_t sched, struct ggml_tensor * node);
+
+    
+    GGML_API void                 ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgraph * graph);
 
     
     GGML_API bool                 ggml_backend_sched_alloc_graph(ggml_backend_sched_t sched, struct ggml_cgraph * graph); 
@@ -325,6 +355,57 @@ extern "C" {
     
     
 
+#define GGML_BACKEND_META_MAX_DEVICES 16
+
+    enum ggml_backend_meta_split_axis {
+        
+        GGML_BACKEND_SPLIT_AXIS_0 = 0,
+        GGML_BACKEND_SPLIT_AXIS_1 = 1,
+        GGML_BACKEND_SPLIT_AXIS_2 = 2,
+        GGML_BACKEND_SPLIT_AXIS_3 = 3,
+
+        GGML_BACKEND_SPLIT_AXIS_MIRRORED = 10, 
+        GGML_BACKEND_SPLIT_AXIS_PARTIAL  = 11, 
+
+        
+        GGML_BACKEND_SPLIT_AXIS_NONE    = 98,
+        GGML_BACKEND_SPLIT_AXIS_UNKNOWN = 99,
+    };
+    GGML_API const char * ggml_backend_meta_split_axis_name(enum ggml_backend_meta_split_axis split_axis);
+
+    struct ggml_backend_meta_split_state {
+        enum ggml_backend_meta_split_axis axis;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        int64_t  ne[16*GGML_BACKEND_META_MAX_DEVICES];
+        uint32_t nr[16];
+        uint32_t n_segments;
+    };
+
+    
+    typedef struct ggml_backend_meta_split_state(*ggml_backend_meta_get_split_state_t)(const struct ggml_tensor * tensor, void * userdata);
+
+    
+    
+    
+    GGML_API ggml_backend_dev_t ggml_backend_meta_device(
+        ggml_backend_dev_t * devs, size_t n_devs, ggml_backend_meta_get_split_state_t get_split_state, void * get_split_state_ud);
+
+    
+    
+    
+
     struct ggml_backend_graph_copy {
         ggml_backend_buffer_t buffer;
         struct ggml_context * ctx_allocated;
@@ -339,7 +420,7 @@ extern "C" {
     typedef bool (*ggml_backend_eval_callback)(int node_index, struct ggml_tensor * t1, struct ggml_tensor * t2, void * user_data);
 
     
-    GGML_API bool ggml_backend_compare_graph_backend(ggml_backend_t backend1, ggml_backend_t backend2, struct ggml_cgraph * graph, ggml_backend_eval_callback callback, void * user_data, struct ggml_tensor * test_node);
+    GGML_API bool ggml_backend_compare_graph_backend(ggml_backend_t backend1, ggml_backend_t backend2, struct ggml_cgraph * graph, ggml_backend_eval_callback callback, void * user_data, struct ggml_tensor const * const * test_nodes, size_t num_test_nodes);
 
     
     GGML_API enum ggml_status ggml_backend_tensor_alloc(ggml_backend_buffer_t buffer, struct ggml_tensor * tensor, void * addr);

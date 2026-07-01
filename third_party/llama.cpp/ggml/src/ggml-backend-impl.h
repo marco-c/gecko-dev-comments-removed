@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-    #define GGML_BACKEND_API_VERSION 1
+    #define GGML_BACKEND_API_VERSION 2
 
     
     
@@ -50,6 +50,10 @@ extern "C" {
         void         (*set_tensor)   (ggml_backend_buffer_t buffer,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
         void         (*get_tensor)   (ggml_backend_buffer_t buffer, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
         
+        void         (*set_tensor_2d)(ggml_backend_buffer_t buffer,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+        void         (*get_tensor_2d)(ggml_backend_buffer_t buffer, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+
+        
         bool         (*cpy_tensor)   (ggml_backend_buffer_t buffer, const struct ggml_tensor * src, struct ggml_tensor * dst);
         
         void         (*clear)        (ggml_backend_buffer_t buffer, uint8_t value);
@@ -84,14 +88,30 @@ extern "C" {
     
     
 
+    GGML_API bool ggml_backend_is_meta       (ggml_backend_t backend);
+    GGML_API bool ggml_backend_buffer_is_meta(ggml_backend_buffer_t buf);
+    GGML_API bool ggml_backend_buft_is_meta  (ggml_backend_buffer_type_t buft);
+
+    GGML_API size_t         ggml_backend_meta_n_backends    (ggml_backend_t meta_backend);
+    GGML_API ggml_backend_t ggml_backend_meta_simple_backend(ggml_backend_t meta_backend, size_t index);
+
+    
+    GGML_API struct ggml_backend_buffer * ggml_backend_meta_alloc_ctx_tensors_from_buft(struct ggml_context * ctx, ggml_backend_buffer_type_t buft);
+
+    
+    
+    
+
     struct ggml_backend_i {
         const char * (*get_name)(ggml_backend_t backend);
 
         void (*free)(ggml_backend_t backend);
 
         
-        void (*set_tensor_async)(ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
-        void (*get_tensor_async)(ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
+        void (*set_tensor_async)   (ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size);
+        void (*get_tensor_async)   (ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size);
+        void (*set_tensor_2d_async)(ggml_backend_t backend,       struct ggml_tensor * tensor, const void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
+        void (*get_tensor_2d_async)(ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
         bool (*cpy_tensor_async)(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst);
 
         
@@ -114,6 +134,9 @@ extern "C" {
         void (*event_record)(ggml_backend_t backend, ggml_backend_event_t event);
         
         void (*event_wait)  (ggml_backend_t backend, ggml_backend_event_t event);
+
+        
+        void                      (*graph_optimize)    (ggml_backend_t backend, struct ggml_cgraph * cgraph);
     };
 
     struct ggml_backend {
@@ -205,9 +228,6 @@ extern "C" {
         struct ggml_backend_reg_i iface;
         void * context;
     };
-
-    
-    GGML_API void ggml_backend_register(ggml_backend_reg_t reg);
 
     
 

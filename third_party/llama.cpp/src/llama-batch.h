@@ -17,6 +17,16 @@ struct llama_ubatch {
         return b_equal_seqs != 0;
     }
 
+    
+    
+    
+    
+    
+    bool is_pos_2d() const {
+        
+        return n_pos >= 3;
+    }
+
     uint32_t b_equal_seqs; 
                            
     
@@ -25,6 +35,7 @@ struct llama_ubatch {
     uint32_t n_seq_tokens; 
     uint32_t n_seqs;       
     uint32_t n_seqs_unq;   
+    uint32_t n_pos;        
 
     
     
@@ -45,10 +56,12 @@ struct llama_ubatch {
         std::vector<float>          embd;
         std::vector<llama_pos>      pos;
         std::vector<int32_t>        n_seq_id;
-        std::vector<llama_seq_id *> seq_id;
+        std::vector<llama_seq_id *> seq_id;      
         std::vector<llama_seq_id>   seq_id_unq;
         std::vector<int32_t>        seq_idx;
         std::vector<int8_t>         output;
+
+        std::vector<llama_seq_id> seq_id_data;
     };
 
     
@@ -123,7 +136,7 @@ private:
     uint32_t n_seq_max;
     uint32_t n_outputs;
 
-    std::array<llama_seq_id, 1> seq_id_0 = { 0 }; 
+    std::array<llama_seq_id, 1> seq_id_0 = {{ 0 }}; 
 
     std::vector<llama_pos>      pos;
     std::vector<int32_t>        n_seq_id;

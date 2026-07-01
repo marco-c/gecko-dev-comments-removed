@@ -1,9 +1,12 @@
 #pragma once
 
 #include "llama.h"
+#include "llama-ext.h"
 #include "llama-cparams.h"
 #include "llama-graph.h"
 #include "llama-adapter.h"
+#include "llama-impl.h"
+#include "llama-memory.h"
 
 #include "ggml-cpp.h"
 #include "ggml-opt.h"
@@ -17,8 +20,24 @@ class llama_batch_allocr;
 class llama_io_read_i;
 class llama_io_write_i;
 
+
 struct llama_memory_i;
 struct llama_memory_context_i;
+
+
+struct llama_memory_buffer {
+    int n_tensors = 0;
+    size_t total_size = 0;
+
+    ggml_backend_buffer_ptr buf;
+
+    ggml_context_ptr ctx;
+
+    std::vector<ggml_tensor *> org;
+    std::vector<ggml_tensor *> cpy;
+};
+
+using llama_memory_buffers = std::map<ggml_backend_buffer_type_t, llama_memory_buffer>;
 
 struct llama_context {
     
@@ -28,6 +47,14 @@ struct llama_context {
 
     ~llama_context();
 
+    
+    
+    
+    
+    
+    
+    void sched_reserve();
+
     void synchronize();
 
     const llama_model   & get_model()   const;
@@ -35,11 +62,11 @@ struct llama_context {
 
     ggml_backend_sched_t get_sched() const;
 
-    uint32_t n_ctx()         const;
-    uint32_t n_ctx_per_seq() const;
-    uint32_t n_batch()       const;
-    uint32_t n_ubatch()      const;
-    uint32_t n_seq_max()     const;
+    uint32_t n_ctx()     const;
+    uint32_t n_ctx_seq() const;
+    uint32_t n_batch()   const;
+    uint32_t n_ubatch()  const;
+    uint32_t n_seq_max() const;
 
     uint32_t n_threads()       const;
     uint32_t n_threads_batch() const;
@@ -47,9 +74,7 @@ struct llama_context {
     llama_memory_t get_memory() const;
 
     
-    
-    bool kv_self_update(bool optimize);
-    void kv_self_defrag_sched();
+    bool memory_update(bool optimize);
 
     enum llama_pooling_type pooling_type() const;
 
@@ -59,6 +84,23 @@ struct llama_context {
     float * get_embeddings();
     float * get_embeddings_ith(int32_t i);
     float * get_embeddings_seq(llama_seq_id seq_id);
+
+    float * get_embeddings_nextn();
+    float * get_embeddings_nextn_ith(int32_t i);
+
+    float * get_embeddings_layer_inp(uint32_t lid);
+
+    llama_token * get_sampled_tokens() const;
+    llama_token   get_sampled_token_ith(int32_t idx);
+
+    float * get_sampled_logits_ith(int32_t idx);
+    size_t  get_sampled_logits_count(int32_t idx);
+
+    float * get_sampled_probs_ith(int32_t idx);
+    size_t  get_sampled_probs_count(int32_t idx);
+
+    const llama_token * get_sampled_candidates_ith(int32_t idx);
+    size_t get_sampled_candidates_count(int32_t idx);
 
     void attach_threadpool(
             ggml_threadpool_t threadpool,
@@ -71,19 +113,16 @@ struct llama_context {
     void set_abort_callback(bool (*abort_callback)(void * data), void * abort_callback_data);
 
     void set_embeddings (bool value);
+    void set_embeddings_nextn(bool value, bool masked);
+    void set_embeddings_layer_inp(uint32_t lid, bool enable);
     void set_causal_attn(bool value);
     void set_warmup(bool value);
 
-    void set_adapter_lora(
-            llama_adapter_lora * adapter,
-            float scale);
+    void set_adapters_lora(llama_adapter_lora ** adapters, size_t n_adapters, float * scales);
 
-    bool rm_adapter_lora(
-            llama_adapter_lora * adapter);
+    bool adapters_lora_are_same(llama_adapter_lora ** adapters, size_t n_adapters, float * scales);
 
-    void clear_adapter_lora();
-
-    bool apply_adapter_cvec(
+    bool set_adapter_cvec(
             const float * data,
                  size_t   len,
                 int32_t   n_embd,
@@ -112,6 +151,7 @@ struct llama_context {
     size_t state_set_data(const uint8_t * src, size_t size);
 
     size_t state_seq_get_size(llama_seq_id seq_id, llama_state_seq_flags flags);
+
     size_t state_seq_get_data(llama_seq_id seq_id,       uint8_t * dst, size_t size, llama_state_seq_flags flags);
     size_t state_seq_set_data(llama_seq_id seq_id, const uint8_t * src, size_t size, llama_state_seq_flags flags);
 
@@ -145,6 +185,8 @@ struct llama_context {
 
     llama_perf_context_data perf_get_data() const;
     void perf_reset();
+
+    llama_memory_breakdown memory_breakdown() const;
 
     
     
@@ -185,11 +227,18 @@ private:
     void output_reorder();
 
     
+    int64_t output_resolve_row(int32_t i) const;
+
+    
+    
+    void extract_layer_inputs(const llm_graph_result * res, size_t token_offset, size_t n_tokens);
+
+    
     
     
 
 public:
-    uint32_t graph_max_nodes() const;
+    uint32_t graph_max_nodes(uint32_t n_tokens) const;
 
     
     llm_graph_result * get_gf_res_reserve() const;
@@ -198,7 +247,10 @@ public:
     ggml_status graph_compute(ggml_cgraph * gf, bool batched);
 
     
-    ggml_cgraph * graph_reserve(uint32_t n_tokens, uint32_t n_seqs, uint32_t n_outputs, const llama_memory_context_i * mctx);
+    ggml_cgraph * graph_reserve(
+        uint32_t n_tokens, uint32_t n_seqs, uint32_t n_outputs, const llama_memory_context_i * mctx, bool split_only = false, size_t * sizes = nullptr);
+
+    bool set_sampler(llama_seq_id seq_id, llama_sampler * sampler);
 
 private:
     llm_graph_params graph_params(
@@ -222,25 +274,49 @@ private:
 
     const llama_model & model;
 
-    llama_cparams       cparams;
-    llama_adapter_cvec  cvec;
-    llama_adapter_loras loras;
+    llama_cparams cparams;
+
+    llama_adapter_cvec_ptr  cvec;
+    llama_adapter_loras_ptr loras;
 
     llama_cross cross; 
 
-    std::unique_ptr<llama_memory_i> memory;
+    llama_memory_ptr memory;
 
     
-    bool memory_force_optimize = false;
-
-    
-    size_t  logits_size = 0; 
-    float * logits      = nullptr;
+    buffer_view<float> logits = {nullptr, 0};
 
     
     
-    size_t  embd_size = 0; 
-    float * embd      = nullptr;
+    buffer_view<float> embd = {nullptr, 0};
+
+    
+    
+    
+    buffer_view<float> embd_nextn = {nullptr, 0};
+
+    
+    
+    std::vector<buffer_view<float>> embd_layer_inp;
+
+    struct sampling_info {
+        
+        std::map<llama_seq_id, llama_sampler *> samplers;
+
+        buffer_view<float>       logits     = {nullptr, 0};
+        buffer_view<llama_token> sampled    = {nullptr, 0};
+        buffer_view<float>       probs      = {nullptr, 0};
+        buffer_view<llama_token> candidates = {nullptr, 0};
+
+        std::vector<uint32_t> logits_count;
+        std::vector<uint32_t> probs_count;
+        std::vector<uint32_t> candidates_count;
+
+        
+        std::vector<llama_token> token_ids_full_vocab;
+    };
+
+    sampling_info sampling;
 
     
     
@@ -262,6 +338,8 @@ private:
 
     ggml_backend_sched_ptr sched;
 
+    bool sched_need_reserve = true;
+
     ggml_backend_t backend_cpu = nullptr;
     std::vector<ggml_backend_ptr> backends;
 
@@ -279,6 +357,7 @@ private:
     
     std::vector<ggml_backend_t>             backend_ptrs;
     std::vector<ggml_backend_buffer_type_t> backend_buft;
+    std::vector<size_t>                     backend_buf_exp_size; 
 
     llm_graph_result_ptr gf_res_prev;
     llm_graph_result_ptr gf_res_reserve;
@@ -286,11 +365,10 @@ private:
     
     ggml_backend_buffer_ptr buf_output;
 
-    bool has_evaluated_once = false;
+    
+    std::map<llama_seq_id, llama_memory_buffers> mem_storage;
 
-    
-    
-    bool supports_set_rows = true;
+    bool has_evaluated_once = false;
 
     
     bool graph_reuse_disable = false;

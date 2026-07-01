@@ -4,6 +4,7 @@
 #include "llama-graph.h"
 #include "llama-memory.h"
 
+#include <map>
 #include <set>
 #include <vector>
 
@@ -15,18 +16,15 @@
 
 class llama_memory_recurrent : public llama_memory_i {
 public:
-
-    
-    using layer_filter_cb = std::function<bool(int32_t il)>;
-
     llama_memory_recurrent(
-            const llama_model &  model,
-              layer_filter_cb && filter,
-                    ggml_type    type_r,
-                    ggml_type    type_s,
-                         bool    offload,
-                     uint32_t    mem_size,
-                     uint32_t    n_seq_max);
+            const llama_model & model,
+                    ggml_type   type_r,
+                    ggml_type   type_s,
+                         bool   offload,
+                     uint32_t   mem_size,
+                     uint32_t   n_seq_max,
+                     uint32_t   n_rs_seq,
+        const layer_filter_cb & filter);
 
     ~llama_memory_recurrent() = default;
 
@@ -54,6 +52,8 @@ public:
     llama_pos seq_pos_min(llama_seq_id seq_id) const override;
     llama_pos seq_pos_max(llama_seq_id seq_id) const override;
 
+    std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const override;
+
     bool prepare(const std::vector<llama_ubatch> & ubatches);
 
     
@@ -69,6 +69,14 @@ public:
     uint32_t head = 0; 
     uint32_t size = 0; 
     uint32_t used = 0; 
+
+    
+    uint32_t n_rs_seq = 0;
+
+    
+    std::vector<uint32_t> rs_idx;
+
+    void set_rs_idx(llama_seq_id seq_id, uint32_t idx);
 
     
     uint32_t n = 0;
@@ -110,8 +118,8 @@ private:
 
     const uint32_t n_seq_max = 1;
 
-    std::vector<ggml_context_ptr>        ctxs;
-    std::vector<ggml_backend_buffer_ptr> bufs;
+    
+    std::vector<std::pair<ggml_context_ptr, ggml_backend_buffer_ptr>> ctxs_bufs;
 
     size_t total_size() const;
 

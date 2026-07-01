@@ -1,6 +1,6 @@
 #pragma once
 
-#include "llama-kv-cache-unified.h"
+#include "llama-kv-cache.h"
 
 #include <vector>
 
@@ -11,22 +11,25 @@
 
 
 
-class llama_kv_cache_unified_iswa : public llama_memory_i {
+
+class llama_kv_cache_dsa : public llama_memory_i {
 public:
-    llama_kv_cache_unified_iswa(
+    llama_kv_cache_dsa(
             const llama_model & model,
                     ggml_type   type_k,
                     ggml_type   type_v,
                          bool   v_trans,
                          bool   offload,
-                         bool   swa_full,
                          bool   unified,
                      uint32_t   kv_size,
                      uint32_t   n_seq_max,
-                     uint32_t   n_ubatch,
-                     uint32_t   n_pad);
+                     uint32_t   n_pad,
+                     uint32_t   n_swa,
+               llama_swa_type   swa_type,
+        const layer_filter_cb & filter,
+        const  layer_reuse_cb & reuse);
 
-    ~llama_kv_cache_unified_iswa() = default;
+    ~llama_kv_cache_dsa() = default;
 
     
     
@@ -54,6 +57,8 @@ public:
     llama_pos seq_pos_min(llama_seq_id seq_id) const override;
     llama_pos seq_pos_max(llama_seq_id seq_id) const override;
 
+    std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const override;
+
     
 
     void state_write(llama_io_write_i & io, llama_seq_id seq_id = -1, llama_state_seq_flags flags = 0) const override;
@@ -63,43 +68,43 @@ public:
     
     
 
-    llama_kv_cache_unified * get_base() const;
-    llama_kv_cache_unified * get_swa () const;
+    llama_kv_cache * get_mla() const;
+    llama_kv_cache * get_lid() const;
 
 private:
-    const llama_hparams & hparams;
+    
+    llama_hparams hparams_lid;
+    const uint32_t n_stream  = 1;
 
-    const bool unified;
-
-    std::unique_ptr<llama_kv_cache_unified> kv_base;
-    std::unique_ptr<llama_kv_cache_unified> kv_swa;
+    std::unique_ptr<llama_kv_cache> kv_mla;
+    std::unique_ptr<llama_kv_cache> kv_lid;
 };
 
-class llama_kv_cache_unified_iswa_context : public llama_memory_context_i {
+class llama_kv_cache_dsa_context : public llama_memory_context_i {
 public:
-    using slot_info_vec_t = llama_kv_cache_unified::slot_info_vec_t;
+    using slot_info_vec_t = llama_kv_cache::slot_info_vec_t;
 
     
-    llama_kv_cache_unified_iswa_context(llama_memory_status status);
+    llama_kv_cache_dsa_context(llama_memory_status status);
 
     
-    llama_kv_cache_unified_iswa_context(
-            llama_kv_cache_unified_iswa * kv);
+    llama_kv_cache_dsa_context(
+            llama_kv_cache_dsa * kv);
 
     
-    llama_kv_cache_unified_iswa_context(
-            llama_kv_cache_unified_iswa * kv,
+    llama_kv_cache_dsa_context(
+            llama_kv_cache_dsa * kv,
             llama_context * lctx,
             bool optimize);
 
     
-    llama_kv_cache_unified_iswa_context(
-            llama_kv_cache_unified_iswa * kv,
+    llama_kv_cache_dsa_context(
+            llama_kv_cache_dsa * kv,
             slot_info_vec_t sinfos_base,
-            slot_info_vec_t sinfos_swa,
+            slot_info_vec_t sinfos_ik,
             std::vector<llama_ubatch> ubatches);
 
-    virtual ~llama_kv_cache_unified_iswa_context();
+    virtual ~llama_kv_cache_dsa_context();
 
     
     
@@ -115,8 +120,8 @@ public:
     
     
 
-    const llama_kv_cache_unified_context * get_base() const;
-    const llama_kv_cache_unified_context * get_swa()  const;
+    const llama_kv_cache_context * get_mla() const;
+    const llama_kv_cache_context * get_lid()  const;
 
 private:
     
@@ -126,8 +131,8 @@ private:
 
     std::vector<llama_ubatch> ubatches;
 
-    const llama_memory_context_ptr ctx_base;
-    const llama_memory_context_ptr ctx_swa;
+    const llama_memory_context_ptr ctx_mla;
+    const llama_memory_context_ptr ctx_lid;
 
     const llama_memory_status status;
 };

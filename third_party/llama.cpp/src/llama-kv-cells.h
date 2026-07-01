@@ -5,17 +5,36 @@
 
 #include <bitset>
 #include <cassert>
-#include <vector>
-#include <set>
+#include <cstring>
 #include <map>
+#include <set>
+#include <vector>
+
+struct llama_kv_cell_ext {
+    
+    llama_pos x = 0;
+    llama_pos y = 0;
+
+    
+    bool is_2d_gt(llama_pos ox, llama_pos oy) const {
+        return (y > oy) || (y == oy && x > ox);
+    }
+
+    void reset() {
+        static_assert(std::is_trivially_copyable_v<llama_kv_cell_ext>);
+
+        memset(this, 0, sizeof(*this));
+    }
+};
 
 
 
-class llama_kv_cells_unified {
+class llama_kv_cells {
 public:
     void reset() {
         for (uint32_t i = 0; i < pos.size(); ++i) {
             pos[i]   = -1;
+            ext[i].reset();
             shift[i] =  0;
             seq[i].reset();
         }
@@ -43,6 +62,7 @@ public:
 
     void resize(uint32_t n) {
         pos.resize(n);
+        ext.resize(n);
         shift.resize(n);
         seq.resize(n);
 
@@ -77,30 +97,30 @@ public:
     }
 
     
-    void mv(uint32_t isrc, uint32_t idst) {
-        assert(isrc < pos.size());
-        assert(idst < pos.size());
-
-        assert(pos[idst] == -1);
-        assert(pos[isrc] != -1);
-
-        pos  [idst] = pos  [isrc];
-        shift[idst] = shift[isrc];
-        seq  [idst] = seq  [isrc];
-
-        pos  [isrc] = -1;
-        shift[isrc] =  0;
-        seq  [isrc].reset();
-
-        used.erase (isrc);
-        used.insert(idst);
-    }
+    
+    
+    
 
     
-    llama_kv_cells_unified cp(uint32_t i, uint32_t n) const {
+    
+
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+    
+
+    
+    llama_kv_cells cp(uint32_t i, uint32_t n) const {
         assert(i + n <= pos.size());
 
-        llama_kv_cells_unified res;
+        llama_kv_cells res;
 
         res.resize(n);
 
@@ -108,6 +128,7 @@ public:
             const auto idx = i + j;
 
             res.pos[j] = pos[idx];
+            res.ext[j] = ext[idx];
             res.seq[j] = seq[idx];
 
             assert(shift[idx] == 0);
@@ -117,8 +138,8 @@ public:
     }
 
     
-    llama_kv_cells_unified cp(const std::vector<uint32_t> & idxs) const {
-        llama_kv_cells_unified res;
+    llama_kv_cells cp(const std::vector<uint32_t> & idxs) const {
+        llama_kv_cells res;
 
         res.resize(idxs.size());
 
@@ -126,6 +147,7 @@ public:
             const auto idx = idxs[j];
 
             res.pos[j] = pos[idx];
+            res.ext[j] = ext[idx];
             res.seq[j] = seq[idx];
 
             assert(shift[idx] == 0);
@@ -135,7 +157,7 @@ public:
     }
 
     
-    void set(uint32_t i, const llama_kv_cells_unified & other) {
+    void set(uint32_t i, const llama_kv_cells & other) {
         assert(i + other.pos.size() <= pos.size());
 
         for (uint32_t j = 0; j < other.pos.size(); ++j) {
@@ -154,6 +176,7 @@ public:
             }
 
             pos[idx] = other.pos[j];
+            ext[idx] = other.ext[j];
             seq[idx] = other.seq[j];
 
             if (pos[idx] != -1) {
@@ -165,7 +188,7 @@ public:
     }
 
     
-    void set(const std::vector<uint32_t> & idxs, const llama_kv_cells_unified & other) {
+    void set(const std::vector<uint32_t> & idxs, const llama_kv_cells & other) {
         assert(idxs.size() == other.pos.size());
 
         for (uint32_t j = 0; j < other.pos.size(); ++j) {
@@ -184,6 +207,7 @@ public:
             }
 
             pos[idx] = other.pos[j];
+            ext[idx] = other.ext[j];
             seq[idx] = other.seq[j];
 
             if (pos[idx] != -1) {
@@ -203,6 +227,7 @@ public:
         seq[i].reset();
 
         pos[i] = -1;
+        ext[i].reset();
         shift[i] = 0;
 
         used.erase(i);
@@ -221,6 +246,7 @@ public:
 
         if (seq[i].none()) {
             pos[i] = -1;
+            ext[i].reset();
             shift[i] = 0;
 
             used.erase(i);
@@ -250,6 +276,7 @@ public:
             seq[i].reset();
 
             pos[i] = -1;
+            ext[i].reset();
             shift[i] = 0;
 
             used.erase(i);
@@ -340,6 +367,13 @@ public:
         return pos[i];
     }
 
+    const llama_kv_cell_ext & ext_get(uint32_t i) const {
+        assert(i < pos.size());
+        assert(pos[i] != -1);
+
+        return ext[i];
+    }
+
     
     llama_pos get_shift(uint32_t i) const {
         assert(i < pos.size());
@@ -366,6 +400,11 @@ public:
         pos[i] = p;
 
         used.insert(i);
+    }
+
+    void ext_set(uint32_t i, llama_kv_cell_ext p) {
+        assert(i < ext.size());
+        ext[i] = p;
     }
 
     
@@ -423,6 +462,9 @@ private:
     std::set<uint32_t> used;
 
     std::vector<llama_pos> pos;
+
+    
+    std::vector<llama_kv_cell_ext> ext;
 
     
     
@@ -489,3 +531,5 @@ private:
         }
     }
 };
+
+using llama_kv_cells_vec = std::vector<llama_kv_cells>;

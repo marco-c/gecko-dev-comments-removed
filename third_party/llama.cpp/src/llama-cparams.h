@@ -3,14 +3,18 @@
 #include "llama.h"
 
 #include <cstdint>
+#include <vector>
 
-#define LLAMA_MAX_SEQ 64
+#define LLAMA_MAX_SEQ 256
 
 struct llama_cparams {
     uint32_t n_ctx;           
+    uint32_t n_ctx_seq;       
     uint32_t n_batch;
     uint32_t n_ubatch;
     uint32_t n_seq_max;
+    uint32_t n_rs_seq;        
+    uint32_t n_outputs_max;   
     int32_t  n_threads;       
     int32_t  n_threads_batch; 
 
@@ -24,19 +28,30 @@ struct llama_cparams {
     float yarn_attn_factor;
     float yarn_beta_fast;
     float yarn_beta_slow;
-    float defrag_thold;
 
     bool embeddings;
+    bool embeddings_nextn;        
+    bool embeddings_nextn_masked; 
     bool causal_attn;
     bool offload_kqv;
     bool flash_attn;
+    bool auto_fa;
+    bool fused_gdn_ar;       
+    bool fused_gdn_ch;       
+    bool auto_fgdn;
     bool no_perf;
-    bool warmup;
+    bool warmup;             
     bool op_offload;
     bool kv_unified;
+    bool pipeline_parallel;
 
+    std::vector<bool> embeddings_layer_inp; 
+
+    enum llama_context_type ctx_type;
     enum llama_pooling_type pooling_type;
 
     ggml_backend_sched_eval_callback cb_eval;
     void * cb_eval_user_data;
+
+    llama_context * ctx_other;
 };
