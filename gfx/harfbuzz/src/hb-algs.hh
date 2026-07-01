@@ -1220,6 +1220,62 @@ hb_unsigned_add_overflows (unsigned int a, unsigned int b, unsigned *result = nu
 
 
 
+
+
+static inline size_t
+hb_unsigned_mul_saturate (size_t a, size_t b)
+{
+  if (sizeof (size_t) > sizeof (unsigned int))
+    return a * b;
+#if hb_has_builtin(__builtin_mul_overflow)
+  size_t result;
+  if (__builtin_mul_overflow (a, b, &result))
+    return (size_t) -1;
+  return result;
+#else
+  if (b > 0 && a > ((size_t) -1) / b) return (size_t) -1;
+  return a * b;
+#endif
+}
+
+static inline size_t
+hb_unsigned_add_saturate (size_t a, size_t b)
+{
+  if (sizeof (size_t) > sizeof (unsigned int))
+    return a + b;
+#if hb_has_builtin(__builtin_add_overflow)
+  size_t result;
+  if (__builtin_add_overflow (a, b, &result))
+    return (size_t) -1;
+  return result;
+#else
+  if (b > ((size_t) -1) - a) return (size_t) -1;
+  return a + b;
+#endif
+}
+
+
+template <typename ...Ts>
+static inline size_t
+hb_unsigned_mul_saturate (size_t a, size_t b, size_t c, Ts... rest)
+{ return hb_unsigned_mul_saturate (hb_unsigned_mul_saturate (a, b), c, rest...); }
+
+template <typename ...Ts>
+static inline size_t
+hb_unsigned_add_saturate (size_t a, size_t b, size_t c, Ts... rest)
+{ return hb_unsigned_add_saturate (hb_unsigned_add_saturate (a, b), c, rest...); }
+
+
+
+static inline size_t
+hb_unsigned_mul_add_saturate (size_t a, size_t b, size_t c)
+{ return hb_unsigned_add_saturate (hb_unsigned_mul_saturate (a, b), c); }
+
+
+
+
+
+
 template <typename K, typename V, typename ...Ts>
 static int
 _hb_cmp_method (const void *pkey, const void *pval, Ts... ds)
@@ -1321,125 +1377,69 @@ hb_bsearch (const K& key, V* base,
 
 
 
-
-
-
-
-#define SORT_R_SWAP(a,b,tmp) ((void) ((tmp) = (a)), (void) ((a) = (b)), (b) = (tmp))
-
-
-
-static inline void sort_r_swap(char *__restrict a, char *__restrict b,
-                               size_t w)
+template <typename T, typename Compar>
+static inline void
+hb_qsort_loop (T *base, size_t nel, Compar compar)
 {
-  char tmp, *end = a+w;
-  for(; a < end; a++, b++) { SORT_R_SWAP(*a, *b, tmp); }
-}
-
-
-
-
-template <typename Compar>
-static inline int sort_r_cmpswap(char *__restrict a,
-                                 char *__restrict b, size_t w,
-                                 Compar compar)
-{
-  if(compar(a, b) > 0) {
-    sort_r_swap(a, b, w);
-    return 1;
-  }
-  return 0;
-}
-
-
-
-
-
-
-
-
-
-static inline void sort_r_swap_blocks(char *ptr, size_t na, size_t nb)
-{
-  if(na > 0 && nb > 0) {
-    if(na > nb) { sort_r_swap(ptr, ptr+na, nb); }
-    else { sort_r_swap(ptr, ptr+nb, na); }
-  }
-}
-
-
-
-template <typename Compar>
-static inline void sort_r_simple(void *base, size_t nel, size_t w,
-                                 Compar compar)
-{
-  char *b = (char *)base, *end = b + nel*w;
-
-  if(nel < 10) {
-    
-    char *pi, *pj;
-    for(pi = b+w; pi < end; pi += w) {
-      for(pj = pi; pj > b && sort_r_cmpswap(pj-w,pj,w,compar); pj -= w) {}
-    }
-  }
-  else
+  while (nel > 24)
   {
+    T *last = base + nel - 1;
+    T *mid = base + nel / 2;
+
+    
+    if (compar (*base, *mid) > 0) hb_swap (*base, *mid);
+    if (compar (*mid, *last) > 0)
+    {
+      hb_swap (*mid, *last);
+      if (compar (*base, *mid) > 0) hb_swap (*base, *mid);
+    }
+    hb_swap (*mid, *(last - 1));
+    T &pivot = *(last - 1);
+
     
 
-    int cmp;
-    char *pl, *ple, *pr, *pre, *pivot;
-    char *last = b+w*(nel-1), *tmp;
 
-    char *l[3];
-    l[0] = b + w;
-    l[1] = b+w*(nel/2);
-    l[2] = last - w;
-
-    if(compar(l[0],l[1]) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
-    if(compar(l[1],l[2]) > 0) {
-      SORT_R_SWAP(l[1], l[2], tmp);
-      if(compar(l[0],l[1]) > 0) { SORT_R_SWAP(l[0], l[1], tmp); }
+    T *i = base, *j = last - 1;
+    while (true)
+    {
+      while (compar (*++i, pivot) < 0) {}
+      while (compar (*--j, pivot) > 0) {}
+      if (i >= j) break;
+      hb_swap (*i, *j);
     }
+    hb_swap (*i, *(last - 1));
 
-    if(l[1] != last) { sort_r_swap(l[1], last, w); }
+    
 
-    pivot = last;
-    ple = pl = b;
-    pre = pr = last;
-
-    while(pl < pr) {
-      for(; pl < pr; pl += w) {
-        cmp = compar(pl, pivot);
-        if(cmp > 0) { break; }
-        else if(cmp == 0) {
-          if(ple < pl) { sort_r_swap(ple, pl, w); }
-          ple += w;
-        }
-      }
-      if(pl >= pr) { break; }
-      for(; pl < pr; ) {
-        pr -= w;
-        cmp = compar(pr, pivot);
-        if(cmp == 0) {
-          pre -= w;
-          if(pr < pre) { sort_r_swap(pr, pre, w); }
-        }
-        else if(cmp < 0) {
-          if(pl < pr) { sort_r_swap(pl, pr, w); }
-          pl += w;
-          break;
-        }
-      }
+    size_t left  = (size_t) (i - base);
+    size_t right = nel - left - 1;
+    if (left < right)
+    {
+      hb_qsort_loop (base, left, compar);
+      base = i + 1;
+      nel  = right;
     }
-
-    pl = pr;
-
-    sort_r_swap_blocks(b, ple-b, pl-ple);
-    sort_r_swap_blocks(pr, pre-pr, end-pre);
-
-    sort_r_simple(b, (pl-ple)/w, w, compar);
-    sort_r_simple(end-(pre-pr), (pre-pr)/w, w, compar);
+    else
+    {
+      hb_qsort_loop (i + 1, right, compar);
+      nel  = left;
+    }
   }
+}
+
+template <typename T, typename Compar>
+static inline void
+hb_qsort_inline (T *base, size_t nel, Compar compar)
+{
+  hb_qsort_loop (base, nel, compar);
+
+  
+
+
+  T *end = base + nel;
+  for (T *pi = base + 1; pi < end; pi++)
+    for (T *pj = pi; pj > base && compar (pj[-1], pj[0]) > 0; pj--)
+      hb_swap (pj[-1], pj[0]);
 }
 
 static inline void

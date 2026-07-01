@@ -280,7 +280,7 @@ static const struct ligature_set_t {
  struct ligature_pairs_t {
    uint16_t components[1];
    uint16_t ligature;
- } ligatures[14];
+ } ligatures[15];
 } ligature_table[] =
 {
   { 0xFE91u, {
@@ -337,6 +337,7 @@ static const struct ligature_set_t {
     { {0xFEA8u}, 0xFCCBu }, 
     { {0xFEE2u}, 0xFC42u }, 
     { {0xFEE4u}, 0xFCCCu }, 
+    { {0xFEF0u}, 0xFC43u }, 
     { {0xFEF2u}, 0xFC44u }, 
     { {0xFEECu}, 0xFCCDu }, 
     { {0xFE82u}, 0xFEF5u }, 

@@ -45,6 +45,8 @@ hb_ot_old_tag_from_script (hb_script_t script)
 
     
     case HB_SCRIPT_HIRAGANA:		return HB_TAG('k','a','n','a');
+    case HB_TAG('H','r','k','t'):
+					return HB_TAG('k','a','n','a');
 
     
     case HB_SCRIPT_LAO:			return HB_TAG('l','a','o',' ');
