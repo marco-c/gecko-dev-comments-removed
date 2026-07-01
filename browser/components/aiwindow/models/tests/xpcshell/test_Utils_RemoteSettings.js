@@ -2,13 +2,13 @@
 
 
 
-const { openAIEngine, parseVersion, FEATURE_MAJOR_VERSIONS } =
+const { getRemoteClient, parseVersion, FEATURE_MAJOR_VERSIONS } =
   ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
   );
 
 add_task(async function test_feature_major_versions_in_dump() {
-  const client = openAIEngine.getRemoteClient();
+  const client = getRemoteClient();
   const records = await client.get();
   for (const [feature, majorVersion] of Object.entries(
     FEATURE_MAJOR_VERSIONS

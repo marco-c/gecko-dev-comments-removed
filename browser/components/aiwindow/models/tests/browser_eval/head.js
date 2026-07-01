@@ -40,13 +40,12 @@ async function setupEvaluation({ url, waitForLoad = true }) {
 
 
 
-
-async function collectChatResponse(conversation, engineInstance) {
+async function collectChatResponse(conversation) {
   const { Chat } = ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
   );
-  await Chat.fetchWithHistory({ conversation, engineInstance });
-  const messages = conversation.getMessagesInOpenAiFormat();
+  await Chat.fetchWithHistory({ conversation });
+  const messages = conversation.getMessagesInChatCompletionsFormat();
   const lastAssistant = messages.findLast(msg => msg.role === "assistant");
   const responseText = lastAssistant?.content ?? "";
   const toolCalls = messages

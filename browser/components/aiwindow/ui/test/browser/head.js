@@ -28,6 +28,11 @@ const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
 );
 
+const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
+
 
 
 
@@ -40,7 +45,6 @@ const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
 
 let gIntentEngineStub;
-let gRemoteClientStub;
 
 
 
@@ -137,14 +141,15 @@ add_setup(async function () {
   registerCleanupFunction(() => gIntentEngineStub.restore());
 
   
-  gRemoteClientStub = sinon
-    .stub(openAIEngine, "getRemoteClient")
-    .returns({ get: async () => MOCK_RS_RECORDS });
-  registerCleanupFunction(() => gRemoteClientStub.restore());
+  _setRemoteClientForTesting({ get: async () => MOCK_RS_RECORDS });
+  registerCleanupFunction(() => _clearRemoteClientForTesting());
 
   
+  
   _setLoadPromptForTesting(async () => "Test system prompt.");
-  registerCleanupFunction(() => _setLoadPromptForTesting(null));
+  registerCleanupFunction(() => {
+    _setLoadPromptForTesting(null);
+  });
 });
 
 
