@@ -399,8 +399,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
 
   
   bool HasChannel() const {
-    
-    
+    RTC_DCHECK_RUN_ON(thread_);
     return channel_ != nullptr;
   }
 
