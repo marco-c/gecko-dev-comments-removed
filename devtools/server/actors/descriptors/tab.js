@@ -332,6 +332,14 @@ class TabDescriptorActor extends Actor {
     );
   }
 
+  
+  
+  
+  
+  swapBrowser(newBrowser) {
+    this._browser = newBrowser;
+  }
+
   destroy() {
     this.emit("descriptor-destroyed");
     this._browser = null;

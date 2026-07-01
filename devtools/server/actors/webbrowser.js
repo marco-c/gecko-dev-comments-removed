@@ -546,7 +546,18 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
     case "TabClose": {
       const actor = this._actorByBrowser.get(browser);
       if (actor) {
-        this._handleActorClose(actor, browser);
+        
+        
+        
+        const { adoptedBy } = event.detail;
+        if (adoptedBy) {
+          actor.swapBrowser(adoptedBy.linkedBrowser);
+          
+          this._actorByBrowser.delete(browser);
+          this._actorByBrowser.set(adoptedBy.linkedBrowser, actor);
+        } else {
+          this._handleActorClose(actor, browser);
+        }
       }
       break;
     }
@@ -658,8 +669,7 @@ BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function (
 
 
       for (const [browser, actor] of this._actorByBrowser) {
-        
-        if (!browser.ownerGlobal) {
+        if (!browser.ownerDocument.isActive()) {
           this._handleActorClose(actor, browser);
         }
       }
