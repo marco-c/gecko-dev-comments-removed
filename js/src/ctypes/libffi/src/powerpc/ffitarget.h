@@ -150,6 +150,16 @@ typedef enum ffi_abi {
 # define FFI_GO_CLOSURES 1
 #endif
 
+
+
+
+
+
+
+#if defined(POWERPC64) && _CALL_ELF == 2
+# define FFI_TARGET_HAS_COMPLEX_TYPE
+#endif
+
 #if _CALL_ELF == 2
 # define FFI_TRAMPOLINE_SIZE 32
 #else

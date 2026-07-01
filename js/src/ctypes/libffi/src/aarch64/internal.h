@@ -91,10 +91,10 @@
   #define SIGN_LR_LINUX_ONLY
   #define BRANCH_TO_REG braaz
   #define PAC_CFI_WINDOW_SAVE
-  #define GNU_PROPERTY_AARCH64_POINTER_AUTH 0
+  #define AARCH64_POINTER_AUTH 0
   
   #elif defined(__ARM_FEATURE_PAC_DEFAULT)
-    #define GNU_PROPERTY_AARCH64_POINTER_AUTH (1 << 1)
+    #define AARCH64_POINTER_AUTH (1 << 1)
     #define PAC_CFI_WINDOW_SAVE cfi_window_save
     #define TMP_REG x9
     #define BRANCH_TO_REG br
@@ -141,6 +141,6 @@
     #define SIGN_LR_LINUX_ONLY
     #define BRANCH_TO_REG br
     #define PAC_CFI_WINDOW_SAVE
-    #define GNU_PROPERTY_AARCH64_POINTER_AUTH 0
+    #define AARCH64_POINTER_AUTH 0
   #endif 
 #endif 

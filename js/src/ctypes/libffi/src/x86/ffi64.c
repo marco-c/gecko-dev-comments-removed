@@ -109,6 +109,20 @@ enum x86_64_reg_class
 
 
 
+#if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE \
+    && defined(__LDBL_MANT_DIG__) && __LDBL_MANT_DIG__ == 113
+# define FFI_LONGDOUBLE_BINARY128 1
+#else
+# define FFI_LONGDOUBLE_BINARY128 0
+#endif
+
+
+
+
+
+
+
+
 static enum x86_64_reg_class
 merge_classes (enum x86_64_reg_class class1, enum x86_64_reg_class class2)
 {
@@ -213,8 +227,14 @@ classify_argument (ffi_type *type, enum x86_64_reg_class classes[],
       return 1;
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
     case FFI_TYPE_LONGDOUBLE:
+#if FFI_LONGDOUBLE_BINARY128
+      
+      classes[0] = X86_64_SSE_CLASS;
+      classes[1] = X86_64_SSEUP_CLASS;
+#else
       classes[0] = X86_64_X87_CLASS;
       classes[1] = X86_64_X87UP_CLASS;
+#endif
       return 2;
 #endif
     case FFI_TYPE_STRUCT:
@@ -341,8 +361,13 @@ classify_argument (ffi_type *type, enum x86_64_reg_class classes[],
 	    return 2;
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 	  case FFI_TYPE_LONGDOUBLE:
+#if FFI_LONGDOUBLE_BINARY128
+	    
+	    return 0;
+#else
 	    classes[0] = X86_64_COMPLEX_X87_CLASS;
 	    return 1;
+#endif
 #endif
 	  }
       }
@@ -466,7 +491,11 @@ ffi_prep_cif_machdep (ffi_cif *cif)
       break;
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
     case FFI_TYPE_LONGDOUBLE:
+#if FFI_LONGDOUBLE_BINARY128
+      flags = UNIX64_RET_XMM128;	
+#else
       flags = UNIX64_RET_X87;
+#endif
       break;
 #endif
     case FFI_TYPE_STRUCT:
@@ -524,7 +553,13 @@ ffi_prep_cif_machdep (ffi_cif *cif)
 	  break;
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 	case FFI_TYPE_LONGDOUBLE:
+#if FFI_LONGDOUBLE_BINARY128
+	  
+	  gprcount++;
+	  flags = UNIX64_RET_VOID | UNIX64_FLAG_RET_IN_MEM;
+#else
 	  flags = UNIX64_RET_X87_2;
+#endif
 	  break;
 #endif
 	case FFI_TYPE_SINT128:
@@ -648,7 +683,13 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *rvalue,
 	      switch (classes[j])
 		{
 		case X86_64_NO_CLASS:
+		  break;
 		case X86_64_SSEUP_CLASS:
+		  
+
+
+		  memcpy ((char *) &reg_args->sse[ssecount - 1] + 8, a,
+			  size < 8 ? size : 8);
 		  break;
 		case X86_64_INTEGER_CLASS:
 		case X86_64_INTEGERSI_CLASS:
@@ -905,7 +946,12 @@ ffi_closure_unix64_inner(ffi_cif *cif,
 	  avalue[i] = a;
 	  for (j = 0; j < n; j++, a += 8)
 	    {
-	      if (SSE_CLASS_P (classes[j]))
+	      if (classes[j] == X86_64_SSEUP_CLASS)
+		
+
+
+		memcpy (a, (char *) &reg_args->sse[ssecount - 1] + 8, 8);
+	      else if (SSE_CLASS_P (classes[j]))
 		memcpy (a, &reg_args->sse[ssecount++], 8);
 	      else
 		memcpy (a, &reg_args->gpr[gprcount++], 8);
