@@ -46,6 +46,15 @@ describe("Sanitize chat conversations", () => {
   beforeEach(async () => {
     await ChatStore.destroyDatabase();
     enableConsent();
+
+    
+    
+    
+    
+    
+    Cc["@mozilla.org/storage/activity-service;1"]
+      .getService(Ci.nsIStorageActivityService)
+      .testOnlyReset();
   });
 
   afterEach(async () => {
