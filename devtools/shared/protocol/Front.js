@@ -13,6 +13,20 @@ var {
   callFunctionWithAsyncStack,
 } = require("resource://devtools/shared/platform/stack.js");
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+
+
+
+const EVENT_MOZ_LOG_SYMBOL = {
+  toSource() {
+    return " \x1b[2m<-\x1b[0m ";
+  },
+};
+
 
 
 
@@ -338,6 +352,7 @@ class Front extends Pool {
     
     const type = packet.type || undefined;
     if (this._clientSpec.events && this._clientSpec.events.has(type)) {
+      logger.log(EVENT_MOZ_LOG_SYMBOL, packet);
       const event = this._clientSpec.events.get(packet.type);
       let args;
       try {
