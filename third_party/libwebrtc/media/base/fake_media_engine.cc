@@ -619,11 +619,13 @@ scoped_refptr<AudioState> FakeVoiceEngine::GetAudioState() const {
   return scoped_refptr<AudioState>();
 }
 std::unique_ptr<VoiceMediaSendChannelInterface>
-FakeVoiceEngine::CreateSendChannel(const Environment& ,
-                                   Call* call,
-                                   const MediaConfig& ,
-                                   const AudioOptions& options,
-                                   const CryptoOptions& ) {
+FakeVoiceEngine::CreateSendChannel(
+    const Environment& ,
+    Call* call,
+    const MediaConfig& ,
+    const AudioOptions& options,
+    const CryptoOptions& ,
+    absl::AnyInvocable<void()> ) {
   std::unique_ptr<FakeVoiceMediaSendChannel> ch =
       std::make_unique<FakeVoiceMediaSendChannel>(options,
                                                   call->network_thread());
@@ -702,7 +704,8 @@ FakeVideoEngine::CreateSendChannel(
     const CryptoOptions& ,
     VideoBitrateAllocatorFactory* ,
     VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
-    ) {
+    ,
+    absl::AnyInvocable<void()> ) {
   std::unique_ptr<FakeVideoMediaSendChannel> ch =
       std::make_unique<FakeVideoMediaSendChannel>(options,
                                                   call->network_thread());

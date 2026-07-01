@@ -122,6 +122,7 @@ class RtpSenderInternal : public RtpSenderInterface {
   virtual std::vector<Codec> GetSendCodecs() const = 0;
 
   virtual void NotifyFirstPacketSent() = 0;
+  virtual void OnParametersChanged() = 0;
 };
 
 
@@ -253,6 +254,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   std::vector<Codec> GetSendCodecs() const override { return send_codecs_; }
 
   void NotifyFirstPacketSent() override;
+  void OnParametersChanged() override;
   void SetObserver(RtpSenderObserverInterface* observer) override;
 
  protected:
@@ -261,9 +263,6 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     cached_parameters_.reset();
   }
 
-  
-  
-  void OnParametersChanged();
   
   
   
