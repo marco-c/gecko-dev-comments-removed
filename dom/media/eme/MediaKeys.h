@@ -111,7 +111,7 @@ class MediaKeys final : public nsIObserver,
 
   CDMProxy* GetCDMProxy() { return mProxy; }
 
-  nsIPrincipal* GetStoragePrincipal() const { return mStoragePrincipal; }
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
 
   
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
@@ -211,8 +211,6 @@ class MediaKeys final : public nsIObserver,
 
   
   RefPtr<nsIPrincipal> mPrincipal;
-  
-  RefPtr<nsIPrincipal> mStoragePrincipal;
   
   
   RefPtr<nsIPrincipal> mTopLevelPrincipal;

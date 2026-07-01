@@ -483,7 +483,6 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
     return promise.forget();
   }
   mPrincipal = sop->GetPrincipal();
-  mStoragePrincipal = sop->GetEffectiveStoragePrincipal();
 
   
   nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();
