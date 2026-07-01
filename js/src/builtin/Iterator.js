@@ -2232,6 +2232,8 @@ function IteratorJoin(separator) {
   return R;
 }
 
+#endif
+
 
 
 
@@ -2313,5 +2315,3 @@ function IteratorIncludes(searchElement, skippedElements = undefined) {
   
   return false;
 }
-
-#endif
