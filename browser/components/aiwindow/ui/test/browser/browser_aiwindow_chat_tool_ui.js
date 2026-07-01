@@ -152,7 +152,7 @@ add_task(async function test_website_confirmation_renders() {
       );
 
       
-      const parent = confirmation.parentElement.parentElement;
+      const parent = confirmation.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-website-confirmation should be inside assistant message bubble"
@@ -224,7 +224,7 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
       Assert.ok(actionResult, "ai-action-result component should be rendered");
 
       
-      const parent = actionResult.parentElement.parentElement;
+      const parent = actionResult.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
@@ -298,7 +298,7 @@ add_task(async function test_action_result_renders_for_restored_tabs() {
       );
 
       
-      const parent = actionResult.parentElement.parentElement;
+      const parent = actionResult.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
