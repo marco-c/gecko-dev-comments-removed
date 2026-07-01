@@ -27,6 +27,7 @@ config = {
         "800x1280",
         "-no-snapstorage",
         "-no-snapshot",
+        "-no-metrics",
         
         "-prop",
         "ro.test_harness=true",

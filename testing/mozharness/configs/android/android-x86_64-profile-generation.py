@@ -27,6 +27,7 @@ config = {
         "1080x1920",
         "-no-snapstorage",
         "-no-snapshot",
+        "-no-metrics",
         
         "-prop",
         "ro.test_harness=true",
