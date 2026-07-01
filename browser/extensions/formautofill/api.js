@@ -9,6 +9,7 @@
 const CACHED_STYLESHEETS = new WeakMap();
 
 ChromeUtils.defineESModuleGetters(this, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
   FormAutofillParent: "resource://autofill/FormAutofillParent.sys.mjs",
   FormAutofillStatus: "resource://autofill/FormAutofillParent.sys.mjs",
@@ -54,13 +55,14 @@ this.formautofill = class extends ExtensionAPI {
   
 
 
+  adjustAndCheckFormAutofillPrefs() {
+    const addressAutofillAvailable = FormAutofill.isAutofillTypeAvailable(
+      AutofillDataTypes.ADDRESS
+    );
+    const creditCardAutofillAvailable = FormAutofill.isAutofillTypeAvailable(
+      AutofillDataTypes.CREDIT_CARD
+    );
 
-
-
-  adjustAndCheckFormAutofillPrefs(
-    addressAutofillAvailable,
-    creditCardAutofillAvailable
-  ) {
     
     
     if (!creditCardAutofillAvailable) {
@@ -87,7 +89,7 @@ this.formautofill = class extends ExtensionAPI {
     
     
     
-    if (FormAutofill.isAutofillAddressesAvailable) {
+    if (addressAutofillAvailable) {
       Services.prefs.setBoolPref(
         "services.sync.engine.addresses.available",
         true
@@ -95,7 +97,7 @@ this.formautofill = class extends ExtensionAPI {
     } else {
       Services.prefs.clearUserPref("services.sync.engine.addresses.available");
     }
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
+    if (creditCardAutofillAvailable) {
       Services.prefs.setBoolPref(
         "services.sync.engine.creditcards.available",
         true
@@ -125,10 +127,7 @@ this.formautofill = class extends ExtensionAPI {
       ["content", "formautofill", "content/"],
     ]);
 
-    this.adjustAndCheckFormAutofillPrefs(
-      FormAutofill.isAutofillAddressesAvailable,
-      FormAutofill.isAutofillCreditCardsAvailable
-    );
+    this.adjustAndCheckFormAutofillPrefs();
 
     
     
