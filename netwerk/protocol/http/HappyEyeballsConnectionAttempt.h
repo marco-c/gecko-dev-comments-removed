@@ -262,6 +262,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsRefPtrHashtable<nsUint64HashKey, ConnectionEstablisher>
       mConnectionEstablisherTable;
+  
+  RefPtr<ConnectionEstablisherFactory> mEstablisherFactory;
   RefPtr<HttpConnectionBase> mOutputConn;
   
   
