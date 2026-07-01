@@ -2430,7 +2430,8 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
     EnumSet<ValidatePrincipalOptions> validationOptions = {};
     
     
-    if (docURI->SchemeIs("chrome") ||
+    
+    if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome") ||
         (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) &&
          GetParentWindowContext() &&
          GetParentWindowContext()->Manager()->Manager() == contentParent &&

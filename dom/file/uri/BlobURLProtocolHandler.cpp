@@ -898,10 +898,7 @@ bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
 
   nsDependentCSubstring originPart = blobURL->OriginPart();
   if (originPart == "system"_ns) {
-    
-    
-    
-    principal = NullPrincipal::Create(aAttrs);
+    principal = nsContentUtils::GetSystemPrincipal();
   } else if (originPart == "null"_ns) {
     
     
