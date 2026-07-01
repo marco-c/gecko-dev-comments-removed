@@ -47,7 +47,7 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
   
   
   static constexpr PayloadType NotSet() { return PayloadType(Internal{}, -1); }
-  bool Valid(bool rtcp_mux = false) {
+  bool Valid(bool rtcp_mux = false) const {
     
     
     
@@ -60,7 +60,7 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
   static bool IsValid(PayloadType id, bool rtcp_mux) {
     return id.Valid(rtcp_mux);
   }
-  bool IsSet() { return value() >= 0; }
+  bool IsSet() const { return value() >= 0; }
 
  private:
   class Internal {};
