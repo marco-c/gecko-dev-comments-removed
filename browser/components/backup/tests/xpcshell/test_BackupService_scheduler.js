@@ -47,6 +47,13 @@ add_setup(() => {
   
   
   sinon.stub(BackupService.prototype, "_startupTimeUnixSeconds").get(() => 0);
+
+  
+  
+  
+  
+  
+  sinon.stub(BackupService.prototype, "takeMeasurements").resolves();
 });
 
 
