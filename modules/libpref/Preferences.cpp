@@ -624,10 +624,6 @@ class Pref;
 static bool IsPreferenceSanitized(const Pref* const aPref);
 static bool ShouldSanitizePreference(const Pref* const aPref);
 
-
-
-static bool gContentProcessPrefsAreInited = false;
-
 class Pref {
  public:
   explicit Pref(const nsACString& aName)
@@ -1534,9 +1530,11 @@ class PreferencesImpl {
   
   
   bool mSavePending = false;
+  int32_t mAllowOMTPrefWrite = -1;
 
   nsCOMPtr<nsIPrefBranch> mRootBranch;
   nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
+
 
   nsresult NotifyServiceObservers(const char* aSubject);
   
@@ -1631,6 +1629,13 @@ class PreferencesImpl {
 static StaticRefPtr<PreferencesImpl> sPImpl;
 
 }  
+
+
+
+
+static bool gContentProcessPrefsAreInited = false;
+
+static mozilla::StaticAutoPtr<nsTArray<mozilla::dom::Pref>> gChangedDomPrefs;
 
 using PrefsHashTable = HashSet<UniquePtr<Pref>, PrefHasher>;
 
@@ -1948,7 +1953,8 @@ static PrefSaveData pref_savePrefs(const nsIPrefOverrideMap* aPrefOverrideMap) {
 static Pref* pref_HashTableLookup(const char* aPrefName) {
   MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
 
-  MOZ_ASSERT_IF(!XRE_IsParentProcess(), gContentProcessPrefsAreInited);
+  MOZ_ASSERT_IF(!XRE_IsParentProcess(),
+                Preferences::ArePrefsInitedInContentProcess());
 
   
   
@@ -3533,9 +3539,6 @@ StaticRefPtr<Preferences> Preferences::sPreferences;
 bool Preferences::sShutdown = false;
 
 
-static int32_t sAllowOMTPrefWrite = -1;
-
-
 class PreferencesWriter final {
  public:
   PreferencesWriter() = default;
@@ -3933,9 +3936,6 @@ class AddPreferencesMemoryReporterRunnable : public Runnable {
 };
 
 }  
-
-
-static StaticAutoPtr<nsTArray<dom::Pref>> gChangedDomPrefs;
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
 #if !(defined(MOZ_WIDGET_ANDROID) && defined(MOZ_TELEMETRY_ON_BY_DEFAULT))
@@ -4545,13 +4545,13 @@ nsresult PreferencesImpl::ResetUserPrefs() {
 bool Preferences::AllowOffMainThreadSave() {
   
   
-  if (sAllowOMTPrefWrite < 0) {
+  if (sPImpl->mAllowOMTPrefWrite < 0) {
     bool value = false;
     Preferences::GetBool("preferences.allow.omt-write", &value);
-    sAllowOMTPrefWrite = value ? 1 : 0;
+    sPImpl->mAllowOMTPrefWrite = value ? 1 : 0;
   }
 
-  return !!sAllowOMTPrefWrite;
+  return !!sPImpl->mAllowOMTPrefWrite;
 }
 
 nsresult Preferences::SavePrefFileBlocking() {
