@@ -448,10 +448,10 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
 
   {
     
-    nsAutoMicroTask mt;
-    AutoEntryScript aes(GetRelevantGlobal(),
-                        "UpdateEntriesForSameDocumentNavigation");
 
+    
+    
+    nsAutoMicroTask mt;
     NavigationCurrentEntryChangeEventInit init;
     init.mFrom = oldCurrentEntry;
     init.mNavigationType.SetValue(aNavigationType);
@@ -645,6 +645,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
           }
         });
 
+    
     
     
     nsAutoMicroTask mt;
