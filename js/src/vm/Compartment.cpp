@@ -339,7 +339,7 @@ bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
     
     
     if (wrapper->is<CrossCompartmentWrapperObject>()) {
-      NukeCrossCompartmentWrapper(cx, wrapper);
+      NukeRemovedCrossCompartmentWrapper(cx, wrapper);
     }
     return false;
   }
