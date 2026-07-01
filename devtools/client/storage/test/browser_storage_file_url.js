@@ -7,10 +7,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  
-  await pushPref("devtools.local-mode.noticed", true);
-
   const TESTPAGE = "storage-file-url.html";
 
   

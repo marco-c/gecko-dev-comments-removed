@@ -131,7 +131,10 @@ class OptionsPanel extends EventEmitter {
     
     this.toolbox.on("tool-unregistered", this.setupToolsList);
     this.toolbox.on("webextension-unregistered", this.setupToolsList);
-    lazy.LocalModeMappings.on("updated", this.#updateLocalModeMappings);
+    this.toolbox.on(
+      "local-mode-mappings-updated",
+      this.#updateLocalModeMappings
+    );
   }
 
   #removeListeners() {
@@ -150,7 +153,10 @@ class OptionsPanel extends EventEmitter {
     this.toolbox.off("tool-unregistered", this.setupToolsList);
     this.toolbox.off("webextension-registered", this.setupToolsList);
     this.toolbox.off("webextension-unregistered", this.setupToolsList);
-    lazy.LocalModeMappings.off("updated", this.#updateLocalModeMappings);
+    this.toolbox.off(
+      "local-mode-mappings-updated",
+      this.#updateLocalModeMappings
+    );
 
     gDevTools.off("theme-registered", this.#themeRegistered);
     gDevTools.off("theme-unregistered", this.#themeUnregistered);
@@ -620,16 +626,53 @@ class OptionsPanel extends EventEmitter {
     this.#updateLocalModeMappings();
   }
 
+  
+  
+  
+  #mappingIndexRegExp = new RegExp(
+    RegExp.escape(lazy.LocalModeMappings.LOCAL_MODE_MAPPINGS_PREF_PREFIX) +
+      "(?<mapping_index>\\d+)"
+  );
+  #originIndexRegExp = /firefox(?<origin_index>\d*)\.localhost/;
+
   #newLocalModeMapping = async event => {
     event.preventDefault();
     event.stopPropagation();
 
-    const origin = lazy.LocalModeMappings.getNextAvailableOrigin();
+    
+    
+    
+    const mappings = lazy.LocalModeMappings.getAllMappings();
+    const mappingIndex = !mappings.length
+      ? 0
+      : parseInt(
+          mappings.at(-1).prefPrefix.match(this.#mappingIndexRegExp).groups
+            .mapping_index,
+          10
+        ) + 1;
+
+    
+    
+    
+    const firefoxLocalhostMappings = mappings
+      .filter(mapping => this.#originIndexRegExp.test(mapping.origin))
+      .sort((a, b) => a.origin.localeCompare(b.origin));
+    const originIndex = !firefoxLocalhostMappings.length
+      ? 0
+      : parseInt(
+          firefoxLocalhostMappings.at(-1).origin.match(this.#originIndexRegExp)
+            .groups.origin_index || "0",
+          10
+        ) + 1;
+    const origin = `firefox${originIndex == 0 ? "" : originIndex}.localhost`;
 
     const path = await this.#chooseLocalModePath(origin);
 
     this.#focusLocalModeLastMapping = true;
-    lazy.LocalModeMappings.createNewMapping(origin, path);
+    const prefPrefix =
+      lazy.LocalModeMappings.LOCAL_MODE_MAPPINGS_PREF_PREFIX + mappingIndex;
+    Services.prefs.setStringPref(prefPrefix + ".origin", origin);
+    Services.prefs.setStringPref(prefPrefix + ".path", path);
   };
 
   
@@ -652,24 +695,21 @@ class OptionsPanel extends EventEmitter {
 
   #createLocalModeMappingDOM(origin, path, disabled, prefPrefix, mappings) {
     const el = this.panelDoc.createElement("li");
-    
-    el.setAttribute("data-pref-prefix", prefPrefix);
     el.classList.toggle("disabled", disabled);
 
     const originLine = this.panelDoc.createElement("div");
     originLine.classList.add("local-mode-origin-line");
 
-    const inputId = "origin-" + prefPrefix.replace(/\./g, "-");
     const originLabel = this.panelDoc.createElement("label");
     originLabel.setAttribute("data-l10n-id", "options-local-mode-domain-label");
-    originLabel.setAttribute("for", inputId);
+    originLabel.setAttribute("for", "origin-" + prefPrefix);
 
     const originValueContainer = this.panelDoc.createElement("div");
     const originPrefixLabel = this.panelDoc.createElement("span");
     originPrefixLabel.textContent = "http(s)://";
 
     const originElement = this.panelDoc.createElement("input");
-    originElement.id = inputId;
+    originElement.id = "origin-" + prefPrefix;
     originElement.classList.add("local-mode-origin-input");
     originElement.setAttribute(
       "data-l10n-id",
