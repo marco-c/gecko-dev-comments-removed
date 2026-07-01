@@ -181,6 +181,12 @@ template EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
 template EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
     const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
     const EditorRawDOMPoint& aPointAtCaret);
+template void EditorBase::AutoCaretBidiLevelManager::Init(
+    const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
+    const EditorDOMPoint& aPointAtCaret);
+template void EditorBase::AutoCaretBidiLevelManager::Init(
+    const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
+    const EditorRawDOMPoint& aPointAtCaret);
 
 EditorBase::EditorBase(EditorType aEditorType)
     : mEditActionData(nullptr),
@@ -6460,13 +6466,30 @@ template <typename PT, typename CT>
 EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
     const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
     const EditorDOMPointBase<PT, CT>& aPointAtCaret) {
-  MOZ_ASSERT(aEditorBase.IsEditActionDataAvailable());
-
-  if (aEditorBase.GetEditContext()) {
-    
-    
-    return;
+  if (EditContext* editContext = aEditorBase.GetEditContext()) {
+    InitForEditContext(aEditorBase, aDirectionAndAmount, *editContext);
+  } else {
+    Init(aEditorBase, aDirectionAndAmount, aPointAtCaret);
   }
+}
+
+void EditorBase::AutoCaretBidiLevelManager::InitForEditContext(
+    const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
+    const EditContext&) {
+  MOZ_ASSERT(aEditorBase.GetEditContext());
+  
+  
+  
+  auto pointAtCaret =
+      aEditorBase.GetFirstSelectionStartPoint<EditorRawDOMPoint>();
+  Init(aEditorBase, aDirectionAndAmount, pointAtCaret);
+}
+
+template <typename PT, typename CT>
+void EditorBase::AutoCaretBidiLevelManager::Init(
+    const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount,
+    const EditorDOMPointBase<PT, CT>& aPointAtCaret) {
+  MOZ_ASSERT(aEditorBase.IsEditActionDataAvailable());
   nsPresContext* presContext = aEditorBase.GetPresContext();
   if (NS_WARN_IF(!presContext)) {
     mFailed = true;

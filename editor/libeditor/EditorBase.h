@@ -2188,6 +2188,16 @@ class EditorBase : public nsIEditor,
     AutoCaretBidiLevelManager(const EditorBase& aEditorBase,
                               nsIEditor::EDirection aDirectionAndAmount,
                               const EditorDOMPointBase<PT, CT>& aPointAtCaret);
+    
+
+
+
+
+    AutoCaretBidiLevelManager(const EditorBase& aEditorBase,
+                              nsIEditor::EDirection aDirectionAndAmount,
+                              const dom::EditContext& aEditContext) {
+      InitForEditContext(aEditorBase, aDirectionAndAmount, aEditContext);
+    }
 
     
 
@@ -2209,6 +2219,13 @@ class EditorBase : public nsIEditor,
     void MaybeUpdateCaretBidiLevel(const EditorBase& aEditorBase) const;
 
    private:
+    template <typename PT, typename CT>
+    void Init(const EditorBase& aEditorBase,
+              nsIEditor::EDirection aDirectionAndAmount,
+              const EditorDOMPointBase<PT, CT>& aPointAtCaret);
+    void InitForEditContext(const EditorBase& aEditorBase,
+                            nsIEditor::EDirection aDirectionAndAmount,
+                            const dom::EditContext&);
     Maybe<mozilla::intl::BidiEmbeddingLevel> mNewCaretBidiLevel;
     bool mFailed = false;
     bool mCanceled = false;

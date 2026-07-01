@@ -576,12 +576,23 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     nsresult rv = deleteHandler.ComputeRangesToDelete(
         *this, aDirectionAndAmount, rangeArray, *textContainer);
     NS_ENSURE_SUCCESS(rv, Err(rv));
+    if (rangeArray.Ranges().IsEmpty()) {
+      
+      return EditActionResult::HandledResult();
+    }
     EditorDOMPoint deletionStart =
         rangeArray.GetFirstRangeStartPoint<EditorDOMPoint>();
     EditorDOMPoint deletionEnd =
         rangeArray.GetFirstRangeEndPoint<EditorDOMPoint>();
     MOZ_ASSERT(deletionStart.GetContainer() == text);
     MOZ_ASSERT(deletionEnd.GetContainer() == text);
+    RefPtr<nsFrameSelection> frameSelection =
+        SelectionRef().GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    AutoCaretBidiLevelManager bidiLevelManager(*this, aDirectionAndAmount,
+                                               *editContext);
     editContext->UpdateTextAndFireEvent(deletionStart.Offset(),
                                         deletionEnd.Offset(), u""_ns);
     if (NS_WARN_IF(Destroyed())) {
@@ -590,6 +601,21 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     if (editContext != GetEditContext()) {
       
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+
+    
+    
+    
+    
+    
+    
+    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+      bidiLevelManager.MaybeUpdateCaretBidiLevel(*this);
+      frameSelection->SetHint(DirectionIsBackspace(aDirectionAndAmount)
+                                  ? CaretAssociationHint::Before
+                                  : CaretAssociationHint::After);
+      
+      TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine = true;
     }
     return EditActionResult::HandledResult();
   }

@@ -1033,11 +1033,16 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   if (RefPtr editContext = GetEditContext()) {
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
+    RefPtr<nsFrameSelection> frameSelection =
+        SelectionRef().GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return Err(NS_ERROR_FAILURE);
+    }
     if (InsertingTextForComposition(aPurpose)) {
       MOZ_ASSERT(mComposition);
       if (mComposition->GetContainerTextNode()) {
-        start = mComposition->XPOffsetInTextNode();
-        end = mComposition->XPEndOffsetInTextNode();
+        start = mComposition->ClampedStartOffsetInTextNode();
+        end = mComposition->ClampedEndOffsetInTextNode();
       }
       mComposition->OnUpdateCompositionInEditor(aInsertionString,
                                                 editContext->TextNode(), start);
@@ -1049,6 +1054,15 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     if (editContext != GetEditContext()) {
       
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+
+    
+    
+    
+    
+    
+    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+      frameSelection->SetHint(CaretAssociationHint::Before);
     }
     return EditActionResult::HandledResult();
   }

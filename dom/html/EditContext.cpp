@@ -178,6 +178,12 @@ void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
   start = std::min(start, TextLength());
   uint32_t end = std::max(aRangeStart, aRangeEnd);
   end = std::min(end, TextLength());
+  if (mSelectionStart == mSelectionEnd && start <= mSelectionStart &&
+      end >= mSelectionStart) {
+    
+    
+    mTextNextToCaretChangedByTextUpdateHandler = true;
+  }
   mText->ReplaceData(start, end - start, aText, IgnoreErrors());
   
   
@@ -219,6 +225,7 @@ void EditContext::UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
   RefPtr<TextUpdateEvent> e =
       TextUpdateEvent::Constructor(this, u"textupdate"_ns, options);
   e->SetTrusted(true);
+  mTextNextToCaretChangedByTextUpdateHandler = false;
   DispatchEvent(*e);
 }
 
