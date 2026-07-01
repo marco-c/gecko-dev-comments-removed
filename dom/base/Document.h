@@ -66,6 +66,7 @@
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
+#include "nsHashtablesFwd.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIClassifiedChannel.h"
@@ -274,6 +275,7 @@ class Selection;
 class ServiceWorkerDescriptor;
 class ShadowRoot;
 class SimpleContentList;
+class SpeculationRules;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -3629,12 +3631,18 @@ class Document : public nsINode,
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
 
-  void SetFocusNavigationStartingPoint(nsIContent* aContent,
-                                       bool aWillBeRemoved = false);
-  nsIContent* GetFocusNavigationStartingPoint() const {
-    return mFocusNavigationStartingPoint;
+  void SetPreviouslyFocusedContent(nsIContent* aContent,
+                                   bool aWillBeRemoved = false);
+  nsIContent* GetPreviouslyFocusedContent() const {
+    return mPreviouslyFocusedContent;
   }
   bool WasFocusedElementRemoved() const { return mWasFocusedElementRemoved; }
+  void SetSelectionMoreRecentThanFocus(bool aValue) {
+    mSelectionMoreRecentThanFocus = aValue;
+  }
+  bool IsSelectionMoreRecentThanFocus() const {
+    return mSelectionMoreRecentThanFocus;
+  }
 
   
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
@@ -4989,7 +4997,7 @@ class Document : public nsINode,
   
   
   
-  RefPtr<nsIContent> mFocusNavigationStartingPoint;
+  RefPtr<nsIContent> mPreviouslyFocusedContent;
 
   
   
@@ -5337,7 +5345,12 @@ class Document : public nsINode,
   
   
   
+  
   bool mWasFocusedElementRemoved : 1;
+
+  
+  
+  bool mSelectionMoreRecentThanFocus : 1;
 
   
   
@@ -5897,6 +5910,10 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIURI> mTLSCertificateBindingURI;
 
+  
+  nsClassHashtable<nsRefPtrHashKey<nsIScriptElement>, SpeculationRules>
+      mSpeculationRulesFromScript;
+
  public:
   
   JS::ExpandoAndGeneration mExpandoAndGeneration;
@@ -5919,6 +5936,11 @@ class Document : public nsINode,
                                               const nsAString& aHTML,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
+
+  void RegisterSpeculationRulesFromScript(
+      nsIScriptElement* aScriptElement,
+      UniquePtr<SpeculationRules> aSpeculationRules);
+  void UnregisterSpeculationRules(nsIScriptElement* aScriptElement);
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;

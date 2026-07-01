@@ -245,6 +245,7 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEvent.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
 #include "mozilla/dom/StyleSheetList.h"
@@ -489,6 +490,7 @@ mozilla::LazyLogModule gSHIPBFCacheLog("SHIPBFCache");
 mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
 mozilla::LazyLogModule gUseCountersLog("UseCounters");
 static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
+extern mozilla::LazyLogModule gFocusNavigationLog;
 
 namespace mozilla {
 
@@ -1397,6 +1399,7 @@ Document::Document(const char* aContentType,
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
+      mSelectionMoreRecentThanFocus(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -2538,7 +2541,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusNavigationStartingPoint)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreviouslyFocusedContent)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFragmentDirective)
@@ -2626,6 +2629,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   }
 
   
+  for (const auto& entry : tmp->mSpeculationRulesFromScript) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSpeculationRulesFromScript key");
+    cb.NoteXPCOMChild(entry.GetKey());
+  }
   for (const auto& entry : tmp->mL10nProtoElements) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mL10nProtoElements key");
     cb.NoteXPCOMChild(entry.GetKey());
@@ -2694,7 +2701,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFocusNavigationStartingPoint)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFragmentDirective)
@@ -2812,6 +2819,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   tmp->UnregisterFromMemoryReportingForDataDocument();
 
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSpeculationRulesFromScript)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mL10nProtoElements)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
@@ -6802,15 +6810,18 @@ void Document::SetLastFocusTime(const TimeStamp& aFocusTime) {
   mLastFocusTime = aFocusTime;
 }
 
-void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
-                                               bool aWillBeRemoved) {
+void Document::SetPreviouslyFocusedContent(nsIContent* aContent,
+                                           bool aWillBeRemoved) {
+  MOZ_LOG_FMT(gFocusNavigationLog, LogLevel::Debug,
+              "Set previously-focused content to {} (will be removed = {})",
+              aContent ? ToString(*aContent).c_str() : "null", aWillBeRemoved);
   mWasFocusedElementRemoved = aWillBeRemoved;
   if (!aWillBeRemoved) {
-    mFocusNavigationStartingPoint = aContent;
+    mPreviouslyFocusedContent = aContent;
     return;
   }
   if (!aContent) {
-    mFocusNavigationStartingPoint = nullptr;
+    mPreviouslyFocusedContent = nullptr;
     return;
   }
 
@@ -6821,15 +6832,15 @@ void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
        aContent = parent, parent = aContent->GetFlattenedTreeParent()) {
     FlattenedChildIterator iterator(parent);
     if (NS_WARN_IF(!iterator.Seek(aContent))) {
-      mFocusNavigationStartingPoint = nullptr;
+      mPreviouslyFocusedContent = nullptr;
       return;
     }
     if (auto* sibling = iterator.GetPreviousChild()) {
-      mFocusNavigationStartingPoint = sibling;
+      mPreviouslyFocusedContent = sibling;
       return;
     }
   }
-  mFocusNavigationStartingPoint = nullptr;
+  mPreviouslyFocusedContent = nullptr;
 }
 
 void Document::GetReferrer(nsACString& aReferrer) const {
@@ -8186,36 +8197,37 @@ DocGroup* Document::GetDocGroupOrCreate() {
 
 void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
   mScopeObject = do_GetWeakReference(aGlobal);
-  if (aGlobal) {
-    mHasHadScriptHandlingObject = true;
+  if (!aGlobal) {
+    return;
+  }
+  mHasHadScriptHandlingObject = true;
 
-    nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
-    if (!window) {
-      return;
-    }
+  nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
+  if (!window) {
+    return;
+  }
 
+  
+  
+  DocGroup* docGroup = GetDocGroupOrCreate();
+  if (!docGroup) {
     
     
-    DocGroup* docGroup = GetDocGroupOrCreate();
-    if (!docGroup) {
-      
-      
-      
-      
-      
-      MOZ_ASSERT(!mDocumentContainer,
-                 "Must have DocGroup if loaded in a DocShell");
-      mDocGroup = window->GetDocGroup();
-      mDocGroup->AddDocument(this);
-    }
+    
+    
+    
+    MOZ_ASSERT(!mDocumentContainer,
+               "Must have DocGroup if loaded in a DocShell");
+    mDocGroup = window->GetDocGroup();
+    mDocGroup->AddDocument(this);
+  }
 
 #ifdef DEBUG
-    AssertDocGroupMatchesKey();
+  AssertDocGroupMatchesKey();
 #endif
-    MOZ_ASSERT_IF(
-        mNodeInfoManager->GetArenaAllocator(),
-        mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
-  }
+  MOZ_ASSERT_IF(
+      mNodeInfoManager->GetArenaAllocator(),
+      mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
 }
 
 bool Document::ContainsEMEContent() {
@@ -21291,6 +21303,19 @@ FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
 bool Document::HasFullscreenKeyboardLockEnabled() {
   Element* elem = GetUnretargetedFullscreenElement();
   return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
+}
+
+
+void Document::RegisterSpeculationRulesFromScript(
+    nsIScriptElement* aScriptElement,
+    UniquePtr<SpeculationRules> aSpeculationRules) {
+  mSpeculationRulesFromScript.InsertOrUpdate(aScriptElement,
+                                             std::move(aSpeculationRules));
+}
+
+
+void Document::UnregisterSpeculationRules(nsIScriptElement* aScriptElement) {
+  mSpeculationRulesFromScript.Remove(aScriptElement);
 }
 
 }  
