@@ -62,7 +62,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptDecoding.h"  
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SpeculationRules.h"
+#include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -1931,7 +1931,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     nsAutoString source;
     aElement->GetScriptText(source);
-    auto speculationRulesResult = SpeculationRules::Parse(
+    auto speculationRuleSetResult = SpeculationRuleSet::Parse(
         NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
 
     
@@ -1943,20 +1943,20 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     
     
-    if (speculationRulesResult.isErr()) {
+    if (speculationRuleSetResult.isErr()) {
       
       
       nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
       if (!global) {
         return false;
       }
-      SpeculationRules::ReportParseError(global,
-                                         speculationRulesResult.unwrapErr());
+      SpeculationRuleSet::ReportParseError(
+          global, speculationRuleSetResult.unwrapErr());
       return false;
     }
 
-    mDocument->RegisterSpeculationRulesFromScript(
-        aElement, speculationRulesResult.unwrap());
+    mDocument->RegisterSpeculationRuleSetFromScript(
+        aElement, speculationRuleSetResult.unwrap());
     return false;
   }
 
