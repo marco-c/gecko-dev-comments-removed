@@ -280,8 +280,37 @@ void InitEncryptionKeystore() {
   }
 }
 
+bool IsBootstrapDatabasePath(const nsACString& aPath) {
+  
+  
+  static constexpr nsLiteralCString kBootstrapNames[] = {
+      "lockstore.keys.sqlite"_ns, "key4.db"_ns, "cert9.db"_ns, "key3.db"_ns,
+      "cert8.db"_ns};
+  
+  
+  
+  
+  const nsDependentCSubstring basename =
+      Substring(aPath, aPath.RFindCharInSet("/\\") + 1);
+  for (const auto& name : kBootstrapNames) {
+    if (basename == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
 nsresult GetDatabaseEncryptionStatus(const nsACString& aDatabasePath,
                                      EncryptionStatus& aStatus) {
+  
+  
+  
+  
+  if (!StaticPrefs::security_storage_encryption_sqlite_enabled()) {
+    aStatus = EncryptionStatus::Plaintext;
+    return NS_OK;
+  }
+
   nsString profilePath;
   nsresult rv = GetCachedProfilePath(profilePath);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -301,11 +330,34 @@ nsresult GetDatabaseEncryptionStatus(const nsACString& aDatabasePath,
   rv = profileDir->Contains(dbFile, &isUnder);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aStatus = isUnder ? EncryptionStatus::Encrypted : EncryptionStatus::Plaintext;
   if (!isUnder) {
+    aStatus = EncryptionStatus::Plaintext;
     MOZ_LOG(GetSQLiteEncryptionLog(), LogLevel::Debug,
             ("Database outside profile; opening unencrypted"));
+    return NS_OK;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsBootstrapDatabasePath(aDatabasePath)) {
+    aStatus = EncryptionStatus::Plaintext;
+    return NS_OK;
+  }
+
+  aStatus = EncryptionStatus::Encrypted;
   return NS_OK;
 }
 

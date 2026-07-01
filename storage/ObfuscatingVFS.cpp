@@ -73,10 +73,16 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
+#include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/storage/SQLiteEncryption.h"
 #include "nsPrintfCString.h"
+#include "nsString.h"
 #include "QuotaVFS.h"
 #include "sqlite3.h"
 
@@ -109,6 +115,12 @@ using namespace mozilla;
 using namespace mozilla::dom::quota;
 
 
+
+
+
+static constexpr int kKeyBytes = sizeof(IPCStreamCipherStrategy::KeyType);
+
+
 struct ObfsFile {
   sqlite3_file base;  
   const char* zFName; 
@@ -119,6 +131,12 @@ struct ObfsFile {
       encryptCipherStrategy; 
   IPCStreamCipherStrategy*
       decryptCipherStrategy; 
+  
+
+
+
+
+  u8 aKey[kKeyBytes];
 };
 
 
@@ -185,13 +203,20 @@ static const sqlite3_io_methods obfs_io_methods = {
     obfsUnfetch                
 };
 
-static constexpr int kKeyBytes = 32;
 static constexpr int kIvBytes = IPCStreamCipherStrategy::BlockPrefixLength;
 static constexpr int kClearTextPrefixBytesOnFirstPage = 32;
 static constexpr int kReservedBytes = 32;
 static constexpr int kBasicBlockSize = IPCStreamCipherStrategy::BasicBlockSize;
 static_assert(kClearTextPrefixBytesOnFirstPage % kBasicBlockSize == 0);
 static_assert(kReservedBytes % kBasicBlockSize == 0);
+
+
+
+
+
+
+static constexpr int kChangeCounterOffset = 24;
+static constexpr int kChangeCounterBytes = 16;
 
 
 
@@ -295,6 +320,12 @@ static int obfsClose(sqlite3_file* pFile) {
   delete p->decryptCipherStrategy;
   delete p->encryptCipherStrategy;
 
+  
+  
+  
+  
+  ::memset(p->aKey, 0, sizeof(p->aKey));
+
   pFile = ORIGFILE(pFile);
   return pFile->pMethods->xClose(pFile);
 }
@@ -313,6 +344,29 @@ static int obfsRead(sqlite3_file* pFile, void* zBuf, int iAmt,
   int rc;
   ObfsFile* p = (ObfsFile*)pFile;
   pFile = ORIGFILE(pFile);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!p->inCkpt && iOfst == kChangeCounterOffset &&
+      iAmt == kChangeCounterBytes) {
+    u8 aPage1[OBFS_PGSZ];
+    rc = pFile->pMethods->xRead(pFile, aPage1, OBFS_PGSZ, 0);
+    if (rc == SQLITE_OK && memcmp(aPage1, "SQLite format 3", 16) == 0) {
+      obfsDecode(p, aPage1, OBFS_PGSZ);
+      memcpy(zBuf, aPage1 + kChangeCounterOffset, kChangeCounterBytes);
+      return SQLITE_OK;
+    }
+  }
+
   rc = pFile->pMethods->xRead(pFile, zBuf, iAmt, iOfst);
   if (rc == SQLITE_OK) {
     if ((iAmt == OBFS_PGSZ || iAmt == OBFS_PGSZ + WAL_FRAMEHDRSIZE) &&
@@ -516,6 +570,109 @@ static u8 obfsHexToInt(int h) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+enum class OnDiskHeader { Missing, Error, TooShort, Plaintext, Encrypted };
+
+
+
+
+static constexpr size_t kOnDiskHeaderProbeBytes = 24;
+
+static OnDiskHeader PeekOnDiskHeader(const char* zPath) {
+  FILE* f = fopen(zPath, "rb");
+  if (!f) {
+    
+    
+    
+    
+    
+    return errno == ENOENT ? OnDiskHeader::Missing : OnDiskHeader::Error;
+  }
+  unsigned char hdr[kOnDiskHeaderProbeBytes] = {0};
+  size_t n = fread(hdr, 1, sizeof(hdr), f);
+  fclose(f);
+  if (n != sizeof(hdr)) {
+    return OnDiskHeader::TooShort;
+  }
+  static const unsigned char kSQLiteMagic[16] = {'S', 'Q', 'L', 'i', 't',
+                                                 'e', ' ', 'f', 'o', 'r',
+                                                 'm', 'a', 't', ' ', '3',
+                                                 '\0'};
+  if (::memcmp(hdr, kSQLiteMagic, sizeof(kSQLiteMagic)) != 0) {
+    
+    
+    return OnDiskHeader::TooShort;
+  }
+  uint32_t pageSize = (static_cast<uint32_t>(hdr[16]) << 8) | hdr[17];
+  if (pageSize == 1) {
+    pageSize = 65536;
+  }
+  uint32_t reservedBytes = hdr[20];
+  
+  if (pageSize == OBFS_PGSZ && reservedBytes == 32) {
+    return OnDiskHeader::Encrypted;
+  }
+  
+  
+  
+  return OnDiskHeader::Plaintext;
+}
+
+
+
+
+
+
+
+static nsAutoCString DeriveMainDbPath(const char* zName, int flags) {
+  nsAutoCString p(zName);
+  if (flags & SQLITE_OPEN_MAIN_JOURNAL) {
+    constexpr auto kJournal = "-journal"_ns;
+    if (StringEndsWith(p, kJournal)) {
+      p.Truncate(p.Length() - kJournal.Length());
+    }
+  } else if (flags & SQLITE_OPEN_WAL) {
+    constexpr auto kWal = "-wal"_ns;
+    if (StringEndsWith(p, kWal)) {
+      p.Truncate(p.Length() - kWal.Length());
+    }
+  }
+  return p;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsBootstrapBypassPath(const nsACString& aMainDbPath) {
+  return mozilla::storage::IsBootstrapDatabasePath(aMainDbPath);
+}
+
 static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
                     int flags, int* pOutFlags) {
   ObfsFile* p;
@@ -524,6 +681,10 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   int rc, i;
   const char* zKey;
   u8 aKey[kKeyBytes];
+  
+  
+  
+  bool keyReady = false;
   pSubVfs = ORIGVFS(pVfs);
   if (flags &
       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL)) {
@@ -531,19 +692,158 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   } else {
     zKey = nullptr;
   }
-  if (zKey == nullptr) {
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (zKey == nullptr &&
+      (flags & (SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL))) {
+    sqlite3_file* pDbFile = sqlite3_database_file_object(zName);
+    if (pDbFile && pDbFile->pMethods == &obfs_io_methods) {
+      ObfsFile* pPartner = reinterpret_cast<ObfsFile*>(pDbFile);
+      ::memcpy(aKey, pPartner->aKey, sizeof(aKey));
+      keyReady = true;
+      MOZ_LOG(mozilla::storage::GetSQLiteEncryptionLog(),
+              mozilla::LogLevel::Verbose,
+              ("obfsOpen: inherited key from partner ObfsFile for %s",
+               zName));
+    }
+  }
+
+  
+  
+  
+  nsAutoCString policyKey;
+
+  if (!keyReady && zKey == nullptr &&
+      (flags &
+       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL))) {
+    
+    
+    
+    
+    mozilla::LogModule* log = mozilla::storage::GetSQLiteEncryptionLog();
+    nsAutoCString dbPath = DeriveMainDbPath(zName, flags);
+
+    
+    
+    
+    
+    if (IsBootstrapBypassPath(dbPath)) {
+      return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
+    }
+
+    mozilla::storage::EncryptionStatus status =
+        mozilla::storage::EncryptionStatus::Unset;
+    nsresult rv =
+        mozilla::storage::GetDatabaseEncryptionStatus(dbPath, status);
+    if (NS_FAILED(rv)) {
+      MOZ_LOG(log, mozilla::LogLevel::Error,
+              ("obfsOpen: policy lookup failed (0x%" PRIx32 ") for %s; "
+               "refusing open rather than risking plaintext fallback",
+               static_cast<uint32_t>(rv), zName));
+      return SQLITE_CANTOPEN;
+    }
+    if (status == mozilla::storage::EncryptionStatus::Unset) {
+      
+      
+      
+      
+      MOZ_LOG(log, mozilla::LogLevel::Error,
+              ("obfsOpen: policy lookup left status unset for %s; refusing",
+               zName));
+      return SQLITE_CANTOPEN;
+    }
+
+    const bool isMainDb = flags & SQLITE_OPEN_MAIN_DB;
+    OnDiskHeader disk =
+        isMainDb ? PeekOnDiskHeader(dbPath.get()) : OnDiskHeader::Missing;
+
+    if (disk == OnDiskHeader::Error) {
+      
+      
+      
+      MOZ_LOG(log, mozilla::LogLevel::Error,
+              ("obfsOpen: could not inspect on-disk header for %s; refusing",
+               zName));
+      return SQLITE_CANTOPEN;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (isMainDb && disk == OnDiskHeader::Missing &&
+        !(flags & SQLITE_OPEN_CREATE)) {
+      return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
+    }
+
+    if (status == mozilla::storage::EncryptionStatus::Plaintext) {
+      
+      
+      
+      
+      
+      if (disk == OnDiskHeader::Encrypted) {
+        MOZ_LOG(log, mozilla::LogLevel::Error,
+                ("obfsOpen: policy says plaintext but on-disk header is "
+                 "encrypted for %s; refusing",
+                 zName));
+        return SQLITE_CANTOPEN_FULLPATH;
+      }
+      return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
+    }
+
+    
+    mozilla::storage::OpenIntent intent =
+        (flags & SQLITE_OPEN_CREATE)
+            ? mozilla::storage::OpenIntent::CreateIfNew
+            : mozilla::storage::OpenIntent::LoadExisting;
+    rv = mozilla::storage::GetEncryptionKey(dbPath, intent, policyKey);
+    if (NS_FAILED(rv)) {
+      MOZ_LOG(log, mozilla::LogLevel::Error,
+              ("obfsOpen: GetEncryptionKey 0x%" PRIx32
+               " for %s; refusing open (no plaintext fallback)",
+               static_cast<uint32_t>(rv), zName));
+      return SQLITE_CANTOPEN;
+    }
+    if (disk == OnDiskHeader::Plaintext) {
+      MOZ_LOG(log, mozilla::LogLevel::Error,
+              ("obfsOpen: policy says encrypted but on-disk header is "
+               "plaintext SQLite for %s; refusing rather than write "
+               "ciphertext over an existing plaintext DB",
+               zName));
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
+    zKey = policyKey.get();
+  }
+
+  if (!keyReady && zKey == nullptr) {
     return pSubVfs->xOpen(pSubVfs, zName, pFile, flags, pOutFlags);
   }
-  for (i = 0;
-       i < kKeyBytes && isxdigit(zKey[i * 2]) && isxdigit(zKey[i * 2 + 1]);
-       i++) {
-    aKey[i] = (obfsHexToInt(zKey[i * 2]) << 4) | obfsHexToInt(zKey[i * 2 + 1]);
-  }
-  if (i != kKeyBytes) {
-    NS_WARNING(
-        nsPrintfCString("invalid query parameter on %s: key=%s", zName, zKey)
-            .get());
-    return SQLITE_CANTOPEN;
+  if (!keyReady) {
+    for (i = 0;
+         i < kKeyBytes && isxdigit(zKey[i * 2]) && isxdigit(zKey[i * 2 + 1]);
+         i++) {
+      aKey[i] =
+          (obfsHexToInt(zKey[i * 2]) << 4) | obfsHexToInt(zKey[i * 2 + 1]);
+    }
+    if (i != kKeyBytes) {
+      NS_WARNING(
+          nsPrintfCString("invalid query parameter on %s: key=%s", zName, zKey)
+              .get());
+      return SQLITE_CANTOPEN;
+    }
   }
   p = (ObfsFile*)pFile;
   memset(p, 0, sizeof(*p));
@@ -583,6 +883,9 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
 
   p->encryptCipherStrategy = encryptCipherStrategy.release();
   p->decryptCipherStrategy = decryptCipherStrategy.release();
+  
+  
+  ::memcpy(p->aKey, aKey, sizeof(aKey));
 
   return SQLITE_OK;
 }

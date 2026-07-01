@@ -38,6 +38,10 @@ enum class OpenIntent : uint8_t {
 
 
 enum class EncryptionStatus : uint8_t {
+  Unset,      
+              
+              
+              
   Encrypted,  
   Plaintext,  
 };
@@ -55,6 +59,19 @@ enum class EncryptionStatus : uint8_t {
 
 nsresult GetDatabaseEncryptionStatus(const nsACString& aDatabasePath,
                                      EncryptionStatus& aStatus);
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsBootstrapDatabasePath(const nsACString& aPath);
 
 
 

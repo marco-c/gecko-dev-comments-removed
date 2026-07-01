@@ -2219,12 +2219,24 @@ class Database final : public PBackgroundIDBDatabaseParent,
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (mConnection && !mConnection->Closed()) {
       mConnection->AssertIsOnConnectionThread();
     } else {
       MOZ_ASSERT(!NS_IsMainThread());
       MOZ_ASSERT(!IsOnBackgroundThread());
-      MOZ_ASSERT(mInvalidated);
     }
 #endif
   }

@@ -24,6 +24,7 @@
 #include "mozilla/LateWriteChecks.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStoragePendingStatement.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_storage.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
@@ -183,11 +184,12 @@ already_AddRefed<Service> Service::getSingleton() {
   return nullptr;
 }
 
-int Service::AutoVFSRegistration::Init(UniquePtr<sqlite3_vfs> aVFS) {
+int Service::AutoVFSRegistration::Init(UniquePtr<sqlite3_vfs> aVFS,
+                                       bool aMakeDefault) {
   MOZ_ASSERT(!mVFS);
   if (aVFS) {
     mVFS = std::move(aVFS);
-    return sqlite3_vfs_register(mVFS.get(), 0);
+    return sqlite3_vfs_register(mVFS.get(), aMakeDefault ? 1 : 0);
   }
   NS_WARNING("Failed to register VFS");
   return SQLITE_OK;
@@ -354,8 +356,21 @@ nsresult Service::initialize() {
     return convertResultCode(rc);
   }
 
-  rc =
-      mObfuscatingSqliteVFS.Init(obfsvfs::ConstructVFS(quotavfs::GetVFSName()));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  rc = mObfuscatingSqliteVFS.Init(
+      obfsvfs::ConstructVFS(quotavfs::GetVFSName()),
+      
+      StaticPrefs::security_storage_encryption_sqlite_enabled());
   if (rc != SQLITE_OK) {
     return convertResultCode(rc);
   }
