@@ -515,6 +515,9 @@ struct AssemblerBufferSettings {
   unsigned headerSize;
 
   
+  unsigned veneerSize;
+
+  
   
   unsigned pcBias;
 
@@ -563,7 +566,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static constexpr unsigned GuardSize = settings.guardSize;
 
   
-  static constexpr unsigned VeneerSize = settings.guardSize;
+  static constexpr unsigned VeneerSize = settings.veneerSize;
 
   
   
