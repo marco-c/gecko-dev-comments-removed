@@ -235,30 +235,13 @@ class D3DSharedTexturesReporter final : public nsIMemoryReporter {
 NS_IMPL_ISUPPORTS(D3DSharedTexturesReporter, nsIMemoryReporter)
 
 gfxWindowsPlatform::gfxWindowsPlatform() {
-  
-  
   if (!IsWin32kLockedDown()) {
-    
-
-
-    CoInitialize(nullptr);
-
     RegisterStrongMemoryReporter(MakeAndAddRef<GPUAdapterReporter>());
     RegisterStrongMemoryReporter(MakeAndAddRef<D3DSharedTexturesReporter>());
   }
 }
 
-gfxWindowsPlatform::~gfxWindowsPlatform() {
-  DeviceManagerDx::Shutdown();
-
-  
-  if (!IsWin32kLockedDown()) {
-    
-
-
-    CoUninitialize();
-  }
-}
+gfxWindowsPlatform::~gfxWindowsPlatform() { DeviceManagerDx::Shutdown(); }
 
 
 void gfxWindowsPlatform::InitMemoryReportersForGPUProcess() {

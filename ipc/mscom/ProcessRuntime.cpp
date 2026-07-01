@@ -38,6 +38,8 @@ ProcessRuntime::ProcessRuntime() : ProcessRuntime(XRE_GetProcessType()) {}
 ProcessRuntime::ProcessRuntime(const GeckoProcessType aProcessType)
     : ProcessRuntime(aProcessType == GeckoProcessType_Default
                          ? ProcessCategory::GeckoBrowserParent
+                     : aProcessType == GeckoProcessType_Content
+                         ? ProcessCategory::GeckoContent
                          : ProcessCategory::GeckoChild) {}
 #endif  
 
@@ -65,45 +67,28 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
                             ProcessCategory::GeckoBrowserParent ||
                         isCurThreadImplicitMTA);
 
+  const bool needsMTAInit =
+      GetDesiredApartmentType(mProcessCategory) == COINIT_MULTITHREADED;
 #  if defined(MOZ_SANDBOX)
-  const bool isLockedDownChildProcess =
-      mProcessCategory == ProcessCategory::GeckoChild && IsWin32kLockedDown();
   
   
   
   
-  
-  if (isLockedDownChildProcess) {
-    
-    
-    HANDLE rawCurThreadImpToken;
-    if (!::OpenThreadToken(::GetCurrentThread(), TOKEN_DUPLICATE | TOKEN_QUERY,
-                           FALSE, &rawCurThreadImpToken)) {
-      mInitResult = HRESULT_FROM_WIN32(::GetLastError());
-      return;
-    }
-    nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
+  const bool needsSandboxedMTAInit =
+      needsMTAInit && SandboxTarget::Instance()->IsSandboxed();
+#  else
+  const bool needsSandboxedMTAInit = false;
+#  endif
 
-    
-    
-    DWORD len;
-    TOKEN_TYPE tokenType;
-    MOZ_RELEASE_ASSERT(
-        ::GetTokenInformation(rawCurThreadImpToken, TokenType, &tokenType,
-                              sizeof(tokenType), &len) &&
-        len == sizeof(tokenType) && tokenType == TokenImpersonation);
-
-    
-    
-    
-    
-    if (!isCurThreadImplicitMTA) {
-      InitUsingPersistentMTAThread(curThreadImpToken);
-      return;
-    }
+  
+  
+  
+  
+  if (!isCurThreadImplicitMTA && needsMTAInit) {
+    InitUsingPersistentMTAThread(needsSandboxedMTAInit);
+    return;
   }
-#  endif  
-#endif    
+#endif  
 
   mAptRegion.Init(GetDesiredApartmentType(mProcessCategory));
 
@@ -141,7 +126,7 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 
 #if defined(MOZILLA_INTERNAL_API)
 #  if defined(MOZ_SANDBOX)
-  if (isLockedDownChildProcess) {
+  if (needsSandboxedMTAInit) {
     
     SandboxTarget::Instance()->RegisterSandboxStartCallback([self = this]() {
       
@@ -164,12 +149,38 @@ ProcessRuntime::~ProcessRuntime() {
   sInstance = nullptr;
 }
 
+void ProcessRuntime::InitUsingPersistentMTAThread(bool aNeedsSandboxedInit) {
+  if (!aNeedsSandboxedInit) {
+    EnsureMTA([this]() { InitInsideApartment(); },
+              EnsureMTA::Option::ForceDispatchToPersistentThread);
+    if (SUCCEEDED(mInitResult)) {
+      PostInit();
+    }
+
+    return;
+  }
+
 #  if defined(MOZ_SANDBOX)
-void ProcessRuntime::InitUsingPersistentMTAThread(
-    const nsAutoHandle& aCurThreadToken) {
+  HANDLE rawCurThreadImpToken;
+  if (!::OpenThreadToken(::GetCurrentThread(), TOKEN_DUPLICATE | TOKEN_QUERY,
+                         FALSE, &rawCurThreadImpToken)) {
+    mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+    return;
+  }
+  nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
+
+  
+  
+  DWORD len;
+  TOKEN_TYPE tokenType;
+  MOZ_RELEASE_ASSERT(
+      ::GetTokenInformation(rawCurThreadImpToken, TokenType, &tokenType,
+                            sizeof(tokenType), &len) &&
+      len == sizeof(tokenType) && tokenType == TokenImpersonation);
+
   
   HANDLE rawMtaThreadImpToken = nullptr;
-  if (!::DuplicateToken(aCurThreadToken, SecurityImpersonation,
+  if (!::DuplicateToken(rawCurThreadImpToken, SecurityImpersonation,
                         &rawMtaThreadImpToken)) {
     mInitResult = HRESULT_FROM_WIN32(::GetLastError());
     return;
@@ -210,9 +221,9 @@ void ProcessRuntime::InitUsingPersistentMTAThread(
           PostInit();
         }
       });
-}
 #  endif  
-#endif    
+}
+#endif  
 
 
 COINIT ProcessRuntime::GetDesiredApartmentType(
@@ -220,6 +231,8 @@ COINIT ProcessRuntime::GetDesiredApartmentType(
   switch (aProcessCategory) {
     case ProcessCategory::GeckoBrowserParent:
       return COINIT_APARTMENTTHREADED;
+    case ProcessCategory::GeckoContent:
+      return COINIT_MULTITHREADED;
     case ProcessCategory::GeckoChild:
       if (!IsWin32kLockedDown()) {
         
@@ -227,7 +240,6 @@ COINIT ProcessRuntime::GetDesiredApartmentType(
         return static_cast<COINIT>(COINIT_APARTMENTTHREADED |
                                    COINIT_DISABLE_OLE1DDE);
       }
-
       [[fallthrough]];
     default:
       return COINIT_MULTITHREADED;
