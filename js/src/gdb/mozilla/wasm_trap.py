@@ -3,8 +3,8 @@
 
 
 """
-In asm code, out-of-bounds heap accesses cause segfaults, which the engine
-handles internally. Make GDB ignore them.
+In wasm code, out-of-bounds heap accesses cause segfaults, which the engine
+handles internally via WasmTrapHandler. Make GDB ignore them.
 """
 
 import gdb
@@ -34,7 +34,7 @@ def on_stop(event):
         WasmTrapHandler = gdb.parse_and_eval("WasmTrapHandler")
         if buf["__sigaction_handler"]["sa_handler"] == WasmTrapHandler:
             
-            print("js/src/gdb/mozilla/asmjs.py: Allowing WasmTrapHandler to run.")
+            print("js/src/gdb/mozilla/wasm_trap.py: Allowing WasmTrapHandler to run.")
 
             
             

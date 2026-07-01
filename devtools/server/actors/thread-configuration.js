@@ -27,6 +27,7 @@ const SUPPORTED_OPTIONS = {
   
   
   observeAsmJS: true,
+  
   observeWasm: true,
   
   pauseOnExceptions: true,

@@ -66,9 +66,6 @@ module.exports = function makeDebugger({
   
   
   
-  dbg.allowUnobservedAsmJS = true;
-  
-  
   dbg.allowUnobservedWasm = true;
 
   dbg.uncaughtExceptionHook = reportDebuggerHookException;

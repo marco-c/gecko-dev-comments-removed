@@ -48,7 +48,6 @@ function check(fn) {
 }
 
 
-
 assertEq(check(g), true);
 assertEq(check(asm_mod), true);
 assertEq(check(asm_fun), true);

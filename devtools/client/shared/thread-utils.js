@@ -44,6 +44,8 @@ exports.getThreadOptions = async function () {
       "devtools.debugger.log-event-breakpoints"
     ),
     
+    
+    
     observeAsmJS: true,
     breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     

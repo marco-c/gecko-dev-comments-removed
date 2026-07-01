@@ -4196,7 +4196,6 @@ bool ScriptLoader::EncodeAndCompress(
   if (result != JS::TranscodeResult::Ok) {
     
     
-    
     JS::ClearFrontendErrors(aFc);
 
     LOG(("LoadedScript (%p): Cannot encode stencil", aLoadedScript));

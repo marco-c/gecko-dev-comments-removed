@@ -15,6 +15,4 @@ function f(i,j) {
 return f
 `);
 let g80 = newGlobal({newCompartment: true});
-
-
 g80.compileToStencilXDR(code, {});

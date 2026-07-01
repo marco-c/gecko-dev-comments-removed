@@ -459,6 +459,12 @@ class ThreadActor extends Actor {
 
     const { window } = this.targetActor;
 
+    if (Cu && Cu.isRemoteProxy(window)) {
+      
+      
+      return false;
+    }
+
     
     
     
@@ -811,9 +817,6 @@ class ThreadActor extends Actor {
     }
     this._options = { ...this._options, ...options };
 
-    if ("observeAsmJS" in options) {
-      this.dbg.allowUnobservedAsmJS = !options.observeAsmJS;
-    }
     if ("observeWasm" in options) {
       this.dbg.allowUnobservedWasm = !options.observeWasm;
     }
@@ -1533,15 +1536,6 @@ class ThreadActor extends Actor {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     const urlMap = {};
     for (const url of this.dbg.findSourceURLs()) {
       if (url !== "self-hosted") {
@@ -1581,7 +1575,7 @@ class ThreadActor extends Actor {
     
     for (const [url, data] of Object.entries(urlMap)) {
       if (data.count > 0) {
-        this._resurrectSource(url, data.sources, data.hasWasm);
+        this._resurrectSource(url, data.sources);
       }
     }
   }
@@ -2210,10 +2204,7 @@ class ThreadActor extends Actor {
 
 
 
-
-
-
-  async _resurrectSource(url, existingInlineSources, forceEnableAsmJS) {
+  async _resurrectSource(url, existingInlineSources) {
     let { content, contentType, sourceMapURL } =
       await this.sourcesManager.urlContents(
         url,
@@ -2303,7 +2294,6 @@ class ThreadActor extends Actor {
               startLine,
               startColumn,
               isScriptElement: true,
-              forceEnableAsmJS,
             })
           );
         } catch (e) {
@@ -2329,7 +2319,6 @@ class ThreadActor extends Actor {
           url,
           startLine: 1,
           sourceMapURL,
-          forceEnableAsmJS,
         })
       );
     } catch (e) {
