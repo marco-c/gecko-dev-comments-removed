@@ -3191,11 +3191,7 @@ void MediaFormatReader::OnVideoSeekFailed(const MediaResult& aError) {
 void MediaFormatReader::SetVideoDecodeThreshold() {
   MOZ_ASSERT(OnTaskQueue());
 
-  if (!HasVideo() || !mVideo.mDecoder) {
-    return;
-  }
-
-  if (!mVideo.mTimeThreshold && !IsSeeking()) {
+  if (!HasVideo()) {
     return;
   }
 
@@ -3215,10 +3211,30 @@ void MediaFormatReader::SetVideoDecodeThreshold() {
     threshold = keyframe.IsValid() && !keyframe.IsInfinite()
                     ? mOriginalSeekTarget.GetTime()
                     : TimeUnit::Invalid();
+    
+    
+    
+    mPendingVideoSeekThreshold = Some(threshold);
+    LOG("Caching seek threshold %" PRId64
+        " to deliver to the recreated decoder",
+        threshold.IsValid() ? threshold.ToMicroseconds() : -1);
+  } else if (mPendingVideoSeekThreshold) {
+    
+    threshold = mPendingVideoSeekThreshold.ref();
   } else {
     return;
   }
 
+  if (!mVideo.mDecoder) {
+    
+    
+    return;
+  }
+
+  if (mPendingVideoSeekThreshold) {
+    LOG("Delivering cached seek threshold to the recreated decoder");
+    mPendingVideoSeekThreshold.reset();
+  }
   if (threshold.IsValid()) {
     LOG("Set seek threshold to %" PRId64, threshold.ToMicroseconds());
   } else {

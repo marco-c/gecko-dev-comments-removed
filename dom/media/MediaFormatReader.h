@@ -851,6 +851,11 @@ class MediaFormatReader final
   
   Maybe<media::TimeUnit> mFallbackSeekTime;
   Maybe<media::TimeUnit> mPendingSeekTime;
+  
+  
+  
+  
+  Maybe<media::TimeUnit> mPendingVideoSeekThreshold;
   MozPromiseHolder<SeekPromise> mSeekPromise;
 
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
