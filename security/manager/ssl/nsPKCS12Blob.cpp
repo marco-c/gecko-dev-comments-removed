@@ -16,7 +16,6 @@
 #include "nsNetUtil.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
-#include "nsNSSHelper.h"
 #include "nsReadableUtils.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -32,8 +31,6 @@ extern LazyLogModule gPIPNSSLog;
 #define PIP_PKCS12_RESTORE_FAILED 5
 #define PIP_PKCS12_BACKUP_FAILED 6
 #define PIP_PKCS12_NSS_ERROR 7
-
-nsPKCS12Blob::nsPKCS12Blob() : mUIContext(new PipUIContext()) {}
 
 
 
@@ -151,7 +148,7 @@ nsresult nsPKCS12Blob::ExportToFile(nsIFile* aFile,
     if (nssCert->slot && !PK11_IsInternal(nssCert->slot)) {
       
       UniqueSECKEYPrivateKey privKey(
-          PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), mUIContext));
+          PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), nullptr));
       if (privKey && !isExtractable(privKey)) {
         
         
