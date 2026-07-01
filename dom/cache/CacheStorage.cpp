@@ -266,6 +266,14 @@ CacheStorage::CacheStorage(Namespace aNamespace, nsIGlobalObject* aGlobal,
   MOZ_DIAGNOSTIC_ASSERT(mGlobal);
 
   
+  if (!BackgroundChild::ValidatePrincipalInfo(*mPrincipalInfo, {})) {
+    MOZ_ASSERT_UNREACHABLE(
+        "ValidatePrincipalInfo failed in CacheStorage constructor");
+    mStatus = NS_ERROR_UNEXPECTED;
+    return;
+  }
+
+  
   
   PBackgroundChild* actor = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actor)) {
