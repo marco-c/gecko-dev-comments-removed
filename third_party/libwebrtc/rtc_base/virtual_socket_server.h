@@ -29,7 +29,6 @@
 #include "api/units/time_delta.h"
 #include "rtc_base/callback_list.h"
 #include "rtc_base/event.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
@@ -232,14 +231,11 @@ class VirtualSocket : public Socket {
 class VirtualSocketServer : public SocketServer {
  public:
   VirtualSocketServer();
-  
-  
-  
-  explicit VirtualSocketServer(ThreadProcessingFakeClock* fake_clock);
-  ~VirtualSocketServer() override;
 
   VirtualSocketServer(const VirtualSocketServer&) = delete;
   VirtualSocketServer& operator=(const VirtualSocketServer&) = delete;
+
+  ~VirtualSocketServer() override;
 
   
   
@@ -457,10 +453,6 @@ class VirtualSocketServer : public SocketServer {
 
   typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
   typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
-
-  
-  
-  ThreadProcessingFakeClock* fake_clock_ = nullptr;
 
   
   Event wakeup_;
