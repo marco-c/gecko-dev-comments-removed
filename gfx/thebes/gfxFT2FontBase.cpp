@@ -471,11 +471,6 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (os2 && os2->sxHeight && yScale > 0.0) {
     mMetrics.xHeight = os2->sxHeight * yScale;
-  } else {
-    
-    
-    
-    mMetrics.xHeight = 0.5 * emHeight;
   }
 
   
@@ -491,8 +486,6 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (os2 && os2->sCapHeight && yScale > 0.0) {
     mMetrics.capHeight = os2->sCapHeight * yScale;
-  } else {
-    mMetrics.capHeight = mMetrics.maxAscent;
   }
 
   
@@ -533,12 +526,19 @@ void gfxFT2FontBase::InitMetrics() {
     if (GetCharExtents('x', &xWidth, &xBounds) && xBounds.y < 0.0) {
       mMetrics.xHeight = -xBounds.y;
       mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
+    } else {
+      
+      
+      
+      mMetrics.xHeight = 0.5 * emHeight;
     }
   }
 
   if (mMetrics.capHeight == 0.0) {
     if (GetCharExtents('H', nullptr, &xBounds) && xBounds.y < 0.0) {
       mMetrics.capHeight = -xBounds.y;
+    } else {
+      mMetrics.capHeight = mMetrics.maxAscent;
     }
   }
 
