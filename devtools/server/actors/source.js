@@ -45,10 +45,23 @@ ChromeUtils.defineESModuleGetters(
 
 const windowsDrive = /^([a-zA-Z]:)/;
 
+
+
+
+
+
+
+
+
+
+
+
+
 function resolveSourceURL(sourceURL, targetActor) {
   if (sourceURL) {
     let baseURL;
     if (targetActor.window) {
+      
       baseURL = targetActor.window.location?.href;
     }
     
@@ -56,6 +69,10 @@ function resolveSourceURL(sourceURL, targetActor) {
     if (targetActor.workerUrl) {
       baseURL = targetActor.workerUrl;
     }
+
+    
+    
+    
     const parsedURL = URL.parse(sourceURL, baseURL);
     if (parsedURL) {
       return parsedURL.href;
@@ -64,48 +81,75 @@ function resolveSourceURL(sourceURL, targetActor) {
 
   return null;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getSourceURL(source, targetActor) {
-  
-  
-  let resourceURL = getDebuggerSourceURL(source) || "";
-
-  
-  
-  resourceURL = resourceURL.split(" -> ").pop();
-
-  
-  
-  
-  
-  
-  resourceURL = resourceURL.replace(/ line \d+ > .*$/, "");
-
-  
-  
-  
-  
   let result = resolveSourceURL(source.displayURL, targetActor);
   if (!result) {
-    result = resolveSourceURL(resourceURL, targetActor) || resourceURL;
-
-    
-    
-    
-    
-    
-    
-    
-    if (
-      resourceURL &&
-      resourceURL.match(windowsDrive) &&
-      result.slice(0, 2) == resourceURL.slice(0, 2).toLowerCase()
-    ) {
-      result = resourceURL.slice(0, 2) + result.slice(2);
-    }
+    result = getRealSourceURL(source, targetActor);
   }
 
   
   return result || null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getRealSourceURL(source, targetActor) {
+  
+  
+  let url = getDebuggerSourceURL(source) || "";
+
+  
+  
+  url = url.split(" -> ").pop();
+
+  
+  
+  
+  
+  
+  url = url.replace(/ line \d+ > .*$/, "");
+
+  let sourceURL = resolveSourceURL(url, targetActor) || url;
+
+  
+  
+  
+  
+  
+  
+  
+  if (
+    url &&
+    sourceURL &&
+    url.match(windowsDrive) &&
+    sourceURL.slice(0, 2) == url.slice(0, 2).toLowerCase()
+  ) {
+    sourceURL = url.slice(0, 2) + sourceURL.slice(2);
+  }
+
+  return sourceURL || null;
 }
 
 
@@ -211,8 +255,12 @@ class SourceActor extends Actor {
       extensionName: this.extensionName,
       url: this.url,
       isBlackBoxed: this.sourcesManager.isBlackBoxed(this.url),
+      
+      
+      
+      
       sourceMapBaseURL: getSourcemapBaseURL(
-        this.url,
+        getRealSourceURL(this._source, this.threadActor.targetActor),
         this.threadActor.targetActor.window
       ),
       sourceMapURL: source.sourceMapURL,
