@@ -55,7 +55,6 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -845,20 +844,15 @@ void DtlsTransportInternalImpl::OnWritableState(
     case DtlsTransportState::kConnected:
       
       if (dtls_in_stun_ && dtls_ && first_ice_writable) {
-        
-        
         UpdateHandshakeTimeout();
-        PeriodicRetransmitDtlsPacketUntilDtlsConnected();
+        FlushPendingDtlsPacket();
       }
       set_writable(ice_transport()->writable());
       break;
     case DtlsTransportState::kConnecting:
       if (dtls_in_stun_ && dtls_) {
-        
-        
-        
         UpdateHandshakeTimeout();
-        PeriodicRetransmitDtlsPacketUntilDtlsConnected();
+        FlushPendingDtlsPacket();
       }
       break;
     case DtlsTransportState::kFailed:
@@ -1282,17 +1276,8 @@ bool DtlsTransportInternalImpl::WasDtlsCompletedByPiggybacking() {
                                DtlsStunPiggybackController::State::PENDING);
 }
 
-void DtlsTransportInternalImpl::
-    PeriodicRetransmitDtlsPacketUntilDtlsConnected() {
+void DtlsTransportInternalImpl::FlushPendingDtlsPacket() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-
-  if (pending_periodic_retransmit_dtls_packet_ == true) {
-    
-    
-    
-    
-    return;
-  }
 
   if (dtls_stun_piggyback_controller_.state() ==
       DtlsStunPiggybackController::State::COMPLETE) {
@@ -1313,32 +1298,6 @@ void DtlsTransportInternalImpl::
                                    0);
     }
   }
-
-  if (dtls_stun_piggyback_controller_.state() ==
-      DtlsStunPiggybackController::State::OFF) {
-    
-    
-    return;
-  }
-
-  const auto rtt_ms = ice_transport()->GetRttEstimate().value_or(
-      kDefaultHandshakeEstimateRttMs);
-  const int delay_ms = ComputeRetransmissionTimeout(rtt_ms);
-
-  
-  pending_periodic_retransmit_dtls_packet_ = true;
-  Thread::Current()->PostDelayedHighPrecisionTask(
-      SafeTask(safety_flag_.flag(),
-               [this] {
-                 RTC_DCHECK_RUN_ON(&thread_checker_);
-                 
-                 pending_periodic_retransmit_dtls_packet_ = false;
-                 PeriodicRetransmitDtlsPacketUntilDtlsConnected();
-               }),
-      TimeDelta::Millis(delay_ms));
-  RTC_LOG(LS_INFO) << ToString()
-                   << ": Scheduled retransmit of DTLS packet, delay_ms: "
-                   << delay_ms;
 }
 
 int DtlsTransportInternalImpl::GetRetransmissionCount() const {

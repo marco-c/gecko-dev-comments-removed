@@ -306,7 +306,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   void SetPiggybackDtlsDataCallback(
       absl::AnyInvocable<void(PacketTransportInternal* transport,
                               const ReceivedIpPacket& packet)> callback);
-  void PeriodicRetransmitDtlsPacketUntilDtlsConnected();
+  void FlushPendingDtlsPacket();
 
   
   
@@ -366,11 +366,6 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   absl::AnyInvocable<void(PacketTransportInternal*, const ReceivedIpPacket&)>
       piggybacked_dtls_callback_;
 
-  
-  
-  
-  
-  bool pending_periodic_retransmit_dtls_packet_ = false;
   ScopedTaskSafetyDetached safety_flag_;
 
   
