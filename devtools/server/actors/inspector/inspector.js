@@ -124,11 +124,19 @@ class InspectorActor extends Actor {
     super.destroy();
     this.destroyEyeDropper();
 
+    this.#highlighters.clear();
     this._compatibility = null;
     this._pageStylePromise = null;
     this._walkerPromise = null;
     this.walker = null;
     this.targetActor = null;
+  }
+
+  unmanage(actor) {
+    if (actor instanceof CustomHighlighterActor) {
+      this.#highlighters.delete(actor.highlighterTypeName);
+    }
+    super.unmanage(actor);
   }
 
   get window() {
@@ -205,6 +213,9 @@ class InspectorActor extends Actor {
   }
 
   
+  #highlighters = new Map();
+
+  
 
 
 
@@ -215,9 +226,21 @@ class InspectorActor extends Actor {
 
 
 
-  async getHighlighterByType(typeName) {
+
+
+
+
+  async getHighlighterByType(typeName, forceNew = false) {
+    let highlighterActor = this.#highlighters.get(typeName);
+    if (highlighterActor && !forceNew) {
+      return highlighterActor;
+    }
     if (isTypeRegistered(typeName)) {
-      const highlighterActor = new CustomHighlighterActor(this, typeName);
+      highlighterActor = new CustomHighlighterActor(this, typeName);
+      
+      if (!forceNew) {
+        this.#highlighters.set(typeName, highlighterActor);
+      }
       if (highlighterActor.instance.isReady) {
         await highlighterActor.instance.isReady;
       }

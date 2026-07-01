@@ -155,10 +155,20 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     this._highlighters.delete(type);
   }
 
-  async getHighlighterByType(typeName) {
+  
+
+
+
+
+
+
+
+
+
+  async getHighlighterByType(typeName, forceNew = false) {
     let highlighter = null;
     try {
-      highlighter = await super.getHighlighterByType(typeName);
+      highlighter = await super.getHighlighterByType(typeName, forceNew);
     } catch (_) {
       throw new Error(
         "The target doesn't support " +
