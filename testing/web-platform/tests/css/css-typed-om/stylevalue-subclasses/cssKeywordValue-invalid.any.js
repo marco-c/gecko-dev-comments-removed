@@ -1,0 +1,9 @@
+
+
+
+
+'use strict';
+
+test(() => {
+  assert_throws_js(TypeError, () => new CSSKeywordValue(''));
+}, 'Constructing CSSKeywordValue with an empty string throws a TypeError');

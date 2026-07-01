@@ -33,12 +33,10 @@ class MissingLink(Rule):
     name = "MISSING-LINK"
     description = "Testcase file must have a link to a spec"
     to_fix = """
-        Ensure that there is a `<link rel="help" href="[url]">` for the spec.
-        `MISSING-LINK` is designed to ensure that the CSS build tool can find
-        the tests. Note that the CSS build system is primarily used by
-        [test.csswg.org/](http://test.csswg.org/), which doesn't use
-        `wptserve`, so `*.any.js` and similar tests won't work there; stick
-        with the `.html` equivalent.
+        Ensure that there is a `<link rel="help" href="[url]">` for the spec
+        in HTML tests, or a `// META: spec=[url]` line in script-based tests
+        (`*.any.js`, `*.window.js`, `*.worker.js`). `MISSING-LINK` is designed
+        to ensure that tests can be associated with the relevant spec.
     """
 
 
@@ -383,6 +381,20 @@ class UnnecessaryExclusionInWebFeaturesFile(Rule):
     name = "UNNECESSARY-EXCLUSION-IN-WEB-FEATURES-FILE"
     description = collapse("""
         The WEB_FEATURES.yml file contains a redundant or inoperable exclusion pattern: %s
+    """)
+
+
+class WebFeaturesFileInNonTestDirectory(Rule):
+    name = "WEB-FEATURES-FILE-IN-NON-TEST-DIRECTORY"
+    description = collapse("""
+        WEB_FEATURES.yml is located in a non-test directory: '%s'
+    """)
+
+
+class NonTestFileInWebFeaturesFile(Rule):
+    name = "NON-TEST-FILE-IN-WEB-FEATURES-FILE"
+    description = collapse("""
+        The WEB_FEATURES.yml file references a non-test file: '%s' in feature '%s'
     """)
 
 
