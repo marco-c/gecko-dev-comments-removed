@@ -220,11 +220,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
-  
-  void NotifyMediaMutedChanged(bool aMuted, ErrorResult& aRv);
-
-  
-  
   static uint32_t CountSiteOrigins(
       GlobalObject& aGlobal,
       const Sequence<mozilla::OwningNonNull<BrowsingContext>>& aRoots);
