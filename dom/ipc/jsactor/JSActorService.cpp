@@ -336,11 +336,18 @@ JSActorService::GetJSWindowActorProtocol(const nsACString& aName) {
 }
 
 bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
+  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
+
+  if (StaticPrefs::dom_jsipc_check_safeForUntrustedWebProcess() &&
+      !mSafeForUntrustedWebProcess &&
+      (StringBeginsWith(remoteTypePrefix, "web"_ns) ||
+       StringBeginsWith(remoteTypePrefix, "file"_ns))) {
+    return false;
+  }
+
   if (mRemoteTypes.IsEmpty()) {
     return true;
   }
-
-  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
 
   
   

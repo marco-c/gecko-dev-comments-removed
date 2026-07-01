@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_JSActorProtocolUtils_h
 #define mozilla_dom_JSActorProtocolUtils_h
 
@@ -20,6 +18,8 @@ class JSActorProtocolUtils {
   static void FromIPCShared(ProtoT& aProto, const ActorInfoT& aInfo) {
     aProto->mRemoteTypes = aInfo.remoteTypes().Clone();
 
+    aProto->mSafeForUntrustedWebProcess = aInfo.safeForUntrustedWebProcess();
+
     aProto->mChild.mESModuleURI = aInfo.url();
 
     aProto->mLoadInDevToolsLoader = aInfo.loadInDevToolsLoader();
@@ -32,6 +32,8 @@ class JSActorProtocolUtils {
     aInfo.name() = aProto->mName;
 
     aInfo.remoteTypes() = aProto->mRemoteTypes.Clone();
+
+    aInfo.safeForUntrustedWebProcess() = aProto->mSafeForUntrustedWebProcess;
 
     aInfo.url() = aProto->mChild.mESModuleURI;
 
@@ -48,6 +50,8 @@ class JSActorProtocolUtils {
       MOZ_ASSERT(aOptions.mRemoteTypes.Value().Length());
       aProto->mRemoteTypes = aOptions.mRemoteTypes.Value();
     }
+
+    aProto->mSafeForUntrustedWebProcess = aOptions.mSafeForUntrustedWebProcess;
 
     if (aOptions.mParent.WasPassed()) {
       const auto& parentOptions = aOptions.mParent.Value();

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_JSActorService_h
 #define mozilla_dom_JSActorService_h
 
@@ -111,6 +109,7 @@ class JSActorProtocol : public nsISupports {
 
   nsCString mName;
   nsTArray<nsCString> mRemoteTypes;
+  bool mSafeForUntrustedWebProcess = false;
 };
 
 }  

@@ -23,6 +23,8 @@ function declTest(name, cfg) {
     includeChrome = false,
     matches,
     remoteTypes,
+    safeForUntrustedWebProcess = true,
+    safeForUntrustedWebProcessPref = undefined,
     messageManagerGroups,
     events,
     observers,
@@ -43,6 +45,7 @@ function declTest(name, cfg) {
   if (remoteTypes !== undefined) {
     actorOptions.remoteTypes = remoteTypes;
   }
+  actorOptions.safeForUntrustedWebProcess = safeForUntrustedWebProcess;
   if (messageManagerGroups !== undefined) {
     actorOptions.messageManagerGroups = messageManagerGroups;
   }
@@ -50,6 +53,17 @@ function declTest(name, cfg) {
   
   add_task(async function () {
     info("Entering test: " + name);
+
+    if (safeForUntrustedWebProcessPref !== undefined) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          [
+            "dom.jsipc.check_safeForUntrustedWebProcess",
+            safeForUntrustedWebProcessPref,
+          ],
+        ],
+      });
+    }
 
     
     ChromeUtils.registerWindowActor("TestWindow", actorOptions);

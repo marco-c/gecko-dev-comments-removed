@@ -34,6 +34,8 @@ function declTest(name, cfg) {
     url = "about:blank",
     includeParent = false,
     remoteTypes,
+    safeForUntrustedWebProcess = true,
+    safeForUntrustedWebProcessPref = undefined,
     loadInDevToolsLoader = false,
     test,
   } = cfg;
@@ -48,6 +50,7 @@ function declTest(name, cfg) {
   if (remoteTypes !== undefined) {
     actorOptions.remoteTypes = remoteTypes;
   }
+  actorOptions.safeForUntrustedWebProcess = safeForUntrustedWebProcess;
   if (loadInDevToolsLoader) {
     actorOptions.loadInDevToolsLoader = true;
   }
@@ -55,6 +58,17 @@ function declTest(name, cfg) {
   
   add_task(async function () {
     info("Entering test: " + name);
+
+    if (safeForUntrustedWebProcessPref !== undefined) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          [
+            "dom.jsipc.check_safeForUntrustedWebProcess",
+            safeForUntrustedWebProcessPref,
+          ],
+        ],
+      });
+    }
 
     
     ChromeUtils.registerProcessActor("TestProcessActor", actorOptions);
