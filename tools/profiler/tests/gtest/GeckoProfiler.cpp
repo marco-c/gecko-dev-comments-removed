@@ -5439,6 +5439,16 @@ void InsertFieldsAndStackMarkers(uint32_t aCount) {
 
 
 
+void FillBufferUntilRecycling() {
+  ProfileChunkedBuffer& coreBuffer = profiler_get_core_buffer();
+  while (coreBuffer.GetState().mClearedBlockCount == 0) {
+    InsertTinyMarkers(10000);
+  }
+}
+
+
+
+
 class MarkerBenchThreadPool {
  public:
   explicit MarkerBenchThreadPool(uint32_t aThreadCount) {
@@ -5711,14 +5721,23 @@ void ReportHistogram(const char* aName, const LatencyHist& aHist) {
 
 class GeckoProfilerMarkerBench : public ::testing::Test {
  protected:
+  
+  
+  virtual PowerOfTwo32 BufferCapacity() const { return PowerOfTwo32(1u << 24); }
+
+  
+  
+  virtual void PrepareBuffer() {}
+
   void SetUp() override {
     
-    const nsCString& _text = LargeMarkerText();
+    (void)LargeMarkerText();
     uint32_t features =
         ProfilerFeature::NoStackSampling | ProfilerFeature::MarkersAllThreads;
-    profiler_start(PowerOfTwo32(1u << 24), PROFILER_DEFAULT_INTERVAL, features,
+    profiler_start(BufferCapacity(), PROFILER_DEFAULT_INTERVAL, features,
                    nullptr, 0, 0);
     mThreadPool = MakeUnique<MarkerBenchThreadPool>(kMarkerInsertionThreads);
+    PrepareBuffer();
   }
 
   void TearDown() override {
@@ -5729,83 +5748,125 @@ class GeckoProfilerMarkerBench : public ::testing::Test {
   UniquePtr<MarkerBenchThreadPool> mThreadPool;
 };
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionSingleThreadTiny,
+
+
+
+
+class GeckoProfilerMarkerBenchNoRecycle : public GeckoProfilerMarkerBench {
+ protected:
+  
+  
+  PowerOfTwo32 BufferCapacity() const override {
+    return PowerOfTwo32(1u << 27);
+  }
+
+  void TearDown() override {
+    EXPECT_EQ(profiler_get_core_buffer().GetState().mClearedBlockCount, 0u)
+        << "buffer recycled chunks; capacity too small for the no-recycle case";
+    GeckoProfilerMarkerBench::TearDown();
+  }
+};
+
+
+
+
+class GeckoProfilerMarkerBenchRecycle : public GeckoProfilerMarkerBench {
+ protected:
+  void PrepareBuffer() override { FillBufferUntilRecycling(); }
+
+  void TearDown() override {
+    EXPECT_GT(profiler_get_core_buffer().GetState().mClearedBlockCount, 0u)
+        << "buffer never recycled; the recycle case measured nothing";
+    GeckoProfilerMarkerBench::TearDown();
+  }
+};
+
+
+
+
+
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
+                  MarkerInsertionSingleThreadTiny,
                   []() { InsertTinyMarkers(kMarkerInsertionCount); });
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionSingleThreadLarge,
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
+                  MarkerInsertionSingleThreadLarge,
                   []() { InsertLargeMarkers(kMarkerInsertionCount); });
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionMultiThreadTiny,
-                  [this]() {
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
+                  MarkerInsertionMultiThreadTiny, [this]() {
                     mThreadPool->InsertOnAll(kMarkerInsertionCount,
                                              &InsertTinyMarkers);
                   });
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionMultiThreadLarge,
-                  [this]() {
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
+                  MarkerInsertionMultiThreadLarge, [this]() {
                     mThreadPool->InsertOnAll(kMarkerInsertionCount,
                                              &InsertLargeMarkers);
                   });
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench,
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
                   MarkerInsertionSingleThreadFieldsAndStack,
                   []() { InsertFieldsAndStackMarkers(kMarkerInsertionCount); });
 
-MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench,
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
                   MarkerInsertionMultiThreadFieldsAndStack, [this]() {
                     mThreadPool->InsertOnAll(kMarkerInsertionCount,
                                              &InsertFieldsAndStackMarkers);
                   });
 
+#define DEFINE_HISTO_TESTS(aFixture, aPrefix)                                  \
+  TEST_F(aFixture, HistoSingleThreadTiny) {                                    \
+    LatencyHist hist;                                                          \
+    TimedInsert(kMarkerInsertionCount, hist,                                   \
+                []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); });            \
+    ReportHistogram(aPrefix "SingleThreadTiny", hist);                         \
+  }                                                                            \
+  TEST_F(aFixture, HistoSingleThreadLarge) {                                   \
+    const nsCString& text = LargeMarkerText();                                 \
+    LatencyHist hist;                                                          \
+    TimedInsert(kMarkerInsertionCount, hist,                                   \
+                [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });    \
+    ReportHistogram(aPrefix "SingleThreadLarge", hist);                        \
+  }                                                                            \
+  TEST_F(aFixture, HistoSingleThreadFieldsAndStack) {                          \
+    LatencyHist hist;                                                          \
+    TimedInsert(kMarkerInsertionCount, hist, []() {                            \
+      profiler_add_marker("M", geckoprofiler::category::OTHER,                 \
+                          MarkerStack::Capture(), BenchFieldsMarker{}, 42,     \
+                          43.0, "bench");                                      \
+    });                                                                        \
+    ReportHistogram(aPrefix "SingleThreadFieldsAndStack", hist);               \
+  }                                                                            \
+  TEST_F(aFixture, HistoMultiThreadTiny) {                                     \
+    LatencyHist hist;                                                          \
+    TimedInsertMultiThread(kMarkerInsertionCount, kMarkerInsertionThreads,     \
+                           hist,                                               \
+                           []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); }); \
+    ReportHistogram(aPrefix "MultiThreadTiny", hist);                          \
+  }                                                                            \
+  TEST_F(aFixture, HistoMultiThreadLarge) {                                    \
+    const nsCString& text = LargeMarkerText();                                 \
+    LatencyHist hist;                                                          \
+    TimedInsertMultiThread(                                                    \
+        kMarkerInsertionCount, kMarkerInsertionThreads, hist,                  \
+        [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });            \
+    ReportHistogram(aPrefix "MultiThreadLarge", hist);                         \
+  }                                                                            \
+  TEST_F(aFixture, HistoMultiThreadFieldsAndStack) {                           \
+    LatencyHist hist;                                                          \
+    TimedInsertMultiThread(                                                    \
+        kMarkerInsertionCount, kMarkerInsertionThreads, hist, []() {           \
+          profiler_add_marker("M", geckoprofiler::category::OTHER,             \
+                              MarkerStack::Capture(), BenchFieldsMarker{}, 42, \
+                              43.0, "bench");                                  \
+        });                                                                    \
+    ReportHistogram(aPrefix "MultiThreadFieldsAndStack", hist);                \
+  }
 
-TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadTiny) {
-  LatencyHist hist;
-  TimedInsert(kMarkerInsertionCount, hist,
-              []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); });
-  ReportHistogram("SingleThreadTiny", hist);
-}
+DEFINE_HISTO_TESTS(GeckoProfilerMarkerBench, "")
+DEFINE_HISTO_TESTS(GeckoProfilerMarkerBenchNoRecycle, "NoRecycle")
+DEFINE_HISTO_TESTS(GeckoProfilerMarkerBenchRecycle, "Recycle")
 
-TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadLarge) {
-  const nsCString& text = LargeMarkerText();
-  LatencyHist hist;
-  TimedInsert(kMarkerInsertionCount, hist,
-              [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });
-  ReportHistogram("SingleThreadLarge", hist);
-}
-
-TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadFieldsAndStack) {
-  LatencyHist hist;
-  TimedInsert(kMarkerInsertionCount, hist, []() {
-    profiler_add_marker("M", geckoprofiler::category::OTHER,
-                        MarkerStack::Capture(), BenchFieldsMarker{}, 42, 43.0,
-                        "bench");
-  });
-  ReportHistogram("SingleThreadFieldsAndStack", hist);
-}
-
-TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadTiny) {
-  LatencyHist hist;
-  TimedInsertMultiThread(kMarkerInsertionCount, kMarkerInsertionThreads, hist,
-                         []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); });
-  ReportHistogram("MultiThreadTiny", hist);
-}
-
-TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadLarge) {
-  const nsCString& text = LargeMarkerText();
-  LatencyHist hist;
-  TimedInsertMultiThread(
-      kMarkerInsertionCount, kMarkerInsertionThreads, hist,
-      [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });
-  ReportHistogram("MultiThreadLarge", hist);
-}
-
-TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadFieldsAndStack) {
-  LatencyHist hist;
-  TimedInsertMultiThread(
-      kMarkerInsertionCount, kMarkerInsertionThreads, hist, []() {
-        profiler_add_marker("M", geckoprofiler::category::OTHER,
-                            MarkerStack::Capture(), BenchFieldsMarker{}, 42,
-                            43.0, "bench");
-      });
-  ReportHistogram("MultiThreadFieldsAndStack", hist);
-}
+#undef DEFINE_HISTO_TESTS
