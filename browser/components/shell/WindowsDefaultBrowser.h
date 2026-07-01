@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef windowsdefaultbrowser_h_
 #define windowsdefaultbrowser_h_
 
@@ -24,14 +23,6 @@ using UIWindowElement = std::pair<HWND, UIElement>;
 bool GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName);
 bool LaunchControlPanelDefaultPrograms();
 bool LaunchModernSettingsDialogDefaultApps();
-
-
-
-
-
-
-
-void FocusElement(HWND aWindow, const UIElement& aElement);
 
 
 

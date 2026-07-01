@@ -6,7 +6,6 @@
 
 
 
-
 #include "WindowsDefaultBrowser.h"
 
 #include "city.h"
@@ -203,16 +202,6 @@ bool LaunchModernSettingsDialogDefaultApps() {
     return SUCCEEDED(hr);
   }
   return true;
-}
-
-static void EnableFocusIndicators(HWND aWindow) {
-  ::PostMessageW(aWindow, WM_UPDATEUISTATE,
-                 MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
-}
-
-void FocusElement(HWND aWindow, const UIElement& aElement) {
-  EnableFocusIndicators(aWindow);
-  aElement->SetFocus();
 }
 
 static already_AddRefed<IUIAutomationElement> TryFindElementByAutomationId(
