@@ -88,6 +88,10 @@ pub struct ImageScratch {
     
     
     pub gpu_address: GpuBufferAddress,
+    
+    
+    
+    pub opacity: PrimitiveOpacity,
 }
 
 impl ImageScratch {
@@ -100,6 +104,7 @@ impl ImageScratch {
             tight_local_clip_rect: LayoutRect::zero(),
             may_need_repetition: true,
             gpu_address: GpuBufferAddress::INVALID,
+            opacity: PrimitiveOpacity::translucent(),
         }
     }
 }
@@ -224,7 +229,6 @@ impl ImageData {
     
     pub fn update(
         &mut self,
-        common: &mut PrimTemplateCommonData,
         prim_instance_index: PrimitiveInstanceIndex,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_state: &mut FrameBuildingState,
@@ -236,17 +240,6 @@ impl ImageData {
         let image_properties = frame_state
             .resource_cache
             .get_image_properties(self.key);
-
-        common.opacity = match &image_properties {
-            Some(properties) => {
-                if properties.descriptor.is_opaque() {
-                    PrimitiveOpacity::from_alpha(self.color.a)
-                } else {
-                    PrimitiveOpacity::translucent()
-                }
-            }
-            None => PrimitiveOpacity::opaque(),
-        };
 
         let request = ImageRequest {
             key: self.key,
@@ -269,6 +262,16 @@ impl ImageData {
 
         let mut image_scratch = ImageScratch::empty();
         image_scratch.tight_local_clip_rect = tight_clip_rect;
+        image_scratch.opacity = match &image_properties {
+            Some(properties) => {
+                if properties.descriptor.is_opaque() {
+                    PrimitiveOpacity::from_alpha(self.color.a)
+                } else {
+                    PrimitiveOpacity::translucent()
+                }
+            }
+            None => PrimitiveOpacity::opaque(),
+        };
         if effective_stretch_size.width >= prim_rect.size().width
             && effective_stretch_size.height >= prim_rect.size().height
         {
@@ -343,7 +346,7 @@ impl ImageData {
                     size.height += padding.vertical();
 
                     if padding != DeviceIntSideOffsets::zero() {
-                        common.opacity = PrimitiveOpacity::translucent();
+                        image_scratch.opacity = PrimitiveOpacity::translucent();
                     }
 
                     let image_cache_key = ImageCacheKey {
@@ -528,7 +531,6 @@ pub fn prepare_image_quads(
     };
 
     let src_is_opaque = image_properties.descriptor.is_opaque()
-        && common_data.opacity.is_opaque
         && image_data.color.a >= 0.9999;
 
     let premultiplied = image_data.alpha_type == AlphaType::PremultipliedAlpha;
