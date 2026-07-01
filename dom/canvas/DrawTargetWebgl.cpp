@@ -218,6 +218,10 @@ SharedContextWebgl::SharedContextWebgl() = default;
 
 SharedContextWebgl::~SharedContextWebgl() {
   
+  
+  
+  DetachWeakPtr();
+  
   if (mWebgl) {
     ExitTlsScope();
     mWebgl->ActiveTexture(0);
