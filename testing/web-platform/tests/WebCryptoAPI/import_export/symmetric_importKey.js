@@ -59,6 +59,20 @@ function runTests(algorithmName) {
                         testFormat(format, algorithm, data, keyData.length * 8, usages, extractable);
                     });
                     testEmptyUsages(format, algorithm, data, keyData.length * 8, extractable);
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (extractable && format !== "jwk") {
+                        allValidUsages(vector.legalUsages).forEach(function(usages) {
+                            testKeyDataAlteredDuringCall(format, algorithm, keyData, keyData.length * 8, usages);
+                        });
+                    }
                 });
             });
 
@@ -111,47 +125,38 @@ function runTests(algorithmName) {
         }, "Empty Usages: " + keySize.toString() + " bits " + parameterString(format, keyData, algorithm, extractable, usages));
     }
 
-
-
     
-
     
-    function equalBuffers(a, b) {
-        if (a.byteLength !== b.byteLength) {
-            return false;
-        }
-
-        var aBytes = new Uint8Array(a);
-        var bBytes = new Uint8Array(b);
-
-        for (var i=0; i<a.byteLength; i++) {
-            if (aBytes[i] !== bBytes[i]) {
-                return false;
-            }
-        }
-
-        return true;
+    
+    
+    
+    
+    function testKeyDataAlteredDuringCall(format, algorithm, keyData, keySize, usages) {
+        promise_test(function(test) {
+            var alteredKeyData = copyBuffer(keyData);
+            alteredKeyData[0] = 255 - alteredKeyData[0];
+            var algorithmWithGetter = {
+                ...algorithm,
+                get name() {
+                    alteredKeyData[0] = keyData[0];
+                    return algorithm.name;
+                }
+            };
+            return subtle.importKey(format, alteredKeyData, algorithmWithGetter, true, usages).
+            then(function(key) {
+                return subtle.exportKey(format, key);
+            }).
+            then(function(result) {
+                assert_true(equalBuffers(keyData, result), "Imported key reflects the key data as it was after normalization");
+            }, function(err) {
+                assert_unreached("Threw an unexpected error: " + err.toString());
+            });
+        }, "Key data altered during call: " + keySize.toString() + " bits " + parameterString(format, keyData, algorithm, true, usages));
     }
 
-    
-    
-    
-    function equalJwk(expected, got) {
-        var fields = Object.keys(expected);
-        var fieldName;
 
-        for(var i=0; i<fields.length; i++) {
-            fieldName = fields[i];
-            if (!(fieldName in got)) {
-                return false;
-            }
-            if (expected[fieldName] !== got[fieldName]) {
-                return false;
-            }
-        }
 
-        return true;
-    }
+    
 
     
     function jwkData(keyData, algorithm) {
@@ -171,17 +176,6 @@ function runTests(algorithmName) {
     }
 
     
-    function byteArrayToUnpaddedBase64(byteArray){
-        var binaryString = "";
-        for (var i=0; i<byteArray.byteLength; i++){
-            binaryString += String.fromCharCode(byteArray[i]);
-        }
-        var base64String = btoa(binaryString);
-
-        return base64String.replace(/=/g, "");
-    }
-
-    
     function parameterString(format, data, algorithm, extractable, usages) {
         var result = "(" +
                         objectToString(format) + ", " +
@@ -192,40 +186,5 @@ function runTests(algorithmName) {
                      ")";
 
         return result;
-    }
-
-    
-    function objectToString(obj) {
-        var keyValuePairs = [];
-
-        if (Array.isArray(obj)) {
-            return "[" + obj.map(function(elem){return objectToString(elem);}).join(", ") + "]";
-        } else if (typeof obj === "object") {
-            Object.keys(obj).sort().forEach(function(keyName) {
-                keyValuePairs.push(keyName + ": " + objectToString(obj[keyName]));
-            });
-            return "{" + keyValuePairs.join(", ") + "}";
-        } else if (typeof obj === "undefined") {
-            return "undefined";
-        } else {
-            return obj.toString();
-        }
-
-        var keyValuePairs = [];
-
-        Object.keys(obj).sort().forEach(function(keyName) {
-            var value = obj[keyName];
-            if (typeof value === "object") {
-                value = objectToString(value);
-            } else if (typeof value === "array") {
-                value = "[" + value.map(function(elem){return objectToString(elem);}).join(", ") + "]";
-            } else {
-                value = value.toString();
-            }
-
-            keyValuePairs.push(keyName + ": " + value);
-        });
-
-        return "{" + keyValuePairs.join(", ") + "}";
     }
 }
