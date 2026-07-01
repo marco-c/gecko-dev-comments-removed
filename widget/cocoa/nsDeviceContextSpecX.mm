@@ -99,35 +99,39 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
 
 #ifdef MOZ_ENABLE_SKIA_PDF
   if (StaticPrefs::print_experimental_skpdf()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    OSStatus status = noErr;
-    PMDestinationType destination;
-    status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings,
-                                           &destination);
-    if (status == noErr) {
-      if (destination == kPMDestinationPrinter ||
-          destination == kPMDestinationPreview) {
-        mPrintViaSkPDF = true;
-      } else if (destination == kPMDestinationFile) {
-        AutoCFTypeRef<CFURLRef> destURL(nullptr);
-        status = ::PMSessionCopyDestinationLocation(
-            mPrintSession, mPMPrintSettings, destURL.Receive());
-        if (status == noErr) {
-          AutoCFTypeRef<CFStringRef> destPathRef(
-              CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle));
-          NSString* destPath = (NSString*)CFStringRef(destPathRef);
-          NSString* destPathExt = [destPath pathExtension];
-          if ([destPathExt isEqualToString:@"pdf"]) {
-            mPrintViaSkPDF = true;
+    if (mOutputStream) {
+      mPrintViaSkPDF = true;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      OSStatus status = noErr;
+      PMDestinationType destination;
+      status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings,
+                                             &destination);
+      if (status == noErr) {
+        if (destination == kPMDestinationPrinter ||
+            destination == kPMDestinationPreview) {
+          mPrintViaSkPDF = true;
+        } else if (destination == kPMDestinationFile) {
+          AutoCFTypeRef<CFURLRef> destURL(nullptr);
+          status = ::PMSessionCopyDestinationLocation(
+              mPrintSession, mPMPrintSettings, destURL.Receive());
+          if (status == noErr) {
+            AutoCFTypeRef<CFStringRef> destPathRef(
+                CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle));
+            NSString* destPath = (NSString*)CFStringRef(destPathRef);
+            NSString* destPathExt = [destPath pathExtension];
+            if ([destPathExt isEqualToString:@"pdf"]) {
+              mPrintViaSkPDF = true;
+            }
           }
         }
       }
@@ -185,7 +189,7 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
 #ifdef MOZ_ENABLE_SKIA_PDF
-  if (mPrintViaSkPDF) {
+  if (mPrintViaSkPDF && !mOutputStream) {
     OSStatus status = noErr;
 
     nsCOMPtr<nsILocalFileMac> tmpPDFFile = do_QueryInterface(mTempFile);
@@ -299,7 +303,9 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
 
 #ifdef MOZ_ENABLE_SKIA_PDF
   if (mPrintViaSkPDF) {
-    
+    if (mOutputStream) {
+      return PrintTargetSkPDF::CreateOrNull(mOutputStream, size);
+    }
     nsresult rv =
         NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mTempFile));
     NS_ENSURE_SUCCESS(rv, nullptr);
