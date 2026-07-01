@@ -84,7 +84,12 @@ void RtpReplayer::Replay(
   }
 
   
-  Environment env = CreateTestEnvironment({.time = &time_controller});
+  
+  
+  
+  
+  
+  Environment env = CreateTestEnvironment({.time = time_controller.GetClock()});
   CallConfig call_config(env);
   std::unique_ptr<Call> call = Call::Create(std::move(call_config));
   SetupVideoStreams(&receive_stream_configs, stream_state.get(), call.get());
