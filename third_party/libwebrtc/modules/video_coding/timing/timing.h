@@ -101,7 +101,7 @@ class VCMTiming {
 
   
   
-  virtual Timestamp RenderTime(uint32_t rtp_timestamp, Timestamp now) const;
+  Timestamp RenderTime(uint32_t rtp_timestamp, Timestamp now) const;
 
   
   
@@ -110,9 +110,9 @@ class VCMTiming {
   
   
   
-  virtual TimeDelta MaxWaitingTime(Timestamp render_time,
-                                   Timestamp now,
-                                   bool too_many_frames_queued) const;
+  TimeDelta MaxWaitingTime(Timestamp render_time,
+                           Timestamp now,
+                           bool too_many_frames_queued) const;
 
   
   
