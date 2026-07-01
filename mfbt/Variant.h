@@ -30,7 +30,6 @@ class Variant;
 
 namespace detail {
 
-
 #if defined(__has_builtin)
 #  if __has_builtin(__type_pack_element)
 #    define MOZ_HAS_TYPE_PACK_ELEMENT
@@ -39,8 +38,16 @@ namespace detail {
 
 #ifdef MOZ_HAS_TYPE_PACK_ELEMENT
 
+
+
+
 template <size_t N, typename... Ts>
-using Nth = __type_pack_element<N, Ts...>;
+struct type_pack_element {
+  using type = __type_pack_element<N, Ts...>;
+};
+
+template <size_t N, typename... Ts>
+using Nth = typename type_pack_element<N, Ts...>::type;
 
 #else
 
