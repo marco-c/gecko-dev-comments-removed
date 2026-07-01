@@ -77,6 +77,10 @@ class MOZ_GSL_OWNER Array {
   constexpr size_t size() const { return Length; }
 
   
+  constexpr T* data() { return mArr; }
+  constexpr const T* data() const { return mArr; }
+
+  
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const {
     return const_reverse_iterator(end());
