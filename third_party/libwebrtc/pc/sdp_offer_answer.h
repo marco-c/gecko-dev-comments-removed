@@ -90,7 +90,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   static std::unique_ptr<SdpOfferAnswerHandler> Create(
       const Environment& env,
       PeerConnectionSdpMethods* pc,
-      const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator,
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
           video_bitrate_allocator_factory,
@@ -111,7 +110,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
     return video_bitrate_allocator_factory_.get();
   }
 
-  const AudioOptions& audio_options() { return audio_options_; }
+  const AudioOptions& audio_options() const { return audio_options_; }
   const VideoOptions& video_options() { return video_options_; }
 
   
@@ -245,7 +244,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   void Initialize(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator,
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
           video_bitrate_allocator_factory,
@@ -712,7 +710,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   std::string session_error_desc_ RTC_GUARDED_BY(signaling_thread());
 
   
-  AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
+  const AudioOptions audio_options_;
   VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
   std::vector<IceParameters> cached_pooled_ice_credentials_
       RTC_GUARDED_BY(signaling_thread());
