@@ -5,7 +5,7 @@
 #ifndef MOZJEMALLOC_PROFILING_H
 #define MOZJEMALLOC_PROFILING_H
 
-#include "mozilla/RefCounted.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozjemalloc_types.h"
@@ -37,10 +37,25 @@ struct PurgeStats {
 };
 
 #ifdef MOZJEMALLOC_PROFILING_CALLBACKS
-class MallocProfilerCallbacks
-    : public external::AtomicRefCounted<MallocProfilerCallbacks> {
+
+
+
+
+
+
+
+
+
+
+class MallocProfilerCallbacks {
  public:
-  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(MallocProfilerCallbacks)
+  void AddRef() const { ++mRefCnt; }
+  void Release() const {
+    MOZ_ASSERT(int32_t(mRefCnt) > 0);
+    if (0 == --mRefCnt) {
+      delete this;
+    }
+  }
 
   virtual ~MallocProfilerCallbacks() {}
 
@@ -48,6 +63,9 @@ class MallocProfilerCallbacks
 
   virtual void OnPurge(TS aStart, TS aEnd, const PurgeStats& aStats,
                        ArenaPurgeResult aResult) = 0;
+
+ private:
+  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire> mRefCnt{0};
 };
 
 MOZ_JEMALLOC_API void jemalloc_set_profiler_callbacks(
