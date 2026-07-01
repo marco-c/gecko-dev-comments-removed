@@ -1712,7 +1712,10 @@ void GetUsageOp::ProcessOriginInternal(QuotaManager* aQuotaManager,
     originUsage->mPersisted = aPersisted;
   }
 
-  originUsage->mUsage = originUsage->mUsage + aUsage;
+  
+  if (aUsage < INT64_MAX) [[likely]] {
+    originUsage->mUsage += aUsage;
+  }
 
   originUsage->mLastAccessTime =
       std::max<int64_t>(originUsage->mLastAccessTime, aTimestamp);
