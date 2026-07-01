@@ -107,7 +107,8 @@ TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
     
     
     
-    GTEST_SKIP() << "QM usage accounting differs under SQLite at-rest encryption";
+    GTEST_SKIP()
+        << "QM usage accounting differs under SQLite at-rest encryption";
   }
   
   ASSERT_NO_FATAL_FAILURE(EnsureDataManager());

@@ -721,8 +721,8 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   nsAutoCString policyKey;
 
   if (!keyReady && zKey == nullptr &&
-      (flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL |
-                SQLITE_OPEN_MAIN_JOURNAL))) {
+      (flags &
+       (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_WAL | SQLITE_OPEN_MAIN_JOURNAL))) {
     
     
     
