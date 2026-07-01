@@ -2628,7 +2628,7 @@ CodeOffset MacroAssembler::call(Register reg) {
 
 CodeOffset MacroAssembler::call(wasm::SymbolicAddress imm) {
   UseScratchRegisterScope temps(this);
-  temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+  temps.Acquire(CallReg);
   movePtr(imm, CallReg);
   return call(CallReg);
 }
@@ -3498,7 +3498,7 @@ void MacroAssembler::branchValueIsNurseryCell(Condition cond,
 
 CodeOffset MacroAssembler::call(const Address& addr) {
   UseScratchRegisterScope temps(this);
-  temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+  temps.Acquire(CallReg);
   loadPtr(addr, CallReg);
   return call(CallReg);
 }
@@ -3584,7 +3584,7 @@ void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
   
   
   UseScratchRegisterScope temps(this);
-  temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+  temps.Acquire(CallReg);
   movePtr(fun, CallReg);
 
   uint32_t stackAdjust;
@@ -3596,7 +3596,7 @@ void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
 void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
   
   UseScratchRegisterScope temps(this);
-  temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+  temps.Acquire(CallReg);
   loadPtr(fun, CallReg);
 
   uint32_t stackAdjust;
@@ -6183,7 +6183,7 @@ BufferOffset MacroAssemblerRiscv64::ma_call(ImmPtr dest) {
   AutoForbidPoolsAndNops afp(this, 7);
 
   UseScratchRegisterScope temps(this);
-  temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+  temps.Acquire(CallReg);
 
   BufferOffset offset = ma_liPatchable(CallReg, dest);
   jalr(CallReg);
