@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -182,6 +184,30 @@ public class IPProtectionController {
   }
 
   
+  public static class Country {
+    
+    public final @NonNull String code;
+
+    
+    public final boolean available;
+
+    
+
+
+
+
+
+    public Country(final @NonNull String code, final boolean available) {
+      this.code = code;
+      this.available = available;
+    }
+
+     Country(final @NonNull GeckoBundle bundle) {
+      this(bundle.getString("code", ""), bundle.getBoolean("available", true));
+    }
+  }
+
+  
   public interface AuthProvider {
     
 
@@ -226,6 +252,15 @@ public class IPProtectionController {
 
     @UiThread
     default void onUsageChanged(final @NonNull UsageInfo info) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onCountryListChanged(final @NonNull List<Country> countries) {}
   }
 
    IPProtectionController() {
@@ -236,6 +271,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPProtectionService:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
+            "GeckoView:IPProtection:ServerList:ListChanged",
             "GeckoView:IPProtection:GetToken");
   }
 
@@ -358,6 +394,31 @@ public class IPProtectionController {
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:IPProtection:IPProtectionService:GetState")
         .map(b -> parseServiceState(b.getString("state")));
+  }
+
+  
+
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Void> getCountryList() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:ServerList:GetCountryList");
+  }
+
+  private static @NonNull List<Country> countriesFromBundle(final @NonNull GeckoBundle bundle) {
+    final List<Country> result = new ArrayList<>();
+    final GeckoBundle[] countries = bundle.getBundleArray("countries");
+    if (countries != null) {
+      for (final GeckoBundle country : countries) {
+        result.add(new Country(country));
+      }
+    }
+    return result;
   }
 
   
@@ -522,6 +583,9 @@ public class IPProtectionController {
           break;
         case "GeckoView:IPProtection:IPPProxyManager:UsageChanged":
           withDelegate(event, d -> d.onUsageChanged(new UsageInfo(message)));
+          break;
+        case "GeckoView:IPProtection:ServerList:ListChanged":
+          withDelegate(event, d -> d.onCountryListChanged(countriesFromBundle(message)));
           break;
         case "GeckoView:IPProtection:GetToken":
           {
