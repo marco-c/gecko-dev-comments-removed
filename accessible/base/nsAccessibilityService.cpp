@@ -594,17 +594,36 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
     return;
   }
   LocalAccessible* accessible = document->GetAccessible(aContent);
-  if (!accessible && aContent == document->GetContent()) {
+  bool shouldQueueUpdateForDocument = false;
+  if (aContent == document->GetContent()) {
     
     
     
-    accessible = document;
+    
+    
+
+    if (!accessible) {
+      
+      
+      
+      accessible = document;
+    } else if (accessible != document) {
+      
+      
+      
+      
+      
+      shouldQueueUpdateForDocument = true;
+    }
   }
   if (!accessible) {
     return;
   }
   if (IPCAccessibilityActive()) {
     document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
+    if (shouldQueueUpdateForDocument) {
+      document->QueueCacheUpdate(document, CacheDomain::Bounds);
+    }
   }
   MOZ_ASSERT(!aContent->IsText() || accessible->IsTextLeaf(),
              "A DOM Text node should only ever have a TextLeafAccessible");
