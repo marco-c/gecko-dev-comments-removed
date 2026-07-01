@@ -172,6 +172,7 @@ struct CustomElementDefinition;
 class CustomElementFormValue;
 class CustomElementRegistry;
 class DataTransfer;
+enum class DeprecatedOperations : uint16_t;
 class Document;
 class DocumentFragment;
 class DOMArena;
@@ -1392,6 +1393,24 @@ class nsContentUtils {
       const mozilla::SourceLocation& aLocation =
           mozilla::JSCallingLocation::Get());
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static void ReportDeprecation(nsIGlobalObject* aGlobal, const Document* aDoc,
+                                nsIURI* aURI,
+                                mozilla::dom::DeprecatedOperations aOperation,
+                                const mozilla::JSCallingLocation& aLocation);
+
   static void ReportEmptyGetElementByIdArg(const Document* aDoc);
 
   static void LogMessageToConsole(const char* aMsg);
@@ -1408,7 +1427,8 @@ class nsContentUtils {
 
 
   static nsresult GetMaybeLocalizedString(PropertiesFile aFile,
-                                          const char* aKey, Document* aDocument,
+                                          const char* aKey,
+                                          const Document* aDocument,
                                           nsAString& aResult);
 
   
