@@ -334,6 +334,12 @@ var allowlist = [
 
   
   
+  {
+    file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+  },
+
+  
+  
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
   { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
 

@@ -7,21 +7,6 @@
 
 
 {
-  const lazy = {};
-
-  ChromeUtils.defineESModuleGetters(lazy, {
-    AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
-  });
-
-  if (!customElements.get("autocomplete-row-item")) {
-    customElements.setElementCreationCallback("autocomplete-row-item", () => {
-      ChromeUtils.importESModule(
-        "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
-        { global: "current" }
-      );
-    });
-  }
-
   const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
   MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends (
     MozPopupElement
@@ -172,26 +157,6 @@
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
       }
       this.richlistbox.selectedIndex = val;
-
-      const prevSelectedItem = this.richlistbox.children[
-        this._previousSelectedIndex
-      ]?.querySelector("autocomplete-row-item");
-      const selectedItem = this.richlistbox.children[val]?.querySelector(
-        "autocomplete-row-item"
-      );
-
-      if (prevSelectedItem) {
-        prevSelectedItem.selected = false;
-      }
-
-      if (selectedItem) {
-        selectedItem.selected = true;
-      }
-
-      if (selectedItem || prevSelectedItem) {
-        lazy.AutoCompleteParent.getCurrentActor()?.previewAutoCompleteEntry();
-      }
-
       
       
       
@@ -326,7 +291,7 @@
       this._invalidate(reason);
     }
 
-    _invalidate() {
+    _invalidate(reason) {
       
       this.richlistbox.collapsed = this.matchCount == 0;
 
@@ -349,15 +314,7 @@
       if (this._appendResultTimeout) {
         clearTimeout(this._appendResultTimeout);
       }
-
-      if (
-        !this.richlistbox.classList.contains("autocomplete-row-item-container")
-      ) {
-        this.richlistbox.replaceChildren();
-      }
-
-      this.richlistbox.classList.add("autocomplete-row-item-container");
-      this._appendAutocompleteResults();
+      this._appendCurrentResult(reason);
     }
 
     _collapseUnusedItems() {
@@ -424,37 +381,20 @@
       this.richlistbox.style.maxHeight = Math.ceil(height) + "px";
     }
 
-    _createAutocompleteRowItem() {
-      const item = document.createXULElement("richlistitem");
-      item.className = "autocomplete-row-item";
-      item.selectedByMouseOver = true;
-      item.appendChild(document.createElement("autocomplete-row-item"));
-      return item;
-    }
-
-    
-    
-    
-    async _localizeRowLabel(row, { id, args }) {
-      MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
-      const value = await document.l10n.formatValue(id, args);
-      const parsed = new DOMParser().parseFromString(value, "text/html");
-      const line1 = parsed.querySelector('[data-l10n-name="line1"]');
-      const line2 = parsed.querySelector('[data-l10n-name="line2"]');
-      row.label = (line1 ?? parsed.body).textContent;
-      row.description = line2?.textContent ?? null;
-    }
-
-    _appendAutocompleteResults() {
-      const controller = this.mInput.controller;
-      const matchCount = this.matchCount;
+    _appendCurrentResult(invalidateReason) {
+      var controller = this.mInput.controller;
+      var matchCount = this.matchCount;
+      var existingItemsCount = this.richlistbox.children.length;
 
       
       for (let i = 0; i < this.maxRows; i++) {
         if (this._currentIndex >= matchCount) {
           break;
         }
+        let item;
+        let itemExists = this._currentIndex < existingItemsCount;
 
+        let originalValue, originalText, originalType;
         let style = controller.getStyleAt(this._currentIndex);
         let value =
           style && style.includes("autofill")
@@ -463,70 +403,153 @@
         let label = controller.getLabelAt(this._currentIndex);
         let comment = controller.getCommentAt(this._currentIndex);
         let image = controller.getImageAt(this._currentIndex);
-
-        let parsedComment = null;
-        try {
-          parsedComment = comment?.length ? JSON.parse(comment) : null;
-        } catch {}
+        
+        let trimmedSearchString = controller.searchString
+          .replace(/^\s+/, "")
+          .replace(/\s+$/, "");
 
         
-        if (!this.richlistbox.children[this._currentIndex]) {
-          this.richlistbox.appendChild(this._createAutocompleteRowItem());
+        try {
+          const details = JSON.parse(label);
+          if (details.title) {
+            value = details.title;
+            label = details.subtitle ?? "";
+          }
+        } catch {}
+
+        let reusable = false;
+        if (itemExists) {
+          item = this.richlistbox.children[this._currentIndex];
+
+          
+          originalValue =
+            item.getAttribute("url") || item.getAttribute("ac-value");
+          originalText = item.getAttribute("ac-text");
+          originalType = item.getAttribute("originaltype");
+
+          
+          
+          const UNREUSEABLE_STYLES = [
+            "autofill",
+            "action",
+            "generatedPassword",
+            "generic",
+            "importableLearnMore",
+            "importableLogins",
+            "insecureWarning",
+            "loginsFooter",
+            "loginWithOrigin",
+          ];
+          
+          
+          reusable =
+            originalType === style ||
+            !(
+              UNREUSEABLE_STYLES.includes(style) ||
+              UNREUSEABLE_STYLES.includes(originalType)
+            );
         }
 
-        const item = this.richlistbox.children[this._currentIndex];
-        const row = item.querySelector("autocomplete-row-item");
-
-        if (row) {
-          if (parsedComment?.l10n) {
-            this._localizeRowLabel(row, parsedComment.l10n);
-          } else {
-            row.label = label;
-            row.description = parsedComment?.secondary ?? null;
+        
+        if (!reusable) {
+          let options = null;
+          switch (style) {
+            case "autofill":
+              options = { is: "autocomplete-autofill-richlistitem" };
+              break;
+            case "action":
+              options = { is: "autocomplete-action-richlistitem" };
+              break;
+            case "generic":
+              options = { is: "autocomplete-two-line-richlistitem" };
+              break;
+            case "importableLearnMore":
+              options = {
+                is: "autocomplete-importable-learn-more-richlistitem",
+              };
+              break;
+            case "importableLogins":
+              options = { is: "autocomplete-importable-logins-richlistitem" };
+              break;
+            case "generatedPassword":
+              options = { is: "autocomplete-generated-password-richlistitem" };
+              break;
+            case "insecureWarning":
+              options = { is: "autocomplete-richlistitem-insecure-warning" };
+              break;
+            case "loginsFooter":
+              options = { is: "autocomplete-richlistitem-logins-footer" };
+              break;
+            case "loginWithOrigin":
+              options = { is: "autocomplete-login-richlistitem" };
+              break;
+            default:
+              options = { is: "autocomplete-richlistitem" };
           }
-          row.icon = parsedComment?.icon ?? image;
-          row.value = value;
-          const secondaryAction = parsedComment?.secondaryAction;
-          row.actions = {
-            primary: () => {},
-            secondary: secondaryAction
-              ? {
-                  type: secondaryAction.type,
-                  action: () =>
-                    lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
-                      true
-                    ),
-                }
-              : null,
-          };
+          item = document.createXULElement("richlistitem", options);
+          item.className = "autocomplete-richlistitem";
         }
 
         item.setAttribute("dir", this.style.direction);
-        item.setAttribute("originaltype", style);
-        item.toggleAttribute(
-          "footer",
-          ["action", "loginsFooter"].includes(style)
-        );
+        item.setAttribute("ac-image", image);
+        item.setAttribute("ac-value", value);
+        item.setAttribute("ac-label", label);
+        item.setAttribute("ac-comment", comment);
+        item.setAttribute("ac-text", trimmedSearchString);
 
-        if (parsedComment?.ariaLabel) {
-          item.setAttribute("aria-label", parsedComment.ariaLabel);
+        
+        
+        
+        
+        let iface = Ci.nsIAutoCompletePopup;
+        if (
+          reusable &&
+          originalText == trimmedSearchString &&
+          invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
+          (originalValue == value ||
+            this.mousedOverIndex === this._currentIndex)
+        ) {
+          
+          item._reuseAcItem();
+          this._currentIndex++;
+          continue;
         } else {
-          item.removeAttribute("aria-label");
+          if (typeof item._cleanup == "function") {
+            item._cleanup();
+          }
+          item.setAttribute("originaltype", style);
         }
 
-        if (parsedComment?.type) {
-          item.setAttribute("type", parsedComment.type);
+        if (reusable) {
+          
+          
+          
+          
+          
+          item._adjustAcItem();
+          item.collapsed = false;
+        } else if (itemExists) {
+          let oldItem = this.richlistbox.children[this._currentIndex];
+          this.richlistbox.replaceChild(item, oldItem);
         } else {
-          item.removeAttribute("type");
+          this.richlistbox.appendChild(item);
         }
-        item.collapsed = false;
 
         this._currentIndex++;
       }
 
+      if (typeof this.onResultsAdded == "function") {
+        
+        
+        
+        Services.tm.dispatchToMainThread(() => this.onResultsAdded());
+      }
+
       if (this._currentIndex < matchCount) {
+        
+        
         this._appendResultTimeout = setTimeout(
-          () => this._appendAutocompleteResults(),
+          () => this._appendCurrentResult(),
           0
         );
       }

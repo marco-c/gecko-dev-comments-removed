@@ -104,9 +104,8 @@ var ParentUtils = {
         return false;
       }
 
-      
-      
-      return el.getAttribute("originaltype") == is;
+      let win = el.documentGlobal;
+      return win.customElements.getName(el.constructor) == is;
     }, "Testing menu entry").then(() => {
       sendAsyncMessage("menuEntryTested");
     });
