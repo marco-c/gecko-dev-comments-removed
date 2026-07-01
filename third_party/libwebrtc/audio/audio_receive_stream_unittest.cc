@@ -421,13 +421,6 @@ TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
 
     MockChannelReceive& channel_receive = *helper.channel_receive();
 
-    
-    
-    
-    
-    
-    recv_stream->ReconfigureForTesting(new_config);
-
     new_config.decoder_map.emplace(1, SdpAudioFormat("foo", 8000, 1));
     EXPECT_CALL(channel_receive, SetReceiveCodecs(new_config.decoder_map));
     recv_stream->SetDecoderMap(new_config.decoder_map);
@@ -439,31 +432,19 @@ TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
   }
 }
 
-TEST(AudioReceiveStreamTest, ReconfigureWithFrameDecryptor) {
+TEST(AudioReceiveStreamTest, SetFrameDecryptorForwardsToChannelReceive) {
   test::RunLoop loop;
   for (bool use_null_audio_processing : {false, true}) {
     ConfigHelper helper(loop.task_queue(), loop.task_queue(),
                         use_null_audio_processing);
     auto recv_stream = helper.CreateAudioReceiveStream();
 
-    auto new_config_0 = helper.config();
-    scoped_refptr<FrameDecryptorInterface> mock_frame_decryptor_0(
-        make_ref_counted<MockFrameDecryptor>());
-    new_config_0.frame_decryptor = mock_frame_decryptor_0;
+    scoped_refptr<FrameDecryptorInterface> mock_frame_decryptor =
+        make_ref_counted<MockFrameDecryptor>();
+    EXPECT_CALL(*helper.channel_receive(),
+                SetFrameDecryptor(mock_frame_decryptor));
 
-    
-    
-    
-    
-    
-    recv_stream->ReconfigureForTesting(new_config_0);
-
-    auto new_config_1 = helper.config();
-    scoped_refptr<FrameDecryptorInterface> mock_frame_decryptor_1(
-        make_ref_counted<MockFrameDecryptor>());
-    new_config_1.frame_decryptor = mock_frame_decryptor_1;
-    new_config_1.crypto_options.sframe.require_frame_encryption = true;
-    recv_stream->ReconfigureForTesting(new_config_1);
+    recv_stream->SetFrameDecryptor(mock_frame_decryptor);
     recv_stream->UnregisterFromTransport();
   }
 }

@@ -152,10 +152,6 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   
   const std::string& sync_group() const;
 
-  
-  void ReconfigureForTesting(
-      const webrtc::AudioReceiveStreamInterface::Config& config);
-
  private:
   internal::AudioState* audio_state() const;
 
