@@ -4,7 +4,6 @@
 
 
 
-
 ITEM_VALUE(TouchEvents,                 1)
 ITEM_VALUE(PointerEvents,               2)
 ITEM_VALUE(KeyboardEvents,              3)
@@ -114,7 +113,7 @@ ITEM_VALUE(WebGLVendorConstant,         78)
 ITEM_VALUE(WebGLVendorRandomize,        79)
 ITEM_VALUE(WebGLRendererConstant,       80)
 
-
+ITEM_VALUE(IMEStyle,                    81)
 
 
 
