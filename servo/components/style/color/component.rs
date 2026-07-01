@@ -18,7 +18,6 @@ use crate::{
         computed,
         generics::calc::CalcUnits,
         specified::calc::{CalcNode, CalcParseFlags, Leaf},
-        specified::NoCalcNumber,
     },
 };
 use cssparser::{color::OPAQUE, Parser, Token};
@@ -110,47 +109,68 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
     }
 
     
-    pub fn resolve(
+    
+    
+    
+    
+    
+    pub fn to_computed_value(
         &self,
-        origin_color: Option<&AbsoluteColor>,
         context: Option<&computed::Context>,
-    ) -> Result<Option<ValueType>, ()> {
-        Ok(match self {
-            ColorComponent::None => None,
-            ColorComponent::Value(value) => Some(value.clone()),
-            ColorComponent::ChannelKeyword(channel_keyword) => match origin_color {
+        origin_color: Option<&AbsoluteColor>,
+    ) -> Self {
+        match self {
+            Self::None => Self::None,
+            Self::Value(v) => Self::Value(v.clone()),
+            Self::ChannelKeyword(channel_keyword) => match origin_color {
                 Some(origin_color) => {
-                    let value = origin_color.get_component_by_channel_keyword(*channel_keyword)?;
-                    Some(ValueType::from_value(value.unwrap_or(0.0)))
+                    match origin_color.get_component_by_channel_keyword(*channel_keyword) {
+                        Ok(value) => Self::Value(ValueType::from_value(value.unwrap_or(0.0))),
+                        Err(()) => Self::ChannelKeyword(*channel_keyword),
+                    }
                 },
-                None => return Err(()),
+                None => Self::ChannelKeyword(*channel_keyword),
             },
-            ColorComponent::Calc(node) => {
-                let resolved_leaf = node.resolve_computed(context, |leaf| match leaf {
-                    
-                    
-                    Leaf::ColorComponent(channel_keyword) => match origin_color {
-                        Some(origin_color) => origin_color
-                            .get_component_by_channel_keyword(*channel_keyword)
-                            .map(|v| Leaf::Number(NoCalcNumber::new(v.unwrap_or(0.0)))),
-                        None => Err(()),
-                    },
-                    _ => Ok(leaf.clone()),
-                })?;
-
-                Some(ValueType::try_from_leaf(&resolved_leaf)?)
-            },
-            ColorComponent::AlphaOmitted => {
-                if let Some(origin_color) = origin_color {
-                    
-                    
-                    
-                    
-                    origin_color.alpha().map(ValueType::from_value)
+            Self::Calc(node) => {
+                
+                
+                
+                if let Ok(value) = node
+                    .resolve_map(|leaf| Ok(leaf.to_computed_value(context, origin_color)))
+                    .and_then(|leaf| ValueType::try_from_leaf(&leaf))
+                {
+                    Self::Value(value)
                 } else {
-                    Some(ValueType::from_value(OPAQUE))
+                    Self::Calc(Box::new(node.to_computed_value(context, origin_color)))
                 }
             },
+            Self::AlphaOmitted => match origin_color {
+                
+                
+                
+                
+                Some(origin_color) => match origin_color.alpha() {
+                    Some(alpha) => Self::Value(ValueType::from_value(alpha)),
+                    None => Self::None,
+                },
+                None => Self::AlphaOmitted,
+            },
+        }
+    }
+
+    
+    
+    
+    
+    pub fn resolve(&self) -> Result<Option<ValueType>, ()> {
+        Ok(match self {
+            Self::None => None,
+            Self::Value(value) => Some(value.clone()),
+            
+            
+            Self::ChannelKeyword(_) => return Err(()),
+            Self::Calc(node) => Some(ValueType::try_from_leaf(&node.resolve()?)?),
+            Self::AlphaOmitted => Some(ValueType::from_value(OPAQUE)),
         })
     }
 }

@@ -78,7 +78,6 @@ impl Color {
     }
 
     
-    
     pub fn resolve_to_absolute(&self, current_color: &AbsoluteColor) -> AbsoluteColor {
         match *self {
             Self::Absolute(c) => c,

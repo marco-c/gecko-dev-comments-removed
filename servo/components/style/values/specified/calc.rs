@@ -7,6 +7,7 @@
 
 
 use crate::color::parsing::ChannelKeyword;
+use crate::color::AbsoluteColor;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{ToTyped, TypedValue};
@@ -121,7 +122,6 @@ pub enum Leaf {
 impl ToTyped for Leaf {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         
-        
         match *self {
             Self::Length(ref l) => l.to_typed(dest),
             Self::Number(n) => n.to_typed(dest),
@@ -129,6 +129,55 @@ impl ToTyped for Leaf {
             Self::Angle(ref a) => a.to_typed(dest),
             Self::Time(t) => t.to_typed(dest),
             _ => Err(()),
+        }
+    }
+}
+
+impl Leaf {
+    
+    
+    
+    
+    pub fn to_computed_value(
+        &self,
+        context: Option<&computed::Context>,
+        origin_color: Option<&AbsoluteColor>,
+    ) -> Self {
+        match self {
+            Self::Length(l) => {
+                let px = match context {
+                    Some(context) => Ok(l.to_computed_value(context).px()),
+                    None => l.to_computed_pixel_length_without_context(),
+                };
+                match px {
+                    Ok(px) => Self::Length(NoCalcLength::from_px(px)),
+                    Err(()) => self.clone(),
+                }
+            },
+            Self::TreeCountingFunction(f) => match context {
+                Some(context) => {
+                    Self::Number(NoCalcNumber::new(f.to_computed_value(context) as f32))
+                },
+                None => self.clone(),
+            },
+            Self::ColorComponent(channel_keyword) => match origin_color {
+                Some(origin_color) => {
+                    match origin_color.get_component_by_channel_keyword(*channel_keyword) {
+                        Ok(value) => Self::Number(NoCalcNumber::new(value.unwrap_or(0.0))),
+                        
+                        
+                        Err(()) => self.clone(),
+                    }
+                },
+                None => self.clone(),
+            },
+            
+            
+            Self::Angle(..)
+            | Self::Time(..)
+            | Self::Resolution(..)
+            | Self::Percentage(..)
+            | Self::Number(..) => self.clone(),
         }
     }
 }
@@ -170,10 +219,8 @@ impl CalcNumeric {
         context: &computed::Context,
         leaf_to_f32: impl FnOnce(Result<Leaf, ()>) -> f32,
     ) -> f32 {
-        let result = self
-            .node
-            .resolve_computed(Some(context), |leaf| Ok(leaf.clone()));
-        self.clamping_mode.clamp(leaf_to_f32(result))
+        let result = self.node.to_computed_value(Some(context), None);
+        self.clamping_mode.clamp(leaf_to_f32(result.resolve()))
     }
 
     
@@ -1260,28 +1307,12 @@ impl CalcNode {
     
     
     
-    
-    pub fn resolve_computed<F>(
+    pub fn to_computed_value(
         &self,
         context: Option<&computed::Context>,
-        leaf_to_output_fn: F,
-    ) -> Result<Leaf, ()>
-    where
-        F: Fn(&Leaf) -> Result<Leaf, ()>,
-    {
-        
-        self.resolve_map(|leaf| {
-            Ok(match leaf {
-                Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(match context {
-                    Some(ctx) => length.to_computed_value(ctx).px(),
-                    None => length.to_computed_pixel_length_without_context()?,
-                })),
-                Leaf::TreeCountingFunction(f) => Leaf::Number(NoCalcNumber::new(
-                    f.to_computed_value(context.ok_or(())?) as f32,
-                )),
-                _ => leaf_to_output_fn(leaf)?,
-            })
-        })
+        origin_color: Option<&AbsoluteColor>,
+    ) -> Self {
+        self.map_leaves(|leaf| leaf.to_computed_value(context, origin_color))
     }
 
     
