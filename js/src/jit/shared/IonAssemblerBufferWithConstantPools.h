@@ -406,22 +406,22 @@ struct Pool {
   const unsigned bias_;
 
   
+  
+  
+  
+  
+  
+  
+  
+  BufferOffset limitingUser{};
+  
+  unsigned limitingUsee = INT_MIN;
+
+  
+  bool oom_ = false;
+
+  
   Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
-
-  
-  bool oom_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  BufferOffset limitingUser;
-  
-  unsigned limitingUsee;
 
  public:
   
@@ -432,13 +432,10 @@ struct Pool {
 
   
   
-  explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
         poolData_(lifoAlloc),
-        oom_(false),
-        limitingUser(),
-        limitingUsee(INT_MIN),
         loadOffsets(lifoAlloc) {}
 
   
