@@ -73,8 +73,9 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
 
 
+
   @Override 
-  public ISurfaceAllocator getSurfaceAllocator() {
+  public ISurfaceAllocator getSurfaceAllocator(final IBinder client) {
     final boolean gpuEnabled = GeckoAppShell.isGpuProcessEnabled();
 
     try {
@@ -87,7 +88,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
               final GpuProcessConnection conn =
                   (GpuProcessConnection) INSTANCE.mConnections.getExistingConnection(selector);
               if (conn != null) {
-                allocator.complete(conn.getSurfaceAllocator());
+                allocator.complete(conn.getSurfaceAllocator(client));
               } else {
                 
                 
@@ -99,7 +100,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             });
       } else {
         
-        allocator.complete(RemoteSurfaceAllocator.getInstance(0));
+        allocator.complete(RemoteSurfaceAllocator.create(0, client));
       }
       return allocator.poll(100);
     } catch (final Throwable e) {
@@ -337,7 +338,6 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
   private static final class GpuProcessConnection extends NonContentConnection {
     private CompositorSurfaceManager mCompositorSurfaceManager;
-    private ISurfaceAllocator mSurfaceAllocator;
 
     
     
@@ -367,14 +367,14 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
       return mCompositorSurfaceManager;
     }
 
-    public ISurfaceAllocator getSurfaceAllocator() {
-      if (mSurfaceAllocator == null && getChild() != null) {
+    public ISurfaceAllocator getSurfaceAllocator(final IBinder client) {
+      if (getChild() != null) {
         try {
-          mSurfaceAllocator = getChild().getSurfaceAllocator(mUniqueGpuProcessId);
+          return getChild().getSurfaceAllocator(mUniqueGpuProcessId, client);
         } catch (final RemoteException ignored) {
         }
       }
-      return mSurfaceAllocator;
+      return null;
     }
   }
 
