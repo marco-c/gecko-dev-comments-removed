@@ -238,6 +238,18 @@ pub(crate) mod profiler_utils {
                     },
                 }
             }
+            
+            
+            
+            Err(
+                crate::private::LookupError::FOGSubmetricMapLockWouldBlock
+                | crate::private::LookupError::JOGMetricMapLockWouldBlock,
+            ) => {
+                json_writer.unique_string_property(
+                    "id",
+                    &format!("metric {} (metadata unavailable)", **id),
+                );
+            }
             Err(e) => {
                 let error_string = format!("Error looking up {:?}: {:?}", id, e);
                 json_writer.unique_string_property("id", &error_string);
