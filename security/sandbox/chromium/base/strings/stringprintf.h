@@ -8,10 +8,10 @@
 #include <stdarg.h>  
 
 #include <string>
-#include <string_view>
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "third_party/abseil-cpp/absl/strings/str_format.h"
 
 namespace base {
 
@@ -19,60 +19,30 @@ namespace base {
 
 
 
-[[nodiscard]] BASE_EXPORT std::string StringPrintf(const char* format, ...)
-    PRINTF_FORMAT(1, 2);
-
-
-
-
-
 template <typename... Args>
-[[nodiscard]] std::string StringPrintfNonConstexpr(std::string_view format,
-                                                   const Args&... args) {
-  
-  
-  return StringPrintf(format.data(), args...);
+[[nodiscard]] std::string StringPrintf(const absl::FormatSpec<Args...>& format,
+                                       const Args&... args) {
+  return absl::StrFormat(format, args...);
 }
 
 
+[[nodiscard]] PRINTF_FORMAT(1, 0) BASE_EXPORT std::string
+    StringPrintV(const char* format, va_list ap);
 
 
 
-
-
-
-
-#if HAS_ATTRIBUTE(enable_if)
 
 template <typename... Args>
-[[nodiscard]] std::string StringPrintfNonConstexpr(std::string_view format,
-                                                   const Args&... args)
-    __attribute__((enable_if(
-        [](std::string_view s) { return s.empty() || s[0] == s[0]; }(format),
-        "Use StringPrintf() for constexpr format strings"))) = delete;
-
-template <typename... Args>
-[[nodiscard]] std::string StringPrintfNonConstexpr(const char* format,
-                                                   const Args&... args)
-    __attribute__((
-        enable_if([](const char* s) { return !!s; }(format),
-                  "Use StringPrintf() for constexpr format strings"))) = delete;
-#endif
+void StringAppendF(std::string* dst,
+                   const absl::FormatSpec<Args...>& format,
+                   const Args&... args) {
+  absl::StrAppendFormat(dst, format, args...);
+}
 
 
-[[nodiscard]] BASE_EXPORT std::string StringPrintV(const char* format,
-                                                   va_list ap)
-    PRINTF_FORMAT(1, 0);
-
-
-
-
-BASE_EXPORT void StringAppendF(std::string* dst, const char* format, ...)
-    PRINTF_FORMAT(2, 3);
-
-
-BASE_EXPORT void StringAppendV(std::string* dst, const char* format, va_list ap)
-    PRINTF_FORMAT(2, 0);
+PRINTF_FORMAT(2, 0)
+BASE_EXPORT
+void StringAppendV(std::string* dst, const char* format, va_list ap);
 
 }  
 

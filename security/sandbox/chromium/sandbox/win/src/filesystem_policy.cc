@@ -10,11 +10,11 @@
 #include <ntstatus.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <string>
 
 #include "base/notreached.h"
 #include "base/win/scoped_handle.h"
+#include "base/win/windows_handle_util.h"
 #include "sandbox/win/src/internal_types.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/nt_internals.h"
@@ -65,6 +65,8 @@ NTSTATUS NtCreateFileInTarget(HANDLE* target_file_handle,
     return status;
   }
 
+  
+  
   if (!::DuplicateHandle(::GetCurrentProcess(), local_handle, target_process,
                          target_file_handle, 0, false,
                          DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS)) {
@@ -84,17 +86,11 @@ bool FileSystemPolicy::GenerateRules(const wchar_t* name,
   }
 
   bool is_pipe = IsPipe(mod_name);
-  if (!PreProcessName(&mod_name)) {
-    
-    NOTREACHED();
-    return false;
-  }
 
   
   
-  
-  if (_wcsnicmp(mod_name.c_str(), kNTDevicePrefix, kNTDevicePrefixLen)) {
-    mod_name = FixNTPrefixForMatch(mod_name);
+  if (mod_name[0] != L'\\') {
+    mod_name.insert(0, kNTPrefix);
     name = mod_name.c_str();
   }
 
@@ -121,23 +117,23 @@ bool FileSystemPolicy::GenerateRules(const wchar_t* name,
 
   
   if (semantics != FileSemantics::kAllowQuery) {
-    if (!create.AddStringMatch(IF, OpenFile::NAME, name, CASE_INSENSITIVE) ||
+    if (!create.AddStringMatch(IF, OpenFile::NAME, name) ||
         !policy->AddRule(IpcTag::NTCREATEFILE, &create)) {
       return false;
     }
 
-    if (!open.AddStringMatch(IF, OpenFile::NAME, name, CASE_INSENSITIVE) ||
+    if (!open.AddStringMatch(IF, OpenFile::NAME, name) ||
         !policy->AddRule(IpcTag::NTOPENFILE, &open)) {
       return false;
     }
   }
 
-  if (!query.AddStringMatch(IF, OpenFile::NAME, name, CASE_INSENSITIVE) ||
+  if (!query.AddStringMatch(IF, OpenFile::NAME, name) ||
       !policy->AddRule(IpcTag::NTQUERYATTRIBUTESFILE, &query)) {
     return false;
   }
 
-  if (!query_full.AddStringMatch(IF, OpenFile::NAME, name, CASE_INSENSITIVE) ||
+  if (!query_full.AddStringMatch(IF, OpenFile::NAME, name) ||
       !policy->AddRule(IpcTag::NTQUERYFULLATTRIBUTESFILE, &query_full)) {
     return false;
   }
@@ -145,7 +141,7 @@ bool FileSystemPolicy::GenerateRules(const wchar_t* name,
   
   if (semantics == FileSemantics::kAllowAny && !is_pipe) {
     PolicyRule rename(result);
-    if (!rename.AddStringMatch(IF, OpenFile::NAME, name, CASE_INSENSITIVE) ||
+    if (!rename.AddStringMatch(IF, OpenFile::NAME, name) ||
         !policy->AddRule(IpcTag::NTSETINFO_RENAME, &rename)) {
       return false;
     }
@@ -269,6 +265,13 @@ bool FileSystemPolicy::SetInformationFileAction(EvalResult eval_result,
     return false;
   }
 
+  
+  
+  
+  if (base::win::IsPseudoHandle(target_file_handle)) {
+    return false;
+  }
+
   HANDLE local_handle = nullptr;
   if (!::DuplicateHandle(client_info.process, target_file_handle,
                          ::GetCurrentProcess(), &local_handle, 0, false,
@@ -285,47 +288,6 @@ bool FileSystemPolicy::SetInformationFileAction(EvalResult eval_result,
       local_handle, io_block, file_info, length, file_info_class);
 
   return true;
-}
-
-bool PreProcessName(std::wstring* path) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::replace(path->begin(), path->end(), L'/', L'\\');
-  if (path->find(L"\\..\\") != std::wstring::npos) {
-    return false;
-  }
-
-  ConvertToLongPath(path);
-  return true;
-}
-
-std::wstring FixNTPrefixForMatch(const std::wstring& name) {
-  std::wstring mod_name = name;
-
-  
-  const wchar_t kNTPrefixEscaped[] = L"\\/?/?\\";
-  const int kNTPrefixEscapedLen = std::size(kNTPrefixEscaped) - 1;
-
-  if (0 != mod_name.compare(0, kNTPrefixLen, kNTPrefix)) {
-    if (0 != mod_name.compare(0, kNTPrefixEscapedLen, kNTPrefixEscaped)) {
-      
-      
-      mod_name.insert(0, kNTPrefixEscaped);
-    }
-  } else {
-    
-    
-    mod_name.replace(0, kNTPrefixLen, kNTPrefixEscaped);
-  }
-
-  return mod_name;
 }
 
 }  

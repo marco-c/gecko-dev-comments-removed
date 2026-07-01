@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+#ifndef BASE_SAMPLING_HEAP_PROFILER_POISSON_ALLOCATION_SAMPLER_H_
+#define BASE_SAMPLING_HEAP_PROFILER_POISSON_ALLOCATION_SAMPLER_H_
+
+namespace base {
+
+struct PoissonAllocationSampler {
+  struct ScopedMuteThreadSamples {
+    
+    ~ScopedMuteThreadSamples() {}
+  };
+};
+
+}  
+
+#endif  

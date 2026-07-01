@@ -8,11 +8,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <array>
+
+#include "base/compiler_specific.h"
+#include "base/containers/span.h"
+#include "base/strings/string_util.h"
+#include "base/strings/stringprintf.h"
 #include "build/build_config.h"
 
 namespace base {
 
-#if defined(__GLIBC__) || BUILDFLAG(IS_NACL)
+#if defined(__GLIBC__)
 #define USE_HISTORICAL_STRERROR_R 1
 
 
@@ -30,15 +36,13 @@ namespace base {
 [[maybe_unused]] static void wrap_posix_strerror_r(
     char* (*strerror_r_ptr)(int, char*, size_t),
     int err,
-    char* buf,
-    size_t len) {
+    base::span<char> buf) {
   
-  char *rc = (*strerror_r_ptr)(err, buf, len);
-  if (rc != buf) {
+  char* rc = (*strerror_r_ptr)(err, buf.data(), buf.size());
+  if (rc != buf.data()) {
     
     
-    buf[0] = '\0';
-    strncat(buf, rc, len - 1);
+    base::strlcpy(buf, rc);
   }
   
   
@@ -53,21 +57,20 @@ namespace base {
 [[maybe_unused]] static void wrap_posix_strerror_r(
     int (*strerror_r_ptr)(int, char*, size_t),
     int err,
-    char* buf,
-    size_t len) {
+    base::span<char> buf) {
   int old_errno = errno;
   
   
   
   
   
-  int result = (*strerror_r_ptr)(err, buf, len);
+  int result = (*strerror_r_ptr)(err, buf.data(), buf.size());
   if (result == 0) {
     
     
     
     
-    buf[len - 1] = '\0';
+    buf.back() = '\0';
   } else {
     
     
@@ -86,31 +89,28 @@ namespace base {
       strerror_error = result;
     }
     
-    snprintf(buf,
-             len,
-             "Error %d while retrieving error %d",
-             strerror_error,
-             err);
+    base::snprintf(buf.data(), buf.size(), "Error %d while retrieving error %d",
+                   strerror_error, err);
   }
   errno = old_errno;
 }
 
-void safe_strerror_r(int err, char *buf, size_t len) {
-  if (buf == nullptr || len <= 0) {
+void safe_strerror_r(int err, base::span<char> buf) {
+  if (buf.empty()) {
     return;
   }
   
   
   
   
-  wrap_posix_strerror_r(&strerror_r, err, buf, len);
+  wrap_posix_strerror_r(&strerror_r, err, buf);
 }
 
 std::string safe_strerror(int err) {
-  const int buffer_size = 256;
-  char buf[buffer_size];
-  safe_strerror_r(err, buf, sizeof(buf));
-  return std::string(buf);
+  constexpr size_t kBufferSize = 256;
+  std::array<char, kBufferSize> buf;
+  safe_strerror_r(err, buf);
+  return std::string(buf.data());
 }
 
 }  

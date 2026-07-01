@@ -12,43 +12,117 @@
 #include <stddef.h>
 
 #include <iosfwd>
+#include <limits>
+#include <optional>
 #include <type_traits>
 
 #include "base/base_export.h"
+#if !defined(MOZ_SANDBOX)
 #include "base/message_loop/message_pump_type.h"
+#endif  
 #include "base/process/process_handle.h"
-#include "base/sequence_checker_impl.h"
 #include "base/threading/platform_thread_ref.h"
-#include "base/time/time.h"
+#include "base/trace_event/base_tracing_forward.h"
 #include "base/types/strong_alias.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
-#elif BUILDFLAG(IS_APPLE)
-#include <mach/mach_types.h>
 #elif BUILDFLAG(IS_POSIX)
 #include <pthread.h>
 #include <unistd.h>
 #endif
 
+#if BUILDFLAG(IS_CHROMEOS)
+#include "base/feature_list.h"
+#endif
+
 namespace base {
 
+class TimeDelta;
 
+
+
+
+
+
+
+
+class BASE_EXPORT PlatformThreadId {
+ public:
 #if BUILDFLAG(IS_WIN)
-typedef DWORD PlatformThreadId;
+  using UnderlyingType = DWORD;
 #elif BUILDFLAG(IS_FUCHSIA)
-typedef zx_handle_t PlatformThreadId;
+  using UnderlyingType = zx_koid_t;
 #elif BUILDFLAG(IS_APPLE)
-typedef mach_port_t PlatformThreadId;
+  using UnderlyingType = uint64_t;
 #elif BUILDFLAG(IS_POSIX)
-typedef pid_t PlatformThreadId;
+  using UnderlyingType = pid_t;
 #endif
-static_assert(std::is_integral_v<PlatformThreadId>, "Always an integer value.");
+  static_assert(std::is_integral_v<UnderlyingType>, "Always an integer value.");
+
+  constexpr PlatformThreadId() = default;
+
+  
+  
+  template <typename T>
+  explicit constexpr PlatformThreadId(T value)
+    requires(std::is_same_v<T, UnderlyingType>)
+      : value_(value) {}
+
+  static constexpr PlatformThreadId ForTest(int value) {
+    return PlatformThreadId(static_cast<UnderlyingType>(value));
+  }
+
+  
+  
+  explicit constexpr operator uint64_t() const {
+    static_assert(sizeof(uint64_t) >= sizeof(UnderlyingType));
+    return static_cast<uint64_t>(value_);
+  }
+  explicit constexpr operator int64_t() const {
+    static_assert(sizeof(int64_t) >= sizeof(UnderlyingType));
+    return static_cast<int64_t>(value_);
+  }
+  
+  
+  explicit constexpr operator uint32_t() const = delete;
+  explicit constexpr operator int32_t() const = delete;
+
+  
+  
+  
+  
+  
+  constexpr int32_t truncate_to_int32_for_display_only() const {
+    return static_cast<int32_t>(value_);
+  }
+
+  
+  
+  
+  constexpr UnderlyingType raw() const { return value_; }
+
+  constexpr friend auto operator<=>(const PlatformThreadId& lhs,
+                                    const PlatformThreadId& rhs) = default;
+  constexpr friend bool operator==(const PlatformThreadId& lhs,
+                                   const PlatformThreadId& rhs) = default;
+
+  
+  void WriteIntoTrace(perfetto::TracedValue&& context) const;
+
+ private:
+  
+  
+  UnderlyingType value_ = 0;
+};
+
+inline std::ostream& operator<<(std::ostream& stream,
+                                const PlatformThreadId& id) {
+  return stream << id.raw();
+}
 
 
 class PlatformThreadHandle {
@@ -67,19 +141,15 @@ class PlatformThreadHandle {
     return handle_ == other.handle_;
   }
 
-  bool is_null() const {
-    return !handle_;
-  }
+  bool is_null() const { return !handle_; }
 
-  Handle platform_handle() const {
-    return handle_;
-  }
+  Handle platform_handle() const { return handle_; }
 
  private:
   Handle handle_;
 };
 
-const PlatformThreadId kInvalidThreadId(0);
+static constexpr PlatformThreadId kInvalidThreadId = PlatformThreadId();
 
 
 
@@ -106,31 +176,14 @@ enum class ThreadType : int {
   kUtility,
   
   
-  
-  kResourceEfficient,
-  
-  
-  
   kDefault,
   
   
-  kCompositing,
-  
   kDisplayCritical,
   
-  kRealtimeAudio,
-  kMaxValue = kRealtimeAudio,
-};
-
-
-
-enum class ThreadPriorityForTest : int {
-  kBackground,
-  kUtility,
-  kResourceEfficient,
-  kNormal,
-  kCompositing,
-  kDisplay,
+  
+  kInteractive,
+  
   kRealtimeAudio,
   kMaxValue = kRealtimeAudio,
 };
@@ -239,7 +292,7 @@ class BASE_EXPORT PlatformThreadBase {
       Delegate* delegate,
       ThreadType thread_type,
       MessagePumpType pump_type_hint = MessagePumpType::DEFAULT);
-#endif
+#endif  
 
   
   
@@ -254,10 +307,12 @@ class BASE_EXPORT PlatformThreadBase {
   
   static bool CanChangeThreadType(ThreadType from, ThreadType to);
 
+#if !defined(MOZ_SANDBOX)
   
   
   
   static void SetCurrentThreadType(ThreadType thread_type);
+#endif  
 
   
   
@@ -267,15 +322,19 @@ class BASE_EXPORT PlatformThreadBase {
   static TimeDelta GetRealtimePeriod(Delegate* delegate);
 
   
-  static absl::optional<TimeDelta> GetThreadLeewayOverride();
+  static std::optional<TimeDelta> GetThreadLeewayOverride();
 
   
   
   static size_t GetDefaultThreadStackSize();
 
-  static ThreadPriorityForTest GetCurrentThreadPriorityForTest();
+  
+  
+  
+  
+  static ThreadType GetCurrentEffectiveThreadTypeForTest();
 
-  protected:
+ protected:
   static void SetNameCommon(const std::string& name);
 };
 
@@ -285,11 +344,10 @@ class BASE_EXPORT PlatformThreadApple : public PlatformThreadBase {
   
   static void SetCurrentThreadRealtimePeriodValue(TimeDelta realtime_period);
 
+  static TimeDelta GetCurrentThreadRealtimePeriodForTest();
+
   
-  
-  
-  
-  static void InitFeaturesPostFieldTrial();
+  static void InitializeFeatures();
 };
 #endif  
 
@@ -315,7 +373,7 @@ class BASE_EXPORT PlatformThreadLinux : public PlatformThreadBase {
   
   
   
-  static void SetThreadType(PlatformThreadId process_id,
+  static void SetThreadType(ProcessId process_id,
                             PlatformThreadId thread_id,
                             ThreadType thread_type,
                             IsViaIPC via_ipc);
@@ -332,17 +390,25 @@ class BASE_EXPORT PlatformThreadLinux : public PlatformThreadBase {
 #endif  
 
 #if BUILDFLAG(IS_CHROMEOS)
+BASE_EXPORT BASE_DECLARE_FEATURE(kSetRtForDisplayThreads);
+
+class CrossProcessPlatformThreadDelegate;
 
 class BASE_EXPORT PlatformThreadChromeOS : public PlatformThreadLinux {
  public:
   
   
-  static void InitFeaturesPostFieldTrial();
+  
+  static void SetCrossProcessPlatformThreadDelegate(
+      CrossProcessPlatformThreadDelegate* delegate);
+
+  
+  static void InitializeFeatures();
 
   
   
   
-  static void SetThreadType(PlatformThreadId process_id,
+  static void SetThreadType(ProcessId process_id,
                             PlatformThreadId thread_id,
                             ThreadType thread_type,
                             IsViaIPC via_ipc);
@@ -361,13 +427,19 @@ class BASE_EXPORT PlatformThreadChromeOS : public PlatformThreadLinux {
                                     bool backgrounded);
 
   
-  static absl::optional<ThreadType> GetThreadTypeFromThreadId(
+  static std::optional<ThreadType> GetThreadTypeFromThreadId(
       ProcessId process_id,
       PlatformThreadId thread_id);
 
   
   
-  static SequenceCheckerImpl& GetCrossProcessThreadPrioritySequenceChecker();
+  
+  
+  
+  
+  
+  
+  static void DcheckCrossProcessThreadPrioritySequence();
 };
 #endif  
 
@@ -382,17 +454,28 @@ using PlatformThread = PlatformThreadLinux;
 using PlatformThread = PlatformThreadBase;
 #endif
 
-#if !defined(MOZ_SANDBOX)
 namespace internal {
 
-void SetCurrentThreadType(ThreadType thread_type,
-                          MessagePumpType pump_type_hint);
+#if BUILDFLAG(IS_APPLE)
+using PlatformPriorityOverride = pthread_override_t;
+#else
+using PlatformPriorityOverride = bool;
+#endif
+PlatformPriorityOverride SetThreadTypeOverride(
+    PlatformThreadHandle thread_handle,
+    ThreadType thread_type);
+void RemoveThreadTypeOverride(
+    const PlatformPriorityOverride& priority_override_handle);
+void RemoveThreadTypeOverrideImpl(
+    const PlatformPriorityOverride& priority_override_handle,
+    ThreadType thread_type);
 
+#if !defined(MOZ_SANDBOX)
 void SetCurrentThreadTypeImpl(ThreadType thread_type,
                               MessagePumpType pump_type_hint);
+#endif  
 
 }  
-#endif
 
 }  
 

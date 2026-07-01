@@ -2,10 +2,16 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_buffers
+#endif
+
 #include "sandbox/win/src/process_mitigations.h"
 
-#include <stddef.h>
 #include <windows.h>
+
+#include <stddef.h>
 #include <wow64apiset.h>
 
 #include <algorithm>
@@ -139,7 +145,7 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags starting_flags,
   }
 
   if (flags & MITIGATION_HARDEN_TOKEN_IL_POLICY) {
-    absl::optional<base::win::AccessToken> token =
+    std::optional<base::win::AccessToken> token =
         base::win::AccessToken::FromCurrentProcess(false,
                                                    READ_CONTROL | WRITE_OWNER);
     if (!token) {
@@ -551,6 +557,14 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
       *policy_value_2 |=
           PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_ALWAYS_ON;
     }
+  }
+
+  
+  
+  if (version >= base::win::Version::WIN11_24H2 &&
+      flags & MITIGATION_RESTRICT_CORE_SHARING) {
+    *policy_value_2 |=
+        PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_ALWAYS_ON;
   }
 
   

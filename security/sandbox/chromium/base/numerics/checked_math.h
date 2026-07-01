@@ -5,25 +5,22 @@
 #ifndef BASE_NUMERICS_CHECKED_MATH_H_
 #define BASE_NUMERICS_CHECKED_MATH_H_
 
-#include <stddef.h>
+#include <stdint.h>
 
 #include <limits>
 #include <type_traits>
 
-#include "base/numerics/checked_math_impl.h"
+#include "base/numerics/checked_math_impl.h"  
+#include "base/numerics/safe_conversions.h"
+#include "base/numerics/safe_math_shared_impl.h"  
 
 namespace base {
-namespace internal {
+namespace numerics_internal {
 
 template <typename T>
+  requires std::is_arithmetic_v<T>
 class CheckedNumeric {
-  static_assert(std::is_arithmetic_v<T>,
-                "CheckedNumeric<T>: T must be a numeric type.");
-
  public:
-  template <typename Src>
-  friend class CheckedNumeric;
-
   using type = T;
 
   constexpr CheckedNumeric() = default;
@@ -35,14 +32,8 @@ class CheckedNumeric {
 
   
   
-  
-  
-  constexpr CheckedNumeric(T value) : state_(value) {}
-
-  
-  
-  template <typename Src,
-            typename = std::enable_if_t<std::is_arithmetic_v<Src>>>
+  template <typename Src>
+    requires(std::is_arithmetic_v<Src>)
   
   constexpr CheckedNumeric(Src value) : state_(value) {}
 
@@ -65,6 +56,46 @@ class CheckedNumeric {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Predicate>
+    requires(std::is_arithmetic_v<ExtractPredicateParamType<Predicate>>)
+  constexpr bool IsValidAnd(Predicate&& predicate) const {
+    using Dst = ExtractPredicateParamType<Predicate>;
+    return IsValid<Dst>() &&
+           std::forward<Predicate>(predicate)(static_cast<Dst>(state_.value()));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Predicate>
+    requires(std::is_arithmetic_v<ExtractPredicateParamType<Predicate>>)
+  constexpr bool IsInvalidOr(Predicate&& predicate) const {
+    using Dst = ExtractPredicateParamType<Predicate>;
+    return !IsValid<Dst>() ||
+           std::forward<Predicate>(predicate)(static_cast<Dst>(state_.value()));
+  }
+
+  
+  
+  
   template <typename Dst>
 #if defined(__clang__) || defined(__GNUC__)
   __attribute__((warn_unused_result))
@@ -73,9 +104,11 @@ class CheckedNumeric {
 #endif
   constexpr bool
   AssignIfValid(Dst* result) const {
-    return BASE_NUMERICS_LIKELY(IsValid<Dst>())
-               ? ((*result = static_cast<Dst>(state_.value())), true)
-               : false;
+    if (IsValid<Dst>()) [[likely]] {
+      *result = static_cast<Dst>(state_.value());
+      return true;
+    }
+    return false;
   }
 
   
@@ -88,9 +121,10 @@ class CheckedNumeric {
   
   template <typename Dst = T, class CheckHandler = CheckOnFailure>
   constexpr StrictNumeric<Dst> ValueOrDie() const {
-    return BASE_NUMERICS_LIKELY(IsValid<Dst>())
-               ? static_cast<Dst>(state_.value())
-               : CheckHandler::template HandleFailure<Dst>();
+    if (IsValid<Dst>()) [[likely]] {
+      return static_cast<Dst>(state_.value());
+    }
+    return CheckHandler::template HandleFailure<Dst>();
   }
 
   
@@ -100,17 +134,18 @@ class CheckedNumeric {
   
   
   template <typename Dst = T, typename Src>
-  constexpr StrictNumeric<Dst> ValueOrDefault(const Src default_value) const {
-    return BASE_NUMERICS_LIKELY(IsValid<Dst>())
-               ? static_cast<Dst>(state_.value())
-               : checked_cast<Dst>(default_value);
+  constexpr StrictNumeric<Dst> ValueOrDefault(Src default_value) const {
+    if (IsValid<Dst>()) [[likely]] {
+      return static_cast<Dst>(state_.value());
+    }
+    return checked_cast<Dst>(default_value);
   }
 
   
   
   
   template <typename Dst>
-  constexpr CheckedNumeric<typename UnderlyingType<Dst>::type> Cast() const {
+  constexpr CheckedNumeric<UnderlyingType<Dst>> Cast() const {
     return *this;
   }
 
@@ -144,7 +179,7 @@ class CheckedNumeric {
 
   constexpr CheckedNumeric operator-() const {
     
-    if (!IsConstantEvaluated() && std::is_signed_v<T> &&
+    if (!std::is_constant_evaluated() && std::is_signed_v<T> &&
         std::is_floating_point_v<T>) {
       return FastRuntimeNegate();
     }
@@ -167,13 +202,13 @@ class CheckedNumeric {
 
   template <typename U>
   constexpr CheckedNumeric<typename MathWrapper<CheckedMaxOp, T, U>::type> Max(
-      const U rhs) const {
+      U rhs) const {
     return CheckMax(*this, rhs);
   }
 
   template <typename U>
   constexpr CheckedNumeric<typename MathWrapper<CheckedMinOp, T, U>::type> Min(
-      const U rhs) const {
+      U rhs) const {
     return CheckMin(*this, rhs);
   }
 
@@ -192,8 +227,8 @@ class CheckedNumeric {
   }
 
   constexpr CheckedNumeric operator++(int) {
-    CheckedNumeric value = *this;
-    *this += 1;
+    const CheckedNumeric value = *this;
+    ++*this;
     return value;
   }
 
@@ -203,18 +238,15 @@ class CheckedNumeric {
   }
 
   constexpr CheckedNumeric operator--(int) {
-    
     const CheckedNumeric value = *this;
-    *this -= 1;
+    --*this;
     return value;
   }
 
   
   
-  template <template <typename, typename, typename> class M,
-            typename L,
-            typename R>
-  static constexpr CheckedNumeric MathOp(const L lhs, const R rhs) {
+  template <template <typename, typename> class M, typename L, typename R>
+  static constexpr CheckedNumeric MathOp(L lhs, R rhs) {
     using Math = typename MathWrapper<M, L, R>::math;
     T result = 0;
     const bool is_valid =
@@ -224,8 +256,8 @@ class CheckedNumeric {
   }
 
   
-  template <template <typename, typename, typename> class M, typename R>
-  constexpr CheckedNumeric& MathOp(const R rhs) {
+  template <template <typename, typename> class M, typename R>
+  constexpr CheckedNumeric& MathOp(R rhs) {
     using Math = typename MathWrapper<M, T, R>::math;
     T result = 0;  
     const bool is_valid =
@@ -236,6 +268,10 @@ class CheckedNumeric {
   }
 
  private:
+  template <typename U>
+    requires std::is_arithmetic_v<U>
+  friend class CheckedNumeric;
+
   CheckedNumericState<T> state_;
 
   CheckedNumeric FastRuntimeNegate() const {
@@ -258,22 +294,25 @@ class CheckedNumeric {
 
   template <typename Src>
   struct Wrapper<CheckedNumeric<Src>> {
-    static constexpr bool is_valid(const CheckedNumeric<Src> v) {
+    static constexpr bool is_valid(CheckedNumeric<Src> v) {
       return v.IsValid();
     }
-    static constexpr Src value(const CheckedNumeric<Src> v) {
+    static constexpr Src value(CheckedNumeric<Src> v) {
       return v.state_.value();
     }
   };
 
   template <typename Src>
   struct Wrapper<StrictNumeric<Src>> {
-    static constexpr bool is_valid(const StrictNumeric<Src>) { return true; }
-    static constexpr Src value(const StrictNumeric<Src> v) {
+    static constexpr bool is_valid(StrictNumeric<Src>) { return true; }
+    static constexpr Src value(StrictNumeric<Src> v) {
       return static_cast<Src>(v);
     }
   };
 };
+
+template <typename T>
+CheckedNumeric(T) -> CheckedNumeric<T>;
 
 
 template <typename Dst, typename Src>
@@ -288,38 +327,34 @@ constexpr StrictNumeric<Dst> ValueOrDieForType(
 }
 
 template <typename Dst, typename Src, typename Default>
-constexpr StrictNumeric<Dst> ValueOrDefaultForType(
-    const CheckedNumeric<Src> value,
-    const Default default_value) {
+constexpr StrictNumeric<Dst> ValueOrDefaultForType(CheckedNumeric<Src> value,
+                                                   Default default_value) {
   return value.template ValueOrDefault<Dst>(default_value);
 }
 
 
 
 template <typename T>
-constexpr CheckedNumeric<typename UnderlyingType<T>::type> MakeCheckedNum(
-    const T value) {
+constexpr CheckedNumeric<UnderlyingType<T>> MakeCheckedNum(T value) {
   return value;
 }
 
 
-template <template <typename, typename, typename> class M,
-          typename L,
-          typename R>
+template <template <typename, typename> class M, typename L, typename R>
 constexpr CheckedNumeric<typename MathWrapper<M, L, R>::type> CheckMathOp(
-    const L lhs,
-    const R rhs) {
+    L lhs,
+    R rhs) {
   using Math = typename MathWrapper<M, L, R>::math;
   return CheckedNumeric<typename Math::result_type>::template MathOp<M>(lhs,
                                                                         rhs);
 }
 
 
-template <template <typename, typename, typename> class M,
+template <template <typename, typename> class M,
           typename L,
           typename R,
           typename... Args>
-constexpr auto CheckMathOp(const L lhs, const R rhs, const Args... args) {
+constexpr auto CheckMathOp(L lhs, R rhs, Args... args) {
   return CheckMathOp<M>(CheckMathOp<M>(lhs, rhs), args...);
 }
 
@@ -340,7 +375,7 @@ BASE_NUMERIC_ARITHMETIC_VARIADIC(Checked, Check, Min)
 
 
 template <typename L, typename R>
-L* operator+(L* lhs, const StrictNumeric<R> rhs) {
+L* operator+(L* lhs, StrictNumeric<R> rhs) {
   const uintptr_t result = CheckAdd(reinterpret_cast<uintptr_t>(lhs),
                                     CheckMul(sizeof(L), static_cast<R>(rhs)))
                                .template ValueOrDie<uintptr_t>();
@@ -348,7 +383,7 @@ L* operator+(L* lhs, const StrictNumeric<R> rhs) {
 }
 
 template <typename L, typename R>
-L* operator-(L* lhs, const StrictNumeric<R> rhs) {
+L* operator-(L* lhs, StrictNumeric<R> rhs) {
   const uintptr_t result = CheckSub(reinterpret_cast<uintptr_t>(lhs),
                                     CheckMul(sizeof(L), static_cast<R>(rhs)))
                                .template ValueOrDie<uintptr_t>();
@@ -357,23 +392,23 @@ L* operator-(L* lhs, const StrictNumeric<R> rhs) {
 
 }  
 
-using internal::CheckAdd;
-using internal::CheckAnd;
-using internal::CheckDiv;
-using internal::CheckedNumeric;
-using internal::CheckLsh;
-using internal::CheckMax;
-using internal::CheckMin;
-using internal::CheckMod;
-using internal::CheckMul;
-using internal::CheckOr;
-using internal::CheckRsh;
-using internal::CheckSub;
-using internal::CheckXor;
-using internal::IsValidForType;
-using internal::MakeCheckedNum;
-using internal::ValueOrDefaultForType;
-using internal::ValueOrDieForType;
+using numerics_internal::CheckAdd;
+using numerics_internal::CheckAnd;
+using numerics_internal::CheckDiv;
+using numerics_internal::CheckedNumeric;
+using numerics_internal::CheckLsh;
+using numerics_internal::CheckMax;
+using numerics_internal::CheckMin;
+using numerics_internal::CheckMod;
+using numerics_internal::CheckMul;
+using numerics_internal::CheckOr;
+using numerics_internal::CheckRsh;
+using numerics_internal::CheckSub;
+using numerics_internal::CheckXor;
+using numerics_internal::IsValidForType;
+using numerics_internal::MakeCheckedNum;
+using numerics_internal::ValueOrDefaultForType;
+using numerics_internal::ValueOrDieForType;
 
 }  
 

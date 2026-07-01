@@ -32,22 +32,25 @@ class TopLevelDispatcher : public Dispatcher {
   bool SetupService(InterceptionManager* manager, IpcTag service) override;
 
  private:
+  friend class PolicyDiagnostic;
+
   
   bool Ping(IPCInfo* ipc, void* cookie);
 
   
   Dispatcher* GetDispatcher(IpcTag ipc_tag);
+  
+  std::vector<IpcTag> ipc_targets();
 
   raw_ptr<PolicyBase> policy_;
+  
   std::unique_ptr<Dispatcher> filesystem_dispatcher_;
-  std::unique_ptr<Dispatcher> named_pipe_dispatcher_;
   std::unique_ptr<Dispatcher> thread_process_dispatcher_;
   std::unique_ptr<Dispatcher> registry_dispatcher_;
   std::unique_ptr<Dispatcher> handle_dispatcher_;
   std::unique_ptr<Dispatcher> process_mitigations_win32k_dispatcher_;
   std::unique_ptr<Dispatcher> signed_dispatcher_;
-  std::unique_ptr<Dispatcher> line_break_dispatcher_;
-  Dispatcher* ipc_targets_[kMaxIpcTag];
+  Dispatcher* ipc_targets_[kSandboxIpcCount];
 };
 
 }  

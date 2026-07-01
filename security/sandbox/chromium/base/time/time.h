@@ -65,9 +65,10 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <compare>
+#include <concepts>
 #include <iosfwd>
 #include <limits>
-#include <ostream>
 #include <type_traits>
 
 #include "base/base_export.h"
@@ -76,7 +77,6 @@
 #include "base/compiler_specific.h"
 #include "base/numerics/clamped_math.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
@@ -94,11 +94,13 @@
 #endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-#include <unistd.h>
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 #if BUILDFLAG(IS_WIN)
+#include <string>
+
 #include "base/gtest_prod_util.h"
 #include "base/win/windows_types.h"
 
@@ -114,7 +116,10 @@ struct TimeSpan;
 
 namespace base {
 
+#if BUILDFLAG(IS_WIN)
+class CommandLine;
 class PlatformThreadHandle;
+#endif
 class TimeDelta;
 
 template <typename T>
@@ -128,7 +133,7 @@ constexpr bool isnan(double d) {
   return d != d;
 }
 
-}
+}  
 
 
 
@@ -207,6 +212,10 @@ class BASE_EXPORT TimeDelta {
   constexpr bool is_inf() const { return is_min() || is_max(); }
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+  
+  
+  
+  
   struct timespec ToTimeSpec() const;
 #endif
 #if BUILDFLAG(IS_FUCHSIA)
@@ -256,8 +265,9 @@ class BASE_EXPORT TimeDelta {
     return *this = (*this - other);
   }
   constexpr TimeDelta operator-() const {
-    if (!is_inf())
+    if (!is_inf()) {
       return TimeDelta(-delta_);
+    }
     return (delta_ < 0) ? Max() : Min();
   }
 
@@ -294,8 +304,9 @@ class BASE_EXPORT TimeDelta {
     return ToDouble() / a.ToDouble();
   }
   constexpr int64_t IntDiv(TimeDelta a) const {
-    if (!is_inf() && !a.is_zero())
+    if (!is_inf() && !a.is_zero()) {
       return int64_t{delta_ / a.delta_};
+    }
 
     
     
@@ -315,23 +326,10 @@ class BASE_EXPORT TimeDelta {
   }
 
   
-  constexpr bool operator==(TimeDelta other) const {
-    return delta_ == other.delta_;
-  }
-  constexpr bool operator!=(TimeDelta other) const {
-    return delta_ != other.delta_;
-  }
-  constexpr bool operator<(TimeDelta other) const {
-    return delta_ < other.delta_;
-  }
-  constexpr bool operator<=(TimeDelta other) const {
-    return delta_ <= other.delta_;
-  }
-  constexpr bool operator>(TimeDelta other) const {
-    return delta_ > other.delta_;
-  }
-  constexpr bool operator>=(TimeDelta other) const {
-    return delta_ >= other.delta_;
+  friend constexpr bool operator==(TimeDelta, TimeDelta) = default;
+  friend constexpr std::strong_ordering operator<=>(TimeDelta lhs,
+                                                    TimeDelta rhs) {
+    return lhs.delta_.RawValue() <=> rhs.delta_.RawValue();
   }
 
   
@@ -351,8 +349,9 @@ class BASE_EXPORT TimeDelta {
   
   
   constexpr double ToDouble() const {
-    if (!is_inf())
+    if (!is_inf()) {
       return static_cast<double>(delta_);
+    }
     return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
                         : std::numeric_limits<double>::infinity();
   }
@@ -362,8 +361,9 @@ class BASE_EXPORT TimeDelta {
 };
 
 constexpr TimeDelta TimeDelta::operator+(TimeDelta other) const {
-  if (!other.is_inf())
+  if (!other.is_inf()) {
     return TimeDelta(delta_ + other.delta_);
+  }
 
   
   CHECK(!is_inf() || (delta_ == other.delta_));
@@ -371,8 +371,9 @@ constexpr TimeDelta TimeDelta::operator+(TimeDelta other) const {
 }
 
 constexpr TimeDelta TimeDelta::operator-(TimeDelta other) const {
-  if (!other.is_inf())
+  if (!other.is_inf()) {
     return TimeDelta(delta_ - other.delta_);
+  }
 
   
   CHECK_NE(int64_t{delta_}, int64_t{other.delta_});
@@ -398,7 +399,7 @@ namespace time_internal {
 
 
 
-template<class TimeClass>
+template <class TimeClass>
 class TimeBase {
  public:
   static constexpr int64_t kHoursPerDay = 24;
@@ -420,11 +421,11 @@ class TimeBase {
       kMicrosecondsPerHour * kHoursPerDay;
   static constexpr int64_t kMicrosecondsPerWeek = kMicrosecondsPerDay * 7;
   static constexpr int64_t kNanosecondsPerMicrosecond = 1000;
+  static constexpr int64_t kNanosecondsPerMillisecond =
+      kNanosecondsPerMicrosecond * kMicrosecondsPerMillisecond;
   static constexpr int64_t kNanosecondsPerSecond =
       kNanosecondsPerMicrosecond * kMicrosecondsPerSecond;
 
-  
-  
   
   
   
@@ -467,7 +468,8 @@ class TimeBase {
 #if !defined(__aarch64__) && BUILDFLAG(IS_ANDROID)
   NOINLINE  
 #endif
-  constexpr TimeDelta operator-(const TimeBase<TimeClass>& other) const;
+      constexpr TimeDelta
+      operator-(const TimeBase<TimeClass>& other) const;
 
   
   constexpr TimeClass operator+(TimeDelta delta) const;
@@ -482,23 +484,10 @@ class TimeBase {
   }
 
   
-  constexpr bool operator==(const TimeBase<TimeClass>& other) const {
-    return us_ == other.us_;
-  }
-  constexpr bool operator!=(const TimeBase<TimeClass>& other) const {
-    return us_ != other.us_;
-  }
-  constexpr bool operator<(const TimeBase<TimeClass>& other) const {
-    return us_ < other.us_;
-  }
-  constexpr bool operator<=(const TimeBase<TimeClass>& other) const {
-    return us_ <= other.us_;
-  }
-  constexpr bool operator>(const TimeBase<TimeClass>& other) const {
-    return us_ > other.us_;
-  }
-  constexpr bool operator>=(const TimeBase<TimeClass>& other) const {
-    return us_ >= other.us_;
+  friend constexpr bool operator==(const TimeBase&, const TimeBase&) = default;
+  friend constexpr std::strong_ordering operator<=>(const TimeBase& lhs,
+                                                    const TimeBase& rhs) {
+    return lhs.us_.RawValue() <=> rhs.us_.RawValue();
   }
 
  protected:
@@ -620,8 +609,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  
-  
   constexpr Time() : TimeBase(0) {}
 
   
@@ -692,11 +679,10 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  template <typename T,
-            typename = std::enable_if_t<
-                std::is_integral_v<T> && !std::is_same_v<T, int64_t> &&
-                (sizeof(T) < sizeof(int64_t) ||
-                 (sizeof(T) == sizeof(int64_t) && std::is_signed_v<T>))>>
+  template <typename T>
+    requires(std::integral<T> && !std::same_as<T, int64_t> &&
+             (sizeof(T) < sizeof(int64_t) ||
+              (sizeof(T) == sizeof(int64_t) && std::is_signed_v<T>)))
   static constexpr Time FromMillisecondsSinceUnixEpoch(T ms_since_epoch) {
     return FromMillisecondsSinceUnixEpoch(int64_t{ms_since_epoch});
   }
@@ -809,7 +795,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
     return FromStringInternal(time_string, false, parsed_time);
   }
 
-#if !defined(MOZ_SANDBOX)
   
   
   
@@ -828,7 +813,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   Time UTCMidnight() const { return Midnight(false); }
   Time LocalMidnight() const { return Midnight(true); }
-#endif
 
   
   
@@ -983,8 +967,9 @@ constexpr int TimeDelta::InMinutes() const {
 }
 
 constexpr double TimeDelta::InSecondsF() const {
-  if (!is_inf())
+  if (!is_inf()) {
     return static_cast<double>(delta_) / Time::kMicrosecondsPerSecond;
+  }
   return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
                       : std::numeric_limits<double>::infinity();
 }
@@ -1091,8 +1076,9 @@ constexpr TimeClass TimeBase<TimeClass>::operator-(TimeDelta delta) const {
 
 
 constexpr Time Time::FromTimeT(time_t tt) {
-  if (tt == 0)
+  if (tt == 0) {
     return Time();  
+  }
   return (tt == std::numeric_limits<time_t>::max())
              ? Max()
              : (UnixEpoch() + Seconds(tt));
@@ -1212,6 +1198,19 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  static TimeTicks LowResolutionNow();
+
+  
+  
+  
+  
   [[nodiscard]] static bool IsHighResolution();
 
   
@@ -1232,6 +1231,18 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
   
   
   static TimeTicks FromQPCValue(LONGLONG qpc_value);
+
+  
+  
+  
+  
+  
+  
+  
+  static bool GetHighResolutionTimeTicksFieldTrial(std::string* trial_name,
+                                                   std::string* group_name);
+
+  static void MaybeAddHighResolutionTimeTicksSwitch(CommandLine* command_line);
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -1243,7 +1254,7 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
 
 #endif  
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
   
   
   
@@ -1274,6 +1285,14 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
 
 #endif  
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1346,6 +1365,22 @@ class BASE_EXPORT LiveTicks : public time_internal::TimeBase<LiveTicks> {
 };
 
 
+BASE_EXPORT std::ostream& operator<<(std::ostream& os, LiveTicks live_ticks);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1386,6 +1421,8 @@ class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
   
   
   
+  
+  
   static ThreadTicks GetForThread(const PlatformThreadHandle& thread_handle);
 #endif
 
@@ -1420,4 +1457,4 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& os, ThreadTicks time_ticks);
 
 }  
 
-#endif
+#endif  

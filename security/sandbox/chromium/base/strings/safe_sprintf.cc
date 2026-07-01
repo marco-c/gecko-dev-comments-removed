@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
 #include "build/build_config.h"
 
@@ -38,11 +39,14 @@
 #include "base/check.h"
 #define DEBUG_CHECK RAW_CHECK
 #else
-#define DEBUG_CHECK(x) do { if (x) { } } while (0)
+#define DEBUG_CHECK(x) \
+  do {                 \
+    if (x) {           \
+    }                  \
+  } while (0)
 #endif
 
-namespace base {
-namespace strings {
+namespace base::strings {
 
 
 
@@ -69,9 +73,9 @@ namespace strings {
 namespace {
 const size_t kSSizeMaxConst = ((size_t)(ssize_t)-1) >> 1;
 
-const char kUpCaseHexDigits[]   = "0123456789ABCDEF";
+const char kUpCaseHexDigits[] = "0123456789ABCDEF";
 const char kDownCaseHexDigits[] = "0123456789abcdef";
-}
+}  
 
 #if defined(NDEBUG)
 
@@ -81,7 +85,7 @@ const char kDownCaseHexDigits[] = "0123456789abcdef";
 namespace {
 const size_t kSSizeMax = kSSizeMaxConst;
 }
-#else  
+#else   
 
 
 
@@ -99,7 +103,7 @@ void SetSafeSPrintfSSizeMaxForTest(size_t max) {
 size_t GetSafeSPrintfSSizeMaxForTest() {
   return kSSizeMax;
 }
-}
+}  
 #endif  
 
 namespace {
@@ -110,10 +114,7 @@ class Buffer {
   
   
   
-  Buffer(char* buffer, size_t size)
-      : buffer_(buffer),
-        size_(size - 1),  
-        count_(0) {
+  Buffer(char* buffer, size_t size) : buffer_(buffer), size_(size - 1) {
 
 
 
@@ -163,7 +164,7 @@ class Buffer {
   
   inline bool Out(char ch) {
     if (size_ >= 1 && count_ < size_) {
-      buffer_[count_] = ch;
+      UNSAFE_TODO(buffer_[count_] = ch);
       return IncrementCountByOne();
     }
     
@@ -185,7 +186,7 @@ class Buffer {
     for (; padding > len; --padding) {
       if (!Out(pad)) {
         if (--padding) {
-          IncrementCount(padding-len);
+          IncrementCount(padding - len);
         }
         return false;
       }
@@ -251,9 +252,7 @@ class Buffer {
   }
 
   
-  inline bool IncrementCountByOne() {
-    return IncrementCount(1);
-  }
+  inline bool IncrementCountByOne() { return IncrementCount(1); }
 
   
   
@@ -264,7 +263,8 @@ class Buffer {
     if (idx > size_) {
       idx = size_;
     }
-    return buffer_ + idx;
+    
+    return UNSAFE_BUFFERS(buffer_ + idx);
   }
 
   
@@ -277,7 +277,7 @@ class Buffer {
   
   
   
-  size_t count_;
+  size_t count_ = 0;
 };
 
 bool Buffer::IToASCII(bool sign,
@@ -335,15 +335,17 @@ bool Buffer::IToASCII(bool sign,
         if (padding) {
           --padding;
         }
-        Out(*prefix++);
+        UNSAFE_TODO(Out(*prefix++));
       }
       prefix = nullptr;
     } else {
-      for (reverse_prefix = prefix; *reverse_prefix; ++reverse_prefix) {
+      for (reverse_prefix = prefix; *reverse_prefix;
+           UNSAFE_TODO(++reverse_prefix)) {
       }
     }
-  } else
+  } else {
     prefix = nullptr;
+  }
   const size_t prefix_length = static_cast<size_t>(reverse_prefix - prefix);
 
   
@@ -362,10 +364,11 @@ bool Buffer::IToASCII(bool sign,
         
         
         
-        for (char* move = buffer_ + start, *end = buffer_ + size_ - 1;
-             move < end;
-             ++move) {
-          *move = move[1];
+        
+        for (char *move = UNSAFE_BUFFERS(buffer_ + start),
+                  *end = UNSAFE_BUFFERS(buffer_ + size_ - 1);
+             move < end; UNSAFE_TODO(++move)) {
+          *move = UNSAFE_TODO(move[1]);
         }
         ++discarded;
         --count_;
@@ -387,14 +390,14 @@ bool Buffer::IToASCII(bool sign,
     
     if (!num && started) {
       if (reverse_prefix > prefix) {
-        Out(*--reverse_prefix);
+        UNSAFE_TODO(Out(*--reverse_prefix));
       } else {
         Out(pad);
       }
     } else {
       started = true;
-      Out((upcase ? kUpCaseHexDigits
-                  : kDownCaseHexDigits)[num % base + minint]);
+      UNSAFE_TODO(Out((upcase ? kUpCaseHexDigits
+                              : kDownCaseHexDigits)[num % base + minint]));
     }
 
     minint = 0;
@@ -411,7 +414,7 @@ bool Buffer::IToASCII(bool sign,
       
       
       
-      if (discarded > 8*sizeof(num) + prefix_length) {
+      if (discarded > 8 * sizeof(num) + prefix_length) {
         IncrementCount(padding);
         padding = 0;
       }
@@ -423,13 +426,16 @@ bool Buffer::IToASCII(bool sign,
     
     
     
-    char* front = buffer_ + start;
+    
+    char* front = UNSAFE_BUFFERS(buffer_ + start);
     char* back = GetInsertionPoint();
-    while (--back > front) {
-      char ch = *back;
-      *back = *front;
-      *front++ = ch;
-    }
+    UNSAFE_TODO({
+      while (--back > front) {
+        char ch = *back;
+        *back = *front;
+        *front++ = ch;
+      }
+    });
   }
   IncrementCount(discarded);
   return !discarded;
@@ -439,14 +445,18 @@ bool Buffer::IToASCII(bool sign,
 
 namespace internal {
 
-ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt, const Arg* args,
+ssize_t SafeSNPrintf(char* buf,
+                     size_t sz,
+                     const char* fmt,
+                     const Arg* args,
                      const size_t max_args) {
   
   
   
   
-  if (static_cast<ssize_t>(sz) < 1)
+  if (static_cast<ssize_t>(sz) < 1) {
     return -1;
+  }
   sz = std::min(sz, kSSizeMax);
 
   
@@ -454,211 +464,225 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt, const Arg* args,
   Buffer buffer(buf, sz);
   size_t padding;
   char pad;
-  for (unsigned int cur_arg = 0; *fmt && !buffer.OutOfAddressableSpace(); ) {
-    if (*fmt++ == '%') {
+  for (unsigned int cur_arg = 0; *fmt && !buffer.OutOfAddressableSpace();) {
+    if (UNSAFE_TODO(*fmt++) == '%') {
       padding = 0;
       pad = ' ';
-      char ch = *fmt++;
+      char ch = UNSAFE_TODO(*fmt++);
     format_character_found:
       switch (ch) {
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        
-        
-        
-        pad = ch == '0' ? '0' : ' ';
-        for (;;) {
-          const size_t digit = static_cast<size_t>(ch - '0');
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
           
           
-          const size_t max_padding = kSSizeMax - 1;
-          if (padding > max_padding / 10 ||
-              10 * padding > max_padding - digit) {
-            DEBUG_CHECK(padding <= max_padding / 10 &&
-                        10 * padding <= max_padding - digit);
+          
+          pad = ch == '0' ? '0' : ' ';
+          for (;;) {
+            const size_t digit = static_cast<size_t>(ch - '0');
             
             
-          padding_overflow:
-            padding = max_padding;
-            while ((ch = *fmt++) >= '0' && ch <= '9') {
+            const size_t max_padding = kSSizeMax - 1;
+            if (padding > max_padding / 10 ||
+                10 * padding > max_padding - digit) {
+              DEBUG_CHECK(padding <= max_padding / 10 &&
+                          10 * padding <= max_padding - digit);
+              
+              
+              
+            padding_overflow:
+              padding = max_padding;
+              while ((ch = UNSAFE_TODO(*fmt++)) >= '0' && ch <= '9') {
+              }
+              if (cur_arg < max_args) {
+                ++cur_arg;
+              }
+              goto fail_to_expand;
             }
-            if (cur_arg < max_args) {
-              ++cur_arg;
+            padding = 10 * padding + digit;
+            if (padding > max_padding) {
+              
+              
+              
+              
+              DEBUG_CHECK(padding <= max_padding);
+              goto padding_overflow;
             }
+            ch = UNSAFE_TODO(*fmt++);
+            if (ch < '0' || ch > '9') {
+              
+              
+              goto format_character_found;
+            }
+          }
+        case 'c': {  
+          
+          if (cur_arg >= max_args) {
+            DEBUG_CHECK(cur_arg < max_args);
             goto fail_to_expand;
           }
-          padding = 10 * padding + digit;
-          if (padding > max_padding) {
-            
-            
-            
-            
-            DEBUG_CHECK(padding <= max_padding);
-            goto padding_overflow;
-          }
-          ch = *fmt++;
-          if (ch < '0' || ch > '9') {
-            
-            
-            goto format_character_found;
-          }
-        }
-      case 'c': {  
-        
-        if (cur_arg >= max_args) {
-          DEBUG_CHECK(cur_arg < max_args);
-          goto fail_to_expand;
-        }
 
-        
-        const Arg& arg = args[cur_arg++];
-        if (arg.type != Arg::INT && arg.type != Arg::UINT) {
-          DEBUG_CHECK(arg.type == Arg::INT || arg.type == Arg::UINT);
-          goto fail_to_expand;
-        }
-
-        
-        buffer.Pad(' ', padding, 1);
-
-        
-        char as_char = static_cast<char>(arg.integer.i);
-        if (!as_char) {
-          goto end_of_output_buffer;
-        }
-        buffer.Out(as_char);
-        break; }
-      case 'd':    
-      case 'o':    
-      case 'x':    
-      case 'X':
-      case 'p': {  
-        
-        if (cur_arg >= max_args) {
-          DEBUG_CHECK(cur_arg < max_args);
-          goto fail_to_expand;
-        }
-
-        const Arg& arg = args[cur_arg++];
-        int64_t i;
-        const char* prefix = nullptr;
-        if (ch != 'p') {
           
+          const Arg& arg = UNSAFE_TODO(args[cur_arg++]);
           if (arg.type != Arg::INT && arg.type != Arg::UINT) {
             DEBUG_CHECK(arg.type == Arg::INT || arg.type == Arg::UINT);
             goto fail_to_expand;
           }
-          i = arg.integer.i;
 
-          if (ch != 'd') {
-            
-            
-            
-            
-            
-            
-            
-            if (arg.integer.width < sizeof(int64_t)) {
-              i &= (1LL << (8*arg.integer.width)) - 1;
-            }
-          }
-        } else {
           
-          if (arg.type == Arg::POINTER) {
-            i = static_cast<int64_t>(reinterpret_cast<uintptr_t>(arg.ptr));
-          } else if (arg.type == Arg::STRING) {
-            i = static_cast<int64_t>(reinterpret_cast<uintptr_t>(arg.str));
-          } else if (arg.type == Arg::INT &&
-                     arg.integer.width == sizeof(NULL) &&
-                     arg.integer.i == 0) {  
-            i = 0;
+          buffer.Pad(' ', padding, 1);
+
+          
+          char as_char = static_cast<char>(arg.integer.i);
+          if (!as_char) {
+            goto end_of_output_buffer;
+          }
+          buffer.Out(as_char);
+          break;
+        }
+        case 'd':  
+        case 'o':  
+        case 'x':  
+        case 'X':
+        case 'p': {  
+          
+          if (cur_arg >= max_args) {
+            DEBUG_CHECK(cur_arg < max_args);
+            goto fail_to_expand;
+          }
+
+          const Arg& arg = UNSAFE_TODO(args[cur_arg++]);
+          int64_t i;
+          const char* prefix = nullptr;
+          if (ch != 'p') {
+            
+            if (arg.type != Arg::INT && arg.type != Arg::UINT) {
+              DEBUG_CHECK(arg.type == Arg::INT || arg.type == Arg::UINT);
+              goto fail_to_expand;
+            }
+            i = arg.integer.i;
+
+            if (ch != 'd') {
+              
+              
+              
+              
+              
+              
+              
+              if (arg.integer.width < sizeof(int64_t)) {
+                i &= (1LL << (8 * arg.integer.width)) - 1;
+              }
+            }
           } else {
-            DEBUG_CHECK(arg.type == Arg::POINTER || arg.type == Arg::STRING);
+            
+            if (arg.type == Arg::POINTER) {
+              i = static_cast<int64_t>(reinterpret_cast<uintptr_t>(arg.ptr));
+            } else if (arg.type == Arg::STRING) {
+              i = static_cast<int64_t>(reinterpret_cast<uintptr_t>(arg.str));
+            } else if (arg.type == Arg::INT &&
+                       arg.integer.width == sizeof(NULL) &&
+                       arg.integer.i == 0) {  
+              i = 0;
+            } else {
+              DEBUG_CHECK(arg.type == Arg::POINTER || arg.type == Arg::STRING);
+              goto fail_to_expand;
+            }
+
+            
+            prefix = "0x";
+          }
+
+          
+          
+          
+          
+          
+          buffer.IToASCII(ch == 'd' && arg.type == Arg::INT, ch != 'x', i,
+                          ch == 'o'   ? 8
+                          : ch == 'd' ? 10
+                                      : 16,
+                          pad, padding, prefix);
+          break;
+        }
+        case 's': {
+          
+          if (cur_arg >= max_args) {
+            DEBUG_CHECK(cur_arg < max_args);
             goto fail_to_expand;
           }
 
           
-          prefix = "0x";
-        }
-
-        
-        
-        
-        
-        
-        buffer.IToASCII(ch == 'd' && arg.type == Arg::INT,
-                        ch != 'x', i,
-                        ch == 'o' ? 8 : ch == 'd' ? 10 : 16,
-                        pad, padding, prefix);
-        break; }
-      case 's': {
-        
-        if (cur_arg >= max_args) {
-          DEBUG_CHECK(cur_arg < max_args);
-          goto fail_to_expand;
-        }
-
-        
-        const Arg& arg = args[cur_arg++];
-        const char *s;
-        if (arg.type == Arg::STRING) {
-          s = arg.str ? arg.str : "<NULL>";
-        } else if (arg.type == Arg::INT && arg.integer.width == sizeof(NULL) &&
-                   arg.integer.i == 0) {  
-          s = "<NULL>";
-        } else {
-          DEBUG_CHECK(arg.type == Arg::STRING);
-          goto fail_to_expand;
-        }
-
-        
-        
-        if (padding) {
-          size_t len = 0;
-          for (const char* src = s; *src++; ) {
-            ++len;
+          const Arg& arg = UNSAFE_TODO(args[cur_arg++]);
+          const char* s;
+          if (arg.type == Arg::STRING) {
+            s = arg.str ? arg.str : "<NULL>";
+          } else if (arg.type == Arg::INT &&
+                     arg.integer.width == sizeof(NULL) &&
+                     arg.integer.i == 0) {  
+            s = "<NULL>";
+          } else {
+            DEBUG_CHECK(arg.type == Arg::STRING);
+            goto fail_to_expand;
           }
-          buffer.Pad(' ', padding, len);
-        }
 
-        
-        
-        
-        for (const char* src = s; *src; ) {
-          buffer.Out(*src++);
+          
+          
+          if (padding) {
+            size_t len = 0;
+            for (const char* src = s; UNSAFE_TODO(*src++);) {
+              ++len;
+            }
+            buffer.Pad(' ', padding, len);
+          }
+
+          
+          
+          
+          for (const char* src = s; *src;) {
+            buffer.Out(UNSAFE_TODO(*src++));
+          }
+          break;
         }
-        break; }
-      case '%':
-        
-        goto copy_verbatim;
-      fail_to_expand:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      default:
-        
-        
-        buffer.Out('%');
-        DEBUG_CHECK(ch);
-        if (!ch) {
-          goto end_of_format_string;
-        }
-        buffer.Out(ch);
-        break;
+        case '%':
+          
+          goto copy_verbatim;
+        fail_to_expand:
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+        default:
+          
+          
+          buffer.Out('%');
+          DEBUG_CHECK(ch);
+          if (!ch) {
+            goto end_of_format_string;
+          }
+          buffer.Out(ch);
+          break;
       }
     } else {
-  copy_verbatim:
-    buffer.Out(fmt[-1]);
+    copy_verbatim:
+      buffer.Out(UNSAFE_TODO(fmt[-1]));
     }
   }
- end_of_format_string:
- end_of_output_buffer:
+end_of_format_string:
+end_of_output_buffer:
   return buffer.GetCount();
 }
 
@@ -669,8 +693,9 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt) {
   
   
   
-  if (static_cast<ssize_t>(sz) < 1)
+  if (static_cast<ssize_t>(sz) < 1) {
     return -1;
+  }
   sz = std::min(sz, kSSizeMax);
 
   Buffer buffer(buf, sz);
@@ -680,15 +705,16 @@ ssize_t SafeSNPrintf(char* buf, size_t sz, const char* fmt) {
   
   
   const char* src = fmt;
-  for (; *src; ++src) {
-    buffer.Out(*src);
-    DEBUG_CHECK(src[0] != '%' || src[1] == '%');
-    if (src[0] == '%' && src[1] == '%') {
-      ++src;
+  UNSAFE_TODO({
+    for (; *src; ++src) {
+      buffer.Out(*src);
+      DEBUG_CHECK(src[0] != '%' || src[1] == '%');
+      if (src[0] == '%' && src[1] == '%') {
+        ++src;
+      }
     }
-  }
+  });
   return buffer.GetCount();
 }
 
-}  
 }  

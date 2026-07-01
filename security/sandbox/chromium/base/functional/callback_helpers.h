@@ -16,7 +16,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "base/atomicops.h"
 #include "base/base_export.h"
 #include "base/check.h"
 #include "base/functional/bind.h"
@@ -36,35 +35,12 @@ struct IsBaseCallbackImpl<OnceCallback<R(Args...)>> : std::true_type {};
 template <typename R, typename... Args>
 struct IsBaseCallbackImpl<RepeatingCallback<R(Args...)>> : std::true_type {};
 
-template <typename T>
-struct IsOnceCallbackImpl : std::false_type {};
-
-template <typename R, typename... Args>
-struct IsOnceCallbackImpl<OnceCallback<R(Args...)>> : std::true_type {};
-
 }  
 
 
 
 template <typename T>
-using IsBaseCallback = internal::IsBaseCallbackImpl<std::decay_t<T>>;
-
-
-
-template <typename T>
-using IsOnceCallback = internal::IsOnceCallbackImpl<std::decay_t<T>>;
-
-
-
-
-
-
-
-
-
-template <template <typename> class CallbackType>
-using EnableIfIsBaseCallback =
-    std::enable_if_t<IsBaseCallback<CallbackType<void()>>::value>;
+concept IsBaseCallback = internal::IsBaseCallbackImpl<std::decay_t<T>>::value;
 
 namespace internal {
 
@@ -157,29 +133,33 @@ SplitOnceCallback(OnceCallback<void(Args...)> callback) {
 
 
 
-template <typename... Preargs, typename... Args>
-RepeatingCallback<void(Preargs..., Args...)> IgnoreArgs(
-    RepeatingCallback<void(Args...)> callback) {
-  return callback ? BindRepeating(
-                        [](RepeatingCallback<void(Args...)> callback,
-                           Preargs..., Args... args) {
-                          std::move(callback).Run(std::forward<Args>(args)...);
+
+
+template <typename... Preargs, typename... Args, typename R>
+RepeatingCallback<R(Preargs..., Args...)> IgnoreArgs(
+    RepeatingCallback<R(Args...)> callback) {
+  return callback ? ::base::BindRepeating(
+                        [](RepeatingCallback<R(Args...)> callback, Preargs...,
+                           Args... args) {
+                          return std::move(callback).Run(
+                              std::forward<Args>(args)...);
                         },
                         std::move(callback))
-                  : RepeatingCallback<void(Preargs..., Args...)>();
+                  : RepeatingCallback<R(Preargs..., Args...)>();
 }
 
 
-template <typename... Preargs, typename... Args>
-OnceCallback<void(Preargs..., Args...)> IgnoreArgs(
-    OnceCallback<void(Args...)> callback) {
-  return callback ? BindOnce(
-                        [](OnceCallback<void(Args...)> callback, Preargs...,
+template <typename... Preargs, typename... Args, typename R>
+OnceCallback<R(Preargs..., Args...)> IgnoreArgs(
+    OnceCallback<R(Args...)> callback) {
+  return callback ? ::base::BindOnce(
+                        [](OnceCallback<R(Args...)> callback, Preargs...,
                            Args... args) {
-                          std::move(callback).Run(std::forward<Args>(args)...);
+                          return std::move(callback).Run(
+                              std::forward<Args>(args)...);
                         },
                         std::move(callback))
-                  : OnceCallback<void(Preargs..., Args...)>();
+                  : OnceCallback<R(Preargs..., Args...)>();
 }
 
 
@@ -189,7 +169,7 @@ OnceCallback<void(Preargs..., Args...)> IgnoreArgs(
 class BASE_EXPORT ScopedClosureRunner {
  public:
   ScopedClosureRunner();
-  explicit ScopedClosureRunner(OnceClosure closure);
+  [[nodiscard]] explicit ScopedClosureRunner(OnceClosure closure);
   ScopedClosureRunner(ScopedClosureRunner&& other);
   
   

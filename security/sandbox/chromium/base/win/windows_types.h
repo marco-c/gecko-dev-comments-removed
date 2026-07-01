@@ -9,15 +9,6 @@
 #define BASE_WIN_WINDOWS_TYPES_H_
 
 
-#if defined(__MINGW32__)
-
-
-#define _Releases_exclusive_lock_(lock)
-
-#define _Post_equals_last_error_
-#else
-#include <concurrencysal.h>
-#endif
 #include <sal.h>
 #include <specstrings.h>
 
@@ -87,6 +78,12 @@ typedef LONG NTSTATUS;
 #define REFGUID const GUID&
 #endif
 
+
+#ifndef __SECSTATUS_DEFINED__
+typedef LONG SECURITY_STATUS;
+#define __SECSTATUS_DEFINED__
+#endif
+
 typedef LPVOID HINTERNET;
 typedef HICON HCURSOR;
 typedef HINSTANCE HMODULE;
@@ -99,6 +96,7 @@ typedef struct _OVERLAPPED OVERLAPPED;
 typedef struct tagMSG MSG, *PMSG, *NPMSG, *LPMSG;
 typedef struct tagTOUCHINPUT TOUCHINPUT;
 typedef struct tagPOINTER_INFO POINTER_INFO;
+typedef struct tagRECT RECT;
 
 typedef struct _RTL_SRWLOCK RTL_SRWLOCK;
 typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
@@ -106,6 +104,7 @@ typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
 typedef struct _GUID GUID;
 typedef GUID CLSID;
 typedef GUID IID;
+typedef GUID UUID;
 
 typedef struct tagLOGFONTW LOGFONTW, *PLOGFONTW, *NPLOGFONTW, *LPLOGFONTW;
 typedef LOGFONTW LOGFONT;
@@ -161,11 +160,7 @@ struct CHROME_LUID {
   DWORD LowPart;
   LONG HighPart;
 
-  bool operator==(CHROME_LUID const& that) const {
-    return this->LowPart == that.LowPart && this->HighPart == that.HighPart;
-  }
-
-  bool operator!=(CHROME_LUID const& that) const { return !(*this == that); }
+  bool operator==(const CHROME_LUID&) const = default;
 };
 
 
@@ -201,6 +196,12 @@ struct CHROME_MSG {
 
 
 
+#ifndef FALSE
+#define FALSE               0
+#endif
+#ifndef TRUE
+#define TRUE                1
+#endif
 #ifndef INVALID_HANDLE_VALUE
 
 #define INVALID_HANDLE_VALUE ((HANDLE)(LONG_PTR)-1)
@@ -290,6 +291,9 @@ struct CHROME_MSG {
 #define WINAPI __stdcall
 #define APIENTRY WINAPI
 #define CALLBACK __stdcall
+#define NTAPI __stdcall
+
+typedef INT_PTR(WINAPI* FARPROC)();
 
 
 WINBASEAPI _Releases_exclusive_lock_(*SRWLock) VOID WINAPI

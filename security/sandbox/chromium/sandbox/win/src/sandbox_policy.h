@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include "base/containers/span.h"
-#include "base/memory/scoped_refptr.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
 
@@ -37,6 +36,19 @@ enum class FileSemantics {
   kAllowReadonly,  
                    
   kAllowQuery,     
+};
+
+
+
+enum class HandleToClose {
+  
+  kWindowsShellGlobalCounters,
+  
+  kDeviceApi,
+  
+  kKsecDD,
+  
+  kDisconnectCsrss,
 };
 
 
@@ -165,13 +177,6 @@ class [[clang::lto_visibility_public]] TargetConfig {
   
   
   
-  [[nodiscard]] virtual ResultCode AllowNamedPipes(const wchar_t* pattern) = 0;
-
-  
-  
-  
-  
-  
   
   [[nodiscard]] virtual ResultCode AllowRegistryRead(
       const wchar_t* pattern) = 0;
@@ -179,14 +184,11 @@ class [[clang::lto_visibility_public]] TargetConfig {
   
   
   
-  [[nodiscard]] virtual ResultCode AllowExtraDlls(const wchar_t* pattern) = 0;
+  [[nodiscard]] virtual ResultCode AllowExtraDll(const wchar_t* path) = 0;
 
   
   
   [[nodiscard]] virtual ResultCode SetFakeGdiInit() = 0;
-
-  
-  [[nodiscard]] virtual ResultCode AllowLineBreaking() = 0;
 
   
   
@@ -242,25 +244,20 @@ class [[clang::lto_visibility_public]] TargetConfig {
 
   
   
-  
-  
   [[nodiscard]] virtual ResultCode AddAppContainerProfile(
-      const wchar_t* package_name,
-      bool create_profile) = 0;
-
-  
-  virtual scoped_refptr<AppContainer> GetAppContainer() = 0;
+      const wchar_t* package_name) = 0;
 
   
   
-  
-  [[nodiscard]] virtual ResultCode AddKernelObjectToClose(
-      const wchar_t* handle_type,
-      const wchar_t* handle_name) = 0;
+  virtual AppContainer* GetAppContainer() = 0;
 
   
   
-  [[nodiscard]] virtual ResultCode SetDisconnectCsrss() = 0;
+  virtual void AddKernelObjectToClose(HandleToClose handle_info) = 0;
+
+  
+  
+  virtual void SetDisconnectCsrss() = 0;
 
   
   

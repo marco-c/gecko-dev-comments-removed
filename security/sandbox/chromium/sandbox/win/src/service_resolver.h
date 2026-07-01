@@ -35,7 +35,6 @@ class [[clang::lto_visibility_public]] ServiceResolverThunk
                  const char* target_name,
                  const char* interceptor_name,
                  const void* interceptor_entry_point,
-                 void* local_thunk_storage,
                  void* thunk_storage,
                  size_t storage_bytes,
                  size_t* storage_used) override;
@@ -55,6 +54,15 @@ class [[clang::lto_visibility_public]] ServiceResolverThunk
 
   
   void AllowLocalPatches();
+
+  
+  
+  
+  NTSTATUS CopyThunk(const void* target_module,
+                     const char* target_name,
+                     BYTE* thunk_storage,
+                     size_t storage_bytes,
+                     size_t* storage_used);
 
   
   

@@ -5,8 +5,9 @@
 #include "base/debug/crash_logging.h"
 
 #include <ostream>
+#include <string_view>
 
-#include "base/strings/string_piece.h"
+#include "base/check_op.h"
 #include "build/build_config.h"
 
 namespace base::debug {
@@ -19,18 +20,15 @@ CrashKeyImplementation* g_crash_key_impl = nullptr;
 
 CrashKeyString* AllocateCrashKeyString(const char name[],
                                        CrashKeySize value_length) {
-  if (!g_crash_key_impl)
-    return nullptr;
-
-    
-    
-    
+  
+  
+  
 #if DCHECK_IS_ON() && !BUILDFLAG(IS_ANDROID)
-  base::StringPiece name_piece = name;
+  std::string_view name_piece = name;
 
   
   
-  DCHECK_EQ(base::StringPiece::npos, name_piece.find(':'))
+  DCHECK_EQ(std::string_view::npos, name_piece.find(':'))
       << "; name_piece = " << name_piece;
 
   
@@ -40,32 +38,39 @@ CrashKeyString* AllocateCrashKeyString(const char name[],
   DCHECK_LT(name_piece.size(), 40u);
 #endif
 
+  if (!g_crash_key_impl) {
+    return nullptr;
+  }
+
   return g_crash_key_impl->Allocate(name, value_length);
 }
 
-void SetCrashKeyString(CrashKeyString* crash_key, base::StringPiece value) {
-  if (!g_crash_key_impl || !crash_key)
+void SetCrashKeyString(CrashKeyString* crash_key, std::string_view value) {
+  if (!g_crash_key_impl || !crash_key) {
     return;
+  }
 
   g_crash_key_impl->Set(crash_key, value);
 }
 
 void ClearCrashKeyString(CrashKeyString* crash_key) {
-  if (!g_crash_key_impl || !crash_key)
+  if (!g_crash_key_impl || !crash_key) {
     return;
+  }
 
   g_crash_key_impl->Clear(crash_key);
 }
 
 void OutputCrashKeysToStream(std::ostream& out) {
-  if (!g_crash_key_impl)
+  if (!g_crash_key_impl) {
     return;
+  }
 
   g_crash_key_impl->OutputCrashKeysToStream(out);
 }
 
 ScopedCrashKeyString::ScopedCrashKeyString(CrashKeyString* crash_key,
-                                           base::StringPiece value)
+                                           std::string_view value)
     : crash_key_(crash_key) {
   SetCrashKeyString(crash_key_, value);
 }

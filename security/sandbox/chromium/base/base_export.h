@@ -15,11 +15,7 @@
 #endif  
 
 #else  
-#if defined(BASE_IMPLEMENTATION)
 #define BASE_EXPORT __attribute__((visibility("default")))
-#else
-#define BASE_EXPORT
-#endif  
 #endif
 
 #else  

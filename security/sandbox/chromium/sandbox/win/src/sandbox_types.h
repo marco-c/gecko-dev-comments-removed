@@ -5,17 +5,12 @@
 #ifndef SANDBOX_WIN_SRC_SANDBOX_TYPES_H_
 #define SANDBOX_WIN_SRC_SANDBOX_TYPES_H_
 
+#include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/process/kill.h"
 #include "base/process/launch.h"
 
 namespace sandbox {
-
-#ifdef __MINGW32__
-
-
-#define _Copy_s copy
-#endif
 
 
 
@@ -183,6 +178,9 @@ enum ResultCode : int {
 
 
 
+
+
+
 enum TerminationCodes {
   SBOX_FATAL_INTEGRITY = 7006,        
   SBOX_FATAL_DROPTOKEN = 7007,        
@@ -192,6 +190,7 @@ enum TerminationCodes {
   SBOX_FATAL_MITIGATION = 7011,       
   SBOX_FATAL_MEMORY_EXCEEDED = 7012,  
   SBOX_FATAL_WARMUP = 7013,           
+  SBOX_FATAL_BROKER_SHUTDOWN_HUNG = 7014,  
   SBOX_FATAL_LAST
 };
 
@@ -221,6 +220,13 @@ enum InterceptionType {
   INTERCEPTION_UNLOAD_MODULE,  
   INTERCEPTION_LAST            
 };
+
+
+
+
+
+using StartSandboxedProcessCallback =
+    base::OnceCallback<void(base::Process, DWORD, int)>;
 
 }  
 

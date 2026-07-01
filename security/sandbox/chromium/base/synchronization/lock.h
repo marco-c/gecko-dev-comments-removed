@@ -5,67 +5,89 @@
 #ifndef BASE_SYNCHRONIZATION_LOCK_H_
 #define BASE_SYNCHRONIZATION_LOCK_H_
 
+#include <type_traits>
+
 #include "base/base_export.h"
 #include "base/dcheck_is_on.h"
 #include "base/synchronization/lock_impl.h"
+#include "base/synchronization/lock_subtle.h"
 #include "base/thread_annotations.h"
 #include "build/build_config.h"
 
 #if DCHECK_IS_ON()
+#include <memory>
+
+#include "base/compiler_specific.h"
 #include "base/threading/platform_thread_ref.h"
 #endif
 
 namespace base {
 
 
+template <typename T>
+class FunctionRef;
+
+
 
 
 class LOCKABLE BASE_EXPORT Lock {
  public:
-#if !DCHECK_IS_ON()
-  
-  Lock() : lock_() {}
-
   Lock(const Lock&) = delete;
   Lock& operator=(const Lock&) = delete;
 
-  ~Lock() {}
+#if defined(__clang__)
+  
+  
+  Lock& operator!();
+#endif
 
-  void Acquire() EXCLUSIVE_LOCK_FUNCTION() { lock_.Lock(); }
+#if !DCHECK_IS_ON()
+  
+
+  Lock() = default;
+  
+  
+  
+  
+  template <typename T>
+    requires(std::is_convertible_v<T, FunctionRef<void()>>)
+  explicit Lock(T check_invariants) : Lock() {}
+  ~Lock() = default;
+
+  void Acquire(subtle::LockTracking tracking = subtle::LockTracking::kDisabled)
+      EXCLUSIVE_LOCK_FUNCTION() {
+    lock_.Lock();
+  }
   void Release() UNLOCK_FUNCTION() { lock_.Unlock(); }
 
   
   
   
   
-  bool Try() EXCLUSIVE_TRYLOCK_FUNCTION(true) { return lock_.Try(); }
+  bool Try(subtle::LockTracking tracking = subtle::LockTracking::kDisabled)
+      EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+    return lock_.Try();
+  }
 
   
   void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK() {}
   void AssertNotHeld() const {}
 #else
   Lock();
+  
+  
+  
+  
+  explicit Lock(FunctionRef<void()> check_invariants LIFETIME_BOUND);
   ~Lock();
 
   
   
-  
-  void Acquire() EXCLUSIVE_LOCK_FUNCTION() {
-    lock_.Lock();
-    CheckUnheldAndMark();
-  }
-  void Release() UNLOCK_FUNCTION() {
-    CheckHeldAndUnmark();
-    lock_.Unlock();
-  }
-
-  bool Try() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    bool rv = lock_.Try();
-    if (rv) {
-      CheckUnheldAndMark();
-    }
-    return rv;
-  }
+  void Acquire(subtle::LockTracking tracking = subtle::LockTracking::kDisabled)
+      EXCLUSIVE_LOCK_FUNCTION();
+  void Release() UNLOCK_FUNCTION();
+  bool Try(subtle::LockTracking tracking = subtle::LockTracking::kDisabled)
+      EXCLUSIVE_TRYLOCK_FUNCTION(true);
 
   void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK();
   void AssertNotHeld() const;
@@ -75,6 +97,9 @@ class LOCKABLE BASE_EXPORT Lock {
   
   static bool HandlesMultipleThreadPriorities() {
 #if BUILDFLAG(IS_WIN)
+    
+    
+    
     
     
     
@@ -96,16 +121,23 @@ class LOCKABLE BASE_EXPORT Lock {
  private:
 #if DCHECK_IS_ON()
   
-  
-  
-  
-  
   void CheckHeldAndUnmark();
+  
   void CheckUnheldAndMark();
 
   
   
+  void AddToLocksHeldOnCurrentThread();
+  void RemoveFromLocksHeldOnCurrentThread();
+
+  
   base::PlatformThreadRef owning_thread_ref_;
+
+  
+  
+  bool in_tracked_locks_held_by_current_thread_ = false;
+
+  std::unique_ptr<FunctionRef<void()>> check_invariants_;
 #endif  
 
   
@@ -114,6 +146,12 @@ class LOCKABLE BASE_EXPORT Lock {
 
 
 using AutoLock = internal::BasicAutoLock<Lock>;
+
+
+
+
+
+using MovableAutoLock = internal::BasicMovableAutoLock<Lock>;
 
 
 

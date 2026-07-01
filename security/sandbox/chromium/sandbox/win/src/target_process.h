@@ -9,13 +9,13 @@
 #include <stdint.h>
 
 #include <memory>
+#include <string_view>
 
 #include "base/containers/span.h"
 #include "base/environment.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/free_deleter.h"
 #include "base/memory/raw_ptr.h"
-#include "base/strings/string_util.h"
 #include "base/win/access_token.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_process_information.h"
@@ -51,7 +51,7 @@ class TargetProcess {
                     const wchar_t* command_line,
                     std::unique_ptr<StartupInformationHelper> startup_info,
                     base::win::ScopedProcessInformation* target_info,
-                    base::EnvironmentMap& env_map,
+                    std::optional<base::EnvironmentMap> env_changes,
                     DWORD* win_error);
 
   
@@ -60,8 +60,8 @@ class TargetProcess {
   
   
   ResultCode Init(Dispatcher* ipc_dispatcher,
-                  absl::optional<base::span<const uint8_t>> policy,
-                  absl::optional<base::span<const uint8_t>> delegate_data,
+                  std::optional<base::span<const uint8_t>> policy,
+                  std::optional<base::span<const uint8_t>> delegate_data,
                   uint32_t shared_IPC_size,
                   DWORD* win_error);
 
@@ -84,8 +84,10 @@ class TargetProcess {
   HANDLE MainThread() const { return sandbox_process_info_.thread_handle(); }
 
   
+  
   ResultCode TransferVariable(const char* name,
-                              const void* address,
+                              const void* local_address,
+                              void* target_address,
                               size_t size);
 
   
@@ -106,7 +108,7 @@ class TargetProcess {
   
   static std::wstring FilterEnvironment(
       const wchar_t* env,
-      const base::span<const base::WStringPiece> to_keep);
+      const base::span<const std::wstring_view> to_keep);
 
   
   base::win::ScopedProcessInformation sandbox_process_info_;

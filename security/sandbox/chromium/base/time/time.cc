@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <ostream>
 #include <tuple>
 #include <utility>
@@ -17,7 +18,6 @@
 #include "base/third_party/nspr/prtime.h"
 #include "base/time/time_override.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
@@ -38,10 +38,14 @@ std::atomic<TimeNowFunction> g_time_now_from_system_time_function{
 std::atomic<TimeTicksNowFunction> g_time_ticks_now_function{
     &subtle::TimeTicksNowIgnoringOverride};
 
+std::atomic<TimeTicksLowResolutionNowFunction>
+    g_time_ticks_low_resolution_now_function{
+        &subtle::TimeTicksLowResolutionNowIgnoringOverride};
+
 #if !defined(MOZ_SANDBOX)
 std::atomic<LiveTicksNowFunction> g_live_ticks_now_function{
     &subtle::LiveTicksNowIgnoringOverride};
-#endif
+#endif  
 
 std::atomic<ThreadTicksNowFunction> g_thread_ticks_now_function{
     &subtle::ThreadTicksNowIgnoringOverride};
@@ -51,18 +55,21 @@ std::atomic<ThreadTicksNowFunction> g_thread_ticks_now_function{
 
 
 TimeDelta TimeDelta::CeilToMultiple(TimeDelta interval) const {
-  if (is_inf() || interval.is_zero())
+  if (is_inf() || interval.is_zero()) {
     return *this;
+  }
   const TimeDelta remainder = *this % interval;
-  if (delta_ < 0)
+  if (delta_ < 0) {
     return *this - remainder;
+  }
   return remainder.is_zero() ? *this
                              : (*this - remainder + interval.magnitude());
 }
 
 TimeDelta TimeDelta::FloorToMultiple(TimeDelta interval) const {
-  if (is_inf() || interval.is_zero())
+  if (is_inf() || interval.is_zero()) {
     return *this;
+  }
   const TimeDelta remainder = *this % interval;
   if (delta_ < 0) {
     return remainder.is_zero() ? *this
@@ -72,10 +79,12 @@ TimeDelta TimeDelta::FloorToMultiple(TimeDelta interval) const {
 }
 
 TimeDelta TimeDelta::RoundToMultiple(TimeDelta interval) const {
-  if (is_inf() || interval.is_zero())
+  if (is_inf() || interval.is_zero()) {
     return *this;
-  if (interval.is_inf())
+  }
+  if (interval.is_inf()) {
     return TimeDelta();
+  }
   const TimeDelta half = interval.magnitude() / 2;
   return (delta_ < 0) ? (*this - half).CeilToMultiple(interval)
                       : (*this + half).FloorToMultiple(interval);
@@ -108,8 +117,9 @@ Time Time::Midnight(bool is_local) const {
   exploded.second = 0;
   exploded.millisecond = 0;
   Time out_time;
-  if (FromExploded(is_local, exploded, &out_time))
+  if (FromExploded(is_local, exploded, &out_time)) {
     return out_time;
+  }
 
   
   
@@ -118,7 +128,7 @@ Time Time::Midnight(bool is_local) const {
   exploded.hour = 1;
   [[maybe_unused]] const bool result =
       FromExploded(is_local, exploded, &out_time);
-#if BUILDFLAG(IS_CHROMEOS_ASH) && defined(ARCH_CPU_ARM_FAMILY)
+#if BUILDFLAG(IS_CHROMEOS) && defined(ARCH_CPU_ARM_FAMILY)
   
   
   
@@ -137,20 +147,21 @@ bool Time::FromStringInternal(const char* time_string,
   DCHECK(time_string);
   DCHECK(parsed_time);
 
-  if (time_string[0] == '\0')
+  if (time_string[0] == '\0') {
     return false;
+  }
 
   PRTime result_time = 0;
-  PRStatus result = PR_ParseTimeString(time_string,
-                                       is_local ? PR_FALSE : PR_TRUE,
-                                       &result_time);
-  if (result != PR_SUCCESS)
+  PRStatus result = PR_ParseTimeString(
+      time_string, is_local ? PR_FALSE : PR_TRUE, &result_time);
+  if (result != PR_SUCCESS) {
     return false;
+  }
 
   *parsed_time = UnixEpoch() + Microseconds(result_time);
   return true;
 }
-#endif
+#endif  
 
 
 bool Time::ExplodedMostlyEquals(const Exploded& lhs, const Exploded& rhs) {
@@ -206,13 +217,19 @@ std::ostream& operator<<(std::ostream& os, Time time) {
                             time.ToDeltaSinceWindowsEpoch().InMicroseconds() %
                                 Time::kMicrosecondsPerSecond);
 }
-#endif
+#endif  
 
 
 
 
 TimeTicks TimeTicks::Now() {
   return internal::g_time_ticks_now_function.load(std::memory_order_relaxed)();
+}
+
+
+TimeTicks TimeTicks::LowResolutionNow() {
+  return internal::g_time_ticks_low_resolution_now_function.load(
+      std::memory_order_relaxed)();
 }
 
 
@@ -252,8 +269,9 @@ TimeTicks TimeTicks::SnappedToNextTick(TimeTicks tick_phase,
   
   
   
-  if (!interval_offset.is_zero() && tick_phase < *this)
+  if (!interval_offset.is_zero() && tick_phase < *this) {
     interval_offset += tick_interval;
+  }
   return *this + interval_offset;
 }
 
@@ -274,7 +292,7 @@ std::ostream& operator<<(std::ostream& os, TimeTicks time_ticks) {
 LiveTicks LiveTicks::Now() {
   return internal::g_live_ticks_now_function.load(std::memory_order_relaxed)();
 }
-#endif
+#endif  
 
 #if !BUILDFLAG(IS_WIN)
 namespace subtle {
@@ -287,6 +305,11 @@ LiveTicks LiveTicksNowIgnoringOverride() {
 }  
 
 #endif
+
+std::ostream& operator<<(std::ostream& os, LiveTicks live_ticks) {
+  const TimeDelta as_time_delta = live_ticks - LiveTicks();
+  return os << as_time_delta.InMicroseconds() << " bogo-live-microseconds";
+}
 
 
 

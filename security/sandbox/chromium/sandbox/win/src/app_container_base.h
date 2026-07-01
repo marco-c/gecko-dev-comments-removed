@@ -6,25 +6,29 @@
 #define SANDBOX_WIN_SRC_APP_CONTAINER_BASE_H_
 
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
+#include "base/files/file_path.h"
 #include "base/win/access_token.h"
 #include "base/win/security_descriptor.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
 #include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/sandbox_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
 class AppContainerBase final : public AppContainer {
  public:
+  AppContainerBase(const wchar_t* package_name,
+                   base::win::Sid package_sid,
+                   AppContainerType type);
   AppContainerBase(const AppContainerBase&) = delete;
   AppContainerBase& operator=(const AppContainerBase&) = delete;
+  ~AppContainerBase();
 
-  void AddRef() override;
-  void Release() override;
   bool AccessCheck(const wchar_t* object_name,
                    base::win::SecurityObjectType object_type,
                    DWORD desired_access,
@@ -48,19 +52,25 @@ class AppContainerBase final : public AppContainer {
   const base::win::Sid& GetPackageSid() const;
 
   
-  
-  
-  static AppContainerBase* CreateProfile(const wchar_t* package_name,
-                                         const wchar_t* display_name,
-                                         const wchar_t* description);
+  const wchar_t* GetPackageName() const;
 
   
   
-  static AppContainerBase* Open(const wchar_t* package_name);
+  
+  static std::unique_ptr<AppContainerBase> CreateProfile(
+      const wchar_t* package_name,
+      const wchar_t* display_name);
 
   
   
-  static AppContainerBase* CreateLowbox(const wchar_t* sid);
+  static std::unique_ptr<AppContainerBase> Open(const wchar_t* package_name);
+
+  
+  
+  static std::unique_ptr<AppContainerBase> CreateLowbox(const wchar_t* sid);
+
+  
+  static bool ProfileExists(const wchar_t* package_name);
 
   
   
@@ -70,25 +80,21 @@ class AppContainerBase final : public AppContainer {
   
   
   
-  absl::optional<base::win::AccessToken> BuildImpersonationToken(
+  std::optional<base::win::AccessToken> BuildImpersonationToken(
       const base::win::AccessToken& token);
 
   
   
   
   
-  absl::optional<base::win::AccessToken> BuildPrimaryToken(
+  std::optional<base::win::AccessToken> BuildPrimaryToken(
       const base::win::AccessToken& token);
 
  private:
-  AppContainerBase(base::win::Sid& package_sid, AppContainerType type);
-  ~AppContainerBase();
-
-  bool AddCapability(const absl::optional<base::win::Sid>& capability_sid,
+  bool AddCapability(const std::optional<base::win::Sid>& capability_sid,
                      bool impersonation_only);
 
-  
-  volatile LONG ref_count_;
+  std::wstring package_name_;
   base::win::Sid package_sid_;
   bool enable_low_privilege_app_container_;
   std::vector<base::win::Sid> capabilities_;

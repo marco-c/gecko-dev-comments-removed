@@ -5,10 +5,11 @@
 #ifndef BASE_SEQUENCE_TOKEN_H_
 #define BASE_SEQUENCE_TOKEN_H_
 
-#include "base/auto_reset.h"
 #include "base/base_export.h"
 
 namespace base {
+namespace internal {
+
 
 
 
@@ -24,7 +25,6 @@ class BASE_EXPORT SequenceToken {
   
   
   bool operator==(const SequenceToken& other) const;
-  bool operator!=(const SequenceToken& other) const;
 
   
   bool IsValid() const;
@@ -75,15 +75,13 @@ class BASE_EXPORT TaskToken {
   
   
   
-  
   static TaskToken GetForCurrentThread();
 
  private:
-  friend class ScopedSetSequenceTokenForCurrentThread;
+  friend class TaskScope;
 
   explicit TaskToken(int token) : token_(token) {}
 
-  
   
   
   static TaskToken Create();
@@ -93,26 +91,37 @@ class BASE_EXPORT TaskToken {
 };
 
 
-class BASE_EXPORT
-    [[maybe_unused, nodiscard]] ScopedSetSequenceTokenForCurrentThread {
+
+
+bool BASE_EXPORT CurrentTaskIsThreadBound();
+
+
+class BASE_EXPORT [[maybe_unused, nodiscard]] TaskScope {
  public:
   
   
   
   
   
-  explicit ScopedSetSequenceTokenForCurrentThread(
-      const SequenceToken& sequence_token);
-  ScopedSetSequenceTokenForCurrentThread(
-      const ScopedSetSequenceTokenForCurrentThread&) = delete;
-  ScopedSetSequenceTokenForCurrentThread& operator=(
-      const ScopedSetSequenceTokenForCurrentThread&) = delete;
-  ~ScopedSetSequenceTokenForCurrentThread();
+  
+  TaskScope(SequenceToken sequence_token,
+            bool is_thread_bound,
+            bool is_running_synchronously = false);
+  TaskScope(const TaskScope&) = delete;
+  TaskScope& operator=(const TaskScope&) = delete;
+  ~TaskScope();
 
  private:
-  const AutoReset<SequenceToken> sequence_token_resetter_;
-  const AutoReset<TaskToken> task_token_resetter_;
+  const TaskToken previous_task_token_;
+  const SequenceToken previous_sequence_token_;
+  const bool previous_task_is_thread_bound_;
+  const bool previous_task_is_running_synchronously_;
 };
+
+}  
+
+
+bool BASE_EXPORT CurrentTaskIsRunningSynchronously();
 
 }  
 

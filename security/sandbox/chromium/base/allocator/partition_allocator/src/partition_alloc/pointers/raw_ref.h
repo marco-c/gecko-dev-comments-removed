@@ -2,36 +2,39 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_POINTERS_RAW_REF_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_POINTERS_RAW_REF_H_
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_buffers
+#endif
+
+
+
+#ifndef PARTITION_ALLOC_POINTERS_RAW_REF_H_
+#define PARTITION_ALLOC_POINTERS_RAW_REF_H_
 
 #include <memory>
 #include <type_traits>
 #include <utility>
 
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/augmentations/compiler_specific.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_config.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h"
+#include "partition_alloc/buildflags.h"
+#include "partition_alloc/partition_alloc_base/augmentations/compiler_specific.h"
+#include "partition_alloc/partition_alloc_base/compiler_specific.h"
+#include "partition_alloc/partition_alloc_config.h"
+#include "partition_alloc/pointers/raw_ptr.h"
+
+#if PA_HAVE_SPACESHIP_OPERATOR
+#include <compare>
+#endif
 
 namespace base {
 
 template <class T, RawPtrTraits Traits>
 class raw_ref;
 
-namespace internal {
-
 template <class T>
-struct is_raw_ref : std::false_type {};
-
+inline constexpr bool IsRawRef = false;
 template <class T, RawPtrTraits Traits>
-struct is_raw_ref<::base::raw_ref<T, Traits>> : std::true_type {};
-
-template <class T>
-constexpr inline bool is_raw_ref_v = is_raw_ref<T>::value;
-
-}  
+inline constexpr bool IsRawRef<::base::raw_ref<T, Traits>> = true;
 
 
 
@@ -53,8 +56,15 @@ constexpr inline bool is_raw_ref_v = is_raw_ref<T>::value;
 
 
 
-template <class T, RawPtrTraits Traits = RawPtrTraits::kEmpty>
+template <class T, RawPtrTraits ReferenceTraits = RawPtrTraits::kEmpty>
 class PA_TRIVIAL_ABI PA_GSL_POINTER raw_ref {
+ public:
+  
+  
+  constexpr static auto Traits =
+      ReferenceTraits | raw_ptr_traits::kTypeTraits<T>;
+
+ private:
   
   
   
@@ -215,86 +225,122 @@ class PA_TRIVIAL_ABI PA_GSL_POINTER raw_ref {
     swap(lhs.inner_, rhs.inner_);
   }
 
+  
+  
+  
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator==(const raw_ref<U, Traits1>& lhs,
-                         const raw_ref<V, Traits2>& rhs);
+  friend constexpr bool operator==(const raw_ref<U, Traits1>& lhs,
+                                   const raw_ref<V, Traits2>& rhs);
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator!=(const raw_ref<U, Traits1>& lhs,
-                         const raw_ref<V, Traits2>& rhs);
+  friend constexpr bool operator!=(const raw_ref<U, Traits1>& lhs,
+                                   const raw_ref<V, Traits2>& rhs);
+#if PA_HAVE_SPACESHIP_OPERATOR
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator<(const raw_ref<U, Traits1>& lhs,
-                        const raw_ref<V, Traits2>& rhs);
+  friend constexpr auto operator<=>(const raw_ref<U, Traits1>& lhs,
+                                    const raw_ref<V, Traits2>& rhs);
+#else
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator>(const raw_ref<U, Traits1>& lhs,
-                        const raw_ref<V, Traits2>& rhs);
+  friend constexpr bool operator<(const raw_ref<U, Traits1>& lhs,
+                                  const raw_ref<V, Traits2>& rhs);
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator<=(const raw_ref<U, Traits1>& lhs,
-                         const raw_ref<V, Traits2>& rhs);
+  friend constexpr bool operator>(const raw_ref<U, Traits1>& lhs,
+                                  const raw_ref<V, Traits2>& rhs);
   template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-  friend bool operator>=(const raw_ref<U, Traits1>& lhs,
-                         const raw_ref<V, Traits2>& rhs);
+  friend constexpr bool operator<=(const raw_ref<U, Traits1>& lhs,
+                                   const raw_ref<V, Traits2>& rhs);
+  template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
+  friend constexpr bool operator>=(const raw_ref<U, Traits1>& lhs,
+                                   const raw_ref<V, Traits2>& rhs);
+#endif
 
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator==(const raw_ref& lhs, const U& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator==(const raw_ref& lhs,
+                                                    const U& rhs) {
     PA_RAW_PTR_CHECK(lhs.inner_);  
     return lhs.inner_ == &rhs;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator!=(const raw_ref& lhs, const U& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator!=(const raw_ref& lhs,
+                                                    const U& rhs) {
     PA_RAW_PTR_CHECK(lhs.inner_);  
     return lhs.inner_ != &rhs;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator<(const raw_ref& lhs, const U& rhs) {
-    PA_RAW_PTR_CHECK(lhs.inner_);  
-    return lhs.inner_ < &rhs;
-  }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator>(const raw_ref& lhs, const U& rhs) {
-    PA_RAW_PTR_CHECK(lhs.inner_);  
-    return lhs.inner_ > &rhs;
-  }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator<=(const raw_ref& lhs, const U& rhs) {
-    PA_RAW_PTR_CHECK(lhs.inner_);  
-    return lhs.inner_ <= &rhs;
-  }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator>=(const raw_ref& lhs, const U& rhs) {
-    PA_RAW_PTR_CHECK(lhs.inner_);  
-    return lhs.inner_ >= &rhs;
-  }
-
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator==(const U& lhs, const raw_ref& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator==(const U& lhs,
+                                                    const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs == rhs.inner_;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator!=(const U& lhs, const raw_ref& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator!=(const U& lhs,
+                                                    const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs != rhs.inner_;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator<(const U& lhs, const raw_ref& rhs) {
+
+#if PA_HAVE_SPACESHIP_OPERATOR
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr auto operator<=>(const raw_ref& lhs,
+                                                     const U& rhs) {
+    PA_RAW_PTR_CHECK(lhs.inner_);  
+    return lhs.inner_ <=> &rhs;
+  }
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr auto operator<=>(const U& lhs,
+                                                     const raw_ref& rhs) {
+    PA_RAW_PTR_CHECK(rhs.inner_);  
+    return &lhs <=> rhs.inner_;
+  }
+#else
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator<(const raw_ref& lhs,
+                                                   const U& rhs) {
+    PA_RAW_PTR_CHECK(lhs.inner_);  
+    return lhs.inner_ < &rhs;
+  }
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator>(const raw_ref& lhs,
+                                                   const U& rhs) {
+    PA_RAW_PTR_CHECK(lhs.inner_);  
+    return lhs.inner_ > &rhs;
+  }
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator<=(const raw_ref& lhs,
+                                                    const U& rhs) {
+    PA_RAW_PTR_CHECK(lhs.inner_);  
+    return lhs.inner_ <= &rhs;
+  }
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator>=(const raw_ref& lhs,
+                                                    const U& rhs) {
+    PA_RAW_PTR_CHECK(lhs.inner_);  
+    return lhs.inner_ >= &rhs;
+  }
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator<(const U& lhs,
+                                                   const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs < rhs.inner_;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator>(const U& lhs, const raw_ref& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator>(const U& lhs,
+                                                   const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs > rhs.inner_;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator<=(const U& lhs, const raw_ref& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator<=(const U& lhs,
+                                                    const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs <= rhs.inner_;
   }
-  template <class U, class = std::enable_if_t<!internal::is_raw_ref_v<U>, void>>
-  PA_ALWAYS_INLINE friend bool operator>=(const U& lhs, const raw_ref& rhs) {
+  template <class U, class = std::enable_if_t<!IsRawRef<U>, void>>
+  PA_ALWAYS_INLINE friend constexpr bool operator>=(const U& lhs,
+                                                    const raw_ref& rhs) {
     PA_RAW_PTR_CHECK(rhs.inner_);  
     return &lhs >= rhs.inner_;
   }
+#endif
 
  private:
   template <class U, RawPtrTraits R>
@@ -304,47 +350,57 @@ class PA_TRIVIAL_ABI PA_GSL_POINTER raw_ref {
 };
 
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator==(const raw_ref<U, Traits1>& lhs,
-                                 const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr bool operator==(const raw_ref<U, Traits1>& lhs,
+                                           const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ == rhs.inner_;
 }
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator!=(const raw_ref<U, Traits1>& lhs,
-                                 const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr bool operator!=(const raw_ref<U, Traits1>& lhs,
+                                           const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ != rhs.inner_;
 }
+#if PA_HAVE_SPACESHIP_OPERATOR
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator<(const raw_ref<U, Traits1>& lhs,
-                                const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr auto operator<=>(const raw_ref<U, Traits1>& lhs,
+                                            const raw_ref<V, Traits2>& rhs) {
+  PA_RAW_PTR_CHECK(lhs.inner_);  
+  PA_RAW_PTR_CHECK(rhs.inner_);  
+  return lhs.inner_ <=> rhs.inner_;
+}
+#else
+template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
+PA_ALWAYS_INLINE constexpr bool operator<(const raw_ref<U, Traits1>& lhs,
+                                          const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ < rhs.inner_;
 }
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator>(const raw_ref<U, Traits1>& lhs,
-                                const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr bool operator>(const raw_ref<U, Traits1>& lhs,
+                                          const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ > rhs.inner_;
 }
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator<=(const raw_ref<U, Traits1>& lhs,
-                                 const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr bool operator<=(const raw_ref<U, Traits1>& lhs,
+                                           const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ <= rhs.inner_;
 }
 template <typename U, typename V, RawPtrTraits Traits1, RawPtrTraits Traits2>
-PA_ALWAYS_INLINE bool operator>=(const raw_ref<U, Traits1>& lhs,
-                                 const raw_ref<V, Traits2>& rhs) {
+PA_ALWAYS_INLINE constexpr bool operator>=(const raw_ref<U, Traits1>& lhs,
+                                           const raw_ref<V, Traits2>& rhs) {
   PA_RAW_PTR_CHECK(lhs.inner_);  
   PA_RAW_PTR_CHECK(rhs.inner_);  
   return lhs.inner_ >= rhs.inner_;
 }
+#endif
 
 
 template <class T>
@@ -354,24 +410,13 @@ raw_ref(const T&) -> raw_ref<const T>;
 
 
 template <typename T>
-struct IsRawRef : std::false_type {};
-
-template <typename T, RawPtrTraits Traits>
-struct IsRawRef<raw_ref<T, Traits>> : std::true_type {};
-
-template <typename T>
-inline constexpr bool IsRawRefV = IsRawRef<T>::value;
-
-template <typename T>
 struct RemoveRawRef {
   using type = T;
 };
-
 template <typename T, RawPtrTraits Traits>
 struct RemoveRawRef<raw_ref<T, Traits>> {
   using type = T;
 };
-
 template <typename T>
 using RemoveRawRefT = typename RemoveRawRef<T>::type;
 

@@ -9,14 +9,21 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <cmath>
+#include <concepts>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "base/containers/span.h"
 #include "base/gtest_prod_util.h"
+#include "base/numerics/clamped_math.h"
+#include "base/numerics/safe_conversions.h"
+#include "base/time/time.h"
 #include "build/build_config.h"
-
-#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+#if !defined(MOZ_SANDBOX)
 #include "third_party/boringssl/src/include/openssl/rand.h"
 #endif
 
@@ -24,19 +31,15 @@ namespace memory_simulator {
 class MemoryHolder;
 }
 
-namespace base {
+namespace gwp_asan::internal {
+class ExtremeLightweightDetectorQuarantineBranch;
+}
 
-class TimeDelta;
+namespace base {
 
 namespace internal {
 
-#if BUILDFLAG(IS_ANDROID)
-
-
-void ConfigureRandBytesFieldTrial();
-#endif
-
-#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+#if !defined(MOZ_SANDBOX)
 void ConfigureBoringSSLBackedRandBytesFieldTrial();
 #endif
 
@@ -44,6 +47,10 @@ void ConfigureBoringSSLBackedRandBytesFieldTrial();
 
 BASE_EXPORT double RandDoubleAvoidAllocation();
 
+}  
+
+namespace test {
+class InsecureRandomGenerator;
 }  
 
 
@@ -65,6 +72,9 @@ BASE_EXPORT double RandDouble();
 BASE_EXPORT float RandFloat();
 
 
+BASE_EXPORT bool RandBool();
+
+
 
 
 BASE_EXPORT TimeDelta RandTimeDelta(TimeDelta start, TimeDelta limit);
@@ -73,6 +83,70 @@ BASE_EXPORT TimeDelta RandTimeDelta(TimeDelta start, TimeDelta limit);
 
 
 BASE_EXPORT TimeDelta RandTimeDeltaUpTo(TimeDelta limit);
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+  requires std::floating_point<T>
+T RandomizeByPercentage(T value, double percentage) {
+  CHECK(!std::isinf(value));
+  CHECK(!std::isnan(value));
+  CHECK(!std::isinf(percentage));
+  CHECK_GE(percentage, 0);
+  return checked_cast<T>(value +
+                         value * (RandDouble() - 0.5) * 2 * percentage / 100);
+}
+template <typename T>
+  requires std::integral<T>
+T RandomizeByPercentage(T value, double percentage) {
+  CHECK(!std::isinf(percentage));
+  CHECK_GE(percentage, 0);
+  
+  
+  
+  const uint64_t abs_value = SafeUnsignedAbs(value);
+  
+  
+  
+  const uint64_t max_abs_adjustment =
+      ClampRound<uint64_t>(static_cast<double>(abs_value) * percentage / 100.0);
+  if (!max_abs_adjustment) {
+    return value;
+  }
+  uint64_t abs_adjustment = RandGenerator(max_abs_adjustment);
+
+  CheckedNumeric<T> checked_value(value);
+  
+  if (RandBool()) {
+    
+    
+    
+    
+    
+    
+    
+    abs_adjustment = max_abs_adjustment - abs_adjustment;
+    checked_value -= abs_adjustment;
+  } else {
+    checked_value += abs_adjustment;
+  }
+  return checked_value.ValueOrDie();
+}
+inline TimeDelta RandomizeByPercentage(TimeDelta value, double percentage) {
+  CHECK(!value.is_inf());
+  return Microseconds(
+      RandomizeByPercentage(value.InMicroseconds(), percentage));
+}
 
 
 
@@ -87,7 +161,16 @@ BASE_EXPORT float BitsToOpenEndedUnitIntervalF(uint64_t bits);
 
 
 
-BASE_EXPORT void RandBytes(void* output, size_t output_length);
+BASE_EXPORT void RandBytes(span<uint8_t> output);
+
+
+
+
+
+
+
+BASE_EXPORT std::vector<uint8_t> RandBytesAsVector(size_t length);
+
 
 
 
@@ -112,7 +195,7 @@ class RandomBitGenerator {
   ~RandomBitGenerator() = default;
 };
 
-#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+#if !defined(MOZ_SANDBOX)
 class NonAllocatingRandomBitGenerator {
  public:
   using result_type = uint64_t;
@@ -168,20 +251,22 @@ class MetricsSubSampler;
 
 
 
+
 class BASE_EXPORT InsecureRandomGenerator {
  public:
   
   void ReseedForTesting(uint64_t seed);
 
-  uint32_t RandUint32();
-  uint64_t RandUint64();
+  uint32_t RandUint32() const;
+  uint64_t RandUint64() const;
   
-  double RandDouble();
+  double RandDouble() const;
 
  private:
   InsecureRandomGenerator();
   
-  uint64_t a_ = 0, b_ = 0;
+  
+  mutable uint64_t a_ = 0, b_ = 0;
 
   
   
@@ -193,6 +278,10 @@ class BASE_EXPORT InsecureRandomGenerator {
   friend class memory_simulator::MemoryHolder;
   
   friend class MetricsSubSampler;
+  
+  friend class test::InsecureRandomGenerator;
+
+  friend class gwp_asan::internal::ExtremeLightweightDetectorQuarantineBranch;
 
   FRIEND_TEST_ALL_PREFIXES(RandUtilTest,
                            InsecureRandomGeneratorProducesBothValuesOfAllBits);
@@ -201,21 +290,58 @@ class BASE_EXPORT InsecureRandomGenerator {
   FRIEND_TEST_ALL_PREFIXES(RandUtilPerfTest, InsecureRandomRandUint64);
 };
 
+
+
+
+
+
+
+
 class BASE_EXPORT MetricsSubSampler {
  public:
   MetricsSubSampler();
-  bool ShouldSample(double probability);
+  bool ShouldSample(double probability) const;
+
+  void Reseed();
 
   
-  class BASE_EXPORT ScopedDisableForTesting {
+  
+  
+  class BASE_EXPORT ScopedAlwaysSampleForTesting {
    public:
-    ScopedDisableForTesting();
-    ~ScopedDisableForTesting();
+    ScopedAlwaysSampleForTesting();
+    ~ScopedAlwaysSampleForTesting();
+  };
+
+  
+  
+  
+  class BASE_EXPORT ScopedNeverSampleForTesting {
+   public:
+    ScopedNeverSampleForTesting();
+    ~ScopedNeverSampleForTesting();
   };
 
  private:
   InsecureRandomGenerator generator_;
 };
+
+
+
+
+
+
+
+
+
+
+
+BASE_EXPORT bool ShouldRecordSubsampledMetric(double probability);
+
+
+
+
+BASE_EXPORT void ReseedSharedMetricsSubsampler();
 
 }  
 

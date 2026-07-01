@@ -31,7 +31,6 @@ namespace {
 
 struct arch_sigsys {
   
-  
   RAW_PTR_EXCLUSION void* ip;
   int nr;
   unsigned int arch;
@@ -227,7 +226,7 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
                        SECCOMP_PARM6(ctx));
 #endif  
   } else {
-    const auto& trap = trap_array_[info->si_errno - 1];
+    const auto& trap = UNSAFE_TODO(trap_array_[info->si_errno - 1]);
     if (!trap.safe) {
       SetIsInSigHandler();
     }
@@ -334,7 +333,7 @@ uint16_t Trap::Add(const Handler& handler) {
 
   uint16_t id = trap_array_size_ + 1;
   trap_ids_[handler] = id;
-  trap_array_[trap_array_size_] = handler;
+  UNSAFE_TODO(trap_array_[trap_array_size_]) = handler;
   trap_array_size_++;
   return id;
 }

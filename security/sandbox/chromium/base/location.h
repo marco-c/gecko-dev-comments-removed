@@ -5,6 +5,7 @@
 #ifndef BASE_LOCATION_H_
 #define BASE_LOCATION_H_
 
+#include <compare>
 #include <string>
 
 #include "base/base_export.h"
@@ -13,19 +14,6 @@
 #include "build/build_config.h"
 
 namespace base {
-
-#if defined(__has_builtin)
-
-#  define SUPPORTS_LOCATION_BUILTINS                                       \
-    (__has_builtin(__builtin_FUNCTION) && __has_builtin(__builtin_FILE) && \
-     __has_builtin(__builtin_LINE))
-#elif defined(COMPILER_GCC) && __GNUC__ >= 7
-
-
-#  define SUPPORTS_LOCATION_BUILTINS 1
-#else
-#  define SUPPORTS_LOCATION_BUILTINS 0
-#endif
 
 
 
@@ -45,14 +33,23 @@ class BASE_EXPORT Location {
 
   
   
-  bool operator==(const Location& other) const {
-    return program_counter_ == other.program_counter_;
+  friend bool operator==(const Location& lhs, const Location& rhs) {
+    return lhs.program_counter_ == rhs.program_counter_;
   }
 
   
   
-  bool operator<(const Location& other) const {
-    return program_counter_ < other.program_counter_;
+  
+  
+  friend std::weak_ordering operator<=>(const Location& lhs,
+                                        const Location& rhs) {
+    return lhs.program_counter_ <=> rhs.program_counter_;
+  }
+
+  
+  template <typename H>
+  friend H AbslHashValue(H h, const base::Location& m) {
+    return H::combine(std::move(h), m.program_counter());
   }
 
   
@@ -84,13 +81,13 @@ class BASE_EXPORT Location {
   
   void WriteIntoTrace(perfetto::TracedValue context) const;
 
-#if SUPPORTS_LOCATION_BUILTINS
   static Location Current(const char* function_name = __builtin_FUNCTION(),
                           const char* file_name = __builtin_FILE(),
                           int line_number = __builtin_LINE());
-#else
-  static Location Current();
-#endif
+
+  static Location CurrentWithoutFunctionName(
+      const char* file_name = __builtin_FILE(),
+      int line_number = __builtin_LINE());
 
  private:
   

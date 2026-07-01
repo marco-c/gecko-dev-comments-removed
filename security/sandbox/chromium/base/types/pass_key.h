@@ -36,11 +36,19 @@ namespace base {
 
 template <typename T>
 class PassKey {
- private:
-  
-  PassKey() {}
-
   friend T;
+  PassKey() = default;
+};
+
+
+
+
+template <typename T>
+class NonCopyablePassKey {
+  friend T;
+  NonCopyablePassKey() = default;
+  NonCopyablePassKey(const NonCopyablePassKey&) = delete;
+  NonCopyablePassKey& operator=(const NonCopyablePassKey&) = delete;
 };
 
 }  

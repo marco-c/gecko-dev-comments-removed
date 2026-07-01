@@ -34,11 +34,11 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_THREAD_ANNOTATIONS_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_THREAD_ANNOTATIONS_H_
+#ifndef PARTITION_ALLOC_PARTITION_ALLOC_BASE_THREAD_ANNOTATIONS_H_
+#define PARTITION_ALLOC_PARTITION_ALLOC_BASE_THREAD_ANNOTATIONS_H_
 
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/debug/debugging_buildflags.h"
-#include "build/build_config.h"
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/buildflags.h"
 
 #if defined(__clang__)
 #define PA_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
@@ -246,7 +246,7 @@ inline T& ts_unchecked_read(T& v) PA_NO_THREAD_SAFETY_ANALYSIS {
 
 
 
-#if BUILDFLAG(PA_DCHECK_IS_ON)
+#if PA_BUILDFLAG(DCHECKS_ARE_ON)
 
 
 #define PA_GUARDED_BY_CONTEXT(name) PA_GUARDED_BY(name)

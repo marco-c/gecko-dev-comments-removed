@@ -6,12 +6,25 @@
 #define BASE_CHECK_H_
 
 #include <iosfwd>
+#include <memory>
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "base/dcheck_is_on.h"
 #include "base/immediate_crash.h"
 #include "base/location.h"
+#include "base/macros/if.h"
+#include "base/macros/is_empty.h"
+#include "base/not_fatal_until.h"
+
+
+
+
+
+
+
+
+
 
 
 
@@ -62,49 +75,59 @@ class LogMessage;
 
 class BASE_EXPORT CheckError {
  public:
-  static CheckError Check(
-      const char* condition,
-      const base::Location& location = base::Location::Current());
   
-  
-  static CheckError CheckOp(
-      char* log_message_str,
-      const base::Location& location = base::Location::Current());
+  explicit CheckError(LogMessage* log_message);
 
-  static CheckError DCheck(
-      const char* condition,
-      const base::Location& location = base::Location::Current());
   
   
-  static CheckError DCheckOp(
-      char* log_message_str,
-      const base::Location& location = base::Location::Current());
+  
+  
+  
+  
+  
+  
+
+  
+  
+  static CheckError Check(const char* condition,
+                          base::NotFatalUntil fatal_milestone,
+                          const base::Location& location =
+                              base::Location::CurrentWithoutFunctionName());
+  
+  
+  static LogMessage* CheckOp(char* log_message_str,
+                             base::NotFatalUntil fatal_milestone,
+                             const base::Location& location =
+                                 base::Location::CurrentWithoutFunctionName());
+
+  static CheckError DCheck(const char* condition,
+                           const base::Location& location =
+                               base::Location::CurrentWithoutFunctionName());
+  
+  
+  static LogMessage* DCheckOp(char* log_message_str,
+                              const base::Location& location =
+                                  base::Location::CurrentWithoutFunctionName());
 
   static CheckError DumpWillBeCheck(
       const char* condition,
-      const base::Location& location = base::Location::Current());
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
   
   
-  static CheckError DumpWillBeCheckOp(
+  static LogMessage* DumpWillBeCheckOp(
       char* log_message_str,
-      const base::Location& location = base::Location::Current());
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
 
-  static CheckError PCheck(
-      const char* condition,
-      const base::Location& location = base::Location::Current());
-  static CheckError PCheck(
-      const base::Location& location = base::Location::Current());
-
-  static CheckError DPCheck(
-      const char* condition,
-      const base::Location& location = base::Location::Current());
-
-  static CheckError DumpWillBeNotReachedNoreturn(
-      const base::Location& location = base::Location::Current());
+  static CheckError DPCheck(const char* condition,
+                            const base::Location& location =
+                                base::Location::CurrentWithoutFunctionName());
 
   static CheckError NotImplemented(
       const char* function,
-      const base::Location& location = base::Location::Current());
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
 
   
   std::ostream& stream();
@@ -117,28 +140,54 @@ class BASE_EXPORT CheckError {
   CheckError& operator=(const CheckError&) = delete;
 
   template <typename T>
-  std::ostream& operator<<(T&& streamed_type) {
-    return stream() << streamed_type;
+  CheckError& operator<<(T&& streamed_type) {
+    stream() << streamed_type;
+    return *this;
   }
 
  protected:
-  
-  explicit CheckError(LogMessage* log_message) : log_message_(log_message) {}
-
-  LogMessage* const log_message_;
+  std::unique_ptr<LogMessage> log_message_;
 };
+
+
+class BASE_EXPORT CheckNoreturnError : public CheckError {
+ public:
+  [[noreturn]] NOMERGE NOINLINE NOT_TAIL_CALLED ~CheckNoreturnError();
+
+  static CheckNoreturnError Check(
+      const char* condition,
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
+  
+  
+  static LogMessage* CheckOp(char* log_message_str,
+                             const base::Location& location =
+                                 base::Location::CurrentWithoutFunctionName());
+
+  static CheckNoreturnError PCheck(
+      const char* condition,
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
+  static CheckNoreturnError PCheck(
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
+
+ private:
+  using CheckError::CheckError;
+};
+
 
 class BASE_EXPORT NotReachedError : public CheckError {
  public:
   static NotReachedError NotReached(
-      const base::Location& location = base::Location::Current());
+      base::NotFatalUntil fatal_milestone,
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
 
-  
-  
-  NOMERGE NOINLINE NOT_TAIL_CALLED static void TriggerNotReached();
+  static NotReachedError DumpWillBeNotReached(
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
 
-  
-  
   NOMERGE NOINLINE NOT_TAIL_CALLED ~NotReachedError();
 
  private:
@@ -146,11 +195,11 @@ class BASE_EXPORT NotReachedError : public CheckError {
 };
 
 
-
 class BASE_EXPORT NotReachedNoreturnError : public CheckError {
  public:
   explicit NotReachedNoreturnError(
-      const base::Location& location = base::Location::Current());
+      const base::Location& location =
+          base::Location::CurrentWithoutFunctionName());
 
   [[noreturn]] NOMERGE NOINLINE NOT_TAIL_CALLED ~NotReachedNoreturnError();
 };
@@ -168,18 +217,29 @@ class BASE_EXPORT NotReachedNoreturnError : public CheckError {
 
 
 
-#define LOGGING_CHECK_FUNCTION_IMPL(check_stream, condition)              \
-  switch (0)                                                              \
-  case 0:                                                                 \
-  default:                                                                \
-    /* Hint to the optimizer that `condition` is unlikely to be false. */ \
-    /* The optimizer can use this as a hint to place the failure path */  \
-    /* out-of-line, e.g. at the tail of the function. */                  \
-    if (const bool probably_true = static_cast<bool>(condition);          \
-        LIKELY(ANALYZER_ASSUME_TRUE(probably_true)))                      \
-      ;                                                                   \
-    else                                                                  \
-      (check_stream)
+
+
+
+
+#define LOGGING_CHECK_FUNCTION_IMPL(check_stream, condition) \
+  switch (0)                                                 \
+  case 0:                                                    \
+  default:                                                   \
+    if (ANALYZER_ASSUME_TRUE((condition) ? true : false))    \
+      [[likely]];                                            \
+    else                                                     \
+      [&]() { return (check_stream); }()
+
+
+
+#define DISCARDING_CHECK_FUNCTION_IMPL(check_failure, condition) \
+  switch (0)                                                     \
+  case 0:                                                        \
+  default:                                                       \
+    if (!ANALYZER_ASSUME_TRUE((condition) ? true : false))       \
+      check_failure;                                             \
+    else [[likely]]                                              \
+      EAT_CHECK_STREAM_PARAMS()
 
 #if defined(OFFICIAL_BUILD) && !defined(NDEBUG)
 #error "Debug builds are not expected to be optimized as official builds."
@@ -188,39 +248,44 @@ class BASE_EXPORT NotReachedNoreturnError : public CheckError {
 #if defined(OFFICIAL_BUILD) && !DCHECK_IS_ON()
 
 
-[[noreturn]] IMMEDIATE_CRASH_ALWAYS_INLINE void CheckFailure() {
+
+
+#define CHECK_WILL_STREAM() false
+
+
+
+[[noreturn]] NOMERGE IMMEDIATE_CRASH_ALWAYS_INLINE void CheckFailure() {
   base::ImmediateCrash();
 }
 
 
 
 
-
-
-
-
-#define CHECK(condition) \
-  UNLIKELY(!(condition)) ? logging::CheckFailure() : EAT_CHECK_STREAM_PARAMS()
-
-#define CHECK_WILL_STREAM() false
-
-
-#define PCHECK(condition) \
-  LOGGING_CHECK_FUNCTION_IMPL(::logging::CheckError::PCheck(), condition)
+#define CHECK_INTERNAL_IMPL(cond) \
+  DISCARDING_CHECK_FUNCTION_IMPL(::logging::CheckFailure(), cond)
 
 #else
 
+
 #define CHECK_WILL_STREAM() true
 
-#define CHECK(condition)                                                \
-  LOGGING_CHECK_FUNCTION_IMPL(::logging::CheckError::Check(#condition), \
-                              condition)
-
-#define PCHECK(condition)                                                \
-  LOGGING_CHECK_FUNCTION_IMPL(::logging::CheckError::PCheck(#condition), \
-                              condition)
+#define CHECK_INTERNAL_IMPL(cond) \
+  LOGGING_CHECK_FUNCTION_IMPL(::logging::CheckNoreturnError::Check(#cond), cond)
 
 #endif
+
+#define CHECK(cond, ...)                                         \
+  BASE_IF(BASE_IS_EMPTY(__VA_ARGS__), CHECK_INTERNAL_IMPL(cond), \
+          LOGGING_CHECK_FUNCTION_IMPL(                           \
+              logging::CheckError::Check(#cond, __VA_ARGS__), cond))
+
+
+#define PCHECK(cond)                                        \
+  LOGGING_CHECK_FUNCTION_IMPL(                              \
+      BASE_IF(CHECK_WILL_STREAM(),                          \
+              ::logging::CheckNoreturnError::PCheck(#cond), \
+              ::logging::CheckNoreturnError::PCheck()),     \
+      cond)
 
 #if DCHECK_IS_ON()
 
@@ -260,15 +325,16 @@ class BASE_EXPORT NotReachedNoreturnError : public CheckError {
 
 
 
-#define DUMP_WILL_BE_CHECK(condition) \
-  LOGGING_CHECK_FUNCTION_IMPL(        \
-      ::logging::CheckError::DumpWillBeCheck(#condition), condition)
+#define DUMP_WILL_BE_CHECK(condition, ...)                                \
+  LOGGING_CHECK_FUNCTION_IMPL(::logging::CheckError::DumpWillBeCheck(     \
+                                  #condition __VA_OPT__(, ) __VA_ARGS__), \
+                              condition)
 
 
 [[noreturn]] BASE_EXPORT void RawCheckFailure(const char* message);
 #define RAW_CHECK(condition)                                        \
   do {                                                              \
-    if (UNLIKELY(!(condition))) {                                   \
+    if (!(condition)) [[unlikely]] {                                \
       ::logging::RawCheckFailure("Check failed: " #condition "\n"); \
     }                                                               \
   } while (0)

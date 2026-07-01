@@ -5,13 +5,14 @@
 #ifndef BASE_PROCESS_PROCESS_H_
 #define BASE_PROCESS_PROCESS_H_
 
+#include <string_view>
+
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/process/process_handle.h"
-#include "base/strings/string_piece.h"
 #include "base/time/time.h"
 #include "build/blink_buildflags.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_handle.h"
@@ -43,10 +44,14 @@ BASE_EXPORT BASE_DECLARE_FEATURE(kOneGroupPerRenderer);
 
 
 BASE_EXPORT BASE_DECLARE_FEATURE(kSetThreadBgForBgProcess);
-#endif
 
-#if BUILDFLAG(IS_WIN)
-BASE_EXPORT BASE_DECLARE_FEATURE(kUseEcoQoSForBackgroundProcess);
+
+
+
+
+BASE_EXPORT BASE_DECLARE_FEATURE(kFlattenCpuCgroups);
+
+class ProcessPriorityDelegate;
 #endif
 
 
@@ -77,6 +82,11 @@ class BASE_EXPORT Process {
   ~Process();
 
   Process& operator=(Process&& other);
+
+  
+  
+  
+  static constexpr int kResultCodeKilledBadMessage = 3;
 
   
   static Process Current();
@@ -135,7 +145,9 @@ class BASE_EXPORT Process {
 #if BUILDFLAG(IS_CHROMEOS)
   
   
-  const std::string& unique_token() const { return unique_token_; }
+  const std::string& unique_token() const LIFETIME_BOUND {
+    return unique_token_;
+  }
 #endif
 
   
@@ -203,15 +215,19 @@ class BASE_EXPORT Process {
 
     
     
+    
     kUserVisible,
 
     
     
     
     kUserBlocking,
+
+    kMaxValue = kUserBlocking,
   };
 
-#if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK))
+#if (BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK))) && \
+    !BUILDFLAG(IS_IOS_TVOS)
   
   
   
@@ -239,7 +255,7 @@ class BASE_EXPORT Process {
   
   int GetOSPriority() const;
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   
   
   
@@ -253,6 +269,10 @@ class BASE_EXPORT Process {
 
 #if BUILDFLAG(IS_CHROMEOS)
   
+  
+  static void SetProcessPriorityDelegate(ProcessPriorityDelegate* delegate);
+
+  
   static bool OneGroupPerRendererEnabledForTesting();
 
   
@@ -264,13 +284,49 @@ class BASE_EXPORT Process {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void InitializePriority();
+
+  
+  
+  
+  void ForgetPriority();
 #endif  
 
 #if BUILDFLAG(IS_APPLE)
   
+  
+  
   static void SetCurrentTaskDefaultRole();
 #endif  
+
+#if BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK)
+  using TerminateCallback = bool (*)(ProcessHandle handle,
+                                     int exit_code,
+                                     bool wait);
+  using WaitForExitCallback = bool (*)(ProcessHandle handle,
+                                       int* exit_code,
+                                       base::TimeDelta timeout);
+  
+  
+  static void SetTerminationHooks(TerminateCallback terminate_callback,
+                                  WaitForExitCallback wait_callback);
+#if TARGET_OS_SIMULATOR
+  
+  
+  
+  void SetIsContentProcess();
+  bool IsContentProcess() const;
+#endif
+#endif
 
  private:
 #if BUILDFLAG(IS_CHROMEOS)
@@ -287,6 +343,13 @@ class BASE_EXPORT Process {
   static void CleanUpProcessScheduled(Process process, int remaining_retries);
 #endif  
 
+#if !BUILDFLAG(IS_IOS) || (BUILDFLAG(IS_IOS) && TARGET_OS_SIMULATOR)
+  bool TerminateInternal(int exit_code, bool wait) const;
+  bool WaitForExitWithTimeoutImpl(base::ProcessHandle handle,
+                                  int* exit_code,
+                                  base::TimeDelta timeout) const;
+#endif
+
 #if BUILDFLAG(IS_WIN)
   win::ScopedHandle process_;
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -297,6 +360,14 @@ class BASE_EXPORT Process {
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA)
   bool is_current_process_;
+#endif
+
+#if BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK) && TARGET_OS_SIMULATOR
+  
+  
+  
+  
+  bool content_process_ = false;
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS)
@@ -313,7 +384,7 @@ class BASE_EXPORT Process {
 
 
 BASE_EXPORT Process::Priority GetProcessPriorityCGroup(
-    const StringPiece& cgroup_contents);
+    std::string_view cgroup_contents);
 #endif  
 
 }  

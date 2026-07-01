@@ -15,9 +15,7 @@ namespace base {
 
 
 struct FreeDeleter {
-  inline void operator()(void* ptr) const {
-    free(ptr);
-  }
+  inline void operator()(void* ptr) const { free(ptr); }
 };
 
 }  

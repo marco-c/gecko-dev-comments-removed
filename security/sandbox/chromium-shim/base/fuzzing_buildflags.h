@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef BASE_FUZZING_BUILDFLAGS_H_
+#define BASE_FUZZING_BUILDFLAGS_H_
+
+#include "build/buildflag.h" 
+
+
+
+#define BUILDFLAG_INTERNAL_USE_FUZZING_ENGINE() (0)
+
+#endif  

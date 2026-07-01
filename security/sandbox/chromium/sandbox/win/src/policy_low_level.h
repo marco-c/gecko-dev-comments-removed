@@ -9,9 +9,9 @@
 #include <stdint.h>
 
 #include <list>
-
 #include <string>
 
+#include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
@@ -69,7 +69,13 @@ namespace sandbox {
 
 
 struct PolicyGlobal {
-  PolicyBuffer* entry[kMaxServiceCount];
+  
+  
+  bool NeedsIpc(IpcTag service) {
+    return UNSAFE_TODO(entry[static_cast<size_t>(service)]) != nullptr;
+  }
+
+  PolicyBuffer* entry[kSandboxIpcCount];
   size_t data_size;
   PolicyBuffer data[1];
 };
@@ -117,11 +123,7 @@ enum RuleType {
 };
 
 
-enum RuleOp {
-  EQUAL,
-  AND,
-  RANGE  
-};
+enum RuleOp { EQUAL, AND };
 
 
 
@@ -138,11 +140,9 @@ class PolicyRule {
   
   
   
-  
   bool AddStringMatch(RuleType rule_type,
                       uint8_t parameter,
-                      const wchar_t* string,
-                      StringMatchOptions match_opts);
+                      const wchar_t* string);
 
   
   
@@ -165,9 +165,7 @@ class PolicyRule {
   void operator=(const PolicyRule&);
   
   
-  
   bool GenStringOpcode(RuleType rule_type,
-                       StringMatchOptions match_opts,
                        uint8_t parameter,
                        int state,
                        bool last_call,

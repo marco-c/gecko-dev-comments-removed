@@ -2,575 +2,1712 @@
 
 
 
+
+
+
+
+
 #ifndef BASE_CONTAINERS_SPAN_H_
 #define BASE_CONTAINERS_SPAN_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include <array>
+#include <algorithm>
+#include <concepts>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
+#include <memory>
+#include <optional>
+#include <ranges>
+#include <span>
 #include <type_traits>
 #include <utility>
 
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/containers/checked_iterators.h"
-#include "base/containers/contiguous_iterator.h"
-#include "base/cxx20_to_address.h"
+#include "base/containers/span_forward_internal.h"
+#include "base/numerics/integral_constant_like.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/template_util.h"
+#include "base/types/to_address.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 namespace base {
 
 
-constexpr size_t dynamic_extent = std::numeric_limits<size_t>::max();
 
-template <typename T,
-          size_t Extent = dynamic_extent,
-          typename InternalPtrType = T*>
-class span;
+
+
+template <size_t N>
+using fixed_extent = std::integral_constant<size_t, N>;
+
+}  
+
+
+
+
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+inline constexpr bool
+    std::ranges::enable_view<base::span<ElementType, Extent, InternalPtrType>> =
+        true;
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+inline constexpr bool std::ranges::enable_borrowed_range<
+    base::span<ElementType, Extent, InternalPtrType>> = true;
+
+namespace base {
+
+
+template <typename T>
+inline constexpr bool kCanSafelyConvertToByteSpan =
+    std::has_unique_object_representations_v<T>;
+template <typename T, typename U>
+inline constexpr bool kCanSafelyConvertToByteSpan<std::pair<T, U>> =
+    kCanSafelyConvertToByteSpan<std::remove_cvref_t<T>> &&
+    kCanSafelyConvertToByteSpan<std::remove_cvref_t<U>>;
+
+
+
+struct allow_nonunique_obj_t {
+  allow_nonunique_obj_t() = default;
+};
+inline constexpr allow_nonunique_obj_t allow_nonunique_obj{};
 
 namespace internal {
 
-template <size_t I>
-using size_constant = std::integral_constant<size_t, I>;
 
 template <typename T>
-struct ExtentImpl : size_constant<dynamic_extent> {};
-
-template <typename T, size_t N>
-struct ExtentImpl<T[N]> : size_constant<N> {};
-
-template <typename T, size_t N>
-struct ExtentImpl<std::array<T, N>> : size_constant<N> {};
-
-template <typename T, size_t N>
-struct ExtentImpl<base::span<T, N>> : size_constant<N> {};
-
+inline constexpr size_t MaybeStaticExt = dynamic_extent;
 template <typename T>
-using Extent = ExtentImpl<remove_cvref_t<T>>;
-
-template <typename T>
-struct IsSpanImpl : std::false_type {};
-
-template <typename T, size_t Extent>
-struct IsSpanImpl<span<T, Extent>> : std::true_type {};
-
-template <typename T>
-using IsNotSpan = std::negation<IsSpanImpl<std::decay_t<T>>>;
-
-template <typename T>
-struct IsStdArrayImpl : std::false_type {};
-
-template <typename T, size_t N>
-struct IsStdArrayImpl<std::array<T, N>> : std::true_type {};
-
-template <typename T>
-using IsNotStdArray = std::negation<IsStdArrayImpl<std::decay_t<T>>>;
-
-template <typename T>
-using IsNotCArray = std::negation<std::is_array<std::remove_reference_t<T>>>;
+  requires IntegralConstantLike<T>
+inline constexpr size_t MaybeStaticExt<T> = {T::value};
 
 template <typename From, typename To>
-using IsLegalDataConversion = std::is_convertible<From (*)[], To (*)[]>;
-
-template <typename Iter, typename T>
-using IteratorHasConvertibleReferenceType =
-    IsLegalDataConversion<std::remove_reference_t<iter_reference_t<Iter>>, T>;
-
-template <typename Iter, typename T>
-using EnableIfCompatibleContiguousIterator = std::enable_if_t<
-    std::conjunction_v<IsContiguousIterator<Iter>,
-                       IteratorHasConvertibleReferenceType<Iter, T>>>;
-
-template <typename Container, typename T>
-using ContainerHasConvertibleData = IsLegalDataConversion<
-    std::remove_pointer_t<decltype(std::data(std::declval<Container>()))>,
-    T>;
-
-template <typename Container>
-using ContainerHasIntegralSize =
-    std::is_integral<decltype(std::size(std::declval<Container>()))>;
-
-template <typename From, size_t FromExtent, typename To, size_t ToExtent>
-using EnableIfLegalSpanConversion =
-    std::enable_if_t<(ToExtent == dynamic_extent || ToExtent == FromExtent) &&
-                     IsLegalDataConversion<From, To>::value>;
-
-
-template <typename Array, typename T, size_t Extent>
-using EnableIfSpanCompatibleArray =
-    std::enable_if_t<(Extent == dynamic_extent ||
-                      Extent == internal::Extent<Array>::value) &&
-                     ContainerHasConvertibleData<Array, T>::value>;
-
-
-template <typename Container, typename T>
-using IsSpanCompatibleContainer =
-    std::conjunction<IsNotSpan<Container>,
-                     IsNotStdArray<Container>,
-                     IsNotCArray<Container>,
-                     ContainerHasConvertibleData<Container, T>,
-                     ContainerHasIntegralSize<Container>>;
-
-template <typename Container, typename T>
-using EnableIfSpanCompatibleContainer =
-    std::enable_if_t<IsSpanCompatibleContainer<Container, T>::value>;
-
-template <typename Container, typename T, size_t Extent>
-using EnableIfSpanCompatibleContainerAndSpanIsDynamic =
-    std::enable_if_t<IsSpanCompatibleContainer<Container, T>::value &&
-                     Extent == dynamic_extent>;
+concept LegalDataConversion = std::is_convertible_v<From (*)[], To (*)[]>;
 
 
 
 
-template <size_t Extent>
-class ExtentStorage {
- public:
-  constexpr explicit ExtentStorage(size_t size) noexcept {}
-  constexpr size_t size() const noexcept { return Extent; }
-};
+
+
+template <typename T>
+concept SpanConstructibleFrom = requires(T&& t) { span(std::forward<T>(t)); };
+
+
+template <typename T>
+  requires SpanConstructibleFrom<T>
+using ElementTypeOfSpanConstructedFrom =
+    typename decltype(span(std::declval<T>()))::element_type;
+
+template <typename T, typename It>
+concept CompatibleIter =
+    std::contiguous_iterator<It> &&
+    LegalDataConversion<std::remove_reference_t<std::iter_reference_t<It>>, T>;
+
+
+template <typename T>
+inline constexpr bool kIsSpan = false;
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+inline constexpr bool kIsSpan<span<ElementType, Extent, InternalPtrType>> =
+    true;
+
+template <typename T, typename R>
+concept CompatibleRange =
+    std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
+    (std::ranges::borrowed_range<R> || (std::is_const_v<T>)) &&
+    
+    (!kIsSpan<std::remove_cvref_t<R>> &&
+     
+     (!std::is_array_v<std::remove_cvref_t<R>>)) &&
+    LegalDataConversion<
+        std::remove_reference_t<std::ranges::range_reference_t<R>>,
+        T>;
 
 
 
-template <>
-struct ExtentStorage<dynamic_extent> {
-  constexpr explicit ExtentStorage(size_t size) noexcept : size_(size) {}
-  constexpr size_t size() const noexcept { return size_; }
-
- private:
-  size_t size_;
-};
+template <size_t N, size_t X>
+concept FixedExtentConstructibleFromExtent = X == N || X == dynamic_extent;
 
 
+template <typename T>
+inline constexpr size_t kComputedExtentImpl = dynamic_extent;
+template <typename T>
+  requires requires { std::tuple_size<T>(); }
+inline constexpr size_t kComputedExtentImpl<T> = std::tuple_size_v<T>;
+template <typename T, size_t N>
+inline constexpr size_t kComputedExtentImpl<T[N]> = N;
+template <typename T, size_t N>
+inline constexpr size_t kComputedExtentImpl<std::span<T, N>> = N;
+template <typename T, size_t N, typename InternalPtrType>
+inline constexpr size_t kComputedExtentImpl<span<T, N, InternalPtrType>> = N;
 
-template <size_t kExtent>
-constexpr size_t must_not_be_dynamic_extent() {
-  static_assert(
-      kExtent != dynamic_extent,
-      "EXTENT should only be used for containers with a static extent.");
-  return kExtent;
+
+
+
+
+
+template <typename I, typename S, std::ranges::subrange_kind K>
+inline constexpr size_t kComputedExtentImpl<std::ranges::subrange<I, S, K>> =
+    dynamic_extent;
+
+template <typename T>
+inline constexpr size_t kComputedExtent =
+    kComputedExtentImpl<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept CanSafelyConvertToByteSpan =
+    kCanSafelyConvertToByteSpan<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept ByteSpanConstructibleFrom =
+    SpanConstructibleFrom<T> &&
+    CanSafelyConvertToByteSpan<ElementTypeOfSpanConstructedFrom<T>>;
+
+
+template <typename T>
+concept CanSafelyConvertNonUniqueToByteSpan =
+    
+    
+    
+    std::is_trivially_copyable_v<T> &&
+    
+    !std::has_unique_object_representations_v<T>;
+
+template <typename T>
+concept ByteSpanConstructibleFromNonUnique =
+    SpanConstructibleFrom<T> &&
+    CanSafelyConvertNonUniqueToByteSpan<ElementTypeOfSpanConstructedFrom<T>>;
+
+template <typename ByteType,
+          typename ElementType,
+          size_t Extent,
+          typename InternalPtrType>
+  requires((std::same_as<std::remove_const_t<ByteType>, char> ||
+            std::same_as<std::remove_const_t<ByteType>, unsigned char>) &&
+           (std::is_const_v<ByteType> || !std::is_const_v<ElementType>))
+constexpr auto as_byte_span(
+    span<ElementType, Extent, InternalPtrType> s) noexcept {
+  constexpr size_t kByteExtent =
+      Extent == dynamic_extent ? dynamic_extent : sizeof(ElementType) * Extent;
+  
+  
+  
+  
+  
+  return UNSAFE_BUFFERS(span<ByteType, kByteExtent>(
+      reinterpret_cast<ByteType*>(s.data()), s.size_bytes()));
 }
 
 }  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, size_t Extent, typename InternalPtrType>
-class GSL_POINTER span : public internal::ExtentStorage<Extent> {
- private:
-  using ExtentStorage = internal::ExtentStorage<Extent>;
-
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+class GSL_POINTER span {
  public:
-  using element_type = T;
-  using value_type = std::remove_cv_t<T>;
+  using element_type = ElementType;
+  using value_type = std::remove_cv_t<element_type>;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
-  using pointer = T*;
-  using const_pointer = const T*;
-  using reference = T&;
-  using const_reference = const T&;
-  using iterator = CheckedContiguousIterator<T>;
+  using pointer = element_type*;
+  using const_pointer = const element_type*;
+  using reference = element_type&;
+  using const_reference = const element_type&;
+  using iterator = CheckedContiguousIterator<element_type>;
+  using const_iterator = CheckedContiguousConstIterator<element_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
-  static constexpr size_t extent = Extent;
+  
+  
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  static constexpr size_type extent = Extent;
 
   
-  constexpr span() noexcept : ExtentStorage(0), data_(nullptr) {
-    static_assert(Extent == dynamic_extent || Extent == 0, "Invalid Extent");
-  }
+  
+  constexpr span() noexcept
+    requires(extent == 0)
+  = default;
 
-  template <typename It,
-            typename = internal::EnableIfCompatibleContiguousIterator<It, T>>
-  constexpr span(It first, StrictNumeric<size_t> count) noexcept
-      : ExtentStorage(count),
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        data_(base::to_address(first)) {
-    CHECK(Extent == dynamic_extent || Extent == count);
-  }
+  
+  template <typename It>
+    requires(internal::CompatibleIter<element_type, It>)
+  
+  
+  UNSAFE_BUFFER_USAGE constexpr span(It first, StrictNumeric<size_type> count)
+      : data_(to_address(first)) {
+    CHECK(size_type{count} == extent);
 
-  template <typename It,
-            typename End,
-            typename = internal::EnableIfCompatibleContiguousIterator<It, T>,
-            typename = std::enable_if_t<!std::is_convertible_v<End, size_t>>>
-  constexpr span(It begin, End end) noexcept
-      
-      
-      : span(begin, static_cast<size_t>(end - begin)) {
     
-    CHECK(begin <= end);
+    
+    DCHECK(count == 0 || !!data_);
   }
 
-  template <
-      size_t N,
-      typename = internal::EnableIfSpanCompatibleArray<T (&)[N], T, Extent>>
-  constexpr span(T (&array)[N]) noexcept : span(std::data(array), N) {}
-
-  template <
-      typename U,
-      size_t N,
-      typename =
-          internal::EnableIfSpanCompatibleArray<std::array<U, N>&, T, Extent>>
-  constexpr span(std::array<U, N>& array) noexcept
-      : span(std::data(array), N) {}
-
-  template <typename U,
-            size_t N,
-            typename = internal::
-                EnableIfSpanCompatibleArray<const std::array<U, N>&, T, Extent>>
-  constexpr span(const std::array<U, N>& array) noexcept
-      : span(std::data(array), N) {}
+  
+  template <typename It, typename End>
+    requires(internal::CompatibleIter<element_type, It> &&
+             std::sized_sentinel_for<End, It> &&
+             !std::is_convertible_v<End, size_t>)
+  
+  
+  UNSAFE_BUFFER_USAGE constexpr span(It first, End last)
+      
+      
+      
+      
+      
+      
+      
+      
+      : UNSAFE_BUFFERS(span(first, static_cast<size_type>(last - first))) {
+    
+    CHECK(first <= last);
+  }
 
   
   
-  template <
-      typename Container,
-      typename =
-          internal::EnableIfSpanCompatibleContainerAndSpanIsDynamic<Container&,
-                                                                    T,
-                                                                    Extent>>
-  constexpr span(Container& container) noexcept
-      : span(std::data(container), std::size(container)) {}
+  constexpr span(element_type (&arr LIFETIME_BOUND)[extent]) noexcept
+      
+      : UNSAFE_BUFFERS(span(arr, extent)) {}
 
-  template <
-      typename Container,
-      typename = internal::EnableIfSpanCompatibleContainerAndSpanIsDynamic<
-          const Container&,
-          T,
-          Extent>>
-  constexpr span(const Container& container) noexcept
-      : span(std::data(container), std::size(container)) {}
+  
+  template <typename R, size_t N = internal::kComputedExtent<R>>
+    requires(internal::CompatibleRange<element_type, R> &&
+             internal::FixedExtentConstructibleFromExtent<extent, N>)
+  
+  constexpr explicit(N != extent) span(R&& range LIFETIME_BOUND)
+      
+      
+      
+      : UNSAFE_BUFFERS(
+            span(std::ranges::data(range), std::ranges::size(range))) {}
+  template <typename R, size_t N = internal::kComputedExtent<R>>
+    requires(internal::CompatibleRange<element_type, R> &&
+             internal::FixedExtentConstructibleFromExtent<extent, N> &&
+             std::ranges::borrowed_range<R>)
+  
+  constexpr explicit(N != extent) span(R&& range)
+      
+      
+      
+      : UNSAFE_BUFFERS(
+            span(std::ranges::data(range), std::ranges::size(range))) {}
 
+  
+  
+  constexpr explicit span(std::initializer_list<value_type> il LIFETIME_BOUND)
+    requires(std::is_const_v<element_type>)
+      
+      
+      : UNSAFE_BUFFERS(span(il.begin(), il.size())) {}
+
+  
   constexpr span(const span& other) noexcept = default;
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires((OtherExtent == dynamic_extent || extent == OtherExtent) &&
+             internal::LegalDataConversion<OtherElementType, element_type>)
+  constexpr explicit(OtherExtent == dynamic_extent)
+      span(const span<OtherElementType, OtherExtent, OtherInternalPtrType>&
+               other) noexcept
+      
+      
+      : UNSAFE_BUFFERS(span(other.data(), other.size())) {}
+  constexpr span(span&& other) noexcept = default;
 
   
-  
-  
-  template <
-      typename U,
-      size_t OtherExtent,
-      typename =
-          internal::EnableIfLegalSpanConversion<U, OtherExtent, T, Extent>>
-  constexpr span(const span<U, OtherExtent>& other)
-      : span(other.data(), other.size()) {}
-
   constexpr span& operator=(const span& other) noexcept = default;
-  ~span() noexcept = default;
+  constexpr span& operator=(span&& other) noexcept = default;
+
+  
+  
+  
+  
+  
+  
+  
+  constexpr void copy_from(span<const element_type, extent> other)
+    requires(!std::is_const_v<element_type>)
+  {
+    if (std::is_constant_evaluated()) {
+      
+      
+      
+      
+
+      
+      if constexpr (extent > 0) {
+        
+        
+        union Holder {
+          constexpr Holder() {}
+          constexpr ~Holder() {}
+          element_type value;
+        };
+        
+        
+        
+        Holder* buffer = new Holder[extent];
+        for (size_t i = 0; i < extent; ++i) {
+          
+          
+          std::construct_at(&UNSAFE_BUFFERS(buffer[i]).value, other[i]);
+        }
+        for (size_t i = 0; i < extent; ++i) {
+          
+          
+          (*this)[i] = UNSAFE_BUFFERS(buffer[i]).value;
+          UNSAFE_BUFFERS(buffer[i]).value.~element_type();
+        }
+        delete[] buffer;
+      }
+    } else {
+      
+      
+      if (reinterpret_cast<uintptr_t>(to_address(begin())) <=
+          reinterpret_cast<uintptr_t>(to_address(other.begin()))) {
+        std::ranges::copy(other, begin());
+      } else {
+        std::ranges::copy_backward(other, end());
+      }
+    }
+  }
+  template <typename R, size_t N = internal::kComputedExtent<R>>
+    requires(!std::is_const_v<element_type> &&
+             
+             
+             
+             N == dynamic_extent &&
+             std::convertible_to<R &&, span<const element_type>>)
+  constexpr void copy_from(R&& other) {
+    
+    
+    copy_from(span<const element_type, extent>(std::forward<R>(other)));
+  }
+
+  
+  
+  
+  
+  constexpr void copy_from_nonoverlapping(
+      span<const element_type, extent> other)
+    requires(!std::is_const_v<element_type>)
+  {
+    
+    
+    
+    
+    if (std::is_constant_evaluated()) {
+      copy_from(other);
+      return;
+    }
+
+    
+    DCHECK(reinterpret_cast<uintptr_t>(to_address(end())) <=
+               reinterpret_cast<uintptr_t>(to_address(other.begin())) ||
+           reinterpret_cast<uintptr_t>(to_address(begin())) >=
+               reinterpret_cast<uintptr_t>(to_address(other.end())));
+    std::ranges::copy(other, begin());
+  }
+  template <typename R, size_t N = internal::kComputedExtent<R>>
+    requires(!std::is_const_v<element_type> && N == dynamic_extent &&
+             std::convertible_to<R &&, span<const element_type>>)
+  constexpr void copy_from_nonoverlapping(R&& other) {
+    
+    
+    copy_from_nonoverlapping(
+        span<const element_type, extent>(std::forward<R>(other)));
+  }
+
+  
+  
+  
+  
+  
+  
+  template <typename R, size_t N = internal::kComputedExtent<R>>
+    requires(!std::is_const_v<element_type> &&
+             (N <= extent || N == dynamic_extent) &&
+             std::convertible_to<R &&, span<const element_type>>)
+  constexpr void copy_prefix_from(R&& other) {
+    if constexpr (N == dynamic_extent) {
+      return first(other.size()).copy_from(other);
+    } else {
+      return first<N>().copy_from(other);
+    }
+  }
+
+  
+  
+  
+  operator std::span<element_type, extent>() const {
+    return std::span<element_type, extent>(*this);
+  }
+  
+  operator std::span<const element_type, extent>() const
+    requires(!std::is_const_v<element_type>)
+  {
+    return std::span<const element_type, extent>(*this);
+  }
+
+  
+  
+  template <size_t Count>
+  constexpr auto first() const
+    requires(Count <= extent)
+  {
+    
+    
+    return UNSAFE_BUFFERS(span<element_type, Count>(data(), Count));
+  }
+  constexpr auto first(StrictNumeric<size_type> count) const {
+    CHECK(size_type{count} <= extent);
+    
+    
+    return UNSAFE_BUFFERS(span<element_type>(data(), count));
+  }
 
   
   template <size_t Count>
-  constexpr span<T, Count> first() const noexcept {
-    static_assert(Count <= Extent, "Count must not exceed Extent");
-    CHECK(Extent != dynamic_extent || Count <= size());
-    return {data(), Count};
+  constexpr auto last() const
+    requires(Count <= extent)
+  {
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type, Count>(data() + (extent - Count), Count));
+  }
+  constexpr auto last(StrictNumeric<size_type> count) const {
+    CHECK(size_type{count} <= extent);
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + (extent - size_type{count}), count));
   }
 
-  template <size_t Count>
-  constexpr span<T, Count> last() const noexcept {
-    static_assert(Count <= Extent, "Count must not exceed Extent");
-    CHECK(Extent != dynamic_extent || Count <= size());
-    return {data() + (size() - Count), Count};
-  }
-
+  
   template <size_t Offset, size_t Count = dynamic_extent>
-  constexpr span<T,
-                 (Count != dynamic_extent
-                      ? Count
-                      : (Extent != dynamic_extent ? Extent - Offset
-                                                  : dynamic_extent))>
-  subspan() const noexcept {
-    static_assert(Offset <= Extent, "Offset must not exceed Extent");
-    static_assert(Count == dynamic_extent || Count <= Extent - Offset,
-                  "Count must not exceed Extent - Offset");
-    CHECK(Extent != dynamic_extent || Offset <= size());
-    CHECK(Extent != dynamic_extent || Count == dynamic_extent ||
-          Count <= size() - Offset);
-    return {data() + Offset, Count != dynamic_extent ? Count : size() - Offset};
+  constexpr auto subspan() const
+    requires(Offset <= extent &&
+             (Count == dynamic_extent || Count <= extent - Offset))
+  {
+    if constexpr (Count == dynamic_extent) {
+      constexpr size_t kRemaining = extent - Offset;
+      
+      
+      
+      return UNSAFE_BUFFERS(
+          span<element_type, kRemaining>(data() + Offset, kRemaining));
+    } else {
+      
+      
+      
+      return UNSAFE_BUFFERS(span<element_type, Count>(data() + Offset, Count));
+    }
   }
-
-  constexpr span<T, dynamic_extent> first(size_t count) const noexcept {
+  constexpr auto subspan(StrictNumeric<size_type> offset) const {
+    CHECK(size_type{offset} <= extent);
+    const size_type remaining = extent - size_type{offset};
     
-    CHECK(count <= size());
-    return {data(), count};
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + size_type{offset}, remaining));
   }
-
-  constexpr span<T, dynamic_extent> last(size_t count) const noexcept {
+  constexpr auto subspan(StrictNumeric<size_type> offset,
+                         StrictNumeric<size_type> count) const {
     
-    CHECK(count <= size());
-    return {data() + (size() - count), count};
-  }
-
-  constexpr span<T, dynamic_extent> subspan(size_t offset,
-                                            size_t count = dynamic_extent) const
-      noexcept {
+    DCHECK(size_type{count} != dynamic_extent);
     
-    CHECK(offset <= size());
-    CHECK(count == dynamic_extent || count <= size() - offset);
-    return {data() + offset, count != dynamic_extent ? count : size() - offset};
+    CHECK(size_type{offset} <= size() &&
+          size_type{count} <= size() - size_type{offset});
+    
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + size_type{offset}, count));
   }
 
   
-  constexpr size_t size() const noexcept { return ExtentStorage::size(); }
-  constexpr size_t size_bytes() const noexcept { return size() * sizeof(T); }
-  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+  
+  
+  
+  
+  template <size_t Offset>
+    requires(Offset <= extent)
+  constexpr auto split_at() const {
+    return std::pair(first<Offset>(), subspan<Offset, extent - Offset>());
+  }
+  constexpr auto split_at(StrictNumeric<size_type> offset) const {
+    return std::pair(first(offset), subspan(offset));
+  }
 
   
-  constexpr T& operator[](size_t idx) const noexcept {
+  
+  constexpr size_type size() const noexcept { return extent; }
+  constexpr size_type size_bytes() const noexcept {
+    return extent * sizeof(element_type);
+  }
+
+  
+  [[nodiscard]] constexpr bool empty() const noexcept { return extent == 0; }
+
+  
+  
+  
+  
+  
+  
+  friend constexpr bool operator==(span lhs, span rhs)
+    requires(std::is_const_v<element_type> &&
+             std::equality_comparable<const element_type>)
+  {
+    return std::ranges::equal(span<const element_type, extent>(lhs),
+                              span<const element_type, extent>(rhs));
+  }
+  friend constexpr bool operator==(span lhs,
+                                   span<const element_type, extent> rhs)
+    requires(!std::is_const_v<element_type> &&
+             std::equality_comparable<const element_type>)
+  {
+    return std::ranges::equal(span<const element_type, extent>(lhs), rhs);
+  }
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires((OtherExtent == dynamic_extent || extent == OtherExtent) &&
+             std::equality_comparable_with<const element_type,
+                                           const OtherElementType>)
+  friend constexpr bool operator==(
+      span lhs,
+      span<OtherElementType, OtherExtent, OtherInternalPtrType> rhs) {
+    return std::ranges::equal(span<const element_type, extent>(lhs),
+                              span<const OtherElementType, OtherExtent>(rhs));
+  }
+
+  
+  
+  
+  
+  
+  
+  friend constexpr auto operator<=>(span lhs, span rhs)
+    requires(std::is_const_v<element_type> &&
+             std::three_way_comparable<const element_type>)
+  {
+    const auto const_lhs = span<const element_type>(lhs);
+    const auto const_rhs = span<const element_type>(rhs);
+    return std::lexicographical_compare_three_way(
+        const_lhs.begin(), const_lhs.end(), const_rhs.begin(), const_rhs.end());
+  }
+  friend constexpr auto operator<=>(span lhs,
+                                    span<const element_type, extent> rhs)
+    requires(!std::is_const_v<element_type> &&
+             std::three_way_comparable<const element_type>)
+  {
+    return span<const element_type>(lhs) <=> rhs;
+  }
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires((OtherExtent == dynamic_extent || extent == OtherExtent) &&
+             std::three_way_comparable_with<const element_type,
+                                            const OtherElementType>)
+  friend constexpr auto operator<=>(
+      span lhs,
+      span<OtherElementType, OtherExtent, OtherInternalPtrType> rhs) {
+    const auto const_lhs = span<const element_type>(lhs);
+    const auto const_rhs = span<const OtherElementType, OtherExtent>(rhs);
+    return std::lexicographical_compare_three_way(
+        const_lhs.begin(), const_lhs.end(), const_rhs.begin(), const_rhs.end());
+  }
+
+  template <typename H>
+  friend H AbslHashValue(H h, span v) {
+    return H::combine_contiguous(std::move(h), v.data(), v.size());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr reference operator[](size_type idx) const
+    requires(extent > 0)
+  {
+    return at(idx);
+  }
+  
+  constexpr reference at(StrictNumeric<size_type> idx) const
+    requires(extent > 0)
+  {
+    return *get_at(idx);
+  }
+
+  
+  
+  
+  constexpr pointer get_at(StrictNumeric<size_type> idx) const
+    requires(extent > 0)
+  {
+    CHECK(size_type{idx} < extent);
     
-    CHECK(idx < size());
-    return *(data() + idx);
+    
+    return UNSAFE_BUFFERS(data() + size_type{idx});
   }
 
-  constexpr T& front() const noexcept {
-    static_assert(Extent == dynamic_extent || Extent > 0,
-                  "Extent must not be 0");
-    CHECK(Extent != dynamic_extent || !empty());
-    return *data();
+  
+  
+  constexpr reference front() const
+    requires(extent > 0)
+  {
+    return operator[](0);
+  }
+  
+  constexpr reference back() const
+    requires(extent > 0)
+  {
+    return operator[](size() - 1);
   }
 
-  constexpr T& back() const noexcept {
-    static_assert(Extent == dynamic_extent || Extent > 0,
-                  "Extent must not be 0");
-    CHECK(Extent != dynamic_extent || !empty());
-    return *(data() + size() - 1);
-  }
+  
+  constexpr pointer data() const noexcept { return data_; }
 
-  constexpr T* data() const noexcept { return data_; }
-
+  
   
   constexpr iterator begin() const noexcept {
-    return iterator(data(), data() + size());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return UNSAFE_BUFFERS(iterator(
+        typename iterator::AssumeValid(data(), data(), data() + extent)));
   }
-
+  constexpr const_iterator cbegin() const noexcept {
+    return const_iterator(begin());
+  }
   constexpr iterator end() const noexcept {
-    return iterator(data(), data() + size(), data() + size());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return UNSAFE_BUFFERS(iterator(typename iterator::AssumeValid(
+        data(), data() + extent, data() + extent)));
+  }
+  constexpr const_iterator cend() const noexcept {
+    return const_iterator(end());
   }
 
+  
   constexpr reverse_iterator rbegin() const noexcept {
     return reverse_iterator(end());
   }
-
+  constexpr const_reverse_iterator crbegin() const noexcept {
+    return const_iterator(rbegin());
+  }
   constexpr reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
   }
+  constexpr const_reverse_iterator crend() const noexcept {
+    return const_iterator(rend());
+  }
 
  private:
-  
-  
-  InternalPtrType data_;
+  InternalPtrType data_ = nullptr;
 };
 
 
+template <typename ElementType, typename InternalPtrType>
+class GSL_POINTER span<ElementType, dynamic_extent, InternalPtrType> {
+ public:
+  using element_type = ElementType;
+  using value_type = std::remove_cv_t<element_type>;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  using pointer = element_type*;
+  using const_pointer = const element_type*;
+  using reference = element_type&;
+  using const_reference = const element_type&;
+  using iterator = CheckedContiguousIterator<element_type>;
+  using const_iterator = CheckedContiguousConstIterator<element_type>;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  
+  
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  static constexpr size_type extent = dynamic_extent;
 
-template <class T, size_t Extent, typename InternalPtrType>
-constexpr size_t span<T, Extent, InternalPtrType>::extent;
+  
+  
+  constexpr span() noexcept = default;
 
-template <typename It,
-          typename T = std::remove_reference_t<iter_reference_t<It>>>
-span(It, StrictNumeric<size_t>) -> span<T>;
+  
+  template <typename It>
+    requires(internal::CompatibleIter<element_type, It>)
+  
+  
+  UNSAFE_BUFFER_USAGE constexpr span(It first, StrictNumeric<size_type> count)
+      : data_(to_address(first)), size_(count) {
+    
+    
+    DCHECK(count == 0 || !!data_);
+  }
 
-template <typename It,
-          typename End,
-          typename = std::enable_if_t<!std::is_convertible_v<End, size_t>>,
-          typename T = std::remove_reference_t<iter_reference_t<It>>>
-span(It, End) -> span<T>;
+  
+  template <typename It, typename End>
+    requires(internal::CompatibleIter<element_type, It> &&
+             std::sized_sentinel_for<End, It> &&
+             !std::is_convertible_v<End, size_t>)
+  
+  
+  UNSAFE_BUFFER_USAGE constexpr span(It first, End last)
+      
+      
+      
+      
+      
+      
+      
+      
+      : UNSAFE_BUFFERS(span(first, static_cast<size_type>(last - first))) {
+    
+    CHECK(first <= last);
+  }
 
-template <typename T, size_t N>
-span(T (&)[N]) -> span<T, N>;
+  
+  template <size_t N>
+  
+  constexpr span(element_type (&arr LIFETIME_BOUND)[N]) noexcept
+      
+      : UNSAFE_BUFFERS(span(arr, N)) {}
 
-template <typename T, size_t N>
-span(std::array<T, N>&) -> span<T, N>;
+  
+  template <typename R>
+    requires(internal::CompatibleRange<element_type, R>)
+  
+  constexpr span(R&& range LIFETIME_BOUND)
+      
+      
+      
+      : UNSAFE_BUFFERS(
+            span(std::ranges::data(range), std::ranges::size(range))) {}
+  template <typename R>
+    requires(internal::CompatibleRange<element_type, R> &&
+             std::ranges::borrowed_range<R>)
+  
+  constexpr span(R&& range)
+      
+      
+      
+      : UNSAFE_BUFFERS(
+            span(std::ranges::data(range), std::ranges::size(range))) {}
 
-template <typename T, size_t N>
-span(const std::array<T, N>&) -> span<const T, N>;
+  
+  constexpr span(std::initializer_list<value_type> il LIFETIME_BOUND)
+    requires(std::is_const_v<element_type>)
+      
+      
+      : UNSAFE_BUFFERS(span(il.begin(), il.size())) {}
 
-template <typename Container,
-          typename T = std::remove_pointer_t<
-              decltype(std::data(std::declval<Container>()))>,
-          size_t X = internal::Extent<Container>::value>
-span(Container&&) -> span<T, X>;
+  
+  constexpr span(const span& other) noexcept = default;
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires(internal::LegalDataConversion<OtherElementType, element_type>)
+  
+  constexpr span(
+      const span<OtherElementType, OtherExtent, OtherInternalPtrType>&
+          other) noexcept
+      : data_(other.data()), size_(other.size()) {}
+  constexpr span(span&& other) noexcept = default;
+
+  
+  constexpr span& operator=(const span& other) noexcept = default;
+  constexpr span& operator=(span&& other) noexcept = default;
+
+  
+  
+  
+  
+  
+  
+  
+  constexpr void copy_from(span<const element_type> other)
+    requires(!std::is_const_v<element_type>)
+  {
+    CHECK(size() == other.size());
+    if (std::is_constant_evaluated()) {
+      
+      
+      
+      
+
+      
+      
+      union Holder {
+        constexpr Holder() {}
+        constexpr ~Holder() {}
+        element_type value;
+      };
+      
+      
+      
+      Holder* buffer = new Holder[other.size()];
+      for (size_t i = 0; i < other.size(); ++i) {
+        
+        
+        std::construct_at(&UNSAFE_BUFFERS(buffer[i]).value, other[i]);
+      }
+      for (size_t i = 0; i < other.size(); ++i) {
+        
+        
+        (*this)[i] = UNSAFE_BUFFERS(buffer[i]).value;
+        UNSAFE_BUFFERS(buffer[i]).value.~element_type();
+      }
+      delete[] buffer;
+    } else {
+      
+      
+      if (reinterpret_cast<uintptr_t>(to_address(begin())) <=
+          reinterpret_cast<uintptr_t>(to_address(other.begin()))) {
+        std::ranges::copy(other, begin());
+      } else {
+        std::ranges::copy_backward(other, end());
+      }
+    }
+  }
+
+  
+  
+  
+  
+  constexpr void copy_from_nonoverlapping(span<const element_type> other)
+    requires(!std::is_const_v<element_type>)
+  {
+    
+    
+    
+    
+    if (std::is_constant_evaluated()) {
+      copy_from(other);
+      return;
+    }
+
+    CHECK(size() == other.size());
+    
+    DCHECK(reinterpret_cast<uintptr_t>(to_address(end())) <=
+               reinterpret_cast<uintptr_t>(to_address(other.begin())) ||
+           reinterpret_cast<uintptr_t>(to_address(begin())) >=
+               reinterpret_cast<uintptr_t>(to_address(other.end())));
+    std::ranges::copy(other, begin());
+  }
+
+  
+  
+  
+  
+  
+  
+  constexpr void copy_prefix_from(span<const element_type> other)
+    requires(!std::is_const_v<element_type>)
+  {
+    return first(other.size()).copy_from(other);
+  }
+
+  
+  
+  template <size_t Count>
+  constexpr auto first() const {
+    CHECK(Count <= size());
+    
+    
+    return UNSAFE_BUFFERS(span<element_type, Count>(data(), Count));
+  }
+  constexpr auto first(StrictNumeric<size_t> count) const {
+    CHECK(size_type{count} <= size());
+    
+    
+    return UNSAFE_BUFFERS(span<element_type>(data(), count));
+  }
+
+  
+  template <size_t Count>
+  constexpr auto last() const {
+    CHECK(Count <= size());
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type, Count>(data() + (size() - Count), Count));
+  }
+  constexpr auto last(StrictNumeric<size_type> count) const {
+    CHECK(size_type{count} <= size());
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + (size() - size_type{count}), count));
+  }
+
+  
+  template <size_t Offset, size_t Count = dynamic_extent>
+  constexpr auto subspan() const {
+    CHECK(Offset <= size());
+    const size_type remaining = size() - Offset;
+    if constexpr (Count == dynamic_extent) {
+      
+      
+      
+      return UNSAFE_BUFFERS(
+          span<element_type, Count>(data() + Offset, remaining));
+    }
+    CHECK(Count <= remaining);
+    
+    
+    
+    return UNSAFE_BUFFERS(span<element_type, Count>(data() + Offset, Count));
+  }
+  constexpr auto subspan(StrictNumeric<size_type> offset) const {
+    CHECK(size_type{offset} <= size());
+    const size_type remaining = size() - size_type{offset};
+    
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + size_type{offset}, remaining));
+  }
+  constexpr auto subspan(StrictNumeric<size_type> offset,
+                         StrictNumeric<size_type> count) const {
+    
+    DCHECK(size_type{count} != dynamic_extent);
+    
+    CHECK(size_type{offset} <= size() &&
+          size_type{count} <= size() - size_type{offset});
+    
+    
+    
+    return UNSAFE_BUFFERS(
+        span<element_type>(data() + size_type{offset}, count));
+  }
+
+  
+  
+  
+  
+  
+  template <size_t Offset>
+  constexpr auto split_at() const {
+    CHECK(Offset <= size());
+    return std::pair(first<Offset>(), subspan<Offset>());
+  }
+  constexpr auto split_at(StrictNumeric<size_type> offset) const {
+    return std::pair(first(offset), subspan(offset));
+  }
+
+  
+  
+  
+  
+  
+  
+  template <size_t Offset>
+  constexpr auto take_first() {
+    const auto [first, rest] = split_at<Offset>();
+    *this = rest;
+    return first;
+  }
+  
+  constexpr auto take_first(StrictNumeric<size_type> offset) {
+    const auto [first, rest] = split_at(offset);
+    *this = rest;
+    return first;
+  }
+
+  
+  
+  
+  
+  
+  
+  constexpr auto take_first_elem() { return take_first<1>().front(); }
+
+  
+  
+  constexpr size_type size() const noexcept { return size_; }
+  constexpr size_type size_bytes() const noexcept {
+    return size() * sizeof(element_type);
+  }
+
+  
+  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+
+  
+  
+  
+  
+  
+  
+  friend constexpr bool operator==(span lhs, span rhs)
+    requires(std::is_const_v<element_type> &&
+             std::equality_comparable<const element_type>)
+  {
+    return std::ranges::equal(span<const element_type>(lhs),
+                              span<const element_type>(rhs));
+  }
+  friend constexpr bool operator==(span lhs,
+                                   span<const element_type, extent> rhs)
+    requires(!std::is_const_v<element_type> &&
+             std::equality_comparable<const element_type>)
+  {
+    return std::ranges::equal(span<const element_type>(lhs), rhs);
+  }
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires(std::equality_comparable_with<const element_type,
+                                           const OtherElementType>)
+  friend constexpr bool operator==(
+      span lhs,
+      span<OtherElementType, OtherExtent, OtherInternalPtrType> rhs) {
+    return std::ranges::equal(span<const element_type>(lhs),
+                              span<const OtherElementType, OtherExtent>(rhs));
+  }
+
+  
+  
+  
+  
+  
+  
+  friend constexpr auto operator<=>(span lhs, span rhs)
+    requires(std::is_const_v<element_type> &&
+             std::three_way_comparable<const element_type>)
+  {
+    const auto const_lhs = span<const element_type>(lhs);
+    const auto const_rhs = span<const element_type>(rhs);
+    return std::lexicographical_compare_three_way(
+        const_lhs.begin(), const_lhs.end(), const_rhs.begin(), const_rhs.end());
+  }
+  friend constexpr auto operator<=>(span lhs,
+                                    span<const element_type, extent> rhs)
+    requires(!std::is_const_v<element_type> &&
+             std::three_way_comparable<const element_type>)
+  {
+    return span<const element_type>(lhs) <=> rhs;
+  }
+  template <typename OtherElementType,
+            size_t OtherExtent,
+            typename OtherInternalPtrType>
+    requires(std::three_way_comparable_with<const element_type,
+                                            const OtherElementType>)
+  friend constexpr auto operator<=>(
+      span lhs,
+      span<OtherElementType, OtherExtent, OtherInternalPtrType> rhs) {
+    const auto const_lhs = span<const element_type>(lhs);
+    const auto const_rhs = span<const OtherElementType, OtherExtent>(rhs);
+    return std::lexicographical_compare_three_way(
+        const_lhs.begin(), const_lhs.end(), const_rhs.begin(), const_rhs.end());
+  }
+
+  template <typename H>
+  friend H AbslHashValue(H h, span v) {
+    return H::combine_contiguous(std::move(h), v.data(), v.size());
+  }
+
+  
+  
+  
+  
+  
+  
+  constexpr reference operator[](size_type idx) const { return at(idx); }
+
+  
+  constexpr reference at(StrictNumeric<size_type> idx) const {
+    return *get_at(idx);
+  }
+
+  
+  
+  
+  constexpr pointer get_at(StrictNumeric<size_type> idx) const {
+    CHECK(size_type{idx} < size());
+    
+    
+    return UNSAFE_BUFFERS(data() + size_type{idx});
+  }
+
+  
+  
+  constexpr reference front() const { return operator[](0); }
+  
+  constexpr reference back() const { return operator[](size() - 1); }
+
+  
+  constexpr pointer data() const noexcept { return data_; }
+
+  
+  
+  constexpr iterator begin() const noexcept {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return UNSAFE_BUFFERS(iterator(
+        typename iterator::AssumeValid(data(), data(), data() + size())));
+  }
+  constexpr const_iterator cbegin() const noexcept {
+    return const_iterator(begin());
+  }
+  constexpr iterator end() const noexcept {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return UNSAFE_BUFFERS(iterator(typename iterator::AssumeValid(
+        data(), data() + size(), data() + size())));
+  }
+  constexpr const_iterator cend() const noexcept {
+    return const_iterator(end());
+  }
+
+  
+  constexpr reverse_iterator rbegin() const noexcept {
+    return reverse_iterator(end());
+  }
+  constexpr const_reverse_iterator crbegin() const noexcept {
+    return const_iterator(rbegin());
+  }
+  constexpr reverse_iterator rend() const noexcept {
+    return reverse_iterator(begin());
+  }
+  constexpr const_reverse_iterator crend() const noexcept {
+    return const_iterator(rend());
+  }
+
+  
+  
+  
+  
+  
+  
+  template <size_t Extent>
+  constexpr std::optional<span<element_type, Extent>> to_fixed_extent() const {
+    return size() == Extent ? std::optional(span<element_type, Extent>(*this))
+                            : std::nullopt;
+  }
+
+ private:
+  InternalPtrType data_ = nullptr;
+  size_t size_ = 0;
+};
 
 
-template <typename T, size_t X>
-span<const uint8_t, (X == dynamic_extent ? dynamic_extent : sizeof(T) * X)>
-as_bytes(span<T, X> s) noexcept {
-  return {reinterpret_cast<const uint8_t*>(s.data()), s.size_bytes()};
+template <typename It, typename EndOrSize>
+  requires(std::contiguous_iterator<It>)
+span(It, EndOrSize) -> span<std::remove_reference_t<std::iter_reference_t<It>>,
+                            internal::MaybeStaticExt<EndOrSize>>;
+
+template <typename R>
+  requires(std::ranges::contiguous_range<R>)
+span(R&&) -> span<std::remove_reference_t<std::ranges::range_reference_t<R>>,
+                  internal::kComputedExtent<R>>;
+
+
+
+
+
+
+
+template <typename R>
+  requires(std::ranges::contiguous_range<R> && !std::ranges::borrowed_range<R>)
+span(R&&)
+    -> span<const std::remove_reference_t<std::ranges::range_reference_t<R>>,
+            internal::kComputedExtent<R>>;
+
+
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType>)
+constexpr auto as_bytes(span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<const uint8_t>(s);
+}
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType>)
+constexpr auto as_bytes(allow_nonunique_obj_t,
+                        span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<const uint8_t>(s);
+}
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_bytes(span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<uint8_t>(s);
+}
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_bytes(allow_nonunique_obj_t,
+                                 span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<uint8_t>(s);
 }
 
-template <typename T,
-          size_t X,
-          typename = std::enable_if_t<!std::is_const_v<T>>>
-span<uint8_t, (X == dynamic_extent ? dynamic_extent : sizeof(T) * X)>
-as_writable_bytes(span<T, X> s) noexcept {
-  return {reinterpret_cast<uint8_t*>(s.data()), s.size_bytes()};
+
+
+
+
+
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType>)
+constexpr auto as_chars(span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<const char>(s);
 }
-
-
-template <int&... ExplicitArgumentBarrier, typename It>
-constexpr auto make_span(It it, StrictNumeric<size_t> size) noexcept {
-  using T = std::remove_reference_t<iter_reference_t<It>>;
-  return span<T>(it, size);
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType>)
+constexpr auto as_chars(allow_nonunique_obj_t,
+                        span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<const char>(s);
 }
-
-template <int&... ExplicitArgumentBarrier,
-          typename It,
-          typename End,
-          typename = std::enable_if_t<!std::is_convertible_v<End, size_t>>>
-constexpr auto make_span(It it, End end) noexcept {
-  using T = std::remove_reference_t<iter_reference_t<It>>;
-  return span<T>(it, end);
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_chars(span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<char>(s);
 }
-
-
-
-
-
-template <int&... ExplicitArgumentBarrier, typename Container>
-constexpr auto make_span(Container&& container) noexcept {
-  using T =
-      std::remove_pointer_t<decltype(std::data(std::declval<Container>()))>;
-  using Extent = internal::Extent<Container>;
-  return span<T, Extent::value>(std::forward<Container>(container));
+template <typename ElementType, size_t Extent, typename InternalPtrType>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_chars(allow_nonunique_obj_t,
+                                 span<ElementType, Extent, InternalPtrType> s) {
+  return internal::as_byte_span<char>(s);
 }
 
 
 
 
-
-
-
-
-
-template <size_t N, int&... ExplicitArgumentBarrier, typename It>
-constexpr auto make_span(It it, StrictNumeric<size_t> size) noexcept {
-  using T = std::remove_reference_t<iter_reference_t<It>>;
-  return span<T, N>(it, size);
+template <typename T>
+constexpr auto span_from_ref(const T& t LIFETIME_BOUND) {
+  
+  
+  return UNSAFE_BUFFERS(span<const T, 1>(std::addressof(t), 1u));
+}
+template <typename T>
+constexpr auto span_from_ref(T& t LIFETIME_BOUND) {
+  
+  
+  return UNSAFE_BUFFERS(span<T, 1>(std::addressof(t), 1u));
 }
 
-template <size_t N,
-          int&... ExplicitArgumentBarrier,
-          typename It,
-          typename End,
-          typename = std::enable_if_t<!std::is_convertible_v<End, size_t>>>
-constexpr auto make_span(It it, End end) noexcept {
-  using T = std::remove_reference_t<iter_reference_t<It>>;
-  return span<T, N>(it, end);
+
+
+
+template <typename T>
+  requires(internal::CanSafelyConvertToByteSpan<T>)
+constexpr auto byte_span_from_ref(const T& t LIFETIME_BOUND) {
+  return as_bytes(span_from_ref(t));
+}
+template <typename T>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<T>)
+constexpr auto byte_span_from_ref(allow_nonunique_obj_t,
+                                  const T& t LIFETIME_BOUND) {
+  return as_bytes(allow_nonunique_obj, span_from_ref(t));
+}
+template <typename T>
+  requires(internal::CanSafelyConvertToByteSpan<T>)
+constexpr auto byte_span_from_ref(T& t LIFETIME_BOUND) {
+  return as_writable_bytes(span_from_ref(t));
+}
+template <typename T>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<T>)
+constexpr auto byte_span_from_ref(allow_nonunique_obj_t, T& t LIFETIME_BOUND) {
+  return as_writable_bytes(allow_nonunique_obj, span_from_ref(t));
 }
 
-template <size_t N, int&... ExplicitArgumentBarrier, typename Container>
-constexpr auto make_span(Container&& container) noexcept {
-  using T =
-      std::remove_pointer_t<decltype(std::data(std::declval<Container>()))>;
-  return span<T, N>(std::data(container), std::size(container));
+
+
+
+
+
+
+
+
+template <typename CharT, size_t Extent>
+constexpr auto span_from_cstring(const CharT (&str LIFETIME_BOUND)[Extent])
+    ENABLE_IF_ATTR(str[Extent - 1u] == CharT{0},
+                   "requires string literal as input") {
+  return span(str).template first<Extent - 1>();
+}
+
+
+
+
+
+template <typename CharT, size_t Extent>
+constexpr auto span_with_nul_from_cstring(
+    const CharT (&str LIFETIME_BOUND)[Extent])
+    ENABLE_IF_ATTR(str[Extent - 1u] == CharT{0},
+                   "requires string literal as input") {
+  return span(str);
+}
+
+
+
+
+template <typename CharT, size_t Extent>
+constexpr auto byte_span_from_cstring(const CharT (&str LIFETIME_BOUND)[Extent])
+    ENABLE_IF_ATTR(str[Extent - 1u] == CharT{0},
+                   "requires string literal as input") {
+  
+  
+  
+  return as_bytes(span(str).template first<Extent - 1>());
+}
+
+
+
+
+template <typename CharT, size_t Extent>
+constexpr auto byte_span_with_nul_from_cstring(
+    const CharT (&str LIFETIME_BOUND)[Extent])
+    ENABLE_IF_ATTR(str[Extent - 1u] == CharT{0},
+                   "requires string literal as input") {
+  
+  
+  
+  return as_bytes(span(str));
+}
+
+
+
+
+
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFrom<const T&>)
+constexpr auto as_byte_span(const T& t LIFETIME_BOUND) {
+  return as_bytes(span(t));
+}
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFromNonUnique<const T&>)
+constexpr auto as_byte_span(allow_nonunique_obj_t, const T& t LIFETIME_BOUND) {
+  return as_bytes(allow_nonunique_obj, span(t));
+}
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFrom<const T&> &&
+           std::ranges::borrowed_range<T>)
+constexpr auto as_byte_span(const T& t) {
+  return as_bytes(span(t));
+}
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFromNonUnique<const T&> &&
+           std::ranges::borrowed_range<T>)
+constexpr auto as_byte_span(allow_nonunique_obj_t, const T& t) {
+  return as_bytes(allow_nonunique_obj, span(t));
+}
+
+
+
+template <int&... ExplicitArgumentBarrier, typename ElementType, size_t Extent>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType>)
+constexpr auto as_byte_span(const ElementType (&arr LIFETIME_BOUND)[Extent]) {
+  return as_bytes(span<const ElementType, Extent>(arr));
+}
+template <int&... ExplicitArgumentBarrier, typename ElementType, size_t Extent>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType>)
+constexpr auto as_byte_span(allow_nonunique_obj_t,
+                            const ElementType (&arr LIFETIME_BOUND)[Extent]) {
+  return as_bytes(allow_nonunique_obj, span<const ElementType, Extent>(arr));
+}
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFrom<T &&> &&
+           !std::is_const_v<internal::ElementTypeOfSpanConstructedFrom<T>>)
+
+
+
+constexpr auto as_writable_byte_span(T&& t) {
+  return as_writable_bytes(span(t));
+}
+template <int&... ExplicitArgumentBarrier, typename T>
+  requires(internal::ByteSpanConstructibleFromNonUnique<T &&> &&
+           !std::is_const_v<internal::ElementTypeOfSpanConstructedFrom<T>>)
+constexpr auto as_writable_byte_span(allow_nonunique_obj_t, T&& t) {
+  return as_writable_bytes(allow_nonunique_obj, span(t));
+}
+template <int&... ExplicitArgumentBarrier, typename ElementType, size_t Extent>
+  requires(internal::CanSafelyConvertToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_byte_span(
+    ElementType (&arr LIFETIME_BOUND)[Extent]) {
+  return as_writable_bytes(span<ElementType, Extent>(arr));
+}
+template <int&... ExplicitArgumentBarrier, typename ElementType, size_t Extent>
+  requires(internal::CanSafelyConvertNonUniqueToByteSpan<ElementType> &&
+           !std::is_const_v<ElementType>)
+constexpr auto as_writable_byte_span(
+    allow_nonunique_obj_t,
+    ElementType (&arr LIFETIME_BOUND)[Extent]) {
+  return as_writable_bytes(allow_nonunique_obj, span<ElementType, Extent>(arr));
 }
 
 }  
-
-
-
-
-
-
-
-
-#define EXTENT(x)                                        \
-  ::base::internal::must_not_be_dynamic_extent<decltype( \
-      ::base::make_span(x))::extent>()
 
 #endif  

@@ -7,73 +7,21 @@
 
 #include <stddef.h>
 
-#include <map>
-#include <set>
-
-#include <string>
-
 #include "sandbox/win/src/interception.h"
-#include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/target_process.h"
 
 namespace sandbox {
 
 
-
-
-typedef std::map<const std::wstring, std::set<std::wstring>> HandleMap;
-
-
-struct HandleListEntry {
-  size_t record_bytes;     
-  size_t offset_to_names;  
-  size_t name_count;
-  wchar_t handle_type[1];
+struct HandleCloserConfig {
+  bool handle_closer_enabled;  
+  bool section_windows_global_shell_counters;
+  bool file_device_api;
+  bool file_ksecdd;
+  bool disconnect_csrss;
 };
 
-
-struct HandleCloserInfo {
-  size_t record_bytes;  
-  size_t num_handle_types;
-  struct HandleListEntry handle_entries[1];
-};
-
-SANDBOX_INTERCEPT HandleCloserInfo* g_handle_closer_info;
-
-
-class HandleCloser {
- public:
-  HandleCloser();
-
-  HandleCloser(const HandleCloser&) = delete;
-  HandleCloser& operator=(const HandleCloser&) = delete;
-
-  ~HandleCloser();
-
-  
-  
-  
-  
-  ResultCode AddHandle(const wchar_t* handle_type, const wchar_t* handle_name);
-
-  
-  
-  bool InitializeTargetHandles(TargetProcess& target);
-
- private:
-  
-  friend class PolicyDiagnostic;
-
-  
-  
-  size_t GetBufferSize();
-
-  
-  bool SetupHandleList(void* buffer, size_t buffer_bytes);
-
-  HandleMap handles_to_close_;
-  std::vector<uint8_t> serialized_map_;
-};
+SANDBOX_INTERCEPT HandleCloserConfig g_handle_closer_info;
 
 }  
 

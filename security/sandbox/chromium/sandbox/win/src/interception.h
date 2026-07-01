@@ -17,16 +17,14 @@
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/raw_ref.h"
+#include "base/types/expected.h"
+#include "sandbox/win/src/interception_internal.h"
 #include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 namespace sandbox {
 
 class TargetProcess;
-
-
-struct DllPatchInfo;
-struct DllInterceptionData;
 
 
 
@@ -202,10 +200,9 @@ class InterceptionManager {
   
   
   
-  
-  ResultCode PatchClientFunctions(DllInterceptionData* thunks,
-                                  size_t thunk_bytes,
-                                  DllInterceptionData* dll_data);
+  base::expected<PatchClientResultData, ResultCode> PatchClientFunctions(
+      DllInterceptionData* thunks,
+      size_t thunk_bytes);
 
   
   const raw_ref<TargetProcess> child_;

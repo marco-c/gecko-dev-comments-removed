@@ -5,12 +5,12 @@
 #ifndef BASE_WIN_SECURITY_UTIL_H_
 #define BASE_WIN_SECURITY_UTIL_H_
 
+#include <optional>
 #include <vector>
 
 #include "base/base_export.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
@@ -39,6 +39,13 @@ BASE_EXPORT bool DenyAccessToPath(const FilePath& path,
                                   bool recursive = true);
 
 
+
+BASE_EXPORT bool HasAccessToPath(const FilePath& path,
+                                 const std::vector<Sid>& sids,
+                                 DWORD access_mask,
+                                 DWORD inheritance);
+
+
 BASE_EXPORT std::vector<Sid> CloneSidVector(const std::vector<Sid>& sids);
 
 
@@ -47,7 +54,7 @@ BASE_EXPORT void AppendSidVector(std::vector<Sid>& base_sids,
 
 
 
-BASE_EXPORT absl::optional<ACCESS_MASK> GetGrantedAccess(HANDLE handle);
+BASE_EXPORT std::optional<ACCESS_MASK> GetGrantedAccess(HANDLE handle);
 
 }  
 }  

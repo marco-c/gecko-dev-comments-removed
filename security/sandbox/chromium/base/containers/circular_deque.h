@@ -8,19 +8,22 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
-#include <type_traits>
 #include <utility>
 
 #include "base/check.h"
+#include "base/containers/span.h"
 #include "base/containers/vector_buffer.h"
 #include "base/dcheck_is_on.h"
 #include "base/memory/raw_ptr_exclusion.h"
-#include "base/ranges/algorithm.h"
-#include "base/template_util.h"
+#include "base/numerics/checked_math.h"
+#include "base/numerics/safe_conversions.h"
+#include "base/types/cxx23_from_range.h"
 
 #if DCHECK_IS_ON()
 #include <ostream>
 #endif
+
+
 
 
 
@@ -136,28 +139,36 @@ constexpr size_t kCircularBufferInitialCapacity = 3;
 template <typename T>
 class circular_deque_const_iterator {
  public:
-  using difference_type = std::ptrdiff_t;
+  using difference_type = ptrdiff_t;
   using value_type = T;
   using pointer = const T*;
   using reference = const T&;
   using iterator_category = std::random_access_iterator_tag;
 
-  circular_deque_const_iterator() : parent_deque_(nullptr), index_(0) {
-#if DCHECK_IS_ON()
-    created_generation_ = 0;
-#endif  
-  }
+  circular_deque_const_iterator() = default;
 
   
   const T& operator*() const {
+    CHECK_NE(index_, end_);
     CheckUnstableUsage();
-    parent_deque_->CheckValidIndex(index_);
-    return parent_deque_->buffer_[index_];
+    CheckValidIndex(index_);
+    
+    
+    
+    
+    
+    return UNSAFE_BUFFERS(buffer_[index_]);
   }
   const T* operator->() const {
+    CHECK_NE(index_, end_);
     CheckUnstableUsage();
-    parent_deque_->CheckValidIndex(index_);
-    return &parent_deque_->buffer_[index_];
+    CheckValidIndex(index_);
+    
+    
+    
+    
+    
+    return &UNSAFE_BUFFERS(buffer_[index_]);
   }
   const value_type& operator[](difference_type i) const { return *(*this + i); }
 
@@ -218,35 +229,34 @@ class circular_deque_const_iterator {
     lhs.CheckComparable(rhs);
     return lhs.index_ == rhs.index_;
   }
-  friend bool operator!=(const circular_deque_const_iterator& lhs,
-                         const circular_deque_const_iterator& rhs) {
-    return !(lhs == rhs);
-  }
-  friend bool operator<(const circular_deque_const_iterator& lhs,
-                        const circular_deque_const_iterator& rhs) {
+  friend std::strong_ordering operator<=>(
+      const circular_deque_const_iterator& lhs,
+      const circular_deque_const_iterator& rhs) {
     lhs.CheckComparable(rhs);
-    return lhs.OffsetFromBegin() < rhs.OffsetFromBegin();
-  }
-  friend bool operator<=(const circular_deque_const_iterator& lhs,
-                         const circular_deque_const_iterator& rhs) {
-    return !(lhs > rhs);
-  }
-  friend bool operator>(const circular_deque_const_iterator& lhs,
-                        const circular_deque_const_iterator& rhs) {
-    lhs.CheckComparable(rhs);
-    return lhs.OffsetFromBegin() > rhs.OffsetFromBegin();
-  }
-  friend bool operator>=(const circular_deque_const_iterator& lhs,
-                         const circular_deque_const_iterator& rhs) {
-    return !(lhs < rhs);
+    
+    
+    return lhs.OffsetFromBegin() <=> rhs.OffsetFromBegin();
   }
 
  protected:
   friend class circular_deque<T>;
 
   circular_deque_const_iterator(const circular_deque<T>* parent, size_t index)
-      : parent_deque_(parent), index_(index) {
+      : buffer_(parent->buffer_.data()),
+        cap_(parent->buffer_.capacity()),
+        begin_(parent->begin_),
+        end_(parent->end_),
+        index_(index) {
+    if (begin_ <= end_) {
+      CHECK_GE(index_, begin_);
+      CHECK_LE(index_, end_);
+    } else if (index_ >= begin_) {
+      CHECK(index_ < cap_);
+    } else {
+      CHECK(index_ <= end_);
+    }
 #if DCHECK_IS_ON()
+    parent_deque_ = parent;
     created_generation_ = parent->generation_;
 #endif  
   }
@@ -254,84 +264,129 @@ class circular_deque_const_iterator {
   
   
   size_t OffsetFromBegin() const {
-    if (index_ >= parent_deque_->begin_)
-      return index_ - parent_deque_->begin_;  
-    return parent_deque_->buffer_.capacity() - parent_deque_->begin_ + index_;
+    if (index_ >= begin_) {
+      return index_ - begin_;  
+    }
+    return cap_ - begin_ + index_;
+  }
+
+  
+  size_t Size() const {
+    if (begin_ <= end_) {
+      return end_ - begin_;
+    }
+    return cap_ - begin_ + end_;
   }
 
   
   void Increment() {
     CheckUnstableUsage();
-    parent_deque_->CheckValidIndex(index_);
+    CheckValidIndex(index_);
+    CHECK_NE(index_, end_);
     index_++;
-    if (index_ == parent_deque_->buffer_.capacity())
-      index_ = 0;
+    if (index_ == cap_) {
+      index_ = 0u;
+    }
   }
   void Decrement() {
     CheckUnstableUsage();
-    parent_deque_->CheckValidIndexOrEnd(index_);
-    if (index_ == 0)
-      index_ = parent_deque_->buffer_.capacity() - 1;
-    else
+    CheckValidIndexOrEnd(index_);
+    CHECK_NE(index_, begin_);
+    if (index_ == 0u) {
+      index_ = cap_ - 1u;
+    } else {
       index_--;
+    }
   }
   void Add(difference_type delta) {
     CheckUnstableUsage();
 #if DCHECK_IS_ON()
-    if (delta <= 0)
-      parent_deque_->CheckValidIndexOrEnd(index_);
-    else
-      parent_deque_->CheckValidIndex(index_);
+    if (delta <= 0) {
+      CheckValidIndexOrEnd(index_);
+    } else {
+      CheckValidIndex(index_);
+    }
 #endif
     
     
     
     
-    if (delta == 0)
+    if (delta == 0) {
       return;
+    }
 
-    difference_type new_offset = OffsetFromBegin() + delta;
-    DCHECK(new_offset >= 0 &&
-           new_offset <= static_cast<difference_type>(parent_deque_->size()));
-    index_ = (new_offset + parent_deque_->begin_) %
-             parent_deque_->buffer_.capacity();
+    const auto offset_from_begin =
+        
+        
+        static_cast<difference_type>(OffsetFromBegin());
+    const auto deque_size =
+        
+        
+        static_cast<difference_type>(Size());
+    if (delta >= 0) {
+      
+      CHECK_LE(delta, deque_size - offset_from_begin);
+    } else {
+      
+      
+      
+      CHECK_GE(delta, -offset_from_begin) << offset_from_begin;
+    }
+    const auto new_offset =
+        
+        
+        
+        static_cast<size_t>(offset_from_begin + delta);
+    index_ = (new_offset + begin_) % cap_;
   }
 
 #if DCHECK_IS_ON()
+  void CheckValidIndexOrEnd(size_t index) const {
+    parent_deque_->CheckValidIndexOrEnd(index_);
+  }
+  void CheckValidIndex(size_t index) const {
+    parent_deque_->CheckValidIndex(index_);
+  }
   void CheckUnstableUsage() const {
     DCHECK(parent_deque_);
     
     
     
-    DCHECK(created_generation_ == parent_deque_->generation_)
+    DCHECK_EQ(created_generation_, parent_deque_->generation_)
         << "circular_deque iterator dereferenced after mutation.";
   }
   void CheckComparable(const circular_deque_const_iterator& other) const {
-    DCHECK(parent_deque_ == other.parent_deque_);
+    DCHECK_EQ(parent_deque_, other.parent_deque_);
     
     
     
     
-    DCHECK(created_generation_ == other.created_generation_);
+    DCHECK_EQ(created_generation_, other.created_generation_);
   }
 #else
   inline void CheckUnstableUsage() const {}
   inline void CheckComparable(const circular_deque_const_iterator&) const {}
+  void CheckValidIndexOrEnd(size_t index) const {}
+  void CheckValidIndex(size_t index) const {}
 #endif  
 
   
   
   
   
-  RAW_PTR_EXCLUSION const circular_deque<T>* parent_deque_;
+  RAW_PTR_EXCLUSION const T* buffer_ = nullptr;
 
-  size_t index_;
+  size_t cap_ = 0u;
+  size_t begin_ = 0u;
+  size_t end_ = 0u;
+  size_t index_ = 0u;
 
 #if DCHECK_IS_ON()
+  RAW_PTR_EXCLUSION const circular_deque<T>* parent_deque_ = nullptr;
   
   
   
-  uint64_t created_generation_;
+  uint64_t created_generation_ = 0u;
 #endif  
 };
 
@@ -414,7 +469,7 @@ class circular_deque {
 
  public:
   using value_type = T;
-  using size_type = std::size_t;
+  using size_type = size_t;
   using difference_type = std::ptrdiff_t;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -429,29 +484,56 @@ class circular_deque {
   
   
 
+  
   constexpr circular_deque() = default;
 
   
   explicit circular_deque(size_type count) { resize(count); }
+
+  
   circular_deque(size_type count, const T& value) { resize(count, value); }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
   template <class InputIterator>
-  circular_deque(InputIterator first, InputIterator last) {
-    assign(first, last);
+    requires(std::input_iterator<InputIterator>)
+  UNSAFE_BUFFER_USAGE circular_deque(InputIterator first, InputIterator last)
+      : circular_deque() {
+    
+    
+    UNSAFE_BUFFERS(assign(first, last));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Range>
+    requires(std::ranges::input_range<Range>)
+  circular_deque(base::from_range_t, Range&& value) : circular_deque() {
+    assign_range(std::forward<Range>(value));
   }
 
   
   circular_deque(const circular_deque& other) : buffer_(other.size() + 1) {
-    assign(other.begin(), other.end());
+    assign_range(other);
   }
   circular_deque(circular_deque&& other) noexcept
       : buffer_(std::move(other.buffer_)),
-        begin_(other.begin_),
-        end_(other.end_) {
-    other.begin_ = 0;
-    other.end_ = 0;
-  }
+        begin_(std::exchange(other.begin_, 0u)),
+        end_(std::exchange(other.end_, 0u)) {}
 
   circular_deque(std::initializer_list<value_type> init) { assign(init); }
 
@@ -463,60 +545,82 @@ class circular_deque {
   
 
   circular_deque& operator=(const circular_deque& other) {
-    if (&other == this)
+    if (&other == this) {
       return *this;
+    }
 
     reserve(other.size());
-    assign(other.begin(), other.end());
+    assign_range(other);
     return *this;
   }
   circular_deque& operator=(circular_deque&& other) noexcept {
-    if (&other == this)
+    if (&other == this) {
       return *this;
+    }
 
     
     
     ClearRetainCapacity();
     buffer_ = std::move(other.buffer_);
-    begin_ = other.begin_;
-    end_ = other.end_;
-
-    other.begin_ = 0;
-    other.end_ = 0;
-
+    begin_ = std::exchange(other.begin_, 0u);
+    end_ = std::exchange(other.end_, 0u);
     IncrementGeneration();
     return *this;
   }
   circular_deque& operator=(std::initializer_list<value_type> ilist) {
     reserve(ilist.size());
-    assign(std::begin(ilist), std::end(ilist));
+    assign_range(ilist);
     return *this;
   }
 
   void assign(size_type count, const value_type& value) {
     ClearRetainCapacity();
     reserve(count);
-    for (size_t i = 0; i < count; i++)
+    for (size_t i = 0; i < count; i++) {
       emplace_back(value);
+    }
     IncrementGeneration();
   }
 
   
+  
+  
+  
+  
+  
+  
   template <typename InputIterator>
-  std::enable_if_t<::base::internal::is_iterator<InputIterator>::value, void>
-  assign(InputIterator first, InputIterator last) {
+    requires(std::forward_iterator<InputIterator>)
+  UNSAFE_BUFFER_USAGE void assign(InputIterator first, InputIterator last) {
     
     
     
     ClearRetainCapacity();
-    for (; first != last; ++first)
+    
+    
+    
+    
+    
+    for (; first != last; UNSAFE_BUFFERS(++first)) {
       emplace_back(*first);
+    }
     IncrementGeneration();
   }
 
-  void assign(std::initializer_list<value_type> value) {
-    reserve(std::distance(value.begin(), value.end()));
-    assign(value.begin(), value.end());
+  
+  
+  void assign(std::initializer_list<value_type> value) { assign_range(value); }
+
+  
+  
+  
+  template <typename Range>
+    requires(std::ranges::input_range<Range>)
+  void assign_range(Range&& range) {
+    reserve(std::ranges::distance(range));
+    
+    
+    UNSAFE_BUFFERS(assign(std::ranges::begin(range), std::ranges::end(range)));
   }
 
   
@@ -525,38 +629,36 @@ class circular_deque {
   
 
   const value_type& at(size_type i) const {
-    DCHECK(i < size());
+    CHECK_LT(i, size());
     size_t right_size = buffer_.capacity() - begin_;
-    if (begin_ <= end_ || i < right_size)
+    if (begin_ <= end_ || i < right_size) {
       return buffer_[begin_ + i];
+    }
     return buffer_[i - right_size];
   }
   value_type& at(size_type i) {
     return const_cast<value_type&>(std::as_const(*this).at(i));
   }
 
-  value_type& operator[](size_type i) {
-    return const_cast<value_type&>(std::as_const(*this)[i]);
-  }
-
   const value_type& operator[](size_type i) const { return at(i); }
+  value_type& operator[](size_type i) { return at(i); }
 
   value_type& front() {
-    DCHECK(!empty());
+    CHECK(!empty());
     return buffer_[begin_];
   }
   const value_type& front() const {
-    DCHECK(!empty());
+    CHECK(!empty());
     return buffer_[begin_];
   }
 
   value_type& back() {
-    DCHECK(!empty());
-    return *(--end());
+    CHECK(!empty());
+    return *(end() - 1);
   }
   const value_type& back() const {
-    DCHECK(!empty());
-    return *(--end());
+    CHECK(!empty());
+    return *(end() - 1);
   }
 
   
@@ -594,8 +696,9 @@ class circular_deque {
   
   
   void reserve(size_type new_capacity) {
-    if (new_capacity > capacity())
+    if (new_capacity > capacity()) {
       SetCapacityTo(new_capacity);
+    }
   }
 
   size_type capacity() const {
@@ -607,8 +710,9 @@ class circular_deque {
     if (empty()) {
       
       
-      if (buffer_.capacity())
+      if (buffer_.capacity()) {
         buffer_ = VectorBuffer();
+      }
     } else {
       SetCapacityTo(size());
     }
@@ -628,8 +732,9 @@ class circular_deque {
   bool empty() const { return begin_ == end_; }
 
   size_type size() const {
-    if (begin_ <= end_)
+    if (begin_ <= end_) {
       return end_ - begin_;
+    }
     return buffer_.capacity() - begin_ + end_;
   }
 
@@ -652,8 +757,9 @@ class circular_deque {
       
       
       ExpandCapacityIfNecessary(count - size());
-      while (size() < count)
+      while (size() < count) {
         emplace_back();
+      }
     } else if (count < size()) {
       size_t new_end = (begin_ + count) % buffer_.capacity();
       DestructRange(new_end, end_);
@@ -667,8 +773,9 @@ class circular_deque {
     
     if (count > size()) {
       ExpandCapacityIfNecessary(count - size());
-      while (size() < count)
+      while (size() < count) {
         emplace_back(value);
+      }
     } else if (count < size()) {
       size_t new_end = (begin_ + count) % buffer_.capacity();
       DestructRange(new_end, end_);
@@ -699,35 +806,34 @@ class circular_deque {
     
     if (pos == begin()) {
       ExpandCapacityIfNecessary(count);
-      for (size_t i = 0; i < count; i++)
+      for (size_t i = 0; i < count; i++) {
         push_front(value);
+      }
       return;
     }
 
+    CHECK_LT(pos.index_, buffer_.capacity());
     iterator insert_cur(this, pos.index_);
     iterator insert_end;
     MakeRoomFor(count, &insert_cur, &insert_end);
     while (insert_cur < insert_end) {
-      new (&buffer_[insert_cur.index_]) T(value);
+      std::construct_at(buffer_.get_at(insert_cur.index_), value);
       ++insert_cur;
     }
 
     IncrementGeneration();
   }
 
-  
-  
   template <class InputIterator>
-  std::enable_if_t<::base::internal::is_iterator<InputIterator>::value, void>
-  insert(const_iterator pos, InputIterator first, InputIterator last) {
+    requires(std::forward_iterator<InputIterator>)
+  void insert(const_iterator pos, InputIterator first, InputIterator last) {
     ValidateIterator(pos);
 
-    const difference_type inserted_items_signed = std::distance(first, last);
-    if (inserted_items_signed == 0)
+    const size_t inserted_items =
+        checked_cast<size_t>(std::distance(first, last));
+    if (inserted_items == 0u) {
       return;  
-    CHECK(inserted_items_signed > 0);
-    const size_type inserted_items =
-        static_cast<size_type>(inserted_items_signed);
+    }
 
     
     iterator insert_cur;
@@ -736,20 +842,34 @@ class circular_deque {
       
       
       ExpandCapacityIfNecessary(inserted_items);
-      insert_end = begin();
-      begin_ =
-          (begin_ + buffer_.capacity() - inserted_items) % buffer_.capacity();
+      const size_t old_begin = begin_;
+      begin_ = (old_begin + buffer_.capacity() - inserted_items) %
+               buffer_.capacity();
       insert_cur = begin();
+      insert_end = iterator(this, old_begin);
     } else {
+      CHECK_LT(pos.index_, buffer_.capacity());
       insert_cur = iterator(this, pos.index_);
       MakeRoomFor(inserted_items, &insert_cur, &insert_end);
     }
 
     
     while (insert_cur < insert_end) {
-      new (&buffer_[insert_cur.index_]) T(*first);
+      std::construct_at(buffer_.get_at(insert_cur.index_), *first);
       ++insert_cur;
-      ++first;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      UNSAFE_BUFFERS(++first);
     }
 
     IncrementGeneration();
@@ -776,10 +896,12 @@ class circular_deque {
     
     IncrementGeneration();
 
+    CHECK_LT(pos.index_, buffer_.capacity());
     iterator insert_begin(this, pos.index_);
     iterator insert_end;
     MakeRoomFor(1, &insert_begin, &insert_end);
-    new (&buffer_[insert_begin.index_]) T(std::forward<Args>(args)...);
+    std::construct_at(buffer_.get_at(insert_begin.index_),
+                      std::forward<Args>(args)...);
 
     return insert_begin;
   }
@@ -791,51 +913,53 @@ class circular_deque {
   
   
   iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
-  iterator erase(const_iterator first, const_iterator last) {
-    ValidateIterator(first);
-    ValidateIterator(last);
+  iterator erase(const_iterator pos_begin, const_iterator pos_end) {
+    ValidateIterator(pos_begin);
+    ValidateIterator(pos_end);
 
     IncrementGeneration();
 
-    
-    if (first.index_ == last.index_) {
+    if (pos_begin.index_ == pos_end.index_) {
       
       
-      return iterator(this, first.index_);
-    } else if (first.index_ < last.index_) {
-      
-      buffer_.DestructRange(&buffer_[first.index_], &buffer_[last.index_]);
-    } else {
-      
-      buffer_.DestructRange(&buffer_[first.index_],
-                            &buffer_[buffer_.capacity()]);
-      buffer_.DestructRange(&buffer_[0], &buffer_[last.index_]);
+      return iterator(this, pos_begin.index_);
     }
 
-    if (first.index_ == begin_) {
+    
+    DestructRange(pos_begin.index_, pos_end.index_);
+
+    if (pos_begin.index_ == begin_) {
       
       
-      begin_ = last.index_;
-      return iterator(this, last.index_);
+      begin_ = pos_end.index_;
+      return iterator(this, pos_end.index_);
     }
 
     
     
-    iterator move_src(this, last.index_);
-    iterator move_src_end = end();
-    iterator move_dest(this, first.index_);
-    for (; move_src < move_src_end; move_src++, move_dest++) {
-      buffer_.MoveRange(&buffer_[move_src.index_],
-                        &buffer_[move_src.index_ + 1],
-                        &buffer_[move_dest.index_]);
+    
+    
+    
+    
+    
+    
+    size_t move_src = pos_end.index_;
+    const size_t move_src_end = end_;
+    size_t move_dest = pos_begin.index_;
+    const size_t cap = buffer_.capacity();
+    while (move_src != move_src_end) {
+      VectorBuffer::MoveConstructRange(buffer_.subspan(move_src, 1u),
+                                       buffer_.subspan(move_dest, 1u));
+      move_src = (move_src + 1u) % cap;
+      move_dest = (move_dest + 1u) % cap;
     }
 
-    end_ = move_dest.index_;
+    end_ = move_dest;
 
     
     
     
-    return iterator(this, first.index_);
+    return iterator(this, pos_begin.index_);
   }
 
   
@@ -850,33 +974,36 @@ class circular_deque {
   template <class... Args>
   reference emplace_front(Args&&... args) {
     ExpandCapacityIfNecessary(1);
-    if (begin_ == 0)
+    if (begin_ == 0) {
       begin_ = buffer_.capacity() - 1;
-    else
+    } else {
       begin_--;
+    }
     IncrementGeneration();
-    new (&buffer_[begin_]) T(std::forward<Args>(args)...);
+    std::construct_at(buffer_.get_at(begin_), std::forward<Args>(args)...);
     return front();
   }
 
   template <class... Args>
   reference emplace_back(Args&&... args) {
     ExpandCapacityIfNecessary(1);
-    new (&buffer_[end_]) T(std::forward<Args>(args)...);
-    if (end_ == buffer_.capacity() - 1)
+    std::construct_at(buffer_.get_at(end_), std::forward<Args>(args)...);
+    if (end_ == buffer_.capacity() - 1) {
       end_ = 0;
-    else
+    } else {
       end_++;
+    }
     IncrementGeneration();
     return back();
   }
 
   void pop_front() {
-    DCHECK(size());
-    buffer_.DestructRange(&buffer_[begin_], &buffer_[begin_ + 1]);
+    CHECK(!empty());
+    DestructRange(begin_, begin_ + 1u);
     begin_++;
-    if (begin_ == buffer_.capacity())
+    if (begin_ == buffer_.capacity()) {
       begin_ = 0;
+    }
 
     ShrinkCapacityIfNecessary();
 
@@ -887,12 +1014,13 @@ class circular_deque {
     IncrementGeneration();
   }
   void pop_back() {
-    DCHECK(size());
-    if (end_ == 0)
+    CHECK(!empty());
+    if (end_ == 0) {
       end_ = buffer_.capacity() - 1;
-    else
+    } else {
       end_--;
-    buffer_.DestructRange(&buffer_[end_], &buffer_[end_ + 1]);
+    }
+    DestructRange(end_, end_ + 1u);
 
     ShrinkCapacityIfNecessary();
 
@@ -919,29 +1047,34 @@ class circular_deque {
   
   
   
-  static void MoveBuffer(VectorBuffer& from_buf,
-                         size_t from_begin,
-                         size_t from_end,
-                         VectorBuffer* to_buf,
-                         size_t* to_begin,
-                         size_t* to_end) {
-    size_t from_capacity = from_buf.capacity();
-
+  
+  
+  
+  
+  
+  UNSAFE_BUFFER_USAGE static void MoveBuffer(VectorBuffer& from_buf,
+                                             size_t from_begin,
+                                             size_t from_end,
+                                             VectorBuffer& to_buf,
+                                             size_t* to_begin,
+                                             size_t* to_end) {
     *to_begin = 0;
     if (from_begin < from_end) {
       
-      from_buf.MoveRange(&from_buf[from_begin], &from_buf[from_end],
-                         to_buf->begin());
+      VectorBuffer::MoveConstructRange(
+          from_buf.subspan(from_begin, from_end - from_begin),
+          to_buf.subspan(0u, from_end - from_begin));
       *to_end = from_end - from_begin;
     } else if (from_begin > from_end) {
       
-      from_buf.MoveRange(&from_buf[from_begin], &from_buf[from_capacity],
-                         to_buf->begin());
-      size_t right_size = from_capacity - from_begin;
+      span<T> right_side = from_buf.subspan(from_begin);
+      VectorBuffer::MoveConstructRange(right_side,
+                                       to_buf.subspan(0u, right_side.size()));
       
-      from_buf.MoveRange(&from_buf[0], &from_buf[from_end],
-                         &(*to_buf)[right_size]);
-      *to_end = right_size + from_end;
+      span<T> left_side = from_buf.subspan(0u, from_end);
+      VectorBuffer::MoveConstructRange(
+          left_side, to_buf.subspan(right_side.size(), left_side.size()));
+      *to_end = left_side.size() + right_side.size();
     } else {
       
       *to_end = 0;
@@ -953,14 +1086,25 @@ class circular_deque {
   void SetCapacityTo(size_t new_capacity) {
     
     
-    VectorBuffer new_buffer(new_capacity + 1);
-    MoveBuffer(buffer_, begin_, end_, &new_buffer, &begin_, &end_);
+    VectorBuffer new_buffer(new_capacity + 1u);
+    
+    
+    UNSAFE_BUFFERS(
+        MoveBuffer(buffer_, begin_, end_, new_buffer, &begin_, &end_));
     buffer_ = std::move(new_buffer);
   }
   void ExpandCapacityIfNecessary(size_t additional_elts) {
-    size_t min_new_capacity = size() + additional_elts;
-    if (capacity() >= min_new_capacity)
+    const size_t cur_size = size();
+    const size_t cur_capacity = capacity();
+
+    
+    
+    CHECK_LE(additional_elts, PTRDIFF_MAX - cur_size);
+
+    size_t min_new_capacity = cur_size + additional_elts;
+    if (cur_capacity >= min_new_capacity) {
       return;  
+    }
 
     min_new_capacity =
         std::max(min_new_capacity, internal::kCircularBufferInitialCapacity);
@@ -968,21 +1112,21 @@ class circular_deque {
     
     
     
-    size_t new_capacity =
-        std::max(min_new_capacity, capacity() + capacity() / 4);
-    SetCapacityTo(new_capacity);
+    SetCapacityTo(std::max(min_new_capacity, cur_capacity + cur_capacity / 4u));
   }
 
   void ShrinkCapacityIfNecessary() {
     
-    if (capacity() <= internal::kCircularBufferInitialCapacity)
+    if (capacity() <= internal::kCircularBufferInitialCapacity) {
       return;
+    }
 
     
     size_t sz = size();
     size_t empty_spaces = capacity() - sz;
-    if (empty_spaces < sz)
+    if (empty_spaces < sz) {
       return;
+    }
 
     
     
@@ -998,6 +1142,10 @@ class circular_deque {
   void ClearRetainCapacity() {
     
     
+
+    
+    
+    
     DestructRange(begin_, end_);
     begin_ = 0;
     end_ = 0;
@@ -1011,10 +1159,10 @@ class circular_deque {
     if (end == begin) {
       return;
     } else if (end > begin) {
-      buffer_.DestructRange(&buffer_[begin], &buffer_[end]);
+      VectorBuffer::DestructRange(buffer_.subspan(begin, end - begin));
     } else {
-      buffer_.DestructRange(&buffer_[begin], &buffer_[buffer_.capacity()]);
-      buffer_.DestructRange(&buffer_[0], &buffer_[end]);
+      VectorBuffer::DestructRange(buffer_.subspan(begin));
+      VectorBuffer::DestructRange(buffer_.subspan(0u, end));
     }
   }
 
@@ -1032,24 +1180,26 @@ class circular_deque {
     size_t begin_offset = insert_begin->OffsetFromBegin();
     ExpandCapacityIfNecessary(count);
 
-    insert_begin->index_ = (begin_ + begin_offset) % buffer_.capacity();
-    *insert_end =
-        iterator(this, (insert_begin->index_ + count) % buffer_.capacity());
-
     
-    iterator src = end();
-    end_ = (end_ + count) % buffer_.capacity();
-    iterator dest = end();
+    
+    const size_t cap = buffer_.capacity();
+    size_t src = end_;
+    end_ = (end_ + count) % cap;
+    size_t dest = end_;
+
+    *insert_begin = iterator(this, (begin_ + begin_offset) % cap);
+    *insert_end = iterator(this, (insert_begin->index_ + count) % cap);
 
     
     
     while (true) {
-      if (src == *insert_begin)
+      if (src == insert_begin->index_) {
         break;
-      --src;
-      --dest;
-      buffer_.MoveRange(&buffer_[src.index_], &buffer_[src.index_ + 1],
-                        &buffer_[dest.index_]);
+      }
+      src = (src + cap - 1u) % cap;
+      dest = (dest + cap - 1u) % cap;
+      VectorBuffer::MoveConstructRange(buffer_.subspan(src, 1u),
+                                       buffer_.subspan(dest, 1u));
     }
   }
 
@@ -1058,16 +1208,18 @@ class circular_deque {
   
   
   void CheckValidIndex(size_t i) const {
-    if (begin_ <= end_)
+    if (begin_ <= end_) {
       DCHECK(i >= begin_ && i < end_);
-    else
+    } else {
       DCHECK((i >= begin_ && i < buffer_.capacity()) || i < end_);
+    }
   }
 
   
   void CheckValidIndexOrEnd(size_t i) const {
-    if (i != end_)
+    if (i != end_) {
       CheckValidIndex(i);
+    }
   }
 
   void ValidateIterator(const const_iterator& i) const {
@@ -1109,18 +1261,18 @@ class circular_deque {
 
 template <class T, class Value>
 size_t Erase(circular_deque<T>& container, const Value& value) {
-  auto it = ranges::remove(container, value);
-  size_t removed = std::distance(it, container.end());
-  container.erase(it, container.end());
-  return removed;
+  auto removed = std::ranges::remove(container, value);
+  size_t num_removed = removed.size();
+  container.erase(removed.begin(), removed.end());
+  return num_removed;
 }
 
 template <class T, class Predicate>
 size_t EraseIf(circular_deque<T>& container, Predicate pred) {
-  auto it = ranges::remove_if(container, pred);
-  size_t removed = std::distance(it, container.end());
-  container.erase(it, container.end());
-  return removed;
+  auto removed = std::ranges::remove_if(container, pred);
+  size_t num_removed = removed.size();
+  container.erase(removed.begin(), removed.end());
+  return num_removed;
 }
 
 }  

@@ -5,22 +5,19 @@
 #ifndef BASE_MEMORY_PLATFORM_SHARED_MEMORY_REGION_H_
 #define BASE_MEMORY_PLATFORM_SHARED_MEMORY_REGION_H_
 
+#include <stdint.h>
+
+#include <optional>
+
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/platform_shared_memory_handle.h"
 #include "base/memory/shared_memory_mapper.h"
+#include "base/types/expected.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-
-#include <stdint.h>
-
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-namespace content {
-class SandboxIPCHandler;
-}
-#endif
 
 namespace base {
 namespace subtle {
@@ -83,29 +80,31 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
     kMaxValue = GET_SHMEM_TEMP_DIR_FAILURE
   };
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-  
-  struct ExecutableRegion {
-   private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static ScopedFD CreateFD(size_t size);
-
-    friend class content::SandboxIPCHandler;
-  };
-#endif
-
   
   
   enum { kMapMinimumAlignment = 32 };
+
+  
+  
+  
+  enum class TakeError {
+    kExpectedReadOnlyButNot,
+    kExpectedWritableButNot,
+#if BUILDFLAG(IS_ANDROID)
+    kFailedToGetAshmemRegionProtectionMask,
+#endif
+#if BUILDFLAG(IS_APPLE)
+    kVmMapFailed,
+#endif
+#if BUILDFLAG(IS_FUCHSIA)
+    kNotVmo,
+#endif
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+    kFcntlFailed,
+    kReadOnlyFdNotReadOnly,
+    kUnexpectedReadOnlyFd,
+#endif
+  };
 
   
   
@@ -119,11 +118,15 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   
+  
+  
+  
   static PlatformSharedMemoryRegion Take(
       ScopedPlatformSharedMemoryHandle handle,
       Mode mode,
       size_t size,
       const UnguessableToken& guid);
+
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)
   
   
@@ -132,6 +135,18 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
                                          size_t size,
                                          const UnguessableToken& guid);
 #endif
+
+  
+  
+  
+  
+  
+  
+  static expected<PlatformSharedMemoryRegion, TakeError> TakeOrFail(
+      ScopedPlatformSharedMemoryHandle handle,
+      Mode mode,
+      size_t size,
+      const UnguessableToken& guid);
 
   
   
@@ -194,15 +209,15 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   
-  absl::optional<span<uint8_t>> MapAt(uint64_t offset,
-                                      size_t size,
-                                      SharedMemoryMapper* mapper) const;
+  std::optional<span<uint8_t>> MapAt(uint64_t offset,
+                                     size_t size,
+                                     SharedMemoryMapper* mapper) const;
 
   
   
   static void Unmap(span<uint8_t> mapping, SharedMemoryMapper* mapper);
 
-  const UnguessableToken& GetGUID() const { return guid_; }
+  const UnguessableToken& GetGUID() const LIFETIME_BOUND { return guid_; }
 
   size_t GetSize() const { return size_; }
 
@@ -221,7 +236,8 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
 #endif
   );
 
-  static bool CheckPlatformHandlePermissionsCorrespondToMode(
+  static base::expected<void, TakeError>
+  CheckPlatformHandlePermissionsCorrespondToMode(
       PlatformSharedMemoryHandle handle,
       Mode mode,
       size_t size);

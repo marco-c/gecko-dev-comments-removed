@@ -10,6 +10,7 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/containers/span.h"
 
 namespace base {
 
@@ -29,7 +30,7 @@ namespace base {
 
 
 
-BASE_EXPORT void safe_strerror_r(int err, char *buf, size_t len);
+BASE_EXPORT void safe_strerror_r(int err, base::span<char> buf);
 
 
 

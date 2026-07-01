@@ -8,12 +8,15 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
+#include "base/containers/heap_array.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base::win {
 
@@ -37,7 +40,7 @@ class BASE_EXPORT ExplicitAccessEntry {
   ExplicitAccessEntry& operator=(ExplicitAccessEntry&&);
   ~ExplicitAccessEntry();
 
-  const Sid& sid() const { return sid_; }
+  const Sid& sid() const LIFETIME_BOUND { return sid_; }
   SecurityAccessMode mode() const { return mode_; }
   DWORD access_mask() const { return access_mask_; }
   DWORD inheritance() const { return inheritance_; }
@@ -59,13 +62,13 @@ class BASE_EXPORT AccessControlList {
  public:
   
   
-  static absl::optional<AccessControlList> FromPACL(ACL* acl);
+  static std::optional<AccessControlList> FromPACL(ACL* acl);
 
   
   
   
   
-  static absl::optional<AccessControlList> FromMandatoryLabel(
+  static std::optional<AccessControlList> FromMandatoryLabel(
       DWORD integrity_level,
       DWORD inheritance,
       DWORD mandatory_policy);
@@ -94,6 +97,18 @@ class BASE_EXPORT AccessControlList {
                 DWORD inheritance);
 
   
+  
+  
+  
+  
+  
+  
+  bool AddAccessAllowedConditionalAce(const Sid& sid,
+                                      DWORD ace_flags,
+                                      DWORD access_mask,
+                                      std::wstring_view condition);
+
+  
   AccessControlList Clone() const;
 
   
@@ -102,14 +117,21 @@ class BASE_EXPORT AccessControlList {
   
   
   
-  ACL* get() const { return reinterpret_cast<ACL*>(acl_.get()); }
+  ACL* get() { return reinterpret_cast<ACL*>(acl_.data()); }
+  const ACL* get() const { return reinterpret_cast<const ACL*>(acl_.data()); }
 
   
-  bool is_null() const { return !acl_; }
+  bool is_null() const {
+    
+    
+    
+    
+    return acl_.empty();
+  }
 
  private:
   explicit AccessControlList(const ACL* acl);
-  std::unique_ptr<uint8_t[]> acl_;
+  base::HeapArray<uint8_t> acl_;
 };
 
 }  

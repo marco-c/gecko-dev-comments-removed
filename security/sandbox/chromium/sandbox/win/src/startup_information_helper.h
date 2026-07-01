@@ -42,7 +42,7 @@ class StartupInformationHelper {
   
   
   
-  void SetAppContainer(scoped_refptr<AppContainer> container);
+  void SetAppContainer(AppContainer* container);
   
   void AddJobToAssociate(HANDLE job_handle);
 
@@ -75,10 +75,11 @@ class StartupInformationHelper {
   DWORD CountAttributes();
 
   
-  scoped_refptr<AppContainer> app_container_;
+  
+  bool enable_low_privilege_app_container_ = false;
   bool restrict_child_process_creation_ = false;
-  HANDLE stdout_handle_ = INVALID_HANDLE_VALUE;
-  HANDLE stderr_handle_ = INVALID_HANDLE_VALUE;
+  HANDLE stdout_handle_ = nullptr;
+  HANDLE stderr_handle_ = nullptr;
   bool inherit_handles_ = false;
   bool filter_environment_ = false;
   size_t mitigations_size_ = 0;

@@ -2,6 +2,11 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_libc_calls
+#endif
+
 #ifndef BASE_CONTAINERS_VECTOR_BUFFER_H_
 #define BASE_CONTAINERS_VECTOR_BUFFER_H_
 
@@ -14,7 +19,7 @@
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
-#include "base/containers/util.h"
+#include "base/containers/span.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/numerics/checked_math.h"
 
@@ -42,7 +47,7 @@ class VectorBuffer {
  public:
   constexpr VectorBuffer() = default;
 
-#if defined(__clang__) && !defined(__native_client__)
+#if defined(__clang__)
   
   
   __attribute__((no_sanitize("cfi-unrelated-cast", "vptr")))
@@ -76,114 +81,95 @@ class VectorBuffer {
   size_t capacity() const { return capacity_; }
 
   T& operator[](size_t i) {
+    CHECK_LT(i, capacity_);
     
     
-    
-    
-    
-    CHECK_LE(i, capacity_);
-    return buffer_[i];
+    return UNSAFE_BUFFERS(buffer_[i]);
   }
 
   const T& operator[](size_t i) const {
-    CHECK_LE(i, capacity_);
-    return buffer_[i];
+    CHECK_LT(i, capacity_);
+    
+    
+    return UNSAFE_BUFFERS(buffer_[i]);
   }
 
+  const T* data() const { return buffer_; }
+  T* data() { return buffer_; }
+
   T* begin() { return buffer_; }
-  T* end() { return &buffer_[capacity_]; }
+  T* end() {
+    
+    return UNSAFE_BUFFERS(buffer_ + capacity_);
+  }
+
+  span<T> as_span() {
+    
+    
+    return UNSAFE_BUFFERS(span(buffer_, buffer_ + capacity_));
+  }
+
+  span<T> subspan(size_t index) { return as_span().subspan(index); }
+
+  span<T> subspan(size_t index, size_t size) {
+    return as_span().subspan(index, size);
+  }
+
+  T* get_at(size_t index) { return as_span().get_at(index); }
 
   
 
-  
-  template <typename T2 = T,
-            std::enable_if_t<std::is_trivially_destructible_v<T2>, int> = 0>
-  void DestructRange(T* begin, T* end) {}
-
-  
-  
-  template <typename T2 = T,
-            std::enable_if_t<!std::is_trivially_destructible_v<T2>, int> = 0>
-  void DestructRange(T* begin, T* end) {
-    CHECK_LE(begin, end);
-    while (begin != end) {
-      begin->~T();
-      begin++;
+  static void DestructRange(span<T> range) {
+    
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      for (T& t : range) {
+        t.~T();
+      }
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-
-  
   
 
   template <typename T2>
   static inline constexpr bool is_trivially_copyable_or_relocatable =
       std::is_trivially_copyable_v<T2> || IS_TRIVIALLY_RELOCATABLE(T2);
 
-  template <typename T2 = T,
-            std::enable_if_t<is_trivially_copyable_or_relocatable<T2>, int> = 0>
-  static void MoveRange(T* from_begin, T* from_end, T* to) {
-    CHECK(!RangesOverlap(from_begin, from_end, to));
+  
+  
+  
+  
+  
+  static void MoveConstructRange(span<T> from, span<T> to) {
+    CHECK(!RangesOverlap(from, to));
+    CHECK_EQ(from.size(), to.size());
 
-    memcpy(
-        static_cast<void*>(to), from_begin,
-        CheckSub(get_uintptr(from_end), get_uintptr(from_begin)).ValueOrDie());
-  }
-
-  
-  
-  template <typename T2 = T,
-            std::enable_if_t<std::is_move_constructible_v<T2> &&
-                                 !is_trivially_copyable_or_relocatable<T2>,
-                             int> = 0>
-  static void MoveRange(T* from_begin, T* from_end, T* to) {
-    CHECK(!RangesOverlap(from_begin, from_end, to));
-    while (from_begin != from_end) {
-      new (to) T(std::move(*from_begin));
-      from_begin->~T();
-      from_begin++;
-      to++;
-    }
-  }
-
-  
-  
-  template <typename T2 = T,
-            std::enable_if_t<!std::is_move_constructible_v<T2> &&
-                                 !is_trivially_copyable_or_relocatable<T2>,
-                             int> = 0>
-  static void MoveRange(T* from_begin, T* from_end, T* to) {
-    CHECK(!RangesOverlap(from_begin, from_end, to));
-    while (from_begin != from_end) {
-      new (to) T(*from_begin);
-      from_begin->~T();
-      from_begin++;
-      to++;
+    if constexpr (is_trivially_copyable_or_relocatable<T>) {
+      
+      
+      
+      memcpy(static_cast<void*>(to.data()), from.data(), to.size_bytes());
+      
+      
+    } else {
+      for (size_t i = 0; i < from.size(); ++i) {
+        T* to_pointer = to.subspan(i).data();
+        if constexpr (std::move_constructible<T>) {
+          new (to_pointer) T(std::move(from[i]));
+        } else {
+          new (to_pointer) T(from[i]);
+        }
+        from[i].~T();
+      }
     }
   }
 
  private:
-  static bool RangesOverlap(const T* from_begin,
-                            const T* from_end,
-                            const T* to) {
-    const auto from_begin_uintptr = get_uintptr(from_begin);
-    const auto from_end_uintptr = get_uintptr(from_end);
-    const auto to_uintptr = get_uintptr(to);
-    return !(
-        to >= from_end ||
-        CheckAdd(to_uintptr, CheckSub(from_end_uintptr, from_begin_uintptr))
-                .ValueOrDie() <= from_begin_uintptr);
+  static bool RangesOverlap(span<T> a, span<T> b) {
+    const auto a_start = reinterpret_cast<uintptr_t>(a.data());
+    const auto a_end = reinterpret_cast<uintptr_t>(a.data()) + a.size();
+    const auto b_start = reinterpret_cast<uintptr_t>(b.data());
+    const auto b_end = reinterpret_cast<uintptr_t>(b.data()) + b.size();
+    return a_end > b_start && a_start < b_end;
   }
 
   

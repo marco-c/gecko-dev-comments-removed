@@ -7,13 +7,15 @@
 
 #include <stdint.h>
 
+#include <array>
+#include <compare>
+#include <optional>
 #include <string>
-#include <tuple>
+#include <string_view>
+#include <utility>
 
 #include "base/base_export.h"
 #include "base/containers/span.h"
-#include "base/strings/string_piece_forward.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
@@ -47,21 +49,16 @@ class BASE_EXPORT Token {
 
   constexpr bool is_zero() const { return words_[0] == 0 && words_[1] == 0; }
 
-  span<const uint8_t, 16> AsBytes() const {
-    return as_bytes(make_span(words_));
-  }
+  span<const uint8_t, 16> AsBytes() const { return as_byte_span(words_); }
 
-  constexpr bool operator==(const Token& other) const {
-    return words_[0] == other.words_[0] && words_[1] == other.words_[1];
-  }
+  friend constexpr auto operator<=>(const Token& lhs,
+                                    const Token& rhs) = default;
+  friend constexpr bool operator==(const Token& lhs,
+                                   const Token& rhs) = default;
 
-  constexpr bool operator!=(const Token& other) const {
-    return !(*this == other);
-  }
-
-  constexpr bool operator<(const Token& other) const {
-    return std::tie(words_[0], words_[1]) <
-           std::tie(other.words_[0], other.words_[1]);
+  template <typename H>
+  friend H AbslHashValue(H h, const Token& token) {
+    return H::combine(std::move(h), token.words_);
   }
 
   
@@ -69,14 +66,15 @@ class BASE_EXPORT Token {
 
   
   
-  static absl::optional<Token> FromString(StringPiece string_representation);
+  static std::optional<Token> FromString(
+      std::string_view string_representation);
 
  private:
   
   
   
 
-  uint64_t words_[2] = {0, 0};
+  std::array<uint64_t, 2> words_ = {0, 0};
 };
 
 
@@ -89,9 +87,9 @@ class PickleIterator;
 
 
 BASE_EXPORT void WriteTokenToPickle(Pickle* pickle, const Token& token);
-BASE_EXPORT absl::optional<Token> ReadTokenFromPickle(
+BASE_EXPORT std::optional<Token> ReadTokenFromPickle(
     PickleIterator* pickle_iterator);
 
 }  
 
-#endif
+#endif  

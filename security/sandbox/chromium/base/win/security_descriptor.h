@@ -7,16 +7,17 @@
 
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/files/file_path.h"
 #include "base/win/access_control_list.h"
 #include "base/win/access_token.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base::win {
 
@@ -62,13 +63,13 @@ class BASE_EXPORT SecurityDescriptor {
   
   
   
-  static absl::optional<SecurityDescriptor> FromPointer(
+  static std::optional<SecurityDescriptor> FromPointer(
       PSECURITY_DESCRIPTOR security_descriptor);
 
   
   
   
-  static absl::optional<SecurityDescriptor> FromFile(
+  static std::optional<SecurityDescriptor> FromFile(
       const base::FilePath& path,
       SECURITY_INFORMATION security_info);
 
@@ -77,7 +78,7 @@ class BASE_EXPORT SecurityDescriptor {
   
   
   
-  static absl::optional<SecurityDescriptor> FromName(
+  static std::optional<SecurityDescriptor> FromName(
       const std::wstring& name,
       SecurityObjectType object_type,
       SECURITY_INFORMATION security_info);
@@ -86,14 +87,14 @@ class BASE_EXPORT SecurityDescriptor {
   
   
   
-  static absl::optional<SecurityDescriptor> FromHandle(
+  static std::optional<SecurityDescriptor> FromHandle(
       HANDLE handle,
       SecurityObjectType object_type,
       SECURITY_INFORMATION security_info);
 
   
   
-  static absl::optional<SecurityDescriptor> FromSddl(const std::wstring& sddl);
+  static std::optional<SecurityDescriptor> FromSddl(const std::wstring& sddl);
 
   SecurityDescriptor();
   SecurityDescriptor(const SecurityDescriptor&) = delete;
@@ -128,15 +129,14 @@ class BASE_EXPORT SecurityDescriptor {
 
   
   
-  absl::optional<std::wstring> ToSddl(SECURITY_INFORMATION security_info) const;
+  std::optional<std::wstring> ToSddl(SECURITY_INFORMATION security_info) const;
 
   
   
-  
-  void ToAbsolute(SECURITY_DESCRIPTOR& sd) const;
+  SECURITY_DESCRIPTOR ToAbsolute() LIFETIME_BOUND;
 
   
-  absl::optional<SelfRelative> ToSelfRelative() const;
+  std::optional<SelfRelative> ToSelfRelative() const;
 
   
   SecurityDescriptor Clone() const;
@@ -188,7 +188,7 @@ class BASE_EXPORT SecurityDescriptor {
   
   
   
-  absl::optional<AccessCheckResult> AccessCheck(
+  std::optional<AccessCheckResult> AccessCheck(
       const AccessToken& token,
       ACCESS_MASK desired_access,
       const GENERIC_MAPPING& generic_mapping);
@@ -203,24 +203,27 @@ class BASE_EXPORT SecurityDescriptor {
   
   
   
-  absl::optional<AccessCheckResult> AccessCheck(const AccessToken& token,
-                                                ACCESS_MASK desired_access,
-                                                SecurityObjectType object_type);
+  std::optional<AccessCheckResult> AccessCheck(const AccessToken& token,
+                                               ACCESS_MASK desired_access,
+                                               SecurityObjectType object_type);
 
   
-  const absl::optional<Sid>& owner() const { return owner_; }
+  const std::optional<Sid>& owner() const { return owner_; }
+  std::optional<Sid>& owner() { return owner_; }
   void set_owner(const Sid& owner) { owner_ = owner.Clone(); }
-  void clear_owner() { owner_ = absl::nullopt; }
+  void clear_owner() { owner_ = std::nullopt; }
 
   
-  const absl::optional<Sid>& group() const { return group_; }
+  const std::optional<Sid>& group() const { return group_; }
+  std::optional<Sid>& group() { return group_; }
   void set_group(const Sid& group) { group_ = group.Clone(); }
-  void clear_group() { group_ = absl::nullopt; }
+  void clear_group() { group_ = std::nullopt; }
 
   
-  const absl::optional<AccessControlList>& dacl() const { return dacl_; }
+  const std::optional<AccessControlList>& dacl() const { return dacl_; }
+  std::optional<AccessControlList>& dacl() { return dacl_; }
   void set_dacl(const AccessControlList& dacl) { dacl_ = dacl.Clone(); }
-  void clear_dacl() { dacl_ = absl::nullopt; }
+  void clear_dacl() { dacl_ = std::nullopt; }
 
   
   bool dacl_protected() const { return dacl_protected_; }
@@ -229,9 +232,10 @@ class BASE_EXPORT SecurityDescriptor {
   }
 
   
-  const absl::optional<AccessControlList>& sacl() const { return sacl_; }
+  const std::optional<AccessControlList>& sacl() const { return sacl_; }
+  std::optional<AccessControlList>& sacl() { return sacl_; }
   void set_sacl(const AccessControlList& sacl) { sacl_ = sacl.Clone(); }
-  void clear_sacl() { sacl_ = absl::nullopt; }
+  void clear_sacl() { sacl_ = std::nullopt; }
 
   
   bool sacl_protected() const { return sacl_protected_; }
@@ -240,18 +244,18 @@ class BASE_EXPORT SecurityDescriptor {
   }
 
  private:
-  SecurityDescriptor(absl::optional<Sid>&& owner,
-                     absl::optional<Sid>&& group,
-                     absl::optional<AccessControlList>&& dacl,
+  SecurityDescriptor(std::optional<Sid>&& owner,
+                     std::optional<Sid>&& group,
+                     std::optional<AccessControlList>&& dacl,
                      bool dacl_protected,
-                     absl::optional<AccessControlList>&& sacl,
+                     std::optional<AccessControlList>&& sacl,
                      bool sacl_protected);
 
-  absl::optional<Sid> owner_;
-  absl::optional<Sid> group_;
-  absl::optional<AccessControlList> dacl_;
+  std::optional<Sid> owner_;
+  std::optional<Sid> group_;
+  std::optional<AccessControlList> dacl_;
   bool dacl_protected_ = false;
-  absl::optional<AccessControlList> sacl_;
+  std::optional<AccessControlList> sacl_;
   bool sacl_protected_ = false;
 };
 

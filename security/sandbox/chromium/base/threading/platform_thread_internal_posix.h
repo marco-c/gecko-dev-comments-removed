@@ -5,50 +5,33 @@
 #ifndef BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 #define BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 
+#include <optional>
+
 #include "base/base_export.h"
 #include "base/threading/platform_thread.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
 namespace internal {
 
-struct ThreadTypeToNiceValuePair {
-  ThreadType thread_type;
-  int nice_value;
-};
-
-struct ThreadPriorityToNiceValuePairForTest {
-  ThreadPriorityForTest priority;
+struct ThreadTypeToNiceValuePairForTest {
+  ThreadType priority;
   int nice_value;
 };
 
 
 
 
-extern const ThreadTypeToNiceValuePair kThreadTypeToNiceValueMap[7];
-
-
-
-
-extern const ThreadPriorityToNiceValuePairForTest
-    kThreadPriorityToNiceValueMapForTest[7];
+extern const ThreadTypeToNiceValuePairForTest
+    kThreadTypeToNiceValueMapForTest[7];
 
 
 
 int ThreadTypeToNiceValue(ThreadType thread_type);
 
 
-
 bool CanSetThreadTypeToRealtimeAudio();
-
-
-
-
-
-bool SetCurrentThreadTypeForPlatform(ThreadType thread_type,
-                                     MessagePumpType pump_type_hint);
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
@@ -61,12 +44,32 @@ BASE_EXPORT void InvalidateTidCache();
 
 
 
-ThreadPriorityForTest NiceValueToThreadPriorityForTest(int nice_value);
+ThreadType NiceValueToThreadTypeForTest(int nice_value);
 
-absl::optional<ThreadPriorityForTest>
-GetCurrentThreadPriorityForPlatformForTest();
+std::optional<ThreadType> GetCurrentEffectiveThreadTypeForPlatformForTest();
 
 int GetCurrentThreadNiceValue();
+int GetThreadNiceValue(PlatformThreadId id);
+
+bool SetThreadNiceFromType(PlatformThreadId thread_id, ThreadType thread_type);
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+void SetThreadTypeLinux(ProcessId process_id,
+                        PlatformThreadId thread_id,
+                        ThreadType thread_type,
+                        IsViaIPC via_ipc);
+#endif
+#if BUILDFLAG(IS_CHROMEOS)
+void SetThreadTypeChromeOS(ProcessId process_id,
+                           PlatformThreadId thread_id,
+                           ThreadType thread_type,
+                           IsViaIPC via_ipc);
+#endif
+#if BUILDFLAG(IS_CHROMEOS)
+inline constexpr auto SetThreadType = SetThreadTypeChromeOS;
+#elif BUILDFLAG(IS_LINUX)
+inline constexpr auto SetThreadType = SetThreadTypeLinux;
+#endif
 
 }  
 

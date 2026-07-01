@@ -7,8 +7,11 @@
 
 #include <stdint.h>
 #include <string.h>
+
+#include <compare>
 #include <iosfwd>
-#include <tuple>
+#include <string_view>
+#include <utility>
 
 #include "base/base_export.h"
 #include "base/check.h"
@@ -62,8 +65,17 @@ class BASE_EXPORT UnguessableToken {
   
   
   
-  static absl::optional<UnguessableToken> Deserialize(uint64_t high,
-                                                      uint64_t low);
+  static std::optional<UnguessableToken> Deserialize(uint64_t high,
+                                                     uint64_t low);
+
+  
+  
+  
+  
+  
+  
+  static std::optional<UnguessableToken> DeserializeFromString(
+      std::string_view string_representation);
 
   
   
@@ -95,19 +107,21 @@ class BASE_EXPORT UnguessableToken {
 
   span<const uint8_t, 16> AsBytes() const { return token_.AsBytes(); }
 
-  constexpr bool operator<(const UnguessableToken& other) const {
-    return token_ < other.token_;
-  }
+  friend constexpr auto operator<=>(const UnguessableToken& lhs,
+                                    const UnguessableToken& rhs) = default;
 
-  bool operator==(const UnguessableToken& other) const;
+  
+  friend BASE_EXPORT bool operator==(const UnguessableToken& lhs,
+                                     const UnguessableToken& rhs);
 
-  bool operator!=(const UnguessableToken& other) const {
-    return !(*this == other);
+  template <typename H>
+  friend H AbslHashValue(H h, const UnguessableToken& token) {
+    return H::combine(std::move(h), token.token_);
   }
 
 #if defined(UNIT_TEST)
   static UnguessableToken CreateForTesting(uint64_t high, uint64_t low) {
-    absl::optional<UnguessableToken> token = Deserialize(high, low);
+    std::optional<UnguessableToken> token = Deserialize(high, low);
     DCHECK(token.has_value());
     return token.value();
   }
@@ -119,6 +133,9 @@ class BASE_EXPORT UnguessableToken {
 
   base::Token token_;
 };
+
+BASE_EXPORT bool operator==(const UnguessableToken& lhs,
+                            const UnguessableToken& rhs);
 
 BASE_EXPORT std::ostream& operator<<(std::ostream& out,
                                      const UnguessableToken& token);

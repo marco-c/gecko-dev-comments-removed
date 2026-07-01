@@ -5,27 +5,21 @@
 #ifndef SANDBOX_WIN_SRC_WIN_UTILS_H_
 #define SANDBOX_WIN_SRC_WIN_UTILS_H_
 
+#include <stdint.h>
 #include <stdlib.h>
 
-#include <map>
 #include <memory>
+#include <optional>
 #include <string>
-#include <vector>
+#include <string_view>
 
+#include "base/containers/span.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
 
 const wchar_t kNTPrefix[] = L"\\??\\";
-const size_t kNTPrefixLen = std::size(kNTPrefix) - 1;
-
-const wchar_t kNTDevicePrefix[] = L"\\Device\\";
-const size_t kNTDevicePrefixLen = std::size(kNTDevicePrefix) - 1;
-
-
-using ProcessHandleMap = std::map<std::wstring, std::vector<HANDLE>>;
 
 
 
@@ -53,38 +47,14 @@ class SingletonBase {
 };
 
 
+std::optional<std::wstring> GetPathFromHandle(HANDLE handle);
 
 
 
-
-bool ConvertToLongPath(std::wstring* path,
-                       const std::wstring* drive_letter = nullptr);
+std::optional<std::wstring> GetNtPathFromWin32Path(const std::wstring& path);
 
 
-
-
-
-
-DWORD IsReparsePoint(const std::wstring& full_path);
-
-
-bool SameObject(HANDLE handle, const wchar_t* full_path);
-
-
-absl::optional<std::wstring> GetPathFromHandle(HANDLE handle);
-
-
-
-absl::optional<std::wstring> GetNtPathFromWin32Path(const std::wstring& path);
-
-
-absl::optional<std::wstring> GetTypeNameFromHandle(HANDLE handle);
-
-
-
-
-
-absl::optional<std::wstring> ResolveRegistryName(std::wstring name);
+std::optional<std::wstring> GetTypeNameFromHandle(HANDLE handle);
 
 
 
@@ -93,8 +63,7 @@ absl::optional<std::wstring> ResolveRegistryName(std::wstring name);
 
 
 bool CopyToChildMemory(HANDLE child,
-                       const void* local_buffer,
-                       size_t buffer_bytes,
+                       base::span<uint8_t> local_buffer,
                        void** remote_buffer);
 
 
@@ -109,16 +78,12 @@ DWORD GetLastErrorFromNtStatus(NTSTATUS status);
 void* GetProcessBaseAddress(HANDLE process);
 
 
+bool ContainsNulCharacter(std::wstring_view str);
 
 
 
-
-absl::optional<ProcessHandleMap> GetCurrentProcessHandles();
+void WarmupRandomnessInfrastructure();
 
 }  
-
-
-
-void ResolveNTFunctionPtr(const char* name, void* ptr);
 
 #endif  

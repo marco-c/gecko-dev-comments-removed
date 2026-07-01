@@ -49,16 +49,22 @@
 
 
 
+
+
+
+
 #ifndef BUILD_BUILD_CONFIG_H_
 #define BUILD_BUILD_CONFIG_H_
 
 #include "build/buildflag.h"  
 
 
-#if defined(__native_client__)
 
-#define OS_NACL 1
-#elif defined(ANDROID)
+
+
+
+
+#if defined(ANDROID)
 #define OS_ANDROID 1
 #elif defined(__APPLE__)
 
@@ -72,6 +78,12 @@
 #if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
 #define OS_IOS_MACCATALYST
 #endif  
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+#define OS_IOS_TVOS 1
+#endif  
+#if defined(TARGET_OS_WATCH) && TARGET_OS_WATCH
+#define OS_WATCHOS 1
+#endif  
 #else
 #define OS_MAC 1
 #endif  
@@ -82,7 +94,7 @@
 #define OS_LINUX 1
 #endif  
 
-#include <assert.h>
+#include <features.h>
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 
 #define LIBC_GLIBC 1
@@ -125,11 +137,11 @@
 
 
 
-#if defined(OS_AIX) || defined(OS_ANDROID) || defined(OS_ASMJS) ||  \
-    defined(OS_FREEBSD) || defined(OS_IOS) || defined(OS_LINUX) ||  \
-    defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NACL) ||  \
-    defined(OS_NETBSD) || defined(OS_OPENBSD) || defined(OS_QNX) || \
-    defined(OS_SOLARIS) || defined(OS_ZOS)
+#if defined(OS_AIX) || defined(OS_ANDROID) || defined(OS_ASMJS) ||   \
+    defined(OS_FREEBSD) || defined(OS_IOS) || defined(OS_LINUX) ||   \
+    defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NETBSD) || \
+    defined(OS_OPENBSD) || defined(OS_QNX) || defined(OS_SOLARIS) || \
+    defined(OS_ZOS)
 #define OS_POSIX 1
 #endif
 
@@ -194,6 +206,12 @@
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (0)
 #endif
 
+#if defined(OS_IOS_TVOS)
+#define BUILDFLAG_INTERNAL_IS_IOS_TVOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_IOS_TVOS() (0)
+#endif
+
 #if defined(OS_LINUX)
 #define BUILDFLAG_INTERNAL_IS_LINUX() (1)
 #else
@@ -204,12 +222,6 @@
 #define BUILDFLAG_INTERNAL_IS_MAC() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_MAC() (0)
-#endif
-
-#if defined(OS_NACL)
-#define BUILDFLAG_INTERNAL_IS_NACL() (1)
-#else
-#define BUILDFLAG_INTERNAL_IS_NACL() (0)
 #endif
 
 #if defined(OS_NETBSD)
@@ -240,6 +252,12 @@
 #define BUILDFLAG_INTERNAL_IS_SOLARIS() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_SOLARIS() (0)
+#endif
+
+#if defined(OS_WATCHOS)
+#define BUILDFLAG_INTERNAL_IS_WATCHOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_WATCHOS() (0)
 #endif
 
 #if defined(OS_WIN)
@@ -308,7 +326,7 @@
 #define ARCH_CPU_ARM64 1
 #define ARCH_CPU_64_BITS 1
 #define ARCH_CPU_LITTLE_ENDIAN 1
-#elif defined(__pnacl__) || defined(__asmjs__) || defined(__wasm__)
+#elif defined(__asmjs__) || defined(__wasm__)
 #define ARCH_CPU_32_BITS 1
 #define ARCH_CPU_LITTLE_ENDIAN 1
 #elif defined(__MIPSEL__)
@@ -356,19 +374,19 @@
 
 
 #if defined(OS_WIN)
-#define WCHAR_T_IS_UTF16
+#define WCHAR_T_IS_16_BIT
 #elif defined(OS_FUCHSIA)
-#define WCHAR_T_IS_UTF32
+#define WCHAR_T_IS_32_BIT
 #elif defined(OS_POSIX) && defined(COMPILER_GCC) && defined(__WCHAR_MAX__) && \
     (__WCHAR_MAX__ == 0x7fffffff || __WCHAR_MAX__ == 0xffffffff)
-#define WCHAR_T_IS_UTF32
+#define WCHAR_T_IS_32_BIT
 #elif defined(OS_POSIX) && defined(COMPILER_GCC) && defined(__WCHAR_MAX__) && \
     (__WCHAR_MAX__ == 0x7fff || __WCHAR_MAX__ == 0xffff)
 
 
 
 
-#define WCHAR_T_IS_UTF16
+#define WCHAR_T_IS_16_BIT
 #else
 #error Please add support for your compiler in build/build_config.h
 #endif
@@ -380,6 +398,26 @@
 
 
 #define BASE_STRING16_ITERATOR_IS_CHAR16_POINTER
+#endif
+
+
+
+#if !defined(CPU_ARM_NEON)
+#if defined(ARCH_CPU_ARM_FAMILY) && \
+    (defined(__ARM_NEON__) || defined(__ARM_NEON))
+#define CPU_ARM_NEON 1
+#endif
+#endif  
+
+
+#if defined(ARCH_CPU_ARM64) && !defined(CPU_ARM_NEON)
+#error "AArch64 mandates NEON, should be detected"
+#endif
+
+#if !defined(HAVE_MIPS_MSA_INTRINSICS)
+#if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
+#define HAVE_MIPS_MSA_INTRINSICS 1
+#endif
 #endif
 
 #endif  

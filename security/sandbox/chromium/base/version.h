@@ -9,10 +9,10 @@
 
 #include <iosfwd>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/strings/string_piece.h"
 
 namespace base {
 
@@ -25,11 +25,15 @@ class BASE_EXPORT Version {
   Version();
 
   Version(const Version& other);
+  Version(Version&& other);
+
+  Version& operator=(const Version& other) = default;
+  Version& operator=(Version&& other) = default;
 
   
   
   
-  explicit Version(StringPiece version_str);
+  explicit Version(std::string_view version_str);
 
   
   
@@ -44,7 +48,7 @@ class BASE_EXPORT Version {
   
   
   
-  static bool IsValidWildcardString(StringPiece wildcard_string);
+  static bool IsValidWildcardString(std::string_view wildcard_string);
 
   
   int CompareTo(const Version& other) const;
@@ -53,7 +57,7 @@ class BASE_EXPORT Version {
   
   
   
-  int CompareToWildcardString(StringPiece wildcard_string) const;
+  int CompareToWildcardString(std::string_view wildcard_string) const;
 
   
   std::string GetString() const;
@@ -65,7 +69,6 @@ class BASE_EXPORT Version {
 };
 
 BASE_EXPORT bool operator==(const Version& v1, const Version& v2);
-BASE_EXPORT bool operator!=(const Version& v1, const Version& v2);
 BASE_EXPORT bool operator<(const Version& v1, const Version& v2);
 BASE_EXPORT bool operator<=(const Version& v1, const Version& v2);
 BASE_EXPORT bool operator>(const Version& v1, const Version& v2);

@@ -4,26 +4,79 @@
 
 #include "sandbox/win/src/handle_closer_agent.h"
 
+#include <windows.h>
+
 #include <stddef.h>
+#include <winnls.h>
 
 #include "base/check.h"
+#include "base/containers/heap_array.h"
+#include "base/containers/span.h"
 #include "base/logging.h"
+#include "base/strings/string_util.h"
 #include "base/win/static_constants.h"
 #include "base/win/win_util.h"
+#include "base/win/windows_handle_util.h"
+#include "sandbox/win/src/heap_helper.h"
+#include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/win_utils.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
+namespace {
+
+constexpr uint32_t ProcessHandleTable = 58;
 
 
-SANDBOX_INTERCEPT HandleCloserInfo* g_handles_to_close = nullptr;
+constexpr wchar_t kFile[] = L"File";
+constexpr wchar_t kSection[] = L"Section";
+constexpr wchar_t kALPCPort[] = L"ALPC Port";
+
+constexpr wchar_t kDeviceApi[] = L"\\Device\\DeviceApi";
+constexpr wchar_t kDeviceKsecDD[] = L"\\Device\\KsecDD";
+
+constexpr wchar_t kWindowsShellGlobalCounters[] =
+    L"\\windows_shell_global_counters";
+
+
+static BOOL CALLBACK EnumLocalesProcEx(LPWSTR lpLocaleString,
+                                       DWORD dwFlags,
+                                       LPARAM lParam) {
+  return TRUE;
+}
+
+
+bool CsrssDisconnectWarmup() {
+  return ::EnumSystemLocalesEx(EnumLocalesProcEx, LOCALE_WINDOWS, 0, 0);
+}
+
+
+
+
+
+
+bool CsrssDisconnectCleanup() {
+  HANDLE csr_port_heap = FindCsrPortHeap();
+  if (!csr_port_heap) {
+    DLOG(ERROR) << "Failed to find CSR Port heap handle";
+    return false;
+  }
+  ::HeapDestroy(csr_port_heap);
+  return true;
+}
+
+}  
+
+
+SANDBOX_INTERCEPT HandleCloserConfig g_handle_closer_info{};
 
 bool HandleCloserAgent::NeedsHandlesClosed() {
-  return !!g_handles_to_close;
+  return g_handle_closer_info.handle_closer_enabled;
 }
 
 HandleCloserAgent::HandleCloserAgent()
-    : dummy_handle_(::CreateEvent(nullptr, false, false, nullptr)) {}
+    : config_(g_handle_closer_info),
+      is_csrss_connected_(true),
+      dummy_handle_(::CreateEvent(nullptr, false, false, nullptr)) {}
 
 HandleCloserAgent::~HandleCloserAgent() {}
 
@@ -31,25 +84,21 @@ HandleCloserAgent::~HandleCloserAgent() {}
 
 
 
-bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
-                                                 const std::wstring& type) {
-  
-  if (type != L"Event" && type != L"File") {
-    return true;
+bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle) {
+  if (!dummy_handle_.is_valid()) {
+    return false;
   }
 
-  if (!dummy_handle_.IsValid())
-    return false;
-
   
-  DCHECK(dummy_handle_.Get() != closed_handle);
+  
+  DCHECK(dummy_handle_.get() != closed_handle);
 
   std::vector<HANDLE> to_close;
 
-  const DWORD original_proc_num = GetCurrentProcessorNumber();
+  const DWORD original_proc_num = ::GetCurrentProcessorNumber();
   DWORD proc_num = original_proc_num;
   DWORD_PTR original_affinity_mask =
-      SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR{1} << proc_num);
+      ::SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR{1} << proc_num);
   bool found_handle = false;
   BOOL result = FALSE;
 
@@ -63,7 +112,7 @@ bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
 
     if (original_affinity_mask & current_mask) {
       if (proc_num != original_proc_num) {
-        SetThreadAffinityMask(GetCurrentThread(), current_mask);
+        ::SetThreadAffinityMask(::GetCurrentThread(), current_mask);
       }
 
       HANDLE dup_dummy = nullptr;
@@ -71,7 +120,7 @@ bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
 
       do {
         result =
-            ::DuplicateHandle(::GetCurrentProcess(), dummy_handle_.Get(),
+            ::DuplicateHandle(::GetCurrentProcess(), dummy_handle_.get(),
                               ::GetCurrentProcess(), &dup_dummy, 0, false, 0);
         if (!result) {
           break;
@@ -94,89 +143,102 @@ bool HandleCloserAgent::AttemptToStuffHandleSlot(HANDLE closed_handle,
     }
   } while (result && !found_handle);
 
-  SetThreadAffinityMask(GetCurrentThread(), original_affinity_mask);
+  SetThreadAffinityMask(::GetCurrentThread(), original_affinity_mask);
 
-  for (HANDLE h : to_close)
+  for (HANDLE h : to_close) {
     ::CloseHandle(h);
+  }
 
   return found_handle;
 }
 
-
-void HandleCloserAgent::InitializeHandlesToClose(bool* is_csrss_connected) {
-  CHECK(g_handles_to_close);
-
-  
-  *is_csrss_connected = true;
+bool HandleCloserAgent::CloseHandles() {
+  CHECK(config_.handle_closer_enabled);
 
   
-  HandleListEntry* entry = g_handles_to_close->handle_entries;
-  for (size_t i = 0; i < g_handles_to_close->num_handle_types; ++i) {
-    
-    wchar_t* input = entry->handle_type;
-    if (!wcscmp(input, L"ALPC Port")) {
-      *is_csrss_connected = false;
-    }
-    HandleMap::mapped_type& handle_names = handles_to_close_[input];
-    input = reinterpret_cast<wchar_t*>(reinterpret_cast<char*>(entry) +
-                                       entry->offset_to_names);
-    
-    for (size_t j = 0; j < entry->name_count; ++j) {
-      std::pair<HandleMap::mapped_type::iterator, bool> name =
-          handle_names.insert(input);
-      CHECK(name.second);
-      input += name.first->size() + 1;
-    }
+  
+  if (base::win::IsAppVerifierLoaded()) {
+    return true;
+  }
 
-    
-    entry = reinterpret_cast<HandleListEntry*>(reinterpret_cast<char*>(entry) +
-                                               entry->record_bytes);
-
-    DCHECK(reinterpret_cast<wchar_t*>(entry) >= input);
-    DCHECK(reinterpret_cast<wchar_t*>(entry) - input <
-           static_cast<ptrdiff_t>(sizeof(size_t) / sizeof(wchar_t)));
+  DWORD handle_count;
+  if (!::GetProcessHandleCount(::GetCurrentProcess(), &handle_count)) {
+    return false;
   }
 
   
-  ::VirtualFree(g_handles_to_close, 0, MEM_RELEASE);
-  g_handles_to_close = nullptr;
+  
+  auto handles = base::HeapArray<uint32_t>::WithSize(handle_count + 1000);
+  DWORD return_length;
+  NTSTATUS status = GetNtExports()->QueryInformationProcess(
+      ::GetCurrentProcess(), static_cast<PROCESSINFOCLASS>(ProcessHandleTable),
+      handles.data(), static_cast<ULONG>(handles.size() * sizeof(uint32_t)),
+      &return_length);
+
+  if (!NT_SUCCESS(status)) {
+    ::SetLastError(GetLastErrorFromNtStatus(status));
+    return false;
+  }
+
+  CHECK(handles.size() * sizeof(uint32_t) >= return_length);
+  for (const uint32_t handle_value :
+       handles.subspan(0, return_length / sizeof(uint32_t))) {
+    HANDLE handle = base::win::Uint32ToHandle(handle_value);
+    auto type_name = GetTypeNameFromHandle(handle);
+    if (type_name) {
+      MaybeCloseHandle(type_name.value(), handle);
+    }
+  }
+
+  return true;
 }
 
-bool HandleCloserAgent::CloseHandles() {
+bool HandleCloserAgent::MaybeCloseHandle(std::wstring& type_name,
+                                         HANDLE handle) {
+  bool bClose = false;
   
   
-  if (base::win::IsAppVerifierLoaded())
-    return true;
-
-  absl::optional<ProcessHandleMap> handle_map = GetCurrentProcessHandles();
-  if (!handle_map)
-    return false;
-
-  for (const HandleMap::value_type& handle_to_close : handles_to_close_) {
-    ProcessHandleMap::iterator result = handle_map->find(handle_to_close.first);
-    if (result == handle_map->end())
-      continue;
-    const HandleMap::mapped_type& names = handle_to_close.second;
-    for (HANDLE handle : result->second) {
-      
-      if (!names.empty()) {
-        auto handle_name = GetPathFromHandle(handle);
-        
-        if (!handle_name || !names.count(handle_name.value())) {
-          continue;
-        }
+  if (config_.section_windows_global_shell_counters && type_name == kSection) {
+    auto path = GetPathFromHandle(handle);
+    if (path && base::EndsWith(path.value(), kWindowsShellGlobalCounters)) {
+      bClose = true;
+    }
+  } else if ((config_.file_device_api || config_.file_ksecdd) &&
+             type_name == kFile) {
+    auto path = GetPathFromHandle(handle);
+    if (path && config_.file_device_api && path.value() == kDeviceApi) {
+      bClose = true;
+    }
+    if (path && config_.file_ksecdd && path.value() == kDeviceKsecDD) {
+      bClose = true;
+    }
+  } else if (config_.disconnect_csrss && type_name == kALPCPort) {
+    
+    
+    if (is_csrss_connected_) {
+      if (!CsrssDisconnectWarmup() || !CsrssDisconnectCleanup()) {
+        return false;
       }
-
+      is_csrss_connected_ = false;
+    }
+    bClose = true;
+  }
+  
+  if (bClose) {
+    
+    if (!::SetHandleInformation(handle, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0)) {
+      return false;
+    }
+    if (!::CloseHandle(handle)) {
+      return false;
+    }
+    
+    if (type_name == kFile) {
       
-      if (!::SetHandleInformation(handle, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0))
-        continue;
-      if (!::CloseHandle(handle))
-        continue;
       
-      AttemptToStuffHandleSlot(handle, result->first);
+      return AttemptToStuffHandleSlot(handle);
     }
   }
-
   return true;
 }
 

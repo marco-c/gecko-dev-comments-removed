@@ -10,54 +10,87 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <bit>
+#include <concepts>
 #include <type_traits>
 
 #include "base/check.h"
-#include "base/compiler_specific.h"
-#include "build/build_config.h"
 
-namespace base {
-namespace bits {
+namespace base::bits {
 
 
 
 
-template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-constexpr bool IsPowerOfTwo(T value) {
-  
-  
-  
-  
-  
-  
-  return value > 0 && (value & (value - 1)) == 0;
-}
+template <typename T>
+concept UnsignedInteger =
+    std::unsigned_integral<T> && !std::same_as<T, bool> &&
+    !std::same_as<T, char> && !std::same_as<T, char8_t> &&
+    !std::same_as<T, char16_t> && !std::same_as<T, char32_t> &&
+    !std::same_as<T, wchar_t>;
 
 
-template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-constexpr T AlignDown(T size, T alignment) {
-  DCHECK(IsPowerOfTwo(alignment));
+
+
+
+
+
+
+template <typename T>
+concept SignedIntegerDeprecatedDoNotUse =
+    std::integral<T> && !UnsignedInteger<T>;
+
+
+template <typename T>
+  requires UnsignedInteger<T>
+inline constexpr T AlignDown(T size, T alignment) {
+  DCHECK(std::has_single_bit(alignment));
   return size & ~(alignment - 1);
 }
 
 
 
-template <typename T, typename = std::enable_if_t<sizeof(T) == 1>>
+
+
+template <typename T>
+inline constexpr auto AlignDownDeprecatedDoNotUse(T size, T alignment) {
+  using U = std::make_unsigned_t<T>;
+  DCHECK(std::has_single_bit(static_cast<U>(alignment)));
+  return static_cast<U>(size) & ~static_cast<U>(alignment - 1);
+}
+
+
+
+template <typename T>
+  requires(sizeof(T) == 1)
 inline T* AlignDown(T* ptr, uintptr_t alignment) {
   return reinterpret_cast<T*>(
       AlignDown(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
 
 
-template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-constexpr T AlignUp(T size, T alignment) {
-  DCHECK(IsPowerOfTwo(alignment));
+template <typename T>
+  requires UnsignedInteger<T>
+inline constexpr T AlignUp(T size, T alignment) {
+  DCHECK(std::has_single_bit(alignment));
   return (size + alignment - 1) & ~(alignment - 1);
 }
 
 
 
-template <typename T, typename = std::enable_if_t<sizeof(T) == 1>>
+
+
+template <typename T>
+  requires SignedIntegerDeprecatedDoNotUse<T>
+inline constexpr T AlignUpDeprecatedDoNotUse(T size, T alignment) {
+  using U = std::make_unsigned_t<T>;
+  DCHECK(std::has_single_bit(static_cast<U>(alignment)));
+  return static_cast<U>(size + alignment - 1) & ~static_cast<U>(alignment - 1);
+}
+
+
+
+template <typename T>
+  requires(sizeof(T) == 1)
 inline T* AlignUp(T* ptr, uintptr_t alignment) {
   return reinterpret_cast<T*>(
       AlignUp(reinterpret_cast<uintptr_t>(ptr), alignment));
@@ -70,71 +103,34 @@ inline T* AlignUp(T* ptr, uintptr_t alignment) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, int bits = sizeof(T) * 8>
-ALWAYS_INLINE constexpr
-    typename std::enable_if<std::is_unsigned_v<T> && sizeof(T) <= 8, int>::type
-    CountLeadingZeroBits(T value) {
-  static_assert(bits > 0, "invalid instantiation");
-  return LIKELY(value)
-             ? bits == 64
-                   ? __builtin_clzll(static_cast<uint64_t>(value))
-                   : __builtin_clz(static_cast<uint32_t>(value)) - (32 - bits)
-             : bits;
-}
-
-template <typename T, int bits = sizeof(T) * 8>
-ALWAYS_INLINE constexpr
-    typename std::enable_if<std::is_unsigned_v<T> && sizeof(T) <= 8, int>::type
-    CountTrailingZeroBits(T value) {
-  return LIKELY(value) ? bits == 64
-                             ? __builtin_ctzll(static_cast<uint64_t>(value))
-                             : __builtin_ctz(static_cast<uint32_t>(value))
-                       : bits;
-}
-
-
-
-
-
-
-
-
 constexpr int Log2Floor(uint32_t n) {
-  return 31 - CountLeadingZeroBits(n);
+  return 31 - std::countl_zero(n);
 }
+
+
+
+
+
+
 
 
 constexpr int Log2Ceiling(uint32_t n) {
   
   
   
-  return (n ? 32 : -1) - CountLeadingZeroBits(n - 1);
+  return (n ? 32 : -1) - std::countl_zero(n - 1);
 }
+
 
 
 
 template <typename T>
+  requires std::integral<T>
 constexpr T LeftmostBit() {
-  static_assert(std::is_integral_v<T>,
-                "This function can only be used with integral types.");
   T one(1u);
   return one << (8 * sizeof(T) - 1);
 }
 
-}  
 }  
 
 #endif  

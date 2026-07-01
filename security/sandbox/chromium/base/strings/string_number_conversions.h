@@ -9,11 +9,12 @@
 #include <stdint.h>
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/containers/span.h"
-#include "base/strings/string_piece.h"
 #include "build/build_config.h"
 
 
@@ -49,11 +50,17 @@ BASE_EXPORT std::string NumberToString(long long value);
 BASE_EXPORT std::u16string NumberToString16(long long value);
 BASE_EXPORT std::string NumberToString(unsigned long long value);
 BASE_EXPORT std::u16string NumberToString16(unsigned long long value);
+
+
 BASE_EXPORT std::string NumberToString(double value);
 BASE_EXPORT std::u16string NumberToString16(double value);
 
 
 
+BASE_EXPORT std::string NumberToStringWithFixedPrecision(double value,
+                                                         int digits);
+BASE_EXPORT std::u16string NumberToString16WithFixedPrecision(double value,
+                                                              int digits);
 
 
 
@@ -70,31 +77,23 @@ BASE_EXPORT std::u16string NumberToString16(double value);
 
 
 
-BASE_EXPORT bool StringToInt(StringPiece input, int* output);
-BASE_EXPORT bool StringToInt(StringPiece16 input, int* output);
-
-BASE_EXPORT bool StringToUint(StringPiece input, unsigned* output);
-BASE_EXPORT bool StringToUint(StringPiece16 input, unsigned* output);
-
-BASE_EXPORT bool StringToInt64(StringPiece input, int64_t* output);
-BASE_EXPORT bool StringToInt64(StringPiece16 input, int64_t* output);
-
-BASE_EXPORT bool StringToUint64(StringPiece input, uint64_t* output);
-BASE_EXPORT bool StringToUint64(StringPiece16 input, uint64_t* output);
-
-BASE_EXPORT bool StringToSizeT(StringPiece input, size_t* output);
-BASE_EXPORT bool StringToSizeT(StringPiece16 input, size_t* output);
 
 
 
+BASE_EXPORT bool StringToInt(std::string_view input, int* output);
+BASE_EXPORT bool StringToInt(std::u16string_view input, int* output);
 
+BASE_EXPORT bool StringToUint(std::string_view input, unsigned* output);
+BASE_EXPORT bool StringToUint(std::u16string_view input, unsigned* output);
 
+BASE_EXPORT bool StringToInt64(std::string_view input, int64_t* output);
+BASE_EXPORT bool StringToInt64(std::u16string_view input, int64_t* output);
 
+BASE_EXPORT bool StringToUint64(std::string_view input, uint64_t* output);
+BASE_EXPORT bool StringToUint64(std::u16string_view input, uint64_t* output);
 
-
-
-BASE_EXPORT bool StringToDouble(StringPiece input, double* output);
-BASE_EXPORT bool StringToDouble(StringPiece16 input, double* output);
+BASE_EXPORT bool StringToSizeT(std::string_view input, size_t* output);
+BASE_EXPORT bool StringToSizeT(std::u16string_view input, size_t* output);
 
 
 
@@ -103,9 +102,26 @@ BASE_EXPORT bool StringToDouble(StringPiece16 input, double* output);
 
 
 
+
+BASE_EXPORT bool StringToDouble(std::string_view input, double* output);
+BASE_EXPORT bool StringToDouble(std::u16string_view input, double* output);
+
+
+
+
+
+
+
+
+
+BASE_EXPORT std::string HexEncode(base::span<const uint8_t> bytes);
+BASE_EXPORT std::string HexEncode(std::string_view chars);
 
 BASE_EXPORT std::string HexEncode(const void* bytes, size_t size);
-BASE_EXPORT std::string HexEncode(base::span<const uint8_t> bytes);
+
+
+BASE_EXPORT std::string HexEncodeLower(base::span<const uint8_t> bytes);
+BASE_EXPORT std::string HexEncodeLower(std::string_view chars);
 
 
 
@@ -120,40 +136,41 @@ inline void AppendHexEncodedByte(uint8_t byte,
                                             '6', '7', '8', '9', 'a', 'b',
                                             'c', 'd', 'e', 'f'};
   const char* const hex_chars = uppercase ? kHexCharsUpper : kHexCharsLower;
-  output.append({hex_chars[byte >> 4], hex_chars[byte & 0xf]});
+  output.append(
+      {UNSAFE_TODO(hex_chars[byte >> 4]), UNSAFE_TODO(hex_chars[byte & 0xf])});
 }
 
 
 
 
-BASE_EXPORT bool HexStringToInt(StringPiece input, int* output);
+BASE_EXPORT bool HexStringToInt(std::string_view input, int* output);
 
 
 
 
 
-BASE_EXPORT bool HexStringToUInt(StringPiece input, uint32_t* output);
+BASE_EXPORT bool HexStringToUInt(std::string_view input, uint32_t* output);
 
 
 
 
-BASE_EXPORT bool HexStringToInt64(StringPiece input, int64_t* output);
-
-
-
-
-
-BASE_EXPORT bool HexStringToUInt64(StringPiece input, uint64_t* output);
+BASE_EXPORT bool HexStringToInt64(std::string_view input, int64_t* output);
 
 
 
 
 
-BASE_EXPORT bool HexStringToBytes(StringPiece input,
+BASE_EXPORT bool HexStringToUInt64(std::string_view input, uint64_t* output);
+
+
+
+
+
+BASE_EXPORT bool HexStringToBytes(std::string_view input,
                                   std::vector<uint8_t>* output);
 
 
-BASE_EXPORT bool HexStringToString(StringPiece input, std::string* output);
+BASE_EXPORT bool HexStringToString(std::string_view input, std::string* output);
 
 
 
@@ -161,7 +178,8 @@ BASE_EXPORT bool HexStringToString(StringPiece input, std::string* output);
 
 
 
-BASE_EXPORT bool HexStringToSpan(StringPiece input, base::span<uint8_t> output);
+BASE_EXPORT bool HexStringToSpan(std::string_view input,
+                                 base::span<uint8_t> output);
 
 }  
 

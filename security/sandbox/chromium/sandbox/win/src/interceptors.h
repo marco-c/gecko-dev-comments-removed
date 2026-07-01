@@ -32,18 +32,11 @@ enum InterceptorId {
   QUERY_FULL_ATTRIB_FILE_ID,
   SET_INFO_FILE_ID,
   
-  CREATE_NAMED_PIPE_ID,
-  
-  CREATE_PROCESSW_ID,
-  CREATE_PROCESSA_ID,
   CREATE_THREAD_ID,
   
   CREATE_KEY_ID,
   OPEN_KEY_ID,
   OPEN_KEY_EX_ID,
-  
-  CREATE_EVENT_ID,
-  OPEN_EVENT_ID,
   
   GDIINITIALIZE_ID,
   GETSTOCKOBJECT_ID,
@@ -54,7 +47,9 @@ enum InterceptorId {
   INTERCEPTOR_MAX_ID
 };
 
-typedef void* OriginalFunctions[INTERCEPTOR_MAX_ID];
+struct OriginalFunctions {
+  void* functions[INTERCEPTOR_MAX_ID];
+};
 
 }  
 

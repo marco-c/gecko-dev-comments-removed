@@ -38,7 +38,7 @@ namespace base {
 
 
 
-template<typename Type>
+template <typename Type>
 struct DefaultSingletonTraits {
   
   static Type* New() {
@@ -48,9 +48,7 @@ struct DefaultSingletonTraits {
   }
 
   
-  static void Delete(Type* x) {
-    delete x;
-  }
+  static void Delete(Type* x) { delete x; }
 
   
   
@@ -67,8 +65,7 @@ struct DefaultSingletonTraits {
 
 
 
-
-template<typename Type>
+template <typename Type>
 struct LeakySingletonTraits : public DefaultSingletonTraits<Type> {
   static const bool kRegisterAtExit = false;
 #if DCHECK_IS_ON()
@@ -102,15 +99,17 @@ struct StaticMemorySingletonTraits {
   
   static Type* New() {
     
-    if (dead_.exchange(true, std::memory_order_relaxed))
+    if (dead_.exchange(true, std::memory_order_relaxed)) {
       return nullptr;
+    }
 
     return new (buffer_) Type();
   }
 
   static void Delete(Type* p) {
-    if (p)
+    if (p) {
       p->Type::~Type();
+    }
   }
 
   static const bool kRegisterAtExit = true;
@@ -233,8 +232,9 @@ class Singleton {
   
   static Type* get() {
 #if DCHECK_IS_ON()
-    if (!Traits::kAllowedToAccessOnNonjoinableThread)
+    if (!Traits::kAllowedToAccessOnNonjoinableThread) {
       internal::AssertSingletonAllowed();
+    }
 #endif
 
     return subtle::GetOrCreateLazyPointer(
@@ -246,12 +246,14 @@ class Singleton {
   
   static Type* GetIfExists() {
 #if DCHECK_IS_ON()
-    if (!Traits::kAllowedToAccessOnNonjoinableThread)
+    if (!Traits::kAllowedToAccessOnNonjoinableThread) {
       internal::AssertSingletonAllowed();
+    }
 #endif
 
-    if (!instance_.load(std::memory_order_relaxed))
+    if (!instance_.load(std::memory_order_relaxed)) {
       return nullptr;
+    }
 
     
     

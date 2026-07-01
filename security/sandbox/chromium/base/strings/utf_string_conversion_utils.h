@@ -12,13 +12,13 @@
 #include <stdint.h>
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include "base/base_export.h"
 #include "base/third_party/icu/icu_utf.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
@@ -46,9 +46,13 @@ inline bool IsValidCharacter(base_icu::UChar32 code_point) {
 
 
 
-BASE_EXPORT absl::optional<size_t> CountUnicodeCharacters(
+BASE_EXPORT std::optional<size_t> CountUnicodeCharacters(
     std::string_view text,
     size_t limit = std::numeric_limits<size_t>::max());
+
+
+
+
 
 
 
@@ -65,12 +69,20 @@ BASE_EXPORT bool ReadUnicodeCharacter(const char* src,
                                       base_icu::UChar32* code_point_out);
 
 
+
+
+
+
 BASE_EXPORT bool ReadUnicodeCharacter(const char16_t* src,
                                       size_t src_len,
                                       size_t* char_index,
                                       base_icu::UChar32* code_point);
 
-#if defined(WCHAR_T_IS_UTF32)
+#if defined(WCHAR_T_IS_32_BIT)
+
+
+
+
 
 BASE_EXPORT bool ReadUnicodeCharacter(const wchar_t* src,
                                       size_t src_len,
@@ -90,7 +102,7 @@ BASE_EXPORT size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
 BASE_EXPORT size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
                                          std::u16string* output);
 
-#if defined(WCHAR_T_IS_UTF32)
+#if defined(WCHAR_T_IS_32_BIT)
 
 
 inline size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
@@ -107,12 +119,18 @@ inline size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
 
 
 
-template<typename CHAR>
+
+
+
+template <typename CHAR>
 void PrepareForUTF8Output(const CHAR* src, size_t src_len, std::string* output);
 
 
 
-template<typename STRING>
+
+
+
+template <typename STRING>
 void PrepareForUTF16Or32Output(const char* src, size_t src_len, STRING* output);
 
 }  

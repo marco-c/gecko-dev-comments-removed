@@ -2,10 +2,27 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
+#ifndef PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
+#define PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
 
-#include "build/build_config.h"
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/buildflags.h"
+
+
+
+
+
+#if defined(__has_cpp_attribute)
+#define PA_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+#define PA_HAS_CPP_ATTRIBUTE(x) 0
+#endif
+
+
+
+
+
+
 
 
 #if defined(__has_attribute)
@@ -13,6 +30,9 @@
 #else
 #define PA_HAS_ATTRIBUTE(x) 0
 #endif
+
+
+
 
 
 #if defined(__has_builtin)
@@ -24,25 +44,60 @@
 
 
 
-#if defined(__clang__) && PA_HAS_ATTRIBUTE(noinline) && __clang_major__ >= 15
-#define PA_NOINLINE [[clang::noinline]]
-#elif defined(COMPILER_GCC) && PA_HAS_ATTRIBUTE(noinline)
-#define PA_NOINLINE __attribute__((noinline))
-#elif defined(COMPILER_MSVC)
-#define PA_NOINLINE __declspec(noinline)
+
+#if defined(__has_feature)
+#define PA_HAS_FEATURE(FEATURE) __has_feature(FEATURE)
+#else
+#define PA_HAS_FEATURE(FEATURE) 0
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(gnu::noinline)
+#define PA_NOINLINE [[gnu::noinline]]
+#elif PA_HAS_CPP_ATTRIBUTE(msvc::noinline)
+#define PA_NOINLINE [[msvc::noinline]]
 #else
 #define PA_NOINLINE
 #endif
 
-#if defined(__clang__) && defined(NDEBUG) && \
-    PA_HAS_ATTRIBUTE(always_inline) && __clang_major__ >= 15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if !PA_BUILDFLAG(IS_DEBUG)
+#if PA_HAS_CPP_ATTRIBUTE(clang::always_inline)
 #define PA_ALWAYS_INLINE [[clang::always_inline]] inline
-#elif defined(COMPILER_GCC) && defined(NDEBUG) && \
-    PA_HAS_ATTRIBUTE(always_inline)
-#define PA_ALWAYS_INLINE inline __attribute__((__always_inline__))
-#elif defined(COMPILER_MSVC) && defined(NDEBUG)
+#elif PA_HAS_CPP_ATTRIBUTE(gnu::always_inline)
+#define PA_ALWAYS_INLINE [[gnu::always_inline]] inline
+#elif defined(PA_COMPILER_MSVC)
 #define PA_ALWAYS_INLINE __forceinline
-#else
+#endif
+#endif  
+#if !defined(PA_ALWAYS_INLINE)
 #define PA_ALWAYS_INLINE inline
 #endif
 
@@ -54,7 +109,14 @@
 
 
 
-#if defined(__clang__) && PA_HAS_ATTRIBUTE(not_tail_called)
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::not_tail_called)
 #define PA_NOT_TAIL_CALLED [[clang::not_tail_called]]
 #else
 #define PA_NOT_TAIL_CALLED
@@ -70,12 +132,17 @@
 
 
 
-#if defined(__clang__)
-#define PA_ALIGNAS(byte_alignment) alignas(byte_alignment)
-#elif defined(COMPILER_MSVC)
-#define PA_ALIGNAS(byte_alignment) __declspec(align(byte_alignment))
-#elif defined(COMPILER_GCC) && PA_HAS_ATTRIBUTE(aligned)
-#define PA_ALIGNAS(byte_alignment) __attribute__((aligned(byte_alignment)))
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::musttail)
+#define PA_MUSTTAIL [[clang::musttail]]
+#else
+#define PA_MUSTTAIL
 #endif
 
 
@@ -84,67 +151,103 @@
 
 
 
-#if (defined(COMPILER_GCC) || defined(__clang__)) && PA_HAS_ATTRIBUTE(format)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(msvc::no_unique_address)
+#define PA_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#elif PA_HAS_CPP_ATTRIBUTE(no_unique_address)
+#define PA_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#else
+#define PA_NO_UNIQUE_ADDRESS
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(gnu::format)
 #define PA_PRINTF_FORMAT(format_param, dots_param) \
-  __attribute__((format(printf, format_param, dots_param)))
+  [[gnu::format(printf, format_param, dots_param)]]
 #else
 #define PA_PRINTF_FORMAT(format_param, dots_param)
 #endif
 
 
-#if PA_HAS_ATTRIBUTE(no_sanitize)
-#define PA_NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::no_sanitize)
+#define PA_NO_SANITIZE(sanitizer) [[clang::no_sanitize(sanitizer)]]
+#else
+#define PA_NO_SANITIZE(sanitizer)
 #endif
-#if !defined(PA_NO_SANITIZE)
-#define PA_NO_SANITIZE(what)
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if defined(MEMORY_SANITIZER)
 #include <sanitizer/msan_interface.h>
-
-
-
-
 #define PA_MSAN_UNPOISON(p, size) __msan_unpoison(p, size)
-#else  
+#else
 #define PA_MSAN_UNPOISON(p, size)
-#endif  
-
-
-#if !defined(PA_UNLIKELY)
-#if defined(COMPILER_GCC) || defined(__clang__)
-#define PA_UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-#define PA_UNLIKELY(x) (x)
-#endif  
-#endif  
-
-#if !defined(PA_LIKELY)
-#if defined(COMPILER_GCC) || defined(__clang__)
-#define PA_LIKELY(x) __builtin_expect(!!(x), 1)
-#else
-#define PA_LIKELY(x) (x)
-#endif  
-#endif  
-
-#if !defined(PA_CPU_ARM_NEON)
-#if defined(__arm__)
-#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
-    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
-#error Chromium does not support middle endian architecture
 #endif
-#if defined(__ARM_NEON__)
-#define PA_CPU_ARM_NEON 1
-#endif
-#endif  
-#endif  
 
-#if !defined(PA_HAVE_MIPS_MSA_INTRINSICS)
-#if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
-#define PA_HAVE_MIPS_MSA_INTRINSICS 1
-#endif
-#endif
+
+
+
+
 
 
 
@@ -154,35 +257,63 @@
 
 
 #if defined(__clang_analyzer__)
-
 namespace partition_alloc::internal {
-
-inline constexpr bool AnalyzerNoReturn() __attribute__((analyzer_noreturn)) {
+inline constexpr bool AnalyzerNoReturn()
+#if PA_HAS_ATTRIBUTE(analyzer_noreturn)
+    __attribute__((analyzer_noreturn))
+#endif
+{
   return false;
 }
-
-inline constexpr bool AnalyzerAssumeTrue(bool arg) {
-  
-  
-  return arg || AnalyzerNoReturn();
-}
-
 }  
-
-#define PA_ANALYZER_ASSUME_TRUE(arg) \
-  ::partition_alloc::internal::AnalyzerAssumeTrue(!!(arg))
 #define PA_ANALYZER_SKIP_THIS_PATH() \
   static_cast<void>(::partition_alloc::internal::AnalyzerNoReturn())
+#else
 
-#else  
+
+#define PA_ANALYZER_SKIP_THIS_PATH()
+#endif
+
+
+
+
+
+
+
+
+
+#if defined(__clang_analyzer__)
+namespace partition_alloc::internal {
+inline constexpr bool AnalyzerAssumeTrue(bool arg) {
+  return arg || AnalyzerNoReturn();
+}
+}  
+#define PA_ANALYZER_ASSUME_TRUE(arg) \
+  ::partition_alloc::internal::AnalyzerAssumeTrue(!!(arg))
+#else
 
 #define PA_ANALYZER_ASSUME_TRUE(arg) (arg)
-#define PA_ANALYZER_SKIP_THIS_PATH()
-
-#endif  
+#endif
 
 
-#if defined(__clang__) && PA_HAS_ATTRIBUTE(nomerge)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::nomerge)
 #define PA_NOMERGE [[clang::nomerge]]
 #else
 #define PA_NOMERGE
@@ -209,7 +340,13 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(__clang__) && PA_HAS_ATTRIBUTE(trivial_abi)
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::trivial_abi)
 #define PA_TRIVIAL_ABI [[clang::trivial_abi]]
 #else
 #define PA_TRIVIAL_ABI
@@ -218,18 +355,70 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if PA_HAS_ATTRIBUTE(require_constant_initialization)
-#define PA_CONSTINIT __attribute__((require_constant_initialization))
-#endif
-#if !defined(PA_CONSTINIT)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::require_constant_initialization)
+#define PA_CONSTINIT [[clang::require_constant_initialization]]
+#else
 #define PA_CONSTINIT
 #endif
 
-#if defined(__clang__) && __clang_major__ >= 13
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(gsl::Pointer)
 #define PA_GSL_POINTER [[gsl::Pointer]]
 #else
 #define PA_GSL_POINTER
 #endif
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -238,5 +427,85 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 #else
 #define PA_CONSTEXPR_DTOR
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
+#define PA_LIFETIME_BOUND [[clang::lifetimebound]]
+#else
+#define PA_LIFETIME_BOUND
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(gnu::no_profile_instrument_function)
+#define PA_NOPROFILE [[gnu::no_profile_instrument_function]]
+#else
+#define PA_NOPROFILE
+#endif
+
+
+
+#if PA_HAS_CPP_ATTRIBUTE(clang::unsafe_buffer_usage)
+#define PA_UNSAFE_BUFFER_USAGE [[clang::unsafe_buffer_usage]]
+#else
+#define PA_UNSAFE_BUFFER_USAGE
+#endif
+
+
+
+
+#if defined(__clang__)
+
+
+
+#define PA_UNSAFE_BUFFERS(...)                  \
+  _Pragma("clang unsafe_buffer_usage begin") \
+  __VA_ARGS__                                \
+  _Pragma("clang unsafe_buffer_usage end")
+
+#else
+#define PA_UNSAFE_BUFFERS(...) __VA_ARGS__
+#endif
+
+
+
+#define PA_UNSAFE_TODO(...) PA_UNSAFE_BUFFERS(__VA_ARGS__)
 
 #endif  

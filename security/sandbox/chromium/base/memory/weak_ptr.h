@@ -84,7 +84,6 @@
 #include "base/memory/safe_ref_traits.h"
 #include "base/sequence_checker.h"
 #include "base/synchronization/atomic_flag.h"
-#include "base/types/pass_key.h"
 
 namespace base {
 
@@ -92,8 +91,8 @@ namespace sequence_manager::internal {
 class TaskQueueImpl;
 }
 
-template <typename T> class SupportsWeakPtr;
-template <typename T> class WeakPtr;
+template <typename T>
+class WeakPtr;
 
 namespace internal {
 
@@ -164,50 +163,11 @@ class BASE_EXPORT WeakReferenceOwner {
   bool HasRefs() const { return !flag_->HasOneRef(); }
 
   void Invalidate();
+  void InvalidateAndDoom();
   void BindToCurrentSequence();
 
  private:
   scoped_refptr<WeakReference::Flag> flag_;
-};
-
-
-
-
-class SupportsWeakPtrBase {
- public:
-  
-  
-  
-  
-  
-  
-  template<typename Derived>
-  static WeakPtr<Derived> StaticAsWeakPtr(Derived* t) {
-    static_assert(std::is_base_of_v<internal::SupportsWeakPtrBase, Derived>,
-                  "AsWeakPtr argument must inherit from SupportsWeakPtr");
-    using Base = typename decltype(ExtractSinglyInheritedBase(t))::Base;
-    
-    
-    WeakPtr<Base> weak = static_cast<SupportsWeakPtr<Base>*>(t)->AsWeakPtr();
-    return WeakPtr<Derived>(weak.CloneWeakReference(),
-                            static_cast<Derived*>(weak.ptr_));
-  }
-
- private:
-  
-  
-  template <typename T>
-  struct ExtractSinglyInheritedBase;
-  template <typename T>
-  struct ExtractSinglyInheritedBase<SupportsWeakPtr<T>> {
-    using Base = T;
-    explicit ExtractSinglyInheritedBase(SupportsWeakPtr<T>*);
-  };
-#if !defined(MOZ_SANDBOX)
-  template <typename T>
-  ExtractSinglyInheritedBase(SupportsWeakPtr<T>*)
-      -> ExtractSinglyInheritedBase<SupportsWeakPtr<T>>;
-#endif
 };
 
 
@@ -217,7 +177,14 @@ SafeRef<T> MakeSafeRefFromWeakPtrInternals(internal::WeakReference&& ref,
 
 }  
 
-template <typename T> class WeakPtrFactory;
+template <typename T>
+class WeakPtrFactory;
+
+
+
+
+
+
 
 
 
@@ -241,12 +208,12 @@ class TRIVIAL_ABI WeakPtr {
 
   
   
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  template <typename U>
+    requires(std::convertible_to<U*, T*>)
   
   WeakPtr(const WeakPtr<U>& other) : ref_(other.ref_), ptr_(other.ptr_) {}
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  template <typename U>
+    requires(std::convertible_to<U*, T*>)
   
   WeakPtr& operator=(const WeakPtr<U>& other) {
     ref_ = other.ref_;
@@ -254,13 +221,13 @@ class TRIVIAL_ABI WeakPtr {
     return *this;
   }
 
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  template <typename U>
+    requires(std::convertible_to<U*, T*>)
   
   WeakPtr(WeakPtr<U>&& other)
       : ref_(std::move(other.ref_)), ptr_(std::move(other.ptr_)) {}
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  template <typename U>
+    requires(std::convertible_to<U*, T*>)
   
   WeakPtr& operator=(WeakPtr<U>&& other) {
     ref_ = std::move(other.ref_);
@@ -303,6 +270,16 @@ class TRIVIAL_ABI WeakPtr {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool MaybeValid() const { return ref_.MaybeValid(); }
 
   
@@ -311,9 +288,8 @@ class TRIVIAL_ABI WeakPtr {
   bool WasInvalidated() const { return ptr_ && !ref_.IsValid(); }
 
  private:
-  friend class internal::SupportsWeakPtrBase;
-  template <typename U> friend class WeakPtr;
-  friend class SupportsWeakPtr<T>;
+  template <typename U>
+  friend class WeakPtr;
   friend class WeakPtrFactory<T>;
   friend class WeakPtrFactory<std::remove_const_t<T>>;
 
@@ -363,6 +339,20 @@ class BASE_EXPORT WeakPtrFactoryBase {
 };
 }  
 
+namespace subtle {
+
+
+
+class BASE_EXPORT BindWeakPtrFactoryPassKey {
+ private:
+  BindWeakPtrFactoryPassKey() = default;
+
+  friend class BindWeakPtrFactoryForTesting;
+  friend class sequence_manager::internal::TaskQueueImpl;
+};
+
+}  
+
 
 
 
@@ -386,18 +376,16 @@ class WeakPtrFactory : public internal::WeakPtrFactoryBase {
                             reinterpret_cast<const T*>(ptr_));
   }
 
-  template <int&... ExplicitArgumentBarrier,
-            typename U = T,
-            typename = std::enable_if_t<!std::is_const_v<U>>>
-  WeakPtr<T> GetWeakPtr() {
+  WeakPtr<T> GetWeakPtr()
+    requires(!std::is_const_v<T>)
+  {
     return WeakPtr<T>(weak_reference_owner_.GetRef(),
                       reinterpret_cast<T*>(ptr_));
   }
 
-  template <int&... ExplicitArgumentBarrier,
-            typename U = T,
-            typename = std::enable_if_t<!std::is_const_v<U>>>
-  WeakPtr<T> GetMutableWeakPtr() const {
+  WeakPtr<T> GetMutableWeakPtr() const
+    requires(!std::is_const_v<T>)
+  {
     return WeakPtr<T>(weak_reference_owner_.GetRef(),
                       reinterpret_cast<T*>(ptr_));
   }
@@ -422,66 +410,24 @@ class WeakPtrFactory : public internal::WeakPtrFactoryBase {
   }
 
   
-  bool HasWeakPtrs() const {
+  
+  
+  void InvalidateWeakPtrsAndDoom() {
     DCHECK(ptr_);
-    return weak_reference_owner_.HasRefs();
+    weak_reference_owner_.InvalidateAndDoom();
+    ptr_ = 0;
   }
+
+  
+  bool HasWeakPtrs() const { return ptr_ && weak_reference_owner_.HasRefs(); }
 
   
   
   
-  void BindToCurrentSequence(
-      PassKey<sequence_manager::internal::TaskQueueImpl>) {
+  void BindToCurrentSequence(subtle::BindWeakPtrFactoryPassKey) {
     weak_reference_owner_.BindToCurrentSequence();
   }
 };
-
-
-
-
-
-
-template <class T>
-class SupportsWeakPtr : public internal::SupportsWeakPtrBase {
- public:
-  SupportsWeakPtr() = default;
-
-  SupportsWeakPtr(const SupportsWeakPtr&) = delete;
-  SupportsWeakPtr& operator=(const SupportsWeakPtr&) = delete;
-
-  WeakPtr<T> AsWeakPtr() {
-    return WeakPtr<T>(weak_reference_owner_.GetRef(), static_cast<T*>(this));
-  }
-
- protected:
-  ~SupportsWeakPtr() = default;
-
- private:
-  internal::WeakReferenceOwner weak_reference_owner_;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename Derived>
-WeakPtr<Derived> AsWeakPtr(Derived* t) {
-  return internal::SupportsWeakPtrBase::StaticAsWeakPtr<Derived>(t);
-}
 
 }  
 

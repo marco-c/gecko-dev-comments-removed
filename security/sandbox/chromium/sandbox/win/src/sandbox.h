@@ -20,19 +20,25 @@
 #define SANDBOX_WIN_SRC_SANDBOX_H_
 
 #include <stddef.h>
+
 #include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 
+#include "base/compiler_specific.h"
 #include "base/containers/span.h"
-#include "base/strings/string_piece.h"
+#include "base/environment.h"
+#include "base/win/scoped_process_information.h"
 #include "base/win/windows_types.h"
 #include "sandbox/win/src/sandbox_policy.h"
 #include "sandbox/win/src/sandbox_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 namespace sandbox {
 
+class BrokerServicesDelegate;
 class BrokerServicesTargetTracker;
 class PolicyDiagnosticsReceiver;
 class ProcessState;
@@ -45,28 +51,25 @@ enum class Desktop;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 class [[clang::lto_visibility_public]] BrokerServices {
  public:
   
   
   
+  using SpawnTargetCallback = base::OnceCallback<
+      void(base::win::ScopedProcessInformation, DWORD, ResultCode)>;
+
   
-  virtual ResultCode Init() = 0;
+  
+  
+  
+  
+  virtual ResultCode Init(std::unique_ptr<BrokerServicesDelegate> delegate) = 0;
 
   
   
   virtual ResultCode InitForTesting(
+      std::unique_ptr<BrokerServicesDelegate> delegate,
       std::unique_ptr<BrokerServicesTargetTracker> target_tracker) = 0;
 
   
@@ -103,31 +106,43 @@ class [[clang::lto_visibility_public]] BrokerServices {
   
   
   
-  virtual std::unique_ptr<TargetPolicy> CreatePolicy(base::StringPiece tag) = 0;
+  virtual std::unique_ptr<TargetPolicy> CreatePolicy(std::string_view tag) = 0;
+
+#if !defined(MOZ_SANDBOX)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void SpawnTargetAsync(const wchar_t* exe_path,
+                                const wchar_t* command_line,
+                                std::unique_ptr<TargetPolicy> policy,
+                                SpawnTargetCallback result_callback) = 0;
+#endif  
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual ResultCode SpawnTarget(const wchar_t* exe_path,
-                                 const wchar_t* command_line,
-                                 base::EnvironmentMap& env_map,
-                                 std::unique_ptr<TargetPolicy> policy,
-                                 DWORD* last_error,
-                                 PROCESS_INFORMATION* target) = 0;
+  virtual ResultCode SpawnTarget(
+      const wchar_t* exe_path,
+      const wchar_t* command_line,
+      std::optional<base::EnvironmentMap> env_changes,
+      std::unique_ptr<TargetPolicy> policy,
+      DWORD* last_error,
+      PROCESS_INFORMATION* target_info) = 0;
 
   
   
@@ -160,8 +175,9 @@ class [[clang::lto_visibility_public]] BrokerServices {
                                            DWORD sid_buffer_length) = 0;
 
  protected:
-  ~BrokerServices() {}
+  virtual ~BrokerServices() = default;
 };
+
 
 
 
@@ -200,7 +216,7 @@ class [[clang::lto_visibility_public]] TargetServices {
   
   
   
-  virtual absl::optional<base::span<const uint8_t>> GetDelegateData() = 0;
+  virtual std::optional<base::span<const uint8_t>> GetDelegateData() = 0;
 
   
   
@@ -212,9 +228,6 @@ class [[clang::lto_visibility_public]] TargetServices {
   
   virtual ProcessState* GetState() = 0;
 
-  virtual ResultCode GetComplexLineBreaks(const WCHAR* text, uint32_t length,
-                                          uint8_t* break_before) = 0;
-
  protected:
   ~TargetServices() {}
 };
@@ -223,7 +236,7 @@ class [[clang::lto_visibility_public]] PolicyInfo {
  public:
   
   
-  virtual const char* JsonString() = 0;
+  virtual const std::string& JsonString() const LIFETIME_BOUND = 0;
   virtual ~PolicyInfo() {}
 };
 
@@ -259,6 +272,42 @@ class [[clang::lto_visibility_public]] BrokerServicesTargetTracker {
   
   virtual void OnTargetRemoved() = 0;
   virtual ~BrokerServicesTargetTracker() {}
+};
+
+
+
+struct [[clang::lto_visibility_public]] CreateTargetResult {
+  base::win::ScopedProcessInformation process_info;
+  DWORD last_error = ERROR_SUCCESS;
+  ResultCode result_code = SBOX_ALL_OK;
+};
+
+
+class [[clang::lto_visibility_public]] BrokerServicesDelegate {
+ public:
+  
+  
+  virtual void ParallelLaunchPostTaskAndReplyWithResult(
+      const base::Location& from_here,
+      base::OnceCallback<CreateTargetResult()> task,
+      base::OnceCallback<void(CreateTargetResult)> reply) = 0;
+  
+  
+  virtual void BeforeTargetProcessCreateOnCreationThread(
+      const void* trace_id) = 0;
+  
+  
+  virtual void AfterTargetProcessCreateOnCreationThread(const void* trace_id,
+                                                        DWORD process_id) = 0;
+
+  
+  
+  virtual void OnCreateThreadActionCreateFailure(DWORD last_error) = 0;
+  
+  
+  virtual void OnCreateThreadActionDuplicateFailure(DWORD last_error) = 0;
+
+  virtual ~BrokerServicesDelegate() {}
 };
 
 }  

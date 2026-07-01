@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "base/check.h"
+#include "base/compiler_specific.h"
 #include "base/functional/callback.h"
 #include "base/memory/ptr_util.h"
 #include "base/notreached.h"
@@ -100,7 +101,8 @@ bool SharedMemIPCServer::Init(void* shared_mem,
   
   
   for (size_t ix = 0; ix != channel_count; ++ix) {
-    ChannelControl* client_context = &client_control_->channels[ix];
+    ChannelControl* client_context =
+        &UNSAFE_TODO(client_control_->channels[ix]);
     ServerControl* service_context = new ServerControl;
     server_contexts_.push_back(base::WrapUnique(service_context));
 
@@ -120,17 +122,18 @@ bool SharedMemIPCServer::Init(void* shared_mem,
     service_context->shared_base = reinterpret_cast<char*>(shared_mem);
     service_context->channel_size = channel_size;
     service_context->channel = client_context;
-    service_context->channel_buffer =
-        service_context->shared_base + client_context->channel_base;
+    service_context->channel_buffer = UNSAFE_TODO(service_context->shared_base +
+                                                  client_context->channel_base);
     service_context->dispatcher = call_dispatcher_;
     service_context->target_info.process = target_process_;
     service_context->target_info.process_id = target_process_id_;
     
     base_start += channel_size;
     
-    thread_pool_->RegisterWait(this, service_context->ping_event.Get(),
+    thread_pool_->RegisterWait(this, service_context->ping_event.get(),
                                ThreadPingEventReady, service_context);
   }
+  
   if (!::DuplicateHandle(::GetCurrentProcess(), g_alive_mutex, target_process_,
                          &client_control_->server_alive,
                          SYNCHRONIZE | EVENT_MODIFY_STATE, false, 0)) {
@@ -263,7 +266,6 @@ bool SharedMemIPCServer::InvokeCallback(const ServerControl* service_context,
       }
       default: {
         NOTREACHED();
-        break;
       }
     }
   }
@@ -272,12 +274,13 @@ bool SharedMemIPCServer::InvokeCallback(const ServerControl* service_context,
     if (handler)
       SetCallError(SBOX_ERROR_FAILED_IPC, call_result);
   } else {
-    memcpy(call_result, &ipc_info.return_info, sizeof(*call_result));
+    UNSAFE_TODO(
+        memcpy(call_result, &ipc_info.return_info, sizeof(*call_result)));
     SetCallSuccess(call_result);
     if (params->IsInOut()) {
       
       
-      memcpy(ipc_buffer, params.get(), output_size);
+      UNSAFE_TODO(memcpy(ipc_buffer, params.get(), output_size));
     }
   }
 
@@ -315,9 +318,10 @@ void __stdcall SharedMemIPCServer::ThreadPingEventReady(void* context,
   
   
   CrossCallParams* call_params = reinterpret_cast<CrossCallParams*>(buffer);
-  memcpy(call_params->GetCallReturn(), &call_result, sizeof(call_result));
+  UNSAFE_TODO(
+      memcpy(call_params->GetCallReturn(), &call_result, sizeof(call_result)));
   ::InterlockedExchange(&service_context->channel->state, kAckChannel);
-  ::SetEvent(service_context->pong_event.Get());
+  ::SetEvent(service_context->pong_event.get());
 }
 
 bool SharedMemIPCServer::MakeEvents(base::win::ScopedHandle* server_ping,
@@ -330,14 +334,22 @@ bool SharedMemIPCServer::MakeEvents(base::win::ScopedHandle* server_ping,
 
   
   server_ping->Set(::CreateEventW(nullptr, false, false, nullptr));
-  if (!::DuplicateHandle(::GetCurrentProcess(), server_ping->Get(),
+  
+  if (!server_ping->is_valid()) {
+    return false;
+  }
+  if (!::DuplicateHandle(::GetCurrentProcess(), server_ping->get(),
                          target_process_, client_ping, kDesiredAccess, false,
                          0)) {
     return false;
   }
 
   server_pong->Set(::CreateEventW(nullptr, false, false, nullptr));
-  if (!::DuplicateHandle(::GetCurrentProcess(), server_pong->Get(),
+  
+  if (!server_pong->is_valid()) {
+    return false;
+  }
+  if (!::DuplicateHandle(::GetCurrentProcess(), server_pong->get(),
                          target_process_, client_pong, kDesiredAccess, false,
                          0)) {
     return false;

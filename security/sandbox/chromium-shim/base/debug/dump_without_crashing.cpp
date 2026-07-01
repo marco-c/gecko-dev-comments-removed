@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+#include "base/debug/dump_without_crashing.h"
+
+namespace base::debug {
+
+bool DumpWithoutCrashing(const base::Location& location,
+                         base::TimeDelta time_between_dumps) {
+  return true;
+}
+
+}  

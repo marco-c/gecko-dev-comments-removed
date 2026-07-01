@@ -56,6 +56,11 @@ class BASE_EXPORT AtExitManager {
   
   static void DisableAllAtExitManagers();
 
+  
+  
+  
+  static void AllowShadowingForTesting();
+
  protected:
   
   
@@ -74,6 +79,7 @@ class BASE_EXPORT AtExitManager {
 
   
   const raw_ptr<AtExitManager, DanglingUntriaged> next_manager_;
+  bool allow_shadowing_ = false;
 };
 
 #if defined(UNIT_TEST)

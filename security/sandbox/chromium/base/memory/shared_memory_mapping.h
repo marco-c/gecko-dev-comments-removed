@@ -6,13 +6,17 @@
 #define BASE_MEMORY_SHARED_MEMORY_MAPPING_H_
 
 #include <cstddef>
-#include <type_traits>
+#include <utility>
 
 #include "base/base_export.h"
 #include "base/check.h"
+#include "base/compiler_specific.h"
+#include "base/containers/checked_iterators.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/raw_span.h"
 #include "base/memory/shared_memory_mapper.h"
+#include "base/memory/shared_memory_safety_checker.h"
 #include "base/unguessable_token.h"
 
 namespace base {
@@ -64,7 +68,7 @@ class BASE_EXPORT SharedMemoryMapping {
   }
 
   
-  const UnguessableToken& guid() const {
+  const UnguessableToken& guid() const LIFETIME_BOUND {
     DCHECK(IsValid());
     return guid_;
   }
@@ -74,16 +78,16 @@ class BASE_EXPORT SharedMemoryMapping {
                       size_t size,
                       const UnguessableToken& guid,
                       SharedMemoryMapper* mapper);
-  void* raw_memory_ptr() const {
-    return reinterpret_cast<void*>(mapped_span_.data());
-  }
+
+  
+  span<uint8_t> mapped_memory() const { return mapped_span_; }
 
  private:
   friend class SharedMemoryTracker;
 
   void Unmap();
 
-  span<uint8_t> mapped_span_;
+  raw_span<uint8_t> mapped_span_;
   size_t size_ = 0;
   UnguessableToken guid_;
   raw_ptr<SharedMemoryMapper> mapper_ = nullptr;
@@ -94,6 +98,8 @@ class BASE_EXPORT SharedMemoryMapping {
 
 class BASE_EXPORT ReadOnlySharedMemoryMapping : public SharedMemoryMapping {
  public:
+  using iterator = base::CheckedContiguousIterator<const uint8_t>;
+
   
   ReadOnlySharedMemoryMapping();
 
@@ -108,20 +114,38 @@ class BASE_EXPORT ReadOnlySharedMemoryMapping : public SharedMemoryMapping {
 
   
   
-  const void* memory() const { return raw_memory_ptr(); }
+  
+  
+  
+  
+  const uint8_t* data() const { return mapped_memory().data(); }
+
+  
+  iterator begin() const {
+    
+    
+    
+    return UNSAFE_BUFFERS(iterator(data(), data() + size()));
+  }
+  iterator end() const {
+    
+    return UNSAFE_BUFFERS(iterator(data(), data() + size(), data() + size()));
+  }
+
+  
+  
+  
+  
+  const void* memory() const { return data(); }
 
   
   
   template <typename T>
+    requires subtle::AllowedOverSharedMemory<T>
   const T* GetMemoryAs() const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return nullptr;
-    if (sizeof(T) > size())
-      return nullptr;
-    return static_cast<const T*>(raw_memory_ptr());
+    return (IsValid() && sizeof(T) <= size())
+               ? reinterpret_cast<const T*>(mapped_memory().data())
+               : nullptr;
   }
 
   
@@ -131,29 +155,26 @@ class BASE_EXPORT ReadOnlySharedMemoryMapping : public SharedMemoryMapping {
   
   
   template <typename T>
+    requires subtle::AllowedOverSharedMemory<T>
   span<const T> GetMemoryAsSpan() const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return span<const T>();
-    size_t count = size() / sizeof(T);
-    return GetMemoryAsSpan<T>(count);
+    return IsValid() ? GetMemoryAsSpan<const T>(size() / sizeof(T))
+                     : span<const T>();
   }
 
   
   
   
   template <typename T>
+    requires subtle::AllowedOverSharedMemory<T>
   span<const T> GetMemoryAsSpan(size_t count) const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return span<const T>();
-    if (size() / sizeof(T) < count)
-      return span<const T>();
-    return span<const T>(static_cast<const T*>(raw_memory_ptr()), count);
+    const T* const ptr = GetMemoryAs<const T>();
+    
+    
+    
+    
+    return (ptr && count <= size() / sizeof(T))
+               ? UNSAFE_BUFFERS(span(ptr, count))
+               : span<const T>();
   }
 
  private:
@@ -169,6 +190,9 @@ class BASE_EXPORT ReadOnlySharedMemoryMapping : public SharedMemoryMapping {
 
 class BASE_EXPORT WritableSharedMemoryMapping : public SharedMemoryMapping {
  public:
+  using iterator = base::CheckedContiguousIterator<uint8_t>;
+  using const_iterator = base::CheckedContiguousIterator<const uint8_t>;
+
   
   WritableSharedMemoryMapping();
 
@@ -183,20 +207,52 @@ class BASE_EXPORT WritableSharedMemoryMapping : public SharedMemoryMapping {
 
   
   
-  void* memory() const { return raw_memory_ptr(); }
+  
+  
+  
+  
+  uint8_t* data() { return mapped_memory().data(); }
+  const uint8_t* data() const { return mapped_memory().data(); }
+
+  
+  iterator begin() {
+    
+    return UNSAFE_BUFFERS(iterator(data(), data() + size()));
+  }
+  const_iterator begin() const {
+    
+    return UNSAFE_BUFFERS(const_iterator(data(), data() + size()));
+  }
+  iterator end() {
+    
+    return UNSAFE_BUFFERS(iterator(data(), data() + size(), data() + size()));
+  }
+  const_iterator end() const {
+    
+    return UNSAFE_BUFFERS(
+        const_iterator(data(), data() + size(), data() + size()));
+  }
+
+  
+  
+  
+  
+  void* memory() { return data(); }
+  const void* memory() const { return data(); }
 
   
   
   template <typename T>
-  T* GetMemoryAs() const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return nullptr;
-    if (sizeof(T) > size())
-      return nullptr;
-    return static_cast<T*>(raw_memory_ptr());
+    requires subtle::AllowedOverSharedMemory<T>
+  const T* GetMemoryAs() const {
+    return (IsValid() && sizeof(T) <= size())
+               ? reinterpret_cast<T*>(mapped_memory().data())
+               : nullptr;
+  }
+  template <typename T>
+    requires(!std::is_const_v<T> && subtle::AllowedOverSharedMemory<T>)
+  T* GetMemoryAs() {
+    return const_cast<T*>(std::as_const(*this).GetMemoryAs<const T>());
   }
 
   
@@ -205,29 +261,37 @@ class BASE_EXPORT WritableSharedMemoryMapping : public SharedMemoryMapping {
   
   
   template <typename T>
-  span<T> GetMemoryAsSpan() const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return span<T>();
-    size_t count = size() / sizeof(T);
-    return GetMemoryAsSpan<T>(count);
+    requires subtle::AllowedOverSharedMemory<T>
+  span<const T> GetMemoryAsSpan() const {
+    return IsValid() ? GetMemoryAsSpan<const T>(size() / sizeof(T))
+                     : span<const T>();
+  }
+  template <typename T>
+    requires(!std::is_const_v<T> && subtle::AllowedOverSharedMemory<T>)
+  span<T> GetMemoryAsSpan() {
+    return IsValid() ? GetMemoryAsSpan<T>(size() / sizeof(T)) : span<T>();
   }
 
   
   
   
   template <typename T>
-  span<T> GetMemoryAsSpan(size_t count) const {
-    static_assert(std::is_trivially_copyable_v<T>,
-                  "Copying non-trivially-copyable object across memory spaces "
-                  "is dangerous");
-    if (!IsValid())
-      return span<T>();
-    if (size() / sizeof(T) < count)
-      return span<T>();
-    return span<T>(static_cast<T*>(raw_memory_ptr()), count);
+    requires subtle::AllowedOverSharedMemory<T>
+  span<const T> GetMemoryAsSpan(size_t count) const {
+    const T* const ptr = GetMemoryAs<const T>();
+    
+    return (ptr && count <= size() / sizeof(T))
+               ? UNSAFE_BUFFERS(span(ptr, count))
+               : span<const T>();
+  }
+  template <typename T>
+    requires(!std::is_const_v<T> && subtle::AllowedOverSharedMemory<T>)
+  span<T> GetMemoryAsSpan(size_t count) {
+    T* const ptr = GetMemoryAs<T>();
+    
+    return (ptr && count <= size() / sizeof(T))
+               ? UNSAFE_BUFFERS(span(ptr, count))
+               : span<T>();
   }
 
  private:
@@ -242,6 +306,8 @@ class BASE_EXPORT WritableSharedMemoryMapping : public SharedMemoryMapping {
                               size_t size,
                               const UnguessableToken& guid,
                               SharedMemoryMapper* mapper);
+
+  friend class DiscardableSharedMemory;  
 };
 
 }  

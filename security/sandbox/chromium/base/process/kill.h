@@ -47,32 +47,44 @@ const DWORD kProcessKilledExitCode = 1;
 
 
 
-enum TerminationStatus {
+
+
+
+
+
+enum TerminationStatus : int {
   
-  TERMINATION_STATUS_NORMAL_TERMINATION,   
-  TERMINATION_STATUS_ABNORMAL_TERMINATION, 
-  TERMINATION_STATUS_PROCESS_WAS_KILLED,   
-  TERMINATION_STATUS_PROCESS_CRASHED,      
-  TERMINATION_STATUS_STILL_RUNNING,        
+  TERMINATION_STATUS_NORMAL_TERMINATION = 0,
+  
+  TERMINATION_STATUS_ABNORMAL_TERMINATION = 1,
+  
+  TERMINATION_STATUS_PROCESS_WAS_KILLED = 2,
+  
+  TERMINATION_STATUS_PROCESS_CRASHED = 3,
+  
+  TERMINATION_STATUS_STILL_RUNNING = 4,
 #if BUILDFLAG(IS_CHROMEOS)
   
-  TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM,
+  TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM = 5,
 #endif
 #if BUILDFLAG(IS_ANDROID)
   
   
   
   
-  TERMINATION_STATUS_OOM_PROTECTED,        
+  TERMINATION_STATUS_OOM_PROTECTED = 6,
 #endif
-  TERMINATION_STATUS_LAUNCH_FAILED,        
-  TERMINATION_STATUS_OOM,                  
+  
+  TERMINATION_STATUS_LAUNCH_FAILED = 7,
+  
+  TERMINATION_STATUS_OOM = 8,
 #if BUILDFLAG(IS_WIN)
   
-  TERMINATION_STATUS_INTEGRITY_FAILURE,
+  TERMINATION_STATUS_INTEGRITY_FAILURE = 9,
 #endif
-  TERMINATION_STATUS_MAX_ENUM
   
+  TERMINATION_STATUS_EVICTED_FOR_MEMORY = 10,
+  TERMINATION_STATUS_MAX_ENUM = 11,
 };
 
 
@@ -110,8 +122,8 @@ BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
 
 
 
-BASE_EXPORT TerminationStatus GetKnownDeadTerminationStatus(
-    ProcessHandle handle, int* exit_code);
+BASE_EXPORT TerminationStatus
+GetKnownDeadTerminationStatus(ProcessHandle handle, int* exit_code);
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
@@ -130,7 +142,7 @@ BASE_EXPORT void EnsureProcessTerminated(Process process);
 
 
 
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_IOS)
 
 
 
@@ -150,6 +162,12 @@ BASE_EXPORT bool CleanupProcesses(const FilePath::StringType& executable_name,
                                   base::TimeDelta wait,
                                   int exit_code,
                                   const ProcessFilter* filter);
+#endif  
+
+#if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && TARGET_OS_SIMULATOR)
+
+
+void WaitForChildToDie(pid_t child, int timeout_seconds);
 #endif  
 
 }  

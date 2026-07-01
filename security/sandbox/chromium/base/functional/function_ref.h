@@ -5,11 +5,13 @@
 #ifndef BASE_FUNCTIONAL_FUNCTION_REF_H_
 #define BASE_FUNCTIONAL_FUNCTION_REF_H_
 
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
+#include "base/compiler_specific.h"
 #include "base/functional/bind_internal.h"
-#include "third_party/abseil-cpp/absl/base/attributes.h"
+#include "base/types/is_instantiation.h"
 #include "third_party/abseil-cpp/absl/functional/function_ref.h"
 
 namespace base {
@@ -61,23 +63,53 @@ class FunctionRef;
 
 template <typename R, typename... Args>
 class FunctionRef<R(Args...)> {
- private:
   template <typename Functor,
-            typename FunctorReturnType =
-                typename internal::BindTypeHelper<Functor>::ReturnType,
-            typename FunctorArgsAsTypeList =
-                typename internal::BindTypeHelper<Functor>::RunParamsList>
-  using EnableIfCompatible = std::enable_if_t<
-      std::is_convertible_v<FunctorReturnType, R> &&
-      std::is_same_v<FunctorArgsAsTypeList, internal::TypeList<Args...>>>;
+            typename RunType = internal::FunctorTraits<Functor>::RunType>
+  static constexpr bool kCompatibleFunctor =
+      std::convertible_to<internal::ExtractReturnType<RunType>, R> &&
+      std::same_as<internal::ExtractArgs<RunType>, internal::TypeList<Args...>>;
 
  public:
   
   
-  template <typename Functor, typename = EnableIfCompatible<Functor>>
+  template <typename Functor>
+    requires kCompatibleFunctor<Functor> &&
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             (!is_instantiation<std::decay_t<Functor>, FunctionRef>) &&
+             
+             
+             (!is_instantiation<std::decay_t<Functor>, absl::FunctionRef>)
   
-  FunctionRef(const Functor& functor ABSL_ATTRIBUTE_LIFETIME_BOUND)
+  FunctionRef(const Functor& functor LIFETIME_BOUND)
       : wrapped_func_ref_(functor) {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Func>
+    requires kCompatibleFunctor<Func*>
+  
+  FunctionRef(Func* func) : wrapped_func_ref_(func) {}
 
   
   FunctionRef() = delete;
@@ -89,13 +121,6 @@ class FunctionRef<R(Args...)> {
   R operator()(Args... args) const {
     return wrapped_func_ref_(std::forward<Args>(args)...);
   }
-
-  absl::FunctionRef<R(Args...)> ToAbsl() const { return wrapped_func_ref_; }
-
-  
-  
-  template <typename Signature>
-  operator absl::FunctionRef<Signature>() = delete;
 
  private:
   absl::FunctionRef<R(Args...)> wrapped_func_ref_;

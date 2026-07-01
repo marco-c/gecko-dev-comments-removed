@@ -7,91 +7,39 @@
 
 #include "base/base_export.h"
 #include "base/check.h"
+#include "base/compiler_specific.h"
 #include "base/dcheck_is_on.h"
-#include "base/logging_buildflags.h"
 
 namespace logging {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if CHECK_WILL_STREAM() || BUILDFLAG(ENABLE_LOG_ERROR_NOT_REACHED)
-#define NOTREACHED() \
-  LOGGING_CHECK_FUNCTION_IMPL(::logging::NotReachedError::NotReached(), false)
-#else
-#define NOTREACHED()                                       \
-  (true) ? ::logging::NotReachedError::TriggerNotReached() \
-         : EAT_CHECK_STREAM_PARAMS()
-#endif
-
-
-
-
-
 #if CHECK_WILL_STREAM()
-#define NOTREACHED_NORETURN() ::logging::NotReachedNoreturnError()
+#define NOTREACHED_INTERNAL_IMPL() ::logging::NotReachedNoreturnError()
 #else
 
 
 
-[[noreturn]] IMMEDIATE_CRASH_ALWAYS_INLINE void NotReachedFailure() {
+[[noreturn]] NOMERGE IMMEDIATE_CRASH_ALWAYS_INLINE void NotReachedFailure() {
   base::ImmediateCrash();
 }
 
-#define NOTREACHED_NORETURN() \
-  (true) ? ::logging::NotReachedFailure() : EAT_CHECK_STREAM_PARAMS()
+#define NOTREACHED_INTERNAL_IMPL() \
+  DISCARDING_CHECK_FUNCTION_IMPL(::logging::NotReachedFailure(), false)
 #endif
 
 
 
 
-#define DUMP_WILL_BE_NOTREACHED_NORETURN() \
-  ::logging::CheckError::DumpWillBeNotReachedNoreturn()
+
+#define NOTREACHED(...)                                           \
+  BASE_IF(BASE_IS_EMPTY(__VA_ARGS__), NOTREACHED_INTERNAL_IMPL(), \
+          LOGGING_CHECK_FUNCTION_IMPL(                            \
+              ::logging::NotReachedError::NotReached(__VA_ARGS__), false))
 
 
 
 
-
-
-
-
-#if DCHECK_IS_ON()
-#define NOTIMPLEMENTED() \
-  ::logging::CheckError::NotImplemented(__PRETTY_FUNCTION__)
-#else
-#define NOTIMPLEMENTED() EAT_CHECK_STREAM_PARAMS()
-#endif
-
-#define NOTIMPLEMENTED_LOG_ONCE()    \
-  {                                  \
-    static bool logged_once = false; \
-    if (!logged_once) {              \
-      NOTIMPLEMENTED();              \
-      logged_once = true;            \
-    }                                \
-  }
+#define DUMP_WILL_BE_NOTREACHED() \
+  ::logging::NotReachedError::DumpWillBeNotReached()
 
 }  
 

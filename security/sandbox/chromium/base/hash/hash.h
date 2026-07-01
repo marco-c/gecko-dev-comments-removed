@@ -15,7 +15,6 @@
 
 #include "base/base_export.h"
 #include "base/containers/span.h"
-#include "base/strings/string_piece.h"
 
 namespace base {
 
@@ -26,7 +25,6 @@ namespace base {
 
 
 
-BASE_EXPORT uint32_t Hash(const void* data, size_t length);
 BASE_EXPORT uint32_t Hash(const std::string& str);
 
 
@@ -36,8 +34,8 @@ BASE_EXPORT uint32_t Hash(const std::string& str);
 
 
 BASE_EXPORT size_t FastHash(base::span<const uint8_t> data);
-inline size_t FastHash(StringPiece str) {
-  return FastHash(as_bytes(make_span(str)));
+inline size_t FastHash(std::string_view str) {
+  return FastHash(as_byte_span(str));
 }
 
 
@@ -47,7 +45,6 @@ inline size_t FastHash(StringPiece str) {
 
 
 BASE_EXPORT uint32_t PersistentHash(base::span<const uint8_t> data);
-BASE_EXPORT uint32_t PersistentHash(const void* data, size_t length);
 BASE_EXPORT uint32_t PersistentHash(std::string_view str);
 
 
@@ -58,8 +55,9 @@ template <typename T1, typename T2>
 inline size_t HashInts(T1 value1, T2 value2) {
   
   
-  if (sizeof(T1) > sizeof(uint32_t) || (sizeof(T2) > sizeof(uint32_t)))
+  if (sizeof(T1) > sizeof(uint32_t) || (sizeof(T2) > sizeof(uint32_t))) {
     return HashInts64(value1, value2);
+  }
 
   return HashInts32(static_cast<uint32_t>(value1),
                     static_cast<uint32_t>(value2));
@@ -78,6 +76,26 @@ struct IntPairHash<std::pair<Type1, Type2>> {
     return HashInts(value.first, value.second);
   }
 };
+
+
+template <typename T>
+size_t HashCombine(size_t seed, const T& value) {
+  size_t hash;
+  if constexpr (sizeof(size_t) == 8) {
+    hash = HashInts64(seed, std::hash<T>()(value));
+  } else {
+    hash = HashInts32(seed, std::hash<T>()(value));
+  }
+
+  return hash;
+}
+
+
+template <typename T, typename... V>
+size_t HashCombine(size_t seed, const T& first, const V&... values) {
+  size_t hash = HashCombine(seed, first);
+  return HashCombine(hash, values...);
+}
 
 }  
 

@@ -5,12 +5,12 @@
 #ifndef BASE_WIN_SID_H_
 #define BASE_WIN_SID_H_
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "base/base_export.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base::win {
 
@@ -65,7 +65,8 @@ class BASE_EXPORT Sid {
  public:
   
   
-  static Sid FromNamedCapability(const std::wstring& capability_name);
+  static std::optional<Sid> FromNamedCapability(
+      const std::wstring& capability_name);
 
   
   
@@ -75,10 +76,10 @@ class BASE_EXPORT Sid {
   static Sid FromKnownSid(WellKnownSid type);
 
   
-  static absl::optional<Sid> FromSddlString(const std::wstring& sddl_sid);
+  static std::optional<Sid> FromSddlString(const std::wstring& sddl_sid);
 
   
-  static absl::optional<Sid> FromPSID(const PSID sid);
+  static std::optional<Sid> FromPSID(const PSID sid);
 
   
   static Sid GenerateRandomSid();
@@ -87,7 +88,7 @@ class BASE_EXPORT Sid {
   static Sid FromIntegrityLevel(DWORD integrity_level);
 
   
-  static absl::optional<std::vector<Sid>> FromSddlStringVector(
+  static std::optional<std::vector<Sid>> FromSddlStringVector(
       const std::vector<std::wstring>& sddl_sids);
 
   
@@ -117,7 +118,7 @@ class BASE_EXPORT Sid {
   PSID GetPSID() const;
 
   
-  absl::optional<std::wstring> ToSddlString() const;
+  std::optional<std::wstring> ToSddlString() const;
 
   
   Sid Clone() const;
@@ -128,11 +129,7 @@ class BASE_EXPORT Sid {
   
   bool operator==(const Sid& sid) const;
 
-  
-  bool operator!=(const Sid& sid) const;
-
  private:
-  Sid() {}
   Sid(const void* sid, size_t length);
   std::vector<char> sid_;
 };

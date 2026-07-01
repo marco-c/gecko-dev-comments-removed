@@ -62,8 +62,9 @@ void PlatformThreadLocalStorage::SetTLSValue(TLSKey key, void* value) {
 void NTAPI OnThreadExit(PVOID module, DWORD reason, PVOID reserved) {
   
   
-  if (DLL_THREAD_DETACH == reason || DLL_PROCESS_DETACH == reason)
+  if (DLL_THREAD_DETACH == reason || DLL_PROCESS_DETACH == reason) {
     base::internal::PlatformThreadLocalStorage::OnThreadExit();
+  }
 }
 
 
@@ -104,4 +105,4 @@ PIMAGE_TLS_CALLBACK p_thread_callback_base = OnThreadExit;
 #pragma data_seg()
 
 #endif  
-}  
+}       

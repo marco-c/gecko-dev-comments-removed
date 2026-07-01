@@ -8,9 +8,9 @@
 
 #include "base/at_exit.h"
 #include "base/threading/platform_thread.h"
+#include "base/time/time.h"
 
-namespace base {
-namespace internal {
+namespace base::internal {
 
 bool NeedsLazyInstance(std::atomic<uintptr_t>& state) {
   
@@ -39,10 +39,11 @@ bool NeedsLazyInstance(std::atomic<uintptr_t>& state) {
       
       
       
-      if (elapsed < Milliseconds(1))
+      if (elapsed < Milliseconds(1)) {
         PlatformThread::YieldCurrentThread();
-      else
+      } else {
         PlatformThread::Sleep(Milliseconds(1));
+      }
     } while (state.load(std::memory_order_acquire) ==
              kLazyInstanceStateCreating);
   }
@@ -60,9 +61,9 @@ void CompleteLazyInstance(std::atomic<uintptr_t>& state,
   state.store(new_instance, std::memory_order_release);
 
   
-  if (new_instance && destructor)
+  if (new_instance && destructor) {
     AtExitManager::RegisterCallback(destructor, destructor_arg);
+  }
 }
 
-}  
 }  

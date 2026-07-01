@@ -18,18 +18,14 @@
 
 
 
-#if defined(__has_cpp_attribute)
-#define HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-#define HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
-
 #if defined(__has_attribute)
 #define HAS_ATTRIBUTE(x) __has_attribute(x)
 #else
 #define HAS_ATTRIBUTE(x) 0
 #endif
+
+
+
 
 
 #if defined(__has_builtin)
@@ -41,24 +37,100 @@
 
 
 
-#if defined(__clang__) && HAS_ATTRIBUTE(noinline) && __clang_major__ >= 15
+
+#if defined(__has_feature)
+#define HAS_FEATURE(FEATURE) __has_feature(FEATURE)
+#else
+#define HAS_FEATURE(FEATURE) 0
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::noinline)
 #define NOINLINE [[clang::noinline]]
-#elif defined(COMPILER_GCC) && HAS_ATTRIBUTE(noinline)
-#define NOINLINE __attribute__((noinline))
-#elif defined(COMPILER_MSVC)
-#define NOINLINE __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+#define NOINLINE [[gnu::noinline]]
+#elif __has_cpp_attribute(msvc::noinline)
+#define NOINLINE [[msvc::noinline]]
 #else
 #define NOINLINE
 #endif
 
-#if defined(__clang__) && defined(NDEBUG) && HAS_ATTRIBUTE(always_inline) && \
-    __clang_major__ >= 15
-#define ALWAYS_INLINE [[clang::always_inline]] inline
-#elif defined(COMPILER_GCC) && defined(NDEBUG) && HAS_ATTRIBUTE(always_inline)
-#define ALWAYS_INLINE inline __attribute__((__always_inline__))
-#elif defined(COMPILER_MSVC) && defined(NDEBUG)
-#define ALWAYS_INLINE __forceinline
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::noinline)
+#define NOINLINE_CALL [[clang::noinline]]
 #else
+#define NOINLINE_CALL
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::optnone)
+#define NOOPT [[clang::optnone]]
+#elif __has_cpp_attribute(gnu::optimize)
+#define NOOPT [[gnu::optimize(0)]]
+#else
+#define NOOPT
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(NDEBUG)
+#if __has_cpp_attribute(clang::always_inline)
+#define ALWAYS_INLINE [[clang::always_inline]] inline
+#elif __has_cpp_attribute(gnu::always_inline)
+#define ALWAYS_INLINE [[gnu::always_inline]] inline
+#elif defined(COMPILER_MSVC)
+#define ALWAYS_INLINE __forceinline
+#endif
+#endif
+#if !defined(ALWAYS_INLINE)
 #define ALWAYS_INLINE inline
 #endif
 
@@ -70,8 +142,40 @@
 
 
 
-#if defined(__clang__) && HAS_ATTRIBUTE(not_tail_called) && \
-    __clang_major__ >= 15
+
+
+
+
+
+
+
+#if defined(NDEBUG)
+#if __has_cpp_attribute(clang::always_inline)
+#define ALWAYS_INLINE_CALL [[clang::always_inline]]
+#endif
+#endif
+#if !defined(ALWAYS_INLINE_CALL)
+#define ALWAYS_INLINE_CALL
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::not_tail_called)
 #define NOT_TAIL_CALLED [[clang::not_tail_called]]
 #else
 #define NOT_TAIL_CALLED
@@ -87,12 +191,17 @@
 
 
 
-#if defined(__clang__)
-#define ALIGNAS(byte_alignment) alignas(byte_alignment)
-#elif defined(COMPILER_MSVC)
-#define ALIGNAS(byte_alignment) __declspec(align(byte_alignment))
-#elif defined(COMPILER_GCC) && HAS_ATTRIBUTE(aligned)
-#define ALIGNAS(byte_alignment) __attribute__((aligned(byte_alignment)))
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::musttail)
+#define MUSTTAIL [[clang::musttail]]
+#else
+#define MUSTTAIL
 #endif
 
 
@@ -103,7 +212,23 @@
 
 
 
-#if HAS_CPP_ATTRIBUTE(no_unique_address)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(msvc::no_unique_address)
+#define NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#elif __has_cpp_attribute(no_unique_address)
 #define NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 #define NO_UNIQUE_ADDRESS
@@ -115,9 +240,26 @@
 
 
 
-#if (defined(COMPILER_GCC) || defined(__clang__)) && HAS_ATTRIBUTE(format)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::format)
 #define PRINTF_FORMAT(format_param, dots_param) \
-  __attribute__((format(printf, format_param, dots_param)))
+  [[gnu::format(printf, format_param, dots_param)]]
 #else
 #define PRINTF_FORMAT(format_param, dots_param)
 #endif
@@ -125,37 +267,76 @@
 
 
 
-#define WPRINTF_FORMAT(format_param, dots_param)
 
 
 
 
-#if HAS_ATTRIBUTE(no_sanitize)
-#define NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+
+
+
+
+
+#if __has_cpp_attribute(clang::no_sanitize)
+#define NO_SANITIZE(sanitizer) [[clang::no_sanitize(sanitizer)]]
+#else
+#define NO_SANITIZE(sanitizer)
 #endif
-#if !defined(NO_SANITIZE)
-#define NO_SANITIZE(what)
-#endif
 
 
-#if defined(MEMORY_SANITIZER) && !BUILDFLAG(IS_NACL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MEMORY_SANITIZER)
 #include <sanitizer/msan_interface.h>
-
-
-
-
 #define MSAN_UNPOISON(p, size) __msan_unpoison(p, size)
+#else
+#define MSAN_UNPOISON(p, size)
+#endif
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MEMORY_SANITIZER)
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) \
   __msan_check_mem_is_initialized(p, size)
-#else  
-#define MSAN_UNPOISON(p, size)
+#else
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size)
-#endif  
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if !defined(DISABLE_CFI_PERF)
@@ -169,95 +350,67 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #if !defined(DISABLE_CFI_ICALL)
 #if BUILDFLAG(IS_WIN)
-
 #define DISABLE_CFI_ICALL NO_SANITIZE("cfi-icall") __declspec(guard(nocf))
 #else
 #define DISABLE_CFI_ICALL NO_SANITIZE("cfi-icall")
 #endif
 #endif
-#if !defined(DISABLE_CFI_ICALL)
-#define DISABLE_CFI_ICALL
-#endif
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 #if !defined(DISABLE_CFI_DLSYM)
 #if BUILDFLAG(IS_WIN)
-
 #define DISABLE_CFI_DLSYM
 #else
 #define DISABLE_CFI_DLSYM DISABLE_CFI_ICALL
 #endif
 #endif
-#if !defined(DISABLE_CFI_DLSYM)
-#define DISABLE_CFI_DLSYM
-#endif
-
-
-#if !defined(CDECL)
-#if BUILDFLAG(IS_WIN)
-#define CDECL __cdecl
-#else  
-#define CDECL
-#endif  
-#endif  
-
-
-#if !defined(UNLIKELY)
-#if defined(COMPILER_GCC) || defined(__clang__)
-#define UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-#define UNLIKELY(x) (x)
-#endif  
-#endif  
-
-#if !defined(LIKELY)
-#if defined(COMPILER_GCC) || defined(__clang__)
-#define LIKELY(x) __builtin_expect(!!(x), 1)
-#else
-#define LIKELY(x) (x)
-#endif  
-#endif  
 
 
 
-#if defined(__has_feature)
-#define HAS_FEATURE(FEATURE) __has_feature(FEATURE)
-#else
-#define HAS_FEATURE(FEATURE) 0
-#endif
+
+
+
+
+
+
+
+
+
 
 #if defined(COMPILER_GCC)
 #define PRETTY_FUNCTION __PRETTY_FUNCTION__
 #elif defined(COMPILER_MSVC)
 #define PRETTY_FUNCTION __FUNCSIG__
 #else
-
 #define PRETTY_FUNCTION __func__
 #endif
 
-#if !defined(CPU_ARM_NEON)
-#if defined(__arm__)
-#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
-    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
-#error Chromium does not support middle endian architecture
-#endif
-#if defined(__ARM_NEON__)
-#define CPU_ARM_NEON 1
-#endif
-#endif  
-#endif  
-
-#if !defined(HAVE_MIPS_MSA_INTRINSICS)
-#if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
-#define HAVE_MIPS_MSA_INTRINSICS 1
-#endif
-#endif
-
-#if defined(__clang__) && HAS_ATTRIBUTE(uninitialized)
 
 
 
@@ -287,7 +440,14 @@
 
 
 
+
+
+
+
+#if __has_cpp_attribute(clang::uninitialized)
 #define STACK_UNINITIALIZED [[clang::uninitialized]]
+#elif __has_cpp_attribute(gnu::uninitialized)
+#define STACK_UNINITIALIZED [[gnu::uninitialized]]
 #else
 #define STACK_UNINITIALIZED
 #endif
@@ -303,12 +463,17 @@
 
 
 
-#if defined(COMPILER_GCC) || defined(__clang__)
-#if HAS_ATTRIBUTE(__no_stack_protector__)
-#define NO_STACK_PROTECTOR __attribute__((__no_stack_protector__))
-#else
-#define NO_STACK_PROTECTOR __attribute__((__optimize__("-fno-stack-protector")))
-#endif
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::no_stack_protector)
+#define NO_STACK_PROTECTOR [[gnu::no_stack_protector]]
+#elif __has_cpp_attribute(gnu::optimize)
+#define NO_STACK_PROTECTOR [[gnu::optimize("-fno-stack-protector")]]
 #else
 #define NO_STACK_PROTECTOR
 #endif
@@ -320,30 +485,63 @@
 
 
 
-#if defined(__clang_analyzer__)
 
-inline constexpr bool AnalyzerNoReturn() __attribute__((analyzer_noreturn)) {
+
+
+
+
+#if defined(__clang_analyzer__)
+inline constexpr bool AnalyzerNoReturn()
+#if HAS_ATTRIBUTE(analyzer_noreturn)
+    __attribute__((analyzer_noreturn))
+#endif
+{
   return false;
 }
+#define ANALYZER_SKIP_THIS_PATH() static_cast<void>(::AnalyzerNoReturn())
+#else
 
+
+#define ANALYZER_SKIP_THIS_PATH()
+#endif
+
+
+
+
+
+
+
+
+
+#if defined(__clang_analyzer__)
 inline constexpr bool AnalyzerAssumeTrue(bool arg) {
-  
-  
   return arg || AnalyzerNoReturn();
 }
-
 #define ANALYZER_ASSUME_TRUE(arg) ::AnalyzerAssumeTrue(!!(arg))
-#define ANALYZER_SKIP_THIS_PATH() static_cast<void>(::AnalyzerNoReturn())
-
-#else  
+#else
 
 #define ANALYZER_ASSUME_TRUE(arg) (arg)
-#define ANALYZER_SKIP_THIS_PATH()
-
-#endif  
+#endif
 
 
-#if defined(__clang__) && HAS_ATTRIBUTE(nomerge)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::nomerge)
 #define NOMERGE [[clang::nomerge]]
 #else
 #define NOMERGE
@@ -370,7 +568,13 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(__clang__) && HAS_ATTRIBUTE(trivial_abi)
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::trivial_abi)
 #define TRIVIAL_ABI [[clang::trivial_abi]]
 #else
 #define TRIVIAL_ABI
@@ -384,7 +588,18 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(__clang__) && HAS_BUILTIN(__is_trivially_relocatable)
+
+
+
+
+
+
+
+#if HAS_BUILTIN(__builtin_is_cpp_trivially_relocatable)
+#define IS_TRIVIALLY_RELOCATABLE(t) __builtin_is_cpp_trivially_relocatable(t)
+#elif HAS_BUILTIN(__is_trivially_relocatable)
+
+
 #define IS_TRIVIALLY_RELOCATABLE(t) __is_trivially_relocatable(t)
 #else
 #define IS_TRIVIALLY_RELOCATABLE(t) false
@@ -393,7 +608,25 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(__clang__) && HAS_ATTRIBUTE(reinitializes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::reinitializes)
 #define REINITIALIZES_AFTER_MOVE [[clang::reinitializes]]
 #else
 #define REINITIALIZES_AFTER_MOVE
@@ -402,18 +635,50 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if HAS_ATTRIBUTE(require_constant_initialization)
-#define CONSTINIT __attribute__((require_constant_initialization))
-#endif
-#if !defined(CONSTINIT)
-#define CONSTINIT
-#endif
 
-#if defined(__clang__) && __clang_major__ >= 13
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gsl::Owner)
 #define GSL_OWNER [[gsl::Owner]]
-#define GSL_POINTER [[gsl::Pointer]]
 #else
 #define GSL_OWNER
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gsl::Pointer)
+#define GSL_POINTER [[gsl::Pointer]]
+#else
 #define GSL_POINTER
 #endif
 
@@ -424,7 +689,17 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(COMPILER_GCC) || defined(__clang__)
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::abi_tag)
 #define LOGICALLY_CONST [[gnu::abi_tag("logically_const")]]
 #else
 #define LOGICALLY_CONST
@@ -442,13 +717,447 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 
 
 
-#if defined(ARCH_CPU_64_BITS) &&                       \
-    !(BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64)) && \
-    !defined(COMPONENT_BUILD) && defined(__clang__) && \
-    __clang_major__ >= 17 && HAS_ATTRIBUTE(preserve_most)
-#define PRESERVE_MOST __attribute__((preserve_most))
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::preserve_most) &&             \
+    (defined(ARCH_CPU_ARM64) || defined(ARCH_CPU_X86_64)) && \
+    !defined(COMPONENT_BUILD) &&                             \
+    !(BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64))
+#define PRESERVE_MOST [[clang::preserve_most]]
 #else
 #define PRESERVE_MOST
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::lifetimebound)
+#define LIFETIME_BOUND [[clang::lifetimebound]]
+#else
+#define LIFETIME_BOUND
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::lifetime_capture_by)
+#define LIFETIME_CAPTURE_BY(x) [[clang::lifetime_capture_by(x)]]
+#else
+#define LIFETIME_CAPTURE_BY(x)
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::weak)
+#define WEAK_SYMBOL [[gnu::weak]]
+#else
+#define WEAK_SYMBOL
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::disable_tail_calls)
+#define DISABLE_TAIL_CALLS [[clang::disable_tail_calls]]
+#else
+#define DISABLE_TAIL_CALLS
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::packed)
+#define PACKED_OBJ [[gnu::packed]]
+#else
+#define PACKED_OBJ
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::returns_nonnull)
+#define RETURNS_NONNULL [[gnu::returns_nonnull]]
+#else
+#define RETURNS_NONNULL
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::const)
+#define CONST_FUNCTION [[gnu::const]]
+#else
+#define CONST_FUNCTION
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(gnu::pure)
+#define PURE_FUNCTION [[gnu::pure]]
+#else
+#define PURE_FUNCTION
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if __has_cpp_attribute(clang::unsafe_buffer_usage)
+#define UNSAFE_BUFFER_USAGE [[clang::unsafe_buffer_usage]]
+#else
+#define UNSAFE_BUFFER_USAGE
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__)
+
+
+
+#define UNSAFE_BUFFERS(...)                  \
+  _Pragma("clang unsafe_buffer_usage begin") \
+  __VA_ARGS__                                \
+  _Pragma("clang unsafe_buffer_usage end")
+
+#else
+#define UNSAFE_BUFFERS(...) __VA_ARGS__
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+#define UNSAFE_TODO(...) UNSAFE_BUFFERS(__VA_ARGS__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if HAS_ATTRIBUTE(enable_if)
+#define ENABLE_IF_ATTR(cond, msg) __attribute__((enable_if(cond, msg)))
+#else
+#define ENABLE_IF_ATTR(cond, msg)
 #endif
 
 #endif  

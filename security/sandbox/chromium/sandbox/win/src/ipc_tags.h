@@ -5,10 +5,12 @@
 #ifndef SANDBOX_WIN_SRC_IPC_TAGS_H_
 #define SANDBOX_WIN_SRC_IPC_TAGS_H_
 
+#include <cstdint>
+
 namespace sandbox {
 
-enum class IpcTag {
-  UNUSED = 0,
+enum class IpcTag : uint32_t {
+  UNUSED,
   PING1,  
           
   PING2,  
@@ -18,7 +20,6 @@ enum class IpcTag {
   NTQUERYATTRIBUTESFILE,
   NTQUERYFULLATTRIBUTESFILE,
   NTSETINFO_RENAME,
-  CREATENAMEDPIPEW,
   NTOPENTHREAD,
   NTOPENPROCESSTOKENEX,
   NTCREATEKEY,
@@ -28,15 +29,13 @@ enum class IpcTag {
   USER_GETFOREGROUNDWINDOW,
   USER_REGISTERCLASSW,
   CREATETHREAD,
-  GETCOMPLEXLINEBREAKS,
   NTCREATESECTION,
-  LAST
+  kMaxValue = NTCREATESECTION,
 };
 
-constexpr size_t kMaxServiceCount = 64;
-constexpr size_t kMaxIpcTag = static_cast<size_t>(IpcTag::LAST);
-static_assert(kMaxIpcTag <= kMaxServiceCount, "kMaxServiceCount is too low");
 
+inline constexpr size_t kSandboxIpcCount =
+    static_cast<size_t>(IpcTag::kMaxValue) + 1;
 }  
 
 #endif  

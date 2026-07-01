@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <string_view>
+
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/raw_ref.h"
@@ -44,7 +46,11 @@
 
 namespace sandbox {
 
-enum class IpcTag;
+enum class IpcTag : uint32_t;
+
+
+
+const uint32_t kIPCChannelSize = 1024;
 
 
 
@@ -118,12 +124,12 @@ class CopyHelper<void*> {
 
 
 template <>
-class CopyHelper<const wchar_t*> {
+class CopyHelper<std::wstring_view> {
  public:
-  explicit CopyHelper(const wchar_t* t) : t_(t) {}
+  explicit CopyHelper(std::wstring_view t) : t_(t) {}
 
   
-  const void* GetStart() const { return t_; }
+  const void* GetStart() const { return t_.data(); }
 
   
   
@@ -133,14 +139,8 @@ class CopyHelper<const wchar_t*> {
   }
 
   
-  
   uint32_t GetSize() const {
-    __try {
-      return (!t_) ? 0
-                   : static_cast<uint32_t>(StringLength(t_) * sizeof(t_[0]));
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-      return UINT32_MAX;
-    }
+    return static_cast<uint32_t>(t_.size() * sizeof(wchar_t));
   }
 
   
@@ -149,56 +149,7 @@ class CopyHelper<const wchar_t*> {
   ArgType GetType() { return WCHAR_TYPE; }
 
  private:
-  
-  
-  
-  static size_t CDECL StringLength(const wchar_t* wcs) {
-    const wchar_t* eos = wcs;
-    while (*eos++)
-      ;
-    return static_cast<size_t>(eos - wcs - 1);
-  }
-
-  const wchar_t* t_;
-};
-
-
-
-template <>
-class CopyHelper<wchar_t*> : public CopyHelper<const wchar_t*> {
- public:
-  typedef CopyHelper<const wchar_t*> Base;
-  explicit CopyHelper(wchar_t* t) : Base(t) {}
-
-  const void* GetStart() const { return Base::GetStart(); }
-
-  bool Update(void* buffer) { return Base::Update(buffer); }
-
-  uint32_t GetSize() const { return Base::GetSize(); }
-
-  bool IsInOut() { return Base::IsInOut(); }
-
-  ArgType GetType() { return Base::GetType(); }
-};
-
-
-
-template <size_t n>
-class CopyHelper<const wchar_t[n]> : public CopyHelper<const wchar_t*> {
- public:
-  typedef const wchar_t array[n];
-  typedef CopyHelper<const wchar_t*> Base;
-  explicit CopyHelper(array t) : Base(t) {}
-
-  const void* GetStart() const { return Base::GetStart(); }
-
-  bool Update(void* buffer) { return Base::Update(buffer); }
-
-  uint32_t GetSize() const { return Base::GetSize(); }
-
-  bool IsInOut() { return Base::IsInOut(); }
-
-  ArgType GetType() { return Base::GetType(); }
+  std::wstring_view t_;
 };
 
 
@@ -208,32 +159,6 @@ class InOutCountedBuffer : public CountedBuffer {
  public:
   InOutCountedBuffer(void* buffer, uint32_t size)
       : CountedBuffer(buffer, size) {}
-};
-
-
-
-template <>
-class CopyHelper<CountedBuffer> {
- public:
-  CopyHelper(const CountedBuffer t) : t_(t) {}
-
-  
-  const void* GetStart() const { return t_.Buffer(); }
-
-  
-  bool Update(void* buffer) { return true; }
-
-  
-  
-  uint32_t GetSize() const { return t_.Size(); }
-
-  
-  bool IsInOut() { return false; }
-
-  ArgType GetType() { return INPTR_TYPE; }
-
- private:
-  const CountedBuffer t_;
 };
 
 

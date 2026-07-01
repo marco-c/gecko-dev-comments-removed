@@ -6,12 +6,15 @@
 #define BASE_WIN_SCOPED_HANDLE_H_
 
 #include <ostream>
+#include <string_view>
 
 #include "base/base_export.h"
 #include "base/check_op.h"
 #include "base/dcheck_is_on.h"
 #include "base/gtest_prod_util.h"
 #include "base/location.h"
+#include "base/types/expected.h"
+#include "base/win/windows_handle_util.h"
 #include "base/win/windows_types.h"
 #include "build/build_config.h"
 
@@ -68,9 +71,6 @@ class GenericScopedHandle {
   ~GenericScopedHandle() { Close(); }
 
   bool is_valid() const { return Traits::IsHandleValid(handle_); }
-
-  
-  bool IsValid() const { return is_valid(); }
 
   GenericScopedHandle& operator=(GenericScopedHandle&& other) {
     DCHECK_NE(this, &other);
@@ -145,8 +145,13 @@ class HandleTraits {
   static bool BASE_EXPORT CloseHandle(HANDLE handle);
 
   
+  
+  
+  
+  
+  
   static bool IsHandleValid(HANDLE handle) {
-    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
+    return handle != nullptr && !base::win::IsPseudoHandle(handle);
   }
 
   
@@ -211,6 +216,15 @@ BASE_EXPORT void DisableHandleVerifier();
 
 
 BASE_EXPORT void OnHandleBeingClosed(HANDLE handle, HandleOperation operation);
+
+
+
+
+
+
+BASE_EXPORT expected<ScopedHandle, NTSTATUS> TakeHandleOfType(
+    HANDLE handle,
+    std::wstring_view object_type_name);
 
 }  
 }  

@@ -39,7 +39,7 @@ enum FeatureState {
 
 
 #define BASE_DECLARE_FEATURE(kFeature) \
-  extern CONSTINIT const base::Feature kFeature
+  extern constinit const base::Feature kFeature
 
 
 
@@ -48,7 +48,7 @@ enum FeatureState {
 
 
 #define BASE_FEATURE(feature, name, default_state) \
-  CONSTINIT const base::Feature feature(           \
+  constinit const base::Feature feature(           \
       name, default_state, base::internal::FeatureMacroHandshake::kSecret)
 
 
@@ -67,7 +67,7 @@ enum FeatureState {
 
 
 #define BASE_DECLARE_FEATURE_PARAM(T, feature_object_name) \
-  extern CONSTINIT const base::FeatureParam<T> feature_object_name
+  extern constinit const base::FeatureParam<T> feature_object_name
 
 
 
@@ -95,7 +95,7 @@ enum FeatureState {
         storage);                                                       \
   }                                                                     \
   } /* field_trial_params_internal */                                   \
-  CONSTINIT const base::FeatureParam<T> feature_object_name(            \
+  constinit const base::FeatureParam<T> feature_object_name(            \
       feature, name, default_value,                                     \
       &field_trial_params_internal::                                    \
           GetFeatureParamWithCacheFor##feature_object_name)
@@ -112,7 +112,7 @@ enum FeatureState {
     return param;                                                      \
   }                                                                    \
   } /* field_trial_params_internal */                                  \
-  CONSTINIT const base::FeatureParam<T> feature_object_name(           \
+  constinit const base::FeatureParam<T> feature_object_name(           \
       feature, name, default_value, options,                           \
       &field_trial_params_internal::                                   \
           GetFeatureParamWithCacheFor##feature_object_name)

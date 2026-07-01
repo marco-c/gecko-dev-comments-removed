@@ -2,7 +2,6 @@
 
 
 
-#include "base/notreached.h"
 #include "base/threading/platform_thread.h"
 
 #include <errno.h>
@@ -17,35 +16,45 @@
 #include <memory>
 #include <tuple>
 
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/compiler_specific.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
+#if !defined(MOZ_SANDBOX)
+#include "base/notimplemented.h"
+#endif  
 #include "base/threading/platform_thread_internal_posix.h"
+#if !defined(MOZ_SANDBOX)
+#include "base/threading/platform_thread_metrics.h"
+#endif  
 #include "base/threading/scoped_blocking_call.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
+#include "partition_alloc/buildflags.h"
 
-#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_NACL)
+#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_FUCHSIA)
+#if !defined(MOZ_SANDBOX)
 #include "base/posix/can_lower_nice_to.h"
+#endif  
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include <sys/syscall.h>
+
 #include <atomic>
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)
-#include <zircon/process.h>
+#include <lib/zx/thread.h>
+
+#include "base/fuchsia/koid.h"
 #else
 #include <sys/resource.h>
 #endif
 
-#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
-#include "base/allocator/partition_allocator/src/partition_alloc/starscan/pcscan.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/starscan/stack/stack.h"
+#if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+#include "partition_alloc/stack/stack.h"  
 #endif
 
 namespace base {
@@ -74,15 +83,14 @@ void* ThreadFunc(void* params) {
         static_cast<ThreadParams*>(params));
 
     delegate = thread_params->delegate;
-    if (!thread_params->joinable)
+    if (!thread_params->joinable) {
       base::DisallowSingleton();
+    }
 
-#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
-    partition_alloc::internal::PCScan::NotifyThreadCreated(
-        partition_alloc::internal::GetStackPointer());
+#if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+    partition_alloc::internal::StackTopRegistry::Get().NotifyThreadCreated();
 #endif
 
-#if !BUILDFLAG(IS_NACL)
 #if BUILDFLAG(IS_APPLE)
     PlatformThread::SetCurrentThreadRealtimePeriodValue(
         delegate->GetRealtimePeriod());
@@ -92,7 +100,6 @@ void* ThreadFunc(void* params) {
     
     
     PlatformThread::SetCurrentThreadType(thread_params->thread_type);
-#endif  
   }
 
   ThreadIdNameManager::GetInstance()->RegisterThread(
@@ -104,9 +111,12 @@ void* ThreadFunc(void* params) {
   ThreadIdNameManager::GetInstance()->RemoveName(
       PlatformThread::CurrentHandle().platform_handle(),
       PlatformThread::CurrentId());
+#if BUILDFLAG(IS_ANDROID)
+  PlatformThreadPriorityMonitor::Get().UnregisterCurrentThread();
+#endif
 
-#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
-  partition_alloc::internal::PCScan::NotifyThreadDestroyed();
+#if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+  partition_alloc::internal::StackTopRegistry::Get().NotifyThreadDestroyed();
 #endif
 
   base::TerminateOnThread();
@@ -127,15 +137,18 @@ bool CreateThread(size_t stack_size,
 
   
   
-  if (!joinable)
+  if (!joinable) {
     pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
+  }
 
   
-  if (stack_size == 0)
+  if (stack_size == 0) {
     stack_size = base::GetDefaultThreadStackSize(attributes);
+  }
 
-  if (stack_size > 0)
+  if (stack_size > 0) {
     pthread_attr_setstacksize(&attributes, stack_size);
+  }
 
   std::unique_ptr<ThreadParams> params(new ThreadParams);
   params->delegate = delegate;
@@ -161,7 +174,7 @@ bool CreateThread(size_t stack_size,
 
   return success;
 }
-#endif
+#endif  
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
@@ -215,7 +228,9 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
   
   
 #if BUILDFLAG(IS_APPLE)
-  return pthread_mach_thread_np(pthread_self());
+  uint64_t tid;
+  CHECK_EQ(pthread_threadid_np(nullptr, &tid), 0);
+  return PlatformThreadId(tid);
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   
   
@@ -246,27 +261,25 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
     }
 #endif
   }
-  return g_thread_id;
+  return PlatformThreadId(g_thread_id);
 #elif BUILDFLAG(IS_ANDROID)
   
   
   
   
   
-  return gettid();
+  return PlatformThreadId(gettid());
 #elif BUILDFLAG(IS_FUCHSIA)
-  return zx_thread_self();
+  thread_local static zx_koid_t id =
+      GetKoid(*zx::thread::self()).value_or(ZX_KOID_INVALID);
+  return PlatformThreadId(id);
 #elif BUILDFLAG(IS_SOLARIS) || BUILDFLAG(IS_QNX)
-  return pthread_self();
-#elif BUILDFLAG(IS_NACL) && defined(__GLIBC__)
-  return pthread_self();
-#elif BUILDFLAG(IS_NACL) && !defined(__GLIBC__)
-  
-  return reinterpret_cast<int32_t>(pthread_self());
+  return PlatformThreadId(pthread_self());
+
 #elif BUILDFLAG(IS_POSIX) && BUILDFLAG(IS_AIX)
-  return pthread_self();
+  return PlatformThreadId(pthread_self());
 #elif BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_AIX)
-  return reinterpret_cast<int64_t>(pthread_self());
+  return PlatformThreadId(reinterpret_cast<int64_t>(pthread_self()));
 #endif
 }
 
@@ -298,8 +311,9 @@ void PlatformThreadBase::Sleep(TimeDelta duration) {
   duration -= Seconds(sleep_time.tv_sec);
   sleep_time.tv_nsec = static_cast<long>(duration.InMicroseconds() * 1000);
 
-  while (nanosleep(&sleep_time, &remaining) == -1 && errno == EINTR)
+  while (nanosleep(&sleep_time, &remaining) == -1 && errno == EINTR) {
     sleep_time = remaining;
+  }
 }
 
 
@@ -310,31 +324,33 @@ const char* PlatformThreadBase::GetName() {
 #if !defined(MOZ_SANDBOX)
 
 bool PlatformThreadBase::CreateWithType(size_t stack_size,
-                                    Delegate* delegate,
-                                    PlatformThreadHandle* thread_handle,
-                                    ThreadType thread_type,
-                                    MessagePumpType pump_type_hint) {
+                                        Delegate* delegate,
+                                        PlatformThreadHandle* thread_handle,
+                                        ThreadType thread_type,
+                                        MessagePumpType pump_type_hint) {
   return CreateThread(stack_size, true , delegate,
                       thread_handle, thread_type, pump_type_hint);
 }
 
 
-bool PlatformThreadBase::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
+bool PlatformThreadBase::CreateNonJoinable(size_t stack_size,
+                                           Delegate* delegate) {
   return CreateNonJoinableWithType(stack_size, delegate, ThreadType::kDefault);
 }
 
 
-bool PlatformThreadBase::CreateNonJoinableWithType(size_t stack_size,
-                                               Delegate* delegate,
-                                               ThreadType thread_type,
-                                               MessagePumpType pump_type_hint) {
+bool PlatformThreadBase::CreateNonJoinableWithType(
+    size_t stack_size,
+    Delegate* delegate,
+    ThreadType thread_type,
+    MessagePumpType pump_type_hint) {
   PlatformThreadHandle unused;
 
   bool result = CreateThread(stack_size, false ,
                              delegate, &unused, thread_type, pump_type_hint);
   return result;
 }
-#endif
+#endif  
 
 
 void PlatformThreadBase::Join(PlatformThreadHandle thread_handle) {
@@ -358,9 +374,6 @@ void PlatformThreadBase::Detach(PlatformThreadHandle thread_handle) {
 #if !defined(MOZ_SANDBOX)
 
 bool PlatformThreadBase::CanChangeThreadType(ThreadType from, ThreadType to) {
-#if BUILDFLAG(IS_NACL)
-  return false;
-#else
   if (from >= to) {
     
     return true;
@@ -370,53 +383,22 @@ bool PlatformThreadBase::CanChangeThreadType(ThreadType from, ThreadType to) {
   }
 
   return internal::CanLowerNiceTo(internal::ThreadTypeToNiceValue(to));
-#endif  
-}
-#endif
-
-namespace internal {
-
-void SetCurrentThreadTypeImpl(ThreadType thread_type,
-                              MessagePumpType pump_type_hint) {
-#if BUILDFLAG(IS_NACL)
-  NOTIMPLEMENTED();
-#else
-  if (internal::SetCurrentThreadTypeForPlatform(thread_type, pump_type_hint))
-    return;
-
-  
-  
-  
-  
-  
-  
-  const int nice_setting = internal::ThreadTypeToNiceValue(thread_type);
-  if (setpriority(PRIO_PROCESS, 0, nice_setting)) {
-    DVPLOG(1) << "Failed to set nice value of thread ("
-              << PlatformThread::CurrentId() << ") to " << nice_setting;
-  }
-#endif  
 }
 
-}  
 
-
-ThreadPriorityForTest PlatformThreadBase::GetCurrentThreadPriorityForTest() {
-#if BUILDFLAG(IS_NACL)
-  NOTIMPLEMENTED();
-  return ThreadPriorityForTest::kNormal;
-#else
+ThreadType PlatformThreadBase::GetCurrentEffectiveThreadTypeForTest() {
   
   auto platform_specific_priority =
-      internal::GetCurrentThreadPriorityForPlatformForTest();  
-  if (platform_specific_priority)
+      internal::GetCurrentEffectiveThreadTypeForPlatformForTest();  
+  if (platform_specific_priority) {
     return platform_specific_priority.value();
+  }
 
   int nice_value = internal::GetCurrentThreadNiceValue();
 
-  return internal::NiceValueToThreadPriorityForTest(nice_value);  
-#endif  
+  return internal::NiceValueToThreadTypeForTest(nice_value);  
 }
+#endif  
 
 #endif  
 

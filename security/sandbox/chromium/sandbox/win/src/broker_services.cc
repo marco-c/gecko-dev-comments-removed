@@ -6,16 +6,21 @@
 
 #include <stddef.h>
 
+#include <algorithm>
+#include <optional>
 #include <utility>
+
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/memory/ptr_util.h"
 #include "base/notreached.h"
+#if !defined(MOZ_SANDBOX)
+#include "base/task/thread_pool.h"
+#endif  
 #include "base/threading/platform_thread.h"
 #include "base/win/access_token.h"
 #include "base/win/current_module.h"
 #include "base/win/scoped_handle.h"
-#include "base/win/scoped_process_information.h"
 #include "base/win/sid.h"
 #include "base/win/windows_version.h"
 #include "build/build_config.h"
@@ -28,7 +33,6 @@
 #include "sandbox/win/src/target_process.h"
 #include "sandbox/win/src/threadpool.h"
 #include "sandbox/win/src/win_utils.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace {
 
@@ -161,10 +165,8 @@ DWORD WINAPI TargetEventsThread(PVOID param) {
           
           
           
-          jobs.erase(std::remove_if(
-                         jobs.begin(), jobs.end(),
-                         [&](auto&& p) -> bool { return p.get() == tracker; }),
-                     jobs.end());
+          std::erase_if(jobs,
+                        [&](auto&& p) -> bool { return p.get() == tracker; });
           break;
         }
 
@@ -209,7 +211,6 @@ DWORD WINAPI TargetEventsThread(PVOID param) {
 
         default: {
           NOTREACHED();
-          break;
         }
       }
     } else if (THREAD_CTRL_NEW_JOB_TRACKER == key) {
@@ -245,7 +246,6 @@ DWORD WINAPI TargetEventsThread(PVOID param) {
   }
 
   NOTREACHED();
-  return 0;
 }
 
 }  
@@ -256,21 +256,27 @@ BrokerServicesBase::BrokerServicesBase() {}
 
 
 
-ResultCode BrokerServicesBase::Init(
+ResultCode BrokerServicesBase::InitInternal(
+    std::unique_ptr<BrokerServicesDelegate> delegate,
     std::unique_ptr<BrokerServicesTargetTracker> target_tracker) {
-  if (job_port_.IsValid() || thread_pool_)
-    return SBOX_ERROR_UNEXPECTED_CALL;
+  broker_services_delegate_ = std::move(delegate);
 
-  if (!SharedMemIPCServer::CreateBrokerAliveMutex())
+  if (job_port_.is_valid() || thread_pool_) {
+    return SBOX_ERROR_UNEXPECTED_CALL;
+  }
+
+  if (!SharedMemIPCServer::CreateBrokerAliveMutex()) {
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
+  }
 
   job_port_.Set(::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0));
-  if (!job_port_.IsValid())
+  if (!job_port_.is_valid()) {
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
+  }
 
   
   auto params = std::make_unique<TargetEventsThreadParams>(
-      job_port_.Get(), std::move(target_tracker),
+      job_port_.get(), std::move(target_tracker),
       std::make_unique<ThreadPool>());
 
   
@@ -289,7 +295,7 @@ ResultCode BrokerServicesBase::Init(
   job_thread_.Set(::CreateThread(nullptr, stack_size,  
                                  TargetEventsThread, params.get(), flags,
                                  nullptr));
-  if (!job_thread_.IsValid()) {
+  if (!job_thread_.is_valid()) {
     thread_pool_ = nullptr;
     
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
@@ -299,14 +305,17 @@ ResultCode BrokerServicesBase::Init(
   return SBOX_ALL_OK;
 }
 
-ResultCode BrokerServicesBase::Init() {
-  return BrokerServicesBase::Init(nullptr);
+ResultCode BrokerServicesBase::Init(
+    std::unique_ptr<BrokerServicesDelegate> delegate) {
+  return BrokerServicesBase::InitInternal(std::move(delegate), nullptr);
 }
 
 
 ResultCode BrokerServicesBase::InitForTesting(
+    std::unique_ptr<BrokerServicesDelegate> delegate,
     std::unique_ptr<BrokerServicesTargetTracker> target_tracker) {
-  return BrokerServicesBase::Init(std::move(target_tracker));
+  return BrokerServicesBase::InitInternal(std::move(delegate),
+                                          std::move(target_tracker));
 }
 
 
@@ -316,20 +325,24 @@ ResultCode BrokerServicesBase::InitForTesting(
 
 BrokerServicesBase::~BrokerServicesBase() {
   
-  if (!job_port_.IsValid())
+  if (!job_port_.is_valid()) {
     return;
+  }
 
   
   
   
   
-  ::PostQueuedCompletionStatus(job_port_.Get(), 0, THREAD_CTRL_QUIT, nullptr);
+  ::PostQueuedCompletionStatus(job_port_.get(), 0, THREAD_CTRL_QUIT, nullptr);
 
-  if (job_thread_.IsValid() &&
-      WAIT_TIMEOUT == ::WaitForSingleObject(job_thread_.Get(), 5000)) {
+  if (job_thread_.is_valid() &&
+      WAIT_TIMEOUT == ::WaitForSingleObject(job_thread_.get(), 5000)) {
+    
+    
+    
+    ::TerminateProcess(GetCurrentProcess(), SBOX_FATAL_BROKER_SHUTDOWN_HUNG);
     
     NOTREACHED();
-    return;
   }
 }
 
@@ -338,7 +351,7 @@ std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy() {
 }
 
 std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy(
-    base::StringPiece tag) {
+    std::string_view tag) {
   
   
   auto policy = std::make_unique<PolicyBase>(tag);
@@ -360,32 +373,39 @@ std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy(
   return policy;
 }
 
+#if !defined(MOZ_SANDBOX)
+void BrokerServicesBase::SpawnTargetAsync(const wchar_t* exe_path,
+                                          const wchar_t* command_line,
+                                          std::unique_ptr<TargetPolicy> policy,
+                                          SpawnTargetCallback result_callback) {
+  
+  SpawnTargetAsyncImpl(
+      exe_path, command_line,
+      base::WrapUnique(static_cast<PolicyBase*>(policy.release())),
+      std::move(result_callback));
+}
+#endif  
 
-
-ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
-                                           const wchar_t* command_line,
-                                           base::EnvironmentMap& env_map,
-                                           std::unique_ptr<TargetPolicy> policy,
-                                           DWORD* last_error,
-                                           PROCESS_INFORMATION* target_info) {
+ResultCode BrokerServicesBase::PreSpawnTarget(
+    const wchar_t* exe_path,
+    PolicyBase* policy_base,
+    StartupInformationHelper* startup_info,
+    std::unique_ptr<TargetProcess>& target) {
   if (!exe_path)
     return SBOX_ERROR_BAD_PARAMS;
 
   
   
   HMODULE exe_module = nullptr;
-  CHECK(::GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                            nullptr, &exe_module));
+  CHECK(::GetModuleHandleEx(
+      GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, nullptr,
+      &exe_module));
   if (CURRENT_MODULE() != exe_module)
     return SBOX_ERROR_INVALID_LINK_STATE;
 
-  if (!policy)
+  if (!policy_base) {
     return SBOX_ERROR_BAD_PARAMS;
-
-  
-  std::unique_ptr<PolicyBase> policy_base;
-  policy_base.reset(static_cast<PolicyBase*>(policy.release()));
-  
+  }
 
   ConfigBase* config_base = static_cast<ConfigBase*>(policy_base->GetConfig());
   if (!config_base->IsConfigured()) {
@@ -414,8 +434,8 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   
   
-  absl::optional<base::win::AccessToken> initial_token;
-  absl::optional<base::win::AccessToken> lockdown_token;
+  std::optional<base::win::AccessToken> initial_token;
+  std::optional<base::win::AccessToken> lockdown_token;
   ResultCode result = SBOX_ALL_OK;
 
   result = policy_base->MakeTokens(initial_token, lockdown_token);
@@ -432,8 +452,6 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
     return result;
 
   
-  auto startup_info = std::make_unique<StartupInformationHelper>();
-
   
   startup_info->UpdateFlags(STARTF_FORCEOFFFEEDBACK);
   startup_info->SetDesktop(GetDesktopName(config_base->desktop()));
@@ -453,9 +471,13 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   for (HANDLE handle : policy_handle_list)
     startup_info->AddInheritedHandle(handle);
 
-  scoped_refptr<AppContainer> container = config_base->GetAppContainer();
-  if (container)
+  AppContainer* container = config_base->GetAppContainer();
+  if (container) {
+    CHECK(config_base->is_csrss_connected() ||
+          config_base->GetLockdownTokenLevel() == USER_LOCKDOWN)
+        << "CSRSS must be connected to use a privileged AppContainer sandbox.";
     startup_info->SetAppContainer(container);
+  }
 
   startup_info->AddJobToAssociate(policy_base->GetJobHandle());
 
@@ -464,23 +486,133 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   
   
-  base::win::ScopedProcessInformation process_info;
-  std::unique_ptr<TargetProcess> target = std::make_unique<TargetProcess>(
+  target = std::make_unique<TargetProcess>(
       std::move(*initial_token), std::move(*lockdown_token), thread_pool_);
 
-  result = target->Create(exe_path, command_line, std::move(startup_info),
-                          &process_info, env_map, last_error);
+  return SBOX_ALL_OK;
+}
 
+
+
+void BrokerServicesBase::SpawnTargetAsyncImpl(
+    const wchar_t* exe_path,
+    const wchar_t* command_line,
+    std::unique_ptr<PolicyBase> policy_base,
+    SpawnTargetCallback result_callback,
+    std::optional<base::EnvironmentMap> env_changes) {
+  auto startup_info = std::make_unique<StartupInformationHelper>();
+  std::unique_ptr<TargetProcess> target;
+
+  ResultCode result =
+      PreSpawnTarget(exe_path, policy_base.get(), startup_info.get(), target);
   if (result != SBOX_ALL_OK) {
-    target->Terminate();
-    return result;
+    std::move(result_callback)
+        .Run(base::win::ScopedProcessInformation(), ::GetLastError(), result);
+    return;
   }
+
+  TargetProcess* target_ptr = target.get();
+  broker_services_delegate_->ParallelLaunchPostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&BrokerServicesBase::CreateTarget, base::Unretained(this),
+                     target_ptr, std::wstring(exe_path),
+                     std::wstring(command_line), std::move(startup_info),
+                     std::move(env_changes)),
+      base::BindOnce(&BrokerServicesBase::FinishSpawnTarget,
+                     base::Unretained(this), std::move(policy_base),
+                     std::move(target), std::move(result_callback)));
+}
+
+ResultCode BrokerServicesBase::SpawnTarget(
+    const wchar_t* exe_path,
+    const wchar_t* command_line,
+    std::optional<base::EnvironmentMap> env_changes,
+    std::unique_ptr<TargetPolicy> policy,
+    DWORD* last_error,
+    PROCESS_INFORMATION* target_info) {
+  ResultCode result_code = SBOX_ERROR_GENERIC;
+  *last_error = ERROR_SUCCESS;
+  
+  
+  
+  bool callback_called = false;
+  SpawnTargetAsyncImpl(
+      exe_path, command_line,
+      base::WrapUnique(static_cast<PolicyBase*>(policy.release())),
+      base::BindOnce(
+          [](bool* called_out, ResultCode* result_out, DWORD* error_out,
+             PROCESS_INFORMATION* info_out,
+             base::win::ScopedProcessInformation proc_info, DWORD error,
+             ResultCode result) {
+            *called_out = true;
+            *result_out = result;
+            *error_out = error;
+            *info_out = proc_info.Take();
+          },
+          &callback_called, &result_code, last_error, target_info),
+      std::move(env_changes));
+  CHECK(callback_called);
+  return result_code;
+}
+
+CreateTargetResult BrokerServicesBase::CreateTarget(
+    TargetProcess* target,
+    const std::wstring& exe_path,
+    const std::wstring& command_line,
+    std::unique_ptr<StartupInformationHelper> startup_info,
+    std::optional<base::EnvironmentMap> env_changes) {
+  
+  
+  const void* trace_id = &startup_info;
+  broker_services_delegate_->BeforeTargetProcessCreateOnCreationThread(
+      trace_id);
+
+  
+  CreateTargetResult result;
+  result.result_code = target->Create(
+      exe_path.c_str(), command_line.c_str(), std::move(startup_info),
+      &result.process_info, std::move(env_changes), &result.last_error);
+
+  broker_services_delegate_->AfterTargetProcessCreateOnCreationThread(
+      trace_id, result.process_info.process_id());
+
+  return result;
+}
+
+void BrokerServicesBase::FinishSpawnTarget(
+    std::unique_ptr<PolicyBase> policy_base,
+    std::unique_ptr<TargetProcess> target,
+    SpawnTargetCallback result_callback,
+    CreateTargetResult target_result) {
+  ResultCode result = FinishSpawnTargetImpl(
+      target_result.result_code, std::move(policy_base), std::move(target),
+      &target_result.process_info, &target_result.last_error);
+  if (result != SBOX_ALL_OK) {
+    target_result.process_info.Close();
+  }
+  std::move(result_callback)
+      .Run(std::move(target_result.process_info), target_result.last_error,
+           result);
+}
+
+ResultCode BrokerServicesBase::FinishSpawnTargetImpl(
+    ResultCode initial_result,
+    std::unique_ptr<PolicyBase> policy_base,
+    std::unique_ptr<TargetProcess> target,
+    base::win::ScopedProcessInformation* process_info,
+    DWORD* last_error) {
+  if (initial_result != SBOX_ALL_OK) {
+    target->Terminate();
+    return initial_result;
+  }
+
+  ConfigBase* config_base = static_cast<ConfigBase*>(policy_base->GetConfig());
 
   if (config_base->GetJobLevel() <= JobLevel::kLimitedUser) {
     
     
     
-    result = policy_base->DropActiveProcessLimit();
+    ResultCode result = policy_base->DropActiveProcessLimit();
     if (result != SBOX_ALL_OK) {
       target->Terminate();
       return result;
@@ -489,7 +621,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   
   
-  result = policy_base->ApplyToTarget(std::move(target));
+  ResultCode result = policy_base->ApplyToTarget(std::move(target));
 
   if (result != SBOX_ALL_OK) {
     *last_error = ::GetLastError();
@@ -498,26 +630,25 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   HANDLE job_handle = policy_base->GetJobHandle();
   JobTracker* tracker =
-      new JobTracker(std::move(policy_base), process_info.process_id());
+      new JobTracker(std::move(policy_base), process_info->process_id());
 
   
   
-  CHECK(::PostQueuedCompletionStatus(job_port_.Get(), 0,
+  CHECK(::PostQueuedCompletionStatus(job_port_.get(), 0,
                                      THREAD_CTRL_NEW_JOB_TRACKER,
                                      reinterpret_cast<LPOVERLAPPED>(tracker)));
   
-  CHECK(AssociateCompletionPort(job_handle, job_port_.Get(), tracker));
+  CHECK(AssociateCompletionPort(job_handle, job_port_.get(), tracker));
 
-  *target_info = process_info.Take();
   return result;
 }
 
 ResultCode BrokerServicesBase::GetPolicyDiagnostics(
     std::unique_ptr<PolicyDiagnosticsReceiver> receiver) {
-  CHECK(job_thread_.IsValid());
+  CHECK(job_thread_.is_valid());
   
   if (!::PostQueuedCompletionStatus(
-          job_port_.Get(), 0, THREAD_CTRL_GET_POLICY_INFO,
+          job_port_.get(), 0, THREAD_CTRL_GET_POLICY_INFO,
           reinterpret_cast<LPOVERLAPPED>(receiver.get()))) {
     receiver->OnError(SBOX_ERROR_GENERIC);
     return SBOX_ERROR_GENERIC;
@@ -548,6 +679,7 @@ std::wstring BrokerServicesBase::GetDesktopName(Desktop desktop) {
     case Desktop::kAlternateDesktop:
       return alt_desktop_->GetDesktopName();
   }
+  NOTREACHED();
 }
 
 ResultCode BrokerServicesBase::UpdateDesktopIntegrity(
@@ -567,6 +699,7 @@ ResultCode BrokerServicesBase::UpdateDesktopIntegrity(
     case Desktop::kAlternateDesktop:
       return alt_desktop_->UpdateDesktopIntegrity(integrity);
   }
+  NOTREACHED();
 }
 
 ResultCode BrokerServicesBase::CreateAlternateDesktop(Desktop desktop) {
@@ -602,6 +735,15 @@ void BrokerServicesBase::DestroyDesktops() {
   alt_desktop_.reset();
 }
 
+BrokerServicesDelegate* BrokerServicesBase::GetMetricsDelegate() {
+  return broker_services_delegate_.get();
+}
+
+void BrokerServicesBase::SetBrokerServicesDelegateForTesting(
+    std::unique_ptr<BrokerServicesDelegate> delegate) {
+  broker_services_delegate_ = std::move(delegate);
+}
+
 
 void BrokerServicesBase::FreezeTargetConfigForTesting(TargetConfig* config) {
   CHECK(!config->IsConfigured());
@@ -611,8 +753,11 @@ void BrokerServicesBase::FreezeTargetConfigForTesting(TargetConfig* config) {
 bool BrokerServicesBase::DeriveCapabilitySidFromName(const wchar_t* name,
                                                      PSID derived_sid,
                                                      DWORD sid_buffer_length) {
-  return ::CopySid(sid_buffer_length, derived_sid,
-                   base::win::Sid::FromNamedCapability(name).GetPSID());
+  std::optional<base::win::Sid> sid = base::win::Sid::FromNamedCapability(name);
+  if (!sid) {
+    return false;
+  }
+  return ::CopySid(sid_buffer_length, derived_sid, sid->GetPSID());
 }
 
 }  

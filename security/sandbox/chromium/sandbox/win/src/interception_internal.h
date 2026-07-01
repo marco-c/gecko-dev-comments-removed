@@ -74,6 +74,17 @@ struct DllInterceptionData {
   ThunkData thunks[1];
 };
 
+
+struct PatchClientResultData {
+  
+  
+  OriginalFunctions originals;
+
+  
+  
+  DllInterceptionData dll_data;
+};
+
 #pragma pack(pop)
 
 }  

@@ -5,18 +5,15 @@
 #ifndef BASE_THREADING_THREAD_RESTRICTIONS_H_
 #define BASE_THREADING_THREAD_RESTRICTIONS_H_
 
+#include <optional>
+
 #include "base/auto_reset.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
-#include "base/dcheck_is_on.h"
+#include "base/debug/stack_trace.h"
 #include "base/gtest_prod_util.h"
 #include "base/location.h"
 #include "build/build_config.h"
-
-#if DCHECK_IS_ON()
-#include "base/debug/stack_trace.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#endif
 
 
 
@@ -127,6 +124,7 @@
 
 class BrowserProcessImpl;
 class BrowserThemePack;
+class ChromeContentRendererClient;
 class ChromeNSSCryptoModuleDelegate;
 class DesktopNotificationBalloon;
 class FirefoxProfileLock;
@@ -140,36 +138,51 @@ class ProfileImpl;
 class ScopedAllowBlockingForProfile;
 class StartupTabProviderImpl;
 class WebEngineBrowserMainParts;
+struct StartupProfilePathInfo;
 
 namespace base {
 class Environment;
 class File;
 class FilePath;
+class CommandLine;
+namespace sequence_manager::internal {
+class WorkTracker;
+}  
 }  
 
-bool EnsureBrowserStateDirectoriesCreated(const base::FilePath&,
-                                          const base::FilePath&,
-                                          const base::FilePath&);
+StartupProfilePathInfo GetStartupProfilePath(
+    const base::FilePath& cur_dir,
+    const base::CommandLine& command_line,
+    bool ignore_profile_picker);
+
+#if BUILDFLAG(IS_IOS)
+class BrowserStateDirectoryBuilder;
+#endif
+
 Profile* GetLastProfileMac();
 bool HasWaylandDisplay(base::Environment* env);
 
 namespace android_webview {
 class AwBrowserContext;
-class AwFormDatabaseService;
+class AwBrowserContextStore;
+class AwMetricsServiceClient;
 class CookieManager;
 class JsSandboxIsolate;
+class OverlayProcessorWebView;
 class ScopedAllowInitGLBindings;
 class VizCompositorThreadRunnerWebView;
 }  
 namespace ash {
-class BrowserDataBackMigrator;
 class LoginEventRecorder;
-class MojoUtils;
 class StartupCustomizationDocument;
 class StartupUtils;
 bool CameraAppUIShouldEnableLocalOverride(const std::string&);
+namespace converters::diagnostics {
+class MojoUtils;
+}
 namespace system {
 class StatisticsProviderImpl;
+class ProcStatFile;
 }  
 }  
 namespace audio {
@@ -178,7 +191,6 @@ class OutputDevice;
 namespace blink {
 class AudioDestination;
 class DiskDataAllocator;
-class IdentifiabilityActiveSampler;
 class RTCVideoDecoderAdapter;
 class RTCVideoEncoder;
 class SourceStream;
@@ -191,7 +203,6 @@ class NonMainThreadImpl;
 }
 }  
 namespace cc {
-class CategorizedWorkerPoolImpl;
 class CategorizedWorkerPoolJob;
 class CategorizedWorkerPool;
 class CompletionEvent;
@@ -210,10 +221,6 @@ namespace system {
 bool IsCoreSchedulingAvailable();
 int NumberOfPhysicalCores();
 }  
-}  
-namespace chrome_cleaner {
-class ResetShortcutsComponent;
-class SystemReportComponent;
 }  
 namespace content {
 class BrowserGpuChannelHostFactory;
@@ -239,21 +246,18 @@ class SandboxHostLinux;
 class ScopedAllowWaitForDebugURL;
 class ServiceWorkerContextClient;
 class ShellPathProvider;
+class SlowWebPreferenceCache;
 class SynchronousCompositor;
 class SynchronousCompositorHost;
 class SynchronousCompositorSyncCallBridge;
 class ScopedAllowBlockingForViewAura;
 class TextInputClientMac;
-class WebContentsImpl;
 class WebContentsViewMac;
 base::File CreateFileForDrop(base::FilePath*);
 }  
 namespace cronet {
 class CronetPrefsManager;
 class CronetContext;
-}  
-namespace crosapi {
-class LacrosThreadTypeDelegate;
 }  
 namespace crypto {
 class ScopedAllowBlockingForNSS;
@@ -285,12 +289,22 @@ class UnpackedInstaller;
 namespace font_service::internal {
 class MappedFontFile;
 }
+
+namespace gfx {
+class WUCBackdrop;
+}
+
 namespace gl {
 struct GLImplementationParts;
 namespace init {
 bool InitializeStaticGLBindings(GLImplementationParts);
 }
 }  
+namespace gpu {
+class MappableBufferAHB;
+class MappableBufferDXGI;
+class GpuPersistentCache;
+}
 namespace history_report {
 class HistoryReportJniBridge;
 }
@@ -304,25 +318,38 @@ namespace leveldb::port {
 class CondVar;
 }  
 namespace nearby::chrome {
+class BleV2GattClient;
+class BleV2Medium;
 class ScheduledExecutor;
 class SubmittableExecutor;
+class WifiDirectSocket;
 }  
 namespace media {
 class AudioInputDevice;
 class AudioOutputDevice;
 class BlockingUrlProtocol;
+template <class WorkerInterface,
+          class WorkerImpl,
+          class Worker,
+          class WorkerStatus,
+          WorkerStatus StatusNotOk,
+          WorkerStatus StatusOk,
+          WorkerStatus StatusWork>
+class CodecWorkerImpl;
 class FileVideoCaptureDeviceFactory;
+class GpuMojoMediaClientWin;
+class MailboxVideoFrameConverter;
 class MojoVideoEncodeAccelerator;
 class PaintCanvasVideoRenderer;
+class V4L2DevicePoller;  
 }  
 namespace memory_instrumentation {
 class OSMetrics;
 }
-namespace memory_pressure {
+namespace content {
 class UserLevelMemoryPressureSignalGenerator;
 }
 namespace metrics {
-class AndroidMetricsServiceClient;
 class CleanExitBeacon;
 }  
 namespace midi {
@@ -332,7 +359,6 @@ namespace module_installer {
 class ScopedAllowModulePakLoad;
 }
 namespace mojo {
-class CoreLibraryInitializer;
 class SyncCallRestrictions;
 namespace core {
 class ScopedIPCSupport;
@@ -345,13 +371,14 @@ namespace net {
 class GSSAPISharedLibrary;
 class MultiThreadedCertVerifierScopedAllowBaseSyncPrimitives;
 class MultiThreadedProxyResolverScopedAllowJoinOnIO;
-class NetworkChangeNotifierMac;
-class NetworkConfigWatcherMacThread;
+class NetworkChangeNotifierApple;
+class NetworkConfigWatcherAppleThread;
 class ProxyConfigServiceWin;
 class ScopedAllowBlockingForSettingGetter;
 namespace internal {
 class AddressTrackerLinux;
-}
+class PemFileCertStore;
+}  
 }  
 namespace printing {
 class LocalPrinterHandlerDefault;
@@ -359,7 +386,9 @@ class LocalPrinterHandlerDefault;
 class PrintBackendServiceImpl;
 #endif
 class PrintBackendServiceManager;
+class PrintPreviewUIUntrusted;
 class PrinterQuery;
+base::FilePath GetAbsoluteSystemDestinationLocation(const base::FilePath&);
 }  
 namespace proxy_resolver {
 class ScopedAllowThreadJoinForProxyResolverV8Tracing;
@@ -411,18 +440,15 @@ class SystemctlLauncherScopedAllowBaseSyncPrimitives;
 namespace viz {
 class HostGpuMemoryBufferManager;
 class ClientGpuMemoryBufferManager;
+class DisplayCompositorMemoryAndTaskController;
+class SkiaOutputSurfaceImpl;
+class SharedImageInterfaceProvider;
 }  
 namespace vr {
 class VrShell;
 }
 namespace web {
 class WebMainLoop;
-}  
-namespace weblayer {
-class BrowserContextImpl;
-class ContentBrowserClientImpl;
-class ProfileImpl;
-class WebLayerPathProvider;
 }  
 
 
@@ -431,6 +457,7 @@ namespace base {
 
 namespace android {
 class JavaHandlerThread;
+class PmfUtils;
 class ScopedAllowBlockingForImportantFileWriter;
 }  
 
@@ -459,6 +486,7 @@ class PlatformSharedMemoryRegion;
 
 namespace win {
 class OSInfo;
+class ObjectWatcher;
 class ScopedAllowBlockingForUserAccountControl;
 }  
 
@@ -475,76 +503,60 @@ class StackSamplingProfiler;
 class TestCustomDisallow;
 class Thread;
 
-#if DCHECK_IS_ON()
+
+
+#if BUILDFLAG(IS_ANDROID)
+#define CAPTURE_THREAD_RESTRICTIONS_STACK_TRACES() false
+#else
+
+
+#define CAPTURE_THREAD_RESTRICTIONS_STACK_TRACES() EXPENSIVE_DCHECKS_ARE_ON()
+#endif
 
 
 
-#define INLINE_OR_NOT_TAIL_CALLED NOT_TAIL_CALLED BASE_EXPORT
-#define EMPTY_BODY_IF_DCHECK_IS_OFF
-#define DEFAULT_IF_DCHECK_IS_OFF
-
-class BooleanWithStack {
+class BooleanWithOptionalStack {
  public:
   
-  BooleanWithStack() = default;
+  BooleanWithOptionalStack() = default;
 
   
-  explicit BooleanWithStack(bool value);
+  explicit BooleanWithOptionalStack(bool value);
 
   explicit operator bool() const { return value_; }
 
   friend std::ostream& operator<<(std::ostream& out,
-                                  const BooleanWithStack& bws);
+                                  const BooleanWithOptionalStack& bws);
 
  private:
   bool value_ = false;
-  absl::optional<debug::StackTrace> stack_;
+#if CAPTURE_THREAD_RESTRICTIONS_STACK_TRACES()
+  std::optional<debug::StackTrace> stack_;
+#endif
 };
 
-#else
 
-#define INLINE_OR_NOT_TAIL_CALLED inline
-
-
-#define EMPTY_BODY_IF_DCHECK_IS_OFF \
-  {}                                \
-  static_assert(true)
-
-#define DEFAULT_IF_DCHECK_IS_OFF = default
-#endif  
-
-namespace internal {
+NOT_TAIL_CALLED BASE_EXPORT void AssertBlockingAllowed();
+NOT_TAIL_CALLED BASE_EXPORT void AssertBlockingDisallowedForTesting();
 
 
+NOT_TAIL_CALLED BASE_EXPORT void DisallowBlocking();
 
 
-INLINE_OR_NOT_TAIL_CALLED void AssertBlockingAllowed()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
-INLINE_OR_NOT_TAIL_CALLED void AssertBlockingDisallowedForTesting()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
-
-}  
-
-
-INLINE_OR_NOT_TAIL_CALLED void DisallowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
-
-
-class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedDisallowBlocking {
+class BASE_EXPORT ScopedDisallowBlocking {
  public:
-  ScopedDisallowBlocking() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedDisallowBlocking();
 
   ScopedDisallowBlocking(const ScopedDisallowBlocking&) = delete;
   ScopedDisallowBlocking& operator=(const ScopedDisallowBlocking&) = delete;
 
-  ~ScopedDisallowBlocking() DEFAULT_IF_DCHECK_IS_OFF;
+  ~ScopedDisallowBlocking();
 
  private:
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
-class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
+class BASE_EXPORT ScopedAllowBlocking {
  public:
   ScopedAllowBlocking(const ScopedAllowBlocking&) = delete;
   ScopedAllowBlocking& operator=(const ScopedAllowBlocking&) = delete;
@@ -558,7 +570,9 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   
   
   
+  friend class ::BrowserProcessImpl;
   friend class ::BrowserThemePack;  
+  friend class ::ChromeContentRendererClient;
   friend class ::DesktopNotificationBalloon;
   friend class ::FirefoxProfileLock;
   friend class ::GaiaConfig;
@@ -567,12 +581,15 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class ::StartupTabProviderImpl;
   friend class ::WebEngineBrowserMainParts;
   friend class android_webview::AwBrowserContext;
+  friend class android_webview::AwBrowserContextStore;
+  friend class android_webview::AwMetricsServiceClient;
+  friend class android_webview::CookieManager;
   friend class android_webview::ScopedAllowInitGLBindings;
-  friend class ash::BrowserDataBackMigrator;
   friend class ash::LoginEventRecorder;
-  friend class ash::MojoUtils;                     
   friend class ash::StartupCustomizationDocument;  
   friend class ash::StartupUtils;
+  friend class ash::converters::diagnostics::MojoUtils;  
+  friend class ash::system::ProcStatFile;
   friend class base::AdjustOOMScoreHelper;
   friend class base::ChromeOSVersionInfo;
   friend class base::Process;
@@ -580,6 +597,7 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class base::ScopedAllowBlockingForProcessMetrics;
   friend class base::StackSamplingProfiler;
   friend class base::android::ScopedAllowBlockingForImportantFileWriter;
+  friend class base::android::PmfUtils;
   friend class base::debug::StackTrace;
   friend class base::subtle::PlatformSharedMemoryRegion;
   friend class base::win::ScopedAllowBlockingForUserAccountControl;
@@ -594,10 +612,10 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class content::
       ScopedAllowBlockingForViewAura;  
   friend class content::ShellPathProvider;
+  friend class content::UserLevelMemoryPressureSignalGenerator;
   friend class content::WebContentsViewMac;
   friend class cronet::CronetContext;
   friend class cronet::CronetPrefsManager;
-  friend class crosapi::LacrosThreadTypeDelegate;
   friend class crypto::ScopedAllowBlockingForNSS;  
   friend class drive::FakeDriveService;
   friend class extensions::InstalledLoader;
@@ -607,17 +625,16 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class io_thread::IOSIOThread;
   friend class media::FileVideoCaptureDeviceFactory;
   friend class memory_instrumentation::OSMetrics;
-  friend class memory_pressure::UserLevelMemoryPressureSignalGenerator;
-  friend class metrics::AndroidMetricsServiceClient;
   friend class metrics::CleanExitBeacon;
   friend class module_installer::ScopedAllowModulePakLoad;
-  friend class mojo::CoreLibraryInitializer;
   friend class net::GSSAPISharedLibrary;    
   friend class net::ProxyConfigServiceWin;  
   friend class net::
       ScopedAllowBlockingForSettingGetter;  
+  friend class net::internal::PemFileCertStore;
   friend class printing::LocalPrinterHandlerDefault;
   friend class printing::PrintBackendServiceManager;
+  friend class printing::PrintPreviewUIUntrusted;
   friend class printing::PrinterQuery;
   friend class remote_cocoa::
       DroppedScreenShotCopierMac;  
@@ -628,23 +645,27 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
   friend class ui::DrmDisplayHostManager;
   friend class ui::ScopedAllowBlockingForGbmSurface;
   friend class ui::SelectFileDialogLinux;
-  friend class weblayer::BrowserContextImpl;
-  friend class weblayer::ContentBrowserClientImpl;
-  friend class weblayer::ProfileImpl;
-  friend class weblayer::WebLayerPathProvider;
 #if BUILDFLAG(IS_MAC)
   friend class printing::PrintBackendServiceImpl;
 #endif
 #if BUILDFLAG(IS_WIN)
   friend class base::win::OSInfo;
-  friend class content::WebContentsImpl;  
+  friend class content::SlowWebPreferenceCache;  
+  friend class media::GpuMojoMediaClientWin;     
+  friend class gfx::WUCBackdrop;
+#endif
+#if BUILDFLAG(IS_IOS)
+  friend class ::BrowserStateDirectoryBuilder;
 #endif
 
   
-  friend bool ::EnsureBrowserStateDirectoriesCreated(const base::FilePath&,
-                                                     const base::FilePath&,
-                                                     const base::FilePath&);
   friend Profile* ::GetLastProfileMac();  
+  
+  
+  friend auto ::GetStartupProfilePath(const base::FilePath& cur_dir,
+                                      const base::CommandLine& command_line,
+                                      bool ignore_profile_picker)
+      -> StartupProfilePathInfo;
   friend bool ::HasWaylandDisplay(
       base::Environment* env);  
   friend bool ash::CameraAppUIShouldEnableLocalOverride(const std::string&);
@@ -660,16 +681,16 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBlocking {
       base::FilePath* file_path);  
   friend bool disk_cache::CleanupDirectorySync(const base::FilePath&);
   friend bool gl::init::InitializeStaticGLBindings(gl::GLImplementationParts);
+  friend base::FilePath printing::GetAbsoluteSystemDestinationLocation(
+      const base::FilePath&);
 
   ScopedAllowBlocking(const Location& from_here = Location::Current());
   ~ScopedAllowBlocking();
 
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
-class [[maybe_unused, nodiscard]] ScopedAllowBlockingForTesting {
+class ScopedAllowBlockingForTesting {
  public:
   ScopedAllowBlockingForTesting() = default;
 
@@ -680,33 +701,28 @@ class [[maybe_unused, nodiscard]] ScopedAllowBlockingForTesting {
   ~ScopedAllowBlockingForTesting() = default;
 
  private:
-#if DCHECK_IS_ON()
   ScopedAllowBlocking scoped_allow_blocking_;
-#endif
 };
 
-INLINE_OR_NOT_TAIL_CALLED void DisallowBaseSyncPrimitives()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void DisallowBaseSyncPrimitives();
 
 
-class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedDisallowBaseSyncPrimitives {
+class BASE_EXPORT ScopedDisallowBaseSyncPrimitives {
  public:
-  ScopedDisallowBaseSyncPrimitives() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedDisallowBaseSyncPrimitives();
 
   ScopedDisallowBaseSyncPrimitives(const ScopedDisallowBaseSyncPrimitives&) =
       delete;
   ScopedDisallowBaseSyncPrimitives& operator=(
       const ScopedDisallowBaseSyncPrimitives&) = delete;
 
-  ~ScopedDisallowBaseSyncPrimitives() DEFAULT_IF_DCHECK_IS_OFF;
+  ~ScopedDisallowBaseSyncPrimitives();
 
  private:
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
-class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBaseSyncPrimitives {
+class BASE_EXPORT ScopedAllowBaseSyncPrimitives {
  public:
   ScopedAllowBaseSyncPrimitives(const ScopedAllowBaseSyncPrimitives&) = delete;
   ScopedAllowBaseSyncPrimitives& operator=(
@@ -731,15 +747,11 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBaseSyncPrimitives {
   friend class android_webview::JsSandboxIsolate;
   friend class base::SimpleThread;
   friend class base::internal::GetAppOutputScopedAllowBaseSyncPrimitives;
-  friend class blink::IdentifiabilityActiveSampler;
   friend class blink::SourceStream;
   friend class blink::VideoTrackRecorderImplContextProvider;
   friend class blink::WorkerThread;
   friend class blink::scheduler::NonMainThreadImpl;
-  friend class cc::CategorizedWorkerPoolImpl;
   friend class cc::CategorizedWorkerPoolJob;
-  friend class chrome_cleaner::ResetShortcutsComponent;
-  friend class chrome_cleaner::SystemReportComponent;
   friend class content::BrowserMainLoop;
   friend class content::BrowserProcessIOThread;
   friend class content::DWriteFontCollectionProxy;
@@ -747,13 +759,25 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBaseSyncPrimitives {
   friend class content::ServiceWorkerContextClient;
   friend class device::UsbContext;
   friend class enterprise_connectors::LinuxKeyRotationCommand;
+  friend class gpu::GpuPersistentCache;
   friend class history_report::HistoryReportJniBridge;
   friend class internal::TaskTracker;
   friend class leveldb::port::CondVar;
   friend class nearby::chrome::ScheduledExecutor;
   friend class nearby::chrome::SubmittableExecutor;
+  friend class nearby::chrome::BleV2GattClient;
+  friend class nearby::chrome::BleV2Medium;
+  friend class nearby::chrome::WifiDirectSocket;
   friend class media::AudioOutputDevice;
   friend class media::BlockingUrlProtocol;
+  template <class WorkerInterface,
+            class WorkerImpl,
+            class Worker,
+            class WorkerStatus,
+            WorkerStatus StatusNotOk,
+            WorkerStatus StatusOk,
+            WorkerStatus StatusWork>
+  friend class media::CodecWorkerImpl;
   friend class media::MojoVideoEncodeAccelerator;
   friend class mojo::core::ScopedIPCSupport;
   friend class net::MultiThreadedCertVerifierScopedAllowBaseSyncPrimitives;
@@ -768,16 +792,18 @@ class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedAllowBaseSyncPrimitives {
   
   
   friend class ::NativeBackendKWallet;  
-  friend class ::ash::system::
-      StatisticsProviderImpl;                      
+  friend class android_webview::
+      OverlayProcessorWebView;                     
   friend class blink::VideoFrameResourceProvider;  
+  friend class viz::
+      DisplayCompositorMemoryAndTaskController;    
+  friend class viz::SkiaOutputSurfaceImpl;         
+  friend class viz::SharedImageInterfaceProvider;  
 
-  ScopedAllowBaseSyncPrimitives() DEFAULT_IF_DCHECK_IS_OFF;
-  ~ScopedAllowBaseSyncPrimitives() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedAllowBaseSyncPrimitives();
+  ~ScopedAllowBaseSyncPrimitives();
 
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
 class BASE_EXPORT
@@ -802,11 +828,10 @@ class BASE_EXPORT
   
   
   friend class ::BrowserProcessImpl;  
+  friend class ::ChromeContentRendererClient;
   friend class ::KeyStorageLinux;
   friend class ::NativeDesktopMediaList;
   friend class android::JavaHandlerThread;
-  friend class android_webview::
-      AwFormDatabaseService;  
   friend class android_webview::CookieManager;
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
@@ -815,11 +840,12 @@ class BASE_EXPORT
   friend class base::StackSamplingProfiler;
   friend class base::internal::JobTaskSource;
   friend class base::sequence_manager::internal::TaskQueueImpl;
+  friend class base::sequence_manager::internal::WorkTracker;
+  friend class base::win::ObjectWatcher;
   friend class blink::AudioDestination;
   friend class blink::RTCVideoDecoderAdapter;
   friend class blink::RTCVideoEncoder;
   friend class blink::WebRtcVideoFrameAdapter;
-  friend class cc::CategorizedWorkerPoolImpl;
   friend class cc::CategorizedWorkerPoolJob;
   friend class cc::CategorizedWorkerPool;
   friend class cc::TileTaskManagerImpl;
@@ -832,33 +858,39 @@ class BASE_EXPORT
   friend class content::SynchronousCompositor;
   friend class content::SynchronousCompositorHost;
   friend class content::SynchronousCompositorSyncCallBridge;
+  friend class gpu::MappableBufferAHB;
+  friend class gpu::MappableBufferDXGI;
   friend class media::AudioInputDevice;
   friend class media::AudioOutputDevice;
+  friend class media::MailboxVideoFrameConverter;
   friend class media::PaintCanvasVideoRenderer;
+  friend class media::V4L2DevicePoller;  
+                                         
   friend class mojo::SyncCallRestrictions;
   friend class mojo::core::ipcz_driver::MojoTrap;
-  friend class net::NetworkConfigWatcherMacThread;
+  friend class net::NetworkConfigWatcherAppleThread;
   friend class ui::DrmThreadProxy;
   friend class viz::ClientGpuMemoryBufferManager;
   friend class viz::HostGpuMemoryBufferManager;
   friend class vr::VrShell;
 
   
+  friend class ::ash::system::StatisticsProviderImpl;  
   friend class ::chromeos::BlockingMethodCaller;  
   friend class base::Thread;                      
   friend class cc::CompletionEvent;               
   friend class content::
-      BrowserGpuChannelHostFactory;                 
-  friend class content::TextInputClientMac;         
-  friend class dbus::Bus;                           
+      BrowserGpuChannelHostFactory;          
+  friend class content::TextInputClientMac;  
+  friend class dbus::Bus;                    
   friend class discardable_memory::
-      ClientDiscardableSharedMemoryManager;         
-  friend class disk_cache::BackendImpl;             
-  friend class disk_cache::InFlightIO;              
-  friend class midi::TaskService;                   
+      ClientDiscardableSharedMemoryManager;  
+  friend class disk_cache::BackendImpl;      
+  friend class disk_cache::InFlightIO;       
+  friend class midi::TaskService;            
   friend class net::
       MultiThreadedProxyResolverScopedAllowJoinOnIO;  
-  friend class net::NetworkChangeNotifierMac;         
+  friend class net::NetworkChangeNotifierApple;       
   friend class net::internal::AddressTrackerLinux;    
   friend class proxy_resolver::
       ScopedAllowThreadJoinForProxyResolverV8Tracing;  
@@ -880,9 +912,7 @@ class BASE_EXPORT
 
   ~ScopedAllowBaseSyncPrimitivesOutsideBlockingScope();
 
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
 
@@ -890,89 +920,76 @@ class BASE_EXPORT
 
 
 
-class BASE_EXPORT
-    [[maybe_unused, nodiscard]] ScopedAllowBaseSyncPrimitivesForTesting {
+class BASE_EXPORT ScopedAllowBaseSyncPrimitivesForTesting {
  public:
-  ScopedAllowBaseSyncPrimitivesForTesting() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedAllowBaseSyncPrimitivesForTesting();
 
   ScopedAllowBaseSyncPrimitivesForTesting(
       const ScopedAllowBaseSyncPrimitivesForTesting&) = delete;
   ScopedAllowBaseSyncPrimitivesForTesting& operator=(
       const ScopedAllowBaseSyncPrimitivesForTesting&) = delete;
 
-  ~ScopedAllowBaseSyncPrimitivesForTesting() DEFAULT_IF_DCHECK_IS_OFF;
+  ~ScopedAllowBaseSyncPrimitivesForTesting();
 
  private:
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
 
 
-class BASE_EXPORT
-    [[maybe_unused, nodiscard]] ScopedAllowUnresponsiveTasksForTesting {
+class BASE_EXPORT ScopedAllowUnresponsiveTasksForTesting {
  public:
-  ScopedAllowUnresponsiveTasksForTesting() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedAllowUnresponsiveTasksForTesting();
 
   ScopedAllowUnresponsiveTasksForTesting(
       const ScopedAllowUnresponsiveTasksForTesting&) = delete;
   ScopedAllowUnresponsiveTasksForTesting& operator=(
       const ScopedAllowUnresponsiveTasksForTesting&) = delete;
 
-  ~ScopedAllowUnresponsiveTasksForTesting() DEFAULT_IF_DCHECK_IS_OFF;
+  ~ScopedAllowUnresponsiveTasksForTesting();
 
  private:
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> base_sync_resetter_;
-  const AutoReset<BooleanWithStack> blocking_resetter_;
-  const AutoReset<BooleanWithStack> cpu_resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> base_sync_resetter_;
+  const AutoReset<BooleanWithOptionalStack> blocking_resetter_;
+  const AutoReset<BooleanWithOptionalStack> cpu_resetter_;
 };
 
 namespace internal {
 
 
 
-INLINE_OR_NOT_TAIL_CALLED void AssertBaseSyncPrimitivesAllowed()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void AssertBaseSyncPrimitivesAllowed();
 
 
-INLINE_OR_NOT_TAIL_CALLED void ResetThreadRestrictionsForTesting()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+BASE_EXPORT void ResetThreadRestrictionsForTesting();
 
 
 
-INLINE_OR_NOT_TAIL_CALLED void AssertSingletonAllowed()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void AssertSingletonAllowed();
 
 }  
 
 
-INLINE_OR_NOT_TAIL_CALLED void DisallowSingleton() EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void DisallowSingleton();
 
 
-class BASE_EXPORT [[maybe_unused, nodiscard]] ScopedDisallowSingleton {
+class BASE_EXPORT ScopedDisallowSingleton {
  public:
-  ScopedDisallowSingleton() DEFAULT_IF_DCHECK_IS_OFF;
+  ScopedDisallowSingleton();
 
   ScopedDisallowSingleton(const ScopedDisallowSingleton&) = delete;
   ScopedDisallowSingleton& operator=(const ScopedDisallowSingleton&) = delete;
 
-  ~ScopedDisallowSingleton() DEFAULT_IF_DCHECK_IS_OFF;
+  ~ScopedDisallowSingleton();
 
  private:
-#if DCHECK_IS_ON()
-  const AutoReset<BooleanWithStack> resetter_;
-#endif
+  const AutoReset<BooleanWithOptionalStack> resetter_;
 };
 
 
-INLINE_OR_NOT_TAIL_CALLED void AssertLongCPUWorkAllowed()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void AssertLongCPUWorkAllowed();
 
-INLINE_OR_NOT_TAIL_CALLED void DisallowUnresponsiveTasks()
-    EMPTY_BODY_IF_DCHECK_IS_OFF;
+NOT_TAIL_CALLED BASE_EXPORT void DisallowUnresponsiveTasks();
 
 
 
@@ -996,13 +1013,9 @@ class BASE_EXPORT PermanentThreadAllowance {
 #endif  
   friend class web::WebMainLoop;
 
-  static void AllowBlocking() EMPTY_BODY_IF_DCHECK_IS_OFF;
-  static void AllowBaseSyncPrimitives() EMPTY_BODY_IF_DCHECK_IS_OFF;
+  static void AllowBlocking();
+  static void AllowBaseSyncPrimitives();
 };
-
-#undef INLINE_OR_NOT_TAIL_CALLED
-#undef EMPTY_BODY_IF_DCHECK_IS_OFF
-#undef DEFAULT_IF_DCHECK_IS_OFF
 
 }  
 

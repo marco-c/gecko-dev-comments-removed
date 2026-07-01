@@ -105,10 +105,12 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/strings/string_piece.h"
+#include "base/compiler_specific.h"
+#include "base/containers/span_forward_internal.h"
 #include "base/trace_event/base_tracing_forward.h"
 #include "build/build_config.h"
 
@@ -144,6 +146,10 @@
 #define FILE_PATH_LITERAL(x) x
 #endif  
 
+#if BUILDFLAG(IS_APPLE)
+using CFStringRef = const struct __CFString*;
+#endif
+
 namespace base {
 
 class SafeBaseName;
@@ -157,16 +163,16 @@ class BASE_EXPORT FilePath {
 #if BUILDFLAG(IS_WIN)
   
   
-  typedef std::wstring StringType;
+  using StringType = std::wstring;
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   
   
   
-  typedef std::string StringType;
+  using StringType = std::string;
 #endif  
 
-  typedef StringType::value_type CharType;
-  typedef BasicStringPiece<CharType> StringPieceType;
+  using CharType = StringType::value_type;
+  using StringViewType = std::basic_string_view<CharType>;
 
   
   
@@ -191,9 +197,12 @@ class BASE_EXPORT FilePath {
   
   static constexpr CharType kExtensionSeparator = FILE_PATH_LITERAL('.');
 
+  
+  static void InitializeFeatures();
+
   FilePath();
   FilePath(const FilePath& that);
-  explicit FilePath(StringPieceType path);
+  explicit FilePath(StringViewType path);
   ~FilePath();
   FilePath& operator=(const FilePath& that);
 
@@ -204,16 +213,14 @@ class BASE_EXPORT FilePath {
   
   FilePath& operator=(FilePath&& that) noexcept;
 
+  
+  
   bool operator==(const FilePath& that) const;
 
-  bool operator!=(const FilePath& that) const;
-
   
-  bool operator<(const FilePath& that) const {
-    return path_ < that.path_;
-  }
+  auto operator<=>(const FilePath& that) const = default;
 
-  const StringType& value() const { return path_; }
+  const StringType& value() const LIFETIME_BOUND { return path_; }
 
   [[nodiscard]] bool empty() const { return path_.empty(); }
 
@@ -240,7 +247,12 @@ class BASE_EXPORT FilePath {
   
   
   
+#if !defined(MOZ_SANDBOX)
+  
+  
+  
   bool IsParent(const FilePath& child) const;
+#endif  
 
   
   
@@ -322,38 +334,53 @@ class BASE_EXPORT FilePath {
   
   
   
-  [[nodiscard]] FilePath InsertBeforeExtension(StringPieceType suffix) const;
-  [[nodiscard]] FilePath InsertBeforeExtensionASCII(StringPiece suffix) const;
-
-  
-  
-  [[nodiscard]] FilePath AddExtension(StringPieceType extension) const;
-
-  
-  
-  [[nodiscard]] FilePath AddExtensionASCII(StringPiece extension) const;
+  [[nodiscard]] FilePath InsertBeforeExtension(StringViewType suffix) const;
+  [[nodiscard]] FilePath InsertBeforeExtensionASCII(
+      std::string_view suffix) const;
 
   
   
   
   
-  [[nodiscard]] FilePath ReplaceExtension(StringPieceType extension) const;
+  [[nodiscard]] FilePath InsertBeforeExtensionUTF8(
+      std::string_view suffix) const;
 
   
   
-  bool MatchesExtension(StringPieceType extension) const;
+  [[nodiscard]] FilePath AddExtension(StringViewType extension) const;
 
   
   
-  bool MatchesFinalExtension(StringPieceType extension) const;
+  [[nodiscard]] FilePath AddExtensionASCII(std::string_view extension) const;
 
   
   
   
   
   
+  [[nodiscard]] FilePath AddExtensionUTF8(std::string_view extension) const;
+
   
-  [[nodiscard]] FilePath Append(StringPieceType component) const;
+  
+  
+  
+  [[nodiscard]] FilePath ReplaceExtension(StringViewType extension) const;
+
+  
+  
+  bool MatchesExtension(StringViewType extension) const;
+
+  
+  
+  bool MatchesFinalExtension(StringViewType extension) const;
+
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] FilePath Append(StringViewType component) const;
   [[nodiscard]] FilePath Append(const FilePath& component) const;
   [[nodiscard]] FilePath Append(const SafeBaseName& component) const;
 
@@ -363,7 +390,13 @@ class BASE_EXPORT FilePath {
   
   
   
-  [[nodiscard]] FilePath AppendASCII(StringPiece component) const;
+  [[nodiscard]] FilePath AppendASCII(std::string_view component) const;
+
+  
+  
+  
+  
+  [[nodiscard]] FilePath AppendUTF8(std::string_view component) const;
 
   
   
@@ -420,7 +453,7 @@ class BASE_EXPORT FilePath {
   std::u16string AsUTF16Unsafe() const;
 
   
-  static FilePath FromASCII(StringPiece ascii);
+  static FilePath FromASCII(std::string_view ascii);
 
   
   
@@ -430,10 +463,10 @@ class BASE_EXPORT FilePath {
   
   
   
-  static FilePath FromUTF8Unsafe(StringPiece utf8);
+  static FilePath FromUTF8Unsafe(std::string_view utf8);
 
   
-  static FilePath FromUTF16Unsafe(StringPiece16 utf16);
+  static FilePath FromUTF16Unsafe(std::u16string_view utf16);
 
   void WriteToPickle(Pickle* pickle) const;
   bool ReadFromPickle(PickleIterator* iter);
@@ -444,7 +477,8 @@ class BASE_EXPORT FilePath {
 
   
   
-  [[nodiscard]] FilePath NormalizePathSeparatorsTo(CharType separator) const;
+  [[nodiscard]] FilePath NormalizePathSeparatorsTo(
+      CharType normalized_separator) const;
 
   
   
@@ -454,14 +488,13 @@ class BASE_EXPORT FilePath {
   
   
   
-  static int CompareIgnoreCase(StringPieceType string1,
-                               StringPieceType string2);
-  static bool CompareEqualIgnoreCase(StringPieceType string1,
-                                     StringPieceType string2) {
+  static int CompareIgnoreCase(StringViewType string1, StringViewType string2);
+  static bool CompareEqualIgnoreCase(StringViewType string1,
+                                     StringViewType string2) {
     return CompareIgnoreCase(string1, string2) == 0;
   }
-  static bool CompareLessIgnoreCase(StringPieceType string1,
-                                    StringPieceType string2) {
+  static bool CompareLessIgnoreCase(StringViewType string1,
+                                    StringViewType string2) {
     return CompareIgnoreCase(string1, string2) < 0;
   }
 
@@ -474,14 +507,15 @@ class BASE_EXPORT FilePath {
   
   
   
-  static StringType GetHFSDecomposedForm(StringPieceType string);
+  static StringType GetHFSDecomposedForm(StringViewType string);
+  static StringType GetHFSDecomposedForm(CFStringRef cfstring);
 
   
   
   
   
-  static int HFSFastUnicodeCompare(StringPieceType string1,
-                                   StringPieceType string2);
+  static int HFSFastUnicodeCompare(StringViewType string1,
+                                   StringViewType string2);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -491,6 +525,14 @@ class BASE_EXPORT FilePath {
   
   
   bool IsContentUri() const;
+
+  
+  
+  
+  
+  
+  
+  bool IsVirtualDocumentPath() const;
 #endif
 
   
@@ -503,6 +545,14 @@ class BASE_EXPORT FilePath {
   
   
   void StripTrailingSeparatorsInternal();
+
+  
+  static span<const CharType> SeparatorsAsSpan();
+
+#if !defined(MOZ_SANDBOX)
+  bool IsParentFast(const FilePath& child) const;
+  bool IsParentSlow(const FilePath& child) const;
+#endif  
 
   StringType path_;
 };

@@ -5,11 +5,14 @@
 #ifndef BASE_THREADING_THREAD_COLLISION_WARNER_H_
 #define BASE_THREADING_THREAD_COLLISION_WARNER_H_
 
-#include "base/atomicops.h"
+#include <atomic>
+
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "base/dcheck_is_on.h"
 #include "base/macros/uniquify.h"
 #include "base/memory/raw_ptr.h"
+#include "base/threading/platform_thread.h"
 
 
 
@@ -97,12 +100,11 @@
 
 
 
-#if !defined(NDEBUG)
+#if DCHECK_IS_ON()
 
 
 
-#define DFAKE_MUTEX(obj) \
-     mutable base::ThreadCollisionWarner obj
+#define DFAKE_MUTEX(obj) mutable base::ThreadCollisionWarner obj
 
 
 #define DFAKE_SCOPED_LOCK(obj) \
@@ -145,9 +147,7 @@ class BASE_EXPORT ThreadCollisionWarner {
  public:
   
   explicit ThreadCollisionWarner(AsserterBase* asserter = new DCheckAsserter())
-      : valid_thread_id_(0),
-        counter_(0),
-        asserter_(asserter) {}
+      : valid_thread_id_(kInvalidThreadId), counter_(0), asserter_(asserter) {}
 
   ThreadCollisionWarner(const ThreadCollisionWarner&) = delete;
   ThreadCollisionWarner& operator=(const ThreadCollisionWarner&) = delete;
@@ -161,8 +161,7 @@ class BASE_EXPORT ThreadCollisionWarner {
   
   class BASE_EXPORT Check {
    public:
-    explicit Check(ThreadCollisionWarner* warner)
-        : warner_(warner) {
+    explicit Check(ThreadCollisionWarner* warner) : warner_(warner) {
       warner_->EnterSelf();
     }
 
@@ -179,17 +178,14 @@ class BASE_EXPORT ThreadCollisionWarner {
   
   class BASE_EXPORT ScopedCheck {
    public:
-    explicit ScopedCheck(ThreadCollisionWarner* warner)
-        : warner_(warner) {
+    explicit ScopedCheck(ThreadCollisionWarner* warner) : warner_(warner) {
       warner_->Enter();
     }
 
     ScopedCheck(const ScopedCheck&) = delete;
     ScopedCheck& operator=(const ScopedCheck&) = delete;
 
-    ~ScopedCheck() {
-      warner_->Leave();
-    }
+    ~ScopedCheck() { warner_->Leave(); }
 
    private:
     raw_ptr<ThreadCollisionWarner> warner_;
@@ -207,9 +203,7 @@ class BASE_EXPORT ThreadCollisionWarner {
     ScopedRecursiveCheck(const ScopedRecursiveCheck&) = delete;
     ScopedRecursiveCheck& operator=(const ScopedRecursiveCheck&) = delete;
 
-    ~ScopedRecursiveCheck() {
-      warner_->Leave();
-    }
+    ~ScopedRecursiveCheck() { warner_->Leave(); }
 
    private:
     raw_ptr<ThreadCollisionWarner> warner_;
@@ -230,11 +224,12 @@ class BASE_EXPORT ThreadCollisionWarner {
 
   
   
-  volatile subtle::Atomic32 valid_thread_id_;
+  std::atomic<PlatformThreadId> valid_thread_id_;
+  static_assert(std::atomic<PlatformThreadId>::is_always_lock_free, "");
 
   
   
-  volatile subtle::Atomic32 counter_;
+  std::atomic<uint32_t> counter_;
 
   
   

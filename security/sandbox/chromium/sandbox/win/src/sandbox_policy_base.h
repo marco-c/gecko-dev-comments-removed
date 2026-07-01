@@ -8,19 +8,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
-#include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/dcheck_is_on.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/scoped_refptr.h"
 #include "base/process/launch.h"
-#include "base/strings/string_piece.h"
-#include "base/synchronization/lock.h"
 #include "base/win/access_token.h"
 #include "base/win/windows_types.h"
 #include "sandbox/win/src/app_container_base.h"
@@ -30,7 +27,6 @@
 #include "sandbox/win/src/policy_engine_opcodes.h"
 #include "sandbox/win/src/policy_engine_params.h"
 #include "sandbox/win/src/sandbox_policy.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
@@ -66,11 +62,9 @@ class ConfigBase final : public TargetConfig {
   void SetJobMemoryLimit(size_t memory_limit) override;
   ResultCode AllowFileAccess(FileSemantics semantics,
                              const wchar_t* pattern) override;
-  ResultCode AllowNamedPipes(const wchar_t* pattern) override;
   ResultCode AllowRegistryRead(const wchar_t* pattern) final;
-  ResultCode AllowExtraDlls(const wchar_t* pattern) override;
+  ResultCode AllowExtraDll(const wchar_t* path) override;
   ResultCode SetFakeGdiInit() override;
-  ResultCode AllowLineBreaking() final;
   void AddDllToUnload(const wchar_t* dll_name) override;
   ResultCode SetIntegrityLevel(IntegrityLevel integrity_level) override;
   IntegrityLevel GetIntegrityLevel() const override;
@@ -82,12 +76,10 @@ class ConfigBase final : public TargetConfig {
   MitigationFlags GetDelayedProcessMitigations() const override;
   void AddRestrictingRandomSid() override;
   void SetLockdownDefaultDacl() override;
-  ResultCode AddAppContainerProfile(const wchar_t* package_name,
-                                    bool create_profile) override;
-  scoped_refptr<AppContainer> GetAppContainer() override;
-  ResultCode AddKernelObjectToClose(const wchar_t* handle_type,
-                                    const wchar_t* handle_name) override;
-  ResultCode SetDisconnectCsrss() override;
+  ResultCode AddAppContainerProfile(const wchar_t* package_name) override;
+  AppContainer* GetAppContainer() override;
+  void AddKernelObjectToClose(HandleToClose handle_info) override;
+  void SetDisconnectCsrss() override;
   void SetDesktop(Desktop desktop) override;
   void SetFilterEnvironment(bool filter) override;
   bool GetEnvironmentFiltered() override;
@@ -100,6 +92,8 @@ class ConfigBase final : public TargetConfig {
   friend class PolicyDiagnostic;
   
   friend class PolicyBase;
+  
+  friend class TopLevelDispatcher;
 
   
   
@@ -112,6 +106,11 @@ class ConfigBase final : public TargetConfig {
   
   LowLevelPolicy* PolicyMaker();
 
+  
+  
+  
+  bool NeedsIpc(IpcTag service) const;
+
 #if DCHECK_IS_ON()
   
   uint32_t creating_thread_id_;
@@ -122,7 +121,7 @@ class ConfigBase final : public TargetConfig {
 
   
   PolicyGlobal* policy();
-  absl::optional<base::span<const uint8_t>> policy_span();
+  std::optional<base::span<const uint8_t>> policy_span();
   std::vector<std::wstring>& blocklisted_dlls();
   AppContainerBase* app_container();
   IntegrityLevel integrity_level() { return integrity_level_; }
@@ -133,8 +132,7 @@ class ConfigBase final : public TargetConfig {
   size_t memory_limit() { return memory_limit_; }
   uint32_t ui_exceptions() { return ui_exceptions_; }
   Desktop desktop() { return desktop_; }
-  
-  HandleCloser* handle_closer() { return handle_closer_.get(); }
+  const HandleCloserConfig& handle_closer() { return handle_closer_; }
   bool zero_appshim() { return zero_appshim_; }
 
   TokenLevel lockdown_level_;
@@ -154,6 +152,7 @@ class ConfigBase final : public TargetConfig {
   Desktop desktop_;
   bool filter_environment_;
   bool zero_appshim_;
+  HandleCloserConfig handle_closer_;
 
   
   
@@ -161,19 +160,14 @@ class ConfigBase final : public TargetConfig {
   
   raw_ptr<PolicyGlobal> policy_;
   
-  
-  
-  
-  std::unique_ptr<HandleCloser> handle_closer_;
-  
   std::vector<std::wstring> blocklisted_dlls_;
   
-  scoped_refptr<AppContainerBase> app_container_;
+  std::unique_ptr<AppContainerBase> app_container_;
 };
 
 class PolicyBase final : public TargetPolicy {
  public:
-  PolicyBase(base::StringPiece key);
+  PolicyBase(std::string_view key);
   ~PolicyBase() override;
 
   PolicyBase(const PolicyBase&) = delete;
@@ -203,8 +197,8 @@ class PolicyBase final : public TargetPolicy {
 
   
   
-  ResultCode MakeTokens(absl::optional<base::win::AccessToken>& initial,
-                        absl::optional<base::win::AccessToken>& lockdown);
+  ResultCode MakeTokens(std::optional<base::win::AccessToken>& initial,
+                        std::optional<base::win::AccessToken>& lockdown);
 
   
   
@@ -223,6 +217,8 @@ class PolicyBase final : public TargetPolicy {
   friend class sandbox::BrokerServicesBase;
   
   friend class PolicyDiagnostic;
+  
+  friend class TopLevelDispatcher;
 
   
   ResultCode SetupAllInterceptions(TargetProcess& target);
@@ -246,7 +242,7 @@ class PolicyBase final : public TargetPolicy {
   
 
   
-  absl::optional<base::span<const uint8_t>> delegate_data_span();
+  std::optional<base::span<const uint8_t>> delegate_data_span();
 
   
   HANDLE stdout_handle_;

@@ -5,38 +5,31 @@
 #ifndef BASE_CONTAINERS_ADAPTERS_H_
 #define BASE_CONTAINERS_ADAPTERS_H_
 
-#include <stddef.h>
-
-#include <iterator>
+#include <ranges>
+#include <type_traits>
 #include <utility>
 
-#include "base/memory/raw_ptr_exclusion.h"
+#include "base/compiler_specific.h"
+#include "base/containers/adapters_internal.h"
 
 namespace base {
 
-namespace internal {
 
 
-template <typename T>
-class ReversedAdapter {
- public:
-  using Iterator = decltype(std::rbegin(std::declval<T&>()));
 
-  explicit ReversedAdapter(T& t) : t_(t) {}
-  ReversedAdapter(const ReversedAdapter& ra) : t_(ra.t_) {}
-  ReversedAdapter& operator=(const ReversedAdapter&) = delete;
-
-  Iterator begin() const { return std::rbegin(t_); }
-  Iterator end() const { return std::rend(t_); }
-
- private:
-  
-  
-  
-  RAW_PTR_EXCLUSION T& t_;
-};
-
-}  
+template <typename Range>
+  requires(std::ranges::input_range<Range> &&
+           
+           
+           
+           !std::ranges::borrowed_range<Range> &&
+           
+           
+           std::movable<
+               std::remove_reference_t<std::ranges::range_reference_t<Range>>>)
+auto RangeAsRvalues(Range&& range LIFETIME_BOUND) {
+  return internal::RangeOfRvaluesAdapter<Range>(std::forward<Range>(range));
+}
 
 
 
@@ -47,9 +40,9 @@ class ReversedAdapter {
 
 
 
-template <typename T>
-internal::ReversedAdapter<T> Reversed(T& t) {
-  return internal::ReversedAdapter<T>(t);
+template <typename Range>
+auto Reversed(Range&& range LIFETIME_BOUND) {
+  return internal::ReversedAdapter<Range>(std::forward<Range>(range));
 }
 
 }  

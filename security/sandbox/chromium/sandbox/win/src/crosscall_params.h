@@ -8,10 +8,10 @@
 #include <windows.h>
 
 #include <lmaccess.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/compiler_specific.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/internal_types.h"
 #include "sandbox/win/src/ipc_tags.h"
@@ -39,10 +39,6 @@
 namespace sandbox {
 
 
-
-const uint32_t kIPCChannelSize = 1024;
-
-
 SANDBOX_INTERCEPT NtExports g_nt;
 
 namespace {
@@ -55,9 +51,10 @@ inline uint32_t Align(uint32_t value) {
 }
 
 inline void* memcpy_wrapper(void* dest, const void* src, size_t count) {
-  if (g_nt.memcpy)
-    return g_nt.memcpy(dest, src, count);
-  return memcpy(dest, src, count);
+  if (UNSAFE_TODO(g_nt.memcpy)) {
+    return UNSAFE_TODO(g_nt.memcpy)(dest, src, count);
+  }
+  return UNSAFE_TODO(memcpy(dest, src, count));
 }
 
 }  
@@ -224,11 +221,6 @@ class ActualCallParams : public CrossCallParams {
   ActualCallParams(const ActualCallParams&) = delete;
   ActualCallParams& operator=(const ActualCallParams&) = delete;
 
-  static constexpr size_t MaxParamsSize() {
-    return sizeof(
-        ActualCallParams<NUMBER_PARAMS, kIPCChannelSize>::parameters_);
-  }
-
   
   
   uint32_t OverrideSize(uint32_t new_size) {
@@ -258,12 +250,13 @@ class ActualCallParams : public CrossCallParams {
     }
 
     if ((size > sizeof(*this)) ||
-        (param_info_[index].offset_ > (sizeof(*this) - size))) {
+        (UNSAFE_TODO(param_info_[index]).offset_ > (sizeof(*this) - size))) {
       
       return false;
     }
 
-    char* dest = reinterpret_cast<char*>(this) + param_info_[index].offset_;
+    char* dest =
+        UNSAFE_TODO(reinterpret_cast<char*>(this) + param_info_[index].offset_);
 
     
     
@@ -278,15 +271,17 @@ class ActualCallParams : public CrossCallParams {
     if (is_in_out)
       SetIsInOut(true);
 
-    param_info_[index + 1].offset_ = Align(param_info_[index].offset_ + size);
-    param_info_[index].size_ = size;
-    param_info_[index].type_ = type;
+    UNSAFE_TODO(param_info_[index + 1]).offset_ =
+        Align(UNSAFE_TODO(param_info_[index]).offset_ + size);
+    UNSAFE_TODO(param_info_[index]).size_ = size;
+    UNSAFE_TODO(param_info_[index]).type_ = type;
     return true;
   }
 
   
   void* GetParamPtr(size_t index) {
-    return reinterpret_cast<char*>(this) + param_info_[index].offset_;
+    return UNSAFE_TODO(reinterpret_cast<char*>(this) +
+                       param_info_[index].offset_);
   }
 
   

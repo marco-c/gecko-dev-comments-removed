@@ -9,6 +9,15 @@
 #ifndef SANDBOX_LINUX_SYSTEM_HEADERS_LINUX_SYSCALLS_H_
 #define SANDBOX_LINUX_SYSTEM_HEADERS_LINUX_SYSCALLS_H_
 
+
+
+
+
+
+
+
+#include <sys/syscall.h>
+
 #include "build/build_config.h"
 
 #if defined(__x86_64__)
@@ -36,4 +45,3 @@
 #endif
 
 #endif  
-

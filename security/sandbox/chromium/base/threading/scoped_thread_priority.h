@@ -6,14 +6,22 @@
 #define BASE_THREADING_SCOPED_THREAD_PRIORITY_H_
 
 #include <atomic>
+#include <optional>
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "base/location.h"
 #include "base/macros/uniquify.h"
 #include "base/memory/raw_ptr.h"
+#if !defined(MOZ_SANDBOX)
+#include "base/task/task_observer.h"
+#endif  
+#include "base/threading/thread_checker.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+
+#if BUILDFLAG(IS_WIN)
+#include "base/win/scoped_handle.h"
+#endif
 
 namespace base {
 
@@ -52,6 +60,8 @@ enum class ThreadType : int;
 
 
 
+
+
 class BASE_EXPORT ScopedBoostPriority {
  public:
   explicit ScopedBoostPriority(ThreadType target_thread_type);
@@ -61,8 +71,66 @@ class BASE_EXPORT ScopedBoostPriority {
   ScopedBoostPriority& operator=(const ScopedBoostPriority&) = delete;
 
  private:
-  absl::optional<ThreadType> original_thread_type_;
+  std::optional<ThreadType> original_thread_type_;
 };
+
+
+
+
+
+
+class BASE_EXPORT ScopedBoostablePriority {
+ public:
+  ScopedBoostablePriority();
+  ~ScopedBoostablePriority();
+
+  ScopedBoostablePriority(const ScopedBoostablePriority&) = delete;
+  ScopedBoostablePriority& operator=(const ScopedBoostablePriority& other) =
+      delete;
+
+  
+  
+  
+  
+  bool BoostPriority(ThreadType target_thread_type);
+
+ private:
+  const ThreadType initial_thread_type_;
+  PlatformThreadHandle thread_handle_;
+#if BUILDFLAG(IS_WIN)
+  win::ScopedHandle scoped_handle_;
+#endif
+  bool did_override_priority_{false};
+  internal::PlatformPriorityOverride priority_override_handle_;
+  THREAD_CHECKER(thread_checker_);
+};
+
+#if !defined(MOZ_SANDBOX)
+
+
+class BASE_EXPORT TaskMonitoringScopedBoostPriority : public TaskObserver {
+ public:
+  explicit TaskMonitoringScopedBoostPriority(
+      ThreadType target_thread_type,
+      RepeatingCallback<bool()> should_boost_callback);
+  ~TaskMonitoringScopedBoostPriority() override;
+
+  TaskMonitoringScopedBoostPriority(const TaskMonitoringScopedBoostPriority&) =
+      delete;
+  TaskMonitoringScopedBoostPriority& operator=(
+      const TaskMonitoringScopedBoostPriority&) = delete;
+
+  
+  void WillProcessTask(const PendingTask& pending_task,
+                       bool was_blocked_or_low_priority) override;
+  void DidProcessTask(const PendingTask& pending_task) override {}
+
+ private:
+  std::optional<ScopedBoostPriority> scoped_boost_priority_;
+  ThreadType target_thread_type_;
+  RepeatingCallback<bool()> should_boost_callback_;
+};
+#endif  
 
 namespace internal {
 
@@ -84,7 +152,7 @@ class BASE_EXPORT ScopedMayLoadLibraryAtBackgroundPriority {
  private:
 #if BUILDFLAG(IS_WIN)
   
-  absl::optional<ThreadType> original_thread_type_;
+  std::optional<ThreadType> original_thread_type_;
   const raw_ptr<std::atomic_bool> already_loaded_;
 #endif
 };

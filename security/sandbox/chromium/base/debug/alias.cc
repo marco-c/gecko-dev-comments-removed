@@ -6,12 +6,10 @@
 
 #include "base/compiler_specific.h"
 
-namespace base {
-namespace debug {
+namespace base::debug {
 
 
 
 NOINLINE void Alias(const void* var) {}
 
-}  
 }  

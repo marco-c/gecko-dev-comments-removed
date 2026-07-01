@@ -5,12 +5,11 @@
 #ifndef SANDBOX_WIN_SRC_RESTRICTED_TOKEN_UTILS_H_
 #define SANDBOX_WIN_SRC_RESTRICTED_TOKEN_UTILS_H_
 
+#include <optional>
 #include "base/win/access_token.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
-#include "sandbox/win/src/restricted_token.h"
 #include "sandbox/win/src/security_level.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 
@@ -34,12 +33,12 @@ enum class TokenType { kImpersonation, kPrimary };
 
 
 
-absl::optional<base::win::AccessToken> CreateRestrictedToken(
+std::optional<base::win::AccessToken> CreateRestrictedToken(
     TokenLevel security_level,
     IntegrityLevel integrity_level,
     TokenType token_type,
     bool lockdown_default_dacl,
-    const absl::optional<base::win::Sid>& unique_restricted_sid,
+    const std::optional<base::win::Sid>& unique_restricted_sid,
     bool use_restricting_sids);
 
 

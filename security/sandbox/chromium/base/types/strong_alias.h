@@ -5,6 +5,8 @@
 #ifndef BASE_TYPES_STRONG_ALIAS_H_
 #define BASE_TYPES_STRONG_ALIAS_H_
 
+#include <compare>
+#include <functional>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -72,13 +74,12 @@ namespace base {
 
 
 
-
 template <typename TagType, typename UnderlyingType>
 class StrongAlias {
  public:
   using underlying_type = UnderlyingType;
 
-  constexpr StrongAlias() = default;
+  StrongAlias() = default;
   constexpr explicit StrongAlias(const UnderlyingType& v) : value_(v) {}
   constexpr explicit StrongAlias(UnderlyingType&& v) noexcept
       : value_(std::move(v)) {}
@@ -100,43 +101,27 @@ class StrongAlias {
 
   constexpr explicit operator const UnderlyingType&() const& { return value_; }
 
-  constexpr bool operator==(const StrongAlias& other) const {
-    return value_ == other.value_;
-  }
-  constexpr bool operator!=(const StrongAlias& other) const {
-    return value_ != other.value_;
-  }
-  constexpr bool operator<(const StrongAlias& other) const {
-    return value_ < other.value_;
-  }
-  constexpr bool operator<=(const StrongAlias& other) const {
-    return value_ <= other.value_;
-  }
-  constexpr bool operator>(const StrongAlias& other) const {
-    return value_ > other.value_;
-  }
-  constexpr bool operator>=(const StrongAlias& other) const {
-    return value_ >= other.value_;
-  }
+  
+  
+  
+  
+  
+  
+  
+  friend auto operator<=>(const StrongAlias& lhs,
+                          const StrongAlias& rhs) = default;
+  friend bool operator==(const StrongAlias& lhs,
+                         const StrongAlias& rhs) = default;
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct Hasher {
-    using argument_type = StrongAlias;
-    using result_type = std::size_t;
-    result_type operator()(const argument_type& id) const {
-      return std::hash<UnderlyingType>()(id.value());
+  template <typename H>
+    requires requires(H h, const StrongAlias& strong_alias) {
+      { H::combine(std::move(h), strong_alias.value()) } -> std::same_as<H>;
     }
-  };
+  friend H AbslHashValue(H h, const StrongAlias& strong_alias) {
+    return H::combine(std::move(h), strong_alias.value_);
+  }
 
   
   
@@ -151,15 +136,21 @@ class StrongAlias {
 };
 
 
-template <typename TagType,
-          typename UnderlyingType,
-          typename = std::enable_if_t<
-              internal::SupportsOstreamOperator<UnderlyingType>::value>>
+template <typename TagType, typename UnderlyingType>
+  requires(internal::SupportsOstreamOperator<UnderlyingType>)
 std::ostream& operator<<(std::ostream& stream,
                          const StrongAlias<TagType, UnderlyingType>& alias) {
   return stream << alias.value();
 }
 
 }  
+
+template <typename TagType, typename UnderlyingType>
+struct std::hash<base::StrongAlias<TagType, UnderlyingType>> {
+  size_t operator()(
+      const base::StrongAlias<TagType, UnderlyingType>& id) const {
+    return std::hash<UnderlyingType>()(id.value());
+  }
+};
 
 #endif  

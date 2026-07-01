@@ -30,8 +30,6 @@ class SequenceCheckerImpl;
 
 class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
  public:
-  static void EnableStackLogging();
-
   ThreadCheckerImpl();
   ~ThreadCheckerImpl();
 
@@ -58,12 +56,11 @@ class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
   void DetachFromThread() LOCKS_EXCLUDED(lock_);
 
  private:
-  
   friend class SequenceCheckerImpl;
 
-  [[nodiscard]] bool CalledOnValidThreadInternal(
-      std::unique_ptr<debug::StackTrace>* out_bound_at) const
-      EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  
+  
+  static void EnableStackLogging();
 
   
   
@@ -79,11 +76,10 @@ class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
   mutable base::Lock lock_;
 
   
-  
   mutable std::unique_ptr<debug::StackTrace> bound_at_ GUARDED_BY(lock_);
 
   
-  mutable PlatformThreadRef thread_id_ GUARDED_BY(lock_);
+  mutable PlatformThreadRef thread_ref_ GUARDED_BY(lock_);
 
   
   
@@ -91,16 +87,13 @@ class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
   
   
   
-  mutable TaskToken task_token_ GUARDED_BY(lock_);
+  mutable internal::TaskToken task_token_ GUARDED_BY(lock_);
 
   
   
   
   
-  
-  
-  
-  mutable SequenceToken sequence_token_ GUARDED_BY(lock_);
+  mutable internal::SequenceToken sequence_token_ GUARDED_BY(lock_);
 };
 
 }  

@@ -2,6 +2,10 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_buffers
+#endif
 
 
 
@@ -11,8 +15,9 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_FLAGS_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_FLAGS_H_
+
+#ifndef PARTITION_ALLOC_FLAGS_H_
+#define PARTITION_ALLOC_FLAGS_H_
 
 #include <type_traits>
 
@@ -44,12 +49,6 @@ template <typename EnumType>
 constexpr inline IfEnum<EnumType, bool> ContainsFlags(EnumType superset,
                                                       EnumType subset) {
   return (superset & subset) == subset;
-}
-
-
-template <typename EnumType>
-constexpr inline IfEnum<EnumType> RemoveFlags(EnumType from, EnumType target) {
-  return from & ~target;
 }
 
 

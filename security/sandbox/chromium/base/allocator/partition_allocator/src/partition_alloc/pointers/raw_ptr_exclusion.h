@@ -2,17 +2,19 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_POINTERS_RAW_PTR_EXCLUSION_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_POINTERS_RAW_PTR_EXCLUSION_H_
+
+
+#ifndef PARTITION_ALLOC_POINTERS_RAW_PTR_EXCLUSION_H_
+#define PARTITION_ALLOC_POINTERS_RAW_PTR_EXCLUSION_H_
 
 
 
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"  
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
-#include "build/build_config.h"
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/buildflags.h"
+#include "partition_alloc/partition_alloc_base/compiler_specific.h"  
 
 #if PA_HAS_ATTRIBUTE(annotate)
-#if defined(OFFICIAL_BUILD) && !BUILDFLAG(FORCE_ENABLE_RAW_PTR_EXCLUSION)
+#if defined(OFFICIAL_BUILD) && !PA_BUILDFLAG(FORCE_ENABLE_RAW_PTR_EXCLUSION)
 
 
 

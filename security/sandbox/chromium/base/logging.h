@@ -17,25 +17,17 @@
 #include "base/compiler_specific.h"
 #include "base/dcheck_is_on.h"
 #include "base/functional/callback_forward.h"
-#include "base/logging_buildflags.h"
-#include "base/scoped_clear_last_error.h"
-#include "base/strings/string_piece_forward.h"
+#include "base/logging/log_severity.h"
 #include "base/strings/utf_ostream_operators.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include <cstdio>
 #endif
 
-
-
-
-
-
-
-
-
+#if BUILDFLAG(IS_WIN)
+#include "base/win/windows_types.h"
+#endif
 
 
 
@@ -185,79 +177,7 @@
 namespace logging {
 
 
-#if BUILDFLAG(IS_WIN)
-typedef wchar_t PathChar;
-#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-typedef char PathChar;
-#endif
-
-
-using LoggingDestination = uint32_t;
-
-
-
-
-enum : uint32_t {
-  LOG_NONE = 0,
-  LOG_TO_FILE = 1 << 0,
-  LOG_TO_SYSTEM_DEBUG_LOG = 1 << 1,
-  LOG_TO_STDERR = 1 << 2,
-
-  LOG_TO_ALL = LOG_TO_FILE | LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
-
-
-
-
-
-#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_NACL)
-  LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
-#elif BUILDFLAG(IS_WIN)
-  LOG_DEFAULT = LOG_TO_FILE,
-#elif BUILDFLAG(IS_POSIX)
-  LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
-#endif
-};
-
-
-
-
-
-
-
-
-enum LogLockingState { LOCK_LOG_FILE, DONT_LOCK_LOG_FILE };
-
-
-
-enum OldFileDeletionState { DELETE_OLD_LOG_FILE, APPEND_TO_OLD_LOG_FILE };
-
-#if BUILDFLAG(IS_CHROMEOS)
-
-
-
-enum class BASE_EXPORT LogFormat { LOG_FORMAT_CHROME, LOG_FORMAT_SYSLOG };
-#endif
-
-struct BASE_EXPORT LoggingSettings {
-  
-  
-  uint32_t logging_dest = LOG_DEFAULT;
-
-  
-  
-  const PathChar* log_file_path = nullptr;
-  LogLockingState lock_log = LOCK_LOG_FILE;
-  OldFileDeletionState delete_old = APPEND_TO_OLD_LOG_FILE;
-#if BUILDFLAG(IS_CHROMEOS)
-  
-  
-  
-  
-  FILE* log_file = nullptr;
-  
-  LogFormat log_format = LogFormat::LOG_FORMAT_SYSLOG;
-#endif
-};
+struct LoggingSettings;
 
 
 
@@ -317,15 +237,25 @@ BASE_EXPORT int GetVlogLevelHelper(const char* file_start, size_t N);
 
 template <size_t N>
 int GetVlogLevel(const char (&file)[N]) {
+  
+  
+  
+  
+#if defined(OFFICIAL_BUILD) && !DCHECK_IS_ON() && BUILDFLAG(IS_ANDROID)
+  return -1;
+#else
   return GetVlogLevelHelper(file, N);
+#endif  
 }
 
 
 
 
 
-BASE_EXPORT void SetLogItems(bool enable_process_id, bool enable_thread_id,
-                             bool enable_timestamp, bool enable_tickcount);
+BASE_EXPORT void SetLogItems(bool enable_process_id,
+                             bool enable_thread_id,
+                             bool enable_timestamp,
+                             bool enable_tickcount);
 
 
 
@@ -341,13 +271,18 @@ BASE_EXPORT void SetShowErrorDialogs(bool enable_dialogs);
 
 
 
+BASE_EXPORT void RegisterAbslAbortHook();
+
+
+
+
 
 
 using LogAssertHandlerFunction =
     base::RepeatingCallback<void(const char* file,
                                  int line,
-                                 const base::StringPiece message,
-                                 const base::StringPiece stack_trace)>;
+                                 std::string_view message,
+                                 std::string_view stack_trace)>;
 
 class BASE_EXPORT ScopedLogAssertHandler {
  public:
@@ -362,37 +297,12 @@ class BASE_EXPORT ScopedLogAssertHandler {
 
 
 typedef bool (*LogMessageHandlerFunction)(int severity,
-    const char* file, int line, size_t message_start, const std::string& str);
+                                          const char* file,
+                                          int line,
+                                          size_t message_start,
+                                          const std::string& str);
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
-
-using LogSeverity = int;
-constexpr LogSeverity LOGGING_VERBOSE = -1;  
-
-
-constexpr LogSeverity LOGGING_INFO = 0;
-constexpr LogSeverity LOGGING_WARNING = 1;
-constexpr LogSeverity LOGGING_ERROR = 2;
-constexpr LogSeverity LOGGING_FATAL = 3;
-constexpr LogSeverity LOGGING_NUM_SEVERITIES = 4;
-
-
-
-#if DCHECK_IS_ON()
-constexpr LogSeverity LOGGING_DFATAL = LOGGING_FATAL;
-#else
-constexpr LogSeverity LOGGING_DFATAL = LOGGING_ERROR;
-#endif
-
-
-
-
-constexpr LogSeverity LOG_VERBOSE = LOGGING_VERBOSE;
-constexpr LogSeverity LOG_INFO = LOGGING_INFO;
-constexpr LogSeverity LOG_WARNING = LOGGING_WARNING;
-constexpr LogSeverity LOG_ERROR = LOGGING_ERROR;
-constexpr LogSeverity LOG_FATAL = LOGGING_FATAL;
-constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
 
 
 
@@ -406,14 +316,11 @@ constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
 #define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
   ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_ERROR, \
                        ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
-                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                         \
+  ::logging::ClassName##Fatal(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+                              ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
   ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
-                       ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
                        ##__VA_ARGS__)
 
 #define COMPACT_GOOGLE_LOG_INFO COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
@@ -421,7 +328,6 @@ constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
 #define COMPACT_GOOGLE_LOG_ERROR COMPACT_GOOGLE_LOG_EX_ERROR(LogMessage)
 #define COMPACT_GOOGLE_LOG_FATAL COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
 #define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
-#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
 
 #if BUILDFLAG(IS_WIN)
 
@@ -431,7 +337,7 @@ constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
 
 #define ERROR 0
 #define COMPACT_GOOGLE_LOG_EX_0(ClassName, ...) \
-  COMPACT_GOOGLE_LOG_EX_ERROR(ClassName , ##__VA_ARGS__)
+  COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_0 COMPACT_GOOGLE_LOG_ERROR
 
 constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
@@ -440,62 +346,33 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 
 
 
-#define LOG_IS_ON(severity) \
-  (::logging::ShouldCreateLogMessage(::logging::LOGGING_##severity))
-
-#if !BUILDFLAG(USE_RUNTIME_VLOG)
 
 
-
+#define LOG_IS_ON(severity)                                     \
+  (::logging::LOGGING_##severity == ::logging::LOGGING_FATAL || \
+   ::logging::ShouldCreateLogMessage(::logging::LOGGING_##severity))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BASE_EXPORT int GetDisableAllVLogLevel();
 
 
 
 #if !defined(ENABLED_VLOG_LEVEL)
-#define ENABLED_VLOG_LEVEL (logging::GetDisableAllVLogLevel())
-#endif  
-
-#define VLOG_IS_ON(verboselevel) ((verboselevel) <= (ENABLED_VLOG_LEVEL))
-
-#else  
-
-
-
-
-
-
-#define VLOG_IS_ON(verboselevel) \
-  ((verboselevel) <= ::logging::GetVlogLevel(__FILE__))
-
+#define ENABLED_VLOG_LEVEL -1
 #endif  
 
 
 
-#define LAZY_STREAM(stream, condition)                                  \
-  !(condition) ? (void) 0 : ::logging::LogMessageVoidify() & (stream)
+
+
+#define VLOG_IS_ON(verboselevel)             \
+  ((verboselevel) <= (ENABLED_VLOG_LEVEL) || \
+   (verboselevel) <= ::logging::GetVlogLevel(__FILE__))
+
+
+
+#define LAZY_STREAM(stream, condition) \
+  !(condition) ? (void)0 : ::logging::LogMessageVoidify() & (stream)
 
 
 
@@ -505,7 +382,7 @@ BASE_EXPORT int GetDisableAllVLogLevel();
 
 
 
-#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_##severity.stream()
 
 #define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
@@ -520,16 +397,18 @@ BASE_EXPORT int GetDisableAllVLogLevel();
 
 #define VLOG_IF(verbose_level, condition) \
   LAZY_STREAM(VLOG_STREAM(verbose_level), \
-      VLOG_IS_ON(verbose_level) && (condition))
+              VLOG_IS_ON(verbose_level) && (condition))
 
 #if BUILDFLAG(IS_WIN)
-#define VPLOG_STREAM(verbose_level) \
+#define VPLOG_STREAM(verbose_level)                                     \
   ::logging::Win32ErrorLogMessage(__FILE__, __LINE__, -(verbose_level), \
-    ::logging::GetLastSystemErrorCode()).stream()
+                                  ::logging::GetLastSystemErrorCode())  \
+      .stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-#define VPLOG_STREAM(verbose_level) \
+#define VPLOG_STREAM(verbose_level)                                \
   ::logging::ErrnoLogMessage(__FILE__, __LINE__, -(verbose_level), \
-    ::logging::GetLastSystemErrorCode()).stream()
+                             ::logging::GetLastSystemErrorCode())  \
+      .stream()
 #endif
 
 #define VPLOG(verbose_level) \
@@ -537,7 +416,7 @@ BASE_EXPORT int GetDisableAllVLogLevel();
 
 #define VPLOG_IF(verbose_level, condition) \
   LAZY_STREAM(VPLOG_STREAM(verbose_level), \
-    VLOG_IS_ON(verbose_level) && (condition))
+              VLOG_IS_ON(verbose_level) && (condition))
 
 
 
@@ -546,17 +425,18 @@ BASE_EXPORT int GetDisableAllVLogLevel();
       << "Assert failed: " #condition ". "
 
 #if BUILDFLAG(IS_WIN)
-#define PLOG_STREAM(severity) \
-  COMPACT_GOOGLE_LOG_EX_ ## severity(Win32ErrorLogMessage, \
-      ::logging::GetLastSystemErrorCode()).stream()
+#define PLOG_STREAM(severity)                                           \
+  COMPACT_GOOGLE_LOG_EX_##severity(Win32ErrorLogMessage,                \
+                                   ::logging::GetLastSystemErrorCode()) \
+      .stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-#define PLOG_STREAM(severity) \
-  COMPACT_GOOGLE_LOG_EX_ ## severity(ErrnoLogMessage, \
-      ::logging::GetLastSystemErrorCode()).stream()
+#define PLOG_STREAM(severity)                                           \
+  COMPACT_GOOGLE_LOG_EX_##severity(ErrnoLogMessage,                     \
+                                   ::logging::GetLastSystemErrorCode()) \
+      .stream()
 #endif
 
-#define PLOG(severity)                                          \
-  LAZY_STREAM(PLOG_STREAM(severity), LOG_IS_ON(severity))
+#define PLOG(severity) LAZY_STREAM(PLOG_STREAM(severity), LOG_IS_ON(severity))
 
 #define PLOG_IF(severity, condition) \
   LAZY_STREAM(PLOG_STREAM(severity), LOG_IS_ON(severity) && (condition))
@@ -583,12 +463,22 @@ BASE_EXPORT extern std::ostream* g_swallow_stream;
 
 #if DCHECK_IS_ON()
 
-#define DLOG_IS_ON(severity) LOG_IS_ON(severity)
-#define DLOG_IF(severity, condition) LOG_IF(severity, condition)
-#define DLOG_ASSERT(condition) LOG_ASSERT(condition)
-#define DPLOG_IF(severity, condition) PLOG_IF(severity, condition)
+
+
+
+#define DLOG_IS_ON(severity) \
+  (::logging::ShouldCreateLogMessage(::logging::LOGGING_##severity))
+
+#define DLOG(severity) LAZY_STREAM(LOG_STREAM(severity), DLOG_IS_ON(severity))
+#define DLOG_IF(severity, condition) \
+  LAZY_STREAM(LOG_STREAM(severity), DLOG_IS_ON(severity) && (condition))
+#define DPLOG(severity) LAZY_STREAM(PLOG_STREAM(severity), DLOG_IS_ON(severity))
+#define DPLOG_IF(severity, condition) \
+  LAZY_STREAM(PLOG_STREAM(severity), DLOG_IS_ON(severity) && (condition))
 #define DVLOG_IF(verboselevel, condition) VLOG_IF(verboselevel, condition)
 #define DVPLOG_IF(verboselevel, condition) VPLOG_IF(verboselevel, condition)
+#define DLOG_ASSERT(condition) \
+  DLOG_IF(FATAL, !(condition)) << "Assert failed: " #condition ". "
 
 #else  
 
@@ -597,23 +487,21 @@ BASE_EXPORT extern std::ostream* g_swallow_stream;
 
 
 #define DLOG_IS_ON(severity) false
+#define DLOG(severity) EAT_STREAM_PARAMETERS
 #define DLOG_IF(severity, condition) EAT_STREAM_PARAMETERS
-#define DLOG_ASSERT(condition) EAT_STREAM_PARAMETERS
+#define DPLOG(severity) EAT_STREAM_PARAMETERS
 #define DPLOG_IF(severity, condition) EAT_STREAM_PARAMETERS
 #define DVLOG_IF(verboselevel, condition) EAT_STREAM_PARAMETERS
 #define DVPLOG_IF(verboselevel, condition) EAT_STREAM_PARAMETERS
+#define DLOG_ASSERT(condition) EAT_STREAM_PARAMETERS
 
 #endif  
 
-#define DLOG(severity)                                          \
-  LAZY_STREAM(LOG_STREAM(severity), DLOG_IS_ON(severity))
-
-#define DPLOG(severity)                                         \
-  LAZY_STREAM(PLOG_STREAM(severity), DLOG_IS_ON(severity))
-
 #define DVLOG(verboselevel) DVLOG_IF(verboselevel, true)
-
 #define DVPLOG(verboselevel) DVPLOG_IF(verboselevel, true)
+
+
+
 
 
 
@@ -637,11 +525,8 @@ constexpr LogSeverity LOGGING_DCHECK = LOGGING_FATAL;
 
 class BASE_EXPORT LogMessage {
  public:
-  
   LogMessage(const char* file, int line, LogSeverity severity);
 
-  
-  LogMessage(const char* file, int line, const char* condition);
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;
   virtual ~LogMessage();
@@ -656,8 +541,13 @@ class BASE_EXPORT LogMessage {
   
   std::string BuildCrashString() const;
 
+ protected:
+  void Flush();
+
  private:
   void Init(const char* file, int line);
+
+  void HandleFatal(size_t stack_start, const std::string& str_newline) const;
 
   const LogSeverity severity_;
   std::ostringstream stream_;
@@ -667,13 +557,8 @@ class BASE_EXPORT LogMessage {
   const char* const file_;
   const int line_;
 
-  
-  
-  
-  base::ScopedClearLastError last_error_;
-
 #if BUILDFLAG(IS_CHROMEOS)
-  void InitWithSyslogPrefix(base::StringPiece filename,
+  void InitWithSyslogPrefix(std::string_view filename,
                             int line,
                             uint64_t tick_count,
                             const char* log_severity_name_c_str,
@@ -685,6 +570,12 @@ class BASE_EXPORT LogMessage {
 #endif
 };
 
+class BASE_EXPORT LogMessageFatal final : public LogMessage {
+ public:
+  using LogMessage::LogMessage;
+  [[noreturn]] ~LogMessageFatal() override;
+};
+
 
 
 
@@ -693,7 +584,7 @@ class LogMessageVoidify {
   LogMessageVoidify() = default;
   
   
-  void operator&(std::ostream&) { }
+  void operator&(std::ostream&) {}
 };
 
 #if BUILDFLAG(IS_WIN)
@@ -720,9 +611,20 @@ class BASE_EXPORT Win32ErrorLogMessage : public LogMessage {
   
   ~Win32ErrorLogMessage() override;
 
+ protected:
+  void AppendError();
+
  private:
   SystemErrorCode err_;
 };
+
+class BASE_EXPORT Win32ErrorLogMessageFatal final
+    : public Win32ErrorLogMessage {
+ public:
+  using Win32ErrorLogMessage::Win32ErrorLogMessage;
+  [[noreturn]] ~Win32ErrorLogMessageFatal() override;
+};
+
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 class BASE_EXPORT ErrnoLogMessage : public LogMessage {
@@ -736,9 +638,19 @@ class BASE_EXPORT ErrnoLogMessage : public LogMessage {
   
   ~ErrnoLogMessage() override;
 
+ protected:
+  void AppendError();
+
  private:
   SystemErrorCode err_;
 };
+
+class BASE_EXPORT ErrnoLogMessageFatal final : public ErrnoLogMessage {
+ public:
+  using ErrnoLogMessage::ErrnoLogMessage;
+  [[noreturn]] ~ErrnoLogMessageFatal() override;
+};
+
 #endif  
 
 
@@ -747,7 +659,7 @@ class BASE_EXPORT ErrnoLogMessage : public LogMessage {
 
 BASE_EXPORT void CloseLogFile();
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 
 
 
@@ -767,6 +679,9 @@ BASE_EXPORT bool IsLoggingToFileEnabled();
 
 
 BASE_EXPORT std::wstring GetLogFileFullPath();
+
+
+BASE_EXPORT HANDLE DuplicateLogFileHandle();
 #endif
 
 }  

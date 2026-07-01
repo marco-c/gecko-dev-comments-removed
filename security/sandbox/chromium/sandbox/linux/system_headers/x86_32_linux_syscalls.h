@@ -1815,4 +1815,9 @@
 #define __NR_lsm_list_modules 461
 #endif
 
+#if !defined(__NR_mseal)
+#define __NR_mseal 462
+#endif
+
 #endif  
+

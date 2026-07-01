@@ -10,6 +10,7 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/gtest_prod_util.h"
 #include "base/version.h"
 
@@ -58,6 +59,8 @@ enum class Version {
   SERVER_2022 = 21,  
   WIN11 = 22,        
   WIN11_22H2 = 23,   
+  WIN11_23H2 = 24,   
+  WIN11_24H2 = 25,   
   WIN_LAST,          
 };
 
@@ -143,9 +146,9 @@ class BASE_EXPORT OSInfo {
 
   
   
-  const VersionType& version_type() const { return version_type_; }
-  const ServicePack& service_pack() const { return service_pack_; }
-  const std::string& service_pack_str() const { return service_pack_str_; }
+  const VersionType& version_type() const LIFETIME_BOUND {
+    return version_type_;
+  }
 
   
   const int& processors() const { return processors_; }
@@ -158,9 +161,13 @@ class BASE_EXPORT OSInfo {
 
   
   std::string processor_model_name();
+  std::string processor_vendor_name();
 
   
-  const std::string& release_id() const { return release_id_; }
+  const std::string& release_id() const LIFETIME_BOUND { return release_id_; }
+
+  
+  bool IsWindowsNSku() const;
 
  private:
   friend class base::test::ScopedOSInfoOverride;
@@ -213,7 +220,6 @@ class BASE_EXPORT OSInfo {
   Version version_;
   VersionNumber version_number_;
   VersionType version_type_;
-  ServicePack service_pack_;
 
   
   
@@ -225,15 +231,13 @@ class BASE_EXPORT OSInfo {
   
   std::string release_id_;
 
-  
-  
-  
-  std::string service_pack_str_;
   int processors_;
   size_t allocation_granularity_;
   WowProcessMachine wow_process_machine_;
   WowNativeMachine wow_native_machine_;
   std::string processor_model_name_;
+  std::string processor_vendor_name_;
+  DWORD os_type_;
 };
 
 

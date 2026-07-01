@@ -5,7 +5,22 @@
 #ifndef BASE_IMMEDIATE_CRASH_H_
 #define BASE_IMMEDIATE_CRASH_H_
 
+#include "base/fuzzing_buildflags.h"
 #include "build/build_config.h"
+
+#if !(defined(OFFICIAL_BUILD) || BUILDFLAG(IS_WIN))
+#include <stdlib.h>
+#endif
+
+#if BUILDFLAG(USE_FUZZING_ENGINE) && BUILDFLAG(IS_LINUX)
+
+
+
+
+
+
+extern "C" int __attribute__((weak)) __llvm_profile_write_file(void);
+#endif  
 
 
 
@@ -43,13 +58,7 @@
 
 #if defined(COMPILER_GCC)
 
-#if BUILDFLAG(IS_NACL)
-
-
-#define TRAP_SEQUENCE1_() __builtin_trap()
-#define TRAP_SEQUENCE2_() asm volatile("")
-
-#elif defined(ARCH_CPU_X86_FAMILY)
+#if defined(ARCH_CPU_X86_FAMILY)
 
 
 
@@ -143,9 +152,37 @@
 namespace base {
 
 [[noreturn]] IMMEDIATE_CRASH_ALWAYS_INLINE void ImmediateCrash() {
+#if BUILDFLAG(USE_FUZZING_ENGINE) && BUILDFLAG(IS_LINUX)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (__llvm_profile_write_file) {
+    __llvm_profile_write_file();
+  }
+#endif  
+
+#if defined(OFFICIAL_BUILD) || BUILDFLAG(IS_WIN)
+  
+  
+  
+  
   TRAP_SEQUENCE_();
 #if defined(__clang__) || defined(COMPILER_GCC)
   __builtin_unreachable();
+#endif  
+#else   
+  abort();
 #endif  
 }
 

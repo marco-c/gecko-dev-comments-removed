@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "base/check_op.h"
+#include "base/compiler_specific.h"
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/sandbox.h"
@@ -52,8 +53,8 @@ void* SharedMemIPCClient::GetBuffer() {
   if (failure) {
     return nullptr;
   }
-  return reinterpret_cast<char*>(control_) +
-         control_->channels[ix].channel_base;
+  return UNSAFE_TODO(reinterpret_cast<char*>(control_) +
+                     control_->channels[ix].channel_base);
 }
 
 
@@ -62,7 +63,8 @@ void* SharedMemIPCClient::GetBuffer() {
 void SharedMemIPCClient::FreeBuffer(void* buffer) {
   size_t num = ChannelIndexFromBuffer(buffer);
   ChannelControl* channel = control_->channels;
-  LONG result = ::InterlockedExchange(&channel[num].state, kFreeChannel);
+  LONG result =
+      ::InterlockedExchange(&UNSAFE_TODO(channel[num]).state, kFreeChannel);
   DCHECK_NE(kFreeChannel, static_cast<ChannelState>(result));
 }
 
@@ -71,8 +73,8 @@ void SharedMemIPCClient::FreeBuffer(void* buffer) {
 
 SharedMemIPCClient::SharedMemIPCClient(void* shared_mem)
     : control_(reinterpret_cast<IPCControl*>(shared_mem)) {
-  first_base_ =
-      reinterpret_cast<char*>(shared_mem) + control_->channels[0].channel_base;
+  first_base_ = UNSAFE_TODO(reinterpret_cast<char*>(shared_mem) +
+                            control_->channels[0].channel_base);
   
   DCHECK(0 != control_->channels_count);
 }
@@ -90,7 +92,7 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
   
   
   
-  channel[num].ipc_tag = params->GetTag();
+  UNSAFE_TODO(channel[num]).ipc_tag = params->GetTag();
 
   
   
@@ -98,8 +100,9 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
 
   
   
-  DWORD wait = SignalObjectAndWaitWrapper(
-      channel[num].ping_event, channel[num].pong_event, kIPCWaitTimeOut1);
+  DWORD wait = SignalObjectAndWaitWrapper(UNSAFE_TODO(channel[num]).ping_event,
+                                          UNSAFE_TODO(channel[num]).pong_event,
+                                          kIPCWaitTimeOut1);
   if (WAIT_TIMEOUT == wait) {
     
     
@@ -108,7 +111,7 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
       wait = WaitForSingleObjectWrapper(control_->server_alive, 0);
       if (WAIT_TIMEOUT == wait) {
         
-        wait = WaitForSingleObjectWrapper(channel[num].pong_event,
+        wait = WaitForSingleObjectWrapper(UNSAFE_TODO(channel[num]).pong_event,
                                           kIPCWaitTimeOut1);
         if (WAIT_OBJECT_0 == wait) {
           
@@ -121,7 +124,8 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
       } else {
         
         
-        ::InterlockedExchange(&channel[num].state, kAbandonedChannel);
+        ::InterlockedExchange(&UNSAFE_TODO(channel[num]).state,
+                              kAbandonedChannel);
         control_->server_alive = 0;
         return SBOX_ERROR_CHANNEL_ERROR;
       }
@@ -153,8 +157,9 @@ size_t SharedMemIPCClient::LockFreeChannel(bool* severe_failure) {
   ChannelControl* channel = control_->channels;
   do {
     for (size_t ix = 0; ix != control_->channels_count; ++ix) {
-      if (kFreeChannel == ::InterlockedCompareExchange(
-                              &channel[ix].state, kBusyChannel, kFreeChannel)) {
+      if (kFreeChannel ==
+          ::InterlockedCompareExchange(&UNSAFE_TODO(channel[ix]).state,
+                                       kBusyChannel, kFreeChannel)) {
         *severe_failure = false;
         return ix;
       }

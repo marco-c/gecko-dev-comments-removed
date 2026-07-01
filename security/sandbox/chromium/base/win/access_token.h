@@ -6,15 +6,17 @@
 #define BASE_WIN_ACCESS_TOKEN_H_
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/win/access_control_list.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/sid.h"
 #include "base/win/windows_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base::win {
 
@@ -33,7 +35,7 @@ class BASE_EXPORT AccessToken {
   class BASE_EXPORT Group {
    public:
     
-    const Sid& GetSid() const { return sid_; }
+    const Sid& GetSid() const LIFETIME_BOUND { return sid_; }
     
     DWORD GetAttributes() const { return attributes_; }
     
@@ -80,40 +82,14 @@ class BASE_EXPORT AccessToken {
   
   
   
-  static absl::optional<AccessToken> FromToken(HANDLE token,
-                                               ACCESS_MASK desired_access = 0);
+  static std::optional<AccessToken> FromToken(HANDLE token,
+                                              ACCESS_MASK desired_access = 0);
 
   
   
   
   
-  static absl::optional<AccessToken> FromToken(ScopedHandle&& token);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static absl::optional<AccessToken> FromProcess(
-      HANDLE process,
-      bool impersonation = false,
-      ACCESS_MASK desired_access = 0);
-
-  
-  
-  
-  
-  
-  
-  
-  static absl::optional<AccessToken> FromCurrentProcess(
-      bool impersonation = false,
-      ACCESS_MASK desired_access = 0);
+  static std::optional<AccessToken> FromToken(ScopedHandle&& token);
 
   
   
@@ -125,9 +101,8 @@ class BASE_EXPORT AccessToken {
   
   
   
-  
-  static absl::optional<AccessToken> FromThread(HANDLE thread,
-                                                bool open_as_self = true,
+  static std::optional<AccessToken> FromProcess(HANDLE process,
+                                                bool impersonation = false,
                                                 ACCESS_MASK desired_access = 0);
 
   
@@ -137,8 +112,34 @@ class BASE_EXPORT AccessToken {
   
   
   
+  static std::optional<AccessToken> FromCurrentProcess(
+      bool impersonation = false,
+      ACCESS_MASK desired_access = 0);
+
   
-  static absl::optional<AccessToken> FromCurrentThread(
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static std::optional<AccessToken> FromThread(HANDLE thread,
+                                               bool open_as_self = true,
+                                               ACCESS_MASK desired_access = 0);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static std::optional<AccessToken> FromCurrentThread(
       bool open_as_self = true,
       ACCESS_MASK desired_access = 0);
 
@@ -147,7 +148,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  static absl::optional<AccessToken> FromEffective(
+  static std::optional<AccessToken> FromEffective(
       ACCESS_MASK desired_access = 0);
 
   AccessToken(const AccessToken&) = delete;
@@ -172,7 +173,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<Sid> LogonId() const;
+  std::optional<Sid> LogonId() const;
 
   
   
@@ -201,17 +202,17 @@ class BASE_EXPORT AccessToken {
 
   
   
-  absl::optional<Sid> AppContainerSid() const;
+  std::optional<Sid> AppContainerSid() const;
 
   
   
   std::vector<Group> Capabilities() const;
 
   
-  absl::optional<AccessToken> LinkedToken() const;
+  std::optional<AccessToken> LinkedToken() const;
 
   
-  absl::optional<AccessControlList> DefaultDacl() const;
+  std::optional<AccessControlList> DefaultDacl() const;
 
   
   
@@ -260,7 +261,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<AccessToken> DuplicatePrimary(
+  std::optional<AccessToken> DuplicatePrimary(
       ACCESS_MASK desired_access = 0) const;
 
   
@@ -269,7 +270,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<AccessToken> DuplicateImpersonation(
+  std::optional<AccessToken> DuplicateImpersonation(
       SecurityImpersonationLevel impersonation_level =
           SecurityImpersonationLevel::kImpersonation,
       ACCESS_MASK desired_access = 0) const;
@@ -282,7 +283,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<AccessToken> CreateRestricted(
+  std::optional<AccessToken> CreateRestricted(
       DWORD flags,
       const std::vector<Sid>& sids_to_disable,
       const std::vector<std::wstring>& privileges_to_delete,
@@ -294,7 +295,7 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<AccessToken> CreateAppContainer(
+  std::optional<AccessToken> CreateAppContainer(
       const Sid& appcontainer_sid,
       const std::vector<Sid>& capabilities,
       ACCESS_MASK desired_access = 0) const;
@@ -304,13 +305,38 @@ class BASE_EXPORT AccessToken {
   
   
   
-  absl::optional<bool> SetPrivilege(const std::wstring& name, bool enable);
+  std::optional<bool> SetPrivilege(const std::wstring& name, bool enable);
 
   
   
   
   
   bool RemovePrivilege(const std::wstring& name);
+
+  
+  
+  
+  bool RemoveAllPrivileges();
+
+  
+  
+  
+  
+  
+  
+  bool AddSecurityAttribute(std::wstring_view name,
+                            bool inherit,
+                            std::wstring_view value);
+
+  
+  
+  
+  std::optional<bool> HasSecurityAttribute(std::wstring_view name) const;
+
+  
+  
+  std::optional<std::wstring> GetSecurityAttributeString(
+      std::wstring_view name) const;
 
   
   bool is_valid() const;

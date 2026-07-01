@@ -8,13 +8,16 @@
 #include <intrin.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <memory>
 
+#include <memory>
+#include <optional>
+#include <string_view>
+
+#include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox_nt_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 void* __cdecl operator new(size_t size,
@@ -108,7 +111,7 @@ void* GetGlobalIPCMemory();
 void* GetGlobalPolicyMemoryForTesting();
 
 
-absl::optional<base::span<const uint8_t>> GetGlobalDelegateData();
+std::optional<base::span<const uint8_t>> GetGlobalDelegateData();
 
 
 const NtExports* GetNtExports();
@@ -126,21 +129,26 @@ NTSTATUS CopyData(void* destination, const void* source, size_t bytes);
 
 
 
-NTSTATUS CopyNameAndAttributes(
-    const OBJECT_ATTRIBUTES* in_object,
-    std::unique_ptr<wchar_t, NtAllocDeleter>* out_name,
-    size_t* out_name_len,
-    uint32_t* attributes = nullptr);
+class NtHeapWString {
+ public:
+  NtHeapWString() = default;
+  explicit NtHeapWString(std::initializer_list<std::wstring_view> parts);
+
+  bool is_valid() const;
+  std::wstring_view view() const;
+
+ private:
+  std::unique_ptr<wchar_t, NtAllocDeleter> data_;
+  size_t length_ = 0;
+};
 
 
-NTSTATUS AllocAndCopyName(const OBJECT_ATTRIBUTES* in_object,
-                          std::unique_ptr<wchar_t, NtAllocDeleter>* out_name,
-                          uint32_t* attributes, HANDLE* root);
+
+void ResolveNTFunctionPtr(const char* name, void* ptr);
 
 
-NTSTATUS AllocAndGetFullPath(
-    HANDLE root, const wchar_t* path,
-    std::unique_ptr<wchar_t, NtAllocDeleter>* full_path);
+
+NtHeapWString AllocAndGetFullPath(HANDLE root, const std::wstring_view& path);
 
 
 bool InitHeap();
@@ -198,8 +206,12 @@ bool IsValidImageSection(HANDLE section,
 UNICODE_STRING* AnsiToUnicode(const char* string);
 
 
-bool NtGetPathFromHandle(HANDLE handle,
-                         std::unique_ptr<wchar_t, NtAllocDeleter>* path);
+
+
+
+
+std::optional<bool> EqualUnicodeString(std::wstring_view left,
+                                       std::wstring_view right);
 
 
 class AutoProtectMemory {
@@ -221,7 +233,6 @@ class AutoProtectMemory {
  private:
   bool changed_;
   
-  
   RAW_PTR_EXCLUSION void* address_;
   size_t bytes_;
   ULONG old_protect_;
@@ -240,7 +251,7 @@ CLIENT_ID GetCurrentClientId();
 __forceinline void Memset(void* ptr, int value, size_t num_bytes) {
   unsigned char* byte_ptr = static_cast<unsigned char*>(ptr);
   while (num_bytes--) {
-    *byte_ptr++ = static_cast<unsigned char>(value);
+    *UNSAFE_TODO(byte_ptr++) = static_cast<unsigned char>(value);
   }
 }
 

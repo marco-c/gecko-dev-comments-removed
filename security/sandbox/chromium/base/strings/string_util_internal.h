@@ -5,54 +5,58 @@
 #ifndef BASE_STRINGS_STRING_UTIL_INTERNAL_H_
 #define BASE_STRINGS_STRING_UTIL_INTERNAL_H_
 
+#include <algorithm>
+#include <concepts>
+#include <string_view>
 #include <type_traits>
-
-#include "base/ranges/algorithm.h"
-#include "base/strings/string_piece.h"
 
 namespace base::internal {
 
 
 
-template <typename CharT,
-          typename = std::enable_if_t<std::is_integral_v<CharT>>>
+template <typename CharT>
+  requires(std::integral<CharT>)
 constexpr CharT ToLowerASCII(CharT c) {
   return (c >= 'A' && c <= 'Z') ? (c + ('a' - 'A')) : c;
 }
 
 template <typename T>
+  requires(std::integral<typename T::value_type>)
 constexpr int CompareCaseInsensitiveASCIIT(T a, T b) {
   
   
   
   
-  static_assert(std::is_integral_v<typename T::value_type>);
   using UCharT = std::make_unsigned_t<typename T::value_type>;
   size_t i = 0;
   while (i < a.length() && i < b.length()) {
     UCharT lower_a = static_cast<UCharT>(ToLowerASCII(a[i]));
     UCharT lower_b = static_cast<UCharT>(ToLowerASCII(b[i]));
-    if (lower_a < lower_b)
+    if (lower_a < lower_b) {
       return -1;
-    if (lower_a > lower_b)
+    }
+    if (lower_a > lower_b) {
       return 1;
+    }
     i++;
   }
 
   
   
-  if (a.length() == b.length())
+  if (a.length() == b.length()) {
     return 0;
+  }
 
-  if (a.length() < b.length())
+  if (a.length() < b.length()) {
     return -1;
+  }
   return 1;
 }
 
 template <typename CharT, typename CharU>
-inline bool EqualsCaseInsensitiveASCIIT(BasicStringPiece<CharT> a,
-                                        BasicStringPiece<CharU> b) {
-  return ranges::equal(a, b, [](auto lhs, auto rhs) {
+inline bool EqualsCaseInsensitiveASCIIT(std::basic_string_view<CharT> a,
+                                        std::basic_string_view<CharU> b) {
+  return std::ranges::equal(a, b, [](auto lhs, auto rhs) {
     return ToLowerASCII(lhs) == ToLowerASCII(rhs);
   });
 }

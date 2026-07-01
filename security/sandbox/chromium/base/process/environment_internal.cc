@@ -6,16 +6,20 @@
 
 #include <stddef.h>
 
+#include <vector>
+
+#include "base/compiler_specific.h"
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <string.h>
 #endif
 
-#include <vector>
+#if BUILDFLAG(IS_WIN)
+#include "base/check_op.h"
+#endif
 
-namespace base {
-namespace internal {
+namespace base::internal {
 
 namespace {
 
@@ -27,13 +31,15 @@ size_t ParseEnvLine(const NativeEnvironmentString::value_type* input,
                     NativeEnvironmentString* key) {
   
   size_t cur = 0;
-  while (input[cur] && input[cur] != '=')
+  while (UNSAFE_TODO(input[cur] && input[cur] != '=')) {
     cur++;
+  }
   *key = NativeEnvironmentString(&input[0], cur);
 
   
-  while (input[cur])
+  while (UNSAFE_TODO(input[cur])) {
     cur++;
+  }
   return cur + 1;
 }
 #endif
@@ -42,22 +48,22 @@ size_t ParseEnvLine(const NativeEnvironmentString::value_type* input,
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
-std::unique_ptr<char* []> AlterEnvironment(const char* const* const env,
-                                           const EnvironmentMap& changes) {
+base::HeapArray<char*> AlterEnvironment(const char* const* const env,
+                                        const EnvironmentMap& changes) {
   std::string value_storage;  
   std::vector<size_t> result_indices;  
 
   
   
   std::string key;
-  for (size_t i = 0; env[i]; i++) {
-    size_t line_length = ParseEnvLine(env[i], &key);
+  for (size_t i = 0; UNSAFE_TODO(env[i]); i++) {
+    size_t line_length = ParseEnvLine(UNSAFE_TODO(env[i]), &key);
 
     
     auto found_change = changes.find(key);
     if (found_change == changes.end()) {
       result_indices.push_back(value_storage.size());
-      value_storage.append(env[i], line_length);
+      value_storage.append(UNSAFE_TODO(env[i]), line_length);
     }
   }
 
@@ -75,17 +81,20 @@ std::unique_ptr<char* []> AlterEnvironment(const char* const* const env,
   size_t pointer_count_required =
       result_indices.size() + 1 +  
       (value_storage.size() + sizeof(char*) - 1) / sizeof(char*);  
-  std::unique_ptr<char*[]> result(new char*[pointer_count_required]);
+  auto result = base::HeapArray<char*>::WithSize(pointer_count_required);
 
-  
-  char* storage_data =
-      reinterpret_cast<char*>(&result.get()[result_indices.size() + 1]);
-  if (!value_storage.empty())
-    memcpy(storage_data, value_storage.data(), value_storage.size());
+  if (!value_storage.empty()) {
+    
+    char* storage_data =
+        reinterpret_cast<char*>(&result[result_indices.size() + 1]);
+    UNSAFE_TODO(
+        memcpy(storage_data, value_storage.data(), value_storage.size()));
 
-  
-  for (size_t i = 0; i < result_indices.size(); i++)
-    result[i] = &storage_data[result_indices[i]];
+    
+    for (size_t i = 0; i < result_indices.size(); i++) {
+      result[i] = UNSAFE_TODO(&storage_data[result_indices[i]]);
+    }
+  }
   result[result_indices.size()] = 0;  
 
   return result;
@@ -107,7 +116,7 @@ NativeEnvironmentString AlterEnvironment(const wchar_t* env,
     if (changes.find(key) == changes.end()) {
       result.append(ptr, line_length);
     }
-    ptr += line_length;
+    UNSAFE_TODO(ptr += line_length);
   }
 
   
@@ -130,5 +139,4 @@ NativeEnvironmentString AlterEnvironment(const wchar_t* env,
 
 #endif  
 
-}  
 }  

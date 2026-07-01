@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
 #include "base/numerics/safe_conversions.h"
 #include "sandbox/win/src/policy_engine_params.h"
@@ -62,15 +63,10 @@ enum EvalResult {
   ASK_BROKER,   
                 
   DENY_ACCESS,  
-  GIVE_READONLY,   
-  GIVE_ALLACCESS,  
-  GIVE_CACHED,     
-  GIVE_FIRST,      
   SIGNAL_ALARM,    
   FAKE_SUCCESS,    
   FAKE_ACCESS_DENIED,  
                        
-  TERMINATE_PROCESS,   
 };
 
 
@@ -78,7 +74,6 @@ enum OpcodeID : uint16_t {
   OP_ALWAYS_FALSE,        
   OP_ALWAYS_TRUE,         
   OP_NUMBER_MATCH,        
-  OP_NUMBER_MATCH_RANGE,  
   OP_NUMBER_AND_MATCH,    
   OP_WSTRING_MATCH,       
   OP_ACTION               
@@ -158,7 +153,8 @@ class PolicyOpcode {
   template <typename T>
   void GetArgument(size_t index, T* argument) const {
     static_assert(sizeof(T) <= sizeof(arguments_[0]), "invalid size");
-    *argument = *reinterpret_cast<const T*>(&arguments_[index].mem);
+    *argument =
+        *reinterpret_cast<const T*>(&UNSAFE_TODO(arguments_[index]).mem);
   }
 
   
@@ -166,7 +162,7 @@ class PolicyOpcode {
   template <typename T>
   void SetArgument(size_t index, const T& argument) {
     static_assert(sizeof(T) <= sizeof(arguments_[0]), "invalid size");
-    *reinterpret_cast<T*>(&arguments_[index].mem) = argument;
+    *reinterpret_cast<T*>(&UNSAFE_TODO(arguments_[index]).mem) = argument;
   }
 
   
@@ -177,7 +173,8 @@ class PolicyOpcode {
   const wchar_t* GetRelativeString(size_t index) const {
     ptrdiff_t str_delta = 0;
     GetArgument(index, &str_delta);
-    const char* delta = reinterpret_cast<const char*>(this) + str_delta;
+    const char* delta =
+        UNSAFE_TODO(reinterpret_cast<const char*>(this) + str_delta);
     return reinterpret_cast<const wchar_t*>(delta);
   }
 
@@ -219,12 +216,6 @@ class PolicyOpcode {
   uint8_t parameter_;
   uint32_t options_;
   OpcodeArgument arguments_[PolicyOpcode::kArgumentCount];
-};
-
-enum StringMatchOptions {
-  CASE_SENSITIVE = 0,    
-  CASE_INSENSITIVE = 1,  
-  EXACT_LENGTH = 2       
 };
 
 
@@ -274,14 +265,14 @@ class OpcodeFactory {
   
   
   OpcodeFactory(char* memory, size_t memory_size) : memory_top_(memory) {
-    memory_bottom_ = &memory_top_[memory_size];
+    memory_bottom_ = &UNSAFE_TODO(memory_top_[memory_size]);
   }
 
   
   
   OpcodeFactory(PolicyBuffer* policy, size_t memory_size) {
     memory_top_ = reinterpret_cast<char*>(&policy->opcodes[0]);
-    memory_bottom_ = &memory_top_[memory_size];
+    memory_bottom_ = &UNSAFE_TODO(memory_top_[memory_size]);
   }
 
   OpcodeFactory(const OpcodeFactory&) = delete;
@@ -320,16 +311,6 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpNumberMatchRange(uint8_t selected_param,
-                                       uint32_t lower_bound,
-                                       uint32_t upper_bound,
-                                       uint32_t options);
-
-  
-  
-  
-  
-  
   
   
   
@@ -339,10 +320,10 @@ class OpcodeFactory {
   
   
   PolicyOpcode* MakeOpWStringMatch(uint8_t selected_param,
-                                   const wchar_t* match_str,
+                                   std::wstring_view match_str,
                                    int start_position,
-                                   StringMatchOptions match_opts,
-                                   uint32_t options);
+                                   uint32_t options,
+                                   bool final_token);
 
   
   
@@ -362,7 +343,7 @@ class OpcodeFactory {
 
   
   
-  ptrdiff_t AllocRelative(void* start, const wchar_t* str, size_t length);
+  ptrdiff_t AllocRelative(void* start, std::wstring_view str);
 
   
   

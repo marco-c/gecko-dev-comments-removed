@@ -42,11 +42,6 @@ namespace debug {
 
 
 
-NOT_TAIL_CALLED BASE_EXPORT bool DumpWithoutCrashingUnthrottled();
-
-
-
-
 
 
 NOT_TAIL_CALLED BASE_EXPORT bool DumpWithoutCrashing(
@@ -56,32 +51,10 @@ NOT_TAIL_CALLED BASE_EXPORT bool DumpWithoutCrashing(
 
 
 
+BASE_EXPORT void SetDumpWithoutCrashingFunction(void (*function)());
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-NOT_TAIL_CALLED BASE_EXPORT bool DumpWithoutCrashingWithUniqueId(
-    size_t unique_identifier,
-    const base::Location& location = base::Location::Current(),
-    base::TimeDelta time_between_dumps = base::Days(1));
-
-
-
-
-BASE_EXPORT void SetDumpWithoutCrashingFunction(void (CDECL *function)());
-
-
-BASE_EXPORT void ClearMapsForTesting();
+BASE_EXPORT void ResetDumpWithoutCrashingThrottlingForTesting();
 
 }  
 }  

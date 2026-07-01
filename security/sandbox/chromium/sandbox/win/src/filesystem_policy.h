@@ -95,10 +95,6 @@ class FileSystemPolicy {
 
 
 
-bool PreProcessName(std::wstring* path);
-
-
-
 
 std::wstring FixNTPrefixForMatch(const std::wstring& name);
 

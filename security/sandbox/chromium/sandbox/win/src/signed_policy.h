@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "base/files/file_path.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
@@ -19,8 +20,7 @@ class SignedPolicy {
  public:
   
   
-  static bool GenerateRules(const wchar_t* name,
-                            LowLevelPolicy* policy);
+  static bool GenerateRules(base::FilePath dll_path, LowLevelPolicy* policy);
 
   
   

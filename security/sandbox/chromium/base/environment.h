@@ -7,10 +7,11 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "base/base_export.h"
-#include "base/strings/string_piece.h"
+#include "base/strings/cstring_view.h"
 #include "build/build_config.h"
 
 namespace base {
@@ -18,7 +19,9 @@ namespace base {
 namespace env_vars {
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
-BASE_EXPORT extern const char kHome[];
+
+
+inline constexpr char kHome[] = "HOME";
 #endif
 
 }  
@@ -32,19 +35,20 @@ class BASE_EXPORT Environment {
 
   
   
-  virtual bool GetVar(StringPiece variable_name, std::string* result) = 0;
+  
+  virtual std::optional<std::string> GetVar(cstring_view variable_name) = 0;
 
   
-  virtual bool HasVar(StringPiece variable_name);
+  bool HasVar(cstring_view variable_name);
 
   
   
-  virtual bool SetVar(StringPiece variable_name,
+  virtual bool SetVar(cstring_view variable_name,
                       const std::string& new_value) = 0;
 
   
   
-  virtual bool UnSetVar(StringPiece variable_name) = 0;
+  virtual bool UnSetVar(cstring_view variable_name) = 0;
 };
 
 #if BUILDFLAG(IS_WIN)

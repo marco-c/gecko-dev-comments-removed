@@ -4,25 +4,33 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_libc_calls
+#endif
+
 #ifndef BASE_STRINGS_STRING_UTIL_H_
 #define BASE_STRINGS_STRING_UTIL_H_
 
-#include <stdarg.h>   
+#include <stdarg.h>  
 #include <stddef.h>
 #include <stdint.h>
 
+#include <concepts>
 #include <initializer_list>
+#include <memory>
+#include <optional>
 #include <string>
-#include <type_traits>
+#include <string_view>
 #include <vector>
 
 #include "base/base_export.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
-#include "base/cxx20_to_address.h"
-#include "base/strings/string_piece.h"  
+
 #include "base/strings/string_util_internal.h"
+#include "base/types/to_address.h"
 #include "build/build_config.h"
 
 namespace base {
@@ -35,15 +43,17 @@ namespace base {
 
 
 
-int vsnprintf(char* buffer, size_t size, const char* format, va_list arguments)
-    PRINTF_FORMAT(3, 0);
+
+PRINTF_FORMAT(3, 0)
+int vsnprintf(char* buffer, size_t size, const char* format, va_list arguments);
 
 
 
 
 
-inline int snprintf(char* buffer, size_t size, const char* format, ...)
-    PRINTF_FORMAT(3, 4);
+
+PRINTF_FORMAT(3, 4)
+inline int snprintf(char* buffer, size_t size, const char* format, ...);
 inline int snprintf(char* buffer, size_t size, const char* format, ...) {
   va_list arguments;
   va_start(arguments, format);
@@ -51,6 +61,17 @@ inline int snprintf(char* buffer, size_t size, const char* format, ...) {
   va_end(arguments);
   return result;
 }
+
+
+
+
+
+
+
+BASE_EXPORT size_t strlcpy(span<char> dst, std::string_view src);
+BASE_EXPORT size_t u16cstrlcpy(span<char16_t> dst, std::u16string_view src);
+BASE_EXPORT size_t wcslcpy(span<wchar_t> dst, std::wstring_view src);
+
 
 
 
@@ -89,41 +110,16 @@ BASE_EXPORT bool IsWprintfFormatPortable(const wchar_t* format);
 
 
 
-template <typename CharT, typename Iter>
-constexpr BasicStringPiece<CharT> MakeBasicStringPiece(Iter begin, Iter end) {
-  DCHECK_GE(end - begin, 0);
-  return {base::to_address(begin), static_cast<size_t>(end - begin)};
-}
-
-
-
-template <typename Iter>
-constexpr StringPiece MakeStringPiece(Iter begin, Iter end) {
-  return MakeBasicStringPiece<char>(begin, end);
-}
-
-template <typename Iter>
-constexpr StringPiece16 MakeStringPiece16(Iter begin, Iter end) {
-  return MakeBasicStringPiece<char16_t>(begin, end);
-}
-
-template <typename Iter>
-constexpr WStringPiece MakeWStringPiece(Iter begin, Iter end) {
-  return MakeBasicStringPiece<wchar_t>(begin, end);
-}
-
-
-
-template <typename CharT,
-          typename = std::enable_if_t<std::is_integral_v<CharT>>>
+template <typename CharT>
+  requires(std::integral<CharT>)
 constexpr CharT ToLowerASCII(CharT c) {
   return internal::ToLowerASCII(c);
 }
 
 
 
-template <typename CharT,
-          typename = std::enable_if_t<std::is_integral_v<CharT>>>
+template <typename CharT>
+  requires(std::integral<CharT>)
 CharT ToUpperASCII(CharT c) {
   return (c >= 'a' && c <= 'z') ? static_cast<CharT>(c + 'A' - 'a') : c;
 }
@@ -131,25 +127,27 @@ CharT ToUpperASCII(CharT c) {
 
 
 
-BASE_EXPORT std::string ToLowerASCII(StringPiece str);
-BASE_EXPORT std::u16string ToLowerASCII(StringPiece16 str);
+BASE_EXPORT std::string ToLowerASCII(std::string_view str);
+BASE_EXPORT std::u16string ToLowerASCII(std::u16string_view str);
 
 
 
 
-BASE_EXPORT std::string ToUpperASCII(StringPiece str);
-BASE_EXPORT std::u16string ToUpperASCII(StringPiece16 str);
-
-
-
-
-
+BASE_EXPORT std::string ToUpperASCII(std::string_view str);
+BASE_EXPORT std::u16string ToUpperASCII(std::u16string_view str);
 
 
 
 
 
-template<typename Char> struct CaseInsensitiveCompareASCII {
+
+
+
+
+
+template <typename Char>
+  requires(std::integral<Char>)
+struct CaseInsensitiveCompareASCII {
  public:
   bool operator()(Char x, Char y) const {
     return ToLowerASCII(x) == ToLowerASCII(y);
@@ -167,12 +165,12 @@ template<typename Char> struct CaseInsensitiveCompareASCII {
 
 
 
-BASE_EXPORT constexpr int CompareCaseInsensitiveASCII(StringPiece a,
-                                                      StringPiece b) {
+BASE_EXPORT constexpr int CompareCaseInsensitiveASCII(std::string_view a,
+                                                      std::string_view b) {
   return internal::CompareCaseInsensitiveASCIIT(a, b);
 }
-BASE_EXPORT constexpr int CompareCaseInsensitiveASCII(StringPiece16 a,
-                                                      StringPiece16 b) {
+BASE_EXPORT constexpr int CompareCaseInsensitiveASCII(std::u16string_view a,
+                                                      std::u16string_view b) {
   return internal::CompareCaseInsensitiveASCIIT(a, b);
 }
 
@@ -181,16 +179,19 @@ BASE_EXPORT constexpr int CompareCaseInsensitiveASCII(StringPiece16 a,
 
 
 
-inline bool EqualsCaseInsensitiveASCII(StringPiece a, StringPiece b) {
+inline bool EqualsCaseInsensitiveASCII(std::string_view a, std::string_view b) {
   return internal::EqualsCaseInsensitiveASCIIT(a, b);
 }
-inline bool EqualsCaseInsensitiveASCII(StringPiece16 a, StringPiece16 b) {
+inline bool EqualsCaseInsensitiveASCII(std::u16string_view a,
+                                       std::u16string_view b) {
   return internal::EqualsCaseInsensitiveASCIIT(a, b);
 }
-inline bool EqualsCaseInsensitiveASCII(StringPiece16 a, StringPiece b) {
+inline bool EqualsCaseInsensitiveASCII(std::u16string_view a,
+                                       std::string_view b) {
   return internal::EqualsCaseInsensitiveASCIIT(a, b);
 }
-inline bool EqualsCaseInsensitiveASCII(StringPiece a, StringPiece16 b) {
+inline bool EqualsCaseInsensitiveASCII(std::string_view a,
+                                       std::u16string_view b) {
   return internal::EqualsCaseInsensitiveASCIIT(a, b);
 }
 
@@ -213,15 +214,16 @@ BASE_EXPORT const std::u16string& EmptyString16();
 
 
 
-BASE_EXPORT extern const wchar_t kWhitespaceWide[];  
+BASE_EXPORT extern const wchar_t kWhitespaceWide[];    
 BASE_EXPORT extern const char16_t kWhitespaceUTF16[];  
 BASE_EXPORT extern const char16_t
     kWhitespaceNoCrLfUTF16[];  
 BASE_EXPORT extern const char kWhitespaceASCII[];
 BASE_EXPORT extern const char16_t kWhitespaceASCIIAs16[];  
-                                                           
 
-BASE_EXPORT extern const char kInfraAsciiWhitespace[];
+
+
+inline constexpr char kInfraAsciiWhitespace[] = {0x09, 0x0A, 0x0C, 0x0D, 0x20};
 
 
 BASE_EXPORT extern const char kUtf8ByteOrderMark[];
@@ -229,11 +231,11 @@ BASE_EXPORT extern const char kUtf8ByteOrderMark[];
 
 
 
-BASE_EXPORT bool RemoveChars(StringPiece16 input,
-                             StringPiece16 remove_chars,
+BASE_EXPORT bool RemoveChars(std::u16string_view input,
+                             std::u16string_view remove_chars,
                              std::u16string* output);
-BASE_EXPORT bool RemoveChars(StringPiece input,
-                             StringPiece remove_chars,
+BASE_EXPORT bool RemoveChars(std::string_view input,
+                             std::string_view remove_chars,
                              std::string* output);
 
 
@@ -241,20 +243,20 @@ BASE_EXPORT bool RemoveChars(StringPiece input,
 
 
 
-BASE_EXPORT bool ReplaceChars(StringPiece16 input,
-                              StringPiece16 replace_chars,
-                              StringPiece16 replace_with,
+BASE_EXPORT bool ReplaceChars(std::u16string_view input,
+                              std::u16string_view replace_chars,
+                              std::u16string_view replace_with,
                               std::u16string* output);
-BASE_EXPORT bool ReplaceChars(StringPiece input,
-                              StringPiece replace_chars,
-                              StringPiece replace_with,
+BASE_EXPORT bool ReplaceChars(std::string_view input,
+                              std::string_view replace_chars,
+                              std::string_view replace_with,
                               std::string* output);
 
 enum TrimPositions {
-  TRIM_NONE     = 0,
-  TRIM_LEADING  = 1 << 0,
+  TRIM_NONE = 0,
+  TRIM_LEADING = 1 << 0,
   TRIM_TRAILING = 1 << 1,
-  TRIM_ALL      = TRIM_LEADING | TRIM_TRAILING,
+  TRIM_ALL = TRIM_LEADING | TRIM_TRAILING,
 };
 
 
@@ -263,27 +265,29 @@ enum TrimPositions {
 
 
 
-BASE_EXPORT bool TrimString(StringPiece16 input,
-                            StringPiece16 trim_chars,
+BASE_EXPORT bool TrimString(std::u16string_view input,
+                            std::u16string_view trim_chars,
                             std::u16string* output);
-BASE_EXPORT bool TrimString(StringPiece input,
-                            StringPiece trim_chars,
+BASE_EXPORT bool TrimString(std::string_view input,
+                            std::string_view trim_chars,
                             std::string* output);
 
 
 
-BASE_EXPORT StringPiece16 TrimString(StringPiece16 input,
-                                     StringPiece16 trim_chars,
-                                     TrimPositions positions);
-BASE_EXPORT StringPiece TrimString(StringPiece input,
-                                   StringPiece trim_chars,
-                                   TrimPositions positions);
+BASE_EXPORT std::u16string_view TrimString(std::u16string_view input,
+                                           std::u16string_view trim_chars,
+                                           TrimPositions positions);
+BASE_EXPORT std::string_view TrimString(std::string_view input,
+                                        std::string_view trim_chars,
+                                        TrimPositions positions);
 
 
 
-BASE_EXPORT void TruncateUTF8ToByteSize(const std::string& input,
+BASE_EXPORT void TruncateUTF8ToByteSize(std::string_view input,
                                         const size_t byte_size,
                                         std::string* output);
+BASE_EXPORT std::string_view TruncateUTF8ToByteSize(std::string_view input,
+                                                    size_t byte_size);
 
 
 
@@ -292,16 +296,16 @@ BASE_EXPORT void TruncateUTF8ToByteSize(const std::string& input,
 
 
 
-BASE_EXPORT TrimPositions TrimWhitespace(StringPiece16 input,
+BASE_EXPORT TrimPositions TrimWhitespace(std::u16string_view input,
                                          TrimPositions positions,
                                          std::u16string* output);
-BASE_EXPORT StringPiece16 TrimWhitespace(StringPiece16 input,
-                                         TrimPositions positions);
-BASE_EXPORT TrimPositions TrimWhitespaceASCII(StringPiece input,
+BASE_EXPORT std::u16string_view TrimWhitespace(std::u16string_view input,
+                                               TrimPositions positions);
+BASE_EXPORT TrimPositions TrimWhitespaceASCII(std::string_view input,
                                               TrimPositions positions,
                                               std::string* output);
-BASE_EXPORT StringPiece TrimWhitespaceASCII(StringPiece input,
-                                            TrimPositions positions);
+BASE_EXPORT std::string_view TrimWhitespaceASCII(std::string_view input,
+                                                 TrimPositions positions);
 
 
 
@@ -312,28 +316,29 @@ BASE_EXPORT StringPiece TrimWhitespaceASCII(StringPiece input,
 
 
 BASE_EXPORT std::u16string CollapseWhitespace(
-    StringPiece16 text,
+    std::u16string_view text,
     bool trim_sequences_with_line_breaks);
 BASE_EXPORT std::string CollapseWhitespaceASCII(
-    StringPiece text,
+    std::string_view text,
     bool trim_sequences_with_line_breaks);
 
 
 
-BASE_EXPORT bool ContainsOnlyChars(StringPiece input, StringPiece characters);
-BASE_EXPORT bool ContainsOnlyChars(StringPiece16 input,
-                                   StringPiece16 characters);
+BASE_EXPORT bool ContainsOnlyChars(std::string_view input,
+                                   std::string_view characters);
+BASE_EXPORT bool ContainsOnlyChars(std::u16string_view input,
+                                   std::u16string_view characters);
 
 
 
 
 
 
-BASE_EXPORT bool IsStringUTF8(StringPiece str);
+BASE_EXPORT bool IsStringUTF8(std::string_view str);
 
 
 
-BASE_EXPORT bool IsStringUTF8AllowingNoncharacters(StringPiece str);
+BASE_EXPORT bool IsStringUTF8AllowingNoncharacters(std::string_view str);
 
 
 
@@ -341,17 +346,17 @@ BASE_EXPORT bool IsStringUTF8AllowingNoncharacters(StringPiece str);
 
 
 
-BASE_EXPORT bool IsStringASCII(StringPiece str);
-BASE_EXPORT bool IsStringASCII(StringPiece16 str);
+BASE_EXPORT bool IsStringASCII(std::string_view str);
+BASE_EXPORT bool IsStringASCII(std::u16string_view str);
 
-#if defined(WCHAR_T_IS_UTF32)
-BASE_EXPORT bool IsStringASCII(WStringPiece str);
+#if defined(WCHAR_T_IS_32_BIT)
+BASE_EXPORT bool IsStringASCII(std::wstring_view str);
 #endif
 
 
 
 
-BASE_EXPORT bool EqualsASCII(StringPiece16 str, StringPiece ascii);
+BASE_EXPORT bool EqualsASCII(std::u16string_view str, std::string_view ascii);
 
 
 
@@ -367,60 +372,95 @@ enum class CompareCase {
 };
 
 BASE_EXPORT bool StartsWith(
-    StringPiece str,
-    StringPiece search_for,
+    std::string_view str,
+    std::string_view search_for,
     CompareCase case_sensitivity = CompareCase::SENSITIVE);
 BASE_EXPORT bool StartsWith(
-    StringPiece16 str,
-    StringPiece16 search_for,
+    std::u16string_view str,
+    std::u16string_view search_for,
     CompareCase case_sensitivity = CompareCase::SENSITIVE);
 BASE_EXPORT bool EndsWith(
-    StringPiece str,
-    StringPiece search_for,
+    std::string_view str,
+    std::string_view search_for,
     CompareCase case_sensitivity = CompareCase::SENSITIVE);
 BASE_EXPORT bool EndsWith(
-    StringPiece16 str,
-    StringPiece16 search_for,
+    std::u16string_view str,
+    std::u16string_view search_for,
+    CompareCase case_sensitivity = CompareCase::SENSITIVE);
+
+
+
+
+
+BASE_EXPORT std::optional<std::string_view> RemovePrefix(
+    std::string_view string,
+    std::string_view prefix,
+    CompareCase case_sensitivity = CompareCase::SENSITIVE);
+BASE_EXPORT std::optional<std::u16string_view> RemovePrefix(
+    std::u16string_view string,
+    std::u16string_view prefix,
+    CompareCase case_sensitivity = CompareCase::SENSITIVE);
+
+
+
+
+
+BASE_EXPORT std::optional<std::string_view> RemoveSuffix(
+    std::string_view string,
+    std::string_view suffix,
+    CompareCase case_sensitivity = CompareCase::SENSITIVE);
+BASE_EXPORT std::optional<std::u16string_view> RemoveSuffix(
+    std::u16string_view string,
+    std::u16string_view suffix,
     CompareCase case_sensitivity = CompareCase::SENSITIVE);
 
 
 
 template <typename Char>
-inline bool IsAsciiWhitespace(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiWhitespace(Char c) {
   
-  for (const char* cur = kWhitespaceASCII; *cur; ++cur) {
-    if (*cur == c)
+  for (const char* cur = kWhitespaceASCII; *cur; UNSAFE_BUFFERS(++cur)) {
+    if (*cur == c) {
       return true;
+    }
   }
   return false;
 }
 template <typename Char>
-inline bool IsAsciiAlpha(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiAlpha(Char c) {
   return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 template <typename Char>
-inline bool IsAsciiUpper(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiUpper(Char c) {
   return c >= 'A' && c <= 'Z';
 }
 template <typename Char>
-inline bool IsAsciiLower(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiLower(Char c) {
   return c >= 'a' && c <= 'z';
 }
 template <typename Char>
-inline bool IsAsciiDigit(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiDigit(Char c) {
   return c >= '0' && c <= '9';
 }
 template <typename Char>
-inline bool IsAsciiAlphaNumeric(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiAlphaNumeric(Char c) {
   return IsAsciiAlpha(c) || IsAsciiDigit(c);
 }
 template <typename Char>
-inline bool IsAsciiPrintable(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiPrintable(Char c) {
   return c >= ' ' && c <= '~';
 }
 
 template <typename Char>
-inline bool IsAsciiControl(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiControl(Char c) {
   if constexpr (std::is_signed_v<Char>) {
     if (c < 0) {
       return false;
@@ -430,21 +470,23 @@ inline bool IsAsciiControl(Char c) {
 }
 
 template <typename Char>
-inline bool IsUnicodeControl(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsUnicodeControl(Char c) {
   return IsAsciiControl(c) ||
          
          (c >= 0x80 && c <= 0x9F);
 }
 
 template <typename Char>
-inline bool IsAsciiPunctuation(Char c) {
+  requires(std::integral<Char>)
+constexpr bool IsAsciiPunctuation(Char c) {
   return c > 0x20 && c < 0x7f && !IsAsciiAlphaNumeric(c);
 }
 
 template <typename Char>
-inline bool IsHexDigit(Char c) {
-  return (c >= '0' && c <= '9') ||
-         (c >= 'A' && c <= 'F') ||
+  requires(std::integral<Char>)
+constexpr bool IsHexDigit(Char c) {
+  return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') ||
          (c >= 'a' && c <= 'f');
 }
 
@@ -464,13 +506,15 @@ inline char HexDigitToInt(char16_t c) {
 
 
 
-template <typename Char, typename = std::enable_if_t<(sizeof(Char) > 1)>>
-inline bool IsUnicodeWhitespace(Char c) {
+template <typename Char>
+  requires(sizeof(Char) > 1)
+constexpr bool IsUnicodeWhitespace(Char c) {
   
-  for (const auto* cur = kWhitespaceWide; *cur; ++cur) {
+  for (const auto* cur = kWhitespaceWide; *cur; UNSAFE_BUFFERS(++cur)) {
     if (static_cast<typename std::make_unsigned_t<wchar_t>>(*cur) ==
-        static_cast<typename std::make_unsigned_t<Char>>(c))
+        static_cast<typename std::make_unsigned_t<Char>>(c)) {
       return true;
+    }
   }
   return false;
 }
@@ -479,7 +523,7 @@ inline bool IsUnicodeWhitespace(Char c) {
 
 
 template <typename Char>
-inline bool IsWhitespace(Char c) {
+constexpr bool IsWhitespace(Char c) {
   if constexpr (sizeof(Char) > 1) {
     return IsUnicodeWhitespace(c);
   } else {
@@ -489,21 +533,16 @@ inline bool IsWhitespace(Char c) {
 
 
 
-
-
-BASE_EXPORT std::u16string FormatBytesUnlocalized(int64_t bytes);
-
-
-
-BASE_EXPORT void ReplaceFirstSubstringAfterOffset(std::u16string* str,
-                                                  size_t start_offset,
-                                                  StringPiece16 find_this,
-                                                  StringPiece16 replace_with);
+BASE_EXPORT void ReplaceFirstSubstringAfterOffset(
+    std::u16string* str,
+    size_t start_offset,
+    std::u16string_view find_this,
+    std::u16string_view replace_with);
 BASE_EXPORT void ReplaceFirstSubstringAfterOffset(
     std::string* str,
     size_t start_offset,
-    StringPiece find_this,
-    StringPiece replace_with);
+    std::string_view find_this,
+    std::string_view replace_with);
 
 
 
@@ -513,13 +552,12 @@ BASE_EXPORT void ReplaceFirstSubstringAfterOffset(
 
 BASE_EXPORT void ReplaceSubstringsAfterOffset(std::u16string* str,
                                               size_t start_offset,
-                                              StringPiece16 find_this,
-                                              StringPiece16 replace_with);
-BASE_EXPORT void ReplaceSubstringsAfterOffset(
-    std::string* str,
-    size_t start_offset,
-    StringPiece find_this,
-    StringPiece replace_with);
+                                              std::u16string_view find_this,
+                                              std::u16string_view replace_with);
+BASE_EXPORT void ReplaceSubstringsAfterOffset(std::string* str,
+                                              size_t start_offset,
+                                              std::string_view find_this,
+                                              std::string_view replace_with);
 
 
 
@@ -554,40 +592,49 @@ BASE_EXPORT char16_t* WriteInto(std::u16string* str, size_t length_with_null);
 
 
 BASE_EXPORT std::string JoinString(span<const std::string> parts,
-                                   StringPiece separator);
+                                   std::string_view separator);
 BASE_EXPORT std::u16string JoinString(span<const std::u16string> parts,
-                                      StringPiece16 separator);
-BASE_EXPORT std::string JoinString(span<const StringPiece> parts,
-                                   StringPiece separator);
-BASE_EXPORT std::u16string JoinString(span<const StringPiece16> parts,
-                                      StringPiece16 separator);
+                                      std::u16string_view separator);
+BASE_EXPORT std::string JoinString(span<const std::string_view> parts,
+                                   std::string_view separator);
+BASE_EXPORT std::u16string JoinString(span<const std::u16string_view> parts,
+                                      std::u16string_view separator);
 
 
 
-BASE_EXPORT std::string JoinString(std::initializer_list<StringPiece> parts,
-                                   StringPiece separator);
+BASE_EXPORT std::string JoinString(
+    std::initializer_list<std::string_view> parts,
+    std::string_view separator);
 BASE_EXPORT std::u16string JoinString(
-    std::initializer_list<StringPiece16> parts,
-    StringPiece16 separator);
+    std::initializer_list<std::u16string_view> parts,
+    std::u16string_view separator);
+
+
+
+
+
+
+
+
 
 
 
 
 
 BASE_EXPORT std::u16string ReplaceStringPlaceholders(
-    StringPiece16 format_string,
-    const std::vector<std::u16string>& subst,
+    std::u16string_view format_string,
+    base::span<const std::u16string> subst,
     std::vector<size_t>* offsets);
 
 BASE_EXPORT std::string ReplaceStringPlaceholders(
-    StringPiece format_string,
-    const std::vector<std::string>& subst,
+    std::string_view format_string,
+    base::span<const std::string> subst,
     std::vector<size_t>* offsets);
 
 
 BASE_EXPORT std::u16string ReplaceStringPlaceholders(
-    const std::u16string& format_string,
-    const std::u16string& a,
+    std::u16string_view format_string,
+    std::u16string_view subst,
     size_t* offset);
 
 }  

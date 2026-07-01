@@ -2,12 +2,17 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_ALLOCATION_GUARD_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_ALLOCATION_GUARD_H_
+#ifdef UNSAFE_BUFFERS_BUILD
 
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/component_export.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_config.h"
-#include "build/build_config.h"
+#pragma allow_unsafe_buffers
+#endif
+
+#ifndef PARTITION_ALLOC_ALLOCATION_GUARD_H_
+#define PARTITION_ALLOC_ALLOCATION_GUARD_H_
+
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/partition_alloc_base/component_export.h"
+#include "partition_alloc/partition_alloc_config.h"
 
 namespace partition_alloc {
 

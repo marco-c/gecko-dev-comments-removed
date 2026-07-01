@@ -15,12 +15,9 @@ namespace base::internal {
 
 
 
-template <typename T, typename = void>
-struct SupportsOstreamOperator : std::false_type {};
 template <typename T>
-struct SupportsOstreamOperator<T, decltype(void(std::declval<std::ostream&>()
-                                                << std::declval<T>()))>
-    : std::true_type {};
+concept SupportsOstreamOperator =
+    requires(const T& t, std::ostream& os) { os << t; };
 
 }  
 

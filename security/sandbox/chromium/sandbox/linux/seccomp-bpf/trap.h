@@ -10,7 +10,6 @@
 
 #include <map>
 
-#include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/linux/bpf_dsl/trap_registry.h"
 #include "sandbox/linux/system_headers/linux_signal.h"

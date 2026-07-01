@@ -10,35 +10,36 @@
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/handle_closer.h"
 #include "sandbox/win/src/sandbox_types.h"
-#include "sandbox/win/src/target_services.h"
 
 namespace sandbox {
+
 
 
 class HandleCloserAgent {
  public:
   HandleCloserAgent();
+  ~HandleCloserAgent();
 
   HandleCloserAgent(const HandleCloserAgent&) = delete;
   HandleCloserAgent& operator=(const HandleCloserAgent&) = delete;
 
-  ~HandleCloserAgent();
-
-  
-  
-  void InitializeHandlesToClose(bool* is_csrss_connected);
-
   
   bool CloseHandles();
+
+  
+  bool IsCsrssConnected() { return is_csrss_connected_; }
 
   
   static bool NeedsHandlesClosed();
 
  private:
   
-  bool AttemptToStuffHandleSlot(HANDLE closed_handle, const std::wstring& type);
+  
+  bool AttemptToStuffHandleSlot(HANDLE closed_handle);
+  bool MaybeCloseHandle(std::wstring& type_name, HANDLE handle);
 
-  HandleMap handles_to_close_;
+  HandleCloserConfig config_;
+  bool is_csrss_connected_;
   base::win::ScopedHandle dummy_handle_;
 };
 

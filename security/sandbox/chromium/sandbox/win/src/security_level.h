@@ -291,6 +291,11 @@ const MitigationFlags MITIGATION_FSCTL_DISABLED = 0x04000000;
 
 
 
+const MitigationFlags MITIGATION_RESTRICT_CORE_SHARING = 0x08000000;
+
+
+
+
 
 
 

@@ -41,9 +41,6 @@ typedef NTSTATUS(WINAPI* NtOpenFileFunction)(OUT PHANDLE FileHandle,
 typedef NTSTATUS(WINAPI* NtCloseFunction)(IN HANDLE Handle);
 
 #if !defined(__MINGW32__)
-
-const auto FileRenameInformation = static_cast<FILE_INFORMATION_CLASS>(10);
-
 typedef struct _FILE_RENAME_INFORMATION {
   BOOLEAN ReplaceIfExists;
   HANDLE RootDirectory;
@@ -173,9 +170,6 @@ typedef NTSTATUS(WINAPI* NtSetInformationThreadFunction)(
     IN THREADINFOCLASS ThreadInformationClass,
     IN PVOID ThreadInformation,
     IN ULONG ThreadInformationLength);
-
-
-const auto ProcessHandleTable = static_cast<PROCESSINFOCLASS>(58);
 
 
 

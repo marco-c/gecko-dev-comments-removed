@@ -5,117 +5,79 @@
 #ifndef BASE_FUNCTIONAL_UNRETAINED_TRAITS_H_
 #define BASE_FUNCTIONAL_UNRETAINED_TRAITS_H_
 
-#include "build/build_config.h"
-
 #include <type_traits>
 
+#include "base/types/is_complete.h"
+#include "base/types/same_as_any.h"
+#include "build/build_config.h"
 
 
-struct ANativeWindow;
-struct DBusMessage;
-struct HWND__;
-struct VkBuffer_T;
-struct VkDeviceMemory_T;
-struct VkImage_T;
-struct VkSemaphore_T;
-struct VmaAllocation_T;
-struct WGPUAdapterImpl;
-struct fpdf_action_t__;
-struct fpdf_annotation_t__;
-struct fpdf_attachment_t__;
-struct fpdf_bookmark_t__;
-struct fpdf_document_t__;
-struct fpdf_form_handle_t__;
-struct fpdf_page_t__;
-struct fpdf_structelement_t__;
-struct hb_set_t;
-struct wl_gpu;
-struct wl_shm;
-struct wl_surface;
+
+#define BASE_INTERNAL_LIST_OF_SAFE_FOR_UNRETAINED                      \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(ANativeWindow)                     \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(DBusMessage)                       \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(HWND__)                            \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(VkBuffer_T)                        \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(VkDeviceMemory_T)                  \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(VkImage_T)                         \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(VkSemaphore_T)                     \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(VmaAllocation_T)                   \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(WGPUAdapterImpl)                   \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_action_t__)                   \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_annotation_t__)               \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_attachment_t__)               \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_bookmark_t__)                 \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_document_t__)                 \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_form_handle_t__)              \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_page_t__)                     \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_structelement_t__)            \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_structelement_attr_t__)       \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(fpdf_structelement_attr_value_t__) \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(hb_set_t)                          \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(wl_gpu)                            \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(wl_shm)                            \
+  BASE_INTERNAL_SAFE_FOR_UNRETAINED(wl_surface)
+
+#define BASE_INTERNAL_SAFE_FOR_UNRETAINED(x) struct x;
+BASE_INTERNAL_LIST_OF_SAFE_FOR_UNRETAINED
+#undef BASE_INTERNAL_SAFE_FOR_UNRETAINED
 
 namespace base::internal {
 
 
 
-template <typename T, typename = void>
-inline constexpr bool IsCompleteTypeV = false;
 
 template <typename T>
-inline constexpr bool IsCompleteTypeV<T, std::void_t<decltype(sizeof(T))>> =
-    true;
-
+concept SafeIncompleteTypeForUnretained =
+    SameAsAny<std::remove_cvref_t<T>,
+#define BASE_INTERNAL_SAFE_FOR_UNRETAINED(x) x,
+              BASE_INTERNAL_LIST_OF_SAFE_FOR_UNRETAINED
+#undef BASE_INTERNAL_SAFE_FOR_UNRETAINED
+              
+              
+              void>;
 
 
 
 
 
 template <typename T>
-inline constexpr bool IsIncompleteTypeSafeForUnretained = false;
+inline constexpr bool kCustomizeSupportsUnretained = true;
 
+template <typename T>
+concept DisallowsUnretained = !kCustomizeSupportsUnretained<T> || requires {
+  
+  
+  typename T::DisallowBaseUnretainedMarker;
+};
 
-
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<void> = true;
-
-
-
-template <typename R, typename... Args>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<R(Args...)> = true;
-
-
-
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<ANativeWindow> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<DBusMessage> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<HWND__> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<VkBuffer_T> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<VkDeviceMemory_T> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<VkImage_T> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<VkSemaphore_T> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<VmaAllocation_T> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<WGPUAdapterImpl> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_action_t__> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_annotation_t__> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_attachment_t__> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_bookmark_t__> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_document_t__> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_form_handle_t__> =
-    true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<fpdf_page_t__> = true;
-template <>
-inline constexpr bool
-    IsIncompleteTypeSafeForUnretained<fpdf_structelement_t__> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<hb_set_t> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_gpu> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_shm> = true;
-template <>
-inline constexpr bool IsIncompleteTypeSafeForUnretained<wl_surface> = true;
-
-template <typename T, typename SFINAE = void>
-struct TypeSupportsUnretained {
+template <typename T>
+struct SupportsUnretainedImpl {
+  
+  
+  template <bool v = IsComplete<T> || SafeIncompleteTypeForUnretained<T>>
+  struct AllowlistIncompleteTypes {
+    static constexpr bool value = [] {
 
 
 
@@ -128,29 +90,46 @@ struct TypeSupportsUnretained {
 
 
 
-#if !defined(UNIT_TEST) && !defined(OFFICIAL_BUILD)
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || \
-    defined(FORCE_UNRETAINED_COMPLETENESS_CHECKS_FOR_TESTS)
-  static_assert(IsCompleteTypeV<T> ||
-                    IsIncompleteTypeSafeForUnretained<std::remove_cv_t<T>>,
-                "T must be fully defined.");
+#if defined(FORCE_UNRETAINED_COMPLETENESS_CHECKS_FOR_TESTS) || \
+    (!defined(UNIT_TEST) && !defined(OFFICIAL_BUILD) &&        \
+     (BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN)))
+      static_assert(v,
+                    "Argument requires unretained storage, but type is not "
+                    "fully defined. This prevents determining whether "
+                    "`Unretained()` is supported.");
+      return v;
+#else
+      return true;
 #endif
-#endif  
+    }();
+  };
 
-  static constexpr inline bool kValue = true;
+  template <bool v = !DisallowsUnretained<T>>
+  struct AllowsUnretained {
+    static constexpr bool value = [] {
+      static_assert(v,
+                    "Argument requires unretained storage, but type does not "
+                    "support `Unretained()`. See "
+                    "base/functional/disallow_unretained.h for alternatives.");
+      return v;
+    }();
+  };
+
+  static constexpr bool value =
+      std::conjunction_v<AllowlistIncompleteTypes<>, AllowsUnretained<>>;
 };
 
 
 
-template <typename T>
-struct TypeSupportsUnretained<T, typename T::DisallowBaseUnretainedMarker> {
-  static constexpr inline bool kValue = false;
-};
 
 
+
+
+
+
+
 template <typename T>
-static inline constexpr bool TypeSupportsUnretainedV =
-    TypeSupportsUnretained<T>::kValue;
+concept SupportsUnretained = SupportsUnretainedImpl<T>::value;
 
 }  
 

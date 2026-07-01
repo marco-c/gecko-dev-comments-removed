@@ -13,7 +13,7 @@ namespace sandbox {
 
 
 
-absl::optional<DWORD> GetIntegrityLevelRid(IntegrityLevel integrity_level);
+std::optional<DWORD> GetIntegrityLevelRid(IntegrityLevel integrity_level);
 
 
 

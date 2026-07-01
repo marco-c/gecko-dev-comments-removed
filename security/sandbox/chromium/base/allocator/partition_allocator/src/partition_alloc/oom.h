@@ -2,18 +2,23 @@
 
 
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_OOM_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_OOM_H_
+#ifdef UNSAFE_BUFFERS_BUILD
+
+#pragma allow_unsafe_buffers
+#endif
+
+#ifndef PARTITION_ALLOC_OOM_H_
+#define PARTITION_ALLOC_OOM_H_
 
 #include <cstddef>
 
-#include "base/allocator/partition_allocator/src/partition_alloc/allocation_guard.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/component_export.h"
-#include "build/build_config.h"
+#include "partition_alloc/allocation_guard.h"
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/partition_alloc_base/compiler_specific.h"
+#include "partition_alloc/partition_alloc_base/component_export.h"
 
-#if BUILDFLAG(IS_WIN)
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/win/windows_types.h"
+#if PA_BUILDFLAG(IS_WIN)
+#include "partition_alloc/partition_alloc_base/win/windows_types.h"
 #endif
 
 namespace partition_alloc {
@@ -22,15 +27,15 @@ namespace partition_alloc {
 
 
 
-PA_COMPONENT_EXPORT(PARTITION_ALLOC)
-void TerminateBecauseOutOfMemory(size_t size);
+[[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
+    PARTITION_ALLOC) void TerminateBecauseOutOfMemory(size_t size);
 
 
 
 
 PA_COMPONENT_EXPORT(PARTITION_ALLOC) extern size_t g_oom_size;
 
-#if BUILDFLAG(IS_WIN)
+#if PA_BUILDFLAG(IS_WIN)
 namespace win {
 
 
@@ -51,6 +56,16 @@ namespace internal {
 
 [[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
     PARTITION_ALLOC) void OnNoMemory(size_t size);
+
+#if PA_BUILDFLAG(IS_POSIX)
+
+
+
+
+
+[[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
+    PARTITION_ALLOC) void OnErrnoNoMem();
+#endif
 
 
 
