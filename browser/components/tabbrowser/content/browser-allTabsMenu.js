@@ -15,7 +15,6 @@ var gTabsPanel = {
     allTabsButton: "alltabs-button",
     allTabsView: "allTabsMenu-allTabsView",
     allTabsViewTabs: "allTabsMenu-allTabsView-tabs",
-    viewAllTabs: "allTabsMenu-viewAllTabs",
     dropIndicator: "allTabsMenu-dropIndicator",
     containerTabsView: "allTabsMenu-containerTabsView",
     hiddenTabsButton: "allTabsMenu-hiddenTabsButton",
@@ -111,21 +110,22 @@ var gTabsPanel = {
 
       
       
-      
-      
-      
       const hasHiddenAudioTabs = this.hiddenAudioTabs.hasChildNodes();
       this.hiddenAudioTabs.hidden = !hasHiddenAudioTabs;
       hiddenTabsSeparator.hidden = !hasHiddenAudioTabs;
       if (hasHiddenAudioTabs) {
-        document
-          .getElementById("allTabsMenu-currentWindowHeader")
-          .after(hiddenTabsButton, this.hiddenAudioTabs, hiddenTabsSeparator);
+        this.allTabsViewTabs.prepend(
+          hiddenTabsButton,
+          this.hiddenAudioTabs,
+          hiddenTabsSeparator
+        );
       } else {
-        this.allTabsViewTabs.append(hiddenTabsButton, this.hiddenAudioTabs);
+        this.allTabsViewTabs.append(
+          hiddenTabsButton,
+          this.hiddenAudioTabs,
+          hiddenTabsSeparator
+        );
       }
-
-      this.allTabsViewTabs.append(this.viewAllTabs);
 
       let closeDuplicateTabsItem = document.getElementById(
         "allTabsMenu-closeDuplicateTabs"
