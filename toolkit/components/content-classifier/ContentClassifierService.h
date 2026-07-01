@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/RefPtr.h"
@@ -75,6 +76,10 @@ struct ContentClassifierFeature {
   
   
   bool mExceptionOnly;
+  
+  
+  
+  Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
 };
 
 enum class InitPhase {
