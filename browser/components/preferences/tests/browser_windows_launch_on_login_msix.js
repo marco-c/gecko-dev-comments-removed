@@ -20,9 +20,16 @@ add_task(async function test_check_uncheck_checkbox() {
     value: { enabled: true },
   });
   
+  
+  
+  
+  await WindowsLaunchOnLogin._disableLaunchOnLoginMSIX();
+
+  
   await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
+
   let doc = gBrowser.contentDocument;
   await TestUtils.waitForCondition(
     () => doc.getElementById("windowsLaunchOnLogin"),
@@ -31,37 +38,27 @@ add_task(async function test_check_uncheck_checkbox() {
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
 
+  ok(!launchOnLoginCheckbox.checked, "Autostart checkbox starts unchecked");
+
   
-  
-  
+  synthesizeClick(launchOnLoginCheckbox);
   ok(
     launchOnLoginCheckbox.checked,
-    "Autostart checkbox starts checked (default-enabled for new installs)"
+    "Autostart checkbox checked after first click"
   );
-  ok(
-    await WindowsLaunchOnLogin.getLaunchOnLoginEnabled(),
-    "Launch on login is enabled at startup"
-  );
+  await TestUtils.waitForCondition(async () => {
+    return await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+  }, "Launch on login is enabled after checking");
 
   
   synthesizeClick(launchOnLoginCheckbox);
   ok(
     !launchOnLoginCheckbox.checked,
-    "Autostart checkbox unchecked after first click"
+    "Autostart checkbox unchecked after second click"
   );
   await TestUtils.waitForCondition(async () => {
     return !(await WindowsLaunchOnLogin.getLaunchOnLoginEnabled());
   }, "Launch on login is disabled after unchecking");
-
-  
-  synthesizeClick(launchOnLoginCheckbox);
-  ok(
-    launchOnLoginCheckbox.checked,
-    "Autostart checkbox re-checked after second click"
-  );
-  await TestUtils.waitForCondition(async () => {
-    return await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
-  }, "Launch on login is re-enabled after rechecking");
 
   gBrowser.removeCurrentTab();
   await doCleanup();

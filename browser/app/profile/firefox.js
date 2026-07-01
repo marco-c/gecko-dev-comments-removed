@@ -344,7 +344,9 @@ pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
 
 
 
-pref("browser.startup.windowsLaunchOnLogin.defaultEnabled", true);
+
+
+pref("browser.startup.windowsLaunchOnLogin.defaultEnabled", false);
 #endif
 
 
