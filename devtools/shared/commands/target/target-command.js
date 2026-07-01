@@ -748,6 +748,9 @@ class TargetCommand extends EventEmitter {
           
           
           this.store.dispatch(refreshTargets());
+
+          
+          this.emit("target-location-updated", targetFront);
         }
       }
     }

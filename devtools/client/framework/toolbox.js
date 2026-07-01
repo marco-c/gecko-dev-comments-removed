@@ -963,6 +963,10 @@ class Toolbox extends EventEmitter {
         "target-thread-wrong-order-on-resume",
         this.#onTargetThreadFrontResumeWrongOrder
       );
+      this.commands.targetCommand.on(
+        "target-location-updated",
+        this.#onTargetLocationUpdated.bind(this)
+      );
       registerStoreObserver(
         this.commands.targetCommand.store,
         this.#onTargetCommandStateChange
@@ -5059,39 +5063,6 @@ class Toolbox extends EventEmitter {
         errors = 0;
       }
 
-      if (
-        resourceType === TYPES.DOCUMENT_EVENT &&
-        !resource.isFrameSwitching &&
-        
-        
-        
-        resource.name === "dom-interactive"
-      ) {
-        
-        
-        
-        setTimeout(() => {
-          if (resource.targetFront.isDestroyed()) {
-            
-            
-            return;
-          }
-
-          this.#updateFrames({
-            frameData: {
-              id: resource.targetFront.actorID,
-              url: resource.targetFront.url,
-              title: resource.targetFront.title,
-            },
-          });
-
-          if (resource.targetFront.isTopLevel) {
-            this.#refreshHostTitle();
-            this.#setDebugTargetData();
-          }
-        }, 0);
-      }
-
       if (resourceType == TYPES.THREAD_STATE) {
         this.#onThreadStateChanged(resource);
       }
@@ -5120,6 +5091,25 @@ class Toolbox extends EventEmitter {
 
     this.setErrorCount(errors);
   };
+
+  
+
+
+
+  #onTargetLocationUpdated(targetFront) {
+    this.#updateFrames({
+      frameData: {
+        id: targetFront.actorID,
+        url: targetFront.url,
+        title: targetFront.title,
+      },
+    });
+
+    if (targetFront.isTopLevel) {
+      this.#refreshHostTitle();
+      this.#setDebugTargetData();
+    }
+  }
 
   
 
