@@ -53,7 +53,12 @@ class Theme {
     this.darkDetails = darkDetails;
     this.windowId = windowId;
 
-    if (startupData?.lwtData) {
+    if (
+      startupData?.lwtData?.dataVersion == LightweightThemeManager.DATA_VERSION
+    ) {
+      
+      
+      
       
       
       
