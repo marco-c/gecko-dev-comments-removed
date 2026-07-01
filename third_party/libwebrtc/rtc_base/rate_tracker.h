@@ -33,12 +33,7 @@ class RateTracker {
   double ComputeRateForInterval(Timestamp current_time,
                                 TimeDelta interval) const;
 
-  
-  
-  double Rate(Timestamp current_time) const {
-    return ComputeRateForInterval(
-        current_time, TimeDelta::Millis(bucket_milliseconds_) * bucket_count_);
-  }
+  double Rate(Timestamp current_time) const;
 
   
   int64_t TotalSampleCount() const;
@@ -60,6 +55,5 @@ class RateTracker {
 };
 
 }  
-
 
 #endif  
