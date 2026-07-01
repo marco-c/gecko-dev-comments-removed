@@ -26,7 +26,8 @@ class ReplacedHttpResponse : nsIReplacedHttpResponse {
   nsCString mResponseStatusText;
   nsCString mResponseBody;
   nsHttpHeaderArray mResponseHeaders;
-  Atomic<bool> mInVisitHeaders{false};
+  
+  Atomic<uint32_t> mInVisitHeaders{0};
 };
 
 }  

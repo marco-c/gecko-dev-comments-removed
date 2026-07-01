@@ -254,7 +254,8 @@ class nsHttpResponseHead {
   
   mutable RecursiveMutex mRecursiveMutex{"nsHttpResponseHead.mRecursiveMutex"};
   
-  bool mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){false};
+  
+  uint32_t mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){0};
 
   friend struct IPC::ParamTraits<nsHttpResponseHead>;
 };
