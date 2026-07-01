@@ -45,6 +45,7 @@ register_strategy(
     kwargs={"split_args": lambda *args: (["docs"], None)},
 )(All)
 register_strategy("test", args=("skip-unless-schedules",))(Alias)
+register_strategy("test-backstop", args=("skip-unless-backstop",))(Alias)
 register_strategy("test-inclusive", args=("skip-unless-schedules",))(Alias)
 register_strategy("test-verify", args=("skip-unless-schedules",))(Alias)
 register_strategy("upload-symbols", args=("never",))(Alias)
@@ -123,11 +124,8 @@ class project:
     beta = {
         
         
-        
-        "test": All(
-            "skip-unless-push-interval-5",
-            "skip-constrained",
-        ),
+        "test": Alias("always"),
+        "test-backstop": Alias("always"),
     }
     """Strategy overrides that apply to beta."""
 
