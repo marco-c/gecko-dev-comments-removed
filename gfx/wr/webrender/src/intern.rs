@@ -203,18 +203,14 @@ impl<I: Internable> DataStore<I> {
 }
 
 
+
+
+
+
 impl<I: Internable> ops::Index<Handle<I>> for DataStore<I> {
     type Output = I::StoreData;
     fn index(&self, handle: Handle<I>) -> &I::StoreData {
         self.items[handle.index as usize].as_ref().expect("Bad datastore lookup")
-    }
-}
-
-
-
-impl<I: Internable> ops::IndexMut<Handle<I>> for DataStore<I> {
-    fn index_mut(&mut self, handle: Handle<I>) -> &mut I::StoreData {
-        self.items[handle.index as usize].as_mut().expect("Bad datastore lookup")
     }
 }
 
