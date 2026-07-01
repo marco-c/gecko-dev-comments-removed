@@ -31,6 +31,7 @@
 #include "base/eintr_wrapper.h"
 #include "base/string_util.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -121,6 +122,20 @@ static Maybe<unsigned> HaveMemfd() {
 #ifdef USE_MEMFD_CREATE
   static const Maybe<unsigned> kHave = []() -> Maybe<unsigned> {
     unsigned flags = MFD_CLOEXEC | MFD_ALLOW_SEALING;
+
+#  ifdef MOZ_VALGRIND
+    
+    if (RUNNING_ON_VALGRIND) {
+      flags &= ~MFD_ALLOW_SEALING;
+    }
+#  endif
+    
+    if (PR_GetEnv("MOZ_SHM_NO_SEALS")) {
+      flags &= ~MFD_ALLOW_SEALING;
+    }
+
+    
+    
 #  ifdef MFD_NOEXEC_SEAL
     flags |= MFD_NOEXEC_SEAL;
 #  endif
@@ -173,6 +188,10 @@ static Maybe<unsigned> HaveMemfd() {
 #endif  
 }
 
+static bool MemfdCanSeal(Maybe<unsigned> aMaybeFlags) {
+  return aMaybeFlags && (*aMaybeFlags & MFD_ALLOW_SEALING);
+}
+
 bool AppendPosixShmPrefix(std::string* aStr, pid_t aPid) {
   if (HaveMemfd()) {
     return false;
@@ -207,8 +226,9 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   mozilla::UniqueFileHandle frozen_fd;
 
 #ifdef USE_MEMFD_CREATE
-  if (auto flags = HaveMemfd()) {
-    fd.reset(memfd_create("mozilla-ipc", *flags));
+  auto memfdStatus = HaveMemfd();
+  if (memfdStatus) {
+    fd.reset(memfd_create("mozilla-ipc", *memfdStatus));
     if (!fd) {
       
       
@@ -272,7 +292,7 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   
   
   
-  if (!HaveMemfd()) {
+  if (!memfdStatus) {
     int rv;
     
     
@@ -311,7 +331,7 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
                     strerror(*fallocateError));
       }
       MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
-                  "fallocate failed to set shm size: {}",
+                  "ftruncate failed to set shm size: {}",
                   strerror(ftruncate_errno));
       return Nothing();
     }
@@ -320,6 +340,15 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   if (aFreezable) {
     *aFreezable = std::move(frozen_fd);
   }
+#ifdef USE_MEMFD_CREATE
+  
+  if (MemfdCanSeal(memfdStatus) &&
+      fcntl(fd.get(), F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW) != 0) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
+                "failed to seal size of shm: {}", strerror(errno));
+  }
+#endif
+
   return Some(std::move(fd));
 }
 
@@ -354,14 +383,10 @@ PlatformHandle Platform::CloneHandle(const PlatformHandle& aHandle) {
 
 bool Platform::Freeze(FreezableHandle& aHandle) {
 #ifdef USE_MEMFD_CREATE
-#  ifdef MOZ_VALGRIND
-  
-  static const bool haveSeals = RUNNING_ON_VALGRIND == 0;
-#  else
-  static const bool haveSeals = true;
-#  endif
-  static const bool useSeals = !PR_GetEnv("MOZ_SHM_NO_SEALS");
-  if (HaveMemfd() && haveSeals && useSeals) {
+  if (MemfdCanSeal(HaveMemfd())) {
+    
+    
+    
     
     
     
@@ -463,6 +488,42 @@ size_t Platform::PageSize() { return sysconf(_SC_PAGESIZE); }
 
 size_t Platform::AllocationGranularity() { return PageSize(); }
 
-bool Platform::IsSafeToMap(const PlatformHandle&) { return true; }
+bool Platform::IsSafeToMap(const PlatformHandle& aHandle, uint64_t aSize) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef USE_MEMFD_CREATE
+  if (MemfdCanSeal(HaveMemfd())) {
+    static constexpr int kReqSeals = F_SEAL_SHRINK;
+    int seals = fcntl(aHandle.get(), F_GET_SEALS);
+    if (seals == -1 || (~seals & kReqSeals)) {
+      MOZ_ASSERT(seals != -1 || errno == EINVAL);
+      MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning, "shm is shrinkable??");
+      return false;
+    }
+  }
+#endif
+
+  struct stat st;
+  if (fstat(aHandle.get(), &st) != 0) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning, "failed to fstat shm: {}",
+                strerror(errno));
+    return false;
+  }
+  CheckedInt<uint64_t> fileSize(st.st_size);
+  if (!fileSize.isValid() || fileSize.value() < aSize) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
+                "shm is too short ({} < {})", st.st_size, aSize);
+    return false;
+  }
+  return true;
+}
 
 }  
