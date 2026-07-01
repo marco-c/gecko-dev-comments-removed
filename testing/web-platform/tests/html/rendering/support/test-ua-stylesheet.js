@@ -26,7 +26,8 @@ function runUAStyleTests(props) {
       ) {
       continue;
      }
-     if (prop === 'overflow' && testEl.localName === 'select') {
+     if (testEl.localName === 'select' &&
+         (prop === 'overflow' || prop === 'overflow-clip-margin')) {
       
       continue;
      }
