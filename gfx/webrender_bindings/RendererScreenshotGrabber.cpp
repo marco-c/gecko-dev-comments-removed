@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RendererScreenshotGrabber.h"
 
 #include "RendererOGL.h"
@@ -62,9 +60,16 @@ void RendererScreenshotGrabber::GrabScreenshot(
     Renderer* aRenderer, const gfx::IntSize& aWindowSize) {
   gfx::IntSize screenshotSize;
 
+  
+  
+  
+  ImageFormat readbackFormat = wr_renderer_supports_bgra_readback(aRenderer)
+                                   ? ImageFormat::BGRA8
+                                   : ImageFormat::RGBA8;
+
   AsyncScreenshotHandle handle = wr_renderer_get_screenshot_async(
       aRenderer, 0, 0, aWindowSize.width, aWindowSize.height,
-      mMaxScreenshotSize.width, mMaxScreenshotSize.height, ImageFormat::BGRA8,
+      mMaxScreenshotSize.width, mMaxScreenshotSize.height, readbackFormat,
       &screenshotSize.width, &screenshotSize.height);
 
   mCurrentFrameQueueItem = Some(QueueItem{
@@ -84,9 +89,12 @@ void RendererScreenshotGrabber::ProcessQueue(Renderer* aRenderer) {
                                                 gfx::DataSourceSurface::WRITE);
           int32_t destStride = map.GetStride();
 
+          
+          
           bool success = wr_renderer_map_and_recycle_screenshot(
               aRenderer, item.mHandle, map.GetData(),
-              destStride * aTargetSurface->GetSize().height, destStride);
+              destStride * aTargetSurface->GetSize().height, destStride,
+              ImageFormat::BGRA8);
 
           return success;
         });

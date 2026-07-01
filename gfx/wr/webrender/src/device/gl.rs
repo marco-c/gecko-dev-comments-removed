@@ -1090,6 +1090,10 @@ pub struct Capabilities {
     
     pub requires_vao_rebind_after_orphaning: bool,
     
+    
+    
+    pub supports_bgra_read: bool,
+    
     pub renderer_name: String,
 }
 
@@ -1686,6 +1690,15 @@ impl Device {
                 gl::GlType::Gles => true,
             };
 
+        
+        
+        
+        
+        let supports_bgra_read = match gl.get_type() {
+            gl::GlType::Gl => true,
+            gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_read_format_bgra"),
+        };
+
         let (color_formats, bgra_formats, bgra_pixel_type, bgra8_sampling_swizzle, texture_storage_usage) = match gl.get_type() {
             
             gl::GlType::Gl if supports_texture_storage && supports_texture_swizzle => (
@@ -2028,6 +2041,7 @@ impl Device {
                 uses_native_antialiasing,
                 supports_image_external_essl3,
                 requires_vao_rebind_after_orphaning,
+                supports_bgra_read,
                 renderer_name,
             },
 
@@ -3408,6 +3422,10 @@ impl Device {
         )
     }
 
+    
+    
+    
+    
     
     pub fn read_pixels_into(
         &mut self,
