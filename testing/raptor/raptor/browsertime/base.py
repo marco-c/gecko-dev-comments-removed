@@ -4,6 +4,7 @@
 
 
 
+import datetime
 import json
 import os
 import pathlib
@@ -432,7 +433,28 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             ),
         ]
 
+        
+        
+        
+        
+        
         moz_log_settings = os.environ.get("MOZ_LOG")
+        if not moz_log_settings:
+            moz_log_settings = test.get("firefox_moz_log") or None
+        if not moz_log_settings:
+            preset = (test.get("firefox_log_modules") or "").strip().lower()
+            if preset == "network":
+                
+                
+                
+                moz_log_settings = (
+                    "timestamp,append,sync,"
+                    "nsHostResolver:5,"
+                    "nsSocketTransport:4,"
+                    "nsHttp:3,"
+                    "TRRIDLECONNECTION:5,"
+                    "cookie:3"
+                )
         if moz_log_settings:
             LOG.info(f"Passing MOZ_LOG settings to browsertime: {moz_log_settings}")
             browsertime_options.extend(["--firefox.collectMozLog", "true"])
@@ -916,9 +938,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             )
             profiler_test = deepcopy(test)
             cmd = self._compose_cmd(profiler_test, timeout, True)
-            LOG.info(
-                "browsertime profiling cmd: {}".format(" ".join([str(c) for c in cmd]))
-            )
+            LOG.info(f"browsertime profiling cmd: {' '.join([str(c) for c in cmd])}")
             mozprocess.run_and_wait(
                 cmd,
                 output_line_handler=line_handler,
@@ -994,7 +1014,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
         LOG.info(f"timeout (ms): {timeout}")
         LOG.info(f"browsertime cwd: {os.getcwd()}")
-        LOG.info("browsertime cmd: {}".format(" ".join([str(c) for c in cmd])))
+        LOG.info(f"browsertime cmd: {' '.join([str(c) for c in cmd])}")
         if self.browsertime_video:
             LOG.info(f"browsertime_ffmpeg: {self.browsertime_ffmpeg}")
 
@@ -1022,7 +1042,32 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 pathlib.Path(os.environ["MOZ_FETCHES_DIR"], "browsertime")
             )
 
-        LOG.info("PATH: {}".format(env["PATH"]))
+        LOG.info(f"PATH: {env['PATH']}")
+
+        
+        
+        
+        
+        
+        browsertime_log_path = os.path.join(
+            os.environ.get("MOZ_UPLOAD_DIR", os.getcwd()), "browsertime.log"
+        )
+        try:
+            browsertime_log_fp = open(browsertime_log_path, "ab", buffering=0)
+        except OSError as e:
+            LOG.warning(
+                f"Could not open browsertime stderr log {browsertime_log_path}: {e}"
+            )
+            browsertime_log_fp = None
+        else:
+            LOG.info(f"browsertime log file: {browsertime_log_path}")
+            header = (
+                f"\n===== {test.get('name', '?')} | {datetime.datetime.utcnow().isoformat()} =====\n"
+            ).encode()
+            try:
+                browsertime_log_fp.write(header)
+            except Exception:
+                pass
 
         
         etw_started = False
@@ -1049,6 +1094,17 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     if self.browsertime_failure, and raise an Exception if necessary
                     to stop Raptor execution (preventing the results processing).
                     """
+
+                    
+                    
+                    
+                    if browsertime_log_fp is not None:
+                        try:
+                            browsertime_log_fp.write(line)
+                            if not line.endswith(b"\n"):
+                                browsertime_log_fp.write(b"\n")
+                        except Exception:
+                            pass
 
                     
                     
@@ -1197,6 +1253,11 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             raise
 
         finally:
+            if browsertime_log_fp is not None:
+                try:
+                    browsertime_log_fp.close()
+                except Exception:
+                    pass
             if etw_started and self.etw_profiler:
                 try:
                     
