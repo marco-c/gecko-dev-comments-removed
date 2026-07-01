@@ -140,24 +140,24 @@ class SctpSidAllocator {
 
 class SctpDataChannel : public DataChannelInterface {
  public:
+  
+  
+  
+  
+  
   static scoped_refptr<SctpDataChannel> Create(
       WeakPtr<SctpDataChannelControllerInterface> controller,
       absl::string_view label,
       bool connected_to_transport,
       const InternalDataChannelInit& config,
+      scoped_refptr<PendingTaskSafetyFlag> controller_safety,
       Thread* signaling_thread,
       Thread* network_thread);
 
   
   
-  
-  
-  
-  
-  
   static scoped_refptr<DataChannelInterface> CreateProxy(
-      scoped_refptr<SctpDataChannel> channel,
-      scoped_refptr<PendingTaskSafetyFlag> signaling_safety);
+      scoped_refptr<SctpDataChannel> channel);
 
   void RegisterObserver(DataChannelObserver* observer) override;
   void UnregisterObserver() override;
@@ -244,6 +244,7 @@ class SctpDataChannel : public DataChannelInterface {
                   WeakPtr<SctpDataChannelControllerInterface> controller,
                   absl::string_view label,
                   bool connected_to_transport,
+                  scoped_refptr<PendingTaskSafetyFlag> controller_safety,
                   Thread* signaling_thread,
                   Thread* network_thread);
   ~SctpDataChannel() override;
@@ -308,6 +309,7 @@ class SctpDataChannel : public DataChannelInterface {
   bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
   bool connected_to_transport_ RTC_GUARDED_BY(network_thread_) = false;
   PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
+  scoped_refptr<PendingTaskSafetyFlag> controller_safety_;
 };
 
 }  
