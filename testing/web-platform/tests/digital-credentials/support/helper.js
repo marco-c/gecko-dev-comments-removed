@@ -218,6 +218,40 @@ const allMappings = {
 
 
 
+function makeCanonicalRequest(type, protocol) {
+  const mapping = allMappings[type];
+  if (protocol in mapping) {
+    return mapping[ (protocol)]();
+  }
+  throw new Error(`Unknown ${type} protocol: ${protocol}`);
+}
+
+
+
+
+
+
+
+export function makeCanonicalCreateRequest(protocol) {
+  return makeCanonicalRequest('create', protocol);
+}
+
+
+
+
+
+
+
+export function makeCanonicalGetRequest(protocol) {
+  return makeCanonicalRequest('get', protocol);
+}
+
+
+
+
+
+
+
 
 
 
@@ -324,4 +358,30 @@ export function loadIframe(iframe, url) {
     }
     iframe.src = url.toString();
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+export function makeGetOptionsWithArbitraryProtocol(protocol, data = {}, signal) {
+  
+  const options = {
+    digital: {
+      requests: [{ protocol, data }]
+    }
+  };
+
+  if (signal) {
+    options.signal = signal;
+  }
+
+  return options;
 }
