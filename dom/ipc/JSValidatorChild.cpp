@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/JSValidatorChild.h"
 
 #include "js/CompileOptions.h"
@@ -202,8 +200,6 @@ JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS(
   
   JS::PrefableCompileOptions prefableOptions;
   xpc::SetPrefableCompileOptions(prefableOptions);
-  
-  prefableOptions.setAsmJSOption(JS::AsmJSOption::DisabledByAsmJSPref);
 
   JS::CompileOptions options(prefableOptions);
   RefPtr<JS::Stencil> stencil =

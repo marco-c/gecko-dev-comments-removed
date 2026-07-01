@@ -228,13 +228,6 @@ JSObject* Module::createObject(JSContext* cx) const {
   return WasmModuleObject::create(cx, *this, proto);
 }
 
-
-JSObject* Module::createObjectForAsmJS(JSContext* cx) const {
-  
-  
-  return WasmModuleObject::create(cx, *this, nullptr);
-}
-
 bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
   
   

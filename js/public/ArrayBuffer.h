@@ -325,7 +325,6 @@ extern JS_PUBLIC_API uint8_t* GetArrayBufferData(JSObject* obj,
 
 
 
-
 extern JS_PUBLIC_API bool DetachArrayBuffer(JSContext* cx,
                                             Handle<JSObject*> obj);
 

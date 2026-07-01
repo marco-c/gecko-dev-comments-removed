@@ -48,7 +48,6 @@ enum class TranscodeResult : uint8_t {
   
   Failure = 0x10,
   Failure_BadBuildId = Failure | 0x1,
-  Failure_AsmJSNotSupported = Failure | 0x2,
   Failure_BadDecode = Failure | 0x3,
 
   

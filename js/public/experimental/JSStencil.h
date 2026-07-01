@@ -203,7 +203,6 @@ namespace JS {
 
 
 
-
 extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    Stencil* stencil,
                                                    TranscodeBuffer& buffer);
@@ -262,7 +261,6 @@ extern JS_PUBLIC_API bool FinishCollectingDelazifications(
 
 extern JS_PUBLIC_API void AbortCollectingDelazifications(JSScript* script);
 extern JS_PUBLIC_API void AbortCollectingDelazifications(JSObject* module);
-
 
 
 

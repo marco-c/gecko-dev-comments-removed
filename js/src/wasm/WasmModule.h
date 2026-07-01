@@ -189,8 +189,6 @@ class Module : public JS::WasmModule {
   
 
   JSObject* createObject(JSContext* cx) const override;
-  
-  JSObject* createObjectForAsmJS(JSContext* cx) const override;
 
   
 
