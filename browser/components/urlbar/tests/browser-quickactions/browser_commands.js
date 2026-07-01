@@ -231,6 +231,16 @@ let COMMANDS_TESTS = [
       return true;
     },
   },
+  {
+    
+    
+    
+    
+    cmd: "edit pdf",
+    uri: "about:pdf",
+    testFun: async () =>
+      gBrowser.selectedBrowser.currentURI.spec == "about:pdf",
+  },
 ];
 
 add_task(async function test_pages() {
