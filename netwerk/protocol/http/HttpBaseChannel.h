@@ -715,6 +715,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
       const OpaqueResponseBlockedTelemetryReason aTelemetryReason);
   void AllowOpaqueResponseAfterSniff();
   void SetChannelBlockedByOpaqueResponse();
+  
+  
+  virtual void OnOpaqueResponseAllowed() {}
   bool Http3Allowed() const;
 
   virtual void ExplicitSetUploadStreamLength(uint64_t aContentLength,

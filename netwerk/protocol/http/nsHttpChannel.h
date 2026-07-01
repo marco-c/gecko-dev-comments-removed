@@ -221,6 +221,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   enum class SnifferType { Media, Image };
   void DisableIsOpaqueResponseAllowedAfterSniffCheck(SnifferType aType);
 
+  void OnOpaqueResponseAllowed() override;
+
  public: 
   uint32_t GetRequestTime() const { return mRequestTime; }
   const nsACString& GetLNAPromptAction() const { return mLNAPromptAction; }
@@ -626,6 +628,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsICacheEntry> mAltDataCacheEntry;
+  
+  
+  
+  
+  nsCOMPtr<nsICacheEntry> mORBValidationCacheEntry;
 
   nsCOMPtr<nsIURI> mCacheEntryURI;
   nsCString mCacheIdExtension;

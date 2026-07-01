@@ -6022,7 +6022,13 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   
 
   bool doom = false;
-  if (LoadInitedCacheEntry()) {
+  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref) {
+    
+    
+    
+    
+    doom = true;
+  } else if (LoadInitedCacheEntry()) {
     MOZ_ASSERT(mResponseHead, "oops");
     if (NS_FAILED(mStatus) && doomOnFailure && LoadCacheEntryIsWriteOnly() &&
         (!mResponseHead || !mResponseHead->IsResumable())) {
@@ -6068,6 +6074,13 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
         }
       }
     }
+
+    
+    
+    
+    if (mORB && mORB->IsSniffing()) {
+      mORBValidationCacheEntry = mCacheEntry;
+    }
   }
 
   mCachedResponseHead = nullptr;
@@ -6080,6 +6093,15 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   mCacheEntry = nullptr;
   StoreCacheEntryIsWriteOnly(false);
   StoreInitedCacheEntry(false);
+}
+
+void nsHttpChannel::OnOpaqueResponseAllowed() {
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  mORBValidationCacheEntry = nullptr;
 }
 
 
@@ -7303,6 +7325,15 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mWebTransportSessionEventListener = nullptr;
   mCanceled = true;
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
+
+  
+  
+  
+  
+  if (mChannelBlockedByOpaqueResponse && mORBValidationCacheEntry) {
+    mORBValidationCacheEntry->AsyncDoom(nullptr);
+    mORBValidationCacheEntry = nullptr;
+  }
 
   
   
