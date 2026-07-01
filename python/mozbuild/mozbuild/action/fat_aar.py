@@ -91,12 +91,14 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
             aar_file.file.filename, JarReader(fileobj=aar_file.open())
         )
         for path, fileobj in UnpackFinder(jar_finder):
+            path_with_prefix = mozpath.join("geckoview", path)
+
             
             if mozpath.match(path, "jni/**"):
-                copier.add(path, fileobj)
+                copier.add(path_with_prefix, fileobj)
 
             elif path in arch_prefs:
-                copier.add(path, fileobj)
+                copier.add(path_with_prefix, fileobj)
 
             elif path in ("classes.jar", "annotations.zip"):
                 
@@ -107,29 +109,29 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
                 z = ZipFile(BytesIO(fileobj.open().read()))
                 for r in z.namelist():
                     fingerprint = sha1(z.open(r).read()).hexdigest()
-                    diffs[f"{path}!/{r}"][fingerprint].append(arch)
+                    diffs[f"{path_with_prefix}!/{r}"][fingerprint].append(arch)
 
             else:
                 fingerprint = sha1(fileobj.open().read()).hexdigest()
                 
                 
-                diffs[path][fingerprint].append(arch)
+                diffs[path_with_prefix][fingerprint].append(arch)
 
             missing_arch_prefs.discard(path)
 
     
     
     allow_pattern_list = {
-        "AndroidManifest.xml",  
-        "classes.jar!/org/mozilla/gecko/util/HardwareUtils.class",  
-        "classes.jar!/org/mozilla/geckoview/BuildConfig.class",
+        "geckoview/AndroidManifest.xml",  
+        "geckoview/classes.jar!/org/mozilla/gecko/util/HardwareUtils.class",  
+        "geckoview/classes.jar!/org/mozilla/geckoview/BuildConfig.class",
         
-        "chrome/toolkit/content/global/buildconfig.html",
+        "geckoview/chrome/toolkit/content/global/buildconfig.html",
         
         
-        "**/*.ftl",
-        "**/*.dtd",
-        "**/*.properties",
+        "geckoview/**/*.ftl",
+        "geckoview/**/*.dtd",
+        "geckoview/**/*.properties",
     }
 
     not_allowed = OrderedDict()
