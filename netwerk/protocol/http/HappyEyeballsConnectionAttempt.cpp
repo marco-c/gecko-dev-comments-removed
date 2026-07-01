@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// HttpLog.h should generally be included first
+
+
+
+
 #include "HttpLog.h"
 
 #include <algorithm>
@@ -26,7 +26,7 @@
 #include "nsSocketTransportService2.h"
 #include "sslerr.h"
 
-// Log on level :5, instead of default :4.
+
 #undef LOG
 #define LOG(args) LOG5(args)
 #undef LOG_ENABLED
@@ -84,10 +84,10 @@ HappyEyeballsConnectionAttempt::~HappyEyeballsConnectionAttempt() {
   LOG(("HappyEyeballsConnectionAttempt dtor %p", this));
 }
 
-// Returns true if the network connectivity service has positively determined
-// that IPv6 is unreachable on the current network while IPv4 works. The UNKNOWN
-// state (probes still in flight) is intentionally treated as "no signal" so we
-// stay optimistic.
+
+
+
+
 static bool ShouldPreferIPv4DueToNoIPv6Connectivity() {
   RefPtr<NetworkConnectivityService> ncs =
       NetworkConnectivityService::GetSingleton();
@@ -111,21 +111,21 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     ipPref = happy_eyeballs::IpPreference::DualStackPreferV4;
   }
 
-  // Clamp delays to at least 10ms to avoid excessive connection attempts.
+  
   uint32_t resolutionDelay = std::max(
       10u, StaticPrefs::network_http_happy_eyeballs_resolution_delay());
   uint32_t connectionAttemptDelay = std::max(
       10u, StaticPrefs::network_http_happy_eyeballs_connection_attempt_delay());
 
-  // Restrict the protocols the Happy Eyeballs engine may attempt to those
-  // enabled by prefs, so disabled protocols are never raced (from HTTPS
-  // records, IP hints, or alt-svc). NS_HTTP_DISALLOW_HTTP3 is set for
-  // transactions that can't use HTTP/3 (e.g. WebSocket upgrades), so honor it
-  // here too.
+  
+  
+  
+  
+  
   happy_eyeballs::HttpVersions httpVersions{
-      /* h1 */ true,
-      /* h2 */ StaticPrefs::network_http_http2_enabled(),
-      /* h3 */ nsHttpHandler::IsHttp3Enabled() &&
+       true,
+       StaticPrefs::network_http_http2_enabled(),
+       nsHttpHandler::IsHttp3Enabled() &&
           !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
@@ -134,12 +134,12 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
        "connectionAttemptDelay=%u",
        static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
 
-  // An explicit HTTP/3 connection info (an alt-svc HTTP/3 route, or a direct
-  // HTTP/3 connection such as WebTransport) must race HTTP/3. When there's an
-  // alt-svc route the HTTP/3 port is the routed port; for a direct HTTP/3
-  // connection (no routed host) it's the origin port. This is checked before
-  // the routed-host-empty case below so direct HTTP/3 connections aren't
-  // mistakenly raced over TCP.
+  
+  
+  
+  
+  
+  
   if (mConnInfo->IsHttp3()) {
     LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
@@ -211,22 +211,22 @@ HappyEyeballsConnectionAttempt::ClassifyConnectionResult(
   if (PossibleZeroRTTRetryError(aStatus)) {
     return ConnResultOutcome::RestartTransaction;
   }
-  // NET_RESET after 0-RTT was sent: the server rejected the early data
-  // (stale PSK ticket, mismatched QUIC transport params, H3 protocol
-  // error, TCP RST on TLS 1.3 early data, …). Restart on the same
-  // endpoint without 0-RTT rather than letting Restart()'s default
-  // CloneAsDirectRoute() strip the alt-svc / H3 route.
+  
+  
+  
+  
+  
   if (aStatus == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
     return ConnResultOutcome::RestartTransaction;
   }
-  // Local Network Access denial: the target IP space is not permitted.
-  // No address for this server will succeed; stop all attempts.
+  
+  
   if (aStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
     return ConnResultOutcome::AbortTransaction;
   }
-  // NSS / TLS errors are server-state-specific (cert verification, PSK
-  // resumption alert, transport-level alert during handshake, ...).
-  // Trying another resolved address won't help — they'll all fail the same way.
+  
+  
+  
   if (NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
     return ConnResultOutcome::AbortTransaction;
   }
@@ -238,9 +238,9 @@ void HappyEyeballsConnectionAttempt::ReleaseRealTransaction(
   if (!mTransaction) {
     return;
   }
-  // Adopted: the carrier's stream still references the transaction;
-  // closing it here would null mConnection mid-flight (bug 2040246).
-  // Just drop our ref and let the carrier drive it.
+  
+  
+  
   if (mTransactionAdopted) {
     LOG(
         ("HappyEyeballsConnectionAttempt::ReleaseRealTransaction %p skipping "
@@ -250,9 +250,9 @@ void HappyEyeballsConnectionAttempt::ReleaseRealTransaction(
     return;
   }
   if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-    // Another attempt may have won and dispatched this still-pending
-    // transaction onto its connection (e.g. via DispatchSpdyPendingQ). Once it
-    // has a connection it's no longer ours to close.
+    
+    
+    
     if (trans->Connection()) {
       LOG(
           ("HappyEyeballsConnectionAttempt::ReleaseRealTransaction %p skipping "
@@ -266,8 +266,8 @@ void HappyEyeballsConnectionAttempt::ReleaseRealTransaction(
     }
   }
   mTransaction->Close(aCloseReason);
-  // Null out so later paths can't race with the Restart() / AddTransaction
-  // that Close just triggered.
+  
+  
   mTransaction = nullptr;
 }
 
@@ -280,7 +280,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
 
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
 
-  // Late establisher results can arrive after we've wound down. No-op.
+  
   if (IsTerminal()) {
     return NS_OK;
   }
@@ -308,9 +308,9 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
         PRErrorCode prCode =
             -static_cast<PRErrorCode>(NS_ERROR_GET_CODE(aStatus));
         if (!mozilla::psm::IsNSSErrorCode(prCode)) {
-          // NSPR-base error (e.g. PR_END_OF_FILE_ERROR): translate to the
-          // network-module nsresult that nsSocketTransport would have
-          // produced.
+          
+          
+          
           closeReason = ErrorAccordingToNSPR(prCode);
         }
       }
@@ -334,7 +334,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
   }
   rv = ProcessHappyEyeballsOutput();
 
-  // If drain didn't reach a terminal state, recompute activity state.
+  
   if (mState == State::ProcessingConnectionResult) {
     if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
       Transition(State::ZeroRttRacing);
@@ -365,9 +365,9 @@ Maybe<nsCString> HappyEyeballsConnectionAttempt::MaybeExtractRetryEchConfig(
     return Nothing();
   }
 
-  // H1/H2: NSS retry_configs aren't queryable from this callback; use the
-  // bytes cached by nsHttpConnection::PostProcessNPNSetup. H3: read from
-  // QuicSocketControl, populated by Http3Session::ProcessEvents.
+  
+  
+  
   nsAutoCString retryEchConfig;
   if (RefPtr<nsHttpConnection> httpConn = do_QueryObject(conn)) {
     retryEchConfig = httpConn->CachedRetryEchConfig();
@@ -438,8 +438,8 @@ void HappyEyeballsConnectionAttempt::FillConnectTimings(
   aTimings.connectStart = mFirstConnectionStart;
   aTimings.connectEnd = mFirstConnectEnd;
   if (aIsQuic) {
-    // QUIC has no separate TCP handshake; secureConnectionStart coincides
-    // with the connection start.
+    
+    
     aTimings.secureConnectionStart = mFirstConnectionStart;
   } else {
     aTimings.tcpConnectEnd = mFirstTcpConnectEnd;
@@ -454,9 +454,9 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
     return NS_OK;
   }
 
-  // Paused on a client-cert prompt: stop polling so no new attempts start
-  // (running ones continue). Resumed by OnClientAuthCertificateSelected or
-  // the holder's result.
+  
+  
+  
   if (mPausedForClientAuth) {
     LOG(("  paused for client-auth (holder id=%" PRIu64 "); not polling",
          mClientAuthHolderId));
@@ -506,7 +506,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
                              event.attempt_connection.port);
         if (res.isErr()) {
           LOG(("Failed to convert to NetAddr"));
-          // TODO: how to handle this error?
+          
           MOZ_ASSERT(false, "Failed to convert to NetAddr");
           return res.unwrapErr();
         }
@@ -550,7 +550,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
       case happy_eyeballs::Output::Tag::None:
         LOG(("happy_eyeballs::Output::Tag::None"));
-        // No more events to process
+        
         return NS_OK;
     }
   }
@@ -591,10 +591,10 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
   dnsFlags |=
       nsIDNSService::GetFlagsFromTRRMode(NS_HTTP_TRR_MODE_FROM_FLAGS(mCaps));
 
-  // When we get here, we are not resolving using any configured proxy likely
-  // because of individual proxy setting on the request or because the host is
-  // excluded from proxying.  Hence, force resolution despite global proxy-DNS
-  // configuration.
+  
+  
+  
+  
   dnsFlags |= nsIDNSService::RESOLVE_IGNORE_SOCKS_DNS;
 
   NS_ASSERTION(!(dnsFlags & nsIDNSService::RESOLVE_DISABLE_IPV6) ||
@@ -607,9 +607,9 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
 
 void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
     nsresult aStatus, nsITransport* aTransport, int64_t aProgress) {
-  // Capture the first racer to reach each connect milestone across all racers.
-  // connectStart (mFirstConnectionStart) and connectEnd (mFirstConnectEnd) are
-  // set elsewhere.
+  
+  
+  
   if (aStatus == NS_NET_STATUS_CONNECTED_TO && mFirstTcpConnectEnd.IsNull()) {
     mFirstTcpConnectEnd = TimeStamp::Now();
   } else if (aStatus == NS_NET_STATUS_TLS_HANDSHAKE_STARTING &&
@@ -621,9 +621,9 @@ void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
       !mTransaction) {
     return;
   }
-  // Skip forwarding to NullTransaction/SpeculativeTransaction. They fire the
-  // activity distributor themselves, causing duplicate events. The statuses
-  // will be replayed to the real transaction when Claim() replaces it.
+  
+  
+  
   if (mTransaction->IsNullTransaction()) {
     return;
   }
@@ -650,12 +650,12 @@ nsresult HappyEyeballsConnectionAttempt::CheckLNAForAddr(const NetAddr& aAddr) {
   }
 
   auto addrSpace = aAddr.GetIpAddressSpace();
-  // Local targets are always checked pre-TLS. Private targets on HTTPS can
-  // be deferred until after the TLS handshake succeeds (see
-  // nsHttpConnection::HandshakeDoneInternal) when
-  // network.lna.defer_https_check is set.
-  // This is in order to prevent unactionable LNA prompts when captive portals
-  // temporarily intercept DNS - See bug 2017712.
+  
+  
+  
+  
+  
+  
   bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
                       StaticPrefs::network_lna_defer_https_check();
   if (addrSpace != nsILoadInfo::IPAddressSpace::Local &&
@@ -696,14 +696,14 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
     nsIDNSService::DNSFlags flags = aFlags.unwrap();
     switch (aType) {
       case happy_eyeballs::DnsRecordType::Https: {
-        // Skip the HTTPS RR lookup in two cases:
-        //   1. Plain-HTTP origin (!FirstHopSSL). HTTPS RR is an HTTPS-upgrade
-        //      mechanism; nsHttpChannel normally does the upgrade before
-        //      creating connection, but some edge cases slip through with an
-        //      http:// conn info.
-        //   2. NS_HTTP_DISALLOW_HTTPS_RR is set.
-        // Setting rv = NS_ERROR_NOT_AVAILABLE feeds an empty HTTPS RR to the
-        // state machine instead of issuing a query.
+        
+        
+        
+        
+        
+        
+        
+        
         if (!mConnInfo->FirstHopSSL() ||
             (!StaticPrefs::network_dns_force_use_https_rr() &&
              (mCaps & NS_HTTP_DISALLOW_HTTPS_RR))) {
@@ -745,7 +745,7 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
     return;
   }
 
-  // Notify the state machine about DNS failure asynchronously.
+  
   NS_DispatchToCurrentThread(
       NS_NewRunnableFunction("HappyEyeballsConnectionAttempt::DNSLookup",
                              [self = RefPtr{this}, rv, aType, aId]() {
@@ -785,17 +785,18 @@ void HappyEyeballsConnectionAttempt::MaybeForward0RTTSecurityInfo(
   }
 }
 
-void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
+void HappyEyeballsConnectionAttempt::HandleConnectionResult(
     Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-    TCPConnectionEstablisher* aEstablisher, uint64_t aId) {
-  RefPtr<TCPConnectionEstablisher> establisher = aEstablisher;
+    ConnectionEstablisher* aEstablisher, uint64_t aId) {
+  RefPtr<ConnectionEstablisher> establisher = aEstablisher;
   mConnectionEstablisherTable.Remove(aId);
   NetAddr addr = establisher->Addr();
 
   LOG(
-      ("HappyEyeballsConnectionAttempt::HandleTCPConnectionResult %p addr=[%s] "
-       "family=[%d] id=%" PRIu64,
-       this, addr.ToString().get(), addr.raw.family, aId));
+      ("HappyEyeballsConnectionAttempt::HandleConnectionResult %p addr=[%s] "
+       "family=[%d] id=%" PRIu64 " isUDP=%d",
+       this, addr.ToString().get(), addr.raw.family, aId,
+       establisher->IsUDP()));
 
   if (aResult.isErr()) {
     nsresult status = aResult.unwrapErr();
@@ -821,9 +822,9 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
   mWinnerAddrRecord = establisher->AddrRecord();
-  // The winner is the first connection to fully succeed.
+  
   mFirstConnectEnd = TimeStamp::Now();
-  // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
+  
   establisher->ClearResultConnection();
 
   ProcessConnectionResult(addr, NS_OK, aId);
@@ -846,15 +847,15 @@ void HappyEyeballsConnectionAttempt::AdoptWinner(
     return;
   }
 
-  // The trans must have been removed from the pending queue by
-  // LockInRealTransactionFromPendingQueue at Do0RTT time.
+  
+  
 #ifdef DEBUG
   {
     RefPtr<ConnectionEntry> entry(mEntry);
     if (entry) {
       RefPtr<PendingTransactionInfo> pendingInfo =
           gHttpHandler->ConnMgr()->FindTransactionHelper(
-              /*removeWhenFound*/ false, entry, realTransaction);
+               false, entry, realTransaction);
       MOZ_ASSERT(
           !pendingInfo,
           "real transaction must have been removed from the pending queue "
@@ -863,8 +864,8 @@ void HappyEyeballsConnectionAttempt::AdoptWinner(
   }
 #endif
   aWinner->Adopt(realTransaction);
-  // Real transaction now lives on the carrier's stream — disarm
-  // ReleaseRealTransaction for the rest of this HCA's lifetime (bug 2040246).
+  
+  
   mTransactionAdopted = true;
 }
 
@@ -879,7 +880,7 @@ bool HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue() {
   }
   RefPtr<PendingTransactionInfo> pendingInfo =
       gHttpHandler->ConnMgr()->FindTransactionHelper(
-          /*removeWhenFound*/ true, entry, realTransaction);
+           true, entry, realTransaction);
   LOG(
       ("HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue "
        "%p realTransaction=%p removed=%d",
@@ -914,8 +915,8 @@ HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
     NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
     bool aIsEchRetry) {
-  // TODO: we always use happy_eyeballs::ConnectionAttemptHttpVersions::H2OrH1
-  // for now. Do we really want to race H2 and H1?
+  
+  
   RefPtr<nsHttpConnectionInfo> info = mConnInfo->CloneAndAdoptPortAndAlpn(
       aPort, happy_eyeballs::ConnectionAttemptHttpVersions::H2OrH1);
   if (!aEchConfig.IsEmpty()) {
@@ -947,7 +948,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -986,7 +987,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleUDPConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -996,50 +997,6 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
 
   return NS_OK;
-}
-
-void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
-    Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-    UDPConnectionEstablisher* aEstablisher, uint64_t aId) {
-  RefPtr<UDPConnectionEstablisher> establisher = aEstablisher;
-  mConnectionEstablisherTable.Remove(aId);
-  NetAddr addr = establisher->Addr();
-
-  LOG(
-      ("HappyEyeballsConnectionAttempt::HandleUDPConnectionResult %p addr=[%s] "
-       "family=[%d] id=%" PRIu64,
-       this, addr.ToString().get(), addr.raw.family, aId));
-
-  if (aResult.isErr()) {
-    nsresult status = aResult.unwrapErr();
-    MaybeForward0RTTSecurityInfo(establisher);
-    Maybe<nsCString> retryEch = MaybeExtractRetryEchConfig(establisher, status);
-    establisher->Close(status);
-    if (retryEch) {
-      ProcessEchRetryConnectionResult(addr, aId, *retryEch);
-    } else {
-      ProcessConnectionResult(addr, status, aId);
-    }
-    return;
-  }
-
-  if (IsTerminal()) {
-    establisher->Close(NS_BASE_STREAM_CLOSED);
-    ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
-    return;
-  }
-
-  mOutputConn = aResult.unwrap();
-  mOutputTrans = establisher->Transaction();
-  mOutputConnId = aId;
-  mAddrFamily = addr.raw.family;
-  mWinnerAddrRecord = establisher->AddrRecord();
-  // The winner is the first connection to fully succeed.
-  mFirstConnectEnd = TimeStamp::Now();
-  // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
-  establisher->ClearResultConnection();
-
-  ProcessConnectionResult(addr, NS_OK, aId);
 }
 
 void HappyEyeballsConnectionAttempt::OnClientAuthCertificateRequested(
@@ -1107,15 +1064,15 @@ void HappyEyeballsConnectionAttempt::CloseHttpTransaction(
       MOZ_ASSERT_UNREACHABLE("Unknown FailureReason");
       break;
   }
-  // Defensive: Failed implies no winner, so should never be adopted.
-  // Route through ReleaseRealTransaction to keep the invariant uniform.
+  
+  
   ReleaseRealTransaction(reason, aEntry);
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {
   LOG(("HappyEyeballsConnectionAttempt::Abandon %p", this));
-  // Route every path (external + outcome entry actions) through Done.
-  // Idempotent — repeat calls are no-ops.
+  
+  
   if (mState == State::Done) {
     return;
   }
@@ -1134,11 +1091,11 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
   LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
        aTransactionAlreadyOnConn));
 
-  // Build coalescing keys for the winning connection and reprocess the pending
-  // queue before inserting connTCP into the active list. If our pending
-  // transaction can coalesce onto an existing connection, ProcessSpdyPendingQ
-  // dispatches it there now (and ReportSpdyConnection below closes the now
-  // redundant connTCP for coalescing).
+  
+  
+  
+  
+  
   if (mWinnerAddrRecord && StaticPrefs::network_http_http2_enabled() &&
       StaticPrefs::network_http_http2_coalesce_hostnames()) {
     if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord)) {
@@ -1152,9 +1109,9 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   nsHttpTransaction* realTrans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-  // WebSocket / WebTransport upgrades on an HTTP/2 connection must be
-  // dispatched through the extended CONNECT tunnel (Http2StreamTunnel)
-  // instead of being activated directly on the Http2Session.
+  
+  
+  
   bool deferExtendedConnect =
       isHttp2 && realTrans &&
       (realTrans->IsWebsocketUpgrade() || realTrans->IsForWebTransport());
@@ -1165,9 +1122,9 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
          "ProcessPendingQ\n",
          realTrans));
 
-    // Another racing attempt may have already dispatched this transaction onto
-    // a connection (bug 2048392). It's no longer ours to re-queue; doing so
-    // would re-dispatch onto its now transport-less connection.
+    
+    
+    
     if (realTrans->Connection()) {
       LOG(
           ("ProcessTCPConn trans=%p already dispatched to a connection; not "
@@ -1176,7 +1133,7 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
     } else {
       RefPtr<PendingTransactionInfo> existing =
           gHttpHandler->ConnMgr()->FindTransactionHelper(
-              /* removeWhenFound = */ false, entry, realTrans);
+               false, entry, realTrans);
       if (!existing) {
         gHttpHandler->ConnMgr()->AddTransaction(realTrans,
                                                 realTrans->Priority());
@@ -1194,13 +1151,13 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
       } else {
-        // Real transaction now on connTCP — disarm ReleaseRealTransaction.
+        
         mTransactionAdopted = true;
       }
     } else if (!isHttp2) {
-      // After about 1 second allow for the possibility of restarting a
-      // transaction due to server close. Keep at sub 1 second as that is the
-      // minimum granularity we can expect a server to be timing out with.
+      
+      
+      
       connTCP->SetIsReusedAfter(950);
 
       LOG(
@@ -1233,21 +1190,21 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
 
   if (!mFirstConnectionStart.IsNull()) {
     TimingStruct connectTimings;
-    FillConnectTimings(/* aIsQuic = */ true, connectTimings);
+    FillConnectTimings( true, connectTimings);
     aConn->SetConnectBootstrapTimings(
         connectTimings.connectStart, connectTimings.tcpConnectEnd,
         connectTimings.secureConnectionStart, connectTimings.connectEnd);
 
     if (aTransactionAlreadyOnConn) {
-      // Activate already ran before timings were set on the connection,
-      // so transfer them directly to the transaction.
-      // mTransaction may be null if restartedFallback0Rtt cleared it.
+      
+      
+      
       nsHttpTransaction* trans =
           mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
       if (trans) {
         TimingStruct timings;
         DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-        FillConnectTimings(/* aIsQuic = */ true, timings);
+        FillConnectTimings( true, timings);
         trans->BootstrapTimings(timings);
       }
     }
@@ -1274,7 +1231,7 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
       } else {
-        // Real transaction now on aConn — see ProcessTCPConn.
+        
         mTransactionAdopted = true;
       }
     } else {
@@ -1282,8 +1239,8 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       if (trans && trans->IsDone()) {
         LOG(("ProcessUDPConn transaction already done, not activating"));
       } else if (trans && trans->Connection()) {
-        // Another racing attempt already dispatched this transaction onto a
-        // connection (cf. bug 2048392 / bug 2048294); don't re-activate it.
+        
+        
         LOG(
             ("ProcessUDPConn transaction already dispatched to a connection, "
              "not activating"));
@@ -1316,62 +1273,62 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
     mOutputConn->SetDnsBootstrapTimings(dnsLookupStart, dnsLookupEnd);
   }
 
-  // Build the real transaction's timings from the first-racer domainLookup
-  // and connect spans (rather than the winning attempt's own collected
-  // timings) before dispatch. We preserve transactionPending explicitly —
-  // BootstrapTimings does a full struct overwrite, and DispatchTransaction
-  // will read the pending time to record wait-time metrics.
+  
+  
+  
+  
+  
   if (mOutputTrans && mTransaction) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
       RefPtr<nsHttpConnection> tcpConn = do_QueryObject(mOutputConn);
       TimingStruct timings;
       DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-      FillConnectTimings(/* aIsQuic = */ !tcpConn, timings);
+      FillConnectTimings( !tcpConn, timings);
       timings.transactionPending = realTransaction->GetPendingTime();
       realTransaction->BootstrapTimings(timings);
     }
   }
   mOutputTrans = nullptr;
 
-  // Fallback for the case where ShouldDisqualify didn't fire. A racer that did
-  // 0-RTT advanced the real transaction's request stream; its flags are
-  // half-set and the winner isn't a 0-RTT racer. Tell the real transaction the
-  // 0-RTT attempt was effectively rejected — FinishAdopted0RTT(restart=true)
-  // rewinds the stream to 0 and marks mDoNotTryEarlyData /
-  // mEarlyDataWasAvailable so the real transaction re-sends a fresh request on
-  // the winning conn.
+  
+  
+  
+  
+  
+  
+  
   bool restartedFallback0Rtt = false;
   nsHttpTransaction* trans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
     if (!mTransaction) {
-      // ReleaseRealTransaction already restarted the real transaction via
-      // Close()/Restart().  The winning connection goes into the pool below
-      // and the CM will dispatch the restarted transaction on it.
+      
+      
+      
     } else {
-      // AnyStarted() is set only after LockInRealTransactionFromPendingQueue()
-      // succeeds, which requires QueryHttpTransaction() to return non-null.
-      // So trans is always non-null here when mTransaction is non-null.
+      
+      
+      
       MOZ_ASSERT(trans,
                  "AnyStarted implies a live real transaction; "
                  "QueryHttpTransaction() should not be null");
       if (trans) {
-        trans->FinishAdopted0RTT(/*aRestart=*/true);
-        // LockInRealTransactionFromPendingQueue removed the real transaction
-        // from the pending queue when 0-RTT was entered. Re-queue it so the
-        // conn manager can dispatch it on the winning conn or open a new
-        // connection. Guard against double-queuing (which would trip
-        // CheckTransInPendingQueue's assertion in AddTransaction) by checking
-        // first.
-        // If another racing attempt already dispatched this transaction onto a
-        // connection it's no longer ours to re-queue (cf. bug 2048392 /
-        // bug 2048294).
+        trans->FinishAdopted0RTT(true);
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if (!trans->Connection()) {
           RefPtr<PendingTransactionInfo> existing;
           if (entry) {
             existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-                /*removeWhenFound=*/false, entry, trans);
+                false, entry, trans);
           }
           if (!existing) {
             gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
@@ -1388,19 +1345,19 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
           !mTransaction,
       "EnterSucceeded: 0-RTT transaction not re-queued and not adopted");
 
-  // Adopted: real transaction is on the conn and already out of the pending
-  // queue. Skip ProcessTCPConn's pending-queue branch — on H1 it
-  // would otherwise reclaim the live conn to the idle pool; on H2/H3
-  // it's a no-op.
-  // Also skip FindTransactionHelper for the fallback restart case: the
-  // re-inserted trans will be dispatched by ReportSpdyConnection →
-  // ProcessPendingQ once the conn is in the active pool.
+  
+  
+  
+  
+  
+  
+  
   bool alreadyOnConn = mZeroRttHandle->HadWinner() || restartedFallback0Rtt;
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
-    // If the original request had an alt-svc route but a direct TCP
-    // connection won, remove the Alt-Used header since we're not using
-    // the alt-svc route.
+    
+    
+    
     if (!mConnInfo->GetRoutedHost().IsEmpty()) {
       if (trans) {
         trans->RemoveAltSvcUsedHeader();
@@ -1415,7 +1372,7 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
 
   mOutputConn = nullptr;
 
-  // Make sure everything is released.
+  
   Abandon();
 
   entry->RemoveConnectionAttempt(this, false);
@@ -1471,34 +1428,34 @@ void HappyEyeballsConnectionAttempt::EnterRestartTransaction(
   RefPtr<ConnectionEntry> entry(mEntry);
 
   if (entry) {
-    // abandon=true routes through Abandon() -> Done; cleanup happens there.
-    // mEntry will be nulled by EnterDone, but |entry| is a local RefPtr
-    // and stays valid for the ReleaseRealTransaction call below.
+    
+    
+    
     entry->RemoveConnectionAttempt(this, true);
   }
 
-  // Both classifier inputs that land here (PossibleZeroRTTRetryError TLS
-  // alerts and NET_RESET while a racer had entered 0-RTT) mean "the
-  // alt-svc endpoint is fine, retry on the same endpoint without 0-RTT".
-  // Keep the alt-svc route so Restart()'s CloneAsDirectRoute() doesn't
-  // strip it and force a TCP/H2 downgrade.
+  
+  
+  
+  
+  
   if (mTransaction) {
     if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
       trans->DoNotRemoveAltSvc();
-      // FinishAdopted0RTT mutates state that only makes sense if a HET
-      // actually adopted 0-RTT (mResumptionAttempted, mDoNotTryEarlyData,
-      // rewind request stream); otherwise leave the txn alone and let
-      // Restart() itself disable 0-RTT and evict the stale token.
+      
+      
+      
+      
       if (aCloseReason == NS_ERROR_NET_RESET && mZeroRttHandle->AnyStarted()) {
-        trans->FinishAdopted0RTT(/* aRestart = */ true);
+        trans->FinishAdopted0RTT( true);
       }
     }
   }
 
   ReleaseRealTransaction(aCloseReason, entry);
 
-  // Fallback if the entry==nullptr path skipped the RemoveConnectionAttempt
-  // -> Abandon route above.
+  
+  
   if (mState != State::Done) {
     Abandon();
   }
@@ -1531,7 +1488,7 @@ void HappyEyeballsConnectionAttempt::EnterDone() {
   }
   mDnsRequestTable.Clear();
 
-  // Snapshot first — Close() callbacks may re-enter and mutate the table.
+  
   nsTArray<RefPtr<ConnectionEstablisher>> establishers;
   for (auto iter = mConnectionEstablisherTable.Iter(); !iter.Done();
        iter.Next()) {
@@ -1548,24 +1505,24 @@ void HappyEyeballsConnectionAttempt::EnterDone() {
   }
   mTimer = nullptr;
 
-  // 0-RTT started but no winner: the real transaction was pulled from the
-  // pending queue by LockInRealTransactionFromPendingQueue. Re-queue it
-  // (guarded against double-queue via FindTransactionHelper).
+  
+  
+  
   if (mTransaction && mZeroRttHandle->AnyStarted() &&
       !mZeroRttHandle->HadWinner()) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
       if (!realTransaction->Closed()) {
-        realTransaction->FinishAdopted0RTT(/*aRestart=*/true);
-        // If another racing attempt already dispatched this transaction onto a
-        // connection it's no longer ours to re-queue (cf. bug 2048392 /
-        // bug 2048294).
+        realTransaction->FinishAdopted0RTT(true);
+        
+        
+        
         if (!realTransaction->Connection()) {
           RefPtr<ConnectionEntry> entry(mEntry);
           RefPtr<PendingTransactionInfo> existing;
           if (entry) {
             existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-                /*removeWhenFound=*/false, entry, realTransaction);
+                false, entry, realTransaction);
           }
           if (!existing) {
             gHttpHandler->ConnMgr()->AddTransaction(
@@ -1594,7 +1551,7 @@ void HappyEyeballsConnectionAttempt::Transition(State aNext,
   LOG(("HappyEyeballsConnectionAttempt::Transition %p mState=%d aNext=%d", this,
        static_cast<int>(mState), static_cast<int>(aNext)));
 
-  // Activity-state self-loops are no-ops.
+  
   if (mState == aNext &&
       (aNext == State::Connecting || aNext == State::ZeroRttRacing ||
        aNext == State::ProcessingConnectionResult)) {
@@ -1664,8 +1621,8 @@ void HappyEyeballsConnectionAttempt::Transition(State aNext,
       break;
 
     case State::Done:
-      // Idempotent — external Abandon() and every outcome entry action
-      // both route here.
+      
+      
       if (mState == State::Done) {
         return;
       }
@@ -1715,8 +1672,8 @@ bool HappyEyeballsConnectionAttempt::Claim(nsHttpTransaction* newTransaction) {
            this, mTransaction.get(), newTransaction));
       mTransaction->Close(NS_ERROR_ABORT);
       mTransaction = newTransaction;
-      // Replay transport statuses that were sent while the null transaction
-      // was in place, in the correct order.
+      
+      
       static const nsresult kStatusOrder[] = {
           NS_NET_STATUS_RESOLVING_HOST, NS_NET_STATUS_RESOLVED_HOST,
           NS_NET_STATUS_CONNECTING_TO, NS_NET_STATUS_CONNECTED_TO};
@@ -1776,7 +1733,7 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
     mLastDnsError = status;
   }
 
-  // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used
+  
 
   nsCOMPtr<nsIDNSAddrRecord> addrRecord = do_QueryInterface(aRecord);
   if (addrRecord) {
@@ -1802,7 +1759,7 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
   nsTArray<NetAddr> addresses;
   addrRecord->GetAddresses(addresses);
 
-  // Filter to only IPv4 addresses
+  
   nsTArray<NetAddr> ipv4Addresses;
   for (const auto& addr : addresses) {
     if (addr.raw.family == AF_INET) {
@@ -1831,7 +1788,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
     mLastDnsError = status;
   }
 
-  // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used
+  
 
   nsCOMPtr<nsIDNSAddrRecord> addrRecord = do_QueryInterface(aRecord);
 
@@ -1849,7 +1806,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
   nsTArray<NetAddr> addresses;
   addrRecord->GetAddresses(addresses);
 
-  // Filter to only IPv6 addresses
+  
   nsTArray<NetAddr> ipv6Addresses;
   for (const auto& addr : addresses) {
     if (addr.raw.family == AF_INET6) {
@@ -1866,7 +1823,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
   return ProcessHappyEyeballsOutput();
 }
 
-// Helper function to convert ALPN string to HttpVersion enum
+
 static Maybe<happy_eyeballs::HttpVersion> AlpnStringToProtocol(
     const nsACString& aAlpn) {
   if (aAlpn.EqualsLiteral("h3")) {
@@ -1878,7 +1835,7 @@ static Maybe<happy_eyeballs::HttpVersion> AlpnStringToProtocol(
   if (aAlpn.EqualsLiteral("http/1.1")) {
     return Some(happy_eyeballs::HttpVersion::H1);
   }
-  // Unknown ALPN protocol
+  
   return Nothing();
 }
 
@@ -1910,7 +1867,7 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
   }
 
   nsTArray<RefPtr<nsISVCBRecord>> svcbRecords;
-  // TODO: Handle aNoHttp2, aNoHttp3, and aCname.
+  
   (void)httpsRecord->GetRecords(svcbRecords);
   if (svcbRecords.IsEmpty()) {
     nsTArray<happy_eyeballs::ServiceInfo> emptyArray;
@@ -1979,8 +1936,8 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
       }
     }
 
-    // The SVCB ALPN set includes the scheme default ("http/1.1") unless
-    // "no-default-alpn" is present (RFC 9460 Section 7.1.2).
+    
+    
     if (!noDefaultAlpn &&
         !svcInfo.alpn_http_versions.Contains(happy_eyeballs::HttpVersion::H1)) {
       svcInfo.alpn_http_versions.AppendElement(happy_eyeballs::HttpVersion::H1);
@@ -2006,12 +1963,12 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
   return ProcessHappyEyeballsOutput();
 }
 
-NS_IMETHODIMP  // method for nsITimerCallback
+NS_IMETHODIMP  
 HappyEyeballsConnectionAttempt::Notify(nsITimer* timer) {
   return ProcessHappyEyeballsOutput();
 }
 
-NS_IMETHODIMP  // method for nsINamed
+NS_IMETHODIMP  
 HappyEyeballsConnectionAttempt::GetName(nsACString& aName) {
   aName.AssignLiteral("HappyEyeballsConnectionAttempt");
   return NS_OK;
@@ -2027,15 +1984,15 @@ void HappyEyeballsConnectionAttempt::SetupTimer(uint64_t aTimeout) {
        aTimeout, this));
 
   if (!mTimer) {
-    // This can only fail on OOM and we'd crash.
+    
     mTimer = NS_NewTimer();
   }
 
   DebugOnly<nsresult> rv =
       mTimer->InitWithCallback(this, aTimeout, nsITimer::TYPE_ONE_SHOT);
-  // There is no meaningful error handling we can do here. But an error here
-  // should only be possible if the timer thread did already shut down.
+  
+  
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
-}  // namespace mozilla::net
+}  
