@@ -82,8 +82,7 @@ class RTC_EXPORT VideoEncoderFactory {
     return GetSupportedFormats();
   }
 
-  
-  
+  [[deprecated("Use the 3-parameter version instead")]]
   virtual CodecSupport QueryCodecSupport(
       const SdpVideoFormat& format,
       std::optional<std::string> scalability_mode) const {
