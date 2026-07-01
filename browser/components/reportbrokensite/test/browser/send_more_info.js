@@ -202,6 +202,13 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     description,
   });
 
+  if (expectedOverrides?.screenshotOptOut) {
+    const { screenshotToggle } = rbs;
+    await isVisible(screenshotToggle);
+    screenshotToggle.pressed = false;
+    await isNotPressed(screenshotToggle);
+  }
+
   const receivedData = await rbs.clickSendMoreInfo();
   await checkWebcompatComPayload(
     tab,
@@ -258,6 +265,12 @@ async function checkWebcompatComPayload(
 
   
   const { screenshot } = receivedData;
+  if (expectedOverrides?.screenshotOptOut) {
+    ok(
+      !screenshot,
+      "opted out of a screenshot, so it ought to not be included"
+    );
+  }
   if (screenshot) {
     const isScreenshotValid = await new Promise(done => {
       var image = new Image();
