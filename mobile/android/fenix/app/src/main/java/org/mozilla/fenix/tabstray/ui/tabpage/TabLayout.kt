@@ -7,6 +7,7 @@
 package org.mozilla.fenix.tabstray.ui.tabpage
 
 import android.content.res.Configuration
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
@@ -69,8 +70,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
@@ -85,6 +87,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabgroups.TabGroupCard
 import org.mozilla.fenix.tabgroups.TabGroupRow
+import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
@@ -121,6 +124,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
+import org.mozilla.fenix.tabstray.ui.tabitems.tabGridColumnCount
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemListInteractionAnimation
 import org.mozilla.fenix.tabstray.ui.tabitems.tabListItemShapeStyling
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -143,15 +147,17 @@ private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_1 = 320
 private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_2 = 480
 private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_3 = 800
 
-private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 = 917
-private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 = 1280
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 = 600
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 = 917
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_3 = 1280
 
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1 = 2
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2 = 3
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3 = 4
 
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 4
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 5
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_3 = 5
 
 private val tabListPadding
     @Composable
@@ -166,6 +172,7 @@ private val ignoredItems = setOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOA
  * @param displayTabsInGrid Whether the tabs should be displayed in a grid.
  * @param dragAndDropEnabled Whether drag and drop is enabled for tab groups.
  * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
+ * @param liveReorderEnabled Whether tab reorders should happen 'live' during a drag.
  * @param selectedItemIndex The index of the currently selected tab. This will be scrolled to on first-render.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection
  * or multi-selection and contains the set of selected tabs.
@@ -192,6 +199,7 @@ fun TabLayout(
     displayTabsInGrid: Boolean,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
+    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -232,6 +240,7 @@ fun TabLayout(
             reorderingEnabled = reorderingEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
+            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         TabList(
@@ -332,6 +341,7 @@ private fun TabGrid(
     tabs: List<TabsTrayItem>,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
+    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -370,6 +380,7 @@ private fun TabGrid(
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
+            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         ReorderableTabGrid(
@@ -489,7 +500,6 @@ private fun ReorderableTabGrid(
         bottomPadding = contentPadding.calculateBottomPadding() + spacing + tabGridBottomPadding + navigationBarPadding,
         isHeaderPresent = header != null,
     )
-
     var isInMultiSelectMode by remember { mutableStateOf(selectionMode is TabsTrayState.Mode.Select) }
     val reorderState = createGridReorderState(
         gridState = gridState,
@@ -527,7 +537,11 @@ private fun ReorderableTabGrid(
                         reorderState = reorderState,
                         isInMultiSelectMode = isInMultiSelectMode,
                     ),
-                ) { reorderingEnabled },
+                ) { reorderingEnabled }
+                .semantics {
+                    tabGridColumnCount = columns
+                    testTag = TabsTrayTestTag.TAB_GRID
+                },
             state = gridState,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(space = spacing),
@@ -578,6 +592,7 @@ private fun ReorderableTabGrid(
 private fun InteractableTabGrid(
     tabs: List<TabsTrayItem>,
     displayTabGroupOnboarding: Boolean,
+    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     focusEnabled: Boolean,
     selectionMode: TabsTrayState.Mode,
@@ -609,11 +624,14 @@ private fun InteractableTabGrid(
         isHeaderPresent = header != null,
     )
 
+    // Don't show the onboarding card while a drag is active
+    var showOnboardingCardInGrid by remember { mutableStateOf(displayTabGroupOnboarding) }
     var isInMultiSelectMode by remember { mutableStateOf(selectionMode is TabsTrayState.Mode.Select) }
     val gridInteractionState = createGridInteractionState(
         gridState = gridState,
         tabInteractionHandler = tabInteractionHandler,
         onLongPress = rememberReactiveLongPressGrid(tabs = tabs, onItemLongClick = onItemLongClick),
+        liveReorderEnabled = liveReorderEnabled,
         ignoredItems = ignoredItems,
     )
     // Prevent a race between multi-select and drag by updating the select mode only if the dragging key is null
@@ -621,6 +639,7 @@ private fun InteractableTabGrid(
         if (gridInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
+        showOnboardingCardInGrid = displayTabGroupOnboarding && (gridInteractionState.draggedItem.key == null)
     }
     BoxWithConstraints(
         modifier = Modifier
@@ -639,7 +658,11 @@ private fun InteractableTabGrid(
         LazyVerticalGrid(
             columns = GridCells.Fixed(count = columns),
             modifier = modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .semantics {
+                    tabGridColumnCount = columns
+                    testTag = TabsTrayTestTag.TAB_GRID
+                },
             state = gridState,
             userScrollEnabled = gridInteractionState.draggedItem == InteractionState.Grid.None,
             contentPadding = contentPadding,
@@ -654,7 +677,7 @@ private fun InteractableTabGrid(
 
             tabGridItems(
                 tabs = tabs,
-                showTabGroupOnboarding = displayTabGroupOnboarding,
+                showTabGroupOnboarding = showOnboardingCardInGrid,
                 selectedItemIndex = selectedItemIndex,
                 columns = columns,
                 onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
@@ -925,12 +948,13 @@ internal val horizontalGridPadding: Dp
     get() = FirefoxTheme.layout.space.static200
 
 private val BoxWithConstraintsScope.thumbnailSizePx: Int
-    @ReadOnlyComposable
     @Composable
+    @ReadOnlyComposable
     get() {
+        val columns = numberOfGridColumns
         val density = LocalDensity.current
-        val totalSpacing = horizontalGridPadding * (numberOfGridColumns - 1) +
-            FirefoxTheme.layout.space.static50 * numberOfGridColumns * 2
+        val totalSpacing = horizontalGridPadding * (columns - 1) +
+            FirefoxTheme.layout.space.static50 * columns * 2
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
@@ -1459,30 +1483,40 @@ private fun ReorderableTabList(
 /**
  * Returns the number of grid columns we can fit on the screen in the tabs tray.
  */
-private val numberOfGridColumns: Int
+
+private val BoxWithConstraintsScope.numberOfGridColumns: Int
     @Composable
     @ReadOnlyComposable
     get() {
         val configuration = LocalConfiguration.current
-        val screenWidthDp = with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.width.toDp().value
-        }
-
         return if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            numberOfGridColumnsLandscape(screenWidthDp = screenWidthDp)
+            numberOfGridColumnsLandscape(screenWidthDp = maxWidth.value)
         } else {
-            numberOfGridColumnsPortrait(screenWidthDp = screenWidthDp)
+            numberOfGridColumnsPortrait(screenWidthDp = maxWidth.value)
         }
     }
 
-private fun numberOfGridColumnsPortrait(screenWidthDp: Float): Int = when {
+/**
+ * Returns the number of columns to be rendered for a grid in portrait mode
+ * given the screen width.
+ * @param screenWidthDp Float representation of screenWidth dp
+ */
+@VisibleForTesting
+internal fun numberOfGridColumnsPortrait(screenWidthDp: Float): Int = when {
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_3 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_2 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_1 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1
     else -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1
 }
 
-private fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
+/**
+ * Returns the number of columns to be rendered for a grid in landscape mode
+ * given the screen width.
+ * @param screenWidthDp Float representation of screenWidth dp
+ */
+@VisibleForTesting
+internal fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
+    screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_3 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_3
     screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2
     screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1
     else -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1
@@ -1557,6 +1591,7 @@ private fun TabListPreview(
                 displayTabsInGrid = false,
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,
+                liveReorderEnabled = false,
                 onTabClose = tabs::remove,
                 onItemClick = {},
                 onItemLongClick = {},
@@ -1594,6 +1629,7 @@ private fun TabGridPreview(
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
             displayTabGroupOnboarding = false,
+            liveReorderEnabled = false,
             onTabClose = tabs::remove,
             onItemClick = {},
             onItemLongClick = {},
@@ -1628,6 +1664,7 @@ private fun TabListWindowSizePreview() {
                 displayTabsInGrid = false,
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,
+                liveReorderEnabled = false,
                 onTabClose = tabs::remove,
                 onItemClick = {},
                 onItemLongClick = {},
@@ -1663,6 +1700,7 @@ private fun TabGridWindowSizePreview() {
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
             displayTabGroupOnboarding = false,
+            liveReorderEnabled = false,
             onTabClose = tabs::remove,
             onItemClick = {},
             onItemLongClick = {},
@@ -1752,6 +1790,7 @@ private fun MultiSelectPreview(
             onCloseTabGroupClick = {},
             onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
+            liveReorderEnabled = false,
         )
     }
 }
