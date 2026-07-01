@@ -5991,7 +5991,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
       
       
       
-      if (Metrics().HasPendingScroll(aLayerMetrics)) {
+      if (aScrollMetadata.GetScrollGenerationOnApz() != mScrollGeneration) {
         needContentRepaint = true;
         contentRepaintType = RepaintUpdateType::eUserAction;
       }

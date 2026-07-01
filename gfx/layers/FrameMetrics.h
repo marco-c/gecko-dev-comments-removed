@@ -240,16 +240,6 @@ struct FrameMetrics {
   
 
 
-
-
-  bool HasPendingScroll(const FrameMetrics& aContentFrameMetrics) const {
-    return GetVisualScrollOffset() !=
-           aContentFrameMetrics.GetVisualScrollOffset();
-  }
-
-  
-
-
   bool ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
 
   
