@@ -7,8 +7,8 @@
 
 
 
-#ifndef MODULES_CONGESTION_CONTROLLER_SCREAM_LOSS_RATE_ESTIMATOR_H_
-#define MODULES_CONGESTION_CONTROLLER_SCREAM_LOSS_RATE_ESTIMATOR_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_SCREAM_LOSS_ESTIMATOR_H_
+#define MODULES_CONGESTION_CONTROLLER_SCREAM_LOSS_ESTIMATOR_H_
 
 #include <stdint.h>
 
@@ -32,21 +32,39 @@ namespace webrtc {
 
 
 
-class LossRateEstimator {
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LossEstimator {
  public:
-  explicit LossRateEstimator(const ScreamV2Parameters& params);
-  ~LossRateEstimator() = default;
+  explicit LossEstimator(const ScreamV2Parameters& params);
+  ~LossEstimator() = default;
 
   
   
   bool Update(const TransportPacketsFeedback& msg, TimeDelta rtt);
 
-  double loss_event_rate() const { return loss_event_rate_; }
+  
+  
+  double congestion_level() const { return congestion_level_; }
+
+  
+  bool congested() const { return congestion_level_ >= 0.99; }
 
  private:
   const TimeDelta virtual_rtt_;
-  const double loss_event_rate_avg_g_loss_;
-  const double loss_event_rate_avg_g_no_loss_;
+  const int rtts_with_loss_before_backoff_;
+  const int lossless_rtts_before_clear_;
 
   
   
@@ -54,7 +72,7 @@ class LossRateEstimator {
   
   
   bool loss_event_this_rtt_ = false;
-  double loss_event_rate_ = 0.0;
+  double congestion_level_ = 0.0;
   int unrecovered_lost_packets_ = 0;
   Timestamp last_loss_or_recovery_time_ = Timestamp::MinusInfinity();
   Timestamp last_rtt_update_time_ = Timestamp::MinusInfinity();

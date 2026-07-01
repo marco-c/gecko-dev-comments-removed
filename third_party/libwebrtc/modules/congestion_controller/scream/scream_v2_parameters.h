@@ -29,17 +29,15 @@ struct ScreamV2Parameters {
   FieldTrialParameter<double> l4s_avg_g_down;
 
   
-  FieldTrialParameter<double> loss_event_rate_avg_g_loss;
-  FieldTrialParameter<double> loss_event_rate_avg_g_no_loss;
+  
+  
+  FieldTrialParameter<int> rtts_with_loss_before_backoff;
 
   
   
   
   
-  
-  
-  FieldTrialParameter<double> loss_event_rate_threshold_discard;
-  FieldTrialParameter<double> loss_event_rate_threshold_increase;
+  FieldTrialParameter<int> lossless_rtts_before_clear;
 
   
   FieldTrialParameter<double> smoothed_rtt_avg_g;

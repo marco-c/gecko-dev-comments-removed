@@ -7,7 +7,7 @@
 
 
 
-#include "modules/congestion_controller/scream/loss_rate_estimator.h"
+#include "modules/congestion_controller/scream/loss_estimator.h"
 
 #include <algorithm>
 
@@ -18,14 +18,13 @@
 
 namespace webrtc {
 
-LossRateEstimator::LossRateEstimator(const ScreamV2Parameters& params)
+LossEstimator::LossEstimator(const ScreamV2Parameters& params)
     : virtual_rtt_(params.virtual_rtt.Get()),
-      loss_event_rate_avg_g_loss_(params.loss_event_rate_avg_g_loss.Get()),
-      loss_event_rate_avg_g_no_loss_(
-          params.loss_event_rate_avg_g_no_loss.Get()) {}
+      rtts_with_loss_before_backoff_(
+          params.rtts_with_loss_before_backoff.Get()),
+      lossless_rtts_before_clear_(params.lossless_rtts_before_clear.Get()) {}
 
-bool LossRateEstimator::Update(const TransportPacketsFeedback& msg,
-                               TimeDelta rtt) {
+bool LossEstimator::Update(const TransportPacketsFeedback& msg, TimeDelta rtt) {
   if (msg.PacketsWithFeedback().empty()) {
     return false;
   }
@@ -54,7 +53,7 @@ bool LossRateEstimator::Update(const TransportPacketsFeedback& msg,
       unrecovered_lost_packets_--;
       unrecovered_lost_packets_ = std::max(0, unrecovered_lost_packets_);
       if (unrecovered_lost_packets_ == 0) {
-        loss_event_rate_ = 0.0;
+        congestion_level_ = 0.0;
         loss_event_this_rtt_ = false;
       }
     } else {
@@ -66,11 +65,27 @@ bool LossRateEstimator::Update(const TransportPacketsFeedback& msg,
 
   if (msg.feedback_time - last_rtt_update_time_ >= max_rtt) {
     last_rtt_update_time_ = msg.feedback_time;
-
-    double g = loss_event_this_rtt_ ? loss_event_rate_avg_g_loss_
-                                    : loss_event_rate_avg_g_no_loss_;
-    loss_event_rate_ =
-        g * (loss_event_this_rtt_ ? 1.0 : 0.0) + (1.0 - g) * loss_event_rate_;
+    if (loss_event_this_rtt_) {
+      
+      
+      
+      
+      congestion_level_ = std::min(
+          1.0, congestion_level_ + 1.0 / rtts_with_loss_before_backoff_);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      congestion_level_ =
+          std::max(0.0, congestion_level_ - 1.0 / lossless_rtts_before_clear_);
+    }
     loss_event_this_rtt_ = false;
   }
   return has_lost_packets;

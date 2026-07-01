@@ -7,7 +7,7 @@
 
 
 
-#include "modules/congestion_controller/scream/loss_rate_estimator.h"
+#include "modules/congestion_controller/scream/loss_estimator.h"
 
 #include <vector>
 
@@ -44,47 +44,68 @@ TransportPacketsFeedback CreateFeedbackWithLoss(Timestamp feedback_time,
   return feedback;
 }
 
-TEST(LossRateEstimatorTest, EstimatesEwmaLossRate) {
+TEST(LossEstimatorTest, EstimatesCongestionLevel) {
   SimulatedClock clock(Timestamp::Seconds(1000));
   Environment env = CreateTestEnvironment({.time = &clock});
   ScreamV2Parameters params(env.field_trials());
-  LossRateEstimator estimator(params);
+  LossEstimator estimator(params);
 
-  EXPECT_EQ(estimator.loss_event_rate(), 0.0);
+  EXPECT_EQ(estimator.congestion_level(), 0.0);
+  EXPECT_FALSE(estimator.congested());
 
   
   
   TransportPacketsFeedback feedback1 =
       CreateFeedbackWithLoss(clock.CurrentTime(), true);
   EXPECT_TRUE(estimator.Update(feedback1, TimeDelta::Millis(25)));
-  EXPECT_NEAR(estimator.loss_event_rate(), 0.1, 0.001);
+  EXPECT_NEAR(estimator.congestion_level(), 1.0 / 3.0, 0.001);
+  EXPECT_FALSE(estimator.congested());
 
-  clock.AdvanceTime(TimeDelta::Millis(25));
   
+  clock.AdvanceTime(TimeDelta::Millis(25));
   TransportPacketsFeedback feedback2 =
+      CreateFeedbackWithLoss(clock.CurrentTime(), true);
+  EXPECT_TRUE(estimator.Update(feedback2, TimeDelta::Millis(25)));
+  EXPECT_NEAR(estimator.congestion_level(), 2.0 / 3.0, 0.001);
+  EXPECT_FALSE(estimator.congested());
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(25));
+  TransportPacketsFeedback feedback3 =
+      CreateFeedbackWithLoss(clock.CurrentTime(), true);
+  EXPECT_TRUE(estimator.Update(feedback3, TimeDelta::Millis(25)));
+  EXPECT_NEAR(estimator.congestion_level(), 1.0, 0.001);
+  EXPECT_TRUE(estimator.congested());
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(25));
+  TransportPacketsFeedback feedback4 =
       CreateFeedbackWithLoss(clock.CurrentTime(), false);
-  EXPECT_FALSE(estimator.Update(feedback2, TimeDelta::Millis(25)));
-  EXPECT_NEAR(estimator.loss_event_rate(), 0.08, 0.001);
+  EXPECT_FALSE(estimator.Update(feedback4, TimeDelta::Millis(25)));
+  EXPECT_NEAR(estimator.congestion_level(), 0.5, 0.001);
+  EXPECT_FALSE(estimator.congested());
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(25));
+  TransportPacketsFeedback feedback5 =
+      CreateFeedbackWithLoss(clock.CurrentTime(), true);
+  EXPECT_TRUE(estimator.Update(feedback5, TimeDelta::Millis(25)));
+  EXPECT_NEAR(estimator.congestion_level(), 0.5 + 1.0 / 3.0, 0.001);
+  EXPECT_FALSE(estimator.congested());
 }
 
-TEST(LossRateEstimatorTest, ClearsLossRateUponFullRecovery) {
+TEST(LossEstimatorTest, ClearsCongestionLevelUponFullRecovery) {
   SimulatedClock clock(Timestamp::Seconds(1000));
   Environment env = CreateTestEnvironment({.time = &clock});
   ScreamV2Parameters params(env.field_trials());
-  LossRateEstimator estimator(params);
+  LossEstimator estimator(params);
 
   
   TransportPacketsFeedback feedback1 =
       CreateFeedbackWithLoss(clock.CurrentTime(), true);
   EXPECT_TRUE(estimator.Update(feedback1, TimeDelta::Millis(25)));
 
-  
-  clock.AdvanceTime(TimeDelta::Millis(25));
-  TransportPacketsFeedback feedback2 =
-      CreateFeedbackWithLoss(clock.CurrentTime(), false);
-  EXPECT_FALSE(estimator.Update(feedback2, TimeDelta::Millis(25)));
-
-  EXPECT_GT(estimator.loss_event_rate(), 0.0);
+  EXPECT_GT(estimator.congestion_level(), 0.0);
 
   
   TransportPacketsFeedback recovery_feedback;
@@ -97,7 +118,7 @@ TEST(LossRateEstimatorTest, ClearsLossRateUponFullRecovery) {
 
   EXPECT_FALSE(estimator.Update(recovery_feedback, TimeDelta::Millis(25)));
 
-  EXPECT_EQ(estimator.loss_event_rate(), 0.0);
+  EXPECT_EQ(estimator.congestion_level(), 0.0);
 }
 
 }  
