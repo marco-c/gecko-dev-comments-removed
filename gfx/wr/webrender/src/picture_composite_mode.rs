@@ -171,7 +171,7 @@ impl PictureCompositeMode {
         &self,
         surface: &SurfaceInfo,
         gpu_buffers: &mut GpuBufferBuilder,
-        data_stores: &DataStores,
+        data_stores: &mut DataStores,
         extra_gpu_data: &mut SmallVec<[GpuBufferAddress; 1]>,
     ) {
         
@@ -242,19 +242,23 @@ impl PictureCompositeMode {
                 }
             }
             PictureCompositeMode::ComponentTransferFilter(handle) => {
-                if extra_gpu_data.is_empty() {
-                    extra_gpu_data.push(GpuBufferAddress::INVALID);
-                }
-                let filter_data = &data_stores.filter_data[handle];
-                extra_gpu_data[0] = filter_data.data.write_gpu_blocks(&mut gpu_buffers.f32);
+                let filter_data = &mut data_stores.filter_data[handle];
+                filter_data.write_gpu_blocks(&mut gpu_buffers.f32);
             }
             PictureCompositeMode::MixBlend(..) |
             PictureCompositeMode::Blit(_) |
             PictureCompositeMode::IntermediateSurface => {}
-            PictureCompositeMode::SVGFEGraph(..) => {
+            PictureCompositeMode::SVGFEGraph(ref filters) => {
                 
-                
-                
+                for (_node, op) in filters {
+                    match op {
+                        FilterGraphOp::SVGFEComponentTransferInterned { handle, creates_pixels: _ } => {
+                            let filter_data = &mut data_stores.filter_data[*handle];
+                            filter_data.write_gpu_blocks(&mut gpu_buffers.f32);
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
     }
@@ -299,7 +303,7 @@ pub fn prepare_composite_mode(
     can_use_shared_surface: bool,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
-    data_stores: &DataStores,
+    data_stores: &mut DataStores,
     extra_gpu_data: &mut SmallVec<[GpuBufferAddress; 1]>,
 ) -> (SurfaceDescriptor, [Option<RenderTaskId>; 2]) {
     let surface = &frame_state.surfaces[surface_index.0];

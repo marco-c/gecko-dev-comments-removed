@@ -599,6 +599,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 80, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 80, "TextRunKey size changed");
 }
