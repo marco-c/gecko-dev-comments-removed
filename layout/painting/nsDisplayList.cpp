@@ -6979,7 +6979,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   
   
   
-  params.mRasterizeLocally = animated && Frame()->HasAnimationOfTransform();
+  
+  params.mRasterizeLocally = false;
   params.SetPreserve3D(mFrame->Extend3DContext() && !mIsTransformSeparator);
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
