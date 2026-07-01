@@ -4,6 +4,7 @@ const CORS_AUTPLAY_PAGE_URL = GetTestWebBasedURL(
   "file_autoplay_media.html",
   true
 );
+const CORS_WEB_AUDIO_PAGE_URL = GetTestWebBasedURL("file_webAudio.html", true);
 
 
 
@@ -30,6 +31,33 @@ add_task(async function testDestroyAudibleIframe() {
     info("remove tab");
     BrowserTestUtils.removeTab(tab);
   }
+});
+
+
+
+
+
+
+
+add_task(async function testDestroyAudibleWebAudioIframe() {
+  info(`open a tab, create a cross-origin iframe with Web Audio`);
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    EMPTY_PAGE_URL
+  );
+  await createIframeAndLoadURL(tab, CORS_WEB_AUDIO_PAGE_URL);
+
+  info(`sound indicator should appear because of audible Web Audio`);
+  await waitForTabSoundIndicatorAppears(tab);
+
+  info(
+    `sound indicator should disappear after destroying the Web Audio iframe`
+  );
+  await removeIframe(tab);
+  await waitForTabSoundIndicatorDisappears(tab);
+
+  info("remove tab");
+  BrowserTestUtils.removeTab(tab);
 });
 
 function createIframeAndLoadURL(tab, url) {

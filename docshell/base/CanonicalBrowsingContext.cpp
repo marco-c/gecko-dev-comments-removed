@@ -1716,9 +1716,23 @@ void CanonicalBrowsingContext::DispatchWheelZoomChange(bool aIncrease) {
 }
 
 void CanonicalBrowsingContext::CanonicalDiscard() {
+  
+  
   if (mTabMediaController) {
     mTabMediaController->Shutdown();
     mTabMediaController = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!IsTop()) {
+    if (RefPtr<MediaController> mc = GetMediaController()) {
+      mc->NotifyBrowsingContextDiscarded(Id());
+    }
   }
 
   if (mCurrentLoad) {

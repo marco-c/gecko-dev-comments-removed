@@ -189,6 +189,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   Maybe<PositionState> GetCurrentPositionState() const;
 
+  virtual void NotifyBrowsingContextDiscarded(uint64_t aBrowsingContextId);
+
   bool IsMediaAudible() const;
   bool IsMediaPlaying() const;
   bool IsAnyMediaBeingControlled() const;
