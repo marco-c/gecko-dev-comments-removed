@@ -430,20 +430,11 @@ this.windows = class extends ExtensionAPIPersistent {
           if (createData.height !== null) {
             features.push("outerHeight=" + createData.height);
           }
-          
-          
-          const cssToDesktopScale = baseWindow
-            ? baseWindow.devicePixelRatio / baseWindow.desktopToDeviceScale
-            : 1;
           if (createData.left !== null) {
-            features.push(
-              "left=" + Math.round(createData.left * cssToDesktopScale)
-            );
+            features.push("left=" + createData.left);
           }
           if (createData.top !== null) {
-            features.push(
-              "top=" + Math.round(createData.top * cssToDesktopScale)
-            );
+            features.push("top=" + createData.top);
           }
 
           let window = Services.ww.openWindow(
