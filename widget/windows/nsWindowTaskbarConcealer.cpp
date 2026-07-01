@@ -196,6 +196,8 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
     
     
     
+    
+    
     mozilla::EnumerateThreadWindows([&](HWND hwnd) {
       
       
@@ -238,14 +240,22 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
   }
 
   
+  
+  
+  
+  
   const auto FindUppermostWindowOn = [&windows](HMONITOR aMonitor) -> HWND {
+    HWND topmost;
     for (const Item& item : windows) {
-      if (item.monitor == aMonitor) {
+      if (item.monitor == aMonitor && (!topmost || item.isGkFullscreen)) {
         MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
                 ("on monitor %p, uppermost relevant HWND is %p", aMonitor,
                  item.hwnd));
-        return item.hwnd;
+        topmost = item.hwnd;
       }
+    }
+    if (topmost) {
+      return topmost;
     }
 
     
