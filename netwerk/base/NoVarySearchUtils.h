@@ -64,10 +64,7 @@ struct NoVarySearchData {
 
 
 
-NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader,
-                                         bool* aParseError = nullptr);
-
-nsLiteralCString NoVarySearchRuleLabel(NoVarySearchData::ParamsRule aRule);
+NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader);
 
 
 
