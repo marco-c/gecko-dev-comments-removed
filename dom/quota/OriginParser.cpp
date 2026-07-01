@@ -100,10 +100,9 @@ auto OriginParser::Parse(nsACString& aSpec) -> ResultType {
   }
 
   if (mSchemeType == eAbout) {
-    if (mMaybeObsolete) {
-      
-      
-      return mHost.EqualsLiteral("home") ? ObsoleteOrigin : InvalidOrigin;
+    
+    if (mScheme.EqualsLiteral("moz-safe-about")) {
+      return ObsoleteOrigin;
     }
     spec.Append(':');
   } else if (mSchemeType != eChrome) {
@@ -264,9 +263,6 @@ void OriginParser::HandleToken(const nsDependentCSubstring& aToken) {
       if (mSchemeType == eFile) {
         mState = eExpectingEmptyTokenOrUniversalFileOrigin;
       } else {
-        if (mSchemeType == eAbout) {
-          mMaybeObsolete = true;
-        }
         mState = eExpectingHost;
       }
 

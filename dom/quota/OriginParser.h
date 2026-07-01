@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_ORIGINPARSER_H_
 #define DOM_QUOTA_ORIGINPARSER_H_
 
@@ -69,7 +67,6 @@ class MOZ_STACK_CLASS OriginParser final {
   bool mUniversalFileOrigin;
   bool mMaybeDriveLetter;
   bool mError;
-  bool mMaybeObsolete;
 
   
   uint8_t mIPGroup;
@@ -83,7 +80,6 @@ class MOZ_STACK_CLASS OriginParser final {
         mUniversalFileOrigin(false),
         mMaybeDriveLetter(false),
         mError(false),
-        mMaybeObsolete(false),
         mIPGroup(0) {}
 
   static ResultType ParseOrigin(const nsACString& aOrigin, nsCString& aSpec,

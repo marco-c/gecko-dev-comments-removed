@@ -6164,8 +6164,7 @@ uint32_t TelemetryIdForFile(nsIFile* aFile) {
   
   
   
-  if (origin.EqualsLiteral("chrome") ||
-      origin.EqualsLiteral("moz-safe-about+home")) {
+  if (origin.EqualsLiteral("chrome")) {
     return 0;
   }
 
