@@ -275,6 +275,11 @@ class MainEventCollector {
       }
       for (const listener of elListeners) {
         const obj = this.unwrap(listener.listenerObject);
+        if (obj && Cu.isDeadWrapper(obj)) {
+          
+          continue;
+        }
+
         if (!obj || !obj[EXCLUDED_LISTENER]) {
           listeners.push(listener);
         }
