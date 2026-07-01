@@ -29,7 +29,12 @@ void MoveEmitterARM64::emit(const MoveResolver& moves) {
   
   
   
-  cycleGeneralReg_ = temps.AcquireX();
+  
+  
+  
+  if (moves.numCycles()) {
+    cycleGeneralReg_ = temps.AcquireX();
+  }
 
   for (size_t i = 0; i < moves.numMoves(); i++) {
     emitMove(moves.getMove(i));
@@ -225,6 +230,8 @@ MemOperand MoveEmitterARM64::cycleSlot() {
 }
 
 void MoveEmitterARM64::breakCycle(const MoveOperand& to, MoveOp::Type type) {
+  MOZ_ASSERT(cycleGeneralReg_.IsValid());
+
   switch (type) {
     case MoveOp::FLOAT32:
       if (to.isMemory()) {
@@ -276,6 +283,8 @@ void MoveEmitterARM64::breakCycle(const MoveOperand& to, MoveOp::Type type) {
 
 void MoveEmitterARM64::completeCycle(const MoveOperand& from,
                                      const MoveOperand& to, MoveOp::Type type) {
+  MOZ_ASSERT(cycleGeneralReg_.IsValid());
+
   switch (type) {
     case MoveOp::FLOAT32:
       if (to.isMemory()) {
