@@ -417,6 +417,10 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     static const int kAudioJitterBufferMaxPackets = 200;
     
     static const int kAggressiveIceConnectionReceivingTimeout = 1000;
+    
+    
+    
+    static const int kMaxCertificates = 1000;
 
     
     
