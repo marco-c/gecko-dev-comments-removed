@@ -802,7 +802,8 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
   
   
   
-  if (mSurface && mSurface->GetType() == gfx::SurfaceType::RECORDING &&
+  if (mSurface &&
+      mSurface->GetUnderlyingType() == gfx::SurfaceType::RECORDING &&
       !aTarget->IsRecording()) {
     RefPtr<gfx::DataSourceSurface> dataSurface = mSurface->GetDataSurface();
     if (!dataSurface) {

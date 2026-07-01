@@ -199,7 +199,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
   if (!sd && sfer.GetSourceSurface()) {
     const auto surf = sfer.GetSourceSurface();
     elemSize = *uvec2::FromSize(surf->GetSize());
-    if (surf->GetType() == gfx::SurfaceType::RECORDING) {
+    if (surf->GetType() == gfx::SurfaceType::CANVAS_RECORDING) {
       
       
       
@@ -209,7 +209,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
       
       layers::SurfaceDescriptor desc;
       if (surf->GetSurfaceDescriptor(desc)) {
-        sd = Some(desc);
+        sd.emplace(std::move(desc));
         sourceSurf = surf;
       }
     }
