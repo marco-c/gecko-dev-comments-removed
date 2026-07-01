@@ -44,7 +44,7 @@ pub use api::key_types::BorderRadiusAu;
 
 
 
-pub use api::key_types::{BorderSideAu, NormalBorderAu};
+pub use api::key_types::BorderSideAu;
 
 
 

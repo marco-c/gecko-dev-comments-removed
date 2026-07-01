@@ -155,20 +155,9 @@ impl From<RadialGradientKey> for RadialGradientTemplate {
 
 pub type RadialGradientDataHandle = InternHandle<RadialGradient>;
 
-#[derive(Debug, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct RadialGradient {
-    pub extend_mode: ExtendMode,
-    pub center: PointKey,
-    pub params: RadialGradientParams,
-    
-    
-    pub stretch_ratio: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub tile_spacing: SizeKey,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-}
+
+
+pub use api::interned_prims::RadialGradient;
 
 impl Internable for RadialGradient {
     type Key = RadialGradientKey;

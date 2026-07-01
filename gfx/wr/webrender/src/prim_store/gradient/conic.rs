@@ -152,20 +152,9 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
 
 pub type ConicGradientDataHandle = InternHandle<ConicGradient>;
 
-#[derive(Debug, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ConicGradient {
-    pub extend_mode: ExtendMode,
-    pub center: PointKey,
-    pub params: ConicGradientParams,
-    
-    
-    pub stretch_ratio: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub tile_spacing: SizeKey,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-}
+
+
+pub use api::interned_prims::ConicGradient;
 
 impl Internable for ConicGradient {
     type Key = ConicGradientKey;

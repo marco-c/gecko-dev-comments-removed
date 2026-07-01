@@ -58,6 +58,10 @@ pub mod key_types;
 
 
 #[doc(hidden)]
+pub mod interned_prims;
+
+
+#[doc(hidden)]
 pub mod prim_geometry;
 mod tile_pool;
 pub mod units;
