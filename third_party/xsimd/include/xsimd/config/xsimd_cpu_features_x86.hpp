@@ -383,6 +383,24 @@ namespace xsimd
         static constexpr detail::x86_reg32_t leaf = 1;
         static constexpr detail::x86_reg32_t subleaf = 0;
 
+        enum class eax
+        {
+            
+            stepping_start = 0,
+            stepping_end = 4,
+            
+            model_start = 4,
+            model_end = 8,
+            
+            family_id_start = 8,
+            family_id_end = 12,
+            
+            ext_model_start = 16,
+            ext_model_end = 20,
+            
+            ext_family_start = 20,
+            ext_family_end = 28,
+        };
         enum class ecx
         {
             
@@ -415,6 +433,7 @@ namespace xsimd
         };
 
         using regs_t = detail::x86_cpuid_regs<leaf, subleaf,
+                                              detail::x86_reg_id<eax, 0>,
                                               detail::x86_reg_id<ecx, 2>,
                                               detail::x86_reg_id<edx, 3>>;
     };
@@ -841,6 +860,45 @@ namespace xsimd
 
         inline bool osxsave() const noexcept { return leaf1().all_bits_set<x86_cpuid_leaf1::ecx::osxsave>(); }
 
+        
+
+
+
+
+
+
+
+
+
+
+        inline detail::x86_reg32_t cpu_family() const noexcept
+        {
+            using eax = x86_cpuid_leaf1::eax;
+            auto family_id = leaf1().get_range<eax::family_id_start, eax::family_id_end>();
+            auto ext_family_id = leaf1().get_range<eax::ext_family_start, eax::ext_family_end>();
+            return family_id + (family_id == 15 ? ext_family_id : 0);
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+        inline detail::x86_reg32_t cpu_model() const noexcept
+        {
+            using eax = x86_cpuid_leaf1::eax;
+            auto model = leaf1().get_range<eax::model_start, eax::model_end>();
+            auto ext_model = leaf1().get_range<eax::ext_model_start, eax::ext_model_end>();
+            auto family_id = leaf1().get_range<eax::family_id_start, eax::family_id_end>();
+            return (family_id == 15 || family_id == 6) ? ((ext_model << 4) + model) : model;
+        }
+
         inline bool sse2() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::edx::sse2>(); }
 
         inline bool sse3() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::sse3>(); }
@@ -857,7 +915,12 @@ namespace xsimd
 
         inline bool avx() const noexcept { return avx_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::avx>(); }
 
-        inline bool avx_128() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::avx>(); }
+        inline bool avx_128() const noexcept
+        {
+            
+            
+            return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::avx>();
+        }
 
         inline bool aes_ni() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::aes_ni>(); }
 
@@ -869,9 +932,34 @@ namespace xsimd
 
         inline bool avx2() const noexcept { return avx_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx2>(); }
 
-        inline bool avx2_128() const noexcept { return sse_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx2>(); }
+        inline bool avx2_128() const noexcept
+        {
+            
+            
+            return sse_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx2>();
+        }
 
         inline bool bmi2() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::bmi2>(); }
+
+        
+
+
+
+
+
+
+
+
+        inline bool efficient_bmi2() const noexcept
+        {
+            if (known_manufacturer() == x86_manufacturer::amd)
+            {
+                
+                
+                return bmi2() && (cpu_family() >= 0x19);
+            }
+            return bmi2();
+        }
 
         inline bool avx512f() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512f>(); }
 
@@ -893,7 +981,25 @@ namespace xsimd
 
         inline bool avx512bw() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512bw>(); }
 
-        inline bool avx512vl() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512vl>(); }
+        inline bool avx512vl() const noexcept
+        {
+            return xcr0().all_bits_set<x86_xcr0::xcr0::opmask>()
+                && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512f, x86_cpuid_leaf7::ebx::avx512vl>();
+        }
+
+        inline bool avx512vl_128() const noexcept
+        {
+            
+            
+            return sse_enabled() && avx512vl();
+        }
+
+        inline bool avx512vl_256() const noexcept
+        {
+            
+            
+            return avx_enabled() && avx512vl();
+        }
 
         inline bool avx512vbmi() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512vbmi>(); }
 

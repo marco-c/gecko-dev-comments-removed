@@ -48,8 +48,11 @@
 #endif
 
 #if XSIMD_WITH_AVX
-#include "./xsimd_avx.hpp"
+
+
 #include "./xsimd_avx_128.hpp"
+#include "./xsimd_avx.hpp"
+
 #endif
 
 #if XSIMD_WITH_FMA3_AVX
@@ -61,8 +64,10 @@
 #endif
 
 #if XSIMD_WITH_AVX2
-#include "./xsimd_avx2.hpp"
+
 #include "./xsimd_avx2_128.hpp"
+#include "./xsimd_avx2.hpp"
+
 #endif
 
 #if XSIMD_WITH_FMA3_AVX2
@@ -75,6 +80,8 @@
 
 #if XSIMD_WITH_AVX512VL
 #include "./xsimd_avx512vl.hpp"
+#include "./xsimd_avx512vl_128.hpp"
+#include "./xsimd_avx512vl_256.hpp"
 #endif
 
 #if XSIMD_WITH_AVX512DQ
