@@ -577,7 +577,8 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
                               .build();
 
   
-  while (fuzz_data.CanReadBytes(1)) {
+  int num_actions = 0;
+  while (fuzz_data.CanReadBytes(1) && ++num_actions <= 1000) {
     uint8_t action = fuzz_data.Read<uint8_t>();
     switch (action & 0b11) {
       case kEncode: {
