@@ -484,7 +484,8 @@ export type RequestFromFrontend =
   | QuerySymbolicationApiRequest
   | GetPageFaviconsRequest
   | OpenScriptInTabDebuggerRequest
-  | GetJSSourcesRequest;
+  | GetJSSourcesRequest
+  | GetSourceMapRequest;
 
 type StatusQueryRequest = { type: "STATUS_QUERY" };
 type EnableMenuButtonRequest = { type: "ENABLE_MENU_BUTTON" };
@@ -522,7 +523,11 @@ type OpenScriptInTabDebuggerRequest = {
 };
 type GetJSSourcesRequest = {
   type: "GET_JS_SOURCES";
-  sourceUuids: Array<string>;
+  sourceIds: Array<string>;
+};
+type GetSourceMapRequest = {
+  type: "GET_SOURCE_MAP";
+  sourceId: string;
 };
 
 export type MessageToFrontend<R> =
@@ -557,10 +562,16 @@ export type ResponseToFrontend =
   | QuerySymbolicationApiResponse
   | GetPageFaviconsResponse
   | OpenScriptInTabDebuggerResponse
-  | GetJSSourcesResponse;
+  | GetJSSourcesResponse
+  | GetSourceMapResponse;
 
 type StatusQueryResponse = {
   menuButtonIsEnabled: boolean;
+  
+  
+  
+  
+  
   
   
   
@@ -592,6 +603,9 @@ type GetJSSourceReponseItem = { sourceText: string } | { error: string };
 type GetJSSourcesResponse = Array<GetJSSourceReponseItem>;
 
 
+type GetSourceMapResponse = object;
+
+
 
 
 
@@ -614,8 +628,14 @@ export class ProfilerWebChannel {
   ) => void;
 }
 
+type JSSourceInfo = {
+  sourceText?: string;
+  url?: string;
+  sourceMapURL?: string;
+};
+
 type JSSources = Partial<{
-  [sourceUuid: string]: string;
+  [sourceId: string]: JSSourceInfo;
 }>;
 
 
