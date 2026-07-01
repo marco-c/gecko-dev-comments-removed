@@ -22097,9 +22097,7 @@ function SectionsMgmtPanel({
   let arrowIconSrc;
   if (novaEnabled) {
     const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-    
-    
-    arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+    arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
   }
   const panelBody = external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h3", {
     "data-l10n-id": "newtab-section-mangage-topics-followed-topics"
@@ -22642,9 +22640,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     let arrowIconSrc;
     if (novaEnabled) {
       const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-      
-      
-      arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
     }
     
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
@@ -23006,9 +23002,7 @@ function WidgetsManagementPanel({
     clocksEnabled
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-  
-  
-  const arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
   return external_React_default().createElement("div", {
     id: "widgets-management-panel",
     className: "widgets-mgmt-panel-container"
