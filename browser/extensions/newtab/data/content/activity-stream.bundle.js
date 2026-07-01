@@ -20652,38 +20652,48 @@ function EditClocksPanel({
     onClick: onShowAddClock
   })), external_React_default().createElement("ul", {
     className: "clocks-edit-list"
-  }, clockZones.map((clock, i) => external_React_default().createElement("li", {
-    className: "clocks-edit-item",
-    key: `${clock.timeZone}-${i}`,
-    tabIndex: 0
-  }, external_React_default().createElement("div", {
-    className: "clocks-edit-top-row"
-  }, external_React_default().createElement("span", {
-    className: "clocks-edit-city"
-  }, clock.city || getCityFromTimeZone(clock.timeZone)), external_React_default().createElement("div", {
-    className: "clocks-edit-item-actions"
-  }, external_React_default().createElement("moz-button", {
-    className: "clocks-edit-item-button clocks-edit-item-edit-button",
-    type: "icon ghost",
-    size: "small",
-    iconSrc: "chrome://global/skin/icons/edit-outline.svg",
-    "data-l10n-id": "newtab-clock-widget-button-edit-clock",
-    onClick: () => onEditClock(i)
-  }), clockZones.length > 1 && external_React_default().createElement("moz-button", {
-    className: "clocks-edit-item-button clocks-edit-item-remove-button",
-    type: "icon ghost",
-    size: "small",
-    iconSrc: "chrome://global/skin/icons/delete.svg",
-    "data-l10n-id": "newtab-clock-widget-button-remove-clock",
-    onClick: () => onRemoveClock(i)
-  }))), external_React_default().createElement("span", {
-    "aria-hidden": !clock.label,
-    className: "clocks-edit-subtitle",
-    "data-l10n-id": clock.label ? "newtab-clock-widget-label-nickname-with-value" : undefined,
-    "data-l10n-args": clock.label ? JSON.stringify({
-      nickname: clock.label
-    }) : undefined
-  }, clock.label ? null : " ")))));
+  }, clockZones.map((clock, i) => {
+    const city = clock.city || getCityFromTimeZone(clock.timeZone);
+    return external_React_default().createElement("li", {
+      className: "clocks-edit-item",
+      key: `${clock.timeZone}-${i}`,
+      tabIndex: 0,
+      "data-l10n-id": clock.label ? "newtab-clock-widget-edit-item-with-nickname" : "newtab-clock-widget-edit-item",
+      "data-l10n-args": JSON.stringify(clock.label ? {
+        city,
+        nickname: clock.label
+      } : {
+        city
+      })
+    }, external_React_default().createElement("div", {
+      className: "clocks-edit-top-row"
+    }, external_React_default().createElement("span", {
+      className: "clocks-edit-city"
+    }, city), external_React_default().createElement("div", {
+      className: "clocks-edit-item-actions"
+    }, external_React_default().createElement("moz-button", {
+      className: "clocks-edit-item-button clocks-edit-item-edit-button",
+      type: "icon ghost",
+      size: "small",
+      iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+      "data-l10n-id": "newtab-clock-widget-button-edit-clock",
+      onClick: () => onEditClock(i)
+    }), clockZones.length > 1 && external_React_default().createElement("moz-button", {
+      className: "clocks-edit-item-button clocks-edit-item-remove-button",
+      type: "icon ghost",
+      size: "small",
+      iconSrc: "chrome://global/skin/icons/delete.svg",
+      "data-l10n-id": "newtab-clock-widget-button-remove-clock",
+      onClick: () => onRemoveClock(i)
+    }))), external_React_default().createElement("span", {
+      "aria-hidden": "true",
+      className: "clocks-edit-subtitle",
+      "data-l10n-id": clock.label ? "newtab-clock-widget-label-nickname-with-value" : undefined,
+      "data-l10n-args": clock.label ? JSON.stringify({
+        nickname: clock.label
+      }) : undefined
+    }, clock.label ? null : " "));
+  })));
 }
 ;
 
