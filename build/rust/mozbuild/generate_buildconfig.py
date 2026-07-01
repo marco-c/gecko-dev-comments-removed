@@ -131,3 +131,8 @@ def generate(output):
     output.write(generate_string_array("NSS_CFLAGS"))
     output.write(generate_string_array("MOZ_PIXMAN_CFLAGS"))
     output.write(generate_string_array("MOZ_ICU_CFLAGS"))
+
+    
+    output.write(generate_string("MOZ_APP_ID"))
+    output.write(generate_string("MOZ_CRASHREPORTER_URL"))
+    output.write(generate_string("MOZ_UPDATE_CHANNEL"))

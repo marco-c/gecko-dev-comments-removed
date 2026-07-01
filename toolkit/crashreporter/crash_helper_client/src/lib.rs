@@ -5,7 +5,8 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle, RawIPCConnector,
+    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle,
+    RawIPCConnector,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -16,6 +17,7 @@ use std::os::windows::io::{BorrowedHandle, OwnedHandle, RawHandle};
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
+    path::PathBuf,
     ptr::null_mut,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -428,6 +430,27 @@ pub unsafe extern "C" fn unregister_child_auxv_info(
 ) -> bool {
     let client = client.as_mut().unwrap();
     client.unregister_auxv_info(id).is_ok()
+}
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn get_install_time(path: *const BreakpadChar) -> u64 {
+    let path = if path.is_null() {
+        None
+    } else {
+        let path = <OsString as BreakpadString>::from_ptr(path);
+        Some(PathBuf::from(path))
+    };
+    ApplicationInfo::compute_install_time(path).unwrap_or(0)
 }
 
 
