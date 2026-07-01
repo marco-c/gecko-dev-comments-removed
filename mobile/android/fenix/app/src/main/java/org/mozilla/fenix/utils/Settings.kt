@@ -2276,14 +2276,6 @@ class Settings(
     )
 
     /**
-     * Indicates if the onboarding redesign should be used.
-     */
-    var useOnboardingRedesign by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_use_onboarding_redesign),
-        default = { FxNimbus.features.junoOnboarding.value().useOnboardingRedesign },
-    )
-
-    /**
      * Indicates if the marketing onboarding card should be shown to the user.
      */
     var shouldShowMarketingOnboarding by booleanPreference(
@@ -3258,7 +3250,7 @@ class Settings(
     )
 
     /**
-     * Whether WebCompat Reporter enhancements is enabled.Í
+     * Whether WebCompat Reporter enhancements is enabled.
      */
     var webCompatReporterEnhancementsEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_webcompat_reporter_enhancements),
