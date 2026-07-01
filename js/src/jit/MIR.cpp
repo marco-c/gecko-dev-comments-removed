@@ -6676,7 +6676,11 @@ static bool AddIsANonZeroAdditionOf(MAdd* add, MDefinition* ins) {
   if (!other->isConstant()) {
     return false;
   }
-  if (other->toConstant()->numberToDouble() == 0) {
+  
+  
+  int32_t n;
+  if (!mozilla::NumberIsInt32(other->toConstant()->numberToDouble(), &n) ||
+      n == 0) {
     return false;
   }
   return true;
