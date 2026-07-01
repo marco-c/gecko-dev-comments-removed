@@ -3696,7 +3696,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
   bool IsBlockFrameOrSubclass() const;
+
+  
+
+
+
+
+  bool IsInlineFrameOrSubclass() const;
 
   
 
