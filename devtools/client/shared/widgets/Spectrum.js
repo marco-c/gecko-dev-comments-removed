@@ -119,13 +119,15 @@ class Spectrum extends ColorPickerCommon {
       this.element.querySelectorAll(".accessibility-contrast-value");
 
     
-    const learnMore = this.document.createElementNS(XHTML_NS, "button");
-    learnMore.id = "learn-more-button";
-    learnMore.className = "learn-more";
-    learnMore.title = L10N.getStr("accessibility.learnMore");
+    const learnMore = this.document.createElementNS(XHTML_NS, "a");
+    learnMore.className = "learn-more-link mdn-link";
+    learnMore.textContent = L10N.getStr("accessibility.learnMore");
     this.element
       .querySelector(".contrast-ratio-header-and-single-ratio")
       .appendChild(learnMore);
+    this.element
+      .querySelector(".contrast-ratio-range")
+      .appendChild(learnMore.cloneNode(true));
 
     if (rgb) {
       this.rgb = rgb;
