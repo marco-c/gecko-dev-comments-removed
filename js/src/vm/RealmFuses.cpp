@@ -414,7 +414,7 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
 #undef PROTO_KEY
   };
 
-  auto* typedArrayproto =
+  auto* typedArrayProto =
       cx->global()->maybeGetPrototype<NativeObject>(JSProto_TypedArray);
 
   
@@ -425,12 +425,12 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
       
       continue;
     }
-    MOZ_ASSERT(typedArrayproto,
+    MOZ_ASSERT(typedArrayProto,
                "%TypedArray%.prototype must be initialized when TypedArray "
                "subclass is initialized");
 
     
-    if (proto->staticPrototype() != typedArrayproto) {
+    if (proto->staticPrototype() != typedArrayProto) {
       return false;
     }
 
@@ -440,6 +440,34 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
     
     if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
                                     ObjectValue(*ctor))) {
+      return false;
+    }
+  }
+
+  auto* typedArrayCtor =
+      cx->global()->maybeGetConstructor<NativeObject>(JSProto_TypedArray);
+
+  
+  for (auto protoKey : typedArrayProtoKeys) {
+    
+    NativeObject* ctor =
+        cx->global()->maybeGetConstructor<NativeObject>(protoKey);
+    if (!ctor) {
+      
+      continue;
+    }
+    MOZ_ASSERT(typedArrayCtor,
+               "%TypedArray% must be initialized when TypedArray subclass is "
+               "initialized");
+
+    
+    if (ctor->staticPrototype() != typedArrayCtor) {
+      return false;
+    }
+
+    
+    auto speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
+    if (ctor->lookupPure(speciesKey).isSome()) {
       return false;
     }
   }
