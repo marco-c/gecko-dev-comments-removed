@@ -144,74 +144,74 @@ function isInXULDocument(el) {
 
 
 
-function standardTreeWalkerFilter(node) {
-  
-  if (
-    node.nodeName === "_moz_generated_content_marker" ||
-    node.nodeName === "_moz_generated_content_before" ||
-    node.nodeName === "_moz_generated_content_after" ||
-    node.nodeName === "_moz_generated_content_backdrop"
-  ) {
-    return nodeFilterConstants.FILTER_ACCEPT;
-  }
 
-  
-  if (isWhitespaceTextNode(node)) {
-    return nodeHasSize(node)
-      ? nodeFilterConstants.FILTER_ACCEPT
-      : nodeFilterConstants.FILTER_SKIP;
-  }
 
-  if (node.isNativeAnonymous && !isInXULDocument(node)) {
-    const nodeTypeAttribute = node.getAttribute && node.getAttribute("type");
+
+
+
+
+
+
+
+function getTreeWalkerFilter(options) {
+  return function (node) {
     
-    
-    
-    if (nodeTypeAttribute === ":-moz-snapshot-containing-block") {
-      
-      
-      return nodeFilterConstants.FILTER_ACCEPT_CHILDREN;
+    if (isWhitespaceTextNode(node)) {
+      return nodeHasSize(node)
+        ? nodeFilterConstants.FILTER_ACCEPT
+        : nodeFilterConstants.FILTER_SKIP;
     }
 
     
-    if (nodeTypeAttribute && nodeTypeAttribute.startsWith(":view-transition")) {
+    if (!options.includeComments && isCommentNode(node)) {
+      return nodeFilterConstants.FILTER_SKIP;
+    }
+
+    
+    
+    if (
+      options.includePseudoElements &&
+      (options.includeNativeAnonymousContent ||
+        node.nodeName === "_moz_generated_content_marker" ||
+        node.nodeName === "_moz_generated_content_before" ||
+        node.nodeName === "_moz_generated_content_after" ||
+        node.nodeName === "_moz_generated_content_backdrop" ||
+        node.nodeName === "_moz_generated_content_picker_icon")
+    ) {
       return nodeFilterConstants.FILTER_ACCEPT;
     }
 
-    
-    
-    
-    return nodeFilterConstants.FILTER_SKIP;
-  }
+    if (
+      !options.includeNativeAnonymousContent &&
+      node.isNativeAnonymous &&
+      !isInXULDocument(node)
+    ) {
+      const nodeTypeAttribute = node.getAttribute && node.getAttribute("type");
+      
+      
+      
+      if (nodeTypeAttribute === ":-moz-snapshot-containing-block") {
+        
+        
+        return nodeFilterConstants.FILTER_ACCEPT_CHILDREN;
+      }
 
-  return nodeFilterConstants.FILTER_ACCEPT;
-}
+      
+      if (
+        nodeTypeAttribute &&
+        nodeTypeAttribute.startsWith(":view-transition")
+      ) {
+        return nodeFilterConstants.FILTER_ACCEPT;
+      }
 
+      
+      
+      
+      return nodeFilterConstants.FILTER_SKIP;
+    }
 
-
-
-function noAnonymousContentTreeWalkerFilter(node) {
-  
-  
-  
-  if (!isInXULDocument(node) && node.isNativeAnonymous) {
-    return nodeFilterConstants.FILTER_SKIP;
-  }
-
-  return nodeFilterConstants.FILTER_ACCEPT;
-}
-
-
-
-
-function allAnonymousContentTreeWalkerFilter(node) {
-  
-  if (isWhitespaceTextNode(node)) {
-    return nodeHasSize(node)
-      ? nodeFilterConstants.FILTER_ACCEPT
-      : nodeFilterConstants.FILTER_SKIP;
-  }
-  return nodeFilterConstants.FILTER_ACCEPT;
+    return nodeFilterConstants.FILTER_ACCEPT;
+  };
 }
 
 
@@ -222,6 +222,16 @@ function allAnonymousContentTreeWalkerFilter(node) {
 
 function isWhitespaceTextNode(node) {
   return node.nodeType == Node.TEXT_NODE && !/[^\s]/.exec(node.nodeValue);
+}
+
+
+
+
+
+
+
+function isCommentNode(node) {
+  return node.nodeType === Node.COMMENT_NODE;
 }
 
 
@@ -586,7 +596,6 @@ function isDocumentReady(document) {
 }
 
 module.exports = {
-  allAnonymousContentTreeWalkerFilter,
   isDocumentReady,
   isWhitespaceTextNode,
   findGridParentContainerForNode,
@@ -598,6 +607,5 @@ module.exports = {
   imageToImageData,
   isNodeDead,
   nodeDocument,
-  standardTreeWalkerFilter,
-  noAnonymousContentTreeWalkerFilter,
+  getTreeWalkerFilter,
 };
