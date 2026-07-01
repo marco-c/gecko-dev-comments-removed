@@ -25,6 +25,7 @@ class EventChainPostVisitor;
 class EventChainPreVisitor;
 class SelectContentData;
 class PresState;
+class WidgetMouseEvent;
 
 namespace dom {
 
@@ -335,6 +336,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   MOZ_CAN_RUN_SCRIPT void CloneOptionIntoSelectedContent(
       HTMLOptionElement* aOption, HTMLSelectedContentElement* aSelectedContent);
 
+  void ScrollToSelectedOption() { return ScrollToOption(SelectedIndex()); }
+
+  void ResetListBoxSelection(bool aAllowScrolling);
+
  protected:
   virtual ~HTMLSelectElement();
 
@@ -408,12 +413,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   nsListControlFrame* GetListBoxFrame();
 
-  
-
-
-
-  void DispatchContentReset();
-
   void SetSelectedIndexInternal(int32_t aIndex, bool aNotify);
 
   void OnSelectionChanged();
@@ -432,9 +431,39 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseUp(EventChainPostVisitor&);
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseMove(EventChainPostVisitor&);
 
+  
+  
+  
+  Maybe<int32_t> GetListBoxIndexFromEvent(const WidgetMouseEvent&);
+  
+  void CaptureMouseEvents(bool aGrabMouseEvents);
+
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  bool PerformListBoxSelection(int32_t aClickedIndex, bool aIsShift,
+                               bool aIsControl);
+  MOZ_CAN_RUN_SCRIPT
+  bool ListBoxSingleSelection(int32_t aClickedIndex, bool aDoToggle);
+  bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
+                         bool aClearAll);
+  bool ToggleOptionSelected(int32_t aIndex);
+  void InitListBoxSelectionRange(int32_t aClickedIndex);
+  MOZ_CAN_RUN_SCRIPT void UpdateSelection();
+  MOZ_CAN_RUN_SCRIPT
+  void UpdateListBoxSelectionAfterKeyEvent(int32_t aNewIndex,
+                                           uint32_t aCharCode, bool aIsShift,
+                                           bool aIsControlOrMeta);
+  void RemoveOptionFromListBoxSelection(int32_t aIndex);
+  void ScrollToOption(int32_t aIndex);
+  MOZ_CAN_RUN_SCRIPT void DoScrollToOption(int32_t aIndex);
   void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& aNewIndex,
                                  int32_t aNumOptions, int32_t aDoAdjustInc,
                                  int32_t aDoAdjustIncNext);
+  void MaybeFireMenuItemActiveEvent(nsIContent* aPreviousCurrentOption);
   bool IsOptionInteractivelySelectable(uint32_t aIndex) const;
   int32_t GetEndSelectionIndex() const;
   int32_t ItemsPerPage() const;
@@ -455,6 +484,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   RefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
+
   
   bool mIsDoneAddingChildren : 1;
   
@@ -486,6 +516,12 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
 
+
+  bool mListBoxSelectionChangedSinceDragStart : 1 = false;
+  
+
+
+
   UniquePtr<SelectContentData> mRestoreState;
 
   
@@ -497,6 +533,18 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
   nsString mPreviewValue;
+  
+
+
+
+
+  static constexpr int32_t kNothingSelected = -1;
+  struct {
+    int32_t mStart = -1;
+    int32_t mEnd = -1;
+
+    void SetTo(int32_t aIndex) { mStart = mEnd = aIndex; }
+  } mListBoxSelection;
 
  private:
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);

@@ -13,12 +13,9 @@ class nsPresContext;
 namespace mozilla {
 class PresShell;
 
-class WidgetMouseEvent;
-
 namespace dom {
 class HTMLOptionElement;
 class HTMLSelectElement;
-class HTMLOptionsCollection;
 }  
 }  
 
@@ -55,9 +52,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
             nsIFrame* aPrevInFlow) final;
 
   bool ReflowFinished() final;
-  void Destroy(DestroyContext&) override;
-
-  int32_t GetEndSelectionIndex() const { return mEndSelectionIndex; }
 
   mozilla::dom::HTMLOptionElement* GetCurrentOption() const;
 
@@ -72,8 +66,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   mozilla::a11y::AccType AccessibleType() final;
 #endif
 
-  int32_t GetSelectedIndex();
-
   
 
 
@@ -81,48 +73,17 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
   void GetOptionText(uint32_t aIndex, nsAString& aStr);
 
-  void CaptureMouseEvents(bool aGrabMouseEvents);
   nscoord GetBSizeOfARow();
-  uint32_t GetNumberOfOptions();
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnContentReset();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnSelectionReset();
   void OptionsAdded();
-  void RemoveOption(int32_t aIndex);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void DoneAddingChildren();
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void OnOptionSelected(int32_t aIndex, bool aSelected);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void OnSetSelectedIndex(int32_t aNewIndex);
+  MOZ_CAN_RUN_SCRIPT void ScrollToIndex(int32_t aIndex);
 
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult HandleLeftButtonMouseDown(const mozilla::WidgetMouseEvent&);
-  MOZ_CAN_RUN_SCRIPT
-  nsresult HandleLeftButtonMouseUp();
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DragMove(const mozilla::WidgetMouseEvent&);
-  MOZ_CAN_RUN_SCRIPT
-
-  MOZ_CAN_RUN_SCRIPT
-  bool PerformSelection(int32_t aClickedIndex, bool aIsShift, bool aIsControl);
-  MOZ_CAN_RUN_SCRIPT
-  void UpdateSelectionAfterKeyEvent(int32_t aNewIndex, uint32_t aCharCode,
-                                    bool aIsShift, bool aIsControlOrMeta,
-                                    bool aIsControlSelectMode);
-
-  
-
-
-  mozilla::dom::HTMLOptionsCollection* GetOptions() const;
   
 
 
@@ -175,19 +136,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 #endif
 
  protected:
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  bool UpdateSelection();
-
-  
-
-
-  bool GetMultiple() const;
-
   mozilla::dom::HTMLSelectElement& Select() const;
 
   
@@ -203,28 +151,10 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
   MOZ_CAN_RUN_SCRIPT void ScrollToFrame(HTMLOptionElement& aOptElement);
 
-  MOZ_CAN_RUN_SCRIPT void ScrollToIndex(int32_t anIndex);
-
- public:
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT void ResetList(bool aAllowScrolling);
-
  protected:
   explicit nsListControlFrame(ComputedStyle* aStyle,
                               nsPresContext* aPresContext);
   virtual ~nsListControlFrame();
-
-  
-
-
-
-
-
-  nsresult GetIndexFromEvent(const mozilla::WidgetMouseEvent&,
-                             int32_t& aCurIndex);
 
   bool CheckIfAllFramesHere();
 
@@ -239,20 +169,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   
   void SetComboboxItem(int32_t aIndex);
 
-  
-  bool SetOptionsSelectedFromFrame(int32_t aStartIndex, int32_t aEndIndex,
-                                   bool aValue, bool aClearAll);
-  bool ToggleOptionSelectedFromFrame(int32_t aIndex);
-
-  MOZ_CAN_RUN_SCRIPT
-  bool SingleSelection(int32_t aClickedIndex, bool aDoToggle);
-  bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
-                         bool aClearAll);
-  MOZ_CAN_RUN_SCRIPT
-  bool HandleListSelection(const mozilla::WidgetMouseEvent&,
-                           int32_t aClickedIndex);
-  void InitSelectionRange(int32_t aClickedIndex);
-
  public:
   static constexpr int32_t kNothingSelected = -1;
 
@@ -265,12 +181,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   uint32_t GetNumberOfRows();
 
   
-  int32_t mStartSelectionIndex = 0;
-  int32_t mEndSelectionIndex = 0;
-
   uint32_t mNumDisplayRows = 0;
   nscoord mBSizeOfARow = -1;
-  bool mChangesSinceDragStart : 1;
 
   bool mNeedToReset : 1;
   bool mPostChildrenLoadedReset : 1;

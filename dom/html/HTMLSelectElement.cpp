@@ -11,6 +11,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
@@ -567,6 +568,29 @@ void HTMLSelectElement::SetSelectedIndex(int32_t aIdx) {
   ScheduleSelectedContentUpdateScriptRunner( true);
 }
 
+void HTMLSelectElement::ScrollToOption(int32_t aIndex) {
+  if (aIndex < 0) {
+    return;
+  }
+  OwnerDoc()->Dispatch(
+      NewRunnableMethod<int32_t>("HTMLSelectElement::DoScrollToOption", this,
+                                 &HTMLSelectElement::DoScrollToOption, aIndex));
+}
+
+void HTMLSelectElement::DoScrollToOption(int32_t aIndex) {
+  RefPtr option = Item(aIndex);
+  if (!option) {
+    return;
+  }
+  if (nsIFrame* childFrame = option->GetPrimaryFrame()) {
+    RefPtr<mozilla::PresShell> presShell = childFrame->PresShell();
+    presShell->ScrollFrameIntoView(childFrame, Nothing(), AxisScrollParams(),
+                                   AxisScrollParams(),
+                                   ScrollFlags::ScrollOverflowHidden |
+                                       ScrollFlags::ScrollFirstAncestorOnly);
+  }
+}
+
 void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
   OptionFlags mask{OptionFlag::IsSelected, OptionFlag::ClearAll,
                    OptionFlag::SetDisabled};
@@ -574,9 +598,20 @@ void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
     mask += OptionFlag::Notify;
   }
   SetOptionsSelectedByIndex(aIndex, aIndex, mask);
-  if (nsListControlFrame* listBoxFrame = GetListBoxFrame()) {
-    listBoxFrame->OnSetSelectedIndex(aIndex);
+  if (!IsCombobox()) {
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.SetTo(aIndex);
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+    ScrollToOption(aIndex);
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
   }
+
   OnSelectionChanged();
 }
 
@@ -597,9 +632,8 @@ void HTMLSelectElement::OnOptionSelected(int32_t aIndex, bool aSelected,
 
   OnSelectionChanged();
 
-  
-  if (auto* listBox = GetListBoxFrame()) {
-    listBox->OnOptionSelected(aIndex, aSelected);
+  if (aSelected && !IsCombobox()) {
+    ScrollToOption(aIndex);
   }
 
 #ifdef ACCESSIBILITY
@@ -1045,9 +1079,7 @@ void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
   }
 
   
-  if (auto* listBoxFrame = GetListBoxFrame()) {
-    listBoxFrame->DoneAddingChildren();
-  }
+  ResetListBoxSelection( true);
 
   if (!mInhibitStateRestoration) {
     GenerateStateKey();
@@ -1179,10 +1211,7 @@ bool HTMLSelectElement::RestoreState(PresState* aState) {
   const PresContentData& state = aState->contentData();
   if (state.type() == PresContentData::TSelectContentData) {
     RestoreStateTo(state.get_SelectContentData());
-
-    
-    
-    DispatchContentReset();
+    ResetListBoxSelection( true);
   }
 
   if (aState->disabledSet() && !aState->disabled()) {
@@ -1266,13 +1295,7 @@ HTMLSelectElement::Reset() {
 
   OnSelectionChanged();
   SetUserInteracted(false);
-
-  
-  
-  
-  
-  
-  DispatchContentReset();
+  ResetListBoxSelection( true);
 
   
   UpdateDescendantSelectedContentElements();
@@ -1317,9 +1340,16 @@ HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
   return NS_OK;
 }
 
-void HTMLSelectElement::DispatchContentReset() {
+void HTMLSelectElement::ResetListBoxSelection(bool aAllowScrolling) {
+  if (!IsDoneAddingChildren() || IsCombobox()) {
+    return;
+  }
+  mListBoxSelection.SetTo(kNothingSelected);
   if (nsListControlFrame* listFrame = GetListBoxFrame()) {
-    listFrame->OnContentReset();
+    listFrame->OnSelectionReset();
+  }
+  if (aAllowScrolling) {
+    ScrollToSelectedOption();
   }
 }
 
@@ -1567,10 +1597,10 @@ void HTMLSelectElement::ContentWillBeRemoved(nsIContent* aChild,
   MutatedOptions options;
   const bool anySelected = CollectOptions(*this, aChild, options);
   if (!options.IsEmpty()) {
-    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+    if (GetListBoxFrame()) {
       auto index = options[0]->Index();
       for (size_t i = 0; i < options.Length(); ++i) {
-        listBox->RemoveOption(index);
+        RemoveOptionFromListBoxSelection(index);
       }
     }
   }
@@ -1702,7 +1732,6 @@ HTMLSelectElement::~HTMLSelectElement() {
   }
 }
 
-static constexpr int32_t kNothingSelected = -1;
 static const uint32_t kMaxDropdownRows = 20;
 
 class MOZ_RAII AutoIncrementalSearchResetter {
@@ -1728,10 +1757,7 @@ class MOZ_RAII AutoIncrementalSearchResetter {
 };
 
 int32_t HTMLSelectElement::GetEndSelectionIndex() const {
-  if (nsListControlFrame* lf = do_QueryFrame(GetPrimaryFrame())) {
-    return lf->GetEndSelectionIndex();
-  }
-  return SelectedIndex();
+  return IsCombobox() ? SelectedIndex() : mListBoxSelection.mEnd;
 }
 
 bool HTMLSelectElement::IsOptionInteractivelySelectable(uint32_t aIndex) const {
@@ -1875,11 +1901,293 @@ void HTMLSelectElement::PostHandleKeyEvent(int32_t aNewIndex,
     UserFinishedInteracting( true);
     return;
   }
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    lf->UpdateSelectionAfterKeyEvent(aNewIndex, aCharCode, aIsShift,
-                                     aIsControlOrMeta, mControlSelectMode);
+  UpdateListBoxSelectionAfterKeyEvent(aNewIndex, aCharCode, aIsShift,
+                                      aIsControlOrMeta);
+}
+
+void HTMLSelectElement::CaptureMouseEvents(bool aGrabMouseEvents) {
+  if (aGrabMouseEvents) {
+    PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
+  } else if (PresShell::GetCapturingContent() == this) {
+    
+    
+    
+    PresShell::ReleaseCapturingContent();
   }
 }
+
+Maybe<int32_t> HTMLSelectElement::GetListBoxIndexFromEvent(
+    const WidgetMouseEvent& aEvent) {
+  nsListControlFrame* lf = GetListBoxFrame();
+  if (NS_WARN_IF(!lf)) {
+    return {};
+  }
+  if (PresShell::GetCapturingContent() != this) {
+    
+    nsPoint pt =
+        nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, RelativeTo{lf});
+    nsRect borderInnerEdge = lf->GetScrollPortRect();
+    if (!borderInnerEdge.Contains(pt)) {
+      return {};
+    }
+  }
+
+  RefPtr<HTMLOptionElement> option;
+  for (nsIContent* content =
+           lf->PresContext()->EventStateManager()->GetEventTargetContent();
+       content && !option; content = content->GetParent()) {
+    option = HTMLOptionElement::FromNode(content);
+  }
+
+  if (!option) {
+    return {};
+  }
+  int32_t idx = option->Index();
+  MOZ_ASSERT(idx >= 0);
+  return Some(idx);
+}
+
+static int32_t DecrementAndClamp(int32_t aSelectionIndex, int32_t aLength) {
+  return aLength == 0 ? -1 : std::max(0, aSelectionIndex - 1);
+}
+
+void HTMLSelectElement::RemoveOptionFromListBoxSelection(int32_t aIndex) {
+  MOZ_ASSERT(aIndex >= 0, "negative <option> index");
+
+  if (mListBoxSelection.mStart != kNothingSelected) {
+    NS_ASSERTION(mListBoxSelection.mEnd != kNothingSelected, "");
+    int32_t numOptions = static_cast<int32_t>(Length());
+    
+    
+    NS_ASSERTION(aIndex <= numOptions, "out-of-bounds <option> index");
+
+    int32_t forward = mListBoxSelection.mEnd - mListBoxSelection.mStart;
+    int32_t* low =
+        forward >= 0 ? &mListBoxSelection.mStart : &mListBoxSelection.mEnd;
+    int32_t* high =
+        forward >= 0 ? &mListBoxSelection.mEnd : &mListBoxSelection.mStart;
+    if (aIndex < *low) {
+      *low = DecrementAndClamp(*low, numOptions);
+    }
+    if (aIndex <= *high) {
+      *high = DecrementAndClamp(*high, numOptions);
+    }
+    if (forward == 0) {
+      *low = *high;
+    }
+  } else {
+    NS_ASSERTION(mListBoxSelection.mEnd == kNothingSelected, "");
+  }
+
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    lf->InvalidateFocus();
+  }
+}
+
+bool HTMLSelectElement::ExtendedSelection(int32_t aStartIndex,
+                                          int32_t aEndIndex, bool aClearAll) {
+  OptionFlags mask = OptionFlag::Notify;
+  mask += OptionFlag::IsSelected;
+  if (aClearAll) {
+    mask += OptionFlag::ClearAll;
+  }
+  return SetOptionsSelectedByIndex(aStartIndex, aEndIndex, mask);
+}
+
+bool HTMLSelectElement::ToggleOptionSelected(int32_t aIndex) {
+  RefPtr<HTMLOptionElement> option = Item(static_cast<uint32_t>(aIndex));
+  NS_ENSURE_TRUE(option, false);
+
+  OptionFlags mask = OptionFlag::Notify;
+  if (!option->Selected()) {
+    mask += OptionFlag::IsSelected;
+  }
+  return SetOptionsSelectedByIndex(aIndex, aIndex, mask);
+}
+
+void HTMLSelectElement::InitListBoxSelectionRange(int32_t aClickedIndex) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t selectedIndex = SelectedIndex();
+  if (selectedIndex >= 0) {
+    
+    RefPtr<HTMLOptionsCollection> options = Options();
+    NS_ASSERTION(options, "Collection of options is null!");
+    uint32_t numOptions = options->Length();
+    
+    uint32_t i;
+    for (i = selectedIndex + 1; i < numOptions; i++) {
+      if (!options->ItemAsOption(i)->Selected()) {
+        break;
+      }
+    }
+
+    if (aClickedIndex < selectedIndex) {
+      
+      
+      mListBoxSelection.mStart = i - 1;
+      mListBoxSelection.mEnd = selectedIndex;
+    } else {
+      
+      
+      mListBoxSelection.mStart = selectedIndex;
+      mListBoxSelection.mEnd = i - 1;
+    }
+  }
+}
+
+bool HTMLSelectElement::ListBoxSingleSelection(int32_t aClickedIndex,
+                                               bool aDoToggle) {
+#ifdef ACCESSIBILITY
+  nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+  bool wasChanged = false;
+  
+  if (aDoToggle) {
+    wasChanged = ToggleOptionSelected(aClickedIndex);
+  } else {
+    wasChanged = ExtendedSelection(aClickedIndex, aClickedIndex, true);
+  }
+  mListBoxSelection.SetTo(aClickedIndex);
+  ScrollToOption(aClickedIndex);
+  if (nsListControlFrame* listBox = GetListBoxFrame()) {
+    listBox->InvalidateFocus();
+  }
+#ifdef ACCESSIBILITY
+  MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+
+  return wasChanged;
+}
+
+bool HTMLSelectElement::PerformListBoxSelection(int32_t aClickedIndex,
+                                                bool aIsShift,
+                                                bool aIsControl) {
+  if (aClickedIndex == kNothingSelected) {
+    
+    return false;
+  }
+  if (!Multiple()) {
+    return ListBoxSingleSelection(aClickedIndex, false);
+  }
+  bool wasChanged = false;
+  if (aIsShift) {
+    
+    
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      InitListBoxSelectionRange(aClickedIndex);
+    }
+
+    
+    
+    int32_t startIndex;
+    int32_t endIndex;
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      startIndex = aClickedIndex;
+      endIndex = aClickedIndex;
+    } else if (mListBoxSelection.mStart <= aClickedIndex) {
+      startIndex = mListBoxSelection.mStart;
+      endIndex = aClickedIndex;
+    } else {
+      startIndex = aClickedIndex;
+      endIndex = mListBoxSelection.mStart;
+    }
+
+    
+    wasChanged = ExtendedSelection(startIndex, endIndex, !aIsControl);
+    ScrollToOption(aClickedIndex);
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      mListBoxSelection.mStart = aClickedIndex;
+    }
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.mEnd = aClickedIndex;
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+  } else {
+    wasChanged = ListBoxSingleSelection(aClickedIndex, aIsControl);
+  }
+  return wasChanged;
+}
+
+
+void HTMLSelectElement::UpdateSelection() {
+  if (IsDoneAddingChildren()) {
+    
+    
+    RefPtr<HTMLSelectElement> kungFuDeathGrip = this;
+    UserFinishedInteracting( true);
+  }
+}
+
+void HTMLSelectElement::UpdateListBoxSelectionAfterKeyEvent(
+    int32_t aNewIndex, uint32_t aCharCode, bool aIsShift,
+    bool aIsControlOrMeta) {
+  bool wasChanged = false;
+  if (aIsControlOrMeta && !aIsShift && aCharCode != ' ') {
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.SetTo(aNewIndex);
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+    ScrollToOption(aNewIndex);
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+  } else if (mControlSelectMode && aCharCode == ' ') {
+    wasChanged = ListBoxSingleSelection(aNewIndex, true);
+  } else {
+    wasChanged = PerformListBoxSelection(aNewIndex, aIsShift, aIsControlOrMeta);
+  }
+  if (wasChanged) {
+    UpdateSelection();
+  }
+}
+
+#ifdef ACCESSIBILITY
+void HTMLSelectElement::MaybeFireMenuItemActiveEvent(
+    nsIContent* aPreviousOption) {
+  if (!State().HasState(ElementState::FOCUS)) {
+    return;
+  }
+
+  nsIContent* optionContent = GetCurrentOption();
+  if (aPreviousOption == optionContent) {
+    
+    return;
+  }
+
+  if (aPreviousOption) {
+    MakeRefPtr<AsyncEventDispatcher>(aPreviousOption, u"DOMMenuItemInactive"_ns,
+                                     CanBubble::eYes, ChromeOnlyDispatch::eNo)
+        ->PostDOMEvent();
+  }
+
+  if (optionContent) {
+    MakeRefPtr<AsyncEventDispatcher>(optionContent, u"DOMMenuItemActive"_ns,
+                                     CanBubble::eYes, ChromeOnlyDispatch::eNo)
+        ->PostDOMEvent();
+  }
+}
+#endif
 
 nsresult HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
@@ -1943,10 +2251,22 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* list = GetListBoxFrame()) {
-    mButtonDown = true;
-    return list->HandleLeftButtonMouseDown(*mouseEvent);
+  mButtonDown = true;
+  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
+  if (!selectedIndex) {
+    return NS_OK;
   }
+  CaptureMouseEvents(true);
+  bool isControlOrMeta;
+#ifdef XP_MACOSX
+  isControlOrMeta = mouseEvent->IsMeta();
+#else
+  isControlOrMeta = mouseEvent->IsControl();
+#endif
+  
+  
+  mListBoxSelectionChangedSinceDragStart = PerformListBoxSelection(
+      *selectedIndex, mouseEvent->IsShift(), isControlOrMeta);
   return NS_OK;
 }
 
@@ -1957,8 +2277,10 @@ nsresult HTMLSelectElement::HandleMouseUp(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    lf->CaptureMouseEvents(false);
+  CaptureMouseEvents(false);
+
+  if (IsCombobox()) {
+    return NS_OK;
   }
 
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
@@ -1971,10 +2293,12 @@ nsresult HTMLSelectElement::HandleMouseUp(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    return lf->HandleLeftButtonMouseUp();
+  if (mListBoxSelectionChangedSinceDragStart) {
+    
+    
+    mListBoxSelectionChangedSinceDragStart = false;
+    UserFinishedInteracting( true);
   }
-
   return NS_OK;
 }
 
@@ -1988,10 +2312,21 @@ nsresult HTMLSelectElement::HandleMouseMove(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    return lf->DragMove(*mouseEvent);
+  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
+  
+  if (!selectedIndex || *selectedIndex == mListBoxSelection.mEnd) {
+    return NS_OK;
   }
-
+  bool isControlOrMeta;
+#ifdef XP_MACOSX
+  isControlOrMeta = mouseEvent->IsMeta();
+#else
+  isControlOrMeta = mouseEvent->IsControl();
+#endif
+  
+  const bool wasChanged = PerformListBoxSelection(
+      *selectedIndex, !isControlOrMeta, isControlOrMeta);
+  mListBoxSelectionChangedSinceDragStart |= wasChanged;
   return NS_OK;
 }
 
@@ -2130,15 +2465,12 @@ nsresult HTMLSelectElement::HandleKeyPress(EventChainPostVisitor& aVisitor) {
       return NS_OK;
     }
 
-    if (nsListControlFrame* lf = GetListBoxFrame()) {
-      bool wasChanged =
-          lf->PerformSelection(index, keyEvent->IsShift(), isControlOrMeta);
-      if (!wasChanged) {
-        return NS_OK;
-      }
+    bool wasChanged =
+        PerformListBoxSelection(index, keyEvent->IsShift(), isControlOrMeta);
+    if (wasChanged) {
       UserFinishedInteracting( true);
     }
-    break;
+    return NS_OK;
   }
 
   return NS_OK;
