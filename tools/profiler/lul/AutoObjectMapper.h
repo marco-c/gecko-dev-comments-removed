@@ -5,6 +5,7 @@
 #ifndef AutoObjectMapper_h
 #define AutoObjectMapper_h
 
+#include <cstdint>
 #include <string>
 
 #include "mozilla/Attributes.h"
@@ -32,7 +33,14 @@ class MOZ_STACK_CLASS AutoObjectMapperPOSIX {
   
   
   
-  bool Map( void** start,  size_t* length, std::string fileName);
+  
+  
+  
+  
+  
+  
+  bool Map( void** start,  size_t* length, std::string fileName,
+           uint64_t offset = 0);
 
  protected:
   

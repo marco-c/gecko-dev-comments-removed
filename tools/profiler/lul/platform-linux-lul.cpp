@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <time.h>
 
+#include <cstdint>
+
 #include "mozilla/ProfilerState.h"
 #include "mozilla/SharedLibraries.h"
 #include "platform.h"
@@ -12,8 +14,43 @@
 #include "LulMain.h"
 #include "AutoObjectMapper.h"
 
+#if defined(GP_OS_android)
+#  include <cstdio>
+#  include <fstream>
+#  include <string>
+#endif
 
 
+
+
+#if defined(GP_OS_android)
+
+
+
+
+
+
+
+
+
+
+static bool GetApkEmbeddedLibraryOffset(uintptr_t aLibStart,
+                                        uint64_t* aOffsetOut) {
+  std::ifstream maps("/proc/self/maps");
+  std::string line;
+  while (std::getline(maps, line)) {
+    unsigned long start = 0;
+    unsigned long end = 0;
+    unsigned long offset = 0;
+    if (sscanf(line.c_str(), "%lx-%lx %*s %lx", &start, &end, &offset) == 3 &&
+        aLibStart >= start && aLibStart < end) {
+      *aOffsetOut = offset;
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 
 
@@ -28,6 +65,27 @@ void read_procmaps(lul::LUL* aLUL) {
     const SharedLibrary& lib = info.GetEntry(i);
 
     std::string nativePath = lib.GetDebugPath();
+    uint64_t fileOffset = 0;
+    bool isApkEmbedded = false;
+
+#  if defined(GP_OS_android)
+    
+    
+    
+    size_t apkSeparator = nativePath.find("!/");
+    if (apkSeparator != std::string::npos) {
+      isApkEmbedded = true;
+      if (!GetApkEmbeddedLibraryOffset(lib.GetStart(), &fileOffset)) {
+        
+        
+        
+        aLUL->NotifyExecutableArea(lib.GetStart(),
+                                   lib.GetEnd() - lib.GetStart());
+        continue;
+      }
+      nativePath.erase(apkSeparator);
+    }
+#  endif
 
     
     AutoObjectMapperPOSIX mapper(aLUL->mLog);
@@ -36,11 +94,12 @@ void read_procmaps(lul::LUL* aLUL) {
     
     void* image = nullptr;
     size_t size = 0;
-    bool ok = mapper.Map(&image, &size, nativePath);
+    bool ok = mapper.Map(&image, &size, nativePath, fileOffset);
     if (ok && image && size > 0) {
       aLUL->NotifyAfterMap(lib.GetStart(), lib.GetEnd() - lib.GetStart(),
                            nativePath.c_str(), image);
-    } else if (!ok && lib.GetDebugName().empty()) {
+    } else if (!ok && (lib.GetDebugName().empty() || isApkEmbedded)) {
+      
       
       
       
