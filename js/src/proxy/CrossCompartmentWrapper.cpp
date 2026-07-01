@@ -538,7 +538,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
 
   
   
-  NukeCrossCompartmentWrapper(cx, wobj);
+  NukeRemovedCrossCompartmentWrapper(cx, wobj);
 
   
   
