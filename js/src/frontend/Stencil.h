@@ -681,6 +681,7 @@ class StencilModuleEntry {
   
   
   
+  
   MaybeModuleRequestIndex moduleRequest;
   TaggedParserAtomIndex localName;
   TaggedParserAtomIndex importName;

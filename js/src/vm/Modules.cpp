@@ -1455,8 +1455,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     importName = in.importName();
 
     
-    if (importName == cx->names().star_namespace_star_ &&
-        moduleRequest->phase() == ImportPhase::Evaluation) {
+    if (importName == cx->names().star_namespace_star_) {
       
       ModuleNamespaceObject* ns =
           GetOrCreateModuleNamespace(cx, importedModule);
@@ -1470,7 +1469,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       
       InitNamespaceOrSourceBinding(cx, env, localName, ObjectValue(*ns));
-    } else if (moduleRequest->phase() == ImportPhase::Source) {
+    } else if (importName == cx->names().star_source_star_) {
       
       
       
