@@ -21190,13 +21190,11 @@ function Widgets() {
       
       
       
-      
-      
-      
       if (novaEnabled) {
         const targetSize = newMaximizedState ? "large" : "medium";
         for (const widget of WIDGET_REGISTRY) {
-          if (resolveWidgetSize(widget, prefs) !== "small") {
+          const inSidebar = resolveWidgetHasSidebar(widget, prefs) && resolveWidgetSize(widget, prefs) === "small";
+          if (!inSidebar) {
             dispatch(actionCreators.SetPref(widget.sizePref, targetSize));
           }
         }
