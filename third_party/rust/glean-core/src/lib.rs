@@ -52,6 +52,7 @@ mod internal_pings;
 pub mod metrics;
 pub mod ping;
 mod scheduler;
+pub(crate) mod session;
 pub mod storage;
 mod system;
 #[doc(hidden)]
@@ -85,6 +86,7 @@ pub use crate::metrics::{
     TestGetValue, TextMetric, TimeUnit, TimerId, TimespanMetric, TimingDistributionMetric,
     UrlMetric, UuidMetric,
 };
+pub use crate::session::{SessionManager, SessionMetadata, SessionMode};
 pub use crate::upload::{PingRequest, PingUploadTask, UploadResult, UploadTaskAction};
 
 const GLEAN_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -114,6 +116,8 @@ static PRE_INIT_PING_ENABLED: Mutex<Vec<(metrics::PingType, bool)>> = Mutex::new
 
 static PRE_INIT_ATTRIBUTION: Mutex<Option<AttributionMetrics>> = Mutex::new(None);
 static PRE_INIT_DISTRIBUTION: Mutex<Option<DistributionMetrics>> = Mutex::new(None);
+static PRE_INIT_ATTRIBUTION_CLEARED: AtomicBool = AtomicBool::new(false);
+static PRE_INIT_DISTRIBUTION_CLEARED: AtomicBool = AtomicBool::new(false);
 
 
 
@@ -166,6 +170,17 @@ pub struct InternalConfiguration {
     pub ping_lifetime_threshold: u64,
     
     pub ping_lifetime_max_time: u64,
+    
+    pub max_pending_pings_count: Option<u64>,
+    
+    pub max_pending_pings_directory_size: Option<u64>,
+    
+    pub session_mode: session::SessionMode,
+    
+    pub session_sample_rate: f64,
+    
+    
+    pub session_inactivity_timeout_ms: u64,
 }
 
 
@@ -471,6 +486,13 @@ fn initialize_inner(
 
             
             
+            
+            if dirty_flag {
+                glean.recover_session_on_dirty_flag();
+            }
+
+            
+            
             let pings = PRE_INIT_PING_REGISTRATION.lock().unwrap();
             for ping in pings.iter() {
                 glean.register_ping_type(ping);
@@ -482,6 +504,14 @@ fn initialize_inner(
 
             
             
+            let clear_attribution = PRE_INIT_ATTRIBUTION_CLEARED.load(Ordering::SeqCst);
+            if clear_attribution {
+                glean.clear_attribution();
+            }
+            let clear_distribution = PRE_INIT_DISTRIBUTION_CLEARED.load(Ordering::SeqCst);
+            if clear_distribution {
+                glean.clear_distribution();
+            }
             if let Some(attribution) = PRE_INIT_ATTRIBUTION.lock().unwrap().take() {
                 glean.update_attribution(attribution);
             }
@@ -1197,6 +1227,33 @@ pub fn glean_handle_client_inactive() {
 }
 
 
+
+
+
+pub fn glean_session_start() {
+    launch_with_glean_mut(|glean| {
+        if glean.session_manager.mode == session::SessionMode::Manual {
+            glean.session_start();
+        }
+    });
+}
+
+
+
+
+
+
+
+
+pub fn glean_session_end(reason: Option<String>) {
+    launch_with_glean_mut(move |glean| {
+        if glean.session_manager.mode == session::SessionMode::Manual {
+            glean.session_end(reason.as_deref());
+        }
+    });
+}
+
+
 pub fn glean_submit_ping_by_name(ping_name: String, reason: Option<String>) {
     dispatcher::launch(|| {
         let sent =
@@ -1314,6 +1371,17 @@ pub fn glean_set_dirty_flag(new_value: bool) {
 
 
 
+pub fn glean_clear_attribution() {
+    if was_initialize_called() && core::global_glean().is_some() {
+        core::with_glean(|glean| glean.clear_attribution());
+    } else {
+        PRE_INIT_ATTRIBUTION_CLEARED.store(true, Ordering::SeqCst);
+        _ = PRE_INIT_ATTRIBUTION.lock().unwrap().take()
+    }
+}
+
+
+
 pub fn glean_update_attribution(attribution: AttributionMetrics) {
     if was_initialize_called() && core::global_glean().is_some() {
         core::with_glean(|glean| glean.update_attribution(attribution));
@@ -1333,6 +1401,17 @@ pub fn glean_update_attribution(attribution: AttributionMetrics) {
 pub fn glean_test_get_attribution() -> AttributionMetrics {
     join_init();
     core::with_glean(|glean| glean.test_get_attribution())
+}
+
+
+
+pub fn glean_clear_distribution() {
+    if was_initialize_called() && core::global_glean().is_some() {
+        core::with_glean(|glean| glean.clear_distribution());
+    } else {
+        PRE_INIT_DISTRIBUTION_CLEARED.store(true, Ordering::SeqCst);
+        _ = PRE_INIT_DISTRIBUTION.lock().unwrap().take()
+    }
 }
 
 

@@ -25,6 +25,8 @@ static DEFINITION_ONLY: &[&str] = &[
     "glean.ping.uploader_capabilities",
     
     "glean.restarted",
+    "glean.session_end",
+    "glean.session_start",
     
     "glean.validation.foreground_count",
 ];

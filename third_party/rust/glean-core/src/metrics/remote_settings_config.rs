@@ -40,6 +40,12 @@ pub struct RemoteSettingsConfig {
     
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_threshold: Option<u32>,
+
+    
+    
+    
+    #[serde(default)]
+    pub session_sample_rate: Option<f64>,
 }
 
 impl RemoteSettingsConfig {
