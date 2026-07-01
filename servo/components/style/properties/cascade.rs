@@ -2134,9 +2134,7 @@ fn substitute_all(
         
         
         
-        
         var: Option<VarType>,
-        
         
         
         
@@ -2204,6 +2202,32 @@ fn substitute_all(
 
         fn map_mut(&mut self) -> &mut ComputedSubstitutionFunctions {
             &mut self.computed_context.builder.substitution_functions
+        }
+
+        
+        fn handle_loop(&mut self, name: &VarType) {
+            match name {
+                VarType::Attr(name) => {
+                    self.computed_context
+                        .builder
+                        .substitution_functions
+                        .remove_attr(name);
+                },
+                VarType::Custom(name) => {
+                    
+                    handle_invalid_at_computed_value_time(
+                        name,
+                        self.stylist.get_custom_property_registration(name),
+                        self.computed_context,
+                    );
+                },
+                VarType::NonCustom(non_custom) => {
+                    self.computed_context
+                        .builder
+                        .invalid_non_custom_properties
+                        .insert(non_custom.to_prioritary_id().to_longhand());
+                },
+            }
         }
 
         
@@ -2398,25 +2422,22 @@ fn substitute_all(
         
         let mut value_non_custom_refs = ReferenceFlags::empty();
         let mut registered = false;
-        let kind = if matches!(var, VarType::Custom(..)) {
-            SubstitutionFunctionKind::Var
-        } else {
-            SubstitutionFunctionKind::Attr
-        };
         let value = match var {
             VarType::Custom(ref name) | VarType::Attr(ref name) => {
                 let map = &context.computed_context.builder.substitution_functions;
-                let (registration, value) = if matches!(var, VarType::Custom(_)) {
+                let (registration, value, kind) = if matches!(var, VarType::Custom(..)) {
                     let registration = context.stylist.get_custom_property_registration(name);
                     (
                         registration,
                         map.get_var(registration, name)?.as_universal()?,
+                        SubstitutionFunctionKind::Var,
                     )
                 } else {
                     
                     (
                         PropertyDescriptors::unregistered(),
                         map.get_attr(name)?.as_universal()?,
+                        SubstitutionFunctionKind::Attr,
                     )
                 };
                 let is_root = context.computed_context.is_root_element();
@@ -2586,18 +2607,6 @@ fn substitute_all(
 
         
         let mut in_loop = self_ref;
-        let name;
-
-        let handle_variable_in_loop =
-            |name: &Name, context: &mut Context<'a, 'b, 'c, 'd>, kind: SubstitutionFunctionKind| {
-                
-                handle_invalid_at_computed_value_time(
-                    name,
-                    kind,
-                    context.stylist.get_custom_property_registration(name),
-                    context.computed_context,
-                );
-            };
         loop {
             let var_index = context
                 .stack
@@ -2605,66 +2614,52 @@ fn substitute_all(
                 .expect("The current variable should still be in stack");
             let var_info = &mut context.var_info[var_index];
             
-            
-            
             let var_name = var_info
                 .var
                 .take()
-                .expect("Variable should not be poped from stack twice");
+                .expect("Variable should not be popped from stack twice");
+            if var_index != index {
+                
+                
+                in_loop = true;
+            }
+            if in_loop {
+                context.handle_loop(&var_name);
+            }
             if var_index == index {
-                name = match var_name {
-                    VarType::Custom(name) | VarType::Attr(name) => name,
-                    VarType::NonCustom(non_custom) => {
-                        
-                        
-                        
-                        
-                        let id = non_custom.to_prioritary_id();
-                        if in_loop {
-                            context
-                                .computed_context
-                                .builder
-                                .invalid_non_custom_properties
-                                .insert(id.to_longhand());
-                        } else {
-                            context.apply_prioritary_property(id, attribute_tracker);
-                        }
-                        return None;
-                    },
-                };
+                debug_assert_eq!(var_name, var);
                 break;
             }
-            match var_name {
-                VarType::Custom(name) | VarType::Attr(name) => {
-                    
-                    
-                    
-                    handle_variable_in_loop(&name, context, kind);
-                },
-                VarType::NonCustom(non_custom) => context
-                    .computed_context
-                    .builder
-                    .invalid_non_custom_properties
-                    .insert(non_custom.to_prioritary_id().to_longhand()),
-            }
-            in_loop = true;
         }
+
         if in_loop {
-            handle_variable_in_loop(&name, context, kind);
             return None;
         }
 
-        if let Some(ref v) = value {
-            
-            
-            substitute_references_if_needed_and_apply(
-                &name,
-                kind,
-                v,
-                context.stylist,
-                context.computed_context,
-                attribute_tracker,
-            );
+        
+        match var {
+            VarType::Custom(ref name) | VarType::Attr(ref name) => {
+                if let Some(ref v) = value {
+                    let kind = if matches!(var, VarType::Custom(..)) {
+                        SubstitutionFunctionKind::Var
+                    } else {
+                        SubstitutionFunctionKind::Attr
+                    };
+                    
+                    
+                    substitute_references_if_needed_and_apply(
+                        name,
+                        kind,
+                        v,
+                        context.stylist,
+                        context.computed_context,
+                        attribute_tracker,
+                    );
+                }
+            },
+            VarType::NonCustom(non_custom) => {
+                context.apply_prioritary_property(non_custom.to_prioritary_id(), attribute_tracker);
+            },
         }
         
         None
