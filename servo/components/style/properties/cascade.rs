@@ -940,25 +940,6 @@ impl<'a> Cascade<'a> {
     }
 
     
-    fn prioritary_property_dependencies(
-        id: PrioritaryPropertyId,
-    ) -> &'static [PrioritaryPropertyId] {
-        use crate::properties::PrioritaryPropertyId::*;
-        match id {
-            MozDefaultAppearance => &[],
-            Appearance => &[MozDefaultAppearance],
-            XTextScale => &[FontFamily],
-            ColorScheme => &[ForcedColorAdjust],
-            FontFamily => &[XLang],
-            FontSize => &[Zoom, FontFamily, MathDepth, MozMinFontSizeRatio, XTextScale],
-            FontWeight | FontStretch | FontStyle | FontSizeAdjust => &[FontSize],
-            LineHeight => &[FontWeight, FontStretch, FontStyle, FontSizeAdjust],
-            MathDepth | MozMinFontSizeRatio | XLang | Zoom | ForcedColorAdjust | Direction
-            | WritingMode | TextOrientation => &[Appearance],
-        }
-    }
-
-    
     fn did_apply_prioritary_property(
         &mut self,
         context: &mut computed::Context,
@@ -1711,8 +1692,11 @@ impl<'a> Cascade<'a> {
             return;
         }
         self.ensured_prioritary.insert(id);
-        for dep in Self::prioritary_property_dependencies(id) {
-            self.ensure_prioritary_property(context, decls, cache, attribute_tracker, *dep);
+        let deps = id.dependencies();
+        if !self.ensured_prioritary.contains_all(deps) {
+            for dep in deps.iter() {
+                self.ensure_prioritary_property(context, decls, cache, attribute_tracker, dep);
+            }
         }
         self.apply_one_prioritary_property(context, decls, cache, id, attribute_tracker);
     }
