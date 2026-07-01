@@ -282,10 +282,11 @@ void * FIRFilter::operator new(size_t)
 
 FIRFilter * FIRFilter::newInstance()
 {
+#if defined(SOUNDTOUCH_ALLOW_MMX) || defined(SOUNDTOUCH_ALLOW_SSE)
     uint uExtensions;
 
     uExtensions = detectCPUextensions();
-    (void)uExtensions;
+#endif
 
     
 
