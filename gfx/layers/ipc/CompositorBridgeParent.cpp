@@ -351,11 +351,12 @@ void CompositorBridgeParent::StopAndClearResources() {
     indirectBridgeParents.clear();
 
     RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
-    {
-      StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-      EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock).mWebRenderAPI =
-          nullptr;
-    }
+    
+    
+    
+    CallWithLayerTreeState(mRootLayerTreeID, [](LayerTreeState& aState) {
+      aState.mWebRenderAPI = nullptr;
+    });
     
     
     mWrBridge->Destroy();
