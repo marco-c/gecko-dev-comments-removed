@@ -975,8 +975,20 @@ private:
 
 
 
+
+
+
+
+
+
+JSON_API size_t& newlineScanByteCountForTesting() {
+  static thread_local size_t count = 0;
+  return count;
+}
+
 bool OurReader::containsNewLine(OurReader::Location begin,
                                 OurReader::Location end) {
+  newlineScanByteCountForTesting() += static_cast<size_t>(end - begin);
   return std::any_of(begin, end, [](char b) { return b == '\n' || b == '\r'; });
 }
 
@@ -1296,9 +1308,13 @@ bool OurReader::readComment() {
       if (lastValueEnd_ && !containsNewLine(lastValueEnd_, commentBegin)) {
         if (isCppStyleComment || !cStyleWithEmbeddedNewline) {
           placement = commentAfterOnSameLine;
-          lastValueHasAComment_ = true;
         }
       }
+      
+      
+      
+      
+      lastValueHasAComment_ = true;
     }
 
     addComment(commentBegin, current_, placement);

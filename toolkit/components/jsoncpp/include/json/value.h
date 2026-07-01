@@ -357,7 +357,8 @@ public:
   Value(const StaticString& value);
   Value(const String& value);
 #ifdef JSONCPP_HAS_STRING_VIEW
-  Value(std::string_view value);
+  inline Value(std::string_view value)
+      : Value(value.data(), value.data() + value.length()) {}
 #endif
   Value(bool value);
   Value(std::nullptr_t ptr) = delete;
@@ -405,7 +406,14 @@ public:
   
 
 
-  bool getString(std::string_view* str) const;
+  inline bool getString(std::string_view* str) const {
+    char const* begin;
+    char const* end;
+    if (!getString(&begin, &end))
+      return false;
+    *str = std::string_view(begin, static_cast<size_t>(end - begin));
+    return true;
+  }
 #endif
   Int asInt() const;
   UInt asUInt() const;
@@ -496,12 +504,19 @@ public:
 #ifdef JSONCPP_HAS_STRING_VIEW
   
   
-  Value& operator[](std::string_view key);
+  inline Value& operator[](std::string_view key) {
+    return resolveReference(key.data(), key.data() + key.length());
+  }
   
   
   
-  const Value& operator[](std::string_view key) const;
-#else
+  inline const Value& operator[](std::string_view key) const {
+    Value const* found = find(key.data(), key.data() + key.length());
+    if (!found)
+      return nullSingleton();
+    return *found;
+  }
+#endif
   
   
   
@@ -516,7 +531,6 @@ public:
   
   
   const Value& operator[](const String& key) const;
-#endif
   
 
 
@@ -533,8 +547,10 @@ public:
 #ifdef JSONCPP_HAS_STRING_VIEW
   
   
-  Value get(std::string_view key, const Value& defaultValue) const;
-#else
+  inline Value get(std::string_view key, const Value& defaultValue) const {
+    return get(key.data(), key.data() + key.length(), defaultValue);
+  }
+#endif
   
   
   Value get(const char* key, const Value& defaultValue) const;
@@ -542,7 +558,6 @@ public:
   
   
   Value get(const String& key, const Value& defaultValue) const;
-#endif
   
   
   
@@ -588,13 +603,14 @@ public:
   
   
 #if JSONCPP_HAS_STRING_VIEW
-  void removeMember(std::string_view key);
-#else
+  inline void removeMember(std::string_view key) {
+    removeMember(key.data(), key.data() + key.length(), nullptr);
+  }
+#endif
   void removeMember(const char* key);
   
   
   void removeMember(const String& key);
-#endif
   
 
 
@@ -602,13 +618,14 @@ public:
 
 
 #if JSONCPP_HAS_STRING_VIEW
-  bool removeMember(std::string_view key, Value* removed);
-#else
+  inline bool removeMember(std::string_view key, Value* removed) {
+    return removeMember(key.data(), key.data() + key.length(), removed);
+  }
+#endif
   bool removeMember(String const& key, Value* removed);
   
   
   bool removeMember(const char* key, Value* removed);
-#endif
   
   bool removeMember(const char* begin, const char* end, Value* removed);
   
@@ -622,15 +639,16 @@ public:
 #ifdef JSONCPP_HAS_STRING_VIEW
   
   
-  bool isMember(std::string_view key) const;
-#else
+  inline bool isMember(std::string_view key) const {
+    return isMember(key.data(), key.data() + key.length());
+  }
+#endif
   
   
   bool isMember(const char* key) const;
   
   
   bool isMember(const String& key) const;
-#endif
   
   bool isMember(const char* begin, const char* end) const;
 
@@ -663,6 +681,11 @@ public:
 
   iterator begin();
   iterator end();
+
+  
+  ValueMembersView members();
+  
+  ValueConstMembersView members() const;
 
   
   
@@ -1021,6 +1044,131 @@ public:
   reference operator*() const { return const_cast<reference>(deref()); }
   pointer operator->() const { return const_cast<pointer>(&deref()); }
 };
+
+
+
+struct MemberProxy {
+  const String name;
+  Value& value;
+};
+
+
+
+
+struct ConstMemberProxy {
+  const String name;
+  const Value& value;
+};
+
+
+
+class ValueMembersIterator {
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = MemberProxy;
+  using difference_type = int;
+  using pointer = MemberProxy*;
+  using reference = MemberProxy;
+
+  ValueMembersIterator() = default;
+  explicit ValueMembersIterator(ValueIterator const& iter) : it_(iter) {}
+
+  ValueMembersIterator& operator++() {
+    ++it_;
+    return *this;
+  }
+  ValueMembersIterator operator++(int) {
+    ValueMembersIterator temp(*this);
+    ++*this;
+    return temp;
+  }
+  bool operator==(ValueMembersIterator const& other) const {
+    return it_ == other.it_;
+  }
+  bool operator!=(ValueMembersIterator const& other) const {
+    return it_ != other.it_;
+  }
+  MemberProxy operator*() const { return MemberProxy{it_.name(), *it_}; }
+
+private:
+  ValueIterator it_;
+};
+
+
+
+class ValueConstMembersIterator {
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = ConstMemberProxy;
+  using difference_type = int;
+  using pointer = ConstMemberProxy*;
+  using reference = ConstMemberProxy;
+
+  ValueConstMembersIterator() = default;
+  explicit ValueConstMembersIterator(ValueConstIterator const& iter)
+      : it_(iter) {}
+
+  ValueConstMembersIterator& operator++() {
+    ++it_;
+    return *this;
+  }
+  ValueConstMembersIterator operator++(int) {
+    ValueConstMembersIterator temp(*this);
+    ++*this;
+    return temp;
+  }
+  bool operator==(ValueConstMembersIterator const& other) const {
+    return it_ == other.it_;
+  }
+  bool operator!=(ValueConstMembersIterator const& other) const {
+    return it_ != other.it_;
+  }
+  ConstMemberProxy operator*() const {
+    return ConstMemberProxy{it_.name(), *it_};
+  }
+
+private:
+  ValueConstIterator it_;
+};
+
+
+
+class ValueMembersView {
+public:
+  ValueMembersView(ValueIterator begin, ValueIterator end)
+      : begin_(begin), end_(end) {}
+  ValueMembersIterator begin() const { return ValueMembersIterator(begin_); }
+  ValueMembersIterator end() const { return ValueMembersIterator(end_); }
+
+private:
+  ValueIterator begin_;
+  ValueIterator end_;
+};
+
+
+
+class ValueConstMembersView {
+public:
+  ValueConstMembersView(ValueConstIterator begin, ValueConstIterator end)
+      : begin_(begin), end_(end) {}
+  ValueConstMembersIterator begin() const {
+    return ValueConstMembersIterator(begin_);
+  }
+  ValueConstMembersIterator end() const {
+    return ValueConstMembersIterator(end_);
+  }
+
+private:
+  ValueConstIterator begin_;
+  ValueConstIterator end_;
+};
+
+inline ValueMembersView Value::members() {
+  return ValueMembersView(begin(), end());
+}
+inline ValueConstMembersView Value::members() const {
+  return ValueConstMembersView(begin(), end());
+}
 
 inline void swap(Value& a, Value& b) { a.swap(b); }
 
