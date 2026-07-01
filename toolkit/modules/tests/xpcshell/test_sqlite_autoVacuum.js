@@ -54,28 +54,52 @@ async function test_vacuum(options = {}) {
   
   await TestUtils.waitForTick();
 
-  Assert.equal(
-    await get_auto_vacuum(conn),
-    options.incrementalVacuum ? 2 : 0,
-    "Check auto_vacuum"
+  
+  
+  
+  
+  
+  
+  
+  
+  let encrypted = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
   );
+  let autoVacuum = await get_auto_vacuum(conn);
+  let expectedAutoVacuum = 0;
+  if (options.incrementalVacuum) {
+    expectedAutoVacuum = 2;
+  } else if (encrypted) {
+    expectedAutoVacuum = 1;
+  }
+  Assert.equal(autoVacuum, expectedAutoVacuum, "Check auto_vacuum");
 
   
   await conn.execute("CREATE TABLE test (id INTEGER)");
   await conn.execute("DROP TABLE test");
-  Assert.greater(await get_freelist_count(conn), 0, "Check freelist_count");
 
-  let promiseVacuumEnd = TestUtils.topicObserved(
-    "vacuum-end",
-    (_, d) => d == dbName
-  );
-  synthesize_idle_daily();
-  info("Await vacuum end");
-  await promiseVacuumEnd;
+  if (autoVacuum == 1) {
+    Assert.equal(
+      await get_freelist_count(conn),
+      0,
+      "Full auto_vacuum reclaims freed pages without an idle VACUUM"
+    );
+  } else {
+    Assert.greater(await get_freelist_count(conn), 0, "Check freelist_count");
 
-  Assert.greater(get_vacuum_date(dbName), lastVacuumDate);
+    let promiseVacuumEnd = TestUtils.topicObserved(
+      "vacuum-end",
+      (_, d) => d == dbName
+    );
+    synthesize_idle_daily();
+    info("Await vacuum end");
+    await promiseVacuumEnd;
 
-  Assert.equal(await get_freelist_count(conn), 0, "Check freelist_count");
+    Assert.greater(get_vacuum_date(dbName), lastVacuumDate);
+
+    Assert.equal(await get_freelist_count(conn), 0, "Check freelist_count");
+  }
 
   await conn.close();
   await IOUtils.remove(dbFile);

@@ -74,17 +74,33 @@ function test_openDatabase_directory() {
   dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
   Assert.ok(dir.exists());
 
+  let encrypted = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  );
+
   try {
     getDatabase(dir);
     do_throw("should not be here");
   } catch (e) {
-    Assert.equal(Cr.NS_ERROR_FILE_ACCESS_DENIED, e.result);
+    
+    
+    
+    Assert.equal(
+      encrypted ? Cr.NS_ERROR_FAILURE : Cr.NS_ERROR_FILE_ACCESS_DENIED,
+      e.result
+    );
   }
 
-  Assert.equal(
-    Glean.sqliteStore.open.get("test_storage_temp", "access").testGetValue(),
-    1
-  );
+  
+  
+  
+  if (!encrypted) {
+    Assert.equal(
+      Glean.sqliteStore.open.get("test_storage_temp", "access").testGetValue(),
+      1
+    );
+  }
 
   dir.remove(true);
 }

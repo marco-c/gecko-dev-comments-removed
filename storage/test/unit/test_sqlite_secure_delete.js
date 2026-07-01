@@ -50,8 +50,20 @@ add_test(function test_delete_removes_data() {
   
   
   
+  
+  
+  
+  
+  let encrypted = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  );
   let contents = getFileContents(file);
-  Assert.notEqual(-1, contents.indexOf(TEST_STRING));
+  if (encrypted) {
+    Assert.equal(-1, contents.indexOf(TEST_STRING));
+  } else {
+    Assert.notEqual(-1, contents.indexOf(TEST_STRING));
+  }
 
   
   stmt = db.createStatement("DELETE FROM test WHERE data = :data");

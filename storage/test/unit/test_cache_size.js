@@ -24,9 +24,15 @@ function check_size(dbOpener, file, pageSize, expectedCacheSize) {
   db.executeSimpleSQL("PRAGMA page_size = " + pageSize);
 
   
+  
+  
+  let encrypted = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  );
   let stmt = db.createStatement("PRAGMA page_size");
   Assert.ok(stmt.executeStep());
-  Assert.equal(stmt.row.page_size, pageSize);
+  Assert.equal(stmt.row.page_size, encrypted ? db.defaultPageSize : pageSize);
   stmt.finalize();
 
   

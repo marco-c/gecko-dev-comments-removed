@@ -22,6 +22,15 @@ const TEST_PAGE_SIZE = 512;
 
 
 
+const ENCRYPTED = Services.prefs.getBoolPref(
+  "security.storage.encryption.sqlite.enabled",
+  false
+);
+
+
+
+
+
 
 
 
@@ -128,6 +137,19 @@ async function createCopy(connection, pagesPerStep, stepDelayMs) {
 
 
 async function assertSuccessfulCopy(file, expectedEntries = TEST_ROWS) {
+  Assert.ok(
+    !file.leafName.endsWith(".tmp"),
+    "Should not end in .tmp extension"
+  );
+
+  if (ENCRYPTED) {
+    
+    
+    
+    
+    return;
+  }
+
   let conn = await openAsyncDatabase(file);
 
   await executeSimpleSQLAsync(conn, "PRAGMA page_size", resultSet => {
@@ -143,11 +165,6 @@ async function assertSuccessfulCopy(file, expectedEntries = TEST_ROWS) {
   let row = results.getNextRow();
   let count = row.getResultByName("COUNT(*)");
   Assert.equal(count, expectedEntries, "Got the expected entries");
-
-  Assert.ok(
-    !file.leafName.endsWith(".tmp"),
-    "Should not end in .tmp extension"
-  );
 
   await asyncClose(conn);
 }

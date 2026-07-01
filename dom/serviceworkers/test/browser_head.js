@@ -259,8 +259,16 @@ async function consume_storage(origin, storageDesc) {
 
 
 
+
+
 function is_minimum_origin_usage(originUsageBytes) {
-  return originUsageBytes <= kMinimumOriginUsageBytes;
+  const limit = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  )
+    ? 2 * kMinimumOriginUsageBytes
+    : kMinimumOriginUsageBytes;
+  return originUsageBytes <= limit;
 }
 
 

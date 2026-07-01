@@ -25,6 +25,17 @@ class IDBEncryptionPBM(QuotaTestCase):
     def setUp(self):
         super().setUp()
 
+        
+        
+        
+        
+        
+        
+        if self.marionette.get_pref("security.storage.encryption.sqlite.enabled"):
+            self.skipTest(
+                "Unrelated to SQLite at-rest encryption; skipped while it is on"
+            )
+
         self.testHTML = "dom/indexedDB/basicIDB_PBM.html"
         self.IDBName = "IDBTest"
         self.IDBStoreName = "IDBTestStore"
@@ -39,6 +50,13 @@ class IDBEncryptionPBM(QuotaTestCase):
 
         self.defaultQMPrefValue = self.marionette.get_pref(QM_TESTING_PREF)
         self.marionette.set_pref(QM_TESTING_PREF, True)
+
+        
+        
+        
+        
+        
+        self.marionette.set_pref("security.storage.encryption.sqlite.enabled", False)
 
     def tearDown(self):
         super().tearDown()

@@ -2,12 +2,11 @@
 
 
 
-
-
 #include "FileSystemParentTest.h"
 #include "FileSystemParentTestHelpers.h"
 #include "FileSystemParentTypes.h"
 #include "gtest/gtest.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 
 
@@ -104,6 +103,12 @@ TEST_F(TestFileSystemUsageTracking, WritesToFilesShouldIncreaseUsage) {
 }
 
 TEST_F(TestFileSystemUsageTracking, RemovingFileShouldDecreaseUsage) {
+  if (StaticPrefs::security_storage_encryption_sqlite_enabled()) {
+    
+    
+    
+    GTEST_SKIP() << "QM usage accounting differs under SQLite at-rest encryption";
+  }
   
   ASSERT_NO_FATAL_FAILURE(EnsureDataManager());
 

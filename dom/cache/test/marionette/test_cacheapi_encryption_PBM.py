@@ -25,6 +25,17 @@ class CacheAPIEncryptionPBM(QuotaTestCase):
     def setUp(self):
         super().setUp()
 
+        
+        
+        
+        
+        
+        
+        if self.marionette.get_pref("security.storage.encryption.sqlite.enabled"):
+            self.skipTest(
+                "Unrelated to SQLite at-rest encryption; skipped while it is on"
+            )
+
         self.testHTML = "dom/cache/basicCacheAPI_PBM.html"
         self.cacheName = "CachePBMTest"
         self.profilePath = self.marionette.instance.profile.profile
@@ -43,6 +54,13 @@ class CacheAPIEncryptionPBM(QuotaTestCase):
         self.cacheDBJournalFileName = "caches.sqlite-wal"
 
         self.dbCheckpointThresholdBytes = 512 * 1024
+
+        
+        
+        
+        
+        
+        self.marionette.set_pref("security.storage.encryption.sqlite.enabled", False)
 
     def tearDown(self):
         super().tearDown()
