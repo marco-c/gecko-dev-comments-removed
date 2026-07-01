@@ -627,6 +627,14 @@ pub struct Shaders {
     ps_quad_repeat: ShaderHandle,
     ps_quad_gradient: ShaderHandle,
     ps_quad_box_shadow: ShaderHandle,
+    
+    
+    
+    ps_quad_yuv: ShaderHandle,
+    ps_quad_yuv_external: Option<ShaderHandle>,
+    ps_quad_yuv_external_bt709: Option<ShaderHandle>,
+    ps_quad_yuv_rect: Option<ShaderHandle>,
+    ps_quad_backdrop: ShaderHandle,
     ps_mask: ShaderHandle,
     ps_mask_fast: ShaderHandle,
     ps_clear: ShaderHandle,
@@ -881,12 +889,70 @@ impl Shaders {
             &shader_list,
         )?;
 
-        let ps_split_composite = loader.create_shader(
+        let ps_quad_yuv = loader.create_shader(
             ShaderKind::Primitive,
-            "ps_split_composite",
-            &[],
+            "ps_quad_yuv",
+            &["TEXTURE_2D"],
             &shader_list,
         )?;
+
+        
+        
+        
+        
+        let ps_quad_yuv_external = if has_platform_support(
+                ImageBufferKind::TextureExternal, device,
+            ) && texture_external_version == TextureExternalVersion::ESSL3
+        {
+            Some(loader.create_shader(
+                ShaderKind::Primitive,
+                "ps_quad_yuv",
+                &["TEXTURE_EXTERNAL"],
+                &shader_list,
+            )?)
+        } else {
+            None
+        };
+
+        let ps_quad_yuv_external_bt709 = if has_platform_support(
+            ImageBufferKind::TextureExternalBT709, device,
+        ) {
+            Some(loader.create_shader(
+                ShaderKind::Primitive,
+                "ps_quad_yuv",
+                &["TEXTURE_EXTERNAL_BT709"],
+                &shader_list,
+            )?)
+        } else {
+            None
+        };
+
+        let ps_quad_yuv_rect = if has_platform_support(
+            ImageBufferKind::TextureRect, device,
+        ) {
+            Some(loader.create_shader(
+                ShaderKind::Primitive,
+                "ps_quad_yuv",
+                &["TEXTURE_RECT"],
+                &shader_list,
+            )?)
+        } else {
+            None
+        };
+
+        let ps_quad_backdrop = loader.create_shader(
+            ShaderKind::Primitive,
+            "ps_quad_backdrop",
+            &["TEXTURE_2D"],
+            &shader_list,
+        )?;
+
+        let ps_split_composite = loader.create_shader(
+        ShaderKind::Primitive,
+        "ps_split_composite",
+        &[],
+        &shader_list,
+    )?;
 
         let ps_clear = loader.create_shader(
             ShaderKind::Clear,
@@ -1053,6 +1119,11 @@ impl Shaders {
             ps_quad_repeat,
             ps_quad_gradient,
             ps_quad_box_shadow,
+            ps_quad_yuv,
+            ps_quad_yuv_external,
+            ps_quad_yuv_external_bt709,
+            ps_quad_yuv_rect,
+            ps_quad_backdrop,
             ps_mask,
             ps_mask_fast,
             ps_split_composite,
@@ -1126,7 +1197,15 @@ impl Shaders {
             PatternKind::Gradient => self.ps_quad_gradient,
             PatternKind::Repeat => self.ps_quad_repeat,
             PatternKind::BoxShadow => self.ps_quad_box_shadow,
-            PatternKind::Mask => unreachable!(),
+            PatternKind::Yuv => self.ps_quad_yuv,
+            PatternKind::YuvTextureExternal => self.ps_quad_yuv_external
+                .expect("bug: ps_quad_yuv TEXTURE_EXTERNAL variant not loaded"),
+            PatternKind::YuvTextureExternalBT709 => self.ps_quad_yuv_external_bt709
+                .expect("bug: ps_quad_yuv TEXTURE_EXTERNAL_BT709 variant not loaded"),
+            PatternKind::YuvTextureRect => self.ps_quad_yuv_rect
+                .expect("bug: ps_quad_yuv TEXTURE_RECT variant not loaded"),
+            PatternKind::Backdrop => self.ps_quad_backdrop,
+            PatternKind::Mask => unreachable!("clip mask pattern is not a quad shader"),
         };
         self.loader.get(shader_handle)
     }
@@ -1174,9 +1253,27 @@ impl Shaders {
             BatchKind::Quad(PatternKind::BoxShadow) => {
                 self.ps_quad_box_shadow
             }
-            BatchKind::Quad(PatternKind::Mask) => {
-                unreachable!();
+            BatchKind::Quad(PatternKind::Yuv) => {
+                self.ps_quad_yuv
             }
+            BatchKind::Quad(PatternKind::YuvTextureExternal) => {
+                self.ps_quad_yuv_external
+                    .expect("bug: ps_quad_yuv TEXTURE_EXTERNAL variant not loaded")
+            }
+            BatchKind::Quad(PatternKind::YuvTextureExternalBT709) => {
+                self.ps_quad_yuv_external_bt709
+                    .expect("bug: ps_quad_yuv TEXTURE_EXTERNAL_BT709 variant not loaded")
+            }
+            BatchKind::Quad(PatternKind::YuvTextureRect) => {
+                self.ps_quad_yuv_rect
+                    .expect("bug: ps_quad_yuv TEXTURE_RECT variant not loaded")
+            }
+            BatchKind::Quad(PatternKind::Backdrop) => {
+                self.ps_quad_backdrop
+            }
+            BatchKind::Quad(PatternKind::Mask) => {
+            unreachable!();
+        }
             BatchKind::SplitComposite => {
                 self.ps_split_composite
             }

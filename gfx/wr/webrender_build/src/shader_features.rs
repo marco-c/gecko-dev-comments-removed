@@ -230,6 +230,22 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders.insert("ps_quad_box_shadow", vec![base_prim_features.finish()]);
 
+    
+    
+    let mut ps_quad_yuv_features: Vec<String> = vec!["TEXTURE_2D".to_string()];
+    if flags.contains(ShaderFeatureFlags::GL) {
+        ps_quad_yuv_features.push("TEXTURE_RECT".to_string());
+    }
+    if flags.contains(ShaderFeatureFlags::TEXTURE_EXTERNAL) {
+        ps_quad_yuv_features.push("TEXTURE_EXTERNAL".to_string());
+    }
+    if flags.contains(ShaderFeatureFlags::TEXTURE_EXTERNAL_BT709) {
+        ps_quad_yuv_features.push("TEXTURE_EXTERNAL_BT709".to_string());
+    }
+    shaders.insert("ps_quad_yuv", ps_quad_yuv_features);
+
+    shaders.insert("ps_quad_backdrop", vec!["TEXTURE_2D".to_string()]);
+
     let mut maybe_dithering = FeatureList::new();
     if flags.contains(ShaderFeatureFlags::DITHERING) {
         maybe_dithering.add("DITHERING");
