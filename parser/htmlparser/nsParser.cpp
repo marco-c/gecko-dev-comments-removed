@@ -1044,6 +1044,13 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
   
   
+  
+  if (status == NS_BINDING_ABORTED) {
+    return Terminate();
+  }
+
+  
+  
   if (IsScriptExecuting()) {
     
     mOnStopPending = true;
