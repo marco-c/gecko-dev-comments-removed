@@ -366,6 +366,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void StopObservingGVAutoplayIfNeeded();
 
+  bool ShouldDelayPlayUntilGVAutoplayRequestResolved() const;
+
   
   bool ShouldCheckAllowOrigin();
 

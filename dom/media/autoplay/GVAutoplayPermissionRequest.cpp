@@ -57,6 +57,18 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(GVAutoplayPermissionRequest,
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(GVAutoplayPermissionRequest,
                                                ContentPermissionRequestBase)
 
+static void NotifyRequestStatusChanged(nsPIDOMWindowInner* aWindow) {
+  if (!aWindow) {
+    return;
+  }
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->NotifyObservers(ToSupports(aWindow),
+                         kGVAutoplayRequestStatusChangedTopic,
+                          nullptr);
+  }
+}
+
 
 void GVAutoplayPermissionRequest::CreateRequest(nsGlobalWindowInner* aWindow,
                                                 BrowsingContext* aContext,
@@ -145,6 +157,7 @@ GVAutoplayPermissionRequest::Cancel() {
              status == RStatus::eUNKNOWN);
   if ((status == RStatus::ePENDING) && !mContext->IsDiscarded()) {
     SetRequestStatus(RStatus::eDENIED);
+    NotifyRequestStatusChanged(mWindow);
   }
   mContext = nullptr;
   return NS_OK;
@@ -165,13 +178,7 @@ GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
              status == RStatus::eUNKNOWN);
   if (status == RStatus::ePENDING) {
     SetRequestStatus(RStatus::eALLOWED);
-    
-    
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      obs->NotifyObservers(ToSupports(mWindow), kGVAutoplayAllowedTopic,
-                            nullptr);
-    }
+    NotifyRequestStatusChanged(mWindow);
   }
   mContext = nullptr;
   return NS_OK;
