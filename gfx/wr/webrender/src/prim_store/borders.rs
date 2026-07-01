@@ -150,7 +150,7 @@ impl NormalBorderData {
     
     
     pub fn write_brush_gpu_blocks(
-        &mut self,
+        &self,
         prim_size: LayoutSize,
         brush_segments: &[BrushSegment],
         frame_state: &mut FrameBuildingState,
@@ -175,7 +175,7 @@ impl NormalBorderData {
     }
 
     pub fn update(
-        &mut self,
+        &self,
         border_segments: &[BorderSegmentInfo],
         prim_spatial_node_index: SpatialNodeIndex,
         device_pixel_scale: DevicePixelScale,
