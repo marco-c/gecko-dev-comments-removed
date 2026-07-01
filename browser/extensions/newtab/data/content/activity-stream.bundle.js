@@ -21163,56 +21163,24 @@ function Widgets() {
   
   
   
-  const sizes = [];
   const enabledWidgetIds = [];
   
   for (const id of effectiveOrder) {
     if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
       continue;
     }
-    const entry = WIDGET_REGISTRY.find(w => w.id === id);
-    let size = entry ? resolveWidgetSize(entry, prefs) : null;
-    
-    
-    if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
-      size = "large";
-    }
-    sizes.push(size);
     enabledWidgetIds.push(id);
   }
-  const overflowsAt = cols => {
-    if (sizes.length <= cols) {
-      return false;
-    }
-    const rest = sizes.slice(cols);
-    if (rest.some(s => s === "large")) {
-      return true;
-    }
-    const partnersAvailable = sizes.slice(0, cols).filter(s => s !== "large").length;
-    return rest.length > partnersAvailable;
-  };
-  
-  
+  const widgetCount = enabledWidgetIds.length;
+  const overflowsAt = cols => widgetCount > cols;
   
   
   
   
   const hiddenIndicesAt = cols => {
     const set = new Set();
-    if (sizes.length <= cols) {
-      return set;
-    }
-    const partnersCount = sizes.slice(0, cols).filter(s => s !== "large").length;
-    let mediumOverflowSeen = 0;
-    for (let i = cols; i < sizes.length; i++) {
-      if (sizes[i] === "large") {
-        set.add(i);
-      } else {
-        if (mediumOverflowSeen >= partnersCount) {
-          set.add(i);
-        }
-        mediumOverflowSeen++;
-      }
+    for (let i = cols; i < widgetCount; i++) {
+      set.add(i);
     }
     return set;
   };
