@@ -56,6 +56,7 @@
 #include <span>
 #include <sstream>  
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -314,13 +315,16 @@ enum class LogArgType : int8_t {
   kLongDouble,
   kCharP,
   kStdString,
-  kStringView,
+  kStringView,  
   kVoidP,
   kLogMetadata,
   kLogMetadataErr,
 #ifdef WEBRTC_ANDROID
   kLogMetadataTag,
+#else
+  kReserved,
 #endif
+  kStdStringView,  
 };
 
 
@@ -381,6 +385,18 @@ inline Val<LogArgType::kStringView, const absl::string_view*> MakeVal(
   return {&x};
 }
 
+
+
+
+
+template <typename T>
+  requires(std::is_same_v<T, std::string_view> &&
+           !std::is_same_v<T, absl::string_view>)
+inline Val<LogArgType::kStdStringView, const std::string_view*> MakeVal(
+    const T& x) {
+  return {&x};
+}
+
 inline Val<LogArgType::kVoidP, const void*> MakeVal(const void* x) {
   return {x};
 }
@@ -411,8 +427,9 @@ inline Val<LogArgType::kLogMetadataTag, LogMetadataTag> MakeVal(
 }
 #endif
 
-template <typename T,
-          std::enable_if_t<absl::HasAbslStringify<T>::value>* = nullptr>
+template <typename T>
+  requires(absl::HasAbslStringify<T>::value &&
+           !std::is_same_v<std::decay_t<T>, std::string_view>)
 ToStringVal MakeVal(const T& x) {
   return {absl::StrCat(x)};
 }
@@ -420,16 +437,16 @@ ToStringVal MakeVal(const T& x) {
 
 
 
-template <typename T,
-          typename T1 = std::decay_t<T>,
-          std::enable_if_t<std::is_class<T1>::value &&               
-                           !std::is_same<T1, std::string>::value &&  
-                           !std::is_same<T1, LogMetadata>::value &&  
-                           !absl::HasAbslStringify<T1>::value &&
+template <typename T>
+  requires(std::is_class_v<std::decay_t<T>> &&
+           !std::is_same_v<std::decay_t<T>, std::string> &&
+           !std::is_same_v<std::decay_t<T>, std::string_view> &&
+           !std::is_same_v<std::decay_t<T>, LogMetadata> &&
+           !absl::HasAbslStringify<std::decay_t<T>>::value &&
 #ifdef WEBRTC_ANDROID
-                           !std::is_same<T1, LogMetadataTag>::value &&  
+           !std::is_same_v<std::decay_t<T>, LogMetadataTag> &&
 #endif
-                           !std::is_same<T1, LogMetadataErr>::value>* = nullptr>
+           !std::is_same_v<std::decay_t<T>, LogMetadataErr>)
 ToStringVal MakeVal(const T& x) {
   std::ostringstream os;  
   os << x;
