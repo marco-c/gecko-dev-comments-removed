@@ -89,10 +89,20 @@ class WebPlatformTestsRunner:
         log_buffer = CriticalLogBuffer()
         logger.add_handler(log_buffer)
 
+        
+        
+        
+        
+        
+        
+        original_shutdown = logger.shutdown
+        logger.shutdown = lambda *args, **kwargs: None
+
         result = 1
         try:
             result = wptrunner.start(**kwargs)
         finally:
+            logger.shutdown = original_shutdown
             if int(result) != 0:
                 self._process_log_errors(logger, log_buffer, kwargs)
             logger.remove_handler(log_buffer)
