@@ -212,19 +212,60 @@ class MediaContentDescription {
 
   
   
-  enum ExtmapAllowMixed { kNo, kSession, kMedia };
-  void set_extmap_allow_mixed_enum(ExtmapAllowMixed new_extmap_allow_mixed) {
-    if (new_extmap_allow_mixed == kMedia &&
-        extmap_allow_mixed_enum_ == kSession) {
+  enum class AttributeLevel { kNone, kSession, kMedia };
+
+  
+  
+  void set_extmap_allow_mixed_level(AttributeLevel level) {
+    if (level == AttributeLevel::kMedia &&
+        extmap_allow_mixed_level_ == AttributeLevel::kSession) {
       
       return;
     }
-    extmap_allow_mixed_enum_ = new_extmap_allow_mixed;
+    extmap_allow_mixed_level_ = level;
   }
+  AttributeLevel extmap_allow_mixed_level() const {
+    return extmap_allow_mixed_level_;
+  }
+  bool extmap_allow_mixed() const {
+    return extmap_allow_mixed_level_ != AttributeLevel::kNone;
+  }
+
+  
+  
+  
+  enum [[deprecated("Use AttributeLevel")]] ExtmapAllowMixed {
+    kNo,
+    kSession,
+    kMedia
+  };
+  [[deprecated("Use set_extmap_allow_mixed_level")]]
+  void set_extmap_allow_mixed_enum(ExtmapAllowMixed new_extmap_allow_mixed) {
+    AttributeLevel level = AttributeLevel::kNone;
+    switch (new_extmap_allow_mixed) {
+      case kNo:
+        level = AttributeLevel::kNone;
+        break;
+      case kSession:
+        level = AttributeLevel::kSession;
+        break;
+      case kMedia:
+        level = AttributeLevel::kMedia;
+        break;
+    }
+    set_extmap_allow_mixed_level(level);
+  }
+  [[deprecated("Use extmap_allow_mixed_level")]]
   ExtmapAllowMixed extmap_allow_mixed_enum() const {
-    return extmap_allow_mixed_enum_;
+    switch (extmap_allow_mixed_level_) {
+      case AttributeLevel::kNone:
+        return kNo;
+      case AttributeLevel::kSession:
+        return kSession;
+      case AttributeLevel::kMedia:
+        return kMedia;
+    }
   }
-  bool extmap_allow_mixed() const { return extmap_allow_mixed_enum_ != kNo; }
 
   
   bool HasSimulcast() const {
@@ -299,7 +340,7 @@ class MediaContentDescription {
   bool conference_mode_ = false;
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kSendRecv;
   SocketAddress connection_address_;
-  ExtmapAllowMixed extmap_allow_mixed_enum_ = kMedia;
+  AttributeLevel extmap_allow_mixed_level_ = AttributeLevel::kMedia;
 
   SimulcastDescription simulcast_;
   std::vector<RidDescription> receive_rids_;
@@ -604,14 +645,15 @@ class SessionDescription {
   
   void set_extmap_allow_mixed(bool supported) {
     extmap_allow_mixed_ = supported;
-    MediaContentDescription::ExtmapAllowMixed media_level_setting =
-        supported ? MediaContentDescription::kSession
-                  : MediaContentDescription::kNo;
+    MediaContentDescription::AttributeLevel media_level_setting =
+        supported ? MediaContentDescription::AttributeLevel::kSession
+                  : MediaContentDescription::AttributeLevel::kNone;
     for (auto& content : contents_) {
       
-      if (supported || content.media_description()->extmap_allow_mixed_enum() !=
-                           MediaContentDescription::kMedia) {
-        content.media_description()->set_extmap_allow_mixed_enum(
+      if (supported ||
+          content.media_description()->extmap_allow_mixed_level() !=
+              MediaContentDescription::AttributeLevel::kMedia) {
+        content.media_description()->set_extmap_allow_mixed_level(
             media_level_setting);
       }
     }
@@ -633,6 +675,5 @@ class SessionDescription {
 enum ContentSource { CS_LOCAL, CS_REMOTE };
 
 }  
-
 
 #endif  

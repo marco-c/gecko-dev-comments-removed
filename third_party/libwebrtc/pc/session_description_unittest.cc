@@ -18,43 +18,56 @@ namespace webrtc {
 
 TEST(MediaContentDescriptionTest, ExtmapAllowMixedDefaultValue) {
   VideoContentDescription video_desc;
-  EXPECT_EQ(MediaContentDescription::kMedia,
-            video_desc.extmap_allow_mixed_enum());
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
+            video_desc.extmap_allow_mixed_level());
 }
 
 TEST(MediaContentDescriptionTest, SetExtmapAllowMixed) {
   VideoContentDescription video_desc;
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
-  EXPECT_EQ(MediaContentDescription::kNo, video_desc.extmap_allow_mixed_enum());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
-  EXPECT_EQ(MediaContentDescription::kMedia,
-            video_desc.extmap_allow_mixed_enum());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kSession);
-  EXPECT_EQ(MediaContentDescription::kSession,
-            video_desc.extmap_allow_mixed_enum());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kNone,
+            video_desc.extmap_allow_mixed_level());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
+            video_desc.extmap_allow_mixed_level());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kSession);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
+            video_desc.extmap_allow_mixed_level());
 
   
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
-  EXPECT_EQ(MediaContentDescription::kSession,
-            video_desc.extmap_allow_mixed_enum());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
+            video_desc.extmap_allow_mixed_level());
 
   
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
-  EXPECT_EQ(MediaContentDescription::kNo, video_desc.extmap_allow_mixed_enum());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
-  EXPECT_EQ(MediaContentDescription::kMedia,
-            video_desc.extmap_allow_mixed_enum());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
-  EXPECT_EQ(MediaContentDescription::kNo, video_desc.extmap_allow_mixed_enum());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kNone,
+            video_desc.extmap_allow_mixed_level());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
+            video_desc.extmap_allow_mixed_level());
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kNone,
+            video_desc.extmap_allow_mixed_level());
 }
 
 TEST(MediaContentDescriptionTest, MixedOneTwoByteHeaderSupported) {
   VideoContentDescription video_desc;
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
   EXPECT_FALSE(video_desc.extmap_allow_mixed());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
   EXPECT_TRUE(video_desc.extmap_allow_mixed());
-  video_desc.set_extmap_allow_mixed_enum(MediaContentDescription::kSession);
+  video_desc.set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kSession);
   EXPECT_TRUE(video_desc.extmap_allow_mixed());
 }
 
@@ -75,35 +88,37 @@ TEST(SessionDescriptionTest, SetExtmapAllowMixedPropagatesToMediaLevel) {
 
   
   session_desc.set_extmap_allow_mixed(true);
-  EXPECT_EQ(MediaContentDescription::kSession,
-            video_desc->extmap_allow_mixed_enum());
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
+            video_desc->extmap_allow_mixed_level());
 
   
-  video_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
-  EXPECT_EQ(MediaContentDescription::kSession,
-            video_desc->extmap_allow_mixed_enum());
-
-  
-  
-  session_desc.set_extmap_allow_mixed(false);
-  EXPECT_EQ(MediaContentDescription::kNo,
-            video_desc->extmap_allow_mixed_enum());
-
-  
-  video_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
-  EXPECT_EQ(MediaContentDescription::kMedia,
-            video_desc->extmap_allow_mixed_enum());
+  video_desc->set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
+            video_desc->extmap_allow_mixed_level());
 
   
   
   session_desc.set_extmap_allow_mixed(false);
-  EXPECT_EQ(MediaContentDescription::kMedia,
-            video_desc->extmap_allow_mixed_enum());
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kNone,
+            video_desc->extmap_allow_mixed_level());
+
+  
+  video_desc->set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
+            video_desc->extmap_allow_mixed_level());
+
+  
+  
+  session_desc.set_extmap_allow_mixed(false);
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
+            video_desc->extmap_allow_mixed_level());
 
   
   session_desc.set_extmap_allow_mixed(true);
-  EXPECT_EQ(MediaContentDescription::kSession,
-            video_desc->extmap_allow_mixed_enum());
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
+            video_desc->extmap_allow_mixed_level());
 }
 
 TEST(SessionDescriptionTest, AddContentTransfersExtmapAllowMixedSetting) {
@@ -111,15 +126,16 @@ TEST(SessionDescriptionTest, AddContentTransfersExtmapAllowMixedSetting) {
   session_desc.set_extmap_allow_mixed(false);
   std::unique_ptr<MediaContentDescription> audio_desc =
       std::make_unique<AudioContentDescription>();
-  audio_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
+  audio_desc->set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kMedia);
 
   
   
   session_desc.AddContent("audio", MediaProtocolType::kRtp,
                           std::move(audio_desc));
-  EXPECT_EQ(MediaContentDescription::kMedia,
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kMedia,
             session_desc.GetContentDescriptionByName("audio")
-                ->extmap_allow_mixed_enum());
+                ->extmap_allow_mixed_level());
 
   
   
@@ -128,9 +144,9 @@ TEST(SessionDescriptionTest, AddContentTransfersExtmapAllowMixedSetting) {
       std::make_unique<VideoContentDescription>();
   session_desc.AddContent("video", MediaProtocolType::kRtp,
                           std::move(video_desc));
-  EXPECT_EQ(MediaContentDescription::kSession,
+  EXPECT_EQ(MediaContentDescription::AttributeLevel::kSession,
             session_desc.GetContentDescriptionByName("video")
-                ->extmap_allow_mixed_enum());
+                ->extmap_allow_mixed_level());
 }
 
 }  
