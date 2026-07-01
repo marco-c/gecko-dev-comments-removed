@@ -8976,6 +8976,8 @@ bool BaseCompiler::emitArrayFill() {
     freePtr(RegPtr(PreBarrierReg));
   }
 
+  sync();
+
   
   
   Label done;
