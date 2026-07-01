@@ -7670,6 +7670,25 @@ static nsIFrame* FindPreviousNonWhitespaceSibling(nsIFrame* aFrame) {
   return f;
 }
 
+static nsIFrame* CheckRubyContainers(nsIFrame* aFrame, nsIFrame* aParent) {
+  auto* ancestor = aParent;
+  auto* ancestorChild = aFrame;
+  while (ancestor && IsWrapperPseudo(ancestor) &&
+         CanRemoveWrapperPseudoForChildRemoval(ancestorChild, ancestor)) {
+    ancestorChild = ancestor;
+    ancestor = ancestorChild->GetParent();
+  }
+  if (!ancestor) {
+    return nullptr;
+  }
+  const auto ancestorType = ancestor->Type();
+  if (ancestorType != LayoutFrameType::Ruby &&
+      !RubyUtils::IsRubyContainerBox(ancestorType)) {
+    return nullptr;
+  }
+  return ancestor;
+}
+
 bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     nsIFrame* aFrame) {
 #define TRACE(reason)                                                       \
@@ -7781,9 +7800,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
   }
 
   
-  LayoutFrameType parentType = parent->Type();
-  if (parentType == LayoutFrameType::Ruby ||
-      RubyUtils::IsRubyContainerBox(parentType)) {
+  if (const auto* ancestor = CheckRubyContainers(inFlowFrame, parent)) {
     
     
     
@@ -7792,7 +7809,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     
     
     TRACE("Ruby container");
-    RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(ancestor->GetContent(), InsertionKind::Async);
     return true;
   }
 
