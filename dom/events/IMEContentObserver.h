@@ -200,6 +200,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
   
 
 
+  [[nodiscard]] bool IsForDesignMode() const {
+    return mRootEditableNodeOrTextControlElement &&
+           mRootEditableNodeOrTextControlElement->IsDocument();
+  }
+
+  
+
+
 
 
 

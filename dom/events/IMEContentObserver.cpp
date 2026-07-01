@@ -248,6 +248,10 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
   if (NS_WARN_IF(!mRootEditableNodeOrTextControlElement)) {
     return false;
   }
+  MOZ_ASSERT_IF(mRootEditableNodeOrTextControlElement->IsInDesignMode(),
+                IsForDesignMode());
+  MOZ_ASSERT_IF(!mRootEditableNodeOrTextControlElement->IsInDesignMode(),
+                !IsForDesignMode());
 
   mEditorBase = &aEditorBase;
 
@@ -259,6 +263,15 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
   }
 
   mRootElement = ComputeRootElement(presShell);
+  
+  
+  if (!mRootElement && IsForDesignMode()) {
+    return false;
+  }
+  
+  if (NS_WARN_IF(!mRootElement)) {
+    return false;
+  }
 
   if (mEditorBase->IsTextEditor()) {
     MOZ_ASSERT(mRootElement);
@@ -268,15 +281,6 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
       mTextControlValueLength = ContentEventHandler::GetNativeTextLength(*text);
     }
     mIsTextControl = true;
-  }
-  if (!mRootElement && mRootEditableNodeOrTextControlElement->IsDocument()) {
-    
-    
-    return false;
-  }
-
-  if (NS_WARN_IF(!mRootElement)) {
-    return false;
   }
 
   mDocShell = aPresContext.GetDocShell();
@@ -614,21 +618,33 @@ bool IMEContentObserver::IsObservingElement(const nsPresContext& aPresContext,
     return !aElement->IsInDesignMode() &&
            aElement == mRootEditableNodeOrTextControlElement;
   }
-  
-  
-  if (mRootEditableNodeOrTextControlElement &&
-      mRootEditableNodeOrTextControlElement->IsInDesignMode()) {
-    return mRootElement && (!aElement || aElement->IsInDesignMode()) &&
-           mRootElement == ComputeRootElement(aPresContext.GetPresShell());
+  if (!mRootEditableNodeOrTextControlElement) {
+    return false;
   }
   
   
   
+  if (IsForDesignMode()) {
+    
+    
+    
+    
+    if (!mRootEditableNodeOrTextControlElement->IsInDesignMode()) {
+      return false;
+    }
+    
+    
+    return mRootElement && (!aElement || aElement->IsInDesignMode()) &&
+           mRootElement == ComputeRootElement(aPresContext.GetPresShell());
+  }
+
   
-  return mRootEditableNodeOrTextControlElement &&
-         mRootEditableNodeOrTextControlElement ==
-             IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
-                 aPresContext, aElement);
+  
+  
+  
+  return mRootEditableNodeOrTextControlElement ==
+         IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
+             aPresContext, aElement);
 }
 
 
