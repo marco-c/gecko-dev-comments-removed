@@ -340,12 +340,6 @@ var allowlist = [
 
   
   
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSessions.sys.mjs",
-  },
-
-  
-  
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
   { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
 

@@ -82,13 +82,19 @@ let _sensitiveInfoDetector = new SensitiveInfoDetector();
  *
  * @returns {Promise<Array<{
  *   url: string,
+ *   urlHash: number,
  *   title: string,
+ *   searchQuery: string,
  *   domain: string,
  *   visitDateMicros: number,
+ *   totalViewTimeMs: number,
  *   frequencyPct: number,
  *   domainFrequencyPct: number,
  *   source: 'history'|'search'
  * }>>}
+ *   For `source === 'search'` rows, `searchQuery` is the parsed query text
+ *   from `moz_inputhistory.input` or the URL's `q`/`search_query` param.
+ *   For `source === 'history'` rows, `searchQuery` is an empty string.
  */
 export async function getRecentHistory(opts = {}) {
   // If provided, this is a Places visit_date-style cutoff in microseconds
@@ -116,6 +122,7 @@ export async function getRecentHistory(opts = {}) {
     SELECT
       p.id                                                 AS place_id,
       p.url                                                AS url,
+      p.url_hash                                           AS url_hash,
       o.host                                               AS host,
       p.title                                              AS title,
       mpm.created_at * 1000                                AS visit_date,
@@ -137,6 +144,7 @@ export async function getRecentHistory(opts = {}) {
       SELECT
         p.id                                                 AS place_id,
         p.url                                                AS url,
+        p.url_hash                                           AS url_hash,
         o.host                                               AS host,
         p.title                                              AS title,
         v.visit_date                                         AS visit_date,
@@ -163,6 +171,7 @@ export async function getRecentHistory(opts = {}) {
       SELECT
         r.place_id,
         r.url,
+        r.url_hash,
         r.host,
         r.title,
         r.visit_date,
@@ -222,9 +231,11 @@ export async function getRecentHistory(opts = {}) {
 
     SELECT
       a.url,
+      a.url_hash,
       a.host,
       a.source,
       a.title,
+      a.search_query,
       a.visit_date,
       a.total_view_time,
       p.frecency_pct,
@@ -248,8 +259,12 @@ export async function getRecentHistory(opts = {}) {
         const out = [];
         for (const row of stmt) {
           const url = row.getResultByName("url");
+          const urlHash = row.getResultByName("url_hash");
           const host = row.getResultByName("host");
           const source = row.getResultByName("source");
+          const searchQuery = safeDecodeURIComponent(
+            row.getResultByName("search_query") || ""
+          );
           const onlyTitle = row.getResultByName("title") || "";
           let title;
           if (onlyTitle) {
@@ -268,15 +283,19 @@ export async function getRecentHistory(opts = {}) {
             continue;
           }
           const visitDateMicros = row.getResultByName("visit_date") || 0;
+          const totalViewTimeMs = row.getResultByName("total_view_time") || 0;
           const frequencyPct = row.getResultByName("frecency_pct") || 0;
           const domainFrequencyPct =
             row.getResultByName("domain_frecency_pct") || 0;
 
           out.push({
             url,
+            urlHash,
             domain: host,
             title: sanitizeUntrustedContent(title, true),
+            searchQuery: sanitizeUntrustedContent(searchQuery, true),
             visitDateMicros,
+            totalViewTimeMs,
             frequencyPct,
             domainFrequencyPct,
             source,
@@ -807,6 +826,17 @@ function getOrInit(mapObj, key, initFn) {
 
 function round2(x) {
   return Math.round(Number(x) * 100) / 100;
+}
+
+function safeDecodeURIComponent(s) {
+  if (!s) {
+    return s;
+  }
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
 }
 
 /**

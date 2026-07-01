@@ -11,6 +11,7 @@ import {
   CATEGORY_TO_ID_PREFIX,
   HISTORY,
   CONVERSATION,
+  SESSION,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 
 /**
@@ -41,9 +42,53 @@ let gState = {
   meta: {
     last_history_memory_ts: 0,
     last_chat_memory_ts: 0,
+    last_session_memory_ts: 0,
   },
   version: MEMORY_STORE_VERSION,
 };
+
+/**
+ * Normalizes a raw source-IDs bundle to the canonical
+ * `{ history_source_ids, conversation_source_ids }` shape with deduped arrays.
+ * Memories created before source-ID tracking normalize to empty arrays.
+ *
+ * @param {object} [raw]
+ * @returns {{history_source_ids: Array<string|number>, conversation_source_ids: Array<string>}}
+ */
+function normalizeSourceIds(raw) {
+  return {
+    history_source_ids: Array.isArray(raw?.history_source_ids)
+      ? [...new Set(raw.history_source_ids)]
+      : [],
+    conversation_source_ids: Array.isArray(raw?.conversation_source_ids)
+      ? [...new Set(raw.conversation_source_ids)]
+      : [],
+  };
+}
+
+/**
+ * Unions two source-ID bundles (used when a memory is regenerated and we want
+ * to accumulate, not replace, its provenance).
+ *
+ * @param {object} a
+ * @param {object} b
+ * @returns {{history_source_ids: Array<string|number>, conversation_source_ids: Array<string>}}
+ */
+function unionSourceIds(a, b) {
+  const an = normalizeSourceIds(a);
+  const bn = normalizeSourceIds(b);
+  return {
+    history_source_ids: [
+      ...new Set([...an.history_source_ids, ...bn.history_source_ids]),
+    ],
+    conversation_source_ids: [
+      ...new Set([
+        ...an.conversation_source_ids,
+        ...bn.conversation_source_ids,
+      ]),
+    ],
+  };
+}
 
 // Whether we've finished initial load
 let gInitialized = false;
@@ -70,6 +115,16 @@ async function loadMemories() {
     sanitizedBasename: "memories",
   });
 
+  let markerData = null;
+  if (Services.profiler.IsActive()) {
+    let sizeLabel = "0 B";
+    try {
+      const stat = await IOUtils.stat(lazy.gStorePath);
+      sizeLabel = `${(stat.size / 1048576).toFixed(1)} MiB`;
+    } catch (_e) {}
+    markerData = { startTime: ChromeUtils.now(), sizeLabel };
+  }
+
   try {
     await gJSONFile.load();
   } catch (ex) {
@@ -78,6 +133,14 @@ async function loadMemories() {
     gJSONFile.data = gState;
     gInitialized = true;
     return;
+  } finally {
+    if (markerData) {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: markerData.startTime },
+        `MemoryStore:load_db(${markerData.sizeLabel})`
+      );
+    }
   }
 
   // Normalize the loaded data into our expected shape.
@@ -86,10 +149,19 @@ async function loadMemories() {
     gJSONFile.data = gState;
   } else {
     gState = {
-      memories: Array.isArray(data.memories) ? data.memories : [],
+      memories: Array.isArray(data.memories)
+        ? data.memories.map(m => ({
+            ...m,
+            // Back-compat: memories created before source-ID tracking get an
+            // empty bundle so the shape is uniform (and they're never matched
+            // by source-based revocation).
+            source_ids: normalizeSourceIds(m.source_ids),
+          }))
+        : [],
       meta: {
         last_history_memory_ts: data.meta?.last_history_memory_ts || 0,
         last_chat_memory_ts: data.meta?.last_chat_memory_ts || 0,
+        last_session_memory_ts: data.meta?.last_session_memory_ts || 0,
       },
       version:
         typeof data.version === "number" ? data.version : MEMORY_STORE_VERSION,
@@ -201,6 +273,14 @@ export const MemoryStore = {
         }
       }
 
+      if (memoryPartial.source_ids) {
+        // Accumulate provenance across regenerations rather than overwriting.
+        memory.source_ids = unionSourceIds(
+          memory.source_ids,
+          memoryPartial.source_ids
+        );
+      }
+
       memory.updated_at = memoryPartial.updated_at || now;
 
       gJSONFile?.saveSoon();
@@ -217,6 +297,7 @@ export const MemoryStore = {
       intent: memoryPartial.intent || "",
       reasoning: memoryPartial.reasoning || "",
       source: memoryPartial.source || HISTORY,
+      source_ids: normalizeSourceIds(memoryPartial.source_ids),
       score: Number.isFinite(memoryPartial.score) ? memoryPartial.score : 0,
       updated_at: memoryPartial.updated_at || now,
       is_deleted: memoryPartial.is_deleted ?? false,
@@ -390,6 +471,7 @@ export const MemoryStore = {
     const validatedProps = [
       ["last_history_memory_ts", v => Number.isFinite(v)],
       ["last_chat_memory_ts", v => Number.isFinite(v)],
+      ["last_session_memory_ts", v => Number.isFinite(v)],
     ];
 
     for (const [prop, validator] of validatedProps) {
@@ -406,6 +488,7 @@ export const MemoryStore = {
 function updateMemoriesCountMetric() {
   let historyCount = 0;
   let conversationCount = 0;
+  let sessionCount = 0;
 
   for (const memory of gState.memories) {
     if (memory.is_deleted) {
@@ -415,11 +498,14 @@ function updateMemoriesCountMetric() {
       conversationCount++;
     } else if (memory.source === HISTORY) {
       historyCount++;
+    } else if (memory.source === SESSION) {
+      sessionCount++;
     }
   }
 
   Glean.smartWindow.memoriesCount.history.set(historyCount);
   Glean.smartWindow.memoriesCount.conversation.set(conversationCount);
+  Glean.smartWindow.memoriesCount.session.set(sessionCount);
 
   updateMemoriesLastUpdatedMetric();
 }
@@ -428,7 +514,8 @@ function updateMemoriesLastUpdatedMetric() {
   const lastUpdated =
     Math.max(
       gState.meta.last_history_memory_ts || 0,
-      gState.meta.last_chat_memory_ts || 0
+      gState.meta.last_chat_memory_ts || 0,
+      gState.meta.last_session_memory_ts || 0
     ) || Date.now();
   if (!lastUpdated || lastUpdated <= 0) {
     return;
