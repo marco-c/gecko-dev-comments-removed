@@ -303,6 +303,7 @@ class TrustPanel {
         .addEventListener("command", () => this.#changeHttpsOnlyPermission());
 
       this.#popup.addEventListener("popupshown", this);
+      this.#popup.addEventListener("popuphidden", this);
     }
   }
 
@@ -1595,13 +1596,35 @@ class TrustPanel {
   
   handleEvent(event) {
     switch (event.type) {
+      case "focus": {
+        let elem = document.activeElement;
+        let position = elem.compareDocumentPosition(this.#popup);
+        if (
+          !(
+            position &
+            (Node.DOCUMENT_POSITION_CONTAINS |
+              Node.DOCUMENT_POSITION_CONTAINED_BY)
+          ) &&
+          !this.#popup.hasAttribute("noautohide")
+        ) {
+          
+          
+          
+          PanelMultiView.hidePopup(this.#popup);
+        }
+        break;
+      }
       case "popupshown":
         this.onPopupShown(event);
+        break;
+      case "popuphidden":
+        this.onPopupHidden(event);
         break;
     }
   }
 
   onPopupShown() {
+    window.addEventListener("focus", this, true);
     PopupNotifications.suppressWhileOpen(this.#popup);
     
     
@@ -1611,6 +1634,10 @@ class TrustPanel {
         this.#enablePopupToggles();
       }, popupClickjackDelay);
     }
+  }
+
+  onPopupHidden() {
+    window.removeEventListener("focus", this, true);
   }
 
   
