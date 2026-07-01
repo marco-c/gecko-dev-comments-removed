@@ -273,6 +273,12 @@
       
       
       await newitem.updateComplete;
+
+      if (aNotification.label?.["l10n-id"] && newitem.shadowRoot) {
+        await document.l10n.translateFragment(newitem.shadowRoot);
+        newitem.setAlertRole();
+      }
+
       this._showNotification(newitem, true);
 
       
@@ -559,8 +565,8 @@
           this.messageL10nArgs = value["l10n-args"];
         } else {
           this.message = value;
+          this.setAlertRole();
         }
-        this.setAlertRole();
       }
 
       setButtons(buttons) {
