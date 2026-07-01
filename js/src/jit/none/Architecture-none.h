@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_none_Architecture_none_h
 #define jit_none_Architecture_none_h
 
@@ -154,7 +152,6 @@ struct FloatRegister {
   }
 };
 
-inline bool hasUnaliasedDouble() { MOZ_CRASH(); }
 inline bool hasMultiAlias() { MOZ_CRASH(); }
 
 static constexpr uint32_t ShadowStackSpace = 0;

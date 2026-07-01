@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_wasm32_Architecture_wasm32_h
 #define jit_wasm32_Architecture_wasm32_h
 
@@ -158,7 +156,6 @@ struct FloatRegister {
   }
 };
 
-inline bool hasUnaliasedDouble() { MOZ_CRASH(); }
 inline bool hasMultiAlias() { MOZ_CRASH(); }
 
 static constexpr uint32_t ShadowStackSpace = 0;

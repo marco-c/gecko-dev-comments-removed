@@ -781,10 +781,6 @@ class ARM64Flags final {
 
 
 
-inline bool hasUnaliasedDouble() { return false; }
-
-
-
 inline bool hasMultiAlias() { return false; }
 
 

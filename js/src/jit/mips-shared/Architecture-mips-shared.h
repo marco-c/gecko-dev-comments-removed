@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips_shared_Architecture_mips_shared_h
 #define jit_mips_shared_Architecture_mips_shared_h
 
@@ -300,9 +298,6 @@ inline uint32_t GetMIPSFlags() { return MIPSFlags::GetFlags(); }
 inline bool hasFPU() { return MIPSFlags::HasFPU(); }
 inline bool isLoongson() { return MIPSFlags::IsLoongson(); }
 inline bool hasR2() { return MIPSFlags::HasR2(); }
-
-
-inline bool hasUnaliasedDouble() { return false; }
 
 
 inline bool hasMultiAlias() { return false; }

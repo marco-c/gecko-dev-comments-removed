@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x86_shared_Architecture_x86_h
 #define jit_x86_shared_Architecture_x86_h
 
@@ -439,10 +437,6 @@ inline FloatRegister::SetType
 FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
-
-
-
-inline bool hasUnaliasedDouble() { return false; }
 
 
 

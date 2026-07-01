@@ -506,9 +506,6 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
 }
 
 
-inline bool hasUnaliasedDouble() { return false; }
-
-
 inline bool hasMultiAlias() { return false; }
 
 uint32_t GetLOONG64Flags();

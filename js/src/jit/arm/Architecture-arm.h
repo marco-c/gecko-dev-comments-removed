@@ -781,10 +781,6 @@ class ARMFlags final {
 
 
 
-inline bool hasUnaliasedDouble() { return ARMFlags::Has32DP(); }
-
-
-
 inline bool hasMultiAlias() { return true; }
 
 
