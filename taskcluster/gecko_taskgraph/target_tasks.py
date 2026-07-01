@@ -1310,8 +1310,10 @@ def _filter_by_release_project(parameters):
     if target_project is None:
         raise Exception("Unknown or unspecified release type in simulation run.")
 
+    
     params = parameters.copy()
     params["project"] = target_project
+    params["level"] = "3"
     return lambda task: filter_for_project(task, params)
 
 
