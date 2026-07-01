@@ -35,7 +35,8 @@ static inline void GetAuthKey(const nsACString& scheme, const nsACString& host,
 
 
 
-NS_IMPL_ISUPPORTS(nsHttpAuthCache, nsIHttpAuthCache)
+NS_IMPL_ISUPPORTS(nsHttpAuthCache, nsIHttpAuthCache, nsIObserver,
+                  nsISupportsWeakReference)
 
 NS_IMETHODIMP
 nsHttpAuthCache::GetEntries(nsTArray<RefPtr<nsIHttpAuthEntry>>& aEntries) {
@@ -72,21 +73,24 @@ nsHttpAuthCache::ClearEntry(nsIHttpAuthEntry* aEntry) {
 
 nsHttpAuthCache::nsHttpAuthCache() : mDB(128) {
   LOG(("nsHttpAuthCache::nsHttpAuthCache %p", this));
+}
 
+
+
+
+void nsHttpAuthCache::Init() {
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   if (obsSvc) {
-    obsSvc->AddObserver(this, "clear-origin-attributes-data", true);
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "clear-origin-attributes-data", true));
   }
 }
 
 nsHttpAuthCache::~nsHttpAuthCache() {
   LOG(("nsHttpAuthCache::~nsHttpAuthCache %p", this));
 
+  
   ClearAll();
-  nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
-  if (obsSvc) {
-    obsSvc->RemoveObserver(this, "clear-origin-attributes-data");
-  }
 }
 
 nsresult nsHttpAuthCache::GetAuthEntryForPath(const nsACString& scheme,

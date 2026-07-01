@@ -13,6 +13,7 @@
 #include "nsStringFwd.h"
 #include "nsIHttpAuthCache.h"
 #include "nsIObserver.h"
+#include "nsWeakReference.h"
 
 namespace mozilla {
 
@@ -160,13 +161,19 @@ class nsHttpAuthNode {
 
 
 
-class nsHttpAuthCache : public nsIHttpAuthCache, public nsIObserver {
+class nsHttpAuthCache : public nsIHttpAuthCache,
+                        public nsIObserver,
+                        public nsSupportsWeakReference {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIHTTPAUTHCACHE
   NS_DECL_NSIOBSERVER
 
   nsHttpAuthCache();
+
+  
+  
+  void Init();
 
   
   
