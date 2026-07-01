@@ -108,10 +108,7 @@ class nsLineLayout {
   
 
 
-
-
-  void VerticalAlignLine(nsFlowAreaRect* aFlowArea = nullptr,
-                         bool aIsLastFormattedLine = false);
+  void VerticalAlignLine();
 
   bool TrimTrailingWhiteSpace();
 
@@ -654,11 +651,6 @@ class nsLineLayout {
                                   const nsSize& aContainerSize,
                                   nscoord aBStartEdge);
   void VerticalAlignFrames(PerSpanData* psd);
-
-  void ApplyBlockTextBoxTrim(PerSpanData* psd, mozilla::WritingMode aLineWM,
-                             nscoord* aLineBSize, nscoord* aBaselineBCoord,
-                             nsFlowAreaRect* aFlowArea,
-                             bool aIsLastFormattedLine);
 
   nscoord ComputeTopAlignFrameStart(const PerFrameData* pfd,
                                     const mozilla::WritingMode& aWM,

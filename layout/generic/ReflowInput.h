@@ -535,12 +535,6 @@ struct ReflowInput : public SizeComputationInput {
     
     
     bool mCanHaveClassABreakpoints : 1;
-
-    
-    
-    
-    bool mShouldApplyTextBoxTrimStart : 1;
-    bool mShouldApplyTextBoxTrimEnd : 1;
   };
   Flags mFlags;
 
