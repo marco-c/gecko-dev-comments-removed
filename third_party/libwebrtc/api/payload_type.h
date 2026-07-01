@@ -39,7 +39,7 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
   
   
   static std::optional<PayloadType> Create(int pt) {
-    if (pt < 0 || pt > 127) {
+    if (pt < 0 || pt > kUpperDynamicRangeMax.value()) {
       return std::nullopt;
     }
     return PayloadType(pt);
@@ -47,20 +47,32 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
   
   
   static constexpr PayloadType NotSet() { return PayloadType(Internal{}, -1); }
+
+  static const PayloadType kLowerDynamicRangeMin;
+  static const PayloadType kLowerDynamicRangeMax;
+  static const PayloadType kUpperDynamicRangeMin;
+  static const PayloadType kUpperDynamicRangeMax;
+
   bool Valid(bool rtcp_mux = false) const {
     
     
     
-    if (rtcp_mux && (value() > 63 && value() < 96)) {
+    if (rtcp_mux &&
+        (*this > kLowerDynamicRangeMax && *this < kUpperDynamicRangeMin)) {
       return false;
     }
-    return value() >= 0 && value() <= 127;
+    return *this >= 0 && *this <= kUpperDynamicRangeMax;
   }
   
   static bool IsValid(PayloadType id, bool rtcp_mux) {
     return id.Valid(rtcp_mux);
   }
   bool IsSet() const { return value() >= 0; }
+
+  bool IsDynamic() const {
+    return (*this >= kLowerDynamicRangeMin && *this <= kLowerDynamicRangeMax) ||
+           (*this >= kUpperDynamicRangeMin && *this <= kUpperDynamicRangeMax);
+  }
 
  private:
   class Internal {};
@@ -71,6 +83,15 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, int> {
     absl::Format(&sink, "%d", pt.value());
   }
 };
+
+inline constexpr PayloadType PayloadType::kLowerDynamicRangeMin =
+    PayloadType(35);
+inline constexpr PayloadType PayloadType::kLowerDynamicRangeMax =
+    PayloadType(63);
+inline constexpr PayloadType PayloadType::kUpperDynamicRangeMin =
+    PayloadType(96);
+inline constexpr PayloadType PayloadType::kUpperDynamicRangeMax =
+    PayloadType(127);
 
 }  
 

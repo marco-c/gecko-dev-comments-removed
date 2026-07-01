@@ -217,8 +217,8 @@ RTCErrorOr<PayloadType> PayloadTypePicker::SuggestMapping(
   
   
   
-  if (codec.id >= 0 && codec.id <= kLastDynamicPayloadTypeUpperRange &&
-      seen_payload_types_.count(codec.id.value()) == 0) {
+  if (codec.id.IsSet() && codec.id.IsDynamic() &&
+      !seen_payload_types_.contains(codec.id)) {
     AddMapping(PayloadType(codec.id), codec);
     return PayloadType(codec.id);
   }
@@ -284,7 +284,7 @@ RTCError PayloadTypeRecorder::AddMapping(PayloadType payload_type,
       !MatchesWithReferenceAttributes(codec, existing_codec_it->second)) {
     
     if (disallow_redefinition_level_ > 0) {
-      if (accepted_definitions_.count(payload_type) > 0) {
+      if (accepted_definitions_.contains(payload_type)) {
         
         RTC_LOG(LS_WARNING)
             << "Rejected attempt to redefine mapping for PT " << payload_type
@@ -428,7 +428,7 @@ RTCErrorOr<int> RtpHeaderExtensionPicker::SuggestMapping(
 
   
   if (preferred_id >= 1 && preferred_id <= 255 &&
-      seen_ids_.count(preferred_id) == 0) {
+      !seen_ids_.contains(preferred_id)) {
     if (preferred_id <= 14) {
       AddMapping(preferred_id, uri, encrypt);
       return preferred_id;
@@ -446,7 +446,7 @@ RTCErrorOr<int> RtpHeaderExtensionPicker::SuggestMapping(
   
   
   for (int id = 14; id >= 1; --id) {
-    if (seen_ids_.count(id) == 0) {
+    if (!seen_ids_.contains(id)) {
       AddMapping(id, uri, encrypt);
       return id;
     }
@@ -456,7 +456,7 @@ RTCErrorOr<int> RtpHeaderExtensionPicker::SuggestMapping(
     
     
     for (int id = 16; id <= 255; ++id) {
-      if (seen_ids_.count(id) == 0) {
+      if (!seen_ids_.contains(id)) {
         AddMapping(id, uri, encrypt);
         return id;
       }
