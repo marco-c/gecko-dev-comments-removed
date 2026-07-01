@@ -1900,17 +1900,9 @@ static void TeardownAppNotes() {
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-#if defined(DEBUG)
-  
-  
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
-  if ((!envvar || !*envvar) && !force) return NS_OK;
-#else
-  
-  
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
-  if (envvar && *envvar && !force) return NS_OK;
-#endif
+  if (!CrashReporterIsEnabled(force)) {
+    return NS_OK;
+  }
 
   
   
