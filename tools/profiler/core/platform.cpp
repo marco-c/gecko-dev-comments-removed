@@ -990,6 +990,28 @@ class CorePS {
   PS_GET_AND_SET(const Maybe<nsCOMPtr<nsIFile>>&, AsyncSignalDumpDirectory)
 #endif
 
+  
+  
+  
+  static const TimeStamp& ScheduledDumpDeadline(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    return sInstance->mScheduledDumpDeadline;
+  }
+  static const nsACString& ScheduledDumpPath(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    return sInstance->mScheduledDumpPath;
+  }
+  static void ScheduleDumpToFile(PSLockRef, const TimeStamp& aDeadline,
+                                 const nsACString& aPath) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mScheduledDumpDeadline = aDeadline;
+    sInstance->mScheduledDumpPath = aPath;
+  }
+  static void CancelScheduledDump(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mScheduledDumpDeadline = TimeStamp{};
+  }
+
   static void SetBandwidthCounter(ProfilerBandwidthCounter* aBandwidthCounter) {
     MOZ_ASSERT(sInstance);
 
@@ -1042,6 +1064,12 @@ class CorePS {
   
   
   nsAutoCString mETLDplus1;
+
+  
+  
+  
+  TimeStamp mScheduledDumpDeadline;
+  nsAutoCString mScheduledDumpPath;
 
   
   
@@ -4664,6 +4692,12 @@ void SamplerThread::Run() {
   
   SamplingState samplingState{};
 
+  
+  
+  
+  bool scheduledDumpDue = false;
+  nsAutoCString scheduledDumpPath;
+
   const TimeDuration sampleInterval =
       TimeDuration::FromMicroseconds(mIntervalMicroseconds);
   const uint32_t minimumIntervalSleepUs =
@@ -4736,6 +4770,13 @@ void SamplerThread::Run() {
       }
 
       ActivePS::ClearExpiredExitProfiles(lock);
+
+      if (const TimeStamp& deadline = CorePS::ScheduledDumpDeadline(lock);
+          !deadline.IsNull() && sampleStart >= deadline) {
+        scheduledDumpDue = true;
+        scheduledDumpPath = CorePS::ScheduledDumpPath(lock);
+        CorePS::CancelScheduledDump(lock);
+      }
 
       TimeStamp expiredMarkersCleaned = TimeStamp::Now();
 
@@ -5211,6 +5252,13 @@ void SamplerThread::Run() {
     
     InvokePostSamplingCallbacks(std::move(postSamplingCallbacks),
                                 samplingState);
+
+    
+    
+    if (scheduledDumpDue) {
+      scheduledDumpDue = false;
+      profiler_save_profile_to_file(scheduledDumpPath.get());
+    }
 
     ProfilerChild::ProcessPendingUpdate();
 
@@ -6603,6 +6651,30 @@ void profiler_save_profile_to_file(const char* aFilename) {
 
   locked_profiler_save_profile_to_file(lock, aFilename,
                                        preRecordedMetaInformation);
+}
+
+void profiler_schedule_dump_to_file(double aDelaySeconds,
+                                    const char* aFilename) {
+  if (!aFilename || !CorePS::Exists()) {
+    return;
+  }
+
+  
+  
+  TimeStamp deadline =
+      TimeStamp::Now() + TimeDuration::FromSeconds(aDelaySeconds);
+
+  PSAutoLock lock;
+  CorePS::ScheduleDumpToFile(lock, deadline, nsDependentCString(aFilename));
+}
+
+void profiler_cancel_scheduled_dump() {
+  if (!CorePS::Exists()) {
+    return;
+  }
+
+  PSAutoLock lock;
+  CorePS::CancelScheduledDump(lock);
 }
 
 void profiler_request_dump_and_quit_for_test(const nsACString& aReason) {
