@@ -31,11 +31,6 @@ class WinTaskbar final : public nsIWinTaskbar {
   static bool GetAppUserModelID(nsAString& aDefaultGroupId,
                                 bool aPrivateBrowsing = false);
 
-  
-  
-  
-  static uint16_t GetWindowIconOverride();
-
  private:
   bool Initialize();
 
