@@ -640,11 +640,17 @@ exports.ToolboxButtons = [
       }
     },
   },
-  createHighlightButton(
-    [HIGHLIGHTER_TYPES.RULERS, HIGHLIGHTER_TYPES.VIEWPORT_SIZE],
-    "rulers"
-  ),
-  createHighlightButton([HIGHLIGHTER_TYPES.MEASURING], "measure"),
+  createHighlightButton({
+    highlighterTypes: [
+      HIGHLIGHTER_TYPES.RULERS,
+      HIGHLIGHTER_TYPES.VIEWPORT_SIZE,
+    ],
+    id: "rulers",
+  }),
+  createHighlightButton({
+    highlighterTypes: [HIGHLIGHTER_TYPES.MEASURING],
+    id: "measure",
+  }),
   {
     id: "command-button-jstracer",
     description: l10n(
@@ -820,7 +826,17 @@ exports.ToolboxButtons = [
   },
 ];
 
-function createHighlightButton(highlighterTypes, id) {
+
+
+
+
+
+
+
+
+
+
+function createHighlightButton({ highlighterTypes, id }) {
   return {
     id: `command-button-${id}`,
     description: l10n(`toolbox.buttons.${id}`),
@@ -828,22 +844,57 @@ function createHighlightButton(highlighterTypes, id) {
     isToolSupported: toolbox =>
       toolbox.commands.descriptorFront.isTabDescriptor,
     async onClick(event, toolbox) {
-      const inspectorFront = await toolbox.target.getFront("inspector");
+      
+      
+      const { targetConfigurationCommand } = toolbox.commands;
+      if (await targetConfigurationCommand.supports("enabledHighlighters")) {
+        const { configuration } = targetConfigurationCommand;
+        let highlighters = configuration.enabledHighlighters || [];
+        
+        if (highlighterTypes.every(type => highlighters.includes(type))) {
+          
+          highlighters = highlighters.filter(
+            type => !highlighterTypes.includes(type)
+          );
+        } else {
+          
+          highlighters = [...highlighters, ...highlighterTypes];
+        }
+        
+        await targetConfigurationCommand.updateConfiguration({
+          enabledHighlighters: highlighters,
+        });
+      } else {
+        const inspectorFront = await toolbox.target.getFront("inspector");
+        await Promise.all(
+          highlighterTypes.map(async name => {
+            const highlighter =
+              await inspectorFront.getOrCreateHighlighterByType(name);
 
-      await Promise.all(
-        highlighterTypes.map(async name => {
-          const highlighter =
-            await inspectorFront.getOrCreateHighlighterByType(name);
-
-          if (highlighter.isShown()) {
-            await highlighter.hide();
-          } else {
-            await highlighter.show();
-          }
-        })
-      );
+            if (highlighter.isShown()) {
+              await highlighter.hide();
+            } else {
+              await highlighter.show();
+            }
+          })
+        );
+      }
     },
     isChecked(toolbox) {
+      const { targetConfigurationCommand } = toolbox.commands;
+      const { configuration } = targetConfigurationCommand;
+      
+      
+      
+      
+      
+      if ("enabledHighlighters" in configuration) {
+        const highlighters = configuration.enabledHighlighters || [];
+        const isChecked = highlighterTypes.every(type =>
+          highlighters.includes(type)
+        );
+        return isChecked;
+      }
       
       
       const inspectorFront = toolbox.target.getCachedFront("inspector");

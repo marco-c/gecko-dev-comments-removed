@@ -240,13 +240,31 @@ class BaseTargetActor extends Actor {
     if (typeof options.isTracerFeatureEnabled === "boolean") {
       this.isTracerFeatureEnabled = options.isTracerFeatureEnabled;
     }
+
+    this.#updateTracerOptions(
+      options.tracerOptions,
+      calledFromDocumentCreation
+    );
+
+    if (options.enabledHighlighters) {
+      this.#updateHighlighters(options.enabledHighlighters);
+    }
+  }
+
+  
+
+
+
+
+
+  #updateTracerOptions(tracerOptions, calledFromDocumentCreation) {
     
-    if (options.tracerOptions) {
+    if (tracerOptions) {
       
       
       
       if (
-        options.tracerOptions.traceOnNextLoad &&
+        tracerOptions.traceOnNextLoad &&
         (!calledFromDocumentCreation || !this.isTopLevelTarget)
       ) {
         if (this.isTopLevelTarget) {
@@ -296,11 +314,49 @@ class BaseTargetActor extends Actor {
         return;
       }
       const tracerActor = this.getTargetScopedActor("tracer");
-      tracerActor.startTracing(options.tracerOptions);
+      tracerActor.startTracing(tracerOptions);
     } else if (this.hasTargetScopedActor("tracer")) {
       const tracerActor = this.getTargetScopedActor("tracer");
       tracerActor.stopTracing();
     }
+  }
+
+  
+  
+  
+  
+  #enabledHighlighters = new Set();
+
+  
+
+
+
+
+
+
+  async #updateHighlighters(enabledHighlighters) {
+    const inspectorActor = this.getTargetScopedActor("inspector");
+
+    
+    const promises = [];
+    for (const type of enabledHighlighters) {
+      if (this.#enabledHighlighters.has(type)) {
+        continue;
+      }
+      const highlighter = await inspectorActor.getHighlighterByType(type);
+      promises.push(highlighter.show());
+      this.#enabledHighlighters.add({ type, highlighter });
+    }
+
+    
+    for (const { type, highlighter } of this.#enabledHighlighters) {
+      if (enabledHighlighters.includes(type)) {
+        continue;
+      }
+      promises.push(highlighter.hide());
+    }
+
+    await Promise.all(promises);
   }
 }
 exports.BaseTargetActor = BaseTargetActor;

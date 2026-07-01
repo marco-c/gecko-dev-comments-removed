@@ -65,6 +65,20 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     });
 
     
+    
+    
+    const { configuration } =
+      this.targetFront.commands.targetConfigurationCommand;
+    if ("enabledHighlighters" in configuration) {
+      await resourceCommand.watchResources(
+        [resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this.#documentEventListener,
+        }
+      );
+    }
+
+    
     if (this.isDestroyed()) {
       return null;
     }
@@ -94,6 +108,22 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     await this.walker.reparentRemoteFrame();
   }
+
+  
+  
+  
+  #documentEventListener = resources => {
+    const willNavigate = resources.some(
+      resource =>
+        resource.name == "will-navigate" && resource.targetFront.isTopLevel
+    );
+    if (!willNavigate) {
+      return;
+    }
+    
+    
+    this._highlighters.clear();
+  };
 
   hasHighlighter(type) {
     return this._highlighters.has(type);
@@ -127,6 +157,9 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     const { resourceCommand } = this;
     resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
       onAvailable: this.noopStylesheetListener,
+    });
+    resourceCommand.unwatchResources([resourceCommand.TYPES.DOCUMENT_EVENT], {
+      onAvailable: this.#documentEventListener,
     });
     this.resourceCommand = null;
 
@@ -199,7 +232,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     let front = this._highlighters.get(type);
     let pendingGetHighlighter = this._pendingGetHighlighterMap.get(type);
 
-    if (!front && !pendingGetHighlighter) {
+    if ((!front || front.isDestroyed()) && !pendingGetHighlighter) {
       pendingGetHighlighter = (async () => {
         const highlighter = await this.getHighlighterByType(type);
         this._highlighters.set(type, highlighter);

@@ -41,6 +41,8 @@ const SUPPORTED_OPTIONS = {
   
   customUserAgent: true,
   
+  enabledHighlighters: true,
+  
   isTracerFeatureEnabled: true,
   
   javascriptEnabled: true,
