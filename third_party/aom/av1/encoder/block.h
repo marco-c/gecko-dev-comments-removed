@@ -44,6 +44,9 @@ extern "C" {
 #define MAX_TX_TYPE_PROB 1024
 
 
+#define TOP_INTER_TX_NO_SPLIT_COUNT 4
+
+
 #define COLOR_SENS_IDX(plane) ((plane) - 1)
 
 
@@ -874,7 +877,7 @@ typedef struct SetOffsetsLoc {
 
 
 
-#define TOP_COMP_AVG_EST_RD_COUNT 2
+#define TOP_COMP_AVG_EST_RD_COUNT 5
 
 
 
@@ -1413,6 +1416,10 @@ typedef struct macroblock {
   int palette_pixels;
 
   
+  int64_t top_inter_tx_no_split_rd[MAX_TX_BLOCKS_IN_MAX_SB]
+                                  [TOP_INTER_TX_NO_SPLIT_COUNT];
+
+  
 
 
   struct SB_FIRST_PASS_STATS *sb_stats_cache;
@@ -1431,6 +1438,12 @@ typedef struct macroblock {
 
   RD_STATS *rdcost;
 #endif  
+
+  
+  int pix_to_bottom_edge;
+
+  
+  int pix_to_right_edge;
 } MACROBLOCK;
 #undef SINGLE_REF_MODES
 

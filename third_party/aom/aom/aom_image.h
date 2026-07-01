@@ -132,10 +132,14 @@ typedef enum aom_matrix_coefficients {
   AOM_CICP_MC_SMPTE_2085 = 11, 
   AOM_CICP_MC_CHROMAT_NCL =
       12, 
-  AOM_CICP_MC_CHROMAT_CL = 13, 
-  AOM_CICP_MC_ICTCP = 14,      
-  AOM_CICP_MC_RESERVED_15 = 15 
-} aom_matrix_coefficients_t;   
+  AOM_CICP_MC_CHROMAT_CL = 13,  
+  AOM_CICP_MC_ICTCP = 14,       
+  AOM_CICP_MC_RESERVED_15 = 15, 
+  AOM_CICP_MC_IPT_C2 = 15,      
+  AOM_CICP_MC_YCGCO_RE = 16,    
+  AOM_CICP_MC_YCGCO_RO = 17,    
+  
+} aom_matrix_coefficients_t; 
 
 
 typedef enum aom_color_range {
@@ -205,13 +209,55 @@ typedef struct aom_metadata {
 
 
 typedef struct aom_image {
-  aom_img_fmt_t fmt;                 
-  aom_color_primaries_t cp;          
-  aom_transfer_characteristics_t tc; 
-  aom_matrix_coefficients_t mc;      
-  int monochrome;                    
-  aom_chroma_sample_position_t csp;  
-  aom_color_range_t range;           
+  aom_img_fmt_t fmt; 
+  
+
+
+
+
+
+
+  aom_color_primaries_t cp;
+  
+
+
+
+
+
+
+  aom_transfer_characteristics_t tc;
+  
+
+
+
+
+
+
+  aom_matrix_coefficients_t mc;
+  
+
+
+
+
+
+
+  int monochrome;
+  
+
+
+
+
+
+
+  aom_chroma_sample_position_t csp;
+  
+
+
+
+
+
+
+  aom_color_range_t range;
 
   
   unsigned int w;         

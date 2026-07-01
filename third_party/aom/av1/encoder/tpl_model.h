@@ -150,6 +150,7 @@ typedef struct TplDepFrame {
   YV12_BUFFER_CONFIG *rec_picture;
   int ref_map_index[REF_FRAMES];
   int stride;
+  
   int width;
   int height;
   int mi_rows;
@@ -241,6 +242,11 @@ typedef struct TplParams {
 
 
   YV12_BUFFER_CONFIG prev_gop_arf_src;
+
+  
+
+
+  YV12_BUFFER_CONFIG prev_gop_arf_tpl_recon;
 
   
 

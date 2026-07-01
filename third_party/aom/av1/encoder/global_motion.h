@@ -77,7 +77,7 @@ void av1_convert_model_to_params(const double *params,
                                  WarpedMotionParams *model);
 
 
-static const double erroradv_tr[2] = { 0.65, 0.2 };
+static const double erroradv_tr[3] = { 0.65, 0.3, 0.2 };
 static const double erroradv_prod_tr = 20000;
 
 

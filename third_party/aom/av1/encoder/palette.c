@@ -304,8 +304,8 @@ static inline void palette_rd_y(
   
   const int txfm_search_done = 1;
   store_winner_mode_stats(
-      &cpi->common, x, mbmi, NULL, NULL, NULL, THR_DC, color_map, bsize,
-      this_rd, cpi->sf.winner_mode_sf.multi_winner_mode_type, txfm_search_done);
+      cpi, x, mbmi, NULL, NULL, NULL, THR_DC, color_map, bsize, this_rd,
+      cpi->sf.winner_mode_sf.multi_winner_mode_type, txfm_search_done);
   if (this_rd < *best_rd) {
     *best_rd = this_rd;
     
@@ -756,9 +756,6 @@ void av1_rd_pick_palette_intra_sby(
   if (best_mbmi->palette_mode_info.palette_size[0] > 0) {
     memcpy(color_map, best_palette_color_map,
            block_width * block_height * sizeof(best_palette_color_map[0]));
-    
-    
-    x->palette_pixels += (block_width * block_height);
   }
   *mbmi = *best_mbmi;
 }

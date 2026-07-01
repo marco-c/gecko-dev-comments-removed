@@ -125,8 +125,6 @@ static bool compare_plane(const uint8_t *const buf1, int stride1,
   return true;
 }
 
-
-
 static bool compare_img(const aom_image_t *img1, const aom_image_t *img2,
                         int *const mismatch_row, int *const mismatch_col,
                         int *const mismatch_plane, int *const mismatch_pix1,
