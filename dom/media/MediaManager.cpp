@@ -3019,16 +3019,23 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
           nsPIDOMWindowOuter* outer = aWindow->GetOuterWindow();
           vc.mBrowserWindow.Construct(outer->WindowID());
         }
+        
+        
+        if (isChrome && videoType == MediaSourceEnum::Browser &&
+            c.mVideo.IsMediaTrackConstraints() &&
+            c.mVideo.GetAsMediaTrackConstraints().mDeviceId.WasPassed()) {
+          break;
+        }
         [[fallthrough]];
       case MediaSourceEnum::Screen:
       case MediaSourceEnum::Window:
         
         
-        if ((!Preferences::GetBool(
-                 ((videoType == MediaSourceEnum::Browser)
+        if (!Preferences::GetBool(
+                ((videoType == MediaSourceEnum::Browser)
                      ? "media.getusermedia.browser.enabled"
                      : "media.getusermedia.screensharing.enabled"),
-                false)) ||
+                false) ||
             (!privileged && !aWindow->IsSecureContext())) {
           return StreamPromise::CreateAndReject(
               MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
