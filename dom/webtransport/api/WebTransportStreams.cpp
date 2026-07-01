@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/WebTransportStreams.h"
 
 #include "mozilla/Result.h"
@@ -85,7 +83,12 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
     return returnResult.unwrap().forget();
   }
   self->BuildStream(aCx, aRv);
+  if (aRv.Failed()) {
+    promise->MaybeReject(aRv.StealNSResult());
+    return promise.forget();
+  }
   
+  promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
 
