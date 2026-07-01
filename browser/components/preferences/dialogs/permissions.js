@@ -388,6 +388,9 @@ var gPermissionManager = {
   },
 
   _addNewPrincipalToList(list, uri) {
+    if (uri.host?.includes("*")) {
+      throw new Error("Wildcard in host");
+    }
     list.push(Services.scriptSecurityManager.createContentPrincipal(uri, {}));
     
     list[list.length - 1].origin;
@@ -407,6 +410,11 @@ var gPermissionManager = {
       
       try {
         let uri = Services.io.newURI(input_url);
+        
+        
+        if (uri instanceof Ci.nsIURL && uri.host.includes("*")) {
+          throw new Error("Wildcard in host");
+        }
         if (this._forcedHTTP && uri.schemeIs("https")) {
           uri = uri.mutate().setScheme("http").finalize();
         }

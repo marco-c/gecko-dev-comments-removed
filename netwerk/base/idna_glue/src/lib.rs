@@ -16,10 +16,6 @@ use nsstring::*;
 use percent_encoding::percent_decode;
 
 
-
-const GECKO: AsciiDenyList = AsciiDenyList::new(true, "%#/:<>?@[\\]^|*\"");
-
-
 const GLYPHLESS: AsciiDenyList = AsciiDenyList::new(true, "");
 
 extern "C" {
@@ -123,7 +119,7 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
         let unpercent: Cow<'_, [u8]> = percent_decode(src).into();
         match Uts46::new().process(
             &unpercent,
-            GECKO,
+            AsciiDenyList::URL,
             Hyphens::Allow,
             ErrorPolicy::FailFast,
             |label, tld, _| unsafe {
