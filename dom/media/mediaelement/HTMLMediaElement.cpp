@@ -8675,6 +8675,7 @@ void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
   
   
   
+  
   if (IsControllableMediaSource() &&
       (!IsAudible() || ComputedVolume() == 0.0f) &&
       !IsBeingUsedInPictureInPictureMode() && !IsInFullScreen()) {
