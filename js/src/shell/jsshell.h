@@ -248,6 +248,9 @@ struct ShellContext {
   Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
 
   
+  uint32_t pendingRootModuleEvaluations = 0;
+
+  
 
   using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;
   JS::PersistentRooted<ObjectVector> taskCallbacks;
