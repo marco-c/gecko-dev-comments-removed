@@ -37,7 +37,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
@@ -69,20 +68,6 @@ const char* UmaPrefixForContentType(VideoContentType content_type) {
   if (videocontenttypehelpers::IsScreenshare(content_type))
     return "WebRTC.Video.Screenshare";
   return "WebRTC.Video";
-}
-
-
-
-
-bool IsCurrentTaskQueueOrThread(TaskQueueBase* task_queue) {
-  if (task_queue->IsCurrent())
-    return true;
-
-  Thread* current_thread = ThreadManager::Instance()->CurrentThread();
-  if (!current_thread)
-    return false;
-
-  return static_cast<TaskQueueBase*>(current_thread) == task_queue;
 }
 
 }  
@@ -576,7 +561,7 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
   if (ssrc != remote_ssrc_)
     return;
 
-  if (!IsCurrentTaskQueueOrThread(worker_thread_)) {
+  if (!worker_thread_->IsCurrent()) {
     
     
     
