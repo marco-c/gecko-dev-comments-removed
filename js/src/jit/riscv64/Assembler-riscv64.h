@@ -117,9 +117,9 @@ using Buffer =
                                               js::jit::AssemblerBufferSettings{
                                                   .instSize = kInstrSize,
                                                   .guardSize = 1,
-                                                  .headerSize = 1,
+                                                  .headerSize = 0,
                                                   .veneerSize = 2,
-                                                  .pcBias = 8,
+                                                  .pcBias = 0,
                                                   .alignFillInst = kNopByte,
                                                   .nopFillInst = kNopByte,
                                                   .numShortBranchRanges =
@@ -234,64 +234,13 @@ class Assembler : public AssemblerShared,
   
   
   void executableCopy(uint8_t* buffer);
-  
-  
-  static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
-  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
-  
+
   static void PatchShortRangeBranchToVeneer(Buffer*, unsigned rangeIdx,
                                             BufferOffset deadline,
                                             BufferOffset veneer);
-  struct PoolHeader {
-    uint32_t data;
-
-    struct Header {
-      
-      
-      union {
-        struct {
-          uint32_t size : 15;
-
-          
-          
-          
-          uint32_t isNatural : 1;
-          uint32_t ONES : 16;
-        };
-        uint32_t data;
-      };
-
-      Header(int size_, bool isNatural_)
-          : size(size_), isNatural(isNatural_), ONES(0xffff) {}
-
-      explicit Header(uint32_t data) : data(data) {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        MOZ_ASSERT(ONES == 0xffff);
-      }
-
-      uint32_t raw() const {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        return data;
-      }
-    };
-
-    PoolHeader(int size_, bool isNatural_)
-        : data(Header(size_, isNatural_).raw()) {}
-
-    uint32_t size() const {
-      Header tmp(data);
-      return tmp.size;
-    }
-
-    uint32_t isNatural() const {
-      Header tmp(data);
-      return tmp.isNatural;
-    }
-  };
-
-  static void WritePoolHeader(uint8_t* start, Pool* p, bool isNatural);
   static void WritePoolGuard(BufferOffset branch, Instruction* inst,
                              BufferOffset dest);
+
   void processCodeLabels(uint8_t* rawCode);
 
   
