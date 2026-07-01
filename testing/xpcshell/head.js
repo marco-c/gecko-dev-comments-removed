@@ -53,6 +53,7 @@ let { PromiseTestUtils: _PromiseTestUtils } = ChromeUtils.importESModule(
 let {
   uploadProfileArtifact: _uploadProfileArtifact,
   installProfilerDumpAndQuit: _installProfilerDumpAndQuit,
+  setProfilerDumpTestName: _setProfilerDumpTestName,
 } = ChromeUtils.importESModule(
   "resource://testing-common/TestProfilerArtifact.sys.mjs"
 );
@@ -99,6 +100,10 @@ var { StructuredLogger: _LoggerClass } = ChromeUtils.importESModule(
   "resource://testing-common/StructuredLog.sys.mjs"
 );
 var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
+
+
+
+
 
 
 
@@ -555,6 +560,11 @@ function _do_upload_profile() {
 
 
 function _execute_test() {
+  
+  
+  
+  _setProfilerDumpTestName(_TEST_NAME);
+
   if (typeof _TEST_CWD != "undefined") {
     try {
       changeTestShellDir(_TEST_CWD);
