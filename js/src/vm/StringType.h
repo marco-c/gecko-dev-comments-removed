@@ -869,6 +869,13 @@ class JSRope : public JSString {
   
   
   
+  
+  
+  [[nodiscard]] bool hash(uint32_t* outhHash) const;
+
+  
+  
+  
   [[nodiscard]] bool hashPrefix(size_t budget, uint32_t* outHash) const;
 
   

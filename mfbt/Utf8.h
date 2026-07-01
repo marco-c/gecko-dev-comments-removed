@@ -587,32 +587,6 @@ inline Maybe<char32_t> DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
   return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd);
 }
 
-
-
-
-
-template <typename Iter, typename EndIter>
-inline char32_t LossyDecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
-                                            Iter* aIter, const EndIter& aEnd) {
-  return DecodeOneUtf8CodePointInline(
-             aLeadUnit, aIter, aEnd, [&] { (*aIter)++; },
-             [&](uint8_t aUnitsAvailable, uint8_t) {
-               
-               
-               
-               uint8_t n = 1;
-               while (n < aUnitsAvailable &&
-                      IsTrailingUnit(Utf8Unit((*aIter)[n]))) {
-                 ++n;
-               }
-               (*aIter) += n;
-             },
-             [&](uint8_t aUnitsObserved) { (*aIter) += aUnitsObserved - 1; },
-             [&](char32_t, uint8_t) { (*aIter)++; },
-             [&](char32_t, uint8_t) { (*aIter)++; })
-      .valueOr(0xfffdu);
-}
-
 }  
 
 #endif 
