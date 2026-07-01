@@ -38,8 +38,6 @@ task. You may need to wait for it to begin running.
 
 
 
-
-
 SCOPE_WHITELIST = [
     
     re.compile(r"^secrets:get:project/taskcluster/gecko/(hgfingerprint|hgmointernal)$"),
@@ -62,6 +60,8 @@ SCOPE_WHITELIST = [
     re.compile(r"^docker-worker:capability:privileged$"),
     re.compile(r"^docker-worker:cache:gecko-level-1-checkouts.*$"),
     re.compile(r"^docker-worker:cache:gecko-level-1-tooltool-cache.*$"),
+    re.compile(r"^generic-worker:cache:gecko-level-1-checkouts.*$"),
+    re.compile(r"^generic-worker:cache:gecko-level-1-tooltool-cache.*$"),
 ]
 
 
@@ -69,13 +69,15 @@ def context(params):
     
     
     if int(params["level"]) < 3:
-        return [{"worker-implementation": "docker-worker"}]
+        return [
+            {"worker-implementation": "docker-worker"},
+            {"worker-implementation": "generic-worker"},
+        ]
     return [
-        {"worker-implementation": "docker-worker", "kind": kind} for kind in TEST_KINDS
+        {"worker-implementation": impl, "kind": kind}
+        for impl in ("docker-worker", "generic-worker")
+        for kind in TEST_KINDS
     ]
-    
-    
-    
 
 
 @register_callback_action(
@@ -104,7 +106,6 @@ def context(params):
     },
 )
 def create_interactive_action(parameters, graph_config, input, task_group_id, task_id):
-    
     
     
     decision_task_id, full_task_graph, label_to_taskid, _ = fetch_graph_and_labels(
@@ -142,8 +143,19 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         payload["maxRunTime"] = max(3600 * 3, payload.get("maxRunTime", 0))
 
         
-        payload["cache"] = {}
-        payload["artifacts"] = {}
+        worker_impl = task_def.get("tags", {}).get("worker-implementation")
+        if worker_impl == "generic-worker":
+            
+            payload["mounts"] = [
+                m for m in payload.get("mounts", []) if "cacheName" not in m
+            ]
+            payload["artifacts"] = []
+            
+            
+            payload.get("features", {}).pop("runAsAdministrator", None)
+        else:
+            payload["cache"] = {}
+            payload["artifacts"] = {}
 
         
         payload.setdefault("features", {})["interactive"] = True
