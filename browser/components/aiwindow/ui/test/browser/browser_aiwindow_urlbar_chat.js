@@ -79,6 +79,7 @@ add_task(async function test_chat_intent_in_aiwindow() {
 
   
   AIWindowUI.closeSidebar(win);
+  await waitForSidebarClosed(win);
 
   
   await lazy.UrlbarTestUtils.promiseAutocompleteResultPopup({

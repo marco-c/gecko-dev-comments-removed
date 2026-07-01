@@ -197,6 +197,44 @@ async function waitForSidebarReady(win) {
 
 
 
+
+
+
+async function waitForSidebarClosed(win) {
+  const box = win.document.getElementById("ai-window-box");
+  await TestUtils.waitForCondition(
+    () => box.collapsed,
+    "Wait for AI sidebar slide-close to finish"
+  );
+  return box;
+}
+
+
+
+
+
+
+
+
+
+
+async function waitForSidebarOpen(win) {
+  const box = win.document.getElementById("ai-window-box");
+  const splitter = win.document.getElementById("ai-window-splitter");
+  await TestUtils.waitForCondition(
+    () =>
+      !box.collapsed && !splitter.collapsed && AIWindowUI.isSidebarOpen(win),
+    "Wait for AI sidebar slide-open to finish"
+  );
+  return box;
+}
+
+
+
+
+
+
+
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
   return openAIWindowSidebar(win);
