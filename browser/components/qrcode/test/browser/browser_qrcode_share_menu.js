@@ -104,6 +104,17 @@ add_task(async function test_qrcode_dialog_opens() {
       "URL should be displayed correctly"
     );
 
+    
+    
+    let dialogWin = dialogDoc.defaultView;
+    dialogDoc.documentElement.setAttribute("dir", "rtl");
+    Assert.equal(
+      dialogWin.getComputedStyle(urlDisplay).direction,
+      "ltr",
+      "URL element should compute as LTR even when the dialog is RTL"
+    );
+    dialogDoc.documentElement.removeAttribute("dir");
+
     Assert.ok(
       dialogDoc.getElementById("copy-button"),
       "Copy button should exist"
