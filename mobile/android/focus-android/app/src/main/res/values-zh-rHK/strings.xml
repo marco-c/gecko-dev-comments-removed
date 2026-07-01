@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
@@ -221,7 +228,7 @@
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
   <string name="preference_autocomplete_add_hint">貼上或輸入網址</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
-  <string name="preference_autocomplete_add_example2">例如：mozilla.org</string>
+  <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">例如：mozilla.org</string>
   <!-- To be removed once the new hint has been translated -->
   <string name="preference_autocomplete_add_example">例如：example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
@@ -285,12 +292,12 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_default_browser2">將 %1$s 設定為預設瀏覽器</string>
-  <string name="preference_category_mozilla">Mozilla</string>
+  <string name="preference_category_mozilla" tools:ignore="BrandUsage">Mozilla</string>
   <string name="preference_mozilla_telemetry2">傳送使用狀況數據</string>
   <!-- A link to SUMO at the end of the summary (preference_mozilla_telemetry_summary2) of the "Send anonymous usage data" setting. -->
   <string name="preference_mozilla_telemetry_summary">想知多啲</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="preference_mozilla_telemetry_summary2">Mozilla 致力只收集大家足以提供並改進 %1$s所需嘅資料。</string>
+  <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">Mozilla 致力只收集大家足以提供並改進 %1$s所需嘅資料。</string>
   <string name="preference_daily_usage_ping_learn_more">想知多啲</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">私隱權告示</string>
@@ -701,7 +708,7 @@
   <!-- Label for button to close the tab -->
   <string name="tab_crash_report_close_tab_button_label">關閉 Tab</string>
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
-  <string name="crash_report_send_crash_label">傳送冧檔報告畀 Mozilla</string>
+  <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">傳送冧檔報告畀 Mozilla</string>
   <!-- Tracking protection bottom sheet -->
 
   <!-- Label for the total number of trackers blocked. %s is the app install date. -->
@@ -766,7 +773,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[呢個可能係伺服器嘅設定問題，或者有人試圖冒充伺服器。<br/><br/> 如果你曾經成功連接到，就好可能只係暫時性嘅問題。]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br> <label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br>\n<label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
   <!--
     Sessions List
 
