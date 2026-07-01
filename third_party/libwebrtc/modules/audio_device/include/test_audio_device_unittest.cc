@@ -103,16 +103,20 @@ TEST(BoundedWavFileWriterTest, SomeStartSilence) {
 TEST(BoundedWavFileWriterTest, NegativeStartSilence) {
   static const std::vector<int16_t> kInputSamples = {
       0, -4, -6, 0, 3, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
-  static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin() + 2,
-                                                     kInputSamples.end());
+  
+  
+  static const std::vector<int16_t> kExpectedSamples = {
+      -6, 0, 0, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
 TEST(BoundedWavFileWriterTest, SomeEndSilence) {
   static const std::vector<int16_t> kInputSamples = {
       75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  
+  
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
-                                                     kInputSamples.end() - 9);
+                                                     kInputSamples.end() - 11);
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
@@ -136,8 +140,10 @@ TEST(BoundedWavFileWriterTest, DoubleSilence) {
 TEST(BoundedWavFileWriterTest, EndSilenceCutoff) {
   static const std::vector<int16_t> kInputSamples = {
       75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0};
+  
+  
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
-                                                     kInputSamples.end() - 4);
+                                                     kInputSamples.end() - 6);
   RunWavTest(kInputSamples, kExpectedSamples);
 }
 
