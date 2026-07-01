@@ -40,7 +40,7 @@ struct RTC_EXPORT AudioOptions {
   
   
   
-  std::optional<bool> ios_force_software_aec_HACK;
+  [[deprecated]] std::optional<bool> ios_force_software_aec_HACK;
 #endif
   
   std::optional<bool> auto_gain_control;
@@ -70,12 +70,5 @@ struct RTC_EXPORT AudioOptions {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::AudioOptions;
-}  
-#endif  
 
 #endif  
