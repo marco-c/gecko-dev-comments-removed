@@ -83,7 +83,20 @@ void nsDragSessionGtk::ReplyToDragMotion(GdkDragContext* aDragContext,
   
   
 
-  gdk_drag_status(aDragContext, GetDragActionGtk(), aTime);
+  GdkDragAction action = GetDragActionGtk();
+
+  
+  
+  
+  
+  
+  
+  if (widget::GdkIsWaylandDisplay() && action == GDK_ACTION_COPY) {
+    LOGDRAGSERVICE("  Wayland: switch copy to move");
+    action = GDK_ACTION_MOVE;
+  }
+
+  gdk_drag_status(aDragContext, action, aTime);
 }
 
 
