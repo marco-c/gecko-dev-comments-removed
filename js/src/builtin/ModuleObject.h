@@ -418,7 +418,7 @@ class ModuleObject : public NativeObject {
       JSContext* cx, MutableHandle<ExportNameVector> exportNames);
 
   
-  void initScriptSlots(HandleScript script);
+  [[nodiscard]] bool initScriptSlots(JSContext* cx, HandleScript script);
   void initModuleSourceSlot(HandleObject moduleSource);
   void initScriptSourceObject(ScriptSourceObject* sso);
 

@@ -234,6 +234,7 @@ struct IteratorHashPolicy {
 
 class DebugEnvironments;
 class NonSyntacticVariablesObject;
+class ScriptSourceObject;
 class WithEnvironmentObject;
 
 
@@ -251,6 +252,12 @@ class ObjectRealm {
  public:
   
   JS::WeakCache<js::InnerViewTable> innerViews;
+
+  using ModuleScriptSourceSet =
+      JS::GCHashSet<js::WeakHeapPtr<ScriptSourceObject*>,
+                    js::DefaultHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
+                    js::ZoneAllocPolicy>;
+  JS::WeakCache<ModuleScriptSourceSet> moduleScriptSources;
 
   
   

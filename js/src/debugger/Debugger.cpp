@@ -6175,6 +6175,22 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
 
     
     
+    
+    
+    for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
+      auto siter = ObjectRealm::get(iter.get()).moduleScriptSources.iter();
+      for (; !siter.done(); siter.next()) {
+        if (ScriptSourceObject* sso = siter.get().get()) {
+          if (!sources.put(sso)) {
+            ReportOutOfMemory(cx);
+            return false;
+          }
+        }
+      }
+    }
+
+    
+    
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
       for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
         if (instance->codeMeta().isSelfHostedModule()) {
