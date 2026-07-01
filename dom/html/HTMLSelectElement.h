@@ -166,7 +166,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   
   void SetCustomValidity(const nsAString& aError);
 
-  void ShowPicker(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void ShowPicker(ErrorResult& aRv);
 
   using nsINode::Remove;
 
@@ -273,6 +273,11 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   bool IsCombobox() const { return !Multiple() && Size() <= 1; }
+
+  bool IsBaseSelectAppearance() const;
+  nsGenericHTMLElement* GetPickerElement() const;
+  MOZ_CAN_RUN_SCRIPT void TogglePickerInternal(
+      bool aIsSourceTouchEvent = false);
 
   bool OpenInParentProcess() const { return mIsOpenInParentProcess; }
   void SetOpenInParentProcess(bool aVal) {
