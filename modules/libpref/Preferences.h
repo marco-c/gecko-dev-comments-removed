@@ -290,6 +290,10 @@ class Preferences final : public nsIPrefService,
 
   
   
+  
+  
+  
+  
   template <typename T = void>
   static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
                                          const nsACString& aPref,
