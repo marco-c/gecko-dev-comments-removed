@@ -580,7 +580,7 @@ nsresult CheckForSmartCardChanges() {
   
   
   if (XRE_IsParentProcess() &&
-      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup()) {
+      StaticPrefs::security_utility_pkcs11_module_process_enabled()) {
     return NS_OK;
   }
 #  endif
@@ -1524,7 +1524,10 @@ nsresult nsNSSComponent::InitializeNSS() {
   SetNSSDatabaseCacheModeAsAppropriate();
 #endif
 
-  bool nocertdb = StaticPrefs::security_nocertdb_AtStartup();
+  
+  
+  
+  bool nocertdb = StaticPrefs::security_nocertdb();
   bool inSafeMode = GetInSafeMode();
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("inSafeMode: %u\n", inSafeMode));
 

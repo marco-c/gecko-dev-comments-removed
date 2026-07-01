@@ -1547,10 +1547,9 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   MOZ_ASSERT(NS_IsMainThread() || XRE_IsUtilityProcess());
   
   
-  MOZ_ASSERT(
-      !XRE_IsUtilityProcess() ||
-      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup() ||
-      PR_GetEnv("MOZ_RUN_GTEST"));
+  MOZ_ASSERT(!XRE_IsUtilityProcess() ||
+             StaticPrefs::security_utility_pkcs11_module_process_enabled() ||
+             PR_GetEnv("MOZ_RUN_GTEST"));
 
   
   
@@ -1566,7 +1565,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   
   bool isParentProcessButLoadingModulesInUtilityProcess =
       XRE_IsParentProcess() &&
-      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+      StaticPrefs::security_utility_pkcs11_module_process_enabled();
   if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules ||
       isParentProcessButLoadingModulesInUtilityProcess) {
     flags |= NSS_INIT_NOMODDB;
@@ -1606,7 +1605,7 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   
   bool isParentProcessAndNotLoadingModulesInUtilityProcess =
       XRE_IsParentProcess() &&
-      !StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+      !StaticPrefs::security_utility_pkcs11_module_process_enabled();
   if (isParentProcessAndNotLoadingModulesInUtilityProcess ||
       XRE_IsUtilityProcess()) {
     CollectThirdPartyPKCS11ModuleTelemetry(true);

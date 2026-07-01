@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef nsAppRunner_h_
 #define nsAppRunner_h_
 
@@ -63,6 +62,14 @@ extern bool gAllowContentAnalysisArgPresent;
 
 namespace mozilla {
 nsresult AppInfoConstructor(const nsID& aIID, void** aResult);
+
+
+
+
+
+
+
+nsresult MarkProfileEncryptedDatabases();
 }  
 
 

@@ -25,18 +25,12 @@ add_task(async function testSecurityEnableEncryption() {
   );
 
   let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
-  let ksPath = profileDir + "/keystore.db";
 
-  
-  
   let dbName = `test_encryption_encrypt_${Date.now()}_${Math.random()
     .toString(36)
     .slice(2, 8)}.sqlite`;
-  let dbPath = profileDir + "/" + dbName;
+  let dbPath = PathUtils.join(profileDir, dbName);
 
-  
-  
-  await removeIfExists(ksPath);
   for (let suffix of ["", "-wal", "-shm", "-journal"]) {
     await removeIfExists(dbPath + suffix);
   }

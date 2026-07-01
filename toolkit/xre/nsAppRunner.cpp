@@ -1511,8 +1511,7 @@ nsXULAppInfo::InvalidateCachesOnRestart() {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsXULAppInfo::MarkProfileEncryptedDatabases() {
+nsresult mozilla::MarkProfileEncryptedDatabases() {
   
   
   
@@ -1558,6 +1557,11 @@ nsXULAppInfo::MarkProfileEncryptedDatabases() {
   PR_Write(fd, kEncryptedHeader, sizeof(kEncryptedHeader) - 1);
   PR_Close(fd);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::MarkProfileEncryptedDatabases() {
+  return mozilla::MarkProfileEncryptedDatabases();
 }
 
 NS_IMETHODIMP

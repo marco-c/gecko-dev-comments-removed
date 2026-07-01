@@ -7,6 +7,8 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIFile.h"
 #include "nsIFileURL.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "mozStorageService.h"
 #include "mozStorageConnection.h"
 #include "nsComponentManagerUtils.h"
@@ -25,7 +27,7 @@
 #include "mozilla/StaticPrefs_storage.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
-#include "mozilla/security/KeyStorage.h"
+#include "mozilla/storage/SQLiteEncryption.h"
 
 #include "sqlite3.h"
 #include "mozilla/AutoSQLiteLifetime.h"
@@ -381,10 +383,14 @@ nsresult Service::initialize() {
   
   
   
-  {
-    nsresult rv = storage::key::Init();
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  
+  
+  
+  
+  
+  
+  
+  InitEncryptionKeystore();
 
   return NS_OK;
 }

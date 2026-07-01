@@ -22,7 +22,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/dom/quota/QuotaObject.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/security/KeyStorage.h"
+#include "mozilla/storage/SQLiteEncryption.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_storage.h"
@@ -1133,18 +1133,33 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
   
   
   
-  
   if (StaticPrefs::security_storage_encryption_sqlite_enabled()) {
-    if (!EnsureNSSInitializedChromeOrContent()) {
-      return NS_ERROR_FAILURE;
-    }
+    nsAutoCString dbPath = NS_ConvertUTF16toUTF8(path);
+    EncryptionStatus encStatus;
+    rv = GetDatabaseEncryptionStatus(dbPath, encStatus);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCString dbKey;
-    rv = key::GetKeyByFile(*aDatabaseFile, dbKey);
-    if (rv == NS_OK) {
+    bool exists = false;
+    aDatabaseFile->Exists(&exists);
+    const bool readOnly = mFlags & SQLITE_OPEN_READONLY;
+
+    
+    
+    
+    if (encStatus == EncryptionStatus::Encrypted && !(readOnly && !exists)) {
+      if (!EnsureNSSInitializedChromeOrContent()) {
+        return NS_ERROR_FAILURE;
+      }
+
+      OpenIntent intent =
+          exists ? OpenIntent::LoadExisting : OpenIntent::CreateIfNew;
+
+      nsCString dbKey;
+      rv = GetEncryptionKey(dbPath, intent, dbKey);
+      NS_ENSURE_SUCCESS(rv, rv);
+
       SetDatabaseEncrypted(true);
 
-      nsAutoCString dbPath = NS_ConvertUTF16toUTF8(path);
       PreparePathForURI(dbPath);
       nsAutoCString dbSpec = "file:"_ns + dbPath + "?key="_ns + dbKey;
 
@@ -1163,9 +1178,15 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
       RecordOpenStatus(rv);
       NS_ENSURE_SUCCESS(rv, rv);
       return NS_OK;
-    } else if (rv != NS_ERROR_NOT_AVAILABLE) {
-      return rv;
     }
+    
+    
+    
+    
+    MOZ_ASSERT(
+        encStatus != EncryptionStatus::Encrypted || (readOnly && !exists),
+        "an existing encrypted database must not fall through to a "
+        "plaintext VFS");
   }
 
   bool exclusive =
@@ -1242,6 +1263,10 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
 
   bool hasKey = false;
   bool hasDirectoryLockId = false;
+  
+  
+  
+  bool mustEncrypt = false;
 
   MOZ_ALWAYS_TRUE(
       URLParams::Parse(query, true,
@@ -1259,18 +1284,39 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
                        }));
 
   if (StaticPrefs::security_storage_encryption_sqlite_enabled()) {
-    if (!EnsureNSSInitializedChromeOrContent()) {
-      return NS_ERROR_FAILURE;
-    }
-    
     
     
     
     
     if (!hasKey) {
-      nsCString dbKey;
-      rv = key::GetKeyByFile(*mDatabaseFile, dbKey);
-      if (rv != NS_ERROR_NOT_AVAILABLE) {
+      nsAutoString dbPathUtf16;
+      rv = mDatabaseFile->GetPath(dbPathUtf16);
+      NS_ENSURE_SUCCESS(rv, rv);
+      nsAutoCString dbPath = NS_ConvertUTF16toUTF8(dbPathUtf16);
+
+      EncryptionStatus encStatus;
+      rv = GetDatabaseEncryptionStatus(dbPath, encStatus);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      bool exists = false;
+      mDatabaseFile->Exists(&exists);
+      const bool readOnly = mFlags & SQLITE_OPEN_READONLY;
+
+      
+      
+      
+      mustEncrypt =
+          encStatus == EncryptionStatus::Encrypted && !(readOnly && !exists);
+      if (mustEncrypt) {
+        if (!EnsureNSSInitializedChromeOrContent()) {
+          return NS_ERROR_FAILURE;
+        }
+
+        OpenIntent intent =
+            exists ? OpenIntent::LoadExisting : OpenIntent::CreateIfNew;
+
+        nsCString dbKey;
+        rv = GetEncryptionKey(dbPath, intent, dbKey);
         NS_ENSURE_SUCCESS(rv, rv);
         spec += (query.IsEmpty() ? "?key="_ns : "&key="_ns) + dbKey;
         hasKey = true;
@@ -1279,6 +1325,16 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
     
     
     SetDatabaseEncrypted(hasKey);
+  }
+
+  
+  
+  
+  
+  
+  if (mustEncrypt && !hasKey) {
+    RecordOpenStatus(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
 
   bool exclusive =
@@ -2084,15 +2140,28 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
           NS_ENSURE_SUCCESS(rv, rv);
 
           if (mDatabaseEncrypted) {
-            nsCString aDBKey, query;
-            rv = ExtractURIPathAndQuery(path.get(), path, query);
+            
+            
+            
+            
+            
+            nsCString dbKey, query, dbPath;
+            rv = ExtractURIPathAndQuery(path.get(), dbPath, query);
             NS_ENSURE_SUCCESS(rv, rv);
 
-            rv = key::GetKeyByPath(path.get(), aDBKey);
+            EncryptionStatus encStatus;
+            rv = GetDatabaseEncryptionStatus(dbPath, encStatus);
             NS_ENSURE_SUCCESS(rv, rv);
 
-            PreparePathForURI(path);
-            BuildFileURIWithKey(path, query, aDBKey, path);
+            
+            
+            if (encStatus == EncryptionStatus::Encrypted) {
+              rv = GetEncryptionKey(dbPath, OpenIntent::LoadExisting, dbKey);
+              NS_ENSURE_SUCCESS(rv, rv);
+
+              PreparePathForURI(dbPath);
+              BuildFileURIWithKey(dbPath, query, dbKey, path);
+            }
           }
           rv = attachStmt->BindUTF8StringByName("path"_ns, path);
           NS_ENSURE_SUCCESS(rv, rv);
@@ -2730,11 +2799,21 @@ Connection::AttachDatabase(const char* aPath, const char* aName,
     rv = ExtractURIPathAndQuery(aPath, path, query);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = key::GetKeyByPath(path.get(), dbKey);
+    EncryptionStatus encStatus;
+    rv = GetDatabaseEncryptionStatus(path, encStatus);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    PreparePathForURI(path);
-    BuildFileURIWithKey(path, query, dbKey, uri);
+    if (encStatus == EncryptionStatus::Encrypted) {
+      
+      rv = GetEncryptionKey(path, OpenIntent::LoadExisting, dbKey);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      PreparePathForURI(path);
+      BuildFileURIWithKey(path, query, dbKey, uri);
+    } else {
+      
+      uri = aPath;
+    }
   } else {
     uri = aPath;
   }
