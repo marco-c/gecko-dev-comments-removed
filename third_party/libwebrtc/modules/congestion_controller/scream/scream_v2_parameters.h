@@ -29,8 +29,8 @@ struct ScreamV2Parameters {
   FieldTrialParameter<double> l4s_avg_g_down;
 
   
-  FieldTrialParameter<double> smoothed_rtt_avg_g_up;
-  FieldTrialParameter<double> smoothed_rtt_avg_g_down;
+  FieldTrialParameter<double> smoothed_rtt_avg_g;
+  FieldTrialParameter<double> smoothed_rtt_avg_in_alr_g;
 
   
   
@@ -135,6 +135,10 @@ struct ScreamV2Parameters {
   
   FieldTrialParameter<TimeDelta>
       allow_large_pacing_bursts_after_congestion_time;
+
+  
+  
+  FieldTrialParameter<bool> enable_alr;
 };
 
 }  
