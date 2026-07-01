@@ -21,7 +21,7 @@ add_task(async function prefMaxRichResults() {
   Assert.equal(
     Glean.urlbar.prefMaxResults.testGetValue(),
     UrlbarPrefs.get("maxRichResults"),
-    "Record prefMaxResults when UrlbarController is initialized"
+    "Record prefMaxResults when UrlbarParentController is initialized"
   );
 
   await SpecialPowers.pushPrefEnv({
@@ -62,7 +62,7 @@ add_task(async function boolPref() {
     Assert.equal(
       Glean.urlbar[green].testGetValue(),
       UrlbarPrefs.get(pref),
-      `Record ${green} when UrlbarController is initialized`
+      `Record ${green} when UrlbarParentController is initialized`
     );
 
     await SpecialPowers.pushPrefEnv({
