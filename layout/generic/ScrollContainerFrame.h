@@ -337,6 +337,10 @@ class ScrollContainerFrame : public nsContainerFrame,
    private:
     friend class ScrollContainerFrame;
     const nsRect& GetOrCompute();
+    
+    
+    
+    void Invalidate() { mComputed = false; }
 
     ScrollContainerFrame* const mFrame;
     const nsIFrame* const mReferenceFrame;

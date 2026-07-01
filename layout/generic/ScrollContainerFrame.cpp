@@ -3333,6 +3333,13 @@ void ScrollContainerFrame::ScrollToImpl(
     
     
     
+    if (mScrolledRectCache) {
+      mScrolledRectCache->Invalidate();
+    }
+
+    
+    
+    
     
     
     
