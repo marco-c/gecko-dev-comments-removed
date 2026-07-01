@@ -132,16 +132,17 @@ class WebRtcVideoEngine : public VideoEngineInterface {
   VideoDecoderFactory* decoder_factory() const override {
     return decoder_factory_.get();
   }
-
   std::vector<SdpVideoFormat> GetSupportedFormats(
       bool is_decoder) const override;
 
+  bool NeedsAuxiliaryCodecsAdded() const override { return true; }
+
+ private:
   std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions(
       
 
       const FieldTrialsView* field_trials) const override;
 
- private:
   const std::unique_ptr<VideoDecoderFactory> decoder_factory_;
   const std::unique_ptr<VideoEncoderFactory> encoder_factory_;
   const FieldTrialsView& trials_;  

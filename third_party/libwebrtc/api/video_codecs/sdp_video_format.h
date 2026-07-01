@@ -69,6 +69,8 @@ struct RTC_EXPORT SdpVideoFormat {
   std::string name;
   CodecParameterMap parameters;
   absl::InlinedVector<ScalabilityMode, kScalabilityModeCount> scalability_modes;
+  std::optional<std::string> packetization;
+  std::optional<std::string> tx_mode;
 
   
   static const SdpVideoFormat VP8();

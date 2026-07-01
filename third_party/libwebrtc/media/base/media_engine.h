@@ -118,7 +118,6 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   
-  
   virtual const std::vector<Codec>& LegacySendCodecs() const = 0;
   virtual const std::vector<Codec>& LegacyRecvCodecs() const = 0;
 
@@ -134,6 +133,10 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   virtual void StopAecDump() = 0;
 
   virtual std::optional<AudioDeviceModule::Stats> GetAudioDeviceStats() = 0;
+
+  
+  
+  virtual bool NeedsAuxiliaryCodecsAdded() const { return false; }
 };
 
 class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
@@ -177,6 +180,10 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
 
   virtual std::vector<SdpVideoFormat> GetSupportedFormats(
       bool is_decoder) const = 0;
+
+  
+  
+  virtual bool NeedsAuxiliaryCodecsAdded() const { return false; }
 };
 
 
