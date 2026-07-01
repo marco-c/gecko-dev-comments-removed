@@ -405,6 +405,11 @@ var gIdentityHandler = {
   },
   get _httpsFirstModeEnabled() {
     delete this._httpsFirstModeEnabled;
+    
+    
+    
+    
+    
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_httpsFirstModeEnabled",

@@ -211,6 +211,9 @@ var gHomePane = {
       this._updateMenuInterface("homeMode");
     };
 
+    
+    
+    
     Services.prefs.addObserver(this.HOMEPAGE_PREF, homePrefObserver);
     window.addEventListener("unload", () => {
       Services.prefs.removeObserver(this.HOMEPAGE_PREF, homePrefObserver);
@@ -246,6 +249,7 @@ var gHomePane = {
   watchHomeTabPrefChange() {
     const observer = () => this.toggleRestoreDefaultsBtn();
     Services.prefs.addObserver(this.ACTIVITY_STREAM_PREF_BRANCH, observer);
+    
     Services.prefs.addObserver(this.HOMEPAGE_PREF, observer);
     Services.prefs.addObserver(this.NEWTAB_ENABLED_PREF, observer);
 
