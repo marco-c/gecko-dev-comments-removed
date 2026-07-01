@@ -322,8 +322,7 @@ async function testPickerBtnAttribute(attr, val, presenceOnly = false) {
 
 
 
-
-async function testKeyOnSpinners(key, document, tabs = 1, hasTime = false) {
+async function testKeyOnSpinners(key, document, tabs = 1) {
   info(`Testing "${key}" key behavior`);
 
   Assert.equal(
@@ -374,7 +373,7 @@ async function testKeyOnSpinners(key, document, tabs = 1, hasTime = false) {
 
   
   
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: hasTime ? 6 : 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
 }
 
 
