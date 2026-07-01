@@ -571,8 +571,14 @@ function processCSSRules(container) {
 function chromeFileExists(aURI) {
   let available = 0;
   try {
+    let uri = NetUtil.newURI(aURI);
+    
+    let contentPolicyType = uri.schemeIs("moz-icon")
+      ? Ci.nsIContentPolicy.TYPE_IMAGE
+      : Ci.nsIContentPolicy.TYPE_OTHER;
     let channel = NetUtil.newChannel({
-      uri: aURI,
+      uri,
+      contentPolicyType,
       loadUsingSystemPrincipal: true,
     });
     let stream = channel.open();
