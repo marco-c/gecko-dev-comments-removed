@@ -33,7 +33,7 @@ GUID CodecToSubtype(CodecType aCodec) {
 }
 
 static bool CanUseWMFHwEncoder(CodecType aCodec) {
-  if (!gfx::gfxVars::IsInitialized()) {
+  if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
     return false;
   }
 
@@ -72,8 +72,9 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     }
     
     
+    
     if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware &&
-        aConfig.mCodec == CodecType::H264) {
+        aConfig.mCodec == CodecType::H264 && !XRE_IsGPUProcess()) {
       auto swEnc =
           MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
       if (SUCCEEDED(swEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
