@@ -23,6 +23,9 @@
 const { AboutNewTabResourceMapping } = ChromeUtils.importESModule(
   "resource:///modules/AboutNewTabResourceMapping.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
 const TOPIC_LANGPACK_STARTUP = "webextension-langpack-startup";
 const TOPIC_LANGPACK_SHUTDOWN = "webextension-langpack-shutdown";
@@ -197,4 +200,43 @@ add_task(async function test_shutdown_observer_removes_shadow() {
     !AboutNewTabResourceMapping._langpackShadowSources.has(FAKE_LANGPACK_ID),
     "Internal tracking removes the langpack id after shutdown notification"
   );
+});
+
+
+
+
+
+
+
+
+add_task(async function test_observe_reentrancy_guard() {
+  const sandbox = sinon.createSandbox();
+  try {
+    
+    
+    
+    
+    
+    const updateFluentStub = sandbox
+      .stub(AboutNewTabResourceMapping, "_updateFluentSourcesRegistration")
+      .callsFake(() => {
+        Services.obs.notifyObservers(null, "intl:app-locales-changed");
+      });
+    sandbox.stub(AboutNewTabResourceMapping, "_updateLangpackShadows");
+
+    AboutNewTabResourceMapping.observe(null, "intl:app-locales-changed", null);
+
+    Assert.equal(
+      updateFluentStub.callCount,
+      1,
+      "Re-entrant observe() call during the handler is coalesced away"
+    );
+    Assert.equal(
+      AboutNewTabResourceMapping._inObserveHandler,
+      false,
+      "_inObserveHandler is reset after the outer call returns"
+    );
+  } finally {
+    sandbox.restore();
+  }
 });
