@@ -1036,11 +1036,13 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
                                     bool aHasValidUserGestureActivation,
                                     bool aNewWindowTarget) {
   NS_ENSURE_ARG_POINTER(aURI);
+  NS_ENSURE_ARG_POINTER(aTriggeringPrincipal);
 
   if (XRE_IsContentProcess()) {
     mozilla::dom::ContentChild::GetSingleton()->SendLoadURIExternal(
-        aURI, aTriggeringPrincipal, aRedirectPrincipal, aBrowsingContext,
-        aTriggeredExternally, aHasValidUserGestureActivation, aNewWindowTarget);
+        WrapNotNull(aURI), WrapNotNull(aTriggeringPrincipal),
+        aRedirectPrincipal, aBrowsingContext, aTriggeredExternally,
+        aHasValidUserGestureActivation, aNewWindowTarget);
     return NS_OK;
   }
 
@@ -1108,7 +1110,7 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
   
   
   
-  if (aBrowsingContext && aTriggeringPrincipal &&
+  if (aBrowsingContext &&
       
       !BasePrincipal::Cast(aTriggeringPrincipal)->AddonPolicy() &&
       
