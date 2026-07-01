@@ -275,30 +275,35 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     return nullptr;
   }
 
-  
-  
-  
-  
-  if (dataSurface->GetType() == SurfaceType::SKIA) {
-    return static_cast<SourceSurfaceSkia*>(dataSurface.get())->GetImage(aLock);
-  }
-
   DataSourceSurface::MappedSurface map;
   void (*releaseProc)(const void*, void*);
-  if (dataSurface->GetType() == SurfaceType::DATA_SHARED_WRAPPER) {
-    
-    
-    
-    
-    if (!dataSurface->Map(DataSourceSurface::MapType::READ, &map)) {
-      gfxWarning() << "Failed mapping DataSourceSurface for Skia image";
-      return nullptr;
-    }
-    releaseProc = ReleaseTemporaryMappedSurface;
-  } else {
-    map.mData = dataSurface->GetData();
-    map.mStride = dataSurface->Stride();
-    releaseProc = ReleaseTemporarySurface;
+  switch (dataSurface->GetType()) {
+    case SurfaceType::SKIA:
+      
+      
+      
+      
+      return static_cast<SourceSurfaceSkia*>(dataSurface.get())
+          ->GetImage(aLock);
+    case SurfaceType::DATA_SHARED_WRAPPER:
+    case SurfaceType::DATA_SHARED:
+    case SurfaceType::DATA_RECYCLING_SHARED:
+      
+      
+      
+      
+      
+      if (!dataSurface->Map(DataSourceSurface::MapType::READ, &map)) {
+        gfxWarning() << "Failed mapping DataSourceSurface for Skia image";
+        return nullptr;
+      }
+      releaseProc = ReleaseTemporaryMappedSurface;
+      break;
+    default:
+      map.mData = dataSurface->GetData();
+      map.mStride = dataSurface->Stride();
+      releaseProc = ReleaseTemporarySurface;
+      break;
   }
 
   if (!map.mData || map.mStride <= 0) {
@@ -1893,16 +1898,16 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   }
   const SkSurfaceProps& props = GetSkSurfaceProps();
 
+  size_t bufSize = BufferSizeFromStrideAndHeight(stride.value(), info.height());
+  if (!bufSize) {
+    return false;
+  }
+
   if (aFormat == SurfaceFormat::A8) {
     
     
     
-    CheckedInt<size_t> size = stride.value();
-    size *= info.height();
-    if (!size.isValid()) {
-      return false;
-    }
-    void* buf = sk_malloc_flags(size.value(), SK_MALLOC_ZERO_INITIALIZE);
+    void* buf = sk_malloc_flags(bufSize, SK_MALLOC_ZERO_INITIALIZE);
     if (!buf) {
       return false;
     }
