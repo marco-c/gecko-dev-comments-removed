@@ -4,7 +4,6 @@
 
 #include "vm/ArgumentsObject-inl.h"
 
-#include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 
 #include <algorithm>
@@ -573,15 +572,6 @@ bool js::MappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
                          HandleValue v, ObjectOpResult& result) {
   Handle<MappedArgumentsObject*> argsobj = obj.as<MappedArgumentsObject>();
 
-  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-  if (!GetOwnPropertyDescriptor(cx, argsobj, id, &desc)) {
-    return false;
-  }
-  MOZ_ASSERT(desc.isSome());
-  MOZ_ASSERT(desc->isDataDescriptor());
-  MOZ_ASSERT(desc->writable());
-  MOZ_ASSERT(!desc->resolving());
-
   if (id.isInt()) {
     unsigned arg = unsigned(id.toInt());
     if (argsobj->isElement(arg)) {
@@ -593,18 +583,9 @@ bool js::MappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
   }
 
   
-
-
-
-
-
-
-
-  Rooted<PropertyDescriptor> desc_(cx, *desc);
-  desc_.setValue(v);
-  ObjectOpResult ignored;
-  return NativeDeleteProperty(cx, argsobj, id, ignored) &&
-         NativeDefineProperty(cx, argsobj, id, desc_, result);
+  Rooted<PropertyDescriptor> desc(cx);
+  desc.setValue(v);
+  return NativeDefineProperty(cx, argsobj, id, desc, result);
 }
 
 
@@ -930,15 +911,6 @@ bool js::UnmappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
                            HandleValue v, ObjectOpResult& result) {
   Handle<UnmappedArgumentsObject*> argsobj = obj.as<UnmappedArgumentsObject>();
 
-  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-  if (!GetOwnPropertyDescriptor(cx, argsobj, id, &desc)) {
-    return false;
-  }
-  MOZ_ASSERT(desc.isSome());
-  MOZ_ASSERT(desc->isDataDescriptor());
-  MOZ_ASSERT(desc->writable());
-  MOZ_ASSERT(!desc->resolving());
-
   if (id.isInt()) {
     unsigned arg = unsigned(id.toInt());
     if (argsobj->isElement(arg)) {
@@ -950,15 +922,9 @@ bool js::UnmappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
   }
 
   
-
-
-
-
-  Rooted<PropertyDescriptor> desc_(cx, *desc);
-  desc_.setValue(v);
-  ObjectOpResult ignored;
-  return NativeDeleteProperty(cx, argsobj, id, ignored) &&
-         NativeDefineProperty(cx, argsobj, id, desc_, result);
+  Rooted<PropertyDescriptor> desc(cx);
+  desc.setValue(v);
+  return NativeDefineProperty(cx, argsobj, id, desc, result);
 }
 
 
