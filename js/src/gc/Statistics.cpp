@@ -682,6 +682,7 @@ void Statistics::formatJsonDescription(JSONPrinter& json) const {
   
   
   json.property("reason", ExplainGCReason(slices_[0].reason));
+  json.property("options", ExplainGCOptions(gcOptions));
   json.property("zones_collected", zoneStats.collectedZoneCount);
   json.property("total_zones", zoneStats.zoneCount);
   json.property("total_compartments", zoneStats.compartmentCount);
