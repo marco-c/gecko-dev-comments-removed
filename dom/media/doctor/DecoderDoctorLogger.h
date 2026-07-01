@@ -137,6 +137,29 @@ class DecoderDoctorLogger {
                    aLabel, aFormat, std::forward<Args>(aArgs)...);
   }
 
+  template <typename... Args>
+  static void EagerLogFmt(const char* aSubjectTypeName,
+                          const void* aSubjectPointer, DDLogCategory aCategory,
+                          const char* aLabel,
+                          fmt::format_string<Args...> aFormat,
+                          Args&&... aArgs) {
+    std::string formatted =
+        fmt::vformat(aFormat, fmt::make_format_args(aArgs...));
+    nsAutoCString printed;
+    printed.Assign(formatted.data(), formatted.length());
+    Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
+        DDLogValue{nsCString{printed}});
+  }
+
+  template <typename Subject, typename... Args>
+  static void EagerLogFmt(const Subject* aSubject, DDLogCategory aCategory,
+                          const char* aLabel,
+                          fmt::format_string<Args...> aFormat,
+                          Args&&... aArgs) {
+    EagerLogFmt(DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory,
+                aLabel, aFormat, std::forward<Args>(aArgs)...);
+  }
+
   static void MozLogPrintf(const char* aSubjectTypeName,
                            const void* aSubjectPointer,
                            const LogModule* aLogModule, LogLevel aLogLevel,
@@ -174,6 +197,30 @@ class DecoderDoctorLogger {
                            Args&&... aArgs) {
     MozLogPrintf(DDLoggedTypeTraits<Subject>::Name(), aSubject, aLogModule,
                  aLogLevel, aFormat, std::forward<Args>(aArgs)...);
+  }
+
+  template <typename... Args>
+  static void MozLogFmt(const char* aSubjectTypeName,
+                        const void* aSubjectPointer,
+                        const LogModule* aLogModule, LogLevel aLogLevel,
+                        fmt::format_string<Args...> aFormat, Args&&... aArgs) {
+    std::string formatted =
+        fmt::vformat(aFormat, fmt::make_format_args(aArgs...));
+    nsAutoCString printed;
+    printed.Assign(formatted.data(), formatted.length());
+    Log(aSubjectTypeName, aSubjectPointer, CategoryForMozLogLevel(aLogLevel),
+        aLogModule->Name(),  
+        DDLogValue{nsCString{printed}});
+    MOZ_LOG_FMT(aLogModule, aLogLevel, "{}[{}] {}", aSubjectTypeName,
+                fmt::ptr(aSubjectPointer), printed.get());
+  }
+
+  template <typename Subject, typename... Args>
+  static void MozLogFmt(const Subject* aSubject, const LogModule* aLogModule,
+                        LogLevel aLogLevel, fmt::format_string<Args...> aFormat,
+                        Args&&... aArgs) {
+    MozLogFmt(DDLoggedTypeTraits<Subject>::Name(), aSubject, aLogModule,
+              aLogLevel, aFormat, std::forward<Args>(aArgs)...);
   }
 
   
@@ -422,6 +469,21 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
   } while (0)
 
 
+
+
+
+
+
+
+#define DDLOGPR_FMT(_category, _label, _format, ...)                     \
+  do {                                                                   \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                     \
+      DecoderDoctorLogger::EagerLogFmt(this, _category, _label, _format, \
+                                       ##__VA_ARGS__);                   \
+    }                                                                    \
+  } while (0)
+
+
 #define DDLINKCHILD(...)                                          \
   do {                                                            \
     if (DecoderDoctorLogger::IsDDLoggingEnabled()) {              \
@@ -463,6 +525,33 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
 
 #define DDMOZ_LOG(_logModule, _logLevel, _format, ...) \
   DDMOZ_LOGEX(this, _logModule, _logLevel, _format, ##__VA_ARGS__)
+
+
+
+
+
+#if !defined(ANDROID) || !defined(RELEASE_OR_BETA)
+#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...)         \
+    do {                                                                      \
+      if (DecoderDoctorLogger::IsDDLoggingEnabled() ||                        \
+          MOZ_LOG_TEST(_logModule, _logLevel)) {                              \
+        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel, _format, \
+                                       ##__VA_ARGS__);                        \
+      }                                                                       \
+    } while (0)
+#else
+#  define DDMOZ_LOGEX_FMT(_this, _logModule, _logLevel, _format, ...)         \
+    do {                                                                      \
+      if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                        \
+        DecoderDoctorLogger::MozLogFmt(_this, _logModule, _logLevel, _format, \
+                                       ##__VA_ARGS__);                        \
+      }                                                                       \
+    } while (0)
+#endif
+
+
+#define DDMOZ_LOG_FMT(_logModule, _logLevel, _format, ...) \
+  DDMOZ_LOGEX_FMT(this, _logModule, _logLevel, _format, ##__VA_ARGS__)
 
 }  
 
