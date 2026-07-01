@@ -132,6 +132,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
       : mWebSocket(aWebSocket),
         mIsServerSide(false),
         mSecure(false),
+        mSecureContext(false),
         mOnCloseScheduled(false),
         mFailed(false),
         mDisconnectingOrDisconnected(false),
@@ -223,6 +224,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
 
   bool mSecure;  
                  
+  bool mSecureContext;
 
   bool mOnCloseScheduled;
   bool mFailed;
@@ -1617,6 +1619,8 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
   AssertIsOnMainThread();
   MOZ_ASSERT(aPrincipal);
 
+  mLoadingPrincipal = aPrincipal;
+
   mService = WebSocketEventService::GetOrCreate();
 
   
@@ -1666,6 +1670,7 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
   }
 
   mIsServerSide = aIsServerSide;
+  mSecureContext = aIsSecure;
 
   
   
@@ -1781,39 +1786,6 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
                         mPrivateBrowsing);
   }
 
-  
-  
-  
-  if (!mIsServerSide && !mSecure &&
-      !Preferences::GetBool("network.websocket.allowInsecureFromHTTPS",
-                            false) &&
-      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
-          mAsciiHost)) {
-    
-    if (aIsSecure) {
-      return NS_ERROR_DOM_SECURITY_ERR;
-    }
-
-    
-    
-    nsCOMPtr<nsIPrincipal> precursorPrincipal =
-        aPrincipal->GetPrecursorPrincipal();
-    nsCOMPtr<nsIURI> precursorOrLoadingURI = precursorPrincipal
-                                                 ? precursorPrincipal->GetURI()
-                                                 : aPrincipal->GetURI();
-
-    
-    if (precursorOrLoadingURI) {
-      nsCOMPtr<nsIURI> precursorOrLoadingInnermostURI =
-          NS_GetInnermostURI(precursorOrLoadingURI);
-      
-      if (precursorOrLoadingInnermostURI &&
-          precursorOrLoadingInnermostURI->SchemeIs("https")) {
-        return NS_ERROR_DOM_SECURITY_ERR;
-      }
-    }
-  }
-
   if (mIsMainThread) {
     mImplProxy = std::move(proxy);
   }
@@ -1887,6 +1859,39 @@ nsresult WebSocketImpl::InitializeConnection(
     nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings) {
   AssertIsOnMainThread();
   MOZ_ASSERT(!mChannel, "mChannel should be null");
+
+  
+  
+  
+  if (!mIsServerSide && !mSecure &&
+      !Preferences::GetBool("network.websocket.allowInsecureFromHTTPS",
+                            false) &&
+      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
+          mAsciiHost)) {
+    
+    if (mSecureContext) {
+      return NS_ERROR_DOM_SECURITY_ERR;
+    }
+
+    
+    
+    nsCOMPtr<nsIPrincipal> precursorPrincipal =
+        mLoadingPrincipal->GetPrecursorPrincipal();
+    nsCOMPtr<nsIURI> precursorOrLoadingURI = precursorPrincipal
+                                                 ? precursorPrincipal->GetURI()
+                                                 : mLoadingPrincipal->GetURI();
+
+    
+    if (precursorOrLoadingURI) {
+      nsCOMPtr<nsIURI> precursorOrLoadingInnermostURI =
+          NS_GetInnermostURI(precursorOrLoadingURI);
+      
+      if (precursorOrLoadingInnermostURI &&
+          precursorOrLoadingInnermostURI->SchemeIs("https")) {
+        return NS_ERROR_DOM_SECURITY_ERR;
+      }
+    }
+  }
 
   nsCOMPtr<nsIWebSocketChannel> wsChannel;
   nsAutoCloseWS autoClose(this);
