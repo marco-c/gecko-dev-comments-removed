@@ -17,6 +17,7 @@
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPtr.h"
 #include "nsXULAppAPI.h"
@@ -871,6 +872,13 @@ NS_IMETHODIMP nsExternalHelperAppService::ApplyDecodingForExtension(
     const nsACString& aExtension, const nsACString& aEncodingType,
     bool* aApplyDecoding) {
   *aApplyDecoding = true;
+  
+  
+  
+  if (StaticPrefs::
+          network_http_decode_content_for_known_compressed_extensions()) {
+    return NS_OK;
+  }
   uint32_t i;
   for (i = 0; i < std::size(nonDecodableExtensions); ++i) {
     if (aExtension.LowerCaseEqualsASCII(

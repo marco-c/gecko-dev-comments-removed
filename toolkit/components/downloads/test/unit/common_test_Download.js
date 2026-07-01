@@ -18,6 +18,8 @@ const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
 
 
 const kDeletePrivateFileFeature = "browser.download.enableDeletePrivate";
+const kDecodeContentForKnownCompressedExtensions =
+  "network.http.decode_content_for_known_compressed_extensions";
 
 ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
@@ -1900,12 +1902,58 @@ add_task(async function test_with_content_encoding() {
 
 
 
+
+
+add_task(async function test_with_content_encoding_matching_extension() {
+  Services.prefs.setBoolPref(kDecodeContentForKnownCompressedExtensions, true);
+
+  let sourcePath = "/test_with_content_encoding_matching_extension.gz";
+  let sourceUrl = httpUrl("test_with_content_encoding_matching_extension.gz");
+
+  function cleanup() {
+    gHttpServer.registerPathHandler(sourcePath, null);
+    Services.prefs.clearUserPref(kDecodeContentForKnownCompressedExtensions);
+  }
+  registerCleanupFunction(cleanup);
+
+  gHttpServer.registerPathHandler(sourcePath, function (aRequest, aResponse) {
+    aResponse.setHeader("Content-Type", "text/plain", false);
+    aResponse.setHeader("Content-Encoding", "gzip", false);
+    aResponse.setHeader(
+      "Content-Length",
+      "" + TEST_DATA_SHORT_GZIP_ENCODED.length,
+      false
+    );
+
+    let bos = new BinaryOutputStream(aResponse.bodyOutputStream);
+    bos.writeByteArray(TEST_DATA_SHORT_GZIP_ENCODED);
+  });
+
+  let download = await promiseStartDownload(sourceUrl);
+  await promiseDownloadStopped(download);
+
+  Assert.equal(download.progress, 100);
+  Assert.equal(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
+
+  
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+
+  cleanup();
+});
+
+
+
+
+
 add_task(async function test_with_content_encoding_ignore_extension() {
+  Services.prefs.setBoolPref(kDecodeContentForKnownCompressedExtensions, false);
+
   let sourcePath = "/test_with_content_encoding_ignore_extension.gz";
   let sourceUrl = httpUrl("test_with_content_encoding_ignore_extension.gz");
 
   function cleanup() {
     gHttpServer.registerPathHandler(sourcePath, null);
+    Services.prefs.clearUserPref(kDecodeContentForKnownCompressedExtensions);
   }
   registerCleanupFunction(cleanup);
 
