@@ -4118,8 +4118,7 @@ async function evaluateTargeting(targeting) {
 const ActionChecklistItem = ({
   item,
   index,
-  handleAction,
-  showExternalLinkIcon
+  handleAction
 }) => {
   const [actionTargeting, setActionTargeting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -4148,19 +4147,15 @@ const ActionChecklistItem = ({
       onClick: onButtonClick
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "action-checklist-label-container"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: item.label
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "check-icon-container"
     }, actionTargeting ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "check-filled"
     }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "check-empty"
-    })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: item.label
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null))), !actionTargeting && showExternalLinkIcon && react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "external-link-icon-container"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "external-link-icon"
-    })))
+      className: "action-arrow"
+    }))))
   );
 };
 const ActionChecklistProgressBar = ({

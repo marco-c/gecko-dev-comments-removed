@@ -1875,8 +1875,7 @@ async function evaluateTargeting(targeting) {
 const ActionChecklistItem = ({
   item,
   index,
-  handleAction,
-  showExternalLinkIcon
+  handleAction
 }) => {
   const [actionTargeting, setActionTargeting] = (0,external_React_namespaceObject.useState)(true);
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -1905,19 +1904,15 @@ const ActionChecklistItem = ({
       onClick: onButtonClick
     }, external_React_default().createElement("div", {
       className: "action-checklist-label-container"
-    }, external_React_default().createElement("div", {
+    }, external_React_default().createElement(Localized, {
+      text: item.label
+    }, external_React_default().createElement("span", null)), external_React_default().createElement("div", {
       className: "check-icon-container"
     }, actionTargeting ? external_React_default().createElement("div", {
       className: "check-filled"
     }) : external_React_default().createElement("div", {
-      className: "check-empty"
-    })), external_React_default().createElement(Localized, {
-      text: item.label
-    }, external_React_default().createElement("span", null))), !actionTargeting && showExternalLinkIcon && external_React_default().createElement("div", {
-      className: "external-link-icon-container"
-    }, external_React_default().createElement("div", {
-      className: "external-link-icon"
-    })))
+      className: "action-arrow"
+    }))))
   );
 };
 const ActionChecklistProgressBar = ({
