@@ -215,7 +215,11 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   if (NS_SUCCEEDED(cacheInfoChannel->IsFromCache(&fromCache)) && fromCache) {
     LOG(("document is already in the cache; canceling prefetch\n"));
     
-    mShouldFireLoadEvent = true;
+    
+    nsresult status;
+    if (NS_SUCCEEDED(aRequest->GetStatus(&status)) && NS_SUCCEEDED(status)) {
+      mShouldFireLoadEvent = true;
+    }
     return NS_BINDING_ABORTED;
   }
 
