@@ -281,6 +281,7 @@ let propNameAllowlist = [
 
   
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
+  { sourceName: /\/in-content\/common-shared\.css/, isFromDevTools: true },
 
   
   
