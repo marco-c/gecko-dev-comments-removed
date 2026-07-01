@@ -10,19 +10,8 @@
 #endif
 
 #if defined(XP_WIN)
-
-
-
-
-
-
-
-
 #  include "minwindef.h"
-#  define RtlGenRandom SystemFunction036
-extern "C" BOOLEAN NTAPI RtlGenRandom(PVOID RandomBuffer,
-                                      ULONG RandomBufferLength);
-
+#  include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #endif
 
 #if defined(ANDROID) || defined(XP_DARWIN) || defined(__DragonFly__) ||    \
@@ -88,7 +77,12 @@ MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer, size_t aLength) {
   MOZ_ASSERT(aLength > 0);
 
 #if defined(XP_WIN)
-  return !!RtlGenRandom(aBuffer, aLength);
+  
+  
+  static const mozilla::StaticDynamicallyLinkedFunctionPtr<BOOL(WINAPI*)(
+      PBYTE, SIZE_T)>
+      pProcessPrng(L"bcryptprimitives.dll", "ProcessPrng");
+  return pProcessPrng && !!pProcessPrng(static_cast<PBYTE>(aBuffer), aLength);
 
 #elif defined(USE_ARC4RANDOM)  
 
