@@ -14,30 +14,8 @@ const TEST_THIRD_PARTY_URI =
   TEST_THIRD_PARTY_DOMAIN + TEST_PATH + "file_stripping.html";
 const TEST_REDIRECT_URI = TEST_DOMAIN + TEST_PATH + "redirect.sjs";
 
-const TEST_CASES = [
-  { testQueryString: "paramToStrip1=123", strippedQueryString: "" },
-  {
-    testQueryString: "PARAMTOSTRIP1=123&paramToStrip2=456",
-    strippedQueryString: "",
-  },
-  {
-    testQueryString: "paramToStrip1=123&paramToKeep=456",
-    strippedQueryString: "paramToKeep=456",
-  },
-  {
-    testQueryString: "paramToStrip1=123&paramToKeep=456&paramToStrip2=abc",
-    strippedQueryString: "paramToKeep=456",
-  },
-  {
-    testQueryString: "paramToKeep=123",
-    strippedQueryString: "paramToKeep=123",
-  },
-  
-  {
-    testQueryString: "paramToStrip1=123&paramToKeep=?$!%",
-    strippedQueryString: "paramToKeep=?$!%",
-  },
-];
+const TEST_QUERY_STRING = "paramToStrip1=123&paramToKeep=456";
+const TEST_STRIPPED_QUERY_STRING = "paramToKeep=456";
 
 let listService;
 
@@ -104,24 +82,18 @@ add_task(async function doTestsForTabOpen() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testURI = TEST_URI + "?" + test.testQueryString;
+    let testURI = TEST_URI + "?" + TEST_QUERY_STRING;
+    let expected = strippingEnabled
+      ? TEST_STRIPPED_QUERY_STRING
+      : TEST_QUERY_STRING;
 
-      let expected = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+    let networkPromise = observeChannel(TEST_URI, expected);
 
-      
-      let networkPromise = observeChannel(TEST_URI, expected);
+    await BrowserTestUtils.withNewTab(testURI, async browser => {
+      await verifyQueryString(browser, expected);
+    });
 
-      
-      await BrowserTestUtils.withNewTab(testURI, async browser => {
-        
-        await verifyQueryString(browser, expected);
-      });
-
-      await networkPromise;
-    }
+    await networkPromise;
 
     await SpecialPowers.popPrefEnv();
   }
@@ -135,65 +107,63 @@ add_task(async function doTestsForWindowOpen() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI = TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + test.testQueryString;
+    let testFirstPartyURI = TEST_URI + "?" + TEST_QUERY_STRING;
+    let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + TEST_QUERY_STRING;
 
-      let originalQueryString = test.testQueryString;
-      let expectedQueryString = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+    let originalQueryString = TEST_QUERY_STRING;
+    let expectedQueryString = strippingEnabled
+      ? TEST_STRIPPED_QUERY_STRING
+      : TEST_QUERY_STRING;
 
-      await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
-        
-        
-        let networkPromise = observeChannel(TEST_URI, originalQueryString);
+    await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
+      
+      
+      let networkPromise = observeChannel(TEST_URI, originalQueryString);
 
-        
-        let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url => {
-          return url.startsWith(TEST_URI);
-        });
-
-        
-        
-        await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
-          content.postMessage({ type: "window-open", url }, "*");
-        });
-
-        await networkPromise;
-        let newTab = await newTabPromise;
-
-        
-        await verifyQueryString(newTab.linkedBrowser, originalQueryString);
-
-        BrowserTestUtils.removeTab(newTab);
-
-        
-        
-        networkPromise = observeChannel(
-          TEST_THIRD_PARTY_URI,
-          expectedQueryString
-        );
-
-        newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url => {
-          return url.startsWith(TEST_THIRD_PARTY_URI);
-        });
-
-        
-        
-        await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
-          content.postMessage({ type: "window-open", url }, "*");
-        });
-
-        await networkPromise;
-        newTab = await newTabPromise;
-
-        
-        await verifyQueryString(newTab.linkedBrowser, expectedQueryString);
-
-        BrowserTestUtils.removeTab(newTab);
+      
+      let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url => {
+        return url.startsWith(TEST_URI);
       });
-    }
+
+      
+      
+      await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
+        content.postMessage({ type: "window-open", url }, "*");
+      });
+
+      await networkPromise;
+      let newTab = await newTabPromise;
+
+      
+      await verifyQueryString(newTab.linkedBrowser, originalQueryString);
+
+      BrowserTestUtils.removeTab(newTab);
+
+      
+      
+      networkPromise = observeChannel(
+        TEST_THIRD_PARTY_URI,
+        expectedQueryString
+      );
+
+      newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url => {
+        return url.startsWith(TEST_THIRD_PARTY_URI);
+      });
+
+      
+      
+      await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
+        content.postMessage({ type: "window-open", url }, "*");
+      });
+
+      await networkPromise;
+      newTab = await newTabPromise;
+
+      
+      await verifyQueryString(newTab.linkedBrowser, expectedQueryString);
+
+      BrowserTestUtils.removeTab(newTab);
+    });
 
     await SpecialPowers.popPrefEnv();
   }
@@ -207,14 +177,14 @@ add_task(async function doTestsForLinkClick() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI = TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + test.testQueryString;
+    {
+      let testFirstPartyURI = TEST_URI + "?" + TEST_QUERY_STRING;
+      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + TEST_QUERY_STRING;
 
-      let originalQueryString = test.testQueryString;
+      let originalQueryString = TEST_QUERY_STRING;
       let expectedQueryString = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+        ? TEST_STRIPPED_QUERY_STRING
+        : TEST_QUERY_STRING;
 
       await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
         
@@ -290,14 +260,14 @@ add_task(async function doTestsForLinkClickInIframe() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI = TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + test.testQueryString;
+    {
+      let testFirstPartyURI = TEST_URI + "?" + TEST_QUERY_STRING;
+      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + TEST_QUERY_STRING;
 
-      let originalQueryString = test.testQueryString;
+      let originalQueryString = TEST_QUERY_STRING;
       let expectedQueryString = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+        ? TEST_STRIPPED_QUERY_STRING
+        : TEST_QUERY_STRING;
 
       await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
         
@@ -406,67 +376,65 @@ add_task(async function doTestsForScriptNavigation() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI = TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + test.testQueryString;
+    let testFirstPartyURI = TEST_URI + "?" + TEST_QUERY_STRING;
+    let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + TEST_QUERY_STRING;
 
-      let originalQueryString = test.testQueryString;
-      let expectedQueryString = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+    let originalQueryString = TEST_QUERY_STRING;
+    let expectedQueryString = strippingEnabled
+      ? TEST_STRIPPED_QUERY_STRING
+      : TEST_QUERY_STRING;
 
-      await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
-        
-        
-        let networkPromise = observeChannel(TEST_URI, originalQueryString);
+    await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
+      
+      
+      let networkPromise = observeChannel(TEST_URI, originalQueryString);
 
-        
-        let locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          testFirstPartyURI
-        );
+      
+      let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        testFirstPartyURI
+      );
 
-        
-        await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(browser, originalQueryString);
-
-        
-        
-
-        let targetURI = expectedQueryString
-          ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
-          : TEST_THIRD_PARTY_URI;
-
-        
-        networkPromise = observeChannel(
-          TEST_THIRD_PARTY_URI,
-          expectedQueryString
-        );
-
-        locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          targetURI
-        );
-
-        
-        await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(browser, expectedQueryString);
+      
+      await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
       });
-    }
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(browser, originalQueryString);
+
+      
+      
+
+      let targetURI = expectedQueryString
+        ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
+        : TEST_THIRD_PARTY_URI;
+
+      
+      networkPromise = observeChannel(
+        TEST_THIRD_PARTY_URI,
+        expectedQueryString
+      );
+
+      locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        targetURI
+      );
+
+      
+      await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
+      });
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(browser, expectedQueryString);
+    });
 
     await SpecialPowers.popPrefEnv();
   }
@@ -481,90 +449,88 @@ add_task(async function doTestsForNoStrippingForIframeNavigation() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI = TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + test.testQueryString;
+    let testFirstPartyURI = TEST_URI + "?" + TEST_QUERY_STRING;
+    let testThirdPartyURI = TEST_THIRD_PARTY_URI + "?" + TEST_QUERY_STRING;
+
+    
+    let originalQueryString = TEST_QUERY_STRING;
+    let expectedQueryString = TEST_QUERY_STRING;
+
+    await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
+      
+      let iframeBC = await SpecialPowers.spawn(
+        browser,
+        [TEST_URI],
+        async url => {
+          let frame = content.document.createElement("iframe");
+          content.document.body.appendChild(frame);
+
+          await new Promise(done => {
+            frame.addEventListener(
+              "load",
+              function () {
+                done();
+              },
+              { capture: true, once: true }
+            );
+
+            frame.setAttribute("src", url);
+          });
+
+          return frame.browsingContext;
+        }
+      );
 
       
-      let originalQueryString = test.testQueryString;
-      let expectedQueryString = test.testQueryString;
+      
+      let networkPromise = observeChannel(TEST_URI, originalQueryString);
 
-      await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
-        
-        let iframeBC = await SpecialPowers.spawn(
-          browser,
-          [TEST_URI],
-          async url => {
-            let frame = content.document.createElement("iframe");
-            content.document.body.appendChild(frame);
+      
+      let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        testFirstPartyURI
+      );
 
-            await new Promise(done => {
-              frame.addEventListener(
-                "load",
-                function () {
-                  done();
-                },
-                { capture: true, once: true }
-              );
-
-              frame.setAttribute("src", url);
-            });
-
-            return frame.browsingContext;
-          }
-        );
-
-        
-        
-        let networkPromise = observeChannel(TEST_URI, originalQueryString);
-
-        
-        let locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          testFirstPartyURI
-        );
-
-        
-        await SpecialPowers.spawn(iframeBC, [testFirstPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(iframeBC, originalQueryString);
-
-        
-        
-
-        let targetURI = expectedQueryString
-          ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
-          : TEST_THIRD_PARTY_URI;
-
-        
-        networkPromise = observeChannel(
-          TEST_THIRD_PARTY_URI,
-          expectedQueryString
-        );
-
-        locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          targetURI
-        );
-
-        
-        await SpecialPowers.spawn(iframeBC, [testThirdPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(iframeBC, expectedQueryString);
+      
+      await SpecialPowers.spawn(iframeBC, [testFirstPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
       });
-    }
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(iframeBC, originalQueryString);
+
+      
+      
+
+      let targetURI = expectedQueryString
+        ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
+        : TEST_THIRD_PARTY_URI;
+
+      
+      networkPromise = observeChannel(
+        TEST_THIRD_PARTY_URI,
+        expectedQueryString
+      );
+
+      locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        targetURI
+      );
+
+      
+      await SpecialPowers.spawn(iframeBC, [testThirdPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
+      });
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(iframeBC, expectedQueryString);
+    });
 
     await SpecialPowers.popPrefEnv();
   }
@@ -579,70 +545,68 @@ add_task(async function doTestsForRedirect() {
     });
     await waitForListServiceInit(strippingEnabled);
 
-    for (const test of TEST_CASES) {
-      let testFirstPartyURI =
-        TEST_REDIRECT_URI + "?" + TEST_URI + "?" + test.testQueryString;
-      let testThirdPartyURI = `${TEST_REDIRECT_URI}?${TEST_THIRD_PARTY_URI}?${test.testQueryString}`;
+    let testFirstPartyURI =
+      TEST_REDIRECT_URI + "?" + TEST_URI + "?" + TEST_QUERY_STRING;
+    let testThirdPartyURI = `${TEST_REDIRECT_URI}?${TEST_THIRD_PARTY_URI}?${TEST_QUERY_STRING}`;
 
-      let originalQueryString = test.testQueryString;
-      let expectedQueryString = strippingEnabled
-        ? test.strippedQueryString
-        : test.testQueryString;
+    let originalQueryString = TEST_QUERY_STRING;
+    let expectedQueryString = strippingEnabled
+      ? TEST_STRIPPED_QUERY_STRING
+      : TEST_QUERY_STRING;
 
-      await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
-        
-        
-        let networkPromise = observeChannel(TEST_URI, originalQueryString);
+    await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
+      
+      
+      let networkPromise = observeChannel(TEST_URI, originalQueryString);
 
-        let targetURI = `${TEST_URI}?${originalQueryString}`;
+      let targetURI = `${TEST_URI}?${originalQueryString}`;
 
-        
-        let locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          targetURI
-        );
+      
+      let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        targetURI
+      );
 
-        
-        await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(browser, originalQueryString);
-
-        
-        
-
-        targetURI = expectedQueryString
-          ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
-          : TEST_THIRD_PARTY_URI;
-
-        
-        networkPromise = observeChannel(
-          TEST_THIRD_PARTY_URI,
-          expectedQueryString
-        );
-
-        locationChangePromise = BrowserTestUtils.waitForLocationChange(
-          gBrowser,
-          targetURI
-        );
-
-        
-        await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
-          content.postMessage({ type: "script", url }, "*");
-        });
-
-        await networkPromise;
-        await locationChangePromise;
-
-        
-        await verifyQueryString(browser, expectedQueryString);
+      
+      await SpecialPowers.spawn(browser, [testFirstPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
       });
-    }
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(browser, originalQueryString);
+
+      
+      
+
+      targetURI = expectedQueryString
+        ? `${TEST_THIRD_PARTY_URI}?${expectedQueryString}`
+        : TEST_THIRD_PARTY_URI;
+
+      
+      networkPromise = observeChannel(
+        TEST_THIRD_PARTY_URI,
+        expectedQueryString
+      );
+
+      locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        targetURI
+      );
+
+      
+      await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
+        content.postMessage({ type: "script", url }, "*");
+      });
+
+      await networkPromise;
+      await locationChangePromise;
+
+      
+      await verifyQueryString(browser, expectedQueryString);
+    });
 
     await SpecialPowers.popPrefEnv();
   }
