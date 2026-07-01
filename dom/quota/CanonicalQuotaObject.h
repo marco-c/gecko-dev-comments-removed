@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_CANONICALQUOTAOBJECT_H_
 #define DOM_QUOTA_CANONICALQUOTAOBJECT_H_
 
@@ -15,6 +13,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/QuotaObject.h"
 #include "nsCOMPtr.h"
@@ -51,17 +50,9 @@ class CanonicalQuotaObject final : public QuotaObject {
   void EnableQuotaCheck() override;
 
  private:
-  CanonicalQuotaObject(OriginInfo* aOriginInfo, Client::Type aClientType,
-                       const nsAString& aPath, int64_t aSize)
-      : QuotaObject( false),
-        mOriginInfo(aOriginInfo),
-        mPath(aPath),
-        mSize(aSize),
-        mClientType(aClientType),
-        mQuotaCheckDisabled(false),
-        mWritingDone(false) {
-    MOZ_COUNT_CTOR(CanonicalQuotaObject);
-  }
+  CanonicalQuotaObject(const RefPtr<OriginInfo>& aOriginInfo,
+                       Client::Type aClientType, const nsAString& aPath,
+                       int64_t aSize);
 
   MOZ_COUNTED_DTOR(CanonicalQuotaObject)
 
@@ -78,7 +69,7 @@ class CanonicalQuotaObject final : public QuotaObject {
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
 
-  OriginInfo* mOriginInfo;
+  ThreadSafeWeakPtr<OriginInfo> mOriginInfo;
   nsString mPath;
   int64_t mSize;
   Client::Type mClientType;
