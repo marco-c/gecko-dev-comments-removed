@@ -505,16 +505,35 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
                 
                 
                 
+                let task_target_rect = render_task.get_target_rect();
                 let uv_scale = if normalized_uvs {
-                    let size = render_task.get_target_rect().size();
+                    let size = task_target_rect.size();
                     [size.width as f32, size.height as f32]
                 } else {
                     [1.0, 1.0]
+                };
+                
+                
+                
+                
+                let sub_uv = if block.task_id.has_sub_rect() {
+                    let sub = &render_tasks.sub_rects[block.task_id.sub_rect_index as usize];
+                    let w = task_target_rect.width() as f32;
+                    let h = task_target_rect.height() as f32;
+                    [
+                        sub.sub_rect.min.x as f32 / w,
+                        sub.sub_rect.min.y as f32 / h,
+                        sub.sub_rect.max.x as f32 / w,
+                        sub.sub_rect.max.y as f32 / h,
+                    ]
+                } else {
+                    [0.0, 0.0, 1.0, 1.0]
                 };
                 deferred_uv_copies.push(DeferredUvCopy {
                     src: render_task.get_texture_address().as_u32(),
                     dst: block.index as u32,
                     uv_scale,
+                    sub_uv,
                 });
                 continue;
             }
@@ -637,6 +656,13 @@ pub struct DeferredUvCopy {
     
     
     pub uv_scale: [f32; 2],
+    
+    
+    
+    
+    
+    
+    pub sub_uv: [f32; 4],
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -661,7 +687,17 @@ impl GpuBuffer<GpuBufferBlockF> {
             uv[1] *= copy.uv_scale[1];
             uv[2] *= copy.uv_scale[0];
             uv[3] *= copy.uv_scale[1];
-            self.data[copy.dst as usize] = uv.into();
+            
+            
+            let w = uv[2] - uv[0];
+            let h = uv[3] - uv[1];
+            let sub = [
+                uv[0] + copy.sub_uv[0] * w,
+                uv[1] + copy.sub_uv[1] * h,
+                uv[0] + copy.sub_uv[2] * w,
+                uv[1] + copy.sub_uv[3] * h,
+            ];
+            self.data[copy.dst as usize] = sub.into();
         }
     }
 }

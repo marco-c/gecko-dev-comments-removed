@@ -2,12 +2,12 @@
 
 
 
+use euclid::vec2;
 use api::{BorderRadius, BorderSide, BorderStyle, ColorF, ColorU};
 use api::{NormalBorder as ApiNormalBorder, RepeatMode};
 use api::units::*;
 use crate::clip::ClipNodeId;
 use crate::ellipse::Ellipse;
-use euclid::vec2;
 use crate::scene_building::SceneBuilder;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::gpu_types::{BorderInstance, BorderSegment, BrushFlags};
@@ -1535,7 +1535,9 @@ pub fn compute_border_repetition_1d(
         if repeat_mode == RepeatMode::Round {
             
             
-            stretch_size = segment_size.width / repetitions
+            
+            let round_repetitions = (segment_size.width / stretch_size).round().max(1.0);
+            stretch_size = segment_size.width / round_repetitions
         }
 
         if repeat_mode == RepeatMode::Space {
@@ -1551,7 +1553,10 @@ pub fn compute_border_repetition_1d(
             
             
             
-            *out_offset = (remaining_space - stretch_size) * 0.5;
+            
+            
+            let half_overflow = (segment_size.width - stretch_size) * 0.5;
+            *out_offset = half_overflow - (half_overflow / stretch_size).ceil() * stretch_size;
         }
     }
 
