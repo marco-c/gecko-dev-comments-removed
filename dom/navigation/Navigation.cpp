@@ -397,8 +397,13 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   switch (aNavigationType) {
     case NavigationType::Traverse:
       MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Traverse navigation"));
-      SetCurrentEntryIndex(aDestinationSHE);
-      MOZ_ASSERT(mCurrentEntryIndex);
+      
+      
+      
+      
+      if (!SetCurrentEntryIndex(aDestinationSHE)) {
+        return;
+      }
       break;
 
     case NavigationType::Push:
@@ -1981,15 +1986,16 @@ Maybe<size_t> Navigation::GetNavigationEntryIndex(
   navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
 }
 
-void Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
-  mCurrentEntryIndex.reset();
+bool Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
   if (auto* entry = FindNavigationHistoryEntry(*aTargetInfo)) {
+    mCurrentEntryIndex.reset();
     MOZ_ASSERT(entry->Index() >= 0);
     mCurrentEntryIndex = Some(entry->Index());
-    return;
+    return true;
   }
 
   LOG_FMTW("Session history entry did not exist");
+  return false;
 }
 
 
