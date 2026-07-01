@@ -896,6 +896,7 @@ void WebGLProgram::LinkProgram() {
   
   std::vector<std::string> scopedMappedTFVaryings;
 
+  bool allowLink = true;
   if (mContext->IsWebGL2()) {
     mVertShader->MapTransformFeedbackVaryings(
         mNextLink_TransformFeedbackVaryings, &scopedMappedTFVaryings);
@@ -906,19 +907,29 @@ void WebGLProgram::LinkProgram() {
       driverVaryings.push_back(cur.c_str());
     }
 
+    
+    
+    
+    gl::GLContext::LocalErrorScope errorScope(*mContext->gl);
     mContext->gl->fTransformFeedbackVaryings(
         mGLName, driverVaryings.size(), driverVaryings.data(),
         mNextLink_TransformFeedbackBufferMode);
+    if (errorScope.GetError()) {
+      allowLink = false;
+      mLinkLog = "Driver rejected the requested transform feedback varyings.";
+    }
   }
 
-  LinkAndUpdate();
+  if (allowLink) {
+    LinkAndUpdate();
 
-  if (mMostRecentLinkInfo) {
-    std::string postLinkLog;
-    if (ValidateAfterTentativeLink(&postLinkLog)) return;
+    if (mMostRecentLinkInfo) {
+      std::string postLinkLog;
+      if (ValidateAfterTentativeLink(&postLinkLog)) return;
 
-    mMostRecentLinkInfo = nullptr;
-    mLinkLog = std::move(postLinkLog);
+      mMostRecentLinkInfo = nullptr;
+      mLinkLog = std::move(postLinkLog);
+    }
   }
 
   
@@ -1061,8 +1072,14 @@ bool WebGLProgram::ValidateAfterTentativeLink(
 
   
   const auto& activeTfVaryings = linkInfo->active.activeTfVaryings;
-  MOZ_ASSERT(mNextLink_TransformFeedbackVaryings.size() ==
-             activeTfVaryings.size());
+  
+  
+  if (mNextLink_TransformFeedbackVaryings.size() != activeTfVaryings.size()) {
+    *out_linkLog =
+        "Mismatch between requested and driver-reported active transform"
+        " feedback varyings.";
+    return false;
+  }
   if (!activeTfVaryings.empty()) {
     GLuint maxComponentsPerIndex = 0;
     switch (linkInfo->transformFeedbackBufferMode) {
@@ -1192,6 +1209,10 @@ void WebGLProgram::TransformFeedbackVaryings(
       GLuint maxAttribs = 0;
       gl->GetUIntegerv(LOCAL_GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS,
                        &maxAttribs);
+      
+      
+      maxAttribs = std::min(
+          maxAttribs, GLuint(webgl::kMaxTransformFeedbackSeparateAttribs));
       if (varyings.size() > maxAttribs) {
         mContext->ErrorInvalidValue("Length of `varyings` exceeds %s.",
                                     "TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS");
