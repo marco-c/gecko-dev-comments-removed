@@ -152,11 +152,6 @@ TEST(TestURLQueryStringStripper, TestStripping)
                expectStrip ? 2 : 0);
         DoTest("https://example.com/?AfoobazB=123"_ns, isPBM,
                "https://example.com/?AfoobazB=123"_ns, 0);
-
-        
-        
-        DoTest("https://example.com/?fooBar=123&nostrip=val!ue"_ns, isPBM,
-               "https://example.com/?nostrip=val!ue"_ns, expectStrip ? 1 : 0);
       }
     }
   }

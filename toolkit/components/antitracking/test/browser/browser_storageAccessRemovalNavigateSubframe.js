@@ -16,7 +16,14 @@ AntiTracking.runTest(
     ok(!threw, "requestStorageAccess should not throw");
     ok(!rejected, "requestStorageAccess should be available");
   },
-  clearSiteTestData, 
+  
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [], 
   false, 
   false, 

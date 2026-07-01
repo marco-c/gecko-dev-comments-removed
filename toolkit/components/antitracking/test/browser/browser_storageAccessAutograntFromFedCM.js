@@ -16,14 +16,10 @@ async function setAutograntPreferences() {
   });
 }
 
-add_setup(async function () {
+add_task(async function testPopupWithUserInteraction() {
   await setPreferences();
   await setAutograntPreferences();
 
-  registerCleanupFunction(clearSiteTestData);
-});
-
-add_task(async function testPopupWithUserInteraction() {
   
   
   
@@ -77,4 +73,7 @@ add_task(async function testPopupWithUserInteraction() {
     Services.perms.ALLOW_ACTION,
     "Storage access permission was granted during the test."
   );
+
+  await cleanUpData();
+  await SpecialPowers.flushPrefEnv();
 });

@@ -22,8 +22,13 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
 
   [],
 
@@ -53,8 +58,13 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
 
   [],
 

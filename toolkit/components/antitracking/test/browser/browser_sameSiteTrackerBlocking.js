@@ -1,10 +1,6 @@
 
 
 
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 add_task(async function () {
   info("Starting first party tracker test");
 
@@ -106,4 +102,12 @@ add_task(async function () {
   UrlClassifierTestUtils.cleanupTestTrackers();
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.flushPrefEnv();
+});
+
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

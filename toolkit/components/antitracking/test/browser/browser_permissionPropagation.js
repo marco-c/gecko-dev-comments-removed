@@ -7,31 +7,7 @@
 
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.storage_access.enabled", true],
-      [
-        "network.cookie.cookieBehavior",
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      ],
-      [
-        "network.cookie.cookieBehavior.pbmode",
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      ],
-      ["privacy.trackingprotection.enabled", false],
-      ["privacy.trackingprotection.pbmode.enabled", false],
-      ["privacy.trackingprotection.annotate_channels", true],
-      ["security.allow_eval_with_system_principal", true],
-    ],
-  });
 
-  UrlClassifierTestUtils.addTestTrackers();
-
-  registerCleanupFunction(() => {
-    UrlClassifierTestUtils.cleanupTestTrackers();
-  });
-});
 
 async function createTab(topUrl, iframeCount, opener, params) {
   let newTab;
@@ -157,12 +133,26 @@ async function testPermission(browser, block, params, frameNumber) {
 add_task(async function testPermissionGrantedOn3rdParty() {
   info("Starting permission propagation test");
 
+  await SpecialPowers.flushPrefEnv();
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["dom.storage_access.enabled", true],
+      [
+        "network.cookie.cookieBehavior",
+        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+      ],
+      [
+        "network.cookie.cookieBehavior.pbmode",
+        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+      ],
+      ["privacy.trackingprotection.enabled", false],
+      ["privacy.trackingprotection.pbmode.enabled", false],
+      ["privacy.trackingprotection.annotate_channels", true],
       [
         "privacy.restrict3rdpartystorage.userInteractionRequiredForHosts",
         "tracking.example.com,tracking.example.org",
       ],
+      ["security.allow_eval_with_system_principal", true],
     ],
   });
 
@@ -294,23 +284,46 @@ add_task(async function testPermissionGrantedOn3rdParty() {
   BrowserTestUtils.removeTab(tab3);
   BrowserTestUtils.removeTab(tab4);
 
+  UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
   info("Cleaning up.");
-  await clearSiteTestData();
-  await SpecialPowers.popPrefEnv();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });
 
 add_task(async function testPermissionGrantedOnFirstParty() {
   info("Starting permission propagation test");
 
+  await SpecialPowers.flushPrefEnv();
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["dom.storage_access.enabled", true],
+      [
+        "network.cookie.cookieBehavior",
+        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+      ],
+      [
+        "network.cookie.cookieBehavior.pbmode",
+        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+      ],
+      ["privacy.trackingprotection.enabled", false],
+      ["privacy.trackingprotection.pbmode.enabled", false],
+      ["privacy.trackingprotection.annotate_channels", true],
       
       [
         "privacy.restrict3rdpartystorage.heuristic.exclude_third_party_trackers",
         false,
       ],
+      ["security.allow_eval_with_system_principal", true],
     ],
   });
+
+  await UrlClassifierTestUtils.addTestTrackers();
 
   let msg = {};
   msg.blockingCallback = (async _ => {
@@ -407,7 +420,14 @@ add_task(async function testPermissionGrantedOnFirstParty() {
   BrowserTestUtils.removeTab(tab3);
   BrowserTestUtils.removeTab(tab4);
 
+  UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
   info("Cleaning up.");
-  await clearSiteTestData();
-  await SpecialPowers.popPrefEnv();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });
