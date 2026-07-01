@@ -50,11 +50,29 @@ pub(super) enum PinOp {
     UnPin,
 }
 
+pub(super) fn is_pinning_available(
+    
+    
+    
+    
+    
+    
+    
+    _main_guard: MainThreadGuard,
+) -> bool {
+    
+    
+    
+    
+    
+    unsafe { CoCreateInstance::<_, IPinnedList3>(&CLSID_TASKBAND_PIN, None, CLSCTX_INPROC_SERVER) }
+        .is_ok()
+}
+
 
 
 
 pub(super) fn modify_taskbar(
-    check_only: bool,
     pin_op: PinOp,
     shortcut_path: &nsAString,
     
@@ -79,9 +97,6 @@ pub(super) fn modify_taskbar(
             .map_err(|_| NS_ERROR_NOT_AVAILABLE)?;
 
     log::info!("COM pinning API is available.");
-    if check_only {
-        return Ok(PinResult::CheckOnly);
-    }
 
     
     
