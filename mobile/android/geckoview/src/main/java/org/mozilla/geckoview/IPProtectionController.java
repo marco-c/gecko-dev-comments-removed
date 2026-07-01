@@ -419,6 +419,21 @@ public class IPProtectionController {
   }
 
   
+
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Void> refreshUsage() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:RefreshUsage")
+        .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
+  }
+
+  
   public static class IPProxyException extends RuntimeException {
 
     
