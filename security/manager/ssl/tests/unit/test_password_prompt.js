@@ -42,7 +42,7 @@ var gWindowWatcher = {
   QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
 };
 
-add_task(async function run_test() {
+function run_test() {
   do_get_profile();
 
   let windowWatcherCID = MockRegistrar.register(
@@ -57,8 +57,8 @@ add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.changePassword("", "hunter2");
-  await token.logout();
+  token.changePassword("", "hunter2");
+  token.logout();
 
   
   gMockPrompter.passwordToTry = "hunter2";
@@ -72,7 +72,7 @@ add_task(async function run_test() {
 
   
   gMockPrompter.numPrompts = 0;
-  await token.logout();
+  token.logout();
 
   
   gMockPrompter.passwordToTry = "*******";
@@ -82,4 +82,4 @@ add_task(async function run_test() {
     "logging in with the wrong password should fail"
   );
   equal(gMockPrompter.numPrompts, 2, "should have prompted for password twice");
-});
+}

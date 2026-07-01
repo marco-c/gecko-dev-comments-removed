@@ -167,7 +167,7 @@ add_task(async function test_os_auth_and_prp() {
   
   
   
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
   info("PrP has been enabled");
 
   
@@ -239,7 +239,7 @@ add_task(async function test_os_auth_and_prp() {
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await LoginTestUtils.primaryPassword.disable();
+  LoginTestUtils.primaryPassword.disable();
 });
 
 
@@ -255,7 +255,7 @@ add_task(
     });
 
     
-    await LoginTestUtils.primaryPassword.enable();
+    LoginTestUtils.primaryPassword.enable();
     info("PrP has been enabled");
 
     
@@ -298,7 +298,7 @@ add_task(
     });
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await LoginTestUtils.primaryPassword.disable();
+    LoginTestUtils.primaryPassword.disable();
     LoginHelper.setOSAuthEnabled(osAuthWasEnabled);
   }
 );

@@ -55,7 +55,7 @@ function findCertByCommonName(commonName) {
   return null;
 }
 
-add_task(async function run_test() {
+function run_test() {
   let promptFactoryCID = MockRegistrar.register(
     "@mozilla.org/prompter;1",
     gPromptFactory
@@ -69,8 +69,8 @@ add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.changePassword("", "password");
-  await token.logout();
+  token.changePassword("", "password");
+  token.logout();
 
   
   let cert = findCertByCommonName(CERT_COMMON_NAME);
@@ -83,7 +83,7 @@ add_task(async function run_test() {
   notEqual(cert, null, "cert should be found now");
 
   
-  await token.logout();
+  token.logout();
 
   
   
@@ -96,7 +96,7 @@ add_task(async function run_test() {
   output.remove(false );
 
   
-  await token.logout();
+  token.logout();
 
   
   
@@ -112,4 +112,4 @@ add_task(async function run_test() {
   );
 
   ok(!output2.exists(), "output2 shouldn't exist after failing to export");
-});
+}
