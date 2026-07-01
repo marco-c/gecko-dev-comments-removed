@@ -77,22 +77,6 @@ impl QuadTransformState {
         }
     }
 
-    pub fn from_scale_offset(
-        local_to_raster: ScaleOffset,
-        prim_node: SpatialNodeIndex,
-        raster_node: SpatialNodeIndex,
-        scale: DevicePixelScale,
-    ) -> QuadTransformState {
-        QuadTransformState {
-            map_prim_to_raster: CoordinateSpaceMapping::ScaleOffset(local_to_raster),
-            as_scale_offset: Some(local_to_raster.then_scale(scale.0)),
-            is_2d_axis_aligned: true,
-            prim_spatial_node: prim_node,
-            raster_spatial_node: raster_node,
-            device_pixel_scale: scale,
-        }
-    }
-
     pub fn set(
         &mut self,
         src_node: SpatialNodeIndex,
@@ -875,9 +859,7 @@ fn prepare_indirect_pattern(
         
         
         
-        
-        
-        clipped_surface_rect = quad.bounds.cast_unit();
+        clipped_surface_rect = quad.clip.cast_unit();
     }
 
     let task_size = clipped_surface_rect.size().to_i32();
@@ -1989,7 +1971,6 @@ fn create_quad_primitive(
 ) -> QuadPrimitive {
     let mut prim_rect;
     let mut prim_clip_rect;
-    let pattern_rect;
     let pattern_transform;
     if let Some(local_to_device) = local_to_device {
         prim_rect = local_to_device.map_rect(local_rect);
@@ -1997,9 +1978,6 @@ fn create_quad_primitive(
                 .map_rect(&local_clip_rect)
                 .intersection_unchecked(device_clip_rect)
                 .to_untyped();
-        
-        
-        pattern_rect = prim_rect;
         prim_rect = round_edges.select(prim_rect.round(), prim_rect);
         prim_clip_rect = round_edges.select(prim_clip_rect.round(), prim_clip_rect);
 
@@ -2007,14 +1985,12 @@ fn create_quad_primitive(
     } else {
         prim_rect = local_rect.to_untyped();
         prim_clip_rect = local_clip_rect.to_untyped();
-        pattern_rect = prim_rect;
         pattern_transform = ScaleOffset::identity();
     };
 
     QuadPrimitive {
-        
-        bounds: prim_rect.intersection_unchecked(&prim_clip_rect),
-        pattern_rect,
+        bounds: prim_rect,
+        clip: prim_clip_rect,
         input_task: pattern.texture_input.task_id(),
         pattern_scale_offset: pattern_transform,
         color: pattern.base_color.premultiplied(),
@@ -2037,7 +2013,6 @@ fn write_prim_blocks(
 ) -> GpuBufferAddress {
     let mut prim_rect;
     let mut prim_clip_rect;
-    let pattern_rect;
     let pattern_transform;
     if let Some(local_to_device) = local_to_device {
         prim_rect = local_to_device.map_rect(&local_rect);
@@ -2045,24 +2020,19 @@ fn write_prim_blocks(
                 .map_rect(&local_clip_rect)
                 .intersection_unchecked(&device_clip_rect)
                 .to_untyped();
-        
-        
-        pattern_rect = prim_rect;
         prim_rect = round_edges.select(prim_rect.round(), prim_rect);
         prim_clip_rect = round_edges.select(prim_clip_rect.round(), prim_clip_rect);
         pattern_transform = local_to_device.inverse();
     } else {
         prim_rect = local_rect.to_untyped();
         prim_clip_rect = local_clip_rect.to_untyped();
-        pattern_rect = prim_rect;
         pattern_transform = ScaleOffset::identity();
     };
 
     write_prim_blocks_impl(
         builder,
-        
-        prim_rect.intersection_unchecked(&prim_clip_rect),
-        pattern_rect,
+        prim_rect,
+        prim_clip_rect,
         pattern.base_color,
         pattern.texture_input.task_id(),
         &[],
@@ -2082,12 +2052,8 @@ pub fn write_device_prim_blocks(
 ) -> GpuBufferAddress {
     write_prim_blocks_impl(
         builder,
-        
-        prim_rect.to_untyped().intersection_unchecked(&clip_rect.to_untyped()),
-        
-        
-        
         prim_rect.to_untyped(),
+        clip_rect.to_untyped(),
         pattern_base_color,
         pattern_texture_input,
         segments,
@@ -2106,11 +2072,8 @@ pub fn write_layout_prim_blocks(
 ) -> GpuBufferAddress {
     write_prim_blocks_impl(
         builder,
-        
-        prim_rect.to_untyped().intersection_unchecked(&clip_rect.to_untyped()),
-        
-        
         prim_rect.to_untyped(),
+        clip_rect.to_untyped(),
         pattern_base_color,
         pattern_texture_input,
         segments,
@@ -2120,10 +2083,8 @@ pub fn write_layout_prim_blocks(
 
 fn write_prim_blocks_impl(
     builder: &mut GpuBufferBuilderF,
-    
-    
     prim_rect: LayoutOrDeviceRect,
-    pattern_rect: LayoutOrDeviceRect,
+    clip_rect: LayoutOrDeviceRect,
     pattern_base_color: ColorF,
     pattern_texture_input: RenderTaskId,
     segments: &[QuadSegment],
@@ -2133,7 +2094,7 @@ fn write_prim_blocks_impl(
 
     writer.push(&QuadPrimitive {
         bounds: prim_rect,
-        pattern_rect,
+        clip: clip_rect,
         input_task: pattern_texture_input,
         pattern_scale_offset,
         color: pattern_base_color.premultiplied(),
