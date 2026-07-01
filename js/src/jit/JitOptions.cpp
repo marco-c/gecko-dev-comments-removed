@@ -137,6 +137,9 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(disableObjectKeysScalarReplacement, false);
 
+  
+  SET_DEFAULT(disableCanonicalizeNaNAtUses, true);
+
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   
   SET_DEFAULT(portableBaselineInterpreter, false);
