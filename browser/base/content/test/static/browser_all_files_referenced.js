@@ -310,11 +310,6 @@ var allowlist = [
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
   
-  {
-    file: "resource://gre/localization/en-US/toolkit/global/rosettaNotification.ftl",
-  },
-
-  
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },
   { file: "chrome://browser/content/backup/BackupManifest.2.schema.json" },
   { file: "chrome://browser/content/backup/ArchiveJSONBlock.1.schema.json" },
