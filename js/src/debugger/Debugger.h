@@ -1076,6 +1076,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   template <typename RunImpl >
   [[nodiscard]] bool enterDebuggerHook(JSContext* cx, RunImpl runImpl) {
+    MOZ_ASSERT(cx->noExecuteDebuggerTop);
+
     if (!isHookCallAllowed(cx)) {
       return true;
     }
