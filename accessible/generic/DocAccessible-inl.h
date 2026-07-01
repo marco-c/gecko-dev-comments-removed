@@ -21,13 +21,8 @@ namespace a11y {
 
 inline LocalAccessible* DocAccessible::AccessibleOrTrueContainer(
     nsINode* aNode, bool aNoContainerIfPruned) const {
-  
-  
   LocalAccessible* container =
       GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
-  if (container && container->IsHTMLCombobox()) {
-    return container->LocalFirstChild();
-  }
   return container;
 }
 

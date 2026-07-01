@@ -1361,6 +1361,11 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     }
 
+    if (content->IsElement() && content->AsElement()->GetPseudoElementType() ==
+                                    PseudoStyleType::Picker) {
+      newAcc = MakeRefPtr<HTMLComboboxListAccessible>(content, document);
+    }
+
     
     
     
