@@ -99,6 +99,7 @@ if __name__ == '__main__':
         ("arm/repack.cpp", "arm/repack-arm.cpp"),
         ("x86/cpu-feats.c", "x86/cpu-feats-x86.c"),
         ("arm/cpu-feats.c", "arm/cpu-feats-x86.c"),
+        ("models/llama.cpp", "models/model-llama.cpp"),
     ]
     for old, new in rename_rules:
       for source_class in all_sources:
@@ -110,6 +111,15 @@ if __name__ == '__main__':
               all_sources[source_class].append(renamed_path)
               if not os.path.exists(renamed_path):
                   os.rename(file, renamed_path)
+
+    
+    
+    
+    
+    for source_class in all_sources:
+        all_sources[source_class] = [
+            f for f in all_sources[source_class] if os.path.exists(f)
+        ]
 
     
     all_exports = list(set(all_exports))
