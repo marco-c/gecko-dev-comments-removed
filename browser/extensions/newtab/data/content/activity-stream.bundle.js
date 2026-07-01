@@ -21103,6 +21103,16 @@ const privacyImage = filename => external_React_default().createElement("div", {
   src: `${ICON_BASE_URL}${filename}`,
   alt: ""
 }));
+const PREF_PRIVACY_MAX_COUNT = "widgets.privacy.maxCount";
+const DEFAULT_PRIVACY_MAX_COUNT = 100;
+
+
+
+
+
+function resolvePrivacyMaxCount(prefs) {
+  return prefs.trainhopConfig?.widgets?.privacyMaxCount || prefs[PREF_PRIVACY_MAX_COUNT] || DEFAULT_PRIVACY_MAX_COUNT;
+}
 function Privacy({
   dispatch,
   widgetsMayBeMaximized,
@@ -21122,7 +21132,8 @@ function Privacy({
   
   const initialized = privacyData?.initialized ?? false;
   
-  const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
+  const maxCount = resolvePrivacyMaxCount(prefs);
+  const displayCount = trackersToday > maxCount ? `${maxCount}+` : `${trackersToday}`;
   const isEmptyState = trackersToday === 0;
   const showTip = !isEmptyState;
   const isLarge = widgetSize === "large";
