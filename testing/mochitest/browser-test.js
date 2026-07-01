@@ -238,21 +238,39 @@ function Tester(aTests, structuredLogger, aCallback) {
   
   
   installProfilerDumpAndQuit(reason => {
-    let testName = this.currentTest?.path ?? "browser-test.js";
-    this.structuredLogger.testStatus(
-      testName,
-      "fatal condition",
-      "FAIL",
-      "PASS",
-      reason
-    );
+    
+    
+    let test = this.tests?.[this.currentTestIndex];
+    if (test) {
+      this.structuredLogger.testStatus(
+        test.path,
+        "fatal condition",
+        "FAIL",
+        "PASS",
+        reason
+      );
+      return {
+        testName: test.path,
+        logger: this.structuredLogger,
+        
+        
+        endTest: () =>
+          this.structuredLogger.testEnd(test.path, "FAIL", "PASS", reason),
+      };
+    }
+
+    
+    
+    
+    this.structuredLogger.error(`browser-test.js | ${reason}`);
+    let profileName = this._lastTestManifest
+      ? `${this._lastTestManifest.replace(/\.\w+$/, "").replace(/[:/]/g, "_")}_shutdown`
+      : "shutdown";
     return {
-      testName,
+      testName: "browser-test.js",
+      profileName,
       logger: this.structuredLogger,
-      
-      
-      endTest: () =>
-        this.structuredLogger.testEnd(testName, "FAIL", "PASS", reason),
+      testRunning: false,
     };
   });
 
@@ -706,6 +724,9 @@ Tester.prototype = {
     
     this.callback(this.tests);
     this.callback = null;
+    
+    
+    this._lastTestManifest = this.tests.at(-1)?.manifest;
     this.tests = null;
   },
 

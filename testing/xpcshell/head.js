@@ -104,6 +104,16 @@ var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
 
 
 _installProfilerDumpAndQuit(reason => {
+  if (_Services.startup.shuttingDown) {
+    
+    
+    _testLogger.error(`${_TEST_NAME} | ${reason}`);
+    return {
+      testName: _TEST_NAME,
+      logger: _testLogger,
+      testRunning: false,
+    };
+  }
   _testLogger.testStatus(_TEST_NAME, "fatal condition", "FAIL", "PASS", reason);
   return {
     testName: _TEST_NAME,
