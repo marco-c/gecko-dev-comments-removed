@@ -4,6 +4,8 @@
 
 
 
+import sys
+
 from logger.logger import RaptorLogger
 from perftest import PerftestDesktop
 
@@ -57,6 +59,12 @@ class BrowsertimeDesktop(PerftestDesktop, Browsertime):
 
         
         chrome_args += ["--enable-benchmarking"]
+
+        if not self.config.get("run_local", False) and sys.platform.startswith("linux"):
+            
+            
+            
+            chrome_args += ["--use-gl=desktop"]
 
         btime_chrome_args = []
         for arg in chrome_args:
