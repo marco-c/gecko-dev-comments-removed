@@ -9,19 +9,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 
 /**
  * Self-contained bookmarks import flow that drives file selection, the in-progress dialog, and
  * completion via an internal [ImporterStore].
  *
- * @param onFinished Invoked when the import flow has reached a terminal [ImporterState.Finished]
- * state, carrying the [ImporterResult]. Hosts typically use this to dismiss the surrounding UI.
+ * @param onEventReceived Invoked when the import flow has received an import event.
  */
 @Composable
 fun BookmarkImporter(
-    onFinished: (ImporterResult) -> Unit,
+    importer: BookmarksFileImporter,
+    onEventReceived: (ImporterEvent) -> Unit,
 ) {
-    val viewModel: ImporterViewModel = viewModel()
+    val viewModel: ImporterViewModel = viewModel(
+        factory = ImporterViewModel.factory(importer),
+    )
     val state by viewModel.store.stateFlow.collectAsState(initial = viewModel.store.state)
 
     when (val current = state) {
@@ -33,12 +36,20 @@ fun BookmarkImporter(
         ImporterState.SelectingFile -> {
             FilePicker(
                 onFileSelected = { uri ->
-                    viewModel.store.dispatch(ImporterAction.FileSelected(uri))
+                    if (uri != null) {
+                        viewModel.store.dispatch(ImporterAction.FileSelected(uri))
+                    } else {
+                        viewModel.store.dispatch(ImporterAction.FileSelectionCanceled)
+                    }
                 },
             )
         }
         ImporterState.Loading -> {
             ImporterDialog(
+                onImportStarted = {
+                    viewModel.store.dispatch(ImporterAction.ImportStarted)
+                    onEventReceived(ImporterEvent.Started)
+                },
                 onCancel = {
                     viewModel.store.dispatch(ImporterAction.ImportCancelled)
                 },
@@ -46,7 +57,7 @@ fun BookmarkImporter(
         }
         is ImporterState.Finished -> {
             LaunchedEffect(current) {
-                onFinished(current.result)
+                onEventReceived(current.result)
             }
         }
     }
