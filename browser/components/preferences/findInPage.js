@@ -115,31 +115,51 @@ var gSearchResultsPane = {
     return content.toLowerCase().includes(query.toLowerCase());
   },
 
-  categoriesInitialized: false,
+  
+
+
+
+
+
+  _categoriesInitialized: null,
 
   
 
 
-  async initializeCategories() {
-    
-    if (!this.categoriesInitialized) {
-      this.categoriesInitialized = true;
-      
-      for (let category of gCategoryInits.values()) {
-        category.init();
-      }
-      if (document.hasPendingL10nMutations) {
-        await new Promise(r =>
-          document.addEventListener("L10nMutationsFinished", r, { once: true })
-        );
-      }
-      queueMicrotask(() =>
-        Services.obs.notifyObservers(
-          window,
-          "preferences-MaybeCategoriesInitializedSLOW"
-        )
+  initializeCategories() {
+    if (!this._categoriesInitialized) {
+      this._categoriesInitialized = this.runCategoryInitialization();
+    }
+    return this._categoriesInitialized;
+  },
+
+  
+
+
+
+
+
+
+  async runCategoryInitialization() {
+    for (let category of gCategoryInits.values()) {
+      category.init();
+    }
+    await Promise.all(
+      [...document.querySelectorAll("setting-pane, setting-group")].map(
+        el => el.updateComplete
+      )
+    );
+    if (document.hasPendingL10nMutations) {
+      await new Promise(r =>
+        document.addEventListener("L10nMutationsFinished", r, { once: true })
       );
     }
+    queueMicrotask(() =>
+      Services.obs.notifyObservers(
+        window,
+        "preferences-MaybeCategoriesInitializedSLOW"
+      )
+    );
   },
 
   
