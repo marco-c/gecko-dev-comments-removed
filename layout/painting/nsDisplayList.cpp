@@ -6840,7 +6840,7 @@ const Matrix4x4Flagged& nsDisplayTransform::GetInverseTransform() const {
 }
 
 Matrix4x4 nsDisplayTransform::GetTransformForRendering(
-    LayoutDevicePoint* aOutOrigin) const {
+    LayoutDevicePoint* aOutOrigin, const nsDisplayListBuilder* aBuilder) const {
   if (!mFrame->HasPerspective() || mHasTransformGetter ||
       mIsTransformSeparator) {
     if (!mHasTransformGetter && !mIsTransformSeparator && aOutOrigin) {
@@ -6852,7 +6852,7 @@ Matrix4x4 nsDisplayTransform::GetTransformForRendering(
       *aOutOrigin = LayoutDevicePoint::FromAppUnits(ToReferenceFrame(), scale);
 
       
-      if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
+      if (nsLayoutUtils::ShouldSnapToGrid(mFrame, aBuilder)) {
         aOutOrigin->Round();
       }
       return GetResultingTransformMatrix(mFrame, nsPoint(0, 0), scale,
@@ -6907,7 +6907,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   
   
   LayoutDevicePoint position;
-  Matrix4x4 newTransformMatrix = GetTransformForRendering(&position);
+  Matrix4x4 newTransformMatrix =
+      GetTransformForRendering(&position, aDisplayListBuilder);
 
   gfx::Matrix4x4* transformForSC = &newTransformMatrix;
   if (newTransformMatrix.IsIdentity()) {
@@ -6919,7 +6920,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     
     
     
-    if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
+    if (nsLayoutUtils::ShouldSnapToGrid(mFrame, aDisplayListBuilder)) {
       position.Round();
     }
   }
