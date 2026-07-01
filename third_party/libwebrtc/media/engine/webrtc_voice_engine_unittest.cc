@@ -74,6 +74,7 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -208,7 +209,7 @@ std::vector<Codec> ReceiveCodecsWithId(WebRtcVoiceEngine& engine) {
 
 
 TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
-  Environment env = CreateEnvironment();
+  Environment env = CreateTestEnvironment();
   for (bool use_null_apm : {false, true}) {
     scoped_refptr<test::MockAudioDeviceModule> adm =
         test::MockAudioDeviceModule::CreateStrict();
@@ -3773,7 +3774,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   for (bool use_null_apm : {false, true}) {
     
     
-    Environment env = CreateEnvironment();
+    Environment env = CreateTestEnvironment();
     scoped_refptr<test::MockAudioDeviceModule> adm =
         test::MockAudioDeviceModule::CreateNice();
     scoped_refptr<AudioProcessing> apm =
@@ -3798,7 +3799,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
 TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   test::RunLoop run_loop;
   for (bool use_null_apm : {false, true}) {
-    Environment env = CreateEnvironment();
+    Environment env = CreateTestEnvironment();
     auto adm =
         make_ref_counted<::testing::NiceMock<test::MockAudioDeviceModule>>();
     {
@@ -3826,7 +3827,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
 
 
 TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
-  Environment env = CreateEnvironment();
+  Environment env = CreateTestEnvironment();
   for (bool use_null_apm : {false, true}) {
     
     
@@ -3875,7 +3876,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   test::RunLoop run_loop;
   for (bool use_null_apm : {false, true}) {
-    Environment env = CreateEnvironment();
+    Environment env = CreateTestEnvironment();
     scoped_refptr<test::MockAudioDeviceModule> adm =
         test::MockAudioDeviceModule::CreateNice();
     scoped_refptr<AudioProcessing> apm =
@@ -3904,7 +3905,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
 TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   test::RunLoop run_loop;
   for (bool use_null_apm : {false, true}) {
-    Environment env = CreateEnvironment();
+    Environment env = CreateTestEnvironment();
     
     
     
@@ -3932,7 +3933,7 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
 
 TEST(WebRtcVoiceEngineTest, SetRtpSendParametersMaxBitrate) {
   test::RunLoop run_loop;
-  Environment env = CreateEnvironment();
+  Environment env = CreateTestEnvironment();
   scoped_refptr<test::MockAudioDeviceModule> adm =
       test::MockAudioDeviceModule::CreateNice();
   FakeAudioSource source;
@@ -3974,7 +3975,7 @@ TEST(WebRtcVoiceEngineTest, SetRtpSendParametersMaxBitrate) {
 }
 
 TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
-  Environment env = CreateEnvironment();
+  Environment env = CreateTestEnvironment();
   for (bool use_null_apm : {false, true}) {
     std::vector<AudioCodecSpec> specs;
     AudioCodecSpec spec1 = {

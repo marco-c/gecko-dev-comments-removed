@@ -20,22 +20,22 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "test/create_test_environment.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
 TEST(AudioDecoderFactoryTest, CreateUnknownDecoder) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   EXPECT_FALSE(adf->Create(env, SdpAudioFormat("rey", 8000, 1), std::nullopt));
 }
 
 TEST(AudioDecoderFactoryTest, CreatePcmu) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   
@@ -48,7 +48,7 @@ TEST(AudioDecoderFactoryTest, CreatePcmu) {
 }
 
 TEST(AudioDecoderFactoryTest, CreatePcma) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   
@@ -61,7 +61,7 @@ TEST(AudioDecoderFactoryTest, CreatePcma) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateL16) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   
@@ -79,7 +79,7 @@ TEST(AudioDecoderFactoryTest, CreateL16) {
 
 
 TEST(AudioDecoderFactoryTest, MaxNrOfChannels) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   std::vector<std::string> codecs = {
 #ifdef WEBRTC_CODEC_OPUS
@@ -97,7 +97,7 @@ TEST(AudioDecoderFactoryTest, MaxNrOfChannels) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateG722) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   
@@ -117,7 +117,7 @@ TEST(AudioDecoderFactoryTest, CreateG722) {
 }
 
 TEST(AudioDecoderFactoryTest, CreateOpus) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDecoderFactory> adf = CreateBuiltinAudioDecoderFactory();
   ASSERT_TRUE(adf);
   

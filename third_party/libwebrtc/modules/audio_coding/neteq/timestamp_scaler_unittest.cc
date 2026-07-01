@@ -16,9 +16,9 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/packet.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -29,7 +29,7 @@ using ::testing::ReturnNull;
 namespace webrtc {
 
 TEST(TimestampScaler, TestNoScaling) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -52,7 +52,7 @@ TEST(TimestampScaler, TestNoScaling) {
 }
 
 TEST(TimestampScaler, TestNoScalingLargeStep) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -80,7 +80,7 @@ TEST(TimestampScaler, TestNoScalingLargeStep) {
 }
 
 TEST(TimestampScaler, TestG722) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -107,7 +107,7 @@ TEST(TimestampScaler, TestG722) {
 }
 
 TEST(TimestampScaler, TestG722LargeStep) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -138,7 +138,7 @@ TEST(TimestampScaler, TestG722LargeStep) {
 }
 
 TEST(TimestampScaler, TestG722WithCng) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -183,7 +183,7 @@ TEST(TimestampScaler, TestG722WithCng) {
 
 
 TEST(TimestampScaler, TestG722Packet) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -214,7 +214,7 @@ TEST(TimestampScaler, TestG722Packet) {
 
 
 TEST(TimestampScaler, TestG722PacketList) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -249,7 +249,7 @@ TEST(TimestampScaler, TestG722PacketList) {
 }
 
 TEST(TimestampScaler, TestG722Reset) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   
@@ -292,7 +292,7 @@ TEST(TimestampScaler, TestG722Reset) {
 
 
 TEST(TimestampScaler, TestOpusLargeStep) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   MockDecoderDatabase db;
   auto factory = CreateBuiltinAudioDecoderFactory();
   const DecoderDatabase::DecoderInfo info(env, SdpAudioFormat("opus", 48000, 2),

@@ -21,7 +21,6 @@
 
 #include "api/audio/echo_canceller3_config.h"
 #include "api/environment/environment.h"
-#include "api/environment/environment_factory.h"
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
@@ -39,6 +38,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/random.h"
 #include "rtc_base/strings/string_builder.h"
+#include "test/create_test_environment.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -267,7 +267,7 @@ TEST(RefinedFilterUpdateGainDeathTest, NullDataOutputGain) {
 
 
 TEST(RefinedFilterUpdateGain, GainCausesFilterToConverge) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
   for (size_t filter_length_blocks : {12, 20, 30}) {
@@ -298,7 +298,7 @@ TEST(RefinedFilterUpdateGain, GainCausesFilterToConverge) {
 
 
 TEST(RefinedFilterUpdateGain, DecreasingGain) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
 
@@ -332,7 +332,7 @@ TEST(RefinedFilterUpdateGain, DecreasingGain) {
 
 
 TEST(RefinedFilterUpdateGain, SaturationBehavior) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
   for (int k = 99; k < 200; ++k) {
@@ -377,7 +377,7 @@ TEST(RefinedFilterUpdateGain, SaturationBehavior) {
 
 
 TEST(RefinedFilterUpdateGain, DISABLED_EchoPathChangeBehavior) {
-  const Environment env = CreateEnvironment();
+  const Environment env = CreateTestEnvironment();
   for (size_t filter_length_blocks : {12, 20, 30}) {
     SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
     std::vector<int> blocks_with_echo_path_changes;
