@@ -207,7 +207,7 @@ pub struct PrimTask {
     pub edge_flags: EdgeMask,
     pub quad_flags: QuadFlags,
     pub prim_needs_scissor_rect: bool,
-    pub texture_input: RenderTaskId,
+    pub texture_input: [RenderTaskId; 3],
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -517,7 +517,7 @@ impl RenderTaskKind {
         edge_flags: EdgeMask,
         quad_flags: QuadFlags,
         prim_needs_scissor_rect: bool,
-        texture_input: RenderTaskId,
+        texture_input: [RenderTaskId; 3],
     ) -> Self {
         RenderTaskKind::Prim(PrimTask {
             pattern,
@@ -2072,8 +2072,8 @@ impl RenderTask {
                 FilterGraphOp::SVGFEComponentTransferInterned { handle, creates_pixels: _ } => {
                     
                     
-                    let filter_data = &mut data_stores.filter_data[handle];
-                    filter_data.write_gpu_blocks(gpu_buffer);
+                    let filter_data = &data_stores.filter_data[handle];
+                    let filter_data_address = filter_data.data.write_gpu_blocks(gpu_buffer);
                     
                     
                     task_id = rg_builder.add().init(RenderTask::new_dynamic(
@@ -2089,7 +2089,7 @@ impl RenderTask {
                                 },
                                 op: op.clone(),
                                 content_origin: node_task_rect.min,
-                                extra_gpu_data: Some(filter_data.gpu_buffer_address),
+                                extra_gpu_data: Some(filter_data_address),
                             }
                         ),
                     ).with_uv_rect_kind(node_uv_rect_kind));
