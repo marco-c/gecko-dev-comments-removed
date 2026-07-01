@@ -174,10 +174,12 @@ inline T_Wrap<T_Rhs*, T_Sbx> memcpy(rlbox_sandbox<T_Sbx>& sandbox,
   detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(dest_start, num_val);
 
   
-  
-  
   const void* src_start = detail::unwrap_value(src);
-  detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src_start, num_val);
+
+  
+  if constexpr(detail::rlbox_is_tainted_or_vol_v<T_Lhs>) {
+    detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src_start, num_val);
+  }
 
   std::memcpy(dest_start, src_start, num_val);
 
@@ -206,10 +208,12 @@ inline tainted_int_hint memcmp(rlbox_sandbox<T_Sbx>& sandbox,
   detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(dest_start, num_val);
 
   
-  
-  
   const void* src_start = detail::unwrap_value(src);
-  detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src_start, num_val);
+
+  
+  if constexpr(detail::rlbox_is_tainted_or_vol_v<T_Lhs>) {
+    detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src_start, num_val);
+  }
 
   int ret = std::memcmp(dest_start, src_start, num_val);
   tainted_int_hint converted_ret(ret);
@@ -242,6 +246,10 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
   static_assert(can_type_be_memcopied<std::remove_pointer_t<T>>,
                 "copy_memory_or_grant_access not supported on this type as "
                 "there may be ABI differences");
+
+  static_assert(!detail::rlbox_is_tainted_or_vol_v<T>,
+                "copy_memory_or_grant_access called on tainted type. Tainted "
+                "data is already accessible to the sandbox. ");
 
   
   size_t source_size = num * sizeof(T);
