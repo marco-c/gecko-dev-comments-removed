@@ -1243,6 +1243,12 @@ fn prepare_prim_for_render(
             let pic_scratch_handle = prim_info.kind_scratch.unwrap_picture();
             let pic = &mut store.pictures[pic_index.0];
 
+            
+            
+            
+            
+            let mut all_masks_in_source = true;
+
             if prim_info.clip_chain.needs_mask {
                 
                 
@@ -1280,6 +1286,8 @@ fn prepare_prim_for_render(
                         target_masks.push(i);
                     }
                 }
+
+                all_masks_in_source = target_masks.is_empty();
 
                 let pic_surface_index = pic.raster_config.as_ref().unwrap().surface_index;
                 let prim_local_rect: LayoutRect = frame_state
@@ -1432,16 +1440,12 @@ fn prepare_prim_for_render(
                     surface.surface_spatial_node_index == surface.raster_spatial_node_index
                 };
 
-                
-                
-                
-                let supported = is_same_coord_system || !prim_info.clip_chain.needs_mask;
-
                 let mut opacity = 1.0;
-                let use_quads = if supported && matches!(pic.context_3d, Picture3DContext::Out) {
+                let use_quads = if all_masks_in_source && matches!(pic.context_3d, Picture3DContext::Out) {
                     match raster_config.composite_mode {
                         PictureCompositeMode::Filter(Filter::Blur { .. })
-                        | PictureCompositeMode::SVGFEGraph(..) => true,
+                        | PictureCompositeMode::SVGFEGraph(..)
+                        | PictureCompositeMode::Blit(..) => true,
                         PictureCompositeMode::Filter(Filter::Opacity(_, amount)) => {
                             opacity = amount;
                             true
@@ -1507,6 +1511,12 @@ fn prepare_prim_for_render(
                             (adjusted_clip_rect, &mut local_transform)
                         };
 
+                        
+                        
+                        
+                        let mut composite_clip_chain = prim_info.clip_chain;
+                        composite_clip_chain.needs_mask = false;
+
                         quad::prepare_quad(
                             &pattern,
                             &pic_local_rect,
@@ -1515,7 +1525,7 @@ fn prepare_prim_for_render(
                             EdgeMask::all(),
                             prim_instance_index,
                             &None,
-                            &prim_info.clip_chain,
+                            &composite_clip_chain,
                             transform,
                             frame_context,
                             pic_context,
