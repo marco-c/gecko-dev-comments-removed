@@ -8,7 +8,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/HTMLScriptElementBinding.h"
-#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsAttrValue.h"
@@ -73,7 +72,7 @@ void HTMLScriptElement::UnbindFromTree(UnbindContext& aContext) {
   
   if (mFrozen && GetScriptIsSpeculationRules()) {
     if (auto* doc = GetComposedDoc()) {
-      doc->SpeculationRules().Unregister(this);
+      doc->UnregisterSpeculationRules(this);
     }
   }
 
