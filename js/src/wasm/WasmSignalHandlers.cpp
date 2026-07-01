@@ -751,7 +751,6 @@ static void MachExceptionHandlerThread() {
     
     
     
-    
     bool handled = HandleMachException(request);
     kern_return_t replyCode = handled ? KERN_SUCCESS : KERN_FAILURE;
 

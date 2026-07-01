@@ -86,6 +86,12 @@ const char* wasm::ToString(Trap trap) {
       return "StackOverflow";
     case Trap::CheckInterrupt:
       return "CheckInterrupt";
+#  ifdef ENABLE_WASM_JSPI
+    case Trap::ThrowSuspendError:
+      return "ThrowSuspendError";
+#  endif
+    case Trap::Unimplemented:
+      return "Unimplemented";
     case Trap::ThrowReported:
       return "ThrowReported";
     case Trap::Limit:
@@ -189,6 +195,9 @@ CodeRange::CodeRange(Kind kind, Offsets offsets)
     case FarJumpIsland:
     case TrapExit:
     case Throw:
+#  ifdef ENABLE_WASM_JSPI
+    case ContBaseFrame:
+#  endif
       break;
     default:
       MOZ_CRASH("should use more specific constructor");
@@ -290,17 +299,8 @@ bool CallSites::lookup(uint32_t returnAddressOffset,
   return false;
 }
 
-CallIndirectId CallIndirectId::forAsmJSFunc() {
-  return CallIndirectId(CallIndirectIdKind::AsmJS);
-}
-
 CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
                                        uint32_t funcIndex) {
-  
-  if (codeMeta.isAsmJS()) {
-    return CallIndirectId::forAsmJSFunc();
-  }
-
   FuncDesc func = codeMeta.funcs[funcIndex];
   if (!func.canRefFunc()) {
     return CallIndirectId();
@@ -311,11 +311,6 @@ CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
 
 CallIndirectId CallIndirectId::forFuncType(const CodeMetadata& codeMeta,
                                            uint32_t funcTypeIndex) {
-  
-  if (codeMeta.isAsmJS()) {
-    return CallIndirectId::forAsmJSFunc();
-  }
-
   const TypeDef& typeDef = codeMeta.types->type(funcTypeIndex);
   const FuncType& funcType = typeDef.funcType();
   CallIndirectId callIndirectId;
@@ -353,14 +348,6 @@ CalleeDesc CalleeDesc::wasmTable(const CodeMetadata& codeMeta,
   c.u.table.minLength_ = desc.initialLength();
   c.u.table.maxLength_ = desc.maximumLength();
   c.u.table.callIndirectId_ = callIndirectId;
-  return c;
-}
-CalleeDesc CalleeDesc::asmJSTable(const CodeMetadata& codeMeta,
-                                  uint32_t tableIndex) {
-  CalleeDesc c;
-  c.which_ = AsmJSTable;
-  c.u.table.instanceDataOffset_ =
-      codeMeta.offsetOfTableInstanceData(tableIndex);
   return c;
 }
 CalleeDesc CalleeDesc::builtin(SymbolicAddress callee) {

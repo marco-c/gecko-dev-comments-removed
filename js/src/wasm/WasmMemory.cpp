@@ -268,9 +268,6 @@ bool wasm::ToPageSize(JSContext* cx, HandleValue value, PageSize* pageSize) {
 
 
 
-
-
-
 static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
 
 
@@ -295,8 +292,6 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 #  endif
 
 #endif
-
-
 
 
 

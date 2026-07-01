@@ -330,7 +330,6 @@ struct AnyReg {
         
         
         
-        
         MOZ_CRASH("AnyReg::any() on 32-bit platform");
 #endif
       case REF:

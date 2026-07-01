@@ -43,7 +43,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   
   
-  ModuleKind kind;
 
   
   SharedCompileArgs compileArgs;
@@ -93,11 +92,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   Uint32Vector exportedFuncIndices;
 
   
-  
-  
-  Uint32Vector asmJSSigToTableIndex;
-
-  
   BranchHintCollection branchHints;
 
   
@@ -135,10 +129,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   
   uint32_t instanceDataLength;
 
-  explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
-                        ModuleKind kind = ModuleKind::Wasm)
-      : kind(kind),
-        compileArgs(compileArgs),
+  explicit CodeMetadata(const CompileArgs* compileArgs = nullptr)
+      : compileArgs(compileArgs),
         numFuncImports(0),
         funcImportsAreJS(false),
         numGlobalImports(0),
@@ -163,7 +155,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   [[nodiscard]] bool prepareForCompile(CompileMode mode);
   bool isPreparedForCompile() const { return instanceDataLength != UINT32_MAX; }
 
-  bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
   
   
   
@@ -182,7 +173,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   bool simdAvailable() const { return features().simd; }
 
   bool hugeMemoryEnabled(uint32_t memoryIndex) const {
-    return !isAsmJS() && memoryIndex < memories.length() &&
+    return memoryIndex < memories.length() &&
            IsHugeMemoryEnabled(memories[memoryIndex].addressType(),
                                memories[memoryIndex].pageSize());
   }
@@ -237,11 +228,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     return 0;
   }
 
-  
-  
-  bool getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
-                          const ShareableBytes* nameSectionPayload,
-                          UTF8Bytes* name) const;
+  bool getFuncName(NameContext ctx, uint32_t funcIndex,
+                   const ShareableBytes* nameSectionPayload,
+                   UTF8Bytes* name) const;
 
   uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
     MOZ_RELEASE_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
@@ -466,9 +455,8 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
 
   explicit ModuleMetadata() = default;
 
-  [[nodiscard]] bool init(const CompileArgs& compileArgs,
-                          ModuleKind kind = ModuleKind::Wasm) {
-    codeMeta = js_new<CodeMetadata>(&compileArgs, kind);
+  [[nodiscard]] bool init(const CompileArgs& compileArgs) {
+    codeMeta = js_new<CodeMetadata>(&compileArgs);
     return !!codeMeta && codeMeta->init();
   }
 

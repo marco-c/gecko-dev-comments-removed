@@ -3986,11 +3986,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  CodeOffset asmCallIndirect(const wasm::CallSiteDesc& desc,
-                             const wasm::CalleeDesc& callee);
-
-  
-  
   
   CodeOffset wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
                                            const ABIArg& instanceArg,

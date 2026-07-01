@@ -46,7 +46,6 @@
 #include "vm/NativeObject.h"   
 #include "vm/PlainObject.h"    
 #include "vm/Time.h"           
-#include "wasm/AsmJS.h"
 
 #include "vm/Compartment-inl.h"  
 #include "vm/GeckoProfiler-inl.h"
@@ -1709,7 +1708,7 @@ static JSFunction* CompileStandaloneFunction(
 
     fun = gcOutput.get().getFunctionNoBaseIndex(
         CompilationStencil::TopLevelIndex);
-    MOZ_ASSERT(fun->hasBytecode() || IsAsmJSModule(fun));
+    MOZ_ASSERT(fun->hasBytecode() || fun->isAsmJSNative());
 
     
     if (!source->tryCompressOffThread(cx)) {

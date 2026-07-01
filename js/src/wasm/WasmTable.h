@@ -31,7 +31,6 @@ namespace wasm {
 
 
 
-
 using TableAnyRefVector = GCVector<HeapPtr<AnyRef>, 0, SystemAllocPolicy>;
 
 class Table : public ShareableBase<Table> {
@@ -46,7 +45,6 @@ class Table : public ShareableBase<Table> {
   TableAnyRefVector objects_;  
   const AddressType addressType_;
   const RefType elemType_;
-  const bool isAsmJS_;
   uint32_t length_;
   const mozilla::Maybe<uint64_t> maximum_;
 
@@ -69,11 +67,6 @@ class Table : public ShareableBase<Table> {
   AddressType addressType() const { return addressType_; }
   RefType elemType() const { return elemType_; }
   TableRepr repr() const { return elemType_.tableRepr(); }
-
-  bool isAsmJS() const {
-    MOZ_ASSERT(elemType_.isFuncHierarchy());
-    return isAsmJS_;
-  }
 
   bool isFunction() const { return elemType().isFuncHierarchy(); }
   uint32_t length() const { return length_; }

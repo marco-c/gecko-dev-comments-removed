@@ -110,7 +110,6 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 
 
 
-
 class WasmModuleObject : public NativeObject {
   static const unsigned MODULE_SLOT = 0;
   static const JSClassOps classOps_;
@@ -206,7 +205,6 @@ class WasmGlobalObject : public NativeObject {
   void setVal(wasm::HandleVal value);
   void* addressOfCell() const;
 };
-
 
 
 

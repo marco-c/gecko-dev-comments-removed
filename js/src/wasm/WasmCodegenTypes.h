@@ -1055,7 +1055,7 @@ WASM_DECLARE_POD_VECTOR(CallSiteKind, CallSiteKindVector)
 
 class CallSiteDesc {
   
-  uint32_t lineOrBytecode_;
+  uint32_t bytecodeOffset_;
   
   
   
@@ -1068,52 +1068,52 @@ class CallSiteDesc {
   
   
   
-  static constexpr uint32_t NO_LINE_OR_BYTECODE = 0;
+  static constexpr uint32_t NO_BYTECODE_OFFSET = 0;
   static constexpr uint32_t FIRST_VALID_BYTECODE_OFFSET =
-      NO_LINE_OR_BYTECODE + 1;
-  static_assert(NO_LINE_OR_BYTECODE < sizeof(wasm::MagicNumber));
+      NO_BYTECODE_OFFSET + 1;
+  static_assert(NO_BYTECODE_OFFSET < sizeof(wasm::MagicNumber));
   
-  static constexpr uint32_t MAX_LINE_OR_BYTECODE_VALUE = wasm::MaxModuleBytes;
+  static constexpr uint32_t MAX_BYTECODE_OFFSET_VALUE = wasm::MaxModuleBytes;
 
   CallSiteDesc()
-      : lineOrBytecode_(NO_LINE_OR_BYTECODE), kind_(CallSiteKind::Func) {}
+      : bytecodeOffset_(NO_BYTECODE_OFFSET), kind_(CallSiteKind::Func) {}
   explicit CallSiteDesc(CallSiteKind kind)
-      : lineOrBytecode_(NO_LINE_OR_BYTECODE), kind_(kind) {
+      : bytecodeOffset_(NO_BYTECODE_OFFSET), kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
   }
-  CallSiteDesc(uint32_t lineOrBytecode, CallSiteKind kind)
-      : lineOrBytecode_(lineOrBytecode), kind_(kind) {
+  CallSiteDesc(uint32_t bytecodeOffset, CallSiteKind kind)
+      : bytecodeOffset_(bytecodeOffset), kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
-    MOZ_ASSERT(lineOrBytecode == lineOrBytecode_);
+    MOZ_ASSERT(bytecodeOffset == bytecodeOffset_);
   }
   CallSiteDesc(BytecodeOffset bytecodeOffset, CallSiteKind kind)
-      : lineOrBytecode_(bytecodeOffset.offset()), kind_(kind) {
+      : bytecodeOffset_(bytecodeOffset.offset()), kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
-    MOZ_ASSERT(bytecodeOffset.offset() == lineOrBytecode_);
+    MOZ_ASSERT(bytecodeOffset.offset() == bytecodeOffset_);
   }
-  CallSiteDesc(uint32_t lineOrBytecode,
+  CallSiteDesc(uint32_t bytecodeOffset,
                InlinedCallerOffsetIndex inlinedCallerOffsetsIndex,
                CallSiteKind kind)
-      : lineOrBytecode_(lineOrBytecode),
+      : bytecodeOffset_(bytecodeOffset),
         inlinedCallerOffsetsIndex_(inlinedCallerOffsetsIndex),
         kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
-    MOZ_ASSERT(lineOrBytecode == lineOrBytecode_);
+    MOZ_ASSERT(bytecodeOffset == bytecodeOffset_);
   }
   CallSiteDesc(BytecodeOffset bytecodeOffset,
                uint32_t inlinedCallerOffsetsIndex, CallSiteKind kind)
-      : lineOrBytecode_(bytecodeOffset.offset()),
+      : bytecodeOffset_(bytecodeOffset.offset()),
         inlinedCallerOffsetsIndex_(inlinedCallerOffsetsIndex),
         kind_(kind) {
     MOZ_ASSERT(kind == CallSiteKind(kind_));
-    MOZ_ASSERT(bytecodeOffset.offset() == lineOrBytecode_);
+    MOZ_ASSERT(bytecodeOffset.offset() == bytecodeOffset_);
   }
-  uint32_t lineOrBytecode() const { return lineOrBytecode_; }
+  uint32_t bytecodeOffset() const { return bytecodeOffset_; }
   InlinedCallerOffsetIndex inlinedCallerOffsetsIndex() const {
     return inlinedCallerOffsetsIndex_;
   }
   TrapSiteDesc toTrapSiteDesc() const {
-    return TrapSiteDesc(wasm::BytecodeOffset(lineOrBytecode()),
+    return TrapSiteDesc(wasm::BytecodeOffset(bytecodeOffset()),
                         inlinedCallerOffsetsIndex_);
   }
   CallSiteKind kind() const { return kind_; }
@@ -1170,7 +1170,7 @@ class CallSites {
   using Uint32Vector = Vector<uint32_t, 0, SystemAllocPolicy>;
 
   CallSiteKindVector kinds_;
-  Uint32Vector lineOrBytecodes_;
+  Uint32Vector bytecodeOffsets_;
   Uint32Vector returnAddressOffsets_;
   InlinedCallerOffsetsIndexHashMap inlinedCallerOffsetsMap_;
 
@@ -1196,7 +1196,7 @@ class CallSites {
 
   CallSiteKind kind(size_t index) const { return kinds_[index]; }
   BytecodeOffset bytecodeOffset(size_t index) const {
-    return BytecodeOffset(lineOrBytecodes_[index]);
+    return BytecodeOffset(bytecodeOffsets_[index]);
   }
   uint32_t returnAddressOffset(size_t index) const {
     return returnAddressOffsets_[index];
@@ -1209,7 +1209,7 @@ class CallSites {
       inlinedCallerOffsetsIndex = entry->value();
       inlinedCallerOffsets = inliningContext[entry->value()];
     }
-    return CallSite(CallSiteDesc(lineOrBytecodes_[index],
+    return CallSite(CallSiteDesc(bytecodeOffsets_[index],
                                  inlinedCallerOffsetsIndex, kinds_[index]),
                     returnAddressOffsets_[index], inlinedCallerOffsets);
   }
@@ -1234,7 +1234,7 @@ class CallSites {
     
     
     if (!kinds_.reserve(kinds_.length() + 1) ||
-        !lineOrBytecodes_.reserve(lineOrBytecodes_.length() + 1) ||
+        !bytecodeOffsets_.reserve(bytecodeOffsets_.length() + 1) ||
         !returnAddressOffsets_.reserve(returnAddressOffsets_.length() + 1)) {
       return false;
     }
@@ -1245,7 +1245,7 @@ class CallSites {
     }
 
     kinds_.infallibleAppend(callSiteDesc.kind());
-    lineOrBytecodes_.infallibleAppend(callSiteDesc.lineOrBytecode());
+    bytecodeOffsets_.infallibleAppend(callSiteDesc.bytecodeOffset());
     returnAddressOffsets_.infallibleAppend(returnAddressOffset);
 
     return true;
@@ -1264,7 +1264,7 @@ class CallSites {
     
     
     if (!kinds_.reserve(newLength.value()) ||
-        !lineOrBytecodes_.reserve(newLength.value()) ||
+        !bytecodeOffsets_.reserve(newLength.value()) ||
         !returnAddressOffsets_.reserve(newLength.value())) {
       return false;
     }
@@ -1296,8 +1296,8 @@ class CallSites {
     }
 
     kinds_.infallibleAppend(other.kinds_.begin(), other.kinds_.end());
-    lineOrBytecodes_.infallibleAppend(other.lineOrBytecodes_.begin(),
-                                      other.lineOrBytecodes_.end());
+    bytecodeOffsets_.infallibleAppend(other.bytecodeOffsets_.begin(),
+                                      other.bytecodeOffsets_.end());
     returnAddressOffsets_.infallibleAppend(other.returnAddressOffsets_.begin(),
                                            other.returnAddressOffsets_.end());
     return true;
@@ -1305,14 +1305,14 @@ class CallSites {
 
   void swap(CallSites& other) {
     kinds_.swap(other.kinds_);
-    lineOrBytecodes_.swap(other.lineOrBytecodes_);
+    bytecodeOffsets_.swap(other.bytecodeOffsets_);
     returnAddressOffsets_.swap(other.returnAddressOffsets_);
     inlinedCallerOffsetsMap_.swap(other.inlinedCallerOffsetsMap_);
   }
 
   void clear() {
     kinds_.clear();
-    lineOrBytecodes_.clear();
+    bytecodeOffsets_.clear();
     returnAddressOffsets_.clear();
     inlinedCallerOffsetsMap_.clear();
   }
@@ -1324,27 +1324,27 @@ class CallSites {
       return false;
     }
 
-    return kinds_.reserve(length) && lineOrBytecodes_.reserve(length) &&
+    return kinds_.reserve(length) && bytecodeOffsets_.reserve(length) &&
            returnAddressOffsets_.reserve(length);
   }
 
   void shrinkStorageToFit() {
     kinds_.shrinkStorageToFit();
-    lineOrBytecodes_.shrinkStorageToFit();
+    bytecodeOffsets_.shrinkStorageToFit();
     returnAddressOffsets_.shrinkStorageToFit();
     inlinedCallerOffsetsMap_.compact();
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return kinds_.sizeOfExcludingThis(mallocSizeOf) +
-           lineOrBytecodes_.sizeOfExcludingThis(mallocSizeOf) +
+           bytecodeOffsets_.sizeOfExcludingThis(mallocSizeOf) +
            returnAddressOffsets_.sizeOfExcludingThis(mallocSizeOf) +
            inlinedCallerOffsetsMap_.shallowSizeOfExcludingThis(mallocSizeOf);
   }
 
   void checkInvariants() const {
 #ifdef DEBUG
-    MOZ_ASSERT(kinds_.length() == lineOrBytecodes_.length());
+    MOZ_ASSERT(kinds_.length() == bytecodeOffsets_.length());
     MOZ_ASSERT(kinds_.length() == returnAddressOffsets_.length());
     uint32_t last = 0;
     for (uint32_t returnAddressOffset : returnAddressOffsets_) {
@@ -1583,9 +1583,6 @@ WASM_DECLARE_POD_VECTOR(CodeRangeUnwindInfo, CodeRangeUnwindInfoVector)
 enum class CallIndirectIdKind {
   
   
-  AsmJS,
-  
-  
   
   Immediate,
   
@@ -1613,10 +1610,6 @@ class CallIndirectId {
 
  public:
   CallIndirectId() : kind_(CallIndirectIdKind::None) {}
-
-  
-  
-  static CallIndirectId forAsmJSFunc();
 
   
   static CallIndirectId forFunc(const CodeMetadata& codeMeta,
@@ -1668,9 +1661,6 @@ class CalleeDesc {
     WasmTable,
 
     
-    AsmJSTable,
-
-    
     Builtin,
 
     
@@ -1705,8 +1695,6 @@ class CalleeDesc {
   static CalleeDesc wasmTable(const CodeMetadata& codeMeta,
                               const TableDesc& desc, uint32_t tableIndex,
                               CallIndirectId callIndirectId);
-  static CalleeDesc asmJSTable(const CodeMetadata& codeMeta,
-                               uint32_t tableIndex);
   static CalleeDesc builtin(SymbolicAddress callee);
   static CalleeDesc builtinInstanceMethod(SymbolicAddress callee);
   static CalleeDesc wasmFuncRef();
@@ -1719,7 +1707,7 @@ class CalleeDesc {
     MOZ_ASSERT(which_ == Import);
     return u.import.instanceDataOffset_;
   }
-  bool isTable() const { return which_ == WasmTable || which_ == AsmJSTable; }
+  bool isTable() const { return which_ == WasmTable; }
   uint32_t tableLengthInstanceDataOffset() const {
     MOZ_ASSERT(isTable());
     return u.table.instanceDataOffset_ + offsetof(TableInstanceData, length);

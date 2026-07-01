@@ -243,6 +243,7 @@ class FrameIter {
   FrameIter(JSContext* cx, DebuggerEvalOption, JSPrincipals*);
   FrameIter(const FrameIter& iter) = delete;
   MOZ_IMPLICIT FrameIter(const Data& data);
+  explicit FrameIter(mozilla::UniquePtr<Data> data) : FrameIter(*data) {}
 
   bool done() const { return data_.state_ == DONE; }
 
@@ -367,7 +368,7 @@ class FrameIter {
   
 
   AbstractFramePtr abstractFramePtr() const;
-  Data* copyData() const;
+  mozilla::UniquePtr<Data> copyData() const;
 
   
   inline InterpreterFrame* interpFrame() const;
@@ -535,7 +536,7 @@ inline wasm::Instance* FrameIter::wasmInstance() const {
 inline unsigned FrameIter::wasmBytecodeOffset() const {
   MOZ_ASSERT(!done());
   MOZ_ASSERT(isWasm());
-  return wasmFrame().lineOrBytecode();
+  return wasmFrame().bytecodeOffset();
 }
 
 inline uint32_t FrameIter::wasmFuncIndex() const {

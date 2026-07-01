@@ -16652,12 +16652,6 @@ void LambdaIRGenerator::trackAttached(const char* name) {
 
 AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
   
-  if (canonicalFunction_->isNativeFun()) {
-    MOZ_ASSERT(IsAsmJSModule(canonicalFunction_));
-    return AttachDecision::NoAction;
-  }
-
-  
   if (cx_->realm()->hasAllocationMetadataBuilder()) {
     return AttachDecision::NoAction;
   }

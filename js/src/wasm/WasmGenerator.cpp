@@ -144,7 +144,6 @@ ModuleGenerator::~ModuleGenerator() {
 }
 
 bool ModuleGenerator::initializeCompleteTier(
-    CodeMetadataForAsmJS* codeMetaForAsmJS,
     const CodeTailMetadata* existingCodeTailMeta) {
   MOZ_ASSERT(compileState_ != CompileState::LazyTier2);
 
@@ -158,12 +157,6 @@ bool ModuleGenerator::initializeCompleteTier(
   }
 
   
-  
-  
-  MOZ_ASSERT(isAsmJS() == !!codeMetaForAsmJS);
-  codeMetaForAsmJS_ = codeMetaForAsmJS;
-
-  
   if (compilingTier1() && !prepareTier1()) {
     return false;
   }
@@ -174,7 +167,6 @@ bool ModuleGenerator::initializeCompleteTier(
 bool ModuleGenerator::initializePartialTier(const Code& code,
                                             uint32_t funcIndex) {
   MOZ_ASSERT(compileState_ == CompileState::LazyTier2);
-  MOZ_ASSERT(!isAsmJS());
 
   
   MOZ_ASSERT(&code.codeMeta() == codeMeta_);
@@ -797,16 +789,15 @@ bool ModuleGenerator::finishOutstandingTask() {
 }
 
 bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
-                                     uint32_t lineOrBytecode,
-                                     const uint8_t* begin, const uint8_t* end,
-                                     Uint32Vector&& lineNums) {
+                                     uint32_t bytecodeOffset,
+                                     const uint8_t* begin, const uint8_t* end) {
   MOZ_ASSERT(!finishedFuncDefs_);
   MOZ_ASSERT(funcIndex < codeMeta_->numFuncs());
 
   if (compilingTier1()) {
     static_assert(MaxFunctionBytes < UINT32_MAX);
     uint32_t bodyLength = (uint32_t)(end - begin);
-    funcDefRanges_.infallibleAppend(BytecodeRange(lineOrBytecode, bodyLength));
+    funcDefRanges_.infallibleAppend(BytecodeRange(bytecodeOffset, bodyLength));
   }
 
   uint32_t threshold;
@@ -844,8 +835,8 @@ bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
     currentTask_ = freeTasks_.popCopy();
   }
 
-  if (!currentTask_->inputs.emplaceBack(funcIndex, lineOrBytecode, begin, end,
-                                        std::move(lineNums))) {
+  if (!currentTask_->inputs.emplaceBack(funcIndex, bytecodeOffset, begin,
+                                        end)) {
     return false;
   }
 
@@ -1171,7 +1162,7 @@ bool ModuleGenerator::startCompleteTier() {
 bool ModuleGenerator::startPartialTier(uint32_t funcIndex) {
 #ifdef JS_JITSPEW
   UTF8Bytes name;
-  if (!codeMeta_->getFuncNameForWasm(
+  if (!codeMeta_->getFuncName(
           NameContext::Standalone, funcIndex,
           partialTieringCode_->codeTailMeta().nameSectionPayload.get(),
           &name) ||
@@ -1387,16 +1378,15 @@ SharedModule ModuleGenerator::finishModule(
 
   
   sharedStubs_.codeBlock->sendToProfiler(
-      *codeMeta_, *codeTailMeta, codeMetaForAsmJS_,
+      *codeMeta_, *codeTailMeta,
       FuncIonPerfSpewerSpan(sharedStubs_.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(sharedStubs_.funcBaselineSpewers));
   tier1Result.codeBlock->sendToProfiler(
-      *codeMeta_, *codeTailMeta, codeMetaForAsmJS_,
+      *codeMeta_, *codeTailMeta,
       FuncIonPerfSpewerSpan(tier1Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier1Result.funcBaselineSpewers));
 
-  MutableCode code =
-      js_new<Code>(mode(), *codeMeta_, *codeTailMeta, codeMetaForAsmJS_);
+  MutableCode code = js_new<Code>(mode(), *codeMeta_, *codeTailMeta);
   if (!code || !code->initialize(std::move(funcImports_),
                                  std::move(sharedStubs_.codeBlock),
                                  std::move(sharedStubs_.linkData),
@@ -1424,8 +1414,7 @@ SharedModule ModuleGenerator::finishModule(
   
   
   
-  if (!isAsmJS() && compileArgs_->features.testSerialization &&
-      module->canSerialize()) {
+  if (compileArgs_->features.testSerialization && module->canSerialize()) {
     MOZ_RELEASE_ASSERT(mode() == CompileMode::Once &&
                        tier() == Tier::Serialized);
 
@@ -1513,7 +1502,7 @@ bool ModuleGenerator::finishTier2(const Module& module) {
 
   
   tier2Result.codeBlock->sendToProfiler(
-      *codeMeta_, module.codeTailMeta(), codeMetaForAsmJS_,
+      *codeMeta_, module.codeTailMeta(),
       FuncIonPerfSpewerSpan(tier2Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier2Result.funcBaselineSpewers));
 
@@ -1539,7 +1528,7 @@ bool ModuleGenerator::finishPartialTier2() {
 
   
   tier2Result.codeBlock->sendToProfiler(
-      *codeMeta_, partialTieringCode_->codeTailMeta(), codeMetaForAsmJS_,
+      *codeMeta_, partialTieringCode_->codeTailMeta(),
       FuncIonPerfSpewerSpan(tier2Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier2Result.funcBaselineSpewers));
 
