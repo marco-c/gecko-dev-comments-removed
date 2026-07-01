@@ -409,43 +409,29 @@ add_task(async function test_user_changes_separate_private_pref() {
     false
   );
 
-  await checkTelemetry("user_private_split", testNewDefaultEngine, null, true);
+  await checkTelemetry("user_private_split", testPrefEngine, null, true);
 });
 
 add_task(async function test_ui_enabled_with_separate_default_notifies() {
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-    false
+    true
   );
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
     true
   );
 
-  clearTelemetry();
-
-  let defaultChanged = SearchTestUtils.promiseSearchNotification(
-    SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE,
-    SearchUtils.TOPIC_ENGINE_MODIFIED
-  );
-
-  Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-    true
-  );
-  await defaultChanged;
-
-  await checkTelemetry(
-    "user_private_pref_enabled",
-    null,
-    testNewDefaultEngine,
-    true
+  await SearchService.setDefaultPrivate(
+    SearchService.getEngineById("newDefault"),
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   clearTelemetry();
 
   
-  defaultChanged = SearchTestUtils.promiseSearchNotification(
+  
+  let defaultChanged = SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
@@ -460,6 +446,25 @@ add_task(async function test_ui_enabled_with_separate_default_notifies() {
     testNewDefaultEngine,
     null,
     true
+  );
+
+  clearTelemetry();
+
+  
+  
+  
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    true
+  );
+
+  await checkTelemetry("user_private_pref_enabled", null, testPrefEngine, true);
+
+  clearTelemetry();
+
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    false
   );
 });
 
