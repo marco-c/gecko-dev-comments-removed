@@ -106,7 +106,10 @@ const gTestSyntaxExamples = {
         input: new CSSMathSum(new CSSUnitValue(0, 'px'), new CSSUnitValue(0, 'em')),
         
         
-        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultSpecified: (input, result) => {
+          assert_is_calc_sum(result);
+          assert_numeric_type_equals(result.type(), input.type());
+        },
         defaultComputed: (_, result) => assert_is_unit('px', result)
       }
     ],
@@ -342,7 +345,8 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
         
         
         
-        if (example.input instanceof CSSUnitValue) {
+        if (example.input instanceof CSSUnitValue ||
+            example.input instanceof CSSMathSum) {
           assert_numeric_type_equals(specifiedResult.type(), example.input.type());
         }
       }
@@ -363,7 +367,8 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
         
         
         
-        if (example.input instanceof CSSUnitValue) {
+        if (example.input instanceof CSSUnitValue ||
+            example.input instanceof CSSMathSum) {
           assert_numeric_type_equals(computedResult.type(), example.input.type());
         }
       }
