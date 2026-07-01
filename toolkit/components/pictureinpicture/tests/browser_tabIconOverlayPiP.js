@@ -22,8 +22,10 @@ add_task(async () => {
     async browser => {
       await ensureVideosReady(browser);
 
-      
-      let tab = gBrowser.getTabForBrowser(browser);
+      let audioPromise = BrowserTestUtils.waitForEvent(
+        browser,
+        "DOMAudioPlaybackStarted"
+      );
 
       await SpecialPowers.spawn(browser, [videoID], async videoID => {
         await content.document.getElementById(videoID).play();
@@ -31,10 +33,10 @@ add_task(async () => {
 
       
       ok(!(await isVideoPaused(browser, videoID)), "The video is not paused.");
-      await TestUtils.waitForCondition(
-        () => tab.hasAttribute("soundplaying"),
-        "Waiting for soundplaying attribute"
-      );
+      await audioPromise;
+
+      
+      let tab = gBrowser.getTabForBrowser(browser);
 
       
       let tabIconOverlay = tab.getElementsByClassName("tab-icon-overlay")[0];
