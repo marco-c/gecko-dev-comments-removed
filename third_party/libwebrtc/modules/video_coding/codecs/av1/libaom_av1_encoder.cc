@@ -220,7 +220,7 @@ class LibaomAv1Encoder final : public VideoEncoder {
   EncodedImageCallback* encoded_image_callback_;
   double framerate_fps_;  
   int64_t timestamp_;
-  const Environment& env_;
+  const Environment env_;
   const LibaomAv1EncoderInfoSettings encoder_info_override_;
 
   
