@@ -388,7 +388,11 @@ export function createSourceMapOriginalSource(id, url, generatedSource) {
 
 
 
-export function createPrettyPrintOriginalSource(id, url, generatedSource) {
+export function createPrettyPrintOriginalScriptSource(
+  id,
+  url,
+  generatedSource
+) {
   return {
     ...createSourceObject({
       id,
@@ -398,6 +402,36 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
       generatedSource,
     }),
     type: ResourceCommand.TYPES.SOURCE,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function createPrettyPrintOriginalStyleSheetSource(
+  id,
+  url,
+  generatedSource
+) {
+  return {
+    ...createSourceObject({
+      id,
+      url,
+      isOriginal: true,
+      isPrettyPrinted: true,
+      generatedSource,
+    }),
+    isStyleSheet: generatedSource.isStyleSheet,
+    type: ResourceCommand.TYPES.STYLESHEET,
   };
 }
 

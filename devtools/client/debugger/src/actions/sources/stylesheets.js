@@ -3,6 +3,7 @@
 
 
 import { prefs } from "../../utils/prefs";
+import { getSourceActorsForSource } from "../../selectors/index";
 
 export function updateStyleSheetContent(sourceActor, text) {
   return async ({ client }) => {
@@ -11,5 +12,24 @@ export function updateStyleSheetContent(sourceActor, text) {
       text,
       prefs.styleSheetTransitions
     );
+  };
+}
+
+
+
+
+export function toggleStylesheetVisibility(sourceActor) {
+  return async ({ client, dispatch, getState }) => {
+    const source = sourceActor.sourceObject;
+
+    const actors = getSourceActorsForSource(getState(), source.id);
+    const response = await Promise.all(
+      actors.map(actor => client.toggleStylesheetVisibility(actor))
+    );
+    dispatch({
+      type: "SET_STYLESHEET_VISIBILITY",
+      isDisabled: !!response[0],
+      sourceId: source.id,
+    });
   };
 }

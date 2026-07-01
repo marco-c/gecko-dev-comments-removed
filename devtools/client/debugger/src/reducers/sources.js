@@ -36,6 +36,14 @@ export function initialSourcesState() {
 
 
 
+    mutableDisabledStylesheetsIDs: new Set(),
+
+    
+
+
+
+
+
 
     mutableOriginalBreakableLines: new Map(),
 
@@ -123,7 +131,6 @@ export function initialSourcesState() {
   };
   
 }
-
 function update(state = initialSourcesState(), action) {
   switch (action.type) {
     case "ADD_SOURCES":
@@ -253,6 +260,10 @@ function update(state = initialSourcesState(), action) {
 
     case "REMOVE_SOURCES": {
       return removeSourcesAndActors(state, action);
+    }
+
+    case "SET_STYLESHEET_VISIBILITY": {
+      return updateDisabledStyleSheets(state, action);
     }
   }
 
@@ -442,6 +453,23 @@ function insertSourceActors(state, action) {
     }
   }
 
+  return { ...state };
+}
+
+function updateDisabledStyleSheets(state, action) {
+  const { sourceId, isDisabled } = action;
+  const { mutableDisabledStylesheetsIDs } = state;
+  if (isDisabled) {
+    if (mutableDisabledStylesheetsIDs.has(sourceId)) {
+      return state;
+    }
+    mutableDisabledStylesheetsIDs.add(sourceId);
+  } else {
+    if (!mutableDisabledStylesheetsIDs.has(sourceId)) {
+      return state;
+    }
+    mutableDisabledStylesheetsIDs.delete(sourceId);
+  }
   return { ...state };
 }
 
