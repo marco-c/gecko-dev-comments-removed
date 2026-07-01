@@ -10,7 +10,13 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(function () {
+add_setup(async function () {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
   registerCleanupFunction(async () => {
     await PlacesUtils.bookmarks.eraseEverything();
   });
