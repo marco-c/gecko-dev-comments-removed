@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include "mozilla/dom/JSProcessActorProtocol.h"
 
 #include "JSActorProtocolUtils.h"
@@ -131,6 +128,8 @@ bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType,
         PromiseFlatCString(aRemoteType).get()));
     return false;
   }
+
+  LogMatch(aRemoteType);
 
   return true;
 }
