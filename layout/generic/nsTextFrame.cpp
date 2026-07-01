@@ -5820,6 +5820,46 @@ static gfxFloat ComputeDecorationLineOffset(
 
 
 
+static nscoord TextDecorationInsetPercentageBasis(const nsTextFrame* aFrame,
+                                                  const nsIFrame* aDecFrame) {
+  
+  
+  const WritingMode wm = aDecFrame->IsInlineFrame()
+                             ? aDecFrame->GetWritingMode()
+                             : FindLineContainer(aFrame)->GetWritingMode();
+  auto getLength = [wm](const nsIFrame* aFrame) {
+    return wm.IsVertical() ? aFrame->GetRectRelativeToSelf().height
+                           : aFrame->GetRectRelativeToSelf().width;
+  };
+  if (aDecFrame->StyleBorder()->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone) {
+    return getLength(aFrame);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nscoord sum = getLength(aFrame);
+  const nsIFrame* prev = aFrame;
+  while ((prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev))) {
+    sum += getLength(prev);
+  }
+  const nsIFrame* next = aFrame;
+  while ((next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next))) {
+    sum += getLength(next);
+  }
+  return sum;
+}
+
+
+
+
+
 static bool ComputeDecorationInset(
     nsTextFrame* aFrame, const nsPresContext* aPresCtx,
     const nsIFrame* aDecFrame, const gfxFont::Metrics& aMetrics,
@@ -5848,13 +5888,19 @@ static bool ComputeDecorationInset(
       return true;
     }
 
-    if (!inset.start.IsLength() || !inset.end.IsLength()) {
-      
-      
-      return true;
+    if (inset.start.IsLength() && inset.end.IsLength()) {
+      insetLeft = inset.start.AsLength().ToAppUnits();
+      insetRight = inset.end.AsLength().ToAppUnits();
+    } else {
+      const nscoord basis =
+          TextDecorationInsetPercentageBasis(aFrame, aDecFrame);
+      insetLeft = inset.start.Resolve(basis);
+      insetRight = inset.end.Resolve(basis);
+      if (!insetLeft && !insetRight) {
+        
+        return true;
+      }
     }
-    insetLeft = inset.start.AsLength().ToAppUnits();
-    insetRight = inset.end.AsLength().ToAppUnits();
   }
 
   
