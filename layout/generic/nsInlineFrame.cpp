@@ -50,6 +50,15 @@ nsresult nsInlineFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
+nsInlineFrame::InlineReflowInput::InlineReflowInput(
+    const ReflowInput& aReflowInput,
+    SetParentDuringReflow aSetParentDuringReflow)
+    : mNextInFlow(
+          static_cast<nsInlineFrame*>(aReflowInput.mFrame->GetNextInFlow())),
+      mLineContainer(aReflowInput.mLineLayout->LineContainerFrame()),
+      mLineLayout(aReflowInput.mLineLayout),
+      mSetParentDuringReflow(aSetParentDuringReflow) {}
+
 void nsInlineFrame::InvalidateFrame(uint32_t aDisplayItemKey,
                                     bool aRebuildDisplayItems) {
   if (IsInSVGTextSubtree()) {
@@ -166,8 +175,7 @@ nscoord nsInlineFrame::GetCaretBaseline() const {
     
     
     if (container && container->LinesAreEmpty()) {
-      nscoord blockSize = container->ContentBSize(GetWritingMode());
-      return GetFontMetricsDerivedCaretBaseline(blockSize);
+      return GetFontMetricsDerivedCaretBaseline();
     }
   }
   return nsIFrame::GetCaretBaseline();
@@ -304,7 +312,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
     return;
   }
 
-  bool lazilySetParentPointer = false;
+  SetParentDuringReflow setParentDuringReflow = SetParentDuringReflow::No;
 
   
   nsInlineFrame* prevInFlow = (nsInlineFrame*)GetPrevInFlow();
@@ -325,7 +333,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
         
         
         mFrames = std::move(*prevOverflowFrames);
-        lazilySetParentPointer = true;
+        setParentDuringReflow = SetParentDuringReflow::Yes;
       } else {
         
         
@@ -359,12 +367,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  InlineReflowInput irs;
-  irs.mPrevFrame = nullptr;
-  irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
-  irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
-  irs.mSetParentPointer = lazilySetParentPointer;
+  InlineReflowInput irs(aReflowInput, setParentDuringReflow);
 
   if (mFrames.IsEmpty()) {
     
@@ -522,7 +525,8 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   bool done = false;
   while (frame) {
     
-    if (irs.mSetParentPointer) {
+    
+    if (irs.mSetParentDuringReflow == SetParentDuringReflow::Yes) {
       nsIFrame* child = frame;
       do {
         child->SetParent(this);
@@ -586,7 +590,7 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
       done = aStatus.IsInlineBreak() ||
              (!reflowingFirstLetter && aStatus.IsIncomplete());
       if (done) {
-        if (!irs.mSetParentPointer) {
+        if (irs.mSetParentDuringReflow == SetParentDuringReflow::No) {
           break;
         }
         
@@ -1057,11 +1061,7 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   DrainSelfOverflowList();
 
   
-  InlineReflowInput irs;
-  irs.mPrevFrame = nullptr;
-  irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
-  irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
+  InlineReflowInput irs(aReflowInput, SetParentDuringReflow::No);
 
   bool wasEmpty = mFrames.IsEmpty();
   if (wasEmpty) {

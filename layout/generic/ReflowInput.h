@@ -681,22 +681,15 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
-
-
-
-
-
   static nscoord CalcLineHeight(const ComputedStyle&,
                                 nsPresContext* aPresContext,
-                                const nsIContent* aContent, nscoord aBlockBSize,
+                                const nsIContent* aContent,
                                 float aFontSizeInflation);
-
   static nscoord CalcLineHeight(const StyleLineHeight&,
                                 const nsStyleFont& aRelativeToFont,
                                 nsPresContext* aPresContext, bool aIsVertical,
-                                const nsIContent* aContent, nscoord aBlockBSize,
+                                const nsIContent* aContent,
                                 float aFontSizeInflation);
-
   static nscoord CalcLineHeightForCanvas(const StyleLineHeight& aLh,
                                          const nsFont& aRelativeToFont,
                                          nsAtom* aLanguage,

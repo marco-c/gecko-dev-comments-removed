@@ -1823,15 +1823,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  nscoord GetFontMetricsDerivedCaretBaseline(
-      nscoord aBSize = NS_UNCONSTRAINEDSIZE) const;
+  nscoord GetFontMetricsDerivedCaretBaseline() const;
 
   
 
