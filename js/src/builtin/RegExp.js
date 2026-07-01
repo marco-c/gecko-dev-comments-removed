@@ -517,6 +517,12 @@ function RegExpGetComplexReplacement(
   DefineDataProperty(captures, capturesLength++, matched);
 
   
+  
+  var storedCaptures = functionalReplace
+    ? nCaptures
+    : std_Math_min(nCaptures, REGEXP_MAX_SUBSTITUTION_CAPTURES);
+
+  
   for (var n = 1; n <= nCaptures; n++) {
     
     var capN = result[n];
@@ -527,7 +533,9 @@ function RegExpGetComplexReplacement(
     }
 
     
-    DefineDataProperty(captures, capturesLength++, capN);
+    if (n <= storedCaptures) {
+      DefineDataProperty(captures, capturesLength++, capN);
+    }
   }
 
   
