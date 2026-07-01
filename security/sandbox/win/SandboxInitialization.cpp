@@ -14,6 +14,11 @@
 namespace mozilla {
 namespace sandboxing {
 
+static bool ThreadLocalStorageIsInitialized() {
+  
+  return !!NtCurrentTeb()->Reserved1[11];
+}
+
 typedef BOOL(WINAPI* CloseHandle_func)(HANDLE hObject);
 static WindowsDllInterceptor::FuncHookType<CloseHandle_func> stub_CloseHandle;
 
@@ -26,8 +31,12 @@ static WindowsDllInterceptor::FuncHookType<DuplicateHandle_func>
 
 static BOOL WINAPI patched_CloseHandle(HANDLE hObject) {
   
-  base::win::OnHandleBeingClosed(hObject,
-                                 base::win::HandleOperation::kCloseHandleHook);
+  
+  
+  if (ThreadLocalStorageIsInitialized()) {
+    base::win::OnHandleBeingClosed(
+        hObject, base::win::HandleOperation::kCloseHandleHook);
+  }
   return stub_CloseHandle(hObject);
 }
 
@@ -38,6 +47,7 @@ static BOOL WINAPI patched_DuplicateHandle(
   
   
   if ((dwOptions & DUPLICATE_CLOSE_SOURCE) &&
+      ThreadLocalStorageIsInitialized() &&
       (GetProcessId(hSourceProcessHandle) == ::GetCurrentProcessId())) {
     base::win::OnHandleBeingClosed(
         hSourceHandle, base::win::HandleOperation::kDuplicateHandleHook);
@@ -108,15 +118,13 @@ static void EnableApiQueryInterception() {
 }
 
 static bool ShouldDisableHandleVerifier() {
-#if defined(_X86_) && (defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG))
   
   
   
-  
-  
-  return !!getenv("MOZ_RUN_GTEST");
+#if defined(DEBUG)
+  return false;
 #else
-  return !getenv("MOZ_ENABLE_HANDLE_VERIFIER");
+  return true;
 #endif
 }
 
