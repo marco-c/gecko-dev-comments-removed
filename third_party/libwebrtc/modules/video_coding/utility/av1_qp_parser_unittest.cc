@@ -8,9 +8,10 @@
 
 
 
-#include "video/corruption_detection/evaluation/av1_qp_parser.h"
+#include "modules/video_coding/utility/av1_qp_parser.h"
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 
 #include "test/gmock.h"
@@ -85,47 +86,47 @@ constexpr uint8_t kQpSpatialLayer2 = 241u;
 constexpr uint8_t kQpSpatialLayer3 = 241u;
 
 TEST(Av1QpParserTest, ParseQpAv1KeyFrame) {
-  Av1QpParser parser;
-  std::optional<uint32_t> qp = parser.Parse(kCodedFrameAv1Frame1Qp81);
+  std::unique_ptr<Av1QpParser> parser = Av1QpParser::Create();
+  std::optional<uint32_t> qp = parser->Parse(kCodedFrameAv1Frame1Qp81);
   EXPECT_THAT(qp, 81u);
 }
 
 TEST(Av1QpParserTest, ParseQpAv1DeltaFrameError) {
-  Av1QpParser parser_error;
+  std::unique_ptr<Av1QpParser> parser_error = Av1QpParser::Create();
   
   
-  std::optional<uint32_t> qp = parser_error.Parse(kCodedFrameAv1Frame2Qp81);
+  std::optional<uint32_t> qp = parser_error->Parse(kCodedFrameAv1Frame2Qp81);
   EXPECT_FALSE(qp.has_value());
 }
 
 TEST(Av1QpParserTest, ParseQpAv1DeltaFrameProper) {
-  Av1QpParser parser;
-  ASSERT_TRUE(parser.Parse(kCodedFrameAv1Frame1Qp81).has_value());
-  std::optional<uint32_t> qp = parser.Parse(kCodedFrameAv1Frame2Qp81);
+  std::unique_ptr<Av1QpParser> parser = Av1QpParser::Create();
+  ASSERT_TRUE(parser->Parse(kCodedFrameAv1Frame1Qp81).has_value());
+  std::optional<uint32_t> qp = parser->Parse(kCodedFrameAv1Frame2Qp81);
   EXPECT_THAT(qp, 81u);
 }
 
 TEST(Av1QpParserTest, ParseQpAv1SvcL3T1SpatialLayer1) {
-  Av1QpParser parser;
+  std::unique_ptr<Av1QpParser> parser = Av1QpParser::Create();
   
-  std::optional<uint32_t> qp = parser.Parse(kL3T1Av1TemporaUnit,
-                                            2);
+  std::optional<uint32_t> qp = parser->Parse(kL3T1Av1TemporaUnit,
+                                             2);
   EXPECT_THAT(qp, kQpSpatialLayer1);
 }
 
 TEST(Av1QpParserTest, ParseQpAv1SvcL3T1SpatialLayer2) {
-  Av1QpParser parser;
+  std::unique_ptr<Av1QpParser> parser = Av1QpParser::Create();
   
-  std::optional<uint32_t> qp = parser.Parse(kL3T1Av1TemporaUnit,
-                                            1);
+  std::optional<uint32_t> qp = parser->Parse(kL3T1Av1TemporaUnit,
+                                             1);
   EXPECT_THAT(qp, kQpSpatialLayer2);
 }
 
 TEST(Av1QpParserTest, ParseQpAv1SvcL3T1SpatialLayer3) {
-  Av1QpParser parser;
+  std::unique_ptr<Av1QpParser> parser = Av1QpParser::Create();
   
-  std::optional<uint32_t> qp = parser.Parse(kL3T1Av1TemporaUnit,
-                                            0);
+  std::optional<uint32_t> qp = parser->Parse(kL3T1Av1TemporaUnit,
+                                             0);
   EXPECT_THAT(qp, kQpSpatialLayer3);
 }
 

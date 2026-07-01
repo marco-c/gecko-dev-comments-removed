@@ -1,0 +1,90 @@
+
+
+
+
+
+
+
+
+
+
+#include "modules/video_coding/utility/av1_qp_parser.h"
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <span>
+
+#include "third_party/libgav1/src/src/buffer_pool.h"
+#include "third_party/libgav1/src/src/decoder_state.h"
+#include "third_party/libgav1/src/src/gav1/status_code.h"
+#include "third_party/libgav1/src/src/obu_parser.h"
+
+namespace webrtc {
+namespace {
+
+class Av1QpParserImpl : public Av1QpParser {
+ public:
+  Av1QpParserImpl()
+      : buffer_pool_(nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr) {}
+
+  std::optional<uint32_t> Parse(std::span<const uint8_t> frame_data) override {
+    return Parse(frame_data, 0);
+  }
+
+  std::optional<uint32_t> Parse(std::span<const uint8_t> frame_data,
+                                int operating_point) override {
+    libgav1::RefCountedBufferPtr curr_frame;
+    libgav1::ObuParser parser(frame_data.data(), frame_data.size(),
+                              operating_point, &buffer_pool_, &decoder_state_);
+    uint8_t highest_acceptable_spatial_layers_qp;
+
+    
+    
+    while (parser.HasData()) {
+      
+      
+      if (sequence_header_) {
+        parser.set_sequence_header(*sequence_header_);
+      }
+      if (parser.ParseOneFrame(&curr_frame) != libgav1::kStatusOk) {
+        return std::nullopt;
+      }
+
+      
+      const auto& frame_header = parser.frame_header();
+      
+      
+      
+      if (frame_header.quantizer.base_index != 0) {
+        highest_acceptable_spatial_layers_qp =
+            frame_header.quantizer.base_index;
+      }
+
+      
+      if (parser.sequence_header_changed()) {
+        sequence_header_ = parser.sequence_header();
+      }
+      decoder_state_.UpdateReferenceFrames(curr_frame,
+                                           frame_header.refresh_frame_flags);
+    }
+
+    return highest_acceptable_spatial_layers_qp;
+  }
+
+ private:
+  libgav1::BufferPool buffer_pool_;
+  libgav1::DecoderState decoder_state_;
+  std::optional<libgav1::ObuSequenceHeader> sequence_header_ = std::nullopt;
+};
+
+}  
+
+std::unique_ptr<Av1QpParser> Av1QpParser::Create() {
+  return std::make_unique<Av1QpParserImpl>();
+}
+
+}  
