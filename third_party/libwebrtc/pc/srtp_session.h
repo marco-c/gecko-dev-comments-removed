@@ -20,6 +20,8 @@
 #include "api/sequence_checker.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/system/no_unique_address.h"
+#include "rtc_base/thread_annotations.h"
 
 
 struct srtp_event_data_t;
@@ -104,20 +106,21 @@ class SrtpSession {
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
 
-  SequenceChecker thread_checker_;
-  srtp_ctx_t_* session_ = nullptr;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_{
+      SequenceChecker::kDetached};
+  srtp_ctx_t_* session_ RTC_GUARDED_BY(thread_checker_) = nullptr;
 
   
   
   
   
-  int rtp_auth_tag_len_ = 0;
-  int rtcp_auth_tag_len_ = 0;
+  int rtp_auth_tag_len_ RTC_GUARDED_BY(thread_checker_) = 0;
+  int rtcp_auth_tag_len_ RTC_GUARDED_BY(thread_checker_) = 0;
 
-  bool inited_ = false;
-  int last_send_seq_num_ = -1;
-  int decryption_failure_count_ = 0;
-  bool dump_plain_rtp_ = false;
+  bool inited_ RTC_GUARDED_BY(thread_checker_) = false;
+  int last_send_seq_num_ RTC_GUARDED_BY(thread_checker_) = -1;
+  int decryption_failure_count_ RTC_GUARDED_BY(thread_checker_) = 0;
+  const bool dump_plain_rtp_ = false;
 };
 
 }  
