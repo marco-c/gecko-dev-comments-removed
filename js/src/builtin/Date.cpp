@@ -1834,6 +1834,11 @@ static bool ParseDate(JSContext* maybecx, const CharT* s, size_t length,
       size_t partLength = index - partStart;
 
       
+      if (partLength > std::numeric_limits<int>::digits10) {
+        return false;
+      }
+
+      
       if (c == 0x202F) {
         c = ' ';
       }

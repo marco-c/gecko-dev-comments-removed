@@ -2,7 +2,6 @@
 
 
 
-
 const accepted = {
   "0": "2000-01-01T00:00:00",
   "1": "2001-01-01T00:00:00",
@@ -26,6 +25,7 @@ const rejected = [
   "S22",
   "5C",
   "Sep26 foo 1995",
+  "4294967303",
 ];
 
 for (const [test, expected] of Object.entries(accepted)) {
