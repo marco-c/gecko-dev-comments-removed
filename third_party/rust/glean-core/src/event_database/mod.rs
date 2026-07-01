@@ -23,6 +23,7 @@ use serde_json::{json, Value as JsonValue};
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, ErrorType};
 use crate::metrics::{DatetimeMetric, TimeUnit};
+use crate::session::{EventSessionContext, SessionMetadata};
 use crate::storage::INTERNAL_STORAGE;
 use crate::util::get_iso_time_string;
 use crate::Glean;
@@ -53,6 +54,14 @@ pub struct RecordedEvent {
     
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<HashMap<String, String>>,
+
+    
+    
+    
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub session: Option<SessionMetadata>,
 }
 
 
@@ -220,6 +229,7 @@ impl EventDatabase {
                         &glean_restarted.into(),
                         crate::get_timestamp_ms(),
                         Some(extra),
+                        EventSessionContext::OutOfSession,
                     );
                 }
                 has_events_events && glean.submit_ping_by_name("events", Some("startup"))
@@ -289,17 +299,26 @@ impl EventDatabase {
     
     
     
+    
+    
     pub fn record(
         &self,
         glean: &Glean,
         meta: &CommonMetricDataInternal,
         timestamp: u64,
         extra: Option<HashMap<String, String>>,
+        ctx: EventSessionContext,
     ) -> bool {
         
         if !glean.is_upload_enabled() {
             return false;
         }
+
+        
+        let session = match ctx {
+            EventSessionContext::OutOfSession => None,
+            EventSessionContext::InSession(session_meta) => Some(session_meta),
+        };
 
         let mut submit_max_capacity_event_ping = false;
         {
@@ -325,6 +344,7 @@ impl EventDatabase {
                         category: meta.inner.category.to_string(),
                         name: meta.inner.name.to_string(),
                         extra: extra.clone(),
+                        session: session.clone(),
                     },
                     execution_counter,
                 };
@@ -737,6 +757,7 @@ mod test {
             category: "cat".to_string(),
             name: "name".to_string(),
             extra: None,
+            session: None,
         };
 
         let mut data = HashMap::new();
@@ -746,6 +767,7 @@ mod test {
             category: "cat".to_string(),
             name: "name".to_string(),
             extra: Some(data),
+            session: None,
         };
 
         let event_empty_json = ::serde_json::to_string_pretty(&event_empty).unwrap();
@@ -793,6 +815,7 @@ mod test {
             category: "cat".to_string(),
             name: "name".to_string(),
             extra: None,
+            session: None,
         };
 
         let mut data = HashMap::new();
@@ -802,6 +825,7 @@ mod test {
             category: "cat".to_string(),
             name: "name".to_string(),
             extra: Some(data),
+            session: None,
         };
 
         assert_eq!(
@@ -835,11 +859,18 @@ mod test {
             category: test_category.to_string(),
             name: test_name.to_string(),
             extra: None,
+            session: None,
         };
 
         
         
-        db.record(&glean, &test_meta, 2, None);
+        db.record(
+            &glean,
+            &test_meta,
+            2,
+            None,
+            EventSessionContext::OutOfSession,
+        );
         {
             let event_stores = db.event_stores.read().unwrap();
             assert_eq!(
@@ -855,7 +886,13 @@ mod test {
         glean.set_upload_enabled(false);
 
         
-        db.record(&glean, &test_meta, 2, None);
+        db.record(
+            &glean,
+            &test_meta,
+            2,
+            None,
+            EventSessionContext::OutOfSession,
+        );
         {
             let event_stores = db.event_stores.read().unwrap();
             assert_eq!(event_stores.get(test_storage).unwrap().len(), 1);
@@ -874,6 +911,7 @@ mod test {
                 category: "glean".into(),
                 name: "restarted".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: None,
         };
@@ -914,6 +952,7 @@ mod test {
                 category: "glean".into(),
                 name: "restarted".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: None,
         };
@@ -923,6 +962,7 @@ mod test {
                 category: "category".into(),
                 name: "name".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: None,
         };
@@ -963,6 +1003,7 @@ mod test {
                 category: "glean".into(),
                 name: "restarted".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: None,
         };
@@ -973,6 +1014,7 @@ mod test {
                 category: "category".into(),
                 name: "name".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: None,
         };
@@ -1298,6 +1340,7 @@ mod test {
                 category: "glean".into(),
                 name: "restarted".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: Some(2),
         };
@@ -1307,6 +1350,7 @@ mod test {
                 category: "category".into(),
                 name: "name".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: Some(2),
         };
@@ -1316,6 +1360,7 @@ mod test {
                 category: "glean".into(),
                 name: "restarted".into(),
                 extra: None,
+                session: None,
             },
             execution_counter: Some(3),
         };

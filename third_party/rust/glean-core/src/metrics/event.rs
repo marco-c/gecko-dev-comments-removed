@@ -8,6 +8,7 @@ use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::event_database::RecordedEvent;
 use crate::metrics::MetricType;
+use crate::session::EventSessionContext;
 use crate::util::truncate_string_at_boundary_with_error;
 use crate::Glean;
 use crate::{CommonMetricData, TestGetValue};
@@ -157,9 +158,21 @@ impl EventMetric {
             map.insert("glean_timestamp".to_string(), precise_timestamp.to_string());
         }
 
+        
+        
+        
+        
+        
+        
+        let ctx = if self.meta().in_session() {
+            glean.session_manager().compute_event_context()
+        } else {
+            EventSessionContext::OutOfSession
+        };
+
         glean
             .event_storage()
-            .record(glean, &self.meta, timestamp, extra_strings)
+            .record(glean, &self.meta, timestamp, extra_strings, ctx)
     }
 
     
