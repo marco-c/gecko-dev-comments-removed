@@ -3,6 +3,7 @@
 
 #include "stun_socket_filter.h"
 
+#include <cstddef>
 #include <iomanip>
 #include <set>
 
@@ -287,6 +288,18 @@ class PendingSTUNId {
   const UINT12 id_;
 };
 
+
+
+
+
+
+static UINT12 GetStunTransactionId(const UCHAR* stun) {
+  UINT12 id;
+  memcpy(id.octet, stun + offsetof(nr_stun_message_header, id),
+         sizeof(id.octet));
+  return id;
+}
+
 class STUNTCPSocketFilter : public nsISocketFilter {
  public:
   STUNTCPSocketFilter() : white_listed_(false) {}
@@ -353,14 +366,13 @@ bool STUNTCPSocketFilter::filter_incoming_packet(const uint8_t* data,
     }
   }
 
-  const nr_stun_message_header* msg =
-      reinterpret_cast<const nr_stun_message_header*>(stun);
+  const UINT12 id = GetStunTransactionId(stun);
 
   
   
   if (nr_is_stun_response_message(stun, length)) {
     std::set<PendingSTUNId>::iterator it =
-        pending_request_ids_.find(PendingSTUNId(msg->id));
+        pending_request_ids_.find(PendingSTUNId(id));
     if (it != pending_request_ids_.end()) {
       pending_request_ids_.erase(it);
       white_listed_ = true;
@@ -368,7 +380,7 @@ bool STUNTCPSocketFilter::filter_incoming_packet(const uint8_t* data,
   } else {
     
     
-    response_allowed_ids_.insert(PendingSTUNId(msg->id));
+    response_allowed_ids_.insert(PendingSTUNId(id));
   }
 
   return true;
@@ -395,13 +407,12 @@ bool STUNTCPSocketFilter::filter_outgoing_packet(const uint8_t* data,
     }
   }
 
-  const nr_stun_message_header* msg =
-      reinterpret_cast<const nr_stun_message_header*>(stun);
+  const UINT12 id = GetStunTransactionId(stun);
 
   
   
   if (nr_is_stun_request_message(stun, length)) {
-    pending_request_ids_.insert(PendingSTUNId(msg->id));
+    pending_request_ids_.insert(PendingSTUNId(id));
     return true;
   }
 
@@ -409,7 +420,7 @@ bool STUNTCPSocketFilter::filter_outgoing_packet(const uint8_t* data,
   
   if (nr_is_stun_response_message(stun, length)) {
     std::set<PendingSTUNId>::iterator it =
-        response_allowed_ids_.find(PendingSTUNId(msg->id));
+        response_allowed_ids_.find(PendingSTUNId(id));
     if (it != response_allowed_ids_.end()) {
       response_allowed_ids_.erase(it);
       white_listed_ = true;
