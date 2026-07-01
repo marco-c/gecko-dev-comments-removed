@@ -44,7 +44,7 @@ function clickSearchbarSuggestion(entryName, clickOptions = {}) {
   let richlistbox = searchBar.textbox.popup.richlistbox;
   let richlistitem = Array.prototype.find.call(
     richlistbox.children,
-    item => item.getAttribute("ac-value") == entryName
+    item => item.querySelector("autocomplete-row-item")?.value == entryName
   );
 
   
