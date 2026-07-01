@@ -3360,9 +3360,6 @@ void SetUseCounter(UseCounterWorker aUseCounter);
 void DeprecationWarning(JSContext* aCx, JSObject* aObject,
                         DeprecatedOperations aOperation);
 
-void DeprecationWarning(const GlobalObject& aGlobal,
-                        DeprecatedOperations aOperation);
-
 namespace binding_detail {
 
 
