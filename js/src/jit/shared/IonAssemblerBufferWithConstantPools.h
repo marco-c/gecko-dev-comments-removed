@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <bit>
 #include <deque>
-#include <type_traits>
 
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
@@ -276,11 +275,6 @@ class BranchDeadlineSet {
   }
 
   
-  size_t earliestRangeSize() const {
-    return listForRange(earliestDeadlineRange()).size();
-  }
-
-  
   BufferOffset earliestDeadline() const {
     MOZ_ASSERT(!empty());
     return earliest_;
@@ -369,7 +363,6 @@ class BranchDeadlineSet<0u> {
   bool empty() const { return true; }
   size_t size() const { return 0; }
   size_t maxRangeSize() const { return 0; }
-  size_t earliestRangeSize() const { return 0; }
   BufferOffset earliestDeadline() const { MOZ_CRASH(); }
   unsigned earliestDeadlineRange() const { MOZ_CRASH(); }
   void addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
@@ -405,22 +398,22 @@ struct Pool {
   const unsigned bias_;
 
   
-  
-  
-  
-  
-  
-  
-  
-  BufferOffset limitingUser{};
-  
-  unsigned limitingUsee = INT_MIN;
-
-  
-  bool oom_ = false;
-
-  
   Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
+
+  
+  bool oom_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  BufferOffset limitingUser;
+  
+  unsigned limitingUsee;
 
  public:
   
@@ -431,10 +424,13 @@ struct Pool {
 
   
   
-  Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
         poolData_(lifoAlloc),
+        oom_(false),
+        limitingUser(),
+        limitingUsee(INT_MIN),
         loadOffsets(lifoAlloc) {}
 
   
@@ -443,6 +439,8 @@ struct Pool {
   unsigned numEntries() const { return poolData_.length(); }
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  bool oom() const { return oom_; }
 
   
   
@@ -503,25 +501,6 @@ struct Pool {
   }
 };
 
-
-
-
-struct EmptyPool final {
-  EmptyPool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc) {}
-
-  unsigned numEntries() const {
-    
-    return 0;
-  }
-
-  size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
-
-  bool checkFull(size_t poolOffset) const {
-    
-    return false;
-  }
-};
-
 struct AssemblerBufferSettings {
   
   
@@ -534,9 +513,6 @@ struct AssemblerBufferSettings {
   
   
   unsigned headerSize;
-
-  
-  unsigned veneerSize;
 
   
   
@@ -587,7 +563,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static constexpr unsigned GuardSize = settings.guardSize;
 
   
-  static constexpr unsigned VeneerSize = settings.veneerSize;
+  static constexpr unsigned VeneerSize = settings.guardSize;
 
   
   
@@ -598,12 +574,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static constexpr unsigned PcBias = settings.pcBias;
 
   
-  static constexpr bool UseConstantPools = HeaderSize > 0;
-
-  using PoolImpl = std::conditional_t<UseConstantPools, Pool, EmptyPool>;
-
-  
-  [[no_unique_address]] PoolImpl pool_;
+  Pool pool_;
 
   
   
@@ -692,29 +663,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static const unsigned OOM_FAIL = unsigned(-1);
   static const unsigned DUMMY_INDEX = unsigned(-2);
 
-  size_t sizeOfPrimaryVeneers(unsigned numNewDeadlines = 0) const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return (VeneerSize - 1) *
-           (branchDeadlines_.earliestRangeSize() + numNewDeadlines) * InstSize;
-  }
-
   size_t sizeOfSecondaryVeneers(unsigned numNewDeadlines = 0) const {
     
     
@@ -769,10 +717,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
                        numPoolEntries * sizeof(PoolAllocUnit);
-      size_t primaryVeneers = sizeOfPrimaryVeneers(numNewDeadlines);
       size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
 
-      if (deadline < poolEnd + primaryVeneers + secondaryVeneers) {
+      if (deadline < poolEnd + secondaryVeneers) {
         return false;
       }
     }
@@ -782,14 +729,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
                                uint8_t* inst, uint8_t* data) {
-    if constexpr (UseConstantPools) {
-      
-      
-      if (numPoolEntries) {
-        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
-      }
-    } else {
-      MOZ_ASSERT(numPoolEntries == 0);
+    
+    
+    if (numPoolEntries) {
+      pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
     }
 
     if (!hasSpaceForInsts(numInst, numPoolEntries)) {
@@ -806,17 +749,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       }
       return insertEntryForwards(numInst, numPoolEntries, inst, data);
     }
-
-    if constexpr (UseConstantPools) {
-      if (numPoolEntries) {
-        unsigned result = pool_.insertEntry(
-            numPoolEntries, data, this->nextOffset(), this->lifoAlloc_);
-        if (result == Pool::OOM_FAIL) {
-          this->fail_oom();
-          return OOM_FAIL;
-        }
-        return result;
+    if (numPoolEntries) {
+      unsigned result = pool_.insertEntry(numPoolEntries, data,
+                                          this->nextOffset(), this->lifoAlloc_);
+      if (result == Pool::OOM_FAIL) {
+        this->fail_oom();
+        return OOM_FAIL;
       }
+      return result;
     }
 
     
@@ -875,14 +815,11 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     
-    if constexpr (UseConstantPools) {
-      if (numPoolEntries) {
-        JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
-                sizeExcludingCurrentPool());
-        Asm::InsertIndexIntoTag(inst, index);
-      }
+    if (numPoolEntries) {
+      JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
+              sizeExcludingCurrentPool());
+      Asm::InsertIndexIntoTag(inst, index);
     }
-
     
     return this->putBytes(numInst * InstSize, inst);
   }
@@ -991,9 +928,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     size_t nextOffset = sizeExcludingCurrentPool();
     size_t poolOffset = nextOffset + (GuardSize + HeaderSize) * InstSize;
     mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
-    auto future =
-        (poolOffset + sizeOfPrimaryVeneers() + sizeOfSecondaryVeneers()) +
-        poolFreeSpace;
+    auto future = (poolOffset + sizeOfSecondaryVeneers()) + poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
@@ -1019,13 +954,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
     
     BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
-    BufferOffset header;
-    BufferOffset data;
-    if constexpr (UseConstantPools) {
-      header = this->putBytes(HeaderSize * InstSize, nullptr);
-      data =
-          this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
-    }
+    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
+    BufferOffset data =
+        this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
     if (this->oom()) {
       return;
     }
@@ -1056,37 +987,34 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     BufferOffset afterPool = this->nextOffset();
     Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
-    if constexpr (UseConstantPools) {
-      Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
+    Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
+
+    
+    
+    
+    size_t poolOffset = data.getOffset();
+
+    unsigned idx = 0;
+    for (BufferOffset* iter = pool_.loadOffsets.begin();
+         iter != pool_.loadOffsets.end(); ++iter, ++idx) {
+      
+      MOZ_ASSERT(iter->getOffset() < guard.getOffset());
+
+      
+      
+      Inst* inst = this->getInst(*iter);
+      size_t codeOffset = poolOffset - iter->getOffset();
 
       
       
       
-      size_t poolOffset = data.getOffset();
-
-      unsigned idx = 0;
-      for (BufferOffset* iter = pool_.loadOffsets.begin();
-           iter != pool_.loadOffsets.end(); ++iter, ++idx) {
-        
-        MOZ_ASSERT(iter->getOffset() < guard.getOffset());
-
-        
-        
-        Inst* inst = this->getInst(*iter);
-        size_t codeOffset = poolOffset - iter->getOffset();
-
-        
-        
-        
-        
-        JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx,
-                codeOffset);
-        Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
-      }
-
       
-      pool_.reset();
+      JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx, codeOffset);
+      Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
     }
+
+    
+    pool_.reset();
   }
 
  public:
