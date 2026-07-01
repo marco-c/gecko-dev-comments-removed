@@ -2947,6 +2947,11 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+  public void setIPPProxyUsage(final @Nullable JSONObject usage) {
+    webExtensionApiCall("SetIPPProxyUsage", args -> args.put("usage", usage));
+  }
+
+  
 
 
 
