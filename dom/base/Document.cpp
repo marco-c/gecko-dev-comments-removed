@@ -1400,6 +1400,7 @@ Document::Document(const char* aContentType,
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
+      mHasScopedCustomElementRegistry(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -9021,6 +9022,49 @@ bool IsLowercaseASCII(const nsAString& aValue) {
 }
 
 
+void Document::FlattenElementCreationOptions(
+    const ElementCreationOptionsOrString& aOptions, const nsString*& aIs,
+    Maybe<RefPtr<CustomElementRegistry>>& aRegistry, ErrorResult& rv) {
+  
+  
+  
+
+  
+
+  
+  if (!aOptions.IsElementCreationOptions()) {
+    return;
+  }
+  const ElementCreationOptions& options =
+      aOptions.GetAsElementCreationOptions();
+
+  
+  if (options.mIs.WasPassed()) {
+    aIs = &options.mIs.Value();
+  }
+  
+  if (options.mCustomElementRegistry.WasPassed()) {
+    
+    if (aIs) {
+      rv.ThrowNotSupportedError(
+          "Cannot specify both 'is' and 'customElementRegistry' options");
+      return;
+    }
+    
+    aRegistry.emplace(options.mCustomElementRegistry.Value());
+    CustomElementRegistry* registry = aRegistry.ref();
+    
+    
+    
+    if (registry && !registry->IsScoped() &&
+        registry != GetCustomElementRegistry()) {
+      rv.ThrowNotSupportedError(
+          "Cannot use a global CustomElementRegistry from another document");
+    }
+  }
+}
+
+
 already_AddRefed<Element> Document::CreateElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
     ErrorResult& rv) {
@@ -9041,20 +9085,18 @@ already_AddRefed<Element> Document::CreateElement(
 
   
   
-  
   const nsString* is = nullptr;
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+
+  
   PseudoStyleType pseudoType = PseudoStyleType::NotPseudo;
   if (aOptions.IsElementCreationOptions()) {
     const ElementCreationOptions& options =
         aOptions.GetAsElementCreationOptions();
-
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
-
-    
-    
-    
     if (options.mPseudo.WasPassed()) {
       Maybe<PseudoStyleRequest> request = PseudoStyleRequest::Parse(
           options.mPseudo.Value(), DefaultStyleAttrURLData());
@@ -9071,8 +9113,12 @@ already_AddRefed<Element> Document::CreateElement(
   
   
   
-  RefPtr<Element> elem = CreateElem(needsLowercase ? lcTagName : aTagName,
-                                    nullptr, mDefaultElementType, is);
+
+  
+  
+  RefPtr<Element> elem =
+      CreateElem(needsLowercase ? lcTagName : aTagName, nullptr,
+                 mDefaultElementType, is, std::move(customElementRegistry));
 
   
   if (pseudoType != PseudoStyleType::NotPseudo) {
@@ -9099,21 +9145,18 @@ already_AddRefed<Element> Document::CreateElementNS(
 
   
   
-  
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
   }
 
   
   
   nsCOMPtr<Element> element;
   rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                     NOT_FROM_PARSER, is);
+                     NOT_FROM_PARSER, is, std::move(customElementRegistry));
   if (rv.Failed()) {
     return nullptr;
   }
@@ -9131,15 +9174,14 @@ already_AddRefed<Element> Document::CreateXULElement(
   }
 
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
   }
 
-  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is);
+  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is,
+                                    customElementRegistry);
   if (!elem) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
@@ -11882,10 +11924,10 @@ CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
   return nullptr;
 }
 
-already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
-                                               nsAtom* aPrefix,
-                                               int32_t aNamespaceID,
-                                               const nsAString* aIs) {
+already_AddRefed<Element> Document::CreateElem(
+    const nsAString& aName, nsAtom* aPrefix, int32_t aNamespaceID,
+    const nsAString* aIs,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
 #ifdef DEBUG
   if (!aPrefix) {
     NS_ASSERTION(nsContentUtils::IsValidElementLocalName(aName),
@@ -11910,8 +11952,9 @@ already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
   NS_ENSURE_TRUE(nodeInfo, nullptr);
 
   nsCOMPtr<Element> element;
-  nsresult rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                              NOT_FROM_PARSER, aIs);
+  nsresult rv =
+      NS_NewElement(getter_AddRefs(element), nodeInfo.forget(), NOT_FROM_PARSER,
+                    aIs, std::move(aCustomElementRegistry));
   return NS_SUCCEEDED(rv) ? element.forget() : nullptr;
 }
 

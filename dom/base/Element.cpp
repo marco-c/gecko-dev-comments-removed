@@ -579,6 +579,14 @@ void Element::SetCustomElementRegistry(
   }
 }
 
+void Element::SetKeepCustomElementRegistryNull() {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!HasCustomElementRegistry(),
+             "We shouldn't set a custom element registry without clearing "
+             "first");
+  SetCustomElementRegistryState(CustomElementRegistryState::Null);
+}
+
 
 CustomElementRegistry* Element::GetCustomElementRegistry() {
   switch (GetCustomElementRegistryState()) {
@@ -589,7 +597,6 @@ CustomElementRegistry* Element::GetCustomElementRegistry() {
     case CustomElementRegistryState::Scoped: {
       RefPtr<CustomElementRegistry> registry =
           CustomElementRegistry::GetScopedRegistry(*this);
-      MOZ_ASSERT(registry);
       return registry;
     }
   }
@@ -1458,7 +1465,7 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   
   
   
-  Maybe<CustomElementRegistry*> registry;
+  Maybe<RefPtr<CustomElementRegistry>> registry;
   if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
     CustomElementRegistry* docRegistry = OwnerDoc()->GetCustomElementRegistry();
     if (aInit.mCustomElementRegistry.WasPassed()) {
@@ -1517,7 +1524,8 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
 
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    const ShadowRootInit& aInit, const Maybe<CustomElementRegistry*>& aRegistry,
+    const ShadowRootInit& aInit,
+    const Maybe<RefPtr<CustomElementRegistry>>& aRegistry,
     CustomSlotDispatch aCustomSlotDispatch, bool aNotify) {
   nsAutoScriptBlocker scriptBlocker;
 

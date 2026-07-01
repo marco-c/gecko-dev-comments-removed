@@ -1686,7 +1686,7 @@ class Element : public FragmentOrElement {
   
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
       const ShadowRootInit&,
-      const Maybe<CustomElementRegistry*>& aRegistry = Nothing(),
+      const Maybe<RefPtr<CustomElementRegistry>>& aRegistry,
       CustomSlotDispatch = CustomSlotDispatch::No, bool aNotify = true);
 
   
@@ -1743,6 +1743,7 @@ class Element : public FragmentOrElement {
   
   CustomElementRegistry* GetCustomElementRegistry();
   void SetCustomElementRegistry(CustomElementRegistry* aCustomElementRegistry);
+  void SetKeepCustomElementRegistryNull();
   static void TraverseCustomElementRegistry(
       Element* aElement, nsCycleCollectionTraversalCallback& aCb);
   static void UnlinkCustomElementRegistry(Element* aElement);

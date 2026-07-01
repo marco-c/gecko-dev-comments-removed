@@ -2403,13 +2403,23 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<Element> CreateElem(const nsAString& aName, nsAtom* aPrefix,
-                                       int32_t aNamespaceID,
-                                       const nsAString* aIs = nullptr);
+  already_AddRefed<Element> CreateElem(
+      const nsAString& aName, nsAtom* aPrefix, int32_t aNamespaceID,
+      const nsAString* aIs = nullptr,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry = mozilla::Nothing());
 
   
   mozilla::dom::CustomElementRegistry*
   GetEffectiveGlobalCustomElementRegistry();
+
+  
+  bool HasScopedCustomElementRegistry() const {
+    return mHasScopedCustomElementRegistry;
+  }
+  void SetHasScopedCustomElementRegistry(bool aValue) {
+    mHasScopedCustomElementRegistry = aValue;
+  }
 
   
 
@@ -4316,6 +4326,10 @@ class Document : public nsINode,
   virtual bool UseWidthDeviceWidthFallbackViewport() const;
 
  private:
+  void FlattenElementCreationOptions(
+      const ElementCreationOptionsOrString& aOptions, const nsString*& aIs,
+      Maybe<RefPtr<CustomElementRegistry>>& aDocumentRegistry, ErrorResult& rv);
+
   bool IsErrorPage() const;
 
   
@@ -5332,6 +5346,10 @@ class Document : public nsINode,
   
   
   bool mWasFocusedElementRemoved : 1;
+
+  
+  
+  bool mHasScopedCustomElementRegistry : 1;
 
   
   

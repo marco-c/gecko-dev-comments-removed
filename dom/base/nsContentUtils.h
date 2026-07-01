@@ -3272,21 +3272,23 @@ class nsContentUtils {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult NewXULOrHTMLElement(
       Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
       mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
-      mozilla::dom::CustomElementDefinition* aDefinition);
+      mozilla::dom::CustomElementDefinition* aDefinition,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry);
 
   
 
 
   static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
-      Document*);
+      nsINode*);
 
   
 
 
 
   static mozilla::dom::CustomElementDefinition* LookupCustomElementDefinition(
-      Document* aDoc, nsAtom* aNameAtom, uint32_t aNameSpaceID,
-      nsAtom* aTypeAtom);
+      mozilla::dom::DocumentOrShadowRoot* aDoc, nsAtom* aNameAtom,
+      uint32_t aNameSpaceID, nsAtom* aTypeAtom);
 
   static void RegisterCallbackUpgradeElement(Element* aElement,
                                              nsAtom* aTypeName);

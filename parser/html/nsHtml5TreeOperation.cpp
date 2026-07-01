@@ -31,6 +31,7 @@
 #include "nsHtml5SVGLoadDispatcher.h"
 #include "nsHtml5TreeBuilder.h"
 #include "nsIFormControl.h"
+#include "nsIContentInlines.h"
 #include "nsIMutationObserver.h"
 #include "nsINode.h"
 #include "nsIProtocolHandler.h"
@@ -561,12 +562,26 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
 nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     nsAtom* aName, nsHtml5HtmlAttributes* aAttributes, FromParser aFromParser,
     nsNodeInfoManager* aNodeInfoManager, nsHtml5DocumentBuilder* aBuilder,
-    HTMLContentCreatorFunction aCreator) {
+    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent) {
+  
+  
+  
+  
+  
+  
+  
   RefPtr<NodeInfo> nodeInfo = aNodeInfoManager->GetNodeInfo(
       aName, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
   NS_ASSERTION(nodeInfo, "Got null nodeinfo.");
 
+  
   Document* document = nodeInfo->GetDocument();
+
+  
+  
+
+  
+  
   RefPtr<nsAtom> isAtom;
   if (aAttributes) {
     nsHtml5String is = aAttributes->getValue(nsHtml5AttributeName::ATTR_IS);
@@ -577,30 +592,76 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     }
   }
 
+  
+  
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry = Nothing();
+  if (aIntendedParent && aIntendedParent->HasScopedRegistry()) {
+    if (auto* reg = nsContentUtils::GetCustomElementRegistry(aIntendedParent)) {
+      customElementRegistry = Some(reg);
+    }
+  }
+
+  
+  
   const bool isCustomElement = aCreator == NS_NewCustomElement || isAtom;
   CustomElementDefinition* customElementDefinition = nullptr;
+
+  
+  
+  
+  
   if (isCustomElement && aFromParser != FROM_PARSER_FRAGMENT) {
     RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
     RefPtr<nsAtom> typeAtom =
         aCreator == NS_NewCustomElement ? tagAtom : isAtom;
 
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
-    customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
-        document, nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+    
+    
+    
+    
+    
+    if (!(customElementRegistry.isSome() && !customElementRegistry.value())) {
+      customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
+          document, nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+    }
   }
 
+  
+  
+  
+  const bool willExecuteScript =
+      customElementDefinition && aFromParser != FROM_PARSER_FRAGMENT;
+
   auto DoCreateElement = [&](HTMLContentCreatorFunction aCreator) -> Element* {
+    
+    
     nsCOMPtr<Element> newElement;
     if (aCreator) {
       newElement = aCreator(nodeInfo.forget(), aFromParser);
     } else {
       NS_NewHTMLElement(getter_AddRefs(newElement), nodeInfo.forget(),
-                        aFromParser, isAtom, customElementDefinition);
+                        aFromParser, isAtom, customElementDefinition,
+                        customElementRegistry);
     }
 
     MOZ_ASSERT(newElement, "Element creation created null pointer.");
     Element* element = newElement.get();
     aBuilder->HoldElement(newElement.forget());
+
+    
+    
+    
+    
+    
+    if (aCreator && customElementRegistry.isSome()) {
+      if (RefPtr<CustomElementRegistry> registry =
+              customElementRegistry.value()) {
+        element->SetCustomElementRegistry(registry);
+      } else {
+        element->SetKeepCustomElementRegistryNull();
+      }
+    }
 
     if (auto* linkStyle = LinkStyle::FromNode(*element)) {
       linkStyle->DisableUpdates();
@@ -612,6 +673,8 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
 
     
     
+    
+    
     if (aCreator) {
       SetHTMLElementAttributesFast(element, aAttributes);
     } else {
@@ -620,14 +683,25 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     return element;
   };
 
-  if (customElementDefinition) {
+  
+  
+  if (willExecuteScript) {
     
     AutoSetThrowOnDynamicMarkupInsertionCounter
         throwOnDynamicMarkupInsertionCounter(aBuilder->GetDocument());
     nsHtml5AutoPauseUpdate autoPauseContentUpdate(aBuilder);
+    
+    
     {
       nsAutoMicroTask mt;
     }
+    
+    
+    
+    
+    
+    
+    
     AutoCEReaction autoCEReaction(
         document->GetDocGroup()->CustomElementReactionsStack(), nullptr);
     return DoCreateElement(nullptr);
@@ -1004,8 +1078,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
-      *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
-                                  nodeInfoManager, mBuilder, creator);
+      *target =
+          CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
+                            nodeInfoManager, mBuilder, creator, intendedParent);
       return NS_OK;
     }
 
