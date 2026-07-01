@@ -663,7 +663,7 @@ bool TimeoutManager::ClearTimeoutInternal(int32_t aTimerId,
   if (nextTimeout) {
     if (aIsIdle) {
       MOZ_ALWAYS_SUCCEEDS(
-          executor->MaybeSchedule(nextTimeout->When(), TimeDuration(0)));
+          executor->MaybeSchedule(nextTimeout->When(), TimeDuration()));
     } else {
       MOZ_ALWAYS_SUCCEEDS(MaybeSchedule(nextTimeout->When()));
     }
@@ -1065,8 +1065,8 @@ bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   
   
   
-  if (delay < TimeDuration(0)) {
-    delay = TimeDuration(0);
+  if (delay < TimeDuration()) {
+    delay = TimeDuration();
   }
 
   aTimeout->SetWhenOrTimeRemaining(aCurrentNow, delay);
@@ -1230,7 +1230,7 @@ void TimeoutManager::Freeze() {
     
     
     
-    TimeDuration delta(0);
+    TimeDuration delta;
     if (aTimeout->When() > now) {
       delta = aTimeout->When() - now;
     }

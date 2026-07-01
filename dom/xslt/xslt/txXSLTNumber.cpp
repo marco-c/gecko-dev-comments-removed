@@ -2,7 +2,6 @@
 
 
 
-
 #include "txXSLTNumber.h"
 
 #include <math.h>
@@ -54,7 +53,7 @@ nsresult txXSLTNumber::createNumber(Expr* aValueExpr, txPattern* aCountPattern,
   txListIterator counterIter(&counters);
   valueIter.resetToEnd();
   int32_t value;
-  txFormattedCounter* counter = 0;
+  txFormattedCounter* counter = nullptr;
   while ((value = NS_PTR_TO_INT32(valueIter.previous()))) {
     if (counterIter.hasNext()) {
       counter = (txFormattedCounter*)counterIter.next();
@@ -106,7 +105,7 @@ nsresult txXSLTNumber::getValueList(Expr* aValueExpr, txPattern* aCountPattern,
 
   txPattern* countPattern = aCountPattern;
   UniquePtr<txPattern> newCountPattern;
-  const txXPathNode& currNode = aContext->getContextNode();
+  txXPathNode currNode(aContext->getContextNode());
 
   
 
@@ -117,7 +116,7 @@ nsresult txXSLTNumber::getValueList(Expr* aValueExpr, txPattern* aCountPattern,
       case txXPathNodeType::ELEMENT_NODE: {
         RefPtr<nsAtom> localName = txXPathNodeUtils::getLocalName(currNode);
         int32_t namespaceID = txXPathNodeUtils::getNamespaceID(currNode);
-        nodeTest = new txNameTest(0, localName, namespaceID,
+        nodeTest = new txNameTest(nullptr, localName, namespaceID,
                                   txXPathNodeType::ELEMENT_NODE);
         break;
       }
@@ -144,7 +143,7 @@ nsresult txXSLTNumber::getValueList(Expr* aValueExpr, txPattern* aCountPattern,
       default: {
         
         
-        nodeTest = new txNameTest(0, nsGkAtoms::_asterisk, 0, nodeType);
+        nodeTest = new txNameTest(nullptr, nsGkAtoms::_asterisk, 0, nodeType);
         break;
       }
     }
@@ -375,7 +374,7 @@ nsresult txXSLTNumber::getCounters(Expr* aGroupSize, Expr* aGroupSeparator,
       ++formatPos;
     }
 
-    txFormattedCounter* counter = 0;
+    txFormattedCounter* counter = nullptr;
     rv = txFormattedCounter::getCounterFor(numToken, groupSize, groupSeparator,
                                            counter);
     if (NS_FAILED(rv)) {

@@ -65,7 +65,7 @@ void Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   
   
   mWhen = aBaseTime + aDelay;
-  mTimeRemaining = TimeDuration(0);
+  mTimeRemaining = TimeDuration();
 }
 
 const TimeStamp& Timeout::When() const {

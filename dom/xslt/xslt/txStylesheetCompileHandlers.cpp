@@ -2,7 +2,6 @@
 
 
 
-
 #include "txStylesheetCompileHandlers.h"
 
 #include <utility>
@@ -26,22 +25,22 @@
 
 using namespace mozilla;
 
-txHandlerTable* gTxIgnoreHandler = 0;
-txHandlerTable* gTxRootHandler = 0;
-txHandlerTable* gTxEmbedHandler = 0;
-txHandlerTable* gTxTopHandler = 0;
-txHandlerTable* gTxTemplateHandler = 0;
-txHandlerTable* gTxTextHandler = 0;
-txHandlerTable* gTxApplyTemplatesHandler = 0;
-txHandlerTable* gTxCallTemplateHandler = 0;
-txHandlerTable* gTxVariableHandler = 0;
-txHandlerTable* gTxForEachHandler = 0;
-txHandlerTable* gTxTopVariableHandler = 0;
-txHandlerTable* gTxChooseHandler = 0;
-txHandlerTable* gTxParamHandler = 0;
-txHandlerTable* gTxImportHandler = 0;
-txHandlerTable* gTxAttributeSetHandler = 0;
-txHandlerTable* gTxFallbackHandler = 0;
+txHandlerTable* gTxIgnoreHandler = nullptr;
+txHandlerTable* gTxRootHandler = nullptr;
+txHandlerTable* gTxEmbedHandler = nullptr;
+txHandlerTable* gTxTopHandler = nullptr;
+txHandlerTable* gTxTemplateHandler = nullptr;
+txHandlerTable* gTxTextHandler = nullptr;
+txHandlerTable* gTxApplyTemplatesHandler = nullptr;
+txHandlerTable* gTxCallTemplateHandler = nullptr;
+txHandlerTable* gTxVariableHandler = nullptr;
+txHandlerTable* gTxForEachHandler = nullptr;
+txHandlerTable* gTxTopVariableHandler = nullptr;
+txHandlerTable* gTxChooseHandler = nullptr;
+txHandlerTable* gTxParamHandler = nullptr;
+txHandlerTable* gTxImportHandler = nullptr;
+txHandlerTable* gTxAttributeSetHandler = nullptr;
+txHandlerTable* gTxFallbackHandler = nullptr;
 
 static nsresult txFnStartLRE(int32_t aNamespaceID, nsAtom* aLocalName,
                              nsAtom* aPrefix, txStylesheetAttr* aAttributes,
@@ -2052,9 +2051,9 @@ struct txHandlerTableData {
 
 const txHandlerTableData gTxIgnoreTableData = {
     
-    {0, 0, txFnStartElementIgnore, txFnEndElementIgnore},
+    {0, nullptr, txFnStartElementIgnore, txFnEndElementIgnore},
     
-    {0, 0, txFnStartElementIgnore, txFnEndElementIgnore},
+    {0, nullptr, txFnStartElementIgnore, txFnEndElementIgnore},
     
     txFnTextIgnore};
 
@@ -2064,17 +2063,17 @@ const txElementHandler gTxRootElementHandlers[] = {
 
 const txHandlerTableData gTxRootTableData = {
     
-    {0, 0, txFnStartElementError, txFnEndElementError},
+    {0, nullptr, txFnStartElementError, txFnEndElementError},
     
-    {0, 0, txFnStartLREStylesheet, txFnEndLREStylesheet},
+    {0, nullptr, txFnStartLREStylesheet, txFnEndLREStylesheet},
     
     txFnTextError};
 
 const txHandlerTableData gTxEmbedTableData = {
     
-    {0, 0, txFnStartEmbed, txFnEndEmbed},
+    {0, nullptr, txFnStartEmbed, txFnEndEmbed},
     
-    {0, 0, txFnStartEmbed, txFnEndEmbed},
+    {0, nullptr, txFnStartEmbed, txFnEndEmbed},
     
     txFnTextIgnore};
 
@@ -2097,9 +2096,9 @@ const txElementHandler gTxTopElementHandlers[] = {
 
 const txHandlerTableData gTxTopTableData = {
     
-    {0, 0, txFnStartOtherTop, txFnEndOtherTop},
+    {0, nullptr, txFnStartOtherTop, txFnEndOtherTop},
     
-    {0, 0, txFnStartOtherTop, txFnEndOtherTop},
+    {0, nullptr, txFnStartOtherTop, txFnEndOtherTop},
     
     txFnTextIgnore};
 
@@ -2129,17 +2128,17 @@ const txElementHandler gTxTemplateElementHandlers[] = {
 
 const txHandlerTableData gTxTemplateTableData = {
     
-    {0, 0, txFnStartUnknownInstruction, txFnEndUnknownInstruction},
+    {0, nullptr, txFnStartUnknownInstruction, txFnEndUnknownInstruction},
     
-    {0, 0, txFnStartLRE, txFnEndLRE},
+    {0, nullptr, txFnStartLRE, txFnEndLRE},
     
     txFnText};
 
 const txHandlerTableData gTxTextTableData = {
     
-    {0, 0, txFnStartElementError, txFnEndElementError},
+    {0, nullptr, txFnStartElementError, txFnEndElementError},
     
-    {0, 0, txFnStartElementError, txFnEndElementError},
+    {0, nullptr, txFnStartElementError, txFnEndElementError},
     
     txFnTextText};
 
@@ -2149,10 +2148,10 @@ const txElementHandler gTxApplyTemplatesElementHandlers[] = {
 
 const txHandlerTableData gTxApplyTemplatesTableData = {
     
-    {0, 0, txFnStartElementSetIgnore,
+    {0, nullptr, txFnStartElementSetIgnore,
      txFnEndElementSetIgnore},  
     
-    {0, 0, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
+    {0, nullptr, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
     
     txFnTextIgnore};
 
@@ -2161,18 +2160,18 @@ const txElementHandler gTxCallTemplateElementHandlers[] = {
 
 const txHandlerTableData gTxCallTemplateTableData = {
     
-    {0, 0, txFnStartElementSetIgnore,
+    {0, nullptr, txFnStartElementSetIgnore,
      txFnEndElementSetIgnore},  
     
-    {0, 0, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
+    {0, nullptr, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
     
     txFnTextIgnore};
 
 const txHandlerTableData gTxVariableTableData = {
     
-    {0, 0, txFnStartElementStartRTF, 0},
+    {0, nullptr, txFnStartElementStartRTF, nullptr},
     
-    {0, 0, txFnStartElementStartRTF, 0},
+    {0, nullptr, txFnStartElementStartRTF, nullptr},
     
     txFnTextStartRTF};
 
@@ -2181,17 +2180,17 @@ const txElementHandler gTxForEachElementHandlers[] = {
 
 const txHandlerTableData gTxForEachTableData = {
     
-    {0, 0, txFnStartElementContinueTemplate, 0},
+    {0, nullptr, txFnStartElementContinueTemplate, nullptr},
     
-    {0, 0, txFnStartElementContinueTemplate, 0},
+    {0, nullptr, txFnStartElementContinueTemplate, nullptr},
     
     txFnTextContinueTemplate};
 
 const txHandlerTableData gTxTopVariableTableData = {
     
-    {0, 0, txFnStartElementStartTopVar, 0},
+    {0, nullptr, txFnStartElementStartTopVar, nullptr},
     
-    {0, 0, txFnStartElementStartTopVar, 0},
+    {0, nullptr, txFnStartElementStartTopVar, nullptr},
     
     txFnTextStartTopVar};
 
@@ -2201,9 +2200,9 @@ const txElementHandler gTxChooseElementHandlers[] = {
 
 const txHandlerTableData gTxChooseTableData = {
     
-    {0, 0, txFnStartElementError, 0},
+    {0, nullptr, txFnStartElementError, nullptr},
     
-    {0, 0, txFnStartElementError, 0},
+    {0, nullptr, txFnStartElementError, nullptr},
     
     txFnTextError};
 
@@ -2212,9 +2211,9 @@ const txElementHandler gTxParamElementHandlers[] = {
 
 const txHandlerTableData gTxParamTableData = {
     
-    {0, 0, txFnStartElementContinueTemplate, 0},
+    {0, nullptr, txFnStartElementContinueTemplate, nullptr},
     
-    {0, 0, txFnStartElementContinueTemplate, 0},
+    {0, nullptr, txFnStartElementContinueTemplate, nullptr},
     
     txFnTextContinueTemplate};
 
@@ -2223,9 +2222,10 @@ const txElementHandler gTxImportElementHandlers[] = {
 
 const txHandlerTableData gTxImportTableData = {
     
-    {0, 0, txFnStartElementContinueTopLevel, 0},
+    {0, nullptr, txFnStartElementContinueTopLevel, nullptr},
     
-    {0, 0, txFnStartOtherTop, txFnEndOtherTop},  
+    {0, nullptr, txFnStartOtherTop,
+     txFnEndOtherTop},  
     
     txFnTextIgnore  
 };
@@ -2235,9 +2235,9 @@ const txElementHandler gTxAttributeSetElementHandlers[] = {
 
 const txHandlerTableData gTxAttributeSetTableData = {
     
-    {0, 0, txFnStartElementError, 0},
+    {0, nullptr, txFnStartElementError, nullptr},
     
-    {0, 0, txFnStartElementError, 0},
+    {0, nullptr, txFnStartElementError, nullptr},
     
     txFnTextError};
 
@@ -2246,9 +2246,9 @@ const txElementHandler gTxFallbackElementHandlers[] = {
 
 const txHandlerTableData gTxFallbackTableData = {
     
-    {0, 0, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
+    {0, nullptr, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
     
-    {0, 0, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
+    {0, nullptr, txFnStartElementSetIgnore, txFnEndElementSetIgnore},
     
     txFnTextIgnore};
 

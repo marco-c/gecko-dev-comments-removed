@@ -60,7 +60,7 @@ class TextDirectiveFinder final {
 
 
 
-  TimeStamp::DurationType mFindTextDirectivesDuration{0};
+  TimeStamp::DurationType mFindTextDirectivesDuration{};
   int64_t mFoundDirectiveCount{0};
 };
 }  

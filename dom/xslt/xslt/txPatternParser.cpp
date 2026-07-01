@@ -2,7 +2,6 @@
 
 
 
-
 #include "txPatternParser.h"
 
 #include "nsError.h"
@@ -44,7 +43,7 @@ nsresult txPatternParser::createUnionPattern(txExprLexer& aLexer,
                                              txIParseContext* aContext,
                                              txPattern*& aPattern) {
   nsresult rv = NS_OK;
-  txPattern* locPath = 0;
+  txPattern* locPath = nullptr;
 
   rv = createLocPathPattern(aLexer, aContext, locPath);
   if (NS_FAILED(rv)) return rv;
@@ -90,8 +89,8 @@ nsresult txPatternParser::createLocPathPattern(txExprLexer& aLexer,
 
   bool isChild = true;
   bool isAbsolute = false;
-  txPattern* stepPattern = 0;
-  txLocPathPattern* pathPattern = 0;
+  txPattern* stepPattern = nullptr;
+  txLocPathPattern* pathPattern = nullptr;
 
   Token::Type type = aLexer.peek()->mType;
   switch (type) {
@@ -146,7 +145,7 @@ nsresult txPatternParser::createLocPathPattern(txExprLexer& aLexer,
   }
 
   pathPattern->addStep(stepPattern, isChild);
-  stepPattern = 0;  
+  stepPattern = nullptr;  
 
   while (type == Token::PARENT_OP || type == Token::ANCESTOR_OP) {
     isChild = type == Token::PARENT_OP;
@@ -157,7 +156,7 @@ nsresult txPatternParser::createLocPathPattern(txExprLexer& aLexer,
       return rv;
     }
     pathPattern->addStep(stepPattern, isChild);
-    stepPattern = 0;  
+    stepPattern = nullptr;  
     type = aLexer.peek()->mType;
   }
   aPattern = pathPattern;

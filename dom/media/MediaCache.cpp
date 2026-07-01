@@ -1186,7 +1186,7 @@ TimeDuration MediaCache::PredictNextUse(AutoLock&, TimeStamp aNow,
       }
       default:
         NS_ERROR("Invalid class for predicting next use");
-        return TimeDuration(0);
+        return TimeDuration();
     }
     if (i == 0 || prediction < result) {
       result = prediction;
@@ -1204,7 +1204,7 @@ TimeDuration MediaCache::PredictNextUseForIncomingData(
     
     return TimeDuration::FromSeconds(24 * 60 * 60);
   }
-  if (bytesAhead <= 0) return TimeDuration(0);
+  if (bytesAhead <= 0) return TimeDuration();
   int64_t millisecondsAhead =
       bytesAhead * 1000 / aStream->mPlaybackBytesPerSecond;
   return TimeDuration::FromMilliseconds(
@@ -1296,7 +1296,7 @@ int32_t MediaCache::TrimCacheIfNeeded(AutoLock& aLock, const TimeStamp& aNow) {
   const int32_t maxBlocks = mBlockCache->GetMaxBlocks(MediaCache::CacheSize());
 
   int32_t freeBlockCount = mFreeBlocks.GetCount();
-  TimeDuration latestPredictedUseForOverflow = 0;
+  TimeDuration latestPredictedUseForOverflow = nullptr;
   if (mIndex.Length() > uint32_t(maxBlocks)) {
     
     
@@ -1533,7 +1533,7 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
         
         LOG("Stream {} reading since there are free blocks", fmt::ptr(stream));
         enableReading = true;
-      } else if (latestNextUse <= TimeDuration(0)) {
+      } else if (latestNextUse <= TimeDuration()) {
         
         LOG("Stream {} throttling due to no reusable blocks", fmt::ptr(stream));
         enableReading = false;

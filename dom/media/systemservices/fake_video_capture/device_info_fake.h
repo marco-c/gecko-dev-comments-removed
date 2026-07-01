@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_SYSTEMSERVICES_FAKE_VIDEO_CAPTURE_DEVICE_INFO_FAKE_H_
 #define DOM_MEDIA_SYSTEMSERVICES_FAKE_VIDEO_CAPTURE_DEVICE_INFO_FAKE_H_
 
@@ -30,7 +28,7 @@ class DeviceInfoFake : public DeviceInfoImpl {
                         char* aProductUniqueIdUTF8 = nullptr,
                         uint32_t aProductUniqueIdUTF8Length = 0,
                         pid_t* aPid = nullptr,
-                        bool* deviceIsPlaceholder = 0) override;
+                        bool* deviceIsPlaceholder = nullptr) override;
   int32_t NumberOfCapabilities(const char* aDeviceUniqueIdUTF8) override;
   int32_t GetCapability(const char* aDeviceUniqueIdUTF8,
                         const uint32_t aDeviceCapabilityNumber,

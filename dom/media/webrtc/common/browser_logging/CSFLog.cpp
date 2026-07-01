@@ -45,7 +45,7 @@ void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine,
 #  define MAX_MESSAGE_LENGTH 1024
   char message[MAX_MESSAGE_LENGTH];
 
-  const char* threadName = NULL;
+  const char* threadName = nullptr;
 
   
   if (NS_IsMainThread()) {

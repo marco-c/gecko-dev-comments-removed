@@ -2,7 +2,6 @@
 
 
 
-
 #include "txExecutionState.h"
 
 #include "txInstructions.h"
@@ -128,7 +127,7 @@ nsresult txExecutionState::init(
 
   
   
-  txStylesheet::ImportFrame* frame = 0;
+  txStylesheet::ImportFrame* frame = nullptr;
   txExpandedName nullName;
   txInstruction* templ;
   rv =

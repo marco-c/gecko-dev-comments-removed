@@ -201,7 +201,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
       kCFAllocatorDefault,  
       const_cast<uint8_t*>(aSample->Data()), aSample->Size(),
       kCFAllocatorNull,  
-      NULL,              
+      nullptr,           
       0,                 
       aSample->Size(), false, block.Receive());
   if (rv != noErr) {
@@ -215,8 +215,9 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
   }
 
   CMSampleTimingInfo timestamp = TimingInfoFromSample(aSample);
-  rv = CMSampleBufferCreate(kCFAllocatorDefault, block, true, 0, 0, mFormat, 1,
-                            1, &timestamp, 0, NULL, sample.Receive());
+  rv = CMSampleBufferCreate(kCFAllocatorDefault, block, true, nullptr, nullptr,
+                            mFormat, 1, 1, &timestamp, 0, nullptr,
+                            sample.Receive());
   if (rv != noErr) {
     NS_ERROR("Couldn't create CMSampleBuffer");
     MonitorAutoLock mon(mMonitor);

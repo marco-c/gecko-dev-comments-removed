@@ -121,7 +121,7 @@ static int cubeb_mock_get_max_channel_count(cubeb* context,
 
 
 cubeb_ops const mock_ops = {
-    NULL,
+    nullptr,
     cubeb_mock_get_backend_id,
     cubeb_mock_get_max_channel_count,
     cubeb_mock_get_min_latency,
@@ -136,16 +136,16 @@ cubeb_ops const mock_ops = {
     cubeb_mock_stream_start,
     cubeb_mock_stream_stop,
     cubeb_mock_stream_get_position,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     cubeb_mock_stream_set_volume,
     cubeb_mock_stream_set_name,
-    NULL,
+    nullptr,
 
-    NULL,
+    nullptr,
     
     cubeb_mock_stream_set_input_processing_params,
-    NULL,
+    nullptr,
     
     cubeb_mock_stream_register_device_changed_callback,
     

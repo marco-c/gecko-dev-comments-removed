@@ -160,7 +160,7 @@ class CCGCScheduler {
   bool NeedsFullGC() const { return mNeedsFullGC; }
 
   
-  void PokeGC(JS::GCReason aReason, JSObject* aObj, TimeDuration aDelay = 0);
+  void PokeGC(JS::GCReason aReason, JSObject* aObj, TimeDuration aDelay = {});
   void PokeShrinkingGC();
   void PokeFullGC();
   void MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects);
@@ -192,7 +192,7 @@ class CCGCScheduler {
 
 
 
-  void EnsureGCRunner(TimeDuration aDelay);
+  void EnsureGCRunner(TimeDuration aDelay = {});
 
   
   

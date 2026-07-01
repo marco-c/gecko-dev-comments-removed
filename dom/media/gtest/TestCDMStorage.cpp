@@ -925,7 +925,7 @@ class CDMStorageTest {
 
     
     
-    auto t = time(0);
+    auto t = time(nullptr);
     nsCString response("stored crossOriginTestRecordId ");
     response.AppendInt((int64_t)t);
     Expect(

@@ -103,7 +103,7 @@ class nsJSContext : public nsIScriptContext {
   
   
   static void PokeGC(JS::GCReason aReason, JSObject* aObj,
-                     mozilla::TimeDuration aDelay = 0);
+                     mozilla::TimeDuration aDelay = {});
 
   
   

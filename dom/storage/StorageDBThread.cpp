@@ -748,7 +748,7 @@ void StorageDBThread::UnscheduleFlush() {
 
 TimeDuration StorageDBThread::TimeUntilFlush() {
   if (mFlushImmediately) {
-    return 0;  
+    return {};  
   }
 
   if (!mDirtyEpoch) {
@@ -760,7 +760,7 @@ TimeDuration StorageDBThread::TimeUntilFlush() {
   static const TimeDuration kMaxAge =
       TimeDuration::FromMilliseconds(FLUSHING_INTERVAL_MS);
   if (age > kMaxAge) {
-    return 0;  
+    return {};  
   }
 
   return kMaxAge - age;  

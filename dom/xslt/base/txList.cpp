@@ -2,7 +2,6 @@
 
 
 
-
 #include "txList.h"
 
 
@@ -14,8 +13,8 @@
 
 
 txList::txList() {
-  firstItem = 0;
-  lastItem = 0;
+  firstItem = nullptr;
+  lastItem = nullptr;
   itemCount = 0;
 }  
 
@@ -53,8 +52,8 @@ void txList::insertAfter(void* objPtr, ListItem* refItem) {
 void txList::insertBefore(void* objPtr, ListItem* refItem) {
   ListItem* item = new ListItem;
   item->objPtr = objPtr;
-  item->nextItem = 0;
-  item->prevItem = 0;
+  item->nextItem = nullptr;
+  item->prevItem = nullptr;
 
   
   if (!refItem) {
@@ -109,8 +108,8 @@ void txList::clear() {
     item = item->nextItem;
     delete tItem;
   }
-  firstItem = 0;
-  lastItem = 0;
+  firstItem = nullptr;
+  lastItem = nullptr;
   itemCount = 0;
 }
 
@@ -124,7 +123,7 @@ void txList::clear() {
 
 txListIterator::txListIterator(txList* list) {
   this->list = list;
-  currentItem = 0;
+  currentItem = nullptr;
   atEndOfList = false;
 }  
 
@@ -164,9 +163,9 @@ void txListIterator::addBefore(void* objPtr) {
 bool txListIterator::hasNext() {
   bool hasNext = false;
   if (currentItem)
-    hasNext = (currentItem->nextItem != 0);
+    hasNext = (currentItem->nextItem != nullptr);
   else if (!atEndOfList)
-    hasNext = (list->firstItem != 0);
+    hasNext = (list->firstItem != nullptr);
 
   return hasNext;
 }  
@@ -175,7 +174,7 @@ bool txListIterator::hasNext() {
 
 
 void* txListIterator::next() {
-  void* obj = 0;
+  void* obj = nullptr;
   if (currentItem)
     currentItem = currentItem->nextItem;
   else if (!atEndOfList)
@@ -193,7 +192,7 @@ void* txListIterator::next() {
 
 
 void* txListIterator::previous() {
-  void* obj = 0;
+  void* obj = nullptr;
 
   if (currentItem)
     currentItem = currentItem->prevItem;
@@ -213,7 +212,7 @@ void* txListIterator::previous() {
 void* txListIterator::current() {
   if (currentItem) return currentItem->objPtr;
 
-  return 0;
+  return nullptr;
 }  
 
 
@@ -221,7 +220,7 @@ void* txListIterator::current() {
 
 
 void* txListIterator::remove() {
-  void* obj = 0;
+  void* obj = nullptr;
   if (currentItem) {
     obj = currentItem->objPtr;
     txList::ListItem* item = currentItem;
@@ -237,7 +236,7 @@ void* txListIterator::remove() {
 
 void txListIterator::reset() {
   atEndOfList = false;
-  currentItem = 0;
+  currentItem = nullptr;
 }  
 
 
@@ -245,5 +244,5 @@ void txListIterator::reset() {
 
 void txListIterator::resetToEnd() {
   atEndOfList = true;
-  currentItem = 0;
+  currentItem = nullptr;
 }  

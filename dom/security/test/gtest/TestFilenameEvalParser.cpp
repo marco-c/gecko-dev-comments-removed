@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -412,7 +410,7 @@ TEST(FilenameEvalParser, WebExtensionPathParser)
         cx, (JSObject*)JS_NewFunction(cx, (JSNative)1, 0, 0, "customMethodA"));
     JS::Rooted<JSObject*> tempGlobalRoot(cx, JS::CurrentGlobalOrNull(cx));
     wEI->mLocalizeCallback = new mozilla::dom::WebExtensionLocalizeCallback(
-        cx, func, tempGlobalRoot, NULL);
+        cx, func, tempGlobalRoot, nullptr);
 
     wEI->mAllowedOrigins =
         mozilla::dom::OwningMatchPatternSetOrStringSequence();

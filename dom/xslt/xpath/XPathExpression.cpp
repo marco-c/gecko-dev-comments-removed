@@ -2,7 +2,6 @@
 
 
 
-
 #include "XPathExpression.h"
 
 #include <utility>
@@ -178,7 +177,7 @@ already_AddRefed<XPathResult> XPathExpression::EvaluateWithContext(
 
 nsresult EvalContextImpl::getVariable(int32_t aNamespace, nsAtom* aLName,
                                       txAExprResult*& aResult) {
-  aResult = 0;
+  aResult = nullptr;
   return NS_ERROR_INVALID_ARG;
 }
 
