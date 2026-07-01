@@ -784,7 +784,7 @@ pref("dom.storage.snapshot_reusing", true);
 pref("dom.storage.client_validation", true);
 
 
-pref("dom.forms.datetime.timepicker", false);
+pref("dom.forms.datetime.timepicker", true);
 
 
 pref("dom.forms.selectSearch", false);
