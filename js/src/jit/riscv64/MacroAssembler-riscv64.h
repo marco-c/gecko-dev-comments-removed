@@ -122,10 +122,6 @@ class MacroAssemblerRiscv64 : public Assembler {
     nopAlign(alignment);
   }
 
-  int32_t GetOffset(Label* L, OffsetSize bits) {
-    return Assembler::branchOffsetHelper(L, bits);
-  }
-
   std::pair<Register, int16_t> computeAddress(Address address,
                                               UseScratchRegisterScope& temps);
 
@@ -244,17 +240,16 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   
   void ma_b(Register lhs, Register rhs, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
+            JumpKind jumpKind);
+  void ma_b(Register lhs, Imm32 imm, Label* l, Condition c, JumpKind jumpKind);
   void ma_b(Register lhs, ImmWord imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
+            JumpKind jumpKind);
   void ma_b(Register lhs, ImmPtr imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump) {
+            JumpKind jumpKind) {
     ma_b(lhs, ImmWord(uintptr_t(imm.value)), l, c, jumpKind);
   }
   void ma_b(Register lhs, ImmGCPtr imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump) {
+            JumpKind jumpKind) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, imm);
