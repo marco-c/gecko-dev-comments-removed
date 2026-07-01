@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,9 +56,11 @@ import androidx.fragment.compose.content
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.feature.app.links.RedirectDialogFragment
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.ExpandableMenuItemAnimation
+import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -112,18 +112,20 @@ class AppLinksPromptFragment : RedirectDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
             setOnShowListener {
-                val bottomSheet = findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
-                bottomSheet?.let {
-                    ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
-                        val systemBarInsets = insets.getInsets(systemBars())
-                        view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
-                        insets
+                runIfFragmentIsAttached {
+                    val bottomSheet = findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
+                    bottomSheet?.let {
+                        ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
+                            val systemBarInsets = insets.getInsets(systemBars())
+                            view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
+                            insets
+                        }
                     }
-                }
-                bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
+                    bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
 
-                behavior.peekHeight = resources.displayMetrics.heightPixels
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                    behavior.peekHeight = context.resources.displayMetrics.heightPixels
+                    behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                }
             }
         }
 
@@ -464,18 +466,10 @@ private fun AppLinkActionButtons(
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(
+        FilledButton(
+            text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
             onClick = onConfirm,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-            ),
-        ) {
-            Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
-                style = FirefoxTheme.typography.button,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
-        }
+        )
     }
 }
 
