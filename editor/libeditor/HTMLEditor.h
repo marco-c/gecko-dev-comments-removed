@@ -430,7 +430,10 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  [[nodiscard]] bool IsStyleEditable() const;
+
+
+  [[nodiscard]] bool IsStyleEditable(
+      const Element* aEditingHost = nullptr) const;
 
   
 
