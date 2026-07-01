@@ -103,10 +103,6 @@ static_assert(F_LINUX_SPECIFIC_BASE == 1024);
 #ifndef F_ADD_SEALS
 #  define F_ADD_SEALS (F_LINUX_SPECIFIC_BASE + 9)
 #  define F_GET_SEALS (F_LINUX_SPECIFIC_BASE + 10)
-#  define F_SEAL_SEAL 0x0001
-#  define F_SEAL_SHRINK 0x0002
-#  define F_SEAL_GROW 0x0004
-#  define F_SEAL_WRITE 0x0008
 #else
 static_assert(F_ADD_SEALS == (F_LINUX_SPECIFIC_BASE + 9));
 static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
@@ -1074,23 +1070,14 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       CASES_FOR_fcntl: {
         Arg<int> cmd(1);
         Arg<int> flags(2);
-
         
         
         
         
         
-        static constexpr int kIgnoredFlags =
+        static const int ignored_flags =
             O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC | FMODE_NONOTIFY;
-        static constexpr int kAllowedFlags =
-            kIgnoredFlags | O_APPEND | O_NONBLOCK;
-
-        
-        
-        
-        
-        static constexpr int kAllowedSeals = F_SEAL_SHRINK | F_SEAL_GROW;
-
+        static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
         return Switch(cmd)
             
             
@@ -1100,7 +1087,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
                 If((flags & ~FD_CLOEXEC) == 0, Allow()).Else(InvalidSyscall()))
             
             .Case(F_GETFL, Allow())
-            .Case(F_SETFL, If((flags & ~kAllowedFlags) == 0, Allow())
+            .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
                                .Else(InvalidSyscall()))
 #if defined(MOZ_PROFILE_GENERATE)
             .Case(F_SETLKW, Allow())
@@ -1110,10 +1097,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             
             
             .Case(F_DUPFD_QUERY, Allow())
-            
-            .Case(F_GET_SEALS, Allow())
-            .Case(F_ADD_SEALS, If((flags & ~kAllowedSeals) == 0, Allow())
-                                   .Else(InvalidSyscall()))
             .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
