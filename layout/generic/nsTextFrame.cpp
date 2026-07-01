@@ -5839,15 +5839,22 @@ static bool ComputeDecorationInset(
     insetLeft = autoDecorationInset;
     insetRight = autoDecorationInset;
   } else {
-    MOZ_ASSERT(cssInset.IsLength(), "Impossible text-decoration-inset");
-    const auto& length = cssInset.AsLength();
-    if (length.start.IsZero() && length.end.IsZero()) {
+    MOZ_ASSERT(cssInset.IsLengthPercentage(),
+               "Impossible text-decoration-inset");
+    const auto& inset = cssInset.AsLengthPercentage();
+    if (inset.start.IsDefinitelyZero() && inset.end.IsDefinitelyZero()) {
       
       
       return true;
     }
-    insetLeft = length.start.ToAppUnits();
-    insetRight = length.end.ToAppUnits();
+
+    if (!inset.start.IsLength() || !inset.end.IsLength()) {
+      
+      
+      return true;
+    }
+    insetLeft = inset.start.AsLength().ToAppUnits();
+    insetRight = inset.end.AsLength().ToAppUnits();
   }
 
   
