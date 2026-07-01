@@ -5,6 +5,7 @@
 #include "IDBFactory.h"
 
 #include "BackgroundChildImpl.h"
+#include "ErrorList.h"
 #include "IDBRequest.h"
 #include "IndexedDatabaseManager.h"
 #include "ProfilerHelpers.h"
@@ -466,6 +467,12 @@ already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx,
     return promise.forget();
   }
 
+  
+  if (!BackgroundChild::ValidatePrincipalInfo(*mPrincipalInfo, {})) {
+    promise->MaybeRejectWithSecurityError(kAccessError);
+    return promise.forget();
+  }
+
   PersistenceType persistenceType = GetPersistenceType(*mPrincipalInfo);
 
   QM_TRY(MOZ_TO_RESULT(EnsureBackgroundActor()), [&promise](const nsresult rv) {
@@ -725,6 +732,12 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenInternal(
       }
     }
     principalInfo = *mPrincipalInfo;
+  }
+
+  
+  if (!BackgroundChild::ValidatePrincipalInfo(principalInfo, {})) {
+    aRv.ThrowSecurityError(kAccessError);
+    return nullptr;
   }
 
   uint64_t version = 0;
