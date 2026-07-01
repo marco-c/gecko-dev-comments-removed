@@ -23,6 +23,14 @@
         }
     }
 
+    function assertTestIsTentative(){
+        const testPath = location.pathname;
+        const tentative = testPath.includes('.tentative.') || testPath.includes('/tentative/');
+        if (!tentative) {
+            throw new Error("Method in testdriver.js intended for tentative tests used in non-tentative test");
+        }
+    }
+
     function getInViewCenterPoint(rect) {
         var left = Math.max(0, rect.left);
         var right = Math.min(window.innerWidth, rect.right);
@@ -1329,6 +1337,34 @@
 
 
 
+        get_accessibility_properties_for_element: async function(element) {
+            assertTestIsTentative();
+            let acc = await window.test_driver_internal.get_accessibility_properties_for_element(element);
+            return acc;
+        },
+
+        
+
+
+
+
+
+
+
+        get_accessibility_properties_for_accessibility_node: async function(accId) {
+            assertTestIsTentative();
+            let acc = await window.test_driver_internal.get_accessibility_properties_for_accessibility_node(accId);
+            return acc;
+        },
+
+        
+
+
+
+
+
+
+
 
 
 
@@ -1963,6 +1999,25 @@
 
 
 
+        set_virtual_wallet_behavior: function(action, protocol=null, response=null, context=null) {
+          return window.test_driver_internal.set_virtual_wallet_behavior(action, protocol, response, context);
+        },
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2519,6 +2574,14 @@
             throw new Error("get_computed_name is a testdriver.js function which cannot be run in this context.");
         },
 
+        async get_accessibility_properties_for_element(element) {
+            throw new Error("get_accessibility_properties_for_element is a testdriver.js function which cannot be run in this context.");
+        },
+
+        async get_accessibility_properties_for_accessibility_node(accId) {
+            throw new Error("get_accessibility_properties_for_accessibility_node is a testdriver.js function which cannot be run in this context.");
+        },
+
         async send_keys(element, keys) {
             if (this.in_automation) {
                 throw new Error("send_keys() is not implemented by testdriver-vendor.js");
@@ -2650,6 +2713,11 @@
         async reset_fedcm_cooldown(context=null) {
             throw new Error("reset_fedcm_cooldown() is not implemented by testdriver-vendor.js");
         },
+
+        async set_virtual_wallet_behavior(action, protocol=null, response=null, context=null) {
+            throw new Error("set_virtual_wallet_behavior() is not implemented by testdriver-vendor.js");
+        },
+
 
         async create_virtual_sensor(sensor_type, sensor_params, context=null) {
             throw new Error("create_virtual_sensor() is not implemented by testdriver-vendor.js");
