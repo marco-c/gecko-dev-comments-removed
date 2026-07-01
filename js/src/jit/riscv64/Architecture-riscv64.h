@@ -17,8 +17,7 @@
 namespace js {
 namespace jit {
 
-static const uint32_t SimdMemoryAlignment =
-    16;  
+static const uint32_t SimdMemoryAlignment = 16;
 
 
 
@@ -447,8 +446,6 @@ struct FloatRegister {
   }
   static Code FromName(const char* name);
 
-  
-  
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<FloatRegister>& s);
 
  private:
