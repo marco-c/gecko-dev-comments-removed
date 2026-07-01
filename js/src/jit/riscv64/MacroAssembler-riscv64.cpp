@@ -882,8 +882,6 @@ void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
   }
   {
     Label not_NaN;
-    UseScratchRegisterScope temps2(this);
-    Register scratch = temps2.Acquire();
     
     
     
@@ -892,12 +890,10 @@ void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
     
     
     if (std::is_same<F, double>::value) {
-      feq_d(scratch, src, src);
-      bnez(scratch, &not_NaN);
+      BranchFloat64(Assembler::DoubleOrdered, src, src, &not_NaN, ShortJump);
       fmin_d(dst, src, src);
     } else {
-      feq_s(scratch, src, src);
-      bnez(scratch, &not_NaN);
+      BranchFloat32(Assembler::DoubleOrdered, src, src, &not_NaN, ShortJump);
       fmin_s(dst, src, src);
     }
     bind(&not_NaN);
@@ -4758,6 +4754,10 @@ void MacroAssemblerRiscv64::Clear_if_nan_d(Register rd, FPURegister fs) {
   Register scratch = temps.Acquire();
 
   feq_d(scratch, fs, fs);
+  if (HasZicondExtension()) {
+    czero_eqz(rd, rd, scratch);
+    return;
+  }
   neg(scratch, scratch);
   and_(rd, rd, scratch);
 }
@@ -4767,6 +4767,10 @@ void MacroAssemblerRiscv64::Clear_if_nan_s(Register rd, FPURegister fs) {
   Register scratch = temps.Acquire();
 
   feq_s(scratch, fs, fs);
+  if (HasZicondExtension()) {
+    czero_eqz(rd, rd, scratch);
+    return;
+  }
   neg(scratch, scratch);
   and_(rd, rd, scratch);
 }
@@ -5094,7 +5098,7 @@ void MacroAssemblerRiscv64::Branch(Label* L, JumpKind jumpKind) {
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
 
-  int32_t offset = GetOffset(L, OffsetSize::kOffset21);
+  int32_t offset = branchOffset(L, OffsetSize::kOffset21);
   BufferOffset bo = nextOffset();
   Assembler::j(offset);
   return bo;
@@ -5138,7 +5142,7 @@ void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
 
   AutoForbidPoolsAndNops afp(this, 2, 1);
 
-  int32_t offset = GetOffset(L, OffsetSize::kOffset13);
+  int32_t offset = branchOffset(L, OffsetSize::kOffset13);
 
   switch (cond) {
     case Equal:
@@ -5185,7 +5189,7 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2);
 
   
-  int32_t imm = branchLongOffsetHelper(L);
+  int32_t imm = branchOffset(L);
 
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
@@ -5200,14 +5204,14 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
   if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21, afn)) {
     AutoForbidPoolsAndNops afp(this, 2, 1);
 
-    int32_t offset = GetOffset(L, OffsetSize::kOffset21);
+    int32_t offset = branchOffset(L, OffsetSize::kOffset21);
     return jal(offset);
   }
 
   AutoForbidPoolsAndNops afp(this, 2);
 
   
-  int32_t imm = branchLongOffsetHelper(L);
+  int32_t imm = branchOffset(L);
 
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
