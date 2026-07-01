@@ -188,18 +188,18 @@ async function getFormSubmitResponseResult(
   { username = "#user", password = "#pass" } = {}
 ) {
   
-  await TestUtils.waitForCondition(() =>
-    SpecialPowers.spawn(browser, [resultURL], resultURL => {
-      return (
-        content.location.pathname.endsWith(resultURL) &&
-        content.document.readyState == "complete"
-      );
-    })
-  );
-  let fieldValues = await SpecialPowers.spawn(
+  
+  
+  let fieldValues = await ContentTask.spawn(
     browser,
-    [username, password],
-    (usernameSelector, passwordSelector) => {
+    { resultURL, usernameSelector: username, passwordSelector: password },
+    async function ({ resultURL, usernameSelector, passwordSelector }) {
+      await ContentTaskUtils.waitForCondition(() => {
+        return (
+          content.location.pathname.endsWith(resultURL) &&
+          content.document.readyState == "complete"
+        );
+      }, `Wait for form submission load (${resultURL})`);
       let username =
         content.document.querySelector(usernameSelector).textContent;
       
