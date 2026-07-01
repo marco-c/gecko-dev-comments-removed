@@ -49,8 +49,6 @@ using mozilla::DebugOnly;
 namespace js {
 namespace jit {
 
-#define UNIMPLEMENTED_RISCV() MOZ_CRASH("RISC_V not implemented");
-
 bool Assembler::FLAG_riscv_debug = false;
 
 
@@ -127,7 +125,22 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
 
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(inst, JitSpew_Codegen);
+  if (JitSpewEnabled(JitSpew_Codegen)) {
+    disassembleInstr(inst, JitSpew_Codegen);
+    inst += 1 * kInstrSize;
+
+    
+    inst += 1 * kInstrSize;
+
+    
+    
+    BufferOffset bo(branch.getOffset() + kInstrSize * 2);
+    while (bo < dest) {
+      disassembleInstr(inst, JitSpew_Codegen);
+      inst += kInstrSize;
+      bo = BufferOffset(bo.getOffset() + kInstrSize);
+    }
+  }
 #endif 
 }
 
@@ -902,7 +915,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
 
 bool Assembler::oom() const {
   return AssemblerShared::oom() || m_buffer.oom() || jumpRelocations_.oom() ||
-         dataRelocations_.oom() || !enoughLabelCache_;
+         dataRelocations_.oom();
 }
 
 #ifdef JS_DISASM_RISCV64
@@ -998,224 +1011,186 @@ void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
   *(raw - 1) = imm.value;
 }
 
-bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
-                                     BufferOffset target_pos) {
-  if (m_buffer.oom()) {
-    return true;
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr int32_t kEndOfJumpChain = 0;
+
+static int32_t ImmPCRawOffset(const Instruction* instr) {
+  if (instr->IsBranch()) {
+    return instr->BranchOffset();
   }
-
-  Instruction* instruction = getInstructionAt(pos);
-  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
-               pos.getOffset(),
-               instruction + target_pos.getOffset() - pos.getOffset(),
-               target_pos.getOffset());
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kBranchOffsetBits)) {
-        return false;
-      }
-      instruction->SetBranchOffset(offset);
-    } break;
-    case JAL: {
-      MOZ_ASSERT(instruction->IsJal());
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kJumpOffsetBits)) {
-        return false;
-      }
-      instruction->SetImm20JValue(offset);
-    } break;
-    case LUI: {
-      uintptr_t target =
-          reinterpret_cast<uintptr_t>(getInstructionAt(target_pos));
-      UpdateLiPtrInstructions(instruction, target);
-    } break;
-    case AUIPC: {
-      Instruction* instruction2 =
-          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-      MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
-
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      auto [Hi20, Lo12] = ToHigh20Low12(offset);
-
-      instruction->SetImm20UValue(Hi20);
-      instruction2->SetImm12Value(Lo12);
-    } break;
-    default:
-      UNIMPLEMENTED_RISCV();
-      break;
+  if (instr->IsJal()) {
+    return instr->Imm20JValue();
   }
-  return true;
+  MOZ_CRASH("unexpected jump instruction");
 }
 
-const int kEndOfChain = -1;
-const int32_t kEndOfJumpChain = 0;
+static int32_t ImmPCRawOffset(const Instruction* auipc,
+                              const Instruction* jalr) {
+  MOZ_ASSERT(auipc->IsAuipc());
+  MOZ_ASSERT(jalr->IsJalr());
 
-int Assembler::jumpChainTargetAt(BufferOffset pos) {
-  if (oom()) {
-    return kEndOfChain;
-  }
-  Instruction* instruction = getInstructionAt(pos);
-  Instruction* instruction2 = nullptr;
-  if (instruction->IsAuipc()) {
-    instruction2 = getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-  }
-  return jumpChainTargetAt(instruction, pos, instruction2);
-}
-
-int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                                 Instruction* instruction2) {
-  DEBUG_PRINTF("\t jumpChainTargetAt: %p(%x)\n\t",
-               reinterpret_cast<Instr*>(instruction), pos.getOffset());
-#ifdef JS_DISASM_RISCV64
-  disassembleInstr(instruction);
-#endif 
-
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t imm13 = instruction->BranchOffset();
-      if (imm13 == kEndOfJumpChain) {
-        
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm13,
-                   pos.getOffset() + imm13);
-      return pos.getOffset() + imm13;
-    }
-    case JAL: {
-      int32_t imm21 = instruction->Imm20JValue();
-      if (imm21 == kEndOfJumpChain) {
-        
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm21,
-                   pos.getOffset() + imm21);
-      return pos.getOffset() + imm21;
-    }
-    case JALR: {
-      int32_t imm12 = instruction->Imm12Value();
-      if (imm12 == kEndOfJumpChain) {
-        
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm12,
-                   pos.getOffset() + imm12);
-      return pos.getOffset() + imm12;
-    }
-    case LUI: {
-      uintptr_t imm = LoadLiPtrInstructions(instruction);
-      uintptr_t instr_address = reinterpret_cast<uintptr_t>(instruction);
-      if (imm == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      MOZ_ASSERT(instr_address - imm < INT32_MAX);
-      int32_t delta = static_cast<int32_t>(instr_address - imm);
-      MOZ_ASSERT(pos.getOffset() > delta);
-      return pos.getOffset() - delta;
-    }
-    case AUIPC: {
-      MOZ_ASSERT(instruction2 != nullptr);
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-
-      int32_t imm_auipc = instruction->Imm20UValue() << kImm20Shift;
-      int32_t imm12 = instruction2->Imm12Value();
-      int32_t offset = imm_auipc + imm12;
-      if (offset == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", offset,
-                   pos.getOffset() + offset);
-      return offset + pos.getOffset();
-    }
-    default: {
-      UNIMPLEMENTED_RISCV();
-    }
-  }
+  int32_t imm_auipc = auipc->Imm20UValue() << kImm20Shift;
+  int32_t imm12 = jalr->Imm12Value();
+  return imm_auipc + imm12;
 }
 
 BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos) {
-  int link = jumpChainTargetAt(pos);
-  return link == kEndOfChain ? BufferOffset() : BufferOffset(link);
+  if (oom()) {
+    return BufferOffset();
+  }
+
+  Instruction* link = getInstructionAt(pos);
+  MOZ_ASSERT(link->IsBranch() || link->IsJal() || link->IsAuipc());
+
+  
+  int32_t offset;
+  if (link->IsAuipc()) {
+    Instruction* instr1 =
+        getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+    offset = ImmPCRawOffset(link, instr1);
+  } else {
+    offset = ImmPCRawOffset(link);
+  }
+
+  
+  if (offset == kEndOfJumpChain) {
+    return BufferOffset();
+  }
+
+  
+  return BufferOffset(pos.getOffset() + offset);
 }
 
-uint32_t Assembler::jumpChainUseNextLink(Label* L) {
-  MOZ_ASSERT(L->used());
-  BufferOffset link = jumpChainGetNextLink(BufferOffset(L));
-  if (!link.assigned()) {
-    L->reset();
-    return LabelBase::INVALID_OFFSET;
+void Assembler::jumpChainPutTargetAt(BufferOffset pos,
+                                     BufferOffset target_pos) {
+  if (oom()) {
+    return;
   }
-  int offset = link.getOffset();
-  DEBUG_PRINTF("next: %p to offset %d\n", L, offset);
-  L->use(offset);
-  return offset;
+
+  int32_t offset = target_pos.getOffset() - pos.getOffset();
+  MOZ_ASSERT((offset & 1) == 0);
+
+  Instruction* instruction = getInstructionAt(pos);
+  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
+               pos.getOffset(), instruction + offset, target_pos.getOffset());
+
+  switch (instruction->InstructionOpcodeType()) {
+    case BRANCH: {
+      MOZ_ASSERT(is_intn(offset, kBranchOffsetBits));
+      instruction->SetBranchOffset(offset);
+      break;
+    }
+    case JAL: {
+      MOZ_ASSERT(is_intn(offset, kJumpOffsetBits));
+      instruction->SetImm20JValue(offset);
+      break;
+    }
+    case AUIPC: {
+      Instruction* jalr =
+          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+      MOZ_ASSERT(jalr->IsJalr());
+      MOZ_ASSERT(instruction->RdValue() == jalr->Rs1Value());
+
+      auto [Hi20, Lo12] = ToHigh20Low12(offset);
+      instruction->SetImm20UValue(Hi20);
+      jalr->SetImm12Value(Lo12);
+      break;
+    }
+    default:
+      MOZ_CRASH("unexpected jump instruction");
+  }
 }
 
 void Assembler::bind(Label* label, BufferOffset boff) {
   JitSpew(JitSpew_Codegen, ".set Llabel %p %u", label, currentOffset());
   DEBUG_PRINTF(".set Llabel %p %u\n", label, currentOffset());
-  
-  
-  BufferOffset dest = boff.assigned() ? boff : nextOffset();
-  if (label->used()) {
-    uint32_t next;
 
-    do {
-      
-      
-      BufferOffset b(label);
-      DEBUG_PRINTF("\tbind next:%d\n", b.getOffset());
-      
-      if (oom()) {
-        return;
-      }
-      int fixup_pos = b.getOffset();
-      int dist = dest.getOffset() - fixup_pos;
-      next = jumpChainUseNextLink(label);
-      DEBUG_PRINTF(
-          "\t%p fixup: %d next: %u dest: %d dist: %d nextOffset: %d "
-          "currOffset: %d\n",
-          label, fixup_pos, next, dest.getOffset(), dist,
-          nextOffset().getOffset(), currentOffset());
-      Instruction* instr = getInstructionAt(b);
-      if (instr->IsBranch()) {
-        if (!is_intn(dist, kBranchOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(b.getOffset() +
-                                ImmBranchMaxForwardOffset(CondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(CondBranchRangeType, deadline);
-        }
-      } else if (instr->IsJal()) {
-        if (!is_intn(dist, kJumpOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(
-              b.getOffset() + ImmBranchMaxForwardOffset(UncondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(UncondBranchRangeType, deadline);
-        }
-      } else {
-        MOZ_ASSERT(instr->IsAuipc());
-        jumpChainPutTargetAt(b, dest);
-      }
-    } while (next != LabelBase::INVALID_OFFSET);
+  
+  
+  BufferOffset targetOffset = boff.assigned() ? boff : nextOffset();
+
+  
+  
+  
+  
+  
+  if (!label->used() || oom()) {
+    label->bind(targetOffset.getOffset());
+    return;
   }
-  label->bind(dest.getOffset());
+
+  
+  
+  
+  BufferOffset branchOffset(label);
+
+  while (branchOffset.assigned()) {
+    
+    
+    BufferOffset nextOffset = jumpChainGetNextLink(branchOffset);
+
+    
+    
+    
+    
+    ptrdiff_t relativeByteOffset =
+        targetOffset.getOffset() - branchOffset.getOffset();
+
+    Instruction* link = getInstructionAt(branchOffset);
+    OffsetSize offsetSize;
+    if (link->IsBranch() || link->IsJal()) {
+      offsetSize = link->GetOffsetSize();
+    } else {
+      MOZ_ASSERT(link->IsAuipc());
+      offsetSize = OffsetSize::kOffset32;
+    }
+
+    
+    if (offsetSize < OffsetSize::kOffset32) {
+      ImmBranchRangeType branchRange =
+          OffsetSizeToImmBranchRangeType(offsetSize);
+      BufferOffset deadline(branchOffset.getOffset() +
+                            ImmBranchMaxForwardOffset(branchRange));
+      m_buffer.unregisterBranchDeadline(branchRange, deadline);
+    }
+
+    
+    if (is_intn(relativeByteOffset, offsetSize)) {
+      
+      jumpChainPutTargetAt(branchOffset, targetOffset);
+    } else {
+      
+      
+      MOZ_ASSERT(offsetSize < OffsetSize::kOffset32);
+
+      
+      MOZ_ASSERT(nextOffset.assigned());
+      MOZ_ASSERT(getInstructionAt(nextOffset)->IsAuipc());
+      MOZ_ASSERT(
+          getInstructionAt(BufferOffset(nextOffset.getOffset() + kInstrSize))
+              ->IsJalr());
+
+      
+      MOZ_RELEASE_ASSERT(is_intn(
+          nextOffset.getOffset() - branchOffset.getOffset(), offsetSize));
+    }
+
+    branchOffset = nextOffset;
+  }
+
+  
+  label->bind(targetOffset.getOffset());
 }
 
 void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
@@ -1235,7 +1210,20 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
-int32_t Assembler::branchLongOffsetHelper(Label* L) {
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
+                                BufferOffset next_instr_offset) {
   if (oom()) {
     return kEndOfJumpChain;
   }
@@ -1243,17 +1231,29 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
   
   AutoForbidNops afn(this);
 
-  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
-  DEBUG_PRINTF("\tbranchLongOffsetHelper: %p to (%d)\n", L,
-               next_instr_offset.getOffset());
+  DEBUG_PRINTF("\branchOffset: %p to %d\n", L, next_instr_offset.getOffset());
 
   if (L->bound()) {
     
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
     int32_t offset = L->offset() - next_instr_offset.getOffset();
-    MOZ_ASSERT((offset & 3) == 0);
+    MOZ_ASSERT(is_intn(offset, bits));
+    MOZ_ASSERT((offset & 1) == 0);
+    MOZ_ASSERT_IF(bits == OffsetSize::kOffset32, (offset & 3) == 0);
     return offset;
+  }
+
+  
+  
+  if (bits < OffsetSize::kOffset32) {
+    
+    BufferOffset deadline(next_instr_offset.getOffset() +
+                          ImmBranchMaxForwardOffset(bits));
+    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
+                 OffsetSizeToImmBranchRangeType(bits));
+    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
+                                    deadline);
   }
 
   
@@ -1262,143 +1262,66 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
     L->use(next_instr_offset.getOffset());
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
+    DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                  next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
     return kEndOfJumpChain;
   }
 
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
+  
+  
+  
+  
 
   
   
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-  } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
+  int32_t earliestReachable =
+      next_instr_offset.getOffset() + ImmBranchMinBackwardOffset(bits);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  if (L->offset() >= earliestReachable) {
+    int32_t offset = L->offset() - next_instr_offset.getOffset();
+    MOZ_ASSERT(offset != kEndOfJumpChain);
+    MOZ_ASSERT(is_intn(offset, bits));
+    MOZ_ASSERT((offset & 1) == 0);
 
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
+    L->use(next_instr_offset.getOffset());
+    return offset;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  BufferOffset next(L);
+  BufferOffset exbr;
+  do {
+    exbr = next;
+    next = jumpChainGetNextLink(next);
+  } while (next.assigned());
+  jumpChainPutTargetAt(exbr, next_instr_offset);
 
   return kEndOfJumpChain;
 }
 
-int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
-  if (oom()) {
-    return kEndOfJumpChain;
-  }
+int32_t Assembler::branchOffset(Label* L) {
+  
+  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
+  return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
+}
+
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits) {
+  MOZ_ASSERT(bits < OffsetSize::kOffset32);
 
   
-  AutoForbidNops afn(this);
-
   BufferOffset next_instr_offset = nextInstrOffset(1, 1);
-  DEBUG_PRINTF("\tbranchOffsetHelper: %p to %d\n", L,
-               next_instr_offset.getOffset());
-
-  if (L->bound()) {
-    
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    int32_t offset = L->offset() - next_instr_offset.getOffset();
-    DEBUG_PRINTF("\toffset = %d\n", offset);
-    MOZ_ASSERT(is_intn(offset, bits));
-    MOZ_ASSERT((offset & 1) == 0);
-    return offset;
-  }
-
-  BufferOffset deadline(next_instr_offset.getOffset() +
-                        ImmBranchMaxForwardOffset(bits));
-  DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
-               OffsetSizeToImmBranchRangeType(bits));
-  m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
-                                  deadline);
-
-  
-  
-  if (!L->used()) {
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    L->use(next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-    DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    return kEndOfJumpChain;
-  }
-
-  
-  
-  
-  
-
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
-
-  
-  
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-  } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
-  }
-
-  return kEndOfJumpChain;
+  return branchOffset(L, bits, next_instr_offset);
 }
 
 Assembler::Condition Assembler::InvertCondition(Condition cond) {
@@ -1607,26 +1530,26 @@ bool UseScratchRegisterScope::hasAvailable() const {
 
 void Assembler::retarget(Label* label, Label* target) {
   spew("retarget %p -> %p", label, target);
-  if (label->used() && !oom()) {
+
+  if (label->used()) {
     if (target->bound()) {
       bind(label, BufferOffset(target));
     } else if (target->used()) {
       
       
-      int32_t next;
       BufferOffset labelBranchOffset(label);
 
       
-      do {
-        next = jumpChainUseNextLink(label);
-        labelBranchOffset = BufferOffset(next);
-      } while (next != LabelBase::INVALID_OFFSET);
+      BufferOffset next = jumpChainGetNextLink(labelBranchOffset);
+      while (next.assigned()) {
+        labelBranchOffset = next;
+        next = jumpChainGetNextLink(next);
+      }
 
       
       
-      target->use(label->offset());
       jumpChainPutTargetAt(labelBranchOffset, BufferOffset(target));
-      MOZ_CRASH("check");
+      target->use(label->offset());
     } else {
       
       
@@ -1664,9 +1587,6 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
 void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
                                               BufferOffset deadline,
                                               BufferOffset veneer) {
-  if (buffer->oom()) {
-    return;
-  }
   DEBUG_PRINTF("\tPatchShortRangeBranchToVeneer\n");
 
   
@@ -1674,35 +1594,36 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   BufferOffset branch(deadline.getOffset() -
                       ImmBranchMaxForwardOffset(branchRange));
   Instruction* branchInst = buffer->getInst(branch);
+  MOZ_ASSERT(branchInst->IsBranch() || branchInst->IsJal());
+
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
       buffer->getInst(BufferOffset(veneer.getOffset() + kInstrSize));
 
-  
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(branchInst, JitSpew_Codegen);
+  disassembleInstr(branchInst);
 #endif 
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
+
+  
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
 
   
   
   
-  int32_t nextElemOffset = jumpChainTargetAt(buffer->getInst(branch), branch);
-  int32_t dist;
+  int32_t nextElemOffset = ImmPCRawOffset(branchInst);
+
   
-  if (nextElemOffset != kEndOfChain) {
+  if (nextElemOffset != kEndOfJumpChain) {
     
     
-    dist = nextElemOffset - veneer.getOffset();
-  } else {
-    dist = kEndOfJumpChain;
+    nextElemOffset += branch.getOffset() - veneer.getOffset();
   }
 
-  auto [Hi20, Lo12] = ToHigh20Low12(dist);
+  auto [Hi20, Lo12] = ToHigh20Low12(nextElemOffset);
 
   
   veneerInst_1->SetUFormat(RO_AUIPC, t6.code(), Hi20);
@@ -1716,6 +1637,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     MOZ_ASSERT(branchInst->IsJal());
     branchInst->SetImm20JValue(offset);
   }
+
 #ifdef JS_DISASM_RISCV64
   DEBUG_PRINTF("\tfix to veneer:");
   disassembleInstr(branchInst);
