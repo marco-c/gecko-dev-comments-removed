@@ -98,6 +98,8 @@ class nsHTMLDocument : public mozilla::dom::Document {
       nsWindowSizes& aWindowSizes) const override;
   
 
+  bool IsAsciiCompatible(const mozilla::Encoding* aEncoding);
+
   virtual bool WillIgnoreCharsetOverride() override;
 
   
@@ -141,9 +143,8 @@ class nsHTMLDocument : public mozilla::dom::Document {
   
   int32_t mNumForms;
 
-  static void TryReloadCharset(nsIDocumentViewer* aViewer,
-                               int32_t& aCharsetSource,
-                               NotNull<const Encoding*>& aEncoding);
+  void TryReloadCharset(nsIDocumentViewer* aViewer, int32_t& aCharsetSource,
+                        NotNull<const Encoding*>& aEncoding);
   void TryUserForcedCharset(nsIDocumentViewer* aViewer, nsIDocShell* aDocShell,
                             int32_t& aCharsetSource,
                             NotNull<const Encoding*>& aEncoding,

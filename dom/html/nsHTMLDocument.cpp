@@ -185,11 +185,11 @@ void nsHTMLDocument::TryReloadCharset(nsIDocumentViewer* aViewer,
       aViewer->ForgetReloadEncoding();
 
       if (reloadEncodingSource <= aCharsetSource ||
-          !aEncoding->IsAsciiCompatible()) {
+          !IsAsciiCompatible(aEncoding)) {
         return;
       }
 
-      if (reloadEncoding && reloadEncoding->IsAsciiCompatible()) {
+      if (reloadEncoding && IsAsciiCompatible(reloadEncoding)) {
         aCharsetSource = reloadEncodingSource;
         aEncoding = WrapNotNull(reloadEncoding);
       }
@@ -213,7 +213,7 @@ void nsHTMLDocument::TryUserForcedCharset(nsIDocumentViewer* aViewer,
   }
 
   
-  if (WillIgnoreCharsetOverride() || !aEncoding->IsAsciiCompatible()) {
+  if (WillIgnoreCharsetOverride() || !IsAsciiCompatible(aEncoding)) {
     return;
   }
 
@@ -744,6 +744,12 @@ void nsHTMLDocument::DocAddSizeOfExcludingThis(
   
 }
 
+bool nsHTMLDocument::IsAsciiCompatible(const Encoding* aEncoding) {
+  return aEncoding->IsAsciiCompatible() ||
+         (aEncoding == ISO_2022_JP_ENCODING &&
+          !GetContentTypeInternal().EqualsLiteral("text/html"));
+}
+
 bool nsHTMLDocument::WillIgnoreCharsetOverride() {
   if (mEncodingMenuDisabled) {
     return true;
@@ -755,8 +761,15 @@ bool nsHTMLDocument::WillIgnoreCharsetOverride() {
   if (mCharacterSetSource >= kCharsetFromByteOrderMark) {
     return true;
   }
-  if (!mCharacterSet->IsAsciiCompatible()) {
+  if (!mCharacterSet->IsAsciiCompatible() &&
+      mCharacterSet != ISO_2022_JP_ENCODING) {
     return true;
+  }
+  if (mCharacterSet == ISO_2022_JP_ENCODING) {
+    
+    if (GetContentTypeInternal().EqualsLiteral("text/html")) {
+      return true;
+    }
   }
   nsIURI* uri = GetOriginalURI();
   if (uri) {
