@@ -39,32 +39,21 @@ bool js::ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer) {
   }
 
   
-  auto fast_getc =
-#if defined(HAVE_GETC_UNLOCKED)
-      getc_unlocked
-#elif defined(HAVE__GETC_NOLOCK)
-      _getc_nolock
-#else
-      getc
-#endif
-      ;
-
-  
   
   
   
   for (;;) {
-    int c = fast_getc(fp);
-    if (c == EOF) {
+    uint8_t chunk[4096];
+    size_t nread = fread(chunk, 1, sizeof(chunk), fp);
+    if (nread == 0) {
       break;
     }
-    if (!buffer.append(c)) {
+    if (!buffer.append(chunk, nread)) {
       return false;
     }
   }
 
   if (ferror(fp)) {
-    
     JS_ReportErrorLatin1(cx, "error reading file: %s", strerror(errno));
     errno = 0;
     return false;
