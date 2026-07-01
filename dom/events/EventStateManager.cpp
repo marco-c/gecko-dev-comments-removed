@@ -907,13 +907,6 @@ static void HandleKeyUpInteraction(WidgetKeyboardEvent* aKeyEvent) {
   }
 }
 
-static bool NeedsActiveContentChange(const WidgetMouseEvent* aMouseEvent) {
-  
-  
-  return !aMouseEvent ||
-         aMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
-}
-
 nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
                                            WidgetEvent* aEvent,
                                            nsIFrame* aTargetFrame,
@@ -1188,17 +1181,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
           NotifyTargetUserActivation(aEvent, aTargetContent);
         }
 
-        if (NeedsActiveContentChange(mouseEvent)) {
-          nsCOMPtr<nsIContent> activeContent =
-              mCurrentTarget ? mCurrentTarget->GetContent() : nullptr;
-          if (activeContent && !activeContent->IsElement()) {
-            if (nsIContent* parent = activeContent->GetFlattenedTreeParent()) {
-              activeContent = parent;
-            }
-          }
-          SetActiveManager(this, activeContent);
-        }
-
         LightDismissOpenPopovers(aEvent, aTargetContent);
         LightDismissOpenDialogs(aEvent, aTargetContent);
       }
@@ -1240,9 +1222,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       GenerateMouseEnterExit(mouseEvent);
       if (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
         NotifyTargetUserActivation(aEvent, aTargetContent);
-      }
-      if (NeedsActiveContentChange(mouseEvent)) {
-        ClearGlobalActiveContent(this);
       }
       break;
     case ePointerGotCapture:
@@ -4029,6 +4008,13 @@ void EventStateManager::PostHandleKeyboardEvent(
   }
 }
 
+static bool NeedsActiveContentChange(const WidgetMouseEvent* aMouseEvent) {
+  
+  
+  return !aMouseEvent ||
+         aMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+}
+
 nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
                                             WidgetEvent* aEvent,
                                             nsIFrame* aTargetFrame,
@@ -4250,10 +4236,24 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         if (mouseEvent->mButton != MouseButton::ePrimary) {
           break;
         }
+
+        
+        
+        
+        if (activeContent && !activeContent->IsElement()) {
+          if (nsIContent* par = activeContent->GetFlattenedTreeParent()) {
+            activeContent = par;
+          }
+        }
       } else {
         
         
         StopTrackingDragGesture(true);
+      }
+      
+      
+      if (NeedsActiveContentChange(mouseEvent)) {
+        SetActiveManager(this, activeContent);
       }
     } break;
     case ePointerCancel:
