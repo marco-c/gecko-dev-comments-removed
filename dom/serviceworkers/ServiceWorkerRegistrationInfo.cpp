@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ServiceWorkerRegistrationInfo.h"
 
 #include "ServiceWorkerManager.h"
@@ -328,8 +326,7 @@ void ServiceWorkerRegistrationInfo::TryToActivateAsync(
     const ServiceWorkerLifetimeExtension& aLifetimeExtension,
     TryToActivateCallback&& aCallback) {
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
-      NewRunnableMethod<StoreCopyPassByRRef<ServiceWorkerLifetimeExtension>,
-                        StoreCopyPassByRRef<TryToActivateCallback>>(
+      NewRunnableMethod<ServiceWorkerLifetimeExtension, TryToActivateCallback>(
           "ServiceWorkerRegistrationInfo::TryToActivate", this,
           &ServiceWorkerRegistrationInfo::TryToActivate, aLifetimeExtension,
           std::move(aCallback))));

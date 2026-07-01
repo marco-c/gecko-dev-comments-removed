@@ -178,9 +178,8 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   virtual void DoAsyncAbort(nsresult aStatus) override;
 
-  nsresult AsyncCall(
-      void (HttpChannelChild::*funcPtr)(),
-      nsRunnableMethod<HttpChannelChild>** retval = nullptr) override {
+  nsresult AsyncCall(void (HttpChannelChild::*funcPtr)(),
+                     CancelableRunnable** retval = nullptr) override {
     
     
     
@@ -214,7 +213,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsresult AsyncOpenInternal(nsIStreamListener* aListener);
 
   nsresult AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
-                         nsRunnableMethod<HttpChannelChild>** retval);
+                         CancelableRunnable** retval);
 
   
   
@@ -349,7 +348,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   Atomic<bool> mDeletingChannelSent{false};
 
   Atomic<bool, SequentiallyConsistent> mIsFromCache{false};
-  Atomic<bool, SequentiallyConsistent> mIsRacing{false};
   
   Atomic<bool, SequentiallyConsistent> mCacheNeedToReportBytesReadInitialized{
       false};

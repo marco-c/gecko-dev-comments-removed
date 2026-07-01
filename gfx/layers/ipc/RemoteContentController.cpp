@@ -38,11 +38,10 @@ void RemoteContentController::NotifyLayerTransforms(
     nsTArray<MatrixMessage>&& aTransforms) {
   if (!mCompositorThread->IsOnCurrentThread()) {
     
-    mCompositorThread->Dispatch(
-        NewRunnableMethod<StoreCopyPassByRRef<nsTArray<MatrixMessage>>>(
-            "layers::RemoteContentController::NotifyLayerTransforms", this,
-            &RemoteContentController::NotifyLayerTransforms,
-            std::move(aTransforms)));
+    mCompositorThread->Dispatch(NewRunnableMethod<nsTArray<MatrixMessage>>(
+        "layers::RemoteContentController::NotifyLayerTransforms", this,
+        &RemoteContentController::NotifyLayerTransforms,
+        std::move(aTransforms)));
     return;
   }
 
@@ -86,7 +85,7 @@ void RemoteContentController::HandleTapOnGPUProcessMainThread(
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  APZInputBridgeParent* apzib =
+  auto apzib =
       CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendHandleTap(aTapType, aPoint, aModifiers, aGuid,
@@ -157,7 +156,7 @@ void RemoteContentController::NotifyPinchGestureOnCompositorThread(
 
   
   
-  APZCTreeManagerParent* apzctmp =
+  auto apzctmp =
       CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
   if (apzctmp) {
     (void)apzctmp->SendNotifyPinchGesture(aType, aGuid, aFocusPoint,
@@ -471,11 +470,8 @@ void RemoteContentController::CancelAutoscrollCrossProcess(
     return;
   }
 
-  
-  
-  if (APZCTreeManagerParent* parent =
-          CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-              aGuid.mLayersId)) {
+  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+          aGuid.mLayersId)) {
     (void)parent->SendCancelAutoscroll(aGuid.mScrollId);
   }
 }
@@ -525,11 +521,8 @@ void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     return;
   }
 
-  
-  
-  if (APZCTreeManagerParent* parent =
-          CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-              aGuid.mLayersId)) {
+  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+          aGuid.mLayersId)) {
     (void)parent->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
   }
 }

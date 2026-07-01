@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebrtcTCPSocketWrapper.h"
 
 #include "mozilla/net/WebrtcTCPSocketChild.h"
@@ -61,7 +59,7 @@ void WebrtcTCPSocketWrapper::AsyncOpen(
 void WebrtcTCPSocketWrapper::SendWrite(nsTArray<uint8_t>&& aReadData) {
   if (!NS_IsMainThread()) {
     MOZ_ALWAYS_SUCCEEDS(
-        mMainThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>&&>(
+        mMainThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>>(
             "WebrtcTCPSocketWrapper::SendWrite", this,
             &WebrtcTCPSocketWrapper::SendWrite, std::move(aReadData))));
     return;
@@ -104,7 +102,7 @@ void WebrtcTCPSocketWrapper::OnRead(nsTArray<uint8_t>&& aReadData) {
   MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
 
   MOZ_ALWAYS_SUCCEEDS(
-      mSocketThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>&&>(
+      mSocketThread->Dispatch(NewRunnableMethod<nsTArray<uint8_t>>(
           "WebrtcTCPSocketWrapper::OnRead", mProxyCallbacks,
           &WebrtcTCPSocketCallback::OnRead, std::move(aReadData))));
 }

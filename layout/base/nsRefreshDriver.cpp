@@ -2775,7 +2775,7 @@ void nsRefreshDriver::Thaw() {
     
     
     
-    RefPtr<nsRunnableMethod<nsRefreshDriver>> event = NewRunnableMethod(
+    nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
         "nsRefreshDriver::DoRefresh", this, &nsRefreshDriver::DoRefresh);
     if (nsPresContext* pc = GetPresContext()) {
       pc->Document()->Dispatch(event.forget());

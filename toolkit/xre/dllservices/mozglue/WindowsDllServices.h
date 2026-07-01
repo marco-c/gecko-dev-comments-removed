@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_glue_WindowsDllServices_h
 #define mozilla_glue_WindowsDllServices_h
 
@@ -167,19 +165,17 @@ class DllServices : public detail::DllServicesBase {
       MOZ_ALWAYS_TRUE(mMainThreadBlockedModules.append(sectionName));
     }
 
-    nsCOMPtr<nsIRunnable> runnable(
-        NewRunnableMethod<StoreCopyPassByRRef<EnhancedModuleLoadInfo>>(
-            "DllServices::NotifyDllLoad", this, &DllServices::NotifyDllLoad,
-            std::move(aModLoadInfo)));
+    nsCOMPtr<nsIRunnable> runnable(NewRunnableMethod<EnhancedModuleLoadInfo>(
+        "DllServices::NotifyDllLoad", this, &DllServices::NotifyDllLoad,
+        std::move(aModLoadInfo)));
     SchedulerGroup::Dispatch(runnable.forget());
   }
 
   void DispatchModuleLoadBacklogNotification(
       ModuleLoadInfoVec&& aEvents) final {
-    nsCOMPtr<nsIRunnable> runnable(
-        NewRunnableMethod<StoreCopyPassByRRef<ModuleLoadInfoVec>>(
-            "DllServices::NotifyModuleLoadBacklog", this,
-            &DllServices::NotifyModuleLoadBacklog, std::move(aEvents)));
+    nsCOMPtr<nsIRunnable> runnable(NewRunnableMethod<ModuleLoadInfoVec>(
+        "DllServices::NotifyModuleLoadBacklog", this,
+        &DllServices::NotifyModuleLoadBacklog, std::move(aEvents)));
 
     SchedulerGroup::Dispatch(runnable.forget());
   }

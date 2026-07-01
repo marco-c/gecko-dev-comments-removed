@@ -48,7 +48,7 @@ bool nsBaseColorPicker::MaybeBlockColorPicker(
     if (aCallback) {
       
       
-      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod<const nsAString&>(
+      NS_DispatchToCurrentThread(mozilla::NewRunnableMethod<nsString>(
           "nsBaseColorPicker::CallbackWithEmptyString", aCallback,
           &nsIColorPickerShownCallback::Done, EmptyString()));
     }

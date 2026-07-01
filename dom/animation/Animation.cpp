@@ -29,7 +29,7 @@
 #include "nsDOMCSSAttrDeclaration.h"  
 #include "nsDOMMutationObserver.h"    
 #include "nsIFrame.h"
-#include "nsThreadUtils.h"  
+#include "nsThreadUtils.h"        
 #include "nsTransitionManager.h"  
 
 namespace mozilla::dom {

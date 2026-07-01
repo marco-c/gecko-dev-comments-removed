@@ -422,8 +422,7 @@ void ChromiumCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
     
     
     mMainThread->Dispatch(
-        NewRunnableMethod<PromiseId, StoreCopyPassByRRef<CopyableErrorResult>,
-                          nsCString>(
+        NewRunnableMethod<PromiseId, CopyableErrorResult, nsCString>(
             "ChromiumCDMProxy::RejectPromise", this,
             &ChromiumCDMProxy::RejectPromiseOnMainThread, aId,
             std::move(aException), aReason),
