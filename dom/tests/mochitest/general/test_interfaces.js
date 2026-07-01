@@ -245,15 +245,37 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSGroupingRule", insecureContext: true },
   
+  { name: "CSSImageValue", insecureContext: true, nightly: true },
+  
   { name: "CSSImportRule", insecureContext: true },
   
   { name: "CSSKeyframeRule", insecureContext: true },
   
   { name: "CSSKeyframesRule", insecureContext: true },
   
+  { name: "CSSKeywordValue", insecureContext: true, nightly: true },
+  
   { name: "CSSLayerBlockRule", insecureContext: true },
   
   { name: "CSSLayerStatementRule", insecureContext: true },
+  
+  { name: "CSSMathClamp", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathInvert", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathMax", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathMin", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathNegate", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathProduct", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathSum", insecureContext: true, nightly: true },
+  
+  { name: "CSSMathValue", insecureContext: true, nightly: true },
+  
+  { name: "CSSMatrixComponent", insecureContext: true, nightly: true },
   
   { name: "CSSMediaRule", insecureContext: true },
   
@@ -263,9 +285,15 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSNestedDeclarations", insecureContext: true },
   
+  { name: "CSSNumericArray", insecureContext: true, nightly: true },
+  
+  { name: "CSSNumericValue", insecureContext: true, nightly: true },
+  
   { name: "CSSPageDescriptors", insecureContext: true },
   
   { name: "CSSPageRule", insecureContext: true },
+  
+  { name: "CSSPerspective", insecureContext: true, nightly: true },
   
   { name: "CSSPositionTryDescriptors", insecureContext: true },
   
@@ -275,11 +303,21 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSPseudoElement", insecureContext: true, disabled: true },
   
+  { name: "CSSRotate", insecureContext: true, nightly: true },
+  
   { name: "CSSRule", insecureContext: true },
   
   { name: "CSSRuleList", insecureContext: true },
   
+  { name: "CSSScale", insecureContext: true, nightly: true },
+  
   { name: "CSSScopeRule", insecureContext: true },
+  
+  { name: "CSSSkew", insecureContext: true, nightly: true },
+  
+  { name: "CSSSkewX", insecureContext: true, nightly: true },
+  
+  { name: "CSSSkewY", insecureContext: true, nightly: true },
   
   { name: "CSSStartingStyleRule", insecureContext: true },
   
@@ -291,9 +329,23 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSStyleSheet", insecureContext: true },
   
+  { name: "CSSStyleValue", insecureContext: true, nightly: true },
+  
   { name: "CSSSupportsRule", insecureContext: true },
   
+  { name: "CSSTransformComponent", insecureContext: true, nightly: true },
+  
+  { name: "CSSTransformValue", insecureContext: true, nightly: true },
+  
   { name: "CSSTransition", insecureContext: true },
+  
+  { name: "CSSTranslate", insecureContext: true },
+  
+  { name: "CSSUnitValue", insecureContext: true, nightly: true },
+  
+  { name: "CSSUnparsedValue", insecureContext: true, nightly: true },
+  
+  { name: "CSSVariableReferenceValue", insecureContext: true, nightly: true },
   
   "Cache",
   
@@ -1526,6 +1578,10 @@ let interfaceNamesInGlobalScope = [
   { name: "StorageEvent", insecureContext: true },
   
   { name: "StorageManager", fennec: false },
+  
+  { name: "StylePropertyMap", insecureContext: true, nightly: true },
+  
+  { name: "StylePropertyMapReadOnly", insecureContext: true, nightly: true },
   
   { name: "StyleSheet", insecureContext: true },
   
