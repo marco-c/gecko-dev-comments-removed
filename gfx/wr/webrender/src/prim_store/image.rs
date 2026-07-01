@@ -228,7 +228,7 @@ impl ImageData {
     
     
     pub fn update(
-        &mut self,
+        &self,
         prim_instance_index: PrimitiveInstanceIndex,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_state: &mut FrameBuildingState,
