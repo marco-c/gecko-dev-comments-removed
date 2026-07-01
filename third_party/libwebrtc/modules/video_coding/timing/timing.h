@@ -23,7 +23,6 @@
 #include "api/video/video_timing.h"
 #include "modules/video_coding/timing/decode_time_percentile_filter.h"
 #include "modules/video_coding/timing/timestamp_extrapolator.h"
-#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
@@ -105,17 +104,6 @@ class VCMTiming {
 
   
   
-  
-  
-  
-  
-  
-  TimeDelta MaxWaitingTime(Timestamp render_time,
-                           Timestamp now,
-                           bool too_many_frames_queued) const;
-
-  
-  
   TimeDelta TargetVideoDelay() const;
 
   
@@ -125,9 +113,6 @@ class VCMTiming {
       std::optional<int> max_composition_delay_in_frames);
 
   VideoFrame::RenderParameters RenderParameters() const;
-
-  
-  void SetLastDecodeScheduledTimestamp(Timestamp last_decode_scheduled);
 
  private:
   mutable Mutex mutex_;
@@ -141,15 +126,6 @@ class VCMTiming {
   VideoDelayTimings timings_ RTC_GUARDED_BY(mutex_);
 
   std::optional<int> max_composition_delay_in_frames_ RTC_GUARDED_BY(mutex_);
-  
-  
-  
-  FieldTrialParameter<TimeDelta> zero_playout_delay_min_pacing_
-      RTC_GUARDED_BY(mutex_);
-  
-  
-  
-  Timestamp last_decode_scheduled_ RTC_GUARDED_BY(mutex_);
 };
 }  
 

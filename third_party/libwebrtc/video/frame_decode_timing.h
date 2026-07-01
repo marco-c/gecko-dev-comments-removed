@@ -15,16 +15,20 @@
 
 #include <optional>
 
+#include "api/field_trials_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/video_coding/timing/timing.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
 class FrameDecodeTiming {
  public:
-  FrameDecodeTiming(Clock* clock, VCMTiming const* timing);
+  FrameDecodeTiming(Clock* clock,
+                    VCMTiming const* timing,
+                    const FieldTrialsView& field_trials);
   ~FrameDecodeTiming() = default;
   FrameDecodeTiming(const FrameDecodeTiming&) = delete;
   FrameDecodeTiming& operator=(const FrameDecodeTiming&) = delete;
@@ -44,9 +48,32 @@ class FrameDecodeTiming {
       TimeDelta max_wait_for_frame,
       bool too_many_frames_queued);
 
+  
+  void SetLastDecodeScheduledTimestamp(Timestamp last_decode_scheduled);
+
+  
+  
+  
+  
+  
+  
+  TimeDelta MaxWaitingTime(Timestamp render_time,
+                           Timestamp now,
+                           bool too_many_frames_queued) const;
+
  private:
   Clock* const clock_;
   VCMTiming const* const timing_;
+
+  
+  
+  
+  FieldTrialParameter<TimeDelta> zero_playout_delay_min_pacing_;
+
+  
+  
+  
+  Timestamp last_decode_scheduled_ = Timestamp::Zero();
 };
 
 }  
