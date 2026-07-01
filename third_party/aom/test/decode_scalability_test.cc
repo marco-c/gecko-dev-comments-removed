@@ -111,8 +111,8 @@ const DecodeParam kAV1DecodeScalabilityTests[] = {
   
   { "av1-1-b8-01-size-16x16.ivf", kSize16x16Headers, 1 },
   { "av1-1-b8-22-svc-L1T2.ivf", kL1T2Headers, 2 },
-  { "av1-1-b8-22-svc-L2T1.ivf", kL2T1Headers, 2 },
-  { "av1-1-b8-22-svc-L2T2.ivf", kL2T2Headers, 4 },
+  { "av1-1-b8-22-svc-L2T1-2.ivf", kL2T1Headers, 2 },
+  { "av1-1-b8-22-svc-L2T2-2.ivf", kL2T2Headers, 4 },
 };
 
 AV1_INSTANTIATE_TEST_SUITE(DecodeScalabilityTest,

@@ -209,13 +209,55 @@ typedef struct aom_metadata {
 
 
 typedef struct aom_image {
-  aom_img_fmt_t fmt;                 
-  aom_color_primaries_t cp;          
-  aom_transfer_characteristics_t tc; 
-  aom_matrix_coefficients_t mc;      
-  int monochrome;                    
-  aom_chroma_sample_position_t csp;  
-  aom_color_range_t range;           
+  aom_img_fmt_t fmt; 
+  
+
+
+
+
+
+
+  aom_color_primaries_t cp;
+  
+
+
+
+
+
+
+  aom_transfer_characteristics_t tc;
+  
+
+
+
+
+
+
+  aom_matrix_coefficients_t mc;
+  
+
+
+
+
+
+
+  int monochrome;
+  
+
+
+
+
+
+
+  aom_chroma_sample_position_t csp;
+  
+
+
+
+
+
+
+  aom_color_range_t range;
 
   
   unsigned int w;         
