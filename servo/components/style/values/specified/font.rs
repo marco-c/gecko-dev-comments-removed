@@ -345,16 +345,6 @@ pub const FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES: f32 = -90.;
 
 impl SpecifiedFontStyle {
     
-    pub fn compute_angle_degrees(angle: &Angle) -> Option<f32> {
-        Some(
-            angle
-                .degrees()?
-                .max(FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES)
-                .min(FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES),
-        )
-    }
-
-    
     pub fn parse_angle<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
