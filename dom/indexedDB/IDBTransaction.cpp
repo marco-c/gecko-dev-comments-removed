@@ -345,7 +345,13 @@ void IDBTransaction::TransitionToActive() {
 
   DrainDeferredResponses();
 
-  mReadyState = ReadyState::Active;
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mReadyState == ReadyState::Inactive ||
+                        mReadyState == ReadyState::Finished);
+  if (mReadyState == ReadyState::Inactive) {
+    mReadyState = ReadyState::Active;
+  }
 }
 
 void IDBTransaction::TransitionToInactiveWithDeferral() {
