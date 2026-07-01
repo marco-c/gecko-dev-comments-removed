@@ -28,7 +28,9 @@ class LastPrivateContextExitWatcher {
     if (topic === "last-pb-context-exited") {
       this.#onAvailable([
         
-        {},
+        
+        
+        { browsingContextID: -1 },
       ]);
     }
   }
