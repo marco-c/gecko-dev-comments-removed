@@ -619,7 +619,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
     return NS_ERROR_FAILURE;
   }
 
-  nsIFrame* focusableFrame = GetFocusableFrame(ptFrame);
+  AutoWeakFrame focusableFrame = GetFocusableFrame(ptFrame);
 
 #ifdef DEBUG_FRAME_DUMP
   AC_LOG("%s: Found %s under (%d, %d)", __FUNCTION__, ptFrame->ListTag().get(),
@@ -675,6 +675,8 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
     return NS_ERROR_FAILURE;
   }
 
+  
+  
   
   ChangeFocusToOrClearOldFocus(focusableFrame);
   if (!ptFrame.IsAlive()) {
