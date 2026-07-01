@@ -145,6 +145,13 @@ bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
 void ForOfIterator::closeThrow() {
   MOZ_ASSERT(iterator);
 
+  if (index != NOT_ARRAY) {
+    
+    
+    
+    return;
+  }
+
   
   
   if (!cx_->isExceptionPending()) {
