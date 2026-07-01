@@ -832,6 +832,7 @@ void js::gc::StoreBuffer::CellPtrEdge<T>::trace(TenuringTracer& mover) const {
     
     
     
+    
     MOZ_ASSERT(!mover.runtime()->gc.isPointerWithinTenuredCell(
         edge, JS::TraceKind::String));
   }

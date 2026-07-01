@@ -2,7 +2,6 @@
 
 
 
-#include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -1285,27 +1284,55 @@ void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
 
 
 
+
+
 bool GCRuntime::isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind) {
+  ArenaChunk* maybeChunk =
+      ArenaChunk::fromAddress(reinterpret_cast<uintptr_t>(ptr));
+
   AutoLockGC lock(this);
 
-  mozilla::Maybe<bool> result;
-  forEachNonEmptyChunk(lock, [&](ArenaChunk* chunk) {
-    if (result.isSome()) {
-      return;
+  auto check = [=](ArenaChunk* chunk) -> std::tuple<bool, bool> {
+    if (chunk != maybeChunk) {
+      return {false, false};
     }
     MOZ_ASSERT(!chunk->isNurseryChunk());
-    if (ptr >= &chunk->arenas[0] && ptr < &chunk->arenas[ArenasPerChunk]) {
-      bool found = false;
-      auto* arena = reinterpret_cast<Arena*>(uintptr_t(ptr) & ~ArenaMask);
-      if (arena->allocated()) {
-        found = traceKind == JS::TraceKind::Null ||
-                MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
-      }
-      result.emplace(found);
-    }
-  });
+    MOZ_ASSERT(ptr >= &chunk->arenas[0] &&
+               ptr < &chunk->arenas[ArenasPerChunk]);
+    auto* arena = reinterpret_cast<Arena*>(uintptr_t(ptr) & ~ArenaMask);
+    
+    
+    
+    
+    bool matches = traceKind == JS::TraceKind::Null ||
+                   MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
+    return {true, matches};
+  };
 
-  return result.valueOr(false);
+  for (AllZonesIter zone(this); !zone.done(); zone.next()) {
+    if (ArenaChunk* chunk = zone->currentChunk_) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+    for (auto chunk = zone->availableChunks(lock).iter(); !chunk.done();
+         chunk.next()) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+    for (auto chunk = zone->fullChunks(lock).iter(); !chunk.done();
+         chunk.next()) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+  }
+
+  return false;
 }
 
 bool GCRuntime::isPointerWithinBufferAlloc(void* ptr) {
