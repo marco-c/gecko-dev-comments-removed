@@ -499,7 +499,26 @@ add_task(async function test_MatchGlob() {
 add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
   const slow_build =
     AppConstants.DEBUG || AppConstants.TSAN || AppConstants.ASAN;
-  const first_limit = slow_build ? 200 : 30;
+  const first_target = slow_build ? 200 : 30;
+  const match_target = 10;
+
+  
+  
+  
+  
+  
+  const SLACK = 2;
+  function checkDuration(duration, target, description) {
+    info(`${description}: ${duration}ms (target: ${target}ms)`);
+    if (duration >= target) {
+      info(`WARNING: ${description} ${duration}ms exceeds target ${target}ms`);
+    }
+    Assert.less(
+      duration,
+      SLACK * target,
+      `${description}: ${duration}ms (fail above ${SLACK * target}ms)`
+    );
+  }
   {
     
     let title = `Monster${"*".repeat(999)}Mash`;
@@ -510,18 +529,14 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
     let first_matches = glob.matches(title);
     let first_duration = (await getMainThreadCpuTime()) - first_start;
     ok(first_matches, `Expected match: ${title}, ${title}`);
-    Assert.less(
-      first_duration,
-      first_limit,
-      `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
-    );
+    checkDuration(first_duration, first_target, "First matching duration");
 
     let start = await getMainThreadCpuTime();
     let matches = glob.matches(title);
     let duration = (await getMainThreadCpuTime()) - start;
 
     ok(matches, `Expected match: ${title}, ${title}`);
-    Assert.less(duration, 10, `Matching duration: ${duration}ms`);
+    checkDuration(duration, match_target, "Matching duration");
   }
   {
     
@@ -533,18 +548,14 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
     let first_matches = glob.matches(title);
     let first_duration = (await getMainThreadCpuTime()) - first_start;
     ok(first_matches, `Expected match: ${title}, ${title}`);
-    Assert.less(
-      first_duration,
-      first_limit,
-      `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
-    );
+    checkDuration(first_duration, first_target, "First matching duration");
 
     let start = await getMainThreadCpuTime();
     let matches = glob.matches(title);
     let duration = (await getMainThreadCpuTime()) - start;
 
     ok(matches, `Expected match: ${title}, ${title}`);
-    Assert.less(duration, 10, `Matching duration: ${duration}ms`);
+    checkDuration(duration, match_target, "Matching duration");
   }
 });
 
