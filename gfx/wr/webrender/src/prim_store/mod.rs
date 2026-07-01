@@ -11,7 +11,6 @@ use crate::clip::ClipLeafId;
 use crate::quad::QuadTileClassifier;
 use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
 use crate::segment::EdgeMask;
-use crate::border::BorderSegmentCacheKey;
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
 use glyph_rasterizer::GlyphKey;
@@ -38,7 +37,7 @@ pub mod interned;
 pub mod storage;
 
 use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
-use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle, NormalBorderScratch};
+use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
 use line_dec::LineDecorationDataHandle;
@@ -294,16 +293,6 @@ pub struct VisibleMaskImageTile {
 }
 
 
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, MallocSizeOf)]
-pub struct BorderSegmentInfo {
-    pub local_task_size: LayoutSize,
-    pub cache_key: BorderSegmentCacheKey,
-}
-
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub enum ClipMaskKind {
@@ -555,9 +544,6 @@ pub struct PrimitiveFrameScratch {
     pub rectangle: storage::Storage<RectangleScratch>,
 
     
-    pub normal_border: storage::Storage<NormalBorderScratch>,
-
-    
     
     
     
@@ -598,15 +584,6 @@ pub struct PrimitiveFrameScratch {
 
     
     
-    pub border_task_ids: storage::Storage<RenderTaskId>,
-
-    
-    
-    
-    pub border_segments: storage::Storage<BorderSegmentInfo>,
-
-    
-    
     
     pub image_border: storage::Storage<ImageBorderScratch>,
 
@@ -632,7 +609,6 @@ impl Default for PrimitiveFrameScratch {
         PrimitiveFrameScratch {
             draws: Vec::new(),
             rectangle: storage::Storage::new(0),
-            normal_border: storage::Storage::new(0),
             pictures: storage::Storage::new(0),
             images: storage::Storage::new(0),
             visible_image_tiles: storage::Storage::new(0),
@@ -640,8 +616,6 @@ impl Default for PrimitiveFrameScratch {
             glyph_keys: GlyphKeyStorage::new(0),
             segments: SegmentStorage::new(0),
             segment_instances: SegmentInstanceStorage::new(0),
-            border_task_ids: storage::Storage::new(0),
-            border_segments: storage::Storage::new(0),
             image_border: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
@@ -656,7 +630,6 @@ impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
         self.rectangle.recycle(recycler);
-        self.normal_border.recycle(recycler);
         self.pictures.recycle(recycler);
         self.images.recycle(recycler);
         self.visible_image_tiles.recycle(recycler);
@@ -664,8 +637,6 @@ impl PrimitiveFrameScratch {
         self.glyph_keys.recycle(recycler);
         self.segments.recycle(recycler);
         self.segment_instances.recycle(recycler);
-        self.border_task_ids.recycle(recycler);
-        self.border_segments.recycle(recycler);
         self.image_border.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
@@ -675,7 +646,6 @@ impl PrimitiveFrameScratch {
 
     pub fn begin_frame(&mut self) {
         self.rectangle.clear();
-        self.normal_border.clear();
         self.pictures.clear();
         self.images.clear();
         self.visible_image_tiles.clear();
@@ -683,8 +653,6 @@ impl PrimitiveFrameScratch {
         self.glyph_keys.clear();
         self.segments.clear();
         self.segment_instances.clear();
-        self.border_task_ids.clear();
-        self.border_segments.clear();
         self.image_border.clear();
 
         

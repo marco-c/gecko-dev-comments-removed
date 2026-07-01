@@ -2,115 +2,35 @@
 
 
 
-use api::{BorderStyle, NormalBorder, PremultipliedColorF, RasterSpace, Shadow};
+use api::{ColorF, NormalBorder, PremultipliedColorF, RasterSpace, RepeatMode, Shadow};
 use api::units::*;
-use crate::border::{self, build_border_instances, get_max_scale_for_border};
+use smallvec::SmallVec;
+use crate::border::{build_border_instances, NormalBorderSegment, MAX_BORDER_RESOLUTION};
 use crate::border::{NormalBorderAu, NinePatchDescriptorExt};
+use crate::clip::{ClipChainInstance, ClipIntern};
+use crate::command_buffer::CommandBufferIndex;
 use crate::gpu_types::ImageBrushPrimitiveData;
+use crate::pattern::image::ImagePattern;
+use crate::quad::{prepare_repeatable_quad, QuadTransformState};
 use crate::render_backend::DataStores;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
 use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
 use crate::scene_building::{CreateShadow, IsVisible};
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
-use crate::intern;
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
+use crate::intern::{self, DataStore};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    BorderSegmentInfo, BrushSegment, InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore, VECS_PER_SEGMENT
+    BrushSegment, InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore, VECS_PER_SEGMENT
 };
 use crate::resource_cache::ImageRequest;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
+use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 use crate::visibility::KindScratchHandle;
 
 use crate::prim_store::storage;
-
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct NormalBorderScratch {
-    
-    
-    pub task_ids: storage::Range<RenderTaskId>,
-    
-    
-    
-    
-    pub brush_segments_range: storage::Range<BrushSegment>,
-    
-    
-    
-    pub border_segments_range: storage::Range<BorderSegmentInfo>,
-    
-    
-    
-    
-    pub gpu_address: GpuBufferAddress,
-    
-    
-    
-    pub may_need_repetition: bool,
-}
-
-impl NormalBorderScratch {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn build_for_prim(
-        data_handle: NormalBorderDataHandle,
-        prim_instance_index: PrimitiveInstanceIndex,
-        prim_size: LayoutSize,
-        data_stores: &DataStores,
-        scratch: &mut PrimitiveScratchBuffer,
-    ) {
-        let prim_data = &data_stores.normal_border[data_handle];
-        let border = &prim_data.kind.border;
-        let widths = &prim_data.kind.widths;
-
-        let brush_open = scratch.frame.segments.open_range();
-        let border_open = scratch.frame.border_segments.open_range();
-        border::create_border_segments(
-            prim_size,
-            border,
-            widths,
-            scratch.frame.border_segments.data_mut(),
-            scratch.frame.segments.data_mut(),
-        );
-        let brush_segments_range = scratch.frame.segments.close_range(brush_open);
-        let border_segments_range = scratch.frame.border_segments.close_range(border_open);
-
-        let may_need_repetition =
-            matches!(border.top.style, BorderStyle::Dotted | BorderStyle::Dashed)
-                || matches!(border.right.style, BorderStyle::Dotted | BorderStyle::Dashed)
-                || matches!(border.bottom.style, BorderStyle::Dotted | BorderStyle::Dashed)
-                || matches!(border.left.style, BorderStyle::Dotted | BorderStyle::Dashed);
-
-        let segment_count = border_segments_range.end.0
-            .saturating_sub(border_segments_range.start.0) as usize;
-        let task_ids = scratch.frame.border_task_ids.extend(
-            std::iter::repeat(RenderTaskId::INVALID).take(segment_count),
-        );
-        let handle = scratch.frame.normal_border.push(NormalBorderScratch {
-            task_ids,
-            brush_segments_range,
-            border_segments_range,
-            gpu_address: GpuBufferAddress::INVALID,
-            may_need_repetition,
-        });
-        scratch.frame.draws[prim_instance_index.0 as usize].kind_scratch =
-            KindScratchHandle::NormalBorder(handle);
-    }
-}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -145,43 +65,22 @@ pub struct NormalBorderData {
 }
 
 impl NormalBorderData {
-    
-    
-    
-    
-    pub fn write_brush_gpu_blocks(
-        &self,
-        prim_size: LayoutSize,
-        brush_segments: &[BrushSegment],
-        frame_state: &mut FrameBuildingState,
-    ) -> GpuBufferAddress {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + brush_segments.len() * VECS_PER_SEGMENT);
-
-        
-        
-        
-        writer.push(&ImageBrushPrimitiveData {
-            color: PremultipliedColorF::WHITE,
-            background_color: PremultipliedColorF::WHITE,
-            stretch_size: prim_size,
-        });
-
-        for segment in brush_segments {
-            segment.write_gpu_blocks(&mut writer);
-        }
-
-        let gpu_address = writer.finish();
-        gpu_address
-    }
-
     pub fn update(
         &self,
-        border_segments: &[BorderSegmentInfo],
+        local_rect: &LayoutRect,
+        clip_chain: &ClipChainInstance,
         prim_spatial_node_index: SpatialNodeIndex,
         device_pixel_scale: DevicePixelScale,
+        aligned_aa_edges: EdgeMask,
+        transformed_aa_edges: EdgeMask,
+        prim_instance_index: PrimitiveInstanceIndex,
+        quad_transform: &mut QuadTransformState,
         frame_context: &FrameBuildingContext,
+        pic_context: &PictureContext,
+        targets: &[CommandBufferIndex],
+        interned_clips: &DataStore<ClipIntern>,
         frame_state: &mut FrameBuildingState,
-        task_ids: &mut [RenderTaskId],
+        scratch: &mut PrimitiveScratchBuffer,
     ) {
         
         
@@ -205,48 +104,136 @@ impl NormalBorderData {
         
         let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
         let mut scale = world_scale * device_pixel_scale;
-        let max_scale = get_max_scale_for_border(border_segments);
+
+        
+        
+        
+        
+        let mut segments: SmallVec<[NormalBorderSegment; 8]> = SmallVec::new();
+        crate::border::create_border_segments(
+            *local_rect,
+            &self.border,
+            &self.widths,
+            &mut |segment| segments.push(segment.clone()),
+        );
+
+        let mut max_dim = 1.0;
+        for segment in &segments {
+            max_dim = segment.task_size.width.max(segment.task_size.height.max(max_dim));
+        }
+        let max_scale = LayoutToDeviceScale::new(MAX_BORDER_RESOLUTION as f32 / max_dim);
         scale.0 = scale.0.min(max_scale.0);
 
-        
-        
-        
-        
-        
+        for segment in &segments {
+                
+                let cache_size = to_cache_size(segment.task_size, &mut scale);
+                let cache_key = RenderTaskCacheKey {
+                    kind: RenderTaskCacheKeyKind::BorderSegment(segment.cache_key.clone()),
+                    origin: DeviceIntPoint::zero(),
+                    size: cache_size,
+                };
 
-        for (i, segment) in border_segments.iter().enumerate() {
-            
-            let cache_size = to_cache_size(segment.local_task_size, &mut scale);
-            let cache_key = RenderTaskCacheKey {
-                kind: RenderTaskCacheKeyKind::BorderSegment(segment.cache_key.clone()),
-                origin: DeviceIntPoint::zero(),
-                size: cache_size,
-            };
+                
+                let is_opaque = false;
 
-            let task_id = frame_state.resource_cache.request_render_task(
-                Some(cache_key),
-                false,          
-                RenderTaskParent::Surface,
-                &mut frame_state.frame_gpu_data.f32,
-                frame_state.rg_builder,
-                &mut frame_state.surface_builder,
-                &mut |rg_builder, gpu_buffer_builder| {
-                    rg_builder.add().init(RenderTask::new_dynamic(
-                        cache_size,
-                        RenderTaskKind::new_border_segment(
-                            build_border_instances(
-                                &segment.cache_key,
-                                cache_size,
-                                &self.border,
-                                scale,
-                                gpu_buffer_builder,
-                            )
-                        ),
-                    ))
+                let task_id = frame_state.resource_cache.request_render_task(
+                    Some(cache_key),
+                    is_opaque,
+                    RenderTaskParent::Surface,
+                    &mut frame_state.frame_gpu_data.f32,
+                    frame_state.rg_builder,
+                    &mut frame_state.surface_builder,
+                    &mut |rg_builder, gpu_buffer_builder| {
+                        rg_builder.add().init(RenderTask::new_dynamic(
+                            cache_size,
+                            RenderTaskKind::new_border_segment(
+                                build_border_instances(
+                                    &segment.cache_key,
+                                    cache_size,
+                                    &self.border,
+                                    scale,
+                                    gpu_buffer_builder,
+                                )
+                            ),
+                        ))
+                    }
+                );
+
+                let pattern = ImagePattern {
+                    src_task_id: task_id,
+                    src_is_opaque: is_opaque,
+                    premultiplied: true,
+                    sampler_kind: api::ImageBufferKind::Texture2D,
+                    color: ColorF::WHITE,
+                };
+
+                
+                
+                
+                
+                let segment_local_rect = segment.local_rect;
+                let local_clip_rect = match segment.clip_rect {
+                    Some(clip_rect) => clip_chain.local_clip_rect
+                        .intersection(&clip_rect)
+                        .unwrap_or(LayoutRect::zero()),
+                    None => clip_chain.local_clip_rect,
+                };
+
+                let mut stretch_size = segment_local_rect.size();
+                let mut spacing = LayoutSize::zero();
+                let mut _repeat_offset = LayoutVector2D::zero();
+                crate::border::compute_border_repetition(
+                    segment_local_rect.size(),
+                    cache_size.to_f32(),
+                    segment.repeat_x,
+                    segment.repeat_y,
+                    &mut stretch_size,
+                    &mut spacing,
+                    &mut _repeat_offset,
+                );
+
+                
+                
+                
+                
+                
+                
+
+                if segment.repeat_x == RepeatMode::Repeat {
+                    let w = segment_local_rect.width();
+                    let sw = stretch_size.width;
+                    let scale = w / ((w / sw).round() * sw);
+
+                    stretch_size.width *= scale;
                 }
-            );
 
-            task_ids[i] = task_id;
+                if segment.repeat_y == RepeatMode::Repeat {
+                    let h = segment_local_rect.height();
+                    let sh = stretch_size.height;
+                    let scale = h / ((h / sh).round() * sh);
+
+                    stretch_size.height *= scale;
+                }
+
+                prepare_repeatable_quad(
+                    &pattern,
+                    &segment_local_rect,
+                    &local_clip_rect,
+                    stretch_size,
+                    spacing,
+                    segment.edge_flags & aligned_aa_edges,
+                    segment.edge_flags & transformed_aa_edges,
+                    prim_instance_index,
+                    &None,
+                    clip_chain,
+                    quad_transform,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    interned_clips,
+                    frame_state,
+                    scratch,
+                );
         }
     }
 }
@@ -351,7 +338,6 @@ impl ImageBorderKey {
 }
 
 impl intern::InternDebug for ImageBorderKey {}
-
 
 
 #[derive(Copy, Clone, Debug)]
