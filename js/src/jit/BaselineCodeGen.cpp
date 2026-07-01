@@ -320,8 +320,7 @@ bool BaselineCompiler::compileImpl() {
 
 bool BaselineCompiler::finishCompile(JSContext* cx) {
   Rooted<JSScript*> script(cx, handler.script());
-  bool isRealmIndependentJitCodeShared =
-      JS::Prefs::experimental_self_hosted_cache() && script->selfHosted();
+  bool isRealmIndependentJitCodeShared = IsRealmIndependentBaselineCode(script);
 
   UniquePtr<BaselineScript> baselineScript(
       nullptr, JS::DeletePolicy<BaselineScript>(cx->runtime()));
@@ -388,42 +387,19 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
   
   
   
-  {
-    UniqueJitcodeGlobalEntry entry;
+  
+  
+  if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(
+          cx->runtime())) {
     JitSpew(JitSpew_Profiling,
             "Added JitcodeGlobalEntry for baseline %sscript %s:%u:%u (%p)",
             isRealmIndependentJitCodeShared ? "shared realm-independent " : "",
             script->filename(), script->lineno(),
             script->column().oneOriginValue(), baselineScript.get());
 
-    
-    UniqueChars str = GeckoProfilerRuntime::allocProfileString(cx, script);
-    if (!str) {
+    if (!AddBaselineJitcodeGlobalEntry(cx, script, code)) {
       return false;
     }
-
-    if (isRealmIndependentJitCodeShared) {
-      entry = MakeJitcodeGlobalEntry<RealmIndependentSharedEntry>(
-          cx, code, code->raw(), code->rawEnd(), std::move(str));
-    } else {
-      uint64_t realmId = script->realm()->creationOptions().profilerRealmID();
-      entry = MakeJitcodeGlobalEntry<BaselineEntry>(cx, code, code->raw(),
-                                                    code->rawEnd(), script,
-                                                    std::move(str), realmId);
-    }
-    if (!entry) {
-      return false;
-    }
-
-    JitcodeGlobalTable* globalTable =
-        cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
-    if (!globalTable->addEntry(std::move(entry))) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-
-    
-    code->setHasBytecodeMap();
   }
 
   script->jitScript()->setIonThreshold(handler.baseWarmUpThreshold());

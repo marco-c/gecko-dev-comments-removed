@@ -221,6 +221,19 @@ inline UniqueJitcodeGlobalEntry MakeJitcodeGlobalEntry(JSContext* cx,
 
 
 
+bool IsRealmIndependentBaselineCode(JSScript* script);
+
+
+
+
+
+[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(JSContext* cx,
+                                                 JSScript* script,
+                                                 JitCode* code);
+
+
+
+
 
 
 
