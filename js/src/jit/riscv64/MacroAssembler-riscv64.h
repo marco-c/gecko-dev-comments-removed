@@ -305,12 +305,6 @@ class MacroAssemblerRiscv64 : public Assembler {
                             Label* overflow);
 
   
-  
-  
-  void ma_mod_mask(Register src, Register dest, Register hold, Register remain,
-                   int32_t shift, Label* negZero = nullptr);
-
-  
   void ma_compareF32(Register rd, DoubleCondition cc, FloatRegister cmp1,
                      FloatRegister cmp2);
   void ma_compareF64(Register rd, DoubleCondition cc, FloatRegister cmp1,
