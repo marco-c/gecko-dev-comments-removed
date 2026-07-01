@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ClientSource.h"
 
 #include "ClientManager.h"
@@ -18,6 +16,7 @@
 #include "mozilla/Try.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DOMMozPromiseRequestHolder.h"
 #include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/dom/MessageEvent.h"
@@ -183,7 +182,8 @@ void ClientSource::Activate(PClientManagerChild* aActor) {
   
   
   
-  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
+  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo(),
+                                             CurrentRemoteType()))) {
     Shutdown();
     return;
   }
@@ -520,11 +520,12 @@ RefPtr<ClientOpPromise> ClientSource::Focus(const ClientFocusArgs& aArgs) {
     return ClientOpPromise::CreateAndReject(rv, __func__);
   }
   nsCOMPtr<nsPIDOMWindowOuter> outer;
-  nsPIDOMWindowInner* inner = GetInnerWindow();
+  nsCOMPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
+  nsIDocShell* docshell = nullptr;
   if (inner) {
     outer = inner->GetOuterWindow();
   } else {
-    nsIDocShell* docshell = GetDocShell();
+    docshell = GetDocShell();
     if (docshell) {
       outer = docshell->GetWindow();
     }
@@ -537,9 +538,48 @@ RefPtr<ClientOpPromise> ClientSource::Focus(const ClientFocusArgs& aArgs) {
   }
 
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  if (docshell) {
+    
+    if (!docshell->GetDocument()) {
+      CopyableErrorResult rv;
+      rv.ThrowInvalidStateError("No document available.");
+      return ClientOpPromise::CreateAndReject(rv, __func__);
+    }
+    inner = GetInnerWindow();
+  }
+
   nsFocusManager::FocusWindow(outer, aArgs.callerType());
 
-  Result<ClientState, ErrorResult> state = SnapshotState();
+  Result<ClientState, ErrorResult> state =
+      [&]() -> Result<ClientState, ErrorResult> {
+    if (!inner) {
+      
+      return ClientState(ClientWindowState(VisibilityState::Hidden, TimeStamp(),
+                                           StorageAccess::eDeny, false));
+    }
+    if (inner->GetClientSource() == this) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return SnapshotState();
+    }
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Client destroyed during focus");
+    return Err(std::move(rv));
+  }();
+
   if (state.isErr()) {
     return ClientOpPromise::CreateAndReject(
         CopyableErrorResult(state.unwrapErr()), __func__);

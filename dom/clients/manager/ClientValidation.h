@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_ClientValidation_h
 #define _mozilla_dom_ClientValidation_h
 
@@ -17,7 +15,8 @@ class PrincipalInfo;
 namespace dom {
 
 bool ClientIsValidPrincipalInfo(
-    const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+    const nsACString& aRemoteType);
 
 bool ClientIsValidCreationURL(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                               const nsACString& aURL);
