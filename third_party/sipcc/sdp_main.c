@@ -450,6 +450,9 @@ const sdp_namearray_t sdp_fmtp_codec_param[SDP_MAX_FMTP_PARAM] =
     {"rtx-time",                         sizeof("rtx-time")}, 
     {"level-idx",                        sizeof("level-idx")}, 
     {"tier",                             sizeof("tier")}, 
+    {"ptime",                            sizeof("ptime")}, 
+    {"minptime",                         sizeof("minptime")}, 
+    {"maxptime",                         sizeof("maxptime")}, 
 } ;
 
 
