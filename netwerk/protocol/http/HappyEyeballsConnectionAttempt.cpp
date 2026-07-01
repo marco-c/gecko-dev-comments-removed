@@ -588,28 +588,6 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
       break;
   }
 
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   dnsFlags |=
       nsIDNSService::GetFlagsFromTRRMode(NS_HTTP_TRR_MODE_FROM_FLAGS(mCaps));
 
