@@ -85,10 +85,6 @@ class nsVideoFrame : public nsContainerFrame,
   nsIContent* GetCaptionOverlay() const { return mCaptionDiv; }
   nsIContent* GetVideoControls() const;
 
-  
-  
-  void UpdatePosterSource(bool aNotify);
-
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
@@ -106,6 +102,11 @@ class nsVideoFrame : public nsContainerFrame,
 
   
   mozilla::Maybe<nsSize> PosterImageSize() const;
+
+  
+  
+  
+  void UpdatePosterSource(bool aNotify);
 
   
   void UpdateTextTrack();
