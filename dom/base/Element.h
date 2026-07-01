@@ -920,8 +920,7 @@ class Element : public FragmentOrElement {
   
   
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                         nsAttrValue& aParsedValue, bool aNotify,
-                         IsKnownNewAttr aIsKnownNew);
+                         nsAttrValue& aParsedValue, bool aNotify);
 
   
 
@@ -1065,18 +1064,16 @@ class Element : public FragmentOrElement {
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
                    bool aNotify) {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, nullptr, aNotify,
-                   IsKnownNewAttr::No);
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    const nsAString& aValue, bool aNotify) {
-    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify,
-                   IsKnownNewAttr::No);
+    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
                    nsIPrincipal* aTriggeringPrincipal, bool aNotify) {
     return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal,
-                   aNotify, IsKnownNewAttr::No);
+                   aNotify);
   }
 
   
@@ -1101,8 +1098,7 @@ class Element : public FragmentOrElement {
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    const nsAString& aValue,
-                   nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify,
-                   IsKnownNewAttr aIsKnownNew);
+                   nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify);
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    nsAtom* aValue, nsIPrincipal* aMaybeScriptedPrincipal,
@@ -1129,7 +1125,7 @@ class Element : public FragmentOrElement {
 
 
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue);
 
   
 
@@ -1142,7 +1138,7 @@ class Element : public FragmentOrElement {
 
 
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue);
 
   
 
@@ -2286,7 +2282,7 @@ class Element : public FragmentOrElement {
   nsresult SetAttrInternal(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                            const nsAttrValueOrString& aValueForComparison,
                            nsIPrincipal* aSubjectPrincipal, bool aNotify,
-                           ParseFunc&& aParseFn, IsKnownNewAttr aIsKnownNew);
+                           ParseFunc&& aParseFn);
 
   
 
@@ -2334,8 +2330,7 @@ class Element : public FragmentOrElement {
                             nsIPrincipal* aSubjectPrincipal,
                             AttrModType aModType, bool aNotify,
                             bool aCallAfterSetAttr, Document* aComposedDocument,
-                            const mozAutoDocUpdate& aGuard,
-                            IsKnownNewAttr aIsKnownNew);
+                            const mozAutoDocUpdate& aGuard);
 
   
 
@@ -2473,14 +2468,8 @@ class Element : public FragmentOrElement {
 
 
 
-
-
-
-
-
   const nsAttrName* InternalGetAttrNameFromQName(
-      const nsAString& aStr, nsAutoString* aNameToUse = nullptr,
-      RefPtr<nsAtom>* aOutAtom = nullptr) const;
+      const nsAString& aStr, nsAutoString* aNameToUse = nullptr) const;
 
   virtual Element* GetNameSpaceElement() override { return this; }
 
