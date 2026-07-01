@@ -17,6 +17,7 @@
 #include "nsAtom.h"
 #include "nsAtomTable.h"
 #include "nsGkAtoms.h"
+#include "nsIThread.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
@@ -68,10 +69,20 @@ nsDynamicAtom::nsDynamicAtom(already_AddRefed<mozilla::StringBuffer> aBuffer,
       mRefCnt(1),
       mStringBuffer(aBuffer) {}
 
+
+static bool IsAsciiLowercase(const char16_t* aString, const uint32_t aLength) {
+  for (uint32_t i = 0; i < aLength; ++i) {
+    if (IS_ASCII_UPPER(aString[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 nsDynamicAtom* nsDynamicAtom::Create(const nsAString& aString, uint32_t aHash) {
   
   const bool isAsciiLower =
-      ComputeIsAsciiLowercase(aString.Data(), aString.Length());
+      ::IsAsciiLowercase(aString.Data(), aString.Length());
   RefPtr<mozilla::StringBuffer> buffer = aString.GetStringBuffer();
   if (!buffer) {
     buffer = mozilla::StringBuffer::Create(aString.Data(), aString.Length());
@@ -504,14 +515,13 @@ void nsAtomTable::RegisterStaticAtoms(const nsStaticAtom* aAtoms,
     const nsStaticAtom* atom = &aAtoms[i];
     MOZ_ASSERT(IsAsciiNullTerminated(atom->String()));
     MOZ_ASSERT(NS_strlen(atom->String()) == atom->GetLength());
-    MOZ_ASSERT(
-        atom->IsAsciiLowercase() ==
-        nsAtom::ComputeIsAsciiLowercase(atom->String(), atom->GetLength()));
+    MOZ_ASSERT(atom->IsAsciiLowercase() ==
+               ::IsAsciiLowercase(atom->String(), atom->GetLength()));
 
     
     
     
-    MOZ_ASSERT(HashString(atom->String(), atom->GetLength()) == atom->hash());
+    MOZ_ASSERT(HashString(atom->String()) == atom->hash());
 
     AtomTableKey key(atom);
     nsAtomSubTable& table = SelectSubTable(key);

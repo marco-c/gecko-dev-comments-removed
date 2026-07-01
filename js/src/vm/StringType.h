@@ -2023,11 +2023,8 @@ JSString* SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt,
 inline js::HashNumber HashStringChars(const JSLinearString* str) {
   JS::AutoCheckCannotGC nogc;
   size_t len = str->length();
-  
-  
-  
   return str->hasLatin1Chars()
-             ? mozilla::HashLatin1AsUTF16(str->latin1Chars(nogc), len)
+             ? mozilla::HashString(str->latin1Chars(nogc), len)
              : mozilla::HashString(str->twoByteChars(nogc), len);
 }
 

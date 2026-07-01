@@ -46,6 +46,10 @@
 
 
 
+
+
+
+
 namespace mozilla {
 namespace detail {
 
@@ -64,7 +68,8 @@ struct GkAtoms {
 
 
 
-#define GK_ATOM(name_, value_) const char16_t name_##_string[sizeof(value_)];
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_) \
+  const char16_t name_##_string[sizeof(value_)];
 #include "nsGkAtomList.h"
 #undef GK_ATOM
 
@@ -76,7 +81,7 @@ struct GkAtoms {
 
 
 
-#define GK_ATOM(name_, value_) name_,
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_) name_,
 #include "nsGkAtomList.h"
 #undef GK_ATOM
     AtomsCount
@@ -147,7 +152,7 @@ class nsGkAtoms {
 
 
 
-#define GK_ATOM(name_, value_)                                      \
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_)              \
   static constexpr nsStaticAtom* name_ = const_cast<nsStaticAtom*>( \
       &mozilla::detail::gGkAtoms.mAtoms[static_cast<size_t>(        \
           mozilla::detail::GkAtoms::Atoms::name_)]);
