@@ -345,6 +345,13 @@ fn(async (t) => {
   const wgThreads = t.params.wgSize[0] * t.params.wgSize[1] * t.params.wgSize[2];
   const testcase = kPredicateCases[t.params.predicate];
 
+  
+  
+  
+  
+  
+  
+  
   const wgsl = `
 enable subgroups;
 
@@ -382,9 +389,13 @@ fn main(
   metadata.id[lid] = id;
   metadata.subgroup_size[lid] = subgroupSize;
 
-  if ${testcase.cond} {
-    let b = ${t.params.op}(lid);
-    output.results[lid] = b;
+  // Only run the quad op when a (subgroupSize / 2) split predicate is
+  // guaranteed to keep every quad fully active. See checker for skip.
+  if subgroupSize >= 8u {
+    if ${testcase.cond} {
+      let b = ${t.params.op}(lid);
+      output.results[lid] = b;
+    }
   }
 }`;
 
@@ -396,6 +407,15 @@ fn main(
     uintsPerOutput,
     new Uint32Array([0]), 
     (metadata, output) => {
+      const bound = Math.floor(output.length / 2);
+      
+      
+      if (metadata[bound] < 8) {
+        t.skip(
+          `Implementation selected subgroup size ${metadata[bound]}; a split ` +
+          `predicate would leave no fully active quad (undefined behavior).`
+        );
+      }
       return checkSwapCompute(metadata, output, t.params.op, testcase.filter);
     }
   );

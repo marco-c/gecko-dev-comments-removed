@@ -10,6 +10,7 @@ const kEnables: Record<string, GPUFeatureName> = {
   subgroups: 'subgroups' as GPUFeatureName,
   clip_distances: 'clip-distances' as GPUFeatureName,
   chromium_experimental_primitive_id: 'chromium-experimental-primitive-id' as GPUFeatureName,
+  atomic_vec2u_min_max: 'atomic-vec2u-min-max' as GPUFeatureName,
 };
 
 
@@ -358,6 +359,8 @@ export class UniqueFeaturesAndLimitsShaderValidationTest extends UniqueFeaturesO
     reference?: string[];
     
     statements?: string[];
+    
+    addWorkgroupSize?: boolean;
   }) {
     const phonies: Array<string> = [];
 
@@ -373,8 +376,12 @@ export class UniqueFeaturesAndLimitsShaderValidationTest extends UniqueFeaturesO
 
     const code =
       args.code +
+      (args.addWorkgroupSize !== false
+        ? `
+@compute @workgroup_size(1)`
+        : `
+@compute`) +
       `
-@compute @workgroup_size(1)
 fn main() {
   ${phonies.join('\n')}
 }`;

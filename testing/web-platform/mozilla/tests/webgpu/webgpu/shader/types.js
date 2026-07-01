@@ -1,6 +1,7 @@
 
 
-import { keysOf } from '../../common/util/data_tables.js';import { assert } from '../../common/util/util.js';import { align } from '../util/math.js';
+import { keysOf } from '../../common/util/data_tables.js';import { assert } from '../../common/util/util.js';
+import { align } from '../util/math.js';
 
 const kDefaultArrayLength = 3;
 
@@ -106,11 +107,21 @@ export const kMatrixContainerTypeLayoutInfo =
 
 
 
+
+
+
+
+
+
+
 export const kAccessModeInfo = {
   read: { read: true, write: false },
   write: { read: false, write: true },
   read_write: { read: true, write: true }
 };
+
+
+
 
 
 
@@ -170,6 +181,14 @@ export const kAddressSpaceInfo = {
     spell: 'may',
     accessModes: ['read_write'],
     spellAccessMode: 'never'
+  },
+  immediate: {
+    scope: 'module',
+    binding: false,
+    spell: 'must',
+    accessModes: ['read'],
+    spellAccessMode: 'never',
+    wgslLanguageFeature: 'immediate_address_space'
   },
   handle: {
     scope: 'module',
@@ -238,7 +257,9 @@ export function* generateTypes({
   const scalarType = isAtomic ? `atomic<${baseType}>` : baseType;
 
   
-  if (addressSpace === 'storage' || addressSpace === 'uniform') {
+  const requiresHostShareable =
+  addressSpace === 'storage' || addressSpace === 'uniform' || addressSpace === 'immediate';
+  if (requiresHostShareable) {
     assert(isHostSharable(baseType), 'type ' + baseType.toString() + ' is not host sharable');
   }
 
@@ -289,6 +310,9 @@ export function* generateTypes({
 
   
   if (containerType === 'array') {
+    if (addressSpace === 'immediate') {
+      return;
+    }
     let arrayElemType = scalarType;
     let arrayElementCount = kDefaultArrayLength;
     let supportsAtomics = scalarInfo.supportsAtomics;
@@ -383,7 +407,10 @@ export function* supportedScalarTypes(p) {
     if (p.isAtomic && !info.supportsAtomics) continue;
 
     
-    const isHostShared = p.addressSpace === 'storage' || p.addressSpace === 'uniform';
+    const isHostShared =
+    p.addressSpace === 'storage' ||
+    p.addressSpace === 'uniform' ||
+    p.addressSpace === 'immediate';
     if (isHostShared && info.layout === undefined) continue;
 
     yield scalarType;

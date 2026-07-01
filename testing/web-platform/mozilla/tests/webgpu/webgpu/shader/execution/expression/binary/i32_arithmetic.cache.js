@@ -81,6 +81,26 @@ export const d = makeCaseCache('binary/i32_arithmetic', {
   remainder_const: () => {
     return generateBinaryToI32Cases(sparseI32Range(), sparseI32Range(), i32_remainder_const);
   },
+  
+  
+  
+  
+  
+  
+  remainder_negative_non_const: () => {
+    return generateBinaryToI32Cases(
+      [-1, -2, -5, -255, -256, -768, -769, -1000, -1234567],
+      [3, 7, 100, 256, 768, 1000],
+      i32_remainder_non_const
+    );
+  },
+  remainder_negative_const: () => {
+    return generateBinaryToI32Cases(
+      [-1, -2, -5, -255, -256, -768, -769, -1000, -1234567],
+      [3, 7, 100, 256, 768, 1000],
+      i32_remainder_const
+    );
+  },
   addition_scalar_vector2: () => {
     return generateI32VectorBinaryToVectorCases(sparseI32Range(), vectorI32Range(2), i32_add);
   },

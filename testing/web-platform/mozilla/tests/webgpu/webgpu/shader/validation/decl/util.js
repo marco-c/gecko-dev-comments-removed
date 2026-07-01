@@ -1,6 +1,8 @@
 
 
-import {
+import { getGPU } from '../../../../common/util/navigator_gpu.js';import { supportsImmediateData } from '../../../../common/util/util.js';import {
+
+
 
   kAccessModeInfo,
   kAddressSpaceInfo } from
@@ -11,6 +13,40 @@ import {
 
 
 export const kShaderStages = ['vertex', 'fragment', 'compute'];
+
+export function requiredLanguageFeatureHeader(addressSpace) {
+  const feature = kAddressSpaceInfo[addressSpace].wgslLanguageFeature;
+  return feature === undefined ? '' : `requires ${feature};\n`;
+}
+
+
+
+
+
+
+
+
+
+export function skipIfImmediateDataNotSupported(t) {
+  if (!supportsImmediateData(getGPU(t.rec))) {
+    t.skip('Immediate data not supported');
+  }
+}
+
+export function skipIfAddressSpaceNotSupported(
+t,
+addressSpace)
+{
+  if (addressSpace === 'immediate') {
+    skipIfImmediateDataNotSupported(t);
+    return;
+  }
+
+  const feature = kAddressSpaceInfo[addressSpace].wgslLanguageFeature;
+  if (feature !== undefined) {
+    t.skipIfLanguageFeatureNotSupported(feature);
+  }
+}
 
 
 
@@ -107,15 +143,16 @@ additionalBody)
     p.explicitSpace ? p.addressSpace : '',
     p.explicitAccess ? p.accessMode : ''
   );
+  const header = requiredLanguageFeatureHeader(p.addressSpace);
 
   additionalBody = additionalBody ?? '';
 
   switch (info.scope) {
     case 'module':
-      return decl + '\n' + declareEntryPoint({ stage: p.stage, body: additionalBody });
+      return header + decl + '\n' + declareEntryPoint({ stage: p.stage, body: additionalBody });
 
     case 'function':
-      return declareEntryPoint({ stage: p.stage, body: decl + '\n' + additionalBody });
+      return header + declareEntryPoint({ stage: p.stage, body: decl + '\n' + additionalBody });
   }
 }
 

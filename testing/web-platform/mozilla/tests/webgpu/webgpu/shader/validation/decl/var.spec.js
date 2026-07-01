@@ -582,9 +582,7 @@ fn((t) => {
 });
 
 
-const kNonHandleAddressSpaces = keysOf(kAddressSpaceInfo).filter(
-  (as) => as !== 'handle'
-);
+const kNonHandleAddressSpaces = keysOf(kAddressSpaceInfo).filter((as) => as !== 'handle');
 
 g.test('explicit_access_mode').
 desc('Validate uses of an explicit access mode on a var declaration').
