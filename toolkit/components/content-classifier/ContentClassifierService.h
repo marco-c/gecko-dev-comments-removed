@@ -199,6 +199,10 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   static Maybe<const ContentClassifierFeature&> GetFeatureByName(
       const nsACString& aName);
 
+  
+  static bool IsBlockingFeatureActive(const nsACString& aFeatureName,
+                                      bool aIsPrivate);
+
   ContentClassifierResult ClassifyForCancel(
       const ContentClassifierRequest& aRequest);
   ContentClassifierResult ClassifyForAnnotate(

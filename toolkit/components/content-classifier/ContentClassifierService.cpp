@@ -953,6 +953,23 @@ nsTHashSet<nsCString> ContentClassifierService::ActiveFeatureNames(
   return names;
 }
 
+
+bool ContentClassifierService::IsBlockingFeatureActive(
+    const nsACString& aFeatureName, bool aIsPrivate) {
+  if (!StaticPrefs::privacy_trackingprotection_content_protection_enabled()) {
+    return false;
+  }
+
+  
+  nsTArray<nsCString> names;
+  EnginesPrefsSnapshot::AppendFeatureNamesFromPref(
+      aIsPrivate
+          ? "privacy.trackingprotection.content.protection.engines.pbmode"
+          : "privacy.trackingprotection.content.protection.engines",
+      names);
+  return names.Contains(aFeatureName);
+}
+
 void ContentClassifierService::PruneInactiveEngines(
     const EnginesPrefsSnapshot& aPreferenceSnapshot) {
   mLock.AssertCurrentThreadOwns();
