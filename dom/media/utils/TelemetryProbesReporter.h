@@ -16,6 +16,7 @@
 
 namespace mozilla {
 class FrameStatistics;
+class MediaResult;
 
 class TelemetryProbesReporterOwner {
  public:
@@ -69,6 +70,14 @@ class TelemetryProbesReporter final {
   void OnMediaContentChanged(MediaContent aContent);
   void OnMutedChanged(bool aMuted);
 
+  
+  
+  void OnDecodeError(const MediaResult& aError);
+
+  
+  
+  static bool IsSessionEndingError(nsresult aError);
+
   enum class FirstFrameLoadedFlag {
     IsMSE,
     IsExternalEngineStateMachine,
@@ -95,6 +104,7 @@ class TelemetryProbesReporter final {
   double GetMutedPlayTimeInSeconds() const;
 
  private:
+  void ClearSessionErrorState();
   void StartInvisibleVideoTimeAccumulator();
   void PauseInvisibleVideoTimeAccumulator();
   void StartInaudibleAudioTimeAccumulator();
@@ -188,6 +198,11 @@ class TelemetryProbesReporter final {
   bool mIsPlaying = false;
 
   bool mIsMuted = false;
+
+  
+  
+  Maybe<int32_t> mLastPlatformError;
+  bool mEndedInError = false;
 };
 
 }  
