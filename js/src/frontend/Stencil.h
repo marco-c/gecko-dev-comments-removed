@@ -782,6 +782,8 @@ class StencilModuleEntry {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
+    entry.importName =
+        TaggedParserAtomIndex::WellKnown::star_all_but_default_star_();
     return entry;
   }
 };
