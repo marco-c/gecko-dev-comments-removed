@@ -30,8 +30,10 @@ class PayloadTypeSuggester {
   
   
   
-  virtual RTCErrorOr<PayloadType> SuggestPayloadType(absl::string_view mid,
-                                                     const Codec& codec) = 0;
+  virtual RTCErrorOr<PayloadType> SuggestPayloadType(
+      absl::string_view mid,
+      const Codec& codec,
+      bool pick_from_top_of_range = false) = 0;
   
   
   virtual RTCError AddLocalMapping(absl::string_view mid,

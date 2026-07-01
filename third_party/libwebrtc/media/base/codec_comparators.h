@@ -14,6 +14,8 @@
 #include <optional>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
+#include "api/payload_type.h"
 #include "api/rtp_parameters.h"
 #include "media/base/codec.h"
 
@@ -26,6 +28,11 @@ bool MatchesWithCodecRules(const Codec& left_codec, const Codec& codec);
 
 bool MatchesWithReferenceAttributes(const Codec& left_codec,
                                     const Codec& right_codec);
+
+bool MatchesWithReferenceAttributesAndComparator(
+    const Codec& codec_to_match,
+    const Codec& potential_match,
+    absl::AnyInvocable<bool(PayloadType, PayloadType)> reference_comparator);
 
 
 
