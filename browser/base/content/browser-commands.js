@@ -361,10 +361,14 @@ var BrowserCommands = {
     }
 
     
+    
     if (gBrowser.multiSelectedTabsCount) {
-      gBrowser.removeMultiSelectedTabs(
-        gBrowser.TabMetrics.userTriggeredContext()
-      );
+      let excludePinnedTabs =
+        event && (event.ctrlKey || event.metaKey || event.altKey);
+      gBrowser.removeMultiSelectedTabs({
+        ...gBrowser.TabMetrics.userTriggeredContext(),
+        excludePinnedTabs,
+      });
       return;
     }
 

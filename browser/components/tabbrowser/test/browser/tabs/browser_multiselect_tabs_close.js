@@ -44,48 +44,58 @@ add_task(async function usingTabCloseButton() {
   let tab2 = await addTab();
   let tab3 = await addTab();
   let tab4 = await addTab();
+  let pinnedTab1 = await addTab();
+  let pinnedTab2 = await addTab();
+
+  gBrowser.pinTab(pinnedTab1);
+  gBrowser.pinTab(pinnedTab2);
 
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
   checkTabCloseButtonTooltip(tab1);
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await triggerClickOn(tab2, { ctrlKey: true });
+  await triggerClickOn(pinnedTab1, { ctrlKey: true });
 
   ok(tab1.multiselected, "Tab1 is multiselected");
-  checkTabCloseButtonTooltip(tab1, 2);
+  checkTabCloseButtonTooltip(tab1, 3);
   ok(tab2.multiselected, "Tab2 is multiselected");
-  checkTabCloseButtonTooltip(tab2, 2);
+  checkTabCloseButtonTooltip(tab2, 3);
   ok(!tab3.multiselected, "Tab3 is not multiselected");
   checkTabCloseButtonTooltip(tab3);
   ok(!tab4.multiselected, "Tab4 is not multiselected");
   checkTabCloseButtonTooltip(tab4);
-  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+  is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
   is(gBrowser.selectedTab, tab1, "Tab1 is active");
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  checkTabCloseButtonTooltip(pinnedTab1, 3);
+  ok(!pinnedTab2.multiselected, "PinnedTab2 is not multiselected");
+  checkTabCloseButtonTooltip(pinnedTab2);
 
   await triggerClickOn(tab3, { ctrlKey: true });
-  is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
-  checkTabCloseButtonTooltip(tab1, 3);
+  is(gBrowser.multiSelectedTabsCount, 4, "Four multiselected tabs");
+  checkTabCloseButtonTooltip(tab1, 4);
   gBrowser.hideTab(tab3);
   is(
     gBrowser.multiSelectedTabsCount,
-    2,
-    "Two multiselected tabs after hiding one tab"
+    3,
+    "Three multiselected tabs after hiding one tab"
   );
-  checkTabCloseButtonTooltip(tab1, 2);
+  checkTabCloseButtonTooltip(tab1, 3);
   gBrowser.showTab(tab3);
   is(
     gBrowser.multiSelectedTabsCount,
-    3,
-    "Three multiselected tabs after re-showing hidden tab"
+    4,
+    "Four multiselected tabs after re-showing hidden tab"
   );
-  checkTabCloseButtonTooltip(tab1, 3);
+  checkTabCloseButtonTooltip(tab1, 4);
   await triggerClickOn(tab3, { ctrlKey: true });
   is(
     gBrowser.multiSelectedTabsCount,
-    2,
-    "Two multiselected tabs after ctrl-clicking multiselected tab"
+    3,
+    "Three multiselected tabs after ctrl-clicking multiselected tab"
   );
-  checkTabCloseButtonTooltip(tab1, 2);
+  checkTabCloseButtonTooltip(tab1, 3);
 
   
   let tab4CloseBtn = tab4.closeButton;
@@ -101,22 +111,33 @@ add_task(async function usingTabCloseButton() {
   ok(!tab3.multiselected, "Tab3 is not multiselected");
   ok(!tab3.closing, "Tab3 is not closing");
   ok(tab4.closing, "Tab4 is closing");
-  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(!pinnedTab1.closing, "PinnedTab1 is not closing");
+  ok(!pinnedTab2.multiselected, "PinnedTab2 is not multiselected");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
+
+  is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
 
   
   let tab2CloseBtn = tab2.closeButton;
   let tab1Closing = BrowserTestUtils.waitForTabClosing(tab1);
   let tab2Closing = BrowserTestUtils.waitForTabClosing(tab2);
+  let pinnedTab1Closing = BrowserTestUtils.waitForTabClosing(pinnedTab1);
   tab2CloseBtn.click();
   await tab1Closing;
   await tab2Closing;
+  await pinnedTab1Closing;
 
   ok(tab1.closing, "Tab1 is closing");
   ok(tab2.closing, "Tab2 is closing");
   ok(!tab3.closing, "Tab3 is not closing");
+  ok(pinnedTab1.closing, "PinnedTab1 is closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
 
   BrowserTestUtils.removeTab(tab3);
+  BrowserTestUtils.removeTab(pinnedTab2);
 });
 
 add_task(async function usingTabContextMenu() {
@@ -124,18 +145,26 @@ add_task(async function usingTabContextMenu() {
   let tab2 = await addTab();
   let tab3 = await addTab();
   let tab4 = await addTab();
+  let pinnedTab1 = await addTab();
+  let pinnedTab2 = await addTab();
+
+  gBrowser.pinTab(pinnedTab1);
+  gBrowser.pinTab(pinnedTab2);
 
   let menuItemCloseTab = document.getElementById("context_closeTab");
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await triggerClickOn(tab2, { ctrlKey: true });
+  await triggerClickOn(pinnedTab1, { ctrlKey: true });
 
   ok(tab1.multiselected, "Tab1 is multiselected");
   ok(tab2.multiselected, "Tab2 is multiselected");
   ok(!tab3.multiselected, "Tab3 is not multiselected");
   ok(!tab4.multiselected, "Tab4 is not multiselected");
-  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(!pinnedTab2.multiselected, "PinnedTab2 is not multiselected");
+  is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
 
   
   updateTabContextMenu(tab4);
@@ -143,26 +172,36 @@ add_task(async function usingTabContextMenu() {
   is(args.tabCount, 1, "Close Tab item lists a single tab");
 
   
+  updateTabContextMenu(pinnedTab2);
+  ({ args } = document.l10n.getAttributes(menuItemCloseTab));
+  is(args.tabCount, 1, "Close Tab item lists a single tab");
+
+  
   
   
   let menu = await openTabMenuFor(tab2);
   ({ args } = document.l10n.getAttributes(menuItemCloseTab));
-  is(args.tabCount, 2, "Close Tab item lists more than one tab");
+  is(args.tabCount, 3, "Close Tab item lists more than one tab");
 
   let tab1Closing = BrowserTestUtils.waitForTabClosing(tab1);
   let tab2Closing = BrowserTestUtils.waitForTabClosing(tab2);
+  let pinnedTab1Closing = BrowserTestUtils.waitForTabClosing(pinnedTab1);
   menu.activateItem(menuItemCloseTab);
   await tab1Closing;
   await tab2Closing;
+  await pinnedTab1Closing;
 
   ok(tab1.closing, "Tab1 is closing");
   ok(tab2.closing, "Tab2 is closing");
   ok(!tab3.closing, "Tab3 is not closing");
   ok(!tab4.closing, "Tab4 is not closing");
+  ok(pinnedTab1.closing, "PinnedTab1 is closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
 
   BrowserTestUtils.removeTab(tab3);
   BrowserTestUtils.removeTab(tab4);
+  BrowserTestUtils.removeTab(pinnedTab2);
 });
 
 add_task(async function closeAllMultiselectedMiddleClick() {
@@ -171,7 +210,9 @@ add_task(async function closeAllMultiselectedMiddleClick() {
   let tab3 = await addTab();
   let tab4 = await addTab();
   let tab5 = await addTab();
-  let tab6 = await addTab();
+  let pinnedTab1 = await addTab();
+
+  gBrowser.pinTab(pinnedTab1);
 
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
 
@@ -193,12 +234,12 @@ add_task(async function closeAllMultiselectedMiddleClick() {
   ok(tab3.multiselected, "Tab3 is multiselected");
   ok(tab4.multiselected, "Tab4 is multiselected");
   ok(tab5.multiselected, "Tab5 is multiselected");
-  ok(!tab6.multiselected, "Tab6 is not multiselected");
+  ok(!pinnedTab1.multiselected, "PinnedTab1 is not multiselected");
   is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
 
-  let tab6Closing = BrowserTestUtils.waitForTabClosing(tab6);
-  await triggerMiddleClickOn(tab6);
-  await tab6Closing;
+  let pinnedTab1Closing = BrowserTestUtils.waitForTabClosing(pinnedTab1);
+  await triggerMiddleClickOn(pinnedTab1);
+  await pinnedTab1Closing;
 
   
   ok(tab3.multiselected, "Tab3 is multiselected");
@@ -213,4 +254,120 @@ add_task(async function closeAllMultiselectedMiddleClick() {
   await tab3Closing;
   await tab4Closing;
   await tab5Closing;
+});
+
+add_task(async function usingKeyboard() {
+  
+  let pinnedTab1 = gBrowser.selectedTab;
+  let pinnedTab2 = await addTab();
+  let unpinnedTab1 = await addTab();
+  let unpinnedTab2 = await addTab();
+
+  gBrowser.pinTab(pinnedTab1);
+  gBrowser.pinTab(pinnedTab2);
+
+  
+  await triggerClickOn(pinnedTab2, { ctrlKey: true });
+  await triggerClickOn(unpinnedTab1, { ctrlKey: true });
+
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(pinnedTab2.multiselected, "PinnedTab2 is multiselected");
+  ok(unpinnedTab1.multiselected, "UnpinnedTab1 is multiselected");
+  ok(!unpinnedTab2.multiselected, "UnpinnedTab2 is not multiselected");
+  is(gBrowser.multiSelectedTabsCount, 3, "Three multiselected tabs");
+  is(gBrowser.selectedTab, pinnedTab1, "PinnedTab1 is active");
+
+  
+  let unpinnedTab1Closing = BrowserTestUtils.waitForTabClosing(unpinnedTab1);
+  EventUtils.synthesizeKey("w", { accelKey: true });
+  await unpinnedTab1Closing;
+
+  ok(!pinnedTab1.closing, "PinnedTab1 is not closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
+  ok(unpinnedTab1.closing, "UnpinnedTab1 is closing");
+  ok(!unpinnedTab2.closing, "UnpinnedTab2 is not closing");
+
+  is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
+  is(
+    gBrowser.tabContainer.selectedIndex,
+    gBrowser.pinnedTabCount,
+    "Selected index is correct"
+  );
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, pinnedTab1);
+  await triggerClickOn(pinnedTab2, { ctrlKey: true });
+
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(pinnedTab2.multiselected, "PinnedTab2 is multiselected");
+  ok(!unpinnedTab2.multiselected, "UnpinnedTab2 is not multiselected");
+  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+  is(gBrowser.selectedTab, pinnedTab1, "PinnedTab1 is active");
+
+  
+  EventUtils.synthesizeKey("w", { accelKey: true });
+
+  ok(!pinnedTab1.closing, "PinnedTab1 is not closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
+  ok(!unpinnedTab2.closing, "UnpinnedTab2 is not closing");
+
+  
+  is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
+  ok(!gBrowser.selectedTab.pinned, "End on an unpinned tab");
+  is(
+    gBrowser.tabContainer.selectedIndex,
+    gBrowser.pinnedTabCount,
+    "Selected index is correct"
+  );
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, pinnedTab1);
+  await triggerClickOn(pinnedTab2, { ctrlKey: true });
+
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(pinnedTab2.multiselected, "PinnedTab2 is multiselected");
+  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+  is(gBrowser.selectedTab, pinnedTab1, "PinnedTab1 is active");
+
+  
+  EventUtils.synthesizeKey("w", { accelKey: true });
+
+  ok(!pinnedTab1.closing, "PinnedTab1 is not closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
+  ok(!unpinnedTab2.closing, "UnpinnedTab2 is not closing");
+
+  
+  ok(!gBrowser.selectedTab.pinned, "End on an unpinned tab");
+  is(
+    gBrowser.tabContainer.selectedIndex,
+    gBrowser.pinnedTabCount,
+    "Selected index is correct"
+  );
+
+  
+  BrowserTestUtils.removeTab(unpinnedTab2);
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, pinnedTab1);
+  await triggerClickOn(pinnedTab2, { ctrlKey: true });
+
+  ok(pinnedTab1.multiselected, "PinnedTab1 is multiselected");
+  ok(pinnedTab2.multiselected, "PinnedTab2 is multiselected");
+  is(gBrowser.multiSelectedTabsCount, 2, "Two multiselected tabs");
+  is(gBrowser.selectedTab, pinnedTab1, "PinnedTab1 is active");
+
+  
+  EventUtils.synthesizeKey("w", { accelKey: true });
+
+  ok(!pinnedTab1.closing, "PinnedTab1 is not closing");
+  ok(!pinnedTab2.closing, "PinnedTab2 is not closing");
+
+  
+  is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
+  is(gBrowser.tabContainer.selectedIndex, 0, "Selected index is correct");
+  is(gBrowser.selectedTab, pinnedTab1, "PinnedTab1 is active");
+
+  
+  gBrowser.unpinTab(pinnedTab1);
+  BrowserTestUtils.removeTab(pinnedTab2);
 });
