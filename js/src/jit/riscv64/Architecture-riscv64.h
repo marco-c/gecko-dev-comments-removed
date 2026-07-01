@@ -120,7 +120,7 @@ class Registers {
     uintptr_t r;
   };
 
-  typedef uint32_t SetType;
+  using SetType = uint32_t;
 
   static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static uint32_t FirstBit(SetType x) {
@@ -192,7 +192,7 @@ class Registers {
 };
 
 
-typedef uint32_t PackedRegisterMask;
+using PackedRegisterMask = uint32_t;
 
 class FloatRegisters {
  public:
