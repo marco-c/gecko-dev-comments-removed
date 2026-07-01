@@ -151,7 +151,7 @@ struct arena_chunk_t {
   arena_t* mArena;
 
   
-  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksDirtyElim;
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksDirtyElement;
 
 #ifdef MALLOC_DOUBLE_PURGE
   
@@ -160,7 +160,7 @@ struct arena_chunk_t {
   
   
   
-  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksMavisedElim;
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksMadvisedElement;
 #endif
 
   
@@ -185,12 +185,12 @@ struct arena_chunk_t {
 namespace mozilla {
 struct DirtyChunkListTrait {
   static DoublyLinkedListElement<arena_chunk_t>& Get(arena_chunk_t* aThis) {
-    return aThis->mChunksDirtyElim;
+    return aThis->mChunksDirtyElement;
   }
 
   static const DoublyLinkedListElement<arena_chunk_t>& Get(
       const arena_chunk_t* aThis) {
-    return aThis->mChunksDirtyElim;
+    return aThis->mChunksDirtyElement;
   }
 
   using SearchKey = arena_chunk_t*;
