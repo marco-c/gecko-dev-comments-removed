@@ -366,7 +366,7 @@ var BrowserCommands = {
       let excludePinnedTabs =
         event && (event.ctrlKey || event.metaKey || event.altKey);
       gBrowser.removeMultiSelectedTabs({
-        metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
+        ...gBrowser.TabMetrics.userTriggeredContext(),
         excludePinnedTabs,
       });
       return;
@@ -388,7 +388,7 @@ var BrowserCommands = {
     
     gBrowser.removeCurrentTab({
       animate: true,
-      metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
+      ...gBrowser.TabMetrics.userTriggeredContext(),
     });
   },
 
