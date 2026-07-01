@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <memory>
 #include <optional>
 
@@ -78,7 +79,8 @@ class CcFeedbackGenerator {
   SimulatedNetwork network_;
 
   int64_t next_packet_id_ = 0;
-  std::deque<PacketInFlightInfo> packets_in_flight_;
+  std::optional<int64_t> last_acked_sequence_number_;
+  std::map<int64_t, PacketResult> sent_packets_;
   
   
   
