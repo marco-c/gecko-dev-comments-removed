@@ -89,20 +89,37 @@ void ProfilerChild::ProcessChunkManagerUpdate(
 }
 
  void ProfilerChild::ProcessPendingUpdate() {
-  auto lockedUpdate = sPendingChunkManagerUpdate.Lock();
-  if (!lockedUpdate->mProfilerChild || lockedUpdate->mUpdate.IsNotUpdate()) {
-    return;
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIThread> thread;
+  {
+    auto lockedUpdate = sPendingChunkManagerUpdate.Lock();
+    if (!lockedUpdate->mProfilerChild || lockedUpdate->mUpdate.IsNotUpdate()) {
+      return;
+    }
+    thread = lockedUpdate->mProfilerChild->mThread;
   }
-  lockedUpdate->mProfilerChild->mThread->Dispatch(NS_NewRunnableFunction(
+  thread->Dispatch(NS_NewRunnableFunction(
       "ProfilerChild::ProcessPendingUpdate", []() mutable {
-        auto lockedUpdate = sPendingChunkManagerUpdate.Lock();
-        if (!lockedUpdate->mProfilerChild ||
-            lockedUpdate->mUpdate.IsNotUpdate()) {
-          return;
+        RefPtr<ProfilerChild> profilerChild;
+        ProfileBufferControlledChunkManager::Update update;
+        {
+          auto lockedUpdate = sPendingChunkManagerUpdate.Lock();
+          if (!lockedUpdate->mProfilerChild ||
+              lockedUpdate->mUpdate.IsNotUpdate()) {
+            return;
+          }
+          profilerChild = lockedUpdate->mProfilerChild;
+          update = std::move(lockedUpdate->mUpdate);
+          lockedUpdate->mUpdate.Clear();
         }
-        lockedUpdate->mProfilerChild->ProcessChunkManagerUpdate(
-            std::move(lockedUpdate->mUpdate));
-        lockedUpdate->mUpdate.Clear();
+        profilerChild->ProcessChunkManagerUpdate(std::move(update));
       }));
 }
 
