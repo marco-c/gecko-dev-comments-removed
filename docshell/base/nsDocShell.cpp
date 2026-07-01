@@ -4279,6 +4279,8 @@ nsDocShell::LoadPageAsViewSource(nsIDocShell* aOtherDocShell,
   
   
   loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
+  loadState->SetPrincipalToInherit(nullptr);
+  loadState->SetPartitionedPrincipalToInherit(nullptr);
   loadState->SetOriginalURI(nullptr);
   loadState->SetResultPrincipalURI(nullptr);
 
