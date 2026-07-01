@@ -62,6 +62,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptDecoding.h"  
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -1231,7 +1232,9 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
     return request.forget();
   }
 
-  MOZ_ASSERT(aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap);
+  MOZ_ASSERT(aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap ||
+             (StaticPrefs::dom_speculation_rules_enabled() &&
+              aKind == ScriptKind::eSpeculationRules));
 
   RefPtr<ScriptLoadRequest> request =
       new ScriptLoadRequest(aKind, aIntegrity, referrer, context);
@@ -1397,6 +1400,8 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement,
     scriptKind = ScriptKind::eModule;
   } else if (aElement->GetScriptIsImportMap()) {
     scriptKind = ScriptKind::eImportMap;
+  } else if (aElement->GetScriptIsSpeculationRules()) {
+    scriptKind = ScriptKind::eSpeculationRules;
   } else {
     scriptKind = ScriptKind::eClassic;
   }
@@ -1439,13 +1444,17 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
   
   
   
-  if (aScriptKind == ScriptKind::eImportMap) {
+  if (aScriptKind == ScriptKind::eImportMap ||
+      aScriptKind == ScriptKind::eSpeculationRules) {
     NS_DispatchToCurrentThread(
         NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
                           &nsIScriptElement::FireErrorEvent));
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Script Loader"_ns, mDocument,
-        PropertiesFile::DOM_PROPERTIES, "ImportMapExternalNotSupported");
+        PropertiesFile::DOM_PROPERTIES,
+        aScriptKind == ScriptKind::eImportMap
+            ? "ImportMapExternalNotSupported"
+            : "SpeculationRulesExternalNotSupported");
     return false;
   }
 
@@ -1878,6 +1887,46 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     
     mModuleLoader->RegisterImportMap(std::move(importMap), request);
+    return false;
+  }
+
+  if (request->IsSpeculationRulesRequest()) {
+    MOZ_ASSERT(StaticPrefs::dom_speculation_rules_enabled());
+
+    
+    
+    
+    
+    
+    
+    nsAutoString source;
+    aElement->GetScriptText(source);
+    auto speculationRulesResult = SpeculationRules::Parse(
+        NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    if (speculationRulesResult.isErr()) {
+      
+      
+      nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
+      if (!global) {
+        return false;
+      }
+      SpeculationRules::ReportParseError(global,
+                                         speculationRulesResult.unwrapErr());
+      return false;
+    }
+
+    mDocument->RegisterSpeculationRulesFromScript(
+        aElement, speculationRulesResult.unwrap());
     return false;
   }
 
@@ -2981,6 +3030,26 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     
     
     aRequest->MarkSkippedAllCaching();
+    aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+    return;
+  }
+
+  if (strcmp(aRequest->URI()->GetSpecOrDefault().get(),
+             "https://snap.licdn.com/li.lms-analytics/insight.min.js") == 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: bug 2042605",
+         aRequest));
+    aRequest->MarkNotCacheable();
     aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
     return;
   }
