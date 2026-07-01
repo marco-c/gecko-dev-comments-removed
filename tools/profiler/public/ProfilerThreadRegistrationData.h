@@ -366,7 +366,16 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   }
 
 #ifdef NIGHTLY_BUILD
-  void RecordWakeCount() const;
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool RecordWakeCount(nsACString& aThreadName,
+                                     uint64_t& aCpuTimeMs,
+                                     uint64_t& aWakeCount) const;
 #endif
 
   

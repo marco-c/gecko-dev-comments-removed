@@ -6,7 +6,6 @@
 
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/FlowMarkers.h"
-#include "mozilla/FOGIPC.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "js/AllocationRecording.h"
 #include "js/ProfilingStack.h"
@@ -325,16 +324,17 @@ void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
 }
 
 #ifdef NIGHTLY_BUILD
-void ThreadRegistrationUnlockedConstReaderAndAtomicRW::RecordWakeCount() const {
+bool ThreadRegistrationUnlockedConstReaderAndAtomicRW::RecordWakeCount(
+    nsACString& aThreadName, uint64_t& aCpuTimeMs, uint64_t& aWakeCount) const {
   baseprofiler::detail::BaseProfilerAutoLock lock(mRecordWakeCountMutex);
 
-  uint64_t newWakeCount = mWakeCount - mAlreadyRecordedWakeCount;
-  if (newWakeCount == 0 && mSleep != AWAKE) {
+  aWakeCount = mWakeCount - mAlreadyRecordedWakeCount;
+  if (aWakeCount == 0 && mSleep != AWAKE) {
     
     
     
     
-    return;
+    return false;
   }
 
   uint64_t cpuTimeNs;
@@ -345,37 +345,37 @@ void ThreadRegistrationUnlockedConstReaderAndAtomicRW::RecordWakeCount() const {
   constexpr uint64_t NS_PER_MS = 1'000'000;
   uint64_t cpuTimeMs = cpuTimeNs / NS_PER_MS;
 
-  uint64_t newCpuTimeMs = MOZ_LIKELY(cpuTimeMs > mAlreadyRecordedCpuTimeInMs)
-                              ? cpuTimeMs - mAlreadyRecordedCpuTimeInMs
-                              : 0;
+  aCpuTimeMs = MOZ_LIKELY(cpuTimeMs > mAlreadyRecordedCpuTimeInMs)
+                   ? cpuTimeMs - mAlreadyRecordedCpuTimeInMs
+                   : 0;
 
-  if (!newWakeCount && !newCpuTimeMs) {
+  if (!aWakeCount && !aCpuTimeMs) {
     
-    return;
+    return false;
   }
 
-  nsAutoCString threadName(mInfo.Name());
+  aThreadName.Assign(mInfo.Name());
   
-  for (size_t length = threadName.Length(); length > 0; --length) {
-    const char c = threadName.CharAt(length - 1);
+  for (size_t length = aThreadName.Length(); length > 0; --length) {
+    const char c = aThreadName.CharAt(length - 1);
     if ((c < '0' || c > '9') && c != '#' && c != ' ') {
-      if (length != threadName.Length()) {
-        threadName.SetLength(length);
+      if (length != aThreadName.Length()) {
+        aThreadName.SetLength(length);
       }
       break;
     }
   }
-
-  mozilla::glean::RecordThreadCpuUse(threadName, newCpuTimeMs, newWakeCount);
 
   
   
   
   
   PROFILER_MARKER("Thread CPU use", OTHER, {}, ThreadCpuUseMarker,
-                  mInfo.ThreadId(), newCpuTimeMs, newWakeCount, threadName);
+                  mInfo.ThreadId(), aCpuTimeMs, aWakeCount, aThreadName);
   mAlreadyRecordedCpuTimeInMs = cpuTimeMs;
-  mAlreadyRecordedWakeCount += newWakeCount;
+  mAlreadyRecordedWakeCount += aWakeCount;
+
+  return true;
 }
 #endif
 

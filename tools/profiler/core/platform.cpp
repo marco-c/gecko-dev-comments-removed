@@ -70,6 +70,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/FOGIPC.h"
 #include "mozilla/glean/ProcesstoolsMetrics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
@@ -7738,11 +7739,34 @@ void profiler_record_wakeup_count(const nsACString& aProcessType) {
   }
 
 #ifdef NIGHTLY_BUILD
-  ThreadRegistry::LockedRegistry lockedRegistry;
-  for (ThreadRegistry::OffThreadRef offThreadRef : lockedRegistry) {
-    const ThreadRegistry::UnlockedConstReaderAndAtomicRW& threadData =
-        offThreadRef.UnlockedConstReaderAndAtomicRWRef();
-    threadData.RecordWakeCount();
+  struct ThreadWakeData {
+    nsCString mThreadName;
+    uint64_t mCpuTimeMs;
+    uint64_t mWakeCount;
+  };
+  
+  
+  
+  
+  nsTArray<ThreadWakeData> threadWakeData;
+  {
+    ThreadRegistry::LockedRegistry lockedRegistry;
+    for (ThreadRegistry::OffThreadRef offThreadRef : lockedRegistry) {
+      const ThreadRegistry::UnlockedConstReaderAndAtomicRW& threadData =
+          offThreadRef.UnlockedConstReaderAndAtomicRWRef();
+      nsAutoCString threadName;
+      uint64_t cpuTimeMs;
+      uint64_t wakeCount;
+      if (threadData.RecordWakeCount(threadName, cpuTimeMs, wakeCount)) {
+        threadWakeData.AppendElement(
+            ThreadWakeData{std::move(threadName), cpuTimeMs, wakeCount});
+      }
+    }
+  }
+
+  for (const ThreadWakeData& data : threadWakeData) {
+    mozilla::glean::RecordThreadCpuUse(data.mThreadName, data.mCpuTimeMs,
+                                       data.mWakeCount);
   }
 #endif
 }
