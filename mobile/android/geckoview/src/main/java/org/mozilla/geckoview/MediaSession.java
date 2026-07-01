@@ -208,6 +208,20 @@ public class MediaSession {
 
 
 
+
+
+    default void onAudioSessionTypeChanged(
+        @NonNull final GeckoSession session,
+        @NonNull final MediaSession mediaSession,
+        @NonNull final String type) {}
+
+    
+
+
+
+
+
+
     default void onFeatures(
         @NonNull final GeckoSession session,
         @NonNull final MediaSession mediaSession,
@@ -576,6 +590,7 @@ public class MediaSession {
   private static final String SKIP_AD_EVENT = "GeckoView:MediaSession:SkipAd";
   private static final String SEEK_TO_EVENT = "GeckoView:MediaSession:SeekTo";
   private static final String MUTE_AUDIO_EVENT = "GeckoView:MediaSession:MuteAudio";
+  private static final String AUDIO_SESSION_TYPE_EVENT = "GeckoView:MediaSession:AudioSessionType";
 
    static class Handler extends GeckoSessionHandler<MediaSession.Delegate> {
 
@@ -596,6 +611,7 @@ public class MediaSession {
             PLAYBACK_PAUSED_EVENT,
             PLAYBACK_PLAYING_EVENT,
             FEATURES_EVENT,
+            AUDIO_SESSION_TYPE_EVENT,
           });
       mSession = session;
       mMediaSession = new MediaSession(session);
@@ -644,6 +660,9 @@ public class MediaSession {
         }
         delegate.onFullscreen(mSession, mMediaSession, enabled, meta);
         callback.sendSuccess(true);
+      } else if (AUDIO_SESSION_TYPE_EVENT.equals(event)) {
+        delegate.onAudioSessionTypeChanged(
+            mSession, mMediaSession, message.getString("type", "auto"));
       }
     }
   }
