@@ -103,6 +103,9 @@ class ScriptLoadRequest : public nsISupports,
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
+  bool IsSpeculationRulesRequest() const {
+    return mKind == ScriptKind::eSpeculationRules;
+  }
 
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
@@ -127,10 +130,37 @@ class ScriptLoadRequest : public nsISupports,
   virtual void SetReady();
 
   enum class State : uint8_t {
+    
     CheckingCache,
+
+    
+    
+    
+    
     Fetching,
+
+    
+    
+    
+    DelayingReady,
+
+    
+    
+    
+    
+    
     Compiling,
+
+    
+    
+    
+    
+    
+    
+    
     Ready,
+
+    
     Canceled
   };
 
@@ -143,6 +173,7 @@ class ScriptLoadRequest : public nsISupports,
   
   
   bool IsFetching() const { return mState == State::Fetching; }
+  bool IsDelayingReady() const { return mState == State::DelayingReady; }
   bool IsCompiling() const { return mState == State::Compiling; }
   bool IsCanceled() const { return mState == State::Canceled; }
 
@@ -186,9 +217,16 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
+  
+  
+  
+  
   void CacheEntryFound(LoadedScript* aLoadedScript,
                        ScriptFetchOptions* aFetchOptions);
 
+  
+  
+  
   void CacheEntryRevived(LoadedScript* aLoadedScript);
 
   
@@ -339,6 +377,7 @@ class ScriptLoadRequest : public nsISupports,
  public:
   
 
+  
   
   const ScriptKind mKind;
 

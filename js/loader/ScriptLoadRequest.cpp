@@ -199,11 +199,17 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
       mLoadedScript = aLoadedScript;
 
-      
-      mState = State::Ready;
+      mState = State::DelayingReady;
       break;
     case ScriptKind::eImportMap:
       MOZ_ASSERT(aLoadedScript->IsImportMapScript());
+
+      mLoadedScript = aLoadedScript;
+
+      mState = State::DelayingReady;
+      break;
+    case ScriptKind::eSpeculationRules:
+      MOZ_ASSERT(aLoadedScript->IsSpeculationRulesScript());
 
       mLoadedScript = aLoadedScript;
 
