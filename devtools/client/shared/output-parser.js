@@ -531,6 +531,16 @@ class OutputParser {
       parts = this.#onCloseParenthesisForLightDark(stackEntry, options);
     } else if (lowerCaseFunctionName === "linear") {
       parts = this.#onCloseParenthesisForLinear(stackEntry, options);
+    } else if (
+      lowerCaseFunctionName === "sibling-count" &&
+      Number.isInteger(options.siblingCount)
+    ) {
+      stackEntry.substitutedText = options.siblingCount;
+    } else if (
+      lowerCaseFunctionName === "sibling-index" &&
+      Number.isInteger(options.siblingIndex)
+    ) {
+      stackEntry.substitutedText = options.siblingIndex;
     } else if (lowerCaseFunctionName === "url") {
       parts = this.#onCloseParenthesisForUrl(stackEntry, options);
     } else if (lowerCaseFunctionName === "var") {
@@ -2585,6 +2595,12 @@ class OutputParser {
 
 
 
+
+
+
+
+
+
   #mergeOptions(overrides) {
     const defaults = {
       useDefaultColorUnit: true,
@@ -2612,6 +2628,8 @@ class OutputParser {
       unmatchedClass: null,
       inStartingStyleRule: false,
       isDarkColorScheme: null,
+      siblingCount: null,
+      siblingIndex: null,
     };
 
     for (const item in overrides) {
