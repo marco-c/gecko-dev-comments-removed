@@ -246,11 +246,6 @@ typedef struct TplParams {
   
 
 
-  YV12_BUFFER_CONFIG prev_gop_arf_tpl_recon;
-
-  
-
-
   int64_t prev_gop_arf_disp_order;
 
   

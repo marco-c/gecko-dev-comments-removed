@@ -628,7 +628,7 @@ static inline void calc_interp_skip_pred_flag(MACROBLOCK *const x,
 
   
   
-  if (cpi->sf.interp_sf.skip_model_rd_uv && num_planes > 1) {
+  if (cpi->sf.interp_sf.skip_model_rd_uv) {
     *skip_hor |= INTERP_EVAL_LUMA_SKIP_CHROMA;
     *skip_ver |= INTERP_EVAL_LUMA_SKIP_CHROMA;
   }

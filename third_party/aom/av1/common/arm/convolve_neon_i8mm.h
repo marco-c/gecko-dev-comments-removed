@@ -78,6 +78,8 @@ static inline void convolve_2d_sr_horiz_12tap_neon_i8mm(
   
   assert(x_filter_ptr[5] != 128);
 
+  const int bd = 8;
+
   
   
   const int8x8_t mask = vcreate_s8(0x0000ffffffffffff);
@@ -95,7 +97,8 @@ static inline void convolve_2d_sr_horiz_12tap_neon_i8mm(
   
   
   
-  const int32x4_t horiz_const = vdupq_n_s32(1 << (ROUND0_BITS - 1));
+  const int32x4_t horiz_const =
+      vdupq_n_s32((1 << (bd + FILTER_BITS - 1)) + (1 << (ROUND0_BITS - 1)));
 
   if (w <= 4) {
     const uint8x16_t permute_tbl = vld1q_u8(kMatMul6PermuteTbl);

@@ -227,7 +227,6 @@ struct av1_extracfg {
   
   
   unsigned int skip_postproc_filtering;
-  int mode_ref_delta_enabled;
   
   const char *two_pass_output;
   const char *second_pass_log;
@@ -248,7 +247,6 @@ struct av1_extracfg {
   int sb_qp_sweep;
   aom_screen_detection_mode screen_detection_mode;
   unsigned int validate_hbd_input;
-  unsigned int force_max_q;
 };
 
 #if !CONFIG_REALTIME_ONLY
@@ -398,7 +396,6 @@ static const struct av1_extracfg default_extra_cfg = {
   -1,              
   LOOPFILTER_ALL,  
   0,               
-  1,               
   NULL,            
   NULL,            
   0,               
@@ -407,7 +404,6 @@ static const struct av1_extracfg default_extra_cfg = {
   0,               
   AOM_SCREEN_DETECTION_STANDARD,
   1,  
-  0,  
 };
 #else
 
@@ -557,7 +553,6 @@ static const struct av1_extracfg default_extra_cfg = {
   -1,              
   LOOPFILTER_ALL,  
   0,               
-  1,               
   NULL,            
   NULL,            
   0,               
@@ -566,7 +561,6 @@ static const struct av1_extracfg default_extra_cfg = {
   0,               
   AOM_SCREEN_DETECTION_STANDARD,
   1,  
-  0,  
 };
 #endif
 
@@ -949,7 +943,6 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(extra_cfg, deltaq_strength, 1000);
   RANGE_CHECK_HI(extra_cfg, loopfilter_control, 3);
   RANGE_CHECK_BOOL(extra_cfg, skip_postproc_filtering);
-  RANGE_CHECK_BOOL(extra_cfg, mode_ref_delta_enabled);
   RANGE_CHECK_HI(extra_cfg, enable_cdef, 3);
   RANGE_CHECK_BOOL(extra_cfg, auto_intra_tools_off);
   RANGE_CHECK_BOOL(extra_cfg, strict_level_conformance);
@@ -1006,9 +999,7 @@ static aom_codec_err_t validate_img(aom_codec_alg_priv_t *ctx,
   
   
   
-  const aom_matrix_coefficients_t matrix_coefficients =
-      ctx->extra_cfg.matrix_coefficients;
-  if (matrix_coefficients == AOM_CICP_MC_IDENTITY &&
+  if (ctx->oxcf.color_cfg.matrix_coefficients == AOM_CICP_MC_IDENTITY &&
       (img->x_chroma_shift != 0 || img->y_chroma_shift != 0)) {
     ERROR("Subsampling must be 0 with AOM_CICP_MC_IDENTITY.");
   }
@@ -1018,10 +1009,8 @@ static aom_codec_err_t validate_img(aom_codec_alg_priv_t *ctx,
     if (img->bit_depth > 8) {
       ERROR("Only 8 bit depth images supported in tune=butteraugli mode.");
     }
-    if (matrix_coefficients != AOM_CICP_MC_IDENTITY &&
-        matrix_coefficients != AOM_CICP_MC_BT_709 &&
-        matrix_coefficients != AOM_CICP_MC_BT_601 &&
-        matrix_coefficients != AOM_CICP_MC_BT_470_B_G) {
+    if (img->mc != 0 && img->mc != AOM_CICP_MC_BT_709 &&
+        img->mc != AOM_CICP_MC_BT_601 && img->mc != AOM_CICP_MC_BT_470_B_G) {
       ERROR(
           "Only BT.709 and BT.601 matrix coefficients supported in "
           "tune=butteraugli mode. Identity matrix is treated as BT.601.");
@@ -1036,17 +1025,16 @@ static aom_codec_err_t validate_img(aom_codec_alg_priv_t *ctx,
     const int max_val = 1 << bit_depth;
     
     
-    const int num_planes = ctx->cfg.monochrome ? 1 : 3;
+    const int num_planes = img->monochrome ? 1 : 3;
     for (int plane = 0; plane < num_planes; ++plane) {
       const unsigned short *src = (const unsigned short *)img->planes[plane];
-      if (!src) return AOM_CODEC_INVALID_PARAM;
       const unsigned int stride = img->stride[plane] / 2;
       const unsigned int ph = aom_img_plane_height(img, plane);
       const unsigned int pw = aom_img_plane_width(img, plane);
       for (unsigned int i = 0; i < ph; ++i) {
         for (unsigned int j = 0; j < pw; ++j) {
           if (src[j] >= max_val) {
-            ERROR("Input pixel value out of range for encoder bit depth");
+            return AOM_CODEC_INVALID_PARAM;
           }
         }
         src += stride;
@@ -1277,7 +1265,6 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
   rc_cfg->vbrbias = cfg->rc_2pass_vbr_bias_pct;
   rc_cfg->vbrmin_section = cfg->rc_2pass_vbr_minsection_pct;
   rc_cfg->vbrmax_section = cfg->rc_2pass_vbr_maxsection_pct;
-  rc_cfg->force_max_q = extra_cfg->force_max_q;
 
   
   tool_cfg->bit_depth = cfg->g_bit_depth;
@@ -1370,7 +1357,6 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
       resize_cfg->resize_mode ? 0 : extra_cfg->enable_tpl_model;
   algo_cfg->loopfilter_control = extra_cfg->loopfilter_control;
   algo_cfg->skip_postproc_filtering = extra_cfg->skip_postproc_filtering;
-  algo_cfg->mode_ref_delta_enabled = extra_cfg->mode_ref_delta_enabled;
   algo_cfg->screen_detection_mode = extra_cfg->screen_detection_mode;
 
   
@@ -1412,13 +1398,10 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
   
   
   
-  
   const int is_low_complexity_decode_mode_supported =
       (cfg->g_usage == AOM_USAGE_GOOD_QUALITY) &&
       (oxcf->speed >= 1 && oxcf->speed <= 3) &&
-      (AOMMIN(cfg->g_w, cfg->g_h) >= 608 &&
-       AOMMIN(cfg->g_w, cfg->g_h) <= 1080) &&
-      (extra_cfg->sharpness != 3);
+      (AOMMIN(cfg->g_w, cfg->g_h) >= 608 && AOMMIN(cfg->g_w, cfg->g_h) <= 1080);
   oxcf->enable_low_complexity_decode =
       extra_cfg->enable_low_complexity_decode &&
       is_low_complexity_decode_mode_supported;
@@ -2846,14 +2829,6 @@ static aom_codec_err_t ctrl_set_skip_postproc_filtering(
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
-static aom_codec_err_t ctrl_set_mode_ref_delta_enabled(
-    aom_codec_alg_priv_t *ctx, va_list args) {
-  struct av1_extracfg extra_cfg = ctx->extra_cfg;
-  extra_cfg.mode_ref_delta_enabled =
-      CAST(AV1E_SET_MODE_REF_DELTA_ENABLED, args);
-  return update_extra_cfg(ctx, &extra_cfg);
-}
-
 static aom_codec_err_t ctrl_set_rtc_external_rc(aom_codec_alg_priv_t *ctx,
                                                 va_list args) {
   ctx->ppi->cpi->rc.rtc_external_ratectrl =
@@ -3340,19 +3315,13 @@ static aom_codec_err_t encoder_encode(aom_codec_alg_priv_t *ctx,
       
       
       
-      
-      
-      aom_rational_t multiplier;
-      multiplier.num = 8;
-      multiplier.den = 1;
+      int multiplier = 8;
       if (ppi->cpi->oxcf.kf_cfg.key_freq_max == 0 &&
-          !ppi->cpi->oxcf.kf_cfg.fwd_kf_enabled) {
-        multiplier.num = 5;
-        multiplier.den = 2;
-      }
-      if (uncompressed_frame_sz > SIZE_MAX / multiplier.num)
+          !ppi->cpi->oxcf.kf_cfg.fwd_kf_enabled)
+        multiplier = 2;
+      if (uncompressed_frame_sz > SIZE_MAX / multiplier)
         return AOM_CODEC_MEM_ERROR;
-      size_t data_sz = uncompressed_frame_sz * multiplier.num / multiplier.den;
+      size_t data_sz = uncompressed_frame_sz * multiplier;
       if (data_sz < kMinCompressedSize) data_sz = kMinCompressedSize;
       if (ctx->cx_data == NULL || ctx->cx_data_sz < data_sz) {
         ctx->cx_data_sz = data_sz;
@@ -4891,9 +4860,6 @@ static aom_codec_err_t encoder_set_option(aom_codec_alg_priv_t *ctx,
   } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.validate_hbd_input,
                               argv, err_string)) {
     extra_cfg.validate_hbd_input = arg_parse_int_helper(&arg, err_string);
-  } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.force_max_q, argv,
-                              err_string)) {
-    extra_cfg.force_max_q = arg_parse_uint_helper(&arg, err_string);
   } else {
     match = 0;
     snprintf(err_string, ARG_ERR_MSG_MAX_LEN, "Cannot find aom option %s",
@@ -5102,7 +5068,6 @@ static aom_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { AV1E_SET_ENABLE_TX_SIZE_SEARCH, ctrl_set_enable_tx_size_search },
   { AV1E_SET_LOOPFILTER_CONTROL, ctrl_set_loopfilter_control },
   { AV1E_SET_SKIP_POSTPROC_FILTERING, ctrl_set_skip_postproc_filtering },
-  { AV1E_SET_MODE_REF_DELTA_ENABLED, ctrl_set_mode_ref_delta_enabled },
   { AV1E_SET_AUTO_INTRA_TOOLS_OFF, ctrl_set_auto_intra_tools_off },
   { AV1E_SET_RTC_EXTERNAL_RC, ctrl_set_rtc_external_rc },
   { AV1E_SET_QUANTIZER_ONE_PASS, ctrl_set_quantizer_one_pass },

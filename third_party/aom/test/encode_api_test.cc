@@ -406,10 +406,8 @@ TEST(EncodeAPI, InvalidInputRange) {
            ++check_input_range) {
         uint8_t *u = img->planes[AOM_PLANE_U];
         uint8_t *v = img->planes[AOM_PLANE_V];
-        
-        
-        
-        if (cfg.monochrome) {
+        img->monochrome = cfg.monochrome;
+        if (img->monochrome) {
           img->planes[AOM_PLANE_U] = img->planes[AOM_PLANE_V] = nullptr;
         }
 

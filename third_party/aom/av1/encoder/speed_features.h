@@ -504,13 +504,6 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
 
 
   int screen_detection_mode2_fast_detection;
-
-  
-
-
-
-
-  int weighted_chroma_distortion;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 
@@ -622,7 +615,6 @@ typedef struct GLOBAL_MOTION_SPEED_FEATURES {
   
   int num_refinement_steps;
 
-  
   
   
   int gm_erroradv_tr_level;
@@ -1248,7 +1240,7 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   
-  float bias_warp_mode_rd_scale_pct;
+  int bias_warp_mode_rd_scale_pct;
 
   
   
@@ -1263,9 +1255,6 @@ typedef struct INTER_MODE_SPEED_FEATURES {
 
   
   int skip_interinter_wedge_search_based_on_mse;
-
-  
-  int enable_comp_wedge_search_using_model_rd;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {
@@ -1852,8 +1841,6 @@ typedef struct REAL_TIME_SPEED_FEATURES {
 
   
   int selective_cdf_update;
-  
-  int rt_use_intrabc;
 
   
   int force_only_last_ref;
