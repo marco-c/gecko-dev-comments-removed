@@ -4085,19 +4085,10 @@ class Document : public nsINode,
            GetDocGroup() == GetInProcessParentDocument()->GetDocGroup();
   }
 
-  void AddIntersectionObserver(DOMIntersectionObserver& aObserver) {
-    MOZ_ASSERT(!mIntersectionObservers.Contains(&aObserver),
-               "Intersection observer already in the list");
-    mIntersectionObservers.AppendElement(&aObserver);
-  }
-  void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
-    
-    
-    
-    mIntersectionObservers.RemoveElement(&aObserver);
-  }
+  void AddIntersectionObserver(DOMIntersectionObserver& aObserver);
+  void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver);
   bool HasIntersectionObservers() const {
-    return !mIntersectionObservers.IsEmpty();
+    return !mIntersectionObservers.isEmpty();
   }
 
   
@@ -4142,15 +4133,9 @@ class Document : public nsINode,
   }
 
   
-  void AddResizeObserver(ResizeObserver& aObserver) {
-    MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
-    mResizeObservers.AppendElement(&aObserver);
-  }
-  void RemoveResizeObserver(ResizeObserver& aObserver) {
-    MOZ_ASSERT(mResizeObservers.Contains(&aObserver));
-    mResizeObservers.RemoveElement(&aObserver);
-  }
-  bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
+  void AddResizeObserver(ResizeObserver& aObserver);
+  void RemoveResizeObserver(ResizeObserver& aObserver);
+  bool HasResizeObservers() const { return !mResizeObservers.isEmpty(); }
 
   void ScheduleResizeObserversNotification();
   
@@ -5654,9 +5639,10 @@ class Document : public nsINode,
   nsWeakPtr mScopeObject;
 
   
-  nsTArray<DOMIntersectionObserver*> mIntersectionObservers;
   
-  nsTArray<ResizeObserver*> mResizeObservers;
+  LinkedList<DOMIntersectionObserver> mIntersectionObservers;
+  
+  LinkedList<ResizeObserver> mResizeObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadObserver;
 
