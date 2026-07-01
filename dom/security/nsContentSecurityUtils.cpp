@@ -1242,7 +1242,8 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
 
 
 static nsLiteralCString sStyleSrcDataAllowList[] = {
-    "about:preferences"_ns, "about:settings"_ns,
+    "about:preferences"_ns,
+    "about:settings"_ns,
     
 };
 
@@ -1404,7 +1405,8 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcHttpAllowList[] = {
-    "about:addons"_ns, "chrome://devtools/content/application/index.html"_ns,
+    "about:addons"_ns,
+    "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     
@@ -1418,7 +1420,8 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
-    "about:reader"_ns, "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "about:reader"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
     
 };
 
@@ -1863,9 +1866,23 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
     return;
   }
 
-  MOZ_ASSERT(policyCount == 1, "about: page should have exactly one CSP");
+  
+  
+  bool hasBaselineCSP = aDocument->NodePrincipal()->IsSystemPrincipal() &&
+                        StaticPrefs::security_chrome_baseline_csp_enabled();
 
-  const nsCSPPolicy* policy = csp->GetPolicy(0);
+  if (policyCount != (hasBaselineCSP ? 2 : 1)) {
+    MOZ_CRASH_UNSAFE_PRINTF("Document (%s) does not have a custom CSP!",
+                            spec.get());
+  }
+
+  if (hasBaselineCSP) {
+    nsAutoString baselinePolicy;
+    csp->GetPolicy(0)->toString(baselinePolicy);
+    MOZ_ASSERT(baselinePolicy == kBaselineSystemCSP);
+  }
+
+  const nsCSPPolicy* policy = csp->GetPolicy(hasBaselineCSP ? 1 : 0);
   {
     AllowBuiltinSrcVisitor visitor(CSPDirective::DEFAULT_SRC_DIRECTIVE, spec);
     if (!visitor.visit(policy)) {
@@ -1925,7 +1942,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
   nsAutoCString spec;
   documentURI->GetSpec(spec);
 
-  if (IsExemptedFromBaselineChromeCSP(spec)) {
+  if (IsExemptedFromBaselineSystemCSP(spec)) {
     return;
   }
 
@@ -1948,7 +1965,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
     nsAutoString baselinePolicy;
     static_cast<nsCSPContext*>(csp.get())->GetPolicy(0)->toString(
         baselinePolicy);
-    MOZ_ASSERT(baselinePolicy == kBaselineChromeCSP);
+    MOZ_ASSERT(baselinePolicy == kBaselineSystemCSP);
   }
 
   
@@ -2009,7 +2026,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
 #endif
 
 
-bool nsContentSecurityUtils::IsExemptedFromBaselineChromeCSP(
+bool nsContentSecurityUtils::IsExemptedFromBaselineSystemCSP(
     nsACString& aSpec) {
   if (xpc::IsInAutomation()) [[unlikely]] {
     

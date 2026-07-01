@@ -91,10 +91,10 @@ class nsContentSecurityUtils {
                                           const char* format_string);
 
   
-  static constexpr nsLiteralString kBaselineChromeCSP =
+  static constexpr nsLiteralString kBaselineSystemCSP =
       u"script-src chrome: resource: moz-src:"_ns;
 
-  static bool IsExemptedFromBaselineChromeCSP(nsACString& aSpec);
+  static bool IsExemptedFromBaselineSystemCSP(nsACString& aSpec);
 
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);
