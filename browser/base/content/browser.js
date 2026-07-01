@@ -3346,6 +3346,19 @@ var gUIDensity = {
           break;
       }
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mode == this._appliedMode) {
+      return;
+    }
+    this._appliedMode = mode;
+
     if (sidebarContentDoc) {
       let tree = sidebarContentDoc.querySelector(".sidebar-placesTree");
       if (tree) {
