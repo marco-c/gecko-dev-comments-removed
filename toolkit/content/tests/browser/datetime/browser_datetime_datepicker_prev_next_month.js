@@ -382,7 +382,7 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
   
   
   EventUtils.synthesizeKey("KEY_Tab", {
-    repeat: 2,
+    repeat: 5,
   });
   EventUtils.synthesizeKey(" ", {});
 
@@ -437,7 +437,7 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
   
   
   EventUtils.synthesizeKey("KEY_Tab", {
-    repeat: 4,
+    repeat: 7,
   });
   EventUtils.synthesizeKey(" ", {});
 
