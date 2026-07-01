@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow};
+use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow, GlyphIndex};
 use api::units::{LayoutToWorldTransform, DevicePixelScale};
 use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
@@ -15,16 +15,19 @@ use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonDat
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
-use crate::prim_store::{InternablePrimitive, PrimitiveKind};
+use crate::prim_store::{InternablePrimitive, PrimitiveKind, LayoutPointAu};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use std::ops;
 
 use super::storage;
 
-
-
-
-pub use api::key_types::GlyphInstanceAu;
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
+pub struct GlyphInstanceAu {
+    pub index: GlyphIndex,
+    pub point: LayoutPointAu,
+}
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]

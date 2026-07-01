@@ -3,7 +3,7 @@
 
 
 use api::{
-    ColorF, RasterSpace,
+    ColorF, ColorU, RasterSpace,
     LineOrientation, LineStyle, Shadow,
 };
 use api::units::*;
@@ -38,7 +38,18 @@ pub struct LineDecorationCacheKey {
 
 
 
-pub use api::interned_prims::LineDecoration;
+
+
+
+#[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct LineDecoration {
+    pub style: LineStyle,
+    pub orientation: LineOrientation,
+    pub wavy_line_thickness: Au,
+    pub color: ColorU,
+}
 
 pub type LineDecorationKey = PrimKey<LineDecoration>;
 

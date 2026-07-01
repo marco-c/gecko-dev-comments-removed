@@ -3,7 +3,7 @@
 
 
 use api::{
-    AlphaType, ColorDepth, ColorF, ColorRange, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, PremultipliedColorF, RasterSpace, Shadow, YuvColorSpace, YuvFormat
+    AlphaType, ColorDepth, ColorF, ColorRange, ColorU, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, PremultipliedColorF, RasterSpace, Shadow, YuvColorSpace, YuvFormat
 };
 use api::units::*;
 use euclid::point2;
@@ -18,7 +18,7 @@ use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureCont
 use crate::intern::{DataStore, Handle as InternHandle, InternDebug, Internable};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore
+    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SizeKey
 };
 use crate::prim_store::storage;
 use crate::render_target::RenderTargetKind;
@@ -113,7 +113,29 @@ impl ImageScratch {
 
 
 
-pub use api::key_types::StretchSizeKey;
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, MallocSizeOf)]
+pub struct StretchSizeKey {
+    pub size: SizeKey,
+    pub fills_width: bool,
+    pub fills_height: bool,
+}
+
+impl StretchSizeKey {
+    
+    
+    pub fn fills_prim() -> Self {
+        StretchSizeKey {
+            size: LayoutSize::zero().into(),
+            fills_width: true,
+            fills_height: true,
+        }
+    }
+}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -147,9 +169,17 @@ impl StretchSize {
     }
 }
 
-
-
-pub use api::interned_prims::Image;
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash)]
+pub struct Image {
+    pub key: ApiImageKey,
+    pub stretch_size: StretchSizeKey,
+    pub tile_spacing: SizeKey,
+    pub color: ColorU,
+    pub image_rendering: ImageRendering,
+    pub alpha_type: AlphaType,
+}
 
 pub type ImageKey = PrimKey<Image>;
 
@@ -856,9 +886,17 @@ impl AdjustedImageSource {
 
 
 
-
-
-pub use api::interned_prims::YuvImage;
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
+pub struct YuvImage {
+    pub color_depth: ColorDepth,
+    pub yuv_key: [ApiImageKey; 3],
+    pub format: YuvFormat,
+    pub color_space: YuvColorSpace,
+    pub color_range: ColorRange,
+    pub image_rendering: ImageRendering,
+}
 
 pub type YuvImageKey = PrimKey<YuvImage>;
 

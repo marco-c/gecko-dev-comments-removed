@@ -1,12 +1,13 @@
 
 
 
-use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, PropertyBinding};
+use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, ColorU, PropertyBinding};
 use api::units::*;
+use crate::border::{BorderRadiusAu};
 use crate::clip::{ClipItemEntry, ClipItemKey, ClipItemKeyKind, ClipNodeId};
 use crate::intern::{Handle as InternHandle, InternDebug, Internable};
 use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData};
-use crate::prim_store::{PrimitiveKind, PrimitiveStore};
+use crate::prim_store::{PrimitiveKind, PrimitiveStore, VectorKey};
 use crate::prim_store::rectangle::RectanglePrim;
 use crate::scene_building::{SceneBuilder, IsVisible};
 use crate::spatial_tree::SpatialNodeIndex;
@@ -28,9 +29,22 @@ impl BoxShadowKey {
 
 impl InternDebug for BoxShadowKey {}
 
-
-
-pub use api::interned_prims::BoxShadow;
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Clone, MallocSizeOf, Hash, Eq, PartialEq)]
+pub struct BoxShadow {
+    pub color: ColorU,
+    pub blur_radius: Au,
+    pub clip_mode: BoxShadowClipMode,
+    pub shadow_radius: BorderRadiusAu,
+    pub element_radius: BorderRadiusAu,
+    
+    
+    pub box_offset: VectorKey,
+    
+    
+    pub spread_amount: Au,
+}
 
 impl IsVisible for BoxShadow {
     fn is_visible(&self) -> bool {
