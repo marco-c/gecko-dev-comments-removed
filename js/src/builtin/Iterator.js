@@ -1941,8 +1941,18 @@ function IteratorChunks(chunkSize) {
   
 
   
+  if (!Number_isInteger(chunkSize)) {
+    
+    
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowTypeError(JSMSG_CHUNK_SIZE_NOT_INTEGER);
+  }
+
   
-  if (!Number_isInteger(chunkSize) || (chunkSize < 1 || chunkSize > (2 ** 32) - 1)) {
+  
+  if (chunkSize < 1 || chunkSize > (2 ** 32) - 1) {
     
     
     try {
@@ -2041,7 +2051,7 @@ function* IteratorChunksGenerator(iterator, nextMethod, chunkSize) {
 
 
 
-function IteratorWindows(windowSize, undersized) {
+function IteratorWindows(windowSize, undersized = undefined) {
   
   var iterator = this;
 
@@ -2054,8 +2064,18 @@ function IteratorWindows(windowSize, undersized) {
   
 
   
+  if (!Number_isInteger(windowSize)) {
+    
+    
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowTypeError(JSMSG_WINDOW_SIZE_NOT_INTEGER);
+  }
+
   
-  if (!Number_isInteger(windowSize) || (windowSize < 1 || windowSize > (2 ** 32) - 1)) {
+  
+  if (windowSize < 1 || windowSize > (2 ** 32) - 1) {
     
     
     try {
