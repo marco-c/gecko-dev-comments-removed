@@ -13,6 +13,11 @@
   MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, \
               "AudioSessionManager={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
 
+#undef LOGW
+#define LOGW(msg, ...)                             \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Warning, \
+              "AudioSessionManager={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
+
 namespace mozilla::dom {
 
 AudioSessionManager::AudioSessionManager(MediaController* aController)
@@ -76,10 +81,112 @@ void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
 }
 
 void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
+  RemoveInterruptedBcId(aBrowsingContextId);
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("NotifyBcDiscarded bc={}", aBrowsingContextId);
     UpdateSelectedAudioSession();
     MaybeFireEffectiveTypeChanged();
+  }
+}
+
+void AudioSessionManager::InterruptAudioSessions(
+    AudioSessionInterruptKind aKind) {
+  const bool permanent = aKind == AudioSessionInterruptKind::Permanent;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  AutoTArray<uint64_t, 4> toInterrupt;
+  [[maybe_unused]] size_t exclusiveActiveCount = 0;
+  for (const auto& entry : mAudioSessions) {
+    if (entry.GetData().GetState() != AudioSessionState::Active) {
+      continue;
+    }
+    toInterrupt.AppendElement(entry.GetKey());
+    if (IsExclusiveAudioSessionType(EffectiveTypeForBc(entry.GetKey()))) {
+      ++exclusiveActiveCount;
+    }
+  }
+  
+  
+  
+  MOZ_ASSERT(exclusiveActiveCount <= 1,
+             "more than one exclusive audio session was active");
+  
+  
+  
+  if (permanent) {
+    for (const uint64_t bcId : mInterruptedBcIds) {
+      toInterrupt.AppendElement(bcId);
+    }
+    ClearInterruptedBcIds();
+  }
+  LOG("InterruptAudioSessions kind={}, count={}", EnumValueToString(aKind),
+      toInterrupt.Length());
+  for (const uint64_t bcId : toInterrupt) {
+    if (!mAudioSessions.Lookup(bcId)) {
+      
+      
+      
+      LOGW("InterruptAudioSessions: record for bc={} vanished", bcId);
+      continue;
+    }
+    if (permanent) {
+      SetAudioSessionState(bcId, AudioSessionState::Inactive);
+    } else {
+      AddInterruptedBcId(bcId);
+      SetAudioSessionState(bcId, AudioSessionState::Interrupted);
+    }
+  }
+}
+
+void AudioSessionManager::RestoreAudioSessions() {
+  if (mInterruptedBcIds.IsEmpty()) {
+    LOG("RestoreAudioSessions skipped: nothing interrupted");
+    return;
+  }
+  
+  
+  AutoTArray<uint64_t, 4> toRestore;
+  for (const uint64_t bcId : mInterruptedBcIds) {
+    toRestore.AppendElement(bcId);
+  }
+  ClearInterruptedBcIds();
+  for (const uint64_t bcId : toRestore) {
+    auto entry = mAudioSessions.Lookup(bcId);
+    if (!entry || entry.Data().GetState() != AudioSessionState::Interrupted) {
+      LOG("RestoreAudioSessions bc={} skipped: {}", bcId,
+          !entry ? "no record" : "not interrupted");
+      continue;
+    }
+    LOG("RestoreAudioSessions bc={}", bcId);
+    SetAudioSessionState(bcId, AudioSessionState::Active);
+  }
+}
+
+void AudioSessionManager::AddInterruptedBcId(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.EnsureInserted(aBrowsingContextId)) {
+    LOG("InterruptedBcIds += bc={}", aBrowsingContextId);
+  }
+}
+
+void AudioSessionManager::RemoveInterruptedBcId(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.EnsureRemoved(aBrowsingContextId)) {
+    LOG("InterruptedBcIds -= bc={}", aBrowsingContextId);
+  }
+}
+
+void AudioSessionManager::ClearInterruptedBcIds() {
+  if (!mInterruptedBcIds.IsEmpty()) {
+    LOG("InterruptedBcIds cleared (count={})", mInterruptedBcIds.Count());
+    mInterruptedBcIds.Clear();
   }
 }
 
@@ -151,8 +258,7 @@ void AudioSessionManager::UpdateAllAudioSessionStates(uint64_t aUpdatedBcId) {
   
   auto updatedEntry = mAudioSessions.Lookup(aUpdatedBcId);
   if (MOZ_UNLIKELY(!updatedEntry)) {
-    LOG("[warning] UpdateAllAudioSessionStates: no record for bc={}",
-        aUpdatedBcId);
+    LOGW("UpdateAllAudioSessionStates: no record for bc={}", aUpdatedBcId);
     return;
   }
   const AudioSessionType updatedType = EffectiveTypeForBc(aUpdatedBcId);

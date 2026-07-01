@@ -174,6 +174,11 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
+  void InterruptAudioSession(AudioSessionInterruptKind aKind);
+  void RestoreAudioSession();
+
+  
+  
   AudioSessionType GetEffectiveAudioSessionType() const;
 
   
