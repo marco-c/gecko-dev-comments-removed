@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 
 template<typename T>
 struct ring_buffer {
