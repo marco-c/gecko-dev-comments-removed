@@ -3786,7 +3786,7 @@
         insertBefore = null,
         isAdoptingGroup = false,
         isUserTriggered = false,
-        telemetryUserCreateSource = "unknown",
+        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
       } = {}
     ) {
       if (
@@ -3838,7 +3838,7 @@
           new CustomEvent("TabGroupCreateByUser", {
             bubbles: true,
             detail: {
-              telemetryUserCreateSource,
+              telemetrySource,
             },
           })
         );
