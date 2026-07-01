@@ -1476,6 +1476,15 @@ class XPCShellTests:
         
         
         
+        if self.selfTest:
+            self.env.pop("MOZ_PROFILER_STARTUP", None)
+            return
+
+        
+        
+        
+        
+        
         
         
         if not self.mozInfo.get("tsan"):
