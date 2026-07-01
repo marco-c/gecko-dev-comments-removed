@@ -151,9 +151,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     }
 
     const highlighter = this._highlighters.get(type);
-    if (!highlighter.isDestroyed()) {
-      highlighter.finalize();
-    }
+    highlighter.destroy();
     this._highlighters.delete(type);
   }
 

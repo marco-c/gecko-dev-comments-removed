@@ -141,11 +141,12 @@ var generateRequestMethods = function (actorSpec, frontProto) {
     
     if (spec.release) {
       const fn = frontProto[name];
-      frontProto[name] = function (...args) {
-        return fn.apply(this, args).then(result => {
-          this.destroy();
-          return result;
-        });
+      frontProto[name] = async function (...args) {
+        
+        
+        const result = await fn.apply(this, args);
+        this.destroy();
+        return result;
       };
     }
   });
