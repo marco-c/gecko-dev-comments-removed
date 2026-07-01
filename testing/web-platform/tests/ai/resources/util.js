@@ -278,6 +278,11 @@ async function createRewriter(options = {}) {
   return await Rewriter.create(options);
 }
 
+async function createEmbedder(options = {}) {
+  await test_driver.bless();
+  return await SemanticEmbedder.create(options);
+}
+
 async function createProofreader(options = {}) {
   await test_driver.bless();
   return await Proofreader.create(options);
@@ -295,6 +300,15 @@ async function ensureLanguageModel(options = {}) {
   
   assert_implements_optional(availability != 'unavailable', 'API unavailable');
 };
+
+async function ensureEmbedder(options = {}) {
+  assert_true(!!SemanticEmbedder);
+  const availability = await SemanticEmbedder.availability(options);
+  assert_in_array(availability, kValidAvailabilities);
+  
+  assert_implements_optional(availability != 'unavailable', 'API unavailable');
+};
+
 
 async function testDestroy(t, createMethod, options, instanceMethods) {
   const instance = await createMethod(options);
