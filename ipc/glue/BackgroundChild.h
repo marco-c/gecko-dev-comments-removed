@@ -5,8 +5,6 @@
 #ifndef mozilla_ipc_backgroundchild_h_
 #define mozilla_ipc_backgroundchild_h_
 
-#include "mozilla/dom/ProcessIsolation.h"
-
 class nsIEventTarget;
 
 namespace mozilla {
@@ -62,17 +60,6 @@ class BackgroundChild final {
 
   
   static void InitContentStarter(mozilla::dom::ContentChild* aContent);
-
-  
-  
-  
-  
-  static bool ValidatePrincipal(
-      nsIPrincipal* aPrincipal,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
-  static bool ValidatePrincipalInfo(
-      const PrincipalInfo& aPrincipalInfo,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
 
  private:
   

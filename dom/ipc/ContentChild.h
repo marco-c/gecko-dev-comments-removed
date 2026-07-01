@@ -933,9 +933,6 @@ inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
   return static_cast<nsIDOMProcessChild*>(aContentChild);
 }
 
-
-nsCString CurrentRemoteType();
-
 }  
 }  
 

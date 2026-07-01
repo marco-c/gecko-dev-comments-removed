@@ -211,14 +211,6 @@ BroadcastChannel::UnpartitionedTestingChannel(const GlobalObject& aGlobal,
   }
 
   
-  if (!BackgroundChild::ValidatePrincipal(unpartitionedPrincipal, {})) {
-    MOZ_ASSERT_UNREACHABLE(
-        "ValidatePrincipal failure in UnpartitionedTestingChannel");
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
-  }
-
-  
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
     
@@ -338,14 +330,6 @@ already_AddRefed<BroadcastChannel> BroadcastChannel::Constructor(
        (ShouldPartitionStorage(storageAccess) &&
         !StoragePartitioningEnabled(storageAccess, cjs)))) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return nullptr;
-  }
-
-  
-  if (!BackgroundChild::ValidatePrincipal(storagePrincipal, {})) {
-    MOZ_ASSERT_UNREACHABLE(
-        "ValidatePrincipal failure in UnpartitionedTestingChannel");
-    aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
 

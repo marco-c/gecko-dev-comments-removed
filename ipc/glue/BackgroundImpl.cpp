@@ -24,7 +24,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/File.h"
-#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/ipc/BackgroundStarterChild.h"
@@ -669,33 +668,6 @@ uint64_t BackgroundParent::GetChildID(PBackgroundParent* aBackgroundActor) {
 }
 
 
-nsCString BackgroundParent::GetRemoteType(PBackgroundParent* aBackgroundActor) {
-  ThreadsafeContentParentHandle* handle =
-      GetContentParentHandle(aBackgroundActor);
-  return handle ? handle->GetRemoteType() : NOT_REMOTE_TYPE;
-}
-
-
-bool BackgroundParent::ValidatePrincipal(
-    PBackgroundParent* aBackgroundActor, nsIPrincipal* aPrincipal,
-    const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  return ValidatePrincipalCouldPotentiallyBeLoadedBy(
-      aPrincipal, GetRemoteType(aBackgroundActor), aOptions);
-}
-
-
-bool BackgroundParent::ValidatePrincipalInfo(
-    PBackgroundParent* aBackgroundActor, const PrincipalInfo& aPrincipal,
-    const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  auto result = PrincipalInfoToPrincipal(aPrincipal);
-  if (NS_WARN_IF(result.isErr())) {
-    return false;
-  }
-
-  return ValidatePrincipal(aBackgroundActor, result.inspect(), aOptions);
-}
-
-
 void BackgroundParent::KillHardAsync(PBackgroundParent* aBackgroundActor,
                                      const nsACString& aReason) {
   ParentImpl::KillHardAsync(aBackgroundActor, aReason);
@@ -732,26 +704,6 @@ void BackgroundChild::CloseForCurrentThread() {
 
 void BackgroundChild::InitContentStarter(ContentChild* aContent) {
   ChildImpl::InitContentStarter(aContent);
-}
-
-
-bool BackgroundChild::ValidatePrincipal(
-    nsIPrincipal* aPrincipal,
-    const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  return ValidatePrincipalCouldPotentiallyBeLoadedBy(
-      aPrincipal, dom::CurrentRemoteType(), aOptions);
-}
-
-
-bool BackgroundChild::ValidatePrincipalInfo(
-    const PrincipalInfo& aPrincipalInfo,
-    const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  auto result = PrincipalInfoToPrincipal(aPrincipalInfo);
-  if (NS_WARN_IF(result.isErr())) {
-    return false;
-  }
-
-  return ValidatePrincipal(result.inspect(), aOptions);
 }
 
 

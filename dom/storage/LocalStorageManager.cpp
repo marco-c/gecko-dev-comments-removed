@@ -150,13 +150,6 @@ nsresult LocalStorageManager::GetStorageInternal(
   nsAutoCString originKey;
   nsAutoCString quotaKey;
 
-  
-  if (!mozilla::ipc::BackgroundChild::ValidatePrincipal(aStoragePrincipal,
-                                                        {})) {
-    MOZ_ASSERT_UNREACHABLE("ValidatePrincipal failure in GetStorageInternal");
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   aStoragePrincipal->OriginAttributesRef().CreateSuffix(originAttrSuffix);
 
   nsresult rv = aStoragePrincipal->GetStorageOriginKey(originKey);

@@ -80,18 +80,6 @@ class BackgroundParent final {
 
   static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);
 
-  static nsCString GetRemoteType(PBackgroundParent* aBackgroundActor);
-
-  
-  
-  
-  static bool ValidatePrincipal(
-      PBackgroundParent* aBackgroundActor, nsIPrincipal* aPrincipal,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
-  static bool ValidatePrincipalInfo(
-      PBackgroundParent* aBackgroundActor, const PrincipalInfo& aPrincipalInfo,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
-
   static void KillHardAsync(PBackgroundParent* aBackgroundActor,
                             const nsACString& aReason);
 
