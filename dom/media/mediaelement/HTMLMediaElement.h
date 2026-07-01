@@ -654,24 +654,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void SetVolume(double aVolume, ErrorResult& aRv);
 
-  enum MutedReasons {
-    MUTED_BY_CONTENT = 0x01,
-    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
-    MUTED_BY_AUDIO_CHANNEL = 0x04,
-    MUTED_BY_AUDIO_TRACK = 0x08,
-    MUTED_BY_MEDIA_CONTROL = 0x10
-  };
-
   bool Muted() const {
     
     return !!(mMuted & (MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE));
   }
-  void SetMuted(bool aMuted, MutedReasons aReason = MUTED_BY_CONTENT);
-
-  
-  
-  
-  uint32_t GetMutedReasons() const { return mMuted; }
+  void SetMuted(bool aMuted);
 
   bool DefaultMuted() const { return GetBoolAttr(nsGkAtoms::muted); }
 
@@ -1613,6 +1600,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mIsAudioTrackAudible = false;
 
+  enum MutedReasons {
+    MUTED_BY_CONTENT = 0x01,
+    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
+    MUTED_BY_AUDIO_CHANNEL = 0x04,
+    MUTED_BY_AUDIO_TRACK = 0x08
+  };
+
   uint32_t mMuted = 0;
 
   
@@ -1990,8 +1984,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  
-  bool IsControllableMediaSource() const;
+  bool ShouldStartMediaControlKeyListener() const;
 
   
   
