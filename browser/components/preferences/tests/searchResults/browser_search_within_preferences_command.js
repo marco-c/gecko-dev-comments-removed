@@ -39,7 +39,12 @@ add_task(async function () {
   await searchCompletedPromise;
 
   
-  is_element_visible(generalPane, "Should be in generalPane");
+  
+  let privacyPane = gBrowser.contentDocument.getElementById(
+    "browserPrivacyCategory"
+  );
+  is_element_visible(privacyPane, "Should return to the privacy pane");
+  is_element_hidden(generalPane, "General pane stays hidden after clearing");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

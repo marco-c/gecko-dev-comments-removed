@@ -70,6 +70,9 @@ var gSearchResultsPane = {
 
     if (!this.searchInput.hidden) {
       this.searchInput.addEventListener("input", this);
+      document
+        .getElementById("search-results-back-button")
+        .addEventListener("click", () => this.handleSearchResultsBack());
       window.addEventListener("DOMContentLoaded", () => {
         this.searchInput.updateComplete.then(() => {
           this.searchInput.focus();
@@ -85,6 +88,14 @@ var gSearchResultsPane = {
     
     await this.initializeCategories();
     this.searchFunction(event);
+  },
+
+  async handleSearchResultsBack() {
+    await this.initializeCategories();
+    this.searchInput.value = "";
+    
+    this.query = null;
+    await this.searchFunction({ target: this.searchInput });
   },
 
   
@@ -447,11 +458,29 @@ var gSearchResultsPane = {
       noResultsEl.hidden = true;
       document.getElementById("sorry-message-query").textContent = "";
       
-      let redesignEnabled = Services.prefs.getBoolPref(
-        "browser.settings-redesign.enabled"
-      );
-      let defaultPane = redesignEnabled ? "paneSync" : "paneGeneral";
-      await gotoPref(defaultPane);
+      
+      
+      
+      
+      
+      if (window.navigation?.canGoBack ?? true) {
+        
+        
+        
+        
+        
+        let paneRestored = new Promise(resolve =>
+          document.addEventListener("paneshown", resolve, { once: true })
+        );
+        window.history.back();
+        await paneRestored;
+      } else {
+        let redesignEnabled = Services.prefs.getBoolPref(
+          "browser.settings-redesign.enabled"
+        );
+        let defaultPane = redesignEnabled ? "paneSync" : "paneGeneral";
+        await gotoPref(defaultPane);
+      }
       srHeader.hidden = true;
 
       

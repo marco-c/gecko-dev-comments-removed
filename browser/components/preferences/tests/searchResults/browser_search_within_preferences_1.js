@@ -244,7 +244,7 @@ add_task(async function search_with_nothing_found() {
 
 
 
-add_task(async function exiting_search_reverts_to_general_pane() {
+add_task(async function exiting_search_reverts_to_previous_pane() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
 
@@ -281,7 +281,12 @@ add_task(async function exiting_search_reverts_to_general_pane() {
   await searchCompletedPromise;
 
   
-  is_element_visible(generalPane, "Should be in generalPane");
+  
+  let privacyPane = gBrowser.contentDocument.getElementById(
+    "browserPrivacyCategory"
+  );
+  is_element_visible(privacyPane, "Should return to the privacy pane");
+  is_element_hidden(generalPane, "General pane stays hidden after clearing");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

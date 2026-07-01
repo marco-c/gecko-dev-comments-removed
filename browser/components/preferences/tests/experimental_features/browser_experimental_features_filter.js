@@ -134,6 +134,7 @@ add_task(async function testFilterFeatures() {
   info(`Resetted the search`);
 
   
+  
   EventUtils.synthesizeMouseAtCenter(
     doc.getElementById("category-experimental"),
     {},

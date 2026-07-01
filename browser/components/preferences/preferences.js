@@ -720,6 +720,18 @@ async function gotoPref(
   
   
   if (gLastCategory.category == category && !subcategory) {
+    document.dispatchEvent(
+       (
+        new CustomEvent("paneshown", {
+          bubbles: true,
+          cancelable: true,
+          detail: {
+            category,
+            subcategory,
+          },
+        })
+      )
+    );
     return;
   }
 
