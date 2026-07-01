@@ -1368,20 +1368,22 @@ std::vector<std::string> unicode_regex_split(const std::string & text, const std
                 
                 bpe_offsets = unicode_regex_split_stl(text_collapsed, regex_expr_collapsed, bpe_offsets);
             } else {
+                fprintf(stderr, "Only use utf-8");
+                std::abort();
                 
-                std::wstring wregex_expr(cpts_regex.begin(), cpts_regex.end());
-
                 
-                std::wstring wtext(cpts.begin(), cpts.end());
-                for (size_t i = 0; i < wtext.size(); ++i) {
-                    if (wtext[i] > 0x7F && unicode_cpt_flags_from_cpt(wtext[i]).is_whitespace) {
-                        wtext[i] = 0x0B;
-                    }
-                }
 
                 
                 
-                bpe_offsets = unicode_regex_split_stl(wtext, wregex_expr, bpe_offsets);
+                
+                
+                
+                
+                
+
+                
+                
+                
             }
         } catch (std::regex_error & e) {
             fprintf(stderr, "Failed to process regex: '%s'\n", regex_expr.c_str());
