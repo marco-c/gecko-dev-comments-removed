@@ -2324,6 +2324,52 @@ void nsHttpChannel::SetCachedContentType() {
   mCacheEntry->SetContentType(contentType);
 }
 
+static bool ShouldSniffMisconfiguredType(nsHttpResponseHead* aResponseHead,
+                                         nsILoadInfo* aLoadInfo) {
+  if (!StaticPrefs::network_mimesniff_sniff_misconfigured_types()) {
+    return false;
+  }
+
+  
+  
+  auto type = aLoadInfo->GetExternalContentPolicyType();
+  if (type != ExtContentPolicyType::TYPE_DOCUMENT &&
+      type != ExtContentPolicyType::TYPE_SUBDOCUMENT) {
+    return false;
+  }
+
+  
+  
+  nsAutoCString contentDisposition;
+  if (NS_SUCCEEDED(aResponseHead->GetHeader(nsHttp::Content_Disposition,
+                                            contentDisposition)) &&
+      !contentDisposition.IsEmpty() &&
+      NS_GetContentDispositionFromHeader(contentDisposition) ==
+          nsIChannel::DISPOSITION_ATTACHMENT) {
+    return false;
+  }
+
+  nsAutoCString contentTypeOptionsHeader;
+  if (aResponseHead->GetContentTypeOptionsHeader(contentTypeOptionsHeader) &&
+      contentTypeOptionsHeader.EqualsIgnoreCase("nosniff")) {
+    return false;
+  }
+
+  nsAutoCString contentType;
+  aResponseHead->ContentType(contentType);
+
+  if (contentType.EqualsLiteral("text/plain")) {
+    return true;
+  }
+
+  if (contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE) ||
+      contentType.IsEmpty()) {
+    return true;
+  }
+
+  return false;
+}
+
 nsresult nsHttpChannel::CallOnStartRequest() {
   LOG(("nsHttpChannel::CallOnStartRequest [this=%p]", this));
 
@@ -2487,7 +2533,16 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   bool unknownDecoderStarted = false;
-  if (mResponseHead && !mResponseHead->HasContentType()) {
+  bool shouldSniff = false;
+  if (mResponseHead) {
+    if (!mResponseHead->HasContentType()) {
+      shouldSniff = true;
+    } else {
+      shouldSniff =
+          ShouldSniffMisconfiguredType(mResponseHead.get(), mLoadInfo);
+    }
+  }
+  if (shouldSniff) {
     MOZ_ASSERT(mConnectionInfo, "Should have connection info here");
     if (!mContentTypeHint.IsEmpty()) {
       mResponseHead->SetContentType(mContentTypeHint);

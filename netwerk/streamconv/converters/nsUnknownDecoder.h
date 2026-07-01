@@ -81,8 +81,7 @@ class nsUnknownDecoder : public nsIStreamConverter, public nsIContentSniffer {
   
   
   
-  
-  bool LastDitchSniff(nsIRequest* aRequest);
+  bool SniffBinary(nsIRequest* aRequest);
 
   
 
