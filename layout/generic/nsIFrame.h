@@ -3631,6 +3631,7 @@ class nsIFrame : public nsQueryFrame {
 #endif
 
   bool IsReplaced() const;
+  bool IsAtomicInline() const;
 
   
 

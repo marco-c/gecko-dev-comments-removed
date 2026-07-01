@@ -56,18 +56,22 @@ static nscoord SynthesizeBOffsetFromInnerBox(const nsIFrame* aFrame,
     MOZ_CRASH();
   })();
 
-  StyleAlignmentBaseline baseline = aFrame->AlignmentBaseline();
-  if (baseline == StyleAlignmentBaseline::Baseline) {
-    baseline = aWM.IsCentralBaseline() ? StyleAlignmentBaseline::Central
-                                       : StyleAlignmentBaseline::Alphabetic;
-  }
-
   BaselineSharingGroup group = aGroup;
   if (aWM.IsLineInverted()) {
     group = GetOppositeBaselineSharingGroup(aGroup);
   }
 
   
+  
+  
+  
+  StyleAlignmentBaseline baseline = aFrame->AlignmentBaseline();
+  if (!aFrame->IsAtomicInline() ||
+      baseline == StyleAlignmentBaseline::Baseline) {
+    baseline = aWM.IsCentralBaseline() ? StyleAlignmentBaseline::Central
+                                       : StyleAlignmentBaseline::Alphabetic;
+  }
+
   
   switch (baseline) {
     case StyleAlignmentBaseline::Baseline:

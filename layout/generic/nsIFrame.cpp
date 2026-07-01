@@ -597,6 +597,12 @@ bool nsIFrame::IsReplaced() const {
   return false;
 }
 
+bool nsIFrame::IsAtomicInline() const {
+  
+  return IsInlineOutside() &&
+         (IsReplaced() || !StyleDisplay()->IsInlineInsideStyle());
+}
+
 bool nsIFrame::ShouldPropagateRepaintsToRoot() const {
   if (!IsPrimaryFrame()) {
     
