@@ -9,25 +9,34 @@ use crate::color::AbsoluteColor;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::TreeCountingCaches;
 use crate::custom_properties::{
-    CustomPropertiesBuilder, DeferFontRelativeCustomPropertyResolution,
+    get_attr_value_for_cycle_resolution, handle_invalid_at_computed_value_time,
+    remove_and_insert_initial_value, substitute_references_if_needed_and_apply,
+    ComputedCustomProperties, ComputedSubstitutionFunctions, Name, NonCustomReferenceMap,
+    ReferenceFlags, References, SingleNonCustomReference, SubstitutionFunctionKind, VariableValue,
 };
 use crate::dom::{AttributeTracker, DummyElementContext, ElementContext, TElement};
 #[cfg(feature = "gecko")]
 use crate::font_metrics::FontMetricsOrientation;
-use crate::logical_geometry::WritingMode;
 use crate::properties::{
     property_counts, CSSWideKeyword, ComputedValues, DeclarationImportanceIterator, LonghandId,
-    LonghandIdSet, PrioritaryPropertyId, PropertyDeclaration, PropertyDeclarationId, PropertyFlags,
-    ShorthandsWithPropertyReferencesCache, StyleBuilder, CASCADE_PROPERTY,
+    LonghandIdSet, PrioritaryPropertyId, PrioritaryPropertyIdSet, PropertyDeclaration,
+    PropertyDeclarationId, PropertyFlags, ShorthandsWithPropertyReferencesCache, StyleBuilder,
+    CASCADE_PROPERTY,
 };
+use crate::properties::{CustomDeclaration, CustomDeclarationValue, UnparsedValue};
+use crate::properties_and_values::rule::Descriptors as PropertyDescriptors;
+use crate::properties_and_values::value::ComputedValue as ComputedRegisteredValue;
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_tree::{CascadeLevel, CascadeOrigin, RuleCascadeFlags, StrongRuleNode};
+use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
 use crate::selector_parser::PseudoElement;
 use crate::shared_lock::StylesheetGuards;
 use crate::style_adjuster::StyleAdjuster;
 use crate::stylesheets::container_rule::ContainerSizeQuery;
 use crate::stylesheets::layer_rule::LayerOrder;
+use crate::stylesheets::UrlExtraData;
 use crate::stylist::Stylist;
+use crate::values::computed::ToComputedValue;
 #[cfg(feature = "gecko")]
 use crate::values::specified::length::FontBaseSize;
 use crate::values::specified::position::PositionTryFallbacksTryTactic;
@@ -37,6 +46,8 @@ use selectors::matching::ElementSelectorFlags;
 use servo_arc::Arc;
 use smallvec::SmallVec;
 use std::borrow::Cow;
+use std::cmp;
+use std::collections::hash_map::Entry;
 
 
 #[derive(Copy, Clone)]
@@ -238,23 +249,28 @@ pub enum CascadeMode<'a, 'b> {
     },
 }
 
-fn iter_declarations<'custom_builder, 'decls: 'custom_builder, 'builder>(
+fn iter_declarations<'c, 'decls: 'c>(
     iter: impl Iterator<Item = (&'decls PropertyDeclaration, CascadePriority)>,
     declarations: &mut Declarations<'decls>,
-    mut custom_builder: Option<&mut CustomPropertiesBuilder<'custom_builder, 'builder>>,
+    mut custom: Option<(&mut Cascade<'c>, &mut computed::Context)>,
     attribute_tracker: &mut AttributeTracker,
 ) {
     for (declaration, priority) in iter {
         if let PropertyDeclaration::Custom(ref declaration) = *declaration {
-            if let Some(ref mut builder) = custom_builder {
-                builder.cascade(declaration, priority, attribute_tracker);
+            if let Some((ref mut cascade, ref mut context)) = custom {
+                cascade.cascade_custom_property(context, declaration, priority, attribute_tracker);
             }
         } else {
             let id = declaration.id().as_longhand().unwrap();
             declarations.note_declaration(declaration, priority, id);
-            if CustomPropertiesBuilder::might_have_non_custom_or_attr_dependency(id, declaration) {
-                if let Some(ref mut builder) = custom_builder {
-                    builder.maybe_note_non_custom_dependency(id, declaration, attribute_tracker);
+            if Cascade::might_have_non_custom_or_attr_dependency(id, declaration) {
+                if let Some((ref mut cascade, ref mut context)) = custom {
+                    cascade.maybe_note_non_custom_dependency(
+                        context,
+                        id,
+                        declaration,
+                        attribute_tracker,
+                    );
                 }
             }
         }
@@ -319,10 +335,15 @@ where
     );
 
     context.style().add_flags(cascade_input_flags);
+    
+    
+    context
+        .style()
+        .add_flags(stylist.get_custom_property_initial_values_flags());
 
     let using_cached_reset_properties;
     let ignore_colors = context.builder.device.forced_colors().is_active();
-    let mut cascade = Cascade::new(first_line_reparenting, try_tactic, ignore_colors);
+    let mut cascade = Cascade::new(first_line_reparenting, stylist, ignore_colors);
     let mut declarations = Default::default();
     let mut shorthand_cache = ShorthandsWithPropertyReferencesCache::default();
     let mut attribute_tracker = AttributeTracker::new(element_context);
@@ -345,42 +366,23 @@ where
             LonghandIdSet::visited_dependent()
         },
         CascadeMode::Unvisited { visited_rules } => {
-            let deferred_custom_properties = {
-                let mut builder = CustomPropertiesBuilder::new(stylist, &mut context);
-                iter_declarations(
-                    iter,
-                    &mut declarations,
-                    Some(&mut builder),
-                    &mut attribute_tracker,
-                );
-                
-                
-                
-                
-                builder.build(
-                    DeferFontRelativeCustomPropertyResolution::Yes,
-                    &mut attribute_tracker,
-                )
-            };
-
+            cascade.init_custom_properties(&mut context);
+            iter_declarations(
+                iter,
+                &mut declarations,
+                Some((&mut cascade, &mut context)),
+                &mut attribute_tracker,
+            );
             
             
-            cascade.apply_prioritary_properties(
+            
+            
+            cascade.apply_custom_and_prioritary_properties(
                 &mut context,
                 &declarations,
                 &mut shorthand_cache,
                 &mut attribute_tracker,
             );
-
-            
-            if let Some(deferred) = deferred_custom_properties {
-                CustomPropertiesBuilder::build_deferred(
-                    deferred,
-                    stylist,
-                    &mut context,
-                    &mut attribute_tracker,
-                );
-            }
 
             if let Some(visited_rules) = visited_rules {
                 cascade.compute_visited_style_if_needed(
@@ -388,6 +390,7 @@ where
                     element,
                     parent_style,
                     layout_parent_style,
+                    try_tactic,
                     visited_rules,
                     guards,
                 );
@@ -642,7 +645,7 @@ struct Declaration<'a> {
 
 
 #[derive(Default)]
-struct Declarations<'a> {
+pub(crate) struct Declarations<'a> {
     
     has_prioritary_properties: bool,
     
@@ -691,32 +694,157 @@ impl<'a> Declarations<'a> {
     }
 }
 
-struct Cascade<'b> {
-    first_line_reparenting: FirstLineReparenting<'b>,
-    try_tactic: &'b PositionTryFallbacksTryTactic,
-    ignore_colors: bool,
-    seen: LonghandIdSet,
-    author_specified: LonghandIdSet,
-    reverted_set: LonghandIdSet,
-    reverted: FxHashMap<LonghandId, (CascadePriority, RevertKind)>,
-    declarations_to_apply_unless_overridden: DeclarationsToApplyUnlessOverriden,
+#[derive(Default)]
+struct RevertedSet {
+    
+    longhands_set: LonghandIdSet,
+    longhands: FxHashMap<LonghandId, (CascadePriority, RevertKind)>,
+    custom: PrecomputedHashMap<Name, (CascadePriority, RevertKind)>,
 }
 
-impl<'b> Cascade<'b> {
+#[derive(Default)]
+struct SeenSubstitutionFunctions<'a> {
+    var: PrecomputedHashSet<&'a Name>,
+    attr: PrecomputedHashSet<&'a Name>,
+}
+
+#[derive(Default)]
+struct SeenSet<'a> {
+    longhands: LonghandIdSet,
+    custom: SeenSubstitutionFunctions<'a>,
+}
+
+
+fn find_non_custom_references(
+    registration: &PropertyDescriptors,
+    value: &VariableValue,
+    is_root_element: bool,
+) -> ReferenceFlags {
+    use crate::properties_and_values::syntax::data_type::DependentDataTypes;
+
+    let mut result = ReferenceFlags::empty();
+    let Some(syntax) = registration.syntax.as_ref() else {
+        return result;
+    };
+    let dependent_types = syntax.dependent_types();
+    let may_reference_length = dependent_types.intersects(DependentDataTypes::LENGTH);
+    if may_reference_length {
+        result |= value.references.non_custom_references(is_root_element);
+    }
+    if dependent_types.intersects(DependentDataTypes::COLOR) {
+        
+        
+        result |= ReferenceFlags::COLOR_SCHEME;
+    }
+    result
+}
+
+
+
+
+
+
+
+
+
+pub struct KeyframeCustomPropertiesBuilder<'a> {
+    cascade: Cascade<'a>,
+    decls: Declarations<'a>,
+    shorthand_cache: ShorthandsWithPropertyReferencesCache,
+}
+
+impl<'a> KeyframeCustomPropertiesBuilder<'a> {
+    
+    
+    pub fn new(
+        stylist: &'a Stylist,
+        context: &mut computed::Context,
+        base: ComputedCustomProperties,
+    ) -> Self {
+        context.builder.substitution_functions =
+            ComputedSubstitutionFunctions::new(Some(base), None);
+        Self {
+            cascade: Cascade::new_for_custom_properties_only(stylist),
+            decls: Declarations::default(),
+            shorthand_cache: ShorthandsWithPropertyReferencesCache::default(),
+        }
+    }
+
+    
+    pub fn cascade(
+        &mut self,
+        context: &mut computed::Context,
+        declaration: &'a CustomDeclaration,
+        priority: CascadePriority,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        self.cascade
+            .cascade_custom_property(context, declaration, priority, attribute_tracker);
+    }
+
+    
+    pub fn build(
+        mut self,
+        context: &mut computed::Context,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        self.cascade.apply_custom_and_prioritary_properties(
+            context,
+            &self.decls,
+            &mut self.shorthand_cache,
+            attribute_tracker,
+        );
+    }
+}
+
+pub(crate) struct Cascade<'a> {
+    first_line_reparenting: FirstLineReparenting<'a>,
+    stylist: &'a Stylist,
+    ignore_colors: bool,
+    seen: SeenSet<'a>,
+    reverted: RevertedSet,
+    author_specified: LonghandIdSet,
+    declarations_to_apply_unless_overridden: DeclarationsToApplyUnlessOverriden,
+    may_have_custom_property_cycles: bool,
+    references_from_non_custom_properties: NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
+    
+    ensured_prioritary: PrioritaryPropertyIdSet,
+}
+
+impl<'a> Cascade<'a> {
     fn new(
-        first_line_reparenting: FirstLineReparenting<'b>,
-        try_tactic: &'b PositionTryFallbacksTryTactic,
+        first_line_reparenting: FirstLineReparenting<'a>,
+        stylist: &'a Stylist,
         ignore_colors: bool,
     ) -> Self {
         Self {
             first_line_reparenting,
-            try_tactic,
+            stylist,
             ignore_colors,
-            seen: LonghandIdSet::default(),
-            author_specified: LonghandIdSet::default(),
-            reverted_set: Default::default(),
+            seen: Default::default(),
+            author_specified: Default::default(),
             reverted: Default::default(),
             declarations_to_apply_unless_overridden: Default::default(),
+            may_have_custom_property_cycles: false,
+            ensured_prioritary: PrioritaryPropertyIdSet::default(),
+            references_from_non_custom_properties: Default::default(),
+        }
+    }
+
+    
+    
+    fn new_for_custom_properties_only(stylist: &'a Stylist) -> Self {
+        Self {
+            first_line_reparenting: FirstLineReparenting::No,
+            stylist,
+            ignore_colors: false,
+            seen: Default::default(),
+            author_specified: Default::default(),
+            reverted: Default::default(),
+            declarations_to_apply_unless_overridden: Default::default(),
+            may_have_custom_property_cycles: false,
+            ensured_prioritary: PrioritaryPropertyIdSet::default(),
+            references_from_non_custom_properties: Default::default(),
         }
     }
 
@@ -771,10 +899,10 @@ impl<'b> Cascade<'b> {
         cache: &mut ShorthandsWithPropertyReferencesCache,
         id: PrioritaryPropertyId,
         attr_provider: &mut AttributeTracker,
-    ) -> bool {
+    ) {
         let mut index = decls.prioritary_positions[id as usize].most_important;
         if index == DeclarationIndex::MAX {
-            return false;
+            return;
         }
 
         let longhand_id = id.to_longhand();
@@ -792,8 +920,10 @@ impl<'b> Cascade<'b> {
                 cache,
                 attr_provider,
             );
-            if self.seen.contains(longhand_id) {
-                return true; 
+            if self.seen.longhands.contains(longhand_id) {
+                
+                self.did_apply_prioritary_property(context, id);
+                return;
             }
             debug_assert!(
                 decl.next_index == 0 || decl.next_index > index,
@@ -803,123 +933,95 @@ impl<'b> Cascade<'b> {
             );
             index = decl.next_index;
             if index == 0 {
-                break;
+                return;
             }
         }
-        false
     }
 
-    fn apply_prioritary_properties(
+    
+    fn prioritary_property_dependencies(
+        id: PrioritaryPropertyId,
+    ) -> &'static [PrioritaryPropertyId] {
+        use crate::properties::PrioritaryPropertyId::*;
+        match id {
+            MozDefaultAppearance => &[],
+            Appearance => &[MozDefaultAppearance],
+            XTextScale => &[FontFamily],
+            ColorScheme => &[ForcedColorAdjust],
+            FontFamily => &[XLang],
+            FontSize => &[Zoom, FontFamily, MathDepth, MozMinFontSizeRatio, XTextScale],
+            FontWeight | FontStretch | FontStyle | FontSizeAdjust => &[FontSize],
+            LineHeight => &[FontWeight, FontStretch, FontStyle, FontSizeAdjust],
+            MathDepth | MozMinFontSizeRatio | XLang | Zoom | ForcedColorAdjust | Direction
+            | WritingMode | TextOrientation => &[Appearance],
+        }
+    }
+
+    
+    fn did_apply_prioritary_property(
         &mut self,
         context: &mut computed::Context,
-        decls: &Declarations,
-        cache: &mut ShorthandsWithPropertyReferencesCache,
-        attribute_tracker: &mut AttributeTracker,
+        id: PrioritaryPropertyId,
     ) {
-        
-        
-        macro_rules! apply {
-            ($prop:ident) => {
-                self.apply_one_prioritary_property(
-                    context,
-                    decls,
-                    cache,
-                    PrioritaryPropertyId::$prop,
-                    attribute_tracker,
-                )
-            };
-        }
-
-        if !decls.has_prioritary_properties {
-            return;
-        }
-
-        #[cfg(feature = "gecko")]
-        apply!(MozDefaultAppearance);
-        #[cfg(feature = "gecko")]
-        if apply!(Appearance) && is_base_appearance(&context) {
-            context
-                .style()
-                .add_flags(ComputedValueFlags::IS_IN_APPEARANCE_BASE_SUBTREE);
-            context
-                .included_cascade_flags
-                .insert(RuleCascadeFlags::APPEARANCE_BASE);
-        }
-
-        let has_writing_mode = apply!(WritingMode) | apply!(Direction);
-        #[cfg(feature = "gecko")]
-        let has_writing_mode = has_writing_mode | apply!(TextOrientation);
-
-        if has_writing_mode {
-            context.builder.writing_mode = WritingMode::new(context.builder.get_inherited_box())
-        }
-
-        if apply!(Zoom) {
-            context.builder.recompute_effective_zooms();
-            if !context.builder.effective_zoom_for_inheritance.is_one() {
-                
-                
-                
-                
-                
-                self.recompute_font_size_for_zoom_change(&mut context.builder);
-            }
-        }
-
-        
-        let has_font_family = apply!(FontFamily);
-        let has_lang = apply!(XLang);
-        #[cfg(feature = "gecko")]
-        {
-            if has_lang {
+        use crate::properties::PrioritaryPropertyId::*;
+        match id {
+            Appearance => {
+                if is_base_appearance(context) {
+                    context
+                        .style()
+                        .add_flags(ComputedValueFlags::IS_IN_APPEARANCE_BASE_SUBTREE);
+                    context
+                        .included_cascade_flags
+                        .insert(RuleCascadeFlags::APPEARANCE_BASE);
+                }
+            },
+            WritingMode | Direction | TextOrientation => {
+                context.builder.writing_mode =
+                    crate::logical_geometry::WritingMode::new(context.builder.get_inherited_box());
+            },
+            Zoom => {
+                context.builder.recompute_effective_zooms();
+                if !context.builder.effective_zoom_for_inheritance.is_one() {
+                    
+                    
+                    
+                    
+                    
+                    self.recompute_font_size_for_zoom_change(&mut context.builder);
+                }
+            },
+            XLang => {
                 self.recompute_initial_font_family_if_needed(&mut context.builder);
-            }
-            if has_font_family {
+                self.recompute_keyword_font_size_if_needed(context);
+            },
+            FontFamily => {
                 self.prioritize_user_fonts_if_needed(&mut context.builder);
-            }
-
-            
-            if apply!(XTextScale) {
-                self.unzoom_fonts_if_needed(&mut context.builder);
-            }
-            let has_font_size = apply!(FontSize);
-            let has_math_depth = apply!(MathDepth);
-            let has_min_font_size_ratio = apply!(MozMinFontSizeRatio);
-
-            if has_math_depth && has_font_size {
-                self.recompute_math_font_size_if_needed(context);
-            }
-            if has_lang || has_font_family {
                 self.recompute_keyword_font_size_if_needed(context);
-            }
-            if has_font_size || has_min_font_size_ratio || has_lang || has_font_family {
+            },
+            FontSize => {
+                if self.seen.longhands.contains(LonghandId::MathDepth) {
+                    Self::recompute_math_font_size_if_needed(context);
+                }
+                if self.seen.longhands.contains(LonghandId::XLang)
+                    || self.seen.longhands.contains(LonghandId::FontFamily)
+                {
+                    self.recompute_keyword_font_size_if_needed(context);
+                }
                 self.constrain_font_size_if_needed(&mut context.builder);
-            }
+            },
+            XTextScale => {
+                self.unzoom_fonts_if_needed(&mut context.builder);
+            },
+            MozMinFontSizeRatio => {
+                self.constrain_font_size_if_needed(&mut context.builder);
+            },
+            ColorScheme => {
+                context.builder.color_scheme =
+                    context.builder.get_inherited_ui().color_scheme_bits();
+            },
+            MozDefaultAppearance | MathDepth | FontWeight | FontStretch | FontStyle
+            | FontSizeAdjust | ForcedColorAdjust | LineHeight => {},
         }
-
-        #[cfg(feature = "servo")]
-        {
-            apply!(FontSize);
-            if has_lang || has_font_family {
-                self.recompute_keyword_font_size_if_needed(context);
-            }
-        }
-
-        
-        apply!(FontWeight);
-        apply!(FontStretch);
-        apply!(FontStyle);
-        #[cfg(feature = "gecko")]
-        apply!(FontSizeAdjust);
-
-        #[cfg(feature = "gecko")]
-        apply!(ForcedColorAdjust);
-        
-        
-        if apply!(ColorScheme) {
-            context.builder.color_scheme = context.builder.get_inherited_ui().color_scheme_bits();
-        }
-        apply!(LineHeight);
     }
 
     fn apply_non_prioritary_properties(
@@ -961,7 +1063,7 @@ impl<'b> Cascade<'b> {
             for declaration in std::mem::take(&mut self.declarations_to_apply_unless_overridden) {
                 let longhand_id = declaration.id().as_longhand().unwrap();
                 debug_assert!(!longhand_id.is_logical());
-                if !self.seen.contains(longhand_id) {
+                if !self.seen.longhands.contains(longhand_id) {
                     unsafe {
                         self.do_apply_declaration(context, longhand_id, &declaration);
                     }
@@ -976,9 +1078,9 @@ impl<'b> Cascade<'b> {
 
     #[cold]
     fn recompute_zoom_dependent_inherited_lengths(&self, context: &mut computed::Context) {
-        debug_assert!(self.seen.contains(LonghandId::Zoom));
+        debug_assert!(self.seen.longhands.contains(LonghandId::Zoom));
         for prop in LonghandIdSet::zoom_dependent_inherited_properties().iter() {
-            if self.seen.contains(prop) {
+            if self.seen.longhands.contains(prop) {
                 continue;
             }
             let declaration = PropertyDeclaration::css_wide_keyword(prop, CSSWideKeyword::Inherit);
@@ -998,7 +1100,7 @@ impl<'b> Cascade<'b> {
         attribute_tracker: &mut AttributeTracker,
     ) {
         debug_assert!(!longhand_id.is_logical());
-        if self.seen.contains(longhand_id) {
+        if self.seen.longhands.contains(longhand_id) {
             return;
         }
 
@@ -1006,8 +1108,10 @@ impl<'b> Cascade<'b> {
             return;
         }
 
-        if self.reverted_set.contains(longhand_id) {
-            if let Some(&(reverted_priority, revert_kind)) = self.reverted.get(&longhand_id) {
+        if self.reverted.longhands_set.contains(longhand_id) {
+            if let Some(&(reverted_priority, revert_kind)) =
+                self.reverted.longhands.get(&longhand_id)
+            {
                 if !reverted_priority.allows_when_reverted(&priority, revert_kind) {
                     return;
                 }
@@ -1034,8 +1138,11 @@ impl<'b> Cascade<'b> {
                 if let Some(revert_kind) = keyword.revert_kind() {
                     
                     
-                    self.reverted_set.insert(longhand_id);
-                    self.reverted.insert(longhand_id, (priority, revert_kind));
+                    
+                    self.reverted.longhands_set.insert(longhand_id);
+                    self.reverted
+                        .longhands
+                        .insert(longhand_id, (priority, revert_kind));
                     return;
                 }
 
@@ -1054,7 +1161,7 @@ impl<'b> Cascade<'b> {
             None => false,
         };
 
-        self.seen.insert(longhand_id);
+        self.seen.longhands.insert(longhand_id);
         if origin.is_author_origin() {
             self.author_specified.insert(longhand_id);
         }
@@ -1093,6 +1200,7 @@ impl<'b> Cascade<'b> {
         element: Option<E>,
         parent_style: Option<&ComputedValues>,
         layout_parent_style: Option<&ComputedValues>,
+        try_tactic: &PositionTryFallbacksTryTactic,
         visited_rules: &StrongRuleNode,
         guards: &StylesheetGuards,
     ) where
@@ -1120,7 +1228,7 @@ impl<'b> Cascade<'b> {
             visited_parent!(parent_style),
             visited_parent!(layout_parent_style),
             self.first_line_reparenting,
-            self.try_tactic,
+            try_tactic,
             CascadeMode::Visited {
                 unvisited_context: &*context,
             },
@@ -1180,8 +1288,8 @@ impl<'b> Cascade<'b> {
 
     fn try_to_use_cached_reset_properties(
         &self,
-        context: &mut computed::Context<'b>,
-        cache: Option<&'b RuleCache>,
+        context: &mut computed::Context<'a>,
+        cache: Option<&'a RuleCache>,
         guards: &StylesheetGuards,
     ) -> bool {
         let style = match self.first_line_reparenting {
@@ -1307,7 +1415,9 @@ impl<'b> Cascade<'b> {
     fn recompute_keyword_font_size_if_needed(&self, context: &mut computed::Context) {
         use crate::values::computed::ToComputedValue;
 
-        if !self.seen.contains(LonghandId::XLang) && !self.seen.contains(LonghandId::FontFamily) {
+        if !self.seen.longhands.contains(LonghandId::XLang)
+            && !self.seen.longhands.contains(LonghandId::FontFamily)
+        {
             return;
         }
 
@@ -1361,7 +1471,7 @@ impl<'b> Cascade<'b> {
     
     #[cfg(feature = "gecko")]
     fn unzoom_fonts_if_needed(&self, builder: &mut StyleBuilder) {
-        debug_assert!(self.seen.contains(LonghandId::XTextScale));
+        debug_assert!(self.seen.longhands.contains(LonghandId::XTextScale));
 
         let parent_text_scale = builder.get_parent_font().clone__x_text_scale();
         let text_scale = builder.get_font().clone__x_text_scale();
@@ -1382,7 +1492,7 @@ impl<'b> Cascade<'b> {
     }
 
     fn recompute_font_size_for_zoom_change(&self, builder: &mut StyleBuilder) {
-        debug_assert!(self.seen.contains(LonghandId::Zoom));
+        debug_assert!(self.seen.longhands.contains(LonghandId::Zoom));
         
         
         let old_size = builder.get_font().clone_font_size();
@@ -1398,7 +1508,7 @@ impl<'b> Cascade<'b> {
     
     
     #[cfg(feature = "gecko")]
-    fn recompute_math_font_size_if_needed(&self, context: &mut computed::Context) {
+    fn recompute_math_font_size_if_needed(context: &mut computed::Context) {
         use crate::values::generics::NonNegative;
 
         
@@ -1525,4 +1635,1051 @@ impl<'b> Cascade<'b> {
         font.mSize = NonNegative(new_size);
         font.mScriptUnconstrainedSize = NonNegative(new_unconstrained_size);
     }
+
+    
+    
+    fn init_custom_properties(&mut self, context: &mut computed::Context) {
+        let is_root_element = context.is_root_element();
+        let initial_values = self.stylist.get_custom_property_initial_values();
+        let inherited = if is_root_element {
+            debug_assert!(context.inherited_custom_properties().is_empty());
+            initial_values.inherited.clone()
+        } else {
+            context.inherited_custom_properties().inherited.clone()
+        };
+        let properties = ComputedCustomProperties {
+            inherited,
+            non_inherited: initial_values.non_inherited.clone(),
+        };
+        context.builder.substitution_functions =
+            ComputedSubstitutionFunctions::new(Some(properties), None);
+    }
+
+    
+    
+    
+    
+    
+    fn apply_custom_and_prioritary_properties(
+        &mut self,
+        context: &mut computed::Context,
+        decls: &Declarations,
+        shorthand_cache: &mut ShorthandsWithPropertyReferencesCache,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        if self.may_have_custom_property_cycles {
+            let stylist = self.stylist;
+            let seen = std::mem::take(&mut self.seen.custom);
+            let references = std::mem::take(&mut self.references_from_non_custom_properties);
+            let mut map = std::mem::take(&mut context.builder.substitution_functions);
+            substitute_all(
+                &mut map,
+                &seen,
+                &references,
+                stylist,
+                context,
+                self,
+                decls,
+                shorthand_cache,
+                attribute_tracker,
+            );
+            context.builder.substitution_functions = map;
+        }
+        
+        if decls.has_prioritary_properties {
+            for id in PrioritaryPropertyId::each() {
+                self.ensure_prioritary_property(
+                    context,
+                    decls,
+                    shorthand_cache,
+                    attribute_tracker,
+                    id,
+                );
+            }
+        }
+        self.finish_cascade_custom_properties(context);
+    }
+
+    
+    fn ensure_prioritary_property(
+        &mut self,
+        context: &mut computed::Context,
+        decls: &Declarations,
+        cache: &mut ShorthandsWithPropertyReferencesCache,
+        attribute_tracker: &mut AttributeTracker,
+        id: PrioritaryPropertyId,
+    ) {
+        if self.ensured_prioritary.contains(id) {
+            return;
+        }
+        self.ensured_prioritary.insert(id);
+        for dep in Self::prioritary_property_dependencies(id) {
+            self.ensure_prioritary_property(context, decls, cache, attribute_tracker, *dep);
+        }
+        self.apply_one_prioritary_property(context, decls, cache, id, attribute_tracker);
+    }
+
+    
+    fn cascade_custom_property(
+        &mut self,
+        context: &mut computed::Context,
+        declaration: &'a CustomDeclaration,
+        priority: CascadePriority,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        let CustomDeclaration {
+            ref name,
+            ref value,
+        } = *declaration;
+
+        if let Some(&(reverted_priority, revert_kind)) = self.reverted.custom.get(name) {
+            if !reverted_priority.allows_when_reverted(&priority, revert_kind) {
+                return;
+            }
+        }
+
+        if !(priority.flags() - context.included_cascade_flags).is_empty() {
+            return;
+        }
+
+        let was_already_present = !self.seen.custom.var.insert(name);
+        if was_already_present {
+            return;
+        }
+
+        if !self.value_may_affect_style(context, name, value) {
+            return;
+        }
+
+        let kind = SubstitutionFunctionKind::Var;
+        let registration = self.stylist.get_custom_property_registration(&name);
+        match value {
+            CustomDeclarationValue::Unparsed(unparsed_value) => {
+                
+                
+                let has_dependency = unparsed_value
+                    .references
+                    .flags
+                    .intersects(ReferenceFlags::ATTR | ReferenceFlags::VAR)
+                    || !find_non_custom_references(
+                        registration,
+                        unparsed_value,
+                        context.is_root_element(),
+                    )
+                    .is_empty();
+                
+                
+                
+                if !has_dependency {
+                    let mut map = std::mem::take(&mut context.builder.substitution_functions);
+                    substitute_references_if_needed_and_apply(
+                        name,
+                        kind,
+                        unparsed_value,
+                        &mut map,
+                        self.stylist,
+                        context,
+                        attribute_tracker,
+                    );
+                    context.builder.substitution_functions = map;
+                    return;
+                }
+                self.may_have_custom_property_cycles = true;
+                let value = ComputedRegisteredValue::universal(Arc::clone(unparsed_value));
+                context
+                    .builder
+                    .substitution_functions
+                    .insert_var(registration, name, value);
+            },
+            CustomDeclarationValue::Parsed(parsed_value) => {
+                let value = parsed_value.to_computed_value(&context);
+                context
+                    .builder
+                    .substitution_functions
+                    .insert_var(registration, name, value);
+            },
+            CustomDeclarationValue::CSSWideKeyword(keyword) => match keyword.revert_kind() {
+                Some(revert_kind) => {
+                    self.seen.custom.var.remove(name);
+                    self.reverted
+                        .custom
+                        .insert(name.clone(), (priority, revert_kind));
+                },
+                None => match keyword {
+                    CSSWideKeyword::Initial => {
+                        
+                        debug_assert!(registration.inherits(), "Should've been handled earlier");
+                        remove_and_insert_initial_value(
+                            name,
+                            registration,
+                            &mut context.builder.substitution_functions,
+                        );
+                    },
+                    CSSWideKeyword::Inherit => {
+                        
+                        debug_assert!(!registration.inherits(), "Should've been handled earlier");
+                        context
+                            .style()
+                            .add_flags(ComputedValueFlags::INHERITS_RESET_STYLE);
+                        let inherited_value = context
+                            .inherited_custom_properties()
+                            .non_inherited
+                            .get(name)
+                            .cloned();
+                        if let Some(inherited_value) = inherited_value {
+                            context.builder.substitution_functions.insert_var(
+                                registration,
+                                name,
+                                inherited_value,
+                            );
+                        }
+                    },
+                    
+                    CSSWideKeyword::Revert
+                    | CSSWideKeyword::RevertLayer
+                    | CSSWideKeyword::RevertRule
+                    | CSSWideKeyword::Unset => unreachable!(),
+                },
+            },
+        }
+    }
+
+    
+    #[inline]
+    pub fn might_have_non_custom_or_attr_dependency(
+        id: LonghandId,
+        decl: &PropertyDeclaration,
+    ) -> bool {
+        if let PropertyDeclaration::WithVariables(v) = decl {
+            return matches!(id, LonghandId::LineHeight | LonghandId::FontSize)
+                || v.value
+                    .variable_value
+                    .references
+                    .flags
+                    .intersects(ReferenceFlags::ATTR);
+        }
+        false
+    }
+
+    
+    
+    pub fn maybe_note_non_custom_dependency(
+        &mut self,
+        context: &mut computed::Context,
+        id: LonghandId,
+        decl: &'a PropertyDeclaration,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        debug_assert!(Self::might_have_non_custom_or_attr_dependency(id, decl));
+        let PropertyDeclaration::WithVariables(v) = decl else {
+            return;
+        };
+        let value = &v.value.variable_value;
+        let refs = &value.references;
+
+        if !refs
+            .flags
+            .intersects(ReferenceFlags::VAR | ReferenceFlags::ATTR)
+        {
+            return;
+        }
+
+        
+        
+        if refs.flags.intersects(ReferenceFlags::ATTR) {
+            self.update_attributes_map(context, value, attribute_tracker);
+            if !refs.flags.intersects(ReferenceFlags::VAR) {
+                return;
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let references = match id {
+            LonghandId::FontSize => ReferenceFlags::FONT_UNITS,
+            LonghandId::LineHeight => ReferenceFlags::LH_UNITS | ReferenceFlags::FONT_UNITS,
+            LonghandId::ColorScheme => ReferenceFlags::COLOR_SCHEME,
+            _ => return,
+        };
+
+        references.for_each_non_custom(context.is_root_element(), |idx| {
+            self.references_from_non_custom_properties[idx]
+                .get_or_insert_with(Vec::new)
+                .push(v.value.clone());
+        });
+    }
+
+    fn value_may_affect_style(
+        &self,
+        context: &computed::Context,
+        name: &Name,
+        value: &CustomDeclarationValue,
+    ) -> bool {
+        let registration = self.stylist.get_custom_property_registration(&name);
+        match *value {
+            CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Inherit) => {
+                
+                
+                
+                if registration.inherits() {
+                    return false;
+                }
+            },
+            CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial) => {
+                
+                
+                if !registration.inherits() {
+                    return false;
+                }
+            },
+            CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Unset) => {
+                
+                
+                
+                return false;
+            },
+            _ => {},
+        }
+
+        let existing_value = context
+            .builder
+            .substitution_functions
+            .get_var(registration, &name);
+        let Some(existing_value) = existing_value else {
+            if matches!(
+                value,
+                CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial)
+            ) {
+                debug_assert!(registration.inherits(), "Should've been handled earlier");
+                
+                
+                
+                if registration.initial_value.is_none() {
+                    return false;
+                }
+            }
+            return true;
+        };
+        match value {
+            CustomDeclarationValue::Unparsed(value) => {
+                
+                
+                if let Some(existing_value) = existing_value.as_universal() {
+                    return existing_value != value;
+                }
+            },
+            CustomDeclarationValue::Parsed(..) => {
+                
+                
+            },
+            CustomDeclarationValue::CSSWideKeyword(kw) => {
+                match kw {
+                    CSSWideKeyword::Inherit => {
+                        debug_assert!(!registration.inherits(), "Should've been handled earlier");
+                        
+                        
+                        
+                        if context
+                            .inherited_custom_properties()
+                            .non_inherited
+                            .get(name)
+                            .is_none()
+                        {
+                            return false;
+                        }
+                    },
+                    CSSWideKeyword::Initial => {
+                        debug_assert!(registration.inherits(), "Should've been handled earlier");
+                        
+                        
+                        if let Some(initial_value) = self
+                            .stylist
+                            .get_custom_property_initial_values()
+                            .get(registration, name)
+                        {
+                            return existing_value != initial_value;
+                        }
+                    },
+                    CSSWideKeyword::Unset => {
+                        debug_assert!(false, "Should've been handled earlier");
+                    },
+                    CSSWideKeyword::Revert
+                    | CSSWideKeyword::RevertLayer
+                    | CSSWideKeyword::RevertRule => {},
+                }
+            },
+        };
+
+        true
+    }
+
+    
+    pub fn update_attributes_map(
+        &mut self,
+        context: &mut computed::Context,
+        value: &'a VariableValue,
+        attribute_tracker: &mut AttributeTracker,
+    ) {
+        let refs = &value.references;
+        if !refs.flags.intersects(ReferenceFlags::ATTR) {
+            return;
+        }
+        self.may_have_custom_property_cycles = true;
+
+        for next in &refs.refs {
+            if !next.is_attr_with_type() || !self.seen.custom.attr.insert(&next.name) {
+                
+                
+                continue;
+            }
+            if let Ok(v) = get_attr_value_for_cycle_resolution(
+                &next.name,
+                &next.attribute_data,
+                &value.url_data,
+                attribute_tracker,
+            ) {
+                context
+                    .builder
+                    .substitution_functions
+                    .insert_attr(&next.name, v);
+            }
+        }
+    }
+
+    
+    
+    pub fn finish_cascade_custom_properties(&mut self, context: &mut computed::Context) {
+        context
+            .builder
+            .substitution_functions
+            .custom_properties
+            .shrink_to_fit();
+
+        
+        
+        
+        
+        let initial_values = self.stylist.get_custom_property_initial_values();
+        let reuse_inherited = context.inherited_custom_properties().inherited
+            == context
+                .builder
+                .substitution_functions
+                .custom_properties
+                .inherited;
+        if reuse_inherited {
+            let inherited = context.inherited_custom_properties().inherited.clone();
+            context
+                .builder
+                .substitution_functions
+                .custom_properties
+                .inherited = inherited;
+        }
+        if initial_values.non_inherited
+            == context
+                .builder
+                .substitution_functions
+                .custom_properties
+                .non_inherited
+        {
+            let non_inherited = initial_values.non_inherited.clone();
+            context
+                .builder
+                .substitution_functions
+                .custom_properties
+                .non_inherited = non_inherited;
+        }
+    }
+}
+
+fn substitute_all(
+    substitution_function_map: &mut ComputedSubstitutionFunctions,
+    seen: &SeenSubstitutionFunctions,
+    references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
+    stylist: &Stylist,
+    computed_context: &mut computed::Context,
+    cascade: &mut Cascade,
+    decls: &Declarations,
+    shorthand_cache: &mut ShorthandsWithPropertyReferencesCache,
+    attr_tracker: &mut AttributeTracker,
+) {
+    
+    
+    
+    
+    
+
+    #[derive(Clone, Eq, PartialEq, Debug)]
+    enum VarType {
+        Attr(Name),
+        Custom(Name),
+        NonCustom(SingleNonCustomReference),
+    }
+
+    
+    #[derive(Debug)]
+    struct VarInfo {
+        
+        
+        
+        
+        var: Option<VarType>,
+        
+        
+        
+        
+        lowlink: usize,
+    }
+
+    #[derive(Debug, Default)]
+    struct OrderIndexMap {
+        
+        var: PrecomputedHashMap<Name, usize>,
+        
+        attr: PrecomputedHashMap<Name, usize>,
+    }
+
+    
+    
+    struct Context<'a, 'b: 'a, 'c, 'd> {
+        
+        
+        count: usize,
+        
+        index_map: OrderIndexMap,
+        
+        non_custom_index_map: NonCustomReferenceMap<usize>,
+        
+        var_info: SmallVec<[VarInfo; 5]>,
+        
+        
+        stack: SmallVec<[usize; 5]>,
+        
+        
+        
+        
+        map: &'a mut ComputedSubstitutionFunctions,
+        
+        
+        stylist: &'a Stylist,
+        
+        
+        computed_context: &'a mut computed::Context<'b>,
+        
+        
+        
+        cascade: &'a mut Cascade<'c>,
+        
+        decls: &'a Declarations<'d>,
+        
+        cache: &'a mut ShorthandsWithPropertyReferencesCache,
+    }
+
+    
+    
+    
+    
+    
+    fn apply_prioritary_property<'a, 'b, 'c, 'd>(
+        context: &mut Context<'a, 'b, 'c, 'd>,
+        id: PrioritaryPropertyId,
+        attr_tracker: &mut AttributeTracker,
+    ) {
+        
+        context.computed_context.builder.substitution_functions = std::mem::take(&mut *context.map);
+        context.cascade.ensure_prioritary_property(
+            context.computed_context,
+            context.decls,
+            context.cache,
+            attr_tracker,
+            id,
+        );
+        *context.map = std::mem::take(&mut context.computed_context.builder.substitution_functions);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_value_references<'a, 'b, 'c, 'd>(
+        var: &VarType,
+        root: &References,
+        url_data: &UrlExtraData,
+        index: usize,
+        references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
+        context: &mut Context<'a, 'b, 'c, 'd>,
+        lowlink: &mut usize,
+        self_ref: &mut bool,
+        attribute_tracker: &mut AttributeTracker,
+        non_custom_references: &mut ReferenceFlags,
+    ) {
+        
+        let mut refs_stack = SmallVec::<[&References; 5]>::new();
+        refs_stack.push(root);
+        while let Some(refs) = refs_stack.pop() {
+            *non_custom_references |= refs.flags;
+            for next in &refs.refs {
+                if next.substitution_kind == SubstitutionFunctionKind::Env {
+                    
+                    
+                    
+                    let device = context.stylist.device();
+                    let present = device
+                        .environment()
+                        .get(&next.name, device, url_data)
+                        .is_some();
+                    if !present {
+                        if let Some(ref fallback) = next.fallback {
+                            refs_stack.push(&fallback.references);
+                        }
+                    }
+                    continue;
+                }
+
+                let next_var = if next.substitution_kind == SubstitutionFunctionKind::Attr {
+                    
+                    
+                    let can_chain = next.is_attr_with_type() || matches!(var, VarType::Attr(..));
+                    if !can_chain {
+                        continue;
+                    }
+                    if context.map.get_attr(&next.name).is_none() {
+                        if let Ok(val) = get_attr_value_for_cycle_resolution(
+                            &next.name,
+                            &next.attribute_data,
+                            url_data,
+                            attribute_tracker,
+                        ) {
+                            context.map.insert_attr(&next.name, val);
+                        }
+                    }
+                    VarType::Attr(next.name.clone())
+                } else {
+                    VarType::Custom(next.name.clone())
+                };
+
+                visit_link(
+                    next_var,
+                    index,
+                    references_from_non_custom_properties,
+                    context,
+                    lowlink,
+                    self_ref,
+                    attribute_tracker,
+                );
+
+                
+                
+                let kind = next.substitution_kind;
+                let resolved = match kind {
+                    SubstitutionFunctionKind::Var => {
+                        let registration =
+                            context.stylist.get_custom_property_registration(&next.name);
+                        context.map.get_var(registration, &next.name)
+                    },
+                    SubstitutionFunctionKind::Attr => context.map.get_attr(&next.name),
+                    SubstitutionFunctionKind::Env => unreachable!("Handled above"),
+                };
+                
+                
+                let mut primary_valid = false;
+                if let Some(ref resolved) = resolved {
+                    if let Some(v) = resolved.as_universal() {
+                        primary_valid = !v.has_references();
+                        *non_custom_references |= v.references.flags;
+                    } else {
+                        
+                        primary_valid = true;
+                    }
+                }
+
+                if !primary_valid {
+                    if let Some(ref fallback) = next.fallback {
+                        refs_stack.push(&fallback.references);
+                    }
+                }
+            }
+        }
+    }
+
+    
+    
+    fn visit_link<'a, 'b, 'c, 'd>(
+        var: VarType,
+        index: usize,
+        non_custom_references: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
+        context: &mut Context<'a, 'b, 'c, 'd>,
+        lowlink: &mut usize,
+        self_ref: &mut bool,
+        attr_tracker: &mut AttributeTracker,
+    ) {
+        let next_index = match traverse(var, non_custom_references, context, attr_tracker) {
+            Some(index) => index,
+            
+            
+            None => return,
+        };
+        let next_info = &context.var_info[next_index];
+        if next_index > index {
+            
+            
+            
+            *lowlink = cmp::min(*lowlink, next_info.lowlink);
+        } else if next_index == index {
+            *self_ref = true;
+        } else if next_info.var.is_some() {
+            
+            
+            *lowlink = cmp::min(*lowlink, next_index);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn traverse<'a, 'b, 'c, 'd>(
+        var: VarType,
+        references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
+        context: &mut Context<'a, 'b, 'c, 'd>,
+        attribute_tracker: &mut AttributeTracker,
+    ) -> Option<usize> {
+        
+        
+        
+        let mut value_non_custom_refs = ReferenceFlags::empty();
+        let mut registered = false;
+        let kind = if matches!(var, VarType::Custom(..)) {
+            SubstitutionFunctionKind::Var
+        } else {
+            SubstitutionFunctionKind::Attr
+        };
+        let value = match var {
+            VarType::Custom(ref name) | VarType::Attr(ref name) => {
+                let registration;
+                let value;
+                match kind {
+                    SubstitutionFunctionKind::Var => {
+                        registration = context.stylist.get_custom_property_registration(name);
+                        value = context.map.get_var(registration, name)?.as_universal()?;
+                    },
+                    SubstitutionFunctionKind::Attr => {
+                        
+                        registration = PropertyDescriptors::unregistered();
+                        value = context.map.get_attr(name)?.as_universal()?;
+                    },
+                    _ => unreachable!("Substitution kind must be var or attr for VarType::Custom."),
+                }
+                let is_root = context.computed_context.is_root_element();
+                value_non_custom_refs = find_non_custom_references(registration, value, is_root);
+                registered = !registration.is_universal();
+                let has_dependency = value
+                    .references
+                    .flags
+                    .intersects(ReferenceFlags::ATTR | ReferenceFlags::VAR)
+                    || !value_non_custom_refs.is_empty();
+                
+                if !has_dependency {
+                    debug_assert!(
+                        !value.references.flags.intersects(ReferenceFlags::ENV),
+                        "Should've been handled earlier"
+                    );
+                    if kind == SubstitutionFunctionKind::Attr || registered {
+                        
+                        
+                        
+                        
+                        let value = value.clone();
+                        substitute_references_if_needed_and_apply(
+                            name,
+                            kind,
+                            &value,
+                            &mut context.map,
+                            context.stylist,
+                            context.computed_context,
+                            attribute_tracker,
+                        );
+                    }
+                    return None;
+                }
+
+                
+                let index_map = if kind == SubstitutionFunctionKind::Var {
+                    &mut context.index_map.var
+                } else {
+                    &mut context.index_map.attr
+                };
+                match index_map.entry(name.clone()) {
+                    Entry::Occupied(entry) => {
+                        return Some(*entry.get());
+                    },
+                    Entry::Vacant(entry) => {
+                        entry.insert(context.count);
+                    },
+                }
+                
+                
+                Some(value.clone())
+            },
+            VarType::NonCustom(ref non_custom) => {
+                let entry = &mut context.non_custom_index_map[*non_custom];
+                if let Some(v) = entry {
+                    return Some(*v);
+                }
+                *entry = Some(context.count);
+                None
+            },
+        };
+
+        
+        let index = context.count;
+        context.count += 1;
+        debug_assert_eq!(index, context.var_info.len());
+        context.var_info.push(VarInfo {
+            var: Some(var.clone()),
+            lowlink: index,
+        });
+        context.stack.push(index);
+
+        let mut self_ref = false;
+        let mut lowlink = index;
+        if let Some(ref v) = value.as_ref() {
+            debug_assert!(
+                matches!(var, VarType::Custom(_) | VarType::Attr(_)),
+                "Non-custom property has references?"
+            );
+
+            
+            visit_value_references(
+                &var,
+                &v.references,
+                &v.url_data,
+                index,
+                references_from_non_custom_properties,
+                context,
+                &mut lowlink,
+                &mut self_ref,
+                attribute_tracker,
+                &mut value_non_custom_refs,
+            );
+
+            
+            
+            let is_root = context.computed_context.is_root_element();
+            if registered && !value_non_custom_refs.is_empty() {
+                value_non_custom_refs.for_each_non_custom(is_root, |r| {
+                    visit_link(
+                        VarType::NonCustom(r),
+                        index,
+                        references_from_non_custom_properties,
+                        context,
+                        &mut lowlink,
+                        &mut self_ref,
+                        attribute_tracker,
+                    );
+                });
+            }
+        } else if let VarType::NonCustom(non_custom) = var {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if non_custom == SingleNonCustomReference::LhUnits {
+                visit_link(
+                    VarType::NonCustom(SingleNonCustomReference::FontUnits),
+                    index,
+                    references_from_non_custom_properties,
+                    context,
+                    &mut lowlink,
+                    &mut self_ref,
+                    attribute_tracker,
+                );
+            }
+            let entry = &references_from_non_custom_properties[non_custom];
+            if let Some(values) = entry.as_ref() {
+                for value in values {
+                    
+                    
+                    
+                    
+                    
+                    
+                    let value = &value.variable_value;
+                    visit_value_references(
+                        &var,
+                        &value.references,
+                        &value.url_data,
+                        index,
+                        references_from_non_custom_properties,
+                        context,
+                        &mut lowlink,
+                        &mut self_ref,
+                        attribute_tracker,
+                        &mut Default::default(),
+                    );
+                }
+            }
+        }
+
+        context.var_info[index].lowlink = lowlink;
+        if lowlink != index {
+            
+            
+            
+            
+            
+            return Some(index);
+        }
+
+        
+        let mut in_loop = self_ref;
+        let name;
+
+        let handle_variable_in_loop =
+            |name: &Name, context: &mut Context<'a, 'b, 'c, 'd>, kind: SubstitutionFunctionKind| {
+                
+                handle_invalid_at_computed_value_time(
+                    name,
+                    kind,
+                    &mut context.map,
+                    context.computed_context,
+                );
+            };
+        loop {
+            let var_index = context
+                .stack
+                .pop()
+                .expect("The current variable should still be in stack");
+            let var_info = &mut context.var_info[var_index];
+            
+            
+            
+            let var_name = var_info
+                .var
+                .take()
+                .expect("Variable should not be poped from stack twice");
+            if var_index == index {
+                name = match var_name {
+                    VarType::Custom(name) | VarType::Attr(name) => name,
+                    VarType::NonCustom(non_custom) => {
+                        
+                        
+                        
+                        
+                        let id = non_custom.to_prioritary_id();
+                        if in_loop {
+                            context
+                                .computed_context
+                                .builder
+                                .invalid_non_custom_properties
+                                .insert(id.to_longhand());
+                        } else {
+                            apply_prioritary_property(context, id, attribute_tracker);
+                        }
+                        return None;
+                    },
+                };
+                break;
+            }
+            match var_name {
+                VarType::Custom(name) | VarType::Attr(name) => {
+                    
+                    
+                    
+                    handle_variable_in_loop(&name, context, kind);
+                },
+                VarType::NonCustom(non_custom) => context
+                    .computed_context
+                    .builder
+                    .invalid_non_custom_properties
+                    .insert(non_custom.to_prioritary_id().to_longhand()),
+            }
+            in_loop = true;
+        }
+        if in_loop {
+            handle_variable_in_loop(&name, context, kind);
+            return None;
+        }
+
+        if let Some(ref v) = value {
+            
+            
+            substitute_references_if_needed_and_apply(
+                &name,
+                kind,
+                v,
+                &mut context.map,
+                context.stylist,
+                context.computed_context,
+                attribute_tracker,
+            );
+        }
+        
+        None
+    }
+
+    let mut run = |make_var: fn(Name) -> VarType, seen: &PrecomputedHashSet<&Name>| {
+        for name in seen {
+            let mut context = Context {
+                count: 0,
+                index_map: OrderIndexMap::default(),
+                non_custom_index_map: NonCustomReferenceMap::default(),
+                stack: SmallVec::new(),
+                var_info: SmallVec::new(),
+                map: &mut *substitution_function_map,
+                stylist,
+                computed_context: &mut *computed_context,
+                cascade: &mut *cascade,
+                decls,
+                cache: &mut *shorthand_cache,
+            };
+
+            traverse(
+                make_var((*name).clone()),
+                references_from_non_custom_properties,
+                &mut context,
+                attr_tracker,
+            );
+        }
+    };
+
+    
+    
+    
+    run(VarType::Custom, &seen.var);
+    
+    
+    run(VarType::Attr, &seen.attr);
 }

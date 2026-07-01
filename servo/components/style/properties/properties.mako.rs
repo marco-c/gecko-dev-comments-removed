@@ -627,9 +627,11 @@ impl LogicalGroupSet {
 }
 
 
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
-pub(crate) enum PrioritaryPropertyId {
+#[allow(missing_docs)]
+pub enum PrioritaryPropertyId {
     % for p in data.longhands:
     % if p.is_prioritary():
     ${p.camel_case},
@@ -638,6 +640,15 @@ pub(crate) enum PrioritaryPropertyId {
 }
 
 impl PrioritaryPropertyId {
+    
+    #[inline]
+    pub fn each() -> impl Iterator<Item = Self> {
+        
+        
+        (0..property_counts::PRIORITARY as u8).map(|i| unsafe { std::mem::transmute::<u8, Self>(i) })
+    }
+
+    
     #[inline]
     pub fn to_longhand(self) -> LonghandId {
         static PRIORITARY_TO_LONGHAND: [LonghandId; property_counts::PRIORITARY] = [
@@ -649,6 +660,8 @@ impl PrioritaryPropertyId {
         ];
         PRIORITARY_TO_LONGHAND[self as usize]
     }
+
+    
     #[inline]
     pub fn from_longhand(l: LonghandId) -> Option<Self> {
         static LONGHAND_TO_PRIORITARY: [Option<PrioritaryPropertyId>; ${len(data.longhands)}] = [

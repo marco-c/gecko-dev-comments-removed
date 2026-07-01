@@ -4,13 +4,12 @@
 
 
 
-use crate::custom_properties::{Name, SubstitutionFunctionKind};
+use crate::custom_properties::Name;
 use crate::properties_and_values::value::ComputedValue as ComputedRegisteredValue;
 use crate::selector_map::PrecomputedHasher;
-use indexmap::{Equivalent, IndexMap};
-use rustc_hash::FxBuildHasher;
+use indexmap::IndexMap;
 use servo_arc::Arc;
-use std::hash::{BuildHasherDefault, Hash};
+use std::hash::BuildHasherDefault;
 use std::sync::LazyLock;
 
 
@@ -217,61 +216,5 @@ impl CustomPropertiesMap {
     
     pub fn iter(&self) -> Iter<'_> {
         self.0.iter()
-    }
-}
-
-
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct AllSubstitutionFunctions(IndexMap<Key, ComputedRegisteredValue, FxBuildHasher>);
-
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
-struct Key(Name, SubstitutionFunctionKind);
-
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
-struct KeyRef<'a>(&'a Name, SubstitutionFunctionKind);
-
-impl<'a> Equivalent<Key> for KeyRef<'a> {
-    fn equivalent(&self, key: &Key) -> bool {
-        *self.0 == key.0 && self.1 == key.1
-    }
-}
-
-impl AllSubstitutionFunctions {
-    
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    
-    #[inline(always)]
-    pub fn get(
-        &self,
-        name: &Name,
-        kind: SubstitutionFunctionKind,
-    ) -> Option<&ComputedRegisteredValue> {
-        debug_assert_ne!(kind, SubstitutionFunctionKind::Env);
-        self.0.get(&KeyRef(name, kind))
-    }
-
-    
-    #[inline(always)]
-    pub fn insert(
-        &mut self,
-        name: &Name,
-        kind: SubstitutionFunctionKind,
-        value: ComputedRegisteredValue,
-    ) {
-        debug_assert_ne!(kind, SubstitutionFunctionKind::Env);
-        let k = Key(name.clone(), kind);
-        self.0.insert(k, value);
-    }
-
-    
-    #[inline(always)]
-    pub fn iter(
-        &self,
-    ) -> impl Iterator<Item = (&Name, SubstitutionFunctionKind, &ComputedRegisteredValue)> {
-        self.0.iter().map(|(k, v)| (&k.0, k.1, v))
     }
 }
