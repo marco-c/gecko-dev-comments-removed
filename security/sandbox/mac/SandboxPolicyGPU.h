@@ -121,6 +121,7 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
     (global-name "com.apple.lsd.mapdb")
     ; Graphics
     (global-name "com.apple.CARenderServer")
+    (global-name "com.apple.windowserver.active")
     (global-name "com.apple.MTLCompilerService")
     (global-name "com.apple.CoreDisplay.master")
     (global-name "com.apple.CoreDisplay.Notification")
@@ -247,15 +248,6 @@ static const char SandboxPolicyGPU[] = R"SANDBOX_LITERAL(
 
   (if (string=? isRosettaTranslated "TRUE")
     (allow file-map-executable (subpath "/private/var/db/oah")))
-)SANDBOX_LITERAL";
-
-
-
-static const char SandboxPolicyGPUx86_64Addend[] = R"SANDBOX_LITERAL(
-
-  (allow mach-lookup
-    (global-name "com.apple.windowserver.active"))
-
 )SANDBOX_LITERAL";
 
 }  
