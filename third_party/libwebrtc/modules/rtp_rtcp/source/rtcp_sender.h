@@ -74,6 +74,11 @@ class RTCPSender final {
     absl::AnyInvocable<void(TimeDelta)> schedule_next_rtcp_send_evaluation;
 
     TimeDelta rtcp_report_interval;
+
+    
+    
+    
+    RtcpMode rtcp_mode = RtcpMode::kOff;
     ReceiveStatisticsProvider* receive_statistics = nullptr;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
   };

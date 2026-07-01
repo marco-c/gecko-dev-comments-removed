@@ -102,6 +102,11 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     int rtcp_report_interval_ms = 0;
 
     
+    
+    
+    RtcpMode rtcp_mode = RtcpMode::kCompound;
+
+    
     bool populate_network2_timestamp = false;
 
     scoped_refptr<FrameTransformerInterface> frame_transformer;
@@ -125,6 +130,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     uint32_t local_media_ssrc = 0;
     std::optional<uint32_t> rtx_send_ssrc;
+    std::optional<uint32_t> remote_ssrc;
 
     bool need_rtp_packet_infos = false;
 

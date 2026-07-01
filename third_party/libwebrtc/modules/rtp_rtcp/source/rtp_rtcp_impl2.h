@@ -359,6 +359,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   RTC_NO_UNIQUE_ADDRESS SequenceChecker rtcp_module_checker_;
   
 
+  RTC_NO_UNIQUE_ADDRESS ScopedTaskSafety task_safety_;
+
   
   
   absl::AnyInvocable<uint32_t() const> recv_ssrc_callback_
@@ -381,8 +383,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   
   mutable Mutex mutex_rtt_;
   int64_t rtt_ms_ RTC_GUARDED_BY(mutex_rtt_);
-
-  RTC_NO_UNIQUE_ADDRESS ScopedTaskSafety task_safety_;
 };
 
 }  
