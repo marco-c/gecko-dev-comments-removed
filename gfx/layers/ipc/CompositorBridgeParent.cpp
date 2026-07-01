@@ -280,7 +280,7 @@ void CompositorBridgeParent::Initialize() {
 
   {  
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-    sIndirectLayerTrees[mRootLayerTreeID].mParent = this;
+    EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock).mParent = this;
   }
 }
 
@@ -353,7 +353,8 @@ void CompositorBridgeParent::StopAndClearResources() {
     RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
     {
       StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-      sIndirectLayerTrees[mRootLayerTreeID].mWebRenderAPI = nullptr;
+      EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock).mWebRenderAPI =
+          nullptr;
     }
     
     
@@ -594,7 +595,7 @@ CompositorBridgeParent::AllocPAPZCTreeManagerParent(const LayersId& aLayersId) {
 
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
-      sIndirectLayerTrees[mRootLayerTreeID];
+      EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock);
   MOZ_ASSERT(state.mParent.get() == this);
   MOZ_ASSERT(!state.mApzcTreeManagerParent);
 
@@ -612,7 +613,7 @@ void CompositorBridgeParent::SetAPZInputBridgeParent(
   MOZ_ASSERT(NS_IsMainThread());
   StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
-      CompositorBridgeParent::sIndirectLayerTrees[aLayersId];
+      EnsureLayerTreeStateUnderLock(aLayersId, lock);
   MOZ_ASSERT(!state.mApzInputBridgeParent);
   state.mApzInputBridgeParent = std::move(aInputBridgeParent);
 }
@@ -650,7 +651,7 @@ already_AddRefed<PAPZParent> CompositorBridgeParent::AllocPAPZParent(
 
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
-      sIndirectLayerTrees[mRootLayerTreeID];
+      EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock);
   MOZ_RELEASE_ASSERT(!state.mController);
   state.mController = controller;
 
@@ -679,7 +680,7 @@ CompositorBridgeParent*
 CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(
     const LayersId& aLayersId) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-  return sIndirectLayerTrees[aLayersId].mParent;
+  return EnsureLayerTreeStateUnderLock(aLayersId, lock).mParent;
 }
 
 
@@ -942,7 +943,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildRecreated(
 
 void CompositorBridgeParent::NotifyChildCreated(LayersId aChild) {
   sIndirectLayerTreesLock.AssertCurrentThreadOwns();
-  sIndirectLayerTrees[aChild].mParent = this;
+  sIndirectLayerTrees.try_emplace(aChild).first->second.mParent = this;
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvMapAndNotifyChildCreated(
@@ -994,15 +995,17 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
 
   {  
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
+    CompositorBridgeParent::LayerTreeState& childState =
+        EnsureLayerTreeStateUnderLock(child, lock);
     
     
-    if (sIndirectLayerTrees[child].mParent == this) {
+    if (childState.mParent == this) {
       return IPC_OK();
     }
 
-    if (sIndirectLayerTrees[child].mParent) {
-      switch (ClassifyCompositorOptionsChange(
-          sIndirectLayerTrees[child].mParent->mOptions, mOptions)) {
+    if (childState.mParent) {
+      switch (ClassifyCompositorOptionsChange(childState.mParent->mOptions,
+                                              mOptions)) {
         case CompositorOptionsChangeKind::eUnsupported: {
           MOZ_ASSERT(false,
                      "Moving tab between windows whose compositor options"
@@ -1023,12 +1026,12 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
           break;
         }
       }
-      oldApzUpdater = sIndirectLayerTrees[child].mParent->mApzUpdater;
+      oldApzUpdater = childState.mParent->mApzUpdater;
     }
     if (mWrBridge) {
-      childWrBridge = sIndirectLayerTrees[child].mWrBridge;
+      childWrBridge = childState.mWrBridge;
     }
-    parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
+    parent = childState.mApzcTreeManagerParent;
   }
 
   if (childWrBridge) {
@@ -1153,8 +1156,10 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(
       MakeRefPtr<WebRenderBridgeParent>(this, aPipelineId, mWidget, mVsyncRate);
   {  
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-    MOZ_ASSERT(sIndirectLayerTrees[mRootLayerTreeID].mWrBridge == nullptr);
-    sIndirectLayerTrees[mRootLayerTreeID].mWrBridge = mWrBridge;
+    CompositorBridgeParent::LayerTreeState& state =
+        EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock);
+    MOZ_ASSERT(state.mWrBridge == nullptr);
+    state.mWrBridge = mWrBridge;
   }
   return do_AddRef(mWrBridge);
 }
@@ -1217,7 +1222,7 @@ void CompositorBridgeParent::EnsureWebRenderBridgeParentInitialized() {
 
   {
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-    sIndirectLayerTrees[mRootLayerTreeID].mWebRenderAPI = api;
+    EnsureLayerTreeStateUnderLock(mRootLayerTreeID, lock).mWebRenderAPI = api;
   }
 
   mWrBridge->FinishInitialization(std::move(api), std::move(asyncMgr));
@@ -1374,18 +1379,19 @@ void EraseLayerState(LayersId aId) {
   RefPtr<APZUpdater> apz;
   RefPtr<WebRenderBridgeParent> wrBridge;
 
-  {  
-    StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
-    auto iter = CompositorBridgeParent::sIndirectLayerTrees.find(aId);
-    if (iter != CompositorBridgeParent::sIndirectLayerTrees.end()) {
-      CompositorBridgeParent* parent = iter->second.mParent;
-      if (parent) {
-        apz = parent->GetAPZUpdater();
-      }
-      wrBridge = iter->second.mWrBridge;
-      CompositorBridgeParent::sIndirectLayerTrees.erase(iter);
-    }
-  }
+  CompositorBridgeParent::WithIndirectLayerTreesLock(
+      [&](const StaticMonitorAutoLock& aProof) {
+        auto* state =
+            CompositorBridgeParent::GetLayerTreeStateUnderLock(aId, aProof);
+        if (state) {
+          CompositorBridgeParent* parent = state->mParent;
+          if (parent) {
+            apz = parent->GetAPZUpdater();
+          }
+          wrBridge = state->mWrBridge;
+          CompositorBridgeParent::EraseLayerTreeStateUnderLock(aId, aProof);
+        }
+      });
 
   if (apz) {
     apz->NotifyLayerTreeRemoved(aId);
@@ -1413,22 +1419,29 @@ void CompositorBridgeParent::DeallocateLayerTreeId(LayersId aId) {
 static void UpdateControllerForLayersId(LayersId aLayersId,
                                         GeckoContentController* aController) {
   
-  StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
-  CompositorBridgeParent::sIndirectLayerTrees[aLayersId].mController =
-      already_AddRefed<GeckoContentController>(aController);
+  CompositorBridgeParent::WithIndirectLayerTreesLock(
+      [&](const StaticMonitorAutoLock& aProof) {
+        CompositorBridgeParent::EnsureLayerTreeStateUnderLock(aLayersId, aProof)
+            .mController =
+            already_AddRefed<GeckoContentController>(aController);
+      });
 }
 
 ScopedLayerTreeRegistration::ScopedLayerTreeRegistration(
     LayersId aLayersId, GeckoContentController* aController)
     : mLayersId(aLayersId) {
-  StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
-  CompositorBridgeParent::sIndirectLayerTrees[aLayersId].mController =
-      aController;
+  CompositorBridgeParent::WithIndirectLayerTreesLock(
+      [&](const StaticMonitorAutoLock& aProof) {
+        CompositorBridgeParent::EnsureLayerTreeStateUnderLock(aLayersId, aProof)
+            .mController = aController;
+      });
 }
 
 ScopedLayerTreeRegistration::~ScopedLayerTreeRegistration() {
-  StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
-  CompositorBridgeParent::sIndirectLayerTrees.erase(mLayersId);
+  CompositorBridgeParent::WithIndirectLayerTreesLock(
+      [&](const StaticMonitorAutoLock& aProof) {
+        CompositorBridgeParent::EraseLayerTreeStateUnderLock(mLayersId, aProof);
+      });
 }
 
 
@@ -1724,14 +1737,35 @@ bool CompositorBridgeParent::CallWithLayerTreeState(
   return true;
 }
 
+ CompositorBridgeParent::LayerTreeState*
+CompositorBridgeParent::GetLayerTreeStateUnderLock(
+    LayersId aId, const StaticMonitorAutoLock& aProofOfLock) {
+  sIndirectLayerTreesLock.AssertCurrentThreadOwns();
+  LayerTreeMap::iterator it = sIndirectLayerTrees.find(aId);
+  if (sIndirectLayerTrees.end() == it) {
+    return nullptr;
+  }
+  return &it->second;
+}
+
+ CompositorBridgeParent::LayerTreeState&
+CompositorBridgeParent::EnsureLayerTreeStateUnderLock(
+    LayersId aId, const StaticMonitorAutoLock& aProofOfLock) {
+  sIndirectLayerTreesLock.AssertCurrentThreadOwns();
+  return sIndirectLayerTrees.try_emplace(aId).first->second;
+}
+
+ void CompositorBridgeParent::EraseLayerTreeStateUnderLock(
+    LayersId aId, const StaticMonitorAutoLock& aProofOfLock) {
+  sIndirectLayerTreesLock.AssertCurrentThreadOwns();
+  sIndirectLayerTrees.erase(aId);
+}
+
 static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
     LayersId aContentLayersId, const StaticMonitorAutoLock& aProofOfLock) {
-  CompositorBridgeParent::sIndirectLayerTreesLock.AssertCurrentThreadOwns();
-  CompositorBridgeParent::LayerTreeState* contentState = nullptr;
-  auto itr = CompositorBridgeParent::sIndirectLayerTrees.find(aContentLayersId);
-  if (CompositorBridgeParent::sIndirectLayerTrees.end() != itr) {
-    contentState = &itr->second;
-  }
+  CompositorBridgeParent::LayerTreeState* contentState =
+      CompositorBridgeParent::GetLayerTreeStateUnderLock(aContentLayersId,
+                                                         aProofOfLock);
 
   
   
@@ -1741,12 +1775,8 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
   
   if (contentState && contentState->mParent) {
     LayersId rootLayersId = contentState->mParent->RootLayerTreeId();
-    itr = CompositorBridgeParent::sIndirectLayerTrees.find(rootLayersId);
-    CompositorBridgeParent::LayerTreeState* rootState =
-        (CompositorBridgeParent::sIndirectLayerTrees.end() != itr)
-            ? &itr->second
-            : nullptr;
-    return rootState;
+    return CompositorBridgeParent::GetLayerTreeStateUnderLock(rootLayersId,
+                                                              aProofOfLock);
   }
 
   

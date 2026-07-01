@@ -128,7 +128,8 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   
   
   void DidCompositeLocked(LayersId aId, const VsyncId& aVsyncId,
-                          TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
+                          TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd,
+                          const StaticMonitorAutoLock& aProofOfLock);
 
   already_AddRefed<PTextureParent> AllocPTextureParent(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,

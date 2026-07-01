@@ -453,6 +453,42 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
       LayersId aId, const std::function<void(LayerTreeState&)>& aFunc);
 
   
+  
+  
+  
+  
+  
+  template <typename Function>
+  static auto WithIndirectLayerTreesLock(Function&& aFn) {
+    StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
+    return aFn(lock);
+  }
+
+  
+  static LayerTreeState* GetLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  
+  
+  
+  static LayerTreeState& EnsureLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  
+  static void EraseLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  
+  template <typename Function>
+  static void ForEachLayerTreeStateUnderLock(
+      const StaticMonitorAutoLock& aProofOfLock, Function&& aFn) {
+    sIndirectLayerTreesLock.AssertCurrentThreadOwns();
+    for (auto& entry : sIndirectLayerTrees) {
+      aFn(entry.first, entry.second);
+    }
+  }
+
+  
 
 
 
@@ -602,9 +638,20 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   bool ResumeCompositionAndResize(int x, int y, int width, int height);
   bool IsPaused();
 
-  typedef std::map<LayersId, CompositorBridgeParent::LayerTreeState>
-      LayerTreeMap;
+  
+  
+  
+  
+  
+  
+  
+  struct LayerTreeMap
+      : public std::map<LayersId, CompositorBridgeParent::LayerTreeState> {
+    mapped_type& operator[](const key_type&) = delete;
+    mapped_type& operator[](key_type&&) = delete;
+  };
 
+ private:
   static StaticMonitor sIndirectLayerTreesLock;
   static LayerTreeMap sIndirectLayerTrees
       MOZ_GUARDED_BY(sIndirectLayerTreesLock);
