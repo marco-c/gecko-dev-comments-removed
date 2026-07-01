@@ -84,9 +84,7 @@ enum class SurfaceFormat : int8_t {
   P010,       
               
               
-  NV16,       
-              
-              
+  P210,       
   YUY2,       
               
               
@@ -179,7 +177,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::NV16:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       info.hasColor = true;
       info.hasAlpha = false;
@@ -246,7 +244,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::NV16:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
     case SurfaceFormat::UNKNOWN:
       break;  
@@ -328,7 +326,6 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
     case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
-    case SurfaceFormat::NV16:
     case SurfaceFormat::YUY2:
       
       
@@ -336,6 +333,7 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
       return 0;
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::P210:
       
       return 0;
     case SurfaceFormat::UNKNOWN:
@@ -364,6 +362,7 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P010:
     case SurfaceFormat::P016:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       return true;
     case SurfaceFormat::B8G8R8A8:
@@ -376,7 +375,6 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::R16G16:
     case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
-    case SurfaceFormat::NV16:
     case SurfaceFormat::UNKNOWN:
       return false;
   }

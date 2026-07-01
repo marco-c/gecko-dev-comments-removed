@@ -26,7 +26,7 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
   SurfaceFormat ioFormat = aSurface->GetFormat();
 
   if ((ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) &&
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210) &&
       (aSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
        aSize.height > PlanarYCbCrImage::MAX_DIMENSION)) {
     return NS_ERROR_FAILURE;
@@ -77,7 +77,7 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     return result;
   }
 
-  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) {
+  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210) {
     
     
     
@@ -217,7 +217,7 @@ already_AddRefed<SourceSurface> CreateSourceSurfaceFromMacIOSurface(
 
   SurfaceFormat format =
       (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 
@@ -269,7 +269,7 @@ nsresult CreateSurfaceDescriptorBufferFromMacIOSurface(
 
   SurfaceFormat format =
       (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 

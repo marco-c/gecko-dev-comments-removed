@@ -87,7 +87,7 @@ TEST(MacIOSurfaceHelpers, P010Readback)
 
 
 
-TEST(MacIOSurfaceHelpers, NV16Readback)
+TEST(MacIOSurfaceHelpers, P210Readback)
 {
   ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
       IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH));

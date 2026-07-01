@@ -2001,7 +2001,7 @@ impl YuvColorSpace {
 pub enum YuvData {
     NV12(ImageKey, ImageKey), 
     P010(ImageKey, ImageKey), 
-    NV16(ImageKey, ImageKey), 
+    P210(ImageKey, ImageKey), 
     PlanarYCbCr(ImageKey, ImageKey, ImageKey), 
     InterleavedYCbCr(ImageKey), 
 }
@@ -2011,7 +2011,7 @@ impl YuvData {
         match *self {
             YuvData::NV12(..) => YuvFormat::NV12,
             YuvData::P010(..) => YuvFormat::P010,
-            YuvData::NV16(..) => YuvFormat::NV16,
+            YuvData::P210(..) => YuvFormat::P210,
             YuvData::PlanarYCbCr(..) => YuvFormat::PlanarYCbCr,
             YuvData::InterleavedYCbCr(..) => YuvFormat::InterleavedYCbCr,
         }
@@ -2023,7 +2023,7 @@ pub enum YuvFormat {
     
     NV12 = 0,
     P010 = 1,
-    NV16 = 2,
+    P210 = 2,
     PlanarYCbCr = 3,
     InterleavedYCbCr = 4,
 }
@@ -2031,7 +2031,7 @@ pub enum YuvFormat {
 impl YuvFormat {
     pub fn get_plane_num(self) -> usize {
         match self {
-            YuvFormat::NV12 | YuvFormat::P010 | YuvFormat::NV16 => 2,
+            YuvFormat::NV12 | YuvFormat::P010 | YuvFormat::P210 => 2,
             YuvFormat::PlanarYCbCr => 3,
             YuvFormat::InterleavedYCbCr => 1,
         }
