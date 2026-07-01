@@ -7224,11 +7224,11 @@ void Document::SetFgColor(const nsAString& aFgColor) {
 }
 
 void Document::CaptureEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfCaptureEvents);
+  
 }
 
 void Document::ReleaseEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfReleaseEvents);
+  
 }
 
 HTMLAllCollection* Document::All() {
