@@ -942,6 +942,7 @@ void PopulateTextAntiAliasing() {
 
 
 
+
 void PopulateFontSmoothingType() {
   int32_t type = -1;  
 
@@ -961,7 +962,8 @@ void PopulateFontSmoothingType() {
       type = 0;  
     } else {
       UINT smoothingType = 0;
-      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType, 0) &&
+      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType,
+                               0) &&
           smoothingType == FE_FONTSMOOTHINGCLEARTYPE) {
         type = 2;  
       } else {
@@ -1003,8 +1005,8 @@ void PopulateFontSmoothingType() {
 void PopulateFontRenderingSettings() {
 #if defined(MOZ_WIDGET_GTK)
   nsAutoCString hinting;
-  if (mozilla::widget::GSettings::GetString(
-          "org.gnome.desktop.interface"_ns, "font-hinting"_ns, hinting) &&
+  if (mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                            "font-hinting"_ns, hinting) &&
       !hinting.IsEmpty()) {
     glean::characteristics::font_hinting.Set(hinting);
   }
