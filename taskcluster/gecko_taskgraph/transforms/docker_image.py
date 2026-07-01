@@ -168,6 +168,15 @@ def fill_template(config, tasks):
 
         worker = taskdesc["worker"]
 
+        
+        
+        
+        
+        
+        
+        if image_name == "image_builder_arm64":
+            worker["env"]["TARGET_ARCH"] = "arm64"
+
         if image_name == "image_builder":
             worker["docker-image"] = IMAGE_BUILDER_IMAGE
             digest_data.append(f"image-builder-image:{IMAGE_BUILDER_IMAGE}")
