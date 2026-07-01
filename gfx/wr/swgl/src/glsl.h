@@ -207,6 +207,42 @@ SI Float sqrt(Float v) {
 #endif
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SI Bool isnan(Float v) {
+  return (Bool){
+    -(fpclassify(v.x) == FP_NAN),
+    -(fpclassify(v.y) == FP_NAN),
+    -(fpclassify(v.z) == FP_NAN),
+    -(fpclassify(v.w) == FP_NAN)
+  };
+}
+
+SI Bool isinf(Float v) {
+  return (Bool){
+    -(fpclassify(v.x) == FP_INFINITE),
+    -(fpclassify(v.y) == FP_INFINITE),
+    -(fpclassify(v.z) == FP_INFINITE),
+    -(fpclassify(v.w) == FP_INFINITE)
+  };
+}
+
 SI float recip(float x) {
 #if USE_SSE2
   return _mm_cvtss_f32(_mm_rcp_ss(_mm_set_ss(x)));
