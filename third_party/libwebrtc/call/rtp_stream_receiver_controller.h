@@ -13,7 +13,10 @@
 #include <cstdint>
 #include <memory>
 
-#include "api/sequence_checker.h"
+#include "absl/base/nullability.h"
+#include "api/scoped_refptr.h"
+#include "api/task_queue/pending_task_safety_flag.h"
+#include "api/task_queue/task_queue_base.h"
 #include "call/rtp_demuxer.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/rtp_rtcp/include/recovered_packet_receiver.h"
@@ -27,10 +30,33 @@ class RtpPacketReceived;
 
 
 
+
+
+class RtpSinkValidator {
+ public:
+  virtual ~RtpSinkValidator() = default;
+  
+  
+  
+  virtual void OnSinkAdded(RtpPacketSinkInterface* sink) = 0;
+  
+  
+  
+  virtual void OnSinkRemoved(RtpPacketSinkInterface* sink) = 0;
+  
+  virtual bool IsValidSink(RtpPacketSinkInterface* sink) const = 0;
+};
+
+
+
+
+
 class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
                                     public RecoveredPacketReceiver {
  public:
-  RtpStreamReceiverController();
+  RtpStreamReceiverController(TaskQueueBase* absl_nonnull network_thread,
+                              TaskQueueBase* absl_nonnull worker_thread,
+                              RtpSinkValidator* absl_nonnull sink_validator);
   ~RtpStreamReceiverController() override;
 
   
@@ -46,6 +72,8 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
   
   
   void OnRecoveredPacket(const RtpPacketReceived& packet) override;
+
+  void DisconnectFromNetworkThread();
 
   bool IsEmpty() const;
 
@@ -63,22 +91,22 @@ class RtpStreamReceiverController : public RtpStreamReceiverControllerInterface,
     RtpPacketSinkInterface* const sink_;
   };
 
-  
   bool AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink);
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
+  TaskQueueBase* const network_thread_;
+  TaskQueueBase* const worker_thread_;
+  RtpSinkValidator* const sink_validator_;
+  scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
+      PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true, network_thread_);
+  scoped_refptr<PendingTaskSafetyFlag> worker_safety_ =
+      PendingTaskSafetyFlag::CreateAttachedToTaskQueue(true, worker_thread_);
   
   
   
   
   
-  
-  
-  
-  SequenceChecker demuxer_sequence_;
-  
-  
-  RtpDemuxer demuxer_ RTC_GUARDED_BY(&demuxer_sequence_){false };
+  RtpDemuxer demuxer_ RTC_GUARDED_BY(network_thread_){false };
 };
 
 }  
