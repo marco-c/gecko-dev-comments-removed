@@ -7,6 +7,7 @@
 #include "BackgroundChildImpl.h"
 #include "ErrorList.h"
 #include "IDBRequest.h"
+#include "IndexedDBCommon.h"
 #include "IndexedDatabaseManager.h"
 #include "ProfilerHelpers.h"
 #include "ReportInternalError.h"
@@ -468,7 +469,8 @@ already_AddRefed<Promise> IDBFactory::Databases(JSContext* const aCx,
   }
 
   
-  if (!BackgroundChild::ValidatePrincipalInfo(*mPrincipalInfo, {})) {
+  if (!BackgroundChild::ValidatePrincipalInfo(
+          *mPrincipalInfo, indexedDB::PrincipalValidationOptions())) {
     promise->MaybeRejectWithSecurityError(kAccessError);
     return promise.forget();
   }
@@ -735,7 +737,8 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenInternal(
   }
 
   
-  if (!BackgroundChild::ValidatePrincipalInfo(principalInfo, {})) {
+  if (!BackgroundChild::ValidatePrincipalInfo(
+          principalInfo, indexedDB::PrincipalValidationOptions())) {
     aRv.ThrowSecurityError(kAccessError);
     return nullptr;
   }
