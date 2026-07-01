@@ -1,8 +1,8 @@
-
+// |jit-test| skip-if: helperThreadCount() === 0
 
 const maxSize = Math.pow(2, 29) - 1;
 
-
+// We just don't want to crash during compilation here.
 
 evaluate(`
   offThreadCompileToStencil("\\

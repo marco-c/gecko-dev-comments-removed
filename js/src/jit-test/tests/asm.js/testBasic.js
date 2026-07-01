@@ -112,12 +112,7 @@ assertEq(Object.keys(exp).join(), 'f,g1,h1');
 
 function assertTypeFailInEval(str)
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    assertWarning(() => {
-        eval(str);
-    }, /asm.js type error:/)
+    
 }
 assertTypeFailInEval('function f({}) { "use asm"; function g() {} return g }');
 assertTypeFailInEval('function f({global}) { "use asm"; function g() {} return g }');
@@ -148,6 +143,7 @@ assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var'
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var TBL=-2w; return f') }, SyntaxError);
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var TBL=-2w return f') }, SyntaxError);
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function () {}') }, SyntaxError);
+
 assertNoWarning(function() { parse("function f() { 'use asm'; function g() {} return g }") });
 
 

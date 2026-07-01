@@ -1,7 +1,5 @@
 
 
-
-
 function build_asm_code(num_params, num_locals_decl_extra) {
   let params = [];
   let param_annots = [];

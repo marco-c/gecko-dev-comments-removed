@@ -29,37 +29,14 @@ assertEq(i32[0], magic);
 assertEq(buffer.detached, false);
 assertEq(buffer.byteLength, byteLength);
 
-if (isAsmJSCompilationAvailable()) {
-  
+let copy = buffer.transfer();
 
-  assertEq(isAsmJSModule(module), true);
-  assertEq(isAsmJSFunction(zero), true);
+assertEq(buffer.detached, true);
+assertEq(buffer.byteLength, 0);
 
-  
-  assertThrowsInstanceOf(() => buffer.transfer(), TypeError);
+assertEq(copy.detached, false);
+assertEq(copy.byteLength, byteLength);
 
-  
-  assertEq(buffer.detached, false);
-  assertEq(buffer.byteLength, byteLength);
-
-  
-  assertEq(zero(), magic);
-  assertEq(i32[0], magic);
-} else {
-  
-
-  assertEq(isAsmJSModule(module), false);
-  assertEq(isAsmJSFunction(zero), false);
-
-  let copy = buffer.transfer();
-
-  assertEq(buffer.detached, true);
-  assertEq(buffer.byteLength, 0);
-
-  assertEq(copy.detached, false);
-  assertEq(copy.byteLength, byteLength);
-
-  
-  assertEq(zero(), 0);
-  assertEq(i32[0], undefined);
-}
+// Access returns undefined when detached.
+assertEq(zero(), 0);
+assertEq(i32[0], undefined);

@@ -8,20 +8,20 @@ print(BUGNUMBER + ": " + summary);
 
 
 enableLastWarning();
-eval(`function f() { if (false) { "use asm"; } }`);
+eval(`function f() { return 1; 2 + 2; }`);
 
 warning = getLastWarning();
 assertEq(warning !== null, true);
-assertEq(warning.name, "SyntaxError");
-assertEq(warning.message.includes("Directive Prologue"), true);
+assertEq(warning.name, "Warning");
+assertEq(warning.message.includes("unreachable code after return statement"), true);
 assertEq(warning.lineNumber, 1);
-assertEq(warning.columnNumber, 29);
+assertEq(warning.columnNumber, 26);
 
 
 
 disableLastWarning();
 
-eval(`function f() { if (false) { "use asm"; } }`);
+eval(`function f() { return 1; 2 + 2; }`);
 
 enableLastWarning();
 warning = getLastWarning();

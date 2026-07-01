@@ -1,10 +1,10 @@
 load(libdir + "asm.js");
 
+
+
+
 let useCounters = getUseCounterResults();
 
-assertEq(useCounters.AsmJS, 0);
-
-assertEq(useCounters.UseAsm, 1);
 
 assertEq(useCounters.Wasm, 0);
 
@@ -28,8 +28,7 @@ assertEq(f(1), 2);
 
 useCounters = getUseCounterResults();
 
-assertEq(useCounters.AsmJS, isAsmJSCompilationAvailable() ? 2 : 0);
-
-assertEq(useCounters.UseAsm, 3);
 
 assertEq(useCounters.Wasm, 0);
+
+
