@@ -7713,18 +7713,8 @@ JS_PUBLIC_API bool FireOnGarbageCollectionHook(
     }
   }
 
-  
-  
-  
-  JS::AutoDebuggerJobQueueInterruption adjqi;
-  if (!adjqi.init(cx)) {
-    cx->clearPendingException();
-    return false;
-  }
-
   for (; !triggered.empty(); triggered.popBack()) {
     Debugger* dbg = Debugger::fromJSObject(triggered.back());
-    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
     if (dbg->getHook(Debugger::OnGarbageCollection)) {
       (void)dbg->enterDebuggerHook(cx, [&]() -> bool {
