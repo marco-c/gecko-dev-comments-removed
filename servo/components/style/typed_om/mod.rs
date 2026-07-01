@@ -139,7 +139,32 @@ impl UnitValue {
 
 
 
-pub type MathSum = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathSum {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathSum {
+    
+    
+    
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        
+        
+        
+        let numeric_type = NumericType::add_types(values.iter().filter_map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 
 
@@ -227,6 +252,17 @@ pub enum MathValue {
     Clamp(MathClamp),
 }
 
+impl MathValue {
+    
+    
+    pub fn numeric_type(&self) -> Option<&NumericType> {
+        match self {
+            Self::Sum(math_sum) => Some(&math_sum.numeric_type),
+            _ => None,
+        }
+    }
+}
+
 
 
 
@@ -259,6 +295,15 @@ impl NumericValue {
             value: 0.0,
             unit: CssString::from("px"),
         })
+    }
+
+    
+    
+    pub fn numeric_type(&self) -> Option<&NumericType> {
+        match self {
+            Self::Unit(unit_value) => Some(&unit_value.numeric_type),
+            Self::Math(math_value) => math_value.numeric_type(),
+        }
     }
 }
 

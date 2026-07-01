@@ -111,7 +111,7 @@ impl SumValue {
                 let mut values: Vec<SumValueItem> = Vec::new();
 
                 
-                for item in math_sum {
+                for item in &math_sum.values {
                     
                     let value = SumValue::try_from_numeric_value(item)?;
 
@@ -374,7 +374,10 @@ impl SumValue {
         
         if units.is_empty() {
             values.sort_by(|a, b| a.unit.cmp(&b.unit));
-            return Ok(values.into_iter().map(NumericValue::Unit).collect());
+
+            return Ok(MathSum::try_from_numeric_values(
+                values.into_iter().map(NumericValue::Unit).collect(),
+            )?);
         }
 
         
@@ -418,6 +421,6 @@ impl SumValue {
             return Err(());
         }
 
-        Ok(result)
+        Ok(MathSum::try_from_numeric_values(result)?)
     }
 }
