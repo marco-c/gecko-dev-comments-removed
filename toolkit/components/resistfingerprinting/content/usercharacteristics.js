@@ -957,10 +957,6 @@ async function populateCSSSystemColors() {
 }
 
 async function populateCSSSystemFonts() {
-  
-  
-  
-  
   const systemFonts = [
     "caption",
     "icon",
@@ -968,6 +964,18 @@ async function populateCSSSystemFonts() {
     "message-box",
     "small-caption",
     "status-bar",
+    "serif",
+    "sans-serif",
+    "monospace",
+    "cursive",
+    "fantasy",
+    "system-ui",
+    "Arial",
+    "Helvetica",
+    "Times New Roman",
+    "Courier New",
+    "Verdana",
+    "Georgia",
   ];
 
   const div = document.createElement("div");
@@ -976,7 +984,7 @@ async function populateCSSSystemFonts() {
 
   const results = [];
   for (const fontName of systemFonts) {
-    div.setAttribute("style", `font: ${fontName} !important`);
+    div.style.fontFamily = fontName;
     const computed = getComputedStyle(div);
     const value = computed.fontSize + " " + computed.fontFamily;
     results.push({ [fontName]: value });
@@ -1605,17 +1613,9 @@ function getCanvasSources() {
 
 
 
-
-
-
-
-
-
-
 const LocalFiraSans = new FontFace(
   "LocalFiraSans",
-  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')",
-  { style: "italic" }
+  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')"
 );
 
 if (document.readyState === "loading") {
