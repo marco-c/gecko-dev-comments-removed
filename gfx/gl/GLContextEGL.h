@@ -101,6 +101,9 @@ class GLContextEGL final : public GLContext {
 
   bool HasExtBufferAge() const;
   bool HasKhrPartialUpdate() const;
+  
+  
+  EGLint GetBindToTextureTargetANGLE();
 
   bool BindTex2DOffscreen(GLContext* aOffscreen);
   void UnbindTex2DOffscreen(GLContext* aOffscreen);
@@ -147,6 +150,7 @@ class GLContextEGL final : public GLContext {
   bool mCanBindToTexture = false;
   bool mShareWithEGLImage = false;
   bool mOwnsContext = true;
+  Maybe<EGLint> mBindToTextureTargetANGLE;
 
   nsIntRegion mDamageRegion;
 

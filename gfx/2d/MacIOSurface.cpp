@@ -11,6 +11,7 @@
 #include "GLConsts.h"
 #ifdef XP_MACOSX
 #  include "GLContextCGL.h"
+#  include "GLContextEGL.h"
 #else
 #  include "GLContextEAGL.h"
 #endif
@@ -633,149 +634,206 @@ ColorDepth MacIOSurface::GetColorDepth() const {
 }
 #endif
 
+ GLenum MacIOSurface::GetTextureTarget(
+    mozilla::gl::GLContext* aGL) {
+  switch (aGL->GetContextType()) {
+#ifdef XP_MACOSX
+    case mozilla::gl::GLContextType::CGL:
+      return LOCAL_GL_TEXTURE_RECTANGLE_ARB;
+
+    case mozilla::gl::GLContextType::EGL: {
+      auto* gle = gl::GLContextEGL::Cast(aGL);
+      const auto eglTarget = gle->GetBindToTextureTargetANGLE();
+
+      switch (eglTarget) {
+        case LOCAL_EGL_TEXTURE_2D:
+          return LOCAL_GL_TEXTURE_2D;
+        case LOCAL_EGL_TEXTURE_RECTANGLE_ANGLE:
+          return LOCAL_GL_TEXTURE_RECTANGLE_ARB;
+        default:
+          gfxCriticalErrorOnce()
+              << "Unexpected EGL_BIND_TO_TEXTURE_TARGET_ANGLE: "
+              << gfx::hexa(eglTarget);
+          return LOCAL_GL_TEXTURE_2D;
+      }
+    }
+#endif
+    default:
+      MOZ_CRASH("unimplemented");
+  }
+}
+
 bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
                                 mozilla::gfx::SurfaceFormat* aOutReadFormat) {
 #ifdef XP_MACOSX
   MOZ_ASSERT(aPlane >= 0);
   bool isCompatibilityProfile = aGL->IsCompatibilityProfile();
   OSType pixelFormat = GetPixelFormat();
+  const auto formatChars = (const char*)&pixelFormat;
+  const char formatStr[] = {formatChars[3], formatChars[2], formatChars[1],
+                            formatChars[0], 0};
 
   GLenum internalFormat;
   GLenum format;
   GLenum type;
-  if (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
-      pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
+  switch (pixelFormat) {
+    case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarFullRange:
+      MOZ_ASSERT(GetPlaneCount() == 2);
+      MOZ_ASSERT(aPlane < 2);
 
-    
-    
-    
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_BYTE;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV12;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange ||
-             pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
-
-    
-    
-    
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_SHORT;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::P010;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange ||
-             pixelFormat == kCVPixelFormatType_422YpCbCr8BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
-
-    
-    
-    
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_BYTE;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV16;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange ||
-             pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
-
-    
-    
-    
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_SHORT;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::P210;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr8_yuvs ||
-             pixelFormat == kCVPixelFormatType_422YpCbCr8FullRange) {
-    MOZ_ASSERT(aPlane == 0);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (isCompatibilityProfile) {
-      format = LOCAL_GL_YCBCR_422_APPLE;
-      if (aOutReadFormat) {
-        *aOutReadFormat = mozilla::gfx::SurfaceFormat::R8G8B8X8;
+      
+      
+      
+      if (aPlane == 0) {
+        internalFormat = format =
+            (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
+      } else {
+        internalFormat = format = (isCompatibilityProfile)
+                                      ? (LOCAL_GL_LUMINANCE_ALPHA)
+                                      : (LOCAL_GL_RG);
       }
-    } else {
-      format = LOCAL_GL_RGB_422_APPLE;
+      type = LOCAL_GL_UNSIGNED_BYTE;
       if (aOutReadFormat) {
-        *aOutReadFormat = mozilla::gfx::SurfaceFormat::YUY2;
+        *aOutReadFormat = GetFormat();
       }
-    }
-    internalFormat = LOCAL_GL_RGB;
-    type = LOCAL_GL_UNSIGNED_SHORT_8_8_REV_APPLE;
-  } else {
-    MOZ_ASSERT(aPlane == 0);
+      break;
 
-    internalFormat = HasAlpha() ? LOCAL_GL_RGBA : LOCAL_GL_RGB;
-    format = LOCAL_GL_BGRA;
-    type = LOCAL_GL_UNSIGNED_INT_8_8_8_8_REV;
-    if (aOutReadFormat) {
-      *aOutReadFormat = HasAlpha() ? mozilla::gfx::SurfaceFormat::R8G8B8A8
-                                   : mozilla::gfx::SurfaceFormat::R8G8B8X8;
-    }
+    case kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange:
+    case kCVPixelFormatType_420YpCbCr10BiPlanarFullRange:
+    case kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr10BiPlanarFullRange:
+      MOZ_ASSERT(GetPlaneCount() == 2);
+      MOZ_ASSERT(aPlane < 2);
+
+      
+      
+      
+      if (aPlane == 0) {
+        internalFormat = format =
+            (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
+      } else {
+        internalFormat = format = (isCompatibilityProfile)
+                                      ? (LOCAL_GL_LUMINANCE_ALPHA)
+                                      : (LOCAL_GL_RG);
+      }
+      type = LOCAL_GL_UNSIGNED_SHORT;
+      if (aOutReadFormat) {
+        *aOutReadFormat = GetFormat();
+      }
+      break;
+
+    case kCVPixelFormatType_32BGRA:
+      MOZ_ASSERT(aPlane == 0);
+
+      if (aGL->GetContextType() == gl::GLContextType::EGL) {
+        
+        
+        
+        internalFormat = HasAlpha() ? LOCAL_GL_BGRA_EXT : LOCAL_GL_RGB;
+        format = LOCAL_GL_RGBA;
+        type = LOCAL_GL_UNSIGNED_BYTE;
+      } else {
+        internalFormat = HasAlpha() ? LOCAL_GL_RGBA : LOCAL_GL_RGB;
+        format = LOCAL_GL_BGRA;
+        type = LOCAL_GL_UNSIGNED_INT_8_8_8_8_REV;
+      }
+      if (aOutReadFormat) {
+        *aOutReadFormat = HasAlpha() ? mozilla::gfx::SurfaceFormat::R8G8B8A8
+                                     : mozilla::gfx::SurfaceFormat::R8G8B8X8;
+      }
+      break;
+
+    default:
+      gfxCriticalError() << "Unsupported IOSurface pixel format: " << formatStr;
+      return false;
   }
 
-  size_t width = GetDevicePixelWidth(aPlane);
-  size_t height = GetDevicePixelHeight(aPlane);
+  const size_t width = GetDevicePixelWidth(aPlane);
+  const size_t height = GetDevicePixelHeight(aPlane);
 
-  auto err = ::CGLTexImageIOSurface2D(
-      gl::GLContextCGL::Cast(aGL)->GetCGLContext(),
-      LOCAL_GL_TEXTURE_RECTANGLE_ARB, internalFormat, width, height, format,
-      type, mIOSurfaceRef.get(), aPlane);
-  if (err) {
-    const auto formatChars = (const char*)&pixelFormat;
-    const char formatStr[] = {formatChars[3], formatChars[2], formatChars[1],
-                              formatChars[0], 0};
-    const nsPrintfCString errStr(
-        "CGLTexImageIOSurface2D(context, target, 0x%04x,"
-        " %u, %u, 0x%04x, 0x%04x, iosurfPtr, %u) -> %i",
-        internalFormat, uint32_t(width), uint32_t(height), format, type,
-        (unsigned int)aPlane, err);
-    gfxCriticalError() << errStr.get() << " (iosurf format: " << formatStr
-                       << ")";
+  switch (aGL->GetContextType()) {
+    case mozilla::gl::GLContextType::CGL: {
+      auto err = ::CGLTexImageIOSurface2D(
+          gl::GLContextCGL::Cast(aGL)->GetCGLContext(),
+          LOCAL_GL_TEXTURE_RECTANGLE_ARB, internalFormat, width, height, format,
+          type, mIOSurfaceRef.get(), aPlane);
+      if (err) {
+        const nsPrintfCString errStr(
+            "CGLTexImageIOSurface2D(context, target, 0x%04x,"
+            " %u, %u, 0x%04x, 0x%04x, iosurfPtr, %u) -> %i",
+            internalFormat, uint32_t(width), uint32_t(height), format, type,
+            (unsigned int)aPlane, err);
+        gfxCriticalError() << errStr.get() << " (iosurf format: " << formatStr
+                           << ")";
+      }
+      return !err;
+    }
+
+    case mozilla::gl::GLContextType::EGL: {
+      auto* gle = gl::GLContextEGL::Cast(aGL);
+      const auto egl = gle->mEgl;
+
+      if (!egl->IsExtensionSupported(
+              mozilla::gl::EGLExtension::ANGLE_iosurface_client_buffer)) {
+        gfxCriticalError()
+            << "Extension EGL_ANGLE_iosurface_client_buffer not supported";
+        return false;
+      }
+
+      const EGLint target = gle->GetBindToTextureTargetANGLE();
+      const EGLint attrs[] = {
+          LOCAL_EGL_TEXTURE_INTERNAL_FORMAT_ANGLE,
+          static_cast<EGLint>(internalFormat),
+          LOCAL_EGL_TEXTURE_TYPE_ANGLE,
+          static_cast<EGLint>(type),
+          LOCAL_EGL_TEXTURE_FORMAT,
+          
+          
+          LOCAL_EGL_TEXTURE_RGBA,
+          LOCAL_EGL_WIDTH,
+          static_cast<EGLint>(width),
+          LOCAL_EGL_HEIGHT,
+          static_cast<EGLint>(height),
+          LOCAL_EGL_TEXTURE_TARGET,
+          target,
+          LOCAL_EGL_IOSURFACE_PLANE_ANGLE,
+          static_cast<EGLint>(aPlane),
+          LOCAL_EGL_NONE,
+
+      };
+
+      const EGLSurface surface = egl->fCreatePbufferFromClientBuffer(
+          LOCAL_EGL_IOSURFACE_ANGLE,
+          reinterpret_cast<EGLClientBuffer>(mIOSurfaceRef.get()),
+          gle->mSurfaceConfig, attrs);
+
+      if (surface == EGL_NO_SURFACE) {
+        EGLint err = egl->mLib->fGetError();
+        gfxCriticalError() << "eglCreatePBufferFromClientBuffer failed: "
+                           << gfx::hexa(err) << " (iosurf format: " << formatStr
+                           << ")";
+        return false;
+      }
+
+      if (!egl->fBindTexImage(surface, LOCAL_EGL_BACK_BUFFER)) {
+        const EGLint err = egl->mLib->fGetError();
+        gfxCriticalError() << "eglBindTexImage failed: " << gfx::hexa(err);
+        egl->fDestroySurface(surface);
+        return false;
+      }
+
+      
+      
+      egl->fDestroySurface(surface);
+      return true;
+    }
+
+    default:
+      MOZ_CRASH("unimplemented");
   }
-  return !err;
 #else
   MOZ_CRASH("unimplemented");
 #endif

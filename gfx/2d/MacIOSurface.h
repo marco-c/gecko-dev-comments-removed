@@ -137,6 +137,9 @@ class MacIOSurface final
   }
 
   
+  static GLenum GetTextureTarget(mozilla::gl::GLContext* aGL);
+
+  
   
   
   
