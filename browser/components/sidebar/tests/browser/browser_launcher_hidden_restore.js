@@ -14,15 +14,9 @@ add_setup(async () => {
       
       
       
-      
-      
-      
-      
-      [VERTICAL_TABS_PREF, true],
       [SIDEBAR_VISIBILITY_PREF, "hide-sidebar"],
     ],
   });
-  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await SidebarController.waitUntilStable();
   sidebarLauncher = SidebarController.sidebarContainer;
 });

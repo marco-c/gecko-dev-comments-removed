@@ -523,9 +523,6 @@ var SidebarController = {
       
       delete this._showLauncherAfterInit;
 
-      
-      
-      
       document.getElementById("sidebar-header").hidden = true;
       if (!this._mainResizeObserverAdded) {
         this._mainResizeObserver.observe(this.sidebarMain);
@@ -809,37 +806,6 @@ var SidebarController = {
     } else if (this._switcherPanel.state == "closed") {
       this.showSwitcherPanel();
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-  async getRevampSwitcherItems() {
-    const resolveLabel = async l10nId => {
-      const [message] = await document.l10n.formatMessages([{ id: l10nId }]);
-      return message?.attributes?.find(a => a.name === "label")?.value ?? "";
-    };
-    const items = [];
-    for (const tool of this.getTools().filter(t => !t.hidden && !t.disabled)) {
-      items.push({ view: tool.view, label: await resolveLabel(tool.l10nId) });
-    }
-    for (const ext of this.getExtensions().filter(e => !e.disabled)) {
-      items.push({ view: ext.view, label: ext.tooltiptext ?? "" });
-    }
-    const customize = this.sidebars.get("viewCustomizeSidebar");
-    if (customize) {
-      items.push({
-        view: "viewCustomizeSidebar",
-        label: await resolveLabel(customize.revampL10nId),
-      });
-    }
-    return items;
   },
 
   
@@ -1228,14 +1194,7 @@ var SidebarController = {
     if (this.isOpen && commandID == this.currentID) {
       
       
-      
-      
-      
-      this.hide({
-        triggerNode,
-        dismissPanel:
-          this.sidebarRevampEnabled && !this._state.launcherHiddenWithPanel,
-      });
+      this.hide({ triggerNode, dismissPanel: this.sidebarRevampEnabled });
       this.updateToolbarButton();
       return Promise.resolve();
     }
@@ -1336,10 +1295,6 @@ var SidebarController = {
     let sidebarShift = 0;
     let novaTranslate = 0;
     const novaMode = Services.prefs.getBoolPref("browser.nova.enabled", false);
-    
-    
-    
-    const launcherHidden = this._state.launcherHiddenWithPanel;
     for (let i = 0; i < animatingElements.length; ++i) {
       const el = animatingElements[i];
       const [wasHidden, from] = fromRects[i];
@@ -1347,9 +1302,7 @@ var SidebarController = {
 
       
       
-      const isSidebar = launcherHidden
-        ? el === this._box
-        : el === this.sidebarContainer;
+      const isSidebar = el === this.sidebarContainer;
 
       if (wasHidden != isHidden) {
         if (wasHidden) {
@@ -1463,7 +1416,7 @@ var SidebarController = {
           options
         )
       );
-      if (!isSidebar || !this._positionStart || launcherHidden) {
+      if (!isSidebar || !this._positionStart) {
         continue;
       }
       
@@ -1511,12 +1464,9 @@ var SidebarController = {
     const initialExpandedValue = this._state.launcherExpanded;
 
     
-    
-    
-    
-    const expandOnToggle =
-      this.sidebarVerticalTabsEnabled &&
-      ["always-show", "expand-on-hover"].includes(this.sidebarRevampVisibility);
+    const expandOnToggle = ["always-show", "expand-on-hover"].includes(
+      this.sidebarRevampVisibility
+    );
 
     
     if (this.sidebarRevampVisibility === "expand-on-hover") {
@@ -1530,23 +1480,6 @@ var SidebarController = {
     if (expandOnToggle) {
       
       this._state.updateVisibility(true, !initialExpandedValue);
-      this.updateToolbarButton();
-      return;
-    }
-
-    if (this._state.launcherHiddenWithPanel) {
-      
-      
-      
-      if (this.isOpen) {
-        this.hide({ dismissPanel: false });
-      } else {
-        let commandID = this._state.command || this.lastOpenedId;
-        if (!commandID || !this.sidebars.has(commandID)) {
-          commandID = this.sidebars.keys().next().value;
-        }
-        await this.show(commandID);
-      }
       this.updateToolbarButton();
       return;
     }
@@ -1592,7 +1525,7 @@ var SidebarController = {
         case "expand-on-hover": {
           
           const isExpanded = this.sidebarMain.expanded;
-          toolbarButton.checked = isExpanded;
+          toolbarButton.checked = isVerticalTabs && isExpanded;
           toolbarButton.dataset.l10nId = isExpanded
             ? "sidebar-widget-collapse-sidebar2"
             : "sidebar-widget-expand-sidebar2";
@@ -1600,29 +1533,8 @@ var SidebarController = {
         }
         case "hide-sidebar": {
           
-          
           const isVisible = !this.sidebarContainer.hidden;
-          toolbarButton.checked = isVisible;
-          toolbarButton.dataset.l10nId = isVisible
-            ? "sidebar-widget-hide-sidebar2"
-            : "sidebar-widget-show-sidebar2";
-          break;
-        }
-        case "hide-on-close": {
-          
-          
-          const isVisible = !this.sidebarContainer.hidden;
-          toolbarButton.checked = false;
-          toolbarButton.dataset.l10nId = isVisible
-            ? "sidebar-widget-hide-sidebar2"
-            : "sidebar-widget-show-sidebar2";
-          break;
-        }
-        case "hide-launcher": {
-          
-          
-          const isVisible = this.isOpen;
-          toolbarButton.checked = isVisible;
+          toolbarButton.checked = isVerticalTabs && isVisible;
           toolbarButton.dataset.l10nId = isVisible
             ? "sidebar-widget-hide-sidebar2"
             : "sidebar-widget-show-sidebar2";
@@ -2279,7 +2191,6 @@ var SidebarController = {
       
       this.lastOpenedId = commandID;
       
-      
       if (!this.sidebarRevampEnabled) {
         this.title = title;
         
@@ -2519,8 +2430,10 @@ var SidebarController = {
     
     
     this.sidebarMain.requestUpdate();
-    if (!toVerticalTabs) {
-      
+    if (
+      !this.verticalTabsEnabled &&
+      this.sidebarRevampVisibility == "hide-sidebar"
+    ) {
       
       
       this._state.launcherExpanded = false;
@@ -2889,9 +2802,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
         
         
-        let showLauncher = !["hide-sidebar", "hide-launcher"].includes(
-          newValue
-        );
+        let showLauncher = true;
+        if (newValue == "hide-sidebar" && isVerticalTabs) {
+          showLauncher = false;
+        }
         SidebarController._state.updateVisibility(showLauncher, forceExpand);
       }
       SidebarController.updateToolbarButton();
@@ -2917,41 +2831,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       }
       SidebarController._state.updatePinnedTabsHeight();
       SidebarController._state.updateToolsHeight();
-      if (SidebarController._state) {
-        
-        
-        
-        
-        
-        let visibility = Services.prefs.getStringPref(
-          "sidebar.visibility",
-          "always-show"
-        );
-        
-        
-        
-        
-        const verticalValues = [
-          "always-show",
-          "expand-on-hover",
-          "hide-sidebar",
-        ];
-        if (newValue && !verticalValues.includes(visibility)) {
-          visibility = "always-show";
-        } else if (!newValue && verticalValues.includes(visibility)) {
-          visibility = "hide-on-close";
-        }
-        const forceExpand =
-          newValue && ["always-show", "hide-sidebar"].includes(visibility);
-        SidebarController._state.updateVisibility(
-          !["hide-sidebar", "hide-launcher"].includes(visibility),
-          newValue ? forceExpand : false
-        );
-      }
-      
-      
-      
-      SidebarController.updateToolbarButton();
     }
   }
 );
