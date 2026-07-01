@@ -48,10 +48,10 @@
 
 
 
-use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
 use log::trace;
@@ -72,6 +72,11 @@ pub const RESOLUTION_DELAY: Duration = Duration::from_millis(50);
 
 
 pub const CONNECTION_ATTEMPT_DELAY: Duration = Duration::from_millis(250);
+
+
+
+
+pub const CONNECTION_ATTEMPT_DELAY_MULTIPLIER: NonZeroU32 = NonZeroU32::MIN;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -594,7 +599,43 @@ pub struct NetworkConfig {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub connection_attempt_delay_multiplier: NonZeroU32,
+    
+    
+    
+    
+    
+    
+    
     pub ech: bool,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub wait_for_preferred_address: bool,
 }
 
 impl Default for NetworkConfig {
@@ -605,7 +646,9 @@ impl Default for NetworkConfig {
             alt_svc: Vec::new(),
             resolution_delay: RESOLUTION_DELAY,
             connection_attempt_delay: CONNECTION_ATTEMPT_DELAY,
+            connection_attempt_delay_multiplier: CONNECTION_ATTEMPT_DELAY_MULTIPLIER,
             ech: true,
+            wait_for_preferred_address: true,
         }
     }
 }
@@ -668,23 +711,87 @@ pub struct Endpoint {
     pub ech_config: Option<EchConfig>,
 }
 
-impl Endpoint {
-    fn cmp_with_config(&self, other: &Endpoint, network_config: &NetworkConfig) -> Ordering {
-        if self.http_version != other.http_version {
-            return self.http_version.cmp(&other.http_version);
-        }
 
-        let order = self
-            .address
-            .ip()
-            .is_ipv6()
-            .cmp(&other.address.ip().is_ipv6());
-        if network_config.prefer_v6() {
-            order.reverse()
-        } else {
-            order
-        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn interleave_endpoints(endpoints: Vec<Endpoint>, prefer_v6: bool) -> Vec<Endpoint> {
+    let total = endpoints.len();
+
+    
+    
+    #[derive(PartialEq, Eq, PartialOrd, Ord)]
+    enum FamilyPreference {
+        Preferred,
+        Other,
     }
+
+    
+    
+    
+    let mut groups: BTreeMap<
+        (ConnectionAttemptHttpVersions, FamilyPreference),
+        VecDeque<Endpoint>,
+    > = BTreeMap::new();
+    for endpoint in endpoints {
+        let family = if endpoint.address.is_ipv6() == prefer_v6 {
+            FamilyPreference::Preferred
+        } else {
+            FamilyPreference::Other
+        };
+        groups
+            .entry((endpoint.http_version, family))
+            .or_default()
+            .push_back(endpoint);
+    }
+
+    
+    
+    let mut ordered = Vec::with_capacity(total);
+    while !groups.is_empty() {
+        for queue in groups.values_mut() {
+            if let Some(endpoint) = queue.pop_front() {
+                ordered.push(endpoint);
+            }
+        }
+        groups.retain(|_, queue| !queue.is_empty());
+    }
+    ordered
 }
 
 #[derive(Debug, Clone)]
@@ -868,6 +975,32 @@ impl HappyEyeballs {
         None
     }
 
+    
+    
+    
+    
+    
+    
+    
+    fn connection_attempt_delay(&self) -> Duration {
+        let base = self.network_config.connection_attempt_delay;
+        let in_progress = self
+            .connection_attempts
+            .iter()
+            .filter(|a| a.state == ConnectionState::InProgress)
+            .count();
+        let exponent = u32::try_from(in_progress)
+            .unwrap_or(u32::MAX)
+            .saturating_sub(1);
+        let factor = self
+            .network_config
+            .connection_attempt_delay_multiplier
+            .get()
+            .checked_pow(exponent)
+            .unwrap_or(u32::MAX);
+        base.checked_mul(factor).unwrap_or(Duration::MAX)
+    }
+
     fn delay(&self, now: Instant) -> Option<Output> {
         
         
@@ -875,7 +1008,8 @@ impl HappyEyeballs {
             return None;
         }
 
-        if let Some(connection_attempt_delay) = self
+        let connection_attempt_delay = self.connection_attempt_delay();
+        if let Some(remaining) = self
             .connection_attempts
             .iter()
             .filter(|a| a.state == ConnectionState::InProgress)
@@ -883,15 +1017,15 @@ impl HappyEyeballs {
             .max()
             .and_then(|started| {
                 let elapsed = now.duration_since(*started);
-                if elapsed < self.network_config.connection_attempt_delay {
-                    Some(self.network_config.connection_attempt_delay - elapsed)
+                if elapsed < connection_attempt_delay {
+                    Some(connection_attempt_delay - elapsed)
                 } else {
                     None
                 }
             })
         {
             return Some(Output::Timer {
-                duration: connection_attempt_delay,
+                duration: remaining,
             });
         }
 
@@ -1125,11 +1259,12 @@ impl HappyEyeballs {
             return None;
         }
 
+        let connection_attempt_delay = self.connection_attempt_delay();
         if self
             .connection_attempts
             .iter()
             .filter(|a| a.state == ConnectionState::InProgress)
-            .any(|a| a.within_delay(now, self.network_config.connection_attempt_delay))
+            .any(|a| a.within_delay(now, connection_attempt_delay))
         {
             return None;
         }
@@ -1195,21 +1330,21 @@ impl HappyEyeballs {
     }
 
     fn endpoints_to_attempt_ip(&self, ip: IpAddr) -> Vec<Endpoint> {
-        let mut endpoints: Vec<Endpoint> = Vec::new();
-        for (http_version, port) in self.origin_version_port_pairs() {
-            let mut bucket = vec![Endpoint {
+        let endpoints = self
+            .origin_version_port_pairs()
+            .into_iter()
+            .map(|(http_version, port)| Endpoint {
                 address: SocketAddr::new(ip, port),
                 http_version,
                 ech_config: None,
-            }];
-            bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-            endpoints.extend(bucket);
-        }
-        endpoints
+            })
+            .collect();
+        interleave_endpoints(endpoints, self.network_config.prefer_v6())
     }
 
     fn endpoints_to_attempt_domain(&self, origin_domain: &str) -> Vec<Endpoint> {
         let any_ech = self.any_ech();
+        let prefer_v6 = self.network_config.prefer_v6();
 
         
         let mut service_infos: Vec<&ServiceInfo> = self
@@ -1243,37 +1378,38 @@ impl HappyEyeballs {
                     }
                     _ => None,
                 });
-            let mut bucket = info.flatten_into_endpoints(
+            let bucket = info.flatten_into_endpoints(
                 self.port,
                 ipv4_addrs,
                 ipv6_addrs,
                 &self.network_config.http_versions,
                 self.network_config.ech,
             );
-            bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-            endpoints.extend(bucket);
+            endpoints.extend(interleave_endpoints(bucket, prefer_v6));
         }
 
         
         
+        
+        
         if !any_ech {
+            let mut fallback: Vec<Endpoint> = Vec::new();
             for (http_version, port) in self.origin_version_port_pairs() {
                 let http_versions = HashSet::from([http_version]);
-                let mut bucket: Vec<Endpoint> = self
-                    .dns_queries
-                    .iter()
-                    .filter_map(|q| match &q.state {
-                        DnsQueryState::Completed {
-                            response: r @ (DnsResult::Aaaa(_) | DnsResult::A(_)),
-                            ..
-                        } if q.target_name.as_str() == origin_domain => Some(r),
-                        _ => None,
-                    })
-                    .flat_map(|r| r.flatten_into_endpoints(port, &http_versions))
-                    .collect();
-                bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-                endpoints.extend(bucket);
+                fallback.extend(
+                    self.dns_queries
+                        .iter()
+                        .filter_map(|q| match &q.state {
+                            DnsQueryState::Completed {
+                                response: r @ (DnsResult::Aaaa(_) | DnsResult::A(_)),
+                                ..
+                            } if q.target_name.as_str() == origin_domain => Some(r),
+                            _ => None,
+                        })
+                        .flat_map(|r| r.flatten_into_endpoints(port, &http_versions)),
+                );
             }
+            endpoints.extend(interleave_endpoints(fallback, prefer_v6));
         }
 
         endpoints
@@ -1404,11 +1540,16 @@ impl HappyEyeballs {
         
         
         
-        if !self
-            .dns_queries
-            .iter()
-            .filter(|q| q.is_completed())
-            .any(|q| q.record_type == self.network_config.preferred_dns_record_type())
+        
+        
+        
+        
+        if self.network_config.wait_for_preferred_address
+            && !self
+                .dns_queries
+                .iter()
+                .filter(|q| q.is_completed())
+                .any(|q| q.record_type == self.network_config.preferred_dns_record_type())
         {
             return false;
         }
