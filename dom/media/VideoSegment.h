@@ -48,7 +48,8 @@ class VideoFrame {
   void TakeFrom(VideoFrame* aFrame);
 
   
-  static already_AddRefed<Image> CreateBlackImage(const gfx::IntSize& aSize);
+  
+  already_AddRefed<Image> CloneAsBlackImage() const;
 
  protected:
   

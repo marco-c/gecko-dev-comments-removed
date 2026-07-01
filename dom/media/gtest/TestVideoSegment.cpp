@@ -46,35 +46,70 @@ TEST(VideoSegment, TestAppendFrameNotForceBlack)
 TEST(VideoSegment, TestBlackImageSize)
 {
   
-  EXPECT_NE(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(640, 480))},
-      nullptr);
+  
+  
+  auto makeBlackImage = [](mozilla::gfx::IntSize aSize) {
+    VideoFrame frame(nullptr, aSize);
+    return frame.CloneAsBlackImage();
+  };
 
   
-  EXPECT_EQ(RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(0, 480))},
-            nullptr);
-  EXPECT_EQ(RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(640, 0))},
+  {
+    const mozilla::gfx::IntSize size(640, 480);
+    RefPtr<layers::Image> img = makeBlackImage(size);
+    ASSERT_NE(img, nullptr);
+    EXPECT_EQ(img->GetSize(), size);
+  }
+
+  
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(0, 480))}, nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(640, 0))}, nullptr);
+
+  
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(-1, 480))}, nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(640, -1))}, nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(-640, -480))}, nullptr);
+
+  
+  EXPECT_NE(RefPtr{makeBlackImage(mozilla::gfx::IntSize(16384, 480))}, nullptr);
+  EXPECT_NE(RefPtr{makeBlackImage(mozilla::gfx::IntSize(640, 16384))}, nullptr);
+  EXPECT_NE(RefPtr{makeBlackImage(mozilla::gfx::IntSize(16384, 16384))},
             nullptr);
 
   
-  EXPECT_EQ(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(-1, 480))},
-      nullptr);
-  EXPECT_EQ(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(640, -1))},
-      nullptr);
-  EXPECT_EQ(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(-640, -480))},
-      nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(16384 + 1, 480))},
+            nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(640, 16384 + 1))},
+            nullptr);
 
   
-  EXPECT_EQ(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(INT_MAX, 480))},
-      nullptr);
-  EXPECT_EQ(
-      RefPtr{VideoFrame::CreateBlackImage(mozilla::gfx::IntSize(640, INT_MAX))},
-      nullptr);
-  EXPECT_EQ(RefPtr{VideoFrame::CreateBlackImage(
-                mozilla::gfx::IntSize(INT_MAX, INT_MAX))},
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(INT_MAX, 480))},
             nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(640, INT_MAX))},
+            nullptr);
+  EXPECT_EQ(RefPtr{makeBlackImage(mozilla::gfx::IntSize(INT_MAX, INT_MAX))},
+            nullptr);
+
+  
+  
+  {
+    RefPtr<layers::Image> img = makeBlackImage(mozilla::gfx::IntSize(640, 480));
+    ASSERT_NE(img, nullptr);
+
+    
+    mozilla::gfx::IntSize intrinsicSize(320, 240);
+    VideoFrame frame(img.forget(), intrinsicSize);
+    RefPtr<layers::Image> result = frame.CloneAsBlackImage();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->GetSize(), intrinsicSize);
+  }
+
+  
+  {
+    RefPtr<layers::Image> img = makeBlackImage(mozilla::gfx::IntSize(320, 240));
+    ASSERT_NE(img, nullptr);
+
+    VideoFrame frame(img.forget(), mozilla::gfx::IntSize(0, 0));
+    EXPECT_EQ(RefPtr{frame.CloneAsBlackImage()}, nullptr);
+  }
 }
