@@ -16,7 +16,6 @@ task-defaults:
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 1800
-    run-on-repo-type: [hg]
     fetches:
         toolchain:
             - linux64-android-gradle-dependencies
@@ -30,7 +29,7 @@ task-defaults:
 apilint:
     description: "APILint Gradle plugin tests"
     treeherder:
-        symbol: A(apilint)
+        symbol: android(apilint)
     run:
         gradle-project: mobile/android/gradle/plugins/apilint
         gradle-args:
@@ -44,7 +43,7 @@ apilint:
 ac-dependencies:
     description: "Android Components dependencies plugin tests"
     treeherder:
-        symbol: A(ac-deps)
+        symbol: android(ac-deps)
     run:
         gradle-project: mobile/android/android-components/plugins/dependencies
         gradle-args:
