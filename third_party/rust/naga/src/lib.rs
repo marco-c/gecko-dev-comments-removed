@@ -82,10 +82,11 @@
     trivial_numeric_casts,
     unused_extern_crates,
     unused_qualifications,
-    clippy::pattern_type_mismatch,
+    clippy::large_stack_frames,
+    clippy::match_wildcard_for_single_variants,
     clippy::missing_const_for_fn,
-    clippy::rest_pat_in_fully_bound_structs,
-    clippy::match_wildcard_for_single_variants
+    clippy::pattern_type_mismatch,
+    clippy::rest_pat_in_fully_bound_structs
 )]
 #![deny(clippy::exit)]
 #![cfg_attr(
@@ -105,6 +106,8 @@
 extern crate std;
 
 extern crate alloc;
+
+extern crate naga_types as nt;
 
 mod arena;
 pub mod back;
@@ -126,6 +129,8 @@ use alloc::string::String;
 pub use crate::arena::{Arena, Handle, Range, UniqueArena};
 pub use crate::span::{SourceLocation, Span, SpanContext, WithSpan};
 
+pub use nt::{FastHashMap, FastHashSet, FastIndexMap, FastIndexSet};
+
 
 pub use ir::*;
 
@@ -134,27 +139,6 @@ pub const BOOL_WIDTH: Bytes = 1;
 
 
 pub const ABSTRACT_WIDTH: Bytes = 8;
-
-
-
-
-pub type FastHashMap<K, T> =
-    hashbrown::HashMap<K, T, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
-
-
-
-pub type FastHashSet<K> =
-    hashbrown::HashSet<K, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
-
-
-
-pub type FastIndexSet<K> =
-    indexmap::IndexSet<K, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
-
-
-
-pub type FastIndexMap<K, V> =
-    indexmap::IndexMap<K, V, core::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
 pub(crate) type NamedExpressions = FastIndexMap<Handle<Expression>, String>;

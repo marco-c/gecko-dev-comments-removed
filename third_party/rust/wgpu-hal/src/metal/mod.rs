@@ -34,6 +34,7 @@ use alloc::{
     vec::Vec,
 };
 use core::{fmt, iter, ops, ptr::NonNull, sync::atomic};
+use std::sync::OnceLock;
 
 use bitflags::bitflags;
 use hashbrown::HashMap;
@@ -55,7 +56,7 @@ use objc2_metal::{
     MTLTriangleFillMode, MTLWinding,
 };
 use objc2_quartz_core::CAMetalLayer;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::{Condvar, Mutex, RwLock};
 
 #[derive(Clone, Debug)]
 pub struct Api;
@@ -466,6 +467,9 @@ impl Queue {
             shared: Arc::new(QueueShared {
                 raw,
                 command_buffer_created_not_submitted: atomic::AtomicUsize::new(0),
+                pending_waits: Mutex::new(Vec::new()),
+                pending_signals: Mutex::new(Vec::new()),
+                relay: OnceLock::new(),
             }),
             timestamp_period,
         }
@@ -474,6 +478,127 @@ impl Queue {
     pub fn as_raw(&self) -> &ProtocolObject<dyn MTLCommandQueue> {
         &self.shared.raw
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn enable_strict_event_sync(&self) -> Result<(), crate::DeviceError> {
+        if self.shared.relay.get().is_some() {
+            return Ok(());
+        }
+        let event = self
+            .shared
+            .raw
+            .device()
+            .newSharedEvent()
+            .ok_or(crate::DeviceError::OutOfMemory)?;
+        let _ = self.shared.relay.set(Relay {
+            event,
+            next_release_value: atomic::AtomicU64::new(1),
+            commit_lock: Mutex::new(()),
+        });
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_wait_event(&self, event: Retained<ProtocolObject<dyn MTLSharedEvent>>, value: u64) {
+        self.shared.pending_waits.lock().push((event, value));
+    }
+
+    
+    
+    pub fn remove_wait_event(&self, event: &ProtocolObject<dyn MTLSharedEvent>) -> bool {
+        let target: *const ProtocolObject<dyn MTLSharedEvent> = event;
+        let mut waits = self.shared.pending_waits.lock();
+        let before = waits.len();
+        waits.retain(|(e, _)| Retained::as_ptr(e) != target);
+        waits.len() != before
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_signal_event(
+        &self,
+        event: Retained<ProtocolObject<dyn MTLSharedEvent>>,
+        value: u64,
+    ) {
+        self.shared.pending_signals.lock().push((event, value));
+    }
+
+    
+    
+    pub fn remove_signal_event(&self, event: &ProtocolObject<dyn MTLSharedEvent>) -> bool {
+        let target: *const ProtocolObject<dyn MTLSharedEvent> = event;
+        let mut signals = self.shared.pending_signals.lock();
+        let before = signals.len();
+        signals.retain(|(e, _)| Retained::as_ptr(e) != target);
+        signals.len() != before
+    }
+}
+
+type PendingEvents = Mutex<Vec<(Retained<ProtocolObject<dyn MTLSharedEvent>>, u64)>>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+struct Relay {
+    event: Retained<ProtocolObject<dyn MTLSharedEvent>>,
+    next_release_value: atomic::AtomicU64,
+    commit_lock: Mutex<()>,
 }
 
 #[derive(Debug)]
@@ -487,6 +612,9 @@ pub struct QueueShared {
     
     
     command_buffer_created_not_submitted: atomic::AtomicUsize,
+    pending_waits: PendingEvents,
+    pending_signals: PendingEvents,
+    relay: OnceLock<Relay>,
 }
 
 pub struct Device {
@@ -541,10 +669,60 @@ impl crate::Queue for Queue {
         (signal_fence, signal_value): (&Fence, crate::FenceValue),
     ) -> Result<(), crate::DeviceError> {
         autoreleasepool(|_| {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            {
+                let relay = self.shared.relay.get();
+                let mut waits = self.shared.pending_waits.lock();
+                if relay.is_some() || !waits.is_empty() {
+                    let _commit_guard = relay.map(|r| r.commit_lock.lock());
+                    
+                    
+                    let wait_cb = self
+                        .shared
+                        .raw
+                        .commandBufferWithUnretainedReferences()
+                        .ok_or(crate::DeviceError::Lost)?;
+                    wait_cb.setLabel(Some(ns_string!("(wgpu internal) Wait")));
+                    for (event, value) in waits.drain(..) {
+                        wait_cb.encodeWaitForEvent_value(event.as_ref(), value);
+                    }
+                    if let Some(relay) = relay {
+                        let release = relay
+                            .next_release_value
+                            .fetch_add(1, atomic::Ordering::AcqRel);
+                        wait_cb.encodeSignalEvent_value(relay.event.as_ref(), release);
+                    }
+                    wait_cb.commit();
+                }
+            }
+
             let extra_command_buffer = {
-                let completed_value = Arc::clone(&signal_fence.completed_value);
+                let fence_sync = Arc::clone(&signal_fence.sync);
                 let block = block2::RcBlock::new(move |_cmd_buf| {
-                    completed_value.store(signal_value, atomic::Ordering::Release);
+                    *fence_sync.0.lock() = signal_value;
+                    fence_sync.1.notify_all();
                 });
 
                 let raw = match command_buffers.last() {
@@ -555,7 +733,7 @@ impl crate::Queue for Queue {
                         self.shared
                             .raw
                             .commandBufferWithUnretainedReferences()
-                            .unwrap()
+                            .ok_or(crate::DeviceError::Lost)?
                     }
                 };
                 raw.setLabel(Some(ns_string!("(wgpu internal) Signal")));
@@ -570,6 +748,16 @@ impl crate::Queue for Queue {
                 if let Some(shared_event) = &signal_fence.shared_event {
                     raw.encodeSignalEvent_value(shared_event.as_ref(), signal_value);
                 }
+
+                
+                
+                {
+                    let mut signals = self.shared.pending_signals.lock();
+                    for (event, value) in signals.drain(..) {
+                        raw.encodeSignalEvent_value(event.as_ref(), value);
+                    }
+                }
+
                 
                 match command_buffers.last() {
                     Some(_) => None,
@@ -592,8 +780,8 @@ impl crate::Queue for Queue {
             if let Some(raw) = extra_command_buffer {
                 raw.commit();
             }
-        });
-        Ok(())
+            Ok(())
+        })
     }
     unsafe fn present(
         &self,
@@ -670,6 +858,10 @@ pub struct Texture {
     array_layers: u32,
     mip_levels: u32,
     copy_size: crate::CopyExtent,
+
+    
+    
+    _drop_guard: Option<crate::DropGuard>,
 }
 
 impl Texture {
@@ -1028,7 +1220,7 @@ unsafe impl Sync for QuerySet {}
 
 #[derive(Debug)]
 pub struct Fence {
-    completed_value: Arc<atomic::AtomicU64>,
+    sync: Arc<(Mutex<crate::FenceValue>, Condvar)>,
     
     pending_command_buffers: RwLock<Vec<PendingCommandBuffer>>,
     shared_event: Option<Retained<ProtocolObject<dyn MTLSharedEvent>>>,
@@ -1046,11 +1238,14 @@ unsafe impl Sync for Fence {}
 
 impl Fence {
     fn get_latest(&self) -> crate::FenceValue {
-        let mut max_value = self.completed_value.load(atomic::Ordering::Acquire);
+        let mut max_value = *self.sync.0.lock();
         let pending_command_buffers = self.pending_command_buffers.read();
         for &(value, ref cmd_buf) in pending_command_buffers.iter() {
-            if cmd_buf.status() == MTLCommandBufferStatus::Completed {
-                max_value = value;
+            match cmd_buf.status() {
+                MTLCommandBufferStatus::Completed | MTLCommandBufferStatus::Error => {
+                    max_value = value;
+                }
+                _ => {}
             }
         }
         max_value

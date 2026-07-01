@@ -466,10 +466,7 @@ impl Swapchain for NativeSwapchain {
         
         
         
-        
-        
-        
-        
+        #[cfg(target_os = "windows")]
         unsafe {
             
             self.device

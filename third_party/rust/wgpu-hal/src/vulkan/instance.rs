@@ -566,7 +566,13 @@ impl super::Instance {
 
         let entry = unsafe {
             profiling::scope!("Load vk library");
-            ash::Entry::load()
+            
+            
+            #[cfg(target_env = "ohos")]
+            let loaded = ash::Entry::load_from("libvulkan.so");
+            #[cfg(not(target_env = "ohos"))]
+            let loaded = ash::Entry::load();
+            loaded
         }
         .map_err(|err| {
             crate::InstanceError::with_source(String::from("missing Vulkan entry points"), err)

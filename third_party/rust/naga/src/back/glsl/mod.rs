@@ -43,6 +43,8 @@
 
 
 
+pub use nt::glsl::*;
+
 pub use features::Features;
 pub use writer::Writer;
 
@@ -54,7 +56,6 @@ use alloc::{
     vec::Vec,
 };
 use core::{
-    cmp::Ordering,
     fmt::{self, Error as FmtError, Write},
     mem,
 };
@@ -81,19 +82,11 @@ mod keywords;
 mod writer;
 
 
-pub const SUPPORTED_CORE_VERSIONS: &[u16] = &[140, 150, 330, 400, 410, 420, 430, 440, 450, 460];
-
-pub const SUPPORTED_ES_VERSIONS: &[u16] = &[300, 310, 320];
-
-
 
 const CLAMPED_LOD_SUFFIX: &str = "_clamped_lod";
 
 pub(crate) const MODF_FUNCTION: &str = "naga_modf";
 pub(crate) const FREXP_FUNCTION: &str = "naga_frexp";
-
-
-pub const FIRST_INSTANCE_BINDING: &str = "naga_vs_first_instance";
 
 #[cfg(feature = "deserialize")]
 #[derive(serde::Deserialize)]
@@ -116,9 +109,6 @@ where
     }
     Ok(map)
 }
-
-
-pub type BindingMap = alloc::collections::BTreeMap<crate::ResourceBinding, u8>;
 
 impl crate::AtomicFunction {
     const fn to_glsl(self) -> &'static str {
@@ -150,144 +140,6 @@ impl crate::AddressSpace {
             crate::AddressSpace::RayPayload | crate::AddressSpace::IncomingRayPayload => {
                 unreachable!()
             }
-        }
-    }
-}
-
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-pub enum Version {
-    
-    Desktop(u16),
-    
-    Embedded { version: u16, is_webgl: bool },
-}
-
-impl Version {
-    
-    pub const fn new_gles(version: u16) -> Self {
-        Self::Embedded {
-            version,
-            is_webgl: false,
-        }
-    }
-
-    
-    const fn is_es(&self) -> bool {
-        match *self {
-            Version::Desktop(_) => false,
-            Version::Embedded { .. } => true,
-        }
-    }
-
-    
-    const fn is_webgl(&self) -> bool {
-        match *self {
-            Version::Desktop(_) => false,
-            Version::Embedded { is_webgl, .. } => is_webgl,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    fn is_supported(&self) -> bool {
-        match *self {
-            Version::Desktop(v) => SUPPORTED_CORE_VERSIONS.contains(&v),
-            Version::Embedded { version: v, .. } => SUPPORTED_ES_VERSIONS.contains(&v),
-        }
-    }
-
-    fn supports_io_locations(&self) -> bool {
-        *self >= Version::Desktop(330) || *self >= Version::new_gles(300)
-    }
-
-    
-    
-    
-    
-    
-    
-    fn supports_explicit_locations(&self) -> bool {
-        *self >= Version::Desktop(420) || *self >= Version::new_gles(310)
-    }
-
-    fn supports_early_depth_test(&self) -> bool {
-        *self >= Version::Desktop(130) || *self >= Version::new_gles(310)
-    }
-
-    fn supports_std140_layout(&self) -> bool {
-        *self >= Version::Desktop(140) || *self >= Version::new_gles(300)
-    }
-
-    fn supports_std430_layout(&self) -> bool {
-        
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(310)
-    }
-
-    fn supports_fma_function(&self) -> bool {
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(320)
-    }
-
-    fn supports_integer_functions(&self) -> bool {
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(310)
-    }
-
-    fn supports_frexp_function(&self) -> bool {
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(310)
-    }
-
-    fn supports_derivative_control(&self) -> bool {
-        *self >= Version::Desktop(450)
-    }
-
-    
-    
-    
-    
-    
-    
-    fn supports_pack_unpack_4x8(&self) -> bool {
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(310)
-    }
-    fn supports_pack_unpack_snorm_2x16(&self) -> bool {
-        *self >= Version::Desktop(420) || *self >= Version::new_gles(300)
-    }
-    fn supports_pack_unpack_unorm_2x16(&self) -> bool {
-        *self >= Version::Desktop(400) || *self >= Version::new_gles(300)
-    }
-
-    
-    
-    
-    
-    fn supports_pack_unpack_half_2x16(&self) -> bool {
-        *self >= Version::Desktop(420) || *self >= Version::new_gles(300)
-    }
-}
-
-impl PartialOrd for Version {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (*self, *other) {
-            (Version::Desktop(x), Version::Desktop(y)) => Some(x.cmp(&y)),
-            (Version::Embedded { version: x, .. }, Version::Embedded { version: y, .. }) => {
-                Some(x.cmp(&y))
-            }
-            _ => None,
-        }
-    }
-}
-
-impl fmt::Display for Version {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Version::Desktop(v) => write!(f, "{v} core"),
-            Version::Embedded { version: v, .. } => write!(f, "{v} es"),
         }
     }
 }
@@ -452,8 +304,7 @@ pub struct ImmediateItem {
     
     
     
-    
-    pub ty: TypeInner,
+    pub ty: GlslUniformType,
     
     pub offset: u32,
     
@@ -540,19 +391,17 @@ impl fmt::Display for VaryingName<'_> {
     }
 }
 
-impl ShaderStage {
-    const fn to_str(self) -> &'static str {
-        match self {
-            ShaderStage::Compute => "cs",
-            ShaderStage::Fragment => "fs",
-            ShaderStage::Vertex => "vs",
-            ShaderStage::Task
-            | ShaderStage::Mesh
-            | ShaderStage::RayGeneration
-            | ShaderStage::AnyHit
-            | ShaderStage::ClosestHit
-            | ShaderStage::Miss => unreachable!(),
-        }
+const fn shader_stage_to_str(st: ShaderStage) -> &'static str {
+    match st {
+        ShaderStage::Compute => "cs",
+        ShaderStage::Fragment => "fs",
+        ShaderStage::Vertex => "vs",
+        ShaderStage::Task
+        | ShaderStage::Mesh
+        | ShaderStage::RayGeneration
+        | ShaderStage::AnyHit
+        | ShaderStage::ClosestHit
+        | ShaderStage::Miss => unreachable!(),
     }
 }
 
@@ -652,4 +501,5 @@ pub fn supported_capabilities() -> valid::Capabilities {
         | Caps::DRAW_INDEX
         | Caps::MEMORY_DECORATION_COHERENT
         | Caps::MEMORY_DECORATION_VOLATILE
+        | Caps::STORAGE_TEXTURE_16BIT_NORM_FORMATS
 }

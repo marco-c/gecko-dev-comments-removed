@@ -9,7 +9,7 @@ use crate::{
         DeviceError,
     },
     ray_tracing::BlasCompactReadyPendingClosure,
-    resource::{Blas, Buffer, Texture, Trackable},
+    resource::{Blas, Buffer, DestroyedQuerySet, Texture, Trackable},
     snatch::SnatchGuard,
     SubmissionIndex,
 };
@@ -52,6 +52,9 @@ struct ActiveSubmission {
     
     
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
+
+    
+    destroy_query_sets: Vec<DestroyedQuerySet>,
 }
 
 impl ActiveSubmission {
@@ -216,6 +219,7 @@ impl LifetimeTracker {
             compact_read_back: Vec::new(),
             encoders,
             work_done_closures: SmallVec::new(),
+            destroy_query_sets: Vec::new(),
         });
     }
 
@@ -305,11 +309,7 @@ impl LifetimeTracker {
         profiling::scope!("triage_submissions");
 
         debug_assert!(self.active.is_sorted_by_key(|a| a.index));
-        let done_count = self
-            .active
-            .iter()
-            .position(|a| a.index > last_done)
-            .unwrap_or(self.active.len());
+        let done_count = self.active.partition_point(|a| a.index <= last_done);
 
         let mut work_done_closures: SmallVec<_> = self.work_done_closures.drain(..).collect();
         for a in self.active.drain(..done_count) {
@@ -343,6 +343,26 @@ impl LifetimeTracker {
             });
         if let Some(resources) = resources {
             resources.push(temp_resource);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn schedule_query_set_destruction(&mut self, query_set: &mut Option<DestroyedQuerySet>) {
+        if let Some(submission) = self.active.last_mut() {
+            if let Some(query_set) = query_set.take() {
+                submission.destroy_query_sets.push(query_set);
+            }
         }
     }
 

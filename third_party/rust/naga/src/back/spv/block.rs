@@ -1178,11 +1178,14 @@ impl BlockContext<'_> {
                             _ => unimplemented!(),
                         },
                         crate::BinaryOperator::Modulo => match left_ty_inner.scalar_kind() {
-                            
-                            
                             Some(crate::ScalarKind::Float) => spirv::Op::FRem,
-                            Some(crate::ScalarKind::Sint | crate::ScalarKind::Uint) => {
-                                unreachable!("Should have been handled by wrapped function")
+                            Some(crate::ScalarKind::Sint) => {
+                                assert!(!self.writer.emit_int_div_checks);
+                                spirv::Op::SRem
+                            }
+                            Some(crate::ScalarKind::Uint) => {
+                                assert!(!self.writer.emit_int_div_checks);
+                                spirv::Op::UMod
                             }
                             _ => unimplemented!(),
                         },

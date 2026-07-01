@@ -18,6 +18,7 @@ impl<I: Iterator<Item = u32>> Frontend<I> {
     
     
     
+    #[allow(clippy::large_stack_frames)] 
     pub(in crate::front::spv) fn next_block(
         &mut self,
         block_id: spirv::Word,

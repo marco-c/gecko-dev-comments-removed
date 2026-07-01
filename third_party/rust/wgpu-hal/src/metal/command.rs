@@ -178,6 +178,9 @@ impl super::CommandEncoder {
             
             
             
+            
+            
+            
             let supports_sample_counters_in_buffer = self
                 .shared
                 .private_caps
@@ -457,6 +460,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
     unsafe fn begin_encoding(&mut self, label: crate::Label) -> Result<(), crate::DeviceError> {
         let queue = &self.queue_shared.raw;
         let retain_references = self.shared.settings.retain_command_buffer_references;
+        let relay = self.queue_shared.relay.get();
 
         
         
@@ -486,6 +490,13 @@ impl crate::CommandEncoder for super::CommandEncoder {
             .unwrap();
             if let Some(label) = label {
                 cmd_buf_ref.setLabel(Some(&NSString::from_str(label)));
+            }
+            
+            
+            
+            if let Some(relay) = relay {
+                let expected = relay.next_release_value.load(atomic::Ordering::Acquire);
+                cmd_buf_ref.encodeWaitForEvent_value(relay.event.as_ref(), expected);
             }
             cmd_buf_ref.to_owned()
         });
@@ -742,14 +753,17 @@ impl crate::CommandEncoder for super::CommandEncoder {
             _ => {}
         }
     }
-    unsafe fn end_query(&mut self, set: &super::QuerySet, _index: u32) {
+    unsafe fn end_query(&mut self, set: &super::QuerySet, index: u32) {
         match set.ty {
             wgt::QueryType::Occlusion => {
                 self.state
                     .render
                     .as_ref()
                     .unwrap()
-                    .setVisibilityResultMode_offset(MTLVisibilityResultMode::Disabled, 0);
+                    .setVisibilityResultMode_offset(
+                        MTLVisibilityResultMode::Disabled,
+                        index as usize * crate::QUERY_SIZE as usize,
+                    );
             }
             _ => {}
         }
@@ -811,14 +825,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
         };
     }
 
-    unsafe fn reset_queries(&mut self, set: &super::QuerySet, range: Range<u32>) {
-        let encoder = self.enter_blit();
-        let raw_range = NSRange {
-            location: range.start as usize * crate::QUERY_SIZE as usize,
-            length: (range.end - range.start) as usize * crate::QUERY_SIZE as usize,
-        };
-        encoder.fillBuffer_range_value(&set.raw_buffer, raw_range, 0);
-    }
+    unsafe fn reset_queries(&mut self, _set: &super::QuerySet, _range: Range<u32>) {}
 
     unsafe fn copy_query_results(
         &mut self,
@@ -1770,7 +1777,7 @@ impl crate::CommandEncoder for super::CommandEncoder {
         }
     }
 
-    unsafe fn dispatch(&mut self, count: [u32; 3]) {
+    unsafe fn dispatch_workgroups(&mut self, count: [u32; 3]) {
         if count[0] > 0 && count[1] > 0 && count[2] > 0 {
             let encoder = self.state.compute.as_ref().unwrap();
             let raw_count = MTLSize {
@@ -1785,7 +1792,11 @@ impl crate::CommandEncoder for super::CommandEncoder {
         }
     }
 
-    unsafe fn dispatch_indirect(&mut self, buffer: &super::Buffer, offset: wgt::BufferAddress) {
+    unsafe fn dispatch_workgroups_indirect(
+        &mut self,
+        buffer: &super::Buffer,
+        offset: wgt::BufferAddress,
+    ) {
         let encoder = self.state.compute.as_ref().unwrap();
         unsafe {
             encoder

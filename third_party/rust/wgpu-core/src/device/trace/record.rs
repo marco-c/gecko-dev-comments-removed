@@ -362,6 +362,11 @@ impl IntoTrace for crate::ray_tracing::OwnedBlasGeometries<ArcReferences> {
                     geos.into_iter().map(|g| g.into_trace()).collect(),
                 )
             }
+            crate::ray_tracing::OwnedBlasGeometries::AabbGeometries(geos) => {
+                crate::ray_tracing::OwnedBlasGeometries::AabbGeometries(
+                    geos.into_iter().map(|g| g.into_trace()).collect(),
+                )
+            }
         }
     }
 }
@@ -378,6 +383,18 @@ impl IntoTrace for crate::ray_tracing::OwnedBlasTriangleGeometry<ArcReferences> 
             vertex_stride: self.vertex_stride,
             first_index: self.first_index,
             transform_buffer_offset: self.transform_buffer_offset,
+        }
+    }
+}
+
+impl IntoTrace for crate::ray_tracing::OwnedBlasAabbGeometry<ArcReferences> {
+    type Output = crate::ray_tracing::OwnedBlasAabbGeometry<PointerReferences>;
+    fn into_trace(self) -> Self::Output {
+        crate::ray_tracing::OwnedBlasAabbGeometry {
+            size: self.size,
+            stride: self.stride,
+            aabb_buffer: self.aabb_buffer.into_trace(),
+            primitive_offset: self.primitive_offset,
         }
     }
 }
@@ -452,8 +469,8 @@ impl IntoTrace for ArcComputeCommand {
                 size_bytes,
                 values_offset,
             },
-            C::Dispatch(groups) => C::Dispatch(groups),
-            C::DispatchIndirect { buffer, offset } => C::DispatchIndirect {
+            C::DispatchWorkgroups(groups) => C::DispatchWorkgroups(groups),
+            C::DispatchWorkgroupsIndirect { buffer, offset } => C::DispatchWorkgroupsIndirect {
                 buffer: buffer.into_trace(),
                 offset,
             },
@@ -475,6 +492,26 @@ impl IntoTrace for ArcComputeCommand {
                 query_index,
             },
             C::EndPipelineStatisticsQuery => C::EndPipelineStatisticsQuery,
+            C::TransitionResources {
+                buffer_transitions,
+                texture_transitions,
+            } => C::TransitionResources {
+                buffer_transitions: buffer_transitions
+                    .into_iter()
+                    .map(|buffer_transition| wgt::BufferTransition {
+                        buffer: buffer_transition.buffer.into_trace(),
+                        state: buffer_transition.state,
+                    })
+                    .collect(),
+                texture_transitions: texture_transitions
+                    .into_iter()
+                    .map(|texture_transition| wgt::TextureTransition {
+                        texture: texture_transition.texture.into_trace(),
+                        selector: texture_transition.selector,
+                        state: texture_transition.state,
+                    })
+                    .collect(),
+            },
         }
     }
 }
@@ -857,18 +894,18 @@ fn action_to_owned(action: Action<'_, PointerReferences>) -> Action<'static, Poi
                 mapped_at_creation: desc.mapped_at_creation,
             },
         ),
-        A::FreeBuffer(buffer) => A::FreeBuffer(buffer),
         A::DestroyBuffer(buffer) => A::DestroyBuffer(buffer),
-        A::FreeTexture(texture) => A::FreeTexture(texture),
+        A::DropBuffer(buffer) => A::DropBuffer(buffer),
         A::DestroyTexture(texture) => A::DestroyTexture(texture),
-        A::DestroyTextureView(texture_view) => A::DestroyTextureView(texture_view),
-        A::FreeExternalTexture(external_texture) => A::FreeExternalTexture(external_texture),
+        A::DropTexture(texture) => A::DropTexture(texture),
+        A::DropTextureView(texture_view) => A::DropTextureView(texture_view),
         A::DestroyExternalTexture(external_texture) => A::DestroyExternalTexture(external_texture),
-        A::DestroySampler(sampler) => A::DestroySampler(sampler),
+        A::DropExternalTexture(external_texture) => A::DropExternalTexture(external_texture),
+        A::DropSampler(sampler) => A::DropSampler(sampler),
         A::GetSurfaceTexture { id, parent } => A::GetSurfaceTexture { id, parent },
         A::Present(surface) => A::Present(surface),
         A::DiscardSurfaceTexture(surface) => A::DiscardSurfaceTexture(surface),
-        A::DestroyBindGroupLayout(layout) => A::DestroyBindGroupLayout(layout),
+        A::DropBindGroupLayout(layout) => A::DropBindGroupLayout(layout),
         A::GetRenderPipelineBindGroupLayout {
             id,
             pipeline,
@@ -887,14 +924,15 @@ fn action_to_owned(action: Action<'_, PointerReferences>) -> Action<'static, Poi
             pipeline,
             index,
         },
-        A::DestroyPipelineLayout(layout) => A::DestroyPipelineLayout(layout),
-        A::DestroyBindGroup(bind_group) => A::DestroyBindGroup(bind_group),
-        A::DestroyShaderModule(shader_module) => A::DestroyShaderModule(shader_module),
-        A::DestroyComputePipeline(pipeline) => A::DestroyComputePipeline(pipeline),
-        A::DestroyRenderPipeline(pipeline) => A::DestroyRenderPipeline(pipeline),
-        A::DestroyPipelineCache(cache) => A::DestroyPipelineCache(cache),
-        A::DestroyRenderBundle(render_bundle) => A::DestroyRenderBundle(render_bundle),
+        A::DropPipelineLayout(layout) => A::DropPipelineLayout(layout),
+        A::DropBindGroup(bind_group) => A::DropBindGroup(bind_group),
+        A::DropShaderModule(shader_module) => A::DropShaderModule(shader_module),
+        A::DropComputePipeline(pipeline) => A::DropComputePipeline(pipeline),
+        A::DropRenderPipeline(pipeline) => A::DropRenderPipeline(pipeline),
+        A::DropPipelineCache(cache) => A::DropPipelineCache(cache),
+        A::DropRenderBundle(render_bundle) => A::DropRenderBundle(render_bundle),
         A::DestroyQuerySet(query_set) => A::DestroyQuerySet(query_set),
+        A::DropQuerySet(query_set) => A::DropQuerySet(query_set),
         A::WriteBuffer {
             id,
             data,
@@ -929,8 +967,8 @@ fn action_to_owned(action: Action<'_, PointerReferences>) -> Action<'static, Poi
             failed_at_submit,
             error,
         },
-        A::DestroyBlas(blas) => A::DestroyBlas(blas),
-        A::DestroyTlas(tlas) => A::DestroyTlas(tlas),
+        A::DropBlas(blas) => A::DropBlas(blas),
+        A::DropTlas(tlas) => A::DropTlas(tlas),
 
         A::CreateTexture(..)
         | A::CreateTextureView { .. }

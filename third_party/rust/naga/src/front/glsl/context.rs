@@ -540,6 +540,7 @@ impl<'a> Context<'a> {
     }
 
     
+    #[allow(clippy::large_stack_frames)] 
     fn lower_inner(
         &mut self,
         stmt: &StmtContext,

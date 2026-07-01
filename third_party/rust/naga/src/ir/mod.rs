@@ -236,6 +236,7 @@ use crate::diagnostic_filter::DiagnosticFilterNode;
 use crate::{FastIndexMap, NamedExpressions};
 
 pub use block::Block;
+pub use naga_types::{ResourceBinding, ShaderStage};
 
 
 
@@ -313,40 +314,6 @@ pub enum ConservativeDepth {
 
     
     Unchanged,
-}
-
-
-#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum ShaderStage {
-    
-    Vertex,
-
-    
-    Task,
-
-    
-    Mesh,
-
-    
-    Fragment,
-
-    
-    Compute,
-
-    
-    RayGeneration,
-
-    
-    Miss,
-
-    
-    AnyHit,
-
-    
-    ClosestHit,
 }
 
 
@@ -1159,18 +1126,6 @@ pub enum Binding {
         
         per_primitive: bool,
     },
-}
-
-
-#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub struct ResourceBinding {
-    
-    pub group: u32,
-    
-    pub binding: u32,
 }
 
 

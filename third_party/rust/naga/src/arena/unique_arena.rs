@@ -62,6 +62,11 @@ impl<T> UniqueArena<T> {
     }
 
     
+    pub fn take(&mut self) -> Self {
+        core::mem::take(self)
+    }
+
+    
     
     
     

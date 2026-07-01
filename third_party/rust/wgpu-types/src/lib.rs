@@ -19,6 +19,8 @@ extern crate std;
 
 extern crate alloc;
 
+extern crate naga_types as nt;
+
 use core::{fmt, hash::Hash, time::Duration};
 
 #[cfg(any(feature = "serde", test))]
@@ -51,6 +53,8 @@ mod transfers;
 mod vertex;
 mod write_only;
 
+pub use nt::VertexFormat;
+
 pub use adapter::*;
 pub use backend::*;
 pub use binding::*;
@@ -73,102 +77,7 @@ pub use transfers::*;
 pub use vertex::*;
 pub use write_only::*;
 
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(not(docsrs))]
-macro_rules! link_to_wgpu_docs {
-    ([$reference:expr]: $url_path:expr) => {
-        concat!("[", $reference, "]: ../wgpu/", $url_path)
-    };
-
-    (../ [$reference:expr]: $url_path:expr) => {
-        concat!("[", $reference, "]: ../../wgpu/", $url_path)
-    };
-}
-#[cfg(docsrs)]
-macro_rules! link_to_wgpu_docs {
-    ($(../)? [$reference:expr]: $url_path:expr) => {
-        concat!(
-            "[",
-            $reference,
-            // URL path will have a base URL of https://docs.rs/
-            "]: /wgpu/",
-            // The version of wgpu-types is not necessarily the same as the version of wgpu
-            // if a patch release of either has been published, so we cannot use the full version
-            // number. docs.rs will interpret this single number as a Cargo-style version
-            // requirement and redirect to the latest compatible version.
-            //
-            // This technique would break if `wgpu` and `wgpu-types` ever switch to having distinct
-            // major version numbering. An alternative would be to hardcode the corresponding `wgpu`
-            // version, but that would give us another thing to forget to update.
-            env!("CARGO_PKG_VERSION_MAJOR"),
-            "/wgpu/",
-            $url_path
-        )
-    };
-}
-
-
-
-
-
-macro_rules! link_to_wgpu_item {
-    ($kind:ident $name:ident) => {
-        $crate::link_to_wgpu_docs!(
-            [concat!("`", stringify!($name), "`")]: concat!(stringify!($kind), ".", stringify!($name), ".html")
-        )
-    };
-}
-
-
-
-
-
-#[cfg(not(docsrs))]
-macro_rules! link_to_wgc_docs {
-    ([$reference:expr]: $url_path:expr) => {
-        concat!("[", $reference, "]: ../wgpu_core/", $url_path)
-    };
-
-    (../ [$reference:expr]: $url_path:expr) => {
-        concat!("[", $reference, "]: ../../wgpu_core/", $url_path)
-    };
-}
-#[cfg(docsrs)]
-macro_rules! link_to_wgc_docs {
-    ($(../)? [$reference:expr]: $url_path:expr) => {
-        concat!(
-            "[",
-            $reference,
-            // URL path will have a base URL of https://docs.rs/
-            "]: /wgpu_core/",
-            // The version of wgpu-types is not necessarily the same as the version of wgpu_core
-            // if a patch release of either has been published, so we cannot use the full version
-            // number. docs.rs will interpret this single number as a Cargo-style version
-            // requirement and redirect to the latest compatible version.
-            //
-            // This technique would break if `wgpu_core` and `wgpu-types` ever switch to having
-            // distinct major version numbering. An alternative would be to hardcode the
-            // corresponding `wgpu_core` version, but that would give us another thing to forget
-            // to update.
-            env!("CARGO_PKG_VERSION_MAJOR"),
-            "/wgpu_core/",
-            $url_path
-        )
-    };
-}
-
-pub(crate) use {link_to_wgc_docs, link_to_wgpu_docs, link_to_wgpu_item};
+pub(crate) use naga_types::{link_to_wgc_docs, link_to_wgpu_docs, link_to_wgpu_item};
 
 
 

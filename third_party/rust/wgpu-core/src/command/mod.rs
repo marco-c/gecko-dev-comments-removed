@@ -71,7 +71,7 @@ pub(crate) use self::{
     clear::clear_texture,
     encoder::EncodingState,
     memory_init::CommandBufferTextureMemoryActions,
-    render::{get_stride_of_indirect_args, VertexLimits},
+    render::{get_dst_stride_of_indirect_args, get_src_stride_of_indirect_args, VertexState},
     transfer::{
         extract_texture_selector, validate_linear_texture_data, validate_texture_buffer_copy,
         validate_texture_copy_dst_format, validate_texture_copy_range,
@@ -656,15 +656,14 @@ impl InnerCommandEncoder {
     
     
     
+    
+    
+    
+    
+    
+    
     fn close_and_swap(&mut self) -> Result<(), DeviceError> {
-        assert!(self.is_open);
-        self.is_open = false;
-
-        let new =
-            unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
-        self.list.insert(self.list.len() - 1, new);
-
-        Ok(())
+        self.close_and_insert_at(self.list.len() - 1)
     }
 
     
@@ -677,13 +676,39 @@ impl InnerCommandEncoder {
     
     
     
+    
+    
+    
+    
+    
+    
     pub(crate) fn close_and_push_front(&mut self) -> Result<(), DeviceError> {
+        self.close_and_insert_at(0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn close_and_insert_at(&mut self, index: usize) -> Result<(), DeviceError> {
         assert!(self.is_open);
         self.is_open = false;
 
-        let new =
+        let cmd_buf =
             unsafe { self.raw.end_encoding() }.map_err(|e| self.device.handle_hal_error(e))?;
-        self.list.insert(0, new);
+        self.list.insert(index, cmd_buf);
 
         Ok(())
     }
@@ -806,6 +831,8 @@ pub(crate) struct BakedCommands {
     pub(crate) indirect_draw_validation_resources: crate::indirect_validation::DrawResources,
     buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
     texture_memory_actions: CommandBufferTextureMemoryActions,
+    pub(crate) query_set_writes: query::QuerySetWrites,
+    pub(crate) deferred_query_set_resolves: Vec<query::DeferredQuerySetResolve>,
 }
 
 
@@ -839,6 +866,11 @@ pub struct CommandBufferMutable {
     
     #[cfg(feature = "trace")]
     pub(crate) trace_commands: Option<Vec<Command<PointerReferences>>>,
+
+    
+    pub(crate) query_set_writes: query::QuerySetWrites,
+    
+    pub(crate) deferred_query_set_resolves: Vec<query::DeferredQuerySetResolve>,
 }
 
 impl CommandBufferMutable {
@@ -850,6 +882,8 @@ impl CommandBufferMutable {
             indirect_draw_validation_resources: self.indirect_draw_validation_resources,
             buffer_memory_init_actions: self.buffer_memory_init_actions,
             texture_memory_actions: self.texture_memory_actions,
+            query_set_writes: self.query_set_writes,
+            deferred_query_set_resolves: self.deferred_query_set_resolves,
         }
     }
 }
@@ -905,6 +939,8 @@ impl CommandEncoder {
                     indirect_draw_validation_resources:
                         crate::indirect_validation::DrawResources::new(device.clone()),
                     commands: Vec::new(),
+                    query_set_writes: Default::default(),
+                    deferred_query_set_resolves: Default::default(),
                     #[cfg(feature = "trace")]
                     trace_commands: if device.trace.lock().is_some() {
                         Some(Vec::new())
@@ -1033,8 +1069,11 @@ impl CommandEncoder {
         for command in commands {
             if matches!(
                 command,
-                ArcCommand::RunRenderPass { .. } | ArcCommand::RunComputePass { .. }
+                ArcCommand::RunRenderPass { .. }
+                    | ArcCommand::RunComputePass { .. }
+                    | ArcCommand::ResolveQuerySet { .. }
             ) {
+                
                 
                 
                 
@@ -1051,6 +1090,8 @@ impl CommandEncoder {
                         .indirect_draw_validation_resources,
                     snatch_guard: &snatch_guard,
                     debug_scope_depth: &mut debug_scope_depth,
+                    query_set_writes: &mut cmd_buf_data.query_set_writes,
+                    deferred_query_set_resolves: &mut cmd_buf_data.deferred_query_set_resolves,
                 };
 
                 match command {
@@ -1104,6 +1145,22 @@ impl CommandEncoder {
                         }
                         res?;
                     }
+                    ArcCommand::ResolveQuerySet {
+                        query_set,
+                        start_query,
+                        query_count,
+                        destination,
+                        destination_offset,
+                    } => {
+                        query::resolve_query_set(
+                            &mut state,
+                            query_set,
+                            start_query,
+                            query_count,
+                            destination,
+                            destination_offset,
+                        )?;
+                    }
                     _ => unreachable!(),
                 }
             } else {
@@ -1125,6 +1182,8 @@ impl CommandEncoder {
                         .indirect_draw_validation_resources,
                     snatch_guard: &snatch_guard,
                     debug_scope_depth: &mut debug_scope_depth,
+                    query_set_writes: &mut cmd_buf_data.query_set_writes,
+                    deferred_query_set_resolves: &mut cmd_buf_data.deferred_query_set_resolves,
                 };
                 match command {
                     ArcCommand::CopyBufferToBuffer {
@@ -1162,22 +1221,6 @@ impl CommandEncoder {
                     } => {
                         query::write_timestamp(&mut state, query_set, query_index)?;
                     }
-                    ArcCommand::ResolveQuerySet {
-                        query_set,
-                        start_query,
-                        query_count,
-                        destination,
-                        destination_offset,
-                    } => {
-                        query::resolve_query_set(
-                            &mut state,
-                            query_set,
-                            start_query,
-                            query_count,
-                            destination,
-                            destination_offset,
-                        )?;
-                    }
                     ArcCommand::PushDebugGroup(label) => {
                         push_debug_group(&mut state, &label)?;
                     }
@@ -1200,7 +1243,9 @@ impl CommandEncoder {
                             texture_transitions,
                         )?;
                     }
-                    ArcCommand::RunComputePass { .. } | ArcCommand::RunRenderPass { .. } => {
+                    ArcCommand::RunComputePass { .. }
+                    | ArcCommand::RunRenderPass { .. }
+                    | ArcCommand::ResolveQuerySet { .. } => {
                         unreachable!()
                     }
                 }
@@ -2047,6 +2092,8 @@ pub enum PassErrorScope {
     BeginPipelineStatisticsQuery,
     #[error("In a end_pipeline_statistics_query command")]
     EndPipelineStatisticsQuery,
+    #[error("In a transition_resources command")]
+    TransitionResources,
     #[error("In a execute_bundle command")]
     ExecuteBundle,
     #[error("In a dispatch command, indirect:{indirect}")]

@@ -145,7 +145,7 @@ pub fn process_overrides<'a>(
 
     
     
-    let mut overrides = mem::take(&mut module.overrides);
+    let mut overrides = module.overrides.take();
     let mut override_iter = overrides.iter_mut_span();
 
     
@@ -264,7 +264,7 @@ pub fn process_overrides<'a>(
         }
     }
 
-    let mut functions = mem::take(&mut module.functions);
+    let mut functions = module.functions.take();
     for (_, function) in functions.iter_mut() {
         process_function(&mut module, &override_map, &mut layouter, function)?;
     }
@@ -424,7 +424,7 @@ fn process_function(
 
     let mut local_expression_kind_tracker = crate::proc::ExpressionKindTracker::new();
 
-    let mut expressions = mem::take(&mut function.expressions);
+    let mut expressions = function.expressions.take();
 
     
     

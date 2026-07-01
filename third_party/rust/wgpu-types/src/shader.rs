@@ -50,6 +50,12 @@ pub struct ShaderRuntimeChecks {
     
     
     pub mesh_shader_primitive_indices_clamp: bool,
+
+    
+    
+    
+    
+    pub int_div_checks: bool,
 }
 
 impl ShaderRuntimeChecks {
@@ -85,6 +91,7 @@ impl ShaderRuntimeChecks {
             ray_query_initialization_tracking: all_checks,
             task_shader_dispatch_tracking: all_checks,
             mesh_shader_primitive_indices_clamp: all_checks,
+            int_div_checks: all_checks,
         }
     }
 }
@@ -96,6 +103,20 @@ impl Default for ShaderRuntimeChecks {
 }
 
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PassthroughShaderEntryPoint<'a> {
+    
+    pub name: Cow<'a, str>,
+    
+    
+    pub workgroup_size: (u32, u32, u32),
+}
+
+
+
+
+
 
 
 #[derive(Debug, Clone)]
@@ -104,7 +125,7 @@ pub struct CreateShaderModuleDescriptorPassthrough<'a, L> {
     
     pub label: L,
     
-    pub num_workgroups: (u32, u32, u32),
+    pub entry_points: Cow<'a, [PassthroughShaderEntryPoint<'a>]>,
 
     
     pub spirv: Option<Cow<'a, [u32]>>,
@@ -128,7 +149,7 @@ impl<'a, L: Default> Default for CreateShaderModuleDescriptorPassthrough<'a, L> 
     fn default() -> Self {
         Self {
             label: Default::default(),
-            num_workgroups: (0, 0, 0),
+            entry_points: Cow::Borrowed(&[]),
             spirv: None,
             dxil: None,
             metallib: None,
@@ -148,7 +169,7 @@ impl<'a, L> CreateShaderModuleDescriptorPassthrough<'a, L> {
     ) -> CreateShaderModuleDescriptorPassthrough<'a, K> {
         CreateShaderModuleDescriptorPassthrough {
             label: fun(&self.label),
-            num_workgroups: self.num_workgroups,
+            entry_points: self.entry_points.clone(),
             spirv: self.spirv.clone(),
             metallib: self.metallib.clone(),
             dxil: self.dxil.clone(),

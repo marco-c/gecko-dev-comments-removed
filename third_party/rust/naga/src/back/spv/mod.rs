@@ -110,6 +110,8 @@ mod selection;
 mod subgroup;
 mod writer;
 
+pub use nt::spv::*;
+
 pub use mesh_shader::{MeshReturnInfo, MeshReturnMember};
 pub use spirv::{Capability, SourceLanguage};
 
@@ -941,6 +943,7 @@ pub struct Writer {
     zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode,
     force_loop_bounding: bool,
     use_storage_input_output_16: bool,
+    emit_int_div_checks: bool,
     void_type: Word,
     tuple_of_u32s_ty_id: Option<Word>,
     
@@ -1037,19 +1040,6 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-pub struct BindingInfo {
-    pub descriptor_set: u32,
-    pub binding: u32,
-    
-    pub binding_array_size: Option<u32>,
-}
-
-
-pub type BindingMap = alloc::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ZeroInitializeWorkgroupMemoryMode {
     
@@ -1114,6 +1104,17 @@ pub struct Options<'a> {
     
     
     pub mesh_shader_primitive_indices_clamp: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub emit_int_div_checks: bool,
 }
 
 impl Default for Options<'_> {
@@ -1139,6 +1140,7 @@ impl Default for Options<'_> {
             debug_info: None,
             task_dispatch_limits: None,
             mesh_shader_primitive_indices_clamp: true,
+            emit_int_div_checks: true,
         }
     }
 }

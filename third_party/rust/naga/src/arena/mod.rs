@@ -196,6 +196,11 @@ impl<T> Arena<T> {
         self.data.clear()
     }
 
+    
+    pub fn take(&mut self) -> Self {
+        core::mem::take(self)
+    }
+
     pub fn get_span(&self, handle: Handle<T>) -> Span {
         *self
             .span_info

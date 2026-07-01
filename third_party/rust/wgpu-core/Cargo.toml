@@ -49,6 +49,7 @@ angle = ["wgpu-core-deps-apple/angle"]
 api_log_info = []
 counters = ["wgpu-types/counters"]
 default = ["std"]
+drm = ["wgpu-core-deps-windows-linux-android/drm"]
 dx12 = ["wgpu-core-deps-windows-linux-android/dx12"]
 fragile-send-sync-non-atomic-wasm = ["wgpu-hal/fragile-send-sync-non-atomic-wasm"]
 gles = [
@@ -109,11 +110,11 @@ version = "0.7.1"
 default-features = false
 
 [dependencies.bit-set]
-version = "0.9"
+version = "0.10"
 default-features = false
 
 [dependencies.bit-vec]
-version = "0.9"
+version = "0.9.1"
 default-features = false
 
 [dependencies.bitflags]
@@ -130,7 +131,7 @@ features = [
 version = "0.2.10"
 
 [dependencies.hashbrown]
-version = "0.16"
+version = "0.17"
 features = [
     "default-hasher",
     "inline-more",
@@ -151,6 +152,10 @@ optional = true
 [dependencies.naga]
 version = "29.0.0"
 path = "../naga"
+
+[dependencies.naga-types]
+version = "29.0.0"
+path = "../naga-types"
 
 [dependencies.once_cell]
 version = "1.21"
