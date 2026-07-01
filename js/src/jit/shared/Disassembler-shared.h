@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_shared_Disassembler_shared_h
 #define jit_shared_Disassembler_shared_h
 
@@ -16,7 +14,8 @@
 
 #include "jstypes.h"  
 
-#if defined(JS_DISASM_ARM) || defined(JS_DISASM_ARM64)
+#if defined(JS_DISASM_ARM) || defined(JS_DISASM_ARM64) || \
+    defined(JS_DISASM_RISCV64)
 #  define JS_DISASM_SUPPORTED
 #endif
 
