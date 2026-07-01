@@ -798,19 +798,6 @@ class DevTools extends EventEmitter {
 
 
 
-  getToolboxForDescriptorFront(descriptorFront) {
-    for (const [commands, toolbox] of this.#toolboxesPerCommands) {
-      if (commands.descriptorFront == descriptorFront) {
-        return toolbox;
-      }
-    }
-    return null;
-  }
-
-  
-
-
-
 
 
 
