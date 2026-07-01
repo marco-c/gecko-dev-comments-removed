@@ -2,22 +2,24 @@
 
 
 
-use api::{AlphaType, ImageBufferKind};
+use api::{AlphaType, ClipMode, ImageBufferKind};
 use api::{FontInstanceFlags, YuvColorSpace, YuvFormat, ColorDepth, ColorRange, PremultipliedColorF};
 use api::units::*;
+use crate::clip::{clamped_radius, ClipNodeFlags, ClipNodeRange, ClipItemKind, ClipStore};
 use crate::command_buffer::PrimitiveCommand;
 use crate::composite::CompositorSurfaceKind;
 use crate::pattern::PatternKind;
-use crate::spatial_tree::SpatialNodeIndex;
+use crate::spatial_tree::{SpatialTree, SpatialNodeIndex, CoordinateSystemId};
 use glyph_rasterizer::{GlyphFormat, SubpixelDirection};
 use crate::gpu_types::{BrushFlags, BrushInstance, PrimitiveHeaders, ZBufferId, ZBufferIdGenerator};
 use crate::gpu_types::SplitCompositeInstance;
 use crate::gpu_types::{PrimitiveInstanceData, RasterizationSpace, GlyphInstance};
 use crate::gpu_types::{PrimitiveHeader, PrimitiveHeaderIndex};
 use crate::gpu_types::{ImageBrushUserData, get_shader_opacity, MaskInstance};
+use crate::gpu_types::{ClipMaskInstanceCommon, ClipMaskInstanceRect};
 use crate::internal_types::{FastHashMap, Filter, FrameAllocator, FrameMemory, FrameVec, Swizzle, TextureSource};
 use crate::picture::{Picture3DContext, PictureCompositeMode};
-use crate::prim_store::PrimitiveKind;
+use crate::prim_store::{PrimitiveKind, ClipData};
 use crate::prim_store::{PrimitiveInstance, PrimitiveOpacity, SegmentInstanceIndex};
 use crate::prim_store::{BrushSegment, ClipMaskKind, ClipTaskIndex};
 use crate::prim_store::VECS_PER_SEGMENT;
@@ -33,7 +35,7 @@ use crate::transform::{GpuTransformId, TransformPalette, TransformMetadata};
 use crate::visibility::{PrimitiveVisibilityFlags, DrawState};
 use smallvec::SmallVec;
 use std::{f32, i32, usize};
-use crate::util::{MaxRect, ScaleOffset};
+use crate::util::{project_rect, MaxRect, ScaleOffset};
 use crate::segment::EdgeMask;
 
 
@@ -43,6 +45,12 @@ const OPAQUE_TASK_ADDRESS: RenderTaskAddress = RenderTaskAddress(0x7fffffff);
 
 
 pub const INVALID_SEGMENT_INDEX: i32 = 0xffff;
+
+
+const CLIP_RECTANGLE_TILE_SIZE: i32 = 128;
+
+
+const CLIP_RECTANGLE_AREA_THRESHOLD: f32 = (CLIP_RECTANGLE_TILE_SIZE * CLIP_RECTANGLE_TILE_SIZE * 4) as f32;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -2554,6 +2562,293 @@ impl ClipMaskInstanceList {
     }
 }
 
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipBatchList {
+    
+    pub slow_rectangles: FrameVec<ClipMaskInstanceRect>,
+    pub fast_rectangles: FrameVec<ClipMaskInstanceRect>,
+}
+
+impl ClipBatchList {
+    fn new(memory: &FrameMemory) -> Self {
+        ClipBatchList {
+            slow_rectangles: memory.new_vec(),
+            fast_rectangles: memory.new_vec(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.slow_rectangles.is_empty()
+          && self.fast_rectangles.is_empty()
+    }
+}
+
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipBatcher {
+    
+    
+    
+    pub primary_clips: ClipBatchList,
+    
+    
+    pub secondary_clips: ClipBatchList,
+
+    gpu_supports_fast_clears: bool,
+}
+
+impl ClipBatcher {
+    pub fn new(
+        gpu_supports_fast_clears: bool,
+        memory: &FrameMemory,
+    ) -> Self {
+        ClipBatcher {
+            primary_clips: ClipBatchList::new(memory),
+            secondary_clips: ClipBatchList::new(memory),
+            gpu_supports_fast_clears,
+        }
+    }
+
+    pub fn add_clip_region(
+        &mut self,
+        local_pos: LayoutPoint,
+        sub_rect: DeviceRect,
+        clip_data: ClipData,
+        task_origin: DevicePoint,
+        screen_origin: DevicePoint,
+        device_pixel_scale: f32,
+    ) {
+        let instance = ClipMaskInstanceRect {
+            common: ClipMaskInstanceCommon {
+                clip_transform_id: GpuTransformId::IDENTITY,
+                prim_transform_id: GpuTransformId::IDENTITY,
+                sub_rect,
+                task_origin,
+                screen_origin,
+                device_pixel_scale,
+            },
+            local_pos,
+            clip_data,
+        };
+
+        self.primary_clips.slow_rectangles.push(instance);
+    }
+
+    
+    
+    fn add_tiled_clip_mask(
+        &mut self,
+        mask_screen_rect: DeviceRect,
+        local_clip_rect: LayoutRect,
+        clip_spatial_node_index: SpatialNodeIndex,
+        spatial_tree: &SpatialTree,
+        world_rect: &WorldRect,
+        global_device_pixel_scale: DevicePixelScale,
+        common: &ClipMaskInstanceCommon,
+        is_first_clip: bool,
+    ) -> bool {
+        
+        if mask_screen_rect.area() < CLIP_RECTANGLE_AREA_THRESHOLD {
+            return false;
+        }
+
+        let mask_screen_rect_size = mask_screen_rect.size().to_i32();
+        let clip_spatial_node = spatial_tree.get_spatial_node(clip_spatial_node_index);
+
+        
+        
+        
+        if clip_spatial_node.coordinate_system_id != CoordinateSystemId::root() {
+            return false;
+        }
+
+        
+        
+        let transform = spatial_tree.get_world_transform(
+            clip_spatial_node_index,
+        );
+        let world_clip_rect = match project_rect(
+            &transform.into_transform(),
+            &local_clip_rect,
+            &world_rect,
+        ) {
+            Some(rect) => rect,
+            None => return false,
+        };
+
+        
+        
+        let world_device_rect = world_clip_rect * global_device_pixel_scale;
+        let x_tiles = (mask_screen_rect_size.width + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+        let y_tiles = (mask_screen_rect_size.height + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+
+        
+        
+        
+        let mask_origin = mask_screen_rect.min.to_vector();
+        let clip_list = self.get_batch_list(is_first_clip);
+
+        for y in 0 .. y_tiles {
+            for x in 0 .. x_tiles {
+                let p0 = DeviceIntPoint::new(
+                    x * CLIP_RECTANGLE_TILE_SIZE,
+                    y * CLIP_RECTANGLE_TILE_SIZE,
+                );
+                let p1 = DeviceIntPoint::new(
+                    (p0.x + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect_size.width),
+                    (p0.y + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect_size.height),
+                );
+                let normalized_sub_rect = DeviceIntRect {
+                    min: p0,
+                    max: p1,
+                }.to_f32();
+                let world_sub_rect = normalized_sub_rect.translate(mask_origin);
+
+                
+                
+                
+                if !world_device_rect.contains_box(&world_sub_rect) {
+                    clip_list.slow_rectangles.push(ClipMaskInstanceRect {
+                        common: ClipMaskInstanceCommon {
+                            sub_rect: normalized_sub_rect,
+                            ..*common
+                        },
+                        local_pos: local_clip_rect.min,
+                        clip_data: ClipData::uniform(local_clip_rect.size(), 0.0, ClipMode::Clip),
+                    });
+                }
+            }
+        }
+
+        true
+    }
+
+    
+    
+    fn get_batch_list(
+        &mut self,
+        is_first_clip: bool,
+    ) -> &mut ClipBatchList {
+        if is_first_clip && !self.gpu_supports_fast_clears {
+            &mut self.primary_clips
+        } else {
+            &mut self.secondary_clips
+        }
+    }
+
+    pub fn add(
+        &mut self,
+        clip_node_range: ClipNodeRange,
+        root_spatial_node_index: SpatialNodeIndex,
+        clip_store: &ClipStore,
+        transforms: &mut TransformPalette,
+        actual_rect: DeviceRect,
+        surface_device_pixel_scale: DevicePixelScale,
+        task_origin: DevicePoint,
+        screen_origin: DevicePoint,
+        ctx: &RenderTargetContext,
+    ) -> bool {
+        let mut is_first_clip = true;
+        let mut clear_to_one = false;
+
+        for i in 0 .. clip_node_range.count {
+            let clip_instance = clip_store.get_instance_from_range(&clip_node_range, i);
+            let clip_node = &ctx.data_stores.clip[clip_instance.handle];
+
+            let clip_transform_id = transforms.gpu.get_id(
+                clip_instance.spatial_node_index,
+                ctx.root_spatial_node_index,
+                ctx.spatial_tree,
+            );
+
+            let prim_transform_id = transforms.gpu.get_id(
+                root_spatial_node_index,
+                ctx.root_spatial_node_index,
+                ctx.spatial_tree,
+            );
+
+            let common = ClipMaskInstanceCommon {
+                sub_rect: DeviceRect::from_size(actual_rect.size()),
+                task_origin,
+                screen_origin,
+                device_pixel_scale: surface_device_pixel_scale.0,
+                clip_transform_id,
+                prim_transform_id,
+            };
+
+            let added_clip = match clip_node.item.kind {
+                ClipItemKind::Image { .. } => {
+                    unreachable!();
+                }
+                ClipItemKind::Rectangle { mode: ClipMode::ClipOut } => {
+                    self.get_batch_list(is_first_clip)
+                        .slow_rectangles
+                        .push(ClipMaskInstanceRect {
+                            common,
+                            local_pos: clip_instance.clip_rect.min,
+                            clip_data: ClipData::uniform(clip_instance.clip_rect.size(), 0.0, ClipMode::ClipOut),
+                        });
+
+                    true
+                }
+                ClipItemKind::Rectangle { mode: ClipMode::Clip } => {
+                    if clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
+                        false
+                    } else {
+                        if self.add_tiled_clip_mask(
+                            actual_rect,
+                            clip_instance.clip_rect,
+                            clip_instance.spatial_node_index,
+                            ctx.spatial_tree,
+                            &ctx.screen_world_rect,
+                            ctx.global_device_pixel_scale,
+                            &common,
+                            is_first_clip,
+                        ) {
+                            clear_to_one |= is_first_clip;
+                        } else {
+                            self.get_batch_list(is_first_clip)
+                                .slow_rectangles
+                                .push(ClipMaskInstanceRect {
+                                    common,
+                                    local_pos: clip_instance.clip_rect.min,
+                                    clip_data: ClipData::uniform(clip_instance.clip_rect.size(), 0.0, ClipMode::Clip),
+                                });
+                        }
+
+                        true
+                    }
+                }
+                ClipItemKind::RoundedRectangle { ref radius, mode, .. } => {
+                    let size = clip_instance.clip_rect.size();
+                    let radius = clamped_radius(radius, size);
+                    let batch_list = self.get_batch_list(is_first_clip);
+                    let instance = ClipMaskInstanceRect {
+                        common,
+                        local_pos: clip_instance.clip_rect.min,
+                        clip_data: ClipData::rounded_rect(size, &radius, mode),
+                    };
+                    if clip_instance.flags.contains(ClipNodeFlags::USE_FAST_PATH) {
+                        batch_list.fast_rectangles.push(instance);
+                    } else {
+                        batch_list.slow_rectangles.push(instance);
+                    }
+
+                    true
+                }
+            };
+
+            is_first_clip &= !added_clip;
+        }
+
+        clear_to_one
+    }
+}
 
 impl<'a, 'rc> RenderTargetContext<'a, 'rc> {
     
