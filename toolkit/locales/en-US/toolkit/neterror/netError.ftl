@@ -59,6 +59,8 @@ neterror-dns-not-found-hint-header = <strong>If you entered the right address, y
 neterror-dns-not-found-hint-try-again = Try again later
 neterror-dns-not-found-hint-check-network = Check your network connection
 neterror-dns-not-found-hint-firewall = Check that { -brand-short-name } has permission to access the web (you might be connected but behind a firewall)
+neterror-dns-not-found-hint-check-network-2 = Check your network connection.
+neterror-dns-not-found-hint-firewall-2 = Check that { -brand-short-name } has permission to access the web (you might be connected but behind a firewall).
 neterror-dns-not-found-offline-hint-header = <strong>What can you do about it?</strong>
 neterror-dns-not-found-offline-hint-different-device = Try connecting on a different device.
 neterror-dns-not-found-offline-hint-modem = Check your modem or router.
@@ -200,9 +202,6 @@ neterror-response-status-code = Error code: { $responsestatus } { $responsestatu
 ## Felt Privacy V1 Strings
 
 fp-neterror-offline-body-title = Looks like there’s a problem with your internet connection
-
-fp-neterror-illustration-alt =
-  .alt = Illustration of a fox looking at disconnected network cables.
 
 ## Variables:
 ##   $hostname (String) - Hostname of the website to which the user was trying to connect.
