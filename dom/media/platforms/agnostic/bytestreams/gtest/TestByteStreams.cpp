@@ -2,7 +2,10 @@
 
 
 
+#include <limits>
+
 #include "AnnexB.h"
+#include "BitWriter.h"
 #include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
@@ -980,6 +983,89 @@ TEST(H264, DecodeSPSFromExtraData)
   testOutput(0x42, 0x40, 0x1E, {1920, 1080}, "Constrained Baseline Profile");
   testOutput(0x4D, 0x00, 0x0B, {300, 300}, "Main Profile");
   testOutput(0x64, 0x0C, 0x33, {1280, 720}, "Constrained High Profile");
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawFields(
+    uint32_t aPicWidthInMBSMinus1, uint32_t aPicHeightInMapUnitsMinus1,
+    bool aFrameMbsOnlyFlag) {
+  RefPtr<MediaByteBuffer> sps = new MediaByteBuffer();
+  BitWriter bw(sps);
+  bw.WriteU8(0);       
+  bw.WriteU8(0);       
+  bw.WriteU8(0);       
+  bw.WriteUE(0);       
+  bw.WriteUE(0);       
+  bw.WriteUE(0);       
+  bw.WriteUE(0);       
+  bw.WriteUE(0);       
+  bw.WriteBit(false);  
+  bw.WriteUE(aPicWidthInMBSMinus1);
+  bw.WriteUE(aPicHeightInMapUnitsMinus1);
+  bw.WriteBit(aFrameMbsOnlyFlag);
+  if (!aFrameMbsOnlyFlag) {
+    bw.WriteBit(false);  
+  }
+  bw.WriteBit(false);  
+  bw.WriteBit(false);  
+  bw.WriteBit(false);  
+  bw.CloseWithRbspTrailing();
+  return sps;
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawWidthMBS(
+    uint32_t aPicWidthInMBSMinus1) {
+  return BuildSPSWithRawFields(aPicWidthInMBSMinus1, 44, true);
+}
+
+TEST(H264, RejectsInvalidPicWidthMbs)
+{
+  
+  
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(0x0FFFFFFF);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnits)
+{
+  
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, true);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnitsRegardlessOfFlag)
+{
+  
+  
+  
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, false);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, AcceptsBoundaryPicWidth)
+{
+  
+  
+  
+  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(kMaxMbs - 1);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_width, kMaxMbs * 16);
+}
+
+TEST(H264, AcceptsBoundaryPicHeight)
+{
+  
+  
+  
+  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, kMaxMbs - 1, true);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_height, kMaxMbs * 16);
 }
 
 TEST(H265, HVCCParsingSuccess)
