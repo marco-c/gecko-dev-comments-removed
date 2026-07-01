@@ -785,14 +785,14 @@ struct NavigationWaitForAllScope final : public nsISupports,
     mNavigation->mOngoingNavigateEvent = nullptr;
 
     
-    RefPtr event = mEvent;
-    event->Finish(true);
-
-    
     
     if (mAPIMethodTracker) {
       mAPIMethodTracker->ResolveFinishedPromise();
     }
+
+    
+    RefPtr event = mEvent;
+    event->Finish(true);
 
     
     RefPtr navigation = mNavigation;
@@ -2052,17 +2052,17 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
   mOngoingNavigateEvent = nullptr;
 
   
+  
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
+  }
+
+  
   aEvent->AbortController()->Abort(aCx, aReason);
 
   
   RootedDictionary<ErrorEventInit> init(aCx);
   ExtractErrorInformation(aCx, aReason, init, aEvent);
-
-  
-  
-  if (mOngoingAPIMethodTracker) {
-    mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
-  }
 
   
   
