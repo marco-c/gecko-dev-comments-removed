@@ -259,6 +259,13 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
 
     
     
+    if (obj->compartment() != this && !AllowNewWrapper(this, obj)) {
+      obj.set(NewDeadProxyObject(cx, obj));
+      return !!obj;
+    }
+
+    
+    
     ExposeObjectToActiveJS(obj);
   }
 
