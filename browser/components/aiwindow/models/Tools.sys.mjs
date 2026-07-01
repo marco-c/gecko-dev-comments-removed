@@ -102,6 +102,7 @@ export const GET_NAVIGATION_INFO = "get_navigation_info";
 export const MANAGE_TABS = "manage_tabs";
 export const WORLD_CUP_MATCHES = "world_cup_matches";
 export const WORLD_CUP_LIVE = "world_cup_live";
+export const ADD_MEMORY = "add_memory";
 
 // Tools gated behind a feature pref. Filtered out of the model's tool list
 // in Chat.sys.mjs when the pref is off.
@@ -118,6 +119,7 @@ export const TOOLS = [
   MANAGE_TABS,
   WORLD_CUP_MATCHES,
   WORLD_CUP_LIVE,
+  ADD_MEMORY,
 ];
 
 export const RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION =
@@ -363,6 +365,38 @@ export const toolsConfig = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: ADD_MEMORY,
+      description:
+        "Save a memory when the user explicitly asks to be remembered something " +
+        '(e.g. "remember that I prefer Walmart for shopping"). Transform the ' +
+        "request into a concise third-person summary of the preference or fact " +
+        '(e.g. "Prefers Walmart for shopping"). Do NOT save personally ' +
+        "identifiable or financial information such as names, addresses, phone " +
+        "numbers, emails, SSNs, account or card numbers.",
+      parameters: {
+        type: "object",
+        properties: {
+          memorySummary: {
+            type: "string",
+            maxLength: 100,
+            description:
+              "A concise summary of what to remember, transformed from the user's request.",
+          },
+          containsPersonallyIdentifiableInfo: {
+            type: "boolean",
+            description:
+              "True if the request contains personally identifiable or financial " +
+              "information (names, addresses, phone numbers, emails, SSNs, account " +
+              "or card numbers, etc.).",
+          },
+        },
+        required: ["memorySummary", "containsPersonallyIdentifiableInfo"],
+      },
+    },
+  },
 ];
 
 /**
@@ -488,44 +522,22 @@ export async function searchBrowsingHistory(toolParams, conversation) {
     )
   );
 
+  // The model only needs link metadata. thumbnail is a heavy, page-controlled
+  // field the UI renders from the history grid above, so keep it out of the
+  // model-facing payload.
+  result.results = result.results.map(
+    ({ url, title, visitDate, visitCount, relevanceScore }) => ({
+      url,
+      title,
+      visitDate,
+      visitCount,
+      relevanceScore,
+    })
+  );
+
   conversation.securityProperties.setPrivateData();
   lazy.console.log("[Tool] searchBrowsingHistory", result);
   return result;
-}
-
-/**
- * Strips heavy or unnecessary fields from a browser history search result.
- *
- * @param {string} result
- *  A JSON string representing the history search response.
- * @returns {string}
- *  The sanitized JSON string with large fields (e.g., favicon, thumbnail)
- *  removed, or the original string if parsing fails.
- */
-export function stripSearchBrowsingHistoryFields(result) {
-  try {
-    const data = JSON.parse(result);
-    if (
-      data.error ||
-      !Array.isArray(data.results) ||
-      data.results.length === 0
-    ) {
-      return result;
-    }
-
-    // Remove large or unnecessary fields to save tokens
-    const OMIT_KEYS = ["favicon", "thumbnail"];
-    for (const item of data.results) {
-      if (item && typeof item === "object") {
-        for (const k of OMIT_KEYS) {
-          delete item[k];
-        }
-      }
-    }
-    return JSON.stringify(data);
-  } catch {
-    return result;
-  }
 }
 
 /**
@@ -1028,6 +1040,44 @@ export async function getUserMemories(conversation) {
 }
 
 /**
+ * Saves a memory the user explicitly asked to be remembered. If the model-inferred
+ * containsPersonallyIdentifiableInfo flag is true, the memory will not be saved
+ *  and an error message will be returned.
+ *
+ * @param {object} toolParams
+ * @param {string} toolParams.memorySummary
+ * @param {boolean} toolParams.containsPersonallyIdentifiableInfo
+ * @param {ChatConversation} conversation
+ * @returns {Promise<string>}
+ */
+export async function addMemory(
+  { memorySummary, containsPersonallyIdentifiableInfo },
+  conversation
+) {
+  // Until UI confirmation is implemented, we will not allow saving memories when untrusted
+  //  input is present in the conversation. This is to mitigate writes of attacker-influenced content
+  // into durable storage that is later re-injected into the user's future conversations as trusted context.
+  if (conversation.securityProperties.untrustedInput) {
+    return "Memory cannot be saved when untrusted content is present in the conversation.";
+  }
+  if (containsPersonallyIdentifiableInfo) {
+    return "Error: Failed to save memory: Memory contains personally identifiable information.";
+  }
+  const result = await lazy.MemoriesManager.saveRequestedMemory(memorySummary);
+  if (!result.ok) {
+    return `Error: Failed to save memory: ${result.reason}`;
+  }
+
+  lazy.MemoriesManager.enrichExistingMemory(
+    result.memory.id,
+    memorySummary
+  ).catch(e => lazy.console.error("[Tool] addMemory classify failed", e));
+
+  lazy.console.log("[Tool] addMemory", result.memory, "Action:", result.action);
+  return `Memory ${result.action}: "${result.memory.memory_summary}"`;
+}
+
+/**
  * Strips fields the language model doesn't need (icons, colors) from a
  * single match payload.
  *
@@ -1267,4 +1317,5 @@ export const toolFns = {
   worldCupMatches,
   worldCupLive,
   manageTabs,
+  addMemory,
 };
