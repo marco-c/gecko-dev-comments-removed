@@ -1923,6 +1923,8 @@ function IteratorRange(start, end, optionOrStep) {
 
 }
 
+#endif
+
 
 
 
@@ -2179,8 +2181,6 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
   
   
 }
-
-#endif
 
 
 
