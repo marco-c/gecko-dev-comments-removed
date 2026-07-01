@@ -242,7 +242,7 @@ class WeakPtr {
     
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     
-    MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(aOther.mRef);
+    MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(aOther.mRef);
 
     mRef = aOther.mRef;
     return *this;
@@ -257,10 +257,7 @@ class WeakPtr {
     
     
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
-    if (!mRef || mRef->get()) {
-      
-      mRef = new WeakReference(nullptr);
-    }
+    mRef = nullptr;
     return *this;
   }
 
@@ -270,11 +267,9 @@ class WeakPtr {
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     if (aOther) {
       mRef = aOther->SelfReferencingWeakReference();
-    } else if (!mRef || mRef->get()) {
-      
-      mRef = new WeakReference(nullptr);
+    } else {
+      mRef = nullptr;
     }
-    
     
     return *this;
   }
@@ -291,11 +286,10 @@ class WeakPtr {
 
   explicit WeakPtr(const RefPtr<T>& aOther) : WeakPtr(aOther.get()) {}
 
-  
-  WeakPtr() : mRef(new WeakReference(nullptr)) {}
+  WeakPtr() = default;
 
-  explicit operator bool() const { return mRef->get(); }
-  T* get() const { return static_cast<T*>(mRef->get()); }
+  explicit operator bool() const { return !!get(); }
+  T* get() const { return mRef ? static_cast<T*>(mRef->get()) : nullptr; }
   operator T*() const { return get(); }
   T& operator*() const { return *get(); }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
@@ -303,9 +297,11 @@ class WeakPtr {
 #ifdef MOZILLA_INTERNAL_API
   ~WeakPtr() {
     if (Destruct == detail::WeakPtrDestructorBehavior::ProxyToMainThread) {
-      NS_ReleaseOnMainThread("WeakPtr::mRef", mRef.forget());
+      if (mRef) {
+        NS_ReleaseOnMainThread("WeakPtr::mRef", mRef.forget());
+      }
     } else {
-      MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(mRef);
+      MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     }
   }
 #endif
