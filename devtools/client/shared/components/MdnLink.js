@@ -23,6 +23,7 @@ function MDNLink({ url, title, children }) {
         
         (children ? "" : " devtools-button") +
         (url.startsWith("https://developer.mozilla.org") ? " mdn-link" : ""),
+      href: url,
       title,
       onClick: e => onLearnMoreClick(e, url),
     },
