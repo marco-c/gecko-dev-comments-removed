@@ -1820,6 +1820,9 @@ class XPCShellTests:
         
         self.mozInfo["e10s"] = self.mozInfo.get("e10s", False)
 
+        
+        self.mozInfo["isolated_process"] = False
+
         mozinfo.update(self.mozInfo)
         return True
 
