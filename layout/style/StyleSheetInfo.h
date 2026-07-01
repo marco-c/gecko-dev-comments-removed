@@ -35,7 +35,10 @@ struct StyleSheetInfo final {
   StyleSheetInfo* CloneFor(StyleSheet* aPrimarySheet);
 
   void AddSheet(StyleSheet* aSheet);
-  void RemoveSheet(StyleSheet* aSheet);
+  
+  
+  
+  [[nodiscard]] bool RemoveSheet(StyleSheet* aSheet);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
