@@ -84,12 +84,14 @@ void OSXVersion::GetSystemVersion(int32_t& aMajor, int32_t& aMinor,
 
   CFURLRef url = CFURLCreateWithString(
       kCFAllocatorDefault,
-      CFSTR("file:///System/Library/CoreServices/SystemVersion.plist"), NULL);
+      CFSTR("file:///System/Library/CoreServices/SystemVersion.plist"),
+      nullptr);
   CFReadStreamRef stream = CFReadStreamCreateWithFile(kCFAllocatorDefault, url);
   CFReadStreamOpen(stream);
   CFDictionaryRef sysVersionPlist =
       (CFDictionaryRef)CFPropertyListCreateWithStream(
-          kCFAllocatorDefault, stream, 0, kCFPropertyListImmutable, NULL, NULL);
+          kCFAllocatorDefault, stream, 0, kCFPropertyListImmutable, nullptr,
+          nullptr);
   CFReadStreamClose(stream);
   CFRelease(stream);
   CFRelease(url);
@@ -156,7 +158,7 @@ bool GetRealPath(std::string& aOutputPath, const char* aInputPath) {
 bool ProcessIsRosettaTranslated() {
   int ret = 0;
   size_t size = sizeof(ret);
-  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, nullptr, 0) == -1) {
     if (errno != ENOENT) {
       fprintf(stderr, "Failed to check for translation environment\n");
     }
@@ -459,6 +461,9 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     }
   } else if (aInfo.type == MacSandboxType_GPU) {
     profile = const_cast<char*>(SandboxPolicyGPU);
+    if (ProcessIsX86_64()) {
+      profile.append(SandboxPolicyGPUx86_64Addend);
+    }
     params.push_back("SHOULD_LOG");
     params.push_back(aInfo.shouldLog ? "TRUE" : "FALSE");
     params.push_back("MAC_OS_VERSION");
@@ -492,7 +497,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     params.push_back(getenv("MOZ_BLOCK_REMOTE_APPLE_IMAGEIO") ? "FALSE"
                                                               : "TRUE");
   } else {
-    char* msg = NULL;
+    char* msg = nullptr;
     asprintf(&msg, "Unexpected sandbox type %u", aInfo.type);
     if (msg) {
       aErrorMessage.assign(msg);
@@ -533,12 +538,12 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
   
   params.push_back(nullptr);
 
-  char* errorbuf = NULL;
+  char* errorbuf = nullptr;
   int rv = sandbox_init_with_parameters(profile.c_str(), 0, params.data(),
                                         &errorbuf);
   if (rv) {
     if (errorbuf) {
-      char* msg = NULL;
+      char* msg = nullptr;
       asprintf(&msg, "sandbox_init() failed with error \"%s\"", errorbuf);
       if (msg) {
         aErrorMessage.assign(msg);
@@ -641,7 +646,7 @@ bool GetContentSandboxParamsFromArgs(int aArgc, char** aArgv,
 #endif  
 
     
-    if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
+    if (strstr(aArgv[i], "gecko-crash-server-pipe") != nullptr) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
     }
@@ -712,7 +717,7 @@ bool GetUtilitySandboxParamsFromArgs(int aArgc, char** aArgv,
     }
 
     
-    if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
+    if (strstr(aArgv[i], "gecko-crash-server-pipe") != nullptr) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
     }
@@ -790,7 +795,7 @@ bool GetPluginSandboxParamsFromArgs(int aArgc, char** aArgv,
     }
 
     
-    if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
+    if (strstr(aArgv[i], "gecko-crash-server-pipe") != nullptr) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
     }
@@ -892,12 +897,12 @@ bool StartMacSandboxIfEnabled(const MacSandboxType aSandboxType, int aArgc,
   return StartMacSandbox(info, aErrorMessage);
 }
 
-bool IsMacSandboxStarted() { return sandbox_check(getpid(), NULL, 0) == 1; }
+bool IsMacSandboxStarted() { return sandbox_check(getpid(), nullptr, 0) == 1; }
 
 #ifdef DEBUG
 
 void AssertMacSandboxEnabled() {
-  MOZ_ASSERT(sandbox_check(getpid(), NULL, 0) == 1);
+  MOZ_ASSERT(sandbox_check(getpid(), nullptr, 0) == 1);
 }
 #endif 
 
