@@ -102,6 +102,12 @@ class SpeechTaskChild : public nsSpeechTask {
 
   void SetAudioOutputVolume(float aVolume) override;
 
+  
+  
+  
+  void PauseFromMediaControl();
+  void ResumeFromMediaControl();
+
  protected:
   void StartMediaControl() override;
   void StopMediaControl() override;
@@ -112,6 +118,10 @@ class SpeechTaskChild : public nsSpeechTask {
   
   
   RefPtr<MediaSharedKeysListener> mSharedKeysListener;
+
+  
+  
+  bool mPausedByMediaControl = false;
 };
 
 }  
