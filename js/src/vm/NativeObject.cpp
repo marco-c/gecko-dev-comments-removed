@@ -1209,11 +1209,12 @@ static MOZ_ALWAYS_INLINE bool PreserveAnyUnpreservedWrapper(
     return true;
   }
 
+  MaybePreserveDOMWrapper(cx, obj);
+
   
   
   
-  return MaybePreserveDOMWrapper(cx, obj) &&
-         JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
+  return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
 }
 
 static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,

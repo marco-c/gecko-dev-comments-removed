@@ -66,9 +66,7 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     target = ObjectValue(*object);
 
     
-    if (!preserveDOMWrapper(cx, object)) {
-      return false;
-    }
+    preserveDOMWrapper(cx, object);
   } else {
     JS::Symbol* symbol = target.toSymbol();
     isPermanent = symbol->isPermanentAndMayBeShared();
@@ -102,14 +100,8 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-bool WeakRefObject::preserveDOMWrapper(JSContext* cx, HandleObject obj) {
-  if (!MaybePreserveDOMWrapper(cx, obj)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_BAD_WEAKREF_TARGET);
-    return false;
-  }
-
-  return true;
+void WeakRefObject::preserveDOMWrapper(JSContext* cx, HandleObject obj) {
+  MaybePreserveDOMWrapper(cx, obj);
 }
 
 

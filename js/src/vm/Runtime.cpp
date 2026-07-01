@@ -752,8 +752,7 @@ void JSRuntime::commitPendingWrapperPreservations(JS::Zone* zone) {
     }
 
     Rooted<JSObject*> rooted(mainContextFromOwnThread(), wrapper);
-    bool success = preserveWrapperCallback(mainContextFromOwnThread(), rooted);
-    MOZ_RELEASE_ASSERT(success);
+    preserveWrapperCallback(mainContextFromOwnThread(), rooted);
   }
 
   

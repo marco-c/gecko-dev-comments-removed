@@ -188,7 +188,7 @@ class FinalizationRegistryObject : public NativeObject {
       HandleFinalizationRegistryObject registry, HandleValue unregisterToken,
       HandleFinalizationRecordObject record);
 
-  static bool preserveDOMWrapper(JSContext* cx, HandleObject obj);
+  static void preserveDOMWrapper(JSContext* cx, HandleObject obj);
 
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JS::GCContext* gcx, JSObject* obj);
@@ -199,7 +199,7 @@ class FinalizationRegistryObject : public NativeObject {
 class FinalizationQueueObject : public NativeObject {
   enum {
     CleanupCallbackSlot = 0,
-    HostDefinedDataSlot,
+    IncumbentGlobalRepresentative,
     RecordsToBeCleanedUpSlot,
     IsQueuedForCleanupSlot,
     DoCleanupFunctionSlot,
@@ -215,7 +215,7 @@ class FinalizationQueueObject : public NativeObject {
   static const JSClass class_;
 
   JSObject* cleanupCallback() const;
-  JSObject* getHostDefinedData() const;
+  JSObject* getIncumbentGlobalRepresentative() const;
   bool hasRecordsToCleanUp() const;
   FinalizationRecordVector* recordsToBeCleanedUp() const;
   bool isQueuedForCleanup() const;

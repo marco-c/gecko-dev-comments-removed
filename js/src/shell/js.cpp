@@ -4107,9 +4107,7 @@ static bool CacheIRHealthReport(JSContext* cx, unsigned argc, Value* vp) {
 #endif 
 
 
-static bool DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {
-  return true;
-}
+static void DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {}
 
 
 static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return false; }
