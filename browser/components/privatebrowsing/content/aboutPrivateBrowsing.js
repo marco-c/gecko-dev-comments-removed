@@ -103,6 +103,7 @@ async function renderPromo({
       promoTitle,
       promoTitleEnabled,
       promoLinkText,
+      promoLinkType,
       promoHeader,
       promoImageLarge,
       onLinkClick,
@@ -148,21 +149,28 @@ async function resolvePromoText(value) {
 
 
 
+
+
+
+
 async function renderNovaPromo({
   container,
   promoTitle,
   promoTitleEnabled,
   promoLinkText,
+  promoLinkType,
   promoHeader,
   promoImageLarge,
   onLinkClick,
 }) {
   const promoEl = container.querySelector("#nova-promo");
   const linkEl = container.querySelector("#nova-promo-link");
+  const buttonEl = container.querySelector("#nova-promo-button");
 
   
   
   await customElements.whenDefined("moz-promo");
+  await customElements.whenDefined("moz-button");
 
   if (promoHeader) {
     promoEl.heading = await resolvePromoText(promoHeader);
@@ -174,8 +182,17 @@ async function renderNovaPromo({
     promoEl.imageSrc = promoImageLarge;
   }
 
-  linkEl.textContent = await resolvePromoText(promoLinkText);
-  linkEl.addEventListener("click", onLinkClick);
+  const ctaText = await resolvePromoText(promoLinkText);
+  const useButton = promoLinkType === "button";
+  const ctaEl = useButton ? buttonEl : linkEl;
+  (useButton ? linkEl : buttonEl).remove();
+
+  if (useButton) {
+    ctaEl.label = ctaText;
+  } else {
+    ctaEl.textContent = ctaText;
+  }
+  ctaEl.addEventListener("click", onLinkClick);
 
   const infoBorderEl = document.querySelector(".info-border");
   infoBorderEl?.insertAdjacentElement("beforebegin", container);
