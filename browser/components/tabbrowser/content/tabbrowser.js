@@ -56,11 +56,6 @@
 
     let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
     if (!userContextId) {
-      
-      
-      if (window.gContainerCreation?.isPillPinned) {
-        return;
-      }
       replaceContainerClass("color", hbox, "");
       hbox.hidden = true;
       return;
