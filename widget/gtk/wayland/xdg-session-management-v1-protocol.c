@@ -1,0 +1,94 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include "wayland-util.h"
+
+#ifndef __has_attribute
+#  define __has_attribute(x) 0 /* Compatibility with non-clang compilers. */
+#endif
+
+#if (__has_attribute(visibility) || defined(__GNUC__) && __GNUC__ >= 4)
+#  define WL_PRIVATE __attribute__((visibility("hidden")))
+#else
+#  define WL_PRIVATE
+#endif
+
+#pragma GCC visibility push(default)
+extern const struct wl_interface xdg_toplevel_interface;
+#pragma GCC visibility pop
+extern const struct wl_interface xdg_session_v1_interface;
+extern const struct wl_interface xdg_toplevel_session_v1_interface;
+
+static const struct wl_interface* xdg_session_management_v1_types[] = {
+    NULL, &xdg_session_v1_interface,          NULL,
+    NULL, &xdg_toplevel_session_v1_interface, &xdg_toplevel_interface,
+    NULL, &xdg_toplevel_session_v1_interface, &xdg_toplevel_interface,
+    NULL,
+};
+
+static const struct wl_message xdg_session_manager_v1_requests[] = {
+    {"destroy", "", xdg_session_management_v1_types + 0},
+    {"get_session", "nu?s", xdg_session_management_v1_types + 1},
+};
+
+WL_PRIVATE const struct wl_interface xdg_session_manager_v1_interface = {
+    "xdg_session_manager_v1", 1, 2, xdg_session_manager_v1_requests, 0, NULL,
+};
+
+static const struct wl_message xdg_session_v1_requests[] = {
+    {"destroy", "", xdg_session_management_v1_types + 0},
+    {"remove", "", xdg_session_management_v1_types + 0},
+    {"add_toplevel", "nos", xdg_session_management_v1_types + 4},
+    {"restore_toplevel", "nos", xdg_session_management_v1_types + 7},
+    {"remove_toplevel", "s", xdg_session_management_v1_types + 0},
+};
+
+static const struct wl_message xdg_session_v1_events[] = {
+    {"created", "s", xdg_session_management_v1_types + 0},
+    {"restored", "", xdg_session_management_v1_types + 0},
+    {"replaced", "", xdg_session_management_v1_types + 0},
+};
+
+WL_PRIVATE const struct wl_interface xdg_session_v1_interface = {
+    "xdg_session_v1", 1, 5, xdg_session_v1_requests, 3, xdg_session_v1_events,
+};
+
+static const struct wl_message xdg_toplevel_session_v1_requests[] = {
+    {"destroy", "", xdg_session_management_v1_types + 0},
+    {"rename", "s", xdg_session_management_v1_types + 0},
+};
+
+static const struct wl_message xdg_toplevel_session_v1_events[] = {
+    {"restored", "", xdg_session_management_v1_types + 0},
+};
+
+WL_PRIVATE const struct wl_interface xdg_toplevel_session_v1_interface = {
+    "xdg_toplevel_session_v1",        1, 2,
+    xdg_toplevel_session_v1_requests, 1, xdg_toplevel_session_v1_events,
+};
