@@ -17,12 +17,6 @@ add_setup(async function () {
   
   
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
   registerCleanupFunction(function () {
     CustomKeys.resetAll();
     BrowserTestUtils.removeTab(tab);

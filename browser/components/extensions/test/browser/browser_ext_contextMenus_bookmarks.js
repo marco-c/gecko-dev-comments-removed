@@ -6,15 +6,6 @@ Services.scriptloader.loadSubScript(
 );
 
 
-add_setup(async function () {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
-
 function bookmarkContextMenuExtension() {
   return ExtensionTestUtils.loadExtension({
     manifest: {
