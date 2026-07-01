@@ -83,7 +83,6 @@
   NS_DECL_OWNINGTHREAD                              \
  public:
 
-class nsIReferrerInfo;
 class nsWindow;
 struct KeyPair;
 
@@ -580,28 +579,6 @@ class WinUtils {
   static nsresult GetProcessImageName(DWORD aProcessId, nsAString& aName);
 
   static void InvalidateWindowPreviews();
-
-  
-
-
-
-  using WriteFileZonePromise = MozPromise<bool, nsresult, true>;
-
-  
-
-
-
-
-
-
-
-  static RefPtr<WriteFileZonePromise> MaybeWriteFileZoneId(
-      nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
-      bool aShouldStoreUrls);
-
-  static Result<bool, nsresult> MaybeWriteFileZoneIdSync(
-      nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
-      bool aShouldStoreUrls);
 
  private:
   static WhitelistVec BuildWhitelist();
