@@ -168,9 +168,12 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   
+  AutoTArray<StyleNumericType, 4> numericTypes;
+  numericTypes.SetCapacity(aUnits.Length());
+
   for (const auto& unit : aUnits) {
-    StyleNumericType numericType;
-    if (!Servo_NumericType_Create(&unit, &numericType)) {
+    StyleNumericType* numericType = numericTypes.AppendElement();
+    if (!Servo_NumericType_Create(&unit, numericType)) {
       aRv.ThrowSyntaxError("Invalid unit: "_ns + unit);
       return nullptr;
     }
@@ -178,6 +181,17 @@ already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
 
   
   
+  
+  
+  
+  
+  if (!numericTypes.IsEmpty()) {
+    StyleNumericType numericType;
+    if (!Servo_NumericType_AddTypesFromValues(&numericTypes, &numericType)) {
+      aRv.ThrowTypeError("Units are not addable");
+      return nullptr;
+    }
+  }
 
   
   auto styleNumericValue = ToStyleNumericValue();
