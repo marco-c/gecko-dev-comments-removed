@@ -694,6 +694,7 @@ class AudioCallbackDriver final : public GraphDriver,
   
   bool StartStream();
   friend class MediaTrackGraphInitThreadRunnable;
+  void QueueInitOp();
   void Init(const nsCString& aStreamName);
   void SetCubebStreamName(const nsCString& aStreamName);
   void Stop();
@@ -703,9 +704,13 @@ class AudioCallbackDriver final : public GraphDriver,
   
 
 
+
   Result<bool, FallbackDriverState> TryStartingFallbackDriver();
   
 
+
+
+  [[nodiscard]] RefPtr<FallbackWrapper> CreateFallbackSystemClockDriver();
   void FallbackToSystemClockDriver();
   
 
@@ -728,6 +733,7 @@ class AudioCallbackDriver final : public GraphDriver,
   
   const uint32_t mOutputChannelCount;
   
+
 
 
 
