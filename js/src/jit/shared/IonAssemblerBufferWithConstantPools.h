@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <bit>
 #include <deque>
+#include <type_traits>
 
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
@@ -446,8 +447,6 @@ struct Pool {
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
 
-  bool oom() const { return oom_; }
-
   
   
   
@@ -504,6 +503,25 @@ struct Pool {
 
     limitingUser = BufferOffset();
     limitingUsee = -1;
+  }
+};
+
+
+
+
+struct EmptyPool final {
+  EmptyPool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc) {}
+
+  unsigned numEntries() const {
+    
+    return 0;
+  }
+
+  size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  bool checkFull(size_t poolOffset) const {
+    
+    return false;
   }
 };
 
@@ -583,7 +601,12 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static constexpr unsigned PcBias = settings.pcBias;
 
   
-  Pool pool_;
+  static constexpr bool UseConstantPools = HeaderSize > 0;
+
+  using PoolImpl = std::conditional_t<UseConstantPools, Pool, EmptyPool>;
+
+  
+  [[no_unique_address]] PoolImpl pool_;
 
   
   
@@ -762,10 +785,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
                                uint8_t* inst, uint8_t* data) {
-    
-    
-    if (numPoolEntries) {
-      pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+    if constexpr (UseConstantPools) {
+      
+      
+      if (numPoolEntries) {
+        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+      }
+    } else {
+      MOZ_ASSERT(numPoolEntries == 0);
     }
 
     if (!hasSpaceForInsts(numInst, numPoolEntries)) {
@@ -782,14 +809,17 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       }
       return insertEntryForwards(numInst, numPoolEntries, inst, data);
     }
-    if (numPoolEntries) {
-      unsigned result = pool_.insertEntry(numPoolEntries, data,
-                                          this->nextOffset(), this->lifoAlloc_);
-      if (result == Pool::OOM_FAIL) {
-        this->fail_oom();
-        return OOM_FAIL;
+
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        unsigned result = pool_.insertEntry(
+            numPoolEntries, data, this->nextOffset(), this->lifoAlloc_);
+        if (result == Pool::OOM_FAIL) {
+          this->fail_oom();
+          return OOM_FAIL;
+        }
+        return result;
       }
-      return result;
     }
 
     
@@ -848,11 +878,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     
-    if (numPoolEntries) {
-      JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
-              sizeExcludingCurrentPool());
-      Asm::InsertIndexIntoTag(inst, index);
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
+                sizeExcludingCurrentPool());
+        Asm::InsertIndexIntoTag(inst, index);
+      }
     }
+
     
     return this->putBytes(numInst * InstSize, inst);
   }
@@ -989,9 +1022,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
     
     BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
-    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
-    BufferOffset data =
-        this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    BufferOffset header;
+    BufferOffset data;
+    if constexpr (UseConstantPools) {
+      header = this->putBytes(HeaderSize * InstSize, nullptr);
+      data =
+          this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    }
     if (this->oom()) {
       return;
     }
@@ -1022,34 +1059,37 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     
     BufferOffset afterPool = this->nextOffset();
     Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
-    Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
-
-    
-    
-    
-    size_t poolOffset = data.getOffset();
-
-    unsigned idx = 0;
-    for (BufferOffset* iter = pool_.loadOffsets.begin();
-         iter != pool_.loadOffsets.end(); ++iter, ++idx) {
-      
-      MOZ_ASSERT(iter->getOffset() < guard.getOffset());
-
-      
-      
-      Inst* inst = this->getInst(*iter);
-      size_t codeOffset = poolOffset - iter->getOffset();
+    if constexpr (UseConstantPools) {
+      Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
 
       
       
       
+      size_t poolOffset = data.getOffset();
+
+      unsigned idx = 0;
+      for (BufferOffset* iter = pool_.loadOffsets.begin();
+           iter != pool_.loadOffsets.end(); ++iter, ++idx) {
+        
+        MOZ_ASSERT(iter->getOffset() < guard.getOffset());
+
+        
+        
+        Inst* inst = this->getInst(*iter);
+        size_t codeOffset = poolOffset - iter->getOffset();
+
+        
+        
+        
+        
+        JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx,
+                codeOffset);
+        Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+      }
+
       
-      JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx, codeOffset);
-      Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+      pool_.reset();
     }
-
-    
-    pool_.reset();
   }
 
  public:
