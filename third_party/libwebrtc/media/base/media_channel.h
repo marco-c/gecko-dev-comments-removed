@@ -59,6 +59,7 @@
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/async_packet_socket.h"
+#include "rtc_base/containers/flat_set.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
@@ -286,10 +287,17 @@ class MediaReceiveChannelInterface {
   virtual absl::AnyInvocable<void() &&> GetResetUnsignaledRecvStreamTask() = 0;
   
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
+  virtual void SetReceiveSsrcs_n(const flat_set<uint32_t>& ssrcs) {}
+  
+  
+  
+  virtual void ClearReceiveSinks_n(std::optional<std::vector<uint32_t>> ssrcs) {
+  }
   
   virtual void OnPacketReceived(RtpPacketReceived packet) = 0;
   
   virtual std::optional<uint32_t> GetUnsignaledSsrc() const = 0;
+  virtual std::vector<uint32_t> GetUnsignaledSsrcs() const = 0;
   
   
   
