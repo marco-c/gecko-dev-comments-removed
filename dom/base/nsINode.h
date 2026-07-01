@@ -771,12 +771,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  [[nodiscard]] bool MaybeParentCachesComputedIndex() const;
-
-  
-
-
-
 
 
 
