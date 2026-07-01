@@ -9,6 +9,48 @@
 
 
 
+
+
+
+
+
+function isNegativeZero(value) {
+  return value === 0 && 1 / value === -Infinity;
+}
+
+function isPrimitive(value) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function');
+}
+
+function formatIdentityFreeValue(value) {
+  switch (value === null ? 'null' : typeof value) {
+    case 'string':
+      return typeof JSON !== "undefined" ? JSON.stringify(value) : '"' + value + '"';
+    case 'bigint':
+      return String(value) + "n";
+    case 'number':
+      if (isNegativeZero(value)) return '-0';
+      
+    case 'boolean':
+    case 'undefined':
+    case 'null':
+      return String(value);
+  }
+}
+
+function formatSimpleValue(value) {
+  var basic = formatIdentityFreeValue(value);
+  if (basic) return basic;
+  try {
+    return String(value);
+  } catch (err) {
+    if (err.name === 'TypeError') {
+      return Object.prototype.toString.call(value);
+    }
+    throw err;
+  }
+}
+
 function assert(mustBeTrue, message) {
   if (mustBeTrue === true) {
     return;
@@ -103,10 +145,6 @@ assert.throws = function (expectedErrorConstructor, func, message) {
   throw new Test262Error(message);
 };
 
-function isPrimitive(value) {
-  return !value || (typeof value !== 'object' && typeof value !== 'function');
-}
-
 assert.compareArray = function (actual, expected, message) {
   message = message === undefined ? '' : message;
 
@@ -115,15 +153,15 @@ assert.compareArray = function (actual, expected, message) {
   }
 
   if (isPrimitive(actual)) {
-    assert(false, `Actual argument [${actual}] shouldn't be primitive. ${message}`);
+    assert(false, "Actual argument [" + actual + "] shouldn't be primitive. " + String(message));
   } else if (isPrimitive(expected)) {
-    assert(false, `Expected argument [${expected}] shouldn't be primitive. ${message}`);
+    assert(false, "Expected argument [" + expected + "] shouldn't be primitive. " + String(message));
   }
   var result = compareArray(actual, expected);
   if (result) return;
 
   var format = compareArray.format;
-  assert(false, `Actual ${format(actual)} and expected ${format(expected)} should have the same contents. ${message}`);
+  assert(false, "Actual " + format(actual) + " and expected " + format(expected) + " should have the same contents. " + String(message));
 };
 
 function compareArray(a, b) {
@@ -139,37 +177,14 @@ function compareArray(a, b) {
 }
 
 compareArray.format = function (arrayLike) {
-  return `[${Array.prototype.map.call(arrayLike, String).join(', ')}]`;
+  return "[" + Array.prototype.map.call(arrayLike, String).join(", ") + "]";
 };
 
-assert._formatIdentityFreeValue = function formatIdentityFreeValue(value) {
-  switch (value === null ? 'null' : typeof value) {
-    case 'string':
-      return typeof JSON !== "undefined" ? JSON.stringify(value) : `"${value}"`;
-    case 'bigint':
-      return `${value}n`;
-    case 'number':
-      if (value === 0 && 1 / value === -Infinity) return '-0';
-      
-    case 'boolean':
-    case 'undefined':
-    case 'null':
-      return String(value);
-  }
-};
+assert._formatIdentityFreeValue = formatIdentityFreeValue;
 
-assert._toString = function (value) {
-  var basic = assert._formatIdentityFreeValue(value);
-  if (basic) return basic;
-  try {
-    return String(value);
-  } catch (err) {
-    if (err.name === 'TypeError') {
-      return Object.prototype.toString.call(value);
-    }
-    throw err;
-  }
-};
+assert._toString = formatSimpleValue;
+
+
 
 
 
@@ -222,31 +237,29 @@ var nonIndexNumericPropertyName = Math.pow(2, 32) - 1;
 
 
 
+
 function verifyProperty(obj, name, desc, options) {
   assert(
     arguments.length > 2,
     'verifyProperty should receive at least 3 arguments: obj, name, and descriptor'
   );
+  var label = options && options.label || String(name);
 
   var originalDesc = __getOwnPropertyDescriptor(obj, name);
-  var nameStr = String(name);
 
   
   if (desc === undefined) {
     assert.sameValue(
       originalDesc,
       undefined,
-      "obj['" + nameStr + "'] descriptor should be undefined"
+      label + " descriptor should be undefined"
     );
 
     
     return true;
   }
 
-  assert(
-    __hasOwnProperty(obj, name),
-    "obj should have an own property " + nameStr
-  );
+  assert(__hasOwnProperty(obj, name), label + " should be an own property");
 
   assert.notSameValue(
     desc,
@@ -269,7 +282,7 @@ function verifyProperty(obj, name, desc, options) {
         names[i] === "configurable" ||
         names[i] === "get" ||
         names[i] === "set",
-      "Invalid descriptor field: " + names[i],
+      "Invalid descriptor field: " + names[i]
     );
   }
 
@@ -277,17 +290,17 @@ function verifyProperty(obj, name, desc, options) {
 
   if (__hasOwnProperty(desc, 'value')) {
     if (!isSameValue(desc.value, originalDesc.value)) {
-      __push(failures, "obj['" + nameStr + "'] descriptor value should be " + desc.value);
+      __push(failures, label + " descriptor value should be " + String(desc.value));
     }
     if (!isSameValue(desc.value, obj[name])) {
-      __push(failures, "obj['" + nameStr + "'] value should be " + desc.value);
+      __push(failures, label + " value should be " + String(desc.value));
     }
   }
 
   if (__hasOwnProperty(desc, 'enumerable') && desc.enumerable !== undefined) {
     if (desc.enumerable !== originalDesc.enumerable ||
         desc.enumerable !== isEnumerable(obj, name)) {
-      __push(failures, "obj['" + nameStr + "'] descriptor should " + (desc.enumerable ? '' : 'not ') + "be enumerable");
+      __push(failures, label + " descriptor should " + (desc.enumerable ? '' : 'not ') + "be enumerable");
     }
   }
 
@@ -296,14 +309,14 @@ function verifyProperty(obj, name, desc, options) {
   if (__hasOwnProperty(desc, 'writable') && desc.writable !== undefined) {
     if (desc.writable !== originalDesc.writable ||
         desc.writable !== isWritable(obj, name)) {
-      __push(failures, "obj['" + nameStr + "'] descriptor should " + (desc.writable ? '' : 'not ') + "be writable");
+      __push(failures, label + " descriptor should " + (desc.writable ? '' : 'not ') + "be writable");
     }
   }
 
   if (__hasOwnProperty(desc, 'configurable') && desc.configurable !== undefined) {
     if (desc.configurable !== originalDesc.configurable ||
         desc.configurable !== isConfigurable(obj, name)) {
-      __push(failures, "obj['" + nameStr + "'] descriptor should " + (desc.configurable ? '' : 'not ') + "be configurable");
+      __push(failures, label + " descriptor should " + (desc.configurable ? '' : 'not ') + "be configurable");
     }
   }
 
@@ -404,11 +417,15 @@ function isWritable(obj, name, verifyProp, value) {
 
 
 
-function verifyCallableProperty(obj, name, functionName, functionLength, desc, options) {
-  var value = obj[name];
 
-  assert.sameValue(typeof value, "function",
-    "obj['" + String(name) + "'] descriptor should be a function");
+
+function verifyCallableProperty(obj, name, functionName, functionLength, desc, options) {
+  var label = options && options.label || String(name);
+  var propertyVerifier = options && options.verifyProperty || verifyProperty;
+
+  var value = obj && obj[name];
+
+  assert.sameValue(typeof value, "function", label + " should be a function");
 
   
   
@@ -425,7 +442,7 @@ function verifyCallableProperty(obj, name, functionName, functionLength, desc, o
     desc.value = value;
   }
 
-  verifyProperty(obj, name, desc, options);
+  propertyVerifier(obj, name, desc, options);
 
   if (functionName === undefined) {
     if (typeof name === "symbol") {
@@ -439,24 +456,125 @@ function verifyCallableProperty(obj, name, functionName, functionLength, desc, o
   
   
   
-  verifyProperty(value, "name", {
+  propertyVerifier(value, "name", {
     value: functionName,
     writable: false,
     enumerable: false,
     configurable: desc.configurable
-  }, options);
+  }, { label: label + " name", restore: options && options.restore });
 
   
   
   
   
   
-  verifyProperty(value, "length", {
+  propertyVerifier(value, "length", {
     value: functionLength,
     writable: false,
     enumerable: false,
     configurable: desc.configurable
-  }, options);
+  }, { label: label + " length", restore: options && options.restore });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function verifyAccessorProperty(obj, name, desc, options) {
+  var checkGet = __hasOwnProperty(desc, "get");
+  var checkSet = __hasOwnProperty(desc, "set");
+  assert(
+    checkGet || checkSet,
+    'verifyAccessorProperty requires at least one of "get" and "set"'
+  );
+  var label = options && options.label || String(name);
+  var propertyVerifier = options && options.verifyProperty || verifyProperty;
+  var callabilityVerifier = options && options.verifyCallableProperty || verifyCallableProperty;
+
+  var originalDesc = __getOwnPropertyDescriptor(obj, name);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (checkGet) {
+    var expectGetter = desc.get;
+    var getterLabel = label + " getter";
+    if (expectGetter === undefined || typeof expectGetter === "function") {
+      assert.sameValue(originalDesc.get, expectGetter, getterLabel);
+    } else {
+      var getterName = expectGetter.name;
+      if (getterName === undefined) {
+        getterName = "get " + (typeof name === "symbol" ? "[" + name.description + "]" : name);
+      }
+      var getterLength = expectGetter.length !== undefined ? expectGetter.length : 0;
+      var getterOptions = { label: getterLabel };
+      callabilityVerifier(originalDesc, "get", getterName, getterLength, {}, getterOptions);
+    }
+  }
+  if (checkSet) {
+    var expectSetter = desc.set;
+    var setterLabel = label + " setter";
+    if (expectSetter === undefined || typeof expectSetter === "function") {
+      assert.sameValue(originalDesc.set, expectSetter, setterLabel);
+    } else {
+      var setterName = expectSetter.name;
+      if (setterName === undefined) {
+        setterName = "set " + (typeof name === "symbol" ? "[" + name.description + "]" : name);
+      }
+      var setterLength = expectSetter.length !== undefined ? expectSetter.length : 1;
+      var setterOptions = { label: setterLabel };
+      callabilityVerifier(originalDesc, "set", setterName, setterLength, {}, setterOptions);
+    }
+  }
+
+  
+  
+  
+  
+  var resolvedDesc = { get: originalDesc.get, set: originalDesc.set };
+  if (!__hasOwnProperty(desc, "enumerable")) {
+    resolvedDesc.enumerable = false;
+  } else if (desc.enumerable !== undefined) {
+    resolvedDesc.enumerable = desc.enumerable;
+  }
+  if (!__hasOwnProperty(desc, "configurable")) {
+    resolvedDesc.configurable = true;
+  } else if (desc.configurable !== undefined) {
+    resolvedDesc.configurable = desc.configurable;
+  }
+  propertyVerifier(obj, name, resolvedDesc, options);
 }
 
 
@@ -551,7 +669,41 @@ var verifyPrimordialProperty = verifyProperty;
 
 
 
-var verifyPrimordialCallableProperty = verifyCallableProperty;
+
+
+function verifyPrimordialCallableProperty(obj, name, functionName, functionLength, desc, options) {
+  var resolvedOptions = {
+    verifyProperty: options && options.verifyProperty !== undefined
+      ? options.verifyProperty
+      : verifyPrimordialProperty
+  };
+  if (options && options.label !== undefined) resolvedOptions.label = options.label;
+  if (options && options.restore !== undefined) resolvedOptions.restore = options.restore;
+
+  return verifyCallableProperty(obj, name, functionName, functionLength, desc, resolvedOptions);
+}
+
+
+
+
+
+
+
+
+function verifyPrimordialAccessorProperty(obj, name, desc, options) {
+  var resolvedOptions = {
+    verifyProperty: options && options.verifyProperty !== undefined
+      ? options.verifyProperty
+      : verifyPrimordialProperty,
+    verifyCallableProperty: options && options.verifyCallableProperty !== undefined
+      ? options.verifyCallableProperty
+      : verifyPrimordialCallableProperty
+  };
+  if (options && options.label !== undefined) resolvedOptions.label = options.label;
+  if (options && options.restore !== undefined) resolvedOptions.restore = options.restore;
+
+  return verifyAccessorProperty(obj, name, desc, resolvedOptions);
+}
 
 
 
@@ -567,6 +719,7 @@ var verifyPrimordialCallableProperty = verifyCallableProperty;
 
 
 function Test262Error(message) {
+  if (!(this instanceof Test262Error)) return new Test262Error(message);
   this.message = message || "";
 }
 

@@ -21,13 +21,19 @@
 
 
 
-let effects = [];
+
+
+
+
+
+
+
 
 assert.throws(TypeError, function() {
   Iterator.prototype.includes.call(null, 0, NaN);
 });
 
-assert.compareArray(effects, []);
+let effects = [];
 
 assert.throws(TypeError, function() {
   Iterator.prototype.includes.call(
@@ -45,6 +51,29 @@ assert.throws(TypeError, function() {
     },
     0,
     NaN
+  );
+});
+
+assert.compareArray(effects, ['return']);
+
+effects = [];
+
+assert.throws(RangeError, function() {
+  Iterator.prototype.includes.call(
+    {
+      get next() {
+        effects.push('get next');
+        return function() {
+          return { done: true, value: undefined };
+        };
+      },
+      return() {
+        effects.push('return');
+        return {};
+      },
+    },
+    0,
+    Number.MAX_SAFE_INTEGER + 1
   );
 });
 
