@@ -229,9 +229,10 @@ static MediaResult ValidateBufferAndPicture(
   }
   
   
+  
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
   CheckedUint32 yLimit = aPicture.y + CheckedUint32(aPicture.height);
-  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mStride ||
+  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mWidth ||
       !yLimit.isValid() || yLimit.value() > aBuffer.mPlanes[0].mHeight) {
     
     
