@@ -495,8 +495,10 @@ static bool BackgroundFlushCallback(TimeStamp ) {
     ex->RunFlushLoop();
   }
   if (gBackgroundFlushList && gBackgroundFlushList->isEmpty()) {
-    gBackgroundFlushRunner->Cancel();
-    gBackgroundFlushRunner = nullptr;
+    if (gBackgroundFlushRunner) {
+      gBackgroundFlushRunner->Cancel();
+      gBackgroundFlushRunner = nullptr;
+    }
     return true;
   }
   return true;
@@ -989,6 +991,7 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
   if (!aMayDocumentWriteOrBlock) {
     MOZ_ASSERT(sele->GetScriptDeferred() || sele->GetScriptAsync() ||
                sele->GetScriptIsModule() || sele->GetScriptIsImportMap() ||
+               sele->GetScriptIsSpeculationRules() ||
                aScriptElement->AsElement()->HasAttr(nsGkAtoms::nomodule));
     sele->AttemptToExecute(nullptr );
     return;
