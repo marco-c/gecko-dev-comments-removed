@@ -58,7 +58,6 @@ myst_enable_extensions = [
     "deflist",
     "html_admonition",
     "fieldlist",
-    "substitution",
 ]
 
 
