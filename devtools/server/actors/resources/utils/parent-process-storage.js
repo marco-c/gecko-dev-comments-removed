@@ -67,9 +67,11 @@ class ParentProcessStorage {
     );
 
     if (watcherActor.sessionContext.type == "browser-element") {
-      const { browsingContext, innerWindowID: innerWindowId } =
-        watcherActor.browserElement;
-      await this._spawnActor(browsingContext.id, innerWindowId);
+      const { browsingContext } = watcherActor;
+      await this._spawnActor(
+        browsingContext.id,
+        browsingContext.currentWindowGlobal.innerWindowId
+      );
     } else if (watcherActor.sessionContext.type == "webextension") {
       
       

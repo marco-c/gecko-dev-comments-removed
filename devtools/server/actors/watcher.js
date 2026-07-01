@@ -102,7 +102,15 @@ exports.WatcherActor = class WatcherActor extends Actor {
             sessionContext.browserId
         );
       }
-      this._browserElement = browsingContext.embedderElement;
+      
+      
+      
+      
+      
+      
+      
+      
+      this._webProgress = browsingContext.webProgress;
     }
 
     this.watcherConnectionPrefix = conn.allocID("watcher");
@@ -161,9 +169,10 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
-
-  get browserElement() {
-    return this._browserElement;
+  get browsingContext() {
+    
+    
+    return this._webProgress?.browsingContext;
   }
 
   getAllBrowsingContexts() {
@@ -175,7 +184,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
   isContextDestroyed() {
     if (this.sessionContext.type == "browser-element") {
-      return !this.browserElement.browsingContext;
+      return !this.browsingContext;
     } else if (this.sessionContext.type == "webextension") {
       
       return false;
@@ -210,7 +219,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     ParentProcessWatcherRegistry.unregisterWatcher(this.actorID);
 
     
-    this._browserElement = null;
+    this._webProgress = null;
 
     
     
@@ -262,7 +271,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     let topLevelTargetProcess;
     if (this.sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
       topLevelTargetProcess =
-        this.browserElement.browsingContext.currentWindowGlobal?.domProcess;
+        this.browsingContext.currentWindowGlobal?.domProcess;
       if (topLevelTargetProcess) {
         await topLevelTargetProcess.getActor(this._jsActorName).watchTargets({
           watcherActorID: this.actorID,

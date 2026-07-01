@@ -144,7 +144,7 @@ class ParentProcessDocumentEventWatcher {
       }
 
       
-      if (browsingContext == this.watcherActor.browserElement.browsingContext) {
+      if (browsingContext == this.watcherActor.browsingContext) {
         this.watcherActor.emit("top-browsing-context-will-navigate");
       }
     }

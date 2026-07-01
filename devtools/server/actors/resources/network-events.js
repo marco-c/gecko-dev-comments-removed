@@ -217,7 +217,7 @@ class NetworkEventWatcher {
     }
 
     const { innerWindowId } =
-      this.watcherActor.browserElement.browsingContext.currentWindowGlobal;
+      this.watcherActor.browsingContext.currentWindowGlobal;
 
     
     

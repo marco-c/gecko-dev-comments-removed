@@ -31,6 +31,8 @@ const LOG_DISABLED = -1;
 
 const SUPPORTED_OPTIONS = {
   
+  animationsPlayBackRateMultiplier: true,
+  
   cacheDisabled: true,
   
   colorSchemeSimulation: true,
@@ -107,7 +109,7 @@ class TargetConfigurationActor extends Actor {
       this._onBfCacheNavigation
     );
 
-    this._browsingContext = this.watcherActor.browserElement?.browsingContext;
+    this._browsingContext = this.watcherActor.browsingContext;
   }
 
   
@@ -257,6 +259,9 @@ class TargetConfigurationActor extends Actor {
     let shouldReload = false;
     for (const [key, value] of Object.entries(configuration)) {
       switch (key) {
+        case "animationsPlayBackRateMultiplier":
+          this._setAnimationsPlayBackRateMultiplier(value);
+          break;
         case "colorSchemeSimulation":
           this._setColorSchemeSimulation(value);
           break;
@@ -349,6 +354,8 @@ class TargetConfigurationActor extends Actor {
     if (this._initialTouchEventsOverride !== undefined) {
       this._setTouchEventsOverride(this._initialTouchEventsOverride);
     }
+
+    this._setAnimationsPlayBackRateMultiplier(1);
   }
 
   
@@ -571,6 +578,21 @@ class TargetConfigurationActor extends Actor {
       LOG_DISABLED
     );
     Services.prefs.setIntPref("logging.PageMessages", LOG_VERBOSE);
+  }
+
+  
+
+
+
+
+
+  _setAnimationsPlayBackRateMultiplier(animationsPlayBackRateMultiplier) {
+    
+    if (!this._browsingContext || this._browsingContext.isDiscarded) {
+      return;
+    }
+    this._browsingContext.animationsPlayBackRateMultiplier =
+      animationsPlayBackRateMultiplier;
   }
 }
 
