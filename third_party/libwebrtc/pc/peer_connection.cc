@@ -499,6 +499,12 @@ PeerConnection::PeerConnection(
   
   RTC_DCHECK(dependencies.trials == nullptr);
 
+  
+  if (!configuration_.enable_sctp_snap) {
+    configuration_.enable_sctp_snap =
+        env.field_trials().IsEnabled("WebRTC-Sctp-Snap");
+  }
+
   std::vector<IceParameters> pooled_credentials;
   std::tie(transport_controller_copy_, pooled_credentials) =
       InitializeNetworkThread(stun_servers, turn_servers);

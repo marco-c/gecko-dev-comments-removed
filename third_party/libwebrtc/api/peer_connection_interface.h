@@ -696,6 +696,10 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     
     
+    bool enable_sctp_snap = false;
+
+    
+    
     
   };
 
