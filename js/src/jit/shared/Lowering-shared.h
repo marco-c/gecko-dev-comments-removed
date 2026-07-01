@@ -150,6 +150,7 @@ class LIRGeneratorShared {
   
   inline LAllocation useRegisterOrInt32Constant(MDefinition* mir);
   inline LAllocation useAnyOrInt32Constant(MDefinition* mir);
+  inline LAllocation useAnyOrInt32ConstantAtStart(MDefinition* mir);
 
   
   
