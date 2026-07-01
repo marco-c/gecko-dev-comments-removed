@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MP4Demuxer.h"
 
 #include <stdint.h>
@@ -392,12 +390,9 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
       
       
       
-      
-      
-      
-      
-      if (mType == kH264 && error == NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
-          hasSeenValidSamples && !seekingFromFirstSyncSample) {
+      if ((mType == kH264 || mType == kHEVC) &&
+          error == NS_ERROR_DOM_MEDIA_END_OF_STREAM && hasSeenValidSamples &&
+          !seekingFromFirstSyncSample) {
         LOG("Can not find a key frame from the closet sync sample, try again "
             "from the first sync sample");
         seekingFromFirstSyncSample = true;
@@ -477,6 +472,23 @@ MP4TrackDemuxer::GetNextSample() {
           
           break;
       }
+    } else if (mType == kHEVC && !sample->mCrypto.IsEncrypted()) {
+#ifdef MOZ_APPLEMEDIA
+      
+      
+      auto isIDR = H265::IsKeyFrame(sample);
+      bool keyframe = isIDR.isOk() && isIDR.unwrap();
+      if (sample->mKeyframe != keyframe) {
+        NS_WARNING(nsPrintfCString(
+                       "HEVC frame incorrectly marked as %skeyframe "
+                       "@ pts:%" PRId64 " dur:%" PRId64 " dts:%" PRId64,
+                       keyframe ? "" : "non-", sample->mTime.ToMicroseconds(),
+                       sample->mDuration.ToMicroseconds(),
+                       sample->mTimecode.ToMicroseconds())
+                       .get());
+        sample->mKeyframe = keyframe;
+      }
+#endif
     } else if (mType == kVP9 && !sample->mCrypto.IsEncrypted()) {
       bool keyframe = VPXDecoder::IsKeyframe(
           Span<const uint8_t>(sample->Data(), sample->Size()),
