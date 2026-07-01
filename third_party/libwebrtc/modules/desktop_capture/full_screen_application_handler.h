@@ -37,14 +37,6 @@ class FullScreenApplicationHandler {
       const DesktopCapturer::SourceList& window_list,
       int64_t timestamp) const;
 
-  void SetHeuristicForFindingEditor(bool use_heuristic) {
-    use_heuristic_for_finding_editor_ = use_heuristic;
-  }
-
-  bool UseHeuristicForFindingEditor() const {
-    return use_heuristic_for_finding_editor_;
-  }
-
   
   
   
@@ -62,9 +54,6 @@ class FullScreenApplicationHandler {
 
  private:
   const DesktopCapturer::SourceId source_id_;
-  
-  
-  bool use_heuristic_for_finding_editor_ = false;
 };
 
 }  

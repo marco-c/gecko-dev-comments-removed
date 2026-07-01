@@ -216,7 +216,7 @@ DesktopCapturer::SourceId FullScreenPowerPointHandler::FindFullScreenWindow(
 
 DesktopCapturer::SourceId FullScreenPowerPointHandler::FindEditorWindow(
     const DesktopCapturer::SourceList& window_list) const {
-  if (!UseHeuristicForFindingEditor() || window_list.empty()) {
+  if (window_list.empty()) {
     return 0;
   }
 
@@ -273,9 +273,6 @@ void FullScreenPowerPointHandler::SetSlideShowCreationStateForTest(
 }
 
 void FullScreenPowerPointHandler::SetEditorWasFound() {
-  if (!UseHeuristicForFindingEditor())
-    return;
-
   
   
   

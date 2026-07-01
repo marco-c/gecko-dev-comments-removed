@@ -343,8 +343,6 @@ TEST_F(FullScreenWinApplicationHandlerTest, EditorWindowFound) {
 
   
   CreateSlideShowWindow(L"PowerPoint Slide Show - [My - Title]");
-  full_screen_ppt_handler_->SetHeuristicForFindingEditor(
-      true);
 
   EXPECT_EQ(FindEditorWindow(), editor_window_info_.hwnd);
 }
@@ -358,37 +356,8 @@ TEST_F(FullScreenWinApplicationHandlerTest,
       CreateSlideShowWindow(L"PowerPoint Slide Show - [My - Title]");
   full_screen_ppt_handler_.reset(new FullScreenPowerPointHandler(
       reinterpret_cast<DesktopCapturer::SourceId>(slide_show)));
-  full_screen_ppt_handler_->SetHeuristicForFindingEditor(
-      true);
 
   EXPECT_EQ(FindEditorWindow(), editor_window_info_.hwnd);
-}
-
-TEST_F(FullScreenWinApplicationHandlerTest,
-       EditorWindowNotFoundWithHeuristicOff) {
-  CreateEditorWindow(L"My - Title - PowerPoint");
-
-  
-  CreateSlideShowWindow(L"PowerPoint Slide Show - [My - Title]");
-  full_screen_ppt_handler_->SetHeuristicForFindingEditor(
-      false);
-
-  EXPECT_NE(FindEditorWindow(), editor_window_info_.hwnd);
-}
-
-TEST_F(FullScreenWinApplicationHandlerTest,
-       EditorWindowNotFoundWithHeuristicOffAndPPTHandlerUsesSlideShowWindow) {
-  CreateEditorWindow(L"My - Title - PowerPoint");
-
-  
-  HWND slide_show =
-      CreateSlideShowWindow(L"PowerPoint Slide Show - [My - Title]");
-  full_screen_ppt_handler_.reset(new FullScreenPowerPointHandler(
-      reinterpret_cast<DesktopCapturer::SourceId>(slide_show)));
-  full_screen_ppt_handler_->SetHeuristicForFindingEditor(
-      false);
-
-  EXPECT_NE(FindEditorWindow(), editor_window_info_.hwnd);
 }
 
 }  

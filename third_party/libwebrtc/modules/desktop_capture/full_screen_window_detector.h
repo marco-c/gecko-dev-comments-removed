@@ -48,13 +48,7 @@ class FullScreenWindowDetector
   FullScreenWindowDetector& operator=(const FullScreenWindowDetector&) = delete;
 
   void SetHeuristicForFindingEditor(bool use_heuristic) {
-    use_heuristic_for_finding_editor_ = use_heuristic;
-    if (app_handler_) {
-      app_handler_->SetHeuristicForFindingEditor(use_heuristic);
-    }
-  }
-  bool UseHeuristicForFindingEditor() {
-    return use_heuristic_for_finding_editor_;
+    
   }
 
   
@@ -82,8 +76,7 @@ class FullScreenWindowDetector
   
   void CreateFullScreenApplicationHandlerForTest(
       DesktopCapturer::SourceId source_id,
-      bool fullscreen_slide_show_started_after_capture_start,
-      bool use_heuristic_for_finding_editor);
+      bool fullscreen_slide_show_started_after_capture_start);
 
  protected:
   std::unique_ptr<FullScreenApplicationHandler> app_handler_;
@@ -92,12 +85,6 @@ class FullScreenWindowDetector
   void CreateApplicationHandlerIfNeeded(DesktopCapturer::SourceId source_id);
 
   ApplicationHandlerFactory application_handler_factory_;
-
-  
-  
-  
-  
-  bool use_heuristic_for_finding_editor_ = false;
 
   
   

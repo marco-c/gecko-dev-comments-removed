@@ -739,38 +739,10 @@ TEST_F(WgcCapturerFullScreenDetectorTest,
             1);
 }
 
-TEST_F(WgcCapturerFullScreenDetectorTest,
-       EditorNotFoundForSlideShowWithHeuristicOff) {
-  wgc_capturer_->SetUpFullScreenDetectorForTest(
-      reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd),
-      false,
-      false);
-
-  EXPECT_TRUE(wgc_capturer_->SelectSource(
-      reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd)));
-  wgc_capturer_->Start(this);
-
-  
-  
-  DoCapture();
-  DoCapture();
-  DoCapture();
-
-  EXPECT_FALSE(wgc_capturer_->IsSourceBeingCaptured(
-      reinterpret_cast<DesktopCapturer::SourceId>(editor_window_.hwnd)));
-  EXPECT_TRUE(wgc_capturer_->IsSourceBeingCaptured(
-      reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd)));
-
-  EXPECT_EQ(
-      wgc_capturer_->SelectedSourceId(),
-      reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd));
-}
-
 TEST_F(WgcCapturerFullScreenDetectorTest, EditorFoundForSlideShow) {
   wgc_capturer_->SetUpFullScreenDetectorForTest(
       reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd),
-      false,
-      true);
+      false);
 
   EXPECT_TRUE(wgc_capturer_->SelectSource(
       reinterpret_cast<DesktopCapturer::SourceId>(slide_show_window_.hwnd)));
