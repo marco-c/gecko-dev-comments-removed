@@ -3971,15 +3971,59 @@ void DebugAPI::traceFramesWithLiveHooks(JSTracer* tracer) {
       continue;
     }
 
+#ifdef ENABLE_WASM_JSPI
+    JSContext* cx = tracer->runtime()->mainContextFromOwnThread();
+#endif
     for (auto iter = dbg->frames.iter(); !iter.done(); iter.next()) {
       HeapPtr<DebuggerFrame*>& frameobj = iter.get().value();
       MOZ_ASSERT(frameobj->isOnStackOrSuspendedWasmStack());
+#ifdef ENABLE_WASM_JSPI
+      
+      
+      
+      
+      if (!frameobj->isOnStack(cx)) {
+        continue;
+      }
+#endif
       if (frameobj->hasAnyHooks()) {
         TraceEdge(tracer, &frameobj, "Debugger.Frame with live hooks");
       }
     }
   }
 }
+
+#ifdef ENABLE_WASM_JSPI
+void DebugAPI::traceWasmContFrame(JSTracer* tracer, JSObject* src,
+                                  wasm::DebugFrame* debugFrame,
+                                  wasm::Instance* instance) {
+  
+  
+  
+  MOZ_ASSERT(tracer->isMarkingTracer());
+
+  JS::AutoAssertNoGC nogc;
+  AbstractFramePtr fp(debugFrame);
+  
+  
+  
+  for (Realm::DebuggerVectorEntry& entry :
+       instance->realm()->getDebuggers(nogc)) {
+    Debugger* dbg = entry.dbg.unbarrieredGet();
+    auto p = dbg->frames.lookup(fp);
+    if (!p) {
+      continue;
+    }
+    HeapPtr<DebuggerFrame*>& frameobj = p->value();
+    if (frameobj->hasAnyHooks()) {
+      
+      
+      TraceCrossCompartmentEdge(tracer, src, &frameobj,
+                                "wasm cont Debugger.Frame with live hooks");
+    }
+  }
+}
+#endif
 
 void DebugAPI::slowPathTraceGeneratorFrame(JSTracer* tracer,
                                            AbstractGeneratorObject* generator) {

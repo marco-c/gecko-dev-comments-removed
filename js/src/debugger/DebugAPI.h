@@ -25,7 +25,8 @@ class AutoSuppressGC;
 }  
 
 namespace wasm {
-class ContStack;
+class DebugFrame;
+class Instance;
 }  
 
 
@@ -102,6 +103,19 @@ class DebugAPI {
 
   static inline void traceGeneratorFrame(JSTracer* tracer,
                                          AbstractGeneratorObject* generator);
+
+#ifdef ENABLE_WASM_JSPI
+  
+
+
+
+
+
+
+  static void traceWasmContFrame(JSTracer* tracer, JSObject* src,
+                                 wasm::DebugFrame* debugFrame,
+                                 wasm::Instance* instance);
+#endif
 
   
   static void traceCrossCompartmentEdges(JSTracer* tracer);

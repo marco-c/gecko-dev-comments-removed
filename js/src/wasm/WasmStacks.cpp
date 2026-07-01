@@ -651,13 +651,25 @@ void ContStack::traceFields(JSTracer* trc) {
   }
 }
 
-void ContStack::traceSuspended(JSTracer* trc) {
+void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
   MOZ_RELEASE_ASSERT(canResume());
 
   WasmFrameIter iter = WasmFrameIter(
       resumeTarget_->instance,
       static_cast<FrameWithInstances*>(resumeTarget_->framePointer),
       resumeTarget_->resumePC);
+
+#  ifdef ENABLE_WASM_JSPI
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(trc->isMarkingTracer(), src);
+  const bool traceDebugFrames = src && trc->isMarkingTracer();
+#  endif
 
   
   
@@ -689,6 +701,12 @@ void ContStack::traceSuspended(JSTracer* trc) {
     TraceInstanceEdge(trc, instance, "WasmFrameIter instance");
     highestByteVisitedInPrevWasmFrame = instance->traceFrame(
         trc, iter, nextPC, highestByteVisitedInPrevWasmFrame);
+
+#  ifdef ENABLE_WASM_JSPI
+    if (traceDebugFrames && iter.debugEnabled()) {
+      DebugAPI::traceWasmContFrame(trc, src, iter.debugFrame(), instance);
+    }
+#  endif
 
     if (iter.frame()->wasmCaller() == baseFrame()) {
       break;
@@ -1082,7 +1100,12 @@ void ContObject::trace(JSTracer* trc, JSObject* obj) {
   ContStack* resumeBase = cont.resumeBase();
   if (resumeBase) {
     MOZ_RELEASE_ASSERT(resumeBase->canResume());
-    resumeBase->traceSuspended(trc);
+    
+    
+    
+    
+    
+    resumeBase->traceSuspended(trc, obj);
   }
 }
 

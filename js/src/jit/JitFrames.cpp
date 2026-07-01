@@ -1510,7 +1510,9 @@ void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
 
   cx->wasm().contStacks().forEachAllocatedStack([trc](wasm::ContStack* stack) {
     if (stack->canResume()) {
-      stack->traceSuspended(trc);
+      
+      
+      stack->traceSuspended(trc, nullptr);
     }
   });
 }

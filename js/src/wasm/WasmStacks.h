@@ -53,6 +53,7 @@ namespace js::wasm {
 struct SwitchTarget;
 struct Handler;
 struct Handlers;
+class Instance;
 class ContStack;
 class ContObject;
 class ContStackArena;
@@ -268,7 +269,9 @@ class ContStack {
   void traceFields(JSTracer* trc);
   
   
-  void traceSuspended(JSTracer* trc);
+  
+  
+  void traceSuspended(JSTracer* trc, JSObject* src);
   
   void updateSuspendedForMovingGC(Nursery& nursery);
 
