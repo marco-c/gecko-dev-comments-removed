@@ -71,13 +71,10 @@ FIFOSampleBuffer::~FIFOSampleBuffer()
 
 void FIFOSampleBuffer::setChannels(int numChannels)
 {
-    uint usedBytes;
-
     if (!verifyNumberOfChannels(numChannels)) return;
-
-    usedBytes = channels * samplesInBuffer;
+    
+    clear();
     channels = (uint)numChannels;
-    samplesInBuffer = usedBytes / channels;
 }
 
 
