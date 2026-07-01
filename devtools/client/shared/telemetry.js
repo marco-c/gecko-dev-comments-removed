@@ -33,6 +33,8 @@ const PENDING_EVENTS = new WeakMapMap();
 
 class Telemetry {
   constructor({ useSessionId = false } = {}) {
+    this.sessionStartTime = this.msSinceProcessStart();
+
     
     this.sessionId = String(
       useSessionId ? parseInt(this.msSinceProcessStart(), 10) : -1
@@ -68,6 +70,8 @@ class Telemetry {
 
 
 
+
+
   msSystemNow() {
     return Services.telemetry.msSystemNow();
   }
@@ -76,8 +80,21 @@ class Telemetry {
 
 
 
+
+
+
   msSinceProcessStart() {
     return Services.telemetry.msSinceProcessStart();
+  }
+
+  
+
+
+
+
+
+  msSinceSessionStart() {
+    return this.msSinceProcessStart() - this.sessionStartTime;
   }
 
   
