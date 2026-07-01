@@ -32,7 +32,15 @@ NS_IMPL_ISUPPORTS(DNSServiceBase, nsIObserver)
 
 void DNSServiceBase::AddPrefObserver(nsIPrefBranch* aPrefs) {
   aPrefs->AddObserver(kPrefProxyType, this, false);
+  
+  
+  
   aPrefs->AddObserver(kPrefDisablePrefetch, this, false);
+  
+  
+  
+  
+  
   
   aPrefs->AddObserver(kPrefNetworkProxySOCKS, this, false);
   aPrefs->AddObserver(kPrefNetworkProxySOCKSVersion, this, false);

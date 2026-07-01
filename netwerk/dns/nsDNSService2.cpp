@@ -881,6 +881,9 @@ nsDNSService::Init() {
   if (prefs) {
     
     prefs->AddObserver(kPrefDnsCacheEntries, this, false);
+    
+    
+    
     prefs->AddObserver(kPrefDnsCacheExpiration, this, false);
     prefs->AddObserver(kPrefDnsCacheGrace, this, false);
     prefs->AddObserver(kPrefIPv4OnlyDomains, this, false);
