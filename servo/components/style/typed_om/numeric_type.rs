@@ -54,13 +54,48 @@ pub const ALL_NUMERIC_BASE_TYPES: [NumericBaseType; NUMERIC_BASE_TYPE_COUNT] = [
     NumericBaseType::Percent,
 ];
 
-const _ASSERT_ALL_NUMERIC_BASE_TYPES_ORDER: () = {
+const fn all_numeric_base_types_are_in_order() -> bool {
     let mut i = 0;
-    while i < NUMERIC_BASE_TYPE_COUNT {
-        assert!(ALL_NUMERIC_BASE_TYPES[i] as u8 == i as u8);
+    while i < NUMERIC_BASE_TYPE_COUNT - 1 {
+        if ALL_NUMERIC_BASE_TYPES_EXCEPT_PERCENT[i] as u8 != i as u8 {
+            return false;
+        }
         i += 1;
     }
-};
+    true
+}
+
+const_assert!(all_numeric_base_types_are_in_order());
+
+
+const ALL_NUMERIC_BASE_TYPES_EXCEPT_PERCENT: [NumericBaseType; NUMERIC_BASE_TYPE_COUNT - 1] = [
+    NumericBaseType::Length,
+    NumericBaseType::Angle,
+    NumericBaseType::Time,
+    NumericBaseType::Frequency,
+    NumericBaseType::Resolution,
+    NumericBaseType::Flex,
+];
+
+const fn all_numeric_base_types_except_percent_are_in_order() -> bool {
+    let mut i = 0;
+    while i < NUMERIC_BASE_TYPE_COUNT - 1 {
+        if ALL_NUMERIC_BASE_TYPES_EXCEPT_PERCENT[i] as u8 != i as u8 {
+            return false;
+        }
+        i += 1;
+    }
+    true
+}
+
+const_assert!(all_numeric_base_types_except_percent_are_in_order());
+
+
+
+
+
+
+
 
 
 
@@ -188,12 +223,10 @@ impl NumericType {
         result.unwrap_or(Self::number())
     }
 
-    #[allow(dead_code)]
     fn exponent(&self, base_type: NumericBaseType) -> i32 {
         self.exponents[base_type as usize]
     }
 
-    #[allow(dead_code)]
     fn set_exponent(&mut self, base_type: NumericBaseType, new_value: i32) {
         let old_value = self.exponent(base_type);
         self.exponents[base_type as usize] = new_value;
@@ -214,8 +247,153 @@ impl NumericType {
         }
     }
 
-    #[allow(dead_code)]
     fn add_exponent(&mut self, base_type: NumericBaseType, delta: i32) {
         self.set_exponent(base_type, self.exponent(base_type) + delta);
+    }
+
+    
+    fn apply_percent_hint(&mut self, hint: NumericBaseType) {
+        
+        self.percent_hint = Optional::Some(hint);
+
+        
+        
+        
+
+        
+        if hint != NumericBaseType::Percent {
+            let percent = self.exponent(NumericBaseType::Percent);
+            if percent != 0 {
+                self.add_exponent(hint, percent);
+                self.set_exponent(NumericBaseType::Percent, 0);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    fn add_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+        
+        
+        
+        let mut type1 = type1.clone();
+        let mut type2 = type2.clone();
+        
+        
+        
+        
+
+        
+        match (type1.percent_hint, type2.percent_hint) {
+            
+            
+            
+            (Optional::Some(h1), Optional::Some(h2)) if h1 as u8 != h2 as u8 => {
+                
+                return Err(());
+            },
+            
+            
+            (Optional::Some(hint), Optional::None) => {
+                
+                type2.apply_percent_hint(hint)
+            },
+            
+            
+            (Optional::None, Optional::Some(hint)) => type1.apply_percent_hint(hint),
+            
+            
+            _ => {
+                
+            },
+        }
+
+        
+        
+        
+        
+        
+        if type1.exponents == type2.exponents {
+            
+            
+            
+            
+            
+            
+            return Ok(type1);
+        }
+
+        
+        
+        
+        
+        if (type1.exponent(NumericBaseType::Percent) != 0
+            || type2.exponent(NumericBaseType::Percent) != 0)
+            && (type1.non_zero_except_percent_count != 0
+                || type2.non_zero_except_percent_count != 0)
+        {
+            
+            for &hint in ALL_NUMERIC_BASE_TYPES_EXCEPT_PERCENT.iter() {
+                
+                
+                
+                
+                
+                
+                let mut type1 = type1.clone();
+                let mut type2 = type2.clone();
+                type1.apply_percent_hint(hint);
+                type2.apply_percent_hint(hint);
+
+                
+                
+                
+                
+                
+                
+                if type1.exponents == type2.exponents {
+                    
+                    
+                    
+                    
+                    
+                    
+                    return Ok(type1);
+                }
+
+                
+                
+                
+                
+                
+            }
+            
+            
+            return Err(());
+        }
+
+        
+        
+        
+        Err(())
+    }
+
+    
+    
+    pub fn add_types(types: &[&NumericType]) -> Result<Self, ()> {
+        let Some((first, rest)) = types.split_first() else {
+            return Err(());
+        };
+
+        let mut result = (*first).clone();
+        for next in rest {
+            result = NumericType::add_two_types(&result, next)?;
+        }
+
+        Ok(result)
     }
 }
