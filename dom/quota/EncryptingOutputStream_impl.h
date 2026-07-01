@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_quota_EncryptingOutputStream_impl_h
 #define mozilla_dom_quota_EncryptingOutputStream_impl_h
 
@@ -245,7 +243,7 @@ nsresult EncryptingOutputStream<CipherStrategy>::FlushToBaseStream() {
   
   nsresult rv = mCipherStrategy.Cipher(
       mEncryptedBlock->MutableCipherPrefix(),
-      mozilla::Span(reinterpret_cast<uint8_t*>(mBuffer.Elements()),
+      mozilla::Span(mBuffer.Elements(),
                     ((mNextByte + (CipherStrategy::BasicBlockSize - 1)) /
                      CipherStrategy::BasicBlockSize) *
                         CipherStrategy::BasicBlockSize),
