@@ -4,7 +4,6 @@
 
 
 
-
 {
   Services.scriptloader.loadSubScript("chrome://browser/content/browser-init.js", this);
   Services.scriptloader.loadSubScript("chrome://global/content/contentAreaUtils.js", this);
@@ -23,6 +22,7 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/split-view-footer.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tab.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabbrowser.js", this);
+  Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tab-context-menu.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabgroup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabgroup-menu.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabnote-menu.js", this);
