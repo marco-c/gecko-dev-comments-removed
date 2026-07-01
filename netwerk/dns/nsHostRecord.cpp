@@ -260,15 +260,7 @@ size_t AddrHostRecord::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
 bool AddrHostRecord::HasUsableResultInternal(
     const mozilla::TimeStamp& now, nsIDNSService::DNSFlags queryFlags) const {
   
-  
-  
-  
-  
-  
-  
-  
-  if (negative && IsHighPriority(queryFlags) &&
-      !StaticPrefs::network_http_happy_eyeballs_enabled()) {
+  if (negative && IsHighPriority(queryFlags)) {
     return false;
   }
 
