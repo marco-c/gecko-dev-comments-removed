@@ -432,6 +432,19 @@
       return item;
     }
 
+    
+    
+    
+    async _localizeRowLabel(row, { id, args }) {
+      MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
+      const value = await document.l10n.formatValue(id, args);
+      const parsed = new DOMParser().parseFromString(value, "text/html");
+      const line1 = parsed.querySelector('[data-l10n-name="line1"]');
+      const line2 = parsed.querySelector('[data-l10n-name="line2"]');
+      row.label = (line1 ?? parsed.body).textContent;
+      row.description = line2?.textContent ?? null;
+    }
+
     _appendAutocompleteResults() {
       const controller = this.mInput.controller;
       const matchCount = this.matchCount;
@@ -462,9 +475,13 @@
         const row = item.querySelector("autocomplete-row-item");
 
         if (row) {
-          row.label = label;
-          row.description = parsedComment?.secondary ?? null;
-          row.icon = image;
+          if (parsedComment?.l10n) {
+            this._localizeRowLabel(row, parsedComment.l10n);
+          } else {
+            row.label = label;
+            row.description = parsedComment?.secondary ?? null;
+          }
+          row.icon = parsedComment?.icon ?? image;
           row.value = value;
           const secondaryAction = parsedComment?.secondaryAction;
           row.actions = {
