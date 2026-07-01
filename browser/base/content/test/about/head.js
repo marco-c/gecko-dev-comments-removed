@@ -175,8 +175,6 @@ async function loadTRRErrorPage() {
   
   Services.prefs.setIntPref("network.proxy.type", 0);
 
-  Services.dns.clearCache(true);
-
   let browser;
   let pageLoaded;
   await BrowserTestUtils.openNewForegroundTab(
