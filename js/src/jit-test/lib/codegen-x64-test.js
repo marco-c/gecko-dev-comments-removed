@@ -33,15 +33,22 @@ load(libdir + "codegen-test-common.js");
 
 var RIPR = `0x${HEXES}`;
 
+const x64_arch = {
+    name: "x64",
 
-
-var x64_prefix = `
+    
+    
+    prefix: `
 mov %rsp, %rbp(
 movq %r14, (0x10|0x30)\\(%rbp\\))?
-`
+`,
 
+    
+    suffix: `pop %rbp`,
 
-var x64_suffix = `pop %rbp`;
+    
+    encoding: `(?:${HEX}{2} )*`,
+};
 
 
 
@@ -150,36 +157,7 @@ function codegenTestX64_unit_v128(inputs, options = {}) {
 
 
 function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) {
-    assertEq(hasDisassembler(), true);
-
-    let ins = wasmEvalText(module_text, {}, options.features);
-    if (options.instanceBox)
-        options.instanceBox.value = ins;
-    let tierTxt = options.baseline ? "baseline" : "ion";
-    let output = wasmDis(ins.exports[export_name],
-                         {tier:tierTxt, asString:true});
-    if (!options.no_prefix)
-        expected = x64_prefix + '\n' + expected;
-    if (!options.no_suffix)
-        expected = expected + '\n' + x64_suffix;
-    const expected_pretty = striplines(expected);
-    expected = fixlines(expected);
-
-    const output_simple = stripencoding(output, `(?:${HEX}{2} )*`);
-    const success = output_simple.match(new RegExp(expected)) != null;
-    if (options.log || !success) {
-        print("Module text:")
-        print(module_text);
-        print("Actual output:")
-        print(output);
-        print("Expected output (as text):")
-        print(expected_pretty);
-        print("");
-        print("Expected output (as regex):")
-        print(expected);
-        print("");
-    }
-    assertEq(success, true);
+    codegenTestShared_adhoc(x64_arch, module_text, export_name, expected, options);
 }
 
 
