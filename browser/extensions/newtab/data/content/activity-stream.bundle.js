@@ -313,6 +313,7 @@ for (const type of [
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
+  "WIDGETS_SPORTS_FETCH_MORE_MATCHES",
   "WIDGETS_SPORTS_LIVE_HIDDEN",
   "WIDGETS_SPORTS_LIVE_REFRESH",
   "WIDGETS_SPORTS_LIVE_UPDATE",
@@ -322,6 +323,7 @@ for (const type of [
   "WIDGETS_SPORTS_SET_CELEBRATIONS",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_SET_LIVE_INDEX",
+  "WIDGETS_SPORTS_SET_LOAD_MORE",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
   "WIDGETS_SPORTS_SET_SELECTED_TEAMS",
   "WIDGETS_SPORTS_SET_WIDGET_STATE",
@@ -6835,6 +6837,15 @@ const INITIAL_STATE = {
     
     
     celebrations: { endedAt: {}, celebrated: [] },
+    
+    
+    
+    
+    
+    loadMore: {
+      upcoming: { loading: false, exhausted: false, lastFetchedDate: null },
+      results: { loading: false, exhausted: false, lastFetchedDate: null },
+    },
   },
 };
 
@@ -7825,8 +7836,6 @@ function ExternalComponents(
 
 function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
   switch (action.type) {
-    case actionTypes.WIDGETS_SPORTS_WIDGET_SET:
-      return { ...prevState, data: action.data, initialized: true };
     case actionTypes.WIDGETS_SPORTS_SET_WIDGET_STATE:
       return { ...prevState, widgetState: action.data };
     case actionTypes.WIDGETS_SPORTS_SET_SELECTED_TEAMS:
@@ -7862,6 +7871,67 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
       return { ...prevState, liveIndex: action.data };
     case actionTypes.WIDGETS_SPORTS_SET_CELEBRATIONS:
       return { ...prevState, celebrations: action.data };
+    case actionTypes.WIDGETS_SPORTS_SET_LOAD_MORE: {
+      const {
+        direction,
+        matches: newMatches,
+        ...loadMoreUpdates
+      } = action.data || {};
+      if (direction !== "upcoming" && direction !== "results") {
+        return prevState;
+      }
+      
+      
+      
+      const targetField = direction === "upcoming" ? "next" : "previous";
+      const nextState = {
+        ...prevState,
+        loadMore: {
+          ...prevState.loadMore,
+          [direction]: {
+            ...prevState.loadMore[direction],
+            ...loadMoreUpdates,
+          },
+        },
+      };
+      if (Array.isArray(newMatches) && newMatches.length && prevState.data) {
+        const existing = prevState.data.matches?.[targetField] ?? [];
+        
+        
+        
+        const matchKey = match =>
+          match?.global_event_id ??
+          `${match?.home_team?.key}-${match?.away_team?.key}-${match?.date}`;
+        const existingKeys = new Set(existing.map(matchKey));
+        const additions = newMatches.filter(
+          m => !existingKeys.has(matchKey(m))
+        );
+        if (additions.length) {
+          nextState.data = {
+            ...prevState.data,
+            matches: {
+              ...(prevState.data.matches || {
+                previous: [],
+                current: [],
+                next: [],
+              }),
+              [targetField]: [...existing, ...additions],
+            },
+          };
+        }
+      }
+      return nextState;
+    }
+    case actionTypes.WIDGETS_SPORTS_WIDGET_SET:
+      
+      
+      
+      return {
+        ...prevState,
+        data: action.data,
+        initialized: true,
+        loadMore: { ...INITIAL_STATE.SportsWidget.loadMore },
+      };
     default:
       return prevState;
   }
@@ -18530,6 +18600,7 @@ function SportsWidget_SportsWidget({
     setShowResultsList: setShowResultsList,
     showUpcomingList: showUpcomingList,
     setShowUpcomingList: setShowUpcomingList,
+    loadMore: sportsWidgetData.loadMore,
     onWatchClick: () => setWatchLiveOpen(true)
   }), widgetState === WIDGET_STATES.KEY_DATES && external_React_default().createElement(SportsWidgetKeyDates, {
     handleViewMatches: handleViewMatches
@@ -18670,6 +18741,49 @@ function SportsSectionLabel({
     "data-l10n-id": "newtab-sports-widget-live"
   })));
 }
+
+
+
+
+
+
+
+
+
+
+
+function useLoadMoreSentinel({
+  direction,
+  sentinelRef,
+  active,
+  loading,
+  exhausted,
+  dispatch
+}) {
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!active || exhausted || !sentinelRef.current) {
+      return undefined;
+    }
+    const sentinel = sentinelRef.current;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !loading && !exhausted) {
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_SPORTS_FETCH_MORE_MATCHES,
+          data: {
+            direction
+          }
+        }));
+      }
+    }, {
+      root: sentinel.closest(".sports-body"),
+      
+      
+      rootMargin: "200px 0px"
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [dispatch, direction, sentinelRef, active, loading, exhausted]);
+}
 function SportsMatchesView({
   dispatch,
   matchesTab,
@@ -18697,10 +18811,23 @@ function SportsMatchesView({
   setShowResultsList,
   showUpcomingList,
   setShowUpcomingList,
+  loadMore,
   onWatchClick
 }) {
   const resultsPanelRef = (0,external_React_namespaceObject.useRef)(null);
   const upcomingPanelRef = (0,external_React_namespaceObject.useRef)(null);
+  
+  
+  
+  
+  
+  
+  const upcomingSentinelRef = (0,external_React_namespaceObject.useRef)(null);
+  const resultsSentinelRef = (0,external_React_namespaceObject.useRef)(null);
+  const upcomingLoadMoreLoading = !!loadMore?.upcoming?.loading;
+  const upcomingLoadMoreExhausted = !!loadMore?.upcoming?.exhausted;
+  const resultsLoadMoreLoading = !!loadMore?.results?.loading;
+  const resultsLoadMoreExhausted = !!loadMore?.results?.exhausted;
   const hasFollowedTeams = selectedTeamsSet.size > 0;
   
   
@@ -18751,6 +18878,27 @@ function SportsMatchesView({
       upcomingPanelRef.current?.querySelector(".sports-match-row")?.focus();
     }
   }, [showUpcomingList]);
+
+  
+  
+  
+  
+  useLoadMoreSentinel({
+    direction: "upcoming",
+    sentinelRef: upcomingSentinelRef,
+    active: showUpcomingList,
+    loading: upcomingLoadMoreLoading,
+    exhausted: upcomingLoadMoreExhausted,
+    dispatch
+  });
+  useLoadMoreSentinel({
+    direction: "results",
+    sentinelRef: resultsSentinelRef,
+    active: showResultsList,
+    loading: resultsLoadMoreLoading,
+    exhausted: resultsLoadMoreExhausted,
+    dispatch
+  });
 
   
   
@@ -18856,7 +19004,16 @@ function SportsMatchesView({
     followedTeams: selectedTeamsSet,
     tbdTeamName: tbdTeamName,
     localizedNames: localizedNames
-  })))))))) : previous[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+  })))))), resultsLoadMoreLoading && external_React_default().createElement("div", {
+    className: "sports-results-loading-more",
+    role: "status",
+    "aria-live": "polite",
+    "data-l10n-id": "newtab-sports-widget-loading-more"
+  }), !resultsLoadMoreExhausted && external_React_default().createElement("div", {
+    ref: resultsSentinelRef,
+    className: "sports-results-load-more-sentinel",
+    "aria-hidden": "true"
+  }))) : previous[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
     match: previous[0]
   }), external_React_default().createElement("div", {
     className: "match-highlight-view"
@@ -18944,7 +19101,16 @@ function SportsMatchesView({
     followedTeams: selectedTeamsSet,
     tbdTeamName: tbdTeamName,
     localizedNames: localizedNames
-  })))))))) : external_React_default().createElement((external_React_default()).Fragment, null, next[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
+  })))))), upcomingLoadMoreLoading && external_React_default().createElement("div", {
+    className: "sports-upcoming-loading-more",
+    role: "status",
+    "aria-live": "polite",
+    "data-l10n-id": "newtab-sports-widget-loading-more"
+  }), !upcomingLoadMoreExhausted && external_React_default().createElement("div", {
+    ref: upcomingSentinelRef,
+    className: "sports-upcoming-load-more-sentinel",
+    "aria-hidden": "true"
+  }))) : external_React_default().createElement((external_React_default()).Fragment, null, next[0] && external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && external_React_default().createElement(SportsSectionLabel, {
     match: next[0]
   }), external_React_default().createElement("div", {
     className: "match-highlight-view"
