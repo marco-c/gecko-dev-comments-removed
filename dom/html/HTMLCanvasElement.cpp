@@ -915,7 +915,8 @@ already_AddRefed<CanvasCaptureMediaStream> HTMLCanvasElement::CaptureStream(
   
   
   CanvasUtils::ImageExtraction extractionBehaviour =
-      CanvasUtils::ImageExtractionResult(this, nullptr, &aSubjectPrincipal);
+      CanvasUtils::ImageExtractionResult(
+          this, nsContentUtils::GetCurrentJSContext(), &aSubjectPrincipal);
 
   rv = RegisterFrameCaptureListener(
       stream->FrameCaptureListener(),
