@@ -116,10 +116,10 @@ const archOptions =
 
 
 function promoteArchSpecificOptions(options, archName) {
-    assertEq(true, knownArchs.some(a => archName == a));
+    assertEq(knownArchs.includes(archName), true);
     if (options.hasOwnProperty(archName)) {
         let archOptions = options[archName];
-        for (optName in archOptions) {
+        for (let optName in archOptions) {
             options[optName] = archOptions[optName];
             if (options.log) {
                 print("---- adding " + archName + "-specific option {"
@@ -127,12 +127,12 @@ function promoteArchSpecificOptions(options, archName) {
             }
         }
     }
-    for (a of knownArchs) {
+    for (let a of knownArchs) {
         delete options[a];
     }
     if (options.log) {
         print("---- final options");
-        for (optName in options) {
+        for (let optName in options) {
             print("{" + optName + ":" + options[optName] + "}");
         }
     }
@@ -146,26 +146,18 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
 
     
     
-    assertEq(true,
-             requiredArchs.every(a => expectedAllTargets.hasOwnProperty(a)));
+    assertEq(requiredArchs.every(a => expectedAllTargets.hasOwnProperty(a)),
+             true);
 
     
     
-    let genX64   = getBuildConfiguration("x64");
-    let genX86   = getBuildConfiguration("x86");
-    let genArm64 = getBuildConfiguration("arm64");
-    let genArm   = getBuildConfiguration("arm");
-    
-    if (genX64 && genArm64 && getBuildConfiguration("arm64-simulator")) {
-        genX64 = false;
-    }
-    if (genX86 && genArm && getBuildConfiguration("arm-simulator")) {
-        genX86 = false;
-    }
+    let genX64   = !!getBuildConfiguration("x64");
+    let genX86   = !!getBuildConfiguration("x86");
+    let genArm64 = !!getBuildConfiguration("arm64");
+    let genArm   = !!getBuildConfiguration("arm");
 
     
-    assertEq(1, [genX64, genX86, genArm64, genArm].map(x => x ? 1 : 0)
-                                                  .reduce((a,b) => a+b, 0));
+    assertEq(genX64 + genX86 + genArm64 + genArm, 1);
 
     
     
@@ -183,20 +175,18 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
         print("---- testing for architecture \"" + archName + "\"");
     }
     
-    assertEq(true, archName.length > 0);
+    assertEq(archName.length > 0, true);
 
     
     
     options = promoteArchSpecificOptions(options, archName);
 
     
-    assertEq(true, archOptions.hasOwnProperty(archName));
-    let encoding = archOptions[archName].encoding;
-    let prefix = archOptions[archName].prefix;
-    let suffix = archOptions[archName].suffix;
-    assertEq(true, encoding.length > 0, `bad instruction encoding: ${encoding}`);
-    assertEq(true, prefix.length > 0, `bad prefix: ${prefix}`);
-    assertEq(true, suffix.length > 0, `bad suffix: ${suffix}`);
+    assertEq(archOptions.hasOwnProperty(archName), true);
+    let {encoding = "", prefix = "", suffix = ""} = archOptions[archName];
+    assertEq(encoding.length > 0, true, `bad instruction encoding: ${encoding}`);
+    assertEq(prefix.length > 0, true, `bad prefix: ${prefix}`);
+    assertEq(suffix.length > 0, true, `bad suffix: ${suffix}`);
 
     
     
@@ -215,7 +205,7 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
 
     
     
-    expectedInitial = expected;
+    let expectedInitial = expected;
     if (!options.no_prefix) {
         expected = prefix + '\n' + expected;
     }
