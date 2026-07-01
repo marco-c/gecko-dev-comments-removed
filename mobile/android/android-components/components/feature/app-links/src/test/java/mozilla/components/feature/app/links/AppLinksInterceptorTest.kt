@@ -44,6 +44,7 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class AppLinksInterceptorTest {
@@ -679,7 +680,7 @@ class AppLinksInterceptorTest {
         )
 
         var response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
-        assertTrue(response is RequestInterceptor.InterceptionResponse.AppIntent)
+        assertIs<RequestInterceptor.InterceptionResponse.AppIntent>(response)
 
         response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
         assertNull(response)
@@ -697,7 +698,7 @@ class AppLinksInterceptorTest {
         assert(response is RequestInterceptor.InterceptionResponse.Url)
 
         response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
-        assertTrue(response is RequestInterceptor.InterceptionResponse.AppIntent)
+        assertIs<RequestInterceptor.InterceptionResponse.AppIntent>(response)
     }
 
     @Test
@@ -793,6 +794,119 @@ class AppLinksInterceptorTest {
     }
 
     @Test
+    fun `WHEN target package matches the caller package THEN isRedirectToCaller returns true`() {
+        val tabSessionState = TabSessionState(
+            id = "tab1",
+            content = ContentState(
+                url = "https://mozilla.org",
+                private = false,
+            ),
+            source = SessionState.Source.External.ActionView(ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY)),
+        )
+
+        assertTrue(AppLinksInterceptor.isRedirectToCaller(tabSessionState, "com.zxing.app"))
+        assertFalse(AppLinksInterceptor.isRedirectToCaller(tabSessionState, "com.example.app"))
+        assertFalse(AppLinksInterceptor.isRedirectToCaller(tabSessionState, null))
+
+        val internalSessionState = TabSessionState(
+            id = "tab1",
+            content = ContentState(
+                url = "https://mozilla.org",
+                private = false,
+            ),
+        )
+        assertFalse(AppLinksInterceptor.isRedirectToCaller(internalSessionState, "com.zxing.app"))
+    }
+
+    @Test
+    fun `WHEN initial load resolves back to the calling app THEN request is not intercepted`() {
+        val url = "https://share.google/abc"
+        val appIntent = Intent.parseUri(url, 0).apply {
+            component = ComponentName("com.example", "com.example.MainActivity")
+        }
+        whenever(mockGetRedirect.invoke(url)).thenReturn(AppLinkRedirect(appIntent, "ExampleApp", null, null))
+
+        val tabSessionState = mozilla.components.browser.state.state.createTab(
+            url = url,
+            private = false,
+            id = "tab1",
+            source = SessionState.Source.External.ActionView(
+                ExternalPackage("com.example", PackageCategory.PRODUCTIVITY),
+            ),
+            engineSession = mockEngineSession,
+        )
+
+        val interceptor = AppLinksInterceptor(
+            context = mockContext,
+            launchInApp = { true },
+            useCases = mockUseCases,
+            store = BrowserStore().apply {
+                dispatch(TabListAction.AddTabAction(tabSessionState))
+            },
+        )
+
+        val response = interceptor.onLoadRequest(
+            engineSession = mockEngineSession,
+            uri = url,
+            lastUri = null,
+            hasUserGesture = false,
+            isSameDomain = false,
+            isRedirect = false,
+            isDirectNavigation = true,
+            isSubframeRequest = false,
+        )
+
+        assertNull(response)
+        verify(mockOpenRedirect, times(0)).invoke(
+            appIntent = any(),
+            launchInNewTask = anyBoolean(),
+            clearTop = anyBoolean(),
+            failedToLaunchAction = any(),
+        )
+    }
+
+    @Test
+    fun `WHEN initial load resolves to a different app than the caller THEN request is intercepted`() {
+        val url = "https://share.google/abc"
+        val appIntent = Intent.parseUri(url, 0).apply {
+            component = ComponentName("com.other.app", "com.other.app.MainActivity")
+        }
+        whenever(mockGetRedirect.invoke(url)).thenReturn(AppLinkRedirect(appIntent, "OtherApp", null, null))
+
+        val tabSessionState = mozilla.components.browser.state.state.createTab(
+            url = url,
+            private = false,
+            id = "tab1",
+            source = SessionState.Source.External.ActionView(
+                ExternalPackage("com.example", PackageCategory.PRODUCTIVITY),
+            ),
+            engineSession = mockEngineSession,
+        )
+
+        val interceptor = AppLinksInterceptor(
+            context = mockContext,
+            launchInApp = { true },
+            useCases = mockUseCases,
+            store = BrowserStore().apply {
+                dispatch(TabListAction.AddTabAction(tabSessionState))
+            },
+        )
+
+        val response = interceptor.onLoadRequest(
+            engineSession = mockEngineSession,
+            uri = url,
+            lastUri = null,
+            hasUserGesture = false,
+            isSameDomain = false,
+            isRedirect = false,
+            isDirectNavigation = true,
+            isSubframeRequest = false,
+        )
+
+        assertIs<RequestInterceptor.InterceptionResponse.AppIntent>(response)
+    }
+
+    @Test
     fun `WHEN scheme is allowed for subframe THEN subframe is allowed to trigger applinks redirect`() {
         assertTrue(isSubframeAllowed("msteams"))
         assertFalse(isSubframeAllowed("msteam"))
@@ -849,7 +963,7 @@ class AppLinksInterceptorTest {
             failedToLaunchAction = any(),
         )
 
-        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+        assertIs<RequestInterceptor.InterceptionResponse.Deny>(response)
     }
 
     @Test
@@ -903,7 +1017,7 @@ class AppLinksInterceptorTest {
             failedToLaunchAction = any(),
         )
 
-        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+        assertIs<RequestInterceptor.InterceptionResponse.Deny>(response)
     }
 
     @Test
