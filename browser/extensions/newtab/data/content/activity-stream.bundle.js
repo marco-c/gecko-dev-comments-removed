@@ -21123,15 +21123,8 @@ function Privacy({
   const initialized = privacyData?.initialized ?? false;
   
   const displayCount = trackersToday > 100 ? "100+" : `${trackersToday}`;
-
-  
-  
-  
-  const [preview, setPreview] = (0,external_React_namespaceObject.useState)("live");
-  const liveState = trackersToday === 0 ? "empty" : "tip";
-  const effectiveState = preview === "live" ? liveState : preview;
-  const isEmptyState = effectiveState === "empty";
-  const showTip = effectiveState === "tip";
+  const isEmptyState = trackersToday === 0;
+  const showTip = !isEmptyState;
   const isLarge = widgetSize === "large";
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -21247,15 +21240,7 @@ function Privacy({
   }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-privacy-menu-learn-more",
     onClick: handleLearnMore
-  }), external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("live")
-  }, "Preview: Live (real count)"), external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("empty")
-  }, "Preview: Empty"), external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("default")
-  }, "Preview: Default (no tip)"), external_React_default().createElement("panel-item", {
-    onClick: () => setPreview("tip")
-  }, "Preview: Default (with tip)")))), external_React_default().createElement("div", {
+  })))), external_React_default().createElement("div", {
     className: "privacy-body"
   }, initialized && (isEmptyState ? external_React_default().createElement("div", {
     className: "privacy-empty"
