@@ -70,8 +70,8 @@ class PDMFactorySupport final {
     return mFactory->Supports(aParams, aDiagnostics);
   }
 
-  static void EnsureInvalidationListenersRegistered(
-      const StaticMutexAutoLock& aProofOfLock);
+  
+  static bool EnsureInvalidationListenersRegistered();
   static void OnInvalidatingPrefChanged(const char* aPref, void* aData);
   static void OnInvalidatingGfxVarChanged();
 

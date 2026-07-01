@@ -14,6 +14,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "nsIXULRuntime.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -115,8 +116,6 @@ media::DecodeSupportSet PDMFactorySupport::IsSupported(
 
 
 RefPtr<PDMFactorySupport> PDMFactorySupport::Instance() {
-  StaticMutexAutoLock lock(sInstanceMutex);
-
   
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return nullptr;
@@ -124,15 +123,22 @@ RefPtr<PDMFactorySupport> PDMFactorySupport::Instance() {
 
   
   
-  EnsureInvalidationListenersRegistered(lock);
+  
+  if (!EnsureInvalidationListenersRegistered()) {
+    return nullptr;
+  }
 
+  StaticMutexAutoLock lock(sInstanceMutex);
   
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return nullptr;
+  }
   
-  
-  if (sStale.exchange(false) && sInstance) {
+  if (sStale.exchange(false)) {
     sInstance = nullptr;
   }
   if (!sInstance) {
+    MOZ_ASSERT(gfx::gfxVars::IsInitialized());
     sInstance = new PDMFactorySupport();
 
     
@@ -174,58 +180,77 @@ void PDMFactorySupport::OnInvalidatingPrefChanged(const char* ,
 void PDMFactorySupport::OnInvalidatingGfxVarChanged() { Invalidate(); }
 
 
-void PDMFactorySupport::EnsureInvalidationListenersRegistered(
-    const StaticMutexAutoLock& ) {
-  
-  
+bool PDMFactorySupport::EnsureInvalidationListenersRegistered() {
+  static Atomic<bool> sListenersRegisteredComplete{false};
+  if (sListenersRegisteredComplete) {
+    return true;
+  }
+
   static std::once_flag sListenersRegistered;
-  std::call_once(sListenersRegistered, []() {
-    auto registerOnMain = []() {
-      MOZ_ASSERT(NS_IsMainThread());
-      Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
-                                     kInvalidatingPrefs_CrossPlatform);
+
+  auto registerOnMain = []() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+      return;
+    }
+
+    
+    
+    
+    if (!gfx::gfxVars::IsInitialized()) {
+      gfx::gfxVars::Initialize();
+      (void)BrowserTabsRemoteAutostart();
+    }
+
+    Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
+                                   kInvalidatingPrefs_CrossPlatform);
 #ifdef MOZ_WMF
-      Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
-                                     kInvalidatingPrefs_WMF);
+    Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
+                                   kInvalidatingPrefs_WMF);
 #endif
 #ifdef MOZ_APPLEMEDIA
-      Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
-                                     kInvalidatingPrefs_AppleMedia);
+    Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
+                                   kInvalidatingPrefs_AppleMedia);
 #endif
 #ifdef ANDROID
-      Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
-                                     kInvalidatingPrefs_Android);
+    Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
+                                   kInvalidatingPrefs_Android);
 #endif
 #ifdef MOZ_FFMPEG
-      Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
-                                     kInvalidatingPrefs_FFmpeg);
+    Preferences::RegisterCallbacks(OnInvalidatingPrefChanged,
+                                   kInvalidatingPrefs_FFmpeg);
 #endif
-      
-      
-      if (!gfx::gfxVars::IsInitialized()) {
-        gfx::gfxVars::Initialize();
-      }
-      gfx::gfxVars::SetCanUseHardwareVideoDecodingListener(
-          OnInvalidatingGfxVarChanged);
-      gfx::gfxVars::SetUseAV1HwDecodeListener(OnInvalidatingGfxVarChanged);
-      gfx::gfxVars::SetUseVP8HwDecodeListener(OnInvalidatingGfxVarChanged);
-      gfx::gfxVars::SetUseVP9HwDecodeListener(OnInvalidatingGfxVarChanged);
-      
-      
-      gfx::gfxVars::SetUseH264HwDecodeListener(OnInvalidatingGfxVarChanged);
-      gfx::gfxVars::SetUseHEVCHwDecodeListener(OnInvalidatingGfxVarChanged);
-    };
+    gfx::gfxVars::SetCanUseHardwareVideoDecodingListener(
+        OnInvalidatingGfxVarChanged);
+    gfx::gfxVars::SetUseAV1HwDecodeListener(OnInvalidatingGfxVarChanged);
+    gfx::gfxVars::SetUseVP8HwDecodeListener(OnInvalidatingGfxVarChanged);
+    gfx::gfxVars::SetUseVP9HwDecodeListener(OnInvalidatingGfxVarChanged);
+    
+    
+    gfx::gfxVars::SetUseH264HwDecodeListener(OnInvalidatingGfxVarChanged);
+    gfx::gfxVars::SetUseHEVCHwDecodeListener(OnInvalidatingGfxVarChanged);
 
-    if (NS_IsMainThread()) {
-      registerOnMain();
-    } else {
-      nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
-      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-          "PDMFactorySupport::EnsureInvalidationListenersRegistered",
-          std::move(registerOnMain));
-      SyncRunnable::DispatchToThread(mainTarget, runnable);
-    }
-  });
+    sListenersRegisteredComplete = true;
+  };
+
+  if (NS_IsMainThread()) {
+    std::call_once(sListenersRegistered, registerOnMain);
+    return sListenersRegisteredComplete;
+  }
+
+  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
+  if (!mainTarget) {
+    return sListenersRegisteredComplete;
+  }
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "PDMFactorySupport::EnsureInvalidationListenersRegistered",
+      [registerOnMain]() {
+        std::call_once(sListenersRegistered, registerOnMain);
+      });
+  SyncRunnable::DispatchToThread(mainTarget, runnable);
+  return sListenersRegisteredComplete;
 }
 
 }  
