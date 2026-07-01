@@ -86,7 +86,12 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
       }
     }
 
-    if (!changed) {
+    
+    
+    
+    
+    
+    if (!changed && !mSelectionRangeObservedMutation) {
       return;
     }
   }
@@ -97,6 +102,7 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     mOldRanges.AppendElement(RawRangeData(aSel->GetRangeAt(i)));
   }
   mOldDirection = aSel->GetDirection();
+  mSelectionRangeObservedMutation = false;
 
   
   
