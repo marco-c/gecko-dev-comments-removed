@@ -710,7 +710,7 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseContentComplete({ blockedReason, extension, channel }) {
+  addResponseContentComplete({ blockedReason, extension, channel, truncated }) {
     
     if (this.isDestroyed()) {
       return;
@@ -719,6 +719,7 @@ class NetworkEventActor extends Actor {
     const changed = {
       blockedReason,
       extension,
+      truncated,
     };
 
     if (channel) {

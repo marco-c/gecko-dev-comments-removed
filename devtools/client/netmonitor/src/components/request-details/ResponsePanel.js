@@ -173,12 +173,21 @@ class ResponsePanel extends Component {
 
 
   handleJSONResponse(mimeType, response) {
+    
+    
+    
     const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     
     
-    if (limit > 0 && limit <= request.responseContent.content.size) {
+    
+    
+    
+    if (
+      request.truncated ||
+      (limit > 0 && limit <= request.responseContent.content.size)
+    ) {
       const result = {};
       result.error = RESPONSE_TRUNCATED;
       return result;
@@ -457,6 +466,13 @@ class ResponsePanel extends Component {
       return div(
         { className: "panel-container" },
         CORSBlockedReasonDetails,
+        
+        
+        request.truncated &&
+          div(
+            { className: "response-error-header", title: RESPONSE_TRUNCATED },
+            RESPONSE_TRUNCATED
+          ),
         div(
           { className: "empty-notice" },
           isRedirect ? RESPONSE_REDIRECT_EMPTY_TEXT : RESPONSE_EMPTY_TEXT
