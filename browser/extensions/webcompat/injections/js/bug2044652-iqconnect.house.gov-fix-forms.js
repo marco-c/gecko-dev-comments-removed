@@ -1,0 +1,13 @@
+
+
+
+
+{
+  const int = setInterval(() => {
+    const ce = document.querySelector("body[contenteditable]");
+    if (ce) {
+      ce.removeAttribute("contenteditable");
+      clearInterval(int);
+    }
+  }, 100);
+}
