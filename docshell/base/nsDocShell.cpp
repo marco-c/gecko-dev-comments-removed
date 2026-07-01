@@ -4199,6 +4199,10 @@ nsresult nsDocShell::StopInternal(
       
       mLoadGroup->SetCanceledReason("navigation"_ns);
     }
+    
+    
+    
+    CancelPlannedFormNavigation();
     Stop();
 
     
@@ -7431,15 +7435,12 @@ bool nsDocShell::NoopenerForceEnabled() {
          !mBrowsingContext->SameOriginWithTop();
 }
 
-nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
-  MOZ_ASSERT(aLoadState, "need a load state!");
-  MOZ_ASSERT(!aLoadState->Target().IsEmpty(), "should have a target here!");
-  MOZ_ASSERT(aLoadState->TargetBrowsingContext().IsNull(),
-             "should not have picked target yet");
-
-  nsresult rv = NS_OK;
-  RefPtr<BrowsingContext> targetContext;
-
+nsresult nsDocShell::ComputeNamedTargetBrowsingContext(
+    nsDocShellLoadState* aLoadState) {
+  if (aLoadState->HasComputedNamedTargetBrowsingContext() ||
+      aLoadState->Target().IsEmpty()) {
+    return NS_OK;
+  }
   
   
   
@@ -7454,9 +7455,30 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
     NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
     WindowGlobalChild* wgc = document->GetWindowGlobalChild();
     NS_ENSURE_TRUE(wgc, NS_ERROR_FAILURE);
-    targetContext = wgc->FindBrowsingContextWithName(
-        aLoadState->Target(),  false);
+    aLoadState->SetTargetBrowsingContext(wgc->FindBrowsingContextWithName(
+        aLoadState->Target(),  false));
   }
+  aLoadState->SetHasComputedNamedTargetBrowsingContext(true);
+  return NS_OK;
+}
+
+nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
+  MOZ_ASSERT(aLoadState, "need a load state!");
+  MOZ_ASSERT(!aLoadState->Target().IsEmpty(), "should have a target here!");
+
+  nsresult rv = NS_OK;
+
+  rv = ComputeNamedTargetBrowsingContext(aLoadState);
+  NS_ENSURE_SUCCESS(rv, rv);
+  const MaybeDiscarded<BrowsingContext>& targetBCMaybeDiscarded =
+      aLoadState->TargetBrowsingContext();
+  if (targetBCMaybeDiscarded.IsDiscarded()) {
+    
+    
+    return NS_BINDING_ABORTED;
+  }
+  RefPtr<BrowsingContext> targetContext =
+      targetBCMaybeDiscarded.GetMaybeDiscarded();
 
   if (!targetContext) {
     
@@ -8388,6 +8410,14 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
       aExtantDocument->GetPrincipal()->Equals(aLoadState->TriggeringPrincipal(),
                                               &convertToReplaceLoad);
     }
+  } else if (aLoadState->HistoryBehavior() ==
+             Some(NavigationHistoryBehavior::Replace)) {
+    
+    
+    
+    
+    
+    convertToReplaceLoad = true;
   }
 
   convertToReplaceLoad =
@@ -11970,13 +12000,17 @@ nsresult nsDocShell::EnsureCommandHandler() {
 
 
 
-class OnLinkClickEvent : public Runnable {
+class OnLinkClickEvent : public CancelableRunnable, public SupportsWeakPtr {
  public:
   OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
                    nsDocShellLoadState* aLoadState, bool aNoOpenerImplied,
                    nsIPrincipal* aTriggeringPrincipal);
 
   NS_IMETHOD Run() override {
+    if (mCancelled) {
+      return NS_OK;
+    }
+
     
     
     
@@ -11985,10 +12019,22 @@ class OnLinkClickEvent : public Runnable {
     
     AutoJSAPI jsapi;
     if (jsapi.Init(mContent->OwnerDoc()->GetScopeObject())) {
-      mLoadState->SetSourceElement(mContent->AsElement());
+      
+      
+      if (!mLoadState->HasSourceElement()) {
+        mLoadState->SetSourceElement(mContent->AsElement());
+      }
       mHandler->OnLinkClickSync(mContent, mLoadState, mNoOpenerImplied,
                                 mTriggeringPrincipal);
     }
+    return NS_OK;
+  }
+
+  nsresult Cancel() override final {
+    mCancelled = true;
+    
+    
+    
     return NS_OK;
   }
 
@@ -11998,18 +12044,91 @@ class OnLinkClickEvent : public Runnable {
   RefPtr<nsDocShellLoadState> mLoadState;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   bool mNoOpenerImplied;
+  bool mCancelled = false;
 };
 
 OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
                                    nsDocShellLoadState* aLoadState,
                                    bool aNoOpenerImplied,
                                    nsIPrincipal* aTriggeringPrincipal)
-    : mozilla::Runnable("OnLinkClickEvent"),
+    : mozilla::CancelableRunnable("OnLinkClickEvent"),
       mHandler(aHandler),
       mContent(aContent),
       mLoadState(aLoadState),
       mTriggeringPrincipal(aTriggeringPrincipal),
       mNoOpenerImplied(aNoOpenerImplied) {}
+
+Result<RefPtr<OnLinkClickEvent>, nsresult> nsDocShell::OnLinkClickWithLoadState(
+    nsIContent* aContent, nsDocShellLoadState* aLoadState,
+    bool aNoOpenerImplied, nsIPrincipal* aTriggeringPrincipal) {
+  if (StaticPrefs::dom_forms_submit_async_navigation()) {
+    
+    
+    
+    ComputeNamedTargetBrowsingContext(aLoadState);
+    if (aContent->IsHTMLElement(nsGkAtoms::form)) {
+      
+      
+      
+      
+      const MaybeDiscarded<BrowsingContext>& bc =
+          aLoadState->TargetBrowsingContext();
+      Document* formDocument = aContent->OwnerDoc();
+      if ((bc.IsNull() || bc == formDocument->GetBrowsingContext()) &&
+          !formDocument->IsCompletelyLoaded()) {
+        aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
+      }
+    }
+  }
+  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
+      this, aContent, aLoadState, aNoOpenerImplied, aTriggeringPrincipal);
+  RefPtr<nsIRunnable> runnable = ev;
+  nsresult rv = Dispatch(runnable.forget());
+  NS_ENSURE_SUCCESS(rv, Err(rv));
+  return ev;
+}
+
+nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
+                                  nsDocShellLoadState* aLoadState) {
+  
+  if (ShouldBlockLoadingForBackButton()) {
+    return NS_OK;
+  }
+  if (!StaticPrefs::dom_forms_submit_async_navigation()) {
+    return OnLinkClickSync(aForm, aLoadState, false, aForm->NodePrincipal());
+  }
+
+  auto result = OnLinkClickWithLoadState(aForm, aLoadState, false,
+                                         aForm->NodePrincipal());
+  if (result.isErr()) {
+    return result.unwrapErr();
+  }
+  nsDocShell* targetDocShell = this;
+  if (!aLoadState->Target().IsEmpty()) {
+    const MaybeDiscarded<BrowsingContext>& targetBC =
+        aLoadState->TargetBrowsingContext();
+    targetDocShell =
+        targetBC.IsNullOrDiscarded()
+            ? nullptr
+            : static_cast<nsDocShell*>(targetBC.get()->GetDocShell());
+  }
+  if (targetDocShell) {
+    targetDocShell->CancelPlannedFormNavigation();
+    
+    
+    targetDocShell->StopPendingJavascriptURLNavigations();
+    targetDocShell->mPlannedFormNavigation = result.unwrap().get();
+  }
+  return NS_OK;
+}
+
+nsresult nsDocShell::CancelPlannedFormNavigation() {
+  if (mPlannedFormNavigation) {
+    mPlannedFormNavigation->Cancel();
+    mPlannedFormNavigation = nullptr;
+  }
+  return NS_OK;
+}
 
 nsresult nsDocShell::OnLinkClick(
     nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
@@ -12104,9 +12223,9 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
-  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
-      this, aContent, loadState, noOpenerImplied, aTriggeringPrincipal);
-  return Dispatch(ev.forget());
+  auto result = OnLinkClickWithLoadState(aContent, loadState, noOpenerImplied,
+                                         aTriggeringPrincipal);
+  return result.isErr() ? result.unwrapErr() : NS_OK;
 }
 
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
@@ -12182,14 +12301,6 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
                                      bool aNoOpenerImplied,
                                      nsIPrincipal* aTriggeringPrincipal) {
   if (!IsNavigationAllowed() || !IsOKToLoadURI(aLoadState->URI())) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (aContent->IsHTMLElement(nsGkAtoms::form) &&
-      ShouldBlockLoadingForBackButton()) {
     return NS_OK;
   }
 
@@ -13183,4 +13294,22 @@ void nsDocShell::SetOngoingNavigation(
 
   
   mOngoingNavigation = aOngoingNavigation;
+}
+
+void nsDocShell::StopPendingJavascriptURLNavigations() {
+  nsCOMPtr<nsISimpleEnumerator> requests;
+  mLoadGroup->GetRequests(getter_AddRefs(requests));
+  bool hasMore;
+  while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
+    nsCOMPtr<nsISupports> elem;
+    requests->GetNext(getter_AddRefs(elem));
+    nsCOMPtr<nsIScriptChannel> script = do_QueryInterface(elem);
+    if (script) {
+      nsCOMPtr<nsIRequest> request = do_QueryInterface(elem);
+      MOZ_ASSERT(request);
+      mLoadGroup->CancelRequest(
+          request, "nsDocShell::StopPendingJavascriptNavigations"_ns,
+          NS_BINDING_ABORTED);
+    }
+  }
 }

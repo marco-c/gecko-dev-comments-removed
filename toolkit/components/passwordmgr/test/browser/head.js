@@ -188,18 +188,15 @@ async function getFormSubmitResponseResult(
   { username = "#user", password = "#pass" } = {}
 ) {
   
-  
-  
-  let fieldValues = await ContentTask.spawn(
+  if (!new URL(browser.currentURI.spec).pathname.endsWith(resultURL)) {
+    await BrowserTestUtils.browserLoaded(browser, false, url => {
+      return new URL(url).pathname.endsWith(resultURL);
+    });
+  }
+  let fieldValues = await SpecialPowers.spawn(
     browser,
-    { resultURL, usernameSelector: username, passwordSelector: password },
-    async function ({ resultURL, usernameSelector, passwordSelector }) {
-      await ContentTaskUtils.waitForCondition(() => {
-        return (
-          content.location.pathname.endsWith(resultURL) &&
-          content.document.readyState == "complete"
-        );
-      }, `Wait for form submission load (${resultURL})`);
+    [username, password],
+    (usernameSelector, passwordSelector) => {
       let username =
         content.document.querySelector(usernameSelector).textContent;
       
