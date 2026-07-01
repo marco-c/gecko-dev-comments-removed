@@ -8,6 +8,15 @@
 
 
 
+add_setup(async function () {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 add_task(async function test_search_input_popupshowing() {
   let sidebar = document.getElementById("sidebar");
 

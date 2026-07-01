@@ -13,6 +13,15 @@ var testPage3 =
 
 var fm = Services.focus;
 
+add_setup(async function () {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 async function expectFocusOnF6(
   backward,
   expectedDocument,
