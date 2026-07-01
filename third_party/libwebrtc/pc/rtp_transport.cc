@@ -64,9 +64,6 @@ RTCError VerifyExtensionIds(const RtpHeaderExtensions& extensions) {
   using ExtensionsUsed = std::bitset<1 + RtpExtension::kMaxId>;
   ExtensionsUsed id_used;
   for (const auto& extension : extensions) {
-    if (extension.id == 0) {
-      continue;
-    }
     if (extension.id < RtpExtension::kMinId ||
         extension.id > RtpExtension::kMaxId) {
       return RTCError::InvalidParameter()
@@ -239,9 +236,6 @@ RTCError RtpTransport::VerifyRtpHeaderExtensionMap(
   }
 
   for (const auto& new_extension : extensions) {
-    if (new_extension.id == 0) {
-      continue;
-    }
     
     
     
