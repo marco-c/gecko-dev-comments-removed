@@ -113,7 +113,12 @@ impl ColorFunction<AbsoluteColor> {
             ColorFunction::Rgb(origin_color, r, g, b, alpha) => {
                 
                 
-                let use_color_syntax = origin_color.is_some();
+                
+                let use_color_syntax = origin_color.is_some()
+                    || r.is_none()
+                    || g.is_none()
+                    || b.is_none()
+                    || alpha.is_none();
 
                 if use_color_syntax {
                     let origin_color = origin_color.as_ref().map(|origin| {
