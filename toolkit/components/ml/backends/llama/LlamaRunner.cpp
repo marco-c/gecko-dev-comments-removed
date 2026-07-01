@@ -16,6 +16,7 @@
 #include "nsXPCOM.h"
 #include "prsystem.h"
 #include "mozilla/Casting.h"
+#include "mozilla/ScopeExit.h"
 #include <cstddef>
 #include "mozilla/dom/Promise.h"
 
@@ -67,7 +68,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(LlamaStreamSource)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceAlgorithmsWrapper)
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(LlamaRunner, mStreamSource,
-                                               mGlobal)
+                                               mGlobal, mInitPromise)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LlamaRunner)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LlamaRunner)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(LlamaRunner)
@@ -689,7 +690,13 @@ void LlamaRunner::OnMetadataReceived() {
 #else
   PROsfd fd = PR_FileDesc2NativeHandle(fileDesc);
   FILE* fp = fdopen(fd, "r");
+  if (!fp) {
+    LOGE_RUNNER("Conversion to FILE* failed");
+    return;
+  }
 #endif
+
+  auto closeFp = mozilla::MakeScopeExit([fp] { fclose(fp); });
 
   auto result = mBackend->Reinitialize(LlamaModelOptions(mModelOptions), fp);
 
