@@ -38,49 +38,45 @@ async function renderPromo({
   promoImageSmall,
   promoButton = null,
 } = {}) {
-  const shouldShow = await RPMSendQuery("ShouldShowPromo", { type: promoType });
-  const container = document.querySelector(".promo");
+  const shouldShowPromo = await RPMSendQuery("ShouldShowPromo", {
+    type: promoType,
+  });
+  const novaEnabled = RPMGetBoolPref("browser.nova.enabled", false);
+  const legacyContainer = document.querySelector(".promo");
+  const novaContainer = document.querySelector(".nova-promo-wrapper");
 
-  if (!promoEnabled || !shouldShow) {
+  
+  
+  (novaEnabled ? legacyContainer : novaContainer)?.remove();
+  const container = novaEnabled ? novaContainer : legacyContainer;
+
+  if (!promoEnabled || !shouldShowPromo) {
     container.remove();
     return false;
   }
 
-  const titleEl = document.getElementById("private-browsing-promo-text");
-  const linkEl = document.getElementById("private-browsing-promo-link");
-  const promoHeaderEl = document.getElementById("promo-header");
-  const infoContainerEl = document.querySelector(".info");
-  const promoImageLargeEl = document.querySelector(".promo-image-large img");
-  const promoImageSmallEl = document.querySelector(".promo-image-small img");
-  const dismissBtn = document.querySelector("#dismiss-btn");
+  
+  
+  const dismissBtn = container.querySelector(
+    ".promo-dismiss, #nova-dismiss-btn"
+  );
 
-  if (promoLinkType === "link") {
-    linkEl.classList.remove("primary");
-    linkEl.classList.add("text-link", "promo-link");
-  }
+  const onLinkClick = async event => {
+    event.preventDefault();
 
-  if (promoButton?.action) {
-    linkEl.addEventListener("click", async event => {
-      event.preventDefault();
-
-      
-      
-      let isExperiment = window.PrivateBrowsingRecordClick("PromoLink");
-      const promoButtonData = promoButton?.action?.data;
-      if (
-        promoButton?.action?.type === "SHOW_SPOTLIGHT" &&
-        promoButtonData?.content
-      ) {
-        promoButtonData.content.metrics = isExperiment ? "allow" : "block";
-      }
-
-      await RPMSendQuery("SpecialMessageActionDispatch", promoButton.action);
-    });
-  } else {
     
-    container.remove();
-    return false;
-  }
+    
+    let isExperiment = window.PrivateBrowsingRecordClick("PromoLink");
+    const promoButtonData = promoButton?.action?.data;
+    if (
+      promoButton?.action?.type === "SHOW_SPOTLIGHT" &&
+      promoButtonData?.content
+    ) {
+      promoButtonData.content.metrics = isExperiment ? "allow" : "block";
+    }
+
+    await RPMSendQuery("SpecialMessageActionDispatch", promoButton.action);
+  };
 
   const onDismissBtnClick = () => {
     window.ASRouterMessage({
@@ -94,6 +90,127 @@ async function renderPromo({
   if (dismissBtn && messageId) {
     dismissBtn.addEventListener("click", onDismissBtnClick, { once: true });
   }
+
+  
+  if (!promoButton?.action) {
+    container.remove();
+    return false;
+  }
+
+  if (novaEnabled) {
+    await renderNovaPromo({
+      container,
+      promoTitle,
+      promoTitleEnabled,
+      promoLinkText,
+      promoHeader,
+      promoImageLarge,
+      onLinkClick,
+    });
+  } else {
+    renderLegacyPromo({
+      container,
+      promoTitle,
+      promoTitleEnabled,
+      promoLinkText,
+      promoLinkType,
+      promoSectionStyle,
+      promoHeader,
+      promoImageLarge,
+      promoImageSmall,
+      onLinkClick,
+    });
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+async function resolvePromoText(value) {
+  if (!value) {
+    return "";
+  }
+  const fluentId = value.replace(/^fluent:/, "");
+  if (fluentId !== value) {
+    return document.l10n.formatValue(fluentId);
+  }
+  return value;
+}
+
+
+
+
+
+
+async function renderNovaPromo({
+  container,
+  promoTitle,
+  promoTitleEnabled,
+  promoLinkText,
+  promoHeader,
+  promoImageLarge,
+  onLinkClick,
+}) {
+  const promoEl = container.querySelector("#nova-promo");
+  const linkEl = container.querySelector("#nova-promo-link");
+
+  
+  
+  await customElements.whenDefined("moz-promo");
+
+  if (promoHeader) {
+    promoEl.heading = await resolvePromoText(promoHeader);
+  }
+  if (promoTitleEnabled) {
+    promoEl.message = await resolvePromoText(promoTitle);
+  }
+  if (promoImageLarge) {
+    promoEl.imageSrc = promoImageLarge;
+  }
+
+  linkEl.textContent = await resolvePromoText(promoLinkText);
+  linkEl.addEventListener("click", onLinkClick);
+
+  const infoBorderEl = document.querySelector(".info-border");
+  infoBorderEl?.insertAdjacentElement("beforebegin", container);
+
+  container.hidden = false;
+}
+
+
+
+
+function renderLegacyPromo({
+  container,
+  promoTitle,
+  promoTitleEnabled,
+  promoLinkText,
+  promoLinkType,
+  promoSectionStyle,
+  promoHeader,
+  promoImageLarge,
+  promoImageSmall,
+  onLinkClick,
+}) {
+  const titleEl = document.getElementById("private-browsing-promo-text");
+  const linkEl = document.getElementById("private-browsing-promo-link");
+  const promoHeaderEl = document.getElementById("promo-header");
+  const infoContainerEl = document.querySelector(".info");
+  const promoImageLargeEl = document.querySelector(".promo-image-large img");
+  const promoImageSmallEl = document.querySelector(".promo-image-small img");
+
+  if (promoLinkType === "link") {
+    linkEl.classList.remove("primary");
+    linkEl.classList.add("text-link", "promo-link");
+  }
+
+  linkEl.addEventListener("click", onLinkClick);
 
   if (promoSectionStyle) {
     container.classList.add(promoSectionStyle);
@@ -177,8 +294,8 @@ function handlePromoOnPreload(message) {
     if (document.visibilityState === "visible") {
       let blocked = await RPMSendQuery("IsPromoBlocked", message);
       if (blocked) {
-        const container = document.querySelector(".promo");
-        container.remove();
+        const container = document.querySelector(".promo, .nova-promo-wrapper");
+        container?.remove();
       }
     }
     document.removeEventListener("visibilitychange", removePromoIfBlocked);
