@@ -3077,6 +3077,16 @@ const MIN_RICH_FAVICON_SIZE = 96;
 
 const MIN_SMALL_FAVICON_SIZE = 16;
 
+
+const SPOC_TYPE = "SPOC";
+
+
+
+
+function isSponsored(link) {
+  return link?.sponsored_position || link?.type === SPOC_TYPE;
+}
+
 ;
 
 
@@ -8525,17 +8535,7 @@ function TopSite_extends() { return TopSite_extends = Object.assign ? Object.ass
 
 
 
-const SPOC_TYPE = "SPOC";
 const NEWTAB_SOURCE = "newtab";
-
-
-
-
-
-
-function isSponsored(link) {
-  return link?.sponsored_position || link?.type === SPOC_TYPE;
-}
 class TopSiteLink extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -9126,17 +9126,12 @@ class _TopSiteList extends (external_React_default()).PureComponent {
   static get DEFAULT_STATE() {
     return {
       activeIndex: null,
-      draggedIndex: null,
-      draggedSite: null,
-      draggedTitle: null,
-      topSitesPreview: null,
       focusedIndex: 0
     };
   }
   constructor(props) {
     super(props);
     this.state = _TopSiteList.DEFAULT_STATE;
-    this.onDragEvent = this.onDragEvent.bind(this);
     this.onActivate = this.onActivate.bind(this);
     this.onWrapperFocus = this.onWrapperFocus.bind(this);
     this.onTopsiteFocus = this.onTopsiteFocus.bind(this);
@@ -9144,156 +9139,16 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     this.onKeyDown = this.onKeyDown.bind(this);
   }
   componentDidUpdate(prevProps) {
-    if (this.state.draggedSite) {
-      const prevTopSites = prevProps.TopSites && prevProps.TopSites.rows;
-      const newTopSites = this.props.TopSites && this.props.TopSites.rows;
-      if (prevTopSites && prevTopSites[this.state.draggedIndex] && prevTopSites[this.state.draggedIndex].url === this.state.draggedSite.url && (!newTopSites[this.state.draggedIndex] || newTopSites[this.state.draggedIndex].url !== this.state.draggedSite.url)) {
-        
-        
-        this.setState(_TopSiteList.DEFAULT_STATE);
-      }
-    }
-  }
-  userEvent(event, index) {
-    this.props.dispatch(actionCreators.UserEvent({
-      event,
-      source: TOP_SITES_SOURCE,
-      action_position: index
-    }));
-  }
-  onDragEvent(event, index, link, title) {
-    switch (event.type) {
-      case "dragstart":
-        this.dropped = false;
-        this.setState({
-          draggedIndex: index,
-          draggedSite: link,
-          draggedTitle: title,
-          activeIndex: null
-        });
-        this.userEvent("DRAG", index);
-        break;
-      case "dragend":
-        if (!this.dropped) {
-          
-          this.setState(_TopSiteList.DEFAULT_STATE);
-        }
-        break;
-      case "dragenter":
-        if (index === this.state.draggedIndex) {
-          this.setState({
-            topSitesPreview: null
-          });
-        } else {
-          this.setState({
-            topSitesPreview: this._makeTopSitesPreview(index)
-          });
-        }
-        break;
-      case "drop":
-        if (index !== this.state.draggedIndex) {
-          this.dropped = true;
-          this.props.dispatch(actionCreators.AlsoToMain({
-            type: actionTypes.TOP_SITES_INSERT,
-            data: {
-              site: {
-                url: this.state.draggedSite.url,
-                label: this.state.draggedTitle,
-                customScreenshotURL: this.state.draggedSite.customScreenshotURL,
-                
-                ...(this.state.draggedSite.searchTopSite && {
-                  searchTopSite: true
-                })
-              },
-              index,
-              draggedFromIndex: this.state.draggedIndex
-            }
-          }));
-          this.userEvent("DROP", index);
-        }
-        break;
-    }
-  }
-  _getTopSites() {
-    
-    let topSites = this.props.TopSites.rows.slice();
-    topSites.length = (this.props.TopSitesRows ?? 0) * (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
     
     
-    const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
-
-    
-    
-    
-    
-    let targetPosition = 0;
-    for (let i = topSites.length - 1; i >= 0; i--) {
-      if (topSites[i] && !topSites[i].isAddButton) {
-        targetPosition = i + 1;
-        break;
-      }
-    }
-    if (addButtonIndex === -1) {
+    const started = !prevProps.draggedSite && this.props.draggedSite;
+    const ended = prevProps.draggedSite && !this.props.draggedSite;
+    if (started || ended) {
       
-      if (targetPosition < topSites.length) {
-        topSites[targetPosition] = {
-          isAddButton: true
-        };
-      }
-    } else if (addButtonIndex !== targetPosition) {
-      
-      const [button] = topSites.splice(addButtonIndex, 1);
-      
-      const adjustedTarget = addButtonIndex < targetPosition ? targetPosition - 1 : targetPosition;
-      topSites[adjustedTarget] = button;
+      this.setState(ended ? _TopSiteList.DEFAULT_STATE : {
+        activeIndex: null
+      });
     }
-    return topSites;
-  }
-
-  
-
-
-
-  _makeTopSitesPreview(index) {
-    const topSites = this._getTopSites();
-    topSites[this.state.draggedIndex] = null;
-    const preview = topSites.map(site => site && (site.isPinned || isSponsored(site) || site.isAddButton) ? site : null);
-    const unpinned = topSites.filter(site => site && !site.isPinned && !isSponsored(site) && !site.isAddButton);
-    const siteToInsert = Object.assign({}, this.state.draggedSite, {
-      isPinned: true,
-      isDragged: true
-    });
-    if (!preview[index]) {
-      preview[index] = siteToInsert;
-    } else {
-      
-      
-      let holeIndex = index;
-      const indexStep = index > this.state.draggedIndex ? -1 : 1;
-      while (preview[holeIndex]) {
-        holeIndex += indexStep;
-      }
-
-      
-      const shiftingStep = index > this.state.draggedIndex ? 1 : -1;
-      while (index > this.state.draggedIndex ? holeIndex < index : holeIndex > index) {
-        let nextIndex = holeIndex + shiftingStep;
-        while (preview[nextIndex] && (isSponsored(preview[nextIndex]) || preview[nextIndex].isAddButton)) {
-          nextIndex += shiftingStep;
-        }
-        preview[holeIndex] = preview[nextIndex];
-        holeIndex = nextIndex;
-      }
-      preview[index] = siteToInsert;
-    }
-
-    
-    for (let i = 0; i < preview.length; i++) {
-      if (!preview[i]) {
-        preview[i] = unpinned.shift() || null;
-      }
-    }
-    return preview;
   }
   onActivate(index) {
     this.setState({
@@ -9331,10 +9186,10 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     const {
       props
     } = this;
-    const topSites = this.state.topSitesPreview || this._getTopSites();
+    const topSites = this.props.sites;
     const topSitesUI = [];
     const commonProps = {
-      onDragEvent: this.onDragEvent,
+      onDragEvent: this.props.onDragEvent,
       dispatch: props.dispatch
     };
     
@@ -9429,7 +9284,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       ref: el => {
         this.focusRef = el;
       },
-      className: `top-sites-list${this.state.draggedSite ? " dnd-active" : ""}`,
+      className: `top-sites-list${this.props.draggedSite ? " dnd-active" : ""}`,
       style: {
         "--top-sites-max-per-row": this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW
       }
@@ -9726,6 +9581,235 @@ TopSiteForm.defaultProps = {
   index: -1
 };
 ;
+
+
+
+
+
+
+
+
+
+function useTopSitesDnD({
+  baseSites,
+  rows,
+  isMovable,
+  
+  isShiftable,
+  
+  onDragStart,
+  onReorder 
+}) {
+  const [draggedIndex, setDraggedIndex] = (0,external_React_namespaceObject.useState)(null);
+  const [draggedSite, setDraggedSite] = (0,external_React_namespaceObject.useState)(null);
+  const [draggedTitle, setDraggedTitle] = (0,external_React_namespaceObject.useState)(null);
+  const [previewSites, setPreviewSites] = (0,external_React_namespaceObject.useState)(null);
+  
+  const droppedRef = (0,external_React_namespaceObject.useRef)(false);
+  const resetDrag = (0,external_React_namespaceObject.useCallback)(() => {
+    setDraggedIndex(null);
+    setDraggedSite(null);
+    setDraggedTitle(null);
+    setPreviewSites(null);
+  }, []);
+
+  
+  
+  const makeTopSitesPreview = (0,external_React_namespaceObject.useCallback)(index => {
+    const sites = baseSites.slice(); 
+    sites[draggedIndex] = null;
+    const preview = sites.map(site => site && !isMovable(site) ? site : null);
+    const pool = sites.filter(site => site && isMovable(site));
+    const siteToInsert = Object.assign({}, draggedSite, {
+      isPinned: true,
+      isDragged: true
+    });
+    if (!preview[index]) {
+      preview[index] = siteToInsert;
+    } else {
+      
+      let holeIndex = index;
+      const indexStep = index > draggedIndex ? -1 : 1;
+      while (preview[holeIndex]) {
+        holeIndex += indexStep;
+      }
+      const shiftingStep = index > draggedIndex ? 1 : -1;
+      while (index > draggedIndex ? holeIndex < index : holeIndex > index) {
+        let nextIndex = holeIndex + shiftingStep;
+        
+        while (preview[nextIndex] && !isMovable(preview[nextIndex]) && !isShiftable(preview[nextIndex])) {
+          nextIndex += shiftingStep;
+        }
+        preview[holeIndex] = preview[nextIndex];
+        holeIndex = nextIndex;
+      }
+      preview[index] = siteToInsert;
+    }
+    for (let i = 0; i < preview.length; i++) {
+      if (!preview[i]) {
+        preview[i] = pool.shift() || null;
+      }
+    }
+    return preview;
+  }, [baseSites, draggedIndex, draggedSite, isMovable, isShiftable]);
+  const onDragEvent = (0,external_React_namespaceObject.useCallback)((event, index, link, title) => {
+    switch (event.type) {
+      case "dragstart":
+        droppedRef.current = false;
+        setDraggedIndex(index);
+        setDraggedSite(link);
+        setDraggedTitle(title);
+        onDragStart?.(index);
+        break;
+      case "dragend":
+        if (!droppedRef.current) {
+          resetDrag();
+        }
+        break;
+      case "dragenter":
+        if (index === draggedIndex) {
+          setPreviewSites(null);
+        } else {
+          setPreviewSites(makeTopSitesPreview(index));
+        }
+        break;
+      case "drop":
+        if (index !== draggedIndex) {
+          droppedRef.current = true;
+          onReorder?.({
+            site: draggedSite,
+            title: draggedTitle,
+            fromIndex: draggedIndex,
+            toIndex: index
+          });
+        }
+        break;
+    }
+  }, [draggedIndex, draggedSite, draggedTitle, makeTopSitesPreview, onDragStart, onReorder, resetDrag]);
+
+  
+  
+  const prevRowsRef = (0,external_React_namespaceObject.useRef)(rows);
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const prevRows = prevRowsRef.current;
+    if (draggedSite && prevRows && prevRows[draggedIndex] && prevRows[draggedIndex].url === draggedSite.url && (!rows[draggedIndex] || rows[draggedIndex].url !== draggedSite.url)) {
+      resetDrag();
+    }
+    prevRowsRef.current = rows;
+  }, [rows, draggedSite, draggedIndex, resetDrag]);
+  return {
+    previewSites,
+    onDragEvent,
+    draggedSite
+  };
+}
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function buildTopSitesList(rows, topSitesRows, maxSitesPerRow) {
+  let topSites = rows.slice();
+  topSites.length = (topSitesRows ?? 0) * (maxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
+  const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
+
+  
+  let targetPosition = 0;
+  for (let i = topSites.length - 1; i >= 0; i--) {
+    if (topSites[i] && !topSites[i].isAddButton) {
+      targetPosition = i + 1;
+      break;
+    }
+  }
+  if (addButtonIndex === -1) {
+    if (targetPosition < topSites.length) {
+      topSites[targetPosition] = {
+        isAddButton: true
+      };
+    }
+  } else if (addButtonIndex !== targetPosition) {
+    const [button] = topSites.splice(addButtonIndex, 1);
+    const adjustedTarget = addButtonIndex < targetPosition ? targetPosition - 1 : targetPosition;
+    topSites[adjustedTarget] = button;
+  }
+  return topSites;
+}
+
+
+const isMovable = site => !site.isPinned && !isSponsored(site) && !site.isAddButton;
+const isShiftable = site => !!site.isPinned;
+
+
+
+function TopSiteListContainer(props) {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const baseSites = (0,external_React_namespaceObject.useMemo)(() => buildTopSitesList(props.TopSites.rows, props.TopSitesRows, props.topSitesMaxSitesPerRow), [props.TopSites.rows, props.TopSitesRows, props.topSitesMaxSitesPerRow]);
+  const onDragStart = (0,external_React_namespaceObject.useCallback)(index => dispatch(actionCreators.UserEvent({
+    event: "DRAG",
+    source: TOP_SITES_SOURCE,
+    action_position: index
+  })), [dispatch]);
+  const onReorder = (0,external_React_namespaceObject.useCallback)(({
+    site,
+    title,
+    fromIndex,
+    toIndex
+  }) => {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.TOP_SITES_INSERT,
+      data: {
+        site: {
+          url: site.url,
+          label: title,
+          customScreenshotURL: site.customScreenshotURL,
+          ...(site.searchTopSite && {
+            searchTopSite: true
+          })
+        },
+        index: toIndex,
+        draggedFromIndex: fromIndex
+      }
+    }));
+    dispatch(actionCreators.UserEvent({
+      event: "DROP",
+      source: TOP_SITES_SOURCE,
+      action_position: toIndex
+    }));
+  }, [dispatch]);
+  const {
+    previewSites,
+    onDragEvent,
+    draggedSite
+  } = useTopSitesDnD({
+    baseSites,
+    rows: props.TopSites.rows,
+    isMovable,
+    isShiftable,
+    onDragStart,
+    onReorder
+  });
+  return external_React_default().createElement(TopSiteList, {
+    TopSitesRows: props.TopSitesRows,
+    topSitesMaxSitesPerRow: props.topSitesMaxSitesPerRow,
+    dispatch: props.dispatch,
+    topSiteIconType: props.topSiteIconType,
+    colors: props.colors,
+    visibleTopSites: props.visibleTopSites,
+    sites: previewSites || baseSites,
+    onDragEvent: onDragEvent,
+    draggedSite: draggedSite
+  });
+}
+;
 function TopSites_extends() { return TopSites_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSites_extends.apply(null, arguments); }
 
 
@@ -9876,7 +9960,7 @@ class _TopSites extends (external_React_default()).PureComponent {
       "data-section-id": "topsites"
     }, external_React_default().createElement(ErrorBoundary, {
       className: "section-body-fallback"
-    }, external_React_default().createElement(TopSiteList, {
+    }, external_React_default().createElement(TopSiteListContainer, {
       TopSites: props.TopSites,
       TopSitesRows: props.TopSitesRows,
       topSitesMaxSitesPerRow: props.TopSitesMaxSitesPerRow,
