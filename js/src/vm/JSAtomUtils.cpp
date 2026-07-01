@@ -153,12 +153,12 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
   
   
   
+  
+  
   static const WellKnownAtomInfo symbolDescInfo[] = {
-#define COMMON_NAME_INFO(NAME)                                  \
-  {uint32_t(sizeof("Symbol." #NAME) - 1),                       \
-   mozilla::HashStringKnownLength("Symbol." #NAME,              \
-                                  sizeof("Symbol." #NAME) - 1), \
-   "Symbol." #NAME},
+#define COMMON_NAME_INFO(NAME)            \
+  {uint32_t(sizeof("Symbol." #NAME) - 1), \
+   mozilla::HashString(u"Symbol." #NAME), "Symbol." #NAME},
       JS_FOR_EACH_WELL_KNOWN_SYMBOL(COMMON_NAME_INFO)
 #undef COMMON_NAME_INFO
   };
