@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WebAuthnEnumStrings_h
 #define mozilla_dom_WebAuthnEnumStrings_h
 
@@ -46,5 +44,8 @@
 #define MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_INTERNAL "internal"
 #define MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_HYBRID "hybrid"
 
+
+
+#define MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_CABLE "cable"
 
 #endif  
