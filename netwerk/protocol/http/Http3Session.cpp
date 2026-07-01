@@ -2157,7 +2157,9 @@ void Http3Session::CloseInternal(bool aCallNeqoClose) {
 
   LOG(("Http3Session::Closing [this=%p]", this));
 
-  if (mState != CONNECTED) {
+  
+  
+  if (mState != CONNECTED && NS_FAILED(mError)) {
     mBeforeConnectedError = true;
   }
 
