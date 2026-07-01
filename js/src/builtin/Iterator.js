@@ -2160,6 +2160,8 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
   
 }
 
+#endif
+
 
 
 
@@ -2231,8 +2233,6 @@ function IteratorJoin(separator) {
   
   return R;
 }
-
-#endif
 
 
 
