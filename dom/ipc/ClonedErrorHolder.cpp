@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/ClonedErrorHolder.h"
 
 #include "js/StructuredClone.h"
