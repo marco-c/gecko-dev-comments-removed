@@ -374,7 +374,23 @@ class AttrArray {
 
   
   
-  static uint64_t HashForBloomFilter(const nsAtom* aAtom);
+  static uint64_t HashForBloomFilter(const nsAtom* aAtom) {
+    if (!aAtom) {
+      return 1ULL;  
+    }
+    
+    
+    constexpr int kAttrBloomBits = sizeof(uintptr_t) == 4 ? 31 : 63;
+
+    uint32_t hash = aAtom->hash();
+    uint64_t filter = 1ULL;
+    
+    uint32_t bit1 = hash % kAttrBloomBits;
+    uint32_t bit2 = (hash >> 6) % kAttrBloomBits;
+    filter |= 1ULL << (1 + bit1);
+    filter |= 1ULL << (1 + bit2);
+    return filter;
+  }
 
  private:
   

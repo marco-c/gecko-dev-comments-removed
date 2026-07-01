@@ -57,6 +57,9 @@ class NodeInfo final {
   nsAtom* NameAtom() const { return mInner.mName; }
 
   
+  uint64_t NameBloomFilterHash() const { return mNameBloomHash; }
+
+  
 
 
 
@@ -78,9 +81,7 @@ class NodeInfo final {
   
 
 
-  const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const {
-    return mInner.HTMLTag();
-  }
+  const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const;
 
   
 
@@ -274,8 +275,6 @@ class NodeInfo final {
       return mHash.value();
     }
 
-    const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const;
-
     nsAtom* const MOZ_OWNING_REF mName;
     nsAtom* MOZ_OWNING_REF mPrefix;
     int32_t mNamespaceID;
@@ -283,7 +282,6 @@ class NodeInfo final {
     const nsAString* const mNameString;
     nsAtom* MOZ_OWNING_REF mExtraName;  
     mutable mozilla::Maybe<const uint32_t> mHash;
-    mutable mozilla::Maybe<const nsHTMLTag> mHTMLTag;
   };
 
   
@@ -311,6 +309,10 @@ class NodeInfo final {
   
   
   nsString mLocalName;
+
+  
+  uint64_t mNameBloomHash;
+  mutable Maybe<const nsHTMLTag> mHTMLTag;
 };
 
 }  

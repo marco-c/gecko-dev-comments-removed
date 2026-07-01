@@ -2864,6 +2864,12 @@ void Element::VerifySubtreeBloomFilter() const {
   expectedBloom |= HashClassesForBloom(GetClasses());
 
   
+  uint64_t localNameHash = NodeInfo()->NameBloomFilterHash();
+  MOZ_ASSERT(localNameHash ==
+             AttrArray::HashForBloomFilter(NodeInfo()->NameAtom()));
+  expectedBloom |= localNameHash;
+
+  
   for (Element* child = GetFirstElementChild(); child;
        child = child->GetNextElementSibling()) {
     expectedBloom |= child->mAttrs.GetSubtreeBloomFilter();
