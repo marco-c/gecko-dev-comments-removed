@@ -94,8 +94,6 @@ class Preferences final : public nsIPrefService,
   friend class ::nsPrefBranch;
 
  public:
-  using WritePrefFilePromise = MozPromise<bool, nsresult, false>;
-
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPREFSERVICE
   NS_DECL_NSIPREFBRANCH
@@ -124,11 +122,7 @@ class Preferences final : public nsIPrefService,
 
   
   static nsIPrefBranch* GetRootBranch(
-      PrefValueKind aKind = PrefValueKind::User) {
-    NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
-    return (aKind == PrefValueKind::Default) ? sPreferences->mDefaultRootBranch
-                                             : sPreferences->mRootBranch;
-  }
+      PrefValueKind aKind = PrefValueKind::User);
 
   
   static nsIPrefBranch::PreferenceType GetType(const char* aPrefName);
@@ -463,36 +457,9 @@ class Preferences final : public nsIPrefService,
   bool AllowOffMainThreadSave();
 
  private:
+  friend class PreferencesImpl;
+
   ~Preferences();
-
-  nsresult NotifyServiceObservers(const char* aSubject);
-
-  
-  
-  already_AddRefed<nsIFile> ReadSavedPrefs();
-
-  
-  void ReadUserOverridePrefs();
-
-  nsresult MakeBackupPrefFile(nsIFile* aFile);
-
-  
-  enum class SaveMethod { Blocking, Asynchronous };
-
-  
-  nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
-
-  nsresult WritePrefFile(
-      nsIFile* aFile, SaveMethod aSaveMethod,
-      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
-      const nsIPrefOverrideMap* aPrefOverrideMap = nullptr);
-
-  nsresult ResetUserPrefs();
-
-  static void SetupTelemetryPref();
-  static nsresult InitInitialObjects(bool aIsStartup);
-
-  friend struct Internals;
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const nsACString& aPref, void* aClosure,
@@ -508,20 +475,6 @@ class Preferences final : public nsIPrefService,
                                       bool aPrefixMatch);
 
   static uint32_t UnregisterCallbacksForBranch(nsPrefBranch* aBranch);
-
- private:
-  nsCOMPtr<nsIFile> mCurrentFile;
-  nsCOMPtr<nsISerialEventTarget> mAsyncTarget;
-  
-  PRTime mUserPrefsFileLastModifiedAtStartup = 0;
-  bool mDirty = false;
-  bool mProfileShutdown = false;
-  
-  
-  bool mSavePending = false;
-
-  nsCOMPtr<nsIPrefBranch> mRootBranch;
-  nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
 
   static StaticRefPtr<Preferences> sPreferences;
   static bool sShutdown;
