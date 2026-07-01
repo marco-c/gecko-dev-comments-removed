@@ -1288,6 +1288,19 @@ void* GetPromiseResults(Instance* instance, void* promiseRef,
   if (!promise) {
     return nullptr;
   }
+
+  
+  
+  
+  
+  
+  
+  if (promise->state() == JS::PromiseState::Pending) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_JSPI_INVALID_STATE);
+    return nullptr;
+  }
+
   bool promiseRejected = promise->state() == JS::PromiseState::Rejected;
   RootedValue promiseReasonOrValue(cx, promise->valueOrReason());
   if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
