@@ -229,7 +229,7 @@ function createChannel(url) {
      null,
      dummyPrincipal,
      dummyPrincipal,
-     0,
+     Ci.nsILoadInfo.SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT,
      Ci.nsIContentPolicy.TYPE_FETCH
   );
 }
@@ -326,6 +326,9 @@ add_task(async function after_basic_fetch_and_gc() {
 
 
 
+
+
+
 add_task(async function getRegisteredChannel_after_response_start() {
   const dummyPolicy = new WebExtensionPolicy({
     id: "@dummyPolicy",
@@ -354,8 +357,8 @@ add_task(async function getRegisteredChannel_after_response_start() {
   channelWrapper.registerTraceableChannel(dummyPolicy, null);
   Assert.equal(
     ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, null),
-    channelWrapper,
-    "getRegisteredChannel() returns wrapper after registerTraceableChannel()"
+    null,
+    "registerTraceableChannel after channel start does not register"
   );
   
   channelWrapper.channel = channel;
@@ -371,6 +374,44 @@ add_task(async function getRegisteredChannel_after_response_start() {
   );
   channelWrapperEquals(channelWrapper, EXPECTATION_INVALID_CHANNEL);
   checkChannelWrapperMethodsAfterGC(channelWrapper);
+});
+
+add_task(async function getRegisteredChannel_after_open() {
+  
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["<all_urls>"] },
+    background() {},
+  });
+  await extension.startup();
+  const dummyPolicy = extension.extension.policy;
+  const { remoteTab } =
+    extension.extension.backgroundContext.xulBrowser.frameLoader;
+
+  const channel = createChannel("http://example.com/home");
+  const channelWrapper = ChannelWrapper.get(channel);
+  const channelId = channelWrapper.id;
+
+  channelWrapper.registerTraceableChannel(dummyPolicy, remoteTab);
+  Assert.equal(
+    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
+    null,
+    "registerTraceableChannel before channel open is ignored"
+  );
+  channel.asyncOpen({
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener"]),
+    onStartRequest() {},
+    onStopRequest() {},
+    onDataAvailable() {},
+  });
+  channelWrapper.registerTraceableChannel(dummyPolicy, remoteTab);
+  Assert.equal(
+    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
+    channelWrapper,
+    "registerTraceableChannel after channel open is accepted"
+  );
+
+  channel.cancel(Cr.NS_ERROR_ABORT);
+  await extension.unload();
 });
 
 add_task(async function ChannelWrapper_https_url() {

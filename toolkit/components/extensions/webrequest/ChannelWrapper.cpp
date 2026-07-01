@@ -851,6 +851,16 @@ void ChannelWrapper::RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
   if (!mChannelEntry) {
     mChannelEntry = WebRequestService::GetSingleton().RegisterChannel(this);
     CheckEventListeners();
+    if (!mAddedStreamListener) {
+      
+      
+      
+      
+      
+      
+      
+      mChannelEntry = nullptr;
+    }
   }
 }
 
@@ -1334,6 +1344,10 @@ void ChannelWrapper::CheckEventListeners() {
        HasListenersFor(nsGkAtoms::onstop) || mChannelEntry)) {
     auto listener = MakeRefPtr<RequestListener>(this);
     if (!NS_WARN_IF(NS_FAILED(listener->Init()))) {
+      
+      
+      
+      
       mAddedStreamListener = true;
     }
   }
