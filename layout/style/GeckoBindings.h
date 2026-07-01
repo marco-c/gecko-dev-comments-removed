@@ -374,6 +374,10 @@ nscoord Gecko_CalcLineHeight(const mozilla::StyleLineHeight*,
                              const mozilla::dom::Element* aElement);
 
 
+
+float Gecko_CalcAutoDecorationInset(float aFontSize);
+
+
 const mozilla::ServoElementSnapshot* Gecko_GetElementSnapshot(
     const mozilla::ServoElementSnapshotTable* table,
     const mozilla::dom::Element*);

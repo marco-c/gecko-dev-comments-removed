@@ -21,6 +21,7 @@
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/GeckoBindings.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
@@ -5831,15 +5832,10 @@ static bool ComputeDecorationInset(
       aDecFrame->StyleTextReset()->mTextDecorationInset;
   nscoord insetLeft, insetRight;
   if (cssInset.IsAuto()) {
-    
-    
-    constexpr gfxFloat kAutoInsetFactor = 1.0 / 12.5;
-    
-    
-    const nscoord autoDecorationInset =
-        std::max(aPresCtx->DevPixelsToAppUnits(
-                     NS_round(aMetrics.emHeight * kAutoInsetFactor)),
-                 nsPresContext::CSSPixelsToAppUnits(1));
+    const float emSize =
+        aMetrics.emHeight / aPresCtx->CSSToDevPixelScale().scale;
+    const nscoord autoDecorationInset = nsPresContext::CSSPixelsToAppUnits(
+        Gecko_CalcAutoDecorationInset(emSize));
     insetLeft = autoDecorationInset;
     insetRight = autoDecorationInset;
   } else {

@@ -345,6 +345,16 @@ nscoord Gecko_CalcLineHeight(const StyleLineHeight* aLh,
                                      aElement, NS_UNCONSTRAINEDSIZE, 1.0f);
 }
 
+float Gecko_CalcAutoDecorationInset(float aFontSize) {
+  
+  
+  constexpr float kAutoInsetFactor = 1.0 / 12.5;
+
+  
+  
+  return std::max(1.0f, aFontSize * kAutoInsetFactor);
+}
+
 const ServoElementSnapshot* Gecko_GetElementSnapshot(
     const ServoElementSnapshotTable* aTable, const Element* aElement) {
   MOZ_ASSERT(aTable);
@@ -864,12 +874,16 @@ bool Gecko_LookupAttrValue(const Element* aElement, nsAtom& aNamespace,
     attrNameSpace = nsNameSpaceManager::GetInstance()->GetNameSpaceID(
         &aNamespace, nsContentUtils::IsChromeDoc(aElement->OwnerDoc()));
   }
-  if (aName.IsAsciiLowercase() || !aElement->OwnerDoc()->IsHTMLDocument()) {
-    return aElement->GetAttr(attrNameSpace, &aName, aResult);
+  
+  
+  
+  if (!aName.IsAsciiLowercase() && aElement->OwnerDoc()->IsHTMLDocument() &&
+      aElement->IsHTMLElement()) {
+    RefPtr<nsAtom> lowercaseName(&aName);
+    ToLowerCaseASCII(lowercaseName);
+    return aElement->GetAttr(attrNameSpace, lowercaseName, aResult);
   }
-  RefPtr<nsAtom> lowercaseName(&aName);
-  ToLowerCaseASCII(lowercaseName);
-  return aElement->GetAttr(attrNameSpace, lowercaseName, aResult);
+  return aElement->GetAttr(attrNameSpace, &aName, aResult);
 }
 
 template <typename Implementor>

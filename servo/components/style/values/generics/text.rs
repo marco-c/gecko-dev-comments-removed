@@ -171,16 +171,12 @@ pub enum GenericTextDecorationLength<L> {
 
 #[repr(C, u8)]
 #[derive(
-    Animate,
     Clone,
-    ComputeSquaredDistance,
     Debug,
     Eq,
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
