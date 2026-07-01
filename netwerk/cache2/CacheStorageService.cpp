@@ -11,7 +11,9 @@
 #include "CacheStorage.h"
 #include "CacheEntry.h"
 #include "CacheFileUtils.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 
+#include "nsQueryObject.h"
 #include "ErrorList.h"
 #include "nsICacheStorageVisitor.h"
 #include "nsIObserverService.h"
@@ -27,6 +29,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/Services.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -1203,6 +1206,39 @@ void CacheStorageService::MarkForcedValidEntryUse(nsACString const& aContextKey,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CacheStorageService::NoteNoVarySearchEntry(const nsACString& aContextKey,
+                                                const nsACString& aBasePath,
+                                                const nsACString& aFullKey) {
+  StaticMutexAutoLock lock(sLock);
+  CacheEntryTable* entries = sGlobalEntryTables->Get(aContextKey);
+  if (entries) {
+    entries->NoteNoVarySearchEntry(aBasePath, aFullKey);
+  }
+}
+
+void CacheStorageService::NoteNoVarySearchEntry(nsICacheEntry* aEntry,
+                                                nsIURI* aURI) {
+  RefPtr<CacheEntryHandle> handle = do_QueryObject(aEntry);
+  if (handle) {
+    handle->Entry()->NoteNoVarySearchEntry(aURI);
+  }
+}
+
+
+
 void CacheStorageService::ForceEntryValidFor(nsACString const& aContextKey,
                                              nsACString const& aEntryKey,
                                              uint32_t aSecondsToTheFuture) {
@@ -1610,6 +1646,10 @@ nsresult CacheStorageService::AddStorageEntry(
   RefPtr<CacheEntry> entry;
   RefPtr<CacheEntryHandle> handle;
 
+  bool nvsHadCandidates = false;
+  bool nvsMatched = false;
+  nsAutoCString nvsMatchedRuleLabel;
+
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -1634,6 +1674,66 @@ nsresult CacheStorageService::AddStorageEntry(
         StaticPrefs::network_cache_bug1708673()) {
       return NS_ERROR_CACHE_KEY_NOT_FOUND;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (StaticPrefs::network_cache_no_vary_search() && !entryExists &&
+        !(aFlags & nsICacheStorage::OPEN_TRUNCATE)) {
+      nsCOMPtr<nsIURI> incomingURI;
+      nsAutoCString basePath;
+      if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(incomingURI), aURI)) &&
+          NS_SUCCEEDED(ExtractNoVarySearchBasePath(incomingURI, basePath))) {
+        auto candidates = entries->mNoVarySearchIndex.Lookup(basePath);
+        if (candidates) {
+          nvsHadCandidates = true;
+          for (const auto& fullKey : *candidates) {
+            RefPtr<CacheEntry> candidate;
+            if (!entries->Get(fullKey, getter_AddRefs(candidate))) {
+              continue;
+            }
+
+            nsAutoCString nvsVal;
+            candidate->GetMetaDataElement("no-vary-search",
+                                          getter_Copies(nvsVal));
+            if (nvsVal.IsEmpty()) {
+              continue;
+            }
+
+            nsAutoCString candidateSpec;
+            candidate->GetKey(candidateSpec);
+            nsCOMPtr<nsIURI> candidateURI;
+            if (NS_FAILED(
+                    NS_NewURI(getter_AddRefs(candidateURI), candidateSpec))) {
+              continue;
+            }
+
+            auto data = ParseNoVarySearchHeader(nvsVal);
+            if (URLsAreEquivalentModuloVariationConfig(incomingURI,
+                                                       candidateURI, data)) {
+              nvsMatched = true;
+              nvsMatchedRuleLabel = NoVarySearchRuleLabel(data.paramsRule);
+              entry = candidate;
+              entryExists = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     if (entryExists && (aFlags & nsICacheStorage::OPEN_COMPLETE_ONLY)) {
       bool ready = false;
       
@@ -1692,6 +1792,18 @@ nsresult CacheStorageService::AddStorageEntry(
       
       
       handle = entry->NewHandle();
+    }
+  }
+
+  
+  
+  if (nvsHadCandidates) {
+    if (nvsMatched) {
+      glean::network::no_vary_search_match.Get("matched"_ns).Add(1);
+      glean::network::no_vary_search_hit_by_rule.Get(nvsMatchedRuleLabel)
+          .Add(1);
+    } else {
+      glean::network::no_vary_search_match.Get("not_matched"_ns).Add(1);
     }
   }
 
@@ -2005,6 +2117,7 @@ nsresult CacheStorageService::DoomStorageEntries(
         if (memoryEntries) {
           RemoveExactEntry(memoryEntries, iter.Key(), entry, false);
         }
+        diskEntries->RemoveNoVarySearchEntryByKey(iter.Key());
         iter.Remove();
       }
     }

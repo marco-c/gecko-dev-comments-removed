@@ -10,6 +10,8 @@
 #include "LoadContextInfo.h"
 
 #include "nsILoadContextInfo.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 
 class nsIURI;
 
@@ -27,6 +29,56 @@ class CacheEntryTable : public TCacheEntryTable {
   CacheEntryTable() = delete;
 
   EType Type() const { return mType; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTHashMap<nsCStringHashKey, nsTArray<nsCString>> mNoVarySearchIndex;
+
+  void NoteNoVarySearchEntry(const nsACString& aBasePath,
+                             const nsACString& aFullKey) {
+    mNoVarySearchIndex.LookupOrInsert(aBasePath).AppendElement(aFullKey);
+  }
+
+  void RemoveNoVarySearchEntry(const nsACString& aBasePath,
+                               const nsACString& aFullKey) {
+    auto entry = mNoVarySearchIndex.Lookup(aBasePath);
+    if (!entry) {
+      return;
+    }
+    entry->RemoveElement(aFullKey);
+    if (entry->IsEmpty()) {
+      mNoVarySearchIndex.Remove(aBasePath);
+    }
+  }
+
+  void RemoveNoVarySearchEntryByKey(const nsACString& aFullKey) {
+    for (auto iter = mNoVarySearchIndex.Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Data().RemoveElement(aFullKey)) {
+        if (iter.Data().IsEmpty()) {
+          iter.Remove();
+        }
+        break;
+      }
+    }
+  }
 
  private:
   EType const mType;
