@@ -155,7 +155,7 @@ void WebRenderImageHost::PushPendingRemoteTexture(
       CompositableTextureHostRef(texture.get()));
 }
 
-void WebRenderImageHost::UseRemoteTexture() {
+void WebRenderImageHost::UseRemoteTexture(bool aCalledInCallback) {
   if (mPendingRemoteTextureWrappers.empty()) {
     return;
   }
@@ -190,7 +190,7 @@ void WebRenderImageHost::UseRemoteTexture() {
             }
 
             self->mWaitingReadyCallback = false;
-            self->UseRemoteTexture();
+            self->UseRemoteTexture( true);
           });
 
       CompositorThread()->Dispatch(runnable.forget());
@@ -201,7 +201,10 @@ void WebRenderImageHost::UseRemoteTexture() {
       auto* wrapper =
           mPendingRemoteTextureWrappers.front()->AsRemoteTextureHostWrapper();
 
-      if (mWaitForRemoteTextureOwner) {
+      
+      
+      
+      if (mWaitForRemoteTextureOwner && !aCalledInCallback) {
         
         RemoteTextureMap::Get()->WaitForRemoteTextureOwner(wrapper);
       }
