@@ -4870,12 +4870,18 @@ MDefinition* MToFloat16::foldsTo(TempAllocator& alloc) {
     }
 
     
-    if (def->isLoadUnboxedScalar() &&
-        def->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
+    MDefinition* load = def;
+    if (load->isCanonicalizeNaN()) {
+      load = load->toCanonicalizeNaN()->input();
+    }
+
+    
+    if (load->isLoadUnboxedScalar() &&
+        load->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
       return def;
     }
-    if (def->isLoadDataViewElement() &&
-        def->toLoadDataViewElement()->storageType() == Scalar::Float16) {
+    if (load->isLoadDataViewElement() &&
+        load->toLoadDataViewElement()->storageType() == Scalar::Float16) {
       return def;
     }
     return nullptr;
