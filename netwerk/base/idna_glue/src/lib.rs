@@ -13,7 +13,7 @@ use idna::uts46::ProcessingSuccess;
 use idna::uts46::Uts46;
 use nserror::*;
 use nsstring::*;
-use percent_encoding::{percent_decode, percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::percent_decode;
 
 
 
@@ -275,11 +275,4 @@ pub unsafe extern "C" fn mozilla_net_recover_keyword_from_punycode(
             sink.append(label);
         }
     }
-}
-
-
-#[no_mangle]
-pub unsafe extern "C" fn mozilla_net_percent_encode(src: &nsACString, dst: &mut nsACString) {
-    static CHARS: AsciiSet = CONTROLS.add(b'%');
-    dst.assign(&percent_encode(src, &CHARS).to_string())
 }

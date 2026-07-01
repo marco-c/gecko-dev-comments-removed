@@ -29,6 +29,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/Telemetry.h"
@@ -1281,6 +1282,11 @@ nsXULAppInfo::GetRemoteType(nsACString& aRemoteType) {
 constinit static nsCString gLastAppVersion;
 constinit static nsCString gLastAppBuildID;
 
+
+
+
+static bool gProfileEncryptedDatabases = false;
+
 NS_IMETHODIMP
 nsXULAppInfo::GetLastAppVersion(nsACString& aResult) {
   if (XRE_IsContentProcess()) {
@@ -1502,6 +1508,55 @@ nsXULAppInfo::InvalidateCachesOnRestart() {
     PR_Write(fd, kInvalidationHeader, sizeof(kInvalidationHeader) - 1);
     PR_Close(fd);
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::MarkProfileEncryptedDatabases() {
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIFile> file;
+  nsresult rv =
+      NS_GetSpecialDirectory(NS_APP_PROFILE_DIR_STARTUP, getter_AddRefs(file));
+  
+  
+  
+  
+  
+  
+  
+  
+  if (NS_FAILED(rv) || !file) return NS_OK;
+
+  file->AppendNative(FILE_COMPATIBILITY_INFO);
+
+  nsINIParser parser;
+  rv = parser.Init(file);
+  if (NS_FAILED(rv)) {
+    
+    
+    return NS_OK;
+  }
+
+  nsAutoCString buf;
+  rv = parser.GetString("Compatibility", "EncryptedDatabases", buf);
+  if (NS_SUCCEEDED(rv)) {
+    
+    return NS_OK;
+  }
+
+  PRFileDesc* fd;
+  rv = file->OpenNSPRFileDesc(PR_RDWR | PR_APPEND, 0600, &fd);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  static const char kEncryptedHeader[] =
+      NS_LINEBREAK "EncryptedDatabases=1" NS_LINEBREAK;
+  PR_Write(fd, kEncryptedHeader, sizeof(kEncryptedHeader) - 1);
+  PR_Close(fd);
   return NS_OK;
 }
 
@@ -2774,6 +2829,70 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
 #endif  
 }
 
+
+
+
+
+static nsresult ProfileEncryptionMismatchDialog(const char* aMsgKey,
+                                                const char* aTitleKey,
+                                                nsINativeAppSupport* aNative) {
+#ifdef MOZ_WIDGET_ANDROID
+  Output(true, "Profile encryption state does not match launching build.\n");
+  return NS_ERROR_ABORT;
+#else
+#  ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    printf_stderr(
+        "Profile encryption state does not match launching build in "
+        "backgroundtask mode\n");
+    return NS_ERROR_ABORT;
+  }
+#  endif  
+
+  nsresult rv;
+
+  ScopedXPCOMStartup xpcom;
+  rv = xpcom.Initialize();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = xpcom.SetWindowCreator(aNative);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+#  ifdef XP_MACOSX
+  InitializeMacApp();
+#  endif
+
+  {  
+     
+    nsCOMPtr<nsIStringBundleService> sbs =
+        mozilla::components::StringBundle::Service();
+    NS_ENSURE_TRUE(sbs, NS_ERROR_FAILURE);
+
+    nsCOMPtr<nsIStringBundle> sb;
+    sbs->CreateBundle(kProfileProperties, getter_AddRefs(sb));
+    NS_ENSURE_TRUE_LOG(sb, NS_ERROR_FAILURE);
+
+    NS_ConvertUTF8toUTF16 appName(gAppData->name);
+    AutoTArray<nsString, 3> params = {appName, appName, appName};
+
+    nsAutoString msg;
+    rv = sb->FormatStringFromName(aMsgKey, params, msg);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_ABORT);
+
+    nsAutoString title;
+    params.SetLength(1);
+    rv = sb->FormatStringFromName(aTitleKey, params, title);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_ABORT);
+
+    nsCOMPtr<nsIPromptService> ps(do_GetService(NS_PROMPTSERVICE_CONTRACTID));
+    NS_ENSURE_TRUE(ps, NS_ERROR_FAILURE);
+
+    ps->Alert(nullptr, title.get(), msg.get());
+    return NS_ERROR_ABORT;
+  }
+#endif  
+}
+
 static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
                                               nsIFile* aProfileLocalDir,
                                               nsIProfileUnlocker* aUnlocker,
@@ -3579,6 +3698,7 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
   *aIsDowngrade = false;
   gLastAppVersion.SetIsVoid(true);
   gLastAppBuildID.SetIsVoid(true);
+  gProfileEncryptedDatabases = false;
 
   nsCOMPtr<nsIFile> file;
   aProfileDir->Clone(getter_AddRefs(file));
@@ -3588,6 +3708,17 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
   nsINIParser parser;
   nsresult rv = parser.Init(file);
   if (NS_FAILED(rv)) return false;
+
+  
+  
+  
+  {
+    nsAutoCString encBuf;
+    gProfileEncryptedDatabases =
+        NS_SUCCEEDED(
+            parser.GetString("Compatibility", "EncryptedDatabases", encBuf)) &&
+        encBuf.EqualsLiteral("1");
+  }
 
   rv = parser.GetString("Compatibility", "LastVersion", aLastVersion);
   if (NS_FAILED(rv)) {
@@ -3707,10 +3838,111 @@ static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
   if (invalidateCache)
     PR_Write(fd, kInvalidationHeader, sizeof(kInvalidationHeader) - 1);
 
+  
+  
+  
+  
+  
+  static const char kEncryptedHeader[] = NS_LINEBREAK "EncryptedDatabases=1";
+  if (gProfileEncryptedDatabases)
+    PR_Write(fd, kEncryptedHeader, sizeof(kEncryptedHeader) - 1);
+
   static const char kNL[] = NS_LINEBREAK;
   PR_Write(fd, kNL, sizeof(kNL) - 1);
 
   PR_Close(fd);
+}
+
+
+
+
+
+enum class DBHeaderResult { Encrypted, Plaintext, NoDBs };
+
+static DBHeaderResult DetectEncryptedDBHeader(nsIFile* aProfileDir) {
+  
+  
+  static const char* const kCandidates[] = {
+      "cookies.sqlite", "places.sqlite",   "permissions.sqlite",
+      "storage.sqlite", "favicons.sqlite",
+  };
+
+  for (const char* name : kCandidates) {
+    nsCOMPtr<nsIFile> file;
+    if (NS_FAILED(aProfileDir->Clone(getter_AddRefs(file))) || !file) continue;
+    if (NS_FAILED(file->AppendNative(nsDependentCString(name)))) continue;
+
+    bool exists = false;
+    if (NS_FAILED(file->Exists(&exists)) || !exists) continue;
+
+    PRFileDesc* fd = nullptr;
+    if (NS_FAILED(file->OpenNSPRFileDesc(PR_RDONLY, 0, &fd)) || !fd) continue;
+
+    
+    
+    
+    
+    static constexpr int32_t kSQLiteHeaderReadBytes = 24;
+    static constexpr int32_t kSQLiteHeaderMinBytes = 21;
+    static constexpr size_t kSQLitePageSizeOffset = 16;
+    static constexpr size_t kSQLiteReservedOffset = 20;
+    static constexpr uint16_t kObfsPageSize = 8192;
+    static constexpr uint8_t kObfsReservedBytes = 32;
+
+    uint8_t hdr[kSQLiteHeaderReadBytes];
+    int32_t got = PR_Read(fd, hdr, sizeof(hdr));
+    PR_Close(fd);
+    if (got < kSQLiteHeaderMinBytes) continue;
+
+    uint16_t pageSize = (uint16_t(hdr[kSQLitePageSizeOffset]) << 8) |
+                        uint16_t(hdr[kSQLitePageSizeOffset + 1]);
+    uint8_t reserved = hdr[kSQLiteReservedOffset];
+
+    if (pageSize == kObfsPageSize && reserved == kObfsReservedBytes) {
+      return DBHeaderResult::Encrypted;
+    }
+    return DBHeaderResult::Plaintext;
+  }
+  return DBHeaderResult::NoDBs;
+}
+
+enum class EncryptionCompatResult {
+  OK,
+  RefuseEncryptedButPrefOff,
+  RefuseMigrationRequired,
+};
+
+
+
+
+
+static EncryptionCompatResult CheckEncryptionCompatibility(nsIFile* aProfileDir,
+                                                           bool aPrefEnabled) {
+  
+  
+  
+  
+  
+  
+  
+  if (!aPrefEnabled) {
+    if (gProfileEncryptedDatabases ||
+        DetectEncryptedDBHeader(aProfileDir) == DBHeaderResult::Encrypted) {
+      return EncryptionCompatResult::RefuseEncryptedButPrefOff;
+    }
+    return EncryptionCompatResult::OK;
+  }
+
+  
+  
+  
+  
+  if (!gProfileEncryptedDatabases &&
+      DetectEncryptedDBHeader(aProfileDir) == DBHeaderResult::Plaintext) {
+    return EncryptionCompatResult::RefuseMigrationRequired;
+  }
+
+  return EncryptionCompatResult::OK;
 }
 
 
@@ -5389,6 +5621,35 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
 
   MOZ_RELEASE_ASSERT(!cachesOK || lastVersion.Equals(version),
                      "Caches cannot be good if the version has changed.");
+
+  
+  
+  
+  
+  
+  
+#ifdef MOZ_BACKGROUNDTASKS
+  if (!BackgroundTasks::IsBackgroundTaskMode())
+#endif
+  {
+    bool prefEnabled =
+        StaticPrefs::security_storage_encryption_sqlite_enabled();
+    EncryptionCompatResult ec =
+        CheckEncryptionCompatibility(mProfD, prefEnabled);
+    if (ec != EncryptionCompatResult::OK) {
+      const char* msgKey =
+          ec == EncryptionCompatResult::RefuseEncryptedButPrefOff
+              ? "profileEncryptedButPrefOff"
+              : "profileNotEncryptedButPrefOn";
+      const char* titleKey =
+          ec == EncryptionCompatResult::RefuseEncryptedButPrefOff
+              ? "profileEncryptedButPrefOffTitle"
+              : "profileNotEncryptedButPrefOnTitle";
+      (void)ProfileEncryptionMismatchDialog(msgKey, titleKey, mNativeApp);
+      *aExitFlag = true;
+      return 0;
+    }
+  }
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
   

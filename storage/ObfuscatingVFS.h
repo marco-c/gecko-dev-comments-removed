@@ -5,6 +5,8 @@
 #ifndef STORAGE_OBFUSCATINGVFS_H_
 #define STORAGE_OBFUSCATINGVFS_H_
 
+#include <cstdint>
+
 #include "mozilla/UniquePtr.h"
 
 struct sqlite3_vfs;
@@ -18,6 +20,10 @@ class QuotaObject;
 }
 
 namespace mozilla::storage::obfsvfs {
+
+
+
+inline constexpr int32_t kObfsPageSize = 8192;
 
 const char* GetVFSName();
 

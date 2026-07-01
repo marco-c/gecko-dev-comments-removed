@@ -535,6 +535,17 @@ class Connection final : public mozIStorageConnection,
   
 
 
+
+
+
+  int32_t mPageSize;
+
+  
+  void SetDatabaseEncrypted(bool aEncrypted);
+
+  
+
+
   Atomic<int32_t> mGrowthChunkSize;
 
   

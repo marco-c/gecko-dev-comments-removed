@@ -101,7 +101,7 @@ using u8 = unsigned char;
 
 
 
-#define OBFS_PGSZ 8192
+#define OBFS_PGSZ (::mozilla::storage::obfsvfs::kObfsPageSize)
 
 #define WAL_FRAMEHDRSIZE 24
 

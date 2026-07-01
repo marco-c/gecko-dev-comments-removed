@@ -42,6 +42,7 @@
 #include "ObfuscatingVFS.h"
 #include "QuotaVFS.h"
 #include "StorageBaseStatementInternal.h"
+#include "mozilla/storage/StoragePathUtil.h"
 #include "mozilla/intl/AppCollator.h"
 #include "FileSystemModule.h"
 #include "mozStorageHelper.h"
@@ -255,35 +256,51 @@ void basicFunctionHelper(sqlite3_context* aCtx, int aArgc,
   }
 }
 
-void PreparePathForURI(nsACString& aPath) {
-#ifdef _WIN32
-  if (aPath.Find(R"(\\?\)") == 0) {
-    aPath.Cut(0, 4);
+using mozilla::storage::PreparePathForURI;
+
+nsresult ExtractURIPathAndQuery(const char* aURI, nsCString& aPath,
+                                nsCString& aQuery) {
+  if (strncmp(aURI, "file:", 5) != 0) {
+    aPath.Assign(aURI);
+    aQuery.Truncate();
+    return NS_OK;
   }
 
-  aPath.ReplaceChar('\\', '/');
-  if (std::isalpha(aPath[0]) && aPath[1] == ':') aPath.Insert('/', 0);
-#endif
-  nsAutoCString tmp(aPath);
-  mozilla_net_percent_encode(&tmp, &aPath);
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), nsDependentCString(aURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(uri, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFile> file;
+  rv = fileURL->GetFile(getter_AddRefs(file));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString path;
+  rv = file->GetPath(path);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aPath = NS_ConvertUTF16toUTF8(path);
+
+  rv = uri->GetQuery(aQuery);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
 }
 
-nsresult ExtractURIPathAndQuery(const char* uri, nsCString& path,
-                                nsCString& query) {
-  if (strstr(uri, "file:") != uri) {
-    return NS_ERROR_FAILURE;
+void BuildFileURIWithKey(const nsACString& aEscapedPath,
+                         const nsACString& aQuery, const nsACString& aDBKey,
+                         nsACString& aURI) {
+  aURI.AssignLiteral("file:");
+  aURI.Append(aEscapedPath);
+  if (aQuery.IsEmpty()) {
+    aURI.AppendLiteral("?key=");
+  } else {
+    aURI.AppendLiteral("?");
+    aURI.Append(aQuery);
+    aURI.AppendLiteral("&key=");
   }
-  const char* queryDelim = strstr(uri, "?");
-  
-  if (!queryDelim || queryDelim == uri) {
-    return NS_ERROR_FAILURE;
-  }
-
-  query.AssignASCII(
-      mozilla::Span<const char>(queryDelim + 1, uri + strlen(uri)));
-  path.AssignASCII(mozilla::Span<const char>(uri + 5, queryDelim));
-
-  return NS_OK;
+  aURI.Append(aDBKey);
 }
 
 RefPtr<QuotaObject> GetQuotaObject(sqlite3_file* aFile, bool obfuscatingVFS) {
@@ -841,6 +858,7 @@ Connection::Connection(Service* aService, int aFlags,
       mAsyncExecutionThreadShuttingDown(false),
       mConnectionClosed(false),
       mDatabaseEncrypted(false),
+      mPageSize(Service::kDefaultPageSize),
       mGrowthChunkSize(0) {
   MOZ_ASSERT(!mIgnoreLockingMode || mFlags & SQLITE_OPEN_READONLY,
              "Can't ignore locking for a non-readonly connection!");
@@ -1114,9 +1132,9 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
 
   
   
+  
+  
   if (StaticPrefs::security_storage_encryption_sqlite_enabled()) {
-    
-    
     if (!EnsureNSSInitializedChromeOrContent()) {
       return NS_ERROR_FAILURE;
     }
@@ -1124,7 +1142,7 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
     nsCString dbKey;
     rv = key::GetKeyByFile(*aDatabaseFile, dbKey);
     if (rv == NS_OK) {
-      mDatabaseEncrypted = true;
+      SetDatabaseEncrypted(true);
 
       nsAutoCString dbPath = NS_ConvertUTF16toUTF8(path);
       PreparePathForURI(dbPath);
@@ -1138,7 +1156,7 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
         mDBConn = nullptr;
         rv = convertResultCode(srv);
         RecordOpenStatus(rv);
-        NS_ENSURE_SUCCESS(rv, rv);
+        return rv;
       }
 
       rv = initializeInternal();
@@ -1148,10 +1166,6 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
     } else if (rv != NS_ERROR_NOT_AVAILABLE) {
       return rv;
     }
-    
-    
-    MOZ_LOG(key::GetKeyStorageLog(), LogLevel::Debug,
-            ("Database outside profile; opening unencrypted"));
   }
 
   bool exclusive =
@@ -1177,7 +1191,7 @@ nsresult Connection::initialize(nsIFile* aDatabaseFile) {
     mDBConn = nullptr;
     rv = convertResultCode(srv);
     RecordOpenStatus(rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+    return rv;
   }
 
   rv = initializeInternal();
@@ -1248,23 +1262,23 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
     if (!EnsureNSSInitializedChromeOrContent()) {
       return NS_ERROR_FAILURE;
     }
-    mDatabaseEncrypted = true;
+    
+    
+    
+    
     
     if (!hasKey) {
-      hasKey = true;
       nsCString dbKey;
       rv = key::GetKeyByFile(*mDatabaseFile, dbKey);
-      if (rv == NS_ERROR_NOT_AVAILABLE) {
-        
-        
-        mDatabaseEncrypted = false;
-      } else {
+      if (rv != NS_ERROR_NOT_AVAILABLE) {
         NS_ENSURE_SUCCESS(rv, rv);
-        hasKey = true;
-        mDatabaseEncrypted = true;
         spec += (query.IsEmpty() ? "?key="_ns : "&key="_ns) + dbKey;
+        hasKey = true;
       }
     }
+    
+    
+    SetDatabaseEncrypted(hasKey);
   }
 
   bool exclusive =
@@ -1280,7 +1294,7 @@ nsresult Connection::initialize(nsIFileURL* aFileURL) {
     mDBConn = nullptr;
     rv = convertResultCode(srv);
     RecordOpenStatus(rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+    return rv;
   }
 
   rv = initializeInternal();
@@ -1317,7 +1331,12 @@ nsresult Connection::initializeInternal() {
         ("Opening connection to '%s' (%p)", mTelemetryFilename.get(), this));
   }
 
-  int64_t pageSize = Service::kDefaultPageSize;
+  
+  
+  
+  
+  
+  int64_t pageSize = mPageSize;
 
   
   
@@ -2066,15 +2085,14 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
 
           if (mDatabaseEncrypted) {
             nsCString aDBKey, query;
-            rv = key::GetKeyByPath(path.get(), aDBKey);
-            NS_ENSURE_SUCCESS(rv, rv);
-
             rv = ExtractURIPathAndQuery(path.get(), path, query);
             NS_ENSURE_SUCCESS(rv, rv);
 
+            rv = key::GetKeyByPath(path.get(), aDBKey);
+            NS_ENSURE_SUCCESS(rv, rv);
+
             PreparePathForURI(path);
-            
-            path = nsPrintfCString("file:%s?key=%s", path.get(), aDBKey.get());
+            BuildFileURIWithKey(path, query, aDBKey, path);
           }
           rv = attachStmt->BindUTF8StringByName("path"_ns, path);
           NS_ENSURE_SUCCESS(rv, rv);
@@ -2275,12 +2293,20 @@ Connection::AsyncVacuum(mozIStorageCompletionCallback* aCallback,
   return NS_OK;
 }
 
+void Connection::SetDatabaseEncrypted(bool aEncrypted) {
+  mDatabaseEncrypted = aEncrypted;
+  
+  
+  
+  mPageSize = aEncrypted ? obfsvfs::kObfsPageSize : Service::kDefaultPageSize;
+}
+
 NS_IMETHODIMP
 Connection::GetDefaultPageSize(int32_t* _defaultPageSize) {
-  if (mDatabaseEncrypted)
-    *_defaultPageSize = 8192;
-  else
-    *_defaultPageSize = Service::kDefaultPageSize;
+  
+  
+  
+  *_defaultPageSize = mPageSize;
   return NS_OK;
 }
 
@@ -2702,26 +2728,13 @@ Connection::AttachDatabase(const char* aPath, const char* aName,
     nsCString dbKey, path, query;
 
     rv = ExtractURIPathAndQuery(aPath, path, query);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    if (rv == NS_OK) {
-      rv = key::GetKeyByPath(path.get(), dbKey);
-      NS_ENSURE_SUCCESS(rv, rv);
+    rv = key::GetKeyByPath(path.get(), dbKey);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      PreparePathForURI(path);
-
-      uri = nsPrintfCString("file:%s?%s&key=%s", path.get(), query.get(),
-                            dbKey.get());
-    } else {
-      rv = key::GetKeyByPath(aPath, dbKey);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsCString uriString;
-      uriString.AssignASCII(aPath);
-
-      PreparePathForURI(uriString);
-
-      uri = nsPrintfCString("file:%s?key=%s", uriString.get(), dbKey.get());
-    }
+    PreparePathForURI(path);
+    BuildFileURIWithKey(path, query, dbKey, uri);
   } else {
     uri = aPath;
   }
