@@ -135,7 +135,6 @@ void FontFaceImpl::InitializeSourceBuffer(uint8_t* aBuffer, uint32_t aLength) {
     mBufferSource = new FontFaceBufferSource(aBuffer, aLength);
   }
 
-  SetStatus(FontFaceLoadStatus::Loading);
   DoLoad();
 }
 
@@ -309,7 +308,7 @@ void FontFaceImpl::DescriptorUpdated() {
 
 FontFaceLoadStatus FontFaceImpl::Status() { return mStatus; }
 
-void FontFaceImpl::Load(ErrorResult& aRv) {
+void FontFaceImpl::Load() {
   mFontFaceSet->FlushUserFontSet();
 
   
@@ -319,11 +318,6 @@ void FontFaceImpl::Load(ErrorResult& aRv) {
       mStatus != FontFaceLoadStatus::Unloaded) {
     return;
   }
-
-  
-  
-  
-  SetStatus(FontFaceLoadStatus::Loading);
 
   DoLoad();
 }
@@ -349,6 +343,8 @@ gfxUserFontEntry* FontFaceImpl::CreateUserFontEntry() {
 }
 
 void FontFaceImpl::DoLoad() {
+  
+  SetStatus(FontFaceLoadStatus::Loading);
   if (!CreateUserFontEntry()) {
     return;
   }
@@ -385,36 +381,46 @@ void FontFaceImpl::SetStatus(FontFaceLoadStatus aStatus) {
 }
 
 void FontFaceImpl::UpdateOwnerPromise() {
-  if (!mFontFaceSet->IsOnOwningThread()) {
-    mFontFaceSet->DispatchToOwningThread(
-        "FontFaceImpl::UpdateOwnerPromise",
-        [self = RefPtr{this}] { self->UpdateOwnerPromise(); });
+  mFontFaceSet->DispatchToOwningThread(
+      "FontFaceImpl::UpdateOwnerPromise",
+      [self = RefPtr{this}] { self->UpdateOwnerPromiseSync(); });
+}
+
+void FontFaceImpl::UpdateOwnerKeepAlive() {
+  AssertIsOnOwningThread();
+  if (!mOwner) {
+    MOZ_DIAGNOSTIC_ASSERT(!mKeepingOwnerAlive);
     return;
   }
+  const bool shouldKeepOwnerAlive =
+      mStatus == FontFaceLoadStatus::Loading && !!mOwner->GetParentObject();
+  if (shouldKeepOwnerAlive == mKeepingOwnerAlive) {
+    return;
+  }
+  mKeepingOwnerAlive = shouldKeepOwnerAlive;
+  if (shouldKeepOwnerAlive) {
+    mOwner->AddRef();
+  } else {
+    mOwner->Release();
+  }
+}
 
+void FontFaceImpl::UpdateOwnerPromiseSync() {
   if (NS_WARN_IF(!mOwner)) {
     MOZ_DIAGNOSTIC_ASSERT(!mKeepingOwnerAlive);
     return;
   }
 
+  RefPtr owner = mOwner;
+  UpdateOwnerKeepAlive();
   if (mStatus == FontFaceLoadStatus::Loaded) {
-    mOwner->MaybeResolve();
+    owner->MaybeResolve();
   } else if (mStatus == FontFaceLoadStatus::Error) {
     if (mSourceType == eSourceType_Buffer) {
-      mOwner->MaybeReject(FontFaceLoadedRejectReason::Syntax,
-                          nsCString("Invalid source buffer"_ns));
+      owner->MaybeReject(FontFaceLoadedRejectReason::Syntax,
+                         nsCString("Invalid source buffer"_ns));
     } else {
-      mOwner->MaybeReject(FontFaceLoadedRejectReason::Network, nsCString());
-    }
-  }
-
-  const bool shouldKeepOwnerAlive = mStatus == FontFaceLoadStatus::Loading;
-  if (shouldKeepOwnerAlive != mKeepingOwnerAlive) {
-    mKeepingOwnerAlive = shouldKeepOwnerAlive;
-    if (shouldKeepOwnerAlive) {
-      mOwner->AddRef();
-    } else {
-      mOwner->Release();
+      owner->MaybeReject(FontFaceLoadedRejectReason::Network, nsCString());
     }
   }
 }
@@ -642,8 +648,7 @@ bool FontFaceImpl::GetAttributesFromRule(
   StyleComputedFontWeightRange weightRange;
   if (Servo_FontFaceRule_GetFontWeight(aData, &weightRange)) {
     aAttr.mRangeFlags &= ~gfxFontEntry::RangeFlags::eAutoWeight;
-    aAttr.mWeight = WeightRange(FontWeight::FromFloat(weightRange._0),
-                                FontWeight::FromFloat(weightRange._1));
+    aAttr.mWeight = WeightRange(weightRange._0, weightRange._1);
   }
 
   StyleComputedFontStretchRange stretchRange;
