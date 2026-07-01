@@ -1956,6 +1956,14 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   
   
   ::LoadLibraryW(L"psapi.dll");
+
+  
+  
+  
+  
+  
+  
+  ::LoadLibraryW(L"verifier.dll");
 #endif  
 
 #ifdef MOZ_WIDGET_ANDROID
