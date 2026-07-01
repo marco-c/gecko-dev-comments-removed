@@ -130,7 +130,7 @@ add_task(async function test_filterResponseData_after_redirect() {
         
         
         
-        this.registerTraceableChannel(policy, remoteTab);
+        this.registerTraceableChannel(policy);
 
         
         

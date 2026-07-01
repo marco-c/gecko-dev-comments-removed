@@ -101,6 +101,9 @@ function registerProxyFilterEvent(
   let listener = data => {
     if (isEarlyWakeupOnRequestEnabled && fire.wakeup) {
       
+      
+      
+      
       extension.emit("start-background-script");
     }
     return fire.sync(data);

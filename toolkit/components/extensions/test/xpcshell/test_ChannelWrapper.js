@@ -190,7 +190,7 @@ function checkChannelWrapperMethodsAfterGC(channelWrapper) {
     "channelWrapper.matches() returns"
   );
   Assert.equal(
-    channelWrapper.registerTraceableChannel(dummyPolicy, null),
+    channelWrapper.registerTraceableChannel(dummyPolicy),
     undefined,
     "registerTraceableChannel() returns"
   );
@@ -330,13 +330,16 @@ add_task(async function after_basic_fetch_and_gc() {
 
 
 add_task(async function getRegisteredChannel_after_response_start() {
-  const dummyPolicy = new WebExtensionPolicy({
-    id: "@dummyPolicy",
-    mozExtensionHostname: "c3c73091-8fab-4229-83cf-84c061dd9ead",
-    baseURL: "resource://modules/whatever_does_not_need_to_exist",
-    allowedOrigins: new MatchPatternSet(["*://*/*"]),
-    localizeCallback: () => "",
+  
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["<all_urls>"] },
+    background() {},
   });
+  await extension.startup();
+  const dummyPolicy = extension.extension.policy;
+  const { remoteTab } =
+    extension.extension.backgroundContext.xulBrowser.frameLoader;
+
   let promise = TestUtils.topicObserved("http-on-modify-request");
   await gContentPage.spawn([], async () => {
     let res = await content.fetch("http://example.com/dummy");
@@ -354,9 +357,9 @@ add_task(async function getRegisteredChannel_after_response_start() {
   
   
   
-  channelWrapper.registerTraceableChannel(dummyPolicy, null);
+  channelWrapper.registerTraceableChannel(dummyPolicy);
   Assert.equal(
-    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, null),
+    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
     null,
     "registerTraceableChannel after channel start does not register"
   );
@@ -368,12 +371,14 @@ add_task(async function getRegisteredChannel_after_response_start() {
 
   Assert.equal(channelWrapper.channel, null, "Channel has been GC'd");
   Assert.equal(
-    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, null),
+    ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
     null,
     "getRegisteredChannel() returns nothing after channel was GC'd"
   );
   channelWrapperEquals(channelWrapper, EXPECTATION_INVALID_CHANNEL);
   checkChannelWrapperMethodsAfterGC(channelWrapper);
+
+  await extension.unload();
 });
 
 add_task(async function getRegisteredChannel_after_open() {
@@ -387,11 +392,17 @@ add_task(async function getRegisteredChannel_after_open() {
   const { remoteTab } =
     extension.extension.backgroundContext.xulBrowser.frameLoader;
 
+  if (WebExtensionPolicy.useRemoteWebExtensions) {
+    ok(remoteTab, "remoteTab always exists when an extension has started");
+  } else {
+    strictEqual(remoteTab, null, "remoteTab is null when in parent process");
+  }
+
   const channel = createChannel("http://example.com/home");
   const channelWrapper = ChannelWrapper.get(channel);
   const channelId = channelWrapper.id;
 
-  channelWrapper.registerTraceableChannel(dummyPolicy, remoteTab);
+  channelWrapper.registerTraceableChannel(dummyPolicy);
   Assert.equal(
     ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
     null,
@@ -403,7 +414,7 @@ add_task(async function getRegisteredChannel_after_open() {
     onStopRequest() {},
     onDataAvailable() {},
   });
-  channelWrapper.registerTraceableChannel(dummyPolicy, remoteTab);
+  channelWrapper.registerTraceableChannel(dummyPolicy);
   Assert.equal(
     ChannelWrapper.getRegisteredChannel(channelId, dummyPolicy, remoteTab),
     channelWrapper,

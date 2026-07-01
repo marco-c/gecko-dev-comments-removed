@@ -33,27 +33,16 @@ function handlerBehaviorChangedCallAllowed(timestamps) {
 
 
 
-function registerEvent(
-  extension,
-  eventName,
-  fire,
-  filter,
-  info,
-  remoteTab = null
-) {
-  let listener = async data => {
+function registerEvent(extension, eventName, fire, filter, info) {
+  let listener = data => {
     let event = data.serialize(eventName);
-    if (data.registerTraceableChannel) {
-      
-      
-      
-      
-      if (fire.wakeup) {
-        await fire.wakeup();
-      }
-      data.registerTraceableChannel(extension.policy, remoteTab);
-    }
-
+    
+    
+    
+    
+    
+    
+    
     return fire.sync(event);
   };
 
@@ -120,9 +109,8 @@ function registerEvent(
     unregister: () => {
       WebRequest[eventName].removeListener(listener);
     },
-    convert(_fire, context) {
+    convert(_fire) {
       fire = _fire;
-      remoteTab = context.xulBrowser.frameLoader.remoteTab;
     },
   };
 }
@@ -137,24 +125,14 @@ function makeWebRequestEventAPI(context, event, extensionApi) {
 }
 
 function makeWebRequestEventRegistrar(event) {
-  return function ({ fire, context }, params) {
+  return function ({ fire }, params) {
     
     
     const { extension } = this;
 
-    const [filter, info] = params;
+    const [filter, extraInfoSpec] = params;
 
-    
-    
-    
-    
-    
-    let remoteTab;
-    if (context) {
-      remoteTab = context.xulBrowser.frameLoader.remoteTab;
-    }
-
-    return registerEvent(extension, event, fire, filter, info, remoteTab);
+    return registerEvent(extension, event, fire, filter, extraInfoSpec);
   };
 }
 

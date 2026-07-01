@@ -17,7 +17,10 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
+#include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
@@ -837,8 +840,8 @@ nsresult ChannelWrapper::GetFrameAncestors(
 
 
 
-void ChannelWrapper::RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
-                                              nsIRemoteTab* aBrowserParent) {
+void ChannelWrapper::RegisterTraceableChannel(
+    const WebExtensionPolicy& aAddon) {
   
   
   
@@ -847,7 +850,9 @@ void ChannelWrapper::RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
     return;
   }
 
-  mAddonEntries.InsertOrUpdate(aAddon.Id(), aBrowserParent);
+  if (!mAddonEntries.Contains(aAddon.Id())) {
+    mAddonEntries.AppendElement(aAddon.Id());
+  }
   if (!mChannelEntry) {
     mChannelEntry = WebRequestService::GetSingleton().RegisterChannel(this);
     CheckEventListeners();
@@ -867,8 +872,7 @@ void ChannelWrapper::RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
 already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     const WebExtensionPolicy& aAddon,
     dom::ContentParent* aContentParent) const {
-  nsCOMPtr<nsIRemoteTab> remoteTab;
-  if (mAddonEntries.Get(aAddon.Id(), getter_AddRefs(remoteTab))) {
+  if (mAddonEntries.Contains(aAddon.Id())) {
     
     
     
@@ -883,16 +887,25 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
       return nullptr;
     }
 
-    ContentParent* contentParent = nullptr;
-    if (remoteTab) {
-      contentParent =
-          BrowserHost::GetFrom(remoteTab.get())->GetActor()->Manager();
+    if (aContentParent) {
+      RefPtr<BrowsingContextGroup> group =
+          BrowsingContextGroup::GetExisting(aAddon.GetBrowsingContextGroupId());
+      if (!group ||
+          group->GetHostProcess(EXTENSION_REMOTE_TYPE) != aContentParent) {
+        return nullptr;
+      }
+    } else {
+      
+      
+      
+      
+      if (ExtensionPolicyService::GetSingleton().UseRemoteExtensions()) {
+        return nullptr;
+      }
     }
 
-    if (contentParent == aContentParent) {
-      nsCOMPtr<nsITraceableChannel> chan = QueryChannel();
-      return chan.forget();
-    }
+    nsCOMPtr<nsITraceableChannel> chan = QueryChannel();
+    return chan.forget();
   }
   return nullptr;
 }
