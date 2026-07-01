@@ -419,6 +419,19 @@ def process_gn_config(
                 "`GnConfigGen` step."
             )
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if spec["type"] == "static_library" and "FINAL_LIBRARY" not in sandbox_vars:
+            context_attrs["NO_EXPAND_LIBS"] = True
+
         if spec["type"] == "shared_library":
             context_attrs["FORCE_SHARED_LIB"] = True
 
