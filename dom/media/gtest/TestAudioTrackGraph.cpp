@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CrossGraphPort.h"
 #include "DeviceInputTrack.h"
 #include "MediaTrackGraphImpl.h"
@@ -303,7 +301,7 @@ TEST(TestAudioTrackGraph, StreamName)
       [&] { dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO); });
 
   RefPtr<SmartMockCubebStream> stream = WaitFor(cubeb->StreamInitEvent());
-  EXPECT_STREQ(stream->StreamName(), name1.get());
+  EXPECT_EQ(stream->StreamName(), name1);
 
   
   nsLiteralCString name2("name2");
