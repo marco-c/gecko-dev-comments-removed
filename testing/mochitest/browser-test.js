@@ -11,6 +11,11 @@ var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+var { uploadProfileArtifact, installProfilerDumpAndQuit } =
+  ChromeUtils.importESModule(
+    "resource://testing-common/TestProfilerArtifact.sys.mjs"
+  );
+
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
@@ -228,6 +233,28 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.structuredLogger = structuredLogger;
   this.tests = aTests;
   this.callback = aCallback;
+
+  
+  
+  
+  installProfilerDumpAndQuit(reason => {
+    let testName = this.currentTest?.path ?? "browser-test.js";
+    this.structuredLogger.testStatus(
+      testName,
+      "fatal condition",
+      "FAIL",
+      "PASS",
+      reason
+    );
+    return {
+      testName,
+      logger: this.structuredLogger,
+      
+      
+      endTest: () =>
+        this.structuredLogger.testEnd(testName, "FAIL", "PASS", reason),
+    };
+  });
 
   this._scriptLoader = Services.scriptloader;
   this.EventUtils = {};
@@ -913,41 +940,15 @@ Tester.prototype = {
 
   async notifyProfilerOfTestEnd() {
     
-    if (this.currentTest.failCount) {
-      
-      
-      if (
-        Services.env.exists("MOZ_UPLOAD_DIR") &&
-        !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-        Services.profiler.IsActive()
-      ) {
-        let name = this.currentTest.path;
-        name = name.slice(name.lastIndexOf("/") + 1);
-        let filename = `profile_${name}.json`;
-        let path = Services.env.get("MOZ_UPLOAD_DIR");
-        let profilePath = PathUtils.join(path, filename);
-        try {
-          const { profile } =
-            await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-          await IOUtils.write(profilePath, new Uint8Array(profile));
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "Found unexpected failures during the test; profile uploaded in " +
-                filename,
-            })
-          );
-        } catch (e) {
-          
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "Found unexpected failures during the test; failed to upload profile: " +
-                e,
-            })
-          );
-        }
-      }
+    
+    
+    if (
+      this.currentTest.failCount &&
+      Services.env.exists("MOZ_UPLOAD_DIR") &&
+      !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+      Services.profiler.IsActive()
+    ) {
+      await uploadProfileArtifact(this.currentTest.path, this.structuredLogger);
     }
   },
 
