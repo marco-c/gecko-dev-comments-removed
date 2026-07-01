@@ -236,6 +236,9 @@ class RegExpMacroAssembler {
   
   void CheckNotInSurrogatePair(int cp_offset, Label* on_failure);
 
+  
+  void UnanchoredAdvance(bool unicode, Label* on_failure);
+
 #define IMPLEMENTATIONS_LIST(V) \
   V(IA32)                       \
   V(ARM)                        \

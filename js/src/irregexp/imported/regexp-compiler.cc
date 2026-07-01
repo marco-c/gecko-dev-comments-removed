@@ -315,6 +315,7 @@ Compiler::Compiler(Isolate* isolate, Zone* zone, int capture_count, Flags flags,
       work_list_(nullptr),
       recursion_depth_(0),
       flags_(flags),
+      macro_assembler_(nullptr),
       one_byte_(one_byte),
       reg_exp_too_big_(false),
       limiting_recursion_(false),
@@ -1541,56 +1542,73 @@ bool Node::KeepRecursing(Compiler* compiler) {
 
 void ActionNode::FillInBMInfo(Isolate* isolate, int offset, int budget,
                               BoyerMooreLookahead* bm, bool not_at_start) {
-  std::optional<Flags> old_flags;
-  if (action_type_ == MODIFY_FLAGS) {
-    
-    
-    
-    old_flags = bm->compiler()->flags();
-    bm->compiler()->set_flags(flags());
-  }
-  if (action_type_ == BEGIN_POSITIVE_SUBMATCH) {
-    
-    
-    success_node()->on_success()->FillInBMInfo(isolate, offset, budget - 1, bm,
-                                               not_at_start);
-  } else if (action_type_ != POSITIVE_SUBMATCH_SUCCESS) {
-    
-    
-    
-    on_success()->FillInBMInfo(isolate, offset, budget - 1, bm, not_at_start);
+  switch (action_type_) {
+    case SET_REGISTER_FOR_LOOP:
+    case INCREMENT_REGISTER:
+    case STORE_POSITION:
+    case RESTORE_POSITION:
+    case BEGIN_NEGATIVE_SUBMATCH:
+    case EMPTY_MATCH_CHECK:
+    case CLEAR_CAPTURES:
+    case EATS_AT_LEAST:
+      on_success()->FillInBMInfo(isolate, offset, budget - 1, bm, not_at_start);
+      break;
+    case MODIFY_FLAGS: {
+      std::optional<Flags> old_flags = bm->compiler()->flags();
+      bm->compiler()->set_flags(flags());
+      on_success()->FillInBMInfo(isolate, offset, budget - 1, bm, not_at_start);
+      bm->compiler()->set_flags(*old_flags);
+      break;
+    }
+    case BEGIN_POSITIVE_SUBMATCH:
+      
+      
+      success_node()->on_success()->FillInBMInfo(isolate, offset, budget - 1,
+                                                 bm, not_at_start);
+      break;
+    case POSITIVE_SUBMATCH_SUCCESS:
+      
+      
+      
+      break;
   }
   SaveBMInfo(bm, not_at_start, offset);
-  if (old_flags.has_value()) {
-    bm->compiler()->set_flags(*old_flags);
-  }
 }
 
 void ActionNode::GetQuickCheckDetails(QuickCheckDetails* details,
                                       Compiler* compiler, int filled_in,
                                       bool not_at_start, int budget) {
-  if (action_type_ == BEGIN_POSITIVE_SUBMATCH) {
-    
-    
-    success_node()->on_success()->GetQuickCheckDetails(
-        details, compiler, filled_in, not_at_start, budget - 1);
-  } else if (action_type() != POSITIVE_SUBMATCH_SUCCESS) {
-    
-    
-    
-    std::optional<Flags> old_flags;
-    if (action_type() == MODIFY_FLAGS) {
-      
-      
-      
-      old_flags = compiler->flags();
+  switch (action_type()) {
+    case SET_REGISTER_FOR_LOOP:
+    case INCREMENT_REGISTER:
+    case STORE_POSITION:
+    case RESTORE_POSITION:
+    case BEGIN_NEGATIVE_SUBMATCH:
+    case EMPTY_MATCH_CHECK:
+    case CLEAR_CAPTURES:
+    case EATS_AT_LEAST:
+      on_success()->GetQuickCheckDetails(details, compiler, filled_in,
+                                         not_at_start, budget - 1);
+      break;
+    case MODIFY_FLAGS: {
+      std::optional<Flags> old_flags = compiler->flags();
       compiler->set_flags(flags());
-    }
-    on_success()->GetQuickCheckDetails(details, compiler, filled_in,
-                                       not_at_start, budget - 1);
-    if (old_flags.has_value()) {
+      on_success()->GetQuickCheckDetails(details, compiler, filled_in,
+                                         not_at_start, budget - 1);
       compiler->set_flags(*old_flags);
+      break;
     }
+    case BEGIN_POSITIVE_SUBMATCH:
+      
+      
+      success_node()->on_success()->GetQuickCheckDetails(
+          details, compiler, filled_in, not_at_start, budget - 1);
+      break;
+    case POSITIVE_SUBMATCH_SUCCESS:
+      
+      
+      
+      break;
   }
 }
 
@@ -1745,7 +1763,7 @@ void TextNode::GetQuickCheckDetails(QuickCheckDetails* details,
   
   
   if (read_backward()) return;
-  Isolate* isolate = compiler->macro_assembler()->isolate();
+  Isolate* isolate = compiler->isolate();
   DCHECK(characters_filled_in < details->characters());
   int characters = details->characters();
   const uint32_t char_mask = CharMask(compiler->one_byte());
@@ -1818,6 +1836,11 @@ void TextNode::GetQuickCheckDetails(QuickCheckDetails* details,
           details->positions(characters_filled_in);
       ClassRanges* tree = elm.class_ranges();
       ZoneList<CharacterRange>* ranges = tree->ranges(zone());
+      
+      
+      
+      
+      CharacterRange::Canonicalize(ranges);
       if (tree->is_negated() || ranges->is_empty()) {
         
         
@@ -1838,17 +1861,13 @@ void TextNode::GetQuickCheckDetails(QuickCheckDetails* details,
             return;
           }
         }
+        int total_characters = 0;
         CharacterRange range = ranges->at(first_range);
         const base::uc32 first_from = range.from();
         const base::uc32 first_to =
             (range.to() > char_mask) ? char_mask : range.to();
+        total_characters += (first_to - first_from + 1);
         const uint32_t differing_bits = (first_from ^ first_to);
-        
-        
-        if ((differing_bits & (differing_bits + 1)) == 0 &&
-            first_from + differing_bits == first_to) {
-          pos->determines_perfectly = true;
-        }
         uint32_t common_bits = ~SmearBitsRight(differing_bits);
         uint32_t bits = (first_from & common_bits);
         for (int i = first_range + 1; i < ranges->length(); i++) {
@@ -1857,12 +1876,7 @@ void TextNode::GetQuickCheckDetails(QuickCheckDetails* details,
           if (from > char_mask) continue;
           const base::uc32 to =
               (range.to() > char_mask) ? char_mask : range.to();
-          
-          
-          
-          
-          
-          pos->determines_perfectly = false;
+          total_characters += (to - from + 1);
           uint32_t new_common_bits = (from ^ to);
           new_common_bits = ~SmearBitsRight(new_common_bits);
           common_bits &= new_common_bits;
@@ -1873,6 +1887,12 @@ void TextNode::GetQuickCheckDetails(QuickCheckDetails* details,
         }
         pos->mask = common_bits;
         pos->value = bits;
+        
+        
+        
+        unsigned int zero_bits =
+            base::bits::CountPopulation((~common_bits) & char_mask);
+        pos->determines_perfectly = (total_characters == (1 << zero_bits));
       }
       characters_filled_in++;
       DCHECK(characters_filled_in <= details->characters());
@@ -3595,6 +3615,38 @@ EmitResult ActionNode::Emit(Compiler* compiler, Trace* trace) {
   return EmitResult::Success();
 }
 
+EmitResult UnanchoredAdvanceNode::Emit(Compiler* compiler, Trace* trace) {
+  RegExpMacroAssembler* assembler = compiler->macro_assembler();
+  if (!trace->is_trivial()) {
+    return trace->Flush(compiler, this);
+  }
+  assembler->UnanchoredAdvance(IsEitherUnicode(compiler->flags()),
+                               trace->backtrack());
+
+  Trace successor_trace(*trace);
+  successor_trace.InvalidateCurrentCharacter();
+  successor_trace.set_at_start(Trace::FALSE_VALUE);
+
+  RETURN_IF_ERROR(on_success()->Emit(compiler, &successor_trace));
+  return EmitResult::Success();
+}
+
+void UnanchoredAdvanceNode::GetQuickCheckDetails(QuickCheckDetails* details,
+                                                 Compiler* compiler,
+                                                 int characters_filled_in,
+                                                 bool not_at_start,
+                                                 int budget) {
+  
+  
+}
+
+void UnanchoredAdvanceNode::FillInBMInfo(Isolate* isolate, int offset,
+                                         int budget, BoyerMooreLookahead* bm,
+                                         bool not_at_start) {
+  
+  
+}
+
 EmitResult BackReferenceNode::Emit(Compiler* compiler, Trace* trace) {
   TRACE_EMIT("BackReference");
   RegExpMacroAssembler* assembler = compiler->macro_assembler();
@@ -3660,6 +3712,10 @@ class AssertionPropagator : public AllStatic {
   static void VisitAction(ActionNode* that) {
     
     
+    that->info()->AddFromFollowing(that->on_success()->info());
+  }
+
+  static void VisitUnanchoredAdvance(UnanchoredAdvanceNode* that) {
     that->info()->AddFromFollowing(that->on_success()->info());
   }
 
@@ -3744,6 +3800,12 @@ class EatsAtLeastPropagator : public AllStatic {
         that->set_eats_at_least_info(*that->on_success()->eats_at_least_info());
         break;
     }
+  }
+
+  static void VisitUnanchoredAdvance(UnanchoredAdvanceNode* that) {
+    uint8_t eats_at_least = base::saturated_cast<uint8_t>(
+        1 + that->on_success()->eats_at_least_info()->from_not_start);
+    that->set_eats_at_least_info(EatsAtLeastInfo(eats_at_least));
   }
 
   static void VisitChoice(ChoiceNode* that, int i) {
@@ -3858,6 +3920,12 @@ class Analysis : public NodeVisitor {
     EnsureAnalyzed(that->on_success());
     if (has_failed()) return;
     STATIC_FOR_EACH(Propagators::VisitAction(that));
+  }
+
+  void VisitUnanchoredAdvance(UnanchoredAdvanceNode* that) override {
+    EnsureAnalyzed(that->on_success());
+    if (has_failed()) return;
+    STATIC_FOR_EACH(Propagators::VisitUnanchoredAdvance(that));
   }
 
   void VisitChoice(ChoiceNode* that) override {

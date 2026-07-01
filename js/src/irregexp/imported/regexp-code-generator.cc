@@ -51,7 +51,7 @@ CodeGenerator::Result CodeGenerator::Assemble(DirectHandle<RegExpData> re_data,
                                 pattern_cstring.get(), &analysis);
     }
   }
-#endif 
+#endif  
 
   PreVisitBytecodes();
   iter_.reset();
