@@ -629,20 +629,16 @@ impl AbsoluteColor {
         
         
         
-        macro_rules! missing_to_nan {
+        macro_rules! missing_to_zero {
             ($c:expr) => {{
-                if let Some(v) = $c {
-                    crate::values::normalize(v)
-                } else {
-                    f32::NAN
-                }
+                crate::values::normalize($c.unwrap_or(0.0))
             }};
         }
 
         let components = ColorComponents(
-            missing_to_nan!(self.c0()),
-            missing_to_nan!(self.c1()),
-            missing_to_nan!(self.c2()),
+            missing_to_zero!(self.c0()),
+            missing_to_zero!(self.c1()),
+            missing_to_zero!(self.c2()),
         );
 
         let result = match (self.color_space, color_space) {
