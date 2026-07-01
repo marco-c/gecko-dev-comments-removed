@@ -10509,13 +10509,6 @@ var TabContextMenu = {
         this.contextTabs.length > 2 ||
         pinnedTabs.length ||
         customizeTabs.length;
-
-      this.removeNewBadge(contextMoveTabToNewSplitView);
-      this.removeNewBadge(contextSeparateSplitView);
-      if (!Services.prefs.getBoolPref("browser.tabs.splitview.hasUsed", true)) {
-        this.addNewBadge(contextMoveTabToNewSplitView);
-        this.addNewBadge(contextSeparateSplitView);
-      }
     }
 
     
