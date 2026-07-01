@@ -146,7 +146,7 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                               const bool* aDeletedChars) {
   MOZ_ASSERT(!aDest->TrailingGlyphRun(), "unexpected glyphRuns in aDest!");
   uint32_t offset = 0;
-  AutoTArray<gfxTextRun::DetailedGlyph, 2> glyphs;
+  AutoTArray<gfxTextRun::DetailedGlyph, 4> glyphs;
   const gfxTextRun::CompressedGlyph continuationGlyph =
       gfxTextRun::CompressedGlyph::MakeComplex(false, false);
   const gfxTextRun::CompressedGlyph* srcGlyphs = aSrc->GetCharacterGlyphs();
@@ -204,6 +204,21 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           
           mergedGlyph.SetComplex(mergedGlyph.IsClusterStart(),
                                  mergedGlyph.IsLigatureGroupStart());
+          
+          
+          
+          
+          
+          
+          
+          
+          if (glyphs.Length() > 1 &&
+              std::all_of(glyphs.cbegin(), glyphs.cend(),
+                          [](const gfxTextRun::DetailedGlyph& g) -> bool {
+                            return g.mAdvance > 0;
+                          })) {
+            mergedGlyph.SetApplyLetterSpacingBetweenDetailedGlyphs();
+          }
           destGlyphs[offset] = mergedGlyph;
           aDest->SetDetailedGlyphs(offset, glyphs.Length(), glyphs.Elements());
           if (anyMissing) {

@@ -809,7 +809,17 @@ class gfxShapedText {
       FLAG_NOT_MISSING = 0x010000U,
       FLAG_NOT_CLUSTER_START = 0x020000U,
       FLAG_NOT_LIGATURE_GROUP_START = 0x040000U,
+
       
+      
+      
+      
+      
+      
+      
+      
+      
+      FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS = 0x080000U,
 
       
       
@@ -1007,6 +1017,15 @@ class gfxShapedText {
     void SetIsFormattingControl() {
       MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_IS_FORMATTING_CONTROL;
+    }
+
+    void SetApplyLetterSpacingBetweenDetailedGlyphs() {
+      MOZ_ASSERT(!IsSimpleGlyph());
+      mValue |= FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS;
+    }
+    bool ApplyLetterSpacingBetweenDetailedGlyphs() const {
+      return !IsSimpleGlyph() &&
+             (mValue & FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS);
     }
 
    private:
@@ -1806,7 +1825,7 @@ class gfxFont {
   virtual RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart,
                              uint32_t aEnd, BoundingBoxType aBoundingBoxType,
                              DrawTarget* aDrawTargetForTightBoundingBox,
-                             Spacing* aSpacing,
+                             Spacing* aSpacing, nscoord aLetterSpacing,
                              mozilla::gfx::ShapedTextFlags aOrientation);
   
 
@@ -2022,14 +2041,14 @@ class gfxFont {
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
                      DrawTarget* aRefDrawTarget, Spacing* aSpacing,
-                     gfxGlyphExtents* aExtents, bool aIsRTL,
-                     bool aNeedsGlyphExtents, RunMetrics& aMetrics,
+                     nscoord aLetterSpacing, gfxGlyphExtents* aExtents,
+                     bool aIsRTL, bool aNeedsGlyphExtents, RunMetrics& aMetrics,
                      gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax);
 
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
-                     DrawTarget* aRefDrawTarget, Spacing* aSpacing, bool aIsRTL,
-                     RunMetrics& aMetrics);
+                     DrawTarget* aRefDrawTarget, Spacing* aSpacing,
+                     nscoord aLetterSpacing, bool aIsRTL, RunMetrics& aMetrics);
 
   
   
@@ -2411,6 +2430,7 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   mozilla::layout::TextDrawTarget* textDrawer = nullptr;
   mozilla::LayoutDeviceRect clipRect;
   mozilla::gfx::Float direction = 1.0f;
+  nscoord letterSpacing = 0;
   double devPerApp = 1.0;
   nscolor textStrokeColor = 0;
   gfxPattern* textStrokePattern = nullptr;

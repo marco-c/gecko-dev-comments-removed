@@ -254,6 +254,8 @@ class gfxTextRun : public gfxShapedText {
     
     
     virtual uint32_t GetAppUnitsPerDevUnit() const = 0;
+
+    virtual nscoord LetterSpacing() const = 0;
   };
 
   struct MOZ_STACK_CLASS DrawParams {
@@ -349,7 +351,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  gfxFloat GetMinAdvanceWidth(Range aRange) const;
+  gfxFloat GetMinAdvanceWidth(Range aRange, nscoord aLetterSpacing) const;
 
   
 
@@ -773,7 +775,8 @@ class gfxTextRun : public gfxShapedText {
     mShapingState = aShapingState;
   }
 
-  int32_t GetAdvanceForGlyph(uint32_t aIndex) const {
+  nscoord GetAdvanceForGlyph(uint32_t aIndex,
+                             nscoord aLetterSpacing = 0) const {
     const CompressedGlyph& glyphData = mCharacterGlyphs[aIndex];
     if (glyphData.IsSimpleGlyph()) {
       return glyphData.GetSimpleAdvance();
@@ -783,9 +786,13 @@ class gfxTextRun : public gfxShapedText {
       return 0;
     }
     const DetailedGlyph* details = GetDetailedGlyphs(aIndex);
-    int32_t advance = 0;
-    for (uint32_t j = 0; j < glyphCount; ++j, ++details) {
+    nscoord advance = 0;
+    if (glyphData.ApplyLetterSpacingBetweenDetailedGlyphs()) {
+      advance += (glyphCount - 1) * aLetterSpacing;
+    }
+    while (glyphCount--) {
       advance += details->mAdvance;
+      ++details;
     }
     return advance;
   }
@@ -823,7 +830,7 @@ class gfxTextRun : public gfxShapedText {
   
 
   
-  int32_t GetAdvanceForGlyphs(Range aRange) const;
+  int32_t GetAdvanceForGlyphs(Range aRange, nscoord aLetterSpacing) const;
 
   
   

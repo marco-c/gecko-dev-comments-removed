@@ -1945,7 +1945,8 @@ static float GetSVGFontSizeScaleFactor(nsIFrame* aFrame) {
   return static_cast<SVGTextFrame*>(container)->GetFontSizeScaleFactor();
 }
 
-static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
+static nscoord ResolveLetterSpacing(nsIFrame* aFrame,
+                                    const nsStyleText& aStyleText) {
   if (aFrame->IsInSVGTextSubtree()) {
     
     
@@ -1961,7 +1962,8 @@ static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
 }
 
 
-static nscoord WordSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
+static nscoord ResolveWordSpacing(nsIFrame* aFrame,
+                                  const nsStyleText& aStyleText) {
   if (aFrame->IsInSVGTextSubtree()) {
     
     
@@ -2160,8 +2162,8 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
 
   const nsStyleFont* fontStyle1 = sc1->StyleFont();
   const nsStyleFont* fontStyle2 = sc2->StyleFont();
-  nscoord letterSpacing1 = LetterSpacing(aFrame1, *textStyle1);
-  nscoord letterSpacing2 = LetterSpacing(aFrame2, *textStyle2);
+  nscoord letterSpacing1 = ResolveLetterSpacing(aFrame1, *textStyle1);
+  nscoord letterSpacing2 = ResolveLetterSpacing(aFrame2, *textStyle2);
   return fontStyle1->mFont == fontStyle2->mFont &&
          fontStyle1->mLanguage == fontStyle2->mLanguage &&
          nsLayoutUtils::GetTextRunFlagsForStyle(sc1, pc, fontStyle1, textStyle1,
@@ -2595,7 +2597,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
   
   flags |= nsLayoutUtils::GetTextRunFlagsForStyle(
       lastComputedStyle, firstFrame->PresContext(), fontStyle, textStyle,
-      LetterSpacing(firstFrame, *textStyle));
+      ResolveLetterSpacing(firstFrame, *textStyle));
   
   
   if (!(flags & gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED)) {
@@ -3482,8 +3484,8 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aLength),
-      mWordSpacing(WordSpacing(aFrame, *aTextStyle)),
-      mLetterSpacing(LetterSpacing(aFrame, *aTextStyle)),
+      mWordSpacing(ResolveWordSpacing(aFrame, *aTextStyle)),
+      mLetterSpacing(ResolveLetterSpacing(aFrame, *aTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
@@ -3512,8 +3514,8 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aFrame->GetContentLength()),
-      mWordSpacing(WordSpacing(aFrame, *mTextStyle)),
-      mLetterSpacing(LetterSpacing(aFrame, *mTextStyle)),
+      mWordSpacing(ResolveWordSpacing(aFrame, *mTextStyle)),
+      mLetterSpacing(ResolveLetterSpacing(aFrame, *mTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(0),
@@ -9892,8 +9894,8 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
   if (textStyle->EffectiveOverflowWrap() == StyleOverflowWrap::Anywhere &&
       textStyle->WordCanWrap(this)) {
     aData->OptionallyBreak();
-    aData->mCurrentLine +=
-        textRun->GetMinAdvanceWidth(Range(start, flowEndInTextRun));
+    aData->mCurrentLine += textRun->GetMinAdvanceWidth(
+        Range(start, flowEndInTextRun), provider.LetterSpacing());
     aData->mTrailingWhitespace = 0;
     aData->mAtStartOfLine = false;
     aData->OptionallyBreak();
@@ -10257,6 +10259,9 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
       
       if (canUseSimpleAdvance) {
         if (uint32_t count = g->GetGlyphCount()) {
+          
+          
+          
           const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
           while (count--) {
             runAdvance += details->mAdvance;
