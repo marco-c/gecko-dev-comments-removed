@@ -39,6 +39,8 @@ user_pref("dom.disable_open_during_load", false);
 user_pref("dom.disable_window_flip", true);
 user_pref("dom.disable_window_move_resize", true);
 
+user_pref("layout.css.stylesheet-cache.timeout_ms", 1000000);
+
 user_pref("dom.push.connection.enabled", false);
 user_pref("extensions.autoDisableScopes", 10);
 user_pref("extensions.blocklist.enabled", false);
