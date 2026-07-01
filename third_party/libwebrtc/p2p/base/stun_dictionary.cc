@@ -134,12 +134,22 @@ StunDictionaryView::ParseDelta(const StunByteStringAttribute& delta) {
 
   
   std::deque<std::unique_ptr<StunAttribute>> attrs;
+  
+  
+  
+  
+  std::vector<uint16_t> seen_keys;
   while (buf.Length()) {
     uint16_t key, length, value_type;
     if (!buf.ReadUInt16(&key)) {
       return RTCError(RTCErrorType::INVALID_PARAMETER,
                       "Failed to read attribute key");
     }
+    if (std::find(seen_keys.begin(), seen_keys.end(), key) != seen_keys.end()) {
+      return RTCError(RTCErrorType::INVALID_PARAMETER,
+                      "Duplicate key in delta");
+    }
+    seen_keys.push_back(key);
     if (!buf.ReadUInt16(&length)) {
       return RTCError(RTCErrorType::INVALID_PARAMETER,
                       "Failed to read attribute length");
@@ -353,15 +363,14 @@ std::unique_ptr<StunByteStringAttribute> StunDictionaryWriter::CreateDelta() {
 
 void StunDictionaryWriter::ApplyDeltaAck(const StunUInt64Attribute& ack) {
   uint64_t acked_version = ack.value();
-  auto entries_to_remove = std::remove_if(
-      pending_.begin(), pending_.end(),
-      [acked_version](const auto& p) { return p.first <= acked_version; });
-
-  
-  for (auto it = entries_to_remove; it != pending_.end(); ++it) {
-    tombstones_.erase((*it).second->type());
+  for (const auto& p : pending_) {
+    if (p.first <= acked_version) {
+      tombstones_.erase(p.second->type());
+    }
   }
-  pending_.erase(entries_to_remove, pending_.end());
+  std::erase_if(pending_, [acked_version](const auto& p) {
+    return p.first <= acked_version;
+  });
 }
 
 
