@@ -2955,6 +2955,14 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+  public @Nullable JSONObject getIPPProxyInfo() {
+    return (JSONObject) webExtensionApiCall("GetIPPProxyInfo", null);
+  }
+
+  
+
+
+
 
 
 

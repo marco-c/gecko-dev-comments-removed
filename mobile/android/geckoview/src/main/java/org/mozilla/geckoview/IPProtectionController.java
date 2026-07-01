@@ -440,11 +440,35 @@ public class IPProtectionController {
 
 
 
+
   @HandlerThread
   public @NonNull GeckoResult<Void> activate() {
+    return activate(true, false, null);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Void> activate(
+      final boolean userAction, final boolean inPrivateBrowsing, final @Nullable String country) {
     ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putBoolean("userAction", userAction);
+    bundle.putBoolean("inPrivateBrowsing", inPrivateBrowsing);
+    if (country != null) {
+      bundle.putString("country", country);
+    }
     return EventDispatcher.getInstance()
-        .queryVoid("GeckoView:IPProtection:Activate")
+        .queryVoid("GeckoView:IPProtection:Activate", bundle)
         .map(
             null,
             e ->
