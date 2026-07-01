@@ -8281,18 +8281,10 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
     if (StaticPrefs::network_dns_use_https_rr_as_altsvc() && !mHTTPSSVCRecord &&
         !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) &&
         canUseHTTPSRRonNetwork(unused)) {
-      MOZ_ASSERT(!mHTTPSSVCRecord);
-
-      OriginAttributes originAttributes;
-      StoragePrincipalHelper::GetOriginAttributesForHTTPSRR(this,
-                                                            originAttributes);
-
-      RefPtr<nsDNSPrefetch> resolver =
-          new nsDNSPrefetch(mURI, originAttributes, nsIRequest::GetTRRMode());
-      (void)resolver->FetchHTTPSSVC(mCaps & NS_HTTP_REFRESH_DNS, true,
-                                    [](nsIDNSHTTPSSVCRecord*) {
-                                      
-                                    });
+      (void)mDNSPrefetch->FetchHTTPSSVC(mCaps & NS_HTTP_REFRESH_DNS, true,
+                                        [](nsIDNSHTTPSSVCRecord*) {
+                                          
+                                        });
     }
 
     
