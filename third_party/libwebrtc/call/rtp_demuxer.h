@@ -167,6 +167,9 @@ class RtpDemuxer {
   void AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink);
 
   
+  void RemoveAllSinks();
+
+  
   
   bool RemoveSink(const RtpPacketSinkInterface* sink);
 
