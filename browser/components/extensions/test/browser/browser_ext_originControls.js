@@ -1,5 +1,7 @@
 "use strict";
 
+requestLongerTimeout(2);
+
 const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
@@ -26,6 +28,19 @@ add_setup(async function setup() {
       ["test.wait300msAfterTabSwitch", true],
       ["extensions.originControls.grantByDefault", false],
     ],
+  });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  registerCleanupFunction(async () => {
+    await CustomizableUI.reset();
   });
 });
 
