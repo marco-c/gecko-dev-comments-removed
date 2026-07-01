@@ -291,7 +291,7 @@
       this._invalidate(reason);
     }
 
-    _invalidate(reason) {
+    _invalidate() {
       
       this.richlistbox.collapsed = this.matchCount == 0;
 
@@ -314,7 +314,23 @@
       if (this._appendResultTimeout) {
         clearTimeout(this._appendResultTimeout);
       }
-      this._appendCurrentResult(reason);
+
+      if (
+        !this.richlistbox.classList.contains("autocomplete-row-item-container")
+      ) {
+        this.richlistbox.replaceChildren();
+      }
+
+      
+      
+      
+      ChromeUtils.importESModule(
+        "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+        { global: "current" }
+      );
+
+      this.richlistbox.classList.add("autocomplete-row-item-container");
+      this._appendAutocompleteResults();
     }
 
     _collapseUnusedItems() {
@@ -381,20 +397,23 @@
       this.richlistbox.style.maxHeight = Math.ceil(height) + "px";
     }
 
-    _appendCurrentResult(invalidateReason) {
-      var controller = this.mInput.controller;
-      var matchCount = this.matchCount;
-      var existingItemsCount = this.richlistbox.children.length;
+    _createAutocompleteRowItem() {
+      const item = document.createXULElement("richlistitem");
+      item.className = "autocomplete-row-item";
+      item.appendChild(document.createElement("autocomplete-row-item"));
+      return item;
+    }
+
+    _appendAutocompleteResults() {
+      const controller = this.mInput.controller;
+      const matchCount = this.matchCount;
 
       
       for (let i = 0; i < this.maxRows; i++) {
         if (this._currentIndex >= matchCount) {
           break;
         }
-        let item;
-        let itemExists = this._currentIndex < existingItemsCount;
 
-        let originalValue, originalText, originalType;
         let style = controller.getStyleAt(this._currentIndex);
         let value =
           style && style.includes("autofill")
@@ -403,153 +422,51 @@
         let label = controller.getLabelAt(this._currentIndex);
         let comment = controller.getCommentAt(this._currentIndex);
         let image = controller.getImageAt(this._currentIndex);
-        
-        let trimmedSearchString = controller.searchString
-          .replace(/^\s+/, "")
-          .replace(/\s+$/, "");
+
+        const parsedComment = comment.length ? JSON.parse(comment) : null;
 
         
-        try {
-          const details = JSON.parse(label);
-          if (details.title) {
-            value = details.title;
-            label = details.subtitle ?? "";
-          }
-        } catch {}
-
-        let reusable = false;
-        if (itemExists) {
-          item = this.richlistbox.children[this._currentIndex];
-
-          
-          originalValue =
-            item.getAttribute("url") || item.getAttribute("ac-value");
-          originalText = item.getAttribute("ac-text");
-          originalType = item.getAttribute("originaltype");
-
-          
-          
-          const UNREUSEABLE_STYLES = [
-            "autofill",
-            "action",
-            "generatedPassword",
-            "generic",
-            "importableLearnMore",
-            "importableLogins",
-            "insecureWarning",
-            "loginsFooter",
-            "loginWithOrigin",
-          ];
-          
-          
-          reusable =
-            originalType === style ||
-            !(
-              UNREUSEABLE_STYLES.includes(style) ||
-              UNREUSEABLE_STYLES.includes(originalType)
-            );
+        if (!this.richlistbox.children[this._currentIndex]) {
+          this.richlistbox.appendChild(this._createAutocompleteRowItem());
         }
 
-        
-        if (!reusable) {
-          let options = null;
-          switch (style) {
-            case "autofill":
-              options = { is: "autocomplete-autofill-richlistitem" };
-              break;
-            case "action":
-              options = { is: "autocomplete-action-richlistitem" };
-              break;
-            case "generic":
-              options = { is: "autocomplete-two-line-richlistitem" };
-              break;
-            case "importableLearnMore":
-              options = {
-                is: "autocomplete-importable-learn-more-richlistitem",
-              };
-              break;
-            case "importableLogins":
-              options = { is: "autocomplete-importable-logins-richlistitem" };
-              break;
-            case "generatedPassword":
-              options = { is: "autocomplete-generated-password-richlistitem" };
-              break;
-            case "insecureWarning":
-              options = { is: "autocomplete-richlistitem-insecure-warning" };
-              break;
-            case "loginsFooter":
-              options = { is: "autocomplete-richlistitem-logins-footer" };
-              break;
-            case "loginWithOrigin":
-              options = { is: "autocomplete-login-richlistitem" };
-              break;
-            default:
-              options = { is: "autocomplete-richlistitem" };
-          }
-          item = document.createXULElement("richlistitem", options);
-          item.className = "autocomplete-richlistitem";
+        const item = this.richlistbox.children[this._currentIndex];
+        const row = item.querySelector("autocomplete-row-item");
+
+        if (row) {
+          row.label = label;
+          row.description = parsedComment?.secondary ?? null;
+          row.icon = image;
+          row.value = value;
+          row.actions = { primary: () => {} };
         }
 
         item.setAttribute("dir", this.style.direction);
-        item.setAttribute("ac-image", image);
-        item.setAttribute("ac-value", value);
-        item.setAttribute("ac-label", label);
-        item.setAttribute("ac-comment", comment);
-        item.setAttribute("ac-text", trimmedSearchString);
+        item.setAttribute("originaltype", style);
+        item.toggleAttribute(
+          "footer",
+          ["action", "loginsFooter"].includes(style)
+        );
 
-        
-        
-        
-        
-        let iface = Ci.nsIAutoCompletePopup;
-        if (
-          reusable &&
-          originalText == trimmedSearchString &&
-          invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
-          (originalValue == value ||
-            this.mousedOverIndex === this._currentIndex)
-        ) {
-          
-          item._reuseAcItem();
-          this._currentIndex++;
-          continue;
+        if (parsedComment?.ariaLabel) {
+          item.setAttribute("aria-label", parsedComment.ariaLabel);
         } else {
-          if (typeof item._cleanup == "function") {
-            item._cleanup();
-          }
-          item.setAttribute("originaltype", style);
+          item.removeAttribute("aria-label");
         }
 
-        if (reusable) {
-          
-          
-          
-          
-          
-          item._adjustAcItem();
-          item.collapsed = false;
-        } else if (itemExists) {
-          let oldItem = this.richlistbox.children[this._currentIndex];
-          this.richlistbox.replaceChild(item, oldItem);
+        if (parsedComment?.type) {
+          item.setAttribute("type", parsedComment.type);
         } else {
-          this.richlistbox.appendChild(item);
+          item.removeAttribute("type");
         }
+        item.collapsed = false;
 
         this._currentIndex++;
       }
 
-      if (typeof this.onResultsAdded == "function") {
-        
-        
-        
-        Services.tm.dispatchToMainThread(() => this.onResultsAdded());
-      }
-
       if (this._currentIndex < matchCount) {
-        
-        
         this._appendResultTimeout = setTimeout(
-          () => this._appendCurrentResult(),
+          () => this._appendAutocompleteResults(),
           0
         );
       }
