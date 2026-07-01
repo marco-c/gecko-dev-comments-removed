@@ -134,28 +134,34 @@ void APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId) {
 void APZUpdater::ClearTree(LayersId aRootLayersId) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
-  RunOnUpdaterThread(
-      aRootLayersId,
-      NS_NewRunnableFunction("APZUpdater::ClearTree",
-                             [=]() {
-                               self->mApz->ClearTree();
-                               self->mDestroyed = true;
+  RefPtr<Runnable> task =
+      NS_NewRunnableFunction("APZUpdater::ClearTree", [=]() {
+        self->mApz->ClearTree();
+        self->mDestroyed = true;
 
-                               
-                               
-                               
-                               
-                               
-                               
-                               
-                               StaticMutexAutoLock lock(sWindowIdLock);
-                               if (self->mWindowId) {
-                                 MOZ_ASSERT(sWindowIdMap);
-                                 sWindowIdMap->erase(
-                                     wr::AsUint64(*(self->mWindowId)));
-                               }
-                             }),
-      DuringShutdown::Yes);
+        
+        
+        
+        
+        
+        StaticMutexAutoLock lock(sWindowIdLock);
+        if (self->mWindowId) {
+          MOZ_ASSERT(sWindowIdMap);
+          sWindowIdMap->erase(wr::AsUint64(*(self->mWindowId)));
+        }
+      });
+
+  
+  
+  
+  
+  
+  if (!HasUpdaterThread()) {
+    task->Run();
+    return;
+  }
+
+  RunOnUpdaterThread(aRootLayersId, task.forget(), DuringShutdown::Yes);
 }
 
 void APZUpdater::UpdateFocusState(LayersId aRootLayerTreeId,
@@ -445,6 +451,17 @@ bool APZUpdater::IsUpdaterThread() const {
     return mUpdaterThreadId && PlatformThread::CurrentId() == *mUpdaterThreadId;
   }
   return CompositorThreadHolder::IsInCompositorThread();
+}
+
+bool APZUpdater::HasUpdaterThread() const {
+  MutexAutoLock lock(mThreadIdLock);
+  return mUpdaterThreadId.isSome();
+}
+
+void APZUpdater::AssertOnUpdaterThreadOrNotInitialized() const {
+  if (APZThreadUtils::GetThreadAssertionsEnabled()) {
+    MOZ_ASSERT(IsUpdaterThread() || !HasUpdaterThread());
+  }
 }
 
 void APZUpdater::RunOnControllerThread(LayersId aLayersId,

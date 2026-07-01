@@ -2816,7 +2816,10 @@ void APZCTreeManager::FlushRepaintsToClearScreenToGeckoTransform() {
 }
 
 void APZCTreeManager::ClearTree() {
-  AssertOnUpdaterThread();
+  
+  
+  
+  GetUpdater()->AssertOnUpdaterThreadOrNotInitialized();
 
   
   

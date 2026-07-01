@@ -104,6 +104,14 @@ class APZUpdater {
 
   void AssertOnUpdaterThread() const;
 
+  
+
+
+
+
+
+  void AssertOnUpdaterThreadOrNotInitialized() const;
+
   enum class DuringShutdown {
     No,
     Yes,
@@ -159,6 +167,11 @@ class APZUpdater {
   void ProcessQueue();
 
  private:
+  
+  
+  
+  bool HasUpdaterThread() const;
+
   RefPtr<APZCTreeManager> mApz;
   bool mDestroyed;
   bool mConnectedToWebRender;
