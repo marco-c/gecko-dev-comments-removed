@@ -155,7 +155,11 @@ add_task(async function test_install_source_blocked_direct() {
     tab.linkedBrowser,
     [{ baseUrl: BASE_URL }],
     async function ({ baseUrl }) {
-      content.document.location.href = baseUrl + "policytest_v0.1.xpi";
+      
+      
+      
+      
+      content.wrappedJSObject.location.href = baseUrl + "policytest_v0.1.xpi";
     }
   );
   await popupPromise;
@@ -278,7 +282,11 @@ add_task(async function test_install_source_allowed_direct() {
     tab.linkedBrowser,
     [{ baseUrl: BASE_URL }],
     async function ({ baseUrl }) {
-      content.document.location.href = baseUrl + "policytest_v0.1.xpi";
+      
+      
+      
+      
+      content.wrappedJSObject.location.href = baseUrl + "policytest_v0.1.xpi";
     }
   );
   await popupPromise;

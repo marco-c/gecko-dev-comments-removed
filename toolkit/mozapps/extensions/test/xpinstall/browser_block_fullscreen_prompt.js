@@ -26,7 +26,11 @@ function changeFullscreen(browser, fullscreenState) {
 
 function triggerInstall(browser, xpi_url) {
   return SpecialPowers.spawn(browser, [xpi_url], async function (xpi_url) {
-    content.location = xpi_url;
+    
+    
+    
+    
+    content.wrappedJSObject.location = xpi_url;
   });
 }
 
@@ -83,13 +87,12 @@ add_task(async function testFullscreenCloseAddonInstallPrompt() {
   let addonEventPromise = TestUtils.topicObserved(
     "webextension-permission-prompt"
   );
-  await SpecialPowers.spawn(
-    gBrowser.selectedBrowser,
-    [TESTROOT + "amosigned.xpi"],
-    xpi_url => {
-      this.content.location = xpi_url;
-    }
-  );
+  let preInstallPromise = TestUtils.topicObserved("addon-install-blocked");
+  await triggerInstall(gBrowser.selectedBrowser, TESTROOT + "amosigned.xpi");
+
+  info("Awaiting pre-install third-party doorhanger and continue install");
+  (await preInstallPromise)[0].wrappedJSObject.install();
+
   
   info("Wait for webextension-permission-prompt");
   await addonEventPromise;
