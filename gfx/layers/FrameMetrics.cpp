@@ -251,6 +251,12 @@ void FrameMetrics::UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
   
   RecalculateLayoutViewportOffset();
   mScrollGeneration = aInfo.GetGeneration();
+
+  
+  
+  
+  SetVisualScrollUpdateType(ScrollOffsetUpdateType::None);
+  SetVisualDestination(GetVisualScrollOffset());
 }
 
 std::ostream& operator<<(std::ostream& aStream,
