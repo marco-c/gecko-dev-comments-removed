@@ -73,6 +73,20 @@ add_task(async function test_prevent_install_ui() {
     "about:preferences#search"
   );
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    if (
+      Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
+    ) {
+      let isAddEngineHidden = () =>
+        content.document.getElementById("setting-control-addEngineButton")
+          ?.hidden;
+      await ContentTaskUtils.waitForMutationCondition(
+        content.document.documentElement,
+        { subtree: true, childList: true, attributeFilter: ["hidden"] },
+        isAddEngineHidden
+      );
+      ok(isAddEngineHidden(), '"Add search engine" button should be hidden');
+      return;
+    }
     let linkContainer = content.document.getElementById("addEnginesBox");
     if (!linkContainer.hidden) {
       await ContentTaskUtils.waitForMutationCondition(
@@ -86,6 +100,34 @@ add_task(async function test_prevent_install_ui() {
       '"Find more search engines" link should be hidden'
     );
   });
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_prevent_install_context_menu() {
+  
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/browser/browser/base/content/test/contextMenu/subtst_contextmenu_add_search_engine.html"
+  );
+
+  let contextMenu = document.getElementById("contentAreaContextMenu");
+  let popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "#search_text",
+    { type: "contextmenu", button: 2 },
+    tab.linkedBrowser
+  );
+  await popupShown;
+
+  ok(
+    document.getElementById("context-add-engine").hidden,
+    "context-add-engine should be hidden when installs are prevented"
+  );
+
+  let popupHidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
+  contextMenu.hidePopup();
+  await popupHidden;
   await BrowserTestUtils.removeTab(tab);
 });
 
