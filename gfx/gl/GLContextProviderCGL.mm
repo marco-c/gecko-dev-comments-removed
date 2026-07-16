@@ -267,6 +267,15 @@ static RefPtr<GLContextCGL> CreateOffscreenFBOContext(
   std::vector<NSOpenGLPixelFormatAttribute> attribs;
   auto& flags = desc.flags;
 
+#if defined(__aarch64__)
+  
+  
+  
+  
+  
+  flags &= ~CreateContextFlags::HIGH_POWER;
+#endif
+
   if (!StaticPrefs::gl_allow_high_power()) {
     flags &= ~CreateContextFlags::HIGH_POWER;
   }
