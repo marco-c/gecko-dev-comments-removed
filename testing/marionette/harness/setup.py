@@ -25,7 +25,7 @@ setup(
     name="marionette-harness",
     version=get_version(),
     description="Marionette test automation harness",
-    long_description=open("README.md").read(),
+    long_description=open("README.rst").read(),
     
     classifiers=[
         "Development Status :: 5 - Production/Stable",
