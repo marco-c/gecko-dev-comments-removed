@@ -481,6 +481,11 @@ void NotificationController::ScheduleProcessing() {
   
   
   if (mObservingState == eNotObservingRefresh && mPresShell) {
+    if (mDocument->IsPrintDoc()) {
+      
+      
+      return;
+    }
     if (mPresShell->AddRefreshObserver(this, FlushType::Display,
                                        "Accessibility notifications")) {
       mObservingState = eRefreshObserving;
