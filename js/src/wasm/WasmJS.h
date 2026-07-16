@@ -77,11 +77,11 @@ struct ImportValues;
                         HandleObject importObj,
                         MutableHandle<WasmInstanceObject*> instanceObj);
 
-
-
-
-
 struct ImportValues;
+
+
+
+
 [[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
                               HandleObject importObj, ImportValues* imports);
 
