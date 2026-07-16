@@ -136,6 +136,10 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
 #endif
 
   
+  
+  gc::MarkingLock markingLock_;
+
+  
 
  private:
   
@@ -395,6 +399,8 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
   void copyRuntimeData(const uint8_t* data);
   void copyICEntries(const uint32_t* icEntries);
   void copySafepoints(const SafepointWriter* writer);
+
+  gc::MarkingLock& markingLock() { return markingLock_; }
 
   bool invalidated() const { return invalidationCount_ != 0; }
 

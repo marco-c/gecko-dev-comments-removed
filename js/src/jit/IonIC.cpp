@@ -4,6 +4,7 @@
 
 #include "jit/IonIC.h"
 
+#include "gc/GCMarker.h"
 #include "jit/CacheIRCompiler.h"
 #include "jit/CacheIRGenerator.h"
 #include "jit/IonScript.h"
@@ -91,6 +92,10 @@ void IonIC::discardStubs(Zone* zone, IonScript* ionScript) {
     PreWriteBarrier(zone, ionScript);
   }
 
+  
+  
+  gc::AutoMarkingLock lock(zone, ionScript->markingLock());
+
 #ifdef JS_CRASH_DIAGNOSTICS
   IonICStub* stub = firstStub_;
   while (stub) {
@@ -111,6 +116,10 @@ void IonIC::reset(Zone* zone, IonScript* ionScript) {
 }
 
 void IonIC::trace(JSTracer* trc, IonScript* ionScript) {
+  
+  
+  gc::AutoMarkingLock lock(trc, ionScript->markingLock());
+
   if (script_) {
     TraceManuallyBarrieredEdge(trc, &script_, "IonIC::script_");
   }
@@ -742,9 +751,14 @@ uint8_t* IonICStub::stubDataStart() {
   return reinterpret_cast<uint8_t*>(this) + stubInfo_->stubDataOffset();
 }
 
-void IonIC::attachStub(IonICStub* newStub, JitCode* code) {
+void IonIC::attachStub(IonScript* ionScript, IonICStub* newStub,
+                       JitCode* code) {
   MOZ_ASSERT(newStub);
   MOZ_ASSERT(code);
+
+  
+  
+  gc::AutoMarkingLock lock(script()->zone(), ionScript->markingLock());
 
   if (firstStub_) {
     newStub->setNext(firstStub_, codeRaw_);
