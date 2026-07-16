@@ -154,8 +154,14 @@ class EditContext final : public DOMEventTargetHelper {
 
   RefPtr<DOMRect> ToDOMRect(const Rect& aCopy) const;
   Rect ToRect(const DOMRect& aRect) const;
-  static LayoutDeviceIntRect ToDeviceRect(const nsPresContext& aPresContext,
-                                          const Rect& aRect);
+
+  
+  
+  
+  static LayoutDeviceIntRect ToRootRelativeDeviceRect(
+      const nsPresContext& aPresContext, const Rect& aRect);
+  static LayoutDeviceIntRect ToRootRelativeDeviceRect(
+      const nsPresContext& aPresContext, const nsRect& aRect);
 
   RefPtr<nsGenericHTMLElement> mAssociatedElement;
   RefPtr<nsGenericHTMLElement> mTextContainer;
