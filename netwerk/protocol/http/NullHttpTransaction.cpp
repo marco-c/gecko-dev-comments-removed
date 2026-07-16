@@ -24,7 +24,7 @@ NS_IMPL_ISUPPORTS(NullHttpTransaction, NullHttpTransaction,
 
 NullHttpTransaction::NullHttpTransaction(nsHttpConnectionInfo* ci,
                                          nsIInterfaceRequestor* callbacks,
-                                         uint32_t caps)
+                                         uint32_t caps, bool reportActivity)
     : mStatus(NS_OK),
       mCaps(caps | NS_HTTP_ALLOW_KEEPALIVE),
       mRequestHead(nullptr),
@@ -32,6 +32,10 @@ NullHttpTransaction::NullHttpTransaction(nsHttpConnectionInfo* ci,
       mClaimed(false),
       mCallbacks(callbacks),
       mConnectionInfo(ci) {
+  if (!reportActivity) {
+    return;
+  }
+
   nsresult rv;
   mActivityDistributor =
       mozilla::components::HttpActivityDistributor::Service(&rv);
@@ -146,7 +150,7 @@ nsresult NullHttpTransaction::WriteSegments(nsAHttpSegmentWriter* writer,
 
 uint32_t NullHttpTransaction::Http1xTransactionCount() { return 0; }
 
-nsHttpRequestHead* NullHttpTransaction::RequestHead() {
+const nsHttpRequestHead* NullHttpTransaction::RequestHead() {
   
   
 

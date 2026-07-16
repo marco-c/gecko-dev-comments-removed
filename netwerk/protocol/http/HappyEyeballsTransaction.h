@@ -133,7 +133,7 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   
   
   
-  nsHttpRequestHead* RequestHead() override;
+  const nsHttpRequestHead* RequestHead() override;
 
   
   

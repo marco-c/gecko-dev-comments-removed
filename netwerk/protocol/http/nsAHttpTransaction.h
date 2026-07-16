@@ -118,7 +118,10 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void SetProxyConnectFailed() = 0;
 
   
-  virtual nsHttpRequestHead* RequestHead() = 0;
+  
+  
+  
+  virtual const nsHttpRequestHead* RequestHead() = 0;
 
   
   
@@ -275,7 +278,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void Close(nsresult reason) override;                                \
   nsHttpConnectionInfo* ConnectionInfo() override;                             \
   void SetProxyConnectFailed() override;                                       \
-  virtual nsHttpRequestHead* RequestHead() override;                           \
+  virtual const nsHttpRequestHead* RequestHead() override;                     \
   uint32_t Http1xTransactionCount() override;                                  \
   [[nodiscard]] nsresult TakeSubTransactions(                                  \
       nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) override;

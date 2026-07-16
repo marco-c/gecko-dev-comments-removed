@@ -72,7 +72,7 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
     return false;
   }
   
-  nsHttpRequestHead* head = realTxn->RequestHead();
+  const nsHttpRequestHead* head = realTxn->RequestHead();
   if (!head || !head->IsSafeMethod()) {
     return false;
   }
