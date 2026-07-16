@@ -1128,7 +1128,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   
   unsigned int versionEnum = channelInfo.protocolVersion & 0xFF;
   MOZ_ASSERT(versionEnum > 0);
-  glean::ssl_handshake::version.AccumulateSingleSample(versionEnum);
+  glean::tls_handshake::version
+      .EnumGet(static_cast<glean::tls_handshake::VersionLabel>(versionEnum - 1))
+      .Add();
 
   SSLCipherSuiteInfo cipherInfo;
   rv = SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &cipherInfo,
