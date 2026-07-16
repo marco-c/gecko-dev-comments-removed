@@ -228,6 +228,9 @@ class ScrollTimeline : public AnimationTimeline,
   Element* GetSource() const;
   dom::ScrollAxis GetScrollAxis() const;
 
+  
+  
+  
   StateSnapshot GetSnapshot() const;
 
   
@@ -307,6 +310,9 @@ class ScrollTimeline : public AnimationTimeline,
   void TimelineDataDidChange();
 
   
+  StateSnapshot ComputeSnapshot() const;
+
+  
   struct ComputedTimelineData {
     nscoord mPosition = 0;
     nscoord mStart = 0;
@@ -328,11 +334,13 @@ class ScrollTimeline : public AnimationTimeline,
 
   RefPtr<Document> mDocument;
 
-  
-  
-  
   ScrollerInfo mScrollerInfo;
   StyleScrollAxis mAxis;
+
+  
+  
+  
+  Maybe<StateSnapshot> mCachedStateSnapshot;
 
   struct CurrentTimeData {
     

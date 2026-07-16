@@ -254,15 +254,15 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
-  const auto state = GetSnapshot();
+  mCachedStateSnapshot = Some(ComputeSnapshot());
   
   
-  if (!state.IsActive()) {
+  if (!mCachedStateSnapshot->IsActive()) {
     return prevCachedCurrentTime.isSome();
   }
 
   const ScrollContainerFrame* scrollContainerFrame =
-      state.GetScrollContainerFrame();
+      mCachedStateSnapshot->GetScrollContainerFrame();
   MOZ_ASSERT(scrollContainerFrame);
 
   
@@ -310,7 +310,7 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   
   
   
-  const auto orientation = state.Axis();
+  const auto orientation = mCachedStateSnapshot->Axis();
   const auto sideInsets =
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
