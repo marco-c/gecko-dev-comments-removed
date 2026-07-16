@@ -1073,7 +1073,12 @@ BackgroundParentImpl::RecvPHttpBackgroundChannelConstructor(
   net::HttpBackgroundChannelParent* aParent =
       static_cast<net::HttpBackgroundChannelParent*>(aActor);
 
-  if (NS_WARN_IF(NS_FAILED(aParent->Init(aChannelId)))) {
+  
+  
+  
+  dom::ContentParentId cpId(BackgroundParent::GetChildID(this));
+
+  if (NS_WARN_IF(NS_FAILED(aParent->Init(cpId, aChannelId)))) {
     return IPC_FAIL_NO_REASON(this);
   }
 

@@ -48,6 +48,13 @@ void BackgroundChannelRegistrar::NotifyChannelLinked(
   MOZ_ASSERT(aChannelParent);
   MOZ_ASSERT(aBgParent);
 
+  
+  
+  
+  if (aChannelParent->GetContentParentId() != aBgParent->GetContentParentId()) {
+    return;
+  }
+
   aBgParent->LinkToChannel(aChannelParent);
   aChannelParent->OnBackgroundParentReady(aBgParent);
 }

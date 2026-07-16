@@ -8,6 +8,7 @@
 #include "mozilla/net/PHttpBackgroundChannelParent.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "nsID.h"
 #include "nsISupportsImpl.h"
 
@@ -26,7 +27,12 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
 
   
   
-  nsresult Init(const uint64_t& aChannelId);
+  nsresult Init(const dom::ContentParentId& aCpId, const uint64_t& aChannelId);
+
+  
+  
+  
+  dom::ContentParentId GetContentParentId() const { return mContentParentId; }
 
   
   
@@ -111,6 +117,10 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
 
   nsCOMPtr<nsISerialEventTarget> mBackgroundThread
       MOZ_GUARDED_BY(mBgThreadMutex);
+
+  
+  
+  dom::ContentParentId mContentParentId;
 
   
   RefPtr<HttpChannelParent> mChannelParent;

@@ -103,6 +103,11 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
                                 const nsACString& aTopLevelSite);
 
   
+  
+  
+  dom::ContentParentId GetContentParentId() const;
+
+  
   void OnBackgroundParentReady(HttpBackgroundChannelParent* aBgParent);
   
   void OnBackgroundParentDestroyed();
