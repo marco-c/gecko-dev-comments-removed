@@ -164,11 +164,6 @@ class Assembler : public AssemblerShared,
   Buffer m_buffer;
   bool isFinished = false;
 
-  
-  Instruction* getInstructionAt(BufferOffset offset) {
-    return m_buffer.getInst(offset);
-  }
-
   struct RelativePatch {
     
     
@@ -262,6 +257,11 @@ class Assembler : public AssemblerShared,
                              BufferOffset dest);
 
   void processCodeLabels(uint8_t* rawCode);
+
+  
+  Instruction* getInstructionAt(BufferOffset offset) {
+    return m_buffer.getInst(offset);
+  }
 
   
   
