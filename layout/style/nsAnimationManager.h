@@ -51,6 +51,7 @@ class nsAnimationManager final
   void RemoveNamedTimelineAnimation(const nsAtom* aName,
                                     mozilla::dom::CSSAnimation* aAnimation);
 
+  void UpdateDeferredTimelineChanges();
   void UpdateNamedTimelineAnimations(
       const nsTArray<RefPtr<const nsAtom>>& aChanged);
   void UpdateAllNamedTimelineAnimations();
@@ -135,6 +136,9 @@ class nsAnimationManager final
   
   
   TimelineNamesToAnimationMap mAnimationsWithNamedTimeline;
+  
+  
+  nsTHashSet<RefPtr<mozilla::dom::CSSAnimation>> mAnimationsWithDeferredUpdate;
 
   void DoUpdateAnimations(const mozilla::NonOwningAnimationTarget& aTarget,
                           const nsStyleUIReset& aStyle,
