@@ -39,25 +39,25 @@ bool done_blocking ABSL_GUARDED_BY(counters_mu) = false;
 
 
 void WaitAndIncrement() {
-  counters_mu.Lock();
+  counters_mu.lock();
   ++call_once_invoke_count;
-  counters_mu.Unlock();
+  counters_mu.unlock();
 
   counters_mu.LockWhen(Condition(&done_blocking));
   ++call_once_finished_count;
-  counters_mu.Unlock();
+  counters_mu.unlock();
 }
 
 void ThreadBody() {
-  counters_mu.Lock();
+  counters_mu.lock();
   ++running_thread_count;
-  counters_mu.Unlock();
+  counters_mu.unlock();
 
   absl::call_once(once, WaitAndIncrement);
 
-  counters_mu.Lock();
+  counters_mu.lock();
   ++call_once_return_count;
-  counters_mu.Unlock();
+  counters_mu.unlock();
 }
 
 
@@ -89,17 +89,17 @@ TEST(CallOnceTest, ExecutionCount) {
   
   
   done_blocking = true;
-  counters_mu.Unlock();
+  counters_mu.unlock();
 
   for (std::thread& thread : threads) {
     thread.join();
   }
 
-  counters_mu.Lock();
+  counters_mu.lock();
   EXPECT_EQ(call_once_invoke_count, 1);
   EXPECT_EQ(call_once_finished_count, 1);
   EXPECT_EQ(call_once_return_count, 10);
-  counters_mu.Unlock();
+  counters_mu.unlock();
 }
 
 }  

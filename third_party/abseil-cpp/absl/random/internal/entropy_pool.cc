@@ -46,14 +46,16 @@ namespace {
 
 
 
-class RandenPoolEntry {
+
+class alignas(std::max(size_t{ABSL_CACHELINE_SIZE}, size_t{32}))
+    RandenPoolEntry {
  public:
   static constexpr size_t kState = RandenTraits::kStateBytes / sizeof(uint32_t);
   static constexpr size_t kCapacity =
       RandenTraits::kCapacityBytes / sizeof(uint32_t);
 
   void Init(absl::Span<const uint32_t> data) {
-    SpinLockHolder l(&mu_);  
+    SpinLockHolder l(mu_);  
     std::copy(data.begin(), data.end(), std::begin(state_));
     next_ = kState;
   }
@@ -74,14 +76,15 @@ class RandenPoolEntry {
 
  private:
   
-  uint32_t state_[kState] ABSL_GUARDED_BY(mu_);  
+  
+  alignas(32) uint32_t state_[kState] ABSL_GUARDED_BY(mu_);
   SpinLock mu_;
   const Randen impl_;
   size_t next_ ABSL_GUARDED_BY(mu_);
 };
 
 void RandenPoolEntry::Fill(uint8_t* out, size_t bytes) {
-  SpinLockHolder l(&mu_);
+  SpinLockHolder l(mu_);
   while (bytes > 0) {
     MaybeRefill();
     size_t remaining = available() * sizeof(state_[0]);
@@ -149,22 +152,6 @@ size_t GetPoolID() {
 }
 
 
-
-RandenPoolEntry* PoolAlignedAlloc() {
-  constexpr size_t kAlignment =
-      ABSL_CACHELINE_SIZE > 32 ? ABSL_CACHELINE_SIZE : 32;
-
-  
-  
-  
-  uintptr_t x = reinterpret_cast<uintptr_t>(
-      new char[sizeof(RandenPoolEntry) + kAlignment]);
-  auto y = x % kAlignment;
-  void* aligned = reinterpret_cast<void*>(y == 0 ? x : (x + kAlignment - y));
-  return new (aligned) RandenPoolEntry();
-}
-
-
 void InitPoolURBG() {
   static constexpr size_t kSeedSize =
       RandenTraits::kStateBytes / sizeof(uint32_t);
@@ -174,7 +161,7 @@ void InitPoolURBG() {
     ThrowSeedGenException();
   }
   for (size_t i = 0; i < kPoolSize; i++) {
-    shared_pools[i] = PoolAlignedAlloc();
+    shared_pools[i] = new RandenPoolEntry();
     shared_pools[i]->Init(
         absl::MakeSpan(&seed_material[i * kSeedSize], kSeedSize));
   }

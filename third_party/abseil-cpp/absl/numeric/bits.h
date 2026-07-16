@@ -68,16 +68,14 @@ using std::rotr;
 
 
 template <class T>
-[[nodiscard]] constexpr
-    typename std::enable_if<std::is_unsigned<T>::value, T>::type
-    rotl(T x, int s) noexcept {
+[[nodiscard]] constexpr std::enable_if_t<std::is_unsigned_v<T>, T> rotl(
+    T x, int s) noexcept {
   return numeric_internal::RotateLeft(x, s);
 }
 
 template <class T>
-[[nodiscard]] constexpr
-    typename std::enable_if<std::is_unsigned<T>::value, T>::type
-    rotr(T x, int s) noexcept {
+[[nodiscard]] constexpr std::enable_if_t<std::is_unsigned_v<T>, T> rotr(
+    T x, int s) noexcept {
   return numeric_internal::RotateRight(x, s);
 }
 
@@ -103,39 +101,35 @@ using std::popcount;
 
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    countl_zero(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CLZ inline std::enable_if_t<std::is_unsigned_v<T>, int>
+countl_zero(T x) noexcept {
   return numeric_internal::CountLeadingZeroes(x);
 }
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    countl_one(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CLZ inline std::enable_if_t<std::is_unsigned_v<T>, int>
+countl_one(T x) noexcept {
   
   return countl_zero(static_cast<T>(~x));
 }
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CTZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    countr_zero(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CTZ inline std::enable_if_t<std::is_unsigned_v<T>, int>
+countr_zero(T x) noexcept {
   return numeric_internal::CountTrailingZeroes(x);
 }
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CTZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    countr_one(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CTZ inline std::enable_if_t<std::is_unsigned_v<T>, int>
+countr_one(T x) noexcept {
   
   return countr_zero(static_cast<T>(~x));
 }
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_POPCOUNT inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    popcount(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_POPCOUNT inline std::enable_if_t<std::is_unsigned_v<T>,
+                                                         int>
+popcount(T x) noexcept {
   return numeric_internal::Popcount(x);
 }
 
@@ -152,26 +146,24 @@ using std::has_single_bit;
 
 
 template <class T>
-constexpr inline typename std::enable_if<std::is_unsigned<T>::value, bool>::type
-has_single_bit(T x) noexcept {
+constexpr inline std::enable_if_t<std::is_unsigned_v<T>, bool> has_single_bit(
+    T x) noexcept {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
 
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, int>::type
-    bit_width(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CLZ inline std::enable_if_t<std::is_unsigned_v<T>, int>
+bit_width(T x) noexcept {
   return std::numeric_limits<T>::digits - countl_zero(x);
 }
 
 
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, T>::type
-    bit_floor(T x) noexcept {
+ABSL_INTERNAL_CONSTEXPR_CLZ inline std::enable_if_t<std::is_unsigned_v<T>, T>
+bit_floor(T x) noexcept {
   return x == 0 ? 0 : T{1} << (bit_width(x) - 1);
 }
 
@@ -179,9 +171,8 @@ ABSL_INTERNAL_CONSTEXPR_CLZ inline
 
 
 template <class T>
-ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, T>::type
-    bit_ceil(T x) {
+ABSL_INTERNAL_CONSTEXPR_CLZ inline std::enable_if_t<std::is_unsigned_v<T>, T>
+bit_ceil(T x) {
   
   
   

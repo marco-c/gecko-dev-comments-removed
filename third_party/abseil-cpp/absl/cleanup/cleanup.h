@@ -65,12 +65,17 @@
 
 
 
+
+
+
+
 #ifndef ABSL_CLEANUP_CLEANUP_H_
 #define ABSL_CLEANUP_CLEANUP_H_
 
 #include <utility>
 
 #include "absl/base/config.h"
+#include "absl/base/internal/hardening.h"
 #include "absl/base/macros.h"
 #include "absl/cleanup/internal/cleanup.h"
 
@@ -91,12 +96,12 @@ class [[nodiscard]] Cleanup final {
   Cleanup(Cleanup&& other) = default;
 
   void Cancel() && {
-    ABSL_HARDENING_ASSERT(storage_.IsCallbackEngaged());
+    absl::base_internal::HardeningAssert(storage_.IsCallbackEngaged());
     storage_.DestroyCallback();
   }
 
   void Invoke() && {
-    ABSL_HARDENING_ASSERT(storage_.IsCallbackEngaged());
+    absl::base_internal::HardeningAssert(storage_.IsCallbackEngaged());
     storage_.InvokeCallback();
     storage_.DestroyCallback();
   }

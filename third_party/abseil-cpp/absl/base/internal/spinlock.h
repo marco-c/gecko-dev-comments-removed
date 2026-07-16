@@ -31,20 +31,24 @@
 
 #include <atomic>
 #include <cstdint>
+#include <mutex>
+#include <type_traits>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/const_init.h"
-#include "absl/base/dynamic_annotations.h"
 #include "absl/base/internal/low_level_scheduling.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/internal/scheduling_mode.h"
 #include "absl/base/internal/tsan_mutex_interface.h"
+#include "absl/base/macros.h"
 #include "absl/base/thread_annotations.h"
 
 namespace tcmalloc {
 namespace tcmalloc_internal {
 
 class AllocationGuardSpinLockHolder;
+class Static;
 
 }  
 }  
@@ -55,17 +59,31 @@ namespace base_internal {
 
 class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
  public:
-  SpinLock() : lockword_(kSpinLockCooperative) {
-    ABSL_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static);
+  constexpr SpinLock() : lockword_(kSpinLockCooperative) { RegisterWithTsan(); }
+
+  
+  
+  constexpr explicit SpinLock(SchedulingMode mode)
+      : lockword_(IsCooperative(mode) ? kSpinLockCooperative : 0) {
+    RegisterWithTsan();
   }
 
+#if ABSL_HAVE_ATTRIBUTE(enable_if) && !defined(_WIN32)
   
   
-  explicit SpinLock(base_internal::SchedulingMode mode);
+  
+  
+  ABSL_DEPRECATE_AND_INLINE()
+  constexpr explicit SpinLock(SchedulingMode mode)
+      __attribute__((enable_if(mode == SCHEDULE_COOPERATIVE_AND_KERNEL,
+                               "Cooperative use default constructor")))
+      : SpinLock() {}
+#endif
 
   
-  constexpr SpinLock(absl::ConstInitType, base_internal::SchedulingMode mode)
-      : lockword_(IsCooperative(mode) ? kSpinLockCooperative : 0) {}
+  ABSL_DEPRECATE_AND_INLINE()
+  constexpr SpinLock(absl::ConstInitType, SchedulingMode mode)
+      : SpinLock(mode) {}
 
   
   
@@ -77,7 +95,7 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
 #endif
 
   
-  inline void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
+  inline void lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
     ABSL_TSAN_MUTEX_PRE_LOCK(this, 0);
     if (!TryLockImpl()) {
       SlowLock();
@@ -85,11 +103,14 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
     ABSL_TSAN_MUTEX_POST_LOCK(this, 0, 0);
   }
 
+  ABSL_DEPRECATE_AND_INLINE()
+  inline void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { return lock(); }
+
   
   
   
   
-  [[nodiscard]] inline bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+  [[nodiscard]] inline bool try_lock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     ABSL_TSAN_MUTEX_PRE_LOCK(this, __tsan_mutex_try_lock);
     bool res = TryLockImpl();
     ABSL_TSAN_MUTEX_POST_LOCK(
@@ -98,15 +119,20 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
     return res;
   }
 
+  ABSL_DEPRECATE_AND_INLINE()
+  [[nodiscard]] inline bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+    return try_lock();
+  }
+
   
-  inline void Unlock() ABSL_UNLOCK_FUNCTION() {
+  inline void unlock() ABSL_UNLOCK_FUNCTION() {
     ABSL_TSAN_MUTEX_PRE_UNLOCK(this, 0);
     uint32_t lock_value = lockword_.load(std::memory_order_relaxed);
     lock_value = lockword_.exchange(lock_value & kSpinLockCooperative,
                                     std::memory_order_release);
 
     if ((lock_value & kSpinLockDisabledScheduling) != 0) {
-      base_internal::SchedulingGuard::EnableRescheduling(true);
+      SchedulingGuard::EnableRescheduling(true);
     }
     if ((lock_value & kWaitTimeMask) != 0) {
       
@@ -116,6 +142,9 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
     }
     ABSL_TSAN_MUTEX_POST_UNLOCK(this, 0);
   }
+
+  ABSL_DEPRECATE_AND_INLINE()
+  inline void Unlock() ABSL_UNLOCK_FUNCTION() { unlock(); }
 
   
   
@@ -146,6 +175,16 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
   
   friend struct SpinLockTest;
   friend class tcmalloc::tcmalloc_internal::AllocationGuardSpinLockHolder;
+  friend class tcmalloc::tcmalloc_internal::Static;
+
+  static int GetAdaptiveSpinCount() {
+    return adaptive_spin_count_.load(std::memory_order_relaxed);
+  }
+  static void SetAdaptiveSpinCount(int count) {
+    adaptive_spin_count_.store(count, std::memory_order_relaxed);
+  }
+
+  static std::atomic<int> adaptive_spin_count_;
 
  private:
   
@@ -175,9 +214,16 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
       ~(kSpinLockHeld | kSpinLockCooperative | kSpinLockDisabledScheduling);
 
   
-  static constexpr bool IsCooperative(
-      base_internal::SchedulingMode scheduling_mode) {
-    return scheduling_mode == base_internal::SCHEDULE_COOPERATIVE_AND_KERNEL;
+  static constexpr bool IsCooperative(SchedulingMode scheduling_mode) {
+    return scheduling_mode == SCHEDULE_COOPERATIVE_AND_KERNEL;
+  }
+
+  constexpr void RegisterWithTsan() {
+#if ABSL_HAVE_BUILTIN(__builtin_is_constant_evaluated)
+    if (!__builtin_is_constant_evaluated()) {
+      ABSL_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static);
+    }
+#endif
   }
 
   bool IsCooperative() const {
@@ -202,19 +248,18 @@ class ABSL_LOCKABLE ABSL_ATTRIBUTE_WARN_UNUSED SpinLock {
 
 
 
-class ABSL_SCOPED_LOCKABLE [[nodiscard]] SpinLockHolder {
+class ABSL_SCOPED_LOCKABLE [[nodiscard]] SpinLockHolder
+    : public std::lock_guard<SpinLock> {
  public:
+  inline explicit SpinLockHolder(
+      SpinLock& l ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(l)
+      : std::lock_guard<SpinLock>(l) {}
+  ABSL_DEPRECATE_AND_INLINE()
   inline explicit SpinLockHolder(SpinLock* l) ABSL_EXCLUSIVE_LOCK_FUNCTION(l)
-      : lock_(l) {
-    l->Lock();
-  }
-  inline ~SpinLockHolder() ABSL_UNLOCK_FUNCTION() { lock_->Unlock(); }
+      : SpinLockHolder(*l) {}
 
-  SpinLockHolder(const SpinLockHolder&) = delete;
-  SpinLockHolder& operator=(const SpinLockHolder&) = delete;
-
- private:
-  SpinLock* lock_;
+  inline ~SpinLockHolder() ABSL_UNLOCK_FUNCTION() = default;
 };
 
 
@@ -243,7 +288,7 @@ inline uint32_t SpinLock::TryLockInternal(uint32_t lock_value,
   if ((lock_value & kSpinLockCooperative) == 0) {
     
     
-    if (base_internal::SchedulingGuard::DisableRescheduling()) {
+    if (SchedulingGuard::DisableRescheduling()) {
       sched_disabled_bit = kSpinLockDisabledScheduling;
     }
   }
@@ -252,7 +297,7 @@ inline uint32_t SpinLock::TryLockInternal(uint32_t lock_value,
           lock_value,
           kSpinLockHeld | lock_value | wait_cycles | sched_disabled_bit,
           std::memory_order_acquire, std::memory_order_relaxed)) {
-    base_internal::SchedulingGuard::EnableRescheduling(sched_disabled_bit != 0);
+    SchedulingGuard::EnableRescheduling(sched_disabled_bit != 0);
   }
 
   return lock_value;

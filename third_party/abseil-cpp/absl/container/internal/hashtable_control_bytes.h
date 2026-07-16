@@ -84,16 +84,11 @@ class NonIterableBitMask {
  public:
   explicit NonIterableBitMask(T mask) : mask_(mask) {}
 
-  explicit operator bool() const { return this->mask_ != 0; }
+  explicit operator bool() const { return mask_ != 0; }
 
   
   uint32_t LowestBitSet() const {
     return container_internal::TrailingZeros(mask_) >> Shift;
-  }
-
-  
-  uint32_t HighestBitSet() const {
-    return static_cast<uint32_t>((bit_width(mask_) - 1) >> Shift);
   }
 
   
@@ -130,7 +125,7 @@ template <class T, int SignificantBits, int Shift = 0,
           bool NullifyBitsOnIteration = false>
 class BitMask : public NonIterableBitMask<T, SignificantBits, Shift> {
   using Base = NonIterableBitMask<T, SignificantBits, Shift>;
-  static_assert(std::is_unsigned<T>::value, "");
+  static_assert(std::is_unsigned_v<T>, "");
   static_assert(Shift == 0 || Shift == 3, "");
   static_assert(!NullifyBitsOnIteration || Shift == 3, "");
 
@@ -217,6 +212,9 @@ static_assert(
 static_assert(ctrl_t::kDeleted == static_cast<ctrl_t>(-2),
               "ctrl_t::kDeleted must be -2 to make the implementation of "
               "ConvertSpecialToEmptyAndFullToDeleted efficient");
+static_assert(ctrl_t::kEmpty == static_cast<ctrl_t>(-128),
+              "ctrl_t::kEmpty must be -128 to use saturated subtraction in"
+              " ConvertSpecialToEmptyAndFullToDeleted");
 
 
 inline bool IsEmpty(ctrl_t c) { return c == ctrl_t::kEmpty; }
@@ -265,7 +263,7 @@ inline bool IsEmptyOrDeleted(ctrl_t c) { return c < ctrl_t::kSentinel; }
 
 inline __m128i _mm_cmpgt_epi8_fixed(__m128i a, __m128i b) {
 #if defined(__GNUC__) && !defined(__clang__)
-  if (std::is_unsigned<char>::value) {
+  if (std::is_unsigned_v<char>) {
     const __m128i mask = _mm_set1_epi8(0x80);
     const __m128i diff = _mm_subs_epi8(b, a);
     return _mm_cmpeq_epi8(_mm_and_si128(diff, mask), mask);
@@ -276,8 +274,12 @@ inline __m128i _mm_cmpgt_epi8_fixed(__m128i a, __m128i b) {
 
 struct GroupSse2Impl {
   static constexpr size_t kWidth = 16;  
-  using BitMaskType = BitMask<uint16_t, kWidth>;
-  using NonIterableBitMaskType = NonIterableBitMask<uint16_t, kWidth>;
+  
+  
+  
+  using MaskInt = uint32_t;
+  using BitMaskType = BitMask<MaskInt, kWidth>;
+  using NonIterableBitMaskType = NonIterableBitMask<MaskInt, kWidth>;
 
   explicit GroupSse2Impl(const ctrl_t* pos) {
     ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
@@ -286,62 +288,68 @@ struct GroupSse2Impl {
   
   BitMaskType Match(h2_t hash) const {
     auto match = _mm_set1_epi8(static_cast<char>(hash));
-    return BitMaskType(
-        static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl))));
+    return BitMaskType(MoveMask(_mm_cmpeq_epi8(match, ctrl)));
   }
 
   
   NonIterableBitMaskType MaskEmpty() const {
 #ifdef ABSL_INTERNAL_HAVE_SSSE3
     
-    return NonIterableBitMaskType(
-        static_cast<uint16_t>(_mm_movemask_epi8(_mm_sign_epi8(ctrl, ctrl))));
+    return NonIterableBitMaskType(MoveMask(_mm_sign_epi8(ctrl, ctrl)));
 #else
     auto match = _mm_set1_epi8(static_cast<char>(ctrl_t::kEmpty));
-    return NonIterableBitMaskType(
-        static_cast<uint16_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl))));
+    return NonIterableBitMaskType(MoveMask(_mm_cmpeq_epi8(match, ctrl)));
 #endif
   }
 
   
   
   
-  BitMaskType MaskFull() const {
-    return BitMaskType(static_cast<uint16_t>(_mm_movemask_epi8(ctrl) ^ 0xffff));
-  }
+  BitMaskType MaskFull() const { return BitMaskType(MoveMask(ctrl) ^ 0xffff); }
 
   
   
   
-  auto MaskNonFull() const {
-    return BitMaskType(static_cast<uint16_t>(_mm_movemask_epi8(ctrl)));
-  }
+  auto MaskNonFull() const { return BitMaskType(MoveMask(ctrl)); }
 
   
   NonIterableBitMaskType MaskEmptyOrDeleted() const {
     auto special = _mm_set1_epi8(static_cast<char>(ctrl_t::kSentinel));
-    return NonIterableBitMaskType(static_cast<uint16_t>(
-        _mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl))));
+    return NonIterableBitMaskType(
+        MoveMask(_mm_cmpgt_epi8_fixed(special, ctrl)));
   }
 
   
-  uint32_t CountLeadingEmptyOrDeleted() const {
-    auto special = _mm_set1_epi8(static_cast<char>(ctrl_t::kSentinel));
-    return TrailingZeros(static_cast<uint32_t>(
-        _mm_movemask_epi8(_mm_cmpgt_epi8_fixed(special, ctrl)) + 1));
+  
+  
+  NonIterableBitMaskType MaskFullOrSentinel() const {
+    auto special = _mm_set1_epi8(static_cast<char>(ctrl_t::kSentinel) - 1);
+    return NonIterableBitMaskType(
+        MoveMask(_mm_cmpgt_epi8_fixed(ctrl, special)));
   }
 
   void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
+    
+    
+    
+    
+    
+    
     auto msbs = _mm_set1_epi8(static_cast<char>(-128));
-    auto x126 = _mm_set1_epi8(126);
-#ifdef ABSL_INTERNAL_HAVE_SSSE3
-    auto res = _mm_or_si128(_mm_shuffle_epi8(x126, ctrl), msbs);
-#else
-    auto zero = _mm_setzero_si128();
-    auto special_mask = _mm_cmpgt_epi8_fixed(zero, ctrl);
-    auto res = _mm_or_si128(msbs, _mm_andnot_si128(special_mask, x126));
-#endif
+    auto twos = _mm_set1_epi8(static_cast<char>(2));
+    auto res = _mm_subs_epi8(_mm_and_si128(msbs, ctrl), twos);
     _mm_storeu_si128(reinterpret_cast<__m128i*>(dst), res);
+  }
+
+  static MaskInt MoveMask(__m128i xmm) {
+    auto mask = static_cast<MaskInt>(_mm_movemask_epi8(xmm));
+#ifdef __clang__
+    
+    
+    
+    asm("" : "+r"(mask));  
+#endif
+    return mask;
   }
 
   __m128i ctrl;
@@ -406,17 +414,13 @@ struct GroupAArch64Impl {
     return NonIterableBitMaskType(mask);
   }
 
-  uint32_t CountLeadingEmptyOrDeleted() const {
-    uint64_t mask =
-        vget_lane_u64(vreinterpret_u64_u8(vcle_s8(
-                          vdup_n_s8(static_cast<int8_t>(ctrl_t::kSentinel)),
-                          vreinterpret_s8_u8(ctrl))),
-                      0);
-    
-    
-    
-    
-    return static_cast<uint32_t>(countr_zero(mask)) >> 3;
+  NonIterableBitMaskType MaskFullOrSentinel() const {
+    uint64_t mask = vget_lane_u64(
+        vreinterpret_u64_u8(
+            vcgt_s8(vreinterpret_s8_u8(ctrl),
+                    vdup_n_s8(static_cast<int8_t>(ctrl_t::kSentinel) - 1))),
+        0);
+    return NonIterableBitMaskType(mask);
   }
 
   void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
@@ -481,12 +485,8 @@ struct GroupPortableImpl {
     return NonIterableBitMaskType((ctrl & ~(ctrl << 7)) & kMsbs8Bytes);
   }
 
-  uint32_t CountLeadingEmptyOrDeleted() const {
-    
-    
-    constexpr uint64_t bits = 0x0101010101010101ULL;
-    return static_cast<uint32_t>(countr_zero((ctrl | ~(ctrl >> 7)) & bits) >>
-                                 3);
+  auto MaskFullOrSentinel() const {
+    return NonIterableBitMaskType((~ctrl | (ctrl << 7)) & kMsbs8Bytes);
   }
 
   void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {

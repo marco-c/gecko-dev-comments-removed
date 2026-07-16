@@ -183,8 +183,8 @@ constexpr bool AsciiInAZRangeNaive(unsigned char c) {
 }
 
 template <bool ToUpper, bool Naive>
-constexpr void AsciiStrCaseFoldImpl(absl::Nonnull<char*> dst,
-                                    absl::Nullable<const char*> src,
+constexpr void AsciiStrCaseFoldImpl(char* absl_nonnull dst,
+                                    const char* absl_nullable src,
                                     size_t size) {
   
   
@@ -195,7 +195,7 @@ constexpr void AsciiStrCaseFoldImpl(absl::Nonnull<char*> dst,
 
   for (size_t i = 0; i < size; ++i) {
     unsigned char v = static_cast<unsigned char>(src[i]);
-    if ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 (Naive) {
+    if constexpr (Naive) {
       v ^= AsciiInAZRangeNaive<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
     } else {
       v ^= AsciiInAZRange<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
@@ -211,18 +211,18 @@ constexpr void AsciiStrCaseFoldImpl(absl::Nonnull<char*> dst,
 
 
 template <bool ToUpper>
-constexpr void AsciiStrCaseFold(absl::Nonnull<char*> dst,
-                                absl::Nullable<const char*> src, size_t size) {
+constexpr void AsciiStrCaseFold(char* absl_nonnull dst,
+                                const char* absl_nullable src, size_t size) {
   size < 16 ? AsciiStrCaseFoldImpl<ToUpper, true>(dst, src, size)
             : AsciiStrCaseFoldImpl<ToUpper, false>(dst, src, size);
 }
 
-void AsciiStrToLower(absl::Nonnull<char*> dst, absl::Nullable<const char*> src,
+void AsciiStrToLower(char* absl_nonnull dst, const char* absl_nullable src,
                      size_t n) {
   return AsciiStrCaseFold<false>(dst, src, n);
 }
 
-void AsciiStrToUpper(absl::Nonnull<char*> dst, absl::Nullable<const char*> src,
+void AsciiStrToUpper(char* absl_nonnull dst, const char* absl_nullable src,
                      size_t n) {
   return AsciiStrCaseFold<true>(dst, src, n);
 }
@@ -253,17 +253,17 @@ static_assert(ValidateAsciiCasefold() == 0, "error in case conversion");
 
 }  
 
-void AsciiStrToLower(absl::Nonnull<std::string*> s) {
+void AsciiStrToLower(std::string* absl_nonnull s) {
   char* p = &(*s)[0];
   return ascii_internal::AsciiStrCaseFold<false>(p, p, s->size());
 }
 
-void AsciiStrToUpper(absl::Nonnull<std::string*> s) {
+void AsciiStrToUpper(std::string* absl_nonnull s) {
   char* p = &(*s)[0];
   return ascii_internal::AsciiStrCaseFold<true>(p, p, s->size());
 }
 
-void RemoveExtraAsciiWhitespace(absl::Nonnull<std::string*> str) {
+void RemoveExtraAsciiWhitespace(std::string* absl_nonnull str) {
   auto stripped = StripAsciiWhitespace(*str);
 
   if (stripped.empty()) {

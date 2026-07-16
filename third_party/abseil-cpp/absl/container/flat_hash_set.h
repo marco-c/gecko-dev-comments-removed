@@ -124,15 +124,31 @@ struct FlatHashSetPolicy;
 
 
 
-template <class T, class Hash = DefaultHashContainerHash<T>,
-          class Eq = DefaultHashContainerEq<T>,
-          class Allocator = std::allocator<T>>
+template <
+    class T,
+    class Hash = typename container_internal::FlatHashSetPolicy<T>::DefaultHash,
+    class Eq = typename container_internal::FlatHashSetPolicy<T>::DefaultEq,
+    class Allocator =
+        typename container_internal::FlatHashSetPolicy<T>::DefaultAlloc>
 class ABSL_ATTRIBUTE_OWNER flat_hash_set
-    : public absl::container_internal::raw_hash_set<
-          absl::container_internal::FlatHashSetPolicy<T>, Hash, Eq, Allocator> {
+    : public absl::container_internal::InstantiateRawHashSet<
+          absl::container_internal::FlatHashSetPolicy<T>, Hash, Eq,
+          Allocator>::type {
   using Base = typename flat_hash_set::raw_hash_set;
 
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -397,6 +413,8 @@ class ABSL_ATTRIBUTE_OWNER flat_hash_set
   
   
   
+  
+  
   using Base::reserve;
 
   
@@ -506,18 +524,20 @@ namespace container_internal {
 
 
 template <typename T, typename H, typename E, typename A, typename Function>
-decay_t<Function> c_for_each_fast(const flat_hash_set<T, H, E, A>& c,
-                                  Function&& f) {
+std::decay_t<Function> c_for_each_fast(const flat_hash_set<T, H, E, A>& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
 template <typename T, typename H, typename E, typename A, typename Function>
-decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>& c, Function&& f) {
+std::decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
 template <typename T, typename H, typename E, typename A, typename Function>
-decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>&& c, Function&& f) {
+std::decay_t<Function> c_for_each_fast(flat_hash_set<T, H, E, A>&& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
@@ -533,16 +553,20 @@ struct FlatHashSetPolicy {
   using init_type = T;
   using constant_iterators = std::true_type;
 
+  using DefaultHash = DefaultHashContainerHash<T>;
+  using DefaultEq = DefaultHashContainerEq<T>;
+  using DefaultAlloc = std::allocator<T>;
+
   template <class Allocator, class... Args>
   static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
-    absl::allocator_traits<Allocator>::construct(*alloc, slot,
-                                                 std::forward<Args>(args)...);
+    std::allocator_traits<Allocator>::construct(*alloc, slot,
+                                                std::forward<Args>(args)...);
   }
 
   
   template <class Allocator>
   static auto destroy(Allocator* alloc, slot_type* slot) {
-    absl::allocator_traits<Allocator>::destroy(*alloc, slot);
+    std::allocator_traits<Allocator>::destroy(*alloc, slot);
     return IsDestructionTrivial<Allocator, slot_type>();
   }
 
@@ -558,9 +582,9 @@ struct FlatHashSetPolicy {
 
   static size_t space_used(const T*) { return 0; }
 
-  template <class Hash>
+  template <class Hash, bool kIsDefault>
   static constexpr HashSlotFn get_hash_slot_fn() {
-    return &TypeErasedApplyToSlotFn<Hash, T>;
+    return &TypeErasedApplyToSlotFn<Hash, T, kIsDefault>;
   }
 };
 }  

@@ -125,7 +125,7 @@ class UnscaledCycleClockWrapperForGetCurrentTime {
 
 
 
-static inline uint64_t SeqAcquire(std::atomic<uint64_t> *seq) {
+static inline uint64_t SeqAcquire(std::atomic<uint64_t>* seq) {
   uint64_t x = seq->fetch_add(1, std::memory_order_relaxed);
 
   
@@ -135,12 +135,12 @@ static inline uint64_t SeqAcquire(std::atomic<uint64_t> *seq) {
   
   std::atomic_thread_fence(std::memory_order_release);
 
-  return x + 2;   
+  return x + 2;  
 }
 
 
 
-static inline void SeqRelease(std::atomic<uint64_t> *seq, uint64_t x) {
+static inline void SeqRelease(std::atomic<uint64_t>* seq, uint64_t x) {
   
   
   seq->store(x, std::memory_order_release);  
@@ -160,8 +160,8 @@ static const uint64_t kMinNSBetweenSamples = 2000 << 20;
 
 
 static_assert(((kMinNSBetweenSamples << (kScale + 1)) >> (kScale + 1)) ==
-               kMinNSBetweenSamples,
-               "cannot represent kMaxBetweenSamplesNSScaled");
+                  kMinNSBetweenSamples,
+              "cannot represent kMaxBetweenSamplesNSScaled");
 
 
 struct TimeSampleAtomic {
@@ -206,8 +206,7 @@ struct ABSL_CACHELINE_ALIGNED TimeState {
 
   
   
-  absl::base_internal::SpinLock lock{absl::kConstInit,
-                                     base_internal::SCHEDULE_KERNEL_ONLY};
+  absl::base_internal::SpinLock lock{base_internal::SCHEDULE_KERNEL_ONLY};
 };
 ABSL_CONST_INIT static TimeState time_state;
 
@@ -219,7 +218,7 @@ ABSL_CONST_INIT static TimeState time_state;
 
 
 static int64_t GetCurrentTimeNanosFromKernel(uint64_t last_cycleclock,
-                                             uint64_t *cycleclock)
+                                             uint64_t* cycleclock)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(time_state.lock) {
   uint64_t local_approx_syscall_time_in_cycles =  
       time_state.approx_syscall_time_in_cycles.load(std::memory_order_relaxed);
@@ -275,8 +274,8 @@ static int64_t GetCurrentTimeNanosSlowPath() ABSL_ATTRIBUTE_COLD;
 
 
 
-static void ReadTimeSampleAtomic(const struct TimeSampleAtomic *atomic,
-                                 struct TimeSample *sample) {
+static void ReadTimeSampleAtomic(const struct TimeSampleAtomic* atomic,
+                                 struct TimeSample* sample) {
   sample->base_ns = atomic->base_ns.load(std::memory_order_relaxed);
   sample->base_cycles = atomic->base_cycles.load(std::memory_order_relaxed);
   sample->nsscaled_per_cycle =
@@ -339,18 +338,20 @@ int64_t GetCurrentTimeNanos() {
   
   seq_read0 = time_state.seq.load(std::memory_order_acquire);
 
-  base_ns = time_state.last_sample.base_ns.load(std::memory_order_relaxed);
+  
+  
+  
+  
+  
+  
+  
+  base_ns = time_state.last_sample.base_ns.load(std::memory_order_acquire);
   base_cycles =
-      time_state.last_sample.base_cycles.load(std::memory_order_relaxed);
+      time_state.last_sample.base_cycles.load(std::memory_order_acquire);
   nsscaled_per_cycle =
-      time_state.last_sample.nsscaled_per_cycle.load(std::memory_order_relaxed);
+      time_state.last_sample.nsscaled_per_cycle.load(std::memory_order_acquire);
   min_cycles_per_sample = time_state.last_sample.min_cycles_per_sample.load(
-      std::memory_order_relaxed);
-
-  
-  
-  
-  std::atomic_thread_fence(std::memory_order_acquire);
+      std::memory_order_acquire);
 
   
   
@@ -398,7 +399,7 @@ static uint64_t SafeDivideAndScale(uint64_t a, uint64_t b) {
 
 static uint64_t UpdateLastSample(
     uint64_t now_cycles, uint64_t now_ns, uint64_t delta_cycles,
-    const struct TimeSample *sample) ABSL_ATTRIBUTE_COLD;
+    const struct TimeSample* sample) ABSL_ATTRIBUTE_COLD;
 
 
 
@@ -416,7 +417,7 @@ static int64_t GetCurrentTimeNanosSlowPath()
     ABSL_LOCKS_EXCLUDED(time_state.lock) {
   
   
-  time_state.lock.Lock();
+  base_internal::SpinLockHolder l(time_state.lock);
 
   
   
@@ -439,15 +440,13 @@ static int64_t GetCurrentTimeNanosSlowPath()
   if (delta_cycles < sample.min_cycles_per_sample) {
     
     
-    estimated_base_ns = sample.base_ns +
-        ((delta_cycles * sample.nsscaled_per_cycle) >> kScale);
+    estimated_base_ns =
+        sample.base_ns + ((delta_cycles * sample.nsscaled_per_cycle) >> kScale);
     time_state.stats_fast_slow_paths++;
   } else {
     estimated_base_ns =
         UpdateLastSample(now_cycles, now_ns, delta_cycles, &sample);
   }
-
-  time_state.lock.Unlock();
 
   return static_cast<int64_t>(estimated_base_ns);
 }
@@ -457,7 +456,7 @@ static int64_t GetCurrentTimeNanosSlowPath()
 
 static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
                                  uint64_t delta_cycles,
-                                 const struct TimeSample *sample)
+                                 const struct TimeSample* sample)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(time_state.lock) {
   uint64_t estimated_base_ns = now_ns;
   uint64_t lock_value =
@@ -494,8 +493,8 @@ static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
         estimated_scaled_ns = (delta_cycles >> s) * sample->nsscaled_per_cycle;
       } while (estimated_scaled_ns / sample->nsscaled_per_cycle !=
                (delta_cycles >> s));
-      estimated_base_ns = sample->base_ns +
-                          (estimated_scaled_ns >> (kScale - s));
+      estimated_base_ns =
+          sample->base_ns + (estimated_scaled_ns >> (kScale - s));
     }
 
     
@@ -522,8 +521,8 @@ static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
                                diff_ns - (diff_ns / 16));
     uint64_t new_nsscaled_per_cycle =
         SafeDivideAndScale(ns, assumed_next_sample_delta_cycles);
-    if (new_nsscaled_per_cycle != 0 &&
-        diff_ns < 100 * 1000 * 1000 && -diff_ns < 100 * 1000 * 1000) {
+    if (new_nsscaled_per_cycle != 0 && diff_ns < 100 * 1000 * 1000 &&
+        -diff_ns < 100 * 1000 * 1000) {
       
       time_state.last_sample.nsscaled_per_cycle.store(
           new_nsscaled_per_cycle, std::memory_order_relaxed);

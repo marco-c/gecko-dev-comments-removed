@@ -127,16 +127,32 @@ struct FlatHashMapPolicy;
 
 
 
-template <class K, class V, class Hash = DefaultHashContainerHash<K>,
-          class Eq = DefaultHashContainerEq<K>,
-          class Allocator = std::allocator<std::pair<const K, V>>>
+template <
+    class K, class V,
+    class Hash =
+        typename container_internal::FlatHashMapPolicy<K, V>::DefaultHash,
+    class Eq = typename container_internal::FlatHashMapPolicy<K, V>::DefaultEq,
+    class Allocator =
+        typename container_internal::FlatHashMapPolicy<K, V>::DefaultAlloc>
 class ABSL_ATTRIBUTE_OWNER flat_hash_map
-    : public absl::container_internal::raw_hash_map<
+    : public absl::container_internal::InstantiateRawHashMap<
           absl::container_internal::FlatHashMapPolicy<K, V>, Hash, Eq,
-          Allocator> {
+          Allocator>::type {
   using Base = typename flat_hash_map::raw_hash_map;
 
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -463,6 +479,8 @@ class ABSL_ATTRIBUTE_OWNER flat_hash_map
   
   
   
+  
+  
   using Base::reserve;
 
   
@@ -603,22 +621,22 @@ namespace container_internal {
 
 template <typename K, typename V, typename H, typename E, typename A,
           typename Function>
-decay_t<Function> c_for_each_fast(const flat_hash_map<K, V, H, E, A>& c,
-                                  Function&& f) {
+std::decay_t<Function> c_for_each_fast(const flat_hash_map<K, V, H, E, A>& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
 template <typename K, typename V, typename H, typename E, typename A,
           typename Function>
-decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>& c,
-                                  Function&& f) {
+std::decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
 template <typename K, typename V, typename H, typename E, typename A,
           typename Function>
-decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>&& c,
-                                  Function&& f) {
+std::decay_t<Function> c_for_each_fast(flat_hash_map<K, V, H, E, A>&& c,
+                                       Function&& f) {
   container_internal::ForEach(f, &c);
   return f;
 }
@@ -634,6 +652,10 @@ struct FlatHashMapPolicy {
   using key_type = K;
   using mapped_type = V;
   using init_type = std::pair< key_type, mapped_type>;
+
+  using DefaultHash = DefaultHashContainerHash<K>;
+  using DefaultEq = DefaultHashContainerEq<K>;
+  using DefaultAlloc = std::allocator<std::pair<const K, V>>;
 
   template <class Allocator, class... Args>
   static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
@@ -660,10 +682,10 @@ struct FlatHashMapPolicy {
                                                    std::forward<Args>(args)...);
   }
 
-  template <class Hash>
+  template <class Hash, bool kIsDefault>
   static constexpr HashSlotFn get_hash_slot_fn() {
     return memory_internal::IsLayoutCompatible<K, V>::value
-               ? &TypeErasedApplyToSlotFn<Hash, K>
+               ? &TypeErasedApplyToSlotFn<Hash, K, kIsDefault>
                : nullptr;
   }
 

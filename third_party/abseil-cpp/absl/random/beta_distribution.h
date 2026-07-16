@@ -196,7 +196,7 @@ class beta_distribution {
     
     bool inverted_{};
 
-    static_assert(std::is_floating_point<RealType>::value,
+    static_assert(std::is_floating_point_v<RealType>,
                   "Class-template absl::beta_distribution<> must be "
                   "parameterized using a floating-point type.");
   };
@@ -282,7 +282,7 @@ beta_distribution<RealType>::AlgorithmJoehnk(
   using random_internal::GeneratePositiveTag;
   using random_internal::GenerateRealFromBits;
   using real_type =
-      absl::conditional_t<std::is_same<RealType, float>::value, float, double>;
+      std::conditional_t<std::is_same_v<RealType, float>, float, double>;
 
   
   
@@ -297,7 +297,7 @@ beta_distribution<RealType>::AlgorithmJoehnk(
 
     
     
-    if (!std::is_same<float, result_type>::value) {
+    if (!std::is_same_v<float, result_type>) {
       x = std::pow(u, p.a_);
       y = std::pow(v, p.b_);
       z = x + y;
@@ -340,7 +340,7 @@ beta_distribution<RealType>::AlgorithmCheng(
   using random_internal::GeneratePositiveTag;
   using random_internal::GenerateRealFromBits;
   using real_type =
-      absl::conditional_t<std::is_same<RealType, float>::value, float, double>;
+      std::conditional_t<std::is_same_v<RealType, float>, float, double>;
 
   
   

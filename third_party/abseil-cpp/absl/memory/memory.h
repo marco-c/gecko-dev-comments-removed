@@ -70,8 +70,8 @@ ABSL_NAMESPACE_BEGIN
 
 template <typename T>
 std::unique_ptr<T> WrapUnique(T* ptr) {
-  static_assert(!std::is_array<T>::value, "array types are unsupported");
-  static_assert(std::is_object<T>::value, "non-object types are unsupported");
+  static_assert(!std::is_array_v<T>, "array types are unsupported");
+  static_assert(std::is_object_v<T>, "non-object types are unsupported");
   return std::unique_ptr<T>(ptr);
 }
 
@@ -94,7 +94,61 @@ std::unique_ptr<T> WrapUnique(T* ptr) {
 
 
 
-using std::make_unique;
+using std::make_unique ABSL_REFACTOR_INLINE;
+
+#if defined(__cpp_lib_smart_ptr_for_overwrite) && \
+    __cpp_lib_smart_ptr_for_overwrite >= 202002L
+using std::make_unique_for_overwrite;
+#else
+
+namespace memory_internal {
+
+
+
+template <typename T>
+struct MakeUniqueResult {
+  using scalar = std::unique_ptr<T>;
+};
+template <typename T>
+struct MakeUniqueResult<T[]> {
+  using array = std::unique_ptr<T[]>;
+};
+template <typename T, size_t N>
+struct MakeUniqueResult<T[N]> {
+  using invalid = void;
+};
+
+}  
+
+
+
+
+
+
+
+template <typename T>
+typename memory_internal::MakeUniqueResult<T>::scalar
+make_unique_for_overwrite() {
+  return std::unique_ptr<T>(new T);
+}
+
+
+
+
+
+template <typename T>
+typename memory_internal::MakeUniqueResult<T>::array make_unique_for_overwrite(
+    size_t n) {
+  return std::unique_ptr<T>(new typename std::remove_extent_t<T>[n]);
+}
+
+
+
+template <typename T, typename... Args>
+typename memory_internal::MakeUniqueResult<T>::invalid
+make_unique_for_overwrite(Args&&... ) = delete;
+
+#endif  
 
 
 
@@ -166,7 +220,8 @@ std::weak_ptr<T> WeakenPtr(const std::shared_ptr<T>& ptr) {
 
 
 
-using std::pointer_traits;
+template <typename Ptr>
+using pointer_traits ABSL_DEPRECATE_AND_INLINE() = std::pointer_traits<Ptr>;
 
 
 
@@ -176,7 +231,9 @@ using std::pointer_traits;
 
 
 
-using std::allocator_traits;
+template <typename Alloc>
+using allocator_traits ABSL_DEPRECATE_AND_INLINE() =
+    std::allocator_traits<Alloc>;
 
 namespace memory_internal {
 
@@ -188,7 +245,7 @@ struct ExtractOr {
 };
 
 template <template <typename> class Extract, typename Obj, typename Default>
-struct ExtractOr<Extract, Obj, Default, void_t<Extract<Obj>>> {
+struct ExtractOr<Extract, Obj, Default, std::void_t<Extract<Obj>>> {
   using type = Extract<Obj>;
 };
 

@@ -22,20 +22,20 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #include "absl/base/config.h"
 #include "absl/strings/string_view.h"
 
 #ifdef ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
 #error ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE cannot be directly set
-#elif defined(__ELF__) && defined(__GLIBC__) && !defined(__native_client__) \
-      && !defined(__asmjs__) && !defined(__wasm__)
+#elif defined(__ELF__) && defined(__GLIBC__) && !defined(__asmjs__) \
+      && !defined(__wasm__)
 #define ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE 1
 
 #include <elf.h>
 #include <link.h>  
 #include <functional>
-#include <string>
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -78,44 +78,54 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace debugging_internal {
 
-struct SymbolDecoratorArgs {
-  
-  const void *pc;
-  
-  ptrdiff_t relocation;
-  
-  
-  int fd;
-  
-  
-  
-  
-  
-  char *const symbol_buf;
-  size_t symbol_buf_size;
-  
-  
-  
-  char *const tmp_buf;
-  size_t tmp_buf_size;
-  
-  void* arg;
+class SymbolDecorator;
+
+class SymbolDecoratorDeleter {
+ public:
+  void operator()(SymbolDecorator* ptr);
 };
-using SymbolDecorator = void (*)(const SymbolDecoratorArgs *);
+
+using SymbolDecoratorPtr =
+    std::unique_ptr<SymbolDecorator, SymbolDecoratorDeleter>;
 
 
 
+class SymbolDecorator {
+ public:
+  
+  
+  
+  
+  using Factory = SymbolDecoratorPtr(int fd);
+
+  virtual ~SymbolDecorator() = default;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void Decorate(
+      const void* pc,
+      ptrdiff_t relocation,
+      char* symbol_buf, size_t symbol_buf_size,
+      char* tmp_buf, size_t tmp_buf_size) const = 0;
+};
 
 
-int InstallSymbolDecorator(SymbolDecorator decorator, void* arg);
-
-
-
-bool RemoveSymbolDecorator(int ticket);
-
-
-
-bool RemoveAllSymbolDecorators();
+SymbolDecorator::Factory* SetSymbolDecoratorFactory(
+    SymbolDecorator::Factory* factory);
 
 
 

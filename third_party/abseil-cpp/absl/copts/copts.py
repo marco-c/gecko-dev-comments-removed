@@ -41,8 +41,13 @@ ABSL_GCC_TEST_ADDITIONAL_FLAGS = [
     "-Wno-unused-private-field",
 ]
 
-ABSL_LLVM_FLAGS = [
-    "-Wall",
+
+
+
+
+
+ABSL_LLVM_BASE_FLAGS = [
+    "-Wmost",
     "-Wextra",
     "-Wc++98-compat-extra-semi",
     "-Wcast-qual",
@@ -84,15 +89,19 @@ ABSL_LLVM_FLAGS = [
     
     
     "-Wno-unknown-warning-option",
+    "-Wno-unused-command-line-argument",
     
     "-DNOMINMAX",
 ]
+
+ABSL_LLVM_FLAGS = ["-Wall"] + ABSL_LLVM_BASE_FLAGS
 
 ABSL_LLVM_TEST_ADDITIONAL_FLAGS = [
     "-Wno-deprecated-declarations",
     "-Wno-implicit-int-conversion",
     "-Wno-missing-prototypes",
     "-Wno-missing-variable-declarations",
+    "-Wno-nullability-completeness",
     "-Wno-shadow",
     "-Wno-shorten-64-to-32",
     "-Wno-sign-compare",
@@ -162,9 +171,15 @@ COPT_VARS = {
     "ABSL_LLVM_TEST_FLAGS": GccStyleFilterAndCombine(
         ABSL_LLVM_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS
     ),
-    "ABSL_CLANG_CL_FLAGS": MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES,
+    "ABSL_CLANG_CL_FLAGS": (
+        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_BASE_FLAGS
+    ),
     "ABSL_CLANG_CL_TEST_FLAGS": (
-        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_TEST_ADDITIONAL_FLAGS
+        MSVC_BIG_WARNING_FLAGS
+        + MSVC_DEFINES
+        + GccStyleFilterAndCombine(
+            ABSL_LLVM_BASE_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS
+        )
     ),
     "ABSL_MSVC_FLAGS": (
         MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES

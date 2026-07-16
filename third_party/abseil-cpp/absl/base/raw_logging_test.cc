@@ -43,11 +43,26 @@ TEST(RawLoggingCompilationTest, PassingCheck) {
   ABSL_RAW_CHECK(true, "RAW CHECK");
 }
 
+TEST(RawLoggingCompilationTest, DebugLog) {
+  ABSL_RAW_DLOG(INFO, "RAW DLOG: %d", 1);
+}
+
+TEST(RawLoggingCompilationTest, PassingDebugCheck) {
+  ABSL_RAW_DCHECK(true, "failure message");
+}
+
 
 
 
 
 const char kExpectedDeathOutput[] = "";
+
+#if !defined(NDEBUG)  
+TEST(RawLoggingDeathTest, FailingDebugCheck) {
+  EXPECT_DEATH_IF_SUPPORTED(ABSL_RAW_DCHECK(1 == 0, "explanation"),
+                            kExpectedDeathOutput);
+}
+#endif  
 
 TEST(RawLoggingDeathTest, FailingCheck) {
   EXPECT_DEATH_IF_SUPPORTED(ABSL_RAW_CHECK(1 == 0, "explanation"),

@@ -16,6 +16,7 @@
 
 
 #include <windows.h>
+#include <winternl.h>
 
 
 #pragma warning(push)
@@ -45,13 +46,29 @@ void InitializeSymbolizer(const char*) {
   
   
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-  if (!SymInitialize(process, nullptr, true)) {
+  DWORD syminitialize_error;
+  constexpr int kSymInitializeRetries = 5;
+  for (int i = 0; i < kSymInitializeRetries; ++i) {
+    if (SymInitialize(process, nullptr, true)) {
+      return;
+    }
+
     
     
     
-    const unsigned long long error{GetLastError()};  
-    ABSL_RAW_LOG(FATAL, "SymInitialize() failed: %llu", error);
+    
+    constexpr DWORD kStatusInfoLengthMismatch = DWORD{0xC0000004};
+    syminitialize_error = GetLastError();
+    if (syminitialize_error != kStatusInfoLengthMismatch) {
+      break;
+    }
   }
+
+  
+  
+  
+  const unsigned long long error{syminitialize_error};
+  ABSL_RAW_LOG(FATAL, "SymInitialize() failed: %llu", error);
 }
 
 bool Symbolize(const void* pc, char* out, int out_size) {

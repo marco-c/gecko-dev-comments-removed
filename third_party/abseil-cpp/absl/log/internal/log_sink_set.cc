@@ -192,7 +192,7 @@ class GlobalLogSinkSet final {
         absl::log_internal::WriteToStderr(
             entry.text_message_with_prefix_and_newline(), entry.log_severity());
       } else {
-        absl::ReaderMutexLock global_sinks_lock(&guard_);
+        absl::ReaderMutexLock global_sinks_lock(guard_);
         ThreadIsLoggingStatus() = true;
         
         
@@ -205,7 +205,7 @@ class GlobalLogSinkSet final {
 
   void AddLogSink(absl::LogSink* sink) ABSL_LOCKS_EXCLUDED(guard_) {
     {
-      absl::WriterMutexLock global_sinks_lock(&guard_);
+      absl::WriterMutexLock global_sinks_lock(guard_);
       auto pos = std::find(sinks_.begin(), sinks_.end(), sink);
       if (pos == sinks_.end()) {
         sinks_.push_back(sink);
@@ -217,7 +217,7 @@ class GlobalLogSinkSet final {
 
   void RemoveLogSink(absl::LogSink* sink) ABSL_LOCKS_EXCLUDED(guard_) {
     {
-      absl::WriterMutexLock global_sinks_lock(&guard_);
+      absl::WriterMutexLock global_sinks_lock(guard_);
       auto pos = std::find(sinks_.begin(), sinks_.end(), sink);
       if (pos != sinks_.end()) {
         sinks_.erase(pos);
@@ -235,7 +235,7 @@ class GlobalLogSinkSet final {
       guard_.AssertReaderHeld();
       FlushLogSinksLocked();
     } else {
-      absl::ReaderMutexLock global_sinks_lock(&guard_);
+      absl::ReaderMutexLock global_sinks_lock(guard_);
       
       ThreadIsLoggingStatus() = true;
       

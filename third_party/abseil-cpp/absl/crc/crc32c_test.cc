@@ -15,11 +15,14 @@
 #include "absl/crc/crc32c.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <sstream>
 #include <string>
+#include <tuple>
 
 #include "gtest/gtest.h"
 #include "absl/crc/internal/crc32c.h"
@@ -98,6 +101,33 @@ TEST(CRC32C, ExtendByZeroes) {
     SCOPED_TRACE(extend_by);
     absl::crc32c_t crc2 = absl::ExtendCrc32cByZeroes(base_crc, extend_by);
     EXPECT_EQ(crc2, absl::ComputeCrc32c(base + std::string(extend_by, '\0')));
+  }
+}
+
+
+
+
+
+
+TEST(CRC32C, ExtendByZeroesAllLengthBits) {
+  absl::crc32c_t base_crc = absl::crc32c_t{0xc99465aa};
+  const std::array<std::tuple<uint64_t, absl::crc32c_t>, 5> kTestCases = {{
+      {0, absl::crc32c_t(0xc99465aa)},
+      {std::numeric_limits<uint32_t>::max(), absl::crc32c_t(0x9b1d5aaa)},
+      {0x12345678, absl::crc32c_t(0xcf0e9553)},
+      {std::numeric_limits<uint64_t>::max(), absl::crc32c_t(0xf5bff489)},
+      {0x12345678abcdefff, absl::crc32c_t(0xaa1ffb0b)},
+  }};
+  for (const auto &test_case : kTestCases) {
+    uint64_t length = std::get<0>(test_case);
+    absl::crc32c_t expected_value = std::get<1>(test_case);
+    SCOPED_TRACE(length);
+    if (length > std::numeric_limits<size_t>::max()) {
+      
+      continue;
+    }
+    EXPECT_EQ(absl::ExtendCrc32cByZeroes(base_crc, static_cast<size_t>(length)),
+              expected_value);
   }
 }
 

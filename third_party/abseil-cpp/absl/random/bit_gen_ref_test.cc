@@ -17,12 +17,13 @@
 
 #include <cstdint>
 #include <random>
+#include <type_traits>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/config.h"
-#include "absl/base/internal/fast_type_id.h"
+#include "absl/base/fast_type_id.h"
 #include "absl/random/internal/sequence_urbg.h"
 #include "absl/random/random.h"
 
@@ -39,7 +40,7 @@ class ConstBitGen {
   result_type operator()() { return 1; }
 
   
-  bool InvokeMock(base_internal::FastTypeIdType, void*, void* result) {
+  bool InvokeMock(FastTypeIdType, void*, void* result) {
     *static_cast<int*>(result) = 42;
     return true;
   }
@@ -102,6 +103,48 @@ TEST(BitGenRefTest, MockingBitGenBaseOverrides) {
   absl::BitGenRef gen_ref(const_gen);
   EXPECT_EQ(FnTest(gen_ref), 42);  
 }
+
+struct MinStdRand {
+  
+  using result_type = absl::BitGen::result_type;
+  static constexpr result_type(min)() { return (absl::BitGen::min)(); }
+  static constexpr result_type(max)() { return (absl::BitGen::max)(); }
+  result_type operator()() { return 0; }
+
+  
+  
+  
+  operator absl::BitGenRef() const {
+    conversion_count++;
+    return absl::BitGenRef(minstd_gen);
+  }
+
+  std::minstd_rand minstd_gen;
+  mutable int conversion_count = 0;
+};
+
+TEST(BitGenRefTest, IsConvertibleTest) {
+  
+  EXPECT_TRUE((std::is_convertible_v<MinStdRand, absl::BitGenRef>));
+
+  
+  {
+    MinStdRand minstd;
+    absl::BitGenRef gen_ref(minstd);
+    EXPECT_EQ(minstd.conversion_count, 1);
+    (void)gen_ref;
+  }
+
+  
+  
+  {
+    MinStdRand minstd;
+    auto result = FnTest(minstd);
+    EXPECT_EQ(minstd.conversion_count, 1);
+    EXPECT_GE(result, 1);
+  }
+}
+
 }  
 ABSL_NAMESPACE_END
 }  

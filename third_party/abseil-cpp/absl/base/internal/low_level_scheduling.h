@@ -18,8 +18,11 @@
 #ifndef ABSL_BASE_INTERNAL_LOW_LEVEL_SCHEDULING_H_
 #define ABSL_BASE_INTERNAL_LOW_LEVEL_SCHEDULING_H_
 
+#include <atomic>
+
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/internal/scheduling_mode.h"
+#include "absl/base/internal/thread_identity.h"
 #include "absl/base/macros.h"
 
 
@@ -64,7 +67,6 @@ class SchedulingGuard {
   SchedulingGuard(const SchedulingGuard&) = delete;
   SchedulingGuard& operator=(const SchedulingGuard&) = delete;
 
- private:
   
   
   
@@ -96,13 +98,6 @@ class SchedulingGuard {
    private:
     int scheduling_disabled_depth_;
   };
-
-  
-  friend class absl::CondVar;
-  friend class absl::Mutex;
-  friend class SchedulingHelper;
-  friend class SpinLock;
-  friend int absl::synchronization_internal::MutexDelay(int32_t c, int mode);
 };
 
 
@@ -110,21 +105,88 @@ class SchedulingGuard {
 
 
 inline bool SchedulingGuard::ReschedulingIsAllowed() {
-  return false;
+  ThreadIdentity* identity = CurrentThreadIdentityIfPresent();
+  if (identity != nullptr) {
+    ThreadIdentity::SchedulerState* state = &identity->scheduler_state;
+    
+    
+    
+    return state->bound_schedulable.load(std::memory_order_relaxed) !=
+               nullptr &&
+           state->scheduling_disabled_depth.load(std::memory_order_relaxed) ==
+               0;
+  } else {
+    
+    return false;
+  }
 }
+
+
 
 inline bool SchedulingGuard::DisableRescheduling() {
-  return false;
+  ThreadIdentity* identity;
+  identity = CurrentThreadIdentityIfPresent();
+  if (identity != nullptr) {
+    
+    
+    
+    int old_val = identity->scheduler_state.scheduling_disabled_depth.load(
+        std::memory_order_relaxed);
+    identity->scheduler_state.scheduling_disabled_depth.store(
+        old_val + 1, std::memory_order_relaxed);
+    return true;
+  } else {
+    return false;
+  }
 }
 
-inline void SchedulingGuard::EnableRescheduling(bool ) {
-  return;
+inline void SchedulingGuard::EnableRescheduling(bool disable_result) {
+  if (!disable_result) {
+    
+    
+    
+    
+    return;
+  }
+
+  ThreadIdentity* identity;
+  
+  identity = CurrentThreadIdentityIfPresent();
+  
+  
+  
+  int old_val = identity->scheduler_state.scheduling_disabled_depth.load(
+      std::memory_order_relaxed);
+  identity->scheduler_state.scheduling_disabled_depth.store(
+      old_val - 1, std::memory_order_relaxed);
 }
 
-inline SchedulingGuard::ScopedEnable::ScopedEnable()
-    : scheduling_disabled_depth_(0) {}
+inline SchedulingGuard::ScopedEnable::ScopedEnable() {
+  ThreadIdentity* identity;
+  identity = CurrentThreadIdentityIfPresent();
+  if (identity != nullptr) {
+    scheduling_disabled_depth_ =
+        identity->scheduler_state.scheduling_disabled_depth.load(
+            std::memory_order_relaxed);
+    if (scheduling_disabled_depth_ != 0) {
+      
+      
+      identity->scheduler_state.scheduling_disabled_depth.store(
+          0, std::memory_order_relaxed);
+    }
+  } else {
+    scheduling_disabled_depth_ = 0;
+  }
+}
+
 inline SchedulingGuard::ScopedEnable::~ScopedEnable() {
-  ABSL_RAW_CHECK(scheduling_disabled_depth_ == 0, "disable unused warning");
+  if (scheduling_disabled_depth_ == 0) {
+    return;
+  }
+  ThreadIdentity* identity = CurrentThreadIdentityIfPresent();
+  
+  identity->scheduler_state.scheduling_disabled_depth.store(
+      scheduling_disabled_depth_, std::memory_order_relaxed);
 }
 
 }  

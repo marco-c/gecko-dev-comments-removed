@@ -18,6 +18,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -95,7 +96,7 @@ void MixIntoSeedMaterial(absl::Span<const uint32_t> sequence,
 
 
 
-absl::optional<uint32_t> GetSaltMaterial();
+std::optional<uint32_t> GetSaltMaterial();
 
 }  
 ABSL_NAMESPACE_END

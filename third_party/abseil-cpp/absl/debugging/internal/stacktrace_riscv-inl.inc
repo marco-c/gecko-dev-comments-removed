@@ -56,6 +56,7 @@ static inline ptrdiff_t ComputeStackFrameSize(const T *low, const T *high) {
 template <bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 static void ** NextStackFrame(void **old_frame_pointer, const void *uc,
                               const std::pair<size_t, size_t> range) {
   
@@ -118,6 +119,7 @@ static void ** NextStackFrame(void **old_frame_pointer, const void *uc,
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
                       int max_depth, int skip_count, const void *ucp,
                       int *min_dropped_frames) {
@@ -140,6 +142,10 @@ static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
   void *return_address = nullptr;
   while (frame_pointer && n < max_depth) {
     return_address = frame_pointer[-1];
+    
+    if (return_address == nullptr) {
+      break;
+    }
 
     
     
@@ -160,7 +166,8 @@ static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
               absl::debugging_internal::StripPointerMetadata(frame_pointer);
         }
         if (sizes != nullptr) {
-          sizes[n] = ComputeStackFrameSize(frame_pointer, next_frame_pointer);
+          sizes[n] = static_cast<int>(
+              ComputeStackFrameSize(frame_pointer, next_frame_pointer));
         }
       }
       n++;

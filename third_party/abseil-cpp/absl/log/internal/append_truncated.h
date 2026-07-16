@@ -17,8 +17,10 @@
 
 #include <cstddef>
 #include <cstring>
+#include <string_view>
 
 #include "absl/base/config.h"
+#include "absl/strings/internal/utf8.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -32,6 +34,32 @@ inline size_t AppendTruncated(absl::string_view src, absl::Span<char> &dst) {
   memcpy(dst.data(), src.data(), src.size());
   dst.remove_prefix(src.size());
   return src.size();
+}
+
+
+
+
+
+
+inline size_t AppendTruncated(std::wstring_view src, absl::Span<char> &dst) {
+  absl::strings_internal::ShiftState state;
+  size_t total_bytes_written = 0;
+  for (const wchar_t wc : src) {
+    
+    
+    if (dst.size() < absl::strings_internal::kMaxEncodedUTF8Size) break;
+    size_t bytes_written =
+        absl::strings_internal::WideToUtf8(wc, dst.data(), state);
+    if (bytes_written == static_cast<size_t>(-1)) {
+      
+      constexpr wchar_t kReplacementCharacter = L'\uFFFD';
+      bytes_written = absl::strings_internal::WideToUtf8(kReplacementCharacter,
+                                                         dst.data(), state);
+    }
+    dst.remove_prefix(bytes_written);
+    total_bytes_written += bytes_written;
+  }
+  return total_bytes_written;
 }
 
 inline size_t AppendTruncated(char c, size_t n, absl::Span<char> &dst) {

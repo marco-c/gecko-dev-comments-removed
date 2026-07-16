@@ -21,13 +21,6 @@
 
 
 
-#ifndef TZDEFRULES
-#define TZDEFRULES "posixrules"
-#endif 
-
-
-
-
 
 
 
@@ -97,21 +90,23 @@ struct tzhead {
 
 #ifndef TZ_MAX_TIMES
 
+
 #define TZ_MAX_TIMES 2000
 #endif 
 
 #ifndef TZ_MAX_TYPES
 
-#define TZ_MAX_TYPES 256 /* Limited by what (unsigned char)'s can hold */
+#define TZ_MAX_TYPES 256 /* Limited to 256 by Internet RFC 9636.  */
 #endif                   
 
 #ifndef TZ_MAX_CHARS
 
-#define TZ_MAX_CHARS 50 /* Maximum number of abbreviation characters */
-                        
-#endif                  
+#define TZ_MAX_CHARS 256 /* Maximum number of abbreviation characters */
+                         
+#endif                   
 
 #ifndef TZ_MAX_LEAPS
+
 
 
 #define TZ_MAX_LEAPS 50 /* Maximum number of leap second corrections */

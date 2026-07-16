@@ -16,11 +16,12 @@
 #ifndef ABSL_RANDOM_INTERNAL_MOCK_HELPERS_H_
 #define ABSL_RANDOM_INTERNAL_MOCK_HELPERS_H_
 
+#include <optional>
 #include <utility>
 
 #include "absl/base/config.h"
-#include "absl/base/internal/fast_type_id.h"
-#include "absl/types/optional.h"
+#include "absl/base/fast_type_id.h"
+#include "absl/random/mocking_access.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -48,7 +49,8 @@ struct NoOpValidator {
 
 
 class MockHelpers {
-  using IdType = ::absl::base_internal::FastTypeIdType;
+  using IdType = ::absl::FastTypeIdType;
+  using RandomMockingAccess = ::absl::RandomMockingAccess;
 
   
   
@@ -63,40 +65,7 @@ class MockHelpers {
     using arg_tuple_type = ArgTupleT;
   };
 
-  
-  template <class T>
-  using invoke_mock_t = decltype(std::declval<T*>()->InvokeMock(
-      std::declval<IdType>(), std::declval<void*>(), std::declval<void*>()));
-
-  
-  template <typename KeyT, typename ReturnT, typename ArgTupleT, typename URBG,
-            typename... Args>
-  static absl::optional<ReturnT> InvokeMockImpl(char, URBG*, Args&&...) {
-    return absl::nullopt;
-  }
-
-  
-  template <typename KeyT, typename ReturnT, typename ArgTupleT, typename URBG,
-            typename = invoke_mock_t<URBG>, typename... Args>
-  static absl::optional<ReturnT> InvokeMockImpl(int, URBG* urbg,
-                                                Args&&... args) {
-    ArgTupleT arg_tuple(std::forward<Args>(args)...);
-    ReturnT result;
-    if (urbg->InvokeMock(base_internal::FastTypeId<KeyT>(), &arg_tuple,
-                         &result)) {
-      return result;
-    }
-    return absl::nullopt;
-  }
-
  public:
-  
-  template <typename URBG>
-  static inline bool PrivateInvokeMock(URBG* urbg, IdType key_id,
-                                       void* args_tuple, void* result) {
-    return urbg->InvokeMock(key_id, args_tuple, result);
-  }
-
   
   
   
@@ -109,13 +78,17 @@ class MockHelpers {
   
   template <typename KeyT, typename URBG, typename... Args>
   static auto MaybeInvokeMock(URBG* urbg, Args&&... args)
-      -> absl::optional<typename KeySignature<KeyT>::result_type> {
-    
-    
-    
-    return InvokeMockImpl<KeyT, typename KeySignature<KeyT>::result_type,
-                          typename KeySignature<KeyT>::arg_tuple_type, URBG>(
-        0, urbg, std::forward<Args>(args)...);
+      -> std::optional<typename KeySignature<KeyT>::result_type> {
+    if constexpr (RandomMockingAccess::HasInvokeMock<URBG>::value) {
+      typename KeySignature<KeyT>::arg_tuple_type arg_tuple(
+          std::forward<Args>(args)...);
+      typename KeySignature<KeyT>::result_type result;
+      if (RandomMockingAccess::InvokeMock(urbg, FastTypeId<KeyT>(), &arg_tuple,
+                                          &result)) {
+        return result;
+      }
+    }
+    return std::nullopt;
   }
 
   
@@ -138,7 +111,7 @@ class MockHelpers {
           m, std::declval<IdType>(), ValidatorT())) {
     return m.template RegisterMock<typename KeySignature<KeyT>::result_type,
                                    typename KeySignature<KeyT>::arg_tuple_type>(
-        m, ::absl::base_internal::FastTypeId<KeyT>(), ValidatorT());
+        m, ::absl::FastTypeId<KeyT>(), ValidatorT());
   }
 
   

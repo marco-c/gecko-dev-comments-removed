@@ -67,6 +67,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 #include "absl/base/casts.h"
 #include "absl/base/dynamic_annotations.h"
@@ -125,28 +126,27 @@ namespace {
 
 const char kOpdSectionName[] = ".opd";
 
-#if (defined(__powerpc__) && !(_CALL_ELF > 1)) || defined(__ia64)
+#if defined(__powerpc64__) && defined(_CALL_ELF)
+#if _CALL_ELF <= 1
+#define ABSL_INTERNAL_HAVE_PPC64_ELFV1_ABI 1
+#endif
+#endif
+#if defined(ABSL_INTERNAL_HAVE_PPC64_ELFV1_ABI) || defined(__ia64)
 
 
-enum { kPlatformUsesOPDSections = 1 };
-#else  
-enum { kPlatformUsesOPDSections = 0 };
+
+
+
+inline constexpr bool kPlatformUsesOPDSections = true;
+#else
+inline constexpr bool kPlatformUsesOPDSections = false;
 #endif
 
 
 
 const size_t kFunctionDescriptorSize = sizeof(void *) * 2;
 
-const int kMaxDecorators = 10;  
-
-struct InstalledSymbolDecorator {
-  SymbolDecorator fn;
-  void *arg;
-  int ticket;
-};
-
-int g_num_decorators;
-InstalledSymbolDecorator g_decorators[kMaxDecorators];
+std::atomic<SymbolDecorator::Factory*> g_decorator_factory = nullptr;
 
 struct FileMappingHint {
   const void *start;
@@ -155,26 +155,16 @@ struct FileMappingHint {
   const char *filename;
 };
 
-
-
-
-
-
-
-
-ABSL_CONST_INIT absl::base_internal::SpinLock g_decorators_mu(
-    absl::kConstInit, absl::base_internal::SCHEDULE_KERNEL_ONLY);
-
 const int kMaxFileMappingHints = 8;
 int g_num_file_mapping_hints;
 FileMappingHint g_file_mapping_hints[kMaxFileMappingHints];
 
 ABSL_CONST_INIT absl::base_internal::SpinLock g_file_mapping_mu(
-    absl::kConstInit, absl::base_internal::SCHEDULE_KERNEL_ONLY);
+    absl::base_internal::SCHEDULE_KERNEL_ONLY);
 
 
 
-static void SafeMemZero(void* p, size_t size) {
+static void SafeMemZero(void *p, size_t size) {
   unsigned char *c = static_cast<unsigned char *>(p);
   while (size--) {
     *c++ = 0;
@@ -182,32 +172,23 @@ static void SafeMemZero(void* p, size_t size) {
 }
 
 struct ObjFile {
-  ObjFile()
-      : filename(nullptr),
-        start_addr(nullptr),
-        end_addr(nullptr),
-        offset(0),
-        fd(-1),
-        elf_type(-1) {
-    SafeMemZero(&elf_header, sizeof(elf_header));
-    SafeMemZero(&phdr[0], sizeof(phdr));
-  }
-
-  char *filename;
-  const void *start_addr;
-  const void *end_addr;
-  uint64_t offset;
+  char *filename = nullptr;
+  const void *start_addr = nullptr;
+  const void *end_addr = nullptr;
+  uint64_t offset = 0;
 
   
   
-  int fd;
-  int elf_type;
-  ElfW(Ehdr) elf_header;
+  int fd = -1;
+  int elf_type = -1;
+  ElfW(Ehdr) elf_header = {};
 
   
   
   
-  std::array<ElfW(Phdr), 4> phdr;
+  std::array<ElfW(Phdr), 4> phdr = {};
+
+  SymbolDecoratorPtr decorator = {};
 };
 
 
@@ -223,29 +204,6 @@ struct SymbolCacheLine {
   
   uint32_t age[ASSOCIATIVITY];
 };
-
-
-
-static std::atomic<base_internal::LowLevelAlloc::Arena *> g_sig_safe_arena;
-
-static base_internal::LowLevelAlloc::Arena *SigSafeArena() {
-  return g_sig_safe_arena.load(std::memory_order_acquire);
-}
-
-static void InitSigSafeArena() {
-  if (SigSafeArena() == nullptr) {
-    base_internal::LowLevelAlloc::Arena *new_arena =
-        base_internal::LowLevelAlloc::NewArena(
-            base_internal::LowLevelAlloc::kAsyncSignalSafe);
-    base_internal::LowLevelAlloc::Arena *old_value = nullptr;
-    if (!g_sig_safe_arena.compare_exchange_strong(old_value, new_arena,
-                                                  std::memory_order_release,
-                                                  std::memory_order_relaxed)) {
-      
-      base_internal::LowLevelAlloc::DeleteArena(new_arena);
-    }
-  }
-}
 
 
 
@@ -279,9 +237,10 @@ ObjFile *AddrMap::Add() {
     size_t new_allocated = allocated_ * 2 + 50;
     ObjFile *new_obj_ =
         static_cast<ObjFile *>(base_internal::LowLevelAlloc::AllocWithArena(
-            new_allocated * sizeof(*new_obj_), SigSafeArena()));
+            new_allocated * sizeof(*new_obj_), base_internal::SigSafeArena()));
     if (obj_) {
-      memcpy(new_obj_, obj_, allocated_ * sizeof(*new_obj_));
+      std::uninitialized_move_n(obj_, size_, new_obj_);
+      std::destroy_n(obj_, size_);
       base_internal::LowLevelAlloc::Free(obj_);
     }
     obj_ = new_obj_;
@@ -324,11 +283,14 @@ class Symbolizer {
   ~Symbolizer();
   const char *GetSymbol(const void *const pc);
 
+  void UpdateDecoratorsIfNeeded(SymbolDecorator::Factory* decorator_factory);
+
  private:
   char *CopyString(const char *s) {
     size_t len = strlen(s);
-    char *dst = static_cast<char *>(
-        base_internal::LowLevelAlloc::AllocWithArena(len + 1, SigSafeArena()));
+    char *dst =
+        static_cast<char *>(base_internal::LowLevelAlloc::AllocWithArena(
+            len + 1, base_internal::SigSafeArena()));
     ABSL_RAW_CHECK(dst != nullptr, "out of memory");
     memcpy(dst, s, len + 1);
     return dst;
@@ -359,6 +321,7 @@ class Symbolizer {
   };
 
   AddrMap addr_map_;
+  SymbolDecorator::Factory* decorator_factory_ = nullptr;
 
   bool ok_;
   bool addr_map_read_;
@@ -433,14 +396,17 @@ static size_t SymbolizerSize() {
 
 
 static Symbolizer *AllocateSymbolizer() {
-  InitSigSafeArena();
+  base_internal::InitSigSafeArena();
   Symbolizer *symbolizer =
       g_cached_symbolizer.exchange(nullptr, std::memory_order_acquire);
-  if (symbolizer != nullptr) {
-    return symbolizer;
+  if (symbolizer == nullptr) {
+    void* ptr = base_internal::LowLevelAlloc::AllocWithArena(
+        SymbolizerSize(), base_internal::SigSafeArena());
+    symbolizer = new (ptr) Symbolizer();
   }
-  return new (base_internal::LowLevelAlloc::AllocWithArena(
-      SymbolizerSize(), SigSafeArena())) Symbolizer();
+  symbolizer->UpdateDecoratorsIfNeeded(
+      g_decorator_factory.load(std::memory_order_acquire));
+  return symbolizer;
 }
 
 
@@ -457,7 +423,7 @@ static void FreeSymbolizer(Symbolizer *s) {
 
 Symbolizer::Symbolizer() : ok_(true), addr_map_read_(false) {
   for (SymbolCacheLine &symbol_cache_line : symbol_cache_) {
-    for (size_t j = 0; j < ABSL_ARRAYSIZE(symbol_cache_line.name); ++j) {
+    for (size_t j = 0; j < std::size(symbol_cache_line.name); ++j) {
       symbol_cache_line.pc[j] = nullptr;
       symbol_cache_line.name[j] = nullptr;
       symbol_cache_line.age[j] = 0;
@@ -472,6 +438,26 @@ Symbolizer::~Symbolizer() {
     }
   }
   ClearAddrMap();
+}
+
+void Symbolizer::UpdateDecoratorsIfNeeded(
+    SymbolDecorator::Factory* decorator_factory) {
+  if (decorator_factory_ == decorator_factory) return;
+
+  for (SymbolCacheLine& symbol_cache_line : symbol_cache_) {
+    for (size_t j = 0; j < std::size(symbol_cache_line.name); ++j) {
+      symbol_cache_line.pc[j] = nullptr;
+      base_internal::LowLevelAlloc::Free(symbol_cache_line.name[j]);
+      symbol_cache_line.name[j] = nullptr;
+      symbol_cache_line.age[j] = 0;
+    }
+  }
+
+  decorator_factory_ = decorator_factory;
+  for (size_t i = 0, end = addr_map_.Size(); i < end; ++i) {
+    ObjFile* obj = addr_map_.At(i);
+    obj->decorator.reset();
+  }
 }
 
 
@@ -1401,7 +1387,8 @@ static void MaybeOpenFdFromSelfExe(ObjFile *obj) {
   obj->fd = fd;
 }
 
-static bool MaybeInitializeObjFile(ObjFile *obj) {
+static bool MaybeInitializeObjFile(
+    ObjFile* obj, SymbolDecorator::Factory* decorator_factory) {
   if (obj->fd < 0) {
     obj->fd = OpenReadOnlyWithHighFD(obj->filename);
 
@@ -1451,7 +1438,7 @@ static bool MaybeInitializeObjFile(ObjFile *obj) {
       }
       phoff += phentsize;
 
-#if defined(__powerpc__) && !(_CALL_ELF > 1)
+#ifdef ABSL_INTERNAL_HAVE_PPC64_ELFV1_ABI
       
       
       
@@ -1461,14 +1448,15 @@ static bool MaybeInitializeObjFile(ObjFile *obj) {
       constexpr int interesting = PF_X | PF_R;
 #endif
 
-      if (phdr.p_type != PT_LOAD
-          || (phdr.p_flags & interesting) != interesting) {
+      if (phdr.p_type != PT_LOAD ||
+          (phdr.p_flags & interesting) != interesting) {
         
         
         continue;
       }
       if (num_interesting_load_segments < obj->phdr.size()) {
-        memcpy(&obj->phdr[num_interesting_load_segments++], &phdr, sizeof(phdr));
+        memcpy(&obj->phdr[num_interesting_load_segments++], &phdr,
+               sizeof(phdr));
       } else {
         ABSL_RAW_LOG(
             WARNING, "%s: too many interesting LOAD segments: %zu >= %zu",
@@ -1481,6 +1469,9 @@ static bool MaybeInitializeObjFile(ObjFile *obj) {
       ABSL_RAW_LOG(WARNING, "%s: no interesting LOAD segments", obj->filename);
       return false;
     }
+  }
+  if (decorator_factory != nullptr && obj->decorator == nullptr) {
+    obj->decorator = decorator_factory(obj->fd);
   }
   return true;
 }
@@ -1495,9 +1486,8 @@ static bool MaybeInitializeObjFile(ObjFile *obj) {
 const char *Symbolizer::GetUncachedSymbol(const void *pc) {
   ObjFile *const obj = FindObjFile(pc, 1);
   ptrdiff_t relocation = 0;
-  int fd = -1;
   if (obj != nullptr) {
-    if (MaybeInitializeObjFile(obj)) {
+    if (MaybeInitializeObjFile(obj, decorator_factory_)) {
       const size_t start_addr = reinterpret_cast<size_t>(obj->start_addr);
       if (obj->elf_type == ET_DYN && start_addr >= obj->offset) {
         
@@ -1517,7 +1507,8 @@ const char *Symbolizer::GetUncachedSymbol(const void *pc) {
             ABSL_RAW_CHECK(p.p_type == PT_NULL, "unexpected p_type");
             break;
           }
-          if (pc < reinterpret_cast<void *>(start_addr + p.p_vaddr + p.p_memsz)) {
+          if (pc <
+              reinterpret_cast<void *>(start_addr + p.p_vaddr + p.p_memsz)) {
             phdr = &p;
             break;
           }
@@ -1536,7 +1527,6 @@ const char *Symbolizer::GetUncachedSymbol(const void *pc) {
         }
       }
 
-      fd = obj->fd;
       if (GetSymbolFromObjectFile(*obj, pc, relocation, symbol_buf_,
                                   sizeof(symbol_buf_), tmp_buf_,
                                   sizeof(tmp_buf_)) == SYMBOL_FOUND) {
@@ -1561,17 +1551,9 @@ const char *Symbolizer::GetUncachedSymbol(const void *pc) {
 #endif
   }
 
-  if (g_decorators_mu.TryLock()) {
-    if (g_num_decorators > 0) {
-      SymbolDecoratorArgs decorator_args = {
-          pc,       relocation,       fd,     symbol_buf_, sizeof(symbol_buf_),
-          tmp_buf_, sizeof(tmp_buf_), nullptr};
-      for (int i = 0; i < g_num_decorators; ++i) {
-        decorator_args.arg = g_decorators[i].arg;
-        g_decorators[i].fn(&decorator_args);
-      }
-    }
-    g_decorators_mu.Unlock();
+  if (obj != nullptr && obj->decorator != nullptr) {
+    obj->decorator->Decorate(pc, relocation, symbol_buf_, sizeof(symbol_buf_),
+                             tmp_buf_, sizeof(tmp_buf_));
   }
   if (symbol_buf_[0] == '\0') {
     return nullptr;
@@ -1616,61 +1598,19 @@ const char *Symbolizer::GetSymbol(const void *pc) {
 #endif
 }
 
-bool RemoveAllSymbolDecorators(void) {
-  if (!g_decorators_mu.TryLock()) {
-    
-    return false;
-  }
-  g_num_decorators = 0;
-  g_decorators_mu.Unlock();
-  return true;
+SymbolDecorator::Factory* SetSymbolDecoratorFactory(
+    SymbolDecorator::Factory* factory) {
+  return g_decorator_factory.exchange(factory, std::memory_order_acq_rel);
 }
 
-bool RemoveSymbolDecorator(int ticket) {
-  if (!g_decorators_mu.TryLock()) {
-    
-    return false;
-  }
-  for (int i = 0; i < g_num_decorators; ++i) {
-    if (g_decorators[i].ticket == ticket) {
-      while (i < g_num_decorators - 1) {
-        g_decorators[i] = g_decorators[i + 1];
-        ++i;
-      }
-      g_num_decorators = i;
-      break;
-    }
-  }
-  g_decorators_mu.Unlock();
-  return true;  
-}
-
-int InstallSymbolDecorator(SymbolDecorator decorator, void *arg) {
-  static int ticket = 0;
-
-  if (!g_decorators_mu.TryLock()) {
-    
-    return -2;
-  }
-  int ret = ticket;
-  if (g_num_decorators >= kMaxDecorators) {
-    ret = -1;
-  } else {
-    g_decorators[g_num_decorators] = {decorator, arg, ticket++};
-    ++g_num_decorators;
-  }
-  g_decorators_mu.Unlock();
-  return ret;
-}
-
-bool RegisterFileMappingHint(const void *start, const void *end, uint64_t offset,
-                             const char *filename) {
+bool RegisterFileMappingHint(const void *start, const void *end,
+                             uint64_t offset, const char *filename) {
   SAFE_ASSERT(start <= end);
   SAFE_ASSERT(filename != nullptr);
 
-  InitSigSafeArena();
+  base_internal::InitSigSafeArena();
 
-  if (!g_file_mapping_mu.TryLock()) {
+  if (!g_file_mapping_mu.try_lock()) {
     return false;
   }
 
@@ -1680,8 +1620,9 @@ bool RegisterFileMappingHint(const void *start, const void *end, uint64_t offset
   } else {
     
     size_t len = strlen(filename);
-    char *dst = static_cast<char *>(
-        base_internal::LowLevelAlloc::AllocWithArena(len + 1, SigSafeArena()));
+    char *dst =
+        static_cast<char *>(base_internal::LowLevelAlloc::AllocWithArena(
+            len + 1, base_internal::SigSafeArena()));
     ABSL_RAW_CHECK(dst != nullptr, "out of memory");
     memcpy(dst, filename, len + 1);
 
@@ -1692,13 +1633,13 @@ bool RegisterFileMappingHint(const void *start, const void *end, uint64_t offset
     hint.filename = dst;
   }
 
-  g_file_mapping_mu.Unlock();
+  g_file_mapping_mu.unlock();
   return ret;
 }
 
 bool GetFileMappingHint(const void **start, const void **end, uint64_t *offset,
                         const char **filename) {
-  if (!g_file_mapping_mu.TryLock()) {
+  if (!g_file_mapping_mu.try_lock()) {
     return false;
   }
   bool found = false;
@@ -1721,7 +1662,7 @@ bool GetFileMappingHint(const void **start, const void **end, uint64_t *offset,
       break;
     }
   }
-  g_file_mapping_mu.Unlock();
+  g_file_mapping_mu.unlock();
   return found;
 }
 
@@ -1757,8 +1698,11 @@ ABSL_NAMESPACE_END
 }  
 
 extern "C" bool AbslInternalGetFileMappingHint(const void **start,
-                                               const void **end, uint64_t *offset,
+                                               const void **end,
+                                               uint64_t *offset,
                                                const char **filename) {
   return absl::debugging_internal::GetFileMappingHint(start, end, offset,
                                                       filename);
 }
+
+#undef ABSL_INTERNAL_HAVE_PPC64_ELFV1_ABI

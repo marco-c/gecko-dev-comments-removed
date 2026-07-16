@@ -47,7 +47,6 @@
 
 
 
-
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -126,12 +125,6 @@
 #endif
 
 
-#if defined(__native_client__)
-#undef ABSL_HAVE_ACCELERATED_AES
-#define ABSL_HAVE_ACCELERATED_AES 0
-#endif
-
-
 
 
 #define ABSL_RANDOM_INTERNAL_AES_DISPATCH 0
@@ -160,12 +153,6 @@
 
 #undef ABSL_RANDOM_INTERNAL_AES_DISPATCH
 #define ABSL_RANDOM_INTERNAL_AES_DISPATCH 1
-#endif
-
-
-#if defined(__native_client__)
-#undef ABSL_RANDOM_INTERNAL_AES_DISPATCH
-#define ABSL_RANDOM_INTERNAL_AES_DISPATCH 0
 #endif
 
 #endif  

@@ -22,8 +22,9 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/optimization.h"
 #include "absl/base/port.h"
-#include "absl/meta/type_traits.h"  
+#include "absl/strings/resize_and_overwrite.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -41,8 +42,8 @@ struct ResizeUninitializedTraits {
 
 template <typename string_type>
 struct ResizeUninitializedTraits<
-    string_type, absl::void_t<decltype(std::declval<string_type&>()
-                                           .__resize_default_init(237))> > {
+    string_type, std::void_t<decltype(std::declval<string_type&>()
+                                          .__resize_default_init(237))> > {
   using HasMember = std::true_type;
   static void Resize(string_type* s, size_t new_size) {
     s->__resize_default_init(new_size);
@@ -71,42 +72,36 @@ inline void STLStringResizeUninitialized(string_type* s, size_t new_size) {
 
 
 
-template <typename string_type>
-void STLStringReserveAmortized(string_type* s, size_t new_size) {
-  const size_t cap = s->capacity();
-  if (new_size > cap) {
-    
-    s->reserve((std::max)(new_size, 2 * cap));
-  }
-}
-
-
-
-template <typename string_type, typename = void>
-struct AppendUninitializedTraits {
-  static void Append(string_type* s, size_t n) {
-    s->append(n, typename string_type::value_type());
-  }
-};
-
-template <typename string_type>
-struct AppendUninitializedTraits<
-    string_type, absl::void_t<decltype(std::declval<string_type&>()
-                                           .__append_default_init(237))> > {
-  static void Append(string_type* s, size_t n) {
-    s->__append_default_init(n);
-  }
-};
-
-
 
 
 
 template <typename string_type>
+[[deprecated]]
 void STLStringResizeUninitializedAmortized(string_type* s, size_t new_size) {
-  const size_t size = s->size();
-  if (new_size > size) {
-    AppendUninitializedTraits<string_type>::Append(s, new_size - size);
+  if (new_size > s->size()) {
+    if (new_size > s->capacity()) {
+      
+      
+      const auto min_growth = s->capacity();
+      if (ABSL_PREDICT_FALSE(s->capacity() > s->max_size() - min_growth)) {
+        s->reserve(s->max_size());
+      } else if (new_size < s->capacity() + min_growth) {
+        s->reserve(s->capacity() + min_growth);
+      }
+    }
+    
+    
+    
+    
+    
+    absl::strings_internal::StringResizeAndOverwriteImpl(
+        *s, new_size, [](typename string_type::value_type*, size_t buf_size) {
+          
+          
+          
+          
+          return buf_size;
+        });
   } else {
     s->erase(new_size);
   }

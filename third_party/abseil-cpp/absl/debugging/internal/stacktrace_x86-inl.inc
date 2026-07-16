@@ -164,6 +164,7 @@ static uintptr_t GetFP(const void *vuc) {
 template <bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 static void **NextStackFrame(void **old_fp, const void *uc,
                              size_t stack_low, size_t stack_high) {
   void **new_fp = (void **)*old_fp;
@@ -244,6 +245,7 @@ static void **NextStackFrame(void **old_fp, const void *uc,
   }
 #endif
 
+  const size_t page_size = static_cast<size_t>(getpagesize());
   const uintptr_t old_fp_u = reinterpret_cast<uintptr_t>(old_fp);
   const uintptr_t new_fp_u = reinterpret_cast<uintptr_t>(new_fp);
 
@@ -262,17 +264,17 @@ static void **NextStackFrame(void **old_fp, const void *uc,
       (!WITH_CONTEXT || uc == nullptr || new_fp_u != GetFP(uc))) {
     
     
-    if (new_fp_u <= old_fp_u) return nullptr;
-
     
     
     
     
     
     
-    if (new_fp_u - old_fp_u > kMaxFrameBytes) {
-      if (stack_high < kUnknownStackEnd &&
-          static_cast<size_t>(getpagesize()) < stack_low) {
+    
+    
+    
+    if (new_fp_u <= old_fp_u || new_fp_u - old_fp_u > kMaxFrameBytes) {
+      if (stack_high < kUnknownStackEnd && page_size < stack_low) {
         
         if (!(stack_low < new_fp_u && new_fp_u <= stack_high)) {
           
@@ -309,7 +311,12 @@ static void **NextStackFrame(void **old_fp, const void *uc,
   if (new_fp_u >= 0xffffe000) return nullptr;
 #endif
 #if !defined(_WIN32)
-  if (!STRICT_UNWINDING) {
+  const uintptr_t old_fp_page = old_fp_u & ~(page_size - 1);
+  const uintptr_t new_fp_page = new_fp_u & ~(page_size - 1);
+  if (old_fp_page == new_fp_page && (new_fp_u & (sizeof(void*) - 1)) == 0) {
+    
+    
+  } else if (!STRICT_UNWINDING) {
     
     
     
@@ -327,6 +334,7 @@ static void **NextStackFrame(void **old_fp, const void *uc,
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 ABSL_ATTRIBUTE_NOINLINE
 static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
                       int max_depth, int skip_count, const void *ucp,

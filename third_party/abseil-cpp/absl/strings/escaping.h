@@ -71,12 +71,12 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-bool CUnescape(absl::string_view source, absl::Nonnull<std::string*> dest,
-               absl::Nullable<std::string*> error);
+bool CUnescape(absl::string_view source, std::string* absl_nonnull dest,
+               std::string* absl_nullable error);
 
 
 inline bool CUnescape(absl::string_view source,
-                      absl::Nonnull<std::string*> dest) {
+                      std::string* absl_nonnull dest) {
   return CUnescape(source, dest, nullptr);
 }
 
@@ -126,17 +126,22 @@ std::string Utf8SafeCHexEscape(absl::string_view src);
 
 
 
-void Base64Escape(absl::string_view src, absl::Nonnull<std::string*> dest);
 std::string Base64Escape(absl::string_view src);
+ABSL_REFACTOR_INLINE inline void
+Base64Escape(absl::string_view src, std::string* absl_nonnull dest) {
+  *dest = Base64Escape(src);
+}
 
 
 
 
 
 
-void WebSafeBase64Escape(absl::string_view src,
-                         absl::Nonnull<std::string*> dest);
 std::string WebSafeBase64Escape(absl::string_view src);
+ABSL_REFACTOR_INLINE inline void
+WebSafeBase64Escape(absl::string_view src, std::string* absl_nonnull dest) {
+  *dest = WebSafeBase64Escape(src);
+}
 
 
 
@@ -145,7 +150,8 @@ std::string WebSafeBase64Escape(absl::string_view src);
 
 
 
-bool Base64Unescape(absl::string_view src, absl::Nonnull<std::string*> dest);
+bool Base64Unescape(absl::string_view src, std::string* absl_nonnull dest);
+
 
 
 
@@ -155,7 +161,7 @@ bool Base64Unescape(absl::string_view src, absl::Nonnull<std::string*> dest);
 
 
 bool WebSafeBase64Unescape(absl::string_view src,
-                           absl::Nonnull<std::string*> dest);
+                           std::string* absl_nonnull dest);
 
 
 
@@ -164,7 +170,7 @@ bool WebSafeBase64Unescape(absl::string_view src,
 
 
 [[nodiscard]] bool HexStringToBytes(absl::string_view hex,
-                                    absl::Nonnull<std::string*> bytes);
+                                    std::string* absl_nonnull bytes);
 
 
 

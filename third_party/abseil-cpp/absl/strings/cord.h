@@ -67,6 +67,7 @@
 #include <cstring>
 #include <iosfwd>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -74,11 +75,13 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/endian.h"
+#include "absl/base/internal/hardening.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
 #include "absl/crc/internal/crc_cord_state.h"
 #include "absl/functional/function_ref.h"
+#include "absl/hash/internal/weakly_mixed_integer.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/cord_analysis.h"
 #include "absl/strings/cord_buffer.h"
@@ -95,6 +98,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/compare.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
+
+namespace strings {
+class CordReader;
+}  
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -102,8 +110,9 @@ class Cord;
 class CordTestPeer;
 template <typename Releaser>
 Cord MakeCordFromExternal(absl::string_view, Releaser&&);
-void CopyCordToString(const Cord& src, absl::Nonnull<std::string*> dst);
-void AppendCordToString(const Cord& src, absl::Nonnull<std::string*> dst);
+void CopyCordToString(const Cord& src, std::string* absl_nonnull dst);
+void AppendCordToString(const Cord& src, std::string* absl_nonnull dst);
+[[nodiscard]] size_t CopyCordToSpan(const Cord& src, absl::Span<char> dst);
 
 
 enum class CordMemoryAccounting {
@@ -171,8 +180,7 @@ enum class CordMemoryAccounting {
 class Cord {
  private:
   template <typename T>
-  using EnableIfString =
-      absl::enable_if_t<std::is_same<T, std::string>::value, int>;
+  using EnableIfString = std::enable_if_t<std::is_same_v<T, std::string>, int>;
 
  public:
   
@@ -417,8 +425,7 @@ class Cord {
   
   
   
-  friend void CopyCordToString(const Cord& src,
-                               absl::Nonnull<std::string*> dst);
+  friend void CopyCordToString(const Cord& src, std::string* absl_nonnull dst);
 
   
   
@@ -430,7 +437,13 @@ class Cord {
   
   
   friend void AppendCordToString(const Cord& src,
-                                 absl::Nonnull<std::string*> dst);
+                                 std::string* absl_nonnull dst);
+
+  
+  
+  
+  
+  friend size_t CopyCordToSpan(const Cord& src, absl::Span<char> dst);
 
   class CharIterator;
 
@@ -467,7 +480,7 @@ class Cord {
     using iterator_category = std::input_iterator_tag;
     using value_type = absl::string_view;
     using difference_type = ptrdiff_t;
-    using pointer = absl::Nonnull<const value_type*>;
+    using pointer = const value_type* absl_nonnull;
     using reference = value_type;
 
     ChunkIterator() = default;
@@ -488,13 +501,13 @@ class Cord {
     using CordRepBtreeReader = absl::cord_internal::CordRepBtreeReader;
 
     
-    explicit ChunkIterator(absl::Nonnull<cord_internal::CordRep*> tree);
+    explicit ChunkIterator(cord_internal::CordRep* absl_nonnull tree);
 
     
-    explicit ChunkIterator(absl::Nonnull<const Cord*> cord);
+    explicit ChunkIterator(const Cord* absl_nonnull cord);
 
     
-    void InitTree(absl::Nonnull<cord_internal::CordRep*> tree);
+    void InitTree(cord_internal::CordRep* absl_nonnull tree);
 
     
     
@@ -512,7 +525,7 @@ class Cord {
     
     
     
-    absl::Nullable<absl::cord_internal::CordRep*> current_leaf_ = nullptr;
+    absl::cord_internal::CordRep* absl_nullable current_leaf_ = nullptr;
     
     size_t bytes_remaining_ = 0;
 
@@ -569,13 +582,13 @@ class Cord {
     using iterator = ChunkIterator;
     using const_iterator = ChunkIterator;
 
-    explicit ChunkRange(absl::Nonnull<const Cord*> cord) : cord_(cord) {}
+    explicit ChunkRange(const Cord* absl_nonnull cord) : cord_(cord) {}
 
     ChunkIterator begin() const;
     ChunkIterator end() const;
 
    private:
-    absl::Nonnull<const Cord*> cord_;
+    const Cord* absl_nonnull cord_;
   };
 
   
@@ -628,7 +641,7 @@ class Cord {
     using iterator_category = std::input_iterator_tag;
     using value_type = char;
     using difference_type = ptrdiff_t;
-    using pointer = absl::Nonnull<const char*>;
+    using pointer = const char* absl_nonnull;
     using reference = const char&;
 
     CharIterator() = default;
@@ -642,7 +655,7 @@ class Cord {
     friend Cord;
 
    private:
-    explicit CharIterator(absl::Nonnull<const Cord*> cord)
+    explicit CharIterator(const Cord* absl_nonnull cord)
         : chunk_iterator_(cord) {}
 
     ChunkIterator chunk_iterator_;
@@ -654,14 +667,14 @@ class Cord {
   
   
   
-  static Cord AdvanceAndRead(absl::Nonnull<CharIterator*> it, size_t n_bytes);
+  static Cord AdvanceAndRead(CharIterator* absl_nonnull it, size_t n_bytes);
 
   
   
   
   
   
-  static void Advance(absl::Nonnull<CharIterator*> it, size_t n_bytes);
+  static void Advance(CharIterator* absl_nonnull it, size_t n_bytes);
 
   
   
@@ -669,6 +682,13 @@ class Cord {
   
   
   static absl::string_view ChunkRemaining(const CharIterator& it);
+
+  
+  
+  
+  
+  static ptrdiff_t Distance(const CharIterator& first,
+                            const CharIterator& last);
 
   
   
@@ -710,13 +730,13 @@ class Cord {
     using iterator = CharIterator;
     using const_iterator = CharIterator;
 
-    explicit CharRange(absl::Nonnull<const Cord*> cord) : cord_(cord) {}
+    explicit CharRange(const Cord* absl_nonnull cord) : cord_(cord) {}
 
     CharIterator begin() const;
     CharIterator end() const;
 
    private:
-    absl::Nonnull<const Cord*> cord_;
+    const Cord* absl_nonnull cord_;
   };
 
   
@@ -756,7 +776,7 @@ class Cord {
   
   
   
-  absl::optional<absl::string_view> TryFlat() const
+  std::optional<absl::string_view> TryFlat() const
       ABSL_ATTRIBUTE_LIFETIME_BOUND;
 
   
@@ -775,7 +795,7 @@ class Cord {
   CharIterator Find(const absl::Cord& needle) const;
 
   
-  friend void AbslFormatFlush(absl::Nonnull<absl::Cord*> cord,
+  friend void AbslFormatFlush(absl::Cord* absl_nonnull cord,
                               absl::string_view part) {
     cord->Append(part);
   }
@@ -809,11 +829,11 @@ class Cord {
 
   
   
-  absl::optional<uint32_t> ExpectedChecksum() const;
+  std::optional<uint32_t> ExpectedChecksum() const;
 
   template <typename H>
   friend H AbslHashValue(H hash_state, const absl::Cord& c) {
-    absl::optional<absl::string_view> maybe_flat = c.TryFlat();
+    std::optional<absl::string_view> maybe_flat = c.TryFlat();
     if (maybe_flat.has_value()) {
       return H::combine(std::move(hash_state), *maybe_flat);
     }
@@ -842,6 +862,7 @@ class Cord {
   
   explicit Cord(absl::string_view src, MethodIdentifier method);
 
+  friend class ::strings::CordReader;
   friend class CordTestPeer;
   friend bool operator==(const Cord& lhs, const Cord& rhs);
   friend bool operator==(const Cord& lhs, absl::string_view rhs);
@@ -878,7 +899,7 @@ class Cord {
   }
 #endif
 
-  friend absl::Nullable<const CordzInfo*> GetCordzInfoForTesting(
+  friend const CordzInfo* absl_nullable GetCordzInfoForTesting(
       const Cord& cord);
 
   
@@ -907,21 +928,21 @@ class Cord {
     InlineRep& operator=(InlineRep&& src) noexcept;
 
     explicit constexpr InlineRep(absl::string_view sv,
-                                 absl::Nullable<CordRep*> rep);
+                                 CordRep* absl_nullable rep);
 
-    void Swap(absl::Nonnull<InlineRep*> rhs);
+    void Swap(InlineRep* absl_nonnull rhs);
     size_t size() const;
     
-    absl::Nullable<const char*> data() const;
+    const char* absl_nullable data() const;
     
-    void set_data(absl::Nonnull<const char*> data, size_t n);
-    absl::Nonnull<char*> set_data(size_t n);  
+    void set_data(const char* absl_nullable data, size_t n);
+    char* absl_nonnull set_data(size_t n);  
     
-    absl::Nullable<absl::cord_internal::CordRep*> tree() const;
-    absl::Nonnull<absl::cord_internal::CordRep*> as_tree() const;
-    absl::Nonnull<const char*> as_chars() const;
+    absl::cord_internal::CordRep* absl_nullable tree() const;
+    absl::cord_internal::CordRep* absl_nonnull as_tree() const;
+    const char* absl_nonnull as_chars() const;
     
-    absl::Nullable<absl::cord_internal::CordRep*> clear();
+    absl::cord_internal::CordRep* absl_nullable clear();
     
     void reduce_size(size_t n);    
     void remove_prefix(size_t n);  
@@ -930,58 +951,56 @@ class Cord {
 
     
     
-    absl::Nonnull<CordRepFlat*> MakeFlatWithExtraCapacity(size_t extra);
+    CordRepFlat* absl_nonnull MakeFlatWithExtraCapacity(size_t extra);
 
     
     
     
     
     
-    void SetTree(absl::Nonnull<CordRep*> rep, const CordzUpdateScope& scope);
+    void SetTree(CordRep* absl_nonnull rep, const CordzUpdateScope& scope);
 
     
     
-    void SetTreeOrEmpty(absl::Nullable<CordRep*> rep,
+    void SetTreeOrEmpty(CordRep* absl_nullable rep,
                         const CordzUpdateScope& scope);
 
     
     
     
     
-    void EmplaceTree(absl::Nonnull<CordRep*> rep, MethodIdentifier method);
+    void EmplaceTree(CordRep* absl_nonnull rep, MethodIdentifier method);
 
     
     
-    void EmplaceTree(absl::Nonnull<CordRep*> rep, const InlineData& parent,
+    void EmplaceTree(CordRep* absl_nonnull rep, const InlineData& parent,
                      MethodIdentifier method);
 
     
     
     
-    void CommitTree(absl::Nullable<const CordRep*> old_rep,
-                    absl::Nonnull<CordRep*> rep, const CordzUpdateScope& scope,
+    void CommitTree(const CordRep* absl_nullable old_rep,
+                    CordRep* absl_nonnull rep, const CordzUpdateScope& scope,
                     MethodIdentifier method);
 
-    void AppendTreeToInlined(absl::Nonnull<CordRep*> tree,
+    void AppendTreeToInlined(CordRep* absl_nonnull tree,
                              MethodIdentifier method);
-    void AppendTreeToTree(absl::Nonnull<CordRep*> tree,
-                          MethodIdentifier method);
-    void AppendTree(absl::Nonnull<CordRep*> tree, MethodIdentifier method);
-    void PrependTreeToInlined(absl::Nonnull<CordRep*> tree,
+    void AppendTreeToTree(CordRep* absl_nonnull tree, MethodIdentifier method);
+    void AppendTree(CordRep* absl_nonnull tree, MethodIdentifier method);
+    void PrependTreeToInlined(CordRep* absl_nonnull tree,
                               MethodIdentifier method);
-    void PrependTreeToTree(absl::Nonnull<CordRep*> tree,
-                           MethodIdentifier method);
-    void PrependTree(absl::Nonnull<CordRep*> tree, MethodIdentifier method);
+    void PrependTreeToTree(CordRep* absl_nonnull tree, MethodIdentifier method);
+    void PrependTree(CordRep* absl_nonnull tree, MethodIdentifier method);
 
     bool IsSame(const InlineRep& other) const { return data_ == other.data_; }
 
     
-    void CopyTo(absl::Nonnull<std::string*> dst) const {
+    void CopyTo(std::string* absl_nonnull dst) const {
       data_.CopyInlineToString(dst);
     }
 
     
-    void CopyToArray(absl::Nonnull<char*> dst) const;
+    void CopyToArray(char* absl_nonnull dst) const;
 
     bool is_tree() const { return data_.is_tree(); }
 
@@ -994,12 +1013,12 @@ class Cord {
     }
 
     
-    absl::Nullable<absl::cord_internal::CordzInfo*> cordz_info() const {
+    absl::cord_internal::CordzInfo* absl_nullable cordz_info() const {
       return data_.cordz_info();
     }
 
     
-    void set_cordz_info(absl::Nonnull<cord_internal::CordzInfo*> cordz_info) {
+    void set_cordz_info(cord_internal::CordzInfo* absl_nonnull cordz_info) {
       assert(cordz_info != nullptr);
       data_.set_cordz_info(cordz_info);
     }
@@ -1031,19 +1050,19 @@ class Cord {
   InlineRep contents_;
 
   
-  static bool GetFlatAux(absl::Nonnull<absl::cord_internal::CordRep*> rep,
-                         absl::Nonnull<absl::string_view*> fragment);
+  static bool GetFlatAux(absl::cord_internal::CordRep* absl_nonnull rep,
+                         absl::string_view* absl_nonnull fragment);
 
   
   static void ForEachChunkAux(
-      absl::Nonnull<absl::cord_internal::CordRep*> rep,
+      absl::cord_internal::CordRep* absl_nonnull rep,
       absl::FunctionRef<void(absl::string_view)> callback);
 
   
   void DestroyCordSlow();
 
   
-  void CopyToArraySlowPath(absl::Nonnull<char*> dst) const;
+  void CopyToArraySlowPath(char* absl_nonnull dst) const;
   int CompareSlowPath(absl::string_view rhs, size_t compared_size,
                       size_t size_to_compare) const;
   int CompareSlowPath(const Cord& rhs, size_t compared_size,
@@ -1060,8 +1079,8 @@ class Cord {
 
   
   
-  absl::Nonnull<absl::cord_internal::CordRep*> TakeRep() const&;
-  absl::Nonnull<absl::cord_internal::CordRep*> TakeRep() &&;
+  absl::cord_internal::CordRep* absl_nonnull TakeRep() const&;
+  absl::cord_internal::CordRep* absl_nonnull TakeRep() &&;
 
   
   template <typename C>
@@ -1093,24 +1112,18 @@ class Cord {
       hash_state = combiner.add_buffer(std::move(hash_state), chunk.data(),
                                        chunk.size());
     });
-    return H::combine(combiner.finalize(std::move(hash_state)), size());
+    return combiner.finalize(std::move(hash_state));
   }
 
   friend class CrcCord;
   void SetCrcCordState(crc_internal::CrcCordState state);
-  absl::Nullable<const crc_internal::CrcCordState*> MaybeGetCrcCordState()
-      const;
+  const crc_internal::CrcCordState* absl_nullable MaybeGetCrcCordState() const;
 
   CharIterator FindImpl(CharIterator it, absl::string_view needle) const;
 
-  void CopyToArrayImpl(absl::Nonnull<char*> dst) const;
+  void CopyToArrayImpl(char* absl_nonnull dst) const;
 };
 
-ABSL_NAMESPACE_END
-}  
-
-namespace absl {
-ABSL_NAMESPACE_BEGIN
 
 
 extern std::ostream& operator<<(std::ostream& out, const Cord& cord);
@@ -1123,16 +1136,16 @@ namespace cord_internal {
 
 
 void InitializeCordRepExternal(absl::string_view data,
-                               absl::Nonnull<CordRepExternal*> rep);
+                               CordRepExternal* absl_nonnull rep);
 
 
 
 template <typename Releaser>
 
-absl::Nonnull<CordRep*> NewExternalRep(absl::string_view data,
-                                       Releaser&& releaser) {
+CordRep* absl_nonnull NewExternalRep(absl::string_view data,
+                                     Releaser&& releaser) {
   assert(!data.empty());
-  using ReleaserType = absl::decay_t<Releaser>;
+  using ReleaserType = std::decay_t<Releaser>;
   CordRepExternal* rep = new CordRepExternalImpl<ReleaserType>(
       std::forward<Releaser>(releaser), 0);
   InitializeCordRepExternal(data, rep);
@@ -1142,7 +1155,7 @@ absl::Nonnull<CordRep*> NewExternalRep(absl::string_view data,
 
 
 
-inline absl::Nonnull<CordRep*> NewExternalRep(
+inline CordRep* absl_nonnull NewExternalRep(
     absl::string_view data, void (&releaser)(absl::string_view)) {
   return NewExternalRep(data, &releaser);
 }
@@ -1157,7 +1170,7 @@ Cord MakeCordFromExternal(absl::string_view data, Releaser&& releaser) {
                                    data, std::forward<Releaser>(releaser)),
                                Cord::MethodIdentifier::kMakeCordFromExternal);
   } else {
-    using ReleaserType = absl::decay_t<Releaser>;
+    using ReleaserType = std::decay_t<Releaser>;
     cord_internal::InvokeReleaser(
         cord_internal::Rank1{}, ReleaserType(std::forward<Releaser>(releaser)),
         data);
@@ -1166,7 +1179,7 @@ Cord MakeCordFromExternal(absl::string_view data, Releaser&& releaser) {
 }
 
 constexpr Cord::InlineRep::InlineRep(absl::string_view sv,
-                                     absl::Nullable<CordRep*> rep)
+                                     CordRep* absl_nullable rep)
     : data_(sv, rep) {}
 
 inline Cord::InlineRep::InlineRep(const Cord::InlineRep& src)
@@ -1205,7 +1218,7 @@ inline Cord::InlineRep& Cord::InlineRep::operator=(
   return *this;
 }
 
-inline void Cord::InlineRep::Swap(absl::Nonnull<Cord::InlineRep*> rhs) {
+inline void Cord::InlineRep::Swap(Cord::InlineRep* absl_nonnull rhs) {
   if (rhs == this) {
     return;
   }
@@ -1213,22 +1226,51 @@ inline void Cord::InlineRep::Swap(absl::Nonnull<Cord::InlineRep*> rhs) {
   swap(data_, rhs->data_);
 }
 
-inline absl::Nullable<const char*> Cord::InlineRep::data() const {
+inline const char* absl_nullable Cord::InlineRep::data() const {
   return is_tree() ? nullptr : data_.as_chars();
 }
 
-inline absl::Nonnull<const char*> Cord::InlineRep::as_chars() const {
+inline char* absl_nonnull Cord::InlineRep::set_data(size_t n) {
+  assert(n <= kMaxInline);
+  ResetToEmpty();
+  set_inline_size(n);
+  return data_.as_chars();
+}
+
+inline void Cord::InlineRep::set_data(const char* absl_nullable data,
+                                      size_t n) {
+  static_assert(kMaxInline == 15, "set_data is hard-coded for a length of 15");
+  assert(data != nullptr || n == 0);
+  data_.set_inline_data(data, n);
+}
+
+inline void Cord::InlineRep::reduce_size(size_t n) {
+  size_t tag = inline_size();
+  assert(tag <= kMaxInline);
+  assert(tag >= n);
+  tag -= n;
+  memset(data_.as_chars() + tag, 0, n);
+  set_inline_size(tag);
+}
+
+inline void Cord::InlineRep::remove_prefix(size_t n) {
+  cord_internal::SmallMemmove(data_.as_chars(), data_.as_chars() + n,
+                              inline_size() - n);
+  reduce_size(n);
+}
+
+inline const char* absl_nonnull Cord::InlineRep::as_chars() const {
   assert(!data_.is_tree());
   return data_.as_chars();
 }
 
-inline absl::Nonnull<absl::cord_internal::CordRep*> Cord::InlineRep::as_tree()
+inline absl::cord_internal::CordRep* absl_nonnull Cord::InlineRep::as_tree()
     const {
   assert(data_.is_tree());
   return data_.as_tree();
 }
 
-inline absl::Nullable<absl::cord_internal::CordRep*> Cord::InlineRep::tree()
+inline absl::cord_internal::CordRep* absl_nullable Cord::InlineRep::tree()
     const {
   if (is_tree()) {
     return as_tree();
@@ -1241,7 +1283,7 @@ inline size_t Cord::InlineRep::size() const {
   return is_tree() ? as_tree()->length : inline_size();
 }
 
-inline absl::Nonnull<cord_internal::CordRepFlat*>
+inline cord_internal::CordRepFlat* absl_nonnull
 Cord::InlineRep::MakeFlatWithExtraCapacity(size_t extra) {
   static_assert(cord_internal::kMinFlatLength >= sizeof(data_), "");
   size_t len = data_.inline_size();
@@ -1251,21 +1293,21 @@ Cord::InlineRep::MakeFlatWithExtraCapacity(size_t extra) {
   return result;
 }
 
-inline void Cord::InlineRep::EmplaceTree(absl::Nonnull<CordRep*> rep,
+inline void Cord::InlineRep::EmplaceTree(CordRep* absl_nonnull rep,
                                          MethodIdentifier method) {
   assert(rep);
   data_.make_tree(rep);
   CordzInfo::MaybeTrackCord(data_, method);
 }
 
-inline void Cord::InlineRep::EmplaceTree(absl::Nonnull<CordRep*> rep,
+inline void Cord::InlineRep::EmplaceTree(CordRep* absl_nonnull rep,
                                          const InlineData& parent,
                                          MethodIdentifier method) {
   data_.make_tree(rep);
   CordzInfo::MaybeTrackCord(data_, parent, method);
 }
 
-inline void Cord::InlineRep::SetTree(absl::Nonnull<CordRep*> rep,
+inline void Cord::InlineRep::SetTree(CordRep* absl_nonnull rep,
                                      const CordzUpdateScope& scope) {
   assert(rep);
   assert(data_.is_tree());
@@ -1273,7 +1315,7 @@ inline void Cord::InlineRep::SetTree(absl::Nonnull<CordRep*> rep,
   scope.SetCordRep(rep);
 }
 
-inline void Cord::InlineRep::SetTreeOrEmpty(absl::Nullable<CordRep*> rep,
+inline void Cord::InlineRep::SetTreeOrEmpty(CordRep* absl_nullable rep,
                                             const CordzUpdateScope& scope) {
   assert(data_.is_tree());
   if (rep) {
@@ -1284,8 +1326,8 @@ inline void Cord::InlineRep::SetTreeOrEmpty(absl::Nullable<CordRep*> rep,
   scope.SetCordRep(rep);
 }
 
-inline void Cord::InlineRep::CommitTree(absl::Nullable<const CordRep*> old_rep,
-                                        absl::Nonnull<CordRep*> rep,
+inline void Cord::InlineRep::CommitTree(const CordRep* absl_nullable old_rep,
+                                        CordRep* absl_nonnull rep,
                                         const CordzUpdateScope& scope,
                                         MethodIdentifier method) {
   if (old_rep) {
@@ -1295,7 +1337,7 @@ inline void Cord::InlineRep::CommitTree(absl::Nullable<const CordRep*> old_rep,
   }
 }
 
-inline absl::Nullable<absl::cord_internal::CordRep*> Cord::InlineRep::clear() {
+inline absl::cord_internal::CordRep* absl_nullable Cord::InlineRep::clear() {
   if (is_tree()) {
     CordzInfo::MaybeUntrackCord(cordz_info());
   }
@@ -1304,7 +1346,7 @@ inline absl::Nullable<absl::cord_internal::CordRep*> Cord::InlineRep::clear() {
   return result;
 }
 
-inline void Cord::InlineRep::CopyToArray(absl::Nonnull<char*> dst) const {
+inline void Cord::InlineRep::CopyToArray(char* absl_nonnull dst) const {
   assert(!is_tree());
   size_t n = inline_size();
   assert(n != 0);
@@ -1392,7 +1434,7 @@ inline size_t Cord::EstimatedMemoryUsage(
   return result;
 }
 
-inline absl::optional<absl::string_view> Cord::TryFlat() const
+inline std::optional<absl::string_view> Cord::TryFlat() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   absl::cord_internal::CordRep* rep = contents_.tree();
   if (rep == nullptr) {
@@ -1402,7 +1444,7 @@ inline absl::optional<absl::string_view> Cord::TryFlat() const
   if (GetFlatAux(rep, &fragment)) {
     return fragment;
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 inline absl::string_view Cord::Flatten() ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -1488,7 +1530,7 @@ inline bool Cord::StartsWith(absl::string_view rhs) const {
   return EqualsImpl(rhs, rhs_size);
 }
 
-inline void Cord::CopyToArrayImpl(absl::Nonnull<char*> dst) const {
+inline void Cord::CopyToArrayImpl(char* absl_nonnull dst) const {
   if (!contents_.is_tree()) {
     if (!empty()) contents_.CopyToArray(dst);
   } else {
@@ -1497,7 +1539,7 @@ inline void Cord::CopyToArrayImpl(absl::Nonnull<char*> dst) const {
 }
 
 inline void Cord::ChunkIterator::InitTree(
-    absl::Nonnull<cord_internal::CordRep*> tree) {
+    cord_internal::CordRep* absl_nonnull tree) {
   tree = cord_internal::SkipCrcNode(tree);
   if (tree->tag == cord_internal::BTREE) {
     current_chunk_ = btree_reader_.Init(tree->btree());
@@ -1508,12 +1550,12 @@ inline void Cord::ChunkIterator::InitTree(
 }
 
 inline Cord::ChunkIterator::ChunkIterator(
-    absl::Nonnull<cord_internal::CordRep*> tree) {
+    cord_internal::CordRep* absl_nonnull tree) {
   bytes_remaining_ = tree->length;
   InitTree(tree);
 }
 
-inline Cord::ChunkIterator::ChunkIterator(absl::Nonnull<const Cord*> cord) {
+inline Cord::ChunkIterator::ChunkIterator(const Cord* absl_nonnull cord) {
   if (CordRep* tree = cord->contents_.tree()) {
     bytes_remaining_ = tree->length;
     if (ABSL_PREDICT_TRUE(bytes_remaining_ != 0)) {
@@ -1548,8 +1590,8 @@ inline void Cord::ChunkIterator::AdvanceBytesBtree(size_t n) {
 }
 
 inline Cord::ChunkIterator& Cord::ChunkIterator::operator++() {
-  ABSL_HARDENING_ASSERT(bytes_remaining_ > 0 &&
-                        "Attempted to iterate past `end()`");
+  
+  absl::base_internal::HardeningAssertGT(bytes_remaining_, size_t{0});
   assert(bytes_remaining_ >= current_chunk_.size());
   bytes_remaining_ -= current_chunk_.size();
   if (bytes_remaining_ > 0) {
@@ -1578,12 +1620,12 @@ inline bool Cord::ChunkIterator::operator!=(const ChunkIterator& other) const {
 }
 
 inline Cord::ChunkIterator::reference Cord::ChunkIterator::operator*() const {
-  ABSL_HARDENING_ASSERT(bytes_remaining_ != 0);
+  absl::base_internal::HardeningAssertGT(bytes_remaining_, size_t{0});
   return current_chunk_;
 }
 
 inline Cord::ChunkIterator::pointer Cord::ChunkIterator::operator->() const {
-  ABSL_HARDENING_ASSERT(bytes_remaining_ != 0);
+  absl::base_internal::HardeningAssertGT(bytes_remaining_, size_t{0});
   return &current_chunk_;
 }
 
@@ -1649,19 +1691,25 @@ inline Cord::CharIterator::reference Cord::CharIterator::operator*() const {
   return *chunk_iterator_->data();
 }
 
-inline Cord Cord::AdvanceAndRead(absl::Nonnull<CharIterator*> it,
+inline Cord Cord::AdvanceAndRead(CharIterator* absl_nonnull it,
                                  size_t n_bytes) {
   assert(it != nullptr);
   return it->chunk_iterator_.AdvanceAndReadBytes(n_bytes);
 }
 
-inline void Cord::Advance(absl::Nonnull<CharIterator*> it, size_t n_bytes) {
+inline void Cord::Advance(CharIterator* absl_nonnull it, size_t n_bytes) {
   assert(it != nullptr);
   it->chunk_iterator_.AdvanceBytes(n_bytes);
 }
 
 inline absl::string_view Cord::ChunkRemaining(const CharIterator& it) {
   return *it.chunk_iterator_;
+}
+
+inline ptrdiff_t Cord::Distance(const CharIterator& first,
+                                const CharIterator& last) {
+  return static_cast<ptrdiff_t>(first.chunk_iterator_.bytes_remaining_ -
+                                last.chunk_iterator_.bytes_remaining_);
 }
 
 inline Cord::CharIterator Cord::char_begin() const {

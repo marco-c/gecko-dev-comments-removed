@@ -27,10 +27,12 @@
 #define ABSL_FLAGS_COMMANDLINEFLAG_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/base/config.h"
-#include "absl/base/internal/fast_type_id.h"
+#include "absl/base/fast_type_id.h"
+#include "absl/base/nullability.h"
 #include "absl/flags/internal/commandlineflag.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -80,7 +82,7 @@ class CommandLineFlag {
   
   template <typename T>
   inline bool IsOfType() const {
-    return TypeId() == base_internal::FastTypeId<T>();
+    return TypeId() == FastTypeId<T>();
   }
 
   
@@ -88,9 +90,9 @@ class CommandLineFlag {
   
   
   template <typename T>
-  absl::optional<T> TryGet() const {
+  std::optional<T> TryGet() const {
     if (IsRetired() || !IsOfType<T>()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
 
     
@@ -118,7 +120,7 @@ class CommandLineFlag {
     Read(&u.value);
     
     if (IsRetired()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return std::move(u.value);
   }
@@ -158,7 +160,7 @@ class CommandLineFlag {
   
   
   
-  bool ParseFrom(absl::string_view value, std::string* error);
+  bool ParseFrom(absl::string_view value, std::string* absl_nonnull error);
 
  protected:
   ~CommandLineFlag() = default;
@@ -188,7 +190,7 @@ class CommandLineFlag {
 
   
   
-  virtual void Read(void* dst) const = 0;
+  virtual void Read(void* absl_nonnull dst) const = 0;
 
   
   

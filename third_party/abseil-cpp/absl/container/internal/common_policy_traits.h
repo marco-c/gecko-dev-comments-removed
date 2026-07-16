@@ -34,7 +34,7 @@ struct policy_trait_element_is_owner : std::false_type {};
 template <class Policy>
 struct policy_trait_element_is_owner<
     Policy,
-    std::enable_if_t<!std::is_void<typename Policy::element_is_owner>::value>>
+    std::enable_if_t<!std::is_void_v<typename Policy::element_is_owner>>>
     : Policy::element_is_owner {};
 
 
@@ -43,7 +43,7 @@ struct common_policy_traits {
   
   using slot_type = typename Policy::slot_type;
   using reference = decltype(Policy::element(std::declval<slot_type*>()));
-  using value_type = typename std::remove_reference<reference>::type;
+  using value_type = std::remove_reference_t<reference>;
 
   
   
@@ -81,7 +81,7 @@ struct common_policy_traits {
   
   
   template <class P = Policy>
-  static auto element(absl::remove_const_t<slot_type>* slot)
+  static auto element(std::remove_const_t<slot_type>* slot)
       -> decltype(P::element(slot)) {
     return P::element(slot);
   }
@@ -91,16 +91,16 @@ struct common_policy_traits {
   }
 
   static constexpr bool transfer_uses_memcpy() {
-    return std::is_same<decltype(transfer_impl<std::allocator<char>>(
-                            nullptr, nullptr, nullptr, Rank2{})),
-                        std::true_type>::value;
+    return std::is_same_v<decltype(transfer_impl<std::allocator<char>>(
+                              nullptr, nullptr, nullptr, Rank2{})),
+                          std::true_type>;
   }
 
   
   template <class Alloc>
   static constexpr bool destroy_is_trivial() {
-    return std::is_same<decltype(destroy<Alloc>(nullptr, nullptr)),
-                        std::true_type>::value;
+    return std::is_same_v<decltype(destroy<Alloc>(nullptr, nullptr)),
+                          std::true_type>;
   }
 
  private:

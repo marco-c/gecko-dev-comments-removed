@@ -16,9 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#if defined(__native_client__) || defined(__EMSCRIPTEN__)
-
-
+#if defined(__EMSCRIPTEN__)
 
 
 

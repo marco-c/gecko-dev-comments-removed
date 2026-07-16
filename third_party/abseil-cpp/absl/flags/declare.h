@@ -59,10 +59,19 @@ ABSL_NAMESPACE_END
 
 
 
+
+
+
+
+#if defined(_MSC_VER)
+#define ABSL_DECLARE_FLAG_INTERNAL(type, name) \
+  extern absl::Flag<type> FLAGS_##name
+#else
 #define ABSL_DECLARE_FLAG_INTERNAL(type, name)               \
   extern absl::Flag<type> FLAGS_##name;                      \
   namespace absl /* block flags in namespaces */ {}          \
   /* second redeclaration is to allow applying attributes */ \
   extern absl::Flag<type> FLAGS_##name
+#endif  
 
 #endif  

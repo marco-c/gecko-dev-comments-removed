@@ -119,7 +119,11 @@ struct Alloc : std::allocator<T> {
   using propagate_on_container_swap = std::true_type;
 
   
-  explicit Alloc(size_t id = 0) : id_(id) {}
+  
+  
+  
+  
+  Alloc(size_t id = 0) : id_(id) {}
 
   Alloc(const Alloc&) = default;
   Alloc& operator=(const Alloc&) = default;
@@ -154,9 +158,8 @@ auto items(const Map& m) -> std::vector<
 }
 
 template <class Set>
-auto keys(const Set& s)
-    -> std::vector<typename std::decay<typename Set::key_type>::type> {
-  std::vector<typename std::decay<typename Set::key_type>::type> res;
+auto keys(const Set& s) -> std::vector<std::decay_t<typename Set::key_type>> {
+  std::vector<std::decay_t<typename Set::key_type>> res;
   res.reserve(s.size());
   for (const auto& v : s) res.emplace_back(v);
   return res;
@@ -165,19 +168,5 @@ auto keys(const Set& s)
 }  
 ABSL_NAMESPACE_END
 }  
-
-
-
-
-
-
-
-
-
-#if defined(__GLIBCXX__) && __GLIBCXX__ <= 20140425
-#define ABSL_UNORDERED_SUPPORTS_ALLOC_CTORS 0
-#else
-#define ABSL_UNORDERED_SUPPORTS_ALLOC_CTORS 1
-#endif
 
 #endif  

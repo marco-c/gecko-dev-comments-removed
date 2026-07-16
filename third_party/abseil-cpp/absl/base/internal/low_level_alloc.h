@@ -120,6 +120,12 @@ class LowLevelAlloc {
   LowLevelAlloc();      
 };
 
+
+LowLevelAlloc::Arena *SigSafeArena();
+
+
+void InitSigSafeArena();
+
 }  
 ABSL_NAMESPACE_END
 }  

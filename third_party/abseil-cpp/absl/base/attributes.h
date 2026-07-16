@@ -539,6 +539,25 @@
 
 
 
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::annotate) && defined(__clang__) && \
+    __clang_major__ >= 12
+#define ABSL_ATTRIBUTE_NULL_AFTER_MOVE                       \
+  [[clang::annotate("clang-tidy", "bugprone-use-after-move", \
+                    "null_after_move")]]
+#else
+#define ABSL_ATTRIBUTE_NULL_AFTER_MOVE
+#endif
+
+
+
+
+
+
+
+
+
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::reinitializes)
 #define ABSL_ATTRIBUTE_REINITIALIZES [[clang::reinitializes]]
 #else
@@ -574,6 +593,10 @@
 #else
 #define ABSL_ATTRIBUTE_INITIAL_EXEC
 #endif
+
+
+
+
 
 
 
@@ -741,46 +764,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-#if defined(__cpp_constinit) && __cpp_constinit >= 201907L
-#define ABSL_CONST_INIT constinit
-#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::require_constant_initialization)
-#define ABSL_CONST_INIT [[clang::require_constant_initialization]]
-#else
-#define ABSL_CONST_INIT
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::require_explicit_initialization)
 
@@ -826,6 +809,46 @@ struct AbslInternal_YouForgotToExplicitlyInitializeAField {
   
   static AbslInternal_YouForgotToExplicitlyInitializeAField v;
 };
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__cpp_constinit) && __cpp_constinit >= 201907L
+#define ABSL_CONST_INIT constinit
+#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::require_constant_initialization)
+#define ABSL_CONST_INIT [[clang::require_constant_initialization]]
+#else
+#define ABSL_CONST_INIT
 #endif
 
 

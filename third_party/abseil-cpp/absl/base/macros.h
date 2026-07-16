@@ -28,6 +28,7 @@
 #ifndef ABSL_BASE_MACROS_H_
 #define ABSL_BASE_MACROS_H_
 
+#include <atomic>
 #include <cassert>
 #include <cstddef>
 
@@ -53,8 +54,39 @@ namespace macros_internal {
 template <typename T, size_t N>
 auto ArraySizeHelper(const T (&array)[N]) -> char (&)[N];
 }  
+
+namespace base_internal {
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::nomerge)
+[[clang::nomerge]]  
+#endif
+[[noreturn]] inline void HardeningAbort() {
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::nomerge)
+  [[clang::nomerge]]  
+#endif
+  ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL();
+  ABSL_INTERNAL_UNREACHABLE_IMPL();
+}
+}  
 ABSL_NAMESPACE_END
 }  
+
+
+
+
+
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+
+
+
+
+
+#define ABSL_INTERNAL_UNEVALUATED(expr) (decltype((void)(expr))())
+#else
+
+
+#define ABSL_INTERNAL_UNEVALUATED(expr) (false ? (void)(expr) : void())
+#endif
 
 
 
@@ -93,33 +125,26 @@ ABSL_NAMESPACE_END
 
 
 #if defined(NDEBUG)
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
-
-
-
-
-
-#define ABSL_ASSERT(expr) (decltype((expr) ? void() : void())())
-#else
-
-
-#define ABSL_ASSERT(expr) (false ? ((expr) ? void() : void()) : void())
-#endif
+#define ABSL_ASSERT(expr) ABSL_INTERNAL_UNEVALUATED((expr) ? void() : void())
 #else
 #define ABSL_ASSERT(expr)                           \
   (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
-                             : [] { assert(false && #expr); }())  // NOLINT
+                             : assert(false && #expr))  // NOLINT
 #endif
 
 
 
 
 
+#if defined(__CUDACC__) || defined(__CUDA_ARCH__) || defined(__CUDA__)
 #define ABSL_INTERNAL_HARDENING_ABORT()   \
   do {                                    \
     ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL(); \
     ABSL_INTERNAL_UNREACHABLE_IMPL();     \
   } while (false)
+#else
+#define ABSL_INTERNAL_HARDENING_ABORT() ::absl::base_internal::HardeningAbort()
+#endif
 
 
 
@@ -133,9 +158,12 @@ ABSL_NAMESPACE_END
 
 
 #if (ABSL_OPTION_HARDENED == 1 || ABSL_OPTION_HARDENED == 2) && defined(NDEBUG)
-#define ABSL_HARDENING_ASSERT(expr)                 \
-  (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
-                             : [] { ABSL_INTERNAL_HARDENING_ABORT(); }())
+ #define ABSL_HARDENING_ASSERT(expr)    \
+   do {                                 \
+     if (!ABSL_PREDICT_TRUE((expr))) {  \
+       ABSL_INTERNAL_HARDENING_ABORT(); \
+     }                                  \
+   } while (false)
 #else
 #define ABSL_HARDENING_ASSERT(expr) ABSL_ASSERT(expr)
 #endif
@@ -152,9 +180,7 @@ ABSL_NAMESPACE_END
 
 
 #if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
-#define ABSL_HARDENING_ASSERT_SLOW(expr)            \
-  (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
-                             : [] { ABSL_INTERNAL_HARDENING_ABORT(); }())
+#define ABSL_HARDENING_ASSERT_SLOW(expr) ABSL_HARDENING_ASSERT(expr)
 #else
 #define ABSL_HARDENING_ASSERT_SLOW(expr) ABSL_ASSERT(expr)
 #endif
@@ -196,14 +222,57 @@ ABSL_NAMESPACE_END
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(deprecated) && \
-    ABSL_HAVE_CPP_ATTRIBUTE(clang::annotate)
-#define ABSL_DEPRECATE_AND_INLINE() [[deprecated, clang::annotate("inline-me")]]
-#elif ABSL_HAVE_CPP_ATTRIBUTE(deprecated)
-#define ABSL_DEPRECATE_AND_INLINE() [[deprecated]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::annotate)
+#define ABSL_REFACTOR_INLINE                                                \
+  _Pragma("clang diagnostic push") /* Avoid errors on using-declarations */ \
+      _Pragma("clang diagnostic ignored \"-Wcxx-attribute-extension\"")     \
+          [[clang::annotate("inline-me")]] _Pragma("clang diagnostic pop")
 #else
-#define ABSL_DEPRECATE_AND_INLINE()
+#define ABSL_REFACTOR_INLINE
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ABSL_DEPRECATE_AND_INLINE() ABSL_REFACTOR_INLINE
 
 
 

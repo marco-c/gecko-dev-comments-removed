@@ -14,6 +14,7 @@
 #ifndef ABSL_STATUS_STATUS_PAYLOAD_PRINTER_H_
 #define ABSL_STATUS_STATUS_PAYLOAD_PRINTER_H_
 
+#include <optional>
 #include <string>
 
 #include "absl/base/nullability.h"
@@ -35,8 +36,8 @@ namespace status_internal {
 
 
 
-using StatusPayloadPrinter = absl::Nullable<absl::optional<std::string> (*)(
-    absl::string_view, const absl::Cord&)>;
+using StatusPayloadPrinter = std::optional<std::string> (*absl_nullable)(
+    absl::string_view, const absl::Cord&);
 
 
 

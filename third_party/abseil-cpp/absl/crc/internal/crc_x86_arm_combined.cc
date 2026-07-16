@@ -21,9 +21,9 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/internal/cpu_detect.h"
 #include "absl/base/internal/endian.h"
 #include "absl/base/prefetch.h"
-#include "absl/crc/internal/cpu_detect.h"
 #include "absl/crc/internal/crc32_x86_arm_combined_simd.h"
 #include "absl/crc/internal/crc_internal.h"
 #include "absl/memory/memory.h"
@@ -37,6 +37,10 @@
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace crc_internal {
+
+using ::absl::base_internal::CpuType;
+using ::absl::base_internal::GetCpuType;
+using ::absl::base_internal::SupportsArmCRC32PMULL;
 
 #if defined(ABSL_INTERNAL_CAN_USE_SIMD_CRC32C)
 
@@ -100,47 +104,67 @@ constexpr size_t kMediumCutoff = 2048;
 
 namespace {
 
-uint32_t multiply(uint32_t a, uint32_t b) {
-  V128 power = V128_From64WithZeroFill(a);
-  V128 crc = V128_From64WithZeroFill(b);
-  V128 res = V128_PMulLow(power, crc);
 
-  
-  
-  
-  
-  
-  
-  res = V128_Add64(res, res);
-  return static_cast<uint32_t>(V128_Extract32<1>(res)) ^
-         CRC32_u32(0, static_cast<uint32_t>(V128_Low64(res)));
+
+
+
+
+
+
+
+
+
+
+
+uint32_t MultiplyWithExtraX33(uint32_t a, uint32_t b) {
+  V128 a_vec = V128_From64WithZeroFill(a);
+  V128 b_vec = V128_From64WithZeroFill(b);
+  V128 res = V128_PMulLow(a_vec, b_vec);
+
+  return CRC32_u64(0, static_cast<uint64_t>(V128_Low64(res)));
 }
+
+
+
+constexpr int kNumDroppedBits = 4;
+
+
+
 
 
 
 
 constexpr uint32_t kCRC32CPowers[] = {
-    0x82f63b78, 0x6ea2d55c, 0x18b8ea18, 0x510ac59a, 0xb82be955, 0xb8fdb1e7,
-    0x88e56f72, 0x74c360a4, 0xe4172b16, 0x0d65762a, 0x35d73a62, 0x28461564,
-    0xbf455269, 0xe2ea32dc, 0xfe7740e6, 0xf946610b, 0x3c204f8f, 0x538586e3,
-    0x59726915, 0x734d5309, 0xbc1ac763, 0x7d0722cc, 0xd289cabe, 0xe94ca9bc,
-    0x05b74f3f, 0xa51e1f42, 0x40000000, 0x20000000, 0x08000000, 0x00800000,
-    0x00008000, 0x82f63b78, 0x6ea2d55c, 0x18b8ea18, 0x510ac59a, 0xb82be955,
-    0xb8fdb1e7, 0x88e56f72, 0x74c360a4, 0xe4172b16, 0x0d65762a, 0x35d73a62,
-    0x28461564, 0xbf455269, 0xe2ea32dc, 0xfe7740e6, 0xf946610b, 0x3c204f8f,
-    0x538586e3, 0x59726915, 0x734d5309, 0xbc1ac763, 0x7d0722cc, 0xd289cabe,
-    0xe94ca9bc, 0x05b74f3f, 0xa51e1f42, 0x40000000, 0x20000000, 0x08000000,
-    0x00800000, 0x00008000,
+    0x493c7d27, 0xba4fc28e, 0x9e4addf8, 0x0d3b6092, 0xb9e02b86, 0xdd7e3b0c,
+    0x170076fa, 0xa51b6135, 0x82f89c77, 0x54a86326, 0x1dc403cc, 0x5ae703ab,
+    0xc5013a36, 0xac2ac6dd, 0x9b4615a9, 0x688d1c61, 0xf6af14e6, 0xb6ffe386,
+    0xb717425b, 0x478b0d30, 0x54cc62e5, 0x7b2102ee, 0x8a99adef, 0xa7568c8f,
+    0xd610d67e, 0x6b086b3f, 0xd94f3c0b, 0xbf818109, 0x780d5a4d, 0x05ec76f1,
+    0x00000001, 0x493c7d27, 0xba4fc28e, 0x9e4addf8, 0x0d3b6092, 0xb9e02b86,
+    0xdd7e3b0c, 0x170076fa, 0xa51b6135, 0x82f89c77, 0x54a86326, 0x1dc403cc,
+    0x5ae703ab, 0xc5013a36, 0xac2ac6dd, 0x9b4615a9, 0x688d1c61, 0xf6af14e6,
+    0xb6ffe386, 0xb717425b, 0x478b0d30, 0x54cc62e5, 0x7b2102ee, 0x8a99adef,
+    0xa7568c8f, 0xd610d67e, 0x6b086b3f, 0xd94f3c0b, 0xbf818109, 0x780d5a4d,
 };
+
+static_assert(std::size(kCRC32CPowers) >= sizeof(size_t) * 8 - kNumDroppedBits);
 
 }  
 
 
 
+
+#if defined(NDEBUG) && ABSL_HAVE_CPP_ATTRIBUTE(clang::no_sanitize)
+
+
+
+
+
+[[clang::no_sanitize("array-bounds")]]
+#endif
 uint32_t CRC32AcceleratedX86ARMCombined::ComputeZeroConstant(
     size_t length) const {
-  
-  length >>= 2;
+  length >>= kNumDroppedBits;
 
   int index = absl::countr_zero(length);
   uint32_t prev = kCRC32CPowers[index];
@@ -149,7 +173,7 @@ uint32_t CRC32AcceleratedX86ARMCombined::ComputeZeroConstant(
   while (length) {
     
     index = absl::countr_zero(length);
-    prev = multiply(prev, kCRC32CPowers[index]);
+    prev = MultiplyWithExtraX33(prev, kCRC32CPowers[index]);
     length &= length - 1;
   }
   return prev;
@@ -159,22 +183,13 @@ void CRC32AcceleratedX86ARMCombined::ExtendByZeroes(uint32_t* crc,
                                                     size_t length) const {
   uint32_t val = *crc;
   
-  switch (length & 3) {
-    case 0:
-      break;
-    case 1:
-      val = CRC32_u8(val, 0);
-      break;
-    case 2:
-      val = CRC32_u16(val, 0);
-      break;
-    case 3:
-      val = CRC32_u8(val, 0);
-      val = CRC32_u16(val, 0);
-      break;
-  }
-  if (length > 3) {
-    val = multiply(val, ComputeZeroConstant(length));
+  if (length & 1) val = CRC32_u8(val, 0);
+  if (length & 2) val = CRC32_u16(val, 0);
+  if (length & 4) val = CRC32_u32(val, 0);
+  if (length & 8) val = CRC32_u64(val, 0);
+  static_assert(kNumDroppedBits == 4);
+  if (length >= size_t{1} << kNumDroppedBits) {
+    val = MultiplyWithExtraX33(val, ComputeZeroConstant(length));
   }
   *crc = val;
 }
@@ -307,6 +322,111 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreamsBase
   }
 
   
+  ABSL_ATTRIBUTE_ALWAYS_INLINE void Process64BytesCRC2Streams(
+      const uint8_t* p0, const uint8_t* p1, uint64_t* crc) const {
+    uint64_t crc0 = crc[0];
+    uint64_t crc1 = crc[1];
+    for (int i = 0; i < 8; i++) {
+      crc0 = CRC32_u64(static_cast<uint32_t>(crc0),
+                       absl::little_endian::Load64(p0));
+      crc1 = CRC32_u64(static_cast<uint32_t>(crc1),
+                       absl::little_endian::Load64(p1));
+      p0 += 8;
+      p1 += 8;
+    }
+    crc[0] = crc0;
+    crc[1] = crc1;
+  }
+
+  
+  ABSL_ATTRIBUTE_ALWAYS_INLINE void Process64BytesCRC3Streams(
+      const uint8_t* p0, const uint8_t* p1, const uint8_t* p2,
+      uint64_t* crc) const {
+    uint64_t crc0 = crc[0];
+    uint64_t crc1 = crc[1];
+    uint64_t crc2 = crc[2];
+    for (int i = 0; i < 8; i++) {
+      crc0 = CRC32_u64(static_cast<uint32_t>(crc0),
+                       absl::little_endian::Load64(p0));
+      crc1 = CRC32_u64(static_cast<uint32_t>(crc1),
+                       absl::little_endian::Load64(p1));
+      crc2 = CRC32_u64(static_cast<uint32_t>(crc2),
+                       absl::little_endian::Load64(p2));
+      p0 += 8;
+      p1 += 8;
+      p2 += 8;
+    }
+    crc[0] = crc0;
+    crc[1] = crc1;
+    crc[2] = crc2;
+  }
+
+#if defined(ABSL_CRC_INTERNAL_HAVE_X86_SIMD) && defined(__AVX__)
+  
+  
+  
+  
+  
+  
+  
+  ABSL_ATTRIBUTE_ALWAYS_INLINE uint64_t
+  FinalizeVpclmulStream(V256* partialCRC) const {
+    uint64_t crc = 0;
+    uint64_t low64, high64;
+    __asm__(
+        
+        "vbroadcasti128 %[k256], %%ymm0 \n"
+        "vpclmulqdq $0x00, %%ymm0, %[crc0], %%ymm1 \n"
+        "vpclmulqdq $0x11, %%ymm0, %[crc0], %%ymm2 \n"
+        "vpxor %%ymm2, %%ymm1, %%ymm1 \n"
+        "vpxor %[crc1], %%ymm1, %%ymm1 \n"
+        
+        "vextracti128 $1, %%ymm1, %%xmm2 \n"
+        "vpclmulqdq $0x00, %[k128], %%xmm1, %%xmm3 \n"
+        "vpclmulqdq $0x11, %[k128], %%xmm1, %%xmm1 \n"
+        "vpxor %%xmm1, %%xmm3, %%xmm3 \n"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n"
+        
+        
+        "vmovq %%xmm3, %[low] \n"
+        "vpextrq $1, %%xmm3, %[high] \n"
+        "crc32q %[low], %[crc_out] \n"
+        "crc32q %[high], %[crc_out] \n"
+        : [crc_out] "+r"(crc), [low] "=&r"(low64), [high] "=&r"(high64)
+        : [k256] "m"(*(const __m128i*)kFoldAcross256Bits),
+          [crc0] "x"(partialCRC[0]), [crc1] "x"(partialCRC[1]),
+          [k128] "m"(*(const __m128i*)kFoldAcross128Bits)
+        : "ymm0", "ymm1", "ymm2", "ymm3");
+    return crc;
+  }
+
+  ABSL_ATTRIBUTE_ALWAYS_INLINE void Process64BytesVpclmul(
+      const uint8_t* p, V256* vpartialCRC, V256 loopMultiplicands) const {
+    __asm__ volatile(
+        "vpclmulqdq $0x11, %3, %0, %%ymm0 \n"
+        "vpclmulqdq $0x11, %3, %1, %%ymm1 \n"
+        "vpclmulqdq $0x00, %3, %0, %0 \n"
+        "vpclmulqdq $0x00, %3, %1, %1 \n"
+        "vpxor %%ymm0, %0, %0 \n"
+        "vpxor %%ymm1, %1, %1 \n"
+        "vpxor (%2), %0, %0 \n"
+        "vpxor 32(%2), %1, %1 \n"
+        : "+x"(vpartialCRC[0]), "+x"(vpartialCRC[1])
+        : "r"(p), "x"(loopMultiplicands)
+        : "ymm0", "ymm1");
+  }
+#else
+  template <typename T = V256>
+  ABSL_ATTRIBUTE_ALWAYS_INLINE void Process64BytesVpclmul(const uint8_t*, T*,
+                                                          T) const {
+    static_assert(sizeof(T) == 0, "Vector PCLMUL not supported");
+  }
+  ABSL_ATTRIBUTE_ALWAYS_INLINE uint64_t FinalizeVpclmulStream(V256*) const {
+    return 0;
+  }
+#endif  
+
+  
   
   alignas(16) static constexpr uint64_t kFoldAcross512Bits[2] = {
       
@@ -335,61 +455,33 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreamsBase
 };
 
 template <size_t num_crc_streams, size_t num_pclmul_streams,
-          CutoffStrategy strategy>
+          size_t num_vpclmul_streams, CutoffStrategy strategy>
 class CRC32AcceleratedX86ARMCombinedMultipleStreams
     : public CRC32AcceleratedX86ARMCombinedMultipleStreamsBase {
   ABSL_ATTRIBUTE_HOT
-  void Extend(uint32_t* crc, const void* bytes, size_t length) const override {
+  void Extend(uint32_t* crc, const void* bytes,
+              const size_t length) const override {
     static_assert(num_crc_streams >= 1 && num_crc_streams <= kMaxStreams,
                   "Invalid number of crc streams");
     static_assert(num_pclmul_streams >= 0 && num_pclmul_streams <= kMaxStreams,
                   "Invalid number of pclmul streams");
+    static_assert(
+        num_vpclmul_streams >= 0 && num_vpclmul_streams <= kMaxStreams,
+        "Invalid number of vpclmul streams");
     const uint8_t* p = static_cast<const uint8_t*>(bytes);
     const uint8_t* e = p + length;
     uint32_t l = *crc;
     uint64_t l64;
 
     
-    if (length & 8) {
-      ABSL_INTERNAL_STEP8(l, p);
-      length &= ~size_t{8};
-    }
-    if (length & 4) {
-      ABSL_INTERNAL_STEP4(l, p);
-      length &= ~size_t{4};
-    }
-    if (length & 2) {
-      ABSL_INTERNAL_STEP2(l, p);
-      length &= ~size_t{2};
-    }
-    if (length & 1) {
-      ABSL_INTERNAL_STEP1(l, p);
-      length &= ~size_t{1};
-    }
-    if (length == 0) {
-      *crc = l;
-      return;
-    }
     
-
-    
-    
-    if (strategy != CutoffStrategy::Unroll64CRC) {
-      if (length < kSmallCutoff) {
-        while (length >= 16) {
-          ABSL_INTERNAL_STEP8(l, p);
-          ABSL_INTERNAL_STEP8(l, p);
-          length -= 16;
-        }
-        *crc = l;
-        return;
-      }
-    }
-
-    
-    
-    
-    if (length < kMediumCutoff) {
+    if (strategy != CutoffStrategy::Unroll64CRC && (length < kSmallCutoff)) {
+      
+      
+    }  else if (length < kMediumCutoff) {
+      
+      
+      
       l64 = l;
       if (strategy == CutoffStrategy::Fold3) {
         uint64_t l641 = 0;
@@ -438,6 +530,7 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
           p += 64;
         }
       }
+      l = static_cast<uint32_t>(l64);
     } else {
       
       
@@ -453,17 +546,23 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
       }
 
       size_t bs = static_cast<size_t>(e - p) /
-                  (num_crc_streams + num_pclmul_streams) / 64;
+                  (num_crc_streams + num_pclmul_streams + num_vpclmul_streams) /
+                  64;
+      const uint8_t* stream_start = p;
       const uint8_t* crc_streams[kMaxStreams];
-      const uint8_t* pclmul_streams[kMaxStreams];
-      
-      crc_streams[0] = p;
-      for (size_t i = 1; i < num_crc_streams; i++) {
-        crc_streams[i] = crc_streams[i - 1] + bs * 64;
+      for (size_t i = 0; i < num_crc_streams; i++) {
+        crc_streams[i] = stream_start;
+        stream_start += bs * 64;
       }
-      pclmul_streams[0] = crc_streams[num_crc_streams - 1] + bs * 64;
-      for (size_t i = 1; i < num_pclmul_streams; i++) {
-        pclmul_streams[i] = pclmul_streams[i - 1] + bs * 64;
+      const uint8_t* pclmul_streams[kMaxStreams];
+      for (size_t i = 0; i < num_pclmul_streams; i++) {
+        pclmul_streams[i] = stream_start;
+        stream_start += bs * 64;
+      }
+      const uint8_t* vpclmul_streams[kMaxStreams];
+      for (size_t i = 0; i < num_vpclmul_streams; i++) {
+        vpclmul_streams[i] = stream_start;
+        stream_start += bs * 64;
       }
 
       
@@ -471,9 +570,19 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
       uint64_t l64_pclmul[kMaxStreams] = {0};
 
       
-      for (size_t i = 0; i < num_crc_streams; i++) {
-        l64_crc[i] = Process64BytesCRC(crc_streams[i], l64_crc[i]);
-        crc_streams[i] += 16 * 4;
+      if (num_crc_streams == 1) {
+        l64_crc[0] = Process64BytesCRC(crc_streams[0], l64_crc[0]);
+        crc_streams[0] += 16 * 4;
+      } else if (num_crc_streams == 2) {
+        Process64BytesCRC2Streams(crc_streams[0], crc_streams[1], l64_crc);
+        crc_streams[0] += 16 * 4;
+        crc_streams[1] += 16 * 4;
+      } else {
+        Process64BytesCRC3Streams(crc_streams[0], crc_streams[1],
+                                  crc_streams[2], l64_crc);
+        crc_streams[0] += 16 * 4;
+        crc_streams[1] += 16 * 4;
+        crc_streams[2] += 16 * 4;
       }
 
       V128 partialCRC[kMaxStreams][4];
@@ -489,6 +598,18 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
         pclmul_streams[i] += 16 * 4;
       }
 
+      V256 vpartialCRC[kMaxStreams][2];
+      V256 loopMultiplicands{};
+      loopMultiplicands =
+          V256_Broadcast128(reinterpret_cast<const V128*>(kFoldAcross512Bits));
+      for (size_t i = 0; i < num_vpclmul_streams; i++) {
+        vpartialCRC[i][0] = V256_LoadU(
+            reinterpret_cast<const V256*>(vpclmul_streams[i] + 32 * 0));
+        vpartialCRC[i][1] = V256_LoadU(
+            reinterpret_cast<const V256*>(vpclmul_streams[i] + 32 * 1));
+        vpclmul_streams[i] += 16 * 4;
+      }
+
       for (size_t i = 1; i < bs; i++) {
         
         for (size_t j = 0; j < num_crc_streams; j++) {
@@ -499,6 +620,10 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
           PrefetchToLocalCache(reinterpret_cast<const char*>(pclmul_streams[j] +
                                                              kPrefetchHorizon));
         }
+        for (size_t j = 0; j < num_vpclmul_streams; j++) {
+          PrefetchToLocalCache(reinterpret_cast<const char*>(
+              vpclmul_streams[j] + kPrefetchHorizon));
+        }
 
         
         
@@ -511,27 +636,37 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
         
         
         
-        l64_crc[0] = Process64BytesCRC(crc_streams[0], l64_crc[0]);
-        crc_streams[0] += 16 * 4;
+        if (num_crc_streams == 1) {
+          l64_crc[0] = Process64BytesCRC(crc_streams[0], l64_crc[0]);
+          crc_streams[0] += 16 * 4;
+        } else if (num_crc_streams == 2) {
+          Process64BytesCRC2Streams(crc_streams[0], crc_streams[1], l64_crc);
+          crc_streams[0] += 16 * 4;
+          crc_streams[1] += 16 * 4;
+        } else {
+          Process64BytesCRC3Streams(crc_streams[0], crc_streams[1],
+                                    crc_streams[2], l64_crc);
+          crc_streams[0] += 16 * 4;
+          crc_streams[1] += 16 * 4;
+          crc_streams[2] += 16 * 4;
+        }
         if (num_pclmul_streams > 0) {
           Process64BytesPclmul(pclmul_streams[0], partialCRC[0]);
           pclmul_streams[0] += 16 * 4;
-        }
-        if (num_crc_streams > 1) {
-          l64_crc[1] = Process64BytesCRC(crc_streams[1], l64_crc[1]);
-          crc_streams[1] += 16 * 4;
         }
         if (num_pclmul_streams > 1) {
           Process64BytesPclmul(pclmul_streams[1], partialCRC[1]);
           pclmul_streams[1] += 16 * 4;
         }
-        if (num_crc_streams > 2) {
-          l64_crc[2] = Process64BytesCRC(crc_streams[2], l64_crc[2]);
-          crc_streams[2] += 16 * 4;
-        }
         if (num_pclmul_streams > 2) {
           Process64BytesPclmul(pclmul_streams[2], partialCRC[2]);
           pclmul_streams[2] += 16 * 4;
+        }
+
+        if constexpr (num_vpclmul_streams > 0) {
+          Process64BytesVpclmul(vpclmul_streams[0], vpartialCRC[0],
+                                loopMultiplicands);
+          vpclmul_streams[0] += 16 * 4;
         }
       }
 
@@ -541,35 +676,64 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
         l64_pclmul[i] = FinalizePclmulStream(partialCRC[i]);
       }
 
-      
-      uint32_t magic = ComputeZeroConstant(bs * 64);
-      l64 = l64_crc[0];
-      for (size_t i = 1; i < num_crc_streams; i++) {
-        l64 = multiply(static_cast<uint32_t>(l64), magic);
-        l64 ^= l64_crc[i];
-      }
-      for (size_t i = 0; i < num_pclmul_streams; i++) {
-        l64 = multiply(static_cast<uint32_t>(l64), magic);
-        l64 ^= l64_pclmul[i];
+      uint64_t l64_vpclmul[kMaxStreams] = {0};
+      if constexpr (num_vpclmul_streams > 0) {
+        for (size_t i = 0; i < num_vpclmul_streams; i++) {
+          l64_vpclmul[i] = FinalizeVpclmulStream(vpartialCRC[i]);
+        }
       }
 
       
-      if (num_pclmul_streams > 0) {
+      static_assert(64 % (1 << kNumDroppedBits) == 0);
+      uint32_t magic = ComputeZeroConstant(bs * 64);
+      l64 = l64_crc[0];
+      for (size_t i = 1; i < num_crc_streams; i++) {
+        l64 = MultiplyWithExtraX33(static_cast<uint32_t>(l64), magic);
+        l64 ^= l64_crc[i];
+      }
+      for (size_t i = 0; i < num_pclmul_streams; i++) {
+        l64 = MultiplyWithExtraX33(static_cast<uint32_t>(l64), magic);
+        l64 ^= l64_pclmul[i];
+      }
+      for (size_t i = 0; i < num_vpclmul_streams; i++) {
+        l64 = MultiplyWithExtraX33(static_cast<uint32_t>(l64), magic);
+        l64 ^= l64_vpclmul[i];
+      }
+
+      
+      if constexpr (num_vpclmul_streams > 0) {
+        p = vpclmul_streams[num_vpclmul_streams - 1];
+      } else if constexpr (num_pclmul_streams > 0) {
         p = pclmul_streams[num_pclmul_streams - 1];
       } else {
         p = crc_streams[num_crc_streams - 1];
       }
+      l = static_cast<uint32_t>(l64);
     }
-    l = static_cast<uint32_t>(l64);
 
+    uint64_t remaining_bytes = static_cast<uint64_t>(e - p);
+    
     while ((e - p) >= 16) {
       ABSL_INTERNAL_STEP8(l, p);
       ABSL_INTERNAL_STEP8(l, p);
     }
-    
-    while (p != e) {
+
+    if (remaining_bytes & 8) {
+      ABSL_INTERNAL_STEP8(l, p);
+    }
+    if (remaining_bytes & 4) {
+      ABSL_INTERNAL_STEP4(l, p);
+    }
+    if (remaining_bytes & 2) {
+      ABSL_INTERNAL_STEP2(l, p);
+    }
+    if (remaining_bytes & 1) {
       ABSL_INTERNAL_STEP1(l, p);
     }
+
+    *crc = l;
+  }
+};
 
 #undef ABSL_INTERNAL_STEP8BY3
 #undef ABSL_INTERNAL_STEP8BY2
@@ -578,10 +742,6 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
 #undef ABSL_INTERNAL_STEP2
 #undef ABSL_INTERNAL_STEP1
 
-    *crc = l;
-  }
-};
-
 }  
 
 
@@ -589,43 +749,62 @@ class CRC32AcceleratedX86ARMCombinedMultipleStreams
 CRCImpl* TryNewCRC32AcceleratedX86ARMCombined() {
   CpuType type = GetCpuType();
   switch (type) {
-    case CpuType::kIntelHaswell:
     case CpuType::kAmdRome:
-    case CpuType::kAmdNaples:
-    case CpuType::kAmdMilan:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          3, 1, CutoffStrategy::Fold3>();
+          3, 0, 0, CutoffStrategy::Fold3>();
+    case CpuType::kIntelHaswell:
+    case CpuType::kAmdNaples:
+      return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
+          3, 1, 0, CutoffStrategy::Fold3>();
+    case CpuType::kAmdMilan:
+    case CpuType::kAmdGenoa:
+    case CpuType::kAmdTurin:
+#if defined(ABSL_CRC_INTERNAL_HAVE_X86_SIMD) && defined(__AVX__)
+      
+      
+      return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
+          3, 0, 1, CutoffStrategy::Fold3>();
+#else
+      return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
+          3, 1, 0, CutoffStrategy::Fold3>();
+#endif
     
     case CpuType::kIntelCascadelakeXeon:
     case CpuType::kIntelSkylakeXeon:
     case CpuType::kIntelBroadwell:
     case CpuType::kIntelSkylake:
+    case CpuType::kIntelIcelake:
+    case CpuType::kIntelSapphirerapids:
+    case CpuType::kIntelEmeraldrapids:
+    case CpuType::kIntelGraniterapids:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          3, 2, CutoffStrategy::Fold3>();
+          3, 2, 0, CutoffStrategy::Fold3>();
     
     case CpuType::kIntelIvybridge:
     case CpuType::kIntelSandybridge:
     case CpuType::kIntelWestmere:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          3, 0, CutoffStrategy::Fold3>();
+          3, 0, 0, CutoffStrategy::Fold3>();
     case CpuType::kArmNeoverseN1:
     case CpuType::kArmNeoverseN2:
     case CpuType::kArmNeoverseV1:
+    case CpuType::kArmNeoverseN3:
+    case CpuType::kNvidiaGrace:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          1, 1, CutoffStrategy::Unroll64CRC>();
+          1, 1, 0, CutoffStrategy::Unroll64CRC>();
     case CpuType::kAmpereSiryn:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          3, 2, CutoffStrategy::Fold3>();
+          3, 2, 0, CutoffStrategy::Fold3>();
     case CpuType::kArmNeoverseV2:
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          1, 2, CutoffStrategy::Unroll64CRC>();
+          1, 2, 0, CutoffStrategy::Unroll64CRC>();
 #if defined(__aarch64__)
     default:
       
       
       if (SupportsArmCRC32PMULL()) {
         return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-            1, 1, CutoffStrategy::Unroll64CRC>();
+            1, 1, 0, CutoffStrategy::Unroll64CRC>();
       } else {
         return nullptr;
       }
@@ -633,70 +812,12 @@ CRCImpl* TryNewCRC32AcceleratedX86ARMCombined() {
     default:
       
       return new CRC32AcceleratedX86ARMCombinedMultipleStreams<
-          3, 0, CutoffStrategy::Fold3>();
+          3, 0, 0, CutoffStrategy::Fold3>();
 #endif
   }
 }
 
-std::vector<std::unique_ptr<CRCImpl>> NewCRC32AcceleratedX86ARMCombinedAll() {
-  auto ret = std::vector<std::unique_ptr<CRCImpl>>();
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 0, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 1, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 2, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 3, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 0, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 1, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 2, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 3, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 0, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 1, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 2, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 3, CutoffStrategy::Fold3>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 0, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 1, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 2, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    1, 3, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 0, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 1, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 2, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    2, 3, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 0, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 1, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 2, CutoffStrategy::Unroll64CRC>>());
-  ret.push_back(absl::make_unique<CRC32AcceleratedX86ARMCombinedMultipleStreams<
-                    3, 3, CutoffStrategy::Unroll64CRC>>());
-
-  return ret;
-}
-
 #else  
-
-std::vector<std::unique_ptr<CRCImpl>> NewCRC32AcceleratedX86ARMCombinedAll() {
-  return std::vector<std::unique_ptr<CRCImpl>>();
-}
 
 
 CRCImpl* TryNewCRC32AcceleratedX86ARMCombined() { return nullptr; }

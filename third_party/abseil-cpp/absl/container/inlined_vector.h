@@ -47,12 +47,14 @@
 
 #include "absl/algorithm/algorithm.h"
 #include "absl/base/attributes.h"
+#include "absl/base/internal/hardening.h"
 #include "absl/base/internal/iterator_traits.h"
-#include "absl/base/internal/throw_delegate.h"
 #include "absl/base/macros.h"
 #include "absl/base/optimization.h"
 #include "absl/base/port.h"
+#include "absl/base/throw_delegate.h"
 #include "absl/container/internal/inlined_vector.h"
+#include "absl/hash/internal/weakly_mixed_integer.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 
@@ -191,8 +193,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
     
     
     
-    if (absl::is_trivially_copy_constructible<value_type>::value &&
-        std::is_same<A, std::allocator<value_type>>::value &&
+    if (std::is_trivially_copy_constructible_v<value_type> &&
+        std::is_same_v<A, std::allocator<value_type>> &&
         !other.storage_.GetIsAllocated()) {
       storage_.MemcpyFrom(other.storage_);
       return;
@@ -217,7 +219,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   InlinedVector(InlinedVector&& other) noexcept(
       absl::allocator_is_nothrow<allocator_type>::value ||
-      std::is_nothrow_move_constructible<value_type>::value)
+      std::is_nothrow_move_constructible_v<value_type>)
       : storage_(other.storage_.GetAllocator()) {
     
     
@@ -225,7 +227,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
     
     
     if (absl::is_trivially_relocatable<value_type>::value &&
-        std::is_same<A, std::allocator<value_type>>::value) {
+        std::is_same_v<A, std::allocator<value_type>>) {
       storage_.MemcpyFrom(other.storage_);
       other.storage_.SetInlinedSize(0);
       return;
@@ -271,7 +273,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
     
     
     if (absl::is_trivially_relocatable<value_type>::value &&
-        std::is_same<A, std::allocator<value_type>>::value) {
+        std::is_same_v<A, std::allocator<value_type>>) {
       storage_.MemcpyFrom(other.storage_);
       other.storage_.SetInlinedSize(0);
       return;
@@ -362,14 +364,14 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   reference operator[](size_type i) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(i < size());
+    absl::base_internal::HardeningAssertLT(i, size());
     return data()[i];
   }
 
   
   
   const_reference operator[](size_type i) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(i < size());
+    absl::base_internal::HardeningAssertLT(i, size());
     return data()[i];
   }
 
@@ -381,8 +383,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   reference at(size_type i) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (ABSL_PREDICT_FALSE(i >= size())) {
-      base_internal::ThrowStdOutOfRange(
-          "`InlinedVector::at(size_type)` failed bounds check");
+      ThrowStdOutOfRange("`InlinedVector::at(size_type)` failed bounds check");
     }
     return data()[i];
   }
@@ -394,7 +395,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   const_reference at(size_type i) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (ABSL_PREDICT_FALSE(i >= size())) {
-      base_internal::ThrowStdOutOfRange(
+      ThrowStdOutOfRange(
           "`InlinedVector::at(size_type) const` failed bounds check");
     }
     return data()[i];
@@ -404,14 +405,14 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   reference front() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(!empty());
+    absl::base_internal::HardeningAssertNonEmpty(*this);
     return data()[0];
   }
 
   
   
   const_reference front() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(!empty());
+    absl::base_internal::HardeningAssertNonEmpty(*this);
     return data()[0];
   }
 
@@ -419,14 +420,14 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   reference back() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(!empty());
+    absl::base_internal::HardeningAssertNonEmpty(*this);
     return data()[size() - 1];
   }
 
   
   
   const_reference back() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(!empty());
+    absl::base_internal::HardeningAssertNonEmpty(*this);
     return data()[size() - 1];
   }
 
@@ -600,7 +601,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   void resize(size_type n) {
-    ABSL_HARDENING_ASSERT(n <= max_size());
+    absl::base_internal::HardeningAssertLE(n, max_size());
     storage_.Resize(DefaultValueAdapter<A>(), n);
   }
 
@@ -610,7 +611,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   void resize(size_type n, const_reference v) {
-    ABSL_HARDENING_ASSERT(n <= max_size());
+    absl::base_internal::HardeningAssertLE(n, max_size());
     storage_.Resize(CopyValueAdapter<A>(std::addressof(v)), n);
   }
 
@@ -635,8 +636,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   iterator insert(const_iterator pos, size_type n,
                   const_reference v) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(pos >= begin());
-    ABSL_HARDENING_ASSERT(pos <= end());
+    absl::base_internal::HardeningAssertGE(pos, cbegin());
+    absl::base_internal::HardeningAssertLE(pos, cend());
 
     if (ABSL_PREDICT_TRUE(n != 0)) {
       value_type dealias = v;
@@ -676,8 +677,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
             EnableIfAtLeastForwardIterator<ForwardIterator> = 0>
   iterator insert(const_iterator pos, ForwardIterator first,
                   ForwardIterator last) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(pos >= begin());
-    ABSL_HARDENING_ASSERT(pos <= end());
+    absl::base_internal::HardeningAssertGE(pos, cbegin());
+    absl::base_internal::HardeningAssertLE(pos, cend());
 
     if (ABSL_PREDICT_TRUE(first != last)) {
       return storage_.Insert(
@@ -697,8 +698,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
             DisableIfAtLeastForwardIterator<InputIterator> = 0>
   iterator insert(const_iterator pos, InputIterator first,
                   InputIterator last) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(pos >= begin());
-    ABSL_HARDENING_ASSERT(pos <= end());
+    absl::base_internal::HardeningAssertGE(pos, cbegin());
+    absl::base_internal::HardeningAssertLE(pos, cend());
 
     size_type index = static_cast<size_type>(std::distance(cbegin(), pos));
     for (size_type i = index; first != last; ++i, static_cast<void>(++first)) {
@@ -715,8 +716,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   template <typename... Args>
   iterator emplace(const_iterator pos,
                    Args&&... args) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(pos >= begin());
-    ABSL_HARDENING_ASSERT(pos <= end());
+    absl::base_internal::HardeningAssertGE(pos, cbegin());
+    absl::base_internal::HardeningAssertLE(pos, cend());
 
     value_type dealias(std::forward<Args>(args)...);
     
@@ -761,7 +762,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   void pop_back() noexcept {
-    ABSL_HARDENING_ASSERT(!empty());
+    absl::base_internal::HardeningAssertNonEmpty(*this);
 
     AllocatorTraits<A>::destroy(storage_.GetAllocator(), data() + (size() - 1));
     storage_.SubtractSize(1);
@@ -774,8 +775,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   iterator erase(const_iterator pos) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(pos >= begin());
-    ABSL_HARDENING_ASSERT(pos < end());
+    absl::base_internal::HardeningAssertGE(pos, cbegin());
+    absl::base_internal::HardeningAssertLT(pos, cend());
 
     
     
@@ -800,9 +801,9 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   iterator erase(const_iterator from,
                  const_iterator to) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    ABSL_HARDENING_ASSERT(from >= begin());
-    ABSL_HARDENING_ASSERT(from <= to);
-    ABSL_HARDENING_ASSERT(to <= end());
+    absl::base_internal::HardeningAssertGE(from, cbegin());
+    absl::base_internal::HardeningAssertLE(from, to);
+    absl::base_internal::HardeningAssertLE(to, cend());
 
     if (ABSL_PREDICT_TRUE(from != to)) {
       return storage_.Erase(from, to);
@@ -818,9 +819,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   void clear() noexcept {
     inlined_vector_internal::DestroyAdapter<A>::DestroyElements(
         storage_.GetAllocator(), data(), size());
-    storage_.DeallocateIfAllocated();
-
-    storage_.SetInlinedSize(0);
+    storage_.SetSize(0);
   }
 
   
@@ -859,8 +858,8 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
     
     
     
-    static_assert(absl::is_trivially_destructible<value_type>::value, "");
-    static_assert(std::is_same<A, std::allocator<value_type>>::value, "");
+    static_assert(std::is_trivially_destructible_v<value_type>, "");
+    static_assert(std::is_same_v<A, std::allocator<value_type>>, "");
 
     
     
@@ -877,7 +876,7 @@ class ABSL_ATTRIBUTE_WARN_UNUSED InlinedVector {
   
   
   void DestroyExistingAndAdopt(InlinedVector&& other) {
-    ABSL_HARDENING_ASSERT(other.storage_.GetIsAllocated());
+    absl::base_internal::HardeningAssert(other.storage_.GetIsAllocated());
 
     inlined_vector_internal::DestroyAdapter<A>::DestroyElements(
         storage_.GetAllocator(), data(), size());
@@ -1007,8 +1006,17 @@ bool operator>=(const absl::InlinedVector<T, N, A>& a,
 
 template <typename H, typename T, size_t N, typename A>
 H AbslHashValue(H h, const absl::InlinedVector<T, N, A>& a) {
-  auto size = a.size();
-  return H::combine(H::combine_contiguous(std::move(h), a.data(), size), size);
+  return H::combine_contiguous(std::move(h), a.data(), a.size());
+}
+
+template <typename T, size_t N, typename A, typename Predicate>
+constexpr typename InlinedVector<T, N, A>::size_type erase_if(
+    InlinedVector<T, N, A>& v, Predicate pred) {
+  const auto it = std::remove_if(v.begin(), v.end(), std::move(pred));
+  const auto removed = static_cast<typename InlinedVector<T, N, A>::size_type>(
+      std::distance(it, v.end()));
+  v.erase(it, v.end());
+  return removed;
 }
 
 ABSL_NAMESPACE_END

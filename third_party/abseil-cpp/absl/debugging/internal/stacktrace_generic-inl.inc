@@ -60,13 +60,20 @@ static int UnwindImpl(void** result, uintptr_t* frames, int* sizes,
 
   size = backtrace(stack, kStackLength);
   skip_count++;  
-  int result_count = size - skip_count;
-  if (result_count < 0)
-    result_count = 0;
-  if (result_count > max_depth)
-    result_count = max_depth;
-  for (int i = 0; i < result_count; i++)
-    result[i] = stack[i + skip_count];
+
+  int num_frames = size - skip_count;
+  if (num_frames < 0) num_frames = 0;
+  if (num_frames > max_depth) num_frames = max_depth;
+
+  int result_count = 0;
+  for (int i = 0; i < num_frames; i++) {
+    int stack_index = i + skip_count;
+    
+    if (stack[stack_index] == nullptr) {
+      break;
+    }
+    result[result_count++] = stack[stack_index];
+  }
 
   if (IS_STACK_FRAMES) {
     

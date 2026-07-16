@@ -16,15 +16,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <limits>
 
 #include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/atomic_hook.h"
 #include "absl/base/internal/cycleclock.h"
+#include "absl/base/internal/scheduling_mode.h"
 #include "absl/base/internal/spinlock_wait.h"
 #include "absl/base/internal/sysinfo.h" 
-#include "absl/base/call_once.h"
+#include "absl/base/internal/tsan_mutex_interface.h"
 
 
 
@@ -58,7 +61,7 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace base_internal {
 
-ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES static base_internal::AtomicHook<void (*)(
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES static AtomicHook<void (*)(
     const void *lock, int64_t wait_cycles)>
     submit_profile_data;
 
@@ -68,24 +71,23 @@ void RegisterSpinLockProfiler(void (*fn)(const void *contendedlock,
 }
 
 
-SpinLock::SpinLock(base_internal::SchedulingMode mode)
-    : lockword_(IsCooperative(mode) ? kSpinLockCooperative : 0) {
-  ABSL_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static);
-}
 
 
-
-
+ABSL_CONST_INIT std::atomic<int> SpinLock::adaptive_spin_count_{0};
 uint32_t SpinLock::SpinLoop() {
   
   
-  ABSL_CONST_INIT static absl::once_flag init_adaptive_spin_count;
-  ABSL_CONST_INIT static int adaptive_spin_count = 0;
-  base_internal::LowLevelCallOnce(&init_adaptive_spin_count, []() {
-    adaptive_spin_count = base_internal::NumCPUs() > 1 ? 1000 : 1;
-  });
-
-  int c = adaptive_spin_count;
+  if (adaptive_spin_count_.load(std::memory_order_relaxed) == 0) {
+    int current_spin_count = 0;
+    int new_spin_count = NumCPUs() > 1 ? 1000 : 1;
+    
+    
+    
+    adaptive_spin_count_.compare_exchange_weak(
+        current_spin_count, new_spin_count, std::memory_order_relaxed,
+        std::memory_order_relaxed);
+  }
+  int c = adaptive_spin_count_.load(std::memory_order_relaxed);
   uint32_t lock_value;
   do {
     lock_value = lockword_.load(std::memory_order_relaxed);
@@ -100,11 +102,11 @@ void SpinLock::SlowLock() {
     return;
   }
 
-  base_internal::SchedulingMode scheduling_mode;
+  SchedulingMode scheduling_mode;
   if ((lock_value & kSpinLockCooperative) != 0) {
-    scheduling_mode = base_internal::SCHEDULE_COOPERATIVE_AND_KERNEL;
+    scheduling_mode = SCHEDULE_COOPERATIVE_AND_KERNEL;
   } else {
-    scheduling_mode = base_internal::SCHEDULE_KERNEL_ONLY;
+    scheduling_mode = SCHEDULE_KERNEL_ONLY;
   }
 
   
@@ -134,7 +136,7 @@ void SpinLock::SlowLock() {
         
         
         lock_value = TryLockInternal(lock_value, wait_cycles);
-        continue;   
+        continue;  
       } else if ((lock_value & kWaitTimeMask) == 0) {
         
         
@@ -150,8 +152,8 @@ void SpinLock::SlowLock() {
     
     ABSL_TSAN_MUTEX_PRE_DIVERT(this, 0);
     
-    base_internal::SpinLockDelay(&lockword_, lock_value, ++lock_wait_call_count,
-                                 scheduling_mode);
+    SpinLockDelay(&lockword_, lock_value, ++lock_wait_call_count,
+                  scheduling_mode);
     ABSL_TSAN_MUTEX_POST_DIVERT(this, 0);
     
     
@@ -162,8 +164,8 @@ void SpinLock::SlowLock() {
 }
 
 void SpinLock::SlowUnlock(uint32_t lock_value) {
-  base_internal::SpinLockWake(&lockword_,
-                              false);  
+  SpinLockWake(&lockword_,
+               false);  
 
   
   

@@ -51,9 +51,9 @@ class GaussianDistributionInterfaceTest : public ::testing::Test {};
 
 
 using RealTypes =
-    std::conditional<absl::numeric_internal::IsDoubleDouble(),
-                     ::testing::Types<float, double>,
-                     ::testing::Types<float, double, long double>>::type;
+    std::conditional_t<absl::numeric_internal::IsDoubleDouble(),
+                       ::testing::Types<float, double>,
+                       ::testing::Types<float, double, long double>>;
 TYPED_TEST_SUITE(GaussianDistributionInterfaceTest, RealTypes);
 
 TYPED_TEST(GaussianDistributionInterfaceTest, SerializeTest) {
@@ -115,7 +115,7 @@ TYPED_TEST(GaussianDistributionInterfaceTest, SerializeTest) {
           EXPECT_GE(sample, before.min()) << before;
           EXPECT_LE(sample, before.max()) << before;
         }
-        if (!std::is_same<TypeParam, long double>::value) {
+        if (!std::is_same_v<TypeParam, long double>) {
           LOG(INFO) << "Range{" << mean << ", " << stddev << "}: " << sample_min
                     << ", " << sample_max;
         }

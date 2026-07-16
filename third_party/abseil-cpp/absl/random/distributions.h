@@ -117,11 +117,11 @@ inline constexpr IntervalOpenClosedTag IntervalOpenClosed = {};
 
 
 template <typename R = void, typename TagType, typename URBG>
-typename absl::enable_if_t<!std::is_same<R, void>::value, R>  
+typename std::enable_if_t<!std::is_same_v<R, void>, R>  
 Uniform(TagType tag,
         URBG&& urbg,  
         R lo, R hi) {
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = random_internal::UniformDistributionWrapper<R>;
 
   auto a = random_internal::uniform_lower_bound(tag, lo, hi);
@@ -137,10 +137,10 @@ Uniform(TagType tag,
 
 
 template <typename R = void, typename URBG>
-typename absl::enable_if_t<!std::is_same<R, void>::value, R>  
+typename std::enable_if_t<!std::is_same_v<R, void>, R>  
 Uniform(URBG&& urbg,  
         R lo, R hi) {
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = random_internal::UniformDistributionWrapper<R>;
   constexpr auto tag = absl::IntervalClosedOpen;
 
@@ -159,12 +159,12 @@ Uniform(URBG&& urbg,
 
 template <typename R = void, typename TagType, typename URBG, typename A,
           typename B>
-typename absl::enable_if_t<std::is_same<R, void>::value,
-                           random_internal::uniform_inferred_return_t<A, B>>
+typename std::enable_if_t<std::is_same_v<R, void>,
+                          random_internal::uniform_inferred_return_t<A, B>>
 Uniform(TagType tag,
         URBG&& urbg,  
         A lo, B hi) {
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using return_t = typename random_internal::uniform_inferred_return_t<A, B>;
   using distribution_t = random_internal::UniformDistributionWrapper<return_t>;
 
@@ -183,11 +183,11 @@ Uniform(TagType tag,
 
 
 template <typename R = void, typename URBG, typename A, typename B>
-typename absl::enable_if_t<std::is_same<R, void>::value,
-                           random_internal::uniform_inferred_return_t<A, B>>
+typename std::enable_if_t<std::is_same_v<R, void>,
+                          random_internal::uniform_inferred_return_t<A, B>>
 Uniform(URBG&& urbg,  
         A lo, B hi) {
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using return_t = typename random_internal::uniform_inferred_return_t<A, B>;
   using distribution_t = random_internal::UniformDistributionWrapper<return_t>;
 
@@ -206,9 +206,9 @@ Uniform(URBG&& urbg,
 
 
 template <typename R, typename URBG>
-typename absl::enable_if_t<!std::numeric_limits<R>::is_signed, R>  
+typename std::enable_if_t<!std::numeric_limits<R>::is_signed, R>  
 Uniform(URBG&& urbg) {  
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = random_internal::UniformDistributionWrapper<R>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -238,7 +238,7 @@ Uniform(URBG&& urbg) {
 template <typename URBG>
 bool Bernoulli(URBG&& urbg,  
                double p) {
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = absl::bernoulli_distribution;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -266,11 +266,11 @@ template <typename RealType, typename URBG>
 RealType Beta(URBG&& urbg,  
               RealType alpha, RealType beta) {
   static_assert(
-      std::is_floating_point<RealType>::value,
+      std::is_floating_point_v<RealType>,
       "Template-argument 'RealType' must be a floating-point type, in "
       "absl::Beta<RealType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::beta_distribution<RealType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -294,15 +294,18 @@ RealType Beta(URBG&& urbg,
 
 
 
+
+
+
 template <typename RealType, typename URBG>
 RealType Exponential(URBG&& urbg,  
                      RealType lambda = 1) {
   static_assert(
-      std::is_floating_point<RealType>::value,
+      std::is_floating_point_v<RealType>,
       "Template-argument 'RealType' must be a floating-point type, in "
       "absl::Exponential<RealType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::exponential_distribution<RealType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -329,11 +332,11 @@ template <typename RealType, typename URBG>
 RealType Gaussian(URBG&& urbg,  
                   RealType mean = 0, RealType stddev = 1) {
   static_assert(
-      std::is_floating_point<RealType>::value,
+      std::is_floating_point_v<RealType>,
       "Template-argument 'RealType' must be a floating-point type, in "
       "absl::Gaussian<RealType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::gaussian_distribution<RealType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -375,7 +378,7 @@ IntType LogUniform(URBG&& urbg,
                 "Template-argument 'IntType' must be an integral type, in "
                 "absl::LogUniform<IntType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::log_uniform_int_distribution<IntType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -405,7 +408,7 @@ IntType Poisson(URBG&& urbg,
                 "Template-argument 'IntType' must be an integral type, in "
                 "absl::Poisson<IntType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::poisson_distribution<IntType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<
@@ -437,7 +440,7 @@ IntType Zipf(URBG&& urbg,
                 "Template-argument 'IntType' must be an integral type, in "
                 "absl::Zipf<IntType, URBG>(...)");
 
-  using gen_t = absl::decay_t<URBG>;
+  using gen_t = std::decay_t<URBG>;
   using distribution_t = typename absl::zipf_distribution<IntType>;
 
   return random_internal::DistributionCaller<gen_t>::template Call<

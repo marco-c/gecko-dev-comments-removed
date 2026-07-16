@@ -64,9 +64,9 @@ class UniformRealDistributionTest : public ::testing::Test {};
 
 
 using RealTypes =
-    std::conditional<absl::numeric_internal::IsDoubleDouble(),
-                     ::testing::Types<float, double>,
-                     ::testing::Types<float, double, long double>>::type;
+    std::conditional_t<absl::numeric_internal::IsDoubleDouble(),
+                       ::testing::Types<float, double>,
+                       ::testing::Types<float, double, long double>>;
 
 TYPED_TEST_SUITE(UniformRealDistributionTest, RealTypes);
 
@@ -180,7 +180,7 @@ TYPED_TEST(UniformRealDistributionTest, ParamSerializeTest) {
       }
     }
 
-    if (!std::is_same<real_type, long double>::value) {
+    if (!std::is_same_v<real_type, long double>) {
       
       LOG(INFO) << "Range: " << static_cast<double>(sample_min) << ", "
                 << static_cast<double>(sample_max);

@@ -39,15 +39,15 @@ enum class Mode { kFairShare, kTotal, kTotalMorePrecise };
 template <Mode mode>
 struct CordRepRef {
   
-  explicit CordRepRef(absl::Nonnull<const CordRep*> r) : rep(r) {}
+  explicit CordRepRef(const CordRep* absl_nonnull r) : rep(r) {}
 
   
   
-  CordRepRef Child(absl::Nonnull<const CordRep*> child) const {
+  CordRepRef Child(const CordRep* absl_nonnull child) const {
     return CordRepRef(child);
   }
 
-  absl::Nonnull<const CordRep*> rep;
+  const CordRep* absl_nonnull rep;
 };
 
 
@@ -66,7 +66,7 @@ template <>
 struct RawUsage<Mode::kTotalMorePrecise> {
   size_t total = 0;
   
-  std::unordered_set<absl::Nonnull<const CordRep*>> counted;
+  std::unordered_set<const CordRep* absl_nonnull> counted;
 
   void Add(size_t size, CordRepRef<Mode::kTotalMorePrecise> repref) {
     if (counted.insert(repref.rep).second) {
@@ -90,15 +90,15 @@ double MaybeDiv(double d, refcount_t refcount) {
 template <>
 struct CordRepRef<Mode::kFairShare> {
   
-  explicit CordRepRef(absl::Nonnull<const CordRep*> r, double frac = 1.0)
+  explicit CordRepRef(const CordRep* absl_nonnull r, double frac = 1.0)
       : rep(r), fraction(MaybeDiv(frac, r->refcount.Get())) {}
 
   
-  CordRepRef Child(absl::Nonnull<const CordRep*> child) const {
+  CordRepRef Child(const CordRep* absl_nonnull child) const {
     return CordRepRef(child, fraction);
   }
 
-  absl::Nonnull<const CordRep*> rep;
+  const CordRep* absl_nonnull rep;
   double fraction;
 };
 
@@ -150,7 +150,7 @@ void AnalyzeBtree(CordRepRef<mode> rep, RawUsage<mode>& raw_usage) {
 }
 
 template <Mode mode>
-size_t GetEstimatedUsage(absl::Nonnull<const CordRep*> rep) {
+size_t GetEstimatedUsage(const CordRep* absl_nonnull rep) {
   
   RawUsage<mode> raw_usage;
 
@@ -179,15 +179,15 @@ size_t GetEstimatedUsage(absl::Nonnull<const CordRep*> rep) {
 
 }  
 
-size_t GetEstimatedMemoryUsage(absl::Nonnull<const CordRep*> rep) {
+size_t GetEstimatedMemoryUsage(const CordRep* absl_nonnull rep) {
   return GetEstimatedUsage<Mode::kTotal>(rep);
 }
 
-size_t GetEstimatedFairShareMemoryUsage(absl::Nonnull<const CordRep*> rep) {
+size_t GetEstimatedFairShareMemoryUsage(const CordRep* absl_nonnull rep) {
   return GetEstimatedUsage<Mode::kFairShare>(rep);
 }
 
-size_t GetMorePreciseMemoryUsage(absl::Nonnull<const CordRep*> rep) {
+size_t GetMorePreciseMemoryUsage(const CordRep* absl_nonnull rep) {
   return GetEstimatedUsage<Mode::kTotalMorePrecise>(rep);
 }
 

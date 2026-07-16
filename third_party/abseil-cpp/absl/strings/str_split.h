@@ -127,7 +127,7 @@ class ByString {
   absl::string_view Find(absl::string_view text, size_t pos) const;
 
  private:
-  const std::string delimiter_;
+  std::string delimiter_;
 };
 
 
@@ -277,7 +277,7 @@ template <typename Delimiter>
 class MaxSplitsImpl {
  public:
   MaxSplitsImpl(Delimiter delimiter, int limit)
-      : delimiter_(delimiter), limit_(limit), count_(0) {}
+      : delimiter_(std::move(delimiter)), limit_(limit), count_(0) {}
   absl::string_view Find(absl::string_view text, size_t pos) {
     if (count_++ == limit_) {
       return absl::string_view(text.data() + text.size(),
@@ -382,16 +382,21 @@ struct SkipEmpty {
 
 struct SkipWhitespace {
   bool operator()(absl::string_view sp) const {
-    sp = absl::StripAsciiWhitespace(sp);
+    sp = absl::StripLeadingAsciiWhitespace(sp);
     return !sp.empty();
   }
 };
 
 template <typename T>
 using EnableSplitIfString =
-    typename std::enable_if<std::is_same<T, std::string>::value ||
-                            std::is_same<T, const std::string>::value,
-                            int>::type;
+    std::enable_if_t<std::is_same_v<T, std::string> ||
+                         std::is_same_v<T, const std::string>,
+                     int>;
+
+
+
+
+
 
 
 

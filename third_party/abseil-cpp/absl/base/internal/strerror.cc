@@ -39,7 +39,7 @@ const char* StrErrorAdaptor(int errnum, char* buf, size_t buflen) {
   
   
   auto ret = strerror_r(errnum, buf, buflen);
-  if (std::is_same<decltype(ret), int>::value) {
+  if (std::is_same_v<decltype(ret), int>) {
     
     if (ret) *buf = '\0';
     return buf;

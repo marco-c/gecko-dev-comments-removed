@@ -41,7 +41,21 @@ namespace strings_internal {
 
 
 enum { kMaxEncodedUTF8Size = 4 };
-size_t EncodeUTF8Char(char *buffer, char32_t utf8_char);
+size_t EncodeUTF8Char(char* buffer, char32_t utf8_char);
+
+struct ShiftState {
+  bool saw_high_surrogate = false;
+  unsigned char bits = 0;
+};
+
+
+
+
+
+
+
+
+size_t WideToUtf8(wchar_t wc, char* buf, ShiftState& s);
 
 }  
 ABSL_NAMESPACE_END

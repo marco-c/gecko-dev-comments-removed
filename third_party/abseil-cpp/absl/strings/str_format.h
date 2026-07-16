@@ -69,6 +69,7 @@
 
 
 
+
 #ifndef ABSL_STRINGS_STR_FORMAT_H_
 #define ABSL_STRINGS_STR_FORMAT_H_
 
@@ -112,7 +113,7 @@ class UntypedFormatSpec {
 
  protected:
   explicit UntypedFormatSpec(
-      absl::Nonnull<const str_format_internal::ParsedFormatBase*> pc)
+      const str_format_internal::ParsedFormatBase* absl_nonnull pc)
       : spec_(pc) {}
 
  private:
@@ -152,7 +153,7 @@ str_format_internal::StreamedWrapper<T> FormatStreamed(const T& v) {
 
 class FormatCountCapture {
  public:
-  explicit FormatCountCapture(absl::Nonnull<int*> p) : p_(p) {}
+  explicit FormatCountCapture(int* absl_nonnull p) : p_(p) {}
 
  private:
   
@@ -161,9 +162,11 @@ class FormatCountCapture {
   
   
   
-  absl::Nonnull<int*> Unused() { return p_; }
-  absl::Nonnull<int*> p_;
+  int* absl_nonnull Unused() { return p_; }
+  int* absl_nonnull p_;
 };
+
+
 
 
 
@@ -377,7 +380,7 @@ template <typename... Args>
 
 
 template <typename... Args>
-std::string& StrAppendFormat(absl::Nonnull<std::string*> dst,
+std::string& StrAppendFormat(std::string* absl_nonnull dst,
                              const FormatSpec<Args...>& format,
                              const Args&... args) {
   return str_format_internal::AppendPack(
@@ -437,7 +440,7 @@ int PrintF(const FormatSpec<Args...>& format, const Args&... args) {
 
 
 template <typename... Args>
-int FPrintF(absl::Nonnull<std::FILE*> output, const FormatSpec<Args...>& format,
+int FPrintF(std::FILE* absl_nonnull output, const FormatSpec<Args...>& format,
             const Args&... args) {
   return str_format_internal::FprintF(
       output, str_format_internal::UntypedFormatSpecImpl::Extract(format),
@@ -466,7 +469,7 @@ int FPrintF(absl::Nonnull<std::FILE*> output, const FormatSpec<Args...>& format,
 
 
 template <typename... Args>
-int SNPrintF(absl::Nonnull<char*> output, std::size_t size,
+int SNPrintF(char* absl_nonnull output, std::size_t size,
              const FormatSpec<Args...>& format, const Args&... args) {
   return str_format_internal::SnprintF(
       output, size, str_format_internal::UntypedFormatSpecImpl::Extract(format),
@@ -497,10 +500,9 @@ class FormatRawSink {
  public:
   
   
-  template <typename T,
-            typename = typename std::enable_if<std::is_constructible<
-                str_format_internal::FormatRawSinkImpl, T*>::value>::type>
-  FormatRawSink(absl::Nonnull<T*> raw)  
+  template <typename T, typename = std::enable_if_t<std::is_constructible_v<
+                            str_format_internal::FormatRawSinkImpl, T*>>>
+  FormatRawSink(T* absl_nonnull raw)  
       : sink_(raw) {}
 
  private:
@@ -857,16 +859,16 @@ class FormatSink {
   }
 
   
-  friend void AbslFormatFlush(absl::Nonnull<FormatSink*> sink,
+  friend void AbslFormatFlush(FormatSink* absl_nonnull sink,
                               absl::string_view v) {
     sink->Append(v);
   }
 
  private:
   friend str_format_internal::FormatSinkImpl;
-  explicit FormatSink(absl::Nonnull<str_format_internal::FormatSinkImpl*> s)
+  explicit FormatSink(str_format_internal::FormatSinkImpl* absl_nonnull s)
       : sink_(s) {}
-  absl::Nonnull<str_format_internal::FormatSinkImpl*> sink_;
+  str_format_internal::FormatSinkImpl* absl_nonnull sink_;
 };
 
 

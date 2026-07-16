@@ -17,7 +17,7 @@
 #define ABSL_FLAGS_INTERNAL_COMMANDLINEFLAG_H_
 
 #include "absl/base/config.h"
-#include "absl/base/internal/fast_type_id.h"
+#include "absl/base/fast_type_id.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -28,7 +28,7 @@ namespace flags_internal {
 
 
 
-using FlagFastTypeId = absl::base_internal::FastTypeIdType;
+using FlagFastTypeId = absl::FastTypeIdType;
 
 
 enum FlagSettingMode {
@@ -58,7 +58,7 @@ class FlagStateInterface {
   virtual ~FlagStateInterface();
 
   
-  virtual void Restore() const = 0;
+  virtual void Restore() && = 0;
 };
 
 }  

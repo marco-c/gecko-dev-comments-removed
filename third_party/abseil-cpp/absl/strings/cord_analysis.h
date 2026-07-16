@@ -29,7 +29,7 @@ namespace cord_internal {
 
 
 
-size_t GetEstimatedMemoryUsage(absl::Nonnull<const CordRep*> rep);
+size_t GetEstimatedMemoryUsage(const CordRep* absl_nonnull rep);
 
 
 
@@ -47,13 +47,13 @@ size_t GetEstimatedMemoryUsage(absl::Nonnull<const CordRep*> rep);
 
 
 
-size_t GetMorePreciseMemoryUsage(absl::Nonnull<const CordRep*> rep);
+size_t GetMorePreciseMemoryUsage(const CordRep* absl_nonnull rep);
 
 
 
 
 
-size_t GetEstimatedFairShareMemoryUsage(absl::Nonnull<const CordRep*> rep);
+size_t GetEstimatedFairShareMemoryUsage(const CordRep* absl_nonnull rep);
 
 }  
 ABSL_NAMESPACE_END

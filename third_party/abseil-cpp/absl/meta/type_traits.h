@@ -38,18 +38,17 @@
 #include <cstddef>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/macros.h"
 
 #ifdef __cpp_lib_span
 #include <span>  
-#endif
-
-#ifdef ABSL_HAVE_STD_STRING_VIEW
-#include <string_view>
 #endif
 
 
@@ -108,6 +107,7 @@ struct is_detected : is_detected_impl<void, Op, Args...>::type {};
 
 
 
+
 template <typename... Ts>
 using void_t = typename type_traits_internal::VoidTImpl<Ts...>::type;
 
@@ -117,45 +117,122 @@ using void_t = typename type_traits_internal::VoidTImpl<Ts...>::type;
 
 
 
-using std::add_const_t;
-using std::add_cv_t;
-using std::add_lvalue_reference_t;
-using std::add_pointer_t;
-using std::add_rvalue_reference_t;
-using std::add_volatile_t;
-using std::common_type_t;
-using std::conditional_t;
-using std::conjunction;
-using std::decay_t;
-using std::enable_if_t;
-using std::disjunction;
-using std::is_copy_assignable;
-using std::is_function;
-using std::is_move_assignable;
-using std::is_trivially_copy_assignable;
-using std::is_trivially_copy_constructible;
-using std::is_trivially_default_constructible;
-using std::is_trivially_destructible;
-using std::is_trivially_move_assignable;
-using std::is_trivially_move_constructible;
-using std::make_signed_t;
-using std::make_unsigned_t;
-using std::negation;
-using std::remove_all_extents_t;
-using std::remove_const_t;
-using std::remove_cv_t;
-using std::remove_extent_t;
-using std::remove_pointer_t;
-using std::remove_reference_t;
-using std::remove_volatile_t;
-using std::underlying_type_t;
+
+template <class T>
+using add_const_t ABSL_DEPRECATE_AND_INLINE() = std::add_const_t<T>;
+
+template <class T>
+using add_cv_t ABSL_DEPRECATE_AND_INLINE() = std::add_cv_t<T>;
+
+template <class T>
+using add_lvalue_reference_t ABSL_DEPRECATE_AND_INLINE() =
+    std::add_lvalue_reference_t<T>;
+
+template <class T>
+using add_pointer_t ABSL_DEPRECATE_AND_INLINE() = std::add_pointer_t<T>;
+
+template <class T>
+using add_rvalue_reference_t ABSL_DEPRECATE_AND_INLINE() =
+    std::add_rvalue_reference_t<T>;
+
+template <class T>
+using add_volatile_t ABSL_DEPRECATE_AND_INLINE() = std::add_volatile_t<T>;
+
+template <class... T>
+using common_type_t ABSL_DEPRECATE_AND_INLINE() = std::common_type_t<T...>;
+
+template <bool C, class T, class F>
+using conditional_t ABSL_DEPRECATE_AND_INLINE() = std::conditional_t<C, T, F>;
+
+template <class... T>
+using conjunction ABSL_DEPRECATE_AND_INLINE() = std::conjunction<T...>;
+
+template <class T>
+using decay_t ABSL_DEPRECATE_AND_INLINE() = std::decay_t<T>;
+
+
+template <bool C, class T = void>
+using enable_if_t ABSL_DEPRECATE_AND_INLINE() = std::enable_if_t<C, T>;
+
+template <class... T>
+using disjunction ABSL_DEPRECATE_AND_INLINE() = std::disjunction<T...>;
+
+template <class T>
+using is_copy_assignable ABSL_DEPRECATE_AND_INLINE() =
+    std::is_copy_assignable<T>;
+
+template <class T>
+using is_function ABSL_DEPRECATE_AND_INLINE() = std::is_function<T>;
+
+template <class T>
+using is_move_assignable ABSL_DEPRECATE_AND_INLINE() =
+    std::is_move_assignable<T>;
+
+template <class T>
+using is_trivially_copy_assignable ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_copy_assignable<T>;
+
+template <class T>
+using is_trivially_copy_constructible ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_copy_constructible<T>;
+
+template <class T>
+using is_trivially_default_constructible ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_default_constructible<T>;
+
+template <class T>
+using is_trivially_destructible ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_destructible<T>;
+
+template <class T>
+using is_trivially_move_assignable ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_move_assignable<T>;
+
+template <class T>
+using is_trivially_move_constructible ABSL_DEPRECATE_AND_INLINE() =
+    std::is_trivially_move_constructible<T>;
+
+template <class T>
+using make_signed_t ABSL_DEPRECATE_AND_INLINE() = std::make_signed_t<T>;
+
+template <class T>
+using make_unsigned_t ABSL_DEPRECATE_AND_INLINE() = std::make_unsigned_t<T>;
+
+template <class T>
+using negation ABSL_DEPRECATE_AND_INLINE() = std::negation<T>;
+
+template <class T>
+using remove_all_extents_t ABSL_DEPRECATE_AND_INLINE() =
+    std::remove_all_extents_t<T>;
+
+template <class T>
+using remove_const_t ABSL_DEPRECATE_AND_INLINE() = std::remove_const_t<T>;
+
+template <class T>
+using remove_cv_t ABSL_DEPRECATE_AND_INLINE() = std::remove_cv_t<T>;
+
+template <class T>
+using remove_extent_t ABSL_DEPRECATE_AND_INLINE() = std::remove_extent_t<T>;
+
+template <class T>
+using remove_pointer_t ABSL_DEPRECATE_AND_INLINE() = std::remove_pointer_t<T>;
+
+template <class T>
+using remove_reference_t ABSL_DEPRECATE_AND_INLINE() =
+    std::remove_reference_t<T>;
+
+template <class T>
+using remove_volatile_t ABSL_DEPRECATE_AND_INLINE() = std::remove_volatile_t<T>;
+
+template <class T>
+using underlying_type_t ABSL_DEPRECATE_AND_INLINE() = std::underlying_type_t<T>;
 
 #if defined(__cpp_lib_remove_cvref) && __cpp_lib_remove_cvref >= 201711L
 template <typename T>
 using remove_cvref = std::remove_cvref<T>;
 
 template <typename T>
-using remove_cvref_t = typename std::remove_cvref<T>::type;
+using remove_cvref_t = std::remove_cvref_t<T>;
 #else
 
 
@@ -163,12 +240,33 @@ using remove_cvref_t = typename std::remove_cvref<T>::type;
 
 template <typename T>
 struct remove_cvref {
-  using type =
-      typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
 };
 
 template <typename T>
 using remove_cvref_t = typename remove_cvref<T>::type;
+#endif
+
+#if defined(__cpp_lib_type_identity) && __cpp_lib_type_identity >= 201806L
+template <typename T>
+using type_identity = std::type_identity<T>;
+
+template <typename T>
+using type_identity_t = std::type_identity_t<T>;
+#else
+
+
+
+template <typename T>
+struct type_identity {
+  typedef T type;
+};
+
+
+
+
+template <typename T>
+using type_identity_t = typename type_identity<T>::type;
 #endif
 
 namespace type_traits_internal {
@@ -192,30 +290,15 @@ using result_of_t = typename type_traits_internal::result_of<F>::type;
 
 namespace type_traits_internal {
 
-
-
-
-#if defined(_MSC_VER) || (defined(_LIBCPP_VERSION) && \
-                          _LIBCPP_VERSION < 4000 && _LIBCPP_STD_VER > 11)
-#define ABSL_META_INTERNAL_STD_HASH_SFINAE_FRIENDLY_ 0
-#else
-#define ABSL_META_INTERNAL_STD_HASH_SFINAE_FRIENDLY_ 1
-#endif
-
-#if !ABSL_META_INTERNAL_STD_HASH_SFINAE_FRIENDLY_
-template <typename Key, typename = size_t>
-struct IsHashable : std::true_type {};
-#else   
 template <typename Key, typename = void>
 struct IsHashable : std::false_type {};
 
 template <typename Key>
 struct IsHashable<
     Key,
-    absl::enable_if_t<std::is_convertible<
+    std::enable_if_t<std::is_convertible_v<
         decltype(std::declval<std::hash<Key>&>()(std::declval<Key const&>())),
-        std::size_t>::value>> : std::true_type {};
-#endif  
+        std::size_t>>> : std::true_type {};
 
 struct AssertHashEnabledHelper {
  private:
@@ -233,19 +316,19 @@ struct AssertHashEnabledHelper {
     static_assert(IsHashable<Key>::value,
                   "std::hash<Key> does not provide a call operator");
     static_assert(
-        std::is_default_constructible<std::hash<Key>>::value,
+        std::is_default_constructible_v<std::hash<Key>>,
         "std::hash<Key> must be default constructible when it is enabled");
     static_assert(
-        std::is_copy_constructible<std::hash<Key>>::value,
+        std::is_copy_constructible_v<std::hash<Key>>,
         "std::hash<Key> must be copy constructible when it is enabled");
-    static_assert(absl::is_copy_assignable<std::hash<Key>>::value,
+    static_assert(std::is_copy_assignable_v<std::hash<Key>>,
                   "std::hash<Key> must be copy assignable when it is enabled");
     
     
     using ReturnType = decltype(GetReturnType<Key>(0));
-    static_assert(std::is_same<ReturnType, NAT>::value ||
-                      std::is_same<ReturnType, size_t>::value,
-                  "std::hash<Key> must return size_t");
+    static_assert(
+        std::is_same_v<ReturnType, NAT> || std::is_same_v<ReturnType, size_t>,
+        "std::hash<Key> must return size_t");
     return nullptr;
   }
 
@@ -279,7 +362,7 @@ using IsSwappableImpl = decltype(swap(std::declval<T&>(), std::declval<T&>()));
 template <class T,
           class IsNoexcept = std::integral_constant<
               bool, noexcept(swap(std::declval<T&>(), std::declval<T&>()))>>
-using IsNothrowSwappableImpl = typename std::enable_if<IsNoexcept::value>::type;
+using IsNothrowSwappableImpl = std::enable_if_t<IsNoexcept::value>;
 
 
 
@@ -301,7 +384,7 @@ struct IsNothrowSwappable
 
 
 
-template <class T, absl::enable_if_t<IsSwappable<T>::value, int> = 0>
+template <class T, std::enable_if_t<IsSwappable<T>::value, int> = 0>
 void Swap(T& lhs, T& rhs) noexcept(IsNothrowSwappable<T>::value) {
   swap(lhs, rhs);
 }
@@ -378,21 +461,30 @@ using swap_internal::Swap;
 
 
 
-#if ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
-    (defined(__cpp_impl_trivially_relocatable) ||    \
-     (!defined(__clang__) && !defined(__APPLE__) && !defined(__NVCC__)))
+
+
+#if ABSL_HAVE_BUILTIN(__builtin_is_cpp_trivially_relocatable)
+
+
+
+
+
 template <class T>
 struct is_trivially_relocatable
-    : std::integral_constant<bool, __is_trivially_relocatable(T)> {};
+    : std::integral_constant<bool, __builtin_is_cpp_trivially_relocatable(T)> {
+};
 #elif ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && defined(__clang__) && \
     !(defined(_WIN32) || defined(_WIN64)) && !defined(__APPLE__) &&          \
     !defined(__NVCC__)
+
+
+
 template <class T>
 struct is_trivially_relocatable
-    : std::integral_constant<
-          bool, std::is_trivially_copyable<T>::value ||
-                    (__is_trivially_relocatable(T) &&
-                     std::is_trivially_move_assignable<T>::value)> {};
+    : std::integral_constant<bool,
+                             std::is_trivially_copyable_v<T> ||
+                                 (__is_trivially_relocatable(T) &&
+                                  std::is_trivially_move_assignable_v<T>)> {};
 #else
 
 
@@ -453,15 +545,14 @@ namespace type_traits_internal {
 
 template <typename T, typename = void>
 struct IsOwnerImpl : std::false_type {
-  static_assert(std::is_same<T, absl::remove_cvref_t<T>>::value,
+  static_assert(std::is_same_v<T, absl::remove_cvref_t<T>>,
                 "type must lack qualifiers");
 };
 
 template <typename T>
 struct IsOwnerImpl<
-    T,
-    std::enable_if_t<std::is_class<typename T::absl_internal_is_view>::value>>
-    : absl::negation<typename T::absl_internal_is_view> {};
+    T, std::enable_if_t<std::is_class_v<typename T::absl_internal_is_view>>>
+    : std::negation<typename T::absl_internal_is_view> {};
 
 
 
@@ -472,6 +563,17 @@ struct IsOwnerImpl<
 
 template <typename T>
 struct IsOwner : IsOwnerImpl<T> {};
+
+
+
+template <typename T1, typename T2>
+struct IsOwner<std::pair<T1, T2>>
+    : std::integral_constant<
+          bool, std::conditional_t<std::is_reference_v<T1>, std::false_type,
+                                   IsOwner<std::remove_cv_t<T1>>>::value &&
+                    std::conditional_t<std::is_reference_v<T2>, std::false_type,
+                                       IsOwner<std::remove_cv_t<T2>>>::value> {
+};
 
 template <typename T, typename Traits, typename Alloc>
 struct IsOwner<std::basic_string<T, Traits, Alloc>> : std::true_type {};
@@ -485,14 +587,13 @@ struct IsOwner<std::vector<T, Alloc>> : std::true_type {};
 
 template <typename T, typename = void>
 struct IsViewImpl : std::false_type {
-  static_assert(std::is_same<T, absl::remove_cvref_t<T>>::value,
+  static_assert(std::is_same_v<T, absl::remove_cvref_t<T>>,
                 "type must lack qualifiers");
 };
 
 template <typename T>
 struct IsViewImpl<
-    T,
-    std::enable_if_t<std::is_class<typename T::absl_internal_is_view>::value>>
+    T, std::enable_if_t<std::is_class_v<typename T::absl_internal_is_view>>>
     : T::absl_internal_is_view {};
 
 
@@ -504,13 +605,18 @@ struct IsViewImpl<
 
 
 template <typename T>
-struct IsView : std::integral_constant<bool, std::is_pointer<T>::value ||
+struct IsView : std::integral_constant<bool, std::is_pointer_v<T> ||
                                                  IsViewImpl<T>::value> {};
 
-#ifdef ABSL_HAVE_STD_STRING_VIEW
+
+
+template <typename T1, typename T2>
+struct IsView<std::pair<T1, T2>>
+    : std::integral_constant<bool, IsView<std::remove_cv_t<T1>>::value &&
+                                       IsView<std::remove_cv_t<T2>>::value> {};
+
 template <typename Char, typename Traits>
 struct IsView<std::basic_string_view<Char, Traits>> : std::true_type {};
-#endif
 
 #ifdef __cpp_lib_span
 template <typename T>
@@ -525,8 +631,8 @@ struct IsView<std::span<T>> : std::true_type {};
 
 
 template <typename T, typename U>
-using IsLifetimeBoundAssignment = absl::conjunction<
-    std::integral_constant<bool, !std::is_lvalue_reference<U>::value>,
+using IsLifetimeBoundAssignment = std::conjunction<
+    std::integral_constant<bool, !std::is_lvalue_reference_v<U>>,
     IsOwner<absl::remove_cvref_t<U>>, IsView<absl::remove_cvref_t<T>>>;
 
 }  

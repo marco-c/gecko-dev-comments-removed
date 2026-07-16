@@ -139,22 +139,6 @@ class CRC32 : public CRCImpl {
 
 
 
-template <typename T>
-T MaskOfLength(int len) {
-  
-  
-  return (T(2) << (len - 1)) - 1;
-}
-
-
-
-template <typename T>
-T RotateRight(T in, int width, int r) {
-  return (in << (width - r)) | ((in >> r) & MaskOfLength<T>(width - r));
-}
-
-
-
 template <int alignment>
 const uint8_t* RoundUp(const uint8_t* p) {
   static_assert((alignment & (alignment - 1)) == 0, "alignment is not 2^n");

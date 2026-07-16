@@ -31,6 +31,7 @@
 #define ABSL_BASE_OPTIMIZATION_H_
 
 #include <assert.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 
@@ -53,9 +54,7 @@
 
 
 
-#if defined(__pnacl__)
-#define ABSL_BLOCK_TAIL_CALL_OPTIMIZATION() if (volatile int x = 0) { (void)x; }
-#elif defined(__clang__)
+#if defined(__clang__)
 
 #define ABSL_BLOCK_TAIL_CALL_OPTIMIZATION() __asm__ __volatile__("")
 #elif defined(__GNUC__)
@@ -219,12 +218,12 @@
 #elif defined(_MSC_VER)
 #define ABSL_INTERNAL_UNREACHABLE_IMPL() __assume(false)
 #else
-#define ABSL_INTERNAL_UNREACHABLE_IMPL()
+#define ABSL_INTERNAL_UNREACHABLE_IMPL() ((void)0)
 #endif
 
 
 
-#if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
+#if (ABSL_OPTION_HARDENED == 1 || ABSL_OPTION_HARDENED == 2) && defined(NDEBUG)
 
 #define ABSL_UNREACHABLE()                \
   do {                                    \

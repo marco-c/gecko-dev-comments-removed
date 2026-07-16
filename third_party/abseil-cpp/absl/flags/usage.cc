@@ -40,7 +40,7 @@ ABSL_CONST_INIT std::string* program_usage_message
 
 
 void SetProgramUsageMessage(absl::string_view new_usage_message) {
-  absl::MutexLock l(&flags_internal::usage_message_guard);
+  absl::MutexLock l(flags_internal::usage_message_guard);
 
   if (flags_internal::program_usage_message != nullptr) {
     ABSL_INTERNAL_LOG(FATAL, "SetProgramUsageMessage() called twice.");
@@ -55,7 +55,7 @@ void SetProgramUsageMessage(absl::string_view new_usage_message) {
 
 
 absl::string_view ProgramUsageMessage() {
-  absl::MutexLock l(&flags_internal::usage_message_guard);
+  absl::MutexLock l(flags_internal::usage_message_guard);
 
   return flags_internal::program_usage_message != nullptr
              ? absl::string_view(*flags_internal::program_usage_message)

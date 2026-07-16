@@ -39,12 +39,6 @@ TEST(SysinfoTest, NumCPUs) {
 
 TEST(SysinfoTest, GetTID) {
   EXPECT_EQ(GetTID(), GetTID());  
-#ifdef __native_client__
-  
-  
-  
-  return;
-#endif
   
   
   for (int i = 0; i < 10; ++i) {
@@ -59,7 +53,7 @@ TEST(SysinfoTest, GetTID) {
       threads.push_back(std::thread([&]() {
         pid_t id = GetTID();
         {
-          MutexLock lock(&mutex);
+          MutexLock lock(mutex);
           ASSERT_TRUE(tids.find(id) == tids.end());
           tids.insert(id);
         }

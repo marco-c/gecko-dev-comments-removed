@@ -66,6 +66,7 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/macros.h"
+#include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
@@ -75,7 +76,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 template <class Sig>
-class AnyInvocable;
+class ABSL_NULLABILITY_COMPATIBLE AnyInvocable;
 
 namespace internal_any_invocable {
 
@@ -103,15 +104,14 @@ template <class T>
 constexpr bool IsStoredLocally() {
   if constexpr (sizeof(T) <= kStorageSize && alignof(T) <= kAlignment &&
                 kAlignment % alignof(T) == 0) {
-    return std::is_nothrow_move_constructible<T>::value;
+    return std::is_nothrow_move_constructible_v<T>;
   }
   return false;
 }
 
 
 template <class T>
-using RemoveCVRef =
-    typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+using RemoveCVRef = std::remove_cv_t<std::remove_reference_t<T>>;
 
 
 template <class ReturnType, class F, class... P>
@@ -146,8 +146,7 @@ T&& ForwardImpl(std::false_type);
 template <class T>
 struct ForwardedParameter {
   using type = decltype((
-      ForwardImpl<T>)(std::integral_constant<bool,
-                                             std::is_scalar<T>::value>()));
+      ForwardImpl<T>)(std::integral_constant<bool, std::is_scalar_v<T>>()));
 };
 
 template <class T>
@@ -161,7 +160,15 @@ using ForwardedParameterType = typename ForwardedParameter<T>::type;
 
 
 
-enum class FunctionToCall : bool { relocate_from_to, dispose };
+
+
+
+
+enum class FunctionToCall : unsigned char {
+  dispose,
+  relocate_from_to,
+  relocate_from_to_and_query_rust,
+};
 
 
 
@@ -235,13 +242,14 @@ void LocalManagerNontrivial(FunctionToCall operation,
                             TypeErasedState* const to) noexcept {
   static_assert(IsStoredLocally<T>(),
                 "Local storage must only be used for supported types.");
-  static_assert(!std::is_trivially_copyable<T>::value,
+  static_assert(!std::is_trivially_copyable_v<T>,
                 "Locally stored types must be trivially copyable.");
 
   T& from_object = (ObjectInLocalStorage<T>)(from);
 
   switch (operation) {
     case FunctionToCall::relocate_from_to:
+    case FunctionToCall::relocate_from_to_and_query_rust:
       
       ::new (static_cast<void*>(&to->storage)) T(std::move(from_object));
       ABSL_FALLTHROUGH_INTENDED;
@@ -276,6 +284,7 @@ inline void RemoteManagerTrivial(FunctionToCall operation,
                                  TypeErasedState* const to) noexcept {
   switch (operation) {
     case FunctionToCall::relocate_from_to:
+    case FunctionToCall::relocate_from_to_and_query_rust:
       
       to->remote = from->remote;
       return;
@@ -302,6 +311,7 @@ void RemoteManagerNontrivial(FunctionToCall operation,
 
   switch (operation) {
     case FunctionToCall::relocate_from_to:
+    case FunctionToCall::relocate_from_to_and_query_rust:
       
       to->remote.target = from->remote.target;
       return;
@@ -335,7 +345,7 @@ template <class T>
 struct IsInPlaceType : std::false_type {};
 
 template <class T>
-struct IsInPlaceType<absl::in_place_type_t<T>> : std::true_type {};
+struct IsInPlaceType<std::in_place_type_t<T>> : std::true_type {};
 
 
 
@@ -405,8 +415,8 @@ class CoreImpl {
   explicit CoreImpl(TypedConversionConstruct<QualDecayedTRef>, F&& f) {
     using DecayedT = RemoveCVRef<QualDecayedTRef>;
 
-    if constexpr (std::is_pointer<DecayedT>::value ||
-                  std::is_member_pointer<DecayedT>::value) {
+    if constexpr (std::is_pointer_v<DecayedT> ||
+                  std::is_member_pointer_v<DecayedT>) {
       
       
       
@@ -452,7 +462,7 @@ class CoreImpl {
   
   
   template <class QualTRef, class... Args>
-  explicit CoreImpl(absl::in_place_type_t<QualTRef>, Args&&... args) {
+  explicit CoreImpl(std::in_place_type_t<QualTRef>, Args&&... args) {
     InitializeStorage<QualTRef>(std::forward<Args>(args)...);
   }
 
@@ -593,45 +603,48 @@ using UnwrapStdReferenceWrapper =
 
 
 
+
+
+
 template <class... T>
 using TrueAlias =
-    std::integral_constant<bool, sizeof(absl::void_t<T...>*) != 0>;
+    std::integral_constant<bool, sizeof(std::common_type<T...>*) != 0>;
 
 
 template <class Sig, class F,
-          class = absl::enable_if_t<
-              !std::is_same<RemoveCVRef<F>, AnyInvocable<Sig>>::value>>
-using CanConvert = TrueAlias<
-    absl::enable_if_t<!IsInPlaceType<RemoveCVRef<F>>::value>,
-    absl::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
-    absl::enable_if_t<
-        Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<F>::value>,
-    absl::enable_if_t<std::is_constructible<absl::decay_t<F>, F>::value>>;
+          class = std::enable_if_t<
+              !std::is_same_v<RemoveCVRef<F>, AnyInvocable<Sig>>>>
+using CanConvert =
+    TrueAlias<std::enable_if_t<!IsInPlaceType<RemoveCVRef<F>>::value>,
+              std::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
+              std::enable_if_t<
+                  Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<F>::value>,
+              std::enable_if_t<std::is_constructible_v<std::decay_t<F>, F>>>;
 
 
 template <class Sig, class F, class... Args>
 using CanEmplace = TrueAlias<
-    absl::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
-    absl::enable_if_t<
+    std::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
+    std::enable_if_t<
         Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<F>::value>,
-    absl::enable_if_t<std::is_constructible<absl::decay_t<F>, Args...>::value>>;
+    std::enable_if_t<std::is_constructible_v<std::decay_t<F>, Args...>>>;
 
 
 template <class Sig, class F,
-          class = absl::enable_if_t<
-              !std::is_same<RemoveCVRef<F>, AnyInvocable<Sig>>::value>>
-using CanAssign = TrueAlias<
-    absl::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
-    absl::enable_if_t<
-        Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<F>::value>,
-    absl::enable_if_t<std::is_constructible<absl::decay_t<F>, F>::value>>;
+          class = std::enable_if_t<
+              !std::is_same_v<RemoveCVRef<F>, AnyInvocable<Sig>>>>
+using CanAssign =
+    TrueAlias<std::enable_if_t<Impl<Sig>::template CallIsValid<F>::value>,
+              std::enable_if_t<
+                  Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<F>::value>,
+              std::enable_if_t<std::is_constructible_v<std::decay_t<F>, F>>>;
 
 
 template <class Sig, class F>
 using CanAssignReferenceWrapper = TrueAlias<
-    absl::enable_if_t<
+    std::enable_if_t<
         Impl<Sig>::template CallIsValid<std::reference_wrapper<F>>::value>,
-    absl::enable_if_t<Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<
+    std::enable_if_t<Impl<Sig>::template CallIsNoexceptIfSigIsNoexcept<
         std::reference_wrapper<F>>::value>>;
 
 
@@ -644,19 +657,19 @@ using CanAssignReferenceWrapper = TrueAlias<
 
 
 
-#define ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_true(inv_quals)      \
-  absl::enable_if_t<absl::disjunction<                                       \
-      std::is_nothrow_invocable_r<                                           \
-          ReturnType, UnwrapStdReferenceWrapper<absl::decay_t<F>> inv_quals, \
-          P...>,                                                             \
-      std::conjunction<                                                      \
-          std::is_nothrow_invocable<                                         \
-              UnwrapStdReferenceWrapper<absl::decay_t<F>> inv_quals, P...>,  \
-          std::is_same<                                                      \
-              ReturnType,                                                    \
-              std::invoke_result_t<                                          \
-                  UnwrapStdReferenceWrapper<absl::decay_t<F>> inv_quals,     \
-                  P...>>>>::value>
+#define ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_true(inv_quals)     \
+  std::enable_if_t<std::disjunction_v<                                      \
+      std::is_nothrow_invocable_r<                                          \
+          ReturnType, UnwrapStdReferenceWrapper<std::decay_t<F>> inv_quals, \
+          P...>,                                                            \
+      std::conjunction<                                                     \
+          std::is_nothrow_invocable<                                        \
+              UnwrapStdReferenceWrapper<std::decay_t<F>> inv_quals, P...>,  \
+          std::is_same<                                                     \
+              ReturnType,                                                   \
+              std::invoke_result_t<                                         \
+                  UnwrapStdReferenceWrapper<std::decay_t<F>> inv_quals,     \
+                  P...>>>>>
 
 #define ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_false(inv_quals)
 
@@ -684,11 +697,11 @@ using CanAssignReferenceWrapper = TrueAlias<
                                                                                \
     /*SFINAE constraint to check if F is invocable with the proper signature*/ \
     template <class F>                                                         \
-    using CallIsValid = TrueAlias<absl::enable_if_t<absl::disjunction<         \
-        std::is_invocable_r<ReturnType, absl::decay_t<F> inv_quals, P...>,     \
-        std::is_same<                                                          \
-            ReturnType,                                                        \
-            std::invoke_result_t<absl::decay_t<F> inv_quals, P...>>>::value>>; \
+    using CallIsValid = TrueAlias<std::enable_if_t<std::disjunction<           \
+        std::is_invocable_r<ReturnType, std::decay_t<F> inv_quals, P...>,      \
+        std::is_same<ReturnType,                                               \
+                     std::invoke_result_t<std::decay_t<F> inv_quals, P...>>>:: \
+                                                       value>>;                \
                                                                                \
     /*SFINAE constraint to check if F is nothrow-invocable when necessary*/    \
     template <class F>                                                         \
@@ -704,14 +717,13 @@ using CanAssignReferenceWrapper = TrueAlias<
     /*knows how to properly type-erase the invocation.*/                       \
     template <class F>                                                         \
     explicit Impl(ConversionConstruct, F&& f)                                  \
-        : Core(TypedConversionConstruct<                                       \
-                   typename std::decay<F>::type inv_quals>(),                  \
+        : Core(TypedConversionConstruct<std::decay_t<F> inv_quals>(),          \
                std::forward<F>(f)) {}                                          \
                                                                                \
     /*Forward along the in-place construction parameters.*/                    \
     template <class T, class... Args>                                          \
-    explicit Impl(absl::in_place_type_t<T>, Args&&... args)                    \
-        : Core(absl::in_place_type<absl::decay_t<T> inv_quals>,                \
+    explicit Impl(std::in_place_type_t<T>, Args&&... args)                     \
+        : Core(std::in_place_type<std::decay_t<T> inv_quals>,                  \
                std::forward<Args>(args)...) {}                                 \
                                                                                \
     /*Raises a fatal error when the AnyInvocable is invoked after a move*/     \
@@ -724,8 +736,8 @@ using CanAssignReferenceWrapper = TrueAlias<
     InvokerType<noex, ReturnType, P...>* ExtractInvoker() cv {                 \
       using QualifiedTestType = int cv ref;                                    \
       auto* invoker = this->invoker_;                                          \
-      if (!std::is_const<QualifiedTestType>::value &&                          \
-          std::is_rvalue_reference<QualifiedTestType>::value) {                \
+      if (!std::is_const_v<QualifiedTestType> &&                               \
+          std::is_rvalue_reference_v<QualifiedTestType>) {                     \
         ABSL_ASSERT([this]() {                                                 \
           /* We checked that this isn't const above, so const_cast is safe */  \
           const_cast<Impl*>(this)->invoker_ = InvokedAfterMove;                \

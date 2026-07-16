@@ -45,7 +45,7 @@ enum class chars_format {
 
 
 struct from_chars_result {
-  absl::Nonnull<const char*> ptr;
+  const char* absl_nonnull ptr;
   std::errc ec;
 };
 
@@ -77,13 +77,13 @@ struct from_chars_result {
 
 
 
-absl::from_chars_result from_chars(absl::Nonnull<const char*> first,
-                                   absl::Nonnull<const char*> last,
+absl::from_chars_result from_chars(const char* absl_nonnull first,
+                                   const char* absl_nonnull last,
                                    double& value,  
                                    chars_format fmt = chars_format::general);
 
-absl::from_chars_result from_chars(absl::Nonnull<const char*> first,
-                                   absl::Nonnull<const char*> last,
+absl::from_chars_result from_chars(const char* absl_nonnull first,
+                                   const char* absl_nonnull last,
                                    float& value,  
                                    chars_format fmt = chars_format::general);
 

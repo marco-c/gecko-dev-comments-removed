@@ -97,7 +97,11 @@
 
 
 
-#define ABSL_OPTION_USE_STD_STRING_VIEW 2
+
+
+
+
+#define ABSL_OPTION_USE_STD_SOURCE_LOCATION 0
 
 
 
@@ -180,5 +184,31 @@
 
 
 #define ABSL_OPTION_HARDENED 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ABSL_OPTION_INLINE_HW_ACCEL_STRATEGY 0
 
 #endif  

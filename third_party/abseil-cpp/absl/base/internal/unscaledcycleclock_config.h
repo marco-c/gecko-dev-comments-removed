@@ -34,7 +34,7 @@
 
 
 
-#if defined(__native_client__) || (defined(__APPLE__)) || \
+#if defined(__APPLE__) || \
     (defined(__ANDROID__) && defined(__aarch64__))
 #define ABSL_USE_UNSCALED_CYCLECLOCK_DEFAULT 0
 #else

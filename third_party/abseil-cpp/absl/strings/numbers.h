@@ -63,7 +63,7 @@ ABSL_NAMESPACE_BEGIN
 
 template <typename int_type>
 [[nodiscard]] bool SimpleAtoi(absl::string_view str,
-                              absl::Nonnull<int_type*> out);
+                              int_type* absl_nonnull out);
 
 
 
@@ -74,7 +74,7 @@ template <typename int_type>
 
 
 
-[[nodiscard]] bool SimpleAtof(absl::string_view str, absl::Nonnull<float*> out);
+[[nodiscard]] bool SimpleAtof(absl::string_view str, float* absl_nonnull out);
 
 
 
@@ -85,8 +85,7 @@ template <typename int_type>
 
 
 
-[[nodiscard]] bool SimpleAtod(absl::string_view str,
-                              absl::Nonnull<double*> out);
+[[nodiscard]] bool SimpleAtod(absl::string_view str, double* absl_nonnull out);
 
 
 
@@ -96,7 +95,7 @@ template <typename int_type>
 
 
 
-[[nodiscard]] bool SimpleAtob(absl::string_view str, absl::Nonnull<bool*> out);
+[[nodiscard]] bool SimpleAtob(absl::string_view str, bool* absl_nonnull out);
 
 
 
@@ -110,13 +109,13 @@ template <typename int_type>
 
 template <typename int_type>
 [[nodiscard]] bool SimpleHexAtoi(absl::string_view str,
-                                 absl::Nonnull<int_type*> out);
+                                 int_type* absl_nonnull out);
 
 
 [[nodiscard]] inline bool SimpleHexAtoi(absl::string_view str,
-                                        absl::Nonnull<absl::int128*> out);
+                                        absl::int128* absl_nonnull out);
 [[nodiscard]] inline bool SimpleHexAtoi(absl::string_view str,
-                                        absl::Nonnull<absl::uint128*> out);
+                                        absl::uint128* absl_nonnull out);
 
 ABSL_NAMESPACE_END
 }  
@@ -129,7 +128,7 @@ namespace numbers_internal {
 
 template <typename int_type>
 constexpr bool is_signed() {
-  if constexpr (std::is_arithmetic<int_type>::value) {
+  if constexpr (std::is_arithmetic_v<int_type>) {
     
     return std::numeric_limits<int_type>::is_signed;
   }
@@ -150,73 +149,90 @@ ABSL_DLL extern const char
 
 
 
-void PutTwoDigits(uint32_t i, absl::Nonnull<char*> buf);
+void PutTwoDigits(uint32_t i, char* absl_nonnull buf);
 
 
 
-bool safe_strto8_base(absl::string_view text, absl::Nonnull<int8_t*> value,
+bool safe_strto8_base(absl::string_view text, int8_t* absl_nonnull value,
                       int base);
-bool safe_strto16_base(absl::string_view text, absl::Nonnull<int16_t*> value,
+bool safe_strto16_base(absl::string_view text, int16_t* absl_nonnull value,
                        int base);
-bool safe_strto32_base(absl::string_view text, absl::Nonnull<int32_t*> value,
+bool safe_strto32_base(absl::string_view text, int32_t* absl_nonnull value,
                        int base);
-bool safe_strto64_base(absl::string_view text, absl::Nonnull<int64_t*> value,
+bool safe_strto64_base(absl::string_view text, int64_t* absl_nonnull value,
                        int base);
 bool safe_strto128_base(absl::string_view text,
-                        absl::Nonnull<absl::int128*> value, int base);
-bool safe_strtou8_base(absl::string_view text, absl::Nonnull<uint8_t*> value,
+                        absl::int128* absl_nonnull value, int base);
+bool safe_strtou8_base(absl::string_view text, uint8_t* absl_nonnull value,
                        int base);
-bool safe_strtou16_base(absl::string_view text, absl::Nonnull<uint16_t*> value,
+bool safe_strtou16_base(absl::string_view text, uint16_t* absl_nonnull value,
                         int base);
-bool safe_strtou32_base(absl::string_view text, absl::Nonnull<uint32_t*> value,
+bool safe_strtou32_base(absl::string_view text, uint32_t* absl_nonnull value,
                         int base);
-bool safe_strtou64_base(absl::string_view text, absl::Nonnull<uint64_t*> value,
+bool safe_strtou64_base(absl::string_view text, uint64_t* absl_nonnull value,
                         int base);
 bool safe_strtou128_base(absl::string_view text,
-                         absl::Nonnull<absl::uint128*> value, int base);
+                         absl::uint128* absl_nonnull value, int base);
 
-static const int kFastToBufferSize = 32;
-static const int kSixDigitsToBufferSize = 16;
-
-
-
+inline constexpr int kFastToBuffer128Size = 41;
+inline constexpr int kFastToBufferSize = 32;
+inline constexpr int kSixDigitsToBufferSize = 16;
 
 
-
-
-size_t SixDigitsToBuffer(double d, absl::Nonnull<char*> buffer);
+char* absl_nonnull RoundTripDoubleToBuffer(double d, char* absl_nonnull buffer);
+char* absl_nonnull RoundTripFloatToBuffer(float f, char* absl_nonnull buffer);
 
 
 
 
 
-absl::Nonnull<char*> FastIntToBuffer(int32_t i, absl::Nonnull<char*> buffer)
+
+
+size_t SixDigitsToBuffer(double d, char* absl_nonnull buffer);
+
+
+
+
+
+
+char* absl_nonnull FastIntToBuffer(int32_t i, char* absl_nonnull buffer)
     ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
-absl::Nonnull<char*> FastIntToBuffer(uint32_t n, absl::Nonnull<char*> out_str)
+char* absl_nonnull FastIntToBuffer(uint32_t n, char* absl_nonnull out_str)
     ABSL_INTERNAL_NEED_MIN_SIZE(out_str, kFastToBufferSize);
-absl::Nonnull<char*> FastIntToBuffer(int64_t i, absl::Nonnull<char*> buffer)
+char* absl_nonnull FastIntToBuffer(int64_t i, char* absl_nonnull buffer)
     ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
-absl::Nonnull<char*> FastIntToBuffer(uint64_t i, absl::Nonnull<char*> buffer)
+char* absl_nonnull FastIntToBuffer(uint64_t i, char* absl_nonnull buffer)
     ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize);
+char* absl_nonnull FastIntToBuffer(int128 i, char* absl_nonnull buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBuffer128Size);
+char* absl_nonnull FastIntToBuffer(uint128 i, char* absl_nonnull buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBuffer128Size);
+
 
 
 
 template <typename int_type>
-absl::Nonnull<char*> FastIntToBuffer(int_type i, absl::Nonnull<char*> buffer)
-    ABSL_INTERNAL_NEED_MIN_SIZE(buffer, kFastToBufferSize) {
-  static_assert(sizeof(i) <= 64 / 8,
-                "FastIntToBuffer works only with 64-bit-or-less integers.");
+char* absl_nonnull FastIntToBuffer(int_type i,
+                                          char* absl_nonnull buffer)
+    ABSL_INTERNAL_NEED_MIN_SIZE(
+        buffer, (sizeof(int_type) > 8 ? kFastToBuffer128Size
+                                      : kFastToBufferSize)) {
   
   constexpr bool kIsSigned = is_signed<int_type>();
   constexpr bool kUse64Bit = sizeof(i) > 32 / 8;
+  constexpr bool kUse128Bit = sizeof(i) > 64 / 8;
   if (kIsSigned) {
-    if (kUse64Bit) {
+    if constexpr (kUse128Bit) {
+      return FastIntToBuffer(static_cast<int128>(i), buffer);
+    } else if constexpr (kUse64Bit) {
       return FastIntToBuffer(static_cast<int64_t>(i), buffer);
     } else {
       return FastIntToBuffer(static_cast<int32_t>(i), buffer);
     }
   } else {
-    if (kUse64Bit) {
+    if constexpr (kUse128Bit) {
+      return FastIntToBuffer(static_cast<uint128>(i), buffer);
+    } else if constexpr (kUse64Bit) {
       return FastIntToBuffer(static_cast<uint64_t>(i), buffer);
     } else {
       return FastIntToBuffer(static_cast<uint32_t>(i), buffer);
@@ -228,11 +244,11 @@ absl::Nonnull<char*> FastIntToBuffer(int_type i, absl::Nonnull<char*> buffer)
 
 template <typename int_type>
 [[nodiscard]] bool safe_strtoi_base(absl::string_view s,
-                                    absl::Nonnull<int_type*> out, int base) {
+                                    int_type* absl_nonnull out, int base) {
   static_assert(sizeof(*out) == 1 || sizeof(*out) == 2 || sizeof(*out) == 4 ||
                     sizeof(*out) == 8,
                 "SimpleAtoi works only with 8, 16, 32, or 64-bit integers.");
-  static_assert(!std::is_floating_point<int_type>::value,
+  static_assert(!std::is_floating_point_v<int_type>,
                 "Use SimpleAtof or SimpleAtod instead.");
   bool parsed;
   
@@ -284,7 +300,7 @@ template <typename int_type>
 
 
 
-inline size_t FastHexToBufferZeroPad16(uint64_t val, absl::Nonnull<char*> out) {
+inline size_t FastHexToBufferZeroPad16(uint64_t val, char* absl_nonnull out) {
 #ifdef ABSL_INTERNAL_HAVE_SSSE3
   uint64_t be = absl::big_endian::FromHost64(val);
   const auto kNibbleMask = _mm_set1_epi8(0xf);
@@ -311,33 +327,33 @@ inline size_t FastHexToBufferZeroPad16(uint64_t val, absl::Nonnull<char*> out) {
 
 template <typename int_type>
 [[nodiscard]] bool SimpleAtoi(absl::string_view str,
-                              absl::Nonnull<int_type*> out) {
+                              int_type* absl_nonnull out) {
   return numbers_internal::safe_strtoi_base(str, out, 10);
 }
 
 [[nodiscard]] inline bool SimpleAtoi(absl::string_view str,
-                                     absl::Nonnull<absl::int128*> out) {
+                                     absl::int128* absl_nonnull out) {
   return numbers_internal::safe_strto128_base(str, out, 10);
 }
 
 [[nodiscard]] inline bool SimpleAtoi(absl::string_view str,
-                                     absl::Nonnull<absl::uint128*> out) {
+                                     absl::uint128* absl_nonnull out) {
   return numbers_internal::safe_strtou128_base(str, out, 10);
 }
 
 template <typename int_type>
 [[nodiscard]] bool SimpleHexAtoi(absl::string_view str,
-                                 absl::Nonnull<int_type*> out) {
+                                 int_type* absl_nonnull out) {
   return numbers_internal::safe_strtoi_base(str, out, 16);
 }
 
 [[nodiscard]] inline bool SimpleHexAtoi(absl::string_view str,
-                                        absl::Nonnull<absl::int128*> out) {
+                                        absl::int128* absl_nonnull out) {
   return numbers_internal::safe_strto128_base(str, out, 16);
 }
 
 [[nodiscard]] inline bool SimpleHexAtoi(absl::string_view str,
-                                        absl::Nonnull<absl::uint128*> out) {
+                                        absl::uint128* absl_nonnull out) {
   return numbers_internal::safe_strtou128_base(str, out, 16);
 }
 

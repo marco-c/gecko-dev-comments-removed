@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <string>
+#include <utility>
 
 #include "absl/base/config.h"
 #include "absl/base/no_destructor.h"
@@ -53,8 +54,11 @@ class FlagRegistry {
   
   void RegisterFlag(CommandLineFlag& flag, const char* filename);
 
-  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION(lock_) { lock_.Lock(); }
-  void Unlock() ABSL_UNLOCK_FUNCTION(lock_) { lock_.Unlock(); }
+  void lock() ABSL_EXCLUSIVE_LOCK_FUNCTION(lock_) { lock_.lock(); }
+  inline void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION(lock_) { lock(); }
+
+  void unlock() ABSL_UNLOCK_FUNCTION(lock_) { lock_.unlock(); }
+  inline void Unlock() ABSL_UNLOCK_FUNCTION(lock_) { unlock(); }
 
   
   
@@ -87,8 +91,8 @@ namespace {
 
 class FlagRegistryLock {
  public:
-  explicit FlagRegistryLock(FlagRegistry& fr) : fr_(fr) { fr_.Lock(); }
-  ~FlagRegistryLock() { fr_.Unlock(); }
+  explicit FlagRegistryLock(FlagRegistry& fr) : fr_(fr) { fr_.lock(); }
+  ~FlagRegistryLock() { fr_.unlock(); }
 
  private:
   FlagRegistry& fr_;
@@ -317,9 +321,9 @@ class FlagSaverImpl {
   }
 
   
-  void RestoreToRegistry() {
+  void RestoreToRegistry() && {
     for (const auto& flag_state : backup_registry_) {
-      flag_state->Restore();
+      std::move(*flag_state).Restore();
     }
   }
 
@@ -337,7 +341,7 @@ FlagSaver::FlagSaver() : impl_(new flags_internal::FlagSaverImpl) {
 FlagSaver::~FlagSaver() {
   if (!impl_) return;
 
-  impl_->RestoreToRegistry();
+  std::move(*impl_).RestoreToRegistry();
   delete impl_;
 }
 

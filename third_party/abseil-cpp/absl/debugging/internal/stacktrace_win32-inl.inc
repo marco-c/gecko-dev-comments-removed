@@ -37,39 +37,20 @@
 #ifndef ABSL_DEBUGGING_INTERNAL_STACKTRACE_WIN32_INL_H_
 #define ABSL_DEBUGGING_INTERNAL_STACKTRACE_WIN32_INL_H_
 
-#include <windows.h>    
+#include <windows.h>  
+
 #include <cassert>
-
-typedef USHORT NTAPI RtlCaptureStackBackTrace_Function(
-    IN ULONG frames_to_skip,
-    IN ULONG frames_to_capture,
-    OUT PVOID *backtrace,
-    OUT PULONG backtrace_hash);
-
-
-
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
-    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-static RtlCaptureStackBackTrace_Function* const RtlCaptureStackBackTrace_fn =
-    &::CaptureStackBackTrace;
-#else
-
-
-static RtlCaptureStackBackTrace_Function* const RtlCaptureStackBackTrace_fn =
-    (RtlCaptureStackBackTrace_Function*)GetProcAddress(
-        GetModuleHandleA("ntdll.dll"), "RtlCaptureStackBackTrace");
-#endif  
 
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 static int UnwindImpl(void** result, uintptr_t* frames, int* sizes,
                       int max_depth, int skip_count, const void*,
                       int* min_dropped_frames) {
   USHORT n = 0;
-  if (!RtlCaptureStackBackTrace_fn || skip_count < 0 || max_depth < 0) {
+  if (skip_count < 0 || max_depth < 0) {
     
   } else {
-    n = RtlCaptureStackBackTrace_fn(static_cast<ULONG>(skip_count) + 2,
-                                    static_cast<ULONG>(max_depth), result, 0);
+    n = CaptureStackBackTrace(static_cast<ULONG>(skip_count) + 2,
+                              static_cast<ULONG>(max_depth), result, 0);
   }
   if (IS_STACK_FRAMES) {
     

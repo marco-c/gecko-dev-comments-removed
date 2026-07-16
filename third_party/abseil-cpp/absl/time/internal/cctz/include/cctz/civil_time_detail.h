@@ -96,6 +96,18 @@ CONSTEXPR_F int days_per_4years(int yi) noexcept {
 CONSTEXPR_F int days_per_year(year_t y, month_t m) noexcept {
   return is_leap_year(y + (m > 2)) ? 366 : 365;
 }
+
+
+
+
+
+
+
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#if __has_cpp_attribute(clang::no_sanitize)
+[[clang::no_sanitize("array-bounds")]]
+#endif
+#endif
 CONSTEXPR_F int days_per_month(year_t y, month_t m) noexcept {
   CONSTEXPR_D int k_days_per_month[1 + 12] = {
       -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31  

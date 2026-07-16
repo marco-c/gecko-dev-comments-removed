@@ -15,6 +15,7 @@
 #include "absl/debugging/internal/demangle.h"
 
 #include <cstdlib>
+#include <memory>
 #include <string>
 
 #include "gmock/gmock.h"
@@ -557,13 +558,14 @@ TEST(Demangle, Clones) {
                        sizeof(tmp)));
   EXPECT_STREQ("Foo()", tmp);
   
-  EXPECT_FALSE(Demangle("_ZL3Foov.", tmp, sizeof(tmp)));
-  
-  EXPECT_FALSE(Demangle("_ZL3Foov.abc123", tmp, sizeof(tmp)));
-  
-  EXPECT_FALSE(Demangle("_ZL3Foov.clone.", tmp, sizeof(tmp)));
-  
-  EXPECT_FALSE(Demangle("_ZL3Foov.isra.2.constprop.", tmp, sizeof(tmp)));
+  EXPECT_TRUE(Demangle("_ZL3Foov.", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  EXPECT_TRUE(Demangle("_ZL3Foov.abc123", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  EXPECT_TRUE(Demangle("_ZL3Foov.clone.", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  EXPECT_TRUE(Demangle("_ZL3Foov.isra.2.constprop.", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
 }
 
 TEST(Demangle, Discriminators) {
@@ -1939,7 +1941,7 @@ static const char *DemangleStackConsumption(const char *mangled,
 
 
 
-const int kStackConsumptionUpperLimit = 8192;
+const int kStackConsumptionUpperLimit = 9670;
 
 
 static std::string NestedMangledName(int depth) {
@@ -1999,7 +2001,7 @@ TEST(Demangle, DemangleStackConsumption) {
 
 static void TestOnInput(const char* input) {
   static const int kOutSize = 1048576;
-  auto out = absl::make_unique<char[]>(kOutSize);
+  auto out = std::make_unique<char[]>(kOutSize);
   Demangle(input, out.get(), kOutSize);
 }
 

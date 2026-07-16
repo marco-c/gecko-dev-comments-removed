@@ -146,6 +146,54 @@ struct ThreadIdentity {
   
   PerThreadSynch per_thread_synch;
 
+  struct SchedulerState {
+    std::atomic<void*> bound_schedulable{nullptr};
+    
+    
+    uint32_t association_lock_word;
+    std::atomic<int> scheduling_disabled_depth;
+    int potentially_blocking_depth;
+    uint32_t schedule_next_state;
+
+    
+    
+    
+    
+    bool waking_designated_waker;
+
+    inline SpinLock* association_lock() {
+      return reinterpret_cast<SpinLock*>(&association_lock_word);
+    }
+  } scheduler_state;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class WaitState : uint8_t {
+    kActive = 0,
+    kWaitingForWork = 1,
+  };
+  std::atomic<WaitState> wait_state;
+  static_assert(std::atomic<WaitState>::is_always_lock_free);
+
+  
+  
+  
+  static constexpr size_t kToBePaddedSize =
+      sizeof(SchedulerState) + sizeof(std::atomic<WaitState>);
+  static_assert(ABSL_CACHELINE_SIZE >= kToBePaddedSize);
+  char padding[ABSL_CACHELINE_SIZE - kToBePaddedSize];
+
   
   struct WaiterState {
     alignas(void*) char data[256];
@@ -160,6 +208,10 @@ struct ThreadIdentity {
   std::atomic<int> ticker;      
   std::atomic<int> wait_start;  
   std::atomic<bool> is_idle;    
+
+  
+  
+  int static_initialization_depth;
 
   ThreadIdentity* next;
 };

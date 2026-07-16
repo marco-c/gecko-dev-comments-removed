@@ -17,6 +17,7 @@
 
 
 #include "absl/debugging/internal/vdso_support.h"
+#include "absl/base/attributes.h"
 
 #ifdef ABSL_HAVE_VDSO_SUPPORT     
 
@@ -190,6 +191,9 @@ long VDSOSupport::InitAndGetCPU(unsigned *cpu,
 
 
 
+
+
+ABSL_ATTRIBUTE_NO_SANITIZE_CFI
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY
 int GetCPU() {
   unsigned cpu;

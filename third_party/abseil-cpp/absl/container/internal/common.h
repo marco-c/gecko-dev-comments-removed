@@ -15,7 +15,11 @@
 #ifndef ABSL_CONTAINER_INTERNAL_COMMON_H_
 #define ABSL_CONTAINER_INTERNAL_COMMON_H_
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <optional>
+#include <tuple>
 #include <type_traits>
 
 #include "absl/meta/type_traits.h"
@@ -54,7 +58,7 @@ template <class Cond>
 using EnableIf = std::enable_if_t<Cond::value, int>;
 
 template <bool Value, class T>
-using HasValue = std::conditional_t<Value, T, absl::negation<T>>;
+using HasValue = std::conditional_t<Value, T, std::negation<T>>;
 
 template <class T>
 struct IfRRef {
@@ -71,7 +75,7 @@ struct IfRRef<T&&> {
 template <class, class = void>
 struct IsTransparent : std::false_type {};
 template <class T>
-struct IsTransparent<T, absl::void_t<typename T::is_transparent>>
+struct IsTransparent<T, std::void_t<typename T::is_transparent>>
     : std::true_type {};
 
 template <bool is_transparent>
@@ -143,7 +147,7 @@ class node_handle_base {
 
   void reset() {
     assert(alloc_.has_value());
-    alloc_ = absl::nullopt;
+    alloc_ = std::nullopt;
   }
 
   slot_type* slot() const {
@@ -153,7 +157,7 @@ class node_handle_base {
   allocator_type* alloc() { return std::addressof(*alloc_); }
 
  private:
-  absl::optional<allocator_type> alloc_ = {};
+  std::optional<allocator_type> alloc_ = {};
   alignas(slot_type) mutable unsigned char slot_space_[sizeof(slot_type)] = {};
 };
 
@@ -179,7 +183,7 @@ class node_handle : public node_handle_base<PolicyTraits, Alloc> {
 
 template <typename Policy, typename PolicyTraits, typename Alloc>
 class node_handle<Policy, PolicyTraits, Alloc,
-                  absl::void_t<typename Policy::mapped_type>>
+                  std::void_t<typename Policy::mapped_type>>
     : public node_handle_base<PolicyTraits, Alloc> {
   using Base = node_handle_base<PolicyTraits, Alloc>;
   using slot_type = typename PolicyTraits::slot_type;
@@ -242,6 +246,54 @@ struct InsertReturnType {
   bool inserted;
   NodeType node;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Or, size_t N, typename... Params>
+using GetFromListOr = std::tuple_element_t<(std::min)(N, sizeof...(Params)),
+                                           std::tuple<Params..., Or>>;
+
+template <typename... T>
+struct TypeList {
+  template <template <typename...> class Template>
+  using Apply = Template<T...>;
+};
+
+
+
+
+
+
+
+template <template <typename...> class Template, typename D, typename T,
+          typename L = TypeList<>, typename = void>
+struct ApplyWithoutDefaultSuffix {
+  using type = typename L::template Apply<Template>;
+};
+template <template <typename...> class Template, typename D, typename... Ds,
+          typename T, typename... Ts, typename... L>
+struct ApplyWithoutDefaultSuffix<
+    Template, TypeList<D, Ds...>, TypeList<T, Ts...>, TypeList<L...>,
+    std::enable_if_t<!std::is_same_v<TypeList<D, Ds...>, TypeList<T, Ts...>>>>
+    : ApplyWithoutDefaultSuffix<Template, TypeList<Ds...>, TypeList<Ts...>,
+                       TypeList<L..., T>> {};
 
 }  
 ABSL_NAMESPACE_END

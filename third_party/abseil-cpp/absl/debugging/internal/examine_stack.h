@@ -31,12 +31,18 @@ typedef void OutputWriter(const char*, void*);
 
 
 typedef void (*SymbolizeUrlEmitter)(void* const stack[], int depth,
-                                    OutputWriter* writer, void* writer_arg);
+                                    const void* crash_pc, OutputWriter* writer,
+                                    void* writer_arg);
+typedef void (*SymbolizeUrlEmitterLegacy)(void* const stack[], int depth,
+                                          OutputWriter* writer,
+                                          void* writer_arg);
 
 
 
 void RegisterDebugStackTraceHook(SymbolizeUrlEmitter hook);
 SymbolizeUrlEmitter GetDebugStackTraceHook();
+
+SymbolizeUrlEmitterLegacy GetDebugStackTraceHookLegacy();
 
 
 

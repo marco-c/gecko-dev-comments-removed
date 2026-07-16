@@ -23,10 +23,13 @@
 
 #include <stdint.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/internal/nullability_traits.h"
+#include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
 
 
@@ -56,12 +59,30 @@ namespace log_internal {
 
 
 [[noreturn]] ABSL_ATTRIBUTE_NOINLINE void DieBecauseNull(
-    const char* file, int line, const char* exprtext);
+    const char* absl_nonnull file, int line, const char* absl_nonnull exprtext);
+
+
+
+
 
 
 template <typename T>
-[[nodiscard]] T DieIfNull(const char* file, int line, const char* exprtext,
-                          T&& t) {
+[[nodiscard]] typename absl::base_internal::AddNonnullIfCompatible<
+    std::remove_reference_t<T>>::type&
+DieIfNull(const char* absl_nonnull file, int line,
+          const char* absl_nonnull exprtext, T& t) {
+  if (ABSL_PREDICT_FALSE(t == nullptr)) {
+    
+    DieBecauseNull(file, line, exprtext);
+  }
+  return t;
+}
+
+template <typename T>
+[[nodiscard]] typename absl::base_internal::AddNonnullIfCompatible<
+    std::remove_reference_t<T>>::type&&
+DieIfNull(const char* absl_nonnull file, int line,
+          const char* absl_nonnull exprtext, T&& t) {
   if (ABSL_PREDICT_FALSE(t == nullptr)) {
     
     DieBecauseNull(file, line, exprtext);

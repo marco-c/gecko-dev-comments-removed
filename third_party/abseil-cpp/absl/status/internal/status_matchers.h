@@ -16,12 +16,12 @@
 #define ABSL_STATUS_INTERNAL_STATUS_MATCHERS_H_
 
 #include <ostream>  
-#include <string>
 #include <type_traits>
 #include <utility>
 
 #include "gmock/gmock.h"  
 #include "absl/base/config.h"
+#include "absl/base/macros.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -35,7 +35,7 @@ inline const absl::Status& GetStatus(const absl::Status& status) {
 }
 
 template <typename T>
-inline const absl::Status& GetStatus(const absl::StatusOr<T>& status) {
+const absl::Status& GetStatus(const absl::StatusOr<T>& status) {
   return status.status();
 }
 
@@ -48,8 +48,7 @@ template <typename StatusOrType>
 class IsOkAndHoldsMatcherImpl
     : public ::testing::MatcherInterface<StatusOrType> {
  public:
-  typedef
-      typename std::remove_reference<StatusOrType>::type::value_type value_type;
+  typedef typename std::remove_reference_t<StatusOrType>::value_type value_type;
 
   template <typename InnerMatcher>
   explicit IsOkAndHoldsMatcherImpl(InnerMatcher&& inner_matcher)
@@ -69,8 +68,8 @@ class IsOkAndHoldsMatcherImpl
   bool MatchAndExplain(
       StatusOrType actual_value,
       ::testing::MatchResultListener* result_listener) const override {
-    if (!GetStatus(actual_value).ok()) {
-      *result_listener << "which has status " << GetStatus(actual_value);
+    if (!actual_value.ok()) {
+      *result_listener << "which has status " << actual_value.status();
       return false;
     }
 
@@ -118,18 +117,24 @@ class IsOkAndHoldsMatcher {
 class StatusCode {
  public:
    StatusCode(int code)  
-      : code_(static_cast<::absl::StatusCode>(code)) {}
-   StatusCode(::absl::StatusCode code) : code_(code) {}  
+      : code_(code) {}
+   StatusCode(::absl::StatusCode code)  
+      : code_(static_cast<int>(code)) {}
 
   explicit operator int() const { return static_cast<int>(code_); }
 
   friend inline void PrintTo(const StatusCode& code, std::ostream* os) {
-    
-    *os << static_cast<int>(code);
+    absl::string_view text =
+        absl::StatusCodeToStringView(static_cast<absl::StatusCode>(code.code_));
+    if (!text.empty()) {
+      *os << text;
+    } else {
+      *os << code.code_;
+    }
   }
 
  private:
-  ::absl::StatusCode code_;
+  int code_;
 };
 
 

@@ -102,7 +102,8 @@ static bool InsideSignalStack(void** ptr, const StackInfo* stack_info) {
 
 template<bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
-ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY  
+ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 static void **NextStackFrame(void **old_frame_pointer, const void *uc,
                              const StackInfo *stack_info) {
   void **new_frame_pointer = reinterpret_cast<void**>(*old_frame_pointer);
@@ -122,27 +123,24 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
       
       
       
-      if (pre_signal_frame_pointer >= old_frame_pointer) {
+      if (pre_signal_frame_pointer > old_frame_pointer) {
         new_frame_pointer = pre_signal_frame_pointer;
       }
+    }
   }
 #endif
 
-
+  
   if ((reinterpret_cast<uintptr_t>(new_frame_pointer) & 7) != 0)
     return nullptr;
 
+  uintptr_t new_fp_comparable = reinterpret_cast<uintptr_t>(new_frame_pointer);
   
-  
-  
-  if (!absl::debugging_internal::AddressIsReadable(
-          new_frame_pointer))
-    return nullptr;
-  }
-
-  
-  if (InsideSignalStack(new_frame_pointer, stack_info) ==
-      InsideSignalStack(old_frame_pointer, stack_info)) {
+  const bool old_inside_signal_stack =
+      InsideSignalStack(old_frame_pointer, stack_info);
+  const bool new_inside_signal_stack =
+      InsideSignalStack(new_frame_pointer, stack_info);
+  if (new_inside_signal_stack == old_inside_signal_stack) {
     
     
     const size_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
@@ -156,16 +154,15 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
     if (frame_size > max_size) {
       size_t stack_low = stack_info->stack_low;
       size_t stack_high = stack_info->stack_high;
-      if (InsideSignalStack(new_frame_pointer, stack_info)) {
+      if (new_inside_signal_stack) {
         stack_low = stack_info->sig_stack_low;
         stack_high = stack_info->sig_stack_high;
       }
       if (stack_high < kUnknownStackEnd &&
           static_cast<size_t>(getpagesize()) < stack_low) {
-        const uintptr_t new_fp_u =
-            reinterpret_cast<uintptr_t>(new_frame_pointer);
         
-        if (!(stack_low < new_fp_u && new_fp_u <= stack_high)) {
+        if (!(stack_low < new_fp_comparable &&
+              new_fp_comparable <= stack_high)) {
           
           return nullptr;
         }
@@ -175,8 +172,19 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
       }
     }
   }
+  
+  
+  
+  
+  
+  if (new_inside_signal_stack ||
+      (new_fp_comparable >= stack_info->stack_low &&
+       new_fp_comparable < stack_info->stack_high) ||
+      absl::debugging_internal::AddressIsReadable(new_frame_pointer)) {
+    return new_frame_pointer;
+  }
 
-  return new_frame_pointer;
+  return nullptr;
 }
 
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
@@ -185,6 +193,7 @@ template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 ABSL_ATTRIBUTE_NOINLINE
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
+ABSL_ATTRIBUTE_NO_SANITIZE_THREAD   
 static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
                       int max_depth, int skip_count, const void *ucp,
                       int *min_dropped_frames) {
@@ -202,6 +211,17 @@ static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
   stack_info.stack_high = kUnknownStackEnd;
   stack_info.sig_stack_low = stack_info.stack_low;
   stack_info.sig_stack_high = kUnknownStackEnd;
+
+#if defined(__linux__)
+  
+  
+  
+  stack_t sig_stack;
+  if (sigaltstack(nullptr, &sig_stack) == 0) {
+    stack_info.sig_stack_low = reinterpret_cast<uintptr_t>(sig_stack.ss_sp);
+    stack_info.sig_stack_high = stack_info.sig_stack_low + sig_stack.ss_size;
+  }
+#endif
 
   
   

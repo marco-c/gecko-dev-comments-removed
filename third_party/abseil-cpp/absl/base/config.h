@@ -237,6 +237,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_HAVE_TLS cannot be directly set
 #elif (defined(__linux__)) && (defined(__clang__) || defined(_GLIBCXX_HAVE_TLS))
 #define ABSL_HAVE_TLS 1
+#elif defined(__INTEL_LLVM_COMPILER)
+#define ABSL_HAVE_TLS 1
 #endif
 
 
@@ -372,12 +374,13 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_MMAP
 #error ABSL_HAVE_MMAP cannot be directly set
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) ||    \
-    defined(_AIX) || defined(__ros__) || defined(__native_client__) ||       \
-    defined(__asmjs__) || defined(__EMSCRIPTEN__) || defined(__Fuchsia__) || \
-    defined(__sun) || defined(__myriad2__) || defined(__HAIKU__) ||          \
-    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) ||       \
-    defined(__VXWORKS__) || defined(__hexagon__) || defined(__XTENSA__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
+    defined(_AIX) || defined(__ros__) || defined(__asmjs__) ||            \
+    defined(__EMSCRIPTEN__) || defined(__Fuchsia__) || defined(__sun) ||  \
+    defined(__myriad2__) || defined(__HAIKU__) || defined(__OpenBSD__) || \
+    defined(__NetBSD__) || defined(__QNX__) || defined(__VXWORKS__) ||    \
+    defined(__hexagon__) || defined(__XTENSA__) ||                        \
+    defined(_WASI_EMULATED_MMAN)
 #define ABSL_HAVE_MMAP 1
 #endif
 
@@ -453,8 +456,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #elif defined(__Fuchsia__)
 
-#elif defined(__native_client__)
-
 #elif defined(__hexagon__)
 #else
 
@@ -493,51 +494,49 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #endif
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__APPLE__) &&                                         \
-    ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
-      __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101300) ||  \
-     (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
-      __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 120000) || \
-     (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
-      __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 50000) ||   \
-     (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
-      __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 120000))
-#define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 1
-#else
-#define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 0
-#endif
-
-
 #define ABSL_HAVE_STD_ANY 1
 #define ABSL_USES_STD_ANY 1
 #define ABSL_HAVE_STD_OPTIONAL 1
 #define ABSL_USES_STD_OPTIONAL 1
+#define ABSL_HAVE_STD_STRING_VIEW 1
+#define ABSL_USES_STD_STRING_VIEW 1
 #define ABSL_HAVE_STD_VARIANT 1
 #define ABSL_USES_STD_VARIANT 1
 
 
 
 
-#ifdef ABSL_HAVE_STD_STRING_VIEW
-#error "ABSL_HAVE_STD_STRING_VIEW cannot be directly set."
-#elif defined(__cpp_lib_string_view) && __cpp_lib_string_view >= 201606L
-#define ABSL_HAVE_STD_STRING_VIEW 1
-#elif defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
-    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
-#define ABSL_HAVE_STD_STRING_VIEW 1
+#ifdef ABSL_HAVE_STD_SOURCE_LOCATION
+#error "ABSL_HAVE_STD_SOURCE_LOCATION cannot be directly set."
+#elif (defined(__cpp_lib_source_location) &&    \
+       __cpp_lib_source_location >= 201907L) || \
+    (defined(ABSL_INTERNAL_CPLUSPLUS_LANG) &&   \
+     ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L)
+#ifdef __has_include
+#if __has_include(<source_location>)
+#define ABSL_HAVE_STD_SOURCE_LOCATION 1
+#endif
+#else
+
+#define ABSL_HAVE_STD_SOURCE_LOCATION 1
+#endif
+#endif
+
+
+
+
+#if !defined(ABSL_OPTION_USE_STD_SOURCE_LOCATION)
+#error options.h is misconfigured.
+#elif ABSL_OPTION_USE_STD_SOURCE_LOCATION == 0 || \
+    (ABSL_OPTION_USE_STD_SOURCE_LOCATION == 2 &&  \
+     !defined(ABSL_HAVE_STD_SOURCE_LOCATION))
+#undef ABSL_USES_STD_SOURCE_LOCATION
+#elif ABSL_OPTION_USE_STD_SOURCE_LOCATION == 1 || \
+    (ABSL_OPTION_USE_STD_SOURCE_LOCATION == 2 &&  \
+     defined(ABSL_HAVE_STD_SOURCE_LOCATION))
+#define ABSL_USES_STD_SOURCE_LOCATION 1
+#else
+#error options.h is misconfigured.
 #endif
 
 
@@ -554,23 +553,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
     (defined(ABSL_INTERNAL_CPLUSPLUS_LANG) &&        \
      ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L)
 #define ABSL_HAVE_STD_ORDERING 1
-#endif
-
-
-
-
-#if !defined(ABSL_OPTION_USE_STD_STRING_VIEW)
-#error options.h is misconfigured.
-#elif ABSL_OPTION_USE_STD_STRING_VIEW == 0 || \
-    (ABSL_OPTION_USE_STD_STRING_VIEW == 2 &&  \
-     !defined(ABSL_HAVE_STD_STRING_VIEW))
-#undef ABSL_USES_STD_STRING_VIEW
-#elif ABSL_OPTION_USE_STD_STRING_VIEW == 1 || \
-    (ABSL_OPTION_USE_STD_STRING_VIEW == 2 &&  \
-     defined(ABSL_HAVE_STD_STRING_VIEW))
-#define ABSL_USES_STD_STRING_VIEW 1
-#else
-#error options.h is misconfigured.
 #endif
 
 
@@ -725,7 +707,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #elif ABSL_HAVE_FEATURE(leak_sanitizer)
 #define ABSL_HAVE_LEAK_SANITIZER 1
-#elif defined(ABSL_HAVE_ADDRESS_SANITIZER)
+#elif defined(ABSL_HAVE_ADDRESS_SANITIZER) && !defined(_WIN32)
 
 #define ABSL_HAVE_LEAK_SANITIZER 1
 #endif
@@ -762,7 +744,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #ifdef ABSL_INTERNAL_HAS_CXA_DEMANGLE
 #error ABSL_INTERNAL_HAS_CXA_DEMANGLE cannot be directly set
 #elif defined(OS_ANDROID) && (defined(__i386__) || defined(__x86_64__))
-#define ABSL_INTERNAL_HAS_CXA_DEMANGLE 0
+#undef ABSL_INTERNAL_HAS_CXA_DEMANGLE
 #elif defined(__GNUC__)
 #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 1
 #elif defined(__clang__) && !defined(_MSC_VER)
@@ -829,6 +811,14 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_INTERNAL_HAVE_ARM_NEON 1
 #endif
 
+#if ABSL_HAVE_BUILTIN(__builtin_LINE) && ABSL_HAVE_BUILTIN(__builtin_FILE)
+#define ABSL_INTERNAL_HAVE_BUILTIN_LINE_FILE 1
+#elif defined(__GNUC__) && !defined(__clang__) && 5 <= __GNUC__ && __GNUC__ < 10
+#define ABSL_INTERNAL_HAVE_BUILTIN_LINE_FILE 1
+#elif defined(_MSC_VER) && _MSC_VER >= 1926
+#define ABSL_INTERNAL_HAVE_BUILTIN_LINE_FILE 1
+#endif
+
 
 
 #ifdef ABSL_HAVE_CONSTANT_EVALUATED
@@ -842,43 +832,22 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-
-
-
-
-
-
-#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
-    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
-#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 constexpr
-#else
-#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17
-#endif
-#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
-    ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
-#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 constexpr
-#else
-#define ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20
-#endif
-
-
-
 #ifdef ABSL_INTERNAL_EMSCRIPTEN_VERSION
 #error ABSL_INTERNAL_EMSCRIPTEN_VERSION cannot be directly set
 #endif
 #ifdef __EMSCRIPTEN__
 #include <emscripten/version.h>
-#ifdef __EMSCRIPTEN_major__
-#if __EMSCRIPTEN_minor__ >= 1000
-#error __EMSCRIPTEN_minor__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
+#ifdef __EMSCRIPTEN_MAJOR__
+#if __EMSCRIPTEN_MINOR__ >= 1000
+#error __EMSCRIPTEN_MINOR__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
 #endif
-#if __EMSCRIPTEN_tiny__ >= 1000
-#error __EMSCRIPTEN_tiny__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
+#if __EMSCRIPTEN_TINY__ >= 1000
+#error __EMSCRIPTEN_TINY__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
 #endif
 #define ABSL_INTERNAL_EMSCRIPTEN_VERSION                              \
-  ((__EMSCRIPTEN_major__) * 1000000 + (__EMSCRIPTEN_minor__) * 1000 + \
-   (__EMSCRIPTEN_tiny__))
+  ((__EMSCRIPTEN_MAJOR__) * 1000000 + (__EMSCRIPTEN_MINOR__) * 1000 + \
+   (__EMSCRIPTEN_TINY__))
 #endif
 #endif
 
-#endif  
+#endif

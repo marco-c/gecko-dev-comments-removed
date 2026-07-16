@@ -23,10 +23,10 @@ ABSL_NAMESPACE_BEGIN
 namespace debugging_internal {
 
 struct DecodeRustPunycodeOptions {
-  const char* punycode_begin;
-  const char* punycode_end;
-  char* out_begin;
-  char* out_end;
+  const char* absl_nonnull punycode_begin;
+  const char* absl_nonnull punycode_end;
+  char* absl_nonnull out_begin;
+  char* absl_nonnull out_end;
 };
 
 
@@ -46,7 +46,7 @@ struct DecodeRustPunycodeOptions {
 
 
 
-absl::Nullable<char*> DecodeRustPunycode(DecodeRustPunycodeOptions options);
+char* absl_nullable DecodeRustPunycode(DecodeRustPunycodeOptions options);
 
 }  
 ABSL_NAMESPACE_END

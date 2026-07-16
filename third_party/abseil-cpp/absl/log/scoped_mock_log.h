@@ -161,6 +161,12 @@ class ScopedMockLog final {
   
   
   
+  
+  
+  
+  
+  
+  
   MOCK_METHOD(void, Send, (const absl::LogEntry&));
 
   

@@ -12,13 +12,14 @@
 
 
 
+
+
 #ifndef ABSL_LOG_INTERNAL_CHECK_IMPL_H_
 #define ABSL_LOG_INTERNAL_CHECK_IMPL_H_
 
 #include "absl/base/optimization.h"
 #include "absl/log/internal/check_op.h"
 #include "absl/log/internal/conditions.h"
-#include "absl/log/internal/log_message.h"
 #include "absl/log/internal/strip.h"
 
 

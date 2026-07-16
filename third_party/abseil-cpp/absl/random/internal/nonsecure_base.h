@@ -78,10 +78,10 @@ class RandenPoolSeedSeq {
       
       
       
-      using TagType = absl::conditional_t<
-          (std::is_pointer<RandomAccessIterator>::value ||
-           std::is_same<RandomAccessIterator,
-                        typename std::vector<U>::iterator>::value),
+      using TagType = std::conditional_t<
+          (std::is_pointer_v<RandomAccessIterator> ||
+           std::is_same_v<RandomAccessIterator,
+                          typename std::vector<U>::iterator>),
           ContiguousTag, BufferTag>;
 
       generate_impl(TagType{}, begin, end);
@@ -106,8 +106,8 @@ class NonsecureURBGBase {
   NonsecureURBGBase& operator=(NonsecureURBGBase&&) = default;
 
   
-  template <class SSeq, typename = typename absl::enable_if_t<
-                            !std::is_same<SSeq, NonsecureURBGBase>::value>>
+  template <class SSeq, typename = typename std::enable_if_t<
+                            !std::is_same_v<SSeq, NonsecureURBGBase>>>
   explicit NonsecureURBGBase(SSeq&& seq)
       : urbg_(ConstructURBG(std::forward<SSeq>(seq))) {}
 

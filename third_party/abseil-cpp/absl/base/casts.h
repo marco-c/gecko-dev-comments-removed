@@ -27,14 +27,24 @@
 #include <cstring>
 #include <memory>
 #include <type_traits>
+#include <typeinfo>
 #include <utility>
+
+#ifdef __has_include
+#if __has_include(<version>)
+#include <version>  
+#endif
+#endif
 
 #if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806L
 #include <bit>  
 #endif  
 
-#include "absl/base/internal/identity.h"
+#include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
+#include "absl/base/optimization.h"
+#include "absl/base/options.h"
 #include "absl/meta/type_traits.h"
 
 namespace absl {
@@ -90,8 +100,25 @@ ABSL_NAMESPACE_BEGIN
 
 
 template <typename To>
-constexpr To implicit_cast(typename absl::internal::type_identity_t<To> to) {
+constexpr std::enable_if_t<
+    !type_traits_internal::IsView<std::enable_if_t<
+        !std::is_reference_v<To>, std::remove_cv_t<To>>>::value,
+    To>
+implicit_cast(absl::type_identity_t<To> to) {
   return to;
+}
+template <typename To>
+constexpr std::enable_if_t<
+    type_traits_internal::IsView<std::enable_if_t<!std::is_reference_v<To>,
+                                                  std::remove_cv_t<To>>>::value,
+    To>
+implicit_cast(absl::type_identity_t<To> to ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+  return to;
+}
+template <typename To>
+constexpr std::enable_if_t<std::is_reference_v<To>, To> implicit_cast(
+    absl::type_identity_t<To> to ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+  return std::forward<absl::type_identity_t<To>>(to);
 }
 
 
@@ -149,16 +176,15 @@ using std::bit_cast;
 
 #else  
 
-template <
-    typename Dest, typename Source,
-    typename std::enable_if<sizeof(Dest) == sizeof(Source) &&
-                                std::is_trivially_copyable<Source>::value &&
-                                std::is_trivially_copyable<Dest>::value
+template <typename Dest, typename Source,
+          std::enable_if_t<sizeof(Dest) == sizeof(Source) &&
+                               std::is_trivially_copyable_v<Source> &&
+                               std::is_trivially_copyable_v<Dest>
 #if !ABSL_HAVE_BUILTIN(__builtin_bit_cast)
-                                && std::is_default_constructible<Dest>::value
+                               && std::is_default_constructible_v<Dest>
 #endif  
-                            ,
-                            int>::type = 0>
+                           ,
+                           int> = 0>
 #if ABSL_HAVE_BUILTIN(__builtin_bit_cast)
 inline constexpr Dest bit_cast(const Source& source) {
   return __builtin_bit_cast(Dest, source);
@@ -174,7 +200,112 @@ inline Dest bit_cast(const Source& source) {
 
 #endif
 
+namespace base_internal {
+
+[[noreturn]] ABSL_ATTRIBUTE_NOINLINE void BadDownCastCrash(
+    const char* source_type, const char* target_type);
+
+template <typename To, typename From>
+inline void ValidateDownCast(From* f ABSL_ATTRIBUTE_UNUSED) {
+  
+  
+#ifdef ABSL_INTERNAL_HAS_RTTI
+#if !defined(NDEBUG) || (ABSL_OPTION_HARDENED == 1)
+  
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#endif
+  if (ABSL_PREDICT_FALSE(f != nullptr && dynamic_cast<To>(f) == nullptr)) {
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+    absl::base_internal::BadDownCastCrash(
+        typeid(*f).name(), typeid(std::remove_pointer_t<To>).name());
+  }
+#endif
+#endif
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename To, typename From>  
+[[nodiscard]]
+inline To down_cast(From* f) {  
+  static_assert(std::is_pointer_v<To>, "target type not a pointer");
+  
+  
+  if constexpr (!std::is_same_v<std::remove_cv_t<std::remove_pointer_t<To>>,
+                                std::remove_cv_t<From>>) {
+    static_assert(std::is_polymorphic_v<From>,
+                  "source type must be polymorphic");
+    static_assert(std::is_polymorphic_v<std::remove_pointer_t<To>>,
+                  "target type must be polymorphic");
+  }
+  static_assert(
+      std::is_convertible_v<std::remove_cv_t<std::remove_pointer_t<To>>*,
+                            std::remove_cv_t<From>*>,
+      "target type not derived from source type");
+
+  absl::base_internal::ValidateDownCast<To>(f);
+
+  return static_cast<To>(f);
+}
+
+
+
+
+
+
+
+
+
+template <typename To, typename From>
+[[nodiscard]]
+inline To down_cast(From& f) {
+  static_assert(std::is_lvalue_reference_v<To>, "target type not a reference");
+  
+  
+  if constexpr (!std::is_same_v<std::remove_cv_t<std::remove_reference_t<To>>,
+                                std::remove_cv_t<From>>) {
+    static_assert(std::is_polymorphic_v<From>,
+                  "source type must be polymorphic");
+    static_assert(std::is_polymorphic_v<std::remove_reference_t<To>>,
+                  "target type must be polymorphic");
+  }
+  static_assert(
+      std::is_convertible_v<std::remove_cv_t<std::remove_reference_t<To>>*,
+                            std::remove_cv_t<From>*>,
+      "target type not derived from source type");
+
+  absl::base_internal::ValidateDownCast<std::remove_reference_t<To>*>(
+      std::addressof(f));
+
+  return static_cast<To>(f);
+}
+
 ABSL_NAMESPACE_END
 }  
 
-#endif  
+#endif

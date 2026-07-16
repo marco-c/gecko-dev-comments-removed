@@ -27,6 +27,7 @@
 #include <type_traits>
 
 #include "absl/base/config.h"
+#include "absl/base/macros.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -40,8 +41,39 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-using std::equal;
-using std::rotate;
+
+template <class InputIt1, class InputIt2>
+ABSL_DEPRECATE_AND_INLINE()
+constexpr bool equal(InputIt1 first1, InputIt1 last1, InputIt2 first2) {
+  return std::equal(first1, last1, first2);
+}
+
+template <class InputIt1, class InputIt2, class BinaryPredicate>
+ABSL_DEPRECATE_AND_INLINE()
+constexpr bool equal(InputIt1 first1, InputIt1 last1, InputIt2 first2,
+                     BinaryPredicate p) {
+  return std::equal(first1, last1, first2, p);
+}
+
+template <class InputIt1, class InputIt2>
+ABSL_DEPRECATE_AND_INLINE()
+constexpr bool equal(InputIt1 first1, InputIt1 last1, InputIt2 first2,
+                     InputIt2 last2) {
+  return std::equal(first1, last1, first2, last2);
+}
+
+template <class InputIt1, class InputIt2, class BinaryPredicate>
+ABSL_DEPRECATE_AND_INLINE()
+constexpr bool equal(InputIt1 first1, InputIt1 last1, InputIt2 first2,
+                     InputIt2 last2, BinaryPredicate p) {
+  return std::equal(first1, last1, first2, last2, p);
+}
+
+template <class ForwardIt>
+ABSL_DEPRECATE_AND_INLINE()
+constexpr ForwardIt rotate(ForwardIt first, ForwardIt n_first, ForwardIt last) {
+  return std::rotate(first, n_first, last);
+}
 
 
 
@@ -53,8 +85,8 @@ using std::rotate;
 
 
 template <typename InputIterator, typename EqualityComparable>
-ABSL_INTERNAL_CONSTEXPR_SINCE_CXX20 bool linear_search(
-    InputIterator first, InputIterator last, const EqualityComparable& value) {
+constexpr bool linear_search(InputIterator first, InputIterator last,
+                             const EqualityComparable& value) {
   return std::find(first, last, value) != last;
 }
 

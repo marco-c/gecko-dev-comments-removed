@@ -37,7 +37,7 @@ TEST(Barrier, SanityTest) {
     }
 
     
-    absl::MutexLock lock(&mutex);
+    absl::MutexLock lock(mutex);
     ++counter;
   };
 
@@ -57,7 +57,7 @@ TEST(Barrier, SanityTest) {
   
   
   {
-    absl::MutexLock lock(&mutex);
+    absl::MutexLock lock(mutex);
     EXPECT_EQ(counter, 0);
   }
 
@@ -70,6 +70,6 @@ TEST(Barrier, SanityTest) {
   }
 
   
-  absl::MutexLock lock(&mutex);
+  absl::MutexLock lock(mutex);
   EXPECT_EQ(counter, kNumThreads);
 }

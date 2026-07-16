@@ -169,15 +169,26 @@ TEST(Unescape, BasicFunction) {
     EXPECT_TRUE(absl::CUnescape(val.escaped, &out));
     EXPECT_EQ(out, val.unescaped);
   }
-  std::string bad[] = {"\\u1",         
-                       "\\U1",         
-                       "\\Uffffff",    
-                       "\\U00110000",  
-                       "\\uD835",      
-                       "\\U0000DD04",  
-                       "\\777",        
-                       "\\xABCD"};     
-  for (const std::string& e : bad) {
+  constexpr absl::string_view bad[] = {
+      "\\u1",          
+      "\\U1",          
+      "\\Uffffff",     
+      "\\U00110000",   
+      "\\uD835",       
+      "\\U0000DD04",   
+      "\\777",         
+      "\\xABCD",       
+      "\\x100000041",  
+      "endswith\\",    
+      "endswith\\x",   
+      "endswith\\X",   
+      "\\x.2345678",   
+      "\\X.2345678",   
+      "\\u.2345678",   
+      "\\U.2345678",   
+      "\\.unknown",    
+  };
+  for (const auto e : bad) {
     std::string error;
     std::string out;
     EXPECT_FALSE(absl::CUnescape(e, &out, &error));
@@ -672,8 +683,7 @@ TEST(Base64, DISABLED_HugeData) {
   static_assert(kSize % 3 == 0, "kSize must be divisible by 3");
   const std::string huge(kSize, 'x');
 
-  std::string escaped;
-  absl::Base64Escape(huge, &escaped);
+  std::string escaped = absl::Base64Escape(huge);
 
   
   
@@ -723,6 +733,10 @@ TEST(Escaping, HexStringToBytesBackToHex) {
   bytes = "abc";
   EXPECT_TRUE(absl::HexStringToBytes("", &bytes));
   EXPECT_EQ("", bytes);  
+
+  
+  hex.assign("\xC8" "b", 2);
+  EXPECT_FALSE(absl::HexStringToBytes(hex, &bytes));
 }
 
 TEST(HexAndBack, HexStringToBytes_and_BytesToHexString) {

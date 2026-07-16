@@ -247,11 +247,11 @@
 
 
 
-#define VLOG(severity) ABSL_LOG_INTERNAL_VLOG_IMPL(severity)
+#define VLOG(verbose_level) ABSL_LOG_INTERNAL_VLOG_IMPL(verbose_level)
 
 
 
-#define DVLOG(severity) ABSL_LOG_INTERNAL_DVLOG_IMPL(severity)
+#define DVLOG(verbose_level) ABSL_LOG_INTERNAL_DVLOG_IMPL(verbose_level)
 
 
 

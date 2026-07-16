@@ -27,8 +27,10 @@ import sys
 import tempfile
 import time
 
+
 assert sys.platform != 'win32', \
-  "This doesn't work on Windows due to https://crbug.com/3790230222"
+  "This doesn't work on Windows, https://crbug.com/379023022"
+
 
 
 
@@ -36,28 +38,13 @@ assert sys.platform != 'win32', \
 
 
 ABSL_SYM_RE = r'0* [BT] (?P<symbol>[?]+[^?].*absl.*|_?Absl.*)'
-if sys.platform == 'win32':
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ABSL_SYM_RE = r'.*External     \| (?P<symbol>[?]+[^?].*?absl.*?|_?Absl.*?)($| \(.*)'
-  
-  
-  ABSL_EXPORTED_RE = r'.*/EXPORT:(.*),.*'
 
 
 def _DebugOrRelease(is_debug):
   return 'dbg' if is_debug else 'rel'
 
 
-def _GenerateDefFile(cpu, is_debug, extra_gn_args=[], suffix=None):
-  """Generates a .def file for the absl component build on the specified CPU."""
+def _GenerateDefFileBuild(cpu, is_debug, use_cxx23, extra_gn_args, suffix, out_dir, cwd):
   if extra_gn_args:
     assert suffix != None, 'suffix is needed when extra_gn_args is used'
 
@@ -67,122 +54,99 @@ def _GenerateDefFile(cpu, is_debug, extra_gn_args=[], suffix=None):
       'is_component_build = true',
       'is_debug = {}'.format(str(is_debug).lower()),
       'proprietary_codecs = true',
+      'use_cxx23={}'.format(str(use_cxx23).lower()),
       'symbol_level = 0',
       'target_cpu = "{}"'.format(cpu),
       'target_os = "win"',
+      'use_remoteexec = true',
   ]
   gn_args.extend(extra_gn_args)
 
   gn = 'gn'
   autoninja = 'autoninja'
-  symbol_dumper = ['third_party/llvm-build/Release+Asserts/bin/llvm-nm']
+  llvm_nm = ['third_party/llvm-build/Release+Asserts/bin/llvm-nm']
   if sys.platform == 'win32':
     gn = 'gn.bat'
     autoninja = 'autoninja.bat'
-    symbol_dumper = ['dumpbin', '/symbols']
-    import shutil
-    if not shutil.which('dumpbin'):
-      logging.error('dumpbin not found. Run tools\\win\\setenv.bat.')
-      exit(1)
-  cwd = os.getcwd()
-  with tempfile.TemporaryDirectory(dir=cwd) as out_dir:
-    logging.info('[%s - %s] Creating tmp out dir in %s', cpu, flavor, out_dir)
-    subprocess.check_call([gn, 'gen', out_dir, '--args=' + ' '.join(gn_args)],
-                          cwd=cwd)
-    logging.info('[%s - %s] gn gen completed', cpu, flavor)
-    subprocess.check_call(
-        [autoninja, '-C', out_dir, 'third_party/abseil-cpp:absl_component_deps'],
-        cwd=os.getcwd())
-    logging.info('[%s - %s] autoninja completed', cpu, flavor)
+    llvm_nm += '.exe'
 
-    obj_files = []
-    for root, _dirnames, filenames in os.walk(
-        os.path.join(out_dir, 'obj', 'third_party', 'abseil-cpp')):
-      matched_files = fnmatch.filter(filenames, '*.obj')
-      obj_files.extend((os.path.join(root, f) for f in matched_files))
+  logging.info('[%s - %s] Creating tmp out dir in %s', cpu, flavor, out_dir)
+  subprocess.check_call([gn, 'gen', out_dir, '--args=' + ' '.join(gn_args)],
+                        cwd=cwd)
+  logging.info('[%s - %s] gn gen completed', cpu, flavor)
+  subprocess.check_call(
+      [autoninja, '-C', out_dir, 'third_party/abseil-cpp:absl_component_deps'],
+      cwd=os.getcwd())
+  logging.info('[%s - %s] autoninja completed', cpu, flavor)
 
-    logging.info('[%s - %s] Found %d object files.', cpu, flavor, len(obj_files))
+  obj_files = []
+  for root, _dirnames, filenames in os.walk(
+      os.path.join(out_dir, 'obj', 'third_party', 'abseil-cpp')):
+    matched_files = fnmatch.filter(filenames, '*.obj')
+    obj_files.extend((os.path.join(root, f) for f in matched_files))
 
-    absl_symbols = set()
-    dll_exports = set()
-    if sys.platform == 'win32':
-      for f in obj_files:
+  logging.info('[%s - %s] Found %d object files.', cpu, flavor, len(obj_files))
+
+  absl_symbols = set()
+  for f in obj_files:
+    stdout = subprocess.check_output(llvm_nm + [f], cwd=os.getcwd())
+    for line in stdout.splitlines():
+      line = line.decode('utf-8')
+      match = re.match(ABSL_SYM_RE, line)
+      if match:
+        symbol = match.group('symbol')
+        assert symbol.count(' ') == 0, ('Regex matched too much, probably got '
+                                        'undecorated name as well')
         
         
         
-        exports_out = subprocess.check_output(['dumpbin', '/directives', f], cwd=os.getcwd())
-        for line in exports_out.splitlines():
-          line = line.decode('utf-8')
-          match = re.match(ABSL_EXPORTED_RE, line)
-          if match:
-            dll_exports.add(match.groups()[0])
-    for f in obj_files:
-      stdout = subprocess.check_output(symbol_dumper + [f], cwd=os.getcwd())
-      for line in stdout.splitlines():
-        try:
-          line = line.decode('utf-8')
-        except UnicodeDecodeError:
-          
-          
-          
-          
+        if symbol.startswith('??_G'):
           continue
-        match = re.match(ABSL_SYM_RE, line)
-        if match:
-          symbol = match.group('symbol')
-          assert symbol.count(' ') == 0, ('Regex matched too much, probably got '
-                                          'undecorated name as well')
-          
-          
-          
-          if symbol in dll_exports:
-            continue
-          
-          
-          
-          if symbol.startswith('??_G'):
-            continue
-          
-          
-          if cpu == 'x86' and symbol.startswith('_'):
-            symbol = symbol[1:]
-          absl_symbols.add(symbol)
+        
+        
+        if cpu == 'x86' and symbol.startswith('_'):
+          symbol = symbol[1:]
+        absl_symbols.add(symbol)
 
-    logging.info('[%s - %s] Found %d absl symbols.', cpu, flavor, len(absl_symbols))
+  logging.info('[%s - %s] Found %d absl symbols.', cpu, flavor, len(absl_symbols))
 
-    if extra_gn_args:
-      def_file = os.path.join('third_party', 'abseil-cpp',
-                              'symbols_{}_{}_{}.def'.format(cpu, flavor, suffix))
-    else:
-      def_file = os.path.join('third_party', 'abseil-cpp',
-                             'symbols_{}_{}.def'.format(cpu, flavor))
+  if extra_gn_args:
+    def_file = os.path.join('third_party', 'abseil-cpp',
+                            'symbols_{}_{}_{}'.format(cpu, flavor, suffix))
+  else:
+    def_file = os.path.join('third_party', 'abseil-cpp',
+                           'symbols_{}_{}'.format(cpu, flavor))
+  if use_cxx23:
+    def_file += "_cxx23"
+  def_file += ".def"
 
-    with open(def_file, 'w', newline='') as f:
-      f.write('EXPORTS\n')
-      for s in sorted(absl_symbols):
-        f.write('    {}\n'.format(s))
+  with open(def_file, 'w', newline='') as f:
+    f.write('EXPORTS\n')
+    for s in sorted(absl_symbols):
+      f.write('    {}\n'.format(s))
+
+  logging.info('[%s - %s] .def file successfully generated.', cpu, flavor)
+
+
+def _GenerateDefFile(cpu, is_debug, use_cxx23, extra_gn_args=[], suffix=None):
+  """Generates a .def file for the absl component build on the specified CPU."""
+  cwd = os.getcwd()
+  with tempfile.TemporaryDirectory(dir=os.path.join(cwd, 'out')) as out_dir:
+    _GenerateDefFileBuild(cpu, is_debug, use_cxx23, extra_gn_args, suffix, out_dir, cwd)
 
     
     time.sleep(10)
-
-  logging.info('[%s - %s] .def file successfully generated.', cpu, flavor)
 
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)
 
-  if sys.version_info.major == 2:
-    logging.error('This script requires Python 3.')
-    exit(1)
-
   if not os.getcwd().endswith('src') or not os.path.exists('chrome/browser'):
     logging.error('Run this script from a chromium/src/ directory.')
     exit(1)
 
-  _GenerateDefFile('x86', True)
-  _GenerateDefFile('x86', False)
-  _GenerateDefFile('x64', True)
-  _GenerateDefFile('x64', False)
-  _GenerateDefFile('x64', False, ['is_asan = true'], 'asan')
-  _GenerateDefFile('arm64', True)
-  _GenerateDefFile('arm64', False)
+  for use_cxx23 in (True, False):
+    _GenerateDefFile('x64', False, use_cxx23, ['is_asan = true'], 'asan')
+    for arch in ('x86', 'x64', 'arm64'):
+      for is_debug in (True, False):
+          _GenerateDefFile(arch, is_debug, use_cxx23)

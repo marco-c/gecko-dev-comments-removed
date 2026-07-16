@@ -62,6 +62,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef ABSL_STATUS_STATUS_MATCHERS_H_
 #define ABSL_STATUS_STATUS_MATCHERS_H_
 
@@ -78,11 +96,17 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+#define ABSL_EXPECT_OK(expression) \
+  EXPECT_THAT(expression, ::absl_testing::IsOk())
+#define ABSL_ASSERT_OK(expression) \
+  ASSERT_THAT(expression, ::absl_testing::IsOk())
+
+
+
 template <typename InnerMatcherT>
-status_internal::IsOkAndHoldsMatcher<typename std::decay<InnerMatcherT>::type>
-IsOkAndHolds(InnerMatcherT&& inner_matcher) {
-  return status_internal::IsOkAndHoldsMatcher<
-      typename std::decay<InnerMatcherT>::type>(
+status_internal::IsOkAndHoldsMatcher<std::decay_t<InnerMatcherT>> IsOkAndHolds(
+    InnerMatcherT&& inner_matcher) {
+  return status_internal::IsOkAndHoldsMatcher<std::decay_t<InnerMatcherT>>(
       std::forward<InnerMatcherT>(inner_matcher));
 }
 
@@ -104,13 +128,37 @@ status_internal::StatusIsMatcher StatusIs(
 
 template <typename StatusCodeMatcherT>
 status_internal::StatusIsMatcher StatusIs(StatusCodeMatcherT&& code_matcher) {
-  return StatusIs(std::forward<StatusCodeMatcherT>(code_matcher), ::testing::_);
+  return absl_testing::StatusIs(std::forward<StatusCodeMatcherT>(code_matcher),
+                                ::testing::_);
 }
 
 
 inline status_internal::IsOkMatcher IsOk() {
   return status_internal::IsOkMatcher();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef ABSL_DEFINE_UNQUALIFIED_STATUS_TESTING_MACROS
+#define EXPECT_OK(expression) ABSL_EXPECT_OK(expression)
+#define ASSERT_OK(expression) ABSL_ASSERT_OK(expression)
+#endif  
 
 ABSL_NAMESPACE_END
 }  
