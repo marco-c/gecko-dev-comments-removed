@@ -12,6 +12,7 @@
 #include "js/String.h"              
 #include "js/Warnings.h"            
 #include "xpcpublic.h"
+#include "jsapi.h"
 
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -248,8 +249,7 @@ nsresult UnboxValue(JSContext* aCx, const jni::Object::LocalRef& aData,
   } else if (aData.IsInstanceOf<jni::DoubleArray>()) {
     return UnboxArrayPrimitive<
         double, jdouble, jdoubleArray, &JNIEnv::GetDoubleArrayElements,
-        &JNIEnv::ReleaseDoubleArrayElements, &JS::DoubleValue>(aCx, aData,
-                                                               aOut);
+        &JNIEnv::ReleaseDoubleArrayElements, &JS_NumberValue>(aCx, aData, aOut);
 
   } else if (aData.IsInstanceOf<StringArray>()) {
     return UnboxArrayObject<&UnboxString>(aCx, aData, aOut);

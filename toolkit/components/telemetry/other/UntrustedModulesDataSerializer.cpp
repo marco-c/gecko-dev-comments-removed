@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "UntrustedModulesDataSerializer.h"
 
 #include "core/TelemetryCommon.h"
