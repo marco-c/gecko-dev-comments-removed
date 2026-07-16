@@ -110,7 +110,7 @@ smart-window-restore-success-summary =
         [one] Tab closed, then restored.
        *[other] Tabs closed, then restored.
     }
-smart-window-cancelled-label = Request cancelled.
+smart-window-cancelled-label = Request canceled.
 # Button label - "Group" is a verb (action to group tabs)
 smart-window-confirm-group-tab = Group
 # Button label - "Group" is a verb (action to group tabs)
@@ -169,6 +169,9 @@ action-log-reading-page = Reading page
 action-log-read-page = Read page content
 action-log-searching-web = Searching the web
 action-log-searched-web = Searched the web
+# Exa is the name of a third-party web search API
+# It is a brand name and should not be translated
+action-log-searched-web-exa = Searched the web with Exa
 action-log-checking-memories = Checking memories
 action-log-checked-memories = Checked memories
 action-log-searching-settings = Searching settings
