@@ -133,11 +133,10 @@ void SVGMarkerFrame::PaintMark(gfxContext& aContext,
   
   SVGFrame->NotifySVGChanged(
       ISVGDisplayableFrame::ChangeFlag::TransformChanged);
-  auto contextPaint = MakeRefPtr<SVGContextPaintImpl>();
-  contextPaint->Init(aContext.GetDrawTarget(),
-                     aToMarkedFrameUserSpace * aContext.CurrentMatrixDouble(),
-                     aMarkedFrame, SVGContextPaint::GetContextPaint(marker),
-                     aImgParams);
+  auto contextPaint = MakeRefPtr<SVGContextPaintImpl>(
+      aContext.GetDrawTarget(),
+      aToMarkedFrameUserSpace * aContext.CurrentMatrixDouble(), aMarkedFrame,
+      SVGContextPaint::GetContextPaint(marker), aImgParams);
   AutoSetRestoreSVGContextPaint autoSetRestore(contextPaint,
                                                marker->OwnerDoc());
   SVGUtils::PaintFrameWithEffects(kid, aContext, markTM, aImgParams);
