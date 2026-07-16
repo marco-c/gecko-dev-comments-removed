@@ -8,48 +8,24 @@
 #include <stdint.h>
 
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
+
+class nsIContent;
 
 namespace mozilla::dom {
 
 
-enum class ChildIterFor {
-  
-  DOM,
-  
-  
-  
-  
-  
-  
-  FlatForSelection,
-  
-  
-  Flat,
-};
-
-template <ChildIterFor>
-class ChildIteratorBase;
-
-using ChildIterator = ChildIteratorBase<ChildIterFor::DOM>;
-using FlattenedChildIteratorForSelection =
-    ChildIteratorBase<ChildIterFor::FlatForSelection>;
-using FlattenedChildIterator = ChildIteratorBase<ChildIterFor::Flat>;
 
 
 
 
 
-template <ChildIterFor aFor>
-class ChildIteratorBase {
-  constexpr static bool IgnoresNonContentShadow() {
-    return aFor != ChildIterFor::Flat;
-  }
-
+class FlattenedChildIterator {
  public:
-  explicit ChildIteratorBase(const nsINode* aParentNode,
-                             bool aStartAtBeginning = true);
+  explicit FlattenedChildIterator(const nsIContent* aParent,
+                                  bool aStartAtBeginning = true);
 
-  [[nodiscard]] nsIContent* GetNextChild();
+  nsIContent* GetNextChild();
 
   
   
@@ -57,95 +33,31 @@ class ChildIteratorBase {
 
   
   
-  [[nodiscard]] nsIContent* Get() const { return mChild; }
+  nsIContent* Get() const { return mChild; }
 
   
-  [[nodiscard]] const nsINode* ParentNode() const {
-    return mOriginalParentNode;
-  }
+  const nsIContent* Parent() const { return mOriginalParent; }
 
   
   
-  [[nodiscard]] nsIContent* GetPreviousChild();
+  nsIContent* GetPreviousChild();
 
-  [[nodiscard]] bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
+  bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
 
-  [[nodiscard]] static uint32_t GetLength(const nsINode* aParent);
-  [[nodiscard]] static Maybe<uint32_t> GetIndexOf(
-      const nsINode* aParent, const nsINode* aPossibleChild);
-  [[nodiscard]] static nsIContent* GetChildAt(const nsINode* aParent,
-                                              uint32_t aIndex);
-  [[nodiscard]] static nsIContent* GetFirstChild(const nsINode* aParent) {
-    return ChildIteratorBase(aParent).GetNextChild();
-  }
-  [[nodiscard]] static nsIContent* GetLastChild(const nsINode* aParent) {
-    return ChildIteratorBase(aParent, false).GetPreviousChild();
-  }
-
-  
-
-
-
-
-
-
-  [[nodiscard]] static nsIContent* GetNextChild(const nsIContent* aChild) {
-    MOZ_ASSERT(aChild);
-    nsINode* const parentNode = GetParentNodeOf(*aChild);
-    if (!parentNode) {
-      return nullptr;
-    }
-    ChildIteratorBase iter(parentNode);
-    return iter.Seek(aChild) ? iter.GetNextChild() : nullptr;
-  }
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] static nsIContent* GetPreviousChild(const nsIContent* aChild) {
-    MOZ_ASSERT(aChild);
-    nsINode* const parentNode = GetParentNodeOf(*aChild);
-    if (!parentNode) {
-      return nullptr;
-    }
-    ChildIteratorBase iter(parentNode);
-    return iter.Seek(aChild) ? iter.GetPreviousChild() : nullptr;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] static nsINode* GetParentNodeOf(const nsIContent& aChild);
+  static uint32_t GetLength(const nsINode* aParent);
+  static Maybe<uint32_t> GetIndexOf(const nsINode* aParent,
+                                    const nsINode* aPossibleChild);
 
  protected:
   
   
-  const nsINode* mParentNode;
+  const nsIContent* mParent;
 
   
   
-  const HTMLSlotElement* mParentNodeAsSlot = nullptr;
+  const HTMLSlotElement* mParentAsSlot = nullptr;
 
-  const nsINode* mOriginalParentNode = nullptr;
+  const nsIContent* mOriginalParent = nullptr;
 
   
   nsIContent* mChild = nullptr;
@@ -197,8 +109,6 @@ class AllChildrenIterator : private FlattenedChildIterator {
   
   
   nsIContent* Get() const;
-
-  const nsIContent* Parent() const { return ParentNode()->AsContent(); }
 
   
   
@@ -263,6 +173,11 @@ class AllChildrenIterator : private FlattenedChildIterator {
 class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator
     : private AllChildrenIterator {
  public:
+  static nsIContent* GetParent(const nsIContent& aContent) {
+    nsINode* node = aContent.GetFlattenedTreeParentNodeForStyle();
+    return node && node->IsContent() ? node->AsContent() : nullptr;
+  }
+
   explicit StyleChildrenIterator(const nsIContent* aContent,
                                  bool aStartAtBeginning = true)
       : AllChildrenIterator(
@@ -285,8 +200,6 @@ class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator
   using AllChildrenIterator::GetNextChild;
   using AllChildrenIterator::GetPreviousChild;
   using AllChildrenIterator::Seek;
-
-  [[nodiscard]] static nsINode* GetParentNodeOf(const nsIContent& aChild);
 };
 
 }  

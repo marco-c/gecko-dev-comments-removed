@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/XULTreeElement.h"
 
 #include "ChildIterator.h"

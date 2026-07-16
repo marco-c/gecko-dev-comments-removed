@@ -96,7 +96,6 @@ class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
 class HTMLDialogElement;
-class HTMLSlotElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -672,35 +671,6 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
-
-  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled();
-
-  
-
-
-
-  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilled() const;
-
-  
-
-
-
-
-  [[nodiscard]] mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilledForSelection();
-
-  
-
-
-
-
-  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
-  GetAsHTMLSlotElementIfFilledForSelection() const;
-
-  
-
-
   bool IsProcessingInstruction() const {
     return NodeType() == PROCESSING_INSTRUCTION_NODE;
   }
@@ -740,9 +710,6 @@ class nsINode : public mozilla::dom::EventTarget {
   uint32_t GetFlatTreeChildCount() const;
 
   
-  uint32_t GetFlatTreeForSelectionChildCount() const;
-
-  
 
 
 
@@ -753,20 +720,7 @@ class nsINode : public mozilla::dom::EventTarget {
   nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
   
-
-
-
-  nsIContent* GetChildAtInFlatTree(uint32_t aIndex) const;
-
-  
-
-
-
-
-
-
-
-  nsIContent* GetChildAtInFlatTreeForSelection(uint32_t aIndex) const;
+  nsINode* GetChildAtInFlatTree(uint32_t aIndex) const;
 
   
 
@@ -796,20 +750,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
-      const nsINode* aPossibleChild) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-  mozilla::Maybe<uint32_t> ComputeFlatTreeForSelectionIndexOf(
       const nsINode* aPossibleChild) const;
 
   
@@ -1270,7 +1210,7 @@ class nsINode : public mozilla::dom::EventTarget {
   nsIContent* DoGetShadowHost() const;
 
  public:
-  [[nodiscard]] nsINode* GetParentOrShadowHostNode() const {
+  nsINode* GetParentOrShadowHostNode() const {
     if (mParent) [[likely]] {
       return mParent;
     }
@@ -1301,7 +1241,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   inline nsINode* GetFlattenedTreeParentNodeForStyle() const;
-  inline nsIContent* GetFlattenedTreeParentForStyle() const;
 
   
 
@@ -1937,61 +1876,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
   mozilla::dom::NodeList* ChildNodes();
 
-  
-
-
   nsIContent* GetFirstChild() const { return mFirstChild; }
 
-  
-
-
   nsIContent* GetLastChild() const;
-
-  
-
-
-
-
-
-
-
-
-  nsIContent* GetFlattenedTreeFirstChild() const;
-
-  
-
-
-
-
-
-
-
-
-  nsIContent* GetFlattenedTreeLastChild() const;
-
-  
-
-
-
-
-
-
-
-
-
-  nsIContent* GetFlattenedTreeFirstChildForSelection() const;
-
-  
-
-
-
-
-
-
-
-
-
-  nsIContent* GetFlattenedTreeLastChildForSelection() const;
 
   
 
@@ -2071,39 +1958,8 @@ class nsINode : public mozilla::dom::EventTarget {
   void LookupNamespaceURI(const nsAString& aNamespacePrefix,
                           nsAString& aNamespaceURI);
 
-  
-
-
   nsIContent* GetNextSibling() const { return mNextSibling; }
-
-  
-
-
-
-
   nsIContent* GetPreviousSibling() const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsIContent* GetFlattenedTreeNextSibling() const = delete;
-  nsIContent* GetFlattenedTreePreviousSibling() const = delete;
-  nsIContent* GetFlattenedTreeNextSiblingForSelection() const = delete;
-  nsIContent* GetFlattenedTreePreviousSiblingForSelection() const = delete;
 
   
 

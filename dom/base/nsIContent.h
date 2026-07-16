@@ -313,12 +313,6 @@ class nsIContent : public nsINode {
 
 
 
-  mozilla::dom::HTMLSlotElement* GetAssignedSlotForSelection() const;
-
-  
-
-
-
 
   void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot);
 
