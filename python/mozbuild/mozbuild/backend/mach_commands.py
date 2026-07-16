@@ -273,6 +273,9 @@ def rust_analyzer_config(command_context):
 
     config = {
         "cargo": {
+            
+            
+            "configPath": f"{command_context.topobjdir}/.cargo/config.toml",
             "extraEnv": {
                 
                 
