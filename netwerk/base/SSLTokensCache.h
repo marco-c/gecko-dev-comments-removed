@@ -151,6 +151,11 @@ class SSLTokensCache : public nsIMemoryReporter,
   static bool ShouldPersistKey(const nsACString& aKey,
                                uint8_t aOverridableError);
 
+  
+  
+  
+  static void ReconcilePersistence(const char* = nullptr, void* = nullptr);
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
       MOZ_REQUIRES(sLock);
 
@@ -161,6 +166,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   uint32_t mCacheSize MOZ_GUARDED_BY(sLock){0};
 
   
+  bool mPrefCallbackRegistered{false};  
   bool mWriteObserversRegistered MOZ_GUARDED_BY(sLock){false};
   nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
   nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
