@@ -257,7 +257,7 @@ async function testCreateBackupHelper(sandbox, taskFn) {
   
   profileSvc.defaultProfile = currentProfile;
 
-  await bs.getBackupFileInfo(backupFilePath);
+  await bs.loadBackupFileInfo(backupFilePath);
   const restoreID = bs.state.restoreID;
 
   
@@ -1096,7 +1096,7 @@ add_task(
 
 
 
-add_task(async function test_getBackupFileInfo() {
+add_task(async function test_loadBackupFileInfo() {
   let sandbox = sinon.createSandbox();
 
   let fakeSampleArchiveResult = {
@@ -1128,7 +1128,7 @@ add_task(async function test_getBackupFileInfo() {
 
   let bs = new BackupService();
 
-  await bs.getBackupFileInfo("fake-archive.html");
+  await bs.loadBackupFileInfo("fake-archive.html");
 
   Assert.ok(
     BackupService.prototype.sampleArchive.calledOnce,
@@ -1183,7 +1183,7 @@ add_task(async function test__deleteLastBackup_file_does_not_exist() {
 
 
 
-add_task(async function test_getBackupFileInfo_error_handling() {
+add_task(async function test_loadBackupFileInfo_error_handling() {
   let sandbox = sinon.createSandbox();
 
   const errorTypes = [
@@ -1224,7 +1224,8 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     sandbox
       .stub(BackupService.prototype, "sampleArchive")
       .resolves(fakeSampleArchiveResult);
-    await bs.getBackupFileInfo("test-backup.html");
+    bs.setBackupFileToRestore("test-backup.html");
+    await bs.loadBackupFileInfo("test-backup.html");
 
     
     Assert.deepEqual(
@@ -1248,7 +1249,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     Assert.strictEqual(
       bs.state.backupFileToRestore,
       "test-backup.html",
-      "Initial backupFileToRestore should be set correctly"
+      "backupFileToRestore should be set by setBackupFileToRestore"
     );
 
     
@@ -1259,11 +1260,11 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     const setRecoveryErrorStub = sandbox.stub(bs, "setRecoveryError");
 
     try {
-      await bs.getBackupFileInfo("test-backup.html");
+      await bs.loadBackupFileInfo("test-backup.html");
     } catch (error) {
       Assert.ok(
         false,
-        `Expected getBackupFileInfo to throw for error ${testError}`
+        `Expected loadBackupFileInfo to throw for error ${testError}`
       );
     }
 

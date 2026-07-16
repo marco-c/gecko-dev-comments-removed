@@ -35,7 +35,7 @@ add_task(
 
     
     
-    sandbox.stub(bs, "getBackupFileInfo").callsFake(async _filePath => {});
+    sandbox.stub(bs, "loadBackupFileInfo").callsFake(async _filePath => {});
     sandbox.stub(BackupService, "docsDirFolderPath").get(() => null);
     sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
 
@@ -201,7 +201,7 @@ add_task(async function test_backupDetectionComplete_telemetry() {
 
     let bs = new BackupService();
     let sandbox = sinon.createSandbox();
-    sandbox.stub(bs, "getBackupFileInfo").callsFake(async _filePath => {});
+    sandbox.stub(bs, "loadBackupFileInfo").callsFake(async _filePath => {});
     sandbox.stub(BackupService, "docsDirFolderPath").get(() => null);
     sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
 
