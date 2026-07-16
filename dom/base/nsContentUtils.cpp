@@ -5522,8 +5522,14 @@ void nsContentUtils::ReportDeprecation(
   MOZ_ASSERT(aGlobal);
   MOZ_ASSERT(aURI);
 
-  nsAutoCString url;
-  ReportingUtils::StripURL(aURI, url);
+  
+  
+  
+  nsAutoCString specOrScheme;
+  nsresult rv = nsContentUtils::AnonymizeURI(aURI, specOrScheme);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 
   const char* operation =
       kDeprecatedOperations[static_cast<size_t>(aOperation)];
@@ -5536,27 +5542,25 @@ void nsContentUtils::ReportDeprecation(
 
   
   nsAutoString msg;
-  nsresult rv = nsContentUtils::GetMaybeLocalizedString(
-      PropertiesFile::DOM_PROPERTIES, key.get(), aDoc, msg);
+  rv = nsContentUtils::GetMaybeLocalizedString(PropertiesFile::DOM_PROPERTIES,
+                                               key.get(), aDoc, msg);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
 
   Nullable<uint32_t> lineNumber;
   Nullable<uint32_t> columnNumber;
-  nsAutoCString sourceFile;
   if (aLocation) {
     lineNumber.SetValue(aLocation.mLine);
     columnNumber.SetValue(aLocation.mColumn);
-    ReportingUtils::StripLocationFileName(aLocation, sourceFile);
   }
 
   RefPtr<DeprecationReportBody> body =
       new DeprecationReportBody(aGlobal, type, nullptr , msg,
-                                sourceFile, lineNumber, columnNumber);
+                                aLocation.FileName(), lineNumber, columnNumber);
 
   ReportingUtils::Report(aGlobal, nsGkAtoms::deprecation, u"default"_ns,
-                         NS_ConvertUTF8toUTF16(url), body);
+                         NS_ConvertUTF8toUTF16(specOrScheme), body);
 }
 
 void nsContentUtils::LogMessageToConsole(const char* aMsg) {
