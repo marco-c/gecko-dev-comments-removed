@@ -439,15 +439,6 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
 
         
         
-        rv = renamedTarget->Exists(&exists);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (exists) {
-          rv = renamedTarget->Remove(false);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        
-        
         
         
         rv = mActualTarget->MoveTo(renamedTargetParentDir, renamedTargetName);

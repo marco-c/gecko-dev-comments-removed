@@ -468,6 +468,32 @@ add_task(async function test_setTarget_fast() {
   destFile2.remove(false);
 });
 
+add_task(async function test_setTarget_rename_overwrites_existing() {
+  
+  let initialFile = getTempFile(TEST_FILE_NAME_1);
+  let renamedFile = getTempFile(TEST_FILE_NAME_2);
+
+  let saver = new BackgroundFileSaverOutputStream();
+  let completionPromise = promiseSaverComplete(saver);
+
+  saver.setTarget(initialFile, false);
+  await promiseCopyToSaver(TEST_DATA_SHORT, saver, true);
+
+  
+  await IOUtils.writeUTF8(renamedFile.path, "pre-existing content");
+
+  saver.setTarget(renamedFile, false);
+  saver.finish(Cr.NS_OK);
+  await completionPromise;
+
+  Assert.ok(
+    !initialFile.exists(),
+    "the initial file should not exist after rename"
+  );
+  await promiseVerifyContents(renamedFile, TEST_DATA_SHORT);
+  renamedFile.remove(false);
+});
+
 add_task(async function test_setTarget_multiple() {
   
   let destFile = getTempFile(TEST_FILE_NAME_1);
