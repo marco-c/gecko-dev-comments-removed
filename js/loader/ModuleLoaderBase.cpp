@@ -666,6 +666,9 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
 
   ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
 
+  
+  
+  
   auto entry = mFetchingModules.Lookup(moduleMapKey);
   if (!entry) {
     LOG(
@@ -1539,6 +1542,8 @@ void ModuleLoaderBase::CancelFetchingModules() {
 
   
   
+  
+  mFetchingModules.Clear();
 }
 
 void ModuleLoaderBase::Shutdown() {
