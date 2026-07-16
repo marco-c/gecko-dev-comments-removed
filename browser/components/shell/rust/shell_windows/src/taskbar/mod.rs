@@ -8,7 +8,7 @@
 
 
 use crate::util::thread::{self, MainThreadGuard};
-use nserror::{NS_ERROR_NOT_SAME_THREAD, NS_OK, nsresult};
+use nserror::{NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_SAME_THREAD, NS_OK, nsresult};
 use nsstring::{nsAString, nsString};
 use xpcom::{Promise, RefPtr};
 
@@ -24,25 +24,43 @@ enum PinResult {
     
     
     Unknown,
-    
-    CheckOnly,
 }
 
 
 async fn pin_app(
-    check_only: bool,
     aumid: &nsAString,
     shortcut_path: &nsAString,
     fire_and_forget: bool,
     main_guard: MainThreadGuard,
 ) -> Result<PinResult, nsresult> {
     
-    winrt::pin_to_taskbar(check_only, aumid, fire_and_forget, main_guard)
+    winrt::pin_to_taskbar(aumid, fire_and_forget, main_guard)
         .await
         .or_else(|_| {
             
-            com::modify_taskbar(check_only, com::PinOp::Pin, shortcut_path, main_guard)
+            com::modify_taskbar(com::PinOp::Pin, shortcut_path, main_guard)
         })
+}
+
+
+
+
+
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shell_windows_taskbar_can_pin_to_taskbar() -> nsresult {
+    let main_guard = match thread::get_main_thread_guard() {
+        Some(m) => m,
+        None => {
+            log::error!("Must be called on main thread to check for pinning APIs.");
+            return NS_ERROR_NOT_SAME_THREAD;
+        }
+    };
+
+    match winrt::is_pinning_allowed() || com::is_pinning_available(main_guard) {
+        true => NS_OK,
+        false => NS_ERROR_NOT_AVAILABLE,
+    }
 }
 
 
@@ -54,7 +72,6 @@ async fn pin_app(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn shell_windows_taskbar_pin_app_to_taskbar(
-    check_only: bool,
     aumid: &nsAString,
     shortcut_path: &nsAString,
     fire_and_forget: bool,
@@ -73,15 +90,7 @@ pub unsafe extern "C" fn shell_windows_taskbar_pin_app_to_taskbar(
     let promise = RefPtr::new(promise);
 
     moz_task::spawn_local("Pin to Taskbar", async move {
-        match pin_app(
-            check_only,
-            &aumid,
-            &shortcut_path,
-            fire_and_forget,
-            main_guard,
-        )
-        .await
-        {
+        match pin_app(&aumid, &shortcut_path, fire_and_forget, main_guard).await {
             Ok(_) => promise.resolve_with_undefined(),
             Err(e) => promise.reject_with_nsresult(e),
         }
@@ -111,7 +120,7 @@ pub unsafe extern "C" fn shell_windows_taskbar_unpin_shortcut_from_taskbar(
         }
     };
 
-    match com::modify_taskbar(false, com::PinOp::UnPin, shortcut_path, main_guard) {
+    match com::modify_taskbar(com::PinOp::UnPin, shortcut_path, main_guard) {
         Ok(_) => NS_OK,
         Err(e) => e,
     }

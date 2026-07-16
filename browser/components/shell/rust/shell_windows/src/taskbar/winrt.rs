@@ -73,11 +73,23 @@ static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     }
 });
 
+pub(super) fn is_pinning_allowed() -> bool {
+    if let Err(_e) = *LAF_LOCK {
+        
+        
+        log::info!(
+            "Failed to unlock Limited Access Feature, attempting to use Taskbar Pinning API assuming LAF is no longer necessary."
+        );
+    }
+
+    TaskbarManager::GetDefault()
+        .and_then(|m| m.IsPinningAllowed())
+        .unwrap_or(false)
+}
 
 
 
 pub(super) async fn pin_to_taskbar(
-    check_only: bool,
     aumid: &nsAString,
     fire_and_forget: bool,
     
@@ -109,13 +121,6 @@ pub(super) async fn pin_to_taskbar(
     })?;
 
     async {
-        if check_only {
-            manager.IsPinningAllowed()?;
-
-            log::info!("WinRT pinning is available.");
-            return Ok(PinResult::CheckOnly);
-        }
-
         if xpcom::is_in_automation() {
             
             
