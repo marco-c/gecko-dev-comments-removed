@@ -630,34 +630,17 @@ void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
   
   
   
-  
-  
-  
   dom::Element* element = dom::Element::FromNodeOrNull(node);
   nsIFrame* elementFrame = element ? element->GetPrimaryFrame() : nullptr;
+  nsIFrame* searchFrame =
+      element ? elementFrame : presShell->GetRootScrollContainerFrame();
+
+  
+  
+  
+  
   layers::ScrollableLayerGuid::ViewID scrollId =
-      layers::ScrollableLayerGuid::NULL_SCROLL_ID;
-  ScrollContainerFrame* scrollFrame = nullptr;
-  if (element) {
-    if (elementFrame) {
-      
-      
-      
-      
-      scrollFrame = nsLayoutUtils::GetNearestScrollContainerFrame(
-          elementFrame, nsLayoutUtils::SCROLLABLE_ALWAYS_MATCH_ROOT |
-                            nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT);
-    }
-  } else {
-    scrollFrame = presShell->GetRootScrollContainerFrame();
-  }
-  if (scrollFrame) {
-    if (nsIFrame* scrolled = scrollFrame->GetScrolledFrame()) {
-      if (nsIContent* scrolledContent = scrolled->GetContent()) {
-        nsLayoutUtils::FindIDFor(scrolledContent, &scrollId);
-      }
-    }
-  }
+      nsLayoutUtils::GetNearestScrollIdFor(searchFrame);
 
   if (StaticPrefs::apz_fastpath_apz_aware_listener_enabled()) {
     
@@ -687,9 +670,8 @@ void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
     } else {
       MOZ_LOG(sApzFastPathLog, LogLevel::Debug,
               ("ELM: no fast-path send (no scrollId; targetIsElement=%d "
-               "elementHasFrame=%d hasScrollContainerAncestor=%d)",
-               element != nullptr, elementFrame != nullptr,
-               scrollFrame != nullptr));
+               "elementHasFrame=%d)",
+               element != nullptr, elementFrame != nullptr));
     }
   }
 

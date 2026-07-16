@@ -656,6 +656,14 @@ class nsLayoutUtils {
 
 
 
+  static mozilla::layers::ScrollableLayerGuid::ViewID GetNearestScrollIdFor(
+      nsIFrame* aSearchFrame);
+
+  
+
+
+
+
   static nsRect GetScrolledRect(nsIFrame* aScrolledFrame,
                                 const nsRect& aScrolledFrameOverflowArea,
                                 const nsSize& aScrollPortSize,
