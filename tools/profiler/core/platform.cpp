@@ -4660,6 +4660,45 @@ static mozilla::StaticMutex sScheduledDumpMutex;
 
 
 
+
+static void profiler_save_profile_to_file_with_progress(
+    const char* aFilename, RefPtr<ProgressLogger::SharedProgress> aProgress);
+
+
+
+
+
+
+
+
+
+
+struct ScheduledDumpProgressEmitter {
+  RefPtr<ProgressLogger::SharedProgress> mProgress;
+  nsCString mSidecarPath;
+  Atomic<bool, MemoryOrdering::Relaxed> mDone{false};
+};
+
+static void ScheduledDumpProgressEmitterThread(void* aArg) {
+  NS_SetCurrentThreadName("ProfilerDumpProgress");
+  auto* emitter = static_cast<ScheduledDumpProgressEmitter*>(aArg);
+  
+  
+  while (!emitter->mDone) {
+    {
+      std::ofstream stream(emitter->mSidecarPath.get());
+      stream << emitter->mProgress->Progress().ToDouble() << "\n";
+    }
+    
+    
+    for (int i = 0; i < 10 && !emitter->mDone; ++i) {
+      PR_Sleep(PR_MillisecondsToInterval(100));
+    }
+  }
+}
+
+
+
 void SamplerThread::Run() {
   NS_SetCurrentThreadName("SamplerThread");
 
@@ -5272,12 +5311,29 @@ void SamplerThread::Run() {
       
       
       mozilla::StaticMutexAutoLock dumpLock(sScheduledDumpMutex);
-      profiler_save_profile_to_file(scheduledDumpPath.get());
+
+      
+      
+      
+      auto dumpProgress = MakeRefPtr<ProgressLogger::SharedProgress>();
+      ScheduledDumpProgressEmitter emitter{dumpProgress};
+      emitter.mSidecarPath = scheduledDumpPath;
+      emitter.mSidecarPath.AppendLiteral(".progress");
+      PRThread* emitterThread = PR_CreateThread(
+          PR_USER_THREAD, ScheduledDumpProgressEmitterThread, &emitter,
+          PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+
+      profiler_save_profile_to_file_with_progress(scheduledDumpPath.get(),
+                                                  dumpProgress);
+      emitter.mDone = true;
       if (scheduledDumpExitAfter) {
         
         
         
         AppShutdown::DoImmediateExit();
+      }
+      if (emitterThread) {
+        PR_JoinThread(emitterThread);
       }
     }
 
@@ -6329,7 +6385,8 @@ void profiler_init(void* aStackTop) {
 static void locked_profiler_save_profile_to_file(
     PSLockRef aLock, const char* aFilename,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation,
-    bool aIsShuttingDown);
+    bool aIsShuttingDown = false,
+    RefPtr<ProgressLogger::SharedProgress> aProgress = nullptr);
 
 static SamplerThread* locked_profiler_stop(PSLockRef aLock);
 
@@ -6613,7 +6670,7 @@ Vector<ProfileAndAdditionalInformation> profiler_move_exit_profiles() {
 static void locked_profiler_save_profile_to_file(
     PSLockRef aLock, const char* aFilename,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation,
-    bool aIsShuttingDown = false) {
+    bool aIsShuttingDown, RefPtr<ProgressLogger::SharedProgress> aProgress) {
   nsAutoCString processedFilename(aFilename);
   const auto processInsertionIndex = processedFilename.Find("%p");
   if (processInsertionIndex != kNotFound) {
@@ -6638,7 +6695,7 @@ static void locked_profiler_save_profile_to_file(
     {
       (void)locked_profiler_stream_json_for_this_process(
           aLock, w,  0, aPreRecordedMetaInformation,
-          aIsShuttingDown, nullptr, ProgressLogger{});
+          aIsShuttingDown, nullptr, ProgressLogger{std::move(aProgress)});
 
       w.StartArrayProperty("processes");
       Vector<ProfileAndAdditionalInformation> exitProfiles =
@@ -6658,7 +6715,11 @@ static void locked_profiler_save_profile_to_file(
 
 void profiler_save_profile_to_file(const char* aFilename) {
   LOG("profiler_save_profile_to_file(%s)", aFilename);
+  profiler_save_profile_to_file_with_progress(aFilename, nullptr);
+}
 
+static void profiler_save_profile_to_file_with_progress(
+    const char* aFilename, RefPtr<ProgressLogger::SharedProgress> aProgress) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   const auto preRecordedMetaInformation = PreRecordMetaInformation();
@@ -6669,8 +6730,9 @@ void profiler_save_profile_to_file(const char* aFilename) {
     return;
   }
 
-  locked_profiler_save_profile_to_file(lock, aFilename,
-                                       preRecordedMetaInformation);
+  locked_profiler_save_profile_to_file(
+      lock, aFilename, preRecordedMetaInformation,
+       false, std::move(aProgress));
 }
 
 void profiler_schedule_dump_to_file(double aDelaySeconds, const char* aFilename,

@@ -427,6 +427,18 @@ class XPCShellTestThread(Thread):
             self.log_full_output()
             self.failCount = 1
 
+    def _readTimeoutProfileProgress(self, profile_path):
+        
+        
+        
+        if not profile_path:
+            return None
+        try:
+            with open(profile_path + ".progress") as f:
+                return float(f.read().strip())
+        except (OSError, ValueError):
+            return None
+
     def testTimeout(self, proc):
         
         
@@ -438,6 +450,30 @@ class XPCShellTestThread(Thread):
         if self.timer is None:
             self.lock.release()
             return
+
+        
+        
+        
+        
+        
+        profile_path = self.env.get("MOZ_TEST_TIMEOUT_PROFILE_PATH")
+        progress = self._readTimeoutProfileProgress(profile_path)
+        if progress is not None and self._timeout_defer_count < 30:
+            if progress > self._last_timeout_profile_progress + 1e-6:
+                self._last_timeout_profile_progress = progress
+                self._timeout_stall_count = 0
+            else:
+                self._timeout_stall_count += 1
+            if progress < 1.0 and self._timeout_stall_count < 3:
+                self._timeout_defer_count += 1
+                self.log.info(
+                    f"{self.test_object['id']} | timeout profile dump "
+                    f"progressing ({progress * 100:.1f}%), deferring kill"
+                )
+                self.timer = Timer(10, lambda: self.testTimeout(proc))
+                self.timer.start()
+                self.lock.release()
+                return
 
         
         
@@ -1062,6 +1098,12 @@ class XPCShellTestThread(Thread):
             kill_interval = testTimeoutInterval
             if timeout_dump_armed:
                 kill_interval = testTimeoutInterval * 1.5
+            
+            
+            
+            self._last_timeout_profile_progress = -1.0
+            self._timeout_stall_count = 0
+            self._timeout_defer_count = 0
             self.timer = Timer(kill_interval, lambda: self.testTimeout(proc))
             self.timer.start()
             self.env["MOZ_TEST_TIMEOUT_INTERVAL"] = str(testTimeoutInterval)
@@ -1113,6 +1155,18 @@ class XPCShellTestThread(Thread):
                 self.timer = None
 
             self.lock.release()
+
+            
+            
+            
+            
+            
+            timeout_profile = self.env.get("MOZ_TEST_TIMEOUT_PROFILE_PATH")
+            if timeout_profile:
+                try:
+                    os.remove(timeout_profile + ".progress")
+                except OSError:
+                    pass
 
             
             
