@@ -6142,7 +6142,7 @@ bool TypedArrayObjectTemplate<float16>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = JS::CanonicalizedDoubleValue(static_cast<double>(f16));
+  *vp = DoubleValue(static_cast<double>(f16));
   return true;
 }
 
@@ -6162,7 +6162,7 @@ bool TypedArrayObjectTemplate<float>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = JS::CanonicalizedDoubleValue(dval);
+  *vp = DoubleValue(dval);
   return true;
 }
 
@@ -6178,7 +6178,7 @@ bool TypedArrayObjectTemplate<double>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = JS::CanonicalizedDoubleValue(val);
+  *vp = DoubleValue(val);
   return true;
 }
 

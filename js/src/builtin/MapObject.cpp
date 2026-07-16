@@ -46,7 +46,8 @@ static Value NormalizeDoubleValue(double d) {
   }
 
   
-  return JS::CanonicalizedDoubleValue(d);
+  
+  return DoubleValue(d);
 }
 
 bool HashableValue::setValue(JSContext* cx, const Value& v) {

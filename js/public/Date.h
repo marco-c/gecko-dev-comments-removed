@@ -131,7 +131,7 @@ inline ClippedTime TimeClip(int64_t time) {
 
 
 inline Value TimeValue(ClippedTime time) {
-  return CanonicalizedDoubleValue(time.toDouble());
+  return DoubleValue(time.toDouble());
 }
 
 
