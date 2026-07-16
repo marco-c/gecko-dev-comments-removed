@@ -1272,6 +1272,16 @@ function getMessageVisibility(
 
   
   
+  
+  if (!passOriginFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: message.chromeContext ? FILTERS.CHROME : FILTERS.CONTENT,
+    };
+  }
+
+  
+  
   if (!passLevelFilters(message, filtersState)) {
     return {
       visible: false,
@@ -1394,6 +1404,23 @@ function passLevelFilters(message, filters) {
     filters[message.level] === true ||
     (filters[FILTERS.ERROR] && isMessageNetworkError(message))
   );
+}
+
+
+
+
+
+
+
+
+
+
+
+function passOriginFilters(message, filters) {
+  if (message.chromeContext) {
+    return filters[FILTERS.CHROME] === true;
+  }
+  return filters[FILTERS.CONTENT] === true;
 }
 
 

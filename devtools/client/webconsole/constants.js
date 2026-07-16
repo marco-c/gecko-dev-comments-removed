@@ -70,6 +70,10 @@ const prefs = {
       CSS: "filter.css",
       NET: "filter.net",
       NETXHR: "filter.netxhr",
+      
+      
+      CHROME: "filter.chrome",
+      CONTENT: "filter.content",
     },
     UI: {
       
@@ -108,7 +112,17 @@ const FILTERS = {
   NETXHR: "netxhr",
   TEXT: "text",
   WARN: "warn",
+  
+  
+  
+  CHROME: "chrome",
+  CONTENT: "content",
 };
+
+
+
+
+const ORIGIN_FILTERS = [FILTERS.CHROME, FILTERS.CONTENT];
 
 const DEFAULT_FILTERS_VALUES = {
   [FILTERS.TEXT]: "",
@@ -120,6 +134,8 @@ const DEFAULT_FILTERS_VALUES = {
   [FILTERS.CSS]: false,
   [FILTERS.NET]: false,
   [FILTERS.NETXHR]: false,
+  [FILTERS.CHROME]: true,
+  [FILTERS.CONTENT]: true,
 };
 
 const DEFAULT_FILTERS = Object.keys(DEFAULT_FILTERS_VALUES).filter(
@@ -211,6 +227,7 @@ const evaluationNotifications = {
 module.exports = Object.assign(
   {
     FILTERS,
+    ORIGIN_FILTERS,
     DEFAULT_FILTERS,
     DEFAULT_FILTERS_VALUES,
     FILTERBAR_DISPLAY_MODES: {
