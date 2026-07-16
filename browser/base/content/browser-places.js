@@ -875,6 +875,24 @@ var BookmarksEventHandler = {
         
         targetURI = tooltipNode.getAttribute("targetURI");
       }
+      
+      
+      
+      
+      
+      let isLabelCropped = label =>
+        !!label && label.scrollWidth > label.clientWidth;
+      switch (tooltipNode.localName) {
+        case "toolbarbutton":
+          cropped = isLabelCropped(
+            tooltipNode.querySelector(".toolbarbutton-text")
+          );
+          break;
+        case "menu":
+        case "menuitem":
+          cropped = isLabelCropped(tooltipNode.querySelector(".menu-text"));
+          break;
+      }
     }
 
     if (!node && !targetURI) {
