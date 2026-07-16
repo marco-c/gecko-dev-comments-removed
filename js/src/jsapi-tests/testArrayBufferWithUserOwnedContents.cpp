@@ -1,7 +1,4 @@
 
-
-
-
 #include <stdint.h>  
 
 #include "js/ArrayBuffer.h"  
@@ -10,7 +7,7 @@
 #include "jsapi-tests/tests.h"
 #include "vm/ArrayBufferObject.h"
 
-char testData[] =
+alignas(js::ArrayBufferObject::ARRAY_BUFFER_ALIGNMENT) char testData[] =
     "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 constexpr size_t testDataLength = sizeof(testData);
