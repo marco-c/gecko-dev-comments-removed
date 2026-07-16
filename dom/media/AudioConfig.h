@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef AudioLayout_h
 #define AudioLayout_h
 
@@ -19,7 +17,7 @@ class AudioConfig {
  public:
   
   
-  enum Channel {
+  enum Channel : int32_t {
     CHANNEL_INVALID = -1,
     CHANNEL_FRONT_LEFT = 0,
     CHANNEL_FRONT_RIGHT,
