@@ -63,7 +63,7 @@ registerCleanupFunction(() => {
 
 
 
-const gRegistry = new TaskbarTabsRegistry();
+const gRegistry = createInMemoryRegistry();
 const gWindowManager = new TaskbarTabsWindowManager();
 
 const BASE_URL = "https://example.org";

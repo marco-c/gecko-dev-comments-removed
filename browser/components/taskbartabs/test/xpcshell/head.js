@@ -4,6 +4,12 @@
 
 "use strict";
 
+const head = {};
+ChromeUtils.defineESModuleGetters(head, {
+  TaskbarTabsRegistry:
+    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
+});
+
 
 
 
@@ -29,4 +35,21 @@ function createTaskbarTab(aRegistry, ...args) {
   }
 
   return check(result);
+}
+
+
+
+
+
+
+
+
+
+function createInMemoryRegistry() {
+  return new head.TaskbarTabsRegistry(
+    {
+      save: () => {},
+    },
+    []
+  );
 }
