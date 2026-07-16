@@ -6371,13 +6371,19 @@ bool DrawTargetWebgl::ReadIntoSkia() {
     } else {
       
       
+      bool readInto = false;
       if (!mSnapshot && mSkia->LockBits(&data, &size, &stride, &format)) {
-        (void)ReadInto(data, stride);
+        if (size == GetSize()) {
+          readInto = ReadInto(data, stride);
+        }
         mSkia->ReleaseBits(data);
-      } else if (RefPtr<SourceSurface> snapshot = Snapshot()) {
-        
-        
-        mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
+      }
+      if (!readInto) {
+        if (RefPtr<SourceSurface> snapshot = Snapshot()) {
+          
+          
+          mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
+        }
       }
       didReadback = true;
     }
