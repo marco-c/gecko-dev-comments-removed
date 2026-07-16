@@ -1125,6 +1125,9 @@ static bool ContainingBlockChangeAffectsDescendants(
       nsIFrame* frameToDiveInto = f;
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
+        if (!outOfFlow) {
+          continue;
+        }
         
         
         NS_ASSERTION(!outOfFlow->IsInSVGTextSubtree(),

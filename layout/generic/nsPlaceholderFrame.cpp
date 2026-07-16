@@ -72,7 +72,7 @@ void nsPlaceholderFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
 void nsPlaceholderFrame::AddFloatToIntrinsicISizeData(
     const IntrinsicSizeInput& aInput, IntrinsicISizeType aType,
     InlineIntrinsicISizeData* aData) const {
-  if (mOutOfFlowFrame->IsFloating()) {
+  if (mOutOfFlowFrame && mOutOfFlowFrame->IsFloating()) {
     const IntrinsicSizeInput floatInput(
         aInput, mOutOfFlowFrame->GetWritingMode(), GetWritingMode());
     const nscoord floatISize = nsLayoutUtils::IntrinsicForContainer(
@@ -107,7 +107,7 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) && mOutOfFlowFrame &&
       !mOutOfFlowFrame->IsMenuPopupFrame() &&
       mOutOfFlowFrame->Style()->GetPseudoType() != PseudoStyleType::Backdrop &&
       !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
