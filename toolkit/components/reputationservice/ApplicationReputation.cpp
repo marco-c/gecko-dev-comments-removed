@@ -261,7 +261,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".hqx",  
     
-    ".htm", ".html",
+    ".htm",
+    ".html",
     ".htt",  
     
     ".img",      
@@ -510,7 +511,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".xar",   
     ".xbap",  
-    ".xht", ".xhtm", ".xhtml",
+    ".xht",
+    ".xhtm",
+    ".xhtml",
     ".xip",   
     ".xla",   
     ".xlam",  
