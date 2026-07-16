@@ -9033,6 +9033,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     this.onTopsiteFocus = this.onTopsiteFocus.bind(this);
     this.onWrapperBlur = this.onWrapperBlur.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
+    this.onListDragLeave = this.onListDragLeave.bind(this);
+    this.onListDragOver = this.onListDragOver.bind(this);
   }
   componentDidUpdate(prevProps) {
     
@@ -9101,6 +9103,47 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       focusedIndex: focusIndex
     }));
   }
+
+  
+  
+  
+  
+  
+  
+  
+  onListDragOver(event) {
+    
+    this.props.listProps?.onDragOver?.(event);
+    if (!this.props.groupedPinsEnabled) {
+      return;
+    }
+    const boxes = [...event.currentTarget.querySelectorAll(".pinned-drop-box")];
+    if (!boxes.length) {
+      return;
+    }
+    const inside = boxes.some(box => {
+      const r = box.getBoundingClientRect();
+      return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+    });
+    if (!inside) {
+      this.props.onDragEvent(event);
+    }
+  }
+
+  
+  
+  
+  
+  onListDragLeave(event) {
+    
+    this.props.listProps?.onDragLeave?.(event);
+    if (!this.props.groupedPinsEnabled) {
+      return;
+    }
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      this.props.onDragEvent(event);
+    }
+  }
   render() {
     const {
       props
@@ -9117,7 +9160,9 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       dispatch: props.dispatch,
       groupedPinsEnabled: this.props.groupedPinsEnabled,
       
-      dropsOnList: !!this.props.listProps
+      
+      
+      dropsOnList: !!this.props.dropsOnList
     };
     const {
       decorations
@@ -9244,6 +9289,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       onFocus: this.onWrapperFocus,
       onBlur: this.onWrapperBlur
     }, this.props.listProps, {
+      onDragOver: this.onListDragOver,
+      onDragLeave: this.onListDragLeave,
       ref: el => {
         this.focusRef = el;
         this.props.listRef?.(el);
@@ -9644,6 +9691,18 @@ function useTopSitesDnD({
           setPreviewSites(makeTopSitesPreview(index));
         }
         break;
+      case "dragover":
+        
+        
+        if (index === undefined) {
+          setPreviewSites(null);
+        }
+        break;
+      case "dragleave":
+        
+        
+        setPreviewSites(null);
+        break;
       case "drop":
         if (index !== draggedIndex || pinInPlace && isMovable(draggedSite)) {
           droppedRef.current = true;
@@ -9798,6 +9857,99 @@ function TopSiteListContainer(props) {
 
 
 
+
+
+
+
+
+
+
+function useAppendPinDrop({
+  baseSites,
+  draggedSite,
+  isMovable,
+  onDragEvent,
+  
+  previewActive 
+}) {
+  const [over, setOver] = (0,external_React_namespaceObject.useState)(false);
+  const placeholderElRef = (0,external_React_namespaceObject.useRef)(null);
+  const setRef = (0,external_React_namespaceObject.useCallback)(el => {
+    placeholderElRef.current = el;
+  }, []);
+  const enabled = !!draggedSite && isMovable(draggedSite);
+
+  
+  const lastPinIndex = baseSites.reduce((last, site, i) => site?.isPinned ? i : last, -1);
+  const appendIndex = lastPinIndex + 1;
+  const isOver = (0,external_React_namespaceObject.useCallback)(event => {
+    const rect = placeholderElRef.current?.getBoundingClientRect();
+    return !!rect && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  }, []);
+  const onDragOver = (0,external_React_namespaceObject.useCallback)(event => {
+    if (!enabled) {
+      return;
+    }
+    const nowOver = isOver(event);
+    if (nowOver) {
+      event.preventDefault();
+      
+      onDragEvent(event);
+    }
+    if (over !== nowOver) {
+      setOver(nowOver);
+    }
+  }, [enabled, isOver, over, onDragEvent]);
+  const onDrop = (0,external_React_namespaceObject.useCallback)(event => {
+    if (!enabled || !isOver(event)) {
+      return;
+    }
+    event.preventDefault();
+    
+    onDragEvent(event, appendIndex);
+  }, [enabled, isOver, onDragEvent, appendIndex]);
+  const onDragLeave = (0,external_React_namespaceObject.useCallback)(event => {
+    if (event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    if (over) {
+      setOver(false);
+    }
+  }, [over]);
+
+  
+  const sites = enabled ? baseSites.map(site => site && site.url === draggedSite.url ? {
+    ...site,
+    isCollapsed: true
+  } : site) : baseSites;
+  return {
+    sites,
+    listProps: {
+      onDragOver,
+      onDrop,
+      onDragLeave
+    },
+    decorations: {
+      
+      
+      zeroPinSlot: enabled && !previewActive ? appendIndex : -1,
+      overZeroPin: over,
+      setZeroPinRef: setRef
+    }
+  };
+}
+;
+
+
+
+
+
+
+
+
+
+
+
 function useZeroPinDrop({
   baseSites,
   isSponsored,
@@ -9939,6 +10091,7 @@ function GroupedTopSiteListContainer_extends() { return GroupedTopSiteListContai
 
 
 
+
 const GroupedTopSiteListContainer_isMovable = site => !site.isPinned && !isSponsored(site) && !site.isAddButton;
 const GroupedTopSiteListContainer_isShiftable = site => !!site.isPinned;
 
@@ -9996,6 +10149,8 @@ function useBaseSites(props) {
 
 
 
+
+
 function GroupedTopSiteListContainer(props) {
   const baseSites = useBaseSites(props);
   const {
@@ -10011,6 +10166,17 @@ function GroupedTopSiteListContainer(props) {
     onDragStart,
     onReorder,
     pinInPlace: true
+  });
+
+  
+  
+  
+  const append = useAppendPinDrop({
+    baseSites,
+    draggedSite: reorder.draggedSite,
+    isMovable: GroupedTopSiteListContainer_isMovable,
+    onDragEvent: reorder.onDragEvent,
+    previewActive: !!reorder.previewSites
   });
   const zeroPin = useZeroPinDrop({
     baseSites,
@@ -10031,12 +10197,12 @@ function GroupedTopSiteListContainer(props) {
   }
   const isZeroPin = active === zeroPin;
   return external_React_default().createElement(TopSiteList, GroupedTopSiteListContainer_extends({}, props, {
-    sites: isZeroPin ? zeroPin.sites : reorder.previewSites || baseSites,
+    sites: isZeroPin ? zeroPin.sites : reorder.previewSites || append.sites,
     onDragEvent: active.onDragEvent,
     draggedSite: active.draggedSite,
     groupedPinsEnabled: true,
-    listProps: isZeroPin ? zeroPin.listProps : undefined,
-    decorations: isZeroPin ? zeroPin.decorations : undefined
+    listProps: isZeroPin ? zeroPin.listProps : append.listProps,
+    decorations: isZeroPin ? zeroPin.decorations : append.decorations
   }));
 }
 ;
