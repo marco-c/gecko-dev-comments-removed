@@ -7,6 +7,7 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+#include "mozilla/widget/WebCustomFormatUtils.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"
 #include "nsIObserver.h"
@@ -127,17 +128,53 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
 
   
   
+  
+  
+  
+  
+  using HasMatchingFlavorsCallbackWithMap =
+      mozilla::MoveOnlyFunction<void(
+          mozilla::Result<nsTArray<nsCString>, nsresult>,
+          mozilla::Maybe<mozilla::widget::WebCustomFormatMap>)>;
+  void AsyncHasNativeClipboardDataMatchingFlavorsWithMap(
+      const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
+      HasMatchingFlavorsCallbackWithMap&& aCallback);
+
+  
+  
   nsITransferable* GetTransferable(int32_t aWhichClipboard);
 
   void ClearTransferable(int32_t aWhichClipboard);
   void ClearCachedTargets(int32_t aWhichClipboard);
 
+  
+  
+  
+  
   bool HasSuitableData(int32_t aWhichClipboard, const nsACString& aFlavor);
+
+  
+  
+  
+  mozilla::widget::WebCustomFormatMap GetWebCustomFormatMapFromClipboard(
+      int32_t aWhichClipboard);
 
   
   nsCOMPtr<nsITransferable> mSelectionTransferable;
   nsCOMPtr<nsITransferable> mGlobalTransferable;
   RefPtr<RetrievalContext> mContext;
+
+  
+  
+  
+  
+  mozilla::widget::WebCustomFormatMap mSelectionWebCustomFormatMap;
+  mozilla::widget::WebCustomFormatMap mGlobalWebCustomFormatMap;
+  mozilla::widget::WebCustomFormatMap& WebCustomFormatMapFor(
+      int32_t aWhichClipboard) {
+    return aWhichClipboard == kSelectionClipboard ? mSelectionWebCustomFormatMap
+                                                  : mGlobalWebCustomFormatMap;
+  }
 
   void IncrementSequenceNumber(int32_t aWhichClipboard) {
     if (aWhichClipboard == kSelectionClipboard) {
