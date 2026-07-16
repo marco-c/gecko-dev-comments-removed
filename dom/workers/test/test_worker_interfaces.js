@@ -201,7 +201,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSTransformValue", insecureContext: true, nightly: true },
   
-  { name: "CSSTranslate", insecureContext: true },
+  { name: "CSSTranslate", insecureContext: true, nightly: true },
   
   { name: "CSSUnitValue", insecureContext: true, nightly: true },
   
