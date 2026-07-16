@@ -241,6 +241,15 @@ void FrameMetrics::UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
 
   SetLayoutScrollOffset(aInfo.GetDestination());
   ClampAndSetVisualScrollOffset(aInfo.GetDestination() + relativeOffset);
+  
+  
+  
+  
+  
+  
+  
+  
+  RecalculateLayoutViewportOffset();
   mScrollGeneration = aInfo.GetGeneration();
 }
 
