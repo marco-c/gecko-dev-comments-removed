@@ -2008,11 +2008,14 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   const uint32_t kEndOffset = aEvent->mInput.EndOffset();
   bool wasLineBreaker = false;
   if (RefPtr<EditContext> editContext = GetEditContext()) {
+    MOZ_ASSERT(offset <= kEndOffset);
+    
+    const uint32_t endOffset = std::max(kEndOffset, offset);
     
     nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
     Maybe<LayoutDeviceIntRect> selectionBounds =
         editContext->GetSelectionBounds();
-    if (selectionBounds && offset == kEndOffset &&
+    if (selectionBounds && offset == endOffset &&
         offset == editContext->SelectionStartClamped() &&
         editContext->SelectionIsCollapsed()) {
       
@@ -2020,24 +2023,31 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
       MOZ_ASSERT(aEvent->Succeeded());
       return NS_OK;
     }
-    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, kEndOffset,
+    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, endOffset,
                                                            rects);
     if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
       LayoutDeviceIntRect lastRect = rects.LastElement();
       
       
-      while (rects.Length() < kEndOffset - offset) {
+      while (rects.Length() < endOffset - offset) {
         rects.AppendElement(lastRect);
       }
-      return rv;
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
     }
     
     
     
     if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
-      
-      
-      return NS_ERROR_FAILURE;
+      nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
+      LayoutDeviceIntRect fallbackBounds = editContext->FallbackBounds();
+      const uint32_t rectCount = std::max(1u, endOffset - offset);
+      rects.SetCapacity(rectCount);
+      for ([[maybe_unused]] uint32_t i : IntegerRange(rectCount)) {
+        rects.AppendElement(fallbackBounds);
+      }
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
     }
   }
   
@@ -2484,9 +2494,9 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
     
     
     if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
-      
-      
-      return NS_ERROR_FAILURE;
+      aEvent->mReply->mRect = editContext->FallbackBounds();
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
     }
   }
 
