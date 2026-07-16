@@ -6,7 +6,7 @@
 #define XREChildData_h
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-#  include "mozilla/sandboxing/loggingTypes.h"
+#  include "mozilla/sandboxing/TargetGeckoServices.h"
 
 namespace sandbox {
 class BrokerServices;
@@ -27,7 +27,8 @@ struct XREChildData {
   
 
 
-  mozilla::sandboxing::ProvideLogFunctionCb ProvideLogFunction = nullptr;
+  mozilla::sandboxing::SetTargetGeckoServicesCb setTargetGeckoServices =
+      nullptr;
 #endif
 };
 
