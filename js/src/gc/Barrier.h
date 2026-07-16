@@ -546,6 +546,14 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
 
   
   
+#ifdef JS_GC_CONCURRENT_MARKING
+  T getForTracing() const { return unbarrieredAtomicGet(); }
+#else
+  T getForTracing() const { return unbarrieredGet(); }
+#endif
+
+  
+  
   
   
   T* unbarrieredAddress() const { return const_cast<T*>(&value); }
@@ -903,6 +911,18 @@ class GCStructPtr : public BarrieredBase<T> {
   operator T() const { return get(); }
   T operator->() const { return get(); }
 
+#if JS_BITS_PER_WORD == 64
+  T atomicGet() const { return this->unbarrieredAtomicGet(); }
+#endif
+
+  
+  
+#ifdef JS_GC_CONCURRENT_MARKING
+  T getForTracing() const { return atomicGet(); }
+#else
+  T getForTracing() const { return get(); }
+#endif
+
  protected:
   bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
 
@@ -953,6 +973,10 @@ class GCBuffer : public BarrieredBase<T> {
   T get() const { return this->unbarrieredGet(); }
   operator T() const { return get(); }
   T operator->() const { return get(); }
+
+#if JS_BITS_PER_WORD == 64
+  T atomicGet() const { return this->unbarrieredAtomicGet(); }
+#endif
 
  protected:
   bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
@@ -1015,6 +1039,14 @@ class HeapSlot : public BarrieredBase<Value>,
 
 #if JS_BITS_PER_WORD == 64
   using Base::unbarrieredAtomicGet;
+#endif
+
+  
+  
+#ifdef JS_GC_CONCURRENT_MARKING
+  Value getForTracing() const { return unbarrieredAtomicGet(); }
+#else
+  Value getForTracing() const { return unbarrieredGet(); }
 #endif
 
   
