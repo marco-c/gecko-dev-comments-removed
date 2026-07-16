@@ -916,7 +916,9 @@ static bool math_sign(JSContext* cx, unsigned argc, Value* vp) {
 
 double js::math_cbrt_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
-  return fdlibm_cbrt(x);
+  
+  
+  return JS::CanonicalizeNaN(fdlibm_cbrt(x));
 }
 
 static bool math_cbrt(JSContext* cx, unsigned argc, Value* vp) {
