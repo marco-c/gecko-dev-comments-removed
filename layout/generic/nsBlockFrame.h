@@ -779,6 +779,7 @@ class nsBlockFrame : public nsContainerFrame {
   WalkInlineDescendantsToReflowAbsoluteFrames(nsIFrame* aFrame,
                                               nsPresContext* aPresContext,
                                               const ReflowInput& aReflowInput,
+                                              const ReflowOutput& aReflowOutput,
                                               nsReflowStatus& aStatus);
 
   
@@ -792,9 +793,13 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
+
   mozilla::Maybe<mozilla::OverflowAreas> ReflowAbsoluteFramesInInlineFrame(
       nsInlineFrame* aInlineFrame, nsPresContext* aPresContext,
-      const ReflowInput& aReflowInput, nsReflowStatus& aStatus);
+      const ReflowInput& aReflowInput, const ReflowOutput& aReflowOutput,
+      nsReflowStatus& aStatus);
 
   
 
