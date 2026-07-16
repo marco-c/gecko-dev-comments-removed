@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef MediaSink_h_
 #define MediaSink_h_
 
 #include "MediaInfo.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/MediaDebugInfoBinding.h"
@@ -117,8 +116,16 @@ class MediaSink {
   
   
   
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(StartType,
+                                                     (Initial, SeekResume));
+
+  
+  
+  
+  
   virtual nsresult Start(const media::TimeUnit& aStartTime,
-                         const MediaInfo& aInfo) = 0;
+                         const MediaInfo& aInfo,
+                         StartType aStartType = StartType::Initial) = 0;
 
   
   

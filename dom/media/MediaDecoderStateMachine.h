@@ -432,6 +432,11 @@ class MediaDecoderStateMachine
   
   
   
+  bool mStartSinkAfterSeek = false;
+
+  
+  
+  
   media::TimeUnit AudioEndTime() const;
 
   

@@ -28,6 +28,9 @@ void AudioSinkWrapper::Shutdown() {
   AssertOwnerThread();
   MOZ_ASSERT(!mIsStarted, "Must be called after playback stopped.");
   mSinkCreator = nullptr;
+  
+  
+  mAsyncInitTaskQueue->AwaitIdle();
 }
 
 
@@ -298,7 +301,7 @@ double AudioSinkWrapper::PlaybackRate() const {
 }
 
 nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
-                                 const MediaInfo& aInfo) {
+                                 const MediaInfo& aInfo, StartType aStartType) {
   LOG("{} AudioSinkWrapper::Start", fmt::ptr(this));
   AssertOwnerThread();
   MOZ_ASSERT(!mIsStarted, "playback already started.");
@@ -320,6 +323,19 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
 
   mEndedPromise = mEndedPromiseHolder.Ensure(__func__);
   if (!NeedAudioSink()) {
+    return NS_OK;
+  }
+  
+  
+  
+  
+  
+  
+  
+  if (aStartType == StartType::SeekResume) {
+    LOG("{}: AudioSinkWrapper::Start, async audio sink init for seek resume",
+        fmt::ptr(this));
+    MaybeAsyncCreateAudioSink(mAudioDevice);
     return NS_OK;
   }
   return SyncCreateAudioSink(aStartTime);
