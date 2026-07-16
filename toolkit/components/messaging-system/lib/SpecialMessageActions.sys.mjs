@@ -212,6 +212,26 @@ export const SpecialMessageActions = {
   },
 
   /**
+   * Set browser as the default handler for a protocol (scheme).
+   *
+   * @param {Window} window Reference to a window object
+   * @param {string} protocol The protocol to claim, e.g. "mailto"
+   * @param {string} [url] URL passed to the OS default-app picker
+   * @param {boolean} [openInFirefox] Whether to open the protocol's default URL
+   *   in Firefox after the user picks it
+   */
+  async setDefaultProtocolHandler(
+    window,
+    protocol,
+    url,
+    openInFirefox = false
+  ) {
+    await window
+      .getShellService()
+      .setAsDefaultProtocolHandler(protocol, url, openInFirefox);
+  },
+
+  /**
    * Reset browser homepage and newtab to default with a certain section configuration
    *
    * @param {"default"|null} home Value to set for browser homepage
@@ -867,11 +887,26 @@ export const SpecialMessageActions = {
           true
         );
         break;
+      case "SET_DEFAULT_PROTOCOL_HANDLER":
+        await this.setDefaultProtocolHandler(
+          window,
+          action.data?.protocol,
+          action.data?.url,
+          action.data?.openInFirefox ?? false
+        );
+        break;
       case "CONFIRM_LAUNCH_ON_LOGIN": {
         const { WindowsLaunchOnLogin } = ChromeUtils.importESModule(
           "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
         );
         await WindowsLaunchOnLogin.createLaunchOnLogin();
+        break;
+      }
+      case "REMOVE_LAUNCH_ON_LOGIN": {
+        const { WindowsLaunchOnLogin } = ChromeUtils.importESModule(
+          "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
+        );
+        await WindowsLaunchOnLogin.removeLaunchOnLogin();
         break;
       }
       case "CREATE_GROUP_FROM_CURRENT_TAB": {
