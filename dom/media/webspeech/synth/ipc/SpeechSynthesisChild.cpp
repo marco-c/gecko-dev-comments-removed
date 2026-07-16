@@ -4,6 +4,7 @@
 
 #include "SpeechSynthesisChild.h"
 
+#include "AutoplayPolicy.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlUtils.h"
@@ -300,7 +301,13 @@ void SpeechTaskChild::Resume() {
   
   
   
-  mPausedByMediaControl = false;
+  if (mUtterance && media::AutoplayPolicy::IsAudioInterruptedByPlatform(
+                        mUtterance->GetOwnerWindow())) {
+    MEDIA_CONTROL_LOG(
+        "SpeechTaskChild {} Resume() deferred: audio interrupted by platform",
+        fmt::ptr(this));
+    return;
+  }
   if (mActor) {
     mActor->SendResume();
   }
@@ -354,6 +361,9 @@ void SpeechTaskChild::ResumeFromMediaControl() {
     return;
   }
   mPausedByMediaControl = false;
+  
+  
+  
   Resume();
 }
 

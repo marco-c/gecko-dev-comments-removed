@@ -4,6 +4,7 @@
 
 #include "SpeechSynthesis.h"
 
+#include "AutoplayPolicy.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -115,6 +116,20 @@ bool SpeechSynthesis::HasVoices() const {
 
 void SpeechSynthesis::Speak(SpeechSynthesisUtterance& aUtterance) {
   if (!mInnerID) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (media::AutoplayPolicy::IsAudioInterruptedByPlatform(GetOwnerWindow())) {
+    LOG(LogLevel::Debug,
+        ("SpeechSynthesis::Speak blocked, audio interrupted by platform"));
+    aUtterance.DispatchSpeechSynthesisEvent(u"error"_ns, 0, nullptr, 0,
+                                            u""_ns);
     return;
   }
 
