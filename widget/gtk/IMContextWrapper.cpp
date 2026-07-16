@@ -24,6 +24,7 @@
 #include "mozilla/ToString.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/Utf16.h"
+#include "mozilla/WidgetUtilsGtk.h"
 
 
 
@@ -3046,6 +3047,16 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
 
   GdkRectangle area = rootWindow->DevicePixelsToGdkRectRoundOut(rect);
   gtk_im_context_set_cursor_location(aContext, &area);
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    if (mOwnerWindow) {
+      GdkWindow* gdkWindow = mOwnerWindow->GetToplevelGdkWindow();
+      if (gdkWindow) {
+        gdk_window_invalidate_rect(gdkWindow, nullptr, false);
+      }
+    }
+  }
+#endif
 }
 
 nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,
