@@ -4234,7 +4234,7 @@ bool BrowsingContext::CanSet(
   return XRE_IsParentProcess() && !aSource && IsTop();
 }
 
-bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint64_t& aValue,
+bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
                              ContentParent* aSource) {
   
   
