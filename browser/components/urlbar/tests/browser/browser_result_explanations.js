@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 const SEARCH_STRING = "explanation-strings";
@@ -32,17 +33,22 @@ add_task(async function hover() {
   });
 
   let row = await getHistoryResult();
-  await assertExplanationVisibility(row, false);
+  await assertExplanationVisibility(row, null);
 
   
   EventUtils.synthesizeMouseAtCenter(row, { type: "mouseover" }, window);
 
-  await assertExplanationVisibility(row, true);
+  await assertExplanationVisibility(row, {
+    id: "urlbar-result-explanation-last-visited-absolute-2",
+    args: {
+      date: "May 11, 2013",
+    },
+  });
 
   
   EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mouseover" }, window);
 
-  await assertExplanationVisibility(row, false);
+  await assertExplanationVisibility(row, null);
 
   await UrlbarTestUtils.promisePopupClose(window);
 });
@@ -55,7 +61,7 @@ add_task(async function selection() {
   });
 
   let row = await getHistoryResult();
-  await assertExplanationVisibility(row, false);
+  await assertExplanationVisibility(row, null);
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -65,7 +71,12 @@ add_task(async function selection() {
     "The history row should be selected"
   );
 
-  await assertExplanationVisibility(row, true);
+  await assertExplanationVisibility(row, {
+    id: "urlbar-result-explanation-last-visited-absolute-2",
+    args: {
+      date: "May 11, 2013",
+    },
+  });
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -75,9 +86,69 @@ add_task(async function selection() {
     "The history row should not be selected"
   );
 
-  await assertExplanationVisibility(row, false);
+  await assertExplanationVisibility(row, null);
 
   await UrlbarTestUtils.promisePopupClose(window);
+});
+
+
+
+add_task(async function allStrings() {
+  let tests = [
+    {
+      formattedDate: {
+        isRelative: false,
+        formattedDate: "May 11, 2013",
+      },
+      expected: {
+        id: "urlbar-result-explanation-last-visited-absolute-2",
+        args: {
+          date: "May 11, 2013",
+        },
+      },
+    },
+    {
+      formattedDate: {
+        isRelative: true,
+        formattedDate: "Today",
+      },
+      expected: {
+        id: "urlbar-result-explanation-last-visited-relative-2",
+        args: {
+          date: "Today",
+        },
+      },
+    },
+  ];
+
+  
+  let sandbox = sinon.createSandbox();
+  let formatDateStub = sandbox.stub(UrlbarUtils, "formatDate");
+
+  for (let { formattedDate, expected } of tests) {
+    formatDateStub.returns(formattedDate);
+
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: SEARCH_STRING,
+    });
+
+    let row = await getHistoryResult();
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+    Assert.equal(
+      UrlbarTestUtils.getSelectedRow(window),
+      row,
+      "The history row should be selected"
+    );
+
+    await assertExplanationVisibility(row, expected);
+
+    await UrlbarTestUtils.promisePopupClose(window);
+  }
+
+  sandbox.restore();
 });
 
 async function getHistoryResult() {
@@ -89,7 +160,7 @@ async function getHistoryResult() {
   return row;
 }
 
-function assertExplanationVisibility(row, shouldBeVisible) {
+function assertExplanationVisibility(row, expectedL10nObject) {
   let explanationElement = row.querySelector(".urlbarView-explanation");
   Assert.ok(explanationElement, "Explanation element should be present");
 
@@ -98,12 +169,20 @@ function assertExplanationVisibility(row, shouldBeVisible) {
 
   Assert.equal(
     BrowserTestUtils.isVisible(urlElement),
-    !shouldBeVisible,
+    !expectedL10nObject,
     "The URL visibility should be as expected"
   );
   Assert.equal(
     BrowserTestUtils.isVisible(explanationElement),
-    shouldBeVisible,
+    !!expectedL10nObject,
     "The explanation visibility should be as expected"
   );
+
+  if (expectedL10nObject) {
+    Assert.deepEqual(
+      document.l10n.getAttributes(explanationElement),
+      expectedL10nObject,
+      "The explanation's l10n object should be as expected"
+    );
+  }
 }
