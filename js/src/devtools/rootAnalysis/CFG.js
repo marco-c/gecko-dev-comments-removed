@@ -1189,10 +1189,36 @@ function synthesizeDestructorName(className) {
     const parts = className.split("::");
     const mangled_dtor = "_ZN" + parts.map(p => mangle(p)).join("") + "D2Ev";
     const pretty_dtor = `void ${className}::~${parts.at(-1)}()`;
+    const synthesized = mangled_dtor + "$" + pretty_dtor;
     
     
     
-    return mangled_dtor + "$" + pretty_dtor;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (typeof xdb !== "undefined") {
+        const xdb_entry = xdb.read_entry(synthesized);
+        const has_no_xdb_entry = !xdb_entry.contents;
+        xdb.free_entry(xdb_entry);
+
+        if (has_no_xdb_entry) {
+            printErr(
+                `skipping synthesized entry not found in \`xdb\`: ${synthesized}`
+            );
+            return;
+        }
+    }
+    
+    
+    
+    return synthesized;
 }
 
 function getCallEdgeProperties(ffg, body, edge, calleeName) {
