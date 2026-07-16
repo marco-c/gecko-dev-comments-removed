@@ -26,16 +26,22 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-container {
+  display: flex;
   flex-direction: column;
   min-height: 0;
   background-color: var(--toolbar-background-color);
   color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
 
-  &:not([hidden]) {
-    /* In a separate rule to avoid 'display:flex' causing the node to be
-     * displayed while the container is still hidden. */
-    display: flex;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    /* Float as a rounded card matching the nova content area. The top gap is
+     * provided by the toolbox's own nova margin-block-end. */
+    margin-inline: var(--chrome-window-gap);
+    margin-block-end: var(--chrome-window-gap);
+    border-radius: var(--chrome-block-radius);
+    border: 1px solid var(--chrome-content-separator-color);
+    overflow: clip;
   }
 }
 
@@ -91,17 +97,14 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-palette {
+  display: block;
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 3em;
+  margin-bottom: 20px;
   padding: 5px 20px 20px;
   transition: opacity 0.3s ease-in-out;
   opacity: 0;
-
-  &:not([hidden]) {
-    display: block;
-    flex: 1 1 auto;
-    overflow: auto;
-    min-height: 3em;
-    margin-bottom: 20px;
-  }
 
   &[showing="true"] {
     opacity: 1;
