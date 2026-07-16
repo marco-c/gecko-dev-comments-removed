@@ -44,11 +44,26 @@ async function testResult(input, expected, index = 1) {
     input.title,
     "Should have the expected title"
   );
-  Assert.equal(
-    result.displayed.typeIcon,
-    "none",
-    "Should not have a type icon"
-  );
+
+  if (
+    
+    
+    !result.heuristic &&
+    Services.prefs.getBoolPref("browser.nova.enabled", false)
+  ) {
+    Assert.equal(
+      result.displayed.typeIcon,
+      'url("chrome://browser/skin/urlbar/badge-history.svg#ltr-icon")',
+      "Should have the history type icon"
+    );
+  } else {
+    Assert.equal(
+      result.displayed.typeIcon,
+      "none",
+      "Should not have a type icon"
+    );
+  }
+
   if (index > 0) {
     Assert.equal(
       result.image,
