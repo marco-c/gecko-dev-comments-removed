@@ -923,6 +923,9 @@ const OsiIndex* IonScript::getOsiIndex(uint8_t* retAddr) const {
 
 void IonScript::Destroy(JS::GCContext* gcx, IonScript* script) {
   
+  script->method_ = nullptr;
+
+  
   
   
   

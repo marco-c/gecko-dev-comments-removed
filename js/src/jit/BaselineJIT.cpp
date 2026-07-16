@@ -883,6 +883,9 @@ void BaselineScript::Destroy(JS::GCContext* gcx, BaselineScript* script) {
   MOZ_ASSERT(!script->hasPendingIonCompileTask());
 
   
+  script->method_ = nullptr;
+
+  
   gcx->deleteUntracked(script);
 }
 
