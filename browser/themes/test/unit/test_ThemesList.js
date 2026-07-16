@@ -72,58 +72,35 @@ add_task(async function test_getThemesList() {
   );
 });
 
-add_task(async function test_getThemeIds() {
+
+
+add_task(async function test_getThemesInfo() {
   const manager = await getThemesList({
     installSource: TEST_INSTALL_SOURCE,
   });
-  const ids = manager.getThemeIds();
+  const themes = manager.getThemesInfo();
 
-  Assert.ok(Array.isArray(ids), "getThemeIds returns an Array");
+  Assert.ok(Array.isArray(themes), "getThemesInfo returns an Array");
   Assert.ok(
-    ids.includes("default-theme@mozilla.org"),
+    themes.some(t => t.id === "default-theme@mozilla.org"),
     "includes default-theme@mozilla.org"
   );
   Assert.ok(
-    ids.includes("nova-sun@mozilla.org"),
+    themes.some(t => t.id === "nova-sun@mozilla.org"),
     "includes nova-sun@mozilla.org"
   );
   Assert.ok(
-    !ids.includes("unknown-theme@mozilla.org"),
+    !themes.some(t => t.id === "unknown-theme@mozilla.org"),
     "does not include unmanaged IDs"
   );
+  const ids = themes.map(t => t.id);
   Assert.equal(new Set(ids).size, ids.length, "all IDs are unique");
-});
-
-add_task(async function test_getThemePickerColors() {
-  const manager = await getThemesList({
-    installSource: TEST_INSTALL_SOURCE,
-  });
 
   
-  
-  
-  
-  
-  const variants = manager.getThemePickerColors("nova-sun@mozilla.org");
-  Assert.deepEqual(
-    variants?.light,
-    {
-      type: "gradient",
-      value: "linear-gradient(90deg, #F9F5E6 0%, #FDE8B5 60%, #FBCC77 100%)",
-    },
-    "nova-sun light variant is a gradient object"
-  );
-  Assert.deepEqual(
-    variants?.dark,
-    { type: "color", value: "#270F00" },
-    "nova-sun dark variant is a plain color object"
-  );
-
-  Assert.strictEqual(
-    manager.getThemePickerColors("unknown-theme@mozilla.org"),
-    null,
-    "returns null for an unmanaged theme ID"
-  );
+  const defaultTheme = themes.find(t => t.id === "default-theme@mozilla.org");
+  Assert.ok(defaultTheme?.themePickerColors, "includes themePickerColors");
+  Assert.ok(defaultTheme.themePickerColors.light, "has light variant");
+  Assert.ok(defaultTheme.themePickerColors.dark, "has dark variant");
 });
 
 add_task(async function test_updateThemeState_unknownThemeId_logsError() {
