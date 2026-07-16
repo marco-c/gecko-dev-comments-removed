@@ -174,8 +174,29 @@ pub fn mix_many(
     let items = items.into_iter().collect::<ColorMixItemList<_>>();
 
     
+    
+    
+    let finalize = |result: AbsoluteColor| -> AbsoluteColor {
+        if flags.contains(ColorMixFlags::RESULT_IN_MODERN_SYNTAX) {
+            if result.is_legacy_syntax() {
+                
+                
+                let mut srgb = result.to_color_space(ColorSpace::Srgb);
+                srgb.flags.remove(ColorFlags::IS_LEGACY_SRGB);
+                srgb
+            } else {
+                result
+            }
+        } else if items.iter().all(|item| item.color.is_legacy_syntax()) {
+            result.into_srgb_legacy()
+        } else {
+            result
+        }
+    };
+
+    
     if items.is_empty() {
-        return AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space);
+        return finalize(AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space));
     }
 
     let normalize = flags.contains(ColorMixFlags::NORMALIZE_WEIGHTS);
@@ -185,7 +206,7 @@ pub fn mix_many(
         
         let sum: f32 = items.iter().map(|item| item.weight).sum();
         if sum == 0.0 {
-            return AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space);
+            return finalize(AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space));
         }
         if (sum - 1.0).abs() > f32::EPSILON {
             weight_scale = 1.0 / sum;
@@ -244,22 +265,7 @@ pub fn mix_many(
     );
     result.flags = accumulated_color.flags;
 
-    if flags.contains(ColorMixFlags::RESULT_IN_MODERN_SYNTAX) {
-        
-        
-        
-        if result.is_legacy_syntax() {
-            result.to_color_space(ColorSpace::Srgb)
-        } else {
-            result
-        }
-    } else if items.iter().all(|item| item.color.is_legacy_syntax()) {
-        
-        
-        result.into_srgb_legacy()
-    } else {
-        result
-    }
+    finalize(result)
 }
 
 
