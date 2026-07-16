@@ -3360,6 +3360,26 @@ var gUIDensity = {
     };
   },
 
+  
+
+
+
+
+
+
+
+
+
+  setUIDensity(mode) {
+    let overridden = this.getCurrentDensity().overridden;
+    Services.prefs.setIntPref(this.uiDensityPref, mode);
+    
+    
+    if (overridden) {
+      Services.prefs.setBoolPref(this.autoTouchModePref, false);
+    }
+  },
+
   update(mode) {
     if (mode == null) {
       mode = this.getCurrentDensity().mode;
