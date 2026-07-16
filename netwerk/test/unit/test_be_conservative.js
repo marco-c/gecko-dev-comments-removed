@@ -192,8 +192,11 @@ function startClient(port, beConservative, expectSuccess) {
 
       
       if (!mozinfo.socketprocess_networking) {
-        
-        HandshakeTelemetryHelpers.checkEntry(flavors, 98, 1);
+        HandshakeTelemetryHelpers.checkEntry(
+          flavors,
+          "SSL_ERROR_PROTOCOL_VERSION_ALERT",
+          1
+        );
         HandshakeTelemetryHelpers.checkEmpty(nonflavors);
       }
 
