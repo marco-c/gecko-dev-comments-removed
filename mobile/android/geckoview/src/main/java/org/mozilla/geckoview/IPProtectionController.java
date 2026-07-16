@@ -27,7 +27,6 @@ public class IPProtectionController {
   private static final String LOGTAG = "IPProtectionController";
   private Delegate mDelegate;
   private AuthProvider mAuthProvider;
-  private GpiProvider mGpiProvider;
   private final BundleEventListener mEventListener;
 
   
@@ -209,38 +208,6 @@ public class IPProtectionController {
   }
 
   
-  public interface GpiProvider {
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    default @NonNull GeckoResult<Void> warmUp() {
-      return GeckoResult.fromValue(null);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    @UiThread
-    default @NonNull GeckoResult<String> onTokenRequest() {
-      return GeckoResult.fromException(new RuntimeException(ERROR_NO_GPI_TOKEN));
-    }
-  }
-
-  
   public interface AuthProvider {
     
 
@@ -255,7 +222,7 @@ public class IPProtectionController {
 
 
     @UiThread
-    default @NonNull GeckoResult<String> onTokenRequest() {
+    default @NonNull GeckoResult<String> getToken() {
       return GeckoResult.fromException(new RuntimeException(ERROR_NO_TOKEN));
     }
   }
@@ -305,9 +272,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
             "GeckoView:IPProtection:ServerList:ListChanged",
-            "GeckoView:IPProtection:GetToken",
-            "GeckoView:IPProtection:GPI:WarmUp",
-            "GeckoView:IPProtection:GPI:RequestToken");
+            "GeckoView:IPProtection:GetToken");
   }
 
   
@@ -372,30 +337,6 @@ public class IPProtectionController {
   public AuthProvider getAuthProvider() {
     ThreadUtils.assertOnUiThread();
     return mAuthProvider;
-  }
-
-  
-
-
-
-
-
-  @UiThread
-  public void setGpiProvider(final @Nullable GpiProvider provider) {
-    ThreadUtils.assertOnUiThread();
-    mGpiProvider = provider;
-  }
-
-  
-
-
-
-
-  @UiThread
-  @Nullable
-  public GpiProvider getGpiProvider() {
-    ThreadUtils.assertOnUiThread();
-    return mGpiProvider;
   }
 
   
@@ -651,8 +592,6 @@ public class IPProtectionController {
 
   private static final String ERROR_NO_AUTH_PROVIDER = "no-auth-provider";
   private static final String ERROR_NO_TOKEN = "no-token";
-  private static final String ERROR_NO_GPI_PROVIDER = "no-gpi-provider";
-  private static final String ERROR_NO_GPI_TOKEN = "no-gpi-token";
 
   private class EventListener implements BundleEventListener {
     @Override
@@ -678,52 +617,11 @@ public class IPProtectionController {
             if (provider == null) return;
             callback.resolveTo(
                 provider
-                    .onTokenRequest()
+                    .getToken()
                     .map(
                         token -> {
                           if (token == null || token.isEmpty()) {
                             throw new RuntimeException(ERROR_NO_TOKEN);
-                          }
-                          final GeckoBundle result = new GeckoBundle(1);
-                          result.putString("token", token);
-                          return result;
-                        }));
-            break;
-          }
-        case "GeckoView:IPProtection:GPI:WarmUp":
-          {
-            final GpiProvider gpiProvider = mGpiProvider;
-            if (gpiProvider == null) {
-              Log.w(LOGTAG, "Received " + event + " but no GPI provider is set");
-              break;
-            }
-            gpiProvider
-                .warmUp()
-                .then(
-                    v -> {
-                      EventDispatcher.getInstance()
-                          .dispatch("GeckoView:IPProtection:GPI:WarmUpCompleted", null);
-                      return null;
-                    },
-                    e -> {
-                      Log.w(LOGTAG, "GPI warm-up failed", e);
-                      EventDispatcher.getInstance()
-                          .dispatch("GeckoView:IPProtection:GPI:WarmUpFailed", null);
-                      return null;
-                    });
-            break;
-          }
-        case "GeckoView:IPProtection:GPI:RequestToken":
-          {
-            final GpiProvider gpiProvider = tryGpiProvider(event, callback);
-            if (gpiProvider == null) return;
-            callback.resolveTo(
-                gpiProvider
-                    .onTokenRequest()
-                    .map(
-                        token -> {
-                          if (token == null || token.isEmpty()) {
-                            throw new RuntimeException(ERROR_NO_GPI_TOKEN);
                           }
                           final GeckoBundle result = new GeckoBundle(1);
                           result.putString("token", token);
@@ -750,15 +648,6 @@ public class IPProtectionController {
         return null;
       }
       return mAuthProvider;
-    }
-
-    private @Nullable GpiProvider tryGpiProvider(final String event, final EventCallback callback) {
-      if (mGpiProvider == null) {
-        Log.w(LOGTAG, "Received event " + event + " but no GPI provider is set");
-        callback.sendError(ERROR_NO_GPI_PROVIDER);
-        return null;
-      }
-      return mGpiProvider;
     }
   }
 }
