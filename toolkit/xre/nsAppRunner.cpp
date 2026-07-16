@@ -6210,7 +6210,7 @@ nsresult XREMain::XRE_mainRun() {
       free(tempArgv);
       NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
-#  ifdef MOZILLA_OFFICIAL
+#  if defined(MOZILLA_OFFICIAL) || defined(DMG_INSTALL_HELPER_DEBUG)
       
       
       if (MacRunFromDmgUtils::MaybeInstallAndRelaunch()) {
