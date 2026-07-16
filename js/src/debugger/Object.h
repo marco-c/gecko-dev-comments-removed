@@ -220,6 +220,42 @@ class DebuggerObject : public NativeObject {
                                            JSErrorReport*& report);
 };
 
+
+
+
+
+
+
+
+
+class DebuggerPrivateName : public NativeObject {
+ public:
+  static const JSClass class_;
+
+  static NativeObject* initClass(JSContext* cx, Handle<GlobalObject*> global,
+                                 HandleObject debugCtor);
+  static DebuggerPrivateName* create(JSContext* cx, HandleObject proto,
+                                     Handle<JS::Symbol*> privateName,
+                                     Handle<NativeObject*> debugger);
+
+  JS::Symbol* privateName() const {
+    return getReservedSlot(SYMBOL_SLOT).toSymbol();
+  }
+  Debugger* owner() const;
+
+ private:
+  enum { SYMBOL_SLOT, OWNER_SLOT, RESERVED_SLOTS };
+
+  static const JSPropertySpec properties_[];
+  static const JSFunctionSpec methods_[];
+
+  [[nodiscard]] static bool construct(JSContext* cx, unsigned argc, Value* vp);
+  [[nodiscard]] static bool descriptionGetter(JSContext* cx, unsigned argc,
+                                              Value* vp);
+  [[nodiscard]] static bool toStringMethod(JSContext* cx, unsigned argc,
+                                           Value* vp);
+};
+
 } 
 
 #endif 

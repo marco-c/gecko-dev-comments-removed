@@ -9,29 +9,20 @@ const debug = Debugger();
 const globalDebugObject = debug.addDebuggee(global);
 
 
-var otherGlobalObj = globalDebugObject.getOwnPropertyDescriptor("obj").value
-var privateSymbol = otherGlobalObj.getOwnPrivateProperties()[0]
+
+
+
+
+
+var otherGlobalObj = globalDebugObject.getOwnPropertyDescriptor("obj").value;
+var privateName = otherGlobalObj.getOwnPrivateProperties()[0];
+
+
+assertEq(typeof privateName, "object");
+assertEq(typeof privateName === "symbol", false);
+
 
 
 var p = new Proxy({}, {});
-
-
-
-
-
-fail = false;
-try {
-    p[privateSymbol] = 1;
-    fail = true;
-} catch (e) {
-    assertEq(e instanceof TypeError, true);
-}
-assertEq(fail, false);
-
-try {
-    p[privateSymbol];
-    fail = true;
-} catch (e) {
-    assertEq(e instanceof TypeError, true);
-}
-assertEq(fail, false);
+p[privateName] = 1;
+assertEq(privateName in p, true);

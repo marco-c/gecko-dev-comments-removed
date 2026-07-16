@@ -42,10 +42,11 @@ class PrivatePropertiesIteratorActor extends Actor {
         size: privateProperties.length,
         propertyDescription(index) {
           
-          const symbol = privateProperties[index];
+          
+          const privateName = privateProperties[index];
           return {
-            name: symbol.description,
-            descriptor: propertyDescriptor(objectActor, symbol, 0),
+            name: privateName.description,
+            descriptor: propertyDescriptor(objectActor, privateName, 0),
           };
         },
       };
