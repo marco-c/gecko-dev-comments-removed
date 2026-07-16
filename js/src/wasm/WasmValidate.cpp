@@ -5982,8 +5982,18 @@ enum class AliasKindRaw : uint8_t {
             
             
             ComponentSortIndex original = inlineExports.resolveOriginal(exp);
-            return ComponentItem::alias(ComponentAliasKind::Outer,
-                                        original.sort, 0, original.index);
+            ComponentItem originalItem = c->resolveSortIndex(original);
+            if (originalItem.isOuterAlias()) {
+              
+              
+              MOZ_ASSERT(
+                  !c->resolveSortIndex(originalItem.outerAliasSortIndex())
+                       .isOuterAlias());
+              return originalItem;
+            } else {
+              return ComponentItem::alias(ComponentAliasKind::Outer,
+                                          original.sort, 0, original.index);
+            }
           });
 
       ComponentSortIndex newAliasSortIndex;

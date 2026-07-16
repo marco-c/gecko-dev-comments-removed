@@ -162,9 +162,9 @@ class Module : public JS::WasmModule {
 
   
 
-  bool instantiate(JSContext* cx, ImportValues& imports,
-                   HandleObject instanceProto,
-                   MutableHandle<WasmInstanceObject*> instanceObj) const;
+  [[nodiscard]] bool instantiate(
+      JSContext* cx, ImportValues& imports, HandleObject instanceProto,
+      MutableHandle<WasmInstanceObject*> instanceObj) const;
 
   
   
