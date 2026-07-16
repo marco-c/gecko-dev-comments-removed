@@ -46,13 +46,6 @@ struct TextureCaps
 
     
     SupportedSampleSet sampleCounts;
-
-    
-    GLuint getMaxSamples() const;
-
-    
-    
-    GLuint getNearestSamples(GLuint requestedSamples) const;
 };
 
 TextureCaps GenerateMinimumTextureCaps(GLenum internalFormat,
@@ -91,14 +84,15 @@ void InitMinimumTextureCapsMap(const Version &clientVersion,
 bool DetermineCompressedTextureETCSupport(const TextureCapsMap &textureCaps);
 
 
+bool DetermineRenderSnormSupport(const TextureCapsMap &textureCaps, bool textureNorm16EXT);
+
+
 using ExtensionBool = bool Extensions::*;
 
 struct ExtensionInfo
 {
     
-    
     bool Requestable = false;
-    bool Disablable  = false;
 
     
     ExtensionBool ExtensionsMember = nullptr;
@@ -127,9 +121,6 @@ struct Limitations
     bool noSeparateStencilRefsAndMasks = false;
 
     
-    bool shadersRequireIndexedLoopValidation = false;
-
-    
     
     bool noSimultaneousConstantColorAndAlphaBlendFunc = false;
 
@@ -150,6 +141,11 @@ struct Limitations
     bool noShadowSamplerCompareModeNone = false;
 
     
+    
+    
+    bool noRasterOrderGroupWithoutAttachmentZero = false;
+
+    
     bool squarePvrtc1 = false;
 
     
@@ -159,12 +155,22 @@ struct Limitations
     bool emulatedAstc = false;
 
     
-    bool noCompressedTexture3D = false;
-
-    
     bool compressedBaseMipLevelMultipleOfFour = false;
 
-    bool limitWebglMaxTextureSizeTo4096 = false;
+    
+    GLint webGLTextureSizeLimit = 0;
+
+    
+    
+    bool multidrawEmulated = true;
+
+    
+    
+    bool baseInstanceBaseVertexEmulated = true;
+
+    
+    
+    GLsizeiptr bufferSizeLimit = std::numeric_limits<GLsizeiptr>::max();
 };
 
 struct TypePrecision
@@ -184,6 +190,20 @@ struct TypePrecision
 
     std::array<GLint, 2> range = {0, 0};
     GLint precision            = 0;
+};
+
+struct FragmentShadingRateProperties
+{
+    GLuint minFragmentShadingRateAttachmentTexelWidth;
+    GLuint minFragmentShadingRateAttachmentTexelHeight;
+    GLuint maxFragmentShadingRateAttachmentTexelWidth;
+    GLuint maxFragmentShadingRateAttachmentTexelHeight;
+    GLuint maxFragmentShadingRateAttachmentTexelAspectRatio;
+    GLuint maxFragmentShadingRateAttachmentLayers;
+    bool layeredShadingRateAttachments;
+    bool fragmentShadingRateNonTrivialCombinersSupport;
+    bool fragmentShadingRateWithShaderDepthStencilWritesSupport;
+    bool fragmentShadingRateWithSampleMaskSupport;
 };
 
 struct Caps
@@ -348,6 +368,8 @@ struct Caps
     GLint maxTessEvaluationInputComponents  = 0;
     GLint maxTessEvaluationOutputComponents = 0;
 
+    bool primitiveRestartForPatchesSupported = false;
+
     GLuint subPixelBits = 4;
 
     
@@ -376,8 +398,10 @@ struct Caps
 
     
     GLuint maxPixelLocalStoragePlanes                       = 0;
-    GLuint maxColorAttachmentsWithActivePixelLocalStorage   = 0;
     GLuint maxCombinedDrawBuffersAndPixelLocalStoragePlanes = 0;
+
+    
+    GLuint maxShaderPixelLocalStorageFastSizeEXT = 0;
 
     
     GLuint maxMultitextureUnits                 = 0;
@@ -393,11 +417,23 @@ struct Caps
     GLfloat maxSmoothLineWidth                  = 0.0f;
 
     
+    GLfloat lineWidthGranularity    = 0.0f;
+    GLfloat minMultisampleLineWidth = 0.0f;
+    GLfloat maxMultisampleLineWidth = 0.0f;
+
+    
     GLint maxTextureBufferSize         = 0;
     GLint textureBufferOffsetAlignment = 0;
+
+    
+    bool fragmentShaderFramebufferFetchMRT = false;
+
+    
+    FragmentShadingRateProperties fragmentShadingRateProperties = {};
 };
 
 Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensions);
+
 }  
 
 namespace egl
@@ -408,10 +444,10 @@ struct Caps
     Caps();
 
     
-    bool textureNPOT;
+    bool textureNPOT = false;
 
     
-    bool stencil8;
+    bool stencil8 = false;
 };
 
 struct DisplayExtensions
@@ -560,6 +596,9 @@ struct DisplayExtensions
     bool getFrameTimestamps = false;
 
     
+    bool frontBufferAutoRefreshANDROID = false;
+
+    
     bool timestampSurfaceAttributeANGLE = false;
 
     
@@ -567,6 +606,9 @@ struct DisplayExtensions
 
     
     bool powerPreference = false;
+
+    
+    bool waitUntilWorkScheduled = false;
 
     
     bool imageD3D11Texture = false;
@@ -590,12 +632,6 @@ struct DisplayExtensions
     bool contextPriority = false;
 
     
-    bool ggpStreamDescriptor = false;
-
-    
-    bool swapWithFrameToken = false;
-
-    
     bool glColorspace = false;
 
     
@@ -615,6 +651,15 @@ struct DisplayExtensions
 
     
     bool eglColorspaceAttributePassthroughANGLE = false;
+
+    
+    bool glColorspaceBt2020Linear = false;
+
+    
+    bool glColorspaceBt2020Pq = false;
+
+    
+    bool glColorspaceBt2020Hlg = false;
 
     
     bool framebufferTargetANDROID = false;
@@ -669,6 +714,27 @@ struct DisplayExtensions
 
     
     bool mtlSyncSharedEventANGLE = false;
+
+    
+    bool mtlSyncCommandsScheduledANGLE = false;
+
+    
+    bool globalFenceSyncANGLE = false;
+
+    
+    bool memoryUsageReportANGLE = false;
+
+    
+    bool surfaceCompressionEXT = false;
+
+    
+    bool webgpuTextureClientBuffer = false;
+
+    
+    bool createContextPassthroughShadersANGLE = false;
+
+    
+    bool contextPriorityRealtimeNV = false;
 };
 
 struct DeviceExtensions
@@ -682,16 +748,28 @@ struct DeviceExtensions
     bool deviceD3D = false;
 
     
-    bool deviceCGL = false;
+    bool deviceD3D9 = false;
 
     
-    bool deviceEAGL = false;
+    bool deviceD3D11 = false;
+
+    
+    bool deviceCGL = false;
 
     
     bool deviceMetal = false;
 
     
     bool deviceVulkan = false;
+
+    
+    bool deviceDrmEXT = false;
+
+    
+    bool deviceDrmRenderNodeEXT = false;
+
+    
+    bool deviceWebGPU = false;
 };
 
 struct ClientExtensions
@@ -718,6 +796,9 @@ struct ClientExtensions
     bool platformWaylandEXT = false;
 
     
+    bool platformSurfacelessMESA = false;
+
+    
     bool platformANGLE = false;
 
     
@@ -727,19 +808,25 @@ struct ClientExtensions
     bool platformANGLED3D11ON12 = false;
 
     
+    bool platformANGLED3DLUID = false;
+
+    
     bool platformANGLEOpenGL = false;
 
     
     bool platformANGLENULL = false;
 
     
+    bool platformANGLEWebgpu = false;
+
+    
     bool platformANGLEVulkan = false;
 
     
-    bool platformANGLEMetal = false;
+    bool platformANGLEVulkanDeviceUUID = false;
 
     
-    bool platformANGLEDeviceContextVolatileEagl = false;
+    bool platformANGLEMetal = false;
 
     
     bool platformANGLEDeviceContextVolatileCgl = false;
@@ -779,6 +866,9 @@ struct ClientExtensions
 
     
     bool displayPowerPreferenceANGLE = false;
+
+    
+    bool noErrorANGLE = false;
 };
 
 }  

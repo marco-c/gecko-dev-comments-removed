@@ -21,9 +21,15 @@ namespace gl
 class ErrorSet;
 class MemoryProgramCache;
 class Path;
+class PixelLocalStoragePlane;
 class Semaphore;
 struct Workarounds;
 }  
+
+namespace angle
+{
+struct ImageLoadContext;
+}
 
 namespace rx
 {
@@ -35,7 +41,7 @@ class ContextImpl : public GLImplFactory
 
     virtual void onDestroy(const gl::Context *context) {}
 
-    virtual angle::Result initialize() = 0;
+    virtual angle::Result initialize(const angle::ImageLoadContext &imageLoadContext) = 0;
 
     
     virtual angle::Result flush(const gl::Context *context)  = 0;
@@ -184,6 +190,7 @@ class ContextImpl : public GLImplFactory
                                          const std::string &message) = 0;
     virtual angle::Result popDebugGroup(const gl::Context *context)  = 0;
     virtual angle::Result handleNoopDrawEvent();
+    virtual angle::Result handleNoopMultiDrawEvent();
 
     
     virtual void setMaxShaderCompilerThreads(GLuint count) {}
@@ -198,9 +205,17 @@ class ContextImpl : public GLImplFactory
     virtual void blendBarrier() {}
 
     
+    virtual angle::Result startTiling(const gl::Context *context,
+                                      const gl::Rectangle &area,
+                                      GLbitfield preserveMask);
+    virtual angle::Result endTiling(const gl::Context *context, GLbitfield preserveMask);
+
+    
     virtual angle::Result syncState(const gl::Context *context,
-                                    const gl::State::DirtyBits &dirtyBits,
-                                    const gl::State::DirtyBits &bitMask,
+                                    const gl::state::DirtyBits dirtyBits,
+                                    const gl::state::DirtyBits bitMask,
+                                    const gl::state::ExtendedDirtyBits extendedDirtyBits,
+                                    const gl::state::ExtendedDirtyBits extendedBitMask,
                                     gl::Command command) = 0;
 
     
@@ -212,12 +227,14 @@ class ContextImpl : public GLImplFactory
     virtual angle::Result onUnMakeCurrent(const gl::Context *context);
 
     
-    virtual gl::Caps getNativeCaps() const                                 = 0;
-    virtual const gl::TextureCapsMap &getNativeTextureCaps() const         = 0;
-    virtual const gl::Extensions &getNativeExtensions() const              = 0;
-    virtual const gl::Limitations &getNativeLimitations() const            = 0;
-    virtual ShPixelLocalStorageType getNativePixelLocalStorageType() const = 0;
+    virtual const angle::ShadingRateMap &getSupportedFragmentShadingRateEXTSampleCounts() const;
 
+    
+    virtual gl::Caps getNativeCaps() const                                              = 0;
+    virtual const gl::TextureCapsMap &getNativeTextureCaps() const                      = 0;
+    virtual const gl::Extensions &getNativeExtensions() const                           = 0;
+    virtual const gl::Limitations &getNativeLimitations() const                         = 0;
+    virtual const ShPixelLocalStorageOptions &getNativePixelLocalStorageOptions() const = 0;
     virtual angle::Result dispatchCompute(const gl::Context *context,
                                           GLuint numGroupsX,
                                           GLuint numGroupsY,
@@ -230,8 +247,6 @@ class ContextImpl : public GLImplFactory
                                                 GLbitfield barriers)                     = 0;
 
     const gl::State &getState() const { return mState; }
-    int getClientMajorVersion() const { return mState.getClientMajorVersion(); }
-    int getClientMinorVersion() const { return mState.getClientMinorVersion(); }
     const gl::Caps &getCaps() const { return mState.getCaps(); }
     const gl::TextureCapsMap &getTextureCaps() const { return mState.getTextureCaps(); }
     const gl::Extensions &getExtensions() const { return mState.getExtensions(); }
@@ -255,12 +270,17 @@ class ContextImpl : public GLImplFactory
     virtual egl::Error reacquireHighPowerGPU(gl::Context *context);
 
     
+    virtual void acquireExternalContext(const gl::Context *context);
+    virtual void releaseExternalContext(const gl::Context *context);
+
+    
     virtual angle::Result acquireTextures(const gl::Context *context,
                                           const gl::TextureBarrierVector &textureBarriers);
     virtual angle::Result releaseTextures(const gl::Context *context,
                                           gl::TextureBarrierVector *textureBarriers);
 
     
+    virtual const angle::PerfMonitorCounterGroupsInfo &getPerfMonitorCountersInfo() const;
     virtual const angle::PerfMonitorCounterGroups &getPerfMonitorCounters();
 
   protected:

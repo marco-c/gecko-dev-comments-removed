@@ -38,7 +38,7 @@ void EnsureEGLLoaded()
     }
 
     std::string errorOut;
-    gEntryPointsLib = OpenSystemLibraryAndGetError(ANGLE_GLESV2_LIBRARY_NAME,
+    gEntryPointsLib = OpenSystemLibraryAndGetError(ANGLE_DISPATCH_LIBRARY,
                                                    angle::SearchType::ModuleDir, &errorOut);
     if (gEntryPointsLib)
     {
@@ -481,6 +481,32 @@ EGLBoolean EGLAPIENTRY eglReleaseDeviceANGLE(EGLDeviceEXT device)
 }
 
 
+void EGLAPIENTRY eglLockVulkanQueueANGLE(EGLDisplay dpy)
+{
+    EnsureEGLLoaded();
+    return EGL_LockVulkanQueueANGLE(dpy);
+}
+
+void EGLAPIENTRY eglUnlockVulkanQueueANGLE(EGLDisplay dpy)
+{
+    EnsureEGLLoaded();
+    return EGL_UnlockVulkanQueueANGLE(dpy);
+}
+
+
+void EGLAPIENTRY eglAcquireExternalContextANGLE(EGLDisplay dpy, EGLSurface drawAndRead)
+{
+    EnsureEGLLoaded();
+    return EGL_AcquireExternalContextANGLE(dpy, drawAndRead);
+}
+
+void EGLAPIENTRY eglReleaseExternalContextANGLE(EGLDisplay dpy)
+{
+    EnsureEGLLoaded();
+    return EGL_ReleaseExternalContextANGLE(dpy);
+}
+
+
 const char *EGLAPIENTRY eglQueryStringiANGLE(EGLDisplay dpy, EGLint name, EGLint index)
 {
     EnsureEGLLoaded();
@@ -500,6 +526,13 @@ void *EGLAPIENTRY eglCopyMetalSharedEventANGLE(EGLDisplay dpy, EGLSyncKHR sync)
 {
     EnsureEGLLoaded();
     return EGL_CopyMetalSharedEventANGLE(dpy, sync);
+}
+
+
+void EGLAPIENTRY eglSetValidationEnabledANGLE(EGLBoolean validationState)
+{
+    EnsureEGLLoaded();
+    return EGL_SetValidationEnabledANGLE(validationState);
 }
 
 
@@ -597,14 +630,6 @@ EGLBoolean EGLAPIENTRY eglStreamPostD3DTextureANGLE(EGLDisplay dpy,
 }
 
 
-EGLBoolean EGLAPIENTRY eglSwapBuffersWithFrameTokenANGLE(EGLDisplay dpy,
-                                                         EGLSurface surface,
-                                                         EGLFrameTokenANGLE frametoken)
-{
-    EnsureEGLLoaded();
-    return EGL_SwapBuffersWithFrameTokenANGLE(dpy, surface, frametoken);
-}
-
 
 EGLBoolean EGLAPIENTRY eglGetMscRateANGLE(EGLDisplay dpy,
                                           EGLSurface surface,
@@ -623,6 +648,13 @@ EGLBoolean EGLAPIENTRY eglExportVkImageANGLE(EGLDisplay dpy,
 {
     EnsureEGLLoaded();
     return EGL_ExportVkImageANGLE(dpy, image, vk_image, vk_image_create_info);
+}
+
+
+void EGLAPIENTRY eglWaitUntilWorkScheduledANGLE(EGLDisplay dpy)
+{
+    EnsureEGLLoaded();
+    return EGL_WaitUntilWorkScheduledANGLE(dpy);
 }
 
 
@@ -704,6 +736,19 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplayEXT(EGLenum platform,
 {
     EnsureEGLLoaded();
     return EGL_GetPlatformDisplayEXT(platform, native_display, attrib_list);
+}
+
+
+EGLBoolean EGLAPIENTRY eglQuerySupportedCompressionRatesEXT(EGLDisplay dpy,
+                                                            EGLConfig config,
+                                                            const EGLAttrib *attrib_list,
+                                                            EGLint *rates,
+                                                            EGLint rate_size,
+                                                            EGLint *num_rates)
+{
+    EnsureEGLLoaded();
+    return EGL_QuerySupportedCompressionRatesEXT(dpy, config, attrib_list, rates, rate_size,
+                                                 num_rates);
 }
 
 

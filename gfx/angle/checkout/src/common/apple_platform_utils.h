@@ -11,56 +11,7 @@
 
 #include "common/platform.h"
 
-
-
-
-
-#if TARGET_OS_MACCATALYST
-
-
-#    define ANGLE_APPLE_AVAILABLE_XCI(macVer, macCatalystVer, iOSVer) \
-        @available(macOS macVer, macCatalyst macCatalystVer, iOS iOSVer, *)
-
-
-#    define ANGLE_APPLE_AVAILABLE_XC(macVer, macCatalystVer) \
-        @available(macOS macVer, macCatalyst macCatalystVer, *)
-
-
-#    define ANGLE_APPLE_AVAILABLE_CI(macCatalystVer, iOSVer) \
-        @available(macCatalyst macCatalystVer, iOS iOSVer, *)
-#else
-#    define ANGLE_APPLE_AVAILABLE_XCI(macVer, macCatalystVer, iOSVer) \
-        ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer)
-
-#    define ANGLE_APPLE_AVAILABLE_XC(macVer, macCatalystVer) @available(macOS macVer, *)
-#    define ANGLE_APPLE_AVAILABLE_CI(macCatalystVer, iOSVer) @available(iOS iOSVer, tvOS iOSVer, *)
-#endif
-
-
-#define ANGLE_APPLE_AVAILABLE_XI(macVer, iOSVer) \
-    @available(macOS macVer, iOS iOSVer, tvOS iOSVer, *)
-
-
-#define ANGLE_APPLE_AVAILABLE_I(iOSVer) @available(iOS iOSVer, tvOS iOSVer, *)
-
-#if TARGET_OS_IPHONE
-#    if !defined(__IPHONE_11_0)
-#        define __IPHONE_11_0 110000
-#    endif
-#    if !defined(ANGLE_IOS_DEPLOY_TARGET)
-#        define ANGLE_IOS_DEPLOY_TARGET __IPHONE_11_0
-#    endif
-#    if !defined(__IPHONE_OS_VERSION_MAX_ALLOWED)
-#        define __IPHONE_OS_VERSION_MAX_ALLOWED __IPHONE_11_0
-#    endif
-#    if !defined(__TV_OS_VERSION_MAX_ALLOWED)
-#        define __TV_OS_VERSION_MAX_ALLOWED __IPHONE_11_0
-#    endif
-#endif
-
-#if !defined(TARGET_OS_MACCATALYST)
-#    define TARGET_OS_MACCATALYST 0
-#endif
+#include <string>
 
 #if defined(__ARM_ARCH)
 #    define ANGLE_APPLE_IS_ARM (__ARM_ARCH != 0)
@@ -82,9 +33,32 @@
 
 #define ANGLE_APPLE_UNUSED __attribute__((unused))
 
+#if __has_warning("-Wdeprecated-declarations")
+#    define ANGLE_APPLE_ALLOW_DEPRECATED_BEGIN \
+        _Pragma("GCC diagnostic push")         \
+            _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#else
+#    define ANGLE_APPLE_ALLOW_DEPRECATED_BEGIN
+#endif
+
+#if __has_warning("-Wdeprecated-declarations")
+#    define ANGLE_APPLE_ALLOW_DEPRECATED_END _Pragma("GCC diagnostic pop")
+#else
+#    define ANGLE_APPLE_ALLOW_DEPRECATED_END
+#endif
+
 namespace angle
 {
 bool IsMetalRendererAvailable();
-}
+
+#if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
+bool GetMacosMachineModel(std::string *outMachineModel);
+bool ParseMacMachineModel(const std::string &identifier,
+                          std::string *type,
+                          int32_t *major,
+                          int32_t *minor);
+#endif
+
+}  
 
 #endif

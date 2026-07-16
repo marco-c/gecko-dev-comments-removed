@@ -10,6 +10,10 @@
 #ifndef COMMON_POOLALLOC_H_
 #define COMMON_POOLALLOC_H_
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #if !defined(NDEBUG)
 #    define ANGLE_POOL_ALLOC_GUARD_BLOCKS
 #endif
@@ -31,21 +35,19 @@
 
 
 
-#include "angleutils.h"
-#include "common/debug.h"
+#include <stdint.h>
+
+#include "common/angleutils.h"
+#include "common/log_utils.h"
+
+#if defined(ANGLE_DISABLE_POOL_ALLOC)
+#    include <memory>
+#    include <vector>
+#endif
 
 namespace angle
 {
-class Allocation;
 class PageHeader;
-
-
-
-
-
-
-
-
 
 
 
@@ -56,41 +58,18 @@ class PageHeader;
 class PoolAllocator : angle::NonCopyable
 {
   public:
+
     static const int kDefaultAlignment = sizeof(void *);
     
     
     
     
     PoolAllocator(int growthIncrement = 8 * 1024, int allocationAlignment = kDefaultAlignment);
-
-    
-    
-    
     ~PoolAllocator();
 
     
-    
-    
-    void initialize(int pageSize, int alignment);
+    void reset();
 
-    
-    
-    
-    
-    void push();
-
-    
-    
-    
-    
-    void pop();
-
-    
-    
-    
-    void popAll();
-
-    
     
     
     
@@ -127,22 +106,8 @@ class PoolAllocator : angle::NonCopyable
     
     
 
-    
-    
-    void lock();
-    void unlock();
-
   private:
-    size_t mAlignment;  
-                        
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    struct AllocState
-    {
-        size_t offset;
-        PageHeader *page;
-    };
-    using AllocStack = std::vector<AllocState>;
-
     
     uint8_t *allocateNewPage(size_t numBytes);
     
@@ -163,17 +128,16 @@ class PoolAllocator : angle::NonCopyable
     
     
     PageHeader *mInUseList;
-    
-    AllocStack mStack;
 
     int mNumCalls;       
     size_t mTotalBytes;  
 
 #else  
-    std::vector<std::vector<void *>> mStack;
+    std::vector<std::unique_ptr<uint8_t[]>> mStack;
 #endif
 
-    bool mLocked;
+    size_t mAlignment;  
+                        
 };
 
 }  

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+#include "backtrace_utils.h"
+
+namespace angle
+{
+
+void BacktraceInfo::populateBacktraceInfo(void **stackAddressBuffer, size_t stackAddressCount) {}
+
+BacktraceInfo getBacktraceInfo()
+{
+    return {};
+}
+
+
+
+
+}  

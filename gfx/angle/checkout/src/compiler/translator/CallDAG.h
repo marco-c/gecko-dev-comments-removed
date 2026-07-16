@@ -32,7 +32,6 @@ namespace sh
 
 
 
-
 class CallDAG : angle::NonCopyable
 {
   public:
@@ -45,16 +44,7 @@ class CallDAG : angle::NonCopyable
         std::vector<int> callees;
     };
 
-    enum InitResult
-    {
-        INITDAG_SUCCESS,
-        INITDAG_RECURSION,
-        INITDAG_UNDEFINED,
-    };
-
-    
-    
-    InitResult init(TIntermNode *root, TDiagnostics *diagnostics);
+    void init(TIntermNode *root);
 
     
     size_t findIndex(const TSymbolUniqueId &id) const;

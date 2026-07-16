@@ -218,8 +218,15 @@ void *OpenSystemLibraryAndGetError(const char *libraryName,
                                    SearchType searchType,
                                    std::string *errorOut)
 {
-    std::string libraryWithExtension = std::string(libraryName) + "." + GetSharedLibraryExtension();
-#if ANGLE_PLATFORM_IOS
+    std::string libraryWithExtension = std::string(libraryName);
+    std::string dotExtension         = std::string(".") + GetSharedLibraryExtension();
+    
+    
+    if (libraryWithExtension.find(dotExtension) == std::string::npos)
+    {
+        libraryWithExtension += dotExtension;
+    }
+#if ANGLE_PLATFORM_IOS_FAMILY
     
     
     
@@ -235,23 +242,23 @@ std::string StripFilenameFromPath(const std::string &path)
     return (lastPathSepLoc != std::string::npos) ? path.substr(0, lastPathSepLoc) : "";
 }
 
-static std::atomic<uint64_t> globalThreadSerial(1);
-
 #if defined(ANGLE_PLATFORM_APPLE)
 
 uint64_t GetCurrentThreadUniqueId()
 {
+    static std::atomic<uint64_t> globalThreadSerial;
     static pthread_key_t tlsIndex;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
-      ASSERT(pthread_key_create(&tlsIndex, nullptr) == 0);
+      auto result = pthread_key_create(&tlsIndex, nullptr);
+      ASSERT(result == 0);
     });
-
     void *tlsValue = pthread_getspecific(tlsIndex);
-    if (tlsValue == nullptr)
+    if (ANGLE_UNLIKELY(tlsValue == nullptr))
     {
-        uint64_t threadId = globalThreadSerial++;
-        ASSERT(pthread_setspecific(tlsIndex, reinterpret_cast<void *>(threadId)) == 0);
+        uint64_t threadId = ++globalThreadSerial;
+        auto result       = pthread_setspecific(tlsIndex, reinterpret_cast<void *>(threadId));
+        ASSERT(result == 0);
         return threadId;
     }
     return reinterpret_cast<uint64_t>(tlsValue);
@@ -259,7 +266,8 @@ uint64_t GetCurrentThreadUniqueId()
 #else
 uint64_t GetCurrentThreadUniqueId()
 {
-    thread_local uint64_t threadId(globalThreadSerial++);
+    static std::atomic<uint64_t> globalThreadSerial;
+    thread_local uint64_t threadId(++globalThreadSerial);
     return threadId;
 }
 #endif

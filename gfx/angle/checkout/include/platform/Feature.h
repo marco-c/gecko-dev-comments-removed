@@ -13,11 +13,13 @@
 #include <string>
 #include <vector>
 
-#define ANGLE_FEATURE_CONDITION(set, feature, cond)       \
-    do                                                    \
-    {                                                     \
-        (set)->feature.enabled   = cond;                  \
-        (set)->feature.condition = ANGLE_STRINGIFY(cond); \
+#define ANGLE_FEATURE_CONDITION(set, feature, cond)           \
+    do                                                        \
+    {                                                         \
+        if (!(set)->feature.hasOverride)                      \
+        {                                                     \
+            (set)->feature.enabled   = cond;                  \
+        }                                                     \
     } while (0)
 
 namespace angle
@@ -35,6 +37,7 @@ enum class FeatureCategory
     VulkanAppWorkarounds,
     MetalFeatures,
     MetalWorkarounds,
+    WebGPUWorkarounds,
 };
 
 constexpr char kFeatureCategoryFrontendWorkarounds[]  = "Frontend workarounds";
@@ -47,6 +50,7 @@ constexpr char kFeatureCategoryVulkanWorkarounds[]    = "Vulkan workarounds";
 constexpr char kFeatureCategoryVulkanFeatures[]       = "Vulkan features";
 constexpr char kFeatureCategoryMetalFeatures[]        = "Metal features";
 constexpr char kFeatureCategoryMetalWorkarounds[]     = "Metal workarounds";
+constexpr char kFeatureCategoryWebGPUWorkarounds[]    = "WebGPU workarounds";
 constexpr char kFeatureCategoryUnknown[]              = "Unknown";
 
 inline const char *FeatureCategoryToString(const FeatureCategory &fc)
@@ -93,6 +97,10 @@ inline const char *FeatureCategoryToString(const FeatureCategory &fc)
             return kFeatureCategoryMetalWorkarounds;
             break;
 
+        case FeatureCategory::WebGPUWorkarounds:
+            return kFeatureCategoryWebGPUWorkarounds;
+            break;
+
         default:
             return kFeatureCategoryUnknown;
             break;
@@ -119,12 +127,10 @@ using FeatureList = std::vector<const FeatureInfo *>;
 struct FeatureInfo
 {
     FeatureInfo(const FeatureInfo &other);
-    FeatureInfo(const char *name,
-                const FeatureCategory &category,
-                const char *description,
-                FeatureMap *const mapPtr,
-                const char *bug);
+    FeatureInfo(const char *name, const FeatureCategory &category, FeatureMap *const mapPtr);
     ~FeatureInfo();
+
+    void applyOverride(bool state);
 
     
     const char *const name;
@@ -133,31 +139,19 @@ struct FeatureInfo
     const FeatureCategory category;
 
     
-    const char *const description;
-
-    
-    const char *const bug;
-
-    
     
     bool enabled = false;
 
     
-    const char *condition;
+    
+    bool hasOverride = false;
 };
 
 inline FeatureInfo::FeatureInfo(const FeatureInfo &other) = default;
 inline FeatureInfo::FeatureInfo(const char *name,
                                 const FeatureCategory &category,
-                                const char *description,
-                                FeatureMap *const mapPtr,
-                                const char *bug = "")
-    : name(name),
-      category(category),
-      description(description),
-      bug(bug),
-      enabled(false),
-      condition("")
+                                FeatureMap *const mapPtr)
+    : name(name), category(category), enabled(false)
 {
     if (mapPtr != nullptr)
     {
@@ -182,7 +176,8 @@ struct FeatureSetBase
     FeatureMap members = FeatureMap();
 
   public:
-    void overrideFeatures(const std::vector<std::string> &featureNames, bool enabled);
+    void reset();
+    std::string overrideFeatures(const std::vector<std::string> &featureNames, bool enabled);
     void populateFeatureList(FeatureList *features) const;
 
     const FeatureMap &getFeatures() const { return members; }

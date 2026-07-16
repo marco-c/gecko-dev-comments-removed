@@ -21,6 +21,16 @@
 
 
 
+#undef Always
+#undef Bool
+#undef None
+#undef Status
+#undef Success
+
+
+
+
+
 
 #if !defined(ANGLE_PLATFORM_FUCHSIA)
 typedef uint32_t zx_handle_t;

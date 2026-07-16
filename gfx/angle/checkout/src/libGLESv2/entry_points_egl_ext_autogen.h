@@ -67,6 +67,15 @@ ANGLE_EXPORT EGLDeviceEXT EGLAPIENTRY EGL_CreateDeviceANGLE(EGLint device_type,
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_ReleaseDeviceANGLE(EGLDeviceEXT device);
 
 
+ANGLE_EXPORT void EGLAPIENTRY EGL_LockVulkanQueueANGLE(EGLDisplay dpy);
+ANGLE_EXPORT void EGLAPIENTRY EGL_UnlockVulkanQueueANGLE(EGLDisplay dpy);
+
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_AcquireExternalContextANGLE(EGLDisplay dpy,
+                                                              EGLSurface drawAndRead);
+ANGLE_EXPORT void EGLAPIENTRY EGL_ReleaseExternalContextANGLE(EGLDisplay dpy);
+
+
 ANGLE_EXPORT const char *EGLAPIENTRY EGL_QueryStringiANGLE(EGLDisplay dpy,
                                                            EGLint name,
                                                            EGLint index);
@@ -76,6 +85,9 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_QueryDisplayAttribANGLE(EGLDisplay dpy,
 
 
 ANGLE_EXPORT void *EGLAPIENTRY EGL_CopyMetalSharedEventANGLE(EGLDisplay dpy, EGLSyncKHR sync);
+
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_SetValidationEnabledANGLE(EGLBoolean validationState);
 
 
 ANGLE_EXPORT void EGLAPIENTRY EGL_ReleaseHighPowerGPUANGLE(EGLDisplay dpy, EGLContext ctx);
@@ -122,12 +134,6 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_StreamPostD3DTextureANGLE(EGLDisplay dpy
                                                                   const EGLAttrib *attrib_list);
 
 
-ANGLE_EXPORT EGLBoolean EGLAPIENTRY
-EGL_SwapBuffersWithFrameTokenANGLE(EGLDisplay dpy,
-                                   EGLSurface surface,
-                                   EGLFrameTokenANGLE frametoken);
-
-
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetMscRateANGLE(EGLDisplay dpy,
                                                         EGLSurface surface,
                                                         EGLint *numerator,
@@ -138,6 +144,9 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_ExportVkImageANGLE(EGLDisplay dpy,
                                                            EGLImage image,
                                                            void *vk_image,
                                                            void *vk_image_create_info);
+
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_WaitUntilWorkScheduledANGLE(EGLDisplay dpy);
 
 
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetSyncValuesCHROMIUM(EGLDisplay dpy,
@@ -179,6 +188,15 @@ ANGLE_EXPORT EGLSurface EGLAPIENTRY EGL_CreatePlatformWindowSurfaceEXT(EGLDispla
 ANGLE_EXPORT EGLDisplay EGLAPIENTRY EGL_GetPlatformDisplayEXT(EGLenum platform,
                                                               void *native_display,
                                                               const EGLint *attrib_list);
+
+
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY
+EGL_QuerySupportedCompressionRatesEXT(EGLDisplay dpy,
+                                      EGLConfig config,
+                                      const EGLAttrib *attrib_list,
+                                      EGLint *rates,
+                                      EGLint rate_size,
+                                      EGLint *num_rates);
 
 
 ANGLE_EXPORT EGLint EGLAPIENTRY EGL_DebugMessageControlKHR(EGLDEBUGPROCKHR callback,

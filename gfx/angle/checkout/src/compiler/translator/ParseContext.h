@@ -6,6 +6,8 @@
 #ifndef COMPILER_TRANSLATOR_PARSECONTEXT_H_
 #define COMPILER_TRANSLATOR_PARSECONTEXT_H_
 
+#include "common/hash_containers.h"
+#include "common/span.h"
 #include "compiler/preprocessor/Preprocessor.h"
 #include "compiler/translator/Compiler.h"
 #include "compiler/translator/Declarator.h"
@@ -14,6 +16,7 @@
 #include "compiler/translator/FunctionLookup.h"
 #include "compiler/translator/QualifierTypes.h"
 #include "compiler/translator/SymbolTable.h"
+#include "compiler/translator/ValidateVaryingLocations.h"
 
 namespace sh
 {
@@ -24,6 +27,40 @@ struct TMatrixFields
     bool wholeCol;
     int row;
     int col;
+};
+
+struct ClipCullDistanceInfo
+{
+    
+    uint32_t size = 0;
+    
+    int32_t maxIndex = -1;
+    
+    bool hasNonConstIndex = false;
+    
+    bool hasArrayLengthMethodCall = false;
+    
+    TSourceLoc firstEncounter = kNoSourceLoc;
+    
+    ir::VariableId id = ir::kInvalidVariableId;
+};
+
+enum class GeomTessArray
+{
+    Sized,
+    Deferred,
+};
+
+enum class FunctionDeclaration
+{
+    Prototype,
+    Definition,
+};
+
+struct VariableAndLocation
+{
+    TSourceLoc line           = {};
+    const TVariable *variable = nullptr;
 };
 
 
@@ -38,7 +75,6 @@ class TParseContext : angle::NonCopyable
                   sh::GLenum type,
                   ShShaderSpec spec,
                   const ShCompileOptions &options,
-                  bool checksPrecErrors,
                   TDiagnostics *diagnostics,
                   const ShBuiltInResources &resources,
                   ShShaderOutput outputType);
@@ -50,6 +86,7 @@ class TParseContext : angle::NonCopyable
     void *getScanner() const { return mScanner; }
     void setScanner(void *scanner) { mScanner = scanner; }
     int getShaderVersion() const { return mShaderVersion; }
+    void onShaderVersionDeclared(int version);
     sh::GLenum getShaderType() const { return mShaderType; }
     ShShaderSpec getShaderSpec() const { return mShaderSpec; }
     int numErrors() const { return mDiagnostics->numErrors(); }
@@ -66,35 +103,21 @@ class TParseContext : angle::NonCopyable
     TIntermBlock *getTreeRoot() const { return mTreeRoot; }
     void setTreeRoot(TIntermBlock *treeRoot);
 
-    bool getFragmentPrecisionHigh() const
-    {
-        return mFragmentPrecisionHighOnESSL1 || mShaderVersion >= 300;
-    }
-    void setFragmentPrecisionHighOnESSL1(bool fragmentPrecisionHigh)
-    {
-        mFragmentPrecisionHighOnESSL1 = fragmentPrecisionHigh;
-    }
+    ir::IR getIR();
 
+    bool usesDerivatives() const { return mUsesDerivatives; }
     bool isEarlyFragmentTestsSpecified() const { return mEarlyFragmentTestsSpecified; }
     bool hasDiscard() const { return mHasDiscard; }
     bool isSampleQualifierSpecified() const { return mSampleQualifierSpecified; }
-
-    void setLoopNestingLevel(int loopNestintLevel) { mLoopNestingLevel = loopNestintLevel; }
-
-    void incrLoopNestingLevel() { ++mLoopNestingLevel; }
-    void decrLoopNestingLevel() { --mLoopNestingLevel; }
-
-    void incrSwitchNestingLevel() { ++mSwitchNestingLevel; }
-    void decrSwitchNestingLevel() { --mSwitchNestingLevel; }
 
     bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
     sh::WorkGroupSize getComputeShaderLocalSize() const;
 
     int getNumViews() const { return mNumViews; }
 
-    const std::map<int, TLayoutImageInternalFormat> &pixelLocalStorageBindings() const
+    const std::map<int, ShPixelLocalStorageLayout> &pixelLocalStorageLayouts() const
     {
-        return mPLSBindings;
+        return mPLSLayouts;
     }
 
     void enterFunctionDeclaration() { mDeclaringFunction = true; }
@@ -117,8 +140,8 @@ class TParseContext : angle::NonCopyable
     
     bool parseVectorFields(const TSourceLoc &line,
                            const ImmutableString &compString,
-                           int vecSize,
-                           TVector<int> *fieldOffsets);
+                           uint32_t vecSize,
+                           TVector<uint32_t> *fieldOffsets);
 
     void assignError(const TSourceLoc &line, const char *op, const TType &left, const TType &right);
     void unaryOpError(const TSourceLoc &line, const char *op, const TType &operand);
@@ -142,6 +165,7 @@ class TParseContext : angle::NonCopyable
 
     
     unsigned int checkIsValidArraySize(const TSourceLoc &line, TIntermTyped *expr);
+    bool checkIsValidArrayDimension(const TSourceLoc &line, TVector<unsigned int> *arraySizes);
     bool checkIsValidQualifierForArray(const TSourceLoc &line, const TPublicType &elementQualifier);
     bool checkArrayElementIsNotArray(const TSourceLoc &line, const TPublicType &elementType);
     bool checkArrayOfArraysInOut(const TSourceLoc &line,
@@ -161,9 +185,6 @@ class TParseContext : angle::NonCopyable
     void checkStd430IsForShaderStorageBlock(const TSourceLoc &location,
                                             const TLayoutBlockStorage &blockStorage,
                                             const TQualifier &qualifier);
-    void checkIsParameterQualifierValid(const TSourceLoc &line,
-                                        const TTypeQualifierBuilder &typeQualifierBuilder,
-                                        TType *type);
 
     
     
@@ -221,7 +242,9 @@ class TParseContext : angle::NonCopyable
 
     
     
-    void adjustRedeclaredBuiltInType(const ImmutableString &identifier, TType *type);
+    void adjustRedeclaredBuiltInType(const TSourceLoc &line,
+                                     const ImmutableString &identifier,
+                                     TType *type);
 
     
     
@@ -234,6 +257,16 @@ class TParseContext : angle::NonCopyable
                                          const ImmutableString &identifier,
                                          TIntermTyped *initializer,
                                          const TSourceLoc &loc);
+
+    void beginNestedScope();
+    void endNestedScope();
+
+    void beginLoop(TLoopType loopType, const TSourceLoc &line);
+    void onLoopConditionBegin(TIntermNode *init, const TSourceLoc &line);
+    void onLoopConditionEnd(TIntermNode *condition, const TSourceLoc &line);
+    void onLoopContinueEnd(TIntermNode *statement, const TSourceLoc &line);
+    void onDoLoopBegin();
+    void onDoLoopConditionBegin();
     TIntermNode *addLoop(TLoopType type,
                          TIntermNode *init,
                          TIntermNode *cond,
@@ -243,6 +276,10 @@ class TParseContext : angle::NonCopyable
 
     
     
+    void onIfTrueBlockBegin(TIntermTyped *cond, const TSourceLoc &loc);
+    void onIfTrueBlockEnd();
+    void onIfFalseBlockBegin();
+    void onIfFalseBlockEnd();
     TIntermNode *addIfElse(TIntermTyped *cond, TIntermNodePair code, const TSourceLoc &loc);
 
     void addFullySpecifiedType(TPublicType *typeSpecifier);
@@ -329,15 +366,18 @@ class TParseContext : angle::NonCopyable
     TFunctionLookup *addNonConstructorFunc(const ImmutableString &name, const TSymbol *symbol);
     TFunctionLookup *addConstructorFunc(const TPublicType &publicType);
 
-    TParameter parseParameterDeclarator(const TPublicType &publicType,
+    TParameter parseParameterDeclarator(const TPublicType &type,
                                         const ImmutableString &name,
                                         const TSourceLoc &nameLoc);
-
-    TParameter parseParameterArrayDeclarator(const ImmutableString &name,
+    TParameter parseParameterArrayDeclarator(const TPublicType &elementType,
+                                             const ImmutableString &name,
                                              const TSourceLoc &nameLoc,
-                                             const TVector<unsigned int> &arraySizes,
-                                             const TSourceLoc &arrayLoc,
-                                             TPublicType *elementType);
+                                             TVector<unsigned int> *arraySizes,
+                                             const TSourceLoc &arrayLoc);
+    void parseParameterQualifier(const TSourceLoc &line,
+                                 const TTypeQualifierBuilder &typeQualifierBuilder,
+                                 TPublicType &type);
+    void addParameter(TFunction *function, TParameter *param);
 
     TIntermTyped *addIndexExpression(TIntermTyped *baseExpression,
                                      const TSourceLoc &location,
@@ -353,10 +393,10 @@ class TParseContext : angle::NonCopyable
                                             const TSourceLoc &loc,
                                             const TVector<unsigned int> *arraySizes);
 
-    void checkDoesNotHaveDuplicateFieldName(const TFieldList::const_iterator begin,
-                                            const TFieldList::const_iterator end,
-                                            const ImmutableString &name,
-                                            const TSourceLoc &location);
+    void checkDoesNotHaveDuplicateFieldNames(const TFieldList *fields, const TSourceLoc &location);
+    void checkDoesNotHaveTooManyFields(const ImmutableString &name,
+                                       const TFieldList *fields,
+                                       const TSourceLoc &location);
     TFieldList *addStructFieldList(TFieldList *fields, const TSourceLoc &location);
     TFieldList *combineStructFieldLists(TFieldList *processedFields,
                                         const TFieldList *newlyAddedFields,
@@ -431,6 +471,7 @@ class TParseContext : angle::NonCopyable
 
     void checkIsBelowStructNestingLimit(const TSourceLoc &line, const TField &field);
 
+    void beginSwitch(const TSourceLoc &line, TIntermTyped *init);
     TIntermSwitch *addSwitch(TIntermTyped *init,
                              TIntermBlock *statementList,
                              const TSourceLoc &loc);
@@ -451,7 +492,10 @@ class TParseContext : angle::NonCopyable
                             TIntermTyped *left,
                             TIntermTyped *right,
                             const TSourceLoc &loc);
+    void onShortCircuitAndBegin(TIntermTyped *left, const TSourceLoc &loc);
+    void onShortCircuitOrBegin(TIntermTyped *left, const TSourceLoc &loc);
 
+    void onCommaLeftHandSideParsed(TIntermTyped *left);
     TIntermTyped *addComma(TIntermTyped *left, TIntermTyped *right, const TSourceLoc &loc);
 
     TIntermBranch *addBranch(TOperator op, const TSourceLoc &loc);
@@ -471,10 +515,27 @@ class TParseContext : angle::NonCopyable
     
     TIntermTyped *addFunctionCallOrMethod(TFunctionLookup *fnCall, const TSourceLoc &loc);
 
+    void onTernaryConditionParsed(TIntermTyped *cond, const TSourceLoc &line);
+    void onTernaryTrueExpressionParsed(TIntermTyped *trueExpression, const TSourceLoc &line);
     TIntermTyped *addTernarySelection(TIntermTyped *cond,
                                       TIntermTyped *trueExpression,
                                       TIntermTyped *falseExpression,
                                       const TSourceLoc &line);
+
+    uint32_t getClipDistanceArraySize() const
+    {
+        return mClipDistanceInfo.size > 0 ? mClipDistanceInfo.size : mClipDistanceInfo.maxIndex + 1;
+    }
+    uint32_t getCullDistanceArraySize() const
+    {
+        return mCullDistanceInfo.size > 0 ? mCullDistanceInfo.size : mCullDistanceInfo.maxIndex + 1;
+    }
+    bool isClipDistanceRedeclared() const { return mClipDistanceInfo.size > 0; }
+    bool isCullDistanceRedeclared() const { return mCullDistanceInfo.size > 0; }
+    bool isClipDistanceUsed() const
+    {
+        return mClipDistanceInfo.maxIndex >= 0 || mClipDistanceInfo.hasNonConstIndex;
+    }
 
     int getGeometryShaderMaxVertices() const { return mGeometryShaderMaxVertices; }
     int getGeometryShaderInvocations() const
@@ -507,16 +568,18 @@ class TParseContext : angle::NonCopyable
         return mTessEvaluationShaderInputPointType;
     }
 
-    const TVector<TType *> &getDeferredArrayTypesToSize() const
-    {
-        return mDeferredArrayTypesToSize;
-    }
-
     void markShaderHasPrecise() { mHasAnyPreciseType = true; }
     bool hasAnyPreciseType() const { return mHasAnyPreciseType; }
     AdvancedBlendEquations getAdvancedBlendEquations() const { return mAdvancedBlendEquations; }
 
     ShShaderOutput getOutputType() const { return mOutputType; }
+
+    
+    void endStatementWithValue(TIntermNode *statement);
+
+    bool postParseChecks();
+
+    const ShCompileOptions &getCompileOptions() const { return mCompileOptions; }
 
     
     TSymbolTable &symbolTable;  
@@ -533,7 +596,7 @@ class TParseContext : angle::NonCopyable
     
     constexpr static size_t kAtomicCounterArrayStride = 4;
 
-    void markStaticReadIfSymbol(TIntermNode *node);
+    void markStaticUseIfSymbol(TIntermNode *node);
 
     
     int checkIndexLessThan(bool outOfRangeIndexIsError,
@@ -545,16 +608,18 @@ class TParseContext : angle::NonCopyable
     bool declareVariable(const TSourceLoc &line,
                          const ImmutableString &identifier,
                          const TType *type,
+                         GeomTessArray sized,
                          TVariable **variable);
+
+    void checkNestingLevel(const TSourceLoc &line);
+    bool checkCase(const TSourceLoc &line, int64_t caseValue, const char *caseOrDefault);
 
     void checkCanBeDeclaredWithoutInitializer(const TSourceLoc &line,
                                               const ImmutableString &identifier,
                                               TType *type);
-
-    TParameter parseParameterDeclarator(TType *type,
-                                        const ImmutableString &name,
-                                        const TSourceLoc &nameLoc);
-
+    void checkDeclarationIsValidArraySize(const TSourceLoc &line,
+                                          const ImmutableString &identifier,
+                                          TType *type);
     bool checkIsValidTypeAndQualifierForArray(const TSourceLoc &indexLocation,
                                               const TPublicType &elementType);
     
@@ -564,18 +629,17 @@ class TParseContext : angle::NonCopyable
     
     bool isMultiplicationTypeCombinationValid(TOperator op, const TType &left, const TType &right);
 
-    void checkOutParameterIsNotOpaqueType(const TSourceLoc &line,
-                                          TQualifier qualifier,
-                                          const TType &type);
-
     void checkInternalFormatIsNotSpecified(const TSourceLoc &location,
                                            TLayoutImageInternalFormat internalFormat);
     void checkMemoryQualifierIsNotSpecified(const TMemoryQualifier &memoryQualifier,
                                             const TSourceLoc &location);
+
+    void checkAtomicCounterOffsetIsValid(bool forceAppend, const TSourceLoc &loc, TType *type);
     void checkAtomicCounterOffsetDoesNotOverlap(bool forceAppend,
                                                 const TSourceLoc &loc,
                                                 TType *type);
     void checkAtomicCounterOffsetAlignment(const TSourceLoc &location, const TType &type);
+    void checkAtomicCounterOffsetLimit(const TSourceLoc &location, const TType &type);
 
     void checkIndexIsNotSpecified(const TSourceLoc &location, int index);
     void checkBindingIsValid(const TSourceLoc &identifierLocation, const TType &type);
@@ -601,6 +665,8 @@ class TParseContext : angle::NonCopyable
                                        int objectLocationCount,
                                        const TLayoutQualifier &layoutQualifier);
 
+    void checkDepthIsNotSpecified(const TSourceLoc &location, TLayoutDepth depth);
+
     void checkYuvIsNotSpecified(const TSourceLoc &location, bool yuv);
 
     void checkEarlyFragmentTestsIsNotSpecified(const TSourceLoc &location, bool earlyFragmentTests);
@@ -613,10 +679,6 @@ class TParseContext : angle::NonCopyable
                                                             TType type,
                                                             const TSourceLoc &line);
 
-    void checkCombinedClipCullDistanceIsValid(const TSourceLoc &line,
-                                              const ImmutableString &identifier,
-                                              const int arraySize);
-
     
     void checkSingleTextureOffset(const TSourceLoc &line,
                                   const TConstantUnion *values,
@@ -627,12 +689,14 @@ class TParseContext : angle::NonCopyable
     
     void checkGeometryShaderInputAndSetArraySize(const TSourceLoc &location,
                                                  const ImmutableString &token,
-                                                 TType *type);
+                                                 TType *type,
+                                                 GeomTessArray *sizedOut);
 
     
     void checkTessellationShaderUnsizedArraysAndSetSize(const TSourceLoc &location,
                                                         const ImmutableString &token,
-                                                        TType *type);
+                                                        TType *type,
+                                                        GeomTessArray *sizedOut);
 
     
     
@@ -669,6 +733,15 @@ class TParseContext : angle::NonCopyable
                                                               const TSourceLoc &location,
                                                               bool insertParametersToSymbolTable);
 
+    void checkESSL100ForLoopInit(TIntermNode *init, const TSourceLoc &line);
+    void checkESSL100ForLoopCondition(TIntermNode *condition, const TSourceLoc &line);
+    void checkESSL100ForLoopContinue(TIntermNode *statement, const TSourceLoc &line);
+    void checkESSL100NoLoopSymbolAssign(TIntermSymbol *symbol, const TSourceLoc &line);
+    void checkESSL100ConstantIndex(TIntermTyped *index, const TSourceLoc &line);
+    bool isESSL100ConstantLoopSymbol(TIntermSymbol *symbol);
+
+    void checkCallGraph();
+
     void setAtomicCounterBindingDefaultOffset(const TPublicType &declaration,
                                               const TSourceLoc &location);
 
@@ -679,6 +752,49 @@ class TParseContext : angle::NonCopyable
 
     bool parseTessControlShaderOutputLayoutQualifier(const TTypeQualifier &typeQualifier);
     bool parseTessEvaluationShaderInputLayoutQualifier(const TTypeQualifier &typeQualifier);
+
+    bool checkVariableSize(const TSourceLoc &line,
+                           const ImmutableString &identifier,
+                           const TType *type);
+    void checkVaryingLocations(const TSourceLoc &line, const TVariable *variable);
+    void checkFragmentOutputLocations(const TSourceLoc &line, const TVariable *variable);
+    void checkVariableLocations(const TSourceLoc &line, const TVariable *variable);
+    void postParseValidateFragmentOutputLocations();
+
+    void sizeUnsizedArrayTypes(uint32_t arraySize);
+
+    enum class ControlFlowType
+    {
+        
+        If,
+        
+        Loop,
+        
+        Switch,
+        
+        NewScope,
+    };
+    bool isNestedIn(ControlFlowType type) const;
+    bool isDirectlyUnderSwitch() const;
+    void popControlFlow();
+
+    
+    
+    
+    
+    ir::TypeId getTypeId(const TType &type);
+    
+    ir::VariableId declareBuiltInOnFirstUse(const TVariable *variable);
+    
+    
+    void declareIRVariable(const TVariable *variable, GeomTessArray sized);
+    
+    
+    void declareFunction(const TFunction *function, FunctionDeclaration declaration);
+    
+    void pushVariable(const TVariable *variable);
+    
+    const TConstantUnion *pushConstant(const TConstantUnion *constant, const TType &type);
 
     
     enum class PLSIllegalOperations
@@ -704,7 +820,15 @@ class TParseContext : angle::NonCopyable
         
         
         AssignFragDepth,
-        AssignSampleMask
+        AssignSampleMask,
+
+        
+        
+        FragDataIndexNonzero,
+
+        
+        
+        EnableAdvancedBlendEquation,
     };
 
     
@@ -722,21 +846,23 @@ class TParseContext : angle::NonCopyable
     sh::GLenum mShaderType;    
     ShShaderSpec mShaderSpec;  
     ShCompileOptions mCompileOptions;  
+    const ShBuiltInResources &mResources;  
+
     int mShaderVersion;
     TIntermBlock *mTreeRoot;  
-    int mLoopNestingLevel;    
     int mStructNestingLevel;  
-    int mSwitchNestingLevel;  
-    const TType
-        *mCurrentFunctionType;    
-    bool mFunctionReturnsValue;   
-    bool mChecksPrecisionErrors;  
-                                  
-    bool mFragmentPrecisionHighOnESSL1;  
-                                         
+    const TFunction *mCurrentFunction;   
+    bool mFunctionReturnsValue;          
     bool mEarlyFragmentTestsSpecified;   
     bool mHasDiscard;                    
     bool mSampleQualifierSpecified;      
+    bool mPositionRedeclaredForSeparateShaderObject;       
+                                                           
+    bool mPointSizeRedeclaredForSeparateShaderObject;      
+                                                           
+    bool mPositionOrPointSizeUsedForSeparateShaderObject;  
+                                                           
+    bool mUsesDerivatives;  
     TLayoutMatrixPacking mDefaultUniformMatrixPacking;
     TLayoutBlockStorage mDefaultUniformBlockStorage;
     TLayoutMatrixPacking mDefaultBufferMatrixPacking;
@@ -746,11 +872,11 @@ class TParseContext : angle::NonCopyable
     TDirectiveHandler mDirectiveHandler;
     angle::pp::Preprocessor mPreprocessor;
     void *mScanner;
-    int mMinProgramTexelOffset;
-    int mMaxProgramTexelOffset;
 
-    int mMinProgramTextureGatherOffset;
-    int mMaxProgramTextureGatherOffset;
+    
+    
+    ClipCullDistanceInfo mClipDistanceInfo;
+    ClipCullDistanceInfo mCullDistanceInfo;
 
     
     bool mComputeShaderLocalSizeDeclared;
@@ -764,40 +890,101 @@ class TParseContext : angle::NonCopyable
     
     unsigned int mNumUniformBlocks;
 
-    int mMaxNumViews;
-    int mMaxImageUnits;
-    int mMaxCombinedTextureImageUnits;
-    int mMaxUniformLocations;
-    int mMaxUniformBufferBindings;
-    int mMaxVertexAttribs;
-    int mMaxAtomicCounterBindings;
-    int mMaxShaderStorageBufferBindings;
+    
+    
+    
+    
+    
+    
+    
+    
+    TUnorderedMap<TQualifier, bool> mBuiltInQualified;
 
     
     bool mDeclaringFunction;
 
     
     bool mDeclaringMain;
+    const TFunction *mMainFunction;
+    
+    
+    bool mIsReturnVisitedInMain;
+    
+    
+    angle::base::CheckedNumeric<size_t> mTotalPrivateVariablesSize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    struct ControlFlow
+    {
+        ControlFlowType type;
+
+        
+        TSymbolUniqueId forLoopSymbol = TSymbolUniqueId::kInvalid();
+        bool isForLoopSymbolConstant  = false;
+
+        
+        TSourceLoc loopLocation                          = kNoSourceLoc;
+        bool isLoopConditionConstantTrue                 = false;
+        const TVariable *loopConditionConstantTrueSymbol = nullptr;
+        bool hasBreak                                    = false;
+        bool hasReturn                                   = false;
+
+        
+        
+        
+        TBasicType switchType                      = EbtInt;
+        static constexpr int64_t kDefaultCaseLabel = std::numeric_limits<int64_t>::max();
+        TVector<int64_t> caseLabels;
+    };
+    std::vector<ControlFlow> mControlFlow;
+    
+    bool mValidateESSL100Limitations;
+    
+    
+    
+    TUnorderedSet<TSymbolUniqueId> mConstantTrueVariables;
+    TVector<VariableAndLocation> mPossiblyInfiniteLoops;
+
+    
+    TUnorderedMap<const TFunction *, TUnorderedSet<const TFunction *>> mCallGraph;
+    
+    
+    TUnorderedSet<const TFunction *> mDefinedFunctions;
 
     
     std::map<int, AtomicCounterBindingState> mAtomicCounterBindingStates;
 
     
-    std::map<int, TLayoutImageInternalFormat> mPLSBindings;
+    std::map<int, ShPixelLocalStorageLayout> mPLSLayouts;
 
     
     std::vector<std::tuple<const TSourceLoc, PLSIllegalOperations>> mPLSPotentialErrors;
+
+    
+    LocationValidationMap mInputVaryingLocations;
+    LocationValidationMap mOutputVaryingLocations;
+
+    
+    TVector<VariableAndLocation> mFragmentOutputsWithLocation;
+    TVector<VariableAndLocation> mFragmentOutputsWithoutLocation;
+    TVector<VariableAndLocation> mFragmentOutputsYuv;
+    bool mFragmentOutputIndex1Used;
+    bool mFragmentOutputFragDepthUsed;
 
     
     TLayoutPrimitiveType mGeometryShaderInputPrimitiveType;
     TLayoutPrimitiveType mGeometryShaderOutputPrimitiveType;
     int mGeometryShaderInvocations;
     int mGeometryShaderMaxVertices;
-    int mMaxGeometryShaderInvocations;
-    int mMaxGeometryShaderMaxVertices;
     unsigned int mGeometryInputArraySize;
 
-    int mMaxPatchVertices;
     int mTessControlShaderOutputVertices;
     TLayoutTessEvaluationType mTessEvaluationShaderInputPrimitiveType;
     TLayoutTessEvaluationType mTessEvaluationShaderInputVertexSpacingType;
@@ -807,6 +994,9 @@ class TParseContext : angle::NonCopyable
     
     TVector<TType *> mDeferredArrayTypesToSize;
     
+    
+    TVector<const TVariable *> mDeferredArrayVariablesToSize;
+    
     bool mHasAnyPreciseType;
 
     AdvancedBlendEquations mAdvancedBlendEquations;
@@ -815,10 +1005,26 @@ class TParseContext : angle::NonCopyable
     bool mFunctionBodyNewScope;
 
     ShShaderOutput mOutputType;
+
+    ir::Builder mIRBuilder;
+    
+    
+    
+    
+    struct VariableToIdInfo
+    {
+        ir::VariableId id;
+        
+        
+        static constexpr uint32_t kNoImplicitField = 0xFFFF'FFFF;
+        uint32_t implicitField                     = kNoImplicitField;
+    };
+    angle::HashMap<const TSymbol *, ir::TypeId> mSymbolToTypeId;
+    angle::HashMap<const TVariable *, VariableToIdInfo> mVariableToId;
+    angle::HashMap<const TFunction *, ir::FunctionId> mFunctionToId;
 };
 
-int PaParseStrings(size_t count,
-                   const char *const string[],
+int PaParseStrings(angle::Span<const char *const> string,
                    const int length[],
                    TParseContext *context);
 

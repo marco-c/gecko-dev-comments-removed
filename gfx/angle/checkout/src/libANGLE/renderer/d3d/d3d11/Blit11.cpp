@@ -6,6 +6,10 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #include "libANGLE/renderer/d3d/d3d11/Blit11.h"
 
 #include <float.h>
@@ -937,7 +941,6 @@ angle::Result Blit11::copyTexture(const gl::Context *context,
     GLenum componentType = d3d11::GetComponentType(sourceSRVDesc.Format);
 
     ASSERT(componentType != GL_NONE);
-    ASSERT(componentType != GL_SIGNED_NORMALIZED);
     bool isSrcSigned = (componentType == GL_INT);
 
     D3D11_RENDER_TARGET_VIEW_DESC destRTVDesc;

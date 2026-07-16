@@ -10,7 +10,6 @@
 
 #include "compiler/translator/CallDAG.h"
 
-#include "compiler/translator/Diagnostics.h"
 #include "compiler/translator/SymbolTable.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
 
@@ -22,14 +21,11 @@ namespace sh
 class CallDAG::CallDAGCreator : public TIntermTraverser
 {
   public:
-    CallDAGCreator(TDiagnostics *diagnostics)
-        : TIntermTraverser(true, false, false),
-          mDiagnostics(diagnostics),
-          mCurrentFunction(nullptr),
-          mCurrentIndex(0)
+    CallDAGCreator()
+        : TIntermTraverser(true, false, false), mCurrentFunction(nullptr), mCurrentIndex(0)
     {}
 
-    InitResult assignIndices()
+    void assignIndices()
     {
         int skipped = 0;
         for (auto &it : mFunctions)
@@ -37,11 +33,7 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
             
             if (it.second.definitionNode)
             {
-                InitResult result = assignIndicesInternal(&it.second);
-                if (result != INITDAG_SUCCESS)
-                {
-                    return result;
-                }
+                assignIndicesInternal(&it.second);
             }
             else
             {
@@ -50,7 +42,6 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
         }
 
         ASSERT(mFunctions.size() == mCurrentIndex + skipped);
-        return INITDAG_SUCCESS;
     }
 
     void fillDataStructures(std::vector<Record> *records, std::map<int, int> *idToIndex)
@@ -144,7 +135,7 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
     }
 
     
-    InitResult assignIndicesInternal(CreatorFunctionData *root)
+    void assignIndicesInternal(CreatorFunctionData *root)
     {
         
         
@@ -155,7 +146,7 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
 
         if (root->indexAssigned)
         {
-            return INITDAG_SUCCESS;
+            return;
         }
 
         
@@ -166,12 +157,11 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
         
         
         
+        
+        
+        
         TVector<CreatorFunctionData *> functionsToProcess;
         functionsToProcess.push_back(root);
-
-        InitResult result = INITDAG_SUCCESS;
-
-        std::stringstream errorStream = sh::InitializeStream<std::stringstream>();
 
         while (!functionsToProcess.empty())
         {
@@ -189,9 +179,9 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
 
             if (!function->definitionNode)
             {
-                errorStream << "Undefined function '" << function->name
-                            << "()' used in the following call chain:";
-                result = INITDAG_UNDEFINED;
+                
+                
+                ASSERT(false);
                 break;
             }
 
@@ -211,45 +201,13 @@ class CallDAG::CallDAGCreator : public TIntermTraverser
                 
                 if (callee->visiting)
                 {
-                    errorStream << "Recursive function call in the following call chain:";
-                    result = INITDAG_RECURSION;
+                    
+                    ASSERT(false);
                     break;
                 }
             }
-
-            if (result != INITDAG_SUCCESS)
-            {
-                break;
-            }
         }
-
-        
-        if (result != INITDAG_SUCCESS)
-        {
-            bool first = true;
-            for (auto function : functionsToProcess)
-            {
-                if (function->visiting)
-                {
-                    if (!first)
-                    {
-                        errorStream << " -> ";
-                    }
-                    errorStream << function->name << ")";
-                    first = false;
-                }
-            }
-            if (mDiagnostics)
-            {
-                std::string errorStr = errorStream.str();
-                mDiagnostics->globalError(errorStr.c_str());
-            }
-        }
-
-        return result;
     }
-
-    TDiagnostics *mDiagnostics;
 
     std::map<int, CreatorFunctionData> mFunctions;
     CreatorFunctionData *mCurrentFunction;
@@ -295,22 +253,17 @@ void CallDAG::clear()
     mFunctionIdToIndex.clear();
 }
 
-CallDAG::InitResult CallDAG::init(TIntermNode *root, TDiagnostics *diagnostics)
+void CallDAG::init(TIntermNode *root)
 {
-    CallDAGCreator creator(diagnostics);
+    CallDAGCreator creator;
 
     
     root->traverse(&creator);
 
     
-    InitResult result = creator.assignIndices();
-    if (result != INITDAG_SUCCESS)
-    {
-        return result;
-    }
+    creator.assignIndices();
 
     creator.fillDataStructures(&mRecords, &mFunctionIdToIndex);
-    return INITDAG_SUCCESS;
 }
 
 }  

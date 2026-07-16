@@ -19,6 +19,7 @@ namespace sh
 
 bool ClampPointSize(TCompiler *compiler,
                     TIntermBlock *root,
+                    float minPointSize,
                     float maxPointSize,
                     TSymbolTable *symbolTable)
 {
@@ -31,17 +32,22 @@ bool ClampPointSize(TCompiler *compiler,
 
     TIntermTyped *pointSizeNode = glPointSize->deepCopy();
 
+    TConstantUnion *minPointSizeConstant = new TConstantUnion();
     TConstantUnion *maxPointSizeConstant = new TConstantUnion();
+    minPointSizeConstant->setFConst(minPointSize);
     maxPointSizeConstant->setFConst(maxPointSize);
+    TIntermConstantUnion *minPointSizeNode =
+        new TIntermConstantUnion(minPointSizeConstant, TType(EbtFloat, EbpHigh, EvqConst));
     TIntermConstantUnion *maxPointSizeNode =
         new TIntermConstantUnion(maxPointSizeConstant, TType(EbtFloat, EbpHigh, EvqConst));
 
     
-    TIntermSequence minArguments;
-    minArguments.push_back(pointSizeNode->deepCopy());
-    minArguments.push_back(maxPointSizeNode);
+    TIntermSequence clampArguments;
+    clampArguments.push_back(pointSizeNode->deepCopy());
+    clampArguments.push_back(minPointSizeNode);
+    clampArguments.push_back(maxPointSizeNode);
     TIntermTyped *clampedPointSize =
-        CreateBuiltInFunctionCallNode("min", &minArguments, *symbolTable, 100);
+        CreateBuiltInFunctionCallNode("clamp", &clampArguments, *symbolTable, 100);
 
     
     TIntermBinary *assignPointSize = new TIntermBinary(EOpAssign, pointSizeNode, clampedPointSize);

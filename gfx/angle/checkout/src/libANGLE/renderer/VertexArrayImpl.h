@@ -12,6 +12,7 @@
 #include "common/angleutils.h"
 #include "libANGLE/Buffer.h"
 #include "libANGLE/VertexArray.h"
+#include "libANGLE/angletypes.h"
 
 
 static_assert(gl::MAX_VERTEX_ATTRIBS == 16, "Invalid max vertex attribs");
@@ -31,7 +32,19 @@ class ContextImpl;
 class VertexArrayImpl : angle::NonCopyable
 {
   public:
-    VertexArrayImpl(const gl::VertexArrayState &state) : mState(state) {}
+    VertexArrayImpl(const gl::VertexArrayState &state,
+                    const gl::VertexArrayBuffers &vertexArrayBuffers)
+        : mState(state), mVertexArrayBuffers(vertexArrayBuffers)
+    {
+        
+        mContentsObserverBindingsMask.set(gl::kElementArrayBufferIndex);
+    }
+
+    
+    
+    virtual gl::VertexArray::DirtyBits checkBufferForDirtyBits(
+        const gl::Context *context,
+        const gl::VertexArrayBufferBindingMask bufferBindingMask);
 
     
     
@@ -45,17 +58,47 @@ class VertexArrayImpl : angle::NonCopyable
 
     const gl::VertexArrayState &getState() const { return mState; }
 
-    void setContentsObservers(gl::VertexArrayBufferContentsObservers *observers)
+    gl::VertexArrayBufferBindingMask getContentObserversBindingMask() const
     {
-        mContentsObservers = observers;
+        return mContentsObserverBindingsMask;
     }
 
     virtual angle::Result onLabelUpdate(const gl::Context *context);
 
+    gl::Buffer *getElementArrayBuffer() const
+    {
+        return mVertexArrayBuffers[gl::kElementArrayBufferIndex].get();
+    }
+    gl::Buffer *getVertexArrayBuffer(size_t bindingIndex) const
+    {
+        ASSERT(bindingIndex != gl::kElementArrayBufferIndex);
+        return mVertexArrayBuffers[bindingIndex].get();
+    }
+
+    const gl::BindingPointer<gl::Buffer> &getBufferBindingPointer(size_t bindingIndex) const
+    {
+        return mVertexArrayBuffers[bindingIndex];
+    }
+
   protected:
     const gl::VertexArrayState &mState;
-    gl::VertexArrayBufferContentsObservers *mContentsObservers = nullptr;
+    const gl::VertexArrayBuffers &mVertexArrayBuffers;
+    
+    
+    
+    gl::VertexArrayBufferBindingMask mContentsObserverBindingsMask;
 };
+
+inline gl::VertexArray::DirtyBits VertexArrayImpl::checkBufferForDirtyBits(
+    const gl::Context *context,
+    const gl::VertexArrayBufferBindingMask bufferBindingMask)
+{
+    
+    
+    uint64_t bits = bufferBindingMask.bits();
+    bits <<= gl::VertexArray::DIRTY_BIT_BINDING_0;
+    return gl::VertexArray::DirtyBits(bits);
+}
 
 inline angle::Result VertexArrayImpl::syncState(const gl::Context *context,
                                                 const gl::VertexArray::DirtyBits &dirtyBits,
