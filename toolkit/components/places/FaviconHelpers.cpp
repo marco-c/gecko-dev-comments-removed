@@ -454,6 +454,11 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
   
   
   
+  
+  
+  
+  
+  
 
   bool hasResult;
 
@@ -480,6 +485,7 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
 
   UniquePtr<IconInfo> svgIcon;
   UniquePtr<IconInfo> selectedIcon;
+  UniquePtr<IconInfo> bestAssociatedIcon;
   uint16_t lastIconWidth = 0;
 
   bool preferNonRichIcons = aPreferredWidth <= THRESHOLD_WIDTH;
@@ -532,6 +538,17 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
       break;
     }
 
+    
+    
+    
+    
+    
+    if (!isSVG && !rootIcon &&
+        (!bestAssociatedIcon || width >= aPreferredWidth)) {
+      bestAssociatedIcon = MakeUnique<IconInfo>(iconId, data, expiration,
+                                                isRich, false, width, iconURL);
+    }
+
     if (!_icon.spec.IsEmpty() && width < aPreferredWidth) {
       
       
@@ -553,6 +570,12 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
                                         rootIcon, width, EmptyCString());
     rv = stmt->GetUTF8String(4, _icon.spec);
     NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  if (selectedIcon && selectedIcon->rootIcon && bestAssociatedIcon &&
+      static_cast<uint32_t>(bestAssociatedIcon->width) * 4 >= aPreferredWidth) {
+    _icon.spec = bestAssociatedIcon->spec;
+    selectedIcon = std::move(bestAssociatedIcon);
   }
 
   
