@@ -1393,8 +1393,12 @@ class gfxShapedWord final : public gfxShapedText {
   }
 
   
-  static uint32_t HashMix(uint32_t aHash, char16_t aCh) {
-    return (aHash >> 28) ^ (aHash << 4) ^ aCh;
+  static constexpr uint32_t sHashInitialValue = 0x811c9dc5;
+  MOZ_ALWAYS_INLINE static constexpr uint32_t HashMix(uint32_t aHash,
+                                                      char16_t aCh) {
+    aHash ^= static_cast<uint32_t>(aCh);
+    aHash *= 16777619u;  
+    return aHash;
   }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
