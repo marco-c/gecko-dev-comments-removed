@@ -356,26 +356,6 @@ impl SpaceSnapper {
             None => *rect,
         }
     }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn snap_rect_round_out<F>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, F> where F: fmt::Debug {
-        debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
-        match self.snapping_transform {
-            Some(SnapTransform { ref scale_offset, swap_xy }) => {
-                let rect = if swap_xy { swap_box_xy(rect) } else { *rect };
-                let snapped_device_rect: DeviceRect = scale_offset.map_rect(&rect).round_out();
-                let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped_device_rect);
-                if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
-            }
-            None => *rect,
-        }
-    }
 }
 
 
@@ -503,6 +483,7 @@ mod tests {
                 is_2d_scale_translation: true,
                 should_snap: false,
                 paired_with_perspective: false,
+                is_offset_only: false,
             },
             LayoutVector2D::zero(),
             PipelineId::dummy(),
@@ -576,6 +557,7 @@ mod tests {
                 is_2d_scale_translation: false,
                 should_snap: false,
                 paired_with_perspective: false,
+                is_offset_only: false,
             },
             LayoutVector2D::zero(),
             PipelineId::dummy(),

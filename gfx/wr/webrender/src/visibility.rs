@@ -15,7 +15,7 @@ use crate::composite::CompositeState;
 use crate::profiler::TransactionProfile;
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::clip::{ClipChainInstance, ClipTree, ClipNodeId};
+use crate::clip::{ClipChainInstance, ClipTree};
 use crate::composite::CompositorSurfaceKind;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo};
@@ -359,40 +359,20 @@ pub fn update_prim_visibility(
         snapper.set_target_spatial_node(cluster.spatial_node_index, frame_context.spatial_tree);
 
         for prim_instance_index in cluster.prim_range() {
-            
-            
-            
-            
-            
-            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
-            let snaps = frame_state.clip_tree.get_leaf(leaf_id).prim_clip_root
-                != ClipNodeId::INVALID;
-
-            let unsnapped_prim_rect =
-                frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect;
-            let snapped_local_rect = if snaps {
-                snapper.snap_rect(&unsnapped_prim_rect)
-            } else {
-                
-                
-                
-                
-                
-                
-                snapper.snap_rect_round_out(&unsnapped_prim_rect)
-            };
+            let snapped_local_rect = snapper.snap_rect(
+                &frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect,
+            );
             frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect =
                 snapped_local_rect;
 
             
             
-            
-            
+            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
             let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
-            let unsnapped = leaf.unsnapped_local_clip_rect;
-            if unsnapped == LayoutRect::max_rect() || !snaps {
-                leaf.snapped_local_clip_rect = unsnapped;
+            if leaf.unsnapped_local_clip_rect == LayoutRect::max_rect() {
+                leaf.snapped_local_clip_rect = leaf.unsnapped_local_clip_rect;
             } else {
+                let unsnapped = leaf.unsnapped_local_clip_rect;
                 leaf.snapped_local_clip_rect = snapper.snap_rect(&unsnapped);
             }
 
