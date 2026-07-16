@@ -2,7 +2,7 @@
 
 
 
-use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
+use api::{PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
@@ -80,16 +80,6 @@ pub struct CopyInstance {
     pub src_rect: DeviceRect,
     pub dst_rect: DeviceRect,
     pub dst_texture_size: DeviceSize,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-pub enum RasterizationSpace {
-    #[allow(unused)]
-    Local = 0,
-    Screen = 1,
 }
 
 #[repr(i32)]
@@ -799,27 +789,6 @@ impl From<BrushInstance> for PrimitiveInstanceData {
 }
 
 
-#[derive(Copy, Clone, Debug)]
-pub struct ImageBrushUserData {
-    pub color_mode: ShaderColorMode,
-    pub alpha_type: AlphaType,
-    pub raster_space: RasterizationSpace,
-    pub opacity: f32,
-}
-
-impl ImageBrushUserData {
-    #[inline]
-    pub fn encode(&self) -> [i32; 4] {
-        [
-            self.color_mode as i32 | ((self.alpha_type as i32) << 16),
-            self.raster_space as i32,
-            get_shader_opacity(self.opacity),
-            0,
-        ]
-    }
-}
-
-
 
 
 
@@ -925,6 +894,3 @@ impl GpuBufferDataF for BrushSegmentGpuData {
     }
 }
 
-pub fn get_shader_opacity(opacity: f32) -> i32 {
-    (opacity * 65535.0).round() as i32
-}
