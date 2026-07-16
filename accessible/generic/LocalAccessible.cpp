@@ -1595,9 +1595,11 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     LocalAccessible* widget = nsAccUtils::GetSelectableContainer(this, State());
     if (widget) {
       AccSelChangeEvent::SelChangeType selChangeType;
-      if (aNameSpaceID != kNameSpaceID_None) {
-        selChangeType = elm->AttrValueIs(aNameSpaceID, aAttribute,
-                                         nsGkAtoms::_true, eCaseMatters)
+      if (aAttribute == nsGkAtoms::selected) {
+        
+        
+        
+        selChangeType = elm->HasAttr(nsGkAtoms::selected)
                             ? AccSelChangeEvent::eSelectionAdd
                             : AccSelChangeEvent::eSelectionRemove;
       } else {
