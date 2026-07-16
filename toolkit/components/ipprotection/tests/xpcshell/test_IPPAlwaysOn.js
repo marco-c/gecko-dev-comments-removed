@@ -12,6 +12,9 @@ const { IPPEarlyStartupFilter } = ChromeUtils.importESModule(
 const { IPProtectionServerlist, PrefServerList } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
 
 const TEST_SERVER = {
   hostname: "proxy.example.com",
@@ -67,6 +70,23 @@ function registerAsHelper(alwaysOn) {
 function restoreHelpers() {
   IPProtectionActivator.removeHelpers();
   IPProtectionActivator.setupHelpers();
+}
+
+
+
+
+
+
+
+async function stopProxyForCleanup() {
+  if (IPPProxyManager.state === IPPProxyStates.ACTIVATING) {
+    await waitForEvent(
+      IPPProxyManager,
+      "IPPProxyManager:StateChanged",
+      () => IPPProxyManager.state !== IPPProxyStates.ACTIVATING
+    );
+  }
+  await IPPProxyManager.stop(false);
 }
 
 add_task(async function test_init_skipped_without_policy() {
@@ -202,7 +222,7 @@ add_task(async function test_proxy_restarts_on_unexpected_stop() {
   
   
   alwaysOn.uninit();
-  await IPPProxyManager.stop(false);
+  await stopProxyForCleanup();
   IPProtectionService.uninit();
   restoreHelpers();
   sandbox.restore();
@@ -241,7 +261,7 @@ add_task(async function test_proxy_restarts_after_error() {
   );
 
   alwaysOn.uninit();
-  await IPPProxyManager.stop(false);
+  await stopProxyForCleanup();
   IPProtectionService.uninit();
   restoreHelpers();
   sandbox.restore();
@@ -307,6 +327,87 @@ add_task(async function test_proxy_not_restarted_when_service_unavailable() {
   );
 
   restoreHelpers();
+  sandbox.restore();
+});
+
+add_task(async function test_failing_start_does_not_starve_event_loop() {
+  const sandbox = sinon.createSandbox();
+  setupStubs(sandbox);
+
+  
+  
+  
+  
+  const quarantinedCountry = {
+    ...TEST_COUNTRY,
+    cities: [
+      {
+        name: "Test City",
+        code: "TC",
+        servers: [{ ...TEST_SERVER, quarantined: true }],
+      },
+    ],
+  };
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify([quarantinedCountry])
+  );
+  await IPProtectionServerlist.maybeFetchList(true);
+
+  let startCount = 0;
+  const realStart = IPPProxyManager.start.bind(IPPProxyManager);
+  sandbox.stub(IPPProxyManager, "start").callsFake((...args) => {
+    startCount++;
+    return realStart(...args);
+  });
+
+  const alwaysOn = makeAlwaysOn(sandbox);
+  registerAsHelper(alwaysOn);
+
+  
+  const firstAttempt = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ACTIVATING
+  );
+  IPProtectionService.init();
+  await firstAttempt;
+
+  
+  
+  
+  
+  for (let i = 0; i < 50; i++) {
+    await TestUtils.waitForTick();
+  }
+
+  Assert.equal(
+    startCount,
+    1,
+    `The failing start is deferred, not synchronously re-triggered (saw ${startCount} attempts)`
+  );
+
+  
+  const secondAttempt = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ACTIVATING
+  );
+  await secondAttempt;
+  Assert.equal(startCount, 2, "A throttled retry eventually fires");
+
+  alwaysOn.uninit();
+  await stopProxyForCleanup();
+  IPProtectionService.uninit();
+  restoreHelpers();
+
+  
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify([TEST_COUNTRY])
+  );
+  await IPProtectionServerlist.maybeFetchList(true);
+
   sandbox.restore();
 });
 
