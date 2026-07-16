@@ -144,13 +144,13 @@ class NotNull {
   NotNull() = delete;
 
   
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<const U&, T>>>
+  template <typename U>
+    requires(std::is_convertible_v<const U&, T>)
   constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
       : mBasePtr(aOther.mBasePtr) {}
 
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U&&, T>>>
+  template <typename U>
+    requires(std::is_convertible_v<U &&, T>)
   constexpr MOZ_IMPLICIT NotNull(MovingNotNull<U>&& aOther)
       : mBasePtr(std::move(aOther).unwrapBasePtr()) {}
 
@@ -166,20 +166,16 @@ class NotNull {
 
   
   
-  template <typename U,
-            std::enable_if_t<!std::is_pointer_v<T> &&
-                                 std::is_convertible_v<const T&, U*>,
-                             int> = 0>
+  template <typename U>
+    requires(!std::is_pointer_v<T> && std::is_convertible_v<const T&, U*>)
   constexpr operator U*() const& {
     return get();
   }
 
   
-  template <typename U,
-            std::enable_if_t<!std::is_pointer_v<T> &&
-                                 std::is_convertible_v<const T&, U*> &&
-                                 !std::is_convertible_v<const T&&, U*>,
-                             int> = 0>
+  template <typename U>
+    requires(!std::is_pointer_v<T> && std::is_convertible_v<const T&, U*> &&
+             !std::is_convertible_v<const T &&, U*>)
   constexpr operator U*() const&& = delete;
 
   
@@ -221,8 +217,8 @@ class NotNull<T*> {
   NotNull() = delete;
 
   
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<const U&, T*>>>
+  template <typename U>
+    requires(std::is_convertible_v<const U&, T*>)
   constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
       : mBasePtr(aOther.get()) {
     static_assert(sizeof(T*) == sizeof(NotNull<T*>),
@@ -231,8 +227,8 @@ class NotNull<T*> {
                   "mBasePtr must have zero offset.");
   }
 
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U&&, T*>>>
+  template <typename U>
+    requires(std::is_convertible_v<U &&, T*>)
   constexpr MOZ_IMPLICIT NotNull(MovingNotNull<U>&& aOther)
       : mBasePtr(NotNull{std::move(aOther)}) {}
 
@@ -317,12 +313,12 @@ class MOZ_NON_AUTOABLE MovingNotNull {
 
   MOZ_IMPLICIT MovingNotNull(const NotNull<T>& aSrc) : mBasePtr(aSrc.get()) {}
 
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U, T>>>
+  template <typename U>
+    requires(std::is_convertible_v<U, T>)
   MOZ_IMPLICIT MovingNotNull(const NotNull<U>& aSrc) : mBasePtr(aSrc.get()) {}
 
-  template <typename U,
-            typename = std::enable_if_t<std::is_convertible_v<U, T>>>
+  template <typename U>
+    requires(std::is_convertible_v<U, T>)
   MOZ_IMPLICIT MovingNotNull(MovingNotNull<U>&& aSrc)
       : mBasePtr(std::move(aSrc).unwrapBasePtr()) {}
 

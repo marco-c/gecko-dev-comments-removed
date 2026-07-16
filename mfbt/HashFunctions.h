@@ -177,44 +177,30 @@ inline HashNumber AddUintNToHash<8>(HashNumber aHash, uint64_t aValue) {
 
 
 
-template <typename T, bool TypeIsNotIntegral = !std::is_integral_v<T>,
-          bool TypeIsNotEnum = !std::is_enum_v<T>,
-          std::enable_if_t<TypeIsNotIntegral && TypeIsNotEnum, int> = 0>
-[[nodiscard]] inline HashNumber AddToHash(HashNumber aHash, T aA) {
-  
-
-
-
-  return detail::AddU32ToHash(aHash, aA);
-}
-
-template <typename A>
-[[nodiscard]] inline HashNumber AddToHash(HashNumber aHash, A* aA) {
-  
-
-
-
-
-  static_assert(sizeof(aA) == sizeof(uintptr_t), "Strange pointer!");
-
-  return detail::AddUintNToHash<sizeof(uintptr_t)>(aHash, uintptr_t(aA));
-}
-
-
-
-
-
-template <typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+template <typename T>
 [[nodiscard]] constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
-  return detail::AddUintNToHash<sizeof(T)>(aHash, aA);
-}
+  if constexpr (std::is_integral_v<T>) {
+    
+    
+    
+    
+    return detail::AddUintNToHash<sizeof(T)>(aHash, aA);
+  } else if constexpr (std::is_enum_v<T>) {
+    
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    return detail::AddUintNToHash<sizeof(UnderlyingType)>(
+        aHash, static_cast<UnderlyingType>(aA));
+  } else if constexpr (std::is_pointer_v<T>) {
+    static_assert(sizeof(aA) == sizeof(uintptr_t), "Strange pointer!");
 
-template <typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-[[nodiscard]] constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
-  
-  using UnderlyingType = typename std::underlying_type<T>::type;
-  return detail::AddUintNToHash<sizeof(UnderlyingType)>(
-      aHash, static_cast<UnderlyingType>(aA));
+    return detail::AddUintNToHash<sizeof(uintptr_t)>(aHash, uintptr_t(aA));
+  } else {
+    
+
+
+
+    return detail::AddU32ToHash(aHash, aA);
+  }
 }
 
 template <typename A, typename... Args>
@@ -352,11 +338,15 @@ class UTF16Hasher {
   return HashBytes(aStr, aLength * sizeof(char16_t));
 }
 
-template <typename WCharT>
-  requires(std::is_same_v<WCharT, wchar_t> &&
-           !std::is_same_v<wchar_t, char16_t>)
-[[nodiscard]] inline HashNumber HashString(const WCharT* aStr, size_t aLength) {
-  static_assert(sizeof(WCharT) == sizeof(char16_t));
+
+
+
+template <typename T>
+concept WCharT = std::same_as<T, wchar_t> && !std::same_as<wchar_t, char16_t>;
+
+template <WCharT T>
+[[nodiscard]] inline HashNumber HashString(const T* aStr, size_t aLength) {
+  static_assert(sizeof(T) == sizeof(char16_t));
   return HashString(reinterpret_cast<const char16_t*>(aStr), aLength);
 }
 
