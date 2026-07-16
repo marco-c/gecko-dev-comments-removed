@@ -364,23 +364,17 @@ pub fn update_prim_visibility(
             
             
             
-            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
+            
+            
+            
+            let prim_instance = &frame_state.prim_instances[prim_instance_index];
+            let leaf_id = prim_instance.clip_leaf_id;
             let snaps = frame_state.clip_tree.get_leaf(leaf_id).prim_clip_root
                 != ClipNodeId::INVALID;
 
-            let unsnapped_prim_rect =
-                frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect;
-            let snapped_local_rect = if snaps {
-                snapper.snap_rect(&unsnapped_prim_rect)
-            } else {
-                
-                
-                
-                
-                
-                
-                snapper.snap_rect_round_out(&unsnapped_prim_rect)
-            };
+            let rounding = prim_instance.snap_rounding(snaps, frame_state.data_stores);
+            let snapped_local_rect =
+                snapper.snap_rect_rounded(&prim_instance.unsnapped_prim_rect, rounding);
             frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect =
                 snapped_local_rect;
 

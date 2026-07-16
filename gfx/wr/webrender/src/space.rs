@@ -342,19 +342,8 @@ impl SpaceSnapper {
 
     
     
-    
-    
     pub fn snap_rect<F>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, F> where F: fmt::Debug {
-        debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
-        match self.snapping_transform {
-            Some(SnapTransform { ref scale_offset, swap_xy }) => {
-                let rect = if swap_xy { swap_box_xy(rect) } else { *rect };
-                let snapped_device_rect: DeviceRect = scale_offset.map_rect(&rect).snap();
-                let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped_device_rect);
-                if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
-            }
-            None => *rect,
-        }
+        self.snap_rect_rounded(rect, SnapRounding::Nearest)
     }
 
     
@@ -362,19 +351,71 @@ impl SpaceSnapper {
     
     
     
-    
-    
-    pub fn snap_rect_round_out<F>(&self, rect: &Box2D<f32, F>) -> Box2D<f32, F> where F: fmt::Debug {
+    pub fn snap_rect_rounded<F>(&self, rect: &Box2D<f32, F>, rounding: SnapRounding) -> Box2D<f32, F> where F: fmt::Debug {
         debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
         match self.snapping_transform {
             Some(SnapTransform { ref scale_offset, swap_xy }) => {
                 let rect = if swap_xy { swap_box_xy(rect) } else { *rect };
-                let snapped_device_rect: DeviceRect = scale_offset.map_rect(&rect).round_out();
-                let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped_device_rect);
+                let device_rect: DeviceRect = scale_offset.map_rect(&rect);
+                let snapped: DeviceRect = match rounding {
+                    SnapRounding::Nearest => device_rect.snap(),
+                    SnapRounding::RoundOut => device_rect.round_out(),
+                    SnapRounding::Line { horizontal } =>
+                        snap_line_device_rect(&device_rect, horizontal ^ swap_xy),
+                };
+                let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped);
                 if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
             }
             None => *rect,
         }
+    }
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum SnapRounding {
+    
+    
+    Nearest,
+    
+    
+    
+    
+    
+    
+    RoundOut,
+    
+    
+    
+    
+    
+    
+    
+    
+    Line { horizontal: bool },
+}
+
+
+
+
+fn snap_line_device_rect(r: &DeviceRect, thin_is_y: bool) -> DeviceRect {
+    let snap_extent = |e: f32| if e > 0.0 { e.round().max(1.0) } else { 0.0 };
+    if thin_is_y {
+        let min_y = r.min.y.round();
+        DeviceRect::from_floats(
+            r.min.x.round(),
+            min_y,
+            r.max.x.round(),
+            min_y + snap_extent(r.max.y - r.min.y),
+        )
+    } else {
+        let min_x = r.min.x.round();
+        DeviceRect::from_floats(
+            min_x,
+            r.min.y.round(),
+            min_x + snap_extent(r.max.x - r.min.x),
+            r.max.y.round(),
+        )
     }
 }
 

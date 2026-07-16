@@ -3,10 +3,12 @@
 
 
 use api::ColorF;
-use api::{ImageRendering, PrimitiveFlags};
+use api::{ImageRendering, LineOrientation, PrimitiveFlags};
 use api::units::*;
 use malloc_size_of::MallocSizeOf;
 use crate::clip::ClipLeafId;
+use crate::render_backend::DataStores;
+use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
 use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
 use crate::segment::EdgeMask;
@@ -425,6 +427,26 @@ impl PrimitiveInstance {
             kind,
             clip_leaf_id,
             unsnapped_prim_rect,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn snap_rounding(&self, snaps: bool, data_stores: &DataStores) -> SnapRounding {
+        if !snaps {
+            return SnapRounding::RoundOut;
+        }
+        match self.kind {
+            PrimitiveKind::LineDecoration { data_handle, .. } => SnapRounding::Line {
+                horizontal: data_stores.line_decoration[data_handle].kind.orientation
+                    == LineOrientation::Horizontal,
+            },
+            _ => SnapRounding::Nearest,
         }
     }
 
