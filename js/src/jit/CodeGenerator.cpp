@@ -10410,13 +10410,11 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       reloadPinnedRegs = true;
       switchRealm = false;
       break;
-    case wasm::CalleeDesc::BuiltinInstanceMethod: {
-      CodeOffset unused_trapStackMapKey;
-      masm.wasmCallBuiltinInstanceMethod(desc, callBase->instanceArg(),
-                                         callee.builtin(),
-                                         callBase->builtinMethodFailureMode(),
-                                         callBase->builtinMethodFailureTrap(),
-                                         &retOffset, &unused_trapStackMapKey);
+    case wasm::CalleeDesc::BuiltinInstanceMethod:
+      retOffset = masm.wasmCallBuiltinInstanceMethod(
+          desc, callBase->instanceArg(), callee.builtin(),
+          callBase->builtinMethodFailureMode(),
+          callBase->builtinMethodFailureTrap());
       
       
       
@@ -10424,7 +10422,6 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       reloadPinnedRegs = true;
       switchRealm = false;
       break;
-    }
     case wasm::CalleeDesc::FuncRef:
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
