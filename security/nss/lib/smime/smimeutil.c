@@ -138,6 +138,18 @@ smime_legacy_pref(SECOidTag algtag)
         if (smime_legacy_map[i].policytag == algtag)
             return i;
     }
+    
+
+    switch (algtag) {
+        case SEC_OID_AES_128_GCM:
+            return smime_legacy_map_count;
+        case SEC_OID_AES_192_GCM:
+            return smime_legacy_map_count + 1;
+        case SEC_OID_AES_256_GCM:
+            return smime_legacy_map_count + 2;
+        default:
+            break;
+    }
     return -1;
 }
 
@@ -244,14 +256,17 @@ smime_keysize_by_cipher(SECOidTag algtag)
             break;
         case SEC_OID_RC2_128_CBC:
         case SEC_OID_AES_128_CBC:
+        case SEC_OID_AES_128_GCM:
         case SEC_OID_CAMELLIA_128_CBC:
             keysize = 128;
             break;
         case SEC_OID_AES_192_CBC:
+        case SEC_OID_AES_192_GCM:
         case SEC_OID_CAMELLIA_192_CBC:
             keysize = 192;
             break;
         case SEC_OID_AES_256_CBC:
+        case SEC_OID_AES_256_GCM:
         case SEC_OID_CAMELLIA_256_CBC:
             keysize = 256;
             break;
@@ -501,6 +516,12 @@ smime_init_once(void *arg)
         
 
 
+        
+
+
+        NSS_SetAlgorithmPolicy(SEC_OID_AES_128_GCM, NSS_USE_ALG_IN_SMIME, 0);
+        NSS_SetAlgorithmPolicy(SEC_OID_AES_192_GCM, NSS_USE_ALG_IN_SMIME, 0);
+        NSS_SetAlgorithmPolicy(SEC_OID_AES_256_GCM, NSS_USE_ALG_IN_SMIME, 0);
         for (i = smime_legacy_map_count - 1; i >= 0; i--) {
             SECOidTag policytag = smime_legacy_map[i].policytag;
             
@@ -527,6 +548,8 @@ smime_init_once(void *arg)
             PORT_Free(tags);
             tags = NULL;
         }
+        
+
         for (i = smime_legacy_map_count - 1; i >= 0; i--) {
             SECOidTag policytag = smime_legacy_map[i].policytag;
             
@@ -586,6 +609,11 @@ smime_init_once(void *arg)
 
     
     for (i = 0; i < tagCount; i++) {
+        
+
+        if (PK11_IsAEAD(PK11_AlgtagToMechanism(tags[i]))) {
+            continue;
+        }
         smime_list_add(&smime_algorithm_list, tags[i]);
     }
     PORT_Free(lengths);
@@ -1190,6 +1218,9 @@ NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECItem *dest)
     int cap_count;
     int cipher_count;
     int hash_count;
+    static const SECOidTag gcm_caps[] = {
+        SEC_OID_AES_256_GCM, SEC_OID_AES_192_GCM, SEC_OID_AES_128_GCM
+    };
 
     SECStatus rv = smime_init();
     if (rv != SECSuccess) {
@@ -1212,7 +1243,8 @@ NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECItem *dest)
         return SECFailure;
     }
 
-    cap_count = cipher_count + hash_count + implemented_key_encipherment_len;
+    cap_count = cipher_count + hash_count + implemented_key_encipherment_len +
+                (int)PR_ARRAY_SIZE(gcm_caps);
 
     
     smime_capabilities = PORT_ZNewArray(NSSSMIMECapability *, cap_count + 1);
@@ -1222,6 +1254,20 @@ NSS_SMIMEUtil_CreateSMIMECapabilities(PLArenaPool *poolp, SECItem *dest)
     }
 
     capIndex = 0;
+
+    
+
+
+
+    for (i = 0; i < (int)PR_ARRAY_SIZE(gcm_caps); i++) {
+        if (!smime_allowed_by_policy(gcm_caps[i], NSS_USE_ALG_IN_SMIME)) {
+            continue;
+        }
+        cap = smime_create_capability(gcm_caps[i]);
+        if (cap == NULL)
+            break;
+        smime_capabilities[capIndex++] = cap;
+    }
 
     
 

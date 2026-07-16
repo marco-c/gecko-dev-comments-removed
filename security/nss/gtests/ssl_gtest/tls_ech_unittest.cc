@@ -1381,6 +1381,35 @@ TEST_F(TlsConnectStreamTls13, GreaseEchHrrMatches) {
   CheckConnected();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+TEST_F(TlsConnectStreamTls13, EchGreaseHrr) {
+  EnsureTlsSetup();
+  
+  client_->ConfigNamedGroups(
+      {ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1});
+  
+  server_->ConfigNamedGroups({ssl_grp_ec_secp256r1});
+  
+  EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_TRUE));
+
+  auto hrr_capture = MakeTlsFilter<TlsHandshakeRecorder>(
+      server_, kTlsHandshakeHelloRetryRequest);
+  Connect();
+  EXPECT_LT(0U, hrr_capture->buffer().len()) << "HelloRetryRequest expected";
+  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_secp256r1, ssl_auth_rsa_sign,
+            ssl_sig_rsa_pss_rsae_sha256);
+}
+
 TEST_F(TlsConnectStreamTls13Ech, EchRejectMisizedEchXtn) {
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;

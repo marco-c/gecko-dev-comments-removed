@@ -75,12 +75,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   StackSECItem nsCertType;
   (void)CERT_FindNSCertTypeExtension(cert.get(), &nsCertType);
 
-  
-  
-  char* nsString =
-      CERT_FindNSStringExtension(cert.get(), SEC_OID_NS_CERT_EXT_COMMENT);
-  PORT_Free(nsString);
-
   (void)CERT_FindAuthKeyIDExten(cert->arena, cert.get());
 
   CERTNameConstraints* constraints = nullptr;

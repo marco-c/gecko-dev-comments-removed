@@ -131,7 +131,7 @@ typedef enum { SSLAppOpRead = 0,
 #define DTLS_RETRANSMIT_FINISHED_MS 30000
 
 
-#define SSL_NAMED_GROUP_COUNT 35
+#define SSL_NAMED_GROUP_COUNT 36
 
 
 #define SSL_MAX_DH_KEY_BITS 8192
@@ -1513,6 +1513,8 @@ extern void ssl_FreeKeyPair(sslKeyPair *keyPair);
 extern sslEphemeralKeyPair *ssl_NewEphemeralKeyPair(
     const sslNamedGroupDef *group,
     SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey);
+extern sslEphemeralKeyPair *ssl_NewEphemeralKeyPairWithKeys(
+    const sslNamedGroupDef *group, sslKeyPair *keys);
 extern sslEphemeralKeyPair *ssl_CopyEphemeralKeyPair(
     sslEphemeralKeyPair *keyPair);
 extern void ssl_FreeEphemeralKeyPair(sslEphemeralKeyPair *keyPair);

@@ -705,8 +705,8 @@ merge_object_instances(
     return rv;
 }
 
-static NSSCertificate *
-add_cert_to_cache(
+NSS_IMPLEMENT NSSCertificate *
+nssTrustDomain_AddCertToCache(
     NSSTrustDomain *td,
     NSSCertificate *cert)
 {
@@ -745,10 +745,11 @@ add_cert_to_cache(
         
         if (merge_object_instances(&rvCert->object, &cert->object) != SECSuccess) {
             nssCertificate_Destroy(rvCert);
+            nssCertificate_Destroy(cert); 
             return NULL;
         }
         STAN_ForceCERTCertificateUpdate(rvCert);
-        nssCertificate_Destroy(cert);
+        nssCertificate_Destroy(cert); 
         return rvCert;
     }
     
@@ -771,18 +772,12 @@ add_cert_to_cache(
     added++;
     
     if (subjectList != NULL) {
-#ifdef nodef
-        PRBool handle = PR_FALSE;
-#endif
         if (certNickname) {
             nssrv = add_nickname_entry(arena, td->cache,
                                        certNickname, subjectList);
             if (nssrv != PR_SUCCESS) {
                 goto loser;
             }
-#ifdef nodef
-            handle = PR_TRUE;
-#endif
             added++;
         }
         if (cert->email) {
@@ -790,27 +785,13 @@ add_cert_to_cache(
             if (nssrv != PR_SUCCESS) {
                 goto loser;
             }
-#ifdef nodef
-            handle = PR_TRUE;
-#endif
             added += 2;
         }
-#ifdef nodef
-        
-
-
-
-        if (!handle) {
-            
-            nssrv = PR_FAILURE;
-            goto loser;
-        }
-#endif
     } else {
         
         nssArena_Destroy(arena);
     }
-    rvCert = cert;
+    rvCert = cert; 
     PR_Unlock(td->cache->lock);
     nss_ZFreeIf(certNickname);
     return rvCert;
@@ -840,26 +821,8 @@ loser:
         nssArena_Destroy(arena);
     }
     PR_Unlock(td->cache->lock);
+    nssCertificate_Destroy(cert); 
     return NULL;
-}
-
-NSS_IMPLEMENT PRStatus
-nssTrustDomain_AddCertsToCache(
-    NSSTrustDomain *td,
-    NSSCertificate **certs,
-    PRUint32 numCerts)
-{
-    PRUint32 i;
-    NSSCertificate *c;
-    for (i = 0; i < numCerts && certs[i]; i++) {
-        c = add_cert_to_cache(td, certs[i]);
-        if (c == NULL) {
-            return PR_FAILURE;
-        } else {
-            certs[i] = c;
-        }
-    }
-    return PR_SUCCESS;
 }
 
 static NSSCertificate **

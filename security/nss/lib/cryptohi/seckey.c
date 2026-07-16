@@ -2823,7 +2823,8 @@ SECKEY_GetECCOid(const SECKEYECParams *params)
 
 
 
-    if (params->data[0] != SEC_ASN1_OBJECT_ID)
+    if (!params || !params->data || params->len < 2 ||
+        params->data[0] != SEC_ASN1_OBJECT_ID)
         return 0;
     oid.len = params->len - 2;
     oid.data = params->data + 2;

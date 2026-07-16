@@ -367,8 +367,13 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-#define nss_ZNEWARRAY(arenaOpt, type, quantity) \
-    ((type *)nss_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
+
+
+#define nss_ZNEWARRAY(arenaOpt, type, quantity)                     \
+    ((type *)(((PRUint64)(quantity) > PR_UINT32_MAX / sizeof(type)) \
+                  ? NULL                                            \
+                  : nss_ZAlloc((arenaOpt),                          \
+                               (PRUint32)(sizeof(type) * (PRUint64)(quantity)))))
 
 
 
@@ -387,8 +392,13 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-#define nss_ZREALLOCARRAY(p, type, quantity) \
-    ((type *)nss_ZRealloc((p), sizeof(type) * (quantity)))
+
+
+#define nss_ZREALLOCARRAY(p, type, quantity)                        \
+    ((type *)(((PRUint64)(quantity) > PR_UINT32_MAX / sizeof(type)) \
+                  ? NULL                                            \
+                  : nss_ZRealloc((p),                               \
+                                 (PRUint32)(sizeof(type) * (PRUint64)(quantity)))))
 
 
 

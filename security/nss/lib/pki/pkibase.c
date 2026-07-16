@@ -1010,19 +1010,20 @@ cert_getUIDFromInstance(nssCryptokiObject *instance, NSSItem *uid,
 static nssPKIObject *
 cert_createObject(nssPKIObject *o)
 {
-    NSSCertificate *cert;
-    cert = nssCertificate_Create(o);
+    NSSCertificate *cert = nssCertificate_Create(o);
+    if (!cert) {
+        return NULL;
+    }
+    NSSTrustDomain *td = o->trustDomain;
     
 
-
-
-    
-
-
-
-    {
-        NSSTrustDomain *td = o->trustDomain;
-        nssTrustDomain_AddCertsToCache(td, &cert, 1);
+    nssCertificate_AddRef(cert);
+    NSSCertificate *certInCache = nssTrustDomain_AddCertToCache(td, cert);
+    if (certInCache) {
+        
+        
+        
+        nssCertificate_Destroy(certInCache);
     }
     return (nssPKIObject *)cert;
 }

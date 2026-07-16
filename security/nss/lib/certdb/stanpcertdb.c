@@ -254,8 +254,6 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
     NSSCertificate *c = STAN_GetNSSCertificate(cert);
     nssCertificateStoreTrace lockTrace = { NULL, NULL, PR_FALSE, PR_FALSE };
     nssCertificateStoreTrace unlockTrace = { NULL, NULL, PR_FALSE, PR_FALSE };
-    SECStatus rv;
-    PRStatus ret;
 
     if (c == NULL) {
         CERT_MapStanError();
@@ -317,12 +315,19 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
         return SECFailure;
     }
     nssPKIObject_AddInstance(&c->object, permInstance);
-    nssTrustDomain_AddCertsToCache(STAN_GetDefaultTrustDomain(), &c, 1);
     
-    CERT_LockCertTempPerm(cert);
-    cert->nssCertificate = NULL;
-    CERT_UnlockCertTempPerm(cert);
-    cert = STAN_GetCERTCertificateOrRelease(c); 
+    
+    
+    
+    
+    nssCertificate_AddRef(c);
+    NSSCertificate *cInCache = nssTrustDomain_AddCertToCache(STAN_GetDefaultTrustDomain(), c);
+    if (!cInCache) {
+        CERT_MapStanError();
+        return SECFailure;
+    }
+    c = cInCache;
+    cert = STAN_GetCERTCertificateOrRelease(c);
     if (!cert) {
         CERT_MapStanError();
         return SECFailure;
@@ -331,15 +336,12 @@ __CERT_AddTempCertToPerm(CERTCertificate *cert, char *nickname,
     cert->istemp = PR_FALSE;
     cert->isperm = PR_TRUE;
     CERT_UnlockCertTempPerm(cert);
-    if (!trust) {
-        return SECSuccess;
-    }
-    ret = STAN_ChangeCertTrust(cert, trust);
-    rv = SECSuccess;
-    if (ret != PR_SUCCESS) {
+    SECStatus rv = SECSuccess;
+    if (trust && STAN_ChangeCertTrust(cert, trust) != PR_SUCCESS) {
         rv = SECFailure;
         CERT_MapStanError();
     }
+    nssCertificate_Destroy(c);
     return rv;
 }
 

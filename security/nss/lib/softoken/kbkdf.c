@@ -371,10 +371,28 @@ kbkdf_FindParameter(const CK_SP800_108_KDF_PARAMS *params, CK_PRF_DATA_TYPE type
     return NULL;
 }
 
-size_t
-kbkdf_IncrementBuffer(size_t cur_offset, size_t consumed, size_t prf_length)
+
+
+
+
+static CK_RV
+kbkdf_IncrementBuffer(size_t *cur_offset, size_t consumed, size_t prf_length)
 {
-    return cur_offset + PR_ROUNDUP(consumed, prf_length);
+    size_t rounded;
+
+    if (prf_length == 0) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    
+    if (consumed > SIZE_MAX - (prf_length - 1)) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    rounded = PR_ROUNDUP(consumed, prf_length);
+    if (*cur_offset > SIZE_MAX - rounded) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    *cur_offset += rounded;
+    return CKR_OK;
 }
 
 CK_ULONG
@@ -423,6 +441,8 @@ kbkdf_CalculateLength(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, C
 
 
 
+    *buffer_length = 0;
+
     if (params->ulAdditionalDerivedKeys == 0) {
         
 
@@ -444,21 +464,30 @@ kbkdf_CalculateLength(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, C
 
         
         *output_bitlen = ret_key_size;
-        *buffer_length = kbkdf_IncrementBuffer(0, ret_key_size, ctx->mac_size);
+        if (kbkdf_IncrementBuffer(buffer_length, ret_key_size,
+                                  ctx->mac_size) != CKR_OK) {
+            return CKR_KEY_SIZE_RANGE;
+        }
 
         
         for (; offset < params->ulAdditionalDerivedKeys - 1; offset++) {
             derived_size = kbkdf_GetDerivedKeySize(params->pAdditionalDerivedKeys + offset);
 
             *output_bitlen += derived_size;
-            *buffer_length = kbkdf_IncrementBuffer(*buffer_length, derived_size, ctx->mac_size);
+            if (kbkdf_IncrementBuffer(buffer_length, derived_size,
+                                      ctx->mac_size) != CKR_OK) {
+                return CKR_KEY_SIZE_RANGE;
+            }
         }
 
         
         derived_size = kbkdf_GetDerivedKeySize(params->pAdditionalDerivedKeys + offset);
 
         *output_bitlen += derived_size;
-        *buffer_length = kbkdf_IncrementBuffer(*buffer_length, derived_size, ctx->mac_size);
+        if (kbkdf_IncrementBuffer(buffer_length, derived_size,
+                                  ctx->mac_size) != CKR_OK) {
+            return CKR_KEY_SIZE_RANGE;
+        }
 
         
 
@@ -722,7 +751,11 @@ kbkdf_SaveKeys(CK_MECHANISM_TYPE mech, CK_SESSION_HANDLE hSession, CK_SP800_108_
 
     
 
-    buffer_offset = kbkdf_IncrementBuffer(buffer_offset, ret_key_size, prf_length);
+
+
+    if (kbkdf_IncrementBuffer(&buffer_offset, ret_key_size, prf_length) != CKR_OK) {
+        return CKR_KEY_SIZE_RANGE;
+    }
 
     if (params->ulAdditionalDerivedKeys > 0) {
         
@@ -754,7 +787,9 @@ kbkdf_SaveKeys(CK_MECHANISM_TYPE mech, CK_SESSION_HANDLE hSession, CK_SP800_108_
             }
 
             
-            buffer_offset = kbkdf_IncrementBuffer(buffer_offset, key_size, prf_length);
+            if (kbkdf_IncrementBuffer(&buffer_offset, key_size, prf_length) != CKR_OK) {
+                return CKR_KEY_SIZE_RANGE;
+            }
 
             
             ret = kbkdf_FinalizeKey(hSession, derived_key, key_obj);

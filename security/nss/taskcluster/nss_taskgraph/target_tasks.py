@@ -12,21 +12,31 @@ def filter_build_type(build_types, task):
         return True
 
 
+
+
+
+
+
+
+
+
+
+
 PLATFORM_ALIASES = {
-    "aarch64-make": "aarch64",
-    "linux": "linux32",
-    "linux-fuzz": "linux32",
-    "linux64-fips": "linux64",
-    "linux64-fuzz": "linux64",
-    "linux64-make": "linux64",
-    "linux-make": "linux32",
-    "win64-make": "windows2022-64",
-    "win-make": "windows2022-32",
-    "win64": "windows2022-64",
-    "win": "windows2022-32",
-    "mac": "macosx64",
-    "mac-make": "macosx64",
+    "linux-x86-make": "linux-x86",
+    "linux-x64-make": "linux-x64",
+    "linux-aarch64-make": "linux-aarch64",
+    "win-x86-make": "win-x86",
+    "win-x64-make": "win-x64",
+    "mac-x64-make": "mac-x64",
+    "linux-x64-fips": "linux-x64",
+    "linux-aarch64-fips": "linux-aarch64",
+    "linux-x86-fuzz": "linux-x86",
+    "linux-x64-fuzz": "linux-x64",
 }
+
+
+_VARIANT_ATTR = {"make": "make", "fips": "make-fips", "fuzz": "fuzz"}
 
 
 def filter_platform(platform, task):
@@ -38,19 +48,9 @@ def filter_platform(platform, task):
     
     keep = task_platform == PLATFORM_ALIASES.get(platform, platform)
     
-    if platform == "linux64-fips":
-        keep &= task.attributes["fips"]
-    elif (
-        platform == "linux64-make"
-        or platform == "linux-make"
-        or platform == "win64-make"
-        or platform == "win-make"
-        or platform == "aarch64-make"
-        or platform == "mac-make"
-    ):
-        keep &= task.attributes["make"]
-    elif platform == "linux64-fuzz" or platform == "linux-fuzz":
-        keep &= task.attributes["fuzz"]
+    
+    if platform in PLATFORM_ALIASES:
+        keep &= task.attributes[_VARIANT_ATTR[platform.rsplit("-", 1)[1]]]
     return keep
 
 

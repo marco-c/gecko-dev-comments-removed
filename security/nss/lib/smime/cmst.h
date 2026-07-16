@@ -63,6 +63,7 @@ typedef struct NSSCMSRecipientInfoStr NSSCMSRecipientInfo;
 
 typedef struct NSSCMSDigestedDataStr NSSCMSDigestedData;
 typedef struct NSSCMSEncryptedDataStr NSSCMSEncryptedData;
+typedef struct NSSCMSAuthEnvelopedDataStr NSSCMSAuthEnvelopedData;
 
 typedef struct NSSCMSGenericWrapperDataStr NSSCMSGenericWrapperData;
 
@@ -117,6 +118,7 @@ union NSSCMSContentUnion {
     NSSCMSDigestedData *digestedData;
     NSSCMSEncryptedData *encryptedData;
     NSSCMSEnvelopedData *envelopedData;
+    NSSCMSAuthEnvelopedData *authEnvelopedData;
     NSSCMSSignedData *signedData;
     NSSCMSGenericWrapperData *genericData;
     
@@ -272,6 +274,22 @@ struct NSSCMSOriginatorInfoStr {
     
     CERTCertificate **certs;
 };
+
+
+
+
+struct NSSCMSAuthEnvelopedDataStr {
+    SECItem version;
+    NSSCMSOriginatorInfo *originatorInfo; 
+    NSSCMSRecipientInfo **recipientInfos;
+    NSSCMSContentInfo contentInfo;
+    NSSCMSAttribute **authAttrs; 
+    SECItem mac;
+    NSSCMSAttribute **unauthAttrs; 
+    
+    NSSCMSMessage *cmsg;
+};
+#define NSS_CMS_AUTH_ENVELOPED_DATA_VERSION 0
 
 
 

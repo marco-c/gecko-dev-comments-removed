@@ -93,17 +93,19 @@ pk11_buildNickname(PK11SlotInfo *slot, CK_ATTRIBUTE *cert_label,
         suffixLen = key_label->ulValueLen;
         suffix = (char *)key_label->pValue;
     } else if (cert_id && cert_id->ulValueLen > 0) {
-        int i, first = cert_id->ulValueLen - MAX_CERT_ID;
-        int offset = sizeof(DEFAULT_STRING);
         char *idValue = (char *)cert_id->pValue;
+        
+        CK_ULONG idLen = (cert_id->ulValueLen > MAX_CERT_ID)
+                             ? MAX_CERT_ID
+                             : cert_id->ulValueLen;
+        CK_ULONG first = cert_id->ulValueLen - idLen;
+        CK_ULONG i;
 
         PORT_Memcpy(buildNew, DEFAULT_STRING, sizeof(DEFAULT_STRING) - 1);
-        next = buildNew + offset;
-        if (first < 0)
-            first = 0;
-        for (i = first; i < (int)cert_id->ulValueLen; i++) {
-            *next++ = toHex((idValue[i] >> 4) & 0xf);
-            *next++ = toHex(idValue[i] & 0xf);
+        next = buildNew + sizeof(DEFAULT_STRING) - 1;
+        for (i = 0; i < idLen; i++) {
+            *next++ = toHex((idValue[first + i] >> 4) & 0xf);
+            *next++ = toHex(idValue[first + i] & 0xf);
         }
         *next++ = 0;
         suffix = buildNew;
@@ -306,11 +308,14 @@ pk11_fastCert(PK11SlotInfo *slot, CK_OBJECT_HANDLE certID,
     }
 
     
-
-
-
-
-    (void)nssTrustDomain_AddCertsToCache(td, &c, 1);
+    
+    
+    
+    
+    c = nssTrustDomain_AddCertToCache(td, c);
+    if (!c) {
+        return NULL;
+    }
     return STAN_GetCERTCertificateOrRelease(c);
 }
 
@@ -1254,12 +1259,20 @@ PK11_ImportCert(PK11SlotInfo *slot, CERTCertificate *cert,
 
     nssPKIObject_AddInstance(&c->object, certobj);
     
-
-
+    
+    
+    
+    
     nssCertificate_AddRef(c);
-    nssTrustDomain_AddCertsToCache(STAN_GetDefaultTrustDomain(), &c, 1);
-    (void)STAN_ForceCERTCertificateUpdate(c);
-    nssCertificate_Destroy(c);
+    NSSCertificate *cInCache = nssTrustDomain_AddCertToCache(STAN_GetDefaultTrustDomain(), c);
+    if (cInCache) {
+        (void)STAN_ForceCERTCertificateUpdate(cInCache);
+        
+        nssCertificate_Destroy(cInCache);
+    } else {
+        (void)STAN_ForceCERTCertificateUpdate(c);
+        
+    }
     SECITEM_FreeItem(keyID, PR_TRUE);
     (void)nssToken_Destroy(token);
     return SECSuccess;
@@ -1563,7 +1576,13 @@ PK11_FindCertByIssuerAndSNOnToken(PK11SlotInfo *slot,
         goto loser;
     }
     object = NULL; 
-    nssTrustDomain_AddCertsToCache(td, &cert, 1);
+    
+    
+    
+    cert = nssTrustDomain_AddCertToCache(td, cert);
+    if (!cert) {
+        goto loser;
+    }
     
     rvCert = STAN_GetCERTCertificate(cert);
     if (!rvCert) {
@@ -2022,9 +2041,9 @@ PK11_FindCertByIssuerAndSN(PK11SlotInfo **slotPtr, CERTIssuerAndSN *issuerSN,
         }
 
         
-    } while (!PK11_IsPresent(rvCert->slot));
+    } while (rvCert->slot && !PK11_IsPresent(rvCert->slot));
 
-    if (rvCert && slotPtr)
+    if (rvCert && rvCert->slot && slotPtr)
         *slotPtr = PK11_ReferenceSlot(rvCert->slot);
 
     SECITEM_FreeItem(derSerial, PR_TRUE);

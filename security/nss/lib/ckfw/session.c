@@ -1446,19 +1446,26 @@ nssCKFWSession_CopyObject(
             return (NSSCKFWObject *)NULL;
         }
 
-        newLength = n;
-        for (i = 0; i < ulAttributeCount; i++) {
-            for (j = 0; j < n; j++) {
+        
+
+
+
+        newLength = 0;
+        for (j = 0; j < n; j++) {
+            for (i = 0; i < ulAttributeCount; i++) {
                 if (oldTypes[j] == pTemplate[i].type) {
                     if ((CK_VOID_PTR)NULL ==
                         pTemplate[i].pValue) {
                         
-                        newLength--;
+                        ;
+                    } else {
+                        
+                        newLength++;
                     }
                     break;
                 }
             }
-            if (j == n) {
+            if (i == ulAttributeCount) {
                 
                 newLength++;
             }

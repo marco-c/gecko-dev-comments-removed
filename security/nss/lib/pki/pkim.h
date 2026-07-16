@@ -445,11 +445,14 @@ nssTrustDomain_InitializeCache(
     NSSTrustDomain *td,
     PRUint32 cacheSize);
 
-NSS_EXTERN PRStatus
-nssTrustDomain_AddCertsToCache(
+
+
+
+
+NSS_EXTERN NSSCertificate *
+nssTrustDomain_AddCertToCache(
     NSSTrustDomain *td,
-    NSSCertificate **certs,
-    PRUint32 numCerts);
+    NSSCertificate *cert);
 
 NSS_EXTERN void
 nssTrustDomain_RemoveCertFromCacheLOCKED(

@@ -325,7 +325,7 @@ static CK_INTERFACE fips_interfaces[] = {
     { (CK_UTF8CHAR_PTR) "Vendor NSS FIPS Interface", &sftk_fips_funcList, NSS_INTERFACE_FLAGS }
 };
 
-#define FIPS_INTERFACE_COUNT 4
+#define FIPS_INTERFACE_COUNT PR_ARRAY_SIZE(fips_interfaces)
 
 
 #define CKO_NOT_A_KEY CKO_DATA
@@ -2253,7 +2253,7 @@ FC_AsyncJoin(CK_SESSION_HANDLE hSession, CK_UTF8CHAR_PTR pFunctionName,
     SFTK_FIPSCHECK();
     CHECK_FORK();
 
-    return FC_AsyncJoin(hSession, pFunctionName, ulID, pData, ulData);
+    return NSC_AsyncJoin(hSession, pFunctionName, ulID, pData, ulData);
 }
 
 CK_RV

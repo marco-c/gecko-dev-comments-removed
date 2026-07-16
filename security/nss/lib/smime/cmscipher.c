@@ -43,6 +43,34 @@ struct NSSCMSCipherContextStr {
 
 
 
+static SECStatus
+nss_cms_cipher_op(void *cx, unsigned char *out, unsigned int *outlen,
+                  unsigned int maxout, const unsigned char *in,
+                  unsigned int inlen)
+{
+    int len = 0;
+    SECStatus rv = PK11_CipherOp((PK11Context *)cx, out, &len, (int)maxout,
+                                 in, (int)inlen);
+    if (outlen != NULL) {
+        *outlen = (unsigned int)len;
+    }
+    return rv;
+}
+
+static SECStatus
+nss_cms_cipher_destroy_op(void *cx, PRBool freeit)
+{
+    PK11_DestroyContext((PK11Context *)cx, freeit);
+    return SECSuccess;
+}
+
+
+
+
+
+
+
+
 
 
 NSSCMSCipherContext *
@@ -99,8 +127,8 @@ NSS_CMSCipherContext_StartDecrypt(PK11SymKey *key, SECAlgorithmID *algid)
     }
 
     cc->cx = ciphercx;
-    cc->doit = (nss_cms_cipher_function)PK11_CipherOp;
-    cc->destroy = (nss_cms_cipher_destroy)PK11_DestroyContext;
+    cc->doit = nss_cms_cipher_op;
+    cc->destroy = nss_cms_cipher_destroy_op;
     cc->encrypt = PR_FALSE;
     cc->pending_count = 0;
 
@@ -187,8 +215,8 @@ NSS_CMSCipherContext_StartEncrypt(PLArenaPool *poolp, PK11SymKey *key, SECAlgori
 
     cc->cx = ciphercx;
     ciphercx = NULL;
-    cc->doit = (nss_cms_cipher_function)PK11_CipherOp;
-    cc->destroy = (nss_cms_cipher_destroy)PK11_DestroyContext;
+    cc->doit = nss_cms_cipher_op;
+    cc->destroy = nss_cms_cipher_destroy_op;
     cc->encrypt = PR_TRUE;
     cc->pending_count = 0;
 

@@ -441,6 +441,9 @@ class TestAgent {
         if (group == ssl_grp_kem_xyber768d00) {
           NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, NSS_USE_ALG_IN_SSL_KX, 0);
         }
+        if (group == ssl_grp_kem_mlkem1024) {
+          NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, NSS_USE_ALG_IN_SSL_KX, 0);
+        }
       }
     }
 
