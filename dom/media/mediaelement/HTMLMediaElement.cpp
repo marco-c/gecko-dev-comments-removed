@@ -64,6 +64,7 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/AudioTrack.h"
@@ -5590,7 +5591,8 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       
       
-      if (mMutedState == MutedState::Default) {
+      if (StaticPrefs::dom_media_muted_state_enabled() &&
+          mMutedState == MutedState::Default) {
         SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
                                 : (mMuted & ~MUTED_BY_CONTENT));
         if (IsInComposedDoc()) {
