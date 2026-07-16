@@ -35,6 +35,18 @@ class TestWorkerWatcher extends ExtensionCommon.EventEmitter {
     this.dataRelPath = dataRelPath;
     this.extensionProcess = null;
     this.extensionProcessActor = null;
+
+    
+    
+    
+    
+    
+    
+    if (this.useRemoteWorkerDebugger) {
+      this.startWatchingWorkersInParent();
+      return;
+    }
+
     this.registerProcessActor();
     this.getAndWatchExtensionProcess();
     
@@ -44,8 +56,25 @@ class TestWorkerWatcher extends ExtensionCommon.EventEmitter {
   }
 
   async destroy() {
+    if (this.useRemoteWorkerDebugger) {
+      this.stopWatchingWorkersInParent();
+      return;
+    }
     await this.stopWatchingWorkers();
     ChromeUtils.unregisterProcessActor(this.JS_ACTOR_NAME);
+  }
+
+  get useRemoteWorkerDebugger() {
+    return Services.prefs.getBoolPref(
+      "dom.worker.remoteDebugger.enabled",
+      false
+    );
+  }
+
+  get wdm() {
+    return Cc["@mozilla.org/dom/workers/workerdebuggermanager;1"].getService(
+      Ci.nsIWorkerDebuggerManager
+    );
   }
 
   get swm() {
@@ -134,6 +163,39 @@ class TestWorkerWatcher extends ExtensionCommon.EventEmitter {
     }
     this.extensionProcessActor.eventEmitter = null;
     return this.extensionProcessActor.sendQuery("Test:StopWatchingWorkers");
+  }
+
+  
+  
+  
+  
+  startWatchingWorkersInParent() {
+    if (this._parentWorkerDebuggerListener) {
+      return;
+    }
+    const watcher = this;
+    this._parentWorkerDebuggerListener = {
+      onRegister(dbg) {
+        watcher.emit("worker-spawned", {
+          workerType: dbg.type,
+          workerUrl: dbg.url,
+        });
+      },
+      onUnregister(dbg) {
+        watcher.emit("worker-terminated", {
+          workerType: dbg.type,
+          workerUrl: dbg.url,
+        });
+      },
+    };
+    this.wdm.addListener(this._parentWorkerDebuggerListener);
+  }
+
+  stopWatchingWorkersInParent() {
+    if (this._parentWorkerDebuggerListener) {
+      this.wdm.removeListener(this._parentWorkerDebuggerListener);
+      this._parentWorkerDebuggerListener = null;
+    }
   }
 
   getAndWatchExtensionProcess() {

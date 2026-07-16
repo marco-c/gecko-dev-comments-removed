@@ -26,6 +26,14 @@ add_setup(async function () {
       
       ["dom.serviceWorkers.idle_timeout", 299999],
       ["dom.serviceWorkers.idle_extended_timeout", 299999],
+      
+      
+      
+      
+      
+      
+      
+      ["dom.worker.remoteDebugger.enabled", false],
     ],
   });
 });

@@ -10,7 +10,7 @@ const BASE_URL = "chrome://mochitests/content/browser/dom/workers/test/";
 const WORKER_URL = BASE_URL + "WorkerDebugger.initialize_waiting_worker.js";
 const DEBUGGER_URL = BASE_URL + "WorkerDebugger.initialize_waiting_debugger.js";
 
-add_task(async function test() {
+async function doTest() {
   const onDbg = waitForRegister(WORKER_URL);
   const worker = new Worker(WORKER_URL);
 
@@ -44,7 +44,22 @@ add_task(async function test() {
   const onUnregistered = waitForUnregister(WORKER_URL);
   worker.terminate();
   await onUnregistered;
-});
+}
+
+
+
+
+for (const remoteDebuggerEnabled of [false, true]) {
+  add_task(async function test() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+    });
+    info(
+      "Running with dom.worker.remoteDebugger.enabled=" + remoteDebuggerEnabled
+    );
+    await doTest();
+  });
+}
 
 function waitForRegister(url, dbgUrl) {
   return new Promise(function (resolve) {

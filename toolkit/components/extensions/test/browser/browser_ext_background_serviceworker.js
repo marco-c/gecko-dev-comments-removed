@@ -7,6 +7,19 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(async function () {
+  
+  
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.worker.remoteDebugger.enabled", false]],
+  });
+});
+
 add_task(assert_background_serviceworker_pref_enabled);
 
 add_task(async function test_serviceWorker_register_guarded_by_pref() {

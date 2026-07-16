@@ -1,0 +1,7 @@
+"use strict";
+
+
+const nested = new Worker("nested_worker.js");
+nested.onmessage = e => {
+  self.postMessage("nested:" + e.data);
+};

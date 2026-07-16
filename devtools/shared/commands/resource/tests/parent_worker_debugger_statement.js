@@ -1,0 +1,11 @@
+"use strict";
+
+self.postMessage("ready");
+
+self.onmessage = e => {
+  if (e.data === "pause") {
+    
+    debugger;
+    self.postMessage("resumed");
+  }
+};

@@ -14,6 +14,15 @@ var WORKER1_URL = "code_listworkers-worker1.js";
 var WORKER2_URL = "code_listworkers-worker2.js";
 
 add_task(async function test() {
+  
+  
+  
+  
+  
+  
+  
+  await pushPref("dom.worker.remoteDebugger.enabled", false);
+
   const tab = await addTab(TAB_URL);
   const target = await createAndAttachTargetForTab(tab);
 

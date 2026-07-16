@@ -7,6 +7,14 @@ add_setup(async function () {
       ["dom.ipc.processCount.privilegedmozilla", 1],
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
+      
+      
+      
+      
+      
+      
+      
+      ["dom.worker.remoteDebugger.enabled", false],
     ],
   });
 });

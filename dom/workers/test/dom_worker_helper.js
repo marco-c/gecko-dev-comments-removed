@@ -25,6 +25,25 @@ function finish() {
   }
 }
 
+
+
+
+
+function addTaskWithBothWorkerDebuggers(testBody) {
+  for (const remoteDebuggerEnabled of [false, true]) {
+    add_task(async function () {
+      await SpecialPowers.pushPrefEnv({
+        set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+      });
+      info(
+        "Running with dom.worker.remoteDebugger.enabled=" +
+          remoteDebuggerEnabled
+      );
+      await testBody();
+    });
+  }
+}
+
 function assertThrows(fun, message) {
   let throws = false;
   try {
@@ -39,9 +58,17 @@ function generateDebuggers() {
   return wdm.getWorkerDebuggerEnumerator();
 }
 
+
+
+
+
+function workerDebuggerURLMatches(dbgUrl, url) {
+  return dbgUrl === url || dbgUrl.endsWith("/" + url);
+}
+
 function findDebugger(url) {
   for (let dbg of generateDebuggers()) {
-    if (dbg.url === url) {
+    if (workerDebuggerURLMatches(dbg.url, url)) {
       return dbg;
     }
   }
@@ -52,7 +79,7 @@ function waitForRegister(url, dbgUrl) {
   return new Promise(function (resolve) {
     wdm.addListener({
       onRegister(dbg) {
-        if (dbg.url !== url) {
+        if (!workerDebuggerURLMatches(dbg.url, url)) {
           return;
         }
         ok(true, "Debugger with url " + url + " should be registered.");
@@ -71,7 +98,7 @@ function waitForUnregister(url) {
   return new Promise(function (resolve) {
     wdm.addListener({
       onUnregister(dbg) {
-        if (dbg.url !== url) {
+        if (!workerDebuggerURLMatches(dbg.url, url)) {
           return;
         }
         ok(true, "Debugger with url " + url + " should be unregistered.");
