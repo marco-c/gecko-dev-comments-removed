@@ -17,14 +17,18 @@ const {
   HISTORY: SOURCE_HISTORY,
   CONVERSATION_USER_REQUEST: SOURCE_USER_REQUEST,
   MAX_MEMORY_SUMMARY_LENGTH,
+  MEMORY_TYPE_DURABLE_MEMORY,
+  MEMORY_TYPE_SHORT_TERM_MEMORY,
+  MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+  MEMORY_SENSITIVITY_CATEGORY_SENSITIVE,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
 );
 const { MemoryStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
-const { EmbeddingsGenerator } = ChromeUtils.importESModule(
-  "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs"
+const { MEMORY_FILTER_COMPARATOR } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/services/MemoryStoreConstants.sys.mjs"
 );
 const { AIWindow } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
@@ -52,19 +56,31 @@ const TEST_MODEL = "test-model";
 const TEST_MESSAGE = "Remember I like coffee.";
 const TEST_MEMORIES = [
   {
+    type: MEMORY_TYPE_DURABLE_MEMORY,
     memory_summary: "Loves drinking coffee",
     reasoning: "Frequeently orders coffee online for pickup",
-    tags: ["category:Food & Drink", "intent:Plan / Organize"],
+    tags: ["category:Food & Drink", "intent:Plan / Organize", "extra:tag"],
+    sources: ["history"],
+    sensitivity_category: MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+    updated_at: 1000,
   },
   {
+    type: MEMORY_TYPE_SHORT_TERM_MEMORY,
     memory_summary: "Buys dog food online",
     reasoning: "Frequently buys dog food on websites like Chewy",
     tags: ["category:Pets & Animals", "intent:Buy / Acquire"],
+    sources: ["session"],
+    sensitivity_category: MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+    updated_at: 1,
   },
   {
+    type: MEMORY_TYPE_DURABLE_MEMORY,
     memory_summary: "Plays games online",
     reasoning: "Visits a lot of gaming-related websites",
-    tags: ["category:Games", "intent:Entertain / Relax"],
+    tags: ["category:Games", "intent:Entertain / Relax", "extra:tag"],
+    sources: ["user_request"],
+    sensitivity_category: MEMORY_SENSITIVITY_CATEGORY_SENSITIVE,
+    updated_at: 200,
   },
 ];
 
@@ -97,6 +113,78 @@ async function addMemories() {
   for (const memory of TEST_MEMORIES) {
     await MemoryStore.addMemory(memory);
   }
+}
+
+
+
+
+
+
+
+
+async function getFakeRelevantMemories(message, topK, threshold) {
+  
+  
+  const fakeGenerator = {
+    async embedMany(_texts) {
+      
+      
+
+      const embeds = [];
+      for (const text of _texts) {
+        if (text.includes("coffee")) {
+          embeds.push([1, 0, 0]); 
+        } else if (text.includes("dog food")) {
+          embeds.push([0, 1, 0]); 
+        } else {
+          embeds.push([0, 0, 1]); 
+        }
+      }
+      return { output: embeds };
+    },
+    async embed(_text) {
+      
+      return {
+        output: [[0.9, 0.1, 0]], 
+      };
+    },
+  };
+
+  
+  
+  const memories = (
+    await MemoryStore.getMemories({ includeSoftDeleted: true })
+  ).sort((a, b) => a.id.localeCompare(b.id));
+  if (memories.length === 0) {
+    return [];
+  }
+
+  
+  const memoryEmbeddings = (
+    await fakeGenerator.embedMany(
+      memories.map(m => `${m.memory_summary}. ${m.reasoning || ""}`)
+    )
+  ).output;
+
+  let queryEmbedding = (await fakeGenerator.embed(message)).output;
+  if (Array.isArray(queryEmbedding) && queryEmbedding.length === 1) {
+    queryEmbedding = queryEmbedding[0];
+  }
+
+  
+  const { cosSim } = ChromeUtils.importESModule(
+    "chrome://global/content/ml/NLPUtils.sys.mjs"
+  );
+
+  const similarities = memoryEmbeddings.map((memEmb, idx) => ({
+    ...memories[idx],
+    similarity: cosSim(queryEmbedding, memEmb),
+  }));
+
+  return similarities
+    .filter(m => m.similarity >= (threshold ?? 0.3))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, topK ?? 5);
 }
 
 add_setup(async function () {
@@ -529,86 +617,14 @@ add_task(async function test_memoryClassifyMessage_sad_path_bad_schema() {
 
 
 
-add_task(async function test_getRelevantMemories_happy_path() {
-  
+
+add_task(async function test_getRelevantMemories_through_MemoryStore() {
   await addMemories();
 
   const sb = sinon.createSandbox();
   try {
-    
-    
-    const fakeGenerator = {
-      async embedMany(_texts) {
-        
-        
-
-        const embeds = [];
-        for (const text of _texts) {
-          if (text.includes("coffee")) {
-            embeds.push([1, 0, 0]); 
-          } else if (text.includes("dog food")) {
-            embeds.push([0, 1, 0]); 
-          } else {
-            embeds.push([0, 0, 1]); 
-          }
-        }
-        return { output: embeds };
-      },
-      async embed(_text) {
-        
-        return {
-          output: [[0.9, 0.1, 0]], 
-        };
-      },
-    };
-
-    
-    let callCount = 0;
-
-    sb.stub(MemoriesManager, "getRelevantMemories").callsFake(
-      async function (message, topK, threshold) {
-        
-        if (callCount === 0) {
-          callCount++;
-          
-          
-          const memories = (await MemoriesManager.getAllMemories()).sort(
-            (a, b) => a.id.localeCompare(b.id)
-          );
-          if (memories.length === 0) {
-            return [];
-          }
-
-          
-          const memoryEmbeddings = (
-            await fakeGenerator.embedMany(
-              memories.map(m => `${m.memory_summary}. ${m.reasoning || ""}`)
-            )
-          ).output;
-
-          let queryEmbedding = (await fakeGenerator.embed(message)).output;
-          if (Array.isArray(queryEmbedding) && queryEmbedding.length === 1) {
-            queryEmbedding = queryEmbedding[0];
-          }
-
-          
-          const { cosSim } = ChromeUtils.importESModule(
-            "chrome://global/content/ml/NLPUtils.sys.mjs"
-          );
-
-          const similarities = memoryEmbeddings.map((memEmb, idx) => ({
-            ...memories[idx],
-            similarity: cosSim(queryEmbedding, memEmb),
-          }));
-
-          return similarities
-            .filter(m => m.similarity >= (threshold || 0.3))
-            .sort((a, b) => b.similarity - a.similarity)
-            .slice(0, topK || 5);
-        }
-        
-        return [];
-      }
+    sb.stub(MemoryStore, "getRelevantMemories").callsFake(
+      getFakeRelevantMemories
     );
 
     const relevantMemories =
@@ -639,139 +655,9 @@ add_task(async function test_getRelevantMemories_happy_path() {
       "number",
       "Similarity should be a number"
     );
-
-    
-    await deleteAllMemories();
   } finally {
     sb.restore();
-  }
-});
-
-
-
-
-
-
-
-add_task(
-  async function test_getRelevantMemories_sad_path_no_existing_memories() {
-    const relevantMemories =
-      await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
-
-    
-    Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
-    Assert.equal(
-      relevantMemories.length,
-      0,
-      "Result should be an empty array when there are no existing memories."
-    );
-  }
-);
-
-
-
-
-add_task(
-  async function test_getRelevantMemories_sad_path_null_classification() {
-    
-    await addMemories();
-
-    const sb = sinon.createSandbox();
-    try {
-      
-      const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([]);
-
-      const relevantMemories =
-        await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
-
-      
-      Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
-
-      
-      Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
-      Assert.equal(
-        relevantMemories.length,
-        0,
-        "Result should be an empty array when no memories meet similarity threshold."
-      );
-
-      
-      await deleteAllMemories();
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-
-
-
-
-add_task(async function test_getRelevantMemories_cache_invalidation() {
-  await deleteAllMemories();
-
-  
-  MemoriesManager._clearEmbeddingsCache();
-
-  const sb = sinon.createSandbox();
-  try {
-    await addMemories();
-
-    let embedManyCallCount = 0;
-
-    const fakeGenerator = {
-      async embedMany(texts) {
-        embedManyCallCount++;
-        return {
-          output: texts.map((_, i) => [i === 0 ? 1 : 0, i === 1 ? 1 : 0, 0]),
-        };
-      },
-      async embed(_text) {
-        return { output: [[0.9, 0.1, 0]] };
-      },
-    };
-
-    sb.stub(EmbeddingsGenerator.prototype, "embedMany").callsFake(
-      fakeGenerator.embedMany
-    );
-    sb.stub(EmbeddingsGenerator.prototype, "embed").callsFake(
-      fakeGenerator.embed
-    );
-
-    await MemoriesManager.getRelevantMemories("coffee");
-    Assert.equal(
-      embedManyCallCount,
-      1,
-      "embedMany should be called once on first call"
-    );
-
-    await MemoriesManager.getRelevantMemories("coffee");
-    Assert.equal(
-      embedManyCallCount,
-      1,
-      "embedMany should NOT be called again when memories unchanged (cache hit)"
-    );
-
-    const memories = await MemoriesManager.getAllMemories();
-    
-    const originalTimestamp = memories[0].updated_at;
-    await MemoryStore.updateMemory(memories[0].id, {
-      memory_summary: "Loves drinking coffee and tea",
-      updated_at: originalTimestamp + 1000, 
-    });
-
-    await MemoriesManager.getRelevantMemories("coffee");
-    Assert.equal(
-      embedManyCallCount,
-      2,
-      "embedMany should be called again after memory update (cache invalidated)"
-    );
-
     await deleteAllMemories();
-  } finally {
-    sb.restore();
-    
-    MemoriesManager._clearEmbeddingsCache();
   }
 });
 
@@ -841,7 +727,6 @@ add_task(async function test_saveRequestedMemory_truncates_long_summary() {
   sandbox
     .stub(ChatStore, "getMostRecentMessages")
     .resolves([{ content: { body: "remember I prefer Walmart" } }]);
-  sandbox.stub(MemoriesManager, "getRelevantMemories").resolves([]);
   try {
     await deleteAllMemories();
     const result = await MemoriesManager.saveRequestedMemory(
@@ -898,7 +783,6 @@ add_task(async function test_saveRequestedMemory_happy_path_creates() {
   sandbox
     .stub(ChatStore, "getMostRecentMessages")
     .resolves([{ content: { body: "remember I prefer Walmart" } }]);
-  sandbox.stub(MemoriesManager, "getRelevantMemories").resolves([]);
   try {
     await deleteAllMemories();
     const result = await MemoriesManager.saveRequestedMemory(
@@ -1303,5 +1187,36 @@ add_task(
       sb.restore();
       await deleteAllMemories();
     }
+  }
+);
+
+
+
+
+
+add_task(
+  async function test_getMemoriesByAttribute_with_filters_through_MemoryStore() {
+    await addMemories();
+
+    
+    const memoriesByType = await MemoriesManager.getMemoriesByAttribute([
+      {
+        field: "type",
+        value: [MEMORY_TYPE_DURABLE_MEMORY],
+        comparator: MEMORY_FILTER_COMPARATOR.IN,
+      },
+    ]);
+    Assert.equal(
+      memoriesByType.length,
+      2,
+      `Should return 2 memories with the "${MEMORY_TYPE_DURABLE_MEMORY}" type`
+    );
+    Assert.deepEqual(
+      ["Loves drinking coffee", "Plays games online"].sort(),
+      memoriesByType.map(mem => mem.memory_summary).sort(),
+      `Filter by "${MEMORY_TYPE_DURABLE_MEMORY}" should return the expected summaries`
+    );
+
+    await deleteAllMemories();
   }
 );
