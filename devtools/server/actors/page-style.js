@@ -835,22 +835,25 @@ class PageStyleActor extends Actor {
     rawNode = null,
     { inherited, isSystem, pseudoElement, keyframes } = {}
   ) {
-    let element = inherited?.rawNode || rule.currentlySelectedElement;
-    
-    
-    if (element.implementedPseudoElement) {
-      element = CssLogic.getBindingElementAndPseudo(element).bindingElement;
-    }
-
-    const parentNode = element?.parentNode;
-    const siblingCount = parentNode?.childElementCount;
+    let siblingCount;
     let siblingIndex;
-    if (parentNode) {
-      for (let i = 0; i < siblingCount; i++) {
-        if (parentNode.children[i] === element) {
-          
-          siblingIndex = i + 1;
-          break;
+    if (rawNode) {
+      let element = rawNode;
+      
+      
+      if (element.implementedPseudoElement) {
+        element = CssLogic.getBindingElementAndPseudo(element).bindingElement;
+      }
+
+      const parentNode = element?.parentNode;
+      siblingCount = parentNode?.childElementCount;
+      if (parentNode) {
+        for (let i = 0; i < siblingCount; i++) {
+          if (parentNode.children[i] === element) {
+            
+            siblingIndex = i + 1;
+            break;
+          }
         }
       }
     }
