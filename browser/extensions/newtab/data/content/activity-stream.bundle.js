@@ -8973,9 +8973,12 @@ class TopSiteAddButton extends (external_React_default()).PureComponent {
   render() {
     
     
+    
     const button = external_React_default().createElement("moz-button", TopSite_extends({
       type: "primary",
-      className: "add-button"
+      className: "add-button",
+      tabIndex: this.props.tabIndex,
+      onFocus: this.props.onFocus
     }, this.props.inGrid && {
       size: "large"
     }, {
@@ -9042,6 +9045,16 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         activeIndex: null
       });
     }
+
+    
+    
+    
+    if (prevProps.TopSitesRows !== this.props.TopSitesRows) {
+      
+      this.setState({
+        focusedIndex: 0
+      });
+    }
   }
   onActivate(index) {
     this.setState({
@@ -9052,16 +9065,29 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     if (this.state.activeIndex || this.state.activeIndex === 0) {
       return;
     }
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      
-      const isRTL = document.dir === "rtl";
-      const navigateToPrevious = isRTL ? e.key === "ArrowRight" : e.key === "ArrowLeft";
-      const targetTopSite = navigateToPrevious ? this.focusedRef?.previousSibling : this.focusedRef?.nextSibling;
-      const targetAnchor = targetTopSite?.querySelector("a");
-      if (targetAnchor) {
-        targetAnchor.tabIndex = 0;
-        targetAnchor.focus();
-      }
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
+      return;
+    }
+    
+    const isRTL = document.dir === "rtl";
+    const navigateToPrevious = isRTL ? e.key === "ArrowRight" : e.key === "ArrowLeft";
+
+    
+    
+    const focusTargets = [...this.focusRef.querySelectorAll("a, .add-button")];
+    const currentIndex = focusTargets.indexOf(e.target);
+    if (currentIndex === -1) {
+      return;
+    }
+    
+    
+    
+    const count = focusTargets.length;
+    const delta = navigateToPrevious ? -1 : 1;
+    const target = focusTargets[(currentIndex + delta + count) % count];
+    if (target) {
+      target.tabIndex = 0;
+      target.focus();
     }
   }
   onWrapperFocus() {
@@ -9166,7 +9192,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
             className: slotProps.className,
             key: slotKey,
             index: i,
-            dispatch: props.dispatch
+            dispatch: props.dispatch,
+            tabIndex: i === this.state.focusedIndex ? 0 : -1,
+            onFocus: () => {
+              this.onTopsiteFocus(i);
+            }
           });
         }
       } else {
@@ -9176,7 +9206,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         if (topSites[i + 1]?.isAddButton && rowFull) {
           addButton = external_React_default().createElement(TopSiteAddButton, {
             index: i + 1,
-            dispatch: props.dispatch
+            dispatch: props.dispatch,
+            tabIndex: i + 1 === this.state.focusedIndex ? 0 : -1,
+            onFocus: () => {
+              this.onTopsiteFocus(i + 1);
+            }
           });
         }
         topSiteLink = external_React_default().createElement(TopSite, TopSite_extends({
@@ -9186,9 +9220,6 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           onActivate: this.onActivate
         }, restSlotProps, commonProps, {
           colors: props.colors,
-          setRef: i === this.state.focusedIndex ? el => {
-            this.focusedRef = el;
-          } : () => {},
           tabIndex: i === this.state.focusedIndex ? 0 : -1,
           onFocus: () => {
             this.onTopsiteFocus(i);
