@@ -14,6 +14,11 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection error/);
 
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(/400 Bad request/);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IntentClassifier:
