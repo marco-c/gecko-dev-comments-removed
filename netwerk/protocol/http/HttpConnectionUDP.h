@@ -107,6 +107,12 @@ class HttpConnectionUDP final : public HttpConnectionBase,
 
   void SetDontExclude() override;
 
+  
+  
+  
+  
+  bool IsConnectedAndUnusable();
+
  private:
   nsresult InitCommon(nsIUDPSocket* aSocket, const NetAddr& aPeerAddr,
                       nsIInterfaceRequestor* callbacks, uint32_t caps,

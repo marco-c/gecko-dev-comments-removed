@@ -49,7 +49,14 @@ ConnectionEntry::ConnectionEntry(nsHttpConnectionInfo* ci,
 
 bool ConnectionEntry::HasActiveH3Connection() const {
   for (const auto& conn : mActiveConns) {
-    if (conn->UsingHttp3()) {
+    
+    
+    
+    
+    
+    
+    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(conn);
+    if (connUDP && !connUDP->IsConnectedAndUnusable()) {
       return true;
     }
   }

@@ -718,6 +718,11 @@ bool HttpConnectionUDP::JoinConnection(const nsACString& hostname,
 }
 
 bool HttpConnectionUDP::CanReuse() {
+#ifdef DEBUG
+  if (StaticPrefs::network_http_http3_force_cannot_reuse_for_testing()) {
+    return false;
+  }
+#endif
   if (NS_FAILED(mErrorBeforeConnect)) {
     return false;
   }
@@ -729,6 +734,15 @@ bool HttpConnectionUDP::CanReuse() {
     return mHttp3Session->CanReuse();
   }
   return false;
+}
+
+bool HttpConnectionUDP::IsConnectedAndUnusable() {
+  
+  
+  
+  
+  
+  return mExperienced && !CanReuse();
 }
 
 bool HttpConnectionUDP::CanDirectlyActivate() {
