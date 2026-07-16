@@ -9,14 +9,29 @@ const { MockRegistrar } = ChromeUtils.importESModule(
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-const { CustomIconManager } = ChromeUtils.importESModule(
+
+
+
+
+
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+const {
+  CustomIconManager,
+  ICON_CATALOG,
+  resolvePreview,
+  resolveResourceId,
+  OS_LIGHT,
+  OS_DARK,
+} = ChromeUtils.importESModule(
   "moz-src:///browser/components/shell/CustomIconManager.sys.mjs"
 );
 
 const PREF_ICON_ID = "browser.shell.customIcon.id";
 const TEST_AUMID = "Test.Firefox.AUMID";
 const TEST_SHORTCUTS = ["C:\\fake\\Desktop\\Nightly.lnk"];
-const RETRO_RESOURCE_ID = CustomIconManager.list().retro.iconResourceId;
+const RETRO_RESOURCE_ID = ICON_CATALOG.retro2004.iconResourceId;
 
 
 
@@ -85,7 +100,7 @@ add_task(
   async function test_apply_updates_shortcuts_pref_and_runtime() {
     resetMocks();
 
-    await CustomIconManager.apply("retro");
+    await CustomIconManager.apply("retro2004");
 
     Assert.ok(
       shellServiceMock.enumerateInstallShortcuts.calledOnceWithExactly(
@@ -118,7 +133,7 @@ add_task(
     );
     Assert.equal(
       Services.prefs.getStringPref(PREF_ICON_ID, ""),
-      "retro",
+      "retro2004",
       "pref records the applied id"
     );
   }
@@ -168,7 +183,7 @@ add_task(async function test_apply_throws_on_msix() {
 
   try {
     await Assert.rejects(
-      CustomIconManager.apply("retro"),
+      CustomIconManager.apply("retro2004"),
       /MSIX/,
       "apply rejects on an MSIX build"
     );
@@ -200,7 +215,7 @@ add_task(
   skipOnMsix(),
   async function test_revert_resets_shortcuts_pref_and_runtime() {
     resetMocks();
-    Services.prefs.setStringPref(PREF_ICON_ID, "retro");
+    Services.prefs.setStringPref(PREF_ICON_ID, "retro2004");
 
     await CustomIconManager.revert();
 
@@ -235,7 +250,7 @@ add_task(skipOnMsix(), async function test_apply_no_matching_shortcuts() {
   shellServiceMock.enumerateInstallShortcuts.resolves([]);
 
   
-  await CustomIconManager.apply("retro");
+  await CustomIconManager.apply("retro2004");
 
   Assert.ok(
     shellServiceMock.setShortcutsIcon.notCalled,
@@ -247,7 +262,7 @@ add_task(skipOnMsix(), async function test_apply_no_matching_shortcuts() {
   );
   Assert.equal(
     Services.prefs.getStringPref(PREF_ICON_ID, ""),
-    "retro",
+    "retro2004",
     "pref still recorded"
   );
 });
@@ -269,7 +284,7 @@ add_task(
     );
 
     
-    await CustomIconManager.apply("retro");
+    await CustomIconManager.apply("retro2004");
 
     Assert.ok(
       shellServiceMock.setShortcutsIcon.calledOnce,
@@ -281,7 +296,7 @@ add_task(
     );
     Assert.equal(
       Services.prefs.getStringPref(PREF_ICON_ID, ""),
-      "retro",
+      "retro2004",
       "pref still recorded"
     );
   }
@@ -296,7 +311,7 @@ add_task(
   skipOnMsix(),
   async function test_ensureAppliedOrRevert_applies_known_id() {
     resetMocks();
-    Services.prefs.setStringPref(PREF_ICON_ID, "retro");
+    Services.prefs.setStringPref(PREF_ICON_ID, "retro2004");
 
     await CustomIconManager.ensureAppliedOrRevert();
 
@@ -310,7 +325,7 @@ add_task(
     );
     Assert.equal(
       Services.prefs.getStringPref(PREF_ICON_ID, ""),
-      "retro",
+      "retro2004",
       "pref retained"
     );
   }
@@ -369,3 +384,122 @@ add_task(
     );
   }
 );
+
+
+
+
+
+
+add_task(async function test_theme_aware_catalog() {
+  let minimal = ICON_CATALOG.minimal;
+  Assert.ok(minimal.variants, "minimal is theme-aware");
+  Assert.notEqual(
+    minimal.variants.dark.iconResourceId,
+    minimal.variants.light.iconResourceId,
+    "dark and light variants use distinct resource IDs"
+  );
+  Assert.notEqual(
+    resolvePreview(minimal, "dark"),
+    resolvePreview(minimal, "light"),
+    "resolvePreview returns the scheme-specific preview for a theme-aware icon"
+  );
+  Assert.equal(
+    resolveResourceId(minimal, "dark"),
+    minimal.variants.dark.iconResourceId,
+    "resolveResourceId picks the dark variant's id under a dark scheme"
+  );
+  Assert.equal(
+    resolveResourceId(minimal, "light"),
+    minimal.variants.light.iconResourceId,
+    "resolveResourceId picks the light variant's id under a light scheme"
+  );
+
+  let retro = ICON_CATALOG.retro2004;
+  Assert.ok(!retro.variants, "retro2004 is theme-agnostic");
+  Assert.equal(
+    resolvePreview(retro, "dark"),
+    resolvePreview(retro, "light"),
+    "a flat entry returns the same preview regardless of scheme"
+  );
+  Assert.equal(
+    resolveResourceId(retro, "dark"),
+    retro.iconResourceId,
+    "a flat entry returns its single resource id regardless of scheme"
+  );
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(skipOnMsix(), async function test_theme_change_reapplies_variant() {
+  resetMocks();
+
+  
+  
+  let osTheme = OS_LIGHT;
+  let regKeyMock = {
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowsRegKey]),
+    open() {},
+    close() {},
+    hasValue: name => name === "SystemUsesLightTheme",
+    readIntValue: name => (name === "SystemUsesLightTheme" ? osTheme : 0),
+  };
+  let regCid = MockRegistrar.register(
+    "@mozilla.org/windows-registry-key;1",
+    regKeyMock
+  );
+
+  let { dark, light } = ICON_CATALOG.minimal.variants;
+
+  try {
+    
+    CustomIconManager.applyRuntimeOverrideForStartup();
+
+    
+    osTheme = OS_LIGHT;
+    await CustomIconManager.apply("minimal");
+    Assert.equal(
+      shellServiceMock.setShortcutsIcon.lastCall.args[2],
+      light.iconResourceId,
+      "Minimal applies the light variant under a light OS theme"
+    );
+    Assert.ok(
+      winTaskbarMock.setAllWindowIcons.calledWith(light.iconResourceId),
+      "runtime window icon set to the light variant"
+    );
+
+    
+    osTheme = OS_DARK;
+    shellServiceMock.setShortcutsIcon.resetHistory();
+    winTaskbarMock.setAllWindowIcons.resetHistory();
+    Services.obs.notifyObservers(null, "look-and-feel-changed");
+    await TestUtils.waitForCondition(
+      () => shellServiceMock.setShortcutsIcon.called,
+      "icon re-applied after the OS theme flipped to dark"
+    );
+    Assert.equal(
+      shellServiceMock.setShortcutsIcon.lastCall.args[2],
+      dark.iconResourceId,
+      "the dark variant is applied after the theme flips to dark"
+    );
+
+    
+    
+    shellServiceMock.setShortcutsIcon.resetHistory();
+    Services.obs.notifyObservers(null, "look-and-feel-changed");
+    Assert.ok(
+      shellServiceMock.setShortcutsIcon.notCalled,
+      "no re-apply when the OS theme is unchanged"
+    );
+  } finally {
+    MockRegistrar.unregister(regCid);
+    Services.prefs.clearUserPref(PREF_ICON_ID);
+  }
+});
