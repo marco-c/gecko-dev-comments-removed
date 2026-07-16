@@ -549,43 +549,18 @@ fn prepare_prim_for_render(
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            let prim_min_rounded = match quad_transform.as_2d_scale_offset() {
-                Some(local_to_device) => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let dev: DevicePoint = local_to_device.map_point(&prim_rect.min);
-                    local_to_device.unmap_point::<DevicePixel, LayoutPixel>(&dev.round())
-                }
-                None => prim_rect.min,
-            };
-
-            
-            
-            
             let dest_rect = outer_shadow_rect;
             let dest_rect_offset = LayoutVector2D::new(
-                dest_rect.min.x - prim_min_rounded.x,
-                dest_rect.min.y - prim_min_rounded.y,
+                dest_rect.min.x - prim_rect.min.x,
+                dest_rect.min.y - prim_rect.min.y,
             );
             let dest_rect_size = dest_rect.size();
 
             let mut element_radius = shadow_data.element_radius;
             border::ensure_no_corner_overlap(&mut element_radius, element_rect.size());
             let element_offset_rel_prim = LayoutVector2D::new(
-                element_rect.min.x - prim_min_rounded.x,
-                element_rect.min.y - prim_min_rounded.y,
+                element_rect.min.x - prim_rect.min.x,
+                element_rect.min.y - prim_rect.min.y,
             );
 
             let pattern = BoxShadowPatternData {
