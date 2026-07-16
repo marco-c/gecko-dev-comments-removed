@@ -2,8 +2,6 @@
 
 
 
-from mozfile import which
-
 from mozboot.base import MERCURIAL_INSTALL_PROMPT, BaseBootstrapper
 from mozboot.linux_common import LinuxBootstrapper
 
@@ -18,9 +16,6 @@ class OpenSUSEBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def install_packages(self, packages):
         
         packages = [p for p in packages if p != "watchman"]
-        
-        if not which("awk"):
-            packages += ["awk"]
         self.zypper_install(*packages)
 
     def _update_package_manager(self):
