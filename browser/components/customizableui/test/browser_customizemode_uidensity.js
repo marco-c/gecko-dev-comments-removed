@@ -163,12 +163,18 @@ async function testModeMenuitem(mode, modePref) {
 
 add_task(async function test_touch_mode_menuitem() {
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", false]],
+  });
+
+  
   if (AppConstants.platform == "macosx") {
     is(
       document.getElementById("customization-uidensity-menuitem-touch"),
       null,
       "There's no touch option on Mac OSX"
     );
+    await SpecialPowers.popPrefEnv();
     return;
   }
 
@@ -220,6 +226,45 @@ add_task(async function test_touch_mode_menuitem() {
       "Automatic Touch Mode is on when the checkbox is checked."
     );
   }
+
+  await endCustomizing();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function test_uidensity_link() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  await startCustomizing();
+
+  let button = document.getElementById("customization-uidensity-button");
+  let link = document.getElementById("customization-uidensity-link");
+
+  ok(button.hidden, "The density dropdown button is hidden when Nova is on");
+  ok(!link.hidden, "The density link is visible when Nova is on");
+
+  let waitForNewTab = BrowserTestUtils.waitForNewTab(gBrowser, url =>
+    url.startsWith("about:preferences")
+  );
+  link.click();
+  let prefsTab = await waitForNewTab;
+
+  ok(
+    gBrowser.currentURI.spec.startsWith("about:preferences#appearance"),
+    "The link opened about:preferences#appearance"
+  );
+  BrowserTestUtils.removeTab(prefsTab);
+
+  
+  
+  await TestUtils.waitForCondition(() =>
+    document.documentElement.hasAttribute("customizing")
+  );
+  await endCustomizing();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function cleanup() {

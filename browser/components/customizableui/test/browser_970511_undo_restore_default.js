@@ -10,7 +10,11 @@ requestLongerTimeout(2);
 
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.compactmode.show", true]],
+    set: [
+      ["browser.compactmode.show", true],
+      
+      ["browser.nova.enabled", false],
+    ],
   });
   let stopReloadButtonId = "stop-reload-button";
   CustomizableUI.removeWidgetFromArea(stopReloadButtonId);
