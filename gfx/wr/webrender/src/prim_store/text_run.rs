@@ -312,8 +312,15 @@ impl TextRunTemplate {
         
         
         
+        
+        
+        
+        
+        
+        
+        
         let (use_subpixel_aa, transform_glyphs, texture_padding, oversized) = if raster_space != RasterSpace::Screen ||
-            transform.has_perspective_component() || !transform.has_2d_inverse()
+            transform.has_2d_plane_perspective() || !transform.has_2d_inverse()
         {
             (false, false, true, device_font_size > FONT_SIZE_LIMIT)
         } else if transform.exceeds_2d_scale((FONT_SIZE_LIMIT / device_font_size) as f64) {

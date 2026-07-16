@@ -373,6 +373,15 @@ pub trait MatrixHelpers<Src, Dst> {
     
     fn preserves_2d_axis_alignment(&self) -> bool;
     fn has_perspective_component(&self) -> bool;
+    
+    
+    
+    
+    
+    
+    
+    
+    fn has_2d_plane_perspective(&self) -> bool;
     fn has_2d_inverse(&self) -> bool;
     
     
@@ -436,6 +445,11 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
          self.m24.abs() > NEARLY_ZERO ||
          self.m34.abs() > NEARLY_ZERO ||
          (self.m44 - 1.0).abs() > NEARLY_ZERO
+    }
+
+    fn has_2d_plane_perspective(&self) -> bool {
+         self.m14.abs() > NEARLY_ZERO ||
+         self.m24.abs() > NEARLY_ZERO
     }
 
     fn has_2d_inverse(&self) -> bool {
