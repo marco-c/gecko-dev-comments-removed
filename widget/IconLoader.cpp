@@ -3,6 +3,7 @@
 
 
 #include "mozilla/widget/IconLoader.h"
+
 #include "gfxPlatform.h"
 #include "imgIContainer.h"
 #include "imgLoader.h"

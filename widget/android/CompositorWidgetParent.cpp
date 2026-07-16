@@ -3,6 +3,7 @@
 
 
 #include "CompositorWidgetParent.h"
+
 #include "mozilla/java/GeckoServiceGpuProcessWrappers.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 

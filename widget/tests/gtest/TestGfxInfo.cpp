@@ -2,8 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "GfxInfoBase.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla::widget;
 

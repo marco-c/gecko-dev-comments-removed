@@ -4,9 +4,10 @@
 
 #include "nsPrinterWin.h"
 
-#include <algorithm>
 #include <windows.h>
 #include <winspool.h>
+
+#include <algorithm>
 
 
 
@@ -16,14 +17,14 @@
 #undef GetForm
 #undef SetForm
 
+#include "PrintBackgroundTask.h"
+#include "WinUtils.h"
 #include "mozilla/Array.h"
 #include "mozilla/dom/Promise.h"
 #include "nsPaper.h"
 #include "nsPrintSettingsImpl.h"
 #include "nsPrintSettingsWin.h"
 #include "nsWindowsHelpers.h"
-#include "PrintBackgroundTask.h"
-#include "WinUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

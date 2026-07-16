@@ -2,12 +2,12 @@
 
 
 
+#include "MOZDynamicCursor.h"
 #include "imgIContainer.h"
 #include "nsCocoaUtils.h"
-#include "MOZDynamicCursor.h"
-#include "nsObjCExceptions.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
+#include "nsObjCExceptions.h"
 
 static MOZDynamicCursor* gInstance;
 static CGFloat sCurrentCursorScaleFactor = 0.0f;
@@ -312,19 +312,6 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
 - (void)set {
   [mCurrentCursor set];
-}
-
-- (void)reassertCurrentCursor {
-  
-  
-  
-  
-  if (mCurrentCursorType == eCursor_none) {
-    [NSCursor unhide];
-    [NSCursor hide];
-  } else {
-    [mCurrentCursor set];
-  }
 }
 
 - (void)dealloc {

@@ -9,12 +9,13 @@
 
 
 
-#include "nsdefs.h"
-#include <winuser.h>
 #include <tpcshrd.h>
-#include "nsPoint.h"
+#include <winuser.h>
+
 #include "mozilla/EventForwards.h"
 #include "mozilla/TouchEvents.h"
+#include "nsPoint.h"
+#include "nsdefs.h"
 
 
 #define TABLET_ROTATE_GESTURE_ENABLE 0x02000000

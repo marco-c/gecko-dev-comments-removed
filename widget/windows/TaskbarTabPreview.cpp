@@ -4,9 +4,11 @@
 
 
 #include "TaskbarTabPreview.h"
-#include "nsWindowGfx.h"
-#include "WinUtils.h"
+
 #include <nsITaskbarPreviewController.h>
+
+#include "WinUtils.h"
+#include "nsWindowGfx.h"
 
 #define TASKBARPREVIEW_HWNDID L"TaskbarTabPreviewHwnd"
 

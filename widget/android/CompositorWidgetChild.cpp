@@ -3,6 +3,7 @@
 
 
 #include "CompositorWidgetChild.h"
+
 #include "gfxPlatform.h"
 
 namespace mozilla {

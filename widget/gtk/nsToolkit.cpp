@@ -2,8 +2,8 @@
 
 
 
-#include "nscore.h"  
 #include "nsGTKToolkit.h"
+#include "nscore.h"  
 
 nsGTKToolkit* nsGTKToolkit::gToolkit = nullptr;
 

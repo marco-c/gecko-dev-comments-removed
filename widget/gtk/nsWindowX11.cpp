@@ -2,21 +2,22 @@
 
 
 
-#include "nsWindow.h"
 #include "nsWindowX11.h"
 
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/PodOperations.h"
-#include <gdk/gdkkeysyms-compat.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xfixes.h>
 #include <X11/extensions/shape.h>
-#include "gfxXlibSurface.h"
-#include "GLContextGLX.h"  
+#include <gdk/gdkkeysyms-compat.h>
+
 #include "GLContextEGL.h"  
+#include "GLContextGLX.h"  
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
+#include "gfxXlibSurface.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

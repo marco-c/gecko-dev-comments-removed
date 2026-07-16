@@ -2,10 +2,10 @@
 
 
 
+#include "TestWidgetEventCtors.h"
 #include "gtest/gtest.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "TestWidgetEventCtors.h"
 
 namespace mozilla {
 

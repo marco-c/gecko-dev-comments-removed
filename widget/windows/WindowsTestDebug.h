@@ -5,8 +5,10 @@
 #ifndef mozilla_widget_WindowsTestDebug_h_
 #define mozilla_widget_WindowsTestDebug_h_
 
+
 #include <windows.h>
 #include <restartmanager.h>
+
 
 #include "nsIWindowsTestDebug.h"
 #include "nsString.h"

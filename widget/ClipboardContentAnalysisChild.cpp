@@ -3,6 +3,7 @@
 
 
 #include "ClipboardContentAnalysisChild.h"
+
 #include "MainThreadUtils.h"
 #include "mozilla/dom/ContentChild.h"
 

@@ -4,10 +4,12 @@
 
 #include "mozilla/widget/filedialog/WinFileDialogCommands.h"
 
-#include <type_traits>
 #include <shobjidl.h>
 #include <shtypes.h>
 #include <winerror.h>
+
+#include <type_traits>
+
 #include "WinUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
@@ -19,6 +21,10 @@
 #include "nsThreadUtils.h"
 
 namespace mozilla::widget::filedialog {
+
+
+
+const size_t kWindowsFileDialogStackSize = 4 * 1024 * 1024;
 
 const char* Error::KindName(Error::Kind kind) {
   switch (kind) {
@@ -356,8 +362,9 @@ RefPtr<Promise<Res>> SpawnFileDialogThread(const char (&where)[N],
 
   RefPtr<nsIThread> thread;
   {
-    nsresult rv = NS_NewNamedThread("File Dialog", getter_AddRefs(thread),
-                                    nullptr, {.isUiThread = true});
+    nsresult rv = NS_NewNamedThread(
+        "File Dialog", getter_AddRefs(thread), nullptr,
+        {.stackSize = kWindowsFileDialogStackSize, .isUiThread = true});
     if (NS_FAILED(rv)) {
       return Promise<Res>::CreateAndReject(
           MOZ_FD_LOCAL_ERROR("NS_NewNamedThread", (HRESULT)rv), where);

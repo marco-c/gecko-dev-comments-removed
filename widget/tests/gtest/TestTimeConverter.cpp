@@ -2,9 +2,9 @@
 
 
 
+#include "SystemTimeConverter.h"
 #include "gtest/gtest.h"
 #include "mozilla/TimeStamp.h"
-#include "SystemTimeConverter.h"
 
 using mozilla::SystemTimeConverter;
 using mozilla::TimeDuration;

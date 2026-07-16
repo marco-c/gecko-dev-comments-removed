@@ -2,10 +2,10 @@
 
 
 
-#include "nsISupports.h"
 #include "mozilla/Components.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/WidgetUtils.h"
+#include "nsISupports.h"
 
 #include "nsWidgetsCID.h"
 

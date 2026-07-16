@@ -3,6 +3,7 @@
 
 
 #include "mozilla/widget/nsGtkHtmlUtils.h"
+
 #include "mozilla/Encoding.h"
 #include "mozilla/Logging.h"
 #include "nsReadableUtils.h"

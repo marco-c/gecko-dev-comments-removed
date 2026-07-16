@@ -6,15 +6,17 @@
 #ifndef nsFilePicker_h_
 #define nsFilePicker_h_
 
-#include <windows.h>
 
-#include "mozilla/MozPromise.h"
-#include "nsCOMArray.h"
-#include "nsBaseFilePicker.h"
-#include "nsString.h"
-#include "nsdefs.h"
+#include <windows.h>
 #include <commdlg.h>
 #include <shobjidl.h>
+
+
+#include "mozilla/MozPromise.h"
+#include "nsBaseFilePicker.h"
+#include "nsCOMArray.h"
+#include "nsString.h"
+#include "nsdefs.h"
 #undef LogSeverity  // SetupAPI.h #defines this as DWORD
 
 class nsIFile;
@@ -70,7 +72,8 @@ class nsFilePicker final : public nsBaseWinFilePicker {
   nsFilePicker();
 
   NS_IMETHOD Init(mozilla::dom::BrowsingContext* aBrowsingContext,
-                  const nsAString& aTitle, nsIFilePicker::Mode aMode) override;
+                  const nsAString& aTitle, nsIFilePicker::Mode aMode,
+                  nsISupports* aGlobal) override;
 
   NS_DECL_ISUPPORTS
 

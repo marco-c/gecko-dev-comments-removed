@@ -3,28 +3,27 @@
 
 
 
-#include "nscore.h"
 #include <stdio.h>
-#include "nsString.h"
 #include <windows.h>
+
+#include "nsString.h"
+#include "nscore.h"
 
 
 #include <mmsystem.h>
 
 #include "HeadlessSound.h"
-#include "nsSound.h"
-#include "nsCRT.h"
-#include "nsIObserverService.h"
-
+#include "gfxPlatform.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
-#include "prtime.h"
-
-#include "nsNativeCharsetUtils.h"
+#include "nsCRT.h"
+#include "nsIObserverService.h"
 #include "nsIThread.h"
+#include "nsNativeCharsetUtils.h"
+#include "nsSound.h"
 #include "nsThreadUtils.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "gfxPlatform.h"
+#include "prtime.h"
 
 using mozilla::LogLevel;
 

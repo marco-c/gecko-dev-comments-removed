@@ -2,10 +2,13 @@
 
 
 
+#include <android/api-level.h>
+#include <pthread.h>
+
+#include "GeckoProfiler.h"
 #include "base/message_loop.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/EventQueue.h"
-#include "mozilla/java/GeckoThreadWrappers.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
@@ -14,13 +17,10 @@
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "GeckoProfiler.h"
+#include "mozilla/java/GeckoThreadWrappers.h"
 #include "nsThread.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
-
-#include <android/api-level.h>
-#include <pthread.h>
 
 using namespace mozilla;
 

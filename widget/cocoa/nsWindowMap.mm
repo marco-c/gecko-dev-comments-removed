@@ -3,9 +3,9 @@
 
 
 #include "nsWindowMap.h"
-#include "nsObjCExceptions.h"
 #include "nsChildView.h"
 #include "nsCocoaWindow.h"
+#include "nsObjCExceptions.h"
 
 @interface WindowDataMap (Private)
 

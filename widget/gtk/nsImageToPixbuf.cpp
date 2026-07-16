@@ -2,14 +2,14 @@
 
 
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
-
 #include "nsImageToPixbuf.h"
 
-#include "imgIContainer.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include <gdk-pixbuf/gdk-pixbuf.h>
+
 #include "GRefPtr.h"
+#include "imgIContainer.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 
 using mozilla::gfx::DataSourceSurface;

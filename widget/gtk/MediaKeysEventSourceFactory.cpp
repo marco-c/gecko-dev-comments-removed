@@ -3,6 +3,7 @@
 
 
 #include "MediaKeysEventSourceFactory.h"
+
 #include "MPRISServiceHandler.h"
 
 namespace mozilla::widget {

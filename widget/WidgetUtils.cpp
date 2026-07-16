@@ -2,11 +2,12 @@
 
 
 
+#include "mozilla/WidgetUtils.h"
+
 #include <numbers>
 
-#include "mozilla/WidgetUtils.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/Components.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsContentUtils.h"
 #include "nsIBidiKeyboard.h"
 #include "nsIStringBundle.h"

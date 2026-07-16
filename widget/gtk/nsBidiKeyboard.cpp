@@ -2,11 +2,12 @@
 
 
 
-#include "prlink.h"
-
 #include "nsBidiKeyboard.h"
-#include "nsIWidget.h"
+
 #include <gtk/gtk.h>
+
+#include "nsIWidget.h"
+#include "prlink.h"
 
 NS_IMPL_ISUPPORTS(nsBidiKeyboard, nsIBidiKeyboard)
 

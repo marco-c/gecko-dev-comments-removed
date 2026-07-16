@@ -3,6 +3,7 @@
 
 
 #include "WinRegistry.h"
+
 #include "nsThreadUtils.h"
 
 namespace mozilla::widget::WinRegistry {

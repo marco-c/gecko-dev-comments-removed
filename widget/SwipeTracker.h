@@ -6,11 +6,12 @@
 #define SwipeTracker_h
 
 #include "EventForwards.h"
-#include "mozilla/layers/AxisPhysicsMSDModel.h"
+#include "Units.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/AxisPhysicsMSDModel.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsRefreshObservers.h"
-#include "Units.h"
 
 class nsIWidget;
 class nsRefreshDriver;
@@ -79,10 +80,10 @@ class SwipeTracker final : public nsARefreshObserver {
   void StartAnimating(double aStartValue, double aTargetValue);
   void SwipeFinished(const TimeStamp& aTimeStamp);
   void UnregisterFromRefreshDriver();
-  bool SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta,
+  void SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta,
                       const TimeStamp& aTimeStamp);
 
-  nsIWidget& mWidget;
+  nsWeakPtr mWidget;
   RefPtr<nsRefreshDriver> mRefreshDriver;
   layers::AxisPhysicsMSDModel mAxis;
   const LayoutDeviceIntPoint mEventPosition;

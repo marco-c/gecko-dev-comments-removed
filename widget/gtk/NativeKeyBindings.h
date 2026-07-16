@@ -5,10 +5,10 @@
 #ifndef NativeKeyBindings_h
 #define NativeKeyBindings_h
 
+#include <glib.h>  
+
 #include "mozilla/EventForwards.h"
 #include "nsIWidget.h"
-
-#include <glib.h>  
 
 using GtkWidget = struct _GtkWidget;
 

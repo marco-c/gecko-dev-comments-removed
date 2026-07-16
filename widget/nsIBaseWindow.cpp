@@ -3,8 +3,9 @@
 
 
 #include "nsIBaseWindow.h"
-#include "nsDeviceContext.h"
+
 #include "mozilla/LookAndFeel.h"
+#include "nsDeviceContext.h"
 
 using namespace mozilla;
 

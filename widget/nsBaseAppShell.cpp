@@ -2,17 +2,17 @@
 
 
 
-#include "base/message_loop.h"
-
-#include "js/Initialization.h"
 #include "nsBaseAppShell.h"
+
+#include "base/message_loop.h"
+#include "js/Initialization.h"
+#include "mozilla/Services.h"
 #include "nsExceptionHandler.h"
-#include "nsJSUtils.h"
-#include "nsThreadUtils.h"
 #include "nsIAppShell.h"
 #include "nsIObserverService.h"
+#include "nsJSUtils.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/Services.h"
+#include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
 

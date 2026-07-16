@@ -4,33 +4,32 @@
 
 #include "GfxInfo.h"
 
-#include "gfxConfig.h"
+#include <batclass.h>  
+#include <devguid.h>   
+#include <intrin.h>
+#include <setupapi.h>  
+#include <windows.h>
+#include <winioctl.h>  
+
 #include "GfxDriverInfo.h"
+#include "gfxConfig.h"
 #include "gfxWindowsPlatform.h"
-#include "jsapi.h"
 #include "js/PropertyAndElement.h"  
+#include "jsapi.h"
+#include "mozilla/Components.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SSE.h"
+#include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/widget/WinRegistry.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
 #include "nsUnicharUtils.h"
 #include "prenv.h"
 #include "prprf.h"
 #include "xpcpublic.h"
-
-#include "mozilla/Components.h"
-#include "mozilla/PodOperations.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/SSE.h"
-#include "mozilla/widget/WinRegistry.h"
-#include "mozilla/WindowsProcessMitigations.h"
-
-#include <intrin.h>
-#include <windows.h>
-#include <devguid.h>   
-#include <setupapi.h>  
-#include <winioctl.h>  
-#include <batclass.h>  
 
 using namespace mozilla;
 using namespace mozilla::gfx;

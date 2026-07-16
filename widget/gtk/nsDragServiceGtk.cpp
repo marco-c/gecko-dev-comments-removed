@@ -2,13 +2,14 @@
 
 
 
-#include "nsDragService.h"
 #include "nsDragServiceGtk.h"
-#include "nsWindow.h"
+
 #include "WidgetUtilsGtk.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/2D.h"
+#include "nsDragService.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

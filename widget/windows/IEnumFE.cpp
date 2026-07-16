@@ -3,6 +3,7 @@
 
 
 #include "IEnumFE.h"
+
 #include <algorithm>
 
 CEnumFormatEtc::CEnumFormatEtc() : mRefCnt(0), mCurrentIdx(0) {}

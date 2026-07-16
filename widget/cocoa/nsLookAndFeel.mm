@@ -2,28 +2,28 @@
 
 
 
-#include "mozilla/widget/ThemeChangeKind.h"
 #include "nsLookAndFeel.h"
-#include "nsCocoaFeatures.h"
-#include "nsNativeThemeColors.h"
-#include "nsStyleConsts.h"
-#include "nsIContent.h"
 #include "gfxFont.h"
 #include "gfxFontConstants.h"
 #include "gfxPlatformMac.h"
-#include "nsCSSColorUtils.h"
-#include "nsAppShell.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/glean/AccessibleMetrics.h"
-#include "mozilla/widget/WidgetMessageUtils.h"
 #include "mozilla/MacStringHelpers.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/glean/AccessibleMetrics.h"
+#include "mozilla/widget/ThemeChangeKind.h"
+#include "mozilla/widget/WidgetMessageUtils.h"
+#include "nsAppShell.h"
+#include "nsCSSColorUtils.h"
+#include "nsCocoaFeatures.h"
+#include "nsIContent.h"
+#include "nsNativeThemeColors.h"
+#include "nsStyleConsts.h"
 
-#import <Cocoa/Cocoa.h>
-#import <Carbon/Carbon.h>
 #import <Accessibility/Accessibility.h>
 #import <AppKit/NSColor.h>
+#import <Carbon/Carbon.h>
+#import <Cocoa/Cocoa.h>
 
 
 #include "nsObjCExceptions.h"

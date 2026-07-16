@@ -12,8 +12,8 @@
 
 
 
-#include <vssym32.h>
 #include <vsstyle.h>
+#include <vssym32.h>
 
 #define THEME_COLOR 204
 #define THEME_FONT 210

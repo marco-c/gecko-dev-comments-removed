@@ -5,10 +5,10 @@
 #ifndef mozilla_PrintBackgroundTask_h_
 #define mozilla_PrintBackgroundTask_h_
 
-#include "mozilla/dom/Promise.h"
-#include "mozilla/ErrorResult.h"
-
 #include <utility>
+
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Promise.h"
 
 
 

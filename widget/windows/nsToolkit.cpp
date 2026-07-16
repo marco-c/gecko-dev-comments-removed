@@ -3,14 +3,16 @@
 
 
 #include "nsToolkit.h"
+
+#include <objbase.h>
+
+#include "WinUtils.h"
 #include "nsAppShell.h"
-#include "nsWindow.h"
+#include "nsComponentManagerUtils.h"
 #include "nsWidgetsCID.h"
+#include "nsWindow.h"
 #include "prmon.h"
 #include "prtime.h"
-#include "nsComponentManagerUtils.h"
-#include <objbase.h>
-#include "WinUtils.h"
 
 
 #include <unknwn.h>

@@ -2,10 +2,11 @@
 
 
 
+#include "nsCUPSShim.h"
+
+#include "mozilla/Logging.h"
 #include "nsDebug.h"
 #include "nsString.h"
-#include "nsCUPSShim.h"
-#include "mozilla/Logging.h"
 #include "prlink.h"
 
 #ifdef CUPS_SHIM_RUNTIME_LINK

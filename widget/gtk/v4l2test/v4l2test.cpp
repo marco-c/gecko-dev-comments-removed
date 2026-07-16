@@ -2,10 +2,11 @@
 
 
 
-#include <cstdio>
-#include <cstdlib>
 #include <errno.h>
 #include <fcntl.h>
+
+#include <cstdio>
+#include <cstdlib>
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 #  include <sys/videoio.h>
 #elif defined(__sun)
@@ -13,11 +14,11 @@
 #else
 #  include <linux/videodev2.h>
 #endif
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)
 #  include <signal.h>

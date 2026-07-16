@@ -6,8 +6,10 @@
 #ifndef nsColorPicker_h_
 #define nsColorPicker_h_
 
+
 #include <windows.h>
 #include <commdlg.h>
+
 
 #include "nsBaseColorPicker.h"
 #include "nsCOMPtr.h"

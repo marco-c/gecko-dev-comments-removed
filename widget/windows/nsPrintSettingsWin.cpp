@@ -3,10 +3,10 @@
 
 #include "nsPrintSettingsWin.h"
 
+#include "WinUtils.h"
 #include "nsCRT.h"
 #include "nsDeviceContextSpecWin.h"
 #include "nsPrintSettingsImpl.h"
-#include "WinUtils.h"
 
 using namespace mozilla;
 

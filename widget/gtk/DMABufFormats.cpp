@@ -2,23 +2,28 @@
 
 
 
-#include <xf86drm.h>
+#include "DMABufFormats.h"
+
+#include <gbm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <gbm.h>
+#include <xf86drm.h>
+
 #include <mutex>
 
 #include "DMABufDevice.h"
-#include "DMABufFormats.h"
 #include "WidgetUtilsGtk.h"
-#ifdef MOZ_WAYLAND
-#  include "nsWaylandDisplay.h"
-#  include "mozilla/widget/mozwayland.h"
-#  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
-#endif
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/gfx/Logging.h"  
+#include "mozilla/gfx/gfxVars.h"
+
+
+#ifdef MOZ_WAYLAND
+#  include "mozilla/widget/mozwayland.h"
+#  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
+#  include "nsWaylandDisplay.h"
+#endif
+
 
 
 
@@ -27,6 +32,7 @@
 #  undef DRM_FORMAT_MOD_INVALID
 #endif
 #include <libdrm/drm_fourcc.h>
+
 #include "GfxInfo.h"
 #include "mozilla/Components.h"
 

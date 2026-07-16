@@ -4,40 +4,33 @@
 
 #include "nsDeviceContextSpecG.h"
 
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "mozilla/GUniquePtr.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_print.h"
+#include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/PrintPromise.h"
 #include "mozilla/gfx/PrintTargetPDF.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Services.h"
-#include "mozilla/GUniquePtr.h"
-#include "mozilla/WidgetUtilsGtk.h"
-
-#include "prenv.h" 
-
+#include "nsCUPSShim.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIFile.h"
+#include "nsIFileStreams.h"
 #include "nsIObserverService.h"
+#include "nsPrintSettingsGTK.h"
+#include "nsPrinterCUPS.h"
 #include "nsPrintfCString.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"
-#include "nsThreadUtils.h"
-
-#include "nsCUPSShim.h"
-#include "nsPrinterCUPS.h"
-
-#include "nsPrintSettingsGTK.h"
-
-#include "nsIFileStreams.h"
-#include "nsIFile.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_print.h"
-
-#include <dlfcn.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "prenv.h" 
 
 
 #include "nsIGIOService.h"
@@ -242,25 +235,25 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIPrintSettings* aPS,
   mGtkPageSetup = gtk_page_setup_copy(mGtkPageSetup);
   mGtkPrintSettings = gtk_print_settings_copy(mGtkPrintSettings);
 
-  if (StaticPrefs::print_cups_monochrome_enabled()) {
-    if (StaticPrefs::print_cups_monochrome_gtk_simple_enabled()) {
-      gtk_print_settings_set(mGtkPrintSettings, "cups-" CUPS_PRINT_COLOR_MODE,
-                             aPS->GetPrintInColor()
-                                 ? CUPS_PRINT_COLOR_MODE_COLOR
-                                 : CUPS_PRINT_COLOR_MODE_MONOCHROME);
-    } else if (!aPS->GetPrintInColor()) {
-      for (const auto& setting : kKnownMonochromeSettings) {
-        gtk_print_settings_set(mGtkPrintSettings, setting.mKey, setting.mValue);
-      }
-      auto applySetting = [&](const nsACString& aKey, const nsACString& aVal) {
-        nsAutoCString extra;
-        extra.AppendASCII("cups-");
-        extra.Append(aKey);
-        gtk_print_settings_set(mGtkPrintSettings, extra.get(),
-                               nsAutoCString(aVal).get());
-      };
-      nsPrinterCUPS::ForEachExtraMonochromeSetting(applySetting);
+  gtk_print_settings_set(mGtkPrintSettings, "cups-" CUPS_PRINT_COLOR_MODE,
+                         aPS->GetPrintInColor()
+                             ? CUPS_PRINT_COLOR_MODE_COLOR
+                             : CUPS_PRINT_COLOR_MODE_MONOCHROME);
+  
+  
+  
+  if (!aPS->GetPrintInColor()) {
+    for (const auto& setting : kKnownMonochromeSettings) {
+      gtk_print_settings_set(mGtkPrintSettings, setting.mKey, setting.mValue);
     }
+    auto applySetting = [&](const nsACString& aKey, const nsACString& aVal) {
+      nsAutoCString extra;
+      extra.AppendASCII("cups-");
+      extra.Append(aKey);
+      gtk_print_settings_set(mGtkPrintSettings, extra.get(),
+                             nsAutoCString(aVal).get());
+    };
+    nsPrinterCUPS::ForEachExtraMonochromeSetting(applySetting);
   }
 
   GtkPaperSize* properPaperSize =

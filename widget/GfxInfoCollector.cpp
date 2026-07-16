@@ -4,8 +4,9 @@
 
 
 #include "GfxInfoCollector.h"
-#include "jsapi.h"
+
 #include "js/PropertyAndElement.h"  
+#include "jsapi.h"
 #include "nsString.h"
 
 using namespace mozilla;

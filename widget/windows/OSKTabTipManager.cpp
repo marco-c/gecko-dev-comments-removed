@@ -4,13 +4,15 @@
 
 #include "OSKTabTipManager.h"
 
-#include "mozilla/Preferences.h"
-#include "nsDebug.h"
-#include "mozilla/widget/WinRegistry.h"
 
+#include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
-#include <windows.h>
+
+
+#include "mozilla/Preferences.h"
+#include "mozilla/widget/WinRegistry.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 namespace widget {

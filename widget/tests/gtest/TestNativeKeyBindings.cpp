@@ -4,12 +4,12 @@
 
 #ifdef XP_MACOSX
 
+#  include "NativeKeyBindings.h"
 #  include "gtest/gtest.h"
 #  include "mozilla/EventForwards.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/NativeKeyBindingsType.h"
 #  include "mozilla/TextEvents.h"
-#  include "NativeKeyBindings.h"
 
 
 

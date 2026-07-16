@@ -6,6 +6,7 @@
 #define nsCUPSShim_h_
 
 #include <cups/cups.h>
+
 #include "mozilla/Mutex.h"
 
 

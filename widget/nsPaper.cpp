@@ -3,10 +3,11 @@
 
 
 #include "nsPaper.h"
-#include "nsPaperMargin.h"
-#include "nsPrinterBase.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
+#include "nsPaperMargin.h"
+#include "nsPrinterBase.h"
 
 using mozilla::ErrorResult;
 using mozilla::PaperInfo;

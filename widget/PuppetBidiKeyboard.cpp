@@ -3,6 +3,7 @@
 
 
 #include "PuppetBidiKeyboard.h"
+
 #include "nsIWidget.h"
 
 using namespace mozilla::widget;

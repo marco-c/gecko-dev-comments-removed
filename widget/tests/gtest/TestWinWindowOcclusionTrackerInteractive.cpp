@@ -2,15 +2,14 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "MockWinWidget.h"
+#include "Units.h"
+#include "WinUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/widget/WinEventObserver.h"
 #include "mozilla/widget/WinWindowOcclusionTracker.h"
 #include "nsThreadUtils.h"
-#include "Units.h"
-#include "WinUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

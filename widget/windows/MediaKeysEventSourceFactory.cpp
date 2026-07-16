@@ -3,6 +3,7 @@
 
 
 #include "MediaKeysEventSourceFactory.h"
+
 #include "WindowsSMTCProvider.h"
 
 namespace mozilla {

@@ -3,8 +3,9 @@
 
 
 #include "DBusMenu.h"
-#include "prlink.h"
+
 #include "nsThreadUtils.h"
+#include "prlink.h"
 
 namespace mozilla::widget {
 

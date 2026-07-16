@@ -2,10 +2,9 @@
 
 
 
-#include "WinHeaderOnlyUtils.h"
-
 #include <algorithm>
 
+#include "WinHeaderOnlyUtils.h"
 #include "gtest/gtest.h"
 #include "mozilla/gtest/MozHelpers.h"
 

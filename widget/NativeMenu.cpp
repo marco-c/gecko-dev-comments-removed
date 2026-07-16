@@ -3,10 +3,11 @@
 
 
 #include "NativeMenu.h"
+
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/ResponsiveImageSelector.h"
-#include "mozilla/ComputedStyle.h"
 #include "nsComputedDOMStyle.h"
 
 namespace mozilla::widget {

@@ -4,8 +4,8 @@
 
 
 #include "nsBidiKeyboard.h"
-#include "nsCocoaUtils.h"
 #include "TextInputHandler.h"
+#include "nsCocoaUtils.h"
 #include "nsIWidget.h"
 
 

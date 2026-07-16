@@ -2,13 +2,14 @@
 
 
 
-#include "ContentAnalysis.h"
 #include "mozilla/ClipboardContentAnalysisParent.h"
+
+#include "ContentAnalysis.h"
 #include "mozilla/ClipboardReadRequestParent.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/MozPromise.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"
 #include "nsID.h"

@@ -3,15 +3,16 @@
 
 
 #include "nsNativeDragSource.h"
-#include "nsISupportsImpl.h"
-#include "nsString.h"
-#include "nsToolkit.h"
-#include "nsWidgetsCID.h"
-#include "nsIDragService.h"
-#include "nsServiceManagerUtils.h"
+
 #include "mozilla/Logging.h"  
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/widget/WidgetLogging.h"
+#include "nsIDragService.h"
+#include "nsISupportsImpl.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nsToolkit.h"
+#include "nsWidgetsCID.h"
 
 #define LOGD DRAGSERVICE_LOGD
 #define LOGI DRAGSERVICE_LOGI

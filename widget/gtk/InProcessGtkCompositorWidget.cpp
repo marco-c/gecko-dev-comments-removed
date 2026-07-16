@@ -2,12 +2,12 @@
 
 
 
+#include "InProcessGtkCompositorWidget.h"
+
 #include "HeadlessCompositorWidget.h"
 #include "HeadlessWidget.h"
-#include "mozilla/widget/PlatformWidgetTypes.h"
-
-#include "InProcessGtkCompositorWidget.h"
 #include "VsyncDispatcher.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsWindow.h"
 
 namespace mozilla::widget {

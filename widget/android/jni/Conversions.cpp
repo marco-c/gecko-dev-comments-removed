@@ -3,8 +3,8 @@
 
 
 #include "Conversions.h"
-#include "JavaBuiltins.h"
 
+#include "JavaBuiltins.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 
 namespace mozilla {

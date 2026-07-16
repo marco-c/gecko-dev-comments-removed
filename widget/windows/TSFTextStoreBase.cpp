@@ -4,6 +4,10 @@
 
 #include "TSFTextStoreBase.h"
 
+#include <comutil.h>  
+#include <oleauto.h>  
+#include <olectl.h>
+
 #include "IMMHandler.h"
 #include "TSFInputScope.h"
 #include "TSFTextStore.h"
@@ -18,10 +22,6 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
 #include "nsWindow.h"
-
-#include <comutil.h>  
-#include <oleauto.h>  
-#include <olectl.h>
 
 
 

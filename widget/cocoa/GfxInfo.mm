@@ -2,20 +2,20 @@
 
 
 
-#include <OpenGL/OpenGL.h>
 #include <OpenGL/CGLRenderers.h>
+#include <OpenGL/OpenGL.h>
 
 #include "GfxInfo.h"
-#include "nsUnicharUtils.h"
-#include "nsExceptionHandler.h"
+#include "js/PropertyAndElement.h"  
+#include "mozilla/Preferences.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
-#include "mozilla/Preferences.h"
-#include "js/PropertyAndElement.h"  
+#include "nsExceptionHandler.h"
+#include "nsUnicharUtils.h"
 
+#import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 #import <IOKit/IOKitLib.h>
-#import <Cocoa/Cocoa.h>
 
 #include "jsapi.h"
 

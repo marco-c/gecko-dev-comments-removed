@@ -4,6 +4,12 @@
 
 #include "TSFTextStore.h"
 
+#include <comutil.h>  
+#include <oleauto.h>  
+#include <olectl.h>
+
+#include <algorithm>
+
 #include "IMMHandler.h"
 #include "KeyboardLayout.h"
 #include "TSFStaticSink.h"
@@ -15,17 +21,12 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_intl.h"
-#include "mozilla/glean/WidgetWindowsMetrics.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/glean/WidgetWindowsMetrics.h"
 #include "nsWindow.h"
-
-#include <algorithm>
-#include <comutil.h>  
-#include <oleauto.h>  
-#include <olectl.h>
 
 
 

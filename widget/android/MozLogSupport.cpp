@@ -3,6 +3,7 @@
 
 
 #include "MozLogSupport.h"
+
 #include "mozilla/Logging.h"
 
 namespace mozilla::widget {

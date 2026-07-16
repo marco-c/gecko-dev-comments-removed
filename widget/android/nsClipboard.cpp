@@ -2,15 +2,16 @@
 
 
 
+#include "nsClipboard.h"
+
 #include "mozilla/java/ClipboardWrappers.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
-#include "nsClipboard.h"
-#include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsISupportsPrimitives.h"
 #include "nsMemory.h"
-#include "nsStringStream.h"
 #include "nsPrimitiveHelpers.h"
+#include "nsStringStream.h"
 
 using namespace mozilla;
 

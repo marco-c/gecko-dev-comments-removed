@@ -2,14 +2,14 @@
 
 
 
-#include <cstdio>
-#include <cstdlib>
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <getopt.h>
 #include <string.h>
 #include <unistd.h>
-#include <getopt.h>
+
+#include <cstdio>
+#include <cstdlib>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)
 #  include <signal.h>
@@ -21,10 +21,9 @@
 #  include <stdio.h>
 #endif
 
+#include "mozilla/GfxInfoUtils.h"
 #include "prlink.h"
 #include "va/va.h"
-
-#include "mozilla/GfxInfoUtils.h"
 
 
 #define OUTPUT_PIPE 1

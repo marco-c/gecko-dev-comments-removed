@@ -3,6 +3,7 @@
 
 
 #include "GfxInfo.h"
+
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {

@@ -3,11 +3,9 @@
 
 
 #include "mozilla/WidgetUtils.h"
-
 #include "nsAppShell.h"
-
-#include "nsLookAndFeel.h"
 #include "nsAppShellSingleton.h"
+#include "nsLookAndFeel.h"
 
 nsresult nsWidgetAndroidModuleCtor() { return nsAppShellInit(); }
 

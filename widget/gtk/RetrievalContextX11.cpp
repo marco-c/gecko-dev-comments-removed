@@ -2,21 +2,23 @@
 
 
 
-#include "AsyncClipboardRequest.h"
 #include "RetrievalContextX11.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/WidgetUtilsGtk.h"
 
 #include <gtk/gtk.h>
 
+#include "AsyncClipboardRequest.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/WidgetUtilsGtk.h"
+
 
 #include <X11/Xlib.h>
-#include <poll.h>
+#include <errno.h>
 #include <gdk/gdkx.h>
+#include <poll.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <errno.h>
 #include <unistd.h>
+
 #include "X11UndefineNone.h"
 
 using namespace mozilla;

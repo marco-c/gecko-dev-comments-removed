@@ -19,29 +19,27 @@
 
 
 
+
 #include <windows.h>
 #include <tchar.h>
 
 #include <unknwn.h>
 #include <commdlg.h>
+#include <winspool.h>
+
 
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
+#include "nsCRT.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsWin.h"
 #include "nsIPrinterList.h"
-#include "nsServiceManagerUtils.h"
-
+#include "nsReadableUtils.h"
 #include "nsRect.h"
-
-#include "nsCRT.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 #include "prenv.h" 
-
-#include <windows.h>
-#include <winspool.h>
 
 
 
@@ -59,8 +57,8 @@
 
 #include <dlgs.h>
 
-#include "nsWindowsHelpers.h"
 #include "WinUtils.h"
+#include "nsWindowsHelpers.h"
 
 
 

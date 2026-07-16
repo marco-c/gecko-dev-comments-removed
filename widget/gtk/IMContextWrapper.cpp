@@ -2,29 +2,28 @@
 
 
 
-#include "mozilla/Logging.h"
-#include "nsString.h"
-#include "prtime.h"
-#include "prenv.h"
-
 #include "IMContextWrapper.h"
 
 #include "GRefPtr.h"
-#include "nsGtkKeyUtils.h"
-#include "nsWindow.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_intl.h"
-#include "mozilla/glean/WidgetGtkMetrics.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
-#include "mozilla/WritingModes.h"
 #include "mozilla/Utf16.h"
 #include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/WritingModes.h"
+#include "mozilla/glean/WidgetGtkMetrics.h"
+#include "nsGtkKeyUtils.h"
+#include "nsString.h"
+#include "nsWindow.h"
+#include "prenv.h"
+#include "prtime.h"
 
 
 

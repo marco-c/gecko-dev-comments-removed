@@ -2,10 +2,10 @@
 
 
 
+#include <shlwapi.h>
+
 #include "gtest/gtest.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
-
-#include <shlwapi.h>
 
 TEST(WinHeaderOnlyUtils, MozPathGetDriveNumber)
 {

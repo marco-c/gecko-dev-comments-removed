@@ -2,12 +2,12 @@
 
 
 
-#include "mozilla/Logging.h"
-
 #include "TaskbarProgress.h"
-#include "nsWindow.h"
+
 #include "WidgetUtils.h"
+#include "mozilla/Logging.h"
 #include "nsPIDOMWindow.h"
+#include "nsWindow.h"
 
 using mozilla::LogLevel;
 static mozilla::LazyLogModule gGtkTaskbarProgressLog("nsIGtkTaskbarProgress");

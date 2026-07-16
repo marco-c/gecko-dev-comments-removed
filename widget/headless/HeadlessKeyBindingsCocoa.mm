@@ -2,14 +2,14 @@
 
 
 
-#include "HeadlessKeyBindings.h"
 #import <Cocoa/Cocoa.h>
-#include "nsCocoaUtils.h"
+#include "HeadlessKeyBindings.h"
 #include "NativeKeyBindings.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/WritingModes.h"
+#include "nsCocoaUtils.h"
 
 namespace mozilla {
 namespace widget {

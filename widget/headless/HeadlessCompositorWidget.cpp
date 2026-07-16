@@ -2,9 +2,10 @@
 
 
 
-#include "mozilla/widget/PlatformWidgetTypes.h"
 #include "HeadlessCompositorWidget.h"
+
 #include "VsyncDispatcher.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
 
 namespace mozilla {
 namespace widget {

@@ -2,22 +2,21 @@
 
 
 
-#include "nsIDragService.h"
-#include "nsWidgetsCID.h"
 #include "nsNativeDragTarget.h"
-#include "nsDragService.h"
-#include "nsINode.h"
-#include "nsCOMPtr.h"
 
-#include "nsIWidget.h"
-#include "nsWindow.h"
-#include "nsClipboard.h"
 #include "KeyboardLayout.h"
-
+#include "mozilla/MouseEvents.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/MouseEvents.h"
 #include "mozilla/widget/WidgetLogging.h"
+#include "nsCOMPtr.h"
+#include "nsClipboard.h"
+#include "nsDragService.h"
+#include "nsIDragService.h"
+#include "nsINode.h"
+#include "nsIWidget.h"
+#include "nsWidgetsCID.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

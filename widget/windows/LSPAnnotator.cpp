@@ -11,11 +11,12 @@
 
 
 
+#include <rpc.h>
+#include <ws2spi.h>
+
 #include "nsExceptionHandler.h"
 #include "nsISupportsImpl.h"
 #include "nsThreadUtils.h"
-#include <rpc.h>
-#include <ws2spi.h>
 
 namespace mozilla {
 namespace crashreporter {

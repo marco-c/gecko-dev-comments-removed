@@ -4,12 +4,10 @@
 
 
 #include "WidgetUtils.h"
-
 #include "mozilla/TextEvents.h"
-
 #include "nsIBaseWindow.h"
-#include "nsIDocShellTreeItem.h"
 #include "nsIDocShell.h"
+#include "nsIDocShellTreeItem.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"

@@ -4,18 +4,18 @@
 
 #include "TSFStaticSink.h"
 
+#include <comutil.h>  
+#include <oleauto.h>  
+#include <olectl.h>
+
 #include "TSFTextStore.h"
 #include "TSFUtils.h"
 #include "WinIMEHandler.h"
 #include "WinMessages.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
-#include "mozilla/glean/WidgetWindowsMetrics.h"
 #include "mozilla/Utf16.h"
-
-#include <comutil.h>  
-#include <oleauto.h>  
-#include <olectl.h>
+#include "mozilla/glean/WidgetWindowsMetrics.h"
 
 extern mozilla::LazyLogModule gIMELog;  
 

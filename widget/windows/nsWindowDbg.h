@@ -9,8 +9,8 @@
 
 
 
-#include "nsWindowDefs.h"
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
+#include "nsWindowDefs.h"
 
 
 

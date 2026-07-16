@@ -2,20 +2,21 @@
 
 
 
+#include "nsApplicationChooser.h"
+
+#include <gio/gdesktopappinfo.h>
 #include <gtk/gtk.h>
 
-#include "nsApplicationChooser.h"
 #include "WidgetUtils.h"
-#include "nsIMIMEInfo.h"
-#include "nsIWidget.h"
-#include "nsIFile.h"
+#include "mozilla/GRefPtr.h"
 #include "nsCExternalHandlerService.h"
 #include "nsComponentManagerUtils.h"
 #include "nsGtkUtils.h"
-#include "nsPIDOMWindow.h"
+#include "nsIFile.h"
 #include "nsIGIOService.h"
-#include <gio/gdesktopappinfo.h>
-#include "mozilla/GRefPtr.h"
+#include "nsIMIMEInfo.h"
+#include "nsIWidget.h"
+#include "nsPIDOMWindow.h"
 
 using namespace mozilla;
 

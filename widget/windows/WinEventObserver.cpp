@@ -2,19 +2,20 @@
 
 
 
+#include "WinEventObserver.h"
+
+
 #include <windows.h>
 #include <winternl.h>
 #include <winuser.h>
 #include <wtsapi32.h>
 #include <dbt.h>
 
-#include "WinEventObserver.h"
 
 #include "InputDeviceUtils.h"
 #include "ScreenHelperWin.h"
-#include "WindowsUIUtils.h"
 #include "WinWindowOcclusionTracker.h"
-
+#include "WindowsUIUtils.h"
 #include "gfxDWriteFonts.h"
 #include "gfxPlatform.h"
 #include "mozilla/Assertions.h"
@@ -25,8 +26,8 @@
 #include "nsLookAndFeel.h"
 #include "nsStringFwd.h"
 #include "nsWindowDbg.h"
-#include "nsdefs.h"
 #include "nsXULAppAPI.h"
+#include "nsdefs.h"
 
 
 

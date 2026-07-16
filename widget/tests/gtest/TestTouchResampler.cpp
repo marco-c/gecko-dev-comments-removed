@@ -3,12 +3,13 @@
 
 
 #include <initializer_list>
+
 #include "InputData.h"
+#include "TouchResampler.h"
 #include "Units.h"
 #include "gtest/gtest.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
-#include "TouchResampler.h"
 
 using namespace mozilla;
 using widget::TouchResampler;

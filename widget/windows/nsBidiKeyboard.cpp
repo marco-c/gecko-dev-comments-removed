@@ -4,9 +4,11 @@
 
 
 #include "nsBidiKeyboard.h"
+
+#include <tchar.h>
+
 #include "WidgetUtils.h"
 #include "nsIWidget.h"
-#include <tchar.h>
 
 NS_IMPL_ISUPPORTS(nsBidiKeyboard, nsIBidiKeyboard)
 

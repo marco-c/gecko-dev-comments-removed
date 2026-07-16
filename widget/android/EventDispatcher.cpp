@@ -5,19 +5,18 @@
 #include "EventDispatcher.h"
 
 #include "JavaBuiltins.h"
-#include "nsAppShell.h"
-#include "nsJSUtils.h"
 #include "js/Array.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/String.h"              
 #include "js/Warnings.h"            
-#include "xpcpublic.h"
 #include "jsapi.h"
-
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/java/EventCallbackWrappers.h"
 #include "mozilla/jni/GeckoBundleUtils.h"
+#include "nsAppShell.h"
+#include "nsJSUtils.h"
+#include "xpcpublic.h"
 
 namespace mozilla::widget {
 

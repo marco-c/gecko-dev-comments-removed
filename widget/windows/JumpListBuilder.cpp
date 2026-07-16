@@ -2,12 +2,17 @@
 
 
 
+#include "JumpListBuilder.h"
+
+
 #include <windows.h>
 #include <shobjidl.h>
 #include <propkey.h>
 #include <propvarutil.h>
 #include <shellapi.h>
-#include "JumpListBuilder.h"
+
+
+#include "WinUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
@@ -15,7 +20,6 @@
 #include "nsIFile.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
-#include "WinUtils.h"
 
 using mozilla::dom::Promise;
 using mozilla::dom::WindowsJumpListShortcutDescription;

@@ -3,6 +3,7 @@
 
 
 #include "CompositorWidgetParent.h"
+
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsWindow.h"
 

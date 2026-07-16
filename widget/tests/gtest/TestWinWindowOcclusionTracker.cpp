@@ -2,12 +2,11 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <dwmapi.h>
 #include <windows.h>
 
 #include "MockWinWidget.h"
+#include "gtest/gtest.h"
 #include "mozilla/widget/WinWindowOcclusionTracker.h"
 
 using namespace mozilla;

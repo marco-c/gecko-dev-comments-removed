@@ -3,6 +3,7 @@
 
 
 #include "nsUserIdleServiceWin.h"
+
 #include <windows.h>
 
 bool nsUserIdleServiceWin::PollIdleTime(uint32_t* aIdleTime) {

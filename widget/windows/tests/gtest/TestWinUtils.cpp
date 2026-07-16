@@ -2,15 +2,14 @@
 
 
 
-#include "gtest/gtest.h"
 #include "WinUtils.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/SpinEventLoopUntil.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

@@ -2,10 +2,10 @@
 
 
 
+#include "DesktopBackgroundImage.h"
 #include "mozilla/Logging.h"
 #include "nsCocoaUtils.h"
 #include "nsIFile.h"
-#include "DesktopBackgroundImage.h"
 
 #import <Foundation/Foundation.h>
 

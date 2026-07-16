@@ -3,14 +3,16 @@
 
 
 
-#include <nsITaskbarPreviewController.h>
 #include "TaskbarWindowPreview.h"
-#include "WindowHook.h"
+
+#include <nsITaskbarPreviewController.h>
+
 #include "TaskbarPreviewButton.h"
-#include "nsWindow.h"
-#include "nsWindowGfx.h"
+#include "WindowHook.h"
 #include "imgLoader.h"
 #include "nsISVGPaintContext.h"
+#include "nsWindow.h"
+#include "nsWindowGfx.h"
 
 namespace mozilla {
 namespace widget {
