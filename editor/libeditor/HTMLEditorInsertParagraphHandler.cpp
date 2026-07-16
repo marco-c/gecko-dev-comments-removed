@@ -68,7 +68,7 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
     }
   }
 
-  if (GetEditContext()) {
+  if (GetEditActionEditContext()) {
     
     return EditActionResult::HandledResult();
   }

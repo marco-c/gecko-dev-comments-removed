@@ -5517,7 +5517,7 @@ bool Document::AutoEditorCommandTarget::IsEditable(Document* aDocument) const {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
   EditorBase* targetEditor = GetTargetEditor();
-  if (targetEditor && targetEditor->GetEditContext()) {
+  if (targetEditor && targetEditor->ComputeEditContext()) {
     
     
     return false;
