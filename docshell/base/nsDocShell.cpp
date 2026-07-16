@@ -2436,8 +2436,9 @@ void nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal) {
   MaybeInheritController(mInitialClientSource.get(), principal);
 }
 
-void VerifyCientPrincipalInfosMatch(const mozilla::ipc::PrincipalInfo& aLeft,
-                                    const mozilla::ipc::PrincipalInfo& aRight) {
+void VerifyClientPrincipalInfosMatch(
+    const mozilla::ipc::PrincipalInfo& aLeft,
+    const mozilla::ipc::PrincipalInfo& aRight) {
   
   
   
@@ -2487,8 +2488,8 @@ void nsDocShell::MaybeInheritController(
     return;
   }
 
-  VerifyCientPrincipalInfosMatch(aClientSource->Info().PrincipalInfo(),
-                                 controller->PrincipalInfo());
+  VerifyClientPrincipalInfosMatch(aClientSource->Info().PrincipalInfo(),
+                                  controller->PrincipalInfo());
   aClientSource->InheritController(controller.ref());
 }
 
