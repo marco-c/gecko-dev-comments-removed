@@ -3860,9 +3860,12 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   
   if (addonPolicy) {
-    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
-
-    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+    if (addonPolicy->Core()->IsSandboxPage(mDocumentURI)) {
+      csp->AppendPolicy(addonPolicy->SandboxPageCSP(), false, false);
+    } else {
+      csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
+      csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+    }
   }
 
   

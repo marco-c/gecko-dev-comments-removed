@@ -1177,6 +1177,8 @@ interface nsIAddonContentPolicy extends nsISupports {
   readonly CSP_ALLOW_WASM?: 8;
 
   validateAddonCSP(aPolicyString: string, aPermittedPolicy: u32): string;
+
+  validateAddonSandboxCSP(aPolicyString: string): string;
 }
 
 
@@ -1436,14 +1438,13 @@ interface nsIEditingSession extends nsISupports {
 interface nsIContentClassifierRemoteSettingsClient extends nsISupports {
   init(aService: nsIContentClassifierService): Promise<any>;
   shutdown(): void;
+  getListBytes(aName: string): Promise<any>;
 }
 
 
 
 interface nsIContentClassifierService extends nsISupports {
-  setFilterListData(aName: string, aData: u8[]): void;
-  removeFilterList(aName: string): void;
-  applyFilterLists(): void;
+  onListsChanged(aUpdated: string[], aRemoved: string[]): void;
   getFeatureNames(): string[];
 }
 
@@ -2631,6 +2632,7 @@ interface nsIDOMWindowUtils extends nsISupports, Enums<typeof nsIDOMWindowUtils_
   getVisualViewportOffsetRelativeToLayoutViewport(aOffsetX: OutParam<float>, aOffsetY: OutParam<float>): void;
   getVisualViewportOffset(aOffsetX: OutParam<i32>, aOffsetY: OutParam<i32>): void;
   transformRectLayoutToVisual(aX: float, aY: float, aWidth: float, aHeight: float): DOMRect;
+  getElementBoundingScreenRect(aElement: Element): DOMRect;
   toScreenRectInCSSUnits(aX: float, aY: float, aWidth: float, aHeight: float): DOMRect;
   toScreenRect(aX: float, aY: float, aWidth: float, aHeight: float): DOMRect;
   toTopLevelWidgetRect(aX: float, aY: float, aWidth: float, aHeight: float): DOMRect;
@@ -3082,6 +3084,13 @@ interface nsIScriptError extends nsIConsoleMessage {
   initWithSanitizedSource(message: string, sourceName: string, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
   initWithSourceURI(message: string, sourceURI: nsIURI, lineNumber: u32, columnNumber: u32, flags: u32, category: string, innerWindowID: u64, fromChromeContext?: boolean): void;
   initSourceId(sourceId: u32): void;
+}
+
+
+
+interface mozITestInterfaceJS extends nsISupports {
+  testThrowNsresult(): void;
+  testThrowNsresultFromNative(): void;
 }
 
 
@@ -4323,14 +4332,8 @@ interface nsIDOMXULSelectControlItemElement extends nsISupports {
 
 
 interface mozIDownloadPlatform extends nsISupports {
-  readonly ZONE_MY_COMPUTER?: 0;
-  readonly ZONE_INTRANET?: 1;
-  readonly ZONE_TRUSTED?: 2;
-  readonly ZONE_INTERNET?: 3;
-  readonly ZONE_RESTRICTED?: 4;
-
   downloadDone(aSource: nsIURI, aReferrer: nsIURI, aTarget: nsIFile, aContentType: string, aIsPrivate: boolean): Promise<any>;
-  mapUrlToZone(aURL: string): u32;
+  maybeWriteDownloadOriginInformation(aTargetFile: nsIFile, aSourceUrl: nsIURI, aReferrerInfo: nsIReferrerInfo, aIsPrivate: boolean): Promise<any>;
 }
 
 
@@ -4760,13 +4763,15 @@ interface nsIFOG extends nsISupports {
   testFlushAllChildren(): Promise<any>;
   testResetFOG(aDataPathOverride?: string, aAppIdOverride?: string): void;
   testTriggerMetrics(aProcessType: u32): Promise<any>;
-  testRegisterRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aExtraArgs?: string): u32;
+  testRegisterRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): u32;
   testRegisterRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): u32;
+  clearAttribution(): void;
   updateAttribution(aSource: string, aMedium: string, aCampaign: string, aTerm: string, aContent: string): void;
   testGetAttribution(): any;
+  clearDistribution(): void;
   updateDistribution(aName: string): void;
   testGetDistribution(): any;
-  registerRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aExtraArgs?: string): void;
+  registerRuntimeMetric(aType: string, aCategory: string, aName: string, aPings: string[], aLifetime: string, aDisabled: boolean, aInSession: boolean, aExtraArgs?: string): void;
   registerRuntimePing(aName: string, aIncludeClientId: boolean, aSendIfEmpty: boolean, aPreciseTimestamps: boolean, aIncludeInfoSections: boolean, aEnabled: boolean, aSchedulesPings: string[], aReasonCodes: string[], aFollowsCollectionEnabled: boolean, aUploaderCapabilities: string[]): void;
 }
 
@@ -5417,6 +5422,37 @@ interface nsISVGPaintContext extends nsISupports {
 
 
 
+}  
+
+declare enum nsILayoutDebuggingTools_DumpFrameFlags {
+  DUMP_FRAME_FLAGS_CSS_PIXELS = 1,
+  DUMP_FRAME_FLAGS_DETERMINISTIC = 2,
+}
+
+declare global {
+
+namespace nsILayoutDebuggingTools {
+  type DumpFrameFlags = nsILayoutDebuggingTools_DumpFrameFlags;
+}
+
+interface nsILayoutDebuggingTools extends nsISupports, Enums<typeof nsILayoutDebuggingTools_DumpFrameFlags> {
+  init(win: mozIDOMWindow): void;
+  forceRefresh(): void;
+  setReflowCounts(enabled: boolean): void;
+  setPagedMode(enabled: boolean): void;
+  dumpContent(anonymousSubtrees: boolean): void;
+  dumpFrames(flags: u8): void;
+  dumpTextRuns(): void;
+  dumpCounterManager(): void;
+  dumpRetainedDisplayList(): void;
+  dumpStyleSheets(): void;
+  dumpMatchedRules(): void;
+  dumpComputedStyles(): void;
+  dumpReflowStats(): void;
+}
+
+
+
 interface nsIPreloadedStyleSheet extends nsISupports {
 }
 
@@ -5543,7 +5579,7 @@ interface nsILockstore extends nsISupports {
   lockKek(kekRef: string): Promise<any>;
   isKekUnlocked(kekRef: string): boolean;
   lock(): Promise<any>;
-  createDek(collection: string, kekRef: string, extractable: boolean): Promise<any>;
+  createDek(collection: string, kekRef: string, extractable: boolean, keySize: u32): Promise<any>;
   importDek(collection: string, kekRef: string, dekBytes: u8[], extractable: boolean): Promise<any>;
   isDekExtractable(collection: string): Promise<any>;
   deleteDek(collection: string): Promise<any>;
@@ -5555,7 +5591,7 @@ interface nsILockstore extends nsISupports {
   encrypt(collection: string, kekRef: string, plaintext: u8[]): Promise<any>;
   decrypt(collection: string, kekRef: string, ciphertext: u8[]): Promise<any>;
   getDek(collection: string, kekRef: string): Promise<any>;
-  createKek(kekType: string, secret: string, cacheTimeoutMs: u32): Promise<any>;
+  createKek(kekType: string, identifier: string, secret: string, cacheTimeoutMs: u32): Promise<any>;
   deleteKek(kekRef: string): Promise<any>;
 }
 
@@ -8638,7 +8674,20 @@ interface nsIHttpUpgradeListener extends nsISupports {
   onUpgradeFailed(aErrorCode: nsresult): void;
 }
 
-interface nsIHttpChannelInternal extends nsISupports {
+}  
+
+declare enum nsIHttpChannelInternal_ProxyDNSStrategy {
+  PROXY_DNS_STRATEGY_ORIGIN = 1,
+  PROXY_DNS_STRATEGY_PROXY = 2,
+}
+
+declare global {
+
+namespace nsIHttpChannelInternal {
+  type ProxyDNSStrategy = nsIHttpChannelInternal_ProxyDNSStrategy;
+}
+
+interface nsIHttpChannelInternal extends nsISupports, Enums<typeof nsIHttpChannelInternal_ProxyDNSStrategy> {
   readonly THIRD_PARTY_FORCE_ALLOW?: 1;
   readonly TLS_FLAG_CONFIGURE_AS_RETRY?: 65536;
   readonly REDIRECT_MODE_FOLLOW?: 0;
@@ -8717,6 +8766,7 @@ type nsIHttpHeaderVisitor = Callable<{
 
 interface nsIHttpProtocolHandler extends nsIProxiedProtocolHandler {
   readonly userAgent: string;
+  readonly documentAcceptHeader: string;
   readonly rfpUserAgent: string;
   readonly appName: string;
   readonly appVersion: string;
@@ -9162,6 +9212,12 @@ interface nsIWifiMonitor extends nsISupports {
 
 
 
+interface nsIInstallationDirLayout extends nsISupports {
+  readonly isInstallationLayoutVersioned: boolean;
+}
+
+
+
 interface nsIParentalControlsService extends nsISupports {
   readonly DOWNLOAD?: 1;
   readonly INSTALL_EXTENSION?: 2;
@@ -9467,6 +9523,7 @@ interface nsIFIPSUtils extends nsISupports {
 
 
 interface nsINSSComponent extends nsISupports {
+  clearTLSCacheAndCancelAllConnections(): void;
   getEnterpriseRoots(): u8[][];
   getEnterpriseRootsPEM(): string;
   getEnterpriseIntermediates(): u8[][];
@@ -9577,16 +9634,12 @@ interface nsIPKCS11Token extends nsISupports {
   readonly tokenHWVersion: string;
   readonly tokenFWVersion: string;
   readonly tokenSerialNumber: string;
-  isLoggedIn(): boolean;
-  login(force: boolean): void;
-  logoutSimple(): void;
-  logoutAndDropAuthenticatedResources(): void;
-  needsLogin(): boolean;
-  readonly needsUserInit: boolean;
+  readonly isLoggedIn: boolean;
+  login(): void;
+  logout(): void;
   reset(): void;
-  checkPassword(password: string): boolean;
-  initPassword(initialPassword: string): void;
   changePassword(oldPassword: string, newPassword: string): void;
+  readonly canHavePassword: boolean;
   readonly hasPassword: boolean;
 }
 
@@ -9610,6 +9663,7 @@ interface nsISecretDecoderRing extends nsISupports {
   asyncEncryptStrings(plaintexts: string[]): Promise<any>;
   decryptString(encryptedBase64Text: string): string;
   asyncDecryptStrings(encryptedStrings: string[]): Promise<any>;
+  login(password: string): boolean;
   logout(): void;
   logoutAndTeardown(): void;
 }
@@ -10550,6 +10604,13 @@ interface mozISandboxSettings extends nsISupports {
 
 
 
+interface mozISandboxTest extends nsISupports {
+  startTests(aProcessesList: string[]): void;
+  finishTests(): void;
+}
+
+
+
 interface nsIFormFillFocusListener extends nsISupports {
   handleFocus(element: Element): Promise<any>;
 }
@@ -10621,6 +10682,32 @@ interface nsISessionStoreRestoreData extends nsISupports {
   addMultipleSelect(aIsXPath: boolean, aIdOrXPath: string, aValues: string[]): void;
   addCustomElement(aIsXPath: boolean, aIdOrXPath: string, aValue: any, aState: any): void;
   addChild(aChild: nsISessionStoreRestoreData, aIndex: u32): void;
+}
+
+
+
+interface nsILimitedAccessFeature extends nsISupports {
+  readonly featureId: string;
+  readonly token: string;
+  readonly attestation: string;
+  unlock(): boolean;
+}
+
+interface nsILimitedAccessFeatureService extends nsISupports {
+  readonly taskbarPinFeatureId: string;
+  generateLimitedAccessFeature(featureId: string): nsILimitedAccessFeature;
+}
+
+
+
+interface nsISecondaryTileListener extends nsISupports {
+  succeeded(accepted: boolean): void;
+  failed(aHresult: i32): void;
+}
+
+interface nsISecondaryTileService extends nsISupports {
+  requestCreateAndPin(aTileId: string, aName: string, aIconPath: string, aArguments: string[], aListener: nsISecondaryTileListener): void;
+  requestDelete(aTileId: string, aListener: nsISecondaryTileListener): void;
 }
 
 
@@ -10802,6 +10889,7 @@ interface mozIStorageAsyncConnection extends nsISupports {
   setProgressHandler(aGranularity: i32, aHandler: mozIStorageProgressHandler): mozIStorageProgressHandler;
   removeProgressHandler(): mozIStorageProgressHandler;
   backupToFileAsync(aDestinationFile: nsIFile, aCallback: mozIStorageCompletionCallback, aPagesPerStep?: u32, aStepDelayMs?: u32): void;
+  attachDatabase(aPath: string, aName: string, aCallback?: mozIStorageStatementCallback): mozIStoragePendingStatement;
 }
 
 
@@ -11612,8 +11700,7 @@ interface nsIContentAnalysisRequest extends nsISupports, Enums<typeof nsIContent
   readonly transferable: nsITransferable;
   readonly textContent: string;
   readonly filePath: string;
-  readonly printDataHandle: u64;
-  readonly printDataSize: u64;
+  getPrintData(): u8[];
   readonly printerName: string;
   readonly url: nsIURI;
   readonly sha256Digest: string;
@@ -13558,6 +13645,7 @@ interface nsIPrinterInfo extends nsISupports {
 interface nsIPrinter extends nsISupports {
   readonly name: string;
   readonly systemName: string;
+  readonly sortAfterLocal: boolean;
   readonly printerInfo: Promise<any>;
   copyFromWithValidation(aSettingsToCopyFrom: nsIPrintSettings): Promise<any>;
   readonly supportsDuplex: Promise<any>;
@@ -13666,6 +13754,24 @@ interface nsIUserIdleService extends nsISupports {
 
 interface nsIUserIdleServiceInternal extends nsIUserIdleService {
   resetIdleTimeOut(idleDeltaInMS: u32): void;
+}
+
+
+
+interface nsIAlertsServiceRust extends nsISupports {
+  getHistory(aAumid: string): string[];
+}
+
+
+
+interface nsIWindowsDebugProcessData extends nsISupports {
+  readonly name: string;
+  readonly executablePath: string;
+  readonly pid: u32;
+}
+
+interface nsIWindowsTestDebug extends nsISupports {
+  processesThatOpenedFile(aFilename: string): nsIWindowsDebugProcessData[];
 }
 
 
@@ -13926,6 +14032,14 @@ interface nsIException extends nsISupports {
 
 interface nsIInterfaceRequestor extends nsISupports {
   getInterface<T extends nsIID>(uuid: T): nsQIResult<T>;
+}
+
+
+
+interface nsIKeyedUUIDMapper extends nsISupports {
+  init(aKey: u8[]): void;
+  toUUID(aValue: u64): string;
+  fromUUID(aUUID: string): u64;
 }
 
 
@@ -15045,6 +15159,7 @@ interface nsIXULRuntime extends nsISupports, Enums<typeof nsIXULRuntime_Experime
   readonly is64Bit: boolean;
   readonly isTextRecognitionSupported: boolean;
   invalidateCachesOnRestart(): void;
+  markProfileEncryptedDatabases(): void;
   readonly replacedLockTime: PRTime;
   readonly defaultUpdateChannel: string;
   readonly distributionID: string;
@@ -15786,6 +15901,7 @@ interface nsIXPCComponents_Interfaces {
   nsITextInputProcessorCallback: nsJSIID<nsITextInputProcessorCallback>;
   nsIScriptErrorNote: nsJSIID<nsIScriptErrorNote>;
   nsIScriptError: nsJSIID<nsIScriptError>;
+  mozITestInterfaceJS: nsJSIID<mozITestInterfaceJS>;
   nsIGeolocationUIUtils: nsJSIID<nsIGeolocationUIUtils>;
   nsIDOMGeoPosition: nsJSIID<nsIDOMGeoPosition>;
   nsIDOMGeoPositionCallback: nsJSIID<nsIDOMGeoPositionCallback>;
@@ -15988,6 +16104,7 @@ interface nsIXPCComponents_Interfaces {
   nsIKeyValueVoidCallback: nsJSIID<nsIKeyValueVoidCallback>;
   nsILayoutHistoryState: nsJSIID<nsILayoutHistoryState>;
   nsISVGPaintContext: nsJSIID<nsISVGPaintContext>;
+  nsILayoutDebuggingTools: nsJSIID<nsILayoutDebuggingTools, typeof nsILayoutDebuggingTools_DumpFrameFlags>;
   nsIPreloadedStyleSheet: nsJSIID<nsIPreloadedStyleSheet>;
   nsIStyleSheetService: nsJSIID<nsIStyleSheetService>;
   nsITreeSelection: nsJSIID<nsITreeSelection>;
@@ -16232,7 +16349,7 @@ interface nsIXPCComponents_Interfaces {
   nsIHttpAuthManager: nsJSIID<nsIHttpAuthManager>;
   nsIHttpChannel: nsJSIID<nsIHttpChannel>;
   nsIHttpUpgradeListener: nsJSIID<nsIHttpUpgradeListener>;
-  nsIHttpChannelInternal: nsJSIID<nsIHttpChannelInternal>;
+  nsIHttpChannelInternal: nsJSIID<nsIHttpChannelInternal, typeof nsIHttpChannelInternal_ProxyDNSStrategy>;
   nsIHttpHeaderVisitor: nsJSIID<nsIHttpHeaderVisitor>;
   nsIHttpProtocolHandler: nsJSIID<nsIHttpProtocolHandler>;
   nsINetworkErrorReport: nsJSIID<nsINetworkErrorReport>;
@@ -16280,6 +16397,7 @@ interface nsIXPCComponents_Interfaces {
   nsIWifiAccessPoint: nsJSIID<nsIWifiAccessPoint>;
   nsIWifiListener: nsJSIID<nsIWifiListener>;
   nsIWifiMonitor: nsJSIID<nsIWifiMonitor>;
+  nsIInstallationDirLayout: nsJSIID<nsIInstallationDirLayout>;
   nsIParentalControlsService: nsJSIID<nsIParentalControlsService>;
   IPeerConnectionObserver: nsJSIID<IPeerConnectionObserver>;
   IPeerConnection: nsJSIID<IPeerConnection>;
@@ -16370,6 +16488,7 @@ interface nsIXPCComponents_Interfaces {
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
   mozISandboxSettings: nsJSIID<mozISandboxSettings>;
+  mozISandboxTest: nsJSIID<mozISandboxTest>;
   nsIFormFillFocusListener: nsJSIID<nsIFormFillFocusListener>;
   nsIFormFillController: nsJSIID<nsIFormFillController>;
   nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
@@ -16379,6 +16498,10 @@ interface nsIXPCComponents_Interfaces {
   mozIInterruptible: nsJSIID<mozIInterruptible>;
   nsISessionStoreFunctions: nsJSIID<nsISessionStoreFunctions>;
   nsISessionStoreRestoreData: nsJSIID<nsISessionStoreRestoreData>;
+  nsILimitedAccessFeature: nsJSIID<nsILimitedAccessFeature>;
+  nsILimitedAccessFeatureService: nsJSIID<nsILimitedAccessFeatureService>;
+  nsISecondaryTileListener: nsJSIID<nsISecondaryTileListener>;
+  nsISecondaryTileService: nsJSIID<nsISecondaryTileService>;
   nsIShellService: nsJSIID<nsIShellService>;
   nsIBFCacheEntry: nsJSIID<nsIBFCacheEntry>;
   nsISHEntry: nsJSIID<nsISHEntry>;
@@ -16596,6 +16719,9 @@ interface nsIXPCComponents_Interfaces {
   nsITransferable: nsJSIID<nsITransferable>;
   nsIUserIdleService: nsJSIID<nsIUserIdleService>;
   nsIUserIdleServiceInternal: nsJSIID<nsIUserIdleServiceInternal>;
+  nsIAlertsServiceRust: nsJSIID<nsIAlertsServiceRust>;
+  nsIWindowsDebugProcessData: nsJSIID<nsIWindowsDebugProcessData>;
+  nsIWindowsTestDebug: nsJSIID<nsIWindowsTestDebug>;
   nsIWindowCreator: nsJSIID<nsIWindowCreator>;
   nsIWindowProvider: nsJSIID<nsIWindowProvider>;
   nsIDialogParamBlock: nsJSIID<nsIDialogParamBlock>;
@@ -16616,6 +16742,7 @@ interface nsIXPCComponents_Interfaces {
   nsIStackFrame: nsJSIID<nsIStackFrame>;
   nsIException: nsJSIID<nsIException>;
   nsIInterfaceRequestor: nsJSIID<nsIInterfaceRequestor>;
+  nsIKeyedUUIDMapper: nsJSIID<nsIKeyedUUIDMapper>;
   nsIFinishDumpingCallback: nsJSIID<nsIFinishDumpingCallback>;
   nsIDumpGCAndCCLogsCallback: nsJSIID<nsIDumpGCAndCCLogsCallback>;
   nsIMemoryInfoDumper: nsJSIID<nsIMemoryInfoDumper>;
