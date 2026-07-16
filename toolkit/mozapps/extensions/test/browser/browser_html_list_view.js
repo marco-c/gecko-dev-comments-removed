@@ -1050,11 +1050,14 @@ add_task(async function testEmptyMessage() {
   ];
 
   for (let test of tests) {
+    info(`Testing list view type ${test.type}`);
+
     let win = await loadInitialView(test.type);
     let doc = win.document;
     let enabledSection = getSection(doc, `${test.type}-enabled-section`);
     let disabledSection = getSection(doc, `${test.type}-disabled-section`);
     const message = doc.querySelector("#empty-addons-message");
+    const emptyStatePromo = doc.querySelector("#empty-addons-promo");
 
     
     ok(
@@ -1064,7 +1067,17 @@ add_task(async function testEmptyMessage() {
 
     
     
-    is_element_hidden(message, "Empty addons message hidden");
+    is_element_hidden(
+      message,
+      `Empty addons message hidden on list view type ${test.type}`
+    );
+
+    
+    
+    is_element_hidden(
+      emptyStatePromo,
+      `Empty addons promo hidden on list view type ${test.type}`
+    );
 
     
     
@@ -1077,7 +1090,48 @@ add_task(async function testEmptyMessage() {
     }
 
     
-    is_element_visible(message, "Empty addons message visible");
+    if (Services.prefs.getBoolPref("browser.nova.enabled")) {
+      switch (test.type) {
+        case "extension":
+          is_element_visible(
+            emptyStatePromo,
+            `Empty addons promo visible on list view type ${test.type}`
+          );
+          break;
+        case "theme": 
+        
+        
+        
+        case "plugin": 
+        case "locale": 
+        case "dictionary":
+          
+          
+          
+          
+          
+          
+          
+          
+          todo(
+            false,
+            "Should we keep the old empty message or add new strings for " +
+              "per-type message and button label to set on the promo?"
+          );
+          is_element_hidden(
+            emptyStatePromo,
+            `Empty addons promo hidden on non empty list view type ${test.type}`
+          );
+          break;
+        default:
+          ok(false, `Unexpected list view type ${test.type}`);
+      }
+    } else {
+      is_element_visible(
+        message,
+        `Empty addons message visible on list view type ${test.type}`
+      );
+    }
 
     await closeView(win);
   }
