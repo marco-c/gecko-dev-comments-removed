@@ -112,6 +112,14 @@ pub fn for_each_border_image_segment(
 ) {
     let w = src_image_size.width;
     let h = src_image_size.height;
+
+    if nine_patch.width <= 0
+        || nine_patch.height <= 0
+        || w <= 0
+        || h <= 0 {
+        return;
+    }
+
     
     
     
