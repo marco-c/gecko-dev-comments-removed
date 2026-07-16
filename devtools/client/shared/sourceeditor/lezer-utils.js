@@ -477,17 +477,15 @@ function getMetaBindings(doc, node) {
 
 
 
-
 async function walkTree(view, language, options) {
   const { forceParsing, syntaxTree } = language;
-  if (options.forceParseTo && !options.tree) {
+  if (options.forceParseTo) {
     
     
     
     await forceParsing(view, options.forceParseTo, 10000);
   }
-  const tree = options.tree || syntaxTree(view.state);
-  await tree.iterate({
+  await syntaxTree(view.state).iterate({
     enter: node => {
       if (options.filterSet?.has(node.name)) {
         options.enterVisitor(node);

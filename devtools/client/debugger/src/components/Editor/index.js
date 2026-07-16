@@ -187,19 +187,16 @@ class Editor extends PureComponent {
   }
 
   onEditorUpdated = viewUpdate => {
-    const { editor } = this.state;
     if (viewUpdate.docChanged || viewUpdate.geometryChanged) {
       updateEditorSizeCssVariables(viewUpdate.view.dom);
       const { selectedLocation } = this.props;
       
       
       if (
-        
         selectedLocation &&
-        
         selectedLocation.source.isStyleSheet &&
-        
-        editor.isViewUpdateFromUserInput(viewUpdate)
+        viewUpdate.view.hasFocus &&
+        viewUpdate.docChanged
       ) {
         this.updateStyleSheetText(
           selectedLocation.sourceActor,
@@ -722,10 +719,7 @@ class Editor extends PureComponent {
     await editor.setText(selectedSourceTextContent.value.value, {
       documentId: selectedSource.id,
     });
-    const isReadOnly =
-      !selectedSource.isStyleSheet ||
-      (selectedSource.isOriginal && !selectedSource.isPrettyPrinted);
-    await editor.setReadOnly(isReadOnly);
+    await editor.setReadOnly(!selectedSource.isStyleSheet);
   }
 
   showErrorMessage(msg) {

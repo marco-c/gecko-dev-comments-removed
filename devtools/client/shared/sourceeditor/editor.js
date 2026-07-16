@@ -539,32 +539,6 @@ class Editor extends EventEmitter {
   }
 
   
-
-
-
-
-
-
-  isViewUpdateFromUserInput(viewUpdate) {
-    const {
-      codemirrorState: { Transaction },
-    } = this.#CodeMirror6;
-    
-    if (viewUpdate.docChanged) {
-      
-      for (const transaction of viewUpdate.transactions) {
-        
-        
-        const userEventType = transaction.annotation(Transaction.userEvent);
-        if (userEventType) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  
   
   setUpdateListener(listener = null) {
     this.#updateListener = listener;
@@ -2391,22 +2365,13 @@ class Editor extends EventEmitter {
 
 
 
-
-  async getFunctionSymbols(sourceId, maxResults) {
+  async getFunctionSymbols(maxResults) {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage,
-      codemirrorLangJavascript: { javascriptLanguage },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
     const functionSymbols = [];
     let resultsCount = 0;
     await lezerUtils.walkTree(cm, codemirrorLanguage, {
-      tree: lezerUtils.getTree(
-        javascriptLanguage,
-        sourceId,
-        cm.state.doc.toString()
-      ),
       filterSet: lezerUtils.nodeTypeSets.functionsDeclAndExpr,
       enterVisitor: node => {
         if (resultsCount == maxResults) {
@@ -2435,6 +2400,7 @@ class Editor extends EventEmitter {
         });
         resultsCount++;
       },
+      forceParseTo: cm.state.doc.length,
     });
 
     return functionSymbols;
@@ -2445,21 +2411,12 @@ class Editor extends EventEmitter {
 
 
 
-
-  async getClassSymbols(sourceId) {
+  async getClassSymbols() {
     const cm = editors.get(this);
-    const {
-      codemirrorLanguage,
-      codemirrorLangJavascript: { javascriptLanguage },
-    } = this.#CodeMirror6;
+    const { codemirrorLanguage } = this.#CodeMirror6;
 
     const classSymbols = [];
     await lezerUtils.walkTree(cm, codemirrorLanguage, {
-      tree: lezerUtils.getTree(
-        javascriptLanguage,
-        sourceId,
-        cm.state.doc.toString()
-      ),
       filterSet: lezerUtils.nodeTypeSets.classes,
       enterVisitor: node => {
         const classVarDefNode = node.node.firstChild.nextSibling;
@@ -2474,6 +2431,7 @@ class Editor extends EventEmitter {
           },
         });
       },
+      forceParseTo: cm.state.doc.length,
     });
 
     return classSymbols;
@@ -4111,13 +4069,6 @@ class Editor extends EventEmitter {
     const offset = this.#positionToOffset(line);
     const el = this.#getElementAtOffset(offset);
     return el.closest(".cm-line");
-  }
-
-  
-  
-  isReadOnly() {
-    const cm = editors.get(this);
-    return cm.state.readOnly;
   }
 
   

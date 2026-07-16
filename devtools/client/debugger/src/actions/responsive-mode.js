@@ -1,9 +1,0 @@
-
-
-
-
-export function launchResponsiveMode(options) {
-  return function ({ panel }) {
-    return panel.toolbox.launchResponsiveMode(options);
-  };
-}
