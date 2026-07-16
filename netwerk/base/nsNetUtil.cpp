@@ -4131,6 +4131,12 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
 
   
   
+  if (StringEndsWith(filePath, "/coverage.json"_ns)) {
+    return;
+  }
+
+  
+  
   
   ExtContentPolicy policy = aLoadInfo
                                 ? aLoadInfo->GetExternalContentPolicyType()
