@@ -110,7 +110,13 @@ nsresult nsVideoFrame::CreateAnonymousContent(
     NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
     mPosterImage = NS_NewHTMLImageElement(nodeInfo.forget());
     NS_ENSURE_TRUE(mPosterImage, NS_ERROR_OUT_OF_MEMORY);
-    UpdatePosterSource(false);
+
+    auto* videoElement = static_cast<HTMLVideoElement*>(GetContent());
+    if (!videoElement->IsLazyLoading()) {
+      
+      
+      UpdatePosterSource(false);
+    }
 
     
     
@@ -162,6 +168,9 @@ nsIContent* nsVideoFrame::GetVideoControls() const {
 void nsVideoFrame::Destroy(DestroyContext& aContext) {
   if (mReflowCallbackPosted) {
     PresShell()->CancelReflowCallback(this);
+  }
+  if (mPosterImage) {
+    mPosterImage->DestroyContent();
   }
   aContext.AddAnonymousContent(mCaptionDiv.forget());
   aContext.AddAnonymousContent(mPosterImage.forget());
@@ -532,7 +541,12 @@ nsresult nsVideoFrame::AttributeChanged(int32_t aNameSpaceID,
                                         nsAtom* aAttribute,
                                         AttrModType aModType) {
   if (aAttribute == nsGkAtoms::poster && HasVideoElement()) {
-    UpdatePosterSource(true);
+    auto* element = static_cast<HTMLVideoElement*>(GetContent());
+    if (!element->IsLazyLoading()) {
+      
+      
+      UpdatePosterSource(true);
+    }
   }
   return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
