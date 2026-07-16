@@ -14,7 +14,12 @@ import attr
 from arsenic.services import Geckodriver, free_port, subprocess_based_service
 from mozdevice import ADBDeviceFactory, ADBError
 
-from condprof.util import write_yml_file, logger, DEFAULT_PREFS, BaseEnv
+from condprof.util import (
+    write_yml_file,
+    logger,
+    DEFAULT_PREFS,
+    BaseEnv,
+)
 
 
 
@@ -96,7 +101,20 @@ class AndroidDevice:
         if not device.is_app_installed(self.app_name):
             raise Exception("%s is not installed" % self.app_name)
 
+        if not device.confirm_clear_app_data(self.app_name):
+            raise Exception(
+                "Abort: Declined to clear app data, can't build conditioned profile."
+            )
+
         
+        
+        
+        logger.info(f"Clearing app data for {self.app_name}")
+        try:
+            device.shell_output(f"pm clear {self.app_name}")
+        except ADBError as e:
+            logger.info(f"pm clear {self.app_name} failed: {e}. Continuing.")
+
         logger.info("Setting %s as the debug app on the phone" % self.app_name)
         device.shell(
             "am set-debug-app --persistent %s" % self.app_name,
@@ -104,15 +122,86 @@ class AndroidDevice:
         )
 
         
+        
+        for perm in ("READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"):
+            try:
+                device.shell(
+                    f"pm grant {self.app_name} android.permission.{perm}",
+                    stdout_callback=logger.info,
+                )
+            except ADBError as e:
+                logger.info(
+                    f"Could not grant {perm} to {self.app_name} (likely already "
+                    f"granted or not applicable on this Android version): {e}"
+                )
+
+        
+        
+        try:
+            device.shell_output(
+                f"appops set {self.app_name} MANAGE_EXTERNAL_STORAGE allow"
+            )
+            logger.info(
+                f"Granted MANAGE_EXTERNAL_STORAGE to {self.app_name} via appops"
+            )
+        except ADBError as e:
+            logger.info(
+                f"Could not grant MANAGE_EXTERNAL_STORAGE to {self.app_name} "
+                f"(likely Android < 11 where the op does not exist): {e}"
+            )
+
+        
+        
+        
+        if not device.is_rooted:
+            granted = False
+            for cmd in (
+                "appops set --uid 2000 MANAGE_EXTERNAL_STORAGE allow",
+                "appops set --uid shell MANAGE_EXTERNAL_STORAGE allow",
+            ):
+                try:
+                    device.shell_output(cmd)
+                    logger.info(f"Granted MANAGE_EXTERNAL_STORAGE to shell via: {cmd}")
+                    granted = True
+                    break
+                except ADBError as e:
+                    logger.info(f"appops grant attempt failed ({cmd}): {e}")
+            if not granted:
+                logger.warning(
+                    "Could not grant MANAGE_EXTERNAL_STORAGE to shell; "
+                    "pulling the profile back from the per-app external "
+                    "storage dir may fail on Android 11+."
+                )
+
+        
         logger.info("Creating the profile on the device")
 
         remote_profile = posixpath.join(self.remote_test_root, "profile")
         logger.info("The profile on the phone will be at %s" % remote_profile)
 
-        device.rm(remote_profile, force=True, recursive=True)
+        
+        
+        
+        try:
+            device.rm(remote_profile, force=True, recursive=True)
+        except ADBError as e:
+            logger.info(
+                f"Could not remove stale remote profile {remote_profile}: {e}. "
+                "Continuing."
+            )
+
         logger.info("Pushing %s on the phone" % self.profile)
         device.push(profile, remote_profile)
-        device.chmod(remote_profile, recursive=True)
+
+        
+        try:
+            device.chmod(remote_profile, recursive=True)
+        except ADBError as e:
+            logger.info(
+                f"Could not chmod {remote_profile} "
+                f"(sdcard / scoped-storage path): {e}. Continuing."
+            )
+
         self.profile = profile
         self.remote_profile = remote_profile
 
