@@ -544,7 +544,25 @@ Maybe<webrtc::AudioSendStream::Stats> WebrtcAudioConduit::GetSenderStats()
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mSendStream) {
     
-    return mTransitionalSendStreamStats;
+    
+    
+    if (mTransitionalSendStreamStats) {
+      return mTransitionalSendStreamStats;
+    }
+    
+    
+    
+    
+    
+    
+    
+    const auto& ssrcs = mControl.mLocalSsrcs.Ref();
+    if (ssrcs.empty()) {
+      return Nothing();
+    }
+    webrtc::AudioSendStream::Stats synthStats;
+    synthStats.local_ssrc = ssrcs[0];
+    return Some(std::move(synthStats));
   }
   
   mTransitionalSendStreamStats = Nothing();

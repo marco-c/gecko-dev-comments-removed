@@ -1592,6 +1592,12 @@ RefPtr<dom::Promise> ReplaceTrackOperation::CallImpl(ErrorResult& aError) {
         
         if (sender->SetSenderTrackWithClosedCheck(track)) {
           
+          
+          
+          
+          
+          sender->MaybeUpdateConduit();
+          
           p->MaybeResolveWithUndefined();
         }
       }));
@@ -2168,7 +2174,7 @@ void RTCRtpSender::UpdateBaseConfig(BaseConfig* aConfig) {
   
   
   
-  aConfig->mTransmitting = mTransceiver->IsSending();
+  aConfig->mTransmitting = mTransceiver->IsSending() && mSenderTrack;
 }
 
 void RTCRtpSender::ApplyVideoConfig(const VideoConfig& aConfig) {

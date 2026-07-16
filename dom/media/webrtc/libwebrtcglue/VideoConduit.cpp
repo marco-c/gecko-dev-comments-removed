@@ -1288,7 +1288,31 @@ Maybe<webrtc::VideoSendStream::Stats> WebrtcVideoConduit::GetSenderStats()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mSendStream) {
-    return Nothing();
+    
+    
+    
+    if (mTransitionalSendStreamStats) {
+      return mTransitionalSendStreamStats;
+    }
+    
+    
+    
+    
+    
+    
+    
+    const auto& ssrcs = mSendStreamConfig.rtp.ssrcs;
+    if (ssrcs.empty()) {
+      return Nothing();
+    }
+    webrtc::VideoSendStream::Stats synthStats;
+    for (uint32_t ssrc : ssrcs) {
+      webrtc::VideoSendStream::StreamStats streamStats;
+      streamStats.type =
+          webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
+      synthStats.substreams[ssrc] = streamStats;
+    }
+    return Some(std::move(synthStats));
   }
   auto stats = mSendStream->GetStats();
   if (stats.substreams.empty()) {
