@@ -874,6 +874,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -955,11 +968,14 @@
 #      define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
 #      define MOZ_GLOBINIT \
         MOZ_RUNINIT __attribute__((annotate("moz_generated")))
+#      define MOZ_BINDING(direction, language, kind, symbol) \
+        __attribute__((annotate(#direction, #language, #kind, #symbol)))
 #    else
 #      define MOZ_UNANNOTATED
 #      define MOZ_ANNOTATED
 #      define MOZ_RUNINIT
 #      define MOZ_GLOBINIT
+#      define MOZ_BINDING(...)
 #    endif
 
 
@@ -993,6 +1009,7 @@
 #    define MOZ_STATIC_CLASS
 #    define MOZ_RUNINIT
 #    define MOZ_GLOBINIT
+#    define MOZ_BINDING(...)
 #    define MOZ_GLIBCXX_CONSTINIT
 #    define MOZ_RELEASE_CONSTINIT
 #    define MOZ_STATIC_LOCAL_CLASS
