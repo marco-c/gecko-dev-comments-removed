@@ -22301,8 +22301,6 @@ const SET_WALLPAPER_CHECK_ICON = "chrome://global/skin/icons/check.svg";
 
 
 
-
-
 const PictureOfTheDay_PictureOfTheDay = ({
   dispatch,
   handleUserInteraction,
@@ -22503,18 +22501,77 @@ const PictureOfTheDay_PictureOfTheDay = ({
 
   
   
-  const renderSourceText = (className, {
-    l10nId,
-    text
-  } = {}) => canOpenSource ? external_React_default().createElement("button", {
-    type: "button",
-    className: `${className} picture-of-the-day-source-link`,
-    "data-l10n-id": l10nId,
-    onClick: handleOpenSource
-  }, text) : external_React_default().createElement("p", {
-    className: className,
-    "data-l10n-id": l10nId
-  }, text);
+  const canOpenLicense = Boolean(pictureData.licenseUrl);
+  const handleOpenLicense = () => {
+    if (!pictureData.licenseUrl) {
+      return;
+    }
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.OPEN_LINK,
+        data: {
+          url: pictureData.licenseUrl,
+          where: "tab"
+        }
+      }));
+      recordUserAction("open_license", {
+        source: "widget"
+      });
+      handleInteraction();
+    });
+  };
+
+  
+  
+  
+  const renderAttribution = () => {
+    const parts = [];
+    if (pictureData.author) {
+      parts.push(external_React_default().createElement("span", {
+        key: "author",
+        className: "picture-of-the-day-attribution-author",
+        "data-l10n-id": "newtab-picture-attribution-author",
+        "data-l10n-args": JSON.stringify({
+          author: pictureData.author
+        })
+      }));
+    }
+    if (canOpenSource) {
+      parts.push(external_React_default().createElement("button", {
+        key: "source",
+        type: "button",
+        className: "picture-of-the-day-attribution-link picture-of-the-day-source-link",
+        "data-l10n-id": "newtab-picture-attribution-source-link",
+        onClick: handleOpenSource
+      }));
+    }
+    if (pictureData.licenseLabel) {
+      parts.push(canOpenLicense ? external_React_default().createElement("button", {
+        key: "license",
+        type: "button",
+        className: "picture-of-the-day-attribution-link picture-of-the-day-source-link",
+        "data-l10n-id": "newtab-picture-attribution-license",
+        "data-l10n-args": JSON.stringify({
+          license: pictureData.licenseLabel
+        }),
+        onClick: handleOpenLicense
+      }, pictureData.licenseLabel) : external_React_default().createElement("span", {
+        key: "license",
+        className: "picture-of-the-day-attribution-item"
+      }, pictureData.licenseLabel));
+    }
+    if (!parts.length) {
+      return null;
+    }
+    return external_React_default().createElement("p", {
+      className: "picture-of-the-day-attribution"
+    }, parts.map((part, i) => external_React_default().createElement((external_React_default()).Fragment, {
+      key: part.key
+    }, i > 0 ? external_React_default().createElement("span", {
+      className: "picture-of-the-day-attribution-sep",
+      "aria-hidden": "true"
+    }, " / ") : null, part)));
+  };
   const pictureImage = external_React_default().createElement("img", {
     className: "picture-of-the-day-image",
     src: pictureData.imageUrl,
@@ -22534,9 +22591,12 @@ const PictureOfTheDay_PictureOfTheDay = ({
     }
   }, external_React_default().createElement("div", {
     className: "picture-of-the-day-toolbar"
-  }, hasPicture ? renderSourceText("picture-of-the-day-source", {
-    l10nId: "newtab-picture-header"
-  }) : null, external_React_default().createElement("div", {
+  }, hasPicture ? external_React_default().createElement("div", {
+    className: "picture-of-the-day-heading"
+  }, external_React_default().createElement("p", {
+    className: "picture-of-the-day-source",
+    "data-l10n-id": "newtab-picture-header-main"
+  }), renderAttribution()) : null, external_React_default().createElement("div", {
     className: "picture-of-the-day-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "picture-of-the-day-context-menu-button",
@@ -22586,9 +22646,9 @@ const PictureOfTheDay_PictureOfTheDay = ({
     onClick: handleOpenSource
   }, pictureImage) : pictureImage, external_React_default().createElement("div", {
     className: "picture-of-the-day-details"
-  }, pictureData.description ? renderSourceText("picture-of-the-day-description", {
-    text: pictureData.description
-  }) : null, canSetWallpaper ? external_React_default().createElement("moz-button", {
+  }, pictureData.description ? external_React_default().createElement("p", {
+    className: "picture-of-the-day-description"
+  }, pictureData.description) : null, canSetWallpaper ? external_React_default().createElement("moz-button", {
     className: `picture-of-the-day-set-wallpaper${justSet || isSetAsWallpaper ? " is-collapsed" : ""}${suppressExpand ? " no-expand" : ""}`,
     type: "primary",
     iconSrc: justSet ? SET_WALLPAPER_CHECK_ICON : SET_WALLPAPER_ICON,
