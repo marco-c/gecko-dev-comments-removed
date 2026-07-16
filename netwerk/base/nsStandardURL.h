@@ -335,7 +335,9 @@ class nsStandardURL : public nsIFileURL,
   void SanityCheck();
 
   
-  bool IsValid();
+  
+  
+  bool IsValid(uint32_t* aFailReason = nullptr);
 
   
   static Atomic<bool, Relaxed> gInitialized;
