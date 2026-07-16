@@ -5,6 +5,7 @@
 
 
 use crate::derives::*;
+#[cfg(feature = "gecko")]
 use crate::gecko_bindings::bindings;
 use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::animated::text::TextDecorationInset as AnimatedTextDecorationInset;
@@ -51,9 +52,19 @@ impl ToAnimatedValue for TextDecorationInset {
                     .clone_font_size()
                     .computed_size()
                     .px();
-                let auto_length = CSSPixelLength::new(unsafe {
-                    bindings::Gecko_CalcAutoDecorationInset(font_size_px)
-                });
+                #[cfg(feature = "gecko")]
+                let auto_length = unsafe { bindings::Gecko_CalcAutoDecorationInset(font_size_px) };
+                #[cfg(feature = "servo")]
+                let auto_length = {
+                    
+                    
+                    let auto_inset_factor = 1.0 / 12.5;
+
+                    
+                    
+                    (font_size_px * auto_inset_factor).max(1.0)
+                };
+                let auto_length = CSSPixelLength::new(auto_length);
                 Self::AnimatedValue {
                     start: LengthPercentage::new_length(auto_length),
                     end: LengthPercentage::new_length(auto_length),
