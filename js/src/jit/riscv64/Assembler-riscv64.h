@@ -102,7 +102,7 @@ static constexpr uint32_t JitStackAlignment = 16;
 static constexpr uint32_t JitStackValueAlignment =
     JitStackAlignment / sizeof(Value);
 static const uint32_t WasmStackAlignment = 16;
-static const uint32_t WasmTrapInstructionLength = 2 * kInstrSize;
+static const uint32_t WasmTrapInstructionLength = kInstrSize;
 
 
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;

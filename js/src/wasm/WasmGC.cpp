@@ -442,8 +442,7 @@ bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
            ((insn[-1] & kBaseOpcodeMask) == JAL) ||               
            ((insn[-2] & kBaseOpcodeMask) == JAL &&
             insn[-1] == 0x00000013 ) ||  
-           (insn[-1] == 0x00100073 &&
-            (insn[-2] & kITypeMask) == RO_CSRRWI)));  
+           (insn[-1] == 0xc0035073)));  
 #  else
   MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
 #  endif
