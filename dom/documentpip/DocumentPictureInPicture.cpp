@@ -139,6 +139,9 @@ static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
       nsWindowWatcher::CreateLoadState(uri, aParent);
 
   
+  loadState->SetTriggeringPrincipal(aParent->GetExtantDoc()->NodePrincipal());
+
+  
   
   nsPrintfCString features("pictureinpicture,top=%d,left=%d,width=%d,height=%d",
                            aExtent.y, aExtent.x, aExtent.width, aExtent.height);
@@ -246,14 +249,7 @@ CSSIntRect DocumentPictureInPicture::DetermineExtent(
 }
 
 already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
-    const DocumentPictureInPictureOptions& aOptions,
-    nsIPrincipal& aCallerPrincipal, ErrorResult& aRv) {
-  if (aCallerPrincipal.GetIsExpandedPrincipal()) {
-    aRv.ThrowNotAllowedError(
-        "Document Picture-in-Picture is not available in isolated world");
-    return nullptr;
-  }
-
+    const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv) {
   
   RefPtr<nsPIDOMWindowInner> ownerWin = GetOwnerWindow();
   if (!ownerWin || !ownerWin->IsFullyActive()) {

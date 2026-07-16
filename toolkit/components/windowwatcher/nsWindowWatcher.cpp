@@ -915,7 +915,20 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       
       
       
-      if (parentBC) {
+
+      const bool isDocumentPiP =
+          (chromeFlags & nsIWebBrowserChrome::CHROME_DOCUMENT_PIP);
+      MOZ_ASSERT_IF(
+          isDocumentPiP,
+          parentDoc && parentDoc->NodePrincipal()->GetIsContentPrincipal());
+
+      if (isDocumentPiP &&
+          parentDoc->NodePrincipal()->GetIsContentPrincipal()) {
+        
+        
+        openWindowInfo->mPrincipalToInheritForAboutBlank =
+            parentDoc->NodePrincipal();
+      } else if (parentBC) {
         openWindowInfo->mPrincipalToInheritForAboutBlank =
             NullPrincipal::Create(parentBC->OriginAttributesRef());
       } else {
