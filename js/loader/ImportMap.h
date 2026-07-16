@@ -45,17 +45,16 @@ class ReportWarningHelper {
 
 
 
-using SpecifierMap =
-    std::map<nsString, nsCOMPtr<nsIURI>, std::greater<nsString>>;
+using SpecifierMap = std::map<nsString, nsCOMPtr<nsIURI>, std::greater<>>;
 
 
 
-using ScopeMap = std::map<nsCString, mozilla::UniquePtr<SpecifierMap>,
-                          std::greater<nsCString>>;
+using ScopeMap =
+    std::map<nsCString, mozilla::UniquePtr<SpecifierMap>, std::greater<>>;
 
 
 
-using IntegrityMap = std::map<nsCString, nsString, std::greater<nsCString>>;
+using IntegrityMap = std::map<nsCString, nsString, std::greater<>>;
 
 
 

@@ -72,24 +72,41 @@ struct YuvLumaCoeffs final {
   static constexpr auto Gbr() { return YuvLumaCoeffs{.r = 0, .g = 1, .b = 0}; }
 };
 
-struct PiecewiseGammaDesc final {
+enum TransferFunctionDescType {
+  PiecewiseGamma,
+  HLG,
+  PQ,
+};
+
+
+
+
+static const float Rec2100ReferenceDisplayWhite = 203.0f;
+
+
+
+
+
+struct TransferFunctionDesc final {
   
   
 
   
+  TransferFunctionDescType tfType = TransferFunctionDescType::PiecewiseGamma;
   float a = 1.055;
   float b = 0.04045 / 12.92;
   float g = 2.4;
   float k = 12.92;
 
-  auto Members() const { return std::tie(a, b, g, k); }
-  MOZ_MIXIN_DERIVE_CMP_OPS_BY_MEMBERS(PiecewiseGammaDesc)
+  auto Members() const { return std::tie(tfType, a, b, g, k); }
+  MOZ_MIXIN_DERIVE_CMP_OPS_BY_MEMBERS(TransferFunctionDesc)
 
-  static constexpr auto Srgb() { return PiecewiseGammaDesc(); }
+  static constexpr auto Srgb() { return TransferFunctionDesc(); }
   static constexpr auto DisplayP3() { return Srgb(); }
 
   static constexpr auto Rec709() {
-    return PiecewiseGammaDesc{
+    return TransferFunctionDesc{
+        .tfType = TransferFunctionDescType::PiecewiseGamma,
         .a = 1.099,
         .b = 0.018,
         .g = 1.0 / 0.45,  
@@ -98,11 +115,42 @@ struct PiecewiseGammaDesc final {
   }
   
   static constexpr auto Rec2020_12bit() {
-    return PiecewiseGammaDesc{
+    return TransferFunctionDesc{
+        .tfType = TransferFunctionDescType::PiecewiseGamma,
         .a = 1.0993,
         .b = 0.0181,
         .g = 1.0 / 0.45,  
         .k = 4.5,
+    };
+  }
+
+  static constexpr auto Rec2100_HLG() {
+    return TransferFunctionDesc{
+        .tfType = TransferFunctionDescType::HLG,
+        .a = 0.17883277f,
+        .b = 0.28466892f,
+        .g = 0.55991073f,
+        .k = 0.0f,
+    };
+  }
+
+  static constexpr auto Rec2100_PQ() {
+    return TransferFunctionDesc{
+        .tfType = TransferFunctionDescType::PQ,
+        .a = 0.0f,
+        .b = 0.0f,
+        .g = 0.0f,
+        .k = 0.0f,
+    };
+  }
+
+  static constexpr auto Linear() {
+    return TransferFunctionDesc{
+        .tfType = TransferFunctionDescType::PiecewiseGamma,
+        .a = 1.0f,
+        .b = 0.0f,
+        .g = 1.0f,
+        .k = 1.0f,
     };
   }
 };
@@ -202,7 +250,7 @@ struct YuvDesc final {
 
 struct ColorspaceDesc final {
   Chromaticities chrom;
-  std::optional<PiecewiseGammaDesc> tf;
+  std::optional<TransferFunctionDesc> tf;
   std::optional<YuvDesc> yuv;
 
   auto Members() const { return std::tie(chrom, tf, yuv); }
@@ -218,7 +266,7 @@ struct ColorspaceDesc final {
   struct std::hash<X> : mozilla::StdHashMembers<X> {};
 
 _(mozilla::color::YuvLumaCoeffs)
-_(mozilla::color::PiecewiseGammaDesc)
+_(mozilla::color::TransferFunctionDesc)
 _(mozilla::color::YcbcrDesc)
 _(mozilla::color::Chromaticities)
 _(mozilla::color::YuvDesc)
@@ -727,9 +775,9 @@ struct ColorspaceTransform final {
   ColorspaceDesc srcSpace;
   ColorspaceDesc dstSpace;
   mat4 srcRgbTfFromSrc;
-  std::optional<PiecewiseGammaDesc> srcTf;
+  std::optional<TransferFunctionDesc> srcTf;
   mat3 dstRgbLinFromSrcRgbLin;
-  std::optional<PiecewiseGammaDesc> dstTf;
+  std::optional<TransferFunctionDesc> dstTf;
   mat4 dstFromDstRgbTf;
 
   static ColorspaceTransform Create(const ColorspaceDesc& src,
@@ -946,7 +994,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
   static constexpr bool INFER_HEAD_TAIL_FROM_BODY_EDGE = false;
   
   
-  if (!IsMonotonic(head, std::less<float>{})) {
+  if (!IsMonotonic(head, std::less<>{})) {
     if (!INFER_HEAD_TAIL_FROM_BODY_EDGE) {
       LinearFill(head,
                  {
@@ -960,7 +1008,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
                        });
     }
   }
-  if (!IsMonotonic(tail, std::less<float>{})) {
+  if (!IsMonotonic(tail, std::less<>{})) {
     if (!INFER_HEAD_TAIL_FROM_BODY_EDGE) {
       LinearFill(tail, {
                            {-0.5, (*(tail_begin - 1) + *tail.begin()) / 2},
@@ -974,7 +1022,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
     }
   }
   
-  MOZ_ASSERT(IsMonotonic(vals, std::less<float>{}));
+  MOZ_ASSERT(IsMonotonic(vals, std::less<>{}));
 
   
   static constexpr bool RESCALE = false;
@@ -993,14 +1041,14 @@ static void InvertLut(const In& lut, Out* const out_invertedLut) {
   MOZ_ASSERT(IsMonotonic(lut));
   auto plut = &lut;
   auto vec = std::vector<float>{};
-  if (!IsMonotonic(lut, std::less<float>{})) {
+  if (!IsMonotonic(lut, std::less<>{})) {
     
     vec.assign(lut.begin(), lut.end());
     DequantizeMonotonic(vec);
     plut = &vec;
     
     
-    MOZ_ASSERT(IsMonotonic(*plut, std::less<float>{}));
+    MOZ_ASSERT(IsMonotonic(*plut, std::less<>{}));
   }
   MOZ_ASSERT(plut->size() >= 2);
 
@@ -1012,7 +1060,7 @@ static void InvertLut(const In& lut, Out* const out_invertedLut) {
   }
 
   MOZ_ASSERT(IsMonotonic(ret));
-  MOZ_ASSERT(IsMonotonic(ret, std::less<float>{}));
+  MOZ_ASSERT(IsMonotonic(ret, std::less<>{}));
 }
 
 
