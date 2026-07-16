@@ -514,7 +514,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   return FilenameTypeAndDetails(kOther, Nothing());
 }
 
-#if defined(EARLY_BETA_OR_EARLIER)
+#ifdef NIGHTLY_BUILD
 
 
 void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
