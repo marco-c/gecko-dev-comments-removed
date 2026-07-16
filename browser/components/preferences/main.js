@@ -363,11 +363,9 @@ Preferences.addSetting({
   pref: "browser.shell.checkDefaultBrowser",
   setup: emitChange => {
     if (!DefaultBrowserHelper.canCheck) {
-      return;
+      return undefined;
     }
-    DefaultBrowserHelper.pollForDefaultChanges(emitChange);
-    
-    return () => DefaultBrowserHelper.clearPollingForDefaultChanges();
+    return DefaultBrowserHelper.pollForDefaultChanges(emitChange);
   },
   
 
