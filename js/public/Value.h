@@ -580,6 +580,9 @@ class Value {
 
   
   
+  
+  
+  
   void setDoubleAssumeCanonicalNaN(double d) {
 #if defined(JS_NONCANONICAL_HARDWARE_NAN)
     d = CanonicalizeNaN(d);
@@ -705,6 +708,9 @@ class Value {
     }
   }
 
+  
+  
+  
   
   
   void setNumberAssumeCanonicalNaN(double d) {

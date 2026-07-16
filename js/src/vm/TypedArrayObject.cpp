@@ -6132,16 +6132,9 @@ bool TypedArrayObjectTemplate<float16>::getElementPure(TypedArrayObject* tarray,
                                                        size_t index,
                                                        Value* vp) {
   float16 f16 = getIndex(tarray, index);
+
   
-
-
-
-
-
-
-
-
-
+  
   *vp = DoubleValue(static_cast<double>(f16));
   return true;
 }
@@ -6153,15 +6146,7 @@ bool TypedArrayObjectTemplate<float>::getElementPure(TypedArrayObject* tarray,
   double dval = val;
 
   
-
-
-
-
-
-
-
-
-
+  
   *vp = DoubleValue(dval);
   return true;
 }
@@ -6172,12 +6157,7 @@ bool TypedArrayObjectTemplate<double>::getElementPure(TypedArrayObject* tarray,
   double val = getIndex(tarray, index);
 
   
-
-
-
-
-
-
+  
   *vp = DoubleValue(val);
   return true;
 }
