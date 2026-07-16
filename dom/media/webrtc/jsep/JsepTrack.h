@@ -100,7 +100,8 @@ class JsepTrack {
 
   void ClearStreamIds() { mStreamIds.clear(); }
 
-  void RecvTrackSetRemote(const Sdp& aSdp, const SdpMediaSection& aMsection);
+  void RecvTrackSetRemote(const Sdp& aSdp, const SdpMediaSection& aMsection,
+                          const std::vector<uint32_t>& aOwnSendSsrcs = {});
   void RecvTrackSetLocal(const SdpMediaSection& aMsection);
 
   
@@ -302,6 +303,11 @@ class JsepTrack {
   
   std::vector<std::string> mRids;
   UniquePtr<JsepTrackNegotiatedDetails> mNegotiatedDetails;
+  
+  
+  
+  
+  
   
   std::vector<uint32_t> mSsrcs;
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;

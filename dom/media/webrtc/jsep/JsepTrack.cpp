@@ -175,7 +175,8 @@ void JsepTrack::SetMaxEncodings(size_t aMax) {
 }
 
 void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
-                                   const SdpMediaSection& aMsection) {
+                                   const SdpMediaSection& aMsection,
+                                   const std::vector<uint32_t>& aOwnSendSsrcs) {
   mInHaveRemote = true;
   if (mDirection != sdp::kRecv) {
     MOZ_MTLOG(ML_ERROR, "RecvTrackSetRemote called on non-receive track");
@@ -206,24 +207,22 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
   SetCNAME(helper.GetCNAME(aMsection));
   mSsrcs.clear();
   
-  
-  
-  std::set<uint32_t> ssrcsSet;
+  mSsrcToRtxSsrc.clear();
+
   if (aMsection.GetAttributeList().HasAttribute(SdpAttribute::kSsrcAttribute)) {
+    std::set<uint32_t> seen;
     for (const auto& s : aMsection.GetAttributeList().GetSsrc().mSsrcs) {
-      if (ssrcsSet.find(s.ssrc) != ssrcsSet.end()) {
-        continue;
-      }
-      ssrcsSet.insert(s.ssrc);
       
-      mSsrcs.push_back(s.ssrc);
+      
+      if (seen.insert(s.ssrc).second) {
+        mSsrcs.push_back(s.ssrc);
+      }
     }
   }
 
   
   
   
-  mSsrcToRtxSsrc.clear();
   if (aMsection.GetAttributeList().HasAttribute(
           SdpAttribute::kSsrcGroupAttribute)) {
     for (const auto& group :
@@ -242,6 +241,17 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
           mSsrcs.erase(res, mSsrcs.end());
         }
       }
+    }
+  }
+
+  
+  
+  
+  for (uint32_t sendSsrc : aOwnSendSsrcs) {
+    auto it = std::find(mSsrcs.begin(), mSsrcs.end(), sendSsrc);
+    if (it != mSsrcs.end()) {
+      mSsrcToRtxSsrc.erase(sendSsrc);
+      mSsrcs.erase(it);
     }
   }
 }
