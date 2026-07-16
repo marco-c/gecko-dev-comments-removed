@@ -6632,6 +6632,8 @@ class Dedupe {
 const TOP_SITES_DEFAULT_ROWS = 1;
 const TOP_SITES_MAX_SITES_PER_ROW = 8;
 
+const TOP_SITES_MAX_ROWS = 4;
+
 ;
 
 
@@ -6641,6 +6643,17 @@ const TOP_SITES_MAX_SITES_PER_ROW = 8;
 
 
 
+
+
+
+
+
+
+
+
+
+const Reducers_sys_TOP_SITES_MAX_ROWS =
+  TOP_SITES_MAX_ROWS ?? 4;
 
 const dedupe = new Dedupe(site => site && site.url);
 
@@ -8341,345 +8354,7 @@ TopSiteImpressionWrapper.defaultProps = {
   tile: null
 };
 ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-function MessageWrapper({
-  children,
-  dispatch,
-  hiddenOverride,
-  onDismiss,
-  wrapperClassName
-}) {
-  const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
-  const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
-  const [tabIsVisible, setTabIsVisible] = (0,external_React_namespaceObject.useState)(() => typeof document !== "undefined" && document.visibilityState === "visible");
-  const [hasRun, setHasRun] = (0,external_React_namespaceObject.useState)();
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    setIsIntersecting(true);
-    
-    if (tabIsVisible && message.messageData.id && !hasRun) {
-      setHasRun(true);
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.MESSAGE_IMPRESSION,
-        data: message.messageData
-      }));
-    }
-  }, [dispatch, message, tabIsVisible, hasRun]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    
-    if (message.isVisible && tabIsVisible) {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
-        data: true
-      }));
-    }
-  }, [message, dispatch, tabIsVisible]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const handleVisibilityChange = () => {
-      setTabIsVisible(document.visibilityState === "visible");
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-  const ref = useIntersectionObserver(handleIntersection);
-  const handleClose = (0,external_React_namespaceObject.useCallback)(() => {
-    const action = {
-      type: actionTypes.MESSAGE_TOGGLE_VISIBILITY,
-      data: false 
-    };
-    if (message.portID) {
-      dispatch(actionCreators.OnlyToOneContent(action, message.portID));
-    } else {
-      dispatch(actionCreators.AlsoToMain(action));
-    }
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
-      data: false
-    }));
-    onDismiss?.();
-  }, [dispatch, message, onDismiss]);
-  function handleDismiss() {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_DISMISS,
-        data: {
-          message: message.messageData
-        }
-      }));
-    }
-    handleClose();
-  }
-  function handleBlock() {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_BLOCK,
-        data: id
-      }));
-    }
-  }
-  function handleClick(elementId) {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_CLICK,
-        data: {
-          message: message.messageData,
-          source: elementId || ""
-        }
-      }));
-    }
-  }
-  if (!message || !hiddenOverride && !message.isVisible) {
-    return null;
-  }
-
-  
-  return external_React_default().createElement("div", {
-    ref: el => {
-      ref.current = [el];
-    },
-    className: wrapperClassName ? `message-wrapper ${wrapperClassName}` : "message-wrapper"
-  }, external_React_default().cloneElement(children, {
-    isIntersecting,
-    handleDismiss,
-    handleClick,
-    handleBlock,
-    handleClose,
-    dispatch
-  }));
-}
-
-;
-
-
-
-
-
-
-function FeatureHighlight({
-  message,
-  icon,
-  toggle,
-  arrowPosition = "",
-  position = "top-left",
-  verticalPosition = "",
-  title,
-  ariaLabel,
-  feature = "FEATURE_HIGHLIGHT_DEFAULT",
-  dispatch = () => {},
-  windowObj = __webpack_require__.g,
-  openedOverride = false,
-  showButtonIcon = true,
-  dismissCallback = () => {},
-  outsideClickCallback = () => {},
-  modalClassName = ""
-}) {
-  const [opened, setOpened] = (0,external_React_namespaceObject.useState)(openedOverride);
-  const ref = (0,external_React_namespaceObject.useRef)(null);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const handleOutsideClick = e => {
-      if (!ref?.current?.contains(e.target)) {
-        setOpened(false);
-        outsideClickCallback();
-      }
-    };
-    const handleKeyDown = e => {
-      if (e.key === "Escape") {
-        outsideClickCallback();
-      }
-    };
-    windowObj.document.addEventListener("click", handleOutsideClick);
-    windowObj.document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      windowObj.document.removeEventListener("click", handleOutsideClick);
-      windowObj.document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [windowObj, outsideClickCallback]);
-  const onToggleClick = (0,external_React_namespaceObject.useCallback)(() => {
-    if (!opened) {
-      dispatch(actionCreators.DiscoveryStreamUserEvent({
-        event: "CLICK",
-        source: "FEATURE_HIGHLIGHT",
-        value: {
-          feature
-        }
-      }));
-    }
-    setOpened(!opened);
-  }, [dispatch, feature, opened]);
-  const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
-    setOpened(false);
-    dismissCallback();
-  }, [dismissCallback]);
-  const hideButtonClass = showButtonIcon ? `` : `isHidden`;
-  const openedClassname = opened ? `opened` : `closed`;
-  return external_React_default().createElement("div", {
-    ref: ref,
-    className: `feature-highlight ${verticalPosition}`
-  }, external_React_default().createElement("button", {
-    title: title,
-    "aria-haspopup": "true",
-    "aria-label": ariaLabel,
-    className: `toggle-button ${hideButtonClass}`,
-    onClick: onToggleClick
-  }, toggle), external_React_default().createElement("div", {
-    className: `feature-highlight-modal ${position} ${arrowPosition} ${modalClassName} ${openedClassname}`
-  }, external_React_default().createElement("div", {
-    className: "message-icon"
-  }, icon), external_React_default().createElement("div", {
-    className: "content-wrapper"
-  }, message), external_React_default().createElement("moz-button", {
-    type: "icon ghost",
-    size: "small",
-    "data-l10n-id": "feature-highlight-dismiss-button",
-    iconsrc: "chrome://global/skin/icons/close.svg",
-    onClick: onDismissClick,
-    onKeyDown: onDismissClick
-  })));
-}
-;
-
-
-
-
-
-
-function ShortcutFeatureHighlight({
-  dispatch,
-  feature,
-  handleBlock,
-  handleDismiss,
-  messageData,
-  position
-}) {
-  const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
-    handleDismiss();
-    handleBlock();
-  }, [handleDismiss, handleBlock]);
-  return external_React_default().createElement("div", {
-    className: `shortcut-feature-highlight ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`
-  }, external_React_default().createElement(FeatureHighlight, {
-    position: position,
-    feature: feature,
-    dispatch: dispatch,
-    message: external_React_default().createElement("div", {
-      className: "shortcut-feature-highlight-content"
-    }, external_React_default().createElement("picture", {
-      className: "follow-section-button-highlight-image"
-    }, external_React_default().createElement("source", {
-      srcSet: messageData.content?.darkModeImageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-shortcuts.svg",
-      media: "(prefers-color-scheme: dark)"
-    }), external_React_default().createElement("source", {
-      srcSet: messageData.content?.imageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-shortcuts.svg",
-      media: "(prefers-color-scheme: light)"
-    }), external_React_default().createElement("img", {
-      width: "320",
-      height: "195",
-      alt: ""
-    })), external_React_default().createElement("div", {
-      className: "shortcut-feature-highlight-copy"
-    }, messageData.content?.cardTitle ? external_React_default().createElement("p", {
-      className: "title"
-    }, messageData.content.cardTitle) : external_React_default().createElement("p", {
-      className: "title",
-      "data-l10n-id": "newtab-shortcuts-highlight-title"
-    }), messageData.content?.cardMessage ? external_React_default().createElement("p", {
-      className: "subtitle"
-    }, messageData.content.cardMessage) : external_React_default().createElement("p", {
-      className: "subtitle",
-      "data-l10n-id": "newtab-shortcuts-highlight-subtitle"
-    }))),
-    openedOverride: true,
-    showButtonIcon: false,
-    dismissCallback: onDismiss,
-    outsideClickCallback: handleDismiss
-  }));
-}
-;
-
-
-
-
-const ASROUTER_NEWTAB_MESSAGE_POSITIONS = Object.freeze({
-  ABOVE_TOPSITES: "ABOVE_TOPSITES",
-  ABOVE_WIDGETS: "ABOVE_WIDGETS",
-  ABOVE_CONTENT_FEED: "ABOVE_CONTENT_FEED",
-});
-
-
-
-
-
-
-
-
-
-function shouldShowOMCHighlight(messagesProp, componentId) {
-  const messageData = messagesProp?.messageData;
-  const isVisible = messagesProp?.isVisible;
-  if (!messageData || Object.keys(messageData).length === 0 || !isVisible) {
-    return false;
-  }
-  return messageData?.content?.messageType === componentId;
-}
-
-
-
-
-
-
-
-
-
-
-
-function shouldShowASRouterNewTabMessage(
-  messagesProps,
-  componentId,
-  currentPosition
-) {
-  const messageData = messagesProps?.messageData;
-  if (!messageData) {
-    return false;
-  }
-
-  const configuredPosition =
-    messageData.content?.position ??
-    ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES;
-
-  if (configuredPosition === currentPosition) {
-    return shouldShowOMCHighlight(messagesProps, componentId);
-  }
-
-  return false;
-}
-
-;
 function TopSite_extends() { return TopSite_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSite_extends.apply(null, arguments); }
-
-
-
 
 
 
@@ -8752,7 +8427,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     if (this.props.groupedPinsEnabled) {
       return !!this.props.link.isPinned;
     }
-    return this.dragged || !isSponsored(this.props.link) && !this.props.isAddButton;
+    return this.dragged || !isSponsored(this.props.link);
   }
   onDragEvent(event) {
     switch (event.type) {
@@ -8822,7 +8497,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     
     
     
-    if (event.key === "Enter" && (this.props.link.searchTopSite || this.props.isAddButton)) {
+    if (event.key === "Enter" && this.props.link.searchTopSite) {
       this.props.onClick(event);
     }
   }
@@ -8918,7 +8593,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       link,
       onClick,
       title,
-      isAddButton,
       visibleTopSites
     } = this.props;
     const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}${link.isCollapsed ? " collapsed" : ""}${link.searchTopSite ? " search-shortcut" : ""}`;
@@ -8930,12 +8604,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       imageClassName,
       selectedColor
     } = this.calculateStyle();
-    const addButtonLabell10n = {
-      "data-l10n-id": "newtab-topsites-add-shortcut-label"
-    };
-    const addButtonTitlel10n = {
-      "data-l10n-id": "newtab-topsites-add-shortcut-title"
-    };
     const addPinnedTitlel10n = {
       "data-l10n-id": "topsite-label-pinned",
       "data-l10n-args": JSON.stringify({
@@ -9029,11 +8697,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       draggable: true,
       "data-is-sponsored-link": !!link.sponsored_tile_id,
       onFocus: this.props.onFocus,
-      "aria-label": link.isPinned ? undefined : title
-    }, isAddButton && {
-      ...addButtonTitlel10n
-    }, !isAddButton && {
-      title
+      "aria-label": link.isPinned ? undefined : title,
+      title: title
     }, link.isPinned && {
       ...addPinnedTitlel10n
     }, {
@@ -9060,25 +8725,15 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "icon icon-pin-small"
     }), external_React_default().createElement("div", {
       className: `title${link.isPinned ? " has-icon pinned" : ""}${link.type === SPOC_TYPE || link.show_sponsored_label ? " sponsored" : ""}`
-    }, external_React_default().createElement("span", TopSite_extends({
+    }, external_React_default().createElement("span", {
       className: "title-label",
       dir: "auto"
-    }, isAddButton && {
-      ...addButtonLabell10n
-    }), link.searchTopSite && external_React_default().createElement("div", {
+    }, link.searchTopSite && external_React_default().createElement("div", {
       className: "top-site-icon search-topsite"
     }), title), external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
-    }))), isAddButton && shouldShowOMCHighlight(this.props.Messages, "ShortcutHighlight") && external_React_default().createElement(MessageWrapper, {
-      dispatch: this.props.dispatch,
-      onClick: e => e.stopPropagation()
-    }, external_React_default().createElement(ShortcutFeatureHighlight, {
-      dispatch: this.props.dispatch,
-      feature: "FEATURE_SHORTCUT_HIGHLIGHT",
-      position: "inset-block-end inset-inline-start",
-      messageData: this.props.Messages?.messageData
-    })), children, impressionStats));
+    }))), children, impressionStats), this.props.addButton);
   }
 }
 TopSiteLink.defaultProps = {
@@ -9316,14 +8971,29 @@ class TopSiteAddButton extends (external_React_default()).PureComponent {
     });
   }
   render() {
-    return external_React_default().createElement(TopSiteLink, TopSite_extends({}, this.props, {
-      isAddButton: true,
-      className: `add-button ${this.props.className || ""}`,
-      onClick: this.onEditButtonClick,
-      setPref: this.props.setPref,
-      isDraggable: false,
-      tabIndex: this.props.tabIndex
+    
+    
+    const button = external_React_default().createElement("moz-button", TopSite_extends({
+      type: "primary",
+      className: "add-button"
+    }, this.props.inGrid && {
+      size: "large"
+    }, {
+      iconsrc: "chrome://global/skin/icons/plus.svg",
+      "data-l10n-id": "newtab-topsites-add-shortcut-title",
+      onClick: this.onEditButtonClick
     }));
+    if (this.props.inGrid) {
+      return external_React_default().createElement("li", {
+        className: `top-site-outer add-button-tile ${this.props.className ? `${this.props.className}` : ""}`
+      }, button);
+    }
+
+    
+    
+    return external_React_default().createElement("div", {
+      className: "add-button-hidden"
+    }, button);
   }
 }
 class TopSitePlaceholder extends (external_React_default()).PureComponent {
@@ -9410,6 +9080,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       props
     } = this;
     const topSites = this.props.sites;
+    const maxSitesPerRow = props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW;
+    
+    
+    const tileCount = topSites.filter(site => site && !site.isAddButton).length;
+    const rowFull = tileCount > 0 && tileCount % maxSitesPerRow === 0;
     const topSitesUI = [];
     const commonProps = {
       onDragEvent: this.props.onDragEvent,
@@ -9482,20 +9157,28 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           }, restSlotProps, commonProps));
         }
       } else if (topSites[i]?.isAddButton) {
-        topSiteLink = external_React_default().createElement(TopSiteAddButton, TopSite_extends({
-          key: slotKey
-        }, restSlotProps, commonProps, {
-          setRef: i === this.state.focusedIndex ? el => {
-            this.focusedRef = el;
-          } : () => {},
-          tabIndex: i === this.state.focusedIndex ? 0 : -1,
-          onFocus: () => {
-            this.onTopsiteFocus(i);
-          },
-          Messages: this.props.Messages,
-          visibleTopSites: this.props.visibleTopSites
-        }));
+        
+        
+        
+        if (!rowFull) {
+          topSiteLink = external_React_default().createElement(TopSiteAddButton, {
+            inGrid: true,
+            className: slotProps.className,
+            key: slotKey,
+            index: i,
+            dispatch: props.dispatch
+          });
+        }
       } else {
+        
+        
+        let addButton = null;
+        if (topSites[i + 1]?.isAddButton && rowFull) {
+          addButton = external_React_default().createElement(TopSiteAddButton, {
+            index: i + 1,
+            dispatch: props.dispatch
+          });
+        }
         topSiteLink = external_React_default().createElement(TopSite, TopSite_extends({
           key: slotKey,
           link: link,
@@ -9510,7 +9193,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           onFocus: () => {
             this.onTopsiteFocus(i);
           },
-          visibleTopSites: this.props.visibleTopSites
+          visibleTopSites: this.props.visibleTopSites,
+          addButton: addButton
         }));
       }
 
@@ -9543,7 +9227,6 @@ class _TopSiteList extends (external_React_default()).PureComponent {
 }
 const TopSiteList = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   App: state.App,
-  Messages: state.Messages,
   Prefs: state.Prefs
 }))(_TopSiteList);
 ;
@@ -9990,7 +9673,9 @@ function buildTopSitesList(rows, topSitesRows, maxSitesPerRow) {
     }
   }
   if (addButtonIndex === -1) {
-    if (targetPosition < topSites.length) {
+    
+    
+    if (targetPosition < topSites.length || topSitesRows < Reducers_sys_TOP_SITES_MAX_ROWS) {
       topSites[targetPosition] = {
         isAddButton: true
       };
@@ -11356,6 +11041,65 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
 
 
+const ASROUTER_NEWTAB_MESSAGE_POSITIONS = Object.freeze({
+  ABOVE_TOPSITES: "ABOVE_TOPSITES",
+  ABOVE_WIDGETS: "ABOVE_WIDGETS",
+  ABOVE_CONTENT_FEED: "ABOVE_CONTENT_FEED",
+});
+
+
+
+
+
+
+
+
+
+function shouldShowOMCHighlight(messagesProp, componentId) {
+  const messageData = messagesProp?.messageData;
+  const isVisible = messagesProp?.isVisible;
+  if (!messageData || Object.keys(messageData).length === 0 || !isVisible) {
+    return false;
+  }
+  return messageData?.content?.messageType === componentId;
+}
+
+
+
+
+
+
+
+
+
+
+
+function shouldShowASRouterNewTabMessage(
+  messagesProps,
+  componentId,
+  currentPosition
+) {
+  const messageData = messagesProps?.messageData;
+  if (!messageData) {
+    return false;
+  }
+
+  const configuredPosition =
+    messageData.content?.position ??
+    ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES;
+
+  if (configuredPosition === currentPosition) {
+    return shouldShowOMCHighlight(messagesProps, componentId);
+  }
+
+  return false;
+}
+
+;
+
+
+
+
 
 
 
@@ -11861,6 +11605,94 @@ const PersonalizedCard = ({
 
 
 
+function FeatureHighlight({
+  message,
+  icon,
+  toggle,
+  arrowPosition = "",
+  position = "top-left",
+  verticalPosition = "",
+  title,
+  ariaLabel,
+  feature = "FEATURE_HIGHLIGHT_DEFAULT",
+  dispatch = () => {},
+  windowObj = __webpack_require__.g,
+  openedOverride = false,
+  showButtonIcon = true,
+  dismissCallback = () => {},
+  outsideClickCallback = () => {},
+  modalClassName = ""
+}) {
+  const [opened, setOpened] = (0,external_React_namespaceObject.useState)(openedOverride);
+  const ref = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const handleOutsideClick = e => {
+      if (!ref?.current?.contains(e.target)) {
+        setOpened(false);
+        outsideClickCallback();
+      }
+    };
+    const handleKeyDown = e => {
+      if (e.key === "Escape") {
+        outsideClickCallback();
+      }
+    };
+    windowObj.document.addEventListener("click", handleOutsideClick);
+    windowObj.document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      windowObj.document.removeEventListener("click", handleOutsideClick);
+      windowObj.document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [windowObj, outsideClickCallback]);
+  const onToggleClick = (0,external_React_namespaceObject.useCallback)(() => {
+    if (!opened) {
+      dispatch(actionCreators.DiscoveryStreamUserEvent({
+        event: "CLICK",
+        source: "FEATURE_HIGHLIGHT",
+        value: {
+          feature
+        }
+      }));
+    }
+    setOpened(!opened);
+  }, [dispatch, feature, opened]);
+  const onDismissClick = (0,external_React_namespaceObject.useCallback)(() => {
+    setOpened(false);
+    dismissCallback();
+  }, [dismissCallback]);
+  const hideButtonClass = showButtonIcon ? `` : `isHidden`;
+  const openedClassname = opened ? `opened` : `closed`;
+  return external_React_default().createElement("div", {
+    ref: ref,
+    className: `feature-highlight ${verticalPosition}`
+  }, external_React_default().createElement("button", {
+    title: title,
+    "aria-haspopup": "true",
+    "aria-label": ariaLabel,
+    className: `toggle-button ${hideButtonClass}`,
+    onClick: onToggleClick
+  }, toggle), external_React_default().createElement("div", {
+    className: `feature-highlight-modal ${position} ${arrowPosition} ${modalClassName} ${openedClassname}`
+  }, external_React_default().createElement("div", {
+    className: "message-icon"
+  }, icon), external_React_default().createElement("div", {
+    className: "content-wrapper"
+  }, message), external_React_default().createElement("moz-button", {
+    type: "icon ghost",
+    size: "small",
+    "data-l10n-id": "feature-highlight-dismiss-button",
+    iconsrc: "chrome://global/skin/icons/close.svg",
+    onClick: onDismissClick,
+    onKeyDown: onDismissClick
+  })));
+}
+;
+
+
+
+
+
+
 function FollowSectionButtonHighlight({
   arrowPosition,
   dispatch,
@@ -11916,6 +11748,136 @@ function FollowSectionButtonHighlight({
     outsideClickCallback: handleDismiss
   }));
 }
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MessageWrapper({
+  children,
+  dispatch,
+  hiddenOverride,
+  onDismiss,
+  wrapperClassName
+}) {
+  const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
+  const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
+  const [tabIsVisible, setTabIsVisible] = (0,external_React_namespaceObject.useState)(() => typeof document !== "undefined" && document.visibilityState === "visible");
+  const [hasRun, setHasRun] = (0,external_React_namespaceObject.useState)();
+  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
+    setIsIntersecting(true);
+    
+    if (tabIsVisible && message.messageData.id && !hasRun) {
+      setHasRun(true);
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.MESSAGE_IMPRESSION,
+        data: message.messageData
+      }));
+    }
+  }, [dispatch, message, tabIsVisible, hasRun]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    
+    if (message.isVisible && tabIsVisible) {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+        data: true
+      }));
+    }
+  }, [message, dispatch, tabIsVisible]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const handleVisibilityChange = () => {
+      setTabIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+  const ref = useIntersectionObserver(handleIntersection);
+  const handleClose = (0,external_React_namespaceObject.useCallback)(() => {
+    const action = {
+      type: actionTypes.MESSAGE_TOGGLE_VISIBILITY,
+      data: false 
+    };
+    if (message.portID) {
+      dispatch(actionCreators.OnlyToOneContent(action, message.portID));
+    } else {
+      dispatch(actionCreators.AlsoToMain(action));
+    }
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+      data: false
+    }));
+    onDismiss?.();
+  }, [dispatch, message, onDismiss]);
+  function handleDismiss() {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_DISMISS,
+        data: {
+          message: message.messageData
+        }
+      }));
+    }
+    handleClose();
+  }
+  function handleBlock() {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_BLOCK,
+        data: id
+      }));
+    }
+  }
+  function handleClick(elementId) {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_CLICK,
+        data: {
+          message: message.messageData,
+          source: elementId || ""
+        }
+      }));
+    }
+  }
+  if (!message || !hiddenOverride && !message.isVisible) {
+    return null;
+  }
+
+  
+  return external_React_default().createElement("div", {
+    ref: el => {
+      ref.current = [el];
+    },
+    className: wrapperClassName ? `message-wrapper ${wrapperClassName}` : "message-wrapper"
+  }, external_React_default().cloneElement(children, {
+    isIntersecting,
+    handleDismiss,
+    handleClick,
+    handleBlock,
+    handleClose,
+    dispatch
+  }));
+}
+
 ;
 
 
