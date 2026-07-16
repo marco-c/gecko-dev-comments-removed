@@ -465,7 +465,7 @@ class GypProcessor:
         
         
         os.environ.update(
-            CC=config.substs["CC"],
+            CC=mozshellutil.quote(*config.substs["CC"]),
             CFLAGS=mozshellutil.quote(*config.substs["CC_BASE_FLAGS"]),
         )
 
