@@ -10,6 +10,7 @@
 #include "nsSize.h"
 #include "nsXPCOM.h"
 #include "nsCOMPtr.h"
+#include "nsIContentInlines.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIFrame.h"
 #include "nsFrameLoaderOwner.h"
@@ -322,7 +323,14 @@ nsresult nsBaseDragSession::InvokeDragSession(
   
   PresShell::ClearMouseCapture();
 
-  if (mSessionIsSynthesizedForTests) {
+  
+  
+  
+  
+  
+  
+  
+  if (mSessionIsSynthesizedForTests && !mSessionIsAsyncSynthesizedForTests) {
     mDoingDrag = true;
     mDragAction = aActionType;
     mEffectAllowedForTests = aActionType;
@@ -451,6 +459,9 @@ nsresult nsBaseDragSession::InitWithImage(
     DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -529,6 +540,9 @@ nsresult nsBaseDragSession::InitWithRemoteImage(
     DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
   mHasImage = true;
@@ -591,6 +605,9 @@ nsresult nsBaseDragSession::InitWithSelection(
     uint32_t aActionType, DragEvent* aDragEvent, DataTransfer* aDataTransfer,
     nsINode* aTargetContent, bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
+  mSessionIsAsyncSynthesizedForTests =
+      aDragEvent &&
+      aDragEvent->WidgetEventPtr()->mFlags.mIsAsyncSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = aSelection;
   mHasImage = true;
@@ -780,6 +797,7 @@ nsresult nsBaseDragSession::EndDragSessionImpl(bool aDoneDrag,
 
   mDoingDrag = false;
   mSessionIsSynthesizedForTests = false;
+  mSessionIsAsyncSynthesizedForTests = false;
   mEffectAllowedForTests = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
   mEndingSession = false;
   mCanDrop = false;

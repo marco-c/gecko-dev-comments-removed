@@ -282,6 +282,13 @@ class nsBaseDragSession : public nsIDragSession {
 
   bool mIsDraggingTextInTextControl = false;
   bool mSessionIsSynthesizedForTests = false;
+  
+  
+  
+  
+  
+  
+  bool mSessionIsAsyncSynthesizedForTests = false;
 
   
   bool mEndingSession = false;

@@ -149,6 +149,11 @@ static const LayoutDeviceIntPoint kInvalidRefPoint =
     LayoutDeviceIntPoint(-1, -1);
 
 static uint32_t gMouseOrKeyboardEventCounter = 0;
+
+
+
+
+static uint32_t gNonSynthesizedMouseOrKeyboardEventCounter = 0;
 static nsITimer* gUserInteractionTimer = nullptr;
 static nsITimerCallback* gUserInteractionTimerCallback = nullptr;
 
@@ -296,13 +301,14 @@ LazyLogModule sPointerBoundaryLog("PointerBoundaryEvents");
 
 class UITimerCallback final : public nsITimerCallback, public nsINamed {
  public:
-  UITimerCallback() : mPreviousCount(0) {}
+  UITimerCallback() : mPreviousCount(0), mPreviousNonSynthesizedCount(0) {}
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
  private:
   ~UITimerCallback() = default;
   uint32_t mPreviousCount;
+  uint32_t mPreviousNonSynthesizedCount;
 };
 
 NS_IMPL_ISUPPORTS(UITimerCallback, nsITimerCallback, nsINamed)
@@ -318,13 +324,27 @@ UITimerCallback::Notify(nsITimer* aTimer) {
   }
   if ((gMouseOrKeyboardEventCounter == mPreviousCount) || !aTimer) {
     gMouseOrKeyboardEventCounter = 0;
+    gNonSynthesizedMouseOrKeyboardEventCounter = 0;
     obs->NotifyObservers(nullptr, "user-interaction-inactive", nullptr);
+    obs->NotifyObservers(nullptr, "user-interaction-inactive-non-synthesized",
+                         nullptr);
     if (gUserInteractionTimer) {
       gUserInteractionTimer->Cancel();
       NS_RELEASE(gUserInteractionTimer);
     }
   } else {
     obs->NotifyObservers(nullptr, "user-interaction-active", nullptr);
+    
+    
+    
+    if (gNonSynthesizedMouseOrKeyboardEventCounter ==
+        mPreviousNonSynthesizedCount) {
+      obs->NotifyObservers(nullptr, "user-interaction-inactive-non-synthesized",
+                           nullptr);
+    } else {
+      obs->NotifyObservers(nullptr, "user-interaction-active-non-synthesized",
+                           nullptr);
+    }
     EventStateManager::UpdateUserActivityTimer();
 
     if (XRE_IsParentProcess()) {
@@ -335,6 +355,7 @@ UITimerCallback::Notify(nsITimer* aTimer) {
     }
   }
   mPreviousCount = gMouseOrKeyboardEventCounter;
+  mPreviousNonSynthesizedCount = gNonSynthesizedMouseOrKeyboardEventCounter;
   return NS_OK;
 }
 
@@ -959,6 +980,21 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
     }
     ++gMouseOrKeyboardEventCounter;
+
+    
+    
+    
+    if (!mouseEvent || mouseEvent->IsReal()) {
+      if (gNonSynthesizedMouseOrKeyboardEventCounter == 0) {
+        nsCOMPtr<nsIObserverService> obs =
+            mozilla::services::GetObserverService();
+        if (obs) {
+          obs->NotifyObservers(
+              nullptr, "user-interaction-active-non-synthesized", nullptr);
+        }
+      }
+      ++gNonSynthesizedMouseOrKeyboardEventCounter;
+    }
 
     nsCOMPtr<nsINode> node = aTargetContent;
     if (node &&
@@ -2875,6 +2911,8 @@ void EventStateManager::GenerateDragGesture(
                              eDragStart, widget);
   startEvent.mFlags.mIsSynthesizedForTests =
       aMouseOrTouchOrPointerEvent.mFlags.mIsSynthesizedForTests;
+  startEvent.mFlags.mIsAsyncSynthesizedForTests =
+      aMouseOrTouchOrPointerEvent.mFlags.mIsAsyncSynthesizedForTests;
   FillInEventFromGestureDown(&startEvent);
 
   startEvent.mDataTransfer = dataTransfer;
