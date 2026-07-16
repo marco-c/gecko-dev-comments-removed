@@ -1043,21 +1043,22 @@ bool ForOfDisposalEmitter::prepareForForOfLoopIteration() {
   return true;
 }
 
-bool ForOfDisposalEmitter::emitEnd() {
+bool ForOfDisposalEmitter::prepareForForOfIteratorClose() {
   MOZ_ASSERT(state_ == State::Iteration);
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
 
   
 
-  if (!bce_->emit1(JSOp::Swap)) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::True)) {
-    
-    return false;
+  if (hasAwaitUsing()) {
+    if (!bce_->emit1(JSOp::GetRval)) {
+      
+      return false;
+    }
+    if (!bce_->emitUnpickN(2)) {
+      
+      return false;
+    }
   }
 
   if (!bce_->emit1(JSOp::Swap)) {
@@ -1070,19 +1071,21 @@ bool ForOfDisposalEmitter::emitEnd() {
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Pop)) {
-    
-    return false;
+  if (hasAwaitUsing()) {
+    if (!bce_->emitPickN(2)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::SetRval)) {
+      
+      return false;
+    }
   }
 
-  if (!bce_->emit1(JSOp::Swap)) {
-    
-    return false;
-  }
-
-#ifdef DEBUG
-  state_ = State::End;
-#endif
+  
+  
+  
+  
   return true;
 }
 
@@ -1211,6 +1214,18 @@ bool NonLocalIteratorCloseUsingEmitter::prepareForIteratorClose(
 
   
 
+  if (hasAwaitUsing()) {
+    
+    
+    
+    if (!bce_->emit1(JSOp::GetRval)) {
+      
+      return false;
+    }
+  }
+
+  
+
   if (!bce_->emit1(JSOp::False)) {
     
     return false;
@@ -1226,9 +1241,21 @@ bool NonLocalIteratorCloseUsingEmitter::prepareForIteratorClose(
     return false;
   }
 
-  if (!bce_->emitPickN(2)) {
+  if (!bce_->emitPickN(hasAwaitUsing() ? 3 : 2)) {
     
     return false;
+  }
+
+  if (hasAwaitUsing()) {
+    if (!bce_->emitPickN(3)) {
+      
+      return false;
+    }
+
+    if (!bce_->emit1(JSOp::SetRval)) {
+      
+      return false;
+    }
   }
 
   tryClosingIterator_ = bce_->fc->getAllocator()->make_unique<TryEmitter>(
