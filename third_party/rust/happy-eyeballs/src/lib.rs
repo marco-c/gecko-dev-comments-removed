@@ -165,22 +165,6 @@ impl DnsResult {
             .map(IpAddr::V6)
             .chain(v4.iter().copied().map(IpAddr::V4))
     }
-
-    fn flatten_into_endpoints(
-        &self,
-        port: u16,
-        http_versions: &HashSet<ConnectionAttemptHttpVersions>,
-    ) -> Vec<Endpoint> {
-        self.ip_addrs()
-            .flat_map(|ip| {
-                http_versions.iter().map(move |v| Endpoint {
-                    address: SocketAddr::new(ip, port),
-                    http_version: *v,
-                    ech_config: None,
-                })
-            })
-            .collect()
-    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -961,6 +945,10 @@ impl HappyEyeballs {
             return Some(o);
         }
 
+        if let Some(o) = self.send_dns_request_for_alt_svc() {
+            return Some(o);
+        }
+
         if let Some(o) = self.delay(now) {
             return Some(o);
         }
@@ -1119,6 +1107,46 @@ impl HappyEyeballs {
             })?;
 
         let target_name = target_name.clone();
+        let id = self.id_generator.next_id();
+        self.dns_queries.push(DnsQuery {
+            id,
+            target_name: target_name.clone(),
+            record_type,
+            state: DnsQueryState::InProgress,
+        });
+        Some(Output::SendDnsQuery {
+            id,
+            hostname: target_name,
+            record_type,
+        })
+    }
+
+    
+    
+    
+    fn send_dns_request_for_alt_svc(&mut self) -> Option<Output> {
+        let hosts = self
+            .network_config
+            .alt_svc
+            .iter()
+            .filter_map(|a| a.host.as_deref())
+            .filter(|h| h.parse::<IpAddr>().is_err());
+
+        let (target_name, record_type) = hosts
+            .flat_map(|h| {
+                self.network_config
+                    .ip
+                    .address_record_types()
+                    .map(move |rt| (h, rt))
+            })
+            .find(|(h, rt)| {
+                !self
+                    .dns_queries
+                    .iter()
+                    .any(|q| q.target_name.as_str() == *h && q.record_type == *rt)
+            })?;
+
+        let target_name: TargetName = target_name.into();
         let id = self.id_generator.next_id();
         self.dns_queries.push(DnsQuery {
             id,
@@ -1323,26 +1351,28 @@ impl HappyEyeballs {
     }
 
     fn endpoints_to_attempt(&self) -> Vec<Endpoint> {
-        match &self.host {
-            Host::Ip(ip) => self.endpoints_to_attempt_ip(*ip),
-            Host::Domain(domain) => self.endpoints_to_attempt_domain(domain),
+        let any_ech = self.any_ech();
+
+        
+        let mut endpoints = self.service_info_endpoints();
+
+        
+        
+        
+        
+        
+        if !any_ech {
+            let mut tier = self.alt_svc_endpoints();
+            tier.extend(self.origin_fallback_endpoints());
+            endpoints.extend(interleave_endpoints(tier, self.network_config.prefer_v6()));
         }
+
+        endpoints
     }
 
-    fn endpoints_to_attempt_ip(&self, ip: IpAddr) -> Vec<Endpoint> {
-        let endpoints = self
-            .origin_version_port_pairs()
-            .into_iter()
-            .map(|(http_version, port)| Endpoint {
-                address: SocketAddr::new(ip, port),
-                http_version,
-                ech_config: None,
-            })
-            .collect();
-        interleave_endpoints(endpoints, self.network_config.prefer_v6())
-    }
-
-    fn endpoints_to_attempt_domain(&self, origin_domain: &str) -> Vec<Endpoint> {
+    
+    
+    fn service_info_endpoints(&self) -> Vec<Endpoint> {
         let any_ech = self.any_ech();
         let prefer_v6 = self.network_config.prefer_v6();
 
@@ -1350,12 +1380,10 @@ impl HappyEyeballs {
         let mut service_infos: Vec<&ServiceInfo> = self
             .completed_service_infos()
             
-            
             .filter(|i| !any_ech || i.ech_config.is_some())
             .collect();
         service_infos.sort_by_key(|i| i.priority);
 
-        
         let mut endpoints: Vec<Endpoint> = Vec::new();
         for info in &service_infos {
             let ipv4_addrs: Option<&[Ipv4Addr]> =
@@ -1386,30 +1414,6 @@ impl HappyEyeballs {
                 self.network_config.ech,
             );
             endpoints.extend(interleave_endpoints(bucket, prefer_v6));
-        }
-
-        
-        
-        
-        
-        if !any_ech {
-            let mut fallback: Vec<Endpoint> = Vec::new();
-            for (http_version, port) in self.origin_version_port_pairs() {
-                let http_versions = HashSet::from([http_version]);
-                fallback.extend(
-                    self.dns_queries
-                        .iter()
-                        .filter_map(|q| match &q.state {
-                            DnsQueryState::Completed {
-                                response: r @ (DnsResult::Aaaa(_) | DnsResult::A(_)),
-                                ..
-                            } if q.target_name.as_str() == origin_domain => Some(r),
-                            _ => None,
-                        })
-                        .flat_map(|r| r.flatten_into_endpoints(port, &http_versions)),
-                );
-            }
-            endpoints.extend(interleave_endpoints(fallback, prefer_v6));
         }
 
         endpoints
@@ -1491,14 +1495,15 @@ impl HappyEyeballs {
     
     
     
-    fn origin_version_port_pairs(&self) -> Vec<(ConnectionAttemptHttpVersions, u16)> {
-        let mut pairs = Vec::new();
-
+    
+    
+    
+    
+    
+    
+    fn alt_svc_endpoints(&self) -> Vec<Endpoint> {
+        let mut endpoints = Vec::new();
         for alt_svc in &self.network_config.alt_svc {
-            debug_assert!(
-                alt_svc.host.is_none(),
-                "alt-svc with custom host not yet supported"
-            );
             if self
                 .network_config
                 .is_http_version_disabled(alt_svc.http_version)
@@ -1506,14 +1511,65 @@ impl HappyEyeballs {
                 continue;
             }
             let port = alt_svc.port.unwrap_or(self.port);
-            pairs.push((alt_svc.http_version.into(), port));
+            let http_version: ConnectionAttemptHttpVersions = alt_svc.http_version.into();
+            endpoints.extend(self.alt_svc_addrs(alt_svc).into_iter().map(|ip| Endpoint {
+                address: SocketAddr::new(ip, port),
+                http_version,
+                ech_config: None,
+            }));
         }
+        endpoints
+    }
 
-        for http_version in self.fallback_http_versions() {
-            pairs.push((http_version, self.port));
+    
+    
+    
+    fn origin_fallback_endpoints(&self) -> Vec<Endpoint> {
+        let http_versions = self.fallback_http_versions();
+        self.origin_addrs()
+            .into_iter()
+            .flat_map(|ip| {
+                http_versions.iter().map(move |&http_version| Endpoint {
+                    address: SocketAddr::new(ip, self.port),
+                    http_version,
+                    ech_config: None,
+                })
+            })
+            .collect()
+    }
+
+    
+    
+    fn alt_svc_addrs(&self, alt_svc: &AltSvc) -> Vec<IpAddr> {
+        match &alt_svc.host {
+            
+            Some(host) => match host.parse::<IpAddr>() {
+                Ok(ip) => vec![ip],
+                Err(_) => self.dns_resolved_addrs(host),
+            },
+            None => self.origin_addrs(),
         }
+    }
 
-        pairs
+    
+    
+    fn origin_addrs(&self) -> Vec<IpAddr> {
+        match &self.host {
+            Host::Ip(ip) => vec![*ip],
+            
+            
+            Host::Domain(domain) => self.dns_resolved_addrs(domain),
+        }
+    }
+
+    
+    fn dns_resolved_addrs(&self, host: &str) -> Vec<IpAddr> {
+        self.dns_queries
+            .iter()
+            .filter(|q| q.target_name.as_str() == host)
+            .filter_map(DnsQuery::response)
+            .flat_map(DnsResult::ip_addrs)
+            .collect()
     }
 
     
