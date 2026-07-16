@@ -357,21 +357,48 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegAudioEncoder<
   Span<float> audio = sample->Data();
 
   if (mResampler) {
+    const uint32_t channels = mConfig.mNumberOfChannels;
     
     
-    int bufferLengthGuess = std::ceil(2. * AssertedCast<float>(audio.size()) *
-                                      mConfig.mSampleRate / mInputSampleRate);
-    mTempBuffer.SetLength(bufferLengthGuess);
-    uint32_t inputFrames = audio.size() / mConfig.mNumberOfChannels;
-    uint32_t inputFramesProcessed = inputFrames;
-    uint32_t outputFrames = bufferLengthGuess / mConfig.mNumberOfChannels;
+    CheckedUint32 inputFrames(audio.size());
+    inputFrames /= channels;
+    if (!inputFrames.isValid()) {
+      return Err(MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+                             "Audio resampler input too large"_ns));
+    }
+    
+    
+    
+    
+    
+    
+    uint64_t scaledOutputFrames = static_cast<uint64_t>(inputFrames.value()) *
+                                      mConfig.mSampleRate /
+                                      AssertedCast<uint32_t>(mInputSampleRate) +
+                                  1u;
+    CheckedUint32 outputFrames(scaledOutputFrames);
+    CheckedUint32 outputSamples = outputFrames * channels;
+    if (!outputSamples.isValid()) {
+      return Err(MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+                             "Invalid audio resampler output size"_ns));
+    }
+    if (!mTempBuffer.SetLength(outputSamples.value(), fallible)) {
+      return Err(
+          MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                      "Audio resampler output buffer allocation failed"_ns));
+    }
+    uint32_t inputFramesProcessed = inputFrames.value();
+    uint32_t outputFramesWritten = outputFrames.value();
     DebugOnly<int> rv = speex_resampler_process_interleaved_float(
         mResampler.get(), audio.data(), &inputFramesProcessed,
-        mTempBuffer.Elements(), &outputFrames);
-    audio = Span<float>(mTempBuffer.Elements(),
-                        outputFrames * mConfig.mNumberOfChannels);
-    MOZ_ASSERT(inputFrames == inputFramesProcessed,
-               "increate the buffer to consume all input each time");
+        mTempBuffer.Elements(), &outputFramesWritten);
+    FFMPEG_LOGV(
+        "Resampled %u -> %u frames (%dHz -> %uHz, %u ch), %u-sample buffer",
+        inputFramesProcessed, outputFramesWritten, mInputSampleRate,
+        mConfig.mSampleRate, channels, outputSamples.value());
+    audio = Span<float>(mTempBuffer.Elements(), outputFramesWritten * channels);
+    MOZ_ASSERT(inputFrames.value() == inputFramesProcessed,
+               "the output buffer must be large enough to consume all input");
     MOZ_ASSERT(rv == RESAMPLER_ERR_SUCCESS);
   }
 
