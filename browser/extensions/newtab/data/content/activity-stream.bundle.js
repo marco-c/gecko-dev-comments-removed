@@ -22623,6 +22623,11 @@ const PictureOfTheDay_PictureOfTheDay = ({
 
   
   
+  
+  const hasInteracted = prefs["widgets.pictureOfTheDay.interaction"];
+
+  
+  
   const [justSet, setJustSet] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!justSet) {
@@ -22886,10 +22891,15 @@ const PictureOfTheDay_PictureOfTheDay = ({
     className: "picture-of-the-day-toolbar"
   }, hasPicture ? external_React_default().createElement("div", {
     className: "picture-of-the-day-heading"
-  }, external_React_default().createElement("p", {
+  }, external_React_default().createElement("div", {
+    className: "picture-of-the-day-title-row"
+  }, !hasInteracted && external_React_default().createElement("moz-badge", {
+    className: "picture-of-the-day-new-badge",
+    "data-l10n-id": "newtab-widget-lists-label-new"
+  }), external_React_default().createElement("p", {
     className: "picture-of-the-day-source",
     "data-l10n-id": "newtab-picture-header-main"
-  }), renderAttribution()) : null, external_React_default().createElement("div", {
+  })), renderAttribution()) : null, external_React_default().createElement("div", {
     className: "picture-of-the-day-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "picture-of-the-day-context-menu-button",
