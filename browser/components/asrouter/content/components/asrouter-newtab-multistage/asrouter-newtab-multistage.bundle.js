@@ -3479,24 +3479,7 @@ const MultiStageAboutWelcome = props => {
 
       
       
-      
-      
-      setScreens(filteredScreens.map(filtered => {
-        const filteredScreen = screens.find(s => s.id === filtered.id);
-        if (!filteredScreen) {
-          return filtered;
-        }
-        if (filtered.content?.tiles && filtered.content) {
-          return {
-            ...filteredScreen,
-            content: {
-              ...filteredScreen.content,
-              tiles: filtered.content.tiles
-            }
-          };
-        }
-        return filteredScreen;
-      }));
+      setScreens(filteredScreens.map(filtered => filtered.id === LANGUAGE_MISMATCH_SCREEN_ID ? screens.find(s => s.id === filtered.id) ?? filtered : filtered));
       
       if (!didFilter.current) {
         didFilter.current = true;
