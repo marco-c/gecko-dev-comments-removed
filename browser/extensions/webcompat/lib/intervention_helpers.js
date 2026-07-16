@@ -241,6 +241,7 @@ class ContentScriptRegistrationsBuilder {
       isolated = false,
       match_origin_as_fallback = false,
       run_at = "document_start",
+      user_styles = false,
     } = contentScriptDescriptor;
 
     
@@ -252,6 +253,7 @@ class ContentScriptRegistrationsBuilder {
       isolated,
       match_origin_as_fallback,
       run_at,
+      user_styles,
     });
 
     
@@ -275,13 +277,21 @@ class ContentScriptRegistrationsBuilder {
     for (const [config, fileTypes] of this.#regs) {
       const reg = {};
 
-      const { all_frames, isolated, match_origin_as_fallback, run_at } =
-        JSON.parse(config);
+      const {
+        all_frames,
+        isolated,
+        match_origin_as_fallback,
+        run_at,
+        user_styles,
+      } = JSON.parse(config);
 
       
       
       if (all_frames) {
         reg.allFrames = true;
+      }
+      if (user_styles) {
+        reg.cssOrigin = "user";
       }
       if (!isolated) {
         reg.world = "MAIN";

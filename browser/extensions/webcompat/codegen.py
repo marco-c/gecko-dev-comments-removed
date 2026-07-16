@@ -101,7 +101,7 @@ def clean_script_template(script, filename):
     return script
 
 
-SPECIAL_META_KEYS = ["all_frames", "match_origin_as_fallback"]
+SPECIAL_META_KEYS = ["all_frames", "match_origin_as_fallback", "user_styles"]
 
 
 class special_js_script_checker:
@@ -339,6 +339,7 @@ def determine_generated_js_content_scripts_for_intervention(
 def determine_generated_css_content_scripts_for_intervention(
     config, bug_number, src_json_filename
 ):
+    
     
     
     
