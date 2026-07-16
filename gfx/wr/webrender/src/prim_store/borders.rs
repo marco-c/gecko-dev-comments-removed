@@ -95,6 +95,30 @@ impl NormalBorderData {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let snap_width = |w: f32, s: f32| {
+            if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
+        };
+        let device_scale_x = scale.0 * device_pixel_scale.0;
+        let device_scale_y = scale.1 * device_pixel_scale.0;
+        let mut widths = self.widths;
+        widths.left = snap_width(widths.left, device_scale_x);
+        widths.right = snap_width(widths.right, device_scale_x);
+        widths.top = snap_width(widths.top, device_scale_y);
+        widths.bottom = snap_width(widths.bottom, device_scale_y);
+
         let scale_width = clamp_to_scale_factor(scale.0, false);
         let scale_height = clamp_to_scale_factor(scale.1, false);
         
@@ -109,7 +133,7 @@ impl NormalBorderData {
         crate::border::create_border_segments(
             *local_rect,
             &self.border,
-            &self.widths,
+            &widths,
             &mut |segment| segments.push(segment.clone()),
         );
 
