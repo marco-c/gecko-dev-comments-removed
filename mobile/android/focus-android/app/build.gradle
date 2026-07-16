@@ -35,7 +35,7 @@ android {
     defaultConfig {
         applicationId "org.mozilla"
         minSdk config.minSdkVersion
-        targetSdk 37
+        targetSdk config.targetSdkVersion
         versionCode 11 // This versionCode is "frozen" for local builds. For "release" builds we
                        // override this with a generated versionCode at build time.
         // The versionName is dynamically overridden for all the build variants at build time.
@@ -301,7 +301,7 @@ dependencies {
     implementation libs.androidx.compose.ui.tooling
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.constraintlayout.compose
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.datastore.preferences
     implementation libs.androidx.emoji2
