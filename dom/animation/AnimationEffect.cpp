@@ -51,14 +51,15 @@ bool AnimationEffect::IsCurrent() const {
     return false;
   }
 
-  
-  
-  
-  
   const AnimationTimeline* timeline = mAnimation->GetTimeline();
+  
   if (timeline && timeline->IsInactiveTimeline()) {
     return false;
   }
+  
+  
+  
+  
   if (timeline && !timeline->IsMonotonicallyIncreasing() &&
       mAnimation->PlayState() != AnimationPlayState::Idle) {
     return true;
@@ -82,6 +83,8 @@ bool AnimationEffect::IsCurrent() const {
 
 bool AnimationEffect::IsInEffect() const {
   const auto* timeline = mAnimation ? mAnimation->GetTimeline() : nullptr;
+  
+  
   if (timeline && timeline->IsInactiveTimeline()) {
     return false;
   }
