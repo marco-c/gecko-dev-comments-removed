@@ -23,8 +23,6 @@
 #include "nsISupports.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashMap.h"
-#include "nsTHashtable.h"
-#include "nsURIHashKey.h"
 #include "nsWrapperCache.h"
 
 class nsIPrincipal;
@@ -48,16 +46,6 @@ class WindowSessionStoreState;
 struct WindowSessionStoreUpdate;
 class SSCacheQueryResult;
 enum class FullscreenKeyboardLock : uint8_t;
-
-
-
-
-
-enum class NoCorsMediaRequestState : uint8_t {
-  NotAvailable,
-  Initial,
-  Subsequent,
-};
 
 
 
@@ -276,10 +264,6 @@ class WindowGlobalParent final : public WindowContext,
   
   
   already_AddRefed<nsIChannel> GetFailedChannel();
-
-  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI) const;
-
-  void RecordSubsequentNoCorsRequestState(nsIURI* aURI);
 
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
@@ -529,11 +513,6 @@ class WindowGlobalParent final : public WindowContext,
   bool mFullscreen = false;
 
   bool mShouldReportHasBlockedOpaqueResponse = false;
-
-  
-  
-  
-  nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
 };
 
 nsCString BFCacheStatusToString(uint32_t aFlags);
