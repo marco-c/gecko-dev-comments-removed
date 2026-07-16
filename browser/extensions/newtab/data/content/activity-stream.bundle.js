@@ -27771,16 +27771,38 @@ function WallpaperFeatureHighlight({
 }) {
   
   const isNova = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["nova.enabled"]);
+  
+  const {
+    messageData
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     handleDismiss();
     handleBlock();
   }, [handleDismiss, handleBlock]);
   const onToggleClick = (0,external_React_namespaceObject.useCallback)(elementId => {
     
+    
+    
+    
+    
+    const {
+      wallpaperCategory
+    } = messageData?.content || {};
+    let category = WALLPAPER_CATEGORIES.Firefox;
+    if (wallpaperCategory !== undefined) {
+      category = Object.values(WALLPAPER_CATEGORIES).includes(wallpaperCategory) ? wallpaperCategory : null;
+    }
+    
+    
+    
+    
+    if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
+      category = null;
+    }
     dispatch({
       type: actionTypes.SHOW_PERSONALIZE,
       data: {
-        wallpaperCategory: WALLPAPER_CATEGORIES.Firefox
+        wallpaperCategory: category
       }
     });
     dispatch(actionCreators.UserEvent({
@@ -27788,12 +27810,7 @@ function WallpaperFeatureHighlight({
     }));
     handleClick(elementId);
     onDismiss();
-  }, [dispatch, onDismiss, handleClick]);
-
-  
-  const {
-    messageData
-  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
+  }, [dispatch, onDismiss, handleClick, messageData]);
   const {
     messageType
   } = messageData?.content || {};
