@@ -1271,9 +1271,88 @@ fn prepare_prim_for_render(
 
             
             
+            pic.write_gpu_blocks(
+                frame_state,
+                data_stores,
+                &mut scratch.frame.pictures[pic_scratch_handle],
+            );
+
             
             
-            let mut all_masks_in_source = true;
+            
+            
+            
+            
+            
+            
+            let mut opacity = 1.0;
+            
+            
+            let mut filter = None;
+            
+            let mut mix_blend = None;
+            let use_quads = if let Some(raster_config) = &pic.raster_config {
+                 if matches!(pic.context_3d, Picture3DContext::Out) {
+                    match raster_config.composite_mode {
+                        PictureCompositeMode::Filter(Filter::Blur { .. })
+                        | PictureCompositeMode::Filter(Filter::DropShadows(..))
+                        | PictureCompositeMode::SVGFEGraph(..)
+                        | PictureCompositeMode::Blit(..) => true,
+                        
+                        
+                        
+                        
+                        PictureCompositeMode::MixBlend(mode) if BlendMode::from_mix_blend_mode(
+                            mode,
+                            frame_context.fb_config.gpu_supports_advanced_blend,
+                            frame_context.fb_config.advanced_blend_is_coherent,
+                            frame_context.fb_config.dual_source_blending_is_supported,
+                        ).is_none() => {
+                            mix_blend = Some(mode);
+                            true
+                        }
+                        PictureCompositeMode::Filter(Filter::Opacity(_, amount)) => {
+                            opacity = amount;
+                            true
+                        }
+                        PictureCompositeMode::Filter(ref f) => {
+                            let extra_gpu_data = scratch.frame
+                                .pictures[pic_scratch_handle]
+                                .extra_gpu_data
+                                .as_slice();
+                            filter = blend_filter_param(f, extra_gpu_data);
+                            filter.is_some()
+                        }
+                        PictureCompositeMode::ComponentTransferFilter(handle) => {
+                            let filter_data = &data_stores.filter_data[handle];
+                            let filter_mode: i32 = Filter::ComponentTransfer.as_int()
+                                | ((filter_data.data.r_func.to_int() << 28
+                                    | filter_data.data.g_func.to_int() << 24
+                                    | filter_data.data.b_func.to_int() << 20
+                                    | filter_data.data.a_func.to_int() << 16)
+                                    as i32);
+                            let addr = scratch.frame
+                                .pictures[pic_scratch_handle]
+                                .extra_gpu_data[0]
+                                .as_int();
+                            filter = Some((filter_mode, addr));
+                            true
+                        }
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+
+            
+            
+            
+            
+            
+            let mut composite_target_clip_range: Option<ClipNodeRange> = None;
 
             if prim_info.clip_chain.needs_mask {
                 
@@ -1312,8 +1391,6 @@ fn prepare_prim_for_render(
                         target_masks.push(i);
                     }
                 }
-
-                all_masks_in_source = target_masks.is_empty();
 
                 let pic_surface_index = pic.raster_config.as_ref().unwrap().surface_index;
                 let prim_local_rect: LayoutRect = frame_state
@@ -1377,152 +1454,97 @@ fn prepare_prim_for_render(
 
                 
                 
+                
+                
                 if !target_masks.is_empty() {
-                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
-                    let coverage_rect = prim_info.clip_chain.pic_coverage_rect;
-
-                    let device_pixel_scale = surface.device_pixel_scale;
-                    let raster_spatial_node_index = surface.raster_spatial_node_index;
-
-                    let Some(clipped_surface_rect) = surface.get_surface_rect(
-                        &coverage_rect,
-                        frame_context.spatial_tree,
-                    ) else {
-                        return;
-                    };
-
-                    
-                    
-                    let empty_task = EmptyTask {
-                        content_origin: clipped_surface_rect.min.to_f32(),
-                        device_pixel_scale,
-                        raster_spatial_node_index,
-                    };
-
-                    let task_size = clipped_surface_rect.size();
-
-                    let clip_task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
-                        task_size,
-                        RenderTaskKind::Empty(empty_task),
-                    ));
-
                     
                     let first_clip_node_index = frame_state.clip_store.clip_node_instances.len() as u32;
                     for instance in target_masks {
                         let clip_instance = frame_state.clip_store.get_instance_from_range(&prim_info.clip_chain.clips_range, instance);
-
-                        for tile in frame_state.clip_store.visible_mask_tiles(clip_instance) {
-                            frame_state.rg_builder.add_dependency(
-                                clip_task_id,
-                                tile.task_id,
-                            );
-                        }
-
                         frame_state.clip_store.clip_node_instances.push(clip_instance.clone());
                     }
-
                     let clip_node_range = ClipNodeRange {
                         first: first_clip_node_index,
                         count: frame_state.clip_store.clip_node_instances.len() as u32 - first_clip_node_index,
                     };
 
-                    let task_rect = clipped_surface_rect.to_f32();
+                    if use_quads {
+                        
+                        
+                        composite_target_clip_range = Some(clip_node_range);
+                    } else {
+                        
+                        
+                        let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                        let coverage_rect = prim_info.clip_chain.pic_coverage_rect;
 
-                    quad::prepare_clip_range(
-                        clip_node_range,
-                        clip_task_id,
-                        &task_rect,
-                        &prim_local_rect,
-                        prim_spatial_node_index,
-                        raster_spatial_node_index,
-                        device_pixel_scale,
-                        &data_stores.clip,
-                        frame_state.clip_store,
-                        frame_context.spatial_tree,
-                        frame_state.rg_builder,
-                        &mut frame_state.frame_gpu_data.f32,
-                        frame_state.transforms,
-                    );
+                        let device_pixel_scale = surface.device_pixel_scale;
+                        let raster_spatial_node_index = surface.raster_spatial_node_index;
 
-                    let clip_task_index = ClipTaskIndex(scratch.frame.clip_mask_instances.len() as _);
-                    scratch.frame.clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
-                    scratch.frame.draws[prim_instance_index.0 as usize].clip_task_index = clip_task_index;
-                    frame_state.surface_builder.add_child_render_task(
-                        clip_task_id,
-                        frame_state.rg_builder,
-                    );
+                        let Some(clipped_surface_rect) = surface.get_surface_rect(
+                            &coverage_rect,
+                            frame_context.spatial_tree,
+                        ) else {
+                            return;
+                        };
+
+                        let empty_task = EmptyTask {
+                            content_origin: clipped_surface_rect.min.to_f32(),
+                            device_pixel_scale,
+                            raster_spatial_node_index,
+                        };
+
+                        let task_size = clipped_surface_rect.size();
+
+                        let clip_task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
+                            task_size,
+                            RenderTaskKind::Empty(empty_task),
+                        ));
+
+                        
+                        for i in 0 .. clip_node_range.count {
+                            let clip_instance = frame_state.clip_store.get_instance_from_range(&clip_node_range, i);
+                            for tile in frame_state.clip_store.visible_mask_tiles(clip_instance) {
+                                frame_state.rg_builder.add_dependency(
+                                    clip_task_id,
+                                    tile.task_id,
+                                );
+                            }
+                        }
+
+                        let task_rect = clipped_surface_rect.to_f32();
+
+                        quad::prepare_clip_range(
+                            clip_node_range,
+                            clip_task_id,
+                            &task_rect,
+                            &prim_local_rect,
+                            prim_spatial_node_index,
+                            raster_spatial_node_index,
+                            device_pixel_scale,
+                            &data_stores.clip,
+                            frame_state.clip_store,
+                            frame_context.spatial_tree,
+                            frame_state.rg_builder,
+                            &mut frame_state.frame_gpu_data.f32,
+                            frame_state.transforms,
+                        );
+
+                        let clip_task_index = ClipTaskIndex(scratch.frame.clip_mask_instances.len() as _);
+                        scratch.frame.clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
+                        scratch.frame.draws[prim_instance_index.0 as usize].clip_task_index = clip_task_index;
+                        frame_state.surface_builder.add_child_render_task(
+                            clip_task_id,
+                            frame_state.rg_builder,
+                        );
+                    }
                 }
             }
-
-            pic.write_gpu_blocks(
-                frame_state,
-                data_stores,
-                &mut scratch.frame.pictures[pic_scratch_handle],
-            );
 
             if let Some(raster_config) = &pic.raster_config {
                 let is_same_coord_system = {
                     let surface = &frame_state.surfaces[raster_config.surface_index.0];
                     surface.surface_spatial_node_index == surface.raster_spatial_node_index
-                };
-
-                let mut opacity = 1.0;
-                
-                
-                let mut filter = None;
-                
-                
-                let mut mix_blend = None;
-                let use_quads = if all_masks_in_source && matches!(pic.context_3d, Picture3DContext::Out) {
-                    match raster_config.composite_mode {
-                        PictureCompositeMode::Filter(Filter::Blur { .. })
-                        | PictureCompositeMode::Filter(Filter::DropShadows(..))
-                        | PictureCompositeMode::SVGFEGraph(..)
-                        | PictureCompositeMode::Blit(..) => true,
-                        
-                        
-                        
-                        
-                        PictureCompositeMode::MixBlend(mode) if BlendMode::from_mix_blend_mode(
-                            mode,
-                            frame_context.fb_config.gpu_supports_advanced_blend,
-                            frame_context.fb_config.advanced_blend_is_coherent,
-                            frame_context.fb_config.dual_source_blending_is_supported,
-                        ).is_none() => {
-                            mix_blend = Some(mode);
-                            true
-                        }
-                        PictureCompositeMode::Filter(Filter::Opacity(_, amount)) => {
-                            opacity = amount;
-                            true
-                        }
-                        PictureCompositeMode::Filter(ref f) => {
-                            let extra_gpu_data = scratch.frame
-                                .pictures[pic_scratch_handle]
-                                .extra_gpu_data
-                                .as_slice();
-                            filter = blend_filter_param(f, extra_gpu_data);
-                            filter.is_some()
-                        }
-                        PictureCompositeMode::ComponentTransferFilter(handle) => {
-                            let filter_data = &data_stores.filter_data[handle];
-                            let filter_mode: i32 = Filter::ComponentTransfer.as_int()
-                                | ((filter_data.data.r_func.to_int() << 28
-                                    | filter_data.data.g_func.to_int() << 24
-                                    | filter_data.data.b_func.to_int() << 20
-                                    | filter_data.data.a_func.to_int() << 16)
-                                    as i32);
-                            let addr = scratch.frame
-                                .pictures[pic_scratch_handle]
-                                .extra_gpu_data[0]
-                                .as_int();
-                            filter = Some((filter_mode, addr));
-                            true
-                        }
-                        _ => false,
-                    }
-                } else {
-                    false
                 };
 
                 if use_quads {
@@ -1579,8 +1601,18 @@ fn prepare_prim_for_render(
                         
                         
                         
+                        
+                        
                         let mut composite_clip_chain = prim_info.clip_chain;
-                        composite_clip_chain.needs_mask = false;
+                        match composite_target_clip_range {
+                            Some(clips_range) => {
+                                composite_clip_chain.needs_mask = true;
+                                composite_clip_chain.clips_range = clips_range;
+                            }
+                            None => {
+                                composite_clip_chain.needs_mask = false;
+                            }
+                        }
 
                         if let Some(mode) = mix_blend {
                             
