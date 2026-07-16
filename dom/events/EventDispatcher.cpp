@@ -16,6 +16,7 @@
 #include "DeviceMotionEvent.h"
 #include "DragEvent.h"
 #include "KeyboardEvent.h"
+#include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentEvents.h"
@@ -696,12 +697,13 @@ void EventTargetChainItem::HandleEventTargetChain(
 
 
 
+
+
 static const uint32_t kCachedMainThreadChainSize = 128;
-struct CachedChains {
-  nsTArray<EventTargetChainItem> mChain1;
-  nsTArray<EventTargetChainItem> mChain2;
-};
-static CachedChains* sCachedMainThreadChains = nullptr;
+static const uint32_t kNumCachedMainThreadChains = 4;
+using CachedMainThreadChains =
+    mozilla::Array<nsTArray<EventTargetChainItem>, kNumCachedMainThreadChains>;
+static CachedMainThreadChains* sCachedMainThreadChains = nullptr;
 
 
 void EventDispatcher::Shutdown() {
@@ -1078,16 +1080,21 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   nsTArray<EventTargetChainItem> chain;
   if (cd.IsMainThread()) {
     if (!sCachedMainThreadChains) {
-      sCachedMainThreadChains = new CachedChains();
+      sCachedMainThreadChains = new CachedMainThreadChains();
     }
 
-    if (sCachedMainThreadChains->mChain1.Capacity() ==
-        kCachedMainThreadChainSize) {
-      chain = std::move(sCachedMainThreadChains->mChain1);
-    } else if (sCachedMainThreadChains->mChain2.Capacity() ==
-               kCachedMainThreadChainSize) {
-      chain = std::move(sCachedMainThreadChains->mChain2);
-    } else {
+    
+    
+    
+    bool reused = false;
+    for (auto& cached : *sCachedMainThreadChains) {
+      if (cached.Capacity() == kCachedMainThreadChainSize) {
+        chain = std::move(cached);
+        reused = true;
+        break;
+      }
+    }
+    if (!reused) {
       chain.SetCapacity(kCachedMainThreadChainSize);
     }
   }
@@ -1455,14 +1462,13 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
   if (cd.IsMainThread() && chain.Capacity() == kCachedMainThreadChainSize &&
       sCachedMainThreadChains) {
-    if (sCachedMainThreadChains->mChain1.Capacity() !=
-        kCachedMainThreadChainSize) {
-      chain.ClearAndRetainStorage();
-      chain.SwapElements(sCachedMainThreadChains->mChain1);
-    } else if (sCachedMainThreadChains->mChain2.Capacity() !=
-               kCachedMainThreadChainSize) {
-      chain.ClearAndRetainStorage();
-      chain.SwapElements(sCachedMainThreadChains->mChain2);
+    
+    for (auto& cached : *sCachedMainThreadChains) {
+      if (cached.Capacity() != kCachedMainThreadChainSize) {
+        chain.ClearAndRetainStorage();
+        chain.SwapElements(cached);
+        break;
+      }
     }
   }
 
