@@ -4,6 +4,10 @@ load(libdir + "asm.js");
 
 
 
+
+
+
+
 let template = `
   'use asm';
   var imported = foreign.imported;
@@ -13,7 +17,9 @@ let template = `
   return main;
   `;
 let args = new Array(100000).fill('0').join(', ');
+let body = template.replace('ARGS', args);
 
-
-let fn = new Function('stdlib', 'foreign', template.replace('ARGS', args));
-assertEq(typeof fn, 'function');
+assertThrowsInstanceOf(() => {
+  let main = new Function('stdlib', 'foreign', body)({}, { imported() {} });
+  main();
+}, SyntaxError);
