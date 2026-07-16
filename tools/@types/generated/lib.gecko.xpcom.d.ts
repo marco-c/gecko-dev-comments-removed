@@ -127,6 +127,12 @@ interface nsIBitsCallback extends nsISupports {
 
 
 
+interface nsISiteCategory extends nsISupports {
+  getCategory(aPrincipal: nsIPrincipal): string;
+}
+
+
+
 interface nsIAccessibilityService extends nsISupports {
   getApplicationAccessible(): nsIAccessible;
   getAccessibleFor(aNode: Node): nsIAccessible;
@@ -1177,7 +1183,6 @@ interface nsIAddonContentPolicy extends nsISupports {
   readonly CSP_ALLOW_WASM?: 8;
 
   validateAddonCSP(aPolicyString: string, aPermittedPolicy: u32): string;
-
   validateAddonSandboxCSP(aPolicyString: string): string;
 }
 
@@ -15741,6 +15746,7 @@ interface nsIXPCComponents_Interfaces {
   nsIBitsNewRequestCallback: nsJSIID<nsIBitsNewRequestCallback>;
   nsIBitsRequest: nsJSIID<nsIBitsRequest>;
   nsIBitsCallback: nsJSIID<nsIBitsCallback>;
+  nsISiteCategory: nsJSIID<nsISiteCategory>;
   nsIAccessibilityService: nsJSIID<nsIAccessibilityService>;
   nsIAccessible: nsJSIID<nsIAccessible>;
   nsIAccessibleAnnouncementEvent: nsJSIID<nsIAccessibleAnnouncementEvent>;
