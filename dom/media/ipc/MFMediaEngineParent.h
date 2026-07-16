@@ -17,9 +17,15 @@
 #include "PlatformDecoderModule.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFMediaEngineParent.h"
+#include "mozilla/TimeStamp.h"
+
+#ifdef MOZ_WMF_CDM
+#  include "MFProtectedPathReadinessMonitor.h"
+#endif
 
 namespace mozilla {
 
+class MFCDMParent;
 class MFCDMProxy;
 class MFContentProtectionManager;
 class MFMediaEngineExtension;
@@ -100,6 +106,20 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   
   
   void RecoverProtectedPlayback(HRESULT aResult);
+
+  
+  
+  
+  MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING_AT_CLASS_SCOPE(
+      ProtectedActivationPhase, uint8_t, (GateHeld, Succeeded, Failed));
+
+  
+  
+  
+  void RecordProtectedReadiness(
+      MFCDMParent* aCdmParent, ProtectedActivationPhase aPhase,
+      HRESULT aPlatformError,
+      const Maybe<MFProtectedPathReadinessMonitor::Reaction>& aReaction);
 #endif
 
   
@@ -145,6 +165,13 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   
   static inline RefPtr<GenericPromise> sPendingHDCPCheck;
   MozPromiseRequestHolder<GenericPromise> mHDCPRequestHolder;
+
+  
+  
+  
+  
+  TimeStamp mProtectedGateHoldStart;
+  TimeDuration mProtectedGateWait;
 #endif
 
   
