@@ -1797,12 +1797,7 @@ class DebuggerProgressListener {
     
     this._knownWindowIDs = new Map();
 
-    
-    
-    
-    
-    
-    this._watchedDocShellsAbortControllersMap = new Map();
+    this._watchedDocShells = new WeakSet();
   }
 
   QueryInterface = ChromeUtils.generateQI([
@@ -1814,18 +1809,14 @@ class DebuggerProgressListener {
     Services.obs.removeObserver(this, "inner-window-destroyed");
     this._knownWindowIDs.clear();
     this._knownWindowIDs = null;
-
-    
-    
-    for (const abortController of this._watchedDocShellsAbortControllersMap.values()) {
-      abortController.abort();
-    }
-    this._watchedDocShellsAbortControllersMap.clear();
   }
 
   watch(docShell) {
-    const abortController = new AbortController();
-    this._watchedDocShellsAbortControllersMap.set(docShell, abortController);
+    
+    
+    
+    const docShellWindow = docShell.domWindow;
+    this._watchedDocShells.add(docShellWindow);
 
     const webProgress = docShell
       .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -1836,23 +1827,12 @@ class DebuggerProgressListener {
         Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
     );
 
-    const { signal } = abortController;
     const handler = getDocShellChromeEventHandler(docShell);
-    handler.addEventListener("DOMWindowCreated", this._onWindowCreated, {
-      capture: true,
-      signal,
-    });
-    handler.addEventListener("pageshow", this._onWindowCreated, {
-      capture: true,
-      signal,
-    });
-    handler.addEventListener("pagehide", this._onWindowHidden, {
-      capture: true,
-      signal,
-    });
+    handler.addEventListener("DOMWindowCreated", this._onWindowCreated, true);
+    handler.addEventListener("pageshow", this._onWindowCreated, true);
+    handler.addEventListener("pagehide", this._onWindowHidden, true);
 
     
-    const docShellWindow = docShell.domWindow;
     const windows = this._targetActor.ignoreSubFrames
       ? [docShellWindow]
       : this._getWindowsInDocShell(docShell);
@@ -1872,6 +1852,18 @@ class DebuggerProgressListener {
   }
 
   unwatch(docShell) {
+    
+    
+    if (docShell.isBeingDestroyed()) {
+      return;
+    }
+
+    const docShellWindow = docShell.domWindow;
+    if (!this._watchedDocShells.has(docShellWindow)) {
+      return;
+    }
+    this._watchedDocShells.delete(docShellWindow);
+
     const webProgress = docShell
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIWebProgress);
@@ -1882,21 +1874,15 @@ class DebuggerProgressListener {
       
     }
 
-    const abortController =
-      this._watchedDocShellsAbortControllersMap.get(docShell);
-    if (!abortController) {
-      return;
-    }
-    this._watchedDocShellsAbortControllersMap.delete(docShell);
-    abortController.abort();
+    const handler = getDocShellChromeEventHandler(docShell);
+    handler.removeEventListener(
+      "DOMWindowCreated",
+      this._onWindowCreated,
+      true
+    );
+    handler.removeEventListener("pageshow", this._onWindowCreated, true);
+    handler.removeEventListener("pagehide", this._onWindowHidden, true);
 
-    
-    
-    if (docShell.isBeingDestroyed()) {
-      return;
-    }
-
-    const docShellWindow = docShell.domWindow;
     const windows = this._targetActor.ignoreSubFrames
       ? [docShellWindow]
       : this._getWindowsInDocShell(docShell);
@@ -2001,7 +1987,7 @@ class DebuggerProgressListener {
     
     
     if (
-      this._watchedDocShellsAbortControllersMap.has(window?.docShell) &&
+      this._watchedDocShells.has(window) &&
       
       
       !Cu.isRemoteProxy(window) &&
