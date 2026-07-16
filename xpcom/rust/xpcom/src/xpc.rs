@@ -1,0 +1,15 @@
+
+
+
+
+
+
+extern "C" {
+    fn Gecko_IsInAutomation() -> bool;
+}
+
+
+pub fn is_in_automation() -> bool {
+    
+    unsafe { Gecko_IsInAutomation() }
+}
