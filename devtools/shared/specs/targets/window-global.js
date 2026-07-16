@@ -67,6 +67,12 @@ const windowGlobalTargetSpecPrototype = {
       request: {},
       response: {},
     },
+    gotoIndex: {
+      request: {
+        index: Arg(0, "number"),
+      },
+      response: {},
+    },
     
     
     
