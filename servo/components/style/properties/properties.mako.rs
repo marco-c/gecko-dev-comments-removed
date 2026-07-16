@@ -14,7 +14,6 @@ use std::{ops, ptr, fmt, mem};
 #[cfg(feature = "servo")] use euclid::SideOffsets2D;
 #[cfg(feature = "gecko")] use crate::gecko_bindings::structs::{self, NonCustomCSSPropertyId};
 #[cfg(feature = "servo")] use crate::logical_geometry::LogicalMargin;
-#[cfg(feature = "servo")] use crate::computed_values;
 #[cfg(feature = "servo")] use crate::dom::AttributeReferences;
 use crate::logical_geometry::WritingMode;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
@@ -2129,32 +2128,6 @@ impl ComputedValuesInner {
             &position_style.bottom,
             &position_style.left,
         ))
-    }
-
-    
-    pub fn overrides_transform_style(&self) -> bool {
-        use crate::computed_values::mix_blend_mode::T as MixBlendMode;
-
-        let effects = self.get_effects();
-        
-        effects.opacity < 1.0 ||
-           !effects.filter.0.is_empty() ||
-           !effects.clip.is_auto() ||
-           effects.mix_blend_mode != MixBlendMode::Normal
-    }
-
-    
-    pub fn get_used_transform_style(&self) -> computed_values::transform_style::T {
-        use crate::computed_values::transform_style::T as TransformStyle;
-
-        let box_ = self.get_box();
-
-        if self.overrides_transform_style() {
-            TransformStyle::Flat
-        } else {
-            
-            box_.transform_style
-        }
     }
 }
 
