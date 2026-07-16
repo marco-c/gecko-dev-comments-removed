@@ -1,6 +1,11 @@
 
 
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+
 async function openTabMenuFor(tab) {
   let tabMenu = tab.ownerDocument.getElementById("tabContextMenu");
 
@@ -35,6 +40,7 @@ add_setup(async function () {
     uriString: "http://mochi.test:8888/#originalTab",
   });
   let originalTab = gBrowser.selectedTab;
+  FirefoxViewTestUtils.enableFirefoxViewButton(window);
   
   FirefoxViewHandler.openTab();
   
