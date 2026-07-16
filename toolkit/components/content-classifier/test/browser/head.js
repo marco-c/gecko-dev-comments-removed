@@ -114,24 +114,86 @@ async function populateRS(db, id, name, rules) {
 
 
 
-async function waitForListsSettled(quietMs = 200) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForListsSettled({
+  quietMs = 0,
+  minNotifies = 0,
+  timeoutMs = 30000,
+} = {}) {
   return new Promise(resolve => {
-    let timer;
-    let observer = () => {
-      clearTimeout(timer);
-      timer = setTimeout(done, quietMs);
-    };
-    function done() {
+    let quietTimer;
+    let deadlineTimer;
+    let notifies = 0;
+
+    function finish() {
+      clearTimeout(quietTimer);
+      clearTimeout(deadlineTimer);
       Services.obs.removeObserver(observer, LISTS_LOADED_TOPIC);
       resolve();
     }
+
+    
+    
+    
+    function maybeSettle() {
+      if (notifies < minNotifies) {
+        return;
+      }
+      if (!quietMs) {
+        finish();
+        return;
+      }
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(finish, quietMs);
+    }
+
+    let observer = () => {
+      notifies++;
+      maybeSettle();
+    };
+
     Services.obs.addObserver(observer, LISTS_LOADED_TOPIC);
-    timer = setTimeout(done, quietMs);
+
+    
+    
+    maybeSettle();
+
+    deadlineTimer = setTimeout(() => {
+      if (notifies < minNotifies) {
+        info(
+          `waitForListsSettled: timed out after ${timeoutMs}ms with ` +
+            `${notifies}/${minNotifies} notification(s); resolving anyway`
+        );
+      }
+      finish();
+    }, timeoutMs);
   });
 }
 
+
+
+
 async function syncAndWaitForLists(client, records) {
-  let settled = waitForListsSettled();
+  let settled = waitForListsSettled({ minNotifies: 1 });
   await client.emit("sync", {
     data: { created: records, updated: [], deleted: [] },
   });
@@ -237,7 +299,7 @@ async function pushEnginePrefs({
   
   
   
-  await waitForListsSettled();
+  
 }
 
 

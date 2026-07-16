@@ -562,7 +562,9 @@ add_task(async function test_rs_back_to_back_sync_updates() {
   
   
   
-  let settled = waitForListsSettled();
+  
+  
+  let settled = waitForListsSettled({ minNotifies: 1, quietMs: 200 });
   await client.emit("sync", {
     data: {
       created: [],

@@ -43,6 +43,8 @@ const ETP_OFF = {
   "privacy.trackingprotection.socialtracking.enabled": false,
   "privacy.trackingprotection.emailtracking.enabled": false,
   "privacy.trackingprotection.emailtracking.pbmode.enabled": false,
+  "privacy.trackingprotection.allow_list.baseline.enabled": false,
+  "privacy.trackingprotection.allow_list.convenience.enabled": false,
 };
 
 
@@ -70,6 +72,12 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({ set: [[HAS_INTERACTED_PREF, false]] });
+
+  registerCleanupFunction(() => {
+    for (const [pref] of CONTENT_PREF_RESET) {
+      Services.prefs.clearUserPref(pref);
+    }
+  });
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -250,6 +258,91 @@ add_task(async function test_strict_list_drives_trackers_content_annotation() {
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
     "trackers-content",
     "strict_list.pbmode.enabled adds trackers-content to PBM annotation"
+  );
+});
+
+
+
+add_task(async function test_baseline_appends_major_exceptions() {
+  await enableMirror({
+    "privacy.trackingprotection.enabled": true,
+    "privacy.trackingprotection.allow_list.baseline.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers,major-exceptions",
+    "baseline adds major-exceptions after the blocker"
+  );
+  is(
+    Services.prefs.getStringPref(ANNO_ENGINES),
+    "",
+    "exception engines never reach the annotation list"
+  );
+});
+
+
+add_task(async function test_convenience_appends_minor_exceptions() {
+  await enableMirror({
+    "privacy.trackingprotection.enabled": true,
+    "privacy.trackingprotection.allow_list.baseline.enabled": true,
+    "privacy.trackingprotection.allow_list.convenience.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers,major-exceptions,minor-exceptions",
+    "baseline+convenience append both exception engines"
+  );
+});
+
+
+
+add_task(async function test_convenience_requires_baseline() {
+  await enableMirror({
+    "privacy.trackingprotection.enabled": true,
+    "privacy.trackingprotection.allow_list.convenience.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "trackers",
+    "convenience alone (baseline off) adds no exception engine"
+  );
+});
+
+
+
+add_task(async function test_exceptions_need_a_blocker() {
+  await enableMirror({
+    "privacy.trackingprotection.allow_list.baseline.enabled": true,
+    "privacy.trackingprotection.allow_list.convenience.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "",
+    "no blocker means no exception engines"
+  );
+  is(
+    Services.prefs.getBoolPref(PROT_ENABLED),
+    false,
+    "protection stays disabled with only allow-list prefs on"
+  );
+});
+
+
+
+add_task(async function test_exceptions_apply_to_pbm_list() {
+  await enableMirror({
+    "privacy.trackingprotection.pbmode.enabled": true,
+    "privacy.trackingprotection.allow_list.baseline.enabled": true,
+  });
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES),
+    "",
+    "normal list empty (only PBM blocker on)"
+  );
+  is(
+    Services.prefs.getStringPref(PROT_ENGINES_PBM),
+    "trackers,major-exceptions",
+    "PBM list gets the exception engine after its blocker"
   );
 });
 
