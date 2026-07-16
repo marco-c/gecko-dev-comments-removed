@@ -698,13 +698,13 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
   
   
   
-  
-  
-  
   if (status == NS_NET_STATUS_TLS_HANDSHAKE_ENDED) {
     MutexAutoLock lock(mLock);
-    if (!mTimings.requestStart.IsNull() && !mTimings.connectEnd.IsNull() &&
-        mTimings.requestStart < mTimings.connectEnd) {
+    if (mEarlyDataDisposition == EARLY_ACCEPTED) {
+      Apply0RTTTimingOverride();
+    } else if (!mTimings.requestStart.IsNull() &&
+               !mTimings.connectEnd.IsNull() &&
+               mTimings.requestStart < mTimings.connectEnd) {
       mTimings.requestStart = mTimings.connectEnd;
     }
   }
@@ -842,6 +842,7 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
       NS_SUCCEEDED(rv) && (*countRead > 0)) {
     LOG(("mEarlyDataDisposition = EARLY_SENT"));
     mEarlyDataDisposition = EARLY_SENT;
+    mEarlyDataSentTime = TimeStamp::Now();
   }
 
   if (mDeferredSendProgress && mConnection) {
@@ -3012,6 +3013,9 @@ void nsHttpTransaction::BootstrapTimings(TimingStruct times) {
       mTimings.requestStart < mTimings.connectEnd) {
     mTimings.requestStart = mTimings.connectEnd;
   }
+  
+  
+  Apply0RTTTimingOverride();
 }
 
 void nsHttpTransaction::SetDomainLookupStart(mozilla::TimeStamp timeStamp,
@@ -3030,6 +3034,25 @@ void nsHttpTransaction::SetDomainLookupEnd(mozilla::TimeStamp timeStamp,
     return;  
   }
   mTimings.domainLookupEnd = timeStamp;
+}
+
+void nsHttpTransaction::Apply0RTTTimingOverride() {
+  mLock.AssertCurrentThreadOwns();
+  
+  
+  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull()) {
+    return;
+  }
+  
+  
+  
+  
+  TimeStamp early = mEarlyDataSentTime;
+  if (!mTimings.connectStart.IsNull() && early < mTimings.connectStart) {
+    early = mTimings.connectStart;
+  }
+  mTimings.connectEnd = early;
+  mTimings.requestStart = early;
 }
 
 void nsHttpTransaction::SetConnectStart(mozilla::TimeStamp timeStamp,
@@ -3333,12 +3356,8 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
     
     
     
-    
     MutexAutoLock lock(mLock);
-    if (mTimings.requestStart.IsNull()) {
-      mTimings.requestStart =
-          mTimings.connectEnd.IsNull() ? TimeStamp::Now() : mTimings.connectEnd;
-    }
+    Apply0RTTTimingOverride();
   }
   if (aRestart) {
     
@@ -3374,13 +3393,8 @@ void nsHttpTransaction::FinishAdopted0RTT(bool aRestart) {
       
       
       
-      
       MutexAutoLock lock(mLock);
-      if (mTimings.requestStart.IsNull()) {
-        mTimings.requestStart = mTimings.connectEnd.IsNull()
-                                    ? TimeStamp::Now()
-                                    : mTimings.connectEnd;
-      }
+      Apply0RTTTimingOverride();
     }
   } else {
     mDoNotTryEarlyData = true;

@@ -187,6 +187,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void MarkEarlyDataSent() {
     if (mEarlyDataDisposition == EARLY_NONE) {
       mEarlyDataDisposition = EARLY_SENT;
+      mEarlyDataSentTime = TimeStamp::Now();
     }
   }
 
@@ -266,6 +267,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   virtual ~nsHttpTransaction();
 
   [[nodiscard]] nsresult Restart();
+  
+  
+  void Apply0RTTTimingOverride();
   char* LocateHttpStart(char* buf, uint32_t len, bool aAllowPartialMatch);
   [[nodiscard]] nsresult ParseLine(nsACString& line);
   [[nodiscard]] nsresult ParseLineSegment(char* seg, uint32_t len);
@@ -644,6 +648,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     EARLY_ACCEPTED,
     EARLY_425
   } mEarlyDataDisposition{EARLY_NONE};
+  
+  
+  
+  
+  
+  TimeStamp mEarlyDataSentTime;
 
   HttpTrafficCategory mTrafficCategory{HttpTrafficCategory::eInvalid};
   
