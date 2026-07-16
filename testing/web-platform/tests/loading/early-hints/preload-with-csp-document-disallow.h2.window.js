@@ -1,5 +1,7 @@
 
 
 
-const early_hints_policy = "allowed";
-fetch_tests_from_window(navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy));
+test(() => {
+    const early_hints_policy = "allowed";
+    navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy);
+});

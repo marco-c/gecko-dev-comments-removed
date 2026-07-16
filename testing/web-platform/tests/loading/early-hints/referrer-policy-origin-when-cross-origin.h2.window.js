@@ -1,4 +1,4 @@
 
 
 
-fetch_tests_from_window(testReferrerPolicy("origin-when-cross-origin"));
+test(() => testReferrerPolicy("origin-when-cross-origin"));

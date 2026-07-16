@@ -1,5 +1,7 @@
 
 
 
-const early_hints_policy = "absent";
-fetch_tests_from_window(navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy));
+test(() => {
+    const early_hints_policy = "absent";
+    navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy);
+});

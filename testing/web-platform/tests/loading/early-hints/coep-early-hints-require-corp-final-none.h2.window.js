@@ -1,7 +1,9 @@
 
 
 
-const early_hints_policy = "require-corp";
-const final_policy = "unsafe-none";
-fetch_tests_from_window(navigateToCrossOriginEmbedderPolicyMismatchTest(early_hints_policy,
-    final_policy));
+test(() => {
+    const early_hints_policy = "require-corp";
+    const final_policy = "unsafe-none";
+    navigateToCrossOriginEmbedderPolicyMismatchTest(early_hints_policy,
+        final_policy);
+});

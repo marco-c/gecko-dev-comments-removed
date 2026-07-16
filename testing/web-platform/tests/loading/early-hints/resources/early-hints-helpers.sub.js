@@ -16,24 +16,6 @@ const CROSS_ORIGIN_RESOURCES_URL = CROSS_ORIGIN + RESOURCES_PATH;
 
 
 
-function openWindow(url) {
-    const win = window.open(url, "_blank");
-    if (win === null) {
-        throw new Error("window.open() should open a popup");
-    }
-    add_completion_callback(() => win.close());
-    return win;
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -52,7 +34,7 @@ function navigateToTestWithEarlyHints(test_url, preloads, exclude_preloads_from_
         params.append("preloads", JSON.stringify(preload));
     }
     const url = RESOURCES_PATH +"/early-hints-test-loader.h2.py?" + params.toString();
-    return openWindow(new URL(url, window.location));
+    window.location.replace(new URL(url, window.location));
 }
 
 
@@ -92,7 +74,7 @@ function navigateToTestWithEarlyHintsPreconnects(test_url, preconnects) {
     }
     const url = RESOURCES_PATH + "/early-hints-test-loader.h2.py?" +
         params.toString();
-    return openWindow(new URL(url, window.location));
+    window.location.replace(new URL(url, window.location));
 }
 
 
@@ -172,7 +154,7 @@ function testReferrerPolicy(referrer_policy) {
 
     const path = "resources/referrer-policy-test-loader.h2.py?" + params.toString();
     const url = new URL(path, window.location);
-    return openWindow(url);
+    window.location.replace(url);
 }
 
 
@@ -197,7 +179,7 @@ function navigateToContentSecurityPolicyBasicTest(
     params.set("final-policy", final_policy);
 
     const url = "resources/csp-basic-loader.h2.py?" + params.toString();
-    return openWindow(new URL(url, window.location));
+    window.location.replace(new URL(url, window.location));
 }
 
 
@@ -221,7 +203,7 @@ function navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy)
     params.set("early-hints-policy", early_hints_policy);
 
     const url = "resources/csp-document-disallow-loader.h2.py?" + params.toString();
-    return openWindow(new URL(url, window.location));
+    window.location.replace(new URL(url, window.location));
 }
 
 
@@ -240,5 +222,5 @@ function navigateToCrossOriginEmbedderPolicyMismatchTest(
     params.set("final-policy", final_policy);
 
     const url = "resources/coep-mismatch.h2.py?" + params.toString();
-    return openWindow(new URL(url, window.location));
+    window.location.replace(new URL(url, window.location));
 }
