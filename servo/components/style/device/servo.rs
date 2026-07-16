@@ -263,6 +263,15 @@ impl Device {
     }
 
     
+    
+    
+    
+    
+    pub fn set_media_type(&mut self, media_type: MediaType) {
+        self.extra.media_type = media_type;
+    }
+
+    
     pub fn media_type(&self) -> MediaType {
         self.extra.media_type.clone()
     }
