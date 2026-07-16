@@ -338,9 +338,8 @@ var allowlist = [
 
   
   
-  
-  
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
+  { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
 
   
   
