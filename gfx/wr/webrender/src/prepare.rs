@@ -72,11 +72,6 @@ pub fn prepare_picture(
     tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     prim_instances: &mut Vec<PrimitiveInstance>,
 ) -> Option<storage::Index<PictureScratch>> {
-    
-    
-    
-    
-    
     if let Some(handle) = frame_state.picture_scratch_handles[pic_index.0] {
         return Some(handle);
     }
@@ -92,6 +87,10 @@ pub fn prepare_picture(
         scratch,
         tile_caches,
     ) else {
+        
+        
+        
+        frame_state.picture_scratch_handles[pic_index.0] = Some(storage::Index::INVALID);
         return None;
     };
 
