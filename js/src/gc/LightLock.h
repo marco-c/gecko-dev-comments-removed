@@ -56,7 +56,10 @@ class LightLock {
   static constexpr uint32_t LockedState = IsLocked;
   static constexpr uint32_t LockedWithWaiterState = IsLocked | HasWaiter;
 
-  mozilla::Atomic<uint32_t, mozilla::Relaxed> state;
+  
+  
+  
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> state;
 
 #ifdef DEBUG
   ThreadId holdingThread_;
@@ -69,9 +72,6 @@ class LightLock {
     if (MOZ_UNLIKELY(!state.compareExchange(UnlockedState, LockedState))) {
       lockSlow(runtime);
     }
-    
-    
-    acquireFence(runtime);
 #ifdef DEBUG
     MOZ_ASSERT(isLocked());
     MOZ_ASSERT(holdingThread_ == ThreadId());
@@ -88,9 +88,6 @@ class LightLock {
     MOZ_ASSERT(holdingThread_ == ThreadId::ThisThreadId());
     holdingThread_ = ThreadId();
 #endif
-    
-    
-    releaseFence(runtime);
     if (MOZ_UNLIKELY(!state.compareExchange(LockedState, UnlockedState))) {
       unlockSlow(runtime);
     }
@@ -107,19 +104,6 @@ class LightLock {
   bool spin(uint32_t& counter);
   bool tryBlockUntilWoken(JSRuntime* runtime);
   void wakeOtherThread(JSRuntime* runtime, const LockGuard<Mutex>& lock);
-
-  void acquireFence(JSRuntime* runtime) {
-    std::atomic_thread_fence(std::memory_order_acquire);
-#ifdef MOZ_TSAN
-    TSANMemoryAcquireFence(runtime);
-#endif
-  }
-  void releaseFence(JSRuntime* runtime) {
-    std::atomic_thread_fence(std::memory_order_release);
-#ifdef MOZ_TSAN
-    TSANMemoryReleaseFence(runtime);
-#endif
-  }
 };
 
 class LightLockRuntime {
