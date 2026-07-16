@@ -64,9 +64,7 @@ class EditContext final : public DOMEventTargetHelper {
   nsGenericHTMLElement* GetAssociatedElement() const {
     return mAssociatedElement;
   }
-  void SetAssociatedElement(nsGenericHTMLElement* aElement) {
-    mAssociatedElement = aElement;
-  }
+  void SetAssociatedElement(nsGenericHTMLElement* aElement);
 
   
   nsGenericHTMLElement& TextContainer() { return *mTextContainer; }
