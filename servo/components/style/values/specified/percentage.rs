@@ -148,6 +148,12 @@ impl Percentage {
     }
 
     
+    #[inline]
+    pub fn is_calc(&self) -> bool {
+        self.0.is_boxed()
+    }
+
+    
     
     
     #[inline]

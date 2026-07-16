@@ -23,6 +23,7 @@
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/BindingCallContext.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffect.h"  
 #include "mozilla/dom/KeyframeEffectBinding.h"
@@ -225,6 +226,20 @@ static void DistributeRange(const Range<Keyframe*>& aRange);
 
 static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
 
+static Maybe<Keyframe::OffsetType> ValidateUTF8StringOffset(
+    const nsCString& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateCSSNumericValueOffset(
+    const dom::CSSNumericValue& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateTimelineRangeOffset(
+    const dom::TimelineRangeOffset& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateKeyframeOffset(
+    const dom::OwningDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8String&
+        aOffset,
+    ErrorResult& aRv);
+
 
 
 
@@ -273,7 +288,8 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 
 
 KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
-    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
+    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline,
+    const dom::AnimationRange* aRange) {
   if (aKeyframes.IsEmpty()) {
     return {false, false};
   }
@@ -309,7 +325,8 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
     }
 
     hasTimelineRangeOffset = true;
-    keyframe.mComputedOffset = GetComputedOffset(offset.ref(), aTimeline);
+    keyframe.mComputedOffset =
+        GetComputedOffset(offset.ref(), aTimeline, aRange);
   }
 
   
@@ -319,9 +336,9 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
 }
 
 
-double KeyframeUtils::GetComputedOffset(
-    const Keyframe::OffsetType& aOffset,
-    const dom::AnimationTimeline* aTimeline) {
+double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
+                                        const dom::AnimationTimeline* aTimeline,
+                                        const dom::AnimationRange* aRange) {
   MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
                  aOffset.mRangeName != StyleTimelineRangeName::Normal,
              "This is only for keyframe selector with timeline range name");
@@ -331,13 +348,24 @@ double KeyframeUtils::GetComputedOffset(
   }
 
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result =
+  const auto offset =
       vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
+  if (!offset) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+
+  if (!aRange) {
+    return *offset;
+  }
 
   
   
-
-  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
+  
+  
+  
+  
+  const auto& range = vt->IntervalForAttachmentRange(*aRange);
+  return (*offset - range.first) / (range.second - range.first);
 }
 
 
@@ -518,7 +546,7 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
   
   
   
-  IgnoredErrorResult parseEasingResult;
+  IgnoredErrorResult parseErrorResult;
 
   for (;;) {
     bool done;
@@ -555,10 +583,11 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
       return false;
     }
 
-    if (!keyframeDict.mOffset.IsNull()) {
-      
-      keyframe->mOffset.emplace(
-          Keyframe::OffsetType::PercentageOffset(keyframeDict.mOffset.Value()));
+    if (!parseErrorResult.Failed() && !keyframeDict.mOffset.IsNull()) {
+      if (auto offset = ValidateKeyframeOffset(keyframeDict.mOffset.Value(),
+                                               parseErrorResult)) {
+        keyframe->mOffset = std::move(offset);
+      }
     }
 
     keyframe->mComposite = keyframeDict.mComposite;
@@ -573,9 +602,9 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
       }
     }
 
-    if (!parseEasingResult.Failed()) {
+    if (!parseErrorResult.Failed()) {
       keyframe->mTimingFunction =
-          TimingParams::ParseEasing(keyframeDict.mEasing, parseEasingResult);
+          TimingParams::ParseEasing(keyframeDict.mEasing, parseErrorResult);
       
       
       
@@ -609,7 +638,8 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
   }
 
   
-  if (parseEasingResult.MaybeSetPendingException(aCx)) {
+  
+  if (parseErrorResult.MaybeSetPendingException(aCx)) {
     return false;
   }
 
@@ -801,14 +831,15 @@ static Maybe<PropertyValuePair> MakePropertyValuePair(
 
 
 
+
+
 static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes) {
   double offset = 0.0;
   for (const Keyframe& keyframe : aKeyframes) {
     if (keyframe.mOffset) {
-      
-      
-      
-      MOZ_ASSERT(keyframe.mOffset->IsPercentageOffset());
+      if (!keyframe.mOffset->IsPercentageOffset()) {
+        continue;
+      }
       double thisOffset = keyframe.mOffset->mPercentage;
       if (thisOffset < offset || thisOffset > 1.0f) {
         return false;
@@ -1040,17 +1071,16 @@ static void BuildSegmentsFromValueEntries(
              aEntries[j + 1].mProperty == aEntries[j].mProperty) {
         ++j;
       }
-    } else if (aEntries[i].mOffset == 1.0f) {
-      if (aEntries[i + 1].mOffset == 1.0f &&
+    } else if (aEntries[i].mOffset >= 1.0f) {
+      if (aEntries[i].mOffset == 1.0f && aEntries[i + 1].mOffset == 1.0f &&
           aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         
         while (j + 1 < n && aEntries[j + 1].mOffset == 1.0f &&
                aEntries[j + 1].mProperty == aEntries[j].mProperty) {
           ++j;
         }
-      } else {
+      } else if (aEntries[i].mProperty != aEntries[i + 1].mProperty) {
         
-        MOZ_ASSERT(aEntries[i].mProperty != aEntries[i + 1].mProperty);
         animationProperty = nullptr;
         ++i;
         continue;
@@ -1162,29 +1192,83 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   
   
   
-  const FallibleTArray<Nullable<double>>* offsets = nullptr;
-  AutoTArray<Nullable<double>, 1> singleOffset;
-  auto& offset = keyframeDict.mOffset;
-  if (offset.IsDouble()) {
-    singleOffset.AppendElement(offset.GetAsDouble());
-    
-    
-    
-    const FallibleTArray<Nullable<double>>& asFallibleArray = singleOffset;
-    offsets = &asFallibleArray;
-  } else if (offset.IsDoubleOrNullSequence()) {
-    offsets = &offset.GetAsDoubleOrNullSequence();
+  
+  
+  
+  
+  
+  
+  nsTArray<Maybe<Keyframe::OffsetType>> offsets(1);
+  if (!keyframeDict.mOffset.IsNull()) {
+    const auto& offset = keyframeDict.mOffset.Value();
+    if (offset.IsDouble()) {
+      offsets.AppendElement(
+          Some(Keyframe::OffsetType::PercentageOffset(offset.GetAsDouble())));
+    } else if (offset.IsCSSNumericValue()) {
+      if (auto result = ValidateCSSNumericValueOffset(
+              offset.GetAsCSSNumericValue(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (offset.IsTimelineRangeOffset()) {
+      if (auto result = ValidateTimelineRangeOffset(
+              offset.GetAsTimelineRangeOffset(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (offset.IsUTF8String()) {
+      if (auto result =
+              ValidateUTF8StringOffset(offset.GetAsUTF8String(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (
+        
+        
+        offset
+            .IsDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8StringOrNullSequence()) {
+      const auto& sequence =
+          offset
+              .GetAsDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8StringOrNullSequence();
+      offsets.SetCapacity(sequence.Length());
+      for (const auto& value : sequence) {
+        if (value.IsNull()) {
+          offsets.AppendElement(Nothing());
+          continue;
+        }
+        auto result = ValidateKeyframeOffset(value.Value(), aRv);
+        if (aRv.Failed()) {
+          
+          break;
+        }
+        MOZ_ASSERT(result);
+        offsets.AppendElement(std::move(result));
+      }
+    }
   }
-  
-  
-  
 
+  
+  
+  
+  
+  
+  if (aRv.Failed()) {
+    
+    
+    
+    aResult.Clear();
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
   size_t offsetsToFill =
-      offsets ? std::min(offsets->Length(), aResult.Length()) : 0;
+      offsets.IsEmpty() ? 0 : std::min(offsets.Length(), aResult.Length());
   for (size_t i = 0; i < offsetsToFill; i++) {
-    if (!offsets->ElementAt(i).IsNull()) {
-      aResult[i].mOffset.emplace(Keyframe::OffsetType::PercentageOffset(
-          offsets->ElementAt(i).Value()));
+    if (offsets.ElementAt(i)) {
+      std::swap(aResult[i].mOffset, offsets.ElementAt(i));
     }
   }
 
@@ -1349,6 +1433,119 @@ static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
     DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
+}
+
+
+
+
+
+
+
+static Maybe<Keyframe::OffsetType> ValidateUTF8StringOffset(
+    const nsCString& aOffset, ErrorResult& aRv) {
+  
+  
+  
+  StyleTimelineRangeName name = StyleTimelineRangeName::None;
+  double percentage = 0.0;
+  if (!Servo_ParseKeyframeSelector(&aOffset, &name, &percentage)) {
+    aRv.ThrowTypeError("Invalid string of the keyframe offset.");
+    return Nothing();
+  }
+  return Some(Keyframe::OffsetType{name, percentage});
+}
+
+
+
+
+
+
+
+
+static Maybe<Keyframe::OffsetType> ValidateCSSNumericValueOffset(
+    const dom::CSSNumericValue& aOffset, ErrorResult& aRv) {
+  if (!StaticPrefs::layout_css_typed_om_enabled() ||
+      !StaticPrefs::layout_css_scroll_driven_animations_enabled()) {
+    aRv.ThrowTypeError(
+        "CSSNumericValue is not supported for keyframe offsets.");
+    return Nothing();
+  }
+
+  RefPtr<dom::CSSUnitValue> asPercent =
+      aOffset.GetAsCSSNumericValue().To("percent"_ns, aRv);
+  return asPercent ? Some(Keyframe::OffsetType::PercentageOffset(
+                         asPercent->Value() / 100.0))
+                   : Nothing();
+}
+
+
+
+
+
+
+
+
+
+
+static Maybe<Keyframe::OffsetType> ValidateTimelineRangeOffset(
+    const dom::TimelineRangeOffset& aOffset, ErrorResult& aRv) {
+  if (!StaticPrefs::layout_css_typed_om_enabled() ||
+      !StaticPrefs::layout_css_scroll_driven_animations_enabled()) {
+    aRv.ThrowTypeError(
+        "TimelineRagneOffset is not supported for keyframe offsets.");
+    return Nothing();
+  }
+
+  const auto& rangeName = aOffset.mRangeName;
+  const auto& offset = aOffset.mOffset;
+  if (!offset.WasPassed()) {
+    if (rangeName.WasPassed()) {
+      
+      
+      aRv.ThrowTypeError("Invalid syntax of the timeline range offset.");
+    }
+    
+    return Nothing();
+  }
+
+  
+  StyleTimelineRangeName name = StyleTimelineRangeName::None;
+  if (rangeName.WasPassed() &&
+      !Servo_ParseTimelineRangeName(&rangeName.Value(), &name)) {
+    aRv.ThrowTypeError("Invalid string of the timeline range name.");
+    return Nothing();
+  }
+  RefPtr<dom::CSSUnitValue> asPercent = offset.Value().To("percent"_ns, aRv);
+  return asPercent
+             ? Some(Keyframe::OffsetType{name, asPercent->Value() / 100.0})
+             : Nothing();
+}
+
+
+
+
+
+
+
+
+static Maybe<Keyframe::OffsetType> ValidateKeyframeOffset(
+    const dom::OwningDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8String&
+        aOffset,
+    ErrorResult& aRv) {
+  if (aOffset.IsDouble()) {
+    return Some(Keyframe::OffsetType::PercentageOffset(aOffset.GetAsDouble()));
+  }
+
+  if (aOffset.IsUTF8String()) {
+    return ValidateUTF8StringOffset(aOffset.GetAsUTF8String(), aRv);
+  }
+
+  if (aOffset.IsCSSNumericValue()) {
+    return ValidateCSSNumericValueOffset(aOffset.GetAsCSSNumericValue(), aRv);
+  }
+
+  MOZ_ASSERT(aOffset.IsTimelineRangeOffset());
+  return ValidateTimelineRangeOffset(aOffset.GetAsTimelineRangeOffset(), aRv);
 }
 
 }  

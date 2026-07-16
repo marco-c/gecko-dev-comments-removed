@@ -27,6 +27,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/layers/AnimationInfo.h"
@@ -1293,10 +1294,26 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
     
     BaseComputedKeyframe keyframeDict;
     if (keyframe.mOffset) {
-      
-      if (!keyframe.mOffset->IsTimelineRangeOffset()) {
-        keyframeDict.mOffset.SetValue(keyframe.mOffset->mPercentage);
-      }
+      if (keyframe.mOffset->IsPercentageOffset()) {
+        
+        
+        keyframeDict.mOffset.SetValue().RawSetAsDouble() =
+            keyframe.mOffset->mPercentage;
+      } else if (StaticPrefs::layout_css_typed_om_enabled()) {
+        
+        MOZ_ASSERT(keyframe.mOffset->IsTimelineRangeOffset());
+
+        nsAutoCString rangeName;
+        Servo_SerializeTimelineRangeName(keyframe.mOffset->mRangeName,
+                                         &rangeName);
+        auto& offset =
+            keyframeDict.mOffset.SetValue().RawSetAsTimelineRangeOffset();
+        offset.mRangeName.Construct(std::move(rangeName));
+        offset.mOffset.Construct(MakeCSSUnitValue(
+            GetParentObject(), StyleNumericType::Percent(),
+            keyframe.mOffset->mPercentage * 100.0, "percent"_ns));
+      }  
+         
     }
     if (std::isnan(keyframe.mComputedOffset)) {
       MOZ_ASSERT(keyframe.IsRangedKeyframe(), "Invalid computed offset");
