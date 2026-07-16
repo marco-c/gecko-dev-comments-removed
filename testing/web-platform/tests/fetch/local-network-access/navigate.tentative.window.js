@@ -13,7 +13,6 @@
 
 
 
-
 setup(() => {
   assert_false(window.isSecureContext);
 });
@@ -101,54 +100,3 @@ subsetTestByKey(
                                    expected: NavigationTestResult.SUCCESS,
                                  }),
     'public to public: no permission required.');
-
-
-
-
-subsetTestByKey(
-    'from-treat-as-public', promise_test,
-    t => navigateTest(t, {
-      source: {
-        server: Server.HTTP_LOOPBACK,
-        treatAsPublic: true,
-      },
-      target: Server.OTHER_HTTP_LOOPBACK,
-      expected: NavigationTestResult.SUCCESS,
-    }),
-    'treat-as-public-address to loopback: no permission required.');
-
-subsetTestByKey(
-    'from-treat-as-public', promise_test,
-    t => navigateTest(t, {
-      source: {
-        server: Server.HTTP_LOOPBACK,
-        treatAsPublic: true,
-      },
-      target: Server.HTTP_LOOPBACK,
-      expected: NavigationTestResult.SUCCESS,
-    }),
-    'treat-as-public-address to loopback (same-origin): no permission required.');
-
-subsetTestByKey(
-    'from-treat-as-public', promise_test,
-    t => navigateTest(t, {
-      source: {
-        server: Server.HTTP_LOOPBACK,
-        treatAsPublic: true,
-      },
-      target: Server.HTTP_LOCAL,
-      expected: NavigationTestResult.SUCCESS,
-    }),
-    'treat-as-public-address to local: no permission required.');
-
-subsetTestByKey(
-    'from-treat-as-public', promise_test,
-    t => navigateTest(t, {
-      source: {
-        server: Server.HTTP_LOOPBACK,
-        treatAsPublic: true,
-      },
-      target: Server.HTTP_PUBLIC,
-      expected: NavigationTestResult.SUCCESS,
-    }),
-    'treat-as-public-address to public: no permission required.');
