@@ -425,21 +425,22 @@ nsresult NS_NewChannel(nsIChannel** outChannel, nsIURI* aUri,
                        nsIInterfaceRequestor* aCallbacks ,
                        nsLoadFlags aLoadFlags ,
                        nsIIOService* aIoService ,
-                       uint32_t aSandboxFlags ) {
+                       uint32_t aSandboxFlags ,
+                       uint64_t aAssociatedBrowsingContextID ) {
   AssertLoadingPrincipalAndClientInfoMatch(
       aLoadingPrincipal, aLoadingClientInfo, aContentPolicyType);
 
   Maybe<ClientInfo> loadingClientInfo;
   loadingClientInfo.emplace(aLoadingClientInfo);
 
-  return NS_NewChannelInternal(outChannel, aUri,
-                               nullptr,  
-                               aLoadingPrincipal,
-                               nullptr,  
-                               loadingClientInfo, aController, aSecurityFlags,
-                               aContentPolicyType, aCookieJarSettings,
-                               aPerformanceStorage, aLoadGroup, aCallbacks,
-                               aLoadFlags, aIoService, aSandboxFlags);
+  return NS_NewChannelInternal(
+      outChannel, aUri,
+      nullptr,  
+      aLoadingPrincipal,
+      nullptr,  
+      loadingClientInfo, aController, aSecurityFlags, aContentPolicyType,
+      aCookieJarSettings, aPerformanceStorage, aLoadGroup, aCallbacks,
+      aLoadFlags, aIoService, aSandboxFlags, aAssociatedBrowsingContextID);
 }
 
 nsresult NS_NewChannelInternal(
@@ -453,8 +454,8 @@ nsresult NS_NewChannelInternal(
     nsILoadGroup* aLoadGroup ,
     nsIInterfaceRequestor* aCallbacks ,
     nsLoadFlags aLoadFlags ,
-    nsIIOService* aIoService ,
-    uint32_t aSandboxFlags ) {
+    nsIIOService* aIoService , uint32_t aSandboxFlags ,
+    uint64_t aAssociatedBrowsingContextID ) {
   NS_ENSURE_ARG_POINTER(outChannel);
 
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
@@ -470,7 +471,7 @@ nsresult NS_NewChannelInternal(
   rv = aIoService->NewChannelFromURIWithClientAndController(
       aUri, aLoadingNode, aLoadingPrincipal, aTriggeringPrincipal,
       aLoadingClientInfo, aController, aSecurityFlags, aContentPolicyType,
-      aSandboxFlags, getter_AddRefs(channel));
+      aSandboxFlags, aAssociatedBrowsingContextID, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     return rv;
   }

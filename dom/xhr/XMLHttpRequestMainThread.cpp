@@ -2628,13 +2628,13 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        nullptr,  
                        loadFlags, nullptr, sandboxFlags);
   } else if (mClientInfo.isSome()) {
-    rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
-                       mClientInfo.ref(), mController, secFlags,
-                       contentPolicyType, mCookieJarSettings,
-                       mPerformanceStorage,  
-                       loadGroup,
-                       nullptr,  
-                       loadFlags, nullptr, sandboxFlags);
+    rv = NS_NewChannel(
+        getter_AddRefs(mChannel), mRequestURL, mPrincipal, mClientInfo.ref(),
+        mController, secFlags, contentPolicyType, mCookieJarSettings,
+        mPerformanceStorage,  
+        loadGroup,
+        nullptr,  
+        loadFlags, nullptr, sandboxFlags, mAssociatedBrowsingContextID);
   } else {
     
     rv = NS_NewChannel(getter_AddRefs(mChannel), mRequestURL, mPrincipal,
