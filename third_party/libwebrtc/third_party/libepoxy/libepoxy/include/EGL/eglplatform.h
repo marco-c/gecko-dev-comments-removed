@@ -19,4 +19,4 @@
 
 
 
-#include "../../../../../gfx/angle/checkout/include/EGL/eglplatform.h"
+#include "../../../../angle/include/EGL/eglplatform.h"
