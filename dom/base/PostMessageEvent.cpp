@@ -73,11 +73,10 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP PostMessageEvent::Run() {
   
   
 
-  RefPtr<nsGlobalWindowInner> targetWindow;
-  if (mTargetWindow->IsClosedOrClosing() ||
-      !(targetWindow = nsGlobalWindowInner::Cast(
-            mTargetWindow->GetCurrentInnerWindow())) ||
-      targetWindow->IsDying())
+  RefPtr<nsGlobalWindowInner> targetWindow =
+      nsGlobalWindowInner::Cast(mTargetWindow->GetCurrentInnerWindow());
+  if (mTargetWindow->IsClosedOrClosing() || !targetWindow ||
+      targetWindow->IsDying() || !targetWindow->IsFullyActive())
     return NS_OK;
 
   
