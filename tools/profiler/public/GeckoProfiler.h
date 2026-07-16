@@ -114,9 +114,11 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 enum class SamplingState {
   JustStopped,  
                 
-  SamplingPaused,    
-                     
-  SamplingCompleted  
+  SamplingPaused,  
+                   
+  NoStackSamplingCompleted,  
+                             
+  SamplingCompleted          
 };
 
 using PostSamplingCallback = std::function<void(SamplingState)>;

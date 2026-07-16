@@ -5,65 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function hasCapturedStack(thread) {
-  const { stackTable, frameTable, stringTable } = thread;
-  const SAMPLE_STACK_SLOT = thread.samples.schema.stack;
-  const STACK_PREFIX_SLOT = stackTable.schema.prefix;
-
-  let rootStackIndex;
-
-  for (const sample of thread.samples.data) {
-    const stackIndex = sample[SAMPLE_STACK_SLOT];
-
-    
-    if (stackIndex === null) {
-      continue;
-    }
-
-    
-    if (rootStackIndex !== undefined) {
-      if (stackIndex !== rootStackIndex) {
-        return true;
-      }
-      continue;
-    }
-
-    if (stackTable.data[stackIndex][STACK_PREFIX_SLOT] !== null) {
-      
-      return true;
-    }
-
-    
-    rootStackIndex = stackIndex;
-
-    
-    const STACK_FRAME_SLOT = stackTable.schema.frame;
-    const FRAME_LOCATION_SLOT = frameTable.schema.location;
-    const frameIndex = stackTable.data[rootStackIndex][STACK_FRAME_SLOT];
-    Assert.equal(
-      stringTable[frameTable.data[frameIndex][FRAME_LOCATION_SLOT]],
-      "(root)",
-      "RootStack is labeled '(root)'."
-    );
-  }
-
-  return false;
-}
-
 add_task(async function test_profile_feature_nostacksampling() {
   await ProfilerTestUtils.assertProfilerInactive();
 
@@ -83,19 +24,19 @@ add_task(async function test_profile_feature_nostacksampling() {
     await wait(500);
 
     
-    
-    
     {
       const { parentThread, contentThread } =
         await stopProfilerNowAndGetThreads(contentPid);
-      Assert.ok(
-        !hasCapturedStack(parentThread),
-        "A stack was captured from the parent process' main thread " +
+      Assert.equal(
+        parentThread.samples.data.length,
+        0,
+        "Stack samples were recorded from the parent process' main thread" +
           "when the No Stack Sampling feature was turned on."
       );
-      Assert.ok(
-        !hasCapturedStack(contentThread),
-        "A stack was captured from the content process' main thread " +
+      Assert.equal(
+        contentThread.samples.data.length,
+        0,
+        "Stack samples were recorded from the content process' main thread" +
           "when the No Stack Sampling feature was turned on."
       );
     }
@@ -112,15 +53,17 @@ add_task(async function test_profile_feature_nostacksampling() {
     {
       const { parentThread, contentThread } =
         await waitSamplingAndStopProfilerAndGetThreads(contentPid);
-      Assert.ok(
-        hasCapturedStack(parentThread),
-        "No stack was captured from the parent process' main thread " +
+      Assert.greater(
+        parentThread.samples.data.length,
+        0,
+        "No Stack samples were recorded from the parent process' main thread" +
           "when the No Stack Sampling feature was not turned on."
       );
 
-      Assert.ok(
-        hasCapturedStack(contentThread),
-        "No stack was captured from the content process' main thread " +
+      Assert.greater(
+        contentThread.samples.data.length,
+        0,
+        "No Stack samples were recorded from the content process' main thread" +
           "when the No Stack Sampling feature was not turned on."
       );
     }
