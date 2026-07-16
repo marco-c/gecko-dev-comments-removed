@@ -640,8 +640,11 @@ impl GpuBufferDataI for QuadHeader {
 
 
 pub struct QuadPrimitive {
+    
+    
     pub bounds: LayoutOrDeviceRect,
-    pub clip: LayoutOrDeviceRect,
+    
+    pub pattern_rect: LayoutOrDeviceRect,
     
     
     pub input_task: RenderTaskId,
@@ -654,7 +657,7 @@ impl GpuBufferDataF for QuadPrimitive {
     const NUM_BLOCKS: usize = 5;
     fn write(&self, writer: &mut GpuBufferWriterF) {
         writer.push_one(self.bounds);
-        writer.push_one(self.clip);
+        writer.push_one(self.pattern_rect);
         writer.push_render_task(self.input_task);
         writer.push_one(self.pattern_scale_offset);
         writer.push_one(self.color);
