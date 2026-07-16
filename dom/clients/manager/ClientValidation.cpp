@@ -21,61 +21,18 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
   if (NS_WARN_IF(result.isErr())) {
     return false;
   }
+  nsCOMPtr<nsIPrincipal> principal = result.unwrap();
 
   
   
   if (NS_WARN_IF(!ValidatePrincipalCouldPotentiallyBeLoadedBy(
-          result.inspect(), aRemoteType,
-          {ValidatePrincipalOptions::AllowSystem}))) {
+          principal, aRemoteType, {ValidatePrincipalOptions::AllowSystem}))) {
     return false;
   }
 
   
-  
-  switch (aPrincipalInfo.type()) {
-    
-    case PrincipalInfo::TSystemPrincipalInfo:
-    case PrincipalInfo::TNullPrincipalInfo: {
-      return true;
-    }
-
-    
-    case PrincipalInfo::TContentPrincipalInfo: {
-      const ContentPrincipalInfo& content =
-          aPrincipalInfo.get_ContentPrincipalInfo();
-
-      
-      RefPtr<MozURL> specURL;
-      nsresult rv = MozURL::Init(getter_AddRefs(specURL), content.spec());
-      NS_ENSURE_SUCCESS(rv, false);
-
-      
-      RefPtr<MozURL> originURL;
-      rv = MozURL::Init(getter_AddRefs(originURL), content.originNoSuffix());
-      NS_ENSURE_SUCCESS(rv, false);
-
-      nsAutoCString originOrigin;
-      originURL->Origin(originOrigin);
-
-      nsAutoCString specOrigin;
-      specURL->Origin(specOrigin);
-
-      
-      
-      
-      
-      
-      
-
-      return specOrigin == originOrigin;
-    }
-    default: {
-      break;
-    }
-  }
-
-  
-  return false;
+  return principal->IsSystemPrincipal() || principal->GetIsNullPrincipal() ||
+         principal->GetIsContentPrincipal();
 }
 
 bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
