@@ -322,7 +322,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
   static intptr_t UnlinkTrap(ArgsRef aArgs, void* aux) {
     auto broker = static_cast<SandboxBrokerClient*>(aux);
     auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    if (path && path[0] == '\0') {
+    if (!path) {
+      
+      return -EFAULT;
+    }
+    if (path[0] == '\0') {
       
       return -ENOENT;
     }
@@ -498,7 +502,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     auto fd = static_cast<int>(aArgs.args[0]);
     auto path = reinterpret_cast<const char*>(aArgs.args[1]);
     auto flags = static_cast<int>(aArgs.args[2]);
-    if (path && path[0] == '\0') {
+    if (!path) {
+      
+      return -EFAULT;
+    }
+    if (path[0] == '\0') {
       
       return -ENOENT;
     }

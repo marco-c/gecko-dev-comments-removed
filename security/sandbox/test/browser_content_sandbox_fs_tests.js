@@ -634,6 +634,24 @@ async function testFileAccessLinuxOnly() {
   }
 
   await runTestsList(tests);
+
+  
+  
+  
+  
+  
+  const EFAULT = 14;
+  let unlinkNull = await SpecialPowers.spawn(webBrowser, [], unlinkNullPath);
+  ok(
+    unlinkNull.ok,
+    "unlink/unlinkat with a null path did not crash the content process"
+  );
+  is(unlinkNull.unlinkErrno, EFAULT, "unlink(NULL) was rejected with EFAULT");
+  is(
+    unlinkNull.unlinkatErrno,
+    EFAULT,
+    "unlinkat(AT_FDCWD, NULL, 0) was rejected with EFAULT"
+  );
 }
 
 async function testFileAccessLinuxSnap() {
