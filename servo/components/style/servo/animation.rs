@@ -594,30 +594,33 @@ impl Animation {
             return false;
         }
 
-        if self.on_last_iteration() {
-            return false;
-        }
-
-        self.iterate();
-        true
+        self.iterate_by(1.) == 1.
     }
 
-    fn iterate(&mut self) {
-        debug_assert!(!self.on_last_iteration());
+    
+    
+    
+    fn iterate_by(&mut self, n: f64) -> f64 {
+        let n = n.trunc().min(self.remaining_iterations().ceil() - 1.0);
+        if n < 1. {
+            return 0.;
+        }
 
         if let KeyframesIterationState::Finite(ref mut current, max) = self.iteration_state {
-            *current = (*current + 1.).min(max);
+            *current = (*current + n).min(max);
         }
 
         if let AnimationState::Paused(ref mut progress) = self.state {
-            debug_assert!(*progress > 1.);
-            *progress -= 1.;
+            debug_assert!(*progress > n);
+            *progress -= n;
         }
 
         
-        self.started_at += self.duration;
+        self.started_at += self.duration * n;
         match self.direction {
-            AnimationDirection::Alternate | AnimationDirection::AlternateReverse => {
+            AnimationDirection::Alternate | AnimationDirection::AlternateReverse
+                if n % 2. == 1.0 =>
+            {
                 self.current_direction = match self.current_direction {
                     AnimationDirection::Normal => AnimationDirection::Reverse,
                     AnimationDirection::Reverse => AnimationDirection::Normal,
@@ -628,6 +631,15 @@ impl Animation {
             },
             _ => {},
         }
+
+        n
+    }
+
+    fn remaining_iterations(&self) -> f64 {
+        match self.iteration_state {
+            KeyframesIterationState::Finite(current, max) => max - current,
+            KeyframesIterationState::Infinite(_) => f64::INFINITY,
+        }
     }
 
     
@@ -635,10 +647,7 @@ impl Animation {
     
     
     pub fn current_iteration_end_progress(&self) -> f64 {
-        match self.iteration_state {
-            KeyframesIterationState::Finite(current, max) => (max - current).min(1.),
-            KeyframesIterationState::Infinite(_) => 1.,
-        }
+        self.remaining_iterations().min(1.)
     }
 
     
@@ -655,10 +664,7 @@ impl Animation {
 
     
     fn on_last_iteration(&self) -> bool {
-        match self.iteration_state {
-            KeyframesIterationState::Finite(current, max) => current >= (max - 1.),
-            KeyframesIterationState::Infinite(_) => false,
-        }
+        self.remaining_iterations() <= 1.
     }
 
     
@@ -714,10 +720,7 @@ impl Animation {
             match old_state {
                 Paused(old_progress) => {
                     let mut progress = old_progress + (old_delay - self.delay) / self.duration;
-                    while progress > 1. && !self.on_last_iteration() {
-                        self.iterate();
-                        progress -= 1.;
-                    }
+                    progress -= self.iterate_by(progress);
                     self.state = Paused(progress);
                 },
                 Finished => {
@@ -732,15 +735,12 @@ impl Animation {
                 _ => {
                     
                     
-                    let mut starting_progress = (now - self.started_at) / self.duration;
+                    let starting_progress = (now - self.started_at) / self.duration;
                     match self.iteration_state {
                         KeyframesIterationState::Finite(ref mut current, _) => *current = 0.0,
                         _ => {},
                     }
-                    while starting_progress > 1. && !self.on_last_iteration() {
-                        self.iterate();
-                        starting_progress -= 1.;
-                    }
+                    self.iterate_by(starting_progress);
                 },
             }
 
@@ -1803,7 +1803,7 @@ pub fn maybe_start_animations<E>(
 
         let now = context.current_time_for_animations;
         let started_at = now + delay;
-        let mut starting_progress = (now - started_at) / duration;
+        let starting_progress = (now - started_at) / duration;
         let state = match style.animation_play_state_mod(i) {
             AnimationPlayState::Paused => AnimationState::Paused(starting_progress),
             AnimationPlayState::Running => AnimationState::Pending,
@@ -1851,10 +1851,7 @@ pub fn maybe_start_animations<E>(
 
         
         
-        while starting_progress > 1. && !new_animation.on_last_iteration() {
-            new_animation.iterate();
-            starting_progress -= 1.;
-        }
+        new_animation.iterate_by(starting_progress);
 
         animation_state.dirty = true;
 
