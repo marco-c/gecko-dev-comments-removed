@@ -2451,9 +2451,25 @@ void VerifyClientPrincipalInfosMatch(
           aLeft.get_ContentPrincipalInfo();
       const mozilla::ipc::ContentPrincipalInfo& rightContent =
           aRight.get_ContentPrincipalInfo();
-      MOZ_RELEASE_ASSERT(leftContent.attrs() == rightContent.attrs() &&
-                         leftContent.originNoSuffix() ==
-                             rightContent.originNoSuffix());
+      {
+        
+        
+        nsAutoString scheme;
+        nsAutoString baseDomain;
+        int32_t port;
+        bool leftForeignBit;
+        bool rightForeignBit;
+        OriginAttributes::ParsePartitionKey(leftContent.attrs().mPartitionKey,
+                                            scheme, baseDomain, port,
+                                            leftForeignBit);
+        OriginAttributes::ParsePartitionKey(rightContent.attrs().mPartitionKey,
+                                            scheme, baseDomain, port,
+                                            rightForeignBit);
+        MOZ_RELEASE_ASSERT(leftForeignBit == rightForeignBit);
+      }
+      MOZ_RELEASE_ASSERT(leftContent.attrs() == rightContent.attrs());
+      MOZ_RELEASE_ASSERT(leftContent.originNoSuffix() ==
+                         rightContent.originNoSuffix());
       return;
     }
     case mozilla::ipc::PrincipalInfo::TNullPrincipalInfo: {
