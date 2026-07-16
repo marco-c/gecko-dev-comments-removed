@@ -86,12 +86,14 @@ class WorkerDescriptorActor extends Actor {
 
       if (!DevToolsServer.isInChildProcess) {
         const registration = this._getServiceWorkerRegistrationInfo();
-        form.scope = registration.scope;
-        const newestWorker =
-          registration.activeWorker ||
-          registration.waitingWorker ||
-          registration.installingWorker;
-        form.fetch = newestWorker?.handlesFetchEvents;
+        if (registration) {
+          form.scope = registration.scope;
+          const newestWorker =
+            registration.activeWorker ||
+            registration.waitingWorker ||
+            registration.installingWorker;
+          form.fetch = newestWorker?.handlesFetchEvents;
+        }
       }
     }
     return form;
@@ -174,7 +176,17 @@ class WorkerDescriptorActor extends Actor {
   }
 
   _getServiceWorkerRegistrationInfo() {
-    return swm.getRegistrationByPrincipal(this._dbg.principal, this._dbg.url);
+    try {
+      return swm.getRegistrationByPrincipal(this._dbg.principal, this._dbg.url);
+    } catch (e) {
+      
+      
+      
+      
+      
+      
+      return null;
+    }
   }
 
   _detach() {

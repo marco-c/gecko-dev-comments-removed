@@ -116,8 +116,11 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
           id: dbg.id,
           name: dbg.name,
           type: dbg.type,
+          
           relatedDocumentInnerWindowId:
-            dbg.window?.windowGlobalChild?.innerWindowId,
+            dbg.type === Ci.nsIWorkerDebugger.TYPE_DEDICATED
+              ? dbg.windowIDs[0]
+              : undefined,
           url: absoluteURL,
           
           
