@@ -64,12 +64,14 @@ function makeI420Frames(colorSpace) {
 }
 
 function makeRGBXFrames(colorSpace) {
-  const kYellow = 0xFFFF00;
-  const kRed = 0xFF0000;
-  const kBlue = 0x0000FF;
-  const kGreen = 0x00FF00;
-  const kBlack = 0x000000;
-  const kWhite = 0xFFFFFF;
+  
+  
+  const kYellow = 0xFF00FFFF;
+  const kRed = 0xFF0000FF;
+  const kBlue = 0xFFFF0000;
+  const kGreen = 0xFF00FF00;
+  const kBlack = 0xFF000000;
+  const kWhite = 0xFFFFFFFF;
 
   const result = [];
   const init = {format: 'RGBX', timestamp: 0, codedWidth: 4, codedHeight: 4};
