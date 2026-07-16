@@ -399,21 +399,6 @@ module.exports = function (config) {
               branches: 0,
             },
             
-            "content-src/components/Widgets/Stocks/StockTicker.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            
-            "content-src/components/Widgets/PictureOfTheDay/PictureOfTheDay.jsx":
-              {
-                statements: 0,
-                lines: 0,
-                functions: 0,
-                branches: 0,
-              },
-            
             "content-src/components/Widgets/Clocks/AddClockForm.jsx": {
               statements: 0,
               lines: 0,

@@ -13027,11 +13027,6 @@ const PREF_STOCKS_SIZE = "widgets.stocks.size";
 const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
   "widgets.system.stocks.enabled";
 const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
-const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
-  "widgets.pictureOfTheDay.enabled";
-const PREF_PICTURE_OF_THE_DAY_SIZE = "widgets.pictureOfTheDay.size";
-const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
-  "widgets.system.pictureOfTheDay.enabled";
 
 
 
@@ -13180,22 +13175,6 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "stocksVisible",
     widgetsSettingsEnabledKey: "stocksEnabled",
-  },
-  {
-    id: "pictureOfTheDay",
-    telemetryName: "picture_of_the_day",
-    order: 8,
-    enabledPref: PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED,
-    sizePref: PREF_PICTURE_OF_THE_DAY_SIZE,
-    defaultSize: "medium",
-    validSizes: ["medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED,
-    trainhopEnabledKey: "pictureOfTheDayEnabled",
-    trainhopSizeKey: "pictureOfTheDaySize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "pictureOfTheDayVisible",
-    widgetsSettingsEnabledKey: "pictureOfTheDayEnabled",
   },
 ];
 
@@ -22245,158 +22224,6 @@ function Stocks({
 
 
 
-const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
-
-
-
-
-
-
-
-const PictureOfTheDay = ({
-  dispatch,
-  widgetsMayBeMaximized,
-  widgetEnabledMap
-}) => {
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const widgetSize = resolveWidgetSize(PICTURE_OF_THE_DAY_ENTRY, prefs);
-  const {
-    impressionRef,
-    recordUserAction,
-    recordEnabled
-  } = useWidgetTelemetry({
-    dispatch,
-    widget: PICTURE_OF_THE_DAY_ENTRY,
-    widgetSize
-  });
-  const handleHide = () => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.SET_PREF,
-        data: {
-          name: PICTURE_OF_THE_DAY_ENTRY.enabledPref,
-          value: false
-        }
-      }));
-      recordEnabled(false, {
-        source: "context_menu"
-      });
-    });
-  };
-  const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.SET_PREF,
-        data: {
-          name: PICTURE_OF_THE_DAY_ENTRY.sizePref,
-          value: size
-        }
-      }));
-      recordUserAction("change_size", {
-        source: "context_menu",
-        value: size,
-        size
-      });
-    });
-  }, [dispatch, recordUserAction]);
-  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
-  const handleLearnMore = () => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.OPEN_LINK,
-        data: {
-          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-          where: "tab"
-        }
-      }));
-      recordUserAction("learn_more", {
-        source: "context_menu"
-      });
-    });
-  };
-
-  
-  
-  const handleManageWallpaper = () => recordUserAction("manage_wallpaper", {
-    source: "context_menu"
-  });
-  const handleHidePhoto = () => recordUserAction("hide_photo", {
-    source: "context_menu"
-  });
-  const handleShow = () => recordUserAction("show_picture", {
-    source: "widget"
-  });
-  return external_React_default().createElement("article", {
-    className: `picture-of-the-day widget col-4 ${widgetSize}-widget`,
-    ref: impressionRef
-  }, external_React_default().createElement("div", {
-    className: "picture-of-the-day-toolbar"
-  }, external_React_default().createElement("div", {
-    className: "picture-of-the-day-context-menu-wrapper"
-  }, external_React_default().createElement("moz-button", {
-    className: "picture-of-the-day-context-menu-button",
-    "data-l10n-id": "newtab-picture-widget-menu-button",
-    iconSrc: "chrome://global/skin/icons/more.svg",
-    menuId: "picture-of-the-day-context-menu",
-    type: "ghost"
-  }), external_React_default().createElement("panel-list", {
-    id: "picture-of-the-day-context-menu"
-  }, external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-picture-menu-manage-wallpaper",
-    onClick: handleManageWallpaper
-  }), external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-picture-menu-hide-photo",
-    onClick: handleHidePhoto
-  }), external_React_default().createElement("hr", null), widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
-    submenu: "picture-of-the-day-size-submenu"
-  }, external_React_default().createElement("span", {
-    "data-l10n-id": "newtab-widget-menu-change-size"
-  }), external_React_default().createElement("panel-list", {
-    ref: sizeSubmenuRef,
-    slot: "submenu",
-    id: "picture-of-the-day-size-submenu"
-  }, ["medium", "large"].map(size => external_React_default().createElement("panel-item", {
-    key: size,
-    type: "checkbox",
-    checked: widgetSize === size || undefined,
-    "data-size": size,
-    "data-l10n-id": `newtab-widget-size-${size}`
-  })))), external_React_default().createElement(MoveSubmenu, {
-    widgetId: "pictureOfTheDay",
-    widgetEnabledMap: widgetEnabledMap
-  }), external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-menu-hide",
-    onClick: handleHide
-  }), external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-picture-menu-learn-more",
-    onClick: handleLearnMore
-  })))), external_React_default().createElement("div", {
-    className: "picture-of-the-day-footer"
-  }, external_React_default().createElement("button", {
-    type: "button",
-    className: "picture-of-the-day-show-button",
-    onClick: handleShow,
-    "data-l10n-id": "newtab-picture-show-button"
-  }), external_React_default().createElement("p", {
-    className: "picture-of-the-day-message",
-    "data-l10n-id": "newtab-picture-check-back"
-  })));
-};
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -22446,8 +22273,7 @@ const WIDGET_ROW_COMPONENTS = {
   clocks: ClocksRowWidget,
   privacy: Privacy,
   crossword: Crossword,
-  stocks: Stocks,
-  pictureOfTheDay: PictureOfTheDay
+  stocks: Stocks
 };
 const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
@@ -22859,8 +22685,7 @@ function Widgets() {
     clocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "clocks"), prefs, widgetsEnabled),
     privacy: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "privacy"), prefs, widgetsEnabled),
     crossword: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "crossword"), prefs, widgetsEnabled),
-    stocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "stocks"), prefs, widgetsEnabled),
-    pictureOfTheDay: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"), prefs, widgetsEnabled)
+    stocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "stocks"), prefs, widgetsEnabled)
   };
   const widgetOrder = resolveWidgetOrder(prefs);
   const {
@@ -24937,7 +24762,6 @@ function WidgetsManagementPanel({
   mayHavePrivacyWidget,
   mayHaveCrosswordWidget,
   mayHaveStocksWidget,
-  mayHavePictureOfTheDayWidget,
   setPref
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
@@ -24995,9 +24819,6 @@ function WidgetsManagementPanel({
         case "WIDGET_STOCKS":
           widgetName = "stocks";
           break;
-        case "WIDGET_PICTURE_OF_THE_DAY":
-          widgetName = "picture_of_the_day";
-          break;
       }
       if (widgetName) {
         const widget = WIDGET_REGISTRY.find(w => w.telemetryName === widgetName);
@@ -25025,8 +24846,7 @@ function WidgetsManagementPanel({
     clocksEnabled,
     privacyEnabled,
     crosswordEnabled,
-    stocksEnabled,
-    pictureOfTheDayEnabled
+    stocksEnabled
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -25140,16 +24960,6 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.stocks.enabled",
     "data-event-source": "WIDGET_STOCKS",
     "data-l10n-id": "newtab-custom-widget-stocks-toggle"
-  })), mayHavePictureOfTheDayWidget && external_React_default().createElement("div", {
-    id: "picture-widget-section",
-    className: "section"
-  }, external_React_default().createElement("moz-toggle", {
-    id: "picture-toggle",
-    pressed: pictureOfTheDayEnabled || null,
-    ontoggle: onToggleWidget,
-    "data-preference": "widgets.pictureOfTheDay.enabled",
-    "data-event-source": "WIDGET_PICTURE_OF_THE_DAY",
-    "data-l10n-id": "newtab-custom-widget-picture-toggle"
   })))))));
 }
 
@@ -25212,9 +25022,6 @@ class ContentSection extends (external_React_default()).PureComponent {
           break;
         case "WIDGET_STOCKS":
           widgetName = "stocks";
-          break;
-        case "WIDGET_PICTURE_OF_THE_DAY":
-          widgetName = "picture_of_the_day";
           break;
       }
       if (widgetName) {
@@ -25320,7 +25127,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHavePrivacyWidget,
       mayHaveCrosswordWidget,
       mayHaveStocksWidget,
-      mayHavePictureOfTheDayWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -25352,8 +25158,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       clocksEnabled,
       privacyEnabled,
       crosswordEnabled,
-      stocksEnabled,
-      pictureOfTheDayEnabled
+      stocksEnabled
     } = enabledWidgets;
 
     
@@ -25461,16 +25266,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "widgets.stocks.enabled",
       "data-event-source": "WIDGET_STOCKS",
       "data-l10n-id": "newtab-custom-widget-stocks-toggle"
-    })), mayHavePictureOfTheDayWidget && external_React_default().createElement("div", {
-      id: "picture-widget-section",
-      className: "section"
-    }, external_React_default().createElement("moz-toggle", {
-      id: "picture-toggle",
-      pressed: pictureOfTheDayEnabled || null,
-      ontoggle: this.onPreferenceSelect,
-      "data-preference": "widgets.pictureOfTheDay.enabled",
-      "data-event-source": "WIDGET_PICTURE_OF_THE_DAY",
-      "data-l10n-id": "newtab-custom-widget-picture-toggle"
     })))), external_React_default().createElement("div", {
       className: "settings-toggles"
     },
@@ -25563,7 +25358,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
       mayHaveStocksWidget: mayHaveStocksWidget,
-      mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
       mayHaveWeatherForecast: mayHaveWeatherForecast,
       weatherDisplay: weatherDisplay,
       setPref: setPref,
@@ -25783,7 +25577,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHavePrivacyWidget: this.props.mayHavePrivacyWidget,
       mayHaveCrosswordWidget: this.props.mayHaveCrosswordWidget,
       mayHaveStocksWidget: this.props.mayHaveStocksWidget,
-      mayHavePictureOfTheDayWidget: this.props.mayHavePictureOfTheDayWidget,
       dispatch: this.props.dispatch,
       onSubpanelToggle: this.onSubpanelToggle,
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
@@ -29094,7 +28887,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayHavePrivacyWidget = widgetVisibleById("privacy");
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
     const mayHaveStocksWidget = widgetVisibleById("stocks");
-    const mayHavePictureOfTheDayWidget = widgetVisibleById("pictureOfTheDay");
 
     
     const enabledWidgets = {
@@ -29106,7 +28898,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       privacyEnabled: prefs["widgets.privacy.enabled"],
       crosswordEnabled: prefs["widgets.crossword.enabled"],
       stocksEnabled: prefs["widgets.stocks.enabled"],
-      pictureOfTheDayEnabled: prefs["widgets.pictureOfTheDay.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"]
     };
@@ -29243,7 +29034,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHavePrivacyWidget: mayHavePrivacyWidget,
         mayHaveCrosswordWidget: mayHaveCrosswordWidget,
         mayHaveStocksWidget: mayHaveStocksWidget,
-        mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
         mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
         weatherDisplay: prefs["weather.display"],
         showing: customizeMenuVisible,
@@ -29337,7 +29127,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
       mayHaveStocksWidget: mayHaveStocksWidget,
-      mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
       mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
       weatherDisplay: prefs["weather.display"],
       showing: customizeMenuVisible,
