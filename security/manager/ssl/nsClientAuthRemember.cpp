@@ -33,6 +33,23 @@ using namespace mozilla;
 using namespace mozilla::psm;
 
 NS_IMPL_ISUPPORTS(nsClientAuthRememberService, nsIClientAuthRememberService)
+
+
+
+
+
+static OriginAttributesPattern PatternForExactOA(
+    const OriginAttributes& aAttrs) {
+  OriginAttributesPattern pattern;
+  pattern.mPrivateBrowsingId.Construct(aAttrs.mPrivateBrowsingId);
+  pattern.mUserContextId.Construct(aAttrs.mUserContextId);
+  pattern.mFirstPartyDomain.Construct(aAttrs.mFirstPartyDomain);
+  pattern.mGeckoViewSessionContextId.Construct(
+      aAttrs.mGeckoViewSessionContextId);
+  pattern.mPartitionKey.Construct(aAttrs.mPartitionKey);
+  return pattern;
+}
+
 NS_IMPL_ISUPPORTS(nsClientAuthRemember, nsIClientAuthRememberRecord)
 
 NS_IMETHODIMP
@@ -93,7 +110,24 @@ nsClientAuthRememberService::ForgetRememberedDecision(const nsACString& key) {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
+  
+  nsAutoCString host(key);
+  int32_t firstComma = host.FindChar(',');
+  OriginAttributesPattern pattern;
+  if (firstComma != kNotFound) {
+    
+    OriginAttributes oa;
+    nsDependentCSubstring oaSuffix = Substring(key, firstComma + 2);
+    if (!oaSuffix.IsEmpty()) {
+      (void)oa.PopulateFromSuffix(oaSuffix);
+    }
+    pattern = PatternForExactOA(oa);
+    host.Truncate(firstComma);
+  }
+  if (!host.IsEmpty()) {
+    mozilla::net::SSLTokensCache::ClearSessionCacheAndTokensForHost(host,
+                                                                    pattern);
+  }
   return NS_OK;
 }
 
@@ -187,7 +221,10 @@ nsClientAuthRememberService::DeleteDecisionsByHost(
       }
     }
   }
-  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
+  OriginAttributesPattern pattern;
+  pattern.mPrivateBrowsingId.Construct(attrs.mPrivateBrowsingId);
+  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokensForHost(aHostName,
+                                                                  pattern);
   return NS_OK;
 }
 

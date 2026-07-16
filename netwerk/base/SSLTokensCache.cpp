@@ -490,6 +490,7 @@ nsresult SSLTokensCache::Init() {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs && XRE_IsParentProcess()) {
       obs->AddObserver(gInstance, "profile-after-change", false);
+      obs->AddObserver(gInstance, "last-pb-context-exited", false);
     }
 
     if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
@@ -555,6 +556,7 @@ nsresult SSLTokensCache::Shutdown() {
     }
     if (XRE_IsParentProcess()) {
       obs->RemoveObserver(instance, "profile-after-change");
+      obs->RemoveObserver(instance, "last-pb-context-exited");
     }
   }
   return NS_OK;
@@ -1002,6 +1004,42 @@ static void DispatchFileRemoval(nsCOMPtr<nsIFile> aBackingFile) {
       }));
 }
 
+
+void SSLTokensCache::ClearPrivateBrowsing() {
+  LOG(("SSLTokensCache::ClearPrivateBrowsing"));
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance) {
+    return;
+  }
+  gInstance->RemoveMatchingLocked([](const nsACString& aKey) {
+    
+    if (!aKey.Contains('^')) return false;
+    return OAFromPeerId(aKey).mPrivateBrowsingId != 0;
+  });
+}
+
+template <typename SendFn>
+static void ForwardToSocketProcess(SendFn aSend) {
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+  if (nsIOService::UseSocketProcess() && gIOService) {
+    gIOService->CallOrWaitForSocketProcess([send = std::move(aSend)]() {
+      RefPtr<SocketProcessParent> socketParent =
+          SocketProcessParent::GetSingleton();
+      if (socketParent) {
+        send(socketParent);
+      }
+    });
+  }
+}
+
+
+void SSLTokensCache::ForwardClearToSocketProcess() {
+  ForwardToSocketProcess(
+      [](SocketProcessParent* p) { (void)p->SendClearSessionCache(); });
+}
+
 static void MaybeClearNSSSessionCache() {
   if (NSS_IsInitialized()) {
     SSL_ClearSessionCache();
@@ -1012,15 +1050,21 @@ static void MaybeClearNSSSessionCache() {
 void SSLTokensCache::ClearSessionCacheAndTokens() {
   MaybeClearNSSSessionCache();
   Clear();
-  if (nsIOService::UseSocketProcess() && gIOService) {
-    gIOService->CallOrWaitForSocketProcess([]() {
-      RefPtr<SocketProcessParent> socketParent =
-          SocketProcessParent::GetSingleton();
-      if (socketParent) {
-        (void)socketParent->SendClearSessionCache();
-      }
-    });
-  }
+  ForwardClearToSocketProcess();
+}
+
+
+void SSLTokensCache::ForwardClearPrivateBrowsingToSocketProcess() {
+  ForwardToSocketProcess([](SocketProcessParent* p) {
+    (void)p->SendClearPrivateBrowsingSessionCache();
+  });
+}
+
+
+void SSLTokensCache::ClearSessionCacheAndPBMTokens() {
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  MaybeClearNSSSessionCache();
+  ClearPrivateBrowsing();
 }
 
 
@@ -1254,6 +1298,15 @@ void SSLTokensCache::RemoveByHostAndOAPattern(
 }
 
 
+void SSLTokensCache::ClearSessionCacheAndTokensForHost(
+    const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern) {
+  LOG(("SSLTokensCache::ClearSessionCacheAndTokensForHost"));
+  MaybeClearNSSSessionCache();
+  RemoveByHostAndOAPattern(aHost, aPattern);
+  ForwardClearToSocketProcess();
+}
+
+
 void SSLTokensCache::RemoveBySiteAndOAPattern(
     const nsACString& aSite, const mozilla::OriginAttributesPattern& aPattern) {
   LOG(("SSLTokensCache::RemoveBySiteAndOAPattern"));
@@ -1405,6 +1458,13 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
       DispatchLoad(std::move(loadPath), loadGen);
       RegisterShutdownBlocker();
     }
+  } else if (!strcmp(aTopic, "last-pb-context-exited")) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    LOG(("SSLTokensCache::Observe [topic=last-pb-context-exited]"));
+    
+    ClearPrivateBrowsing();
+    
+    ForwardClearPrivateBrowsingToSocketProcess();
   }
   return NS_OK;
 }
