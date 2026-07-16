@@ -137,6 +137,8 @@ public class WebExtension {
 
 
 
+
+
     public static final long ALLOW_CONTENT_MESSAGING = 1 << 0;
 
     
@@ -168,6 +170,13 @@ public class WebExtension {
   }
 
   
+
+
+
+
+
+
+
 
 
 
@@ -896,6 +905,9 @@ public class WebExtension {
     }
 
     
+
+
+
 
 
 
