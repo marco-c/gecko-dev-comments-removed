@@ -132,10 +132,9 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   
   
   
-  using HasMatchingFlavorsCallbackWithMap =
-      mozilla::MoveOnlyFunction<void(
-          mozilla::Result<nsTArray<nsCString>, nsresult>,
-          mozilla::Maybe<mozilla::widget::WebCustomFormatMap>)>;
+  using HasMatchingFlavorsCallbackWithMap = mozilla::MoveOnlyFunction<void(
+      mozilla::Result<nsTArray<nsCString>, nsresult>,
+      mozilla::Maybe<mozilla::widget::WebCustomFormatMap>)>;
 
  private:
   virtual ~nsClipboard();
