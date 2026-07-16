@@ -178,7 +178,7 @@ pub struct VariableDeclaration {
 
 
 
-#[derive(Clone, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, ToTyped)]
 pub enum CustomDeclarationValue {
     
     Unparsed(Arc<custom_properties::SpecifiedValue>),
@@ -190,7 +190,6 @@ pub enum CustomDeclarationValue {
 
 
 #[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
-#[typed(todo_derive_fields)]
 pub struct CustomDeclaration {
     
     #[css(skip)]

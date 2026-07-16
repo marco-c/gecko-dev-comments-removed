@@ -31,6 +31,16 @@ struct CSSPropertyId {
  public:
   
   
+  static CSSPropertyId Parse(const nsACString& aName) {
+    NonCustomCSSPropertyId prop = nsCSSProps::LookupProperty(aName);
+    if (prop == eCSSPropertyExtra_variable) {
+      return FromCustomProperty(aName);
+    }
+    return CSSPropertyId(prop);
+  }
+
+  
+  
   
   static CSSPropertyId FromCustomName(RefPtr<nsAtom> aCustomName) {
     return CSSPropertyId(std::move(aCustomName));
@@ -60,6 +70,7 @@ struct CSSPropertyId {
   RefPtr<nsAtom> mCustomName;
 
   bool IsCustom() const { return mId == eCSSPropertyExtra_variable; }
+  bool IsShorthand() const { return nsCSSProps::IsShorthand(mId); }
 
   bool operator==(const CSSPropertyId&) const = default;
   bool operator!=(const CSSPropertyId&) const = default;

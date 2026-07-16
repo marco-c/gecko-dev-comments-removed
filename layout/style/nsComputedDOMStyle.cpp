@@ -385,6 +385,19 @@ void nsComputedDOMStyle::SetCssText(const nsACString& aCssText,
   aRv.ThrowNoModificationAllowedError("Can't set cssText on computed style");
 }
 
+uint32_t nsComputedDOMStyle::NonCustomPropertyCount() {
+  return GetComputedStyleMap()->Length();
+}
+
+NonCustomCSSPropertyId nsComputedDOMStyle::NonCustomPropertyAt(
+    uint32_t aIndex) {
+  return GetComputedStyleMap()->PropertyAt(aIndex);
+}
+
+bool nsComputedDOMStyle::HasNonCustomProperty(NonCustomCSSPropertyId aId) {
+  return !!GetComputedStyleMap()->FindEntryForProperty(aId);
+}
+
 uint32_t nsComputedDOMStyle::Length() {
   
   
@@ -393,8 +406,8 @@ uint32_t nsComputedDOMStyle::Length() {
     return 0;
   }
 
-  uint32_t length = GetComputedStyleMap()->Length() +
-                    Servo_GetCustomPropertiesCount(mComputedStyle);
+  uint32_t length =
+      NonCustomPropertyCount() + Servo_GetCustomPropertiesCount(mComputedStyle);
 
   ClearCurrentStyleSources();
 

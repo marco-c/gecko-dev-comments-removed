@@ -203,7 +203,8 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem, ToTyped)]
+#[typed(todo_derive_fields)]
 pub struct Value<Component> {
     
     pub(crate) v: ValueInner<Component>,
@@ -383,7 +384,8 @@ impl SpecifiedValue {
 }
 
 impl ComputedValue {
-    fn to_declared_value(&self) -> properties::CustomDeclarationValue {
+    
+    pub fn to_declared_value(&self) -> properties::CustomDeclarationValue {
         if let ValueInner::Universal(ref var) = self.v {
             return properties::CustomDeclarationValue::Unparsed(Arc::clone(var));
         }

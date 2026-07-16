@@ -477,6 +477,14 @@ impl ComputedCustomProperties {
             self.non_inherited.get(name)
         }
     }
+
+    
+    
+    pub fn get_for_cssom(&self, name: &Name) -> Option<&ComputedRegisteredValue> {
+        self.inherited
+            .get(name)
+            .or_else(|| self.non_inherited.get(name))
+    }
 }
 
 
