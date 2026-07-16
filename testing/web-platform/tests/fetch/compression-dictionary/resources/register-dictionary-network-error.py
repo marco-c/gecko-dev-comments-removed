@@ -1,0 +1,5 @@
+def main(request, response):
+    
+    
+    response.status = 302
+    response.headers.set(b"Location", "about:blank")
