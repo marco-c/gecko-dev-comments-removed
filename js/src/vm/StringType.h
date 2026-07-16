@@ -215,7 +215,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   size_t length() const { return headerLengthField(); }
   MOZ_ALWAYS_INLINE
   uint32_t flags() const { return headerFlagsField(); }
-  uint32_t getFlagsAtomic() const { return headerFlagsFieldAtomic(); }
+  uint32_t getFlagsForTracing() const { return headerFlagsFieldForTracing(); }
 
   
   
@@ -489,8 +489,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   MOZ_ALWAYS_INLINE
   bool isRope() const { return StringFlags::isRope(flags()); }
-  MOZ_ALWAYS_INLINE
-  bool isRopeAtomic() const { return StringFlags::isRope(getFlagsAtomic()); }
 
   MOZ_ALWAYS_INLINE
   JSRope& asRope() const {
@@ -789,6 +787,26 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
  protected:
   JSString() = default;
+
+  
+  
+  
+  template <typename T>
+  static T getFieldForTracing(T* ptr) {
+#ifdef JS_GC_CONCURRENT_MARKING
+    return __atomic_load_n(ptr, __ATOMIC_RELAXED);
+#else
+    return *ptr;
+#endif
+  }
+  template <typename T>
+  static void setField(T* ptr, T value) {
+#ifdef JS_GC_CONCURRENT_MARKING
+    __atomic_store_n(ptr, value, __ATOMIC_RELAXED);
+#else
+    *ptr = value;
+#endif
+  }
 };
 
 namespace js {
@@ -887,6 +905,16 @@ class JSRope : public JSString {
     return d.s.u3.right;
   }
 
+  JSString* getLeftChildForTracing() const {
+    
+    return getFieldForTracing(&d.s.u2.left);
+  }
+
+  JSString* getRightChildForTracing() const {
+    
+    return getFieldForTracing(&d.s.u3.right);
+  }
+
   void traceChildren(JSTracer* trc);
 
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
@@ -964,6 +992,8 @@ class JSLinearString : public JSString {
   
   
   JSExtensibleString& makeExtensible(size_t capacity);
+
+  JSLinearString* getBaseForTracing() const;
 
   template <typename CharT>
   MOZ_ALWAYS_INLINE const CharT* nonInlineChars(
@@ -2287,6 +2317,11 @@ inline JSLinearString* JSString::base() const {
   return d.s.u3.base;
 }
 
+inline JSLinearString* JSLinearString::getBaseForTracing() const {
+  MOZ_ASSERT(hasBase());
+  return getFieldForTracing(&d.s.u3.base);
+}
+
 inline JSAtom* JSString::atom() const {
   MOZ_ASSERT(isAtomRef());
   return &d.s.u3.base->asAtom();
@@ -2440,7 +2475,7 @@ MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(const char16_t* chars,
   if (!(isAtomRef() && atom()->isInline())) {
     checkStringCharsArena(chars, usesStringBuffer);
   }
-  d.s.u2.nonInlineCharsTwoByte = chars;
+  setField(&d.s.u2.nonInlineCharsTwoByte, chars);
 }
 
 template <>
@@ -2450,7 +2485,7 @@ MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(const JS::Latin1Char* chars,
   if (!(isAtomRef() && atom()->isInline())) {
     checkStringCharsArena(chars, usesStringBuffer);
   }
-  d.s.u2.nonInlineCharsLatin1 = chars;
+  setField(&d.s.u2.nonInlineCharsLatin1, chars);
 }
 
 MOZ_ALWAYS_INLINE const JS::Latin1Char* JSLinearString::rawLatin1Chars() const {
