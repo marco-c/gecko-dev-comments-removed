@@ -183,6 +183,14 @@ def export_mots(config_path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     
+    
+    
+    
+    for stale in path.parent.glob(f"{path.stem}.*"):
+        if stale != path:
+            stale.unlink()
+
+    
     with path.open("w", encoding="utf-8") as f:
         f.write(output)
 
