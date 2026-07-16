@@ -199,10 +199,7 @@ class AudioProxyThread {
       mPacket = MakeUnique<int16_t[]>(audio_10ms * aChannels);
     }
 
-    
-    
-    
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mPacketizer->Input(aAudioData, aFrameCount)));
+    mPacketizer->Input(aAudioData, aFrameCount);
 
     while (mPacketizer->PacketsAvailable()) {
       mPacketizer->Output(mPacket.get());
