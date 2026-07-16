@@ -728,6 +728,7 @@ class Component : public JS::WasmComponent {
   }
 
   const ItemVector& types() const { return types_; }
+  ComponentType getType(uint32_t typeIndex) const;
   [[nodiscard]] bool addType(ComponentType&& type) {
     MOZ_RELEASE_ASSERT(type.isValid());
     return addDefinedItem(std::move(type), definedTypes_, types_);
@@ -762,11 +763,13 @@ class Component : public JS::WasmComponent {
   }
 
   const ItemVector& coreModules() const { return coreModules_; }
+  SharedModule getCoreModule(uint32_t modIndex) const;
   [[nodiscard]] bool addCoreModule(SharedModule module) {
     return addDefinedItem(std::move(module), definedCoreModules_, coreModules_);
   }
 
   const ItemVector& coreInstances() const { return coreInstances_; }
+  SharedModule getCoreModuleForCoreInstance(uint32_t instanceIndex) const;
   [[nodiscard]] bool addCoreInstance(CoreInstanceDesc&& instance) {
     return addDefinedItem(std::move(instance), definedCoreInstances_,
                           coreInstances_);
@@ -776,108 +779,11 @@ class Component : public JS::WasmComponent {
   
 
   
-  ComponentType getType(uint32_t typeIndex) const {
-    ComponentItem item = types_[typeIndex];
-    switch (item.kind()) {
-      case ComponentItem::ItemKind::Defined:
-        return definedTypes_[item.itemIndex()];
-      case ComponentItem::ItemKind::Import:
-        return imports_[item.itemIndex()].externDesc().asType();
-      case ComponentItem::ItemKind::Export:
-        return exports_[item.itemIndex()].externDesc().asType();
-      case ComponentItem::ItemKind::Alias:
-        MOZ_CRASH("should be impossible for now");
-      default:
-        MOZ_CRASH();
-    }
-  }
+  
+  ComponentType getTypeForFunc(uint32_t funcIndex) const;
 
   
-  
-  ComponentType getTypeForFunc(uint32_t funcIndex) const {
-    ComponentItem item = funcs_[funcIndex];
-    switch (item.kind()) {
-      case ComponentItem::ItemKind::Defined:
-        return getType(definedFuncs_[item.itemIndex()].typeIndex());
-      case ComponentItem::ItemKind::Import:
-        return imports_[item.itemIndex()].externDesc().asFunc();
-      case ComponentItem::ItemKind::Export:
-        return exports_[item.itemIndex()].externDesc().asFunc();
-      case ComponentItem::ItemKind::Alias:
-        MOZ_CRASH("should be impossible for now");
-      default:
-        MOZ_CRASH();
-    }
-  }
-
-  
-  const FuncType& getCoreFuncTypeForCoreFunc(uint32_t coreFuncIndex) const {
-    ComponentItem item = coreFuncs_[coreFuncIndex];
-    switch (item.kind()) {
-      case ComponentItem::ItemKind::Defined: {
-        
-        MOZ_CRASH("should be impossible for now");
-      } break;
-      case ComponentItem::ItemKind::Import:
-      case ComponentItem::ItemKind::Export:
-        
-        MOZ_CRASH();
-      case ComponentItem::ItemKind::Alias: {
-        MOZ_ASSERT(item.aliasKind() == ComponentAliasKind::CoreExport);
-        SharedModule mod =
-            getCoreModuleForCoreInstance(item.aliasInstanceIndex());
-        uint32_t ft = mod->codeMeta().funcs[item.itemIndex()].typeIndex;
-        return mod->codeMeta().types->type(ft).funcType();
-      } break;
-      default:
-        MOZ_CRASH();
-    }
-  }
-
-  SharedModule getCoreModule(uint32_t modIndex) const {
-    ComponentItem item = coreModules_[modIndex];
-    switch (item.kind()) {
-      case ComponentItem::ItemKind::Defined:
-        return definedCoreModules_[item.itemIndex()];
-      case ComponentItem::ItemKind::Import:
-        
-        MOZ_CRASH("should be impossible for now");
-      case ComponentItem::ItemKind::Export: {
-        const ComponentExport& exp = exports_[item.itemIndex()];
-        MOZ_ASSERT(exp.externDesc().sort() == ComponentSort::CoreModule);
-        return definedCoreModules_[exp.externDesc().asCoreModule()];
-      } break;
-      case ComponentItem::ItemKind::Alias:
-        
-        MOZ_CRASH("should be impossible for now");
-      default:
-        MOZ_CRASH();
-    }
-  }
-
-  SharedModule getCoreModuleForCoreInstance(uint32_t instanceIndex) const {
-    ComponentItem item = coreInstances_[instanceIndex];
-    switch (item.kind()) {
-      case ComponentItem::ItemKind::Defined: {
-        const CoreInstanceDesc& instance =
-            definedCoreInstances_[item.itemIndex()];
-        if (instance.is<CoreInstanceDescFromModule>()) {
-          return getCoreModule(
-              instance.as<CoreInstanceDescFromModule>().moduleIndex);
-        }
-        return instance.as<CoreInstanceDescFromInlineExports>().mod;
-      } break;
-      case ComponentItem::ItemKind::Import:
-      case ComponentItem::ItemKind::Export:
-        
-        MOZ_CRASH();
-      case ComponentItem::ItemKind::Alias:
-        
-        MOZ_CRASH("should be impossible for now");
-      default:
-        MOZ_CRASH();
-    }
-  }
+  const TypeDef& getTypeForCoreFunc(uint32_t coreFuncIndex) const;
 
   size_t gcMallocBytesExcludingCode() const {
     
