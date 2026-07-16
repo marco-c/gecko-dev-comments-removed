@@ -80,8 +80,10 @@ class JsepSessionTest : public JsepSessionTestBase,
     EXPECT_EQ(NS_OK, mSessionOff->Init());
     EXPECT_EQ(NS_OK, mSessionAns->Init());
 
+    DefaultCodecPreferences prefs;
     AutoTArray<UniquePtr<JsepCodecDescription>, 16> preferredCodecs;
-    PeerConnectionImpl::SetupPreferredCodecs(preferredCodecs);
+    EnumerateDefaultVideoCodecs(&preferredCodecs, prefs);
+    EnumerateDefaultAudioCodecs(&preferredCodecs, prefs);
     for (auto& codec : preferredCodecs) {
       
       
@@ -97,7 +99,7 @@ class JsepSessionTest : public JsepSessionTestBase,
     mSessionAns->SetDefaultCodecs(preferredCodecs);
 
     std::vector<PeerConnectionImpl::RtpExtensionHeader> preferredHeaders;
-    PeerConnectionImpl::SetupPreferredRtpExtensions(preferredHeaders);
+    PeerConnectionImpl::GetDefaultRtpExtensions(prefs, preferredHeaders);
 
     for (const auto& header : preferredHeaders) {
       mSessionOff->AddRtpExtension(header.mMediaType, header.extensionname,
