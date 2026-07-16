@@ -161,8 +161,9 @@ template void Premultiply_SSE2<true, true>(const uint8_t*, int32_t, uint8_t*,
 
 
 
-#define UNPREMULQ_SSE2(x) \
-  (0x10001U * (0xFF0220U / ((x) * ((x) < 0x20 ? 0x100 : 8))))
+
+
+#define UNPREMULQ_SSE2(x) (0xFF00FFU / (x))
 #define UNPREMULQ_SSE2_2(x) UNPREMULQ_SSE2(x), UNPREMULQ_SSE2((x) + 1)
 #define UNPREMULQ_SSE2_4(x) UNPREMULQ_SSE2_2(x), UNPREMULQ_SSE2_2((x) + 2)
 #define UNPREMULQ_SSE2_8(x) UNPREMULQ_SSE2_4(x), UNPREMULQ_SSE2_4((x) + 4)
@@ -204,8 +205,6 @@ static MOZ_ALWAYS_INLINE __m128i UnpremultiplyVector_SSE2(const __m128i& aSrc) {
 
   
   
-  
-  
   __m128i q12 =
       _mm_unpacklo_epi32(_mm_cvtsi32_si128(sUnpremultiplyTable_SSE2[a1]),
                          _mm_cvtsi32_si128(sUnpremultiplyTable_SSE2[a2]));
@@ -216,22 +215,29 @@ static MOZ_ALWAYS_INLINE __m128i UnpremultiplyVector_SSE2(const __m128i& aSrc) {
 
   
   
-  __m128i scale = _mm_cmplt_epi32(ga, _mm_set1_epi32(0x00200000));
   
-  
-  scale = _mm_xor_si128(scale, _mm_set1_epi16(8));
-  scale = _mm_and_si128(scale, _mm_set1_epi16(0x108));
+  __m128i qLo = _mm_and_si128(q1234, _mm_set1_epi32(0x0000FFFF));
+  qLo = _mm_or_si128(qLo, _mm_slli_epi32(qLo, 16));
+  __m128i qHi = _mm_srli_epi32(q1234, 16);
+  qHi = _mm_or_si128(qHi, _mm_slli_epi32(qHi, 16));
+
   
   ga = _mm_and_si128(ga, _mm_set1_epi32(0x000000FF));
 
   
-  rb = _mm_mullo_epi16(rb, scale);
-  ga = _mm_mullo_epi16(ga, scale);
-
   
   
-  rb = _mm_mulhi_epu16(rb, q1234);
-  ga = _mm_mulhi_epu16(ga, q1234);
+  
+  
+  
+  
+  __m128i lowByte = _mm_set1_epi16(0x00FF);
+  rb = _mm_and_si128(
+      _mm_add_epi16(_mm_mullo_epi16(rb, qHi), _mm_mulhi_epu16(rb, qLo)),
+      lowByte);
+  ga = _mm_and_si128(
+      _mm_add_epi16(_mm_mullo_epi16(ga, qHi), _mm_mulhi_epu16(ga, qLo)),
+      lowByte);
 
   
   
