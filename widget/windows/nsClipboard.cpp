@@ -1627,6 +1627,11 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  auto fileDeleteGuard =
+      mozilla::MakeScopeExit([&] { DeleteFile(flatFileName.get()); });
   auto fileCloseGuard = mozilla::MakeScopeExit([&] { CloseHandle(handle); });
 
   const ULONG bufferSize = 4096;
@@ -1638,6 +1643,10 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
     if (FAILED(result)) {
       return NS_ERROR_FAILURE;
     }
+    if (bytesRead > bufferSize) {
+      
+      return NS_ERROR_FAILURE;
+    }
     if (bytesRead == 0) {
       break;
     }
@@ -1646,5 +1655,6 @@ nsresult nsClipboard::SaveStorageOrStream(IDataObject* aDataObject, UINT aIndex,
       return NS_ERROR_FAILURE;
     }
   }
+  fileDeleteGuard.release();
   return NS_OK;
 }
