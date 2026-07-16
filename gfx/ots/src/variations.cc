@@ -92,7 +92,14 @@ ParseVariationDataSubtable(const ots::Font* font, const uint8_t* data, const siz
     }
   }
 
-  if (!subtable.Skip(valueSize * size_t(itemCount) * (size_t(wordDeltaCount) + size_t(*regionIndexCount)))) {
+  
+  
+  size_t deltaSetSize = valueSize * (size_t(wordDeltaCount) + size_t(*regionIndexCount));
+  
+  if (itemCount && deltaSetSize > std::numeric_limits<size_t>::max() / itemCount) {
+    return OTS_FAILURE_MSG("Delta data size overflow");
+  }
+  if (!subtable.Skip(deltaSetSize * size_t(itemCount))) {
     return OTS_FAILURE_MSG("Failed to read delta data");
   }
 
