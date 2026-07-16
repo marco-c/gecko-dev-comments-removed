@@ -260,3 +260,20 @@ test(() => {
   input.setAttribute("alpha", "");
   assert_equals(input.value, "color(srgb 0 0 1)");
 }, "Setting alpha by setAttribute should update the value");
+
+
+
+
+
+test(() => {
+  const input = document.createElement("input");
+  input.type = "color";
+  
+  
+  input.setAttribute("value", "#ffffff08");
+  assert_equals(input.value, "#ffffff");
+  input.setAttribute("alpha", "");
+  
+  
+  assert_colors(input.value, "color(srgb 1 1 1 / 0.031373)");
+}, "Adding alpha reparses the original value attribute for a non-dirty value");
