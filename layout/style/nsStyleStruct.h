@@ -517,6 +517,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   
   
   mozilla::StyleOverflowClipMargin mOverflowClipMargin;
+
+  mozilla::StyleMarginTrim mMarginTrim;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {
