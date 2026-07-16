@@ -514,6 +514,39 @@ void MFMediaEngineParent::SetMediaSourceOnEngine() {
   AssertOnManagerThread();
   MOZ_ASSERT(mMediaSource);
 
+#ifdef MOZ_WMF_CDM
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool gateEnabled =
+      mProxyId && !mIsFrameServerMode &&
+      StaticPrefs::
+          media_wmf_media_engine_protected_readiness_gate_enabled_AtStartup();
+  RefPtr<MFCDMParent> cdmParent =
+      gateEnabled ? MFCDMParent::GetCDMById(*mProxyId) : nullptr;
+  const bool holdForReadiness =
+      cdmParent && cdmParent->IsHardwareDRM() &&
+      !cdmParent->ReadinessMonitor().AllActivationConditionsSettled();
+  if (holdForReadiness) {
+    LOG("Holding protected topology build until readiness conditions settle");
+    ENGINE_MARKER("MFMediaEngineParent, HoldForReadiness");
+    cdmParent->ReadinessMonitor().RunWhenActivationSettled(
+        [self = RefPtr{this}, this] {
+          if (mMediaEngine) {
+            LOG("Readiness settled; setting protected media source on engine");
+            SetMediaSourceOnEngine();
+          }
+        },
+        mManagerThread);
+    return;
+  }
+#endif
+
   auto errorExit = MakeScopeExit([&] {
     MediaResult error(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                       "Failed to set media source");
