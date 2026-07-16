@@ -3174,6 +3174,14 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force ) {
   }
 #endif
 
+  {
+    
+    StaticMutexAutoLock lock(gCrashHelperClientMutex);
+    if (gCrashHelperClient) {
+      return NS_OK;
+    }
+  }
+
   CrashHelperClient* crashHelperClient;
 
   PathString tempPath;
