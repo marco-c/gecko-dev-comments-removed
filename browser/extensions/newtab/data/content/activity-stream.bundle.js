@@ -22080,7 +22080,8 @@ function Crossword({
   }, external_React_default().createElement("div", {
     className: "crossword-title-wrapper"
   }, external_React_default().createElement("h3", {
-    className: "newtab-crossword-title"
+    className: "newtab-crossword-title",
+    "data-l10n-id": "newtab-crossword-widget-header"
   }), external_React_default().createElement("div", {
     className: "crossword-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
@@ -22112,8 +22113,9 @@ function Crossword({
     onClick: handleCrosswordHide
   }), external_React_default().createElement("panel-item", {
     className: "learn-more",
+    "data-l10n-id": "newtab-crossword-menu-learn-more",
     onClick: handleLearnMore
-  }, "Learn more")))), external_React_default().createElement("div", {
+  })))), external_React_default().createElement("div", {
     className: "crossword-body"
   }, external_React_default().createElement("iframe", {
     className: "crossword-frame",
@@ -25564,7 +25566,7 @@ function WidgetsManagementPanel({
     ontoggle: onToggleWidget,
     "data-preference": "widgets.crossword.enabled",
     "data-event-source": "WIDGET_CROSSWORD",
-    label: "Crossword"
+    "data-l10n-id": "newtab-crossword-widget-toggle"
   })), mayHaveStocksWidget && external_React_default().createElement("div", {
     id: "stocks-widget-section",
     className: "section"
