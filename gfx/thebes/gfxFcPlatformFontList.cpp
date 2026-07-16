@@ -1707,37 +1707,8 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
     UpdateSystemFontOptionsFromIpc(fontList.options());
 #endif
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int fcVersion = FcGetVersion();
-    bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
-
-    for (FontPatternListEntry& fpe : fontList.entries()) {
-      nsCString& patternStr = fpe.pattern();
-      if (fcCharsetParseBug) {
-        int32_t index = patternStr.Find(":charset= ");
-        if (index != kNotFound) {
-          
-          patternStr.Insert('\\', index + 9);
-        }
-      }
-      FcPattern* pattern = FcNameParse((const FcChar8*)patternStr.get());
+    for (const FontPatternListEntry& fpe : fontList.entries()) {
+      FcPattern* pattern = FcNameParse((const FcChar8*)fpe.pattern().get());
       AddPatternToFontList(pattern, lastFamilyName, familyName, fontFamily,
                            fpe.appFontFamily());
       FcPatternDestroy(pattern);
@@ -1911,13 +1882,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
   
   
-  
-  int fcVersion = FcGetVersion();
-  bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
-
-  
-  
-  auto addPattern = [this, fcCharsetParseBug, &families, &faces](
+  auto addPattern = [this, &families, &faces](
                         FcPattern* aPattern, FcChar8*& aLastFamilyName,
                         nsCString& aFamilyName, bool aAppFont) -> bool {
     
@@ -1963,15 +1928,6 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
           (char*)FcNameUnparse(dupToUnparse ? dupToUnparse.get() : aPattern);
       descriptor.Assign(s);
       free(s);
-    }
-
-    if (fcCharsetParseBug) {
-      
-      int32_t index = descriptor.Find(":charset= ");
-      if (index != kNotFound) {
-        
-        descriptor.Insert('\\', index + 9);
-      }
     }
 
     WeightRange weight(FontWeight::NORMAL);
