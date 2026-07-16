@@ -88,18 +88,18 @@ class ContentIteratorBase {
 
   
   
-  static nsINode* GetDeepFirstChild(nsINode* aRoot);
+  template <TreeKind>
+  static nsINode* GetDeepFirstInclusiveDescendant(nsINode*);
   
   
-  static nsIContent* GetDeepFirstChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
-  static nsINode* GetDeepLastChild(nsINode* aRoot);
+  template <TreeKind>
+  static nsIContent* GetDeepFirstInclusiveDescendant(nsIContent*);
+  template <TreeKind>
+  static nsINode* GetDeepLastInclusiveDescendant(nsINode*);
   
   
-  static nsIContent* GetDeepLastChild(
-      nsIContent* aRoot,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
+  template <TreeKind>
+  static nsIContent* GetDeepLastInclusiveDescendant(nsIContent*);
 
   struct AncestorInfo {
     nsIContent* mAncestor = nullptr;
@@ -121,17 +121,16 @@ class ContentIteratorBase {
   
   
   
+  template <TreeKind>
   static nsIContent* GetNextSibling(
       nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No,
       nsTArray<AncestorInfo>* aInclusiveAncestorsOfEndContainer = nullptr);
-  static nsIContent* GetPrevSibling(
-      nsINode* aNode,
-      dom::AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
-          dom::AllowRangeCrossShadowBoundary::No);
+  template <TreeKind>
+  static nsIContent* GetPrevSibling(nsINode* aNode);
 
+  template <TreeKind>
   nsINode* NextNode(nsINode* aNode);
+  template <TreeKind>
   nsINode* PrevNode(nsINode* aNode);
 
   void SetEmpty();

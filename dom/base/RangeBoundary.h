@@ -306,6 +306,16 @@ class RangeBoundaryBase {
 
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
 
+  
+
+
+
+
+
+
+
+
+
   RangeBoundaryBase AsRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
     if (mTreeKind == TreeKind::FlatForSelection) {
       return *this;
@@ -335,16 +345,19 @@ class RangeBoundaryBase {
           
           dom::ShadowRoot* const shadowRoot =
               mParent->GetShadowRootForSelection();
-          MOZ_ASSERT(shadowRoot);
-          MOZ_ASSERT(aChild->GetContainingShadow() != shadowRoot);
+          RawParentType* const slot =
+              mParent->GetAsHTMLSlotElementIfFilledForSelection();
+          MOZ_ASSERT(shadowRoot || slot);
+          MOZ_ASSERT_IF(shadowRoot,
+                        aChild->GetContainingShadow() != shadowRoot);
           
           
           
           
           return IsStartOfContainer()
-                     ? StartOfParent(*shadowRoot, mSetBy,
+                     ? StartOfParent(shadowRoot ? *shadowRoot : *slot, mSetBy,
                                      TreeKind::FlatForSelection)
-                     : EndOfParent(*shadowRoot, mSetBy,
+                     : EndOfParent(shadowRoot ? *shadowRoot : *slot, mSetBy,
                                    TreeKind::FlatForSelection);
         };
     
@@ -401,6 +414,41 @@ class RangeBoundaryBase {
         !mParent->HasChildNodes(),
         fmt::format("Called with invalid offset?\nthis={}", *this).c_str());
     return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
+  }
+
+  
+
+
+
+
+  RangeBoundaryBase GetRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
+    MOZ_ASSERT(IsSet());
+    RangeBoundaryBase inFlatTree = AsRangeBoundaryInFlatTree(aFor);
+    if (NS_WARN_IF(!inFlatTree.IsSet())) {
+      MOZ_ASSERT(inFlatTree.mTreeKind == TreeKind::FlatForSelection);
+      return inFlatTree;
+    }
+    dom::Element* const shadowHostOrSlotElementNotFlatingTheParent =
+        inFlatTree.mParent
+            ->template GetFlatTreeAncestorElementForNonFlatTreeNode<
+                TreeKind::FlatForSelection>();
+    if (!shadowHostOrSlotElementNotFlatingTheParent) [[likely]] {
+      return inFlatTree;
+    }
+    
+    
+    
+    
+    
+    
+    nsIContent* const shadowRoot =
+        shadowHostOrSlotElementNotFlatingTheParent->GetShadowRootForSelection();
+    MOZ_ASSERT_IF(!shadowRoot,
+                  shadowHostOrSlotElementNotFlatingTheParent
+                      ->GetAsHTMLSlotElementIfFilledForSelection());
+    return EndOfParent(
+        shadowRoot ? *shadowRoot : *shadowHostOrSlotElementNotFlatingTheParent,
+        mSetBy, TreeKind::FlatForSelection);
   }
 
   RangeBoundaryBase AsRangeBoundaryInDOMTree() const {
@@ -761,6 +809,11 @@ class RangeBoundaryBase {
 
     nsINode* const parentNode = aChild->GetParentNode();
     if (!parentNode) {
+      return nullptr;
+    }
+    if (parentNode->GetAsHTMLSlotElementIfFilledForSelection()) {
+      
+      
       return nullptr;
     }
     const dom::ShadowRoot* const shadowRoot = parentNode->GetShadowRoot();

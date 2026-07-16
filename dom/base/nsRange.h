@@ -171,6 +171,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
+  already_AddRefed<nsRange> GetRangeInFlatTree() const;
+
+  
+
+
+
+
+
 
 
   nsresult SetStartAndEnd(
