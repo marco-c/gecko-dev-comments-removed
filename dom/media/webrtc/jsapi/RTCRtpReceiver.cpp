@@ -191,6 +191,11 @@ RTCRtpReceiver::RTCRtpReceiver(
 
   mParameters.mCodecs.Construct();
   mParameters.mHeaderExtensions.Construct();
+
+  mParameters.mRtcp.Construct();
+  
+  
+  mParameters.mRtcp.Value().mReducedSize.Construct(false);
 }
 
 #undef INIT_MIRROR
