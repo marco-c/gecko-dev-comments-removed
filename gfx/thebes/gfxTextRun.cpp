@@ -983,6 +983,11 @@ uint32_t gfxTextRun::BreakAndMeasureText(
   
   
   
+  const CompressedGlyph* charGlyphs = mCharacterGlyphs;
+
+  
+  
+  
   uint32_t rescanLimit = aStart;
   for (uint32_t i = aStart; i < end; ++i) {
     if (i >= bufferRange.end) {
@@ -1033,7 +1038,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     
     if (aSuppressBreak != eSuppressAllBreaks &&
         (aSuppressBreak != eSuppressInitialBreak || i > aStart)) {
-      bool atNaturalBreak = mCharacterGlyphs[i].CanBreakBefore() ==
+      bool atNaturalBreak = charGlyphs[i].CanBreakBefore() ==
                             CompressedGlyph::FLAG_BREAK_TYPE_NORMAL;
       
       
@@ -1051,15 +1056,15 @@ uint32_t gfxTextRun::BreakAndMeasureText(
       bool wordWrapping =
           (aCanWordWrap ||
            (aCanWhitespaceWrap &&
-            mCharacterGlyphs[i].CanBreakBefore() ==
+            charGlyphs[i].CanBreakBefore() ==
                 CompressedGlyph::FLAG_BREAK_TYPE_EMERGENCY_WRAP)) &&
-          mCharacterGlyphs[i].IsClusterStart() &&
+          charGlyphs[i].IsClusterStart() &&
           aBreakPriority <= gfxBreakPriority::eWordWrapBreak;
 
       bool whitespaceWrapping = false;
       if (i > aStart) {
         
-        auto const& g = mCharacterGlyphs[i - 1];
+        auto const& g = charGlyphs[i - 1];
         whitespaceWrapping =
             aIsBreakSpaces &&
             (g.CharIsSpace() || g.CharIsTab() || g.CharIsNewline());
@@ -1134,7 +1139,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
 
     advance += charAdvance;
     if (aOutTrimmableWhitespace) {
-      if (mCharacterGlyphs[i].CharIsSpace()) {
+      if (charGlyphs[i].CharIsSpace()) {
         ++trimmableChars;
         trimmableAdvance += charAdvance;
       } else {
