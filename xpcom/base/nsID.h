@@ -7,7 +7,6 @@
 
 #include <string.h>
 
-#include "nsStringFwd.h"
 #include "nscore.h"
 
 #define NSID_LENGTH 39
@@ -68,13 +67,7 @@ struct nsID {
 
 
 
-
-
-
-
-
-
-  bool Parse(const nsACString& aIDStr);
+  bool Parse(const char* aIDStr);
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
   
