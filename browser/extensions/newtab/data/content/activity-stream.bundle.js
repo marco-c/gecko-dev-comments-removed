@@ -22100,220 +22100,16 @@ function Privacy({
 const Crossword_USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size"
 };
-
-
-
-
-const CROSSWORD_CHANNEL = "crossword_widget";
-
-
-
-
-const COMMAND_TYPES = {
-  MENU_ACTION: "menu_action",
-  FORCE_REFRESH: "force_refresh"
-};
-
-
-const EVENT_TYPES = {
-  COMMAND_ACK: "command_ack",
-  WIDGET_READY: "widget_ready",
-  WIDGET_ERROR: "widget_error",
-  PUZZLE_STATE: "puzzle_state",
-  PUZZLE_COMPLETED: "puzzle_completed",
-  INTERACTION: "interaction"
-};
-
-
-
-
-const PUZZLE_STATES = ["intro", "in_progress", "completed"];
-const isNonNegativeNumber = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
-const isWholeCount = value => isNonNegativeNumber(value) && Number.isInteger(value);
-
-
-
-
-const EVENT_PAYLOAD_VALIDATORS = {
-  [EVENT_TYPES.COMMAND_ACK]: payload => typeof payload?.requestId === "string" && typeof payload?.status === "string",
-  [EVENT_TYPES.WIDGET_READY]: () => true,
-  [EVENT_TYPES.WIDGET_ERROR]: payload => typeof payload?.reason === "string" && typeof payload?.terminal === "boolean",
-  [EVENT_TYPES.PUZZLE_STATE]: payload => PUZZLE_STATES.includes(payload?.state),
-  [EVENT_TYPES.PUZZLE_COMPLETED]: payload => isNonNegativeNumber(payload?.elapsedTimeSeconds) && isWholeCount(payload?.hintsTaken),
-  [EVENT_TYPES.INTERACTION]: payload => typeof payload?.action === "string"
-};
-const MENU_ACTION_ITEMS = [{
-  key: "show-all-clues",
-  label: "Show clues",
-  action: "show_all_clues"
-}, {
-  
-  
-  key: "solve-puzzle",
-  label: "Solve puzzle",
-  action: "reveal_grid",
-  hideWhenCompleted: true
-}];
 const CROSSWORD_ENTRY = WIDGET_REGISTRY.find(w => w.id === "crossword");
-
-
-
-const PREF_CROSSWORD_INTERACTION = "widgets.crossword.interaction";
 function Crossword({
   dispatch,
-  handleUserInteraction,
   widgetsMayBeMaximized,
   widgetEnabledMap
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
-  const hasInteracted = prefs[PREF_CROSSWORD_INTERACTION];
   const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const iframeRef = (0,external_React_namespaceObject.useRef)(null);
-
-  
-  
-  const [puzzleCompleted, setPuzzleCompleted] = (0,external_React_namespaceObject.useState)(false);
-
-  
-  
-  
-  const [showLarge, setShowLarge] = (0,external_React_namespaceObject.useState)(false);
-
-  
-  
-  const displaySize = widgetsMayBeMaximized && showLarge ? "large" : widgetSize;
-
-  
-  
-  const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("crossword"), [handleUserInteraction]);
-
-  
-  
-  const merinoOrigin = (0,external_React_namespaceObject.useMemo)(() => {
-    try {
-      return new URL(crosswordEndpoint).origin;
-    } catch {
-      return null;
-    }
-  }, [crosswordEndpoint]);
-
-  
-  
-  
-  
-  const pendingCommandsRef = (0,external_React_namespaceObject.useRef)(new Map());
-
-  
-  
-  
-  
-  
-  const postMenuAction = (0,external_React_namespaceObject.useCallback)(action => {
-    const frameWindow = iframeRef.current?.contentWindow;
-    const requestId = `firefox-menu-${crypto.randomUUID()}`;
-    if (!frameWindow || !merinoOrigin) {
-      return;
-    }
-    pendingCommandsRef.current.set(requestId, action);
-    frameWindow.postMessage({
-      channel: CROSSWORD_CHANNEL,
-      type: COMMAND_TYPES.MENU_ACTION,
-      requestId,
-      action
-    }, merinoOrigin);
-  }, [merinoOrigin]);
-  const handleWidgetEvent = (0,external_React_namespaceObject.useCallback)((type, payload) => {
-    switch (type) {
-      case EVENT_TYPES.COMMAND_ACK:
-        pendingCommandsRef.current.delete(payload.requestId);
-        break;
-      case EVENT_TYPES.WIDGET_READY:
-        break;
-      case EVENT_TYPES.WIDGET_ERROR:
-        break;
-      case EVENT_TYPES.PUZZLE_STATE:
-        
-        
-        if (payload.state === "in_progress") {
-          setShowLarge(true);
-        } else if (payload.state === "intro") {
-          setShowLarge(false);
-        }
-        break;
-      case EVENT_TYPES.PUZZLE_COMPLETED:
-        setPuzzleCompleted(true);
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "iframe",
-            user_action: "puzzle_completed",
-            action_value: payload.hintsTaken,
-            widget_size: widgetSize
-          }
-        }));
-        break;
-      case EVENT_TYPES.INTERACTION:
-        handleInteraction();
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "iframe",
-            user_action: "interaction",
-            action_value: payload.action,
-            widget_size: widgetSize
-          }
-        }));
-        break;
-      default:
-        break;
-    }
-  }, [dispatch, handleInteraction, widgetSize]);
-
-  
-  
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (!merinoOrigin) {
-      return undefined;
-    }
-    function handleMessage(event) {
-      if (event.origin !== merinoOrigin) {
-        return;
-      }
-      if (event.source !== iframeRef.current?.contentWindow) {
-        return;
-      }
-      const message = event.data;
-      if (!message || message.channel !== CROSSWORD_CHANNEL || typeof message.type !== "string") {
-        return;
-      }
-      const validatePayload = EVENT_PAYLOAD_VALIDATORS[message.type];
-      const payload = message.payload ?? {};
-      if (!validatePayload || !validatePayload(payload)) {
-        return;
-      }
-      handleWidgetEvent(message.type, payload);
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [merinoOrigin, handleWidgetEvent]);
-  const handleMenuAction = (0,external_React_namespaceObject.useCallback)(action => {
-    handleInteraction();
-    postMenuAction(action);
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "crossword",
-        widget_source: "context_menu",
-        user_action: "menu_action",
-        action_value: action,
-        widget_size: widgetSize
-      }
-    }));
-  }, [handleInteraction, postMenuAction, dispatch, widgetSize]);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -22349,7 +22145,6 @@ function Crossword({
     });
   }
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
-    handleInteraction();
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
@@ -22369,10 +22164,9 @@ function Crossword({
         }
       }));
     });
-  }, [dispatch, handleInteraction]);
+  }, [dispatch]);
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   function handleLearnMore() {
-    handleInteraction();
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.OPEN_LINK,
@@ -22391,41 +22185,16 @@ function Crossword({
       }));
     });
   }
-  function handlePoweredByParticle() {
-    handleInteraction();
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.OPEN_LINK,
-        data: {
-          url: "https://particle.news"
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "crossword",
-          widget_source: "context_menu",
-          user_action: "powered_by_particle",
-          widget_size: widgetSize
-        }
-      }));
-    });
-  }
   return external_React_default().createElement("article", {
-    className: `crossword widget col-4 ${displaySize}-widget`,
+    className: `crossword widget col-4 ${widgetSize}-widget`,
     ref: el => {
       widgetRef.current = [el];
     }
   }, external_React_default().createElement("div", {
     className: "crossword-title-wrapper"
-  }, external_React_default().createElement("div", {
-    className: "crossword-badge-title-wrapper"
-  }, !hasInteracted && external_React_default().createElement("moz-badge", {
-    className: "crossword-new-badge",
-    "data-l10n-id": "newtab-widget-lists-label-new"
-  }), external_React_default().createElement("h3", {
+  }, external_React_default().createElement("h3", {
     className: "newtab-crossword-title"
-  }, "Daily crossword")), external_React_default().createElement("div", {
+  }, "Daily crossword"), external_React_default().createElement("div", {
     className: "crossword-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "crossword-context-menu-button",
@@ -22434,14 +22203,7 @@ function Crossword({
     type: "ghost"
   }), external_React_default().createElement("panel-list", {
     id: "crossword-context-menu"
-  }, MENU_ACTION_ITEMS.filter(item => !(puzzleCompleted && item.hideWhenCompleted)).map(item => external_React_default().createElement("panel-item", {
-    key: item.key,
-    className: item.key,
-    onClick: () => handleMenuAction(item.action)
-  }, item.label)), external_React_default().createElement("panel-item", {
-    className: "powered-by-particle",
-    onClick: handlePoweredByParticle
-  }, "Powered by Particle"), external_React_default().createElement("hr", null), widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
+  }, widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
     submenu: "crossword-size-submenu"
   }, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
@@ -22467,14 +22229,13 @@ function Crossword({
   }, "Learn more")))), external_React_default().createElement("div", {
     className: "crossword-body"
   }, external_React_default().createElement("iframe", {
-    ref: iframeRef,
     className: "crossword-frame",
     title: "Crossword",
     src: crosswordEndpoint
     
     
     ,
-    sandbox: "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+    sandbox: "allow-scripts allow-same-origin"
   })));
 }
 
