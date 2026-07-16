@@ -27,7 +27,8 @@ class SerialDeviceChangeProxy final : public SerialDeviceChangeObserver,
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  explicit SerialDeviceChangeProxy(uint64_t aBrowserId);
+  explicit SerialDeviceChangeProxy(
+      uint64_t aBrowserId, RefPtr<SerialPlatformService> aPlatformService);
 
   void AddPortActor(SerialPortParent* aActor);
   void RemovePortActor(SerialPortParent* aActor);
@@ -47,6 +48,9 @@ class SerialDeviceChangeProxy final : public SerialDeviceChangeObserver,
 
   nsTArray<RefPtr<SerialPortParent>> mPortActors MOZ_GUARDED_BY(mMutex);
   const uint64_t mBrowserId;
+  
+  
+  const RefPtr<SerialPlatformService> mPlatformService;
 };
 
 
@@ -101,6 +105,9 @@ class SerialManagerParent final : public PSerialManagerParent {
                                                 TResolver&& aResolver);
 
   uint64_t mBrowserId = 0;
+  
+  
+  RefPtr<SerialPlatformService> mPlatformService;
   RefPtr<SerialDeviceChangeProxy> mProxy;
 
   
