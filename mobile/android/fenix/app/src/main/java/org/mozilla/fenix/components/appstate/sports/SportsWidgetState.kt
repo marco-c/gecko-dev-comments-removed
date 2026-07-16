@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.appstate.sports
 
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.SportCardErrorState
+import org.mozilla.fenix.home.sports.hasWorldCupEnded
 import org.mozilla.fenix.home.sports.hasWorldCupStarted
 import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
 
@@ -26,6 +27,9 @@ import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
  * @property hasWorldCupStartedOverride Debug-only override for [hasWorldCupStarted].
  * @property errorState The [SportCardErrorState] if the last fetch failed, null otherwise.
  * @property isOneWeekToWorldCupOverride Debug-only override for [isOneWeekToWorldCup].
+ * @property forceOneWeekToWorldCup Nimbus-controlled flag that forces [isOneWeekToWorldCup]
+ * to true regardless of the device date. The natural date check still applies when this is
+ * false; the debug override still wins over both.
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
@@ -39,19 +43,21 @@ data class SportsWidgetState(
     val hasWorldCupStartedOverride: Boolean? = null,
     val errorState: SportCardErrorState? = null,
     val isOneWeekToWorldCupOverride: Boolean? = null,
+    val forceOneWeekToWorldCup: Boolean = false,
 ) {
     /**
      * Whether the sports widget should be rendered on the homepage: true only when the feature
-     * is enabled and the user has not dismissed the widget.
+     * is enabled, the user has not dismissed the widget, and the World Cup hasn't ended yet.
+     * After [hasWorldCupEnded] the widget is retired for everyone regardless of the feature flag.
      */
     val isShown: Boolean
-        get() = isFeatureEnabled && isVisible
+        get() = isFeatureEnabled && isVisible && !hasWorldCupEnded()
 
     val hasWorldCupStarted: Boolean
         get() = hasWorldCupStartedOverride ?: hasWorldCupStarted()
 
     val isOneWeekToWorldCup: Boolean
-        get() = isOneWeekToWorldCupOverride ?: isOneWeekToWorldCup()
+        get() = isOneWeekToWorldCupOverride ?: (forceOneWeekToWorldCup || isOneWeekToWorldCup())
 
     val isCountdownShown: Boolean
         get() = !hasWorldCupStarted && !isOneWeekToWorldCup && isCountdownWidgetVisible
