@@ -10,6 +10,10 @@ Services.scriptloader.loadSubScript(
 
 requestLongerTimeout(3);
 
+
+
+
+
 describe("Smart Window model selection", () => {
   let doc, win;
 
