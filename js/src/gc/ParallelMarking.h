@@ -109,6 +109,16 @@ class MOZ_STACK_CLASS ParallelMarker {
 #endif
   ParallelMarkTask* takeWaitingTask();
 
+#ifdef DEBUG
+  
+  
+  
+  
+  bool isMarkingDeferredWeakmaps(const AutoLockHelperThreadState& lock) const {
+    return markingDeferredWeakmaps.ref();
+  }
+#endif
+
   bool hasActiveTasks(const AutoLockHelperThreadState& lock) const {
     return !activeTasks.ref().IsEmpty();
   }
@@ -132,6 +142,11 @@ class MOZ_STACK_CLASS ParallelMarker {
   WaitingTaskSet waitingTasks;
 
   HelperThreadLockData<ParallelTaskBitset> activeTasks;
+
+#ifdef DEBUG
+  
+  HelperThreadLockData<bool> markingDeferredWeakmaps;
+#endif
 
   const MarkColor color;
 };

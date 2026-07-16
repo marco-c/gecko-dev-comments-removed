@@ -216,11 +216,20 @@ void ParallelMarkTask::markDeferredWeakmaps(AutoLockHelperThreadState& lock) {
   
   WeakMapList deferred(std::move(gc->deferredMapsList(pm->color)));
 
+#ifdef DEBUG
+  
+  
+  
+  pm->markingDeferredWeakmaps = true;
+#endif
   {
     
     AutoUnlockHelperThreadState unlock(lock);
     marker->markDeferredWeakMapChildren(deferred);
   }
+#ifdef DEBUG
+  pm->markingDeferredWeakmaps = false;
+#endif
 
   
   MOZ_ASSERT(deferred.isEmpty());
@@ -263,7 +272,11 @@ void ParallelMarkTask::waitUntilResumed(AutoLockHelperThreadState& lock) {
   isWaiting = true;
 
   do {
-    MOZ_ASSERT(pm->hasActiveTasks(lock));
+    
+    
+    
+    
+    MOZ_ASSERT(pm->hasActiveTasks(lock) || pm->isMarkingDeferredWeakmaps(lock));
     resumed.wait(lock);
   } while (isWaiting);
 
