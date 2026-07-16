@@ -678,6 +678,16 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     if (transferOwnership) {
       JS::Rooted<JSObject*> bufferObj(aGlobal.Context(), arrayBuffer);
       void* data = JS::StealArrayBufferContents(aGlobal.Context(), bufferObj);
+      if (!data) {
+        
+        
+        
+        
+        
+        aRv.MightThrowJSException();
+        aRv.StealExceptionFromJSContext(aGlobal.Context());
+        return;
+      }
       fnSourceBufferFromSpan(Span(static_cast<uint8_t*>(data), length));
     } else {
       view.ProcessFixedData(fnSourceBufferFromSpan);
@@ -698,6 +708,16 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
       JS::Rooted<JSObject*> bufferObj(aGlobal.Context(), buffer.Obj());
       size_t length = JS::GetArrayBufferByteLength(bufferObj);
       void* data = JS::StealArrayBufferContents(aGlobal.Context(), bufferObj);
+      if (!data) {
+        
+        
+        
+        
+        
+        aRv.MightThrowJSException();
+        aRv.StealExceptionFromJSContext(aGlobal.Context());
+        return;
+      }
       fnSourceBufferFromSpan(Span(static_cast<uint8_t*>(data), length));
     } else {
       buffer.ProcessFixedData(fnSourceBufferFromSpan);
