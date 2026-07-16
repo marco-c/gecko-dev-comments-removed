@@ -1485,7 +1485,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_HasSessionHistory>, bool aOldValue);
 
-  bool CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
+  bool CanSet(FieldIndex<IDX_BrowserId>, const uint64_t& aValue,
               ContentParent* aSource);
 
   bool CanSet(FieldIndex<IDX_UseErrorPages>, const bool& aUseErrorPages,
@@ -1611,8 +1611,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   RefPtr<WindowContext> mCurrentWindowContext;
 
   RefPtr<nsGeolocationService> mGeolocationServiceOverride;
-
-  JS::UniqueChars mDefaultLocale;
 
   
   
