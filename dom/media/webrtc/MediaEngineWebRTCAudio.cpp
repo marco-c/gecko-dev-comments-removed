@@ -915,8 +915,11 @@ void AudioInputProcessing::PacketizeAndProcess(AudioProcessingTrack* aTrack,
 
   
   
-  mPacketizerInput->Input(mInterleavedBuffer.Elements(),
-                          static_cast<uint32_t>(frameCount));
+  
+  
+  
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mPacketizerInput->Input(
+      mInterleavedBuffer.Elements(), static_cast<uint32_t>(frameCount))));
 
   
   
