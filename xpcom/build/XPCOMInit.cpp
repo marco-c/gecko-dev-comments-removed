@@ -56,7 +56,6 @@
 #include "nsLocalFile.h"
 #include "nsMemoryReporterManager.h"
 #include "nsMultiplexInputStream.h"
-#include "nsNSSComponent.h"
 #include "nsObserverService.h"
 #include "nsSystemInfo.h"
 #include "nsThread.h"
@@ -68,6 +67,7 @@
 #include "nsXPCOMPrivate.h"
 #include "nss.h"
 #include "prlink.h"
+#include "ssl.h"
 #ifdef MOZ_PHC
 #  include "mozilla/PHCManager.h"
 #endif
@@ -687,7 +687,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   if (NSS_IsInitialized()) {
-    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
+    SSL_ClearSessionCache();
     if (NSS_Shutdown() != SECSuccess) {
       
       

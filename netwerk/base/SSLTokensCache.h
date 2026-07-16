@@ -19,11 +19,16 @@
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
+#include "nsISSLTokensCache.h"
 #include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
+
+#ifdef ENABLE_TESTS
+#  include "nsISSLTokensCacheTest.h"
+#endif
 
 class CommonSocketControl;
 struct SslTokensPersistedRecord;
@@ -74,6 +79,12 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
+  
+  
+  
+  
+  
+  static void ClearSessionCacheAndTokens();
   static void RemoveByHostAndOAPattern(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
@@ -231,6 +242,28 @@ class SSLTokensCache : public nsIMemoryReporter,
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
       MOZ_GUARDED_BY(sLock);
   nsTArray<TokenCacheRecord*> mExpirationArray MOZ_GUARDED_BY(sLock);
+};
+
+
+
+
+class SSLTokensCacheService final : public nsISSLTokensCache
+#ifdef ENABLE_TESTS
+    ,
+                                    public nsISSLTokensCacheTest
+#endif
+{
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSISSLTOKENSCACHE
+#ifdef ENABLE_TESTS
+  NS_DECL_NSISSLTOKENSCACHETEST
+#endif
+
+  SSLTokensCacheService() = default;
+
+ private:
+  ~SSLTokensCacheService() = default;
 };
 
 }  
