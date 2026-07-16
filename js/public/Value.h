@@ -142,8 +142,6 @@ class JS_PUBLIC_API Value;
 
 
 
-
-
 #define JSVAL_INT_BITS 32
 #define JSVAL_INT_MIN ((int32_t)0x80000000)
 #define JSVAL_INT_MAX ((int32_t)0x7fffffff)
@@ -516,9 +514,7 @@ class Value {
   explicit constexpr Value(uint64_t asBits) : asBits_(asBits) {}
 
   static uint64_t bitsFromDouble(double d) {
-#if defined(JS_NONCANONICAL_HARDWARE_NAN)
     d = CanonicalizeNaN(d);
-#endif
     return mozilla::BitwiseCast<uint64_t>(d);
   }
 
@@ -1112,7 +1108,7 @@ static inline Value DoubleValue(double dbl) {
 }
 
 static inline Value CanonicalizedDoubleValue(double d) {
-  return Value::fromDouble(CanonicalizeNaN(d));
+  return DoubleValue(d);
 }
 
 static inline Value NaNValue() {
