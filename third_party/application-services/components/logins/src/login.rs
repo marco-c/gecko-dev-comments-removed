@@ -285,6 +285,13 @@ use sync_guid::Guid;
 use url::Url;
 
 
+
+
+
+
+pub(crate) const FXA_CREDENTIALS_ORIGIN: &str = "chrome://FirefoxAccounts";
+
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
 pub struct LoginFields {
     pub origin: String,

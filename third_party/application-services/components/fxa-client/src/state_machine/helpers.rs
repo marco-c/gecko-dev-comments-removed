@@ -152,13 +152,11 @@ impl<'a> RetryingAccount<'a> {
     }
 
     
-    
-    
-    pub fn ensure_capabilities(
-        &mut self,
-        capabilities: &[DeviceCapability],
-    ) -> Result<LocalDevice> {
-        self.with_retry(|a| a.ensure_capabilities(capabilities))
+    pub fn finish_initialize(&mut self, capabilities: &[DeviceCapability]) -> Result<()> {
+        self.with_auth_recovery(|a| {
+            a.ensure_capabilities(capabilities)?;
+            Ok(())
+        })
     }
 
     pub fn check_authorization_status(&mut self) -> Result<bool> {

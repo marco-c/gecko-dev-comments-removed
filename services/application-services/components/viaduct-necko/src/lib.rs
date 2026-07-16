@@ -236,7 +236,8 @@ pub fn init_necko_backend() -> Result<()> {
     info!("Initializing viaduct Necko backend");
     
     unsafe { viaduct_necko_backend_init() };
-    init_backend(Arc::new(NeckoBackend))
+    init_backend(Arc::new(NeckoBackend));
+    Ok(())
 }
 
 #[async_trait::async_trait]

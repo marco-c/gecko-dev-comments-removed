@@ -5,6 +5,11 @@
 #![allow(unknown_lints)]
 #![warn(rust_2018_idioms)]
 
+
+
+#[allow(unused_extern_crates)]
+extern crate rusqlite;
+
 use url::Url;
 #[macro_use]
 mod headers;
@@ -12,7 +17,6 @@ mod headers;
 mod backend;
 mod client;
 pub mod error;
-mod new_backend;
 #[cfg(feature = "ohttp")]
 pub mod ohttp;
 #[cfg(feature = "ohttp")]
@@ -22,18 +26,12 @@ pub use error::*;
 
 pub use error_support::{debug, error, info, trace, warn};
 
-pub use backend::{note_backend, set_backend, Backend as OldBackend};
+pub use backend::{init_backend, Backend};
 pub use client::{Client, ClientSettings};
 pub use headers::{consts as header_names, Header, HeaderName, Headers, InvalidHeaderName};
-pub use new_backend::{init_backend, Backend};
 #[cfg(feature = "ohttp")]
 pub use ohttp::{clear_ohttp_channels, configure_ohttp_channel, list_ohttp_channels, OhttpConfig};
 pub use settings::{allow_android_emulator_loopback, GLOBAL_SETTINGS};
-
-#[allow(clippy::derive_partial_eq_without_eq)]
-pub(crate) mod msg_types {
-    include!("mozilla.appservices.httpconfig.protobuf.rs");
-}
 
 
 
@@ -95,8 +93,12 @@ impl Request {
         }
     }
 
+    
+    
+    
+    
     pub fn send(self) -> Result<Response, ViaductError> {
-        crate::backend::send(self)
+        Client::default().send_sync(self)
     }
 
     

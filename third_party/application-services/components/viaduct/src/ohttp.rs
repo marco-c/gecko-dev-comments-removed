@@ -12,24 +12,9 @@ use url::Url;
 use crate::{Headers, Method, Request, Response, Result, ViaductError};
 
 
-
-
-
-
-
-
-
 async fn send_request(request: Request, settings: crate::ClientSettings) -> Result<Response> {
-    
-    if let Ok(backend) = crate::new_backend::get_backend() {
-        return backend.send_request(request, settings).await;
-    }
-
-    
-    crate::trace!(
-        "OHTTP: Using old backend (global settings will be used instead of per-request settings)"
-    );
-    crate::backend::send(request)
+    let backend = crate::backend::get_backend()?;
+    backend.send_request(request, settings).await
 }
 
 

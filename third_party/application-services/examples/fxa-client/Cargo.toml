@@ -12,11 +12,11 @@ name = "fxa-client"
 path = "src/main.rs"
 
 [dev-dependencies]
-nss = { path = "../../components/support/rc_crypto/nss" }
+nss-as = { path = "../../components/support/rc_crypto/nss" }
 viaduct = { path = "../../components/viaduct"}
 viaduct-hyper = { path = "../../components/support/viaduct-hyper" }
 log = "0.4"
-clap = {version = "4.2", default-features = false, features = ["std", "derive"]}
+clap = {version = "4.2", default-features = false, features = ["std", "derive", "help"]}
 cli-support = { path = "../cli-support" }
 fxa-client = { path = "../../components/fxa-client" }
 anyhow = "1.0"

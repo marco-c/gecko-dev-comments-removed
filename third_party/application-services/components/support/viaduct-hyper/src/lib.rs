@@ -34,7 +34,7 @@ struct HyperBackend {
 
 
 #[uniffi::export]
-pub fn viaduct_init_backend_hyper() -> Result<()> {
+pub fn viaduct_init_backend_hyper() {
     info!("initializing hyper backend");
     
     

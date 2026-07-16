@@ -8,7 +8,7 @@ use super::SyncStatus;
 use crate::db::CLONE_ENTIRE_MIRROR_SQL;
 use crate::encryption::EncryptorDecryptor;
 use crate::error::*;
-use crate::login::EncryptedLogin;
+use crate::login::{EncryptedLogin, FXA_CREDENTIALS_ORIGIN};
 use crate::schema;
 use crate::util;
 use crate::LoginDb;
@@ -23,13 +23,6 @@ use sync15::bso::{IncomingBso, OutgoingBso, OutgoingEnvelope};
 use sync15::engine::{CollSyncIds, CollectionRequest, EngineSyncAssociation, SyncEngine};
 use sync15::{telemetry, ServerTimestamp};
 use sync_guid::Guid;
-
-
-
-
-
-
-const FXA_CREDENTIALS_ORIGIN: &str = "chrome://FirefoxAccounts";
 
 
 pub struct LoginsSyncEngine {

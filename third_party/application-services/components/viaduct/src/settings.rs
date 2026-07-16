@@ -4,7 +4,6 @@
 
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use std::time::Duration;
 use url::Url;
 
 
@@ -19,32 +18,13 @@ use url::Url;
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct Settings {
-    pub read_timeout: Option<Duration>,
-    pub connect_timeout: Option<Duration>,
-    pub follow_redirects: bool,
-    pub use_caches: bool,
     pub default_user_agent: Option<String>,
-    
-    
-    
-    
-    
     pub addn_allowed_insecure_url: Option<Url>,
 }
-
-#[cfg(target_os = "ios")]
-const TIMEOUT_DURATION: Duration = Duration::from_secs(7);
-
-#[cfg(not(target_os = "ios"))]
-const TIMEOUT_DURATION: Duration = Duration::from_secs(10);
 
 
 pub static GLOBAL_SETTINGS: Lazy<RwLock<Settings>> = Lazy::new(|| {
     RwLock::new(Settings {
-        read_timeout: Some(TIMEOUT_DURATION),
-        connect_timeout: Some(TIMEOUT_DURATION),
-        follow_redirects: true,
-        use_caches: false,
         default_user_agent: None,
         addn_allowed_insecure_url: None,
     })

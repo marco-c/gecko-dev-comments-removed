@@ -3,14 +3,11 @@
 
 
 use crate::{
+    backend::get_backend,
     header_names::USER_AGENT,
-    new_backend::get_backend,
     settings::{validate_request, GLOBAL_SETTINGS},
     Request, Response, Result,
 };
-
-
-
 
 
 #[derive(Default)]
@@ -78,7 +75,7 @@ impl Client {
 #[repr(C)]
 pub struct ClientSettings {
     
-    #[uniffi(default = 0)]
+    #[uniffi(default = 60_000)]
     pub timeout: u32,
     
     #[uniffi(default = 10)]

@@ -7,8 +7,7 @@
 
 
 
-use crate::{Error, FxaError, FxaEvent, FxaRustAuthState, FxaState};
-use error_support::{convert_log_report_error, GetErrorHandling};
+use crate::{Error, FxaEvent, FxaRustAuthState, FxaState};
 
 use super::helpers::{ResultExt, RetryingAccount, StateMachineErr};
 
@@ -27,21 +26,9 @@ pub fn transition(
                 FxaRustAuthState::Disconnected => Ok(S::Disconnected),
                 FxaRustAuthState::AuthIssues => Ok(S::AuthIssues),
                 FxaRustAuthState::Connected => {
-                    
-                    
-                    
-                    
-                    match account.ensure_capabilities(&device_config.capabilities) {
-                        Ok(_) => Ok(S::Connected),
-                        Err(e) if is_auth_error(&e) => {
-                            
-                            let _: FxaError = convert_log_report_error(e);
-                            let active = account
-                                .check_authorization_status()
-                                .to_state_machine_err(|| S::AuthIssues)?;
-                            Ok(if active { S::Connected } else { S::AuthIssues })
-                        }
-                        Err(cause) => Err(StateMachineErr::new(cause, S::Disconnected)),
+                    match account.finish_initialize(&device_config.capabilities) {
+                        Ok(()) => Ok(S::Connected),
+                        Err(cause) => Err(StateMachineErr::new(cause, S::AuthIssues)),
                     }
                 }
             }
@@ -231,10 +218,6 @@ pub fn transition(
             Error::InvalidStateTransition(format!("{state} -> {event}")),
         ))),
     }
-}
-
-fn is_auth_error(e: &Error) -> bool {
-    matches!(e.get_error_handling().err, FxaError::Authentication)
 }
 
 #[cfg(test)]

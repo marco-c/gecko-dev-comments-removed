@@ -27,6 +27,18 @@ pub const OAUTH_WEBCHANNEL_REDIRECT: &str = "urn:ietf:wg:oauth:2.0:oob:oauth-red
 
 impl FirefoxAccount {
     
+    pub fn has_scope(&self, scope: &str) -> bool {
+        let mut requested = scope.split_ascii_whitespace().peekable();
+        if requested.peek().is_none() {
+            return false;
+        }
+        match self.state.refresh_token() {
+            Some(refresh_token) => requested.all(|s| refresh_token.scopes.contains(s)),
+            None => false,
+        }
+    }
+
+    
     
     pub fn handle_web_channel_login(&mut self, json_payload: &str) -> Result<()> {
         let data: serde_json::Value = serde_json::from_str(json_payload)?;
@@ -357,7 +369,8 @@ impl FirefoxAccount {
         resp: OAuthTokenResponse,
         scoped_keys_flow: Option<ScopedKeysFlow>,
     ) -> Result<()> {
-        let sync_scope_granted = resp.scope.split(' ').any(|s| s == scopes::OLD_SYNC);
+        
+        
         let scoped_keys = match resp.keys_jwe {
             Some(ref jwe) => {
                 let scoped_keys_flow = scoped_keys_flow.ok_or(Error::ApiClientError(
@@ -366,28 +379,12 @@ impl FirefoxAccount {
                 let decrypted_keys = scoped_keys_flow.decrypt_keys_jwe(jwe)?;
                 let scoped_keys: serde_json::Map<String, serde_json::Value> =
                     serde_json::from_str(&decrypted_keys)?;
-                if sync_scope_granted && !scoped_keys.contains_key(scopes::OLD_SYNC) {
-                    error_support::report_error!(
-                        "fxaclient-scoped-key",
-                        "Sync scope granted, but no sync scoped key (scope granted: {}, key scopes: {})",
-                        resp.scope,
-                        scoped_keys.keys().map(|s| s.as_ref()).collect::<Vec<&str>>().join(", ")
-                    );
-                }
                 scoped_keys
                     .into_iter()
                     .map(|(scope, key)| Ok((scope, serde_json::from_value(key)?)))
                     .collect::<Result<Vec<_>>>()?
             }
-            None => {
-                if sync_scope_granted {
-                    error_support::report_error!(
-                        "fxaclient-scoped-key",
-                        "Sync scope granted, but keys_jwe is None"
-                    );
-                }
-                vec![]
-            }
+            None => vec![],
         };
 
         
@@ -485,6 +482,27 @@ impl FirefoxAccount {
             
             
             self.state.clear_refresh_token();
+        }
+
+        
+        
+        
+        let sync_scope_granted = new_refresh_token.scopes.contains(scopes::OLD_SYNC);
+        let have_sync_key = scoped_keys
+            .iter()
+            .any(|(scope, _)| scope == scopes::OLD_SYNC)
+            || self.state.get_scoped_key(scopes::OLD_SYNC).is_some();
+        if sync_scope_granted && !have_sync_key {
+            error_support::report_error!(
+                "fxaclient-scoped-key",
+                "Sync scope granted, but no sync scoped key held (final scopes: {})",
+                new_refresh_token
+                    .scopes
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
         }
 
         self.state
@@ -650,6 +668,24 @@ mod tests {
     use std::borrow::Cow;
     use std::collections::HashMap;
     use std::sync::Arc;
+
+    #[test]
+    fn test_has_scope() {
+        nss_as::ensure_initialized();
+        let mut fxa =
+            FirefoxAccount::with_config(Config::stable_dev("12345678", "https://foo.bar"));
+        
+        assert!(!fxa.has_scope("profile"));
+        fxa.state.force_refresh_token(RefreshToken {
+            token: "rt".to_owned(),
+            scopes: ["profile", "sync"].iter().map(|s| s.to_string()).collect(),
+        });
+        assert!(fxa.has_scope("profile"));
+        assert!(fxa.has_scope("sync profile"));
+        assert!(fxa.has_scope("profile sync ")); 
+        assert!(!fxa.has_scope("sync unknown")); 
+        assert!(!fxa.has_scope("")); 
+    }
 
     #[test]
     fn test_oauth_flow_url() {
@@ -1395,5 +1431,133 @@ mod tests {
 
         let scopes = &fxa.state.refresh_token().unwrap().scopes;
         assert_eq!(scopes, &["profile".to_string()].into());
+    }
+
+    
+    
+    #[test]
+    fn test_complete_oauth_flow_retains_existing_sync_key_when_adding_scope() {
+        nss_as::ensure_initialized();
+        let config = Config::new_with_mock_well_known_fxa_client_configuration(
+            "mock-fxa.example.com",
+            "12345678",
+            "https://foo.bar",
+        );
+        let mut fxa = FirefoxAccount::with_config(config);
+
+        
+        let url = fxa
+            .begin_oauth_flow("", &["new_scope"], "test_entrypoint")
+            .unwrap();
+        let url = Url::parse(&url).unwrap();
+        let state = url.query_pairs().find(|(name, _)| name == "state").unwrap();
+
+        
+        
+        fxa.state.force_refresh_token(RefreshToken {
+            token: "old_refresh".to_string(),
+            scopes: [OLD_SYNC.to_string()].into(),
+        });
+        fxa.state.insert_scoped_key(
+            OLD_SYNC,
+            crate::ScopedKey {
+                kty: "oct".to_string(),
+                scope: OLD_SYNC.to_string(),
+                k: "existing_sync_key_material".to_string(),
+                kid: "existing_sync_kid".to_string(),
+            },
+        );
+        fxa.set_session_token("mock_session_token");
+
+        let mut client = MockFxAClient::new();
+
+        
+        client
+            .expect_create_refresh_token_using_authorization_code()
+            .times(1)
+            .returning(|_, _, _, _| {
+                Ok(OAuthTokenResponse {
+                    keys_jwe: None,
+                    refresh_token: Some("new_narrow_refresh".to_string()),
+                    session_token: None,
+                    expires_in: 3600,
+                    scope: "new_scope".to_string(),
+                    access_token: "access_token".to_string(),
+                })
+            });
+
+        
+        client
+            .expect_destroy_access_token()
+            .with(always(), always())
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        
+        client
+            .expect_get_devices()
+            .with(always(), eq("old_refresh"))
+            .times(1)
+            .returning(|_, _| Ok(vec![make_mock_device("Test Device")]));
+
+        
+        client
+            .expect_create_refresh_token_using_session_token()
+            .withf(|_, session_token, _| session_token == "mock_session_token")
+            .times(1)
+            .returning(|_, _, _| {
+                Ok(OAuthTokenResponse {
+                    keys_jwe: None,
+                    refresh_token: Some("merged_refresh".to_string()),
+                    session_token: None,
+                    expires_in: 3600,
+                    scope: format!("{OLD_SYNC} new_scope"),
+                    access_token: "access_token2".to_string(),
+                })
+            });
+
+        
+        client
+            .expect_destroy_refresh_token()
+            .with(always(), eq("new_narrow_refresh"))
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        
+        client
+            .expect_destroy_refresh_token()
+            .with(always(), eq("old_refresh"))
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        
+        client
+            .expect_update_device_record()
+            .times(1)
+            .returning(|_, _, _| Ok(make_mock_update_device_response()));
+
+        fxa.set_client(Arc::new(client));
+
+        fxa.complete_oauth_flow("mock_code", state.1.as_ref())
+            .unwrap();
+
+        
+        let sync_key = fxa
+            .state
+            .get_scoped_key(OLD_SYNC)
+            .expect("sync scoped key should be retained");
+        assert_eq!(sync_key.k, "existing_sync_key_material");
+
+        
+        let scopes = &fxa.state.refresh_token().unwrap().scopes;
+        assert!(
+            scopes.contains(OLD_SYNC),
+            "expected sync scope, got {scopes:?}"
+        );
+        assert!(
+            scopes.contains("new_scope"),
+            "expected new_scope, got {scopes:?}"
+        );
+        assert_eq!(scopes.len(), 2);
     }
 }

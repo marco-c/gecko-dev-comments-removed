@@ -80,8 +80,8 @@ fn main() -> Result<()> {
     } else {
         DEFAULT_LOG_FILTER
     });
-    nss::ensure_initialized();
-    viaduct_hyper::viaduct_init_backend_hyper()?;
+    nss_as::ensure_initialized();
+    viaduct_hyper::viaduct_init_backend_hyper();
     let service = build_service(&cli)?;
     match cli.command {
         Commands::Sync { collections } => sync(service, collections),

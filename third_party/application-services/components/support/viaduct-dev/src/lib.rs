@@ -104,10 +104,7 @@ fn send_request(request: Request, settings: ClientSettings) -> Result<Response> 
 pub fn init_backend_dev() {
     info!("initializing dev backend");
     let backend = Arc::new(DevBackend::new());
-    
-    
-    
-    let _ = init_backend(backend);
+    init_backend(backend);
 }
 
 impl DevBackend {

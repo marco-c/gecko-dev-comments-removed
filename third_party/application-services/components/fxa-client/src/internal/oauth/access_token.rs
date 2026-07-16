@@ -4,7 +4,7 @@
 
 use super::super::{scopes, util, FirefoxAccount};
 use super::RefreshToken;
-use crate::{error, Error, Result, ScopedKey};
+use crate::{debug, error, info, Error, Result, ScopedKey};
 use serde_derive::*;
 use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -37,6 +37,7 @@ impl FirefoxAccount {
     
     
     pub fn get_access_token(&mut self, scope: &str, use_cache: bool) -> Result<AccessTokenInfo> {
+        debug!("get_access_token for scope={scope}, use_cache={use_cache}");
         let requested = normalize_scopes(scope);
         if requested.is_empty() {
             return Err(Error::IllegalState("No scopes requested."));
@@ -50,6 +51,11 @@ impl FirefoxAccount {
                     if oauth_info.check_missing_sync_scoped_key().is_ok() {
                         return Ok(oauth_info.clone());
                     }
+                    
+                    error_support::report_error!(
+                        "fxaclient-lost-scoped-key",
+                        "have cached token without a key"
+                    );
                 }
             }
         }
@@ -64,6 +70,10 @@ impl FirefoxAccount {
                     .collect();
                 if !missing.is_empty() {
                     
+                    info!(
+                        "refresh token doing exchange; have {:?}, missing {missing:?})",
+                        refresh_token.scopes
+                    );
                     let exchange_resp = self.client.exchange_token_for_scope(
                         self.state.config(),
                         &refresh_token.token,
@@ -92,6 +102,9 @@ impl FirefoxAccount {
                     .iter()
                     .all(|s| refresh_token.scopes.contains(*s))
                 {
+                    info!(
+                        "using refresh token to request new token with scope {requested_scopes:?}"
+                    );
                     self.client.create_access_token_using_refresh_token(
                         self.state.config(),
                         &refresh_token.token,
@@ -106,14 +119,19 @@ impl FirefoxAccount {
                     return Err(Error::UnexpectedServerResponse);
                 }
             }
-            None => match self.state.session_token() {
-                Some(session_token) => self.client.create_access_token_using_session_token(
-                    self.state.config(),
-                    session_token,
-                    &requested_scopes,
-                )?,
-                None => return Err(Error::NoSessionToken),
-            },
+            None => {
+                match self.state.session_token() {
+                    Some(session_token) => {
+                        info!("using session token to request new token with scope {requested_scopes:?}");
+                        self.client.create_access_token_using_session_token(
+                            self.state.config(),
+                            session_token,
+                            &requested_scopes,
+                        )?
+                    }
+                    None => return Err(Error::NoSessionToken),
+                }
+            }
         };
         let since_epoch = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -241,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_gat_empty_scope_errors() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         assert!(matches!(
             fxa.get_access_token("", true),
@@ -255,7 +273,7 @@ mod tests {
 
     #[test]
     fn test_gat_no_tokens_errors() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         assert!(matches!(
             fxa.get_access_token("profile", false),
@@ -265,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_gat_cache_hit() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         fxa.add_cached_token("profile", token_info("profile"));
         let client = MockFxAClient::new(); 
@@ -275,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_gat_cache_hit_order_insensitive() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         fxa.add_cached_token("a b", token_info("a b")); 
         let client = MockFxAClient::new();
@@ -285,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_gat_single_scope_from_refresh_token() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &["profile"]);
         let mut client = MockFxAClient::new();
@@ -302,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_gat_single_scope_exchange() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &["profile"]);
         let mut client = MockFxAClient::new();
@@ -328,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_gat_old_sync_key_populated() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &[scopes::OLD_SYNC]);
         fxa.state
@@ -348,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_gat_old_sync_missing_key_errors() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &[scopes::OLD_SYNC]);
         let mut client = MockFxAClient::new();
@@ -365,7 +383,7 @@ mod tests {
 
     #[test]
     fn test_gat_multi_scope_from_refresh_token() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &["profile", "sync"]);
         let mut client = MockFxAClient::new();
@@ -382,7 +400,7 @@ mod tests {
 
     #[test]
     fn test_gat_multi_scope_exchange_missing() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &["profile"]);
         let mut client = MockFxAClient::new();
@@ -409,7 +427,7 @@ mod tests {
 
     #[test]
     fn test_gat_multi_scope_session_token() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         fxa.set_session_token("st");
         let mut client = MockFxAClient::new();
@@ -423,7 +441,7 @@ mod tests {
 
     #[test]
     fn test_gat_multi_scope_old_sync_key_is_none() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         let combined = format!("{} profile", scopes::OLD_SYNC);
         seed_refresh_token(&mut fxa, "rt", &[scopes::OLD_SYNC, "profile"]);
@@ -444,7 +462,7 @@ mod tests {
 
     #[test]
     fn test_gat_duplicate_scopes_deduped() {
-        nss::ensure_initialized();
+        nss_as::ensure_initialized();
         let mut fxa = make_fxa();
         seed_refresh_token(&mut fxa, "rt", &["profile"]);
         let mut client = MockFxAClient::new();

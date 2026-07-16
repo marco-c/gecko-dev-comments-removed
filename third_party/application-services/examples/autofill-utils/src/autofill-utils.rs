@@ -476,8 +476,8 @@ fn get_encryption_key(store: &Store, db_path: &str, opts: &Opts) -> Result<Strin
 }
 
 fn main() -> Result<()> {
-    nss::ensure_initialized();
-    viaduct_hyper::viaduct_init_backend_hyper()?;
+    nss_as::ensure_initialized();
+    viaduct_hyper::viaduct_init_backend_hyper();
 
     let opts = Opts::parse();
     if !opts.no_logging {

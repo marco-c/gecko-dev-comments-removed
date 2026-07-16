@@ -99,6 +99,9 @@ enum Commands {
         
         #[arg(long)]
         accept_language: Option<String>,
+        
+        #[arg(long)]
+        date: Option<String>,
 
         #[command(subcommand)]
         endpoint: WorldCupEndpoint,
@@ -116,7 +119,7 @@ enum WorldCupEndpoint {
 }
 
 fn main() -> Result<()> {
-    viaduct_hyper::viaduct_init_backend_hyper()?;
+    viaduct_hyper::viaduct_init_backend_hyper();
 
     let cli = Cli::parse();
 
@@ -186,6 +189,7 @@ fn main() -> Result<()> {
             limit,
             teams,
             accept_language,
+            date,
             endpoint,
         } => {
             let client = WorldCupClient::new(WorldCupConfig {
@@ -195,6 +199,7 @@ fn main() -> Result<()> {
                 limit,
                 teams,
                 accept_language,
+                date,
             };
             let result = match endpoint {
                 WorldCupEndpoint::Teams => client.get_teams(options),

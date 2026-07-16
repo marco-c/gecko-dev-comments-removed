@@ -6,7 +6,7 @@
 
 use clap::Parser;
 use cli_support::fxa_creds::{get_default_fxa_config, CliFxa, SYNC_SCOPE};
-use nss::ensure_initialized;
+use nss_as::ensure_initialized;
 use std::sync::Arc;
 use std::{collections::HashSet, process};
 
@@ -28,7 +28,7 @@ macro_rules! cleanup_clients {
 }
 
 pub fn init_testing() {
-    viaduct_hyper::viaduct_init_backend_hyper().expect("Error initializing viaduct");
+    viaduct_hyper::viaduct_init_backend_hyper();
     ensure_initialized();
 
     

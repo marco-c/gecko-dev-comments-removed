@@ -61,6 +61,16 @@ impl FirefoxAccount {
     
     
     
+    
+    
+    pub fn has_scope(&self, scope: &str) -> bool {
+        self.internal.lock().has_scope(scope)
+    }
+
+    
+    
+    
+    
     pub fn get_signed_in_user_for_web_channel(&self) -> Option<String> {
         self.internal.lock().get_signed_in_user_for_web_channel()
     }
