@@ -9,6 +9,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   EMBEDDING_TYPE: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
   EmbeddingsGenerator: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -231,21 +232,33 @@ add_task(async function test_forPlaces_prefDrivesContextual() {
   
   
   
+  
+  const isMacOrWindows =
+    AppConstants.platform === "macosx" || AppConstants.platform === "win";
+
   await SpecialPowers.pushPrefEnv({
     set: [["places.semanticHistory.embeddingType", "contextual"]],
   });
   try {
     const contextual = EmbeddingsGenerator.forPlaces();
-    Assert.equal(
-      contextual.options.backend,
-      "onnx-native",
-      "forPlaces + 'contextual' pref resolves to onnx-native"
-    );
-    Assert.equal(
-      contextual.embeddingSize,
-      384,
-      "Contextual dim defaults to 384 when no override pref is set"
-    );
+    if (isMacOrWindows) {
+      Assert.equal(
+        contextual.options.backend,
+        "onnx-native",
+        "forPlaces + 'contextual' pref resolves to onnx-native on Mac/Windows"
+      );
+      Assert.equal(
+        contextual.embeddingSize,
+        384,
+        "Contextual dim defaults to 384 when no override pref is set"
+      );
+    } else {
+      Assert.equal(
+        contextual.options.backend,
+        "static-embeddings",
+        "forPlaces + 'contextual' falls back to static on non-Mac/Windows"
+      );
+    }
   } finally {
     await SpecialPowers.popPrefEnv();
   }
