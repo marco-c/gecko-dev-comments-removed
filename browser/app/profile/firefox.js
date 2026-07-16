@@ -439,6 +439,13 @@ pref("browser.urlbar.focusContentDocumentOnEsc", true);
 
 
 
+
+
+
+pref("browser.urlbar.ipc.chromeMessagePassing", false);
+
+
+
 pref("browser.urlbar.loglevel", "Error");
 
 
