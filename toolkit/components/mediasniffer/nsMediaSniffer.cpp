@@ -37,6 +37,8 @@ static const uint32_t MAX_BYTES_SNIFFED_MP3 = 320 * 144 / 32 + 1 + 4;
 
 static const uint32_t MAX_BYTES_SNIFFED_ADTS = 8096;
 
+static const uint32_t MAX_BYTES_SNIFFED_MPEGTS = 188 * 5;
+
 NS_IMPL_ISUPPORTS(nsMediaSniffer, nsIContentSniffer)
 
 nsMediaSnifferEntry nsMediaSniffer::sSnifferEntries[] = {
@@ -187,6 +189,30 @@ static bool MatchesADTS(const uint8_t* aData, const uint32_t aLength) {
   return mozilla::ADTSDemuxer::ADTSSniffer(aData, aLength);
 }
 
+
+
+
+
+
+static bool MatchesMPEGTS(const uint8_t* aData, const uint32_t aLength) {
+  static const uint8_t kSyncByte = 0x47;
+  static const uint32_t kPacketSize = 188;
+  static const uint32_t kPacketsToMatch = 5;
+  static const uint32_t kMinBytesToMatch =
+      kPacketSize * (kPacketsToMatch - 1) + 1;
+
+  if (aLength < kMinBytesToMatch) {
+    return false;
+  }
+
+  for (uint32_t i = 0; i < kPacketsToMatch; ++i) {
+    if (aData[i * kPacketSize] != kSyncByte) {
+      return false;
+    }
+  }
+  return true;
+}
+
 NS_IMETHODIMP
 nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
                                        const uint8_t* aData,
@@ -268,6 +294,12 @@ nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
   if (MatchesADTS(aData, std::min(aLength, MAX_BYTES_SNIFFED_ADTS))) {
     aSniffedType.AssignLiteral(AUDIO_AAC);
     LOG("Sniffed ATDS content");
+    return NS_OK;
+  }
+
+  if (MatchesMPEGTS(aData, std::min(aLength, MAX_BYTES_SNIFFED_MPEGTS))) {
+    aSniffedType.AssignLiteral(VIDEO_MPEG_TS);
+    LOG("Sniffed MPEG-TS content");
     return NS_OK;
   }
 
