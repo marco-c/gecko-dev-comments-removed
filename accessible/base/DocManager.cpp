@@ -238,11 +238,6 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     }
   }
   if (DocAccessibleChild* ipcDoc = topDocAcc->IPCDoc()) {
-    
-    
-    
-    
-    
     ipcDoc->SendPrinting();
   } else if (XRE_IsParentProcess()) {
     if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {
@@ -687,14 +682,12 @@ void DocManager::RemoteDocAdded(DocAccessibleParent* aDoc) {
   MOZ_ASSERT(!sRemoteDocuments->Contains(aDoc),
              "How did we already have the doc!");
   sRemoteDocuments->AppendElement(aDoc);
-  if (!aDoc->IsPrintDoc()) {
-    ProxyCreated(aDoc);
-    
-    if (LocalAccessible* outerDoc = aDoc->OuterDocOfRemoteBrowser()) {
-      MOZ_ASSERT(outerDoc->Document());
-      auto reorder = MakeRefPtr<AccReorderEvent>(outerDoc);
-      outerDoc->Document()->FireDelayedEvent(reorder);
-    }
+  ProxyCreated(aDoc);
+  
+  if (LocalAccessible* outerDoc = aDoc->OuterDocOfRemoteBrowser()) {
+    MOZ_ASSERT(outerDoc->Document());
+    auto reorder = MakeRefPtr<AccReorderEvent>(outerDoc);
+    outerDoc->Document()->FireDelayedEvent(reorder);
   }
 }
 
