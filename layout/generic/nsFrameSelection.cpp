@@ -1822,33 +1822,31 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
     return nullptr;
   }
 
-  nsIFrame* rootFrameToSelect = [&]() -> nsIFrame* {
-    if (mLimiters.mIndependentSelectionRootElement) {
-      return mLimiters.mIndependentSelectionRootElement->GetPrimaryFrame();
+  nsIFrame* rootFrameToSelect;
+  if (mLimiters.mIndependentSelectionRootElement) {
+    rootFrameToSelect =
+        mLimiters.mIndependentSelectionRootElement->GetPrimaryFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
     }
-    if (mLimiters.mAncestorLimiter) {
-      return mLimiters.mAncestorLimiter->GetPrimaryFrame();
+  } else if (mLimiters.mAncestorLimiter) {
+    rootFrameToSelect = mLimiters.mAncestorLimiter->GetPrimaryFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
     }
-    return mPresShell->GetRootScrollContainerFrame();
-  }();
-
-  if (NS_WARN_IF(!rootFrameToSelect)) {
-    return nullptr;
+  } else {
+    rootFrameToSelect = mPresShell->GetRootScrollContainerFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
+    }
   }
 
-  
-  
-  nsIFrame* innerScrollableFrame = [&]() -> nsIFrame* {
-    RefPtr contentToSelect = mPresShell->GetContentForScrolling();
-    if (!contentToSelect) {
-      return nullptr;
-    }
-    nsIFrame* frame = contentToSelect->GetPrimaryFrame();
-    if (!frame ||
-        !nsLayoutUtils::IsProperAncestorFrame(rootFrameToSelect, frame)) {
-      return nullptr;
-    }
-    for (; frame != rootFrameToSelect; frame = frame->GetParent()) {
+  nsCOMPtr<nsIContent> contentToSelect = mPresShell->GetContentForScrolling();
+  if (contentToSelect) {
+    
+    
+    for (nsIFrame* frame = contentToSelect->GetPrimaryFrame();
+         frame && frame != rootFrameToSelect; frame = frame->GetParent()) {
       ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
       if (!scrollContainerFrame) {
         continue;
@@ -1864,13 +1862,12 @@ nsIFrame* nsFrameSelection::GetFrameToPageSelect() const {
         return frame;
       }
     }
-    
-    
-    
-    
-    return nullptr;
-  }();
-  return innerScrollableFrame ? innerScrollableFrame : rootFrameToSelect;
+  }
+  
+  
+  
+  
+  return rootFrameToSelect;
 }
 
 nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
