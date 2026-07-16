@@ -239,9 +239,7 @@ add_task(async function test_xpcom_graph_wait() {
       markerName == "ChromeUtils.importESModule" ||
       markerName == "ChromeUtils.importESModule static import"
     ) {
-      
-      
-      let module = profile.stringTable[markerData.name];
+      let module = markerData.name;
       if (!markersForAllPhases.modules.includes(module)) {
         markersForAllPhases.modules.push(module);
         markersForCurrentPhase.modules.push(module);
@@ -259,9 +257,7 @@ add_task(async function test_xpcom_graph_wait() {
       
       
       
-      
-      
-      let cid = profile.stringTable[markerData.name];
+      let cid = markerData.name;
 
       if (!markersForAllPhases.services.includes(cid)) {
         markersForAllPhases.services.push(cid);
