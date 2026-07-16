@@ -186,6 +186,12 @@ impl<'a> SceneBuilder<'a> {
                     }
 
                     
+                    
+                    
+                    
+                    
+                    
+                    
                     clips.push(ClipItemEntry {
                         key: ClipItemKey {
                             kind: ClipItemKeyKind::rounded_rect(
@@ -195,12 +201,16 @@ impl<'a> SceneBuilder<'a> {
                         },
                         spatial_node_index,
                         clip_rect: prim_info.rect,
+                        snap_outset: Au::from_f32_px(spread_radius),
                     });
 
                     (shadow_rect, shadow_radius)
                 }
                 BoxShadowClipMode::Inset => {
                     if !shadow_rect.is_empty() {
+                        
+                        
+                        
                         clips.push(ClipItemEntry {
                             key: ClipItemKey {
                                 kind: ClipItemKeyKind::rounded_rect(
@@ -210,6 +220,7 @@ impl<'a> SceneBuilder<'a> {
                             },
                             spatial_node_index,
                             clip_rect: shadow_rect,
+                            snap_outset: Au::from_f32_px(spread_radius),
                         });
                     }
 
@@ -217,6 +228,9 @@ impl<'a> SceneBuilder<'a> {
                 }
             };
 
+            
+            
+            
             clips.push(ClipItemEntry {
                 key: ClipItemKey {
                     kind: ClipItemKeyKind::rounded_rect(
@@ -226,6 +240,7 @@ impl<'a> SceneBuilder<'a> {
                 },
                 spatial_node_index,
                 clip_rect: final_prim_rect,
+                snap_outset: Au(0),
             });
 
             self.add_primitive(

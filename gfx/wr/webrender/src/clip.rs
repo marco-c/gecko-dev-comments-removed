@@ -124,6 +124,15 @@ pub struct ClipTreeNode {
     
     
     pub unsnapped_clip_rect: LayoutRect,
+    
+    
+    
+    
+    
+    
+    
+    
+    pub snap_outset: Au,
     pub parent: ClipNodeId,
 
     children: FastHashMap<ClipEntry, ClipNodeId>,
@@ -147,7 +156,16 @@ impl ClipTreeNode {
     ) -> LayoutRect {
         debug_assert!(self.spatial_node_index != SpatialNodeIndex::INVALID);
         snapper.set_target_spatial_node(self.spatial_node_index, spatial_tree);
-        snapper.snap_rect(&self.unsnapped_clip_rect)
+        let outset = self.snap_outset.to_f32_px();
+        if outset != 0.0 {
+            
+            
+            
+            let anchor = self.unsnapped_clip_rect.inflate(outset, outset);
+            snapper.snap_rect(&anchor).inflate(-outset, -outset)
+        } else {
+            snapper.snap_rect(&self.unsnapped_clip_rect)
+        }
     }
 }
 
@@ -241,6 +259,7 @@ impl ClipTree {
                     handle: ClipDataHandle::INVALID,
                     spatial_node_index: SpatialNodeIndex::INVALID,
                     unsnapped_clip_rect: LayoutRect::zero(),
+                    snap_outset: Au(0),
                     children: FastHashMap::default(),
                     parent: ClipNodeId::NONE,
                 }
@@ -258,6 +277,7 @@ impl ClipTree {
             handle: ClipDataHandle::INVALID,
             spatial_node_index: SpatialNodeIndex::INVALID,
             unsnapped_clip_rect: LayoutRect::zero(),
+            snap_outset: Au(0),
             children: FastHashMap::default(),
             parent: ClipNodeId::NONE,
         });
@@ -296,6 +316,7 @@ impl ClipTree {
                         handle: key.handle,
                         spatial_node_index: key.spatial_node_index,
                         unsnapped_clip_rect: key.clip_rect.into(),
+                        snap_outset: key.snap_outset,
                         children: FastHashMap::default(),
                         parent: id,
                     });
@@ -473,6 +494,8 @@ pub struct ClipEntry {
     pub handle: ClipDataHandle,
     pub spatial_node_index: SpatialNodeIndex,
     pub clip_rect: RectKey,
+    
+    pub snap_outset: Au,
 }
 
 
@@ -563,7 +586,7 @@ impl ClipTreeBuilder {
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
     ) {
-        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into() });
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: Au(0) });
     }
 
     
@@ -574,7 +597,7 @@ impl ClipTreeBuilder {
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
     ) {
-        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into() });
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: Au(0) });
     }
 
     
@@ -585,7 +608,7 @@ impl ClipTreeBuilder {
         spatial_node_index: SpatialNodeIndex,
         clip_rect: LayoutRect,
     ) {
-        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into() });
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index, clip_rect: clip_rect.into(), snap_outset: Au(0) });
     }
 
     
@@ -1002,6 +1025,7 @@ impl ClipTreeBuilder {
                     handle,
                     spatial_node_index: clip_item_entry.spatial_node_index,
                     clip_rect: clip_item_entry.clip_rect.into(),
+                    snap_outset: clip_item_entry.snap_outset,
                 });
             }
 
@@ -1893,6 +1917,8 @@ pub struct ClipItemEntry {
     pub key: ClipItemKey,
     pub spatial_node_index: SpatialNodeIndex,
     pub clip_rect: LayoutRect,
+    
+    pub snap_outset: Au,
 }
 
 
