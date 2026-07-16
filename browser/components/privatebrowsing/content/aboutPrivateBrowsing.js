@@ -272,6 +272,7 @@ function renderLegacyPromo({
   
   
   container.classList.add("promo-visible");
+  container.hidden = false;
   return true;
 }
 
