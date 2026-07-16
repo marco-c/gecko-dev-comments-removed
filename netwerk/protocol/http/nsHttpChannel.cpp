@@ -12309,14 +12309,10 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
       
       MOZ_ASSERT(mLoadInfo);
 
-      bool isMediaRequest;
-      mLoadInfo->GetIsMediaRequest(&isMediaRequest);
-      if (isMediaRequest) {
-        bool isInitialRequest;
-        mLoadInfo->GetIsMediaInitialRequest(&isInitialRequest);
-        MOZ_ASSERT(isInitialRequest);
-
-        if (!isInitialRequest) {
+      auto noCorsMediaRequestState = NoCorsMediaRequestState();
+      if (noCorsMediaRequestState !=
+          dom::NoCorsMediaRequestState::NotAvailable) {
+        if (noCorsMediaRequestState != dom::NoCorsMediaRequestState::Initial) {
           
           BlockOpaqueResponseAfterSniff(
               u"media request after sniffing, but not initial request"_ns,
@@ -12331,6 +12327,11 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
               OpaqueResponseBlockedTelemetryReason::eMediaIncorrectResp);
           return;
         }
+
+        
+        
+        
+        RecordSubsequentNoCorsRequestState();
       }
     }
 
