@@ -145,22 +145,6 @@ const CONFIG_WITH_MODIFIED_CLASSIFICATION = [
   },
 ];
 
-const CONFIG_WITH_MODIFIED_NAME = [
-  {
-    identifier: "originalDefault",
-    base: {
-      name: "Modified Engine Name",
-      urls: {
-        search: {
-          base: "https://example.com/search",
-          searchTermParamName: "q",
-        },
-      },
-      classification: "general",
-    },
-  },
-];
-
 const testSearchEngine = {
   id: "originalDefault",
   providerId: "originalDefault",
@@ -593,17 +577,11 @@ add_task(async function test_default_engine_update() {
   await extension.unload();
 });
 
-add_task(async function test_only_notify_on_relevant_engine_property_change() {
-  clearTelemetry();
+add_task(async function test_non_telemetry_event_change_config_engine() {
+  
+  
   await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
-
-  
-  
-  
-  let notificationSpy = sinon.spy(
-    AppProvidedConfigEngine.prototype,
-    "_resetPrevEngineInfo"
-  );
+  clearTelemetry();
 
   
   
@@ -614,56 +592,66 @@ add_task(async function test_only_notify_on_relevant_engine_property_change() {
   );
   await reloadObserved;
 
-  Assert.equal(
-    notificationSpy.callCount,
-    0,
-    "Should not have sent a notification"
-  );
+  
+  await TestUtils.waitForTick();
 
-  notificationSpy.restore();
+  let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
+  Assert.ok(
+    !snapshot,
+    "Should not have received any events for a non-telemetry related change to a config engine"
+  );
 });
 
-add_task(
-  async function test_multiple_updates_only_notify_on_relevant_engine_property_change() {
-    clearTelemetry();
-    await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
+add_task(async function test_non_telemetry_event_change_addon_engine() {
+  
+  
+  clearTelemetry();
+  let extension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "engine",
+      id: "engine@tests.mozilla.org",
+      search_url_get_params: `q={searchTerms}`,
+      search_url: "https://www.google.com/search",
+      encoding: "UTF-8",
+      version: "1.0",
+    },
+    { skipUnload: true }
+  );
+  let engine = SearchService.getEngineByName("engine");
 
-    
-    
-    
-    let notificationSpy = sinon.spy(
-      AppProvidedConfigEngine.prototype,
-      "_resetPrevEngineInfo"
-    );
+  Assert.ok(!!engine, "Should have loaded the engine");
 
-    
-    
-    let reloadObserved1 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(
-      CONFIG_WITH_MODIFIED_CLASSIFICATION
-    );
-    await reloadObserved1;
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
-    Assert.equal(
-      notificationSpy.callCount,
-      0,
-      "Should not have sent a notification"
-    );
+  clearTelemetry();
 
-    
-    
-    let reloadObserved2 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_WITH_MODIFIED_NAME);
-    await reloadObserved2;
+  let promiseChanged = TestUtils.topicObserved(
+    "browser-search-engine-modified",
+    (eng, verb) => verb == "engine-changed"
+  );
+  let manifest = SearchTestUtils.createEngineManifest({
+    name: "engine",
+    id: "engine@tests.mozilla.org",
+    search_url_get_params: `q={searchTerms}`,
+    search_url: "https://www.google.com/search",
+    encoding: "UTF-16",
+    version: "2.0",
+  });
 
-    Assert.equal(
-      notificationSpy.callCount,
-      1,
-      "Should have sent a notification"
-    );
+  await extension.upgrade({
+    useAddonManager: "permanent",
+    manifest,
+  });
+  await AddonTestUtils.waitForSearchProviderStartup(extension);
+  await promiseChanged;
 
-    notificationSpy.restore();
-  }
-);
+  
+  await TestUtils.waitForTick();
+
+  let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
+  Assert.ok(
+    !snapshot,
+    "Should not have received any events for a non-telemetry related change to an add-on engine"
+  );
+  await extension.unload();
+});
