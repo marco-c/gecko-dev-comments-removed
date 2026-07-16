@@ -221,7 +221,12 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
 
   
   rbs = await menu.openReportBrokenSite();
-  rbs.isProperlyReset();
+  ok(
+    !rbs.urlInputs.some(i => i.input && i.input.value != url),
+    "URL inputs were not reset"
+  );
+  is(rbs.reason, reason, "Reason was not reset");
+  is(rbs.description, description, "Description was not reset");
   rbs.close();
 }
 
