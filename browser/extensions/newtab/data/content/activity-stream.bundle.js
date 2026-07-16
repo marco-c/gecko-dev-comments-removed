@@ -13206,6 +13206,7 @@ const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
 
 
 
+
 const WIDGET_REGISTRY = [
   {
     id: "sportsWidget",
@@ -13350,6 +13351,7 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "pictureOfTheDayVisible",
     widgetsSettingsEnabledKey: "pictureOfTheDayEnabled",
+    trainhopNamespace: "widgetPictureOfTheDay",
   },
 ];
 
@@ -13405,6 +13407,8 @@ function resolveWidgetOrder(prefs) {
 
 function isWidgetAddable(widget, prefs) {
   return Boolean(
+    (widget.trainhopNamespace &&
+      prefs.trainhopConfig?.[widget.trainhopNamespace]?.visible) ||
     prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
     prefs.trainhopConfig?.widgetsSettings?.[widget.widgetsSettingsVisibleKey] ||
     prefs[widget.systemEnabledPref]
@@ -13482,10 +13486,13 @@ function resolveWidgetSize(widget, prefs) {
   if (userPref) {
     return userPref;
   }
+  const dedicatedSize = widget.trainhopNamespace
+    ? prefs.trainhopConfig?.[widget.trainhopNamespace]?.size
+    : null;
   const trainhopSize = widget.trainhopSizeKey
     ? prefs.trainhopConfig?.widgets?.[widget.trainhopSizeKey]
     : null;
-  return trainhopSize || widget.defaultSize;
+  return dedicatedSize || trainhopSize || widget.defaultSize;
 }
 
 
@@ -22542,9 +22549,17 @@ const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTh
 
 
 
+
 function resolveSetAsWallpaperEnabled(prefs) {
-  const override = prefs.trainhopConfig?.widgets?.pictureOfTheDaySetAsWallpaperEnabled;
-  return override !== undefined ? override : Boolean(prefs["widgets.pictureOfTheDay.setAsWallpaper.enabled"]);
+  const dedicated = prefs.trainhopConfig?.widgetPictureOfTheDay?.setAsWallpaperEnabled;
+  if (dedicated !== undefined) {
+    return dedicated;
+  }
+  const shared = prefs.trainhopConfig?.widgets?.pictureOfTheDaySetAsWallpaperEnabled;
+  if (shared !== undefined) {
+    return shared;
+  }
+  return Boolean(prefs["widgets.pictureOfTheDay.setAsWallpaper.enabled"]);
 }
 
 
