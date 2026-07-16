@@ -458,6 +458,7 @@ nsDragSession::GetData(nsITransferable* aTransferable, uint32_t anItem) {
   if (IsCollectionObject(mDataObject)) {
     
     nsDataObjCollection* dataObjCol = GetDataObjCollection(mDataObject);
+    NS_ENSURE_TRUE(dataObjCol, NS_ERROR_FAILURE);
     uint32_t cnt = dataObjCol->GetNumDataObjects();
     if (anItem < cnt) {
       IDataObject* dataObj = dataObjCol->GetDataObjectAt(anItem);
