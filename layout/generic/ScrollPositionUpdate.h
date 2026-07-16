@@ -37,7 +37,12 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
         
         
         
-        PureRelative));
+        PureRelative,
+        
+        
+        
+        
+        ZeroDeltaLayoutScroll));
 
 enum class ScrollTriggeredByScript : bool { No, Yes };
 
@@ -86,6 +91,10 @@ class ScrollPositionUpdate {
   static ScrollPositionUpdate NewPureRelativeScroll(ScrollOrigin aOrigin,
                                                     ScrollMode aMode,
                                                     const nsPoint& aDelta);
+
+  static ScrollPositionUpdate NewZeroDeltaLayoutScroll(
+      ScrollOrigin aOrigin, ScrollMode aMode,
+      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 
