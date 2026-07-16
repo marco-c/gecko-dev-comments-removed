@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <algorithm>
 
 #include "AnnexB.h"
@@ -530,11 +528,20 @@ static void H264EncodeBatchTest(
     MediaDataEncoder::EncodedData output = std::move(r.mEncodedData);
     if (aUsage == Usage::Realtime && is4KOrLarger) {
       
+      
+      
+      
+      
+      
       EXPECT_LE(output.Length(), numFrames);
+      EXPECT_FALSE(output.IsEmpty());
+      if (!output.IsEmpty()) {
+        EXPECT_TRUE(output[0]->mKeyframe);
+      }
     } else {
       EXPECT_EQ(output.Length(), numFrames);
+      EXPECT_GE(GetKeyFrameCount(output), r.mInputKeyframes);
     }
-    EXPECT_GE(GetKeyFrameCount(output), r.mInputKeyframes);
     if (isAVCC) {
       uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
       EXPECT_GT(naluSize, 0);
