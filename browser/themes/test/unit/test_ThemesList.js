@@ -72,77 +72,57 @@ add_task(async function test_getThemesList() {
   );
 });
 
-
-
-add_task(async function test_getThemesInfo() {
+add_task(async function test_getThemeIds() {
   const manager = await getThemesList({
     installSource: TEST_INSTALL_SOURCE,
   });
-  const themes = manager.getThemesInfo();
+  const ids = manager.getThemeIds();
 
-  Assert.ok(Array.isArray(themes), "getThemesInfo returns an Array");
+  Assert.ok(Array.isArray(ids), "getThemeIds returns an Array");
   Assert.ok(
-    themes.some(t => t.id === "default-theme@mozilla.org"),
+    ids.includes("default-theme@mozilla.org"),
     "includes default-theme@mozilla.org"
   );
   Assert.ok(
-    themes.some(t => t.id === "nova-sun@mozilla.org"),
+    ids.includes("nova-sun@mozilla.org"),
     "includes nova-sun@mozilla.org"
   );
   Assert.ok(
-    !themes.some(t => t.id === "unknown-theme@mozilla.org"),
+    !ids.includes("unknown-theme@mozilla.org"),
     "does not include unmanaged IDs"
   );
-  const ids = themes.map(t => t.id);
   Assert.equal(new Set(ids).size, ids.length, "all IDs are unique");
-
-  
-  const defaultTheme = themes.find(t => t.id === "default-theme@mozilla.org");
-  Assert.ok(defaultTheme?.themePickerColors, "includes themePickerColors");
-  Assert.ok(defaultTheme.themePickerColors.light, "has light variant");
-  Assert.ok(defaultTheme.themePickerColors.dark, "has dark variant");
 });
 
-
-
-add_task(async function test_getThemesInfo_showInCompactLayout() {
+add_task(async function test_getThemePickerColors() {
   const manager = await getThemesList({
     installSource: TEST_INSTALL_SOURCE,
   });
 
-  const allThemes = manager.getThemesInfo();
-  const compactLayoutThemes = manager.getThemesInfo({
-    showInCompactLayout: true,
-  });
-
-  const expectedCompactLayoutThemes = [
-    "default-theme@mozilla.org",
-    "nova-sun@mozilla.org",
-    "nova-flare@mozilla.org",
-    "nova-lagoon@mozilla.org",
-    "nova-pine@mozilla.org",
-    "nova-ash@mozilla.org",
-  ];
-
-  Assert.equal(
-    compactLayoutThemes.length,
-    expectedCompactLayoutThemes.length,
-    "compact layout returns expected number of themes"
+  
+  
+  
+  
+  
+  const variants = manager.getThemePickerColors("nova-sun@mozilla.org");
+  Assert.deepEqual(
+    variants?.light,
+    {
+      type: "gradient",
+      value: "linear-gradient(90deg, #F9F5E6 0%, #FDE8B5 60%, #FBCC77 100%)",
+    },
+    "nova-sun light variant is a gradient object"
+  );
+  Assert.deepEqual(
+    variants?.dark,
+    { type: "color", value: "#270F00" },
+    "nova-sun dark variant is a plain color object"
   );
 
-  for (const themeId of expectedCompactLayoutThemes) {
-    Assert.ok(
-      compactLayoutThemes.some(t => t.id === themeId),
-      `compact layout includes ${themeId}`
-    );
-  }
-
-  const nonCompactLayoutTheme = allThemes.find(
-    t => !expectedCompactLayoutThemes.includes(t.id)
-  );
-  Assert.ok(
-    !compactLayoutThemes.some(t => t.id === nonCompactLayoutTheme.id),
-    `compact layout excludes theme ${nonCompactLayoutTheme.id}`
+  Assert.strictEqual(
+    manager.getThemePickerColors("unknown-theme@mozilla.org"),
+    null,
+    "returns null for an unmanaged theme ID"
   );
 });
 
