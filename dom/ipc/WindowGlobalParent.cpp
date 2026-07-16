@@ -60,6 +60,7 @@
 #include "mozilla/glean/GeckoviewMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/net/CookieCommons.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PCookieServiceParent.h"
@@ -2025,6 +2026,27 @@ void WindowGlobalParent::SetShouldReportHasBlockedOpaqueResponse(
 IPCResult WindowGlobalParent::RecvSetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
     nsIURI* aHost, bool aIsThirdParty, const nsTArray<CookieStruct>& aCookies) {
+  
+  
+  
+  nsIPrincipal* documentPrincipal = DocumentPrincipal();
+  if (!documentPrincipal || !documentPrincipal->GetIsContentPrincipal()) {
+    return IPC_FAIL(this,
+                    "SetCookies requires a content principal on the window");
+  }
+
+  
+  
+  if (!documentPrincipal->SchemeIs("file")) {
+    nsAutoCString principalBaseDomain;
+    if (NS_FAILED(net::CookieCommons::GetBaseDomain(documentPrincipal,
+                                                    principalBaseDomain)) ||
+        !principalBaseDomain.Equals(aBaseDomain)) {
+      return IPC_FAIL(
+          this, "SetCookies baseDomain does not match document principal");
+    }
+  }
+
   
   
   ContentParent* contentParent = GetContentParent();
