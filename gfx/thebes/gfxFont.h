@@ -2202,36 +2202,38 @@ class gfxFont {
   
   
   struct WordCacheKey {
-    union {
-      const uint8_t* mSingle;
-      const char16_t* mDouble;
-    } mText;
-    uint8_t mLength;
-    ShapedTextFlags mFlags;
-    Script mScript;
     
     
     
     nsAtom* mLanguage;
+    ShapedTextFlags mFlags;
+    Script mScript;
     uint16_t mAppUnitsPerDevUnit;
+    uint8_t mLength;
+    RoundingFlags mRounding;
+
+    union {
+      const uint8_t* mSingle;
+      const char16_t* mDouble;
+    } mText;
     PLDHashNumber mHashKey;
     bool mTextIs8Bit;
-    RoundingFlags mRounding;
+    
 
     WordCacheKey(const uint8_t* aText, uint8_t aLength, uint32_t aStringHash,
                  Script aScriptCode, nsAtom* aLanguage,
                  uint16_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
                  RoundingFlags aRounding)
-        : mLength(aLength),
+        : mLanguage(aLanguage),
           mFlags(aFlags),
           mScript(aScriptCode),
-          mLanguage(aLanguage),
           mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
+          mLength(aLength),
+          mRounding(aRounding),
           mHashKey(aStringHash + static_cast<int32_t>(aScriptCode) +
                    aAppUnitsPerDevUnit * 0x100 + uint16_t(aFlags) * 0x10000 +
                    int(aRounding) + (aLanguage ? aLanguage->hash() : 0)),
-          mTextIs8Bit(true),
-          mRounding(aRounding) {
+          mTextIs8Bit(true) {
       NS_ASSERTION(aFlags & ShapedTextFlags::TEXT_IS_8BIT,
                    "8-bit flag should have been set");
       mText.mSingle = aText;
@@ -2241,16 +2243,16 @@ class gfxFont {
                  Script aScriptCode, nsAtom* aLanguage,
                  uint16_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
                  RoundingFlags aRounding)
-        : mLength(aLength),
+        : mLanguage(aLanguage),
           mFlags(aFlags),
           mScript(aScriptCode),
-          mLanguage(aLanguage),
           mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
+          mLength(aLength),
+          mRounding(aRounding),
           mHashKey(aStringHash + static_cast<int32_t>(aScriptCode) +
                    aAppUnitsPerDevUnit * 0x100 + uint16_t(aFlags) * 0x10000 +
                    int(aRounding)),
-          mTextIs8Bit(false),
-          mRounding(aRounding) {
+          mTextIs8Bit(false) {
       
       
       
