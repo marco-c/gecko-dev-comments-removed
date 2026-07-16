@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"     
 #include "mozilla/Maybe.h"       
+#include "mozilla/RefPtr.h"      
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -93,6 +94,12 @@ class JitActivation : public Activation {
   
   
   mozilla::Maybe<wasm::TrapData> wasmTrapData_;
+
+  
+  
+  
+  
+  RefPtr<const wasm::Code> wasmTrapCode_;
 
 #ifdef CHECK_OSIPOINT_REGISTERS
  protected:

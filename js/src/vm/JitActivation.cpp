@@ -244,6 +244,14 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   const wasm::Code& code = wasm::GetNearestEffectiveInstance(fp)->code();
   MOZ_RELEASE_ASSERT(&code == wasm::LookupCode(pc));
 
+  
+  
+  
+  
+  
+  wasmTrapCode_ = wasm::LookupCode(state.pc);
+  MOZ_RELEASE_ASSERT(wasmTrapCode_);
+
   setWasmExitFP(fp);
   wasmTrapData_.emplace();
   wasmTrapData_->resumePC =
@@ -271,6 +279,9 @@ void js::jit::JitActivation::finishWasmTrap() {
   MOZ_ASSERT(hasWasmExitFP());
   MOZ_ASSERT(isWasmTrapping());
   wasmTrapData_.reset();
+  
+  
+  
   packedExitFP_ = nullptr;
   MOZ_ASSERT(!isWasmTrapping());
 }
