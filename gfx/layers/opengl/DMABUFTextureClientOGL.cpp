@@ -3,9 +3,8 @@
 
 
 #include "DMABUFTextureClientOGL.h"
-
-#include "gfxPlatform.h"
 #include "mozilla/widget/DMABufSurface.h"
+#include "gfxPlatform.h"
 
 namespace mozilla::layers {
 

@@ -2,12 +2,14 @@
 
 
 
+#include "gtest/gtest.h"
+
+#include "PolygonTestUtils.h"
+
+#include "nsTArray.h"
 #include "Point.h"
 #include "Polygon.h"
-#include "PolygonTestUtils.h"
 #include "Triangle.h"
-#include "gtest/gtest.h"
-#include "nsTArray.h"
 
 using namespace mozilla::gfx;
 typedef mozilla::gfx::Polygon MozPolygon;

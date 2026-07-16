@@ -5,16 +5,15 @@
 #ifndef MOZILLA_LAYERS_COMPOSITORTYPES_H
 #define MOZILLA_LAYERS_COMPOSITORTYPES_H
 
-#include <stdint.h>     
-#include <sys/types.h>  
-
 #include <iosfwd>
-
+#include <stdint.h>       
+#include <sys/types.h>    
 #include "LayersTypes.h"  
-#include "mozilla/TypedEnumBits.h"
+#include "nsXULAppAPI.h"  
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/SyncObject.h"
-#include "nsXULAppAPI.h"  
+
+#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {
 namespace layers {

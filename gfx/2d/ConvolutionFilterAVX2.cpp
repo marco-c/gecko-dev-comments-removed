@@ -2,9 +2,8 @@
 
 
 
-#include <immintrin.h>
-
 #include "SkConvolver.h"
+#include <immintrin.h>
 
 namespace skia {
 

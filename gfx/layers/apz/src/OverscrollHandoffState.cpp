@@ -5,9 +5,8 @@
 #include "OverscrollHandoffState.h"
 
 #include <algorithm>  
-
-#include "AsyncPanZoomController.h"
 #include "mozilla/Assertions.h"
+#include "AsyncPanZoomController.h"
 
 namespace mozilla {
 namespace layers {

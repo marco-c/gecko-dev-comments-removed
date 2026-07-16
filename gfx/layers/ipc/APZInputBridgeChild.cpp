@@ -4,15 +4,16 @@
 
 #include "mozilla/layers/APZInputBridgeChild.h"
 
-#include "InputData.h"                  
-#include "mozilla/dom/BrowserParent.h"  
+#include "InputData.h"  
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/DoubleTapToZoom.h"  
-#include "mozilla/layers/GeckoContentController.h"  
-#include "mozilla/layers/RemoteCompositorSession.h"  
 #include "mozilla/layers/SynchronousTask.h"
+
+#include "mozilla/layers/GeckoContentController.h"  
+#include "mozilla/layers/DoubleTapToZoom.h"  
+#include "mozilla/layers/RemoteCompositorSession.h"  
+#include "mozilla/dom/BrowserParent.h"               
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"  
 #endif

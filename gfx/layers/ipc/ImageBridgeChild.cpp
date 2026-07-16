@@ -9,7 +9,6 @@
 #include "ImageBridgeParent.h"  
 #include "ImageContainer.h"     
 #include "SynchronousTask.h"
-#include "WindowRenderer.h"
 #include "mozilla/Assertions.h"        
 #include "mozilla/Monitor.h"           
 #include "mozilla/ReentrantMonitor.h"  
@@ -30,13 +29,14 @@
 #include "mozilla/media/MediaSystemResourceManager.h"  
 #include "mozilla/media/MediaSystemResourceManagerChild.h"  
 #include "mozilla/mozalloc.h"  
+#include "transport/runnable_utils.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsISupportsImpl.h"         
 #include "nsTArray.h"                
 #include "nsTArrayForwardDeclare.h"  
 #include "nsThreadUtils.h"           
-#include "transport/runnable_utils.h"
+#include "WindowRenderer.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/gfx/DeviceManagerDx.h"

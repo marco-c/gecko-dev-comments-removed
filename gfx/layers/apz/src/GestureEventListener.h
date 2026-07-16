@@ -6,7 +6,6 @@
 #define mozilla_layers_GestureEventListener_h
 
 #include <iosfwd>
-
 #include "InputData.h"  
 #include "Units.h"
 #include "mozilla/EventForwards.h"  

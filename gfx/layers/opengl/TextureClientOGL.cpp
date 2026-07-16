@@ -2,26 +2,24 @@
 
 
 
-#include "mozilla/layers/TextureClientOGL.h"
-
-#include "GLContext.h"  
-#include "GLLibraryEGL.h"
+#include "GLContext.h"           
 #include "mozilla/Assertions.h"  
-#include "mozilla/gfx/2D.h"      
-#include "mozilla/gfx/Point.h"   
 #include "mozilla/layers/ISurfaceAllocator.h"
+#include "mozilla/layers/TextureClientOGL.h"
+#include "mozilla/gfx/2D.h"     
+#include "mozilla/gfx/Point.h"  
+#include "GLLibraryEGL.h"
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <jni.h>
 #  include <android/native_window.h>
 #  include <android/native_window_jni.h>
-#  include <jni.h>
 #  include <sys/socket.h>
-
-#  include "mozilla/UniquePtrExtensions.h"
 #  include "mozilla/ipc/FileDescriptor.h"
 #  include "mozilla/java/GeckoSurfaceWrappers.h"
 #  include "mozilla/java/SurfaceAllocatorWrappers.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
+#  include "mozilla/UniquePtrExtensions.h"
 #endif
 
 using namespace mozilla::gl;

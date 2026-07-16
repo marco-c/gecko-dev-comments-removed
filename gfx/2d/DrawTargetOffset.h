@@ -1,11 +1,12 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_GFX_DRAWTARGETOFFSET_H_
 #define MOZILLA_GFX_DRAWTARGETOFFSET_H_
 
 #include "2D.h"
+
 #include "Filters.h"
 #include "Logging.h"
 
@@ -50,7 +51,7 @@ class DrawTargetOffset : public DrawTarget {
 
   virtual bool IsValid() const override { return mDrawTarget->IsValid(); }
 
-  
+  // We'll pestimistically return true here
   virtual bool IsTiledDrawTarget() const override { return true; }
 
   virtual DrawTargetType GetType() const override {
@@ -78,7 +79,7 @@ class DrawTargetOffset : public DrawTarget {
                           const DrawOptions& aOptions = DrawOptions()) override;
   virtual void DrawSurfaceWithShadow(
       SourceSurface* aSurface, const Point& aDest, const ShadowOptions& aShadow,
-      CompositionOp aOperator) override { 
+      CompositionOp aOperator) override { /* Not implemented */
     MOZ_CRASH("GFX: DrawSurfaceWithShadow");
   }
 
@@ -186,7 +187,7 @@ class DrawTargetOffset : public DrawTarget {
   IntPoint mOrigin;
 };
 
-}  
-}  
+}  // namespace gfx
+}  // namespace mozilla
 
 #endif

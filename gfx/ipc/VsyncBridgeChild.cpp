@@ -2,7 +2,6 @@
 
 
 #include "VsyncBridgeChild.h"
-
 #include "VsyncIOThreadHolder.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/GPUProcessManager.h"

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "2D.h"
 #include "Swizzle.h"
@@ -16,38 +16,37 @@
 #include "ScaledFontBase.h"
 
 #if defined(WIN32)
-#  include "NativeFontResourceGDI.h"
 #  include "ScaledFontWin.h"
+#  include "NativeFontResourceGDI.h"
 #  include "UnscaledFontGDI.h"
 #endif
 
 #ifdef XP_DARWIN
-#  include "NativeFontResourceMac.h"
 #  include "ScaledFontMac.h"
+#  include "NativeFontResourceMac.h"
 #  include "UnscaledFontMac.h"
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-#  include "NativeFontResourceFreeType.h"
 #  include "ScaledFontFontconfig.h"
+#  include "NativeFontResourceFreeType.h"
 #  include "UnscaledFontFreeType.h"
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include "NativeFontResourceFreeType.h"
 #  include "ScaledFontFreeType.h"
+#  include "NativeFontResourceFreeType.h"
 #  include "UnscaledFontFreeType.h"
 #endif
 
 #ifdef WIN32
+#  include "ScaledFontDWrite.h"
+#  include "NativeFontResourceDWrite.h"
+#  include "UnscaledFontDWrite.h"
 #  include <d3d10_1.h>
 #  include <stdlib.h>
-
 #  include "HelpersWin.h"
 #  include "ImageContainer.h"
-#  include "NativeFontResourceDWrite.h"
-#  include "ScaledFontDWrite.h"
-#  include "UnscaledFontDWrite.h"
 #  include "mozilla/layers/LayersSurfaces.h"
 #  include "mozilla/layers/TextureD3D11.h"
 #  include "mozilla/layers/VideoProcessorD3D11.h"
@@ -57,7 +56,9 @@
 #include "DrawTargetOffset.h"
 #include "DrawTargetRecording.h"
 #include "PathRecording.h"
+
 #include "SourceSurfaceRawData.h"
+
 #include "mozilla/CheckedInt.h"
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -145,7 +146,7 @@ already_AddRefed<SharedFTFace> FTUserFontData::CloneFace(int aFaceIndex) {
 #endif
 
 #ifdef WIN32
-
+// Note: mDeviceLock must be held when mutating these values.
 StaticRefPtr<ID3D11Device> Factory::mD3D11Device;
 StaticRefPtr<IDWriteFactory> Factory::mDWriteFactory;
 StaticRefPtr<IDWriteFontCollection> Factory::mDWriteSystemFonts;
@@ -181,8 +182,8 @@ void Factory::ShutDown() {
 #endif
 }
 
-
-
+// If the size is "reasonable", we want gfxCriticalError to assert, so
+// this is the option set up for it.
 inline int LoggerOptionsBasedOnSize(const IntSize& aSize) {
   return CriticalLog::DefaultOptions(Factory::ReasonableSurfaceSize(aSize));
 }
@@ -206,14 +207,14 @@ bool Factory::CheckSurfaceSize(const IntSize& sz, int32_t extentLimit,
     return false;
   }
 
-  
+  // reject images with sides bigger than limit
   if (extentLimit && (sz.width > extentLimit || sz.height > extentLimit)) {
     gfxDebug() << "Surface size too large (exceeds extent limit)!";
     return false;
   }
 
-  
-  
+  // assuming 4 bytes per pixel, make sure the allocation size
+  // doesn't overflow a int32_t either
   auto stride = GetAlignedStride<16>(sz.width, 4);
   if (stride.isNothing()) {
     gfxDebug() << "Surface size too large (stride is invalid)!";
@@ -270,7 +271,7 @@ already_AddRefed<DrawTarget> Factory::CreateDrawTarget(BackendType aBackend,
   }
 
   if (!retVal) {
-    
+    // Failed
     gfxCriticalError(LoggerOptionsBasedOnSize(aSize))
         << "Failed to create DrawTarget, Type: " << int(aBackend)
         << " Size: " << aSize;
@@ -566,9 +567,9 @@ already_AddRefed<SharedFTFace> Factory::NewSharedFTFace(FT_Library aFTLibrary,
 
   RefPtr<FTUserFontData> data;
 #  ifdef ANDROID
-  
-  
-  
+  // If the font has variations, we may later need to "clone" it in
+  // UnscaledFontFreeType::CreateScaledFont. To support this, we attach an
+  // FTUserFontData that records the filename used to instantiate the face.
   if (face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
     data = new FTUserFontData(aFilename);
   }
@@ -683,8 +684,8 @@ RefPtr<IDWriteFontCollection> Factory::GetDWriteSystemFonts(bool aUpdate) {
   HRESULT hr =
       mDWriteFactory->GetSystemFontCollection(getter_AddRefs(systemFonts));
   if (FAILED(hr) || !systemFonts) {
-    
-    
+    // only crash some of the time so those experiencing this problem
+    // don't stop using Firefox
     if ((rand() & 0x3f) == 0) {
       gfxCriticalError(int(gfx::LogOptions::AssertOnCall))
           << "Failed to create DWrite system font collection";
@@ -718,7 +719,7 @@ already_AddRefed<ScaledFont> Factory::CreateScaledFontForGDIFont(
   return MakeAndAddRef<ScaledFontWin>(static_cast<const LOGFONT*>(aLogFont),
                                       aUnscaledFont, aSize);
 }
-#endif  
+#endif  // WIN32
 
 already_AddRefed<DrawTarget> Factory::CreateDrawTargetWithSkCanvas(
     SkCanvas* aCanvas) {
@@ -766,11 +767,11 @@ already_AddRefed<SourceSurface> Factory::CreateSourceSurfaceForCairoSurface(
 already_AddRefed<DataSourceSurface> Factory::CreateWrappingDataSourceSurface(
     uint8_t* aData, int32_t aStride, const IntSize& aSize,
     SurfaceFormat aFormat,
-    SourceSurfaceDeallocator aDeallocator ,
-    void* aClosure ) {
-  
-  
-  
+    SourceSurfaceDeallocator aDeallocator /* = nullptr */,
+    void* aClosure /* = nullptr */) {
+  // Just check for negative/zero size instead of the full AllowedSurfaceSize()
+  // - since the data is already allocated we do not need to check for a
+  // possible overflow - it already worked.
   if (aSize.width <= 0 || aSize.height <= 0) {
     return nullptr;
   }
@@ -795,7 +796,7 @@ already_AddRefed<DataSourceSurface> Factory::CreateDataSourceSurface(
     return nullptr;
   }
 
-  
+  // Skia doesn't support RGBX, so memset RGBX to 0xFF
   bool clearSurface = aZero || aFormat == SurfaceFormat::B8G8R8X8;
   uint8_t clearValue = aFormat == SurfaceFormat::B8G8R8X8 ? 0xFF : 0;
 
@@ -818,7 +819,7 @@ already_AddRefed<DataSourceSurface> Factory::CreateDataSourceSurfaceWithStride(
     return nullptr;
   }
 
-  
+  // Skia doesn't support RGBX, so memset RGBX to 0xFF
   bool clearSurface = aZero || aFormat == SurfaceFormat::B8G8R8X8;
   uint8_t clearValue = aFormat == SurfaceFormat::B8G8R8X8 ? 0xFF : 0;
 
@@ -835,7 +836,7 @@ already_AddRefed<DataSourceSurface> Factory::CreateDataSourceSurfaceWithStride(
 
 already_AddRefed<DataSourceSurface> Factory::CopyDataSourceSurface(
     DataSourceSurface* aSource) {
-  
+  // Don't worry too much about speed.
   MOZ_ASSERT(aSource->GetFormat() == SurfaceFormat::R8G8B8A8 ||
              aSource->GetFormat() == SurfaceFormat::R8G8B8X8 ||
              aSource->GetFormat() == SurfaceFormat::B8G8R8A8 ||
@@ -852,7 +853,7 @@ already_AddRefed<DataSourceSurface> Factory::CopyDataSourceSurface(
   SurfaceFormat format = aSource->GetFormat();
 
   RefPtr<DataSourceSurface> dst = CreateDataSourceSurfaceWithStride(
-      size, format, srcMap.GetStride(),  false);
+      size, format, srcMap.GetStride(), /* aZero */ false);
   if (NS_WARN_IF(!dst)) {
     return nullptr;
   }
@@ -870,7 +871,7 @@ already_AddRefed<DataSourceSurface> Factory::CopyDataSourceSurface(
 
 void Factory::CopyDataSourceSurface(DataSourceSurface* aSource,
                                     DataSourceSurface* aDest) {
-  
+  // Don't worry too much about speed.
   MOZ_ASSERT(aSource->GetSize() == aDest->GetSize());
   MOZ_ASSERT(aSource->GetFormat() == SurfaceFormat::R8G8B8A8 ||
              aSource->GetFormat() == SurfaceFormat::R8G8B8X8 ||
@@ -901,7 +902,7 @@ void Factory::CopyDataSourceSurface(DataSourceSurface* aSource,
 
 #ifdef WIN32
 
-
+/* static */
 already_AddRefed<DataSourceSurface>
 Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
     ID3D11Texture2D* aSrcTexture, uint32_t aArrayIndex,
@@ -923,7 +924,7 @@ Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
   return destTexture.forget();
 }
 
- nsresult Factory::CreateSdbForD3D11Texture(
+/* static */ nsresult Factory::CreateSdbForD3D11Texture(
     ID3D11Texture2D* aSrcTexture, const IntSize& aSrcSize,
     layers::SurfaceDescriptorBuffer& aSdBuffer,
     const std::function<layers::MemoryOrShmem(uint32_t)>& aAllocate) {
@@ -951,7 +952,7 @@ Factory::CreateBGRA8DataSourceSurfaceForD3D11Texture(
   return NS_OK;
 }
 
-
+/* static */
 bool Factory::ConvertSourceAndRetryReadback(
     DataSourceSurface* aDestCpuTexture, ID3D11Texture2D* aSrcTexture,
     uint32_t aArrayIndex, gfx::ColorSpace2 aColorSpace,
@@ -1011,7 +1012,7 @@ bool Factory::ConvertSourceAndRetryReadback(
                          aColorRange, aTransferFunction);
 }
 
-
+/* static */
 bool Factory::ReadbackTexture(DataSourceSurface* aDestCpuTexture,
                               ID3D11Texture2D* aSrcTexture,
                               uint32_t aArrayIndex,
@@ -1021,8 +1022,8 @@ bool Factory::ReadbackTexture(DataSourceSurface* aDestCpuTexture,
   D3D11_TEXTURE2D_DESC srcDesc = {0};
   aSrcTexture->GetDesc(&srcDesc);
 
-  
-  
+  // Special case: If the source and destination have different formats and the
+  // destination is B8G8R8A8 then convert the source to B8G8R8A8 and readback.
   if ((srcDesc.Format != DXGIFormat(aDestCpuTexture->GetFormat())) &&
       (aDestCpuTexture->GetFormat() == SurfaceFormat::B8G8R8A8)) {
     return ConvertSourceAndRetryReadback(aDestCpuTexture, aSrcTexture,
@@ -1049,7 +1050,7 @@ bool Factory::ReadbackTexture(DataSourceSurface* aDestCpuTexture,
   return ret;
 }
 
-
+/* static */
 bool Factory::ReadbackTexture(uint8_t* aDestData, int32_t aDestStride,
                               ID3D11Texture2D* aSrcTexture) {
   MOZ_ASSERT(aDestData && aDestStride && aSrcTexture);
@@ -1123,9 +1124,9 @@ bool Factory::ReadbackTexture(uint8_t* aDestData, int32_t aDestStride,
   return true;
 }
 
-#endif  
+#endif  // WIN32
 
-
+// static
 void CriticalLogger::OutputMessage(const std::string& aString, int aLevel,
                                    bool aNoNewline) {
   if (Factory::GetLogForwarder()) {
@@ -1153,4 +1154,4 @@ void LogWStr(const wchar_t* aWStr, std::stringstream& aOut) {
 }
 #endif
 
-}  
+}  // namespace mozilla::gfx

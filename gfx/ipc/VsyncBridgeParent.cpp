@@ -2,7 +2,6 @@
 
 
 #include "VsyncBridgeParent.h"
-
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"

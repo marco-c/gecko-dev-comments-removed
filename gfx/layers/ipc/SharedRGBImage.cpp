@@ -3,22 +3,21 @@
 
 
 #include "SharedRGBImage.h"
-
 #include "ImageTypes.h"         
+#include "mozilla/ipc/Shmem.h"  
 #include "gfx2DGlue.h"          
 #include "gfxPlatform.h"        
 #include "mozilla/gfx/Point.h"  
-#include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/ImageBridgeChild.h"   
 #include "mozilla/layers/ImageClient.h"        
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/TextureClient.h"      
 #include "mozilla/layers/TextureClientRecycleAllocator.h"  
-#include "mozilla/mozalloc.h"  
-#include "nsDebug.h"           
-#include "nsISupportsImpl.h"   
+#include "mozilla/layers/ImageBridgeChild.h"  
+#include "mozilla/mozalloc.h"                 
+#include "nsDebug.h"                          
+#include "nsISupportsImpl.h"                  
 #include "nsProxyRelease.h"
 #include "nsRect.h"  
 

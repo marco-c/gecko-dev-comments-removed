@@ -5,18 +5,17 @@
 #ifndef MOZILLA_GFX_TYPES_H_
 #define MOZILLA_GFX_TYPES_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <bit>
-#include <iosfwd>  
-#include <optional>
-
 #include "mozilla/DefineEnum.h"  
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
+
+#include <bit>
+#include <iosfwd>  
+#include <stddef.h>
+#include <stdint.h>
+#include <optional>
 
 namespace mozilla {
 namespace gfx {

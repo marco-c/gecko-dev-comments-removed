@@ -5,10 +5,8 @@
 #ifndef GFX_SCROLLABLELAYERGUID_H
 #define GFX_SCROLLABLELAYERGUID_H
 
-#include <stdint.h>  
-
-#include <iosfwd>  
-
+#include <iosfwd>                        
+#include <stdint.h>                      
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsHashKeys.h"                  
 

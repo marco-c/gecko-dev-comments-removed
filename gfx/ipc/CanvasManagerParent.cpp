@@ -3,19 +3,18 @@
 
 
 #include "CanvasManagerParent.h"
-
 #include "gfxPlatform.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/WebGLParent.h"
 #include "mozilla/gfx/CanvasRenderThread.h"
-#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"

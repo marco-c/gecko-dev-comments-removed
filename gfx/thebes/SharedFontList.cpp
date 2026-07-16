@@ -3,14 +3,14 @@
 
 
 #include "SharedFontList-impl.h"
-#include "gfxFont.h"
-#include "gfxFontUtils.h"
 #include "gfxPlatformFontList.h"
-#include "mozilla/Logging.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
+#include "gfxFontUtils.h"
+#include "gfxFont.h"
 #include "nsReadableUtils.h"
 #include "prerror.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/Logging.h"
 
 #define LOG_FONTLIST(args) \
   MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontlist), LogLevel::Debug, args)

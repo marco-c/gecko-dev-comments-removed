@@ -7,11 +7,11 @@
 
 #include <unordered_set>
 
-#include "GLContextTypes.h"   
-#include "GLDefs.h"           
-#include "OGLShaderConfig.h"  
-#include "Units.h"            
 #include "gfx2DGlue.h"
+#include "GLContextTypes.h"         
+#include "GLDefs.h"                 
+#include "OGLShaderConfig.h"        
+#include "Units.h"                  
 #include "mozilla/Assertions.h"     
 #include "mozilla/RefPtr.h"         
 #include "mozilla/gfx/2D.h"         

@@ -3,7 +3,6 @@
 
 
 #include "PathRecording.h"
-
 #include "DrawEventRecorder.h"
 #include "RecordedEventImpl.h"
 

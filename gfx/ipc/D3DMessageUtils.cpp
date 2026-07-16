@@ -1,9 +1,8 @@
 
 
 
-#include "D3DMessageUtils.h"
-
 #include "ipc/IPCMessageUtils.h"
+#include "D3DMessageUtils.h"
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"
 #endif

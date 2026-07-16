@@ -2,8 +2,8 @@
 
 
 
-#include "FuzzingBufferReader.h"
 #include "FuzzingInterface.h"
+#include "FuzzingBufferReader.h"
 #include "mozilla/webrender/webrender_ffi.h"
 
 static int testInitMoz2D(int* argc, char*** argv) { return 0; }

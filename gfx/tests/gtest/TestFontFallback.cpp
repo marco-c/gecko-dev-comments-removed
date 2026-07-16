@@ -2,10 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
 #include "gfxTypes.h"
-#include "gtest/gtest.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsTArray.h"

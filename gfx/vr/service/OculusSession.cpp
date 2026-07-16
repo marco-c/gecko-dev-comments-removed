@@ -6,17 +6,16 @@
 #  error "Oculus support only available for Windows"
 #endif
 
-#include "OculusSession.h"
-
-#include <d3d11.h>
 #include <math.h>
+#include <d3d11.h>
 
-#include "mozilla/SharedLibrary.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/dom/GamepadEventTypes.h"
+#include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/SharedLibrary.h"
+#include "OculusSession.h"
 
 
 

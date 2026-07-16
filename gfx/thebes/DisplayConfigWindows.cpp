@@ -2,9 +2,9 @@
 
 
 
-#include "DisplayConfigWindows.h"
-
 #include <windows.h>
+
+#include "DisplayConfigWindows.h"
 
 namespace mozilla {
 namespace gfx {

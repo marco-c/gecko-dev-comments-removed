@@ -9,11 +9,11 @@
 
 #include "APZUtils.h"
 #include "AxisPhysicsMSDModel.h"
-#include "Units.h"
 #include "mozilla/DataMutex.h"  
-#include "mozilla/TimeStamp.h"  
 #include "mozilla/gfx/Types.h"  
+#include "mozilla/TimeStamp.h"  
 #include "nsTArray.h"           
+#include "Units.h"
 
 namespace mozilla {
 namespace layers {

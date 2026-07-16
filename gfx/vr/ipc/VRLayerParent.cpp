@@ -3,7 +3,6 @@
 
 
 #include "VRLayerParent.h"
-
 #include "VRManager.h"
 #include "mozilla/layers/CompositorThread.h"
 

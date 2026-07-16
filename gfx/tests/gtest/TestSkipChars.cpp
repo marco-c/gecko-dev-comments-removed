@@ -2,8 +2,9 @@
 
 
 
-#include "gfxSkipChars.h"
 #include "gtest/gtest.h"
+
+#include "gfxSkipChars.h"
 
 static bool TestConstructor() {
   gfxSkipChars skipChars;

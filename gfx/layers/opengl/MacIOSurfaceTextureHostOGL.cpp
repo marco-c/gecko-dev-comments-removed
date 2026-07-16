@@ -3,9 +3,8 @@
 
 
 #include "MacIOSurfaceTextureHostOGL.h"
-
-#include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/GpuFence.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"

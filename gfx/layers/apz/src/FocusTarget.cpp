@@ -3,15 +3,14 @@
 
 
 #include "mozilla/layers/FocusTarget.h"
-
-#include "mozilla/EventDispatcher.h"  
-#include "mozilla/PresShell.h"        
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"         
 #include "mozilla/dom/RemoteBrowser.h"       
-#include "nsIContentInlines.h"               
-#include "nsLayoutUtils.h"                   
+#include "mozilla/EventDispatcher.h"         
+#include "mozilla/PresShell.h"               
+#include "mozilla/StaticPrefs_apz.h"
+#include "nsIContentInlines.h"  
+#include "nsLayoutUtils.h"      
 
 static mozilla::LazyLogModule sApzFtgLog("apz.focustarget");
 #define FT_LOG(...) MOZ_LOG(sApzFtgLog, LogLevel::Debug, (__VA_ARGS__))

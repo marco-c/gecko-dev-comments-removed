@@ -2,8 +2,8 @@
 
 
 
-#include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
 #include "mozilla/layers/NativeLayerRemoteMac.h"
+#include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
 #include "mozilla/layers/SurfacePool.h"
 
 namespace mozilla {

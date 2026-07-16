@@ -3,9 +3,11 @@
 
 
 #include "APZTestCommon.h"
+
 #include "InputUtils.h"
-#include "RecentEventsBuffer.h"
 #include "gtest/gtest.h"
+
+#include "RecentEventsBuffer.h"
 
 struct TestEvent {
  public:

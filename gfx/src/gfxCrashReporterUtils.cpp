@@ -3,15 +3,13 @@
 
 
 #include "gfxCrashReporterUtils.h"
-
-#include <string.h>  
-
-#include "MainThreadUtils.h"         
-#include "mozilla/RefPtr.h"          
+#include <string.h>                  
 #include "mozilla/SchedulerGroup.h"  
 #include "mozilla/Services.h"        
 #include "mozilla/StaticMutex.h"
 #include "mozilla/mozalloc.h"    
+#include "mozilla/RefPtr.h"      
+#include "MainThreadUtils.h"     
 #include "nsCOMPtr.h"            
 #include "nsError.h"             
 #include "nsExceptionHandler.h"  
@@ -19,8 +17,8 @@
 #include "nsIObserverService.h"  
 #include "nsIRunnable.h"         
 #include "nsISupports.h"
-#include "nsTArray.h"       
 #include "nsThreadUtils.h"  
+#include "nsTArray.h"       
 #include "nscore.h"         
 
 namespace mozilla {

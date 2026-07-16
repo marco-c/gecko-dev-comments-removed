@@ -2,9 +2,9 @@
 
 
 
-#include <arm_neon.h>
-
 #include "Swizzle.h"
+
+#include <arm_neon.h>
 
 namespace mozilla {
 namespace gfx {

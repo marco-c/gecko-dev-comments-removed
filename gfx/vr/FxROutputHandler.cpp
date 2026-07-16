@@ -3,10 +3,9 @@
 
 
 #include "FxROutputHandler.h"
-
-#include "VRShMem.h"
-#include "moz_external_vr.h"
 #include "mozilla/Assertions.h"
+#include "moz_external_vr.h"
+#include "VRShMem.h"
 
 
 

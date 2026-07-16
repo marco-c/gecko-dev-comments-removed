@@ -2,14 +2,13 @@
 
 
 
-#include <queue>
 #include <vector>
-
-#include "TreeTraversal.h"
-#include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
-#include "nsRect.h"
+#include "gtest/gtest.h"
 #include "nsRegion.h"
+#include "nsRect.h"
+#include "TreeTraversal.h"
+#include <queue>
 
 using namespace mozilla::layers;
 using namespace mozilla;

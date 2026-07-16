@@ -3,13 +3,12 @@
 
 
 #include "DMABUFTextureHostOGL.h"
-
-#include "GLContextEGL.h"
+#include "mozilla/widget/DMABufSurface.h"
+#include "mozilla/widget/DMABufFormats.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/widget/DMABufFormats.h"
-#include "mozilla/widget/DMABufSurface.h"
+#include "GLContextEGL.h"
 
 namespace mozilla::layers {
 

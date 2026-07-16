@@ -3,19 +3,12 @@
 
 
 #include "CompositorOGL.h"
-
-#include <stddef.h>  
-#include <stdint.h>  
-#include <stdlib.h>  
-
-#include "GLBlitHelper.h"
-#include "GLContext.h"          
+#include <stddef.h>             
+#include <stdint.h>             
+#include <stdlib.h>             
 #include "GLContextProvider.h"  
-#include "GLReadTexImageHelper.h"
+#include "GLContext.h"          
 #include "GLUploadHelpers.h"
-#include "HeapCopyOfStackArray.h"
-#include "OGLShaderProgram.h"  
-#include "ScopedGLHelpers.h"
 #include "gfxCrashReporterUtils.h"  
 #include "gfxEnv.h"                 
 #include "gfxPlatform.h"            
@@ -28,19 +21,18 @@
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/Matrix.h"     
-#include "mozilla/gfx/Swizzle.h"
-#include "mozilla/gfx/Triangle.h"  
-#include "mozilla/gfx/gfxVars.h"   
-#include "mozilla/layers/CompositingRenderTargetOGL.h"
-#include "mozilla/layers/Effects.h"  
+#include "mozilla/gfx/Triangle.h"   
+#include "mozilla/gfx/gfxVars.h"    
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/NativeLayer.h"
-#include "mozilla/layers/PTextureParent.h"  
-#include "mozilla/layers/TextureHost.h"     
+#include "mozilla/layers/CompositingRenderTargetOGL.h"
+#include "mozilla/layers/Effects.h"      
+#include "mozilla/layers/TextureHost.h"  
 #include "mozilla/layers/TextureHostOGL.h"  
+#include "mozilla/layers/PTextureParent.h"  
 #include "mozilla/mozalloc.h"               
-#include "nsAString.h"
 #include "nsAppRunner.h"
+#include "nsAString.h"
 #include "nsClassHashtable.h"
 #include "nsIConsoleService.h"      
 #include "nsIWidget.h"              
@@ -49,6 +41,12 @@
 #include "nsRect.h"                 
 #include "nsServiceManagerUtils.h"  
 #include "nsString.h"               
+#include "OGLShaderProgram.h"       
+#include "ScopedGLHelpers.h"
+#include "GLReadTexImageHelper.h"
+#include "HeapCopyOfStackArray.h"
+#include "GLBlitHelper.h"
+#include "mozilla/gfx/Swizzle.h"
 #ifdef MOZ_WIDGET_GTK
 #  include "mozilla/widget/GtkCompositorWidget.h"
 #endif

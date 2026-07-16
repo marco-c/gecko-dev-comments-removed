@@ -3,7 +3,6 @@
 
 
 #include "PathSkia.h"
-
 #include "HelpersSkia.h"
 #include "PathHelpers.h"
 #include "skia/include/core/SkPathUtils.h"

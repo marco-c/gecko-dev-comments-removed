@@ -3,11 +3,10 @@
 
 
 #include "nsRegion.h"
-
-#include "gfx2DGlue.h"
-#include "gfxUtils.h"
-#include "mozilla/ToString.h"
 #include "nsTArray.h"
+#include "gfxUtils.h"
+#include "gfx2DGlue.h"
+#include "mozilla/ToString.h"
 
 void nsRegion::AssertStateInternal() const {
   bool failed = false;

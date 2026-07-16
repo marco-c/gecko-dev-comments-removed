@@ -6,14 +6,14 @@
 #define MOZILLA_GFX_PersistentBUFFERPROVIDER_H
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/RefCounted.h"
-#include "mozilla/RefPtr.h"  
-#include "mozilla/Vector.h"
-#include "mozilla/WeakPtr.h"
-#include "mozilla/gfx/Types.h"
+#include "mozilla/RefPtr.h"      
 #include "mozilla/layers/ActiveResource.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/RefCounted.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/Vector.h"
+#include "mozilla/WeakPtr.h"
 
 namespace mozilla {
 

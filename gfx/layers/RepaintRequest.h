@@ -5,19 +5,18 @@
 #ifndef GFX_REPAINTREQUEST_H
 #define GFX_REPAINTREQUEST_H
 
+#include <iosfwd>
 #include <stdint.h>  
 
-#include <iosfwd>
-
 #include "FrameMetrics.h"                
-#include "UnitTransforms.h"              
-#include "Units.h"                       
 #include "mozilla/DefineEnum.h"          
-#include "mozilla/ScrollSnapTargetId.h"  
-#include "mozilla/TimeStamp.h"           
 #include "mozilla/gfx/BasePoint.h"       
 #include "mozilla/gfx/Rect.h"            
 #include "mozilla/gfx/ScaleFactor.h"     
+#include "mozilla/ScrollSnapTargetId.h"  
+#include "mozilla/TimeStamp.h"           
+#include "Units.h"                       
+#include "UnitTransforms.h"              
 
 namespace IPC {
 template <typename T>

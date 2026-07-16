@@ -3,23 +3,26 @@
 
 
 #include "ScaledFontDWrite.h"
-
-#include <vector>
-
-#include "HelpersWinFonts.h"
-#include "Logging.h"
-#include "PathSkia.h"
-#include "StackArray.h"
-#include "UnscaledFontDWrite.h"
-#include "cairo-dwrite.h"
-#include "dwrite_3.h"
 #include "gfxDWriteCommon.h"
+#include "UnscaledFontDWrite.h"
 #include "gfxFont.h"
+#include "Logging.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "StackArray.h"
+
+#include "dwrite_3.h"
+
+#include "PathSkia.h"
 #include "skia/include/core/SkPaint.h"
 #include "skia/include/core/SkPath.h"
 #include "skia/include/ports/SkTypeface_win.h"
+
+#include <vector>
+
+#include "cairo-dwrite.h"
+
+#include "HelpersWinFonts.h"
 
 namespace mozilla {
 namespace gfx {

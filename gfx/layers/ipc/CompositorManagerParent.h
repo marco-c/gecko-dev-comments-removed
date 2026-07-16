@@ -5,13 +5,11 @@
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 #define MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 
-#include <stdint.h>  
-
 #include <map>
-
-#include "mozilla/RefPtr.h"         
-#include "mozilla/StaticMonitor.h"  
+#include <stdint.h>                 
 #include "mozilla/StaticPtr.h"      
+#include "mozilla/StaticMonitor.h"  
+#include "mozilla/RefPtr.h"         
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/PCompositorManagerParent.h"
 #include "nsTArray.h"  

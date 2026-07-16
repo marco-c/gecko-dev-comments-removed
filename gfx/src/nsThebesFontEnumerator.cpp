@@ -3,17 +3,15 @@
 
 
 #include "nsThebesFontEnumerator.h"
-
-#include <stdint.h>  
-
+#include <stdint.h>              
 #include "gfxPlatform.h"         
 #include "mozilla/Assertions.h"  
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"  
-#include "nsAtom.h"               
 #include "nsCOMPtr.h"             
 #include "nsDebug.h"              
 #include "nsError.h"              
+#include "nsAtom.h"               
 #include "nsID.h"
 #include "nsString.h"  
 #include "nsTArray.h"  

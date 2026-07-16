@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_IMAGECOMPOSITE_H
 #define MOZILLA_GFX_IMAGECOMPOSITE_H
 
-#include "CompositableHost.h"   
-#include "mozilla/TimeStamp.h"  
+#include "CompositableHost.h"  
 #include "mozilla/gfx/2D.h"
+#include "mozilla/TimeStamp.h"  
 #include "nsTArray.h"
 
 namespace mozilla {

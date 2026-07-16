@@ -5,23 +5,25 @@
 #include "mozilla/layers/APZInputBridge.h"
 
 #include "AsyncPanZoomController.h"
-#include "InputBlockState.h"         
 #include "InputData.h"               
+#include "InputBlockState.h"         
 #include "OverscrollHandoffState.h"  
+#include "nsLayoutUtils.h"           
 #include "mozilla/EventForwards.h"
-#include "mozilla/EventStateManager.h"  
-#include "mozilla/MouseEvents.h"        
+#include "mozilla/dom/WheelEventBinding.h"  
+#include "mozilla/EventStateManager.h"      
+#include "mozilla/layers/APZThreadUtils.h"  
+#include "mozilla/MouseEvents.h"            
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_test.h"
-#include "mozilla/TextEvents.h"             
-#include "mozilla/TouchEvents.h"            
-#include "mozilla/WheelHandlingHelper.h"    
-                                            
-#include "mozilla/dom/WheelEventBinding.h"  
-#include "mozilla/layers/APZThreadUtils.h"  
-#include "nsLayoutUtils.h"                  
+#include "mozilla/TextEvents.h"           
+#include "mozilla/TouchEvents.h"          
+#include "mozilla/WheelHandlingHelper.h"  
+                                          
 
-namespace mozilla::layers {
+namespace mozilla {
+namespace layers {
 
 APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
                                    const AsyncPanZoomController* aTarget,
@@ -480,4 +482,5 @@ std::ostream& operator<<(std::ostream& aOut,
   return aOut;
 }
 
+}  
 }  

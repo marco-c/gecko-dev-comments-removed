@@ -3,8 +3,8 @@
 
 
 #include "apz/src/AsyncPanZoomController.h"
-#include "gtest/gtest.h"
 #include "mozilla/StaticPrefs_apz.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

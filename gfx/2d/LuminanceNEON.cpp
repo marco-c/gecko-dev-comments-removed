@@ -2,9 +2,8 @@
 
 
 
-#include "LuminanceNEON.h"
-
 #include <arm_neon.h>
+#include "LuminanceNEON.h"
 
 using namespace mozilla::gfx;
 

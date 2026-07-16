@@ -3,9 +3,8 @@
 
 
 #include "X11Util.h"
-
-#include "MainThreadUtils.h"  
 #include "nsDebug.h"          
+#include "MainThreadUtils.h"  
 
 namespace mozilla {
 

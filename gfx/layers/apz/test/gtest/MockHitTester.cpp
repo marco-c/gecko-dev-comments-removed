@@ -3,7 +3,6 @@
 
 
 #include "MockHitTester.h"
-
 #include "TreeTraversal.h"
 #include "apz/src/APZCTreeManager.h"
 #include "apz/src/AsyncPanZoomController.h"

@@ -3,17 +3,16 @@
 
 
 #include "HitTestingTreeNode.h"
-
 #include <stack>
 
 #include "AsyncPanZoomController.h"  
-#include "UnitTransforms.h"          
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/ToString.h"         
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/layers/APZUtils.h"  
 #include "mozilla/layers/AsyncDragMetrics.h"  
+#include "mozilla/ToString.h"                 
 #include "nsPrintfCString.h"                  
+#include "UnitTransforms.h"                   
 
 static mozilla::LazyLogModule sApzMgrLog("apz.manager");
 

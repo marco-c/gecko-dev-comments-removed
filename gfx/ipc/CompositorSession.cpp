@@ -2,11 +2,10 @@
 
 
 #include "CompositorSession.h"
-
-#include "GPUChild.h"
 #include "base/process_util.h"
-#include "mozilla/gfx/GPUProcessHost.h"
+#include "GPUChild.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/GPUProcessHost.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 

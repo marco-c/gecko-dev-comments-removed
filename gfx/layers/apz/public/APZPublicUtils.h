@@ -9,13 +9,12 @@
 
 
 #include <stdint.h>
-
 #include "ScrollAnimationBezierPhysics.h"
 #include "Units.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/ScrollOrigin.h"
-#include "mozilla/ScrollTypes.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/ScrollTypes.h"
 
 namespace mozilla {
 

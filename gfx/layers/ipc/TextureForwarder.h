@@ -6,14 +6,13 @@
 #define MOZILLA_LAYERS_TEXTUREFORWARDER
 
 #include <stdint.h>  
-
 #include "gfxTypes.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/layers/TextureClient.h"   
+#include "mozilla/layers/KnowsCompositor.h"
 #include "nsISerialEventTarget.h"
 
 namespace mozilla {

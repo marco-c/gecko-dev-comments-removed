@@ -3,7 +3,6 @@
 
 
 #include "GLDebugUtils.h"
-
 #include "GLConsts.h"
 
 namespace mozilla {

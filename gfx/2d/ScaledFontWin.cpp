@@ -3,14 +3,17 @@
 
 
 #include "ScaledFontWin.h"
+#include "UnscaledFontGDI.h"
 
 #include "AutoHelpersWin.h"
-#include "HelpersWinFonts.h"
 #include "Logging.h"
-#include "UnscaledFontGDI.h"
-#include "cairo-win32.h"
 #include "nsString.h"
+
 #include "skia/include/ports/SkTypeface_win.h"
+
+#include "cairo-win32.h"
+
+#include "HelpersWinFonts.h"
 
 namespace mozilla {
 namespace gfx {

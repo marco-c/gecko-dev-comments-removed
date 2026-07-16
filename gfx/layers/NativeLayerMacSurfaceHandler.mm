@@ -2,12 +2,12 @@
 
 
 
-#include "mozilla/layers/NativeLayerMacSurfaceHandler.h"
-#include "GLBlitHelper.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/MacIOSurface.h"
+#include "mozilla/layers/NativeLayerMacSurfaceHandler.h"
 #include "mozilla/layers/SurfacePoolCA.h"
+#include "GLBlitHelper.h"
 #ifdef XP_MACOSX
 #  include "GLContextCGL.h"
 #else

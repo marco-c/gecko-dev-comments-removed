@@ -5,27 +5,28 @@
 #ifndef MOZILLA_LAYERS_RENDERTHREAD_H
 #define MOZILLA_LAYERS_RENDERTHREAD_H
 
+#include "base/basictypes.h"       
+#include "base/platform_thread.h"  
+#include "base/thread.h"           
+#include "base/message_loop.h"
+#include "GLTypes.h"  
+#include "nsISupportsImpl.h"
+#include "mozilla/gfx/Point.h"
+#include "mozilla/Hal.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/webrender/webrender_ffi.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "mozilla/layers/CompositionRecorder.h"
+#include "mozilla/layers/SynchronousTask.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/VsyncDispatcher.h"
+
 #include <list>
 #include <queue>
 #include <unordered_map>
-
-#include "GLTypes.h"          
-#include "base/basictypes.h"  
-#include "base/message_loop.h"
-#include "base/platform_thread.h"  
-#include "base/thread.h"           
-#include "mozilla/DataMutex.h"
-#include "mozilla/Hal.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/VsyncDispatcher.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/layers/CompositionRecorder.h"
-#include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/webrender/webrender_ffi.h"
-#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace gl {

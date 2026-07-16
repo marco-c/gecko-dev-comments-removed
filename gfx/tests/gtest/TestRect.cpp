@@ -3,15 +3,16 @@
 
 #include <limits>
 
-#include "gfxRect.h"
-#include "gfxTypes.h"
 #include "gtest/gtest.h"
-#include "mozilla/WritingModes.h"
+
+#include "gfxTypes.h"
+#include "nsRect.h"
+#include "nsRectAbsolute.h"
+#include "gfxRect.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/RectAbsolute.h"
-#include "nsRect.h"
-#include "nsRectAbsolute.h"
+#include "mozilla/WritingModes.h"
 #ifdef XP_WIN
 #  include <windows.h>
 #endif

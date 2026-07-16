@@ -3,7 +3,6 @@
 
 
 #include "Effects.h"
-
 #include "nsAString.h"
 #include "nsPrintfCString.h"  
 #include "nsString.h"         

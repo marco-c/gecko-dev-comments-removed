@@ -3,16 +3,14 @@
 
 
 #include "GestureEventListener.h"
-
-#include <math.h>    
-#include <stddef.h>  
-
 #include <algorithm>  
 #include <ostream>
-
+#include <math.h>                    
+#include <stddef.h>                  
 #include "AsyncPanZoomController.h"  
 #include "InputBlockState.h"         
 #include "base/task.h"               
+#include "InputBlockState.h"         
 #include "mozilla/Assertions.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/StaticPrefs_apz.h"

@@ -8,9 +8,9 @@
 #include <stdint.h>  
 
 #include "mozilla/DefineEnum.h"                  
-#include "mozilla/Maybe.h"                       
-#include "mozilla/Variant.h"                     
 #include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/Variant.h"                     
+#include "mozilla/Maybe.h"                       
 
 namespace mozilla {
 

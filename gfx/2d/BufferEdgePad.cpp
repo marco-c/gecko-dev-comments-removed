@@ -7,6 +7,7 @@
 #include "2D.h"     
 #include "Point.h"  
 #include "Types.h"  
+
 #include "nsRegion.h"
 
 namespace mozilla {

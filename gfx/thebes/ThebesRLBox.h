@@ -26,8 +26,9 @@
 
 #include "graphite2/Font.h"
 #include "graphite2/GraphiteExtra.h"
-#include "graphite2/GraphiteStructsForRLBox.h"
 #include "graphite2/Segment.h"
+
+#include "graphite2/GraphiteStructsForRLBox.h"
 rlbox_load_structs_from_library(graphite);
 
 #endif

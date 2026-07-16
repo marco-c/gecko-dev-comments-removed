@@ -7,14 +7,16 @@
 
 #include "mozilla/Assertions.h"                 
 #include "mozilla/RefPtr.h"                     
-#include "mozilla/gfx/Point.h"                  
-#include "mozilla/gfx/Types.h"                  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"     
 #include "mozilla/layers/LayersSurfaces.h"      
+#include "mozilla/layers/TextureClient.h"       
 #include "mozilla/layers/PersistentBufferProvider.h"
-#include "mozilla/layers/TextureClient.h"  
-#include "mozilla/mozalloc.h"              
+
+#include "mozilla/mozalloc.h"  
+
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Types.h"  
 
 namespace mozilla {
 namespace layers {

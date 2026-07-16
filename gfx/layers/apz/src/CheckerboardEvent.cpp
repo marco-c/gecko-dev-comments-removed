@@ -3,10 +3,9 @@
 
 
 #include "CheckerboardEvent.h"
+#include "mozilla/Logging.h"
 
 #include <algorithm>  
-
-#include "mozilla/Logging.h"
 
 static mozilla::LazyLogModule sApzCheckLog("apz.checkerboard");
 

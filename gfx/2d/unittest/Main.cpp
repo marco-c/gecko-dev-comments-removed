@@ -2,13 +2,13 @@
 
 
 
-#include <sstream>
-#include <string>
-
 #include "SanityChecks.h"
-#include "TestBugs.h"
 #include "TestPoint.h"
 #include "TestScaling.h"
+#include "TestBugs.h"
+
+#include <string>
+#include <sstream>
 
 struct TestObject {
   TestBase* test;

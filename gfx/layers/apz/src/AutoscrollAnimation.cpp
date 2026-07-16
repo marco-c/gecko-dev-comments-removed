@@ -7,8 +7,8 @@
 #include <algorithm>  
 #include <cmath>      
 
-#include "APZCTreeManager.h"
 #include "AsyncPanZoomController.h"
+#include "APZCTreeManager.h"
 #include "FrameMetrics.h"
 #include "mozilla/StaticPrefs_general.h"
 

@@ -3,9 +3,8 @@
 
 
 #include "RenderRootTypes.h"
-
-#include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderMessageUtils.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
 
 using namespace mozilla::layers;
 

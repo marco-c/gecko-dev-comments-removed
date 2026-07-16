@@ -3,7 +3,6 @@
 
 
 #include "CompositingRenderTargetOGL.h"
-
 #include "GLContext.h"
 #include "GLReadTexImageHelper.h"
 #include "ScopedGLHelpers.h"

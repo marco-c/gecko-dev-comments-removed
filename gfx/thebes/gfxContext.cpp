@@ -2,21 +2,22 @@
 
 
 
-#include "gfxContext.h"
-
 #include <math.h>
 
-#include <algorithm>
-
-#include "TextDrawTarget.h"
 #include "cairo.h"
-#include "gfx2DGlue.h"
+
+#include "gfxContext.h"
+
 #include "gfxMatrix.h"
+#include "gfxUtils.h"
 #include "gfxPattern.h"
 #include "gfxPlatform.h"
-#include "gfxUtils.h"
-#include "mozilla/ProfilerLabels.h"
+
+#include "gfx2DGlue.h"
 #include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/ProfilerLabels.h"
+#include <algorithm>
+#include "TextDrawTarget.h"
 
 #if XP_WIN
 #  include "gfxWindowsPlatform.h"

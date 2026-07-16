@@ -7,23 +7,22 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
-
 #include <unordered_map>
 
 #include "ImageContainer.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  
-#include "mozilla/Mutex.h"
-#include "mozilla/ReentrantMonitor.h"  
-#include "mozilla/RefPtr.h"            
-#include "mozilla/UniquePtr.h"
-#include "mozilla/gfx/Rect.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/RefPtr.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/PImageBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsRegion.h"  
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/ReentrantMonitor.h"  
 
 namespace mozilla {
 namespace ipc {

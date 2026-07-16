@@ -2,8 +2,9 @@
 
 
 
-#include "BufferUnrotate.h"
 #include "gtest/gtest.h"
+
+#include "BufferUnrotate.h"
 
 using mozilla::gfx::BufferUnrotate;
 

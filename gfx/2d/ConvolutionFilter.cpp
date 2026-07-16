@@ -3,7 +3,6 @@
 
 
 #include "ConvolutionFilter.h"
-
 #include "HelpersSkia.h"
 #include "SkConvolver.h"
 #include "skia/include/core/SkBitmap.h"

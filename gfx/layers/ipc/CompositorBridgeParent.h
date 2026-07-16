@@ -6,9 +6,7 @@
 #define mozilla_layers_CompositorBridgeParent_h
 
 #include <stdint.h>  
-
 #include <unordered_map>
-
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"        
 #include "mozilla/RefPtr.h"         
@@ -16,7 +14,6 @@
 #include "mozilla/TimeStamp.h"      
 #include "mozilla/gfx/Point.h"      
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/layers/CompositorController.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/FocusTarget.h"
@@ -24,6 +21,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PCompositorBridgeParent.h"
 #include "mozilla/layers/PWebRenderBridgeParent.h"
+#include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {

@@ -2,13 +2,14 @@
 
 
 
-#include <deque>
-#include <list>
+#include "gtest/gtest.h"
 
 #include "BSPTree.h"
 #include "Polygon.h"
 #include "PolygonTestUtils.h"
-#include "gtest/gtest.h"
+
+#include <deque>
+#include <list>
 
 using namespace mozilla::gfx;
 using namespace mozilla::layers;

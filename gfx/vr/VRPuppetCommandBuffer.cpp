@@ -3,9 +3,8 @@
 
 
 #include "VRPuppetCommandBuffer.h"
-
-#include "mozilla/ClearOnShutdown.h"
 #include "prthread.h"
+#include "mozilla/ClearOnShutdown.h"
 
 namespace mozilla::gfx {
 

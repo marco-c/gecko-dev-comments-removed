@@ -1,8 +1,9 @@
 
 
 
-#include "gfxFeature.h"
 #include "gtest/gtest.h"
+
+#include "gfxFeature.h"
 #include "mozilla/gfx/gfxConfigManager.h"
 #include "nsIGfxInfo.h"
 

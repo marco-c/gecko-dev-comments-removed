@@ -3,14 +3,13 @@
 
 
 #include "GLImages.h"
-
-#include "GLBlitHelper.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"
-#include "GLImages.h"
-#include "GLLibraryEGL.h"
-#include "GLReadTexImageHelper.h"
 #include "ScopedGLHelpers.h"
+#include "GLImages.h"
+#include "GLBlitHelper.h"
+#include "GLReadTexImageHelper.h"
+#include "GLLibraryEGL.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/LayersSurfaces.h"
 

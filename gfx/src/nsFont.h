@@ -6,7 +6,6 @@
 #define nsFont_h_
 
 #include <cstdint>
-
 #include "gfxFontConstants.h"  
 #include "gfxFontVariations.h"
 #include "mozilla/ServoStyleConsts.h"

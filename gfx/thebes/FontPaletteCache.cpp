@@ -3,7 +3,6 @@
 
 
 #include "FontPaletteCache.h"
-
 #include "COLRFonts.h"
 #include "gfxFontEntry.h"
 

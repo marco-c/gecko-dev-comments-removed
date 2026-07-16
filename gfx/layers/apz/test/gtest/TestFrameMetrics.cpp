@@ -2,8 +2,9 @@
 
 
 
-#include "FrameMetrics.h"
 #include "gtest/gtest.h"
+
+#include "FrameMetrics.h"
 #include "mozilla/ScrollPositionUpdate.h"
 
 using namespace mozilla;

@@ -3,14 +3,13 @@
 
 
 #include "mozilla/gfx/gfxConfigManager.h"
-
-#include "gfxConfig.h"
-#include "gfxPlatform.h"
-#include "mozilla/Components.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "gfxConfig.h"
+#include "gfxPlatform.h"
 #include "nsIGfxInfo.h"
 #include "nsPrintfCString.h"
 #include "nsXULAppAPI.h"

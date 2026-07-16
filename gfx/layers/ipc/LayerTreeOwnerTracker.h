@@ -5,12 +5,12 @@
 #ifndef mozilla_layers_LayerTreeOwnerTracker_h
 #define mozilla_layers_LayerTreeOwnerTracker_h
 
+#include "base/process.h"   
+#include "LayersTypes.h"    
+#include "mozilla/Mutex.h"  
+
 #include <functional>
 #include <map>
-
-#include "LayersTypes.h"    
-#include "base/process.h"   
-#include "mozilla/Mutex.h"  
 
 namespace mozilla {
 

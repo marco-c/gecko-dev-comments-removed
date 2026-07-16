@@ -3,20 +3,19 @@
 
 
 #include "mozilla/layers/Compositor.h"
-
-#include "GeckoProfiler.h"
-#include "base/message_loop.h"  
-#include "gfx2DGlue.h"
-#include "gfxUtils.h"
-#include "mozilla/gfx/Types.h"
 #include "mozilla/layers/CompositionRecorder.h"
+#include "base/message_loop.h"  
+#include "mozilla/gfx/Types.h"
 #include "mozilla/layers/CompositorBridgeParent.h"  
-#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/Diagnostics.h"
 #include "mozilla/layers/Effects.h"  
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureHost.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/mozalloc.h"  
+#include "GeckoProfiler.h"
+#include "gfx2DGlue.h"
+#include "gfxUtils.h"
 #include "nsAppRunner.h"
 
 namespace mozilla::layers {

@@ -2,12 +2,13 @@
 
 
 
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
 #include "APZCBasicTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
 #include "apz/src/InputBlockState.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "mozilla/StaticPrefs_apz.h"
 
 

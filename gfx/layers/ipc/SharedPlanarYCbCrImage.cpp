@@ -3,24 +3,22 @@
 
 
 #include "SharedPlanarYCbCrImage.h"
-
-#include <stddef.h>  
-#include <stdio.h>   
-
-#include "ISurfaceAllocator.h"   
+#include <stddef.h>              
+#include <stdio.h>               
 #include "gfx2DGlue.h"           
+#include "ISurfaceAllocator.h"   
 #include "mozilla/Assertions.h"  
 #include "mozilla/gfx/Types.h"   
-#include "mozilla/ipc/Shmem.h"
-#include "mozilla/layers/BufferTexture.h"
-#include "mozilla/layers/ImageBridgeChild.h"  
-#include "mozilla/layers/ImageClient.h"       
-#include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/ImageClient.h"     
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "mozilla/mozalloc.h"  
-#include "nsISupportsImpl.h"   
+#include "mozilla/layers/BufferTexture.h"
+#include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/ImageBridgeChild.h"  
+#include "mozilla/mozalloc.h"                 
+#include "nsISupportsImpl.h"                  
+#include "mozilla/ipc/Shmem.h"
 
 namespace mozilla {
 namespace layers {

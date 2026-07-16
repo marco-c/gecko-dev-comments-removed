@@ -5,9 +5,8 @@
 #ifndef _nsBoundingMetrics_h
 #define _nsBoundingMetrics_h
 
-#include <algorithm>
-
 #include "nsCoord.h"
+#include <algorithm>
 
 
 

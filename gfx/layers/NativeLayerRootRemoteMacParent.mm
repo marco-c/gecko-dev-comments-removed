@@ -2,8 +2,8 @@
 
 
 
-#include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
 #include "xpcpublic.h"
 
 namespace mozilla {

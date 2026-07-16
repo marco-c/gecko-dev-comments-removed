@@ -3,11 +3,8 @@
 
 
 #include "IpcResourceUpdateQueue.h"
-
 #include <string.h>
-
 #include <algorithm>
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/layers/PTextureChild.h"

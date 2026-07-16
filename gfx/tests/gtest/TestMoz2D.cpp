@@ -2,10 +2,10 @@
 
 
 
-#include "TestBase.h"
-#include "TestBugs.h"
-#include "TestScaling.h"
 #include "gtest/gtest.h"
+#include "TestBase.h"
+#include "TestScaling.h"
+#include "TestBugs.h"
 
 TEST(Moz2D, Bugs)
 {

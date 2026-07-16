@@ -10,13 +10,13 @@
 #include "mozilla/RefCounted.h"  
 #include "mozilla/RefPtr.h"      
 #include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/TimeStamp.h"   
 #include "mozilla/gfx/Matrix.h"  
 #include "mozilla/layers/APZUtils.h"
-#include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/TouchCounter.h"
-#include "nsTArray.h"  
+#include "mozilla/TimeStamp.h"  
+#include "nsTArray.h"           
 
 namespace mozilla {
 namespace layers {

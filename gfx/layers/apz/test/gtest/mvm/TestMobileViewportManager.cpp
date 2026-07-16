@@ -2,11 +2,12 @@
 
 
 
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
 #include <functional>
 
 #include "MobileViewportManager.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "mozilla/MVMContext.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/InteractiveWidget.h"

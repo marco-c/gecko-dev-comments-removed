@@ -1,14 +1,13 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_GFX_DRAWTARGETSKIA_H
 #define MOZILLA_GFX_DRAWTARGETSKIA_H
 
+#include "2D.h"
 #include <sstream>
 #include <vector>
-
-#include "2D.h"
 
 #ifdef XP_DARWIN
 #  include <CoreGraphics/CGColorSpace.h>
@@ -148,9 +147,9 @@ class DrawTargetSkia : public DrawTarget {
 
   static void UpdateSurfaceProps();
 
-  
+  // Skia assumes that texture sizes fit in 16-bit integers.
   static size_t GetMaxSurfaceSize() { return 65535; }
-  
+  // Skia assumes the surface area will fit in a 32-bit signed integer.
   static size_t GetMaxSurfaceArea() { return 0x7FFFFFFF; }
 
   operator std::string() const {
@@ -220,7 +219,7 @@ class DrawTargetSkia : public DrawTarget {
 #endif
 };
 
-}  
-}  
+}  // namespace gfx
+}  // namespace mozilla
 
-#endif  
+#endif  // _MOZILLA_GFX_SOURCESURFACESKIA_H

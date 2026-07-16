@@ -6,30 +6,29 @@
 #define GFX_FRAMEMETRICS_H
 
 #include <stdint.h>  
-
 #include <iosfwd>
 
-#include "PLDHashTable.h"           
-#include "UnitTransforms.h"         
 #include "Units.h"                  
+#include "UnitTransforms.h"         
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/Maybe.h"
-#include "mozilla/ScrollPositionUpdate.h"  
+#include "mozilla/dom/InteractiveWidget.h"
+#include "mozilla/gfx/BasePoint.h"               
+#include "mozilla/gfx/Rect.h"                    
+#include "mozilla/gfx/ScaleFactor.h"             
+#include "mozilla/gfx/Logging.h"                 
+#include "mozilla/layers/LayersTypes.h"          
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/ScrollPositionUpdate.h"        
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/StaticPtr.h"  
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/WritingModes.h"
-#include "mozilla/dom/InteractiveWidget.h"
-#include "mozilla/gfx/BasePoint.h"               
-#include "mozilla/gfx/Logging.h"                 
-#include "mozilla/gfx/Rect.h"                    
-#include "mozilla/gfx/ScaleFactor.h"             
-#include "mozilla/layers/LayersTypes.h"          
-#include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "nsString.h"
 #include "nsTHashMap.h"  
+#include "nsString.h"
+#include "PLDHashTable.h"  
 
 struct nsStyleDisplay;
 namespace mozilla {

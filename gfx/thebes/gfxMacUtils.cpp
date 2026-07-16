@@ -3,7 +3,6 @@
 
 
 #include "gfxMacUtils.h"
-
 #include <CoreVideo/CoreVideo.h>
 
  CFStringRef gfxMacUtils::CFStringForTransferFunction(

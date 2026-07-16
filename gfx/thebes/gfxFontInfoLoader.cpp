@@ -3,13 +3,12 @@
 
 
 #include "gfxFontInfoLoader.h"
-
-#include "gfxPlatformFontList.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/AppShutdown.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"  
+#include "gfxPlatformFontList.h"
 
 #ifdef XP_WIN
 #  include <windows.h>

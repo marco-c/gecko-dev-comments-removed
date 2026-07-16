@@ -2,8 +2,8 @@
 
 
 
-#include "GfxDriverInfo.h"
 #include "gtest/gtest.h"
+#include "GfxDriverInfo.h"
 #include "nsVersionComparator.h"
 
 using namespace mozilla::widget;

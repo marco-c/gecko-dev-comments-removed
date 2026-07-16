@@ -4,8 +4,8 @@
 
 #include "CheckerboardReportService.h"
 
-#include "MainThreadUtils.h"          
 #include "jsapi.h"                    
+#include "MainThreadUtils.h"          
 #include "mozilla/Assertions.h"       
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/Preferences.h"

@@ -5,7 +5,6 @@
 #include "ScrollableLayerGuid.h"
 
 #include <ostream>
-
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/IntegerPrintfMacros.h"
 #include "nsPrintfCString.h"  

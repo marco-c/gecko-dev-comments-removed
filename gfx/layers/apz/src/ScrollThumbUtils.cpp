@@ -3,14 +3,13 @@
 
 
 #include "ScrollThumbUtils.h"
-
 #include "AsyncPanZoomController.h"
 #include "FrameMetrics.h"
 #include "UnitTransforms.h"
 #include "Units.h"
 #include "gfxPlatform.h"
-#include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/gfx/Matrix.h"
+#include "mozilla/StaticPrefs_toolkit.h"
 
 namespace mozilla {
 namespace layers {

@@ -3,10 +3,9 @@
 
 
 #include "gfxFontFeatures.h"
-
 #include "nsAtom.h"
-#include "nsHashKeys.h"
 #include "nsUnicharUtils.h"
+#include "nsHashKeys.h"
 
 using namespace mozilla;
 

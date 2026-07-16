@@ -3,17 +3,16 @@
 
 
 #include "nsFont.h"
-
 #include "gfxFont.h"          
 #include "gfxFontFeatures.h"  
 #include "gfxFontUtils.h"     
 #include "mozilla/ServoStyleConstsInlines.h"
-#include "mozilla/gfx/2D.h"
 #include "nsCRT.h"    
 #include "nsDebug.h"  
 #include "nsISupports.h"
 #include "nsUnicharUtils.h"
 #include "nscore.h"  
+#include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
 

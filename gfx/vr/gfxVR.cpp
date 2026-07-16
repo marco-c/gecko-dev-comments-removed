@@ -2,9 +2,9 @@
 
 
 
-#include "gfxVR.h"
-
 #include <math.h>
+
+#include "gfxVR.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

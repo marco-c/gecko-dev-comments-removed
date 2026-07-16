@@ -3,10 +3,9 @@
 
 
 #include "VRThread.h"
-
 #include "nsDebug.h"
-#include "nsThread.h"
 #include "nsThreadManager.h"
+#include "nsThread.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {

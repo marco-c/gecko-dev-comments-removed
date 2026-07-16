@@ -3,7 +3,6 @@
 
 
 #include "EGLImageHelpers.h"
-
 #include "GLContext.h"
 #include "GLLibraryEGL.h"
 

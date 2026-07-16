@@ -3,9 +3,8 @@
 
 
 #include "mozilla/layers/TextureSourceProvider.h"
-
-#include "mozilla/layers/PTextureParent.h"
 #include "mozilla/layers/TextureHost.h"
+#include "mozilla/layers/PTextureParent.h"
 
 namespace mozilla {
 namespace layers {

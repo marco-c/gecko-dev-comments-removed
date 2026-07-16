@@ -4,9 +4,8 @@
 
 #include "mozilla/layers/CompositorVsyncScheduler.h"
 
-#include <stdint.h>  
-#include <stdio.h>   
-
+#include <stdio.h>        
+#include <stdint.h>       
 #include "base/task.h"    
 #include "base/thread.h"  
 #include "gfxPlatform.h"  
@@ -17,11 +16,9 @@
 #include "mozilla/DebugOnly.h"    
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/VsyncDispatcher.h"
 #include "mozilla/gfx/2D.h"     
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Rect.h"   
-#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/mozalloc.h"  
@@ -30,11 +27,13 @@
 #include "nsISupportsImpl.h"   
 #include "nsIWidget.h"         
 #include "nsThreadUtils.h"     
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/VsyncDispatcher.h"
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 #  include "VsyncSource.h"
 #endif
-#include "VRManager.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "VRManager.h"
 
 namespace mozilla {
 

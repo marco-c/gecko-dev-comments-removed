@@ -3,16 +3,15 @@
 
 
 #include "SharedSurfacesParent.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPrefs_image.h"
-#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/layers/CompositorManagerParent.h"
-#include "mozilla/layers/CompositorThread.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/SharedSurfacesMemoryReport.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
+#include "mozilla/layers/CompositorManagerParent.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/webrender/RenderSharedSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "nsThreadUtils.h"  

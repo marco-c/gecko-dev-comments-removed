@@ -5,18 +5,17 @@
 #ifndef GFX_LAYERSTYPES_H
 #define GFX_LAYERSTYPES_H
 
+#include <iosfwd>    
 #include <stdint.h>  
 #include <stdio.h>   
-
-#include <iosfwd>  
 #include <tuple>
 
 #include "Units.h"
 #include "mozilla/DefineEnum.h"  
-#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"  
 #include "nsRegion.h"
+#include "mozilla/EnumSet.h"
 
 #ifndef MOZ_LAYERS_HAVE_LOG
 #  define MOZ_LAYERS_HAVE_LOG

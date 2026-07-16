@@ -2,11 +2,10 @@
 
 
 
-#include "DataSurfaceHelpers.h"
-
 #include <cstring>
 
 #include "2D.h"
+#include "DataSurfaceHelpers.h"
 #include "Logging.h"
 #include "Swizzle.h"
 #include "Tools.h"

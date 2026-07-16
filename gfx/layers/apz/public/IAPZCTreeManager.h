@@ -7,12 +7,12 @@
 
 #include <stdint.h>  
 
-#include "Units.h"                               
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/ZoomConstraints.h"      
-#include "nsISupportsImpl.h"                     
 #include "nsTArrayForwardDeclare.h"  
+#include "nsISupportsImpl.h"         
+#include "Units.h"                   
 
 namespace mozilla {
 namespace layers {
