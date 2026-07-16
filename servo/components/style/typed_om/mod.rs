@@ -156,7 +156,6 @@ impl MathSum {
     pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
         
         
-        
         let numeric_type = NumericType::add_types(values.iter().filter_map(|v| v.numeric_type()))?;
 
         Ok(Self {
@@ -200,7 +199,6 @@ impl MathProduct {
     pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
         
         
-        
         let numeric_type =
             NumericType::multiply_types(values.iter().filter_map(|v| v.numeric_type()))?;
 
@@ -215,28 +213,132 @@ impl MathProduct {
 
 
 
-pub type MathNegate = Box<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathNegate {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub value: Box<NumericValue>,
+}
+
+impl MathNegate {
+    
+    
+    
+    pub fn from_numeric_value(value: NumericValue) -> Self {
+        
+        
+        let numeric_type = value
+            .numeric_type()
+            .unwrap_or(&NumericType::number())
+            .clone();
+
+        Self {
+            numeric_type,
+            value: Box::new(value),
+        }
+    }
+}
 
 
 
 
 
 
-pub type MathInvert = Box<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathInvert {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub value: Box<NumericValue>,
+}
+
+impl MathInvert {
+    
+    
+    
+    
+    pub fn from_numeric_value(value: NumericValue) -> Self {
+        
+        
+        let mut numeric_type = value
+            .numeric_type()
+            .unwrap_or(&NumericType::number())
+            .clone();
+        numeric_type.invert();
+
+        Self {
+            numeric_type,
+            value: Box::new(value),
+        }
+    }
+}
 
 
 
 
 
 
-pub type MathMin = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathMin {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathMin {
+    
+    
+    
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        
+        
+        let numeric_type = NumericType::add_types(values.iter().filter_map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 
 
 
 
 
-pub type MathMax = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathMax {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathMax {
+    
+    
+    
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        
+        
+        let numeric_type = NumericType::add_types(values.iter().filter_map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 
 
@@ -245,7 +347,32 @@ pub type MathMax = ThinVec<NumericValue>;
 
 
 
-pub type MathClamp = crate::OwnedArray<NumericValue, 3>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathClamp {
+    
+    pub numeric_type: NumericType,
+
+    
+    
+    pub values: crate::OwnedArray<NumericValue, 3>,
+}
+
+impl MathClamp {
+    
+    
+    
+    pub fn try_from_numeric_values(values: crate::OwnedArray<NumericValue, 3>) -> Result<Self, ()> {
+        
+        
+        let numeric_type = NumericType::add_types(values.iter().filter_map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 
 
@@ -297,7 +424,11 @@ impl MathValue {
         match self {
             Self::Sum(math_sum) => Some(&math_sum.numeric_type),
             Self::Product(math_product) => Some(&math_product.numeric_type),
-            _ => None,
+            Self::Negate(math_negate) => Some(&math_negate.numeric_type),
+            Self::Invert(math_invert) => Some(&math_invert.numeric_type),
+            Self::Min(math_min) => Some(&math_min.numeric_type),
+            Self::Max(math_max) => Some(&math_max.numeric_type),
+            Self::Clamp(math_clamp) => Some(&math_clamp.numeric_type),
         }
     }
 }
