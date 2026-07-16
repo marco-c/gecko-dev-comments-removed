@@ -101,7 +101,6 @@ void EditContext::Deactivate() {
   }
 
   
-  mIsComposing = false;
   
   
   
@@ -315,10 +314,12 @@ void EditContext::UpdateTextAndFireEvent(
   e->SetTrusted(true);
   mTextNextToCaretChangedByTextUpdateHandler = false;
   
-  MOZ_ASSERT(!mIsFiringTextUpdate);
+  
+  
+  
+  AutoRestore restore(mIsFiringTextUpdate);
   mIsFiringTextUpdate = true;
   DispatchEvent(*e);
-  mIsFiringTextUpdate = false;
 }
 
 void EditContext::StartComposition(const WidgetCompositionEvent& aEvent) {

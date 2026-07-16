@@ -4131,16 +4131,21 @@ nsresult EditorBase::OnCompositionChange(
     TextComposition::CompositionChangeEventHandlingMarker
         compositionChangeEventHandlingMarker(mComposition,
                                              &aCompositionChangeEvent);
-    AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::IMETxnName,
-                                               ScrollSelectionIntoView::Yes,
-                                               __FUNCTION__);
-
+    Maybe<AutoPlaceholderBatch> treatAsOneTransaction;
+    
+    
+    
+    
+    if (!GetEditActionEditContext()) {
+      treatAsOneTransaction.emplace(*this, *nsGkAtoms::IMETxnName,
+                                    ScrollSelectionIntoView::Yes, __FUNCTION__);
+      MOZ_ASSERT(mIsInEditSubAction,
+                 "AutoPlaceholderBatch should've notified the observers of "
+                 "before-edit");
+    }
     
     RefPtr<nsCaret> caret = GetCaretForSelection();
 
-    MOZ_ASSERT(
-        mIsInEditSubAction,
-        "AutoPlaceholderBatch should've notified the observes of before-edit");
     
     
     const auto purpose = [&]() -> InsertTextFor {
@@ -4163,9 +4168,13 @@ nsresult EditorBase::OnCompositionChange(
   }
 
   if (RefPtr editContext = editActionData.GetEditContext()) {
-    RefPtr<TextRangeArray> ranges = mComposition->GetRanges();
-    editContext->FireTextFormatUpdate(
-        ranges, mComposition->ClampedStartOffsetInTextNode());
+    RefPtr<TextRangeArray> ranges;
+    uint32_t offset = 0;
+    if (mComposition) {
+      ranges = mComposition->GetRanges();
+      offset = mComposition->ClampedStartOffsetInTextNode();
+    }
+    editContext->FireTextFormatUpdate(ranges, offset);
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -4180,13 +4189,13 @@ nsresult EditorBase::OnCompositionChange(
   
   
   
-  if (!aCompositionChangeEvent.IsFollowedByCompositionEnd()) {
+  if (!aCompositionChangeEvent.IsFollowedByCompositionEnd() && mComposition) {
     
     
     
     
     
-    MOZ_ASSERT_IF(mComposition, mComposition->String() == data);
+    MOZ_ASSERT(mComposition->String() == data);
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
   }
   
@@ -6671,7 +6680,9 @@ nsresult EditorBase::InsertTextAsAction(const nsAString& aStringToInsert,
 nsresult EditorBase::InsertTextAsSubAction(const nsAString& aStringToInsert,
                                            InsertTextFor aPurpose) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(mPlaceholderBatch);
+  
+  
+  MOZ_ASSERT(mPlaceholderBatch || GetEditActionEditContext());
   MOZ_ASSERT(IsHTMLEditor() ||
              aStringToInsert.FindChar(nsCRT::CR) == kNotFound);
   MOZ_ASSERT_IF(aPurpose == InsertTextFor::CompositionStart ||
