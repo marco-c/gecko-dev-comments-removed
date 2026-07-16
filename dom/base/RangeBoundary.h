@@ -397,9 +397,8 @@ class RangeBoundaryBase {
       }
     }
     
-    NS_ASSERTION(
-        !mParent->HasChildNodes(),
-        fmt::format("Called with invalid offset?\nthis={}", *this).c_str());
+    NS_ASSERTION(!mParent->HasChildNodes(),
+                 fmt::format("Called with invalid offset?", *this).c_str());
     return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
   }
 

@@ -3583,14 +3583,6 @@ bool Selection::ContainsNode(nsINode& aNode, bool aAllowPartial,
   }
 
   
-  
-  
-  if (aNode.GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
-          TreeKind::FlatForSelection>()) {
-    return false;
-  }
-
-  
   uint32_t nodeLength;
   auto* nodeAsCharData = CharacterData::FromNode(aNode);
   if (nodeAsCharData) {
