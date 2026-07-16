@@ -8,9 +8,8 @@
 
 
 
-#include "content_decryption_module.h"
-
 #include "ClearKeySessionManager.h"
+#include "content_decryption_module.h"
 
 #ifdef ENABLE_WMF
 #  include "VideoDecoder.h"
