@@ -6,6 +6,11 @@
 
 
 
+
+
+gczeal(0);
+
+
 setJitCompilerOption("baseline.warmup.trigger", 5);
 
 
