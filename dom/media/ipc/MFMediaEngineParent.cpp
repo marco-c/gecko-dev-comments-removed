@@ -268,6 +268,14 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
       if (mProxyId) {
         if (RefPtr<MFCDMParent> cdmParent =
                 MFCDMParent::GetCDMById(*mProxyId)) {
+          
+          
+          
+          
+          
+          if (cdmParent->IsHardwareDRM() && !cdmParent->IsClearLead()) {
+            cdmParent->ReadinessMonitor().MarkAllReady();
+          }
           cdmParent->ReadinessMonitor().ResetRecoveryBudget();
         }
       }

@@ -63,6 +63,10 @@ class MFCDMParent final : public PMFCDMParent {
 
   bool IsHardwareDRM() const { return mIsHardwareDRM; }
 
+  
+  
+  bool IsClearLead() const;
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
