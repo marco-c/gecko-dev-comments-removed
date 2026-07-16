@@ -156,6 +156,9 @@ impl NormalBorderData {
                 
                 let is_opaque = false;
 
+                
+                
+                
                 let task_id = frame_state.resource_cache.request_render_task(
                     Some(cache_key),
                     is_opaque,
