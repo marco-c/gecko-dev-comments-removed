@@ -1786,8 +1786,8 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
     
     
     
-    transceiver->mRecvTrack.RecvTrackSetRemote(remote, msection,
-                                               transceiver->mSendTrack.GetSsrcs());
+    transceiver->mRecvTrack.RecvTrackSetRemote(
+        remote, msection, transceiver->mSendTrack.GetSsrcs());
     SetTransceiver(*transceiver);
   }
 
