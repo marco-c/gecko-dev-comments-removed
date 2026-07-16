@@ -86,6 +86,11 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   uint32_t PruneDeadConnections();
   void MakeConnectionPendingAndDontReuse(HttpConnectionBase* conn);
+  
+  
+  
+  
+  void MoveUnusableH3ConnsToPending();
   void VerifyTraffic();
   void PruneNoTraffic();
   uint32_t TimeoutTick();

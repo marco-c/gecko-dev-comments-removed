@@ -507,6 +507,34 @@ void ConnectionEntry::MakeConnectionPendingAndDontReuse(
   LOG(("Move active connection to pending list [conn=%p]\n", conn));
 }
 
+void ConnectionEntry::MoveUnusableH3ConnsToPending() {
+  
+  
+  
+  if (mConnInfo->GetWebTransport()) {
+    return;
+  }
+
+  
+  for (int32_t i = mActiveConns.Length() - 1; i >= 0; --i) {
+    
+    
+    
+    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(mActiveConns[i]);
+    if (!connUDP || !connUDP->IsConnectedAndUnusable()) {
+      continue;
+    }
+    RefPtr<HttpConnectionBase> conn = mActiveConns[i];
+    LOG(
+        ("ConnectionEntry::MoveUnusableH3ConnsToPending [ci=%s conn=%p] "
+         "moving unusable HTTP/3 connection to pending list\n",
+         mConnInfo->HashKey().get(), conn.get()));
+    mActiveConns.RemoveElementAt(i);
+    conn->SetOwner(nullptr);
+    MakeConnectionPendingAndDontReuse(conn);
+  }
+}
+
 template <typename ConnType>
 static void CheckForTrafficForConns(nsTArray<RefPtr<ConnType>>& aConns,
                                     bool aCheck) {

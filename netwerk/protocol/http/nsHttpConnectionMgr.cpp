@@ -1244,6 +1244,11 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
   if (ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty()) {
     return false;
   }
+
+  
+  
+  ent->MoveUnusableH3ConnsToPending();
+
   ProcessSpdyPendingQ(ent);
 
   bool dispatchedSuccessfully = false;
