@@ -105,7 +105,7 @@ add_task(async function test_dark_theme() {
 
   await testNormalAndPrivate({
     normalThemeId: DARK_THEME_ID,
-    privateThemeId: DARK_THEME_ID,
+    privateThemeId: PRIVATE_THEME_ID,
     expectInApp: true,
   });
 
@@ -119,7 +119,7 @@ add_task(async function test_light_theme() {
 
   await testNormalAndPrivate({
     normalThemeId: LIGHT_THEME_ID,
-    privateThemeId: LIGHT_THEME_ID,
+    privateThemeId: PRIVATE_THEME_ID,
     expectInApp: true,
   });
 
