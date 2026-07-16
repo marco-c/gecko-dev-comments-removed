@@ -15,7 +15,6 @@ ChromeUtils.defineESModuleGetters(this, {
   SERPDomainToCategoriesMap:
     "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
-  Utils: "resource://services-settings/Utils.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [
@@ -81,19 +80,24 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
 
-  await db.clear();
-
   
   
   
   
-  Services.prefs.setStringPref(
-    "services.settings.base_attachments_url",
-    `${Utils.SERVER_URL}|https://unreachable-cdn/`
-  );
+  
+  
+  
+  
+  
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(client.attachments, "downloadAsBytes")
+    .rejects(new Error("Simulated Download Error"));
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("services.settings.base_attachments_url");
+    sandbox.restore();
   });
+
+  await db.clear();
 
   
   
