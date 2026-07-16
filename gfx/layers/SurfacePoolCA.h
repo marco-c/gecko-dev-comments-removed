@@ -167,7 +167,7 @@ class SurfacePoolCA final : public SurfacePool {
         gl::GLContext* aGL, const gfx::IntSize& aSize);
     UniquePtr<gl::MozFramebuffer> CreateFramebufferForTexture(
         gl::GLContext* aGL, const gfx::IntSize& aSize, GLuint aTexture,
-        bool aNeedsDepthBuffer);
+        GLenum aTarget, bool aNeedsDepthBuffer);
 
     
     
