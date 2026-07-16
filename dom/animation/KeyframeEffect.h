@@ -168,7 +168,7 @@ class KeyframeEffect : public AnimationEffect {
   void SetPseudoElement(const nsAString& aPseudoElement, ErrorResult& aRv);
 
   void GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
-                    ErrorResult& aRv) const;
+                    ErrorResult& aRv);
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
@@ -190,7 +190,8 @@ class KeyframeEffect : public AnimationEffect {
                             JS::Handle<JSObject*> aKeyframes, ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     const ComputedStyle* aStyle,
-                    const AnimationTimeline* aTimeline);
+                    const AnimationTimeline* aTimeline,
+                    const AnimationRange* aRange);
 
   
   
@@ -371,7 +372,8 @@ class KeyframeEffect : public AnimationEffect {
 
   double AnimationsPlayBackRateMultiplier() const;
 
-  void MaybeUpdateKeyframeComputedOffsets(const AnimationTimeline* aTimelne);
+  void MaybeUpdateKeyframeComputedOffsets(const AnimationTimeline* aTimelne,
+                                          const AnimationRange& aRange);
 
  protected:
   ~KeyframeEffect() override = default;

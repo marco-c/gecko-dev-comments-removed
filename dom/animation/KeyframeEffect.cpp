@@ -1227,7 +1227,7 @@ void KeyframeEffect::GetProperties(
 }
 
 void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
-                                  ErrorResult& aRv) const {
+                                  ErrorResult& aRv) {
   MOZ_ASSERT(aResult.IsEmpty());
   MOZ_ASSERT(!aRv.Failed());
 
@@ -1260,6 +1260,12 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
     
     
     computedStyle = GetTargetComputedStyle(Flush::Style);
+  }
+
+  
+  if (mAnimation && mAnimation->GetTimeline()) {
+    MaybeUpdateKeyframeComputedOffsets(mAnimation->GetTimeline(),
+                                       mAnimation->GetTimelineRange());
   }
 
   const StylePerDocumentStyleData* rawData =
@@ -1892,6 +1898,14 @@ void KeyframeEffect::SetAnimation(Animation* aAnimation) {
   mAnimation = aAnimation;
 
   UpdateNormalizedTiming();
+
+  
+  
+  
+  
+  MaybeUpdateKeyframeComputedOffsets(
+      mAnimation ? mAnimation->GetTimeline() : nullptr,
+      mAnimation ? mAnimation->GetTimelineRange() : AnimationRange());
 
   
   
