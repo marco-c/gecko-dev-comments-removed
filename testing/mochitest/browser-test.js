@@ -1226,7 +1226,10 @@ Tester.prototype = {
         );
       }
 
+      
+      
       this.PromiseTestUtils.assertNoUncaughtRejections();
+      this.PromiseTestUtils.clearAllowedUncaughtRejections();
 
       await this.notifyProfilerOfTestEnd();
 
