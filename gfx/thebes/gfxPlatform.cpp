@@ -1332,10 +1332,7 @@ void gfxPlatform::Shutdown() {
   
   GLContextProvider::Shutdown();
 
-#if defined(XP_WIN)
-  
-  
-  
+#if defined(XP_WIN) || defined(XP_MACOSX)
   
   
   

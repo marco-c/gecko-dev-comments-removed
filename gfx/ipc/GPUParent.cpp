@@ -782,9 +782,7 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         
         gl::GLContextProvider::Shutdown();
 
-#if defined(XP_WIN)
-        
-        
+#if defined(XP_WIN) || defined(XP_MACOSX)
         
         
         
