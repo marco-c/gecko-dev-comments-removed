@@ -3,11 +3,12 @@
 
 
 #include "VsyncSource.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
-#include "mozilla/VsyncDispatcher.h"
+
 #include "MainThreadUtils.h"
 #include "gfxPlatform.h"
+#include "mozilla/VsyncDispatcher.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 #ifdef MOZ_WAYLAND
 #  include "WaylandVsyncSource.h"

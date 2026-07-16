@@ -3,6 +3,7 @@
 
 
 #include "VideoBridgeParent.h"
+
 #include "CompositorThread.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ipc/Endpoint.h"

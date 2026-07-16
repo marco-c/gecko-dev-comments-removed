@@ -12,9 +12,10 @@
 
 
 
-#include "moz_external_vr.h"
-#include "base/process.h"  
 #include <functional>
+
+#include "base/process.h"  
+#include "moz_external_vr.h"
 
 namespace mozilla {
 namespace gfx {

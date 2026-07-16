@@ -2,16 +2,18 @@
 
 
 
-#include <cmath>
-#include "DataSurfaceHelpers.h"
 #include "FilterNodeSoftware.h"
-#include "2D.h"
-#include "Tools.h"
-#include "Blur.h"
+
+#include <cmath>
 #include <map>
 #include <numeric>
+
+#include "2D.h"
+#include "Blur.h"
+#include "DataSurfaceHelpers.h"
 #include "FilterProcessing.h"
 #include "Logging.h"
+#include "Tools.h"
 #include "mozilla/PodOperations.h"
 
 

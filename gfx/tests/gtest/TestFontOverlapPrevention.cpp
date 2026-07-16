@@ -2,9 +2,10 @@
 
 
 
-#include "gtest/gtest.h"
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "gtest/gtest.h"
 
 #define StandardFonts
 #ifdef XP_WIN

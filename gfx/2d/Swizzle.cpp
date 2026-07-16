@@ -3,13 +3,14 @@
 
 
 #include "Swizzle.h"
+
 #include "Logging.h"
-#include "src/base/SkVx.h"
 #include "Orientation.h"
 #include "Tools.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtr.h"
+#include "src/base/SkVx.h"
 
 #ifdef USE_SSE2
 #  include "mozilla/SSE.h"

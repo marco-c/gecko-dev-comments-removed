@@ -3,11 +3,12 @@
 
 
 #include "ElementStateManager.h"
+
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_ui.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZUtils.h"
 #include "nsITimer.h"

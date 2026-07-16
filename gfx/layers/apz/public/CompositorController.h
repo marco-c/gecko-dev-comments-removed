@@ -5,8 +5,8 @@
 #ifndef mozilla_layers_CompositorController_h
 #define mozilla_layers_CompositorController_h
 
-#include "nsISupportsImpl.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "nsISupportsImpl.h"  
 
 namespace mozilla {
 namespace layers {

@@ -3,8 +3,11 @@
 
 
 #include "nsFontMetrics.h"
-#include <math.h>                
-#include <algorithm>             
+
+#include <math.h>  
+
+#include <algorithm>  
+
 #include "gfxContext.h"          
 #include "gfxFontConstants.h"    
 #include "gfxPlatform.h"         
@@ -12,6 +15,8 @@
 #include "gfxRect.h"             
 #include "gfxTextRun.h"          
 #include "gfxTypes.h"            
+#include "mozilla/Assertions.h"  
+#include "mozilla/UniquePtr.h"   
 #include "nsAtom.h"              
 #include "nsBoundingMetrics.h"   
 #include "nsDebug.h"             
@@ -20,8 +25,6 @@
 #include "nsPresContext.h"       
 #include "nsString.h"            
 #include "nsStyleConsts.h"       
-#include "mozilla/Assertions.h"  
-#include "mozilla/UniquePtr.h"   
 
 class gfxUserFontSet;
 using namespace mozilla;

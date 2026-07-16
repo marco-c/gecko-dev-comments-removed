@@ -3,11 +3,12 @@
 
 
 #include "VRDisplayPresentation.h"
+
+#include "VRDisplayClient.h"
+#include "VRLayerChild.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/XRWebGLLayer.h"
-#include "VRDisplayClient.h"
-#include "VRLayerChild.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

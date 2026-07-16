@@ -7,8 +7,8 @@
 
 #include <cstdint>  
 
-#include "mozilla/ScrollTypes.h"
 #include "mozilla/DefineEnum.h"  
+#include "mozilla/ScrollTypes.h"
 
 namespace mozilla {
 namespace layers {

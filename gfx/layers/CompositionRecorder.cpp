@@ -3,20 +3,22 @@
 
 
 #include "CompositionRecorder.h"
+
+#include <ctime>
+
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "nsIInputStream.h"
 #include "nsIBinaryOutputStream.h"
+#include "nsIInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "prtime.h"
-
-#include <ctime>
 #include "stdio.h"
 #ifdef XP_WIN
 #  include "direct.h"
 #else
 #  include <sys/types.h>
+
 #  include "sys/stat.h"
 #endif
 

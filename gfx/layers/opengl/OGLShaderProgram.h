@@ -10,8 +10,8 @@
 #include <utility>
 
 #include "GLContext.h"  
-#include "mozilla/UniquePtr.h"
 #include "OGLShaderConfig.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace layers {

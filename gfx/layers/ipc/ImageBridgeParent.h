@@ -7,6 +7,7 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
+
 #include "CompositableTransactionParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/ProtocolUtils.h"

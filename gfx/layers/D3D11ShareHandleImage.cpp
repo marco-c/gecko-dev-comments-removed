@@ -3,6 +3,7 @@
 
 
 #include "D3D11ShareHandleImage.h"
+
 #include "DXVA2Manager.h"
 #include "WMF.h"
 #include "d3d11.h"

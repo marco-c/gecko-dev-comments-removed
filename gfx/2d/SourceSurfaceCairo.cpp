@@ -3,10 +3,10 @@
 
 
 #include "SourceSurfaceCairo.h"
+
+#include "DataSourceSurfaceWrapper.h"
 #include "DrawTargetCairo.h"
 #include "HelpersCairo.h"
-#include "DataSourceSurfaceWrapper.h"
-
 #include "cairo.h"
 
 namespace mozilla {

@@ -5,8 +5,9 @@
 #ifndef MOZILLA_GFX_BUFFERHOST_H
 #define MOZILLA_GFX_BUFFERHOST_H
 
-#include <stdint.h>              
-#include <stdio.h>               
+#include <stdint.h>  
+#include <stdio.h>   
+
 #include "gfxRect.h"             
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
@@ -16,11 +17,11 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorTypes.h"  
 
+#include "Units.h"  
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/TextureHost.h"  
 #include "nsCOMPtr.h"                    
 #include "nscore.h"                      
-#include "Units.h"                       
 
 namespace mozilla {
 

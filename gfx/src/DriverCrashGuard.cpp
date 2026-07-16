@@ -2,21 +2,22 @@
 
 
 #include "DriverCrashGuard.h"
-#include "gfxEnv.h"
+
 #include "gfxConfig.h"
+#include "gfxEnv.h"
+#include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsExceptionHandler.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_webgl.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/Components.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/dom/ContentChild.h"
 
 namespace mozilla {
 namespace gfx {

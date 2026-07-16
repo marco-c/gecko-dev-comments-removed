@@ -2,22 +2,22 @@
 
 
 
-#include "nsString.h"
+#include "gfxHarfBuzzShaper.h"
+
+#include <algorithm>
+
 #include "gfxContext.h"
 #include "gfxFontConstants.h"
-#include "gfxHarfBuzzShaper.h"
 #include "gfxFontUtils.h"
 #include "gfxTextRun.h"
+#include "harfbuzz/hb-ot.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/intl/String.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
+#include "nsString.h"
 #include "nsUnicodeProperties.h"
-
-#include "harfbuzz/hb.h"
-#include "harfbuzz/hb-ot.h"
-
-#include <algorithm>
 
 extern "C" {
 hb_unicode_funcs_t* mozilla_harfbuzz_glue_set_up_unicode_funcs();

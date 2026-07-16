@@ -1,25 +1,26 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "DrawTargetRecording.h"
-#include "DrawTargetSkia.h"
-#include "InlineTranslator.h"
-#include "PathRecording.h"
+
 #include <stdio.h>
 
-#include "ImageContainer.h"
-#include "Logging.h"
-#include "Tools.h"
+#include "DrawTargetSkia.h"
 #include "Filters.h"
+#include "ImageContainer.h"
+#include "InlineTranslator.h"
+#include "Logging.h"
+#include "PathRecording.h"
+#include "RecordedEventImpl.h"
+#include "RecordingTypes.h"
+#include "Tools.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/layers/CanvasDrawEventRecorder.h"
 #include "mozilla/layers/RecordedCanvasEventImpl.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/TextureRecorded.h"
-#include "nsXULAppAPI.h"  // for XRE_IsContentProcess()
-#include "RecordingTypes.h"
-#include "RecordedEventImpl.h"
+#include "nsXULAppAPI.h"  
 
 namespace mozilla {
 namespace gfx {
@@ -28,8 +29,8 @@ struct RecordingSourceSurfaceUserData {
   void* refPtr;
   RefPtr<DrawEventRecorderPrivate> recorder;
 
-  // The optimized surface holds a reference to our surface, for GetDataSurface
-  // calls, so we must hold a weak reference to avoid circular dependency.
+  
+  
   ThreadSafeWeakPtr<SourceSurface> optimizedSurface;
 };
 
@@ -52,11 +53,11 @@ static void RecordingSourceSurfaceUserDataFunc(void* aUserData) {
 static bool EnsureSurfaceStoredRecording(DrawEventRecorderPrivate* aRecorder,
                                          SourceSurface* aSurface,
                                          const char* reason) {
-  // It's important that TryAddStoredObject is called first because that will
-  // run any pending processing required by recorded objects that have been
-  // deleted off the main thread.
+  
+  
+  
   if (!aRecorder->TryAddStoredObject(aSurface)) {
-    // Surface is already stored.
+    
     return false;
   }
   aRecorder->StoreSourceSurfaceRecording(aSurface, reason);
@@ -106,9 +107,9 @@ class SourceSurfaceRecording final : public SourceSurface {
   IntSize mSize;
   SurfaceFormat mFormat;
   RefPtr<DrawEventRecorderPrivate> mRecorder;
-  // If a SourceSurfaceRecording is returned from an OptimizeSourceSurface call
-  // we need GetDataSurface to work, so we hold the original surface we
-  // optimized to return its GetDataSurface.
+  
+  
+  
   RefPtr<SourceSurface> mOriginalSurface;
 };
 
@@ -339,10 +340,10 @@ void DrawTargetRecording::DrawGlyphs(ScaledFont* aFont,
   } else if (!aFont->GetUserData(userDataKey)) {
     UnscaledFont* unscaledFont = aFont->GetUnscaledFont();
     if (mRecorder->IncrementUnscaledFontRefCount(unscaledFont) == 0) {
-      // Prefer sending the description, if we can create one. This ensures
-      // we don't record the data of system fonts which saves time and can
-      // prevent duplicate copies from accumulating in the OS cache during
-      // playback.
+      
+      
+      
+      
       RecordedFontDescriptor fontDesc(unscaledFont);
       if (fontDesc.IsValid()) {
         RecordEventSkipFlushTransform(fontDesc);
@@ -350,8 +351,8 @@ void DrawTargetRecording::DrawGlyphs(ScaledFont* aFont,
         RecordedFontData fontData(unscaledFont);
         RecordedFontDetails fontDetails;
         if (fontData.GetFontDetails(fontDetails)) {
-          // Try to serialise the whole font, just in case this is a web font
-          // that is not present on the system.
+          
+          
           if (!mRecorder->HasStoredFontData(fontDetails.fontDataKey)) {
             RecordEventSkipFlushTransform(fontData);
             mRecorder->AddStoredFontData(fontDetails.fontDataKey);
@@ -541,7 +542,7 @@ void DrawTargetRecording::DrawSurface(SourceSurface* aSurface,
     return;
   }
 
-  // TODO: Should we TryToReplaySurface here (and in other entrypoints)?
+  
 
   MarkChanged();
 
@@ -577,10 +578,10 @@ bool DrawTargetRecording::TryToReplaySurface(SourceSurface* aSurface,
 
   MarkChanged();
 
-  // Map points in the source surface's content space to our current user
-  // space (aSource -> aDest). Pre* methods prepend, so build right-to-left:
-  // first the destination translation, then the scaling, then the source
-  // translation, giving: Translate(-aSource) * Scale * Translate(aDest).
+  
+  
+  
+  
   Matrix mapping;
   mapping.PreTranslate(aDest.X(), aDest.Y());
   mapping.PreScale(aDest.Width() / aSource.Width(),
@@ -592,18 +593,18 @@ bool DrawTargetRecording::TryToReplaySurface(SourceSurface* aSurface,
 
   PushClipRect(aDest);
 
-  // The recording may have filtered out SetTransform calls with the same value
-  // so we need to apply the mapping ourselves to ensure it gets used even if
-  // the recording never emits a SetTransform of its own.
-  // See Translator::DrawDependentSurface.
+  
+  
+  
+  
   SetTransform(combined);
 
   InlineTranslator translator(this);
-  // RecordedSetTransform composes its recorded transform with this reference
-  // transform whenever it targets the reference DT (which is |this|), so
-  // every recorded inner SetTransform M ends up effectively as
-  //   M * mapping * savedTransform
-  // on the playback target.
+  
+  
+  
+  
+  
   translator.SetReferenceDrawTargetTransform(combined);
   translator.TranslateRecording(memRecorder->mOutputStream.mData,
                                 memRecorder->mOutputStream.mLength);
@@ -714,10 +715,10 @@ void DrawTargetRecording::PushClip(const Path* aPath) {
     return;
   }
 
-  // The canvas doesn't have a clipRect API so we always end up in the generic
-  // path. The D2D backend doesn't have a good way of specializing rectangular
-  // clips so we take advantage of the fact that aPath is usually backed by a
-  // SkiaPath which implements AsRect() and specialize it here.
+  
+  
+  
+  
   auto rect = aPath->AsRect();
   if (rect.isSome()) {
     PushClipRect(rect.value());
@@ -803,9 +804,9 @@ DrawTargetRecording::CreateSourceSurfaceFromData(unsigned char* aData,
 
 already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
     SourceSurface* aSurface) const {
-  // See if we have a previously optimized surface available. We have to do this
-  // check before the SurfaceType::RECORDING below, because aSurface might be a
-  // SurfaceType::RECORDING from another recorder we have previously optimized.
+  
+  
+  
   auto* userData = static_cast<RecordingSourceSurfaceUserData*>(
       aSurface->GetUserData(reinterpret_cast<UserDataKey*>(mRecorder.get())));
   if (userData) {
@@ -816,8 +817,8 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
   } else {
     if (!EnsureSurfaceStoredRecording(mRecorder, aSurface,
                                       "OptimizeSourceSurface")) {
-      // Surface was already stored, but doesn't have UserData so must be one
-      // of our recording surfaces.
+      
+      
       MOZ_ASSERT(aSurface->GetUnderlyingType() == SurfaceType::RECORDING);
       return do_AddRef(aSurface);
     }
@@ -849,10 +850,10 @@ already_AddRefed<DrawTarget>
 DrawTargetRecording::CreateSimilarDrawTargetWithBacking(
     const IntSize& aSize, SurfaceFormat aFormat) const {
   if (mFinalDT->CanCreateSimilarDrawTarget(aSize, aFormat)) {
-    // If the requested similar draw target is too big, then we should try to
-    // rasterize on the content side to avoid duplicating the effort when a
-    // blob image gets tiled. If we fail somehow to produce it, we can fall
-    // back to recording.
+    
+    
+    
+    
     constexpr int32_t kRasterThreshold = 256 * 256 * 4;
     int32_t stride = aSize.width * BytesPerPixel(aFormat);
     int32_t surfaceBytes = aSize.height * stride;
@@ -882,10 +883,10 @@ already_AddRefed<DrawTarget> DrawTargetRecording::CreateSimilarDrawTarget(
     RecordEventSelfSkipFlushTransform(
         RecordedCreateSimilarDrawTarget(similarDT.get(), aSize, aFormat));
   } else if (XRE_IsContentProcess()) {
-    // Crash any content process that calls this function with arguments that
-    // would fail to create a similar draw target. We do this to root out bad
-    // callers. We don't want to crash any important processes though so for
-    // for those we'll just gracefully return nullptr.
+    
+    
+    
+    
     MOZ_CRASH(
         "Content-process DrawTargetRecording can't create requested similar "
         "drawtarget");
@@ -918,13 +919,13 @@ DrawTargetRecording::CreateSimilarDrawTargetForFilter(
     similarDT = new DrawTargetRecording(this, IntRect(IntPoint(0, 0), aMaxSize),
                                         aFormat);
     similarDT->SetOptimizeTransform(mOptimizeTransform);
-    // RecordedCreateDrawTargetForFilter::PlayEvent uses the transform, despite
-    // the fact that the underlying DrawTarget does not.
+    
+    
     RecordEventSelf(RecordedCreateDrawTargetForFilter(similarDT.get(), aMaxSize,
                                                       aFormat, aFilter, aSource,
                                                       aSourceRect, aDestPoint));
   } else if (XRE_IsContentProcess()) {
-    // See CreateSimilarDrawTarget
+    
     MOZ_CRASH(
         "Content-process DrawTargetRecording can't create requested clipped "
         "drawtarget");
@@ -976,7 +977,7 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
     pathRecording =
         const_cast<PathRecording*>(static_cast<const PathRecording*>(aPath));
     if (!mRecorder->TryAddStoredObject(pathRecording)) {
-      // Path is already stored.
+      
       return pathRecording.forget();
     }
   } else {
@@ -989,30 +990,30 @@ already_AddRefed<PathRecording> DrawTargetRecording::EnsurePathStored(
     mRecorder->AddStoredObject(pathRecording);
   }
 
-  // It's important that AddStoredObject or TryAddStoredObject is called before
-  // this because that will run any pending processing required by recorded
-  // objects that have been deleted off the main thread.
+  
+  
+  
   RecordEventSelfSkipFlushTransform(RecordedPathCreation(pathRecording.get()));
   pathRecording->mStoredRecorders.push_back(mRecorder);
 
   return pathRecording.forget();
 }
 
-// This should only be called on the 'root' DrawTargetRecording.
-// Calling it on a child DrawTargetRecordings will cause confusion.
+
+
 void DrawTargetRecording::FlushItem(const IntRect& aBounds) {
   mRecorder->FlushItem(aBounds);
-  // Reinitialize the recorder (FlushItem will write a new recording header)
-  // Tell the new recording about our draw target
-  // This code should match what happens in the DrawTargetRecording constructor.
+  
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(mRecorder->GetRecorderType() ==
                         RecorderType::WEBRENDER);
   RecordEventSkipFlushTransform(
       RecordedDrawTargetCreation(this, mFinalDT->GetBackendType(), mRect,
                                  mFinalDT->GetFormat(), false, nullptr));
-  // RecordedDrawTargetCreation can actually reuse the base DrawTarget for the
-  // recording, but we cannot conclude that from here, so force the transform
-  // to be recorded.
+  
+  
+  
   RecordTransform(mTransform);
   mTransformDirty = false;
 }
@@ -1021,7 +1022,7 @@ void DrawTargetRecording::EnsurePatternDependenciesStored(
     const Pattern& aPattern) {
   switch (aPattern.GetType()) {
     case PatternType::COLOR:
-      // No dependencies here.
+      
       return;
     case PatternType::LINEAR_GRADIENT: {
       MOZ_ASSERT_IF(
@@ -1059,5 +1060,5 @@ void DrawTargetRecording::AccessibleId(uint64_t aBrowsingContextId,
   RecordEventSelf(RecordedAccessibleId(aBrowsingContextId, aAccId));
 }
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  

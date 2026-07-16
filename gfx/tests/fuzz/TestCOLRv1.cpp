@@ -3,11 +3,11 @@
 
 
 #include "COLRFonts.h"
-#include "gfxFontUtils.h"
-#include "harfbuzz/hb.h"
+#include "FuzzingInterface.h"
 #include "MockDrawTarget.h"
 #include "MockScaledFont.h"
-#include "FuzzingInterface.h"
+#include "gfxFontUtils.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/Preferences.h"
 
 using namespace mozilla;

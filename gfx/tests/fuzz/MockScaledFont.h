@@ -2,11 +2,10 @@
 
 
 
-
-
 #ifndef FUZZ_MOCKSCALEDFONT_H
 #define FUZZ_MOCKSCALEDFONT_H
 
+#include "harfbuzz/hb.h"
 #include "mozilla/gfx/2D.h"
 
 class MockUnscaledFont : public mozilla::gfx::UnscaledFont {

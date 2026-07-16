@@ -2,12 +2,13 @@
 
 
 
+#include <tuple>
+
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/LayersTypes.h"
-#include <tuple>
 
 using LayersUpdateFlags = AsyncPanZoomController::LayersUpdateFlags;
 

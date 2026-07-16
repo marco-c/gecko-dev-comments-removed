@@ -4,9 +4,8 @@
 
 #include "FlingAccelerator.h"
 
-#include "mozilla/StaticPrefs_apz.h"
-
 #include "GenericFlingAnimation.h"  
+#include "mozilla/StaticPrefs_apz.h"
 
 namespace mozilla {
 namespace layers {

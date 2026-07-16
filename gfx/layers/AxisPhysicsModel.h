@@ -5,7 +5,8 @@
 #ifndef mozilla_layers_AxisPhysicsModel_h
 #define mozilla_layers_AxisPhysicsModel_h
 
-#include <sys/types.h>          
+#include <sys/types.h>  
+
 #include "mozilla/TimeStamp.h"  
 
 namespace mozilla {

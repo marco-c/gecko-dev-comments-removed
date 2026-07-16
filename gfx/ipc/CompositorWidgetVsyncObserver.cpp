@@ -3,6 +3,7 @@
 
 
 #include "CompositorWidgetVsyncObserver.h"
+
 #include "mozilla/gfx/VsyncBridgeChild.h"
 
 namespace mozilla {

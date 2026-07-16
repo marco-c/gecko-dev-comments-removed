@@ -5,8 +5,10 @@
 #ifndef NSRECT_H
 #define NSRECT_H
 
-#include <stdint.h>          
-#include <algorithm>         
+#include <stdint.h>  
+
+#include <algorithm>  
+
 #include "mozilla/Likely.h"  
 #include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/Rect.h"

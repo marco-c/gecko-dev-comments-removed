@@ -3,9 +3,9 @@
 
 
 #include "FilterProcessing.h"
+
 #include "Logging.h"
 #include "Swizzle.h"
-
 #include "mozilla/SSE.h"
 
 namespace mozilla {

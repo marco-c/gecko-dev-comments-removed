@@ -7,9 +7,8 @@
 
 #include <map>
 
-#include "nsDebug.h"                
-#include "nsDOMNavigationTiming.h"  
-#include "nsTArray.h"
+#include "ipc/IPCMessageUtils.h"
+#include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"       
 #include "mozilla/DebugOnly.h"        
 #include "mozilla/GfxMessageUtils.h"  
@@ -18,8 +17,9 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/LayersMessageUtils.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"
-#include "ipc/IPCMessageUtils.h"
-#include "js/TypeDecls.h"
+#include "nsDOMNavigationTiming.h"  
+#include "nsDebug.h"                
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace layers {

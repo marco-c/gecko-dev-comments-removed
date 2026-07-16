@@ -3,19 +3,20 @@
 
 
 #include "nsRect.h"
-#include "mozilla/gfx/Types.h"   
+
 #include "mozilla/CheckedInt.h"  
+#include "mozilla/gfx/Types.h"   
 #include "nsDeviceContext.h"     
-#include "nsString.h"            
 #include "nsMargin.h"            
+#include "nsString.h"            
 
 #ifdef USE_NEON
-#  include "nsRectIntersectGeneric.h"
 #  include "mozilla/arm.h"
+#  include "nsRectIntersectGeneric.h"
 #endif
 #if defined(USE_SSE42)
-#  include "nsRectIntersectGeneric.h"
 #  include "mozilla/SSE.h"
+#  include "nsRectIntersectGeneric.h"
 #endif
 
 static_assert(

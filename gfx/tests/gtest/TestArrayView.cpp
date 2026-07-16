@@ -3,7 +3,6 @@
 
 
 #include "gtest/gtest.h"
-
 #include "mozilla/ArrayView.h"
 
 using namespace mozilla::gfx;

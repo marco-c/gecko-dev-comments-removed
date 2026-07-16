@@ -3,6 +3,7 @@
 
 
 #include "gfxVars.h"
+
 #include "gfxVarReceiver.h"
 #include "mozilla/dom/ContentChild.h"
 

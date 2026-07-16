@@ -5,15 +5,15 @@
 #ifndef mozilla_layers_OMTASampler_h
 #define mozilla_layers_OMTASampler_h
 
-#include <unordered_map>
 #include <queue>
+#include <unordered_map>
 
-#include "base/platform_thread.h"           
-#include "mozilla/layers/OMTAController.h"  
+#include "base/platform_thread.h"  
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/layers/OMTAController.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
 
 namespace mozilla {

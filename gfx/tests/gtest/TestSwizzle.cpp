@@ -2,11 +2,12 @@
 
 
 
+#include <bit>
+
+#include "Orientation.h"
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/Swizzle.h"
-#include "Orientation.h"
-#include <bit>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

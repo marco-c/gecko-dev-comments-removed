@@ -3,25 +3,27 @@
 
 
 #include "nsDeviceContext.h"
+
 #include <algorithm>  
+
 #include "gfxContext.h"
 #include "gfxPoint.h"    
 #include "gfxTextRun.h"  
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/gfx/PrintTarget.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"            
-#include "mozilla/widget/Screen.h"  
-#include "nsDebug.h"                
-#include "nsFontMetrics.h"          
-#include "nsIDeviceContextSpec.h"   
-#include "nsIWidget.h"              
-#include "nsRect.h"                 
-#include "nsTArray.h"               
+#include "mozilla/Try.h"  
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/gfx/PrintTarget.h"
+#include "mozilla/widget/Screen.h"         
 #include "mozilla/widget/ScreenManager.h"  
+#include "nsDebug.h"                       
+#include "nsFontMetrics.h"                 
+#include "nsIDeviceContextSpec.h"          
+#include "nsIWidget.h"                     
+#include "nsRect.h"                        
+#include "nsTArray.h"                      
 
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"

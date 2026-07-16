@@ -2,11 +2,13 @@
 
 
 
-#include <string>
-#include <sstream>
-#include "nsExceptionHandler.h"
 #include "GfxTexturesReporter.h"
+
+#include <sstream>
+#include <string>
+
 #include "mozilla/StaticPrefs_gfx.h"
+#include "nsExceptionHandler.h"
 
 using namespace mozilla::gl;
 

@@ -3,11 +3,11 @@
 
 
 #include "FxRWindowManager.h"
+
 #include "mozilla/Assertions.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/WidgetUtils.h"
-
+#include "nsPIDOMWindow.h"
 #include "nsWindow.h"
 
 static mozilla::StaticAutoPtr<FxRWindowManager> sFxrWinMgrInstance;

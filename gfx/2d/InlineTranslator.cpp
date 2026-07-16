@@ -3,8 +3,8 @@
 
 
 #include "InlineTranslator.h"
-#include "RecordedEventImpl.h"
 
+#include "RecordedEventImpl.h"
 #include "mozilla/gfx/RecordingTypes.h"
 
 using namespace mozilla::gfx;

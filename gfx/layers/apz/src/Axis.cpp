@@ -4,7 +4,8 @@
 
 #include "Axis.h"
 
-#include <math.h>     
+#include <math.h>  
+
 #include <algorithm>  
 
 #include "APZCTreeManager.h"                

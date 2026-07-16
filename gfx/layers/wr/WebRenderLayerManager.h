@@ -5,10 +5,12 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
-#include <cstddef>                    
-#include <cstdint>                    
-#include <string>                     
-#include "Units.h"                    
+#include <cstddef>  
+#include <cstdint>  
+#include <string>   
+
+#include "Units.h"  
+#include "WindowRenderer.h"
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"              
@@ -23,11 +25,10 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/WebRenderCommandBuilder.h"  
 #include "mozilla/layers/WebRenderScrollData.h"      
-#include "WindowRenderer.h"
-#include "nsHashKeys.h"   
-#include "nsRegion.h"     
-#include "nsStringFwd.h"  
-#include "nsTArray.h"     
+#include "nsHashKeys.h"                              
+#include "nsRegion.h"                                
+#include "nsStringFwd.h"                             
+#include "nsTArray.h"                                
 #include "nsTHashSet.h"
 
 class gfxContext;
