@@ -645,7 +645,8 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
   }
 
   
-  if (!GetEditContext()) {
+  
+  if (!GetEditActionEditContext()) {
     rv = HandleInlineSpellCheck(
         TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
         TopLevelEditSubActionDataRef().mChangedRange);
@@ -879,7 +880,7 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
   }
 
   
-  if (GetEditContext()) {
+  if (GetEditActionEditContext()) {
     return NS_OK;
   }
 
@@ -1030,7 +1031,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
   UndefineCaretBidiLevel();
 
-  if (RefPtr editContext = GetEditContext()) {
+  if (RefPtr editContext = GetEditActionEditContext()) {
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
     RefPtr<nsFrameSelection> frameSelection =
@@ -1051,7 +1052,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (editContext != GetEditContext()) {
+    if (EditContextChangedSinceStartOfEditAction()) {
       
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
