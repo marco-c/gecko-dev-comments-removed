@@ -7,6 +7,10 @@ const { RunSearch } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("browser.smartwindow.lastSmartWindowUsageTime");
+});
+
 
 
 
@@ -73,6 +77,7 @@ async function preloadAndCloseSidebar(win, aiTab) {
   );
 
   await AIWindowUI.openSidebar(win);
+  await AIWindowUI.focusSidebar(win);
   await assertSidebarSmartbarFocused(win, "Preloaded sidebar");
   AIWindowUI.closeSidebar(win, "test");
 
