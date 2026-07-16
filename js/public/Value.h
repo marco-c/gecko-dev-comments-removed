@@ -450,7 +450,14 @@ static MOZ_ALWAYS_INLINE double Infinity() {
 
 
 static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
-  if (MOZ_UNLIKELY(std::isnan(d))) {
+  
+  
+#if defined(__clang__) || defined(__GNUC__)
+  bool isNaN = __builtin_isnan(d);
+#else
+  bool isNaN = std::isnan(d);
+#endif
+  if (MOZ_UNLIKELY(isNaN)) {
     return GenericNaN();
   }
   return d;
