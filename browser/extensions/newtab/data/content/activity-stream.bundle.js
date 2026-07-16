@@ -22566,7 +22566,6 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const pictureData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PictureOfTheDay);
   const widgetSize = resolveWidgetSize(PICTURE_OF_THE_DAY_ENTRY, prefs);
-  const isSetAsWallpaper = Boolean(prefs["widgets.pictureOfTheDay.wallpaperActive"]);
 
   
   
@@ -22588,6 +22587,12 @@ const PictureOfTheDay_PictureOfTheDay = ({
   
   const pictureDate = pictureData.publishedDate || new Date().toDateString();
   const dismissed = pictureDate === prefs["widgets.pictureOfTheDay.dismissedDate"];
+  
+  
+  
+  
+  
+  const isSetAsWallpaper = Boolean(prefs["newtabWallpapers.user.enabled"]) && pictureDate === prefs["widgets.pictureOfTheDay.wallpaperActive"];
   const hasPicture = Boolean(pictureData.imageUrl) && !dismissed && !imageFailed;
 
   
@@ -22720,6 +22725,11 @@ const PictureOfTheDay_PictureOfTheDay = ({
   
   
   const handleSetWallpaper = () => {
+    
+    
+    if (isSetAsWallpaper) {
+      return;
+    }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_PICTURE_SET_WALLPAPER
@@ -22906,9 +22916,9 @@ const PictureOfTheDay_PictureOfTheDay = ({
   }, pictureData.description ? external_React_default().createElement("p", {
     className: "picture-of-the-day-description"
   }, pictureData.description) : null, canSetWallpaper ? external_React_default().createElement("moz-button", {
-    className: `picture-of-the-day-set-wallpaper${justSet || isSetAsWallpaper ? " is-collapsed" : ""}${suppressExpand ? " no-expand" : ""}`,
+    className: `picture-of-the-day-set-wallpaper${justSet || isSetAsWallpaper ? " is-collapsed" : ""}${suppressExpand || isSetAsWallpaper ? " no-expand" : ""}`,
     type: "primary",
-    iconSrc: justSet ? SET_WALLPAPER_CHECK_ICON : SET_WALLPAPER_ICON,
+    iconSrc: justSet || isSetAsWallpaper ? SET_WALLPAPER_CHECK_ICON : SET_WALLPAPER_ICON,
     onClick: handleSetWallpaper,
     "data-l10n-id": "newtab-picture-set-wallpaper"
   }) : null)) : external_React_default().createElement("div", {
