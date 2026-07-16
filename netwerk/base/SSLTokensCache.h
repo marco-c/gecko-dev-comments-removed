@@ -18,17 +18,12 @@
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
-#include "nsISSLTokensCache.h"
 #include "nsISerialEventTarget.h"
 #include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
-
-#ifdef ENABLE_TESTS
-#  include "nsISSLTokensCacheTest.h"
-#endif
 
 class CommonSocketControl;
 struct SslTokensPersistedRecord;
@@ -79,31 +74,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
-  
-  
-  
-  
-  
-  static void ClearSessionCacheAndTokens();
-  
-  
-  static void ForwardClearToSocketProcess();
-  
-  
-  
-  static void ForwardClearPrivateBrowsingToSocketProcess();
-  
-  static void ClearPrivateBrowsing();
-  
-  
-  
-  static void ClearSessionCacheAndPBMTokens();
   static void RemoveByHostAndOAPattern(
-      const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
-      MOZ_EXCLUDES(sLock);
-  
-  
-  static void ClearSessionCacheAndTokensForHost(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
   static void RemoveBySiteAndOAPattern(
@@ -151,11 +122,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   static bool ShouldPersistKey(const nsACString& aKey,
                                uint8_t aOverridableError);
 
-  
-  
-  
-  static void ReconcilePersistence(const char* = nullptr, void* = nullptr);
-
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
       MOZ_REQUIRES(sLock);
 
@@ -166,7 +132,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   uint32_t mCacheSize MOZ_GUARDED_BY(sLock){0};
 
   
-  bool mPrefCallbackRegistered{false};  
   bool mWriteObserversRegistered MOZ_GUARDED_BY(sLock){false};
   nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
   nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
@@ -266,28 +231,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
       MOZ_GUARDED_BY(sLock);
   nsTArray<TokenCacheRecord*> mExpirationArray MOZ_GUARDED_BY(sLock);
-};
-
-
-
-
-class SSLTokensCacheService final : public nsISSLTokensCache
-#ifdef ENABLE_TESTS
-    ,
-                                    public nsISSLTokensCacheTest
-#endif
-{
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSISSLTOKENSCACHE
-#ifdef ENABLE_TESTS
-  NS_DECL_NSISSLTOKENSCACHETEST
-#endif
-
-  SSLTokensCacheService() = default;
-
- private:
-  ~SSLTokensCacheService() = default;
 };
 
 }  

@@ -5,11 +5,9 @@
 
 
 
-
 do_get_profile();
 
 const GOOD_DOMAIN = "good.include-subdomains.pinning.example.com";
-const PRIVATE_BROWSING_OA = { privateBrowsingId: 1 };
 
 const statsPtr = getSSLStatistics();
 const toInt32 = ctypes.Int64.lo;
@@ -48,32 +46,37 @@ function run_test() {
   );
 
   
-  add_connection_test(
-    GOOD_DOMAIN,
-    PRErrorCodeSuccess,
-    null,
-    null,
-    null,
-    PRIVATE_BROWSING_OA
-  );
-
-  
   add_test(function () {
     Services.obs.notifyObservers(null, "last-pb-context-exited");
     run_next_test();
   });
 
   
-  
-  
+  let hitsAfterClear;
+  let missesAfterClear;
   add_connection_test(
     GOOD_DOMAIN,
     PRErrorCodeSuccess,
-    null,
+    function () {
+      let stats = statsPtr.contents;
+      hitsAfterClear = toInt32(stats.sch_sid_cache_hits);
+      missesAfterClear = toInt32(stats.sch_sid_cache_misses);
+    },
     function (transportSecurityInfo) {
       ok(
-        transportSecurityInfo.resumed,
-        "Non-PBM session should survive last-pb-context-exited"
+        !transportSecurityInfo.resumed,
+        "Connection after PBM exit should not be resumed"
+      );
+      let stats = statsPtr.contents;
+      equal(
+        toInt32(stats.sch_sid_cache_hits),
+        hitsAfterClear,
+        "Should have no additional cache hits after PBM exit"
+      );
+      equal(
+        toInt32(stats.sch_sid_cache_misses),
+        missesAfterClear + 1,
+        "Should have one additional cache miss after PBM exit"
       );
     }
   );
@@ -85,12 +88,10 @@ function run_test() {
     null,
     function (transportSecurityInfo) {
       ok(
-        !transportSecurityInfo.resumed,
-        "PBM session should be evicted by last-pb-context-exited"
+        transportSecurityInfo.resumed,
+        "Connection should resume again after cache is re-populated"
       );
-    },
-    null,
-    PRIVATE_BROWSING_OA
+    }
   );
 
   run_next_test();

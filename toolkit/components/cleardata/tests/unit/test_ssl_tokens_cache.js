@@ -10,10 +10,9 @@
 
 
 
-
-const nssTestComponent = Cc[
-  "@mozilla.org/network/ssl-tokens-cache;1"
-].getService(Ci.nsISSLTokensCacheTest);
+const nssTestComponent = Cc["@mozilla.org/psm;1"].getService(
+  Ci.nsISSLTokensCacheTest
+);
 
 const FLAGS = Ci.nsIClearDataService.CLEAR_TLS_TOKEN_CACHE;
 const TEST_KEY = "example.com:443";
