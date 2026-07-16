@@ -261,7 +261,9 @@ mozilla::ipc::IPCResult ProfilerChild::RecvWaitOnePeriodicSampling(
                 "nsProfiler::WaitOnePeriodicSampling result on main thread",
                 [resolve = std::move(resolve), aSamplingState]() {
                   (*resolve)(aSamplingState ==
-                             SamplingState::SamplingCompleted);
+                                 SamplingState::SamplingCompleted ||
+                             aSamplingState ==
+                                 SamplingState::NoStackSamplingCompleted);
                 }));
           })) {
     
