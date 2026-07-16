@@ -4,6 +4,7 @@
 
 import os
 
+import yaml
 from android_taskgraph import register as register_android_taskgraph
 from mozilla_taskgraph import register as register_mozilla_taskgraph
 from taskgraph import config as taskgraph_config
@@ -12,6 +13,7 @@ from taskgraph import morph as taskgraph_morph
 from taskgraph.transforms.task import payload_builders
 from taskgraph.util import docker, schema
 from taskgraph.util import taskcluster as tc_util
+from taskgraph.util.readonlydict import ReadOnlyDict
 
 from gecko_taskgraph.config import GraphConfigSchema
 
@@ -20,6 +22,18 @@ TEST_CONFIGS = os.path.join(GECKO, "taskcluster", "test_configs")
 
 
 taskgraph_config.graph_config_schema = GraphConfigSchema
+
+
+def _represent_ro_dict(dumper, data):
+    return dumper.represent_dict(dict(data))
+
+
+
+
+
+
+
+yaml.SafeDumper.add_representer(ReadOnlyDict, _represent_ro_dict)
 
 
 
