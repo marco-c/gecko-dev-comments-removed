@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef DOM_MEDIA_TIMEPACKETIZER_H_
 #define DOM_MEDIA_TIMEPACKETIZER_H_
 
@@ -23,8 +22,8 @@ class TimedPacketizer {
         mTimeStamp(media::TimeUnit(aInitialTick, aBase)),
         mBase(aBase) {}
 
-  void Input(const InputType* aFrames, uint32_t aFrameCount) {
-    mPacketizer.Input(aFrames, aFrameCount);
+  [[nodiscard]] nsresult Input(const InputType* aFrames, uint32_t aFrameCount) {
+    return mPacketizer.Input(aFrames, aFrameCount);
   }
 
   media::TimeUnit Output(OutputType* aOutputBuffer) {
