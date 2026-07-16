@@ -51,30 +51,40 @@ function preInsertionValidateHierarchy(methodName) {
   }, "If node is a DocumentFragment with multiple elements and parent is a document, then throw a HierarchyRequestError DOMException.");
 
   
-  test(() => {
-    const doc = document.implementation.createHTMLDocument("title");
-    const df = doc.createDocumentFragment();
-    df.appendChild(doc.createElement("a"));
-    assert_throws_dom("HierarchyRequestError", () => insert(doc, df));
-  }, "If node is a DocumentFragment with an element and parent is a document with another element, then throw a HierarchyRequestError DOMException.");
+  if (methodName !== "replaceChildren") {
+    
+    test(() => {
+      const doc = document.implementation.createHTMLDocument("title");
+      const df = doc.createDocumentFragment();
+      df.appendChild(doc.createElement("a"));
+      assert_throws_dom("HierarchyRequestError", () => insert(doc, df));
+    }, "If node is a DocumentFragment with an element and parent is a document with another element, then throw a HierarchyRequestError DOMException.");
+  }
 
   
-  test(() => {
-    const doc = document.implementation.createHTMLDocument("title");
-    const el = doc.createElement("a");
-    assert_throws_dom("HierarchyRequestError", () => insert(doc, el));
-  }, "If node is an Element and parent is a document with another element, then throw a HierarchyRequestError DOMException.");
+  if (methodName !== "replaceChildren") {
+    
+    test(() => {
+      const doc = document.implementation.createHTMLDocument("title");
+      const el = doc.createElement("a");
+      assert_throws_dom("HierarchyRequestError", () => insert(doc, el));
+    }, "If node is an Element and parent is a document with another element, then throw a HierarchyRequestError DOMException.");
+  }
 
   
-  test(() => {
-    const doc = document.implementation.createHTMLDocument("title");
-    const doctype = doc.childNodes[0].cloneNode();
-    doc.documentElement.remove();
-    assert_throws_dom("HierarchyRequestError", () => insert(doc, doctype));
-  }, "If node is a doctype and parent is a document with another doctype, then throw a HierarchyRequestError DOMException.");
+  if (methodName !== "replaceChildren") {
+    
+    test(() => {
+      const doc = document.implementation.createHTMLDocument("title");
+      const doctype = doc.childNodes[0].cloneNode();
+      doc.documentElement.remove();
+      assert_throws_dom("HierarchyRequestError", () => insert(doc, doctype));
+    }, "If node is a doctype and parent is a document with another doctype, then throw a HierarchyRequestError DOMException.");
+  }
 
   
-  if (methodName !== "prepend") {
+  if (methodName !== "prepend" && methodName !== "replaceChildren") {
+    
     
     test(() => {
       const doc = document.implementation.createHTMLDocument("title");
