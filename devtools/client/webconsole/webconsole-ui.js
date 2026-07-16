@@ -530,11 +530,6 @@ class WebConsoleUI extends EventEmitter {
       }
 
       if (resource.resourceType === TYPES.NETWORK_EVENT) {
-        
-        
-        if (resource.cause.type == "devtools") {
-          return;
-        }
         this.networkDataProvider?.onNetworkResourceAvailable(resource);
       }
       messages.push(resource);
