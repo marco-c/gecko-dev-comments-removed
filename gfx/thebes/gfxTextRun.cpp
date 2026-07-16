@@ -1416,8 +1416,8 @@ void gfxTextRun::SanitizeGlyphRuns() {
     
     
     
-    while (charGlyphs[aRun.mCharacterOffset].IsLigatureContinuation() &&
-           aRun.mCharacterOffset < GetLength()) {
+    while (aRun.mCharacterOffset < GetLength() &&
+           charGlyphs[aRun.mCharacterOffset].IsLigatureContinuation()) {
       aRun.mCharacterOffset++;
     }
 

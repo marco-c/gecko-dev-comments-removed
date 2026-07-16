@@ -813,7 +813,8 @@ void gfxShapedText::ClearGlyphs() {
 
 gfxShapedText::DetailedGlyph* gfxShapedText::AllocateDetailedGlyphs(
     uint32_t aIndex, uint32_t aCount) {
-  NS_ASSERTION(aIndex < GetLength(), "Index out of range");
+  MOZ_ASSERT(aIndex < GetLength(), "Index out of range");
+  MOZ_ASSERT(aCount <= CompressedGlyph::GLYPH_COUNT_MASK);
 
   if (!mDetailedGlyphs) {
     mDetailedGlyphs = MakeUnique<DetailedGlyphStore>();
@@ -828,6 +829,13 @@ void gfxShapedText::SetDetailedGlyphs(uint32_t aIndex, uint32_t aGlyphCount,
 
   MOZ_ASSERT(aIndex > 0 || g.IsLigatureGroupStart(),
              "First character can't be a ligature continuation!");
+
+  
+  
+  
+  
+  aGlyphCount =
+      std::min<uint32_t>(aGlyphCount, CompressedGlyph::GLYPH_COUNT_MASK);
 
   if (aGlyphCount > 0) {
     DetailedGlyph* details = AllocateDetailedGlyphs(aIndex, aGlyphCount);
