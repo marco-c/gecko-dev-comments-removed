@@ -79,7 +79,12 @@ add_task(async function test_switchtab() {
   EventUtils.synthesizeKey("KEY_Tab", {}, win);
   EventUtils.synthesizeKey("KEY_Enter", {}, win);
 
-  is(win.gBrowser.tabs.length, 1, "We switched to previous tab");
+  
+  
+  await TestUtils.waitForCondition(
+    () => win.gBrowser.tabs.length == 1,
+    "We switched to previous tab"
+  );
   is(
     win.gBrowser.currentURI.spec,
     "https://example.com/",
