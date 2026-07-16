@@ -437,7 +437,14 @@ ScaleYCbCrToRGB32(const uint8_t* y_buf,
       
       supports_sse3() ||
 #endif
+#if defined(MOZ_YCBCR_ROW_SSE)
+      
+      
+      
       (supports_mmx() && supports_sse() && !supports_sse3());
+#else
+      false;
+#endif
   
   
   if (yuv_color_space != YUVColorSpace::BT601) {
