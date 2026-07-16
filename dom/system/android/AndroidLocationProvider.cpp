@@ -2,11 +2,8 @@
 
 
 
-
-
 #include "AndroidLocationProvider.h"
 
-#include "Geolocation.h"
 #include "GeolocationPosition.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"

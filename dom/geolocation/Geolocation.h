@@ -42,80 +42,6 @@ enum class LocationOSPermission;
 }
 }  
 
-struct CachedPositionAndAccuracy {
-  nsCOMPtr<nsIDOMGeoPosition> position;
-  bool isHighAccuracy;
-};
-
-
-
-
-class nsGeolocationService final : public nsIGeolocationUpdate,
-                                   public nsIObserver {
- public:
-  static already_AddRefed<nsGeolocationService> GetGeolocationService(
-      mozilla::dom::BrowsingContext* browsingContext = nullptr);
-  static mozilla::StaticRefPtr<nsGeolocationService> sService;
-
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIGEOLOCATIONUPDATE
-  NS_DECL_NSIOBSERVER
-
-  nsGeolocationService() = default;
-
-  nsresult Init();
-
-  
-  void AddLocator(mozilla::dom::Geolocation* aLocator);
-  void RemoveLocator(mozilla::dom::Geolocation* aLocator);
-
-  
-  void MoveLocators(nsGeolocationService* aService);
-
-  void SetCachedPosition(nsIDOMGeoPosition* aPosition);
-  CachedPositionAndAccuracy GetCachedPosition();
-
-  
-  MOZ_CAN_RUN_SCRIPT nsresult StartDevice();
-
-  
-  void StopDevice();
-
-  
-  void SetDisconnectTimer();
-
-  
-  void UpdateAccuracy(bool aForceHigh = false);
-  bool HighAccuracyRequested();
-
- private:
-  ~nsGeolocationService();
-
-  
-  
-  
-  nsCOMPtr<nsITimer> mDisconnectTimer;
-
-  
-  nsCOMPtr<nsIGeolocationProvider> mProvider;
-
-  
-  
-  
-  nsTArray<mozilla::WeakPtr<mozilla::dom::Geolocation>> mGeolocators;
-
-  
-  CachedPositionAndAccuracy mLastPosition;
-
-  
-  bool mHigherAccuracy = false;
-
-  
-  
-  
-  mozilla::Maybe<bool> mStarting;
-};
-
 namespace mozilla::dom {
 
 
@@ -235,7 +161,7 @@ class Geolocation final : public nsIGeolocationUpdate,
   static void RequestIfPermitted(nsGeolocationRequest* request);
 
   
-  void SetService(nsGeolocationService* aService) { mService = aService; }
+  void SetService(nsGeolocationService* aService);
 
   
   
