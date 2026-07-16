@@ -179,6 +179,7 @@ for (const type of [
   "MESSAGE_NOTIFY_VISIBILITY",
   "MESSAGE_SET",
   "MESSAGE_TOGGLE_VISIBILITY",
+  "MULTIPLE_PREFS_CHANGED",
   "NEW_TAB_INIT",
   "NEW_TAB_INITIAL_STATE",
   "NEW_TAB_LOAD",
@@ -232,6 +233,7 @@ for (const type of [
   "SECTION_UPDATE_CARD",
   "SETTINGS_CLOSE",
   "SETTINGS_OPEN",
+  "SET_MULTIPLE_PREFS",
   "SET_PREF",
   "SHOW_DOWNLOAD_FILE",
   "SHOW_FIREFOX_ACCOUNTS",
@@ -549,6 +551,15 @@ function SetPref(prefName, value, importContext = globalImportContext) {
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
+
+const SetMultiplePrefs = (values, importContext = globalImportContext) => {
+  const action = {
+    type: actionTypes.SET_MULTIPLE_PREFS,
+    data: { values },
+  };
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
+};
+
 function WebExtEvent(type, data, importContext = globalImportContext) {
   if (!data || !data.source) {
     throw new Error(
@@ -570,6 +581,7 @@ const actionCreators = {
   OnlyToMain,
   AlsoToPreloaded,
   SetPref,
+  SetMultiplePrefs,
   WebExtEvent,
   DiscoveryStreamImpressionStats,
   DiscoveryStreamLoadedContent,
@@ -7085,6 +7097,10 @@ function Prefs(prevState = INITIAL_STATE.Prefs, action) {
       newValues = Object.assign({}, prevState.values);
       newValues[action.data.name] = action.data.value;
       return Object.assign({}, prevState, { values: newValues });
+    case actionTypes.MULTIPLE_PREFS_CHANGED:
+      return Object.assign({}, prevState, {
+        values: Object.assign({}, prevState.values, action.data.values),
+      });
     default:
       return prevState;
   }
@@ -22574,32 +22590,38 @@ function Widgets() {
   function toggleMaximize() {
     const newMaximizedState = !isMaximized;
     const newWidgetSize = widgetsMayBeMaximized && !newMaximizedState ? "medium" : "large";
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (novaEnabled) {
-        const targetSize = newMaximizedState ? "large" : "medium";
-        for (const widget of WIDGET_REGISTRY) {
-          const inSidebar = resolveWidgetHasSidebar(widget, prefs) && resolveWidgetSize(widget, prefs) === "small";
-          if (!inSidebar) {
-            dispatch(actionCreators.SetPref(widget.sizePref, targetSize));
-          }
+    
+    
+    const prefUpdates = {
+      [PREF_WIDGETS_MAXIMIZED]: newMaximizedState
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (novaEnabled) {
+      const targetSize = newMaximizedState ? "large" : "medium";
+      for (const widget of WIDGET_REGISTRY) {
+        const inSidebar = resolveWidgetHasSidebar(widget, prefs) && resolveWidgetSize(widget, prefs) === "small";
+        if (!inSidebar) {
+          prefUpdates[widget.sizePref] = targetSize;
         }
       }
-      const telemetryData = {
-        action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
-        action_value: newMaximizedState ? "maximize_widgets" : "minimize_widgets",
-        widget_size: newWidgetSize
-      };
+    }
+    const telemetryData = {
+      action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
+      action_value: newMaximizedState ? "maximize_widgets" : "minimize_widgets",
+      widget_size: newWidgetSize
+    };
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.SetMultiplePrefs(prefUpdates));
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_CONTAINER_ACTION,
         data: telemetryData
