@@ -13,6 +13,7 @@ use crate::media_queries::MediaType;
 use crate::properties::style_structs::Font;
 use crate::properties::ComputedValues;
 use crate::queries::values::PrefersColorScheme;
+use crate::servo::media_features::PointerCapabilities;
 use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::{
     CSSPixelLength, Length, LineHeight, LinkParameters, NonNegativeLength,
@@ -67,6 +68,12 @@ pub(super) struct ExtraDeviceData {
     #[ignore_malloc_size_of = "Pure stack type"]
     prefers_color_scheme: PrefersColorScheme,
     
+    #[ignore_malloc_size_of = "Pure stack type"]
+    primary_pointer_capabilities: PointerCapabilities,
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    all_pointer_capabilities: PointerCapabilities,
+    
     #[ignore_malloc_size_of = "Owned by embedder"]
     font_metrics_provider: Box<dyn FontMetricsProvider>,
 }
@@ -81,6 +88,8 @@ impl Device {
         font_metrics_provider: Box<dyn FontMetricsProvider>,
         default_values: Arc<ComputedValues>,
         prefers_color_scheme: PrefersColorScheme,
+        primary_pointer_capabilities: PointerCapabilities,
+        all_pointer_capabilities: PointerCapabilities,
     ) -> Device {
         let root_style = RwLock::new(Arc::clone(&default_values));
         Device {
@@ -106,6 +115,8 @@ impl Device {
                 device_pixel_ratio,
                 quirks_mode,
                 prefers_color_scheme,
+                primary_pointer_capabilities,
+                all_pointer_capabilities,
                 font_metrics_provider,
             },
         }
@@ -264,6 +275,34 @@ impl Device {
     
     pub fn color_scheme(&self) -> PrefersColorScheme {
         self.extra.prefers_color_scheme
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_primary_pointer_capabilities(&mut self, capabilities: PointerCapabilities) {
+        self.extra.primary_pointer_capabilities = capabilities;
+    }
+
+    
+    pub fn primary_pointer_capabilities(&self) -> PointerCapabilities {
+        self.extra.primary_pointer_capabilities
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_all_pointer_capabilities(&mut self, capabilities: PointerCapabilities) {
+        self.extra.all_pointer_capabilities = capabilities;
+    }
+
+    
+    pub fn all_pointer_capabilities(&self) -> PointerCapabilities {
+        self.extra.all_pointer_capabilities
     }
 
     pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
