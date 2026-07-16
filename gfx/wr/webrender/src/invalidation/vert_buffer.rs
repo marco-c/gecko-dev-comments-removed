@@ -16,8 +16,18 @@ use crate::util::{MatrixHelpers, ScaleOffset};
 
 pub const VERT_QUANTIZE_SCALE: f32 = 4.0;
 
+
+
+
+
+
+
+
+
+
+
 pub fn quantize(v: f32) -> i32 {
-    (v * VERT_QUANTIZE_SCALE).round() as i32
+    (v * VERT_QUANTIZE_SCALE).trunc() as i32
 }
 
 
