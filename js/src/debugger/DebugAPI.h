@@ -296,18 +296,6 @@ class DebugAPI {
   static inline void onNewPromise(JSContext* cx,
                                   Handle<PromiseObject*> promise);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  static inline void onPromiseSettled(JSContext* cx,
-                                      Handle<PromiseObject*> promise);
-
-  
   static inline void onNewGlobalObject(JSContext* cx,
                                        Handle<GlobalObject*> global);
 
@@ -411,8 +399,6 @@ class DebugAPI {
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
   static void slowPathOnNewPromise(JSContext* cx,
                                    Handle<PromiseObject*> promise);
-  static void slowPathOnPromiseSettled(JSContext* cx,
-                                       Handle<PromiseObject*> promise);
   static bool inFrameMaps(AbstractFramePtr frame);
   static void slowPathTraceGeneratorFrame(JSTracer* tracer,
                                           AbstractGeneratorObject* generator);
