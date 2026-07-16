@@ -1072,21 +1072,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       ::SetClassLongPtrW(mWnd, GCLP_WNDPROC,
                          reinterpret_cast<LONG_PTR>(
                              WinUtils::NonClientDpiScalingDefWindowProcW));
-      
-      
-      
-      SetCustomTitlebar(true);
-
-      
-      
-      
-      
-      
-      
-      
-      if (mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
-        TaskbarConcealer::OnWindowMaximized(this,  true);
-      }
     }
   }
 
@@ -1693,6 +1678,17 @@ void nsWindow::Show(bool aState) {
       ::NotifyWinEvent(EVENT_OBJECT_FOCUS, mWnd, OBJID_CLIENT, CHILDID_SELF);
     }
 #endif  
+
+    
+    
+    
+    
+    
+    
+    if (mCustomNonClient &&
+        mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
+      TaskbarConcealer::OnWindowMaximized(this,  true);
+    }
   }
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup,
