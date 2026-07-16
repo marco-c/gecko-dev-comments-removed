@@ -3429,7 +3429,7 @@ Element* nsContentUtils::GetCommonFlattenedTreeAncestorForStyle(
 
 template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildNodes(
-    const nsINode* aChild1, const nsINode* aChild2,
+    const nsIContent* aChild1, const nsIContent* aChild2,
     NodeIndexCache* aIndexCache ) {
   
   if (MOZ_UNLIKELY((aChild1 && NS_WARN_IF(aChild1->IsDocumentFragment())) ||
@@ -3462,7 +3462,7 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
         aKind == TreeKind::Flat
             ? int32_t(FlattenedChildIterator::GetLength(&parent))
             : int32_t(parent.GetChildCount());
-    const auto indexOf = [&](const nsINode* aChild) -> Maybe<int32_t> {
+    const auto indexOf = [&](const nsIContent* aChild) -> Maybe<int32_t> {
       if (!aChild) {
         return Some(regularCount);
       }
@@ -3608,8 +3608,8 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
 
 template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
-    const nsINode& aParent, const nsINode* aChild1, const nsINode* aChild2,
-    nsContentUtils::NodeIndexCache* aIndexCache) {
+    const nsINode& aParent, const nsIContent* aChild1,
+    const nsIContent* aChild2, nsContentUtils::NodeIndexCache* aIndexCache) {
   MOZ_ASSERT_IF(aChild1 && aKind == TreeKind::DOM, aChild1->GetParentNode());
   MOZ_ASSERT_IF(aChild2 && aKind == TreeKind::DOM, aChild2->GetParentNode());
   MOZ_ASSERT_IF(aChild1 && aKind != TreeKind::DOM,
@@ -3670,7 +3670,7 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
 
 template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
-    uint32_t aOffset1, const nsINode& aChild2,
+    uint32_t aOffset1, const nsIContent& aChild2,
     NodeIndexCache* aIndexCache ) {
   if (NS_WARN_IF(aChild2.IsDocumentFragment())) {
     return Nothing();
@@ -3764,7 +3764,7 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
 
 template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildNodeAndChildOffset(
-    const nsINode& aChild1, uint32_t aOffset2,
+    const nsIContent& aChild1, uint32_t aOffset2,
     NodeIndexCache* aIndexCache ) {
   Maybe<int32_t> comp =
       CompareChildOffsetAndChildNode<aKind>(aOffset2, aChild1);
@@ -3793,11 +3793,15 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
     return Nothing();
   }
 
-  const nsINode* closestCommonAncestorChild1 =
-      commonAncestors.GetClosestCommonAncestorChild1();
-  const nsINode* closestCommonAncestorChild2 =
-      commonAncestors.GetClosestCommonAncestorChild2();
+  const nsIContent* closestCommonAncestorChild1 = nsIContent::FromNodeOrNull(
+      commonAncestors.GetClosestCommonAncestorChild1());
+  const nsIContent* closestCommonAncestorChild2 = nsIContent::FromNodeOrNull(
+      commonAncestors.GetClosestCommonAncestorChild2());
   MOZ_ASSERT(closestCommonAncestorChild1 != closestCommonAncestorChild2);
+  MOZ_ASSERT_IF(!closestCommonAncestorChild1,
+                !commonAncestors.GetClosestCommonAncestorChild1());
+  MOZ_ASSERT_IF(!closestCommonAncestorChild2,
+                !commonAncestors.GetClosestCommonAncestorChild2());
   commonAncestors
       .template WarnIfClosestCommonAncestorChildrenAreNotInChildList<aKind>();
   if (closestCommonAncestorChild1 && closestCommonAncestorChild2) {
@@ -3998,13 +4002,17 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   }
   MOZ_ASSERT(commonAncestors.GetClosestCommonAncestor());
 
-  const nsINode* closestCommonAncestorChild1 =
-      commonAncestors.GetClosestCommonAncestorChild1();
-  const nsINode* closestCommonAncestorChild2 =
-      commonAncestors.GetClosestCommonAncestorChild2();
+  const nsIContent* closestCommonAncestorChild1 = nsIContent::FromNodeOrNull(
+      commonAncestors.GetClosestCommonAncestorChild1());
+  const nsIContent* closestCommonAncestorChild2 = nsIContent::FromNodeOrNull(
+      commonAncestors.GetClosestCommonAncestorChild2());
   commonAncestors
       .template WarnIfClosestCommonAncestorChildrenAreNotInChildList<aKind>();
   MOZ_ASSERT(closestCommonAncestorChild1 != closestCommonAncestorChild2);
+  MOZ_ASSERT_IF(!closestCommonAncestorChild1,
+                !commonAncestors.GetClosestCommonAncestorChild1());
+  MOZ_ASSERT_IF(!closestCommonAncestorChild2,
+                !commonAncestors.GetClosestCommonAncestorChild2());
   if (closestCommonAncestorChild1 && closestCommonAncestorChild2) {
     return CompareClosestCommonAncestorChildren<aKind>(
         *commonAncestors.GetClosestCommonAncestor(),
@@ -13092,28 +13100,27 @@ MOZ_ALWAYS_INLINE const nsINode* GetParent(const nsINode* aNode) {
 }
 
 template <TreeKind aKind>
-Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
-                                                const nsINode* aNode) {
+Maybe<int32_t> nsContentUtils::GetIndexInParent(
+    const nsINode* aParent, const nsIContent* aPossibleChild) {
   Maybe<uint32_t> idx;
   if constexpr (aKind == TreeKind::DOM ||
                 aKind == TreeKind::ShadowIncludingDOM) {
-    idx = aParent->ComputeIndexOf(aNode);
+    idx = aParent->ComputeIndexOf(aPossibleChild);
   } else {
     idx = [&]() -> Maybe<uint32_t> {
-      if (aNode->IsContent()) {
-        if (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
-          
-          
-          
-          
-          
-          if (slot->GetClosestNativeAnonymousSubtreeRootParentOrHost() ==
-              aParent) {
-            return aParent->ComputeIndexOf(aNode);
-          }
+      if (HTMLSlotElement* slot =
+              aPossibleChild->AsContent()->GetAssignedSlot()) {
+        
+        
+        
+        
+        
+        if (slot->GetClosestNativeAnonymousSubtreeRootParentOrHost() ==
+            aParent) {
+          return aParent->ComputeIndexOf(aPossibleChild);
         }
       }
-      return aParent->ComputeFlatTreeIndexOf(aNode);
+      return aParent->ComputeFlatTreeIndexOf(aPossibleChild);
     }();
   }
 
@@ -13122,7 +13129,7 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   }
 
   if constexpr (aKind == TreeKind::ShadowIncludingDOM) {
-    if (const auto* sr = ShadowRoot::FromNode(aNode)) {
+    if (const auto* sr = ShadowRoot::FromNode(aPossibleChild)) {
       return sr->GetHost() == aParent ? Some(-1) : Nothing();
     }
   }
@@ -13131,29 +13138,29 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   
   
   
-  if (NS_WARN_IF(!aNode->IsRootOfNativeAnonymousSubtree())) {
+  if (NS_WARN_IF(!aPossibleChild->IsRootOfNativeAnonymousSubtree())) {
     
     return Nothing();
   }
 
-  if (NS_WARN_IF(aNode->GetParentNode() != aParent)) {
+  if (NS_WARN_IF(aPossibleChild->GetParentNode() != aParent)) {
     
     return Nothing();
   }
 
-  if (aNode->IsGeneratedContentContainerForBackdrop()) {
+  if (aPossibleChild->IsGeneratedContentContainerForBackdrop()) {
     return Some(-5);
   }
 
-  if (aNode->IsGeneratedContentContainerForMarker()) {
+  if (aPossibleChild->IsGeneratedContentContainerForMarker()) {
     return Some(-4);
   }
 
-  if (aNode->IsGeneratedContentContainerForCheckmark()) {
+  if (aPossibleChild->IsGeneratedContentContainerForCheckmark()) {
     return Some(-3);
   }
 
-  if (aNode->IsGeneratedContentContainerForBefore()) {
+  if (aPossibleChild->IsGeneratedContentContainerForBefore()) {
     return Some(-2);
   }
 
@@ -13172,16 +13179,16 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   nsContentUtils::AppendNativeAnonymousChildren(aParent->AsContent(), anonKids,
                                                 nsIContent::eAllChildren);
 
-  if (aNode->IsGeneratedContentContainerForAfter()) {
+  if (aPossibleChild->IsGeneratedContentContainerForAfter()) {
     return Some(int32_t(siblingCount + anonKids.Length()));
   }
 
-  if (aNode->IsGeneratedContentContainerForPickerIcon()) {
+  if (aPossibleChild->IsGeneratedContentContainerForPickerIcon()) {
     return Some(int32_t(siblingCount + anonKids.Length()) + 1);
   }
 
-  auto index = anonKids.IndexOf(aNode);
-  if (index == anonKids.NoIndex) {
+  auto index = anonKids.IndexOf(aPossibleChild);
+  if (index == decltype(anonKids)::NoIndex) {
     MOZ_ASSERT_UNREACHABLE(
         "Missing parent -> child link somehow?"
         "Potentially unstable ordering");
@@ -13237,6 +13244,7 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
     return CompareTreePosition<aTreeKind>(aNode1, aNode2, nullptr, aCache);
   }
 
+  
   int last1 = node1Ancestors.Length() - 1;
   int last2 = node2Ancestors.Length() - 1;
   const nsINode* node1Ancestor = nullptr;
@@ -13267,14 +13275,21 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
   if (NS_WARN_IF(!parent)) {  
     return 0;
   }
+  MOZ_ASSERT(node1Ancestor);
+  MOZ_ASSERT(node2Ancestor);
   Maybe<int32_t> index1;
   Maybe<int32_t> index2;
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(node1Ancestor->IsContent());
+  MOZ_DIAGNOSTIC_ASSERT(node2Ancestor->IsContent());
   if (aCache) {
-    aCache->ComputeIndicesOf<aTreeKind>(parent, node1Ancestor, node2Ancestor,
-                                        index1, index2);
+    aCache->ComputeIndicesOf<aTreeKind>(parent, node1Ancestor->AsContent(),
+                                        node2Ancestor->AsContent(), index1,
+                                        index2);
   } else {
-    index1 = GetIndexInParent<aTreeKind>(parent, node1Ancestor);
-    index2 = GetIndexInParent<aTreeKind>(parent, node2Ancestor);
+    index1 = GetIndexInParent<aTreeKind>(parent, node1Ancestor->AsContent());
+    index2 = GetIndexInParent<aTreeKind>(parent, node2Ancestor->AsContent());
   }
   if (NS_WARN_IF(index1.isNothing()) || NS_WARN_IF(index2.isNothing())) {
     
