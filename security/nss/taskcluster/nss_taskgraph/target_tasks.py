@@ -64,9 +64,13 @@ def filter_try_syntax(options, task):
         return any(t in options["tools"] for t in ["all", symbol])
 
     
+    
+    
+    
+    
     if task.kind == "test":
         tests = {"all", symbol}
-        if group in ("cipher", "ssl"):
+        if group in ("cipher", "ssl", "gtest"):
             tests.add(group)
         if not any(t in options["unittests"] for t in tests):
             return False

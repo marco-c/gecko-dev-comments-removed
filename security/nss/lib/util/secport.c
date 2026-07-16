@@ -220,21 +220,31 @@ PORT_SafeZero(void *p, size_t n)
 #ifdef __STDC_LIB_EXT1__
     
     memset_s(p, n, 0, n);
-#else
+#elif (defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE)) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
     
 
 
-#if (defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE)) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
     explicit_bzero(p, n);
-#else
-#ifdef XP_WIN
+#elif defined(XP_WIN)
     
     SecureZeroMemory(p, n);
+#elif defined(__GNUC__) || defined(__clang__)
+    
+
+
+
+    if (p != NULL) {
+        memset(p, 0, n);
+        __asm__ __volatile__(""
+                             :
+                             : "r"(p)
+                             : "memory");
+    }
 #else
     
 
 
-    
+
 
     if (p != NULL) {
         volatile unsigned char *__vl = (unsigned char *)p;
@@ -242,9 +252,7 @@ PORT_SafeZero(void *p, size_t n)
         while (__nl--)
             *__vl++ = 0;
     }
-#endif 
-#endif 
-#endif 
+#endif
 }
 
 

@@ -937,6 +937,9 @@ SECStatus PK11_Finalize(PK11Context *context);
 SECStatus PK11_DigestFinal(PK11Context *context, unsigned char *data,
                            unsigned int *outLen, unsigned int length);
 #define PK11_CipherFinal PK11_DigestFinal
+
+
+
 SECStatus PK11_SaveContext(PK11Context *cx, unsigned char *save,
                            int *len, int saveLength);
 
