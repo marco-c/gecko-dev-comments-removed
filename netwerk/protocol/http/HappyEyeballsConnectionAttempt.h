@@ -338,10 +338,13 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   bool mTRRInfoForwarded = false;
 
   
-  
-  
   TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
+  
+  
+  
+  
+  TimeStamp mDnsResolutionEnd;
 
   
   

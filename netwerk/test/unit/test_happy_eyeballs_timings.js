@@ -166,6 +166,14 @@ function assertTimingsOrder(timedChannel) {
     timedChannel.domainLookupEndTime,
     "domainLookupStart <= domainLookupEnd"
   );
+  
+  
+  
+  Assert.lessOrEqual(
+    timedChannel.domainLookupEndTime,
+    timedChannel.connectStartTime,
+    "domainLookupEnd <= connectStart"
+  );
   Assert.lessOrEqual(
     timedChannel.connectStartTime,
     timedChannel.secureConnectionStartTime,

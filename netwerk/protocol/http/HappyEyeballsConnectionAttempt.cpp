@@ -495,7 +495,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessEchRetryConnectionResult(
 void HappyEyeballsConnectionAttempt::DnsLookupTimings(TimeStamp& aStart,
                                                       TimeStamp& aEnd) const {
   aStart = mFirstDnsLookupStart;
-  aEnd = mFirstConnectionStart;
+  aEnd = mDnsResolutionEnd.IsNull() ? mFirstConnectionStart : mDnsResolutionEnd;
 }
 
 void HappyEyeballsConnectionAttempt::FillConnectTimings(
@@ -565,6 +565,12 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
         if (mFirstConnectionStart.IsNull()) {
           mFirstConnectionStart = TimeStamp::Now();
+          
+          
+          
+          if (mDnsResolutionEnd.IsNull()) {
+            mDnsResolutionEnd = mFirstConnectionStart;
+          }
         }
 
         auto res = ToNetAddr(event.attempt_connection.addr,
@@ -1856,6 +1862,14 @@ HappyEyeballsConnectionAttempt::OnLookupComplete(nsICancelable* request,
                                                  nsIDNSRecord* rec,
                                                  nsresult status) {
   LOG(("HappyEyeballsConnectionAttempt::OnLookupComplete"));
+
+  
+  
+  
+  
+  if (mFirstConnectionStart.IsNull()) {
+    mDnsResolutionEnd = TimeStamp::Now();
+  }
 
   if (!request) {
     return NS_OK;
