@@ -1,0 +1,15 @@
+
+
+
+
+#ifndef TOOLKIT_COMPONENTS_SITECATEGORIES_SITECATEGORY_H_
+#define TOOLKIT_COMPONENTS_SITECATEGORIES_SITECATEGORY_H_
+
+#include "ErrorList.h"
+#include "nsID.h"
+
+extern "C" {
+nsresult new_site_category(REFNSIID iid, void** result);
+};
+
+#endif  
