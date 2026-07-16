@@ -682,10 +682,14 @@ class StencilModuleEntry {
   
   
   
+  
+  
+  
   MaybeModuleRequestIndex moduleRequest;
   TaggedParserAtomIndex localName;
   TaggedParserAtomIndex importName;
   TaggedParserAtomIndex exportName;
+  js::ImportNameValueType importNameValueType = js::ImportNameValueType::String;
 
   
   
@@ -715,6 +719,7 @@ class StencilModuleEntry {
         localName(other.localName),
         importName(other.importName),
         exportName(other.exportName),
+        importNameValueType(other.importNameValueType),
         lineno(other.lineno),
         column(other.column) {}
 
@@ -725,6 +730,7 @@ class StencilModuleEntry {
     localName = other.localName;
     importName = other.importName;
     exportName = other.exportName;
+    importNameValueType = other.importNameValueType;
     lineno = other.lineno;
     column = other.column;
     return *this;
@@ -739,17 +745,22 @@ class StencilModuleEntry {
     return entry;
   }
 
-  static StencilModuleEntry importEntry(MaybeModuleRequestIndex moduleRequest,
-                                        TaggedParserAtomIndex localName,
-                                        TaggedParserAtomIndex importName,
-                                        uint32_t lineno,
-                                        JS::ColumnNumberOneOrigin column) {
+  static StencilModuleEntry importEntry(
+      MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex localName,
+      TaggedParserAtomIndex importName,
+      js::ImportNameValueType importNameValueType, uint32_t lineno,
+      JS::ColumnNumberOneOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
-    MOZ_ASSERT(localName && importName);
+    MOZ_ASSERT(localName);
+    MOZ_ASSERT_IF(importNameValueType != js::ImportNameValueType::String,
+                  !importName);
+    MOZ_ASSERT_IF(importNameValueType == js::ImportNameValueType::String,
+                  importName);
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = moduleRequest;
     entry.localName = localName;
     entry.importName = importName;
+    entry.importNameValueType = importNameValueType;
     return entry;
   }
 
@@ -766,14 +777,20 @@ class StencilModuleEntry {
 
   static StencilModuleEntry exportFromEntry(
       MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex importName,
-      TaggedParserAtomIndex exportName, uint32_t lineno,
+      TaggedParserAtomIndex exportName,
+      js::ImportNameValueType importNameValueType, uint32_t lineno,
       JS::ColumnNumberOneOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
-    MOZ_ASSERT(importName && exportName);
+    MOZ_ASSERT(exportName);
+    MOZ_ASSERT_IF(importNameValueType != js::ImportNameValueType::String,
+                  !importName);
+    MOZ_ASSERT_IF(importNameValueType == js::ImportNameValueType::String,
+                  importName);
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = moduleRequest;
     entry.importName = importName;
     entry.exportName = exportName;
+    entry.importNameValueType = importNameValueType;
     return entry;
   }
 
@@ -783,8 +800,7 @@ class StencilModuleEntry {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
-    entry.importName =
-        TaggedParserAtomIndex::WellKnown::star_all_but_default_star_();
+    entry.importNameValueType = js::ImportNameValueType::AllButDefault;
     return entry;
   }
 };

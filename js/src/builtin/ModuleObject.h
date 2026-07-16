@@ -67,6 +67,20 @@ using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
 enum class ImportPhase : uint8_t { Source, Evaluation, Limit };
 
+
+
+
+
+
+
+
+enum class ImportNameValueType : uint8_t {
+  String,
+  Namespace,
+  Source,
+  AllButDefault
+};
+
 class ModuleRequestObject : public NativeObject {
  public:
   enum {
@@ -108,6 +122,8 @@ class ImportEntry {
   const HeapPtr<JSAtom*> importName_;
   const HeapPtr<JSAtom*> localName_;
 
+  const ImportNameValueType importNameValueType_;
+
   
   const uint32_t lineNumber_;
 
@@ -117,11 +133,21 @@ class ImportEntry {
  public:
   ImportEntry(Handle<ModuleRequestObject*> moduleRequest,
               Handle<JSAtom*> maybeImportName, Handle<JSAtom*> localName,
-              uint32_t lineNumber, JS::ColumnNumberOneOrigin columnNumber);
+              ImportNameValueType importNameValueType, uint32_t lineNumber,
+              JS::ColumnNumberOneOrigin columnNumber);
 
   ModuleRequestObject* moduleRequest() const { return moduleRequest_; }
-  JSAtom* importName() const { return importName_; }
+  JSAtom* importName() const {
+    MOZ_ASSERT_IF(importNameValueType_ != ImportNameValueType::String,
+                  !importName_);
+    return importName_;
+  }
   JSAtom* localName() const { return localName_; }
+  ImportNameValueType importNameValueType() const {
+    MOZ_ASSERT_IF(importName_,
+                  importNameValueType_ == ImportNameValueType::String);
+    return importNameValueType_;
+  }
   uint32_t lineNumber() const { return lineNumber_; }
   JS::ColumnNumberOneOrigin columnNumber() const { return columnNumber_; }
 
@@ -136,6 +162,8 @@ class ExportEntry {
   const HeapPtr<JSAtom*> importName_;
   const HeapPtr<JSAtom*> localName_;
 
+  const ImportNameValueType importNameValueType_;
+
   
   const uint32_t lineNumber_;
 
@@ -146,11 +174,21 @@ class ExportEntry {
   ExportEntry(Handle<JSAtom*> maybeExportName,
               Handle<ModuleRequestObject*> maybeModuleRequest,
               Handle<JSAtom*> maybeImportName, Handle<JSAtom*> maybeLocalName,
-              uint32_t lineNumber, JS::ColumnNumberOneOrigin columnNumber);
+              ImportNameValueType importNameValueType, uint32_t lineNumber,
+              JS::ColumnNumberOneOrigin columnNumber);
   JSAtom* exportName() const { return exportName_; }
   ModuleRequestObject* moduleRequest() const { return moduleRequest_; }
-  JSAtom* importName() const { return importName_; }
+  JSAtom* importName() const {
+    MOZ_ASSERT_IF(importNameValueType_ != ImportNameValueType::String,
+                  !importName_);
+    return importName_;
+  }
   JSAtom* localName() const { return localName_; }
+  ImportNameValueType importNameValueType() const {
+    MOZ_ASSERT_IF(importName_,
+                  importNameValueType_ == ImportNameValueType::String);
+    return importNameValueType_;
+  }
   uint32_t lineNumber() const { return lineNumber_; }
   JS::ColumnNumberOneOrigin columnNumber() const { return columnNumber_; }
 
