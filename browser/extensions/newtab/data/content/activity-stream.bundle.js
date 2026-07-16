@@ -1711,10 +1711,11 @@ class DSImage extends (external_React_default()).PureComponent {
           srcSetRules.push(srcSetRule);
           srcSetRules.push(srcSetRule2x);
         }
+        const explicitSize = this.props.sizes[this.props.sizes.length - 1];
         if (this.props.sizes.length) {
           
           
-          sizeRules.push(`${this.props.sizes[this.props.sizes.length - 1].width}px`);
+          sizeRules.push(`${explicitSize.width}px`);
         }
         img = external_React_default().createElement("img", {
           loading: "lazy",
@@ -1724,7 +1725,11 @@ class DSImage extends (external_React_default()).PureComponent {
           onError: this.onOptimizedImageError,
           sizes: sizeRules.join(","),
           src: securedSource,
-          srcSet: srcSetRules.join(",")
+          srcSet: srcSetRules.join(","),
+          style: explicitSize ? {
+            width: `${explicitSize.width}px`,
+            height: `${explicitSize.height}px`
+          } : undefined
         });
       } else if (this.props.source && !this.state.nonOptimizedImageFailed) {
         img = external_React_default().createElement("img", {
