@@ -56,3 +56,8 @@ assertThrowsInstanceOf(() => Reflect.parse("(async () => await import.UNKNOWN('m
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js',)"), SyntaxError);
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js', {with: {type:'json'}})"), SyntaxError);
 
+
+
+
+assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^expected meta or source, got /);
+

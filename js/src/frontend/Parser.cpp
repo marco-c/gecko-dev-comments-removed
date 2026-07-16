@@ -5128,7 +5128,7 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   ListNodeType importSpecSet =
       MOZ_TRY(handler_.newList(ParseNodeKind::ImportSpecList, pos()));
 
-  bool isSourcePhaseImport = false;
+  ImportPhase phase = ImportPhase::Evaluation;
   NameNodeType importSourceBinding;
   if (tt == TokenKind::String) {
     
@@ -5149,59 +5149,62 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
       
       
       if (options().sourcePhaseImports() && tt == TokenKind::Source) {
-        isSourcePhaseImport = true;
-        
         if (!tokenStream.peekToken(&tt)) {
+          return errorResult();
+        }
+        if (tt == TokenKind::From) {
+          
+          
+          tokenStream.consumeKnownToken(TokenKind::From);
+          if (!tokenStream.peekToken(&tt)) {
+            return errorResult();
+          }
+          if (tt == TokenKind::From) {
+            phase = ImportPhase::Source;
+          }
+          anyChars.ungetToken();
+        } else if (tt != TokenKind::Comma) {
+          
+          phase = ImportPhase::Source;
+        }
+      }
+
+      if (phase == ImportPhase::Source) {
+        
+        if (!tokenStream.getToken(&tt)) {
+          return errorResult();
+        }
+
+        if (!TokenKindIsPossibleIdentifierName(tt)) {
+          error(JSMSG_DECLARATION_AFTER_IMPORT_SOURCE);
+          return errorResult();
+        }
+
+        TaggedParserAtomIndex bindingAtom = importedBinding();
+        if (!bindingAtom) {
+          return errorResult();
+        }
+
+        importSourceBinding = MOZ_TRY(newName(bindingAtom));
+
+        
+        
+        
+        if (!noteDeclaredName(bindingAtom, DeclarationKind::Const, pos())) {
           return errorResult();
         }
 
         
-        if (tt == TokenKind::From) {
-          tokenStream.consumeKnownToken(tt);
-          if (!tokenStream.peekToken(&tt)) {
-            return errorResult();
-          }
-          if (tt != TokenKind::From) {
-            isSourcePhaseImport = false;
-          }
-          anyChars.ungetToken();
-        } else if (tt == TokenKind::Comma) {
-          isSourcePhaseImport = false;
-        }
-
-        if (isSourcePhaseImport) {
-          if (!tokenStream.getToken(&tt)) {
-            return errorResult();
-          }
-
-          if (!TokenKindIsPossibleIdentifierName(tt)) {
-            error(JSMSG_DECLARATION_AFTER_IMPORT_SOURCE);
-            return errorResult();
-          }
-
-          TaggedParserAtomIndex bindingAtom = importedBinding();
-          if (!bindingAtom) {
-            return errorResult();
-          }
-
-          importSourceBinding = MOZ_TRY(newName(bindingAtom));
-
-          
-          
-          
-          if (!noteDeclaredName(bindingAtom, DeclarationKind::Const, pos())) {
-            return errorResult();
-          }
-
-          
-          
-          pc_->varScope()
-              .lookupDeclaredName(bindingAtom)
-              ->value()
-              ->setClosedOver();
-        }
-      }
-      if (!isSourcePhaseImport) {
+        
+        pc_->varScope()
+            .lookupDeclaredName(bindingAtom)
+            ->value()
+            ->setClosedOver();
+      } else {
+        
+        
+        
+        
         NameNodeType importName =
             MOZ_TRY(newName(TaggedParserAtomIndex::WellKnown::default_()));
 
@@ -5266,7 +5269,7 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   }
 
   Node importAttributeList;
-  if (isSourcePhaseImport) {
+  if (phase == ImportPhase::Source) {
     
     importAttributeList = MOZ_TRY(handler_.newPosHolder(pos()));
   } else {
@@ -5292,13 +5295,10 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
       moduleSpec, importAttributeList, TokenPos(begin, pos().end)));
 
   Node importClause;
-  ImportPhase phase;
-  if (isSourcePhaseImport) {
+  if (phase == ImportPhase::Source) {
     importClause = importSourceBinding;
-    phase = ImportPhase::Source;
   } else {
     importClause = importSpecSet;
-    phase = ImportPhase::Evaluation;
   }
 
   BinaryNodeType node = MOZ_TRY(handler_.newImportDeclaration(
@@ -12404,7 +12404,7 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
     return errorResult();
   }
 
-  bool isSourcePhaseImport = false;
+  ImportPhase phase = ImportPhase::Evaluation;
 
   if (next == TokenKind::Dot) {
     if (!tokenStream.getToken(&next)) {
@@ -12421,17 +12421,16 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
       return handler_.newImportMeta(importHolder, metaHolder);
     }
 
-    if (options().sourcePhaseImports()) {
-      if (next != TokenKind::Source) {
-        error(JSMSG_UNEXPECTED_TOKEN, "meta or source", TokenKindToDesc(next));
-        return errorResult();
-      }
-      isSourcePhaseImport = true;
-      if (!tokenStream.getToken(&next)) {
-        return errorResult();
-      }
+    if (options().sourcePhaseImports() && next == TokenKind::Source) {
+      phase = ImportPhase::Source;
     } else {
-      error(JSMSG_UNEXPECTED_TOKEN, "meta", TokenKindToDesc(next));
+      error(JSMSG_UNEXPECTED_TOKEN,
+            options().sourcePhaseImports() ? "meta or source" : "meta",
+            TokenKindToDesc(next));
+      return errorResult();
+    }
+
+    if (!tokenStream.getToken(&next)) {
       return errorResult();
     }
   }
@@ -12447,7 +12446,7 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
     Node optionalArg;
     if (next == TokenKind::Comma
         
-        && !isSourcePhaseImport) {
+        && phase != ImportPhase::Source) {
       tokenStream.consumeKnownToken(TokenKind::Comma,
                                     TokenStream::SlashIsRegExp);
 
@@ -12482,8 +12481,6 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
 
     Node spec = MOZ_TRY(handler_.newCallImportSpec(arg, optionalArg));
 
-    ImportPhase phase =
-        isSourcePhaseImport ? ImportPhase::Source : ImportPhase::Evaluation;
     return handler_.newCallImport(importHolder, spec, phase);
   }
 
