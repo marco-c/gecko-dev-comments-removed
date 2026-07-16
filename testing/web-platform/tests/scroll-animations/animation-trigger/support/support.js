@@ -12,6 +12,7 @@ const setScrollTop = (scroller, y) => {
   return scrollend_promise;
 }
 
+
 function getRangeBoundariesForTest(trigger_start, trigger_end,
                                    exit_start, exit_end, scroller) {
   let rangeBoundaries = {
@@ -45,6 +46,34 @@ function getRangeBoundariesForTest(trigger_start, trigger_end,
   };
 
   return rangeBoundaries;
+}
+
+
+
+
+
+
+const enter = (rangeBoundaries) => {
+  return runAndWaitForFrameUpdate(() => {
+    rangeBoundaries.enterTriggerRange();
+    
+  }).then(waitForNextFrame);
+}
+
+
+
+
+
+
+const exit = (rangeBoundaries, exitAbove = true) => {
+  return runAndWaitForFrameUpdate(() => {
+    if (exitAbove) {
+      rangeBoundaries.exitExitRangeAbove();
+    } else {
+      rangeBoundaries.exitExitRangeBelow();
+    }
+    
+  }).then(waitForNextFrame);
 }
 
 
