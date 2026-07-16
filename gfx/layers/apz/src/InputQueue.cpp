@@ -476,6 +476,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   
   result.SetStatusAsConsumeDoDefault();
 
+  bool terminateSynthesizedBlock = false;
   if (!block || block->WasInterrupted()) {
     if (event.mType == PanGestureInput::PANGESTURE_MOMENTUMSTART ||
         event.mType == PanGestureInput::PANGESTURE_MOMENTUMPAN ||
@@ -491,8 +492,17 @@ APZEventResult InputQueue::ReceivePanGestureInput(
       
       
       INPQ_LOG(
-          "transmogrifying pan input %d to PANGESTURE_START for new block\n",
-          event.mType);
+          "transmogrifying pan input %d to PANGESTURE_START for new block %p\n",
+          event.mType, block.get());
+      
+      
+      
+      
+      
+      
+      
+      terminateSynthesizedBlock =
+          event.mType == PanGestureInput::PANGESTURE_END;
       event.mType = PanGestureInput::PANGESTURE_START;
     }
     block = new PanGestureBlockState(aTarget, aFlags, event);
@@ -543,6 +553,15 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   
   
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
+  if (terminateSynthesizedBlock) {
+    
+    
+    PanGestureInput terminator = event;
+    terminator.mType = PanGestureInput::PANGESTURE_END;
+    terminator.mPanDisplacement = ScreenPoint{};
+    terminator.mLocalPanDisplacement = ParentLayerPoint{};
+    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(terminator, *block));
+  }
   ProcessQueue();
 
   return result;
