@@ -2239,11 +2239,13 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
 }
 
 
-void BacktrackingAllocator::allocateStackDefinition(VirtualRegister& reg) {
+bool BacktrackingAllocator::allocateStackDefinition(VirtualRegister& reg) {
   LInstruction* ins = reg.ins()->toInstruction();
   if (reg.def()->type() == LDefinition::STACKRESULTS) {
     LStackArea alloc(ins->toInstruction());
-    stackSlotAllocator.allocateStackArea(&alloc);
+    if (!stackSlotAllocator.allocateStackArea(&alloc)) {
+      return false;
+    }
     reg.def()->setOutput(alloc);
   } else {
     
@@ -2253,6 +2255,7 @@ void BacktrackingAllocator::allocateStackDefinition(VirtualRegister& reg) {
     const LStackArea* areaAlloc = area.def()->output()->toStackArea();
     reg.def()->setOutput(areaAlloc->resultAlloc(ins, reg.def()));
   }
+  return true;
 }
 
 
@@ -2481,8 +2484,9 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
     VirtualRegister& reg = vregs[i];
 
     
-    if (reg.def() && reg.def()->policy() == LDefinition::STACK) {
-      allocateStackDefinition(reg);
+    if (reg.def() && reg.def()->policy() == LDefinition::STACK &&
+        !allocateStackDefinition(reg)) {
+      return false;
     }
 
     for (VirtualRegister::RangeIterator iter(reg); iter; iter++) {
@@ -3970,7 +3974,10 @@ bool BacktrackingAllocator::pickStackSlot(SpillSet* spillSet) {
 
   
   LStackSlot::Width width = LStackSlot::width(type);
-  uint32_t stackSlot = stackSlotAllocator.allocateSlot(width);
+  uint32_t stackSlot;
+  if (!stackSlotAllocator.allocateSlot(width, &stackSlot)) {
+    return false;
+  }
 
   SpillSlot* spillSlot =
       new (alloc().fallible()) SpillSlot(stackSlot, width, alloc().lifoAlloc());
