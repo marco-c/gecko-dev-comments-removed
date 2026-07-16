@@ -103,7 +103,11 @@ class GLContextEGL final : public GLContext {
   bool HasKhrPartialUpdate() const;
   
   
-  EGLint GetBindToTextureTargetANGLE();
+  
+  EGLint GetBindToTextureTargetANGLE() const;
+  
+  
+  GLenum GetPreferredMacIOSurfaceTextureTarget() const override;
 
   bool BindTex2DOffscreen(GLContext* aOffscreen);
   void UnbindTex2DOffscreen(GLContext* aOffscreen);
@@ -150,7 +154,7 @@ class GLContextEGL final : public GLContext {
   bool mCanBindToTexture = false;
   bool mShareWithEGLImage = false;
   bool mOwnsContext = true;
-  Maybe<EGLint> mBindToTextureTargetANGLE;
+  mutable Maybe<EGLint> mBindToTextureTargetANGLE;
 
   nsIntRegion mDamageRegion;
 

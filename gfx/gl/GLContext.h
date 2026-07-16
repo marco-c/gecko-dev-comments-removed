@@ -3851,6 +3851,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 #endif
   }
 
+  
+  virtual GLenum GetPreferredMacIOSurfaceTextureTarget() const {
+    MOZ_CRASH("unimplemented");
+  }
+
   virtual bool RenewSurface(widget::CompositorWidget* aWidget) { return false; }
 
   
