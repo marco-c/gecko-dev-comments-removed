@@ -7,6 +7,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <numbers>
 #include "mozilla/Vector.h"
 #include "Types.h"
 
@@ -44,7 +45,7 @@ class SkLanczosFilter final : public SkBitmapFilter {
     if (x > -FLT_EPSILON && x < FLT_EPSILON) {
       return 1.0f;  
     }
-    float xpi = x * float(M_PI);
+    float xpi = x * std::numbers::pi_v<float>;
     return (sinf(xpi) / xpi) *                   
            sinf(xpi / fWidth) / (xpi / fWidth);  
   }

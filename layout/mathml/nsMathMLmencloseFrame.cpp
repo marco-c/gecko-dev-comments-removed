@@ -5,6 +5,7 @@
 #include "nsMathMLmencloseFrame.h"
 
 #include <algorithm>
+#include <numbers>
 
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
@@ -407,7 +408,7 @@ void nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
   
   
   if (IsToDraw(MencloseNotation::Circle)) {
-    double ratio = (sqrt(2.0) - 1.0) / 2.0;
+    double ratio = (std::numbers::sqrt2 - 1.0) / 2.0;
     nscoord padding2;
 
     

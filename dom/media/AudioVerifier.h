@@ -2,10 +2,10 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_GTEST_AUDIOVERIFIER_H_
 #define DOM_MEDIA_GTEST_AUDIOVERIFIER_H_
+
+#include <numbers>
 
 #include "AudioGenerator.h"
 
@@ -60,7 +60,7 @@ class AudioVerifier {
   
   Sample MaxMagnitudeDifference() {
     return static_cast<Sample>(AudioGenerator<Sample>::Amplitude() * 2 *
-                               sin(2 * M_PI * mFrequency / mRate));
+                               sin(2 * std::numbers::pi * mFrequency / mRate));
   }
 
   bool PreSilenceEnded() const {

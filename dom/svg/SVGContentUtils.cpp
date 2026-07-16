@@ -6,6 +6,8 @@
 
 #include "SVGContentUtils.h"
 
+#include <numbers>
+
 
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "SVGGeometryProperty.h"
@@ -651,7 +653,7 @@ float SVGContentUtils::AngleBisect(float a1, float a2) {
   float r = a1 + delta / 2;
   if (delta >= M_PI) {
     
-    r += static_cast<float>(M_PI);
+    r += std::numbers::pi_v<float>;
   }
   return r;
 }

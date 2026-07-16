@@ -15,8 +15,9 @@
 #include "mozilla/dom/SimpleGestureEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
 
-#include <cmath>
 #include <uxtheme.h>
+
+#include <numbers>
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -174,7 +175,7 @@ bool nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam,
       if (gi.ullArguments != 0)
         radians = GID_ROTATE_ANGLE_FROM_ARGUMENT(gi.ullArguments);
 
-      double degrees = -1 * radians * (180 / M_PI);
+      double degrees = -1 * radians * (180 / std::numbers::pi);
 
       if (gi.dwFlags & GF_BEGIN) {
         

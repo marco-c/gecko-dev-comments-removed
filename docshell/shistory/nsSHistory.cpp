@@ -5,6 +5,7 @@
 #include "nsSHistory.h"
 
 #include <algorithm>
+#include <numbers>
 
 #include "nsContentUtils.h"
 #include "nsCOMArray.h"
@@ -330,7 +331,7 @@ uint32_t nsSHistory::CalcMaxTotalViewers() {
   
   
   uint32_t viewers = 0;
-  double x = std::log(kBytesD) / std::log(2.0) - MAX_TOTAL_VIEWERS_BIAS;
+  double x = std::log(kBytesD) / std::numbers::ln2 - MAX_TOTAL_VIEWERS_BIAS;
   if (x > 0) {
     viewers = (uint32_t)(x * x - x + 2.001);  
     viewers /= 4;

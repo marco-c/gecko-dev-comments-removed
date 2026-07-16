@@ -54,6 +54,8 @@
 #include "ImageRegion.h"
 #include "gfx2DGlue.h"
 
+#include <numbers>
+
 #ifdef XP_WIN
 #  include "gfxWindowsPlatform.h"
 #endif
@@ -563,7 +565,7 @@ float gfxUtils::ClampToScaleFactor(float aVal, bool aRoundDown) {
     aVal = 1 / aVal;
   }
 
-  float power = logf(aVal) / logf(kScaleResolution);
+  float power = logf(aVal) / std::numbers::ln2_v<float>;
 
   
   
