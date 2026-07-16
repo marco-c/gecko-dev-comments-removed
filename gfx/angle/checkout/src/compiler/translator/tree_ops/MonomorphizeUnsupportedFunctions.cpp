@@ -4,6 +4,9 @@
 
 
 
+
+
+
 #include "compiler/translator/tree_ops/MonomorphizeUnsupportedFunctions.h"
 
 #include "compiler/translator/ImmutableStringBuilder.h"
@@ -197,12 +200,12 @@ const TFunction *MonomorphizeFunction(TSymbolTable *symbolTable,
                               originalParam->symbolType());
             
             substituteFunction->addParameter(substituteArgument);
-            (*argumentMapOut)[originalParam->uniqueId()] = new TIntermSymbol(substituteArgument);
+            (*argumentMapOut)[originalParam] = new TIntermSymbol(substituteArgument);
         }
         else
         {
             TIntermTyped *substituteArgument = (*replacedArguments)[nextReplacedArg].argument;
-            (*argumentMapOut)[originalParam->uniqueId()] = substituteArgument;
+            (*argumentMapOut)[originalParam] = substituteArgument;
 
             
             
@@ -239,10 +242,12 @@ class MonomorphizeTraverser final : public TIntermTraverser
   public:
     explicit MonomorphizeTraverser(TCompiler *compiler,
                                    TSymbolTable *symbolTable,
+                                   const ShCompileOptions &compileOptions,
                                    UnsupportedFunctionArgsBitSet unsupportedFunctionArgs,
                                    FunctionMap *functionMap)
         : TIntermTraverser(true, false, false, symbolTable),
           mCompiler(compiler),
+          mCompileOptions(compileOptions),
           mUnsupportedFunctionArgs(unsupportedFunctionArgs),
           mFunctionMap(functionMap)
     {}
@@ -336,6 +341,16 @@ class MonomorphizeTraverser final : public TIntermTraverser
             }
         }
 
+        if (mUnsupportedFunctionArgs[UnsupportedFunctionArgs::SamplerCubeEmulation])
+        {
+            
+            
+            if (type.isSamplerCube() && mCompileOptions.emulateSeamfulCubeMapSampling)
+            {
+                return true;
+            }
+        }
+
         if (mUnsupportedFunctionArgs[UnsupportedFunctionArgs::Image])
         {
             if (type.isImage())
@@ -388,8 +403,6 @@ class MonomorphizeTraverser final : public TIntermTraverser
 
         mAnyMonomorphized = true;
 
-        
-        
         insertStatementsInParentBlock(replacementIndices);
 
         
@@ -421,6 +434,7 @@ class MonomorphizeTraverser final : public TIntermTraverser
     }
 
     TCompiler *mCompiler;
+    const ShCompileOptions &mCompileOptions;
     UnsupportedFunctionArgsBitSet mUnsupportedFunctionArgs;
     bool mAnyMonomorphized = false;
 
@@ -453,7 +467,7 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
         
         if (data.monomorphizedDefinitions.empty())
         {
-            ASSERT(data.isOriginalUsed || function->isMain());
+            ASSERT(data.isOriginalUsed);
             return;
         }
 
@@ -484,7 +498,7 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
         
         if (data.monomorphizedDefinitions.empty())
         {
-            ASSERT(data.isOriginalUsed || function->isMain());
+            ASSERT(data.isOriginalUsed || function->name() == "main");
             return false;
         }
 
@@ -534,12 +548,13 @@ void SortDeclarations(TIntermBlock *root)
     replacement.insert(replacement.end(), functionDefs.begin(), functionDefs.end());
 
     
-    root->replaceAllChildren(std::move(replacement));
+    root->replaceAllChildren(replacement);
 }
 
 bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
                                           TIntermBlock *root,
                                           TSymbolTable *symbolTable,
+                                          const ShCompileOptions &compileOptions,
                                           UnsupportedFunctionArgsBitSet unsupportedFunctionArgs)
 {
     
@@ -552,8 +567,8 @@ bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
         FunctionMap functionMap;
         InitializeFunctionMap(root, &functionMap);
 
-        MonomorphizeTraverser monomorphizer(compiler, symbolTable, unsupportedFunctionArgs,
-                                            &functionMap);
+        MonomorphizeTraverser monomorphizer(compiler, symbolTable, compileOptions,
+                                            unsupportedFunctionArgs, &functionMap);
         root->traverse(&monomorphizer);
 
         if (!monomorphizer.getAnyMonomorphized())
@@ -582,14 +597,15 @@ bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
 bool MonomorphizeUnsupportedFunctions(TCompiler *compiler,
                                       TIntermBlock *root,
                                       TSymbolTable *symbolTable,
+                                      const ShCompileOptions &compileOptions,
                                       UnsupportedFunctionArgsBitSet unsupportedFunctionArgs)
 {
     
     
     bool enableValidateFunctionCall = compiler->disableValidateFunctionCall();
 
-    bool result =
-        MonomorphizeUnsupportedFunctionsImpl(compiler, root, symbolTable, unsupportedFunctionArgs);
+    bool result = MonomorphizeUnsupportedFunctionsImpl(compiler, root, symbolTable, compileOptions,
+                                                       unsupportedFunctionArgs);
 
     compiler->restoreValidateFunctionCall(enableValidateFunctionCall);
     return result && compiler->validateAST(root);

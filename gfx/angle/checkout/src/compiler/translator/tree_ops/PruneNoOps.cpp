@@ -5,6 +5,13 @@
 
 
 
+
+
+
+
+
+
+
 #include "compiler/translator/tree_ops/PruneNoOps.h"
 
 #include "compiler/translator/Symbol.h"
@@ -15,88 +22,20 @@ namespace sh
 
 namespace
 {
-uint32_t GetSwitchConstantAsUInt(const TConstantUnion *value)
-{
-    TConstantUnion asUInt;
-    if (value->getType() == EbtYuvCscStandardEXT)
-    {
-        asUInt.setUConst(value->getYuvCscStandardEXTConst());
-    }
-    else
-    {
-        bool valid = asUInt.cast(EbtUInt, *value);
-        ASSERT(valid);
-    }
-    return asUInt.getUConst();
-}
-
-bool IsNoOpSwitch(TIntermSwitch *node)
-{
-    if (node == nullptr)
-    {
-        return false;
-    }
-
-    TIntermConstantUnion *expr = node->getInit()->getAsConstantUnion();
-    if (expr == nullptr)
-    {
-        return false;
-    }
-
-    const uint32_t exprValue = GetSwitchConstantAsUInt(expr->getConstantValue());
-
-    
-    const TIntermSequence &statements = *node->getStatementList()->getSequence();
-
-    for (TIntermNode *statement : statements)
-    {
-        TIntermCase *caseLabel = statement->getAsCaseNode();
-        if (caseLabel == nullptr)
-        {
-            continue;
-        }
-
-        
-        if (!caseLabel->hasCondition())
-        {
-            return false;
-        }
-
-        TIntermConstantUnion *condition = caseLabel->getCondition()->getAsConstantUnion();
-        ASSERT(condition != nullptr);
-
-        
-        const uint32_t caseValue = GetSwitchConstantAsUInt(condition->getConstantValue());
-        if (caseValue == exprValue)
-        {
-            return false;
-        }
-    }
-
-    
-    return true;
-}
 
 bool IsNoOp(TIntermNode *node)
 {
+    if (node->getAsConstantUnion() != nullptr)
+    {
+        return true;
+    }
     bool isEmptyDeclaration = node->getAsDeclarationNode() != nullptr &&
                               node->getAsDeclarationNode()->getSequence()->empty();
     if (isEmptyDeclaration)
     {
         return true;
     }
-
-    if (IsNoOpSwitch(node->getAsSwitchNode()))
-    {
-        return true;
-    }
-
-    if (node->getAsTyped() == nullptr || node->getAsFunctionPrototypeNode() != nullptr)
-    {
-        return false;
-    }
-
-    return !node->getAsTyped()->hasSideEffects();
+    return false;
 }
 
 class PruneNoOpsTraverser : private TIntermTraverser
@@ -112,7 +51,6 @@ class PruneNoOpsTraverser : private TIntermTraverser
     bool visitBlock(Visit visit, TIntermBlock *node) override;
     bool visitLoop(Visit visit, TIntermLoop *loop) override;
     bool visitBranch(Visit visit, TIntermBranch *node) override;
-    TIntermTyped *pruneNoOpCommaExpressions(TIntermTyped *statement);
 
     bool mIsBranchVisited = false;
 };
@@ -223,22 +161,6 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
         }
 
         
-        
-        
-        if (statement->getAsBinaryNode() != nullptr)
-        {
-            statement = pruneNoOpCommaExpressions(statement->getAsBinaryNode());
-            if (statement == nullptr)
-            {
-                TIntermSequence emptyReplacement;
-                mMultiReplacements.emplace_back(node, statement, std::move(emptyReplacement));
-                continue;
-            }
-
-            statements[statementIndex] = statement;
-        }
-
-        
         statement->traverse(this);
     }
 
@@ -251,40 +173,6 @@ bool PruneNoOpsTraverser::visitBlock(Visit visit, TIntermBlock *node)
     }
 
     return false;
-}
-
-TIntermTyped *PruneNoOpsTraverser::pruneNoOpCommaExpressions(TIntermTyped *statement)
-{
-    TIntermBinary *commaSeparatedExpressions = statement->getAsBinaryNode();
-    if (commaSeparatedExpressions == nullptr || commaSeparatedExpressions->getOp() != EOpComma)
-    {
-        return statement;
-    }
-
-    TIntermTyped *left  = commaSeparatedExpressions->getLeft();
-    TIntermTyped *right = commaSeparatedExpressions->getRight();
-
-    TIntermTyped *prunedLeft  = IsNoOp(left) ? nullptr : pruneNoOpCommaExpressions(left);
-    TIntermTyped *prunedRight = IsNoOp(right) ? nullptr : pruneNoOpCommaExpressions(right);
-
-    if (left == prunedLeft && right == prunedRight)
-    {
-        
-        return statement;
-    }
-
-    
-    
-    if (prunedRight == nullptr)
-    {
-        return prunedLeft;
-    }
-    if (prunedLeft == nullptr)
-    {
-        return prunedRight;
-    }
-
-    return new TIntermBinary(EOpComma, prunedLeft, prunedRight);
 }
 
 bool PruneNoOpsTraverser::visitLoop(Visit visit, TIntermLoop *loop)

@@ -15,10 +15,6 @@
 namespace gl
 {
 
-void RecordVersionErrorESEXT(const Context *context, angle::EntryPoint entryPoint);
-
-void RecordEntryPointBaseUnsupportedError(const Context *context, angle::EntryPoint entryPoint);
-
 }  
 
 #endif  

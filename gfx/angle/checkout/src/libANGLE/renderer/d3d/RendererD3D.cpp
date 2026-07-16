@@ -23,9 +23,10 @@
 #include "libANGLE/renderer/ContextImpl.h"
 #include "libANGLE/renderer/TextureImpl.h"
 #include "libANGLE/renderer/d3d/BufferD3D.h"
+#include "libANGLE/renderer/d3d/DeviceD3D.h"
 #include "libANGLE/renderer/d3d/DisplayD3D.h"
 #include "libANGLE/renderer/d3d/IndexDataManager.h"
-#include "libANGLE/renderer/d3d/ProgramExecutableD3D.h"
+#include "libANGLE/renderer/d3d/ProgramD3D.h"
 #include "libANGLE/renderer/d3d/SamplerD3D.h"
 #include "libANGLE/renderer/d3d/TextureD3D.h"
 
@@ -37,6 +38,7 @@ RendererD3D::RendererD3D(egl::Display *display)
       mPresentPathFastEnabled(false),
       mCapsInitialized(false),
       mFeaturesInitialized(false),
+      mDisjoint(false),
       mDeviceLost(false)
 {}
 
@@ -46,8 +48,7 @@ bool RendererD3D::skipDraw(const gl::State &glState, gl::PrimitiveMode drawMode)
 {
     if (drawMode == gl::PrimitiveMode::Points)
     {
-        bool usesPointSize =
-            GetImplAs<ProgramExecutableD3D>(glState.getProgramExecutable())->usesPointSize();
+        bool usesPointSize = GetImplAs<ProgramD3D>(glState.getProgram())->usesPointSize();
 
         
         
@@ -97,6 +98,21 @@ void RendererD3D::notifyDeviceLost()
     mDisplay->notifyDeviceLost();
 }
 
+void RendererD3D::setGPUDisjoint()
+{
+    mDisjoint = true;
+}
+
+GLint RendererD3D::getGPUDisjoint()
+{
+    bool disjoint = mDisjoint;
+
+    
+    mDisjoint = false;
+
+    return disjoint;
+}
+
 GLint64 RendererD3D::getTimestamp()
 {
     
@@ -107,8 +123,7 @@ void RendererD3D::ensureCapsInitialized() const
 {
     if (!mCapsInitialized)
     {
-        generateCaps(&mNativeCaps, &mNativeTextureCaps, &mNativeExtensions, &mNativeLimitations,
-                     &mNativePLSOptions);
+        generateCaps(&mNativeCaps, &mNativeTextureCaps, &mNativeExtensions, &mNativeLimitations);
         mCapsInitialized = true;
     }
 }
@@ -137,14 +152,25 @@ const gl::Limitations &RendererD3D::getNativeLimitations() const
     return mNativeLimitations;
 }
 
-const ShPixelLocalStorageOptions &RendererD3D::getNativePixelLocalStorageOptions() const
+ShPixelLocalStorageType RendererD3D::getNativePixelLocalStorageType() const
 {
-    return mNativePLSOptions;
+    if (!getNativeExtensions().shaderPixelLocalStorageANGLE)
+    {
+        return ShPixelLocalStorageType::NotSupported;
+    }
+    
+    return ShPixelLocalStorageType::ImageStoreR32PackedFormats;
 }
 
-UniqueSerial RendererD3D::generateSerial()
+Serial RendererD3D::generateSerial()
 {
     return mSerialFactory.generate();
+}
+
+bool InstancedPointSpritesActive(ProgramD3D *programD3D, gl::PrimitiveMode mode)
+{
+    return programD3D->usesPointSize() && programD3D->usesInstancedPointSpriteEmulation() &&
+           mode == gl::PrimitiveMode::Points;
 }
 
 angle::Result RendererD3D::initRenderTarget(const gl::Context *context,

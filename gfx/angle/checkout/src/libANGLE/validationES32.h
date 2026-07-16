@@ -15,9 +15,6 @@
 namespace gl
 {
 
-void RecordVersionErrorES1Or32(const Context *context, angle::EntryPoint entryPoint);
-void RecordVersionErrorES32(const Context *context, angle::EntryPoint entryPoint);
-
 }  
 
 #endif  

@@ -4,6 +4,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #ifndef COMPILER_TRANSLATOR_TREEOPS_SEPARATEDECLARATIONS_H_
 #define COMPILER_TRANSLATOR_TREEOPS_SEPARATEDECLARATIONS_H_
 
@@ -12,63 +21,12 @@
 namespace sh
 {
 class TCompiler;
-class TIntermBlock;
+class TIntermNode;
+class TSymbolTable;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] bool SeparateDeclarations(TCompiler &compiler,
-                                        TIntermBlock &root,
-                                        bool separateCompoundStructDeclarations);
-
+[[nodiscard]] bool SeparateDeclarations(TCompiler *compiler,
+                                        TIntermNode *root,
+                                        TSymbolTable *symbolTable);
 }  
 
 #endif  

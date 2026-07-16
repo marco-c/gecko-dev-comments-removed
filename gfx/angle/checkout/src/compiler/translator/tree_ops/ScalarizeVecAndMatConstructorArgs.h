@@ -8,12 +8,11 @@
 
 
 
-#ifndef COMPILER_TRANSLATOR_TREEOPS_GLSL_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
-#define COMPILER_TRANSLATOR_TREEOPS_GLSL_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
+#ifndef COMPILER_TRANSLATOR_TREEOPS_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
+#define COMPILER_TRANSLATOR_TREEOPS_SCALARIZEVECANDMATCONSTRUCTORARGS_H_
 
 #include "GLSLANG/ShaderLang.h"
 #include "common/angleutils.h"
-#include "common/debug.h"
 
 namespace sh
 {
@@ -24,7 +23,6 @@ class TSymbolTable;
 [[nodiscard]] bool ScalarizeVecAndMatConstructorArgs(TCompiler *compiler,
                                                      TIntermBlock *root,
                                                      TSymbolTable *symbolTable);
-
 }  
 
 #endif  

@@ -14,6 +14,7 @@
 namespace angle
 {
 
+
 void *AlignedAlloc(size_t size, size_t alignment);
 void AlignedFree(void *ptr);
 

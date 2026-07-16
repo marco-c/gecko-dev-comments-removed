@@ -26,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 407
+#define ANGLE_SH_VERSION 309
 
 enum ShShaderSpec
 {
@@ -37,93 +37,61 @@ enum ShShaderSpec
     SH_WEBGL2_SPEC,
 
     SH_GLES3_1_SPEC,
+    SH_WEBGL3_SPEC,
 
     SH_GLES3_2_SPEC,
+
+    SH_GL_CORE_SPEC,
+    SH_GL_COMPATIBILITY_SPEC,
 };
 
 enum ShShaderOutput
 {
     
-    SH_NULL_OUTPUT,
+    SH_ESSL_OUTPUT = 0x8B45,
 
     
-    SH_ESSL_OUTPUT,
+    SH_GLSL_COMPATIBILITY_OUTPUT = 0x8B46,
+    
+    SH_GLSL_130_OUTPUT      = 0x8B47,
+    SH_GLSL_140_OUTPUT      = 0x8B80,
+    SH_GLSL_150_CORE_OUTPUT = 0x8B81,
+    SH_GLSL_330_CORE_OUTPUT = 0x8B82,
+    SH_GLSL_400_CORE_OUTPUT = 0x8B83,
+    SH_GLSL_410_CORE_OUTPUT = 0x8B84,
+    SH_GLSL_420_CORE_OUTPUT = 0x8B85,
+    SH_GLSL_430_CORE_OUTPUT = 0x8B86,
+    SH_GLSL_440_CORE_OUTPUT = 0x8B87,
+    SH_GLSL_450_CORE_OUTPUT = 0x8B88,
 
     
-    SH_GLSL_150_CORE_OUTPUT,
-    SH_GLSL_330_CORE_OUTPUT,
-    SH_GLSL_400_CORE_OUTPUT,
-    SH_GLSL_410_CORE_OUTPUT,
-    SH_GLSL_420_CORE_OUTPUT,
-    SH_GLSL_430_CORE_OUTPUT,
-    SH_GLSL_440_CORE_OUTPUT,
-    SH_GLSL_450_CORE_OUTPUT,
+    SH_HLSL_3_0_OUTPUT       = 0x8B48,  
+    SH_HLSL_4_1_OUTPUT       = 0x8B49,  
+    SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A,  
 
     
-    SH_HLSL_3_0_OUTPUT,  
-    SH_HLSL_4_1_OUTPUT,  
+    SH_SPIRV_VULKAN_OUTPUT = 0x8B4B,
 
     
-    SH_SPIRV_VULKAN_OUTPUT,
+    SH_SPIRV_METAL_OUTPUT = 0x8B4C,
 
     
-    SH_MSL_METAL_OUTPUT,
-
-    
-    SH_WGSL_OUTPUT,
-};
-
-struct ShCompileOptionsMetal
-{
-    
-
-    
-    int driverUniformsBindingIndex = 0;
-    
-    int defaultUniformsBindingIndex = 0;
-    
-    int UBOArgumentBufferBindingIndex = 0;
-
-    bool generateShareableShaders = false;
-
-    
-    
-    bool injectAsmStatementIntoLoopBodies = false;
+    SH_MSL_METAL_OUTPUT = 0x8B4D,
 };
 
 
 
-enum class ShPixelLocalStorageType : uint8_t
+enum class ShPixelLocalStorageType
 {
     NotSupported,
-    ImageLoadStore,
-    FramebufferFetch,
+    ImageStoreR32PackedFormats,
+    ImageStoreNativeFormats,
+    FramebufferFetch
 };
 
 
 
-enum class ShPixelLocalStorageFormat : uint8_t
-{
-    NotPLS,  
-    RGBA8,
-    RGBA8I,
-    RGBA8UI,
-    R32F,
-    R32I,
-    R32UI,
-};
-
-
-
-struct ShPixelLocalStorageLayout
-{
-    ShPixelLocalStorageFormat format = ShPixelLocalStorageFormat::NotPLS;
-    bool noncoherent                 = false;
-};
-
-
-
-enum class ShFragmentSynchronizationType : uint8_t
+enum class ShFragmentSynchronizationType
 {
     NotSupported,  
 
@@ -141,21 +109,25 @@ enum class ShFragmentSynchronizationType : uint8_t
     EnumCount = InvalidEnum,
 };
 
-struct ShPixelLocalStorageOptions
+
+struct ShCompileOptionsMetal
+{
+    
+
+    
+    int driverUniformsBindingIndex;
+    
+    int defaultUniformsBindingIndex;
+    
+    int UBOArgumentBufferBindingIndex;
+};
+
+struct ShCompileOptionsPLS
 {
     ShPixelLocalStorageType type = ShPixelLocalStorageType::NotSupported;
-
     
-    ShFragmentSynchronizationType fragmentSyncType = ShFragmentSynchronizationType::NotSupported;
-
-    
-    
-    
-    bool supportsNoncoherent = false;
-
-    
-    
-    bool supportsNativeRGBA8ImageFormats = false;
+    ShFragmentSynchronizationType fragmentSynchronizationType =
+        ShFragmentSynchronizationType::NotSupported;
 };
 
 struct ShCompileOptions
@@ -169,7 +141,7 @@ struct ShCompileOptions
     uint64_t objectCode : 1;
 
     
-    uint64_t outputDebugInfo : 1;
+    uint64_t variables : 1;
 
     
     uint64_t sourcePath : 1;
@@ -206,9 +178,6 @@ struct ShCompileOptions
     uint64_t emulateAbsIntFunction : 1;
 
     
-    uint64_t useDemoteToHelperInvocation : 1;
-
-    
     
     
     
@@ -243,7 +212,6 @@ struct ShCompileOptions
 
     
     
-    
     uint64_t initOutputVariables : 1;
 
     
@@ -253,6 +221,10 @@ struct ShCompileOptions
     
     
     uint64_t regenerateStructNames : 1;
+
+    
+    
+    uint64_t rewriteDoWhileLoops : 1;
 
     
     
@@ -291,6 +263,10 @@ struct ShCompileOptions
     
     
     uint64_t useUnusedStandardSharedBlocks : 1;
+
+    
+    
+    uint64_t rewriteFloatUnaryMinusOperator : 1;
 
     
     
@@ -355,13 +331,18 @@ struct ShCompileOptions
 
     
     
-    uint64_t forceDeferNonConstGlobalInitializers : 1;
+    
+    
+    
+    uint64_t forceAtomicValueResolution : 1;
 
     
     uint64_t emulateGLBaseVertexBaseInstance : 1;
 
     
-    uint64_t wrapSwitchInIfTrue : 1;
+    
+    
+    uint64_t emulateSeamfulCubeMapSampling : 1;
 
     
     uint64_t takeVideoTextureAsExternalOES : 1;
@@ -396,9 +377,10 @@ struct ShCompileOptions
     
     uint64_t addVulkanDepthCorrection : 1;
 
+    uint64_t forceShaderPrecisionHighpToMediump : 1;
+
     
-    
-    uint64_t validatePerStageMaxUniformBlocks : 1;
+    uint64_t useSpecializationConstant : 1;
 
     
     uint64_t addVulkanXfbEmulationSupportCode : 1;
@@ -409,13 +391,15 @@ struct ShCompileOptions
 
     
     
-    uint64_t rejectWebglShadersWithLargeVariables : 1;
+    
+    uint64_t initFragmentOutputVariables : 1;
 
     
-    uint64_t explicitFragmentLocations : 1;
+    
+    uint64_t generateSpirvThroughGlslang : 1;
 
     
-    uint64_t emulateDithering : 1;
+    uint64_t addExplicitBoolCasts : 1;
 
     
     
@@ -423,8 +407,7 @@ struct ShCompileOptions
 
     
     
-    
-    uint64_t unused3 : 1;
+    uint64_t precisionSafeDivision : 1;
 
     
     
@@ -432,67 +415,11 @@ struct ShCompileOptions
     uint64_t passHighpToPackUnormSnormBuiltins : 1;
 
     
-    uint64_t emulateClipDistanceState : 1;
-
     
-    uint64_t emulateClipOrigin : 1;
-
-    
-    
-    uint64_t aliasedUnlessRestrict : 1;
-
-    
-    uint64_t emulateAlphaToCoverage : 1;
-
-    
-    uint64_t rescopeGlobalVariables : 1;
-
-    
-    uint64_t preTransformTextureCubeGradDerivatives : 1;
-
-    
-    uint64_t avoidOpSelectWithMismatchingRelaxedPrecision : 1;
-
-    
-    uint64_t emitSPIRV14 : 1;
-
-    
-    
-    
-    
-    uint64_t rejectWebglShadersWithUndefinedBehavior : 1;
-
-    
-    uint64_t emulateR32fImageAtomicExchange : 1;
-
-    
-    uint64_t simplifyLoopConditions : 1;
-
-    
-    uint64_t separateCompoundStructDeclarations : 1;
-
-    
-    uint64_t preserveDenorms : 1;
-
-    
-    
-    uint64_t removeInactiveVariables : 1;
-    uint64_t retainInactiveFragmentOutputs : 1;
-
-    
-    uint64_t ensureLoopForwardProgress : 1;
-
-    
-    
-    uint64_t skipAllValidationAndTransforms : 1;
-
-    uint64_t transformFloatUniformTo16Bits : 1;
-
-    
-    uint64_t useIR : 1;
+    uint64_t validatePerStageMaxUniformBlocks : 1;
 
     ShCompileOptionsMetal metal;
-    ShPixelLocalStorageOptions pls;
+    ShCompileOptionsPLS pls;
 };
 
 
@@ -518,10 +445,6 @@ struct ShBuiltInResources
     int MaxTextureImageUnits;
     int MaxFragmentUniformVectors;
     int MaxDrawBuffers;
-    int ShadingRateFlag2VerticalPixelsEXT;
-    int ShadingRateFlag4VerticalPixelsEXT;
-    int ShadingRateFlag2HorizontalPixelsEXT;
-    int ShadingRateFlag4HorizontalPixelsEXT;
 
     
     
@@ -531,28 +454,24 @@ struct ShBuiltInResources
     int NV_EGL_stream_consumer_external;
     int ARB_texture_rectangle;
     int EXT_blend_func_extended;
-    int EXT_conservative_depth;
     int EXT_draw_buffers;
     int EXT_frag_depth;
     int EXT_shader_texture_lod;
     int EXT_shader_framebuffer_fetch;
     int EXT_shader_framebuffer_fetch_non_coherent;
+    int NV_shader_framebuffer_fetch;
     int NV_shader_noperspective_interpolation;
     int ARM_shader_framebuffer_fetch;
-    int ARM_shader_framebuffer_fetch_depth_stencil;
     int OVR_multiview;
     int OVR_multiview2;
     int EXT_multisampled_render_to_texture;
     int EXT_multisampled_render_to_texture2;
-    int EXT_fragment_shading_rate;
-    int EXT_fragment_shading_rate_primitive;
     int EXT_YUV_target;
     int EXT_geometry_shader;
     int OES_geometry_shader;
     int OES_shader_io_blocks;
     int EXT_shader_io_blocks;
     int EXT_gpu_shader5;
-    int OES_gpu_shader5;
     int EXT_shader_non_constant_global_initializers;
     int OES_texture_storage_multisample_2d_array;
     int OES_texture_3D;
@@ -565,21 +484,16 @@ struct ShBuiltInResources
     int APPLE_clip_distance;
     int OES_texture_cube_map_array;
     int EXT_texture_cube_map_array;
-    int EXT_texture_query_lod;
-    int EXT_texture_shadow_lod;
     int EXT_shadow_samplers;
     int OES_shader_multisample_interpolation;
     int OES_shader_image_atomic;
     int EXT_tessellation_shader;
-    int OES_tessellation_shader;
     int OES_texture_buffer;
     int EXT_texture_buffer;
     int OES_sample_variables;
     int EXT_clip_cull_distance;
-    int ANGLE_clip_cull_distance;
     int EXT_primitive_bounding_box;
     int OES_primitive_bounding_box;
-    int EXT_separate_shader_objects;
     int ANGLE_base_vertex_base_instance_shader_builtin;
     int ANDROID_extension_pack_es31a;
     int KHR_blend_equation_advanced;
@@ -590,6 +504,9 @@ struct ShBuiltInResources
     
     int NV_draw_buffers;
 
+    
+    
+    
     
     int FragmentPrecisionHigh;
 
@@ -621,15 +538,7 @@ struct ShBuiltInResources
     ShHashFunction64 HashFunction;
 
     
-    
-    
-    char UserVariableNamePrefix;
-
-    
     int MaxExpressionComplexity;
-
-    
-    int MaxStatementDepth;
 
     
     int MaxCallStackDepth;
@@ -717,9 +626,6 @@ struct ShBuiltInResources
     int MaxShaderStorageBufferBindings;
 
     
-    float MinPointSize;
-
-    
     float MaxPointSize;
 
     
@@ -727,6 +633,7 @@ struct ShBuiltInResources
 
     
     int MaxGeometryUniformComponents;
+    int MaxGeometryUniformBlocks;
     int MaxGeometryInputComponents;
     int MaxGeometryOutputComponents;
     int MaxGeometryOutputVertices;
@@ -734,9 +641,9 @@ struct ShBuiltInResources
     int MaxGeometryTextureImageUnits;
     int MaxGeometryAtomicCounterBuffers;
     int MaxGeometryAtomicCounters;
+    int MaxGeometryShaderStorageBlocks;
     int MaxGeometryShaderInvocations;
     int MaxGeometryImageUniforms;
-    int MaxGeometryUniformBlocks;
 
     
     int MaxTessControlInputComponents;
@@ -763,18 +670,21 @@ struct ShBuiltInResources
     int MaxTessEvaluationUniformBlocks;
 
     
+    int SubPixelBits;
+
+    
     int MaxClipDistances;
     int MaxCullDistances;
     int MaxCombinedClipAndCullDistances;
 
     
     int MaxPixelLocalStoragePlanes;
+    int MaxColorAttachmentsWithActivePixelLocalStorage;
     int MaxCombinedDrawBuffersAndPixelLocalStoragePlanes;
 
     
     size_t MaxVariableSizeInBytes;
     size_t MaxPrivateVariableSizeInBytes;
-    size_t MaxTotalPrivateVariableSizeInBytes;
 };
 
 
@@ -788,8 +698,7 @@ using ShHandle = void *;
 
 namespace sh
 {
-using BinaryBlob       = std::vector<uint32_t>;
-using ShaderBinaryBlob = std::vector<uint8_t>;
+using BinaryBlob = std::vector<uint32_t>;
 
 
 
@@ -882,15 +791,6 @@ const BinaryBlob &GetObjectBinaryBlob(const ShHandle handle);
 
 
 
-bool GetShaderBinary(const ShHandle handle,
-                     const char *const shaderStrings[],
-                     size_t numStrings,
-                     const ShCompileOptions &compileOptions,
-                     ShaderBinaryBlob *const binaryOut);
-
-
-
-
 
 const std::map<std::string, std::string> *GetNameHashingMap(const ShHandle handle);
 
@@ -915,7 +815,7 @@ sh::WorkGroupSize GetComputeShaderLocalGroupSize(const ShHandle handle);
 int GetVertexShaderNumViews(const ShHandle handle);
 
 
-const std::vector<ShPixelLocalStorageLayout> *GetPixelLocalStorageLayouts(const ShHandle handle);
+bool EnablesPerSampleShading(const ShHandle handle);
 
 
 uint32_t GetShaderSpecConstUsageBits(const ShHandle handle);
@@ -928,6 +828,17 @@ uint32_t GetShaderSpecConstUsageBits(const ShHandle handle);
 
 bool CheckVariablesWithinPackingLimits(int maxVectors,
                                        const std::vector<sh::ShaderVariable> &variables);
+
+
+
+
+
+
+
+
+bool GetShaderStorageBlockRegister(const ShHandle handle,
+                                   const std::string &shaderStorageBlockName,
+                                   unsigned int *indexOut);
 
 
 
@@ -961,8 +872,14 @@ unsigned int GetImage2DRegisterIndex(const ShHandle handle);
 
 const std::set<std::string> *GetUsedImage2DFunctionNames(const ShHandle handle);
 
-uint8_t GetClipDistanceArraySize(const ShHandle handle);
-uint8_t GetCullDistanceArraySize(const ShHandle handle);
+bool HasDiscardInFragmentShader(const ShHandle handle);
+bool HasValidGeometryShaderInputPrimitiveType(const ShHandle handle);
+bool HasValidGeometryShaderOutputPrimitiveType(const ShHandle handle);
+bool HasValidGeometryShaderMaxVertices(const ShHandle handle);
+bool HasValidTessGenMode(const ShHandle handle);
+bool HasValidTessGenSpacing(const ShHandle handle);
+bool HasValidTessGenVertexOrder(const ShHandle handle);
+bool HasValidTessGenPointMode(const ShHandle handle);
 GLenum GetGeometryShaderInputPrimitiveType(const ShHandle handle);
 GLenum GetGeometryShaderOutputPrimitiveType(const ShHandle handle);
 int GetGeometryShaderInvocations(const ShHandle handle);
@@ -975,9 +892,6 @@ GLenum GetTessGenVertexOrder(const ShHandle handle);
 GLenum GetTessGenPointMode(const ShHandle handle);
 
 
-uint32_t GetMetadataFlags(const ShHandle handle);
-
-
 
 uint32_t GetAdvancedBlendEquations(const ShHandle handle);
 
@@ -986,41 +900,21 @@ uint32_t GetAdvancedBlendEquations(const ShHandle handle);
 
 inline bool IsWebGLBasedSpec(ShShaderSpec spec)
 {
-    return (spec == SH_WEBGL_SPEC || spec == SH_WEBGL2_SPEC);
+    return (spec == SH_WEBGL_SPEC || spec == SH_WEBGL2_SPEC || spec == SH_WEBGL3_SPEC);
 }
 
 
 
 
-extern const char kUserDefinedNamePrefix;
-
-enum class MetadataFlags
+inline bool IsDesktopGLSpec(ShShaderSpec spec)
 {
-    
-    
-    HasClipDistance,
-    
-    HasDiscard,
-    HasFragCoord,
-    EnablesPerSampleShading,
-    HasInputAttachment0,
-    
-    HasInputAttachment7 = HasInputAttachment0 + 7,
-    HasDepthInputAttachment,
-    HasStencilInputAttachment,
-    
-    HasValidGeometryShaderInputPrimitiveType,
-    HasValidGeometryShaderOutputPrimitiveType,
-    HasValidGeometryShaderMaxVertices,
-    
-    HasValidTessGenMode,
-    HasValidTessGenSpacing,
-    HasValidTessGenVertexOrder,
-    HasValidTessGenPointMode,
+    return spec == SH_GL_CORE_SPEC || spec == SH_GL_COMPATIBILITY_SPEC;
+}
 
-    InvalidEnum,
-    EnumCount = InvalidEnum,
-};
+
+
+
+extern const char kUserDefinedNamePrefix[];
 
 namespace vk
 {
@@ -1028,17 +922,19 @@ namespace vk
 
 enum class SpecializationConstantId : uint32_t
 {
-    Dither = 0,
+    SurfaceRotation = 0,
+    Dither          = 1,
 
-    InvalidEnum = 1,
+    InvalidEnum = 2,
     EnumCount   = InvalidEnum,
 };
 
 enum class SpecConstUsage : uint32_t
 {
-    Dither = 0,
+    Rotation = 0,
+    Dither   = 1,
 
-    InvalidEnum = 1,
+    InvalidEnum = 2,
     EnumCount   = InvalidEnum,
 };
 
@@ -1051,132 +947,17 @@ enum ColorAttachmentDitherControl
     kDitherControlDither565  = 3,
 };
 
-namespace spirv
-{
-enum NonSemanticInstruction
-{
-    
-    
-    
-    kNonSemanticOverview,
-    
-    kNonSemanticEnter,
-    
-    
-    
-    kNonSemanticOutput,
-    
-    
-    kNonSemanticTransformFeedbackEmulation,
-};
+
+extern const char kDefaultUniformsNameVS[];
+extern const char kDefaultUniformsNameTCS[];
+extern const char kDefaultUniformsNameTES[];
+extern const char kDefaultUniformsNameGS[];
+extern const char kDefaultUniformsNameFS[];
+extern const char kDefaultUniformsNameCS[];
 
 
-
-
-constexpr uint32_t kNonSemanticInstructionBits       = 4;
-constexpr uint32_t kNonSemanticInstructionMask       = 0xF;
-constexpr uint32_t kOverviewHasSampleRateShadingMask = 0x10;
-constexpr uint32_t kOverviewHasSampleIDMask          = 0x20;
-constexpr uint32_t kOverviewHasOutputPerVertexMask   = 0x40;
-
-enum ReservedIds
-{
-    kIdInvalid = 0,
-
-    
-    
-    
-
-    
-    kIdNonSemanticInstructionSet,
-    kIdEntryPoint,
-
-    
-    kIdVoid,
-    kIdFloat,
-    kIdVec2,
-    kIdVec3,
-    kIdVec4,
-    kIdMat2,
-    kIdMat3,
-    kIdMat4,
-    kIdInt,
-    kIdIVec4,
-    kIdUint,
-
-    
-    kIdIntZero,
-    kIdIntOne,
-    kIdIntTwo,
-    kIdIntThree,
-
-    
-    kIdIntInputTypePointer,
-    kIdVec4OutputTypePointer,
-    kIdIVec4FunctionTypePointer,
-    kIdOutputPerVertexTypePointer,
-
-    
-    kIdTransformPositionFunction,
-    kIdInputPerVertexBlockArray,
-    kIdOutputPerVertexBlockArray,
-    kIdOutputPerVertexVar,
-
-    
-    kIdXfbEmulationGetOffsetsFunction,
-    kIdXfbEmulationCaptureFunction,
-    kIdXfbEmulationBufferVarZero,
-    kIdXfbEmulationBufferVarOne,
-    kIdXfbEmulationBufferVarTwo,
-    kIdXfbEmulationBufferVarThree,
-
-    
-    kIdSampleID,
-
-    
-    
-    
-    
-    
-    
-    
-    kIdShaderVariablesBegin,
-
-    
-    kIdInputPerVertexBlock = kIdShaderVariablesBegin,
-    kIdOutputPerVertexBlock,
-    
-    kIdDriverUniformsBlock,
-    kIdDefaultUniformsBlock,
-    
-    kIdAtomicCounterBlock,
-    
-    kIdXfbEmulationBufferBlockZero,
-    kIdXfbEmulationBufferBlockOne,
-    kIdXfbEmulationBufferBlockTwo,
-    kIdXfbEmulationBufferBlockThree,
-    
-    kIdXfbExtensionPosition,
-    
-    kIdInputAttachment0,
-    kIdInputAttachment7 = kIdInputAttachment0 + 7,
-    kIdDepthInputAttachment,
-    kIdStencilInputAttachment,
-
-    
-    kIdFloat16,
-    kIdFloat16Vec2,
-    kIdFloat16Vec3,
-    kIdFloat16Vec4,
-    kIdFloat16Mat2,
-    kIdFloat16Mat3,
-    kIdFloat16Mat4,
-
-    kIdFirstUnreserved,
-};
-}  
-
-
+extern const char kDriverUniformsBlockName[];
+extern const char kDriverUniformsVarName[];
 
 
 
@@ -1194,32 +975,45 @@ constexpr uint32_t kDriverUniformsMiscEnabledClipPlanesOffset     = 12;
 constexpr uint32_t kDriverUniformsMiscEnabledClipPlanesMask       = 0xFF;
 constexpr uint32_t kDriverUniformsMiscTransformDepthOffset        = 20;
 constexpr uint32_t kDriverUniformsMiscTransformDepthMask          = 0x1;
-constexpr uint32_t kDriverUniformsMiscAlphaToCoverageOffset       = 21;
-constexpr uint32_t kDriverUniformsMiscAlphaToCoverageMask         = 0x1;
-constexpr uint32_t kDriverUniformsMiscLayeredFramebufferOffset    = 22;
-constexpr uint32_t kDriverUniformsMiscLayeredFramebufferMask      = 0x1;
+
+
+extern const char kAtomicCountersBlockName[];
+
+
+extern const char kXfbEmulationGetOffsetsFunctionName[];
+extern const char kXfbEmulationCaptureFunctionName[];
+extern const char kXfbEmulationBufferBlockName[];
+extern const char kXfbEmulationBufferName[];
+extern const char kXfbEmulationBufferFieldName[];
+
+
+extern const char kXfbExtensionPositionOutName[];
+
+
+extern const char kTransformPositionFunctionName[];
+
+
+extern const char kInputAttachmentName[];
+
 }  
 
 namespace mtl
 {
 
-extern const char kMultisampledRenderingConstName[];
+extern const char kCoverageMaskEnabledConstName[];
 
 
 extern const char kRasterizerDiscardEnabledConstName[];
 
 
 extern const char kDepthWriteEnabledConstName[];
-
-
-extern const char kEmulateAlphaToCoverageConstName[];
-
-
-extern const char kWriteHelperSampleMaskConstName[];
-
-
-extern const char kSampleMaskWriteEnabledConstName[];
 }  
+
+
+
+
+void InitializeGlslang();
+void FinalizeGlslang();
 
 }  
 

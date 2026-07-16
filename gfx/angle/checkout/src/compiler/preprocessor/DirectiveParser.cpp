@@ -147,8 +147,7 @@ DirectiveParser::DirectiveParser(Tokenizer *tokenizer,
                                  Diagnostics *diagnostics,
                                  DirectiveHandler *directiveHandler,
                                  const PreprocessorSettings &settings)
-    : mHandledVersion(false),
-      mPastFirstStatement(false),
+    : mPastFirstStatement(false),
       mSeenNonPreprocessorToken(false),
       mTokenizer(tokenizer),
       mMacroSet(macroSet),
@@ -174,12 +173,6 @@ void DirectiveParser::lex(Token *token)
         else if (!isEOD(token) && !skipping())
         {
             mSeenNonPreprocessorToken = true;
-            if (!mHandledVersion)
-            {
-                
-                
-                handleVersion(token->location);
-            }
         }
 
         if (token->type == Token::LAST)
@@ -210,13 +203,6 @@ void DirectiveParser::parseDirective(Token *token)
     }
 
     DirectiveType directive = getDirective(token);
-
-    if (!mHandledVersion && directive != DIRECTIVE_VERSION)
-    {
-        
-        
-        handleVersion(token->location);
-    }
 
     
     
@@ -727,6 +713,7 @@ void DirectiveParser::parseVersion(Token *token)
     {
         VERSION_NUMBER,
         VERSION_PROFILE_ES,
+        VERSION_PROFILE_GL,
         VERSION_ENDLINE
     };
 
@@ -754,7 +741,11 @@ void DirectiveParser::parseVersion(Token *token)
                 }
                 if (valid)
                 {
-                    if (version < 300)
+                    if (sh::IsDesktopGLSpec(mSettings.shaderSpec))
+                    {
+                        state = VERSION_PROFILE_GL;
+                    }
+                    else if (version < 300)
                     {
                         state = VERSION_ENDLINE;
                     }
@@ -765,7 +756,18 @@ void DirectiveParser::parseVersion(Token *token)
                 }
                 break;
             case VERSION_PROFILE_ES:
+                ASSERT(!sh::IsDesktopGLSpec(mSettings.shaderSpec));
                 if (token->type != Token::IDENTIFIER || token->text != "es")
+                {
+                    mDiagnostics->report(Diagnostics::PP_INVALID_VERSION_DIRECTIVE, token->location,
+                                         token->text);
+                    valid = false;
+                }
+                state = VERSION_ENDLINE;
+                break;
+            case VERSION_PROFILE_GL:
+                ASSERT(sh::IsDesktopGLSpec(mSettings.shaderSpec));
+                if (token->type != Token::IDENTIFIER || token->text != "core")
                 {
                     mDiagnostics->report(Diagnostics::PP_INVALID_VERSION_DIRECTIVE, token->location,
                                          token->text);
@@ -781,6 +783,11 @@ void DirectiveParser::parseVersion(Token *token)
         }
 
         mTokenizer->lex(token);
+
+        if (token->type == '\n' && state == VERSION_PROFILE_GL)
+        {
+            state = VERSION_ENDLINE;
+        }
     }
 
     if (valid && (state != VERSION_ENDLINE))
@@ -799,8 +806,9 @@ void DirectiveParser::parseVersion(Token *token)
 
     if (valid)
     {
+        mDirectiveHandler->handleVersion(token->location, version, mSettings.shaderSpec);
         mShaderVersion = version;
-        handleVersion(token->location);
+        PredefineMacro(mMacroSet, "__VERSION__", version);
     }
 }
 
@@ -966,13 +974,6 @@ int DirectiveParser::parseExpressionIfdef(Token *token)
         skipUntilEOD(mTokenizer, token);
     }
     return expression;
-}
-
-void DirectiveParser::handleVersion(const SourceLocation &location)
-{
-    PredefineMacro(mMacroSet, "__VERSION__", mShaderVersion);
-    mDirectiveHandler->handleVersion(location, mShaderVersion, mSettings.shaderSpec, mMacroSet);
-    mHandledVersion = true;
 }
 
 }  

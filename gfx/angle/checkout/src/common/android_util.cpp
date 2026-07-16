@@ -9,9 +9,7 @@
 #include "common/android_util.h"
 #include "common/debug.h"
 
-#if defined(ANGLE_PLATFORM_ANDROID)
-#    include <sys/system_properties.h>
-#endif
+#include <cstdint>
 
 #if defined(ANGLE_PLATFORM_ANDROID) && __ANDROID_API__ >= 26
 #    define ANGLE_AHARDWARE_BUFFER_SUPPORT
@@ -45,16 +43,6 @@ typedef struct native_handle
 
 typedef const native_handle_t *buffer_handle_t;
 
-
-
-#define ANDROID_NATIVE_UNSIGNED_CAST(x) static_cast<unsigned int>(x)
-
-#define ANDROID_NATIVE_MAKE_CONSTANT(a, b, c, d)                                         \
-    ((ANDROID_NATIVE_UNSIGNED_CAST(a) << 24) | (ANDROID_NATIVE_UNSIGNED_CAST(b) << 16) | \
-     (ANDROID_NATIVE_UNSIGNED_CAST(c) << 8) | (ANDROID_NATIVE_UNSIGNED_CAST(d)))
-
-#define ANDROID_NATIVE_BUFFER_MAGIC ANDROID_NATIVE_MAKE_CONSTANT('_', 'b', 'f', 'r')
-
 typedef struct android_native_base_t
 {
     
@@ -85,11 +73,131 @@ typedef struct ANativeWindowBuffer
     void *reserved_proc[8 - (sizeof(uint64_t) / sizeof(void *))];
 } ANativeWindowBuffer_t;
 
-namespace angle
-{
 
-namespace android
-{
+
+
+
+
+
+
+
+
+
+enum {
+
+#ifndef ANGLE_AHARDWARE_BUFFER_SUPPORT
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM           = 1,
+
+    
+
+
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM           = 2,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM             = 3,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM             = 4,
+#endif  
+
+    AHARDWAREBUFFER_FORMAT_B8G8R8A8_UNORM           = 5,
+    AHARDWAREBUFFER_FORMAT_B5G5R5A1_UNORM           = 6,
+    AHARDWAREBUFFER_FORMAT_B4G4R4A4_UNORM           = 7,
+
+#ifndef ANGLE_AHARDWARE_BUFFER_SUPPORT
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT       = 0x16,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM        = 0x2b,
+
+    
+
+
+
+    AHARDWAREBUFFER_FORMAT_BLOB                     = 0x21,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_D16_UNORM                = 0x30,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_D24_UNORM                = 0x31,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT        = 0x32,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_D32_FLOAT                = 0x33,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT        = 0x34,
+
+    
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_S8_UINT                  = 0x35,
+
+    
+
+
+
+
+
+    AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420             = 0x23,
+
+#endif  
+
+    AHARDWAREBUFFER_FORMAT_YV12                     = 0x32315659,
+    AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED   = 0x22,
+};
+
 
 namespace
 {
@@ -119,43 +227,41 @@ GLenum GetPixelFormatInfo(int pixelFormat, bool *isYUV)
     *isYUV = false;
     switch (pixelFormat)
     {
-        case ANGLE_AHB_FORMAT_R8G8B8A8_UNORM:
+        case AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM:
             return GL_RGBA8;
-        case ANGLE_AHB_FORMAT_R8G8B8X8_UNORM:
+        case AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM:
             return GL_RGB8;
-        case ANGLE_AHB_FORMAT_R8G8B8_UNORM:
+        case AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM:
             return GL_RGB8;
-        case ANGLE_AHB_FORMAT_R5G6B5_UNORM:
+        case AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM:
             return GL_RGB565;
-        case ANGLE_AHB_FORMAT_B8G8R8A8_UNORM:
+        case AHARDWAREBUFFER_FORMAT_B8G8R8A8_UNORM:
             return GL_BGRA8_EXT;
-        case ANGLE_AHB_FORMAT_B5G5R5A1_UNORM:
+        case AHARDWAREBUFFER_FORMAT_B5G5R5A1_UNORM:
             return GL_RGB5_A1;
-        case ANGLE_AHB_FORMAT_B4G4R4A4_UNORM:
+        case AHARDWAREBUFFER_FORMAT_B4G4R4A4_UNORM:
             return GL_RGBA4;
-        case ANGLE_AHB_FORMAT_R16G16B16A16_FLOAT:
+        case AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT:
             return GL_RGBA16F;
-        case ANGLE_AHB_FORMAT_R10G10B10A2_UNORM:
+        case AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM:
             return GL_RGB10_A2;
-        case ANGLE_AHB_FORMAT_BLOB:
+        case AHARDWAREBUFFER_FORMAT_BLOB:
             return GL_NONE;
-        case ANGLE_AHB_FORMAT_D16_UNORM:
+        case AHARDWAREBUFFER_FORMAT_D16_UNORM:
             return GL_DEPTH_COMPONENT16;
-        case ANGLE_AHB_FORMAT_D24_UNORM:
+        case AHARDWAREBUFFER_FORMAT_D24_UNORM:
             return GL_DEPTH_COMPONENT24;
-        case ANGLE_AHB_FORMAT_D24_UNORM_S8_UINT:
+        case AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT:
             return GL_DEPTH24_STENCIL8;
-        case ANGLE_AHB_FORMAT_D32_FLOAT:
+        case AHARDWAREBUFFER_FORMAT_D32_FLOAT:
             return GL_DEPTH_COMPONENT32F;
-        case ANGLE_AHB_FORMAT_D32_FLOAT_S8_UINT:
+        case AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT:
             return GL_DEPTH32F_STENCIL8;
-        case ANGLE_AHB_FORMAT_S8_UINT:
+        case AHARDWAREBUFFER_FORMAT_S8_UINT:
             return GL_STENCIL_INDEX8;
-        case ANGLE_AHB_FORMAT_R8_UNORM:
-            return GL_R8;
-        case ANGLE_AHB_FORMAT_Y8Cb8Cr8_420:
-        case ANGLE_AHB_FORMAT_YV12:
-        case ANGLE_AHB_FORMAT_IMPLEMENTATION_DEFINED:
+        case AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420:
+        case AHARDWAREBUFFER_FORMAT_YV12:
+        case AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED:
             *isYUV = true;
             return GL_RGB8;
         default:
@@ -168,14 +274,15 @@ GLenum GetPixelFormatInfo(int pixelFormat, bool *isYUV)
 
 }  
 
+namespace angle
+{
+
+namespace android
+{
+
 ANativeWindowBuffer *ClientBufferToANativeWindowBuffer(EGLClientBuffer clientBuffer)
 {
     return reinterpret_cast<ANativeWindowBuffer *>(clientBuffer);
-}
-
-bool IsValidNativeWindowBuffer(ANativeWindowBuffer *windowBuffer)
-{
-    return windowBuffer->common.magic == ANDROID_NATIVE_BUFFER_MAGIC;
 }
 
 uint64_t GetAHBUsage(int eglNativeBufferUsage)
@@ -253,38 +360,36 @@ int GLInternalFormatToNativePixelFormat(GLenum internalFormat)
 {
     switch (internalFormat)
     {
-        case GL_R8:
-            return ANGLE_AHB_FORMAT_R8_UNORM;
         case GL_RGBA8:
-            return ANGLE_AHB_FORMAT_R8G8B8A8_UNORM;
+            return AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
         case GL_RGB8:
-            return ANGLE_AHB_FORMAT_R8G8B8X8_UNORM;
+            return AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
         case GL_RGB565:
-            return ANGLE_AHB_FORMAT_R5G6B5_UNORM;
+            return AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
         case GL_BGRA8_EXT:
-            return ANGLE_AHB_FORMAT_B8G8R8A8_UNORM;
+            return AHARDWAREBUFFER_FORMAT_B8G8R8A8_UNORM;
         case GL_RGB5_A1:
-            return ANGLE_AHB_FORMAT_B5G5R5A1_UNORM;
+            return AHARDWAREBUFFER_FORMAT_B5G5R5A1_UNORM;
         case GL_RGBA4:
-            return ANGLE_AHB_FORMAT_B4G4R4A4_UNORM;
+            return AHARDWAREBUFFER_FORMAT_B4G4R4A4_UNORM;
         case GL_RGBA16F:
-            return ANGLE_AHB_FORMAT_R16G16B16A16_FLOAT;
+            return AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT;
         case GL_RGB10_A2:
-            return ANGLE_AHB_FORMAT_R10G10B10A2_UNORM;
+            return AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM;
         case GL_NONE:
-            return ANGLE_AHB_FORMAT_BLOB;
+            return AHARDWAREBUFFER_FORMAT_BLOB;
         case GL_DEPTH_COMPONENT16:
-            return ANGLE_AHB_FORMAT_D16_UNORM;
+            return AHARDWAREBUFFER_FORMAT_D16_UNORM;
         case GL_DEPTH_COMPONENT24:
-            return ANGLE_AHB_FORMAT_D24_UNORM;
+            return AHARDWAREBUFFER_FORMAT_D24_UNORM;
         case GL_DEPTH24_STENCIL8:
-            return ANGLE_AHB_FORMAT_D24_UNORM_S8_UINT;
+            return AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT;
         case GL_DEPTH_COMPONENT32F:
-            return ANGLE_AHB_FORMAT_D32_FLOAT;
+            return AHARDWAREBUFFER_FORMAT_D32_FLOAT;
         case GL_DEPTH32F_STENCIL8:
-            return ANGLE_AHB_FORMAT_D32_FLOAT_S8_UINT;
+            return AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT;
         case GL_STENCIL_INDEX8:
-            return ANGLE_AHB_FORMAT_S8_UINT;
+            return AHARDWAREBUFFER_FORMAT_S8_UINT;
         default:
             WARN() << "Unknown internalFormat: " << internalFormat << ". Treating as 0";
             return 0;
@@ -315,23 +420,5 @@ AHardwareBuffer *ClientBufferToAHardwareBuffer(EGLClientBuffer clientBuffer)
     return OffsetPointer<AHardwareBuffer>(clientBuffer,
                                           -kAHardwareBufferToANativeWindowBufferOffset);
 }
-
-bool GetSystemProperty(const char *propertyName, std::string *value)
-{
-#if defined(ANGLE_PLATFORM_ANDROID)
-    
-    std::vector<char> propertyBuf(PROP_VALUE_MAX);
-    int len = __system_property_get(propertyName, propertyBuf.data());
-    if (len <= 0)
-    {
-        return false;
-    }
-    *value = std::string(propertyBuf.data());
-    return true;
-#else
-    return false;
-#endif
-}
-
 }  
 }  

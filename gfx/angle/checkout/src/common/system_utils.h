@@ -40,21 +40,12 @@ const char *GetPathSeparatorForEnvironmentVar();
 bool PrependPathToEnvironmentVar(const char *variableName, const char *path);
 bool IsDirectory(const char *filename);
 bool IsFullPath(std::string dirName);
-bool CreateDirectories(const std::string &path);
-void MakeForwardSlashThePathSeparator(std::string &path);
-bool IsSameFileDescriptor(int fd1, int fd2);
 std::string GetRootDirectory();
 std::string ConcatenatePath(std::string first, std::string second);
 
 Optional<std::string> GetTempDirectory();
 Optional<std::string> CreateTemporaryFileInDirectory(const std::string &directory);
 Optional<std::string> CreateTemporaryFile();
-
-#if defined(ANGLE_PLATFORM_POSIX)
-
-Optional<std::string> CreateTemporaryFileInDirectoryWithExtension(const std::string &directory,
-                                                                  const std::string &extension);
-#endif
 
 
 double GetCurrentSystemTime();
@@ -63,11 +54,6 @@ double GetCurrentProcessCpuTime();
 
 
 uint64_t GetCurrentThreadUniqueId();
-
-
-ThreadId GetCurrentThreadId();
-
-ThreadId InvalidThreadId();
 
 
 
@@ -233,17 +219,6 @@ std::wstring Widen(const std::string_view &utf8);
 #endif
 
 std::string StripFilenameFromPath(const std::string &path);
-
-ANGLE_INLINE ThreadId GetCurrentThreadId()
-{
-    return std::this_thread::get_id();
-}
-ANGLE_INLINE ThreadId InvalidThreadId()
-{
-    return ThreadId();
-}
-
-void SetCurrentThreadName(const char *name);
 }  
 
 #endif  

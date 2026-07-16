@@ -219,10 +219,7 @@ inline void DefaultHistogramBoolean(PlatformMethods *platform, const char *name,
 
 
 
-
-
-constexpr size_t kProgramCacheControlKeySize = 20;
-using ProgramKeyType                         = std::array<uint8_t, kProgramCacheControlKeySize>;
+using ProgramKeyType   = std::array<uint8_t, 20>;
 using CacheProgramFunc = void (*)(PlatformMethods *platform,
                                   const ProgramKeyType &key,
                                   size_t programSize,
@@ -247,11 +244,6 @@ using PlaceholderCallbackFunc = void (*)(...);
 inline void DefaultPlaceholderCallback(...) {}
 
 
-
-using RecordShaderCacheUseFunc = void (*)(bool);
-inline void DefaultRecordShaderCacheUse(bool) {}
-
-
 #define ANGLE_PLATFORM_OP(OP)                                    \
     OP(currentTime, CurrentTime)                                 \
     OP(monotonicallyIncreasingTime, MonotonicallyIncreasingTime) \
@@ -269,8 +261,7 @@ inline void DefaultRecordShaderCacheUse(bool) {}
     OP(placeholder2, PlaceholderCallback)                        \
     OP(cacheProgram, CacheProgram)                               \
     OP(placeholder3, PlaceholderCallback)                        \
-    OP(postWorkerTask, PostWorkerTask)                           \
-    OP(recordShaderCacheUse, RecordShaderCacheUse)
+    OP(postWorkerTask, PostWorkerTask)
 
 #define ANGLE_PLATFORM_METHOD_DEF(Name, CapsName) CapsName##Func Name = Default##CapsName;
 
@@ -296,7 +287,7 @@ constexpr unsigned int g_NumPlatformMethods = (sizeof(PlatformMethods) / sizeof(
 
 
 
-static_assert(g_NumPlatformMethods == 18, "Avoid adding methods to PlatformMethods");
+static_assert(g_NumPlatformMethods == 17, "Avoid adding methods to PlatformMethods");
 
 #define ANGLE_PLATFORM_METHOD_STRING(Name) #Name
 #define ANGLE_PLATFORM_METHOD_STRING2(Name, CapsName) ANGLE_PLATFORM_METHOD_STRING(Name),

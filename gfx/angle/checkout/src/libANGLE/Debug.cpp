@@ -4,10 +4,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 
 
 #include "libANGLE/Debug.h"
@@ -153,10 +149,11 @@ void Debug::insertMessage(GLenum source,
                           GLuint id,
                           GLenum severity,
                           const std::string &message,
-                          gl::LogSeverity logSeverity) const
+                          gl::LogSeverity logSeverity,
+                          angle::EntryPoint entryPoint) const
 {
     std::string messageCopy(message);
-    insertMessage(source, type, id, severity, std::move(messageCopy), logSeverity);
+    insertMessage(source, type, id, severity, std::move(messageCopy), logSeverity, entryPoint);
 }
 
 void Debug::insertMessage(GLenum source,
@@ -164,13 +161,18 @@ void Debug::insertMessage(GLenum source,
                           GLuint id,
                           GLenum severity,
                           std::string &&message,
-                          gl::LogSeverity logSeverity) const
+                          gl::LogSeverity logSeverity,
+                          angle::EntryPoint entryPoint) const
 {
     {
         
         const char *messageTypeString = GLMessageTypeToString(type);
         const char *severityString    = GLSeverityToString(severity);
         std::ostringstream messageStream;
+        if (entryPoint != angle::EntryPoint::GLInvalid)
+        {
+            messageStream << GetEntryPointName(entryPoint) << ": ";
+        }
         messageStream << "GL " << messageTypeString << ": " << severityString << ": " << message;
         switch (logSeverity)
         {
@@ -197,20 +199,15 @@ void Debug::insertMessage(GLenum source,
         return;
     }
 
-    
-    
-    
-    
-    
     if (mCallbackFunction != nullptr)
     {
+        
+        
         mCallbackFunction(source, type, id, severity, static_cast<GLsizei>(message.length()),
                           message.c_str(), mCallbackUserParam);
     }
     else
     {
-        std::lock_guard<angle::SimpleMutex> lock(mMutex);
-
         if (mMessages.size() >= mMaxLoggedMessages)
         {
             
@@ -237,8 +234,6 @@ size_t Debug::getMessages(GLuint count,
                           GLsizei *lengths,
                           GLchar *messageLog)
 {
-    std::lock_guard<angle::SimpleMutex> lock(mMutex);
-
     size_t messageCount       = 0;
     size_t messageStringIndex = 0;
     while (messageCount <= count && !mMessages.empty())
@@ -295,13 +290,11 @@ size_t Debug::getMessages(GLuint count,
 
 size_t Debug::getNextMessageLength() const
 {
-    std::lock_guard<angle::SimpleMutex> lock(mMutex);
     return mMessages.empty() ? 0 : mMessages.front().message.length() + 1;
 }
 
 size_t Debug::getMessageCount() const
 {
-    std::lock_guard<angle::SimpleMutex> lock(mMutex);
     return mMessages.size();
 }
 
@@ -325,7 +318,7 @@ void Debug::setMessageControl(GLenum source,
 void Debug::pushGroup(GLenum source, GLuint id, std::string &&message)
 {
     insertMessage(source, GL_DEBUG_TYPE_PUSH_GROUP, id, GL_DEBUG_SEVERITY_NOTIFICATION,
-                  std::string(message), gl::LOG_INFO);
+                  std::string(message), gl::LOG_INFO, angle::EntryPoint::GLPushDebugGroup);
 
     Group g;
     g.source  = source;
@@ -343,7 +336,7 @@ void Debug::popGroup()
     mGroups.pop_back();
 
     insertMessage(g.source, GL_DEBUG_TYPE_POP_GROUP, g.id, GL_DEBUG_SEVERITY_NOTIFICATION,
-                  g.message, gl::LOG_INFO);
+                  g.message, gl::LOG_INFO, angle::EntryPoint::GLPopDebugGroup);
 }
 
 size_t Debug::getGroupStackDepth() const
@@ -351,17 +344,32 @@ size_t Debug::getGroupStackDepth() const
     return mGroups.size();
 }
 
-void Debug::insertPerfWarning(GLenum severity, bool isLastRepeat, const char *message) const
+void Debug::insertPerfWarning(GLenum severity, const char *message, uint32_t *repeatCount) const
 {
+    bool repeatLast;
+
+    {
+        constexpr uint32_t kMaxRepeat = 4;
+        std::lock_guard<std::mutex> lock(GetDebugMutex());
+
+        if (*repeatCount >= kMaxRepeat)
+        {
+            return;
+        }
+
+        ++*repeatCount;
+        repeatLast = (*repeatCount == kMaxRepeat);
+    }
+
     std::string msg = message;
-    if (isLastRepeat)
+    if (repeatLast)
     {
         msg += " (this message will no longer repeat)";
     }
 
     
     insertMessage(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_PERFORMANCE, 0, severity, std::move(msg),
-                  gl::LOG_INFO);
+                  gl::LOG_INFO, angle::EntryPoint::GLInvalid);
 }
 
 bool Debug::isMessageEnabled(GLenum source, GLenum type, GLuint id, GLenum severity) const

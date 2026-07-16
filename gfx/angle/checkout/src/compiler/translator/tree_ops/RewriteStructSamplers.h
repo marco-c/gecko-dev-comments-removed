@@ -29,10 +29,10 @@ class TCompiler;
 class TIntermBlock;
 class TSymbolTable;
 
-bool RewriteStructSamplers(TCompiler *compiler,
-                           TIntermBlock *root,
-                           TSymbolTable *symbolTable,
-                           int *removedUniformsCountOut);
+[[nodiscard]] bool RewriteStructSamplers(TCompiler *compiler,
+                                         TIntermBlock *root,
+                                         TSymbolTable *symbolTable,
+                                         int *removedUniformsCountOut);
 }  
 
 #endif  

@@ -15,7 +15,6 @@
 
 #include "common/FastVector.h"
 #include "common/angleutils.h"
-#include "libANGLE/Constants.h"
 
 namespace angle
 {
@@ -57,56 +56,26 @@ enum class SubjectMessage
     InternalMemoryAllocationChanged,
 
     
-    VkImageChanged,
-
-    
     SurfaceChanged,
+    
+    
+    SwapchainImageChanged,
 
     
     ProgramTextureOrImageBindingChanged,
-    
-    
-    ProgramUnlinked,
     
     ProgramRelinked,
     
     SamplerUniformsUpdated,
     
-    ProgramUniformBlockBindingZeroUpdated,
-    ProgramUniformBlockBindingLastUpdated = ProgramUniformBlockBindingZeroUpdated +
-                                            gl::IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS -
-                                            1,
+    ProgramUniformUpdated,
 
     
     StorageReleased,
 
     
-    
-    
-    TextureIDDeleted,
-
-    
     InitializationComplete,
-
-    
-    FoveatedRenderingStateChanged,
 };
-
-inline bool IsProgramUniformBlockBindingUpdatedMessage(SubjectMessage message)
-{
-    return message >= SubjectMessage::ProgramUniformBlockBindingZeroUpdated &&
-           message <= SubjectMessage::ProgramUniformBlockBindingLastUpdated;
-}
-inline SubjectMessage ProgramUniformBlockBindingUpdatedMessageFromIndex(uint32_t blockIndex)
-{
-    return static_cast<SubjectMessage>(
-        static_cast<uint32_t>(SubjectMessage::ProgramUniformBlockBindingZeroUpdated) + blockIndex);
-}
-inline uint32_t ProgramUniformBlockBindingUpdatedMessageToIndex(SubjectMessage message)
-{
-    return static_cast<uint32_t>(message) -
-           static_cast<uint32_t>(SubjectMessage::ProgramUniformBlockBindingZeroUpdated);
-}
 
 
 class ObserverInterface

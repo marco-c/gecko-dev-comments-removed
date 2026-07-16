@@ -4,21 +4,14 @@
 
 
 
-#include "compiler/translator/IntermNode.h"
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "compiler/translator/util.h"
 
 #include <limits>
 
-#include "common/span.h"
 #include "common/utilities.h"
 #include "compiler/preprocessor/numeric_lex.h"
-#include "compiler/translator/BaseTypes.h"
 #include "compiler/translator/ImmutableStringBuilder.h"
-#include "compiler/translator/Symbol.h"
+#include "compiler/translator/SymbolTable.h"
 
 bool atoi_clamp(const char *str, unsigned int *value)
 {
@@ -81,8 +74,6 @@ bool IsInterpolationIn(TQualifier qualifier)
         case EvqNoPerspectiveIn:
         case EvqCentroidIn:
         case EvqSampleIn:
-        case EvqNoPerspectiveCentroidIn:
-        case EvqNoPerspectiveSampleIn:
             return true;
         default:
             return false;
@@ -98,8 +89,6 @@ bool IsInterpolationOut(TQualifier qualifier)
         case EvqNoPerspectiveOut:
         case EvqCentroidOut:
         case EvqSampleOut:
-        case EvqNoPerspectiveCentroidOut:
-        case EvqNoPerspectiveSampleOut:
             return true;
         default:
             return false;
@@ -107,10 +96,12 @@ bool IsInterpolationOut(TQualifier qualifier)
 }
 }  
 
-float NumericLexFloat32OutOfRangeToInfinity(const std::string &str, bool preserveDenorms)
+float NumericLexFloat32OutOfRangeToInfinity(const std::string &str)
 {
     
     
+    
+
     
     
     unsigned int decimalMantissa = 0;
@@ -215,60 +206,37 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str, bool preserv
             }
         }
     }
-
     
     long long exponentLong =
         static_cast<long long>(exponent) + static_cast<long long>(exponentOffset);
-
     if (exponentLong > std::numeric_limits<float>::max_exponent10)
     {
         return std::numeric_limits<float>::infinity();
     }
-
-    if (!preserveDenorms)
+    else if (exponentLong < std::numeric_limits<float>::min_exponent10)
     {
-        
-        
-        
-        
-        
-        
-        
-        
-        if (exponentLong < std::numeric_limits<float>::min_exponent10 - 1)
-        {
-            return 0.0f;
-        }
+        return 0.0f;
     }
-
     
     exponent     = static_cast<int>(exponentLong);
     double value = decimalMantissa;
 
     
     int normalizationExponentOffset = 1 - mantissaDecimalDigits;
-
     
     value *= std::pow(10.0, static_cast<double>(exponent + normalizationExponentOffset));
-
     if (value > static_cast<double>(std::numeric_limits<float>::max()))
     {
         return std::numeric_limits<float>::infinity();
     }
-
-    if (!preserveDenorms)
+    if (value < static_cast<double>(std::numeric_limits<float>::min()))
     {
-        if (static_cast<float>(value) < std::numeric_limits<float>::min())
-        {
-            return 0.0f;
-        }
+        return 0.0f;
     }
-
-    
     return static_cast<float>(value);
 }
 
-bool strtof_clamp(const std::string &str, float *value, bool preserveDenorms)
+bool strtof_clamp(const std::string &str, float *value)
 {
     
     
@@ -278,7 +246,7 @@ bool strtof_clamp(const std::string &str, float *value, bool preserveDenorms)
     
     
     
-    *value = NumericLexFloat32OutOfRangeToInfinity(str, preserveDenorms);
+    *value = NumericLexFloat32OutOfRangeToInfinity(str);
     return !gl::isInf(*value);
 }
 
@@ -309,9 +277,6 @@ GLenum GLVariableType(const TType &type)
             ASSERT(type.getSecondarySize() == 1);
 
             return kBoolGLType[type.getNominalSize() - 1];
-
-        case EbtYuvCscStandardEXT:
-            return GL_UNSIGNED_INT;
 
         case EbtSampler2D:
             return GL_SAMPLER_2D;
@@ -439,6 +404,9 @@ GLenum GLVariablePrecision(const TType &type)
                 return GL_MEDIUM_FLOAT;
             case EbpLow:
                 return GL_LOW_FLOAT;
+            case EbpUndefined:
+                
+                return GL_NONE;
             default:
                 UNREACHABLE();
         }
@@ -453,6 +421,9 @@ GLenum GLVariablePrecision(const TType &type)
                 return GL_MEDIUM_INT;
             case EbpLow:
                 return GL_LOW_INT;
+            case EbpUndefined:
+                
+                return GL_NONE;
             default:
                 UNREACHABLE();
         }
@@ -467,7 +438,7 @@ ImmutableString ArrayString(const TType &type)
     if (!type.isArray())
         return ImmutableString("");
 
-    const angle::Span<const unsigned int> &arraySizes = type.getArraySizes();
+    const TSpan<const unsigned int> &arraySizes     = type.getArraySizes();
     constexpr const size_t kMaxDecimalDigitsPerSize = 10u;
     ImmutableStringBuilder arrayString(arraySizes.size() * (kMaxDecimalDigitsPerSize + 2u));
     for (auto arraySizeIter = arraySizes.rbegin(); arraySizeIter != arraySizes.rend();
@@ -476,50 +447,19 @@ ImmutableString ArrayString(const TType &type)
         arrayString << "[";
         if (*arraySizeIter > 0)
         {
-            arrayString << *arraySizeIter;
+            arrayString.appendDecimal(*arraySizeIter);
         }
         arrayString << "]";
     }
     return arrayString;
 }
 
-ImmutableString GetTypeName(const TType &type,
-                            char prefix,
-                            ShHashFunction64 hashFunction,
-                            NameMap *nameMap)
+ImmutableString GetTypeName(const TType &type, ShHashFunction64 hashFunction, NameMap *nameMap)
 {
     if (type.getBasicType() == EbtStruct)
-        return HashName(type.getStruct(), prefix, hashFunction, nameMap);
+        return HashName(type.getStruct(), hashFunction, nameMap);
     else
         return ImmutableString(type.getBuiltInTypeNameString());
-}
-
-bool IsParam(TQualifier qualifier)
-{
-    switch (qualifier)
-    {
-        case EvqParamOut:
-        case EvqParamInOut:
-        case EvqParamIn:
-        case EvqParamConst:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
-bool IsParamOut(TQualifier qualifier)
-{
-    switch (qualifier)
-    {
-        case EvqParamOut:
-        case EvqParamInOut:
-            return true;
-
-        default:
-            return false;
-    }
 }
 
 bool IsVaryingOut(TQualifier qualifier)
@@ -527,10 +467,15 @@ bool IsVaryingOut(TQualifier qualifier)
     switch (qualifier)
     {
         case EvqVaryingOut:
+        case EvqSmoothOut:
+        case EvqFlatOut:
+        case EvqNoPerspectiveOut:
+        case EvqCentroidOut:
         case EvqVertexOut:
         case EvqGeometryOut:
         case EvqTessControlOut:
         case EvqTessEvaluationOut:
+        case EvqSampleOut:
         case EvqPatchOut:
             return true;
 
@@ -538,7 +483,7 @@ bool IsVaryingOut(TQualifier qualifier)
             break;
     }
 
-    return IsInterpolationOut(qualifier);
+    return false;
 }
 
 bool IsVaryingIn(TQualifier qualifier)
@@ -546,10 +491,15 @@ bool IsVaryingIn(TQualifier qualifier)
     switch (qualifier)
     {
         case EvqVaryingIn:
+        case EvqSmoothIn:
+        case EvqFlatIn:
+        case EvqNoPerspectiveIn:
+        case EvqCentroidIn:
         case EvqFragmentIn:
         case EvqGeometryIn:
         case EvqTessControlIn:
         case EvqTessEvaluationIn:
+        case EvqSampleIn:
         case EvqPatchIn:
             return true;
 
@@ -557,7 +507,7 @@ bool IsVaryingIn(TQualifier qualifier)
             break;
     }
 
-    return IsInterpolationIn(qualifier);
+    return false;
 }
 
 bool IsVarying(TQualifier qualifier)
@@ -624,14 +574,6 @@ InterpolationType GetInterpolationType(TQualifier qualifier)
         case EvqNoPerspectiveOut:
             return INTERPOLATION_NOPERSPECTIVE;
 
-        case EvqNoPerspectiveCentroidIn:
-        case EvqNoPerspectiveCentroidOut:
-            return INTERPOLATION_NOPERSPECTIVE_CENTROID;
-
-        case EvqNoPerspectiveSampleIn:
-        case EvqNoPerspectiveSampleOut:
-            return INTERPOLATION_NOPERSPECTIVE_SAMPLE;
-
         case EvqSmoothIn:
         case EvqSmoothOut:
         case EvqVertexOut:
@@ -664,20 +606,14 @@ InterpolationType GetFieldInterpolationType(TQualifier qualifier)
 {
     switch (qualifier)
     {
-        case EvqSmooth:
-            return INTERPOLATION_SMOOTH;
         case EvqFlat:
             return INTERPOLATION_FLAT;
         case EvqNoPerspective:
             return INTERPOLATION_NOPERSPECTIVE;
+        case EvqSmooth:
+            return INTERPOLATION_SMOOTH;
         case EvqCentroid:
             return INTERPOLATION_CENTROID;
-        case EvqSample:
-            return INTERPOLATION_SAMPLE;
-        case EvqNoPerspectiveCentroid:
-            return INTERPOLATION_NOPERSPECTIVE_CENTROID;
-        case EvqNoPerspectiveSample:
-            return INTERPOLATION_NOPERSPECTIVE_SAMPLE;
         default:
             return GetInterpolationType(qualifier);
     }
@@ -782,7 +718,6 @@ bool IsBuiltinOutputVariable(TQualifier qualifier)
         case EvqClipDistance:
         case EvqCullDistance:
         case EvqLastFragData:
-        case EvqLastFragColor:
         case EvqSampleMask:
             return true;
         default:
@@ -800,9 +735,6 @@ bool IsBuiltinFragmentInputVariable(TQualifier qualifier)
         case EvqFrontFacing:
         case EvqHelperInvocation:
         case EvqLastFragData:
-        case EvqLastFragColor:
-        case EvqLastFragDepth:
-        case EvqLastFragStencil:
             return true;
         default:
             break;
@@ -827,11 +759,6 @@ bool IsFragmentOutput(TQualifier qualifier)
     }
 }
 
-bool IsOutputNULL(ShShaderOutput output)
-{
-    return output == SH_NULL_OUTPUT;
-}
-
 bool IsOutputESSL(ShShaderOutput output)
 {
     return output == SH_ESSL_OUTPUT;
@@ -841,6 +768,8 @@ bool IsOutputGLSL(ShShaderOutput output)
 {
     switch (output)
     {
+        case SH_GLSL_130_OUTPUT:
+        case SH_GLSL_140_OUTPUT:
         case SH_GLSL_150_CORE_OUTPUT:
         case SH_GLSL_330_CORE_OUTPUT:
         case SH_GLSL_400_CORE_OUTPUT:
@@ -849,6 +778,7 @@ bool IsOutputGLSL(ShShaderOutput output)
         case SH_GLSL_430_CORE_OUTPUT:
         case SH_GLSL_440_CORE_OUTPUT:
         case SH_GLSL_450_CORE_OUTPUT:
+        case SH_GLSL_COMPATIBILITY_OUTPUT:
             return true;
         default:
             break;
@@ -861,23 +791,24 @@ bool IsOutputHLSL(ShShaderOutput output)
     {
         case SH_HLSL_3_0_OUTPUT:
         case SH_HLSL_4_1_OUTPUT:
+        case SH_HLSL_4_0_FL9_3_OUTPUT:
             return true;
         default:
             break;
     }
     return false;
 }
-bool IsOutputSPIRV(ShShaderOutput output)
+bool IsOutputVulkan(ShShaderOutput output)
 {
     return output == SH_SPIRV_VULKAN_OUTPUT;
 }
-bool IsOutputMSL(ShShaderOutput output)
+bool IsOutputMetal(ShShaderOutput output)
+{
+    return output == SH_SPIRV_METAL_OUTPUT;
+}
+bool IsOutputMetalDirect(ShShaderOutput output)
 {
     return output == SH_MSL_METAL_OUTPUT;
-}
-bool IsOutputWGSL(ShShaderOutput output)
-{
-    return output == SH_WGSL_OUTPUT;
 }
 
 bool IsInShaderStorageBlock(TIntermTyped *node)
@@ -947,6 +878,114 @@ bool IsSpecWithFunctionBodyNewScope(ShShaderSpec shaderSpec, int shaderVersion)
     return (shaderVersion == 100 && !sh::IsWebGLBasedSpec(shaderSpec));
 }
 
+ImplicitTypeConversion GetConversion(TBasicType t1, TBasicType t2)
+{
+    if (t1 == t2)
+        return ImplicitTypeConversion::Same;
+
+    switch (t1)
+    {
+        case EbtInt:
+            switch (t2)
+            {
+                case EbtInt:
+                    UNREACHABLE();
+                    break;
+                case EbtUInt:
+                    return ImplicitTypeConversion::Invalid;
+                case EbtFloat:
+                    return ImplicitTypeConversion::Left;
+                default:
+                    return ImplicitTypeConversion::Invalid;
+            }
+            break;
+        case EbtUInt:
+            switch (t2)
+            {
+                case EbtInt:
+                    return ImplicitTypeConversion::Invalid;
+                case EbtUInt:
+                    UNREACHABLE();
+                    break;
+                case EbtFloat:
+                    return ImplicitTypeConversion::Left;
+                default:
+                    return ImplicitTypeConversion::Invalid;
+            }
+            break;
+        case EbtFloat:
+            switch (t2)
+            {
+                case EbtInt:
+                case EbtUInt:
+                    return ImplicitTypeConversion::Right;
+                case EbtFloat:
+                    UNREACHABLE();
+                    break;
+                default:
+                    return ImplicitTypeConversion::Invalid;
+            }
+            break;
+        default:
+            return ImplicitTypeConversion::Invalid;
+    }
+    return ImplicitTypeConversion::Invalid;
+}
+
+bool IsValidImplicitConversion(sh::ImplicitTypeConversion conversion, TOperator op)
+{
+    switch (conversion)
+    {
+        case sh::ImplicitTypeConversion::Same:
+            return true;
+        case sh::ImplicitTypeConversion::Left:
+            switch (op)
+            {
+                case EOpEqual:
+                case EOpNotEqual:
+                case EOpLessThan:
+                case EOpGreaterThan:
+                case EOpLessThanEqual:
+                case EOpGreaterThanEqual:
+                case EOpAdd:
+                case EOpSub:
+                case EOpMul:
+                case EOpDiv:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        case sh::ImplicitTypeConversion::Right:
+            switch (op)
+            {
+                case EOpAssign:
+                case EOpInitialize:
+                case EOpEqual:
+                case EOpNotEqual:
+                case EOpLessThan:
+                case EOpGreaterThan:
+                case EOpLessThanEqual:
+                case EOpGreaterThanEqual:
+                case EOpAdd:
+                case EOpSub:
+                case EOpMul:
+                case EOpDiv:
+                case EOpAddAssign:
+                case EOpSubAssign:
+                case EOpMulAssign:
+                case EOpDivAssign:
+                    return true;
+                default:
+                    break;
+            }
+            break;
+        case sh::ImplicitTypeConversion::Invalid:
+            break;
+    }
+    return false;
+}
+
 bool IsPrecisionApplicableToType(TBasicType type)
 {
     switch (type)
@@ -964,11 +1003,8 @@ bool IsPrecisionApplicableToType(TBasicType type)
 
 bool IsRedeclarableBuiltIn(const ImmutableString &name)
 {
-    return name == "gl_ClipDistance" || name == "gl_CullDistance" || name == "gl_FragDepth" ||
-           name == "gl_LastFragData" || name == "gl_LastFragColorARM" ||
-           name == "gl_LastFragDepthARM" || name == "gl_LastFragStencilARM" ||
-           name == "gl_PerVertex" || name == "gl_in" || name == "gl_out" || name == "gl_Position" ||
-           name == "gl_PointSize";
+    return name == "gl_ClipDistance" || name == "gl_CullDistance" || name == "gl_LastFragData" ||
+           name == "gl_PerVertex" || name == "gl_Position" || name == "gl_PointSize";
 }
 
 size_t FindFieldIndex(const TFieldList &fieldList, const char *fieldName)
@@ -982,41 +1018,6 @@ size_t FindFieldIndex(const TFieldList &fieldList, const char *fieldName)
     }
     UNREACHABLE();
     return 0;
-}
-
-Declaration ViewDeclaration(TIntermDeclaration &declNode, uint32_t index)
-{
-    ASSERT(declNode.getChildCount() > index);
-    TIntermNode *childNode = declNode.getChildNode(index);
-    ASSERT(childNode);
-    TIntermSymbol *symbolNode;
-    if ((symbolNode = childNode->getAsSymbolNode()))
-    {
-        return {*symbolNode, nullptr};
-    }
-    else
-    {
-        TIntermBinary *initNode = childNode->getAsBinaryNode();
-        ASSERT(initNode);
-        ASSERT(initNode->getOp() == TOperator::EOpInitialize);
-        symbolNode = initNode->getLeft()->getAsSymbolNode();
-        ASSERT(symbolNode);
-        return {*symbolNode, initNode->getRight()};
-    }
-}
-
-bool IsIndexOp(TOperator op)
-{
-    switch (op)
-    {
-        case EOpIndexDirect:
-        case EOpIndexDirectStruct:
-        case EOpIndexDirectInterfaceBlock:
-        case EOpIndexIndirect:
-            return true;
-        default:
-            return false;
-    }
 }
 
 }  

@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_TREEOPS_D3D_REWRITE_ATOMIC_FUNCTION_EXPRESSIONS_H_
+#define COMPILER_TRANSLATOR_TREEOPS_D3D_REWRITE_ATOMIC_FUNCTION_EXPRESSIONS_H_
+
+#include "common/angleutils.h"
+
+namespace sh
+{
+class TCompiler;
+class TIntermNode;
+class TSymbolTable;
+
+[[nodiscard]] bool RewriteAtomicFunctionExpressions(TCompiler *compiler,
+                                                    TIntermNode *root,
+                                                    TSymbolTable *symbolTable,
+                                                    int shaderVersion);
+}  
+
+#endif  

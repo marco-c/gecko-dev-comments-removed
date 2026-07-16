@@ -12,8 +12,9 @@
 #include <GLSLANG/ShaderVars.h>
 #include <anglebase/sha1.h>
 
-#include "common/BinaryStream.h"
+#include "common/angle_version_info.h"
 #include "common/utilities.h"
+#include "libANGLE/BinaryStream.h"
 #include "libANGLE/Compiler.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/Debug.h"
@@ -27,58 +28,88 @@ namespace gl
 
 namespace
 {
+void ComputeHash(const Context *context,
+                 const Shader *shader,
+                 const ShCompileOptions &compileOptions,
+                 const ShCompilerInstance &compilerInstance,
+                 egl::BlobCache::Key *hashOut)
+{
+    BinaryOutputStream hashStream;
+    
+    hashStream.writeEnum(shader->getType());
+    hashStream.writeString(shader->getSourceString());
 
+    
+    hashStream.writeString(angle::GetANGLECommitHash());
 
+    hashStream.writeEnum(Compiler::SelectShaderSpec(context->getState()));
+    hashStream.writeEnum(compilerInstance.getShaderOutputType());
+    hashStream.writeBytes(reinterpret_cast<const uint8_t *>(&compileOptions),
+                          sizeof(compileOptions));
 
-static constexpr size_t kMaxUncompressedShaderSize = 5 * 1024 * 1024;
+    
+    
+    const ShBuiltInResources resources = compilerInstance.getBuiltInResources();
+    hashStream.writeBytes(reinterpret_cast<const uint8_t *>(&resources), sizeof(resources));
+
+    
+    const std::vector<uint8_t> &shaderKey = hashStream.getData();
+    angle::base::SHA1HashBytes(shaderKey.data(), shaderKey.size(), hashOut->data());
+}
 }  
 
 MemoryShaderCache::MemoryShaderCache(egl::BlobCache &blobCache) : mBlobCache(blobCache) {}
 
 MemoryShaderCache::~MemoryShaderCache() {}
 
-egl::CacheGetResult MemoryShaderCache::getShader(const Context *context,
-                                                 Shader *shader,
-                                                 const egl::BlobCache::Key &shaderHash,
-                                                 angle::JobResultExpectancy resultExpectancy)
+angle::Result MemoryShaderCache::getShader(const Context *context,
+                                           Shader *shader,
+                                           const ShCompileOptions &compileOptions,
+                                           const ShCompilerInstance &compilerInstance,
+                                           egl::BlobCache::Key *hashOut)
 {
     
-    if (!mBlobCache.isCachingEnabled(context))
+    if (!mBlobCache.isCachingEnabled())
     {
-        return egl::CacheGetResult::NotFound;
+        return angle::Result::Incomplete;
     }
 
+    ComputeHash(context, shader, compileOptions, compilerInstance, hashOut);
+
     angle::MemoryBuffer uncompressedData;
-    const egl::BlobCache::GetAndDecompressResult result =
-        mBlobCache.getAndDecompress(context, context->getScratchBuffer(), shaderHash,
-                                    kMaxUncompressedShaderSize, &uncompressedData);
-    switch (result)
+    switch (mBlobCache.getAndDecompress(context->getScratchBuffer(), *hashOut, &uncompressedData))
     {
         case egl::BlobCache::GetAndDecompressResult::DecompressFailure:
             ANGLE_PERF_WARNING(context->getState().getDebug(), GL_DEBUG_SEVERITY_LOW,
                                "Error decompressing shader binary data from cache.");
-            mBlobCache.remove(shaderHash);
-            return egl::CacheGetResult::NotFound;
+            return angle::Result::Incomplete;
 
         case egl::BlobCache::GetAndDecompressResult::NotFound:
-            return egl::CacheGetResult::NotFound;
+            return angle::Result::Incomplete;
 
-        case egl::BlobCache::GetAndDecompressResult::Success:
-            if (shader->loadBinary(context, uncompressedData.data(),
-                                   static_cast<int>(uncompressedData.size()), resultExpectancy))
+        case egl::BlobCache::GetAndDecompressResult::GetSuccess:
+            angle::Result result = shader->loadBinary(context, uncompressedData.data(),
+                                                      static_cast<int>(uncompressedData.size()));
+
             {
-                return egl::CacheGetResult::Success;
+                std::scoped_lock<std::mutex> lock(mHistogramMutex);
+                ANGLE_HISTOGRAM_BOOLEAN("GPU.ANGLE.ShaderCache.LoadBinarySuccess",
+                                        result == angle::Result::Continue);
             }
+            ANGLE_TRY(result);
+
+            if (result == angle::Result::Continue)
+                return angle::Result::Continue;
 
             
             ANGLE_PERF_WARNING(context->getState().getDebug(), GL_DEBUG_SEVERITY_LOW,
                                "Failed to load shader binary from cache.");
-            mBlobCache.remove(shaderHash);
-            return egl::CacheGetResult::Rejected;
+            mBlobCache.remove(*hashOut);
+            return angle::Result::Incomplete;
     }
 
     UNREACHABLE();
-    return egl::CacheGetResult::NotFound;
+    return angle::Result::Incomplete;
 }
 
 angle::Result MemoryShaderCache::putShader(const Context *context,
@@ -86,32 +117,26 @@ angle::Result MemoryShaderCache::putShader(const Context *context,
                                            const Shader *shader)
 {
     
-    if (!mBlobCache.isCachingEnabled(context))
+    if (!mBlobCache.isCachingEnabled())
     {
-        return angle::Result::Continue;
+        return angle::Result::Incomplete;
     }
 
     angle::MemoryBuffer serializedShader;
     ANGLE_TRY(shader->serialize(nullptr, &serializedShader));
 
-    if (serializedShader.size() > kMaxUncompressedShaderSize)
-    {
-        std::ostringstream warningMessage;
-        warningMessage << "Shader is too large to cache: ";
-        warningMessage << "shader size: " << serializedShader.size()
-                       << ", max size: " << kMaxUncompressedShaderSize;
-        ANGLE_PERF_WARNING(context->getState().getDebug(), GL_DEBUG_SEVERITY_LOW, "%s",
-                           warningMessage.str().c_str());
-        return angle::Result::Continue;
-    }
-
     size_t compressedSize;
-    if (!mBlobCache.compressAndPut(context, shaderHash, std::move(serializedShader),
-                                   &compressedSize))
+    if (!mBlobCache.compressAndPut(shaderHash, std::move(serializedShader), &compressedSize))
     {
         ANGLE_PERF_WARNING(context->getState().getDebug(), GL_DEBUG_SEVERITY_LOW,
                            "Error compressing shader binary data for insertion into cache.");
-        return angle::Result::Continue;
+        return angle::Result::Incomplete;
+    }
+
+    {
+        std::scoped_lock<std::mutex> lock(mHistogramMutex);
+        ANGLE_HISTOGRAM_COUNTS("GPU.ANGLE.ShaderCache.ShaderBinarySizeBytes",
+                               static_cast<int>(compressedSize));
     }
 
     return angle::Result::Continue;

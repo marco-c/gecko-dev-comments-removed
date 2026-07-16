@@ -4,10 +4,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 
 
 #include "image_util/loadimage.h"
@@ -117,8 +113,7 @@ R8G8B8A8 DecodeColor(const uint8_t *src,
 }  
 
 
-void LoadPalettedToRGBA8Impl(const ImageLoadContext &context,
-                             size_t width,
+void LoadPalettedToRGBA8Impl(size_t width,
                              size_t height,
                              size_t depth,
                              uint32_t indexBits,
@@ -138,8 +133,7 @@ void LoadPalettedToRGBA8Impl(const ImageLoadContext &context,
 
     const uint8_t *palette = input;
 
-    const uint8_t *texels =
-        input + paletteBytes;  
+    const uint8_t *texels = input + paletteBytes;  
 
     for (size_t z = 0; z < depth; z++)
     {

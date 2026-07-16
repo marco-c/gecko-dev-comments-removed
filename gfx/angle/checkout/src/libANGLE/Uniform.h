@@ -7,188 +7,79 @@
 #ifndef LIBANGLE_UNIFORM_H_
 #define LIBANGLE_UNIFORM_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include <string>
 #include <vector>
 
 #include "angle_gl.h"
 #include "common/MemoryBuffer.h"
 #include "common/debug.h"
-#include "common/uniform_type_info_autogen.h"
 #include "common/utilities.h"
 #include "compiler/translator/blocklayout.h"
 #include "libANGLE/angletypes.h"
 
 namespace gl
 {
-class BinaryInputStream;
-class BinaryOutputStream;
 struct UniformTypeInfo;
-struct UsedUniform;
-struct LinkedUniform;
-
-#define ACTIVE_VARIABLE_COMMON_INTERFACES                         \
-    void setActive(ShaderType shaderType, bool used, uint32_t id) \
-    {                                                             \
-        ASSERT(shaderType != ShaderType::InvalidEnum);            \
-        pod.activeUseBits.set(shaderType, used);                  \
-        pod.ids[shaderType] = id;                                 \
-    }                                                             \
-    ShaderType getFirstActiveShaderType() const                   \
-    {                                                             \
-        return pod.activeUseBits.first();                         \
-    }                                                             \
-    bool isActive(ShaderType shaderType) const                    \
-    {                                                             \
-        return pod.activeUseBits[shaderType];                     \
-    }                                                             \
-    const ShaderMap<uint32_t> &getIds() const                     \
-    {                                                             \
-        return pod.ids;                                           \
-    }                                                             \
-    uint32_t getId(ShaderType shaderType) const                   \
-    {                                                             \
-        return pod.ids[shaderType];                               \
-    }                                                             \
-    ShaderBitSet activeShaders() const                            \
-    {                                                             \
-        return pod.activeUseBits;                                 \
-    }                                                             \
-    uint32_t activeShaderCount() const                            \
-    {                                                             \
-        return static_cast<uint32_t>(pod.activeUseBits.count());  \
-    }
 
 struct ActiveVariable
 {
-    ActiveVariable() { memset(&pod, 0, sizeof(pod)); }
+    ActiveVariable();
+    ActiveVariable(const ActiveVariable &rhs);
+    virtual ~ActiveVariable();
 
-    ACTIVE_VARIABLE_COMMON_INTERFACES
+    ActiveVariable &operator=(const ActiveVariable &rhs);
 
-    struct PODStruct
+    ShaderType getFirstShaderTypeWhereActive() const;
+    void setActive(ShaderType shaderType, bool used);
+    void unionReferencesWith(const ActiveVariable &other);
+    bool isActive(ShaderType shaderType) const
     {
-        ShaderBitSet activeUseBits;
-        
-        
-        ShaderMap<uint32_t> ids;
-    } pod;
+        ASSERT(shaderType != ShaderType::InvalidEnum);
+        return mActiveUseBits[shaderType];
+    }
+    ShaderBitSet activeShaders() const { return mActiveUseBits; }
+    GLuint activeShaderCount() const;
+
+  private:
+    ShaderBitSet mActiveUseBits;
 };
 
-inline const UniformTypeInfo &GetUniformTypeInfoFromIndex(UniformTypeIndex index)
+
+struct LinkedUniform : public sh::ShaderVariable, public ActiveVariable
 {
-    ASSERT(index.value >= 0 && index.value < kUniformInfoTable.size());
-    return kUniformInfoTable[index.value];
-}
+    LinkedUniform();
+    LinkedUniform(GLenum type,
+                  GLenum precision,
+                  const std::string &name,
+                  const std::vector<unsigned int> &arraySizes,
+                  const int binding,
+                  const int offset,
+                  const int location,
+                  const int bufferIndex,
+                  const sh::BlockMemberInfo &blockInfo);
+    LinkedUniform(const sh::ShaderVariable &uniform);
+    LinkedUniform(const LinkedUniform &uniform);
+    LinkedUniform &operator=(const LinkedUniform &uniform);
+    ~LinkedUniform() override;
 
+    bool isSampler() const { return typeInfo->isSampler; }
+    bool isImage() const { return typeInfo->isImageType; }
+    bool isAtomicCounter() const { return IsAtomicCounterType(type); }
+    bool isInDefaultBlock() const { return bufferIndex == -1; }
+    bool isField() const { return name.find('.') != std::string::npos; }
+    size_t getElementSize() const { return typeInfo->externalSize; }
+    size_t getElementComponents() const { return typeInfo->componentCount; }
 
+    const UniformTypeInfo *typeInfo;
 
-
-
-ANGLE_ENABLE_STRUCT_PADDING_WARNINGS
-struct LinkedUniform
-{
-    LinkedUniform() = default;
-    LinkedUniform(GLenum typeIn,
-                  GLenum precisionIn,
-                  const std::vector<unsigned int> &arraySizesIn,
-                  const int bindingIn,
-                  const int offsetIn,
-                  const int locationIn,
-                  const int bufferIndexIn,
-                  const sh::BlockMemberInfo &blockInfoIn);
-    LinkedUniform(const UsedUniform &usedUniform);
-
-    const UniformTypeInfo &getUniformTypeInfo() const
-    {
-        return GetUniformTypeInfoFromIndex(pod.typeIndex);
-    }
-
-    bool isSampler() const { return getUniformTypeInfo().isSampler; }
-    bool isImage() const { return getUniformTypeInfo().isImageType; }
-    bool isAtomicCounter() const { return IsAtomicCounterType(getType()); }
-    bool isInDefaultBlock() const { return pod.bufferIndex == -1; }
-    size_t getElementSize() const { return getUniformTypeInfo().externalSize; }
-    GLint getElementComponents() const { return GetUniformElementComponents(pod.typeIndex); }
-
-    bool isTexelFetchStaticUse() const { return pod.flagBits.texelFetchStaticUse; }
-    bool isFragmentInOut() const { return pod.flagBits.isFragmentInOut; }
-
-    bool isArray() const { return pod.flagBits.isArray; }
-    uint16_t getBasicTypeElementCount() const
-    {
-        ASSERT(pod.flagBits.isArray || pod.arraySize == 1u);
-        return pod.arraySize;
-    }
-
-    GLenum getType() const { return getUniformTypeInfo().type; }
-    uint16_t getOuterArrayOffset() const { return pod.outerArrayOffset; }
-    uint16_t getOuterArraySizeProduct() const { return pod.outerArraySizeProduct; }
-    uint16_t getBlockOffset() const { return pod.blockOffset; }
-    int16_t getBinding() const { return pod.binding; }
-    int16_t getOffset() const { return pod.offset; }
-    int getBufferIndex() const { return pod.bufferIndex; }
-    int getLocation() const { return pod.location; }
-    GLenum getImageUnitFormat() const { return pod.imageUnitFormat; }
-    bool isFloat16() const { return pod.flagBits.isFloat16; }
-
-    ACTIVE_VARIABLE_COMMON_INTERFACES
-
-    struct PODStruct
-    {
-        UniformTypeIndex typeIndex;
-        uint16_t precision;
-
-        int32_t location;
-
-        
-        uint16_t blockOffset;
-        uint16_t blockArrayStride;
-
-        uint16_t blockMatrixStride;
-        uint16_t imageUnitFormat;
-
-        
-        
-        static_assert(IMPLEMENTATION_MAX_UNIFORM_BLOCK_SIZE <=
-                      std::numeric_limits<uint16_t>::max() + 1);
-        int16_t binding;
-        int16_t bufferIndex;
-
-        int16_t offset;
-        uint16_t arraySize;
-
-        uint16_t outerArraySizeProduct;
-        uint16_t outerArrayOffset;
-
-        uint16_t parentArrayIndex;
-        union
-        {
-            struct
-            {
-                uint8_t isFragmentInOut : 1;
-                uint8_t texelFetchStaticUse : 1;
-                uint8_t isArray : 1;
-                uint8_t blockIsRowMajorMatrix : 1;
-                uint8_t isBlock : 1;
-                uint8_t isFloat16 : 1;
-                uint8_t padding : 2;
-            } flagBits;
-            uint8_t flagBitsAsUByte;
-        };
-        ShaderBitSet activeUseBits;
-
-        uint32_t id;
-        
-        
-        ShaderMap<uint32_t> ids;
-    } pod;
+    
+    int bufferIndex;
+    sh::BlockMemberInfo blockInfo;
+    std::vector<unsigned int> outerArraySizes;
+    unsigned int outerArrayOffset;
 };
-ANGLE_DISABLE_STRUCT_PADDING_WARNINGS
 
-struct BufferVariable
+struct BufferVariable : public sh::ShaderVariable, public ActiveVariable
 {
     BufferVariable();
     BufferVariable(GLenum type,
@@ -196,77 +87,38 @@ struct BufferVariable
                    const std::string &name,
                    const std::vector<unsigned int> &arraySizes,
                    const int bufferIndex,
-                   int topLevelArraySize,
                    const sh::BlockMemberInfo &blockInfo);
-    ~BufferVariable() {}
+    ~BufferVariable() override;
 
-    bool isArray() const { return pod.isArray; }
-    uint32_t getBasicTypeElementCount() const { return pod.basicTypeElementCount; }
+    int bufferIndex;
+    sh::BlockMemberInfo blockInfo;
 
-    ACTIVE_VARIABLE_COMMON_INTERFACES
-
-    std::string name;
-    std::string mappedName;
-
-    ANGLE_ENABLE_STRUCT_PADDING_WARNINGS
-    struct PODStruct
-    {
-        uint16_t type;
-        uint16_t precision;
-
-        
-        ShaderBitSet activeUseBits;
-        bool isArray;
-
-        int16_t bufferIndex;
-
-        
-        
-        ShaderMap<uint32_t> ids;
-
-        sh::BlockMemberInfo blockInfo;
-
-        int32_t topLevelArraySize;
-        uint32_t basicTypeElementCount;
-    } pod;
-    ANGLE_DISABLE_STRUCT_PADDING_WARNINGS
+    int topLevelArraySize;
 };
 
 
-struct AtomicCounterBuffer
+
+struct ShaderVariableBuffer : public ActiveVariable
 {
-    AtomicCounterBuffer();
-    ~AtomicCounterBuffer() {}
+    ShaderVariableBuffer();
+    ShaderVariableBuffer(const ShaderVariableBuffer &other);
+    ~ShaderVariableBuffer() override;
+    int numActiveVariables() const;
 
-    ACTIVE_VARIABLE_COMMON_INTERFACES
-    int numActiveVariables() const { return static_cast<int>(memberIndexes.size()); }
-    void unionReferencesWith(const LinkedUniform &otherUniform);
-
+    int binding;
+    unsigned int dataSize;
     std::vector<unsigned int> memberIndexes;
-
-    ANGLE_ENABLE_STRUCT_PADDING_WARNINGS
-    struct PODStruct
-    {
-        
-        
-        ShaderMap<uint32_t> ids;
-        
-        int inShaderBinding;
-        unsigned int dataSize;
-        ShaderBitSet activeUseBits;
-        uint8_t pads[3];
-    } pod;
-    ANGLE_DISABLE_STRUCT_PADDING_WARNINGS
 };
 
+using AtomicCounterBuffer = ShaderVariableBuffer;
 
-struct InterfaceBlock
+
+struct InterfaceBlock : public ShaderVariableBuffer
 {
     InterfaceBlock();
     InterfaceBlock(const std::string &nameIn,
                    const std::string &mappedNameIn,
                    bool isArrayIn,
-                   bool isReadOnlyIn,
                    unsigned int arrayElementIn,
                    unsigned int firstFieldArraySizeIn,
                    int bindingIn);
@@ -274,37 +126,13 @@ struct InterfaceBlock
     std::string nameWithArrayIndex() const;
     std::string mappedNameWithArrayIndex() const;
 
-    ACTIVE_VARIABLE_COMMON_INTERFACES
-
-    int numActiveVariables() const { return static_cast<int>(memberIndexes.size()); }
-
     std::string name;
     std::string mappedName;
-    std::vector<unsigned int> memberIndexes;
-
-    ANGLE_ENABLE_STRUCT_PADDING_WARNINGS
-    struct PODStruct
-    {
-        uint32_t arrayElement;
-        uint32_t firstFieldArraySize;
-
-        ShaderBitSet activeUseBits;
-        uint8_t isArray : 1;
-        
-        uint8_t isReadOnly : 1;
-        uint8_t padings : 6;
-        
-        int16_t inShaderBinding;
-
-        unsigned int dataSize;
-        
-        
-        ShaderMap<uint32_t> ids;
-    } pod;
-    ANGLE_DISABLE_STRUCT_PADDING_WARNINGS
+    bool isArray;
+    unsigned int arrayElement;
+    unsigned int firstFieldArraySize;
 };
 
-#undef ACTIVE_VARIABLE_COMMON_INTERFACES
 }  
 
 #endif  

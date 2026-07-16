@@ -51,6 +51,10 @@ class IntermNodePatternMatcher
 
         
         kArrayLengthMethod = 1u << 6u,
+
+        
+        
+        kScalarizedVecOrMatConstructor = 1u << 7u,
     };
     IntermNodePatternMatcher(const unsigned int mask);
 

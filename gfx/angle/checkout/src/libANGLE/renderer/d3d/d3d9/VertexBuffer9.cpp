@@ -6,10 +6,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/d3d/d3d9/VertexBuffer9.h"
 
 #include "libANGLE/Buffer.h"

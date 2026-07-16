@@ -243,8 +243,6 @@ angle::Result Framebuffer9::blitImpl(const gl::Context *context,
 
         const gl::FramebufferAttachment *drawBuffer = mState.getColorAttachment(0);
         ASSERT(drawBuffer);
-        
-        ASSERT(!(drawBuffer->isRenderToTexture() && drawBuffer->isMultiview()));
 
         RenderTarget9 *drawRenderTarget = nullptr;
         ANGLE_TRY(
@@ -363,8 +361,6 @@ angle::Result Framebuffer9::blitImpl(const gl::Context *context,
 
         const gl::FramebufferAttachment *drawBuffer = mState.getDepthOrStencilAttachment();
         ASSERT(drawBuffer);
-        
-        ASSERT(!(drawBuffer->isRenderToTexture() && drawBuffer->isMultiview()));
 
         RenderTarget9 *drawDepthStencil = nullptr;
         ANGLE_TRY(

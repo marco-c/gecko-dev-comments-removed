@@ -17,10 +17,10 @@ namespace overlay
 constexpr uint32_t kFontMipCount                     = 2;
 constexpr uint32_t kFontCharacters                   = 95;
 constexpr uint32_t kFontGlyphWidth                   = 17;
-constexpr uint32_t kFontGlyphHeight                  = 39;
-constexpr uint32_t kFontMipDataSize[kFontMipCount]   = {62985, 14440};
-constexpr uint32_t kFontMipDataOffset[kFontMipCount] = {0, 62985};
-constexpr uint32_t kFontTotalDataSize                = 77425;
+constexpr uint32_t kFontGlyphHeight                  = 34;
+constexpr uint32_t kFontMipDataSize[kFontMipCount]   = {54910, 12920};
+constexpr uint32_t kFontMipDataOffset[kFontMipCount] = {0, 54910};
+constexpr uint32_t kFontTotalDataSize                = 67830;
 constexpr uint32_t kFontMipLarge                     = 0;
 constexpr uint32_t kFontMipSmall                     = 1;
 }  
