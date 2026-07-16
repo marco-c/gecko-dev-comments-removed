@@ -39,6 +39,7 @@
 #include "nsThreadManager.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/Encoding.h"
 #include "nsQueryObject.h"
 #include "private/pprio.h"
 
@@ -94,10 +95,46 @@ LlamaGenerateTask::~LlamaGenerateTask() {
   LOGD_RUNNER("Entered {}", __PRETTY_FUNCTION__);
 }
 
+namespace {
+
+
+
+
+
+
+
+[[nodiscard]] bool AppendDecodedUtf8(Decoder& aDecoder,
+                                     const nsACString& aBytes,
+                                     nsACString& aOut) {
+  Span<const uint8_t> src(
+      reinterpret_cast<const uint8_t*>(aBytes.BeginReading()), aBytes.Length());
+  CheckedInt<size_t> capacity = aDecoder.MaxUTF8BufferLength(src.Length());
+  size_t base = aOut.Length();
+  if (!capacity.isValid() ||
+      !aOut.SetLength(base + capacity.value(), fallible)) {
+    return false;
+  }
+  Span<uint8_t> dst(reinterpret_cast<uint8_t*>(aOut.BeginWriting()) + base,
+                    capacity.value());
+  aOut.SetLength(base + std::get<2>(aDecoder.DecodeToUTF8(src, dst, false)));
+  return true;
+}
+
+}  
+
 nsresult LlamaGenerateTask::Run() {
   LOGD_RUNNER("Entered {}", __PRETTY_FUNCTION__);
   mState = TaskState::Running;
   mozilla::dom::LlamaChatResponse response;
+
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<Decoder> decoder = UTF_8_ENCODING->NewDecoderWithoutBOMHandling();
 
   
   auto cancelCallback = [&state = mState]() -> bool {
@@ -106,8 +143,9 @@ nsresult LlamaGenerateTask::Run() {
 
   
   auto tokenCallback =
-      [&response, bufSize = mChatOptions.mMinOutputBufferSize, self = this](
-          const mozilla::dom::LlamaChatResponse& chunk) -> ResultStatus {
+      [&response, &decoder, bufSize = mChatOptions.mMinOutputBufferSize,
+       self =
+           this](const mozilla::dom::LlamaChatResponse& chunk) -> ResultStatus {
     LOGV_RUNNER("Entered {}", __PRETTY_FUNCTION__);
     
     if ((response.mPhase != chunk.mPhase) && !response.mTokens.IsEmpty()) {
@@ -125,7 +163,12 @@ nsresult LlamaGenerateTask::Run() {
       }
     }
 
-    response.mPiece.Append(chunk.mPiece);
+    if (!AppendDecodedUtf8(*decoder, chunk.mPiece, response.mPiece)) {
+      auto msg = nsFmtCString("{}: Unable to append message to the response",
+                              __PRETTY_FUNCTION__);
+      LOGE_RUNNER("{}", msg);
+      return mozilla::Err(Error{std::move(msg)});
+    }
     auto out =
         response.mTokens.AppendElements(chunk.mTokens, mozilla::fallible);
     if (!out) {
