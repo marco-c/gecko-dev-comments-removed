@@ -449,7 +449,44 @@ function processCSSRules(container) {
       processCSSRules(rule); 
     }
     if (!rule.style) {
-      continue; 
+      
+
+      
+      if (rule.conditionText) {
+        const lexer = new InspectorCSSParser(rule.conditionText);
+        let token;
+        let foundStyleFunc = false;
+        while ((token = lexer.nextToken())) {
+          
+          
+          if (token.tokenType === "Function" && token.value === "style") {
+            foundStyleFunc = true;
+            continue;
+          }
+
+          
+          
+          if (
+            foundStyleFunc &&
+            token.tokenType === "Ident" &&
+            token.text.startsWith("--")
+          ) {
+            foundStyleFunc = false;
+            const prop = token.text;
+            let prevValue = customPropsToReferencesMap.get(prop) || 0;
+            customPropsToReferencesMap.set(prop, prevValue + 1);
+            continue;
+          }
+
+          
+          if (token.tokenType === "CloseParenthesis") {
+            foundStyleFunc = false;
+            continue;
+          }
+        }
+      }
+
+      continue;
     }
 
     
