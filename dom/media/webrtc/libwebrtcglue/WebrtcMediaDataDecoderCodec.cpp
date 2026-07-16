@@ -52,8 +52,14 @@ media::DecodeSupportSet WebrtcMediaDataDecoder::Supports(
   }
   aParams.mOptions = WebrtcDecoderOptions();
   auto support = MakeRefPtr<PDMFactory>()->Supports(aParams, nullptr);
+  
+  
+  
+  
+  
   if (aCodecType == webrtc::VideoCodecType::kVideoCodecH264 &&
-      !StaticPrefs::media_webrtc_hw_h264_enabled()) {
+      !StaticPrefs::media_webrtc_hw_h264_enabled() &&
+      support.contains(media::DecodeSupport::SoftwareDecode)) {
     support -= media::DecodeSupport::HardwareDecode;
   }
 #ifdef MOZ_WIDGET_GTK

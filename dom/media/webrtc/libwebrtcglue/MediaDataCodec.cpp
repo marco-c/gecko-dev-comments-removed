@@ -77,8 +77,14 @@ media::DecodeSupportSet MediaDataCodec::SupportsDecoderCodec(
   }
   media::DecodeSupportSet support =
       PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
+  
+  
+  
+  
+  
   if (aCodecType == webrtc::VideoCodecType::kVideoCodecH264 &&
-      !StaticPrefs::media_webrtc_hw_h264_enabled()) {
+      !StaticPrefs::media_webrtc_hw_h264_enabled() &&
+      support.contains(media::DecodeSupport::SoftwareDecode)) {
     support -= media::DecodeSupport::HardwareDecode;
   }
   return support;
