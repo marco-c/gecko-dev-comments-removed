@@ -1638,7 +1638,16 @@ fn prepare_tiled_picture_surface(
         .map(&tile_cache.local_clip_rect)
         .expect("bug: unable to map clip rect")
         .round();
-    let device_clip_rect = (world_clip_rect * frame_context.global_device_pixel_scale).round();
+    
+    
+    
+    
+    
+    
+    
+    let device_clip_rect = frame_state
+        .composite_state
+        .get_device_rect(&tile_cache.local_clip_rect, tile_cache.transform_index);
 
     for (sub_slice_index, sub_slice) in tile_cache.sub_slices.iter_mut().enumerate() {
         for tile in sub_slice.tiles.values_mut() {
