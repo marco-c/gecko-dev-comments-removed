@@ -9,47 +9,64 @@
 
 
 
+#include <array>
 #include <bit>
 
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "jit/riscv64/base/Integer.h"
 
-namespace js {
-namespace jit {
-void Assembler::RecursiveLi(Register rd, int64_t imm) {
-  if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
-    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
-    int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
-    if (countFillZero < RecursiveLiImplCount(imm)) {
-      RecursiveLiImpl(rd, ShiftedVal);
-      srli(rd, rd, LeadingZeros);
-      return;
-    }
-  }
-  RecursiveLiImpl(rd, imm);
-}
+using namespace js::jit;
 
-int Assembler::RecursiveLiCount(int64_t imm) {
-  if (imm > 0 && RecursiveLiImplCount(imm) > 2) {
-    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
-    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
-    
-    
-    
-    int countFillZero = RecursiveLiImplCount(ShiftedVal) + 1;
-    if (countFillZero < RecursiveLiImplCount(imm)) {
-      return countFillZero;
-    }
-  }
-  return RecursiveLiImplCount(imm);
-}
+class Inst : public InstructionBase {
+  Instr instr_{};
 
-inline int64_t signExtend(uint64_t V, int N) {
+ public:
+  operator Instr() const { return instr_; }
+};
+
+class InstSeq {
+  
+  static constexpr size_t MaxLength = 8;
+
+  std::array<Inst, MaxLength> insts_;
+  size_t size_ = 0;
+
+  auto* next() {
+    MOZ_RELEASE_ASSERT(size_ < MaxLength);
+    return &instrs_[size_++];
+  }
+
+ public:
+  size_t size() const { return size_; }
+
+  auto begin() { return insts_.begin(); }
+  auto begin() const { return insts_.begin(); }
+
+  auto end() { return std::next(insts_.begin(), size_); }
+  auto end() const { return std::next(insts_.begin(), size_); }
+
+  void lui(Register rd, int32_t imm20) {
+    next()->SetUFormat(RO_LUI, rd.code(), imm20);
+  }
+  void addi(Register rd, Register rs1, int16_t imm12) {
+    next()->SetIFormat(RO_ADDI, rd.code(), rs1.code(), imm12);
+  }
+  void addiw(Register rd, Register rs1, int16_t imm12) {
+    next()->SetIFormat(RO_ADDIW, rd.code(), rs1.code(), imm12);
+  }
+  void slli(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShiftFormat(RO_SLLI, rd.code(), rs1.code(), shamt);
+  }
+  void srli(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShiftFormat(RO_SRLI, rd.code(), rs1.code(), shamt);
+  }
+};
+
+static inline int64_t signExtend(uint64_t V, int N) {
   return int64_t(V << (64 - N)) >> (64 - N);
 }
 
-void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
+static void RecursiveLiImpl(Register rd, int64_t imm, InstSeq& result) {
   if (is_int32(imm)) {
     
     
@@ -61,14 +78,14 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
     auto [Hi20, Lo12] = ToHigh20Low12(int32_t(imm));
 
     if (Hi20) {
-      lui(rd, (int32_t)Hi20);
+      result.lui(rd, (int32_t)Hi20);
     }
 
     if (Lo12 || Hi20 == 0) {
       if (Hi20) {
-        addiw(rd, rd, Lo12);
+        result.addiw(rd, rd, Lo12);
       } else {
-        addi(rd, zero_reg, Lo12);
+        result.addi(rd, zero_reg, Lo12);
       }
     }
     return;
@@ -114,96 +131,53 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
       Hi52 = (uint64_t)Hi52 << 12;
     }
   }
-  RecursiveLi(rd, Hi52);
+  RecursiveLiImpl(rd, Hi52, result);
 
   if (Unsigned) {
   } else {
-    slli(rd, rd, ShiftAmount);
+    result.slli(rd, rd, ShiftAmount);
   }
   if (Lo12) {
-    addi(rd, rd, Lo12);
+    result.addi(rd, rd, Lo12);
   }
 }
 
-int Assembler::RecursiveLiImplCount(int64_t imm) {
-  int count = 0;
-  if (is_int32(imm)) {
-    
-    
-    
-    
-    
-    
-    
-    auto [Hi20, Lo12] = ToHigh20Low12(int32_t(imm));
+static void RecursiveLi(Register rd, int64_t imm, InstSeq& result) {
+  MOZ_ASSERT(result.size() == 0);
 
-    if (Hi20) {
-      
-      count++;
-    }
+  RecursiveLiImpl(rd, imm, result);
 
-    if (Lo12 || Hi20 == 0) {
-      
-      
-      count++;
-    }
-    return count;
-  }
+  if (imm > 0 && result.size() > 2) {
+    
+    
+    
+    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
+    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+    InstSeq shifted;
+    ::RecursiveLi(shifted, rd, ShiftedVal);
 
-  int64_t Lo12 = imm << 52 >> 52;
-  int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
-  Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
-
-  
-  
-  bool Unsigned = false;
-  if (ShiftAmount > 12 && !is_int12(Hi52)) {
-    if (is_int32((uint64_t)Hi52 << 12)) {
-      
-      
-      ShiftAmount -= 12;
-      Hi52 = (uint64_t)Hi52 << 12;
+    size_t countFillZero = shifted.size() + 1;
+    if (countFillZero < result.size()) {
+      result = shifted;
+      result.srli(rd, rd, LeadingZeros);
     }
   }
-
-  count += RecursiveLiImplCount(Hi52);
-
-  if (Unsigned) {
-  } else {
-    
-    count++;
-  }
-  if (Lo12) {
-    
-    count++;
-  }
-  return count;
 }
 
-}  
-}  
+void js::jit::Assembler::RecursiveLi(Register rd, int64_t imm) {
+  InstSeq seq;
+  ::RecursiveLi(rd, imm, seq);
+
+  AutoForbidPoolsAndNops afp(this, 8);
+  for (auto instr : seq) {
+    emit(instr);
+  }
+}
+
+int js::jit::Assembler::RecursiveLiCount(int64_t imm) {
+  InstSeq seq;
+  ::RecursiveLi(zero, imm, seq);
+
+  return seq.size();
+}
