@@ -268,6 +268,12 @@ void PointerEventHandler::RecordMouseState(
       layers::InputAPZContext::GetTargetLayerGuid();
   
   if (aMouseEvent.mClass != eDragEventClass) {
+    
+    
+    
+    
+    
+    sLastMouseInfo->mIsActive = !!aMouseEvent.ComputeButtonsBeforeDispatch();
     sLastMouseInfo->mInputSource = aMouseEvent.mInputSource;
     sLastMouseInfo->mIsSynthesizedForTests =
         aMouseEvent.mFlags.mIsSynthesizedForTests;
@@ -298,6 +304,18 @@ void PointerEventHandler::RecordMouseState(
     }
   }
 #endif  
+}
+
+
+void PointerEventHandler::WillDispatchMouseEventToDOM(
+    const WidgetMouseEvent& aMouseEvent) {
+  if (!sLastMouseInfo) {
+    return;
+  }
+  
+  
+  
+  sLastMouseInfo->mIsActive = !!aMouseEvent.mButtons;
 }
 
 

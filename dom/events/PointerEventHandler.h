@@ -307,6 +307,11 @@ class PointerEventHandler final {
   
 
 
+  static void WillDispatchMouseEventToDOM(const WidgetMouseEvent& aMouseEvent);
+
+  
+
+
   static void RecordMouseButtons(const WidgetMouseEvent& aMouseEvent) {
     
     

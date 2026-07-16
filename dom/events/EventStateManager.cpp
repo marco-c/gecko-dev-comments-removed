@@ -5317,25 +5317,11 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
     newEvent->mButton = newEvent->mClass == ePointerEventClass
                             ? MouseButton::eNotPressed
                             : MouseButton::ePrimary;
-    if (aMouseEvent->IsPressingButton()) {
-      
-      
-      newEvent->mButtons = static_cast<decltype(WidgetMouseEvent::mButtons)>(
-          aMouseEvent->mButtons &
-          ~MouseButtonsFlagToChange(
-              static_cast<MouseButton>(aMouseEvent->mButton)));
-    } else if (aMouseEvent->IsReleasingButton()) {
-      
-      
-      newEvent->mButtons = static_cast<decltype(WidgetMouseEvent::mButtons)>(
-          aMouseEvent->mButtons |
-          MouseButtonsFlagToChange(
-              static_cast<MouseButton>(aMouseEvent->mButton)));
-    } else {
-      
-      
-      newEvent->mButtons = aMouseEvent->mButtons;
-    }
+    
+    
+    
+    
+    newEvent->mButtons = aMouseEvent->ComputeButtonsBeforeDispatch();
     
     
     
@@ -7098,13 +7084,24 @@ void EventStateManager::ContentRemoved(Document* aDocument,
     const bool hadMouseOutTarget =
         mMouseEnterLeaveHelper->GetOutEventTarget() != nullptr;
     mMouseEnterLeaveHelper->ContentRemoved(*aContent);
-    
-    
-    
     if (hadMouseOutTarget && !mMouseEnterLeaveHelper->GetOutEventTarget()) {
-      if (PresShell* presShell =
+      if (PresShell* const presShell =
               mPresContext ? mPresContext->GetPresShell() : nullptr) {
-        presShell->SynthesizeMouseMove(false);
+        
+        
+        
+        const bool requiresToSynthesizeMouseMove = [&]() {
+          
+          
+          
+          const PointerInfo* const lastMouseInfo =
+              PointerEventHandler::GetLastMouseInfo();
+          return lastMouseInfo && (lastMouseInfo->InputSourceSupportsHover() ||
+                                   lastMouseInfo->mIsActive);
+        }();
+        if (requiresToSynthesizeMouseMove) {
+          presShell->SynthesizeMouseMove(false);
+        }
       }
     }
   }
