@@ -8241,22 +8241,9 @@ void ScrollContainerFrame::ApzSmoothScrollTo(
   
   MOZ_ASSERT(aOrigin != ScrollOrigin::None);
   mApzSmoothScrollDestination = Some(aDestination);
-
-  
-  
-  
-  
-  
-  if (GetScrollPosition() == aDestination &&
-      aViewportToScroll == ViewportType::Layout &&
-      aTriggeredByScript == ScrollTriggeredByScript::Yes) {
-    AppendScrollUpdate(ScrollPositionUpdate::NewZeroDeltaLayoutScroll(
-        aOrigin, aMode, std::move(aSnapTargetIds)));
-  } else {
-    AppendScrollUpdate(ScrollPositionUpdate::NewSmoothScroll(
-        aMode, aOrigin, aDestination, aTriggeredByScript,
-        std::move(aSnapTargetIds), aViewportToScroll));
-  }
+  AppendScrollUpdate(ScrollPositionUpdate::NewSmoothScroll(
+      aMode, aOrigin, aDestination, aTriggeredByScript,
+      std::move(aSnapTargetIds), aViewportToScroll));
 
   nsIContent* content = GetContent();
   if (!DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(content)) {
