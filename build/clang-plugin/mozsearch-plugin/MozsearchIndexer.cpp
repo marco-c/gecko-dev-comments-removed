@@ -2,7 +2,6 @@
 
 
 
-#include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Expr.h"
@@ -10,7 +9,6 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
 #include "clang/Format/Format.h"
@@ -20,7 +18,6 @@
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/TokenConcatenation.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -38,27 +35,15 @@
 #include "BindingOperations.h"
 #include "FileOperations.h"
 #include "StringOperations.h"
-#include "from-clangd/HeuristicResolver.h"
-
-#if CLANG_VERSION_MAJOR < 8
-
-#define getBeginLoc getLocStart
-#define getEndLoc getLocEnd
-#endif
-
-
-
-
-
-
-
-#if __cplusplus < 201402L
-using llvm::make_unique;
-#else
-using std::make_unique;
-#endif
 
 using namespace clang;
+
+#if CLANG_VERSION_MAJOR >= 20
+#include "clang/Sema/HeuristicResolver.h"
+#else
+#include "from-clangd/HeuristicResolver.h"
+using HeuristicResolver = clangd::HeuristicResolver;
+#endif
 
 const std::string GENERATED("__GENERATED__" PATHSEP_STRING);
 
@@ -255,13 +240,7 @@ public:
   virtual void InclusionDirective(SourceLocation HashLoc,
                                   const Token &IncludeTok, StringRef FileName,
                                   bool IsAngled, CharSourceRange FileNameRange,
-#if CLANG_VERSION_MAJOR >= 16
                                   OptionalFileEntryRef File,
-#elif CLANG_VERSION_MAJOR >= 15
-                                  Optional<FileEntryRef> File,
-#else
-                                  const FileEntry *File,
-#endif
                                   StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
                                   const Module *SuggestedModule,
@@ -296,7 +275,7 @@ private:
   std::map<FileID, std::unique_ptr<FileInfo>> FileMap;
   MangleContext *CurMangleContext;
   ASTContext *AstContext;
-  std::unique_ptr<clangd::HeuristicResolver> Resolver;
+  std::unique_ptr<HeuristicResolver> Resolver;
 
   
   TokenConcatenation ConcatInfo;
@@ -347,7 +326,7 @@ private:
           Absolute = Filename;
         }
       }
-      std::unique_ptr<FileInfo> Info = make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
+      std::unique_ptr<FileInfo> Info = std::make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
       It = FileMap.insert(std::make_pair(Id, std::move(Info))).first;
     }
     return It->second.get();
@@ -703,7 +682,6 @@ private:
           isa<TagDecl>(DC)) {
         llvm::SmallVector<char, 512> Output;
         llvm::raw_svector_ostream Out(Output);
-#if CLANG_VERSION_MAJOR >= 11
         
         
         GlobalDecl GD;
@@ -716,16 +694,6 @@ private:
           GD = GlobalDecl(Decl);
         }
         Ctx->mangleName(GD, Out);
-#else
-        if (const CXXConstructorDecl *D = dyn_cast<CXXConstructorDecl>(Decl)) {
-          Ctx->mangleCXXCtor(D, CXXCtorType::Ctor_Complete, Out);
-        } else if (const CXXDestructorDecl *D =
-                       dyn_cast<CXXDestructorDecl>(Decl)) {
-          Ctx->mangleCXXDtor(D, CXXDtorType::Dtor_Complete, Out);
-        } else {
-          Ctx->mangleName(Decl, Out);
-        }
-#endif
         return Out.str().str();
       } else {
         return std::string("V_") + mangleLocation(Decl->getLocation()) +
@@ -790,7 +758,7 @@ public:
         CurMangleContext(nullptr), AstContext(nullptr),
         ConcatInfo(CI.getPreprocessor()), CurDeclContext(nullptr),
         TemplateStack(nullptr) {
-    CI.getPreprocessor().addPPCallbacks(make_unique<PreprocessorHook>(this));
+    CI.getPreprocessor().addPPCallbacks(std::make_unique<PreprocessorHook>(this));
     CI.getPreprocessor().setTokenWatcher(
         [this](const auto &token) { onTokenLexed(token); });
   }
@@ -822,7 +790,7 @@ public:
         clang::ItaniumMangleContext::create(Ctx, CI.getDiagnostics());
 
     AstContext = &Ctx;
-    Resolver = std::make_unique<clangd::HeuristicResolver>(Ctx);
+    Resolver = std::make_unique<HeuristicResolver>(Ctx);
     TraverseDecl(Ctx.getTranslationUnitDecl());
 
     
@@ -2501,6 +2469,9 @@ public:
         if (const auto *DeclRef = dyn_cast<DeclRefExpr>(CalleeExpr)) {
           return DeclRef->getLocation();
         }
+        if (const auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(CalleeExpr)) {
+          return UnresolvedLookup->getNameLoc();
+        }
 
         
         
@@ -2514,7 +2485,7 @@ public:
       
       
       if (TemplateStack->inGatherMode()) {
-        if (CalleeExpr->isTypeDependent()) {
+        if (CalleeExpr->isTypeDependent() || isa<UnresolvedLookupExpr>(CalleeExpr)) {
           TemplateStack->visitDependent(CalleeLocation);
           ForwardedTemplateLocations.insert(CalleeLocation.getRawEncoding());
         }
@@ -3276,13 +3247,7 @@ void PreprocessorHook::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 void PreprocessorHook::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FileNameRange,
-#if CLANG_VERSION_MAJOR >= 16
     OptionalFileEntryRef File,
-#elif CLANG_VERSION_MAJOR >= 15
-    Optional<FileEntryRef> File,
-#else
-    const FileEntry *File,
-#endif
     StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
     const Module *SuggestedModule, bool ModuleImported,
@@ -3290,15 +3255,11 @@ void PreprocessorHook::InclusionDirective(
     const Module *Imported,
 #endif
     SrcMgr::CharacteristicKind FileType) {
-#if CLANG_VERSION_MAJOR >= 15
   if (!File) {
     return;
   }
   Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(),
                               &File->getFileEntry());
-#else
-  Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(), File);
-#endif
 }
 
 void PreprocessorHook::MacroDefined(const Token &Tok,
@@ -3336,7 +3297,7 @@ class IndexAction : public PluginASTAction {
 protected:
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  llvm::StringRef F) {
-    return make_unique<IndexConsumer>(CI);
+    return std::make_unique<IndexConsumer>(CI);
   }
 
   bool ParseArgs(const CompilerInstance &CI,
