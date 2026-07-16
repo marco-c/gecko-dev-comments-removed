@@ -3,8 +3,7 @@ use core::ops::Deref;
 
 use windows::{core::Interface as _, Win32::Graphics::Dxgi};
 
-use crate::dx12::DxgiLib;
-
+use super::dxgi_lib::DxgiLib;
 use super::result::HResult as _;
 
 

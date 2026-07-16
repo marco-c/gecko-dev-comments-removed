@@ -13,6 +13,8 @@ use windows::{
     },
 };
 
+use super::dxgi_lib::DxgiLib;
+
 
 
 type Primaries = [[f32; 2]; 3];
@@ -114,6 +116,7 @@ fn display_hdr_info_from_desc1(
 pub struct DxgiHdrSource {
     hwnd: HWND,
     factory: Mutex<Option<Dxgi::IDXGIFactory1>>,
+    dxgi_lib: Option<DxgiLib>,
 }
 
 
@@ -131,6 +134,9 @@ impl DxgiHdrSource {
         Self {
             hwnd,
             factory: Mutex::new(None),
+            dxgi_lib: DxgiLib::new()
+                .inspect_err(|e| log::warn!("DxgiLib::new failed: {e}"))
+                .ok(),
         }
     }
 
@@ -161,7 +167,7 @@ impl DxgiHdrSource {
         if need_new {
             
             
-            match unsafe { Dxgi::CreateDXGIFactory1() } {
+            match self.dxgi_lib.as_ref()?.create_factory1() {
                 Ok(new) => *factory = Some(new),
                 Err(e) => {
                     log::warn!("CreateDXGIFactory1 failed: {e}");

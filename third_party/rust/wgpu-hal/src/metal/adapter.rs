@@ -411,8 +411,12 @@ impl crate::Adapter for super::Adapter {
                 
                 
                 color_spaces |= wgt::SurfaceColorSpaces::EXTENDED_SRGB_LINEAR
-                    | wgt::SurfaceColorSpaces::EXTENDED_SRGB
-                    | wgt::SurfaceColorSpaces::EXTENDED_DISPLAY_P3;
+                    | wgt::SurfaceColorSpaces::EXTENDED_SRGB;
+                
+                
+                if available!(macos = 11.0, ios = 14.0, tvos = 14.0, visionos = 1.0) {
+                    color_spaces |= wgt::SurfaceColorSpaces::EXTENDED_DISPLAY_P3;
+                }
             }
             
             

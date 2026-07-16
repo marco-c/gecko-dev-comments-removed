@@ -22,6 +22,10 @@ impl<T> WeakVec<T> {
         Self { inner: Vec::new() }
     }
 
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &Weak<T>> {
+        self.inner.iter()
+    }
+
     
     
     
