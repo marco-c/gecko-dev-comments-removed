@@ -2,14 +2,13 @@
 
 
 
-
-
 #if !defined(AutoplayPolicy_h_)
 #  define AutoplayPolicy_h_
 
 #  include <cstdint>
 
 class nsIPrincipal;
+class nsPIDOMWindowInner;
 
 namespace mozilla::dom {
 
@@ -41,6 +40,11 @@ class AutoplayPolicy {
 
   
   static bool IsAllowedToPlay(const dom::AudioContext& aContext);
+
+  
+  
+  
+  static bool IsAudioInterruptedByPlatform(nsPIDOMWindowInner* aWindow);
 
   
   
