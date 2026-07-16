@@ -92,6 +92,13 @@ struct SupportDecoderParams;
 [[nodiscard]] media::EncodeSupportSet WebrtcGmpEncoderSupports(
     const EncoderConfig& aConfig);
 
+
+
+
+[[nodiscard]] bool StripH264AccessUnitDelimiters(const uint8_t* aData,
+                                                 size_t aSize,
+                                                 nsTArray<uint8_t>& aOut);
+
 static void NotifyGmpInitDone(const std::string& aPCHandle, int32_t aResult,
                               const std::string& aError = "") {
   if (!NS_IsMainThread()) {
