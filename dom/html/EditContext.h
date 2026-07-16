@@ -94,11 +94,20 @@ class EditContext final : public DOMEventTargetHelper {
 
   bool IsActive() const;
 
-  MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
-                                                 const nsAString& aString);
+  
+  
+  
+  enum class PreventSetSelection { No, Yes };
+  MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(
+      uint32_t aStart, uint32_t aEnd, const nsAString& aString,
+      PreventSetSelection aPreventSetSelection = PreventSetSelection::No);
   MOZ_CAN_RUN_SCRIPT void StartComposition(
       const WidgetCompositionEvent& aEvent);
   MOZ_CAN_RUN_SCRIPT void EndComposition(const WidgetCompositionEvent& aEvent);
+
+  
+  MOZ_CAN_RUN_SCRIPT void DoContentCommandReplaceText(
+      WidgetContentCommandEvent& aEvent);
 
   MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
                                                uint32_t aCompositionOffset);
