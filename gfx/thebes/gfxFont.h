@@ -2177,7 +2177,7 @@ class gfxFont {
   
   
   template <typename T, typename Func>
-  bool ProcessShapedWordInternal(const T* aText, uint32_t aLength,
+  bool ProcessShapedWordInternal(const T* aText, uint8_t aLength,
                                  uint32_t aHash, Script aRunScript,
                                  nsAtom* aLanguage, bool aVertical,
                                  uint16_t aAppUnitsPerDevUnit,
@@ -2206,7 +2206,7 @@ class gfxFont {
       const uint8_t* mSingle;
       const char16_t* mDouble;
     } mText;
-    uint32_t mLength;
+    uint8_t mLength;
     ShapedTextFlags mFlags;
     Script mScript;
     
@@ -2218,7 +2218,7 @@ class gfxFont {
     bool mTextIs8Bit;
     RoundingFlags mRounding;
 
-    WordCacheKey(const uint8_t* aText, uint32_t aLength, uint32_t aStringHash,
+    WordCacheKey(const uint8_t* aText, uint8_t aLength, uint32_t aStringHash,
                  Script aScriptCode, nsAtom* aLanguage,
                  uint16_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
                  RoundingFlags aRounding)
@@ -2237,7 +2237,7 @@ class gfxFont {
       mText.mSingle = aText;
     }
 
-    WordCacheKey(const char16_t* aText, uint32_t aLength, uint32_t aStringHash,
+    WordCacheKey(const char16_t* aText, uint8_t aLength, uint32_t aStringHash,
                  Script aScriptCode, nsAtom* aLanguage,
                  uint16_t aAppUnitsPerDevUnit, ShapedTextFlags aFlags,
                  RoundingFlags aRounding)
@@ -2257,8 +2257,6 @@ class gfxFont {
       
       mText.mDouble = aText;
     }
-
-    bool Matches(const WordCacheKey& aLookup) const;
 
     class HashPolicy {
      public:
