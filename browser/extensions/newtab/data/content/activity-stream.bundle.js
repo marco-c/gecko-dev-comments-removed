@@ -12356,6 +12356,61 @@ const CURATED_RECOMMENDATIONS_FEED_URL = "https://merino.services.mozilla.com/ap
 
 
 const DEFAULT_MAX_TILES = 12;
+
+
+
+
+const CARD_SIZE = {
+  small: {
+    width: 2,
+    height: 1
+  },
+  medium: {
+    width: 2,
+    height: 2
+  },
+  large: {
+    width: 4,
+    height: 2
+  }
+};
+const sizeOf = tile => CARD_SIZE[tile.size] ?? CARD_SIZE.medium;
+
+
+
+function getOrphanTileIndexes(tiles, columnCount) {
+  const rowWidth = columnCount * 2; 
+  let currentRow = []; 
+  let filled = 0; 
+  let carry = 0; 
+
+  
+  
+  
+  tiles.forEach((tile, index) => {
+    const {
+      width,
+      height
+    } = sizeOf(tile);
+    currentRow.push(index);
+    filled += width;
+    if (height > 1) {
+      carry += width;
+    }
+
+    
+    if (filled >= rowWidth) {
+      currentRow = [];
+      filled = carry; 
+      carry = 0;
+      
+      if (filled >= rowWidth) {
+        filled = 0;
+      }
+    }
+  });
+  return new Set(currentRow);
+}
 function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
@@ -12364,8 +12419,12 @@ function getLayoutData(responsiveLayouts, index) {
     allowsWidget: false
   };
   responsiveLayouts.forEach(layout => {
+    const orphanTiles = getOrphanTileIndexes(layout.tiles, layout.columnCount);
     layout.tiles.forEach((tile, tileIndex) => {
       if (tile.position === index) {
+        if (orphanTiles.has(tileIndex)) {
+          layoutData.classNames.push(`col-${layout.columnCount}-hidden`);
+        }
         layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
         layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
         layoutData.imageSizes[layout.columnCount] = tile.size;
