@@ -218,7 +218,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   
   
 
-  AssertNoUnderflow(aSize, mSize);
+  QM_ASSERT_NO_UNDERFLOW(aSize, mSize);
   const uint64_t increase = aSize - mSize;
 
   if (!originInfo->LockedUpdateUsagesForEviction(mClientType, increase)) {

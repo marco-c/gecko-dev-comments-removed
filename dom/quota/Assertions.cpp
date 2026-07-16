@@ -2,15 +2,34 @@
 
 
 
-
-
 #include "Assertions.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "nsIThread.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom::quota {
+
+bool ShouldReportUnderflow(const nsACString& aContext) {
+  static StaticDataMutex<nsTHashMap<nsCStringHashKey, uint32_t>> sCounters(
+      "ShouldReportUnderflow::sCounters");
+
+  auto counters = sCounters.Lock();
+  uint32_t& counter = counters->LookupOrInsert(aContext, 0u);
+
+  
+  
+  
+  
+  
+  
+  
+  const bool result = 0u == (counter & (1u + counter));
+  ++counter;
+  return result;
+}
 
 bool IsOnIOThread() {
   QuotaManager* quotaManager = QuotaManager::Get();
