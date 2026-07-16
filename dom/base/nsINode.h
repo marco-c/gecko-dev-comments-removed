@@ -5,6 +5,8 @@
 #ifndef nsINode_h_
 #define nsINode_h_
 
+#include <fmt/format.h>
+
 #include <iosfwd>
 
 #include "js/TypeDecls.h"  
@@ -96,6 +98,7 @@ class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
 class HTMLDialogElement;
+class HTMLSlotElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -329,6 +332,68 @@ class nsNodeWeakReference final : public nsIWeakReference {
  private:
   ~nsNodeWeakReference();
 };
+
+enum class TreeKind : uint8_t {
+  
+  
+  
+  DOM,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ShadowIncludingDOM,
+  
+  
+  
+  
+  Flat,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FlatForSelection,
+};
+
+template <TreeKind aKind>
+[[nodiscard]] constexpr static inline bool ShouldIgnoreNonContentShadow() {
+  return aKind != TreeKind::Flat;
+}
+
+template <TreeKind aKind>
+[[nodiscard]] constexpr static inline bool ShouldHandleAssignedNodesOnSlot() {
+  return aKind == TreeKind::Flat || aKind == TreeKind::FlatForSelection;
+}
+
+inline auto format_as(const TreeKind& aTreeKind) {
+  constexpr static const char* sNames[] = {
+      "DOM",
+      "ShadowIncludingDOM",
+      "Flat",
+      "FlatForSelection",
+  };
+  return std::string(sNames[static_cast<uint8_t>(aTreeKind)]);
+}
+
+inline std::ostream& operator<<(std::ostream& aStream, TreeKind aTreeKind) {
+  return aStream << format_as(aTreeKind);
+}
 
 
 
@@ -671,6 +736,55 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+
+  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled();
+
+  
+
+
+
+  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilled() const;
+
+  
+
+
+
+
+  [[nodiscard]] mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilledForSelection();
+
+  
+
+
+
+
+  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilledForSelection() const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled() {
+    if constexpr (aKind == TreeKind::DOM ||
+                  aKind == TreeKind::ShadowIncludingDOM) {
+      return nullptr;
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetAsHTMLSlotElementIfFilled();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetAsHTMLSlotElementIfFilledForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
+
+  template <TreeKind aKind>
+  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilled() const {
+    return const_cast<nsINode*>(this)->GetAsHTMLSlotElementIfFilled();
+  }
+
+  
+
+
   bool IsProcessingInstruction() const {
     return NodeType() == PROCESSING_INSTRUCTION_NODE;
   }
@@ -698,16 +812,41 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
-  bool HasChildren() const { return !!mFirstChild; }
+  [[nodiscard]] bool HasChildren() const { return !!mFirstChild; }
+
+  template <TreeKind aKind>
+  [[nodiscard]] bool HasChildren() const {
+    return !!GetChildCount<aKind>();
+  }
 
   
 
 
 
-  uint32_t GetChildCount() const { return mChildCount; }
+  [[nodiscard]] uint32_t GetChildCount() const { return mChildCount; }
 
   
-  uint32_t GetFlatTreeChildCount() const;
+  [[nodiscard]] uint32_t GetFlatTreeChildCount() const;
+
+  
+  [[nodiscard]] uint32_t GetFlatTreeForSelectionChildCount() const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] uint32_t GetChildCount() const {
+    static_assert(
+        aKind != TreeKind::ShadowIncludingDOM,
+        "It's unclear what this should return if this is a shadow host so that "
+        "this does not support TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return GetChildCount();
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetFlatTreeChildCount();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetFlatTreeForSelectionChildCount();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   
 
@@ -717,15 +856,15 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
-
-  
-  nsINode* GetChildAtInFlatTree(uint32_t aIndex) const;
+  [[nodiscard]] nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
   
 
 
 
+  [[nodiscard]] nsIContent* GetChildAtInFlatTree(uint32_t aIndex) const;
+
+  
 
 
 
@@ -733,7 +872,39 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aPossibleChild) const;
+  [[nodiscard]] nsIContent* GetChildAtInFlatTreeForSelection(
+      uint32_t aIndex) const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const {
+    static_assert(
+        aKind != TreeKind::ShadowIncludingDOM,
+        "It's unclear what this should return if this is a shadow host so that "
+        "this does not support TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return GetChildAt_Deprecated(aIndex);
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetChildAtInFlatTree(aIndex);
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetChildAtInFlatTreeForSelection(aIndex);
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeIndexOf(
+      const nsINode* aPossibleChild) const;
 
   
 
@@ -749,8 +920,41 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
+  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
       const nsINode* aPossibleChild) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeFlatTreeForSelectionIndexOf(
+      const nsINode* aPossibleChild) const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::Maybe<uint32_t> ComputeIndexOf(
+      const nsINode* aPossibleChild) const {
+    static_assert(
+        aKind != TreeKind::ShadowIncludingDOM,
+        "It's unclear what this should return if this is a shadow host and "
+        "aPossibleChild is either a child of the ShadowRoot or a child of the "
+        "host so that this does not support TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return ComputeIndexOf(aPossibleChild);
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return ComputeFlatTreeIndexOf(aPossibleChild);
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return ComputeFlatTreeForSelectionIndexOf(aPossibleChild);
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   
 
@@ -1204,13 +1408,13 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsINode* GetParentNode() const { return mParent; }
+  [[nodiscard]] nsINode* GetParentNode() const { return mParent; }
 
  private:
   nsIContent* DoGetShadowHost() const;
 
  public:
-  nsINode* GetParentOrShadowHostNode() const {
+  [[nodiscard]] nsINode* GetParentOrShadowHostNode() const {
     if (mParent) [[likely]] {
       return mParent;
     }
@@ -1230,9 +1434,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  inline nsINode* GetFlattenedTreeParentNode() const;
 
-  nsINode* GetFlattenedTreeParentNodeNonInline() const;
+
+
+  [[nodiscard]] inline nsINode* GetFlattenedTreeParentNode() const;
+
+  [[nodiscard]] nsINode* GetFlattenedTreeParentNodeNonInline() const;
 
   
 
@@ -1241,6 +1448,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   inline nsINode* GetFlattenedTreeParentNodeForStyle() const;
+  inline nsIContent* GetFlattenedTreeParentForStyle() const;
 
   
 
@@ -1249,7 +1457,39 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
+
+
+
+
+
+
+
+  [[nodiscard]] inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
+
+  
+
+
+
+
+
+
+
+  template <TreeKind aKind>
+  [[nodiscard]] nsINode* GetParentNode() const {
+    static_assert(aKind != TreeKind::ShadowIncludingDOM,
+                  "It's unclear what this should return if this is a child of "
+                  "a ShadowRoot so that this does not support "
+                  "TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return GetParentNode();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetFlattenedTreeParentNodeForSelection();
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetFlattenedTreeParentNode();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   inline mozilla::dom::Element* GetFlattenedTreeParentElement() const;
   inline mozilla::dom::Element* GetFlattenedTreeParentElementForStyle() const;
@@ -1683,10 +1923,31 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+
+
+
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     return IsInShadowTree()
                ? reinterpret_cast<mozilla::dom::ShadowRoot*>(mSubtreeRoot)
                : nullptr;
+  }
+
+  
+
+
+
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadowForSelection()
+      const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadow() const {
+    if constexpr (aKind == TreeKind::Flat) {
+      return GetContainingShadow();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetContainingShadowForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
   }
 
   
@@ -1876,9 +2137,95 @@ class nsINode : public mozilla::dom::EventTarget {
 
   mozilla::dom::NodeList* ChildNodes();
 
-  nsIContent* GetFirstChild() const { return mFirstChild; }
+  
 
-  nsIContent* GetLastChild() const;
+
+  [[nodiscard]] nsIContent* GetFirstChild() const { return mFirstChild; }
+
+  
+
+
+  [[nodiscard]] nsIContent* GetLastChild() const;
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] nsIContent* GetFlattenedTreeFirstChild() const;
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] nsIContent* GetFlattenedTreeLastChild() const;
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] nsIContent* GetFlattenedTreeFirstChildForSelection() const;
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] nsIContent* GetFlattenedTreeLastChildForSelection() const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] nsIContent* GetFirstChild() const {
+    static_assert(
+        aKind != TreeKind::ShadowIncludingDOM,
+        "It's unclear what this should return if this is a shadow host so that "
+        "this does not support TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return GetFirstChild();
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetFlattenedTreeFirstChild();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetFlattenedTreeFirstChildForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
+
+  template <TreeKind aKind>
+  [[nodiscard]] nsIContent* GetLastChild() const {
+    static_assert(
+        aKind != TreeKind::ShadowIncludingDOM,
+        "It's unclear what this should return if this is a shadow host so that "
+        "this does not support TreeKind::ShadowIncludingDOM");
+    if constexpr (aKind == TreeKind::DOM) {
+      return GetLastChild();
+    } else if constexpr (aKind == TreeKind::Flat) {
+      return GetFlattenedTreeLastChild();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetFlattenedTreeLastChildForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   
 
@@ -1958,8 +2305,39 @@ class nsINode : public mozilla::dom::EventTarget {
   void LookupNamespaceURI(const nsAString& aNamespacePrefix,
                           nsAString& aNamespaceURI);
 
+  
+
+
   nsIContent* GetNextSibling() const { return mNextSibling; }
+
+  
+
+
+
+
   nsIContent* GetPreviousSibling() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetFlattenedTreeNextSibling() const = delete;
+  nsIContent* GetFlattenedTreePreviousSibling() const = delete;
+  nsIContent* GetFlattenedTreeNextSiblingForSelection() const = delete;
+  nsIContent* GetFlattenedTreePreviousSiblingForSelection() const = delete;
 
   
 
@@ -2345,13 +2723,59 @@ class nsINode : public mozilla::dom::EventTarget {
     ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
   }
 
-  inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
+  [[nodiscard]] inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
 
   
   
   
   
-  mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetShadowRootForSelection() const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetShadowRoot() const {
+    if constexpr (aKind == TreeKind::DOM) {
+      return nullptr;
+    } else if constexpr (aKind == TreeKind::ShadowIncludingDOM ||
+                         aKind == TreeKind::FlatForSelection) {
+      MOZ_ASSERT(ShouldIgnoreNonContentShadow<aKind>());
+      return GetShadowRootForSelection();
+    } else if constexpr (aKind == TreeKind::Flat) {
+      MOZ_ASSERT(!ShouldIgnoreNonContentShadow<aKind>());
+      return GetShadowRoot();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  template <TreeKind aKind,
+            typename = std::enable_if_t<aKind == TreeKind::Flat ||
+                                        aKind == TreeKind::FlatForSelection>>
+  [[nodiscard]] mozilla::dom::Element*
+  GetClosestFlatTreeAncestorElementForNonFlatTreeNode() const;
+
+  
+
+
+
+
+
+
+
+
+  template <TreeKind aKind,
+            typename = std::enable_if_t<aKind == TreeKind::Flat ||
+                                        aKind == TreeKind::FlatForSelection>>
+  [[nodiscard]] mozilla::dom::Element*
+  GetFlatTreeAncestorElementForNonFlatTreeNode() const;
 
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }

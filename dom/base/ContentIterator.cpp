@@ -41,14 +41,16 @@ static bool ComparePostMode(const RawRangeBoundary& aStart,
   RawRangeBoundary afterNode(parent, content);
   const auto isStartLessThanAfterNode = [&]() {
     const Maybe<int32_t> startComparedToAfterNode =
-        nsContentUtils::ComparePoints(aStart, afterNode);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
+                                                                    afterNode);
     return !NS_WARN_IF(!startComparedToAfterNode) &&
            (*startComparedToAfterNode < 0);
   };
 
   const auto isAfterNodeLessOrEqualToEnd = [&]() {
     const Maybe<int32_t> afterNodeComparedToEnd =
-        nsContentUtils::ComparePoints(afterNode, aEnd);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(afterNode,
+                                                                    aEnd);
     return !NS_WARN_IF(!afterNodeComparedToEnd) &&
            (*afterNodeComparedToEnd <= 0);
   };
@@ -68,14 +70,16 @@ static bool ComparePreMode(const RawRangeBoundary& aStart,
 
   const auto isStartLessOrEqualToBeforeNode = [&]() {
     const Maybe<int32_t> startComparedToBeforeNode =
-        nsContentUtils::ComparePoints(aStart, beforeNode);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
+                                                                    beforeNode);
     return !NS_WARN_IF(!startComparedToBeforeNode) &&
            (*startComparedToBeforeNode <= 0);
   };
 
   const auto isBeforeNodeLessThanEndNode = [&]() {
     const Maybe<int32_t> beforeNodeComparedToEnd =
-        nsContentUtils::ComparePoints(beforeNode, aEnd);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(beforeNode,
+                                                                    aEnd);
     return !NS_WARN_IF(!beforeNodeComparedToEnd) &&
            (*beforeNodeComparedToEnd < 0);
   };
@@ -189,11 +193,15 @@ nsresult ContentIteratorBase<NodeType>::Init(nsINode* aRoot) {
 
   if (mOrder == Order::Pre) {
     mFirst = aRoot;
-    mLast = ContentIteratorBase::GetDeepLastChild(aRoot);
-    NS_WARNING_ASSERTION(mLast, "GetDeepLastChild returned null");
+    mLast = ContentIteratorBase::GetDeepLastInclusiveDescendant<TreeKind::DOM>(
+        aRoot);
+    NS_WARNING_ASSERTION(mLast, "GetDeepLastInclusiveDescendant returned null");
   } else {
-    mFirst = ContentIteratorBase::GetDeepFirstChild(aRoot);
-    NS_WARNING_ASSERTION(mFirst, "GetDeepFirstChild returned null");
+    mFirst =
+        ContentIteratorBase::GetDeepFirstInclusiveDescendant<TreeKind::DOM>(
+            aRoot);
+    NS_WARNING_ASSERTION(mFirst,
+                         "GetDeepFirstInclusiveDescendant returned null");
     mLast = aRoot;
   }
 
@@ -402,7 +410,8 @@ nsINode* ContentIteratorBase<NodeType>::Initializer::DetermineFirstNode()
       if (!mStartIsCharacterData &&
           (startIsContainer || !mStart.IsStartOfContainer())) {
         nsINode* const result =
-            ContentIteratorBase::GetNextSibling(mStart.GetContainer());
+            ContentIteratorBase::GetNextSibling<TreeKind::DOM>(
+                mStart.GetContainer());
         NS_WARNING_ASSERTION(result, "GetNextSibling returned null");
 
         
@@ -431,8 +440,10 @@ nsINode* ContentIteratorBase<NodeType>::Initializer::DetermineFirstNode()
   }
 
   
-  nsINode* const result = ContentIteratorBase::GetDeepFirstChild(cChild);
-  NS_WARNING_ASSERTION(result, "GetDeepFirstChild returned null");
+  nsINode* const result =
+      ContentIteratorBase::GetDeepFirstInclusiveDescendant<TreeKind::DOM>(
+          cChild);
+  NS_WARNING_ASSERTION(result, "GetDeepFirstInclusiveDescendant returned null");
 
   
   
@@ -467,7 +478,8 @@ ContentIteratorBase<NodeType>::Initializer::DetermineLastNode() const {
             nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
       }
       if (!endIsCharacterData && !endIsContainer && mEnd.IsStartOfContainer()) {
-        nsINode* const result = mIterator.PrevNode(mEnd.GetContainer());
+        nsINode* const result =
+            mIterator.PrevNode<TreeKind::DOM>(mEnd.GetContainer());
         NS_WARNING_ASSERTION(result, "PrevNode returned null");
         if (result && result != mIterator.mFirst &&
             NS_WARN_IF(!NodeIsInTraversalRange(
@@ -489,7 +501,8 @@ ContentIteratorBase<NodeType>::Initializer::DetermineLastNode() const {
 
     if (!endIsCharacterData) {
       nsINode* const result =
-          ContentIteratorBase::GetPrevSibling(mEnd.GetContainer());
+          ContentIteratorBase::GetPrevSibling<TreeKind::DOM>(
+              mEnd.GetContainer());
       NS_WARNING_ASSERTION(result, "GetPrevSibling returned null");
 
       if (!NodeIsInTraversalRange(result, mIterator.mOrder == Order::Pre,
@@ -510,8 +523,11 @@ ContentIteratorBase<NodeType>::Initializer::DetermineLastNode() const {
   }
 
   if (mIterator.mOrder == Order::Pre) {
-    nsINode* const result = ContentIteratorBase::GetDeepLastChild(cChild);
-    NS_WARNING_ASSERTION(result, "GetDeepLastChild returned null");
+    nsINode* const result =
+        ContentIteratorBase::GetDeepLastInclusiveDescendant<TreeKind::DOM>(
+            cChild);
+    NS_WARNING_ASSERTION(result,
+                         "GetDeepLastInclusiveDescendant returned null");
 
     if (NS_WARN_IF(!NodeIsInTraversalRange(
             result, mIterator.mOrder == Order::Pre, mStart, mEnd))) {
@@ -537,108 +553,65 @@ void ContentIteratorBase<NodeType>::SetEmpty() {
 
 
 template <typename NodeType>
-nsINode* ContentIteratorBase<NodeType>::GetDeepFirstChild(nsINode* aRoot) {
-  if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
-    return aRoot;
+template <TreeKind aKind>
+nsINode* ContentIteratorBase<NodeType>::GetDeepFirstInclusiveDescendant(
+    nsINode* aNode) {
+  if (NS_WARN_IF(!aNode)) {
+    return aNode;
   }
-
-  return ContentIteratorBase::GetDeepFirstChild(aRoot->GetFirstChild());
+  nsIContent* const firstChild = aNode->GetFirstChild<aKind>();
+  if (!firstChild) {
+    return aNode;
+  }
+  return ContentIteratorBase::GetDeepFirstInclusiveDescendant<aKind>(
+      firstChild);
 }
 
 
 template <typename NodeType>
-nsIContent* ContentIteratorBase<NodeType>::GetDeepFirstChild(
-    nsIContent* aRoot,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
-  if (NS_WARN_IF(!aRoot)) {
+template <TreeKind aKind>
+nsIContent* ContentIteratorBase<NodeType>::GetDeepFirstInclusiveDescendant(
+    nsIContent* aContent) {
+  if (NS_WARN_IF(!aContent)) {
     return nullptr;
   }
 
-  nsIContent* node = aRoot;
-  nsIContent* child = nullptr;
-
-  if (ShadowRoot* shadowRoot = ShadowDOMSelectionHelpers::GetShadowRoot(
-          node, aAllowCrossShadowBoundary)) {
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes);
-    child = shadowRoot->GetFirstChild();
-  } else {
-    child = node->GetFirstChild();
+  nsIContent* lastContent = aContent;
+  while (nsIContent* const firstChild = lastContent->GetFirstChild<aKind>()) {
+    lastContent = firstChild;
   }
-
-  while (child) {
-    node = child;
-    if (ShadowRoot* shadowRoot = ShadowDOMSelectionHelpers::GetShadowRoot(
-            node, aAllowCrossShadowBoundary)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      child = shadowRoot->GetFirstChild();
-    } else {
-      child = node->GetFirstChild();
-    }
-  }
-
-  return node;
+  return lastContent;
 }
 
 
 template <typename NodeType>
-nsINode* ContentIteratorBase<NodeType>::GetDeepLastChild(nsINode* aRoot) {
-  if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
-    return aRoot;
+template <TreeKind aKind>
+nsINode* ContentIteratorBase<NodeType>::GetDeepLastInclusiveDescendant(
+    nsINode* aNode) {
+  if (NS_WARN_IF(!aNode)) {
+    return aNode;
   }
-
-  return ContentIteratorBase::GetDeepLastChild(aRoot->GetLastChild());
+  nsIContent* const lastChild = aNode->GetLastChild<aKind>();
+  if (!lastChild) {
+    return aNode;
+  }
+  return ContentIteratorBase::GetDeepLastInclusiveDescendant<aKind>(lastChild);
 }
 
 
 template <typename NodeType>
-nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
-    nsIContent* aRoot,
-    AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
-  if (NS_WARN_IF(!aRoot)) {
+template <TreeKind aKind>
+nsIContent* ContentIteratorBase<NodeType>::GetDeepLastInclusiveDescendant(
+    nsIContent* aContent) {
+  if (NS_WARN_IF(!aContent)) {
     return nullptr;
   }
 
-  nsIContent* node = aRoot;
-
-  while (HTMLSlotElement* slot = HTMLSlotElement::FromNode(node)) {
-    auto assigned = slot->AssignedNodes();
-    
-    if (!assigned.IsEmpty()) {
-      node = assigned[assigned.Length() - 1]->AsContent();
-      continue;
-    }
-    break;
+  nsIContent* lastContent = aContent;
+  while (nsIContent* const lastChild = lastContent->GetLastChild<aKind>()) {
+    lastContent = lastChild;
   }
-
-  ShadowRoot* shadowRoot =
-      ShadowDOMSelectionHelpers::GetShadowRoot(node, aAllowCrossShadowBoundary);
-  while (node->HasChildren() || (shadowRoot && shadowRoot->HasChildren())) {
-    if (node->HasChildren()) {
-      node = node->GetLastChild();
-    } else {
-      MOZ_ASSERT(shadowRoot);
-      
-      
-      node = shadowRoot->GetLastChild();
-    }
-    shadowRoot = ShadowDOMSelectionHelpers::GetShadowRoot(
-        node, aAllowCrossShadowBoundary);
-  }
-  return node;
+  return lastContent;
 }
 
 
@@ -648,174 +621,190 @@ nsIContent* ContentIteratorBase<NodeType>::GetDeepLastChild(
 
 
 template <typename NodeType>
+template <TreeKind aKind>
 nsIContent* ContentIteratorBase<NodeType>::GetNextSibling(
-    nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
-    nsTArray<AncestorInfo>* aInclusiveAncestorsOfEndContainer) {
+    nsINode* aNode, nsTArray<AncestorInfo>* aInclusiveAncestorsOfEndContainer) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
 
-  if (aNode->IsContent() &&
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    
-    while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
-      if (!ShadowDOMSelectionHelpers::GetShadowRoot(
-              slot->GetContainingShadowHost(), aAllowCrossShadowBoundary)) {
-        
-        
-        break;
-      }
-
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
+    if (aNode->IsContent()) {
       
-      auto assigned = slot->AssignedNodes();
-      auto cur = assigned.IndexOf(aNode);
-      if (cur != assigned.npos && cur + 1 < assigned.Length()) {
-        return assigned[cur + 1]->AsContent();
+      while (HTMLSlotElement* slot =
+                 aNode->AsContent()->GetAssignedSlot<aKind>()) {
+        
+        auto assigned = slot->AssignedNodes();
+        auto cur = assigned.IndexOf(aNode);
+        if (cur != assigned.npos && cur + 1 < assigned.Length()) {
+          return assigned[cur + 1]->AsContent();
+        }
+        
+        aNode = slot;
       }
-      
-      aNode = slot;
+      if (nsIContent* const next =
+              ChildIteratorBase<aKind>::GetNextChild(aNode->AsContent())) {
+        return next;
+      }
+    }
+  } else {
+    if (nsIContent* const next = aNode->GetNextSibling()) {
+      return next;
     }
   }
 
-  if (nsIContent* next = aNode->GetNextSibling()) {
-    return next;
-  }
-
   nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-      *aNode, aAllowCrossShadowBoundary);
+      *aNode, aKind == TreeKind::DOM ? AllowRangeCrossShadowBoundary::No
+                                     : AllowRangeCrossShadowBoundary::Yes);
   if (NS_WARN_IF(!parent)) {
     return nullptr;
   }
 
   
   
-  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
-      aInclusiveAncestorsOfEndContainer && parent->GetShadowRoot() == aNode) {
-    const int32_t i = aInclusiveAncestorsOfEndContainer->IndexOf(
-        parent, 0, InclusiveAncestorComparator());
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
+    if (aInclusiveAncestorsOfEndContainer &&
+        parent->GetShadowRoot<aKind>() == aNode) {
+      const int32_t i = aInclusiveAncestorsOfEndContainer->IndexOf(
+          parent, 0, InclusiveAncestorComparator());
 
-    
-    
-    
-    
-    
-    
-    
-    if (i != -1) {
-      MOZ_ASSERT(!aInclusiveAncestorsOfEndContainer->ElementAt(i)
-                      .mIsDescendantInShadowTree);
-      return parent->AsContent();
+      
+      
+      
+      
+      
+      
+      
+      if (i != -1) {
+        MOZ_ASSERT(!aInclusiveAncestorsOfEndContainer->ElementAt(i)
+                        .mIsDescendantInShadowTree);
+        return parent->AsContent();
+      }
     }
   }
 
-  return ContentIteratorBase::GetNextSibling(parent, aAllowCrossShadowBoundary,
-                                             aInclusiveAncestorsOfEndContainer);
+  return ContentIteratorBase::GetNextSibling<aKind>(
+      parent, aInclusiveAncestorsOfEndContainer);
 }
 
 
 
 template <typename NodeType>
-nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(
-    nsINode* aNode, AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary) {
+template <TreeKind aKind>
+nsIContent* ContentIteratorBase<NodeType>::GetPrevSibling(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
 
-  if (aNode->IsContent() &&
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    
-    while (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
-      if (!ShadowDOMSelectionHelpers::GetShadowRoot(
-              slot->GetContainingShadowHost(), aAllowCrossShadowBoundary)) {
-        
-        
-        break;
-      }
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
+    if (aNode->IsContent()) {
       
-      auto assigned = slot->AssignedNodes();
-      auto cur = assigned.IndexOf(aNode);
-      if (cur != assigned.npos && cur != 0) {
-        return assigned[cur - 1]->AsContent();
+      while (HTMLSlotElement* slot =
+                 aNode->AsContent()->GetAssignedSlot<aKind>()) {
+        
+        auto assigned = slot->AssignedNodes();
+        auto cur = assigned.IndexOf(aNode);
+        if (cur != assigned.npos && cur != 0) {
+          return assigned[cur - 1]->AsContent();
+        }
+        aNode = slot;
       }
-      aNode = slot;
+      if (nsIContent* const prev =
+              ChildIteratorBase<aKind>::GetPreviousChild(aNode->AsContent())) {
+        return prev;
+      }
+    }
+  } else {
+    if (nsIContent* const prev = aNode->GetPreviousSibling()) {
+      return prev;
     }
   }
 
-  if (nsIContent* prev = aNode->GetPreviousSibling()) {
-    return prev;
-  }
-
   nsINode* parent = ShadowDOMSelectionHelpers::GetParentNodeInSameSelection(
-      *aNode, aAllowCrossShadowBoundary);
+      *aNode, aKind == TreeKind::DOM ? AllowRangeCrossShadowBoundary::No
+                                     : AllowRangeCrossShadowBoundary::Yes);
   if (NS_WARN_IF(!parent)) {
     return nullptr;
   }
 
-  return ContentIteratorBase::GetPrevSibling(parent, aAllowCrossShadowBoundary);
+  return ContentIteratorBase::GetPrevSibling<aKind>(parent);
 }
 
 template <typename NodeType>
+template <TreeKind aKind>
 nsINode* ContentIteratorBase<NodeType>::NextNode(nsINode* aNode) {
   nsINode* node = aNode;
 
   
   if (mOrder == Order::Pre) {
     
-    if (node->HasChildren()) {
-      nsIContent* firstChild = node->GetFirstChild();
-      MOZ_ASSERT(firstChild);
-
+    if (nsIContent* const firstChild = node->GetFirstChild<aKind>()) {
       return firstChild;
     }
 
     
-    return ContentIteratorBase::GetNextSibling(node);
+    return ContentIteratorBase::GetNextSibling<aKind>(node);
   }
 
   
-  nsINode* parent = node->GetParentNode();
+  nsINode* parent = node->GetParentNode<aKind>();
   if (NS_WARN_IF(!parent)) {
     MOZ_ASSERT(parent, "The node is the root node but not the last node");
     mCurNode = nullptr;
     return node;
   }
 
-  if (nsIContent* sibling = node->GetNextSibling()) {
-    
-    return ContentIteratorBase::GetDeepFirstChild(sibling);
+  if constexpr (aKind == TreeKind::DOM) {
+    if (nsIContent* const sibling = node->GetNextSibling()) {
+      
+      return ContentIteratorBase::GetDeepFirstInclusiveDescendant<aKind>(
+          sibling);
+    }
+  } else if (node->IsContent()) {
+    if (nsIContent* const sibling =
+            ChildIteratorBase<aKind>::GetNextChild(node->AsContent())) {
+      return ContentIteratorBase::GetDeepFirstInclusiveDescendant<aKind>(
+          sibling);
+    }
   }
-
   return parent;
 }
 
 template <typename NodeType>
+template <TreeKind aKind>
 nsINode* ContentIteratorBase<NodeType>::PrevNode(nsINode* aNode) {
   nsINode* node = aNode;
 
   
   if (mOrder == Order::Pre) {
-    nsINode* parent = node->GetParentNode();
+    nsINode* parent = node->GetParentNode<aKind>();
     if (NS_WARN_IF(!parent)) {
       MOZ_ASSERT(parent, "The node is the root node but not the first node");
       mCurNode = nullptr;
       return aNode;
     }
-
-    nsIContent* sibling = node->GetPreviousSibling();
-    if (sibling) {
-      return ContentIteratorBase::GetDeepLastChild(sibling);
+    if constexpr (aKind == TreeKind::DOM) {
+      if (nsIContent* const sibling = node->GetPreviousSibling()) {
+        return ContentIteratorBase::GetDeepLastInclusiveDescendant<aKind>(
+            sibling);
+      }
+    } else if (node->IsContent()) {
+      if (nsIContent* const sibling =
+              ChildIteratorBase<aKind>::GetPreviousChild(node->AsContent())) {
+        return ContentIteratorBase::GetDeepLastInclusiveDescendant<aKind>(
+            sibling);
+      }
     }
-
     return parent;
   }
 
   
-  if (node->HasChildren()) {
-    return node->GetLastChild();
+  if (nsIContent* const lastChild = node->GetLastChild<aKind>()) {
+    return lastChild;
   }
 
   
-  return ContentIteratorBase::GetPrevSibling(node);
+  return ContentIteratorBase::GetPrevSibling<aKind>(node);
 }
 
 
@@ -865,7 +854,7 @@ void ContentIteratorBase<NodeType>::Next() {
     return;
   }
 
-  mCurNode = NextNode(mCurNode);
+  mCurNode = NextNode<TreeKind::DOM>(mCurNode);
 }
 
 NS_INSTANTIATE_CONTENT_ITER_BASE_METHOD(void, Prev);
@@ -881,7 +870,7 @@ void ContentIteratorBase<NodeType>::Prev() {
     return;
   }
 
-  mCurNode = PrevNode(mCurNode);
+  mCurNode = PrevNode<TreeKind::DOM>(mCurNode);
 }
 
 
@@ -1002,7 +991,13 @@ nsresult ContentSubtreeIterator::InitWithAllowCrossShadowBoundary(
     return NS_ERROR_INVALID_ARG;
   }
 
-  mRange = aRange;
+  if (aRange->IsDynamicRange()) {
+    
+    
+    mRange = aRange->AsDynamicRange()->GetRangeInFlatTree();
+  } else {
+    mRange = aRange;
+  }
 
   mAllowCrossShadowBoundary = AllowRangeCrossShadowBoundary::Yes;
   return InitWithRange();
@@ -1048,7 +1043,9 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
   nsIContent* firstCandidate = nullptr;
   
   nsINode* node = nullptr;
-  if (!startContainer->GetChildCount()) {
+  if (IterAllowCrossShadowBoundary()
+          ? !startContainer->HasChildren<TreeKind::FlatForSelection>()
+          : !startContainer->HasChildren<TreeKind::DOM>()) {
     
     node = startContainer;
   } else {
@@ -1074,12 +1071,18 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
   if (!firstCandidate) {
     
     firstCandidate =
-        ContentIteratorBase::GetNextSibling(node, mAllowCrossShadowBoundary);
+        IterAllowCrossShadowBoundary()
+            ? ContentIteratorBase::GetNextSibling<TreeKind::FlatForSelection>(
+                  node)
+            : ContentIteratorBase::GetNextSibling<TreeKind::DOM>(node);
   }
 
   if (firstCandidate) {
-    firstCandidate = ContentIteratorBase::GetDeepFirstChild(
-        firstCandidate, mAllowCrossShadowBoundary);
+    firstCandidate = IterAllowCrossShadowBoundary()
+                         ? ContentIteratorBase::GetDeepFirstInclusiveDescendant<
+                               TreeKind::FlatForSelection>(firstCandidate)
+                         : ContentIteratorBase::GetDeepFirstInclusiveDescendant<
+                               TreeKind::DOM>(firstCandidate);
   }
 
   return firstCandidate;
@@ -1095,8 +1098,8 @@ nsIContent* ContentSubtreeIterator::DetermineFirstContent() const {
   
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*firstCandidate,
-                                                               mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *firstCandidate, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *firstCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1118,8 +1121,10 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
   int32_t offset =
       ShadowDOMSelectionHelpers::EndOffset(mRange, mAllowCrossShadowBoundary);
 
-  int32_t numChildren = endContainer->GetChildCount();
-
+  const int32_t numChildren =
+      IterAllowCrossShadowBoundary()
+          ? endContainer->GetFlatTreeForSelectionChildCount()
+          : endContainer->GetChildCount();
   nsINode* node = nullptr;
   if (offset > numChildren) {
     
@@ -1144,12 +1149,18 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
   if (!lastCandidate) {
     
     lastCandidate =
-        ContentIteratorBase::GetPrevSibling(node, mAllowCrossShadowBoundary);
+        IterAllowCrossShadowBoundary()
+            ? ContentIteratorBase::GetPrevSibling<TreeKind::FlatForSelection>(
+                  node)
+            : ContentIteratorBase::GetPrevSibling<TreeKind::DOM>(node);
   }
 
   if (lastCandidate) {
-    lastCandidate = ContentIteratorBase::GetDeepLastChild(
-        lastCandidate, mAllowCrossShadowBoundary);
+    lastCandidate = IterAllowCrossShadowBoundary()
+                        ? ContentIteratorBase::GetDeepLastInclusiveDescendant<
+                              TreeKind::FlatForSelection>(lastCandidate)
+                        : ContentIteratorBase::GetDeepLastInclusiveDescendant<
+                              TreeKind::DOM>(lastCandidate);
   }
 
   return lastCandidate;
@@ -1175,7 +1186,10 @@ nsresult ContentSubtreeIterator::InitWithRange() {
 
   
   if (startRef.GetContainer() == endRef.GetContainer()) {
-    nsINode* child = startRef.GetContainer()->GetFirstChild();
+    nsIContent* const child =
+        IterAllowCrossShadowBoundary()
+            ? startRef.GetContainer()->GetFlattenedTreeFirstChildForSelection()
+            : startRef.GetContainer()->GetFirstChild();
 
     if (!child || startRef == endRef) {
       
@@ -1214,8 +1228,8 @@ nsIContent* ContentSubtreeIterator::DetermineLastContent() const {
 
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*lastCandidate,
-                                                               mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *lastCandidate, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *lastCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1249,8 +1263,12 @@ void ContentSubtreeIterator::Next() {
     return;
   }
 
-  nsINode* nextNode = ContentIteratorBase::GetNextSibling(
-      mCurNode, mAllowCrossShadowBoundary, &mInclusiveAncestorsOfEndContainer);
+  nsINode* nextNode =
+      IterAllowCrossShadowBoundary()
+          ? ContentIteratorBase::GetNextSibling<TreeKind::FlatForSelection>(
+                mCurNode, &mInclusiveAncestorsOfEndContainer)
+          : ContentIteratorBase::GetNextSibling<TreeKind::DOM>(
+                mCurNode, &mInclusiveAncestorsOfEndContainer);
 
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
@@ -1264,10 +1282,12 @@ void ContentSubtreeIterator::Next() {
         nextNode, mAllowCrossShadowBoundary);
     if (mInclusiveAncestorsOfEndContainer[i].mIsDescendantInShadowTree) {
       MOZ_ASSERT(root);
-      nextNode = root->GetFirstChild();
-    } else if (auto* slot = HTMLSlotElement::FromNode(nextNode);
-               slot && IterAllowCrossShadowBoundary() &&
-               !slot->AssignedNodes().IsEmpty()) {
+      nextNode = IterAllowCrossShadowBoundary()
+                     ? root->GetFlattenedTreeFirstChildForSelection()
+                     : root->GetFirstChild();
+    } else if (HTMLSlotElement* const slot =
+                   nextNode->GetAsHTMLSlotElementIfFilledForSelection();
+               slot && IterAllowCrossShadowBoundary()) {
       
       
       nextNode = slot->AssignedNodes()[0];
@@ -1279,7 +1299,9 @@ void ContentSubtreeIterator::Next() {
         mCurNode = nullptr;
         return;
       }
-      nextNode = nextNode->GetFirstChild();
+      nextNode = IterAllowCrossShadowBoundary()
+                     ? nextNode->GetFlattenedTreeFirstChildForSelection()
+                     : nextNode->GetFirstChild();
     }
     NS_ASSERTION(nextNode, "Iterator error, expected a child node!");
 
@@ -1308,11 +1330,23 @@ void ContentSubtreeIterator::Prev() {
 
   
   
-  nsINode* prevNode = ContentIteratorBase::GetDeepFirstChild(mCurNode);
+  nsINode* prevNode =
+      IterAllowCrossShadowBoundary()
+          ? ContentIteratorBase::GetDeepFirstInclusiveDescendant<
+                TreeKind::FlatForSelection>(mCurNode)
+          : ContentIteratorBase::GetDeepFirstInclusiveDescendant<TreeKind::DOM>(
+                mCurNode);
 
-  prevNode = PrevNode(prevNode);
+  prevNode = IterAllowCrossShadowBoundary()
+                 ? PrevNode<TreeKind::FlatForSelection>(prevNode)
+                 : PrevNode<TreeKind::DOM>(prevNode);
 
-  prevNode = ContentIteratorBase::GetDeepLastChild(prevNode);
+  prevNode =
+      IterAllowCrossShadowBoundary()
+          ? ContentIteratorBase::GetDeepLastInclusiveDescendant<
+                TreeKind::FlatForSelection>(prevNode)
+          : ContentIteratorBase::GetDeepLastInclusiveDescendant<TreeKind::DOM>(
+                prevNode);
 
   mCurNode = GetTopAncestorInRange(prevNode);
 }
@@ -1339,7 +1373,8 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
   
   Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*aNode, mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *aNode, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *aNode, mRange);
 
@@ -1371,8 +1406,8 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
 
     isNodeContainedInRange =
         IterAllowCrossShadowBoundary()
-            ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*parent,
-                                                                 mRange)
+            ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                  *parent, mRange)
             : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                   *parent, mRange);
 
@@ -1421,14 +1456,16 @@ nsresult RangeSubtreeIterator::Init(
     return NS_ERROR_FAILURE;
   }
 
+  
+  
   nsINode* node = aRange->GetMayCrossShadowBoundaryStartContainer();
   if (NS_WARN_IF(!node)) {
     return NS_ERROR_FAILURE;
   }
 
   if (node->IsCharacterData() ||
-      (node->IsElement() && node->AsElement()->GetChildCount() ==
-                                aRange->MayCrossShadowBoundaryStartOffset())) {
+      (node->IsElement() &&
+       aRange->MayCrossShadowBoundaryStartRef().IsEndOfContainer())) {
     mStart = node;
   }
 
@@ -1442,7 +1479,8 @@ nsresult RangeSubtreeIterator::Init(
   }
 
   if (node->IsCharacterData() ||
-      (node->IsElement() && aRange->MayCrossShadowBoundaryEndOffset() == 0)) {
+      (node->IsElement() &&
+       aRange->MayCrossShadowBoundaryEndRef().IsStartOfContainer())) {
     mEnd = node;
   }
 
