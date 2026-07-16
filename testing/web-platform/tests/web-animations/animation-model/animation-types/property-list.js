@@ -1265,7 +1265,7 @@ const gCSSProperties2 = {
   },
   'path-length': {
     
-    types: [ 'positiveNumber' ],
+    types: [ 'length' ],
     setup: t => {
       return createElement(t, 'path');
     }
