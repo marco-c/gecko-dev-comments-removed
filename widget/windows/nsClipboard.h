@@ -61,6 +61,13 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   
   
   
+  template <typename GroupDesc>
+  static bool FileGroupDescriptorHasItems(HGLOBAL aHGlobal,
+                                          uint64_t aItemCount);
+
+  
+  
+  
   
   
   static UINT GetFormat(const char* aMimeStr, bool aMapHTMLMime = true);
