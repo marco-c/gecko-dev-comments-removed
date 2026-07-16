@@ -281,6 +281,21 @@ class MOZ_RAII GeckoProfilerBaselineOSRMarker {
   mozilla::DebugOnly<uint32_t> spBefore_ = 0;
 };
 
+
+
+
+
+class MOZ_RAII AutoSuppressProfilerSampling {
+ public:
+  explicit AutoSuppressProfilerSampling(JSContext* cx);
+
+  ~AutoSuppressProfilerSampling();
+
+ private:
+  JSContext* cx_;
+  bool previouslyEnabled_;
+};
+
 } 
 
 #endif 

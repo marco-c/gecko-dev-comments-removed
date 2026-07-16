@@ -118,7 +118,18 @@ static char* jitDumpBuffer = nullptr;
 static bool IsPerfProfiling() { return JitDumpFilePtr != nullptr; }
 #endif
 
-AutoLockPerfSpewer::AutoLockPerfSpewer() { PerfMutex.lock(); }
+AutoLockPerfSpewer::AutoLockPerfSpewer() {
+  
+  
+  
+  
+  JSContext* cx = TlsContext.get();
+  if (cx) {
+    asps.emplace(cx);
+  }
+
+  PerfMutex.lock();
+}
 
 AutoLockPerfSpewer::~AutoLockPerfSpewer() { PerfMutex.unlock(); }
 
@@ -431,12 +442,7 @@ JS::JitCodeRecord* JS::LookupJitCodeRecord(uint64_t addr) {
     return nullptr;
   }
 
-  
-  
-  
-  if (!PerfMutex.tryLock()) {
-    return nullptr;
-  }
+  AutoLockPerfSpewer lock;
 
   JS::JitCodeRecord* result = nullptr;
   for (auto& record : profilerData) {
@@ -447,7 +453,6 @@ JS::JitCodeRecord* JS::LookupJitCodeRecord(uint64_t addr) {
     }
   }
 
-  PerfMutex.unlock();
   return result;
 }
 
