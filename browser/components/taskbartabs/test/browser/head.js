@@ -26,7 +26,7 @@ async function openTaskbarTabWindow(aTab = null, aOptions = null) {
   const url = Services.io.newURI("https://example.com");
   const userContextId = aOptions?.userContextId ?? 0;
 
-  const registry = createInMemoryRegistry();
+  const registry = new TaskbarTabsRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
   const windowManager = new TaskbarTabsWindowManager();
 
@@ -62,21 +62,4 @@ function createTaskbarTab(aRegistry, ...args) {
   }
 
   return check(result);
-}
-
-
-
-
-
-
-
-
-
-function createInMemoryRegistry() {
-  return new TaskbarTabsRegistry(
-    {
-      save: () => {},
-    },
-    []
-  );
 }
