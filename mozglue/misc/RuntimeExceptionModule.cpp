@@ -5,6 +5,7 @@
 #include "RuntimeExceptionModule.h"
 
 #include "mozilla/ProcessType.h"
+#include <stdlib.h>
 
 #if defined(XP_WIN)
 #  include <windows.h>
@@ -49,21 +50,9 @@ bool GetRuntimeExceptionModulePath(wchar_t* aPath, const size_t aLength) {
 
 void RegisterRuntimeExceptionModule() {
 #ifdef XP_WIN
-#  if defined(DEBUG)
-  
-  
-  const char* envvar = getenv("MOZ_CRASHREPORTER");
-  if (!envvar || !*envvar) {
+  if (!CrashReporterIsEnabled()) {
     return;
   }
-#  else
-  
-  
-  const char* envvar = getenv("MOZ_CRASHREPORTER_DISABLE");
-  if (envvar && *envvar) {
-    return;
-  }
-#  endif
 
   
   if (*sModulePath) {
@@ -94,6 +83,23 @@ void UnregisterRuntimeExceptionModule() {
     *sModulePath = L'\0';
   }
 #endif  
+}
+
+bool CrashReporterIsEnabled(bool force) {
+  if (force) {
+    return true;
+  }
+#if defined(DEBUG)
+  
+  
+  const char* envvar = getenv("MOZ_CRASHREPORTER");
+  return envvar && *envvar;
+#else
+  
+  
+  const char* envvar = getenv("MOZ_CRASHREPORTER_DISABLE");
+  return !envvar || !*envvar;
+#endif
 }
 
 }  
