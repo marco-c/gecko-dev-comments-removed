@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_AppleVTEncoder_h_
 #define mozilla_AppleVTEncoder_h_
 
@@ -38,6 +36,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
       override;
@@ -54,7 +53,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
   }
 
   void OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
-                   CMSampleBufferRef aBuffer);
+                   CMSampleBufferRef aBuffer, void* aSourceFrameRefcon);
 
  private:
   enum class EncodeResult { Success, EncodeError, FrameDropped, EmptyBuffer };
@@ -64,7 +63,8 @@ class AppleVTEncoder final : public MediaDataEncoder {
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
           aConfigurationChanges);
-  void ProcessOutput(RefPtr<MediaRawData>&& aOutput, EncodeResult aResult);
+  void ProcessOutput(RefPtr<MediaRawData>&& aOutput, EncodeResult aResult,
+                     bool aWasForcedKeyframe = false);
   void ForceOutputIfNeeded();
   void MaybeResolveOrRejectEncodePromise();
   RefPtr<EncodePromise> ProcessDrain();
@@ -86,6 +86,9 @@ class AppleVTEncoder final : public MediaDataEncoder {
   bool IsSettingColorSpaceSupported() const;
   MediaResult SetColorSpace(const EncoderConfig::SampleFormat& aFormat);
 
+  void EncodeNextSample(nsTArray<RefPtr<MediaData>>&& aInputs,
+                        MediaDataEncoder::EncodedData&& aOutputs);
+
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   EncoderConfig mConfig;
@@ -95,6 +98,8 @@ class AppleVTEncoder final : public MediaDataEncoder {
   EncodedData mEncodedData;
   
   MozPromiseHolder<EncodePromise> mEncodePromise;
+  MozPromiseHolder<EncodePromise> mEncodeBatchPromise;
+  MozPromiseRequestHolder<EncodePromise> mEncodeBatchRequest;
   RefPtr<MediaByteBuffer> mAvcc;  
   MediaResult mError;
 
