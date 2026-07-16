@@ -4,11 +4,13 @@
 
 #include "AutoscrollAnimation.h"
 
-#include <cmath>  
+#include <algorithm>  
+#include <cmath>      
 
 #include "AsyncPanZoomController.h"
 #include "APZCTreeManager.h"
 #include "FrameMetrics.h"
+#include "mozilla/StaticPrefs_general.h"
 
 namespace mozilla {
 namespace layers {
@@ -16,7 +18,13 @@ namespace layers {
 
 
 static float Accelerate(ScreenCoord curr, ScreenCoord start) {
-  static const int speed = 12;
+  
+  
+  
+  static const float baseSpeed = 12.0f;
+  int multiplier =
+      std::max(1, int(StaticPrefs::general_autoscroll_speed_multiplier()));
+  float speed = std::max(1.0f, baseSpeed * 100 / multiplier);
   float val = (curr - start) / speed;
   if (val > 1) {
     return val * sqrtf(val) - 1;
