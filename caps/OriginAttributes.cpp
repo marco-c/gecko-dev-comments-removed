@@ -3,6 +3,7 @@
 
 
 #include "mozilla/OriginAttributes.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"

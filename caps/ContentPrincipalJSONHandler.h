@@ -8,17 +8,14 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "js/TypeDecls.h"  
-
-#include "mozilla/RefPtr.h"  
-
-#include "nsCOMPtr.h"  
-#include "nsDebug.h"   
-#include "nsIURI.h"    
-
 #include "ContentPrincipal.h"
 #include "OriginAttributes.h"
 #include "SharedJSONHandler.h"
+#include "js/TypeDecls.h"    
+#include "mozilla/RefPtr.h"  
+#include "nsCOMPtr.h"        
+#include "nsDebug.h"         
+#include "nsIURI.h"          
 
 namespace mozilla {
 

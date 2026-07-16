@@ -8,20 +8,17 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "js/TypeDecls.h"  
-
+#include "ExpandedPrincipal.h"
+#include "OriginAttributes.h"
+#include "SharedJSONHandler.h"
+#include "SubsumedPrincipalJSONHandler.h"
+#include "js/TypeDecls.h"    
 #include "mozilla/Maybe.h"   
 #include "mozilla/RefPtr.h"  
-
-#include "nsCOMPtr.h"      
-#include "nsDebug.h"       
-#include "nsIPrincipal.h"  
-#include "nsTArray.h"      
-
-#include "OriginAttributes.h"
-#include "ExpandedPrincipal.h"
-#include "SubsumedPrincipalJSONHandler.h"
-#include "SharedJSONHandler.h"
+#include "nsCOMPtr.h"        
+#include "nsDebug.h"         
+#include "nsIPrincipal.h"    
+#include "nsTArray.h"        
 
 namespace mozilla {
 

@@ -2,8 +2,8 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
 #include "nsPrintfCString.h"

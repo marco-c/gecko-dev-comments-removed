@@ -2,10 +2,10 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIEventTarget.h"

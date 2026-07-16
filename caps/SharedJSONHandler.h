@@ -5,11 +5,9 @@
 #ifndef mozilla_SharedJSONHandler_h
 #define mozilla_SharedJSONHandler_h
 
-#include "js/JSON.h"  
-
+#include "BasePrincipal.h"   
+#include "js/JSON.h"         
 #include "mozilla/RefPtr.h"  
-
-#include "BasePrincipal.h"  
 
 namespace mozilla {
 
