@@ -36,7 +36,9 @@ class MozNewTabWallpaperProtocolHandler final
 
 
 
+
   RefPtr<RemoteStreamPromise> NewStream(nsIURI* aChildURI,
+                                        nsILoadInfo* aLoadInfo,
                                         bool* aTerminateSender);
 
  protected:

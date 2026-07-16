@@ -41,7 +41,9 @@ class PageThumbProtocolHandler final : public nsISubstitutingProtocolHandler,
 
 
 
+
   RefPtr<RemoteStreamPromise> NewStream(nsIURI* aChildURI,
+                                        nsILoadInfo* aLoadInfo,
                                         bool* aTerminateSender);
 
  protected:
