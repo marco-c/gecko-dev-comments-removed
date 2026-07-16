@@ -7482,6 +7482,14 @@ void QuotaManager::ShutdownStorageInternal() {
       mTemporaryStorageInitializedInternal = false;
     }
 
+    
+    
+    {
+      MutexAutoLock lock(mQuotaMutex);
+      mOriginToStorageOriginMap.Clear();
+      mStorageOriginToOriginMap.Clear();
+    }
+
     ReleaseIOThreadObjects();
 
     mStorageConnection = nullptr;
