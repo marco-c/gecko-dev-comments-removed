@@ -1175,9 +1175,9 @@ static bool CreateURLFilenameFromTextA(nsAutoString& aText, char* aFilename) {
   
   
   char defaultChar = '_';
-  int currLen = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
-                                    aText.get(), -1, aFilename, MAX_PATH,
-                                    &defaultChar, nullptr);
+  int currLen = WideCharToMultiByte(
+      CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR | WC_NO_BEST_FIT_CHARS,
+      aText.get(), -1, aFilename, MAX_PATH, &defaultChar, nullptr);
   return currLen != 0;
 }
 
