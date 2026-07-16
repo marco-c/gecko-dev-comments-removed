@@ -3479,7 +3479,24 @@ const MultiStageAboutWelcome = props => {
 
       
       
-      setScreens(filteredScreens.map(filtered => screens.find(s => s.id === filtered.id) ?? filtered));
+      
+      
+      setScreens(filteredScreens.map(filtered => {
+        const filteredScreen = screens.find(s => s.id === filtered.id);
+        if (!filteredScreen) {
+          return filtered;
+        }
+        if (filtered.content?.tiles && filtered.content) {
+          return {
+            ...filteredScreen,
+            content: {
+              ...filteredScreen.content,
+              tiles: filtered.content.tiles
+            }
+          };
+        }
+        return filteredScreen;
+      }));
       
       if (!didFilter.current) {
         didFilter.current = true;
@@ -4175,7 +4192,7 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
         return;
       }
       const multiSelectId = `tile-${tileIndex}`;
-      const activeSelections = props.activeMultiSelect[multiSelectId] || [];
+      const activeSelections = props.activeMultiSelect?.[multiSelectId] || [];
       for (const checkbox of tile.data) {
         let checkboxAction;
         if (activeSelections.includes(checkbox.id)) {
@@ -4202,7 +4219,7 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
 
     
     action.data.actions.unshift(...multiSelectActions);
-    for (const value of Object.values(props.activeMultiSelect)) {
+    for (const value of Object.values(props.activeMultiSelect || {})) {
       
       MultiStageUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX");
     }

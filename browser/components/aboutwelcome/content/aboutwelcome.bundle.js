@@ -223,7 +223,7 @@ const MultiStageAboutWelcome = props => {
 
       
       
-      setScreens(filteredScreens.map(filtered => screens.find(s => s.id === filtered.id) ?? filtered));
+      setScreens(filteredScreens.map(filtered => filtered.id === LANGUAGE_MISMATCH_SCREEN_ID ? screens.find(s => s.id === filtered.id) ?? filtered : filtered));
       
       if (!didFilter.current) {
         didFilter.current = true;
@@ -919,7 +919,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         return;
       }
       const multiSelectId = `tile-${tileIndex}`;
-      const activeSelections = props.activeMultiSelect[multiSelectId] || [];
+      const activeSelections = props.activeMultiSelect?.[multiSelectId] || [];
       for (const checkbox of tile.data) {
         let checkboxAction;
         if (activeSelections.includes(checkbox.id)) {
@@ -946,7 +946,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
 
     
     action.data.actions.unshift(...multiSelectActions);
-    for (const value of Object.values(props.activeMultiSelect)) {
+    for (const value of Object.values(props.activeMultiSelect || {})) {
       
       _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX");
     }
