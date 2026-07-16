@@ -3265,6 +3265,8 @@ void gfxPlatform::InitWebGLConfig() {
       IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_ANGLE));
   gfxVars::SetWebglUseHardware(
       IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_USE_HARDWARE));
+  gfxVars::SetAllowMetalAngleWebGL(
+      IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_ANGLE_METAL));
 
   if (kIsMacOS) {
     

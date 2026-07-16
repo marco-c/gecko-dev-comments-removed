@@ -363,6 +363,15 @@ bool WebGLContext::CreateAndInitGL(
     tryNativeGL = true;
     tryANGLE = false;
   }
+#elif defined(XP_MACOSX)
+  if (gfx::gfxVars::AllowMetalAngleWebGL() &&
+      !StaticPrefs::webgl_disable_angle() &&
+      
+      
+      !(flags & gl::CreateContextFlags::FORBID_HARDWARE)) {
+    tryNativeGL = false;
+    tryANGLE = true;
+  }
 #endif
 
   if (tryNativeGL && !forceEnabled) {
