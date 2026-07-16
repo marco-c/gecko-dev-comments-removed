@@ -632,6 +632,9 @@ interface nsIXPCComponents_Results {
   
 
   
+  NS_ERROR_DOM_NETWORK_ERR: 0x80530013;
+
+  
   NS_ERROR_DOM_NOT_FOUND_ERR: 0x80530008;
 
   
