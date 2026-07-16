@@ -6,7 +6,9 @@
 
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
+#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/RTCDtlsTransportBinding.h"
+#include "mozilla/dom/RTCErrorEvent.h"
 #include "mozilla/dom/TypedArray.h"
 
 namespace mozilla::dom {
@@ -57,7 +59,11 @@ void RTCDtlsTransport::UpdateStateNoEvent(TransportLayer::State aState) {
 }
 
 void RTCDtlsTransport::UpdateState(TransportLayer::State aState,
-                                   nsTArray<nsTArray<uint8_t>>&& aRemoteCerts) {
+                                   nsTArray<nsTArray<uint8_t>>&& aRemoteCerts,
+                                   Maybe<RTCErrorParams> aError) {
+  
+  auto kungFuDeathGrip = RefPtr(this);
+
   RTCDtlsTransportState oldState = mState;
   UpdateStateNoEvent(aState);
   
@@ -69,13 +75,26 @@ void RTCDtlsTransport::UpdateState(TransportLayer::State aState,
     return;
   }
 
+  
+  if (aError.isSome()) {
+    RTCErrorEventInit errorEventInit;
+    errorEventInit.mBubbles = false;
+    errorEventInit.mCancelable = false;
+    errorEventInit.mError =
+        new RTCError(aError->errorInit(), nsCString(aError->message()));
+    RefPtr<Event> errorEvent =
+        RTCErrorEvent::Constructor(this, u"error"_ns, errorEventInit);
+    DispatchTrustedEvent(errorEvent);
+  }
+
   EventInit init;
   init.mBubbles = false;
   init.mCancelable = false;
 
-  RefPtr<Event> event = Event::Constructor(this, u"statechange"_ns, init);
+  RefPtr<Event> stateChangeEvent =
+      Event::Constructor(this, u"statechange"_ns, init);
 
-  DispatchTrustedEvent(event);
+  DispatchTrustedEvent(stateChangeEvent);
 }
 
 void RTCDtlsTransport::GetRemoteCertificates(JSContext* aCx,
