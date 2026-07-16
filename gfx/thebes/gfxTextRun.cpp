@@ -987,6 +987,10 @@ uint32_t gfxTextRun::BreakAndMeasureText(
 
   
   
+  const nscoord letterSpacing = aProvider.LetterSpacing();
+
+  
+  
   
   uint32_t rescanLimit = aStart;
   for (uint32_t i = aStart; i < end; ++i) {
@@ -1126,8 +1130,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
 
     gfxFloat charAdvance;
     if (i >= ligatureRange.start && i < ligatureRange.end) {
-      charAdvance =
-          GetAdvanceForGlyphs(Range(i, i + 1), aProvider.LetterSpacing());
+      charAdvance = GetAdvanceForGlyphs(Range(i, i + 1), letterSpacing);
       if (haveSpacing) {
         PropertyProvider::Spacing* space =
             &spacingBuffer[i - bufferRange.start];
