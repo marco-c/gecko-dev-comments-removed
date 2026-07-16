@@ -973,10 +973,31 @@ bool ReflowInput::ShouldApplyAutomaticMinimumOnBlockAxis() const {
 }
 
 bool ReflowInput::IsInFragmentedContext() const {
+  if (AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+    return true;
+  }
+
+  
+  
+  if (mFlags.mIsInLastColumnBalancingReflow) {
+    return true;
+  }
+
   
   
   
-  return AvailableBSize() != NS_UNCONSTRAINEDSIZE || mFrame->GetPrevInFlow();
+  if (mFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    return true;
+  }
+
+  
+  
+  
+  if (mFrame->GetPrevInFlow() || mFrame->GetNextInFlow()) {
+    return true;
+  }
+
+  return false;
 }
 
 

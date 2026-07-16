@@ -493,6 +493,7 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
+    
     bool mMustReflowPlaceholders : 1;
 
     
@@ -789,8 +790,6 @@ struct ReflowInput : public SizeComputationInput {
   
   bool ShouldApplyAutomaticMinimumOnBlockAxis() const;
 
-  
-  
   
   
   

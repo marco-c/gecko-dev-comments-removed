@@ -666,7 +666,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
 
       
       
-      kidReflowInput.mFlags.mMustReflowPlaceholders = !changingBSize;
+      
+      
+      kidReflowInput.mFlags.mMustReflowPlaceholders =
+          !changingBSize || reflowLastColumnWithUnconstrainedAvailBSize;
 
       COLUMN_SET_LOG(
           "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d), "

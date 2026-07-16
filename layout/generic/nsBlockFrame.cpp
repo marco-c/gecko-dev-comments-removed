@@ -3395,11 +3395,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
     if (!line->IsDirty()) {
       const bool isPaginated =
-          
-          
-          
-          aState.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE ||
-          HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
+          aState.mReflowInput.IsInFragmentedContext() ||
           
           aState.mPresContext->IsPaginated();
       if (isPaginated) {
