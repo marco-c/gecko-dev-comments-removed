@@ -2,7 +2,6 @@
 
 
 
-
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/FloatingPoint.h"
@@ -675,8 +674,8 @@ nsresult txEXSLTRegExFunctionCall::evaluate(txIEvalContext* aContext,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  nsCOMPtr<txIEXSLTFunctions> funcs =
-      do_ImportESModule("resource://gre/modules/txEXSLTRegExFunctions.sys.mjs");
+  nsCOMPtr<txIEXSLTFunctions> funcs = do_ImportESModule(
+      "moz-src:///dom/xslt/xslt/txEXSLTRegExFunctions.sys.mjs");
   MOZ_ALWAYS_TRUE(funcs);
 
   switch (mType) {
