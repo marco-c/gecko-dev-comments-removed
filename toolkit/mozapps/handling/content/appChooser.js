@@ -58,10 +58,15 @@ let dialog = {
 
   initialize() {
     let args = window.arguments[0].wrappedJSObject || window.arguments[0];
-    let { handler, outArgs, usePrivateBrowsing, enableButtonDelay } = args;
+    let { handler, outArgs, usePrivateBrowsing, enableButtonDelay, kind } =
+      args;
 
     this._handlerInfo = handler.QueryInterface(Ci.nsIHandlerInfo);
     this._outArgs = outArgs;
+    
+    
+    
+    this._kind = kind;
 
     this.isPrivate =
       usePrivateBrowsing ||
@@ -88,6 +93,19 @@ let dialog = {
     
     this.populateList();
 
+    if (this._kind === "mailto") {
+      
+      
+      
+      this._itemChoose.hidden = true;
+      if (!this.selectedItem || this.selectedItem == this._itemChoose) {
+        this.selectedItem = items.querySelector("richlistitem:not([hidden])");
+      }
+      
+      
+      this._dialog.removeAttribute("data-l10n-id");
+    }
+
     this.initL10n();
 
     if (enableButtonDelay) {
@@ -107,11 +125,35 @@ let dialog = {
 
   initL10n() {
     let rememberLabel = document.getElementById("remember-label");
+    let description = document.getElementById("description");
+
+    if (this._kind === "mailto") {
+      document.l10n.setAttributes(
+        document.documentElement,
+        "mailto-handler-picker-window"
+      );
+      document.l10n.setAttributes(
+        rememberLabel,
+        "mailto-handler-picker-always-ask"
+      );
+      document.l10n.setAttributes(
+        description,
+        "mailto-handler-picker-subtitle"
+      );
+      document.l10n.setAttributes(
+        this._dialog.getButton("accept"),
+        "mailto-handler-picker-set-default"
+      );
+      document.l10n.setAttributes(
+        this._dialog.getButton("cancel"),
+        "mailto-handler-picker-not-now"
+      );
+      return;
+    }
+
     document.l10n.setAttributes(rememberLabel, "chooser-dialog-remember", {
       scheme: this._handlerInfo.type,
     });
-
-    let description = document.getElementById("description");
     document.l10n.setAttributes(description, "chooser-dialog-description", {
       scheme: this._handlerInfo.type,
     });
@@ -126,6 +168,11 @@ let dialog = {
     var preferredHandler = this._handlerInfo.preferredApplicationHandler;
     for (let i = possibleHandlers.length - 1; i >= 0; --i) {
       let app = possibleHandlers.queryElementAt(i, Ci.nsIHandlerApp);
+      
+      
+      if (this._kind === "mailto" && !(app instanceof Ci.nsIWebHandlerApp)) {
+        continue;
+      }
       let elm = document.createXULElement("richlistitem", {
         is: "mozapps-handler",
       });
@@ -197,7 +244,7 @@ let dialog = {
     }
 
     
-    if (Cc["@mozilla.org/gio-service;1"]) {
+    if (Cc["@mozilla.org/gio-service;1"] && this._kind !== "mailto") {
       let gIOSvc = Cc["@mozilla.org/gio-service;1"].getService(
         Ci.nsIGIOService
       );
@@ -281,7 +328,13 @@ let dialog = {
 
 
   onAccept() {
-    this.updateHandlerData(this._rememberCheck.checked);
+    
+    
+    let skipAsk =
+      this._kind === "mailto"
+        ? !this._rememberCheck.checked
+        : this._rememberCheck.checked;
+    this.updateHandlerData(skipAsk);
     this._outArgs.setProperty("openHandler", true);
   },
 
