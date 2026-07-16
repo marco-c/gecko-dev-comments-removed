@@ -260,8 +260,11 @@ MediaConduitErrorCode WebrtcAudioConduit::Init() {
 
 void WebrtcAudioConduit::OnDtmfEvent(const DtmfEvent& aEvent) {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  MOZ_ASSERT(mSendStream);
   MOZ_ASSERT(mDtmfEnabled);
+  
+  if (!mSendStream) {
+    return;
+  }
   mSendStream->SendTelephoneEvent(aEvent.mPayloadType, aEvent.mPayloadFrequency,
                                   aEvent.mEventCode, aEvent.mLengthMs);
 }
