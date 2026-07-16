@@ -2362,7 +2362,15 @@ var SidebarController = {
       this._state.command = "";
       this.lastOpenedId = null;
       if (this._launcherStateAtOpen !== undefined) {
-        if (this.sidebarRevampVisibility === "hide-sidebar") {
+        
+        
+        
+        
+        if (
+          ["hide-sidebar", "hide-on-close"].includes(
+            this.sidebarRevampVisibility
+          )
+        ) {
           this._state.launcherVisible = this._launcherStateAtOpen;
         }
         delete this._launcherStateAtOpen;
