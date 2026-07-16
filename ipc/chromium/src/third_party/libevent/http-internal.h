@@ -185,6 +185,22 @@ EVENT2_EXPORT_SYMBOL
 void evhttp_connection_fail_(struct evhttp_connection *,
     enum evhttp_request_error error);
 
+enum evhttp_transfer_encoding_header_status {
+	
+
+
+	TE_INVALID,
+	
+	TE_ENDS_IN_CHUNKED,
+	
+	TE_NO_CHUNKED,
+};
+EVENT2_EXPORT_SYMBOL
+int evhttp_str_is_chunked_(const char *value, const char *eos);
+EVENT2_EXPORT_SYMBOL
+enum evhttp_transfer_encoding_header_status
+evhttp_check_transfer_encoding_(const char *value);
+
 enum message_read_status;
 
 EVENT2_EXPORT_SYMBOL

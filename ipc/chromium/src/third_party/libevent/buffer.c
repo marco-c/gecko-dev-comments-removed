@@ -1039,7 +1039,12 @@ evbuffer_add_buffer_reference(struct evbuffer *outbuf, struct evbuffer *inbuf)
 	if (out_total_len == 0) {
 		
 
+
+
 		evbuffer_free_all_chains(outbuf->first);
+		outbuf->first = NULL;
+		outbuf->last = NULL;
+		outbuf->last_with_datap = &outbuf->first;
 	}
 	APPEND_CHAIN_MULTICAST(outbuf, inbuf);
 

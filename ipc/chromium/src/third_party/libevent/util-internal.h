@@ -355,6 +355,12 @@ ev_int32_t evutil_weakrand_range_(struct evutil_weakrand_state *seed, ev_int32_t
 #define EVUTIL_FALLTHROUGH
 #endif
 
+#if EVUTIL_HAS_ATTRIBUTE(nonstring)
+#define EVUTIL_NONSTRING __attribute__((nonstring))
+#else
+#define EVUTIL_NONSTRING
+#endif
+
 
 #ifdef NDEBUG
 #define EVUTIL_ASSERT(cond) EVUTIL_NIL_CONDITION_(cond)

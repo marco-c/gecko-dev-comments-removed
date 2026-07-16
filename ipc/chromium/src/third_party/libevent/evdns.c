@@ -1671,7 +1671,10 @@ dnsname_to_labels(u8 *const buf, size_t buf_len, off_t j,
 	
 	
 	
-	if (!j || buf[j-1]) buf[j++] = 0;
+	if ((size_t)j >= buf_len)
+		return -2;
+	if (!j || buf[j-1])
+		buf[j++] = 0;
 	return j;
  overflow:
 	return (-2);

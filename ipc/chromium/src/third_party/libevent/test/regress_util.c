@@ -979,6 +979,8 @@ test_evutil_rand(void *arg)
 		tt_int_op(r, <, 9999);
 	}
 
+	(void) n;
+
 	
 end:
 	;

@@ -440,7 +440,7 @@
 #define EVENT__LT_OBJDIR ".libs/"
 
 
-#define EVENT__NUMERIC_VERSION 0x02010c00
+#define EVENT__NUMERIC_VERSION 0x02010d00
 
 
 #define EVENT__PACKAGE "libevent"
@@ -452,7 +452,7 @@
 #define EVENT__PACKAGE_NAME "libevent"
 
 
-#define EVENT__PACKAGE_STRING "libevent 2.1.12-stable"
+#define EVENT__PACKAGE_STRING "libevent 2.1.13-stable"
 
 
 #define EVENT__PACKAGE_TARNAME "libevent"
@@ -461,7 +461,7 @@
 #define EVENT__PACKAGE_URL ""
 
 
-#define EVENT__PACKAGE_VERSION "2.1.12-stable"
+#define EVENT__PACKAGE_VERSION "2.1.13-stable"
 
 
 
@@ -548,7 +548,7 @@
 
 
 
-#define EVENT__VERSION "2.1.12-stable"
+#define EVENT__VERSION "2.1.13-stable"
 
 
 #ifndef _DARWIN_USE_64_BIT_INODE

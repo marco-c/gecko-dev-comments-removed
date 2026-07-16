@@ -515,6 +515,8 @@ conn_closed(struct bufferevent_openssl *bev_ssl, int when, int errcode, int ret)
 		break;
 	case SSL_ERROR_SSL:
 		
+		if (ret == 0 && SSL_is_init_finished(bev_ssl->ssl) == 0)
+			dirty_shutdown = 1;
 		put_error(bev_ssl, errcode);
 		break;
 	case SSL_ERROR_WANT_X509_LOOKUP:

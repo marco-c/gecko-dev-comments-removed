@@ -10,6 +10,9 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+
+#define OPENSSL_SUPPRESS_DEPRECATED
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
