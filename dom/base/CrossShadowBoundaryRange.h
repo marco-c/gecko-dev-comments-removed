@@ -45,6 +45,12 @@ class CrossShadowBoundaryRange final : public StaticRange,
   nsINode* GetCommonAncestor() const { return mCommonAncestor; }
 
   
+  
+  
+  
+  void UpdateCommonAncestor();
+
+  
   nsresult SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
                           nsINode* aEndContainer, uint32_t aEndOffset) = delete;
 
@@ -64,21 +70,7 @@ class CrossShadowBoundaryRange final : public StaticRange,
         mOwner(aOwner) {}
   virtual ~CrossShadowBoundaryRange() = default;
 
-  
-
-
-
-
-
-
-
-
-
-
-  template <typename SPT, typename SRT, typename EPT, typename ERT>
-  void DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-                  const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
-                  nsINode* aRootNode, nsRange* aOwner);
+  void ResetToReuse();
 
   
   
@@ -93,6 +85,12 @@ class CrossShadowBoundaryRange final : public StaticRange,
   
   nsRange* mOwner;
 };
+
+inline CrossShadowBoundaryRange* StaticRange::AsCrossShadowBoundaryRange() {
+  MOZ_ASSERT(IsCrossShadowBoundaryRange());
+  return static_cast<CrossShadowBoundaryRange*>(this);
+}
+
 }  
 }  
 

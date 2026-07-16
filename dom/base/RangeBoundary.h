@@ -208,9 +208,8 @@ class RangeBoundaryBase {
         mSetBy(RangeBoundarySetBy::Ref),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
-        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::FlatForSelection,
-        "Only TreeKind::DOM and TreeKind::FlatForSelection are valid at the "
-        "moment.");
+        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
+        "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
     if (mRef) {
       NS_WARNING_ASSERTION(
           IsValidParent(mParent, mRef),
@@ -246,9 +245,8 @@ class RangeBoundaryBase {
         mSetBy(aSetBy),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
-        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::FlatForSelection,
-        "Only TreeKind::DOM and TreeKind::FlatForSelection are valid at the "
-        "moment.");
+        aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
+        "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
     if (IsSetByOffset()) {
       
       
@@ -296,14 +294,13 @@ class RangeBoundaryBase {
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
 
   RangeBoundaryBase AsRangeBoundaryInFlatTree(RangeBoundaryFor aFor) const {
-    if (mTreeKind == TreeKind::FlatForSelection) {
+    if (mTreeKind == TreeKind::Flat) {
       return *this;
     }
     MOZ_ASSERT(IsSet());
     if (!mParent->IsContainerNode()) {
       MOZ_ASSERT(mOffset);
-      return RangeBoundaryBase(mParent, *mOffset, mSetBy,
-                               TreeKind::FlatForSelection);
+      return RangeBoundaryBase(mParent, *mOffset, mSetBy, TreeKind::Flat);
     }
     enum class ChildKind : bool { ChildAtOffset, Ref };
     
@@ -312,10 +309,9 @@ class RangeBoundaryBase {
     
     const auto ComputeRangeBoundaryInFlatTreeFromChildNode =
         [&](RawRefType* aChild, ChildKind aChildKind) {
-          RangeBoundaryBase ret =
-              aChildKind == ChildKind::ChildAtOffset
-                  ? FromChild(*aChild, TreeKind::FlatForSelection)
-                  : FromRef(*aChild, TreeKind::FlatForSelection);
+          RangeBoundaryBase ret = aChildKind == ChildKind::ChildAtOffset
+                                      ? FromChild(*aChild, TreeKind::Flat)
+                                      : FromRef(*aChild, TreeKind::Flat);
           if (MOZ_LIKELY(ret.IsSet())) {
             return ret;
           }
@@ -331,10 +327,8 @@ class RangeBoundaryBase {
           
           
           return IsStartOfContainer()
-                     ? StartOfParent(*shadowRoot, mSetBy,
-                                     TreeKind::FlatForSelection)
-                     : EndOfParent(*shadowRoot, mSetBy,
-                                   TreeKind::FlatForSelection);
+                     ? StartOfParent(*shadowRoot, mSetBy, TreeKind::Flat)
+                     : EndOfParent(*shadowRoot, mSetBy, TreeKind::Flat);
         };
     
     
@@ -387,7 +381,7 @@ class RangeBoundaryBase {
     }
     
     MOZ_ASSERT(!mParent->HasChildNodes());
-    return EndOfParent(*mParent, mSetBy, TreeKind::FlatForSelection);
+    return EndOfParent(*mParent, mSetBy, TreeKind::Flat);
   }
 
   RangeBoundaryBase AsRangeBoundaryInDOMTree() const {
@@ -774,7 +768,7 @@ class RangeBoundaryBase {
     if (aParent == ComputeParentNode(aChild, aKind)) {
       return true;
     }
-    if (aKind == TreeKind::FlatForSelection) {
+    if (aKind == TreeKind::Flat) {
       
       
       if (aParent->GetShadowRootForSelection() == aChild->GetParentNode()) {

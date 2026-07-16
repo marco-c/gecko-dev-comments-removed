@@ -1429,10 +1429,10 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeToString(
   nsContentUtils::GetInclusiveAncestors(mClosestCommonInclusiveAncestorOfRange,
                                         mCommonInclusiveAncestors);
   if (mAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
-    nsContentUtils::GetFlattenedTreeAncestorsAndOffsetsForSelection(
+    nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
         startContainer, startOffset, inclusiveAncestorsOfStart,
         inclusiveAncestorsOffsetsOfStart);
-    nsContentUtils::GetFlattenedTreeAncestorsAndOffsetsForSelection(
+    nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
         endContainer, endOffset, inclusiveAncestorsOfEnd,
         inclusiveAncestorsOffsetsOfEnd);
   } else {
@@ -1647,7 +1647,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
  protected:
   [[nodiscard]] TreeKind GetTreeKind() const {
     return mFlags & nsIDocumentEncoder::AllowCrossShadowBoundary
-               ? TreeKind::FlatForSelection
+               ? TreeKind::Flat
                : TreeKind::DOM;
   }
   nsresult PromoteRange(nsRange* inRange);
@@ -1667,7 +1667,7 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
 
     [[nodiscard]] nsINode* GetParentNode() const {
       MOZ_ASSERT(mContainer);
-      return mTreeKind == TreeKind::FlatForSelection
+      return mTreeKind == TreeKind::Flat
                  ? mContainer->GetFlattenedTreeParentNodeForSelection()
                  : mContainer->GetParentNode();
     }
@@ -1983,8 +1983,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
     
     
     
-    if (GetTreeKind() == TreeKind::FlatForSelection &&
-        ref.GetTreeKind() == TreeKind::DOM) {
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
       return ref.AsRaw().AsRangeBoundaryInFlatTree(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::Start);
@@ -1993,8 +1992,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   }();
   const RawRangeBoundary endRef = [&]() -> RawRangeBoundary {
     const auto& ref = inRange->MayCrossShadowBoundaryEndRef();
-    if (GetTreeKind() == TreeKind::FlatForSelection &&
-        ref.GetTreeKind() == TreeKind::DOM) {
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
       return ref.AsRaw().AsRangeBoundaryInFlatTree(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::End);
@@ -2365,7 +2363,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
 
   
   
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     if (ShadowRoot* const shadowRoot = ShadowRoot::FromNode(containerContent)) {
       Element* const host = shadowRoot->GetHost();
       if (MOZ_UNLIKELY(!host)) {
@@ -2386,7 +2384,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
   }
 
   nsINode* const containerParentNode =
-      aPoint.GetTreeKind() == TreeKind::FlatForSelection
+      aPoint.GetTreeKind() == TreeKind::Flat
           ? containerContent->GetFlattenedTreeParentNodeForSelection()
           : containerContent->GetParentNode();
   if (MOZ_UNLIKELY(!containerParentNode)) {
@@ -2417,7 +2415,7 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPointAfterContainer(
 
   
   
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     if (ShadowRoot* const shadowRoot = ShadowRoot::FromNode(containerContent)) {
       Element* const host = shadowRoot->GetHost();
       if (MOZ_UNLIKELY(!host)) {
@@ -2449,7 +2447,7 @@ bool nsHTMLCopyEncoder::IsRoot(nsINode* aNode, TreeKind aKind) const {
     return content->IsHTMLElement(nsGkAtoms::div);
   }
 
-  if (aKind == TreeKind::FlatForSelection) {
+  if (aKind == TreeKind::Flat) {
     
     
     
@@ -2502,7 +2500,7 @@ bool nsHTMLCopyEncoder::ChildIsFirstNode(const RawRangeBoundary& aPoint) {
   const auto ChildIsSignificant = [](nsIContent& aContent) {
     return !aContent.TextIsOnlyWhitespace();
   };
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
     if (!iter.Seek(aPoint.GetChildAtOffset())) {
       return false;
@@ -2552,7 +2550,7 @@ bool nsHTMLCopyEncoder::ChildIsLastNode(const RawRangeBoundary& aPoint) {
     }
     return !aContent.TextIsOnlyWhitespace();
   };
-  if (aPoint.GetTreeKind() == TreeKind::FlatForSelection) {
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
     FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
     if (!iter.Seek(aPoint.GetChildAtOffset())) {
       return false;

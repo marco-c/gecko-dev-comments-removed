@@ -244,6 +244,17 @@ enum EventNameType {
   EventNameType_All = 0xFFFF
 };
 
+enum class TreeKind : uint8_t { DOM, ShadowIncludingDOM, Flat };
+
+inline std::ostream& operator<<(std::ostream& aStream, TreeKind aTreeKind) {
+  constexpr static const char* sNames[] = {
+      "DOM",
+      "ShadowIncludingDOM",
+      "Flat",
+  };
+  return aStream << sNames[static_cast<uint8_t>(aTreeKind)];
+}
+
 enum class SerializeShadowRoots : uint8_t { Yes, No };
 
 struct EventNameMapping {
@@ -532,8 +543,7 @@ class nsContentUtils {
 
 
 
-
-  static nsresult GetFlattenedTreeAncestorsAndOffsetsForSelection(
+  static nsresult GetFlattenedTreeAncestorsAndOffsets(
       nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
       nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
 
