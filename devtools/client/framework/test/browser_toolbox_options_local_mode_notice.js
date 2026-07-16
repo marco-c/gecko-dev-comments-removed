@@ -10,6 +10,12 @@ const { LocalModeMappings } = ChromeUtils.importESModule(
   "resource://devtools/client/framework/LocalModeMappings.sys.mjs"
 );
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
+
 add_task(async function addToSettings() {
   ok(TEST_URI.startsWith("file://"), "The test URL is a file:// URL");
 
