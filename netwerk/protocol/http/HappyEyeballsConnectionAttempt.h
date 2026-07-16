@@ -230,6 +230,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   void RetryWithoutTRR();
+  
+  
+  
+  
+  void MaybeBuildOriginCoalescingKeys();
 
   
   
@@ -300,9 +305,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   RefPtr<HappyEyeballsTransaction> mOutputTrans;
   uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
-  
-  
-  nsCOMPtr<nsIDNSAddrRecord> mWinnerAddrRecord;
 
   
   
