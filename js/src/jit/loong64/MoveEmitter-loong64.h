@@ -27,6 +27,10 @@ class MoveEmitterLOONG64 {
   
   int32_t pushedAtCycle_ = -1;
 
+  
+  
+  Register cycleGeneralReg_ = InvalidReg;
+
   bool inCycle_ = false;
 
   void assertDone() { MOZ_ASSERT(!inCycle_); }
