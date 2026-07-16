@@ -115,6 +115,8 @@ void AfterMaybeBlockingSyscall() {}
 #ifndef INCLUDE_PERFETTO_EXT_BASE_ANDROID_UTILS_H_
 #define INCLUDE_PERFETTO_EXT_BASE_ANDROID_UTILS_H_
 
+#include <cstdint>
+#include <optional>
 #include <string>
 
 
@@ -131,6 +133,43 @@ std::string GetAndroidProp(const char* name);
 
 #endif  
 
+struct Utsname {
+  std::string sysname;
+  std::string version;
+  std::string machine;
+  std::string release;
+};
+
+struct SystemInfo {
+  std::optional<int32_t> timezone_off_mins;
+  std::optional<Utsname> utsname_info;
+  std::optional<uint32_t> page_size;
+  std::optional<uint32_t> num_cpus;
+  std::optional<uint64_t> system_ram_bytes;
+  std::string android_build_fingerprint;
+  std::string android_device_manufacturer;
+  std::optional<uint64_t> android_sdk_version;
+  std::string android_soc_model;
+  std::string android_guest_soc_model;
+  std::string android_hardware_revision;
+  std::string android_storage_model;
+  std::string android_ram_model;
+  std::string android_serial_console;
+};
+
+
+Utsname GetUtsname();
+
+
+SystemInfo GetSystemInfo();
+
+
+
+
+
+
+std::string GetPerfettoMachineName();
+
 }  
 }  
 
@@ -154,90 +193,25 @@ std::string GetAndroidProp(const char* name);
 
 
 
-
-#include <string>
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-#include <sys/system_properties.h>
-#endif
-
-
-
-
-namespace perfetto {
-namespace base {
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-
-std::string GetAndroidProp(const char* name) {
-  std::string ret;
-#if __ANDROID_API__ >= 26
-  const prop_info* pi = __system_property_find(name);
-  if (!pi) {
-    return ret;
-  }
-  __system_property_read_callback(
-      pi,
-      [](void* dst_void, const char*, const char* value, uint32_t) {
-        std::string& dst = *static_cast<std::string*>(dst_void);
-        dst = value;
-      },
-      &ret);
-#else  
-  char value_buf[PROP_VALUE_MAX];
-  int len = __system_property_get(name, value_buf);
-  if (len > 0 && static_cast<size_t>(len) < sizeof(value_buf)) {
-    ret = std::string(value_buf, static_cast<size_t>(len));
-  }
-#endif
-  return ret;
-}
-
-#endif  
-
-}  
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_HASH_H_
-#define INCLUDE_PERFETTO_EXT_BASE_HASH_H_
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FNV_HASH_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FNV_HASH_H_
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
 
-namespace perfetto {
-namespace base {
+namespace perfetto::base {
 
 
 
 
 
-class Hasher {
+class FnvHasher {
  public:
   
-  constexpr Hasher() = default;
+  constexpr FnvHasher() = default;
 
   
   template <
@@ -283,9 +257,10 @@ class Hasher {
 
   
   
+  
   template <typename... Ts>
   static constexpr uint64_t Combine(Ts&&... args) {
-    Hasher hasher;
+    FnvHasher hasher;
     hasher.UpdateAll(std::forward<Ts>(args)...);
     return hasher.digest();
   }
@@ -295,8 +270,8 @@ class Hasher {
   
   
   template <typename... Ts>
-  static constexpr Hasher CreatePartial(Ts&&... args) {
-    Hasher hasher;
+  static constexpr FnvHasher CreatePartial(Ts&&... args) {
+    FnvHasher hasher;
     hasher.UpdateAll(std::forward<Ts>(args)...);
     return hasher;
   }
@@ -321,26 +296,16 @@ class Hasher {
 
 
 
-template <typename T>
-struct AlreadyHashed {
-  size_t operator()(const T& x) const { return static_cast<size_t>(x); }
-};
-
-
-
-
 
 
 template <typename T>
-struct Hash {
+struct FnvHash {
   
   template <typename U = T>
   auto operator()(const U& x) ->
       typename std::enable_if<std::is_arithmetic<U>::value, size_t>::type
       const {
-    Hasher hash;
-    hash.Update(x);
-    return static_cast<size_t>(hash.digest());
+    return FnvHasher::Combine(x);
   }
 
   
@@ -352,7 +317,6 @@ struct Hash {
   }
 };
 
-}  
 }  
 
 #endif  
@@ -415,6 +379,8 @@ class StringView {
   StringView(const char* cstr) : data_(cstr), size_(strlen(cstr)) {
     PERFETTO_DCHECK(cstr != nullptr);
   }
+
+  StringView(std::string_view str) : data_(str.data()), size_(str.size()) {}
 
   
   
@@ -514,7 +480,7 @@ class StringView {
   }
 
   uint64_t Hash() const {
-    base::Hasher hasher;
+    base::FnvHasher hasher;
     hasher.Update(data_, size_);
     return hasher.digest();
   }
@@ -583,6 +549,516 @@ struct std::hash<::perfetto::base::StringView> {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_UTILS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_STRING_UTILS_H_
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <charconv>
+#include <cinttypes>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <vector>
+
+
+
+namespace perfetto {
+namespace base {
+
+inline char Lowercase(char c) {
+  return ('A' <= c && c <= 'Z') ? static_cast<char>(c - ('A' - 'a')) : c;
+}
+
+inline char Uppercase(char c) {
+  return ('a' <= c && c <= 'z') ? static_cast<char>(c + ('A' - 'a')) : c;
+}
+
+
+
+
+
+inline bool IsSpace(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' ||
+         c == '\r';
+}
+
+inline std::optional<uint32_t> CStringToUInt32(const char* s, int base = 10) {
+  char* endptr = nullptr;
+  auto value = static_cast<uint32_t>(strtoul(s, &endptr, base));
+  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
+}
+
+inline std::optional<int32_t> CStringToInt32(const char* s, int base = 10) {
+  char* endptr = nullptr;
+  auto value = static_cast<int32_t>(strtol(s, &endptr, base));
+  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
+}
+
+
+inline std::optional<int64_t> CStringToInt64(const char* s, int base = 10) {
+  char* endptr = nullptr;
+  auto value = static_cast<int64_t>(strtoll(s, &endptr, base));
+  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
+}
+
+inline std::optional<uint64_t> CStringToUInt64(const char* s, int base = 10) {
+  char* endptr = nullptr;
+  auto value = static_cast<uint64_t>(strtoull(s, &endptr, base));
+  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
+}
+
+double StrToD(const char* nptr, char** endptr);
+
+inline std::optional<double> CStringToDouble(const char* s) {
+  char* endptr = nullptr;
+  double value = StrToD(s, &endptr);
+  std::optional<double> result(std::nullopt);
+  if (*s != '\0' && *endptr == '\0')
+    result = value;
+  return result;
+}
+
+inline std::optional<uint32_t> StringToUInt32(const std::string& s,
+                                              int base = 10) {
+  return CStringToUInt32(s.c_str(), base);
+}
+
+inline std::optional<int32_t> StringToInt32(const std::string& s,
+                                            int base = 10) {
+  return CStringToInt32(s.c_str(), base);
+}
+
+inline std::optional<uint64_t> StringToUInt64(const std::string& s,
+                                              int base = 10) {
+  return CStringToUInt64(s.c_str(), base);
+}
+
+inline std::optional<int64_t> StringToInt64(const std::string& s,
+                                            int base = 10) {
+  return CStringToInt64(s.c_str(), base);
+}
+
+inline std::optional<double> StringToDouble(const std::string& s) {
+  return CStringToDouble(s.c_str());
+}
+
+template <typename T>
+inline std::optional<T> StringViewToNumber(const base::StringView& sv,
+                                           int base = 10) {
+  
+  
+  
+  size_t start_offset = !sv.empty() && sv.at(0) == '+' ? 1 : 0;
+  T value;
+  auto result =
+      std::from_chars(sv.begin() + start_offset, sv.end(), value, base);
+  if (result.ec == std::errc() && result.ptr == sv.end()) {
+    return value;
+  } else {
+    return std::nullopt;
+  }
+}
+
+inline std::optional<uint32_t> StringViewToUInt32(const base::StringView& sv,
+                                                  int base = 10) {
+  
+  
+  
+  
+  if (sv.size() > 0 && sv.at(0) == '-') {
+    return static_cast<std::optional<uint32_t> >(
+        StringViewToNumber<int32_t>(sv, base));
+  } else {
+    return StringViewToNumber<uint32_t>(sv, base);
+  }
+}
+
+inline std::optional<int32_t> StringViewToInt32(const base::StringView& sv,
+                                                int base = 10) {
+  return StringViewToNumber<int32_t>(sv, base);
+}
+
+inline std::optional<uint64_t> StringViewToUInt64(const base::StringView& sv,
+                                                  int base = 10) {
+  
+  
+  
+  
+  if (sv.size() > 0 && sv.at(0) == '-') {
+    return static_cast<std::optional<uint64_t> >(
+        StringViewToNumber<int64_t>(sv, base));
+  } else {
+    return StringViewToNumber<uint64_t>(sv, base);
+  }
+}
+
+inline std::optional<int64_t> StringViewToInt64(const base::StringView& sv,
+                                                int base = 10) {
+  return StringViewToNumber<int64_t>(sv, base);
+}
+
+
+
+
+
+
+
+
+bool StartsWith(const std::string& str, const std::string& prefix);
+bool EndsWith(const std::string& str, const std::string& suffix);
+bool StartsWithAny(const std::string& str,
+                   const std::vector<std::string>& prefixes);
+bool Contains(const std::string& haystack, const std::string& needle);
+bool Contains(const std::string& haystack, char needle);
+bool Contains(const std::vector<std::string>& haystack,
+              const std::string& needle);
+size_t Find(const StringView& needle, const StringView& haystack);
+bool CaseInsensitiveEqual(const std::string& first, const std::string& second);
+std::string Join(const std::vector<std::string>& parts,
+                 const std::string& delim);
+std::vector<std::string> SplitString(const std::string& text,
+                                     const std::string& delimiter);
+std::string StripPrefix(const std::string& str, const std::string& prefix);
+std::string StripSuffix(const std::string& str, const std::string& suffix);
+std::string_view TrimWhitespace(std::string_view str);
+std::string TrimWhitespace(const std::string& str);
+std::string_view TrimWhitespace(const char* str);
+std::string ToLower(const std::string& str);
+std::string ToUpper(const std::string& str);
+std::string StripChars(const std::string& str,
+                       const std::string& chars,
+                       char replacement);
+std::string ToHex(const char* data, size_t size);
+inline std::string ToHex(const std::string& s) {
+  return ToHex(s.c_str(), s.size());
+}
+std::string IntToHexString(uint32_t number);
+std::string Uint64ToHexString(uint64_t number);
+std::string Uint64ToHexStringNoPrefix(uint64_t number);
+std::string ReplaceAll(std::string str,
+                       const std::string& to_replace,
+                       const std::string& replacement);
+
+
+
+
+
+
+
+bool CheckAsciiAndRemoveInvalidUTF8(base::StringView str, std::string& output);
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+bool WideToUTF8(const std::wstring& source, std::string& output);
+bool UTF8ToWide(const std::string& source, std::wstring& output);
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+inline void StringCopy(char* dst, const char* src, size_t dst_size) {
+  for (size_t i = 0; i < dst_size; ++i) {
+    if ((dst[i] = src[i]) == '\0') {
+      return;  
+    }
+  }
+
+  
+  if (PERFETTO_LIKELY(dst_size > 0))
+    dst[dst_size - 1] = 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+size_t SprintfTrunc(char* dst, size_t dst_size, const char* fmt, ...)
+    PERFETTO_PRINTF_FORMAT(3, 4);
+
+
+struct LineWithOffset {
+  base::StringView line;
+  uint32_t line_offset;
+  uint32_t line_num;
+};
+
+
+
+
+
+std::optional<LineWithOffset> FindLineWithOffset(base::StringView str,
+                                                 uint32_t offset);
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t N>
+class StackString {
+ public:
+  explicit PERFETTO_PRINTF_FORMAT( 2, 3)
+      StackString(const char* fmt, ...) {
+    buf_[0] = '\0';
+    va_list args;
+    va_start(args, fmt);
+    int res = vsnprintf(buf_, sizeof(buf_), fmt, args);
+    va_end(args);
+    buf_[sizeof(buf_) - 1] = '\0';
+    len_ = res < 0 ? 0 : std::min(static_cast<size_t>(res), sizeof(buf_) - 1);
+  }
+
+  StringView string_view() const { return StringView(buf_, len_); }
+  std::string ToStdString() const { return std::string(buf_, len_); }
+  const char* c_str() const { return buf_; }
+  size_t len() const { return len_; }
+  char* mutable_data() { return buf_; }
+
+ private:
+  char buf_[N];
+  size_t len_ = 0;  
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <string>
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+#include <sys/system_properties.h>
+#endif
+
+
+
+
+
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&  \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL) && \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+#include <sys/utsname.h>
+#include <unistd.h>
+#endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+#include <sys/sysinfo.h>
+#endif
+
+namespace perfetto {
+namespace base {
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+std::string GetAndroidProp(const char* name) {
+  std::string ret;
+#if __ANDROID_API__ >= 26
+  const prop_info* pi = __system_property_find(name);
+  if (!pi) {
+    return ret;
+  }
+  __system_property_read_callback(
+      pi,
+      [](void* dst_void, const char*, const char* value, uint32_t) {
+        std::string& dst = *static_cast<std::string*>(dst_void);
+        dst = value;
+      },
+      &ret);
+#else  
+  char value_buf[PROP_VALUE_MAX];
+  int len = __system_property_get(name, value_buf);
+  if (len > 0 && static_cast<size_t>(len) < sizeof(value_buf)) {
+    ret = std::string(value_buf, static_cast<size_t>(len));
+  }
+#endif
+  return ret;
+}
+
+#endif  
+
+Utsname GetUtsname() {
+  Utsname utsname_info;
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&  \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL) && \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+  struct utsname uname_info;
+  if (uname(&uname_info) == 0) {
+    utsname_info.sysname = uname_info.sysname;
+    utsname_info.version = uname_info.version;
+    utsname_info.machine = uname_info.machine;
+    utsname_info.release = uname_info.release;
+  } else {
+    PERFETTO_ELOG("Unable to read Utsname information");
+  }
+#endif  
+  return utsname_info;
+}
+
+SystemInfo GetSystemInfo() {
+  SystemInfo info;
+
+  info.timezone_off_mins = GetTimezoneOffsetMins();
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&  \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL) && \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+
+  info.utsname_info = GetUtsname();
+  info.page_size = static_cast<uint32_t>(sysconf(_SC_PAGESIZE));
+  info.num_cpus = static_cast<uint32_t>(sysconf(_SC_NPROCESSORS_CONF));
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  
+  
+  struct sysinfo sys_info;
+  if (sysinfo(&sys_info) == 0) {
+    info.system_ram_bytes =
+        static_cast<uint64_t>(sys_info.totalram) * sys_info.mem_unit;
+  }
+#else
+  
+  long pages = sysconf(_SC_PHYS_PAGES);
+  if (pages > 0 && info.page_size.has_value()) {
+    info.system_ram_bytes = static_cast<uint64_t>(pages) * (*info.page_size);
+  }
+#endif
+#endif  
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  info.android_build_fingerprint = GetAndroidProp("ro.build.fingerprint");
+  if (info.android_build_fingerprint.empty()) {
+    PERFETTO_ELOG("Unable to read ro.build.fingerprint");
+  }
+
+  info.android_device_manufacturer = GetAndroidProp("ro.product.manufacturer");
+  if (info.android_device_manufacturer.empty()) {
+    PERFETTO_ELOG("Unable to read ro.product.manufacturer");
+  }
+
+  std::string sdk_str_value = GetAndroidProp("ro.build.version.sdk");
+  info.android_sdk_version = StringToUInt64(sdk_str_value);
+  if (!info.android_sdk_version.has_value()) {
+    PERFETTO_ELOG("Unable to read ro.build.version.sdk");
+  }
+
+  info.android_soc_model = GetAndroidProp("ro.soc.model");
+  if (info.android_soc_model.empty()) {
+    PERFETTO_ELOG("Unable to read ro.soc.model");
+  }
+
+  
+  info.android_guest_soc_model = GetAndroidProp("ro.boot.guest_soc.model");
+
+  info.android_hardware_revision = GetAndroidProp("ro.boot.hardware.revision");
+  if (info.android_hardware_revision.empty()) {
+    PERFETTO_ELOG("Unable to read ro.boot.hardware.revision");
+  }
+
+  info.android_storage_model = GetAndroidProp("ro.boot.hardware.ufs");
+  if (info.android_storage_model.empty()) {
+    PERFETTO_ELOG("Unable to read ro.boot.hardware.ufs");
+  }
+
+  info.android_ram_model = GetAndroidProp("ro.boot.hardware.ddr");
+  if (info.android_ram_model.empty()) {
+    PERFETTO_ELOG("Unable to read ro.boot.hardware.ddr");
+  }
+
+  info.android_serial_console = GetAndroidProp("init.svc.console");
+  if (info.android_serial_console.empty()) {
+    PERFETTO_ELOG("Unable to read init.svc.console");
+  }
+#endif  
+
+  return info;
+}
+
+std::string GetPerfettoMachineName() {
+  const char* env_name = getenv("PERFETTO_MACHINE_NAME");
+  if (env_name) {
+    return env_name;
+  }
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  std::string name = base::GetAndroidProp("traced.machine_name");
+  if (name.empty()) {
+    name = GetUtsname().sysname;
+  }
+  return name;
+#else
+  return GetUtsname().sysname;
+#endif
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #ifndef INCLUDE_PERFETTO_EXT_BASE_SYS_TYPES_H_
@@ -598,9 +1074,17 @@ struct std::hash<::perfetto::base::StringView> {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 
+#ifdef __MINGW32__
+
+using uid_t = int;
+using gid_t = int;
+
+#else
+
 #if !PERFETTO_BUILDFLAG(PERFETTO_COMPILER_GCC)
 
 using uid_t = int;
+using gid_t = int;
 using pid_t = int;
 #endif  
 
@@ -612,9 +1096,19 @@ using ssize_t = long;
 
 #endif  
 
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && !defined(AID_SHELL)
+#endif  
 
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+#ifndef AID_ROOT
+#define AID_ROOT 0
+#endif
+#ifndef AID_STATSD
+#define AID_STATSD 1066
+#endif
+#ifndef AID_SHELL
 #define AID_SHELL 2000
+#endif
 #endif
 
 namespace perfetto {
@@ -1071,6 +1565,809 @@ std::optional<std::string> Base64Decode(const char* src, size_t src_size) {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_CPU_INFO_H_
+#define INCLUDE_PERFETTO_EXT_BASE_CPU_INFO_H_
+
+#include <stdint.h>
+#include <optional>
+#include <string>
+#include <vector>
+
+namespace perfetto {
+namespace base {
+
+struct CpuInfo {
+  std::string processor;
+  uint32_t cpu_index = 0;
+  std::optional<uint32_t> implementer;
+  std::optional<uint32_t> architecture;
+  std::optional<uint32_t> variant;
+  std::optional<uint32_t> part;
+  std::optional<uint32_t> revision;
+  uint64_t features = 0;
+  char arm_cpuid[32] = {};
+};
+
+
+std::vector<CpuInfo> ParseCpuInfo(std::string proc_cpu_info);
+
+
+std::vector<CpuInfo> ReadCpuInfo();
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_CPU_INFO_FEATURES_ALLOWLIST_H_
+#define INCLUDE_PERFETTO_EXT_BASE_CPU_INFO_FEATURES_ALLOWLIST_H_
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+constexpr const char* kCpuInfoFeatures[] = {
+    "mte",   
+    "mte3",  
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_BASE_STATUS_H_
+#define INCLUDE_PERFETTO_BASE_STATUS_H_
+
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+
+
+
+
+class PERFETTO_EXPORT_COMPONENT Status {
+ public:
+  Status() : ok_(true) {}
+  explicit Status(std::string msg) : ok_(false), message_(std::move(msg)) {
+    PERFETTO_CHECK(!message_.empty());
+  }
+
+  
+  Status(const Status&) = default;
+  Status& operator=(const Status&) = default;
+
+  
+  Status(Status&&) noexcept = default;
+  Status& operator=(Status&&) = default;
+
+  bool ok() const { return ok_; }
+
+  
+  
+  const std::string& message() const { return message_; }
+  const char* c_message() const { return message_.c_str(); }
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  std::optional<std::string_view> GetPayload(std::string_view type_url) const;
+
+  
+  
+  
+  void SetPayload(std::string_view type_url, std::string value);
+
+  
+  
+  
+  
+  bool ErasePayload(std::string_view type_url);
+
+ private:
+  struct Payload {
+    std::string type_url;
+    std::string payload;
+  };
+
+  bool ok_ = false;
+  std::string message_;
+  std::vector<Payload> payloads_;
+};
+
+
+inline Status OkStatus() {
+  return Status();
+}
+
+Status ErrStatus(const char* format, ...) PERFETTO_PRINTF_FORMAT(1, 2);
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
+
+
+
+#include <stdio.h>
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <dirent.h>  
+#endif
+
+#include <string>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+namespace internal {
+
+
+template <typename T, T InvalidValue>
+struct DefaultValidityChecker {
+  static bool IsValid(T t) { return t != InvalidValue; }
+};
+}  
+
+
+
+
+template <typename T,
+          int (*CloseFunction)(T),
+          T InvalidValue,
+          bool CheckClose = true,
+          class Checker = internal::DefaultValidityChecker<T, InvalidValue>>
+class ScopedResource {
+ public:
+  using ValidityChecker = Checker;
+  static constexpr T kInvalid = InvalidValue;
+
+  explicit ScopedResource(T t = InvalidValue) : t_(t) {}
+  ScopedResource(ScopedResource&& other) noexcept : t_(other.t_) {
+    other.t_ = InvalidValue;
+  }
+  ScopedResource& operator=(ScopedResource&& other) {
+    reset(other.t_);
+    other.t_ = InvalidValue;
+    return *this;
+  }
+  T get() const { return t_; }
+  T operator*() const { return t_; }
+  explicit operator bool() const { return Checker::IsValid(t_); }
+  void reset(T r = InvalidValue) {
+    if (Checker::IsValid(t_)) {
+      int res = CloseFunction(t_);
+      if (CheckClose)
+        PERFETTO_CHECK(res == 0);
+    }
+    t_ = r;
+  }
+  T release() {
+    T t = t_;
+    t_ = InvalidValue;
+    return t;
+  }
+  ~ScopedResource() { reset(InvalidValue); }
+
+ private:
+  ScopedResource(const ScopedResource&) = delete;
+  ScopedResource& operator=(const ScopedResource&) = delete;
+  T t_;
+};
+
+
+int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
+
+
+using ScopedFile = ScopedResource<int, CloseFile, -1>;
+using ScopedFstream = ScopedResource<FILE*, fclose, nullptr>;
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+using ScopedPlatformHandle = ScopedResource<PlatformHandle,
+                                            ClosePlatformHandle,
+                                            nullptr,
+                                            true,
+                                            PlatformHandleChecker>;
+#else
+
+
+
+static_assert(std::is_same<int, PlatformHandle>::value, "");
+using ScopedPlatformHandle = ScopedFile;
+
+
+using ScopedDir = ScopedResource<DIR*, closedir, nullptr>;
+#endif
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
+
+#include <fcntl.h>  
+#include <stddef.h>
+
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+class TaskRunner;
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+using FileOpenMode = int;
+inline constexpr char kDevNull[] = "NUL";
+inline constexpr char kFopenReadFlag[] = "r";
+#else
+using FileOpenMode = mode_t;
+inline constexpr char kDevNull[] = "/dev/null";
+inline constexpr char kFopenReadFlag[] = "re";
+#endif
+
+constexpr FileOpenMode kFileModeInvalid = static_cast<FileOpenMode>(-1);
+
+
+
+bool ReadPlatformHandle(PlatformHandle, std::string* out);
+
+
+
+
+
+
+
+bool ReadFileDescriptor(int fd, std::string* out);
+
+
+bool ReadFileStream(FILE* f, std::string* out);
+
+
+
+bool ReadFile(const std::string& path, std::string* out);
+
+
+
+ssize_t Read(int fd, void* dst, size_t dst_size);
+
+
+
+
+
+
+
+
+ssize_t WriteAll(int fd, const void* buf, size_t count);
+
+
+
+
+base::Status CopyFileContents(int fd_in, int fd_out);
+
+ssize_t WriteAllHandle(PlatformHandle, const void* buf, size_t count);
+
+ScopedFile OpenFile(const std::string& path,
+                    int flags,
+                    FileOpenMode = kFileModeInvalid);
+ScopedFstream OpenFstream(const std::string& path, const std::string& mode);
+
+
+
+
+int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
+
+bool FlushFile(int fd);
+
+
+bool Mkdir(const std::string& path);
+
+
+bool Rmdir(const std::string& path);
+
+
+bool FileExists(const std::string& path);
+
+
+
+
+std::string GetFileExtension(const std::string& filename);
+
+
+
+
+
+
+
+
+
+
+
+std::string Basename(const std::string& path);
+
+
+
+
+
+
+
+
+
+
+
+std::string Dirname(const std::string& path);
+
+
+
+
+
+base::Status ListFilesRecursive(const std::string& dir_path,
+                                std::vector<std::string>& output);
+
+
+
+
+base::Status ListDirectories(const std::string& dir_path,
+                             std::vector<std::string>& output);
+
+
+
+base::Status SetFilePermissions(const std::string& path,
+                                const std::string& group_name,
+                                const std::string& mode_bits);
+
+
+std::optional<uint64_t> GetFileSize(const std::string& path);
+
+
+std::optional<uint64_t> GetFileSize(PlatformHandle fd);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LinuxFileWatch {
+ public:
+  
+  
+  
+  
+  static std::unique_ptr<LinuxFileWatch> WatchFileCreation(
+      TaskRunner*,
+      const char* path,
+      std::function<void()> callback);
+
+  virtual ~LinuxFileWatch();
+
+ protected:
+  LinuxFileWatch() = default;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
+
+#include <string>
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+class StringSplitter {
+ public:
+  
+  enum class EmptyTokenMode {
+    DISALLOW_EMPTY_TOKENS,
+    ALLOW_EMPTY_TOKENS,
+
+    DEFAULT = DISALLOW_EMPTY_TOKENS,
+  };
+
+  
+  
+  StringSplitter(std::string,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  StringSplitter(char* str,
+                 size_t size,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  
+  
+  StringSplitter(StringSplitter*,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  bool Next();
+
+  
+  
+  char* NextToken() { return Next() ? cur_token() : nullptr; }
+
+  
+  
+  
+  
+  char* cur_token() { return cur_; }
+
+  
+  size_t cur_token_size() const { return cur_size_; }
+
+  
+  
+  char* remainder() { return next_; }
+
+  
+  size_t remainder_size() { return static_cast<size_t>(end_ - next_); }
+
+ private:
+  StringSplitter(const StringSplitter&) = delete;
+  StringSplitter& operator=(const StringSplitter&) = delete;
+  void Initialize(char* str, size_t size);
+
+  std::string str_;
+  char* cur_;
+  size_t cur_size_;
+  char* next_;
+  char* end_;  
+  const char delimiter_;
+  const EmptyTokenMode empty_token_mode_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace base {
+namespace {
+
+
+
+const char kDefaultProcessor[] = "Processor";
+
+
+
+const char kProcessor[] = "processor";
+
+
+const char kImplementer[] = "CPU implementer";
+
+
+const char kArchitecture[] = "CPU architecture";
+
+
+const char kVariant[] = "CPU variant";
+
+
+const char kPart[] = "CPU part";
+
+
+const char kRevision[] = "CPU revision";
+
+
+
+const char kFeatures[] = "Features";
+const char kFlags[] = "Flags";
+
+std::string ReadFile(const std::string& path) {
+  std::string contents;
+  if (!base::ReadFile(path, &contents))
+    return "";
+  return contents;
+}
+
+}  
+
+std::vector<CpuInfo> ParseCpuInfo(std::string proc_cpu_info) {
+  std::vector<CpuInfo> cpus;
+  std::string processor = "unknown";
+
+  std::optional<uint32_t> cpu_index;
+  std::optional<uint32_t> implementer;
+  std::optional<uint32_t> architecture;
+  std::optional<uint32_t> variant;
+  std::optional<uint32_t> part;
+  std::optional<uint32_t> revision;
+  uint64_t features = 0;
+  uint32_t next_cpu_index = 0;
+
+  auto flush_cpu = [&] {
+    if (cpu_index.has_value()) {
+      CpuInfo cpu{};
+      cpu.processor = processor;
+      cpu.cpu_index = *cpu_index;
+      cpu.implementer = implementer;
+      cpu.architecture = architecture;
+      cpu.variant = variant;
+      cpu.part = part;
+      cpu.revision = revision;
+      cpu.features = features;
+#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_ARM64)
+      if (cpu.implementer && cpu.part) {
+        std::string cpuid =
+            base::Uint64ToHexStringNoPrefix(cpu.implementer.value()) +
+            base::Uint64ToHexStringNoPrefix(cpu.part.value());
+        if (cpu.variant) {
+          cpuid += base::Uint64ToHexStringNoPrefix(cpu.variant.value());
+          if (cpu.revision) {
+            cpuid += base::Uint64ToHexStringNoPrefix(cpu.revision.value());
+          }
+        }
+        base::StringCopy(cpu.arm_cpuid, cpuid.c_str(), sizeof(cpu.arm_cpuid));
+      }
+#endif  
+      cpus.emplace_back(std::move(cpu));
+      next_cpu_index++;
+    }
+    cpu_index = std::nullopt;
+    implementer = std::nullopt;
+    architecture = std::nullopt;
+    variant = std::nullopt;
+    part = std::nullopt;
+    revision = std::nullopt;
+    features = 0;
+  };
+
+  for (base::StringSplitter lines(
+           std::move(proc_cpu_info), '\n',
+           base::StringSplitter::EmptyTokenMode::ALLOW_EMPTY_TOKENS);
+       lines.Next();) {
+    std::string line(lines.cur_token(), lines.cur_token_size());
+    if (line.empty() && cpu_index.has_value()) {
+      flush_cpu();
+      continue;
+    }
+
+    auto splits = base::SplitString(line, ":");
+    if (splits.size() != 2)
+      continue;
+    std::string key =
+        base::StripSuffix(base::StripChars(splits[0], "\t", ' '), " ");
+    std::string value = base::StripPrefix(splits[1], " ");
+
+    if (key == kDefaultProcessor) {
+      processor = value;
+    } else if (key == kProcessor) {
+      cpu_index = base::StringToUInt32(value);
+    } else if (key == kImplementer) {
+      implementer = base::CStringToUInt32(value.data(), 16);
+    } else if (key == kArchitecture) {
+      architecture = base::CStringToUInt32(value.data(), 10);
+    } else if (key == kVariant) {
+      variant = base::CStringToUInt32(value.data(), 16);
+    } else if (key == kPart) {
+      part = base::CStringToUInt32(value.data(), 16);
+    } else if (key == kRevision) {
+      revision = base::CStringToUInt32(value.data(), 10);
+    } else if (key == kFeatures || key == kFlags) {
+      for (base::StringSplitter ss(value.data(), ' '); ss.Next();) {
+        for (size_t i = 0; i < base::ArraySize(kCpuInfoFeatures); ++i) {
+          if (strcmp(ss.cur_token(), kCpuInfoFeatures[i]) == 0) {
+            static_assert(base::ArraySize(kCpuInfoFeatures) < 64);
+            features |= 1ull << i;
+          }
+        }
+      }
+    }
+  }
+
+  flush_cpu();
+  return cpus;
+}
+
+std::vector<CpuInfo> ReadCpuInfo() {
+  return ParseCpuInfo(ReadFile("/proc/cpuinfo"));
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef INCLUDE_PERFETTO_EXT_BASE_CRASH_KEYS_H_
 #define INCLUDE_PERFETTO_EXT_BASE_CRASH_KEYS_H_
 
@@ -1234,304 +2531,6 @@ void UnregisterAllCrashKeysForTesting();
 
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_UTILS_H_
-#define INCLUDE_PERFETTO_EXT_BASE_STRING_UTILS_H_
-
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <charconv>
-#include <cinttypes>
-#include <optional>
-#include <string>
-#include <system_error>
-#include <vector>
-
-
-
-namespace perfetto {
-namespace base {
-
-inline char Lowercase(char c) {
-  return ('A' <= c && c <= 'Z') ? static_cast<char>(c - ('A' - 'a')) : c;
-}
-
-inline char Uppercase(char c) {
-  return ('a' <= c && c <= 'z') ? static_cast<char>(c + ('A' - 'a')) : c;
-}
-
-inline std::optional<uint32_t> CStringToUInt32(const char* s, int base = 10) {
-  char* endptr = nullptr;
-  auto value = static_cast<uint32_t>(strtoul(s, &endptr, base));
-  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
-}
-
-inline std::optional<int32_t> CStringToInt32(const char* s, int base = 10) {
-  char* endptr = nullptr;
-  auto value = static_cast<int32_t>(strtol(s, &endptr, base));
-  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
-}
-
-
-inline std::optional<int64_t> CStringToInt64(const char* s, int base = 10) {
-  char* endptr = nullptr;
-  auto value = static_cast<int64_t>(strtoll(s, &endptr, base));
-  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
-}
-
-inline std::optional<uint64_t> CStringToUInt64(const char* s, int base = 10) {
-  char* endptr = nullptr;
-  auto value = static_cast<uint64_t>(strtoull(s, &endptr, base));
-  return (*s && !*endptr) ? std::make_optional(value) : std::nullopt;
-}
-
-double StrToD(const char* nptr, char** endptr);
-
-inline std::optional<double> CStringToDouble(const char* s) {
-  char* endptr = nullptr;
-  double value = StrToD(s, &endptr);
-  std::optional<double> result(std::nullopt);
-  if (*s != '\0' && *endptr == '\0')
-    result = value;
-  return result;
-}
-
-inline std::optional<uint32_t> StringToUInt32(const std::string& s,
-                                              int base = 10) {
-  return CStringToUInt32(s.c_str(), base);
-}
-
-inline std::optional<int32_t> StringToInt32(const std::string& s,
-                                            int base = 10) {
-  return CStringToInt32(s.c_str(), base);
-}
-
-inline std::optional<uint64_t> StringToUInt64(const std::string& s,
-                                              int base = 10) {
-  return CStringToUInt64(s.c_str(), base);
-}
-
-inline std::optional<int64_t> StringToInt64(const std::string& s,
-                                            int base = 10) {
-  return CStringToInt64(s.c_str(), base);
-}
-
-inline std::optional<double> StringToDouble(const std::string& s) {
-  return CStringToDouble(s.c_str());
-}
-
-template <typename T>
-inline std::optional<T> StringViewToNumber(const base::StringView& sv,
-                                           int base = 10) {
-  
-  
-  
-  size_t start_offset = !sv.empty() && sv.at(0) == '+' ? 1 : 0;
-  T value;
-  auto result =
-      std::from_chars(sv.begin() + start_offset, sv.end(), value, base);
-  if (result.ec == std::errc() && result.ptr == sv.end()) {
-    return value;
-  } else {
-    return std::nullopt;
-  }
-}
-
-inline std::optional<uint32_t> StringViewToUInt32(const base::StringView& sv,
-                                                  int base = 10) {
-  
-  
-  
-  
-  if (sv.size() > 0 && sv.at(0) == '-') {
-    return static_cast<std::optional<uint32_t> >(
-        StringViewToNumber<int32_t>(sv, base));
-  } else {
-    return StringViewToNumber<uint32_t>(sv, base);
-  }
-}
-
-inline std::optional<int32_t> StringViewToInt32(const base::StringView& sv,
-                                                int base = 10) {
-  return StringViewToNumber<int32_t>(sv, base);
-}
-
-inline std::optional<uint64_t> StringViewToUInt64(const base::StringView& sv,
-                                                  int base = 10) {
-  
-  
-  
-  
-  if (sv.size() > 0 && sv.at(0) == '-') {
-    return static_cast<std::optional<uint64_t> >(
-        StringViewToNumber<int64_t>(sv, base));
-  } else {
-    return StringViewToNumber<uint64_t>(sv, base);
-  }
-}
-
-inline std::optional<int64_t> StringViewToInt64(const base::StringView& sv,
-                                                int base = 10) {
-  return StringViewToNumber<int64_t>(sv, base);
-}
-
-
-
-
-
-
-
-
-bool StartsWith(const std::string& str, const std::string& prefix);
-bool EndsWith(const std::string& str, const std::string& suffix);
-bool StartsWithAny(const std::string& str,
-                   const std::vector<std::string>& prefixes);
-bool Contains(const std::string& haystack, const std::string& needle);
-bool Contains(const std::string& haystack, char needle);
-size_t Find(const StringView& needle, const StringView& haystack);
-bool CaseInsensitiveEqual(const std::string& first, const std::string& second);
-std::string Join(const std::vector<std::string>& parts,
-                 const std::string& delim);
-std::vector<std::string> SplitString(const std::string& text,
-                                     const std::string& delimiter);
-std::string StripPrefix(const std::string& str, const std::string& prefix);
-std::string StripSuffix(const std::string& str, const std::string& suffix);
-std::string TrimWhitespace(const std::string& str);
-std::string ToLower(const std::string& str);
-std::string ToUpper(const std::string& str);
-std::string StripChars(const std::string& str,
-                       const std::string& chars,
-                       char replacement);
-std::string ToHex(const char* data, size_t size);
-inline std::string ToHex(const std::string& s) {
-  return ToHex(s.c_str(), s.size());
-}
-std::string IntToHexString(uint32_t number);
-std::string Uint64ToHexString(uint64_t number);
-std::string Uint64ToHexStringNoPrefix(uint64_t number);
-std::string ReplaceAll(std::string str,
-                       const std::string& to_replace,
-                       const std::string& replacement);
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-bool WideToUTF8(const std::wstring& source, std::string& output);
-bool UTF8ToWide(const std::string& source, std::wstring& output);
-#endif 
-
-
-
-
-
-
-
-
-
-
-
-inline void StringCopy(char* dst, const char* src, size_t dst_size) {
-  for (size_t i = 0; i < dst_size; ++i) {
-    if ((dst[i] = src[i]) == '\0') {
-      return;  
-    }
-  }
-
-  
-  if (PERFETTO_LIKELY(dst_size > 0))
-    dst[dst_size - 1] = 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-size_t SprintfTrunc(char* dst, size_t dst_size, const char* fmt, ...)
-    PERFETTO_PRINTF_FORMAT(3, 4);
-
-
-struct LineWithOffset {
-  base::StringView line;
-  uint32_t line_offset;
-  uint32_t line_num;
-};
-
-
-
-
-
-std::optional<LineWithOffset> FindLineWithOffset(base::StringView str,
-                                                 uint32_t offset);
-
-
-
-
-
-
-
-
-
-
-
-
-template <size_t N>
-class StackString {
- public:
-  explicit PERFETTO_PRINTF_FORMAT( 2, 3)
-      StackString(const char* fmt, ...) {
-    buf_[0] = '\0';
-    va_list args;
-    va_start(args, fmt);
-    int res = vsnprintf(buf_, sizeof(buf_), fmt, args);
-    va_end(args);
-    buf_[sizeof(buf_) - 1] = '\0';
-    len_ = res < 0 ? 0 : std::min(static_cast<size_t>(res), sizeof(buf_) - 1);
-  }
-
-  StringView string_view() const { return StringView(buf_, len_); }
-  std::string ToStdString() const { return std::string(buf_, len_); }
-  const char* c_str() const { return buf_; }
-  size_t len() const { return len_; }
-  char* mutable_data() { return buf_; }
-
- private:
-  char buf_[N];
-  size_t len_ = 0;  
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #include <string.h>
 
@@ -1669,7 +2668,8 @@ void InstallCtrlCHandler(CtrlCHandlerFunction);
 
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <io.h>
 #else
 #include <signal.h>
@@ -1681,26 +2681,29 @@ namespace base {
 
 namespace {
 CtrlCHandlerFunction g_handler = nullptr;
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+BOOL WINAPI Trampoline(DWORD type) {
+  if (type == CTRL_C_EVENT) {
+    g_handler();
+    return TRUE;
+  }
+  return FALSE;
 }
+#endif
+}  
 
 void InstallCtrlCHandler(CtrlCHandlerFunction handler) {
   PERFETTO_CHECK(g_handler == nullptr);
   g_handler = handler;
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-  auto trampoline = [](DWORD type) -> int {
-    if (type == CTRL_C_EVENT) {
-      g_handler();
-      return true;
-    }
-    return false;
-  };
-  ::SetConsoleCtrlHandler(trampoline, true);
+  ::SetConsoleCtrlHandler(Trampoline, true);
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   
-  struct sigaction sa {};
+  struct sigaction sa{};
 
 
 #pragma GCC diagnostic push
@@ -1710,7 +2713,7 @@ void InstallCtrlCHandler(CtrlCHandlerFunction handler) {
   sa.sa_handler = [](int) { g_handler(); };
 #if !PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
   sa.sa_flags = static_cast<decltype(sa.sa_flags)>(SA_RESETHAND | SA_RESTART);
-#else 
+#else  
   sa.sa_flags = static_cast<decltype(sa.sa_flags)>(SA_RESETHAND);
 #endif
 #pragma GCC diagnostic pop
@@ -1742,19 +2745,18 @@ void InstallCtrlCHandler(CtrlCHandlerFunction handler) {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_DYNAMIC_STRING_WRITER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_DYNAMIC_STRING_WRITER_H_
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
-#define INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
+#include <string.h>
 
-
-
-#include <stdio.h>
-
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <dirent.h>  
-#endif
-
-#include <string>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
+#include <memory>
+#include <type_traits>
 
 
 
@@ -1763,92 +2765,230 @@ void InstallCtrlCHandler(CtrlCHandlerFunction handler) {
 namespace perfetto {
 namespace base {
 
-namespace internal {
-
-
-template <typename T, T InvalidValue>
-struct DefaultValidityChecker {
-  static bool IsValid(T t) { return t != InvalidValue; }
-};
-}  
 
 
 
-
-template <typename T,
-          int (*CloseFunction)(T),
-          T InvalidValue,
-          bool CheckClose = true,
-          class Checker = internal::DefaultValidityChecker<T, InvalidValue>>
-class ScopedResource {
+class DynamicStringWriter {
  public:
-  using ValidityChecker = Checker;
-  static constexpr T kInvalid = InvalidValue;
+  using ScopedCString = std::unique_ptr<char, void (*)(void*)>;
 
-  explicit ScopedResource(T t = InvalidValue) : t_(t) {}
-  ScopedResource(ScopedResource&& other) noexcept {
-    t_ = other.t_;
-    other.t_ = InvalidValue;
+  
+  DynamicStringWriter() {}
+
+  
+  void AppendChar(char in, size_t n = 1) { buffer_.append(n, in); }
+
+  
+  void AppendString(const char* in, size_t n) { buffer_.append(in, n); }
+
+  void AppendStringView(StringView sv) { AppendString(sv.data(), sv.size()); }
+
+  
+  template <size_t N>
+  inline void AppendLiteral(const char (&in)[N]) {
+    AppendString(in, N - 1);
   }
-  ScopedResource& operator=(ScopedResource&& other) {
-    reset(other.t_);
-    other.t_ = InvalidValue;
-    return *this;
+
+  
+  void AppendString(StringView data) {
+    buffer_.append(data.data(), data.size());
   }
-  T get() const { return t_; }
-  T operator*() const { return t_; }
-  explicit operator bool() const { return Checker::IsValid(t_); }
-  void reset(T r = InvalidValue) {
-    if (Checker::IsValid(t_)) {
-      int res = CloseFunction(t_);
-      if (CheckClose)
-        PERFETTO_CHECK(res == 0);
+
+  
+  void AppendInt(int64_t value) {
+    constexpr size_t STACK_BUFFER_SIZE = 32;
+    StackString<STACK_BUFFER_SIZE> buf("%" PRId64, value);
+    AppendString(buf.string_view());
+  }
+
+  
+  
+  template <char padchar, uint64_t padding>
+  void AppendPaddedInt(int64_t sign_value) {
+    const bool negate = std::signbit(static_cast<double>(sign_value));
+    uint64_t absolute_value;
+    if (sign_value == std::numeric_limits<int64_t>::min()) {
+      absolute_value =
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 1;
+    } else {
+      absolute_value = static_cast<uint64_t>(std::abs(sign_value));
     }
-    t_ = r;
+    AppendPaddedIntImpl<padchar, padding>(absolute_value, negate);
   }
-  T release() {
-    T t = t_;
-    t_ = InvalidValue;
-    return t;
+
+  void AppendUnsignedInt(uint64_t value) {
+    constexpr size_t STACK_BUFFER_SIZE = 32;
+    StackString<STACK_BUFFER_SIZE> buf("%" PRIu64, value);
+    AppendString(buf.string_view());
   }
-  ~ScopedResource() { reset(InvalidValue); }
+
+  template <char padchar, uint64_t padding>
+  void AppendPaddedUnsignedInt(uint64_t value) {
+    AppendPaddedIntImpl<padchar, padding>(value, false);
+  }
+
+  template <typename IntType>
+  void AppendPaddedHexInt(IntType value, char padchar, uint64_t padding) {
+    using UnsignedType = std::make_unsigned_t<IntType>;
+    constexpr size_t kMaxHexDigits = sizeof(IntType) * 2;
+    constexpr size_t kBufferSize = 32;
+    auto size_needed =
+        kMaxHexDigits > padding ? kMaxHexDigits : static_cast<size_t>(padding);
+    PERFETTO_DCHECK(size_needed <= kBufferSize);
+
+    std::array<char, kBufferSize> data;
+    constexpr char hex_asc[] = "0123456789abcdef";
+
+    size_t idx = size_needed - 1;
+    auto uvalue = static_cast<UnsignedType>(value);
+    do {
+      data[idx--] = hex_asc[uvalue & 0xF];
+      uvalue >>= 4;
+    } while (uvalue != 0);
+
+    if (padding > 0) {
+      const auto num_digits = static_cast<uint64_t>(size_needed - 1 - idx);
+      
+      
+      for (auto i = num_digits; i < std::max(uint64_t{1u}, padding); i++) {
+        data[idx--] = padchar;
+      }
+    }
+    AppendString(&data[idx + 1], size_needed - idx - 1);
+  }
+
+  
+  template <typename IntType>
+  void AppendHexInt(IntType value) {
+    constexpr size_t STACK_BUFFER_SIZE = 64;
+    StackString<STACK_BUFFER_SIZE> buf("%" PRIx64, value);
+    AppendString(buf.string_view());
+  }
+
+  void AppendHexString(const uint8_t* data, size_t size, char separator);
+
+  void AppendHexString(StringView data, char separator) {
+    AppendHexString(reinterpret_cast<const uint8_t*>(data.data()), data.size(),
+                    separator);
+  }
+
+  
+  void AppendDouble(double value) {
+    constexpr size_t STACK_BUFFER_SIZE = 32;
+    StackString<STACK_BUFFER_SIZE> buf("%.16g", value);
+    AppendString(buf.string_view());
+  }
+
+  void AppendBool(bool value) {
+    if (value) {
+      AppendLiteral("true");
+      return;
+    }
+    AppendLiteral("false");
+  }
+
+  StringView GetStringView() {
+    return StringView(buffer_.c_str(), buffer_.size());
+  }
+
+  ScopedCString CreateStringCopy() const {
+    size_t n = buffer_.size();
+    char* dup = reinterpret_cast<char*>(malloc(n + 1));
+    if (dup) {
+      memcpy(dup, buffer_.data(), n);
+      dup[n] = '\0';
+    }
+    return {dup, free};
+  }
+
+  size_t pos() const { return buffer_.size(); }
+
+  void Clear() { buffer_.clear(); }
 
  private:
-  ScopedResource(const ScopedResource&) = delete;
-  ScopedResource& operator=(const ScopedResource&) = delete;
-  T t_;
+  template <char padchar, uint64_t padding>
+  void AppendPaddedIntImpl(uint64_t absolute_value, bool negate) {
+    
+    
+    constexpr auto kMaxDigits = std::numeric_limits<uint64_t>::digits10 + 2;
+    constexpr auto kSizeNeeded = kMaxDigits > padding ? kMaxDigits : padding;
+
+    char data[kSizeNeeded];
+
+    size_t idx;
+    for (idx = kSizeNeeded - 1; absolute_value >= 10;) {
+      char digit = absolute_value % 10;
+      absolute_value /= 10;
+      data[idx--] = digit + '0';
+    }
+    data[idx--] = static_cast<char>(absolute_value) + '0';
+
+    if (padding > 0) {
+      size_t num_digits = kSizeNeeded - 1 - idx;
+      
+      
+      for (size_t i = num_digits; i < std::max(uint64_t{1u}, padding); i++) {
+        data[idx--] = padchar;
+      }
+    }
+
+    if (negate)
+      AppendChar('-');
+    AppendString(&data[idx + 1], kSizeNeeded - idx - 1);
+  }
+
+  std::string buffer_;
 };
-
-
-int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
-
-
-using ScopedFile = ScopedResource<int, CloseFile, -1>;
-using ScopedFstream = ScopedResource<FILE*, fclose, nullptr>;
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-using ScopedPlatformHandle = ScopedResource<PlatformHandle,
-                                            ClosePlatformHandle,
-                                            nullptr,
-                                            true,
-                                            PlatformHandleChecker>;
-#else
-
-
-
-static_assert(std::is_same<int, PlatformHandle>::value, "");
-using ScopedPlatformHandle = ScopedFile;
-
-
-using ScopedDir = ScopedResource<DIR*, closedir, nullptr>;
-#endif
 
 }  
 }  
 
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+
+namespace perfetto {
+namespace base {
+
+void DynamicStringWriter::AppendHexString(const uint8_t* data,
+                                          size_t size,
+                                          char separator) {
+  
+  
+  size_t printed_size = std::min<size_t>(size, size_t{64});
+
+  if (printed_size) {
+    AppendPaddedHexInt(data[0], '0', 2);
+  }
+  for (size_t pos = 1; pos < printed_size; pos++) {
+    AppendChar(separator);
+    AppendPaddedHexInt(data[pos], '0', 2);
+  }
+}
+
+}  
+}  
+
+
 
 
 
@@ -1903,8 +3043,8 @@ class EventFd {
 
 
 
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) &&   \
-    !PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && \
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) && \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) &&           \
     !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   
   
@@ -1989,7 +3129,8 @@ class Pipe {
 #include <stdint.h>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <synchapi.h>
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
 #include <unistd.h>
@@ -2099,15 +3240,12 @@ void EventFd::Clear() {
 
 
 
+#ifndef INCLUDE_PERFETTO_BASE_TASK_RUNNER_H_
+#define INCLUDE_PERFETTO_BASE_TASK_RUNNER_H_
 
-#ifndef INCLUDE_PERFETTO_BASE_STATUS_H_
-#define INCLUDE_PERFETTO_BASE_STATUS_H_
+#include <stdint.h>
 
-#include <optional>
-#include <string>
-#include <string_view>
-#include <vector>
-
+#include <functional>
 
 
 
@@ -2123,79 +3261,42 @@ namespace base {
 
 
 
-class PERFETTO_EXPORT_COMPONENT Status {
+
+
+class PERFETTO_EXPORT_COMPONENT TaskRunner {
  public:
-  Status() : ok_(true) {}
-  explicit Status(std::string msg) : ok_(false), message_(std::move(msg)) {
-    PERFETTO_CHECK(!message_.empty());
-  }
-
-  
-  Status(const Status&) = default;
-  Status& operator=(const Status&) = default;
-
-  
-  Status(Status&&) noexcept = default;
-  Status& operator=(Status&&) = default;
-
-  bool ok() const { return ok_; }
+  virtual ~TaskRunner();
 
   
   
-  const std::string& message() const { return message_; }
-  const char* c_message() const { return message_.c_str(); }
+  virtual void PostTask(std::function<void()>) = 0;
 
   
   
   
+  virtual void PostDelayedTask(std::function<void()>, uint32_t delay_ms) = 0;
 
   
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  std::optional<std::string_view> GetPayload(std::string_view type_url) const;
-
-  
-  
-  
-  void SetPayload(std::string_view type_url, std::string value);
+  virtual void AddFileDescriptorWatch(PlatformHandle,
+                                      std::function<void()>) = 0;
 
   
   
   
   
-  bool ErasePayload(std::string_view type_url);
+  virtual void RemoveFileDescriptorWatch(PlatformHandle) = 0;
 
- private:
-  struct Payload {
-    std::string type_url;
-    std::string payload;
-  };
-
-  bool ok_ = false;
-  std::string message_;
-  std::vector<Payload> payloads_;
+  
+  
+  
+  
+  
+  virtual bool RunsTasksOnCurrentThread() const = 0;
 };
-
-
-inline Status OkStatus() {
-  return Status();
-}
-
-Status ErrStatus(const char* format, ...) PERFETTO_PRINTF_FORMAT(1, 2);
 
 }  
 }  
@@ -2217,17 +3318,17 @@ Status ErrStatus(const char* format, ...) PERFETTO_PRINTF_FORMAT(1, 2);
 
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
-
-#include <fcntl.h>  
-#include <stddef.h>
-
-#include <optional>
-#include <string>
-#include <vector>
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_THREAD_CHECKER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_THREAD_CHECKER_H_
+
+
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <pthread.h>
+#endif
+#include <atomic>
 
 
 
@@ -2237,79 +3338,155 @@ namespace perfetto {
 namespace base {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-using FileOpenMode = int;
-inline constexpr char kDevNull[] = "NUL";
+using ThreadID = unsigned long;
 #else
-using FileOpenMode = mode_t;
-inline constexpr char kDevNull[] = "/dev/null";
+using ThreadID = pthread_t;
 #endif
 
-constexpr FileOpenMode kFileModeInvalid = static_cast<FileOpenMode>(-1);
+class PERFETTO_EXPORT_COMPONENT ThreadChecker {
+ public:
+  ThreadChecker();
+  ~ThreadChecker();
+  ThreadChecker(const ThreadChecker&);
+  ThreadChecker& operator=(const ThreadChecker&);
+  bool CalledOnValidThread() const PERFETTO_WARN_UNUSED_RESULT;
+  void DetachFromThread();
 
-bool ReadPlatformHandle(PlatformHandle, std::string* out);
-bool ReadFileDescriptor(int fd, std::string* out);
-bool ReadFileStream(FILE* f, std::string* out);
-bool ReadFile(const std::string& path, std::string* out);
+ private:
+  mutable std::atomic<ThreadID> thread_id_;
+};
 
+#if PERFETTO_DCHECK_IS_ON() && !PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
 
+#define PERFETTO_THREAD_CHECKER(name) base::ThreadChecker name;
+#define PERFETTO_DCHECK_THREAD(name) \
+  PERFETTO_DCHECK((name).CalledOnValidThread())
+#define PERFETTO_DETACH_FROM_THREAD(name) (name).DetachFromThread()
+#else
+#define PERFETTO_THREAD_CHECKER(name)
+#define PERFETTO_DCHECK_THREAD(name)
+#define PERFETTO_DETACH_FROM_THREAD(name)
+#endif  
 
-ssize_t Read(int fd, void* dst, size_t dst_size);
+}  
+}  
 
-
-
-
-
-
-
-
-ssize_t WriteAll(int fd, const void* buf, size_t count);
-
-ssize_t WriteAllHandle(PlatformHandle, const void* buf, size_t count);
-
-ScopedFile OpenFile(const std::string& path,
-                    int flags,
-                    FileOpenMode = kFileModeInvalid);
-ScopedFstream OpenFstream(const char* path, const char* mode);
-
-
-
-
-int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
-
-bool FlushFile(int fd);
-
-
-bool Mkdir(const std::string& path);
-
-
-bool Rmdir(const std::string& path);
-
-
-bool FileExists(const std::string& path);
-
-
-
-
-std::string GetFileExtension(const std::string& filename);
+#endif  
 
 
 
 
 
-base::Status ListFilesRecursive(const std::string& dir_path,
-                                std::vector<std::string>& output);
 
 
 
-base::Status SetFilePermissions(const std::string& path,
-                                const std::string& group_name,
-                                const std::string& mode_bits);
 
 
-std::optional<uint64_t> GetFileSize(const std::string& path);
 
 
-std::optional<uint64_t> GetFileSize(PlatformHandle fd);
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_WEAK_PTR_H_
+#define INCLUDE_PERFETTO_EXT_BASE_WEAK_PTR_H_
+
+
+
+#include <memory>
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class WeakPtrFactory;  
+
+template <typename T>
+class WeakPtr {
+ public:
+  WeakPtr() {}
+  WeakPtr(const WeakPtr&) = default;
+  WeakPtr& operator=(const WeakPtr&) = default;
+  WeakPtr(WeakPtr&&) = default;
+  WeakPtr& operator=(WeakPtr&&) = default;
+
+  T* get() const {
+    PERFETTO_DCHECK_THREAD(thread_checker);
+    return handle_ ? *handle_.get() : nullptr;
+  }
+  T* operator->() const { return get(); }
+  T& operator*() const { return *get(); }
+
+  explicit operator bool() const { return !!get(); }
+
+ private:
+  friend class WeakPtrFactory<T>;
+  explicit WeakPtr(const std::shared_ptr<T*>& handle) : handle_(handle) {}
+
+  std::shared_ptr<T*> handle_;
+  PERFETTO_THREAD_CHECKER(thread_checker)
+};
+
+template <typename T>
+class WeakPtrFactory {
+ public:
+  explicit WeakPtrFactory(T* owner) : weak_ptr_(std::make_shared<T*>(owner)) {
+    PERFETTO_DCHECK_THREAD(thread_checker);
+  }
+
+  ~WeakPtrFactory() {
+    PERFETTO_DCHECK_THREAD(thread_checker);
+    *(weak_ptr_.handle_.get()) = nullptr;
+  }
+
+  
+  
+  
+  WeakPtr<T> GetWeakPtr() const { return weak_ptr_; }
+
+  
+  
+  
+  void Reset(T* owner) {
+    
+    PERFETTO_DETACH_FROM_THREAD(thread_checker);
+    PERFETTO_DCHECK_THREAD(thread_checker);
+
+    
+    PERFETTO_DCHECK(weak_ptr_.handle_.use_count() == 1);
+
+    weak_ptr_ = WeakPtr<T>(std::make_shared<T*>(owner));
+  }
+
+ private:
+  WeakPtrFactory(const WeakPtrFactory&) = delete;
+  WeakPtrFactory& operator=(const WeakPtrFactory&) = delete;
+
+  WeakPtr<T> weak_ptr_;
+  PERFETTO_THREAD_CHECKER(thread_checker)
+};
 
 }  
 }  
@@ -2352,8 +3529,11 @@ std::optional<uint64_t> GetFileSize(PlatformHandle fd);
 
 
 
+
+
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <direct.h>
 #include <io.h>
 #include <stringapiset.h>
@@ -2364,6 +3544,7 @@ std::optional<uint64_t> GetFileSize(PlatformHandle fd);
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #define PERFETTO_SET_FILE_PERMISSIONS
 #include <fcntl.h>
@@ -2371,6 +3552,12 @@ std::optional<uint64_t> GetFileSize(PlatformHandle fd);
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+#include <sys/inotify.h>
 #endif
 
 namespace perfetto {
@@ -2384,7 +3571,7 @@ int CloseFindHandle(HANDLE h) {
   return FindClose(h) ? 0 : -1;
 }
 
-std::optional<std::wstring> ToUtf16(const std::string str) {
+std::optional<std::wstring> ToUtf16(const std::string& str) {
   int len = MultiByteToWideChar(CP_UTF8, 0, str.data(),
                                 static_cast<int>(str.size()), nullptr, 0);
   if (len < 0) {
@@ -2423,7 +3610,7 @@ bool ReadFileDescriptor(int fd, std::string* out) {
   
   size_t i = out->size();
 
-  struct stat buf {};
+  struct stat buf{};
   if (fstat(fd, &buf) != -1) {
     if (buf.st_size > 0)
       out->resize(i + static_cast<size_t>(buf.st_size));
@@ -2504,6 +3691,49 @@ ssize_t WriteAll(int fd, const void* buf, size_t count) {
   return static_cast<ssize_t>(written);
 }
 
+base::Status CopyFileContents(int fd_in, int fd_out) {
+  off_t original_offset = lseek(fd_in, 0, SEEK_CUR);
+  if (original_offset == -1) {
+    return base::ErrStatus(
+        "Can't get offset in 'fd_in', lseek error: %s (errno: %d)",
+        strerror(errno), errno);
+  }
+
+  if (lseek(fd_in, 0, SEEK_SET) == -1) {
+    return base::ErrStatus(
+        "Can't change the offset in 'fd_in', lseek error: %s (errno: %d)",
+        strerror(errno), errno);
+  }
+
+  auto restore_offset_on_exit = OnScopeExit([fd_in, original_offset] {
+    
+    
+    PERFETTO_CHECK(lseek(fd_in, original_offset, SEEK_SET) >= 0);
+  });
+
+  
+  constexpr size_t kCopyFileBufSize = 32 * 1024;  
+  static_assert(kCopyFileBufSize > kBufSize);
+  
+  std::vector<char> buffer(kCopyFileBufSize);
+  for (;;) {
+    ssize_t bytes_read = Read(fd_in, buffer.data(), buffer.size());
+    if (bytes_read == 0)
+      break;
+    if (bytes_read < 0) {
+      return base::ErrStatus("Read failed: %s (errno: %d)", strerror(errno),
+                             errno);
+    }
+    ssize_t written =
+        WriteAll(fd_out, buffer.data(), static_cast<size_t>(bytes_read));
+    if (written != bytes_read) {
+      return base::ErrStatus("Write failed: %s (errno: %d)", strerror(errno),
+                             errno);
+    }
+  }
+  return base::OkStatus();
+}
+
 ssize_t WriteAllHandle(PlatformHandle h, const void* buf, size_t count) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   DWORD wsize = 0;
@@ -2563,19 +3793,33 @@ ScopedFile OpenFile(const std::string& path, int flags, FileOpenMode mode) {
   return fd;
 }
 
-ScopedFstream OpenFstream(const char* path, const char* mode) {
+ScopedFstream OpenFstream(const std::string& path, const std::string& mode) {
   ScopedFstream file;
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  std::string s_mode(mode);
+  
+  
+  bool is_text_mode = Contains(s_mode, "ccs=") || Contains(s_mode, "t");
+  PERFETTO_CHECK(!is_text_mode);
+  bool is_binary_mode = Contains(s_mode, 'b');
+  if (!is_binary_mode)
+    s_mode += 'b';
+
   auto w_path = ToUtf16(path);
-  auto w_mode = ToUtf16(mode);
+  auto w_mode = ToUtf16(s_mode);
   if (w_path && w_mode) {
     file.reset(_wfopen(w_path->c_str(), w_mode->c_str()));
   }
 #else
-  file.reset(fopen(path, mode));
+  file.reset(fopen(path.c_str(), mode.c_str()));
 #endif
   return file;
 }
@@ -2656,28 +3900,74 @@ base::Status ListFilesRecursive(const std::string& dir_path,
           strcmp(dirent->d_name, "..") == 0) {
         continue;
       }
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
-      struct stat* dirstat;
-      const std::string full_path = cur_dir + dirent->d_name;
-      PERFETTO_CHECK(stat(full_path.c_str(), dirstat) == 0);
-      if (S_ISDIR(dirstat->st_mode)) {
+      struct stat dirstat;
+      std::string full_path = cur_dir + dirent->d_name;
+      PERFETTO_CHECK(stat(full_path.c_str(), &dirstat) == 0);
+      
+      
+      PERFETTO_MSAN_UNPOISON(&dirstat, sizeof(dirstat));
+      if (S_ISDIR(dirstat.st_mode)) {
         dir_queue.push_back(full_path + '/');
-      } else if (S_ISREG(dirstat->st_mode)) {
+      } else if (S_ISREG(dirstat.st_mode)) {
         PERFETTO_CHECK(full_path.length() > root_dir_path.length());
         output.push_back(full_path.substr(root_dir_path.length()));
       }
-#else
-      if (dirent->d_type == DT_DIR) {
-        dir_queue.push_back(cur_dir + dirent->d_name + '/');
-      } else if (dirent->d_type == DT_REG) {
-        const std::string full_path = cur_dir + dirent->d_name;
-        PERFETTO_CHECK(full_path.length() > root_dir_path.length());
-        output.push_back(full_path.substr(root_dir_path.length()));
-      }
-#endif
     }
 #endif
   }
+  return base::OkStatus();
+}
+
+base::Status ListDirectories(const std::string& dir_path,
+                             std::vector<std::string>& output) {
+  std::string normalized_path = dir_path;
+  if (!normalized_path.empty() && normalized_path.back() != '/' &&
+      normalized_path.back() != '\\') {
+    normalized_path.push_back('/');
+  }
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_NACL)
+  return base::ErrStatus("ListDirectories not supported yet");
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  std::string glob_path = normalized_path + "*";
+  if (glob_path.length() + 1 > MAX_PATH) {
+    return base::ErrStatus("Directory path %s is too long", dir_path.c_str());
+  }
+  WIN32_FIND_DATAA ffd;
+
+  base::ScopedResource<HANDLE, CloseFindHandle, nullptr, false,
+                       base::PlatformHandleChecker>
+      hFind(FindFirstFileA(glob_path.c_str(), &ffd));
+  if (!hFind) {
+    return base::ErrStatus("Failed to open directory %s",
+                           normalized_path.c_str());
+  }
+  do {
+    if (strcmp(ffd.cFileName, ".") == 0 || strcmp(ffd.cFileName, "..") == 0) {
+      continue;
+    }
+    if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+      output.push_back(ffd.cFileName);
+    }
+  } while (FindNextFileA(*hFind, &ffd));
+#else
+  ScopedDir dir = ScopedDir(opendir(normalized_path.c_str()));
+  if (!dir) {
+    return base::ErrStatus("Failed to open directory %s",
+                           normalized_path.c_str());
+  }
+  for (auto* dirent = readdir(dir.get()); dirent != nullptr;
+       dirent = readdir(dir.get())) {
+    if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0) {
+      continue;
+    }
+    std::string full_path = normalized_path + dirent->d_name;
+    struct stat dirstat;
+    if (stat(full_path.c_str(), &dirstat) == 0 && S_ISDIR(dirstat.st_mode)) {
+      output.push_back(dirent->d_name);
+    }
+  }
+#endif
   return base::OkStatus();
 }
 
@@ -2686,6 +3976,77 @@ std::string GetFileExtension(const std::string& filename) {
   if (ext_idx == std::string::npos)
     return std::string();
   return filename.substr(ext_idx);
+}
+
+std::string Basename(const std::string& path) {
+  
+  if (path.empty())
+    return ".";
+
+  
+  std::string p = path;
+
+  
+  while (p.size() > 1 && (p.back() == '/' || p.back() == '\\')) {
+    p.pop_back();
+  }
+
+  
+  if (p.empty() || p == "/" || p == "\\")
+    return p.empty() ? "/" : p;
+
+  
+  size_t last_sep = p.find_last_of("/\\");
+
+  if (last_sep == std::string::npos) {
+    
+    return p;
+  }
+
+  
+  return p.substr(last_sep + 1);
+}
+
+std::string Dirname(const std::string& path) {
+  
+  if (path.empty())
+    return ".";
+
+  
+  std::string p = path;
+
+  
+  while (p.size() > 1 && (p.back() == '/' || p.back() == '\\')) {
+    p.pop_back();
+  }
+
+  
+  if (p == "/" || p == "\\")
+    return p;
+
+  
+  size_t last_sep = p.find_last_of("/\\");
+
+  if (last_sep == std::string::npos) {
+    
+    return ".";
+  }
+
+  
+  if (last_sep == 0)
+    return p.substr(0, 1);  
+
+  
+  while (last_sep > 0 && (p[last_sep - 1] == '/' || p[last_sep - 1] == '\\')) {
+    --last_sep;
+  }
+
+  
+  if (last_sep == 0)
+    return p.substr(0, 1);
+
+  
+  return p.substr(0, last_sep);
 }
 
 base::Status SetFilePermissions(const std::string& file_path,
@@ -2741,8 +4102,8 @@ std::optional<uint64_t> GetFileSize(const std::string& file_path) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   
   base::ScopedPlatformHandle fd(
-      CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+      CreateFileA(file_path.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
+                  nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
 #else
   base::ScopedFile fd(base::OpenFile(file_path, O_RDONLY | O_CLOEXEC));
 #endif
@@ -2762,7 +4123,7 @@ std::optional<uint64_t> GetFileSize(PlatformHandle fd) {
   static_assert(sizeof(decltype(file_size.QuadPart)) <= sizeof(uint64_t));
   return static_cast<uint64_t>(file_size.QuadPart);
 #else
-  struct stat buf {};
+  struct stat buf{};
   if (fstat(fd, &buf) == -1) {
     return std::nullopt;
   }
@@ -2770,6 +4131,111 @@ std::optional<uint64_t> GetFileSize(PlatformHandle fd) {
   return static_cast<uint64_t>(buf.st_size);
 #endif
 }
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+namespace {
+
+
+class FileWatchImpl : public LinuxFileWatch {
+ public:
+  FileWatchImpl(TaskRunner* tr,
+                std::string fn,
+                ScopedFile ifd,
+                std::function<void()> cb)
+      : task_runner_(tr),
+        file_base_name_(std::move(fn)),
+        inotify_fd_(std::move(ifd)),
+        callback_(std::move(cb)),
+        weak_ptr_factory_(this) {
+    task_runner_->AddFileDescriptorWatch(
+        *inotify_fd_, [weak_handle = weak_ptr_factory_.GetWeakPtr()] {
+          if (!weak_handle)
+            return;
+          alignas(struct inotify_event) char buf[4096];
+          ssize_t rsize =
+              base::Read(*weak_handle->inotify_fd_, buf, sizeof(buf));
+          if (rsize <= 0)
+            return;
+          for (ssize_t i = 0; i < rsize;) {
+            auto* evt = reinterpret_cast<struct inotify_event*>(&buf[i]);
+            i += static_cast<ssize_t>(sizeof(inotify_event) + evt->len);
+            if (evt->len > 0 && (evt->mask & IN_CREATE)) {
+              if (weak_handle->file_base_name_ == evt->name) {
+                weak_handle->task_runner_->PostTask(weak_handle->callback_);
+                return;
+              }
+            }
+          }  
+        });
+  }
+
+  ~FileWatchImpl() override {
+    if (!inotify_fd_)
+      return;
+    task_runner_->RemoveFileDescriptorWatch(*inotify_fd_);
+    inotify_fd_.reset();
+  }
+
+ private:
+  TaskRunner* task_runner_ = nullptr;
+  std::string file_base_name_;  
+  ScopedFile inotify_fd_;
+  std::function<void()> callback_;
+  WeakPtrFactory<FileWatchImpl> weak_ptr_factory_;  
+};
+
+}  
+
+std::unique_ptr<LinuxFileWatch> LinuxFileWatch::WatchFileCreation(
+    TaskRunner* task_runner,
+    const char* path,
+    std::function<void()> callback) {
+  if (!path || path[0] == '\0') {
+    
+    return nullptr;
+  }
+
+  ScopedFile inotify_fd(inotify_init1(IN_CLOEXEC | IN_NONBLOCK));
+  if (!inotify_fd) {
+    PERFETTO_DLOG("inotify_init() failed");
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  std::string file_dir = Dirname(path);
+  if (inotify_add_watch(*inotify_fd, file_dir.c_str(), IN_CREATE) < 0) {
+    PERFETTO_DLOG("inotify_add_watch(%s) failed", file_dir.c_str());
+    return nullptr;
+  }
+
+  std::string file_base_name = Basename(path);
+
+  return std::unique_ptr<LinuxFileWatch>(
+      new FileWatchImpl(task_runner, std::move(file_base_name),
+                        std::move(inotify_fd), std::move(callback)));
+}
+
+LinuxFileWatch::~LinuxFileWatch() = default;
+
+#else
+
+std::unique_ptr<LinuxFileWatch> LinuxFileWatch::WatchFileCreation(
+    TaskRunner*,
+    const char*,
+    std::function<void()>) {
+  return nullptr;  
+}
+
+LinuxFileWatch::~LinuxFileWatch() = default;
+
+#endif  
 
 }  
 }  
@@ -2903,6 +4369,36 @@ const option* LookupShortOpt(const std::vector<option>& opts, char c) {
   return nullptr;
 }
 
+
+
+
+bool TokenConsumesNextArg(const char* token, const std::vector<option>& opts) {
+  if (token[0] != '-' || token[1] == '\0')
+    return false;
+  if (token[1] == '-') {
+    
+    
+    if (token[2] == '\0')
+      return false;  
+    if (strchr(token + 2, '=') != nullptr)
+      return false;
+    size_t len = strlen(token + 2);
+    const option* opt = LookupLongOpt(opts, token + 2, len);
+    return opt && opt->has_arg == required_argument;
+  }
+  
+  
+  
+  for (size_t i = 1; token[i] != '\0'; ++i) {
+    const option* opt = LookupShortOpt(opts, token[i]);
+    if (!opt)
+      return false;
+    if (opt->has_arg == required_argument)
+      return token[i + 1] == '\0';
+  }
+  return false;
+}
+
 bool ParseOpts(const char* shortopts,
                const option* longopts,
                std::vector<option>* res) {
@@ -2957,6 +4453,37 @@ int getopt_long(int argc,
 
   if (!ParseOpts(shortopts, longopts, &opts))
     return '?';
+
+  
+  
+  
+  
+  
+  
+  if (!nextchar) {
+    int scan = optind;
+    while (scan < argc) {
+      const char* s = argv[scan];
+      
+      if (s[0] == '-' && s[1] != '\0')
+        break;
+      ++scan;
+    }
+    
+    
+    if (scan < argc && scan > optind && strcmp(argv[scan], "--") != 0) {
+      bool takes_next = TokenConsumesNextArg(argv[scan], opts);
+      int count = (takes_next && scan + 1 < argc) ? 2 : 1;
+      char* opt_token = argv[scan];
+      char* opt_arg = count == 2 ? argv[scan + 1] : nullptr;
+      
+      for (int k = scan - 1; k >= optind; --k)
+        argv[k + count] = argv[k];
+      argv[optind] = opt_token;
+      if (count == 2)
+        argv[optind + 1] = opt_arg;
+    }
+  }
 
   char* arg = argv[optind];
   optopt = 0;
@@ -3079,6 +4606,769 @@ int getopt(int argc, char** argv, const char* shortopts) {
 
 }  
 }  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_INTRUSIVE_LIST_H_
+#define INCLUDE_PERFETTO_EXT_BASE_INTRUSIVE_LIST_H_
+
+#include <cstddef>
+#include <cstdint>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base {
+
+namespace internal {
+
+struct ListNode {
+  ListNode* prev;
+  ListNode* next;
+};
+
+
+
+class ListOps {
+ public:
+  void PushFront(ListNode* node);
+  void PopFront();
+  void Erase(ListNode* node);
+
+  ListNode* front_{nullptr};
+  size_t size_{0};
+};
+
+}  
+
+using IntrusiveListNode = internal::ListNode;
+
+
+
+
+
+template <typename T, typename ListTraits>
+class IntrusiveList : private internal::ListOps {
+ public:
+  class Iterator {
+   public:
+    Iterator() = default;
+    explicit Iterator(IntrusiveListNode* node) : node_(node) {}
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    bool operator==(const Iterator& other) const {
+      return node_ == other.node_;
+    }
+    bool operator!=(const Iterator& other) const { return !(*this == other); }
+    T* operator->() { return const_cast<T*>(entryof(node_)); }
+    T& operator*() {
+      PERFETTO_DCHECK(node_);
+      return *operator->();
+    }
+    explicit operator bool() const { return node_ != nullptr; }
+
+    Iterator& operator++() {
+      PERFETTO_DCHECK(node_);
+      node_ = node_->next;
+      return *this;
+    }
+
+   private:
+    IntrusiveListNode* node_{nullptr};
+  };
+
+  using value_type = T;
+  using const_pointer = const T*;
+
+  void PushFront(T& entry) { internal::ListOps::PushFront(nodeof(&entry)); }
+
+  void PopFront() { internal::ListOps::PopFront(); }
+
+  T& front() {
+    PERFETTO_DCHECK(front_);
+    return const_cast<T&>(*entryof(front_));
+  }
+
+  void Erase(T& entry) { internal::ListOps::Erase(nodeof(&entry)); }
+
+  bool empty() const { return size_ == 0; }
+
+  size_t size() const { return size_; }
+
+  Iterator begin() { return Iterator{front_}; }
+
+  Iterator end() { return Iterator{nullptr}; }
+
+ private:
+  static constexpr size_t kNodeOffset = ListTraits::node_offset();
+
+  static constexpr IntrusiveListNode* nodeof(T* entry) {
+    return reinterpret_cast<IntrusiveListNode*>(
+        reinterpret_cast<uintptr_t>(entry) + kNodeOffset);
+  }
+
+  static constexpr const T* entryof(IntrusiveListNode* node) {
+    return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(node) -
+                                kNodeOffset);
+  }
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base::internal {
+
+void ListOps::PushFront(IntrusiveListNode* node) {
+  node->prev = nullptr;
+  node->next = front_;
+
+  if (front_) {
+    front_->prev = node;
+  }
+
+  front_ = node;
+  ++size_;
+}
+
+void ListOps::PopFront() {
+  PERFETTO_DCHECK(front_);
+  front_ = front_->next;
+
+  if (front_) {
+    front_->prev = nullptr;
+  }
+
+  PERFETTO_DCHECK(size_ > 0);
+  --size_;
+}
+
+void ListOps::Erase(IntrusiveListNode* node) {
+  auto* prev = node->prev;
+  auto* next = node->next;
+
+  if (node == front_) {
+    front_ = next;
+  }
+
+  if (prev) {
+    prev->next = next;
+  }
+
+  if (next) {
+    next->prev = prev;
+  }
+
+  PERFETTO_DCHECK(size_ > 0);
+  --size_;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_INTRUSIVE_TREE_H_
+#define INCLUDE_PERFETTO_EXT_BASE_INTRUSIVE_TREE_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base {
+
+namespace internal {
+
+enum RBColor : uint8_t {
+  BLACK = 0,
+  RED = 1,
+};
+
+struct RBNode {
+  RBNode* left = nullptr;
+  RBNode* right = nullptr;
+  RBNode* parent = nullptr;
+  RBColor color = RBColor::BLACK;
+};
+
+void RBInsertColor(RBNode** root, RBNode* elm);
+void RBRemove(RBNode** root, RBNode* elm);
+
+
+const RBNode* RBNext(const RBNode* node);
+
+
+
+
+template <
+    class Traits,
+    class = std::enable_if_t<std::is_function_v<typename Traits::CompareKey>,
+                             void> >
+int KeyCompare(const typename Traits::KeyType& k1,
+               const typename Traits::KeyType& k2) {
+  return Traits::CompareKey(k1, k2);
+}
+
+
+template <class Traits>
+int KeyCompare(const typename Traits::KeyType& k1,
+               const typename Traits::KeyType& k2) {
+  std::less<typename Traits::KeyType> less_cmp;
+  return less_cmp(k1, k2) ? -1 : (less_cmp(k2, k1) ? 1 : 0);
+}
+
+}  
+
+using IntrusiveTreeNode = internal::RBNode;
+
+
+
+
+
+template <typename T, typename Traits>
+class IntrusiveTree {
+ public:
+  using Key = typename Traits::KeyType;
+
+  class Iterator {
+   public:
+    Iterator() = default;
+    explicit Iterator(const internal::RBNode* node) : node_(node) {}
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    bool operator==(const Iterator& o) const { return node_ == o.node_; }
+    bool operator!=(const Iterator& o) const { return !(*this == o); }
+    const T* operator->() const { return entryof(node_); }
+    const T& operator*() const {
+      PERFETTO_DCHECK(node_ != nullptr);
+      return *operator->();
+    }
+    T* operator->() { return const_cast<T*>(entryof(node_)); }
+    T& operator*() {
+      PERFETTO_DCHECK(node_ != nullptr);
+      return *operator->();
+    }
+    explicit operator bool() const { return node_ != nullptr; }
+
+    Iterator& operator++() {
+      node_ = internal::RBNext(node_);
+      return *this;
+    }
+
+   private:
+    const internal::RBNode* node_ = nullptr;
+  };  
+
+  using value_type = T;
+  using const_pointer = const T*;
+  using const_iterator = Iterator;
+
+  std::pair<Iterator, bool> Insert(T& entry) {
+    
+    
+    
+    int comp = 0;
+    internal::RBNode* tmp = root_;
+    internal::RBNode* parent = nullptr;
+    internal::RBNode* const entry_node = nodeof(&entry);
+    while (tmp) {
+      parent = tmp;
+      comp = key_compare(entry_node, parent);
+      if (comp < 0) {
+        tmp = tmp->left;
+      } else if (comp > 0) {
+        tmp = tmp->right;
+      } else {
+        return {Iterator(tmp), false};  
+      }
+    }  
+    entry_node->left = entry_node->right = nullptr;
+    entry_node->parent = parent;
+    entry_node->color = internal::RBColor::RED;
+    if (parent) {
+      if (comp < 0) {
+        PERFETTO_DCHECK(parent->left == nullptr);
+        parent->left = entry_node;
+      } else {
+        PERFETTO_DCHECK(parent->right == nullptr);
+        parent->right = entry_node;
+      }
+    } else {
+      root_ = entry_node;
+    }
+    internal::RBInsertColor(&root_, entry_node);
+    ++size_;
+    return {Iterator(entry_node), true};
+  }
+
+  Iterator Find(const Key& key) const {
+    internal::RBNode* tmp = root_;
+    while (tmp) {
+      int comp =
+          internal::KeyCompare<Traits>(key, Traits::GetKey(*entryof(tmp)));
+      if (comp < 0) {
+        tmp = tmp->left;
+      } else if (comp > 0) {
+        tmp = tmp->right;
+      } else {
+        return Iterator(tmp);
+      }
+    }
+    return Iterator(nullptr);
+  }
+
+  bool Remove(const Key& key) {
+    Iterator it = Find(key);
+    if (!it)
+      return false;
+    internal::RBRemove(&root_, nodeof(std::addressof(*it)));
+    --size_;
+    return true;
+  }
+
+  Iterator Remove(T& entry) { return Remove(Iterator(nodeof(&entry))); }
+
+  Iterator Remove(Iterator it) {
+    Iterator next = it;
+    ++next;
+    internal::RBRemove(&root_, nodeof(std::addressof(*it)));
+    --size_;
+    return next;
+  }
+
+  size_t Size() const { return size_; }
+
+  Iterator begin() const {
+    const internal::RBNode* node = root_;
+    while (node && node->left)
+      node = node->left;
+    return Iterator(node);
+  }
+
+  Iterator end() const { return Iterator(nullptr); }
+
+ private:
+  static constexpr size_t off_ = Traits::NodeOffset();
+  static internal::RBNode* nodeof(T* t) {
+    PERFETTO_DCHECK(t != nullptr);
+    return reinterpret_cast<internal::RBNode*>(reinterpret_cast<uintptr_t>(t) +
+                                               off_);
+  }
+  static const T* entryof(const internal::RBNode* n) {
+    PERFETTO_DCHECK(n != nullptr);
+    return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(n) - off_);
+  }
+  static int key_compare(const internal::RBNode* node_a,
+                         const internal::RBNode* node_b) {
+    auto* a = entryof(node_a);
+    auto* b = entryof(node_b);
+    return internal::KeyCompare<Traits>(Traits::GetKey(*a), Traits::GetKey(*b));
+  }
+
+  internal::RBNode* root_ = nullptr;
+  size_t size_ = 0;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base::internal {
+
+namespace {
+
+void RBSetBlackRed(RBNode* black, RBNode* red) {
+  black->color = RBColor::BLACK;
+  red->color = RBColor::RED;
+}
+
+void RBRotateLeft(RBNode** root, RBNode* elm, RBNode* tmp) {
+  tmp = elm->right;
+  if ((elm->right = tmp->left)) {
+    tmp->left->parent = elm;
+  }
+  
+  if ((tmp->parent = elm->parent)) {
+    if (elm == elm->parent->left)
+      elm->parent->left = tmp;
+    else
+      elm->parent->right = tmp;
+  } else
+    *root = tmp;
+  tmp->left = elm;
+  elm->parent = tmp;
+  
+  
+  
+}
+
+void RBRotateRight(RBNode** root, RBNode* elm, RBNode* tmp) {
+  tmp = elm->left;
+  if ((elm->left = tmp->right)) {
+    tmp->right->parent = elm;
+  }
+  
+  if ((tmp->parent = elm->parent)) {
+    if (elm == elm->parent->left)
+      elm->parent->left = tmp;
+    else
+      elm->parent->right = tmp;
+  } else
+    *root = tmp;
+  tmp->right = elm;
+  elm->parent = tmp;
+  
+  
+  
+}
+
+void RBRemoveColor(RBNode** root, RBNode* parent, RBNode* elm) {
+  RBNode* tmp;
+  while ((elm == nullptr || elm->color == RBColor::BLACK) && elm != *root) {
+    if (parent->left == elm) {
+      tmp = parent->right;
+      if (tmp->color == RBColor::RED) {
+        RBSetBlackRed(tmp, parent);
+        RBRotateLeft(root, parent, tmp);
+        tmp = parent->right;
+      }
+      if ((tmp->left == nullptr || tmp->left->color == RBColor::BLACK) &&
+          (tmp->right == nullptr || tmp->right->color == RBColor::BLACK)) {
+        tmp->color = RBColor::RED;
+        elm = parent;
+        parent = elm->parent;
+      } else {
+        if (tmp->right == nullptr || tmp->right->color == RBColor::BLACK) {
+          RBNode* oleft;
+          if ((oleft = tmp->left))
+            oleft->color = RBColor::BLACK;
+          tmp->color = RBColor::RED;
+          RBRotateRight(root, tmp, oleft);
+          tmp = parent->right;
+        }
+        tmp->color = parent->color;
+        parent->color = RBColor::BLACK;
+        if (tmp->right)
+          tmp->right->color = RBColor::BLACK;
+        RBRotateLeft(root, parent, tmp);
+        elm = *root;
+        break;
+      }
+    } else {
+      tmp = parent->left;
+      if (tmp->color == RBColor::RED) {
+        RBSetBlackRed(tmp, parent);
+        RBRotateRight(root, parent, tmp);
+        tmp = parent->left;
+      }
+      if ((tmp->left == nullptr || tmp->left->color == RBColor::BLACK) &&
+          (tmp->right == nullptr || tmp->right->color == RBColor::BLACK)) {
+        tmp->color = RBColor::RED;
+        elm = parent;
+        parent = elm->parent;
+      } else {
+        if (tmp->left == nullptr || tmp->left->color == RBColor::BLACK) {
+          RBNode* oright;
+          if ((oright = tmp->right))
+            oright->color = RBColor::BLACK;
+          tmp->color = RBColor::RED;
+          RBRotateLeft(root, tmp, oright);
+          tmp = parent->left;
+        }
+        tmp->color = parent->color;
+        parent->color = RBColor::BLACK;
+        if (tmp->left)
+          tmp->left->color = RBColor::BLACK;
+        RBRotateRight(root, parent, tmp);
+        elm = *root;
+        break;
+      }
+    }
+  }
+  if (elm)
+    elm->color = RBColor::BLACK;
+}
+
+}  
+
+void RBInsertColor(RBNode** root, RBNode* elm) {
+  RBNode *parent, *gparent, *tmp;
+  while ((parent = elm->parent) && parent->color == RBColor::RED) {
+    gparent = parent->parent;
+    if (parent == gparent->left) {
+      tmp = gparent->right;
+      if (tmp && tmp->color == RBColor::RED) {
+        tmp->color = RBColor::BLACK;
+        RBSetBlackRed(parent, gparent);
+        elm = gparent;
+        continue;
+      }
+      if (parent->right == elm) {
+        RBRotateLeft(root, parent, tmp);
+        tmp = parent;
+        parent = elm;
+        elm = tmp;
+      }
+      RBSetBlackRed(parent, gparent);
+      RBRotateRight(root, gparent, tmp);
+    } else {
+      tmp = gparent->left;
+      if (tmp && tmp->color == RBColor::RED) {
+        tmp->color = RBColor::BLACK;
+        RBSetBlackRed(parent, gparent);
+        elm = gparent;
+        continue;
+      }
+      if (parent->left == elm) {
+        RBRotateRight(root, parent, tmp);
+        tmp = parent;
+        parent = elm;
+        elm = tmp;
+      }
+      RBSetBlackRed(parent, gparent);
+      RBRotateLeft(root, gparent, tmp);
+    }
+  }
+  (*root)->color = RBColor::BLACK;
+}
+
+void RBRemove(RBNode** root, RBNode* elm) {
+  RBNode* child = elm;
+  RBNode* parent = elm;
+  RBNode* old = elm;
+  RBColor color;
+
+  if (elm->left == nullptr)
+    child = elm->right;
+  else if (elm->right == nullptr)
+    child = elm->left;
+  else {
+    RBNode* left;
+    elm = elm->right;
+    while ((left = elm->left))
+      elm = left;
+    child = elm->right;
+    parent = elm->parent;
+    color = elm->color;
+    if (child)
+      child->parent = parent;
+    if (parent) {
+      if (parent->left == elm) {
+        parent->left = child;
+      } else {
+        parent->right = child;
+      }
+      
+    } else {
+      *root = child;
+    }
+    if (elm->parent == old)
+      parent = elm;
+    *elm = *old;
+    if (old->parent) {
+      if (old->parent->left == old) {
+        old->parent->left = elm;
+      } else {
+        old->parent->right = elm;
+      }
+      
+    } else {
+      *root = elm;
+    }
+    old->left->parent = elm;
+    if (old->right)
+      old->right->parent = elm;
+    if (parent) {
+      left = parent;
+      
+      
+      
+    }
+    goto color;
+  }
+  parent = elm->parent;
+  color = elm->color;
+  if (child)
+    child->parent = parent;
+  if (parent) {
+    if (parent->left == elm)
+      parent->left = child;
+    else
+      parent->right = child;
+    
+  } else {
+    *root = child;
+  }
+color:
+  if (color == RBColor::BLACK)
+    RBRemoveColor(root, parent, child);
+}
+
+
+const RBNode* RBNext(const RBNode* node) {
+  if (node->right) {
+    node = node->right;
+    while (node->left)
+      node = node->left;
+  } else {
+    if (node->parent && node == node->parent->left) {
+      node = node->parent;
+    } else {
+      while (node->parent && node == node->parent->right) {
+        node = node->parent;
+      }
+      node = node->parent;
+    }
+  }
+  return node;
+}
+
 }  
 
 
@@ -3591,7 +5881,22 @@ enum Tags : uint32_t {
   F(PROFILER_UNWIND_ATTEMPT), \
   F(PROFILER_MAPS_PARSE), \
   F(PROFILER_MAPS_REPARSE), \
-  F(PROFILER_UNWIND_CACHE_CLEAR)
+  F(PROFILER_UNWIND_CACHE_CLEAR), \
+  F(ANDROID_CPU_PER_UID_TICK), \
+  F(ANDROID_KERNEL_WAKELOCKS_TICK), \
+  F(ANDROID_POWER_TICK), \
+  F(ANDROID_POWER_WRITE_BATTERY_COUNTERS), \
+  F(ANDROID_POWER_WRITE_ENERGY_ESTIMATION_BREAKDOWN), \
+  F(ANDROID_POWER_WRITE_ENTITY_STATE_RESIDENCY), \
+  F(ANDROID_POWER_WRITE_POWER_RAILS_DATA), \
+  F(LINUX_POWER_SYSFS_TICK)
+
+
+
+
+
+
+
 
 
 
@@ -3606,7 +5911,13 @@ enum Tags : uint32_t {
   F(PS_PIDS_SCANNED), \
   F(TRACE_SERVICE_COMMIT_DATA), \
   F(PROFILER_UNWIND_QUEUE_SZ), \
-  F(PROFILER_UNWIND_CURRENT_PID)
+  F(PROFILER_UNWIND_CURRENT_PID), \
+  F(WATCHDOG_CRASH_REASON), \
+  F(WATCHDOG_CRASH_TIME_BOOT_MS), \
+  F(WATCHDOG_CRASH_ACTUAL_MONO), \
+  F(WATCHDOG_CRASH_ACTUAL_BOOT), \
+  F(WATCHDOG_CRASH_ACTUAL_CPU), \
+  F(FTRACE_SESSIONS)
 
 
 
@@ -3971,85 +6282,6 @@ class ScopedEvent {
 
 
 
-#ifndef INCLUDE_PERFETTO_BASE_TASK_RUNNER_H_
-#define INCLUDE_PERFETTO_BASE_TASK_RUNNER_H_
-
-#include <stdint.h>
-
-#include <functional>
-
-
-
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-
-
-
-
-
-
-class PERFETTO_EXPORT_COMPONENT TaskRunner {
- public:
-  virtual ~TaskRunner();
-
-  
-  
-  virtual void PostTask(std::function<void()>) = 0;
-
-  
-  
-  
-  virtual void PostDelayedTask(std::function<void()>, uint32_t delay_ms) = 0;
-
-  
-  
-  
-  
-  
-  virtual void AddFileDescriptorWatch(PlatformHandle,
-                                      std::function<void()>) = 0;
-
-  
-  
-  
-  
-  virtual void RemoveFileDescriptorWatch(PlatformHandle) = 0;
-
-  
-  
-  
-  
-  
-  virtual bool RunsTasksOnCurrentThread() const = 0;
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4364,7 +6596,7 @@ class PagedMemory {
 #include <cstddef>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #else  
 #include <sys/mman.h>
 #endif  
@@ -4532,196 +6764,6 @@ void PagedMemory::EnsureCommitted(size_t committed_size) {
 
 
 
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_THREAD_CHECKER_H_
-#define INCLUDE_PERFETTO_EXT_BASE_THREAD_CHECKER_H_
-
-
-
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <pthread.h>
-#endif
-#include <atomic>
-
-
-
-
-
-namespace perfetto {
-namespace base {
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-using ThreadID = unsigned long;
-#else
-using ThreadID = pthread_t;
-#endif
-
-class PERFETTO_EXPORT_COMPONENT ThreadChecker {
- public:
-  ThreadChecker();
-  ~ThreadChecker();
-  ThreadChecker(const ThreadChecker&);
-  ThreadChecker& operator=(const ThreadChecker&);
-  bool CalledOnValidThread() const PERFETTO_WARN_UNUSED_RESULT;
-  void DetachFromThread();
-
- private:
-  mutable std::atomic<ThreadID> thread_id_;
-};
-
-#if PERFETTO_DCHECK_IS_ON() && !PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
-
-#define PERFETTO_THREAD_CHECKER(name) base::ThreadChecker name;
-#define PERFETTO_DCHECK_THREAD(name) \
-  PERFETTO_DCHECK((name).CalledOnValidThread())
-#define PERFETTO_DETACH_FROM_THREAD(name) (name).DetachFromThread()
-#else
-#define PERFETTO_THREAD_CHECKER(name)
-#define PERFETTO_DCHECK_THREAD(name)
-#define PERFETTO_DETACH_FROM_THREAD(name)
-#endif  
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_WEAK_PTR_H_
-#define INCLUDE_PERFETTO_EXT_BASE_WEAK_PTR_H_
-
-
-
-#include <memory>
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class WeakPtrFactory;  
-
-template <typename T>
-class WeakPtr {
- public:
-  WeakPtr() {}
-  WeakPtr(const WeakPtr&) = default;
-  WeakPtr& operator=(const WeakPtr&) = default;
-  WeakPtr(WeakPtr&&) = default;
-  WeakPtr& operator=(WeakPtr&&) = default;
-
-  T* get() const {
-    PERFETTO_DCHECK_THREAD(thread_checker);
-    return handle_ ? *handle_.get() : nullptr;
-  }
-  T* operator->() const { return get(); }
-  T& operator*() const { return *get(); }
-
-  explicit operator bool() const { return !!get(); }
-
- private:
-  friend class WeakPtrFactory<T>;
-  explicit WeakPtr(const std::shared_ptr<T*>& handle) : handle_(handle) {}
-
-  std::shared_ptr<T*> handle_;
-  PERFETTO_THREAD_CHECKER(thread_checker)
-};
-
-template <typename T>
-class WeakPtrFactory {
- public:
-  explicit WeakPtrFactory(T* owner) : weak_ptr_(std::make_shared<T*>(owner)) {
-    PERFETTO_DCHECK_THREAD(thread_checker);
-  }
-
-  ~WeakPtrFactory() {
-    PERFETTO_DCHECK_THREAD(thread_checker);
-    *(weak_ptr_.handle_.get()) = nullptr;
-  }
-
-  
-  
-  
-  WeakPtr<T> GetWeakPtr() const { return weak_ptr_; }
-
-  
-  
-  
-  void Reset(T* owner) {
-    
-    PERFETTO_DETACH_FROM_THREAD(thread_checker);
-    PERFETTO_DCHECK_THREAD(thread_checker);
-
-    
-    PERFETTO_DCHECK(weak_ptr_.handle_.use_count() == 1);
-
-    weak_ptr_ = WeakPtr<T>(std::make_shared<T*>(owner));
-  }
-
- private:
-  WeakPtrFactory(const WeakPtrFactory&) = delete;
-  WeakPtrFactory& operator=(const WeakPtrFactory&) = delete;
-
-  WeakPtr<T> weak_ptr_;
-  PERFETTO_THREAD_CHECKER(thread_checker)
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef INCLUDE_PERFETTO_EXT_BASE_PERIODIC_TASK_H_
 #define INCLUDE_PERFETTO_EXT_BASE_PERIODIC_TASK_H_
 
@@ -4795,7 +6837,7 @@ class PeriodicTask {
 }  
 }  
 
-#endif
+#endif  
 
 
 
@@ -4823,6 +6865,7 @@ class PeriodicTask {
 
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) ||           \
     (PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && __ANDROID_API__ >= 19)
 #include <sys/timerfd.h>
 #endif
@@ -4843,12 +6886,13 @@ uint32_t GetNextDelayMs(const TimeMillis& now_ms,
 
 ScopedPlatformHandle CreateTimerFd(const PeriodicTask::Args& args) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) ||           \
     (PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && __ANDROID_API__ >= 19)
   ScopedPlatformHandle tfd(
       timerfd_create(CLOCK_BOOTTIME, TFD_CLOEXEC | TFD_NONBLOCK));
   uint32_t phase_ms = GetNextDelayMs(GetBootTimeMs(), args);
 
-  struct itimerspec its {};
+  struct itimerspec its{};
   
   
   
@@ -5002,10 +7046,11 @@ void PeriodicTask::ResetTimerFd() {
 
 
 
-#include <fcntl.h>  // For O_BINARY (Windows) and F_SETxx (UNIX)
+#include <fcntl.h>  
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <namedpipeapi.h>
 #else
 #include <sys/types.h>
@@ -5073,6 +7118,315 @@ Pipe Pipe::Create(Flags flags) {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_RT_MUTEX_H_
+#define INCLUDE_PERFETTO_EXT_BASE_RT_MUTEX_H_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define _PERFETTO_MUTEX_MODE_STD 0
+#define _PERFETTO_MUTEX_MODE_RT_FUTEX 1
+#define _PERFETTO_MUTEX_MODE_RT_MUTEX 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && \
+    PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD)
+#define _PERFETTO_MUTEX_MODE _PERFETTO_MUTEX_MODE_RT_FUTEX
+#elif PERFETTO_BUILDFLAG(PERFETTO_ENABLE_RT_MUTEX)
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+#define _PERFETTO_MUTEX_MODE _PERFETTO_MUTEX_MODE_RT_FUTEX
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+#define _PERFETTO_MUTEX_MODE _PERFETTO_MUTEX_MODE_RT_MUTEX
+#endif
+#endif
+
+
+#ifndef _PERFETTO_MUTEX_MODE
+#define _PERFETTO_MUTEX_MODE _PERFETTO_MUTEX_MODE_STD
+#endif
+
+
+#define PERFETTO_HAS_POSIX_RT_MUTEX() \
+  (_PERFETTO_MUTEX_MODE == _PERFETTO_MUTEX_MODE_RT_MUTEX)
+#define PERFETTO_HAS_RT_FUTEX() \
+  (_PERFETTO_MUTEX_MODE == _PERFETTO_MUTEX_MODE_RT_FUTEX)
+
+#include <atomic>
+#include <mutex>
+#include <type_traits>
+
+#if PERFETTO_HAS_POSIX_RT_MUTEX()
+#include <pthread.h>
+#endif
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <unistd.h>  
+#endif
+
+namespace perfetto::base {
+
+namespace internal {
+
+#if PERFETTO_HAS_RT_FUTEX()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PERFETTO_LOCKABLE RtFutex {
+ public:
+  RtFutex() { PERFETTO_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static); }
+  ~RtFutex() { PERFETTO_TSAN_MUTEX_DESTROY(this, __tsan_mutex_not_static); }
+
+  
+  
+  
+  
+  
+  RtFutex(const RtFutex&) = delete;
+  RtFutex& operator=(const RtFutex&) = delete;
+  RtFutex(RtFutex&&) = delete;
+  RtFutex& operator=(RtFutex&&) = delete;
+
+  inline bool TryLockFastpath() noexcept {
+    int expected = 0;
+    return lock_.compare_exchange_strong(expected, ::gettid(),
+                                         std::memory_order_acquire,
+                                         std::memory_order_relaxed);
+  }
+
+  bool try_lock() noexcept PERFETTO_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+    PERFETTO_TSAN_MUTEX_PRE_LOCK(this, __tsan_mutex_try_lock);
+    if (PERFETTO_LIKELY(TryLockFastpath()) || TryLockSlowpath()) {
+      PERFETTO_TSAN_MUTEX_POST_LOCK(this, __tsan_mutex_try_lock, 0);
+      return true;
+    }
+    PERFETTO_TSAN_MUTEX_POST_LOCK(
+        this, __tsan_mutex_try_lock | __tsan_mutex_try_lock_failed, 0);
+    return false;
+  }
+
+  void lock() PERFETTO_EXCLUSIVE_LOCK_FUNCTION() {
+    PERFETTO_TSAN_MUTEX_PRE_LOCK(this, 0);
+    if (!PERFETTO_LIKELY(TryLockFastpath())) {
+      LockSlowpath();
+    }
+    PERFETTO_TSAN_MUTEX_POST_LOCK(this, 0, 0);
+  }
+
+  void unlock() noexcept PERFETTO_UNLOCK_FUNCTION() {
+    PERFETTO_TSAN_MUTEX_PRE_UNLOCK(this, 0);
+    int expected = ::gettid();
+    
+    
+    if (!PERFETTO_LIKELY(lock_.compare_exchange_strong(
+            expected, 0, std::memory_order_release,
+            std::memory_order_relaxed))) {
+      
+      
+      UnlockSlowpath();
+    }
+    PERFETTO_TSAN_MUTEX_POST_UNLOCK(this, 0);
+  }
+
+ private:
+  std::atomic<int> lock_{};
+
+  void LockSlowpath();
+  bool TryLockSlowpath();
+  void UnlockSlowpath();
+};
+
+#endif  
+
+#if PERFETTO_HAS_POSIX_RT_MUTEX()
+class PERFETTO_LOCKABLE RtPosixMutex {
+ public:
+  RtPosixMutex() noexcept;
+  ~RtPosixMutex() noexcept;
+
+  RtPosixMutex(const RtPosixMutex&) = delete;
+  RtPosixMutex& operator=(const RtPosixMutex&) = delete;
+  RtPosixMutex(RtPosixMutex&&) = delete;
+  RtPosixMutex& operator=(RtPosixMutex&&) = delete;
+
+  bool try_lock() noexcept PERFETTO_EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void lock() noexcept PERFETTO_EXCLUSIVE_LOCK_FUNCTION();
+  void unlock() noexcept PERFETTO_UNLOCK_FUNCTION();
+
+ private:
+  pthread_mutex_t mutex_;
+};
+
+#endif  
+}  
+
+
+
+#if PERFETTO_HAS_RT_FUTEX()
+using MaybeRtMutex = internal::RtFutex;
+#elif PERFETTO_HAS_POSIX_RT_MUTEX()
+using MaybeRtMutex = internal::RtPosixMutex;
+#else
+using MaybeRtMutex = std::mutex;
+#endif
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <errno.h>
+
+
+
+
+#if PERFETTO_HAS_RT_FUTEX()
+#include <linux/futex.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+
+namespace perfetto::base {
+
+namespace internal {
+
+#if PERFETTO_HAS_RT_FUTEX()
+
+void RtFutex::LockSlowpath() {
+  auto res = PERFETTO_EINTR(
+      syscall(SYS_futex, &lock_, FUTEX_LOCK_PI_PRIVATE, 0, nullptr));
+  PERFETTO_CHECK(res == 0);
+}
+
+bool RtFutex::TryLockSlowpath() {
+  auto res = PERFETTO_EINTR(
+      syscall(SYS_futex, &lock_, FUTEX_TRYLOCK_PI_PRIVATE, 0, nullptr));
+  if (res == 0)
+    return true;
+  if (errno == EBUSY || errno == EDEADLK)
+    return false;
+  PERFETTO_FATAL("FUTEX_TRYLOCK_PI_PRIVATE failed");
+}
+
+void RtFutex::UnlockSlowpath() {
+  auto res = PERFETTO_EINTR(
+      syscall(SYS_futex, &lock_, FUTEX_UNLOCK_PI_PRIVATE, 0, nullptr));
+  PERFETTO_CHECK(res == 0);
+}
+
+#endif  
+
+#if PERFETTO_HAS_POSIX_RT_MUTEX()
+
+RtPosixMutex::RtPosixMutex() noexcept {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) && __ANDROID_API__ < 28
+  
+#error \
+    "Priority-inheritance RtMutex is not available in this version of Android."
+#endif
+  pthread_mutexattr_t at{};
+  PERFETTO_CHECK(pthread_mutexattr_init(&at) == 0);
+  PERFETTO_CHECK(pthread_mutexattr_setprotocol(&at, PTHREAD_PRIO_INHERIT) == 0);
+  PERFETTO_CHECK(pthread_mutex_init(&mutex_, &at) == 0);
+}
+
+RtPosixMutex::~RtPosixMutex() noexcept {
+  pthread_mutex_destroy(&mutex_);
+}
+
+bool RtPosixMutex::try_lock() noexcept {
+  int res = pthread_mutex_trylock(&mutex_);
+  if (res == 0)
+    return true;
+  
+  
+  if (res == EBUSY)
+    return false;
+  PERFETTO_FATAL("pthread_mutex_trylock() failed");
+}
+
+void RtPosixMutex::lock() noexcept {
+  PERFETTO_CHECK(pthread_mutex_lock(&mutex_) == 0);
+}
+
+void RtPosixMutex::unlock() noexcept {
+  PERFETTO_CHECK(pthread_mutex_unlock(&mutex_) == 0);
+}
+
+#endif  
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_MMAP_H_
 #define INCLUDE_PERFETTO_EXT_BASE_SCOPED_MMAP_H_
 
@@ -5083,6 +7437,7 @@ Pipe Pipe::Create(Flags flags) {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 #define PERFETTO_HAS_MMAP() 1
@@ -5122,6 +7477,7 @@ class ScopedMmap {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   
   
@@ -5141,14 +7497,14 @@ class ScopedMmap {
 };
 
 
-ScopedMmap ReadMmapFilePart(const char* fname, size_t length);
+ScopedMmap ReadMmapFilePart(const std::string& file_path, size_t length);
 
 
-ScopedMmap ReadMmapWholeFile(const char* fname);
+ScopedMmap ReadMmapWholeFile(const std::string& file_path);
 
 }  
 
-#endif
+#endif  
 
 
 
@@ -5174,29 +7530,31 @@ ScopedMmap ReadMmapWholeFile(const char* fname);
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #include <sys/mman.h>
 #include <unistd.h>
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 namespace perfetto::base {
 namespace {
 
-ScopedPlatformHandle OpenFileForMmap(const char* fname) {
+ScopedPlatformHandle OpenFileForMmap(const std::string& file_path) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
-  return OpenFile(fname, O_RDONLY);
+  return OpenFile(file_path, O_RDONLY);
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   
-  return ScopedPlatformHandle(CreateFileA(fname, GENERIC_READ, FILE_SHARE_READ,
-                                          nullptr, OPEN_EXISTING,
-                                          FILE_ATTRIBUTE_NORMAL, nullptr));
+  return ScopedPlatformHandle(
+      CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
 #else
   
-  base::ignore_result(fname);
+  base::ignore_result(file_path);
   return ScopedPlatformHandle();
 #endif
 }
@@ -5234,6 +7592,7 @@ ScopedMmap ScopedMmap::FromHandle(base::ScopedPlatformHandle file,
   }
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   void* ptr = mmap(nullptr, length, PROT_READ, MAP_PRIVATE, *file, 0);
   if (ptr != MAP_FAILED) {
@@ -5264,6 +7623,7 @@ bool ScopedMmap::reset() noexcept {
   bool ret = true;
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   if (ptr_ != nullptr) {
     ret = munmap(ptr_, length_) == 0;
@@ -5282,6 +7642,7 @@ bool ScopedMmap::reset() noexcept {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 
 ScopedMmap ScopedMmap::InheritMmappedRange(void* data, size_t size) {
@@ -5292,11 +7653,11 @@ ScopedMmap ScopedMmap::InheritMmappedRange(void* data, size_t size) {
 }
 #endif
 
-ScopedMmap ReadMmapFilePart(const char* fname, size_t length) {
+ScopedMmap ReadMmapFilePart(const std::string& fname, size_t length) {
   return ScopedMmap::FromHandle(OpenFileForMmap(fname), length);
 }
 
-ScopedMmap ReadMmapWholeFile(const char* fname) {
+ScopedMmap ReadMmapWholeFile(const std::string& fname) {
   ScopedPlatformHandle file = OpenFileForMmap(fname);
   if (!file) {
     return ScopedMmap();
@@ -5311,6 +7672,490 @@ ScopedMmap ReadMmapWholeFile(const char* fname) {
   }
   return ScopedMmap::FromHandle(std::move(file), size);
 }
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_STATUS_OR_H_
+#define INCLUDE_PERFETTO_EXT_BASE_STATUS_OR_H_
+
+#include <optional>
+
+
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+
+
+template <typename T>
+class StatusOr {
+ public:
+  
+  
+  using value_type = T;
+
+  
+  
+  StatusOr(base::Status status) : StatusOr(std::move(status), std::nullopt) {
+    if (status_.ok()) {
+      
+      
+      PERFETTO_FATAL("base::OkStatus passed to StatusOr: this is not allowed");
+    }
+  }
+  StatusOr(T value) : StatusOr(base::OkStatus(), std::move(value)) {}
+
+  bool ok() const { return status_.ok(); }
+  const base::Status& status() const { return status_; }
+
+  T& value() {
+    PERFETTO_DCHECK(status_.ok());
+    return *value_;
+  }
+  const T& value() const { return *value_; }
+
+  T& operator*() { return value(); }
+  const T& operator*() const { return value(); }
+
+  T* operator->() { return &value(); }
+  const T* operator->() const { return &value(); }
+
+ private:
+  StatusOr(base::Status status, std::optional<T> value)
+      : status_(std::move(status)), value_(std::move(value)) {
+    PERFETTO_DCHECK(!status_.ok() || value_.has_value());
+  }
+
+  base::Status status_;
+  std::optional<T> value_;
+};
+
+
+template <typename T>
+StatusOr(T) -> StatusOr<T>;
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_SCHED_BOOST_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SCOPED_SCHED_BOOST_H_
+
+
+
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+struct SchedPolicyAndPrio {
+  enum class Policy {
+    kSchedOther,
+    kSchedFifo
+  };  
+
+  bool operator<(const SchedPolicyAndPrio& other) const {
+    return std::tie(policy, prio) < std::tie(other.policy, other.prio);
+  }
+
+  bool operator==(const SchedPolicyAndPrio& other) const {
+    return policy == other.policy && prio == other.prio;
+  }
+
+  bool operator!=(const SchedPolicyAndPrio& other) const {
+    return !(*this == other);
+  }
+
+  Policy policy = Policy::kSchedOther;
+  uint32_t prio = 0;
+};
+
+
+
+class SchedOsHooks {
+ public:
+  struct SchedOsConfig {
+    int policy;
+    int rt_prio;
+    int nice;
+  };
+
+  virtual ~SchedOsHooks() = default;
+  static SchedOsHooks* GetInstance();
+  
+  virtual Status SetSchedConfig(const SchedOsConfig& arg);
+  
+  virtual StatusOr<SchedOsConfig> GetCurrentSchedConfig() const;
+};
+
+
+
+
+
+class ScopedSchedBoost {
+ public:
+  static StatusOr<ScopedSchedBoost> Boost(SchedPolicyAndPrio);
+  ScopedSchedBoost(ScopedSchedBoost&&) noexcept;
+  ScopedSchedBoost& operator=(ScopedSchedBoost&&) noexcept;
+  ~ScopedSchedBoost();
+
+  
+  ScopedSchedBoost(const ScopedSchedBoost&) = delete;
+  ScopedSchedBoost& operator=(const ScopedSchedBoost&) = delete;
+
+  static void ResetForTesting(SchedOsHooks*);
+
+ private:
+  explicit ScopedSchedBoost(SchedPolicyAndPrio p) : policy_and_prio_(p) {}
+
+  std::optional<SchedPolicyAndPrio> policy_and_prio_;
+  ThreadChecker thread_checker_;
+};
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_STATUS_MACROS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_STATUS_MACROS_H_
+
+
+
+
+
+#define RETURN_IF_ERROR(expr)                                       \
+  do {                                                              \
+    ::perfetto::base::Status status_macro_internal_status = (expr); \
+    if (!status_macro_internal_status.ok())                         \
+      return status_macro_internal_status;                          \
+  } while (0)
+
+#define PERFETTO_INTERNAL_CONCAT_IMPL(x, y) x##y
+#define PERFETTO_INTERNAL_MACRO_CONCAT(x, y) PERFETTO_INTERNAL_CONCAT_IMPL(x, y)
+
+
+
+
+#define ASSIGN_OR_RETURN(lhs, rhs)                                   \
+  PERFETTO_INTERNAL_MACRO_CONCAT(auto status_or, __LINE__) = rhs;    \
+  RETURN_IF_ERROR(                                                   \
+      PERFETTO_INTERNAL_MACRO_CONCAT(status_or, __LINE__).status()); \
+  lhs = std::move(PERFETTO_INTERNAL_MACRO_CONCAT(status_or, __LINE__).value())
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+#include <sched.h>         
+#include <sys/resource.h>  
+#include <sys/types.h>     
+
+#include <algorithm>
+#include <vector>
+
+#endif  
+
+namespace perfetto::base {
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+namespace {
+constexpr pid_t kCurrentPid = 0;
+
+class ThreadMgr {
+ public:
+  
+  
+  
+  static ThreadMgr* GetInstance();
+
+  explicit ThreadMgr(SchedOsHooks*);
+
+  Status Add(SchedPolicyAndPrio);
+  void Remove(SchedPolicyAndPrio);
+  Status RecalcAndUpdatePrio();
+
+  ThreadMgr(const ThreadMgr&) = delete;
+  ThreadMgr& operator=(const ThreadMgr&) = delete;
+  ThreadMgr(ThreadMgr&&) = delete;
+  ThreadMgr& operator=(ThreadMgr&&) = delete;
+
+  void ResetForTesting(SchedOsHooks*);
+
+ private:
+  SchedOsHooks* os_hooks_;
+  SchedOsHooks::SchedOsConfig initial_config_{};
+  std::vector<SchedPolicyAndPrio> prios_;
+};
+
+ThreadMgr* ThreadMgr::GetInstance() {
+  static auto* instance = new ThreadMgr(SchedOsHooks::GetInstance());
+  return instance;
+}
+ThreadMgr::ThreadMgr(SchedOsHooks* os_hooks) : os_hooks_(os_hooks) {
+  auto res = os_hooks_->GetCurrentSchedConfig();
+  if (!res.ok()) {
+    
+    
+    
+    PERFETTO_DFATAL_OR_ELOG("Failed to get default sched config: %s",
+                            res.status().c_message());
+    initial_config_ = SchedOsHooks::SchedOsConfig{SCHED_OTHER, 0, 0};
+  } else {
+    initial_config_ = res.value();
+  }
+}
+
+Status ThreadMgr::Add(SchedPolicyAndPrio spp) {
+  prios_.push_back(spp);
+  return RecalcAndUpdatePrio();
+}
+
+void ThreadMgr::Remove(SchedPolicyAndPrio spp) {
+  auto it = std::find(prios_.begin(), prios_.end(), spp);
+  if (it != prios_.end()) {
+    prios_.erase(it);
+  }
+  
+  
+  
+  
+  
+  for (;;) {
+    if (auto res = RecalcAndUpdatePrio(); !res.ok()) {
+      PERFETTO_ELOG("%s", res.c_message());
+    } else {
+      break;
+    }
+  }
+}
+
+Status ThreadMgr::RecalcAndUpdatePrio() {
+  if (prios_.empty()) {
+    return os_hooks_->SetSchedConfig(initial_config_);
+  }
+  
+  auto max_prio = std::max_element(prios_.begin(), prios_.end());
+  SchedOsHooks::SchedOsConfig os_config{};
+  switch (max_prio->policy) {
+    case SchedPolicyAndPrio::Policy::kSchedOther:
+      os_config = SchedOsHooks::SchedOsConfig{
+          SCHED_OTHER, 0, -1 * static_cast<int>(max_prio->prio)};
+      break;
+    case SchedPolicyAndPrio::Policy::kSchedFifo:
+      os_config = SchedOsHooks::SchedOsConfig{
+          SCHED_FIFO, static_cast<int>(max_prio->prio), 0};
+      break;
+  }
+  Status res = os_hooks_->SetSchedConfig(os_config);
+  if (!res.ok()) {
+    prios_.erase(max_prio);
+    return res;
+  }
+  return OkStatus();
+}
+
+void ThreadMgr::ResetForTesting(SchedOsHooks* os_hooks) {
+  os_hooks_ = os_hooks;
+  initial_config_ = os_hooks_->GetCurrentSchedConfig().value();
+  prios_.clear();
+}
+
+}  
+
+SchedOsHooks* SchedOsHooks::GetInstance() {
+  static auto* instance = new SchedOsHooks();
+  return instance;
+}
+
+Status SchedOsHooks::SetSchedConfig(const SchedOsConfig& arg) {
+  sched_param param{};
+  param.sched_priority = arg.rt_prio;
+  int ret = sched_setscheduler(kCurrentPid, arg.policy, &param);
+  if (ret == -1) {
+    return ErrStatus("sched_setscheduler(%d, %d) failed (errno: %d, %s)",
+                     arg.policy, arg.rt_prio, errno, strerror(errno));
+  }
+  
+  
+  
+  if (arg.rt_prio == 0) {
+    ret = setpriority(PRIO_PROCESS, kCurrentPid, arg.nice);
+    if (ret == -1) {
+      return ErrStatus("setpriority(%d) failed (errno: %d, %s)", arg.nice,
+                       errno, strerror(errno));
+    }
+  }
+  return OkStatus();
+}
+
+StatusOr<SchedOsHooks::SchedOsConfig> SchedOsHooks::GetCurrentSchedConfig()
+    const {
+  int policy = sched_getscheduler(kCurrentPid);
+  if (policy == -1) {
+    return ErrStatus("sched_getscheduler failed (errno: %d, %s)", errno,
+                     strerror(errno));
+  }
+  sched_param param{};
+  if (sched_getparam(kCurrentPid, &param) == -1) {
+    return ErrStatus("sched_getparam failed (errno: %d, %s)", errno,
+                     strerror(errno));
+  }
+  int nice = 0;
+  
+  
+  
+  if (param.sched_priority == 0) {
+    errno = 0;
+    nice = getpriority(PRIO_PROCESS, kCurrentPid);
+    if (nice == -1 && errno != 0) {
+      return ErrStatus("getpriority failed (errno: %d, %s)", errno,
+                       strerror(errno));
+    }
+  }
+  return SchedOsConfig{policy, param.sched_priority, nice};
+}
+
+
+StatusOr<ScopedSchedBoost> ScopedSchedBoost::Boost(SchedPolicyAndPrio spp) {
+  auto res = ThreadMgr::GetInstance()->Add(spp);
+  RETURN_IF_ERROR(res);
+  return ScopedSchedBoost(spp);
+}
+
+ScopedSchedBoost::ScopedSchedBoost(ScopedSchedBoost&& other) noexcept {
+  this->policy_and_prio_ = other.policy_and_prio_;
+  other.policy_and_prio_ = std::nullopt;
+}
+
+ScopedSchedBoost& ScopedSchedBoost::operator=(
+    ScopedSchedBoost&& other) noexcept {
+  if (this != &other) {
+    this->~ScopedSchedBoost();
+    new (this) ScopedSchedBoost(std::move(other));
+  }
+  return *this;
+}
+
+ScopedSchedBoost::~ScopedSchedBoost() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!policy_and_prio_.has_value())
+    return;
+  ThreadMgr::GetInstance()->Remove(*policy_and_prio_);
+  policy_and_prio_ = std::nullopt;
+}
+
+
+void ScopedSchedBoost::ResetForTesting(SchedOsHooks* os_manager) {
+  ThreadMgr::GetInstance()->ResetForTesting(os_manager);
+}
+
+#else
+
+
+SchedOsHooks* SchedOsHooks::GetInstance() {
+  return nullptr;
+}
+
+Status SchedOsHooks::SetSchedConfig(const SchedOsHooks::SchedOsConfig&) {
+  return ErrStatus("SchedOsHooks is supported only on Linux/Android");
+}
+
+StatusOr<SchedOsHooks::SchedOsConfig> SchedOsHooks::GetCurrentSchedConfig()
+    const {
+  return ErrStatus("SchedOsHooks is supported only on Linux/Android");
+}
+
+
+StatusOr<ScopedSchedBoost> ScopedSchedBoost::Boost(SchedPolicyAndPrio) {
+  return ErrStatus("ScopedSchedBoost is supported only on Linux/Android");
+}
+
+ScopedSchedBoost::ScopedSchedBoost(ScopedSchedBoost&&) noexcept = default;
+ScopedSchedBoost& ScopedSchedBoost::operator=(ScopedSchedBoost&&) noexcept =
+    default;
+ScopedSchedBoost::~ScopedSchedBoost() = default;
+
+#endif  
 
 }  
 
@@ -5438,108 +8283,6 @@ bool Status::ErasePayload(std::string_view type_url) {
 
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
-#define INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
-
-#include <string>
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-class StringSplitter {
- public:
-  
-  enum class EmptyTokenMode {
-    DISALLOW_EMPTY_TOKENS,
-    ALLOW_EMPTY_TOKENS,
-
-    DEFAULT = DISALLOW_EMPTY_TOKENS,
-  };
-
-  
-  
-  StringSplitter(std::string,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  StringSplitter(char* str,
-                 size_t size,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  
-  
-  StringSplitter(StringSplitter*,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  bool Next();
-
-  
-  
-  char* NextToken() { return Next() ? cur_token() : nullptr; }
-
-  
-  
-  
-  
-  char* cur_token() { return cur_; }
-
-  
-  size_t cur_token_size() const { return cur_size_; }
-
-  
-  
-  char* remainder() { return next_; }
-
-  
-  size_t remainder_size() { return static_cast<size_t>(end_ - next_); }
-
- private:
-  StringSplitter(const StringSplitter&) = delete;
-  StringSplitter& operator=(const StringSplitter&) = delete;
-  void Initialize(char* str, size_t size);
-
-  std::string str_;
-  char* cur_;
-  size_t cur_size_;
-  char* next_;
-  char* end_;  
-  const char delimiter_;
-  const EmptyTokenMode empty_token_mode_;
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #include <utility>
 
@@ -5643,7 +8386,7 @@ bool StringSplitter::Next() {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #include <xlocale.h>
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 #include <cinttypes>
@@ -5656,7 +8399,7 @@ namespace base {
 
 
 double StrToD(const char* nptr, char** endptr) {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) ||           \
     PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   static auto c_locale = newlocale(LC_ALL, "C", nullptr);
@@ -5689,6 +8432,11 @@ bool Contains(const std::string& haystack, const std::string& needle) {
 
 bool Contains(const std::string& haystack, const char needle) {
   return haystack.find(needle) != std::string::npos;
+}
+
+bool Contains(const std::vector<std::string>& haystack,
+              const std::string& needle) {
+  return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
 }
 
 size_t Find(const StringView& needle, const StringView& haystack) {
@@ -5740,16 +8488,23 @@ std::vector<std::string> SplitString(const std::string& text,
   return output;
 }
 
+std::string_view TrimWhitespace(std::string_view str) {
+  static constexpr char kWhitespaces[] = "\t\n ";
+  size_t front_idx = str.find_first_not_of(kWhitespaces);
+  if (front_idx == std::string_view::npos)
+    return {};
+  std::string_view front_trimmed = str.substr(front_idx);
+  size_t end_idx = front_trimmed.find_last_not_of(kWhitespaces);
+  PERFETTO_DCHECK(end_idx != std::string_view::npos);
+  return front_trimmed.substr(0, end_idx + 1);
+}
+
 std::string TrimWhitespace(const std::string& str) {
-  std::string whitespaces = "\t\n ";
+  return std::string(TrimWhitespace(std::string_view(str)));
+}
 
-  size_t front_idx = str.find_first_not_of(whitespaces);
-  std::string front_trimmed =
-      front_idx == std::string::npos ? "" : str.substr(front_idx);
-
-  size_t end_idx = front_trimmed.find_last_not_of(whitespaces);
-  return end_idx == std::string::npos ? ""
-                                      : front_trimmed.substr(0, end_idx + 1);
+std::string_view TrimWhitespace(const char* str) {
+  return TrimWhitespace(std::string_view(str));
 }
 
 std::string StripPrefix(const std::string& str, const std::string& prefix) {
@@ -5837,6 +8592,83 @@ std::string ReplaceAll(std::string str,
   return str;
 }
 
+bool CheckAsciiAndRemoveInvalidUTF8(base::StringView str, std::string& output) {
+  bool is_ascii = std::all_of(str.begin(), str.end(), [](char c) {
+    return (static_cast<unsigned char>(c) & 0b10000000) == 0b00000000;
+  });
+  if (is_ascii) {
+    return true;
+  }
+
+  
+  output.clear();
+  output.reserve(str.size());
+  for (size_t i = 0; i < str.size();) {
+    unsigned char c = static_cast<unsigned char>(str.data()[i]);
+    size_t num_bytes = 0;
+    bool valid_sequence = true;
+
+    if ((c & 0b10000000) == 0b00000000) {
+      num_bytes = 1;
+    } else if ((c & 0b11100000) == 0b11000000) {
+      num_bytes = 2;
+    } else if ((c & 0b11110000) == 0b11100000) {
+      num_bytes = 3;
+    } else if ((c & 0b11111000) == 0b11110000) {
+      num_bytes = 4;
+    } else {
+      valid_sequence = false;
+      
+      num_bytes = 1;
+    }
+
+    if (valid_sequence) {
+      
+      if (i + num_bytes > str.size()) {
+        valid_sequence = false;
+        num_bytes = 1;  
+      } else {
+        
+        if (num_bytes == 2 && c < 0b11000010) {  
+          valid_sequence = false;                
+        } else if (num_bytes == 3) {
+          unsigned char byte2 = static_cast<unsigned char>(str.data()[i + 1]);
+          if ((c == 0b11100000 && byte2 < 0b10100000) ||   
+              (c == 0b11101101 && byte2 >= 0b10100000)) {  
+            valid_sequence = false;
+          }
+        } else if (num_bytes == 4) {
+          unsigned char byte2 = static_cast<unsigned char>(str.data()[i + 1]);
+          if ((c == 0b11110000 && byte2 < 0b10010000) ||  
+              (c == 0b11110100 && byte2 > 0b10001111)) {  
+            valid_sequence = false;
+          }
+        }
+
+        if (valid_sequence && num_bytes > 1) {
+          for (size_t j = 1; j < num_bytes; ++j) {
+            unsigned char continuation_byte =
+                static_cast<unsigned char>(str.data()[i + j]);
+            if ((continuation_byte & 0b11000000) != 0b10000000) {
+              valid_sequence = false;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (valid_sequence) {
+      for (size_t j = 0; j < num_bytes; ++j) {
+        output.push_back(str.data()[i + j]);
+      }
+    }
+
+    i += num_bytes;
+  }
+  return false;
+}
+
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 bool WideToUTF8(const std::wstring& source, std::string& output) {
   if (source.empty() ||
@@ -5854,7 +8686,7 @@ bool WideToUTF8(const std::wstring& source, std::string& output) {
   }
   return true;
 }
-#endif 
+#endif  
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 bool UTF8ToWide(const std::string& source, std::wstring& output) {
@@ -5872,7 +8704,7 @@ bool UTF8ToWide(const std::string& source, std::wstring& output) {
   }
   return true;
 }
-#endif 
+#endif  
 
 size_t SprintfTrunc(char* dst, size_t dst_size, const char* fmt, ...) {
   if (PERFETTO_UNLIKELY(dst_size == 0))
@@ -6259,7 +9091,8 @@ class TempDir {
 #include <string.h>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <direct.h>
 #include <fileapi.h>
 #include <io.h>
@@ -6411,7 +9244,7 @@ TempDir::~TempDir() {
 
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 namespace perfetto {
@@ -6435,9 +9268,8 @@ ThreadChecker::ThreadChecker() {
 
 ThreadChecker::~ThreadChecker() = default;
 
-ThreadChecker::ThreadChecker(const ThreadChecker& other) {
-  thread_id_ = other.thread_id_.load();
-}
+ThreadChecker::ThreadChecker(const ThreadChecker& other)
+    : thread_id_(other.thread_id_.load()) {}
 
 ThreadChecker& ThreadChecker::operator=(const ThreadChecker& other) {
   thread_id_ = other.thread_id_.load();
@@ -6578,7 +9410,7 @@ inline bool GetThreadName(std::string&) {
 #include <zircon/syscalls.h>
 #include <zircon/types.h>
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 namespace perfetto {
@@ -6674,7 +9506,7 @@ bool GetThreadName(std::string& out_result) {
 
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -6895,6 +9727,7 @@ std::optional<int32_t> GetTimezoneOffsetMins() {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA)
 #include <limits.h>
 #include <stdlib.h>  
@@ -6904,6 +9737,10 @@ std::optional<int32_t> GetTimezoneOffsetMins() {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #include <mach-o/dyld.h>
 #include <mach/vm_page_size.h>
+#endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
+#include <sys/sysctl.h>
 #endif
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
@@ -6925,7 +9762,8 @@ std::optional<int32_t> GetTimezoneOffsetMins() {
 #endif  
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <io.h>
 #include <malloc.h>  
 #endif
@@ -7002,11 +9840,16 @@ CheckCpuOptimizations() {
   const bool have_bmi = (ebx >> 3) & 0x1;
   const bool have_bmi2 = (ebx >> 8) & 0x1;
 
-  if (!have_sse4_2 || !have_popcnt || !have_avx2 || !have_bmi || !have_bmi2) {
+  
+  PERFETTO_GETCPUID(eax, ebx, ecx, edx, 0x80000001, 0);
+  const bool have_lzcnt = ecx & (1u << 5);
+
+  if (!have_sse4_2 || !have_popcnt || !have_avx2 || !have_bmi || !have_bmi2 ||
+      !have_lzcnt) {
     fprintf(
         stderr,
-        "This executable requires a x86_64 cpu that supports SSE4.2, BMI2 and "
-        "AVX2.\n"
+        "This executable requires a x86_64 cpu that supports SSE4.2, BMI2, "
+        "AVX2 and LZCNT.\n"
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
         "On MacOS, this might be caused by running x86_64 binaries on arm64.\n"
         "See https://github.com/google/perfetto/issues/294 for more.\n"
@@ -7037,6 +9880,8 @@ uint32_t GetSysPageSizeSlowpath() {
   page_size = static_cast<uint32_t>(page_size_int > 0 ? page_size_int : 4096);
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   page_size = static_cast<uint32_t>(vm_page_size);
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
+  page_size = static_cast<uint32_t>(sysconf(_SC_PAGESIZE));
 #else
   page_size = 4096;
 #endif
@@ -7070,6 +9915,7 @@ void MaybeReleaseAllocatorMemToOS() {
 uid_t GetCurrentUserId() {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   return geteuid();
 #else
@@ -7100,7 +9946,9 @@ void UnsetEnv(const std::string& key) {
 void Daemonize(std::function<int()> parent_cb) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
+    (PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) &&  \
+     !PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE_TVOS))
   Pipe pipe = Pipe::Create(Pipe::kBothBlock);
   pid_t pid;
   switch (pid = fork()) {
@@ -7163,6 +10011,18 @@ std::string GetCurExecutablePath() {
   char buf[MAX_PATH];
   auto len = ::GetModuleFileNameA(nullptr , buf, sizeof(buf));
   self_path = std::string(buf, len);
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
+  char buf[PATH_MAX];
+  int mib[4], ret;
+  size_t len = sizeof(buf);
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_PROC;
+  mib[2] = KERN_PROC_PATHNAME;
+  mib[3] = -1;
+  ret = sysctl(mib, 4, buf, &len, NULL, 0);
+  PERFETTO_CHECK(ret == 0);
+  
+  self_path = std::string(buf);
 #else
   PERFETTO_FATAL(
       "GetCurExecutableDir() not implemented on the current platform");
@@ -7272,7 +10132,6 @@ std::string HexDump(const void* data_void, size_t len, size_t bytes_per_line) {
 #include <string.h>
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <string>
 
 
@@ -7344,87 +10203,7 @@ Uuid Uuidv4();
 
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_NO_DESTRUCTOR_H_
-#define INCLUDE_PERFETTO_EXT_BASE_NO_DESTRUCTOR_H_
 
-#include <new>
-#include <utility>
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class NoDestructor {
- public:
-  
-  
-  template <typename... Args>
-  explicit NoDestructor(Args&&... args) {
-    new (storage_) T(std::forward<Args>(args)...);
-  }
-
-  NoDestructor(const NoDestructor&) = delete;
-  NoDestructor& operator=(const NoDestructor&) = delete;
-  NoDestructor(NoDestructor&&) = delete;
-  NoDestructor& operator=(NoDestructor&&) = delete;
-
-  ~NoDestructor() = default;
-
-  
-
-
-
-
-  const T& ref() const {
-    auto* const cast = reinterpret_cast<const T*>(storage_);
-    return *cast;
-  }
-  T& ref() {
-    auto* const cast = reinterpret_cast<T*>(storage_);
-    return *cast;
-  }
-
- private:
-  alignas(T) char storage_[sizeof(T)];
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <mutex>
 #include <random>
 
 
@@ -7436,6 +10215,7 @@ namespace {
 
 constexpr char kHexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                             '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
 }  
 
 
@@ -7453,29 +10233,30 @@ Uuid Uuidv4() {
   
   
   
-  
-  static std::minstd_rand rng(
-      static_cast<uint32_t>(static_cast<uint64_t>(GetBootTimeNs().count()) ^
-                            static_cast<uint64_t>(GetWallTimeNs().count()) ^
-                            (reinterpret_cast<uintptr_t>(&kHexmap) >> 14)));
-  Uuid uuid;
-  auto& data = *uuid.data();
+  uint64_t boot_ns = static_cast<uint64_t>(GetBootTimeNs().count());
+  uint64_t epoch_ns = static_cast<uint64_t>(GetWallTimeNs().count());
 
   
-  
-  
-  static base::NoDestructor<std::mutex> rand_mutex;
-  std::unique_lock<std::mutex> rand_lock(rand_mutex.ref());
+  uint32_t code_ptr =
+      static_cast<uint32_t>(reinterpret_cast<uint64_t>(&Uuidv4) >> 12);
 
-  for (size_t i = 0; i < sizeof(data);) {
-    
-    
-    const auto rnd_data = static_cast<uint16_t>(rng());
-    memcpy(&data[i], &rnd_data, sizeof(rnd_data));
-    i += sizeof(rnd_data);
-  }
+  
+  uint32_t stack_ptr =
+      static_cast<uint32_t>(reinterpret_cast<uint64_t>(&code_ptr) >> 12);
 
-  return uuid;
+  uint32_t entropy[] = {static_cast<uint32_t>(boot_ns >> 32),
+                        static_cast<uint32_t>(boot_ns),
+                        static_cast<uint32_t>(epoch_ns >> 32),
+                        static_cast<uint32_t>(epoch_ns),
+                        code_ptr,
+                        stack_ptr};
+  std::seed_seq entropy_seq(entropy, entropy + ArraySize(entropy));
+
+  auto words = std::array<uint32_t, 4>();
+  entropy_seq.generate(words.begin(), words.end());
+  uint64_t msb = static_cast<uint64_t>(words[0]) << 32u | words[1];
+  uint64_t lsb = static_cast<uint64_t>(words[2]) << 32u | words[3];
+  return Uuid(static_cast<int64_t>(lsb), static_cast<int64_t>(msb));
 }
 
 Uuid::Uuid() {}
@@ -7662,10 +10443,15 @@ void WaitableEvent::Notify() {
 
 #include <stdint.h>
 
+#include <functional>
+
 namespace perfetto {
 namespace base {
 
+class TaskRunner;
+
 enum class WatchdogCrashReason;  
+struct WatchdogCrashInfo;        
 
 class Watchdog {
  public:
@@ -7683,7 +10469,8 @@ class Watchdog {
   Timer CreateFatalTimer(uint32_t , WatchdogCrashReason) {
     return Timer();
   }
-  void Start() {}
+  void Start(TaskRunner*  = nullptr,
+             std::function<void(WatchdogCrashInfo)>  = {}) {}
   void SetMemoryLimit(uint64_t , uint32_t ) {}
   void SetCpuLimit(uint32_t , uint32_t ) {}
 };
@@ -7733,6 +10520,28 @@ enum class WatchdogCrashReason {
   kMemGuardrail = 2,
   kTaskRunnerHung = 3,
   kTraceDidntStop = 4,
+};
+
+
+
+
+struct WatchdogCrashInfo {
+  int thread_id = 0;
+  WatchdogCrashReason reason = WatchdogCrashReason::kUnspecified;
+
+  
+  int64_t alarm_time_ms = 0;
+
+  
+  int timeout_s = 0;
+
+  
+  
+  
+  
+  int actual_mono_s = 0;
+  int actual_boot_s = 0;
+  int actual_cpu_s = 0;
 };
 
 
@@ -7790,6 +10599,7 @@ inline void RunTaskWithWatchdogGuard(const std::function<void()>& task) {
 
 
 
+
 #if PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
 
 #include <fcntl.h>
@@ -7815,6 +10625,7 @@ inline void RunTaskWithWatchdogGuard(const std::function<void()>& task) {
 
 
 
+
 namespace perfetto {
 namespace base {
 
@@ -7822,7 +10633,15 @@ namespace {
 
 constexpr uint32_t kDefaultPollingInterval = 30 * 1000;
 
+
+
+constexpr uint32_t kFatalHandlerGraceMs = 60 * 1000;
+
 base::CrashKey g_crash_key_reason("wdog_reason");
+base::CrashKey g_crash_key_timeout("wdog_timeout");
+base::CrashKey g_crash_key_actual_mono("wdog_actual_mono");
+base::CrashKey g_crash_key_actual_boot("wdog_actual_boot");
+base::CrashKey g_crash_key_actual_cpu("wdog_actual_cpu");
 
 bool IsMultipleOf(uint32_t number, uint32_t divisor) {
   return number >= divisor && number % divisor == 0;
@@ -7874,12 +10693,11 @@ Watchdog::~Watchdog() {
   }
   PERFETTO_DCHECK(enabled_);
   enabled_ = false;
-
   
   
   
   
-  struct itimerspec ts {};
+  struct itimerspec ts{};
   ts.it_value.tv_sec = 0;
   ts.it_value.tv_nsec = 1;
   timerfd_settime(*timer_fd_, 0, &ts, nullptr);
@@ -7927,7 +10745,7 @@ void Watchdog::RearmTimerFd_Locked() {
 
   
   
-  struct itimerspec ts {};
+  struct itimerspec ts{};
   if (it != timers_.end()) {
     ts.it_value = ToPosixTimespec(it->deadline);
   }
@@ -7937,12 +10755,19 @@ void Watchdog::RearmTimerFd_Locked() {
   PERFETTO_DCHECK(res == 0);
 }
 
-void Watchdog::Start() {
+void Watchdog::Start(TaskRunner* task_runner,
+                     std::function<void(WatchdogCrashInfo)> fatal_handler) {
   std::lock_guard<std::mutex> guard(mutex_);
   if (thread_.joinable()) {
     PERFETTO_DCHECK(enabled_);
   } else {
     PERFETTO_DCHECK(!enabled_);
+
+    
+    
+    
+    fatal_handler_task_runner_ = task_runner;
+    fatal_handler_ = std::move(fatal_handler);
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
@@ -7987,6 +10812,10 @@ void Watchdog::SetCpuLimit(uint32_t percentage, uint32_t window_ms) {
 void Watchdog::ThreadMain() {
   
   g_crash_key_reason.Register();
+  g_crash_key_timeout.Register();
+  g_crash_key_actual_boot.Register();
+  g_crash_key_actual_mono.Register();
+  g_crash_key_actual_cpu.Register();
 
   base::ScopedFile stat_fd(base::OpenFile("/proc/self/stat", O_RDONLY));
   if (!stat_fd) {
@@ -8027,24 +10856,42 @@ void Watchdog::ThreadMain() {
     auto res = PERFETTO_EINTR(read(*timer_fd_, &expired, sizeof(expired)));
     PERFETTO_DCHECK((res < 0 && (errno == EAGAIN)) ||
                     (res == sizeof(expired) && expired > 0));
-    const auto now = GetWallTimeMs();
+    const TimeMillis now_mono_ms = GetWallTimeMs();
 
     
-    int tid_to_kill = 0;
-    WatchdogCrashReason crash_reason{};
+    WatchdogCrashInfo info{};
     {
       std::lock_guard<std::mutex> guard(mutex_);
       for (const auto& timer : timers_) {
-        if (now >= timer.deadline) {
-          tid_to_kill = timer.thread_id;
-          crash_reason = timer.crash_reason;
+        if (now_mono_ms >= timer.deadline) {
+          info.thread_id = timer.thread_id;
+          info.reason = timer.crash_reason;
+          const TimeMillis now_boot_ms = GetBootTimeMs();
+          info.alarm_time_ms = now_boot_ms.count();
+          info.timeout_s =
+              static_cast<int>(std::chrono::duration_cast<TimeSeconds>(
+                                   timer.deadline - timer.ctime_mono)
+                                   .count());
+          info.actual_mono_s =
+              static_cast<int>(std::chrono::duration_cast<TimeSeconds>(
+                                   now_mono_ms - timer.ctime_mono)
+                                   .count());
+          info.actual_boot_s =
+              static_cast<int>(std::chrono::duration_cast<TimeSeconds>(
+                                   now_boot_ms - timer.ctime_boot)
+                                   .count());
+          info.actual_cpu_s =
+              static_cast<int>(std::chrono::duration_cast<TimeSeconds>(
+                                   GetProcessCPUTimeNs() - timer.ctime_cpu)
+                                   .count());
           break;
         }
       }
     }
 
-    if (tid_to_kill)
-      SerializeLogsAndKillThread(tid_to_kill, crash_reason);
+    if (info.thread_id) {
+      SerializeLogsAndKillThread(info.thread_id, info);
+    }
 
     
     lseek(stat_fd.get(), 0, SEEK_SET);
@@ -8056,6 +10903,7 @@ void Watchdog::ThreadMain() {
         static_cast<uint64_t>(stat.rss_pages) * base::GetSysPageSize();
 
     bool threshold_exceeded = false;
+    WatchdogCrashReason crash_reason{};
     {
       std::lock_guard<std::mutex> guard(mutex_);
       if (CheckMemory_Locked(rss_bytes) && !IsSyncMemoryTaggingEnabled()) {
@@ -8067,14 +10915,40 @@ void Watchdog::ThreadMain() {
       }
     }
 
-    if (threshold_exceeded)
-      SerializeLogsAndKillThread(getpid(), crash_reason);
+    if (threshold_exceeded) {
+      info.reason = crash_reason;
+      
+      SerializeLogsAndKillThread(getpid(), info);
+    }
   }
 }
 
 void Watchdog::SerializeLogsAndKillThread(int tid,
-                                          WatchdogCrashReason crash_reason) {
-  g_crash_key_reason.Set(static_cast<int>(crash_reason));
+                                          const WatchdogCrashInfo& info) {
+  g_crash_key_timeout.Set(info.timeout_s);
+  g_crash_key_actual_mono.Set(info.actual_mono_s);
+  g_crash_key_actual_boot.Set(info.actual_boot_s);
+  g_crash_key_actual_cpu.Set(info.actual_cpu_s);
+  g_crash_key_reason.Set(static_cast<int>(info.reason));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (fatal_handler_ && fatal_handler_task_runner_) {
+    fatal_handler_task_runner_->PostTask(
+        [h = std::move(fatal_handler_), info] { h(info); });
+    fatal_handler_ = nullptr;
+    fatal_handler_task_runner_ = nullptr;
+    if (!disable_kill_failsafe_for_testing_) {
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(kFatalHandlerGraceMs));
+    }
+  }
 
   
   
@@ -8186,7 +11060,13 @@ Watchdog::Timer::Timer(Watchdog* watchdog,
     : watchdog_(watchdog) {
   if (!ms)
     return;  
-  timer_data_.deadline = GetWallTimeMs() + std::chrono::milliseconds(ms);
+
+  TimeMillis now_mono = GetWallTimeMs();
+  timer_data_.deadline = now_mono + std::chrono::milliseconds(ms);
+  timer_data_.ctime_mono = now_mono;
+  timer_data_.ctime_boot = GetBootTimeMs();
+  timer_data_.ctime_cpu =
+      std::chrono::duration_cast<TimeMillis>(GetProcessCPUTimeNs());
   timer_data_.thread_id = GetThreadId();
   timer_data_.crash_reason = crash_reason;
   PERFETTO_DCHECK(watchdog_);
@@ -8343,8 +11223,54 @@ void WeakRunner::PostDelayedTask(std::function<void()> f,
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD) && \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+#include <perfetto_flags.h>
+#else
+
+
+#define PERFETTO_FLAGS(FLAG) PERFETTO_FLAGS_##FLAG
+
+#define PERFETTO_FLAGS_TEST_READ_ONLY_FLAG false
+#define PERFETTO_FLAGS_USE_LOCKFREE_TASKRUNNER \
+  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_LOCKFREE_TASKRUNNER)
+#define PERFETTO_FLAGS_BUFFER_CLONE_PRESERVE_READ_ITER true
+#define PERFETTO_FLAGS_USE_UNIX_SOCKET_INOTIFY \
+  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_SOCK_INOTIFY)
+#define PERFETTO_FLAGS_TRACK_EVENT_INCREMENTAL_STATE_CLEAR_NOT_DESTROY true
+#define PERFETTO_FLAGS_TRIGGER_PERFETTO_ON_TRACED_PROBES_DISCONNECT false
+#define PERFETTO_FLAGS_USE_PCRE2 PERFETTO_BUILDFLAG(PERFETTO_PCRE2)
+#define PERFETTO_FLAGS_SYS_STATS_LARGE_READ true
+
+#endif  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef INCLUDE_PERFETTO_EXT_BASE_UNIX_TASK_RUNNER_H_
 #define INCLUDE_PERFETTO_EXT_BASE_UNIX_TASK_RUNNER_H_
+
 
 
 
@@ -8436,7 +11362,7 @@ class UnixTaskRunner : public TaskRunner {
   std::vector<struct pollfd> poll_fds_;
 #endif
 
-  std::mutex lock_;
+  base::MaybeRtMutex lock_;
 
   std::deque<std::function<void()>> immediate_tasks_ PERFETTO_GUARDED_BY(lock_);
   std::multimap<TimeMillis, std::function<void()>> delayed_tasks_
@@ -8481,6 +11407,934 @@ class UnixTaskRunner : public TaskRunner {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_LOCK_FREE_TASK_RUNNER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_LOCK_FREE_TASK_RUNNER_H_
+
+
+
+
+
+
+
+
+
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <poll.h>
+#endif
+
+#include <array>
+#include <atomic>
+#include <thread>
+#include <unordered_map>
+
+namespace perfetto {
+namespace base {
+
+namespace task_runner_internal {
+class ScopedRefcount;
+struct Slab;
+
+
+constexpr uint32_t kNumRefcountBuckets = 32;
+constexpr size_t kSlabSize = 512;
+
+}  
+
+template <typename T>
+class TaskRunnerTest;
+
+
+
+
+
+class PERFETTO_EXPORT_COMPONENT LockFreeTaskRunner : public TaskRunner {
+ public:
+  LockFreeTaskRunner();
+  ~LockFreeTaskRunner() override;
+
+  void Run();
+  void Quit();
+
+  
+  
+  bool IsIdleForTesting();
+
+  
+  void PostTask(std::function<void()>) override;
+  void PostDelayedTask(std::function<void()>, uint32_t delay_ms) override;
+  void AddFileDescriptorWatch(PlatformHandle, std::function<void()>) override;
+  void RemoveFileDescriptorWatch(PlatformHandle) override;
+  bool RunsTasksOnCurrentThread() const override;
+
+  
+  
+  void AdvanceTimeForTesting(uint32_t ms);
+
+  
+  size_t slabs_allocated() const {
+    return slabs_allocated_.load(std::memory_order_relaxed);
+  }
+  size_t slabs_freed() const {
+    return slabs_freed_.load(std::memory_order_relaxed);
+  }
+
+ private:
+  using Slab = task_runner_internal::Slab;
+  using ScopedRefcount = task_runner_internal::ScopedRefcount;
+  friend class task_runner_internal::ScopedRefcount;
+
+  struct DelayedTask {
+    TimeMillis time;
+    uint64_t seq;
+    std::function<void()> task;
+
+    
+    
+    
+    bool operator<(const DelayedTask& other) const {
+      if (time != other.time)
+        return time > other.time;
+      return seq > other.seq;
+    }
+    bool operator==(const DelayedTask& other) const {
+      return time == other.time && seq == other.seq;
+    }
+  };
+
+  PERFETTO_ALWAYS_INLINE std::function<void()> PopNextImmediateTask();
+  std::function<void()> PopTaskRecursive(Slab*, Slab* next_slab);
+  std::function<void()> PopNextExpiredDelayedTask();
+  int GetDelayMsToNextTask() const;
+  void WakeUp() { wakeup_event_.Notify(); }
+  Slab* AllocNewSlab();
+  void DeleteSlab(Slab*);
+  void PostFileDescriptorWatches(uint64_t windows_wait_result);
+  void RunFileDescriptorWatch(PlatformHandle);
+  void UpdateWatchTasks();
+
+  
+  
+  std::atomic<Slab*> tail_{};  
+  std::atomic<Slab*> free_slab_{};
+
+  EventFd wakeup_event_;
+  bool quit_ = false;
+  std::thread::id run_task_thread_id_;
+
+  
+  
+  FlatSet<DelayedTask> delayed_tasks_;
+  uint64_t next_delayed_task_seq_ = 0;
+  std::atomic<uint32_t> advanced_time_for_testing_{};
+
+  
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  std::vector<PlatformHandle> poll_fds_;
+#else
+  std::vector<struct pollfd> poll_fds_;
+#endif
+
+  struct WatchTask {
+    std::function<void()> callback;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    
+    
+    
+    bool pending = false;
+#else
+    size_t poll_fd_index;  
+#endif
+  };
+
+  
+  std::unordered_map<PlatformHandle, WatchTask> watch_tasks_;
+  bool watch_tasks_changed_ = false;
+
+  
+  
+  
+  
+  
+  std::array<std::atomic<int32_t>, task_runner_internal::kNumRefcountBuckets>
+      refcounts_{};
+
+  
+  std::atomic<size_t> slabs_allocated_{};
+  std::atomic<size_t> slabs_freed_{};
+};
+
+namespace task_runner_internal {
+
+
+static uint32_t HashSlabPtr(Slab* slab) {
+  
+  
+  uint64_t u = reinterpret_cast<uintptr_t>(slab);
+  u &= 0x00FFFFFFFFFFFFFFull;  
+  u += 0x9E3779B97F4A7C15ull;
+  u = (u ^ (u >> 30)) * 0xBF58476D1CE4E5B9ull;
+  u = (u ^ (u >> 27)) * 0x94D049BB133111EBull;
+  return static_cast<uint32_t>((u ^ (u >> 31)) % kNumRefcountBuckets);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct Slab {
+  Slab();
+  ~Slab();
+
+  std::atomic<size_t> next_task_slot{0};
+
+  
+  
+  
+  std::array<std::function<void()>, kSlabSize> tasks{};
+
+  
+  
+  
+  using BitWord = size_t;
+  static constexpr size_t kBitsPerWord = sizeof(BitWord) * 8;
+  static constexpr size_t kNumWords = kSlabSize / kBitsPerWord;
+  std::array<std::atomic<BitWord>, kNumWords> tasks_written{};
+
+  
+  
+  std::array<BitWord, kNumWords> tasks_read{};
+
+  
+  
+  
+  
+  
+  
+  
+  Slab* prev = nullptr;
+};
+
+class ScopedRefcount {
+ public:
+  ScopedRefcount(LockFreeTaskRunner* tr, LockFreeTaskRunner::Slab* slab) {
+    bucket_ = &tr->refcounts_[HashSlabPtr(slab)];
+    auto prev_value = bucket_->fetch_add(1);
+    PERFETTO_DCHECK(prev_value >= 0);
+  }
+
+  ~ScopedRefcount() {
+    if (bucket_) {
+      auto prev_value = bucket_->fetch_sub(1);
+      PERFETTO_DCHECK(prev_value > 0);
+    }
+  }
+
+  ScopedRefcount(ScopedRefcount&& other) noexcept {
+    bucket_ = other.bucket_;
+    other.bucket_ = nullptr;
+  }
+
+  ScopedRefcount& operator=(ScopedRefcount&& other) noexcept {
+    this->~ScopedRefcount();
+    new (this) ScopedRefcount(std::move(other));
+    return *this;
+  }
+
+  ScopedRefcount(const ScopedRefcount&) = delete;
+  ScopedRefcount& operator=(const ScopedRefcount&) = delete;
+
+  std::atomic<int32_t>* bucket_{};
+};
+}  
+
+using MaybeLockFreeTaskRunner =
+    std::conditional_t<PERFETTO_FLAGS(USE_LOCKFREE_TASKRUNNER),
+                       LockFreeTaskRunner,
+                       UnixTaskRunner>;
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_BITS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_BITS_H_
+
+#include <cstddef>
+#include <cstdint>
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+#include <immintrin.h>
+#endif
+
+namespace perfetto {
+namespace base {
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros32(uint32_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_lzcnt_u32(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_clz(value)) : 32u;
+#else
+  unsigned long out;
+  return _BitScanReverse(&out, value) ? 31 - out : 32u;
+#endif
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros64(uint64_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_lzcnt_u64(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_clzll(value)) : 64u;
+#else
+  unsigned long out;
+  return _BitScanReverse64(&out, value) ? 63 - out : 64u;
+#endif
+}
+
+template <typename T>
+uint32_t CountLeadZeros(T value) {
+  if constexpr (sizeof(T) == 8)
+    return CountLeadZeros64(static_cast<uint64_t>(value));
+  return CountLeadZeros32(static_cast<uint32_t>(value));
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros64(uint64_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_tzcnt_u64(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_ctzll(value)) : 64u;
+#else
+  unsigned long out;
+  return _BitScanForward64(&out, value) ? static_cast<uint32_t>(out) : 64u;
+#endif
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros32(uint32_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return _tzcnt_u32(value);
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_ctz(value)) : 32u;
+#else
+  unsigned long out;
+  return _BitScanForward(&out, value) ? out : 32u;
+#endif
+}
+
+template <typename T>
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros(T value) {
+  if (sizeof(T) == 8) {
+    return CountTrailZeros64(static_cast<uint64_t>(value));
+  }
+  return CountTrailZeros32(static_cast<uint32_t>(value));
+}
+
+template <typename T>
+constexpr bool AllBitsSet(T v) {
+  return v == static_cast<T>(-1);
+}
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <windows.h>
+
+
+#include <synchapi.h>
+#else
+#include <poll.h>
+#include <unistd.h>
+#endif
+
+#include <thread>
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+namespace task_runner_internal {
+Slab::Slab() = default;
+Slab::~Slab() {
+  PERFETTO_DCHECK(!prev);  
+}
+}  
+
+namespace {
+static constexpr auto kSlabSize = task_runner_internal::kSlabSize;
+}
+
+LockFreeTaskRunner::LockFreeTaskRunner()
+    : run_task_thread_id_(std::this_thread::get_id()) {
+  static_assert((kSlabSize & (kSlabSize - 1)) == 0, "kSlabSize must be a pow2");
+  static_assert(kSlabSize >= Slab::kBitsPerWord);
+
+  
+  
+  tail_.store(AllocNewSlab());
+  free_slab_.store(AllocNewSlab());
+
+  AddFileDescriptorWatch(wakeup_event_.fd(), [] {
+    
+    PERFETTO_DFATAL("Should be unreachable.");
+  });
+}
+
+LockFreeTaskRunner::~LockFreeTaskRunner() {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+
+  for (Slab* slab = tail_.exchange(nullptr); slab;) {
+    Slab* prev = slab->prev;
+    slab->prev = nullptr;
+    delete slab;
+    slab = prev;
+  }
+  delete free_slab_.exchange(nullptr);
+}
+
+void LockFreeTaskRunner::PostTask(std::function<void()> closure) {
+  
+  
+  
+  PERFETTO_CHECK(PERFETTO_LIKELY(closure));
+  using BitWord = Slab::BitWord;
+  for (;;) {
+    Slab* slab = tail_.load();
+    PERFETTO_DCHECK(slab);  
+    ScopedRefcount scoped_refcount(this, slab);
+    
+    
+    
+    
+    
+    
+    
+    
+    if (PERFETTO_UNLIKELY(tail_.load() != slab)) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    size_t slot = slab->next_task_slot.fetch_add(1, std::memory_order_relaxed);
+
+    if (slot >= kSlabSize) {  
+      Slab* new_slab = AllocNewSlab();
+      new_slab->prev = slab;
+      new_slab->next_task_slot.store(1, std::memory_order_relaxed);
+      slot = 0;
+      if (PERFETTO_UNLIKELY(!tail_.compare_exchange_strong(slab, new_slab))) {
+        
+        
+        
+        
+        new_slab->prev = nullptr;
+        DeleteSlab(new_slab);
+        continue;
+      }
+
+      slab = new_slab;
+      scoped_refcount = ScopedRefcount(this, new_slab);
+    }
+
+    
+    PERFETTO_DCHECK(!slab->tasks[slot]);
+    slab->tasks[slot] = std::move(closure);
+    size_t s_word = slot / Slab::kBitsPerWord;
+    size_t s_bit = slot % Slab::kBitsPerWord;
+    BitWord s_mask = BitWord(1) << s_bit;
+    PERFETTO_DCHECK(
+        (slab->tasks_written[s_word].load(std::memory_order_relaxed) &
+         s_mask) == 0);
+    slab->tasks_written[s_word].fetch_or(s_mask, std::memory_order_release);
+
+    if (!RunsTasksOnCurrentThread()) {
+      
+      
+      
+      
+      WakeUp();
+    }
+    return;
+  }
+}
+
+void LockFreeTaskRunner::Run() {
+  PERFETTO_CHECK(run_task_thread_id_ == std::this_thread::get_id());
+  quit_ = false;
+
+  while (!quit_) {
+    
+    std::function<void()> immediate_task = PopNextImmediateTask();
+    std::function<void()> delayed_task = PopNextExpiredDelayedTask();
+    bool has_task = immediate_task || delayed_task;
+    int poll_timeout_ms = has_task ? 0 : GetDelayMsToNextTask();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    UpdateWatchTasks();
+
+    uint64_t windows_wait_res = 0;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    
+    
+    
+    
+    
+    
+    DWORD timeout =
+        poll_timeout_ms >= 0 ? static_cast<DWORD>(poll_timeout_ms) : INFINITE;
+    windows_wait_res =
+        WaitForMultipleObjects(static_cast<DWORD>(poll_fds_.size()),
+                               &poll_fds_[0], false, timeout);
+#else
+    platform::BeforeMaybeBlockingSyscall();
+    int ret = PERFETTO_EINTR(poll(
+        &poll_fds_[0], static_cast<nfds_t>(poll_fds_.size()), poll_timeout_ms));
+    platform::AfterMaybeBlockingSyscall();
+    PERFETTO_CHECK(ret >= 0);
+#endif
+    PostFileDescriptorWatches(windows_wait_res);
+
+    if (immediate_task) {
+      errno = 0;
+      RunTaskWithWatchdogGuard(std::move(immediate_task));
+    }
+
+    if (delayed_task) {
+      errno = 0;
+      RunTaskWithWatchdogGuard(std::move(delayed_task));
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  while (
+      std::any_of(refcounts_.begin(), refcounts_.end(),
+                  [](std::atomic<int32_t>& bucket) { return bucket.load(); })) {
+    std::this_thread::yield();
+  }
+}
+
+std::function<void()> LockFreeTaskRunner::PopNextImmediateTask() {
+  return PopTaskRecursive(tail_.load(), nullptr);
+}
+
+std::function<void()> LockFreeTaskRunner::PopTaskRecursive(Slab* slab,
+                                                           Slab* next_slab) {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+  Slab* prev = slab->prev;
+  if (PERFETTO_UNLIKELY(prev)) {
+    
+    
+    
+    auto task = PopTaskRecursive(prev, slab);
+    if (task)
+      return task;
+  }
+
+  size_t words_fully_consumed = 0;
+  for (size_t w = 0; w < Slab::kNumWords; ++w) {
+    using BitWord = Slab::BitWord;
+    BitWord wr_word = slab->tasks_written[w].load(std::memory_order_acquire);
+    BitWord rd_word = slab->tasks_read[w];
+    words_fully_consumed += base::AllBitsSet(rd_word) ? 1 : 0;
+    BitWord unread_word = wr_word & ~rd_word;
+
+    if (unread_word == 0)
+      continue;
+
+    
+    uint32_t bit = base::CountTrailZeros(unread_word);
+    BitWord bit_mask = BitWord(1) << bit;
+    size_t slot = w * Slab::kBitsPerWord + bit;
+    std::function<void()> task = std::move(slab->tasks[slot]);
+    slab->tasks[slot] = nullptr;
+    slab->tasks_read[w] |= bit_mask;
+    return task;
+  }  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  bool slab_fully_consumed = words_fully_consumed == Slab::kNumWords;
+
+  const uint32_t bucket = HashSlabPtr(slab);
+  if (slab_fully_consumed && next_slab && refcounts_[bucket].load() == 0) {
+    
+    
+    
+    PERFETTO_DCHECK(next_slab->prev == slab);
+    next_slab->prev = slab->prev;
+    slab->prev = nullptr;
+    DeleteSlab(slab);
+  }
+
+  return nullptr;
+}
+
+void LockFreeTaskRunner::Quit() {
+  
+  
+  
+  
+  
+  
+  if (!RunsTasksOnCurrentThread()) {
+    PostTask([this] { this->Quit(); });
+    return;
+  }
+  quit_ = true;
+}
+
+bool LockFreeTaskRunner::IsIdleForTesting() {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+  for (Slab* slab = tail_; slab; slab = slab->prev) {
+    for (size_t i = 0; i < Slab::kNumWords; ++i) {
+      if (slab->tasks_written[i] & ~slab->tasks_read[i]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+std::function<void()> LockFreeTaskRunner::PopNextExpiredDelayedTask() {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+  TimeMillis now =
+      GetWallTimeMs() +
+      TimeMillis(advanced_time_for_testing_.load(std::memory_order_relaxed));
+  if (!delayed_tasks_.empty() && delayed_tasks_.back().time <= now) {
+    auto task = std::move(delayed_tasks_.back().task);
+    delayed_tasks_.pop_back();
+    return task;
+  }
+  return nullptr;
+}
+
+int LockFreeTaskRunner::GetDelayMsToNextTask() const {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+  if (delayed_tasks_.empty()) {
+    return -1;  
+  }
+  TimeMillis now =
+      GetWallTimeMs() +
+      TimeMillis(advanced_time_for_testing_.load(std::memory_order_relaxed));
+  TimeMillis deadline = delayed_tasks_.back().time;
+  if (deadline <= now) {
+    return 0;
+  }
+  return static_cast<int>((deadline - now).count());
+}
+
+LockFreeTaskRunner::Slab* LockFreeTaskRunner::AllocNewSlab() {
+  Slab* free_slab = free_slab_.exchange(nullptr);
+  if (free_slab) {
+    free_slab->~Slab();
+    new (free_slab) Slab();
+    return free_slab;
+  }
+  slabs_allocated_.fetch_add(1, std::memory_order_relaxed);
+  return new Slab();
+}
+
+void LockFreeTaskRunner::DeleteSlab(Slab* slab) {
+  PERFETTO_DCHECK(!slab->prev);  
+  Slab* null_slab = nullptr;
+  if (!free_slab_.compare_exchange_strong(null_slab, slab)) {
+    slabs_freed_.fetch_add(1, std::memory_order_relaxed);
+    delete slab;
+  }
+}
+
+void LockFreeTaskRunner::PostDelayedTask(std::function<void()> task,
+                                         uint32_t delay_ms) {
+  if (!RunsTasksOnCurrentThread()) {
+    PostTask([this, task = std::move(task), delay_ms] {
+      this->PostDelayedTask(std::move(task), delay_ms);
+    });
+    return;
+  }
+
+  TimeMillis runtime =
+      GetWallTimeMs() + TimeMillis(delay_ms) +
+      TimeMillis(advanced_time_for_testing_.load(std::memory_order_relaxed));
+  delayed_tasks_.insert(
+      DelayedTask{runtime, next_delayed_task_seq_++, std::move(task)});
+}
+
+void LockFreeTaskRunner::AdvanceTimeForTesting(uint32_t ms) {
+  advanced_time_for_testing_.fetch_add(ms);
+  WakeUp();
+}
+
+void LockFreeTaskRunner::PostFileDescriptorWatches(
+    uint64_t windows_wait_result) {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+  for (size_t i = 0; i < poll_fds_.size(); i++) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    const PlatformHandle handle = poll_fds_[i];
+    
+    
+    
+    if (i != windows_wait_result &&
+        WaitForSingleObject(handle, 0) != WAIT_OBJECT_0) {
+      continue;
+    }
+#else
+    base::ignore_result(windows_wait_result);
+    const PlatformHandle handle = poll_fds_[i].fd;
+    if (!(poll_fds_[i].revents & (POLLIN | POLLHUP)))
+      continue;
+    poll_fds_[i].revents = 0;
+#endif
+
+    
+    
+    if (handle == wakeup_event_.fd()) {
+      wakeup_event_.Clear();
+      continue;
+    }
+
+    
+    
+    PostTask([this, handle] { this->RunFileDescriptorWatch(handle); });
+
+    
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    
+    
+    
+    auto it = watch_tasks_.find(handle);
+    PERFETTO_CHECK(it != watch_tasks_.end());
+    PERFETTO_DCHECK(!it->second.pending);
+    it->second.pending = true;
+#else
+    
+    
+    PERFETTO_DCHECK(poll_fds_[i].fd >= 0);
+    poll_fds_[i].fd = -poll_fds_[i].fd;
+#endif
+  }
+}
+
+void LockFreeTaskRunner::RunFileDescriptorWatch(PlatformHandle fd) {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+
+  std::function<void()> task;
+  auto it = watch_tasks_.find(fd);
+  if (it == watch_tasks_.end())
+    return;
+  WatchTask& watch_task = it->second;
+
+  
+  
+  UpdateWatchTasks();
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  
+  
+  
+  PERFETTO_DCHECK(watch_task.pending);
+  watch_task.pending = false;
+#else
+  size_t fd_index = watch_task.poll_fd_index;
+  PERFETTO_DCHECK(fd_index < poll_fds_.size());
+  PERFETTO_DCHECK(::abs(poll_fds_[fd_index].fd) == fd);
+  poll_fds_[fd_index].fd = fd;
+#endif
+  task = watch_task.callback;
+  errno = 0;
+  RunTaskWithWatchdogGuard(task);
+}
+
+void LockFreeTaskRunner::UpdateWatchTasks() {
+  PERFETTO_DCHECK(RunsTasksOnCurrentThread());
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  if (!watch_tasks_changed_)
+    return;
+  watch_tasks_changed_ = false;
+#endif
+  poll_fds_.clear();
+  for (auto& it : watch_tasks_) {
+    PlatformHandle handle = it.first;
+    WatchTask& watch_task = it.second;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    if (!watch_task.pending)
+      poll_fds_.push_back(handle);
+#else
+    watch_task.poll_fd_index = poll_fds_.size();
+    poll_fds_.push_back({handle, POLLIN | POLLHUP, 0});
+#endif
+  }
+}
+
+void LockFreeTaskRunner::AddFileDescriptorWatch(PlatformHandle fd,
+                                                std::function<void()> task) {
+  PERFETTO_DCHECK(PlatformHandleChecker::IsValid(fd));
+
+  if (!RunsTasksOnCurrentThread()) {
+    PostTask([this, task = std::move(task), fd] {
+      this->AddFileDescriptorWatch(fd, std::move(task));
+    });
+    return;
+  }
+
+  PERFETTO_DCHECK(!watch_tasks_.count(fd));
+  WatchTask& watch_task = watch_tasks_[fd];
+  watch_task.callback = std::move(task);
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  watch_task.pending = false;
+#else
+  watch_task.poll_fd_index = SIZE_MAX;
+#endif
+  watch_tasks_changed_ = true;
+}
+
+void LockFreeTaskRunner::RemoveFileDescriptorWatch(PlatformHandle fd) {
+  if (!RunsTasksOnCurrentThread()) {
+    PostTask([this, fd] { this->RemoveFileDescriptorWatch(fd); });
+    return;
+  }
+
+  PERFETTO_DCHECK(watch_tasks_.count(fd));
+  watch_tasks_.erase(fd);
+  watch_tasks_changed_ = true;
+}
+
+bool LockFreeTaskRunner::RunsTasksOnCurrentThread() const {
+  return run_task_thread_id_ == std::this_thread::get_id();
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef INCLUDE_PERFETTO_EXT_BASE_THREAD_TASK_RUNNER_H_
 #define INCLUDE_PERFETTO_EXT_BASE_THREAD_TASK_RUNNER_H_
 
@@ -8491,6 +12345,8 @@ class UnixTaskRunner : public TaskRunner {
 
 namespace perfetto {
 namespace base {
+
+
 
 
 
@@ -8520,6 +12376,8 @@ class PERFETTO_EXPORT_COMPONENT ThreadTaskRunner : public TaskRunner {
   
   uint64_t GetThreadCPUTimeNsForTesting();
 
+  PlatformThreadId GetThreadIdForTesting();
+
   
   
   
@@ -8527,7 +12385,7 @@ class PERFETTO_EXPORT_COMPONENT ThreadTaskRunner : public TaskRunner {
   
   
   
-  UnixTaskRunner* get() const { return task_runner_; }
+  MaybeLockFreeTaskRunner* get() const { return task_runner_; }
 
   
   
@@ -8539,11 +12397,11 @@ class PERFETTO_EXPORT_COMPONENT ThreadTaskRunner : public TaskRunner {
 
  private:
   explicit ThreadTaskRunner(const std::string& name);
-  void RunTaskThread(std::function<void(UnixTaskRunner*)> initializer);
+  void RunTaskThread(std::function<void(MaybeLockFreeTaskRunner*)> initializer);
 
   std::thread thread_;
   std::string name_;
-  UnixTaskRunner* task_runner_ = nullptr;
+  MaybeLockFreeTaskRunner* task_runner_ = nullptr;
 };
 
 }  
@@ -8600,7 +12458,6 @@ ThreadTaskRunner& ThreadTaskRunner::operator=(ThreadTaskRunner&& other) {
 
 ThreadTaskRunner::~ThreadTaskRunner() {
   if (task_runner_) {
-    PERFETTO_CHECK(!task_runner_->QuitCalled());
     task_runner_->Quit();
 
     PERFETTO_DCHECK(thread_.joinable());
@@ -8613,8 +12470,8 @@ ThreadTaskRunner::ThreadTaskRunner(const std::string& name) : name_(name) {
   std::mutex init_lock;
   std::condition_variable init_cv;
 
-  std::function<void(UnixTaskRunner*)> initializer =
-      [this, &init_lock, &init_cv](UnixTaskRunner* task_runner) {
+  std::function<void(MaybeLockFreeTaskRunner*)> initializer =
+      [this, &init_lock, &init_cv](MaybeLockFreeTaskRunner* task_runner) {
         std::lock_guard<std::mutex> lock(init_lock);
         task_runner_ = task_runner;
         
@@ -8632,12 +12489,12 @@ ThreadTaskRunner::ThreadTaskRunner(const std::string& name) : name_(name) {
 }
 
 void ThreadTaskRunner::RunTaskThread(
-    std::function<void(UnixTaskRunner*)> initializer) {
+    std::function<void(MaybeLockFreeTaskRunner*)> initializer) {
   if (!name_.empty()) {
     base::MaybeSetThreadName(name_);
   }
 
-  UnixTaskRunner task_runner;
+  MaybeLockFreeTaskRunner task_runner;
   task_runner.PostTask(std::bind(std::move(initializer), &task_runner));
   task_runner.Run();
 }
@@ -8664,6 +12521,11 @@ uint64_t ThreadTaskRunner::GetThreadCPUTimeNsForTesting() {
     thread_time_ns = static_cast<uint64_t>(base::GetThreadCPUTimeNs().count());
   });
   return thread_time_ns;
+}
+PlatformThreadId ThreadTaskRunner::GetThreadIdForTesting() {
+  PlatformThreadId thread_id = static_cast<PlatformThreadId>(-1);
+  PostTaskAndWaitForTesting([&thread_id] { thread_id = GetThreadId(); });
+  return thread_id;
 }
 
 void ThreadTaskRunner::PostTask(std::function<void()> task) {
@@ -8717,7 +12579,8 @@ bool ThreadTaskRunner::RunsTasksOnCurrentThread() const {
 #include <stdlib.h>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <Windows.h>
+#include <windows.h>
+
 #include <synchapi.h>
 #else
 #include <unistd.h>
@@ -8748,13 +12611,13 @@ void UnixTaskRunner::Run() {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   created_thread_id_.store(GetThreadId(), std::memory_order_relaxed);
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     quit_ = false;
   }
   for (;;) {
     int poll_timeout_ms;
     {
-      std::lock_guard<std::mutex> lock(lock_);
+      std::lock_guard<base::MaybeRtMutex> lock(lock_);
       if (quit_)
         return;
       poll_timeout_ms = GetDelayMsToNextTaskLocked();
@@ -8790,23 +12653,23 @@ void UnixTaskRunner::Run() {
 }
 
 void UnixTaskRunner::Quit() {
-  std::lock_guard<std::mutex> lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
   quit_ = true;
   WakeUp();
 }
 
 bool UnixTaskRunner::QuitCalled() {
-  std::lock_guard<std::mutex> lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
   return quit_;
 }
 
 bool UnixTaskRunner::IsIdleForTesting() {
-  std::lock_guard<std::mutex> lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
   return immediate_tasks_.empty();
 }
 
 void UnixTaskRunner::AdvanceTimeForTesting(uint32_t ms) {
-  std::lock_guard<std::mutex> lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
   advanced_time_for_testing_ += TimeMillis(ms);
 }
 
@@ -8837,7 +12700,7 @@ void UnixTaskRunner::RunImmediateAndDelayedTask() {
   std::function<void()> delayed_task;
   TimeMillis now = GetWallTimeMs();
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     if (!immediate_tasks_.empty()) {
       immediate_task = std::move(immediate_tasks_.front());
       immediate_tasks_.pop_front();
@@ -8911,7 +12774,7 @@ void UnixTaskRunner::PostFileDescriptorWatches(uint64_t windows_wait_result) {
 void UnixTaskRunner::RunFileDescriptorWatch(PlatformHandle fd) {
   std::function<void()> task;
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     auto it = watch_tasks_.find(fd);
     if (it == watch_tasks_.end())
       return;
@@ -8954,7 +12817,7 @@ int UnixTaskRunner::GetDelayMsToNextTaskLocked() const {
 void UnixTaskRunner::PostTask(std::function<void()> task) {
   bool was_empty;
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     was_empty = immediate_tasks_.empty();
     immediate_tasks_.push_back(std::move(task));
   }
@@ -8966,7 +12829,7 @@ void UnixTaskRunner::PostDelayedTask(std::function<void()> task,
                                      uint32_t delay_ms) {
   TimeMillis runtime = GetWallTimeMs() + TimeMillis(delay_ms);
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     delayed_tasks_.insert(
         std::make_pair(runtime + advanced_time_for_testing_, std::move(task)));
   }
@@ -8977,7 +12840,7 @@ void UnixTaskRunner::AddFileDescriptorWatch(PlatformHandle fd,
                                             std::function<void()> task) {
   PERFETTO_DCHECK(PlatformHandleChecker::IsValid(fd));
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     PERFETTO_DCHECK(!watch_tasks_.count(fd));
     WatchTask& watch_task = watch_tasks_[fd];
     watch_task.callback = std::move(task);
@@ -8994,7 +12857,7 @@ void UnixTaskRunner::AddFileDescriptorWatch(PlatformHandle fd,
 void UnixTaskRunner::RemoveFileDescriptorWatch(PlatformHandle fd) {
   PERFETTO_DCHECK(PlatformHandleChecker::IsValid(fd));
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> lock(lock_);
     PERFETTO_DCHECK(watch_tasks_.count(fd));
     watch_tasks_.erase(fd);
     watch_tasks_changed_ = true;
@@ -9220,6 +13083,10 @@ class Subprocess {
   Status Poll();
 
   
+  
+  void Kill(int sig_num = 0);
+
+  
   void KillAndWaitForTermination(int sig_num = 0);
 
   PlatformProcessId pid() const { return s_->pid; }
@@ -9276,7 +13143,7 @@ class Subprocess {
   };
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-  static void StdinThread(MovableState*, std::string input);
+  static void StdinThread(MovableState*, const std::string& input);
   static void StdoutErrThread(MovableState*);
 #else
   void TryPushStdin();
@@ -9395,6 +13262,7 @@ std::string Subprocess::Args::GetCmdString() const {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 
 #include <fcntl.h>
@@ -9644,7 +13512,7 @@ void Subprocess::Start() {
   auto* rusage = s_->rusage.get();
   s_->waitpid_thread = std::thread([pid, exit_status_pipe_wr, rusage] {
     int pid_stat = -1;
-    struct rusage usg {};
+    struct rusage usg{};
     int wait_res = PERFETTO_EINTR(wait4(pid, &pid_stat, 0, &usg));
     PERFETTO_CHECK(wait_res == pid);
 
@@ -9815,8 +13683,12 @@ void Subprocess::TryReadStdoutAndErr() {
   }
 }
 
-void Subprocess::KillAndWaitForTermination(int sig_num) {
+void Subprocess::Kill(int sig_num) {
   kill(s_->pid, sig_num ? sig_num : SIGKILL);
+}
+
+void Subprocess::KillAndWaitForTermination(int sig_num) {
+  Kill(sig_num);
   Wait();
   
   PERFETTO_DCHECK(!s_->waitpid_thread.joinable());
@@ -9855,7 +13727,7 @@ void Subprocess::KillAndWaitForTermination(int sig_num) {
 #include <mutex>
 #include <tuple>
 
-#include <Windows.h>
+#include <windows.h>
 
 
 
@@ -9999,7 +13871,7 @@ void Subprocess::Start() {
 }
 
 
-void Subprocess::StdinThread(MovableState* s, std::string input) {
+void Subprocess::StdinThread(MovableState* s, const std::string& input) {
   size_t input_written = 0;
   while (input_written < input.size()) {
     DWORD wsize = 0;
@@ -10152,9 +14024,13 @@ bool Subprocess::Wait(int timeout_ms) {
   return true;
 }
 
-void Subprocess::KillAndWaitForTermination(int exit_code) {
+void Subprocess::Kill(int exit_code) {
   auto code = exit_code ? static_cast<DWORD>(exit_code) : STATUS_CONTROL_C_EXIT;
   ::TerminateProcess(*s_->win_proc_handle, code);
+}
+
+void Subprocess::KillAndWaitForTermination(int exit_code) {
+  Kill(exit_code);
   Wait();
   
   PERFETTO_DCHECK(!s_->stdin_thread.joinable());
@@ -10604,10 +14480,6 @@ namespace protozero {
 MessageArena::MessageArena() {
   
   blocks_.emplace_front();
-  static_assert(
-      std::alignment_of<decltype(blocks_.front().storage[0])>::value >=
-          alignof(Message),
-      "MessageArea's storage is not properly aligned");
 }
 
 MessageArena::~MessageArena() = default;
@@ -10621,7 +14493,7 @@ Message* MessageArena::NewMessage() {
     block = &blocks_.front();
   }
   const auto idx = block->entries++;
-  void* storage = &block->storage[idx];
+  void* storage = block->storage[idx];
   PERFETTO_ASAN_UNPOISON(storage, sizeof(Message));
   return new (storage) Message();
 }
@@ -10744,12 +14616,6 @@ ParseFieldResult ParseOneField(const uint8_t* const buffer,
                                const uint8_t* const end) {
   ParseFieldResult res{ParseFieldResult::kAbort, buffer, Field{}};
 
-  
-  
-  
-  
-  const uint8_t kFieldTypeNumBits = 3;
-  const uint64_t kFieldTypeMask = (1 << kFieldTypeNumBits) - 1;  
   const uint8_t* pos = buffer;
 
   
@@ -10766,11 +14632,13 @@ ParseFieldResult ParseOneField(const uint8_t* const buffer,
     pos = next;
   }
 
-  uint32_t field_id = static_cast<uint32_t>(preamble >> kFieldTypeNumBits);
+  uint32_t field_id =
+      static_cast<uint32_t>(proto_utils::GetTagFieldId(preamble));
   if (field_id == 0 || pos >= end)
     return res;
 
-  auto field_type = static_cast<uint8_t>(preamble & kFieldTypeMask);
+  auto field_type =
+      static_cast<uint8_t>(proto_utils::GetTagFieldType(preamble));
   const uint8_t* new_pos = pos;
   uint64_t int_value = 0;
   uint64_t size = 0;
@@ -11054,6 +14922,24 @@ std::vector<uint8_t> ScatteredHeapBuffer::StitchSlices() {
   return buffer;
 }
 
+std::pair<std::unique_ptr<uint8_t[]>, size_t>
+ScatteredHeapBuffer::StitchAsUniquePtr() {
+  size_t stitched_size = 0u;
+  const auto& slices = GetSlices();
+  for (const auto& slice : slices)
+    stitched_size += slice.size() - slice.unused_bytes();
+
+  std::unique_ptr<uint8_t[]> buffer(new uint8_t[stitched_size]);
+  uint8_t* ptr = buffer.get();
+  for (const auto& slice : slices) {
+    auto used_range = slice.GetUsedRange();
+    memcpy(ptr, used_range.begin, used_range.size());
+    ptr += used_range.size();
+  }
+
+  return std::make_pair(std::move(buffer), stitched_size);
+}
+
 std::vector<protozero::ContiguousMemoryRange> ScatteredHeapBuffer::GetRanges() {
   std::vector<protozero::ContiguousMemoryRange> ranges;
   for (const auto& slice : GetSlices())
@@ -11190,11 +15076,13 @@ void ScatteredStreamWriter::WriteBytesSlowPath(const uint8_t* src,
 
 
 uint8_t* ScatteredStreamWriter::ReserveBytes(size_t size) {
-  if (write_ptr_ + size > cur_range_.end) {
+  PERFETTO_DCHECK(write_ptr_ <= cur_range_.end);
+  if (size > static_cast<size_t>(cur_range_.end - write_ptr_)) {
     
     
     Extend();
-    PERFETTO_DCHECK(write_ptr_ + size <= cur_range_.end);
+    PERFETTO_DCHECK(write_ptr_ <= cur_range_.end);
+    PERFETTO_DCHECK(size <= static_cast<size_t>(cur_range_.end - write_ptr_));
   }
   uint8_t* begin = write_ptr_;
   write_ptr_ += size;
@@ -11276,6 +15164,609 @@ CppMessageObj::~CppMessageObj() = default;
 MessageFinalizationListener::~MessageFinalizationListener() = default;
 
 }  
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+VmOpDel::VmOpDel() = default;
+VmOpDel::~VmOpDel() = default;
+VmOpDel::VmOpDel(const VmOpDel&) = default;
+VmOpDel& VmOpDel::operator=(const VmOpDel&) = default;
+VmOpDel::VmOpDel(VmOpDel&&) noexcept = default;
+VmOpDel& VmOpDel::operator=(VmOpDel&&) = default;
+
+bool VmOpDel::operator==(const VmOpDel& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool VmOpDel::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpDel::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpDel::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpDel::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmOpSet::VmOpSet() = default;
+VmOpSet::~VmOpSet() = default;
+VmOpSet::VmOpSet(const VmOpSet&) = default;
+VmOpSet& VmOpSet::operator=(const VmOpSet&) = default;
+VmOpSet::VmOpSet(VmOpSet&&) noexcept = default;
+VmOpSet& VmOpSet::operator=(VmOpSet&&) = default;
+
+bool VmOpSet::operator==(const VmOpSet& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool VmOpSet::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpSet::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpSet::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpSet::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmOpMerge::VmOpMerge() = default;
+VmOpMerge::~VmOpMerge() = default;
+VmOpMerge::VmOpMerge(const VmOpMerge&) = default;
+VmOpMerge& VmOpMerge::operator=(const VmOpMerge&) = default;
+VmOpMerge::VmOpMerge(VmOpMerge&&) noexcept = default;
+VmOpMerge& VmOpMerge::operator=(VmOpMerge&&) = default;
+
+bool VmOpMerge::operator==(const VmOpMerge& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(skip_submessages_, other.skip_submessages_)
+   && ::protozero::internal::gen_helpers::EqualsField(del_if_src_empty_, other.del_if_src_empty_);
+}
+
+bool VmOpMerge::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&skip_submessages_);
+        break;
+      case 2 :
+        field.get(&del_if_src_empty_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpMerge::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpMerge::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpMerge::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(1, skip_submessages_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(2, del_if_src_empty_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmOpRegLoad::VmOpRegLoad() = default;
+VmOpRegLoad::~VmOpRegLoad() = default;
+VmOpRegLoad::VmOpRegLoad(const VmOpRegLoad&) = default;
+VmOpRegLoad& VmOpRegLoad::operator=(const VmOpRegLoad&) = default;
+VmOpRegLoad::VmOpRegLoad(VmOpRegLoad&&) noexcept = default;
+VmOpRegLoad& VmOpRegLoad::operator=(VmOpRegLoad&&) = default;
+
+bool VmOpRegLoad::operator==(const VmOpRegLoad& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(cursor_, other.cursor_)
+   && ::protozero::internal::gen_helpers::EqualsField(dst_register_, other.dst_register_);
+}
+
+bool VmOpRegLoad::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&cursor_);
+        break;
+      case 2 :
+        field.get(&dst_register_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpRegLoad::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpRegLoad::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpRegLoad::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, cursor_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, dst_register_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmOpSelect::VmOpSelect() = default;
+VmOpSelect::~VmOpSelect() = default;
+VmOpSelect::VmOpSelect(const VmOpSelect&) = default;
+VmOpSelect& VmOpSelect::operator=(const VmOpSelect&) = default;
+VmOpSelect::VmOpSelect(VmOpSelect&&) noexcept = default;
+VmOpSelect& VmOpSelect::operator=(VmOpSelect&&) = default;
+
+bool VmOpSelect::operator==(const VmOpSelect& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(cursor_, other.cursor_)
+   && ::protozero::internal::gen_helpers::EqualsField(relative_path_, other.relative_path_)
+   && ::protozero::internal::gen_helpers::EqualsField(create_if_not_exist_, other.create_if_not_exist_);
+}
+
+int VmOpSelect::relative_path_size() const { return static_cast<int>(relative_path_.size()); }
+void VmOpSelect::clear_relative_path() { relative_path_.clear(); }
+VmOpSelect_PathComponent* VmOpSelect::add_relative_path() { relative_path_.emplace_back(); return &relative_path_.back(); }
+bool VmOpSelect::ParseFromArray(const void* raw, size_t size) {
+  relative_path_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&cursor_);
+        break;
+      case 2 :
+        relative_path_.emplace_back();
+        relative_path_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 3 :
+        field.get(&create_if_not_exist_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpSelect::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpSelect::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpSelect::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, cursor_, msg);
+  }
+
+  
+  for (auto& it : relative_path_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, create_if_not_exist_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmOpSelect_PathComponent::VmOpSelect_PathComponent() = default;
+VmOpSelect_PathComponent::~VmOpSelect_PathComponent() = default;
+VmOpSelect_PathComponent::VmOpSelect_PathComponent(const VmOpSelect_PathComponent&) = default;
+VmOpSelect_PathComponent& VmOpSelect_PathComponent::operator=(const VmOpSelect_PathComponent&) = default;
+VmOpSelect_PathComponent::VmOpSelect_PathComponent(VmOpSelect_PathComponent&&) noexcept = default;
+VmOpSelect_PathComponent& VmOpSelect_PathComponent::operator=(VmOpSelect_PathComponent&&) = default;
+
+bool VmOpSelect_PathComponent::operator==(const VmOpSelect_PathComponent& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(field_id_, other.field_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(array_index_, other.array_index_)
+   && ::protozero::internal::gen_helpers::EqualsField(map_key_field_id_, other.map_key_field_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(is_repeated_, other.is_repeated_)
+   && ::protozero::internal::gen_helpers::EqualsField(register_to_match_, other.register_to_match_)
+   && ::protozero::internal::gen_helpers::EqualsField(store_foreach_index_into_register_, other.store_foreach_index_into_register_);
+}
+
+bool VmOpSelect_PathComponent::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&field_id_);
+        break;
+      case 2 :
+        field.get(&array_index_);
+        break;
+      case 3 :
+        field.get(&map_key_field_id_);
+        break;
+      case 5 :
+        field.get(&is_repeated_);
+        break;
+      case 6 :
+        field.get(&register_to_match_);
+        break;
+      case 7 :
+        field.get(&store_foreach_index_into_register_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmOpSelect_PathComponent::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmOpSelect_PathComponent::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmOpSelect_PathComponent::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, field_id_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, array_index_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, map_key_field_id_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, is_repeated_, msg);
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, register_to_match_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(7, store_foreach_index_into_register_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmInstruction::VmInstruction() = default;
+VmInstruction::~VmInstruction() = default;
+VmInstruction::VmInstruction(const VmInstruction&) = default;
+VmInstruction& VmInstruction::operator=(const VmInstruction&) = default;
+VmInstruction::VmInstruction(VmInstruction&&) noexcept = default;
+VmInstruction& VmInstruction::operator=(VmInstruction&&) = default;
+
+bool VmInstruction::operator==(const VmInstruction& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(select_, other.select_)
+   && ::protozero::internal::gen_helpers::EqualsField(reg_load_, other.reg_load_)
+   && ::protozero::internal::gen_helpers::EqualsField(merge_, other.merge_)
+   && ::protozero::internal::gen_helpers::EqualsField(set_, other.set_)
+   && ::protozero::internal::gen_helpers::EqualsField(del_, other.del_)
+   && ::protozero::internal::gen_helpers::EqualsField(abort_level_, other.abort_level_)
+   && ::protozero::internal::gen_helpers::EqualsField(nested_instructions_, other.nested_instructions_);
+}
+
+int VmInstruction::nested_instructions_size() const { return static_cast<int>(nested_instructions_.size()); }
+void VmInstruction::clear_nested_instructions() { nested_instructions_.clear(); }
+VmInstruction* VmInstruction::add_nested_instructions() { nested_instructions_.emplace_back(); return &nested_instructions_.back(); }
+bool VmInstruction::ParseFromArray(const void* raw, size_t size) {
+  nested_instructions_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        (*select_).ParseFromArray(field.data(), field.size());
+        break;
+      case 2 :
+        (*reg_load_).ParseFromArray(field.data(), field.size());
+        break;
+      case 3 :
+        (*merge_).ParseFromArray(field.data(), field.size());
+        break;
+      case 4 :
+        (*set_).ParseFromArray(field.data(), field.size());
+        break;
+      case 5 :
+        (*del_).ParseFromArray(field.data(), field.size());
+        break;
+      case 6 :
+        field.get(&abort_level_);
+        break;
+      case 7 :
+        nested_instructions_.emplace_back();
+        nested_instructions_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmInstruction::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmInstruction::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmInstruction::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    (*select_).Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  
+  if (_has_field_[2]) {
+    (*reg_load_).Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  
+  if (_has_field_[3]) {
+    (*merge_).Serialize(msg->BeginNestedMessage<::protozero::Message>(3));
+  }
+
+  
+  if (_has_field_[4]) {
+    (*set_).Serialize(msg->BeginNestedMessage<::protozero::Message>(4));
+  }
+
+  
+  if (_has_field_[5]) {
+    (*del_).Serialize(msg->BeginNestedMessage<::protozero::Message>(5));
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, abort_level_, msg);
+  }
+
+  
+  for (auto& it : nested_instructions_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(7));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+VmProgram::VmProgram() = default;
+VmProgram::~VmProgram() = default;
+VmProgram::VmProgram(const VmProgram&) = default;
+VmProgram& VmProgram::operator=(const VmProgram&) = default;
+VmProgram::VmProgram(VmProgram&&) noexcept = default;
+VmProgram& VmProgram::operator=(VmProgram&&) = default;
+
+bool VmProgram::operator==(const VmProgram& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(version_, other.version_)
+   && ::protozero::internal::gen_helpers::EqualsField(instructions_, other.instructions_);
+}
+
+int VmProgram::instructions_size() const { return static_cast<int>(instructions_.size()); }
+void VmProgram::clear_instructions() { instructions_.clear(); }
+VmInstruction* VmProgram::add_instructions() { instructions_.emplace_back(); return &instructions_.back(); }
+bool VmProgram::ParseFromArray(const void* raw, size_t size) {
+  instructions_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&version_);
+        break;
+      case 2 :
+        instructions_.emplace_back();
+        instructions_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string VmProgram::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> VmProgram::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void VmProgram::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, version_, msg);
+  }
+
+  
+  for (auto& it : instructions_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 
 
@@ -11756,7 +16247,8 @@ bool CommitDataRequest_ChunksToMove::operator==(const CommitDataRequest_ChunksTo
    && ::protozero::internal::gen_helpers::EqualsField(page_, other.page_)
    && ::protozero::internal::gen_helpers::EqualsField(chunk_, other.chunk_)
    && ::protozero::internal::gen_helpers::EqualsField(target_buffer_, other.target_buffer_)
-   && ::protozero::internal::gen_helpers::EqualsField(data_, other.data_);
+   && ::protozero::internal::gen_helpers::EqualsField(data_, other.data_)
+   && ::protozero::internal::gen_helpers::EqualsField(chunk_incomplete_, other.chunk_incomplete_);
 }
 
 bool CommitDataRequest_ChunksToMove::ParseFromArray(const void* raw, size_t size) {
@@ -11780,6 +16272,9 @@ bool CommitDataRequest_ChunksToMove::ParseFromArray(const void* raw, size_t size
         break;
       case 4 :
         field.get(&data_);
+        break;
+      case 5 :
+        field.get(&chunk_incomplete_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -11822,6 +16317,11 @@ void CommitDataRequest_ChunksToMove::Serialize(::protozero::Message* msg) const 
     ::protozero::internal::gen_helpers::SerializeString(4, data_, msg);
   }
 
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, chunk_incomplete_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -11844,6 +16344,7 @@ void CommitDataRequest_ChunksToMove::Serialize(::protozero::Message* msg) const 
 #endif
 
 
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -11863,6 +16364,7 @@ bool DataSourceDescriptor::operator==(const DataSourceDescriptor& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(will_notify_on_start_, other.will_notify_on_start_)
    && ::protozero::internal::gen_helpers::EqualsField(handles_incremental_state_clear_, other.handles_incremental_state_clear_)
    && ::protozero::internal::gen_helpers::EqualsField(no_flush_, other.no_flush_)
+   && ::protozero::internal::gen_helpers::EqualsField(protovm_program_, other.protovm_program_)
    && ::protozero::internal::gen_helpers::EqualsField(gpu_counter_descriptor_, other.gpu_counter_descriptor_)
    && ::protozero::internal::gen_helpers::EqualsField(track_event_descriptor_, other.track_event_descriptor_)
    && ::protozero::internal::gen_helpers::EqualsField(ftrace_descriptor_, other.ftrace_descriptor_);
@@ -11895,6 +16397,9 @@ bool DataSourceDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 9 :
         field.get(&no_flush_);
+        break;
+      case 10 :
+        (*protovm_program_).ParseFromArray(field.data(), field.size());
         break;
       case 5 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &gpu_counter_descriptor_);
@@ -11954,6 +16459,11 @@ void DataSourceDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[9]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(9, no_flush_, msg);
+  }
+
+  
+  if (_has_field_[10]) {
+    (*protovm_program_).Serialize(msg->BeginNestedMessage<::protozero::Message>(10));
   }
 
   
@@ -13217,9 +17727,12 @@ bool GpuCounterDescriptor::operator==(const GpuCounterDescriptor& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(specs_, other.specs_)
    && ::protozero::internal::gen_helpers::EqualsField(blocks_, other.blocks_)
+   && ::protozero::internal::gen_helpers::EqualsField(counter_groups_, other.counter_groups_)
    && ::protozero::internal::gen_helpers::EqualsField(min_sampling_period_ns_, other.min_sampling_period_ns_)
    && ::protozero::internal::gen_helpers::EqualsField(max_sampling_period_ns_, other.max_sampling_period_ns_)
-   && ::protozero::internal::gen_helpers::EqualsField(supports_instrumented_sampling_, other.supports_instrumented_sampling_);
+   && ::protozero::internal::gen_helpers::EqualsField(supports_instrumented_sampling_, other.supports_instrumented_sampling_)
+   && ::protozero::internal::gen_helpers::EqualsField(supports_counter_names_, other.supports_counter_names_)
+   && ::protozero::internal::gen_helpers::EqualsField(supports_counter_name_globs_, other.supports_counter_name_globs_);
 }
 
 int GpuCounterDescriptor::specs_size() const { return static_cast<int>(specs_.size()); }
@@ -13228,9 +17741,13 @@ GpuCounterDescriptor_GpuCounterSpec* GpuCounterDescriptor::add_specs() { specs_.
 int GpuCounterDescriptor::blocks_size() const { return static_cast<int>(blocks_.size()); }
 void GpuCounterDescriptor::clear_blocks() { blocks_.clear(); }
 GpuCounterDescriptor_GpuCounterBlock* GpuCounterDescriptor::add_blocks() { blocks_.emplace_back(); return &blocks_.back(); }
+int GpuCounterDescriptor::counter_groups_size() const { return static_cast<int>(counter_groups_.size()); }
+void GpuCounterDescriptor::clear_counter_groups() { counter_groups_.clear(); }
+GpuCounterDescriptor_GpuCounterGroupSpec* GpuCounterDescriptor::add_counter_groups() { counter_groups_.emplace_back(); return &counter_groups_.back(); }
 bool GpuCounterDescriptor::ParseFromArray(const void* raw, size_t size) {
   specs_.clear();
   blocks_.clear();
+  counter_groups_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -13248,6 +17765,10 @@ bool GpuCounterDescriptor::ParseFromArray(const void* raw, size_t size) {
         blocks_.emplace_back();
         blocks_.back().ParseFromArray(field.data(), field.size());
         break;
+      case 6 :
+        counter_groups_.emplace_back();
+        counter_groups_.back().ParseFromArray(field.data(), field.size());
+        break;
       case 3 :
         field.get(&min_sampling_period_ns_);
         break;
@@ -13256,6 +17777,12 @@ bool GpuCounterDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 5 :
         field.get(&supports_instrumented_sampling_);
+        break;
+      case 7 :
+        field.get(&supports_counter_names_);
+        break;
+      case 8 :
+        field.get(&supports_counter_name_globs_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -13289,6 +17816,11 @@ void GpuCounterDescriptor::Serialize(::protozero::Message* msg) const {
   }
 
   
+  for (auto& it : counter_groups_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(6));
+  }
+
+  
   if (_has_field_[3]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(3, min_sampling_period_ns_, msg);
   }
@@ -13301,6 +17833,100 @@ void GpuCounterDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[5]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, supports_instrumented_sampling_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(7, supports_counter_names_, msg);
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(8, supports_counter_name_globs_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+GpuCounterDescriptor_GpuCounterGroupSpec::GpuCounterDescriptor_GpuCounterGroupSpec() = default;
+GpuCounterDescriptor_GpuCounterGroupSpec::~GpuCounterDescriptor_GpuCounterGroupSpec() = default;
+GpuCounterDescriptor_GpuCounterGroupSpec::GpuCounterDescriptor_GpuCounterGroupSpec(const GpuCounterDescriptor_GpuCounterGroupSpec&) = default;
+GpuCounterDescriptor_GpuCounterGroupSpec& GpuCounterDescriptor_GpuCounterGroupSpec::operator=(const GpuCounterDescriptor_GpuCounterGroupSpec&) = default;
+GpuCounterDescriptor_GpuCounterGroupSpec::GpuCounterDescriptor_GpuCounterGroupSpec(GpuCounterDescriptor_GpuCounterGroupSpec&&) noexcept = default;
+GpuCounterDescriptor_GpuCounterGroupSpec& GpuCounterDescriptor_GpuCounterGroupSpec::operator=(GpuCounterDescriptor_GpuCounterGroupSpec&&) = default;
+
+bool GpuCounterDescriptor_GpuCounterGroupSpec::operator==(const GpuCounterDescriptor_GpuCounterGroupSpec& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(group_id_, other.group_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(description_, other.description_)
+   && ::protozero::internal::gen_helpers::EqualsField(counter_ids_, other.counter_ids_);
+}
+
+bool GpuCounterDescriptor_GpuCounterGroupSpec::ParseFromArray(const void* raw, size_t size) {
+  counter_ids_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&group_id_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 3 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &description_);
+        break;
+      case 4 :
+        counter_ids_.emplace_back();
+        field.get(&counter_ids_.back());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string GpuCounterDescriptor_GpuCounterGroupSpec::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> GpuCounterDescriptor_GpuCounterGroupSpec::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void GpuCounterDescriptor_GpuCounterGroupSpec::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, group_id_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, name_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeString(3, description_, msg);
+  }
+
+  
+  for (auto& it : counter_ids_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(4, it, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -13417,7 +18043,8 @@ bool GpuCounterDescriptor_GpuCounterSpec::operator==(const GpuCounterDescriptor_
    && ::protozero::internal::gen_helpers::EqualsField(numerator_units_, other.numerator_units_)
    && ::protozero::internal::gen_helpers::EqualsField(denominator_units_, other.denominator_units_)
    && ::protozero::internal::gen_helpers::EqualsField(select_by_default_, other.select_by_default_)
-   && ::protozero::internal::gen_helpers::EqualsField(groups_, other.groups_);
+   && ::protozero::internal::gen_helpers::EqualsField(groups_, other.groups_)
+   && ::protozero::internal::gen_helpers::EqualsField(value_direction_, other.value_direction_);
 }
 
 bool GpuCounterDescriptor_GpuCounterSpec::ParseFromArray(const void* raw, size_t size) {
@@ -13462,6 +18089,9 @@ bool GpuCounterDescriptor_GpuCounterSpec::ParseFromArray(const void* raw, size_t
       case 10 :
         groups_.emplace_back();
         field.get(&groups_.back());
+        break;
+      case 11 :
+        field.get(&value_direction_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -13527,6 +18157,11 @@ void GpuCounterDescriptor_GpuCounterSpec::Serialize(::protozero::Message* msg) c
   
   for (auto& it : groups_) {
     ::protozero::internal::gen_helpers::SerializeVarInt(10, it, msg);
+  }
+
+  
+  if (_has_field_[11]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(11, value_direction_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -13723,7 +18358,8 @@ bool ObservableEvents_CloneTriggerHit::operator==(const ObservableEvents_CloneTr
    && ::protozero::internal::gen_helpers::EqualsField(trigger_name_, other.trigger_name_)
    && ::protozero::internal::gen_helpers::EqualsField(producer_name_, other.producer_name_)
    && ::protozero::internal::gen_helpers::EqualsField(producer_uid_, other.producer_uid_)
-   && ::protozero::internal::gen_helpers::EqualsField(boot_time_ns_, other.boot_time_ns_);
+   && ::protozero::internal::gen_helpers::EqualsField(boot_time_ns_, other.boot_time_ns_)
+   && ::protozero::internal::gen_helpers::EqualsField(trigger_delay_ms_, other.trigger_delay_ms_);
 }
 
 bool ObservableEvents_CloneTriggerHit::ParseFromArray(const void* raw, size_t size) {
@@ -13750,6 +18386,9 @@ bool ObservableEvents_CloneTriggerHit::ParseFromArray(const void* raw, size_t si
         break;
       case 5 :
         field.get(&boot_time_ns_);
+        break;
+      case 6 :
+        field.get(&trigger_delay_ms_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -13795,6 +18434,11 @@ void ObservableEvents_CloneTriggerHit::Serialize(::protozero::Message* msg) cons
   
   if (_has_field_[5]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(5, boot_time_ns_, msg);
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, trigger_delay_ms_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -13908,10 +18552,12 @@ bool FollowerEvent::operator==(const FollowerEvent& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(counter_, other.counter_)
    && ::protozero::internal::gen_helpers::EqualsField(tracepoint_, other.tracepoint_)
    && ::protozero::internal::gen_helpers::EqualsField(raw_event_, other.raw_event_)
+   && ::protozero::internal::gen_helpers::EqualsField(modifiers_, other.modifiers_)
    && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_);
 }
 
 bool FollowerEvent::ParseFromArray(const void* raw, size_t size) {
+  modifiers_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -13929,6 +18575,10 @@ bool FollowerEvent::ParseFromArray(const void* raw, size_t size) {
         break;
       case 3 :
         (*raw_event_).ParseFromArray(field.data(), field.size());
+        break;
+      case 5 :
+        modifiers_.emplace_back();
+        field.get(&modifiers_.back());
         break;
       case 4 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
@@ -13970,6 +18620,11 @@ void FollowerEvent::Serialize(::protozero::Message* msg) const {
   }
 
   
+  for (auto& it : modifiers_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(5, it, msg);
+  }
+
+  
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeString(4, name_, msg);
   }
@@ -13990,7 +18645,8 @@ bool PerfEvents_RawEvent::operator==(const PerfEvents_RawEvent& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(type_, other.type_)
    && ::protozero::internal::gen_helpers::EqualsField(config_, other.config_)
    && ::protozero::internal::gen_helpers::EqualsField(config1_, other.config1_)
-   && ::protozero::internal::gen_helpers::EqualsField(config2_, other.config2_);
+   && ::protozero::internal::gen_helpers::EqualsField(config2_, other.config2_)
+   && ::protozero::internal::gen_helpers::EqualsField(pmu_name_, other.pmu_name_);
 }
 
 bool PerfEvents_RawEvent::ParseFromArray(const void* raw, size_t size) {
@@ -14014,6 +18670,9 @@ bool PerfEvents_RawEvent::ParseFromArray(const void* raw, size_t size) {
         break;
       case 4 :
         field.get(&config2_);
+        break;
+      case 5 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &pmu_name_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -14054,6 +18713,11 @@ void PerfEvents_RawEvent::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(4, config2_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeString(5, pmu_name_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -14181,14 +18845,17 @@ bool PerfEvents_Timebase::operator==(const PerfEvents_Timebase& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(frequency_, other.frequency_)
    && ::protozero::internal::gen_helpers::EqualsField(period_, other.period_)
+   && ::protozero::internal::gen_helpers::EqualsField(poll_period_ms_, other.poll_period_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(counter_, other.counter_)
    && ::protozero::internal::gen_helpers::EqualsField(tracepoint_, other.tracepoint_)
    && ::protozero::internal::gen_helpers::EqualsField(raw_event_, other.raw_event_)
+   && ::protozero::internal::gen_helpers::EqualsField(modifiers_, other.modifiers_)
    && ::protozero::internal::gen_helpers::EqualsField(timestamp_clock_, other.timestamp_clock_)
    && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_);
 }
 
 bool PerfEvents_Timebase::ParseFromArray(const void* raw, size_t size) {
+  modifiers_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -14204,6 +18871,9 @@ bool PerfEvents_Timebase::ParseFromArray(const void* raw, size_t size) {
       case 1 :
         field.get(&period_);
         break;
+      case 6 :
+        field.get(&poll_period_ms_);
+        break;
       case 4 :
         field.get(&counter_);
         break;
@@ -14212,6 +18882,10 @@ bool PerfEvents_Timebase::ParseFromArray(const void* raw, size_t size) {
         break;
       case 5 :
         (*raw_event_).ParseFromArray(field.data(), field.size());
+        break;
+      case 12 :
+        modifiers_.emplace_back();
+        field.get(&modifiers_.back());
         break;
       case 11 :
         field.get(&timestamp_clock_);
@@ -14251,6 +18925,11 @@ void PerfEvents_Timebase::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, poll_period_ms_, msg);
+  }
+
+  
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(4, counter_, msg);
   }
@@ -14263,6 +18942,11 @@ void PerfEvents_Timebase::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[5]) {
     (*raw_event_).Serialize(msg->BeginNestedMessage<::protozero::Message>(5));
+  }
+
+  
+  for (auto& it : modifiers_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(12, it, msg);
   }
 
   
@@ -14322,6 +19006,455 @@ namespace gen {
 namespace perfetto {
 namespace protos {
 namespace gen {
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+SystemInfo::SystemInfo() = default;
+SystemInfo::~SystemInfo() = default;
+SystemInfo::SystemInfo(const SystemInfo&) = default;
+SystemInfo& SystemInfo::operator=(const SystemInfo&) = default;
+SystemInfo::SystemInfo(SystemInfo&&) noexcept = default;
+SystemInfo& SystemInfo::operator=(SystemInfo&&) = default;
+
+bool SystemInfo::operator==(const SystemInfo& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(utsname_, other.utsname_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_build_fingerprint_, other.android_build_fingerprint_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_device_manufacturer_, other.android_device_manufacturer_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_soc_model_, other.android_soc_model_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_guest_soc_model_, other.android_guest_soc_model_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_hardware_revision_, other.android_hardware_revision_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_storage_model_, other.android_storage_model_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_ram_model_, other.android_ram_model_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_serial_console_, other.android_serial_console_)
+   && ::protozero::internal::gen_helpers::EqualsField(tracing_service_version_, other.tracing_service_version_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_sdk_version_, other.android_sdk_version_)
+   && ::protozero::internal::gen_helpers::EqualsField(page_size_, other.page_size_)
+   && ::protozero::internal::gen_helpers::EqualsField(num_cpus_, other.num_cpus_)
+   && ::protozero::internal::gen_helpers::EqualsField(timezone_off_mins_, other.timezone_off_mins_)
+   && ::protozero::internal::gen_helpers::EqualsField(hz_, other.hz_)
+   && ::protozero::internal::gen_helpers::EqualsField(system_ram_bytes_, other.system_ram_bytes_);
+}
+
+bool SystemInfo::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        (*utsname_).ParseFromArray(field.data(), field.size());
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_build_fingerprint_);
+        break;
+      case 14 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_device_manufacturer_);
+        break;
+      case 9 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_soc_model_);
+        break;
+      case 13 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_guest_soc_model_);
+        break;
+      case 10 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_hardware_revision_);
+        break;
+      case 11 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_storage_model_);
+        break;
+      case 12 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_ram_model_);
+        break;
+      case 15 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_serial_console_);
+        break;
+      case 4 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &tracing_service_version_);
+        break;
+      case 5 :
+        field.get(&android_sdk_version_);
+        break;
+      case 6 :
+        field.get(&page_size_);
+        break;
+      case 8 :
+        field.get(&num_cpus_);
+        break;
+      case 7 :
+        field.get(&timezone_off_mins_);
+        break;
+      case 3 :
+        field.get(&hz_);
+        break;
+      case 16 :
+        field.get(&system_ram_bytes_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string SystemInfo::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> SystemInfo::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void SystemInfo::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    (*utsname_).Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, android_build_fingerprint_, msg);
+  }
+
+  
+  if (_has_field_[14]) {
+    ::protozero::internal::gen_helpers::SerializeString(14, android_device_manufacturer_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeString(9, android_soc_model_, msg);
+  }
+
+  
+  if (_has_field_[13]) {
+    ::protozero::internal::gen_helpers::SerializeString(13, android_guest_soc_model_, msg);
+  }
+
+  
+  if (_has_field_[10]) {
+    ::protozero::internal::gen_helpers::SerializeString(10, android_hardware_revision_, msg);
+  }
+
+  
+  if (_has_field_[11]) {
+    ::protozero::internal::gen_helpers::SerializeString(11, android_storage_model_, msg);
+  }
+
+  
+  if (_has_field_[12]) {
+    ::protozero::internal::gen_helpers::SerializeString(12, android_ram_model_, msg);
+  }
+
+  
+  if (_has_field_[15]) {
+    ::protozero::internal::gen_helpers::SerializeString(15, android_serial_console_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeString(4, tracing_service_version_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(5, android_sdk_version_, msg);
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, page_size_, msg);
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(8, num_cpus_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(7, timezone_off_mins_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, hz_, msg);
+  }
+
+  
+  if (_has_field_[16]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(16, system_ram_bytes_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+Utsname::Utsname() = default;
+Utsname::~Utsname() = default;
+Utsname::Utsname(const Utsname&) = default;
+Utsname& Utsname::operator=(const Utsname&) = default;
+Utsname::Utsname(Utsname&&) noexcept = default;
+Utsname& Utsname::operator=(Utsname&&) = default;
+
+bool Utsname::operator==(const Utsname& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(sysname_, other.sysname_)
+   && ::protozero::internal::gen_helpers::EqualsField(version_, other.version_)
+   && ::protozero::internal::gen_helpers::EqualsField(release_, other.release_)
+   && ::protozero::internal::gen_helpers::EqualsField(machine_, other.machine_);
+}
+
+bool Utsname::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &sysname_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &version_);
+        break;
+      case 3 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &release_);
+        break;
+      case 4 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &machine_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string Utsname::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> Utsname::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void Utsname::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, sysname_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, version_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeString(3, release_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeString(4, machine_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+TraceAttributes::TraceAttributes() = default;
+TraceAttributes::~TraceAttributes() = default;
+TraceAttributes::TraceAttributes(const TraceAttributes&) = default;
+TraceAttributes& TraceAttributes::operator=(const TraceAttributes&) = default;
+TraceAttributes::TraceAttributes(TraceAttributes&&) noexcept = default;
+TraceAttributes& TraceAttributes::operator=(TraceAttributes&&) = default;
+
+bool TraceAttributes::operator==(const TraceAttributes& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(attribute_, other.attribute_);
+}
+
+int TraceAttributes::attribute_size() const { return static_cast<int>(attribute_.size()); }
+void TraceAttributes::clear_attribute() { attribute_.clear(); }
+TraceAttributes_Attribute* TraceAttributes::add_attribute() { attribute_.emplace_back(); return &attribute_.back(); }
+bool TraceAttributes::ParseFromArray(const void* raw, size_t size) {
+  attribute_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        attribute_.emplace_back();
+        attribute_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TraceAttributes::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TraceAttributes::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TraceAttributes::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : attribute_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+TraceAttributes_Attribute::TraceAttributes_Attribute() = default;
+TraceAttributes_Attribute::~TraceAttributes_Attribute() = default;
+TraceAttributes_Attribute::TraceAttributes_Attribute(const TraceAttributes_Attribute&) = default;
+TraceAttributes_Attribute& TraceAttributes_Attribute::operator=(const TraceAttributes_Attribute&) = default;
+TraceAttributes_Attribute::TraceAttributes_Attribute(TraceAttributes_Attribute&&) noexcept = default;
+TraceAttributes_Attribute& TraceAttributes_Attribute::operator=(TraceAttributes_Attribute&&) = default;
+
+bool TraceAttributes_Attribute::operator==(const TraceAttributes_Attribute& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(key_, other.key_)
+   && ::protozero::internal::gen_helpers::EqualsField(long_value_, other.long_value_)
+   && ::protozero::internal::gen_helpers::EqualsField(string_value_, other.string_value_);
+}
+
+bool TraceAttributes_Attribute::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &key_);
+        break;
+      case 2 :
+        field.get(&long_value_);
+        break;
+      case 3 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &string_value_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TraceAttributes_Attribute::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TraceAttributes_Attribute::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TraceAttributes_Attribute::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, key_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, long_value_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeString(3, string_value_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
 }  
 }  
 }  
@@ -14777,7 +19910,8 @@ bool TraceStats_BufferStats::operator==(const TraceStats_BufferStats& other) con
    && ::protozero::internal::gen_helpers::EqualsField(readaheads_succeeded_, other.readaheads_succeeded_)
    && ::protozero::internal::gen_helpers::EqualsField(readaheads_failed_, other.readaheads_failed_)
    && ::protozero::internal::gen_helpers::EqualsField(abi_violations_, other.abi_violations_)
-   && ::protozero::internal::gen_helpers::EqualsField(trace_writer_packet_loss_, other.trace_writer_packet_loss_);
+   && ::protozero::internal::gen_helpers::EqualsField(trace_writer_packet_loss_, other.trace_writer_packet_loss_)
+   && ::protozero::internal::gen_helpers::EqualsField(shadow_buffer_stats_, other.shadow_buffer_stats_);
 }
 
 bool TraceStats_BufferStats::ParseFromArray(const void* raw, size_t size) {
@@ -14846,6 +19980,9 @@ bool TraceStats_BufferStats::ParseFromArray(const void* raw, size_t size) {
         break;
       case 19 :
         field.get(&trace_writer_packet_loss_);
+        break;
+      case 21 :
+        (*shadow_buffer_stats_).ParseFromArray(field.data(), field.size());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -14961,6 +20098,129 @@ void TraceStats_BufferStats::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[19]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(19, trace_writer_packet_loss_, msg);
+  }
+
+  
+  if (_has_field_[21]) {
+    (*shadow_buffer_stats_).Serialize(msg->BeginNestedMessage<::protozero::Message>(21));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+TraceStats_BufferStats_ShadowBufferStats::TraceStats_BufferStats_ShadowBufferStats() = default;
+TraceStats_BufferStats_ShadowBufferStats::~TraceStats_BufferStats_ShadowBufferStats() = default;
+TraceStats_BufferStats_ShadowBufferStats::TraceStats_BufferStats_ShadowBufferStats(const TraceStats_BufferStats_ShadowBufferStats&) = default;
+TraceStats_BufferStats_ShadowBufferStats& TraceStats_BufferStats_ShadowBufferStats::operator=(const TraceStats_BufferStats_ShadowBufferStats&) = default;
+TraceStats_BufferStats_ShadowBufferStats::TraceStats_BufferStats_ShadowBufferStats(TraceStats_BufferStats_ShadowBufferStats&&) noexcept = default;
+TraceStats_BufferStats_ShadowBufferStats& TraceStats_BufferStats_ShadowBufferStats::operator=(TraceStats_BufferStats_ShadowBufferStats&&) = default;
+
+bool TraceStats_BufferStats_ShadowBufferStats::operator==(const TraceStats_BufferStats_ShadowBufferStats& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(packets_seen_, other.packets_seen_)
+   && ::protozero::internal::gen_helpers::EqualsField(packets_in_both_, other.packets_in_both_)
+   && ::protozero::internal::gen_helpers::EqualsField(packets_only_v1_, other.packets_only_v1_)
+   && ::protozero::internal::gen_helpers::EqualsField(packets_only_v2_, other.packets_only_v2_)
+   && ::protozero::internal::gen_helpers::EqualsField(patches_attempted_, other.patches_attempted_)
+   && ::protozero::internal::gen_helpers::EqualsField(v1_patches_succeeded_, other.v1_patches_succeeded_)
+   && ::protozero::internal::gen_helpers::EqualsField(v2_patches_succeeded_, other.v2_patches_succeeded_)
+   && ::protozero::internal::gen_helpers::EqualsField(stats_version_, other.stats_version_);
+}
+
+bool TraceStats_BufferStats_ShadowBufferStats::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&packets_seen_);
+        break;
+      case 2 :
+        field.get(&packets_in_both_);
+        break;
+      case 3 :
+        field.get(&packets_only_v1_);
+        break;
+      case 4 :
+        field.get(&packets_only_v2_);
+        break;
+      case 5 :
+        field.get(&patches_attempted_);
+        break;
+      case 6 :
+        field.get(&v1_patches_succeeded_);
+        break;
+      case 7 :
+        field.get(&v2_patches_succeeded_);
+        break;
+      case 8 :
+        field.get(&stats_version_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TraceStats_BufferStats_ShadowBufferStats::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TraceStats_BufferStats_ShadowBufferStats::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TraceStats_BufferStats_ShadowBufferStats::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, packets_seen_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, packets_in_both_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, packets_only_v1_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(4, packets_only_v2_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(5, patches_attempted_, msg);
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, v1_patches_succeeded_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(7, v2_patches_succeeded_, msg);
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(8, stats_version_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -15090,6 +20350,7 @@ void TracingServiceCapabilities::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
 
 
 
@@ -15449,7 +20710,9 @@ bool TracingServiceState_Producer::operator==(const TracingServiceState_Producer
    && ::protozero::internal::gen_helpers::EqualsField(pid_, other.pid_)
    && ::protozero::internal::gen_helpers::EqualsField(uid_, other.uid_)
    && ::protozero::internal::gen_helpers::EqualsField(sdk_version_, other.sdk_version_)
-   && ::protozero::internal::gen_helpers::EqualsField(frozen_, other.frozen_);
+   && ::protozero::internal::gen_helpers::EqualsField(frozen_, other.frozen_)
+   && ::protozero::internal::gen_helpers::EqualsField(machine_id_, other.machine_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(machine_name_, other.machine_name_);
 }
 
 bool TracingServiceState_Producer::ParseFromArray(const void* raw, size_t size) {
@@ -15479,6 +20742,12 @@ bool TracingServiceState_Producer::ParseFromArray(const void* raw, size_t size) 
         break;
       case 6 :
         field.get(&frozen_);
+        break;
+      case 7 :
+        field.get(&machine_id_);
+        break;
+      case 8 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &machine_name_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -15529,6 +20798,16 @@ void TracingServiceState_Producer::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[6]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(6, frozen_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(7, machine_id_, msg);
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeString(8, machine_name_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -15713,6 +20992,105 @@ void TrackEventCategory::Serialize(::protozero::Message* msg) const {
 namespace perfetto {
 namespace protos {
 namespace gen {
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+AndroidAflagsConfig::AndroidAflagsConfig() = default;
+AndroidAflagsConfig::~AndroidAflagsConfig() = default;
+AndroidAflagsConfig::AndroidAflagsConfig(const AndroidAflagsConfig&) = default;
+AndroidAflagsConfig& AndroidAflagsConfig::operator=(const AndroidAflagsConfig&) = default;
+AndroidAflagsConfig::AndroidAflagsConfig(AndroidAflagsConfig&&) noexcept = default;
+AndroidAflagsConfig& AndroidAflagsConfig::operator=(AndroidAflagsConfig&&) = default;
+
+bool AndroidAflagsConfig::operator==(const AndroidAflagsConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(poll_ms_, other.poll_ms_);
+}
+
+bool AndroidAflagsConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&poll_ms_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AndroidAflagsConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AndroidAflagsConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AndroidAflagsConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, poll_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
 
 AndroidGameInterventionListConfig::AndroidGameInterventionListConfig() = default;
 AndroidGameInterventionListConfig::~AndroidGameInterventionListConfig() = default;
@@ -15805,7 +21183,8 @@ bool AndroidInputEventConfig::operator==(const AndroidInputEventConfig& other) c
    && ::protozero::internal::gen_helpers::EqualsField(mode_, other.mode_)
    && ::protozero::internal::gen_helpers::EqualsField(rules_, other.rules_)
    && ::protozero::internal::gen_helpers::EqualsField(trace_dispatcher_input_events_, other.trace_dispatcher_input_events_)
-   && ::protozero::internal::gen_helpers::EqualsField(trace_dispatcher_window_dispatch_, other.trace_dispatcher_window_dispatch_);
+   && ::protozero::internal::gen_helpers::EqualsField(trace_dispatcher_window_dispatch_, other.trace_dispatcher_window_dispatch_)
+   && ::protozero::internal::gen_helpers::EqualsField(trace_evdev_events_, other.trace_evdev_events_);
 }
 
 int AndroidInputEventConfig::rules_size() const { return static_cast<int>(rules_.size()); }
@@ -15834,6 +21213,9 @@ bool AndroidInputEventConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 4 :
         field.get(&trace_dispatcher_window_dispatch_);
+        break;
+      case 5 :
+        field.get(&trace_evdev_events_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -15874,6 +21256,11 @@ void AndroidInputEventConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(4, trace_dispatcher_window_dispatch_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, trace_evdev_events_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -16009,7 +21396,8 @@ bool AndroidLogConfig::operator==(const AndroidLogConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(log_ids_, other.log_ids_)
    && ::protozero::internal::gen_helpers::EqualsField(min_prio_, other.min_prio_)
-   && ::protozero::internal::gen_helpers::EqualsField(filter_tags_, other.filter_tags_);
+   && ::protozero::internal::gen_helpers::EqualsField(filter_tags_, other.filter_tags_)
+   && ::protozero::internal::gen_helpers::EqualsField(preserve_log_buffer_, other.preserve_log_buffer_);
 }
 
 bool AndroidLogConfig::ParseFromArray(const void* raw, size_t size) {
@@ -16034,6 +21422,9 @@ bool AndroidLogConfig::ParseFromArray(const void* raw, size_t size) {
       case 4 :
         filter_tags_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &filter_tags_.back());
+        break;
+      case 5 :
+        field.get(&preserve_log_buffer_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -16069,6 +21460,11 @@ void AndroidLogConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : filter_tags_) {
     ::protozero::internal::gen_helpers::SerializeString(4, it, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, preserve_log_buffer_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -16359,6 +21755,350 @@ namespace perfetto {
 namespace protos {
 namespace gen {
 
+AppWakelocksConfig::AppWakelocksConfig() = default;
+AppWakelocksConfig::~AppWakelocksConfig() = default;
+AppWakelocksConfig::AppWakelocksConfig(const AppWakelocksConfig&) = default;
+AppWakelocksConfig& AppWakelocksConfig::operator=(const AppWakelocksConfig&) = default;
+AppWakelocksConfig::AppWakelocksConfig(AppWakelocksConfig&&) noexcept = default;
+AppWakelocksConfig& AppWakelocksConfig::operator=(AppWakelocksConfig&&) = default;
+
+bool AppWakelocksConfig::operator==(const AppWakelocksConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(write_delay_ms_, other.write_delay_ms_)
+   && ::protozero::internal::gen_helpers::EqualsField(filter_duration_below_ms_, other.filter_duration_below_ms_)
+   && ::protozero::internal::gen_helpers::EqualsField(drop_owner_pid_, other.drop_owner_pid_);
+}
+
+bool AppWakelocksConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&write_delay_ms_);
+        break;
+      case 2 :
+        field.get(&filter_duration_below_ms_);
+        break;
+      case 3 :
+        field.get(&drop_owner_pid_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AppWakelocksConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AppWakelocksConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AppWakelocksConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, write_delay_ms_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, filter_duration_below_ms_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, drop_owner_pid_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+CpuPerUidConfig::CpuPerUidConfig() = default;
+CpuPerUidConfig::~CpuPerUidConfig() = default;
+CpuPerUidConfig::CpuPerUidConfig(const CpuPerUidConfig&) = default;
+CpuPerUidConfig& CpuPerUidConfig::operator=(const CpuPerUidConfig&) = default;
+CpuPerUidConfig::CpuPerUidConfig(CpuPerUidConfig&&) noexcept = default;
+CpuPerUidConfig& CpuPerUidConfig::operator=(CpuPerUidConfig&&) = default;
+
+bool CpuPerUidConfig::operator==(const CpuPerUidConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(poll_ms_, other.poll_ms_);
+}
+
+bool CpuPerUidConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&poll_ms_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string CpuPerUidConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> CpuPerUidConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void CpuPerUidConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, poll_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+InputMethodConfig::InputMethodConfig() = default;
+InputMethodConfig::~InputMethodConfig() = default;
+InputMethodConfig::InputMethodConfig(const InputMethodConfig&) = default;
+InputMethodConfig& InputMethodConfig::operator=(const InputMethodConfig&) = default;
+InputMethodConfig::InputMethodConfig(InputMethodConfig&&) noexcept = default;
+InputMethodConfig& InputMethodConfig::operator=(InputMethodConfig&&) = default;
+
+bool InputMethodConfig::operator==(const InputMethodConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(client_, other.client_)
+   && ::protozero::internal::gen_helpers::EqualsField(service_, other.service_)
+   && ::protozero::internal::gen_helpers::EqualsField(manager_service_, other.manager_service_);
+}
+
+bool InputMethodConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&client_);
+        break;
+      case 2 :
+        field.get(&service_);
+        break;
+      case 3 :
+        field.get(&manager_service_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string InputMethodConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> InputMethodConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void InputMethodConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(1, client_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(2, service_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, manager_service_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+KernelWakelocksConfig::KernelWakelocksConfig() = default;
+KernelWakelocksConfig::~KernelWakelocksConfig() = default;
+KernelWakelocksConfig::KernelWakelocksConfig(const KernelWakelocksConfig&) = default;
+KernelWakelocksConfig& KernelWakelocksConfig::operator=(const KernelWakelocksConfig&) = default;
+KernelWakelocksConfig::KernelWakelocksConfig(KernelWakelocksConfig&&) noexcept = default;
+KernelWakelocksConfig& KernelWakelocksConfig::operator=(KernelWakelocksConfig&&) = default;
+
+bool KernelWakelocksConfig::operator==(const KernelWakelocksConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(poll_ms_, other.poll_ms_);
+}
+
+bool KernelWakelocksConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&poll_ms_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string KernelWakelocksConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> KernelWakelocksConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void KernelWakelocksConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, poll_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
 NetworkPacketTraceConfig::NetworkPacketTraceConfig() = default;
 NetworkPacketTraceConfig::~NetworkPacketTraceConfig() = default;
 NetworkPacketTraceConfig::NetworkPacketTraceConfig(const NetworkPacketTraceConfig&) = default;
@@ -16490,11 +22230,14 @@ PackagesListConfig& PackagesListConfig::operator=(PackagesListConfig&&) = defaul
 
 bool PackagesListConfig::operator==(const PackagesListConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
-   && ::protozero::internal::gen_helpers::EqualsField(package_name_filter_, other.package_name_filter_);
+   && ::protozero::internal::gen_helpers::EqualsField(package_name_filter_, other.package_name_filter_)
+   && ::protozero::internal::gen_helpers::EqualsField(package_name_regex_filter_, other.package_name_regex_filter_)
+   && ::protozero::internal::gen_helpers::EqualsField(only_write_on_cpu_use_every_ms_, other.only_write_on_cpu_use_every_ms_);
 }
 
 bool PackagesListConfig::ParseFromArray(const void* raw, size_t size) {
   package_name_filter_.clear();
+  package_name_regex_filter_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -16507,6 +22250,13 @@ bool PackagesListConfig::ParseFromArray(const void* raw, size_t size) {
       case 1 :
         package_name_filter_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &package_name_filter_.back());
+        break;
+      case 3 :
+        package_name_regex_filter_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &package_name_regex_filter_.back());
+        break;
+      case 2 :
+        field.get(&only_write_on_cpu_use_every_ms_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -16532,6 +22282,16 @@ void PackagesListConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : package_name_filter_) {
     ::protozero::internal::gen_helpers::SerializeString(1, it, msg);
+  }
+
+  
+  for (auto& it : package_name_regex_filter_) {
+    ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, only_write_on_cpu_use_every_ms_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -16998,6 +22758,85 @@ namespace perfetto {
 namespace protos {
 namespace gen {
 
+AndroidUserListConfig::AndroidUserListConfig() = default;
+AndroidUserListConfig::~AndroidUserListConfig() = default;
+AndroidUserListConfig::AndroidUserListConfig(const AndroidUserListConfig&) = default;
+AndroidUserListConfig& AndroidUserListConfig::operator=(const AndroidUserListConfig&) = default;
+AndroidUserListConfig::AndroidUserListConfig(AndroidUserListConfig&&) noexcept = default;
+AndroidUserListConfig& AndroidUserListConfig::operator=(AndroidUserListConfig&&) = default;
+
+bool AndroidUserListConfig::operator==(const AndroidUserListConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(user_type_filter_, other.user_type_filter_);
+}
+
+bool AndroidUserListConfig::ParseFromArray(const void* raw, size_t size) {
+  user_type_filter_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        user_type_filter_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &user_type_filter_.back());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AndroidUserListConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AndroidUserListConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AndroidUserListConfig::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : user_type_filter_) {
+    ::protozero::internal::gen_helpers::SerializeString(1, it, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
 WindowManagerConfig::WindowManagerConfig() = default;
 WindowManagerConfig::~WindowManagerConfig() = default;
 WindowManagerConfig::WindowManagerConfig(const WindowManagerConfig&) = default;
@@ -17008,7 +22847,8 @@ WindowManagerConfig& WindowManagerConfig::operator=(WindowManagerConfig&&) = def
 bool WindowManagerConfig::operator==(const WindowManagerConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(log_frequency_, other.log_frequency_)
-   && ::protozero::internal::gen_helpers::EqualsField(log_level_, other.log_level_);
+   && ::protozero::internal::gen_helpers::EqualsField(log_level_, other.log_level_)
+   && ::protozero::internal::gen_helpers::EqualsField(log_mode_, other.log_mode_);
 }
 
 bool WindowManagerConfig::ParseFromArray(const void* raw, size_t size) {
@@ -17026,6 +22866,9 @@ bool WindowManagerConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 2 :
         field.get(&log_level_);
+        break;
+      case 3 :
+        field.get(&log_mode_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -17056,6 +22899,88 @@ void WindowManagerConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[2]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(2, log_level_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, log_mode_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+FrozenFtraceConfig::FrozenFtraceConfig() = default;
+FrozenFtraceConfig::~FrozenFtraceConfig() = default;
+FrozenFtraceConfig::FrozenFtraceConfig(const FrozenFtraceConfig&) = default;
+FrozenFtraceConfig& FrozenFtraceConfig::operator=(const FrozenFtraceConfig&) = default;
+FrozenFtraceConfig::FrozenFtraceConfig(FrozenFtraceConfig&&) noexcept = default;
+FrozenFtraceConfig& FrozenFtraceConfig::operator=(FrozenFtraceConfig&&) = default;
+
+bool FrozenFtraceConfig::operator==(const FrozenFtraceConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(instance_name_, other.instance_name_);
+}
+
+bool FrozenFtraceConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &instance_name_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string FrozenFtraceConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> FrozenFtraceConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void FrozenFtraceConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, instance_name_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -17094,42 +23019,54 @@ FtraceConfig& FtraceConfig::operator=(FtraceConfig&&) = default;
 bool FtraceConfig::operator==(const FtraceConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(ftrace_events_, other.ftrace_events_)
-   && ::protozero::internal::gen_helpers::EqualsField(kprobe_events_, other.kprobe_events_)
    && ::protozero::internal::gen_helpers::EqualsField(atrace_categories_, other.atrace_categories_)
    && ::protozero::internal::gen_helpers::EqualsField(atrace_apps_, other.atrace_apps_)
    && ::protozero::internal::gen_helpers::EqualsField(atrace_categories_prefer_sdk_, other.atrace_categories_prefer_sdk_)
+   && ::protozero::internal::gen_helpers::EqualsField(atrace_userspace_only_, other.atrace_userspace_only_)
    && ::protozero::internal::gen_helpers::EqualsField(buffer_size_kb_, other.buffer_size_kb_)
+   && ::protozero::internal::gen_helpers::EqualsField(buffer_size_lower_bound_, other.buffer_size_lower_bound_)
    && ::protozero::internal::gen_helpers::EqualsField(drain_period_ms_, other.drain_period_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(drain_buffer_percent_, other.drain_buffer_percent_)
    && ::protozero::internal::gen_helpers::EqualsField(compact_sched_, other.compact_sched_)
    && ::protozero::internal::gen_helpers::EqualsField(print_filter_, other.print_filter_)
    && ::protozero::internal::gen_helpers::EqualsField(symbolize_ksyms_, other.symbolize_ksyms_)
    && ::protozero::internal::gen_helpers::EqualsField(ksyms_mem_policy_, other.ksyms_mem_policy_)
-   && ::protozero::internal::gen_helpers::EqualsField(initialize_ksyms_synchronously_for_testing_, other.initialize_ksyms_synchronously_for_testing_)
    && ::protozero::internal::gen_helpers::EqualsField(throttle_rss_stat_, other.throttle_rss_stat_)
+   && ::protozero::internal::gen_helpers::EqualsField(denser_generic_event_encoding_, other.denser_generic_event_encoding_)
    && ::protozero::internal::gen_helpers::EqualsField(disable_generic_events_, other.disable_generic_events_)
    && ::protozero::internal::gen_helpers::EqualsField(syscall_events_, other.syscall_events_)
    && ::protozero::internal::gen_helpers::EqualsField(enable_function_graph_, other.enable_function_graph_)
    && ::protozero::internal::gen_helpers::EqualsField(function_filters_, other.function_filters_)
    && ::protozero::internal::gen_helpers::EqualsField(function_graph_roots_, other.function_graph_roots_)
+   && ::protozero::internal::gen_helpers::EqualsField(function_graph_max_depth_, other.function_graph_max_depth_)
+   && ::protozero::internal::gen_helpers::EqualsField(kprobe_events_, other.kprobe_events_)
    && ::protozero::internal::gen_helpers::EqualsField(preserve_ftrace_buffer_, other.preserve_ftrace_buffer_)
    && ::protozero::internal::gen_helpers::EqualsField(use_monotonic_raw_clock_, other.use_monotonic_raw_clock_)
    && ::protozero::internal::gen_helpers::EqualsField(instance_name_, other.instance_name_)
-   && ::protozero::internal::gen_helpers::EqualsField(buffer_size_lower_bound_, other.buffer_size_lower_bound_);
+   && ::protozero::internal::gen_helpers::EqualsField(debug_ftrace_abi_, other.debug_ftrace_abi_)
+   && ::protozero::internal::gen_helpers::EqualsField(tids_to_trace_, other.tids_to_trace_)
+   && ::protozero::internal::gen_helpers::EqualsField(tracefs_options_, other.tracefs_options_)
+   && ::protozero::internal::gen_helpers::EqualsField(tracing_cpumask_, other.tracing_cpumask_)
+   && ::protozero::internal::gen_helpers::EqualsField(initialize_ksyms_synchronously_for_testing_, other.initialize_ksyms_synchronously_for_testing_);
 }
 
 int FtraceConfig::kprobe_events_size() const { return static_cast<int>(kprobe_events_.size()); }
 void FtraceConfig::clear_kprobe_events() { kprobe_events_.clear(); }
 FtraceConfig_KprobeEvent* FtraceConfig::add_kprobe_events() { kprobe_events_.emplace_back(); return &kprobe_events_.back(); }
+int FtraceConfig::tracefs_options_size() const { return static_cast<int>(tracefs_options_.size()); }
+void FtraceConfig::clear_tracefs_options() { tracefs_options_.clear(); }
+FtraceConfig_TracefsOption* FtraceConfig::add_tracefs_options() { tracefs_options_.emplace_back(); return &tracefs_options_.back(); }
 bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
   ftrace_events_.clear();
-  kprobe_events_.clear();
   atrace_categories_.clear();
   atrace_apps_.clear();
   atrace_categories_prefer_sdk_.clear();
   syscall_events_.clear();
   function_filters_.clear();
   function_graph_roots_.clear();
+  kprobe_events_.clear();
+  tids_to_trace_.clear();
+  tracefs_options_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -17143,10 +23080,6 @@ bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
         ftrace_events_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &ftrace_events_.back());
         break;
-      case 30 :
-        kprobe_events_.emplace_back();
-        kprobe_events_.back().ParseFromArray(field.data(), field.size());
-        break;
       case 2 :
         atrace_categories_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &atrace_categories_.back());
@@ -17159,8 +23092,14 @@ bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
         atrace_categories_prefer_sdk_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &atrace_categories_prefer_sdk_.back());
         break;
+      case 34 :
+        field.get(&atrace_userspace_only_);
+        break;
       case 10 :
         field.get(&buffer_size_kb_);
+        break;
+      case 27 :
+        field.get(&buffer_size_lower_bound_);
         break;
       case 11 :
         field.get(&drain_period_ms_);
@@ -17180,11 +23119,11 @@ bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
       case 17 :
         field.get(&ksyms_mem_policy_);
         break;
-      case 14 :
-        field.get(&initialize_ksyms_synchronously_for_testing_);
-        break;
       case 15 :
         field.get(&throttle_rss_stat_);
+        break;
+      case 32 :
+        field.get(&denser_generic_event_encoding_);
         break;
       case 16 :
         field.get(&disable_generic_events_);
@@ -17204,6 +23143,13 @@ bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
         function_graph_roots_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &function_graph_roots_.back());
         break;
+      case 33 :
+        field.get(&function_graph_max_depth_);
+        break;
+      case 30 :
+        kprobe_events_.emplace_back();
+        kprobe_events_.back().ParseFromArray(field.data(), field.size());
+        break;
       case 23 :
         field.get(&preserve_ftrace_buffer_);
         break;
@@ -17213,8 +23159,22 @@ bool FtraceConfig::ParseFromArray(const void* raw, size_t size) {
       case 25 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &instance_name_);
         break;
-      case 27 :
-        field.get(&buffer_size_lower_bound_);
+      case 31 :
+        field.get(&debug_ftrace_abi_);
+        break;
+      case 35 :
+        tids_to_trace_.emplace_back();
+        field.get(&tids_to_trace_.back());
+        break;
+      case 36 :
+        tracefs_options_.emplace_back();
+        tracefs_options_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 37 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &tracing_cpumask_);
+        break;
+      case 14 :
+        field.get(&initialize_ksyms_synchronously_for_testing_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -17243,11 +23203,6 @@ void FtraceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
-  for (auto& it : kprobe_events_) {
-    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(30));
-  }
-
-  
   for (auto& it : atrace_categories_) {
     ::protozero::internal::gen_helpers::SerializeString(2, it, msg);
   }
@@ -17263,8 +23218,18 @@ void FtraceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[34]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(34, atrace_userspace_only_, msg);
+  }
+
+  
   if (_has_field_[10]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(10, buffer_size_kb_, msg);
+  }
+
+  
+  if (_has_field_[27]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(27, buffer_size_lower_bound_, msg);
   }
 
   
@@ -17298,13 +23263,13 @@ void FtraceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
-  if (_has_field_[14]) {
-    ::protozero::internal::gen_helpers::SerializeTinyVarInt(14, initialize_ksyms_synchronously_for_testing_, msg);
+  if (_has_field_[15]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(15, throttle_rss_stat_, msg);
   }
 
   
-  if (_has_field_[15]) {
-    ::protozero::internal::gen_helpers::SerializeTinyVarInt(15, throttle_rss_stat_, msg);
+  if (_has_field_[32]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(32, denser_generic_event_encoding_, msg);
   }
 
   
@@ -17333,6 +23298,16 @@ void FtraceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[33]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(33, function_graph_max_depth_, msg);
+  }
+
+  
+  for (auto& it : kprobe_events_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(30));
+  }
+
+  
   if (_has_field_[23]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(23, preserve_ftrace_buffer_, msg);
   }
@@ -17348,8 +23323,156 @@ void FtraceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
-  if (_has_field_[27]) {
-    ::protozero::internal::gen_helpers::SerializeTinyVarInt(27, buffer_size_lower_bound_, msg);
+  if (_has_field_[31]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(31, debug_ftrace_abi_, msg);
+  }
+
+  
+  for (auto& it : tids_to_trace_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(35, it, msg);
+  }
+
+  
+  for (auto& it : tracefs_options_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(36));
+  }
+
+  
+  if (_has_field_[37]) {
+    ::protozero::internal::gen_helpers::SerializeString(37, tracing_cpumask_, msg);
+  }
+
+  
+  if (_has_field_[14]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(14, initialize_ksyms_synchronously_for_testing_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+FtraceConfig_TracefsOption::FtraceConfig_TracefsOption() = default;
+FtraceConfig_TracefsOption::~FtraceConfig_TracefsOption() = default;
+FtraceConfig_TracefsOption::FtraceConfig_TracefsOption(const FtraceConfig_TracefsOption&) = default;
+FtraceConfig_TracefsOption& FtraceConfig_TracefsOption::operator=(const FtraceConfig_TracefsOption&) = default;
+FtraceConfig_TracefsOption::FtraceConfig_TracefsOption(FtraceConfig_TracefsOption&&) noexcept = default;
+FtraceConfig_TracefsOption& FtraceConfig_TracefsOption::operator=(FtraceConfig_TracefsOption&&) = default;
+
+bool FtraceConfig_TracefsOption::operator==(const FtraceConfig_TracefsOption& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(state_, other.state_);
+}
+
+bool FtraceConfig_TracefsOption::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 2 :
+        field.get(&state_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string FtraceConfig_TracefsOption::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> FtraceConfig_TracefsOption::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void FtraceConfig_TracefsOption::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, name_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, state_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent() = default;
+FtraceConfig_KprobeEvent::~FtraceConfig_KprobeEvent() = default;
+FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent(const FtraceConfig_KprobeEvent&) = default;
+FtraceConfig_KprobeEvent& FtraceConfig_KprobeEvent::operator=(const FtraceConfig_KprobeEvent&) = default;
+FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent(FtraceConfig_KprobeEvent&&) noexcept = default;
+FtraceConfig_KprobeEvent& FtraceConfig_KprobeEvent::operator=(FtraceConfig_KprobeEvent&&) = default;
+
+bool FtraceConfig_KprobeEvent::operator==(const FtraceConfig_KprobeEvent& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(probe_, other.probe_)
+   && ::protozero::internal::gen_helpers::EqualsField(type_, other.type_);
+}
+
+bool FtraceConfig_KprobeEvent::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &probe_);
+        break;
+      case 2 :
+        field.get(&type_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string FtraceConfig_KprobeEvent::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> FtraceConfig_KprobeEvent::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void FtraceConfig_KprobeEvent::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, probe_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, type_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -17607,70 +23730,6 @@ void FtraceConfig_CompactSchedConfig::Serialize(::protozero::Message* msg) const
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
-
-FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent() = default;
-FtraceConfig_KprobeEvent::~FtraceConfig_KprobeEvent() = default;
-FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent(const FtraceConfig_KprobeEvent&) = default;
-FtraceConfig_KprobeEvent& FtraceConfig_KprobeEvent::operator=(const FtraceConfig_KprobeEvent&) = default;
-FtraceConfig_KprobeEvent::FtraceConfig_KprobeEvent(FtraceConfig_KprobeEvent&&) noexcept = default;
-FtraceConfig_KprobeEvent& FtraceConfig_KprobeEvent::operator=(FtraceConfig_KprobeEvent&&) = default;
-
-bool FtraceConfig_KprobeEvent::operator==(const FtraceConfig_KprobeEvent& other) const {
-  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
-   && ::protozero::internal::gen_helpers::EqualsField(probe_, other.probe_)
-   && ::protozero::internal::gen_helpers::EqualsField(type_, other.type_);
-}
-
-bool FtraceConfig_KprobeEvent::ParseFromArray(const void* raw, size_t size) {
-  unknown_fields_.clear();
-  bool packed_error = false;
-
-  ::protozero::ProtoDecoder dec(raw, size);
-  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
-    if (field.id() < _has_field_.size()) {
-      _has_field_.set(field.id());
-    }
-    switch (field.id()) {
-      case 1 :
-        ::protozero::internal::gen_helpers::DeserializeString(field, &probe_);
-        break;
-      case 2 :
-        field.get(&type_);
-        break;
-      default:
-        field.SerializeAndAppendTo(&unknown_fields_);
-        break;
-    }
-  }
-  return !packed_error && !dec.bytes_left();
-}
-
-std::string FtraceConfig_KprobeEvent::SerializeAsString() const {
-  ::protozero::internal::gen_helpers::MessageSerializer msg;
-  Serialize(msg.get());
-  return msg.SerializeAsString();
-}
-
-std::vector<uint8_t> FtraceConfig_KprobeEvent::SerializeAsArray() const {
-  ::protozero::internal::gen_helpers::MessageSerializer msg;
-  Serialize(msg.get());
-  return msg.SerializeAsArray();
-}
-
-void FtraceConfig_KprobeEvent::Serialize(::protozero::Message* msg) const {
-  
-  if (_has_field_[1]) {
-    ::protozero::internal::gen_helpers::SerializeString(1, probe_, msg);
-  }
-
-  
-  if (_has_field_[2]) {
-    ::protozero::internal::gen_helpers::SerializeVarInt(2, type_, msg);
-  }
-
-  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
-}
-
 }  
 }  
 }  
@@ -17705,12 +23764,15 @@ bool GpuCounterConfig::operator==(const GpuCounterConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(counter_period_ns_, other.counter_period_ns_)
    && ::protozero::internal::gen_helpers::EqualsField(counter_ids_, other.counter_ids_)
+   && ::protozero::internal::gen_helpers::EqualsField(counter_names_, other.counter_names_)
    && ::protozero::internal::gen_helpers::EqualsField(instrumented_sampling_, other.instrumented_sampling_)
+   && ::protozero::internal::gen_helpers::EqualsField(instrumented_sampling_config_, other.instrumented_sampling_config_)
    && ::protozero::internal::gen_helpers::EqualsField(fix_gpu_clock_, other.fix_gpu_clock_);
 }
 
 bool GpuCounterConfig::ParseFromArray(const void* raw, size_t size) {
   counter_ids_.clear();
+  counter_names_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -17727,8 +23789,15 @@ bool GpuCounterConfig::ParseFromArray(const void* raw, size_t size) {
         counter_ids_.emplace_back();
         field.get(&counter_ids_.back());
         break;
+      case 6 :
+        counter_names_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &counter_names_.back());
+        break;
       case 3 :
         field.get(&instrumented_sampling_);
+        break;
+      case 5 :
+        (*instrumented_sampling_config_).ParseFromArray(field.data(), field.size());
         break;
       case 4 :
         field.get(&fix_gpu_clock_);
@@ -17765,13 +23834,344 @@ void GpuCounterConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  for (auto& it : counter_names_) {
+    ::protozero::internal::gen_helpers::SerializeString(6, it, msg);
+  }
+
+  
   if (_has_field_[3]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, instrumented_sampling_, msg);
   }
 
   
+  if (_has_field_[5]) {
+    (*instrumented_sampling_config_).Serialize(msg->BeginNestedMessage<::protozero::Message>(5));
+  }
+
+  
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(4, fix_gpu_clock_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+GpuCounterConfig_InstrumentedSamplingConfig::GpuCounterConfig_InstrumentedSamplingConfig() = default;
+GpuCounterConfig_InstrumentedSamplingConfig::~GpuCounterConfig_InstrumentedSamplingConfig() = default;
+GpuCounterConfig_InstrumentedSamplingConfig::GpuCounterConfig_InstrumentedSamplingConfig(const GpuCounterConfig_InstrumentedSamplingConfig&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig& GpuCounterConfig_InstrumentedSamplingConfig::operator=(const GpuCounterConfig_InstrumentedSamplingConfig&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig::GpuCounterConfig_InstrumentedSamplingConfig(GpuCounterConfig_InstrumentedSamplingConfig&&) noexcept = default;
+GpuCounterConfig_InstrumentedSamplingConfig& GpuCounterConfig_InstrumentedSamplingConfig::operator=(GpuCounterConfig_InstrumentedSamplingConfig&&) = default;
+
+bool GpuCounterConfig_InstrumentedSamplingConfig::operator==(const GpuCounterConfig_InstrumentedSamplingConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(activity_name_filters_, other.activity_name_filters_)
+   && ::protozero::internal::gen_helpers::EqualsField(activity_tx_include_globs_, other.activity_tx_include_globs_)
+   && ::protozero::internal::gen_helpers::EqualsField(activity_tx_exclude_globs_, other.activity_tx_exclude_globs_)
+   && ::protozero::internal::gen_helpers::EqualsField(activity_ranges_, other.activity_ranges_);
+}
+
+int GpuCounterConfig_InstrumentedSamplingConfig::activity_name_filters_size() const { return static_cast<int>(activity_name_filters_.size()); }
+void GpuCounterConfig_InstrumentedSamplingConfig::clear_activity_name_filters() { activity_name_filters_.clear(); }
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter* GpuCounterConfig_InstrumentedSamplingConfig::add_activity_name_filters() { activity_name_filters_.emplace_back(); return &activity_name_filters_.back(); }
+int GpuCounterConfig_InstrumentedSamplingConfig::activity_ranges_size() const { return static_cast<int>(activity_ranges_.size()); }
+void GpuCounterConfig_InstrumentedSamplingConfig::clear_activity_ranges() { activity_ranges_.clear(); }
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange* GpuCounterConfig_InstrumentedSamplingConfig::add_activity_ranges() { activity_ranges_.emplace_back(); return &activity_ranges_.back(); }
+bool GpuCounterConfig_InstrumentedSamplingConfig::ParseFromArray(const void* raw, size_t size) {
+  activity_name_filters_.clear();
+  activity_tx_include_globs_.clear();
+  activity_tx_exclude_globs_.clear();
+  activity_ranges_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 3 :
+        activity_name_filters_.emplace_back();
+        activity_name_filters_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 6 :
+        activity_tx_include_globs_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &activity_tx_include_globs_.back());
+        break;
+      case 7 :
+        activity_tx_exclude_globs_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &activity_tx_exclude_globs_.back());
+        break;
+      case 5 :
+        activity_ranges_.emplace_back();
+        activity_ranges_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string GpuCounterConfig_InstrumentedSamplingConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> GpuCounterConfig_InstrumentedSamplingConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void GpuCounterConfig_InstrumentedSamplingConfig::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : activity_name_filters_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(3));
+  }
+
+  
+  for (auto& it : activity_tx_include_globs_) {
+    ::protozero::internal::gen_helpers::SerializeString(6, it, msg);
+  }
+
+  
+  for (auto& it : activity_tx_exclude_globs_) {
+    ::protozero::internal::gen_helpers::SerializeString(7, it, msg);
+  }
+
+  
+  for (auto& it : activity_ranges_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(5));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange() = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::~GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange() = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange& GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::operator=(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange(GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange&&) noexcept = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange& GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::operator=(GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange&&) = default;
+
+bool GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::operator==(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(skip_, other.skip_)
+   && ::protozero::internal::gen_helpers::EqualsField(count_, other.count_);
+}
+
+bool GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&skip_);
+        break;
+      case 2 :
+        field.get(&count_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void GpuCounterConfig_InstrumentedSamplingConfig_ActivityRange::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, skip_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, count_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter() = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::~GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter() = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter& GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::operator=(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter&) = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter(GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter&&) noexcept = default;
+GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter& GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::operator=(GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter&&) = default;
+
+bool GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::operator==(const GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_glob_, other.name_glob_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_base_, other.name_base_);
+}
+
+bool GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_glob_);
+        break;
+      case 2 :
+        field.get(&name_base_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void GpuCounterConfig_InstrumentedSamplingConfig_ActivityNameFilter::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, name_glob_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, name_base_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+GpuRenderStagesConfig::GpuRenderStagesConfig() = default;
+GpuRenderStagesConfig::~GpuRenderStagesConfig() = default;
+GpuRenderStagesConfig::GpuRenderStagesConfig(const GpuRenderStagesConfig&) = default;
+GpuRenderStagesConfig& GpuRenderStagesConfig::operator=(const GpuRenderStagesConfig&) = default;
+GpuRenderStagesConfig::GpuRenderStagesConfig(GpuRenderStagesConfig&&) noexcept = default;
+GpuRenderStagesConfig& GpuRenderStagesConfig::operator=(GpuRenderStagesConfig&&) = default;
+
+bool GpuRenderStagesConfig::operator==(const GpuRenderStagesConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(full_loadstore_, other.full_loadstore_)
+   && ::protozero::internal::gen_helpers::EqualsField(low_overhead_, other.low_overhead_)
+   && ::protozero::internal::gen_helpers::EqualsField(trace_metrics_, other.trace_metrics_);
+}
+
+bool GpuRenderStagesConfig::ParseFromArray(const void* raw, size_t size) {
+  trace_metrics_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&full_loadstore_);
+        break;
+      case 2 :
+        field.get(&low_overhead_);
+        break;
+      case 3 :
+        trace_metrics_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &trace_metrics_.back());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string GpuRenderStagesConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> GpuRenderStagesConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void GpuRenderStagesConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(1, full_loadstore_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(2, low_overhead_, msg);
+  }
+
+  
+  for (auto& it : trace_metrics_) {
+    ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -18167,6 +24567,105 @@ namespace perfetto {
 namespace protos {
 namespace gen {
 
+SystemdJournaldConfig::SystemdJournaldConfig() = default;
+SystemdJournaldConfig::~SystemdJournaldConfig() = default;
+SystemdJournaldConfig::SystemdJournaldConfig(const SystemdJournaldConfig&) = default;
+SystemdJournaldConfig& SystemdJournaldConfig::operator=(const SystemdJournaldConfig&) = default;
+SystemdJournaldConfig::SystemdJournaldConfig(SystemdJournaldConfig&&) noexcept = default;
+SystemdJournaldConfig& SystemdJournaldConfig::operator=(SystemdJournaldConfig&&) = default;
+
+bool SystemdJournaldConfig::operator==(const SystemdJournaldConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(min_prio_, other.min_prio_)
+   && ::protozero::internal::gen_helpers::EqualsField(filter_identifiers_, other.filter_identifiers_)
+   && ::protozero::internal::gen_helpers::EqualsField(filter_units_, other.filter_units_);
+}
+
+bool SystemdJournaldConfig::ParseFromArray(const void* raw, size_t size) {
+  filter_identifiers_.clear();
+  filter_units_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&min_prio_);
+        break;
+      case 2 :
+        filter_identifiers_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &filter_identifiers_.back());
+        break;
+      case 3 :
+        filter_units_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &filter_units_.back());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string SystemdJournaldConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> SystemdJournaldConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void SystemdJournaldConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, min_prio_, msg);
+  }
+
+  
+  for (auto& it : filter_identifiers_) {
+    ::protozero::internal::gen_helpers::SerializeString(2, it, msg);
+  }
+
+  
+  for (auto& it : filter_units_) {
+    ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
 AndroidPowerConfig::AndroidPowerConfig() = default;
 AndroidPowerConfig::~AndroidPowerConfig() = default;
 AndroidPowerConfig::AndroidPowerConfig(const AndroidPowerConfig&) = default;
@@ -18282,6 +24781,92 @@ namespace perfetto {
 namespace protos {
 namespace gen {
 
+PriorityBoostConfig::PriorityBoostConfig() = default;
+PriorityBoostConfig::~PriorityBoostConfig() = default;
+PriorityBoostConfig::PriorityBoostConfig(const PriorityBoostConfig&) = default;
+PriorityBoostConfig& PriorityBoostConfig::operator=(const PriorityBoostConfig&) = default;
+PriorityBoostConfig::PriorityBoostConfig(PriorityBoostConfig&&) noexcept = default;
+PriorityBoostConfig& PriorityBoostConfig::operator=(PriorityBoostConfig&&) = default;
+
+bool PriorityBoostConfig::operator==(const PriorityBoostConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(policy_, other.policy_)
+   && ::protozero::internal::gen_helpers::EqualsField(priority_, other.priority_);
+}
+
+bool PriorityBoostConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&policy_);
+        break;
+      case 2 :
+        field.get(&priority_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string PriorityBoostConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> PriorityBoostConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void PriorityBoostConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, policy_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, priority_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
 ProcessStatsConfig::ProcessStatsConfig() = default;
 ProcessStatsConfig::~ProcessStatsConfig() = default;
 ProcessStatsConfig::ProcessStatsConfig(const ProcessStatsConfig&) = default;
@@ -18296,10 +24881,11 @@ bool ProcessStatsConfig::operator==(const ProcessStatsConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(record_thread_names_, other.record_thread_names_)
    && ::protozero::internal::gen_helpers::EqualsField(proc_stats_poll_ms_, other.proc_stats_poll_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(proc_stats_cache_ttl_ms_, other.proc_stats_cache_ttl_ms_)
-   && ::protozero::internal::gen_helpers::EqualsField(resolve_process_fds_, other.resolve_process_fds_)
    && ::protozero::internal::gen_helpers::EqualsField(scan_smaps_rollup_, other.scan_smaps_rollup_)
    && ::protozero::internal::gen_helpers::EqualsField(record_process_age_, other.record_process_age_)
-   && ::protozero::internal::gen_helpers::EqualsField(record_process_runtime_, other.record_process_runtime_);
+   && ::protozero::internal::gen_helpers::EqualsField(record_process_runtime_, other.record_process_runtime_)
+   && ::protozero::internal::gen_helpers::EqualsField(record_process_dmabuf_rss_, other.record_process_dmabuf_rss_)
+   && ::protozero::internal::gen_helpers::EqualsField(resolve_process_fds_, other.resolve_process_fds_);
 }
 
 bool ProcessStatsConfig::ParseFromArray(const void* raw, size_t size) {
@@ -18329,9 +24915,6 @@ bool ProcessStatsConfig::ParseFromArray(const void* raw, size_t size) {
       case 6 :
         field.get(&proc_stats_cache_ttl_ms_);
         break;
-      case 9 :
-        field.get(&resolve_process_fds_);
-        break;
       case 10 :
         field.get(&scan_smaps_rollup_);
         break;
@@ -18340,6 +24923,12 @@ bool ProcessStatsConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 12 :
         field.get(&record_process_runtime_);
+        break;
+      case 13 :
+        field.get(&record_process_dmabuf_rss_);
+        break;
+      case 9 :
+        field.get(&resolve_process_fds_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -18388,11 +24977,6 @@ void ProcessStatsConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
-  if (_has_field_[9]) {
-    ::protozero::internal::gen_helpers::SerializeTinyVarInt(9, resolve_process_fds_, msg);
-  }
-
-  
   if (_has_field_[10]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(10, scan_smaps_rollup_, msg);
   }
@@ -18405,6 +24989,16 @@ void ProcessStatsConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[12]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(12, record_process_runtime_, msg);
+  }
+
+  
+  if (_has_field_[13]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(13, record_process_dmabuf_rss_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(9, resolve_process_fds_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -19029,6 +25623,9 @@ bool PerfEventConfig::operator==(const PerfEventConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(timebase_, other.timebase_)
    && ::protozero::internal::gen_helpers::EqualsField(followers_, other.followers_)
    && ::protozero::internal::gen_helpers::EqualsField(callstack_sampling_, other.callstack_sampling_)
+   && ::protozero::internal::gen_helpers::EqualsField(target_cpu_, other.target_cpu_)
+   && ::protozero::internal::gen_helpers::EqualsField(ignore_open_failure_, other.ignore_open_failure_)
+   && ::protozero::internal::gen_helpers::EqualsField(cpuid_, other.cpuid_)
    && ::protozero::internal::gen_helpers::EqualsField(ring_buffer_read_period_ms_, other.ring_buffer_read_period_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(ring_buffer_pages_, other.ring_buffer_pages_)
    && ::protozero::internal::gen_helpers::EqualsField(max_enqueued_footprint_kb_, other.max_enqueued_footprint_kb_)
@@ -19051,6 +25648,8 @@ void PerfEventConfig::clear_followers() { followers_.clear(); }
 FollowerEvent* PerfEventConfig::add_followers() { followers_.emplace_back(); return &followers_.back(); }
 bool PerfEventConfig::ParseFromArray(const void* raw, size_t size) {
   followers_.clear();
+  target_cpu_.clear();
+  cpuid_.clear();
   target_installed_by_.clear();
   target_pid_.clear();
   target_cmdline_.clear();
@@ -19074,6 +25673,17 @@ bool PerfEventConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 16 :
         (*callstack_sampling_).ParseFromArray(field.data(), field.size());
+        break;
+      case 20 :
+        target_cpu_.emplace_back();
+        field.get(&target_cpu_.back());
+        break;
+      case 21 :
+        field.get(&ignore_open_failure_);
+        break;
+      case 22 :
+        cpuid_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &cpuid_.back());
         break;
       case 8 :
         field.get(&ring_buffer_read_period_ms_);
@@ -19159,6 +25769,21 @@ void PerfEventConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[16]) {
     (*callstack_sampling_).Serialize(msg->BeginNestedMessage<::protozero::Message>(16));
+  }
+
+  
+  for (auto& it : target_cpu_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(20, it, msg);
+  }
+
+  
+  if (_has_field_[21]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(21, ignore_open_failure_, msg);
+  }
+
+  
+  for (auto& it : cpuid_) {
+    ::protozero::internal::gen_helpers::SerializeString(22, it, msg);
   }
 
   
@@ -19442,6 +26067,293 @@ void PerfEventConfig_Scope::Serialize(::protozero::Message* msg) const {
 namespace perfetto {
 namespace protos {
 namespace gen {
+
+SmapsConfig::SmapsConfig() = default;
+SmapsConfig::~SmapsConfig() = default;
+SmapsConfig::SmapsConfig(const SmapsConfig&) = default;
+SmapsConfig& SmapsConfig::operator=(const SmapsConfig&) = default;
+SmapsConfig::SmapsConfig(SmapsConfig&&) noexcept = default;
+SmapsConfig& SmapsConfig::operator=(SmapsConfig&&) = default;
+
+bool SmapsConfig::operator==(const SmapsConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(vma_fields_, other.vma_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(unaggregated_, other.unaggregated_);
+}
+
+bool SmapsConfig::ParseFromArray(const void* raw, size_t size) {
+  vma_fields_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        vma_fields_.emplace_back();
+        field.get(&vma_fields_.back());
+        break;
+      case 2 :
+        field.get(&unaggregated_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string SmapsConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> SmapsConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void SmapsConfig::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : vma_fields_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, it, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(2, unaggregated_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+ProtoVmConfig::ProtoVmConfig() = default;
+ProtoVmConfig::~ProtoVmConfig() = default;
+ProtoVmConfig::ProtoVmConfig(const ProtoVmConfig&) = default;
+ProtoVmConfig& ProtoVmConfig::operator=(const ProtoVmConfig&) = default;
+ProtoVmConfig::ProtoVmConfig(ProtoVmConfig&&) noexcept = default;
+ProtoVmConfig& ProtoVmConfig::operator=(ProtoVmConfig&&) = default;
+
+bool ProtoVmConfig::operator==(const ProtoVmConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(memory_limit_kb_, other.memory_limit_kb_);
+}
+
+bool ProtoVmConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&memory_limit_kb_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ProtoVmConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ProtoVmConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ProtoVmConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, memory_limit_kb_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+QnxConfig::QnxConfig() = default;
+QnxConfig::~QnxConfig() = default;
+QnxConfig::QnxConfig(const QnxConfig&) = default;
+QnxConfig& QnxConfig::operator=(const QnxConfig&) = default;
+QnxConfig::QnxConfig(QnxConfig&&) noexcept = default;
+QnxConfig& QnxConfig::operator=(QnxConfig&&) = default;
+
+bool QnxConfig::operator==(const QnxConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_kernel_buffers_, other.qnx_kernel_buffers_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_kernel_kbuffers_, other.qnx_kernel_kbuffers_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_kernel_wide_events_, other.qnx_kernel_wide_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_cache_pages_, other.qnx_cache_pages_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_cache_max_pages_, other.qnx_cache_max_pages_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_trace_buffer_init_bytes_, other.qnx_trace_buffer_init_bytes_);
+}
+
+bool QnxConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&qnx_kernel_buffers_);
+        break;
+      case 2 :
+        field.get(&qnx_kernel_kbuffers_);
+        break;
+      case 3 :
+        field.get(&qnx_kernel_wide_events_);
+        break;
+      case 4 :
+        field.get(&qnx_cache_pages_);
+        break;
+      case 5 :
+        field.get(&qnx_cache_max_pages_);
+        break;
+      case 6 :
+        field.get(&qnx_trace_buffer_init_bytes_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string QnxConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> QnxConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void QnxConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, qnx_kernel_buffers_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, qnx_kernel_kbuffers_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, qnx_kernel_wide_events_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(4, qnx_cache_pages_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(5, qnx_cache_max_pages_, msg);
+  }
+
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(6, qnx_trace_buffer_init_bytes_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
 }  
 }  
 }  
@@ -19681,7 +26593,8 @@ bool SysStatsConfig::operator==(const SysStatsConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(psi_period_ms_, other.psi_period_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(thermal_period_ms_, other.thermal_period_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(cpuidle_period_ms_, other.cpuidle_period_ms_)
-   && ::protozero::internal::gen_helpers::EqualsField(gpufreq_period_ms_, other.gpufreq_period_ms_);
+   && ::protozero::internal::gen_helpers::EqualsField(gpufreq_period_ms_, other.gpufreq_period_ms_)
+   && ::protozero::internal::gen_helpers::EqualsField(slab_period_ms_, other.slab_period_ms_);
 }
 
 bool SysStatsConfig::ParseFromArray(const void* raw, size_t size) {
@@ -19741,6 +26654,9 @@ bool SysStatsConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 14 :
         field.get(&gpufreq_period_ms_);
+        break;
+      case 15 :
+        field.get(&slab_period_ms_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -19833,6 +26749,11 @@ void SysStatsConfig::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeVarInt(14, gpufreq_period_ms_, msg);
   }
 
+  
+  if (_has_field_[15]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(15, slab_period_ms_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -19867,7 +26788,8 @@ SystemInfoConfig::SystemInfoConfig(SystemInfoConfig&&) noexcept = default;
 SystemInfoConfig& SystemInfoConfig::operator=(SystemInfoConfig&&) = default;
 
 bool SystemInfoConfig::operator==(const SystemInfoConfig& other) const {
-  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(irq_names_, other.irq_names_);
 }
 
 bool SystemInfoConfig::ParseFromArray(const void* raw, size_t size) {
@@ -19880,6 +26802,9 @@ bool SystemInfoConfig::ParseFromArray(const void* raw, size_t size) {
       _has_field_.set(field.id());
     }
     switch (field.id()) {
+      case 1 :
+        field.get(&irq_names_);
+        break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
         break;
@@ -19901,6 +26826,11 @@ std::vector<uint8_t> SystemInfoConfig::SerializeAsArray() const {
 }
 
 void SystemInfoConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(1, irq_names_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -19944,6 +26874,7 @@ bool TrackEventConfig::operator==(const TrackEventConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(timestamp_unit_multiplier_, other.timestamp_unit_multiplier_)
    && ::protozero::internal::gen_helpers::EqualsField(filter_debug_annotations_, other.filter_debug_annotations_)
    && ::protozero::internal::gen_helpers::EqualsField(enable_thread_time_sampling_, other.enable_thread_time_sampling_)
+   && ::protozero::internal::gen_helpers::EqualsField(thread_time_subsampling_ns_, other.thread_time_subsampling_ns_)
    && ::protozero::internal::gen_helpers::EqualsField(filter_dynamic_event_names_, other.filter_dynamic_event_names_);
 }
 
@@ -19988,6 +26919,9 @@ bool TrackEventConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 8 :
         field.get(&enable_thread_time_sampling_);
+        break;
+      case 10 :
+        field.get(&thread_time_subsampling_ns_);
         break;
       case 9 :
         field.get(&filter_dynamic_event_names_);
@@ -20054,6 +26988,11 @@ void TrackEventConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[10]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(10, thread_time_subsampling_ns_, msg);
+  }
+
+  
   if (_has_field_[9]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(9, filter_dynamic_event_names_, msg);
   }
@@ -20097,7 +27036,8 @@ bool ChromeConfig::operator==(const ChromeConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(privacy_filtering_enabled_, other.privacy_filtering_enabled_)
    && ::protozero::internal::gen_helpers::EqualsField(convert_to_legacy_json_, other.convert_to_legacy_json_)
    && ::protozero::internal::gen_helpers::EqualsField(client_priority_, other.client_priority_)
-   && ::protozero::internal::gen_helpers::EqualsField(json_agent_label_filter_, other.json_agent_label_filter_);
+   && ::protozero::internal::gen_helpers::EqualsField(json_agent_label_filter_, other.json_agent_label_filter_)
+   && ::protozero::internal::gen_helpers::EqualsField(event_package_name_filter_enabled_, other.event_package_name_filter_enabled_);
 }
 
 bool ChromeConfig::ParseFromArray(const void* raw, size_t size) {
@@ -20124,6 +27064,9 @@ bool ChromeConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 5 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &json_agent_label_filter_);
+        break;
+      case 6 :
+        field.get(&event_package_name_filter_enabled_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -20171,6 +27114,11 @@ void ChromeConfig::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeString(5, json_agent_label_filter_, msg);
   }
 
+  
+  if (_has_field_[6]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(6, event_package_name_filter_enabled_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -20191,6 +27139,184 @@ void ChromeConfig::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+ChromiumHistogramSamplesConfig::ChromiumHistogramSamplesConfig() = default;
+ChromiumHistogramSamplesConfig::~ChromiumHistogramSamplesConfig() = default;
+ChromiumHistogramSamplesConfig::ChromiumHistogramSamplesConfig(const ChromiumHistogramSamplesConfig&) = default;
+ChromiumHistogramSamplesConfig& ChromiumHistogramSamplesConfig::operator=(const ChromiumHistogramSamplesConfig&) = default;
+ChromiumHistogramSamplesConfig::ChromiumHistogramSamplesConfig(ChromiumHistogramSamplesConfig&&) noexcept = default;
+ChromiumHistogramSamplesConfig& ChromiumHistogramSamplesConfig::operator=(ChromiumHistogramSamplesConfig&&) = default;
+
+bool ChromiumHistogramSamplesConfig::operator==(const ChromiumHistogramSamplesConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(histograms_, other.histograms_)
+   && ::protozero::internal::gen_helpers::EqualsField(filter_histogram_names_, other.filter_histogram_names_);
+}
+
+int ChromiumHistogramSamplesConfig::histograms_size() const { return static_cast<int>(histograms_.size()); }
+void ChromiumHistogramSamplesConfig::clear_histograms() { histograms_.clear(); }
+ChromiumHistogramSamplesConfig_HistogramSample* ChromiumHistogramSamplesConfig::add_histograms() { histograms_.emplace_back(); return &histograms_.back(); }
+bool ChromiumHistogramSamplesConfig::ParseFromArray(const void* raw, size_t size) {
+  histograms_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        histograms_.emplace_back();
+        histograms_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 2 :
+        field.get(&filter_histogram_names_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ChromiumHistogramSamplesConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ChromiumHistogramSamplesConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ChromiumHistogramSamplesConfig::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : histograms_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(2, filter_histogram_names_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+ChromiumHistogramSamplesConfig_HistogramSample::ChromiumHistogramSamplesConfig_HistogramSample() = default;
+ChromiumHistogramSamplesConfig_HistogramSample::~ChromiumHistogramSamplesConfig_HistogramSample() = default;
+ChromiumHistogramSamplesConfig_HistogramSample::ChromiumHistogramSamplesConfig_HistogramSample(const ChromiumHistogramSamplesConfig_HistogramSample&) = default;
+ChromiumHistogramSamplesConfig_HistogramSample& ChromiumHistogramSamplesConfig_HistogramSample::operator=(const ChromiumHistogramSamplesConfig_HistogramSample&) = default;
+ChromiumHistogramSamplesConfig_HistogramSample::ChromiumHistogramSamplesConfig_HistogramSample(ChromiumHistogramSamplesConfig_HistogramSample&&) noexcept = default;
+ChromiumHistogramSamplesConfig_HistogramSample& ChromiumHistogramSamplesConfig_HistogramSample::operator=(ChromiumHistogramSamplesConfig_HistogramSample&&) = default;
+
+bool ChromiumHistogramSamplesConfig_HistogramSample::operator==(const ChromiumHistogramSamplesConfig_HistogramSample& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(histogram_name_, other.histogram_name_)
+   && ::protozero::internal::gen_helpers::EqualsField(min_value_, other.min_value_)
+   && ::protozero::internal::gen_helpers::EqualsField(max_value_, other.max_value_);
+}
+
+bool ChromiumHistogramSamplesConfig_HistogramSample::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &histogram_name_);
+        break;
+      case 2 :
+        field.get(&min_value_);
+        break;
+      case 3 :
+        field.get(&max_value_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ChromiumHistogramSamplesConfig_HistogramSample::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ChromiumHistogramSamplesConfig_HistogramSample::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ChromiumHistogramSamplesConfig_HistogramSample::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, histogram_name_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, min_value_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, max_value_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -20614,12 +27740,14 @@ ScenarioConfig& ScenarioConfig::operator=(ScenarioConfig&&) = default;
 bool ScenarioConfig::operator==(const ScenarioConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(scenario_name_, other.scenario_name_)
+   && ::protozero::internal::gen_helpers::EqualsField(scenario_description_, other.scenario_description_)
    && ::protozero::internal::gen_helpers::EqualsField(start_rules_, other.start_rules_)
    && ::protozero::internal::gen_helpers::EqualsField(stop_rules_, other.stop_rules_)
    && ::protozero::internal::gen_helpers::EqualsField(upload_rules_, other.upload_rules_)
    && ::protozero::internal::gen_helpers::EqualsField(setup_rules_, other.setup_rules_)
    && ::protozero::internal::gen_helpers::EqualsField(trace_config_, other.trace_config_)
-   && ::protozero::internal::gen_helpers::EqualsField(nested_scenarios_, other.nested_scenarios_);
+   && ::protozero::internal::gen_helpers::EqualsField(nested_scenarios_, other.nested_scenarios_)
+   && ::protozero::internal::gen_helpers::EqualsField(use_system_backend_, other.use_system_backend_);
 }
 
 int ScenarioConfig::start_rules_size() const { return static_cast<int>(start_rules_.size()); }
@@ -20655,6 +27783,9 @@ bool ScenarioConfig::ParseFromArray(const void* raw, size_t size) {
       case 1 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &scenario_name_);
         break;
+      case 9 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &scenario_description_);
+        break;
       case 2 :
         start_rules_.emplace_back();
         start_rules_.back().ParseFromArray(field.data(), field.size());
@@ -20677,6 +27808,9 @@ bool ScenarioConfig::ParseFromArray(const void* raw, size_t size) {
       case 7 :
         nested_scenarios_.emplace_back();
         nested_scenarios_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 8 :
+        field.get(&use_system_backend_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -20702,6 +27836,11 @@ void ScenarioConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[1]) {
     ::protozero::internal::gen_helpers::SerializeString(1, scenario_name_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeString(9, scenario_description_, msg);
   }
 
   
@@ -20732,6 +27871,11 @@ void ScenarioConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : nested_scenarios_) {
     it.Serialize(msg->BeginNestedMessage<::protozero::Message>(7));
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(8, use_system_backend_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -21021,6 +28165,8 @@ void V8Config::Serialize(::protozero::Message* msg) const {
 
 
 
+
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -21036,12 +28182,16 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
    && ::protozero::internal::gen_helpers::EqualsField(target_buffer_, other.target_buffer_)
+   && ::protozero::internal::gen_helpers::EqualsField(target_buffer_name_, other.target_buffer_name_)
    && ::protozero::internal::gen_helpers::EqualsField(trace_duration_ms_, other.trace_duration_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(prefer_suspend_clock_for_duration_, other.prefer_suspend_clock_for_duration_)
    && ::protozero::internal::gen_helpers::EqualsField(stop_timeout_ms_, other.stop_timeout_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(enable_extra_guardrails_, other.enable_extra_guardrails_)
    && ::protozero::internal::gen_helpers::EqualsField(session_initiator_, other.session_initiator_)
    && ::protozero::internal::gen_helpers::EqualsField(tracing_session_id_, other.tracing_session_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(buffer_exhausted_policy_, other.buffer_exhausted_policy_)
+   && ::protozero::internal::gen_helpers::EqualsField(priority_boost_, other.priority_boost_)
+   && ::protozero::internal::gen_helpers::EqualsField(protovm_config_, other.protovm_config_)
    && ::protozero::internal::gen_helpers::EqualsField(ftrace_config_, other.ftrace_config_)
    && ::protozero::internal::gen_helpers::EqualsField(inode_file_config_, other.inode_file_config_)
    && ::protozero::internal::gen_helpers::EqualsField(process_stats_config_, other.process_stats_config_)
@@ -21060,6 +28210,7 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(android_system_property_config_, other.android_system_property_config_)
    && ::protozero::internal::gen_helpers::EqualsField(statsd_tracing_config_, other.statsd_tracing_config_)
    && ::protozero::internal::gen_helpers::EqualsField(system_info_config_, other.system_info_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(frozen_ftrace_config_, other.frozen_ftrace_config_)
    && ::protozero::internal::gen_helpers::EqualsField(chrome_config_, other.chrome_config_)
    && ::protozero::internal::gen_helpers::EqualsField(v8_config_, other.v8_config_)
    && ::protozero::internal::gen_helpers::EqualsField(interceptor_config_, other.interceptor_config_)
@@ -21073,6 +28224,16 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(pixel_modem_config_, other.pixel_modem_config_)
    && ::protozero::internal::gen_helpers::EqualsField(windowmanager_config_, other.windowmanager_config_)
    && ::protozero::internal::gen_helpers::EqualsField(chromium_system_metrics_, other.chromium_system_metrics_)
+   && ::protozero::internal::gen_helpers::EqualsField(kernel_wakelocks_config_, other.kernel_wakelocks_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(gpu_renderstages_config_, other.gpu_renderstages_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(chromium_histogram_samples_, other.chromium_histogram_samples_)
+   && ::protozero::internal::gen_helpers::EqualsField(app_wakelocks_config_, other.app_wakelocks_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(cpu_per_uid_config_, other.cpu_per_uid_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(user_list_config_, other.user_list_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(inputmethod_config_, other.inputmethod_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_aflags_config_, other.android_aflags_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(journald_config_, other.journald_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(qnx_config_, other.qnx_config_)
    && ::protozero::internal::gen_helpers::EqualsField(legacy_config_, other.legacy_config_)
    && ::protozero::internal::gen_helpers::EqualsField(for_testing_, other.for_testing_);
 }
@@ -21093,6 +28254,9 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
       case 2 :
         field.get(&target_buffer_);
         break;
+      case 11 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &target_buffer_name_);
+        break;
       case 3 :
         field.get(&trace_duration_ms_);
         break;
@@ -21110,6 +28274,15 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 4 :
         field.get(&tracing_session_id_);
+        break;
+      case 9 :
+        field.get(&buffer_exhausted_policy_);
+        break;
+      case 10 :
+        (*priority_boost_).ParseFromArray(field.data(), field.size());
+        break;
+      case 12 :
+        (*protovm_config_).ParseFromArray(field.data(), field.size());
         break;
       case 100 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &ftrace_config_);
@@ -21165,6 +28338,9 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
       case 119 :
         (*system_info_config_).ParseFromArray(field.data(), field.size());
         break;
+      case 136 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &frozen_ftrace_config_);
+        break;
       case 101 :
         (*chrome_config_).ParseFromArray(field.data(), field.size());
         break;
@@ -21204,6 +28380,36 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
       case 131 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &chromium_system_metrics_);
         break;
+      case 132 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &kernel_wakelocks_config_);
+        break;
+      case 133 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &gpu_renderstages_config_);
+        break;
+      case 134 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &chromium_histogram_samples_);
+        break;
+      case 135 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &app_wakelocks_config_);
+        break;
+      case 137 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &cpu_per_uid_config_);
+        break;
+      case 138 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &user_list_config_);
+        break;
+      case 139 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &inputmethod_config_);
+        break;
+      case 140 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_aflags_config_);
+        break;
+      case 141 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &journald_config_);
+        break;
+      case 150 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &qnx_config_);
+        break;
       case 1000 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &legacy_config_);
         break;
@@ -21242,6 +28448,11 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[11]) {
+    ::protozero::internal::gen_helpers::SerializeString(11, target_buffer_name_, msg);
+  }
+
+  
   if (_has_field_[3]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(3, trace_duration_ms_, msg);
   }
@@ -21269,6 +28480,21 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[4]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(4, tracing_session_id_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(9, buffer_exhausted_policy_, msg);
+  }
+
+  
+  if (_has_field_[10]) {
+    (*priority_boost_).Serialize(msg->BeginNestedMessage<::protozero::Message>(10));
+  }
+
+  
+  if (_has_field_[12]) {
+    (*protovm_config_).Serialize(msg->BeginNestedMessage<::protozero::Message>(12));
   }
 
   
@@ -21362,6 +28588,11 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[136]) {
+    msg->AppendString(136, frozen_ftrace_config_);
+  }
+
+  
   if (_has_field_[101]) {
     (*chrome_config_).Serialize(msg->BeginNestedMessage<::protozero::Message>(101));
   }
@@ -21427,6 +28658,56 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[132]) {
+    msg->AppendString(132, kernel_wakelocks_config_);
+  }
+
+  
+  if (_has_field_[133]) {
+    msg->AppendString(133, gpu_renderstages_config_);
+  }
+
+  
+  if (_has_field_[134]) {
+    msg->AppendString(134, chromium_histogram_samples_);
+  }
+
+  
+  if (_has_field_[135]) {
+    msg->AppendString(135, app_wakelocks_config_);
+  }
+
+  
+  if (_has_field_[137]) {
+    msg->AppendString(137, cpu_per_uid_config_);
+  }
+
+  
+  if (_has_field_[138]) {
+    msg->AppendString(138, user_list_config_);
+  }
+
+  
+  if (_has_field_[139]) {
+    msg->AppendString(139, inputmethod_config_);
+  }
+
+  
+  if (_has_field_[140]) {
+    msg->AppendString(140, android_aflags_config_);
+  }
+
+  
+  if (_has_field_[141]) {
+    msg->AppendString(141, journald_config_);
+  }
+
+  
+  if (_has_field_[150]) {
+    msg->AppendString(150, qnx_config_);
+  }
+
+  
   if (_has_field_[1000]) {
     ::protozero::internal::gen_helpers::SerializeString(1000, legacy_config_, msg);
   }
@@ -21471,11 +28752,21 @@ EtwConfig& EtwConfig::operator=(EtwConfig&&) = default;
 
 bool EtwConfig::operator==(const EtwConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
-   && ::protozero::internal::gen_helpers::EqualsField(kernel_flags_, other.kernel_flags_);
+   && ::protozero::internal::gen_helpers::EqualsField(kernel_flags_, other.kernel_flags_)
+   && ::protozero::internal::gen_helpers::EqualsField(scheduler_provider_events_, other.scheduler_provider_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(memory_provider_events_, other.memory_provider_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(file_provider_events_, other.file_provider_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(stack_sampling_events_, other.stack_sampling_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(disk_provider_events_, other.disk_provider_events_);
 }
 
 bool EtwConfig::ParseFromArray(const void* raw, size_t size) {
   kernel_flags_.clear();
+  scheduler_provider_events_.clear();
+  memory_provider_events_.clear();
+  file_provider_events_.clear();
+  stack_sampling_events_.clear();
+  disk_provider_events_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -21488,6 +28779,26 @@ bool EtwConfig::ParseFromArray(const void* raw, size_t size) {
       case 1 :
         kernel_flags_.emplace_back();
         field.get(&kernel_flags_.back());
+        break;
+      case 2 :
+        scheduler_provider_events_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &scheduler_provider_events_.back());
+        break;
+      case 3 :
+        memory_provider_events_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &memory_provider_events_.back());
+        break;
+      case 4 :
+        file_provider_events_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &file_provider_events_.back());
+        break;
+      case 5 :
+        stack_sampling_events_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &stack_sampling_events_.back());
+        break;
+      case 6 :
+        disk_provider_events_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &disk_provider_events_.back());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -21513,6 +28824,31 @@ void EtwConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : kernel_flags_) {
     ::protozero::internal::gen_helpers::SerializeVarInt(1, it, msg);
+  }
+
+  
+  for (auto& it : scheduler_provider_events_) {
+    ::protozero::internal::gen_helpers::SerializeString(2, it, msg);
+  }
+
+  
+  for (auto& it : memory_provider_events_) {
+    ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
+  }
+
+  
+  for (auto& it : file_provider_events_) {
+    ::protozero::internal::gen_helpers::SerializeString(4, it, msg);
+  }
+
+  
+  for (auto& it : stack_sampling_events_) {
+    ::protozero::internal::gen_helpers::SerializeString(5, it, msg);
+  }
+
+  
+  for (auto& it : disk_provider_events_) {
+    ::protozero::internal::gen_helpers::SerializeString(6, it, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -21622,6 +28958,20 @@ void InterceptorConfig::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22257,6 +29607,20 @@ void TestConfig_DummyFields::Serialize(::protozero::Message* msg) const {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -22304,7 +29668,13 @@ bool TraceConfig::operator==(const TraceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(trace_filter_, other.trace_filter_)
    && ::protozero::internal::gen_helpers::EqualsField(android_report_config_, other.android_report_config_)
    && ::protozero::internal::gen_helpers::EqualsField(cmd_trace_start_delay_, other.cmd_trace_start_delay_)
-   && ::protozero::internal::gen_helpers::EqualsField(session_semaphores_, other.session_semaphores_);
+   && ::protozero::internal::gen_helpers::EqualsField(session_semaphores_, other.session_semaphores_)
+   && ::protozero::internal::gen_helpers::EqualsField(priority_boost_, other.priority_boost_)
+   && ::protozero::internal::gen_helpers::EqualsField(exclusive_prio_, other.exclusive_prio_)
+   && ::protozero::internal::gen_helpers::EqualsField(write_flush_mode_, other.write_flush_mode_)
+   && ::protozero::internal::gen_helpers::EqualsField(fflush_post_write_, other.fflush_post_write_)
+   && ::protozero::internal::gen_helpers::EqualsField(trace_all_machines_, other.trace_all_machines_)
+   && ::protozero::internal::gen_helpers::EqualsField(notes_, other.notes_);
 }
 
 int TraceConfig::buffers_size() const { return static_cast<int>(buffers_.size()); }
@@ -22319,12 +29689,16 @@ TraceConfig_ProducerConfig* TraceConfig::add_producers() { producers_.emplace_ba
 int TraceConfig::session_semaphores_size() const { return static_cast<int>(session_semaphores_.size()); }
 void TraceConfig::clear_session_semaphores() { session_semaphores_.clear(); }
 TraceConfig_SessionSemaphore* TraceConfig::add_session_semaphores() { session_semaphores_.emplace_back(); return &session_semaphores_.back(); }
+int TraceConfig::notes_size() const { return static_cast<int>(notes_.size()); }
+void TraceConfig::clear_notes() { notes_.clear(); }
+TraceConfig_Note* TraceConfig::add_notes() { notes_.emplace_back(); return &notes_.back(); }
 bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
   buffers_.clear();
   data_sources_.clear();
   producers_.clear();
   activate_triggers_.clear();
   session_semaphores_.clear();
+  notes_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -22443,6 +29817,25 @@ bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
       case 39 :
         session_semaphores_.emplace_back();
         session_semaphores_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 40 :
+        (*priority_boost_).ParseFromArray(field.data(), field.size());
+        break;
+      case 41 :
+        field.get(&exclusive_prio_);
+        break;
+      case 44 :
+        field.get(&write_flush_mode_);
+        break;
+      case 45 :
+        field.get(&fflush_post_write_);
+        break;
+      case 43 :
+        field.get(&trace_all_machines_);
+        break;
+      case 46 :
+        notes_.emplace_back();
+        notes_.back().ParseFromArray(field.data(), field.size());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -22638,6 +30031,100 @@ void TraceConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : session_semaphores_) {
     it.Serialize(msg->BeginNestedMessage<::protozero::Message>(39));
+  }
+
+  
+  if (_has_field_[40]) {
+    (*priority_boost_).Serialize(msg->BeginNestedMessage<::protozero::Message>(40));
+  }
+
+  
+  if (_has_field_[41]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(41, exclusive_prio_, msg);
+  }
+
+  
+  if (_has_field_[44]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(44, write_flush_mode_, msg);
+  }
+
+  
+  if (_has_field_[45]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(45, fflush_post_write_, msg);
+  }
+
+  
+  if (_has_field_[43]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(43, trace_all_machines_, msg);
+  }
+
+  
+  for (auto& it : notes_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(46));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+TraceConfig_Note::TraceConfig_Note() = default;
+TraceConfig_Note::~TraceConfig_Note() = default;
+TraceConfig_Note::TraceConfig_Note(const TraceConfig_Note&) = default;
+TraceConfig_Note& TraceConfig_Note::operator=(const TraceConfig_Note&) = default;
+TraceConfig_Note::TraceConfig_Note(TraceConfig_Note&&) noexcept = default;
+TraceConfig_Note& TraceConfig_Note::operator=(TraceConfig_Note&&) = default;
+
+bool TraceConfig_Note::operator==(const TraceConfig_Note& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(key_, other.key_)
+   && ::protozero::internal::gen_helpers::EqualsField(value_, other.value_);
+}
+
+bool TraceConfig_Note::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &key_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &value_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TraceConfig_Note::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TraceConfig_Note::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TraceConfig_Note::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, key_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, value_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -22865,7 +30352,9 @@ bool TraceConfig_TraceFilter::operator==(const TraceConfig_TraceFilter& other) c
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(bytecode_, other.bytecode_)
    && ::protozero::internal::gen_helpers::EqualsField(bytecode_v2_, other.bytecode_v2_)
-   && ::protozero::internal::gen_helpers::EqualsField(string_filter_chain_, other.string_filter_chain_);
+   && ::protozero::internal::gen_helpers::EqualsField(string_filter_chain_, other.string_filter_chain_)
+   && ::protozero::internal::gen_helpers::EqualsField(bytecode_overlay_v54_, other.bytecode_overlay_v54_)
+   && ::protozero::internal::gen_helpers::EqualsField(string_filter_chain_v54_, other.string_filter_chain_v54_);
 }
 
 bool TraceConfig_TraceFilter::ParseFromArray(const void* raw, size_t size) {
@@ -22886,6 +30375,12 @@ bool TraceConfig_TraceFilter::ParseFromArray(const void* raw, size_t size) {
         break;
       case 3 :
         (*string_filter_chain_).ParseFromArray(field.data(), field.size());
+        break;
+      case 4 :
+        field.get(&bytecode_overlay_v54_);
+        break;
+      case 5 :
+        (*string_filter_chain_v54_).ParseFromArray(field.data(), field.size());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -22921,6 +30416,16 @@ void TraceConfig_TraceFilter::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[3]) {
     (*string_filter_chain_).Serialize(msg->BeginNestedMessage<::protozero::Message>(3));
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeString(4, bytecode_overlay_v54_, msg);
+  }
+
+  
+  if (_has_field_[5]) {
+    (*string_filter_chain_v54_).Serialize(msg->BeginNestedMessage<::protozero::Message>(5));
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -22998,10 +30503,13 @@ bool TraceConfig_TraceFilter_StringFilterRule::operator==(const TraceConfig_Trac
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(policy_, other.policy_)
    && ::protozero::internal::gen_helpers::EqualsField(regex_pattern_, other.regex_pattern_)
-   && ::protozero::internal::gen_helpers::EqualsField(atrace_payload_starts_with_, other.atrace_payload_starts_with_);
+   && ::protozero::internal::gen_helpers::EqualsField(atrace_payload_starts_with_, other.atrace_payload_starts_with_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(semantic_type_, other.semantic_type_);
 }
 
 bool TraceConfig_TraceFilter_StringFilterRule::ParseFromArray(const void* raw, size_t size) {
+  semantic_type_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -23019,6 +30527,13 @@ bool TraceConfig_TraceFilter_StringFilterRule::ParseFromArray(const void* raw, s
         break;
       case 3 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &atrace_payload_starts_with_);
+        break;
+      case 4 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 5 :
+        semantic_type_.emplace_back();
+        field.get(&semantic_type_.back());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -23054,6 +30569,16 @@ void TraceConfig_TraceFilter_StringFilterRule::Serialize(::protozero::Message* m
   
   if (_has_field_[3]) {
     ::protozero::internal::gen_helpers::SerializeString(3, atrace_payload_starts_with_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeString(4, name_, msg);
+  }
+
+  
+  for (auto& it : semantic_type_) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(5, it, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -23619,7 +31144,8 @@ bool TraceConfig_BuiltinDataSource::operator==(const TraceConfig_BuiltinDataSour
    && ::protozero::internal::gen_helpers::EqualsField(primary_trace_clock_, other.primary_trace_clock_)
    && ::protozero::internal::gen_helpers::EqualsField(snapshot_interval_ms_, other.snapshot_interval_ms_)
    && ::protozero::internal::gen_helpers::EqualsField(prefer_suspend_clock_for_snapshot_, other.prefer_suspend_clock_for_snapshot_)
-   && ::protozero::internal::gen_helpers::EqualsField(disable_chunk_usage_histograms_, other.disable_chunk_usage_histograms_);
+   && ::protozero::internal::gen_helpers::EqualsField(disable_chunk_usage_histograms_, other.disable_chunk_usage_histograms_)
+   && ::protozero::internal::gen_helpers::EqualsField(disable_extension_descriptors_, other.disable_extension_descriptors_);
 }
 
 bool TraceConfig_BuiltinDataSource::ParseFromArray(const void* raw, size_t size) {
@@ -23655,6 +31181,9 @@ bool TraceConfig_BuiltinDataSource::ParseFromArray(const void* raw, size_t size)
         break;
       case 8 :
         field.get(&disable_chunk_usage_histograms_);
+        break;
+      case 9 :
+        field.get(&disable_extension_descriptors_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -23717,6 +31246,11 @@ void TraceConfig_BuiltinDataSource::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(8, disable_chunk_usage_histograms_, msg);
   }
 
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(9, disable_extension_descriptors_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -23732,12 +31266,14 @@ bool TraceConfig_DataSource::operator==(const TraceConfig_DataSource& other) con
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(config_, other.config_)
    && ::protozero::internal::gen_helpers::EqualsField(producer_name_filter_, other.producer_name_filter_)
-   && ::protozero::internal::gen_helpers::EqualsField(producer_name_regex_filter_, other.producer_name_regex_filter_);
+   && ::protozero::internal::gen_helpers::EqualsField(producer_name_regex_filter_, other.producer_name_regex_filter_)
+   && ::protozero::internal::gen_helpers::EqualsField(machine_name_filter_, other.machine_name_filter_);
 }
 
 bool TraceConfig_DataSource::ParseFromArray(const void* raw, size_t size) {
   producer_name_filter_.clear();
   producer_name_regex_filter_.clear();
+  machine_name_filter_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -23757,6 +31293,10 @@ bool TraceConfig_DataSource::ParseFromArray(const void* raw, size_t size) {
       case 3 :
         producer_name_regex_filter_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &producer_name_regex_filter_.back());
+        break;
+      case 4 :
+        machine_name_filter_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &machine_name_filter_.back());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -23794,6 +31334,11 @@ void TraceConfig_DataSource::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
   }
 
+  
+  for (auto& it : machine_name_filter_) {
+    ::protozero::internal::gen_helpers::SerializeString(4, it, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -23810,7 +31355,9 @@ bool TraceConfig_BufferConfig::operator==(const TraceConfig_BufferConfig& other)
    && ::protozero::internal::gen_helpers::EqualsField(size_kb_, other.size_kb_)
    && ::protozero::internal::gen_helpers::EqualsField(fill_policy_, other.fill_policy_)
    && ::protozero::internal::gen_helpers::EqualsField(transfer_on_clone_, other.transfer_on_clone_)
-   && ::protozero::internal::gen_helpers::EqualsField(clear_before_clone_, other.clear_before_clone_);
+   && ::protozero::internal::gen_helpers::EqualsField(clear_before_clone_, other.clear_before_clone_)
+   && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
+   && ::protozero::internal::gen_helpers::EqualsField(experimental_mode_, other.experimental_mode_);
 }
 
 bool TraceConfig_BufferConfig::ParseFromArray(const void* raw, size_t size) {
@@ -23834,6 +31381,12 @@ bool TraceConfig_BufferConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 6 :
         field.get(&clear_before_clone_);
+        break;
+      case 7 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &name_);
+        break;
+      case 8 :
+        field.get(&experimental_mode_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -23876,6 +31429,16 @@ void TraceConfig_BufferConfig::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(6, clear_before_clone_, msg);
   }
 
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeString(7, name_, msg);
+  }
+
+  
+  if (_has_field_[8]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(8, experimental_mode_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -23885,6 +31448,30 @@ void TraceConfig_BufferConfig::Serialize(::protozero::Message* msg) const {
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -25745,7 +33332,9 @@ bool ChromeFrameReporter::operator==(const ChromeFrameReporter& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(frame_type_, other.frame_type_)
    && ::protozero::internal::gen_helpers::EqualsField(high_latency_contribution_stage_, other.high_latency_contribution_stage_)
    && ::protozero::internal::gen_helpers::EqualsField(checkerboarded_needs_raster_, other.checkerboarded_needs_raster_)
-   && ::protozero::internal::gen_helpers::EqualsField(checkerboarded_needs_record_, other.checkerboarded_needs_record_);
+   && ::protozero::internal::gen_helpers::EqualsField(checkerboarded_needs_record_, other.checkerboarded_needs_record_)
+   && ::protozero::internal::gen_helpers::EqualsField(surface_frame_trace_id_, other.surface_frame_trace_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(display_trace_id_, other.display_trace_id_);
 }
 
 bool ChromeFrameReporter::ParseFromArray(const void* raw, size_t size) {
@@ -25807,6 +33396,12 @@ bool ChromeFrameReporter::ParseFromArray(const void* raw, size_t size) {
         break;
       case 16 :
         field.get(&checkerboarded_needs_record_);
+        break;
+      case 17 :
+        field.get(&surface_frame_trace_id_);
+        break;
+      case 18 :
+        field.get(&display_trace_id_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -25907,6 +33502,16 @@ void ChromeFrameReporter::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[16]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(16, checkerboarded_needs_record_, msg);
+  }
+
+  
+  if (_has_field_[17]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(17, surface_frame_trace_id_, msg);
+  }
+
+  
+  if (_has_field_[18]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(18, display_trace_id_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -26910,7 +34515,8 @@ ChromeThreadDescriptor& ChromeThreadDescriptor::operator=(ChromeThreadDescriptor
 bool ChromeThreadDescriptor::operator==(const ChromeThreadDescriptor& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(thread_type_, other.thread_type_)
-   && ::protozero::internal::gen_helpers::EqualsField(legacy_sort_index_, other.legacy_sort_index_);
+   && ::protozero::internal::gen_helpers::EqualsField(legacy_sort_index_, other.legacy_sort_index_)
+   && ::protozero::internal::gen_helpers::EqualsField(is_sandboxed_tid_, other.is_sandboxed_tid_);
 }
 
 bool ChromeThreadDescriptor::ParseFromArray(const void* raw, size_t size) {
@@ -26928,6 +34534,9 @@ bool ChromeThreadDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 2 :
         field.get(&legacy_sort_index_);
+        break;
+      case 3 :
+        field.get(&is_sandboxed_tid_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -26958,6 +34567,11 @@ void ChromeThreadDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[2]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(2, legacy_sort_index_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, is_sandboxed_tid_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -27181,7 +34795,8 @@ bool CounterDescriptor::operator==(const CounterDescriptor& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(unit_, other.unit_)
    && ::protozero::internal::gen_helpers::EqualsField(unit_name_, other.unit_name_)
    && ::protozero::internal::gen_helpers::EqualsField(unit_multiplier_, other.unit_multiplier_)
-   && ::protozero::internal::gen_helpers::EqualsField(is_incremental_, other.is_incremental_);
+   && ::protozero::internal::gen_helpers::EqualsField(is_incremental_, other.is_incremental_)
+   && ::protozero::internal::gen_helpers::EqualsField(y_axis_share_key_, other.y_axis_share_key_);
 }
 
 bool CounterDescriptor::ParseFromArray(const void* raw, size_t size) {
@@ -27213,6 +34828,9 @@ bool CounterDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 5 :
         field.get(&is_incremental_);
+        break;
+      case 7 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &y_axis_share_key_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -27263,6 +34881,11 @@ void CounterDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[5]) {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, is_incremental_, msg);
+  }
+
+  
+  if (_has_field_[7]) {
+    ::protozero::internal::gen_helpers::SerializeString(7, y_axis_share_key_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -28160,7 +35783,9 @@ Screenshot& Screenshot::operator=(Screenshot&&) = default;
 
 bool Screenshot::operator==(const Screenshot& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
-   && ::protozero::internal::gen_helpers::EqualsField(jpg_image_, other.jpg_image_);
+   && ::protozero::internal::gen_helpers::EqualsField(jpg_image_, other.jpg_image_)
+   && ::protozero::internal::gen_helpers::EqualsField(pam_image_, other.pam_image_)
+   && ::protozero::internal::gen_helpers::EqualsField(ppm_image_, other.ppm_image_);
 }
 
 bool Screenshot::ParseFromArray(const void* raw, size_t size) {
@@ -28175,6 +35800,12 @@ bool Screenshot::ParseFromArray(const void* raw, size_t size) {
     switch (field.id()) {
       case 1 :
         field.get(&jpg_image_);
+        break;
+      case 2 :
+        field.get(&pam_image_);
+        break;
+      case 3 :
+        field.get(&ppm_image_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -28200,6 +35831,16 @@ void Screenshot::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[1]) {
     ::protozero::internal::gen_helpers::SerializeString(1, jpg_image_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, pam_image_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeString(3, ppm_image_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -28641,6 +36282,7 @@ bool TrackDescriptor::operator==(const TrackDescriptor& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(name_, other.name_)
    && ::protozero::internal::gen_helpers::EqualsField(static_name_, other.static_name_)
    && ::protozero::internal::gen_helpers::EqualsField(atrace_name_, other.atrace_name_)
+   && ::protozero::internal::gen_helpers::EqualsField(description_, other.description_)
    && ::protozero::internal::gen_helpers::EqualsField(process_, other.process_)
    && ::protozero::internal::gen_helpers::EqualsField(chrome_process_, other.chrome_process_)
    && ::protozero::internal::gen_helpers::EqualsField(thread_, other.thread_)
@@ -28648,7 +36290,10 @@ bool TrackDescriptor::operator==(const TrackDescriptor& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(counter_, other.counter_)
    && ::protozero::internal::gen_helpers::EqualsField(disallow_merging_with_system_tracks_, other.disallow_merging_with_system_tracks_)
    && ::protozero::internal::gen_helpers::EqualsField(child_ordering_, other.child_ordering_)
-   && ::protozero::internal::gen_helpers::EqualsField(sibling_order_rank_, other.sibling_order_rank_);
+   && ::protozero::internal::gen_helpers::EqualsField(sibling_order_rank_, other.sibling_order_rank_)
+   && ::protozero::internal::gen_helpers::EqualsField(sibling_merge_behavior_, other.sibling_merge_behavior_)
+   && ::protozero::internal::gen_helpers::EqualsField(sibling_merge_key_, other.sibling_merge_key_)
+   && ::protozero::internal::gen_helpers::EqualsField(sibling_merge_key_int_, other.sibling_merge_key_int_);
 }
 
 bool TrackDescriptor::ParseFromArray(const void* raw, size_t size) {
@@ -28676,6 +36321,9 @@ bool TrackDescriptor::ParseFromArray(const void* raw, size_t size) {
       case 13 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &atrace_name_);
         break;
+      case 14 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &description_);
+        break;
       case 3 :
         (*process_).ParseFromArray(field.data(), field.size());
         break;
@@ -28699,6 +36347,15 @@ bool TrackDescriptor::ParseFromArray(const void* raw, size_t size) {
         break;
       case 12 :
         field.get(&sibling_order_rank_);
+        break;
+      case 15 :
+        field.get(&sibling_merge_behavior_);
+        break;
+      case 16 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &sibling_merge_key_);
+        break;
+      case 17 :
+        field.get(&sibling_merge_key_int_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -28747,6 +36404,11 @@ void TrackDescriptor::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[14]) {
+    ::protozero::internal::gen_helpers::SerializeString(14, description_, msg);
+  }
+
+  
   if (_has_field_[3]) {
     (*process_).Serialize(msg->BeginNestedMessage<::protozero::Message>(3));
   }
@@ -28784,6 +36446,21 @@ void TrackDescriptor::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[12]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(12, sibling_order_rank_, msg);
+  }
+
+  
+  if (_has_field_[15]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(15, sibling_merge_behavior_, msg);
+  }
+
+  
+  if (_has_field_[16]) {
+    ::protozero::internal::gen_helpers::SerializeString(16, sibling_merge_key_, msg);
+  }
+
+  
+  if (_has_field_[17]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(17, sibling_merge_key_int_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -29061,6 +36738,11 @@ bool TrackEvent::operator==(const TrackEvent& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(flow_ids_, other.flow_ids_)
    && ::protozero::internal::gen_helpers::EqualsField(terminating_flow_ids_old_, other.terminating_flow_ids_old_)
    && ::protozero::internal::gen_helpers::EqualsField(terminating_flow_ids_, other.terminating_flow_ids_)
+   && ::protozero::internal::gen_helpers::EqualsField(correlation_id_, other.correlation_id_)
+   && ::protozero::internal::gen_helpers::EqualsField(correlation_id_str_, other.correlation_id_str_)
+   && ::protozero::internal::gen_helpers::EqualsField(correlation_id_str_iid_, other.correlation_id_str_iid_)
+   && ::protozero::internal::gen_helpers::EqualsField(callstack_, other.callstack_)
+   && ::protozero::internal::gen_helpers::EqualsField(callstack_iid_, other.callstack_iid_)
    && ::protozero::internal::gen_helpers::EqualsField(debug_annotations_, other.debug_annotations_)
    && ::protozero::internal::gen_helpers::EqualsField(task_execution_, other.task_execution_)
    && ::protozero::internal::gen_helpers::EqualsField(log_message_, other.log_message_)
@@ -29171,6 +36853,21 @@ bool TrackEvent::ParseFromArray(const void* raw, size_t size) {
       case 48 :
         terminating_flow_ids_.emplace_back();
         field.get(&terminating_flow_ids_.back());
+        break;
+      case 52 :
+        field.get(&correlation_id_);
+        break;
+      case 53 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &correlation_id_str_);
+        break;
+      case 54 :
+        field.get(&correlation_id_str_iid_);
+        break;
+      case 55 :
+        (*callstack_).ParseFromArray(field.data(), field.size());
+        break;
+      case 56 :
+        field.get(&callstack_iid_);
         break;
       case 4 :
         debug_annotations_.emplace_back();
@@ -29353,6 +37050,31 @@ void TrackEvent::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : terminating_flow_ids_) {
     ::protozero::internal::gen_helpers::SerializeFixed(48, it, msg);
+  }
+
+  
+  if (_has_field_[52]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(52, correlation_id_, msg);
+  }
+
+  
+  if (_has_field_[53]) {
+    ::protozero::internal::gen_helpers::SerializeString(53, correlation_id_str_, msg);
+  }
+
+  
+  if (_has_field_[54]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(54, correlation_id_str_iid_, msg);
+  }
+
+  
+  if (_has_field_[55]) {
+    (*callstack_).Serialize(msg->BeginNestedMessage<::protozero::Message>(55));
+  }
+
+  
+  if (_has_field_[56]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(56, callstack_iid_, msg);
   }
 
   
@@ -29683,12 +37405,201 @@ void TrackEvent_LegacyEvent::Serialize(::protozero::Message* msg) const {
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
+
+TrackEvent_Callstack::TrackEvent_Callstack() = default;
+TrackEvent_Callstack::~TrackEvent_Callstack() = default;
+TrackEvent_Callstack::TrackEvent_Callstack(const TrackEvent_Callstack&) = default;
+TrackEvent_Callstack& TrackEvent_Callstack::operator=(const TrackEvent_Callstack&) = default;
+TrackEvent_Callstack::TrackEvent_Callstack(TrackEvent_Callstack&&) noexcept = default;
+TrackEvent_Callstack& TrackEvent_Callstack::operator=(TrackEvent_Callstack&&) = default;
+
+bool TrackEvent_Callstack::operator==(const TrackEvent_Callstack& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(frames_, other.frames_);
+}
+
+int TrackEvent_Callstack::frames_size() const { return static_cast<int>(frames_.size()); }
+void TrackEvent_Callstack::clear_frames() { frames_.clear(); }
+TrackEvent_Callstack_Frame* TrackEvent_Callstack::add_frames() { frames_.emplace_back(); return &frames_.back(); }
+bool TrackEvent_Callstack::ParseFromArray(const void* raw, size_t size) {
+  frames_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        frames_.emplace_back();
+        frames_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TrackEvent_Callstack::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TrackEvent_Callstack::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TrackEvent_Callstack::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : frames_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+TrackEvent_Callstack_Frame::TrackEvent_Callstack_Frame() = default;
+TrackEvent_Callstack_Frame::~TrackEvent_Callstack_Frame() = default;
+TrackEvent_Callstack_Frame::TrackEvent_Callstack_Frame(const TrackEvent_Callstack_Frame&) = default;
+TrackEvent_Callstack_Frame& TrackEvent_Callstack_Frame::operator=(const TrackEvent_Callstack_Frame&) = default;
+TrackEvent_Callstack_Frame::TrackEvent_Callstack_Frame(TrackEvent_Callstack_Frame&&) noexcept = default;
+TrackEvent_Callstack_Frame& TrackEvent_Callstack_Frame::operator=(TrackEvent_Callstack_Frame&&) = default;
+
+bool TrackEvent_Callstack_Frame::operator==(const TrackEvent_Callstack_Frame& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(function_name_, other.function_name_)
+   && ::protozero::internal::gen_helpers::EqualsField(source_file_, other.source_file_)
+   && ::protozero::internal::gen_helpers::EqualsField(line_number_, other.line_number_);
+}
+
+bool TrackEvent_Callstack_Frame::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &function_name_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &source_file_);
+        break;
+      case 3 :
+        field.get(&line_number_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string TrackEvent_Callstack_Frame::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> TrackEvent_Callstack_Frame::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void TrackEvent_Callstack_Frame::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, function_name_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, source_file_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, line_number_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
 }  
 }  
 }  
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30230,7 +38141,6 @@ class PERFETTO_EXPORT_COMPONENT SharedMemory {
   void* start() { return const_cast<void*>(std::as_const(*this).start()); }
   virtual const void* start() const = 0;
 
-
   virtual size_t size() const = 0;
 };
 
@@ -30268,6 +38178,7 @@ namespace perfetto {
 class InProcessSharedMemory : public SharedMemory {
  public:
   static constexpr size_t kDefaultSize = 128 * 1024;
+  static constexpr size_t kShmemEmulationSize = 1024 * 1024;
 
   
   
@@ -30350,7 +38261,6 @@ size_t InProcessSharedMemory::size() const {
 
 
 
-
 #ifndef INCLUDE_PERFETTO_EXT_TRACING_CORE_BASIC_TYPES_H_
 #define INCLUDE_PERFETTO_EXT_TRACING_CORE_BASIC_TYPES_H_
 
@@ -30380,6 +38290,8 @@ using FlushRequestID = uint64_t;
 
 using ProducerAndWriterID = uint32_t;
 
+using PendingCloneID = uint64_t;
+
 inline ProducerAndWriterID MkProducerAndWriterID(ProducerID p, WriterID w) {
   static_assert(
       sizeof(ProducerID) + sizeof(WriterID) == sizeof(ProducerAndWriterID),
@@ -30401,7 +38313,8 @@ static constexpr ProducerID kMaxProducerID = static_cast<ProducerID>(-1);
 
 
 
-static constexpr WriterID kMaxWriterID = static_cast<WriterID>((1 << 10) - 1);
+
+static constexpr WriterID kMaxWriterID = static_cast<WriterID>((1 << 15) - 1);
 
 
 using ChunkID = uint32_t;
@@ -30439,9 +38352,12 @@ constexpr TracingSessionID kBugreportSessionId =
 using MachineID = base::MachineID;
 constexpr MachineID kDefaultMachineID = base::kDefaultMachineID;
 
+constexpr uint32_t kDataSourceStopTimeoutMs = 5000;
+
 }  
 
 #endif  
+
 
 
 
@@ -30514,6 +38430,11 @@ class PERFETTO_EXPORT_COMPONENT TraceWriter : public TraceWriterBase {
 #ifndef SRC_TRACING_CORE_NULL_TRACE_WRITER_H_
 #define SRC_TRACING_CORE_NULL_TRACE_WRITER_H_
 
+#include <cstdint>
+#include <functional>
+#include <memory>
+
+
 
 
 
@@ -30536,6 +38457,7 @@ class NullTraceWriter : public TraceWriter {
   void Flush(std::function<void()> callback = {}) override;
   WriterID writer_id() const override;
   uint64_t written() const override;
+  uint64_t drop_count() const override;
 
  private:
   NullTraceWriter(const NullTraceWriter&) = delete;
@@ -30611,6 +38533,10 @@ WriterID NullTraceWriter::writer_id() const {
 }
 
 uint64_t NullTraceWriter::written() const {
+  return 0;
+}
+
+uint64_t NullTraceWriter::drop_count() const {
   return 0;
 }
 
@@ -30929,6 +38855,7 @@ class SharedMemoryABI {
   
   
   struct ChunkHeader {
+    inline static constexpr uint8_t kFlagsMask = 0x7;
     enum Flags : uint8_t {
       
       
@@ -31089,6 +39016,7 @@ class SharedMemoryABI {
   size_t page_size() const { return page_size_; }
   size_t num_pages() const { return num_pages_; }
   bool is_valid() { return num_pages() > 0; }
+  bool use_shmem_emulation() { return use_shmem_emulation_; }
 
   uint8_t* page_start(size_t page_idx) {
     PERFETTO_DCHECK(page_idx < num_pages_);
@@ -31780,6 +39708,8 @@ class PERFETTO_EXPORT_COMPONENT TracePacket {
   
   void AddSlice(const void* start, size_t size);
 
+  void Clear();
+
   
   size_t size() const { return size_; }
 
@@ -31791,7 +39721,11 @@ class PERFETTO_EXPORT_COMPONENT TracePacket {
 
   
   
-  std::string GetRawBytesForTesting();
+  void GetRawBytes(std::string*) const;
+
+  
+  
+  std::string GetRawBytesForTesting() const;
 
   
   
@@ -31808,8 +39742,8 @@ class PERFETTO_EXPORT_COMPONENT TracePacket {
   TracePacket(const TracePacket&) = delete;
   TracePacket& operator=(const TracePacket&) = delete;
 
-  Slices slices_;     
-  size_t size_ = 0;   
+  Slices slices_;    
+  size_t size_ = 0;  
 
   
   uint32_t buffer_index_for_stats_ = 0;
@@ -31939,8 +39873,7 @@ class PERFETTO_EXPORT_COMPONENT ProducerEndpoint {
   
   virtual std::unique_ptr<TraceWriter> CreateTraceWriter(
       BufferID target_buffer,
-      BufferExhaustedPolicy buffer_exhausted_policy =
-          BufferExhaustedPolicy::kDefault) = 0;
+      BufferExhaustedPolicy buffer_exhausted_policy) = 0;
 
   
 
@@ -32049,6 +39982,14 @@ class PERFETTO_EXPORT_COMPONENT ConsumerEndpoint {
     
     
     uint64_t clone_trigger_boot_time_ns = 0;
+    
+    
+    uint64_t clone_trigger_delay_ms = 0;
+
+    
+    
+    
+    base::ScopedFile output_file_fd;
   };
   virtual void CloneSession(CloneSessionArgs) = 0;
 
@@ -32133,6 +40074,20 @@ struct PERFETTO_EXPORT_COMPONENT TracingServiceInitOpts {
 
   
   bool enable_relay_endpoint = false;
+
+  
+  
+  
+  
+  struct ProtoExtensionDescriptor {
+    std::string name;
+    const uint8_t* start = nullptr;
+    size_t size = 0;
+    bool gzipped = false;
+  };
+  
+  
+  std::vector<ProtoExtensionDescriptor> extension_descriptors;
 };
 
 
@@ -32149,6 +40104,8 @@ class PERFETTO_EXPORT_COMPONENT RelayEndpoint {
   };
 
   enum class SyncMode : uint32_t { PING = 1, UPDATE = 2 };
+
+  virtual void CacheSystemInfo(std::vector<uint8_t> serialized_system_info) = 0;
   virtual void SyncClocks(SyncMode sync_mode,
                           base::ClockSnapshotVector client_clocks,
                           base::ClockSnapshotVector host_clocks) = 0;
@@ -32249,7 +40206,8 @@ class PERFETTO_EXPORT_COMPONENT TracingService {
           ProducerSMBScrapingMode::kDefault,
       size_t shared_memory_page_size_hint_bytes = 0,
       std::unique_ptr<SharedMemory> shm = nullptr,
-      const std::string& sdk_version = {}) = 0;
+      const std::string& sdk_version = {},
+      const std::string& machine_name = {}) = 0;
 
   
   
@@ -32308,6 +40266,7 @@ class PERFETTO_EXPORT_COMPONENT TracingService {
 #include <stddef.h>
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -32343,8 +40302,7 @@ class PERFETTO_EXPORT_COMPONENT SharedMemoryArbiter {
   
   virtual std::unique_ptr<TraceWriter> CreateTraceWriter(
       BufferID target_buffer,
-      BufferExhaustedPolicy buffer_exhausted_policy =
-          BufferExhaustedPolicy::kDefault) = 0;
+      BufferExhaustedPolicy buffer_exhausted_policy) = 0;
 
   
   
@@ -32457,6 +40415,14 @@ class PERFETTO_EXPORT_COMPONENT SharedMemoryArbiter {
   
   
   
+  virtual void ScrapeEmulatedSharedMemoryBuffer(
+      const std::map<WriterID, BufferID>& buffer_for_writers) = 0;
+
+  
+  
+  
+  
+  
   
   virtual bool TryShutdown() = 0;
 
@@ -32500,7 +40466,7 @@ class PERFETTO_EXPORT_COMPONENT SharedMemoryArbiter {
 
 }  
 
-#endif
+#endif  
 
 
 
@@ -32527,6 +40493,7 @@ class PERFETTO_EXPORT_COMPONENT SharedMemoryArbiter {
 #include <memory>
 #include <mutex>
 #include <vector>
+
 
 
 
@@ -32666,9 +40633,67 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
 
   
   
+  
+  template <typename F>
+  static inline void ForEachScrapableChunk(SharedMemoryABI* shmem_abi,
+                                           F handle_chunk_function) {
+    static_assert(std::is_invocable_v<F, SharedMemoryABI::Chunk*, bool,
+                                      uint16_t, uint8_t>);
+    
+    
+    for (size_t page_idx = 0; page_idx < shmem_abi->num_pages(); page_idx++) {
+      uint32_t header_bitmap = shmem_abi->GetPageHeaderBitmap(page_idx);
+
+      uint32_t used_chunks =
+          shmem_abi->GetUsedChunks(header_bitmap);  
+      
+      if (used_chunks == 0) {
+        continue;
+      }
+
+      
+      
+      for (uint32_t chunk_idx = 0; used_chunks;
+           chunk_idx++, used_chunks >>= 1) {
+        if (!(used_chunks & 1))
+          continue;
+
+        auto state = SharedMemoryABI::GetChunkStateFromHeaderBitmap(
+            header_bitmap, chunk_idx);
+        PERFETTO_DCHECK(state == SharedMemoryABI::kChunkBeingWritten ||
+                        state == SharedMemoryABI::kChunkComplete);
+        bool chunk_complete = state == SharedMemoryABI::kChunkComplete;
+
+        SharedMemoryABI::Chunk chunk =
+            shmem_abi->GetChunkUnchecked(page_idx, header_bitmap, chunk_idx);
+
+        uint16_t packet_count;
+        uint8_t packet_flags;
+        
+        std::tie(packet_count, packet_flags) = chunk.GetPacketCountAndFlags();
+
+        
+        
+        
+        if (!chunk_complete && packet_count < 2)
+          continue;
+
+        
+        
+        
+        
+        
+        handle_chunk_function(&chunk, chunk_complete, packet_count,
+                              packet_flags);
+      }
+    }
+  }
+
+  
+  
   std::unique_ptr<TraceWriter> CreateTraceWriter(
       BufferID target_buffer,
-      BufferExhaustedPolicy = BufferExhaustedPolicy::kDefault) override;
+      BufferExhaustedPolicy) override;
   std::unique_ptr<TraceWriter> CreateStartupTraceWriter(
       uint16_t target_buffer_reservation_id) override;
   void BindToProducerEndpoint(TracingService::ProducerEndpoint*,
@@ -32687,6 +40712,8 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
 
   void FlushPendingCommitDataRequests(
       std::function<void()> callback = {}) override;
+  void ScrapeEmulatedSharedMemoryBuffer(
+      const std::map<WriterID, BufferID>& buffer_for_writers) override;
   bool TryShutdown() override;
 
   base::TaskRunner* task_runner() const { return task_runner_; }
@@ -32740,9 +40767,10 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
   
   void ReleaseWriterID(WriterID);
 
-  void BindStartupTargetBufferImpl(std::unique_lock<std::mutex> scoped_lock,
-                                   uint16_t target_buffer_reservation_id,
-                                   BufferID target_buffer_id);
+  void BindStartupTargetBufferImpl(
+      std::unique_lock<base::MaybeRtMutex> scoped_lock,
+      uint16_t target_buffer_reservation_id,
+      BufferID target_buffer_id);
 
   
   struct Stats {
@@ -32767,6 +40795,9 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
   
   bool ReplaceCommitPlaceholderBufferIdsLocked();
 
+  void CommitDataWithSplitting(std::unique_ptr<CommitDataRequest> req,
+                               std::function<void()> callback);
+
   
   
   bool UpdateFullyBoundLocked();
@@ -32780,7 +40811,7 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
 
   
 
-  std::mutex lock_;
+  base::MaybeRtMutex lock_;
 
   base::TaskRunner* task_runner_ = nullptr;
   SharedMemoryABI shmem_abi_;
@@ -32829,6 +40860,13 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
   
   
   bool delayed_flush_scheduled_ = false;
+
+  
+  
+  
+  
+  
+  bool immediate_flush_scheduled_ = false;
 
   
   
@@ -33006,6 +41044,10 @@ class PatchList {
 #ifndef SRC_TRACING_CORE_TRACE_WRITER_IMPL_H_
 #define SRC_TRACING_CORE_TRACE_WRITER_IMPL_H_
 
+#include <cstdint>
+#include <functional>
+#include <memory>
+
 
 
 
@@ -33055,6 +41097,7 @@ class TraceWriterImpl : public TraceWriter,
   uint64_t written() const override {
     return protobuf_stream_writer_.written();
   }
+  uint64_t drop_count() const override { return drop_count_; }
 
   bool drop_packets_for_testing() const { return drop_packets_; }
 
@@ -33178,6 +41221,14 @@ class TraceWriterImpl : public TraceWriter,
   
   
   bool first_packet_on_sequence_ = true;
+
+  
+  
+  
+  
+  
+  
+  uint64_t drop_count_ = 0;
 };
 
 }  
@@ -33222,6 +41273,10 @@ namespace {
 static_assert(sizeof(BufferID) == sizeof(uint16_t),
               "The MaybeUnboundBufferID logic requires BufferID not to grow "
               "above uint16_t.");
+
+constexpr size_t kMaxCommitDataRequestChunkSize =
+    128 * 1024 - 512;  
+                       
 
 MaybeUnboundBufferID MakeTargetBufferIdForReservation(uint16_t reservation_id) {
   
@@ -33285,22 +41340,37 @@ Chunk SharedMemoryArbiterImpl::GetNewChunk(
   static const unsigned kMaxStallIntervalUs = 100000;
   static const int kLogAfterNStalls = 3;
   static const int kFlushCommitsAfterEveryNStalls = 2;
-  static const int kAssertAtNStalls = 200;
+  static const int kAssertAtNStalls = 300;
+
+  bool should_stall = false;
+  bool should_abort = false;
+
+  switch (buffer_exhausted_policy) {
+    case BufferExhaustedPolicy::kDrop:
+      break;
+    case BufferExhaustedPolicy::kStall:
+      should_stall = true;
+      should_abort = true;
+      break;
+    case BufferExhaustedPolicy::kStallThenDrop:
+      should_stall = true;
+      should_abort = false;
+      break;
+  }
 
   for (;;) {
     
     
     
     {
-      std::unique_lock<std::mutex> scoped_lock(lock_);
+      std::unique_lock<base::MaybeRtMutex> scoped_lock(lock_);
 
       
       
       
       
       
-      PERFETTO_DCHECK(was_always_bound_ ||
-                      buffer_exhausted_policy == BufferExhaustedPolicy::kDrop);
+      PERFETTO_DCHECK(was_always_bound_ || !should_stall);
 
       task_runner_runs_on_current_thread =
           task_runner_ && task_runner_->RunsTasksOnCurrentThread();
@@ -33316,8 +41386,7 @@ Chunk SharedMemoryArbiterImpl::GetNewChunk(
       
       
       bool should_commit_synchronously =
-          task_runner_runs_on_current_thread &&
-          buffer_exhausted_policy == BufferExhaustedPolicy::kStall &&
+          task_runner_runs_on_current_thread && should_stall &&
           commit_data_req_ && bytes_pending_commit_ >= shmem_abi_.size() / 2;
 
       const size_t initial_page_idx = page_idx_;
@@ -33348,8 +41417,8 @@ Chunk SharedMemoryArbiterImpl::GetNewChunk(
           if (!chunk.is_valid())
             continue;
           if (stall_count > kLogAfterNStalls) {
-            PERFETTO_LOG("Recovered from stall after %d iterations",
-                         stall_count);
+            PERFETTO_DLOG("Recovered from stall after %d iterations",
+                          stall_count);
           }
 
           if (should_commit_synchronously) {
@@ -33364,7 +41433,7 @@ Chunk SharedMemoryArbiterImpl::GetNewChunk(
       }
     }  
 
-    if (buffer_exhausted_policy == BufferExhaustedPolicy::kDrop) {
+    if (!should_stall) {
       PERFETTO_DLOG("Shared memory buffer exhausted, returning invalid Chunk!");
       return Chunk();
     }
@@ -33375,17 +41444,23 @@ Chunk SharedMemoryArbiterImpl::GetNewChunk(
     
     
     if (stall_count++ == kLogAfterNStalls) {
-      PERFETTO_LOG("Shared memory buffer overrun! Stalling");
+      PERFETTO_DLOG("Shared memory buffer overrun! Stalling");
     }
 
     if (stall_count == kAssertAtNStalls) {
-      Stats stats = GetStats();
-      PERFETTO_FATAL(
-          "Shared memory buffer max stall count exceeded; possible deadlock "
-          "free=%zu bw=%zu br=%zu comp=%zu pages_free=%zu pages_err=%zu",
-          stats.chunks_free, stats.chunks_being_written,
-          stats.chunks_being_read, stats.chunks_complete, stats.pages_free,
-          stats.pages_unexpected);
+      if (should_abort) {
+        Stats stats = GetStats();
+        PERFETTO_FATAL(
+            "Shared memory buffer max stall count exceeded; possible deadlock "
+            "free=%zu bw=%zu br=%zu comp=%zu pages_free=%zu pages_err=%zu",
+            stats.chunks_free, stats.chunks_being_written,
+            stats.chunks_being_read, stats.chunks_complete, stats.pages_free,
+            stats.pages_unexpected);
+      } else {
+        PERFETTO_DLOG(
+            "Shared memory buffer exhausted, returning invalid Chunk!");
+        return Chunk();
+      }
     }
 
     
@@ -33445,7 +41520,7 @@ void SharedMemoryArbiterImpl::UpdateCommitDataRequest(
   uint32_t flush_delay_ms = 0;
   base::WeakPtr<SharedMemoryArbiterImpl> weak_this;
   {
-    std::lock_guard<std::mutex> scoped_lock(lock_);
+    std::unique_lock<base::MaybeRtMutex> scoped_lock(lock_);
 
     if (!commit_data_req_) {
       commit_data_req_.reset(new CommitDataRequest());
@@ -33550,9 +41625,49 @@ void SharedMemoryArbiterImpl::UpdateCommitDataRequest(
     
     if (fully_bound_ &&
         (last_patch_req || bytes_pending_commit_ >= shmem_abi_.size() / 2)) {
-      weak_this = weak_ptr_factory_.GetWeakPtr();
-      task_runner_to_post_delayed_callback_on = task_runner_;
-      flush_delay_ms = 0;
+      
+      
+      
+      
+      if (!immediate_flush_scheduled_) {
+        weak_this = weak_ptr_factory_.GetWeakPtr();
+        task_runner_to_post_delayed_callback_on = task_runner_;
+        flush_delay_ms = 0;
+        immediate_flush_scheduled_ = true;
+      }
+    }
+
+    
+    
+    
+    
+    
+    if (fully_bound_ && use_shmem_emulation_) {
+      if (task_runner_->RunsTasksOnCurrentThread()) {
+        task_runner_to_post_delayed_callback_on = nullptr;
+        
+        
+        delayed_flush_scheduled_ = false;
+        
+        
+        immediate_flush_scheduled_ = false;
+        
+        scoped_lock.unlock();
+        FlushPendingCommitDataRequests();
+      } else {
+        
+        
+        
+        
+        
+        
+        if (!immediate_flush_scheduled_) {
+          weak_this = weak_ptr_factory_.GetWeakPtr();
+          task_runner_to_post_delayed_callback_on = task_runner_;
+          flush_delay_ms = 0;
+          immediate_flush_scheduled_ = true;
+        }
+      }
     }
   }  
 
@@ -33565,10 +41680,12 @@ void SharedMemoryArbiterImpl::UpdateCommitDataRequest(
           if (!weak_this)
             return;
           {
-            std::lock_guard<std::mutex> scoped_lock(weak_this->lock_);
+            std::lock_guard<base::MaybeRtMutex> scoped_lock(weak_this->lock_);
+            
             
             
             weak_this->delayed_flush_scheduled_ = false;
+            weak_this->immediate_flush_scheduled_ = false;
           }
           weak_this->FlushPendingCommitDataRequests();
         },
@@ -33648,12 +41765,12 @@ bool SharedMemoryArbiterImpl::TryDirectPatchLocked(
 
 void SharedMemoryArbiterImpl::SetBatchCommitsDuration(
     uint32_t batch_commits_duration_ms) {
-  std::lock_guard<std::mutex> scoped_lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
   batch_commits_duration_ms_ = batch_commits_duration_ms;
 }
 
 bool SharedMemoryArbiterImpl::EnableDirectSMBPatching() {
-  std::lock_guard<std::mutex> scoped_lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
   if (!direct_patching_supported_by_service_) {
     return false;
   }
@@ -33662,7 +41779,7 @@ bool SharedMemoryArbiterImpl::EnableDirectSMBPatching() {
 }
 
 void SharedMemoryArbiterImpl::SetDirectSMBPatchingSupportedByService() {
-  std::lock_guard<std::mutex> scoped_lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
   direct_patching_supported_by_service_ = true;
 }
 
@@ -33679,7 +41796,7 @@ void SharedMemoryArbiterImpl::FlushPendingCommitDataRequests(
     std::function<void()> callback) {
   std::unique_ptr<CommitDataRequest> req;
   {
-    std::unique_lock<std::mutex> scoped_lock(lock_);
+    std::unique_lock<base::MaybeRtMutex> scoped_lock(lock_);
 
     
     
@@ -33754,7 +41871,11 @@ void SharedMemoryArbiterImpl::FlushPendingCommitDataRequests(
   }  
 
   if (req) {
-    producer_endpoint_->CommitData(*req, callback);
+    if (use_shmem_emulation_) {
+      CommitDataWithSplitting(std::move(req), std::move(callback));
+    } else {
+      producer_endpoint_->CommitData(*req, std::move(callback));
+    }
   } else if (callback) {
     
     
@@ -33764,8 +41885,62 @@ void SharedMemoryArbiterImpl::FlushPendingCommitDataRequests(
   }
 }
 
+void SharedMemoryArbiterImpl::CommitDataWithSplitting(
+    std::unique_ptr<CommitDataRequest> req,
+    std::function<void()> callback) {
+  PERFETTO_DCHECK(use_shmem_emulation_);
+
+  
+  
+  uint32_t total_bytes = 0;
+  for (const auto& ctm : req->chunks_to_move()) {
+    total_bytes += static_cast<uint32_t>(ctm.data().size());
+  }
+  if (total_bytes < kMaxCommitDataRequestChunkSize) {
+    producer_endpoint_->CommitData(*req, std::move(callback));
+    return;
+  }
+
+  uint32_t current_req_bytes = 0;
+  auto split_req = std::make_unique<CommitDataRequest>();
+
+  for (auto& ctm : *req->mutable_chunks_to_move()) {
+    
+    
+    
+    
+    
+    
+    if (current_req_bytes + ctm.data().size() >=
+        kMaxCommitDataRequestChunkSize) {
+      producer_endpoint_->CommitData(*split_req);
+      split_req.reset(new CommitDataRequest());
+      current_req_bytes = 0;
+    }
+
+    current_req_bytes += ctm.data().size();
+    auto* new_ctm = split_req->add_chunks_to_move();
+    new_ctm->set_page(ctm.page());
+    new_ctm->set_chunk(ctm.chunk());
+    new_ctm->set_target_buffer(ctm.target_buffer());
+    new_ctm->set_chunk_incomplete(ctm.chunk_incomplete());
+    new_ctm->set_data(ctm.data());
+  }
+
+  
+  
+  
+  
+  
+  *split_req->mutable_chunks_to_patch() =
+      std::move(*req->mutable_chunks_to_patch());
+  split_req->set_flush_request_id(req->flush_request_id());
+
+  producer_endpoint_->CommitData(*split_req, std::move(callback));
+}
+
 bool SharedMemoryArbiterImpl::TryShutdown() {
-  std::lock_guard<std::mutex> scoped_lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
   did_shutdown_ = true;
   
   return active_writer_ids_.IsEmpty();
@@ -33794,7 +41969,7 @@ void SharedMemoryArbiterImpl::BindToProducerEndpoint(
   bool should_flush = false;
   std::function<void()> flush_callback;
   {
-    std::lock_guard<std::mutex> scoped_lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
     PERFETTO_CHECK(!fully_bound_);
     PERFETTO_CHECK(!producer_endpoint_ && !task_runner_);
 
@@ -33833,7 +42008,7 @@ void SharedMemoryArbiterImpl::BindStartupTargetBuffer(
     BufferID target_buffer_id) {
   PERFETTO_DCHECK(target_buffer_id > 0);
 
-  std::unique_lock<std::mutex> scoped_lock(lock_);
+  std::unique_lock<base::MaybeRtMutex> scoped_lock(lock_);
 
   
   PERFETTO_CHECK(producer_endpoint_);
@@ -33846,7 +42021,7 @@ void SharedMemoryArbiterImpl::BindStartupTargetBuffer(
 
 void SharedMemoryArbiterImpl::AbortStartupTracingForReservation(
     uint16_t target_buffer_reservation_id) {
-  std::unique_lock<std::mutex> scoped_lock(lock_);
+  std::unique_lock<base::MaybeRtMutex> scoped_lock(lock_);
 
   
   
@@ -33875,7 +42050,7 @@ void SharedMemoryArbiterImpl::AbortStartupTracingForReservation(
 }
 
 void SharedMemoryArbiterImpl::BindStartupTargetBufferImpl(
-    std::unique_lock<std::mutex> scoped_lock,
+    std::unique_lock<base::MaybeRtMutex> scoped_lock,
     uint16_t target_buffer_reservation_id,
     BufferID target_buffer_id) {
   
@@ -33936,7 +42111,7 @@ void SharedMemoryArbiterImpl::BindStartupTargetBufferImpl(
 }
 
 SharedMemoryArbiterImpl::Stats SharedMemoryArbiterImpl::GetStats() {
-  std::lock_guard<std::mutex> scoped_lock(lock_);
+  std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
   Stats res;
 
   for (size_t page_idx = 0; page_idx < shmem_abi_.num_pages(); page_idx++) {
@@ -33992,7 +42167,7 @@ void SharedMemoryArbiterImpl::NotifyFlushComplete(FlushRequestID req_id) {
   base::TaskRunner* task_runner_to_commit_on = nullptr;
 
   {
-    std::lock_guard<std::mutex> scoped_lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
     
     
     if (!commit_data_req_) {
@@ -34021,6 +42196,33 @@ void SharedMemoryArbiterImpl::NotifyFlushComplete(FlushRequestID req_id) {
   }
 }
 
+void SharedMemoryArbiterImpl::ScrapeEmulatedSharedMemoryBuffer(
+    const std::map<WriterID, BufferID>& buffer_for_writers) {
+  PERFETTO_CHECK(use_shmem_emulation_);
+
+  
+  PERFETTO_CHECK(task_runner_->RunsTasksOnCurrentThread());
+
+  CommitDataRequest commit_req;
+  ForEachScrapableChunk(&shmem_abi_, [&](SharedMemoryABI::Chunk* chunk,
+                                         bool chunk_complete, auto, auto) {
+    const auto writer = buffer_for_writers.find(chunk->writer_id());
+    if (writer == buffer_for_writers.end())
+      return;
+    BufferID target_buffer_id = writer->second;
+    auto* ctm = commit_req.add_chunks_to_move();
+    auto page_and_chunk = shmem_abi_.GetPageAndChunkIndex(*chunk);
+    ctm->set_page(static_cast<uint32_t>(page_and_chunk.first));
+    ctm->set_chunk(static_cast<uint32_t>(page_and_chunk.second));
+    ctm->set_target_buffer(target_buffer_id);
+    ctm->set_data(chunk->begin(), chunk->size());
+    ctm->set_chunk_incomplete(!chunk_complete);
+  });
+  if (commit_req.chunks_to_move_size() == 0)
+    return;
+  producer_endpoint_->CommitData(commit_req);
+}
+
 std::unique_ptr<TraceWriter> SharedMemoryArbiterImpl::CreateTraceWriterInternal(
     MaybeUnboundBufferID target_buffer,
     BufferExhaustedPolicy buffer_exhausted_policy) {
@@ -34028,7 +42230,7 @@ std::unique_ptr<TraceWriter> SharedMemoryArbiterImpl::CreateTraceWriterInternal(
   base::TaskRunner* task_runner_to_register_on = nullptr;
 
   {
-    std::lock_guard<std::mutex> scoped_lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
     if (did_shutdown_)
       return std::unique_ptr<TraceWriter>(new NullTraceWriter());
 
@@ -34058,6 +42260,7 @@ std::unique_ptr<TraceWriter> SharedMemoryArbiterImpl::CreateTraceWriterInternal(
       fully_bound_ = false;
       was_always_bound_ = false;
     } else if (target_buffer != kInvalidBufferId) {
+      
       
       PERFETTO_CHECK(producer_endpoint_ && task_runner_);
       task_runner_to_register_on = task_runner_;
@@ -34091,7 +42294,7 @@ void SharedMemoryArbiterImpl::ReleaseWriterID(WriterID id) {
   base::TaskRunner* task_runner = nullptr;
   base::WeakPtr<SharedMemoryArbiterImpl> weak_this;
   {
-    std::lock_guard<std::mutex> scoped_lock(lock_);
+    std::lock_guard<base::MaybeRtMutex> scoped_lock(lock_);
     active_writer_ids_.Free(id);
 
     auto it = pending_writers_.find(id);
@@ -34222,6 +42425,12 @@ void TracePacket::AddSlice(const void* start, size_t size) {
   slices_.emplace_back(start, size);
 }
 
+void TracePacket::Clear() {
+  slices_.clear();
+  size_ = 0;
+  buffer_index_for_stats_ = 0;
+}
+
 std::tuple<char*, size_t> TracePacket::GetProtoPreamble() {
   using protozero::proto_utils::MakeTagLengthDelimited;
   using protozero::proto_utils::WriteVarInt;
@@ -34238,15 +42447,19 @@ std::tuple<char*, size_t> TracePacket::GetProtoPreamble() {
   return std::make_tuple(&preamble_[0], preamble_size);
 }
 
-std::string TracePacket::GetRawBytesForTesting() {
-  std::string data;
-  data.resize(size());
-  size_t pos = 0;
-  for (const Slice& slice : slices()) {
-    PERFETTO_CHECK(pos + slice.size <= data.size());
-    memcpy(&data[pos], slice.start, slice.size);
+void TracePacket::GetRawBytes(std::string* out_data) const {
+  out_data->resize(size());
+  uint64_t pos = 0;
+  for (const auto& slice : slices()) {
+    PERFETTO_CHECK(pos + slice.size <= out_data->size());
+    memcpy(out_data->data() + pos, slice.start, slice.size);
     pos += slice.size;
   }
+}
+
+std::string TracePacket::GetRawBytesForTesting() const {
+  std::string data;
+  GetRawBytes(&data);
   return data;
 }
 
@@ -34275,6 +42488,7 @@ std::string TracePacket::GetRawBytesForTesting() {
 #include <algorithm>
 #include <type_traits>
 #include <utility>
+
 
 
 
@@ -34492,8 +42706,13 @@ protozero::ContiguousMemoryRange TraceWriterImpl::GetNewBuffer() {
   header.chunk_id.store(next_chunk_id_, std::memory_order_relaxed);
   header.packets.store(packets, std::memory_order_relaxed);
 
+  BufferExhaustedPolicy policy = buffer_exhausted_policy_;
+  if (policy == BufferExhaustedPolicy::kStallThenDrop && drop_packets_) {
+    policy = BufferExhaustedPolicy::kDrop;
+  }
+
   SharedMemoryABI::Chunk new_chunk =
-      shmem_arbiter_->GetNewChunk(header, buffer_exhausted_policy_);
+      shmem_arbiter_->GetNewChunk(header, policy);
   if (!new_chunk.is_valid()) {
     
     
@@ -34560,6 +42779,9 @@ protozero::ContiguousMemoryRange TraceWriterImpl::GetNewBuffer() {
       ReturnCompletedChunk();
     }
 
+    
+    
+    drop_count_ += !drop_packets_;
     drop_packets_ = true;
     cur_chunk_ = SharedMemoryABI::Chunk();  
     cur_chunk_packet_count_inflated_ = false;
@@ -34619,7 +42841,7 @@ protozero::ContiguousMemoryRange TraceWriterImpl::GetNewBuffer() {
 #endif
       }
     }  
-  }    
+  }  
 
   if (cur_chunk_.is_valid()) {
     
@@ -34792,6 +43014,7 @@ TraceWriter::~TraceWriter() = default;
 
 
 
+
 namespace perfetto {
 
 class TracePacket;
@@ -34854,6 +43077,7 @@ class PERFETTO_EXPORT_COMPONENT Consumer {
     bool success;
     std::string error;
     base::Uuid uuid;  
+    bool was_write_into_file;
   };
   virtual void OnSessionCloned(const OnSessionClonedArgs&);
 };
@@ -35066,7 +43290,6 @@ void Consumer::OnSessionCloned(const OnSessionClonedArgs&) {}
 #include <cmath>
 #include <optional>
 #include <tuple>
-
 
 
 
@@ -35530,6 +43753,16 @@ void ConsoleInterceptor::PrintDebugAnnotationValue(
 
 
 
+#include <atomic>
+#include <cstdint>
+
+
+
+
+
+
+
+
 
 
 namespace perfetto {
@@ -35588,8 +43821,9 @@ void DataSourceType::PopulateTlsInst(
           std::memory_order_relaxed);
   tls_inst->data_source_instance_id = instance_state->data_source_instance_id;
   tls_inst->is_intercepted = instance_state->interceptor_id != 0;
-  tls_inst->trace_writer = tracing_impl->CreateTraceWriter(
-      &state_, instance_index, instance_state, buffer_exhausted_policy_);
+  tls_inst->trace_writer =
+      tracing_impl->CreateTraceWriter(&state_, instance_index, instance_state,
+                                      instance_state->buffer_exhausted_policy);
   if (create_incremental_state_fn_) {
     PERFETTO_DCHECK(!tls_inst->incremental_state);
     CreateIncrementalState(tls_inst, instance_index);
@@ -35601,6 +43835,29 @@ void DataSourceType::PopulateTlsInst(
   
   
   PERFETTO_DCHECK(tls_inst->trace_writer);
+}
+
+void DataSourceType::ClearIncrementalState(
+    internal::DataSourceInstanceThreadLocalState* tls_inst,
+    uint32_t instance_index,
+    uint32_t actual_generation) {
+  if constexpr (
+      PERFETTO_FLAGS_TRACK_EVENT_INCREMENTAL_STATE_CLEAR_NOT_DESTROY) {
+    
+    
+    
+    void* incremental_state = tls_inst->incremental_state.get();
+    if (clear_incremental_state_fn_ && incremental_state &&
+        clear_incremental_state_fn_(incremental_state, user_arg_)) {
+      tls_inst->incremental_state_generation = actual_generation;
+    } else {
+      tls_inst->incremental_state.reset();
+      CreateIncrementalState(tls_inst, instance_index);
+    }
+  } else {
+    tls_inst->incremental_state.reset();
+    CreateIncrementalState(tls_inst, instance_index);
+  }
 }
 
 }  
@@ -35751,12 +44008,10 @@ struct PERFETTO_EXPORT_COMPONENT InternedDebugAnnotationValueTypeName
 namespace perfetto {
 
 EventContext::EventContext(
-    TraceWriterBase* trace_writer,
     EventContext::TracePacketHandle trace_packet,
     internal::TrackEventIncrementalState* incremental_state,
     internal::TrackEventTlsState* tls_state)
-    : trace_writer_(trace_writer),
-      trace_packet_(std::move(trace_packet)),
+    : trace_packet_(std::move(trace_packet)),
       event_(trace_packet_->set_track_event()),
       incremental_state_(incremental_state),
       tls_state_(tls_state) {}
@@ -35944,6 +44199,12 @@ CheckedScope& CheckedScope::operator=(CheckedScope&& other) {
 #ifndef INCLUDE_PERFETTO_TRACING_INTERNAL_INTERCEPTOR_TRACE_WRITER_H_
 #define INCLUDE_PERFETTO_TRACING_INTERNAL_INTERCEPTOR_TRACE_WRITER_H_
 
+#include <atomic>
+#include <cstdint>
+#include <functional>
+#include <memory>
+
+
 
 
 
@@ -35968,6 +44229,7 @@ class InterceptorTraceWriter : public TraceWriterBase {
   void FinishTracePacket() override;
   void Flush(std::function<void()> callback = {}) override;
   uint64_t written() const override;
+  uint64_t drop_count() const override;
 
  private:
   std::unique_ptr<InterceptorBase::ThreadLocalState> tls_;
@@ -36007,6 +44269,17 @@ class InterceptorTraceWriter : public TraceWriterBase {
 
 
 
+
+
+
+
+
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <utility>
 
 
 
@@ -36075,6 +44348,10 @@ void InterceptorTraceWriter::FinishTracePacket() {}
 
 uint64_t InterceptorTraceWriter::written() const {
   return bytes_written_;
+}
+
+uint64_t InterceptorTraceWriter::drop_count() const {
+  return 0;
 }
 
 }  
@@ -36342,13 +44619,7 @@ class TracingMuxerFake : public TracingMuxer {
   TracingMuxerFake() : TracingMuxer(&FakePlatform::instance) {}
   ~TracingMuxerFake() override;
 
-  static constexpr TracingMuxerFake* Get() {
-#if PERFETTO_HAS_NO_DESTROY()
-    return &instance;
-#else
-    return nullptr;
-#endif
-  }
+  static constexpr TracingMuxerFake* Get() { return &instance; }
 
   
   bool RegisterDataSource(const DataSourceDescriptor&,
@@ -36407,13 +44678,11 @@ PERFETTO_NORETURN void FailUninitialized() {
 
 }  
 
-#if PERFETTO_HAS_NO_DESTROY()
 
 PERFETTO_NO_DESTROY TracingMuxerFake::FakePlatform
     TracingMuxerFake::FakePlatform::instance{};
 
 PERFETTO_NO_DESTROY TracingMuxerFake TracingMuxerFake::instance{};
-#endif  
 
 TracingMuxerFake::~TracingMuxerFake() = default;
 
@@ -36591,8 +44860,7 @@ class TracingMuxerImpl : public TracingMuxer {
   struct RegisteredDataSource {
     DataSourceDescriptor descriptor;
     DataSourceFactory factory{};
-    bool supports_multiple_instances = false;
-    bool requires_callbacks_under_lock = false;
+    DataSourceParams params;
     bool no_flush = false;
     DataSourceStaticState* static_state = nullptr;
   };
@@ -37106,7 +45374,6 @@ class TracingMuxerImpl : public TracingMuxer {
 
 
 
-
 #ifndef INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_STATE_H_
 #define INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_STATE_H_
 
@@ -37142,6 +45409,7 @@ class TracingMuxerImpl : public TracingMuxer {
 #include <mutex>
 #include <optional>
 #include <vector>
+
 
 
 
@@ -37281,6 +45549,27 @@ struct CompareBackendByType {
     return BackendTypePriority(type) < BackendTypePriority(b.type);
   }
 };
+
+BufferExhaustedPolicy ComputeBufferExhaustedPolicy(
+    const DataSourceConfig& cfg,
+    const DataSourceParams& params) {
+  if (!params.buffer_exhausted_policy_configurable) {
+    return params.default_buffer_exhausted_policy;
+  }
+
+  switch (cfg.buffer_exhausted_policy()) {
+    case DataSourceConfig::BUFFER_EXHAUSTED_UNSPECIFIED:
+      return params.default_buffer_exhausted_policy;
+    case DataSourceConfig::BUFFER_EXHAUSTED_DROP:
+      return BufferExhaustedPolicy::kDrop;
+    case DataSourceConfig::BUFFER_EXHAUSTED_STALL_THEN_ABORT:
+      return BufferExhaustedPolicy::kStall;
+    case DataSourceConfig::BUFFER_EXHAUSTED_STALL_THEN_DROP:
+      return BufferExhaustedPolicy::kStallThenDrop;
+  }
+
+  return params.default_buffer_exhausted_policy;
+}
 
 }  
 
@@ -37564,7 +45853,7 @@ void TracingMuxerImpl::ConsumerImpl::OnConnect() {
     muxer_->QueryServiceState(session_id_, std::move(callback));
   }
   if (session_to_clone_) {
-    service_->CloneSession(*session_to_clone_);
+    service_->CloneSession(std::move(*session_to_clone_));
     session_to_clone_ = std::nullopt;
   }
 
@@ -38223,26 +46512,25 @@ bool TracingMuxerImpl::RegisterDataSource(
   static_state->index = new_index;
 
   
-  base::Hasher hash;
-  hash.Update(reinterpret_cast<intptr_t>(static_state));
-  hash.Update(base::GetWallTimeNs().count());
-  static_state->id = hash.digest() ? hash.digest() : 1;
+  uint64_t digest = base::FnvHasher::Combine(
+      reinterpret_cast<intptr_t>(static_state), base::GetWallTimeNs().count());
+  static_state->id = digest ? digest : 1;
 
-  task_runner_->PostTask([this, descriptor, factory, static_state, params,
-                          no_flush] {
-    data_sources_.emplace_back();
-    RegisteredDataSource& rds = data_sources_.back();
-    rds.descriptor = descriptor;
-    rds.factory = factory;
-    rds.supports_multiple_instances =
-        supports_multiple_data_source_instances_ &&
-        params.supports_multiple_instances;
-    rds.requires_callbacks_under_lock = params.requires_callbacks_under_lock;
-    rds.static_state = static_state;
-    rds.no_flush = no_flush;
+  task_runner_->PostTask(
+      [this, descriptor, factory, static_state, params, no_flush] {
+        data_sources_.emplace_back();
+        RegisteredDataSource& rds = data_sources_.back();
+        rds.descriptor = descriptor;
+        rds.factory = factory;
+        rds.params = params;
+        if (!supports_multiple_data_source_instances_) {
+          rds.params.supports_multiple_instances = false;
+        }
+        rds.static_state = static_state;
+        rds.no_flush = no_flush;
 
-    UpdateDataSourceOnAllBackends(rds, false);
-  });
+        UpdateDataSourceOnAllBackends(rds, false);
+      });
   return true;
 }
 
@@ -38350,6 +46638,8 @@ static bool MaybeAdoptStartupTracingInDataSource(
         internal_state->data_source_instance_id = instance_id;
         internal_state->buffer_id =
             static_cast<internal::BufferId>(cfg.target_buffer());
+        internal_state->buffer_exhausted_policy =
+            ComputeBufferExhaustedPolicy(cfg, rds.params);
         internal_state->config.reset(new DataSourceConfig(cfg));
 
         
@@ -38428,7 +46718,7 @@ TracingMuxerImpl::FindDataSourceRes TracingMuxerImpl::SetupDataSourceImpl(
 
   
   
-  if (!rds.supports_multiple_instances &&
+  if (!rds.params.supports_multiple_instances &&
       static_state.valid_instances.load(std::memory_order_acquire) != 0) {
     PERFETTO_ELOG(
         "Failed to setup data source because some another instance of this "
@@ -38471,6 +46761,8 @@ TracingMuxerImpl::FindDataSourceRes TracingMuxerImpl::SetupDataSourceImpl(
     internal_state->data_source_instance_id = instance_id;
     internal_state->buffer_id =
         static_cast<internal::BufferId>(cfg.target_buffer());
+    internal_state->buffer_exhausted_policy =
+        ComputeBufferExhaustedPolicy(cfg, rds.params);
     internal_state->config.reset(new DataSourceConfig(cfg));
     internal_state->startup_session_id = startup_session_id;
     internal_state->data_source = rds.factory();
@@ -38507,12 +46799,12 @@ TracingMuxerImpl::FindDataSourceRes TracingMuxerImpl::SetupDataSourceImpl(
     setup_args.backend_type = backend.type;
     setup_args.internal_instance_index = i;
 
-    if (!rds.requires_callbacks_under_lock)
+    if (!rds.params.requires_callbacks_under_lock)
       lock.unlock();
     internal_state->data_source->OnSetup(setup_args);
 
     return FindDataSourceRes(&static_state, internal_state, i,
-                             rds.requires_callbacks_under_lock);
+                             rds.params.requires_callbacks_under_lock);
   }
   PERFETTO_ELOG(
       "Maximum number of data source instances exhausted. "
@@ -38686,7 +46978,7 @@ void TracingMuxerImpl::StopDataSource_AsyncEnd(TracingBackendId backend_id,
     return;
   }
 
-  const uint32_t mask = ~(1 << ds.instance_idx);
+  const uint32_t mask = ~(1U << ds.instance_idx);
   ds.static_state->valid_instances.fetch_and(mask, std::memory_order_acq_rel);
 
   bool will_notify_on_stop;
@@ -38762,6 +47054,7 @@ void TracingMuxerImpl::StopDataSource_AsyncEnd(TracingBackendId backend_id,
       producer->service_->NotifyDataSourceStopped(instance_id);
   }
   producer->SweepDeadServices();
+  base::MaybeReleaseAllocatorMemToOS();
 }
 
 void TracingMuxerImpl::ClearDataSourceIncrementalState(
@@ -39086,14 +47379,14 @@ void TracingMuxerImpl::CloneTracingSession(
   
   PERFETTO_DCHECK(!consumer->clone_trace_callback_);
   consumer->clone_trace_callback_ = std::move(callback);
-  ConsumerEndpoint::CloneSessionArgs consumer_args{};
+  ConsumerEndpoint::CloneSessionArgs consumer_args;
   consumer_args.unique_session_name = args.unique_session_name;
   if (!consumer->connected_) {
     consumer->session_to_clone_ = std::move(consumer_args);
     return;
   }
   consumer->session_to_clone_ = std::nullopt;
-  consumer->service_->CloneSession(consumer_args);
+  consumer->service_->CloneSession(std::move(consumer_args));
 }
 
 void TracingMuxerImpl::ChangeTracingSessionConfig(
@@ -39351,7 +47644,7 @@ void TracingMuxerImpl::OnProducerDisconnected(ProducerImpl* producer) {
                     std::memory_order_relaxed)) {
           StopDataSource_AsyncBeginImpl(
               FindDataSourceRes(static_state, internal_state, i,
-                                rds.requires_callbacks_under_lock));
+                                rds.params.requires_callbacks_under_lock));
         }
       }
     }
@@ -39401,7 +47694,7 @@ TracingMuxerImpl::FindDataSourceRes TracingMuxerImpl::FindDataSource(
                   std::memory_order_relaxed) &&
           internal_state->data_source_instance_id == instance_id) {
         return FindDataSourceRes(static_state, internal_state, i,
-                                 rds.requires_callbacks_under_lock);
+                                 rds.params.requires_callbacks_under_lock);
       }
     }
   }
@@ -39729,7 +48022,7 @@ void TracingMuxerImpl::AbortStartupTracingSession(
           session_it->num_aborting_data_sources++;
           StopDataSource_AsyncBeginImpl(
               FindDataSourceRes(static_state, internal_state, i,
-                                rds.requires_callbacks_under_lock));
+                                rds.params.requires_callbacks_under_lock));
         }
       }
     }
@@ -39936,6 +48229,87 @@ static_assert(std::is_same<internal::BufferId, BufferID>::value,
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_NO_DESTRUCTOR_H_
+#define INCLUDE_PERFETTO_EXT_BASE_NO_DESTRUCTOR_H_
+
+#include <new>
+#include <utility>
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class NoDestructor {
+ public:
+  
+  
+  template <typename... Args>
+  explicit NoDestructor(Args&&... args) {
+    new (storage_) T(std::forward<Args>(args)...);
+  }
+
+  NoDestructor(const NoDestructor&) = delete;
+  NoDestructor& operator=(const NoDestructor&) = delete;
+  NoDestructor(NoDestructor&&) = delete;
+  NoDestructor& operator=(NoDestructor&&) = delete;
+
+  ~NoDestructor() = default;
+
+  
+
+
+
+
+  const T& ref() const {
+    auto* const cast = reinterpret_cast<const T*>(storage_);
+    return *cast;
+  }
+  T& ref() {
+    auto* const cast = reinterpret_cast<T*>(storage_);
+    return *cast;
+  }
+
+ private:
+  alignas(T) char storage_[sizeof(T)];
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39974,7 +48348,6 @@ BaseTrackEventInternedDataIndex::~BaseTrackEventInternedDataIndex() = default;
 
 namespace {
 
-static constexpr const char kLegacySlowPrefix[] = "disabled-by-default-";
 static constexpr const char kSlowTag[] = "slow";
 static constexpr const char kDebugTag[] = "debug";
 static constexpr const char kFilteredEventName[] = "FILTERED";
@@ -40006,13 +48379,15 @@ class TrackEventSessionObserverRegistry {
                      observers_.end());
   }
 
-  void ForEachObserverForRegistry(
-      const TrackEventCategoryRegistry& registry,
+  void ForEachObserverForRegistries(
+      const std::vector<const TrackEventCategoryRegistry*>& registries,
       std::function<void(TrackEventSessionObserver*)> callback) {
     std::unique_lock<std::recursive_mutex> lock(mutex_);
     for (auto& registered_observer : observers_) {
-      if (&registry == registered_observer.registry) {
-        callback(registered_observer.observer);
+      for (const auto* registry : registries) {
+        if (registry == registered_observer.registry) {
+          callback(registered_observer.observer);
+        }
       }
     }
   }
@@ -40033,7 +48408,7 @@ class TrackEventSessionObserverRegistry {
   std::vector<RegisteredObserver> observers_;
 };
 
-enum class MatchType { kExact, kPattern };
+enum class MatchType { kExact, kPattern, kWildcard };
 
 bool NameMatchesPattern(const std::string& pattern,
                         const std::string& name,
@@ -40043,6 +48418,9 @@ bool NameMatchesPattern(const std::string& pattern,
   size_t i = pattern.find('*');
   if (i != std::string::npos) {
     PERFETTO_DCHECK(i == pattern.size() - 1);
+    if (i == 0) {
+      return match_type == MatchType::kWildcard;
+    }
     if (match_type != MatchType::kPattern)
       return false;
     return name.substr(0, i) == pattern.substr(0, i);
@@ -40062,36 +48440,59 @@ bool NameMatchesPatternList(const std::vector<std::string>& patterns,
 
 }  
 
+TrackEventInternal& TrackEventInternal::GetInstance() {
+  static base::NoDestructor<TrackEventInternal> state;
+  return state.ref();
+}
+
 
 const Track TrackEventInternal::kDefaultTrack{};
 
 
 std::atomic<int> TrackEventInternal::session_count_{};
 
+std::vector<const TrackEventCategoryRegistry*>
+TrackEventInternal::GetRegistries() {
+  std::unique_lock<std::mutex> lock(mu_);
+  return registries_;
+}
+
+std::vector<const TrackEventCategoryRegistry*> TrackEventInternal::AddRegistry(
+    const TrackEventCategoryRegistry* registry) {
+  std::unique_lock<std::mutex> lock(mu_);
+  registries_.push_back(registry);
+  return registries_;
+}
+
+void TrackEventInternal::ResetRegistriesForTesting() {
+  std::unique_lock<std::mutex> lock(mu_);
+  registries_.clear();
+}
+
 
 bool TrackEventInternal::Initialize(
-    const TrackEventCategoryRegistry& registry,
+    const std::vector<const TrackEventCategoryRegistry*> registries,
     bool (*register_data_source)(const DataSourceDescriptor&)) {
   DataSourceDescriptor dsd;
   dsd.set_name("track_event");
 
   protozero::HeapBuffered<protos::pbzero::TrackEventDescriptor> ted;
-  for (size_t i = 0; i < registry.category_count(); i++) {
-    auto category = registry.GetCategory(i);
-    
-    if (category->IsGroup())
-      continue;
-    auto cat = ted->add_available_categories();
-    cat->set_name(category->name);
-    if (category->description)
-      cat->set_description(category->description);
-    for (const auto& tag : category->tags) {
-      if (tag)
-        cat->add_tags(tag);
+  for (const auto* registry : registries) {
+    for (size_t i = 0; i < registry->category_count(); i++) {
+      auto category = registry->GetCategory(i);
+      
+      if (category->IsGroup())
+        continue;
+      auto cat = ted->add_available_categories();
+      cat->set_name(category->name);
+      if (category->description)
+        cat->set_description(category->description);
+      for (const auto& tag : category->tags) {
+        if (tag) {
+          cat->add_tags(tag);
+        }
+      }
     }
-    
-    if (!strncmp(category->name, kLegacySlowPrefix, strlen(kLegacySlowPrefix)))
-      cat->add_tags(kSlowTag);
   }
   dsd.set_track_event_descriptor_raw(ted.SerializeAsString());
 
@@ -40131,49 +48532,75 @@ protos::pbzero::BuiltinClock TrackEventInternal::clock_ = kDefaultTraceClock;
 bool TrackEventInternal::disallow_merging_with_system_tracks_ = false;
 
 
+BufferExhaustedPolicy TrackEventInternal::buffer_exhausted_policy_ =
+    BufferExhaustedPolicy::kDrop;
+
+
+void TrackEventInternal::EnableRegistry(
+    const TrackEventCategoryRegistry* registry,
+    const protos::gen::TrackEventConfig& config,
+    uint32_t internal_instance_index) {
+  for (size_t i = 0; i < registry->category_count(); i++) {
+    if (IsCategoryEnabled(*registry, config, *registry->GetCategory(i))) {
+      PERFETTO_DLOG("EnableRegistry %" PRIu32 " %zu", internal_instance_index,
+                    i);
+      registry->EnableCategoryForInstance(i, internal_instance_index);
+    }
+  }
+}
+
 void TrackEventInternal::EnableTracing(
-    const TrackEventCategoryRegistry& registry,
     const protos::gen::TrackEventConfig& config,
     const DataSourceBase::SetupArgs& args) {
-  for (size_t i = 0; i < registry.category_count(); i++) {
-    if (IsCategoryEnabled(registry, config, *registry.GetCategory(i)))
-      registry.EnableCategoryForInstance(i, args.internal_instance_index);
+  std::vector<const TrackEventCategoryRegistry*> registries;
+  {
+    std::unique_lock<std::mutex> lock(mu_);
+    registries = registries_;
+    for (const auto& registry : registries) {
+      for (size_t i = 0; i < registry->category_count(); i++) {
+        if (IsCategoryEnabled(*registry, config, *registry->GetCategory(i)))
+          registry->EnableCategoryForInstance(i, args.internal_instance_index);
+      }
+    }
   }
-  TrackEventSessionObserverRegistry::GetInstance()->ForEachObserverForRegistry(
-      registry, [&](TrackEventSessionObserver* o) { o->OnSetup(args); });
+  TrackEventSessionObserverRegistry::GetInstance()
+      ->ForEachObserverForRegistries(
+          registries, [&](TrackEventSessionObserver* o) { o->OnSetup(args); });
+}
+
+void TrackEventInternal::DisableTracing(uint32_t internal_instance_index) {
+  std::unique_lock<std::mutex> lock(mu_);
+  for (const auto& registry : registries_) {
+    for (size_t i = 0; i < registry->category_count(); i++)
+      registry->DisableCategoryForInstance(i, internal_instance_index);
+  }
 }
 
 
-void TrackEventInternal::OnStart(const TrackEventCategoryRegistry& registry,
-                                 const DataSourceBase::StartArgs& args) {
+void TrackEventInternal::OnStart(const DataSourceBase::StartArgs& args) {
   session_count_.fetch_add(1);
-  TrackEventSessionObserverRegistry::GetInstance()->ForEachObserverForRegistry(
-      registry, [&](TrackEventSessionObserver* o) { o->OnStart(args); });
+  TrackEventSessionObserverRegistry::GetInstance()
+      ->ForEachObserverForRegistries(
+          GetInstance().GetRegistries(),
+          [&](TrackEventSessionObserver* o) { o->OnStart(args); });
 }
 
 
-void TrackEventInternal::OnStop(const TrackEventCategoryRegistry& registry,
-                                const DataSourceBase::StopArgs& args) {
-  TrackEventSessionObserverRegistry::GetInstance()->ForEachObserverForRegistry(
-      registry, [&](TrackEventSessionObserver* o) { o->OnStop(args); });
-}
-
-
-void TrackEventInternal::DisableTracing(
-    const TrackEventCategoryRegistry& registry,
-    uint32_t internal_instance_index) {
-  for (size_t i = 0; i < registry.category_count(); i++)
-    registry.DisableCategoryForInstance(i, internal_instance_index);
+void TrackEventInternal::OnStop(const DataSourceBase::StopArgs& args) {
+  TrackEventSessionObserverRegistry::GetInstance()
+      ->ForEachObserverForRegistries(
+          GetInstance().GetRegistries(),
+          [&](TrackEventSessionObserver* o) { o->OnStop(args); });
 }
 
 
 void TrackEventInternal::WillClearIncrementalState(
-    const TrackEventCategoryRegistry& registry,
     const DataSourceBase::ClearIncrementalStateArgs& args) {
-  TrackEventSessionObserverRegistry::GetInstance()->ForEachObserverForRegistry(
-      registry, [&](TrackEventSessionObserver* o) {
-        o->WillClearIncrementalState(args);
-      });
+  TrackEventSessionObserverRegistry::GetInstance()
+      ->ForEachObserverForRegistries(GetInstance().GetRegistries(),
+                                     [&](TrackEventSessionObserver* o) {
+                                       o->WillClearIncrementalState(args);
+                                     });
 }
 
 
@@ -40224,44 +48651,18 @@ bool TrackEventInternal::IsCategoryEnabled(
       if (matcher(tag))
         return true;
     }
-    
-    if (!strncmp(category.name, kLegacySlowPrefix, strlen(kLegacySlowPrefix)) &&
-        matcher(kSlowTag)) {
-      return true;
-    }
     return false;
   };
 
   
-  const std::array<MatchType, 2> match_types = {
-      {MatchType::kExact, MatchType::kPattern}};
+  
+  const std::array<MatchType, 3> match_types = {
+      {MatchType::kExact, MatchType::kPattern, MatchType::kWildcard}};
   for (auto match_type : match_types) {
     
     if (NameMatchesPatternList(config.enabled_categories(), category.name,
                                match_type)) {
       return true;
-    }
-
-    
-    if (has_matching_tag([&](const char* tag) {
-          return NameMatchesPatternList(config.enabled_tags(), tag, match_type);
-        })) {
-      return true;
-    }
-
-    
-    
-    
-    
-    if (match_type == MatchType::kExact &&
-        !strncmp(category.name, kLegacySlowPrefix, strlen(kLegacySlowPrefix))) {
-      for (const auto& pattern : config.enabled_categories()) {
-        if (!strncmp(pattern.c_str(), kLegacySlowPrefix,
-                     strlen(kLegacySlowPrefix)) &&
-            NameMatchesPattern(pattern, category.name, MatchType::kPattern)) {
-          return true;
-        }
-      }
     }
 
     
@@ -40275,13 +48676,21 @@ bool TrackEventInternal::IsCategoryEnabled(
           if (config.disabled_tags_size()) {
             return NameMatchesPatternList(config.disabled_tags(), tag,
                                           match_type);
-          } else {
+          } else if (config.enabled_tags_size() == 0) {
             
             return NameMatchesPattern(kSlowTag, tag, match_type) ||
                    NameMatchesPattern(kDebugTag, tag, match_type);
           }
+          return false;
         })) {
       return false;
+    }
+
+    
+    if (has_matching_tag([&](const char* tag) {
+          return NameMatchesPatternList(config.enabled_tags(), tag, match_type);
+        })) {
+      return true;
     }
   }
 
@@ -40473,20 +48882,29 @@ EventContext TrackEventInternal::WriteEvent(
     bool on_current_thread_track) {
   PERFETTO_DCHECK(!incr_state->was_cleared);
   auto packet = NewTracePacket(trace_writer, incr_state, tls_state, timestamp);
-  EventContext ctx(trace_writer, std::move(packet), incr_state, &tls_state);
+  EventContext ctx(std::move(packet), incr_state, &tls_state);
 
   auto track_event = ctx.event();
   if (type != protos::pbzero::TrackEvent::TYPE_UNSPECIFIED)
     track_event->set_type(type);
 
   if (tls_state.enable_thread_time_sampling && on_current_thread_track) {
-    int64_t thread_time_ns = base::GetThreadCPUTimeNs().count();
-    auto thread_time_delta_ns =
-        thread_time_ns - incr_state->last_thread_time_ns;
-    incr_state->last_thread_time_ns = thread_time_ns;
-    track_event->add_extra_counter_values(
-        thread_time_delta_ns /
-        static_cast<int64_t>(tls_state.timestamp_unit_multiplier));
+    if (tls_state.thread_time_subsampling_ns == 0 ||
+        incr_state->last_thread_time_timestamp_ns == 0 ||
+        timestamp.value >= incr_state->last_thread_time_timestamp_ns +
+                               tls_state.thread_time_subsampling_ns) {
+      auto thread_time_ns = base::GetThreadCPUTimeNs().count();
+      auto thread_time_delta_ns =
+          thread_time_ns - incr_state->last_thread_time_ns;
+      incr_state->last_thread_time_ns = thread_time_ns;
+      incr_state->last_thread_time_timestamp_ns = timestamp.value;
+      track_event->add_extra_counter_values(
+          thread_time_delta_ns /
+          static_cast<int64_t>(tls_state.timestamp_unit_multiplier));
+    } else {
+      
+      track_event->add_extra_counter_values(0);
+    }
   }
 
   
@@ -40523,7 +48941,17 @@ protos::pbzero::DebugAnnotation* TrackEventInternal::AddDebugAnnotation(
   return annotation;
 }
 
+void TrackEventDataSource::OnStart(const DataSourceBase::StartArgs& args) {
+  TrackEventInternal::OnStart(args);
+}
+
 }  
+
+PERFETTO_DEFINE_DATA_SOURCE_STATIC_MEMBERS_WITH_ATTRS(
+    PERFETTO_EXPORT_COMPONENT,
+    perfetto::internal::TrackEventDataSource,
+    perfetto::internal::TrackEventDataSourceTraits);
+
 }  
 
 
@@ -40639,6 +49067,319 @@ PlatformThreadLocalObject::CreateInstance() {
 base::PlatformProcessId Platform::process_id_ = 0;
 
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+
+
+
+
+
+
+
+#include <pthread.h>
+#include <stdlib.h>
+
+namespace perfetto {
+
+namespace {
+
+class PlatformPosix : public Platform {
+ public:
+  PlatformPosix();
+  ~PlatformPosix() override;
+
+  ThreadLocalObject* GetOrCreateThreadLocalObject() override;
+
+  std::unique_ptr<base::TaskRunner> CreateTaskRunner(
+      const CreateTaskRunnerArgs&) override;
+  std::string GetCurrentProcessName() override;
+  void Shutdown() override;
+
+ private:
+  pthread_key_t tls_key_{};
+};
+
+PlatformPosix* g_instance = nullptr;
+
+using ThreadLocalObject = Platform::ThreadLocalObject;
+
+PlatformPosix::PlatformPosix() {
+  PERFETTO_CHECK(!g_instance);
+  g_instance = this;
+  auto tls_dtor = [](void* obj) {
+    
+    
+    
+    
+    
+    
+    pthread_setspecific(g_instance->tls_key_, obj);
+    delete static_cast<ThreadLocalObject*>(obj);
+    pthread_setspecific(g_instance->tls_key_, nullptr);
+  };
+  PERFETTO_CHECK(pthread_key_create(&tls_key_, tls_dtor) == 0);
+}
+
+PlatformPosix::~PlatformPosix() {
+  
+  
+  void* tls_ptr = pthread_getspecific(tls_key_);
+  delete static_cast<ThreadLocalObject*>(tls_ptr);
+
+  pthread_key_delete(tls_key_);
+  g_instance = nullptr;
+}
+
+void PlatformPosix::Shutdown() {
+  PERFETTO_CHECK(g_instance == this);
+  delete this;
+  PERFETTO_CHECK(!g_instance);
+  
+  
+}
+
+ThreadLocalObject* PlatformPosix::GetOrCreateThreadLocalObject() {
+  
+  void* tls_ptr = pthread_getspecific(tls_key_);
+
+  
+  
+  ThreadLocalObject* tls = static_cast<ThreadLocalObject*>(tls_ptr);
+  if (!tls) {
+    tls = ThreadLocalObject::CreateInstance().release();
+    pthread_setspecific(tls_key_, tls);
+  }
+  return tls;
+}
+
+std::unique_ptr<base::TaskRunner> PlatformPosix::CreateTaskRunner(
+    const CreateTaskRunnerArgs& args) {
+  return std::unique_ptr<base::TaskRunner>(new base::ThreadTaskRunner(
+      base::ThreadTaskRunner::CreateAndStart(args.name_for_debugging)));
+}
+
+std::string PlatformPosix::GetCurrentProcessName() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  std::string cmdline;
+  base::ReadFile("/proc/self/cmdline", &cmdline);
+  return cmdline.substr(0, cmdline.find('\0'));
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
+  return std::string(getprogname());
+#else
+  return "unknown_producer";
+#endif
+}
+
+}  
+
+
+Platform* Platform::GetDefaultPlatform() {
+  static PlatformPosix* instance = new PlatformPosix();
+  return instance;
+}
+
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+#include <windows.h>
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef _WIN64
+#pragma comment(linker, "/INCLUDE:_tls_used")
+#pragma comment(linker, "/INCLUDE:perfetto_thread_callback_base")
+#else
+#pragma comment(linker, "/INCLUDE:__tls_used")
+#pragma comment(linker, "/INCLUDE:_perfetto_thread_callback_base")
+#endif
+
+namespace perfetto {
+
+namespace {
+
+class PlatformWindows : public Platform {
+ public:
+  static PlatformWindows* instance;
+  PlatformWindows();
+  ~PlatformWindows() override;
+
+  ThreadLocalObject* GetOrCreateThreadLocalObject() override;
+  std::unique_ptr<base::TaskRunner> CreateTaskRunner(
+      const CreateTaskRunnerArgs&) override;
+  std::string GetCurrentProcessName() override;
+  void OnThreadExit();
+
+ private:
+  DWORD tls_key_{};
+};
+
+using ThreadLocalObject = Platform::ThreadLocalObject;
+
+
+PlatformWindows* PlatformWindows::instance = nullptr;
+
+PlatformWindows::PlatformWindows() {
+  instance = this;
+  tls_key_ = ::TlsAlloc();
+  PERFETTO_CHECK(tls_key_ != TLS_OUT_OF_INDEXES);
+}
+
+PlatformWindows::~PlatformWindows() {
+  ::TlsFree(tls_key_);
+  instance = nullptr;
+}
+
+void PlatformWindows::OnThreadExit() {
+  auto tls = static_cast<ThreadLocalObject*>(::TlsGetValue(tls_key_));
+  if (tls) {
+    
+    
+    delete tls;
+  }
+}
+
+ThreadLocalObject* PlatformWindows::GetOrCreateThreadLocalObject() {
+  void* tls_ptr = ::TlsGetValue(tls_key_);
+
+  auto* tls = static_cast<ThreadLocalObject*>(tls_ptr);
+  if (!tls) {
+    tls = ThreadLocalObject::CreateInstance().release();
+    ::TlsSetValue(tls_key_, tls);
+  }
+  return tls;
+}
+
+std::unique_ptr<base::TaskRunner> PlatformWindows::CreateTaskRunner(
+    const CreateTaskRunnerArgs& args) {
+  return std::unique_ptr<base::TaskRunner>(new base::ThreadTaskRunner(
+      base::ThreadTaskRunner::CreateAndStart(args.name_for_debugging)));
+}
+
+std::string PlatformWindows::GetCurrentProcessName() {
+  char buf[MAX_PATH];
+  auto len = ::GetModuleFileNameA(nullptr , buf, sizeof(buf));
+  std::string name(buf, static_cast<size_t>(len));
+  size_t sep = name.find_last_of('\\');
+  if (sep != std::string::npos)
+    name = name.substr(sep + 1);
+  return name;
+}
+
+}  
+
+
+Platform* Platform::GetDefaultPlatform() {
+  static PlatformWindows* thread_safe_init_instance = new PlatformWindows();
+  return thread_safe_init_instance;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern "C" {
+
+
+
+
+
+void NTAPI PerfettoOnThreadExit(PVOID, DWORD, PVOID);
+void NTAPI PerfettoOnThreadExit(PVOID, DWORD reason, PVOID) {
+  if (reason == DLL_THREAD_DETACH || reason == DLL_PROCESS_DETACH) {
+    if (perfetto::PlatformWindows::instance)
+      perfetto::PlatformWindows::instance->OnThreadExit();
+  }
+}
+
+#ifdef _WIN64
+
+
+#pragma const_seg(".CRT$XLP")
+
+
+
+extern const PIMAGE_TLS_CALLBACK perfetto_thread_callback_base;
+const PIMAGE_TLS_CALLBACK perfetto_thread_callback_base = PerfettoOnThreadExit;
+
+
+#pragma const_seg()
+
+#else  
+
+#pragma data_seg(".CRT$XLP")
+PIMAGE_TLS_CALLBACK perfetto_thread_callback_base = PerfettoOnThreadExit;
+
+#pragma data_seg()
+
+#endif  
+
+}  
+
+#endif  
 
 
 
@@ -40853,6 +49594,7 @@ TracedArray TracedDictionary::AddArray(DynamicString key) {
 
 
 
+
 namespace perfetto {
 namespace {
 bool g_was_initialized = false;
@@ -40888,10 +49630,13 @@ void Tracing::InitializeInternal(const TracingInitArgs& args) {
     if (args.disallow_merging_with_system_tracks) {
       internal::TrackEventInternal::SetDisallowMergingWithSystemTracks(true);
     }
+
+    internal::TrackEventInternal::SetBufferExhaustedPolicy(
+        args.track_event_buffer_exhausted_policy);
   }
 
   internal::TracingMuxerImpl::InitializeInstance(args);
-  internal::TrackRegistry::InitializeInstance();
+  internal::TrackRegistry::InitializeInstance(args.process_uuid);
   g_was_initialized = true;
 }
 
@@ -40918,6 +49663,7 @@ void Tracing::ResetForTesting() {
   base::SetLogMessageCallback(nullptr);
   internal::TracingMuxerImpl::ResetForTesting();
   internal::TrackRegistry::ResetForTesting();
+  internal::TrackEventDataSource::ResetForTesting();
   g_was_initialized = false;
 }
 
@@ -41191,6 +49937,15 @@ protos::gen::TrackDescriptor NamedTrack::Serialize() const {
   } else {
     desc.set_name(dynamic_name_.value);
   }
+  if (sibling_merge_behavior_ != perfetto::protos::gen::TrackDescriptor::
+                                     SIBLING_MERGE_BEHAVIOR_UNSPECIFIED) {
+    desc.set_sibling_merge_behavior(sibling_merge_behavior_);
+  }
+  if (sibling_merge_key_) {
+    desc.set_sibling_merge_key(sibling_merge_key_);
+  } else if (sibling_merge_key_int_.has_value()) {
+    desc.set_sibling_merge_key_int(*sibling_merge_key_int_);
+  }
   return desc;
 }
 
@@ -41272,30 +50027,33 @@ TrackRegistry::TrackRegistry() = default;
 TrackRegistry::~TrackRegistry() = default;
 
 
-void TrackRegistry::InitializeInstance() {
+void TrackRegistry::InitializeInstance(std::optional<uint64_t> process_uuid) {
   if (instance_)
     return;
   instance_ = new TrackRegistry();
-  Track::process_uuid = ComputeProcessUuid();
+  if (process_uuid) {
+    Track::process_uuid = *process_uuid;
+  } else {
+    Track::process_uuid = ComputeProcessUuid();
+  }
 }
 
 
 uint64_t TrackRegistry::ComputeProcessUuid() {
-  base::Hasher hash;
   
   
   
   
   
+  uint64_t random;
   if (uint64_t start_time = GetProcessStartTime()) {
-    hash.Update(start_time);
+    random = start_time;
   } else {
     
     static uint64_t random_once = static_cast<uint64_t>(base::Uuidv4().lsb());
-    hash.Update(random_once);
+    random = random_once;
   }
-  hash.Update(Platform::GetCurrentProcessId());
-  return hash.digest();
+  return base::FnvHasher::Combine(random, Platform::GetCurrentProcessId());
 }
 
 void TrackRegistry::ResetForTesting() {
@@ -41343,6 +50101,12 @@ void TrackRegistry::WriteTrackDescriptor(
 
 
 namespace perfetto {
+namespace {
+
+static constexpr const char kLegacySlowPrefix[] = "disabled-by-default-";
+static constexpr const char kSlowTag[] = "slow";
+
+}  
 
 
 Category Category::FromDynamicCategory(const char* name) {
@@ -41353,6 +50117,10 @@ Category Category::FromDynamicCategory(const char* name) {
   }
   Category category(name);
   PERFETTO_DCHECK(category.name);
+  
+  if (!strncmp(name, kLegacySlowPrefix, strlen(kLegacySlowPrefix))) {
+    return category.SetTags(kSlowTag);
+  }
   return category;
 }
 
@@ -41446,7 +50214,7 @@ void LegacyTraceId::Write(protos::pbzero::TrackEvent::LegacyEvent* event,
                                       legacy::kTraceEventFlagHasGlobalId);
   uint64_t id = raw_id_;
   if (scope_ && scope_flags != legacy::kTraceEventFlagHasGlobalId) {
-    id = base::Hasher::Combine(id, scope_);
+    id = base::FnvHasher::Combine(id, scope_);
   }
 
   switch (scope_flags) {
@@ -41561,7 +50329,7 @@ void TrackEventStateTracker::ProcessTracePacket(
   }
 
   if (name.data) {
-    base::Hasher hash;
+    base::FnvHasher hash;
     hash.Update(name.data, name.size);
     name_hash = hash.digest();
   }
@@ -41888,6 +50656,11 @@ enum class PerfettoStatsdAtom {
   kTracedEnableTracingInvalidTriggerMode = 52,
   kTracedEnableTracingInvalidBrFilename = 54,
   kTracedEnableTracingFailedSessionSemaphoreCheck = 57,
+  kTracedEnablePriorityBoostInvalidConfig = 61,
+  kTracedEnablePriorityBoostOtherError = 62,
+  kTracedEnableTracingExclusiveSessionRejected = 63,
+  kTracedEnableTracingExclusiveSessionNotAllowed = 64,
+  kTracedEnableTracingDuplicateBufferName = 65,
 
   
   kOnTracingDisabled = 4,
@@ -41991,11 +50764,9 @@ void MaybeLogUploadEvent(PerfettoStatsdAtom atom,
                          const std::string& trigger_name = "");
 
 
-void MaybeLogTriggerEvent(PerfettoTriggerAtom atom, const std::string& trigger);
-
-
-void MaybeLogTriggerEvents(PerfettoTriggerAtom atom,
-                           const std::vector<std::string>& triggers);
+void MaybeLogTriggerEvent(PerfettoTriggerAtom atom,
+                          int64_t uuid_lsb,
+                          const std::string& trigger);
 
 }  
 }  
@@ -42052,20 +50823,11 @@ void MaybeLogUploadEvent(PerfettoStatsdAtom atom,
 }
 
 void MaybeLogTriggerEvent(PerfettoTriggerAtom atom,
+                          int64_t uuid_lsb,
                           const std::string& trigger_name) {
   PERFETTO_LAZY_LOAD(android_internal::StatsdLogTriggerEvent, log_event_fn);
   if (log_event_fn) {
-    log_event_fn(atom, trigger_name.c_str());
-  }
-}
-
-void MaybeLogTriggerEvents(PerfettoTriggerAtom atom,
-                           const std::vector<std::string>& triggers) {
-  PERFETTO_LAZY_LOAD(android_internal::StatsdLogTriggerEvent, log_event_fn);
-  if (log_event_fn) {
-    for (const std::string& trigger_name : triggers) {
-      log_event_fn(atom, trigger_name.c_str());
-    }
+    log_event_fn(atom, uuid_lsb, trigger_name.c_str());
   }
 }
 
@@ -42074,11 +50836,482 @@ void MaybeLogUploadEvent(PerfettoStatsdAtom,
                          int64_t,
                          int64_t,
                          const std::string&) {}
-void MaybeLogTriggerEvent(PerfettoTriggerAtom, const std::string&) {}
-void MaybeLogTriggerEvents(PerfettoTriggerAtom,
-                           const std::vector<std::string>&) {}
+void MaybeLogTriggerEvent(PerfettoTriggerAtom, int64_t, const std::string&) {}
 #endif
 
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_REGEX_H_
+#define INCLUDE_PERFETTO_EXT_BASE_REGEX_H_
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+
+
+namespace perfetto {
+namespace base {
+
+
+class RegexImpl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Regex {
+ public:
+  
+  enum class CaseSensitivity : uint8_t {
+    kSensitive,
+    kInsensitive,
+  };
+
+  Regex(Regex&&) noexcept;
+  Regex& operator=(Regex&&) noexcept;
+  ~Regex();
+
+  
+  Regex(const Regex&) = delete;
+  Regex& operator=(const Regex&) = delete;
+
+  
+  
+  static StatusOr<Regex> Create(
+      std::string_view pattern,
+      CaseSensitivity cs = CaseSensitivity::kSensitive);
+
+  
+  
+  static Regex CreateOrCheck(std::string_view pattern,
+                             CaseSensitivity cs = CaseSensitivity::kSensitive);
+
+  
+  
+  std::string GlobalReplace(std::string_view s,
+                            std::string_view replacement) const;
+
+  
+  bool FullMatch(std::string_view s) const;
+
+  
+  
+  
+  
+  
+  
+  
+  bool FullMatchWithGroups(std::string_view s,
+                           std::vector<std::string_view>& out) const;
+
+  
+  bool PartialMatch(std::string_view s) const;
+
+  
+  
+  
+  
+  
+  
+  
+  bool PartialMatchWithGroups(std::string_view s,
+                              std::vector<std::string_view>& out) const;
+
+  
+  class PartialMatchIterator {
+   public:
+    
+    std::optional<std::string_view> Next();
+
+    
+    
+    std::optional<std::string_view> NextWithGroups(
+        std::vector<std::string_view>& groups);
+
+   private:
+    friend class Regex;
+    PartialMatchIterator(const Regex* re, std::string_view input);
+    const Regex* re_;
+    std::string_view input_;
+    size_t offset_ = 0;
+    std::vector<std::string_view> groups_;  
+  };
+
+  
+  PartialMatchIterator PartialMatchAll(std::string_view s) const;
+
+  
+  const std::string& pattern() const { return pattern_; }
+  CaseSensitivity case_sensitivity() const { return cs_; }
+
+ private:
+  Regex() = default;
+  std::unique_ptr<RegexImpl> impl_;
+  std::string pattern_;
+  CaseSensitivity cs_ = CaseSensitivity::kSensitive;
+};
+
+
+
+
+
+
+class CopyableRegex {
+ public:
+  explicit CopyableRegex(Regex regex);
+
+  CopyableRegex(const CopyableRegex& other);
+  CopyableRegex& operator=(const CopyableRegex& other);
+  CopyableRegex(CopyableRegex&&) noexcept = default;
+  CopyableRegex& operator=(CopyableRegex&&) noexcept = default;
+  ~CopyableRegex() = default;
+
+  std::string GlobalReplace(std::string_view s,
+                            std::string_view replacement) const {
+    return regex_.GlobalReplace(s, replacement);
+  }
+  bool FullMatch(std::string_view s) const { return regex_.FullMatch(s); }
+  bool FullMatchWithGroups(std::string_view s,
+                           std::vector<std::string_view>& out) const {
+    return regex_.FullMatchWithGroups(s, out);
+  }
+  bool PartialMatch(std::string_view s) const { return regex_.PartialMatch(s); }
+  bool PartialMatchWithGroups(std::string_view s,
+                              std::vector<std::string_view>& out) const {
+    return regex_.PartialMatchWithGroups(s, out);
+  }
+  Regex::PartialMatchIterator PartialMatchAll(std::string_view s) const {
+    return regex_.PartialMatchAll(s);
+  }
+
+ private:
+  Regex regex_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_BASE_REGEX_REGEX_STD_H_
+#define SRC_BASE_REGEX_REGEX_STD_H_
+
+#include <regex>
+#include <string>
+#include <string_view>
+#include <vector>
+
+
+
+namespace perfetto {
+namespace base {
+
+
+
+class RegexStd {
+ public:
+  RegexStd(RegexStd&&) noexcept = default;
+  RegexStd& operator=(RegexStd&&) noexcept = default;
+  ~RegexStd() = default;
+
+  RegexStd(const RegexStd&) = delete;
+  RegexStd& operator=(const RegexStd&) = delete;
+
+  static StatusOr<RegexStd> Create(std::string_view pattern,
+                                   bool case_insensitive) {
+    RegexStd result;
+    auto flags = std::regex::ECMAScript;
+    if (case_insensitive) {
+      flags |= std::regex::icase;
+    }
+    result.re_ = std::regex(std::string(pattern), flags);
+    return std::move(result);
+  }
+
+  std::string GlobalReplace(std::string_view s,
+                            std::string_view replacement) const {
+    return std::regex_replace(std::string(s), re_, std::string(replacement));
+  }
+
+  bool FullMatch(std::string_view s) const {
+    return std::regex_match(s.data(), s.data() + s.size(), re_);
+  }
+
+  bool FullMatchWithGroups(std::string_view s,
+                           std::vector<std::string_view>& out) const {
+    out.clear();
+    if (!std::regex_match(s.data(), s.data() + s.size(), match_data_, re_))
+      return false;
+    FillGroups(s.data(), out);
+    return true;
+  }
+
+  bool PartialMatch(std::string_view s) const {
+    return std::regex_search(s.data(), s.data() + s.size(), re_);
+  }
+
+  bool PartialMatchWithGroups(std::string_view s,
+                              std::vector<std::string_view>& out) const {
+    out.clear();
+    if (!std::regex_search(s.data(), s.data() + s.size(), match_data_, re_))
+      return false;
+    FillGroups(s.data(), out);
+    return true;
+  }
+
+  bool SearchWithOffset(std::string_view s,
+                        size_t start_offset,
+                        std::vector<std::string_view>& out) const {
+    out.clear();
+    const char* begin = s.data() + start_offset;
+    const char* end = s.data() + s.size();
+    if (begin > end)
+      return false;
+    if (!std::regex_search(begin, end, match_data_, re_))
+      return false;
+    FillGroups(begin, out);
+    return true;
+  }
+
+ private:
+  RegexStd() = default;
+
+  void FillGroups(const char* base, std::vector<std::string_view>& out) const {
+    for (size_t i = 0; i < match_data_.size(); ++i) {
+      if (match_data_[i].matched) {
+        out.emplace_back(base + match_data_.position(i),
+                         static_cast<size_t>(match_data_.length(i)));
+      } else {
+        out.emplace_back();
+      }
+    }
+  }
+
+  std::regex re_;
+  mutable std::cmatch match_data_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(PERFETTO_REGEX_FORCE_STD)
+
+#define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexStd
+#elif PERFETTO_BUILDFLAG(PERFETTO_PCRE2) && PERFETTO_FLAGS_USE_PCRE2
+
+#define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexPcre2
+#elif PERFETTO_BUILDFLAG(PERFETTO_RE2)
+
+#define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexRe2
+#else
+
+#define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexStd
+#endif
+
+namespace perfetto {
+namespace base {
+
+
+
+class RegexImpl {
+ public:
+  using Backend = PERFETTO_REGEX_BACKEND;
+  explicit RegexImpl(Backend b) : backend(std::move(b)) {}
+
+ private:
+  friend class Regex;
+  Backend backend;
+};
+#undef PERFETTO_REGEX_BACKEND
+
+Regex::Regex(Regex&&) noexcept = default;
+Regex& Regex::operator=(Regex&&) noexcept = default;
+Regex::~Regex() = default;
+
+StatusOr<Regex> Regex::Create(std::string_view pattern,
+                              Regex::CaseSensitivity cs) {
+  bool insensitive = (cs == CaseSensitivity::kInsensitive);
+  ASSIGN_OR_RETURN(auto backend,
+                   RegexImpl::Backend::Create(pattern, insensitive));
+  Regex regex;
+  regex.pattern_ = std::string(pattern);
+  regex.cs_ = cs;
+  regex.impl_ = std::make_unique<RegexImpl>(std::move(backend));
+  return std::move(regex);
+}
+
+Regex Regex::CreateOrCheck(std::string_view pattern,
+                           Regex::CaseSensitivity cs) {
+  auto re_or = Create(pattern, cs);
+  PERFETTO_CHECK(re_or.ok());
+  return std::move(*re_or);
+}
+
+std::string Regex::GlobalReplace(std::string_view s,
+                                 std::string_view replacement) const {
+  PERFETTO_DCHECK(impl_);
+  return impl_->backend.GlobalReplace(s, replacement);
+}
+
+bool Regex::FullMatch(std::string_view s) const {
+  PERFETTO_DCHECK(impl_);
+  return impl_->backend.FullMatch(s);
+}
+
+bool Regex::FullMatchWithGroups(std::string_view s,
+                                std::vector<std::string_view>& out) const {
+  PERFETTO_DCHECK(impl_);
+  return impl_->backend.FullMatchWithGroups(s, out);
+}
+
+bool Regex::PartialMatch(std::string_view s) const {
+  PERFETTO_DCHECK(impl_);
+  return impl_->backend.PartialMatch(s);
+}
+
+bool Regex::PartialMatchWithGroups(std::string_view s,
+                                   std::vector<std::string_view>& out) const {
+  PERFETTO_DCHECK(impl_);
+  return impl_->backend.PartialMatchWithGroups(s, out);
+}
+
+
+
+Regex::PartialMatchIterator::PartialMatchIterator(const Regex* re,
+                                                  std::string_view input)
+    : re_(re), input_(input) {}
+
+std::optional<std::string_view> Regex::PartialMatchIterator::Next() {
+  return NextWithGroups(groups_);
+}
+
+std::optional<std::string_view> Regex::PartialMatchIterator::NextWithGroups(
+    std::vector<std::string_view>& groups) {
+  if (offset_ > input_.size())
+    return std::nullopt;
+  PERFETTO_DCHECK(re_->impl_);
+  if (!re_->impl_->backend.SearchWithOffset(input_, offset_, groups))
+    return std::nullopt;
+  if (groups.empty())
+    return std::nullopt;
+  std::string_view match = groups[0];
+  size_t match_end =
+      static_cast<size_t>(match.data() - input_.data()) + match.size();
+  
+  
+  offset_ = match.size() == 0 ? match_end + 1 : match_end;
+  return match;
+}
+
+Regex::PartialMatchIterator Regex::PartialMatchAll(std::string_view s) const {
+  return PartialMatchIterator(this, s);
+}
+
+
+
+CopyableRegex::CopyableRegex(Regex regex) : regex_(std::move(regex)) {}
+
+CopyableRegex::CopyableRegex(const CopyableRegex& other)
+    : regex_(Regex::CreateOrCheck(other.regex_.pattern(),
+                                  other.regex_.case_sensitivity())) {}
+
+CopyableRegex& CopyableRegex::operator=(const CopyableRegex& other) {
+  if (this != &other) {
+    this->~CopyableRegex();
+    new (this) CopyableRegex(other);
+  }
+  return *this;
+}
+
+}  
 }  
 
 
@@ -42107,9 +51340,10 @@ namespace perfetto::base {
 
 ClockSnapshotVector CaptureClockSnapshots() {
   ClockSnapshotVector snapshot_data;
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) && \
-    !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&   \
-    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL) &&  \
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) &&   \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&     \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) && \
+    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL) &&    \
     !PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
   struct {
     clockid_t id;
@@ -42215,8 +51449,8 @@ const char* GetVersionCode();
 #ifndef GEN_PERFETTO_VERSION_GEN_H_
 #define GEN_PERFETTO_VERSION_GEN_H_
 
-#define PERFETTO_VERSION_STRING() "v49.0-b7483d6ac"
-#define PERFETTO_VERSION_SCM_REVISION() "b7483d6ac40fcce7eb9dcca402a43df2d3373db7"
+#define PERFETTO_VERSION_STRING() "v56.1-c794fceab"
+#define PERFETTO_VERSION_SCM_REVISION() "c794fceabe584dc9172e5512aaaeecc21019a635"
 
 #endif  
 
@@ -42290,13 +51524,4908 @@ const char* GetVersionString() {
 
 
 
+
+#ifndef SRC_PROTOVM_ERROR_HANDLING_H_
+#define SRC_PROTOVM_ERROR_HANDLING_H_
+
+#include <cstdarg>
+#include <cstdint>
+#include <memory>
+#include <new>
+#include <string>
+#include <type_traits>
+#include <vector>
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#if defined(__clang__)
+#pragma clang diagnostic push
+
+
+#pragma clang diagnostic ignored "-Wpragma-system-header-outside-header"
+#endif
+
+
+#pragma GCC system_header
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#endif
+
+namespace perfetto {
+namespace protovm {
+
+using Stacktrace = std::vector<std::string>;
+
+void LogStacktraceMessage(Stacktrace& stacktrace,
+                          const char* file_name,
+                          int file_line,
+                          const char* fmt,
+                          ...) PERFETTO_PRINTF_FORMAT(4, 5);
+
+
+void LogStacktraceMessage(Stacktrace& stacktrace,
+                          const char* file_name,
+                          int file_line);
+
+#define PROTOVM_ABORT(fmt, ...)                                       \
+  do {                                                                \
+    auto status_abort = StatusOr<void>::Abort();                      \
+    LogStacktraceMessage(status_abort.stacktrace(),                   \
+                         ::perfetto::base::LoggingBasename(__FILE__), \
+                         __LINE__, fmt, ##__VA_ARGS__);               \
+    return status_abort;                                              \
+  } while (0)
+
+#define PROTOVM_RETURN(s, ...)                                          \
+  do {                                                                  \
+    if (s.IsAbort()) {                                                  \
+      LogStacktraceMessage(s.stacktrace(),                              \
+                           ::perfetto::base::LoggingBasename(__FILE__), \
+                           __LINE__, ##__VA_ARGS__);                    \
+    }                                                                   \
+    return s;                                                           \
+  } while (0)
+
+#define PROTOVM_RETURN_IF_NOT_OK(s, ...)                                \
+  do {                                                                  \
+    if (s.IsAbort()) {                                                  \
+      LogStacktraceMessage(s.stacktrace(),                              \
+                           ::perfetto::base::LoggingBasename(__FILE__), \
+                           __LINE__, ##__VA_ARGS__);                    \
+      return s;                                                         \
+    }                                                                   \
+    if (!s.IsOk()) {                                                    \
+      return s;                                                         \
+    }                                                                   \
+  } while (0)
+
+#define PROTOVM_INTERNAL_CONCAT_IMPL(x, y) x##y
+#define PROTOVM_INTERNAL_MACRO_CONCAT(x, y) PROTOVM_INTERNAL_CONCAT_IMPL(x, y)
+
+
+
+
+#define PROTOVM_ASSIGN_OR_RETURN(lhs, rhs)                       \
+  PROTOVM_INTERNAL_MACRO_CONCAT(auto status_or, __LINE__) = rhs; \
+  PROTOVM_RETURN_IF_NOT_OK(                                      \
+      PROTOVM_INTERNAL_MACRO_CONCAT(status_or, __LINE__));       \
+  lhs = std::move(PROTOVM_INTERNAL_MACRO_CONCAT(status_or, __LINE__).value())
+
+enum class Status : uint8_t {
+  kOk,
+  kError,
+
+  
+  
+  kAbort,
+};
+
+namespace internal {
+
+template <class T, class Arg, class... Args>
+static constexpr bool is_copy_or_move_ctor_arg_v =
+    sizeof...(Args) == 0 && std::is_same_v<T, std::decay_t<Arg>>;
+
+template <class T>
+inline constexpr std::size_t sizeof_v = sizeof(T);
+
+template <>
+inline constexpr std::size_t sizeof_v<void> = 0;
+
+template <class T>
+inline constexpr std::size_t alignof_v = alignof(T);
+
+template <>
+inline constexpr std::size_t alignof_v<void> = 0;
+
+}  
+
+template <class T>
+class StatusOr {
+ public:
+  
+  static StatusOr Ok() { return StatusOr{Status::kOk}; }
+  static StatusOr Error() { return StatusOr{Status::kError}; }
+  static StatusOr Abort() { return StatusOr{Status::kAbort}; }
+
+  StatusOr(const StatusOr&) = delete;
+
+  StatusOr(StatusOr&& other) : status_{other.status_} {
+    if (IsOk()) {
+      if constexpr (!std::is_same_v<T, void>) {
+        new (storage_) T(std::move(other.value()));
+      }
+    } else if (IsAbort()) {
+      new (storage_) std::unique_ptr<Stacktrace>(
+          std::move(other.GetStacktraceUniquePtr()));
+    }
+  }
+
+  
+  
+  template <
+      class... Args,
+      
+      std::enable_if_t<!internal::is_copy_or_move_ctor_arg_v<StatusOr, Args...>,
+                       int> = 0>
+  StatusOr(Args&&... args) : status_{Status::kOk} {
+    if constexpr (!std::is_same_v<T, void>) {
+      new (storage_) T(std::forward<Args>(args)...);
+    }
+  }
+
+  
+  
+  
+  
+  template <class U, std::enable_if_t<!std::is_same_v<U, T>, int> = 0>
+  StatusOr(StatusOr<U>&& other) : status_{other.status_} {
+    if (IsOk()) {
+      PERFETTO_DCHECK((std::is_same_v<T, void>));
+    } else if (IsAbort()) {
+      new (storage_) std::unique_ptr<Stacktrace>(
+          std::move(other.GetStacktraceUniquePtr()));
+    }
+  }
+
+  ~StatusOr() {
+    if (IsOk()) {
+      if constexpr (!std::is_same_v<T, void>) {
+        value().~T();
+      }
+    }
+    if (IsAbort()) {
+      GetStacktraceUniquePtr().~unique_ptr();
+    }
+  }
+
+  bool IsOk() const { return status_ == Status::kOk; }
+  bool IsError() const { return status_ == Status::kError; }
+  bool IsAbort() const { return status_ == Status::kAbort; }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, U&> value() {
+    PERFETTO_DCHECK(IsOk());
+    return *std::launder(reinterpret_cast<T*>(storage_));
+  }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, const U&> value() const {
+    return const_cast<StatusOr*>(this)->value();
+  }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, U&> operator*() {
+    return value();
+  }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, const U&> operator*() const {
+    return value();
+  }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, U*> operator->() {
+    return &value();
+  }
+
+  template <class U = T>
+  std::enable_if_t<!std::is_same_v<U, void>, const U*> operator->() const {
+    return &value();
+  }
+
+  Stacktrace& stacktrace() {
+    PERFETTO_DCHECK(IsAbort());
+    return **std::launder(
+        reinterpret_cast<std::unique_ptr<Stacktrace>*>(storage_));
+  }
+
+ private:
+  template <class U>
+  friend class StatusOr;
+
+  
+  
+  
+  
+  explicit StatusOr(Status status) : status_{status} {
+    PERFETTO_DCHECK((std::is_same_v<T, void>) || !IsOk());
+    if (IsAbort()) {
+      new (storage_) std::unique_ptr<Stacktrace>{new Stacktrace{}};
+    }
+  }
+
+  std::unique_ptr<Stacktrace>& GetStacktraceUniquePtr() {
+    PERFETTO_DCHECK(IsAbort());
+    return *std::launder(
+        reinterpret_cast<std::unique_ptr<Stacktrace>*>(storage_));
+  }
+
+  Status status_;
+
+  static constexpr size_t kStorageAlign =
+      std::max(internal::alignof_v<T>, alignof(std::unique_ptr<Stacktrace>));
+  static constexpr size_t kStorageSize =
+      std::max(internal::sizeof_v<T>, sizeof(std::unique_ptr<Stacktrace>));
+  alignas(kStorageAlign) unsigned char storage_[kStorageSize];
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_OWNED_PTR_H_
+#define SRC_PROTOVM_OWNED_PTR_H_
+
+
+
+namespace perfetto {
+namespace protovm {
+
+
+
+
+
+
+
+
+
+template <class T>
+class OwnedPtr {
+ public:
+  using pointer = T*;
+  OwnedPtr(const OwnedPtr&) = delete;
+  OwnedPtr(OwnedPtr&& other) {
+    p_ = other.p_;
+    other.p_ = nullptr;
+  }
+  OwnedPtr(T* p) noexcept : p_(p) {}  
+  ~OwnedPtr() noexcept { reset(); }
+  OwnedPtr& operator=(const OwnedPtr&) = delete;
+  OwnedPtr& operator=(OwnedPtr&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    reset();
+    p_ = other.p_;
+    other.p_ = nullptr;
+    return *this;
+  }
+  T* get() const noexcept { return p_; }
+  T* release() noexcept {
+    T* p = p_;
+    p_ = nullptr;
+    return p;
+  }
+  typename std::add_lvalue_reference<T>::type operator*() const noexcept {
+    return *p_;
+  }
+  explicit operator bool() const noexcept { return get() != nullptr; }
+  T* operator->() const noexcept { return p_; }
+  void reset(T* p = pointer()) noexcept {
+    PERFETTO_DCHECK(p_ == nullptr);
+    p_ = p;
+  }
+
+ private:
+  T* p_ = nullptr;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_SCALAR_H_
+#define SRC_PROTOVM_SCALAR_H_
+
+
+
+namespace perfetto {
+namespace protovm {
+
+struct Scalar {
+  static Scalar Fixed32(uint32_t value) {
+    return Scalar{protozero::proto_utils::ProtoWireType::kFixed32, value};
+  }
+
+  static Scalar Fixed64(uint64_t value) {
+    return Scalar{protozero::proto_utils::ProtoWireType::kFixed64, value};
+  }
+
+  static Scalar VarInt(uint64_t value) {
+    return Scalar{protozero::proto_utils::ProtoWireType::kVarInt, value};
+  }
+
+  bool operator==(const Scalar& other) const {
+    return wire_type == other.wire_type && value == other.value;
+  }
+
+  bool operator!=(const Scalar& other) const { return !(*this == other); }
+
+  protozero::proto_utils::ProtoWireType wire_type;
+  uint64_t value;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_NODE_H_
+#define SRC_PROTOVM_NODE_H_
+
+#include <type_traits>
+#include <variant>
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+struct Node;
+
+struct MapNode {
+  struct Traits {
+    using KeyType = uint64_t;
+    static constexpr size_t NodeOffset() {
+      static_assert(std::is_standard_layout_v<MapNode>);
+      return offsetof(MapNode, node);
+    }
+    static const KeyType& GetKey(const MapNode& n) { return n.key; }
+  };
+
+  MapNode(uint64_t k, OwnedPtr<Node> v) : key{k}, value{std::move(v)} {}
+
+  base::IntrusiveTreeNode node{};
+  uint64_t key;
+  OwnedPtr<Node> value;
+};
+
+using IntrusiveMap = base::IntrusiveTree<MapNode, MapNode::Traits>;
+
+struct Node {
+  struct Bytes {
+    OwnedPtr<void> data;
+    size_t size;
+  };
+
+  struct Empty {};
+
+  struct MappedRepeatedField {
+    IntrusiveMap key_to_node;
+  };
+
+  struct IndexedRepeatedField {
+    IntrusiveMap index_to_node;
+  };
+
+  struct Message {
+    IntrusiveMap field_id_to_node;
+  };
+
+  template <class T>
+  T* GetIf() {
+    return std::get_if<T>(&value);
+  }
+
+  template <class T>
+  const T* GetIf() const {
+    return std::get_if<T>(&value);
+  }
+
+  const char* GetTypeName() const;
+
+  std::variant<Bytes,
+               Empty,
+               IndexedRepeatedField,
+               MappedRepeatedField,
+               Message,
+               Scalar>
+      value;
+
+  
+  
+  bool has_been_merged = false;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_HASH_H_
+#define INCLUDE_PERFETTO_EXT_BASE_HASH_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <tuple>
+#include <utility>
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::optional<T>& value) {
+  if (value.has_value()) {
+    return H::Combine(H::Combine(std::move(h), true), *value);
+  }
+  return H::Combine(std::move(h), false, 0);
+}
+
+
+template <typename H, typename T1, typename T2>
+H PerfettoHashValue(H h, const std::pair<T1, T2>& value) {
+  return H::Combine(std::move(h), value.first, value.second);
+}
+
+
+template <typename H, typename... Ts>
+H PerfettoHashValue(H h, const std::tuple<Ts...>& value) {
+  return std::apply(
+      [&h](const auto&... elements) {
+        return H::Combine(std::move(h), elements...);
+      },
+      value);
+}
+
+
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::unique_ptr<T>& ptr) {
+  return H::Combine(std::move(h), ptr.get());
+}
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::shared_ptr<T>& ptr) {
+  return H::Combine(std::move(h), ptr.get());
+}
+
+
+
+
+template <typename T>
+struct AlreadyHashed {
+  size_t operator()(const T& x) const { return static_cast<size_t>(x); }
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
+#define INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_HAS_BUILTIN(__builtin_isnan)
+#define PERFETTO_IS_NAN(x) __builtin_isnan(x)
+#else
+#include <cmath>
+#define PERFETTO_IS_NAN(x) std::isnan(x)
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base {
+
+namespace murmur_internal {
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline uint64_t MurmurHashMix(uint64_t h) {
+  h ^= h >> 33;
+  h *= 0xff51afd7ed558ccdULL;
+  h ^= h >> 33;
+  h *= 0xc4ceb9fe1a85ec53ULL;
+  h ^= h >> 33;
+  return h;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline uint64_t MurmurHashBytes(const void* input, size_t len) {
+  
+  
+  
+  
+  static constexpr uint64_t kSeed = 0xe17a1465U;
+  static constexpr uint64_t kMulConstant = 0xc6a4a7935bd1e995;
+  static constexpr int kShift = 47;
+
+  uint64_t h = kSeed ^ (len * kMulConstant);
+  const auto* data = static_cast<const uint8_t*>(input);
+  const size_t num_blocks = len / 8;
+
+  
+  for (size_t i = 0; i < num_blocks; ++i) {
+    uint64_t k;
+    memcpy(&k, data, sizeof(k));
+    data += sizeof(k);  
+
+    k *= kMulConstant;
+    k ^= k >> kShift;
+    k *= kMulConstant;
+
+    h ^= k;
+    h *= kMulConstant;
+  }
+
+  
+  
+  switch (len & 7) {
+    case 7:
+      h ^= static_cast<uint64_t>(data[6]) << 48;
+      [[fallthrough]];
+    case 6:
+      h ^= static_cast<uint64_t>(data[5]) << 40;
+      [[fallthrough]];
+    case 5:
+      h ^= static_cast<uint64_t>(data[4]) << 32;
+      [[fallthrough]];
+    case 4:
+      h ^= static_cast<uint64_t>(data[3]) << 24;
+      [[fallthrough]];
+    case 3:
+      h ^= static_cast<uint64_t>(data[2]) << 16;
+      [[fallthrough]];
+    case 2:
+      h ^= static_cast<uint64_t>(data[1]) << 8;
+      [[fallthrough]];
+    case 1:
+      h ^= static_cast<uint64_t>(data[0]);
+      h *= kMulConstant;
+  }
+
+  
+  h ^= h >> kShift;
+  h *= kMulConstant;
+  h ^= h >> kShift;
+
+  return h;
+}
+
+template <typename Float, typename Int>
+Int NormalizeFloatToInt(Float value) {
+  static_assert(std::is_floating_point_v<Float>);
+  static_assert(std::is_integral_v<Int>);
+
+  
+  if (PERFETTO_UNLIKELY(value == 0.0)) {
+    
+    value = 0.0;
+  } else if (PERFETTO_UNLIKELY(PERFETTO_IS_NAN(value))) {
+    
+    value = std::numeric_limits<Float>::quiet_NaN();
+  }
+  Int res;
+  static_assert(sizeof(Float) == sizeof(Int));
+  memcpy(&res, &value, sizeof(Float));
+  return res;
+}
+
+
+
+
+
+
+
+
+template <typename T>
+auto MurmurHashBuiltinValue(const T& value) {
+  if constexpr (std::is_enum_v<T>) {
+    return murmur_internal::MurmurHashMix(
+        static_cast<uint64_t>(static_cast<std::underlying_type_t<T>>(value)));
+  } else if constexpr (std::is_integral_v<T>) {
+    return murmur_internal::MurmurHashMix(static_cast<uint64_t>(value));
+  } else if constexpr (std::is_same_v<T, double>) {
+    return murmur_internal::MurmurHashMix(
+        murmur_internal::NormalizeFloatToInt<double, uint64_t>(value));
+  } else if constexpr (std::is_same_v<T, float>) {
+    return murmur_internal::MurmurHashMix(
+        murmur_internal::NormalizeFloatToInt<float, uint32_t>(value));
+  } else if constexpr (std::is_same_v<T, std::string> ||
+                       std::is_same_v<T, std::string_view> ||
+                       std::is_same_v<T, base::StringView>) {
+    return murmur_internal::MurmurHashBytes(value.data(), value.size());
+  } else if constexpr (std::is_same_v<T, const char*>) {
+    std::string_view view(value);
+    return murmur_internal::MurmurHashBytes(view.data(), view.size());
+  } else if constexpr (std::is_pointer_v<T>) {
+    return murmur_internal::MurmurHashMix(
+        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(value)));
+  } else {
+    struct InvalidBuiltin {};
+    return InvalidBuiltin{};
+  }
+}
+
+
+template <typename T>
+constexpr bool HasMurmurHashBuiltinValue() {
+  return std::is_same_v<decltype(MurmurHashBuiltinValue(std::declval<T>())),
+                        uint64_t>;
+}
+
+
+template <typename T, typename U>
+constexpr bool IsConvertibleIntegral() {
+  return std::is_integral_v<T> && std::is_integral_v<U> &&
+         std::is_convertible_v<U, T>;
+}
+
+
+
+template <typename T>
+constexpr bool IsStringLike() {
+  return std::is_same_v<T, std::string> ||
+         std::is_same_v<T, std::string_view> ||
+         std::is_same_v<T, base::StringView> || std::is_same_v<T, const char*>;
+}
+
+
+
+template <typename T, typename U>
+constexpr bool AllowsHeterogeneousLookup() {
+  return IsConvertibleIntegral<T, U>() ||
+         (IsStringLike<T>() && IsStringLike<U>());
+}
+
+
+
+
+template <typename... Args>
+constexpr bool HasPointerV = (std::is_pointer_v<Args> || ...);
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MurmurHashCombiner {
+ public:
+  MurmurHashCombiner() = default;
+
+  
+  
+  template <typename... Args>
+  static MurmurHashCombiner Combine(MurmurHashCombiner h, const Args&... args) {
+    h.Combine(args...);
+    return h;
+  }
+
+  
+  
+  
+  template <typename... Args>
+  void Combine(const Args&... args) {
+    static_assert(!murmur_internal::HasPointerV<Args...>,
+                  "MurmurHashCombiner::Combine() does not support pointers. "
+                  "If you want to hash the contents of a memory range, use a "
+                  "single hashable object (e.g., std::string_view). If you "
+                  "want to hash a pointer address, cast it to uintptr_t.");
+    
+    (CombineOne(args), ...);
+  }
+
+  
+  uint64_t digest() const { return hash_; }
+
+ private:
+  
+  template <typename T>
+  void CombineOne(const T& value) {
+    if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
+      Update(murmur_internal::MurmurHashBuiltinValue(value));
+    } else {
+      
+      
+      
+      hash_ = PerfettoHashValue(std::move(*this), value).digest();
+    }
+  }
+
+  
+  
+  
+  void Update(uint64_t piece_hash) {
+    hash_ ^= piece_hash + 0x9e3779b9 + (hash_ << 6) + (hash_ >> 2);
+  }
+
+  static constexpr uint64_t kSeed = 0xe17a1465U;
+  uint64_t hash_ = kSeed;
+};
+
+
+
+template <typename... Args>
+uint64_t MurmurHashCombine(const Args&... value) {
+  return MurmurHashCombiner::Combine(MurmurHashCombiner{}, value...).digest();
+}
+
+
+
+
+
+
+
+template <typename T>
+uint64_t MurmurHashValue(const T& value) {
+  if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
+    return murmur_internal::MurmurHashBuiltinValue(value);
+  } else {
+    return MurmurHashCombine(value);
+  }
+}
+
+
+
+template <typename T>
+struct MurmurHash {
+  using is_transparent = void;
+
+  uint64_t operator()(const T& value) const { return MurmurHashValue(value); }
+
+  
+  
+  template <typename U>
+  auto operator()(const U& value) const
+      -> std::enable_if_t<murmur_internal::AllowsHeterogeneousLookup<T, U>(),
+                          uint64_t> {
+    return MurmurHashValue(value);
+  }
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct LinearProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + step) & (capacity - 1);  
+  }
+};
+
+
+
+
+
+struct QuadraticProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + 2 * step * step + step) & (capacity - 1);
+  }
+};
+
+
+
+
+
+struct QuadraticHalfProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + (step * step + step) / 2) & (capacity - 1);
+  }
+};
+
+
+struct FlatHashMapV1Base {
+ public:
+  
+  template <typename, typename = void>
+  struct HasIsTransparent : std::false_type {};
+
+  template <typename H>
+  struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
+      : std::true_type {};
+
+  
+  
+  
+  
+  
+  template <typename K, typename Key, typename Hasher>
+  static constexpr bool IsLookupKeyAllowed() {
+    if constexpr (HasIsTransparent<Hasher>::value) {
+      return std::is_invocable_v<Hasher, const K&> &&
+             std::is_same_v<decltype(std::declval<const Key&>() ==
+                                     std::declval<const K&>()),
+                            bool>;
+    } else if constexpr (std::is_convertible_v<K, Key>) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+template <typename Key,
+          typename Value,
+          typename Hasher = base::MurmurHash<Key>,
+          typename Probe = QuadraticProbe,
+          bool AppendOnly = false>
+class FlatHashMapV1 : protected FlatHashMapV1Base {
+ public:
+  class Iterator {
+   public:
+    explicit Iterator(const FlatHashMapV1* map) : map_(map) {
+      FindNextNonFree();
+    }
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    Key& key() { return map_->keys_[idx_]; }
+    Value& value() { return map_->values_[idx_]; }
+    const Key& key() const { return map_->keys_[idx_]; }
+    const Value& value() const { return map_->values_[idx_]; }
+
+    explicit operator bool() const { return idx_ != kEnd; }
+    Iterator& operator++() {
+      PERFETTO_DCHECK(idx_ < map_->capacity_);
+      ++idx_;
+      FindNextNonFree();
+      return *this;
+    }
+
+   private:
+    static constexpr size_t kEnd = std::numeric_limits<size_t>::max();
+
+    void FindNextNonFree() {
+      const auto& tags = map_->tags_;
+      for (; idx_ < map_->capacity_; idx_++) {
+        if (tags[idx_] != kFreeSlot && (AppendOnly || tags[idx_] != kTombstone))
+          return;
+      }
+      idx_ = kEnd;
+    }
+
+    const FlatHashMapV1* map_ = nullptr;
+    size_t idx_ = 0;
+  };  
+  static constexpr int kDefaultLoadLimitPct = 75;
+  explicit FlatHashMapV1(size_t initial_capacity = 0,
+                         int load_limit_pct = kDefaultLoadLimitPct)
+      : load_limit_percent_(load_limit_pct) {
+    if (initial_capacity > 0)
+      Reset(initial_capacity, true);
+  }
+
+  
+  
+  ~FlatHashMapV1() { Clear(); }
+
+  FlatHashMapV1(FlatHashMapV1&& other) noexcept {
+    tags_ = std::move(other.tags_);
+    keys_ = std::move(other.keys_);
+    values_ = std::move(other.values_);
+    capacity_ = other.capacity_;
+    size_ = other.size_;
+    tombstones_ = other.tombstones_;
+    max_probe_length_ = other.max_probe_length_;
+    load_limit_ = other.load_limit_;
+    load_limit_percent_ = other.load_limit_percent_;
+
+    new (&other) FlatHashMapV1();
+  }
+
+  FlatHashMapV1& operator=(FlatHashMapV1&& other) noexcept {
+    this->~FlatHashMapV1();
+    new (this) FlatHashMapV1(std::move(other));
+    return *this;
+  }
+
+  FlatHashMapV1(const FlatHashMapV1&) = delete;
+  FlatHashMapV1& operator=(const FlatHashMapV1&) = delete;
+
+  std::pair<Value*, bool> Insert(Key key, Value value) {
+    const size_t key_hash = Hasher{}(key);
+    const uint8_t tag = HashToTag(key_hash);
+    static constexpr size_t kSlotNotFound = std::numeric_limits<size_t>::max();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    size_t insertion_slot;
+    size_t probe_len;
+    for (;;) {
+      PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
+      insertion_slot = kSlotNotFound;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      for (probe_len = 0; probe_len < capacity_;) {
+        const size_t idx = Probe::Calc(key_hash, probe_len, capacity_);
+        PERFETTO_DCHECK(idx < capacity_);
+        const uint8_t tag_idx = tags_[idx];
+        ++probe_len;
+        if (tag_idx == kFreeSlot) {
+          
+          
+          
+          if (AppendOnly || insertion_slot == kSlotNotFound)
+            insertion_slot = idx;
+          break;
+        }
+        
+        PERFETTO_DCHECK(!(tag_idx == kTombstone && AppendOnly));
+        if (!AppendOnly && tag_idx == kTombstone) {
+          insertion_slot = idx;
+          continue;
+        }
+        if (tag_idx == tag && keys_[idx] == key) {
+          
+          return std::make_pair(&values_[idx], false);
+        }
+      }  
+
+      
+      
+      
+      if (PERFETTO_UNLIKELY(size_ >= load_limit_)) {
+        MaybeGrowAndRehash(true);
+        continue;
+      }
+      
+      
+      
+      bool is_many_tombstones = tombstones_ > size_ && size_ > 128;
+      bool is_tombstones_plus_size_too_high = tombstones_ + size_ > load_limit_;
+      if (PERFETTO_UNLIKELY(is_many_tombstones ||
+                            is_tombstones_plus_size_too_high)) {
+        MaybeGrowAndRehash(false);
+        continue;
+      }
+      PERFETTO_DCHECK(insertion_slot != kSlotNotFound);
+      break;
+    }  
+
+    PERFETTO_CHECK(insertion_slot < capacity_);
+
+    
+    if (tags_[insertion_slot] == kTombstone) {
+      PERFETTO_DCHECK(tombstones_ > 0);
+      tombstones_--;
+    }
+    Value* value_idx = &values_[insertion_slot];
+    new (&keys_[insertion_slot]) Key(std::move(key));
+    new (value_idx) Value(std::move(value));
+    tags_[insertion_slot] = tag;
+    PERFETTO_DCHECK(probe_len > 0 && probe_len <= capacity_);
+    max_probe_length_ = std::max(max_probe_length_, probe_len);
+    size_++;
+
+    return std::make_pair(value_idx, true);
+  }
+
+  template <typename K = Key>
+  Value* Find(const K& key) const {
+    const size_t idx = FindInternal(key);
+    if (idx == kNotFound)
+      return nullptr;
+    return &values_[idx];
+  }
+
+  template <typename K = Key>
+  bool Erase(const K& key) {
+    if (AppendOnly)
+      PERFETTO_FATAL("Erase() not supported because AppendOnly=true");
+    size_t idx = FindInternal(key);
+    if (idx == kNotFound)
+      return false;
+    EraseInternal(idx);
+    return true;
+  }
+
+  void Clear() {
+    
+    if (PERFETTO_UNLIKELY(capacity_ == 0))
+      return;
+
+    for (size_t i = 0; i < capacity_; ++i) {
+      const uint8_t tag = tags_[i];
+      if (tag != kFreeSlot && (AppendOnly || tag != kTombstone)) {
+        keys_[i].~Key();
+        values_[i].~Value();
+      }
+    }
+    Reset(capacity_, false);
+  }
+
+  Value& operator[](Key key) {
+    auto it_and_inserted = Insert(std::move(key), Value{});
+    return *it_and_inserted.first;
+  }
+
+  Iterator GetIterator() { return Iterator(this); }
+  const Iterator GetIterator() const { return Iterator(this); }
+
+  size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
+
+  
+  
+ protected:
+  enum ReservedTags : uint8_t { kFreeSlot = 0, kTombstone = 1 };
+  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max();
+
+  template <typename K = Key>
+  size_t FindInternal(const K& key) const {
+    static_assert(
+        IsLookupKeyAllowed<K, Key, Hasher>(),
+        "Heterogeneous lookup requires Hasher to define is_transparent and "
+        "support hashing the lookup key type. For same-type lookup, Key and K "
+        "must match exactly.");
+    const size_t key_hash = Hasher{}(key);
+    const uint8_t tag = HashToTag(key_hash);
+    PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
+    PERFETTO_DCHECK(max_probe_length_ <= capacity_);
+    for (size_t i = 0; i < max_probe_length_; ++i) {
+      const size_t idx = Probe::Calc(key_hash, i, capacity_);
+      const uint8_t tag_idx = tags_[idx];
+
+      if (tag_idx == kFreeSlot)
+        return kNotFound;
+      
+      
+      if (tag_idx == tag && keys_[idx] == key) {
+        PERFETTO_DCHECK(tag_idx > kTombstone);
+        return idx;
+      }
+    }  
+    return kNotFound;
+  }
+
+  void EraseInternal(size_t idx) {
+    PERFETTO_DCHECK(tags_[idx] > kTombstone);
+    PERFETTO_DCHECK(size_ > 0);
+    tags_[idx] = kTombstone;
+    keys_[idx].~Key();
+    values_[idx].~Value();
+    size_--;
+    tombstones_++;
+    PERFETTO_DCHECK(size_ + tombstones_ <= capacity_);
+  }
+
+  PERFETTO_NO_INLINE void MaybeGrowAndRehash(bool grow) {
+    PERFETTO_DCHECK(size_ <= capacity_);
+    const size_t old_capacity = capacity_;
+
+    
+    const size_t old_size_bytes = old_capacity * (sizeof(Key) + sizeof(Value));
+    const size_t grow_factor = old_size_bytes < (1024u * 1024u) ? 8 : 2;
+    const size_t new_capacity =
+        grow ? std::max(old_capacity * grow_factor, size_t(1024))
+             : old_capacity;
+
+    auto old_tags(std::move(tags_));
+    auto old_keys(std::move(keys_));
+    auto old_values(std::move(values_));
+    size_t old_size = size_;
+
+    
+    
+    PERFETTO_CHECK(new_capacity >= old_capacity);
+    Reset(new_capacity, true);
+
+    size_t new_size = 0;  
+    for (size_t i = 0; i < old_capacity; ++i) {
+      const uint8_t old_tag = old_tags[i];
+      if (old_tag != kFreeSlot && old_tag != kTombstone) {
+        Insert(std::move(old_keys[i]), std::move(old_values[i]));
+        old_keys[i].~Key();  
+        old_values[i].~Value();
+        new_size++;
+      }
+    }
+    PERFETTO_DCHECK(new_size == old_size);
+    PERFETTO_DCHECK(tombstones_ == 0);
+    size_ = new_size;
+  }
+
+  
+  PERFETTO_NO_INLINE void Reset(size_t n, bool reallocate) {
+    PERFETTO_DCHECK((n & (n - 1)) == 0);  
+
+    capacity_ = n;
+    max_probe_length_ = 0;
+    size_ = 0;
+    tombstones_ = 0;
+    load_limit_ = n * static_cast<size_t>(load_limit_percent_) / 100;
+    load_limit_ = std::min(load_limit_, n);
+
+    if (reallocate) {
+      tags_.reset(new uint8_t[n]);
+      keys_ = AlignedAllocTyped<Key[]>(n);  
+      values_ =
+          AlignedAllocTyped<Value[]>(n);  
+    }
+
+    
+    if (tags_) {
+      memset(&tags_[0], 0, n);  
+    }
+  }
+
+  static inline uint8_t HashToTag(size_t full_hash) {
+    uint8_t tag = full_hash >> (sizeof(full_hash) * 8 - 8);
+    
+    tag += (tag <= kTombstone) << 1;
+    PERFETTO_DCHECK(tag > kTombstone);
+    return tag;
+  }
+
+  size_t capacity_ = 0;
+  size_t size_ = 0;
+  size_t tombstones_ = 0;
+  size_t max_probe_length_ = 0;
+  size_t load_limit_ = 0;  
+  int load_limit_percent_ =
+      kDefaultLoadLimitPct;  
+
+  
+  
+  std::unique_ptr<uint8_t[]> tags_;
+  AlignedUniquePtr<Key[]> keys_;
+  AlignedUniquePtr<Value[]> values_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+#include <immintrin.h>
+#endif
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace flat_hash_map_v2_internal {
+
+
+template <typename, typename = void>
+struct HasIsTransparent : std::false_type {};
+
+template <typename H>
+struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
+    : std::true_type {};
+
+
+template <typename T>
+struct HashEq : public std::equal_to<T> {};
+
+
+
+
+
+
+
+
+template <>
+struct HashEq<std::string> {
+  bool operator()(const std::string& a, const std::string& b) const {
+    return std::string_view(a) == std::string_view(b);
+  }
+  bool operator()(const std::string& a, const std::string_view& b) const {
+    return std::string_view(a) == b;
+  }
+  bool operator()(const std::string& a, base::StringView b) const {
+    return base::StringView(a) == b;
+  }
+};
+
+
+
+
+template <>
+struct HashEq<double> {
+  bool operator()(double a, double b) const { return std::equal_to<>()(a, b); }
+};
+
+
+
+
+
+
+template <typename K, typename Key, typename Hasher>
+static constexpr bool IsLookupKeyAllowed() {
+  if constexpr (HasIsTransparent<Hasher>::value) {
+    return std::is_invocable_v<Hasher, const K&> &&
+           std::is_invocable_v<std::equal_to<>, const Key&, const K&>;
+  } else if constexpr (std::is_convertible_v<K, Key>) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+
+
+
+static constexpr uint8_t kFreeSlot = 0x80;   
+static constexpr uint8_t kTombstone = 0xFE;  
+
+
+static constexpr int kDefaultLoadLimitPct = 75;
+
+}  
+
+template <typename Key,
+          typename Value,
+          typename Hasher = base::MurmurHash<Key>,
+          typename Eq = flat_hash_map_v2_internal::HashEq<Key>>
+class FlatHashMapV2 {
+ private:
+  
+  static constexpr uint8_t kFreeSlot = flat_hash_map_v2_internal::kFreeSlot;
+  static constexpr uint8_t kTombstone = flat_hash_map_v2_internal::kTombstone;
+  static constexpr int kDefaultLoadLimitPct =
+      flat_hash_map_v2_internal::kDefaultLoadLimitPct;
+
+  
+  struct Slot {
+    Key key;
+    Value value;
+  };
+
+ public:
+  class Iterator {
+   public:
+    explicit Iterator(const uint8_t* ctrl, const uint8_t* ctrl_end, Slot* slot)
+        : ctrl_(ctrl), ctrl_end_(ctrl_end), slot_(slot) {
+      FindNextNonFree();
+    }
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    const Key& key() { return slot_->key; }
+    Value& value() { return slot_->value; }
+    const Key& key() const { return slot_->key; }
+    const Value& value() const { return slot_->value; }
+
+    explicit operator bool() const { return ctrl_ != ctrl_end_; }
+    Iterator& operator++() {
+      PERFETTO_DCHECK(ctrl_ != ctrl_end_);
+      ++ctrl_;
+      ++slot_;
+      FindNextNonFree();
+      return *this;
+    }
+
+   private:
+    void FindNextNonFree() {
+      for (; ctrl_ != ctrl_end_; ++ctrl_, ++slot_) {
+        const uint8_t cur_ctrl = *ctrl_;
+        if (cur_ctrl != kFreeSlot && cur_ctrl != kTombstone)
+          return;
+      }
+    }
+    const uint8_t* ctrl_ = nullptr;
+    const uint8_t* ctrl_end_ = nullptr;
+    Slot* slot_ = nullptr;
+  };  
+
+  explicit FlatHashMapV2(size_t initial_capacity = 0,
+                         int load_limit_pct = kDefaultLoadLimitPct)
+      : load_limit_percent_(load_limit_pct) {
+    if (initial_capacity > 0) {
+      Reset(initial_capacity, true);
+    }
+  }
+
+  
+  
+  ~FlatHashMapV2() { Clear(); }
+
+  FlatHashMapV2(FlatHashMapV2&& other) noexcept
+      : storage_(std::move(other.storage_)),
+        capacity_(other.capacity_),
+        size_(other.size_),
+        growth_info_(other.growth_info_),
+        load_limit_percent_(other.load_limit_percent_),
+        ctrl_(other.ctrl_),
+        slots_(other.slots_) {
+    new (&other) FlatHashMapV2();
+  }
+
+  FlatHashMapV2& operator=(FlatHashMapV2&& other) noexcept {
+    this->~FlatHashMapV2();
+    new (this) FlatHashMapV2(std::move(other));
+    return *this;
+  }
+
+  FlatHashMapV2(const FlatHashMapV2&) = delete;
+  FlatHashMapV2& operator=(const FlatHashMapV2&) = delete;
+
+  template <typename K = Key>
+  PERFETTO_ALWAYS_INLINE Value* Find(const K& key) const {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(res.needs_insert)) {
+      return nullptr;
+    }
+    return &slots_[res.idx].value;
+  }
+
+  template <typename K = Key>
+  bool Erase(const K& key) {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(res.needs_insert)) {
+      return false;
+    }
+    PERFETTO_DCHECK(size_ > 0);
+    SetCtrl(res.idx, kTombstone);
+    slots_[res.idx].key.~Key();
+    slots_[res.idx].value.~Value();
+    size_--;
+    growth_info_.has_tombstones = 1;
+    return true;
+  }
+
+  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> Insert(Key key, Value value) {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<true>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(!res.needs_insert)) {
+      return {&slots_[res.idx].value, false};
+    }
+    if (PERFETTO_UNLIKELY(growth_info_.growth_left == 0)) {
+      GrowAndRehash();
+      
+      
+      res.idx = FindFirstEmptyOrTombstone(key_hash);
+    }
+    PERFETTO_DCHECK(res.idx != kNotFound);
+    size_t insert_idx = res.idx;
+    bool is_freeslot = true;
+    if (PERFETTO_UNLIKELY(growth_info_.has_tombstones)) {
+      insert_idx = FindFirstEmptyOrTombstone(key_hash);
+      is_freeslot = ctrl_[insert_idx] != kTombstone;
+    }
+    new (&slots_[insert_idx].key) Key(std::move(key));
+    new (&slots_[insert_idx].value) Value(std::move(value));
+    SetCtrl(insert_idx, h2);
+    size_++;
+    if (is_freeslot) {
+      growth_info_.growth_left--;
+    }
+    return {&slots_[insert_idx].value, true};
+  }
+
+  Value& operator[](Key key) {
+    auto it_and_inserted = Insert(std::move(key), Value{});
+    return *it_and_inserted.first;
+  }
+
+  void Clear() {
+    
+    if (PERFETTO_UNLIKELY(capacity_ == 0)) {
+      return;
+    }
+    for (size_t i = 0; i < capacity_; ++i) {
+      const uint8_t tag = ctrl_[i];
+      if (tag == kFreeSlot || tag == kTombstone) {
+        continue;
+      }
+      slots_[i].key.~Key();
+      slots_[i].value.~Value();
+    }
+    Reset(capacity_, false);
+  }
+
+  Iterator GetIterator() { return Iterator(ctrl_, ctrl_ + capacity_, slots_); }
+  Iterator GetIterator() const {
+    return Iterator(ctrl_, ctrl_ + capacity_, slots_);
+  }
+
+  size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
+
+ private:
+  
+  struct FindResult {
+    uint64_t idx : 63;
+    uint64_t needs_insert : 1;
+  };
+
+  
+  
+  struct GrowthInfo {
+    uint64_t growth_left : 63;
+    uint64_t has_tombstones : 1;
+  };
+
+  
+  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max() >> 1;
+
+  
+  
+  
+  
+  
+  
+  
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  struct Group {
+   public:
+    
+    static constexpr size_t kSize = 16;
+
+    
+    
+    
+    struct Iterator {
+     public:
+      PERFETTO_ALWAYS_INLINE explicit Iterator(uint16_t mask) : mask_(mask) {}
+      PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
+
+      PERFETTO_ALWAYS_INLINE size_t Next() {
+        auto idx = static_cast<size_t>(CountTrailZeros(mask_));
+        mask_ &= static_cast<uint16_t>(mask_ - 1);
+        return idx;
+      }
+
+     private:
+      uint16_t mask_;
+    };
+
+    PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
+      ctrl_ = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
+      auto match = _mm_cmpeq_epi8(ctrl_, _mm_set1_epi8(static_cast<char>(h2)));
+      return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(match)));
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
+      return Iterator(static_cast<uint16_t>(
+          _mm_movemask_epi8(_mm_sign_epi8(ctrl_, ctrl_))));
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
+      return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(ctrl_)));
+    }
+
+   private:
+    __m128i ctrl_;
+  };
+#else
+  
+  struct Group {
+   public:
+    
+    static constexpr size_t kSize = 8;
+
+    
+    
+    
+    struct Iterator {
+     public:
+      PERFETTO_ALWAYS_INLINE explicit Iterator(uint64_t mask) : mask_(mask) {}
+      PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
+      PERFETTO_ALWAYS_INLINE size_t Next() {
+        
+        
+        
+        size_t idx = static_cast<size_t>(CountTrailZeros(mask_) >> 3);
+        mask_ &= mask_ - 1;  
+        return idx;
+      }
+
+     private:
+      uint64_t mask_;
+    };
+
+    PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
+      memcpy(&ctrl_, pos, sizeof(ctrl_));
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
+      uint64_t x = ctrl_ ^ (kLsbs * h2);
+      return Iterator((x - kLsbs) & ~x & kMsbs);
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
+      
+      return Iterator((ctrl_ & ~(ctrl_ << 6)) & kMsbs);
+    }
+
+    PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
+      
+      return Iterator((ctrl_ & ~(ctrl_ << 7)) & kMsbs);
+    }
+
+   private:
+    static constexpr uint64_t kLsbs = 0x0101010101010101ULL;
+    static constexpr uint64_t kMsbs = 0x8080808080808080ULL;
+
+    uint64_t ctrl_;
+  };
+#endif
+
+  
+  static constexpr size_t kNumClones = Group::kSize - 1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <bool ForInsert, typename K = Key>
+  PERFETTO_ALWAYS_INLINE FindResult
+  FindSlotIgnoringTombstones(const K& key, size_t key_hash, uint8_t h2) const {
+    static_assert(
+        flat_hash_map_v2_internal::IsLookupKeyAllowed<K, Key, Hasher>(),
+        "Heterogeneous lookup requires Hasher to define is_transparent and "
+        "support hashing the lookup key type. For same-type lookup, Key and K "
+        "must match exactly.");
+
+    if (PERFETTO_UNLIKELY(ctrl_ == nullptr)) {
+      return {kNotFound, true};
+    }
+
+    const size_t cap_mask = capacity_ - 1;
+    size_t offset = H1(key_hash) & cap_mask;
+    size_t probe_size = 0;
+    const uint8_t* ctrl = ctrl_;
+
+    
+    
+    __builtin_prefetch(ctrl_ + offset, 0, 3);
+
+    while (true) {
+      
+      __builtin_prefetch(slots_ + offset, 0, 3);
+
+      Group group(ctrl + offset);
+
+      
+      for (auto it = group.Match(h2); PERFETTO_LIKELY(it);) {
+        
+        
+        size_t idx = (offset + it.Next()) & cap_mask;
+        if (PERFETTO_LIKELY(Eq{}(slots_[idx].key, key))) {
+          return {idx, false};  
+        }
+      }
+
+      
+      
+      if (auto it = group.MatchEmpty(); PERFETTO_LIKELY(it)) {
+        if constexpr (ForInsert) {
+          size_t empty_idx = (offset + it.Next()) & cap_mask;
+          return {empty_idx, true};  
+        } else {
+          return {kNotFound, true};  
+        }
+      }
+
+      
+      probe_size += Group::kSize;
+      offset = (offset + probe_size) & cap_mask;
+
+      
+      PERFETTO_DCHECK(probe_size <= capacity_);
+    }
+  }
+
+  
+  
+  
+  size_t FindFirstEmptyOrTombstone(size_t key_hash) const {
+    const size_t cap_mask = capacity_ - 1;
+    size_t offset = H1(key_hash) & cap_mask;
+    size_t probe_size = 0;
+    while (true) {
+      Group group(ctrl_ + offset);
+      if (auto it = group.MatchEmptyOrDeleted(); PERFETTO_LIKELY(it)) {
+        return (offset + it.Next()) & cap_mask;
+      }
+      probe_size += Group::kSize;
+      offset = (offset + probe_size) & cap_mask;
+    }
+  }
+
+  PERFETTO_NO_INLINE void GrowAndRehash() {
+    
+    
+    static constexpr size_t kGrowFactor = 2;
+    static_assert((kGrowFactor & (kGrowFactor - 1)) == 0,
+                  "kGrowFactor must be a power of 2");
+
+    PERFETTO_DCHECK(size_ <= capacity_);
+
+    size_t old_capacity = capacity_;
+    size_t old_size = size_;
+    uint8_t* old_ctrl = ctrl_;
+    Slot* old_slots = slots_;
+    std::unique_ptr<uint8_t[]> old_storage(std::move(storage_));
+
+    
+    
+    size_t new_capacity = old_capacity * kGrowFactor;
+    PERFETTO_CHECK(new_capacity >= old_capacity);
+    Reset(new_capacity, true);
+
+    size_t new_size = 0;
+    for (size_t i = 0; i < old_capacity; ++i) {
+      if (uint8_t t = old_ctrl[i]; t == kFreeSlot || t == kTombstone) {
+        continue;
+      }
+      Insert(std::move(old_slots[i].key), std::move(old_slots[i].value));
+      old_slots[i].key.~Key();  
+      old_slots[i].value.~Value();
+      new_size++;
+    }
+    PERFETTO_DCHECK(new_size == old_size);
+    size_ = new_size;
+  }
+
+  
+  PERFETTO_NO_INLINE void Reset(size_t n, bool reallocate) {
+    
+    PERFETTO_CHECK((n & (n - 1)) == 0);
+
+    
+    capacity_ = std::max<size_t>(n, 128u);
+    size_ = 0;
+    growth_info_.growth_left =
+        (capacity_ * static_cast<size_t>(load_limit_percent_)) / 100;
+    growth_info_.has_tombstones = 0;
+
+    if (reallocate) {
+      
+      size_t slots_offset =
+          base::AlignUp(capacity_ + kNumClones, alignof(Slot));
+      storage_.reset(new uint8_t[slots_offset + (capacity_ * sizeof(Slot))]);
+      ctrl_ = storage_.get();
+      slots_ = reinterpret_cast<Slot*>(storage_.get() + slots_offset);
+    }
+    if (ctrl_) {
+      
+      memset(ctrl_, kFreeSlot, capacity_ + kNumClones);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  static constexpr size_t H1(size_t hash) { return (hash >> 7); }
+  static constexpr uint8_t H2(size_t hash) { return hash & 0x7F; }
+
+  
+  PERFETTO_ALWAYS_INLINE void SetCtrl(size_t i, uint8_t h) {
+    ctrl_[i] = h;
+    
+    if (PERFETTO_UNLIKELY(i < kNumClones)) {
+      ctrl_[capacity_ + i] = h;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<uint8_t[]> storage_;
+
+  size_t capacity_ = 0;
+  size_t size_ = 0;
+
+  
+  GrowthInfo growth_info_{0, 0};
+
+  
+  int load_limit_percent_ = kDefaultLoadLimitPct;
+
+  
+  
+  uint8_t* ctrl_ = nullptr;  
+  Slot* slots_ = nullptr;    
+};
+
+
+
+
+
+template <typename Key,
+          typename Value,
+          typename Hasher = MurmurHash<Key>,
+          typename Probe = QuadraticProbe,
+          bool AppendOnly = false>
+using FlatHashMap = FlatHashMapV1<Key, Value, Hasher, Probe, AppendOnly>;
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_SLAB_ALLOCATOR_H_
+#define SRC_PROTOVM_SLAB_ALLOCATOR_H_
+
+#include <cstdlib>
+#include <new>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+namespace internal {
+static constexpr size_t k4KiloBytes = static_cast<size_t>(4096);
+}
+
+template <size_t ElementSize, size_t ElementAlign, size_t Blocks4KB>
+class Slab {
+ public:
+  struct IntrusiveListTraits {
+    static constexpr size_t node_offset() {
+      return offsetof(Slab, intrusive_list_node_);
+    }
+  };
+
+  Slab() : paged_memory_(base::PagedMemory::Allocate(ElementSize * kCapacity)) {
+    PERFETTO_CHECK(paged_memory_.IsValid());
+
+    
+    PERFETTO_CHECK(reinterpret_cast<uintptr_t>(paged_memory_.Get()) %
+                       internal::k4KiloBytes ==
+                   0);
+
+    ConstructSlots();
+    InitializeSlotsFreeList();
+  }
+
+  ~Slab() { DestroySlots(); }
+
+  void* Allocate() {
+    PERFETTO_DCHECK(next_free_slot_);
+    auto* slot = next_free_slot_;
+    next_free_slot_ = next_free_slot_->next;
+    ++size_;
+    return slot;
+  }
+
+  void Free(void* p) {
+    auto* slot = static_cast<Slot*>(p);
+    PERFETTO_DCHECK(slot >= slots() && slot < slots() + kCapacity);
+    slot->next = next_free_slot_;
+    next_free_slot_ = slot;
+    --size_;
+  }
+
+  bool IsFull() const { return size_ == kCapacity; }
+
+  bool IsEmpty() const { return size_ == 0; }
+
+  const void* GetBeginAddress() const {
+    return const_cast<Slab*>(this)->slots();
+  }
+
+  const void* GetEndAddress() const {
+    return const_cast<Slab*>(this)->slots() + kCapacity;
+  }
+
+ private:
+  static constexpr size_t kCapacity =
+      Blocks4KB * (internal::k4KiloBytes / ElementSize);
+
+  static_assert(kCapacity >= 128,
+                "The configured number of 4KB blocks per slab seems too small, "
+                "resulting in a low slab capacity. Slab allocation is "
+                "expensive (involves syscalls), so a high elements-to-slab "
+                "ratio is desirable to amortize the cost.");
+
+  static_assert(ElementAlign <= internal::k4KiloBytes,
+                "SlabAllocator currently supports alignment <= 4KB");
+
+  union Slot {
+    Slot* next;
+    alignas(ElementAlign) unsigned char element[ElementSize];
+  };
+
+  void InitializeSlotsFreeList() {
+    next_free_slot_ = &slots()[0];
+
+    for (size_t i = 0; i + 1 < kCapacity; ++i) {
+      auto& slot = slots()[i];
+      auto& next_slot = slots()[i + 1];
+      slot.next = &next_slot;
+    }
+
+    auto& last_slot = slots()[kCapacity - 1];
+    last_slot.next = nullptr;
+  }
+
+  void ConstructSlots() {
+    auto* slot = slots();
+    for (size_t i = 0; i < kCapacity; ++i) {
+      new (&slot[i]) Slot();
+    }
+  }
+
+  void DestroySlots() {
+    auto* slot = slots();
+    for (size_t i = 0; i < kCapacity; ++i) {
+      slot[i].~Slot();
+    }
+  }
+
+  Slot* slots() {
+    return std::launder(reinterpret_cast<Slot*>(paged_memory_.Get()));
+  }
+
+  Slot* next_free_slot_{nullptr};
+  size_t size_{0};
+  base::IntrusiveListNode intrusive_list_node_;
+  base::PagedMemory paged_memory_;
+};
+
+template <size_t ElementSize, size_t ElementAlign, size_t Blocks4KBPerSlab = 16>
+class SlabAllocator {
+ public:
+  ~SlabAllocator() {
+    DeleteSlabs(slabs_non_full_);
+    DeleteSlabs(slabs_full_);
+  }
+
+  void* Allocate() {
+    
+    if (slabs_non_full_.empty()) {
+      auto* slab = new SlabType();
+      slabs_non_full_.PushFront(*slab);
+      ++slabs_non_full_size_;
+      InsertHashMapEntries(*slab);
+    }
+
+    
+    auto& slab = slabs_non_full_.front();
+    auto* allocated = slab.Allocate();
+    PERFETTO_CHECK(allocated);
+
+    
+    if (slab.IsFull()) {
+      slabs_non_full_.Erase(slab);
+      --slabs_non_full_size_;
+      slabs_full_.PushFront(slab);
+    }
+
+    return allocated;
+  }
+
+  void Free(void* p) {
+    auto& slab = FindSlabInHashMap(p);
+
+    
+    if (slab.IsFull()) {
+      slabs_full_.Erase(slab);
+      slabs_non_full_.PushFront(slab);
+      ++slabs_non_full_size_;
+    }
+
+    slab.Free(p);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (slab.IsEmpty() && slabs_non_full_size_ > 1) {
+      EraseHashMapEntries(slab);
+      slabs_non_full_.Erase(slab);
+      --slabs_non_full_size_;
+      delete &slab;
+    }
+  }
+
+ private:
+  using SlabType = Slab<ElementSize, ElementAlign, Blocks4KBPerSlab>;
+  using SlabList =
+      base::IntrusiveList<SlabType, typename SlabType::IntrusiveListTraits>;
+
+  void InsertHashMapEntries(SlabType& slab) {
+    for (auto p = reinterpret_cast<uintptr_t>(slab.GetBeginAddress());
+         p < reinterpret_cast<uintptr_t>(slab.GetEndAddress());
+         p += internal::k4KiloBytes) {
+      PERFETTO_DCHECK(p % internal::k4KiloBytes == 0);
+      block_4KB_aligned_to_slab_.Insert(p, &slab);
+    }
+  }
+
+  void EraseHashMapEntries(const SlabType& slab) {
+    for (auto p = reinterpret_cast<uintptr_t>(slab.GetBeginAddress());
+         p < reinterpret_cast<uintptr_t>(slab.GetEndAddress());
+         p += internal::k4KiloBytes) {
+      PERFETTO_DCHECK(p % internal::k4KiloBytes == 0);
+      block_4KB_aligned_to_slab_.Erase(p);
+    }
+  }
+
+  SlabType& FindSlabInHashMap(const void* ptr) {
+    auto ptr_4KB_aligned = reinterpret_cast<uintptr_t>(ptr) &
+                           ~(static_cast<uintptr_t>(internal::k4KiloBytes) - 1);
+    SlabType** slab = block_4KB_aligned_to_slab_.Find(ptr_4KB_aligned);
+    PERFETTO_CHECK(slab);
+    PERFETTO_CHECK(*slab);
+    return **slab;
+  }
+
+  void DeleteSlabs(SlabList& slabs) {
+    while (!slabs.empty()) {
+      auto& slab = slabs.front();
+      slabs.PopFront();
+      delete &slab;
+    }
+  }
+
+  base::FlatHashMap<uintptr_t, SlabType*> block_4KB_aligned_to_slab_;
+  SlabList slabs_full_;
+  SlabList slabs_non_full_;
+  size_t slabs_non_full_size_{0};
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_ALLOCATOR_H_
+#define SRC_PROTOVM_ALLOCATOR_H_
+
+#include <algorithm>
+#include <cstdlib>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+
+
+
+class Allocator {
+ public:
+  static constexpr size_t kNodeSize = std::max(sizeof(Node), sizeof(MapNode));
+  static constexpr size_t kNodeAlign =
+      std::max(alignof(Node), alignof(MapNode));
+
+  explicit Allocator(size_t memory_limit_bytes);
+
+  template <class T, class... Args>
+  StatusOr<OwnedPtr<Node>> CreateNode(Args&&... args) {
+    auto p = Allocate();
+    PROTOVM_RETURN_IF_NOT_OK(p);
+
+    
+    
+    
+    new (*p) Node{T{std::forward<Args>(args)...}};
+
+    return OwnedPtr<Node>(static_cast<Node*>(*p));
+  }
+
+  StatusOr<OwnedPtr<MapNode>> CreateMapNode(uint64_t key, OwnedPtr<Node> value);
+
+  StatusOr<Node::Bytes> AllocateAndCopyBytes(protozero::ConstBytes data);
+
+  
+  
+  
+  void Delete(Node* node);
+  void Delete(MapNode* node);
+
+  
+  
+  
+  void DeleteReferencedData(Node* node);
+
+  
+  
+  void DeleteReferencedData(Node::Message* message);
+
+  
+  
+  void DeleteReferencedData(Node::Bytes* bytes);
+
+  size_t GetMemoryUsageBytes() const { return used_memory_bytes_; }
+
+ private:
+  void DeallocateBytes(OwnedPtr<void> p, size_t size);
+  StatusOr<void*> Allocate();
+
+  size_t memory_limit_bytes_{0};
+  size_t used_memory_bytes_{0};
+  SlabAllocator<kNodeSize, kNodeAlign> slab_allocator_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+Allocator::Allocator(size_t memory_limit_bytes)
+    : memory_limit_bytes_{memory_limit_bytes}, used_memory_bytes_{0} {}
+
+StatusOr<OwnedPtr<MapNode>> Allocator::CreateMapNode(uint64_t key,
+                                                     OwnedPtr<Node> value) {
+  PERFETTO_DCHECK(value);
+  auto p = Allocate();
+  if (!p.IsOk()) {
+    Delete(value.release());
+    PROTOVM_RETURN(p);
+  }
+  new (*p) MapNode{key, std::move(value)};
+  return OwnedPtr<MapNode>(static_cast<MapNode*>(*p));
+}
+
+StatusOr<Node::Bytes> Allocator::AllocateAndCopyBytes(
+    protozero::ConstBytes data) {
+  if (used_memory_bytes_ + data.size > memory_limit_bytes_) {
+    PROTOVM_ABORT(
+        "Failed to allocate %zu bytes. Memory limit: %zu bytes. Used: %zu "
+        "bytes.)",
+        data.size, memory_limit_bytes_, used_memory_bytes_);
+  }
+
+  if (data.size == 0) {
+    return Node::Bytes{nullptr, 0};
+  }
+
+  auto copy = OwnedPtr<void>{malloc(data.size)};
+  if (!copy) {
+    PROTOVM_ABORT("Failed to malloc %zu bytes", data.size);
+  }
+  used_memory_bytes_ += data.size;
+  memcpy(copy.get(), data.data, data.size);
+
+  return Node::Bytes{std::move(copy), data.size};
+}
+
+void Allocator::Delete(Node* node) {
+  DeleteReferencedData(node);
+  node->~Node();
+  slab_allocator_.Free(node);
+  used_memory_bytes_ -= kNodeSize;
+}
+
+void Allocator::Delete(MapNode* node) {
+  Delete(node->value.release());
+  node->~MapNode();
+  slab_allocator_.Free(node);
+  used_memory_bytes_ -= kNodeSize;
+}
+
+void Allocator::DeleteReferencedData(Node* node) {
+  if (auto* message = node->GetIf<Node::Message>()) {
+    DeleteReferencedData(message);
+  } else if (auto* indexed_fields = node->GetIf<Node::IndexedRepeatedField>()) {
+    for (auto it = indexed_fields->index_to_node.begin(); it;) {
+      auto& map_node = *it;
+      it = indexed_fields->index_to_node.Remove(it);
+      Delete(&map_node);
+    }
+  } else if (auto* mapped_fields = node->GetIf<Node::MappedRepeatedField>()) {
+    for (auto it = mapped_fields->key_to_node.begin(); it;) {
+      auto& map_node = *it;
+      it = mapped_fields->key_to_node.Remove(it);
+      Delete(&map_node);
+    }
+  } else if (auto* bytes = node->GetIf<Node::Bytes>()) {
+    DeleteReferencedData(bytes);
+  }
+}
+
+void Allocator::DeleteReferencedData(Node::Message* message) {
+  for (auto it = message->field_id_to_node.begin(); it;) {
+    auto& map_node = *it;
+    it = message->field_id_to_node.Remove(it);
+    Delete(&map_node);
+  }
+}
+
+void Allocator::DeleteReferencedData(Node::Bytes* bytes) {
+  DeallocateBytes(std::move(bytes->data), bytes->size);
+}
+
+void Allocator::DeallocateBytes(OwnedPtr<void> p, size_t size) {
+  free(p.release());
+  used_memory_bytes_ -= size;
+}
+
+StatusOr<void*> Allocator::Allocate() {
+  if (used_memory_bytes_ + kNodeSize > memory_limit_bytes_) {
+    PROTOVM_ABORT(
+        "Failed to allocate element (%zu bytes). Memory limit: %zu [bytes]. "
+        "Used: %zu "
+        "[bytes].)",
+        kNodeSize, memory_limit_bytes_, used_memory_bytes_);
+  }
+  auto* p = slab_allocator_.Allocate();
+  if (!p) {
+    PROTOVM_ABORT("Failed to allocate node");
+  }
+  used_memory_bytes_ += kNodeSize;
+  return p;
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+void LogStacktraceMessage(Stacktrace& stacktrace,
+                          const char* file_name,
+                          int file_line,
+                          const char* fmt,
+                          ...) {
+  const char* const fmt_file_info = "%s:%d ";
+  auto size_file_info =
+      std::snprintf(nullptr, 0, fmt_file_info, file_name, file_line);
+
+  va_list args;
+  va_start(args, fmt);
+  auto size_message = std::vsnprintf(nullptr, 0, fmt, args);
+  va_end(args);
+
+  auto s = std::string(
+      static_cast<std::size_t>(size_file_info + size_message + 1), '.');
+
+  std::snprintf(s.data(), static_cast<size_t>(size_file_info) + 1,
+                fmt_file_info, file_name, file_line);
+
+  va_start(args, fmt);
+  std::vsnprintf(s.data() + size_file_info,
+                 static_cast<size_t>(size_message) + 1, fmt, args);
+  va_end(args);
+
+  s.pop_back();  
+
+  stacktrace.push_back(std::move(s));
+}
+
+void LogStacktraceMessage(Stacktrace& stacktrace,
+                          const char* file_name,
+                          int file_line) {
+  const char* const fmt = "%s:%d <no message>";
+  auto size_message = std::snprintf(nullptr, 0, fmt, file_name, file_line);
+  auto s = std::string(static_cast<size_t>(size_message) + 1, '.');
+  std::snprintf(s.data(), static_cast<size_t>(size_message) + 1, fmt, file_name,
+                file_line);
+
+  s.pop_back();  
+
+  stacktrace.push_back(std::move(s));
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_RO_CURSOR_H_
+#define SRC_PROTOVM_RO_CURSOR_H_
+
+#include <cstdint>
+#include <variant>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+class RoCursor {
+ public:
+  class RepeatedFieldIterator {
+   public:
+    RepeatedFieldIterator();
+    explicit RepeatedFieldIterator(protozero::ProtoDecoder decoder,
+                                   uint32_t field_id);
+    RepeatedFieldIterator& operator++();
+    RoCursor operator*();
+    explicit operator bool() const;
+
+   private:
+    protozero::Field Advance();
+
+    protozero::ProtoDecoder decoder_;
+    uint32_t field_id_;
+    protozero::Field field_;
+  };
+
+  RoCursor();
+  explicit RoCursor(protozero::ConstBytes data);
+  explicit RoCursor(protozero::Field data);
+  StatusOr<void> EnterField(uint32_t field_id);
+  StatusOr<void> EnterRepeatedFieldAt(uint32_t field_id, uint32_t index);
+  StatusOr<RepeatedFieldIterator> IterateRepeatedField(uint32_t field_id) const;
+  bool IsScalar() const;
+  bool IsBytes() const;
+  StatusOr<Scalar> GetScalar() const;
+  StatusOr<protozero::ConstBytes> GetBytes() const;
+
+ private:
+  StatusOr<protozero::ConstBytes> GetLengthDelimitedData() const;
+
+  std::variant<protozero::ConstBytes, protozero::Field> data_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_RW_PROTO_CURSOR_H_
+#define SRC_PROTOVM_RW_PROTO_CURSOR_H_
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+class RwProtoCursor {
+ public:
+  enum MergeFlags : uint32_t {
+    kNone = 0,
+    kSkipSubmessages = 1 << 0,
+    kDelIfSrcEmpty = 1 << 1,
+  };
+
+  class RepeatedFieldIterator {
+   public:
+    RepeatedFieldIterator();
+    RepeatedFieldIterator(Allocator* allocator, IntrusiveMap::Iterator it);
+    RepeatedFieldIterator& operator++();
+    RwProtoCursor GetCursor();
+    explicit operator bool() const;
+
+   private:
+    Allocator* allocator_{nullptr};
+    IntrusiveMap::Iterator it_;
+  };
+
+  RwProtoCursor();
+  explicit RwProtoCursor(Node* node, Allocator* allocator);
+
+  bool operator==(const RwProtoCursor& other) const;
+  bool operator!=(const RwProtoCursor& other) const;
+
+  StatusOr<bool> IsRoot() const;
+  StatusOr<bool> HasField(uint32_t field_id);
+  StatusOr<void> EnterField(uint32_t field_id);
+  StatusOr<void> EnterRepeatedFieldAt(uint32_t field_id, uint32_t index);
+  StatusOr<RepeatedFieldIterator> IterateRepeatedField(uint32_t field_id);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  StatusOr<void> EnterRepeatedFieldByKey(uint32_t field_id,
+                                         uint32_t map_key_field_id,
+                                         uint64_t key);
+
+  StatusOr<Scalar> GetScalar() const;
+  StatusOr<void> SetBytes(protozero::ConstBytes data);
+  StatusOr<void> SetScalar(Scalar scalar);
+
+  
+  
+  
+  
+  
+  
+  
+  StatusOr<void> Merge(protozero::ConstBytes data, uint32_t flags);
+
+  StatusOr<void> Delete();
+
+ private:
+  struct ParentLink {
+    Node* node;
+    IntrusiveMap* map;
+    MapNode* map_node;
+  };
+
+  StatusOr<void> ConvertToMessageIfNeeded(Node* node);
+  StatusOr<OwnedPtr<Node>> CreateNodeFromField(protozero::Field field);
+  StatusOr<void> ConvertToMappedRepeatedFieldIfNeeded(
+      Node* node,
+      uint32_t map_key_field_id);
+  StatusOr<void> ConvertToIndexedRepeatedFieldIfNeeded(Node* node);
+  StatusOr<IntrusiveMap::Iterator> FindOrCreateMessageField(Node* node,
+                                                            uint32_t field_id);
+  StatusOr<IntrusiveMap::Iterator> FindOrCreateIndexedRepeatedField(
+      Node* node,
+      uint32_t index);
+  StatusOr<IntrusiveMap::Iterator> FindOrCreateMappedRepeatedField(
+      Node* node,
+      uint64_t key);
+  StatusOr<IntrusiveMap::Iterator> MapInsert(IntrusiveMap* map,
+                                             uint64_t key,
+                                             OwnedPtr<Node> map_value);
+  StatusOr<uint64_t> ReadScalarField(const Node& node, uint32_t field_id);
+
+  StatusOr<void> CheckIsValid() const;
+
+  Node* node_ = nullptr;
+  ParentLink parent_link_ = {};
+  Allocator* allocator_ = nullptr;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_RW_PROTO_H_
+#define SRC_PROTOVM_RW_PROTO_H_
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RwProto {
+ public:
+  using Cursor = RwProtoCursor;
+
+  explicit RwProto(Allocator* allocator);
+  ~RwProto();
+  Cursor GetRoot();
+  void Serialize(protozero::Message*) const;
+
+ private:
+  void SerializeField(uint32_t field_id,
+                      const Node& node,
+                      protozero::Message* proto) const;
+
+  Allocator* allocator_{nullptr};
+  Node root_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_EXECUTOR_H_
+#define SRC_PROTOVM_EXECUTOR_H_
+
+#include <cstdint>
+#include <optional>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+using CursorEnum = perfetto::protos::pbzero::VmCursorEnum;
+
+struct Cursors {
+  RoCursor src;
+  RwProto::Cursor dst;
+  CursorEnum selected{CursorEnum::VM_CURSOR_UNSPECIFIED};
+  bool create_if_not_exist{false};
+
+  
+  
+  const RwProto::Cursor* innermost_saved_dst{nullptr};
+};
+
+
+class Executor {
+ public:
+  using MergeFlags = RwProto::Cursor::MergeFlags;
+
+  virtual ~Executor();
+  virtual StatusOr<void> EnterField(Cursors* cursors, uint32_t field_id) const;
+  virtual StatusOr<void> EnterRepeatedFieldAt(Cursors* cursors,
+                                              uint32_t field_id,
+                                              uint32_t index) const;
+  virtual StatusOr<void> EnterRepeatedFieldByKey(Cursors* cursors,
+                                                 uint32_t field_id,
+                                                 uint32_t map_key_field_id,
+                                                 uint64_t key) const;
+  virtual StatusOr<RoCursor::RepeatedFieldIterator> IterateRepeatedField(
+      RoCursor* src,
+      uint32_t field_id) const;
+  virtual StatusOr<RwProto::Cursor::RepeatedFieldIterator> IterateRepeatedField(
+      RwProto::Cursor* dst,
+      uint32_t field_id) const;
+  virtual StatusOr<uint64_t> ReadRegister(uint8_t reg_id) const;
+  virtual StatusOr<void> WriteRegister(const Cursors& cursors, uint8_t reg_id);
+  virtual StatusOr<void> Delete(RwProto::Cursor* dst) const;
+  virtual StatusOr<void> Merge(Cursors* cursors, uint32_t flags) const;
+  virtual StatusOr<void> Set(Cursors* cursors) const;
+
+ private:
+  std::array<std::optional<uint64_t>, 32> registers_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+Executor::~Executor() = default;
+
+StatusOr<void> Executor::EnterField(Cursors* cursors, uint32_t field_id) const {
+  if (cursors->selected == CursorEnum::VM_CURSOR_SRC) {
+    return cursors->src.EnterField(field_id);
+  }
+
+  auto has_field = cursors->dst.HasField(field_id);
+  PROTOVM_RETURN_IF_NOT_OK(has_field);
+
+  if (!has_field.value() && !cursors->create_if_not_exist) {
+    return StatusOr<void>::Error();
+  }
+
+  return cursors->dst.EnterField(field_id);
+}
+
+StatusOr<void> Executor::EnterRepeatedFieldAt(Cursors* cursors,
+                                              uint32_t field_id,
+                                              uint32_t index) const {
+  if (cursors->selected == CursorEnum::VM_CURSOR_SRC) {
+    return cursors->src.EnterRepeatedFieldAt(field_id, index);
+  }
+
+  return cursors->dst.EnterRepeatedFieldAt(field_id, index);
+}
+
+StatusOr<void> Executor::EnterRepeatedFieldByKey(Cursors* cursors,
+                                                 uint32_t field_id,
+                                                 uint32_t map_key_field_id,
+                                                 uint64_t key) const {
+  if (cursors->selected == CursorEnum::VM_CURSOR_SRC) {
+    PROTOVM_ABORT(
+        "Mapped repeated fields are currently supported only in RwProto");
+  }
+
+  auto has_field = cursors->dst.HasField(field_id);
+  PROTOVM_RETURN_IF_NOT_OK(has_field);
+
+  if (!has_field.value() && !cursors->create_if_not_exist) {
+    return StatusOr<void>::Error();
+  }
+
+  return cursors->dst.EnterRepeatedFieldByKey(field_id, map_key_field_id, key);
+}
+
+StatusOr<RoCursor::RepeatedFieldIterator> Executor::IterateRepeatedField(
+    RoCursor* src,
+    uint32_t field_id) const {
+  return src->IterateRepeatedField(field_id);
+}
+
+StatusOr<RwProto::Cursor::RepeatedFieldIterator> Executor::IterateRepeatedField(
+    RwProto::Cursor* dst,
+    uint32_t field_id) const {
+  return dst->IterateRepeatedField(field_id);
+}
+
+StatusOr<uint64_t> Executor::ReadRegister(uint8_t reg_id) const {
+  if (reg_id >= registers_.size()) {
+    PROTOVM_ABORT("Register (id = %d) is out of bounds", reg_id);
+  }
+  if (!registers_[reg_id]) {
+    PROTOVM_ABORT("Register (id = %d) is not initialized)", reg_id);
+  }
+  return StatusOr<uint64_t>{*registers_[reg_id]};
+}
+
+StatusOr<void> Executor::WriteRegister(const Cursors& cursors, uint8_t reg_id) {
+  if (reg_id >= registers_.size()) {
+    PROTOVM_ABORT("Register (id = %d) is out of bounds", reg_id);
+  }
+
+  auto status_or_scalar = cursors.selected == CursorEnum::VM_CURSOR_SRC
+                              ? cursors.src.GetScalar()
+                              : cursors.dst.GetScalar();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_scalar);
+
+  registers_[reg_id] = status_or_scalar->value;
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> Executor::Delete(RwProto::Cursor* dst) const {
+  return dst->Delete();
+}
+
+StatusOr<void> Executor::Merge(Cursors* cursors, uint32_t flags) const {
+  if (!cursors->src.IsBytes()) {
+    PROTOVM_ABORT(
+        "Attempted MERGE operation but src cursor has incompatible data "
+        "type");
+  }
+
+  return cursors->dst.Merge(*cursors->src.GetBytes(), flags);
+}
+
+StatusOr<void> Executor::Set(Cursors* cursors) const {
+  if (cursors->src.IsScalar()) {
+    auto status_or_scalar = cursors->src.GetScalar();
+    PROTOVM_RETURN_IF_NOT_OK(status_or_scalar);
+    return cursors->dst.SetScalar(*status_or_scalar);
+  }
+
+  if (cursors->src.IsBytes()) {
+    auto status_or_bytes = cursors->src.GetBytes();
+    PROTOVM_RETURN_IF_NOT_OK(status_or_bytes);
+    return cursors->dst.SetBytes(*status_or_bytes);
+  }
+
+  PROTOVM_ABORT("Attempted SET operation but src cursor has no valid data");
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+const char* Node::GetTypeName() const {
+  return std::visit(
+      [](auto&& value) {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, Node::Bytes>) {
+          return "Bytes";
+        } else if constexpr (std::is_same_v<T, Node::Empty>) {
+          return "Empty";
+        } else if constexpr (std::is_same_v<T, Node::IndexedRepeatedField>) {
+          return "IndexedRepeatedField";
+        } else if constexpr (std::is_same_v<T, Node::MappedRepeatedField>) {
+          return "MappedRepeatedField";
+        } else if constexpr (std::is_same_v<T, Node::Message>) {
+          return "Message";
+        } else if constexpr (std::is_same_v<T, Scalar>) {
+          return "Scalar";
+        } else {
+          return "<unknown>";
+        }
+      },
+      value);
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_PARSER_H_
+#define SRC_PROTOVM_PARSER_H_
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+class Parser {
+ public:
+  Parser(protozero::ConstBytes program, Executor* executor);
+  StatusOr<void> Run(RoCursor src, RwProto::Cursor dst);
+
+ private:
+  StatusOr<void> ParseInstructions(
+      protozero::RepeatedFieldIterator<protozero::ConstBytes> it_instruction);
+  StatusOr<void> ParseInstruction(
+      const protos::pbzero::VmInstruction::Decoder& instruction);
+  StatusOr<void> ParseMerge(
+      const protos::pbzero::VmInstruction::Decoder& instruction);
+  StatusOr<void> ParseRegLoad(
+      const protos::pbzero::VmInstruction::Decoder& instruction);
+  StatusOr<void> ParseSelect(
+      const protos::pbzero::VmInstruction::Decoder& instruction);
+  StatusOr<void> ParseSelectRec(
+      const protos::pbzero::VmInstruction::Decoder& instruction,
+      protozero::RepeatedFieldIterator<protozero::ConstBytes>
+          it_path_component);
+
+  protos::pbzero::VmProgram::Decoder program_;
+  Cursors cursors_;
+  Executor* executor_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+Parser::Parser(protozero::ConstBytes program, Executor* executor)
+    : program_{program}, executor_(executor) {}
+
+StatusOr<void> Parser::Run(RoCursor src, RwProto::Cursor dst) {
+  cursors_.src = src;
+  cursors_.dst = dst;
+  cursors_.innermost_saved_dst = nullptr;
+  return ParseInstructions(program_.instructions());
+}
+
+StatusOr<void> Parser::ParseInstructions(
+    protozero::RepeatedFieldIterator<protozero::ConstBytes> it_instruction) {
+  int instruction_index = 0;
+  for (; it_instruction; ++it_instruction) {
+    auto instruction = protos::pbzero::VmInstruction::Decoder(*it_instruction);
+    auto status = ParseInstruction(instruction);
+
+    if (status.IsAbort()) {
+      PROTOVM_RETURN(status, "instruction[%d]", instruction_index);
+    }
+
+    if (status.IsError()) {
+      using AbortLevel = perfetto::protos::pbzero::VmInstruction::AbortLevel;
+      auto abort_level =
+          instruction.has_abort_level()
+              ? static_cast<AbortLevel>(instruction.abort_level())
+              : AbortLevel::SKIP_CURRENT_INSTRUCTION_AND_BREAK_OUTER;
+      if (abort_level == AbortLevel::SKIP_CURRENT_INSTRUCTION_AND_BREAK_OUTER) {
+        return StatusOr<void>::Error();
+      }
+      if (abort_level == AbortLevel::ABORT) {
+        PROTOVM_ABORT(
+            "instruction[%d]: returned status = error and instruction's "
+            "abort level = 'abort'",
+            instruction_index);
+      }
+    }
+
+    ++instruction_index;
+  }
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> Parser::ParseInstruction(
+    const protos::pbzero::VmInstruction::Decoder& instruction) {
+  if (instruction.has_select()) {
+    auto status = ParseSelect(instruction);
+    PROTOVM_RETURN(status, "select");
+  }
+
+  if (instruction.has_reg_load()) {
+    auto status = ParseRegLoad(instruction);
+    PROTOVM_RETURN_IF_NOT_OK(status, "reg_load");
+  } else if (instruction.has_del()) {
+    PROTOVM_ASSIGN_OR_RETURN(bool is_root, cursors_.dst.IsRoot());
+    if (cursors_.innermost_saved_dst != nullptr &&
+        cursors_.dst == *cursors_.innermost_saved_dst && !is_root) {
+      
+      
+      
+      
+      
+      
+      
+      PROTOVM_ABORT(
+          "del would invalidate a cursor saved by an enclosing select");
+    }
+    auto status = executor_->Delete(&cursors_.dst);
+    PROTOVM_RETURN_IF_NOT_OK(status, "del");
+  } else if (instruction.has_merge()) {
+    auto status = ParseMerge(instruction);
+    PROTOVM_RETURN_IF_NOT_OK(status, "merge");
+  } else if (instruction.has_set()) {
+    auto status = executor_->Set(&cursors_);
+    PROTOVM_RETURN_IF_NOT_OK(status, "set");
+  } else {
+    PROTOVM_ABORT("Unsupported instruction");
+  }
+
+  return ParseInstructions(instruction.nested_instructions());
+}
+
+StatusOr<void> Parser::ParseMerge(
+    const protos::pbzero::VmInstruction::Decoder& instruction) {
+  protos::pbzero::VmOpMerge::Decoder merge(instruction.merge());
+  uint32_t flags = Executor::MergeFlags::kNone;
+  if (merge.skip_submessages())
+    flags |= Executor::MergeFlags::kSkipSubmessages;
+  if (merge.del_if_src_empty())
+    flags |= Executor::MergeFlags::kDelIfSrcEmpty;
+  auto status = executor_->Merge(&cursors_, flags);
+  PROTOVM_RETURN_IF_NOT_OK(status);
+  return status;
+}
+
+StatusOr<void> Parser::ParseRegLoad(
+    const protos::pbzero::VmInstruction::Decoder& instruction) {
+  auto saved_selected = cursors_.selected;
+
+  protos::pbzero::VmOpRegLoad::Decoder reg_load(instruction.reg_load());
+  cursors_.selected = !reg_load.has_cursor()
+                          ? CursorEnum::VM_CURSOR_SRC
+                          : static_cast<CursorEnum>(reg_load.cursor());
+  auto status = executor_->WriteRegister(
+      cursors_, static_cast<uint8_t>(reg_load.dst_register()));
+
+  cursors_.selected = saved_selected;
+
+  PROTOVM_RETURN_IF_NOT_OK(status);
+
+  return status;
+}
+
+StatusOr<void> Parser::ParseSelect(
+    const protos::pbzero::VmInstruction::Decoder& instruction) {
+  auto saved_cursors = cursors_;
+  cursors_.innermost_saved_dst = &saved_cursors.dst;
+
+  protos::pbzero::VmOpSelect::Decoder select(instruction.select());
+  cursors_.selected = !select.has_cursor()
+                          ? CursorEnum::VM_CURSOR_SRC
+                          : static_cast<CursorEnum>(select.cursor());
+  cursors_.create_if_not_exist = select.create_if_not_exist();
+
+  if (cursors_.selected == CursorEnum::VM_CURSOR_SRC &&
+      cursors_.create_if_not_exist) {
+    PROTOVM_ABORT(
+        "incompatible params: src cursor (read only) + create_if_not_exist");
+  }
+
+  auto status = ParseSelectRec(instruction, select.relative_path());
+  cursors_ = saved_cursors;
+
+  return status;
+}
+
+StatusOr<void> Parser::ParseSelectRec(
+    const protos::pbzero::VmInstruction::Decoder& instruction,
+    protozero::RepeatedFieldIterator<protozero::ConstBytes> it_path_component) {
+  protos::pbzero::VmOpSelect::Decoder select(instruction.select());
+
+  bool has_entered_all_path_components = !it_path_component;
+  if (has_entered_all_path_components) {
+    return ParseInstructions(instruction.nested_instructions());
+  }
+
+  auto curr_component =
+      protos::pbzero::VmOpSelect::PathComponent::Decoder(*it_path_component);
+  ++it_path_component;
+
+  std::optional<protos::pbzero::VmOpSelect::PathComponent::Decoder>
+      next_component =
+          it_path_component
+              ? std::make_optional(
+                    protos::pbzero::VmOpSelect::PathComponent::Decoder(
+                        *it_path_component))
+              : std::nullopt;
+
+  if (!curr_component.has_field_id()) {
+    PROTOVM_ABORT("Invalid path. Expected path component with field_id.");
+  }
+
+  
+  if (curr_component.is_repeated()) {
+    if (cursors_.selected == CursorEnum::VM_CURSOR_SRC) {
+      auto status_or_it = executor_->IterateRepeatedField(
+          &cursors_.src, curr_component.field_id());
+      PROTOVM_RETURN_IF_NOT_OK(status_or_it, "iterate repeated field (id = %d)",
+                               static_cast<int>(curr_component.field_id()));
+      int index = 0;
+      for (auto it = *status_or_it; it; ++it) {
+        cursors_.src = *it;
+        auto status = ParseSelectRec(instruction, it_path_component);
+        PROTOVM_RETURN_IF_NOT_OK(status, "repeated field (id = %d, index = %d)",
+                                 static_cast<int>(curr_component.field_id()),
+                                 index);
+        ++index;
+      }
+    } else if (cursors_.selected == CursorEnum::VM_CURSOR_DST) {
+      auto status_or_it = executor_->IterateRepeatedField(
+          &cursors_.dst, curr_component.field_id());
+      PROTOVM_RETURN_IF_NOT_OK(status_or_it, "iterate repeated field (id = %d)",
+                               static_cast<int>(curr_component.field_id()));
+      int index = 0;
+      for (auto it = *status_or_it; it; ++it) {
+        cursors_.dst = it.GetCursor();
+        auto status = ParseSelectRec(instruction, it_path_component);
+        PROTOVM_RETURN_IF_NOT_OK(status, "repeated field (id = %d, index = %d)",
+                                 static_cast<int>(curr_component.field_id()),
+                                 index);
+        ++index;
+      }
+    } else {
+      PROTOVM_ABORT(
+          "Iteration over selected cursor (%d) is not supported. Should be "
+          "either SRC or DST cursor.",
+          static_cast<int>(cursors_.selected));
+    }
+    return StatusOr<void>::Ok();
+  }
+
+  
+  if (next_component && next_component->has_array_index()) {
+    ++it_path_component;
+    auto status_enter = executor_->EnterRepeatedFieldAt(
+        &cursors_, curr_component.field_id(), next_component->array_index());
+    PROTOVM_RETURN_IF_NOT_OK(status_enter, "enter indexed repeated field");
+    auto status_select = ParseSelectRec(instruction, it_path_component);
+    PROTOVM_RETURN(status_select, "repeated field (id = %d, index = %d)",
+                   static_cast<int>(curr_component.field_id()),
+                   static_cast<int>(next_component->array_index()));
+  }
+
+  
+  if (next_component && next_component->has_map_key_field_id()) {
+    ++it_path_component;
+    if (!next_component->has_register_to_match()) {
+      PROTOVM_ABORT(
+          "enter mapped repeated field: expected field 'register_to_match'");
+    }
+    auto reg_id = static_cast<uint8_t>(next_component->register_to_match());
+    auto key = executor_->ReadRegister(reg_id);
+    PROTOVM_RETURN_IF_NOT_OK(key, "enter mapped repeated field");
+    auto status_enter = executor_->EnterRepeatedFieldByKey(
+        &cursors_, curr_component.field_id(),
+        next_component->map_key_field_id(), static_cast<uint32_t>(*key));
+    PROTOVM_RETURN_IF_NOT_OK(status_enter, "enter mapped repeated field");
+    auto status_select = ParseSelectRec(instruction, it_path_component);
+    PROTOVM_RETURN(status_select, "mapped repeated field (id = %d, key = %d)",
+                   static_cast<int>(curr_component.field_id()),
+                   static_cast<int>(*key));
+  }
+
+  
+  auto status = executor_->EnterField(&cursors_, curr_component.field_id());
+  PROTOVM_RETURN_IF_NOT_OK(status, "enter field (id = %d)",
+                           static_cast<int>(curr_component.field_id()));
+
+  return ParseSelectRec(instruction, it_path_component);
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+RoCursor::RepeatedFieldIterator::RepeatedFieldIterator()
+    : decoder_{protozero::ConstBytes{}}, field_id_{0}, field_{Advance()} {
+  PERFETTO_DCHECK(!field_.valid());
+}
+
+RoCursor::RepeatedFieldIterator::RepeatedFieldIterator(
+    protozero::ProtoDecoder decoder,
+    uint32_t field_id)
+    : decoder_(decoder), field_id_(field_id), field_{Advance()} {}
+
+RoCursor::RepeatedFieldIterator& RoCursor::RepeatedFieldIterator::operator++() {
+  field_ = Advance();
+  return *this;
+}
+
+RoCursor RoCursor::RepeatedFieldIterator::operator*() {
+  return RoCursor(field_);
+}
+
+RoCursor::RepeatedFieldIterator::operator bool() const {
+  return field_.valid();
+}
+
+protozero::Field RoCursor::RepeatedFieldIterator::Advance() {
+  auto field = decoder_.ReadField();
+  while (field) {
+    if (field.id() == field_id_) {
+      break;
+    }
+    field = decoder_.ReadField();
+  }
+  return field;
+}
+
+RoCursor::RoCursor() = default;
+
+RoCursor::RoCursor(protozero::ConstBytes data) : data_{data} {}
+
+RoCursor::RoCursor(protozero::Field data) : data_{data} {}
+
+StatusOr<void> RoCursor::EnterField(uint32_t field_id) {
+  auto status_or_data = GetLengthDelimitedData();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_data);
+
+  protozero::ProtoDecoder decoder(*status_or_data);
+
+  for (auto field = decoder.ReadField(); field.valid();
+       field = decoder.ReadField()) {
+    if (field.id() == field_id) {
+      data_ = field;
+      return StatusOr<void>::Ok();
+    }
+  }
+
+  return StatusOr<void>::Error();
+}
+
+StatusOr<void> RoCursor::EnterRepeatedFieldAt(uint32_t field_id,
+                                              uint32_t index) {
+  auto status_or_data = GetLengthDelimitedData();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_data);
+
+  protozero::ProtoDecoder decoder(*status_or_data);
+
+  uint32_t current_index = 0;
+
+  for (auto field = decoder.ReadField(); field.valid();
+       field = decoder.ReadField()) {
+    if (field.id() != field_id) {
+      continue;
+    }
+
+    if (current_index == index) {
+      data_ = field.as_bytes();
+      return StatusOr<void>::Ok();
+    }
+
+    ++current_index;
+  }
+
+  return StatusOr<void>::Error();
+}
+
+StatusOr<RoCursor::RepeatedFieldIterator> RoCursor::IterateRepeatedField(
+    uint32_t field_id) const {
+  auto status_or_data = GetLengthDelimitedData();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_data);
+  protozero::ProtoDecoder decoder(*status_or_data);
+  return RepeatedFieldIterator(decoder, field_id);
+}
+
+bool RoCursor::IsScalar() const {
+  auto* field = std::get_if<protozero::Field>(&data_);
+  if (!field) {
+    return false;
+  }
+
+  return field->type() == protozero::proto_utils::ProtoWireType::kVarInt ||
+         field->type() == protozero::proto_utils::ProtoWireType::kFixed32 ||
+         field->type() == protozero::proto_utils::ProtoWireType::kFixed64;
+}
+
+bool RoCursor::IsBytes() const {
+  if (std::holds_alternative<protozero::ConstBytes>(data_)) {
+    return true;
+  }
+
+  auto& field = std::get<protozero::Field>(data_);
+  return field.type() ==
+         protozero::proto_utils::ProtoWireType::kLengthDelimited;
+}
+
+StatusOr<Scalar> RoCursor::GetScalar() const {
+  if (!IsScalar()) {
+    PROTOVM_ABORT("Attempted to access length-delimited field as a scalar");
+  }
+
+  auto& field = std::get<protozero::Field>(data_);
+  return Scalar{field.type(), field.as_uint64()};
+}
+
+StatusOr<protozero::ConstBytes> RoCursor::GetBytes() const {
+  if (std::holds_alternative<protozero::ConstBytes>(data_)) {
+    return std::get<protozero::ConstBytes>(data_);
+  }
+
+  auto& field = std::get<protozero::Field>(data_);
+  if (field.type() != protozero::proto_utils::ProtoWireType::kLengthDelimited) {
+    PROTOVM_ABORT(
+        "Attempted to access field as length-delimited but actual wire "
+        "type is "
+        "%u",
+        static_cast<uint32_t>(field.type()));
+  }
+
+  return field.as_bytes();
+}
+
+StatusOr<protozero::ConstBytes> RoCursor::GetLengthDelimitedData() const {
+  if (std::holds_alternative<protozero::Field>(data_)) {
+    auto& field = std::get<protozero::Field>(data_);
+    if (field.type() !=
+        protozero::proto_utils::ProtoWireType::kLengthDelimited) {
+      PROTOVM_ABORT(
+          "Attempted to access field as length-delimited, but actual "
+          "wire type is %u",
+          static_cast<uint32_t>(field.type()));
+    }
+    return field.as_bytes();
+  }
+
+  return std::get<protozero::ConstBytes>(data_);
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+RwProto::RwProto(Allocator* allocator)
+    : allocator_{allocator}, root_{Node::Empty{}} {}
+
+RwProto::~RwProto() {
+  allocator_->DeleteReferencedData(&root_);
+}
+
+RwProto::Cursor RwProto::GetRoot() {
+  return Cursor{&root_, allocator_};
+}
+
+void RwProto::Serialize(protozero::Message* proto) const {
+  if (root_.GetIf<Node::Empty>()) {
+    return;
+  }
+
+  if (auto* bytes = root_.GetIf<Node::Bytes>()) {
+    proto->AppendRawProtoBytes(bytes->data.get(), bytes->size);
+    return;
+  }
+
+  auto* message = root_.GetIf<Node::Message>();
+  PERFETTO_DCHECK(message);
+
+  for (auto it = message->field_id_to_node.begin(); it; ++it) {
+    auto field_id = static_cast<uint32_t>(it->key);
+    SerializeField(field_id, *it->value, proto);
+  }
+}
+
+void RwProto::SerializeField(uint32_t field_id,
+                             const Node& node,
+                             protozero::Message* proto) const {
+  if (node.GetIf<Node::Empty>()) {
+    return;
+  }
+
+  if (auto* bytes = node.GetIf<Node::Bytes>()) {
+    proto->AppendBytes(field_id, bytes->data.get(), bytes->size);
+    return;
+  }
+
+  if (auto* scalar = node.GetIf<Scalar>()) {
+    if (scalar->wire_type == protozero::proto_utils::ProtoWireType::kFixed32) {
+      proto->AppendFixed(field_id, static_cast<uint32_t>(scalar->value));
+      return;
+    }
+
+    if (scalar->wire_type == protozero::proto_utils::ProtoWireType::kFixed64) {
+      proto->AppendFixed(field_id, static_cast<uint64_t>(scalar->value));
+      return;
+    }
+
+    proto->AppendVarInt(field_id, scalar->value);
+    return;
+  }
+
+  if (auto* message = node.GetIf<Node::Message>()) {
+    auto* message_proto =
+        proto->BeginNestedMessage<protozero::Message>(field_id);
+
+    for (auto it = message->field_id_to_node.begin(); it; ++it) {
+      auto message_field_id = static_cast<uint32_t>(it->key);
+      SerializeField(message_field_id, *it->value, message_proto);
+    }
+  }
+
+  if (node.GetIf<Node::IndexedRepeatedField>() ||
+      node.GetIf<Node::MappedRepeatedField>()) {
+    const IntrusiveMap* map;
+    if (auto* indexed = node.GetIf<Node::IndexedRepeatedField>()) {
+      map = &indexed->index_to_node;
+    } else {
+      map = &node.GetIf<Node::MappedRepeatedField>()->key_to_node;
+    }
+
+    for (auto it = map->begin(); it; ++it) {
+      SerializeField(field_id, *it->value, proto);
+    }
+  }
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+RwProtoCursor::RepeatedFieldIterator::RepeatedFieldIterator()
+    : allocator_{nullptr}, it_{} {}
+
+RwProtoCursor::RepeatedFieldIterator::RepeatedFieldIterator(
+    Allocator* allocator,
+    IntrusiveMap::Iterator it)
+    : allocator_{allocator}, it_{it} {}
+
+RwProtoCursor::RepeatedFieldIterator&
+RwProtoCursor::RepeatedFieldIterator::RepeatedFieldIterator::operator++() {
+  ++it_;
+  return *this;
+}
+
+RwProtoCursor RwProtoCursor::RepeatedFieldIterator::GetCursor() {
+  return RwProtoCursor{it_->value.get(), allocator_};
+}
+
+RwProtoCursor::RepeatedFieldIterator::operator bool() const {
+  return static_cast<bool>(it_);
+}
+
+RwProtoCursor::RwProtoCursor() = default;
+
+RwProtoCursor::RwProtoCursor(Node* node, Allocator* allocator)
+    : node_{node}, allocator_{allocator} {}
+
+bool RwProtoCursor::operator==(const RwProtoCursor& other) const {
+  return node_ == other.node_;
+}
+bool RwProtoCursor::operator!=(const RwProtoCursor& other) const {
+  return !(*this == other);
+}
+
+StatusOr<bool> RwProtoCursor::IsRoot() const {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+  return parent_link_.node == nullptr;
+}
+
+StatusOr<bool> RwProtoCursor::HasField(uint32_t field_id) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  
+  
+  auto status = ConvertToMessageIfNeeded(node_);
+  PROTOVM_RETURN_IF_NOT_OK(status);
+  auto* message = node_->GetIf<Node::Message>();
+  bool found = static_cast<bool>(message->field_id_to_node.Find(field_id));
+  return found;
+}
+
+StatusOr<void> RwProtoCursor::EnterField(uint32_t field_id) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  auto status_or_it = FindOrCreateMessageField(node_, field_id);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_it);
+  auto it = *status_or_it;
+
+  if (it->value->GetIf<Node::IndexedRepeatedField>()) {
+    PROTOVM_ABORT(
+        "Attempted to enter field (id=%u) as a simple field but it is an "
+        "indexed repeated field",
+        field_id);
+  }
+
+  if (it->value->GetIf<Node::MappedRepeatedField>()) {
+    PROTOVM_ABORT(
+        "Attempted to enter field (id=%u) as a simple field but it is a "
+        "mapped repeated field",
+        field_id);
+  }
+
+  parent_link_ = {node_, &node_->GetIf<Node::Message>()->field_id_to_node,
+                  std::addressof(*it)};
+  node_ = it->value.get();
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> RwProtoCursor::EnterRepeatedFieldAt(uint32_t field_id,
+                                                   uint32_t index) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  auto status_or_message_field = FindOrCreateMessageField(node_, field_id);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_message_field);
+  auto message_field = *status_or_message_field;
+
+  auto status =
+      ConvertToIndexedRepeatedFieldIfNeeded(message_field->value.get());
+  PROTOVM_RETURN_IF_NOT_OK(status);
+
+  auto status_or_repeated_field =
+      FindOrCreateIndexedRepeatedField(message_field->value.get(), index);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_repeated_field);
+
+  parent_link_ = {
+      message_field->value.get(),
+      &message_field->value->GetIf<Node::IndexedRepeatedField>()->index_to_node,
+      std::addressof(**status_or_repeated_field)};
+  node_ = (*status_or_repeated_field)->value.get();
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<RwProtoCursor::RepeatedFieldIterator>
+RwProtoCursor::IterateRepeatedField(uint32_t field_id) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  auto status_convertion_to_message = ConvertToMessageIfNeeded(node_);
+  PROTOVM_RETURN_IF_NOT_OK(status_convertion_to_message);
+
+  auto* message = node_->GetIf<Node::Message>();
+  auto it = message->field_id_to_node.Find(field_id);
+
+  if (!it) {
+    return RepeatedFieldIterator{};
+  }
+
+  auto* field = it->value.get();
+  auto status_convertion_to_repeated_field =
+      ConvertToIndexedRepeatedFieldIfNeeded(field);
+  PROTOVM_RETURN_IF_NOT_OK(status_convertion_to_repeated_field);
+
+  return RepeatedFieldIterator{
+      allocator_,
+      field->GetIf<Node::IndexedRepeatedField>()->index_to_node.begin()};
+}
+
+StatusOr<void> RwProtoCursor::EnterRepeatedFieldByKey(uint32_t field_id,
+                                                      uint32_t map_key_field_id,
+                                                      uint64_t key) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  auto status_or_message_field = FindOrCreateMessageField(node_, field_id);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_message_field);
+  auto message_field = *status_or_message_field;
+
+  auto status_conversion = ConvertToMappedRepeatedFieldIfNeeded(
+      message_field->value.get(), map_key_field_id);
+  PROTOVM_RETURN_IF_NOT_OK(status_conversion);
+
+  auto status_or_repeated_field =
+      FindOrCreateMappedRepeatedField(message_field->value.get(), key);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_repeated_field);
+
+  parent_link_ = {
+      message_field->value.get(),
+      &message_field->value->GetIf<Node::MappedRepeatedField>()->key_to_node,
+      std::addressof(**status_or_repeated_field)};
+  node_ = (*status_or_repeated_field)->value.get();
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<Scalar> RwProtoCursor::GetScalar() const {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  auto* scalar = node_->GetIf<Scalar>();
+  if (!scalar) {
+    PROTOVM_ABORT("Attempted \"get scalar\" operation but node has type %s",
+                  node_->GetTypeName());
+  }
+  return *scalar;
+}
+
+StatusOr<void> RwProtoCursor::SetBytes(protozero::ConstBytes data) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  if (bool is_compatible = node_->GetIf<Node::Empty>() ||
+                           node_->GetIf<Node::Bytes>() ||
+                           node_->GetIf<Node::Message>();
+      !is_compatible) {
+    PROTOVM_ABORT("Attempted \"set bytes\" operation but node has type %s",
+                  node_->GetTypeName());
+  }
+
+  auto status_or_bytes = allocator_->AllocateAndCopyBytes(data);
+  PROTOVM_RETURN_IF_NOT_OK(status_or_bytes);
+
+  allocator_->DeleteReferencedData(node_);
+  node_->value = Node::Bytes{std::move(*status_or_bytes)};
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> RwProtoCursor::SetScalar(Scalar scalar) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  if (bool is_compatible =
+          node_->GetIf<Node::Empty>() || node_->GetIf<Scalar>();
+      !is_compatible) {
+    PROTOVM_ABORT("Attempted \"set scalar\" operation but node has type %s",
+                  node_->GetTypeName());
+  }
+
+  node_->value = scalar;
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> RwProtoCursor::Merge(protozero::ConstBytes data,
+                                    uint32_t flags) {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  if (bool is_compatible = node_->GetIf<Node::Empty>() ||
+                           node_->GetIf<Node::Message>() ||
+                           node_->GetIf<Node::Bytes>();
+      !is_compatible) {
+    PROTOVM_ABORT("Attempted MERGE operation but node has type %s",
+                  node_->GetTypeName());
+  }
+
+  if (data.size == 0) {
+    return StatusOr<void>::Ok();
+  }
+
+  auto status_convert_to_message = ConvertToMessageIfNeeded(node_);
+  PROTOVM_RETURN_IF_NOT_OK(status_convert_to_message);
+  auto* message = node_->GetIf<Node::Message>();
+
+  protozero::ProtoDecoder decoder(data);
+
+  for (auto field = decoder.ReadField(); field.valid();
+       field = decoder.ReadField()) {
+    auto it = message->field_id_to_node.Find(field.id());
+
+    bool skip_submessages = (flags & kSkipSubmessages) != 0;
+    if (skip_submessages && it && it->value->GetIf<Node::Message>()) {
+      
+      
+      continue;
+    }
+
+    bool del_if_src_empty = (flags & kDelIfSrcEmpty) != 0;
+    if (it && del_if_src_empty &&
+        field.type() ==
+            protozero::proto_utils::ProtoWireType::kLengthDelimited &&
+        field.size() == 0) {
+      
+      
+      message->field_id_to_node.Remove(*it);
+      allocator_->Delete(&*it);
+      continue;
+    }
+
+    auto status_or_map_value = CreateNodeFromField(field);
+    PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+    if (!it) {
+      auto status_or_it = MapInsert(&message->field_id_to_node, field.id(),
+                                    std::move(*status_or_map_value));
+      PROTOVM_RETURN_IF_NOT_OK(status_or_it);
+      (*status_or_it)->value->has_been_merged = true;
+      continue;
+    }
+
+    if (it->value->GetIf<Node::MappedRepeatedField>()) {
+      PROTOVM_ABORT(
+          "Merge operation of mapped repeated field is not supported (field id "
+          "= %u)",
+          field.id());
+    }
+
+    
+    
+    
+    
+    if (it->value->has_been_merged) {
+      auto status_convert_to_indexed =
+          ConvertToIndexedRepeatedFieldIfNeeded(it->value.get());
+      PROTOVM_RETURN_IF_NOT_OK(status_convert_to_indexed);
+    }
+
+    if (auto* indexed_fields = it->value->GetIf<Node::IndexedRepeatedField>()) {
+      
+      
+      if (!it->value->has_been_merged) {
+        
+        
+        
+        allocator_->DeleteReferencedData(it->value.get());
+        it->value->has_been_merged = true;
+      }
+      MapInsert(&indexed_fields->index_to_node,
+                indexed_fields->index_to_node.Size(),
+                std::move(*status_or_map_value));
+      continue;
+    }
+
+    
+    
+    allocator_->Delete(it->value.release());
+    it->value = std::move(*status_or_map_value);
+    it->value->has_been_merged = true;
+  }
+
+  
+  for (auto& field : message->field_id_to_node) {
+    field.value->has_been_merged = false;
+  }
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> RwProtoCursor::Delete() {
+  PROTOVM_RETURN_IF_NOT_OK(CheckIsValid());
+
+  PROTOVM_ASSIGN_OR_RETURN(bool is_root, IsRoot());
+  if (is_root) {
+    node_->value = Node::Empty{};
+    return StatusOr<void>::Ok();
+  }
+
+  PERFETTO_DCHECK(parent_link_.map);
+  PERFETTO_DCHECK(parent_link_.map_node);
+
+  parent_link_.map->Remove(*parent_link_.map_node);
+  allocator_->Delete(parent_link_.map_node);
+
+  
+  node_ = nullptr;
+  parent_link_ = {};
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<void> RwProtoCursor::ConvertToMessageIfNeeded(Node* node) {
+  if (node->GetIf<Node::Message>()) {
+    return StatusOr<void>::Ok();
+  }
+
+  if (node->GetIf<Node::Empty>()) {
+    node->value = Node::Message{};
+    return StatusOr<void>::Ok();
+  }
+
+  auto* bytes = node->GetIf<Node::Bytes>();
+  if (!bytes) {
+    PROTOVM_ABORT("Attempted conversion to message but node has type %s",
+                  node->GetTypeName());
+  }
+
+  Node::Message message;
+
+  protozero::ProtoDecoder decoder(protozero::ConstBytes{
+      static_cast<const uint8_t*>(bytes->data.get()), bytes->size});
+
+  for (auto field = decoder.ReadField(); field.valid();
+       field = decoder.ReadField()) {
+    auto status_or_map_value = CreateNodeFromField(field);
+    if (!status_or_map_value.IsOk()) {
+      allocator_->DeleteReferencedData(&message);
+      PROTOVM_RETURN(status_or_map_value);
+    }
+
+    auto it = message.field_id_to_node.Find(field.id());
+
+    
+    
+    if (!it) {
+      auto status_or_it = MapInsert(&message.field_id_to_node, field.id(),
+                                    std::move(*status_or_map_value));
+      if (!status_or_it.IsOk()) {
+        allocator_->DeleteReferencedData(&message);
+        PROTOVM_RETURN(status_or_it, "Insert message field (id = %u)",
+                       field.id());
+      }
+      continue;
+    }
+
+    
+    
+    
+    auto status_conversion =
+        ConvertToIndexedRepeatedFieldIfNeeded(it->value.get());
+    if (!status_conversion.IsOk()) {
+      allocator_->DeleteReferencedData(&message);
+      allocator_->Delete(status_or_map_value->release());
+      PROTOVM_RETURN(status_conversion);
+    }
+
+    auto& index_to_node =
+        it->value->GetIf<Node::IndexedRepeatedField>()->index_to_node;
+    auto status_or_it = MapInsert(&index_to_node, index_to_node.Size(),
+                                  std::move(*status_or_map_value));
+    if (!status_or_it.IsOk()) {
+      allocator_->DeleteReferencedData(&message);
+      PROTOVM_RETURN(status_or_it,
+                     "Insert repeated field (id = %u, index = %d)", field.id(),
+                     static_cast<int>(index_to_node.Size()));
+    }
+  }
+
+  allocator_->DeleteReferencedData(node);
+  node->value = message;
+
+  return StatusOr<void>::Ok();
+}
+
+StatusOr<OwnedPtr<Node>> RwProtoCursor::CreateNodeFromField(
+    protozero::Field field) {
+  if (field.type() == protozero::proto_utils::ProtoWireType::kLengthDelimited) {
+    auto status_or_bytes = allocator_->AllocateAndCopyBytes(field.as_bytes());
+    PROTOVM_RETURN_IF_NOT_OK(status_or_bytes);
+    auto status_or_node =
+        allocator_->CreateNode<Node::Bytes>(std::move(*status_or_bytes));
+    if (!status_or_node.IsOk()) {
+      allocator_->DeleteReferencedData(&status_or_bytes.value());
+      PROTOVM_RETURN(status_or_node);
+    }
+
+    return std::move(*status_or_node);
+  }
+
+  auto status_or_node =
+      allocator_->CreateNode<Scalar>(field.type(), field.as_uint64());
+  if (!status_or_node.IsOk()) {
+    PROTOVM_RETURN(status_or_node);
+  }
+
+  return std::move(*status_or_node);
+}
+
+StatusOr<void> RwProtoCursor::ConvertToMappedRepeatedFieldIfNeeded(
+    Node* node,
+    uint32_t map_key_field_id) {
+  if (node->GetIf<Node::MappedRepeatedField>()) {
+    return StatusOr<void>::Ok();
+  }
+
+  if (node->GetIf<Node::Empty>()) {
+    node->value = Node::MappedRepeatedField{};
+    return StatusOr<void>::Ok();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (node->GetIf<Node::Bytes>() || node->GetIf<Node::Message>()) {
+    auto status_or_key = ReadScalarField(*node, map_key_field_id);
+    PROTOVM_RETURN_IF_NOT_OK(status_or_key);
+
+    auto status_or_map_value = allocator_->CreateNode<Node::Empty>();
+    PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+    auto map_value = std::move(*status_or_map_value);
+    map_value->value = std::move(node->value);
+    node->value = Node::MappedRepeatedField{};
+
+    auto status_or_it =
+        MapInsert(&node->GetIf<Node::MappedRepeatedField>()->key_to_node,
+                  *status_or_key, std::move(map_value));
+    PROTOVM_RETURN(status_or_it);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (auto* indexed = node->GetIf<Node::IndexedRepeatedField>()) {
+    Node::MappedRepeatedField mapped_repeated_field;
+
+    for (auto it = indexed->index_to_node.begin(); it;) {
+      auto& map_entry = *it;
+      auto& value_node = *it->value;
+
+      it = indexed->index_to_node.Remove(it);
+
+      auto status_or_key = ReadScalarField(value_node, map_key_field_id);
+      PROTOVM_RETURN_IF_NOT_OK(status_or_key);
+
+      map_entry.key = *status_or_key;
+      mapped_repeated_field.key_to_node.Insert(map_entry);
+    }
+
+    node->value = mapped_repeated_field;
+
+    return StatusOr<void>::Ok();
+  }
+
+  PROTOVM_ABORT(
+      "Attempted to access field as MappedRepeatedField but node has type "
+      "%s",
+      node->GetTypeName());
+}
+
+StatusOr<void> RwProtoCursor::ConvertToIndexedRepeatedFieldIfNeeded(
+    Node* node) {
+  if (node->GetIf<Node::IndexedRepeatedField>()) {
+    return StatusOr<void>::Ok();
+  }
+
+  if (node->GetIf<Node::MappedRepeatedField>()) {
+    PROTOVM_ABORT(
+        "Attempted \"convert to indexed repeated field\" operation but "
+        "node has type %s",
+        node->GetTypeName());
+  }
+
+  if (node->GetIf<Node::Empty>()) {
+    node->value = Node::IndexedRepeatedField{};
+    return StatusOr<void>::Ok();
+  }
+
+  auto status_or_map_value = allocator_->CreateNode<Node::Empty>();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+  auto map_value = std::move(*status_or_map_value);
+  map_value->value = std::move(node->value);
+  node->value = Node::IndexedRepeatedField{};
+
+  auto status_or_it =
+      MapInsert(&node->GetIf<Node::IndexedRepeatedField>()->index_to_node, 0,
+                std::move(map_value));
+  PROTOVM_RETURN(status_or_it);
+}
+
+StatusOr<IntrusiveMap::Iterator> RwProtoCursor::FindOrCreateMessageField(
+    Node* node,
+    uint32_t field_id) {
+  auto status = ConvertToMessageIfNeeded(node);
+  PROTOVM_RETURN_IF_NOT_OK(status);
+
+  auto* message = node->GetIf<Node::Message>();
+  auto it = message->field_id_to_node.Find(field_id);
+  if (it) {
+    return it;
+  }
+
+  auto status_or_map_value = allocator_->CreateNode<Node::Empty>();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+  auto status_or_it = MapInsert(&message->field_id_to_node, field_id,
+                                std::move(*status_or_map_value));
+  PROTOVM_RETURN(status_or_it);
+}
+
+StatusOr<IntrusiveMap::Iterator>
+RwProtoCursor::FindOrCreateIndexedRepeatedField(Node* node, uint32_t index) {
+  auto& index_to_node =
+      node->GetIf<Node::IndexedRepeatedField>()->index_to_node;
+
+  auto it = index_to_node.Find(index);
+  if (it) {
+    return it;
+  }
+
+  bool requires_creation_and_is_not_simple_append =
+      index > index_to_node.Size();
+  if (requires_creation_and_is_not_simple_append) {
+    PROTOVM_ABORT(
+        "Attempted to insert repeated field at arbitrary position (only "
+        "append operation is supported)");
+  }
+
+  auto status_or_map_value = allocator_->CreateNode<Node::Empty>();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+  return MapInsert(&node->GetIf<Node::IndexedRepeatedField>()->index_to_node,
+                   index, std::move(*status_or_map_value));
+}
+
+StatusOr<IntrusiveMap::Iterator> RwProtoCursor::FindOrCreateMappedRepeatedField(
+    Node* node,
+    uint64_t key) {
+  auto it = node->GetIf<Node::MappedRepeatedField>()->key_to_node.Find(key);
+
+  if (it) {
+    return it;
+  }
+
+  auto status_or_map_value = allocator_->CreateNode<Node::Empty>();
+  PROTOVM_RETURN_IF_NOT_OK(status_or_map_value);
+
+  return MapInsert(&node->GetIf<Node::MappedRepeatedField>()->key_to_node, key,
+                   std::move(*status_or_map_value));
+}
+
+StatusOr<IntrusiveMap::Iterator> RwProtoCursor::MapInsert(
+    IntrusiveMap* map,
+    uint64_t key,
+    OwnedPtr<Node> map_value) {
+  auto status_or_map_node =
+      allocator_->CreateMapNode(key, std::move(map_value));
+  PROTOVM_RETURN_IF_NOT_OK(status_or_map_node, "Failed to allocate node");
+
+  auto [it, inserted] = map->Insert(*status_or_map_node->get());
+  if (!inserted) {
+    allocator_->Delete(status_or_map_node->release());
+    PROTOVM_ABORT(
+        "Failed to insert intrusive map entry (key = %d). Duplicated key?",
+        static_cast<int>(key));
+  }
+
+  status_or_map_node->release();
+  return it;
+}
+
+StatusOr<uint64_t> RwProtoCursor::ReadScalarField(const Node& node,
+                                                  uint32_t field_id) {
+  if (auto* bytes = node.GetIf<Node::Bytes>()) {
+    protozero::ProtoDecoder decoder(protozero::ConstBytes{
+        static_cast<const uint8_t*>(bytes->data.get()), bytes->size});
+
+    auto field = decoder.ReadField();
+    while (field.valid() && field.id() != field_id) {
+      field = decoder.ReadField();
+    }
+
+    if (!field.valid()) {
+      PROTOVM_ABORT(
+          "Attempted to read scalar field (id=%u) but it is not present",
+          field_id);
+    }
+
+    if (field.type() ==
+        protozero::proto_utils::ProtoWireType::kLengthDelimited) {
+      PROTOVM_ABORT("Attempted to length-delimited field (id=%u) as scalar",
+                    field_id);
+    }
+
+    return field.as_uint64();
+  }
+
+  if (auto* message = node.GetIf<Node::Message>()) {
+    auto it = message->field_id_to_node.Find(field_id);
+    if (!it) {
+      PROTOVM_ABORT(
+          "Attempted to read scalar field (id=%u) but it is not present",
+          field_id);
+    }
+
+    auto* scalar = it->value->GetIf<Scalar>();
+    if (!scalar) {
+      PROTOVM_ABORT(
+          "Attempted to read scalar field (id=%u) from node with type %s",
+          field_id, it->value->GetTypeName());
+    }
+
+    return scalar->value;
+  }
+
+  PROTOVM_ABORT(
+      "Attempted to read scalar field (id=%u) but parent node has type %s",
+      field_id, node.GetTypeName());
+}
+
+StatusOr<void> RwProtoCursor::CheckIsValid() const {
+  if (!node_) {
+    PROTOVM_ABORT("Attempted to access invalid cursor");
+  }
+  return StatusOr<void>::Ok();
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOVM_VM_H_
+#define SRC_PROTOVM_VM_H_
+
+#include <memory>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Vm {
+ public:
+  Vm(protozero::ConstBytes program,
+     size_t memory_limit_bytes,
+     protozero::ConstBytes initial_incremental_state = {nullptr, 0});
+  StatusOr<void> ApplyPatch(protozero::ConstBytes packet);
+  void SerializeIncrementalState(protozero::Message*) const;
+  std::string SerializeProgram() const;
+  std::unique_ptr<Vm> CloneReadOnly() const;
+  uint64_t GetMemoryUsageBytes() const;
+
+ private:
+  struct ReadWriteState {
+    ReadWriteState(std::string& program,
+                   size_t memory_limit_bytes,
+                   protozero::ConstBytes initial_incremental_state)
+        : executor{},
+          parser{protozero::ConstBytes{
+                     reinterpret_cast<const uint8_t*>(program.data()),
+                     program.size()},
+                 &executor},
+          allocator{memory_limit_bytes},
+          incremental_state{&allocator} {
+      if (initial_incremental_state.data) {
+        incremental_state.GetRoot().SetBytes(initial_incremental_state);
+      }
+    }
+
+    Executor executor;
+    Parser parser;
+    Allocator allocator;
+    RwProto incremental_state;
+  };
+
+  struct ReadOnlyState {
+    explicit ReadOnlyState(std::string incremental_state)
+        : serialized_incremental_state(std::move(incremental_state)) {}
+
+    std::string serialized_incremental_state;
+  };
+
+  
+  
+  
+  Vm(const Vm&);
+
+  
+  explicit Vm(std::string incremental_state);
+
+  std::string SerializeIncrementalStateAsString() const;
+
+  std::string owned_program_;
+  std::variant<ReadWriteState, ReadOnlyState> state_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+namespace protovm {
+
+Vm::Vm(protozero::ConstBytes program,
+       size_t memory_limit_bytes,
+       protozero::ConstBytes initial_incremental_state)
+    : owned_program_(program.ToStdString()),
+      state_(std::in_place_type_t<ReadWriteState>{},
+             owned_program_,
+             memory_limit_bytes,
+             initial_incremental_state) {}
+
+Vm::Vm(const Vm& other)
+    : owned_program_(other.SerializeProgram()),
+      state_(std::in_place_type_t<ReadOnlyState>{},
+             other.SerializeIncrementalStateAsString()) {}
+
+StatusOr<void> Vm::ApplyPatch(protozero::ConstBytes packet) {
+  ReadWriteState* rw_state = std::get_if<ReadWriteState>(&state_);
+  if (!rw_state) {
+    return StatusOr<void>::Abort();
+  }
+  auto src = RoCursor(packet);
+  auto dst = rw_state->incremental_state.GetRoot();
+  return rw_state->parser.Run(src, dst);
+}
+
+void Vm::SerializeIncrementalState(protozero::Message* proto) const {
+  if (const ReadOnlyState* state = std::get_if<ReadOnlyState>(&state_); state) {
+    proto->AppendRawProtoBytes(state->serialized_incremental_state.data(),
+                               state->serialized_incremental_state.size());
+    return;
+  }
+
+  const ReadWriteState* state = std::get_if<ReadWriteState>(&state_);
+  state->incremental_state.Serialize(proto);
+}
+
+std::string Vm::SerializeIncrementalStateAsString() const {
+  protozero::HeapBuffered<protozero::Message> proto;
+  SerializeIncrementalState(proto.get());
+  return proto.SerializeAsString();
+}
+
+std::string Vm::SerializeProgram() const {
+  return owned_program_;
+}
+
+std::unique_ptr<Vm> Vm::CloneReadOnly() const {
+  return std::unique_ptr<Vm>(new Vm(*this));
+}
+
+uint64_t Vm::GetMemoryUsageBytes() const {
+  if (const ReadOnlyState* state = std::get_if<ReadOnlyState>(&state_); state) {
+    return owned_program_.size() + state->serialized_incremental_state.size();
+  }
+
+  const ReadWriteState* state = std::get_if<ReadWriteState>(&state_);
+  return owned_program_.size() + state->allocator.GetMemoryUsageBytes();
+}
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef SRC_PROTOZERO_FILTERING_FILTER_BYTECODE_PARSER_H_
 #define SRC_PROTOZERO_FILTERING_FILTER_BYTECODE_PARSER_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include <optional>
 #include <vector>
 
 namespace protozero {
@@ -42319,6 +56448,14 @@ namespace protozero {
 
 class FilterBytecodeParser {
  public:
+  static constexpr uint32_t kSimpleField = 0x7fffffff;
+  static constexpr uint32_t kFilterStringField = 0x7ffffffe;
+  
+  
+  static constexpr uint32_t kFilterStringFieldWithType = 0x7fff0000;
+  static constexpr uint32_t kFilterStringFieldWithTypeMask = 0x7fff0000;
+  static constexpr uint32_t kSemanticTypeMask = 0xffff;
+
   
   struct QueryResult {
     bool allowed;  
@@ -42330,27 +56467,50 @@ class FilterBytecodeParser {
 
     
     
+    uint32_t semantic_type;
+
+    
+    
     bool simple_field() const { return nested_msg_index == kSimpleField; }
 
     
     
     bool filter_string_field() const {
-      return nested_msg_index == kFilterStringField;
+      
+      
+      return nested_msg_index >= kFilterStringFieldWithType &&
+             nested_msg_index <= kFilterStringField;
     }
 
     
     
     
     bool nested_msg_field() const {
+      static_assert(kFilterStringFieldWithType < kFilterStringField,
+                    "kFilterStringFieldWithType < kFilterStringField");
       static_assert(kFilterStringField < kSimpleField,
                     "kFilterStringField < kSimpleField");
-      return nested_msg_index < kFilterStringField;
+      return nested_msg_index < kFilterStringFieldWithType;
     }
   };
 
   
   
-  bool Load(const void* filter_data, size_t len);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool Load(const void* filter_data,
+            size_t len,
+            const void* overlay_data = nullptr,
+            size_t overlay_len = 0);
 
   
   
@@ -42363,10 +56523,11 @@ class FilterBytecodeParser {
  private:
   static constexpr uint32_t kDirectlyIndexLimit = 128;
   static constexpr uint32_t kAllowed = 1u << 31u;
-  static constexpr uint32_t kSimpleField = 0x7fffffff;
-  static constexpr uint32_t kFilterStringField = 0x7ffffffe;
 
-  bool LoadInternal(const uint8_t* filter_data, size_t len);
+  bool LoadInternal(const uint8_t* filter_data,
+                    size_t len,
+                    const uint8_t* overlay_data,
+                    size_t overlay_len);
 
   
   
@@ -42388,6 +56549,8 @@ class FilterBytecodeParser {
   
   
 
+  
+  
   
   
   
@@ -42459,7 +56622,18 @@ enum FilterOpcode : uint32_t {
   
   
   kFilterOpcode_FilterString = 4,
+
+  
+  
+  
+  
+  kFilterOpcode_FilterStringWithType = 5,
 };
+
+
+
+constexpr uint32_t kOpcodeMask = 0x7u;
+constexpr uint32_t kOpcodeShift = 3;
 
 }  
 
@@ -42482,6 +56656,12 @@ enum FilterOpcode : uint32_t {
 
 
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <vector>
+
 
 
 
@@ -42491,56 +56671,169 @@ enum FilterOpcode : uint32_t {
 
 namespace protozero {
 
+namespace {
+
+
+
+bool ParseAndVerifyChecksum(const uint8_t* data,
+                            size_t len,
+                            std::vector<uint32_t>* words,
+                            bool suppress_logs) {
+  if (len == 0) {
+    return false;
+  }
+  words->reserve(len);  
+
+  
+  
+  perfetto::base::FnvHasher hasher;
+  uint32_t actual_csum = 0;
+
+  using BytecodeDecoder =
+      PackedRepeatedFieldIterator<proto_utils::ProtoWireType::kVarInt,
+                                  uint32_t>;
+  bool has_checksum = false;
+  bool packed_parse_err = false;
+  for (BytecodeDecoder it(data, len, &packed_parse_err); it;) {
+    uint32_t word = *it++;
+    if (bool is_last_word = !it; is_last_word) {
+      actual_csum = word;
+      has_checksum = true;
+      break;
+    }
+    words->emplace_back(word);
+    hasher.Update(word);
+  }
+  if (packed_parse_err || !has_checksum) {
+    words->clear();
+    return false;
+  }
+  auto expected_csum = static_cast<uint32_t>(hasher.digest());
+  if (expected_csum != actual_csum) {
+    if (!suppress_logs) {
+      PERFETTO_ELOG("Filter bytecode checksum failed. Expected: %x, actual: %x",
+                    expected_csum, actual_csum);
+    }
+    words->clear();
+    return false;
+  }
+  return true;
+}
+
+struct OverlayEntry {
+  uint32_t msg_index;
+  uint32_t field_id;
+  uint32_t message_id;
+};
+
+
+
+uint32_t GetMessageIdForOverlay(uint32_t opcode, uint32_t argument) {
+  switch (opcode) {
+    case kFilterOpcode_SimpleField:
+      return FilterBytecodeParser::kSimpleField;
+    case kFilterOpcode_FilterString:
+      return FilterBytecodeParser::kFilterStringField;
+    case kFilterOpcode_FilterStringWithType:
+      
+      return FilterBytecodeParser::kFilterStringFieldWithType |
+             (argument & FilterBytecodeParser::kSemanticTypeMask);
+    default:
+      return 0;  
+  }
+}
+
+}  
+
 void FilterBytecodeParser::Reset() {
   bool suppress = suppress_logs_for_fuzzer_;
   *this = FilterBytecodeParser();
   suppress_logs_for_fuzzer_ = suppress;
 }
 
-bool FilterBytecodeParser::Load(const void* filter_data, size_t len) {
+bool FilterBytecodeParser::Load(const void* filter_data,
+                                size_t len,
+                                const void* overlay_data,
+                                size_t overlay_len) {
   Reset();
-  bool res = LoadInternal(static_cast<const uint8_t*>(filter_data), len);
+  bool res =
+      LoadInternal(static_cast<const uint8_t*>(filter_data), len,
+                   static_cast<const uint8_t*>(overlay_data), overlay_len);
   
   if (!res)
     Reset();
   return res;
 }
 
-bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
-                                        size_t len) {
+bool FilterBytecodeParser::LoadInternal(const uint8_t* filter_data,
+                                        size_t len,
+                                        const uint8_t* overlay_data,
+                                        size_t overlay_len) {
   
   
   std::vector<uint32_t> words;
-  bool packed_parse_err = false;
-  words.reserve(len);  
-  using BytecodeDecoder =
-      PackedRepeatedFieldIterator<proto_utils::ProtoWireType::kVarInt,
-                                  uint32_t>;
-  for (BytecodeDecoder it(bytecode_data, len, &packed_parse_err); it; ++it)
-    words.emplace_back(*it);
-
-  if (packed_parse_err || words.empty())
+  if (!ParseAndVerifyChecksum(filter_data, len, &words,
+                              suppress_logs_for_fuzzer_))
     return false;
 
-  perfetto::base::Hasher hasher;
-  for (size_t i = 0; i < words.size() - 1; ++i)
-    hasher.Update(words[i]);
-
-  uint32_t expected_csum = static_cast<uint32_t>(hasher.digest());
-  if (expected_csum != words.back()) {
-    if (!suppress_logs_for_fuzzer_) {
-      PERFETTO_ELOG("Filter bytecode checksum failed. Expected: %x, actual: %x",
-                    expected_csum, words.back());
+  
+  std::vector<OverlayEntry> overlay;
+  if (overlay_data && overlay_len > 0) {
+    std::vector<uint32_t> overlay_words;
+    if (!ParseAndVerifyChecksum(overlay_data, overlay_len, &overlay_words,
+                                suppress_logs_for_fuzzer_)) {
+      return false;
     }
-    return false;
-  }
 
-  words.pop_back();  
+    
+    
+    if (overlay_words.size() % 3 != 0) {
+      PERFETTO_DLOG("overlay error: size %zu not multiple of 3",
+                    overlay_words.size());
+      return false;
+    }
+
+    for (size_t i = 0; i < overlay_words.size(); i += 3) {
+      overlay.emplace_back();
+
+      uint32_t opcode = overlay_words[i + 1] & kOpcodeMask;
+      uint32_t message_id =
+          GetMessageIdForOverlay(opcode, overlay_words[i + 2]);
+      if (message_id == 0) {
+        PERFETTO_DLOG("overlay error: invalid opcode %u at index %zu", opcode,
+                      i + 1);
+        return false;
+      }
+
+      OverlayEntry& entry = overlay.back();
+      entry.msg_index = overlay_words[i];
+      entry.field_id = overlay_words[i + 1] >> kOpcodeShift;
+      entry.message_id = message_id;
+
+      if (overlay.size() == 1) {
+        continue;
+      }
+      
+      const OverlayEntry& prev_entry = overlay[overlay.size() - 2];
+      if (entry.msg_index < prev_entry.msg_index ||
+          (entry.msg_index == prev_entry.msg_index &&
+           entry.field_id <= prev_entry.field_id)) {
+        PERFETTO_DLOG(
+            "overlay error: entries not sorted at index %zu (msg %u, "
+            "field %u) after (msg %u, field %u)",
+            i, entry.msg_index, entry.field_id, prev_entry.msg_index,
+            prev_entry.field_id);
+        return false;
+      }
+    }
+  }
 
   
   std::vector<uint32_t> direct_indexed_fields;
   std::vector<uint32_t> ranges;
   uint32_t max_msg_index = 0;
+  uint32_t current_msg_index = 0;
+  size_t overlay_idx = 0;
 
   auto add_directly_indexed_field = [&](uint32_t field_id, uint32_t msg_id) {
     PERFETTO_DCHECK(field_id > 0 && field_id < kDirectlyIndexLimit);
@@ -42557,12 +56850,61 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
     ranges.emplace_back(kAllowed | msg_id);
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr uint32_t kOverlayError = std::numeric_limits<uint32_t>::max();
+  auto process_overlay = [&](uint32_t field_id) -> uint32_t {
+    while (overlay_idx < overlay.size()) {
+      const OverlayEntry& entry = overlay[overlay_idx];
+
+      
+      if (entry.msg_index > current_msg_index ||
+          (entry.msg_index == current_msg_index && entry.field_id > field_id)) {
+        break;
+      }
+
+      
+      
+      PERFETTO_DCHECK(entry.msg_index == current_msg_index);
+
+      
+      if (entry.field_id == field_id) {
+        ++overlay_idx;
+        return entry.message_id;
+      }
+
+      
+      if (entry.field_id < kDirectlyIndexLimit) {
+        add_directly_indexed_field(entry.field_id, entry.message_id);
+      } else {
+        add_range(entry.field_id, entry.field_id + 1, entry.message_id);
+      }
+      ++overlay_idx;
+    }
+    
+    return 0;
+  };
+
   bool is_eom = true;
   for (size_t i = 0; i < words.size(); ++i) {
     const uint32_t word = words[i];
     const bool has_next_word = i < words.size() - 1;
-    const uint32_t opcode = word & 0x7u;
-    const uint32_t field_id = word >> 3;
+    const uint32_t opcode = word & kOpcodeMask;
+    const uint32_t field_id = word >> kOpcodeShift;
 
     is_eom = opcode == kFilterOpcode_EndOfMessage;
     if (field_id == 0 && opcode != kFilterOpcode_EndOfMessage) {
@@ -42572,7 +56914,9 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
 
     if (opcode == kFilterOpcode_SimpleField ||
         opcode == kFilterOpcode_NestedField ||
-        opcode == kFilterOpcode_FilterString) {
+        opcode == kFilterOpcode_FilterString ||
+        opcode == kFilterOpcode_FilterStringWithType) {
+      
       
       
       
@@ -42584,6 +56928,17 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
         msg_id = kSimpleField;
       } else if (opcode == kFilterOpcode_FilterString) {
         msg_id = kFilterStringField;
+      } else if (opcode == kFilterOpcode_FilterStringWithType) {
+        
+        if (!has_next_word) {
+          PERFETTO_DLOG(
+              "bytecode error @ word %zu: unterminated filter string with type",
+              i);
+          return false;
+        }
+        uint32_t semantic_type = words[++i];
+        msg_id =
+            kFilterStringFieldWithType | (semantic_type & kSemanticTypeMask);
       } else {  
         
         if (!has_next_word) {
@@ -42593,6 +56948,16 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
         }
         msg_id = words[++i];
         max_msg_index = std::max(max_msg_index, msg_id);
+      }
+
+      
+      
+      uint32_t overlay_msg_id = process_overlay(field_id);
+      if (overlay_msg_id == kOverlayError) {
+        return false;
+      }
+      if (overlay_msg_id != 0) {
+        msg_id = overlay_msg_id;
       }
 
       if (field_id < kDirectlyIndexLimit) {
@@ -42624,6 +56989,26 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
         add_range(id, range_end, kSimpleField);
     } else if (opcode == kFilterOpcode_EndOfMessage) {
       
+      if (process_overlay(std::numeric_limits<uint32_t>::max()) ==
+          kOverlayError) {
+        return false;
+      }
+
+      
+      
+      for (size_t r = 0; r + 3 < ranges.size(); r += 3) {
+        const uint32_t prev_range_end = ranges[r + 1];
+        const uint32_t curr_range_start = ranges[r + 3];
+        if (curr_range_start < prev_range_end) {
+          PERFETTO_DLOG(
+              "bytecode error @ message %u: overlapping ranges [%u, %u) "
+              "and [%u, ...)",
+              current_msg_index, ranges[r], prev_range_end, curr_range_start);
+          return false;
+        }
+      }
+
+      
       
       
       
@@ -42637,6 +57022,7 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
       words_.insert(words_.end(), ranges.begin(), ranges.end());
       direct_indexed_fields.clear();
       ranges.clear();
+      ++current_msg_index;
     } else {
       PERFETTO_DLOG("bytecode error @ word %zu: invalid opcode (%x)", i, word);
       return false;
@@ -42646,6 +57032,12 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
   if (!is_eom) {
     PERFETTO_DLOG(
         "bytecode error: end of message not the last word in the bytecode");
+    return false;
+  }
+
+  if (overlay_idx != overlay.size()) {
+    PERFETTO_DLOG("bytecode error: overlay contains %zu unconsumed entries",
+                  overlay.size() - overlay_idx);
     return false;
   }
 
@@ -42667,7 +57059,7 @@ bool FilterBytecodeParser::LoadInternal(const uint8_t* bytecode_data,
 FilterBytecodeParser::QueryResult FilterBytecodeParser::Query(
     uint32_t msg_index,
     uint32_t field_id) const {
-  FilterBytecodeParser::QueryResult res{false, 0u};
+  FilterBytecodeParser::QueryResult res{false, 0u, 0u};
   if (static_cast<uint64_t>(msg_index) + 1 >=
       static_cast<uint64_t>(message_offset_.size())) {
     return res;
@@ -42698,10 +57090,17 @@ FilterBytecodeParser::QueryResult FilterBytecodeParser::Query(
         break;
       }
     }  
-  }    
+  }  
 
   res.allowed = (field_state & kAllowed) != 0;
   res.nested_msg_index = field_state & ~kAllowed;
+  
+  
+  if ((res.nested_msg_index & kFilterStringFieldWithTypeMask) ==
+          kFilterStringFieldWithType &&
+      res.nested_msg_index != kFilterStringField) {
+    res.semantic_type = res.nested_msg_index & kSemanticTypeMask;
+  }
   PERFETTO_DCHECK(!res.nested_msg_field() ||
                   res.nested_msg_index < message_offset_.size() - 1);
   return res;
@@ -42729,9 +57128,17 @@ FilterBytecodeParser::QueryResult FilterBytecodeParser::Query(
 #ifndef SRC_PROTOZERO_FILTERING_STRING_FILTER_H_
 #define SRC_PROTOZERO_FILTERING_STRING_FILTER_H_
 
-#include <regex>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
+
+
+
+
 
 namespace protozero {
 
@@ -42739,7 +57146,53 @@ namespace protozero {
 
 class StringFilter {
  public:
-  enum class Policy {
+  
+  class SemanticTypeMask {
+   public:
+    using Word = uint64_t;
+    static constexpr size_t kBitsPerWord = sizeof(Word) * 8;
+    static constexpr size_t kLimit = 128;
+
+    
+    
+    static constexpr SemanticTypeMask Unspecified() {
+      return SemanticTypeMask(Word(1), Word(0));
+    }
+
+    
+    static constexpr SemanticTypeMask FromWords(Word w0, Word w1) {
+      return SemanticTypeMask(w0, w1);
+    }
+
+    
+    constexpr SemanticTypeMask() = default;
+
+    
+    PERFETTO_ALWAYS_INLINE void Set(uint32_t semantic_type) {
+      PERFETTO_DCHECK(semantic_type < kLimit);
+      uint32_t word_index = semantic_type / kBitsPerWord;
+      uint32_t bit_index = semantic_type % kBitsPerWord;
+      words_[word_index] |= Word(1) << bit_index;
+    }
+
+    
+    PERFETTO_ALWAYS_INLINE bool IsSet(uint32_t semantic_type) const {
+      
+      if (PERFETTO_UNLIKELY(semantic_type >= kLimit)) {
+        return true;
+      }
+      uint32_t word_index = semantic_type / kBitsPerWord;
+      uint32_t bit_index = semantic_type % kBitsPerWord;
+      return (words_[word_index] & (Word(1) << bit_index)) != 0;
+    }
+
+   private:
+    constexpr SemanticTypeMask(Word w0, Word w1) : words_{w0, w1} {}
+
+    std::array<Word, 2> words_ = {};
+  };
+
+  enum class Policy : uint8_t {
     kMatchRedactGroups = 1,
     kAtraceMatchRedactGroups = 2,
     kMatchBreak = 3,
@@ -42748,29 +57201,53 @@ class StringFilter {
   };
 
   
-  void AddRule(Policy policy,
-               std::string_view pattern,
-               std::string atrace_payload_starts_with);
+  
+  
+  
+  
+  
+  
+  
+  void AddRule(
+      Policy policy,
+      std::string_view pattern,
+      std::string atrace_payload_starts_with,
+      std::string name = {},
+      SemanticTypeMask semantic_type_mask = SemanticTypeMask::Unspecified());
 
   
   
   bool MaybeFilter(char* ptr, size_t len) const {
+    return MaybeFilter(ptr, len, 0);
+  }
+
+  
+  
+  
+  bool MaybeFilter(char* ptr, size_t len, uint32_t semantic_type) const {
     if (len == 0 || rules_.empty()) {
       return false;
     }
-    return MaybeFilterInternal(ptr, len);
+    return MaybeFilterInternal(ptr, len, semantic_type);
   }
 
  private:
   struct Rule {
     Policy policy;
-    std::regex pattern;
+    std::optional<perfetto::base::CopyableRegex> pattern;
     std::string atrace_payload_starts_with;
+    std::string name;
+    SemanticTypeMask semantic_type_mask = SemanticTypeMask::Unspecified();
   };
 
-  bool MaybeFilterInternal(char* ptr, size_t len) const;
+  bool MaybeFilterInternal(char* ptr, size_t len, uint32_t semantic_type) const;
 
+  
   std::vector<Rule> rules_;
+
+  
+  
+  mutable std::vector<std::string_view> matches_;
 };
 
 }  
@@ -42794,22 +57271,21 @@ class StringFilter {
 
 
 
+#include <algorithm>
+#include <cstdint>
 #include <cstring>
-#include <regex>
+#include <string>
 #include <string_view>
-
-
-
+#include <utility>
+#include <vector>
 
 
 
 namespace protozero {
 namespace {
 
-using Matches = std::match_results<char*>;
-
-static constexpr std::string_view kRedacted = "P60REDACTED";
-static constexpr char kRedactedDash = '-';
+constexpr std::string_view kRedacted = "P60REDACTED";
+constexpr char kRedactedDash = '-';
 
 
 
@@ -42819,7 +57295,8 @@ static constexpr char kRedactedDash = '-';
 
 
 
-const char* FindAtracePayloadPtr(const char* ptr, const char* end) {
+PERFETTO_ALWAYS_INLINE const char* FindAtracePayloadPtr(const char* ptr,
+                                                        const char* end) {
   
   
   
@@ -42828,7 +57305,7 @@ const char* FindAtracePayloadPtr(const char* ptr, const char* end) {
   
   static constexpr size_t kEarliestSecondPipeIndex = 2;
   const char* search_start = ptr + kEarliestSecondPipeIndex;
-  if (search_start >= end || *ptr == 'E') {
+  if (PERFETTO_UNLIKELY(search_start >= end || *ptr == 'E')) {
     return nullptr;
   }
 
@@ -42840,31 +57317,47 @@ const char* FindAtracePayloadPtr(const char* ptr, const char* end) {
   return pipe ? pipe + 1 : nullptr;
 }
 
-bool StartsWith(const char* ptr,
-                const char* end,
-                const std::string& starts_with) {
+PERFETTO_ALWAYS_INLINE bool StartsWith(const char* ptr,
+                                       const char* end,
+                                       const std::string& starts_with) {
   
   
+  size_t len = starts_with.size();
+  if (PERFETTO_UNLIKELY(ptr + len > end))
+    return false;
+
   
-  return ptr + starts_with.size() <= end &&
-         memcmp(ptr, starts_with.data(), starts_with.size()) == 0;
+  if (PERFETTO_UNLIKELY(len == 0))
+    return true;
+
+  
+  
+  if (PERFETTO_LIKELY(*ptr != *starts_with.data()))
+    return false;
+
+  
+  return memcmp(ptr + 1, starts_with.data() + 1, len - 1) == 0;
 }
 
-void RedactMatches(const Matches& matches) {
+void RedactMatches(const std::vector<std::string_view>& matches) {
   
   for (size_t i = 1; i < matches.size(); ++i) {
     const auto& match = matches[i];
-    PERFETTO_CHECK(match.second >= match.first);
+    
+    
+    if (match.empty())
+      continue;
 
     
     
     
-    size_t match_len = static_cast<size_t>(match.second - match.first);
+    size_t match_len = match.size();
     size_t redacted_len = std::min(match_len, kRedacted.size());
-    memcpy(match.first, kRedacted.data(), redacted_len);
+    memcpy(const_cast<char*>(match.data()), kRedacted.data(), redacted_len);
 
     
-    memset(match.first + redacted_len, kRedactedDash, match_len - redacted_len);
+    memset(const_cast<char*>(match.data()) + redacted_len, kRedactedDash,
+           match_len - redacted_len);
   }
 }
 
@@ -42872,31 +57365,48 @@ void RedactMatches(const Matches& matches) {
 
 void StringFilter::AddRule(Policy policy,
                            std::string_view pattern_str,
-                           std::string atrace_payload_starts_with) {
-  rules_.emplace_back(StringFilter::Rule{
-      policy,
-      std::regex(pattern_str.begin(), pattern_str.end(),
-                 std::regex::ECMAScript | std::regex_constants::optimize),
-      std::move(atrace_payload_starts_with)});
+                           std::string atrace_payload_starts_with,
+                           std::string name,
+                           SemanticTypeMask semantic_type_mask) {
+  perfetto::base::CopyableRegex re(
+      perfetto::base::Regex::CreateOrCheck(std::string(pattern_str)));
+  Rule new_rule{policy, std::move(re), std::move(atrace_payload_starts_with),
+                std::move(name), semantic_type_mask};
+  
+  if (!new_rule.name.empty()) {
+    for (Rule& existing : rules_) {
+      if (existing.name == new_rule.name) {
+        existing = std::move(new_rule);
+        return;
+      }
+    }
+  }
+  rules_.push_back(std::move(new_rule));
 }
 
-bool StringFilter::MaybeFilterInternal(char* ptr, size_t len) const {
-  std::match_results<char*> matches;
+bool StringFilter::MaybeFilterInternal(char* ptr,
+                                       size_t len,
+                                       uint32_t semantic_type) const {
   bool atrace_find_tried = false;
   const char* atrace_payload_ptr = nullptr;
+  std::string_view input(ptr, len);
+
   for (const Rule& rule : rules_) {
+    if (!rule.semantic_type_mask.IsSet(semantic_type)) {
+      continue;
+    }
     switch (rule.policy) {
-      case Policy::kMatchRedactGroups:
       case Policy::kMatchBreak:
-        if (std::regex_match(ptr, ptr + len, matches, rule.pattern)) {
-          if (rule.policy == Policy::kMatchBreak) {
-            return false;
-          }
-          RedactMatches(matches);
+        if (PERFETTO_UNLIKELY(rule.pattern->FullMatch(input)))
+          return false;
+        break;
+      case Policy::kMatchRedactGroups:
+        if (PERFETTO_UNLIKELY(
+                rule.pattern->FullMatchWithGroups(input, matches_))) {
+          RedactMatches(matches_);
           return true;
         }
         break;
-      case Policy::kAtraceMatchRedactGroups:
       case Policy::kAtraceMatchBreak:
         atrace_payload_ptr = atrace_find_tried
                                  ? atrace_payload_ptr
@@ -42905,11 +57415,21 @@ bool StringFilter::MaybeFilterInternal(char* ptr, size_t len) const {
         if (atrace_payload_ptr &&
             StartsWith(atrace_payload_ptr, ptr + len,
                        rule.atrace_payload_starts_with) &&
-            std::regex_match(ptr, ptr + len, matches, rule.pattern)) {
-          if (rule.policy == Policy::kAtraceMatchBreak) {
-            return false;
-          }
-          RedactMatches(matches);
+            rule.pattern->FullMatch(input)) {
+          return false;
+        }
+        break;
+      case Policy::kAtraceMatchRedactGroups:
+        atrace_payload_ptr = atrace_find_tried
+                                 ? atrace_payload_ptr
+                                 : FindAtracePayloadPtr(ptr, ptr + len);
+        atrace_find_tried = true;
+        if (atrace_payload_ptr &&
+            StartsWith(atrace_payload_ptr, ptr + len,
+                       rule.atrace_payload_starts_with) &&
+            PERFETTO_UNLIKELY(
+                rule.pattern->FullMatchWithGroups(input, matches_))) {
+          RedactMatches(matches_);
           return true;
         }
         break;
@@ -42920,11 +57440,11 @@ bool StringFilter::MaybeFilterInternal(char* ptr, size_t len) const {
         atrace_find_tried = true;
         if (atrace_payload_ptr && StartsWith(atrace_payload_ptr, ptr + len,
                                              rule.atrace_payload_starts_with)) {
-          auto beg = std::regex_iterator<char*>(ptr, ptr + len, rule.pattern);
-          auto end = std::regex_iterator<char*>();
-          bool has_any_matches = beg != end;
-          for (auto it = std::move(beg); it != end; ++it) {
-            RedactMatches(*it);
+          bool has_any_matches = false;
+          for (auto iter = rule.pattern->PartialMatchAll(input);
+               iter.NextWithGroups(matches_);) {
+            RedactMatches(matches_);
+            has_any_matches = true;
           }
           if (has_any_matches) {
             return true;
@@ -43196,7 +57716,14 @@ class MessageFilter {
  public:
   class Config {
    public:
-    bool LoadFilterBytecode(const void* filter_data, size_t len);
+    
+    
+    
+    bool LoadFilterBytecode(const void* filter_data,
+                            size_t len,
+                            const void* overlay_data = nullptr,
+                            size_t overlay_len = 0);
+
     bool SetFilterRoot(std::initializer_list<uint32_t> field_ids);
 
     const FilterBytecodeParser& filter() const { return filter_; }
@@ -43231,8 +57758,13 @@ class MessageFilter {
   
   
   
-  bool LoadFilterBytecode(const void* filter_data, size_t len) {
-    return config_.LoadFilterBytecode(filter_data, len);
+  
+  bool LoadFilterBytecode(const void* filter_data,
+                          size_t len,
+                          const void* overlay_data = nullptr,
+                          size_t overlay_len = 0) {
+    return config_.LoadFilterBytecode(filter_data, len, overlay_data,
+                                      overlay_len);
   }
 
   
@@ -43277,6 +57809,7 @@ class MessageFilter {
   }
 
   const Config& config() const { return config_; }
+  Config& config() { return config_; }
 
   
   StringFilter& string_filter() { return config_.string_filter(); }
@@ -43348,6 +57881,9 @@ class MessageFilter {
     
     
     uint8_t* filter_string_ptr = nullptr;
+
+    
+    uint32_t filter_string_semantic_type = 0;
 
     
     
@@ -43461,8 +57997,10 @@ MessageFilter::MessageFilter() : MessageFilter(Config()) {}
 MessageFilter::~MessageFilter() = default;
 
 bool MessageFilter::Config::LoadFilterBytecode(const void* filter_data,
-                                               size_t len) {
-  return filter_.Load(filter_data, len);
+                                               size_t len,
+                                               const void* overlay_data,
+                                               size_t overlay_len) {
+  return filter_.Load(filter_data, len, overlay_data, overlay_len);
 }
 
 bool MessageFilter::Config::SetFilterRoot(
@@ -43544,7 +58082,8 @@ void MessageFilter::FilterOneByte(uint8_t octet) {
       if (state->eat_next_bytes == 0) {
         config_.string_filter().MaybeFilter(
             reinterpret_cast<char*>(state->filter_string_ptr),
-            static_cast<size_t>(out_ - state->filter_string_ptr));
+            static_cast<size_t>(out_ - state->filter_string_ptr),
+            state->filter_string_semantic_type);
       }
     }
   } else {
@@ -43616,6 +58155,7 @@ void MessageFilter::FilterOneByte(uint8_t octet) {
               state->action = StackState::kFilterString;
               AppendLenDelim(token.field_id, submessage_len, &out_);
               state->filter_string_ptr = out_;
+              state->filter_string_semantic_type = filter.semantic_type;
             } else if (filter.allowed) {
               state->action = StackState::kPassthrough;
               AppendLenDelim(token.field_id, submessage_len, &out_);
@@ -43630,7 +58170,7 @@ void MessageFilter::FilterOneByte(uint8_t octet) {
         IncrementCurrentFieldUsage(token.field_id, filter.allowed);
       }
     }  
-  }    
+  }  
 
   ++state->in_bytes;
   while (state->in_bytes >= state->in_bytes_limit) {
@@ -43706,6 +58246,170 @@ void MessageFilter::IncrementCurrentFieldUsage(uint32_t field_id,
   
   append_field_id(field_id);
   field_usage_[field_path] += allowed ? 1 : -1;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_PROTOZERO_FILTERING_MESSAGE_FILTER_CONFIG_H_
+#define SRC_PROTOZERO_FILTERING_MESSAGE_FILTER_CONFIG_H_
+
+
+
+
+
+namespace protozero {
+
+
+
+
+
+
+
+perfetto::base::Status LoadMessageFilterConfig(
+    const perfetto::protos::gen::TraceConfig::TraceFilter& filt,
+    MessageFilter* filter);
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <cstdint>
+#include <optional>
+#include <string>
+
+
+
+
+
+
+namespace protozero {
+
+namespace {
+
+using TraceFilter = perfetto::protos::gen::TraceConfig::TraceFilter;
+using StringFilterRule = TraceFilter::StringFilterRule;
+
+std::optional<StringFilter::Policy> ConvertPolicy(
+    TraceFilter::StringFilterPolicy policy) {
+  switch (policy) {
+    case TraceFilter::SFP_UNSPECIFIED:
+      return std::nullopt;
+    case TraceFilter::SFP_MATCH_REDACT_GROUPS:
+      return StringFilter::Policy::kMatchRedactGroups;
+    case TraceFilter::SFP_ATRACE_MATCH_REDACT_GROUPS:
+      return StringFilter::Policy::kAtraceMatchRedactGroups;
+    case TraceFilter::SFP_MATCH_BREAK:
+      return StringFilter::Policy::kMatchBreak;
+    case TraceFilter::SFP_ATRACE_MATCH_BREAK:
+      return StringFilter::Policy::kAtraceMatchBreak;
+    case TraceFilter::SFP_ATRACE_REPEATED_SEARCH_REDACT_GROUPS:
+      return StringFilter::Policy::kAtraceRepeatedSearchRedactGroups;
+  }
+  return std::nullopt;
+}
+
+std::optional<StringFilter::SemanticTypeMask> ConvertSemanticTypeMask(
+    const StringFilterRule& rule) {
+  
+  
+  
+  if (rule.semantic_type().empty()) {
+    return StringFilter::SemanticTypeMask::Unspecified();
+  }
+  StringFilter::SemanticTypeMask mask;
+  for (const auto& type : rule.semantic_type()) {
+    auto semantic_type = static_cast<uint32_t>(type);
+    if (semantic_type >= StringFilter::SemanticTypeMask::kLimit) {
+      return std::nullopt;
+    }
+    mask.Set(semantic_type);
+  }
+  return mask;
+}
+
+}  
+
+perfetto::base::Status LoadMessageFilterConfig(const TraceFilter& filt,
+                                               MessageFilter* filter) {
+  StringFilter& string_filter = filter->string_filter();
+
+  auto add_rule = [&](const auto& rule) -> perfetto::base::Status {
+    auto policy = ConvertPolicy(rule.policy());
+    if (!policy.has_value()) {
+      return perfetto::base::ErrStatus(
+          "Trace filter has invalid string filtering rules");
+    }
+    auto semantic_type = ConvertSemanticTypeMask(rule);
+    if (!semantic_type.has_value()) {
+      return perfetto::base::ErrStatus(
+          "Trace filter has invalid semantic types in string filtering rules");
+    }
+    string_filter.AddRule(*policy, rule.regex_pattern(),
+                          rule.atrace_payload_starts_with(), rule.name(),
+                          *semantic_type);
+    return perfetto::base::OkStatus();
+  };
+
+  
+  for (const auto& rule : filt.string_filter_chain().rules()) {
+    auto status = add_rule(rule);
+    if (!status.ok())
+      return status;
+  }
+
+  
+  
+  for (const auto& rule : filt.string_filter_chain_v54().rules()) {
+    auto status = add_rule(rule);
+    if (!status.ok())
+      return status;
+  }
+
+  const std::string& bytecode_v1 = filt.bytecode();
+  const std::string& bytecode_v2 = filt.bytecode_v2();
+  const std::string& bytecode = bytecode_v2.empty() ? bytecode_v1 : bytecode_v2;
+  const std::string& overlay = filt.bytecode_overlay_v54();
+  if (!filter->LoadFilterBytecode(bytecode.data(), bytecode.size(),
+                                  overlay.empty() ? nullptr : overlay.data(),
+                                  overlay.size())) {
+    return perfetto::base::ErrStatus("Trace filter bytecode invalid");
+  }
+
+  return perfetto::base::OkStatus();
 }
 
 }  
@@ -43970,9 +58674,9 @@ void MetatraceWriter::WriteAllAvailableEvents() {
 void MetatraceWriter::WriteAllAndFlushTraceWriter(
     std::function<void()> callback) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!started_)
-    return;
-  WriteAllAvailableEvents();
+  if (started_) {
+    WriteAllAvailableEvents();
+  }
   trace_writer_->Flush(std::move(callback));
 }
 
@@ -44064,6 +58768,9 @@ const uint32_t kReservedFieldIds[] = {
     protos::pbzero::TracePacket::kSynchronizationMarkerFieldNumber,
     protos::pbzero::TracePacket::kTrustedPidFieldNumber,
     protos::pbzero::TracePacket::kMachineIdFieldNumber,
+    protos::pbzero::TracePacket::kServiceEventFieldNumber,
+    protos::pbzero::TracePacket::kTraceProvenanceFieldNumber,
+    protos::pbzero::TracePacket::kProtovmsFieldNumber,
 };
 
 
@@ -44161,7 +58868,7 @@ class ProtoFieldParserFSM {
         
         return 0;
 
-    }          
+    }  
     return 0;  
   }
 
@@ -44296,406 +59003,6 @@ double RandomImpl::GetValue() {
 }  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
-
-
-
-
-
-
-#include <algorithm>
-#include <limits>
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct LinearProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + step) & (capacity - 1);  
-  }
-};
-
-
-
-
-
-struct QuadraticProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + 2 * step * step + step) & (capacity - 1);
-  }
-};
-
-
-
-
-
-struct QuadraticHalfProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + (step * step + step) / 2) & (capacity - 1);
-  }
-};
-
-template <typename Key,
-          typename Value,
-          typename Hasher = base::Hash<Key>,
-          typename Probe = QuadraticProbe,
-          bool AppendOnly = false>
-class FlatHashMap {
- public:
-  class Iterator {
-   public:
-    explicit Iterator(const FlatHashMap* map) : map_(map) { FindNextNonFree(); }
-    ~Iterator() = default;
-    Iterator(const Iterator&) = default;
-    Iterator& operator=(const Iterator&) = default;
-    Iterator(Iterator&&) noexcept = default;
-    Iterator& operator=(Iterator&&) noexcept = default;
-
-    Key& key() { return map_->keys_[idx_]; }
-    Value& value() { return map_->values_[idx_]; }
-    const Key& key() const { return map_->keys_[idx_]; }
-    const Value& value() const { return map_->values_[idx_]; }
-
-    explicit operator bool() const { return idx_ != kEnd; }
-    Iterator& operator++() {
-      PERFETTO_DCHECK(idx_ < map_->capacity_);
-      ++idx_;
-      FindNextNonFree();
-      return *this;
-    }
-
-   private:
-    static constexpr size_t kEnd = std::numeric_limits<size_t>::max();
-
-    void FindNextNonFree() {
-      const auto& tags = map_->tags_;
-      for (; idx_ < map_->capacity_; idx_++) {
-        if (tags[idx_] != kFreeSlot && (AppendOnly || tags[idx_] != kTombstone))
-          return;
-      }
-      idx_ = kEnd;
-    }
-
-    const FlatHashMap* map_ = nullptr;
-    size_t idx_ = 0;
-  };  
-
-  static constexpr int kDefaultLoadLimitPct = 75;
-  explicit FlatHashMap(size_t initial_capacity = 0,
-                       int load_limit_pct = kDefaultLoadLimitPct)
-      : load_limit_percent_(load_limit_pct) {
-    if (initial_capacity > 0)
-      Reset(initial_capacity);
-  }
-
-  
-  
-  ~FlatHashMap() { Clear(); }
-
-  FlatHashMap(FlatHashMap&& other) noexcept {
-    tags_ = std::move(other.tags_);
-    keys_ = std::move(other.keys_);
-    values_ = std::move(other.values_);
-    capacity_ = other.capacity_;
-    size_ = other.size_;
-    max_probe_length_ = other.max_probe_length_;
-    load_limit_ = other.load_limit_;
-    load_limit_percent_ = other.load_limit_percent_;
-
-    new (&other) FlatHashMap();
-  }
-
-  FlatHashMap& operator=(FlatHashMap&& other) noexcept {
-    this->~FlatHashMap();
-    new (this) FlatHashMap(std::move(other));
-    return *this;
-  }
-
-  FlatHashMap(const FlatHashMap&) = delete;
-  FlatHashMap& operator=(const FlatHashMap&) = delete;
-
-  std::pair<Value*, bool> Insert(Key key, Value value) {
-    const size_t key_hash = Hasher{}(key);
-    const uint8_t tag = HashToTag(key_hash);
-    static constexpr size_t kSlotNotFound = std::numeric_limits<size_t>::max();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    size_t insertion_slot;
-    size_t probe_len;
-    for (;;) {
-      PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
-      insertion_slot = kSlotNotFound;
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      for (probe_len = 0; probe_len < capacity_;) {
-        const size_t idx = Probe::Calc(key_hash, probe_len, capacity_);
-        PERFETTO_DCHECK(idx < capacity_);
-        const uint8_t tag_idx = tags_[idx];
-        ++probe_len;
-        if (tag_idx == kFreeSlot) {
-          
-          
-          
-          if (AppendOnly || insertion_slot == kSlotNotFound)
-            insertion_slot = idx;
-          break;
-        }
-        
-        PERFETTO_DCHECK(!(tag_idx == kTombstone && AppendOnly));
-        if (!AppendOnly && tag_idx == kTombstone) {
-          insertion_slot = idx;
-          continue;
-        }
-        if (tag_idx == tag && keys_[idx] == key) {
-          
-          return std::make_pair(&values_[idx], false);
-        }
-      }  
-
-      
-      
-      
-      if (PERFETTO_UNLIKELY(size_ >= load_limit_)) {
-        MaybeGrowAndRehash(true);
-        continue;
-      }
-      PERFETTO_DCHECK(insertion_slot != kSlotNotFound);
-      break;
-    }  
-
-    PERFETTO_CHECK(insertion_slot < capacity_);
-
-    
-    Value* value_idx = &values_[insertion_slot];
-    new (&keys_[insertion_slot]) Key(std::move(key));
-    new (value_idx) Value(std::move(value));
-    tags_[insertion_slot] = tag;
-    PERFETTO_DCHECK(probe_len > 0 && probe_len <= capacity_);
-    max_probe_length_ = std::max(max_probe_length_, probe_len);
-    size_++;
-
-    return std::make_pair(value_idx, true);
-  }
-
-  Value* Find(const Key& key) const {
-    const size_t idx = FindInternal(key);
-    if (idx == kNotFound)
-      return nullptr;
-    return &values_[idx];
-  }
-
-  bool Erase(const Key& key) {
-    if (AppendOnly)
-      PERFETTO_FATAL("Erase() not supported because AppendOnly=true");
-    size_t idx = FindInternal(key);
-    if (idx == kNotFound)
-      return false;
-    EraseInternal(idx);
-    return true;
-  }
-
-  void Clear() {
-    
-    if (PERFETTO_UNLIKELY(capacity_ == 0))
-      return;
-
-    for (size_t i = 0; i < capacity_; ++i) {
-      const uint8_t tag = tags_[i];
-      if (tag != kFreeSlot && tag != kTombstone)
-        EraseInternal(i);
-    }
-    
-    MaybeGrowAndRehash(false);
-  }
-
-  Value& operator[](Key key) {
-    auto it_and_inserted = Insert(std::move(key), Value{});
-    return *it_and_inserted.first;
-  }
-
-  Iterator GetIterator() { return Iterator(this); }
-  const Iterator GetIterator() const { return Iterator(this); }
-
-  size_t size() const { return size_; }
-  size_t capacity() const { return capacity_; }
-
-  
-  
- protected:
-  enum ReservedTags : uint8_t { kFreeSlot = 0, kTombstone = 1 };
-  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max();
-
-  size_t FindInternal(const Key& key) const {
-    const size_t key_hash = Hasher{}(key);
-    const uint8_t tag = HashToTag(key_hash);
-    PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
-    PERFETTO_DCHECK(max_probe_length_ <= capacity_);
-    for (size_t i = 0; i < max_probe_length_; ++i) {
-      const size_t idx = Probe::Calc(key_hash, i, capacity_);
-      const uint8_t tag_idx = tags_[idx];
-
-      if (tag_idx == kFreeSlot)
-        return kNotFound;
-      
-      
-      if (tag_idx == tag && keys_[idx] == key) {
-        PERFETTO_DCHECK(tag_idx > kTombstone);
-        return idx;
-      }
-    }  
-    return kNotFound;
-  }
-
-  void EraseInternal(size_t idx) {
-    PERFETTO_DCHECK(tags_[idx] > kTombstone);
-    PERFETTO_DCHECK(size_ > 0);
-    tags_[idx] = kTombstone;
-    keys_[idx].~Key();
-    values_[idx].~Value();
-    size_--;
-  }
-
-  PERFETTO_NO_INLINE void MaybeGrowAndRehash(bool grow) {
-    PERFETTO_DCHECK(size_ <= capacity_);
-    const size_t old_capacity = capacity_;
-
-    
-    const size_t old_size_bytes = old_capacity * (sizeof(Key) + sizeof(Value));
-    const size_t grow_factor = old_size_bytes < (1024u * 1024u) ? 8 : 2;
-    const size_t new_capacity =
-        grow ? std::max(old_capacity * grow_factor, size_t(1024))
-             : old_capacity;
-
-    auto old_tags(std::move(tags_));
-    auto old_keys(std::move(keys_));
-    auto old_values(std::move(values_));
-    size_t old_size = size_;
-
-    
-    
-    PERFETTO_CHECK(new_capacity >= old_capacity);
-    Reset(new_capacity);
-
-    size_t new_size = 0;  
-    for (size_t i = 0; i < old_capacity; ++i) {
-      const uint8_t old_tag = old_tags[i];
-      if (old_tag != kFreeSlot && old_tag != kTombstone) {
-        Insert(std::move(old_keys[i]), std::move(old_values[i]));
-        old_keys[i].~Key();  
-        old_values[i].~Value();
-        new_size++;
-      }
-    }
-    PERFETTO_DCHECK(new_size == old_size);
-    size_ = new_size;
-  }
-
-  
-  PERFETTO_NO_INLINE void Reset(size_t n) {
-    PERFETTO_DCHECK((n & (n - 1)) == 0);  
-
-    capacity_ = n;
-    max_probe_length_ = 0;
-    size_ = 0;
-    load_limit_ = n * static_cast<size_t>(load_limit_percent_) / 100;
-    load_limit_ = std::min(load_limit_, n);
-
-    tags_.reset(new uint8_t[n]);
-    memset(&tags_[0], 0, n);                  
-    keys_ = AlignedAllocTyped<Key[]>(n);      
-    values_ = AlignedAllocTyped<Value[]>(n);  
-  }
-
-  static inline uint8_t HashToTag(size_t full_hash) {
-    uint8_t tag = full_hash >> (sizeof(full_hash) * 8 - 8);
-    
-    tag += (tag <= kTombstone) << 1;
-    PERFETTO_DCHECK(tag > kTombstone);
-    return tag;
-  }
-
-  size_t capacity_ = 0;
-  size_t size_ = 0;
-  size_t max_probe_length_ = 0;
-  size_t load_limit_ = 0;  
-  int load_limit_percent_ =
-      kDefaultLoadLimitPct;  
-
-  
-  
-  std::unique_ptr<uint8_t[]> tags_;
-  AlignedUniquePtr<Key[]> keys_;
-  AlignedUniquePtr<Value[]> values_;
-};
-
-}  
-}  
-
-#endif  
 
 
 
@@ -44858,8 +59165,161 @@ class Histogram {
 
 
 
+
 #ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_H_
 #define SRC_TRACING_SERVICE_TRACE_BUFFER_H_
+
+#include <stdint.h>
+#include <array>
+#include <memory>
+
+
+
+
+
+
+
+namespace perfetto {
+
+class TracePacket;
+class TraceBuffer_WriterStats;
+
+
+
+class TraceBuffer {
+ public:
+  using WriterStats = TraceBuffer_WriterStats;
+
+  
+  enum OverwritePolicy { kOverwrite, kDiscard };
+
+  
+  
+  
+  
+  enum BufType {
+    kV1,
+    kV2,
+    kV1WithV2Shadow,
+  };
+
+  
+  struct Patch {
+    
+    static constexpr size_t kSize = 4;
+
+    size_t offset_untrusted;
+    std::array<uint8_t, kSize> data;
+  };
+
+  
+  struct PacketSequenceProperties {
+    ProducerID producer_id_trusted;
+    ClientIdentity client_identity_trusted;
+    WriterID writer_id;
+
+    uid_t producer_uid_trusted() const { return client_identity_trusted.uid(); }
+    pid_t producer_pid_trusted() const { return client_identity_trusted.pid(); }
+  };
+
+  virtual ~TraceBuffer();
+
+  
+  virtual void CopyChunkUntrusted(ProducerID producer_id_trusted,
+                                  const ClientIdentity& client_identity_trusted,
+                                  WriterID writer_id,
+                                  ChunkID chunk_id,
+                                  uint16_t num_fragments,
+                                  uint8_t chunk_flags,
+                                  bool chunk_complete,
+                                  const uint8_t* src,
+                                  size_t size) = 0;
+
+  
+  
+  
+  virtual bool TryPatchChunkContents(ProducerID,
+                                     WriterID,
+                                     ChunkID,
+                                     const Patch* patches,
+                                     size_t patches_size,
+                                     bool other_patches_pending) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual void BeginRead() = 0;
+
+  
+  
+  
+  virtual bool ReadNextTracePacket(
+      TracePacket*,
+      PacketSequenceProperties* sequence_properties,
+      bool* previous_packet_on_sequence_dropped) = 0;
+
+  
+  
+  virtual std::unique_ptr<TraceBuffer> CloneReadOnly() const = 0;
+
+  virtual void set_read_only() = 0;
+  virtual const TraceStats::BufferStats& stats() const = 0;
+  virtual const WriterStats& writer_stats() const = 0;
+  virtual size_t size() const = 0;
+  virtual size_t used_size() const = 0;
+  virtual size_t GetMemoryUsageBytes() const = 0;
+  virtual OverwritePolicy overwrite_policy() const = 0;
+  virtual bool has_data() const = 0;
+  virtual BufType buf_type() const = 0;
+
+  
+  static inline constexpr size_t InlineChunkHeaderSize = 16;
+};
+
+class TraceBuffer_WriterStats {
+ public:
+  using WriterBuckets =
+      Histogram<8, 32, 128, 512, 1024, 2048, 4096, 8192, 12288, 16384>;
+  using WriterStatsMap = base::FlatHashMap<ProducerAndWriterID,
+                                           WriterBuckets,
+                                           std::hash<ProducerAndWriterID>,
+                                           base::QuadraticProbe,
+                                           true>;
+
+  void Insert(ProducerAndWriterID key, HistValue val) {
+    map_.Insert(key, {}).first->Add(val);
+  }
+
+  WriterStatsMap::Iterator GetIterator() const { return map_.GetIterator(); }
+
+ private:
+  WriterStatsMap map_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_V1_H_
+#define SRC_TRACING_SERVICE_TRACE_BUFFER_V1_H_
 
 #include <stdint.h>
 #include <string.h>
@@ -44985,49 +59445,18 @@ class TracePacket;
 
 
 
-class TraceBuffer {
+class TraceBufferV1 : public TraceBuffer {
  public:
-  static const size_t InlineChunkHeaderSize;  
+  
+  using OverwritePolicy = TraceBuffer::OverwritePolicy;
+  using Patch = TraceBuffer::Patch;
+  using PacketSequenceProperties = TraceBuffer::PacketSequenceProperties;
 
   
-  enum OverwritePolicy { kOverwrite, kDiscard };
+  static std::unique_ptr<TraceBufferV1> Create(size_t size_in_bytes,
+                                               OverwritePolicy = kOverwrite);
 
-  
-  struct Patch {
-    
-    static constexpr size_t kSize = 4;
-
-    size_t offset_untrusted;
-    std::array<uint8_t, kSize> data;
-  };
-
-  
-  struct PacketSequenceProperties {
-    ProducerID producer_id_trusted;
-    ClientIdentity client_identity_trusted;
-    WriterID writer_id;
-
-    uid_t producer_uid_trusted() const { return client_identity_trusted.uid(); }
-    pid_t producer_pid_trusted() const { return client_identity_trusted.pid(); }
-  };
-
-  
-  struct WriterStats {
-    Histogram<8, 32, 128, 512, 1024, 2048, 4096, 8192, 12288, 16384>
-        used_chunk_hist;
-  };
-
-  using WriterStatsMap = base::FlatHashMap<ProducerAndWriterID,
-                                           WriterStats,
-                                           std::hash<ProducerAndWriterID>,
-                                           base::QuadraticProbe,
-                                           true>;
-
-  
-  static std::unique_ptr<TraceBuffer> Create(size_t size_in_bytes,
-                                             OverwritePolicy = kOverwrite);
-
-  ~TraceBuffer();
+  ~TraceBufferV1() override;
 
   
   
@@ -45052,14 +59481,13 @@ class TraceBuffer {
   
   void CopyChunkUntrusted(ProducerID producer_id_trusted,
                           const ClientIdentity& client_identity_trusted,
-
                           WriterID writer_id,
                           ChunkID chunk_id,
                           uint16_t num_fragments,
                           uint8_t chunk_flags,
                           bool chunk_complete,
                           const uint8_t* src,
-                          size_t size);
+                          size_t size) override;
 
   
   
@@ -45081,7 +59509,7 @@ class TraceBuffer {
                              ChunkID,
                              const Patch* patches,
                              size_t patches_size,
-                             bool other_patches_pending);
+                             bool other_patches_pending) override;
 
   
   
@@ -45089,7 +59517,7 @@ class TraceBuffer {
   
   
   
-  void BeginRead();
+  void BeginRead() override;
 
   
   
@@ -45121,21 +59549,24 @@ class TraceBuffer {
   
   bool ReadNextTracePacket(TracePacket*,
                            PacketSequenceProperties* sequence_properties,
-                           bool* previous_packet_on_sequence_dropped);
+                           bool* previous_packet_on_sequence_dropped) override;
 
   
   
   
-  
-  std::unique_ptr<TraceBuffer> CloneReadOnly() const;
+  std::unique_ptr<TraceBuffer> CloneReadOnly() const override;
 
-  void set_read_only() { read_only_ = true; }
-  const WriterStatsMap& writer_stats() const { return writer_stats_; }
-  const TraceStats::BufferStats& stats() const { return stats_; }
-  size_t size() const { return size_; }
-  size_t used_size() const { return used_size_; }
-  OverwritePolicy overwrite_policy() const { return overwrite_policy_; }
-  bool has_data() const { return has_data_; }
+  void set_read_only() override { read_only_ = true; }
+  const TraceStats::BufferStats& stats() const override { return stats_; }
+  const WriterStats& writer_stats() const override { return writer_stats_; }
+  size_t size() const override { return size_; }
+  size_t used_size() const override { return used_size_; }
+  size_t GetMemoryUsageBytes() const override { return size_; }
+  OverwritePolicy overwrite_policy() const override {
+    return overwrite_policy_;
+  }
+  bool has_data() const override { return has_data_; }
+  BufType buf_type() const override { return kV1; }
 
  private:
   friend class TraceBufferTest;
@@ -45385,14 +59816,14 @@ class TraceBuffer {
     kFailedEmptyPacket,
   };
 
-  explicit TraceBuffer(OverwritePolicy);
-  TraceBuffer(const TraceBuffer&) = delete;
-  TraceBuffer& operator=(const TraceBuffer&) = delete;
+  explicit TraceBufferV1(OverwritePolicy);
+  TraceBufferV1(const TraceBufferV1&) = delete;
+  TraceBufferV1& operator=(const TraceBufferV1&) = delete;
 
   
   
   struct CloneCtor {};
-  TraceBuffer(CloneCtor, const TraceBuffer&);
+  TraceBufferV1(CloneCtor, const TraceBufferV1&);
 
   bool Initialize(size_t size);
 
@@ -45525,7 +59956,7 @@ class TraceBuffer {
   size_t size_to_end() const { return static_cast<size_t>(end() - wptr_); }
 
   base::PagedMemory data_;
-  size_t size_ = 0;            
+  size_t size_ = 0;  
 
   
   
@@ -45567,7 +59998,7 @@ class TraceBuffer {
   TraceStats::BufferStats stats_;
 
   
-  WriterStatsMap writer_stats_;
+  WriterStats writer_stats_;
 
   
   
@@ -45614,6 +60045,7 @@ class TraceBuffer {
 
 
 
+
 #define TRACE_BUFFER_VERBOSE_LOGGING() 0  // Set to 1 when debugging unittests.
 #if TRACE_BUFFER_VERBOSE_LOGGING()
 #define TRACE_BUFFER_DLOG PERFETTO_DLOG
@@ -45632,27 +60064,26 @@ constexpr uint8_t kChunkNeedsPatching =
     SharedMemoryABI::ChunkHeader::kChunkNeedsPatching;
 }  
 
-const size_t TraceBuffer::InlineChunkHeaderSize = sizeof(ChunkRecord);
 
-
-std::unique_ptr<TraceBuffer> TraceBuffer::Create(size_t size_in_bytes,
-                                                 OverwritePolicy pol) {
-  std::unique_ptr<TraceBuffer> trace_buffer(new TraceBuffer(pol));
+std::unique_ptr<TraceBufferV1> TraceBufferV1::Create(size_t size_in_bytes,
+                                                     OverwritePolicy pol) {
+  std::unique_ptr<TraceBufferV1> trace_buffer(new TraceBufferV1(pol));
   if (!trace_buffer->Initialize(size_in_bytes))
     return nullptr;
   return trace_buffer;
 }
 
-TraceBuffer::TraceBuffer(OverwritePolicy pol) : overwrite_policy_(pol) {
+TraceBufferV1::TraceBufferV1(OverwritePolicy pol) : overwrite_policy_(pol) {
   
   static_assert(sizeof(ChunkRecord) == sizeof(SharedMemoryABI::PageHeader) +
                                            sizeof(SharedMemoryABI::ChunkHeader),
                 "ChunkRecord out of sync with the layout of SharedMemoryABI");
+  static_assert(sizeof(ChunkRecord) == TraceBuffer::InlineChunkHeaderSize);
 }
 
-TraceBuffer::~TraceBuffer() = default;
+TraceBufferV1::~TraceBufferV1() = default;
 
-bool TraceBuffer::Initialize(size_t size) {
+bool TraceBufferV1::Initialize(size_t size) {
   static_assert(
       SharedMemoryABI::kMinPageSize % sizeof(ChunkRecord) == 0,
       "sizeof(ChunkRecord) must be an integer divider of a page size");
@@ -45678,7 +60109,7 @@ bool TraceBuffer::Initialize(size_t size) {
 
 
 
-void TraceBuffer::CopyChunkUntrusted(
+void TraceBufferV1::CopyChunkUntrusted(
     ProducerID producer_id_trusted,
     const ClientIdentity& client_identity_trusted,
     WriterID writer_id,
@@ -45783,7 +60214,7 @@ void TraceBuffer::CopyChunkUntrusted(
     
     if (record_meta->num_fragments_read > prev->num_fragments) {
       PERFETTO_ELOG(
-          "TraceBuffer read too many fragments from an incomplete chunk");
+          "TraceBufferV1 read too many fragments from an incomplete chunk");
       PERFETTO_DCHECK(suppress_client_dchecks_for_testing_);
       return;
     }
@@ -45899,7 +60330,7 @@ void TraceBuffer::CopyChunkUntrusted(
     AddPaddingRecord(padding_size);
 }
 
-ssize_t TraceBuffer::DeleteNextChunksFor(size_t bytes_to_clear) {
+ssize_t TraceBufferV1::DeleteNextChunksFor(size_t bytes_to_clear) {
   PERFETTO_CHECK(!discard_writes_);
 
   
@@ -45981,7 +60412,7 @@ ssize_t TraceBuffer::DeleteNextChunksFor(size_t bytes_to_clear) {
   return static_cast<ssize_t>(next_chunk_ptr - search_end);
 }
 
-void TraceBuffer::AddPaddingRecord(size_t size) {
+void TraceBufferV1::AddPaddingRecord(size_t size) {
   PERFETTO_DCHECK(size >= sizeof(ChunkRecord) && size <= ChunkRecord::kMaxSize);
   ChunkRecord record(size);
   record.is_padding = 1;
@@ -45992,12 +60423,12 @@ void TraceBuffer::AddPaddingRecord(size_t size) {
   
 }
 
-bool TraceBuffer::TryPatchChunkContents(ProducerID producer_id,
-                                        WriterID writer_id,
-                                        ChunkID chunk_id,
-                                        const Patch* patches,
-                                        size_t patches_size,
-                                        bool other_patches_pending) {
+bool TraceBufferV1::TryPatchChunkContents(ProducerID producer_id,
+                                          WriterID writer_id,
+                                          ChunkID chunk_id,
+                                          const Patch* patches,
+                                          size_t patches_size,
+                                          bool other_patches_pending) {
   PERFETTO_CHECK(!read_only_);
   ChunkMeta::Key key(producer_id, writer_id, chunk_id);
   auto it = index_.find(key);
@@ -46050,14 +60481,14 @@ bool TraceBuffer::TryPatchChunkContents(ProducerID producer_id,
   return true;
 }
 
-void TraceBuffer::BeginRead() {
+void TraceBufferV1::BeginRead() {
   read_iter_ = GetReadIterForSequence(index_.begin());
 #if PERFETTO_DCHECK_IS_ON()
   changed_since_last_read_ = false;
 #endif
 }
 
-TraceBuffer::SequenceIterator TraceBuffer::GetReadIterForSequence(
+TraceBufferV1::SequenceIterator TraceBufferV1::GetReadIterForSequence(
     ChunkMap::iterator seq_begin) {
   SequenceIterator iter;
   iter.seq_begin = seq_begin;
@@ -46099,7 +60530,7 @@ TraceBuffer::SequenceIterator TraceBuffer::GetReadIterForSequence(
   return iter;
 }
 
-void TraceBuffer::SequenceIterator::MoveNext() {
+void TraceBufferV1::SequenceIterator::MoveNext() {
   
   
   if (cur == seq_end || cur->first.chunk_id == wrapping_id) {
@@ -46125,7 +60556,7 @@ void TraceBuffer::SequenceIterator::MoveNext() {
     cur = seq_end;
 }
 
-bool TraceBuffer::ReadNextTracePacket(
+bool TraceBufferV1::ReadNextTracePacket(
     TracePacket* packet,
     PacketSequenceProperties* sequence_properties,
     bool* previous_packet_on_sequence_dropped) {
@@ -46310,10 +60741,10 @@ bool TraceBuffer::ReadNextTracePacket(
       chunk_meta->set_last_read_packet_skipped(true);
       previous_packet_dropped = true;
     }  
-  }    
+  }  
 }
 
-TraceBuffer::ReadAheadResult TraceBuffer::ReadAhead(TracePacket* packet) {
+TraceBufferV1::ReadAheadResult TraceBufferV1::ReadAhead(TracePacket* packet) {
   static_assert(static_cast<ChunkID>(kMaxChunkID + 1) == 0,
                 "relying on kMaxChunkID to wrap naturally");
   TRACE_BUFFER_DLOG(" readahead start @ chunk %u", read_iter_.chunk_id());
@@ -46393,7 +60824,7 @@ TraceBuffer::ReadAheadResult TraceBuffer::ReadAhead(TracePacket* packet) {
   return ReadAheadResult::kFailedMoveToNextSequence;
 }
 
-TraceBuffer::ReadPacketResult TraceBuffer::ReadNextPacketInChunk(
+TraceBufferV1::ReadPacketResult TraceBufferV1::ReadNextPacketInChunk(
     ProducerAndWriterID producer_and_writer_id,
     ChunkMeta* const chunk_meta,
     TracePacket* packet) {
@@ -46464,8 +60895,8 @@ TraceBuffer::ReadPacketResult TraceBuffer::ReadNextPacketInChunk(
                         chunk_meta->is_complete())) {
     stats_.set_chunks_read(stats_.chunks_read() + 1);
     stats_.set_bytes_read(stats_.bytes_read() + chunk_record->size);
-    auto* writer_stats = writer_stats_.Insert(producer_and_writer_id, {}).first;
-    writer_stats->used_chunk_hist.Add(chunk_meta->cur_fragment_offset);
+    writer_stats_.Insert(producer_and_writer_id,
+                         chunk_meta->cur_fragment_offset);
   } else {
     
     if (chunk_meta->cur_fragment_offset + sizeof(ChunkRecord) >=
@@ -46485,21 +60916,21 @@ TraceBuffer::ReadPacketResult TraceBuffer::ReadNextPacketInChunk(
   return ReadPacketResult::kSucceeded;
 }
 
-void TraceBuffer::DiscardWrite() {
+void TraceBufferV1::DiscardWrite() {
   PERFETTO_DCHECK(overwrite_policy_ == kDiscard);
   discard_writes_ = true;
   stats_.set_chunks_discarded(stats_.chunks_discarded() + 1);
   TRACE_BUFFER_DLOG("  discarding write");
 }
 
-std::unique_ptr<TraceBuffer> TraceBuffer::CloneReadOnly() const {
-  std::unique_ptr<TraceBuffer> buf(new TraceBuffer(CloneCtor(), *this));
+std::unique_ptr<TraceBuffer> TraceBufferV1::CloneReadOnly() const {
+  std::unique_ptr<TraceBufferV1> buf(new TraceBufferV1(CloneCtor(), *this));
   if (!buf->data_.IsValid())
     return nullptr;  
   return buf;
 }
 
-TraceBuffer::TraceBuffer(CloneCtor, const TraceBuffer& src)
+TraceBufferV1::TraceBufferV1(CloneCtor, const TraceBufferV1& src)
     : overwrite_policy_(src.overwrite_policy_),
       read_only_(true),
       discard_writes_(src.discard_writes_) {
@@ -46519,18 +60950,163 @@ TraceBuffer::TraceBuffer(CloneCtor, const TraceBuffer& src)
   stats_.set_readaheads_succeeded(0);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   index_ = ChunkMap(src.index_);
-  for (auto& kv : index_) {
-    ChunkMeta& chunk_meta = kv.second;
-    chunk_meta.num_fragments_read = 0;
-    chunk_meta.cur_fragment_offset = 0;
-    chunk_meta.set_last_read_packet_skipped(false);
+  if constexpr (!PERFETTO_FLAGS(BUFFER_CLONE_PRESERVE_READ_ITER)) {
+    for (auto& kv : index_) {
+      ChunkMeta& chunk_meta = kv.second;
+      chunk_meta.num_fragments_read = 0;
+      chunk_meta.cur_fragment_offset = 0;
+      chunk_meta.set_last_read_packet_skipped(false);
+    }
   }
   read_iter_ = SequenceIterator();
 }
 
+
+TraceBuffer::~TraceBuffer() = default;
+
 }  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_V1_WITH_V2_SHADOW_H_
+#define SRC_TRACING_SERVICE_TRACE_BUFFER_V1_WITH_V2_SHADOW_H_
+
+#include <memory>
+#include <unordered_set>
+
+
+
+
+namespace perfetto {
+
+class TracePacket;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TraceBufferV1WithV2Shadow : public TraceBuffer {
+ public:
+  static std::unique_ptr<TraceBufferV1WithV2Shadow> Create(size_t size_in_bytes,
+                                                           OverwritePolicy);
+
+  ~TraceBufferV1WithV2Shadow() override;
+
+  
+  void CopyChunkUntrusted(ProducerID producer_id_trusted,
+                          const ClientIdentity& client_identity_trusted,
+                          WriterID writer_id,
+                          ChunkID chunk_id,
+                          uint16_t num_fragments,
+                          uint8_t chunk_flags,
+                          bool chunk_complete,
+                          const uint8_t* src,
+                          size_t size) override;
+
+  bool TryPatchChunkContents(ProducerID,
+                             WriterID,
+                             ChunkID,
+                             const Patch* patches,
+                             size_t patches_size,
+                             bool other_patches_pending) override;
+
+  
+  void BeginRead() override;
+
+  
+  bool ReadNextTracePacket(TracePacket*,
+                           PacketSequenceProperties* sequence_properties,
+                           bool* previous_packet_on_sequence_dropped) override;
+
+  std::unique_ptr<TraceBuffer> CloneReadOnly() const override;
+
+  
+  const TraceStats::BufferStats& stats() const override;
+
+  
+  void set_read_only() override;
+  const WriterStats& writer_stats() const override;
+  size_t size() const override;
+  size_t used_size() const override;
+  size_t GetMemoryUsageBytes() const override;
+  OverwritePolicy overwrite_policy() const override;
+  bool has_data() const override;
+  BufType buf_type() const override { return kV1WithV2Shadow; }
+
+ private:
+  TraceBufferV1WithV2Shadow();
+
+  
+  void UpdateShadowStats() const;
+
+  static constexpr uint8_t kSeenInV1 = 1 << 0;
+  static constexpr uint8_t kSeenInV2 = 1 << 1;
+
+  std::unique_ptr<TraceBuffer> v1_;
+  std::unique_ptr<TraceBuffer> v2_;
+
+  struct HashPacketCounts {
+    uint16_t seen_in_v1 = 0;
+    uint16_t seen_in_v2 = 0;
+  };
+  base::FlatHashMap<uint64_t,
+                    HashPacketCounts,
+                    base::AlreadyHashed<uint64_t>,
+                    base::QuadraticProbe,
+                    true>
+      packet_hashes_;
+  uint64_t packets_seen_ = 0;
+
+  
+  uint64_t patches_attempted_ = 0;
+  uint64_t v1_patches_succeeded_ = 0;
+  uint64_t v2_patches_succeeded_ = 0;
+
+  
+  mutable TraceStats::BufferStats stats_;
+};
+
+}  
+
+#endif  
 
 
 
@@ -46555,6 +61131,7 @@ TraceBuffer::TraceBuffer(CloneCtor, const TraceBuffer& src)
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <iterator>
 
@@ -46605,6 +61182,9 @@ class CircularQueue {
       ignore_result(generation);
     }
 
+    
+    
+    Iterator() noexcept = default;
     Iterator(const Iterator&) noexcept = default;
     Iterator& operator=(const Iterator&) noexcept = default;
     Iterator(Iterator&&) noexcept = default;
@@ -46695,18 +61275,25 @@ class CircularQueue {
     }
 
    private:
+    friend class CircularQueue<T>;
+
     inline void Add(difference_type offset) {
       pos_ = static_cast<uint64_t>(static_cast<difference_type>(pos_) + offset);
       PERFETTO_DCHECK(pos_ <= queue_->end_);
     }
 
-    CircularQueue* queue_;
-    uint64_t pos_;
+    CircularQueue* queue_ = nullptr;
+    uint64_t pos_ = 0;
 
 #if PERFETTO_DCHECK_IS_ON()
-    uint32_t generation_;
+    uint32_t generation_ = 0;
 #endif
   };
+
+  using ReverseIterator = std::reverse_iterator<Iterator>;
+  using value_type = T;
+  using const_iterator = Iterator;
+  using iterator = Iterator;
 
   explicit CircularQueue(size_t initial_capacity = 1024) {
     Grow(initial_capacity);
@@ -46768,6 +61355,38 @@ class CircularQueue {
 
   void pop_front() { erase_front(1); }
 
+  void InsertBefore(Iterator pos, T value) {
+    increment_generation();
+    PERFETTO_DCHECK(pos.queue_ == this);
+    PERFETTO_DCHECK(pos.pos_ >= begin_ && pos.pos_ <= end_);
+
+    
+    
+    uint64_t relative_pos = pos.pos_ - begin_;
+
+    if (PERFETTO_UNLIKELY(size() >= capacity_))
+      Grow();
+
+    
+    
+    uint64_t insert_pos = begin_ + relative_pos;
+
+    
+    for (uint64_t i = end_++; i > insert_pos; --i) {
+      T* dst = Get(i);
+      T* src = Get(i - 1);
+      new (dst) T(std::move(*src));
+      src->~T();
+    }
+
+    
+    new (Get(insert_pos)) T(std::move(value));
+  }
+
+  void InsertAfter(ReverseIterator pos, T value) {
+    InsertBefore(pos.base(), std::move(value));
+  }
+
   void clear() { erase_front(size()); }
 
   void shrink_to_fit() {
@@ -46787,6 +61406,21 @@ class CircularQueue {
 
   Iterator begin() { return Iterator(this, begin_, generation()); }
   Iterator end() { return Iterator(this, end_, generation()); }
+  Iterator begin() const {
+    return Iterator(const_cast<CircularQueue*>(this), begin_, generation());
+  }
+  Iterator end() const {
+    return Iterator(const_cast<CircularQueue*>(this), end_, generation());
+  }
+
+  ReverseIterator rbegin() { return ReverseIterator(end()); }
+  ReverseIterator rend() { return ReverseIterator(begin()); }
+
+  Iterator Find(const T& value) {
+    auto it = std::find(begin(), end(), value);
+    return it;
+  }
+
   T& front() { return *begin(); }
   T& back() { return *(end() - 1); }
 
@@ -46887,6 +61521,2742 @@ class CircularQueue {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
+
+#include <algorithm>
+#include <type_traits>
+#include <utility>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+
+template <typename T, size_t kSize>
+class SmallVector {
+ public:
+  static constexpr size_t kInlineSize = kSize;
+
+  explicit SmallVector() = default;
+
+  ~SmallVector() {
+    clear();
+    if (PERFETTO_UNLIKELY(is_using_heap()))
+      AlignedFree(begin_);
+    begin_ = end_ = end_of_storage_ = nullptr;
+  }
+
+  
+  SmallVector(SmallVector&& other) noexcept(
+      std::is_nothrow_move_constructible<T>::value) {
+    if (other.is_using_heap()) {
+      
+      
+      begin_ = other.begin_;
+      end_ = other.end_;
+      end_of_storage_ = other.end_of_storage_;
+    } else {
+      const size_t other_size = other.size();
+      PERFETTO_DCHECK(other_size <= capacity());
+      for (size_t i = 0; i < other_size; i++) {
+        
+        new (&begin_[i]) T(std::move(other.begin_[i]));
+        other.begin_[i].~T();
+      }
+      end_ = begin_ + other_size;
+    }
+    auto* const other_inline_storage = other.inline_storage_begin();
+    other.end_ = other.begin_ = other_inline_storage;
+    other.end_of_storage_ = other_inline_storage + kInlineSize;
+  }
+
+  SmallVector& operator=(SmallVector&& other) noexcept(
+      std::is_nothrow_move_constructible<T>::value) {
+    this->~SmallVector();
+    new (this) SmallVector<T, kSize>(std::move(other));
+    return *this;
+  }
+
+  
+  SmallVector(const SmallVector& other) {
+    const size_t other_size = other.size();
+    if (other_size > capacity())
+      Grow(other_size);
+    
+    for (size_t i = 0; i < other_size; ++i)
+      new (&begin_[i]) T(other.begin_[i]);
+    end_ = begin_ + other_size;
+  }
+
+  SmallVector& operator=(const SmallVector& other) {
+    if (PERFETTO_UNLIKELY(this == &other))
+      return *this;
+    this->~SmallVector();
+    new (this) SmallVector<T, kSize>(other);
+    return *this;
+  }
+
+  T* data() { return begin_; }
+  const T* data() const { return begin_; }
+
+  T* begin() { return begin_; }
+  const T* begin() const { return begin_; }
+
+  T* end() { return end_; }
+  const T* end() const { return end_; }
+
+  size_t size() const { return static_cast<size_t>(end_ - begin_); }
+
+  bool empty() const { return end_ == begin_; }
+
+  size_t capacity() const {
+    return static_cast<size_t>(end_of_storage_ - begin_);
+  }
+
+  T& front() {
+    PERFETTO_DCHECK(!empty());
+    return begin_[0];
+  }
+  const T& front() const {
+    PERFETTO_DCHECK(!empty());
+    return begin_[0];
+  }
+
+  T& back() {
+    PERFETTO_DCHECK(!empty());
+    return end_[-1];
+  }
+  const T& back() const {
+    PERFETTO_DCHECK(!empty());
+    return end_[-1];
+  }
+
+  T& operator[](size_t index) {
+    PERFETTO_DCHECK(index < size());
+    return begin_[index];
+  }
+
+  const T& operator[](size_t index) const {
+    PERFETTO_DCHECK(index < size());
+    return begin_[index];
+  }
+
+  template <typename... Args>
+  void emplace_back(Args&&... args) {
+    T* end = end_;
+    if (PERFETTO_UNLIKELY(end == end_of_storage_))
+      end = Grow();
+    new (end) T(std::forward<Args>(args)...);
+    end_ = end + 1;
+  }
+
+  void pop_back() {
+    PERFETTO_DCHECK(!empty());
+    back().~T();
+    --end_;
+  }
+
+  
+  void clear() {
+    while (!empty())
+      pop_back();
+  }
+
+ private:
+  PERFETTO_NO_INLINE T* Grow(size_t desired_capacity = 0) {
+    size_t cur_size = size();
+    size_t new_capacity = desired_capacity;
+    if (desired_capacity <= cur_size)
+      new_capacity = std::max(capacity() * 2, size_t(128));
+    T* new_storage =
+        static_cast<T*>(AlignedAlloc(alignof(T), new_capacity * sizeof(T)));
+    for (size_t i = 0; i < cur_size; ++i) {
+      
+      new (&new_storage[i]) T(std::move(begin_[i]));
+      begin_[i].~T();
+    }
+    if (is_using_heap())
+      AlignedFree(begin_);
+    begin_ = new_storage;
+    end_ = new_storage + cur_size;
+    end_of_storage_ = new_storage + new_capacity;
+    return end_;
+  }
+
+  T* inline_storage_begin() { return reinterpret_cast<T*>(inline_storage_); }
+  bool is_using_heap() { return begin_ != inline_storage_begin(); }
+
+  T* begin_ = inline_storage_begin();
+  T* end_ = begin_;
+  T* end_of_storage_ = begin_ + kInlineSize;
+
+  alignas(T) char inline_storage_[sizeof(T) * kInlineSize];
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_V2_H_
+#define SRC_TRACING_SERVICE_TRACE_BUFFER_V2_H_
+
+#include <stdint.h>
+#include <string.h>
+
+#include <limits>
+#include <optional>
+#include <unordered_map>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+class TracePacket;
+class TraceBufferV2;
+
+namespace protovm {
+class Vm;
+}
+
+namespace internal {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct TBChunk {
+  static constexpr size_t kMaxSize = std::numeric_limits<uint16_t>::max();
+  static uint8_t Checksum(size_t off, size_t size) {
+    
+    
+    return ((off >> 24) ^ (off >> 16) ^ (off >> 8) ^ off ^ (size >> 8) ^ size) &
+           0xFF;
+  }
+
+  explicit TBChunk(size_t off, size_t size_)
+      : size(static_cast<uint16_t>(size_)), checksum(Checksum(off, size)) {
+    PERFETTO_DCHECK(size_ <= kMaxSize);
+  }
+
+  
+  ChunkID chunk_id = 0;
+
+  
+  
+  ProducerAndWriterID pri_wri_id = 0;
+
+  
+  
+  
+  uint16_t size = 0;
+
+  
+  
+  
+  
+  
+  uint16_t payload_size = 0;
+
+  
+  
+  
+  
+  
+  uint16_t payload_avail = 0;
+
+  
+  
+  
+  uint8_t flags = 0;
+
+  
+  
+  uint8_t checksum = 0;
+
+  
+  
+  uint16_t unread_payload_off() {
+    PERFETTO_DCHECK((payload_avail <= payload_size));
+    return payload_size - payload_avail;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  static inline constexpr size_t alignment() { return sizeof(TBChunk); }
+
+  static inline size_t OuterSize(size_t sz) {
+    return base::AlignUp(sizeof(TBChunk) + sz, alignment());
+  }
+  size_t outer_size() { return OuterSize(size); }
+
+  bool is_padding() const { return pri_wri_id == 0; }
+
+  uint8_t* fragments_begin() {
+    return reinterpret_cast<uint8_t*>(this) + sizeof(TBChunk);
+  }
+
+  uint8_t* fragments_end() { return fragments_begin() + payload_size; }
+
+  bool IsChecksumValid(size_t off) { return Checksum(off, size) == checksum; }
+};
+
+
+
+
+
+
+
+
+
+
+
+struct SequenceState {
+  SequenceState(ProducerID, WriterID, ClientIdentity);
+  ~SequenceState();
+  SequenceState(const SequenceState&) noexcept;
+  SequenceState& operator=(const SequenceState&) noexcept;
+
+  ProducerID producer_id = 0;
+  WriterID writer_id = 0;
+  ClientIdentity client_identity{};
+
+  
+  
+  
+  uint64_t skip_in_generation = 0;
+
+  
+  
+  uint64_t age_for_gc = 0;
+
+  
+  
+  
+  
+  
+  struct ConsumedChunkInfo {
+    ChunkID chunk_id = 0;
+    uint16_t payload_size = 0;
+    bool was_incomplete = false;
+  };
+  std::optional<ConsumedChunkInfo> last_chunk_consumed;
+
+  
+  
+  bool data_loss = false;
+
+  
+  
+  
+  
+  base::CircularQueue<size_t> chunks;
+};
+
+
+
+
+
+
+
+
+struct Frag {
+  enum FragType : uint8_t {
+    
+    kFragWholePacket,
+
+    
+
+    
+    kFragBegin,
+
+    
+    
+    kFragContinue,
+
+    
+    kFragEnd,
+  };
+
+  
+  
+  
+  
+  
+  
+
+  
+  const uint8_t* const begin = nullptr;
+  FragType const type = kFragWholePacket;
+  uint8_t const hdr_size = 0;  
+  uint16_t const size = 0;     
+
+  uint16_t size_with_header() { return size + hdr_size; }
+
+  Frag(const uint8_t* b, FragType t, uint8_t h, uint16_t s)
+      : begin(b), type(t), hdr_size(h), size(s) {}
+};
+
+
+
+
+
+
+
+
+
+
+class FragIterator {
+ public:
+  explicit FragIterator(TBChunk* chunk)
+      : chunk_begin_(chunk->fragments_begin()),
+        chunk_size_(chunk->payload_size),
+        next_frag_off_(chunk->unread_payload_off()),
+        chunk_flags_(chunk->flags) {}
+
+  FragIterator(const uint8_t* begin, size_t size, uint8_t flags)
+      : chunk_begin_(begin), chunk_size_(size), chunk_flags_(flags) {}
+
+  std::optional<Frag> NextFragmentInChunk();
+  size_t next_frag_off() const { return next_frag_off_; }
+  bool chunk_corrupted() { return chunk_corrupted_; }
+  bool trace_writer_data_drop() { return trace_writer_data_drop_; }
+
+ private:
+  const uint8_t* chunk_begin_ = nullptr;
+  size_t chunk_size_ = 0;
+  size_t next_frag_off_ = 0;
+  uint8_t chunk_flags_ = 0;
+  bool chunk_corrupted_ = false;
+  bool trace_writer_data_drop_ = false;
+};
+
+
+
+
+
+
+
+class ChunkSeqIterator {
+ public:
+  
+  explicit ChunkSeqIterator(TraceBufferV2*, SequenceState*);
+  ChunkSeqIterator() = default;  
+  ChunkSeqIterator(const ChunkSeqIterator&) = default;  
+  ChunkSeqIterator& operator=(const ChunkSeqIterator&) = default;
+
+  TBChunk* NextChunkInSequence();
+  void EraseCurrentChunk();
+  TBChunk* chunk() const { return chunk_; }
+  bool sequence_gap_detected() const { return sequence_gap_detected_; }
+  bool valid() const { return !!seq_ && !!chunk_; }
+
+ private:
+  TraceBufferV2* buf_ = nullptr;
+  SequenceState* seq_ = nullptr;
+  TBChunk* chunk_ = nullptr;
+  bool sequence_gap_detected_ = false;
+  size_t list_idx_ = 0;  
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ChunkSeqReader {
+ public:
+  enum Mode {
+    kReadMode,   
+    kEraseMode,  
+  };
+
+  ChunkSeqReader(TraceBufferV2*, TBChunk*, Mode);
+
+  bool ReadNextPacketInSeqOrder(TracePacket*);
+  TBChunk* end() { return end_; }
+  TBChunk* iter() { return iter_; }
+  SequenceState* seq() { return seq_; }
+
+ private:
+  ChunkSeqReader(const ChunkSeqReader&) = delete;
+  ChunkSeqReader& operator=(const ChunkSeqReader&) = delete;
+  ChunkSeqReader(ChunkSeqReader&&) = delete;
+  ChunkSeqReader& operator=(ChunkSeqReader&&) = delete;
+
+  enum class FragReassemblyResult { kSuccess = 0, kNotEnoughData, kDataLoss };
+  FragReassemblyResult ReassembleFragmentedPacket(TracePacket* out_packet,
+                                                  Frag* initial_frag);
+  void ConsumeFragment(TBChunk*, Frag*);
+
+  TraceBufferV2* const buf_ = nullptr;
+  Mode const mode_;
+
+  
+  
+  
+  
+  TBChunk* const end_ = nullptr;
+
+  SequenceState* const seq_ = nullptr;
+
+  ChunkSeqIterator seq_iter_;
+
+  
+  
+  TBChunk* iter_ = nullptr;
+
+  FragIterator frag_iter_;
+};
+
+}  
+
+
+
+
+class TraceBufferV2 : public TraceBuffer {
+ public:
+  using TBChunk = internal::TBChunk;
+  using OverwritePolicy = TraceBuffer::OverwritePolicy;
+  using Patch = TraceBuffer::Patch;
+  using PacketSequenceProperties = TraceBuffer::PacketSequenceProperties;
+
+  
+  struct Vm {
+    Vm();
+    ~Vm();
+    Vm(Vm&&) noexcept;
+    Vm CloneReadOnly() const;
+
+    std::unique_ptr<protovm::Vm> instance;
+    std::string data_source_name;
+    uint64_t program_hash = 0;
+    uint32_t memory_limit_kb = 0;
+    base::FlatSet<ProducerID> producers;
+  };
+
+  
+  static std::unique_ptr<TraceBufferV2> Create(size_t size_in_bytes,
+                                               OverwritePolicy = kOverwrite);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void CopyChunkUntrusted(ProducerID producer_id_trusted,
+                          const ClientIdentity& client_identity_trusted,
+                          WriterID writer_id,
+                          ChunkID chunk_id,
+                          uint16_t num_fragments,
+                          uint8_t chunk_flags,
+                          bool chunk_complete,
+                          const uint8_t* src,
+                          size_t size) override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool TryPatchChunkContents(ProducerID,
+                             WriterID,
+                             ChunkID,
+                             const Patch* patches,
+                             size_t patches_size,
+                             bool other_patches_pending) override;
+
+  void MaybeSetUpProtoVm(const std::string& data_source_name,
+                         const std::string& program_bytes,
+                         uint32_t memory_limit_kb,
+                         ProducerID producer_id);
+
+  const std::vector<Vm>& GetProtoVmInstances() const { return protovms_; }
+
+  
+  
+  
+  
+  
+  
+  void BeginRead() override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ReadNextTracePacket(TracePacket*,
+                           PacketSequenceProperties* sequence_properties,
+                           bool* previous_packet_on_sequence_dropped) override;
+
+  
+  
+  
+  
+  std::unique_ptr<TraceBuffer> CloneReadOnly() const override;
+
+  size_t size() const override { return size_; }
+  size_t used_size() const override { return used_size_; }
+  size_t GetMemoryUsageBytes() const override;
+  OverwritePolicy overwrite_policy() const override {
+    return overwrite_policy_;
+  }
+  const TraceStats::BufferStats& stats() const override { return stats_; }
+  const WriterStats& writer_stats() const override { return writer_stats_; }
+  bool has_data() const override { return used_size_ > 0; }
+  void set_read_only() override { read_only_ = true; }
+  BufType buf_type() const override { return kV2; }
+
+  void DumpForTesting();
+
+ private:
+  using Frag = internal::Frag;
+  using SequenceState = internal::SequenceState;
+  using ChunkSeqReader = internal::ChunkSeqReader;
+
+  friend class TraceBufferV2Test;
+  friend class internal::ChunkSeqReader;
+  friend class internal::ChunkSeqIterator;
+
+  explicit TraceBufferV2(OverwritePolicy);
+  TraceBufferV2(const TraceBufferV2&) = delete;
+  TraceBufferV2& operator=(const TraceBufferV2&) = delete;
+
+  
+  
+  struct CloneCtor {};
+  TraceBufferV2(CloneCtor, const TraceBufferV2&);
+
+  bool Initialize(size_t size);
+  TBChunk* CreateTBChunk(size_t off, size_t payload_size);
+  void DeleteNextChunksFor(size_t bytes_to_clear);
+
+  void DcheckIsAlignedAndWithinBounds(size_t off) const {
+    PERFETTO_DCHECK((off & (alignof(TBChunk) - 1)) == 0);
+    PERFETTO_DCHECK(off <= size_ - sizeof(TBChunk));
+  }
+
+  
+  TBChunk* GetTBChunkAtUnchecked(size_t off) {
+    DcheckIsAlignedAndWithinBounds(off);
+    return reinterpret_cast<TBChunk*>(begin() + off);
+  }
+
+  TBChunk* GetTBChunkAt(size_t off) {
+    TBChunk* tbchunk = GetTBChunkAtUnchecked(off);
+    PERFETTO_CHECK(tbchunk->outer_size() <= (size_ - off));
+
+    
+    
+    PERFETTO_CHECK(tbchunk->IsChecksumValid(off));
+    return tbchunk;
+  }
+
+  
+  SequenceState* GetSeqForChunk(const TBChunk* chunk) {
+    auto it = sequences_.find(chunk->pri_wri_id);
+    return it == sequences_.end() ? nullptr : &it->second;
+  }
+
+  size_t OffsetOf(const TBChunk* chunk) {
+    uintptr_t addr = reinterpret_cast<uintptr_t>(chunk);
+    uintptr_t buf_start = reinterpret_cast<uintptr_t>(begin());
+    PERFETTO_DCHECK(addr >= buf_start && buf_start <= addr + size_);
+    return static_cast<size_t>(addr - buf_start);
+  }
+
+  void DiscardWrite();
+  void DeleteStaleEmptySequences();
+  void MaybeProcessOverwrittenPacketWithProtoVm(const TracePacket&, ProducerID);
+
+  uint8_t* begin() const { return reinterpret_cast<uint8_t*>(data_.Get()); }
+  uint8_t* end() const { return begin() + size_; }
+  size_t size_to_end() const { return size_ - wr_; }
+
+  base::PagedMemory data_;
+  size_t size_ = 0;  
+
+  
+  
+  
+  size_t used_size_ = 0;
+
+  size_t wr_ = 0;  
+  size_t rd_ = 0;  
+  std::optional<ChunkSeqReader> chunk_seq_reader_;
+
+  
+  TraceStats::BufferStats stats_;
+
+  
+  WriterStats writer_stats_;
+
+  OverwritePolicy overwrite_policy_ = kOverwrite;
+
+  
+  
+  std::unordered_map<ProducerAndWriterID, SequenceState> sequences_;
+
+  
+  
+  size_t empty_sequences_ = 0;
+
+  
+  uint64_t read_generation_ = 0;
+
+  
+  
+  uint64_t seq_age_ = 0;
+
+  
+  
+  bool read_only_ = false;
+
+  
+  
+  bool discard_writes_ = false;
+
+  
+  
+  
+  bool suppress_client_dchecks_for_testing_ = false;
+
+  
+  std::vector<Vm> protovms_;
+
+  
+  
+  
+  
+  
+  TracePacket overwritten_packet_;
+
+  
+  
+  
+  
+  
+  std::string protovm_patch_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+namespace {
+
+
+
+constexpr size_t kMaxPacketHashes = 1000000;
+
+uint64_t ComputePacketHash(
+    const TracePacket& packet,
+    const TraceBuffer::PacketSequenceProperties& seq_props) {
+  base::MurmurHashCombiner hasher;
+  for (const Slice& slice : packet.slices()) {
+    hasher.Combine(std::string_view(reinterpret_cast<const char*>(slice.start),
+                                    slice.size));
+  }
+  hasher.Combine(seq_props.producer_id_trusted);
+  hasher.Combine(seq_props.writer_id);
+  return hasher.digest();
+}
+
+void IncrementWithSaturation(uint16_t* v) {
+  *v += *v < UINT16_MAX ? 1 : 0;
+}
+
+}  
+
+TraceBufferV1WithV2Shadow::TraceBufferV1WithV2Shadow() = default;
+TraceBufferV1WithV2Shadow::~TraceBufferV1WithV2Shadow() = default;
+
+
+std::unique_ptr<TraceBufferV1WithV2Shadow> TraceBufferV1WithV2Shadow::Create(
+    size_t size_in_bytes,
+    OverwritePolicy policy) {
+  auto v1 = TraceBufferV1::Create(size_in_bytes, policy);
+  auto v2 = TraceBufferV2::Create(size_in_bytes, policy);
+  if (!v1 || !v2)
+    return nullptr;
+
+  std::unique_ptr<TraceBufferV1WithV2Shadow> instance(
+      new TraceBufferV1WithV2Shadow());
+  instance->v1_ = std::move(v1);
+  instance->v2_ = std::move(v2);
+  return instance;
+}
+
+void TraceBufferV1WithV2Shadow::CopyChunkUntrusted(
+    ProducerID producer_id_trusted,
+    const ClientIdentity& client_identity_trusted,
+    WriterID writer_id,
+    ChunkID chunk_id,
+    uint16_t num_fragments,
+    uint8_t chunk_flags,
+    bool chunk_complete,
+    const uint8_t* src,
+    size_t size) {
+  v1_->CopyChunkUntrusted(producer_id_trusted, client_identity_trusted,
+                          writer_id, chunk_id, num_fragments, chunk_flags,
+                          chunk_complete, src, size);
+  v2_->CopyChunkUntrusted(producer_id_trusted, client_identity_trusted,
+                          writer_id, chunk_id, num_fragments, chunk_flags,
+                          chunk_complete, src, size);
+}
+
+bool TraceBufferV1WithV2Shadow::TryPatchChunkContents(
+    ProducerID producer_id,
+    WriterID writer_id,
+    ChunkID chunk_id,
+    const Patch* patches,
+    size_t patches_size,
+    bool other_patches_pending) {
+  patches_attempted_++;
+  bool v1_result =
+      v1_->TryPatchChunkContents(producer_id, writer_id, chunk_id, patches,
+                                 patches_size, other_patches_pending);
+  bool v2_result =
+      v2_->TryPatchChunkContents(producer_id, writer_id, chunk_id, patches,
+                                 patches_size, other_patches_pending);
+  if (v1_result)
+    v1_patches_succeeded_++;
+  if (v2_result)
+    v2_patches_succeeded_++;
+  return v1_result;
+}
+
+void TraceBufferV1WithV2Shadow::BeginRead() {
+  v1_->BeginRead();
+
+  if (packets_seen_ > kMaxPacketHashes)
+    return;
+
+  
+  v2_->BeginRead();
+
+  for (;;) {
+    TracePacket packet;
+    PacketSequenceProperties seq_props{};
+    bool prev_dropped = false;
+    if (!v2_->ReadNextTracePacket(&packet, &seq_props, &prev_dropped))
+      break;
+    auto hash = ComputePacketHash(packet, seq_props);
+    IncrementWithSaturation(&packet_hashes_[hash].seen_in_v2);
+  }
+}
+
+bool TraceBufferV1WithV2Shadow::ReadNextTracePacket(
+    TracePacket* packet,
+    PacketSequenceProperties* sequence_properties,
+    bool* previous_packet_on_sequence_dropped) {
+  bool result = v1_->ReadNextTracePacket(packet, sequence_properties,
+                                         previous_packet_on_sequence_dropped);
+  if (result && packets_seen_ < kMaxPacketHashes) {
+    auto hash = ComputePacketHash(*packet, *sequence_properties);
+    IncrementWithSaturation(&packet_hashes_[hash].seen_in_v1);
+    ++packets_seen_;
+  }
+  return result;
+}
+
+std::unique_ptr<TraceBuffer> TraceBufferV1WithV2Shadow::CloneReadOnly() const {
+  auto v1_clone = v1_->CloneReadOnly();
+  auto v2_clone = v2_->CloneReadOnly();
+  if (!v1_clone || !v2_clone)
+    return nullptr;
+
+  std::unique_ptr<TraceBufferV1WithV2Shadow> clone(
+      new TraceBufferV1WithV2Shadow());
+  clone->v1_ = std::move(v1_clone);
+  clone->v2_ = std::move(v2_clone);
+  
+  clone->patches_attempted_ = patches_attempted_;
+  clone->v1_patches_succeeded_ = v1_patches_succeeded_;
+  clone->v2_patches_succeeded_ = v2_patches_succeeded_;
+  return clone;
+}
+
+const TraceStats::BufferStats& TraceBufferV1WithV2Shadow::stats() const {
+  UpdateShadowStats();
+  return stats_;
+}
+
+void TraceBufferV1WithV2Shadow::UpdateShadowStats() const {
+  
+  stats_ = v1_->stats();
+
+  
+  uint64_t packets_in_both = 0;
+  uint64_t packets_only_v1 = 0;
+  uint64_t packets_only_v2 = 0;
+  for (auto it = packet_hashes_.GetIterator(); it; ++it) {
+    HashPacketCounts& counts = it.value();
+    if (counts.seen_in_v1 <= counts.seen_in_v2) {
+      packets_in_both += counts.seen_in_v1;
+      packets_only_v2 += counts.seen_in_v2 - counts.seen_in_v1;
+    } else {
+      packets_in_both += counts.seen_in_v2;
+      packets_only_v1 += counts.seen_in_v1 - counts.seen_in_v2;
+    }
+  }
+
+  
+  auto* shadow_stats = stats_.mutable_shadow_buffer_stats();
+  shadow_stats->set_stats_version(2);
+  shadow_stats->set_packets_seen(packets_seen_);
+  shadow_stats->set_packets_in_both(packets_in_both);
+  shadow_stats->set_packets_only_v1(packets_only_v1);
+  shadow_stats->set_packets_only_v2(packets_only_v2);
+  shadow_stats->set_patches_attempted(patches_attempted_);
+  shadow_stats->set_v1_patches_succeeded(v1_patches_succeeded_);
+  shadow_stats->set_v2_patches_succeeded(v2_patches_succeeded_);
+}
+
+void TraceBufferV1WithV2Shadow::set_read_only() {
+  v1_->set_read_only();
+  v2_->set_read_only();
+}
+
+const TraceBuffer::WriterStats& TraceBufferV1WithV2Shadow::writer_stats()
+    const {
+  return v1_->writer_stats();
+}
+
+size_t TraceBufferV1WithV2Shadow::size() const {
+  return v1_->size();
+}
+
+size_t TraceBufferV1WithV2Shadow::used_size() const {
+  return v1_->used_size();
+}
+
+size_t TraceBufferV1WithV2Shadow::GetMemoryUsageBytes() const {
+  return v1_->GetMemoryUsageBytes() + v2_->GetMemoryUsageBytes();
+}
+
+TraceBuffer::OverwritePolicy TraceBufferV1WithV2Shadow::overwrite_policy()
+    const {
+  return v1_->overwrite_policy();
+}
+
+bool TraceBufferV1WithV2Shadow::has_data() const {
+  return v1_->has_data();
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <memory>
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define TRACE_BUFFER_V2_VERBOSE_LOGGING() 0
+
+#if TRACE_BUFFER_V2_VERBOSE_LOGGING()
+#define TRACE_BUFFER_V2_DLOG PERFETTO_DLOG
+#else
+#define TRACE_BUFFER_V2_DLOG(...) base::ignore_result(__VA_ARGS__)
+#endif
+
+using protozero::proto_utils::ParseVarInt;
+namespace proto_utils = ::protozero::proto_utils;
+
+namespace perfetto {
+
+namespace {
+
+
+
+constexpr uint8_t kFirstPacketContFromPrevChunk =
+    SharedMemoryABI::ChunkHeader::kFirstPacketContinuesFromPrevChunk;
+constexpr uint8_t kLastPacketContOnNextChunk =
+    SharedMemoryABI::ChunkHeader::kLastPacketContinuesOnNextChunk;
+constexpr uint8_t kChunkNeedsPatch =
+    SharedMemoryABI::ChunkHeader::kChunkNeedsPatching;
+
+
+
+
+constexpr uint8_t kChunkIncomplete = 0x80;
+
+
+constexpr uint8_t kFlagsMask = SharedMemoryABI::ChunkHeader::kFlagsMask;
+
+
+
+
+
+
+
+
+
+
+
+int ChunkIdCompare(ChunkID a, ChunkID b) {
+  if (a == b)
+    return 0;
+  return (static_cast<int32_t>(a - b) < 0) ? -1 : 1;
+}
+
+
+constexpr size_t kKeepLastEmptySeq = 1024;
+
+
+constexpr size_t kEmptySequencesGcTreshold = kKeepLastEmptySeq + 128;
+}  
+
+namespace internal {
+
+SequenceState::SequenceState(ProducerID p, WriterID w, ClientIdentity c)
+    : producer_id(p),
+      writer_id(w),
+      client_identity(c),
+      chunks(64) {}
+SequenceState::~SequenceState() = default;
+SequenceState::SequenceState(const SequenceState&) noexcept = default;
+SequenceState& SequenceState::operator=(const SequenceState&) noexcept =
+    default;
+
+
+
+
+
+std::optional<Frag> FragIterator::NextFragmentInChunk() {
+  
+  
+  PERFETTO_DCHECK(next_frag_off_ <= chunk_size_);
+  const uint8_t* chunk_end = chunk_begin_ + chunk_size_;
+  const uint8_t* hdr_begin = chunk_begin_ + next_frag_off_;
+  if (hdr_begin >= chunk_end)
+    return std::nullopt;
+
+  bool is_first_frag = next_frag_off_ == 0;
+  uint64_t frag_size_u64 = 0;
+
+  
+  
+  
+  
+  
+  uint8_t* frag_begin =
+      const_cast<uint8_t*>(ParseVarInt(hdr_begin, chunk_end, &frag_size_u64));
+  uint8_t hdr_size =  
+      static_cast<uint8_t>(reinterpret_cast<uintptr_t>(frag_begin) -
+                           reinterpret_cast<uintptr_t>(hdr_begin));
+
+  
+  
+  if (PERFETTO_UNLIKELY(hdr_size == 0)) {
+    chunk_corrupted_ = true;
+    return std::nullopt;
+  }
+
+  
+  
+  
+  
+  if (PERFETTO_UNLIKELY(frag_size_u64 ==
+                        SharedMemoryABI::kPacketSizeDropPacket)) {
+    trace_writer_data_drop_ = true;
+    return std::nullopt;
+  }
+
+  
+  
+  if (frag_size_u64 > reinterpret_cast<uintptr_t>(chunk_end) -
+                          reinterpret_cast<uintptr_t>(frag_begin)) {
+    chunk_corrupted_ = true;
+    return std::nullopt;
+  }
+
+  uint16_t frag_size = static_cast<uint16_t>(frag_size_u64);
+  next_frag_off_ += hdr_size + frag_size;  
+  bool is_last_frag = next_frag_off_ >= chunk_size_;
+  bool first_frag_continues = chunk_flags_ & kFirstPacketContFromPrevChunk;
+  bool last_frag_continues = chunk_flags_ & kLastPacketContOnNextChunk;
+
+  Frag::FragType frag_type = Frag::kFragWholePacket;
+  if (is_last_frag && last_frag_continues) {
+    if (is_first_frag && first_frag_continues) {
+      frag_type = Frag::kFragContinue;
+    } else {
+      frag_type = Frag::kFragBegin;
+    }
+  } else if (is_first_frag && first_frag_continues) {
+    frag_type = Frag::kFragEnd;
+  } else {
+    frag_type = Frag::kFragWholePacket;
+  }
+  return Frag(frag_begin, frag_type, hdr_size, frag_size);
+}
+
+
+
+
+
+ChunkSeqIterator::ChunkSeqIterator(TraceBufferV2* buf, SequenceState* seq)
+    : buf_(buf), seq_(seq) {
+  auto& chunk_list = seq_->chunks;
+  PERFETTO_CHECK(!chunk_list.empty());
+  size_t first_off = *chunk_list.begin();
+  TBChunk* first_chunk_of_seq = buf->GetTBChunkAt(first_off);
+  PERFETTO_DCHECK(!first_chunk_of_seq->is_padding());
+  chunk_ = first_chunk_of_seq;
+}
+
+TBChunk* ChunkSeqIterator::NextChunkInSequence() {
+  PERFETTO_DCHECK(seq_);
+  auto& chunk_list = seq_->chunks;
+
+  
+  
+  PERFETTO_DCHECK(chunk_->is_padding() ||
+                  chunk_list.at(list_idx_) == buf_->OffsetOf(chunk_));
+
+  size_t next_list_idx = list_idx_ + 1;
+  if (next_list_idx >= chunk_list.size()) {
+    
+    
+    
+    
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::optional<ChunkID> last_chunk_id;
+  if (chunk_->is_padding()) {
+    if (seq_->last_chunk_consumed.has_value())
+      last_chunk_id = seq_->last_chunk_consumed->chunk_id;  
+  } else {
+    last_chunk_id = chunk_->chunk_id;  
+  }
+
+  size_t next_chunk_off = chunk_list.at(next_list_idx);      
+  TBChunk* next_chunk = buf_->GetTBChunkAt(next_chunk_off);  
+
+  if (last_chunk_id.has_value() && next_chunk->chunk_id != *last_chunk_id + 1)
+    sequence_gap_detected_ = true;
+
+  chunk_ = next_chunk;
+  list_idx_ = next_list_idx;
+  return next_chunk;
+}
+
+void ChunkSeqIterator::EraseCurrentChunk() {
+  size_t chunk_off = buf_->OffsetOf(chunk_);
+  TRACE_BUFFER_V2_DLOG("EraseChunk() id=%u off=%zu", chunk_->chunk_id,
+                       chunk_off);
+  const uint32_t chunk_size = chunk_->size;
+  const bool was_incomplete = chunk_->flags & kChunkIncomplete;
+  seq_->last_chunk_consumed = SequenceState::ConsumedChunkInfo{
+      chunk_->chunk_id, chunk_->payload_size, was_incomplete};
+
+  auto& chunk_list = seq_->chunks;
+
+  
+  
+  
+  PERFETTO_CHECK(list_idx_ == 0 && *chunk_list.begin() == chunk_off);
+  chunk_list.pop_front();
+  if (chunk_list.empty()) {
+    seq_->age_for_gc = ++buf_->seq_age_;
+    ++buf_->empty_sequences_;
+  }
+
+  
+  
+  
+  list_idx_ = static_cast<size_t>(-1);
+
+  
+  uint16_t old_payload_size = chunk_->payload_size;
+  TBChunk* cleared_chunk = buf_->CreateTBChunk(chunk_off, chunk_size);
+  cleared_chunk->payload_size = old_payload_size;
+
+  
+  
+  
+}
+
+
+
+
+
+ChunkSeqReader::ChunkSeqReader(TraceBufferV2* buf,
+                               TBChunk* end_chunk,
+                               Mode mode)
+    : buf_(buf),
+      mode_(mode),
+      end_(end_chunk),
+      seq_(buf_->GetSeqForChunk(end_chunk)),
+      seq_iter_(buf, seq_),
+      iter_(seq_iter_.chunk()),  
+      frag_iter_(iter_) {
+  PERFETTO_DCHECK(!iter_->is_padding());
+  TRACE_BUFFER_V2_DLOG("ChunkSeqReader() last_id=%u iter_=%u end_=%u",
+                       seq_->last_chunk_consumed.has_value()
+                           ? seq_->last_chunk_consumed->chunk_id
+                           : 0,
+                       iter_->chunk_id, end_->chunk_id);
+
+  if (seq_->last_chunk_consumed.has_value()) {
+    const auto& last = *seq_->last_chunk_consumed;
+    
+    
+    
+    
+    
+    
+    bool readmit = last.was_incomplete && iter_->chunk_id == last.chunk_id;
+    if (!readmit && iter_->chunk_id != last.chunk_id + 1) {
+      seq_->data_loss = true;
+    }
+  }
+}
+
+bool ChunkSeqReader::ReadNextPacketInSeqOrder(TracePacket* out_packet) {
+  PERFETTO_DCHECK(!iter_->is_padding());
+  PERFETTO_DCHECK(frag_iter_.next_frag_off() >= iter_->unread_payload_off());
+  PERFETTO_DCHECK(frag_iter_.next_frag_off() <= iter_->payload_size);
+
+  
+  
+  
+  if (seq_->skip_in_generation == buf_->read_generation_ && mode_ == kReadMode)
+    return false;
+
+  
+  
+  
+  
+  
+  for (;;) {
+    std::optional<Frag> maybe_frag = frag_iter_.NextFragmentInChunk();
+    if (!maybe_frag.has_value()) {
+      
+      bool end_reached = iter_ == end_;
+
+      if (frag_iter_.chunk_corrupted()) {
+        seq_->data_loss = true;
+      }
+
+      
+      
+      
+      if ((iter_->flags & kChunkIncomplete) && mode_ == kReadMode) {
+        
+        seq_->skip_in_generation = buf_->read_generation_;
+        end_reached = true;
+      } else {
+        
+        seq_iter_.EraseCurrentChunk();
+      }
+      if (end_reached)
+        return false;  
+      TBChunk* next_chunk = seq_iter_.NextChunkInSequence();
+      if (!next_chunk)
+        return false;  
+      iter_ = next_chunk;
+      frag_iter_ = FragIterator(next_chunk);
+      continue;
+    }
+
+    Frag& frag = *maybe_frag;
+    switch (frag.type) {
+      case Frag::kFragWholePacket:
+        ConsumeFragment(iter_, &frag);
+        
+        
+        
+        
+        if (frag.size == 0) {
+          break;  
+        }
+        if (out_packet)
+          out_packet->AddSlice(frag.begin, frag.size);
+        TRACE_BUFFER_V2_DLOG(
+            "  ReadNextPacketInSeqOrder -> true (whole packet)");
+        return true;
+
+      case Frag::kFragContinue:
+      case Frag::kFragEnd:
+        
+        
+        
+        
+        
+        
+        
+        seq_->data_loss = true;
+        ConsumeFragment(iter_, &frag);
+        break;  
+
+      case Frag::kFragBegin:
+        auto reassembly_res = ReassembleFragmentedPacket(out_packet, &frag);
+        if (reassembly_res == FragReassemblyResult::kSuccess) {
+          buf_->stats_.set_readaheads_succeeded(
+              buf_->stats_.readaheads_succeeded() + 1);
+
+          
+          
+          
+          
+          
+          
+          TRACE_BUFFER_V2_DLOG(
+              "  ReadNextPacketInSeqOrder -> true (reassembly)");
+          return true;
+        }
+
+        
+
+        buf_->stats_.set_readaheads_failed(buf_->stats_.readaheads_failed() +
+                                           1);
+
+        if (reassembly_res == FragReassemblyResult::kNotEnoughData &&
+            mode_ == kReadMode) {
+          
+          
+          
+          
+          
+          seq_->skip_in_generation = buf_->read_generation_;
+          return false;
+          
+          
+        }
+
+        
+        
+        
+        
+        PERFETTO_DCHECK(
+            reassembly_res == FragReassemblyResult::kDataLoss ||
+            (reassembly_res == FragReassemblyResult::kNotEnoughData &&
+             mode_ == kEraseMode));
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        seq_->data_loss = true;
+        break;  
+    }  
+  }  
+}
+
+void ChunkSeqReader::ConsumeFragment(TBChunk* chunk, Frag* frag) {
+  
+  uintptr_t payload_addr = reinterpret_cast<uintptr_t>(frag->begin);
+  uintptr_t chunk_addr = reinterpret_cast<uintptr_t>(chunk->fragments_begin());
+  PERFETTO_DCHECK(payload_addr > chunk_addr);
+  uintptr_t payload_off = payload_addr - chunk_addr;
+  PERFETTO_DCHECK(payload_off == chunk->unread_payload_off() + frag->hdr_size);
+
+  PERFETTO_DCHECK(chunk->payload_avail >= frag->size_with_header());
+  chunk->payload_avail -= frag->size_with_header();
+
+  if (chunk->payload_avail == 0) {
+    TRACE_BUFFER_V2_DLOG("  Fully consumed chunk @ %zu", buf_->OffsetOf(chunk));
+    auto& stats = buf_->stats_;
+    if (mode_ == kReadMode) {
+      stats.set_chunks_read(stats.chunks_read() + 1);
+      stats.set_bytes_read(stats.bytes_read() + chunk->outer_size());
+    } else if (mode_ == kEraseMode) {
+      stats.set_chunks_overwritten(stats.chunks_overwritten() + 1);
+      stats.set_bytes_overwritten(stats.bytes_overwritten() +
+                                  chunk->outer_size());
+    }
+  }
+}
+
+
+
+
+ChunkSeqReader::FragReassemblyResult ChunkSeqReader::ReassembleFragmentedPacket(
+    TracePacket* out_packet,
+    Frag* initial_frag) {
+  PERFETTO_DCHECK(initial_frag->type == Frag::kFragBegin);
+  TBChunk* initial_chunk = seq_iter_.chunk();
+
+  struct FragAndChunk {
+    FragAndChunk(Frag f, TBChunk* c) : frag(std::move(f)), chunk(c) {}
+    Frag frag;
+    TBChunk* chunk;
+  };
+  base::SmallVector<FragAndChunk, 8> frags;
+  frags.emplace_back(*initial_frag, initial_chunk);
+  ChunkSeqIterator chunk_iter = seq_iter_;  
+
+  
+  
+  FragReassemblyResult res = FragReassemblyResult::kNotEnoughData;
+  const bool chunk_needs_patching = initial_chunk->flags & kChunkNeedsPatch;
+  while (!chunk_needs_patching) {
+    PERFETTO_DCHECK((chunk_iter.valid()));
+    TBChunk* next_chunk = chunk_iter.NextChunkInSequence();
+    if (!next_chunk || next_chunk->flags & kChunkNeedsPatch) {
+      res = FragReassemblyResult::kNotEnoughData;
+      break;
+    }
+    if (chunk_iter.sequence_gap_detected()) {
+      
+      res = FragReassemblyResult::kDataLoss;
+      break;
+    }
+    FragIterator frag_iter = FragIterator(next_chunk);
+    
+    
+    
+    
+    
+    
+    
+    
+    std::optional<Frag> frag = frag_iter.NextFragmentInChunk();
+    if (!frag.has_value()) {
+      if (frag_iter.chunk_corrupted()) {
+        res = FragReassemblyResult::kDataLoss;
+        break;
+      }
+      
+      
+      continue;
+    }
+
+    const auto& frag_type = frag->type;
+    if (frag_type == Frag::kFragContinue) {
+      frags.emplace_back(*frag, next_chunk);
+      continue;
+    }
+    if (frag_type == Frag::kFragEnd) {
+      frags.emplace_back(*frag, next_chunk);
+
+      res = FragReassemblyResult::kSuccess;
+      break;
+    }
+    
+    
+    
+    
+    
+    
+    
+    res = FragReassemblyResult::kDataLoss;
+    break;
+  }  
+
+  for (FragAndChunk& fc : frags) {
+    Frag& f = fc.frag;
+    if (res == FragReassemblyResult::kSuccess && f.size > 0) {
+      if (out_packet)
+        out_packet->AddSlice(f.begin, f.size);
+    }
+    if (res == FragReassemblyResult::kSuccess ||
+        res == FragReassemblyResult::kDataLoss ||
+        (res == FragReassemblyResult::kNotEnoughData && mode_ == kEraseMode)) {
+      ConsumeFragment(fc.chunk, &f);
+    }
+  }
+  return res;
+}
+
+}  
+
+
+
+
+
+
+std::unique_ptr<TraceBufferV2> TraceBufferV2::Create(size_t size_in_bytes,
+                                                     OverwritePolicy pol) {
+  
+  
+  static_assert(sizeof(TBChunk) == 16);
+  static_assert(alignof(TBChunk) == 4);
+  std::unique_ptr<TraceBufferV2> trace_buffer(new TraceBufferV2(pol));
+  if (!trace_buffer->Initialize(size_in_bytes))
+    return nullptr;
+  return trace_buffer;
+}
+
+TraceBufferV2::TraceBufferV2(OverwritePolicy pol) : overwrite_policy_(pol) {}
+
+bool TraceBufferV2::Initialize(size_t size) {
+  size = base::AlignUp(std::max(size, size_t(1)), 4096);
+  
+  
+  PERFETTO_CHECK(size <= UINT32_MAX);
+  data_ = base::PagedMemory::Allocate(
+      size, base::PagedMemory::kMayFail | base::PagedMemory::kDontCommit);
+  if (!data_.IsValid()) {
+    PERFETTO_ELOG("Trace buffer allocation failed (size: %zu)", size);
+    return false;
+  }
+  size_ = size;
+  wr_ = 0;
+  used_size_ = 0;
+  stats_.set_buffer_size(size);
+  return true;
+}
+
+void TraceBufferV2::BeginRead() {
+  
+  
+  
+  
+  TRACE_BUFFER_V2_DLOG("BeginRead(), wr_=%zu", wr_);
+  rd_ = wr_ == used_size_ ? 0 : wr_;
+  chunk_seq_reader_.reset();
+  ++read_generation_;
+}
+
+bool TraceBufferV2::ReadNextTracePacket(
+    TracePacket* out_packet,
+    PacketSequenceProperties* sequence_properties,
+    bool* previous_packet_on_sequence_dropped) {
+  *sequence_properties = {0, ClientIdentity(), 0};
+  *previous_packet_on_sequence_dropped = false;
+
+  
+  
+  
+  
+  
+  
+  
+  for (;;) {
+    size_t next_rd = 0;
+    
+    
+    
+    if (!chunk_seq_reader_.has_value()) {
+      
+      
+      
+      
+      TBChunk* chunk = GetTBChunkAt(rd_);
+      if (!chunk->is_padding()) {
+        
+        chunk_seq_reader_.emplace(this, chunk, ChunkSeqReader::kReadMode);
+        continue;
+      }
+      
+      next_rd = rd_ + chunk->outer_size();
+      
+    } else {
+      
+      
+      
+      
+      
+      
+      if (chunk_seq_reader_->ReadNextPacketInSeqOrder(out_packet)) {
+        SequenceState& s = *chunk_seq_reader_->seq();
+        *sequence_properties = {s.producer_id, s.client_identity, s.writer_id};
+        *previous_packet_on_sequence_dropped = s.data_loss;
+        s.data_loss = false;
+        return true;
+      }
+      
+      
+      TBChunk* chunk = chunk_seq_reader_->end();
+      next_rd = OffsetOf(chunk) + chunk->outer_size();
+    }
+
+    
+    PERFETTO_DCHECK(next_rd > 0);
+    const bool wrap = next_rd >= used_size_;
+    chunk_seq_reader_.reset();
+    if (next_rd == wr_ || (wrap && wr_ == 0)) {
+      
+      
+      return false;
+    }
+    rd_ = wrap ? 0 : next_rd;
+  }  
+}
+
+void TraceBufferV2::CopyChunkUntrusted(
+    ProducerID producer_id_trusted,
+    const ClientIdentity& client_identity_trusted,
+    WriterID writer_id,
+    ChunkID chunk_id,
+    uint16_t num_fragments,
+    uint8_t chunk_flags,
+    bool chunk_complete,
+    const uint8_t* src,
+    size_t src_size) {
+  TRACE_BUFFER_V2_DLOG("");
+  TRACE_BUFFER_V2_DLOG("CopyChunkUntrusted(%zu) @ wr_=%zu", src_size, wr_);
+  if (TRACE_BUFFER_V2_VERBOSE_LOGGING())
+    DumpForTesting();
+
+  PERFETTO_CHECK(!read_only_);
+
+  if (PERFETTO_UNLIKELY(discard_writes_))
+    return DiscardWrite();
+
+  
+  
+  
+  
+  
+  if (PERFETTO_UNLIKELY(!chunk_complete)) {
+    chunk_flags |= kChunkIncomplete;
+    if (num_fragments > 0) {
+      num_fragments--;
+      
+      
+      
+      chunk_flags &= ~kLastPacketContOnNextChunk;
+      chunk_flags &= ~kChunkNeedsPatch;
+    }
+  }
+
+  
+  size_t all_frags_size = 0;
+  internal::FragIterator frag_iter(src, src_size, chunk_flags);
+  for (uint16_t frag_idx = 0; frag_idx < num_fragments; frag_idx++) {
+    std::optional<Frag> maybe_frag = frag_iter.NextFragmentInChunk();
+    if (!maybe_frag.has_value()) {
+      
+      
+      stats_.set_abi_violations(stats_.abi_violations() + 1);
+      PERFETTO_DCHECK(suppress_client_dchecks_for_testing_);
+      break;
+    }
+    Frag& f = *maybe_frag;
+    all_frags_size += f.size_with_header();
+    TRACE_BUFFER_V2_DLOG("  Frag %u: %p - %p", frag_idx,
+                         static_cast<const void*>(f.begin),
+                         static_cast<const void*>(f.begin + f.size));
+  }
+  bool trace_writer_data_drop = frag_iter.trace_writer_data_drop();
+
+  PERFETTO_CHECK(all_frags_size <= src_size);
+  const uint16_t all_frags_size_u16 = static_cast<uint16_t>(all_frags_size);
+
+  
+
+  
+  
+  
+  size_t tbchunk_size = chunk_complete ? all_frags_size : src_size;
+  const size_t tbchunk_outer_size = TBChunk::OuterSize(tbchunk_size);
+
+  if (PERFETTO_UNLIKELY(tbchunk_outer_size > size_)) {
+    
+    
+    stats_.set_abi_violations(stats_.abi_violations() + 1);
+    PERFETTO_DCHECK(suppress_client_dchecks_for_testing_);
+    return;
+  }
+
+  auto seq_key = MkProducerAndWriterID(producer_id_trusted, writer_id);
+  writer_stats_.Insert(seq_key, static_cast<HistValue>(all_frags_size));
+
+  auto [seq_it, seq_is_new] = sequences_.try_emplace(
+      seq_key,
+      SequenceState(producer_id_trusted, writer_id, client_identity_trusted));
+  if (seq_is_new) {
+    TRACE_BUFFER_V2_DLOG("  Added seq %x", seq_key);
+  }
+
+  SequenceState& seq = seq_it->second;
+  if (trace_writer_data_drop) {
+    stats_.set_trace_writer_packet_loss(stats_.trace_writer_packet_loss() + 1);
+    seq.data_loss = true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  uint16_t previously_consumed_payload = 0;
+  if (seq.last_chunk_consumed.has_value()) {
+    int cmp = ChunkIdCompare(chunk_id, seq.last_chunk_consumed->chunk_id);
+    if (cmp == 0 && seq.last_chunk_consumed->was_incomplete &&
+        seq.last_chunk_consumed->payload_size < all_frags_size) {
+      previously_consumed_payload = seq.last_chunk_consumed->payload_size;
+      TRACE_BUFFER_V2_DLOG("  Re-admitting chunk %u (prev_payload=%u)",
+                           chunk_id, previously_consumed_payload);
+    } else if (cmp <= 0) {
+      
+      stats_.set_chunks_discarded(stats_.chunks_discarded() + 1);
+      PERFETTO_DCHECK(suppress_client_dchecks_for_testing_);
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto& chunk_list = seq.chunks;
+  size_t chunk_list_size_before_remove = chunk_list.size();
+
+  using InsIter = base::CircularQueue<size_t>::ReverseIterator;
+  auto compute_insert_position = [&]() -> std::pair<InsIter, TBChunk*> const {
+    TBChunk* _recommit_chunk = nullptr;
+    auto _insert_pos = chunk_list.rbegin();
+    for (; _insert_pos != chunk_list.rend(); ++_insert_pos) {
+      TBChunk* other_chunk = GetTBChunkAt(*_insert_pos);
+      int cmp = ChunkIdCompare(chunk_id, other_chunk->chunk_id);
+      if (cmp > 0)
+        break;
+      if (cmp == 0) {
+        
+        
+        
+        
+        _recommit_chunk = other_chunk;
+        break;
+      }
+    }
+    return std::make_pair(_insert_pos, _recommit_chunk);
+  };
+
+  auto [insert_pos, recommit_chunk] = compute_insert_position();
+
+  
+  
+  if (PERFETTO_UNLIKELY(recommit_chunk)) {
+    const uint8_t recommit_flags = recommit_chunk->flags & kFlagsMask;
+    if (all_frags_size < recommit_chunk->payload_size ||
+        all_frags_size > recommit_chunk->size ||
+        (recommit_flags & chunk_flags) != recommit_flags) {
+      
+      
+      stats_.set_abi_violations(stats_.abi_violations() + 1);
+      PERFETTO_DCHECK(suppress_client_dchecks_for_testing_);
+      return;
+    }
+    
+    
+    
+    if (chunk_complete)
+      recommit_chunk->flags &= ~kChunkIncomplete;
+    if (all_frags_size == recommit_chunk->payload_size) {
+      TRACE_BUFFER_V2_DLOG("  skipping recommit of identical chunk");
+      return;
+    }
+    uint16_t payload_consumed =
+        recommit_chunk->payload_size - recommit_chunk->payload_avail;
+    recommit_chunk->payload_size = all_frags_size_u16;
+    recommit_chunk->payload_avail = all_frags_size_u16 - payload_consumed;
+    memcpy(recommit_chunk->fragments_begin(), src, all_frags_size);
+    recommit_chunk->flags |= chunk_flags;
+    stats_.set_chunks_rewritten(stats_.chunks_rewritten() + 1);
+    return;
+  }
+
+  
+  
+  const size_t cached_size_to_end = size_to_end();
+  if (PERFETTO_UNLIKELY(tbchunk_outer_size > cached_size_to_end)) {
+    
+    
+    if (overwrite_policy_ == kDiscard)
+      return DiscardWrite();
+
+    
+    
+    if (cached_size_to_end > 0)
+      DeleteNextChunksFor(cached_size_to_end);
+
+    wr_ = 0;
+    stats_.set_write_wrap_count(stats_.write_wrap_count() + 1);
+    PERFETTO_DCHECK(size_to_end() >= tbchunk_outer_size);
+  }
+
+  
+  DeleteNextChunksFor(tbchunk_outer_size);
+
+  
+  
+  
+  
+  
+  if (PERFETTO_UNLIKELY(chunk_list.size() != chunk_list_size_before_remove)) {
+    std::tie(insert_pos, std::ignore) = compute_insert_position();
+  }
+
+  TBChunk* tbchunk = CreateTBChunk(wr_, tbchunk_size);
+  tbchunk->payload_size = all_frags_size_u16;
+  
+  PERFETTO_DCHECK(previously_consumed_payload == 0 ||
+                  previously_consumed_payload < all_frags_size_u16);
+  
+  tbchunk->payload_avail = all_frags_size_u16 - previously_consumed_payload;
+  tbchunk->chunk_id = chunk_id;
+  tbchunk->flags = chunk_flags;
+  tbchunk->pri_wri_id = seq_key;
+  auto* payload_begin = reinterpret_cast<uint8_t*>(tbchunk) + sizeof(TBChunk);
+  uint8_t* wptr = payload_begin;
+
+  
+  memcpy(wptr, src, all_frags_size);
+
+  PERFETTO_DCHECK(wr_ == OffsetOf(tbchunk));
+  if (insert_pos != chunk_list.rbegin()) {
+    stats_.set_chunks_committed_out_of_order(
+        stats_.chunks_committed_out_of_order() + 1);
+  }
+  chunk_list.InsertAfter(insert_pos, wr_);
+  if (chunk_list.size() == 1 && !seq_is_new) {
+    PERFETTO_DCHECK(empty_sequences_ > 0);
+    --empty_sequences_;
+  }
+
+  TRACE_BUFFER_V2_DLOG(" END OF CopyChunkUntrusted(%zu) @ wr=%zu", src_size,
+                       wr_);
+
+  wr_ += tbchunk_outer_size;
+  PERFETTO_DCHECK(wr_ <= size_ && wr_ <= used_size_);
+
+  stats_.set_chunks_written(stats_.chunks_written() + 1);
+  stats_.set_bytes_written(stats_.bytes_written() + tbchunk_outer_size);
+
+  
+  
+  
+  if (empty_sequences_ > kEmptySequencesGcTreshold)
+    DeleteStaleEmptySequences();
+}
+
+TraceBufferV2::TBChunk* TraceBufferV2::CreateTBChunk(size_t off, size_t size) {
+  DcheckIsAlignedAndWithinBounds(off);
+  size_t end = off + TBChunk::OuterSize(size);
+  if (PERFETTO_UNLIKELY(end > used_size_)) {
+    used_size_ = end;
+    data_.EnsureCommitted(end);
+  }
+  TBChunk* chunk = GetTBChunkAtUnchecked(off);
+  return new (chunk) TBChunk(off, size);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void TraceBufferV2::DeleteNextChunksFor(size_t bytes_to_clear) {
+  TRACE_BUFFER_V2_DLOG("DeleteNextChunksFor(%zu) @ wr=%zu", bytes_to_clear,
+                       wr_);
+  PERFETTO_CHECK(!discard_writes_);
+  PERFETTO_DCHECK(bytes_to_clear >= sizeof(TBChunk));
+  PERFETTO_DCHECK((bytes_to_clear % TBChunk::alignment()) == 0);
+
+  DcheckIsAlignedAndWithinBounds(wr_);
+  const size_t clear_end = wr_ + bytes_to_clear;
+  PERFETTO_DCHECK(clear_end <= size_);
+
+  
+  for (size_t off = wr_, next_off = 0; off < clear_end; off = next_off) {
+    if (PERFETTO_UNLIKELY(off >= used_size_)) {
+      
+      
+      break;
+    }
+    TBChunk* chunk = GetTBChunkAt(off);
+    const auto chunk_outer_size = chunk->outer_size();
+    next_off = off + chunk_outer_size;
+    if (chunk->is_padding()) {
+      stats_.set_padding_bytes_cleared(stats_.padding_bytes_cleared() +
+                                       chunk_outer_size);
+      continue;
+    }
+    
+    
+    
+    
+    ChunkSeqReader csr(this, chunk, ChunkSeqReader::kEraseMode);
+    bool has_cleared_unconsumed_fragments = false;
+    for (;;) {
+      
+      
+      
+      TracePacket* maybe_packet = nullptr;
+      if (!protovms_.empty()) {
+        overwritten_packet_.Clear();
+        maybe_packet = &overwritten_packet_;
+      }
+      if (!csr.ReadNextPacketInSeqOrder(maybe_packet)) {
+        break;
+      }
+      if (maybe_packet) {
+        MaybeProcessOverwrittenPacketWithProtoVm(*maybe_packet,
+                                                 csr.seq()->producer_id);
+      }
+      has_cleared_unconsumed_fragments = true;
+    }
+
+    
+    
+    if (has_cleared_unconsumed_fragments) {
+      csr.seq()->data_loss = true;
+    }
+
+    
+    
+    PERFETTO_DCHECK(chunk->is_padding());
+  }
+
+  
+  
+  for (size_t off = wr_; off < clear_end && off < used_size_;) {
+    TBChunk* chunk = GetTBChunkAt(off);
+    PERFETTO_DCHECK(chunk->is_padding());
+    size_t chunk_end = off + chunk->outer_size();
+    if (clear_end > off && clear_end < chunk_end) {
+      PERFETTO_DCHECK(chunk_end - clear_end >= sizeof(TBChunk));
+      
+      TBChunk* pad_chunk =
+          CreateTBChunk(clear_end, chunk_end - clear_end - sizeof(TBChunk));
+      stats_.set_padding_bytes_written(stats_.padding_bytes_written() +
+                                       pad_chunk->outer_size());
+    }
+    off += chunk->outer_size();
+  }
+}
+
+bool TraceBufferV2::TryPatchChunkContents(ProducerID producer_id,
+                                          WriterID writer_id,
+                                          ChunkID chunk_id,
+                                          const Patch* patches,
+                                          size_t patches_size,
+                                          bool other_patches_pending) {
+  PERFETTO_CHECK(!read_only_);
+
+  ProducerAndWriterID seq_key = MkProducerAndWriterID(producer_id, writer_id);
+  auto seq_it = sequences_.find(seq_key);
+  if (seq_it == sequences_.end()) {
+    stats_.set_patches_failed(stats_.patches_failed() + 1);
+    return false;
+  }
+
+  
+  
+  
+  auto& chunk_list = seq_it->second.chunks;
+  TBChunk* chunk = nullptr;
+  for (auto it = chunk_list.rbegin(); it != chunk_list.rend(); ++it) {
+    TBChunk* it_chunk = GetTBChunkAt(*it);
+    if (it_chunk->chunk_id == chunk_id) {
+      chunk = it_chunk;
+      break;
+    }
+  }
+
+  if (chunk == nullptr) {
+    stats_.set_patches_failed(stats_.patches_failed() + 1);
+    return false;
+  }
+
+  size_t payload_size = chunk->payload_size;
+
+  static_assert(Patch::kSize == SharedMemoryABI::kPacketHeaderSize,
+                "Patch::kSize out of sync with SharedMemoryABI");
+
+  for (size_t i = 0; i < patches_size; i++) {
+    const size_t offset_untrusted = patches[i].offset_untrusted;
+    if (payload_size < Patch::kSize ||
+        offset_untrusted > payload_size - Patch::kSize) {
+      
+      
+      stats_.set_patches_failed(stats_.patches_failed() + 1);
+      return false;
+    }
+    PERFETTO_DCHECK(offset_untrusted >= payload_size - chunk->payload_avail);
+    TRACE_BUFFER_V2_DLOG("PatchChunk {%" PRIu32 ",%" PRIu32
+                         ",%u} size=%zu @ %zu with {%02x %02x %02x %02x}",
+                         producer_id, writer_id, chunk_id,
+                         size_t(chunk->payload_size), offset_untrusted,
+                         patches[i].data[0], patches[i].data[1],
+                         patches[i].data[2], patches[i].data[3]);
+    uint8_t* dst = chunk->fragments_begin() + offset_untrusted;
+    memcpy(dst, &patches[i].data[0], Patch::kSize);
+  }
+  TRACE_BUFFER_V2_DLOG(
+      "Chunk raw (after patch): %s",
+      base::HexDump(chunk->fragments_begin(), chunk->payload_size).c_str());
+  stats_.set_patches_succeeded(stats_.patches_succeeded() + patches_size);
+  if (!other_patches_pending) {
+    chunk->flags &= ~kChunkNeedsPatch;
+  }
+  return true;
+}
+
+void TraceBufferV2::DiscardWrite() {
+  PERFETTO_DCHECK(overwrite_policy_ == kDiscard);
+  discard_writes_ = true;
+  stats_.set_chunks_discarded(stats_.chunks_discarded() + 1);
+  TRACE_BUFFER_V2_DLOG("  discarding write");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void TraceBufferV2::DeleteStaleEmptySequences() {
+  
+  using SeqIterator = decltype(sequences_)::iterator;
+  std::vector<SeqIterator> empty_seqs;
+  empty_seqs.reserve(sequences_.size());
+  for (auto it = sequences_.begin(); it != sequences_.end(); ++it) {
+    if (it->second.chunks.empty())
+      empty_seqs.emplace_back(it);
+  }
+  static_assert(kEmptySequencesGcTreshold >= kKeepLastEmptySeq);
+  if (empty_seqs.size() < kEmptySequencesGcTreshold)
+    return;
+
+  std::sort(empty_seqs.begin(), empty_seqs.end(),
+            [](const SeqIterator& a, const SeqIterator& b) {
+              return a->second.age_for_gc < b->second.age_for_gc;
+            });
+
+  size_t n_oldest = empty_seqs.size() - kKeepLastEmptySeq;
+  for (size_t i = 0; i < n_oldest; ++i) {
+    sequences_.erase(empty_seqs[i]);
+  }
+  empty_sequences_ = kKeepLastEmptySeq;
+
+  
+  
+  
+  
+  
+  chunk_seq_reader_.reset();
+}
+
+std::unique_ptr<TraceBuffer> TraceBufferV2::CloneReadOnly() const {
+  std::unique_ptr<TraceBufferV2> buf(new TraceBufferV2(CloneCtor(), *this));
+  if (!buf->data_.IsValid())
+    return nullptr;  
+  return buf;
+}
+
+size_t TraceBufferV2::GetMemoryUsageBytes() const {
+  size_t total_bytes = size();
+  for (const Vm& vm : protovms_) {
+    total_bytes += vm.instance->GetMemoryUsageBytes();
+  }
+  return total_bytes;
+}
+
+TraceBufferV2::TraceBufferV2(CloneCtor, const TraceBufferV2& src)
+    : overwrite_policy_(src.overwrite_policy_),
+      read_generation_(src.read_generation_),
+      read_only_(true),
+      discard_writes_(src.discard_writes_) {
+  if (!Initialize(src.data_.size()))
+    return;  
+
+  
+
+  data_.EnsureCommitted(src.used_size_);
+  memcpy(data_.Get(), src.data_.Get(), src.used_size_);
+  used_size_ = src.used_size_;
+  wr_ = src.wr_;
+
+  stats_ = src.stats_;
+  stats_.set_bytes_read(0);
+  stats_.set_chunks_read(0);
+  stats_.set_readaheads_failed(0);
+  stats_.set_readaheads_succeeded(0);
+
+  
+  sequences_ = src.sequences_;
+
+  for (const auto& vm : src.protovms_) {
+    auto vm_cloned = vm.CloneReadOnly();
+    if (!vm_cloned.instance) {
+      PERFETTO_ELOG("Failed to clone ProtoVMs");
+      protovms_.clear();
+      break;
+    }
+    protovms_.push_back(std::move(vm_cloned));
+  }
+}
+
+TraceBufferV2::Vm TraceBufferV2::Vm::CloneReadOnly() const {
+  Vm cloned_vm;
+  cloned_vm.data_source_name = data_source_name;
+  cloned_vm.program_hash = program_hash;
+  cloned_vm.memory_limit_kb = memory_limit_kb;
+  cloned_vm.producers = producers;
+  cloned_vm.instance = instance->CloneReadOnly();
+  return cloned_vm;
+}
+
+void TraceBufferV2::DumpForTesting() {
+  PERFETTO_DLOG(
+      "------------------- DUMP BEGIN ------------------------------");
+  PERFETTO_DLOG("wr=%zu, size=%zu, used_size=%zu", wr_, size_, used_size_);
+  if (chunk_seq_reader_.has_value()) {
+    PERFETTO_DLOG("rd=%zu, target=%zu", OffsetOf(chunk_seq_reader_->iter()),
+                  OffsetOf(chunk_seq_reader_->end()));
+  } else {
+    PERFETTO_DLOG("rd=invalid");
+  }
+  for (size_t rd = 0; rd < size_;) {
+    TBChunk* c = GetTBChunkAtUnchecked(rd);
+    bool checksum_valid = c->IsChecksumValid(rd);
+    if (checksum_valid) {
+      PERFETTO_DLOG(
+          "[%06zu-%06zu] size=%05u(%05u) id=%05u pr_wr=%08x flags=%08x", rd,
+          rd + c->outer_size(), c->payload_size,
+          c->payload_size - c->payload_avail, c->chunk_id, c->pri_wri_id,
+          c->flags);
+      rd += c->outer_size();
+      continue;
+    }
+    size_t zero_start = rd;
+    
+    for (; rd < size_ && begin()[rd] == 0; rd++) {
+    }
+    PERFETTO_DLOG("%zu zeros, %zu left", rd - zero_start, size_ - rd);
+    break;
+  }
+  PERFETTO_DLOG("------------------------------------------------------------");
+}
+
+TraceBufferV2::Vm::Vm() = default;
+TraceBufferV2::Vm::~Vm() = default;
+TraceBufferV2::Vm::Vm(Vm&&) noexcept = default;
+
+void TraceBufferV2::MaybeSetUpProtoVm(const std::string& data_source_name,
+                                      const std::string& program_bytes,
+                                      uint32_t memory_limit_kb,
+                                      ProducerID producer_id) {
+  Vm* vm = nullptr;
+  
+  uint64_t program_hash = base::MurmurHashValue(program_bytes);
+  auto vm_it =
+      std::find_if(protovms_.begin(), protovms_.end(), [&](const Vm& vm) {
+        return vm.data_source_name == data_source_name &&
+               vm.program_hash == program_hash;
+      });
+  if (vm_it != protovms_.end()) {
+    vm = &(*vm_it);
+  } else {
+    
+    Vm new_vm;
+    new_vm.data_source_name = data_source_name;
+    new_vm.program_hash = program_hash;
+    new_vm.memory_limit_kb = memory_limit_kb;
+
+    protozero::ConstBytes program_bytes_view{
+        reinterpret_cast<const uint8_t*>(program_bytes.data()),
+        program_bytes.size()};
+
+    new_vm.instance = std::make_unique<protovm::Vm>(
+        program_bytes_view, new_vm.memory_limit_kb * 1024);
+    if (!new_vm.instance) {
+      PERFETTO_ELOG("Failed to allocate ProtoVM");
+      return;
+    }
+
+    protovms_.push_back(std::move(new_vm));
+    vm = &protovms_.back();
+  }
+  
+  vm->producers.insert(producer_id);
+}
+
+void TraceBufferV2::MaybeProcessOverwrittenPacketWithProtoVm(
+    const TracePacket& packet,
+    ProducerID producer) {
+  protovm_patch_.clear();
+
+  for (auto& vm : protovms_) {
+    if (vm.producers.find(producer) == vm.producers.end()) {
+      continue;
+    }
+    
+    
+    if (protovm_patch_.empty()) {
+      packet.GetRawBytes(&protovm_patch_);
+    }
+    protozero::ConstBytes bytes{
+        reinterpret_cast<const uint8_t*>(protovm_patch_.data()),
+        protovm_patch_.size()};
+    auto status = vm.instance->ApplyPatch(bytes);
+    if (status.IsOk()) {
+      break;
+    }
+    if (status.IsAbort()) {
+      
+      
+      PERFETTO_ELOG("ProtoVM abort while applying patch. Stacktrace:\n%s",
+                    base::Join(status.stacktrace(), "\n").c_str());
+    }
+  }
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACING_SERVICE_ENDPOINTS_IMPL_H_
+#define SRC_TRACING_SERVICE_TRACING_SERVICE_ENDPOINTS_IMPL_H_
+
+#include <functional>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <vector>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+class SharedMemoryArbiterImpl;
+
+namespace tracing_service {
+
+class TracingServiceImpl;
+struct DataSourceInstance;
+struct TracingSession;
+struct TriggerInfo;
+
+
+class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
+ public:
+  ProducerEndpointImpl(ProducerID,
+                       const ClientIdentity& client_identity,
+                       TracingServiceImpl*,
+                       base::TaskRunner*,
+                       Producer*,
+                       const std::string& producer_name,
+                       const std::string& machine_name,
+                       const std::string& sdk_version,
+                       bool in_process,
+                       bool smb_scraping_enabled);
+  ~ProducerEndpointImpl() override;
+
+  
+  void Disconnect() override;
+  void RegisterDataSource(const DataSourceDescriptor&) override;
+  void UpdateDataSource(const DataSourceDescriptor&) override;
+  void UnregisterDataSource(const std::string& name) override;
+  void RegisterTraceWriter(uint32_t writer_id, uint32_t target_buffer) override;
+  void UnregisterTraceWriter(uint32_t writer_id) override;
+  void CommitData(const CommitDataRequest&, CommitDataCallback) override;
+  void SetupSharedMemory(std::unique_ptr<SharedMemory>,
+                         size_t page_size_bytes,
+                         bool provided_by_producer,
+                         SharedMemoryABI::ShmemMode shmem_mode);
+  std::unique_ptr<TraceWriter> CreateTraceWriter(
+      BufferID,
+      BufferExhaustedPolicy) override;
+  SharedMemoryArbiter* MaybeSharedMemoryArbiter() override;
+  bool IsShmemProvidedByProducer() const override;
+  void NotifyFlushComplete(FlushRequestID) override;
+  void NotifyDataSourceStarted(DataSourceInstanceID) override;
+  void NotifyDataSourceStopped(DataSourceInstanceID) override;
+  SharedMemory* shared_memory() const override;
+  size_t shared_buffer_page_size_kb() const override;
+  void ActivateTriggers(const std::vector<std::string>&) override;
+  void Sync(std::function<void()> callback) override;
+
+  void OnTracingSetup();
+  void SetupDataSource(DataSourceInstanceID, const DataSourceConfig&);
+  void StartDataSource(DataSourceInstanceID, const DataSourceConfig&);
+  void StopDataSource(DataSourceInstanceID);
+  void Flush(FlushRequestID,
+             const std::vector<DataSourceInstanceID>&,
+             FlushFlags);
+  void OnFreeBuffers(const std::vector<BufferID>& target_buffers);
+  void ClearIncrementalState(const std::vector<DataSourceInstanceID>&);
+
+  bool is_allowed_target_buffer(BufferID buffer_id) const {
+    return allowed_target_buffers_.count(buffer_id);
+  }
+
+  std::optional<BufferID> buffer_id_for_writer(WriterID writer_id) const {
+    const auto it = writers_.find(writer_id);
+    if (it != writers_.end())
+      return it->second;
+    return std::nullopt;
+  }
+
+  bool IsShmemEmulated() { return shmem_abi_.use_shmem_emulation(); }
+
+  bool IsAndroidProcessFrozen();
+  uid_t uid() const { return client_identity_.uid(); }
+  pid_t pid() const { return client_identity_.pid(); }
+  const ClientIdentity& client_identity() const { return client_identity_; }
+
+ private:
+  friend class TracingServiceImpl;
+  friend class ConsumerEndpointImpl;
+  ProducerEndpointImpl(const ProducerEndpointImpl&) = delete;
+  ProducerEndpointImpl& operator=(const ProducerEndpointImpl&) = delete;
+
+  ProducerID const id_;
+  ClientIdentity const client_identity_;
+  TracingServiceImpl* const service_;
+  Producer* producer_;
+  std::unique_ptr<SharedMemory> shared_memory_;
+  size_t shared_buffer_page_size_kb_ = 0;
+  SharedMemoryABI shmem_abi_;
+  size_t shmem_size_hint_bytes_ = 0;
+  size_t shmem_page_size_hint_bytes_ = 0;
+  bool is_shmem_provided_by_producer_ = false;
+  const std::string name_;
+  const std::string machine_name_;
+  std::string sdk_version_;
+  bool in_process_;
+  bool smb_scraping_enabled_;
+
+  
+  
+  std::set<BufferID> allowed_target_buffers_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  std::map<WriterID, BufferID> writers_;
+
+  
+  
+  std::unique_ptr<SharedMemoryArbiterImpl> inproc_shmem_arbiter_;
+
+  PERFETTO_THREAD_CHECKER(thread_checker_)
+  base::WeakRunner weak_runner_;
+};
+
+
+class ConsumerEndpointImpl : public TracingService::ConsumerEndpoint {
+ public:
+  ConsumerEndpointImpl(TracingServiceImpl*,
+                       base::TaskRunner*,
+                       Consumer*,
+                       uid_t uid);
+  ~ConsumerEndpointImpl() override;
+
+  void NotifyOnTracingDisabled(const std::string& error);
+
+  
+  void EnableTracing(const TraceConfig&, base::ScopedFile) override;
+  void ChangeTraceConfig(const TraceConfig& cfg) override;
+  void StartTracing() override;
+  void DisableTracing() override;
+  void ReadBuffers() override;
+  void FreeBuffers() override;
+  void Flush(uint32_t timeout_ms, FlushCallback, FlushFlags) override;
+  void Detach(const std::string& key) override;
+  void Attach(const std::string& key) override;
+  void GetTraceStats() override;
+  void ObserveEvents(uint32_t enabled_event_types) override;
+  void QueryServiceState(QueryServiceStateArgs,
+                         QueryServiceStateCallback) override;
+  void QueryCapabilities(QueryCapabilitiesCallback) override;
+  void SaveTraceForBugreport(SaveTraceForBugreportCallback) override;
+  void CloneSession(CloneSessionArgs) override;
+
+  
+  void OnDataSourceInstanceStateChange(const ProducerEndpointImpl&,
+                                       const DataSourceInstance&);
+  void OnAllDataSourcesStarted();
+
+  base::WeakPtr<ConsumerEndpointImpl> GetWeakPtr() {
+    return weak_ptr_factory_.GetWeakPtr();
+  }
+
+ private:
+  friend class TracingServiceImpl;
+  friend struct TracingSession;
+  ConsumerEndpointImpl(const ConsumerEndpointImpl&) = delete;
+  ConsumerEndpointImpl& operator=(const ConsumerEndpointImpl&) = delete;
+
+  void NotifyCloneSnapshotTrigger(const TriggerInfo& trigger_name);
+
+  
+  
+  ObservableEvents* AddObservableEvents();
+
+  base::TaskRunner* const task_runner_;
+  TracingServiceImpl* const service_;
+  Consumer* const consumer_;
+  uid_t const uid_;
+  TracingSessionID tracing_session_id_ = 0;
+
+  
+  
+  uint32_t observable_events_mask_ = 0;
+
+  
+  
+  std::unique_ptr<ObservableEvents> observable_events_;
+
+  PERFETTO_THREAD_CHECKER(thread_checker_)
+  base::WeakPtrFactory<ConsumerEndpointImpl> weak_ptr_factory_;  
+};
+
+class RelayEndpointImpl : public TracingService::RelayEndpoint {
+ public:
+  using SyncMode = RelayEndpoint::SyncMode;
+  using RelayClientID = TracingService::RelayClientID;
+
+  struct SyncedClockSnapshots {
+    SyncedClockSnapshots(SyncMode _sync_mode,
+                         base::ClockSnapshotVector _client_clocks,
+                         base::ClockSnapshotVector _host_clocks)
+        : sync_mode(_sync_mode),
+          client_clocks(std::move(_client_clocks)),
+          host_clocks(std::move(_host_clocks)) {}
+    SyncMode sync_mode;
+    base::ClockSnapshotVector client_clocks;
+    base::ClockSnapshotVector host_clocks;
+  };
+
+  explicit RelayEndpointImpl(RelayClientID relay_client_id,
+                             TracingServiceImpl* service);
+  ~RelayEndpointImpl() override;
+
+  void CacheSystemInfo(std::vector<uint8_t> serialized_system_info) override {
+    serialized_system_info_ = serialized_system_info;
+  }
+
+  void SyncClocks(SyncMode sync_mode,
+                  base::ClockSnapshotVector client_clocks,
+                  base::ClockSnapshotVector host_clocks) override;
+  void Disconnect() override;
+
+  MachineID machine_id() const { return relay_client_id_.first; }
+
+  base::CircularQueue<SyncedClockSnapshots>& synced_clocks() {
+    return synced_clocks_;
+  }
+
+  std::vector<uint8_t>& serialized_system_info() {
+    return serialized_system_info_;
+  }
+
+ private:
+  friend class TracingServiceImpl;
+  RelayEndpointImpl(const RelayEndpointImpl&) = delete;
+  RelayEndpointImpl& operator=(const RelayEndpointImpl&) = delete;
+
+  RelayClientID relay_client_id_;
+  TracingServiceImpl* const service_;
+  std::vector<uint8_t> serialized_system_info_;
+  base::CircularQueue<SyncedClockSnapshots> synced_clocks_;
+
+  PERFETTO_THREAD_CHECKER(thread_checker_)
+};
+
+}  
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_CAPABILITIES_H_
+#define INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_CAPABILITIES_H_
+
+
+
+
+
+
+
+
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef SRC_TRACING_SERVICE_DEPENDENCIES_H_
 #define SRC_TRACING_SERVICE_DEPENDENCIES_H_
 
@@ -46923,22 +64293,440 @@ struct Dependencies {
 
 
 
-#ifndef SRC_TRACING_SERVICE_TRACING_SERVICE_IMPL_H_
-#define SRC_TRACING_SERVICE_TRACING_SERVICE_IMPL_H_
 
-#include <algorithm>
-#include <functional>
-#include <map>
+
+#ifndef SRC_TRACING_SERVICE_TRACING_SERVICE_STRUCTS_H_
+#define SRC_TRACING_SERVICE_TRACING_SERVICE_STRUCTS_H_
+
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <set>
-#include <utility>
+#include <string>
 #include <vector>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+class TraceBuffer;
+
+namespace tracing_service {
+
+class ConsumerEndpointImpl;
+
+struct TriggerInfo {
+  uint64_t boot_time_ns = 0;
+  std::string trigger_name;
+  std::string producer_name;
+  uid_t producer_uid = 0;
+  uint64_t trigger_delay_ms = 0;
+};
+
+struct PendingClone {
+  size_t pending_flush_cnt = 0;
+  
+  
+  std::vector<std::unique_ptr<TraceBuffer>> buffers;
+  std::vector<int64_t> buffer_cloned_timestamps;
+  bool flush_failed = false;
+  base::WeakPtr<ConsumerEndpointImpl> weak_consumer;
+  bool skip_trace_filter = false;
+  std::optional<TriggerInfo> clone_trigger;
+  int64_t clone_started_timestamp_ns = 0;
+  base::ScopedFile output_file_fd;
+};
+
+struct PendingFlush {
+  std::set<ProducerID> producers;
+  ConsumerEndpoint::FlushCallback callback;
+  explicit PendingFlush(decltype(callback) cb) : callback(std::move(cb)) {}
+};
+
+struct TriggerHistory {
+  int64_t timestamp_ns;
+  uint64_t name_hash;
+
+  bool operator<(const TriggerHistory& other) const {
+    return timestamp_ns < other.timestamp_ns;
+  }
+};
+
+struct RegisteredDataSource {
+  ProducerID producer_id;
+  DataSourceDescriptor descriptor;
+};
+
+
+struct DataSourceInstance {
+  DataSourceInstance(DataSourceInstanceID id,
+                     const DataSourceConfig& cfg,
+                     const std::string& ds_name,
+                     bool notify_on_start,
+                     bool notify_on_stop,
+                     bool handles_incremental_state_invalidation,
+                     bool no_flush_)
+      : instance_id(id),
+        config(cfg),
+        data_source_name(ds_name),
+        will_notify_on_start(notify_on_start),
+        will_notify_on_stop(notify_on_stop),
+        handles_incremental_state_clear(handles_incremental_state_invalidation),
+        no_flush(no_flush_) {}
+  DataSourceInstance(const DataSourceInstance&) = delete;
+  DataSourceInstance& operator=(const DataSourceInstance&) = delete;
+
+  DataSourceInstanceID instance_id;
+  DataSourceConfig config;
+  std::string data_source_name;
+  bool will_notify_on_start;
+  bool will_notify_on_stop;
+  bool handles_incremental_state_clear;
+  bool no_flush;
+
+  enum DataSourceInstanceState {
+    CONFIGURED,
+    STARTING,
+    STARTED,
+    STOPPING,
+    STOPPED
+  };
+  DataSourceInstanceState state = CONFIGURED;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACING_SERVICE_SESSION_H_
+#define SRC_TRACING_SERVICE_TRACING_SERVICE_SESSION_H_
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <tuple>
+#include <vector>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace protozero {
+class MessageFilter;
+}
+
+namespace perfetto {
+
+namespace protos {
+namespace gen {
+enum TraceStats_FinalFlushOutcome : int;
+}
+}  
+
+namespace base {
+class TaskRunner;
+}
+
+namespace tracing_service {
+
+class ConsumerEndpointImpl;
+
+
+
+struct TracingSession {
+  enum State {
+    DISABLED = 0,
+    CONFIGURED,
+    STARTED,
+    DISABLING_WAITING_STOP_ACKS,
+    CLONED_READ_ONLY,
+  };
+
+  TracingSession(TracingSessionID,
+                 ConsumerEndpointImpl*,
+                 const TraceConfig&,
+                 base::TaskRunner*);
+  TracingSession(TracingSession&&) = delete;
+  TracingSession& operator=(TracingSession&&) = delete;
+
+  size_t num_buffers() const { return buffers_index.size(); }
+
+  uint32_t flush_timeout_ms() {
+    uint32_t timeout_ms = config.flush_timeout_ms();
+    return timeout_ms ? timeout_ms : kDefaultFlushTimeoutMs;
+  }
+
+  uint32_t data_source_stop_timeout_ms() {
+    uint32_t timeout_ms = config.data_source_stop_timeout_ms();
+    return timeout_ms ? timeout_ms : kDataSourceStopTimeoutMs;
+  }
+
+  PacketSequenceID GetPacketSequenceID(MachineID, ProducerID, WriterID);
+  DataSourceInstance* GetDataSourceInstance(ProducerID, DataSourceInstanceID);
+  bool AllDataSourceInstancesStarted();
+  bool AllDataSourceInstancesStopped();
+
+  
+  
+  bool IsCloneAllowed(uid_t clone_uid) const;
+
+  const TracingSessionID id;
+
+  
+  
+  ConsumerEndpointImpl* consumer_maybe_null;
+
+  
+  
+  
+  uid_t const consumer_uid;
+
+  
+  
+  
+  
+  std::vector<TriggerInfo> received_triggers;
+
+  
+  
+  TraceConfig config;
+
+  
+  
+  std::multimap<ProducerID, DataSourceInstance> data_source_instances;
+
+  
+  
+  std::map<FlushRequestID, PendingFlush> pending_flushes;
+
+  
+  
+  std::map<PendingCloneID, PendingClone> pending_clones;
+
+  PendingCloneID last_pending_clone_id_ = 0;
+
+  
+  
+  
+  std::vector<BufferID> buffers_index;
+
+  std::map<std::tuple<MachineID, ProducerID, WriterID>, PacketSequenceID>
+      packet_sequence_ids;
+  PacketSequenceID last_packet_sequence_id = kServicePacketSequenceID;
+
+  
+  
+  bool should_emit_stats = false;
+
+  
+  
+  bool should_emit_sync_marker = false;
+
+  
+  
+  bool did_emit_initial_packets = false;
+
+  
+  bool did_emit_remote_clock_sync_ = false;
+
+  
+  bool did_emit_protovm_instances_ = false;
+
+  
+  bool compress_deflate = false;
+
+  
+  size_t num_triggers_emitted_into_trace = 0;
+
+  
+  uint64_t invalid_packets = 0;
+
+  
+  uint64_t flushes_requested = 0;
+  uint64_t flushes_succeeded = 0;
+  uint64_t flushes_failed = 0;
+
+  
+  protos::gen::TraceStats_FinalFlushOutcome final_flush_outcome{};
+
+  
+  bool did_notify_all_data_source_started = false;
+
+  
+  
+  struct LifecycleEvent {
+    explicit LifecycleEvent(uint32_t f_id, uint32_t m_size = 1)
+        : field_id(f_id), max_size(m_size), timestamps(m_size) {}
+
+    
+    uint32_t field_id;
+
+    
+    
+    
+    uint32_t max_size;
+
+    
+    
+    
+    base::CircularQueue<int64_t> timestamps;
+  };
+  std::vector<LifecycleEvent> lifecycle_events;
+
+  
+  
+  struct ArbitraryLifecycleEvent {
+    int64_t timestamp;
+    std::vector<uint8_t> data;
+  };
+
+  std::optional<ArbitraryLifecycleEvent> slow_start_event;
+
+  std::vector<ArbitraryLifecycleEvent> last_flush_events;
+
+  
+  
+  std::vector<int64_t> buffer_cloned_timestamps;
+
+  using ClockSnapshotData = base::ClockSnapshotVector;
+
+  
+  
+  
+  ClockSnapshotData initial_clock_snapshot;
+
+  
+  
+  
+  
+  base::CircularQueue<ClockSnapshotData> clock_snapshot_ring_buffer;
+
+  State state = DISABLED;
+
+  
+  
+  std::string detach_key;
+
+  
+  
+  
+  
+  base::ScopedFile write_into_file;
+  uint32_t write_period_ms = 0;
+
+  
+  
+  
+  
+  
+  
+  enum class FlushStrategy : uint8_t { kDisabled, kOnWrite, kPeriodic };
+  FlushStrategy flush_strategy = FlushStrategy::kDisabled;
+  uint32_t periodic_flush_ms = 0;
+  bool fflush_post_write = false;
+  uint64_t max_file_size_bytes = 0;
+  uint64_t bytes_written_into_file = 0;
+
+  
+  
+  base::PeriodicTask snapshot_periodic_task;
+
+  
+  
+  
+  base::PeriodicTask timed_stop_task;
+
+  
+  std::unique_ptr<protozero::MessageFilter> trace_filter;
+  uint64_t filter_input_packets = 0;
+  uint64_t filter_input_bytes = 0;
+  uint64_t filter_output_bytes = 0;
+  uint64_t filter_errors = 0;
+  uint64_t filter_time_taken_ns = 0;
+  std::vector<uint64_t> filter_bytes_discarded_per_buffer;
+
+  
+  
+  
+  
+  base::Uuid trace_uuid;
+
+  
+  std::optional<TriggerInfo> clone_trigger;
+
+  std::optional<base::ScopedSchedBoost> priority_boost;
+
+  
+  
+  
+  
+};
+
+}  
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACING_SERVICE_IMPL_H_
+#define SRC_TRACING_SERVICE_TRACING_SERVICE_IMPL_H_
+
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <vector>
 
 
 
@@ -46980,15 +64768,11 @@ class SharedMemoryArbiterImpl;
 class TraceBuffer;
 class TracePacket;
 
+namespace tracing_service {
 
 class TracingServiceImpl : public TracingService {
- private:
-  struct DataSourceInstance;
-  struct TriggerInfo;
-
  public:
   static constexpr size_t kMaxShmSize = 32 * 1024 * 1024ul;
-  static constexpr uint32_t kDataSourceStopTimeoutMs = 5000;
   static constexpr uint8_t kSyncMarker[] = {0x82, 0x47, 0x7a, 0x76, 0xb2, 0x8d,
                                             0x42, 0xba, 0x81, 0xdc, 0x33, 0x32,
                                             0x6d, 0x57, 0xa0, 0x79};
@@ -47001,221 +64785,6 @@ class TracingServiceImpl : public TracingService {
   
   
   static constexpr size_t kWriteIntoFileChunkSize = 1024 * 1024ul;
-
-  
-  class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
-   public:
-    ProducerEndpointImpl(ProducerID,
-                         const ClientIdentity& client_identity,
-                         TracingServiceImpl*,
-                         base::TaskRunner*,
-                         Producer*,
-                         const std::string& producer_name,
-                         const std::string& sdk_version,
-                         bool in_process,
-                         bool smb_scraping_enabled);
-    ~ProducerEndpointImpl() override;
-
-    
-    void Disconnect() override;
-    void RegisterDataSource(const DataSourceDescriptor&) override;
-    void UpdateDataSource(const DataSourceDescriptor&) override;
-    void UnregisterDataSource(const std::string& name) override;
-    void RegisterTraceWriter(uint32_t writer_id,
-                             uint32_t target_buffer) override;
-    void UnregisterTraceWriter(uint32_t writer_id) override;
-    void CommitData(const CommitDataRequest&, CommitDataCallback) override;
-    void SetupSharedMemory(std::unique_ptr<SharedMemory>,
-                           size_t page_size_bytes,
-                           bool provided_by_producer);
-    std::unique_ptr<TraceWriter> CreateTraceWriter(
-        BufferID,
-        BufferExhaustedPolicy) override;
-    SharedMemoryArbiter* MaybeSharedMemoryArbiter() override;
-    bool IsShmemProvidedByProducer() const override;
-    void NotifyFlushComplete(FlushRequestID) override;
-    void NotifyDataSourceStarted(DataSourceInstanceID) override;
-    void NotifyDataSourceStopped(DataSourceInstanceID) override;
-    SharedMemory* shared_memory() const override;
-    size_t shared_buffer_page_size_kb() const override;
-    void ActivateTriggers(const std::vector<std::string>&) override;
-    void Sync(std::function<void()> callback) override;
-
-    void OnTracingSetup();
-    void SetupDataSource(DataSourceInstanceID, const DataSourceConfig&);
-    void StartDataSource(DataSourceInstanceID, const DataSourceConfig&);
-    void StopDataSource(DataSourceInstanceID);
-    void Flush(FlushRequestID,
-               const std::vector<DataSourceInstanceID>&,
-               FlushFlags);
-    void OnFreeBuffers(const std::vector<BufferID>& target_buffers);
-    void ClearIncrementalState(const std::vector<DataSourceInstanceID>&);
-
-    bool is_allowed_target_buffer(BufferID buffer_id) const {
-      return allowed_target_buffers_.count(buffer_id);
-    }
-
-    std::optional<BufferID> buffer_id_for_writer(WriterID writer_id) const {
-      const auto it = writers_.find(writer_id);
-      if (it != writers_.end())
-        return it->second;
-      return std::nullopt;
-    }
-
-    bool IsAndroidProcessFrozen();
-    uid_t uid() const { return client_identity_.uid(); }
-    pid_t pid() const { return client_identity_.pid(); }
-    const ClientIdentity& client_identity() const { return client_identity_; }
-
-   private:
-    friend class TracingServiceImpl;
-    ProducerEndpointImpl(const ProducerEndpointImpl&) = delete;
-    ProducerEndpointImpl& operator=(const ProducerEndpointImpl&) = delete;
-
-    ProducerID const id_;
-    ClientIdentity const client_identity_;
-    TracingServiceImpl* const service_;
-    Producer* producer_;
-    std::unique_ptr<SharedMemory> shared_memory_;
-    size_t shared_buffer_page_size_kb_ = 0;
-    SharedMemoryABI shmem_abi_;
-    size_t shmem_size_hint_bytes_ = 0;
-    size_t shmem_page_size_hint_bytes_ = 0;
-    bool is_shmem_provided_by_producer_ = false;
-    const std::string name_;
-    std::string sdk_version_;
-    bool in_process_;
-    bool smb_scraping_enabled_;
-
-    
-    
-    std::set<BufferID> allowed_target_buffers_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    std::map<WriterID, BufferID> writers_;
-
-    
-    
-    std::unique_ptr<SharedMemoryArbiterImpl> inproc_shmem_arbiter_;
-
-    PERFETTO_THREAD_CHECKER(thread_checker_)
-    base::WeakRunner weak_runner_;
-  };
-
-  
-  class ConsumerEndpointImpl : public TracingService::ConsumerEndpoint {
-   public:
-    ConsumerEndpointImpl(TracingServiceImpl*,
-                         base::TaskRunner*,
-                         Consumer*,
-                         uid_t uid);
-    ~ConsumerEndpointImpl() override;
-
-    void NotifyOnTracingDisabled(const std::string& error);
-
-    
-    void EnableTracing(const TraceConfig&, base::ScopedFile) override;
-    void ChangeTraceConfig(const TraceConfig& cfg) override;
-    void StartTracing() override;
-    void DisableTracing() override;
-    void ReadBuffers() override;
-    void FreeBuffers() override;
-    void Flush(uint32_t timeout_ms, FlushCallback, FlushFlags) override;
-    void Detach(const std::string& key) override;
-    void Attach(const std::string& key) override;
-    void GetTraceStats() override;
-    void ObserveEvents(uint32_t enabled_event_types) override;
-    void QueryServiceState(QueryServiceStateArgs,
-                           QueryServiceStateCallback) override;
-    void QueryCapabilities(QueryCapabilitiesCallback) override;
-    void SaveTraceForBugreport(SaveTraceForBugreportCallback) override;
-    void CloneSession(CloneSessionArgs) override;
-
-    
-    void OnDataSourceInstanceStateChange(const ProducerEndpointImpl&,
-                                         const DataSourceInstance&);
-    void OnAllDataSourcesStarted();
-
-    base::WeakPtr<ConsumerEndpointImpl> GetWeakPtr() {
-      return weak_ptr_factory_.GetWeakPtr();
-    }
-
-   private:
-    friend class TracingServiceImpl;
-    ConsumerEndpointImpl(const ConsumerEndpointImpl&) = delete;
-    ConsumerEndpointImpl& operator=(const ConsumerEndpointImpl&) = delete;
-
-    void NotifyCloneSnapshotTrigger(const TriggerInfo& trigger_name);
-
-    
-    
-    ObservableEvents* AddObservableEvents();
-
-    base::TaskRunner* const task_runner_;
-    TracingServiceImpl* const service_;
-    Consumer* const consumer_;
-    uid_t const uid_;
-    TracingSessionID tracing_session_id_ = 0;
-
-    
-    
-    uint32_t observable_events_mask_ = 0;
-
-    
-    
-    std::unique_ptr<ObservableEvents> observable_events_;
-
-    PERFETTO_THREAD_CHECKER(thread_checker_)
-    base::WeakPtrFactory<ConsumerEndpointImpl> weak_ptr_factory_;  
-  };
-
-  class RelayEndpointImpl : public TracingService::RelayEndpoint {
-   public:
-    using SyncMode = RelayEndpoint::SyncMode;
-
-    struct SyncedClockSnapshots {
-      SyncedClockSnapshots(SyncMode _sync_mode,
-                           base::ClockSnapshotVector _client_clocks,
-                           base::ClockSnapshotVector _host_clocks)
-          : sync_mode(_sync_mode),
-            client_clocks(std::move(_client_clocks)),
-            host_clocks(std::move(_host_clocks)) {}
-      SyncMode sync_mode;
-      base::ClockSnapshotVector client_clocks;
-      base::ClockSnapshotVector host_clocks;
-    };
-
-    explicit RelayEndpointImpl(RelayClientID relay_client_id,
-                               TracingServiceImpl* service);
-    ~RelayEndpointImpl() override;
-    void SyncClocks(SyncMode sync_mode,
-                    base::ClockSnapshotVector client_clocks,
-                    base::ClockSnapshotVector host_clocks) override;
-    void Disconnect() override;
-
-    MachineID machine_id() const { return relay_client_id_.first; }
-
-    base::CircularQueue<SyncedClockSnapshots>& synced_clocks() {
-      return synced_clocks_;
-    }
-
-   private:
-    RelayEndpointImpl(const RelayEndpointImpl&) = delete;
-    RelayEndpointImpl& operator=(const RelayEndpointImpl&) = delete;
-
-    RelayClientID relay_client_id_;
-    TracingServiceImpl* const service_;
-    base::CircularQueue<SyncedClockSnapshots> synced_clocks_;
-
-    PERFETTO_THREAD_CHECKER(thread_checker_)
-  };
 
   explicit TracingServiceImpl(std::unique_ptr<SharedMemory::Factory>,
                               base::TaskRunner*,
@@ -47255,7 +64824,9 @@ class TracingServiceImpl : public TracingService {
   void ChangeTraceConfig(ConsumerEndpointImpl*, const TraceConfig&);
 
   void StartTracing(TracingSessionID);
-  void DisableTracing(TracingSessionID, bool disable_immediately = false);
+  void DisableTracing(TracingSessionID,
+                      bool disable_immediately = false,
+                      const std::string& error = {});
   void Flush(TracingSessionID tsid,
              uint32_t timeout_ms,
              ConsumerEndpoint::FlushCallback,
@@ -47285,9 +64856,13 @@ class TracingServiceImpl : public TracingService {
   
   
   
-  bool ReadBuffersIntoFile(TracingSessionID);
+  
+  
+  
+  bool ReadBuffersIntoFile(TracingSessionID tsid,
+                           bool async_flush_buffers_before_read);
 
-  void FreeBuffers(TracingSessionID);
+  void FreeBuffers(TracingSessionID tsid, const std::string& error = {});
 
   
   std::unique_ptr<TracingService::ProducerEndpoint> ConnectProducer(
@@ -47300,7 +64875,8 @@ class TracingServiceImpl : public TracingService {
           ProducerSMBScrapingMode::kDefault,
       size_t shared_memory_page_size_hint_bytes = 0,
       std::unique_ptr<SharedMemory> shm = nullptr,
-      const std::string& sdk_version = {}) override;
+      const std::string& sdk_version = {},
+      const std::string& machine_name = {}) override;
 
   std::unique_ptr<TracingService::ConsumerEndpoint> ConnectConsumer(
       Consumer*,
@@ -47322,342 +64898,8 @@ class TracingServiceImpl : public TracingService {
   ProducerEndpointImpl* GetProducer(ProducerID) const;
 
  private:
-  struct TriggerHistory {
-    int64_t timestamp_ns;
-    uint64_t name_hash;
-
-    bool operator<(const TriggerHistory& other) const {
-      return timestamp_ns < other.timestamp_ns;
-    }
-  };
-
-  struct RegisteredDataSource {
-    ProducerID producer_id;
-    DataSourceDescriptor descriptor;
-  };
-
-  
-  struct DataSourceInstance {
-    DataSourceInstance(DataSourceInstanceID id,
-                       const DataSourceConfig& cfg,
-                       const std::string& ds_name,
-                       bool notify_on_start,
-                       bool notify_on_stop,
-                       bool handles_incremental_state_invalidation,
-                       bool no_flush_)
-        : instance_id(id),
-          config(cfg),
-          data_source_name(ds_name),
-          will_notify_on_start(notify_on_start),
-          will_notify_on_stop(notify_on_stop),
-          handles_incremental_state_clear(
-              handles_incremental_state_invalidation),
-          no_flush(no_flush_) {}
-    DataSourceInstance(const DataSourceInstance&) = delete;
-    DataSourceInstance& operator=(const DataSourceInstance&) = delete;
-
-    DataSourceInstanceID instance_id;
-    DataSourceConfig config;
-    std::string data_source_name;
-    bool will_notify_on_start;
-    bool will_notify_on_stop;
-    bool handles_incremental_state_clear;
-    bool no_flush;
-
-    enum DataSourceInstanceState {
-      CONFIGURED,
-      STARTING,
-      STARTED,
-      STOPPING,
-      STOPPED
-    };
-    DataSourceInstanceState state = CONFIGURED;
-  };
-
-  struct PendingFlush {
-    std::set<ProducerID> producers;
-    ConsumerEndpoint::FlushCallback callback;
-    explicit PendingFlush(decltype(callback) cb) : callback(std::move(cb)) {}
-  };
-
-  using PendingCloneID = uint64_t;
-
-  struct TriggerInfo {
-    uint64_t boot_time_ns = 0;
-    std::string trigger_name;
-    std::string producer_name;
-    uid_t producer_uid = 0;
-  };
-
-  struct PendingClone {
-    size_t pending_flush_cnt = 0;
-    
-    
-    std::vector<std::unique_ptr<TraceBuffer>> buffers;
-    std::vector<int64_t> buffer_cloned_timestamps;
-    bool flush_failed = false;
-    base::WeakPtr<ConsumerEndpointImpl> weak_consumer;
-    bool skip_trace_filter = false;
-    std::optional<TriggerInfo> clone_trigger;
-    int64_t clone_started_timestamp_ns = 0;
-  };
-
-  
-  
-  struct TracingSession {
-    enum State {
-      DISABLED = 0,
-      CONFIGURED,
-      STARTED,
-      DISABLING_WAITING_STOP_ACKS,
-      CLONED_READ_ONLY,
-    };
-
-    TracingSession(TracingSessionID,
-                   ConsumerEndpointImpl*,
-                   const TraceConfig&,
-                   base::TaskRunner*);
-    TracingSession(TracingSession&&) = delete;
-    TracingSession& operator=(TracingSession&&) = delete;
-
-    size_t num_buffers() const { return buffers_index.size(); }
-
-    uint32_t flush_timeout_ms() {
-      uint32_t timeout_ms = config.flush_timeout_ms();
-      return timeout_ms ? timeout_ms : kDefaultFlushTimeoutMs;
-    }
-
-    uint32_t data_source_stop_timeout_ms() {
-      uint32_t timeout_ms = config.data_source_stop_timeout_ms();
-      return timeout_ms ? timeout_ms : kDataSourceStopTimeoutMs;
-    }
-
-    PacketSequenceID GetPacketSequenceID(MachineID machine_id,
-                                         ProducerID producer_id,
-                                         WriterID writer_id) {
-      auto key = std::make_tuple(machine_id, producer_id, writer_id);
-      auto it = packet_sequence_ids.find(key);
-      if (it != packet_sequence_ids.end())
-        return it->second;
-      
-      
-      static_assert(kMaxPacketSequenceID > kMaxProducerID * kMaxWriterID,
-                    "PacketSequenceID value space doesn't cover service "
-                    "sequence ID and all producer/writer ID combinations!");
-      PERFETTO_DCHECK(last_packet_sequence_id < kMaxPacketSequenceID);
-      PacketSequenceID sequence_id = ++last_packet_sequence_id;
-      packet_sequence_ids[key] = sequence_id;
-      return sequence_id;
-    }
-
-    DataSourceInstance* GetDataSourceInstance(
-        ProducerID producer_id,
-        DataSourceInstanceID instance_id) {
-      for (auto& inst_kv : data_source_instances) {
-        if (inst_kv.first != producer_id ||
-            inst_kv.second.instance_id != instance_id) {
-          continue;
-        }
-        return &inst_kv.second;
-      }
-      return nullptr;
-    }
-
-    bool AllDataSourceInstancesStarted() {
-      return std::all_of(
-          data_source_instances.begin(), data_source_instances.end(),
-          [](decltype(data_source_instances)::const_reference x) {
-            return x.second.state == DataSourceInstance::STARTED;
-          });
-    }
-
-    bool AllDataSourceInstancesStopped() {
-      return std::all_of(
-          data_source_instances.begin(), data_source_instances.end(),
-          [](decltype(data_source_instances)::const_reference x) {
-            return x.second.state == DataSourceInstance::STOPPED;
-          });
-    }
-
-    
-    
-    bool IsCloneAllowed(uid_t clone_uid) const;
-
-    const TracingSessionID id;
-
-    
-    
-    ConsumerEndpointImpl* consumer_maybe_null;
-
-    
-    
-    
-    uid_t const consumer_uid;
-
-    
-    
-    
-    
-    std::vector<TriggerInfo> received_triggers;
-
-    
-    
-    TraceConfig config;
-
-    
-    
-    std::multimap<ProducerID, DataSourceInstance> data_source_instances;
-
-    
-    
-    std::map<FlushRequestID, PendingFlush> pending_flushes;
-
-    
-    
-    std::map<PendingCloneID, PendingClone> pending_clones;
-
-    PendingCloneID last_pending_clone_id_ = 0;
-
-    
-    
-    
-    std::vector<BufferID> buffers_index;
-
-    std::map<std::tuple<MachineID, ProducerID, WriterID>, PacketSequenceID>
-        packet_sequence_ids;
-    PacketSequenceID last_packet_sequence_id = kServicePacketSequenceID;
-
-    
-    
-    bool should_emit_stats = false;
-
-    
-    
-    bool should_emit_sync_marker = false;
-
-    
-    
-    bool did_emit_initial_packets = false;
-
-    
-    bool did_emit_remote_clock_sync_ = false;
-
-    
-    bool compress_deflate = false;
-
-    
-    size_t num_triggers_emitted_into_trace = 0;
-
-    
-    uint64_t invalid_packets = 0;
-
-    
-    uint64_t flushes_requested = 0;
-    uint64_t flushes_succeeded = 0;
-    uint64_t flushes_failed = 0;
-
-    
-    protos::gen::TraceStats_FinalFlushOutcome final_flush_outcome{};
-
-    
-    bool did_notify_all_data_source_started = false;
-
-    
-    
-    struct LifecycleEvent {
-      LifecycleEvent(uint32_t f_id, uint32_t m_size = 1)
-          : field_id(f_id), max_size(m_size), timestamps(m_size) {}
-
-      
-      uint32_t field_id;
-
-      
-      
-      
-      uint32_t max_size;
-
-      
-      
-      
-      base::CircularQueue<int64_t> timestamps;
-    };
-    std::vector<LifecycleEvent> lifecycle_events;
-
-    
-    
-    struct ArbitraryLifecycleEvent {
-      int64_t timestamp;
-      std::vector<uint8_t> data;
-    };
-
-    std::optional<ArbitraryLifecycleEvent> slow_start_event;
-
-    std::vector<ArbitraryLifecycleEvent> last_flush_events;
-
-    
-    
-    std::vector<int64_t> buffer_cloned_timestamps;
-
-    using ClockSnapshotData = base::ClockSnapshotVector;
-
-    
-    
-    
-    ClockSnapshotData initial_clock_snapshot;
-
-    
-    
-    
-    
-    base::CircularQueue<ClockSnapshotData> clock_snapshot_ring_buffer;
-
-    State state = DISABLED;
-
-    
-    
-    std::string detach_key;
-
-    
-    
-    
-    
-    base::ScopedFile write_into_file;
-    uint32_t write_period_ms = 0;
-    uint64_t max_file_size_bytes = 0;
-    uint64_t bytes_written_into_file = 0;
-
-    
-    
-    base::PeriodicTask snapshot_periodic_task;
-
-    
-    
-    
-    base::PeriodicTask timed_stop_task;
-
-    
-    std::unique_ptr<protozero::MessageFilter> trace_filter;
-    uint64_t filter_input_packets = 0;
-    uint64_t filter_input_bytes = 0;
-    uint64_t filter_output_bytes = 0;
-    uint64_t filter_errors = 0;
-    uint64_t filter_time_taken_ns = 0;
-    std::vector<uint64_t> filter_bytes_discarded_per_buffer;
-
-    
-    
-    
-    
-    base::Uuid trace_uuid;
-
-    
-    std::optional<TriggerInfo> clone_trigger;
-
-    
-    
-    
-    
-  };
+  friend class ProducerEndpointImpl;
+  friend class ConsumerEndpointImpl;
 
   TracingServiceImpl(const TracingServiceImpl&) = delete;
   TracingServiceImpl& operator=(const TracingServiceImpl&) = delete;
@@ -47668,6 +64910,10 @@ class TracingServiceImpl : public TracingService {
                                       const TraceConfig::ProducerConfig&,
                                       const RegisteredDataSource&,
                                       TracingSession*);
+
+  void MaybeSetUpProtoVm(const DataSourceConfig&,
+                         const RegisteredDataSource&,
+                         BufferID);
 
   
   ProducerID GetNextProducerID();
@@ -47724,14 +64970,19 @@ class TracingServiceImpl : public TracingService {
   void EmitUuid(TracingSession*, std::vector<TracePacket>*);
   void MaybeEmitTraceConfig(TracingSession*, std::vector<TracePacket>*);
   void EmitSystemInfo(std::vector<TracePacket>*);
+  void EmitTraceProvenance(TracingSession*, std::vector<TracePacket>*);
+  void MaybeEmitRemoteSystemInfo(std::vector<TracePacket>*);
   void MaybeEmitCloneTrigger(TracingSession*, std::vector<TracePacket>*);
   void MaybeEmitReceivedTriggers(TracingSession*, std::vector<TracePacket>*);
   void MaybeEmitRemoteClockSync(TracingSession*, std::vector<TracePacket>*);
+  void MaybeEmitProtoVmInstances(TracingSession*, std::vector<TracePacket>*);
+  void EmitExtensionDescriptors(TracingSession*, std::vector<TracePacket>*);
   void MaybeNotifyAllDataSourcesStarted(TracingSession*);
   void OnFlushTimeout(TracingSessionID, FlushRequestID, FlushFlags);
   void OnDisableTracingTimeout(TracingSessionID);
   void OnAllDataSourceStartedTimeout(TracingSessionID);
-  void DisableTracingNotifyConsumerAndFlushFile(TracingSession*);
+  void DisableTracingNotifyConsumerAndFlushFile(TracingSession*,
+                                                const std::string& error = {});
   void PeriodicFlushTask(TracingSessionID, bool post_next_only);
   void CompleteFlush(TracingSessionID tsid,
                      ConsumerEndpoint::FlushCallback callback,
@@ -47759,7 +65010,8 @@ class TracingServiceImpl : public TracingService {
                                   bool final_flush_outcome,
                                   std::optional<TriggerInfo> clone_trigger,
                                   base::Uuid*,
-                                  int64_t clone_started_timestamp_ns);
+                                  int64_t clone_started_timestamp_ns,
+                                  base::ScopedFile output_file_fd);
   void OnFlushDoneForClone(TracingSessionID src_tsid,
                            PendingCloneID clone_id,
                            const std::set<BufferID>& buf_ids,
@@ -47801,6 +65053,7 @@ class TracingServiceImpl : public TracingService {
                            PerfettoStatsdAtom atom,
                            const std::string& trigger_name = "");
   void MaybeLogTriggerEvent(const TraceConfig&,
+                            const base::Uuid&,
                             PerfettoTriggerAtom atom,
                             const std::string& trigger_name);
   size_t PurgeExpiredAndCountTriggerInWindow(int64_t now_ns,
@@ -47849,6 +65102,7 @@ class TracingServiceImpl : public TracingService {
 };
 
 }  
+}  
 
 #endif  
 
@@ -47868,8 +65122,6 @@ class TracingServiceImpl : public TracingService {
 
 
 
-#ifndef INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_CAPABILITIES_H_
-#define INCLUDE_PERFETTO_TRACING_CORE_TRACING_SERVICE_CAPABILITIES_H_
 
 
 
@@ -47878,8 +65130,756 @@ class TracingServiceImpl : public TracingService {
 
 
 
+
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_service {
+
+namespace {
+
+
+
+
+
+
+
+int32_t EncodeCommitDataRequest(ProducerID producer_id,
+                                const CommitDataRequest& req_untrusted) {
+  uint32_t cmov = static_cast<uint32_t>(req_untrusted.chunks_to_move_size());
+  uint32_t cpatch = static_cast<uint32_t>(req_untrusted.chunks_to_patch_size());
+  uint32_t has_flush_id = req_untrusted.flush_request_id() != 0;
+
+  uint32_t mask = (1 << 10) - 1;
+  uint32_t acc = 0;
+  acc |= has_flush_id << 30;
+  acc |= (cpatch & mask) << 20;
+  acc |= (cmov & mask) << 10;
+  acc |= (producer_id & mask);
+  return static_cast<int32_t>(acc);
+}
+}  
+
+
+
+
+
+ConsumerEndpointImpl::ConsumerEndpointImpl(TracingServiceImpl* service,
+                                           base::TaskRunner* task_runner,
+                                           Consumer* consumer,
+                                           uid_t uid)
+    : task_runner_(task_runner),
+      service_(service),
+      consumer_(consumer),
+      uid_(uid),
+      weak_ptr_factory_(this) {}
+
+ConsumerEndpointImpl::~ConsumerEndpointImpl() {
+  service_->DisconnectConsumer(this);
+  consumer_->OnDisconnect();
+}
+
+void ConsumerEndpointImpl::NotifyOnTracingDisabled(const std::string& error) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr(),
+                          error ] {
+    if (weak_this)
+      weak_this->consumer_->OnTracingDisabled(error);
+  });
+}
+
+void ConsumerEndpointImpl::EnableTracing(const TraceConfig& cfg,
+                                         base::ScopedFile fd) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  auto status = service_->EnableTracing(this, cfg, std::move(fd));
+  if (!status.ok())
+    NotifyOnTracingDisabled(status.message());
+}
+
+void ConsumerEndpointImpl::ChangeTraceConfig(const TraceConfig& cfg) {
+  if (!tracing_session_id_) {
+    PERFETTO_LOG(
+        "Consumer called ChangeTraceConfig() but tracing was "
+        "not active");
+    return;
+  }
+  service_->ChangeTraceConfig(this, cfg);
+}
+
+void ConsumerEndpointImpl::StartTracing() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session_id_) {
+    PERFETTO_LOG("Consumer called StartTracing() but tracing was not active");
+    return;
+  }
+  service_->StartTracing(tracing_session_id_);
+}
+
+void ConsumerEndpointImpl::DisableTracing() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session_id_) {
+    PERFETTO_LOG("Consumer called DisableTracing() but tracing was not active");
+    return;
+  }
+  service_->DisableTracing(tracing_session_id_);
+}
+
+void ConsumerEndpointImpl::ReadBuffers() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session_id_) {
+    PERFETTO_LOG("Consumer called ReadBuffers() but tracing was not active");
+    consumer_->OnTraceData({},  false);
+    return;
+  }
+  if (!service_->ReadBuffersIntoConsumer(tracing_session_id_, this)) {
+    consumer_->OnTraceData({},  false);
+  }
+}
+
+void ConsumerEndpointImpl::FreeBuffers() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session_id_) {
+    PERFETTO_LOG("Consumer called FreeBuffers() but tracing was not active");
+    return;
+  }
+  service_->FreeBuffers(tracing_session_id_);
+  tracing_session_id_ = 0;
+}
+
+void ConsumerEndpointImpl::Flush(uint32_t timeout_ms,
+                                 FlushCallback callback,
+                                 FlushFlags flush_flags) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session_id_) {
+    PERFETTO_LOG("Consumer called Flush() but tracing was not active");
+    return;
+  }
+  service_->Flush(tracing_session_id_, timeout_ms, callback, flush_flags);
+}
+
+void ConsumerEndpointImpl::Detach(const std::string& key) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  bool success = service_->DetachConsumer(this, key);
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
+  task_runner_->PostTask([weak_this = std::move(weak_this), success] {
+    if (weak_this)
+      weak_this->consumer_->OnDetach(success);
+  });
+}
+
+void ConsumerEndpointImpl::Attach(const std::string& key) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  bool success = service_->AttachConsumer(this, key);
+  task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr(), success] {
+    if (!weak_this)
+      return;
+    Consumer* consumer = weak_this->consumer_;
+    TracingSession* session =
+        weak_this->service_->GetTracingSession(weak_this->tracing_session_id_);
+    if (!session) {
+      consumer->OnAttach(false, TraceConfig());
+      return;
+    }
+    consumer->OnAttach(success, session->config);
+  });
+}
+
+void ConsumerEndpointImpl::GetTraceStats() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  bool success = false;
+  TraceStats stats;
+  TracingSession* session = service_->GetTracingSession(tracing_session_id_);
+  if (session) {
+    success = true;
+    stats = service_->GetTraceStats(session);
+  }
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
+  task_runner_->PostTask(
+      [weak_this = std::move(weak_this), success, stats = std::move(stats)] {
+        if (weak_this)
+          weak_this->consumer_->OnTraceStats(success, stats);
+      });
+}
+
+void ConsumerEndpointImpl::ObserveEvents(uint32_t events_mask) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  observable_events_mask_ = events_mask;
+  TracingSession* session = service_->GetTracingSession(tracing_session_id_);
+  if (!session)
+    return;
+
+  if (observable_events_mask_ & ObservableEvents::TYPE_DATA_SOURCES_INSTANCES) {
+    
+    for (const auto& kv : session->data_source_instances) {
+      ProducerEndpointImpl* producer = service_->GetProducer(kv.first);
+      PERFETTO_DCHECK(producer);
+      OnDataSourceInstanceStateChange(*producer, kv.second);
+    }
+  }
+
+  
+  
+  if (observable_events_mask_ &
+      ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED) {
+    service_->MaybeNotifyAllDataSourcesStarted(session);
+  }
+}
+
+void ConsumerEndpointImpl::OnDataSourceInstanceStateChange(
+    const ProducerEndpointImpl& producer,
+    const DataSourceInstance& instance) {
+  if (!(observable_events_mask_ &
+        ObservableEvents::TYPE_DATA_SOURCES_INSTANCES)) {
+    return;
+  }
+
+  if (instance.state != DataSourceInstance::CONFIGURED &&
+      instance.state != DataSourceInstance::STARTED &&
+      instance.state != DataSourceInstance::STOPPED) {
+    return;
+  }
+
+  auto* observable_events = AddObservableEvents();
+  auto* change = observable_events->add_instance_state_changes();
+  change->set_producer_name(producer.name_);
+  change->set_data_source_name(instance.data_source_name);
+  if (instance.state == DataSourceInstance::STARTED) {
+    change->set_state(ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STARTED);
+  } else {
+    change->set_state(ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STOPPED);
+  }
+}
+
+void ConsumerEndpointImpl::OnAllDataSourcesStarted() {
+  if (!(observable_events_mask_ &
+        ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED)) {
+    return;
+  }
+  auto* observable_events = AddObservableEvents();
+  observable_events->set_all_data_sources_started(true);
+}
+
+void ConsumerEndpointImpl::NotifyCloneSnapshotTrigger(
+    const TriggerInfo& trigger) {
+  if (!(observable_events_mask_ & ObservableEvents::TYPE_CLONE_TRIGGER_HIT)) {
+    return;
+  }
+  auto* observable_events = AddObservableEvents();
+  auto* clone_trig = observable_events->mutable_clone_trigger_hit();
+  clone_trig->set_tracing_session_id(static_cast<int64_t>(tracing_session_id_));
+  clone_trig->set_trigger_name(trigger.trigger_name);
+  clone_trig->set_producer_name(trigger.producer_name);
+  clone_trig->set_producer_uid(static_cast<uint32_t>(trigger.producer_uid));
+  clone_trig->set_boot_time_ns(trigger.boot_time_ns);
+  clone_trig->set_trigger_delay_ms(trigger.trigger_delay_ms);
+}
+
+ObservableEvents* ConsumerEndpointImpl::AddObservableEvents() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!observable_events_) {
+    observable_events_.reset(new ObservableEvents());
+    task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr()] {
+      if (!weak_this)
+        return;
+
+      
+      auto observable_events = std::move(weak_this->observable_events_);
+      weak_this->consumer_->OnObservableEvents(*observable_events);
+    });
+  }
+  return observable_events_.get();
+}
+
+void ConsumerEndpointImpl::QueryServiceState(
+    QueryServiceStateArgs args,
+    QueryServiceStateCallback callback) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  TracingServiceState svc_state;
+
+  const auto& sessions = service_->tracing_sessions_;
+  svc_state.set_tracing_service_version(base::GetVersionString());
+  svc_state.set_num_sessions(static_cast<int>(sessions.size()));
+
+  int num_started = 0;
+  for (const auto& kv : sessions)
+    num_started += kv.second.state == TracingSession::State::STARTED ? 1 : 0;
+  svc_state.set_num_sessions_started(num_started);
+
+  for (const auto& kv : service_->producers_) {
+    if (args.sessions_only)
+      break;
+    auto* producer = svc_state.add_producers();
+    producer->set_id(static_cast<int>(kv.first));
+    producer->set_name(kv.second->name_);
+    producer->set_sdk_version(kv.second->sdk_version_);
+    producer->set_uid(static_cast<int32_t>(kv.second->uid()));
+    producer->set_pid(static_cast<int32_t>(kv.second->pid()));
+    producer->set_frozen(kv.second->IsAndroidProcessFrozen());
+    
+    
+    
+    
+    if (kv.second->client_identity().has_non_default_machine_id()) {
+      producer->set_machine_id(kv.second->client_identity().machine_id());
+      if (!kv.second->machine_name_.empty()) {
+        producer->set_machine_name(kv.second->machine_name_);
+      }
+    }
+  }
+
+  for (const auto& kv : service_->data_sources_) {
+    if (args.sessions_only)
+      break;
+    const auto& registered_data_source = kv.second;
+    auto* data_source = svc_state.add_data_sources();
+    *data_source->mutable_ds_descriptor() = registered_data_source.descriptor;
+    data_source->set_producer_id(
+        static_cast<int>(registered_data_source.producer_id));
+  }
+
+  svc_state.set_supports_tracing_sessions(true);
+  for (const auto& kv : service_->tracing_sessions_) {
+    const TracingSession& s = kv.second;
+    if (!s.IsCloneAllowed(uid_))
+      continue;
+    auto* session = svc_state.add_tracing_sessions();
+    session->set_id(s.id);
+    session->set_consumer_uid(static_cast<int>(s.consumer_uid));
+    session->set_duration_ms(s.config.duration_ms());
+    session->set_num_data_sources(
+        static_cast<uint32_t>(s.data_source_instances.size()));
+    session->set_unique_session_name(s.config.unique_session_name());
+    if (s.config.has_bugreport_score())
+      session->set_bugreport_score(s.config.bugreport_score());
+    if (s.config.has_bugreport_filename())
+      session->set_bugreport_filename(s.config.bugreport_filename());
+    for (const auto& snap_kv : s.initial_clock_snapshot) {
+      if (snap_kv.clock_id == protos::pbzero::BUILTIN_CLOCK_REALTIME)
+        session->set_start_realtime_ns(static_cast<int64_t>(snap_kv.timestamp));
+    }
+    for (const auto& buf : s.config.buffers())
+      session->add_buffer_size_kb(buf.size_kb());
+
+    switch (s.state) {
+      case TracingSession::State::DISABLED:
+        session->set_state("DISABLED");
+        break;
+      case TracingSession::State::CONFIGURED:
+        session->set_state("CONFIGURED");
+        break;
+      case TracingSession::State::STARTED:
+        session->set_is_started(true);
+        session->set_state("STARTED");
+        break;
+      case TracingSession::State::DISABLING_WAITING_STOP_ACKS:
+        session->set_state("STOP_WAIT");
+        break;
+      case TracingSession::State::CLONED_READ_ONLY:
+        session->set_state("CLONED_READ_ONLY");
+        break;
+    }
+  }
+  callback(true, svc_state);
+}
+
+void ConsumerEndpointImpl::QueryCapabilities(
+    QueryCapabilitiesCallback callback) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  TracingServiceCapabilities caps;
+  caps.set_has_query_capabilities(true);
+  caps.set_has_trace_config_output_path(true);
+  caps.set_has_clone_session(true);
+  caps.add_observable_events(ObservableEvents::TYPE_DATA_SOURCES_INSTANCES);
+  caps.add_observable_events(ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED);
+  caps.add_observable_events(ObservableEvents::TYPE_CLONE_TRIGGER_HIT);
+  static_assert(
+      ObservableEvents::Type_MAX == ObservableEvents::TYPE_CLONE_TRIGGER_HIT,
+      "");
+  callback(caps);
+}
+
+void ConsumerEndpointImpl::SaveTraceForBugreport(
+    SaveTraceForBugreportCallback consumer_callback) {
+  consumer_callback(false,
+                    "SaveTraceForBugreport is deprecated. Use "
+                    "CloneSession(kBugreportSessionId) instead.");
+}
+
+void ConsumerEndpointImpl::CloneSession(CloneSessionArgs args) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  
+  base::Status result = service_->FlushAndCloneSession(this, std::move(args));
+
+  if (!result.ok()) {
+    consumer_->OnSessionCloned({false, result.message(), {}, false});
+  }
+}
+
+
+
+
+
+ProducerEndpointImpl::ProducerEndpointImpl(
+    ProducerID id,
+    const ClientIdentity& client_identity,
+    TracingServiceImpl* service,
+    base::TaskRunner* task_runner,
+    Producer* producer,
+    const std::string& producer_name,
+    const std::string& machine_name,
+    const std::string& sdk_version,
+    bool in_process,
+    bool smb_scraping_enabled)
+    : id_(id),
+      client_identity_(client_identity),
+      service_(service),
+      producer_(producer),
+      name_(producer_name),
+      machine_name_(machine_name),
+      sdk_version_(sdk_version),
+      in_process_(in_process),
+      smb_scraping_enabled_(smb_scraping_enabled),
+      weak_runner_(task_runner) {}
+
+ProducerEndpointImpl::~ProducerEndpointImpl() {
+  service_->DisconnectProducer(id_);
+  producer_->OnDisconnect();
+}
+
+void ProducerEndpointImpl::Disconnect() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  
+  PERFETTO_FATAL("Not supported");
+}
+
+void ProducerEndpointImpl::RegisterDataSource(
+    const DataSourceDescriptor& desc) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  service_->RegisterDataSource(id_, desc);
+}
+
+void ProducerEndpointImpl::UpdateDataSource(const DataSourceDescriptor& desc) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  service_->UpdateDataSource(id_, desc);
+}
+
+void ProducerEndpointImpl::UnregisterDataSource(const std::string& name) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  service_->UnregisterDataSource(id_, name);
+}
+
+void ProducerEndpointImpl::RegisterTraceWriter(uint32_t writer_id,
+                                               uint32_t target_buffer) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  writers_[static_cast<WriterID>(writer_id)] =
+      static_cast<BufferID>(target_buffer);
+}
+
+void ProducerEndpointImpl::UnregisterTraceWriter(uint32_t writer_id) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  writers_.erase(static_cast<WriterID>(writer_id));
+}
+
+void ProducerEndpointImpl::CommitData(const CommitDataRequest& req_untrusted,
+                                      CommitDataCallback callback) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+
+  if (metatrace::IsEnabled(metatrace::TAG_TRACE_SERVICE)) {
+    PERFETTO_METATRACE_COUNTER(TAG_TRACE_SERVICE, TRACE_SERVICE_COMMIT_DATA,
+                               EncodeCommitDataRequest(id_, req_untrusted));
+  }
+
+  if (!shared_memory_) {
+    PERFETTO_DLOG(
+        "Attempted to commit data before the shared memory was allocated.");
+    return;
+  }
+  PERFETTO_DCHECK(shmem_abi_.is_valid());
+  for (const auto& entry : req_untrusted.chunks_to_move()) {
+    const uint32_t page_idx = entry.page();
+    if (page_idx >= shmem_abi_.num_pages())
+      continue;  
+
+    SharedMemoryABI::Chunk chunk;
+    bool commit_data_over_ipc = entry.has_data();
+    bool chunk_complete = true;
+    if (PERFETTO_UNLIKELY(commit_data_over_ipc)) {
+      
+      
+      const std::string& data = entry.data();
+      if (data.size() > SharedMemoryABI::Chunk::kMaxSize) {
+        PERFETTO_DFATAL("IPC data commit too large: %zu", data.size());
+        continue;  
+      }
+      
+      
+      chunk = SharedMemoryABI::MakeChunkFromSerializedData(
+          reinterpret_cast<uint8_t*>(const_cast<char*>(data.data())),
+          static_cast<uint16_t>(entry.data().size()),
+          static_cast<uint8_t>(entry.chunk()));
+      chunk_complete = !entry.chunk_incomplete();
+    } else
+      chunk = shmem_abi_.TryAcquireChunkForReading(page_idx, entry.chunk());
+    if (!chunk.is_valid()) {
+      PERFETTO_DLOG("Asked to move chunk %u:%u, but it's not complete",
+                    entry.page(), entry.chunk());
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    BufferID buffer_id = static_cast<BufferID>(entry.target_buffer());
+    const SharedMemoryABI::ChunkHeader& chunk_header = *chunk.header();
+    WriterID writer_id = chunk_header.writer_id.load(std::memory_order_relaxed);
+    ChunkID chunk_id = chunk_header.chunk_id.load(std::memory_order_relaxed);
+    auto packets = chunk_header.packets.load(std::memory_order_relaxed);
+    uint16_t num_fragments = packets.count;
+    uint8_t chunk_flags = packets.flags;
+
+    service_->CopyProducerPageIntoLogBuffer(
+        id_, client_identity_, writer_id, chunk_id, buffer_id, num_fragments,
+        chunk_flags, chunk_complete, chunk.payload_begin(),
+        chunk.payload_size());
+
+    if (!commit_data_over_ipc) {
+      
+      shmem_abi_.ReleaseChunkAsFree(std::move(chunk));
+    }
+  }  
+
+  service_->ApplyChunkPatches(id_, req_untrusted.chunks_to_patch());
+
+  if (req_untrusted.flush_request_id()) {
+    service_->NotifyFlushDoneForProducer(id_, req_untrusted.flush_request_id());
+  }
+
+  
+  
+  
+  if (callback)
+    callback();
+}
+
+void ProducerEndpointImpl::SetupSharedMemory(
+    std::unique_ptr<SharedMemory> shared_memory,
+    size_t page_size_bytes,
+    bool provided_by_producer,
+    SharedMemoryABI::ShmemMode shmem_mode) {
+  PERFETTO_DCHECK(!shared_memory_ && !shmem_abi_.is_valid());
+  PERFETTO_DCHECK(page_size_bytes % 1024 == 0);
+
+  shared_memory_ = std::move(shared_memory);
+  shared_buffer_page_size_kb_ = page_size_bytes / 1024;
+  is_shmem_provided_by_producer_ = provided_by_producer;
+
+  shmem_abi_.Initialize(reinterpret_cast<uint8_t*>(shared_memory_->start()),
+                        shared_memory_->size(),
+                        shared_buffer_page_size_kb() * 1024, shmem_mode);
+  if (in_process_) {
+    inproc_shmem_arbiter_.reset(new SharedMemoryArbiterImpl(
+        shared_memory_->start(), shared_memory_->size(),
+        SharedMemoryABI::ShmemMode::kDefault,
+        shared_buffer_page_size_kb_ * 1024, this, weak_runner_.task_runner()));
+    inproc_shmem_arbiter_->SetDirectSMBPatchingSupportedByService();
+  }
+
+  OnTracingSetup();
+  service_->UpdateMemoryGuardrail();
+}
+
+SharedMemory* ProducerEndpointImpl::shared_memory() const {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  return shared_memory_.get();
+}
+
+size_t ProducerEndpointImpl::shared_buffer_page_size_kb() const {
+  return shared_buffer_page_size_kb_;
+}
+
+void ProducerEndpointImpl::ActivateTriggers(
+    const std::vector<std::string>& triggers) {
+  service_->ActivateTriggers(id_, triggers);
+}
+
+void ProducerEndpointImpl::StopDataSource(DataSourceInstanceID ds_inst_id) {
+  
+  
+  
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  weak_runner_.PostTask(
+      [this, ds_inst_id] { producer_->StopDataSource(ds_inst_id); });
+}
+
+SharedMemoryArbiter* ProducerEndpointImpl::MaybeSharedMemoryArbiter() {
+  if (!inproc_shmem_arbiter_) {
+    PERFETTO_FATAL(
+        "The in-process SharedMemoryArbiter can only be used when "
+        "CreateProducer has been called with in_process=true and after tracing "
+        "has started.");
+  }
+
+  PERFETTO_DCHECK(in_process_);
+  return inproc_shmem_arbiter_.get();
+}
+
+bool ProducerEndpointImpl::IsShmemProvidedByProducer() const {
+  return is_shmem_provided_by_producer_;
+}
+
+
+std::unique_ptr<TraceWriter> ProducerEndpointImpl::CreateTraceWriter(
+    BufferID buf_id,
+    BufferExhaustedPolicy buffer_exhausted_policy) {
+  PERFETTO_DCHECK(MaybeSharedMemoryArbiter());
+  return MaybeSharedMemoryArbiter()->CreateTraceWriter(buf_id,
+                                                       buffer_exhausted_policy);
+}
+
+void ProducerEndpointImpl::NotifyFlushComplete(FlushRequestID id) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  PERFETTO_DCHECK(MaybeSharedMemoryArbiter());
+  return MaybeSharedMemoryArbiter()->NotifyFlushComplete(id);
+}
+
+void ProducerEndpointImpl::OnTracingSetup() {
+  weak_runner_.PostTask([this] { producer_->OnTracingSetup(); });
+}
+
+void ProducerEndpointImpl::Flush(
+    FlushRequestID flush_request_id,
+    const std::vector<DataSourceInstanceID>& data_sources,
+    FlushFlags flush_flags) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  weak_runner_.PostTask([this, flush_request_id, data_sources, flush_flags] {
+    producer_->Flush(flush_request_id, data_sources.data(), data_sources.size(),
+                     flush_flags);
+  });
+}
+
+void ProducerEndpointImpl::SetupDataSource(DataSourceInstanceID ds_id,
+                                           const DataSourceConfig& config) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  allowed_target_buffers_.insert(static_cast<BufferID>(config.target_buffer()));
+  weak_runner_.PostTask([this, ds_id, config] {
+    producer_->SetupDataSource(ds_id, std::move(config));
+  });
+}
+
+void ProducerEndpointImpl::StartDataSource(DataSourceInstanceID ds_id,
+                                           const DataSourceConfig& config) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  weak_runner_.PostTask([this, ds_id, config] {
+    producer_->StartDataSource(ds_id, std::move(config));
+  });
+}
+
+void ProducerEndpointImpl::NotifyDataSourceStarted(
+    DataSourceInstanceID data_source_id) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  service_->NotifyDataSourceStarted(id_, data_source_id);
+}
+
+void ProducerEndpointImpl::NotifyDataSourceStopped(
+    DataSourceInstanceID data_source_id) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  service_->NotifyDataSourceStopped(id_, data_source_id);
+}
+
+void ProducerEndpointImpl::OnFreeBuffers(
+    const std::vector<BufferID>& target_buffers) {
+  if (allowed_target_buffers_.empty())
+    return;
+  for (BufferID buffer : target_buffers)
+    allowed_target_buffers_.erase(buffer);
+}
+
+void ProducerEndpointImpl::ClearIncrementalState(
+    const std::vector<DataSourceInstanceID>& data_sources) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  weak_runner_.PostTask([this, data_sources] {
+    base::StringView producer_name(name_);
+    producer_->ClearIncrementalState(data_sources.data(), data_sources.size());
+  });
+}
+
+void ProducerEndpointImpl::Sync(std::function<void()> callback) {
+  weak_runner_.task_runner()->PostTask(callback);
+}
+
+bool ProducerEndpointImpl::IsAndroidProcessFrozen() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  if (in_process_ || uid() == base::kInvalidUid || pid() == base::kInvalidPid)
+    return false;
+
+  
+  
+  
+  
+  
+  base::StackString<255> path_v1(
+      "/sys/fs/cgroup/uid_%" PRIu32 "/pid_%" PRIu32 "/cgroup.freeze",
+      static_cast<uint32_t>(uid()), static_cast<uint32_t>(pid()));
+  base::StackString<255> path_v2_app(
+      "/sys/fs/cgroup/apps/uid_%" PRIu32 "/pid_%" PRIu32 "/cgroup.freeze",
+      static_cast<uint32_t>(uid()), static_cast<uint32_t>(pid()));
+  base::StackString<255> path_v2_system(
+      "/sys/fs/cgroup/system/uid_%" PRIu32 "/pid_%" PRIu32 "/cgroup.freeze",
+      static_cast<uint32_t>(uid()), static_cast<uint32_t>(pid()));
+  const char* paths[] = {path_v1.c_str(), path_v2_app.c_str(),
+                         path_v2_system.c_str()};
+
+  for (const char* path : paths) {
+    char frozen = '0';
+    auto fd = base::OpenFile(path, O_RDONLY);
+    ssize_t rsize = 0;
+    if (fd) {
+      rsize = base::Read(*fd, &frozen, sizeof(frozen));
+      if (rsize > 0) {
+        return frozen == '1';
+      }
+    }
+  }
+  PERFETTO_DLOG("Failed to read cgroup.freeze from [%s, %s, %s]",
+                path_v1.c_str(), path_v2_app.c_str(), path_v2_system.c_str());
 
 #endif
+  return false;
+}
+
+
+
+
+RelayEndpointImpl::RelayEndpointImpl(RelayClientID relay_client_id,
+                                     TracingServiceImpl* service)
+    : relay_client_id_(relay_client_id),
+      service_(service),
+      serialized_system_info_({}) {}
+RelayEndpointImpl::~RelayEndpointImpl() = default;
+
+void RelayEndpointImpl::SyncClocks(SyncMode sync_mode,
+                                   base::ClockSnapshotVector client_clocks,
+                                   base::ClockSnapshotVector host_clocks) {
+  
+  static constexpr size_t kNumSyncClocks = 5;
+  if (synced_clocks_.size() >= kNumSyncClocks)
+    synced_clocks_.pop_front();
+
+  synced_clocks_.emplace_back(sync_mode, std::move(client_clocks),
+                              std::move(host_clocks));
+}
+
+void RelayEndpointImpl::Disconnect() {
+  service_->DisconnectRelayClient(relay_client_id_);
+}
+}  
 
 
 
@@ -47898,16 +65898,80 @@ class TracingServiceImpl : public TracingService {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_TRACING_CORE_PRIORITY_BOOST_CONFIG_H_
+#define INCLUDE_PERFETTO_EXT_TRACING_CORE_PRIORITY_BOOST_CONFIG_H_
+
+
+
+
+
+
+namespace perfetto {
+inline base::StatusOr<base::SchedPolicyAndPrio> CreateSchedPolicyFromConfig(
+    const protos::gen::PriorityBoostConfig& config) {
+  auto policy = config.policy();
+  uint32_t priority = config.priority();
+  switch (policy) {
+    case protos::gen::PriorityBoostConfig::POLICY_SCHED_OTHER:
+      if (priority <= 20) {
+        return base::SchedPolicyAndPrio{
+            base::SchedPolicyAndPrio::Policy::kSchedOther, priority};
+      }
+      return base::ErrStatus(
+          "For the 'POLICY_SCHED_OTHER' priority must be in the range [0; 20]");
+    case protos::gen::PriorityBoostConfig::POLICY_SCHED_FIFO:
+      if (priority >= 1 && priority <= 99) {
+        return base::SchedPolicyAndPrio{
+            base::SchedPolicyAndPrio::Policy::kSchedFifo, priority};
+      }
+      return base::ErrStatus(
+          "For the 'POLICY_SCHED_FIFO' priority must be in the range [1; 99]");
+    case protos::gen::PriorityBoostConfig::POLICY_UNSPECIFIED:
+      return base::ErrStatus("Policy must not be 'POLICY_UNSPECIFIED'");
+  }
+  PERFETTO_CHECK(false);  
+}
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <fcntl.h>
 #include <limits.h>
 #include <string.h>
-
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cinttypes>
 #include <cstdint>
+#include <cstdlib>
+#include <functional>
 #include <limits>
+#include <map>
+#include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) && \
     !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL)
@@ -47924,10 +65988,39 @@ class TracingServiceImpl : public TracingService {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #define PERFETTO_HAS_CHMOD
 #include <sys/stat.h>
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47987,6 +66080,22 @@ class TracingServiceImpl : public TracingService {
 
 namespace perfetto {
 
+
+std::unique_ptr<TracingService> TracingService::CreateInstance(
+    std::unique_ptr<SharedMemory::Factory> shm_factory,
+    base::TaskRunner* task_runner,
+    InitOpts init_opts) {
+  tracing_service::Dependencies deps;
+  deps.clock = std::make_unique<tracing_service::ClockImpl>();
+  uint32_t seed = static_cast<uint32_t>(deps.clock->GetWallTimeMs().count());
+  deps.random = std::make_unique<tracing_service::RandomImpl>(seed);
+  return std::unique_ptr<TracingService>(
+      new tracing_service::TracingServiceImpl(
+          std::move(shm_factory), task_runner, std::move(deps), init_opts));
+}
+
+namespace tracing_service {
+
 namespace {
 constexpr int kMaxBuffersPerConsumer = 128;
 constexpr uint32_t kDefaultSnapshotsIntervalMs = 10 * 1000;
@@ -47995,7 +66104,9 @@ constexpr int kMinWriteIntoFilePeriodMs = 100;
 constexpr uint32_t kAllDataSourceStartedTimeout = 20000;
 constexpr int kMaxConcurrentTracingSessions = 15;
 constexpr int kMaxConcurrentTracingSessionsPerUid = 5;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
 constexpr int kMaxConcurrentTracingSessionsForStatsdUid = 10;
+#endif
 constexpr int64_t kMinSecondsBetweenTracesGuardrail = 5 * 60;
 
 constexpr uint32_t kMillisPerHour = 3600000;
@@ -48007,6 +66118,8 @@ constexpr uint32_t kGuardrailsMaxTracingBufferSizeKb = 128 * 1024;
 constexpr uint32_t kGuardrailsMaxTracingDurationMillis = 24 * kMillisPerHour;
 
 constexpr size_t kMaxLifecycleEventsListedDataSources = 32;
+
+constexpr uint32_t kTracePacketSystemInfoFieldId = 45;
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) || PERFETTO_BUILDFLAG(PERFETTO_OS_NACL)
 struct iovec {
@@ -48034,30 +66147,8 @@ ssize_t writev(int fd, const struct iovec* iov, int iovcnt) {
 #define IOV_MAX 1024  // Linux compatible limit.
 #endif
 
-
-
-
-
-
-
-
-int32_t EncodeCommitDataRequest(ProducerID producer_id,
-                                const CommitDataRequest& req_untrusted) {
-  uint32_t cmov = static_cast<uint32_t>(req_untrusted.chunks_to_move_size());
-  uint32_t cpatch = static_cast<uint32_t>(req_untrusted.chunks_to_patch_size());
-  uint32_t has_flush_id = req_untrusted.flush_request_id() != 0;
-
-  uint32_t mask = (1 << 10) - 1;
-  uint32_t acc = 0;
-  acc |= has_flush_id << 30;
-  acc |= (cpatch & mask) << 20;
-  acc |= (cmov & mask) << 10;
-  acc |= (producer_id & mask);
-  return static_cast<int32_t>(acc);
-}
-
 void SerializeAndAppendPacket(std::vector<TracePacket>* packets,
-                              std::vector<uint8_t> packet) {
+                              const std::vector<uint8_t>& packet) {
   Slice slice = Slice::Allocate(packet.size());
   memcpy(slice.own_data(), packet.data(), packet.size());
   packets->emplace_back();
@@ -48108,18 +66199,15 @@ std::tuple<size_t , size_t > EnsureValidShmSizes(
 bool NameMatchesFilter(const std::string& name,
                        const std::vector<std::string>& name_filter,
                        const std::vector<std::string>& name_regex_filter) {
-  bool filter_is_set = !name_filter.empty() || !name_regex_filter.empty();
-  if (!filter_is_set)
+  if (std::find(name_filter.begin(), name_filter.end(), name) !=
+      name_filter.end()) {
     return true;
-  bool filter_matches = std::find(name_filter.begin(), name_filter.end(),
-                                  name) != name_filter.end();
-  bool filter_regex_matches =
-      std::find_if(name_regex_filter.begin(), name_regex_filter.end(),
-                   [&](const std::string& regex) {
-                     return std::regex_match(
-                         name, std::regex(regex, std::regex::extended));
-                   }) != name_regex_filter.end();
-  return filter_matches || filter_regex_matches;
+  }
+  return std::any_of(
+      name_regex_filter.begin(), name_regex_filter.end(),
+      [&](const std::string& pattern) {
+        return base::Regex::CreateOrCheck(pattern).FullMatch(name);
+      });
 }
 
 
@@ -48189,40 +66277,7 @@ void AppendOwnedSlicesToPacket(std::unique_ptr<uint8_t[]> data,
   }
 }
 
-using TraceFilter = protos::gen::TraceConfig::TraceFilter;
-std::optional<protozero::StringFilter::Policy> ConvertPolicy(
-    TraceFilter::StringFilterPolicy policy) {
-  switch (policy) {
-    case TraceFilter::SFP_UNSPECIFIED:
-      return std::nullopt;
-    case TraceFilter::SFP_MATCH_REDACT_GROUPS:
-      return protozero::StringFilter::Policy::kMatchRedactGroups;
-    case TraceFilter::SFP_ATRACE_MATCH_REDACT_GROUPS:
-      return protozero::StringFilter::Policy::kAtraceMatchRedactGroups;
-    case TraceFilter::SFP_MATCH_BREAK:
-      return protozero::StringFilter::Policy::kMatchBreak;
-    case TraceFilter::SFP_ATRACE_MATCH_BREAK:
-      return protozero::StringFilter::Policy::kAtraceMatchBreak;
-    case TraceFilter::SFP_ATRACE_REPEATED_SEARCH_REDACT_GROUPS:
-      return protozero::StringFilter::Policy::kAtraceRepeatedSearchRedactGroups;
-  }
-  return std::nullopt;
-}
-
 }  
-
-
-std::unique_ptr<TracingService> TracingService::CreateInstance(
-    std::unique_ptr<SharedMemory::Factory> shm_factory,
-    base::TaskRunner* task_runner,
-    InitOpts init_opts) {
-  tracing_service::Dependencies deps;
-  deps.clock = std::make_unique<tracing_service::ClockImpl>();
-  uint32_t seed = static_cast<uint32_t>(deps.clock->GetWallTimeMs().count());
-  deps.random = std::make_unique<tracing_service::RandomImpl>(seed);
-  return std::unique_ptr<TracingService>(new TracingServiceImpl(
-      std::move(shm_factory), task_runner, std::move(deps), init_opts));
-}
 
 TracingServiceImpl::TracingServiceImpl(
     std::unique_ptr<SharedMemory::Factory> shm_factory,
@@ -48252,12 +66307,13 @@ TracingServiceImpl::ConnectProducer(Producer* producer,
                                     ProducerSMBScrapingMode smb_scraping_mode,
                                     size_t shared_memory_page_size_hint_bytes,
                                     std::unique_ptr<SharedMemory> shm,
-                                    const std::string& sdk_version) {
+                                    const std::string& sdk_version,
+                                    const std::string& machine_name) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
 
   auto uid = client_identity.uid();
   if (lockdown_mode_ && uid != base::GetCurrentUserId()) {
-    PERFETTO_DLOG("Lockdown mode. Rejecting producer with UID %ld",
+    PERFETTO_DLOG("Lockdown mode. Rejecting producer with UID %lu",
                   static_cast<unsigned long>(uid));
     return nullptr;
   }
@@ -48283,7 +66339,8 @@ TracingServiceImpl::ConnectProducer(Producer* producer,
 
   std::unique_ptr<ProducerEndpointImpl> endpoint(new ProducerEndpointImpl(
       id, client_identity, this, weak_runner_.task_runner(), producer,
-      producer_name, sdk_version, in_process, smb_scraping_enabled));
+      producer_name, machine_name, sdk_version, in_process,
+      smb_scraping_enabled));
   auto it_and_inserted = producers_.emplace(id, endpoint.get());
   PERFETTO_DCHECK(it_and_inserted.second);
   endpoint->shmem_size_hint_bytes_ = shared_memory_size_hint_bytes;
@@ -48308,8 +66365,11 @@ TracingServiceImpl::ConnectProducer(Producer* producer,
       PERFETTO_DLOG(
           "Adopting producer-provided SMB of %zu kB for producer \"%s\"",
           shm_size / 1024, endpoint->name_.c_str());
+      auto shmem_mode = client_identity.machine_id() == kDefaultMachineID
+                            ? SharedMemoryABI::ShmemMode::kDefault
+                            : SharedMemoryABI::ShmemMode::kShmemEmulation;
       endpoint->SetupSharedMemory(std::move(shm), page_size,
-                                  true);
+                                  true, shmem_mode);
     } else {
       PERFETTO_LOG(
           "Discarding incorrectly sized producer-provided SMB for producer "
@@ -48330,10 +66390,21 @@ void TracingServiceImpl::DisconnectProducer(ProducerID id) {
   PERFETTO_DLOG("Producer %" PRIu16 " disconnected", id);
   PERFETTO_DCHECK(producers_.count(id));
 
-  
   if (auto* producer = GetProducer(id)) {
-    for (auto& session_id_and_session : tracing_sessions_)
+    
+    for (auto& session_id_and_session : tracing_sessions_) {
       ScrapeSharedMemoryBuffers(&session_id_and_session.second, producer);
+    }
+
+    
+    
+    if constexpr (PERFETTO_FLAGS(
+                      TRIGGER_PERFETTO_ON_TRACED_PROBES_DISCONNECT)) {
+      if (producer->name_ == "perfetto.traced_probes") {
+        PERFETTO_ELOG("traced_probes disconnected, firing disconnect trigger");
+        ActivateTriggers(id, {"perfetto.traced_probes.disconnect"});
+      }
+    }
   }
 
   for (auto it = data_sources_.begin(); it != data_sources_.end();) {
@@ -48348,8 +66419,7 @@ void TracingServiceImpl::DisconnectProducer(ProducerID id) {
   UpdateMemoryGuardrail();
 }
 
-TracingServiceImpl::ProducerEndpointImpl* TracingServiceImpl::GetProducer(
-    ProducerID id) const {
+ProducerEndpointImpl* TracingServiceImpl::GetProducer(ProducerID id) const {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   auto it = producers_.find(id);
   if (it == producers_.end())
@@ -48616,25 +66686,127 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
     }
   }
 
-  if (cfg.buffers_size() > kMaxBuffersPerConsumer) {
+  const size_t num_buffers = static_cast<size_t>(cfg.buffers_size());
+  if (num_buffers > kMaxBuffersPerConsumer) {
     MaybeLogUploadEvent(cfg, uuid,
                         PerfettoStatsdAtom::kTracedEnableTracingTooManyBuffers);
-    return PERFETTO_SVC_ERR("Too many buffers configured (%d)",
-                            cfg.buffers_size());
+    return PERFETTO_SVC_ERR("Too many buffers configured (%zu)", num_buffers);
   }
+
+  
+  
+  base::FlatHashMap<std::string, size_t> buffer_name_to_index;
+  for (size_t i = 0; i < num_buffers; ++i) {
+    const auto& buf = cfg.buffers()[i];
+    if (!buf.name().empty()) {
+      size_t* existing_idx = buffer_name_to_index.Find(buf.name());
+      if (existing_idx) {
+        MaybeLogUploadEvent(
+            cfg, uuid,
+            PerfettoStatsdAtom::kTracedEnableTracingDuplicateBufferName);
+        return PERFETTO_SVC_ERR(
+            "Duplicate buffer name \"%s\" at index %zu (first occurrence at "
+            "index %zu)",
+            buf.name().c_str(), i, *existing_idx);
+      }
+      buffer_name_to_index.Insert(buf.name(), i);
+    }
+  }
+
   
   
   
   for (const TraceConfig::DataSource& cfg_data_source : cfg.data_sources()) {
-    size_t num_buffers = static_cast<size_t>(cfg.buffers_size());
-    size_t target_buffer = cfg_data_source.config().target_buffer();
+    const auto& ds_config = cfg_data_source.config();
+
+    
+    size_t target_buffer = ds_config.target_buffer();
+    if (!ds_config.target_buffer_name().empty()) {
+      size_t* resolved_index_ptr =
+          buffer_name_to_index.Find(ds_config.target_buffer_name());
+      if (!resolved_index_ptr) {
+        MaybeLogUploadEvent(
+            cfg, uuid, PerfettoStatsdAtom::kTracedEnableTracingOobTargetBuffer);
+        return PERFETTO_SVC_ERR(
+            "Data source \"%s\" specified target_buffer_name \"%s\" which does "
+            "not match any buffer",
+            ds_config.name().c_str(), ds_config.target_buffer_name().c_str());
+      }
+      size_t resolved_index = *resolved_index_ptr;
+
+      
+      
+      
+      
+      
+      
+      if (target_buffer > 0 && target_buffer != resolved_index) {
+        MaybeLogUploadEvent(
+            cfg, uuid, PerfettoStatsdAtom::kTracedEnableTracingOobTargetBuffer);
+        return PERFETTO_SVC_ERR(
+            "Data source \"%s\" specified both target_buffer=%zu and "
+            "target_buffer_name=\"%s\" (index %zu) but they don't match",
+            ds_config.name().c_str(), target_buffer,
+            ds_config.target_buffer_name().c_str(), resolved_index);
+      }
+      target_buffer = resolved_index;
+    }
+
     if (target_buffer >= num_buffers) {
       MaybeLogUploadEvent(
           cfg, uuid, PerfettoStatsdAtom::kTracedEnableTracingOobTargetBuffer);
       return PERFETTO_SVC_ERR(
           "Data source \"%s\" specified an out of bounds target_buffer (%zu >= "
           "%zu)",
-          cfg_data_source.config().name().c_str(), target_buffer, num_buffers);
+          ds_config.name().c_str(), target_buffer, num_buffers);
+    }
+  }
+
+  uint32_t current_exclusive_prio = 0;
+  for (const auto& [_, session] : tracing_sessions_) {
+    current_exclusive_prio =
+        std::max(current_exclusive_prio, session.config.exclusive_prio());
+  }
+
+  
+  
+  if (current_exclusive_prio > 0 &&
+      current_exclusive_prio >= cfg.exclusive_prio()) {
+    MaybeLogUploadEvent(
+        cfg, uuid,
+        PerfettoStatsdAtom::kTracedEnableTracingExclusiveSessionRejected);
+    return PERFETTO_SVC_ERR(
+        "An exclusive session with priority %u >= requested priority %u is "
+        "already active.",
+        current_exclusive_prio, cfg.exclusive_prio());
+  }
+
+  if (cfg.exclusive_prio() > 0) {  
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+    if (consumer->uid_ != AID_ROOT && consumer->uid_ != AID_SHELL) {
+      MaybeLogUploadEvent(
+          cfg, uuid,
+          PerfettoStatsdAtom::kTracedEnableTracingExclusiveSessionNotAllowed);
+      return PERFETTO_SVC_ERR(
+          "On android, exclusive mode can only be requested by root or shell.");
+    }
+#endif
+    
+    const std::string abort_reason =
+        "Aborted due to user requested higher-priority (" +
+        std::to_string(cfg.exclusive_prio()) + ") exclusive session.";
+    for (auto it = tracing_sessions_.begin(); it != tracing_sessions_.end();) {
+      auto next_it = it;
+      ++next_it;
+      const auto session_consumer = it->second.consumer_maybe_null;
+      
+      
+      FreeBuffers(it->first, abort_reason);
+      
+      if (session_consumer) {
+        session_consumer->tracing_session_id_ = 0;
+      }
+      it = next_it;
     }
   }
 
@@ -48744,9 +66916,11 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
       }));
 
   int per_uid_limit = kMaxConcurrentTracingSessionsPerUid;
-  if (consumer->uid_ == 1066 ) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  if (consumer->uid_ == AID_STATSD) {
     per_uid_limit = kMaxConcurrentTracingSessionsForStatsdUid;
   }
+#endif
   if (sessions_for_uid >= per_uid_limit) {
     MaybeLogUploadEvent(
         cfg, uuid,
@@ -48773,30 +66947,14 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
   
   std::unique_ptr<protozero::MessageFilter> trace_filter;
   if (cfg.has_trace_filter()) {
-    const auto& filt = cfg.trace_filter();
     trace_filter.reset(new protozero::MessageFilter());
 
-    protozero::StringFilter& string_filter = trace_filter->string_filter();
-    for (const auto& rule : filt.string_filter_chain().rules()) {
-      auto opt_policy = ConvertPolicy(rule.policy());
-      if (!opt_policy.has_value()) {
-        MaybeLogUploadEvent(
-            cfg, uuid, PerfettoStatsdAtom::kTracedEnableTracingInvalidFilter);
-        return PERFETTO_SVC_ERR(
-            "Trace filter has invalid string filtering rules, aborting");
-      }
-      string_filter.AddRule(*opt_policy, rule.regex_pattern(),
-                            rule.atrace_payload_starts_with());
-    }
-
-    const std::string& bytecode_v1 = filt.bytecode();
-    const std::string& bytecode_v2 = filt.bytecode_v2();
-    const std::string& bytecode =
-        bytecode_v2.empty() ? bytecode_v1 : bytecode_v2;
-    if (!trace_filter->LoadFilterBytecode(bytecode.data(), bytecode.size())) {
+    auto filter_status = protozero::LoadMessageFilterConfig(cfg.trace_filter(),
+                                                            trace_filter.get());
+    if (!filter_status.ok()) {
       MaybeLogUploadEvent(
           cfg, uuid, PerfettoStatsdAtom::kTracedEnableTracingInvalidFilter);
-      return PERFETTO_SVC_ERR("Trace filter bytecode invalid, aborting");
+      return PERFETTO_SVC_ERR("%s", filter_status.c_message());
     }
 
     
@@ -48814,6 +66972,26 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
     }
   }
 
+  std::optional<base::ScopedSchedBoost> priority_boost;
+  if (cfg.has_priority_boost()) {
+    auto sched_policy = CreateSchedPolicyFromConfig(cfg.priority_boost());
+    if (!sched_policy.ok()) {
+      MaybeLogUploadEvent(
+          cfg, uuid,
+          PerfettoStatsdAtom::kTracedEnablePriorityBoostInvalidConfig);
+      return PERFETTO_SVC_ERR("Invalid priority boost config: %s",
+                              sched_policy.status().c_message());
+    }
+    auto boost = base::ScopedSchedBoost::Boost(sched_policy.value());
+    if (!boost.ok()) {
+      MaybeLogUploadEvent(
+          cfg, uuid, PerfettoStatsdAtom::kTracedEnablePriorityBoostOtherError);
+      return PERFETTO_SVC_ERR("Failed to boost priority: %s",
+                              boost.status().c_message());
+    }
+    priority_boost = std::move(*boost);
+  }
+
   const TracingSessionID tsid = ++last_tracing_session_id_;
   TracingSession* tracing_session =
       &tracing_sessions_
@@ -48826,6 +67004,16 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
 
   if (trace_filter)
     tracing_session->trace_filter = std::move(trace_filter);
+
+  if (priority_boost)
+    tracing_session->priority_boost = std::move(priority_boost);
+
+  if (cfg.flush_period_ms() > 0) {
+    tracing_session->flush_strategy = TracingSession::FlushStrategy::kPeriodic;
+    tracing_session->periodic_flush_ms = cfg.flush_period_ms();
+  } else {
+    tracing_session->flush_strategy = TracingSession::FlushStrategy::kDisabled;
+  }
 
   if (cfg.write_into_file()) {
     if (!fd ^ !cfg.output_path().empty()) {
@@ -48854,9 +67042,41 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
       write_period_ms = kDefaultWriteIntoFilePeriodMs;
     if (write_period_ms < kMinWriteIntoFilePeriodMs)
       write_period_ms = kMinWriteIntoFilePeriodMs;
+
+    auto flush_mode = cfg.write_flush_mode();
+    if (flush_mode == TraceConfig::WRITE_FLUSH_AUTO ||
+        flush_mode == TraceConfig::WRITE_FLUSH_UNSPECIFIED) {
+      if (write_period_ms <=
+          static_cast<uint32_t>(kDefaultWriteIntoFilePeriodMs)) {
+        tracing_session->flush_strategy =
+            TracingSession::FlushStrategy::kPeriodic;
+        tracing_session->periodic_flush_ms =
+            static_cast<uint32_t>(kDefaultWriteIntoFilePeriodMs);
+      } else {
+        tracing_session->flush_strategy =
+            TracingSession::FlushStrategy::kOnWrite;
+      }
+
+      if (cfg.flush_period_ms() > 0) {
+        PERFETTO_LOG(
+            "Warning: flush_period_ms is ignored because write_flush_mode is "
+            "in AUTO mode. Set write_flush_mode to WRITE_FLUSH_DISABLED to "
+            "use flush_period_ms.");
+      }
+    } else if (flush_mode == TraceConfig::WRITE_FLUSH_ENABLED) {
+      tracing_session->flush_strategy = TracingSession::FlushStrategy::kOnWrite;
+      if (cfg.flush_period_ms() > 0) {
+        PERFETTO_LOG(
+            "Warning: flush_period_ms is ignored because write_flush_mode is "
+            "in WRITE_FLUSH_ENABLED mode. Set write_flush_mode to "
+            "WRITE_FLUSH_DISABLED to use flush_period_ms.");
+      }
+    }
     tracing_session->write_period_ms = write_period_ms;
     tracing_session->max_file_size_bytes = cfg.max_file_size_bytes();
     tracing_session->bytes_written_into_file = 0;
+    tracing_session->fflush_post_write =
+        cfg.fflush_post_write() == TraceConfig::FFLUSH_ENABLED;
   }
 
   if (cfg.compression_type() == TraceConfig::COMPRESSION_TYPE_DEFLATE) {
@@ -48878,7 +67098,6 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
   
   
   size_t total_buf_size_kb = 0;
-  const size_t num_buffers = static_cast<size_t>(cfg.buffers_size());
   tracing_session->buffers_index.reserve(num_buffers);
   for (size_t i = 0; i < num_buffers; i++) {
     const TraceConfig::BufferConfig& buffer_cfg = cfg.buffers()[i];
@@ -48904,8 +67123,19 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
         buffer_cfg.fill_policy() == TraceConfig::BufferConfig::DISCARD
             ? TraceBuffer::kDiscard
             : TraceBuffer::kOverwrite;
-    auto it_and_inserted =
-        buffers_.emplace(global_id, TraceBuffer::Create(buf_size, policy));
+    std::unique_ptr<TraceBuffer> new_buffer;
+    switch (buffer_cfg.experimental_mode()) {
+      case TraceConfig::BufferConfig::TRACE_BUFFER_V2:
+        new_buffer = TraceBufferV2::Create(buf_size, policy);
+        break;
+      case TraceConfig::BufferConfig::TRACE_BUFFER_V2_SHADOW_MODE:
+        new_buffer = TraceBufferV1WithV2Shadow::Create(buf_size, policy);
+        break;
+      case TraceConfig::BufferConfig::MODE_UNSPECIFIED:
+        new_buffer = TraceBufferV1::Create(buf_size, policy);
+        break;
+    }
+    auto it_and_inserted = buffers_.emplace(global_id, std::move(new_buffer));
     PERFETTO_DCHECK(it_and_inserted.second);  
     std::unique_ptr<TraceBuffer>& trace_buffer = it_and_inserted.first->second;
     if (!trace_buffer) {
@@ -49097,7 +67327,9 @@ void TracingServiceImpl::ChangeTraceConfig(ConsumerEndpointImpl* consumer,
       
       
       
-      if (!NameMatchesFilter(producer->name_, new_producer_name_filter,
+      if ((!new_producer_name_filter.empty() ||
+           !new_producer_name_regex_filter.empty()) &&
+          !NameMatchesFilter(producer->name_, new_producer_name_filter,
                              new_producer_name_regex_filter)) {
         continue;
       }
@@ -49214,13 +67446,21 @@ void TracingServiceImpl::StartTracing(TracingSessionID tsid) {
 
   
   if (tracing_session->config.write_into_file()) {
-    weak_runner_.PostDelayedTask([this, tsid] { ReadBuffersIntoFile(tsid); },
-                                 DelayToNextWritePeriodMs(*tracing_session));
+    bool async_flush_buffers_before_read =
+        tracing_session->flush_strategy ==
+        TracingSession::FlushStrategy::kOnWrite;
+    weak_runner_.PostDelayedTask(
+        [this, tsid, async_flush_buffers_before_read] {
+          ReadBuffersIntoFile(tsid, async_flush_buffers_before_read);
+        },
+        DelayToNextWritePeriodMs(*tracing_session));
   }
 
   
-  if (tracing_session->config.flush_period_ms())
+  if (tracing_session->flush_strategy ==
+      TracingSession::FlushStrategy::kPeriodic) {
     PeriodicFlushTask(tsid, true);
+  }
 
   
   
@@ -49267,17 +67507,17 @@ void TracingServiceImpl::StopOnDurationMsExpiry(TracingSessionID tsid) {
 void TracingServiceImpl::StartDataSourceInstance(
     ProducerEndpointImpl* producer,
     TracingSession* tracing_session,
-    TracingServiceImpl::DataSourceInstance* instance) {
+    DataSourceInstance* instance) {
   PERFETTO_DCHECK(instance->state == DataSourceInstance::CONFIGURED);
 
   bool start_immediately = !instance->will_notify_on_start;
 
   if (producer->IsAndroidProcessFrozen()) {
     PERFETTO_DLOG(
-        "skipping waiting of data source \"%s\" on producer \"%s\" (pid=%u) "
+        "skipping waiting of data source \"%s\" on producer \"%s\" (pid=%d) "
         "because it is frozen",
         instance->data_source_name.c_str(), producer->name_.c_str(),
-        producer->pid());
+        static_cast<int>(producer->pid()));
     start_immediately = true;
   }
 
@@ -49302,7 +67542,8 @@ void TracingServiceImpl::StartDataSourceInstance(
 
 
 void TracingServiceImpl::DisableTracing(TracingSessionID tsid,
-                                        bool disable_immediately) {
+                                        bool disable_immediately,
+                                        const std::string& error) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   TracingSession* tracing_session = GetTracingSession(tsid);
   if (!tracing_session) {
@@ -49311,9 +67552,6 @@ void TracingServiceImpl::DisableTracing(TracingSessionID tsid,
     PERFETTO_DLOG("DisableTracing() failed, invalid session ID %" PRIu64, tsid);
     return;
   }
-
-  MaybeLogUploadEvent(tracing_session->config, tracing_session->trace_uuid,
-                      PerfettoStatsdAtom::kTracedDisableTracing);
 
   switch (tracing_session->state) {
     
@@ -49334,7 +67572,7 @@ void TracingServiceImpl::DisableTracing(TracingSessionID tsid,
     case TracingSession::DISABLING_WAITING_STOP_ACKS:
       PERFETTO_DCHECK(!tracing_session->AllDataSourceInstancesStopped());
       if (disable_immediately)
-        DisableTracingNotifyConsumerAndFlushFile(tracing_session);
+        DisableTracingNotifyConsumerAndFlushFile(tracing_session, error);
       return;
 
     
@@ -49346,6 +67584,21 @@ void TracingServiceImpl::DisableTracing(TracingSessionID tsid,
 
     
     case TracingSession::STARTED:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MaybeLogUploadEvent(tracing_session->config, tracing_session->trace_uuid,
+                          PerfettoStatsdAtom::kTracedDisableTracing);
       break;
   }
 
@@ -49371,7 +67624,7 @@ void TracingServiceImpl::DisableTracing(TracingSessionID tsid,
   
   
   if (tracing_session->AllDataSourceInstancesStopped())
-    return DisableTracingNotifyConsumerAndFlushFile(tracing_session);
+    return DisableTracingNotifyConsumerAndFlushFile(tracing_session, error);
 
   tracing_session->state = TracingSession::DISABLING_WAITING_STOP_ACKS;
   weak_runner_.PostDelayedTask([this, tsid] { OnDisableTracingTimeout(tsid); },
@@ -49545,9 +67798,9 @@ void TracingServiceImpl::ActivateTriggers(
     PERFETTO_DLOG("Received ActivateTriggers request for \"%s\"",
                   trigger_name.c_str());
     android_stats::MaybeLogTriggerEvent(PerfettoTriggerAtom::kTracedTrigger,
-                                        trigger_name);
+                                         0, trigger_name);
 
-    base::Hasher hash;
+    base::FnvHasher hash;
     hash.Update(trigger_name.c_str(), trigger_name.size());
     std::string triggered_session_name;
     base::Uuid triggered_session_uuid;
@@ -49577,11 +67830,11 @@ void TracingServiceImpl::ActivateTriggers(
       
       
       
-      if (!iter->producer_name_regex().empty() &&
-          !std::regex_match(
-              producer->name_,
-              std::regex(iter->producer_name_regex(), std::regex::extended))) {
-        continue;
+      if (!iter->producer_name_regex().empty()) {
+        auto re = base::Regex::CreateOrCheck(iter->producer_name_regex());
+        if (!re.FullMatch(producer->name_)) {
+          continue;
+        }
       }
 
       
@@ -49589,7 +67842,7 @@ void TracingServiceImpl::ActivateTriggers(
       double trigger_rnd = random_->GetValue();
       PERFETTO_DCHECK(trigger_rnd >= 0 && trigger_rnd < 1);
       if (trigger_rnd < iter->skip_probability()) {
-        MaybeLogTriggerEvent(tracing_session.config,
+        MaybeLogTriggerEvent(tracing_session.config, tracing_session.trace_uuid,
                              PerfettoTriggerAtom::kTracedLimitProbability,
                              trigger_name);
         continue;
@@ -49598,7 +67851,7 @@ void TracingServiceImpl::ActivateTriggers(
       
       
       if (iter->max_per_24_h() > 0 && count_in_window >= iter->max_per_24_h()) {
-        MaybeLogTriggerEvent(tracing_session.config,
+        MaybeLogTriggerEvent(tracing_session.config, tracing_session.trace_uuid,
                              PerfettoTriggerAtom::kTracedLimitMaxPer24h,
                              trigger_name);
         continue;
@@ -49613,7 +67866,9 @@ void TracingServiceImpl::ActivateTriggers(
       const bool triggers_already_received =
           !tracing_session.received_triggers.empty();
       const TriggerInfo trigger = {static_cast<uint64_t>(now_ns), iter->name(),
-                                   producer->name_, producer->uid()};
+                                   producer->name_, producer->uid(),
+                                   iter->stop_delay_ms()};
+      MaybeSnapshotClocksIntoRingBuffer(&tracing_session);
       tracing_session.received_triggers.push_back(trigger);
       switch (trigger_mode) {
         case TraceConfig::TriggerConfig::START_TRACING:
@@ -49719,7 +67974,8 @@ void TracingServiceImpl::OnDisableTracingTimeout(TracingSessionID tsid) {
 }
 
 void TracingServiceImpl::DisableTracingNotifyConsumerAndFlushFile(
-    TracingSession* tracing_session) {
+    TracingSession* tracing_session,
+    const std::string& error) {
   PERFETTO_DCHECK(tracing_session->state != TracingSession::DISABLED);
   for (auto& inst_kv : tracing_session->data_source_instances) {
     if (inst_kv.second.state == DataSourceInstance::STOPPED)
@@ -49745,14 +68001,16 @@ void TracingServiceImpl::DisableTracingNotifyConsumerAndFlushFile(
 
   if (tracing_session->write_into_file) {
     tracing_session->write_period_ms = 0;
-    ReadBuffersIntoFile(tracing_session->id);
+    
+    ReadBuffersIntoFile(tracing_session->id,
+                         false);
   }
 
   MaybeLogUploadEvent(tracing_session->config, tracing_session->trace_uuid,
                       PerfettoStatsdAtom::kTracedNotifyTracingDisabled);
 
   if (tracing_session->consumer_maybe_null)
-    tracing_session->consumer_maybe_null->NotifyOnTracingDisabled("");
+    tracing_session->consumer_maybe_null->NotifyOnTracingDisabled(error);
 }
 
 void TracingServiceImpl::Flush(TracingSessionID tsid,
@@ -49774,9 +68032,19 @@ void TracingServiceImpl::Flush(TracingSessionID tsid,
   std::map<ProducerID, std::vector<DataSourceInstanceID>> data_source_instances;
   for (const auto& [producer_id, ds_inst] :
        tracing_session->data_source_instances) {
-    if (ds_inst.no_flush)
+    if (!ds_inst.no_flush) {
+      data_source_instances[producer_id].push_back(ds_inst.instance_id);
       continue;
-    data_source_instances[producer_id].push_back(ds_inst.instance_id);
+    }
+    ProducerEndpointImpl* producer = GetProducer(producer_id);
+    if (producer->smb_scraping_enabled_ && producer->IsShmemEmulated()) {
+      
+      
+      
+      
+      
+      data_source_instances.try_emplace(producer_id);
+    }
   }
   FlushDataSourceInstances(tracing_session, timeout_ms, data_source_instances,
                            std::move(callback), flush_flags);
@@ -49867,7 +68135,7 @@ void TracingServiceImpl::NotifyFlushDoneForProducer(
         it++;
       }
     }  
-  }    
+  }  
 }
 
 void TracingServiceImpl::OnFlushTimeout(TracingSessionID tsid,
@@ -49956,7 +68224,7 @@ void TracingServiceImpl::CompleteFlush(TracingSessionID tsid,
 void TracingServiceImpl::ScrapeSharedMemoryBuffers(
     TracingSession* tracing_session,
     ProducerEndpointImpl* producer) {
-  if (!producer->smb_scraping_enabled_)
+  if (!producer->smb_scraping_enabled_ || producer->IsShmemEmulated())
     return;
 
   
@@ -50000,76 +68268,34 @@ void TracingServiceImpl::ScrapeSharedMemoryBuffers(
   
   
 
-  SharedMemoryABI* abi = &producer->shmem_abi_;
-  
-  
-  for (size_t page_idx = 0; page_idx < abi->num_pages(); page_idx++) {
-    uint32_t header_bitmap = abi->GetPageHeaderBitmap(page_idx);
+  SharedMemoryArbiterImpl::ForEachScrapableChunk(
+      &producer->shmem_abi_,
+      [&](SharedMemoryABI::Chunk* chunk, bool chunk_complete,
+          uint16_t packet_count, uint8_t packet_flags) {
+        WriterID writer_id = chunk->writer_id();
+        std::optional<BufferID> target_buffer_id =
+            producer->buffer_id_for_writer(writer_id);
 
-    uint32_t used_chunks =
-        abi->GetUsedChunks(header_bitmap);  
-    
-    if (used_chunks == 0)
-      continue;
+        
+        
+        if (!target_buffer_id)
+          return;
 
-    
-    
-    for (uint32_t chunk_idx = 0; used_chunks; chunk_idx++, used_chunks >>= 1) {
-      if (!(used_chunks & 1))
-        continue;
+        
+        bool target_buffer_belongs_to_session =
+            std::find(session_buffers.begin(), session_buffers.end(),
+                      *target_buffer_id) != session_buffers.end();
+        if (!target_buffer_belongs_to_session)
+          return;
 
-      SharedMemoryABI::ChunkState state =
-          SharedMemoryABI::GetChunkStateFromHeaderBitmap(header_bitmap,
-                                                         chunk_idx);
-      PERFETTO_DCHECK(state == SharedMemoryABI::kChunkBeingWritten ||
-                      state == SharedMemoryABI::kChunkComplete);
-      bool chunk_complete = state == SharedMemoryABI::kChunkComplete;
+        uint32_t chunk_id =
+            chunk->header()->chunk_id.load(std::memory_order_relaxed);
 
-      SharedMemoryABI::Chunk chunk =
-          abi->GetChunkUnchecked(page_idx, header_bitmap, chunk_idx);
-
-      uint16_t packet_count;
-      uint8_t flags;
-      
-      std::tie(packet_count, flags) = chunk.GetPacketCountAndFlags();
-
-      
-      
-      
-      if (!chunk_complete && packet_count < 2)
-        continue;
-
-      
-      
-      
-      
-      
-
-      WriterID writer_id = chunk.writer_id();
-      std::optional<BufferID> target_buffer_id =
-          producer->buffer_id_for_writer(writer_id);
-
-      
-      
-      if (!target_buffer_id)
-        continue;
-
-      
-      bool target_buffer_belongs_to_session =
-          std::find(session_buffers.begin(), session_buffers.end(),
-                    *target_buffer_id) != session_buffers.end();
-      if (!target_buffer_belongs_to_session)
-        continue;
-
-      uint32_t chunk_id =
-          chunk.header()->chunk_id.load(std::memory_order_relaxed);
-
-      CopyProducerPageIntoLogBuffer(
-          producer->id_, producer->client_identity_, writer_id, chunk_id,
-          *target_buffer_id, packet_count, flags, chunk_complete,
-          chunk.payload_begin(), chunk.payload_size());
-    }
-  }
+        CopyProducerPageIntoLogBuffer(
+            producer->id_, producer->client_identity_, writer_id, chunk_id,
+            *target_buffer_id, packet_count, packet_flags, chunk_complete,
+            chunk->payload_begin(), chunk->payload_size());
+      });
 }
 
 void TracingServiceImpl::FlushAndDisableTracing(TracingSessionID tsid) {
@@ -50111,7 +68337,9 @@ void TracingServiceImpl::PeriodicFlushTask(TracingSessionID tsid,
   if (!tracing_session || tracing_session->state != TracingSession::STARTED)
     return;
 
-  uint32_t flush_period_ms = tracing_session->config.flush_period_ms();
+  PERFETTO_CHECK(tracing_session->flush_strategy ==
+                 TracingSession::FlushStrategy::kPeriodic);
+  uint32_t flush_period_ms = tracing_session->periodic_flush_ms;
   weak_runner_.PostDelayedTask(
       [this, tsid] { PeriodicFlushTask(tsid, false); },
       flush_period_ms - static_cast<uint32_t>(clock_->GetWallTimeMs().count() %
@@ -50231,7 +68459,9 @@ bool TracingServiceImpl::ReadBuffersIntoConsumer(
   return true;
 }
 
-bool TracingServiceImpl::ReadBuffersIntoFile(TracingSessionID tsid) {
+bool TracingServiceImpl::ReadBuffersIntoFile(
+    TracingSessionID tsid,
+    bool async_flush_buffers_before_read) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   TracingSession* tracing_session = GetTracingSession(tsid);
   if (!tracing_session) {
@@ -50248,35 +68478,66 @@ bool TracingServiceImpl::ReadBuffersIntoFile(TracingSessionID tsid) {
   if (IsWaitingForTrigger(tracing_session))
     return false;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool has_more = true;
-  bool stop_writing_into_file = false;
-  do {
-    std::vector<TracePacket> packets =
-        ReadBuffers(tracing_session, kWriteIntoFileChunkSize, &has_more);
+  auto do_read_buffers_into_file_fn =
+      [this, tsid](bool async_flush_buffers_before_read) {
+        TracingSession* tracing_session = GetTracingSession(tsid);
+        if (!tracing_session)
+          return;
+        
+        
+        
+        
+        
+        
+        
+        
+        bool has_more = true;
+        bool stop_writing_into_file = false;
+        do {
+          std::vector<TracePacket> packets =
+              ReadBuffers(tracing_session, kWriteIntoFileChunkSize, &has_more);
 
-    stop_writing_into_file = WriteIntoFile(tracing_session, std::move(packets));
-  } while (has_more && !stop_writing_into_file);
+          stop_writing_into_file =
+              WriteIntoFile(tracing_session, std::move(packets));
+        } while (has_more && !stop_writing_into_file);
 
-  if (stop_writing_into_file || tracing_session->write_period_ms == 0) {
-    
-    base::FlushFile(tracing_session->write_into_file.get());
-    tracing_session->write_into_file.reset();
-    tracing_session->write_period_ms = 0;
-    if (tracing_session->state == TracingSession::STARTED)
-      DisableTracing(tsid);
-    return true;
+        if (stop_writing_into_file || tracing_session->write_period_ms == 0) {
+          
+          base::FlushFile(tracing_session->write_into_file.get());
+          tracing_session->write_into_file.reset();
+          tracing_session->write_period_ms = 0;
+          if (tracing_session->state == TracingSession::STARTED)
+            DisableTracing(tsid);
+          return;
+        }
+
+        if (tracing_session->fflush_post_write) {
+          
+          base::FlushFile(tracing_session->write_into_file.get());
+        }
+
+        weak_runner_.PostDelayedTask(
+            [this, tsid, async_flush_buffers_before_read] {
+              ReadBuffersIntoFile(tsid, async_flush_buffers_before_read);
+            },
+            DelayToNextWritePeriodMs(*tracing_session));
+      };
+
+  if (async_flush_buffers_before_read) {
+    Flush(
+        tsid, 0,
+        [do_read_buffers_into_file_fn](bool success) {
+          if (!success)
+            PERFETTO_ELOG("ReadBuffersIntoFile flush timed out");
+          do_read_buffers_into_file_fn(
+               true);
+        },
+        FlushFlags(FlushFlags::Initiator::kTraced,
+                   FlushFlags::Reason::kPeriodic));
+  } else {
+    do_read_buffers_into_file_fn( false);
   }
 
-  weak_runner_.PostDelayedTask([this, tsid] { ReadBuffersIntoFile(tsid); },
-                               DelayToNextWritePeriodMs(*tracing_session));
   return true;
 }
 
@@ -50350,8 +68611,16 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
   }
   if (!tracing_session->did_emit_initial_packets) {
     EmitUuid(tracing_session, &packets);
-    if (!tracing_session->config.builtin_data_sources().disable_system_info())
+    if (!tracing_session->config.builtin_data_sources()
+             .disable_extension_descriptors()) {
+      EmitExtensionDescriptors(tracing_session, &packets);
+    }
+    EmitTraceProvenance(tracing_session, &packets);
+    if (!tracing_session->config.builtin_data_sources().disable_system_info()) {
       EmitSystemInfo(&packets);
+      if (!relay_clients_.empty())
+        MaybeEmitRemoteSystemInfo(&packets);
+    }
   }
   tracing_session->did_emit_initial_packets = true;
 
@@ -50363,8 +68632,13 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
 
   
   
-  if (!relay_clients_.empty())
+  if (!tracing_session->config.builtin_data_sources()
+           .disable_clock_snapshotting() &&
+      !relay_clients_.empty()) {
     MaybeEmitRemoteClockSync(tracing_session, &packets);
+  }
+
+  MaybeEmitProtoVmInstances(tracing_session, &packets);
 
   size_t packets_bytes = 0;  
 
@@ -50445,7 +68719,7 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
       did_hit_threshold = packets_bytes >= threshold;
       packets.emplace_back(std::move(packet));
     }  
-  }    
+  }  
 
   *has_more = did_hit_threshold;
 
@@ -50631,7 +68905,8 @@ bool TracingServiceImpl::WriteIntoFile(TracingSession* tracing_session,
   return stop_writing_into_file;
 }
 
-void TracingServiceImpl::FreeBuffers(TracingSessionID tsid) {
+void TracingServiceImpl::FreeBuffers(TracingSessionID tsid,
+                                     const std::string& error) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   PERFETTO_DLOG("Freeing buffers for session %" PRIu64, tsid);
   TracingSession* tracing_session = GetTracingSession(tsid);
@@ -50639,7 +68914,7 @@ void TracingServiceImpl::FreeBuffers(TracingSessionID tsid) {
     PERFETTO_DLOG("FreeBuffers() failed, invalid session ID %" PRIu64, tsid);
     return;  
   }
-  DisableTracing(tsid, true);
+  DisableTracing(tsid, true, error);
 
   PERFETTO_DCHECK(tracing_session->AllDataSourceInstancesStopped());
   tracing_session->data_source_instances.clear();
@@ -50672,7 +68947,7 @@ void TracingServiceImpl::FreeBuffers(TracingSessionID tsid) {
           [weak_consumer = clone_op.weak_consumer] {
             if (weak_consumer) {
               weak_consumer->consumer_->OnSessionCloned(
-                  {false, "Original session ended", {}});
+                  {false, "Original session ended", {}, false});
             }
           });
     }
@@ -50691,6 +68966,53 @@ void TracingServiceImpl::FreeBuffers(TracingSessionID tsid) {
   base::ignore_result(notify_traceur);
   base::ignore_result(is_long_trace);
 #endif
+}
+
+void TracingServiceImpl::MaybeSetUpProtoVm(
+    const DataSourceConfig& ds_config,
+    const RegisteredDataSource& ds_instance,
+    BufferID buffer_id) {
+  if (!ds_config.has_protovm_config() &&
+      !ds_instance.descriptor.has_protovm_program()) {
+    return;  
+  }
+  
+  
+  if (!ds_instance.descriptor.has_protovm_program()) {
+    PERFETTO_ELOG(
+        "ProtoVM config for data source %s specifies a ProtoVM, but the data "
+        "source instance (ProducerID: %d) doesn't specify a ProtoVM program",
+        ds_config.name().c_str(), ds_instance.producer_id);
+    return;
+  }
+  if (!ds_config.has_protovm_config()) {
+    PERFETTO_ELOG(
+        "Received ProtoVM program from data souce instance (ProducerID: %d, "
+        "Data source name: %s), but the data source config doesn't specify a "
+        "ProtoVM.",
+        ds_instance.producer_id, ds_config.name().c_str());
+    return;
+  }
+  if (!ds_config.protovm_config().has_memory_limit_kb()) {
+    PERFETTO_ELOG(
+        "ProtoVM config for data source %s doesn't specify a memory limit",
+        ds_config.name().c_str());
+    return;
+  }
+  auto it = buffers_.find(buffer_id);
+  PERFETTO_CHECK(it != buffers_.cend());
+  if (it->second->buf_type() != TraceBuffer::BufType::kV2) {
+    PERFETTO_ELOG(
+        "Data source %s is configured to run a ProtoVM, but the corresponding "
+        "buffer is not of type V2",
+        ds_config.name().c_str());
+    return;
+  }
+  auto* buffer = static_cast<TraceBufferV2*>(it->second.get());
+  buffer->MaybeSetUpProtoVm(
+      ds_config.name(),
+      ds_instance.descriptor.protovm_program().SerializeAsString(),
+      ds_config.protovm_config().memory_limit_kb(), ds_instance.producer_id);
 }
 
 void TracingServiceImpl::RegisterDataSource(ProducerID producer_id,
@@ -50794,10 +69116,10 @@ void TracingServiceImpl::StopDataSourceInstance(ProducerEndpointImpl* producer,
   const DataSourceInstanceID ds_inst_id = instance->instance_id;
   if (producer->IsAndroidProcessFrozen()) {
     PERFETTO_DLOG(
-        "skipping waiting of data source \"%s\" on producer \"%s\" (pid=%u) "
+        "skipping waiting of data source \"%s\" on producer \"%s\" (pid=%d) "
         "because it is frozen",
         instance->data_source_name.c_str(), producer->name_.c_str(),
-        producer->pid());
+        static_cast<int>(producer->pid()));
     disable_immediately = true;
   }
   if (instance->will_notify_on_stop && !disable_immediately) {
@@ -50867,11 +69189,11 @@ void TracingServiceImpl::UnregisterDataSource(ProducerID producer_id,
 bool TracingServiceImpl::IsInitiatorPrivileged(
     const TracingSession& tracing_session) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  if (tracing_session.consumer_uid == 1066  &&
+  if (tracing_session.consumer_uid == AID_STATSD &&
       tracing_session.config.statsd_metadata().triggering_config_uid() !=
-          2000 
-      && tracing_session.config.statsd_metadata().triggering_config_uid() !=
-             0 ) {
+          AID_SHELL &&
+      tracing_session.config.statsd_metadata().triggering_config_uid() !=
+          AID_ROOT) {
     
     
     
@@ -50895,7 +69217,7 @@ bool TracingServiceImpl::IsInitiatorPrivileged(
   return false;
 }
 
-TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
+DataSourceInstance* TracingServiceImpl::SetupDataSource(
     const TraceConfig::DataSource& cfg_data_source,
     const TraceConfig::ProducerConfig& producer_config,
     const RegisteredDataSource& data_source,
@@ -50909,18 +69231,61 @@ TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
     PERFETTO_DLOG("Lockdown mode: not enabling producer %hu", producer->id_);
     return nullptr;
   }
+
   
-  
-  if (!NameMatchesFilter(producer->name_,
-                         cfg_data_source.producer_name_filter(),
-                         cfg_data_source.producer_name_regex_filter())) {
-    PERFETTO_DLOG("Data source: %s is filtered out for producer: %s",
+  bool is_host_machine =
+      producer->client_identity().machine_id() == kDefaultMachineID;
+  if (cfg_data_source.machine_name_filter_size()) {
+    
+    const auto& cfg_names = cfg_data_source.machine_name_filter();
+    bool filter_match =
+        NameMatchesFilter(producer->machine_name_, cfg_names, {});
+    
+    bool host_match =
+        is_host_machine && NameMatchesFilter("host", cfg_names, {});
+    if (!filter_match && !host_match) {
+      PERFETTO_DLOG("Data source: %s is filtered out for machine: %s",
+                    cfg_data_source.config().name().c_str(),
+                    producer->machine_name_.c_str());
+      return nullptr;
+    }
+  } else if (!tracing_session->config.trace_all_machines() &&
+             !is_host_machine) {
+    
+    
+    PERFETTO_DLOG("Data source: %s is filtered out for remote machine: %s",
                   cfg_data_source.config().name().c_str(),
-                  producer->name_.c_str());
+                  producer->machine_name_.c_str());
     return nullptr;
   }
 
-  auto relative_buffer_id = cfg_data_source.config().target_buffer();
+  
+  if (cfg_data_source.producer_name_filter_size() ||
+      cfg_data_source.producer_name_regex_filter_size()) {
+    if (!NameMatchesFilter(producer->name_,
+                           cfg_data_source.producer_name_filter(),
+                           cfg_data_source.producer_name_regex_filter())) {
+      PERFETTO_DLOG("Data source: %s is filtered out for producer: %s",
+                    cfg_data_source.config().name().c_str(),
+                    producer->name_.c_str());
+      return nullptr;
+    }
+  }
+
+  
+  
+  uint32_t relative_buffer_id = cfg_data_source.config().target_buffer();
+  const auto& ds_cfg = cfg_data_source.config();
+  if (!ds_cfg.target_buffer_name().empty()) {
+    
+    for (size_t i = 0; i < tracing_session->num_buffers(); ++i) {
+      const auto& buf = tracing_session->config.buffers()[i];
+      if (buf.name() == ds_cfg.target_buffer_name()) {
+        relative_buffer_id = static_cast<uint32_t>(i);
+        break;
+      }
+    }
+  }
   if (relative_buffer_id >= tracing_session->num_buffers()) {
     PERFETTO_LOG(
         "The TraceConfig for DataSource %s specified a target_buffer out of "
@@ -50985,6 +69350,8 @@ TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
   PERFETTO_DCHECK(global_id);
   ds_config.set_target_buffer(global_id);
 
+  MaybeSetUpProtoVm(ds_config, data_source, global_id);
+
   PERFETTO_DLOG("Setting up data source %s with target buffer %" PRIu16,
                 ds_config.name().c_str(), global_id);
   if (!producer->shared_memory()) {
@@ -51021,9 +69388,17 @@ TracingServiceImpl::DataSourceInstance* TracingServiceImpl::SetupDataSource(
     
     PERFETTO_DLOG("Creating SMB of %zu KB for producer \"%s\"", shm_size / 1024,
                   producer->name_.c_str());
+    
+    
+    
+    
     auto shared_memory = shm_factory_->CreateSharedMemory(shm_size);
+    auto shmem_mode =
+        producer->client_identity().machine_id() == kDefaultMachineID
+            ? SharedMemoryABI::ShmemMode::kDefault
+            : SharedMemoryABI::ShmemMode::kShmemEmulation;
     producer->SetupSharedMemory(std::move(shared_memory), page_size,
-                                false);
+                                false, shmem_mode);
   }
   producer->SetupDataSource(inst_id, ds_config);
   return ds_instance;
@@ -51156,9 +69531,8 @@ void TracingServiceImpl::ApplyChunkPatches(
   }
 }
 
-TracingServiceImpl::TracingSession* TracingServiceImpl::GetDetachedSession(
-    uid_t uid,
-    const std::string& key) {
+TracingSession* TracingServiceImpl::GetDetachedSession(uid_t uid,
+                                                       const std::string& key) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   for (auto& kv : tracing_sessions_) {
     TracingSession* session = &kv.second;
@@ -51170,8 +69544,7 @@ TracingServiceImpl::TracingSession* TracingServiceImpl::GetDetachedSession(
   return nullptr;
 }
 
-TracingServiceImpl::TracingSession* TracingServiceImpl::GetTracingSession(
-    TracingSessionID tsid) {
+TracingSession* TracingServiceImpl::GetTracingSession(TracingSessionID tsid) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   auto it = tsid ? tracing_sessions_.find(tsid) : tracing_sessions_.end();
   if (it == tracing_sessions_.end())
@@ -51179,8 +69552,7 @@ TracingServiceImpl::TracingSession* TracingServiceImpl::GetTracingSession(
   return &it->second;
 }
 
-TracingServiceImpl::TracingSession*
-TracingServiceImpl::GetTracingSessionByUniqueName(
+TracingSession* TracingServiceImpl::GetTracingSessionByUniqueName(
     const std::string& unique_session_name) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   if (unique_session_name.empty()) {
@@ -51198,8 +69570,7 @@ TracingServiceImpl::GetTracingSessionByUniqueName(
   return nullptr;
 }
 
-TracingServiceImpl::TracingSession*
-TracingServiceImpl::FindTracingSessionWithMaxBugreportScore() {
+TracingSession* TracingServiceImpl::FindTracingSessionWithMaxBugreportScore() {
   TracingSession* max_session = nullptr;
   for (auto& session_id_and_session : tracing_sessions_) {
     auto& session = session_id_and_session.second;
@@ -51229,7 +69600,7 @@ TraceBuffer* TracingServiceImpl::GetBufferByID(BufferID buffer_id) {
   auto buf_iter = buffers_.find(buffer_id);
   if (buf_iter == buffers_.end())
     return nullptr;
-  return &*buf_iter->second;
+  return buf_iter->second.get();
 }
 
 void TracingServiceImpl::OnStartTriggersTimeout(TracingSessionID tsid) {
@@ -51268,7 +69639,7 @@ void TracingServiceImpl::UpdateMemoryGuardrail() {
 
   
   for (const auto& id_to_buffer : buffers_) {
-    total_buffer_bytes += id_to_buffer.second->size();
+    total_buffer_bytes += id_to_buffer.second->GetMemoryUsageBytes();
   }
 
   
@@ -51278,7 +69649,7 @@ void TracingServiceImpl::UpdateMemoryGuardrail() {
       const PendingClone& clone_op = id_to_clone_op.second;
       for (const std::unique_ptr<TraceBuffer>& buf : clone_op.buffers) {
         if (buf) {
-          total_buffer_bytes += buf->size();
+          total_buffer_bytes += buf->GetMemoryUsageBytes();
         }
       }
     }
@@ -51552,7 +69923,7 @@ TraceStats TracingServiceImpl::GetTraceStats(TracingSession* tracing_session) {
       if (!buf)
         continue;
       for (auto it = buf->writer_stats().GetIterator(); it; ++it) {
-        const auto& hist = it.value().used_chunk_hist;
+        const auto& hist = it.value();
         ProducerID p;
         WriterID w;
         GetProducerAndWriterID(it.key(), &p, &w);
@@ -51574,8 +69945,8 @@ TraceStats TracingServiceImpl::GetTraceStats(TracingSession* tracing_session) {
           wri_stats->add_chunk_payload_histogram_sum(hist.GetBucketSum(i));
         }
       }  
-    }    
-  }      
+    }  
+  }  
 
   return trace_stats;
 }
@@ -51606,88 +69977,114 @@ void TracingServiceImpl::MaybeEmitTraceConfig(
 void TracingServiceImpl::EmitSystemInfo(std::vector<TracePacket>* packets) {
   protozero::HeapBuffered<protos::pbzero::TracePacket> packet;
   auto* info = packet->set_system_info();
+
+  base::SystemInfo sys_info = base::GetSystemInfo();
   info->set_tracing_service_version(base::GetVersionString());
 
-  std::optional<int32_t> tzoff = base::GetTimezoneOffsetMins();
-  if (tzoff.has_value())
-    info->set_timezone_off_mins(*tzoff);
+  if (sys_info.timezone_off_mins.has_value())
+    info->set_timezone_off_mins(*sys_info.timezone_off_mins);
 
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) && \
-    !PERFETTO_BUILDFLAG(PERFETTO_OS_NACL)
-  struct utsname uname_info;
-  if (uname(&uname_info) == 0) {
+  if (sys_info.utsname_info.has_value()) {
     auto* utsname_info = info->set_utsname();
-    utsname_info->set_sysname(uname_info.sysname);
-    utsname_info->set_version(uname_info.version);
-    utsname_info->set_machine(uname_info.machine);
-    utsname_info->set_release(uname_info.release);
-  }
-  info->set_page_size(static_cast<uint32_t>(sysconf(_SC_PAGESIZE)));
-  info->set_num_cpus(static_cast<uint32_t>(sysconf(_SC_NPROCESSORS_CONF)));
-#endif  
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  std::string fingerprint_value = base::GetAndroidProp("ro.build.fingerprint");
-  if (!fingerprint_value.empty()) {
-    info->set_android_build_fingerprint(fingerprint_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.build.fingerprint");
+    utsname_info->set_sysname(sys_info.utsname_info->sysname);
+    utsname_info->set_version(sys_info.utsname_info->version);
+    utsname_info->set_machine(sys_info.utsname_info->machine);
+    utsname_info->set_release(sys_info.utsname_info->release);
   }
 
-  std::string device_manufacturer_value =
-      base::GetAndroidProp("ro.product.manufacturer");
-  if (!device_manufacturer_value.empty()) {
-    info->set_android_device_manufacturer(device_manufacturer_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.product.manufacturer");
-  }
+  if (sys_info.page_size.has_value())
+    info->set_page_size(*sys_info.page_size);
+  if (sys_info.system_ram_bytes.has_value())
+    info->set_system_ram_bytes(*sys_info.system_ram_bytes);
+  if (sys_info.num_cpus.has_value())
+    info->set_num_cpus(*sys_info.num_cpus);
 
-  std::string sdk_str_value = base::GetAndroidProp("ro.build.version.sdk");
-  std::optional<uint64_t> sdk_value = base::StringToUInt64(sdk_str_value);
-  if (sdk_value.has_value()) {
-    info->set_android_sdk_version(*sdk_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.build.version.sdk");
-  }
+  if (!sys_info.android_build_fingerprint.empty())
+    info->set_android_build_fingerprint(sys_info.android_build_fingerprint);
+  if (!sys_info.android_device_manufacturer.empty())
+    info->set_android_device_manufacturer(sys_info.android_device_manufacturer);
+  if (sys_info.android_sdk_version.has_value())
+    info->set_android_sdk_version(*sys_info.android_sdk_version);
+  if (!sys_info.android_soc_model.empty())
+    info->set_android_soc_model(sys_info.android_soc_model);
+  if (!sys_info.android_guest_soc_model.empty())
+    info->set_android_guest_soc_model(sys_info.android_guest_soc_model);
+  if (!sys_info.android_hardware_revision.empty())
+    info->set_android_hardware_revision(sys_info.android_hardware_revision);
+  if (!sys_info.android_storage_model.empty())
+    info->set_android_storage_model(sys_info.android_storage_model);
+  if (!sys_info.android_ram_model.empty())
+    info->set_android_ram_model(sys_info.android_ram_model);
+  if (!sys_info.android_serial_console.empty())
+    info->set_android_serial_console(sys_info.android_serial_console);
 
-  std::string soc_model_value = base::GetAndroidProp("ro.soc.model");
-  if (!soc_model_value.empty()) {
-    info->set_android_soc_model(soc_model_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.soc.model");
-  }
-
-  
-  std::string guest_soc_model_value =
-      base::GetAndroidProp("ro.boot.guest_soc.model");
-  if (!guest_soc_model_value.empty()) {
-    info->set_android_guest_soc_model(guest_soc_model_value);
-  }
-
-  std::string hw_rev_value = base::GetAndroidProp("ro.boot.hardware.revision");
-  if (!hw_rev_value.empty()) {
-    info->set_android_hardware_revision(hw_rev_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.boot.hardware.revision");
-  }
-
-  std::string hw_ufs_value = base::GetAndroidProp("ro.boot.hardware.ufs");
-  if (!hw_ufs_value.empty()) {
-    info->set_android_storage_model(hw_ufs_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.boot.hardware.ufs");
-  }
-
-  std::string hw_ddr_value = base::GetAndroidProp("ro.boot.hardware.ddr");
-  if (!hw_ddr_value.empty()) {
-    info->set_android_ram_model(hw_ddr_value);
-  } else {
-    PERFETTO_ELOG("Unable to read ro.boot.hardware.ddr");
-  }
-
-#endif  
   packet->set_trusted_uid(static_cast<int32_t>(uid_));
   packet->set_trusted_packet_sequence_id(kServicePacketSequenceID);
   SerializeAndAppendPacket(packets, packet.SerializeAsArray());
+}
+
+void TracingServiceImpl::EmitTraceProvenance(
+    TracingSession* tracing_session,
+    std::vector<TracePacket>* packets) {
+  protozero::HeapBuffered<protos::pbzero::TracePacket> packet;
+  packet->set_timestamp(static_cast<uint64_t>(clock_->GetBootTimeNs().count()));
+  auto* provenance = packet->set_trace_provenance();
+  for (const BufferID buf_id : tracing_session->buffers_index) {
+    auto* buffer_proto = provenance->add_buffers();
+    TraceBuffer* buf = GetBufferByID(buf_id);
+    if (!buf)
+      continue;
+    for (auto it = buf->writer_stats().GetIterator(); it; ++it) {
+      ProducerID producer_id;
+      WriterID writer_id;
+      GetProducerAndWriterID(it.key(), &producer_id, &writer_id);
+      ProducerEndpointImpl* producer = GetProducer(producer_id);
+      
+      
+      
+      
+      MachineID machine_id = producer ? producer->client_identity().machine_id()
+                                      : kDefaultMachineID;
+      auto* sequence_proto = buffer_proto->add_sequences();
+      sequence_proto->set_id(tracing_session->GetPacketSequenceID(
+          machine_id, producer_id, writer_id));
+      sequence_proto->set_producer_id(static_cast<int32_t>(producer_id));
+    }
+  }
+  packet->set_trusted_uid(static_cast<int32_t>(uid_));
+  packet->set_trusted_packet_sequence_id(kServicePacketSequenceID);
+  SerializeAndAppendPacket(packets, packet.SerializeAsArray());
+}
+
+void TracingServiceImpl::MaybeEmitRemoteSystemInfo(
+    std::vector<TracePacket>* packets) {
+  std::unordered_set<MachineID> did_emit_machines;
+  for (const auto& id_and_relay_client : relay_clients_) {
+    const auto& relay_client = id_and_relay_client.second;
+    auto machine_id = relay_client->machine_id();
+    if (did_emit_machines.find(machine_id) != did_emit_machines.end())
+      continue;  
+
+    if (relay_client->serialized_system_info().empty()) {
+      PERFETTO_DLOG("System info not provided for machine ID = %" PRIu32,
+                    machine_id);
+      continue;
+    }
+
+    
+    did_emit_machines.insert(machine_id);
+
+    protozero::HeapBuffered<protos::pbzero::TracePacket> packet;
+    auto& system_info = relay_client->serialized_system_info();
+
+    packet->AppendBytes(kTracePacketSystemInfoFieldId, system_info.data(),
+                        system_info.size());
+
+    packet->set_machine_id(machine_id);
+    packet->set_trusted_uid(static_cast<int32_t>(uid_));
+    packet->set_trusted_packet_sequence_id(kServicePacketSequenceID);
+    SerializeAndAppendPacket(packets, packet.SerializeAsArray());
+  }
 }
 
 void TracingServiceImpl::EmitLifecycleEvents(
@@ -51802,9 +70199,85 @@ void TracingServiceImpl::MaybeEmitRemoteClockSync(
   tracing_session->did_emit_remote_clock_sync_ = true;
 }
 
+void TracingServiceImpl::MaybeEmitProtoVmInstances(
+    TracingSession* tracing_session,
+    std::vector<TracePacket>* packets) {
+  if (tracing_session->did_emit_protovm_instances_)
+    return;
+
+  std::optional<protozero::HeapBuffered<protos::pbzero::TracePacket>>
+      maybe_packet;
+
+  auto get_packet_protovms =
+      [&, protovms = static_cast<protos::pbzero::TracePacket::ProtoVms*>(
+              nullptr)]() mutable {
+        if (protovms) {
+          return protovms;
+        }
+        maybe_packet.emplace();
+        protovms = maybe_packet.value()->set_protovms();
+        return protovms;
+      };
+
+  for (auto buffer_id : tracing_session->buffers_index) {
+    auto it = buffers_.find(buffer_id);
+    PERFETTO_CHECK(it != buffers_.cend());
+    if (it->second->buf_type() != TraceBuffer::BufType::kV2) {
+      continue;
+    }
+    auto* buffer = static_cast<TraceBufferV2*>(it->second.get());
+    for (const TraceBufferV2::Vm& vm : buffer->GetProtoVmInstances()) {
+      auto* vm_instance = get_packet_protovms()->add_instance();
+      vm_instance->AppendString(
+          protos::pbzero::TracePacket::ProtoVms::Instance::kProgramFieldNumber,
+          vm.instance->SerializeProgram());
+      auto* state = vm_instance->set_state();
+      vm.instance->SerializeIncrementalState(state);
+      vm_instance->set_memory_limit_kb(vm.memory_limit_kb);
+      for (ProducerID producer_id : vm.producers) {
+        vm_instance->add_producer_id(producer_id);
+      }
+    }
+  }
+
+  if (maybe_packet) {
+    maybe_packet.value()->set_trusted_uid(static_cast<int32_t>(uid_));
+    maybe_packet.value()->set_trusted_packet_sequence_id(
+        kServicePacketSequenceID);
+    SerializeAndAppendPacket(packets, maybe_packet->SerializeAsArray());
+  }
+
+  tracing_session->did_emit_protovm_instances_ = true;
+}
+
+void TracingServiceImpl::EmitExtensionDescriptors(
+    TracingSession*,
+    std::vector<TracePacket>* packets) {
+  for (const auto& desc : init_opts_.extension_descriptors) {
+    protozero::HeapBuffered<protos::pbzero::TracePacket> packet;
+    packet->set_trusted_uid(static_cast<int32_t>(uid_));
+    packet->set_trusted_packet_sequence_id(kServicePacketSequenceID);
+    auto* ext = packet->set_extension_descriptor();
+    if (desc.gzipped) {
+      ext->set_extension_set_gzip(desc.start, desc.size);
+    } else {
+      ext->AppendBytes(
+          protos::pbzero::ExtensionDescriptor::kExtensionSetFieldNumber,
+          desc.start, desc.size);
+    }
+    if (!desc.name.empty()) {
+      ext->set_file_name(desc.name);
+    }
+    SerializeAndAppendPacket(packets, packet.SerializeAsArray());
+  }
+}
+
 void TracingServiceImpl::MaybeEmitCloneTrigger(
     TracingSession* tracing_session,
     std::vector<TracePacket>* packets) {
+  if (tracing_session->did_emit_initial_packets)
+    return;
+
   if (tracing_session->clone_trigger.has_value()) {
     protozero::HeapBuffered<protos::pbzero::TracePacket> packet;
     auto* trigger = packet->set_clone_snapshot_trigger();
@@ -51812,6 +70285,7 @@ void TracingServiceImpl::MaybeEmitCloneTrigger(
     trigger->set_trigger_name(info.trigger_name);
     trigger->set_producer_name(info.producer_name);
     trigger->set_trusted_producer_uid(static_cast<int32_t>(info.producer_uid));
+    trigger->set_stop_delay_ms(info.trigger_delay_ms);
 
     packet->set_timestamp(info.boot_time_ns);
     packet->set_trusted_uid(static_cast<int32_t>(uid_));
@@ -51833,6 +70307,7 @@ void TracingServiceImpl::MaybeEmitReceivedTriggers(
     trigger->set_trigger_name(info.trigger_name);
     trigger->set_producer_name(info.producer_name);
     trigger->set_trusted_producer_uid(static_cast<int32_t>(info.producer_uid));
+    trigger->set_stop_delay_ms(info.trigger_delay_ms);
 
     packet->set_timestamp(info.boot_time_ns);
     packet->set_trusted_uid(static_cast<int32_t>(uid_));
@@ -51849,17 +70324,20 @@ void TracingServiceImpl::MaybeLogUploadEvent(const TraceConfig& cfg,
   if (!ShouldLogEvent(cfg))
     return;
 
-  PERFETTO_DCHECK(uuid);  
+  PERFETTO_CHECK(uuid);  
   android_stats::MaybeLogUploadEvent(atom, uuid.lsb(), uuid.msb(),
                                      trigger_name);
 }
 
 void TracingServiceImpl::MaybeLogTriggerEvent(const TraceConfig& cfg,
+                                              const base::Uuid& uuid,
                                               PerfettoTriggerAtom atom,
                                               const std::string& trigger_name) {
   if (!ShouldLogEvent(cfg))
     return;
-  android_stats::MaybeLogTriggerEvent(atom, trigger_name);
+
+  PERFETTO_CHECK(uuid);  
+  android_stats::MaybeLogTriggerEvent(atom, uuid.lsb(), trigger_name);
 }
 
 size_t TracingServiceImpl::PurgeExpiredAndCountTriggerInWindow(
@@ -51927,6 +70405,39 @@ base::Status TracingServiceImpl::FlushAndCloneSession(
 
   
   
+  
+  
+  
+  
+  bool clone_session_write_into_file =
+      PERFETTO_FLAGS(BUFFER_CLONE_PRESERVE_READ_ITER) &&
+      session->write_into_file;
+
+  if (clone_session_write_into_file) {
+    if (!args.output_file_fd) {
+      return PERFETTO_SVC_ERR(
+          "Failed to clone 'write_into_file' session: a file descriptor is "
+          "required to copy existing file");
+    }
+    base::FlushFile(*session->write_into_file);
+    base::Status status =
+        base::CopyFileContents(*session->write_into_file, *args.output_file_fd);
+    if (!status.ok()) {
+      return PERFETTO_SVC_ERR(
+          "Failed to clone 'write_into_file' session: failed to copy existing "
+          "file: %s",
+          status.c_message());
+    }
+  } else {
+    
+    
+    
+    
+    args.output_file_fd.reset();
+  }
+
+  
+  
   size_t buf_idx = 0;
   for (BufferID src_buf_id : session->buffers_index) {
     if (!session->config.buffers()[buf_idx++].clear_before_clone())
@@ -51946,8 +70457,19 @@ base::Status TracingServiceImpl::FlushAndCloneSession(
     
     const auto buf_policy = buf->overwrite_policy();
     const auto buf_size = buf->size();
+    const auto buf_type = buf->buf_type();
     std::unique_ptr<TraceBuffer> old_buf = std::move(buf);
-    buf = TraceBuffer::Create(buf_size, buf_policy);
+    switch (buf_type) {
+      case TraceBuffer::kV1:
+        buf = TraceBufferV1::Create(buf_size, buf_policy);
+        break;
+      case TraceBuffer::kV2:
+        buf = TraceBufferV2::Create(buf_size, buf_policy);
+        break;
+      case TraceBuffer::kV1WithV2Shadow:
+        buf = TraceBufferV1WithV2Shadow::Create(buf_size, buf_policy);
+        break;
+    }
     if (!buf) {
       
       
@@ -51972,10 +70494,13 @@ base::Status TracingServiceImpl::FlushAndCloneSession(
   clone_op.weak_consumer = weak_consumer;
   clone_op.skip_trace_filter = args.skip_trace_filter;
   if (!args.clone_trigger_name.empty()) {
-    clone_op.clone_trigger = {args.clone_trigger_boot_time_ns,
-                              args.clone_trigger_name,
-                              args.clone_trigger_producer_name,
-                              args.clone_trigger_trusted_producer_uid};
+    clone_op.clone_trigger = {
+        args.clone_trigger_boot_time_ns, args.clone_trigger_name,
+        args.clone_trigger_producer_name,
+        args.clone_trigger_trusted_producer_uid, args.clone_trigger_delay_ms};
+  }
+  if (args.output_file_fd) {
+    clone_op.output_file_fd = std::move(args.output_file_fd);
   }
 
   
@@ -51996,7 +70521,7 @@ base::Status TracingServiceImpl::FlushAndCloneSession(
 
   SnapshotLifecycleEvent(
       session, protos::pbzero::TracingServiceEvent::kFlushStartedFieldNumber,
-      false );
+      true);
   clone_op.pending_flush_cnt = bufs_groups.size();
   clone_op.clone_started_timestamp_ns = clock_->GetBootTimeNs().count();
   for (const std::set<BufferID>& buf_group : bufs_groups) {
@@ -52063,6 +70588,7 @@ void TracingServiceImpl::OnFlushDoneForClone(TracingSessionID tsid,
     result = PERFETTO_SVC_ERR("Buffer allocation failed");
   }
 
+  bool was_write_into_file = false;
   if (result.ok()) {
     UpdateMemoryGuardrail();
 
@@ -52075,17 +70601,19 @@ void TracingServiceImpl::OnFlushDoneForClone(TracingSessionID tsid,
                  final_flush_outcome);
 
     if (clone_op.weak_consumer) {
+      was_write_into_file = static_cast<bool>(clone_op.output_file_fd);
       result = FinishCloneSession(
           &*clone_op.weak_consumer, tsid, std::move(clone_op.buffers),
           std::move(clone_op.buffer_cloned_timestamps),
           clone_op.skip_trace_filter, !clone_op.flush_failed,
-          clone_op.clone_trigger, &uuid, clone_op.clone_started_timestamp_ns);
+          clone_op.clone_trigger, &uuid, clone_op.clone_started_timestamp_ns,
+          std::move(clone_op.output_file_fd));
     }
   }  
 
   if (clone_op.weak_consumer) {
     clone_op.weak_consumer->consumer_->OnSessionCloned(
-        {result.ok(), result.message(), uuid});
+        {result.ok(), result.message(), uuid, was_write_into_file});
   }
 
   src->pending_clones.erase(it);
@@ -52112,8 +70640,19 @@ bool TracingServiceImpl::DoCloneBuffers(const TracingSession& src,
     if (src.config.buffers()[buf_idx].transfer_on_clone()) {
       const auto buf_policy = src_buf->overwrite_policy();
       const auto buf_size = src_buf->size();
+      const auto buf_type = src_buf->buf_type();
       new_buf = std::move(src_buf);
-      src_buf = TraceBuffer::Create(buf_size, buf_policy);
+      switch (buf_type) {
+        case TraceBuffer::kV1:
+          src_buf = TraceBufferV1::Create(buf_size, buf_policy);
+          break;
+        case TraceBuffer::kV2:
+          src_buf = TraceBufferV2::Create(buf_size, buf_policy);
+          break;
+        case TraceBuffer::kV1WithV2Shadow:
+          src_buf = TraceBufferV1WithV2Shadow::Create(buf_size, buf_policy);
+          break;
+      }
       if (!src_buf) {
         
         
@@ -52140,7 +70679,8 @@ base::Status TracingServiceImpl::FinishCloneSession(
     bool final_flush_outcome,
     std::optional<TriggerInfo> clone_trigger,
     base::Uuid* new_uuid,
-    int64_t clone_started_timestamp_ns) {
+    int64_t clone_started_timestamp_ns,
+    base::ScopedFile output_file_fd) {
   PERFETTO_DLOG("CloneSession(%" PRIu64
                 ", skip_trace_filter=%d) started, consumer uid: %d",
                 src_tsid, skip_trace_filter, static_cast<int>(consumer->uid_));
@@ -52247,709 +70787,48 @@ base::Status TracingServiceImpl::FinishCloneSession(
   cloned_session->final_flush_outcome = final_flush_outcome
                                             ? TraceStats::FINAL_FLUSH_SUCCEEDED
                                             : TraceStats::FINAL_FLUSH_FAILED;
+  if (output_file_fd) {
+    cloned_session->write_into_file = std::move(output_file_fd);
+    cloned_session->write_period_ms = 0;
+    
+    ReadBuffersIntoFile(cloned_session->id,
+                         false);
+  }
+
   return base::OkStatus();
 }
 
-bool TracingServiceImpl::TracingSession::IsCloneAllowed(uid_t clone_uid) const {
-  if (clone_uid == 0)
-    return true;  
-  if (clone_uid == this->consumer_uid)
-    return true;  
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  
-  
-  if (clone_uid == AID_SHELL && this->config.bugreport_score() > 0)
-    return true;
-#endif
-  return false;
-}
+}  
+}  
 
 
 
 
 
-TracingServiceImpl::ConsumerEndpointImpl::ConsumerEndpointImpl(
-    TracingServiceImpl* service,
-    base::TaskRunner* task_runner,
-    Consumer* consumer,
-    uid_t uid)
-    : task_runner_(task_runner),
-      service_(service),
-      consumer_(consumer),
-      uid_(uid),
-      weak_ptr_factory_(this) {}
 
-TracingServiceImpl::ConsumerEndpointImpl::~ConsumerEndpointImpl() {
-  service_->DisconnectConsumer(this);
-  consumer_->OnDisconnect();
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::NotifyOnTracingDisabled(
-    const std::string& error) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr(),
-                          error ] {
-    if (weak_this)
-      weak_this->consumer_->OnTracingDisabled(error);
-  });
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::EnableTracing(
-    const TraceConfig& cfg,
-    base::ScopedFile fd) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  auto status = service_->EnableTracing(this, cfg, std::move(fd));
-  if (!status.ok())
-    NotifyOnTracingDisabled(status.message());
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::ChangeTraceConfig(
-    const TraceConfig& cfg) {
-  if (!tracing_session_id_) {
-    PERFETTO_LOG(
-        "Consumer called ChangeTraceConfig() but tracing was "
-        "not active");
-    return;
-  }
-  service_->ChangeTraceConfig(this, cfg);
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::StartTracing() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!tracing_session_id_) {
-    PERFETTO_LOG("Consumer called StartTracing() but tracing was not active");
-    return;
-  }
-  service_->StartTracing(tracing_session_id_);
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::DisableTracing() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!tracing_session_id_) {
-    PERFETTO_LOG("Consumer called DisableTracing() but tracing was not active");
-    return;
-  }
-  service_->DisableTracing(tracing_session_id_);
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::ReadBuffers() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!tracing_session_id_) {
-    PERFETTO_LOG("Consumer called ReadBuffers() but tracing was not active");
-    consumer_->OnTraceData({},  false);
-    return;
-  }
-  if (!service_->ReadBuffersIntoConsumer(tracing_session_id_, this)) {
-    consumer_->OnTraceData({},  false);
-  }
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::FreeBuffers() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!tracing_session_id_) {
-    PERFETTO_LOG("Consumer called FreeBuffers() but tracing was not active");
-    return;
-  }
-  service_->FreeBuffers(tracing_session_id_);
-  tracing_session_id_ = 0;
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::Flush(uint32_t timeout_ms,
-                                                     FlushCallback callback,
-                                                     FlushFlags flush_flags) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!tracing_session_id_) {
-    PERFETTO_LOG("Consumer called Flush() but tracing was not active");
-    return;
-  }
-  service_->Flush(tracing_session_id_, timeout_ms, callback, flush_flags);
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::Detach(const std::string& key) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  bool success = service_->DetachConsumer(this, key);
-  auto weak_this = weak_ptr_factory_.GetWeakPtr();
-  task_runner_->PostTask([weak_this = std::move(weak_this), success] {
-    if (weak_this)
-      weak_this->consumer_->OnDetach(success);
-  });
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::Attach(const std::string& key) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  bool success = service_->AttachConsumer(this, key);
-  task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr(), success] {
-    if (!weak_this)
-      return;
-    Consumer* consumer = weak_this->consumer_;
-    TracingSession* session =
-        weak_this->service_->GetTracingSession(weak_this->tracing_session_id_);
-    if (!session) {
-      consumer->OnAttach(false, TraceConfig());
-      return;
-    }
-    consumer->OnAttach(success, session->config);
-  });
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::GetTraceStats() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  bool success = false;
-  TraceStats stats;
-  TracingSession* session = service_->GetTracingSession(tracing_session_id_);
-  if (session) {
-    success = true;
-    stats = service_->GetTraceStats(session);
-  }
-  auto weak_this = weak_ptr_factory_.GetWeakPtr();
-  task_runner_->PostTask(
-      [weak_this = std::move(weak_this), success, stats = std::move(stats)] {
-        if (weak_this)
-          weak_this->consumer_->OnTraceStats(success, stats);
-      });
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::ObserveEvents(
-    uint32_t events_mask) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  observable_events_mask_ = events_mask;
-  TracingSession* session = service_->GetTracingSession(tracing_session_id_);
-  if (!session)
-    return;
 
-  if (observable_events_mask_ & ObservableEvents::TYPE_DATA_SOURCES_INSTANCES) {
-    
-    for (const auto& kv : session->data_source_instances) {
-      ProducerEndpointImpl* producer = service_->GetProducer(kv.first);
-      PERFETTO_DCHECK(producer);
-      OnDataSourceInstanceStateChange(*producer, kv.second);
-    }
-  }
 
-  
-  
-  if (observable_events_mask_ &
-      ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED) {
-    service_->MaybeNotifyAllDataSourcesStarted(session);
-  }
-}
 
-void TracingServiceImpl::ConsumerEndpointImpl::OnDataSourceInstanceStateChange(
-    const ProducerEndpointImpl& producer,
-    const DataSourceInstance& instance) {
-  if (!(observable_events_mask_ &
-        ObservableEvents::TYPE_DATA_SOURCES_INSTANCES)) {
-    return;
-  }
 
-  if (instance.state != DataSourceInstance::CONFIGURED &&
-      instance.state != DataSourceInstance::STARTED &&
-      instance.state != DataSourceInstance::STOPPED) {
-    return;
-  }
 
-  auto* observable_events = AddObservableEvents();
-  auto* change = observable_events->add_instance_state_changes();
-  change->set_producer_name(producer.name_);
-  change->set_data_source_name(instance.data_source_name);
-  if (instance.state == DataSourceInstance::STARTED) {
-    change->set_state(ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STARTED);
-  } else {
-    change->set_state(ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STOPPED);
-  }
-}
+namespace perfetto::tracing_service {
 
-void TracingServiceImpl::ConsumerEndpointImpl::OnAllDataSourcesStarted() {
-  if (!(observable_events_mask_ &
-        ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED)) {
-    return;
-  }
-  auto* observable_events = AddObservableEvents();
-  observable_events->set_all_data_sources_started(true);
-}
-
-void TracingServiceImpl::ConsumerEndpointImpl::NotifyCloneSnapshotTrigger(
-    const TriggerInfo& trigger) {
-  if (!(observable_events_mask_ & ObservableEvents::TYPE_CLONE_TRIGGER_HIT)) {
-    return;
-  }
-  auto* observable_events = AddObservableEvents();
-  auto* clone_trig = observable_events->mutable_clone_trigger_hit();
-  clone_trig->set_tracing_session_id(static_cast<int64_t>(tracing_session_id_));
-  clone_trig->set_trigger_name(trigger.trigger_name);
-  clone_trig->set_producer_name(trigger.producer_name);
-  clone_trig->set_producer_uid(static_cast<uint32_t>(trigger.producer_uid));
-  clone_trig->set_boot_time_ns(trigger.boot_time_ns);
-}
-
-ObservableEvents*
-TracingServiceImpl::ConsumerEndpointImpl::AddObservableEvents() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!observable_events_) {
-    observable_events_.reset(new ObservableEvents());
-    task_runner_->PostTask([weak_this = weak_ptr_factory_.GetWeakPtr()] {
-      if (!weak_this)
-        return;
-
-      
-      auto observable_events = std::move(weak_this->observable_events_);
-      weak_this->consumer_->OnObservableEvents(*observable_events);
-    });
-  }
-  return observable_events_.get();
-}
-
-void TracingServiceImpl::ConsumerEndpointImpl::QueryServiceState(
-    QueryServiceStateArgs args,
-    QueryServiceStateCallback callback) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  TracingServiceState svc_state;
-
-  const auto& sessions = service_->tracing_sessions_;
-  svc_state.set_tracing_service_version(base::GetVersionString());
-  svc_state.set_num_sessions(static_cast<int>(sessions.size()));
-
-  int num_started = 0;
-  for (const auto& kv : sessions)
-    num_started += kv.second.state == TracingSession::State::STARTED ? 1 : 0;
-  svc_state.set_num_sessions_started(num_started);
-
-  for (const auto& kv : service_->producers_) {
-    if (args.sessions_only)
-      break;
-    auto* producer = svc_state.add_producers();
-    producer->set_id(static_cast<int>(kv.first));
-    producer->set_name(kv.second->name_);
-    producer->set_sdk_version(kv.second->sdk_version_);
-    producer->set_uid(static_cast<int32_t>(kv.second->uid()));
-    producer->set_pid(static_cast<int32_t>(kv.second->pid()));
-    producer->set_frozen(kv.second->IsAndroidProcessFrozen());
-  }
-
-  for (const auto& kv : service_->data_sources_) {
-    if (args.sessions_only)
-      break;
-    const auto& registered_data_source = kv.second;
-    auto* data_source = svc_state.add_data_sources();
-    *data_source->mutable_ds_descriptor() = registered_data_source.descriptor;
-    data_source->set_producer_id(
-        static_cast<int>(registered_data_source.producer_id));
-  }
-
-  svc_state.set_supports_tracing_sessions(true);
-  for (const auto& kv : service_->tracing_sessions_) {
-    const TracingSession& s = kv.second;
-    if (!s.IsCloneAllowed(uid_))
-      continue;
-    auto* session = svc_state.add_tracing_sessions();
-    session->set_id(s.id);
-    session->set_consumer_uid(static_cast<int>(s.consumer_uid));
-    session->set_duration_ms(s.config.duration_ms());
-    session->set_num_data_sources(
-        static_cast<uint32_t>(s.data_source_instances.size()));
-    session->set_unique_session_name(s.config.unique_session_name());
-    if (s.config.has_bugreport_score())
-      session->set_bugreport_score(s.config.bugreport_score());
-    if (s.config.has_bugreport_filename())
-      session->set_bugreport_filename(s.config.bugreport_filename());
-    for (const auto& snap_kv : s.initial_clock_snapshot) {
-      if (snap_kv.clock_id == protos::pbzero::BUILTIN_CLOCK_REALTIME)
-        session->set_start_realtime_ns(static_cast<int64_t>(snap_kv.timestamp));
-    }
-    for (const auto& buf : s.config.buffers())
-      session->add_buffer_size_kb(buf.size_kb());
-
-    switch (s.state) {
-      case TracingSession::State::DISABLED:
-        session->set_state("DISABLED");
-        break;
-      case TracingSession::State::CONFIGURED:
-        session->set_state("CONFIGURED");
-        break;
-      case TracingSession::State::STARTED:
-        session->set_is_started(true);
-        session->set_state("STARTED");
-        break;
-      case TracingSession::State::DISABLING_WAITING_STOP_ACKS:
-        session->set_state("STOP_WAIT");
-        break;
-      case TracingSession::State::CLONED_READ_ONLY:
-        session->set_state("CLONED_READ_ONLY");
-        break;
-    }
-  }
-  callback(true, svc_state);
-}
-
-void TracingServiceImpl::ConsumerEndpointImpl::QueryCapabilities(
-    QueryCapabilitiesCallback callback) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  TracingServiceCapabilities caps;
-  caps.set_has_query_capabilities(true);
-  caps.set_has_trace_config_output_path(true);
-  caps.set_has_clone_session(true);
-  caps.add_observable_events(ObservableEvents::TYPE_DATA_SOURCES_INSTANCES);
-  caps.add_observable_events(ObservableEvents::TYPE_ALL_DATA_SOURCES_STARTED);
-  caps.add_observable_events(ObservableEvents::TYPE_CLONE_TRIGGER_HIT);
-  static_assert(
-      ObservableEvents::Type_MAX == ObservableEvents::TYPE_CLONE_TRIGGER_HIT,
-      "");
-  callback(caps);
-}
-
-void TracingServiceImpl::ConsumerEndpointImpl::SaveTraceForBugreport(
-    SaveTraceForBugreportCallback consumer_callback) {
-  consumer_callback(false,
-                    "SaveTraceForBugreport is deprecated. Use "
-                    "CloneSession(kBugreportSessionId) instead.");
-}
-
-void TracingServiceImpl::ConsumerEndpointImpl::CloneSession(
-    CloneSessionArgs args) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  
-  base::Status result = service_->FlushAndCloneSession(this, std::move(args));
-
-  if (!result.ok()) {
-    consumer_->OnSessionCloned({false, result.message(), {}});
-  }
-}
-
-
-
-
-
-TracingServiceImpl::ProducerEndpointImpl::ProducerEndpointImpl(
-    ProducerID id,
-    const ClientIdentity& client_identity,
-    TracingServiceImpl* service,
-    base::TaskRunner* task_runner,
-    Producer* producer,
-    const std::string& producer_name,
-    const std::string& sdk_version,
-    bool in_process,
-    bool smb_scraping_enabled)
-    : id_(id),
-      client_identity_(client_identity),
-      service_(service),
-      producer_(producer),
-      name_(producer_name),
-      sdk_version_(sdk_version),
-      in_process_(in_process),
-      smb_scraping_enabled_(smb_scraping_enabled),
-      weak_runner_(task_runner) {}
-
-TracingServiceImpl::ProducerEndpointImpl::~ProducerEndpointImpl() {
-  service_->DisconnectProducer(id_);
-  producer_->OnDisconnect();
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::Disconnect() {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  
-  PERFETTO_FATAL("Not supported");
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::RegisterDataSource(
-    const DataSourceDescriptor& desc) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  service_->RegisterDataSource(id_, desc);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::UpdateDataSource(
-    const DataSourceDescriptor& desc) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  service_->UpdateDataSource(id_, desc);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::UnregisterDataSource(
-    const std::string& name) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  service_->UnregisterDataSource(id_, name);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::RegisterTraceWriter(
-    uint32_t writer_id,
-    uint32_t target_buffer) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  writers_[static_cast<WriterID>(writer_id)] =
-      static_cast<BufferID>(target_buffer);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::UnregisterTraceWriter(
-    uint32_t writer_id) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  writers_.erase(static_cast<WriterID>(writer_id));
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::CommitData(
-    const CommitDataRequest& req_untrusted,
-    CommitDataCallback callback) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-
-  if (metatrace::IsEnabled(metatrace::TAG_TRACE_SERVICE)) {
-    PERFETTO_METATRACE_COUNTER(TAG_TRACE_SERVICE, TRACE_SERVICE_COMMIT_DATA,
-                               EncodeCommitDataRequest(id_, req_untrusted));
-  }
-
-  if (!shared_memory_) {
-    PERFETTO_DLOG(
-        "Attempted to commit data before the shared memory was allocated.");
-    return;
-  }
-  PERFETTO_DCHECK(shmem_abi_.is_valid());
-  for (const auto& entry : req_untrusted.chunks_to_move()) {
-    const uint32_t page_idx = entry.page();
-    if (page_idx >= shmem_abi_.num_pages())
-      continue;  
-
-    SharedMemoryABI::Chunk chunk;
-    bool commit_data_over_ipc = entry.has_data();
-    if (PERFETTO_UNLIKELY(commit_data_over_ipc)) {
-      
-      
-      const std::string& data = entry.data();
-      if (data.size() > SharedMemoryABI::Chunk::kMaxSize) {
-        PERFETTO_DFATAL("IPC data commit too large: %zu", data.size());
-        continue;  
-      }
-      
-      
-      chunk = SharedMemoryABI::MakeChunkFromSerializedData(
-          reinterpret_cast<uint8_t*>(const_cast<char*>(data.data())),
-          static_cast<uint16_t>(entry.data().size()),
-          static_cast<uint8_t>(entry.chunk()));
-    } else
-      chunk = shmem_abi_.TryAcquireChunkForReading(page_idx, entry.chunk());
-    if (!chunk.is_valid()) {
-      PERFETTO_DLOG("Asked to move chunk %d:%d, but it's not complete",
-                    entry.page(), entry.chunk());
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    BufferID buffer_id = static_cast<BufferID>(entry.target_buffer());
-    const SharedMemoryABI::ChunkHeader& chunk_header = *chunk.header();
-    WriterID writer_id = chunk_header.writer_id.load(std::memory_order_relaxed);
-    ChunkID chunk_id = chunk_header.chunk_id.load(std::memory_order_relaxed);
-    auto packets = chunk_header.packets.load(std::memory_order_relaxed);
-    uint16_t num_fragments = packets.count;
-    uint8_t chunk_flags = packets.flags;
-
-    service_->CopyProducerPageIntoLogBuffer(
-        id_, client_identity_, writer_id, chunk_id, buffer_id, num_fragments,
-        chunk_flags,
-        true, chunk.payload_begin(), chunk.payload_size());
-
-    if (!commit_data_over_ipc) {
-      
-      shmem_abi_.ReleaseChunkAsFree(std::move(chunk));
-    }
-  }  
-
-  service_->ApplyChunkPatches(id_, req_untrusted.chunks_to_patch());
-
-  if (req_untrusted.flush_request_id()) {
-    service_->NotifyFlushDoneForProducer(id_, req_untrusted.flush_request_id());
-  }
-
-  
-  
-  
-  if (callback)
-    callback();
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::SetupSharedMemory(
-    std::unique_ptr<SharedMemory> shared_memory,
-    size_t page_size_bytes,
-    bool provided_by_producer) {
-  PERFETTO_DCHECK(!shared_memory_ && !shmem_abi_.is_valid());
-  PERFETTO_DCHECK(page_size_bytes % 1024 == 0);
-
-  shared_memory_ = std::move(shared_memory);
-  shared_buffer_page_size_kb_ = page_size_bytes / 1024;
-  is_shmem_provided_by_producer_ = provided_by_producer;
-
-  shmem_abi_.Initialize(reinterpret_cast<uint8_t*>(shared_memory_->start()),
-                        shared_memory_->size(),
-                        shared_buffer_page_size_kb() * 1024,
-                        SharedMemoryABI::ShmemMode::kDefault);
-  if (in_process_) {
-    inproc_shmem_arbiter_.reset(new SharedMemoryArbiterImpl(
-        shared_memory_->start(), shared_memory_->size(),
-        SharedMemoryABI::ShmemMode::kDefault,
-        shared_buffer_page_size_kb_ * 1024, this, weak_runner_.task_runner()));
-    inproc_shmem_arbiter_->SetDirectSMBPatchingSupportedByService();
-  }
-
-  OnTracingSetup();
-  service_->UpdateMemoryGuardrail();
-}
-
-SharedMemory* TracingServiceImpl::ProducerEndpointImpl::shared_memory() const {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  return shared_memory_.get();
-}
-
-size_t TracingServiceImpl::ProducerEndpointImpl::shared_buffer_page_size_kb()
-    const {
-  return shared_buffer_page_size_kb_;
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::ActivateTriggers(
-    const std::vector<std::string>& triggers) {
-  service_->ActivateTriggers(id_, triggers);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::StopDataSource(
-    DataSourceInstanceID ds_inst_id) {
-  
-  
-  
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  weak_runner_.PostTask(
-      [this, ds_inst_id] { producer_->StopDataSource(ds_inst_id); });
-}
-
-SharedMemoryArbiter*
-TracingServiceImpl::ProducerEndpointImpl::MaybeSharedMemoryArbiter() {
-  if (!inproc_shmem_arbiter_) {
-    PERFETTO_FATAL(
-        "The in-process SharedMemoryArbiter can only be used when "
-        "CreateProducer has been called with in_process=true and after tracing "
-        "has started.");
-  }
-
-  PERFETTO_DCHECK(in_process_);
-  return inproc_shmem_arbiter_.get();
-}
-
-bool TracingServiceImpl::ProducerEndpointImpl::IsShmemProvidedByProducer()
-    const {
-  return is_shmem_provided_by_producer_;
-}
-
-
-std::unique_ptr<TraceWriter>
-TracingServiceImpl::ProducerEndpointImpl::CreateTraceWriter(
-    BufferID buf_id,
-    BufferExhaustedPolicy buffer_exhausted_policy) {
-  PERFETTO_DCHECK(MaybeSharedMemoryArbiter());
-  return MaybeSharedMemoryArbiter()->CreateTraceWriter(buf_id,
-                                                       buffer_exhausted_policy);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::NotifyFlushComplete(
-    FlushRequestID id) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  PERFETTO_DCHECK(MaybeSharedMemoryArbiter());
-  return MaybeSharedMemoryArbiter()->NotifyFlushComplete(id);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::OnTracingSetup() {
-  weak_runner_.PostTask([this] { producer_->OnTracingSetup(); });
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::Flush(
-    FlushRequestID flush_request_id,
-    const std::vector<DataSourceInstanceID>& data_sources,
-    FlushFlags flush_flags) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  weak_runner_.PostTask([this, flush_request_id, data_sources, flush_flags] {
-    producer_->Flush(flush_request_id, data_sources.data(), data_sources.size(),
-                     flush_flags);
-  });
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::SetupDataSource(
-    DataSourceInstanceID ds_id,
-    const DataSourceConfig& config) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  allowed_target_buffers_.insert(static_cast<BufferID>(config.target_buffer()));
-  weak_runner_.PostTask([this, ds_id, config] {
-    producer_->SetupDataSource(ds_id, std::move(config));
-  });
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::StartDataSource(
-    DataSourceInstanceID ds_id,
-    const DataSourceConfig& config) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  weak_runner_.PostTask([this, ds_id, config] {
-    producer_->StartDataSource(ds_id, std::move(config));
-  });
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::NotifyDataSourceStarted(
-    DataSourceInstanceID data_source_id) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  service_->NotifyDataSourceStarted(id_, data_source_id);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::NotifyDataSourceStopped(
-    DataSourceInstanceID data_source_id) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  service_->NotifyDataSourceStopped(id_, data_source_id);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::OnFreeBuffers(
-    const std::vector<BufferID>& target_buffers) {
-  if (allowed_target_buffers_.empty())
-    return;
-  for (BufferID buffer : target_buffers)
-    allowed_target_buffers_.erase(buffer);
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::ClearIncrementalState(
-    const std::vector<DataSourceInstanceID>& data_sources) {
-  PERFETTO_DCHECK_THREAD(thread_checker_);
-  weak_runner_.PostTask([this, data_sources] {
-    base::StringView producer_name(name_);
-    producer_->ClearIncrementalState(data_sources.data(), data_sources.size());
-  });
-}
-
-void TracingServiceImpl::ProducerEndpointImpl::Sync(
-    std::function<void()> callback) {
-  weak_runner_.task_runner()->PostTask(callback);
-}
-
-bool TracingServiceImpl::ProducerEndpointImpl::IsAndroidProcessFrozen() {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  if (in_process_ || uid() == base::kInvalidUid || pid() == base::kInvalidPid)
-    return false;
-  base::StackString<255> path(
-      "/sys/fs/cgroup/uid_%" PRIu32 "/pid_%" PRIu32 "/cgroup.freeze",
-      static_cast<uint32_t>(uid()), static_cast<uint32_t>(pid()));
-  char frozen = '0';
-  auto fd = base::OpenFile(path.c_str(), O_RDONLY);
-  ssize_t rsize = 0;
-  if (fd) {
-    rsize = base::Read(*fd, &frozen, sizeof(frozen));
-    if (rsize > 0) {
-      return frozen == '1';
-    }
-  }
-  PERFETTO_DLOG("Failed to read %s (fd=%d, rsize=%d)", path.c_str(), !!fd,
-                static_cast<int>(rsize));
-#endif
-  return false;
-}
-
-
-
-
-
-TracingServiceImpl::TracingSession::TracingSession(
-    TracingSessionID session_id,
-    ConsumerEndpointImpl* consumer,
-    const TraceConfig& new_config,
-    base::TaskRunner* task_runner)
+TracingSession::TracingSession(TracingSessionID session_id,
+                               ConsumerEndpointImpl* consumer,
+                               const TraceConfig& new_config,
+                               base::TaskRunner* task_runner)
     : id(session_id),
       consumer_maybe_null(consumer),
       consumer_uid(consumer->uid_),
@@ -52967,30 +70846,63 @@ TracingServiceImpl::TracingSession::TracingSession(
       64 );
 }
 
-
-
-
-TracingServiceImpl::RelayEndpointImpl::RelayEndpointImpl(
-    RelayClientID relay_client_id,
-    TracingServiceImpl* service)
-    : relay_client_id_(relay_client_id), service_(service) {}
-TracingServiceImpl::RelayEndpointImpl::~RelayEndpointImpl() = default;
-
-void TracingServiceImpl::RelayEndpointImpl::SyncClocks(
-    SyncMode sync_mode,
-    base::ClockSnapshotVector client_clocks,
-    base::ClockSnapshotVector host_clocks) {
+bool TracingSession::IsCloneAllowed(uid_t clone_uid) const {
+  if (clone_uid == 0)
+    return true;  
+  if (clone_uid == this->consumer_uid)
+    return true;  
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
   
-  static constexpr size_t kNumSyncClocks = 5;
-  if (synced_clocks_.size() >= kNumSyncClocks)
-    synced_clocks_.pop_front();
-
-  synced_clocks_.emplace_back(sync_mode, std::move(client_clocks),
-                              std::move(host_clocks));
+  
+  if (clone_uid == AID_SHELL && this->config.bugreport_score() > 0)
+    return true;
+#endif
+  return false;
 }
 
-void TracingServiceImpl::RelayEndpointImpl::Disconnect() {
-  service_->DisconnectRelayClient(relay_client_id_);
+PacketSequenceID TracingSession::GetPacketSequenceID(MachineID machine_id,
+                                                     ProducerID producer_id,
+                                                     WriterID writer_id) {
+  auto key = std::make_tuple(machine_id, producer_id, writer_id);
+  auto it = packet_sequence_ids.find(key);
+  if (it != packet_sequence_ids.end())
+    return it->second;
+  
+  
+  static_assert(kMaxPacketSequenceID > kMaxProducerID * kMaxWriterID,
+                "PacketSequenceID value space doesn't cover service "
+                "sequence ID and all producer/writer ID combinations!");
+  PERFETTO_DCHECK(last_packet_sequence_id < kMaxPacketSequenceID);
+  PacketSequenceID sequence_id = ++last_packet_sequence_id;
+  packet_sequence_ids[key] = sequence_id;
+  return sequence_id;
+}
+
+DataSourceInstance* TracingSession::GetDataSourceInstance(
+    ProducerID producer_id,
+    DataSourceInstanceID instance_id) {
+  for (auto& inst_kv : data_source_instances) {
+    if (inst_kv.first != producer_id ||
+        inst_kv.second.instance_id != instance_id) {
+      continue;
+    }
+    return &inst_kv.second;
+  }
+  return nullptr;
+}
+
+bool TracingSession::AllDataSourceInstancesStarted() {
+  return std::all_of(data_source_instances.begin(), data_source_instances.end(),
+                     [](decltype(data_source_instances)::const_reference x) {
+                       return x.second.state == DataSourceInstance::STARTED;
+                     });
+}
+
+bool TracingSession::AllDataSourceInstancesStopped() {
+  return std::all_of(data_source_instances.begin(), data_source_instances.end(),
+                     [](decltype(data_source_instances)::const_reference x) {
+                       return x.second.state == DataSourceInstance::STOPPED;
+                     });
 }
 
 }  
@@ -53136,6 +71048,21 @@ TracingService* InProcessTracingBackend::GetOrCreateService(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -53152,7 +71079,8 @@ bool CloneSessionResponse::operator==(const CloneSessionResponse& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(success_, other.success_)
    && ::protozero::internal::gen_helpers::EqualsField(error_, other.error_)
    && ::protozero::internal::gen_helpers::EqualsField(uuid_msb_, other.uuid_msb_)
-   && ::protozero::internal::gen_helpers::EqualsField(uuid_lsb_, other.uuid_lsb_);
+   && ::protozero::internal::gen_helpers::EqualsField(uuid_lsb_, other.uuid_lsb_)
+   && ::protozero::internal::gen_helpers::EqualsField(was_write_into_file_, other.was_write_into_file_);
 }
 
 bool CloneSessionResponse::ParseFromArray(const void* raw, size_t size) {
@@ -53176,6 +71104,9 @@ bool CloneSessionResponse::ParseFromArray(const void* raw, size_t size) {
         break;
       case 4 :
         field.get(&uuid_lsb_);
+        break;
+      case 5 :
+        field.get(&was_write_into_file_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -53218,6 +71149,11 @@ void CloneSessionResponse::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeVarInt(4, uuid_lsb_, msg);
   }
 
+  
+  if (_has_field_[5]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(5, was_write_into_file_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -53238,7 +71174,8 @@ bool CloneSessionRequest::operator==(const CloneSessionRequest& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_name_, other.clone_trigger_name_)
    && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_producer_name_, other.clone_trigger_producer_name_)
    && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_trusted_producer_uid_, other.clone_trigger_trusted_producer_uid_)
-   && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_boot_time_ns_, other.clone_trigger_boot_time_ns_);
+   && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_boot_time_ns_, other.clone_trigger_boot_time_ns_)
+   && ::protozero::internal::gen_helpers::EqualsField(clone_trigger_delay_ms_, other.clone_trigger_delay_ms_);
 }
 
 bool CloneSessionRequest::ParseFromArray(const void* raw, size_t size) {
@@ -53274,6 +71211,9 @@ bool CloneSessionRequest::ParseFromArray(const void* raw, size_t size) {
         break;
       case 8 :
         field.get(&clone_trigger_boot_time_ns_);
+        break;
+      case 9 :
+        field.get(&clone_trigger_delay_ms_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -53334,6 +71274,11 @@ void CloneSessionRequest::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[8]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(8, clone_trigger_boot_time_ns_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(9, clone_trigger_delay_ms_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -54897,6 +72842,20 @@ void EnableTracingRequest::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -56638,6 +74597,7 @@ void InitializeConnectionRequest::Serialize(::protozero::Message* msg) const {
 #endif
 
 
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -56820,6 +74780,107 @@ void SyncClockRequest_Clock::Serialize(::protozero::Message* msg) const {
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
+
+InitRelayResponse::InitRelayResponse() = default;
+InitRelayResponse::~InitRelayResponse() = default;
+InitRelayResponse::InitRelayResponse(const InitRelayResponse&) = default;
+InitRelayResponse& InitRelayResponse::operator=(const InitRelayResponse&) = default;
+InitRelayResponse::InitRelayResponse(InitRelayResponse&&) noexcept = default;
+InitRelayResponse& InitRelayResponse::operator=(InitRelayResponse&&) = default;
+
+bool InitRelayResponse::operator==(const InitRelayResponse& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool InitRelayResponse::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string InitRelayResponse::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> InitRelayResponse::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void InitRelayResponse::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+InitRelayRequest::InitRelayRequest() = default;
+InitRelayRequest::~InitRelayRequest() = default;
+InitRelayRequest::InitRelayRequest(const InitRelayRequest&) = default;
+InitRelayRequest& InitRelayRequest::operator=(const InitRelayRequest&) = default;
+InitRelayRequest::InitRelayRequest(InitRelayRequest&&) noexcept = default;
+InitRelayRequest& InitRelayRequest::operator=(InitRelayRequest&&) = default;
+
+bool InitRelayRequest::operator==(const InitRelayRequest& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(system_info_, other.system_info_);
+}
+
+bool InitRelayRequest::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        (*system_info_).ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string InitRelayRequest::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> InitRelayRequest::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void InitRelayRequest::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    (*system_info_).Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
 }  
 }  
 }  
@@ -56974,7 +75035,8 @@ bool IPCFrame_SetPeerIdentity::operator==(const IPCFrame_SetPeerIdentity& other)
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(pid_, other.pid_)
    && ::protozero::internal::gen_helpers::EqualsField(uid_, other.uid_)
-   && ::protozero::internal::gen_helpers::EqualsField(machine_id_hint_, other.machine_id_hint_);
+   && ::protozero::internal::gen_helpers::EqualsField(machine_id_hint_, other.machine_id_hint_)
+   && ::protozero::internal::gen_helpers::EqualsField(machine_name_, other.machine_name_);
 }
 
 bool IPCFrame_SetPeerIdentity::ParseFromArray(const void* raw, size_t size) {
@@ -56995,6 +75057,9 @@ bool IPCFrame_SetPeerIdentity::ParseFromArray(const void* raw, size_t size) {
         break;
       case 3 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &machine_id_hint_);
+        break;
+      case 4 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &machine_name_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -57030,6 +75095,11 @@ void IPCFrame_SetPeerIdentity::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[3]) {
     ::protozero::internal::gen_helpers::SerializeString(3, machine_id_hint_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeString(4, machine_name_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -57475,6 +75545,7 @@ void IPCFrame_BindService::Serialize(::protozero::Message* msg) const {
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 
 
@@ -57500,6 +75571,7 @@ using ScopedSocketHandle =
 using ScopedSocketHandle = ScopedFile;
 #endif
 
+class LinuxFileWatch;
 class TaskRunner;
 
 
@@ -57534,6 +75606,25 @@ enum class SockPeerCredMode {
 
 
 SockFamily GetSockFamily(const char* addr);
+
+
+
+struct NetAddrInfo {
+  NetAddrInfo(std::string _ip_port, SockFamily _family, SockType _type)
+      : ip_port(std::move(_ip_port)), family(_family), type(_type) {}
+  std::string ip_port;  
+  SockFamily family;    
+  SockType type;        
+};
+
+
+
+
+
+
+
+std::vector<NetAddrInfo> GetNetAddrInfo(const std::string& ip,
+                                        const std::string& port);
 
 
 inline bool SockShmemSupported(SockFamily sock_family) {
@@ -57910,6 +76001,19 @@ class PERFETTO_EXPORT_COMPONENT UnixSocket {
   WeakPtrFactory<UnixSocket> weak_ptr_factory_;  
 };
 
+
+
+
+
+
+
+
+
+std::unique_ptr<LinuxFileWatch> WatchUnixSocketCreation(
+    TaskRunner* task_runner,
+    const char* sock_name,
+    std::function<void()> callback);
+
 }  
 }  
 
@@ -57941,7 +76045,7 @@ class PERFETTO_EXPORT_COMPONENT UnixSocket {
 
 #include <sys/socket.h>
 
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX) && __has_include(<vm_sockets.h>)
 
 #include <vm_sockets.h>
 #elif defined(AF_VSOCK)
@@ -57970,7 +76074,7 @@ struct sockaddr_vm {
 #endif  
         
 
-#endif  
+#endif
 
 
 
@@ -57998,12 +76102,15 @@ struct sockaddr_vm {
 
 
 
+
+
+
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 
-#include <Windows.h>
+#include <windows.h>
 
-#include <WS2tcpip.h>
-#include <WinSock2.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 #include <afunix.h>
 #else
@@ -58017,7 +76124,8 @@ struct sockaddr_vm {
 #include <unistd.h>
 #endif
 
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
 #include <sys/ucred.h>
 #endif
 
@@ -58063,6 +76171,15 @@ using CBufLenType = socklen_t;
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
 constexpr char kVsockNamePrefix[] = "vsock://";
+#endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+bool IsVirtualized() {
+  static bool is_virtualized = [] {
+    return base::GetAndroidProp("ro.traced.hypervisor") == "true";
+  }();
+  return is_virtualized;
+}
 #endif
 
 
@@ -58125,7 +76242,7 @@ inline int MkSockType(SockType type) {
 SockaddrAny MakeSockAddr(SockFamily family, const std::string& socket_name) {
   switch (family) {
     case SockFamily::kUnix: {
-      struct sockaddr_un saddr {};
+      struct sockaddr_un saddr{};
       const size_t name_len = socket_name.size();
       if (name_len + 1  >= sizeof(saddr.sun_path)) {
         errno = ENAMETOOLONG;
@@ -58159,7 +76276,7 @@ SockaddrAny MakeSockAddr(SockFamily family, const std::string& socket_name) {
       auto parts = SplitString(socket_name, ":");
       PERFETTO_CHECK(parts.size() == 2);
       struct addrinfo* addr_info = nullptr;
-      struct addrinfo hints {};
+      struct addrinfo hints{};
       hints.ai_family = AF_INET;
       PERFETTO_CHECK(getaddrinfo(parts[0].c_str(), parts[1].c_str(), &hints,
                                  &addr_info) == 0);
@@ -58177,7 +76294,7 @@ SockaddrAny MakeSockAddr(SockFamily family, const std::string& socket_name) {
       auto port = SplitString(parts[1], ":");
       PERFETTO_CHECK(port.size() == 1);
       struct addrinfo* addr_info = nullptr;
-      struct addrinfo hints {};
+      struct addrinfo hints{};
       hints.ai_family = AF_INET6;
       PERFETTO_CHECK(getaddrinfo(address[0].c_str(), port[0].c_str(), &hints,
                                  &addr_info) == 0);
@@ -58199,6 +76316,15 @@ SockaddrAny MakeSockAddr(SockFamily family, const std::string& socket_name) {
       addr.svm_family = AF_VSOCK;
       addr.svm_cid = *base::StringToUInt32(parts[0]);
       addr.svm_port = *base::StringToUInt32(parts[1]);
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+#if defined(VMADDR_FLAG_TO_HOST)
+      if (IsVirtualized()) {
+        
+        
+        addr.svm_flags = VMADDR_FLAG_TO_HOST;
+      }
+#endif
+#endif
       SockaddrAny res(&addr, sizeof(addr));
       return res;
 #else
@@ -58213,7 +76339,7 @@ SockaddrAny MakeSockAddr(SockFamily family, const std::string& socket_name) {
   PERFETTO_CHECK(false);  
 }
 
-ScopedSocketHandle CreateSocketHandle(SockFamily family, SockType type) {
+void InitWinSockOnce() {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   static bool init_winsock_once = [] {
     WSADATA ignored{};
@@ -58221,8 +76347,50 @@ ScopedSocketHandle CreateSocketHandle(SockFamily family, SockType type) {
   }();
   PERFETTO_CHECK(init_winsock_once);
 #endif
+}
+
+ScopedSocketHandle CreateSocketHandle(SockFamily family, SockType type) {
+  InitWinSockOnce();
   return ScopedSocketHandle(socket(MkSockFamily(family), MkSockType(type), 0));
 }
+
+std::string AddrinfoToIpStr(const struct addrinfo* addrinfo_ptr) {
+  PERFETTO_CHECK(addrinfo_ptr && addrinfo_ptr->ai_addr);
+  PERFETTO_CHECK((addrinfo_ptr->ai_family == AF_INET) ||
+                 (addrinfo_ptr->ai_family == AF_INET6));
+
+  void* addr_ptr = nullptr;
+  char ip_str_buffer[INET6_ADDRSTRLEN];
+
+  if (addrinfo_ptr->ai_family == AF_INET) {  
+    struct sockaddr_in* ipv4_addr =
+        reinterpret_cast<struct sockaddr_in*>(addrinfo_ptr->ai_addr);
+    addr_ptr = &(ipv4_addr->sin_addr);
+  } else if (addrinfo_ptr->ai_family == AF_INET6) {  
+    struct sockaddr_in6* ipv6_addr =
+        reinterpret_cast<struct sockaddr_in6*>(addrinfo_ptr->ai_addr);
+    addr_ptr = &(ipv6_addr->sin6_addr);
+  }
+  PERFETTO_CHECK(inet_ntop(addrinfo_ptr->ai_family, addr_ptr, ip_str_buffer,
+                           sizeof(ip_str_buffer)) != NULL);
+  return std::string(ip_str_buffer);
+}
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+
+
+
+
+bool ShouldIgnoreSocketTimeoutError(SocketHandle fd) {
+  if (errno != EINVAL)
+    return false;
+
+  struct sockaddr_storage addr;
+  socklen_t addr_len = sizeof(addr);
+  return getpeername(fd, reinterpret_cast<struct sockaddr*>(&addr),
+                     &addr_len) != 0;
+}
+#endif
 
 }  
 
@@ -58253,6 +76421,34 @@ SockFamily GetSockFamily(const char* addr) {
   }
 
   return SockFamily::kUnix;  
+}
+
+std::vector<NetAddrInfo> GetNetAddrInfo(const std::string& ip,
+                                        const std::string& port) {
+  InitWinSockOnce();
+  struct addrinfo hints;
+  struct addrinfo* serv_info;
+  struct addrinfo* p;
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+  PERFETTO_CHECK(getaddrinfo(ip.c_str(), port.c_str(), &hints, &serv_info) ==
+                 0);
+  std::vector<NetAddrInfo> res;
+  for (p = serv_info; p != nullptr; p = p->ai_next) {
+    if (p->ai_family == AF_INET) {
+      std::string ip_str = AddrinfoToIpStr(p);
+      std::string ip_port = ip_str + ":" + port;
+      res.emplace_back(ip_port, SockFamily::kInet, SockType::kStream);
+    } else if (p->ai_family == AF_INET6) {
+      std::string ip_str = AddrinfoToIpStr(p);
+      std::string ip_port = "[" + ip_str + "]:" + port;
+      res.emplace_back(ip_port, SockFamily::kInet6, SockType::kStream);
+    }
+  }
+  freeaddrinfo(serv_info);
+  return res;
 }
 
 
@@ -58313,7 +76509,8 @@ UnixSocketRaw::UnixSocketRaw(ScopedSocketHandle fd,
                              SockType type)
     : fd_(std::move(fd)), family_(family), type_(type) {
   PERFETTO_CHECK(fd_);
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
   const int no_sigpipe = 1;
   setsockopt(*fd_, SOL_SOCKET, SO_NOSIGPIPE, &no_sigpipe, sizeof(no_sigpipe));
 #endif
@@ -58440,6 +76637,26 @@ bool UnixSocketRaw::Connect(const std::string& socket_name) {
   bool continue_async = WSAGetLastError() == WSAEWOULDBLOCK;
 #else
   bool continue_async = errno == EINPROGRESS;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
+  
+  
+  
+  bool is_blocking_call = family_ == SockFamily::kVsock;
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  
+  
+  
+  
+  bool is_blocking_call = family_ == SockFamily::kVsock && IsVirtualized();
+#else
+  bool is_blocking_call = false;
+#endif
+  if (is_blocking_call && res < 0 && continue_async) {
+    pollfd pfd{*fd_, POLLOUT, 0};
+    if (PERFETTO_EINTR(poll(&pfd, 1 , 3000 )) <= 0)
+      return false;
+    return (pfd.revents & POLLOUT) != 0;
+  }
 #endif
   if (res && !continue_async)
     return false;
@@ -58648,7 +76865,7 @@ bool UnixSocketRaw::SetTxTimeout(uint32_t timeout_ms) {
   DWORD timeout = timeout_ms;
   ignore_result(tx_timeout_ms_);
 #else
-  struct timeval timeout {};
+  struct timeval timeout{};
   uint32_t timeout_sec = timeout_ms / 1000;
   timeout.tv_sec = static_cast<decltype(timeout.tv_sec)>(timeout_sec);
   timeout.tv_usec = static_cast<decltype(timeout.tv_usec)>(
@@ -58656,14 +76873,23 @@ bool UnixSocketRaw::SetTxTimeout(uint32_t timeout_ms) {
 #endif
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
   if (family() == SockFamily::kVsock) {
-      
-      return true;
+    
+    return true;
   }
 #endif
 
-  return setsockopt(*fd_, SOL_SOCKET, SO_SNDTIMEO,
-                    reinterpret_cast<const char*>(&timeout),
-                    sizeof(timeout)) == 0;
+  if (setsockopt(*fd_, SOL_SOCKET, SO_SNDTIMEO,
+                 reinterpret_cast<const char*>(&timeout),
+                 sizeof(timeout)) == 0) {
+    return true;
+  }
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+  if (ShouldIgnoreSocketTimeoutError(*fd_))
+    return true;
+#endif
+
+  return false;
 }
 
 bool UnixSocketRaw::SetRxTimeout(uint32_t timeout_ms) {
@@ -58671,19 +76897,28 @@ bool UnixSocketRaw::SetRxTimeout(uint32_t timeout_ms) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   DWORD timeout = timeout_ms;
 #else
-  struct timeval timeout {};
+  struct timeval timeout{};
   uint32_t timeout_sec = timeout_ms / 1000;
   timeout.tv_sec = static_cast<decltype(timeout.tv_sec)>(timeout_sec);
   timeout.tv_usec = static_cast<decltype(timeout.tv_usec)>(
       (timeout_ms - (timeout_sec * 1000)) * 1000);
 #endif
-  return setsockopt(*fd_, SOL_SOCKET, SO_RCVTIMEO,
-                    reinterpret_cast<const char*>(&timeout),
-                    sizeof(timeout)) == 0;
+  if (setsockopt(*fd_, SOL_SOCKET, SO_RCVTIMEO,
+                 reinterpret_cast<const char*>(&timeout),
+                 sizeof(timeout)) == 0) {
+    return true;
+  }
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+  if (ShouldIgnoreSocketTimeoutError(*fd_))
+    return true;
+#endif
+
+  return false;
 }
 
 std::string UnixSocketRaw::GetSockAddr() const {
-  struct sockaddr_storage stg {};
+  struct sockaddr_storage stg{};
   socklen_t slen = sizeof(stg);
   PERFETTO_CHECK(
       getsockname(*fd_, reinterpret_cast<struct sockaddr*>(&stg), &slen) == 0);
@@ -58910,7 +77145,9 @@ void UnixSocket::ReadPeerCredentialsPosix() {
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
   int fd = sock_raw_.fd();
-  int res = getpeereid(fd, &peer_uid_, nullptr);
+  gid_t peer_gid = 0;
+  int res = getpeereid(fd, &peer_uid_, &peer_gid);
+  ignore_result(peer_gid);
   PERFETTO_CHECK(res == 0);
   
 #elif PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
@@ -58922,7 +77159,8 @@ void UnixSocket::ReadPeerCredentialsPosix() {
   PERFETTO_CHECK(res == 0);
   peer_uid_ = user_cred.uid;
   peer_pid_ = user_cred.pid;
-#elif PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD)
   struct xucred user_cred;
   socklen_t len = sizeof(user_cred);
   int res = getsockopt(sock_raw_.fd(), 0, LOCAL_PEERCRED, &user_cred, &len);
@@ -59023,11 +77261,22 @@ void UnixSocket::OnEvent() {
 
   if (state_ == State::kConnecting) {
     PERFETTO_DCHECK(sock_raw_);
-    int sock_err = EINVAL;
-    socklen_t err_len = sizeof(sock_err);
-    int res =
-        getsockopt(sock_raw_.fd(), SOL_SOCKET, SO_ERROR, &sock_err, &err_len);
-
+    int res = 0, sock_err = 0;
+    bool is_error_opt_supported = true;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
+    
+    
+    
+    if (sock_raw_.family() == SockFamily::kVsock) {
+      is_error_opt_supported = false;
+    }
+#endif
+    if (is_error_opt_supported) {
+      sock_err = EINVAL;
+      socklen_t err_len = sizeof(sock_err);
+      res =
+          getsockopt(sock_raw_.fd(), SOL_SOCKET, SO_ERROR, &sock_err, &err_len);
+    }
     if (res == 0 && sock_err == EINPROGRESS)
       return;  
     if (res == 0 && sock_err == 0) {
@@ -59162,6 +77411,22 @@ void UnixSocket::EventListener::OnNewIncomingConnection(
 void UnixSocket::EventListener::OnConnect(UnixSocket*, bool) {}
 void UnixSocket::EventListener::OnDisconnect(UnixSocket*) {}
 void UnixSocket::EventListener::OnDataAvailable(UnixSocket*) {}
+
+std::unique_ptr<LinuxFileWatch> WatchUnixSocketCreation(
+    TaskRunner* task_runner,
+    const char* sock_name,
+    std::function<void()> callback) {
+  if constexpr (!PERFETTO_FLAGS(USE_UNIX_SOCKET_INOTIFY))
+    return nullptr;
+
+  if (!sock_name || base::GetSockFamily(sock_name) != base::SockFamily::kUnix ||
+      sock_name[0] == '@') {
+    
+    return nullptr;
+  }
+  return LinuxFileWatch::WatchFileCreation(task_runner, sock_name,
+                                           std::move(callback));
+}
 
 }  
 }  
@@ -60053,13 +78318,18 @@ class ClientInfo {
   ClientInfo(ClientID client_id,
              uid_t uid,
              pid_t pid,
-             base::MachineID machine_id)
-      : client_id_(client_id), uid_(uid), pid_(pid), machine_id_(machine_id) {}
+             base::MachineID machine_id,
+             std::string machine_name)
+      : client_id_(client_id),
+        uid_(uid),
+        pid_(pid),
+        machine_id_(machine_id),
+        machine_name_(machine_name) {}
 
   bool operator==(const ClientInfo& other) const {
-    return std::tie(client_id_, uid_, pid_, machine_id_) ==
-           std::tie(other.client_id_, other.uid_, other.pid_,
-                    other.machine_id_);
+    return std::tie(client_id_, uid_, pid_, machine_id_, machine_name_) ==
+           std::tie(other.client_id_, other.uid_, other.pid_, other.machine_id_,
+                    other.machine_name_);
   }
   bool operator!=(const ClientInfo& other) const { return !(*this == other); }
 
@@ -60083,6 +78353,9 @@ class ClientInfo {
   
   base::MachineID machine_id() const { return machine_id_; }
 
+  
+  std::string machine_name() const { return machine_name_; }
+
  private:
   ClientID client_id_ = 0;
   
@@ -60090,6 +78363,8 @@ class ClientInfo {
   uid_t uid_ = kInvalidUid;
   pid_t pid_ = base::kInvalidPid;
   base::MachineID machine_id_ = base::kDefaultMachineID;
+  
+  std::string machine_name_;
 };
 
 }  
@@ -60346,6 +78621,7 @@ ServiceProxy::EventListener::~EventListener() = default;
 
 
 
+
 namespace perfetto {
 
 namespace protos {
@@ -60413,6 +78689,7 @@ class ClientImpl : public Client, public base::UnixSocket::EventListener {
   bool invoking_method_reply_ = false;
   const char* socket_name_ = nullptr;
   bool socket_retry_ = false;
+  bool delayed_reconnect_pending_ = false;
   uint32_t socket_backoff_ms_ = 0;
   std::unique_ptr<base::UnixSocket> sock_;
   base::TaskRunner* const task_runner_;
@@ -60424,6 +78701,9 @@ class ClientImpl : public Client, public base::UnixSocket::EventListener {
 
   
   std::list<base::WeakPtr<ServiceProxy>> queued_bindings_;
+
+  
+  std::unique_ptr<base::LinuxFileWatch> sock_inotify_;
 
   base::WeakPtrFactory<Client> weak_ptr_factory_;  
 };
@@ -60540,6 +78820,7 @@ class ServiceDescriptor {
 
 
 
+
 namespace perfetto {
 namespace ipc {
 
@@ -60582,6 +78863,8 @@ ClientImpl::~ClientImpl() {
 
 void ClientImpl::TryConnect() {
   PERFETTO_DCHECK(socket_name_);
+  if (sock_ && sock_->is_connected())
+    return;
   sock_ = base::UnixSocket::Connect(
       socket_name_, this, task_runner_, base::GetSockFamily(socket_name_),
       base::SockType::kStream, base::SockPeerCredMode::kIgnore);
@@ -60659,21 +78942,44 @@ bool ClientImpl::SendFrame(const Frame& frame, int fd) {
 }
 
 void ClientImpl::OnConnect(base::UnixSocket*, bool connected) {
+  
+  
+  
+  
+  
+  
   if (!connected && socket_retry_) {
-    socket_backoff_ms_ =
-        (socket_backoff_ms_ < 10000) ? socket_backoff_ms_ + 1000 : 30000;
-    PERFETTO_DLOG(
-        "Connection to traced's UNIX socket failed, retrying in %u seconds",
-        socket_backoff_ms_ / 1000);
     auto weak_this = weak_ptr_factory_.GetWeakPtr();
-    task_runner_->PostDelayedTask(
-        [weak_this] {
-          if (weak_this)
-            static_cast<ClientImpl&>(*weak_this).TryConnect();
-        },
-        socket_backoff_ms_);
+    if (!delayed_reconnect_pending_) {
+      delayed_reconnect_pending_ = true;
+      socket_backoff_ms_ =
+          (socket_backoff_ms_ < 10000) ? socket_backoff_ms_ + 1000 : 30000;
+      PERFETTO_DLOG(
+          "Connection to traced's UNIX socket failed, retrying in %u seconds",
+          socket_backoff_ms_ / 1000);
+
+      task_runner_->PostDelayedTask(
+          [weak_this] {
+            if (!weak_this)
+              return;
+            auto& thiz = *static_cast<ClientImpl*>(weak_this.get());
+            thiz.delayed_reconnect_pending_ = false;
+            thiz.TryConnect();
+          },
+          socket_backoff_ms_);
+    }  
+
+    if (!sock_inotify_) {
+      sock_inotify_ = base::WatchUnixSocketCreation(
+          task_runner_, socket_name_, [weak_this] {
+            if (weak_this)
+              static_cast<ClientImpl*>(weak_this.get())->TryConnect();
+          });
+    }  
     return;
   }
+
+  sock_inotify_.reset();
 
   
   
@@ -61039,10 +79345,12 @@ class HostImpl : public Host, public base::UnixSocket::EventListener {
     
     
     base::MachineID machine_id = base::kDefaultMachineID;
+    std::string machine_name;
 
     pid_t GetLinuxPeerPid() const;
     uid_t GetPosixPeerUid() const;
     base::MachineID GetMachineID() const { return machine_id; }
+    std::string GetMachineName() const { return machine_name; }
   };
   struct ExposedService {
     ExposedService(ServiceID, const std::string&, std::unique_ptr<Service>);
@@ -61074,6 +79382,7 @@ class HostImpl : public Host, public base::UnixSocket::EventListener {
   std::unique_ptr<base::UnixSocket> sock_;  
   std::map<ClientID, std::unique_ptr<ClientConnection>> clients_;
   std::map<base::UnixSocket*, ClientConnection*> clients_by_socket_;
+  std::string machine_name_;
   ServiceID last_service_id_ = 0;
   ClientID last_client_id_ = 0;
   uint32_t socket_tx_timeout_ms_ = kDefaultIpcTxTimeoutMs;
@@ -61123,6 +79432,7 @@ class HostImpl : public Host, public base::UnixSocket::EventListener {
 
 
 
+
 namespace perfetto {
 namespace ipc {
 
@@ -61140,7 +79450,7 @@ base::MachineID GenerateMachineID(base::UnixSocket* sock,
   if (!sock->is_connected() || sock->family() == base::SockFamily::kUnix)
     return base::kDefaultMachineID;
 
-  base::Hasher hasher;
+  base::FnvHasher hasher;
   
   
   if (!machine_id_hint.empty()) {
@@ -61178,6 +79488,7 @@ base::MachineID GenerateMachineID(base::UnixSocket* sock,
 uid_t HostImpl::ClientConnection::GetPosixPeerUid() const {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
   if (sock->family() == base::SockFamily::kUnix)
     return sock->peer_uid_posix();
@@ -61228,14 +79539,18 @@ std::unique_ptr<Host> Host::CreateInstance_Fuchsia(
 
 HostImpl::HostImpl(base::ScopedSocketHandle socket_fd,
                    base::TaskRunner* task_runner)
-    : task_runner_(task_runner), weak_ptr_factory_(this) {
+    : task_runner_(task_runner),
+      machine_name_(base::GetPerfettoMachineName()),
+      weak_ptr_factory_(this) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   sock_ = base::UnixSocket::Listen(std::move(socket_fd), this, task_runner_,
                                    kHostSockFamily, base::SockType::kStream);
 }
 
 HostImpl::HostImpl(const char* socket_name, base::TaskRunner* task_runner)
-    : task_runner_(task_runner), weak_ptr_factory_(this) {
+    : task_runner_(task_runner),
+      machine_name_(base::GetPerfettoMachineName()),
+      weak_ptr_factory_(this) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   sock_ = base::UnixSocket::Listen(socket_name, this, task_runner_,
                                    base::GetSockFamily(socket_name),
@@ -61246,7 +79561,9 @@ HostImpl::HostImpl(const char* socket_name, base::TaskRunner* task_runner)
 }
 
 HostImpl::HostImpl(base::TaskRunner* task_runner)
-    : task_runner_(task_runner), weak_ptr_factory_(this) {
+    : task_runner_(task_runner),
+      machine_name_(base::GetPerfettoMachineName()),
+      weak_ptr_factory_(this) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
 }
 
@@ -61302,6 +79619,9 @@ void HostImpl::OnNewIncomingConnection(
   client->id = client_id;
   client->sock = std::move(new_conn);
   client->sock->SetTxTimeout(socket_tx_timeout_ms_);
+  if (client->sock->family() == base::SockFamily::kUnix) {
+    client->machine_name = machine_name_;
+  }
   clients_[client_id] = std::move(client);
 }
 
@@ -61414,8 +79734,9 @@ void HostImpl::OnInvokeMethod(ClientConnection* client,
 
   auto peer_uid = client->GetPosixPeerUid();
   auto scoped_key = g_crash_key_uid.SetScoped(static_cast<int64_t>(peer_uid));
-  service->client_info_ = ClientInfo(
-      client->id, peer_uid, client->GetLinuxPeerPid(), client->GetMachineID());
+  service->client_info_ =
+      ClientInfo(client->id, peer_uid, client->GetLinuxPeerPid(),
+                 client->GetMachineID(), client->GetMachineName());
   service->received_fd_ = &client->received_fd;
   method.invoker(service, *decoded_req_args, std::move(deferred_reply));
   service->received_fd_ = nullptr;
@@ -61442,6 +79763,7 @@ void HostImpl::OnSetPeerIdentity(ClientConnection* client,
 
   client->machine_id = GenerateMachineID(client->sock.get(),
                                          set_peer_identity.machine_id_hint());
+  client->machine_name = set_peer_identity.machine_name();
 }
 
 void HostImpl::ReplyToMethodInvocation(ClientID client_id,
@@ -61507,7 +79829,8 @@ void HostImpl::OnDisconnect(base::UnixSocket* sock) {
   ClientID client_id = client->id;
 
   ClientInfo client_info(client_id, client->GetPosixPeerUid(),
-                         client->GetLinuxPeerPid(), client->GetMachineID());
+                         client->GetLinuxPeerPid(), client->GetMachineID(),
+                         client->GetMachineName());
 
   clients_by_socket_.erase(it);
   PERFETTO_DCHECK(clients_.count(client_id));
@@ -62262,6 +80585,7 @@ void ProducerPortProxy::UpdateDataSource(const UpdateDataSourceRequest& request,
 
 
 
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -62279,6 +80603,9 @@ class RelayPort : public ::perfetto::ipc::Service {
   const ::perfetto::ipc::ServiceDescriptor& GetDescriptor() override;
 
   
+  using DeferredInitRelayResponse = ::perfetto::ipc::Deferred<InitRelayResponse>;
+  virtual void InitRelay(const InitRelayRequest&, DeferredInitRelayResponse) = 0;
+
   using DeferredSyncClockResponse = ::perfetto::ipc::Deferred<SyncClockResponse>;
   virtual void SyncClock(const SyncClockRequest&, DeferredSyncClockResponse) = 0;
 
@@ -62294,6 +80621,9 @@ class RelayPortProxy : public ::perfetto::ipc::ServiceProxy {
   const ::perfetto::ipc::ServiceDescriptor& GetDescriptor() override;
 
   
+  using DeferredInitRelayResponse = ::perfetto::ipc::Deferred<InitRelayResponse>;
+  void InitRelay(const InitRelayRequest&, DeferredInitRelayResponse, int fd = -1);
+
   using DeferredSyncClockResponse = ::perfetto::ipc::Deferred<SyncClockResponse>;
   void SyncClock(const SyncClockRequest&, DeferredSyncClockResponse, int fd = -1);
 
@@ -62316,6 +80646,12 @@ namespace gen {
 ::perfetto::ipc::ServiceDescriptor* RelayPort::NewDescriptor() {
   auto* desc = new ::perfetto::ipc::ServiceDescriptor();
   desc->service_name = "RelayPort";
+
+  desc->methods.emplace_back(::perfetto::ipc::ServiceDescriptor::Method{
+     "InitRelay",
+     &_IPC_Decoder<InitRelayRequest>,
+     &_IPC_Decoder<InitRelayResponse>,
+     &_IPC_Invoker<RelayPort, InitRelayRequest, InitRelayResponse, &RelayPort::InitRelay>});
 
   desc->methods.emplace_back(::perfetto::ipc::ServiceDescriptor::Method{
      "SyncClock",
@@ -62347,6 +80683,11 @@ RelayPortProxy::~RelayPortProxy() = default;
 
 const ::perfetto::ipc::ServiceDescriptor& RelayPortProxy::GetDescriptor() {
   return RelayPort::GetDescriptorStatic();
+}
+
+void RelayPortProxy::InitRelay(const InitRelayRequest& request, DeferredInitRelayResponse reply, int fd) {
+  BeginInvoke("InitRelay", request, ::perfetto::ipc::DeferredBase(std::move(reply)),
+              fd);
 }
 
 void RelayPortProxy::SyncClock(const SyncClockRequest& request, DeferredSyncClockResponse reply, int fd) {
@@ -62382,10 +80723,12 @@ void RelayPortProxy::SyncClock(const SyncClockRequest& request, DeferredSyncCloc
 
 
 
+
 #include <stdlib.h>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
 #include <unistd.h>
 #endif
@@ -62445,9 +80788,18 @@ const char* GetProducerSocket() {
   return name;
 }
 
-const char* GetRelaySocket() {
+std::string GetRelaySocket() {
   
-  return getenv("PERFETTO_RELAY_SOCK_NAME");
+  
+  
+  const char* name = getenv("PERFETTO_RELAY_SOCK_NAME");
+  if (name != nullptr)
+    return std::string(name);
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  return base::GetAndroidProp("traced_relay.relay_port");
+#else
+  return std::string();
+#endif
 }
 
 std::vector<std::string> TokenizeProducerSockets(
@@ -62553,7 +80905,7 @@ base::ScopedFile CreateMemfd(const char* name, unsigned int flags);
 
 #define PERFETTO_MEMFD_ENABLED()             \
   PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-  PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX)
+      PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX)
 
 #if PERFETTO_MEMFD_ENABLED()
 
@@ -62653,6 +81005,7 @@ base::ScopedFile CreateMemfd(const char*, unsigned int) {
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
 
 #include <stddef.h>
@@ -62733,6 +81086,7 @@ class PosixSharedMemory : public SharedMemory {
     PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
     PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
     PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
 
 #include <fcntl.h>
@@ -62895,10 +81249,12 @@ class SharedMemoryWindows : public SharedMemory {
   
   enum Flags { kNone = 0, kInheritableHandles };
   static std::unique_ptr<SharedMemoryWindows> Create(
-      size_t size, Flags flags=Flags::kNone);
+      size_t size,
+      Flags flags = Flags::kNone);
   static std::unique_ptr<SharedMemoryWindows> Attach(const std::string& key);
   static std::unique_ptr<SharedMemoryWindows> AttachToHandleWithKey(
-      base::ScopedPlatformHandle fd, const std::string& key);
+      base::ScopedPlatformHandle fd,
+      const std::string& key);
   ~SharedMemoryWindows() override;
   const std::string& key() const { return key_; }
   const base::ScopedPlatformHandle& handle() const { return handle_; }
@@ -62950,7 +81306,7 @@ class SharedMemoryWindows : public SharedMemory {
 #include <memory>
 #include <random>
 
-#include <Windows.h>
+#include <windows.h>
 
 
 
@@ -62958,8 +81314,8 @@ class SharedMemoryWindows : public SharedMemory {
 namespace perfetto {
 
 
-std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Create(
-    size_t size, Flags flags) {
+std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Create(size_t size,
+                                                                 Flags flags) {
   base::ScopedPlatformHandle shmem_handle;
   std::random_device rnd_dev;
   uint64_t rnd_key = (static_cast<uint64_t>(rnd_dev()) << 32) | rnd_dev();
@@ -62972,8 +81328,7 @@ std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Create(
 
   shmem_handle.reset(CreateFileMappingA(
       INVALID_HANDLE_VALUE,  
-      &security_attributes,
-      PAGE_READWRITE,
+      &security_attributes, PAGE_READWRITE,
       static_cast<DWORD>(size >> 32),  
       static_cast<DWORD>(size),        
       key.c_str()));
@@ -63025,7 +81380,8 @@ std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Attach(
 
 
 std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::AttachToHandleWithKey(
-    base::ScopedPlatformHandle shmem_handle, const std::string& key) {
+    base::ScopedPlatformHandle shmem_handle,
+    const std::string& key) {
   void* start =
       MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
                     0, 0);
@@ -63730,6 +82086,17 @@ void ConsumerIPCClientImpl::CloneSession(CloneSessionArgs args) {
     return;
   }
 
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  if (args.output_file_fd) {
+    consumer_->OnSessionCloned(
+        {false,
+         "Passing FDs into CloneSession is not supported on Windows",
+         {},
+         false});
+    return;
+  }
+#endif
+
   protos::gen::CloneSessionRequest req;
   if (args.tsid) {
     req.set_session_id(args.tsid);
@@ -63752,6 +82119,9 @@ void ConsumerIPCClientImpl::CloneSession(CloneSessionArgs args) {
   if (args.clone_trigger_boot_time_ns != 0) {
     req.set_clone_trigger_boot_time_ns(args.clone_trigger_boot_time_ns);
   }
+  if (args.clone_trigger_delay_ms != 0) {
+    req.set_clone_trigger_delay_ms(args.clone_trigger_delay_ms);
+  }
   ipc::Deferred<protos::gen::CloneSessionResponse> async_response;
   auto weak_this = weak_ptr_factory_.GetWeakPtr();
 
@@ -63764,14 +82134,18 @@ void ConsumerIPCClientImpl::CloneSession(CloneSessionArgs args) {
           
           
           weak_this->consumer_->OnSessionCloned(
-              {false, "CloneSession IPC not supported", {}});
+              {false, "CloneSession IPC not supported", {}, false});
         } else {
           base::Uuid uuid(response->uuid_lsb(), response->uuid_msb());
           weak_this->consumer_->OnSessionCloned(
-              {response->success(), response->error(), uuid});
+              {response->success(), response->error(), uuid,
+               response->was_write_into_file()});
         }
       });
-  consumer_port_.CloneSession(req, std::move(async_response));
+  
+  
+  consumer_port_.CloneSession(req, std::move(async_response),
+                              *args.output_file_fd);
 }
 }  
 
@@ -64004,6 +82378,13 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
   
   
   std::unique_ptr<protos::gen::ProducerPortProxy> producer_port_;
+
+  
+  
+  
+  
+  
+  std::map<WriterID, BufferID> writers_for_scraping_;
 
   std::unique_ptr<SharedMemory> shared_memory_;
   std::unique_ptr<SharedMemoryArbiter> shared_memory_arbiter_;
@@ -64386,10 +82767,8 @@ void ProducerIPCClientImpl::OnServiceRequest(
       PERFETTO_CHECK(!ipc_shared_memory);
       
       
-      
-      
       ipc_shared_memory = InProcessSharedMemory::Create(
-          InProcessSharedMemory::kDefaultSize);
+          InProcessSharedMemory::kShmemEmulationSize);
     }
     if (ipc_shared_memory) {
       auto shmem_mode = use_shmem_emulation_
@@ -64503,6 +82882,11 @@ void ProducerIPCClientImpl::RegisterTraceWriter(uint32_t writer_id,
         "Cannot RegisterTraceWriter(), not connected to tracing service");
     return;
   }
+  if (use_shmem_emulation_ &&
+      smb_scraping_mode_ == TracingService::ProducerSMBScrapingMode::kEnabled) {
+    writers_for_scraping_[static_cast<WriterID>(writer_id)] =
+        static_cast<BufferID>(target_buffer);
+  }
   protos::gen::RegisterTraceWriterRequest req;
   req.set_trace_writer_id(writer_id);
   req.set_target_buffer(target_buffer);
@@ -64516,6 +82900,10 @@ void ProducerIPCClientImpl::UnregisterTraceWriter(uint32_t writer_id) {
     PERFETTO_DLOG(
         "Cannot UnregisterTraceWriter(), not connected to tracing service");
     return;
+  }
+  if (use_shmem_emulation_ &&
+      smb_scraping_mode_ == TracingService::ProducerSMBScrapingMode::kEnabled) {
+    writers_for_scraping_.erase(static_cast<WriterID>(writer_id));
   }
   protos::gen::UnregisterTraceWriterRequest req;
   req.set_trace_writer_id(writer_id);
@@ -64623,7 +83011,23 @@ bool ProducerIPCClientImpl::IsShmemProvidedByProducer() const {
 }
 
 void ProducerIPCClientImpl::NotifyFlushComplete(FlushRequestID req_id) {
-  return shared_memory_arbiter_->NotifyFlushComplete(req_id);
+  shared_memory_arbiter_->NotifyFlushComplete(req_id);
+
+  
+  
+  
+  
+  if (use_shmem_emulation_ &&
+      smb_scraping_mode_ == TracingService::ProducerSMBScrapingMode::kEnabled) {
+    
+    
+    
+    
+    
+    
+    shared_memory_arbiter_->ScrapeEmulatedSharedMemoryBuffer(
+        writers_for_scraping_);
+  }
 }
 
 SharedMemory* ProducerIPCClientImpl::shared_memory() const {
@@ -65165,6 +83569,12 @@ void ConsumerIPCService::CloneSession(
   if (req.has_clone_trigger_boot_time_ns()) {
     args.clone_trigger_boot_time_ns = req.clone_trigger_boot_time_ns();
   }
+  if (req.has_clone_trigger_delay_ms()) {
+    args.clone_trigger_delay_ms = req.clone_trigger_delay_ms();
+  }
+  
+  
+  args.output_file_fd = ipc::Service::TakeReceivedFD();
   remote_consumer->service_endpoint->CloneSession(std::move(args));
 }
 
@@ -65327,6 +83737,7 @@ void ConsumerIPCService::RemoteConsumer::OnSessionCloned(
   resp->set_error(args.error);
   resp->set_uuid_msb(args.uuid.msb());
   resp->set_uuid_lsb(args.uuid.lsb());
+  resp->set_was_write_into_file(args.was_write_into_file);
   std::move(clone_session_response).Resolve(std::move(resp));
 }
 
@@ -65601,7 +84012,7 @@ void ProducerIPCService::InitializeConnection(
       req.shared_memory_size_hint_bytes(),
       false, smb_scraping_mode,
       req.shared_memory_page_size_hint_bytes(), std::move(shmem),
-      req.sdk_version());
+      req.sdk_version(), client_info.machine_name());
 
   
   if (!producer->service_endpoint) {
@@ -66062,6 +84473,8 @@ class RelayIPCService : public protos::gen::RelayPort {
   ~RelayIPCService() override = default;
 
   void OnClientDisconnected() override;
+  void InitRelay(const protos::gen::InitRelayRequest&,
+                 DeferredInitRelayResponse) override;
   void SyncClock(const protos::gen::SyncClockRequest&,
                  DeferredSyncClockResponse) override;
 
@@ -66134,7 +84547,7 @@ TracingService::RelayEndpoint* RelayIPCService::GetRelayEndpoint(
 
 void RelayIPCService::OnClientDisconnected() {
   auto client_id = ipc::Service::client_info().client_id();
-  PERFETTO_DLOG("Relay endpoint %" PRIu64 "disconnected ", client_id);
+  PERFETTO_DLOG("Relay endpoint %" PRIu64 " disconnected ", client_id);
 
   auto* endpoint = GetRelayEndpoint(client_id);
   if (!endpoint)
@@ -66142,6 +84555,26 @@ void RelayIPCService::OnClientDisconnected() {
 
   endpoint->Disconnect();
   relay_endpoints_.Erase(client_id);
+}
+
+void RelayIPCService::InitRelay(const protos::gen::InitRelayRequest& req,
+                                DeferredInitRelayResponse resp) {
+  
+  auto async_resp = ipc::AsyncResult<protos::gen::InitRelayResponse>::Create();
+  resp.Resolve(std::move(async_resp));
+
+  
+  auto machine_id = ipc::Service::client_info().machine_id();
+  auto client_id = ipc::Service::client_info().client_id();
+  auto* endpoint = GetRelayEndpoint(client_id);
+  if (!endpoint) {
+    auto ep = core_service_->ConnectRelayClient(
+        std::make_pair(machine_id, client_id));
+    endpoint = ep.get();
+    relay_endpoints_.Insert(client_id, std::move(ep));
+  }
+
+  endpoint->CacheSystemInfo(req.system_info().SerializeAsArray());
 }
 
 void RelayIPCService::SyncClock(const protos::gen::SyncClockRequest& req,
@@ -66199,9 +84632,8 @@ void RelayIPCService::SyncClock(const protos::gen::SyncClockRequest& req,
 #ifndef INCLUDE_PERFETTO_EXT_TRACING_IPC_SERVICE_IPC_HOST_H_
 #define INCLUDE_PERFETTO_EXT_TRACING_IPC_SERVICE_IPC_HOST_H_
 
+#include <list>
 #include <memory>
-
-
 
 
 
@@ -66222,6 +84654,32 @@ class Host;
 
 
 
+
+
+struct ListenEndpoint {
+  explicit ListenEndpoint(const char* socket_name);
+  explicit ListenEndpoint(std::string socket_name);
+  explicit ListenEndpoint(base::ScopedSocketHandle);
+  explicit ListenEndpoint(std::unique_ptr<ipc::Host>);
+  ~ListenEndpoint();
+
+  
+  ListenEndpoint(ListenEndpoint&&) noexcept;
+  ListenEndpoint& operator=(ListenEndpoint&&);
+  ListenEndpoint(const ListenEndpoint&) noexcept = delete;
+  ListenEndpoint& operator=(const ListenEndpoint&) noexcept = delete;
+
+  
+  std::string sock_name;
+  base::ScopedSocketHandle sock_handle;
+  std::unique_ptr<ipc::Host> ipc_host;
+};
+
+
+
+
+
+
 class PERFETTO_EXPORT_COMPONENT ServiceIPCHost {
  public:
   static std::unique_ptr<ServiceIPCHost> CreateInstance(
@@ -66231,27 +84689,30 @@ class PERFETTO_EXPORT_COMPONENT ServiceIPCHost {
 
   
   
-  bool Start(const char* producer_socket_name,
-             const char* consumer_socket_name) {
-    return Start(TokenizeProducerSockets(producer_socket_name),
-                 consumer_socket_name);
-  }
-  
-  
-  virtual bool Start(const std::vector<std::string>& producer_socket_names,
-                     const char* consumer_socket_name) = 0;
-
-  
-  
-  
-  virtual bool Start(base::ScopedSocketHandle producer_socket_fd,
-                     base::ScopedSocketHandle consumer_socket_fd) = 0;
-
-  
-  virtual bool Start(std::unique_ptr<ipc::Host> producer_host,
-                     std::unique_ptr<ipc::Host> consumer_host) = 0;
+  virtual bool Start(std::list<ListenEndpoint> producer_sockets,
+                     ListenEndpoint consumer_socket) = 0;
 
   virtual TracingService* service() const = 0;
+
+  
+  
+  
+
+  
+  
+  
+  
+  bool Start(base::ScopedSocketHandle producer_socket_fd,
+             base::ScopedSocketHandle consumer_socket_fd);
+
+  
+  bool Start(std::unique_ptr<ipc::Host> producer_host,
+             std::unique_ptr<ipc::Host> consumer_host);
+
+  
+  
+  bool Start(const char* producer_socket_names,
+             const char* consumer_socket_name);
 
  protected:
   ServiceIPCHost();
@@ -66304,12 +84765,8 @@ class ServiceIPCHostImpl : public ServiceIPCHost {
   ~ServiceIPCHostImpl() override;
 
   
-  bool Start(const std::vector<std::string>& producer_socket_names,
-             const char* consumer_socket_name) override;
-  bool Start(base::ScopedSocketHandle producer_socket_fd,
-             base::ScopedSocketHandle consumer_socket_fd) override;
-  bool Start(std::unique_ptr<ipc::Host> producer_host,
-             std::unique_ptr<ipc::Host> consumer_host) override;
+  bool Start(std::list<ListenEndpoint> producer_sockets,
+             ListenEndpoint consumer_socket) override;
 
   TracingService* service() const override;
 
@@ -66353,6 +84810,9 @@ class ServiceIPCHostImpl : public ServiceIPCHost {
 
 
 
+#include <list>
+
+
 
 
 
@@ -66371,7 +84831,22 @@ namespace perfetto {
 
 namespace {
 constexpr uint32_t kProducerSocketTxTimeoutMs = 10;
+
+std::unique_ptr<ipc::Host> CreateIpcHost(base::TaskRunner* task_runner,
+                                         ListenEndpoint ep) {
+  if (!ep.sock_name.empty()) {
+    PERFETTO_DCHECK(!ep.sock_handle && !ep.ipc_host);
+    return ipc::Host::CreateInstance(ep.sock_name.c_str(), task_runner);
+  }
+  if (ep.sock_handle) {
+    PERFETTO_DCHECK(!ep.ipc_host);
+    return ipc::Host::CreateInstance(std::move(ep.sock_handle), task_runner);
+  }
+  PERFETTO_DCHECK(ep.ipc_host);
+  return std::move(ep.ipc_host);
 }
+
+}  
 
 
 
@@ -66390,41 +84865,16 @@ ServiceIPCHostImpl::ServiceIPCHostImpl(base::TaskRunner* task_runner,
 
 ServiceIPCHostImpl::~ServiceIPCHostImpl() {}
 
-bool ServiceIPCHostImpl::Start(
-    const std::vector<std::string>& producer_socket_names,
-    const char* consumer_socket_name) {
+bool ServiceIPCHostImpl::Start(std::list<ListenEndpoint> producer_sockets,
+                               ListenEndpoint consumer_socket) {
   PERFETTO_CHECK(!svc_);  
 
   
-  for (const auto& producer_socket_name : producer_socket_names)
+  for (auto& sock : producer_sockets) {
     producer_ipc_ports_.emplace_back(
-        ipc::Host::CreateInstance(producer_socket_name.c_str(), task_runner_));
-  consumer_ipc_port_ =
-      ipc::Host::CreateInstance(consumer_socket_name, task_runner_);
-  return DoStart();
-}
-
-bool ServiceIPCHostImpl::Start(base::ScopedSocketHandle producer_socket_fd,
-                               base::ScopedSocketHandle consumer_socket_fd) {
-  PERFETTO_CHECK(!svc_);  
-
-  
-  producer_ipc_ports_.emplace_back(
-      ipc::Host::CreateInstance(std::move(producer_socket_fd), task_runner_));
-  consumer_ipc_port_ =
-      ipc::Host::CreateInstance(std::move(consumer_socket_fd), task_runner_);
-  return DoStart();
-}
-
-bool ServiceIPCHostImpl::Start(std::unique_ptr<ipc::Host> producer_host,
-                               std::unique_ptr<ipc::Host> consumer_host) {
-  PERFETTO_CHECK(!svc_);  
-  PERFETTO_DCHECK(producer_host);
-  PERFETTO_DCHECK(consumer_host);
-
-  
-  producer_ipc_ports_.emplace_back(std::move(producer_host));
-  consumer_ipc_port_ = std::move(consumer_host);
+        CreateIpcHost(task_runner_, std::move(sock)));
+  }
+  consumer_ipc_port_ = CreateIpcHost(task_runner_, std::move(consumer_socket));
 
   return DoStart();
 }
@@ -66499,6 +84949,44 @@ void ServiceIPCHostImpl::Shutdown() {
 
 ServiceIPCHost::ServiceIPCHost() = default;
 ServiceIPCHost::~ServiceIPCHost() = default;
+
+
+ListenEndpoint::ListenEndpoint(const char* socket_name)
+    : sock_name(socket_name) {}
+ListenEndpoint::ListenEndpoint(std::string socket_name)
+    : sock_name(std::move(socket_name)) {}
+ListenEndpoint::ListenEndpoint(base::ScopedSocketHandle sh)
+    : sock_handle(std::move(sh)) {}
+ListenEndpoint::ListenEndpoint(std::unique_ptr<ipc::Host> ih)
+    : ipc_host(std::move(ih)) {}
+ListenEndpoint::ListenEndpoint(ListenEndpoint&&) noexcept = default;
+ListenEndpoint& ListenEndpoint::operator=(ListenEndpoint&&) = default;
+ListenEndpoint::~ListenEndpoint() = default;
+
+
+
+bool ServiceIPCHost::Start(const char* producer_socket_names,
+                           const char* consumer_socket_name) {
+  std::list<ListenEndpoint> eps;
+  for (const auto& sock_name : TokenizeProducerSockets(producer_socket_names)) {
+    eps.emplace_back(ListenEndpoint(sock_name));
+  }
+  return Start(std::move(eps), ListenEndpoint(consumer_socket_name));
+}
+
+bool ServiceIPCHost::Start(base::ScopedSocketHandle producer_socket_fd,
+                           base::ScopedSocketHandle consumer_socket_fd) {
+  std::list<ListenEndpoint> eps;
+  eps.emplace_back(ListenEndpoint(std::move(producer_socket_fd)));
+  return Start(std::move(eps), ListenEndpoint(std::move(consumer_socket_fd)));
+}
+
+bool ServiceIPCHost::Start(std::unique_ptr<ipc::Host> producer_host,
+                           std::unique_ptr<ipc::Host> consumer_host) {
+  std::list<ListenEndpoint> eps;
+  eps.emplace_back(ListenEndpoint(std::move(producer_host)));
+  return Start(std::move(eps), ListenEndpoint(std::move(consumer_host)));
+}
 
 }  
 
@@ -66603,315 +85091,4 @@ std::unique_ptr<ConsumerEndpoint> SystemConsumerTracingBackend::ConnectConsumer(
 
 }  
 }  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
-
-
-
-
-
-
-
-#include <pthread.h>
-#include <stdlib.h>
-
-namespace perfetto {
-
-namespace {
-
-class PlatformPosix : public Platform {
- public:
-  PlatformPosix();
-  ~PlatformPosix() override;
-
-  ThreadLocalObject* GetOrCreateThreadLocalObject() override;
-
-  std::unique_ptr<base::TaskRunner> CreateTaskRunner(
-      const CreateTaskRunnerArgs&) override;
-  std::string GetCurrentProcessName() override;
-  void Shutdown() override;
-
- private:
-  pthread_key_t tls_key_{};
-};
-
-PlatformPosix* g_instance = nullptr;
-
-using ThreadLocalObject = Platform::ThreadLocalObject;
-
-PlatformPosix::PlatformPosix() {
-  PERFETTO_CHECK(!g_instance);
-  g_instance = this;
-  auto tls_dtor = [](void* obj) {
-    
-    
-    
-    
-    
-    
-    pthread_setspecific(g_instance->tls_key_, obj);
-    delete static_cast<ThreadLocalObject*>(obj);
-    pthread_setspecific(g_instance->tls_key_, nullptr);
-  };
-  PERFETTO_CHECK(pthread_key_create(&tls_key_, tls_dtor) == 0);
-}
-
-PlatformPosix::~PlatformPosix() {
-  
-  
-  void* tls_ptr = pthread_getspecific(tls_key_);
-  delete static_cast<ThreadLocalObject*>(tls_ptr);
-
-  pthread_key_delete(tls_key_);
-  g_instance = nullptr;
-}
-
-void PlatformPosix::Shutdown() {
-  PERFETTO_CHECK(g_instance == this);
-  delete this;
-  PERFETTO_CHECK(!g_instance);
-  
-  
-}
-
-ThreadLocalObject* PlatformPosix::GetOrCreateThreadLocalObject() {
-  
-  void* tls_ptr = pthread_getspecific(tls_key_);
-
-  
-  
-  ThreadLocalObject* tls = static_cast<ThreadLocalObject*>(tls_ptr);
-  if (!tls) {
-    tls = ThreadLocalObject::CreateInstance().release();
-    pthread_setspecific(tls_key_, tls);
-  }
-  return tls;
-}
-
-std::unique_ptr<base::TaskRunner> PlatformPosix::CreateTaskRunner(
-    const CreateTaskRunnerArgs& args) {
-  return std::unique_ptr<base::TaskRunner>(new base::ThreadTaskRunner(
-      base::ThreadTaskRunner::CreateAndStart(args.name_for_debugging)));
-}
-
-std::string PlatformPosix::GetCurrentProcessName() {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  std::string cmdline;
-  base::ReadFile("/proc/self/cmdline", &cmdline);
-  return cmdline.substr(0, cmdline.find('\0'));
-#elif PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
-  return std::string(getprogname());
-#else
-  return "unknown_producer";
-#endif
-}
-
-}  
-
-
-Platform* Platform::GetDefaultPlatform() {
-  static PlatformPosix* instance = new PlatformPosix();
-  return instance;
-}
-
-}  
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-#include <Windows.h>
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef _WIN64
-#pragma comment(linker, "/INCLUDE:_tls_used")
-#pragma comment(linker, "/INCLUDE:perfetto_thread_callback_base")
-#else
-#pragma comment(linker, "/INCLUDE:__tls_used")
-#pragma comment(linker, "/INCLUDE:_perfetto_thread_callback_base")
-#endif
-
-namespace perfetto {
-
-namespace {
-
-class PlatformWindows : public Platform {
- public:
-  static PlatformWindows* instance;
-  PlatformWindows();
-  ~PlatformWindows() override;
-
-  ThreadLocalObject* GetOrCreateThreadLocalObject() override;
-  std::unique_ptr<base::TaskRunner> CreateTaskRunner(
-      const CreateTaskRunnerArgs&) override;
-  std::string GetCurrentProcessName() override;
-  void OnThreadExit();
-
- private:
-  DWORD tls_key_{};
-};
-
-using ThreadLocalObject = Platform::ThreadLocalObject;
-
-
-PlatformWindows* PlatformWindows::instance = nullptr;
-
-PlatformWindows::PlatformWindows() {
-  instance = this;
-  tls_key_ = ::TlsAlloc();
-  PERFETTO_CHECK(tls_key_ != TLS_OUT_OF_INDEXES);
-}
-
-PlatformWindows::~PlatformWindows() {
-  ::TlsFree(tls_key_);
-  instance = nullptr;
-}
-
-void PlatformWindows::OnThreadExit() {
-  auto tls = static_cast<ThreadLocalObject*>(::TlsGetValue(tls_key_));
-  if (tls) {
-    
-    
-    delete tls;
-  }
-}
-
-ThreadLocalObject* PlatformWindows::GetOrCreateThreadLocalObject() {
-  void* tls_ptr = ::TlsGetValue(tls_key_);
-
-  auto* tls = static_cast<ThreadLocalObject*>(tls_ptr);
-  if (!tls) {
-    tls = ThreadLocalObject::CreateInstance().release();
-    ::TlsSetValue(tls_key_, tls);
-  }
-  return tls;
-}
-
-std::unique_ptr<base::TaskRunner> PlatformWindows::CreateTaskRunner(
-    const CreateTaskRunnerArgs& args) {
-  return std::unique_ptr<base::TaskRunner>(new base::ThreadTaskRunner(
-      base::ThreadTaskRunner::CreateAndStart(args.name_for_debugging)));
-}
-
-std::string PlatformWindows::GetCurrentProcessName() {
-  char buf[MAX_PATH];
-  auto len = ::GetModuleFileNameA(nullptr , buf, sizeof(buf));
-  std::string name(buf, static_cast<size_t>(len));
-  size_t sep = name.find_last_of('\\');
-  if (sep != std::string::npos)
-    name = name.substr(sep + 1);
-  return name;
-}
-
-}  
-
-
-Platform* Platform::GetDefaultPlatform() {
-  static PlatformWindows* thread_safe_init_instance = new PlatformWindows();
-  return thread_safe_init_instance;
-}
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern "C" {
-
-
-
-
-
-void NTAPI PerfettoOnThreadExit(PVOID, DWORD, PVOID);
-void NTAPI PerfettoOnThreadExit(PVOID, DWORD reason, PVOID) {
-  if (reason == DLL_THREAD_DETACH || reason == DLL_PROCESS_DETACH) {
-    if (perfetto::PlatformWindows::instance)
-      perfetto::PlatformWindows::instance->OnThreadExit();
-  }
-}
-
-#ifdef _WIN64
-
-
-#pragma const_seg(".CRT$XLP")
-
-
-
-extern const PIMAGE_TLS_CALLBACK perfetto_thread_callback_base;
-const PIMAGE_TLS_CALLBACK perfetto_thread_callback_base = PerfettoOnThreadExit;
-
-
-#pragma const_seg()
-
-#else  
-
-#pragma data_seg(".CRT$XLP")
-PIMAGE_TLS_CALLBACK perfetto_thread_callback_base = PerfettoOnThreadExit;
-
-#pragma data_seg()
-
-#endif  
-
-}  
-
-#endif  
 
