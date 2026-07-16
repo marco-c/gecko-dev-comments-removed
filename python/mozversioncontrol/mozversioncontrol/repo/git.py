@@ -356,7 +356,12 @@ class GitRepository(Repository):
         if dest_branch and not ref:
             raise ValueError("Cannot specify dest_branch without specifying ref")
 
-        args = ["push"]
+        args = []
+        if remote and remote.startswith("hg::"):
+            
+            
+            args.extend(["-c", "cinnabar.experiments=git_commit"])
+        args.append("push")
         if force:
             args.append("--force")
         if remote:
