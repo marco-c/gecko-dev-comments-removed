@@ -782,7 +782,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   }
 
   unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
-                               uint8_t* inst, uint8_t* data) {
+                               uint8_t* data) {
     if constexpr (UseConstantPools) {
       
       
@@ -805,7 +805,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       if (this->oom()) {
         return OOM_FAIL;
       }
-      return insertEntryForwards(numInst, numPoolEntries, inst, data);
+      return insertEntryForwards(numInst, numPoolEntries, data);
     }
 
     if constexpr (UseConstantPools) {
@@ -870,7 +870,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #endif
 
     
-    unsigned index = insertEntryForwards(numInst, numPoolEntries, inst, data);
+    unsigned index = insertEntryForwards(numInst, numPoolEntries, data);
     if (this->oom()) {
       return BufferOffset();
     }
