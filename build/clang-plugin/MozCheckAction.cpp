@@ -2,26 +2,20 @@
 
 
 
+#include "MozCheckAction.h"
+
 #include "DiagnosticsMatcher.h"
-#include "plugin.h"
-#include "clang/Frontend/FrontendPluginRegistry.h"
 
-class MozCheckAction : public PluginASTAction {
-public:
-  ASTConsumerPtr CreateASTConsumer(CompilerInstance &CI,
-                                   StringRef FileName) override {
-    void *Buffer = CI.getASTContext().Allocate<DiagnosticsMatcher>();
-    auto Matcher = new (Buffer) DiagnosticsMatcher(CI);
-    return Matcher->makeASTConsumer();
-  }
+ASTConsumerPtr MozCheckAction::CreateASTConsumer(CompilerInstance &CI,
+                                  StringRef FileName) {
+  void *Buffer = CI.getASTContext().Allocate<DiagnosticsMatcher>();
+  auto Matcher = new (Buffer) DiagnosticsMatcher(CI);
+  return Matcher->makeASTConsumer();
+}
 
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string> &Args) override {
-    return true;
-  }
-};
-
-static FrontendPluginRegistry::Add<MozCheckAction> X("moz-check",
-                                                     "check moz action");
+bool MozCheckAction::ParseArgs(const CompilerInstance &CI,
+                const std::vector<std::string> &Args) {
+  return true;
+}
 
 DenseMap<StringRef, bool> InThirdPartyPathCache;
