@@ -96,19 +96,56 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
   TimeStamp t = TimeStamp::Now();
 
   if (mAudioSink) {
-    if (mLastClockSource == ClockSource::SystemClock) {
-      TimeUnit switchTime = GetSystemClockPosition(t);
-      
-      
-      mAudioSink->UpdateStartTime(switchTime);
-      LOGV("{}: switching to audio clock at media time {}", fmt::ptr(this),
-           switchTime.ToSeconds());
-    }
+    TimeUnit audioPos = mAudioSink->GetPosition();
+    TimeUnit systemPos =
+        mClockStartTime.IsNull() ? audioPos : GetSystemClockPosition(t);
     
-    pos = mAudioSink->GetPosition();
-    LOGV("{}: Getting position from the Audio Sink {}", fmt::ptr(this),
-         pos.ToSeconds());
-    mLastClockSource = ClockSource::AudioStream;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mLastClockSource == ClockSource::SystemClock &&
+        !mAudioSink->AudioStreamCallbackStarted()) {
+      pos = systemPos;
+      mAudioSink->UpdateStartTime(systemPos);
+      DropAudioPacketsIfNeeded(systemPos);
+      LOGV(
+          "{}: Getting position from the system clock, due to the audio stream "
+          "not having started yet {}",
+          fmt::ptr(this), pos.ToSeconds());
+      mLastClockSource = ClockSource::SystemClock;
+    } else {
+      if (mLastClockSource == ClockSource::SystemClock &&
+          !mClockStartTime.IsNull()) {
+        
+        
+        
+        
+        
+        
+        
+        mAudioSink->UpdateStartTime(systemPos);
+        audioPos = mAudioSink->GetPosition();
+        LOG("{}: Re-anchored the audio sink start time to the system clock {}",
+            fmt::ptr(this), audioPos.ToSeconds());
+      }
+      pos = audioPos;
+      LOGV("{}: Getting position from the Audio Sink {}", fmt::ptr(this),
+           pos.ToSeconds());
+      mLastClockSource = ClockSource::AudioStream;
+    }
   } else if (!mClockStartTime.IsNull()) {
     
     
