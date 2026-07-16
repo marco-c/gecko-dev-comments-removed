@@ -1,11 +1,9 @@
 
 
 
-test(() => {
-    const preloads = ["low", "high", "auto"].map(fetchpriority => { return {
-        "url": "empty.js?" + token() + fetchpriority,
-        "as_attr": "script",
-        "fetchpriority_attr": fetchpriority,
-    }});
-    navigateToTestWithEarlyHints("resources/preload-fetchpriority.html", preloads);
-});
+const preloads = ["low", "high", "auto"].map(fetchpriority => { return {
+    "url": "empty.js?" + token() + fetchpriority,
+    "as_attr": "script",
+    "fetchpriority_attr": fetchpriority,
+}});
+fetch_tests_from_window(navigateToTestWithEarlyHints("resources/preload-fetchpriority.html", preloads));
