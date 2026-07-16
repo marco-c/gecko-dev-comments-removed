@@ -137,12 +137,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   
   
   
-  
-  
-  bool mHardwareResetInProgress = false;
-  
-  
-  
   static inline RefPtr<GenericPromise> sPendingHDCPCheck;
   MozPromiseRequestHolder<GenericPromise> mHDCPRequestHolder;
 #endif
