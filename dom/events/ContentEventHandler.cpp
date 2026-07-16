@@ -22,6 +22,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
@@ -1383,6 +1384,29 @@ nsresult ContentEventHandler::OnQuerySelectedText(
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
 
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    
+    
+    uint32_t selectionStart;
+    uint32_t selectionEnd;
+    if (aEvent->mInput.mSelectionType == SelectionType::eNormal) {
+      selectionStart = editContext->SelectionStartClamped();
+      selectionEnd = editContext->SelectionEndClamped();
+    } else {
+      selectionStart = mSelection->AnchorOffset();
+      selectionEnd = mSelection->FocusOffset();
+    }
+    uint32_t selectionMin = std::min(selectionStart, selectionEnd);
+    uint32_t selectionMax = std::max(selectionStart, selectionEnd);
+    nsAutoString selectedText;
+    editContext->GetTextSubstring(selectionMin, selectionMax, selectedText);
+    aEvent->mReply->mOffsetAndData.emplace(selectionMin, selectedText,
+                                           OffsetAndDataFor::SelectedString);
+    aEvent->mReply->mWritingMode = editContext->WritingMode();
+    aEvent->mReply->mReversed = selectionEnd < selectionStart;
+    return NS_OK;
+  }
+
   if (!mFirstSelectedSimpleRange.IsPositioned()) {
     MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
     
@@ -1486,6 +1510,26 @@ nsresult ContentEventHandler::OnQueryTextContent(
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
       domRangeAndAdjustedOffsetOrError = ConvertFlatTextOffsetToUnsafeDOMRange(
           aEvent->mInput.mOffset, aEvent->mInput.mLength, false);
+
+  if (EditContext* editContext = GetEditContext()) {
+    
+    
+    nsAutoString text;
+    uint32_t start = aEvent->mInput.mOffset;
+    uint32_t end = start + aEvent->mInput.mLength;
+    editContext->GetTextSubstring(start, end, text);
+    aEvent->mReply->mOffsetAndData.emplace(start, text);
+    
+    
+    if (!mRootElement->IsHTMLElement(nsGkAtoms::canvas) &&
+        domRangeAndAdjustedOffsetOrError.isOk()) {
+      uint32_t fontRangeLength;
+      GenerateFlatFontRanges(domRangeAndAdjustedOffsetOrError.unwrap().mRange,
+                             aEvent->mReply->mFontRanges, fontRangeLength);
+    }
+    return NS_OK;
+  }
+
   if (MOZ_UNLIKELY(domRangeAndAdjustedOffsetOrError.isErr())) {
     NS_WARNING(
         "ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase() failed");
@@ -1961,6 +2005,29 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = aEvent->mInput.EndOffset();
   bool wasLineBreaker = false;
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    
+    nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
+    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, kEndOffset,
+                                                           rects);
+    if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
+      LayoutDeviceIntRect lastRect = rects.LastElement();
+      
+      
+      while (rects.Length() < kEndOffset - offset) {
+        rects.AppendElement(lastRect);
+      }
+      return rv;
+    }
+    
+    
+    
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+  }
   
   
   nsRect lastCharRect;
@@ -2369,6 +2436,35 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   }
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    
+    const uint32_t start = aEvent->mInput.mOffset;
+    const uint32_t end = start + aEvent->mInput.mLength;
+    AutoTArray<LayoutDeviceIntRect, 8> rects;
+    rv = editContext->FireCharacterBoundsUpdateAndGetRects(start, end, rects);
+    
+    if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
+      
+      LayoutDeviceIntRect boundingRect = rects[0];
+      for (size_t i : IntegerRange(1u, rects.Length())) {
+        boundingRect = boundingRect.Union(rects[i]);
+      }
+      nsAutoString data;
+      editContext->GetTextSubstring(start, end, data);
+      aEvent->mReply->mOffsetAndData.emplace(start, data,
+                                             OffsetAndDataFor::EditorString);
+      aEvent->mReply->mRect = boundingRect;
+      return NS_OK;
+    }
+    
+    
+    
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+  }
 
   Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
       domRangeAndAdjustedOffsetOrError = ConvertFlatTextOffsetToDOMRange(
@@ -2813,6 +2909,35 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
   MOZ_ASSERT(aEvent->mReply->mTentativeCaretOffset.isNothing());
+
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    AutoTArray<LayoutDeviceIntRect, 8> rects;
+    
+    
+    rv = editContext->FireCharacterBoundsUpdateAndGetRects(
+        0, editContext->TextLength(), rects);
+    if (NS_SUCCEEDED(rv)) {
+      for (size_t i : IntegerRange(0u, rects.Length())) {
+        if (rects[i].Contains(aEvent->mRefPoint)) {
+          nsAutoString string;
+          editContext->GetTextSubstring(i, i + 1, string);
+          aEvent->mReply->mOffsetAndData.emplace(i, string);
+          aEvent->mReply->mRect = rects[i];
+          
+          
+          aEvent->mReply->mTentativeCaretOffset = Some(i);
+          return NS_OK;
+        }
+      }
+      return NS_OK;
+    }
+    
+    
+    
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
 
   PresShell* presShell = mDocument->GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);

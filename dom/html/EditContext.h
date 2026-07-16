@@ -26,16 +26,7 @@ class EditContext final : public DOMEventTargetHelper {
 
   void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
                   const nsAString& aText, ErrorResult& aRv);
-  void UpdateSelection(uint32_t aStart, uint32_t aEnd) {
-    if (aStart == mSelectionStart && aEnd == mSelectionEnd) {
-      return;
-    }
-    mSelectionStart = aStart;
-    mSelectionEnd = aEnd;
-    
-    
-    mTextNextToCaretChangedByTextUpdateHandler = true;
-  }
+  void UpdateSelection(uint32_t aStart, uint32_t aEnd);
   void UpdateControlBounds(DOMRect& aControlBounds);
   void UpdateSelectionBounds(DOMRect& aSelectionBounds);
   void UpdateCharacterBounds(
@@ -48,9 +39,23 @@ class EditContext final : public DOMEventTargetHelper {
   }
 
   void GetText(nsAString& aText) const;
+  void GetTextSubstring(uint32_t aStart, uint32_t aEnd, nsAString& aText);
   uint32_t TextLength() const;
   uint32_t SelectionStart() const { return mSelectionStart; }
   uint32_t SelectionEnd() const { return mSelectionEnd; }
+
+  
+  uint32_t SelectionStartClamped() const {
+    
+    
+    return std::min(SelectionStart(), TextLength());
+  }
+  
+  uint32_t SelectionEndClamped() const {
+    
+    
+    return std::min(SelectionEnd(), TextLength());
+  }
   uint32_t CharacterBoundsRangeStart() const {
     return mCodepointRectsStartIndex;
   }
@@ -66,6 +71,9 @@ class EditContext final : public DOMEventTargetHelper {
   
   nsGenericHTMLElement& TextContainer() { return *mTextContainer; }
   nsTextNode& TextNode() { return *mText; }
+
+  
+  mozilla::WritingMode WritingMode() const;
 
   
   MOZ_CAN_RUN_SCRIPT void Deactivate();
@@ -84,6 +92,8 @@ class EditContext final : public DOMEventTargetHelper {
 
   static bool IsAnyAttached();
 
+  bool IsActive() const;
+
   MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
                                                  const nsAString& aString);
   MOZ_CAN_RUN_SCRIPT void StartComposition(
@@ -92,6 +102,8 @@ class EditContext final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
                                                uint32_t aCompositionOffset);
+  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateAndGetRects(
+      uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects);
 
   bool WasTextNextToCaretChangedByTextUpdateHandler() const {
     return mTextNextToCaretChangedByTextUpdateHandler;
@@ -118,6 +130,7 @@ class EditContext final : public DOMEventTargetHelper {
   uint32_t mCodepointRectsStartIndex = 0;
   bool mIsComposing = false;
   bool mTextNextToCaretChangedByTextUpdateHandler = false;
+  bool mExpectingCharacterBounds = false;
 };
 
 }  

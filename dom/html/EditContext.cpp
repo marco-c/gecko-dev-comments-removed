@@ -7,20 +7,25 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/IMEContentObserver.h"
+#include "mozilla/IMEStateManager.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/CharacterBoundsUpdateEvent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/TextFormatUpdateEvent.h"
 #include "mozilla/dom/TextUpdateEvent.h"
+#include "mozilla/intl/Segmenter.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsGenericHTMLElement.h"
 #include "nsTextNode.h"
 
 namespace mozilla::dom {
 
+using InlineDir = WritingMode::InlineDir;
 using LineStyle = TextRangeStyle::LineStyle;
 
 NS_IMPL_ADDREF_INHERITED(EditContext, DOMEventTargetHelper)
@@ -99,6 +104,11 @@ void EditContext::Deactivate() {
   
 }
 
+bool EditContext::IsActive() const {
+  return mAssociatedElement &&
+         mAssociatedElement->OwnerDoc()->GetActiveEditContext() == this;
+}
+
 
 bool EditContext::IsAnyAttached() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -139,6 +149,11 @@ EditContext::EditContext(nsIGlobalObject* aGlobalObject,
 
 void EditContext::GetText(nsAString& aText) const { mText->GetData(aText); }
 
+void EditContext::GetTextSubstring(uint32_t aStart, uint32_t aEnd,
+                                   nsAString& aText) {
+  mText->SubstringData(aStart, aEnd - aStart, aText, IgnoreErrors());
+}
+
 RefPtr<DOMRect> EditContext::ToDOMRect(const Rect& copy) const {
   return MakeRefPtr<DOMRect>(GetRelevantGlobal(), copy.x, copy.y, copy.width,
                              copy.height);
@@ -146,6 +161,24 @@ RefPtr<DOMRect> EditContext::ToDOMRect(const Rect& copy) const {
 
 auto EditContext::ToRect(const DOMRect& rect) const -> Rect {
   return Rect(rect.X(), rect.Y(), rect.Width(), rect.Height());
+}
+
+void EditContext::UpdateSelection(uint32_t aStart, uint32_t aEnd) {
+  if (aStart == mSelectionStart && aEnd == mSelectionEnd) {
+    return;
+  }
+  mSelectionStart = aStart;
+  mSelectionEnd = aEnd;
+  
+  
+  mTextNextToCaretChangedByTextUpdateHandler = true;
+
+  if (IsActive()) {
+    if (IMEContentObserver* observer =
+            IMEStateManager::GetActiveContentObserver()) {
+      observer->EditContextSelectionChanged();
+    }
+  }
 }
 
 void EditContext::UpdateCharacterBounds(
@@ -156,6 +189,15 @@ void EditContext::UpdateCharacterBounds(
   mCodepointRects.SetCapacity(aCharacterBounds.Length());
   for (const auto& rect : aCharacterBounds) {
     mCodepointRects.AppendElement(ToRect(rect));
+  }
+  if (!mExpectingCharacterBounds && IsActive()) {
+    
+    
+    
+    if (IMEContentObserver* observer =
+            IMEStateManager::GetActiveContentObserver()) {
+      observer->EditContextPositionChanged();
+    }
   }
 }
 
@@ -168,12 +210,25 @@ void EditContext::CharacterBounds(nsTArray<RefPtr<DOMRect>>& aRetVal) const {
 
 uint32_t EditContext::TextLength() const { return mText->TextLength(); }
 
+WritingMode EditContext::WritingMode() const {
+  if (!mAssociatedElement) {
+    return mozilla::WritingMode();
+  }
+  nsIFrame* frame = mAssociatedElement->GetPrimaryFrame();
+  if (!frame) {
+    return mozilla::WritingMode();
+  }
+  return frame->GetWritingMode();
+}
+
 void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
                              const nsAString& aText, ErrorResult& aRv) {
   if (NS_WARN_IF(!mText->DataBuffer().CanGrowBy(aText.Length()))) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
+  const uint32_t prevSelectionStart = SelectionStartClamped();
+  const uint32_t prevSelectionEnd = SelectionEndClamped();
   uint32_t start = std::min(aRangeStart, aRangeEnd);
   start = std::min(start, TextLength());
   uint32_t end = std::max(aRangeStart, aRangeEnd);
@@ -187,6 +242,16 @@ void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
   mText->ReplaceData(start, end - start, aText, IgnoreErrors());
   
   
+  if (IsActive()) {
+    if (IMEContentObserver* observer =
+            IMEStateManager::GetActiveContentObserver()) {
+      if (SelectionStartClamped() != prevSelectionStart ||
+          SelectionEndClamped() != prevSelectionEnd) {
+        observer->EditContextSelectionChanged();
+      }
+      observer->EditContextTextChanged(aRangeStart, aRangeEnd, aText);
+    }
+  }
 }
 
 void EditContext::UpdateControlBounds(DOMRect& aControlBounds) {
@@ -308,6 +373,170 @@ void EditContext::FireTextFormatUpdate(const TextRangeArray* aRanges,
       this, u"textformatupdate"_ns, eventOptions);
   e->SetTrusted(true);
   DispatchEvent(*e);
+}
+
+static InlineDir ReverseInlineDir(InlineDir dir) {
+  switch (dir) {
+    case InlineDir::LTR:
+      return InlineDir::RTL;
+    case InlineDir::RTL:
+      return InlineDir::LTR;
+    case InlineDir::BTT:
+      return InlineDir::TTB;
+    case InlineDir::TTB:
+      return InlineDir::BTT;
+  }
+  MOZ_ASSERT(false, "invalid InlineDir");
+  return InlineDir::LTR;
+}
+
+nsresult EditContext::FireCharacterBoundsUpdateAndGetRects(
+    uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects) {
+  MOZ_ASSERT(aRects.IsEmpty());
+  aStart = std::min(aStart, TextLength());
+  aEnd = std::min(aEnd, TextLength());
+  enum class CollapseDirection {
+    
+    None,
+    
+    
+    Previous,
+    
+    
+    Next,
+  };
+  CollapseDirection collapse = CollapseDirection::None;
+  if (aStart == aEnd) {
+    if (TextLength() == 0) {
+      
+      return NS_ERROR_FAILURE;
+    }
+    
+    if (aEnd < TextLength()) {
+      
+      
+      aEnd++;
+      collapse = CollapseDirection::Previous;
+    } else {
+      
+      
+      MOZ_ASSERT(aStart > 0);
+      aStart--;
+      collapse = CollapseDirection::Next;
+    }
+  }
+  MOZ_ASSERT(aStart < aEnd);
+
+  
+  
+  
+  uint32_t startExtendedToGraphemeCluster = aStart;
+  
+  
+  constexpr uint32_t kContext = 16;
+  {
+    nsAutoString startText;
+    uint32_t startTextOffset = std::max(aStart, kContext) - kContext;
+    GetTextSubstring(startTextOffset, std::min(aStart + kContext, TextLength()),
+                     startText);
+    intl::GraphemeClusterBreakIteratorUtf16 iter(startText);
+    
+    while (Maybe<uint32_t> i = iter.Next()) {
+      if (startTextOffset + *i > aStart) {
+        break;
+      }
+      startExtendedToGraphemeCluster = startTextOffset + *i;
+    }
+  }
+  uint32_t endExtendedToGraphemeCluster = aEnd;
+  {
+    nsAutoString endText;
+    uint32_t endTextOffset = std::max(aEnd, kContext) - kContext;
+    GetTextSubstring(endTextOffset, std::min(aEnd + kContext, TextLength()),
+                     endText);
+    
+    intl::GraphemeClusterBreakIteratorUtf16 iter(endText);
+    while (Maybe<uint32_t> i = iter.Next()) {
+      if (endTextOffset + *i >= aEnd) {
+        endExtendedToGraphemeCluster = endTextOffset + *i;
+        break;
+      }
+    }
+  }
+
+  RefPtr<nsPresContext> presContext = mText->OwnerDoc()->GetPresContext();
+
+  CharacterBoundsUpdateEventInit eventOptions;
+  eventOptions.mBubbles = false;
+  eventOptions.mCancelable = true;
+  eventOptions.mRangeStart = startExtendedToGraphemeCluster;
+  eventOptions.mRangeEnd = endExtendedToGraphemeCluster;
+  {
+    AutoRestore restore(mExpectingCharacterBounds);
+    mExpectingCharacterBounds = true;
+    RefPtr event = CharacterBoundsUpdateEvent::Constructor(
+        this, u"characterboundsupdate"_ns, eventOptions);
+    event->SetTrusted(true);
+    DispatchEvent(*event);
+  }
+  aRects.SetCapacity(aEnd - aStart);
+  for (uint32_t i = aStart; i < aEnd; i++) {
+    CheckedUint32 indexInCodepointRects =
+        CheckedUint32(i) - mCodepointRectsStartIndex;
+    if (!indexInCodepointRects.isValid() ||
+        indexInCodepointRects.value() >= mCodepointRects.Length()) {
+      
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+    CSSIntRect rect;
+    mCodepointRects[indexInCodepointRects.value()].ToIntRect(&rect);
+    LayoutDeviceIntRect deviceRect;
+    deviceRect.x = presContext->CSSPixelsToDevPixels(rect.x);
+    deviceRect.y = presContext->CSSPixelsToDevPixels(rect.y);
+    
+    
+    deviceRect.width =
+        std::max(1, presContext->CSSPixelsToDevPixels(rect.width));
+    deviceRect.height =
+        std::max(1, presContext->CSSPixelsToDevPixels(rect.height));
+    aRects.AppendElement(deviceRect);
+  }
+  if (collapse != CollapseDirection::None) {
+    
+    MOZ_ASSERT(aRects.Length() == 1);
+    if (aRects.IsEmpty()) {
+      
+      return NS_ERROR_FAILURE;
+    }
+    LayoutDeviceIntRect& rect = aRects[0];
+    InlineDir dir = WritingMode().GetInlineDir();
+    if (collapse == CollapseDirection::Next) {
+      dir = ReverseInlineDir(dir);
+    }
+    switch (dir) {
+      case InlineDir::LTR:
+        
+        rect.width = 1;
+        break;
+      case InlineDir::RTL:
+        
+        rect.x += rect.width;
+        rect.width = 1;
+        break;
+      case InlineDir::BTT:
+        
+        rect.y += rect.height;
+        rect.height = 1;
+        break;
+      case InlineDir::TTB:
+        
+        rect.height = 1;
+        break;
+    }
+  }
+  return NS_OK;
 }
 
 }  
