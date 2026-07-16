@@ -808,29 +808,92 @@ void wasm::PurgeComponentCanonicalTypes() {
 }
 
 mozilla::Maybe<FuncType> wasm::FlattenFuncType(
-    const Component& c, const ComponentFuncType& funcType) {
+    const ComponentFuncType& funcType, CanonMode mode, bool* memoryRequired,
+    bool* reallocRequired, bool* tooDeep) {
+  const uint32_t MaxFlatParams = 16;
+  const uint32_t MaxFlatResults = 1;
+
   ValTypeVector params;
   ValTypeVector results;
 
-  
-  
-  
-  
-
-  if (!FlattenTypes(c, funcType.paramTypes, &params)) {
+  bool paramsHaveStringsOrLists = false;
+  bool resultsHaveStringsOrLists = false;
+  if (!FlattenTypes(funcType.paramTypes, &params, &paramsHaveStringsOrLists,
+                    tooDeep, 0)) {
     return mozilla::Nothing();
   }
   if (funcType.resultType.isSome()) {
-    if (!FlattenType(c, funcType.resultType.ref(), &results)) {
+    if (!FlattenType(funcType.resultType.ref(), &results,
+                     &resultsHaveStringsOrLists, tooDeep, 0)) {
       return mozilla::Nothing();
     }
+  }
+
+  
+  
+  if ((mode == CanonMode::Lift && resultsHaveStringsOrLists) ||
+      (mode == CanonMode::Lower && paramsHaveStringsOrLists)) {
+    *memoryRequired = true;
+  }
+  if ((mode == CanonMode::Lift && paramsHaveStringsOrLists) ||
+      (mode == CanonMode::Lower && resultsHaveStringsOrLists)) {
+    *reallocRequired = true;
+  }
+
+  
+  
+  
+  if (params.length() > MaxFlatParams) {
+    params.clear();
+    if (!params.append(ValType::i32())) {
+      return mozilla::Nothing();
+    }
+
+    
+    
+    
+    if (mode == CanonMode::Lift) {
+      *reallocRequired = true;
+    } else {
+      *memoryRequired = true;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (results.length() > MaxFlatResults) {
+    if (mode == CanonMode::Lift) {
+      results.clear();
+      if (!results.append(ValType::i32())) {
+        return mozilla::Nothing();
+      }
+    } else {
+      if (!params.append(ValType::i32())) {
+        return mozilla::Nothing();
+      }
+      results.clear();
+    }
+
+    *memoryRequired = true;
+  }
+
+  
+  if (*reallocRequired) {
+    *memoryRequired = true;
   }
 
   return mozilla::Some(FuncType(std::move(params), std::move(results)));
 }
 
-bool wasm::FlattenTypes(const Component& c, const ComponentTypeVector& types,
-                        ValTypeVector* result) {
+bool wasm::FlattenTypes(const ComponentTypeVector& types, ValTypeVector* result,
+                        bool* hasStringsOrLists, bool* tooDeep,
+                        uint32_t depth) {
   
   
   
@@ -839,7 +902,7 @@ bool wasm::FlattenTypes(const Component& c, const ComponentTypeVector& types,
   }
 
   for (const ComponentType& t : types) {
-    if (!FlattenType(c, t, result)) {
+    if (!FlattenType(t, result, hasStringsOrLists, tooDeep, depth)) {
       return false;
     }
   }
@@ -859,8 +922,14 @@ static ValType JoinVariantValType(ValType a, ValType b) {
   }
 }
 
-bool wasm::FlattenType(const Component& c, const ComponentType& type,
-                       ValTypeVector* result) {
+bool wasm::FlattenType(const ComponentType& type, ValTypeVector* result,
+                       bool* hasStringsOrLists, bool* tooDeep, uint32_t depth) {
+  if (depth > MaxComponentFlatteningDepth) {
+    *tooDeep = true;
+    return false;
+  }
+  depth += 1;
+
   switch (type.kind()) {
     
     case ComponentTypeKind::Bool:
@@ -898,6 +967,7 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
 
     
     case ComponentTypeKind::String: {
+      *hasStringsOrLists = true;
       if (!result->append(ValType::i32())) {
         return false;
       }
@@ -910,6 +980,7 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
     
     
     case ComponentTypeKind::List: {
+      *hasStringsOrLists = true;
       
       if (!result->append(ValType::i32())) {
         return false;
@@ -919,12 +990,14 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
       }
     } break;
     case ComponentTypeKind::Record: {
-      if (!FlattenRecord(c, type.asRecord(), result)) {
+      if (!FlattenRecord(type.asRecord(), result, hasStringsOrLists, tooDeep,
+                         depth)) {
         return false;
       }
     } break;
     case ComponentTypeKind::Tuple: {
-      if (!FlattenTypes(c, type.asTuple(), result)) {
+      if (!FlattenTypes(type.asTuple(), result, hasStringsOrLists, tooDeep,
+                        depth)) {
         return false;
       }
     } break;
@@ -943,7 +1016,8 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
         }
 
         ValTypeVector caseFlattened;
-        if (!FlattenType(c, *case_.type, &caseFlattened)) {
+        if (!FlattenType(*case_.type, &caseFlattened, hasStringsOrLists,
+                         tooDeep, depth)) {
           return false;
         }
         for (size_t i = 0; i < caseFlattened.length(); i++) {
@@ -966,7 +1040,7 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
       if (!result->append(ValType::i32())) {
         return false;
       }
-      if (!FlattenType(c, inner, result)) {
+      if (!FlattenType(inner, result, hasStringsOrLists, tooDeep, depth)) {
         return false;
       }
     } break;
@@ -983,13 +1057,15 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
       
       size_t startIndex = result->length();
       if (inner.type.isSome()) {
-        if (!FlattenType(c, *inner.type, result)) {
+        if (!FlattenType(*inner.type, result, hasStringsOrLists, tooDeep,
+                         depth)) {
           return false;
         }
       }
       if (inner.errorType.isSome()) {
         ValTypeVector errorFlattened;
-        if (!FlattenType(c, *inner.errorType, &errorFlattened)) {
+        if (!FlattenType(*inner.errorType, &errorFlattened, hasStringsOrLists,
+                         tooDeep, depth)) {
           return false;
         }
         for (size_t i = 0; i < errorFlattened.length(); i++) {
@@ -1013,11 +1089,11 @@ bool wasm::FlattenType(const Component& c, const ComponentType& type,
   return true;
 }
 
-bool wasm::FlattenRecord(const Component& c,
-                         const ComponentRecordFieldVector& fields,
-                         ValTypeVector* result) {
+bool wasm::FlattenRecord(const ComponentRecordFieldVector& fields,
+                         ValTypeVector* result, bool* hasStringsOrLists,
+                         bool* tooDeep, uint32_t depth) {
   for (const ComponentRecordField& field : fields) {
-    if (!FlattenType(c, field.type, result)) {
+    if (!FlattenType(field.type, result, hasStringsOrLists, tooDeep, depth)) {
       return false;
     }
   }
@@ -1178,10 +1254,8 @@ const TypeDef& Component::getTypeForCoreFunc(uint32_t coreFuncIndex) const {
   ComponentItem item = coreFuncs_[coreFuncIndex];
   MOZ_ASSERT(item.sort() == ComponentSort::CoreFunction);
   switch (item.kind()) {
-    case ComponentItem::ItemKind::Defined: {
-      
-      MOZ_CRASH("should be impossible for now");
-    } break;
+    case ComponentItem::ItemKind::Defined:
+      return *loweredFuncs_[item.itemIndex()].flattenedType();
     case ComponentItem::ItemKind::Import:
     case ComponentItem::ItemKind::Export:
       

@@ -3,7 +3,7 @@
 
 
 
-function componentWithLift(componentFuncType, coreParams, coreResults) {
+function componentWithLift(typeDefs, funcTypeIndex, coreParams, coreResults) {
   const params = coreParams.length > 0 ? `(param ${coreParams.join(" ")})` : "";
   const results = coreResults.length > 0 ? `(result ${coreResults.join(" ")})` : "";
 
@@ -15,16 +15,47 @@ function componentWithLift(componentFuncType, coreParams, coreResults) {
 
   return `
     (component
-      (type ${componentFuncType})
+      ${typeDefs.join("\n")}
 
-      (core module
+      (core module $m
+        (memory (export "mem") 0)
+        (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
         (func (export "f") ${params} ${results}
           ${body}
         )
       )
-      (core instance (instantiate 0))
-      (alias core export 0 "f" (core func))
-      (func (type 0) (canon lift (core func 0)))
+      (core instance (instantiate $m))
+      (alias core export 0 "mem" (core memory $mem))
+      (alias core export 0 "realloc" (core func $realloc))
+      (alias core export 0 "f" (core func $f))
+      (func (type ${funcTypeIndex}) (canon lift (core func $f) (memory $mem) (realloc $realloc)))
+    )
+  `;
+}
+
+
+
+
+function componentWithLower(typeDefs, funcTypeIndex, expectParams, expectResults) {
+  const ep = expectParams.length ? `(param ${expectParams.join(" ")})` : "";
+  const er = expectResults.length ? `(result ${expectResults.join(" ")})` : "";
+  return `
+    (component
+      ${typeDefs.join("\n")}
+
+      (core module $m
+        (memory (export "mem") 0)
+        (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+      )
+      (core instance (instantiate $m))
+      (alias core export 0 "mem" (core memory $mem))
+      (alias core export 0 "realloc" (core func $realloc))
+
+      (import "f" (func $f (type ${funcTypeIndex})))
+      (core func $lowered (canon lower (func $f) (memory $mem) (realloc $realloc)))
+      (core instance $env (export "lowered" (func $lowered)))
+      (core module $test (import "env" "lowered" (func ${ep} ${er})))
+      (core instance (instantiate $test (with "env" (instance $env))))
     )
   `;
 }
@@ -34,14 +65,14 @@ function componentWithLift(componentFuncType, coreParams, coreResults) {
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" bool) (result bool))`,
+  [`(type (func (param "a" bool) (result bool)))`], 0,
   ["i32"], ["i32"],
 ));
 
 
 for (const t of ["s8", "s16", "s32"]) {
   wasmValidateText(componentWithLift(
-    `(func (param "a" ${t}) (result ${t}))`,
+    [`(type (func (param "a" ${t}) (result ${t})))`], 0,
     ["i32"], ["i32"],
   ));
 }
@@ -49,7 +80,7 @@ for (const t of ["s8", "s16", "s32"]) {
 
 for (const t of ["u8", "u16", "u32"]) {
   wasmValidateText(componentWithLift(
-    `(func (param "a" ${t}) (result ${t}))`,
+    [`(type (func (param "a" ${t}) (result ${t})))`], 0,
     ["i32"], ["i32"],
   ));
 }
@@ -57,144 +88,76 @@ for (const t of ["u8", "u16", "u32"]) {
 
 for (const t of ["s64", "u64"]) {
   wasmValidateText(componentWithLift(
-    `(func (param "a" ${t}) (result ${t}))`,
+    [`(type (func (param "a" ${t}) (result ${t})))`], 0,
     ["i64"], ["i64"],
   ));
 }
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" f32) (result f32))`,
+  [`(type (func (param "a" f32) (result f32)))`], 0,
   ["f32"], ["f32"],
 ));
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" f64) (result f64))`,
+  [`(type (func (param "a" f64) (result f64)))`], 0,
   ["f64"], ["f64"],
 ));
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" char) (result char))`,
+  [`(type (func (param "a" char) (result char)))`], 0,
   ["i32"], ["i32"],
 ));
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" string) (result string))`,
-  ["i32", "i32"], ["i32", "i32"],
+  [`(type (func (param "a" string)))`], 0,
+  ["i32", "i32"], [],
 ));
 
 
 
 
 
-wasmValidateText(`
-(component
-  (type (record (field "x" f64) (field "y" f64) (field "z" f64)))
-  (type (func (param "pos" 0) (result 0)))
-
-  (core module
-    (func (export "f") (param f64 f64 f64) (result f64 f64 f64)
-      (local.get 0) (local.get 1) (local.get 2)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 1) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (record (field "x" f64) (field "y" f64) (field "z" f64)))`,
+   `(type (func (param "pos" 0)))`], 1,
+  ["f64", "f64", "f64"], []));
 
 
-wasmValidateText(`
-(component
-  (type (record (field "x" f64) (field "y" f64)))
-  (type (record (field "start" 0) (field "end" 0)))
-  (type (func (param "seg" 1) (result u32)))
-
-  (core module
-    (func (export "f") (param f64 f64 f64 f64) (result i32)
-      (i32.const 0)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 2) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (record (field "x" f64) (field "y" f64)))`,
+   `(type (record (field "start" 0) (field "end" 0)))`,
+   `(type (func (param "seg" 1) (result u32)))`], 2,
+  ["f64", "f64", "f64", "f64"], ["i32"]));
 
 
-wasmValidateText(`
-(component
-  (type (tuple u32 f64 u32))
-  (type (func (param "t" 0) (result 0)))
-
-  (core module
-    (func (export "f") (param i32 f64 i32) (result i32 f64 i32)
-      (local.get 0) (local.get 1) (local.get 2)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 1) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (tuple u32 f64 u32))`, `(type (func (param "t" 0)))`], 1,
+  ["i32", "f64", "i32"], []));
 
 
-wasmValidateText(`
-(component
-  (type (list u32))
-  (type (func (param "items" 0) (result 0)))
-
-  (core module
-    (func (export "f") (param i32 i32) (result i32 i32)
-      (local.get 0) (local.get 1)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 1) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (list u32))`, `(type (func (param "items" 0)))`], 1,
+  ["i32", "i32"], []));
 
 
-wasmValidateText(`
-(component
-  (type (flags "read" "write" "execute"))
-  (type (func (param "perms" 0) (result 0)))
-
-  (core module
-    (func (export "f") (param i32) (result i32)
-      (local.get 0)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 1) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (flags "read" "write" "execute"))`,
+   `(type (func (param "perms" 0) (result 0)))`], 1,
+  ["i32"], ["i32"]));
 
 
 
 
 
 
-wasmValidateText(`
-(component
-  (type (enum "red" "green" "blue"))
-  (type (func (param "color" 0) (result 0)))
-
-  (core module
-    (func (export "f") (param i32) (result i32)
-      (local.get 0)
-    )
-  )
-  (core instance (instantiate 0))
-  (alias core export 0 "f" (core func))
-  (func (type 1) (canon lift (core func 0)))
-)
-`);
+wasmValidateText(componentWithLift(
+  [`(type (enum "red" "green" "blue"))`,
+   `(type (func (param "color" 0) (result 0)))`], 1,
+  ["i32"], ["i32"]));
 
 
 
@@ -205,25 +168,10 @@ wasmValidateText(`
 
 function liftVariant(typeDefs, flattened) {
   const variantIndex = typeDefs.length - 1;
-  const funcTypeIndex = typeDefs.length;
-  const params = flattened.length > 0 ? `(param ${flattened.join(" ")})` : "";
-  const results = flattened.length > 0 ? `(result ${flattened.join(" ")})` : "";
-  const body = flattened.map(r => `${r}.const 0`).join("\n");
-  return `
-    (component
-      ${typeDefs.join("\n")}
-      (type (func (param "v" ${variantIndex}) (result ${variantIndex})))
-
-      (core module
-        (func (export "f") ${params} ${results}
-          ${body}
-        )
-      )
-      (core instance (instantiate 0))
-      (alias core export 0 "f" (core func))
-      (func (type ${funcTypeIndex}) (canon lift (core func 0)))
-    )
-  `;
+  return componentWithLift(
+    [...typeDefs, `(type (func (param "v" ${variantIndex})))`],
+    typeDefs.length,
+    flattened, []);
 }
 
 
@@ -404,12 +352,10 @@ wasmValidateText(liftVariant(
 wasmValidateText(`
 (component
   (type (option f32))
-  (type (func (param "v" 0) (result 0)))
+  (type (func (param "v" 0)))
 
   (core module
-    (func (export "f") (param i32 f32) (result i32 f32)
-      (local.get 0) (local.get 1)
-    )
+    (func (export "f") (param i32 f32))
   )
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
@@ -422,12 +368,10 @@ wasmValidateText(`
 wasmValidateText(`
 (component
   (type (result))
-  (type (func (param "v" 0) (result 0)))
+  (type (func (param "v" 0)))
 
   (core module
-    (func (export "f") (param i32) (result i32)
-      (local.get 0)
-    )
+    (func (export "f") (param i32))
   )
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
@@ -438,12 +382,10 @@ wasmValidateText(`
 wasmValidateText(`
 (component
   (type (result f32))
-  (type (func (param "v" 0) (result 0)))
+  (type (func (param "v" 0)))
 
   (core module
-    (func (export "f") (param i32 f32) (result i32 f32)
-      (local.get 0) (local.get 1)
-    )
+    (func (export "f") (param i32 f32))
   )
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
@@ -454,12 +396,10 @@ wasmValidateText(`
 wasmValidateText(`
 (component
   (type (result (error f32)))
-  (type (func (param "v" 0) (result 0)))
+  (type (func (param "v" 0)))
 
   (core module
-    (func (export "f") (param i32 f32) (result i32 f32)
-      (local.get 0) (local.get 1)
-    )
+    (func (export "f") (param i32 f32))
   )
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
@@ -470,12 +410,10 @@ wasmValidateText(`
 wasmValidateText(`
 (component
   (type (result f32 (error f64)))
-  (type (func (param "v" 0) (result 0)))
+  (type (func (param "v" 0)))
 
   (core module
-    (func (export "f") (param i32 i64) (result i32 i64)
-      (local.get 0) (local.get 1)
-    )
+    (func (export "f") (param i32 i64))
   )
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
@@ -488,37 +426,37 @@ wasmValidateText(`
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" s32) (param "b" s32) (result s32))`,
+  [`(type (func (param "a" s32) (param "b" s32) (result s32)))`], 0,
   ["i32"], ["i32"]
 ), /could not lift core func/);
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" s32) (result s32))`,
+  [`(type (func (param "a" s32) (result s32)))`], 0,
   ["i32", "i32", "i32"], ["i32"]
 ), /could not lift core func/);
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" s64) (result s64))`,
+  [`(type (func (param "a" s64) (result s64)))`], 0,
   ["i32"], ["i32"]
 ), /could not lift core func/);
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" s32) (result s32))`,
+  [`(type (func (param "a" s32) (result s32)))`], 0,
   ["i32"], []
 ), /could not lift core func/);
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" s32))`,
+  [`(type (func (param "a" s32)))`], 0,
   ["i32"], ["i32"]
 ), /could not lift core func/);
 
 
 wasmFailValidateText(componentWithLift(
-  `(func (param "a" string) (result bool))`,
+  [`(type (func (param "a" string) (result bool)))`], 0,
   ["i32"], ["i32"]
 ), /could not lift core func/);
 
@@ -554,7 +492,7 @@ wasmFailValidateText(`
 
 
 wasmValidateText(componentWithLift(
-  `(func (param "a" string) (param "b" u32) (result bool))`,
+  [`(type (func (param "a" string) (param "b" u32) (result bool)))`], 0,
   ["i32", "i32", "i32"], ["i32"]
 ));
 
@@ -577,7 +515,7 @@ wasmValidateText(`
 
 
 wasmValidateText(componentWithLift(
-  `(func)`,
+  [`(type (func))`], 0,
   [], []
 ));
 
@@ -585,14 +523,811 @@ wasmValidateText(componentWithLift(
 
 
 
+
+for (const t of ["bool", "s8", "s16", "s32", "u8", "u16", "u32", "char"]) {
+  wasmValidateText(componentWithLower(
+    [`(type (func (param "a" ${t}) (result ${t})))`], 0, ["i32"], ["i32"]));
+}
+for (const t of ["s64", "u64"]) {
+  wasmValidateText(componentWithLower(
+    [`(type (func (param "a" ${t}) (result ${t})))`], 0, ["i64"], ["i64"]));
+}
+wasmValidateText(componentWithLower(
+  [`(type (func (param "a" f32) (result f32)))`], 0, ["f32"], ["f32"]));
+wasmValidateText(componentWithLower(
+  [`(type (func (param "a" f64) (result f64)))`], 0, ["f64"], ["f64"]));
+
+
+
+wasmValidateText(componentWithLower(
+  [`(type (func (param "a" string) (result string)))`], 0,
+  ["i32", "i32", "i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (record (field "x" u32) (field "y" f64)))`,
+   `(type (func (param "pt" 0) (result bool)))`], 1,
+  ["i32", "f64"], ["i32"]));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (record (field "x" f64) (field "y" f64)))`,
+   `(type (record (field "start" 0) (field "end" 0)))`,
+   `(type (func (param "seg" 1)))`], 2,
+  ["f64", "f64", "f64", "f64"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (tuple u32 f64 u32))`, `(type (func (param "t" 0)))`], 1,
+  ["i32", "f64", "i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (list u32))`, `(type (func (param "items" 0)))`], 1,
+  ["i32", "i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (flags "read" "write" "execute"))`,
+   `(type (func (param "perms" 0)))`], 1,
+  ["i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (enum "red" "green" "blue"))`, `(type (func (param "color" 0)))`], 1,
+  ["i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (option f32))`, `(type (func (param "v" 0)))`], 1,
+  ["i32", "f32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (result f32 (error f64)))`, `(type (func (param "v" 0)))`], 1,
+  ["i32", "i64"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (variant (case "a" u32) (case "b" f64)))`,
+   `(type (func (param "v" 0)))`], 1,
+  ["i32", "i64"], []));
+
+
+wasmValidateText(componentWithLower([`(type (func))`], 0, [], []));
+
+
 wasmFailValidateText(`
 (component
   (type (func (param "a" s32) (result s32)))
+  (import "f" (func (type 0)))
+  (core func (canon lower (func 99)))
+)
+`, /invalid function index/);
 
+
+
+
+
+
+
+
+
+const u32x17 = Array(17).fill("u32").join(" ");
+const u32x16 = Array(16).fill("u32").join(" ");
+const i32x16 = Array(16).fill("i32").join(" ");
+
+
+wasmValidateText(componentWithLift(
+  [`(type (tuple ${u32x16}))`, `(type (func (param "a" 0) (result u32)))`], 1,
+  i32x16.split(" "), ["i32"]));
+
+
+wasmValidateText(componentWithLift(
+  [`(type (tuple ${u32x17}))`, `(type (func (param "a" 0) (result u32)))`], 1,
+  ["i32"], ["i32"]));
+
+
+wasmValidateText(componentWithLift(
+  [`(type (func (result u32)))`], 0,
+  [], ["i32"]));
+
+
+wasmValidateText(componentWithLift(
+  [`(type (tuple u32 u32))`, `(type (func (result 0)))`], 1,
+  [], ["i32"]));
+
+
+
+
+wasmValidateText(componentWithLower(
+  [`(type (tuple ${u32x16}))`, `(type (func (param "a" 0) (result f32)))`], 1,
+  i32x16.split(" "), ["f32"]));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (tuple ${u32x17}))`, `(type (func (param "a" 0) (result f32)))`], 1,
+  ["i32"], ["f32"]));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (func (result f32)))`], 0,
+  [], ["f32"]));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (tuple u32 u32))`, `(type (func (result 0)))`], 1,
+  ["i32"], []));
+
+
+wasmValidateText(componentWithLower(
+  [`(type (tuple ${u32x16}))`, `(type (tuple f32 f32))`,
+   `(type (func (param "a" 0) (result 1)))`], 2,
+  [...i32x16.split(" "), "i32"], []));
+
+
+
+
+
+for (const enc of ["utf8", "utf16", "latin1+utf16"]) {
+  wasmValidateText(`
+  (component
+    (type (func (param "a" u32) (result u32)))
+    (core module (func (export "f") (param i32) (result i32) (local.get 0)))
+    (core instance (instantiate 0))
+    (alias core export 0 "f" (core func))
+    (func (type 0) (canon lift (core func 0) string-encoding=${enc}))
+  )
+  `);
+}
+
+
+wasmValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) (i32.const 0))
+    (func (export "pr") (param i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 0) (canon lift (core func 0)
+    string-encoding=utf16 (memory 0) (realloc 1) (post-return 2)))
+)
+`);
+
+
+wasmValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (import "f" (func (type 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) string-encoding=utf8 (memory 0) (realloc 0)))
+)
+`);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0)))
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 0) string-encoding=utf8 string-encoding=utf16))
+)
+`, /string encoding already specified/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module (memory (export "m") 1)
+    (func (export "f") (param i32) (result i32) (local.get 0)))
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 0) (memory 0) (memory 0)))
+)
+`, /memory already specified/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "realloc" (core func))
+  (func (type 0) (canon lift (core func 0) (realloc 1) (realloc 1)))
+)
+`, /realloc already specified/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "pr") (param i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 0) (canon lift (core func 0) (post-return 1) (post-return 1)))
+)
+`, /post-return already specified/);
+
+
+
+
+
+{
+  const valid = wasmTextToBinary(`
+  (component
+    (type (func (param "a" u32) (result u32)))
+    (core module (memory (export "m") 1)
+      (func (export "f") (param i32) (result i32) (local.get 0)))
+    (core instance (instantiate 0))
+    (alias core export 0 "m" (core memory))
+    (alias core export 0 "f" (core func))
+    (func (type 0) (canon lift (core func 0) (memory 0)))
+  )
+  `);
+
+  
+  assertEq(valid[valid.length - 3], 0x03);
+  const unknownKind = valid.slice();
+  unknownKind[unknownKind.length - 3] = 0x06;
+  wasmFailValidateBinary(unknownKind, /unexpected canonopt 0x06/);
+
+  
+  assertEq(valid[valid.length - 6], 0x00);
+  const badDummy = valid.slice();
+  badDummy[badDummy.length - 6] = 0x01;
+  wasmFailValidateBinary(badDummy, /expected canonical definition/);
+}
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
   (core module (func (export "f") (param i32) (result i32) (local.get 0)))
   (core instance (instantiate 0))
   (alias core export 0 "f" (core func))
-  (func (type 0) (canon lift (core func 0)))
+  (func (type 0) (canon lift (core func 0) (memory 5)))
+)
+`, /invalid memory index/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module (func (export "f") (param i32) (result i32) (local.get 0)))
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 0) (realloc 5)))
+)
+`, /invalid index .* for realloc function/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "bad"))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "bad" (core func))
+  (func (type 0) (canon lift (core func 0) (realloc 1)))
+)
+`, /invalid signature for realloc function/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module (func (export "f") (param i32) (result i32) (local.get 0)))
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 0) (post-return 5)))
+)
+`, /invalid index .* for post-return function/);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (import "f" (func (type 0)))
+  (core module (func (export "pr") (param i32)))
+  (core instance (instantiate 0))
+  (alias core export 0 "pr" (core func))
+  (core func (canon lower (func 0) (post-return 0)))
+)
+`, /post-return only valid for canon lift/);
+
+
+wasmValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "pr") (param i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 0) (canon lift (core func 0) (post-return 1)))
+)
+`);
+wasmFailValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (core module
+    (func (export "f") (param i32) (result i32) (local.get 0))
+    (func (export "pr") (param i64))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 0) (canon lift (core func 0) (post-return 1)))
+)
+`, /invalid signature for post-return function/);
+
+
+
+wasmValidateText(`
+(component
+  (type (tuple f32 f32))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "f") (result i32) (i32.const 0))
+    (func (export "pr") (param i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 1) (canon lift (core func 0) (post-return 1) (memory 0)))
+)
+`);
+wasmFailValidateText(`
+(component
+  (type (tuple f32 f32))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "f") (result i32) (i32.const 0))
+    (func (export "pr") (param i64))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "f" (core func))
+  (alias core export 0 "pr" (core func))
+  (func (type 1) (canon lift (core func 0) (post-return 1) (memory 0)))
+)
+`, /invalid signature for post-return function/);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function requiresMemoryOnly(component) {
+  const withoutMemory = component.replace(/(\(canon .*)\(memory.*?\)/, "$1");
+  const withoutRealloc = component.replace(/(\(canon .*)\(realloc.*?\)/, "$1");
+  const withoutBoth = withoutRealloc.replace(/(\(canon .*)\(memory.*?\)/, "$1");
+
+  wasmValidateText(component);
+  wasmValidateText(withoutRealloc);
+  wasmFailValidateText(withoutMemory, /memory required for canon (lift|lower)/);
+  wasmFailValidateText(withoutBoth, /memory required for canon (lift|lower)/);
+}
+function requiresRealloc(component) {
+  const withoutMemory = component.replace(/(\(canon .*)\(memory.*?\)/, "$1");
+  const withoutRealloc = component.replace(/(\(canon .*)\(realloc.*?\)/, "$1");
+  const withoutBoth = withoutRealloc.replace(/(\(canon .*)\(memory.*?\)/, "$1");
+
+  wasmValidateText(component);
+  wasmFailValidateText(withoutRealloc, /realloc required for canon (lift|lower)/);
+  wasmFailValidateText(withoutMemory, /memory required for canon (lift|lower)/);
+  wasmFailValidateText(withoutBoth, /memory required for canon (lift|lower)/);
+}
+
+
+
+requiresMemoryOnly(`
+(component
+  (type (func (result string)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+requiresMemoryOnly(`
+(component
+  (type (func (param "a" string)))
+  (import "f" (func (type 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (list u32))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+requiresMemoryOnly(`
+(component
+  (type (list u32))
+  (type (func (param "a" 0)))
+  (import "f" (func (type 1)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (record (field "s" string)))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+requiresMemoryOnly(`
+(component
+  (type (record (field "s" string)))
+  (type (func (param "r" 0)))
+  (import "f" (func (type 1)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+wasmFailValidateText(`
+(component
+  (type (func (result string)))
+  (import "f" (func (type 0)))
   (core func (canon lower (func 0)))
 )
-`, /canon lower is not supported/);
+`, /memory required for canon lower/);
+
+
+requiresMemoryOnly(`
+(component
+  (type (tuple ${u32x17}))
+  (type (func (param "a" 0)))
+  (import "f" (func (type 1)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+wasmValidateText(`
+(component
+  (type (func (param "a" u32) (result u32)))
+  (import "f" (func (type 0)))
+  (core func (canon lower (func 0)))
+)
+`);
+
+
+wasmValidateText(`
+(component
+  (type (tuple ${u32x16}))
+  (type (func (param "r" 0) (result u32)))
+  (core module (func (export "f") (param ${i32x16}) (result i32) i32.const 0))
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 0)))
+)
+`);
+
+
+
+
+requiresRealloc(`
+(component
+  (type (func (param "a" string)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (param i32 i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 0) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresRealloc(`
+(component
+  (type (list u32))
+  (type (func (param "a" 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (param i32 i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresRealloc(`
+(component
+  (type (func (result string)))
+  (import "f" (func (type 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (func (param "a" string)))
+  (import "f" (func (type 0)))
+  (core module (memory (export "m") 1))
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (core func (canon lower (func 0) (memory 0)))
+)
+`);
+
+
+requiresRealloc(`
+(component
+  (type (tuple ${u32x17}))
+  (type (func (param "a" 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (param i32))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (tuple ${u32x17}))
+  (type (func (param "a" 0)))
+  (import "f" (func (type 1)))
+  (core module (memory (export "m") 1))
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (core func (canon lower (func 0) (memory 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (tuple u32 u32))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+    (func (export "f") (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 1) (memory 0) (realloc 0)))
+)
+`);
+
+
+requiresMemoryOnly(`
+(component
+  (type (tuple u32 u32))
+  (type (func (result 0)))
+  (import "f" (func (type 1)))
+  (core module
+    (memory (export "m") 1)
+    (func (export "realloc") (param i32 i32 i32 i32) (result i32) i32.const 0)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "realloc" (core func))
+  (core func (canon lower (func 0) (memory 0) (realloc 0)))
+)
+`);
+
+
+
+
+
+
+
+
+
+
+wasmFailValidateText(`
+(component
+  (type (tuple s32 s32))
+  (type (func (result 0)))
+  (core module
+    (memory (export "m") i64 1)
+    (func (export "f") (result i32) (i32.const 0))
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (alias core export 0 "f" (core func))
+  (func (type 1) (canon lift (core func 0) (memory 0)))
+)
+`, /memory for canonical ABI must be 32-bit/);
+wasmFailValidateText(`
+(component
+  (type (tuple s32 s32))
+  (type (func (param "a" 0)))
+  (import "f" (func (type 1)))
+  (core module
+    (memory (export "m") i64 1)
+  )
+  (core instance (instantiate 0))
+  (alias core export 0 "m" (core memory))
+  (core func (canon lower (func 0) (memory 0)))
+)
+`, /memory for canonical ABI must be 32-bit/);
+
+
+
+
+function depthinate(depth, body) {
+  let nestedTypes = "";
+  for (let i = 1; i <= depth; i++) {
+    nestedTypes += `(type (;${i};) ${i === depth ? "$t" : ""} (option ${i-1}))\n`;
+  }
+  return `(component
+    (type (;0;) s32)
+    ${nestedTypes}
+    ${body}
+  )`;
+}
+
+
+wasmFailValidateText(
+  depthinate(64, `
+    (type $ft (func (param "x" $t)))
+    (core module $m
+      (func (export "f"))
+    )
+    (core instance $i (instantiate $m))
+    (alias core export $i "f" (core func $f))
+    (func (type $ft) (canon lift (core func $f)))
+  `),
+  /exceeded maximum depth/,
+);
+
+wasmFailValidateText(
+  depthinate(64, `
+    (type $ft (func (result $t)))
+    (core module $m
+      (func (export "f"))
+    )
+    (core instance $i (instantiate $m))
+    (alias core export $i "f" (core func $f))
+    (func (type $ft) (canon lift (core func $f)))
+  `),
+  /exceeded maximum depth/,
+);
+
+wasmFailValidateText(
+  depthinate(64, `
+    (type $ft (func (param "x" $t)))
+    (import "f" (func $f (type $ft)))
+    (core func (canon lower (func $f)))
+  `),
+  /exceeded maximum depth/,
+);
+
+wasmFailValidateText(
+  depthinate(64, `
+    (type $ft (func (result $t)))
+    (import "f" (func $f (type $ft)))
+    (core func (canon lower (func $f)))
+  `),
+  /exceeded maximum depth/,
+);
