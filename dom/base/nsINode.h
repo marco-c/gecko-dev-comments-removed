@@ -335,7 +335,17 @@ class nsNodeWeakReference final : public nsIWeakReference {
 
 enum class TreeKind : uint8_t {
   
+  
+  
   DOM,
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -344,7 +354,15 @@ enum class TreeKind : uint8_t {
   
   
   
+  
+  
+  
+  
+  
+  
   FlatForSelection,
+  
+  
   
   
   Flat,
