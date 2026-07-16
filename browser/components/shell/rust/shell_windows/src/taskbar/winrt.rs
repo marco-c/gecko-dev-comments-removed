@@ -223,7 +223,7 @@ mod aumid {
         
         
         #[must_use]
-        pub async fn set_aumid(temp_aumid: &nsAString) -> Result<Self, nsresult> {
+        pub(super) async fn set_aumid(temp_aumid: &nsAString) -> Result<Self, nsresult> {
             
             let default_aumid_lock = DEFAULT_AUMID.as_ref().map_err(|e| *e)?.lock().await;
             let original_aumid = &*default_aumid_lock;
@@ -247,7 +247,7 @@ mod aumid {
 
         
         
-        pub fn restore_aumid(self) {}
+        pub(super) fn restore_aumid(self) {}
     }
 
     impl Drop for Holder<'_> {
