@@ -22119,9 +22119,15 @@ const EVENT_TYPES = {
   COMMAND_ACK: "command_ack",
   WIDGET_READY: "widget_ready",
   WIDGET_ERROR: "widget_error",
+  PUZZLE_STATE: "puzzle_state",
   PUZZLE_COMPLETED: "puzzle_completed",
   INTERACTION: "interaction"
 };
+
+
+
+
+const PUZZLE_STATES = ["intro", "in_progress", "completed"];
 const isNonNegativeNumber = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const isWholeCount = value => isNonNegativeNumber(value) && Number.isInteger(value);
 
@@ -22132,6 +22138,7 @@ const EVENT_PAYLOAD_VALIDATORS = {
   [EVENT_TYPES.COMMAND_ACK]: payload => typeof payload?.requestId === "string" && typeof payload?.status === "string",
   [EVENT_TYPES.WIDGET_READY]: () => true,
   [EVENT_TYPES.WIDGET_ERROR]: payload => typeof payload?.reason === "string" && typeof payload?.terminal === "boolean",
+  [EVENT_TYPES.PUZZLE_STATE]: payload => PUZZLE_STATES.includes(payload?.state),
   [EVENT_TYPES.PUZZLE_COMPLETED]: payload => isNonNegativeNumber(payload?.elapsedTimeSeconds) && isWholeCount(payload?.hintsTaken),
   [EVENT_TYPES.INTERACTION]: payload => typeof payload?.action === "string"
 };
@@ -22168,6 +22175,15 @@ function Crossword({
   
   
   const [puzzleCompleted, setPuzzleCompleted] = (0,external_React_namespaceObject.useState)(false);
+
+  
+  
+  
+  const [showLarge, setShowLarge] = (0,external_React_namespaceObject.useState)(false);
+
+  
+  
+  const displaySize = widgetsMayBeMaximized && showLarge ? "large" : widgetSize;
 
   
   
@@ -22216,6 +22232,15 @@ function Crossword({
       case EVENT_TYPES.WIDGET_READY:
         break;
       case EVENT_TYPES.WIDGET_ERROR:
+        break;
+      case EVENT_TYPES.PUZZLE_STATE:
+        
+        
+        if (payload.state === "in_progress") {
+          setShowLarge(true);
+        } else if (payload.state === "intro") {
+          setShowLarge(false);
+        }
         break;
       case EVENT_TYPES.PUZZLE_COMPLETED:
         setPuzzleCompleted(true);
@@ -22387,7 +22412,7 @@ function Crossword({
     });
   }
   return external_React_default().createElement("article", {
-    className: `crossword widget col-4 ${widgetSize}-widget`,
+    className: `crossword widget col-4 ${displaySize}-widget`,
     ref: el => {
       widgetRef.current = [el];
     }
