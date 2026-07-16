@@ -398,32 +398,38 @@ impl TextRunTemplate {
         spatial_tree: &SpatialTree,
     ) -> RasterSpace {
         let prim_spatial_node = spatial_tree.get_spatial_node(prim_spatial_node_index);
-        if prim_spatial_node.is_ancestor_or_self_zooming {
-            if low_quality_pinch_zoom {
-                
-                
-                
-                
-                
-                
-                RasterSpace::Local(1.0)
-            } else {
-                let root_spatial_node_index = spatial_tree.root_reference_frame_index();
+        if prim_spatial_node.is_ancestor_or_self_zooming && low_quality_pinch_zoom {
+            
+            
+            
+            
+            
+            
+            RasterSpace::Local(1.0)
+        } else if prim_spatial_node.is_ancestor_or_self_zooming
+            || prim_spatial_node.is_ancestor_or_self_animating
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let root_spatial_node_index = spatial_tree.root_reference_frame_index();
+            let scale_factors = spatial_tree
+                .get_relative_transform(prim_spatial_node_index, root_spatial_node_index)
+                .scale_factors();
 
-                
-                
-                
-                
-                let scale_factors = spatial_tree
-                    .get_relative_transform(prim_spatial_node_index, root_spatial_node_index)
-                    .scale_factors();
+            let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
+            let rounded_up = 2.0f32.powf(scale.log2().ceil());
 
-                
-                let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
-                let rounded_up = 2.0f32.powf(scale.log2().ceil());
-
-                RasterSpace::Local(rounded_up / device_pixel_scale.0)
-            }
+            RasterSpace::Local(rounded_up / device_pixel_scale.0)
         } else {
             
             

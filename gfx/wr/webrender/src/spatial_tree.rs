@@ -537,6 +537,9 @@ pub struct TransformUpdateState {
     pub is_ancestor_or_self_zooming: bool,
 
     
+    pub is_ancestor_or_self_animating: bool,
+
+    
     pub external_id: Option<ExternalScrollId>,
 
     
@@ -728,6 +731,7 @@ impl SpatialTree {
                 invertible: true,
                 is_async_zooming: false,
                 is_ancestor_or_self_zooming: false,
+                is_ancestor_or_self_animating: false,
             });
         }
 
@@ -992,6 +996,7 @@ impl SpatialTree {
             invertible: true,
             preserves_3d: false,
             is_ancestor_or_self_zooming: false,
+            is_ancestor_or_self_animating: false,
             external_id: None,
             scroll_offset: LayoutVector2D::zero(),
         };
@@ -1842,4 +1847,79 @@ fn test_is_ancestor_or_self_zooming() {
     assert!(st.get_spatial_node(root).is_ancestor_or_self_zooming);
     assert!(st.get_spatial_node(child1).is_ancestor_or_self_zooming);
     assert!(st.get_spatial_node(child2).is_ancestor_or_self_zooming);
+}
+
+
+
+
+#[test]
+fn test_is_ancestor_or_self_animating() {
+    let mut cst = SceneSpatialTree::new();
+    let root_reference_frame_index = cst.root_reference_frame_index();
+
+    
+    let root = add_reference_frame(
+        &mut cst,
+        root_reference_frame_index,
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+    
+    
+    let animated = cst.add_reference_frame(
+        root,
+        TransformStyle::Flat,
+        PropertyBinding::Binding(api::PropertyBindingKey::new(1), LayoutTransform::identity()),
+        ReferenceFrameKind::Transform {
+            is_2d_scale_translation: false,
+            should_snap: false,
+            paired_with_perspective: false,
+        },
+        LayoutVector2D::zero(),
+        PipelineId::dummy(),
+        false,
+    );
+    
+    let child = add_reference_frame(
+        &mut cst,
+        animated,
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    
+    
+    
+    let apz = cst.add_reference_frame(
+        root,
+        TransformStyle::Flat,
+        PropertyBinding::Binding(api::PropertyBindingKey::new(2), LayoutTransform::identity()),
+        ReferenceFrameKind::Transform {
+            is_2d_scale_translation: true,
+            should_snap: true,
+            paired_with_perspective: false,
+        },
+        LayoutVector2D::zero(),
+        PipelineId::dummy(),
+        false,
+    );
+    let apz_child = add_reference_frame(
+        &mut cst,
+        apz,
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    let mut st = SpatialTree::new();
+    st.apply_updates(cst.end_frame_and_get_pending_updates());
+    st.update_tree(&SceneProperties::new());
+
+    
+    assert!(!st.get_spatial_node(root).is_ancestor_or_self_animating);
+    
+    assert!(st.get_spatial_node(animated).is_ancestor_or_self_animating);
+    assert!(st.get_spatial_node(child).is_ancestor_or_self_animating);
+    
+    assert!(!st.get_spatial_node(apz).is_ancestor_or_self_animating);
+    assert!(!st.get_spatial_node(apz_child).is_ancestor_or_self_animating);
 }

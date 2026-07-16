@@ -230,6 +230,14 @@ pub struct SpatialNode {
     
     
     pub is_ancestor_or_self_zooming: bool,
+
+    
+    
+    
+    
+    
+    
+    pub is_ancestor_or_self_animating: bool,
 }
 
 
@@ -310,6 +318,30 @@ impl SpatialNode {
         let state = state_stack.last().unwrap();
 
         self.is_ancestor_or_self_zooming = self.is_async_zooming | state.is_ancestor_or_self_zooming;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let self_has_animated_transform = match self.node_type {
+            SpatialNodeType::ReferenceFrame(ref info) => {
+                matches!(info.source_transform, PropertyBinding::Binding(..))
+                    && !matches!(
+                        info.kind,
+                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. }
+                    )
+            }
+            _ => false,
+        };
+        self.is_ancestor_or_self_animating =
+            self_has_animated_transform | state.is_ancestor_or_self_animating;
 
         
         
@@ -629,6 +661,7 @@ impl SpatialNode {
     pub fn prepare_state_for_children(&self, state: &mut TransformUpdateState) {
         state.current_coordinate_system_id = self.coordinate_system_id;
         state.is_ancestor_or_self_zooming = self.is_ancestor_or_self_zooming;
+        state.is_ancestor_or_self_animating = self.is_ancestor_or_self_animating;
         state.invertible &= self.invertible;
 
         
