@@ -1,7 +1,10 @@
 
 #![allow(clippy::result_large_err)]
 
-pub use {maps_reader::LINUX_GATE_LIBRARY_NAME, process_inspection::process_reader};
+pub use {
+    maps_reader::LINUX_GATE_LIBRARY_NAME,
+    process_inspection::{Error as BackendError, process_reader},
+};
 
 pub mod app_memory;
 pub mod crash_context;

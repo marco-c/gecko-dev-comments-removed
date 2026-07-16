@@ -11,7 +11,7 @@ use crate::prelude::*;
 
 
 
-#[allow(unused)]
+#[allow(dead_code)]
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub(crate) struct Padding<T: Copy>(MaybeUninit<T>);
@@ -24,13 +24,9 @@ impl<T: Copy> Default for Padding<T> {
 
 impl<T: Copy> Padding<T> {
     
-    
-    
-    #[allow(unused)]
-    pub(crate) const fn uninit() -> Self {
-        
-        
-        Self(MaybeUninit::uninit())
+    #[allow(dead_code)]
+    pub(crate) const fn new(val: T) -> Self {
+        Self(MaybeUninit::new(val))
     }
 }
 

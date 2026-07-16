@@ -27,6 +27,7 @@
 
 #![cfg_attr(feature = "rustc-dep-of-std", feature(link_cfg, no_core))]
 #![cfg_attr(feature = "rustc-dep-of-std", allow(internal_features))]
+
 #![cfg_attr(feature = "rustc-dep-of-std", allow(unused_features))]
 
 #![cfg_attr(feature = "rustc-dep-of-std", allow(static_mut_refs))]

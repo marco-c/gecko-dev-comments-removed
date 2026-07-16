@@ -11,13 +11,6 @@ pub fn serialize_goblin_error<S: Serializer>(
     serialize_generic_error(error, serializer)
 }
 
-pub fn serialize_nix_error<S: Serializer>(
-    error: &nix::Error,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    serialize_generic_error(error, serializer)
-}
-
 pub fn serialize_proc_error<S: Serializer>(
     error: &procfs_core::ProcError,
     serializer: S,

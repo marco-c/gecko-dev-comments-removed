@@ -13,6 +13,8 @@ use std::{
 
 const ALLOWED_CFGS: &[&str] = &[
     "emscripten_old_stat_abi",
+    
+    "espidf_picolibc",
     "espidf_time32",
     "freebsd10",
     "freebsd11",
@@ -30,6 +32,8 @@ const ALLOWED_CFGS: &[&str] = &[
     "musl_v1_2_3",
     
     "musl32_time64",
+    
+    "musl_redir_time64",
     "vxworks_lt_25_09",
 ];
 
@@ -52,7 +56,8 @@ const CHECK_CFG_EXTRA: &[(&str, &[&str])] = &[
 ];
 
 
-const MUSL_REDIR_TIME64_ARCHES: &[&str] = &["arm", "hexagon", "mips", "powerpc", "x86"];
+
+const MUSL_REDIR_TIME64_ARCHES: &[&str] = &["arm", "mips", "powerpc", "x86"];
 
 fn main() {
     
@@ -117,9 +122,12 @@ fn main() {
 
     if musl && musl_v1_2_3 {
         set_cfg("musl_v1_2_3");
-        if MUSL_REDIR_TIME64_ARCHES.contains(&target_arch.as_str()) {
+        if target_ptr_width == "32" {
             set_cfg("musl32_time64");
             set_cfg("linux_time_bits64");
+        }
+        if MUSL_REDIR_TIME64_ARCHES.contains(&target_arch.as_str()) {
+            set_cfg("musl_redir_time64");
         }
     }
 
