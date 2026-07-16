@@ -129,7 +129,6 @@ class MFProtectedPathReadinessMonitor final {
 
   
   
-  
   MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING_AT_CLASS_SCOPE(Reaction, uint8_t,
                                                               (Recover,
                                                                Terminal));
