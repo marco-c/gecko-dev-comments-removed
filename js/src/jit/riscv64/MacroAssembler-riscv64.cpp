@@ -1306,6 +1306,27 @@ void MacroAssemblerRiscv64Compat::truncateFloat32ModUint32(FloatRegister src,
 }
 
 
+static inline bool is_two_int12(int64_t n) {
+  
+  
+  
+  return -4096 <= n && n <= 4094;
+}
+
+struct TwoInt12 {
+  int16_t first;
+  int16_t second;
+};
+
+constexpr auto ToTwoInt12(int32_t n) {
+  MOZ_ASSERT(is_two_int12(n));
+  return TwoInt12{
+      .first = int16_t(n / 2),
+      .second = int16_t(n - (n / 2)),
+  };
+}
+
+
 std::pair<Register, int16_t> MacroAssemblerRiscv64::computeAddress(
     Address address, UseScratchRegisterScope& temps) {
   Register base;
@@ -5378,20 +5399,13 @@ void MacroAssemblerRiscv64::ExtractBits(Register rd, Register rs, uint16_t pos,
   srli(rd, src, MaxBits - size);
 }
 
-
-static inline bool is_two_int12(int64_t n) {
-  
-  
-  
-  return -4096 <= n && n <= 4094;
-}
-
 void MacroAssemblerRiscv64::ma_add32(Register rd, Register rs, Imm32 rt) {
   if (is_int12(rt.value)) {
     addiw(rd, rs, static_cast<int32_t>(rt.value));
   } else if (is_two_int12(rt.value)) {
-    addiw(rd, rs, rt.value / 2);
-    addiw(rd, rd, rt.value - (rt.value / 2));
+    auto [first, second] = ToTwoInt12(rt.value);
+    addiw(rd, rs, first);
+    addiw(rd, rd, second);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -5404,8 +5418,9 @@ void MacroAssemblerRiscv64::ma_add64(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     addi(rd, rs, static_cast<int32_t>(rt.value));
   } else if (is_two_int12(rt.value)) {
-    addi(rd, rs, rt.value / 2);
-    addi(rd, rd, rt.value - (rt.value / 2));
+    auto [first, second] = ToTwoInt12(rt.value);
+    addi(rd, rs, first);
+    addi(rd, rd, second);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -5419,8 +5434,9 @@ void MacroAssemblerRiscv64::ma_sub32(Register rd, Register rs, Imm32 rt) {
     
     addiw(rd, rs, static_cast<int32_t>(-rt.value));
   } else if (is_two_int12(rt.value)) {
-    addiw(rd, rs, -rt.value / 2);
-    addiw(rd, rd, -rt.value - (-rt.value / 2));
+    auto [first, second] = ToTwoInt12(rt.value);
+    addiw(rd, rs, -first);
+    addiw(rd, rd, -second);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -5434,8 +5450,9 @@ void MacroAssemblerRiscv64::ma_sub64(Register rd, Register rs, Imm64 rt) {
     
     addi(rd, rs, static_cast<int32_t>(-rt.value));
   } else if (is_two_int12(rt.value)) {
-    addi(rd, rs, -rt.value / 2);
-    addi(rd, rd, -rt.value - (-rt.value / 2));
+    auto [first, second] = ToTwoInt12(rt.value);
+    addi(rd, rs, -first);
+    addi(rd, rd, -second);
   } else {
     
     UseScratchRegisterScope temps(this);
