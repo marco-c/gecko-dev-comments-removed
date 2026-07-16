@@ -649,6 +649,11 @@ var FullScreen = {
       }
     }
     document.documentElement.setAttribute("inDOMFullscreen", true);
+    
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      true
+    );
 
     XULBrowserWindow.onEnterDOMFullscreen();
 
@@ -748,6 +753,12 @@ var FullScreen = {
     );
 
     document.documentElement.removeAttribute("inDOMFullscreen");
+    
+    
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      this._isChromeCollapsed
+    );
 
     return needToWaitForChildExit;
   },
@@ -960,6 +971,7 @@ var FullScreen = {
     }
 
     this._isChromeCollapsed = false;
+    document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
     Services.obs.notifyObservers(
       gNavToolbox,
       "fullscreen-nav-toolbox",
@@ -1028,6 +1040,10 @@ var FullScreen = {
     gNavToolbox.style.marginTop =
       -gNavToolbox.getBoundingClientRect().height + "px";
     this._isChromeCollapsed = true;
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      true
+    );
     Services.obs.notifyObservers(
       gNavToolbox,
       "fullscreen-nav-toolbox",

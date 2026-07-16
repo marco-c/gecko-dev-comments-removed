@@ -430,19 +430,21 @@ var SidebarController = {
     }
 
     
+    
     this._fullscreenObserver = new MutationObserver(() => {
-      const inFullscreen =
-        document.documentElement.hasAttribute("inDOMFullscreen");
-      this._state.fullscreen = inFullscreen;
+      this._state.navToolboxCollapsed = document.documentElement.hasAttribute(
+        "fullscreenNavToolboxHidden"
+      );
     });
 
     this._fullscreenObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["inDOMFullscreen"],
+      attributeFilter: ["fullscreenNavToolboxHidden"],
     });
-    
-    this._state.fullscreen =
-      document.documentElement.hasAttribute("inDOMFullscreen");
+    this._state.navToolboxCollapsed = document.documentElement.hasAttribute(
+      "fullscreenNavToolboxHidden"
+    );
+
     this._pinnedTabsContainer = document.getElementById(
       "pinned-tabs-container"
     );
