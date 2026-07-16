@@ -60,26 +60,51 @@ struct MaxContiguousEnumValue<SVGContextPaintTypeTag> {
 
 
 class SVGContextPaint : public RefCounted<SVGContextPaint> {
- protected:
+ public:
   using DrawTarget = mozilla::gfx::DrawTarget;
   using Float = mozilla::gfx::Float;
   using imgDrawingParams = mozilla::image::imgDrawingParams;
-
-  SVGContextPaint() : mDashOffset(0.0f), mStrokeWidth(0.0f) {}
-
- public:
   using Tag = SVGContextPaintTypeTag;
+
+  SVGContextPaint(const DrawTarget* aDrawTarget,
+                  const gfxMatrix& aContextMatrix, nsIFrame* aFrame,
+                  SVGContextPaint* aOuterContextPaint,
+                  imgDrawingParams& aImgParams);
+  explicit SVGContextPaint(gfxContext* aContext);
+  SVGContextPaint(Maybe<nscolor> aFill, Maybe<nscolor> aStroke)
+      : SVGContextPaint(aFill, Some(1.0f), aStroke, Some(1.0f)) {}
+  SVGContextPaint(Maybe<nscolor> aFill, Maybe<float> aFillOpacity,
+                  Maybe<nscolor> aStroke, Maybe<float> aStrokeOpacity) {
+    if (aFill) {
+      mPaint[Tag::Fill].SetColor(aFill.value());
+    }
+    mOpacity[Tag::Fill] = aFillOpacity ? aFillOpacity.value() : 1.0f;
+    if (aStroke) {
+      mPaint[Tag::Stroke].SetColor(aStroke.value());
+    }
+    mOpacity[Tag::Stroke] = aStrokeOpacity ? aStrokeOpacity.value() : 1.0f;
+  }
+
+  bool operator==(const SVGContextPaint& aOther) const {
+    MOZ_ASSERT(GetStrokeWidth() == aOther.GetStrokeWidth() &&
+                   GetStrokeDashOffset() == aOther.GetStrokeDashOffset() &&
+                   GetStrokeDashArray() == aOther.GetStrokeDashArray(),
+               "We don't currently include these in the context information "
+               "from an embedding element");
+    return std::equal(mPaint.begin(), mPaint.end(), aOther.mPaint.begin(),
+                      aOther.mPaint.end()) &&
+           std::equal(mOpacity.begin(), mOpacity.end(), aOther.mOpacity.begin(),
+                      aOther.mOpacity.end());
+  }
 
   MOZ_DECLARE_REFCOUNTED_TYPENAME(SVGContextPaint)
 
-  virtual ~SVGContextPaint() = default;
-
-  virtual bool IsSolidColor(Tag aTag) const = 0;
-  virtual gfx::DeviceColor AsSolidColor(Tag aTag) const = 0;
-  virtual already_AddRefed<gfxPattern> GetPattern(
-      Tag aTag, const DrawTarget* aDrawTarget, float aOpacity,
-      const gfxMatrix& aCTM, imgDrawingParams& aImgParams) const = 0;
-  virtual float GetOpacity(Tag aTag) const = 0;
+  bool IsSolidColor(Tag aTag) const;
+  gfx::DeviceColor AsSolidColor(Tag aTag) const;
+  already_AddRefed<gfxPattern> GetPattern(Tag aTag,
+                                          const DrawTarget* aDrawTarget,
+                                          float aOpacity, const gfxMatrix& aCTM,
+                                          imgDrawingParams& aImgParams) const;
 
   already_AddRefed<gfxPattern> GetPattern(Tag aTag,
                                           const DrawTarget* aDrawTarget,
@@ -87,6 +112,8 @@ class SVGContextPaint : public RefCounted<SVGContextPaint> {
                                           imgDrawingParams& aImgParams) const {
     return GetPattern(aTag, aDrawTarget, GetOpacity(aTag), aCTM, aImgParams);
   }
+
+  float GetOpacity(Tag aTag) const { return mOpacity[aTag]; }
 
   static SVGContextPaint* GetContextPaint(nsIContent* aContent);
 
@@ -100,69 +127,13 @@ class SVGContextPaint : public RefCounted<SVGContextPaint> {
 
   Float GetStrokeWidth() const { return mStrokeWidth; }
 
-  virtual uint32_t Hash() const {
-    MOZ_ASSERT_UNREACHABLE(
-        "Only VectorImage needs to hash, and that should "
-        "only be operating on our SVGEmbeddingContextPaint "
-        "subclass");
-    return 0;
-  }
+  uint32_t Hash() const;
 
   
 
 
 
   static bool IsAllowedForImageFromURI(nsIURI* aURI);
-
- private:
-  
-  FallibleTArray<Float> mDashes;
-  MOZ_INIT_OUTSIDE_CTOR Float mDashOffset;
-  MOZ_INIT_OUTSIDE_CTOR Float mStrokeWidth;
-};
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoSetRestoreSVGContextPaint {
- public:
-  AutoSetRestoreSVGContextPaint(const SVGContextPaint* aContextPaint,
-                                dom::Document* aDocument);
-  ~AutoSetRestoreSVGContextPaint();
-
- private:
-  dom::Document* mDocument;
-  
-  
-  const SVGContextPaint* mOuterContextPaint;
-};
-
-
-
-
-
-struct SVGContextPaintImpl : public SVGContextPaint {
- protected:
-  using DrawTarget = mozilla::gfx::DrawTarget;
-
- public:
-  SVGContextPaintImpl(const DrawTarget* aDrawTarget,
-                      const gfxMatrix& aContextMatrix, nsIFrame* aFrame,
-                      SVGContextPaint* aOuterContextPaint,
-                      imgDrawingParams& aImgParams);
-  explicit SVGContextPaintImpl(gfxContext* aContext);
-
-  bool IsSolidColor(Tag aTag) const override;
-  gfx::DeviceColor AsSolidColor(Tag aTag) const override;
-  already_AddRefed<gfxPattern> GetPattern(
-      Tag aTag, const DrawTarget* aDrawTarget, float aOpacity,
-      const gfxMatrix& aCTM, imgDrawingParams& aImgParams) const override;
-
-  float GetOpacity(Tag aTag) const override { return mOpacity[aTag]; }
 
   struct Paint {
     enum class Tag : uint8_t {
@@ -179,6 +150,28 @@ struct SVGContextPaintImpl : public SVGContextPaint {
       if (mPaintType == Tag::Pattern) {
         mPaintDefinition.mPattern->Release();
       }
+    }
+
+    bool operator==(const Paint& aOther) const {
+      if (mPaintType != aOther.mPaintType) {
+        return false;
+      }
+      switch (mPaintType) {
+        case Tag::None:
+          return true;
+        case Tag::Color:
+          return mPaintDefinition.mColor == aOther.mPaintDefinition.mColor;
+        case Tag::Pattern:
+          return mPaintDefinition.mPattern == aOther.mPaintDefinition.mPattern;
+        case Tag::PaintServer:
+          return mPaintDefinition.mPaintServerFrame ==
+                 aOther.mPaintDefinition.mPaintServerFrame;
+        case Tag::ContextFill:
+        case Tag::ContextStroke:
+          return mPaintDefinition.mContextPaint ==
+                 aOther.mPaintDefinition.mContextPaint;
+      }
+      return false;
     }
 
     void SetPaintServer(nsIFrame* aFrame, const gfxMatrix& aContextMatrix,
@@ -248,6 +241,11 @@ struct SVGContextPaintImpl : public SVGContextPaint {
   EnumeratedArray<Tag, Paint> mPaint;
   EnumeratedArray<Tag, float> mOpacity;
 
+  
+  FallibleTArray<Float> mDashes;
+  Float mDashOffset = 0.0f;
+  Float mStrokeWidth = 0.0f;
+
   DrawMode mDrawMode = DrawMode(0);
 };
 
@@ -257,54 +255,18 @@ struct SVGContextPaintImpl : public SVGContextPaint {
 
 
 
-class SVGEmbeddingContextPaint : public SVGContextPaint {
-  using DeviceColor = gfx::DeviceColor;
 
+class MOZ_RAII AutoSetRestoreSVGContextPaint {
  public:
-  SVGEmbeddingContextPaint(Maybe<nscolor> aFill, Maybe<nscolor> aStroke)
-      : SVGEmbeddingContextPaint(aFill, Some(1.0f), aStroke, Some(1.0f)) {}
-  SVGEmbeddingContextPaint(Maybe<nscolor> aFill, Maybe<float> aFillOpacity,
-                           Maybe<nscolor> aStroke,
-                           Maybe<float> aStrokeOpacity) {
-    if (aFill) {
-      mColor[Tag::Fill].emplace(gfx::ToDeviceColor(aFill.value()));
-    }
-    mOpacity[Tag::Fill] = aFillOpacity ? aFillOpacity.value() : 1.0f;
-    if (aStroke) {
-      mColor[Tag::Stroke].emplace(gfx::ToDeviceColor(aStroke.value()));
-    }
-    mOpacity[Tag::Stroke] = aStrokeOpacity ? aStrokeOpacity.value() : 1.0f;
-  }
-
-  bool operator==(const SVGEmbeddingContextPaint& aOther) const {
-    MOZ_ASSERT(GetStrokeWidth() == aOther.GetStrokeWidth() &&
-                   GetStrokeDashOffset() == aOther.GetStrokeDashOffset() &&
-                   GetStrokeDashArray() == aOther.GetStrokeDashArray(),
-               "We don't currently include these in the context information "
-               "from an embedding element");
-    return std::equal(mColor.begin(), mColor.end(), aOther.mColor.begin(),
-                      aOther.mColor.end()) &&
-           std::equal(mOpacity.begin(), mOpacity.end(), aOther.mOpacity.begin(),
-                      aOther.mOpacity.end());
-  }
-
-  using SVGContextPaint::GetPattern;
-  
-
-
-  bool IsSolidColor(Tag aTag) const override;
-  gfx::DeviceColor AsSolidColor(Tag aTag) const override;
-  already_AddRefed<gfxPattern> GetPattern(
-      Tag aTag, const DrawTarget* aDrawTarget, float aOpacity,
-      const gfxMatrix& aCTM, imgDrawingParams& aImgParams) const override;
-
-  float GetOpacity(Tag aTag) const override { return mOpacity[aTag]; };
-
-  uint32_t Hash() const override;
+  AutoSetRestoreSVGContextPaint(const SVGContextPaint* aContextPaint,
+                                dom::Document* aDocument);
+  ~AutoSetRestoreSVGContextPaint();
 
  private:
-  EnumeratedArray<Tag, Maybe<DeviceColor>> mColor;
-  EnumeratedArray<Tag, float> mOpacity;
+  dom::Document* mDocument;
+  
+  
+  const SVGContextPaint* mOuterContextPaint;
 };
 
 }  
