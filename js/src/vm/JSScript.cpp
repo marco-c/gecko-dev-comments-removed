@@ -2488,11 +2488,16 @@ bool PrivateScriptData::InitFromStencil(
   MOZ_ASSERT(ngcthings <= INDEX_LIMIT);
 
   
-  if (!JSScript::createPrivateScriptData(cx, script, ngcthings)) {
+  
+  
+  
+  
+  RootedBuffer<PrivateScriptData> data(cx,
+                                       PrivateScriptData::new_(cx, ngcthings));
+  if (!data) {
     return false;
   }
 
-  js::PrivateScriptData* data = script->data_;
   if (ngcthings) {
     if (!EmitScriptThingsVector(cx, atomCache, stencil, gcOutput,
                                 scriptStencil.gcthings(stencil),
@@ -2500,6 +2505,13 @@ bool PrivateScriptData::InitFromStencil(
       return false;
     }
   }
+
+  
+  
+  MemoryReleaseFence(cx->zone());
+
+  script->swapData(&data);
+  MOZ_ASSERT(!data);
 
   return true;
 }
@@ -2546,23 +2558,6 @@ uint32_t JSScript::vtuneMethodID() {
   return id;
 }
 #endif
-
-
-bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
-                                       uint32_t ngcthings) {
-  cx->check(script);
-
-  RootedBuffer<PrivateScriptData> data(cx,
-                                       PrivateScriptData::new_(cx, ngcthings));
-  if (!data) {
-    return false;
-  }
-
-  script->swapData(&data);
-  MOZ_ASSERT(!data);
-
-  return true;
-}
 
 
 bool JSScript::fullyInitFromStencil(
