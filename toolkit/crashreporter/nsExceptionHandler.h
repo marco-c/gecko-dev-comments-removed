@@ -87,6 +87,11 @@ nsresult UnsetExceptionHandler();
 
 
 
+uint32_t GetCrashHelperPid();
+
+
+
+
 
 
 
