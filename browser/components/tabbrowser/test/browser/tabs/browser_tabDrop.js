@@ -52,6 +52,20 @@ add_task(async function single_url3() {
 });
 
 
+
+add_task(async function multiline_search() {
+  await dropText("Charles Ray\nAmerican", [
+    url => new URL(url).searchParams.get("q") === "Charles Ray American",
+  ]);
+});
+
+add_task(async function url_among_prose() {
+  await dropText("some prose\nexample.com/prose\nmore prose", [
+    "http://example.com/prose",
+  ]);
+});
+
+
 add_task(async function multiple_urls() {
   await dropText("example.com/1\nexample.com/2", [
     "http://example.com/1",
