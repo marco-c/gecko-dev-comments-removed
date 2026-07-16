@@ -201,6 +201,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1904826
 ]
 
+["browser_list_all_tabs_menu_items.js"]
+
 ["browser_list_all_tabs_telemetry.js"]
 
 ["browser_long_data_url_label_truncation.js"]
@@ -515,6 +517,9 @@ skip-if = [
   "true", # Bug 1616418 Bug 1549985
 ]
 
+["browser_tabContextMenu_altStructure.js"]
+tags = "vertical-tabs"
+
 ["browser_tabContextMenu_keyboard.js"]
 tags = "vertical-tabs"
 
@@ -629,9 +634,6 @@ skip-if = [
 ]
 
 ["browser_tab_manager_keyboard_access.js"]
-tags = "vertical-tabs"
-
-["browser_tab_manager_synced_tabs.js"]
 tags = "vertical-tabs"
 
 ["browser_tab_move_active_tab.js"]

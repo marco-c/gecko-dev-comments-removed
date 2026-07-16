@@ -29,6 +29,32 @@ function updateTabContextMenu(tab) {
   menu.hidePopup();
 }
 
+
+
+async function openTabContextMenu(tab = gBrowser.selectedTab) {
+  const tabContextMenu = document.getElementById("tabContextMenu");
+  const contextMenuShown = BrowserTestUtils.waitForPopupEvent(
+    tabContextMenu,
+    "shown"
+  );
+  tab.scrollIntoView({ behavior: "instant" });
+  EventUtils.synthesizeMouseAtCenter(
+    tab,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await contextMenuShown;
+  return tabContextMenu;
+}
+
+async function closeTabContextMenu(
+  menu = document.getElementById("tabContextMenu")
+) {
+  const contextMenuHidden = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+  menu.hidePopup();
+  await contextMenuHidden;
+}
+
 function triggerClickOn(target, options) {
   let promise = BrowserTestUtils.waitForEvent(target, "click");
   if (AppConstants.platform == "macosx") {

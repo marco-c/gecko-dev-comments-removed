@@ -712,14 +712,17 @@ var gProfiles = {
       ...menuPopup.querySelectorAll(":scope > menuitem[profileid]"),
     ];
 
+    
+    
+    
+    let anchor = separator;
     for (let profile of profiles) {
       if (profile.id === currentProfile.id) {
         continue;
       }
 
       let menuitem = existingItems.shift();
-      let isNewItem = !menuitem;
-      if (isNewItem) {
+      if (!menuitem) {
         menuitem = document.createXULElement("menuitem");
         menuitem.setAttribute("tbattr", "tabbrowser-multiple-visible");
         menuitem.setAttribute("data-l10n-id", "move-to-new-profile");
@@ -733,9 +736,8 @@ var gProfiles = {
         JSON.stringify({ profileName: profile.name })
       );
 
-      if (isNewItem) {
-        menuPopup.appendChild(menuitem);
-      }
+      anchor.after(menuitem);
+      anchor = menuitem;
     }
     
     for (let remaining of existingItems) {

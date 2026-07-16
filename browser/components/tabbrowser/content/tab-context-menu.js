@@ -4,6 +4,476 @@
 
 var TabContextMenu = {
   contextTab: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MENU_SECTIONS: {
+    classic: {
+      tabContextMenu: [
+        {
+          name: "priority-items",
+          items: [
+            "#context_openANewTab",
+            [
+              "#context_moveTabToNewGroup",
+              "#context_moveSplitViewToNewGroup",
+              "#context_moveTabToGroup",
+              "#context_ungroupTab",
+              "#context_ungroupSplitView",
+            ],
+            [
+              "#context_moveTabToSplitView",
+              "#context_separateSplitView",
+              "#context_reverseSplitView",
+            ],
+            "#context_openAndOrganizeSeparator",
+          ],
+        },
+        {
+          name: "action-items",
+          items: [
+            ["#context_reloadTab", "#context_reloadSelectedTabs"],
+            ["#context_playTab", "#context_playSelectedTabs"],
+            ["#context_toggleMuteTab", "#context_toggleMuteSelectedTabs"],
+            [
+              "#context_pinTab",
+              "#context_unpinTab",
+              "#context_pinSelectedTabs",
+              "#context_unpinSelectedTabs",
+            ],
+            "#context_unloadTab",
+            ["#context_duplicateTab", "#context_duplicateTabs"],
+            "#context_tabStateSeparator",
+          ],
+        },
+        {
+          name: "ai",
+          
+
+
+
+
+
+          items: [
+            "#context_askChat",
+            "#context_aiSeparator",
+            "#context_askChatSummarize",
+          ],
+        },
+        {
+          name: "tab-tools",
+          items: [
+            ["#context_bookmarkSelectedTabs", "#context_bookmarkTab"],
+            ["#context_addNote", "#context_editNote"],
+            "#context_moveTabOptions",
+            { selector: ".share-tab-url-item", optional: true },
+            "#context_reopenInContainer",
+            "#context_selectAllTabs",
+            "#context_tabToolsSeparator",
+          ],
+        },
+        {
+          name: "sending-items",
+          items: [
+            "#context_shareSelectedTabs",
+            "#context_shareSelectedTabsSeparator",
+            "#context_sendTabToDevice",
+            "#context_sendTabToDeviceSeparator",
+          ],
+        },
+        {
+          name: "close",
+          items: [
+            "#context_closeTab",
+            "#context_closeDuplicateTabs",
+            "#context_closeTabOptions",
+            "#context_undoCloseTab",
+          ],
+        },
+        {
+          name: "fullscreen",
+          items: [
+            "#context_fullscreenSeparator",
+            "#context_fullscreenAutohide",
+            "#context_fullscreenExit",
+          ],
+        },
+        {
+          
+
+
+
+
+          name: "extensions",
+          open: true,
+          items: [],
+        },
+      ],
+      
+
+
+
+      moveTabOptionsMenu: [
+        {
+          name: "positions",
+          items: [
+            "#context_moveToStart",
+            "#context_moveToEnd",
+            "#context_openTabInWindow",
+            "#moveTabSeparator",
+            "#context_moveTabToGroupSeparator",
+            "#context_selectAllSeparator",
+          ],
+        },
+      ],
+      context_moveTabToGroupPopupMenu: [
+        {
+          name: "groups",
+          items: [
+            "#context_moveTabToGroupNewGroup",
+            "#open-tab-groups-separator-upper",
+            "#open-tab-groups-separator-lower",
+            "#context_moveTabToSavedGroup",
+          ],
+        },
+      ],
+      closeTabOptions: [
+        {
+          name: "close-multiple",
+          items: [
+            "#context_closeTabsToTheStart",
+            "#context_closeTabsToTheEnd",
+            "#context_closeOtherTabs",
+          ],
+        },
+      ],
+    },
+    
+
+
+
+
+    altstructure: {
+      tabContextMenu: [
+        {
+          name: "priority-items",
+          items: [
+            "#context_openANewTab",
+            ["#context_duplicateTab", "#context_duplicateTabs"],
+            "#context_openAndOrganizeSeparator",
+          ],
+        },
+        {
+          name: "action-items",
+          items: [
+            [
+              "#context_pinTab",
+              "#context_unpinTab",
+              "#context_pinSelectedTabs",
+              "#context_unpinSelectedTabs",
+            ],
+            ["#context_toggleMuteTab", "#context_toggleMuteSelectedTabs"],
+            ["#context_playTab", "#context_playSelectedTabs"],
+            ["#context_reloadTab", "#context_reloadSelectedTabs"],
+            "#context_unloadTab",
+            "#context_tabStateSeparator",
+          ],
+        },
+        {
+          name: "spatial-items",
+          items: [
+            [
+              "#context_moveTabToSplitView",
+              "#context_separateSplitView",
+              "#context_reverseSplitView",
+            ],
+            
+
+
+
+
+
+            "#context_moveTabOptions",
+            [
+              "#context_moveTabToNewGroup",
+              "#context_moveSplitViewToNewGroup",
+              "#context_moveTabToGroup",
+              "#context_ungroupTab",
+              "#context_ungroupSplitView",
+            ],
+            "#context_reopenInContainer",
+            
+
+
+
+
+
+            "#context_aiSeparator",
+          ],
+        },
+        {
+          name: "remembering-items",
+          items: [
+            ["#context_bookmarkSelectedTabs", "#context_bookmarkTab"],
+            ["#context_addNote", "#context_editNote"],
+            "#context_askChatSummarize",
+            "#context_tabToolsSeparator",
+          ],
+        },
+        {
+          name: "sending-items",
+          items: [
+            "#context_shareSelectedTabs",
+            
+
+
+
+
+            { selector: ".share-tab-url-item", optional: true },
+            "#context_shareSelectedTabsSeparator",
+            "#context_sendTabToDevice",
+            "#context_sendTabToDeviceSeparator",
+          ],
+        },
+        {
+          name: "destructive-items",
+          
+          items: [
+            "#context_closeTab",
+            "#context_closeTabOptions",
+            "#context_undoCloseTab",
+          ],
+        },
+        {
+          name: "fullscreen",
+          items: [
+            "#context_fullscreenSeparator",
+            "#context_fullscreenAutohide",
+            "#context_fullscreenExit",
+          ],
+        },
+        {
+          
+          name: "unused",
+          items: ["#context_askChat"],
+        },
+        {
+          
+
+
+
+
+          name: "extensions",
+          open: true,
+          items: [],
+        },
+      ],
+      
+
+
+
+
+
+      moveTabOptionsMenu: [
+        {
+          name: "groups",
+          items: [
+            "#context_moveTabToGroupNewGroup",
+            "#open-tab-groups-separator-upper",
+            "#open-tab-groups-separator-lower",
+            "#context_moveTabToSavedGroup",
+            "#context_moveTabToGroupSeparator",
+          ],
+        },
+        {
+          name: "positions",
+          items: [
+            "#context_moveToStart",
+            "#context_moveToEnd",
+            "#context_openTabInWindow",
+            "#moveTabSeparator",
+          ],
+        },
+        {
+          name: "select-all",
+          items: ["#context_selectAllSeparator", "#context_selectAllTabs"],
+        },
+      ],
+      
+      context_moveTabToGroupPopupMenu: [],
+      
+
+
+
+      closeTabOptions: [
+        {
+          name: "close-multiple",
+          items: [
+            "#context_closeTabsToTheStart",
+            "#context_closeTabsToTheEnd",
+            "#context_closeOtherTabs",
+            "#context_closeDuplicateTabs",
+          ],
+        },
+      ],
+    },
+  },
+
+  
+  DYNAMIC_MENU_ITEM_SELECTORS: ["[tab-group-id]", "[profileid]"],
+
+  _tabContextMenuArranged: false,
+  _altTabContextMenuPrefObserved: false,
+
+  
+
+
+
+
+  _ensureMenuArranged(aPopupMenu) {
+    if (!this._altTabContextMenuPrefObserved) {
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_altTabContextMenu",
+        "browser.tabs.contextmenu.altstructure.enabled",
+        false,
+        () => {
+          this._tabContextMenuArranged = false;
+        }
+      );
+      this._altTabContextMenuPrefObserved = true;
+    }
+    if (this._tabContextMenuArranged) {
+      return;
+    }
+    
+
+
+
+    let layout =
+      (this._altTabContextMenu && this.MENU_SECTIONS.altstructure) ||
+      this.MENU_SECTIONS.classic;
+    
+    
+    try {
+      new this.MenuSectionLayout(layout, {
+        dynamicItemSelectors: this.DYNAMIC_MENU_ITEM_SELECTORS,
+      }).arrange(aPopupMenu);
+      this._hideUnusedSectionItems(layout);
+      this._updateL10nIds(aPopupMenu, this._altTabContextMenu);
+    } catch (ex) {
+      console.error(ex);
+    }
+    this._tabContextMenuArranged = true;
+  },
+
+  
+
+
+
+
+  _updateL10nIds(aPopupMenu, altEnabled) {
+    for (let item of aPopupMenu.querySelectorAll("[data-alt-l10n-id]")) {
+      if (item._classicL10nId == null) {
+        item._classicL10nId =
+          item.getAttribute("data-lazy-l10n-id") ??
+          item.getAttribute("data-l10n-id");
+      }
+      let id = altEnabled ? item.dataset.altL10nId : item._classicL10nId;
+      if (id) {
+        item.setAttribute("data-l10n-id", id);
+      }
+    }
+  },
+
+  
+  _hideUnusedSectionItems(layout) {
+    for (let section of layout.tabContextMenu) {
+      if (section.name !== "unused") {
+        continue;
+      }
+      for (let { selector } of this.MenuSectionLayout.placementsFor([
+        section,
+      ])) {
+        let item = document.querySelector(selector);
+        if (item) {
+          item.hidden = true;
+        }
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _updateMoveTabToFlattenedVisibility(
+    groupsEnabled,
+    hasOpenGroups,
+    hasSavedGroups
+  ) {
+    let byId = id => document.getElementById(id);
+    let newGroup = byId("context_moveTabToGroupNewGroup");
+    let upperSeparator = byId("open-tab-groups-separator-upper");
+    let lowerSeparator = byId("open-tab-groups-separator-lower");
+    let savedGroups = byId("context_moveTabToSavedGroup");
+    let groupSeparator = byId("context_moveTabToGroupSeparator");
+    let selectAllSeparator = byId("context_selectAllSeparator");
+
+    if (!this._altTabContextMenu) {
+      
+      newGroup.hidden = false;
+      upperSeparator.hidden = false;
+      savedGroups.hidden = false;
+      groupSeparator.hidden = true;
+      selectAllSeparator.hidden = true;
+      return;
+    }
+
+    
+
+
+
+
+    byId("context_moveTabToGroup").hidden = true;
+    byId("context_moveTabToNewGroup").hidden = true;
+    byId("context_moveSplitViewToNewGroup").hidden = true;
+
+    newGroup.hidden = !groupsEnabled;
+    upperSeparator.hidden = !(
+      groupsEnabled &&
+      (hasOpenGroups || hasSavedGroups)
+    );
+    lowerSeparator.hidden = true;
+    savedGroups.hidden = !(groupsEnabled && hasSavedGroups);
+    groupSeparator.hidden = !groupsEnabled;
+    selectAllSeparator.hidden = false;
+  },
+
   _updateToggleMuteMenuItems(aTab, aConditionFn) {
     ["muted", "soundplaying"].forEach(attr => {
       if (!aConditionFn || aConditionFn(attr)) {
@@ -19,6 +489,8 @@ var TabContextMenu = {
   },
   
   updateContextMenu(aPopupMenu) {
+    this._ensureMenuArranged(aPopupMenu);
+
     let triggerTab =
       aPopupMenu.triggerNode &&
       (aPopupMenu.triggerNode.tab || aPopupMenu.triggerNode.closest("tab"));
@@ -108,6 +580,8 @@ var TabContextMenu = {
     let isAllSplitViewTabs = this.contextTabs.every(
       contextTab => contextTab.splitview
     );
+    let openGroupsToMoveTo = [];
+    let savedGroupsToMoveTo = [];
 
     if (gBrowser._tabGroupsEnabled) {
       let selectedGroupCount = new Set(
@@ -115,7 +589,7 @@ var TabContextMenu = {
         this.contextTabs.map(t => t.group).filter(g => g)
       ).size;
 
-      let openGroupsToMoveTo = gBrowser.getAllTabGroups({
+      openGroupsToMoveTo = gBrowser.getAllTabGroups({
         sortByLastSeenActive: true,
       });
 
@@ -133,7 +607,6 @@ var TabContextMenu = {
       
       
       
-      let savedGroupsToMoveTo = [];
       if (
         !PrivateBrowsingUtils.isWindowPrivate(window) &&
         SessionStore.shouldSaveTabsToGroup(this.contextTabs)
@@ -180,16 +653,20 @@ var TabContextMenu = {
           contextMoveTabToGroup.setAttribute("data-l10n-args", tabCountInfo);
         }
 
-        const openGroupsMenu = contextMoveTabToGroup.querySelector("menupopup");
+        
+        
+        
+        
+        const upperSeparator = document.getElementById(
+          "open-tab-groups-separator-upper"
+        );
+        const lowerSeparator = document.getElementById(
+          "open-tab-groups-separator-lower"
+        );
+        const openGroupsMenu = upperSeparator.parentNode;
         openGroupsMenu
           .querySelectorAll("[tab-group-id]")
           .forEach(el => el.remove());
-        const upperSeparator = openGroupsMenu.querySelector(
-          `#open-tab-groups-separator-upper`
-        );
-        const lowerSeparator = openGroupsMenu.querySelector(
-          `#open-tab-groups-separator-lower`
-        );
 
         lowerSeparator.hidden = !openGroupsToMoveTo.length;
 
@@ -198,8 +675,8 @@ var TabContextMenu = {
           upperSeparator.after(item);
         });
 
-        const savedGroupsMenu = contextMoveTabToGroup.querySelector(
-          "#context_moveTabToSavedGroup"
+        const savedGroupsMenu = document.getElementById(
+          "context_moveTabToSavedGroup"
         );
         const savedGroupsMenuPopup = savedGroupsMenu.querySelector("menupopup");
 
@@ -237,6 +714,12 @@ var TabContextMenu = {
       contextMoveSplitViewToNewGroup.hidden = true;
       contextUngroupSplitView.hidden = true;
     }
+
+    this._updateMoveTabToFlattenedVisibility(
+      gBrowser._tabGroupsEnabled,
+      !!openGroupsToMoveTo.length,
+      !!savedGroupsToMoveTo.length
+    );
 
     let contextAddNote = document.getElementById("context_addNote");
     let contextEditNote = document.getElementById("context_editNote");
@@ -290,11 +773,13 @@ var TabContextMenu = {
       !splitViewEnabled || !hasSplitViewTab || this.multiselected;
     if (splitViewEnabled) {
       contextMoveTabToNewSplitView.removeAttribute("data-l10n-id");
+      let splitViewStringId =
+        this._altTabContextMenu || this.contextTabs.length >= 2
+          ? "tab-context-open-in-split-view"
+          : "tab-context-add-split-view";
       contextMoveTabToNewSplitView.setAttribute(
         "data-l10n-id",
-        this.contextTabs.length < 2
-          ? "tab-context-add-split-view"
-          : "tab-context-open-in-split-view"
+        splitViewStringId
       );
 
       let pinnedTabs = this.contextTabs.filter(t => t.pinned);
@@ -356,10 +841,26 @@ var TabContextMenu = {
       !this.contextTab.pinned || !this.multiselected;
 
     
-    TabContextMenu.GenAI.buildTabMenu(
-      document.getElementById("context_askChat"),
-      this
-    );
+    
+    
+    
+    if (!this._altTabContextMenu) {
+      document.getElementById("context_askChatSummarize").hidden = true;
+      TabContextMenu.GenAI.buildTabMenu(
+        document.getElementById("context_askChat"),
+        this
+      );
+    } else {
+      document.getElementById("context_askChat").hidden = true;
+      
+      
+      
+      document.getElementById("context_aiSeparator").hidden = false;
+      TabContextMenu.GenAI.buildTabSummarizeItem(
+        document.getElementById("context_askChatSummarize"),
+        this
+      );
+    }
 
     
     let contextMoveTabOptions = document.getElementById(
@@ -374,7 +875,20 @@ var TabContextMenu = {
       visibleOrCollapsedTabs.length == 1 ||
       visibleOrCollapsedTabs.every(t => t.multiselected);
     contextMoveTabOptions.setAttribute("data-l10n-args", tabCountInfo);
-    contextMoveTabOptions.disabled = this.contextTab.hidden || allTabsSelected;
+    
+    
+    
+    let moveTabOptionsL10nId = "tab-context-move-tabs";
+    if (this._altTabContextMenu) {
+      moveTabOptionsL10nId = this.contextTab.splitview
+        ? "tab-context-move-split-view"
+        : "tab-context-move-tabs2";
+    }
+    contextMoveTabOptions.setAttribute("data-l10n-id", moveTabOptionsL10nId);
+    
+    
+    contextMoveTabOptions.disabled =
+      this.contextTab.hidden || (allTabsSelected && !this._altTabContextMenu);
     let selectedTabs = gBrowser.selectedTabs;
     let contextMoveTabToEnd = document.getElementById("context_moveToEnd");
     let allSelectedTabsAdjacent = selectedTabs.every(
@@ -481,10 +995,12 @@ var TabContextMenu = {
     ).length;
 
     
+    
     document.getElementById("context_closeTabOptions").disabled =
       closeTabsToTheStartItem.disabled &&
       closeTabsToTheEndItem.disabled &&
-      closeOtherTabsItem.disabled;
+      closeOtherTabsItem.disabled &&
+      (!this._altTabContextMenu || closeDuplicateTabsItem.disabled);
 
     
     
@@ -520,10 +1036,21 @@ var TabContextMenu = {
     toggleMultiSelectMute.hidden = !this.multiselected;
 
     const isMuted = this.contextTab.hasAttribute("muted");
-    document.l10n.setAttributes(
-      toggleMute,
-      isMuted ? "tabbrowser-context-unmute-tab" : "tabbrowser-context-mute-tab"
-    );
+    if (this._altTabContextMenu) {
+      document.l10n.setAttributes(
+        toggleMute,
+        isMuted
+          ? "tabbrowser-context-unmute-tab2"
+          : "tabbrowser-context-mute-tab2"
+      );
+    } else {
+      document.l10n.setAttributes(
+        toggleMute,
+        isMuted
+          ? "tabbrowser-context-unmute-tab"
+          : "tabbrowser-context-mute-tab"
+      );
+    }
     document.l10n.setAttributes(
       toggleMultiSelectMute,
       isMuted
@@ -539,6 +1066,14 @@ var TabContextMenu = {
     selectAllTabs.disabled = gBrowser.allTabsSelected();
 
     gSync.updateTabContextMenu(aPopupMenu, this.contextTab);
+    if (this._altTabContextMenu) {
+      
+      
+      
+      document
+        .getElementById("context_sendTabToDevice")
+        .setAttribute("data-l10n-id", "tab-context-send-to-device2");
+    }
 
     let reopenInContainer = document.getElementById(
       "context_reopenInContainer"
@@ -548,10 +1083,18 @@ var TabContextMenu = {
       PrivateBrowsingUtils.isWindowPrivate(window);
     reopenInContainer.disabled = this.contextTab.hidden;
 
+    
+    
+    
+    
     SharingUtils.ensureShareMenu(
       this.contextTab.linkedBrowser,
       this.multiselected ? this.contextTabs.map(t => t.linkedBrowser) : null,
-      document.getElementById("context_moveTabOptions")
+      document.getElementById(
+        this._altTabContextMenu
+          ? "context_shareSelectedTabs"
+          : "context_moveTabOptions"
+      )
     );
   },
 
@@ -903,5 +1446,6 @@ var TabContextMenu = {
 
 ChromeUtils.defineESModuleGetters(TabContextMenu, {
   GenAI: "resource:///modules/GenAI.sys.mjs",
+  MenuSectionLayout: "resource:///modules/MenuSectionLayout.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
 });

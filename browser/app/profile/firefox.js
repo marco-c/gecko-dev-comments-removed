@@ -1187,6 +1187,9 @@ pref("browser.tabs.searchclipboardfor.middleclick", true);
 pref("browser.tabs.searchclipboardfor.middleclick", false);
 #endif
 
+
+pref("browser.tabs.contextmenu.altstructure.enabled", false);
+
 #if defined(XP_MACOSX)
   
   

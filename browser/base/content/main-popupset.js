@@ -504,15 +504,22 @@ document.addEventListener(
         TabContextMenu.reopenInContainer(event);
       });
 
-    document
-      .getElementById("context_moveTabToGroupPopupMenu")
-      .addEventListener("command", event => {
+    
+    
+    for (let menu of [
+      document.getElementById("context_moveTabToGroupPopupMenu"),
+      document.getElementById("context_moveTabOptions"),
+    ]) {
+      menu.addEventListener("command", event => {
         if (event.target.id == "context_moveTabToGroupNewGroup") {
           TabContextMenu.moveTabsToNewGroup();
           return;
         }
 
         const tabGroupId = event.target.getAttribute("tab-group-id");
+        if (!tabGroupId) {
+          return;
+        }
         const group = gBrowser.getTabGroupById(tabGroupId);
         if (group) {
           TabContextMenu.moveTabsToGroup(group);
@@ -522,6 +529,7 @@ document.addEventListener(
           TabContextMenu.addTabsToSavedGroup(tabGroupId);
         }
       });
+    }
 
     document
       .getElementById("backForwardMenu")
