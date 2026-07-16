@@ -1337,7 +1337,12 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
   
   if (gAppData->profile) {
     nsAutoCString profile;
-    profile = gAppData->profile;
+#  if defined(MOZ_THUNDERBIRD)
+    if (gAppData->profile[0] != '.') {
+      profile.Assign('.');
+    }
+#  endif
+    profile.Append(gAppData->profile);
     MOZ_TRY(aFile->AppendRelativeNativePath(profile));
   } else {
     nsAutoCString vendor;
@@ -1354,6 +1359,7 @@ nsresult nsXREDirProvider::AppendFromAppData(nsIFile* aFile, bool aIsDotted) {
 
   return NS_OK;
 }
+
 
 
 
@@ -1516,7 +1522,20 @@ nsresult nsXREDirProvider::GetLegacyOrXDGHomePath(const char* aHomeDir,
 
     
     
-    if (gAppData->profile) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (gAppData->profile
+#  if defined(MOZ_THUNDERBIRD)
+        && strcmp(gAppData->profile, "thunderbird") != 0 &&
+        strcmp(gAppData->profile, "Thunderbird") != 0
+#  endif
+    ) {
       MOZ_TRY(NS_NewNativeLocalFile(nsDependentCString(aHomeDir),
                                     getter_AddRefs(localDir)));
     } else {
