@@ -80,7 +80,7 @@ class JsepSessionTest : public JsepSessionTestBase,
     EXPECT_EQ(NS_OK, mSessionOff->Init());
     EXPECT_EQ(NS_OK, mSessionAns->Init());
 
-    std::vector<UniquePtr<JsepCodecDescription>> preferredCodecs;
+    AutoTArray<UniquePtr<JsepCodecDescription>, 16> preferredCodecs;
     PeerConnectionImpl::SetupPreferredCodecs(preferredCodecs);
     for (auto& codec : preferredCodecs) {
       
@@ -2664,11 +2664,53 @@ TEST_P(JsepSessionTest, ParseRejectsBadMediaFormat) {
   std::string offer = CreateOffer();
   UniquePtr<Sdp> munge(Parse(offer));
   SdpMediaSection& mediaSection = munge->GetMediaSection(0);
+  mediaSection.AddCodec("19", "DummyFormatVal", 8000, 1);
+  std::string sdpString = munge->ToString();
+  JsepSession::Result result =
+      mSessionOff->SetLocalDescription(kJsepSdpOffer, sdpString);
+  ASSERT_EQ(dom::PCError::InvalidAccessError, *result.mError);
+}
+
+TEST_P(JsepSessionTest, ParseRejectsRtcpMuxPayloadTypeInRtcpRange) {
+  AddTracks(*mSessionOff);
+  if (types.front() == SdpMediaSection::MediaType::kApplication) {
+    return;
+  }
+  std::string offer = CreateOffer();
+  UniquePtr<Sdp> munge(Parse(offer));
+  SdpMediaSection& mediaSection = munge->GetMediaSection(0);
+  ASSERT_TRUE(mediaSection.GetAttributeList().HasAttribute(
+      SdpAttribute::kRtcpMuxAttribute));
+  
+  
+  
   mediaSection.AddCodec("75", "DummyFormatVal", 8000, 1);
   std::string sdpString = munge->ToString();
   JsepSession::Result result =
       mSessionOff->SetLocalDescription(kJsepSdpOffer, sdpString);
-  ASSERT_EQ(dom::PCError::OperationError, *result.mError);
+  ASSERT_EQ(dom::PCError::InvalidAccessError, *result.mError);
+}
+
+TEST_P(JsepSessionTest, AnswerRejectsRtcpMuxPayloadTypeInRtcpRange) {
+  AddTracks(*mSessionOff);
+  AddTracks(*mSessionAns);
+  if (types.front() == SdpMediaSection::MediaType::kApplication) {
+    return;
+  }
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+  SetRemoteOffer(offer);
+  std::string answer = CreateAnswer();
+  UniquePtr<Sdp> munge(Parse(answer));
+  SdpMediaSection& mediaSection = munge->GetMediaSection(0);
+  ASSERT_TRUE(mediaSection.GetAttributeList().HasAttribute(
+      SdpAttribute::kRtcpMuxAttribute));
+  
+  mediaSection.AddCodec("75", "DummyFormatVal", 8000, 1);
+  std::string sdpString = munge->ToString();
+  JsepSession::Result result =
+      mSessionOff->SetRemoteDescription(kJsepSdpAnswer, sdpString);
+  ASSERT_EQ(dom::PCError::InvalidAccessError, *result.mError);
 }
 
 TEST_P(JsepSessionTest, FullCallWithCandidates) {

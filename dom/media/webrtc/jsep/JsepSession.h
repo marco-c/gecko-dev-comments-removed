@@ -15,6 +15,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/PeerConnectionObserverEnumsBinding.h"
 #include "nsError.h"
+#include "nsTArray.h"
 #include "sdp/Sdp.h"
 
 namespace mozilla {
@@ -101,17 +102,12 @@ class JsepSession {
       const std::string& extensionName,
       SdpDirectionAttribute::Direction direction) = 0;
 
-  
-  
-  
-  
-  
-  
-  virtual std::vector<UniquePtr<JsepCodecDescription>>& Codecs() = 0;
+  virtual Span<UniquePtr<JsepCodecDescription>> Codecs() = 0;
 
   template <class UnaryFunction>
   void ForEachCodec(UnaryFunction& function) {
-    std::for_each(Codecs().begin(), Codecs().end(), function);
+    Span codecs = Codecs();
+    std::for_each(codecs.begin(), codecs.end(), function);
     for (auto& transceiver : GetTransceivers()) {
       transceiver.mSendTrack.ForEachCodec(function);
       transceiver.mRecvTrack.ForEachCodec(function);
@@ -120,7 +116,8 @@ class JsepSession {
 
   template <class BinaryPredicate>
   void SortCodecs(BinaryPredicate& sorter) {
-    std::stable_sort(Codecs().begin(), Codecs().end(), sorter);
+    Span codecs = Codecs();
+    std::stable_sort(codecs.begin(), codecs.end(), sorter);
     for (auto& transceiver : GetTransceivers()) {
       transceiver.mSendTrack.SortCodecs(sorter);
       transceiver.mRecvTrack.SortCodecs(sorter);
@@ -293,7 +290,7 @@ class JsepSession {
   }
 
   virtual void SetDefaultCodecs(
-      const std::vector<UniquePtr<JsepCodecDescription>>& aPreferredCodecs) = 0;
+      const nsTArray<UniquePtr<JsepCodecDescription>>& aPreferredCodecs) = 0;
 
   
   void SetRtxIsAllowed(bool aRtxIsAllowed) { mRtxIsAllowed = aRtxIsAllowed; }
