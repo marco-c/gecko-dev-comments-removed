@@ -40,10 +40,23 @@ add_task(async function run_test() {
   });
 
   
+  
+  
+  
+  
   Services.prefs.setBoolPref(
-    Sanitizer.PREF_SHUTDOWN_BRANCH + "siteSettings",
+    "privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs3",
     true
   );
+  for (let category of ["cache", "cookiesAndStorage", "siteSettings"]) {
+    Services.prefs.setBoolPref(Sanitizer.PREF_SHUTDOWN_BRANCH + category, true);
+  }
+  for (let category of ["browsingHistoryAndDownloads", "formdata"]) {
+    Services.prefs.setBoolPref(
+      Sanitizer.PREF_SHUTDOWN_BRANCH + category,
+      false
+    );
+  }
   Services.prefs.setBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, true);
 
   
