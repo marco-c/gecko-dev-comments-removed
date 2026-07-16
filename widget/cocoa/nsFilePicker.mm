@@ -301,8 +301,13 @@ static void UpdatePanelFileTypes(NSOpenPanel* aPanel, NSArray* aFilters) {
     if (baseName.length > 0) {
       [mSavePanel setNameFieldStringValue:
                       [baseName stringByAppendingPathExtension:newExtension]];
+      
+      
+      mSavePanel.allowedFileTypes = @[ newExtension ];
     }
   }
+  
+  
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -497,6 +502,14 @@ void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {
            selector:@selector(menuChangedItem:)
                name:NSMenuWillSendActionNotification
              object:[popupButton menu]];
+  }
+
+  
+  
+  
+  NSString* defaultExtension = defaultFilename.pathExtension;
+  if (defaultExtension.length != 0) {
+    thePanel.allowedFileTypes = @[ defaultExtension ];
   }
 
   
