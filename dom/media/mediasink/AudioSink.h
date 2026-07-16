@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef AudioSink_h_
 #define AudioSink_h_
 
@@ -137,6 +135,13 @@ class AudioSink : private AudioStream::DataSource {
   const RefPtr<AbstractThread> mOwnerThread;
 
   
+  void InitPlaybackState();
+
+  void ApplyPlaybackParams(const PlaybackParams& aParams);
+
+  void ConnectAudioQueues();
+
+  
   void OnAudioPopped();
   void OnAudioPushed(const RefPtr<AudioData>& aSample);
   void NotifyAudioNeeded();
@@ -164,7 +169,7 @@ class AudioSink : private AudioStream::DataSource {
   uint32_t mOutputRate;
   uint32_t mOutputChannels;
   AudibilityMonitor mAudibilityMonitor;
-  bool mIsAudioDataAudible;
+  Atomic<bool> mIsAudioDataAudible;
   MediaEventProducer<bool> mAudibleEvent;
   
   MediaEventProducer<void> mAudioPopped;
