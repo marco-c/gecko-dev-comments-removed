@@ -64,7 +64,7 @@ class WebRenderThreadPool {
 
   
   
-  void Release();
+  void Destroy(bool aJoinWorkers);
 
  protected:
   wr::WrThreadPool* mThreadPool;

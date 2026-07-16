@@ -232,8 +232,20 @@ void RenderThread::ShutDownTask() {
   }
 
   
-  mThreadPool.Release();
-  mThreadPoolLP.Release();
+  
+  mShaders = nullptr;
+  mProgramCache = nullptr;
+
+  
+  
+  
+#ifdef NS_FREE_PERMANENT_DATA
+  const bool joinWorkers = true;
+#else
+  const bool joinWorkers = false;
+#endif
+  mThreadPool.Destroy(joinWorkers);
+  mThreadPoolLP.Destroy(joinWorkers);
 
   
   
@@ -1572,11 +1584,11 @@ WebRenderThreadPool::WebRenderThreadPool(bool low_priority) {
   mThreadPool = wr_thread_pool_new(low_priority);
 }
 
-WebRenderThreadPool::~WebRenderThreadPool() { Release(); }
+WebRenderThreadPool::~WebRenderThreadPool() { Destroy(false); }
 
-void WebRenderThreadPool::Release() {
+void WebRenderThreadPool::Destroy(bool aJoinWorkers) {
   if (mThreadPool) {
-    wr_thread_pool_delete(mThreadPool);
+    wr_thread_pool_delete(mThreadPool, aJoinWorkers);
     mThreadPool = nullptr;
   }
 }
