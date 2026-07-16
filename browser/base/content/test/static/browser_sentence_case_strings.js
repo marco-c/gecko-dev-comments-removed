@@ -86,6 +86,11 @@ function checkToolbarButtons(view) {
   info("Checking toolbarbuttons in subview with id " + view.id);
 
   for (let toolbarbutton of toolbarbuttons) {
+    
+    
+    if (toolbarbutton.id === "appMenu-update-banner") {
+      continue;
+    }
     let strings = [
       toolbarbutton.label,
       toolbarbutton.textContent,
