@@ -676,7 +676,8 @@ void TextComposition::MaybeNotifyIMEOfCompositionEventHandled(
   
   
   if (contentObserver && contentObserver->IsObserving(*this)) {
-    contentObserver->MaybeNotifyCompositionEventHandled();
+    contentObserver->MaybeNotifyCompositionEventHandled(
+        aCompositionEvent->mMessage);
     return;
   }
   
