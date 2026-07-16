@@ -1,9 +1,12 @@
+#[allow(unused_imports)]
 use crate::dispatch::*;
+#[allow(unused_imports)]
 use coreaudio_sys::*;
 
 
 
 
+#[cfg(not(feature = "no-private-apis"))]
 extern "C" {
     fn AudioDeviceDuck(
         inDevice: AudioDeviceID,
@@ -14,6 +17,7 @@ extern "C" {
 }
 
 
+#[cfg(not(feature = "no-private-apis"))]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn audio_device_duck(
     in_device: AudioDeviceID,

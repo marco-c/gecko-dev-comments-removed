@@ -5,6 +5,8 @@
 
 use std::ffi::{CStr, CString};
 
+
+
 #[derive(Debug)]
 pub struct Proplist(*mut ffi::pa_proplist);
 
@@ -28,4 +30,47 @@ impl Proplist {
 
 pub unsafe fn from_raw_ptr(raw: *mut ffi::pa_proplist) -> Proplist {
     Proplist(raw)
+}
+
+
+
+
+#[derive(Debug)]
+pub struct OwnedProplist(*mut ffi::pa_proplist);
+
+impl OwnedProplist {
+    pub fn new() -> Option<OwnedProplist> {
+        let p = unsafe { ffi::pa_proplist_new() };
+        if p.is_null() {
+            None
+        } else {
+            Some(OwnedProplist(p))
+        }
+    }
+
+    pub fn sets<K, V>(&mut self, key: K, value: V) -> bool
+    where
+        K: Into<Vec<u8>>,
+        V: Into<Vec<u8>>,
+    {
+        let key = match CString::new(key) {
+            Ok(k) => k,
+            _ => return false,
+        };
+        let value = match CString::new(value) {
+            Ok(v) => v,
+            _ => return false,
+        };
+        0 == unsafe { ffi::pa_proplist_sets(self.0, key.as_ptr(), value.as_ptr()) }
+    }
+
+    pub fn as_ptr(&self) -> *mut ffi::pa_proplist {
+        self.0
+    }
+}
+
+impl Drop for OwnedProplist {
+    fn drop(&mut self) {
+        unsafe { ffi::pa_proplist_free(self.0) };
+    }
 }
