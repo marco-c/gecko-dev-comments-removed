@@ -179,7 +179,15 @@ class DataChannelRegistry {
 
     DC_DEBUG(("Calling usrsctp_init %p", this));
 
-    MOZ_DIAGNOSTIC_ASSERT(!sInitted);
+    
+    
+    
+    
+    
+    
+    if (sInitted) {
+      return;
+    }
     usrsctp_init(0, DataChannelRegistry::SendSctpPacket, debug_printf);
     sInitted = true;
 
@@ -215,8 +223,14 @@ class DataChannelRegistry {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
     MOZ_DIAGNOSTIC_ASSERT(sInitted);
     DC_DEBUG(("Calling usrsctp_finish %p", this));
-    usrsctp_finish();
-    sInitted = false;
+    
+    
+    
+    
+    
+    if (usrsctp_finish() == 0) {
+      sInitted = false;
+    }
   }
 
   uintptr_t mNextId MOZ_GUARDED_BY(sInstanceMutex) = 1;
