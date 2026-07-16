@@ -25,6 +25,7 @@ sealed class Action {
      * @property onClick [BrowserToolbarInteraction] describing how to handle this button being clicked.
      * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button
      * being long clicked.
+     * @property testTag Optional test tag for this button.
      */
     data class ActionButtonRes(
         @param:DrawableRes val drawableResId: Int,
@@ -33,6 +34,7 @@ sealed class Action {
         val highlighted: Boolean = false,
         val onClick: BrowserToolbarInteraction,
         val onLongClick: BrowserToolbarInteraction? = null,
+        val testTag: String? = null,
     ) : Action()
 
     /**
@@ -46,6 +48,7 @@ sealed class Action {
      * @property onClick [BrowserToolbarInteraction] describing how to handle this button being clicked.
      * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button
      * being long clicked.
+     * @property testTag Optional test tag for this button.
      */
     data class ActionButton(
         val drawable: Drawable?,
@@ -55,6 +58,7 @@ sealed class Action {
         val highlighted: Boolean = false,
         val onClick: BrowserToolbarInteraction,
         val onLongClick: BrowserToolbarInteraction? = null,
+        val testTag: String? = null,
     ) : Action() {
 
         /**
@@ -175,15 +179,19 @@ sealed class Action {
      * @property overlayResId The resource ID of a smaller optional icon overlaid at the bottom-end of [iconResId].
      * @property textResId The resource ID of the label shown briefly beside the icon before it fades.
      * @property contentDescriptionResId The resource ID of the accessibility description for the button.
+     * @property animated Whether to animate the collapsing transition or present in 'post-animation' state.
      * @property highlighted Whether to highlight this button.
      * @property onClick [BrowserToolbarInteraction] dispatched when the button is tapped.
+     * @property testTag Optional test tag for this button.
      */
     data class AnimatedPillActionRes(
         @param:DrawableRes val iconResId: Int,
         @param:DrawableRes val overlayResId: Int,
         @param:StringRes val textResId: Int,
         @param:StringRes val contentDescriptionResId: Int,
+        val animated: Boolean = true,
         val highlighted: Boolean = false,
         val onClick: BrowserToolbarInteraction,
+        val testTag: String? = null,
     ) : Action()
 }
