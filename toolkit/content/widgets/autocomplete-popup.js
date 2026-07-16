@@ -120,7 +120,7 @@
                 this.mousedOverIndex = index;
 
                 if (item.selectedByMouseOver) {
-                  this.richlistbox.selectedIndex = index;
+                  this._setSelectedIndex(index, true);
                 }
 
                 this.mLastMoveTime = Date.now();
@@ -168,9 +168,17 @@
     }
 
     set selectedIndex(val) {
-      if (val != this.richlistbox.selectedIndex) {
+      this._setSelectedIndex(val, false);
+    }
+
+    _setSelectedIndex(val, pointer) {
+      const changed = val != this.richlistbox.selectedIndex;
+      if (changed) {
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
       }
+
+      this.richlistbox.toggleAttribute("pointerselected", pointer);
+
       this.richlistbox.selectedIndex = val;
 
       const prevSelectedItem = this.richlistbox.children[
@@ -188,7 +196,7 @@
         selectedItem.selected = true;
       }
 
-      if (selectedItem || prevSelectedItem) {
+      if (changed && (selectedItem || prevSelectedItem)) {
         lazy.AutoCompleteParent.getCurrentActor()?.previewAutoCompleteEntry();
       }
 
