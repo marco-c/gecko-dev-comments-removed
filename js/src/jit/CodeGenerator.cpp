@@ -17612,6 +17612,9 @@ bool CodeGenerator::link(JSContext* cx) {
   }
 
   
+  MemoryReleaseFence(script.get());
+
+  
   
   freeIonScript.release();
   script->jitScript()->setIonScript(script, ionScript);
