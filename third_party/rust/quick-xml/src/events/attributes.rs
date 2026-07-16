@@ -4,12 +4,14 @@
 
 use crate::encoding::Decoder;
 use crate::errors::Result as XmlResult;
-use crate::escape::{escape, resolve_predefined_entity, unescape_with};
-use crate::name::{LocalName, Namespace, QName};
-use crate::reader::NsReader;
+use crate::escape::{escape, resolve_predefined_entity};
+use crate::name::{LocalName, Namespace, NamespaceResolver, QName};
 use crate::utils::{is_whitespace, Bytes};
+use crate::XmlVersion;
 
+use std::collections::HashSet;
 use std::fmt::{self, Debug, Display, Formatter};
+use std::hash::{BuildHasherDefault, DefaultHasher, Hasher};
 use std::iter::FusedIterator;
 use std::{borrow::Cow, ops::Range};
 
@@ -44,9 +46,44 @@ impl<'a> Attribute<'a> {
     
     
     
-    #[cfg(any(doc, not(feature = "encoding")))]
-    pub fn unescape_value(&self) -> XmlResult<Cow<'a, str>> {
-        self.unescape_value_with(resolve_predefined_entity)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn normalized_value(&self, version: XmlVersion) -> XmlResult<Cow<'a, str>> {
+        
+        self.normalized_value_with(version, 1, resolve_predefined_entity)
     }
 
     
@@ -63,39 +100,271 @@ impl<'a> Attribute<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn normalized_value_with<'entity>(
+        &self,
+        version: XmlVersion,
+        depth: usize,
+        resolve_entity: impl FnMut(&str) -> Option<&'entity str>,
+    ) -> XmlResult<Cow<'a, str>> {
+        use crate::encoding::EncodingError;
+        use std::str::from_utf8;
+
+        let decoded = match &self.value {
+            Cow::Borrowed(bytes) => Cow::Borrowed(from_utf8(bytes).map_err(EncodingError::Utf8)?),
+            
+            Cow::Owned(bytes) => {
+                Cow::Owned(from_utf8(bytes).map_err(EncodingError::Utf8)?.to_owned())
+            }
+        };
+
+        match version.normalize_attribute_value(&decoded, depth, resolve_entity)? {
+            
+            Cow::Borrowed(_) => Ok(decoded),
+            Cow::Owned(s) => Ok(s.into()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn decoded_and_normalized_value(
+        &self,
+        version: XmlVersion,
+        decoder: Decoder,
+    ) -> XmlResult<Cow<'a, str>> {
+        
+        self.decoded_and_normalized_value_with(version, decoder, 1, resolve_predefined_entity)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn decoded_and_normalized_value_with<'entity>(
+        &self,
+        version: XmlVersion,
+        decoder: Decoder,
+        depth: usize,
+        resolve_entity: impl FnMut(&str) -> Option<&'entity str>,
+    ) -> XmlResult<Cow<'a, str>> {
+        let decoded = match &self.value {
+            Cow::Borrowed(bytes) => decoder.decode(bytes)?,
+            
+            Cow::Owned(bytes) => decoder.decode(bytes)?.into_owned().into(),
+        };
+
+        match version.normalize_attribute_value(&decoded, depth, resolve_entity)? {
+            
+            Cow::Borrowed(_) => Ok(decoded),
+            Cow::Owned(s) => Ok(s.into()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(any(doc, not(feature = "encoding")))]
+    #[deprecated = "use `Self::normalized_value()`"]
+    pub fn unescape_value(&self) -> XmlResult<Cow<'a, str>> {
+        
+        self.normalized_value_with(XmlVersion::Implicit1_0, 1, resolve_predefined_entity)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(doc, not(feature = "encoding")))]
+    #[deprecated = "use `Self::normalized_value_with()`"]
     #[inline]
     pub fn unescape_value_with<'entity>(
         &self,
         resolve_entity: impl FnMut(&str) -> Option<&'entity str>,
     ) -> XmlResult<Cow<'a, str>> {
-        self.decode_and_unescape_value_with(Decoder::utf8(), resolve_entity)
+        self.normalized_value_with(XmlVersion::Implicit1_0, 128, resolve_entity)
     }
 
     
     
     
     
+    #[deprecated = "use `Self::decoded_and_normalized_value()`"]
     pub fn decode_and_unescape_value(&self, decoder: Decoder) -> XmlResult<Cow<'a, str>> {
-        self.decode_and_unescape_value_with(decoder, resolve_predefined_entity)
+        
+        self.decoded_and_normalized_value_with(
+            XmlVersion::Implicit1_0,
+            decoder,
+            1,
+            resolve_predefined_entity,
+        )
     }
 
     
     
     
     
+    #[deprecated = "use `Self::decoded_and_normalized_value_with()`"]
     pub fn decode_and_unescape_value_with<'entity>(
         &self,
         decoder: Decoder,
         resolve_entity: impl FnMut(&str) -> Option<&'entity str>,
     ) -> XmlResult<Cow<'a, str>> {
-        let decoded = decoder.decode_cow(&self.value)?;
-
-        match unescape_with(&decoded, resolve_entity)? {
-            
-            Cow::Borrowed(_) => Ok(decoded),
-            Cow::Owned(s) => Ok(s.into()),
-        }
+        self.decoded_and_normalized_value_with(
+            XmlVersion::Implicit1_0,
+            decoder,
+            128,
+            resolve_entity,
+        )
     }
 
     
@@ -232,32 +501,80 @@ impl<'a> From<Attr<&'a [u8]>> for Attribute<'a> {
 
 
 
+
+
+
 #[derive(Clone)]
 pub struct Attributes<'a> {
     
     bytes: &'a [u8],
     
     state: IterState,
+    
+    decoder: Decoder,
 }
 
 impl<'a> Attributes<'a> {
     
     #[inline]
-    pub(crate) const fn wrap(buf: &'a [u8], pos: usize, html: bool) -> Self {
+    pub(crate) const fn wrap(buf: &'a [u8], pos: usize, html: bool, decoder: Decoder) -> Self {
         Self {
             bytes: buf,
             state: IterState::new(pos, html),
+            decoder,
         }
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const fn new(buf: &'a str, pos: usize) -> Self {
-        Self::wrap(buf.as_bytes(), pos, false)
+        Self::wrap(buf.as_bytes(), pos, false, Decoder::utf8())
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub const fn html(buf: &'a str, pos: usize) -> Self {
-        Self::wrap(buf.as_bytes(), pos, true)
+        Self::wrap(buf.as_bytes(), pos, true, Decoder::utf8())
     }
 
     
@@ -328,12 +645,12 @@ impl<'a> Attributes<'a> {
     
     
     
-    pub fn has_nil<R>(&mut self, reader: &NsReader<R>) -> bool {
+    pub fn has_nil(&mut self, resolver: &NamespaceResolver) -> bool {
         use crate::name::ResolveResult::*;
 
         self.any(|attr| {
             if let Ok(attr) = attr {
-                match reader.resolve_attribute(attr.key) {
+                match resolver.resolve_attribute(attr.key) {
                     (
                         Bound(Namespace(b"http://www.w3.org/2001/XMLSchema-instance")),
                         LocalName(b"nil"),
@@ -345,13 +662,30 @@ impl<'a> Attributes<'a> {
             }
         })
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub const fn decoder(&self) -> Decoder {
+        self.decoder
+    }
 }
 
 impl<'a> Debug for Attributes<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.debug_struct("Attributes")
-            .field("bytes", &Bytes(&self.bytes))
+            .field("bytes", &Bytes(self.bytes))
             .field("state", &self.state)
+            .field("decoder", &self.decoder)
             .finish()
     }
 }
@@ -633,6 +967,53 @@ enum State {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+const SMALL_ATTRIBUTE_COUNT: usize = 32;
+
+
+
+
+#[derive(Default)]
+struct IdentityHasher(u64);
+
+impl Hasher for IdentityHasher {
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.0
+    }
+
+    #[inline]
+    fn write(&mut self, _: &[u8]) {
+        
+        unreachable!("IdentityHasher only supports u64 keys")
+    }
+
+    #[inline]
+    fn write_u64(&mut self, n: u64) {
+        self.0 = n;
+    }
+}
+
+
+
+#[inline]
+fn hash_name(name: &[u8]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    hasher.write(name);
+    hasher.finish()
+}
+
+
 #[derive(Clone, Debug)]
 pub(crate) struct IterState {
     
@@ -647,6 +1028,13 @@ pub(crate) struct IterState {
     
     
     keys: Vec<Range<usize>>,
+    
+    
+    
+    
+    
+    
+    key_hashes: Option<HashSet<u64, BuildHasherDefault<IdentityHasher>>>,
 }
 
 impl IterState {
@@ -656,6 +1044,7 @@ impl IterState {
             html,
             check_duplicates: true,
             keys: Vec::new(),
+            key_hashes: None,
         }
     }
 
@@ -731,6 +1120,17 @@ impl IterState {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn check_for_duplicates(
         &mut self,
@@ -738,6 +1138,9 @@ impl IterState {
         key: Range<usize>,
     ) -> Result<Range<usize>, AttrError> {
         if self.check_duplicates {
+            if self.keys.len() >= SMALL_ATTRIBUTE_COUNT {
+                return self.check_for_duplicates_hashed(slice, key);
+            }
             if let Some(prev) = self
                 .keys
                 .iter()
@@ -747,6 +1150,44 @@ impl IterState {
             }
             self.keys.push(key.clone());
         }
+        Ok(key)
+    }
+
+    
+    
+    
+    #[cold]
+    fn check_for_duplicates_hashed(
+        &mut self,
+        slice: &[u8],
+        key: Range<usize>,
+    ) -> Result<Range<usize>, AttrError> {
+        let keys = &self.keys;
+        let key_hashes = self.key_hashes.get_or_insert_with(|| {
+            
+            
+            let mut set = HashSet::with_capacity_and_hasher(
+                keys.len() * 2,
+                BuildHasherDefault::<IdentityHasher>::default(),
+            );
+            for r in keys {
+                set.insert(hash_name(&slice[r.clone()]));
+            }
+            set
+        });
+        
+        
+        
+        if !key_hashes.insert(hash_name(&slice[key.clone()])) {
+            if let Some(prev) = self
+                .keys
+                .iter()
+                .find(|r| slice[(*r).clone()] == slice[key.clone()])
+            {
+                return Err(AttrError::Duplicated(key.start, prev.start));
+            }
+        }
+        self.keys.push(key.clone());
         Ok(key)
     }
 
@@ -927,6 +1368,217 @@ impl IterState {
 mod xml {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    mod attribute_value_normalization {
+        use super::*;
+        use crate::errors::Error;
+        use crate::escape::EscapeError::*;
+        use crate::XmlVersion::*;
+        use pretty_assertions::assert_eq;
+
+        
+        #[test]
+        fn empty() {
+            let raw_value = "".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            let value = attr
+                .decoded_and_normalized_value(Implicit1_0, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+
+            let value = attr
+                .decoded_and_normalized_value(Explicit1_0, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+
+            let value = attr
+                .decoded_and_normalized_value(Explicit1_1, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+        }
+
+        
+        #[test]
+        fn already_normalized() {
+            let raw_value = "foobar123".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            let value = attr
+                .decoded_and_normalized_value(Implicit1_0, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "foobar123");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+
+            let value = attr
+                .decoded_and_normalized_value(Explicit1_0, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "foobar123");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+
+            let value = attr
+                .decoded_and_normalized_value(Explicit1_1, Decoder::utf8())
+                .unwrap();
+            assert_eq!(value, "foobar123");
+            
+            assert!(matches!(value, Cow::Borrowed(_)));
+        }
+
+        
+        
+        #[test]
+        fn space_replacement() {
+            let raw_value = "\r\nfoo\u{85}\u{2028}\rbar\tbaz\n\ndelta\n\r\u{85}".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            assert_eq!(
+                attr.decoded_and_normalized_value(Implicit1_0, Decoder::utf8())
+                    .unwrap(),
+                " foo\u{85}\u{2028} bar baz  delta  \u{85}"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value(Explicit1_0, Decoder::utf8())
+                    .unwrap(),
+                " foo\u{85}\u{2028} bar baz  delta  \u{85}"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value(Explicit1_1, Decoder::utf8())
+                    .unwrap(),
+                " foo   bar baz  delta  "
+            );
+        }
+
+        
+        #[test]
+        fn unterminated_entity() {
+            let raw_value = "abc&quotdef".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            match attr.decoded_and_normalized_value(Implicit1_0, Decoder::utf8()) {
+                Err(Error::Escape(err)) => assert_eq!(err, UnterminatedEntity(3..11)),
+                x => panic!("Expected Err(Escape(_)), got {:?}", x),
+            }
+
+            match attr.decoded_and_normalized_value(Explicit1_0, Decoder::utf8()) {
+                Err(Error::Escape(err)) => assert_eq!(err, UnterminatedEntity(3..11)),
+                x => panic!("Expected Err(Escape(_)), got {:?}", x),
+            }
+
+            match attr.decoded_and_normalized_value(Explicit1_1, Decoder::utf8()) {
+                Err(Error::Escape(err)) => assert_eq!(err, UnterminatedEntity(3..11)),
+                x => panic!("Expected Err(Escape(_)), got {:?}", x),
+            }
+        }
+
+        
+        #[test]
+        fn unrecognized_entity() {
+            let raw_value = "abc&unkn;def".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            match attr.decoded_and_normalized_value(Implicit1_0, Decoder::utf8()) {
+                
+                
+                Err(Error::Escape(err)) => {
+                    assert_eq!(err, UnrecognizedEntity(4..8, "unkn".to_owned()))
+                }
+                x => panic!("Expected Err(Escape(err)), got {:?}", x),
+            }
+            match attr.decoded_and_normalized_value(Explicit1_0, Decoder::utf8()) {
+                
+                
+                Err(Error::Escape(err)) => {
+                    assert_eq!(err, UnrecognizedEntity(4..8, "unkn".to_owned()))
+                }
+                x => panic!("Expected Err(Escape(err)), got {:?}", x),
+            }
+            match attr.decoded_and_normalized_value(Explicit1_1, Decoder::utf8()) {
+                
+                
+                Err(Error::Escape(err)) => {
+                    assert_eq!(err, UnrecognizedEntity(4..8, "unkn".to_owned()))
+                }
+                x => panic!("Expected Err(Escape(err)), got {:?}", x),
+            }
+        }
+
+        
+        #[test]
+        fn entity_replacement() {
+            let raw_value = "&d;&d;A&a;&#x20;&a;B&da;".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+            fn custom_resolver(ent: &str) -> Option<&'static str> {
+                match ent {
+                    "d" => Some("&#xD;"),
+                    "a" => Some("&#xA;"),
+                    "da" => Some("&#xD;&#xA;"),
+                    _ => None,
+                }
+            }
+
+            assert_eq!(
+                attr.decoded_and_normalized_value_with(
+                    Implicit1_0,
+                    Decoder::utf8(),
+                    5,
+                    &custom_resolver
+                )
+                .unwrap(),
+                "\r\rA\n \nB\r\n"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value_with(
+                    Explicit1_0,
+                    Decoder::utf8(),
+                    5,
+                    &custom_resolver
+                )
+                .unwrap(),
+                "\r\rA\n \nB\r\n"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value_with(
+                    Explicit1_1,
+                    Decoder::utf8(),
+                    5,
+                    &custom_resolver
+                )
+                .unwrap(),
+                "\r\rA\n \nB\r\n"
+            );
+        }
+
+        #[test]
+        fn char_references() {
+            
+            let raw_value = "&#xd;&#xd;A&#xa;&#xa;B&#xd;&#xa;".as_bytes();
+            let attr = Attribute::from(("foo".as_bytes(), raw_value));
+
+            assert_eq!(
+                attr.decoded_and_normalized_value(Implicit1_0, Decoder::utf8())
+                    .unwrap(),
+                "\r\rA\n\nB\r\n"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value(Explicit1_0, Decoder::utf8())
+                    .unwrap(),
+                "\r\rA\n\nB\r\n"
+            );
+            assert_eq!(
+                attr.decoded_and_normalized_value(Explicit1_1, Decoder::utf8())
+                    .unwrap(),
+                "\r\rA\n\nB\r\n"
+            );
+        }
+    }
 
     
     mod single {
@@ -1444,6 +2096,40 @@ mod xml {
                 );
                 assert_eq!(iter.next(), None);
                 assert_eq!(iter.next(), None);
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            #[test]
+            fn duplicate_past_hash_threshold() {
+                let dup = SMALL_ATTRIBUTE_COUNT / 2;
+                let n = SMALL_ATTRIBUTE_COUNT + 8;
+
+                let mut source = String::from("tag");
+                let mut positions = Vec::with_capacity(n);
+                for i in 0..n {
+                    source.push(' ');
+                    positions.push(source.len());
+                    source.push_str(&format!("k{:04}=''", i));
+                }
+                
+                source.push(' ');
+                let dup_pos = source.len();
+                source.push_str(&format!("k{:04}=''", dup));
+
+                let mut iter = Attributes::new(&source, 3);
+                for _ in 0..n {
+                    assert!(matches!(iter.next(), Some(Ok(_))));
+                }
+                assert_eq!(
+                    iter.next(),
+                    Some(Err(AttrError::Duplicated(dup_pos, positions[dup])))
+                );
             }
         }
 

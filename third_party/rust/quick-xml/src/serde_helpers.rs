@@ -224,11 +224,91 @@ macro_rules! deserialize_match {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export(local_inner_macros)]
 macro_rules! impl_deserialize_for_internally_tagged_enum {
     (
         $enum:ty,
-        $tag:literal,
+        $tag:literal $(:[ $($field:literal),* ])?,
         $($cases:tt)*
     ) => {
         impl<'de> serde::de::Deserialize<'de> for $enum {
@@ -285,7 +365,7 @@ macro_rules! impl_deserialize_for_internally_tagged_enum {
                 }
                 // Tell the deserializer to deserialize the data as a map,
                 // using the TheVisitor as the decoder
-                deserializer.deserialize_map(TheVisitor)
+                deserializer.deserialize_struct(std::stringify!($enum), &[ $($($field),*)? ], TheVisitor)
             }
         }
     }

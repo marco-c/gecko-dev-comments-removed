@@ -2,6 +2,7 @@
 
 use crate::errors::SyntaxError;
 use crate::parser::Parser;
+use crate::utils::is_whitespace;
 
 
 
@@ -72,8 +73,19 @@ impl Parser for PiParser {
     }
 
     #[inline]
-    fn eof_error() -> SyntaxError {
-        SyntaxError::UnclosedPIOrXmlDecl
+    fn eof_error(self, content: &[u8]) -> SyntaxError {
+        
+        
+        
+        let is_xml_decl = content.starts_with(b"<?xml")
+            && content
+                .get(5)
+                .map_or(true, |&b| is_whitespace(b) || b == b'?');
+        if is_xml_decl {
+            SyntaxError::UnclosedXmlDecl
+        } else {
+            SyntaxError::UnclosedPI
+        }
     }
 }
 

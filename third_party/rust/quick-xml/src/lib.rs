@@ -50,7 +50,9 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(clippy::missing_const_for_fn)]
 
 #[cfg(feature = "serialize")]
 pub mod de;
@@ -70,6 +72,8 @@ pub mod serde_helpers;
 pub mod utils;
 pub mod writer;
 
+use std::borrow::Cow;
+
 
 pub use crate::encoding::Decoder;
 #[cfg(feature = "serialize")]
@@ -77,3 +81,51 @@ pub use crate::errors::serialize::{DeError, SeError};
 pub use crate::errors::{Error, Result};
 pub use crate::reader::{NsReader, Reader};
 pub use crate::writer::{ElementWriter, Writer};
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum XmlVersion {
+    
+    
+    
+    
+    
+    Implicit1_0,
+    
+    
+    
+    
+    Explicit1_0,
+    
+    
+    
+    
+    Explicit1_1,
+}
+
+impl XmlVersion {
+    pub(crate) fn normalize_attribute_value<'input, 'entity, F>(
+        &self,
+        value: &'input str,
+        depth: usize,
+        resolve_entity: F,
+    ) -> std::result::Result<Cow<'input, str>, escape::EscapeError>
+    where
+        
+        F: FnMut(&str) -> Option<&'entity str>,
+    {
+        match self {
+            Self::Explicit1_1 => {
+                escape::normalize_xml11_attribute_value(value, depth, resolve_entity)
+            }
+            _ => escape::normalize_xml10_attribute_value(value, depth, resolve_entity),
+        }
+    }
+}
+
+impl Default for XmlVersion {
+    #[inline]
+    fn default() -> Self {
+        Self::Implicit1_0
+    }
+}

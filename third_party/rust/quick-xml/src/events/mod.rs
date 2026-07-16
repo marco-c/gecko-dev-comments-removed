@@ -49,12 +49,12 @@ use std::str::from_utf8;
 use crate::encoding::{Decoder, EncodingError};
 use crate::errors::{Error, IllFormedError};
 use crate::escape::{
-    escape, minimal_escape, partial_escape, resolve_predefined_entity, unescape_with,
+    escape, minimal_escape, normalize_xml10_eols, normalize_xml11_eols, parse_number,
+    partial_escape, EscapeError,
 };
 use crate::name::{LocalName, QName};
-#[cfg(feature = "serialize")]
-use crate::utils::CowRef;
-use crate::utils::{name_len, trim_xml_end, trim_xml_start, write_cow_string, Bytes};
+use crate::utils::{self, name_len, trim_xml_end, trim_xml_start, write_cow_string};
+use crate::XmlVersion;
 use attributes::{AttrError, Attribute, Attributes};
 
 
@@ -95,15 +95,18 @@ pub struct BytesStart<'a> {
     pub(crate) buf: Cow<'a, [u8]>,
     
     pub(crate) name_len: usize,
+    
+    decoder: Decoder,
 }
 
 impl<'a> BytesStart<'a> {
     
     #[inline]
-    pub(crate) const fn wrap(content: &'a [u8], name_len: usize) -> Self {
+    pub(crate) const fn wrap(content: &'a [u8], name_len: usize, decoder: Decoder) -> Self {
         BytesStart {
             buf: Cow::Borrowed(content),
             name_len,
+            decoder,
         }
     }
 
@@ -118,6 +121,7 @@ impl<'a> BytesStart<'a> {
         BytesStart {
             name_len: buf.len(),
             buf,
+            decoder: Decoder::utf8(),
         }
     }
 
@@ -133,6 +137,7 @@ impl<'a> BytesStart<'a> {
         BytesStart {
             buf: str_cow_to_bytes(content),
             name_len,
+            decoder: Decoder::utf8(),
         }
     }
 
@@ -141,6 +146,7 @@ impl<'a> BytesStart<'a> {
         BytesStart {
             buf: Cow::Owned(self.buf.into_owned()),
             name_len: self.name_len,
+            decoder: self.decoder,
         }
     }
 
@@ -149,6 +155,7 @@ impl<'a> BytesStart<'a> {
         BytesStart {
             buf: Cow::Owned(self.buf.clone().into_owned()),
             name_len: self.name_len,
+            decoder: self.decoder,
         }
     }
 
@@ -177,22 +184,37 @@ impl<'a> BytesStart<'a> {
     
     
     
-    pub fn borrow(&self) -> BytesStart {
+    pub fn borrow(&self) -> BytesStart<'_> {
         BytesStart {
             buf: Cow::Borrowed(&self.buf),
             name_len: self.name_len,
+            decoder: self.decoder,
         }
     }
 
     
     #[inline]
-    pub fn to_end(&self) -> BytesEnd {
+    pub fn to_end(&self) -> BytesEnd<'_> {
         BytesEnd::from(self.name())
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn name(&self) -> QName {
+    pub const fn decoder(&self) -> Decoder {
+        self.decoder
+    }
+
+    
+    #[inline]
+    pub fn name(&self) -> QName<'_> {
         QName(&self.buf[..self.name_len])
     }
 
@@ -201,7 +223,7 @@ impl<'a> BytesStart<'a> {
     
     
     #[inline]
-    pub fn local_name(&self) -> LocalName {
+    pub fn local_name(&self) -> LocalName<'_> {
         self.name().into()
     }
 
@@ -215,22 +237,6 @@ impl<'a> BytesStart<'a> {
         bytes.splice(..self.name_len, name.iter().cloned());
         self.name_len = name.len();
         self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "serialize")]
-    pub(crate) fn raw_name<'e>(&'e self) -> CowRef<'a, 'e, [u8]> {
-        match self.buf {
-            Cow::Borrowed(b) => CowRef::Input(&b[..self.name_len]),
-            Cow::Owned(ref o) => CowRef::Slice(&o[..self.name_len]),
-        }
     }
 }
 
@@ -278,13 +284,13 @@ impl<'a> BytesStart<'a> {
     }
 
     
-    pub fn attributes(&self) -> Attributes {
-        Attributes::wrap(&self.buf, self.name_len, false)
+    pub fn attributes(&self) -> Attributes<'_> {
+        Attributes::wrap(&self.buf, self.name_len, false, self.decoder)
     }
 
     
-    pub fn html_attributes(&self) -> Attributes {
-        Attributes::wrap(&self.buf, self.name_len, true)
+    pub fn html_attributes(&self) -> Attributes<'_> {
+        Attributes::wrap(&self.buf, self.name_len, true, self.decoder)
     }
 
     
@@ -345,14 +351,6 @@ impl<'a> Deref for BytesStart<'a> {
     }
 }
 
-impl<'a> From<QName<'a>> for BytesStart<'a> {
-    #[inline]
-    fn from(name: QName<'a>) -> Self {
-        let name = name.into_inner();
-        Self::wrap(name, name.len())
-    }
-}
-
 #[cfg(feature = "arbitrary")]
 impl<'a> arbitrary::Arbitrary<'a> for BytesStart<'a> {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
@@ -361,14 +359,15 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesStart<'a> {
             return Err(arbitrary::Error::IncorrectFormat);
         }
         let mut result = Self::new(s);
-        result.extend_attributes(Vec::<(&str, &str)>::arbitrary(u)?.into_iter());
+        result.extend_attributes(Vec::<(&str, &str)>::arbitrary(u)?);
         Ok(result)
     }
 
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
+
 
 
 
@@ -434,7 +433,7 @@ impl<'a> BytesEnd<'a> {
 
     
     #[inline]
-    pub fn borrow(&self) -> BytesEnd {
+    pub fn borrow(&self) -> BytesEnd<'_> {
         BytesEnd {
             name: Cow::Borrowed(&self.name),
         }
@@ -442,7 +441,7 @@ impl<'a> BytesEnd<'a> {
 
     
     #[inline]
-    pub fn name(&self) -> QName {
+    pub fn name(&self) -> QName<'_> {
         QName(&self.name)
     }
 
@@ -451,7 +450,7 @@ impl<'a> BytesEnd<'a> {
     
     
     #[inline]
-    pub fn local_name(&self) -> LocalName {
+    pub fn local_name(&self) -> LocalName<'_> {
         self.name().into()
     }
 }
@@ -485,9 +484,11 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesEnd<'a> {
         Ok(Self::new(<&str>::arbitrary(u)?))
     }
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
+
+
 
 
 
@@ -534,6 +535,7 @@ pub struct BytesText<'a> {
 
 impl<'a> BytesText<'a> {
     
+    
     #[inline]
     pub(crate) fn wrap<C: Into<Cow<'a, [u8]>>>(content: C, decoder: Decoder) -> Self {
         Self {
@@ -543,11 +545,35 @@ impl<'a> BytesText<'a> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn from_escaped<C: Into<Cow<'a, str>>>(content: C) -> Self {
         Self::wrap(str_cow_to_bytes(content), Decoder::utf8())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
@@ -573,7 +599,7 @@ impl<'a> BytesText<'a> {
 
     
     #[inline]
-    pub fn borrow(&self) -> BytesText {
+    pub fn borrow(&self) -> BytesText<'_> {
         BytesText {
             content: Cow::Borrowed(&self.content),
             decoder: self.decoder,
@@ -584,25 +610,74 @@ impl<'a> BytesText<'a> {
     
     
     
-    pub fn unescape(&self) -> Result<Cow<'a, str>, Error> {
-        self.unescape_with(resolve_predefined_entity)
+    
+    
+    
+    
+    pub fn decode(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.decode_cow(&self.content)
     }
 
     
     
     
     
-    pub fn unescape_with<'entity>(
-        &self,
-        resolve_entity: impl FnMut(&str) -> Option<&'entity str>,
-    ) -> Result<Cow<'a, str>, Error> {
-        let decoded = self.decoder.decode_cow(&self.content)?;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml10_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml10_eols)
+    }
 
-        match unescape_with(&decoded, resolve_entity)? {
-            
-            Cow::Borrowed(_) => Ok(decoded),
-            Cow::Owned(s) => Ok(s.into()),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml11_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml11_eols)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn xml_content(&self, version: XmlVersion) -> Result<Cow<'a, str>, EncodingError> {
+        match version {
+            XmlVersion::Explicit1_1 => self.xml11_content(),
+            _ => self.xml10_content(),
         }
+    }
+
+    
+    #[inline]
+    pub fn html_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.xml10_content()
     }
 
     
@@ -652,7 +727,7 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesText<'a> {
     }
 
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
 
@@ -741,10 +816,9 @@ impl<'a> BytesCData<'a> {
     
     
     #[inline]
-    pub fn escaped(content: &'a str) -> CDataIterator<'a> {
+    pub const fn escaped(content: &'a str) -> CDataIterator<'a> {
         CDataIterator {
-            unprocessed: content.as_bytes(),
-            finished: false,
+            inner: utils::CDataIterator::new(content),
         }
     }
 
@@ -766,7 +840,7 @@ impl<'a> BytesCData<'a> {
 
     
     #[inline]
-    pub fn borrow(&self) -> BytesCData {
+    pub fn borrow(&self) -> BytesCData<'_> {
         BytesCData {
             content: Cow::Borrowed(&self.content),
             decoder: self.decoder,
@@ -849,8 +923,80 @@ impl<'a> BytesCData<'a> {
     
     
     
+    
+    
+    
+    
+    
     pub fn decode(&self) -> Result<Cow<'a, str>, EncodingError> {
-        Ok(self.decoder.decode_cow(&self.content)?)
+        self.decoder.decode_cow(&self.content)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml10_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml10_eols)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml11_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml11_eols)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn xml_content(&self, version: XmlVersion) -> Result<Cow<'a, str>, EncodingError> {
+        match version {
+            XmlVersion::Explicit1_1 => self.xml11_content(),
+            _ => self.xml10_content(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn html_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.xml10_content()
     }
 }
 
@@ -876,48 +1022,25 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesCData<'a> {
         Ok(Self::new(<&str>::arbitrary(u)?))
     }
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
 
 
 
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CDataIterator<'a> {
-    
-    
-    unprocessed: &'a [u8],
-    finished: bool,
-}
-
-impl<'a> Debug for CDataIterator<'a> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.debug_struct("CDataIterator")
-            .field("unprocessed", &Bytes(self.unprocessed))
-            .field("finished", &self.finished)
-            .finish()
-    }
+    inner: utils::CDataIterator<'a>,
 }
 
 impl<'a> Iterator for CDataIterator<'a> {
     type Item = BytesCData<'a>;
 
     fn next(&mut self) -> Option<BytesCData<'a>> {
-        if self.finished {
-            return None;
-        }
-
-        for gt in memchr::memchr_iter(b'>', self.unprocessed) {
-            if self.unprocessed[..gt].ends_with(b"]]") {
-                let (slice, rest) = self.unprocessed.split_at(gt);
-                self.unprocessed = rest;
-                return Some(BytesCData::wrap(slice, Decoder::utf8()));
-            }
-        }
-
-        self.finished = true;
-        Some(BytesCData::wrap(self.unprocessed, Decoder::utf8()))
+        self.inner
+            .next()
+            .map(|slice| BytesCData::wrap(slice.as_bytes(), Decoder::utf8()))
     }
 }
 
@@ -956,9 +1079,9 @@ pub struct BytesPI<'a> {
 impl<'a> BytesPI<'a> {
     
     #[inline]
-    pub(crate) const fn wrap(content: &'a [u8], target_len: usize) -> Self {
+    pub(crate) const fn wrap(content: &'a [u8], target_len: usize, decoder: Decoder) -> Self {
         Self {
-            content: BytesStart::wrap(content, target_len),
+            content: BytesStart::wrap(content, target_len, decoder),
         }
     }
 
@@ -972,7 +1095,11 @@ impl<'a> BytesPI<'a> {
         let buf = str_cow_to_bytes(content);
         let name_len = name_len(&buf);
         Self {
-            content: BytesStart { buf, name_len },
+            content: BytesStart {
+                buf,
+                name_len,
+                decoder: Decoder::utf8(),
+            },
         }
     }
 
@@ -981,7 +1108,7 @@ impl<'a> BytesPI<'a> {
     #[inline]
     pub fn into_owned(self) -> BytesPI<'static> {
         BytesPI {
-            content: self.content.into_owned().into(),
+            content: self.content.into_owned(),
         }
     }
 
@@ -993,7 +1120,7 @@ impl<'a> BytesPI<'a> {
 
     
     #[inline]
-    pub fn borrow(&self) -> BytesPI {
+    pub fn borrow(&self) -> BytesPI<'_> {
         BytesPI {
             content: self.content.borrow(),
         }
@@ -1063,7 +1190,7 @@ impl<'a> BytesPI<'a> {
     
     
     #[inline]
-    pub fn attributes(&self) -> Attributes {
+    pub fn attributes(&self) -> Attributes<'_> {
         self.content.attributes()
     }
 }
@@ -1090,7 +1217,7 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesPI<'a> {
         Ok(Self::new(<&str>::arbitrary(u)?))
     }
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
 
@@ -1223,7 +1350,7 @@ impl<'a> BytesDecl<'a> {
     
     
     
-    pub fn version(&self) -> Result<Cow<[u8]>, Error> {
+    pub fn version(&self) -> Result<Cow<'_, [u8]>, Error> {
         
         match self.content.attributes().with_checks(false).next() {
             Some(Ok(a)) if a.key.as_ref() == b"version" => Ok(a.value),
@@ -1278,7 +1405,7 @@ impl<'a> BytesDecl<'a> {
     
     
     
-    pub fn encoding(&self) -> Option<Result<Cow<[u8]>, AttrError>> {
+    pub fn encoding(&self) -> Option<Result<Cow<'_, [u8]>, AttrError>> {
         self.content
             .try_get_attribute("encoding")
             .map(|a| a.map(|a| a.value))
@@ -1320,11 +1447,76 @@ impl<'a> BytesDecl<'a> {
     
     
     
-    pub fn standalone(&self) -> Option<Result<Cow<[u8]>, AttrError>> {
+    pub fn standalone(&self) -> Option<Result<Cow<'_, [u8]>, AttrError>> {
         self.content
             .try_get_attribute("standalone")
             .map(|a| a.map(|a| a.value))
             .transpose()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml_version(&self) -> Result<XmlVersion, Error> {
+        let v = self.version()?;
+        match v.as_ref() {
+            b"1.0" => Ok(XmlVersion::Explicit1_0),
+            b"1.1" => Ok(XmlVersion::Explicit1_1),
+            _ => Err(Error::IllFormed(IllFormedError::UnknownVersion)),
+        }
     }
 
     
@@ -1349,7 +1541,7 @@ impl<'a> BytesDecl<'a> {
 
     
     #[inline]
-    pub fn borrow(&self) -> BytesDecl {
+    pub fn borrow(&self) -> BytesDecl<'_> {
         BytesDecl {
             content: self.content.borrow(),
         }
@@ -1375,7 +1567,223 @@ impl<'a> arbitrary::Arbitrary<'a> for BytesDecl<'a> {
     }
 
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        return <&str as arbitrary::Arbitrary>::size_hint(depth);
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct BytesRef<'a> {
+    content: Cow<'a, [u8]>,
+    
+    decoder: Decoder,
+}
+
+impl<'a> BytesRef<'a> {
+    
+    #[inline]
+    pub(crate) const fn wrap(content: &'a [u8], decoder: Decoder) -> Self {
+        Self {
+            content: Cow::Borrowed(content),
+            decoder,
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn new<C: Into<Cow<'a, str>>>(name: C) -> Self {
+        Self {
+            content: str_cow_to_bytes(name),
+            decoder: Decoder::utf8(),
+        }
+    }
+
+    
+    pub fn into_owned(self) -> BytesRef<'static> {
+        BytesRef {
+            content: Cow::Owned(self.content.into_owned()),
+            decoder: self.decoder,
+        }
+    }
+
+    
+    #[inline]
+    pub fn into_inner(self) -> Cow<'a, [u8]> {
+        self.content
+    }
+
+    
+    #[inline]
+    pub fn borrow(&self) -> BytesRef<'_> {
+        BytesRef {
+            content: Cow::Borrowed(&self.content),
+            decoder: self.decoder,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn decode(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.decode_cow(&self.content)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml10_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml10_eols)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn xml11_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.decoder.content(&self.content, normalize_xml11_eols)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn xml_content(&self, version: XmlVersion) -> Result<Cow<'a, str>, EncodingError> {
+        match version {
+            XmlVersion::Explicit1_1 => self.xml11_content(),
+            _ => self.xml10_content(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn html_content(&self) -> Result<Cow<'a, str>, EncodingError> {
+        self.xml10_content()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_char_ref(&self) -> bool {
+        matches!(self.content.first(), Some(b'#'))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn resolve_char_ref(&self) -> Result<Option<char>, Error> {
+        if let Some(num) = self.decode()?.strip_prefix('#') {
+            let ch = parse_number(num).map_err(EscapeError::InvalidCharRef)?;
+            return Ok(Some(ch));
+        }
+        Ok(None)
+    }
+}
+
+impl<'a> Debug for BytesRef<'a> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "BytesRef {{ content: ")?;
+        write_cow_string(f, &self.content)?;
+        write!(f, " }}")
+    }
+}
+
+impl<'a> Deref for BytesRef<'a> {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        &self.content
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for BytesRef<'a> {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self::new(<&str>::arbitrary(u)?))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        <&str as arbitrary::Arbitrary>::size_hint(depth)
     }
 }
 
@@ -1406,6 +1814,9 @@ pub enum Event<'a> {
     
     DocType(BytesText<'a>),
     
+    
+    GeneralRef(BytesRef<'a>),
+    
     Eof,
 }
 
@@ -1423,13 +1834,14 @@ impl<'a> Event<'a> {
             Event::Decl(e) => Event::Decl(e.into_owned()),
             Event::PI(e) => Event::PI(e.into_owned()),
             Event::DocType(e) => Event::DocType(e.into_owned()),
+            Event::GeneralRef(e) => Event::GeneralRef(e.into_owned()),
             Event::Eof => Event::Eof,
         }
     }
 
     
     #[inline]
-    pub fn borrow(&self) -> Event {
+    pub fn borrow(&self) -> Event<'_> {
         match self {
             Event::Start(e) => Event::Start(e.borrow()),
             Event::End(e) => Event::End(e.borrow()),
@@ -1440,6 +1852,7 @@ impl<'a> Event<'a> {
             Event::Decl(e) => Event::Decl(e.borrow()),
             Event::PI(e) => Event::PI(e.borrow()),
             Event::DocType(e) => Event::DocType(e.borrow()),
+            Event::GeneralRef(e) => Event::GeneralRef(e.borrow()),
             Event::Eof => Event::Eof,
         }
     }
@@ -1458,6 +1871,7 @@ impl<'a> Deref for Event<'a> {
             Event::CData(ref e) => e,
             Event::Comment(ref e) => e,
             Event::DocType(ref e) => e,
+            Event::GeneralRef(ref e) => e,
             Event::Eof => &[],
         }
     }

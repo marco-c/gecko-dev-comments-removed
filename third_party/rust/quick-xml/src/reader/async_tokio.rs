@@ -7,12 +7,15 @@ use std::task::{Context, Poll};
 
 use tokio::io::{self, AsyncBufRead, AsyncBufReadExt, AsyncRead, ReadBuf};
 
-use crate::errors::{Error, Result, SyntaxError};
-use crate::events::Event;
+use crate::encoding;
+use crate::errors::{Error, IllFormedError, Result, SyntaxError};
+use crate::events::{BytesRef, BytesText, Event};
 use crate::name::{QName, ResolveResult};
 use crate::parser::{ElementParser, Parser, PiParser};
 use crate::reader::buffered_reader::impl_buffered_source;
-use crate::reader::{BangType, BinaryStream, NsReader, ParseState, ReadTextResult, Reader, Span};
+use crate::reader::{
+    BangType, BinaryStream, NsReader, ParseState, ReadRefResult, ReadTextResult, Reader, Span,
+};
 use crate::utils::is_whitespace;
 
 
@@ -196,6 +199,82 @@ impl<R: AsyncBufRead + Unpin> Reader<R> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn read_text_into_async<'n, 'b>(
+        &mut self,
+        
+        end: QName<'n>,
+        buf: &'b mut Vec<u8>,
+    ) -> Result<BytesText<'b>> {
+        let start = buf.len();
+        let span = read_to_end!(self, end, buf, read_event_into_async, {}, await);
+
+        let len = span.end - span.start;
+        
+        
+        
+        let end = start + len as usize;
+
+        Ok(BytesText::wrap(&buf[start..end], self.decoder()))
+    }
+
+    
+    
     async fn read_until_close_async<'b>(&mut self, buf: &'b mut Vec<u8>) -> Result<Event<'b>> {
         read_until_close!(self, buf, TokioAdapter(&mut self.reader), await)
     }
@@ -335,7 +414,84 @@ impl<R: AsyncBufRead + Unpin> NsReader<R> {
     ) -> Result<Span> {
         
         
-        self.reader.read_to_end_into_async(end, buf).await
+        let result = self.reader.read_to_end_into_async(end, buf).await?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn read_text_into_async<'n, 'b>(
+        &mut self,
+        
+        end: QName<'n>,
+        buf: &'b mut Vec<u8>,
+    ) -> Result<BytesText<'b>> {
+        
+        
+        let result = self.reader.read_text_into_async(end, buf).await?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
     }
 
     
@@ -404,8 +560,8 @@ impl<R: AsyncBufRead + Unpin> NsReader<R> {
         &'ns mut self,
         buf: &'b mut Vec<u8>,
     ) -> Result<(ResolveResult<'ns>, Event<'b>)> {
-        let event = self.read_event_into_async(buf).await;
-        self.resolve_event(event)
+        let event = self.read_event_into_async(buf).await?;
+        Ok(self.resolver().resolve_event(event))
     }
 }
 
@@ -417,8 +573,8 @@ mod test {
     check!(
         #[tokio::test]
         read_event_into_async,
-        read_until_close_async,
         TokioAdapter,
+        1,
         &mut Vec::new(),
         async,
         await

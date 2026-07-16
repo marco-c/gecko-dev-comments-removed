@@ -4,10 +4,11 @@
 
 
 use crate::events::attributes::Attribute;
-use crate::events::BytesStart;
-use crate::utils::write_byte_string;
+use crate::events::{BytesStart, Event};
+use crate::utils::{write_byte_string, Bytes};
 use memchr::memchr;
 use std::fmt::{self, Debug, Formatter};
+use std::iter::FusedIterator;
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,6 +40,13 @@ pub enum NamespaceError {
     
     
     InvalidPrefixForXmlns(Vec<u8>),
+    
+    
+    
+    
+    
+    
+    TooManyDeclarations(usize),
 }
 
 impl fmt::Display for NamespaceError {
@@ -68,6 +76,14 @@ impl fmt::Display for NamespaceError {
                 f.write_str("the namespace prefix '")?;
                 write_byte_string(f, prefix)?;
                 f.write_str("' cannot be bound to 'http://www.w3.org/2000/xmlns/'")
+            }
+            Self::TooManyDeclarations(limit) => {
+                write!(
+                    f,
+                    "start tag declares more than {} namespace bindings; \
+                     raise the limit with NamespaceResolver::set_max_declarations_per_element",
+                    limit,
+                )
             }
         }
     }
@@ -257,6 +273,18 @@ impl<'a> Prefix<'a> {
     pub const fn into_inner(self) -> &'a [u8] {
         self.0
     }
+
+    
+    #[inline(always)]
+    pub const fn is_xml(&self) -> bool {
+        matches!(self.0, b"xml")
+    }
+
+    
+    #[inline(always)]
+    pub const fn is_xmlns(&self) -> bool {
+        matches!(self.0, b"xmlns")
+    }
 }
 impl<'a> Debug for Prefix<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -276,13 +304,25 @@ impl<'a> AsRef<[u8]> for Prefix<'a> {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PrefixDeclaration<'a> {
     
     Default,
     
     
     Named(&'a [u8]),
+}
+impl<'a> Debug for PrefixDeclaration<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Default => f.write_str("PrefixDeclaration::Default"),
+            Self::Named(prefix) => {
+                f.write_str("PrefixDeclaration::Named(")?;
+                write_byte_string(f, prefix)?;
+                f.write_str(")")
+            }
+        }
+    }
 }
 
 
@@ -347,8 +387,6 @@ impl<'a> AsRef<[u8]> for Namespace<'a> {
 
 
 
-
-
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum ResolveResult<'ns> {
     
@@ -402,7 +440,7 @@ impl<'ns> TryFrom<ResolveResult<'ns>> for Option<Namespace<'ns>> {
 
 
 #[derive(Debug, Clone)]
-struct NamespaceEntry {
+struct NamespaceBinding {
     
     start: usize,
     
@@ -423,18 +461,22 @@ struct NamespaceEntry {
     
     
     
-    level: i32,
+    level: u16,
 }
 
-impl NamespaceEntry {
+impl NamespaceBinding {
     
     
     #[inline]
-    fn prefix<'b>(&self, ns_buffer: &'b [u8]) -> Option<Prefix<'b>> {
+    const fn prefix<'b>(&self, buffer: &'b [u8]) -> Option<Prefix<'b>> {
         if self.prefix_len == 0 {
             None
         } else {
-            Some(Prefix(&ns_buffer[self.start..self.start + self.prefix_len]))
+            
+            
+            let (_, prefix) = buffer.split_at(self.start);
+            let (prefix, _) = prefix.split_at(self.prefix_len);
+            Some(Prefix(prefix))
         }
     }
 
@@ -443,12 +485,15 @@ impl NamespaceEntry {
     
     
     #[inline]
-    fn namespace<'ns>(&self, buffer: &'ns [u8]) -> ResolveResult<'ns> {
+    const fn namespace<'ns>(&self, buffer: &'ns [u8]) -> ResolveResult<'ns> {
         if self.value_len == 0 {
             ResolveResult::Unbound
         } else {
-            let start = self.start + self.prefix_len;
-            ResolveResult::Bound(Namespace(&buffer[start..start + self.value_len]))
+            
+            
+            let (_, ns) = buffer.split_at(self.start + self.prefix_len);
+            let (ns, _) = ns.split_at(self.value_len);
+            ResolveResult::Bound(Namespace(ns))
         }
     }
 }
@@ -456,16 +501,45 @@ impl NamespaceEntry {
 
 
 
-#[derive(Debug, Clone)]
-pub(crate) struct NamespaceResolver {
+
+#[derive(Clone)]
+pub struct NamespaceResolver {
     
     
     buffer: Vec<u8>,
     
-    bindings: Vec<NamespaceEntry>,
+    bindings: Vec<NamespaceBinding>,
     
     
-    nesting_level: i32,
+    nesting_level: u16,
+    
+    
+    
+    
+    max_declarations_per_element: usize,
+}
+
+
+
+
+
+
+
+
+pub const DEFAULT_MAX_DECLARATIONS_PER_ELEMENT: usize = 256;
+
+impl Debug for NamespaceResolver {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NamespaceResolver")
+            .field("buffer", &Bytes(&self.buffer))
+            .field("bindings", &self.bindings)
+            .field("nesting_level", &self.nesting_level)
+            .field(
+                "max_declarations_per_element",
+                &self.max_declarations_per_element,
+            )
+            .finish()
+    }
 }
 
 
@@ -500,7 +574,7 @@ impl Default for NamespaceResolver {
         for ent in &[RESERVED_NAMESPACE_XML, RESERVED_NAMESPACE_XMLNS] {
             let prefix = ent.0.into_inner();
             let uri = ent.1.into_inner();
-            bindings.push(NamespaceEntry {
+            bindings.push(NamespaceBinding {
                 start: buffer.len(),
                 prefix_len: prefix.len(),
                 value_len: uri.len(),
@@ -514,6 +588,7 @@ impl Default for NamespaceResolver {
             buffer,
             bindings,
             nesting_level: 0,
+            max_declarations_per_element: DEFAULT_MAX_DECLARATIONS_PER_ELEMENT,
         }
     }
 }
@@ -523,57 +598,128 @@ impl NamespaceResolver {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add(
+        &mut self,
+        prefix: PrefixDeclaration,
+        namespace: Namespace,
+    ) -> Result<(), NamespaceError> {
+        let level = self.nesting_level;
+        match prefix {
+            PrefixDeclaration::Default => {
+                let start = self.buffer.len();
+                self.buffer.extend_from_slice(namespace.0);
+                self.bindings.push(NamespaceBinding {
+                    start,
+                    prefix_len: 0,
+                    value_len: namespace.0.len(),
+                    level,
+                });
+            }
+            PrefixDeclaration::Named(b"xml") => {
+                if namespace != RESERVED_NAMESPACE_XML.1 {
+                    
+                    return Err(NamespaceError::InvalidXmlPrefixBind(namespace.0.to_vec()));
+                }
+                
+            }
+            PrefixDeclaration::Named(b"xmlns") => {
+                
+                return Err(NamespaceError::InvalidXmlnsPrefixBind(namespace.0.to_vec()));
+            }
+            PrefixDeclaration::Named(prefix) => {
+                
+                if namespace == RESERVED_NAMESPACE_XML.1 {
+                    return Err(NamespaceError::InvalidPrefixForXml(prefix.to_vec()));
+                } else
+                
+                if namespace == RESERVED_NAMESPACE_XMLNS.1 {
+                    return Err(NamespaceError::InvalidPrefixForXmlns(prefix.to_vec()));
+                }
+
+                let start = self.buffer.len();
+                self.buffer.extend_from_slice(prefix);
+                self.buffer.extend_from_slice(namespace.0);
+                self.bindings.push(NamespaceBinding {
+                    start,
+                    prefix_len: prefix.len(),
+                    value_len: namespace.0.len(),
+                    level,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    
+    
+    
+    
     pub fn push(&mut self, start: &BytesStart) -> Result<(), NamespaceError> {
         self.nesting_level += 1;
-        let level = self.nesting_level;
+        let mut count = 0usize;
         
         
         for a in start.attributes().with_checks(false) {
             if let Ok(Attribute { key: k, value: v }) = a {
-                match k.as_namespace_binding() {
-                    Some(PrefixDeclaration::Default) => {
-                        let start = self.buffer.len();
-                        self.buffer.extend_from_slice(&v);
-                        self.bindings.push(NamespaceEntry {
-                            start,
-                            prefix_len: 0,
-                            value_len: v.len(),
-                            level,
-                        });
+                if let Some(prefix) = k.as_namespace_binding() {
+                    if count >= self.max_declarations_per_element {
+                        return Err(NamespaceError::TooManyDeclarations(
+                            self.max_declarations_per_element,
+                        ));
                     }
-                    Some(PrefixDeclaration::Named(b"xml")) => {
-                        if Namespace(&v) != RESERVED_NAMESPACE_XML.1 {
-                            
-                            return Err(NamespaceError::InvalidXmlPrefixBind(v.to_vec()));
-                        }
-                        
-                    }
-                    Some(PrefixDeclaration::Named(b"xmlns")) => {
-                        
-                        return Err(NamespaceError::InvalidXmlnsPrefixBind(v.to_vec()));
-                    }
-                    Some(PrefixDeclaration::Named(prefix)) => {
-                        let ns = Namespace(&v);
-
-                        if ns == RESERVED_NAMESPACE_XML.1 {
-                            
-                            return Err(NamespaceError::InvalidPrefixForXml(prefix.to_vec()));
-                        } else if ns == RESERVED_NAMESPACE_XMLNS.1 {
-                            
-                            return Err(NamespaceError::InvalidPrefixForXmlns(prefix.to_vec()));
-                        }
-
-                        let start = self.buffer.len();
-                        self.buffer.extend_from_slice(prefix);
-                        self.buffer.extend_from_slice(&v);
-                        self.bindings.push(NamespaceEntry {
-                            start,
-                            prefix_len: prefix.len(),
-                            value_len: v.len(),
-                            level,
-                        });
-                    }
-                    None => {}
+                    count += 1;
+                    self.add(prefix, Namespace(&v))?;
                 }
             } else {
                 break;
@@ -586,11 +732,80 @@ impl NamespaceResolver {
     
     
     
+    
+    #[inline]
+    pub const fn max_declarations_per_element(&self) -> usize {
+        self.max_declarations_per_element
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn set_max_declarations_per_element(&mut self, limit: usize) -> &mut Self {
+        self.max_declarations_per_element = limit;
+        self
+    }
+
+    
+    
+    
+    
+    #[inline]
     pub fn pop(&mut self) {
-        self.nesting_level -= 1;
-        let current_level = self.nesting_level;
+        self.set_level(self.nesting_level.saturating_sub(1));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_level(&mut self, level: u16) {
+        self.nesting_level = level;
         
-        match self.bindings.iter().rposition(|n| n.level <= current_level) {
+        match self.bindings.iter().rposition(|n| n.level <= level) {
             
             None => {
                 self.buffer.clear();
@@ -619,71 +834,331 @@ impl NamespaceResolver {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn resolve<'n>(
         &self,
         name: QName<'n>,
         use_default: bool,
-    ) -> (ResolveResult, LocalName<'n>) {
+    ) -> (ResolveResult<'_>, LocalName<'n>) {
         let (local_name, prefix) = name.decompose();
         (self.resolve_prefix(prefix, use_default), local_name)
     }
 
     
     
-    
-    
-    
-    
-    
-    
+    #[inline]
+    pub fn resolve_element<'n>(&self, name: QName<'n>) -> (ResolveResult<'_>, LocalName<'n>) {
+        self.resolve(name, true)
+    }
+
     
     
     #[inline]
-    pub fn find(&self, element_name: QName) -> ResolveResult {
-        self.resolve_prefix(element_name.prefix(), true)
+    pub fn resolve_attribute<'n>(&self, name: QName<'n>) -> (ResolveResult<'_>, LocalName<'n>) {
+        self.resolve(name, false)
     }
 
-    fn resolve_prefix(&self, prefix: Option<Prefix>, use_default: bool) -> ResolveResult {
-        self.bindings
-            .iter()
-            
-            .rev()
-            .find_map(|n| match (n.prefix(&self.buffer), prefix) {
-                
-                (None, None) if use_default => Some(n.namespace(&self.buffer)),
-                (None, None) => Some(ResolveResult::Unbound),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn resolve_event<'i>(&self, event: Event<'i>) -> (ResolveResult<'_>, Event<'i>) {
+        use Event::*;
 
-                
-                (None, Some(_)) => None,
-                (Some(_), None) => None,
-
-                
-                (Some(definition), Some(usage)) if definition != usage => None,
-
-                
-                _ if n.value_len == 0 => Some(Self::maybe_unknown(prefix)),
-                
-                _ => Some(n.namespace(&self.buffer)),
-            })
-            .unwrap_or_else(|| Self::maybe_unknown(prefix))
-    }
-
-    #[inline]
-    fn maybe_unknown(prefix: Option<Prefix>) -> ResolveResult<'static> {
-        match prefix {
-            Some(p) => ResolveResult::Unknown(p.into_inner().to_vec()),
-            None => ResolveResult::Unbound,
+        match event {
+            Empty(e) => (self.resolve_prefix(e.name().prefix(), true), Empty(e)),
+            Start(e) => (self.resolve_prefix(e.name().prefix(), true), Start(e)),
+            End(e) => (self.resolve_prefix(e.name().prefix(), true), End(e)),
+            e => (ResolveResult::Unbound, e),
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    pub fn resolve_prefix(&self, prefix: Option<Prefix>, use_default: bool) -> ResolveResult<'_> {
+        
+        let mut iter = self.bindings.iter().rev();
+        match (prefix, use_default) {
+            
+            (None, false) => ResolveResult::Unbound,
+            
+            (None, true) => match iter.find(|n| n.prefix_len == 0) {
+                Some(n) => n.namespace(&self.buffer),
+                None => ResolveResult::Unbound,
+            },
+            
+            (Some(p), _) => match iter.find(|n| n.prefix(&self.buffer) == prefix) {
+                Some(n) if n.value_len != 0 => n.namespace(&self.buffer),
+                
+                _ => ResolveResult::Unknown(p.into_inner().to_vec()),
+            },
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub const fn iter(&self) -> PrefixIter {
-        PrefixIter {
+    pub const fn bindings(&self) -> NamespaceBindingsIter<'_> {
+        NamespaceBindingsIter {
             resolver: self,
             
-            bindings_cursor: 2,
+            cursor: 2,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn bindings_of(&self, level: u16) -> NamespaceBindingsOfLevelIter<'_> {
+        NamespaceBindingsOfLevelIter {
+            resolver: self,
+            cursor: 0,
+            level,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn level(&self) -> u16 {
+        self.nesting_level
     }
 }
 
@@ -693,55 +1168,141 @@ impl NamespaceResolver {
 
 
 #[derive(Debug, Clone)]
-pub struct PrefixIter<'a> {
+pub struct NamespaceBindingsIter<'a> {
     resolver: &'a NamespaceResolver,
-    bindings_cursor: usize,
+    cursor: usize,
 }
 
-impl<'a> Iterator for PrefixIter<'a> {
+impl<'a> Iterator for NamespaceBindingsIter<'a> {
     type Item = (PrefixDeclaration<'a>, Namespace<'a>);
 
     fn next(&mut self) -> Option<(PrefixDeclaration<'a>, Namespace<'a>)> {
-        while let Some(namespace_entry) = self.resolver.bindings.get(self.bindings_cursor) {
-            self.bindings_cursor += 1; 
+        while let Some(binding) = self.resolver.bindings.get(self.cursor) {
+            self.cursor += 1; 
 
             
             
-            let prefix = namespace_entry.prefix(&self.resolver.buffer);
-            if self.resolver.bindings[self.bindings_cursor..]
+            let prefix = binding.prefix(&self.resolver.buffer);
+            if self.resolver.bindings[self.cursor..]
                 .iter()
                 .any(|ne| prefix == ne.prefix(&self.resolver.buffer))
             {
                 continue; 
             }
-            let namespace = if let ResolveResult::Bound(namespace) =
-                namespace_entry.namespace(&self.resolver.buffer)
-            {
-                namespace
-            } else {
-                continue; 
-            };
-            let prefix = if let Some(Prefix(prefix)) = prefix {
-                PrefixDeclaration::Named(prefix)
-            } else {
-                PrefixDeclaration::Default
-            };
-            return Some((prefix, namespace));
+            if let ResolveResult::Bound(namespace) = binding.namespace(&self.resolver.buffer) {
+                let prefix = match prefix {
+                    Some(Prefix(prefix)) => PrefixDeclaration::Named(prefix),
+                    None => PrefixDeclaration::Default,
+                };
+                return Some((prefix, namespace));
+            }
         }
         None 
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         
-        (0, Some(self.resolver.bindings.len() - self.bindings_cursor))
+        (0, Some(self.resolver.bindings.len() - self.cursor))
     }
 }
+
+impl<'a> FusedIterator for NamespaceBindingsIter<'a> {}
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct NamespaceBindingsOfLevelIter<'a> {
+    resolver: &'a NamespaceResolver,
+    cursor: usize,
+    level: u16,
+}
+
+impl<'a> Iterator for NamespaceBindingsOfLevelIter<'a> {
+    type Item = (PrefixDeclaration<'a>, Namespace<'a>);
+
+    fn next(&mut self) -> Option<(PrefixDeclaration<'a>, Namespace<'a>)> {
+        while let Some(binding) = self.resolver.bindings.get(self.cursor) {
+            self.cursor += 1; 
+            if binding.level < self.level {
+                continue;
+            }
+            if binding.level > self.level {
+                break;
+            }
+
+            if let ResolveResult::Bound(namespace) = binding.namespace(&self.resolver.buffer) {
+                let prefix = match binding.prefix(&self.resolver.buffer) {
+                    Some(Prefix(prefix)) => PrefixDeclaration::Named(prefix),
+                    None => PrefixDeclaration::Default,
+                };
+                return Some((prefix, namespace));
+            }
+        }
+        None 
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        
+        (0, Some(self.resolver.bindings.len() - self.cursor))
+    }
+}
+
+impl<'a> FusedIterator for NamespaceBindingsOfLevelIter<'a> {}
+
+
 
 #[cfg(test)]
 mod namespaces {
     use super::*;
     use pretty_assertions::assert_eq;
     use ResolveResult::*;
+
+    
+    
+    
+    #[test]
+    fn push_rejects_too_many_declarations() {
+        let mut tag = String::from("e");
+        for i in 0..=DEFAULT_MAX_DECLARATIONS_PER_ELEMENT {
+            tag.push_str(&format!(" xmlns:p{}=''", i));
+        }
+        let mut resolver = NamespaceResolver::default();
+        assert_eq!(
+            resolver.push(&BytesStart::from_content(&tag, 1)),
+            Err(NamespaceError::TooManyDeclarations(
+                DEFAULT_MAX_DECLARATIONS_PER_ELEMENT
+            )),
+        );
+
+        
+        let mut tag = String::from("e");
+        for i in 0..DEFAULT_MAX_DECLARATIONS_PER_ELEMENT {
+            tag.push_str(&format!(" xmlns:p{}=''", i));
+        }
+        let mut resolver = NamespaceResolver::default();
+        assert_eq!(resolver.push(&BytesStart::from_content(&tag, 1)), Ok(()));
+
+        
+        let mut resolver = NamespaceResolver::default();
+        resolver.set_max_declarations_per_element(2);
+        assert_eq!(
+            resolver.push(&BytesStart::from_content(
+                "e xmlns:a='' xmlns:b='' xmlns:c=''",
+                1,
+            )),
+            Err(NamespaceError::TooManyDeclarations(2)),
+        );
+        let mut resolver = NamespaceResolver::default();
+        resolver.set_max_declarations_per_element(usize::MAX);
+        assert_eq!(
+            resolver.push(&BytesStart::from_content(
+                "e xmlns:a='' xmlns:b='' xmlns:c=''",
+                1,
+            )),
+            Ok(()),
+        );
+    }
 
     
     
@@ -782,7 +1343,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unbound, LocalName(b"simple"))
             );
-            assert_eq!(resolver.find(name), Bound(ns));
         }
 
         
@@ -811,7 +1371,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unbound, LocalName(b"simple"))
             );
-            assert_eq!(resolver.find(name), Bound(new_ns));
 
             resolver.pop();
             assert_eq!(&resolver.buffer[s..], b"old");
@@ -823,7 +1382,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unbound, LocalName(b"simple"))
             );
-            assert_eq!(resolver.find(name), Bound(old_ns));
         }
 
         
@@ -854,7 +1412,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unbound, LocalName(b"simple"))
             );
-            assert_eq!(resolver.find(name), Unbound);
 
             resolver.pop();
             assert_eq!(&resolver.buffer[s..], b"old");
@@ -866,7 +1423,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unbound, LocalName(b"simple"))
             );
-            assert_eq!(resolver.find(name), Bound(old_ns));
         }
     }
 
@@ -902,7 +1458,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Bound(ns), LocalName(b"with-declared-prefix"))
             );
-            assert_eq!(resolver.find(name), Bound(ns));
         }
 
         
@@ -931,7 +1486,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Bound(new_ns), LocalName(b"with-declared-prefix"))
             );
-            assert_eq!(resolver.find(name), Bound(new_ns));
 
             resolver.pop();
             assert_eq!(&resolver.buffer[s..], b"pold");
@@ -943,7 +1497,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Bound(old_ns), LocalName(b"with-declared-prefix"))
             );
-            assert_eq!(resolver.find(name), Bound(old_ns));
         }
 
         
@@ -974,7 +1527,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Unknown(b"p".to_vec()), LocalName(b"with-declared-prefix"))
             );
-            assert_eq!(resolver.find(name), Unknown(b"p".to_vec()));
 
             resolver.pop();
             assert_eq!(&resolver.buffer[s..], b"pold");
@@ -986,7 +1538,6 @@ mod namespaces {
                 resolver.resolve(name, false),
                 (Bound(old_ns), LocalName(b"with-declared-prefix"))
             );
-            assert_eq!(resolver.find(name), Bound(old_ns));
         }
     }
 
@@ -1017,7 +1568,6 @@ mod namespaces {
                     resolver.resolve(name, false),
                     (Bound(namespace), LocalName(b"random"))
                 );
-                assert_eq!(resolver.find(name), Bound(namespace));
             }
 
             
@@ -1101,7 +1651,6 @@ mod namespaces {
                     resolver.resolve(name, false),
                     (Bound(namespace), LocalName(b"random"))
                 );
-                assert_eq!(resolver.find(name), Bound(namespace));
             }
 
             
@@ -1185,7 +1734,6 @@ mod namespaces {
             resolver.resolve(name, false),
             (Unknown(b"unknown".to_vec()), LocalName(b"prefix"))
         );
-        assert_eq!(resolver.find(name), Unknown(b"unknown".to_vec()));
     }
 
     

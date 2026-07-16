@@ -1905,23 +1905,82 @@
 
 
 
-use serde::serde_if_integer128;
 
-macro_rules! deserialize_num {
-    ($deserialize:ident => $visit:ident, $($mut:tt)?) => {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! forward_to_simple_type {
+    ($deserialize:ident, $($mut:tt)?) => {
+        #[inline]
         fn $deserialize<V>($($mut)? self, visitor: V) -> Result<V::Value, DeError>
         where
             V: Visitor<'de>,
         {
-            // No need to unescape because valid integer representations cannot be escaped
-            let text = self.read_string()?;
-            match text.parse() {
-                Ok(number) => visitor.$visit(number),
-                Err(_) => match text {
-                    Cow::Borrowed(t) => visitor.visit_str(t),
-                    Cow::Owned(t) => visitor.visit_string(t),
-                }
-            }
+            SimpleTypeDeserializer::from_text(self.read_string()?).$deserialize(visitor)
         }
     };
 }
@@ -1930,63 +1989,27 @@ macro_rules! deserialize_num {
 
 macro_rules! deserialize_primitives {
     ($($mut:tt)?) => {
-        deserialize_num!(deserialize_i8 => visit_i8, $($mut)?);
-        deserialize_num!(deserialize_i16 => visit_i16, $($mut)?);
-        deserialize_num!(deserialize_i32 => visit_i32, $($mut)?);
-        deserialize_num!(deserialize_i64 => visit_i64, $($mut)?);
+        forward_to_simple_type!(deserialize_i8, $($mut)?);
+        forward_to_simple_type!(deserialize_i16, $($mut)?);
+        forward_to_simple_type!(deserialize_i32, $($mut)?);
+        forward_to_simple_type!(deserialize_i64, $($mut)?);
 
-        deserialize_num!(deserialize_u8 => visit_u8, $($mut)?);
-        deserialize_num!(deserialize_u16 => visit_u16, $($mut)?);
-        deserialize_num!(deserialize_u32 => visit_u32, $($mut)?);
-        deserialize_num!(deserialize_u64 => visit_u64, $($mut)?);
+        forward_to_simple_type!(deserialize_u8, $($mut)?);
+        forward_to_simple_type!(deserialize_u16, $($mut)?);
+        forward_to_simple_type!(deserialize_u32, $($mut)?);
+        forward_to_simple_type!(deserialize_u64, $($mut)?);
 
-        serde_if_integer128! {
-            deserialize_num!(deserialize_i128 => visit_i128, $($mut)?);
-            deserialize_num!(deserialize_u128 => visit_u128, $($mut)?);
-        }
+        forward_to_simple_type!(deserialize_i128, $($mut)?);
+        forward_to_simple_type!(deserialize_u128, $($mut)?);
 
-        deserialize_num!(deserialize_f32 => visit_f32, $($mut)?);
-        deserialize_num!(deserialize_f64 => visit_f64, $($mut)?);
+        forward_to_simple_type!(deserialize_f32, $($mut)?);
+        forward_to_simple_type!(deserialize_f64, $($mut)?);
 
-        fn deserialize_bool<V>($($mut)? self, visitor: V) -> Result<V::Value, DeError>
-        where
-            V: Visitor<'de>,
-        {
-            let text = match self.read_string()? {
-                Cow::Borrowed(s) => CowRef::Input(s),
-                Cow::Owned(s) => CowRef::Owned(s),
-            };
-            text.deserialize_bool(visitor)
-        }
+        forward_to_simple_type!(deserialize_bool, $($mut)?);
+        forward_to_simple_type!(deserialize_char, $($mut)?);
 
-        /// Character represented as [strings](#method.deserialize_str).
-        #[inline]
-        fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, DeError>
-        where
-            V: Visitor<'de>,
-        {
-            self.deserialize_str(visitor)
-        }
-
-        fn deserialize_str<V>($($mut)? self, visitor: V) -> Result<V::Value, DeError>
-        where
-            V: Visitor<'de>,
-        {
-            let text = self.read_string()?;
-            match text {
-                Cow::Borrowed(string) => visitor.visit_borrowed_str(string),
-                Cow::Owned(string) => visitor.visit_string(string),
-            }
-        }
-
-        /// Representation of owned strings the same as [non-owned](#method.deserialize_str).
-        #[inline]
-        fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, DeError>
-        where
-            V: Visitor<'de>,
-        {
-            self.deserialize_str(visitor)
-        }
+        forward_to_simple_type!(deserialize_str, $($mut)?);
+        forward_to_simple_type!(deserialize_string, $($mut)?);
 
         /// Forwards deserialization to the [`deserialize_any`](#method.deserialize_any).
         #[inline]
@@ -2072,6 +2095,7 @@ macro_rules! deserialize_primitives {
     };
 }
 
+mod attributes;
 mod key;
 mod map;
 mod resolver;
@@ -2079,18 +2103,20 @@ mod simple_type;
 mod text;
 mod var;
 
+pub use self::attributes::AttributesDeserializer;
 pub use self::resolver::{EntityResolver, PredefinedEntityResolver};
 pub use self::simple_type::SimpleTypeDeserializer;
 pub use crate::errors::serialize::DeError;
+use crate::XmlVersion;
 
 use crate::{
     de::map::ElementMapAccess,
     encoding::Decoder,
     errors::Error,
-    events::{BytesCData, BytesEnd, BytesStart, BytesText, Event},
+    escape::{parse_number, EscapeError},
+    events::{BytesCData, BytesEnd, BytesRef, BytesStart, BytesText, Event},
     name::QName,
     reader::NsReader,
-    utils::CowRef,
 };
 use serde::de::{
     self, Deserialize, DeserializeOwned, DeserializeSeed, IntoDeserializer, SeqAccess, Visitor,
@@ -2102,12 +2128,18 @@ use std::io::BufRead;
 use std::mem::replace;
 #[cfg(feature = "overlapped-lists")]
 use std::num::NonZeroUsize;
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 
 
 pub(crate) const TEXT_KEY: &str = "$text";
 
 pub(crate) const VALUE_KEY: &str = "$value";
+
+
+#[inline]
+const fn is_non_whitespace(ch: char) -> bool {
+    !matches!(ch, ' ' | '\r' | '\n' | '\t')
+}
 
 
 
@@ -2122,7 +2154,77 @@ pub(crate) const VALUE_KEY: &str = "$value";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Text<'a> {
+    
+    
+    
+    
+    
     text: Cow<'a, str>,
+    
+    content: Range<usize>,
+}
+
+impl<'a> Text<'a> {
+    fn new(text: Cow<'a, str>) -> Self {
+        let start = text.find(is_non_whitespace).unwrap_or(0);
+        let end = text.rfind(is_non_whitespace).map_or(0, |i| i + 1);
+
+        let content = if start >= end { 0..0 } else { start..end };
+
+        Self { text, content }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn trimmed(&self) -> Cow<'a, str> {
+        match self.text {
+            Cow::Borrowed(text) => Cow::Borrowed(&text[self.content.clone()]),
+            Cow::Owned(ref text) => Cow::Owned(text[self.content.clone()].to_string()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_blank(&self) -> bool {
+        self.content.is_empty()
+    }
 }
 
 impl<'a> Deref for Text<'a> {
@@ -2137,25 +2239,21 @@ impl<'a> Deref for Text<'a> {
 impl<'a> From<&'a str> for Text<'a> {
     #[inline]
     fn from(text: &'a str) -> Self {
-        Self {
-            text: Cow::Borrowed(text),
-        }
+        Self::new(Cow::Borrowed(text))
     }
 }
 
 impl<'a> From<String> for Text<'a> {
     #[inline]
     fn from(text: String) -> Self {
-        Self {
-            text: Cow::Owned(text),
-        }
+        Self::new(Cow::Owned(text))
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Text<'a> {
     #[inline]
     fn from(text: Cow<'a, str>) -> Self {
-        Self { text }
+        Self::new(text)
     }
 }
 
@@ -2207,6 +2305,8 @@ pub enum PayloadEvent<'a> {
     
     DocType(BytesText<'a>),
     
+    GeneralRef(BytesRef<'a>),
+    
     Eof,
 }
 
@@ -2220,6 +2320,7 @@ impl<'a> PayloadEvent<'a> {
             PayloadEvent::Text(e) => PayloadEvent::Text(e.into_owned()),
             PayloadEvent::CData(e) => PayloadEvent::CData(e.into_owned()),
             PayloadEvent::DocType(e) => PayloadEvent::DocType(e.into_owned()),
+            PayloadEvent::GeneralRef(e) => PayloadEvent::GeneralRef(e.into_owned()),
             PayloadEvent::Eof => PayloadEvent::Eof,
         }
     }
@@ -2272,12 +2373,26 @@ impl<'i, R: XmlRead<'i>, E: EntityResolver> XmlReader<'i, R, E> {
     #[inline(always)]
     const fn current_event_is_last_text(&self) -> bool {
         
+        
+        
+        
+        
+        
+        
+        
         !matches!(
             self.lookahead,
-            Ok(PayloadEvent::Text(_)) | Ok(PayloadEvent::CData(_))
+            Ok(PayloadEvent::Text(_)
+                | PayloadEvent::CData(_)
+                | PayloadEvent::GeneralRef(_)
+                | PayloadEvent::DocType(_))
         )
     }
 
+    
+    
+    
+    
     
     
     
@@ -2291,22 +2406,26 @@ impl<'i, R: XmlRead<'i>, E: EntityResolver> XmlReader<'i, R, E> {
             }
 
             match self.next_impl()? {
-                PayloadEvent::Text(mut e) => {
-                    if self.current_event_is_last_text() {
-                        
-                        e.inplace_trim_end();
-                    }
-                    result
-                        .to_mut()
-                        .push_str(&e.unescape_with(|entity| self.entity_resolver.resolve(entity))?);
+                PayloadEvent::Text(e) => result
+                    .to_mut()
+                    .push_str(&e.xml_content(self.reader.xml_version())?),
+                PayloadEvent::CData(e) => result
+                    .to_mut()
+                    .push_str(&e.xml_content(self.reader.xml_version())?),
+                PayloadEvent::GeneralRef(e) => self.resolve_reference(result.to_mut(), e)?,
+                PayloadEvent::DocType(e) => {
+                    self.entity_resolver
+                        .capture(e)
+                        .map_err(|err| DeError::Custom(format!("cannot parse DTD: {}", err)))?;
                 }
-                PayloadEvent::CData(e) => result.to_mut().push_str(&e.decode()?),
 
                 
-                _ => unreachable!("Only `Text` and `CData` events can come here"),
+                _ => unreachable!(
+                    "Only `Text`, `CData`, `GeneralRef` or `DocType` events can come here"
+                ),
             }
         }
-        Ok(DeEvent::Text(Text { text: result }))
+        Ok(DeEvent::Text(Text::new(result)))
     }
 
     
@@ -2315,23 +2434,40 @@ impl<'i, R: XmlRead<'i>, E: EntityResolver> XmlReader<'i, R, E> {
             return match self.next_impl()? {
                 PayloadEvent::Start(e) => Ok(DeEvent::Start(e)),
                 PayloadEvent::End(e) => Ok(DeEvent::End(e)),
-                PayloadEvent::Text(mut e) => {
-                    if self.current_event_is_last_text() && e.inplace_trim_end() {
-                        
-                        continue;
-                    }
-                    self.drain_text(e.unescape_with(|entity| self.entity_resolver.resolve(entity))?)
+                PayloadEvent::Text(e) => self.drain_text(e.xml_content(self.reader.xml_version())?),
+                PayloadEvent::CData(e) => {
+                    self.drain_text(e.xml_content(self.reader.xml_version())?)
                 }
-                PayloadEvent::CData(e) => self.drain_text(e.decode()?),
                 PayloadEvent::DocType(e) => {
                     self.entity_resolver
                         .capture(e)
                         .map_err(|err| DeError::Custom(format!("cannot parse DTD: {}", err)))?;
                     continue;
                 }
+                PayloadEvent::GeneralRef(e) => {
+                    let mut text = String::new();
+                    self.resolve_reference(&mut text, e)?;
+                    self.drain_text(text.into())
+                }
                 PayloadEvent::Eof => Ok(DeEvent::Eof),
             };
         }
+    }
+
+    fn resolve_reference(&mut self, result: &mut String, event: BytesRef) -> Result<(), DeError> {
+        let len = event.len();
+        let reference = self.decoder().decode(&event)?;
+
+        if let Some(num) = reference.strip_prefix('#') {
+            let codepoint = parse_number(num).map_err(EscapeError::InvalidCharRef)?;
+            result.push_str(codepoint.encode_utf8(&mut [0u8; 4]));
+            return Ok(());
+        }
+        if let Some(value) = self.entity_resolver.resolve(reference.as_ref()) {
+            result.push_str(value);
+            return Ok(());
+        }
+        Err(EscapeError::UnrecognizedEntity(0..len, reference.to_string()).into())
     }
 
     #[inline]
@@ -2472,14 +2608,15 @@ where
     
     pub fn is_empty(&self) -> bool {
         #[cfg(feature = "overlapped-lists")]
-        if self.read.is_empty() {
-            return self.reader.is_empty();
-        }
+        let event = self.read.front();
+
         #[cfg(not(feature = "overlapped-lists"))]
-        if self.peek.is_none() {
-            return self.reader.is_empty();
+        let event = self.peek.as_ref();
+
+        match event {
+            None | Some(DeEvent::Eof) => self.reader.is_empty(),
+            _ => false,
         }
-        false
     }
 
     
@@ -2594,16 +2731,9 @@ where
     }
     #[cfg(not(feature = "overlapped-lists"))]
     fn peek(&mut self) -> Result<&DeEvent<'de>, DeError> {
-        if self.peek.is_none() {
-            self.peek = Some(self.reader.next()?);
-        }
-        match self.peek.as_ref() {
-            Some(v) => Ok(v),
-            
-            
-            
-            
-            None => unreachable!(),
+        match &mut self.peek {
+            Some(event) => Ok(event),
+            empty_peek @ None => Ok(empty_peek.insert(self.reader.next()?)),
         }
     }
 
@@ -2636,6 +2766,18 @@ where
         self.reader.next()
     }
 
+    fn skip_whitespaces(&mut self) -> Result<(), DeError> {
+        loop {
+            match self.peek()? {
+                DeEvent::Text(e) if e.is_blank() => {
+                    self.next()?;
+                }
+                _ => break,
+            }
+        }
+        Ok(())
+    }
+
     
     
     #[cfg(feature = "overlapped-lists")]
@@ -2653,34 +2795,31 @@ where
     fn skip(&mut self) -> Result<(), DeError> {
         let event = self.next()?;
         self.skip_event(event)?;
-        match self.write.back() {
-            
-            Some(DeEvent::Start(e)) => {
-                let end = e.name().as_ref().to_owned();
-                let mut depth = 0;
-                loop {
-                    let event = self.next()?;
-                    match event {
-                        DeEvent::Start(ref e) if e.name().as_ref() == end => {
-                            self.skip_event(event)?;
-                            depth += 1;
-                        }
-                        DeEvent::End(ref e) if e.name().as_ref() == end => {
-                            self.skip_event(event)?;
-                            if depth == 0 {
-                                break;
-                            }
-                            depth -= 1;
-                        }
-                        DeEvent::Eof => {
-                            self.skip_event(event)?;
+        
+        if let Some(DeEvent::Start(e)) = self.write.back() {
+            let end = e.name().as_ref().to_owned();
+            let mut depth = 0;
+            loop {
+                let event = self.next()?;
+                match event {
+                    DeEvent::Start(ref e) if e.name().as_ref() == end => {
+                        self.skip_event(event)?;
+                        depth += 1;
+                    }
+                    DeEvent::End(ref e) if e.name().as_ref() == end => {
+                        self.skip_event(event)?;
+                        if depth == 0 {
                             break;
                         }
-                        _ => self.skip_event(event)?,
+                        depth -= 1;
                     }
+                    DeEvent::Eof => {
+                        self.skip_event(event)?;
+                        break;
+                    }
+                    _ => self.skip_event(event)?,
                 }
             }
-            _ => (),
         }
         Ok(())
     }
@@ -2762,13 +2901,17 @@ where
     
     fn read_string_impl(&mut self, allow_start: bool) -> Result<Cow<'de, str>, DeError> {
         match self.next()? {
+            
             DeEvent::Text(e) => Ok(e.text),
             
+            
             DeEvent::Start(e) if allow_start => self.read_text(e.name()),
+            
             DeEvent::Start(e) => Err(DeError::UnexpectedStart(e.name().as_ref().to_owned())),
             
             
             DeEvent::End(e) => unreachable!("{:?}", e),
+            
             DeEvent::Eof => Err(DeError::UnexpectedEof),
         }
     }
@@ -2782,17 +2925,23 @@ where
         match self.next()? {
             DeEvent::Text(e) => match self.next()? {
                 
+                
                 DeEvent::End(_) => Ok(e.text),
                 
                 DeEvent::Text(_) => unreachable!(),
+                
                 DeEvent::Start(e) => Err(DeError::UnexpectedStart(e.name().as_ref().to_owned())),
+                
                 DeEvent::Eof => Err(Error::missed_end(name, self.reader.decoder()).into()),
             },
             
             
             
+            
             DeEvent::End(_) => Ok("".into()),
+            
             DeEvent::Start(s) => Err(DeError::UnexpectedStart(s.name().as_ref().to_owned())),
+            
             DeEvent::Eof => Err(Error::missed_end(name, self.reader.decoder()).into()),
         }
     }
@@ -2861,6 +3010,21 @@ where
         let name = start.name();
         self.read_to_end(name)
     }
+
+    
+    
+    #[doc(hidden)]
+    #[track_caller]
+    pub fn check_eof_reached(&mut self) {
+        
+        self.skip_whitespaces().expect("cannot skip whitespaces");
+        let event = self.peek().expect("cannot peek event");
+        assert_eq!(
+            *event,
+            DeEvent::Eof,
+            "the whole XML document should be consumed, expected `Eof`",
+        );
+    }
 }
 
 impl<'de> Deserializer<'de, SliceReader<'de>> {
@@ -2871,6 +3035,45 @@ impl<'de> Deserializer<'de, SliceReader<'de>> {
     pub fn from_str(source: &'de str) -> Self {
         Self::from_str_with_resolver(source, PredefinedEntityResolver)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn borrowing(reader: NsReader<&'de [u8]>) -> Self {
+        Self::borrowing_with_resolver(reader, PredefinedEntityResolver)
+    }
 }
 
 impl<'de, E> Deserializer<'de, SliceReader<'de>, E>
@@ -2880,14 +3083,23 @@ where
     
     
     pub fn from_str_with_resolver(source: &'de str, entity_resolver: E) -> Self {
-        let mut reader = NsReader::from_str(source);
+        Self::borrowing_with_resolver(NsReader::from_str(source), entity_resolver)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn borrowing_with_resolver(mut reader: NsReader<&'de [u8]>, entity_resolver: E) -> Self {
         let config = reader.config_mut();
         config.expand_empty_elements = true;
 
         Self::new(
             SliceReader {
                 reader,
-                start_trimmer: StartTrimmer::default(),
+                version: XmlVersion::Implicit1_0,
             },
             entity_resolver,
         )
@@ -2908,6 +3120,45 @@ where
     
     pub fn from_reader(reader: R) -> Self {
         Self::with_resolver(reader, PredefinedEntityResolver)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn buffering(reader: NsReader<R>) -> Self {
+        Self::buffering_with_resolver(reader, PredefinedEntityResolver)
     }
 }
 
@@ -2930,15 +3181,35 @@ where
         Self::new(
             IoReader {
                 reader,
-                start_trimmer: StartTrimmer::default(),
                 buf: Vec::new(),
+                version: XmlVersion::Implicit1_0,
+            },
+            entity_resolver,
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn buffering_with_resolver(mut reader: NsReader<R>, entity_resolver: E) -> Self {
+        let config = reader.config_mut();
+        config.expand_empty_elements = true;
+
+        Self::new(
+            IoReader {
+                reader,
+                buf: Vec::new(),
+                version: XmlVersion::Implicit1_0,
             },
             entity_resolver,
         )
     }
 }
 
-impl<'de, 'a, R, E> de::Deserializer<'de> for &'a mut Deserializer<'de, R, E>
+impl<'de, R, E> de::Deserializer<'de> for &mut Deserializer<'de, R, E>
 where
     R: XmlRead<'de>,
     E: EntityResolver,
@@ -2956,8 +3227,10 @@ where
     where
         V: Visitor<'de>,
     {
+        
+        self.skip_whitespaces()?;
         match self.next()? {
-            DeEvent::Start(e) => visitor.visit_map(ElementMapAccess::new(self, e, fields)?),
+            DeEvent::Start(e) => visitor.visit_map(ElementMapAccess::new(self, e, fields)),
             
             
             DeEvent::End(e) => unreachable!("{:?}", e),
@@ -3028,6 +3301,10 @@ where
     where
         V: Visitor<'de>,
     {
+        
+        
+        
+        self.skip_whitespaces()?;
         visitor.visit_enum(var::EnumAccess::new(self))
     }
 
@@ -3048,7 +3325,7 @@ where
             DeEvent::Text(t) if t.is_empty() => visitor.visit_none(),
             DeEvent::Eof => visitor.visit_none(),
             
-            DeEvent::Start(start) if self.reader.reader.has_nil_attr(&start) => {
+            DeEvent::Start(start) if self.reader.reader.has_nil_attr(start) => {
                 self.skip_next_tree()?;
                 visitor.visit_none()
             }
@@ -3072,7 +3349,7 @@ where
 
 
 
-impl<'de, 'a, R, E> SeqAccess<'de> for &'a mut Deserializer<'de, R, E>
+impl<'de, R, E> SeqAccess<'de> for &mut Deserializer<'de, R, E>
 where
     R: XmlRead<'de>,
     E: EntityResolver,
@@ -3083,12 +3360,15 @@ where
     where
         T: DeserializeSeed<'de>,
     {
+        
+        
+        
+        
+        
+        
+        self.skip_whitespaces()?;
         match self.peek()? {
-            DeEvent::Eof => {
-                
-                self.next()?;
-                Ok(None)
-            }
+            DeEvent::Eof => Ok(None),
 
             
             _ => seed.deserialize(&mut **self).map(Some),
@@ -3096,7 +3376,7 @@ where
     }
 }
 
-impl<'de, 'a, R, E> IntoDeserializer<'de, DeError> for &'a mut Deserializer<'de, R, E>
+impl<'de, R, E> IntoDeserializer<'de, DeError> for &mut Deserializer<'de, R, E>
 where
     R: XmlRead<'de>,
     E: EntityResolver,
@@ -3113,48 +3393,22 @@ where
 
 
 
+#[inline(always)]
+fn skip_uninterested<'a>(event: Event<'a>) -> Option<PayloadEvent<'a>> {
+    let event = match event {
+        Event::DocType(e) => PayloadEvent::DocType(e),
+        Event::Start(e) => PayloadEvent::Start(e),
+        Event::End(e) => PayloadEvent::End(e),
+        Event::Eof => PayloadEvent::Eof,
 
-struct StartTrimmer {
-    
-    
-    
-    
-    trim_start: bool,
-}
+        
+        Event::CData(e) => PayloadEvent::CData(e),
+        Event::Text(e) => PayloadEvent::Text(e),
+        Event::GeneralRef(e) => PayloadEvent::GeneralRef(e),
 
-impl StartTrimmer {
-    
-    
-    #[inline(always)]
-    fn trim<'a>(&mut self, event: Event<'a>) -> Option<PayloadEvent<'a>> {
-        let (event, trim_next_event) = match event {
-            Event::DocType(e) => (PayloadEvent::DocType(e), true),
-            Event::Start(e) => (PayloadEvent::Start(e), true),
-            Event::End(e) => (PayloadEvent::End(e), true),
-            Event::Eof => (PayloadEvent::Eof, true),
-
-            
-            Event::CData(e) => (PayloadEvent::CData(e), false),
-            Event::Text(mut e) => {
-                
-                if self.trim_start && e.inplace_trim_start() {
-                    return None;
-                }
-                (PayloadEvent::Text(e), false)
-            }
-
-            _ => return None,
-        };
-        self.trim_start = trim_next_event;
-        Some(event)
-    }
-}
-
-impl Default for StartTrimmer {
-    #[inline]
-    fn default() -> Self {
-        Self { trim_start: true }
-    }
+        _ => return None,
+    };
+    Some(event)
 }
 
 
@@ -3174,6 +3428,9 @@ pub trait XmlRead<'i> {
     fn read_to_end(&mut self, name: QName) -> Result<(), DeError>;
 
     
+    fn xml_version(&self) -> XmlVersion;
+
+    
     fn decoder(&self) -> Decoder;
 
     
@@ -3189,8 +3446,8 @@ pub trait XmlRead<'i> {
 
 pub struct IoReader<R: BufRead> {
     reader: NsReader<R>,
-    start_trimmer: StartTrimmer,
     buf: Vec<u8>,
+    version: XmlVersion,
 }
 
 impl<R: BufRead> IoReader<R> {
@@ -3234,7 +3491,10 @@ impl<'i, R: BufRead> XmlRead<'i> for IoReader<R> {
             self.buf.clear();
 
             let event = self.reader.read_event_into(&mut self.buf)?;
-            if let Some(event) = self.start_trimmer.trim(event) {
+            if let Event::Decl(e) = &event {
+                self.version = e.xml_version()?;
+            }
+            if let Some(event) = skip_uninterested(event) {
                 return Ok(event.into_owned());
             }
         }
@@ -3247,12 +3507,18 @@ impl<'i, R: BufRead> XmlRead<'i> for IoReader<R> {
         }
     }
 
+    #[inline]
+    fn xml_version(&self) -> XmlVersion {
+        self.version
+    }
+
+    #[inline]
     fn decoder(&self) -> Decoder {
         self.reader.decoder()
     }
 
     fn has_nil_attr(&self, start: &BytesStart) -> bool {
-        start.attributes().has_nil(&self.reader)
+        start.attributes().has_nil(self.reader.resolver())
     }
 }
 
@@ -3262,7 +3528,7 @@ impl<'i, R: BufRead> XmlRead<'i> for IoReader<R> {
 
 pub struct SliceReader<'de> {
     reader: NsReader<&'de [u8]>,
-    start_trimmer: StartTrimmer,
+    version: XmlVersion,
 }
 
 impl<'de> SliceReader<'de> {
@@ -3303,7 +3569,10 @@ impl<'de> XmlRead<'de> for SliceReader<'de> {
     fn next(&mut self) -> Result<PayloadEvent<'de>, DeError> {
         loop {
             let event = self.reader.read_event()?;
-            if let Some(event) = self.start_trimmer.trim(event) {
+            if let Event::Decl(e) = &event {
+                self.version = e.xml_version()?;
+            }
+            if let Some(event) = skip_uninterested(event) {
                 return Ok(event);
             }
         }
@@ -3316,12 +3585,18 @@ impl<'de> XmlRead<'de> for SliceReader<'de> {
         }
     }
 
+    #[inline]
+    fn xml_version(&self) -> XmlVersion {
+        self.version
+    }
+
+    #[inline]
     fn decoder(&self) -> Decoder {
         self.reader.decoder()
     }
 
     fn has_nil_attr(&self, start: &BytesStart) -> bool {
-        start.attributes().has_nil(&self.reader)
+        start.attributes().has_nil(self.reader.resolver())
     }
 }
 
@@ -3347,16 +3622,16 @@ mod tests {
         #[test]
         fn read_and_peek() {
             let mut de = make_de(
-                r#"
-                <root>
-                    <inner>
-                        text
-                        <inner/>
-                    </inner>
-                    <next/>
-                    <target/>
-                </root>
-                "#,
+                "\
+                <root>\
+                    <inner>\
+                        text\
+                        <inner/>\
+                    </inner>\
+                    <next/>\
+                    <target/>\
+                </root>\
+                ",
             );
 
             
@@ -3478,17 +3753,17 @@ mod tests {
         #[test]
         fn read_to_end() {
             let mut de = make_de(
-                r#"
-                <root>
-                    <skip>
-                        text
-                        <skip/>
-                    </skip>
-                    <target>
-                        <target/>
-                    </target>
-                </root>
-                "#,
+                "\
+                <root>\
+                    <skip>\
+                        text\
+                        <skip/>\
+                    </skip>\
+                    <target>\
+                        <target/>\
+                    </target>\
+                </root>\
+                ",
             );
 
             
@@ -3571,18 +3846,18 @@ mod tests {
         #[test]
         fn partial_replay() {
             let mut de = make_de(
-                r#"
-                <root>
-                    <skipped-1/>
-                    <skipped-2/>
-                    <inner>
-                        <skipped-3/>
-                        <skipped-4/>
-                        <target-2/>
-                    </inner>
-                    <target-1/>
-                </root>
-                "#,
+                "\
+                <root>\
+                    <skipped-1/>\
+                    <skipped-2/>\
+                    <inner>\
+                        <skipped-3/>\
+                        <skipped-4/>\
+                        <target-2/>\
+                    </inner>\
+                    <target-1/>\
+                </root>\
+                ",
             );
 
             
@@ -3777,17 +4052,17 @@ mod tests {
             }
 
             let mut de = make_de(
-                r#"
-                <any-name>
-                    <item/>
-                    <another-item>
-                        <some-element>with text</some-element>
-                        <yet-another-element/>
-                    </another-item>
-                    <item/>
-                    <item/>
-                </any-name>
-                "#,
+                "\
+                <any-name>\
+                    <item/>\
+                    <another-item>\
+                        <some-element>with text</some-element>\
+                        <yet-another-element/>\
+                    </another-item>\
+                    <item/>\
+                    <item/>\
+                </any-name>\
+                ",
             );
             de.event_buffer_size(NonZeroUsize::new(3));
 
@@ -3829,14 +4104,17 @@ mod tests {
                 "#,
             );
 
+            assert_eq!(de.next().unwrap(), Text("\n                ".into()));
             assert_eq!(de.next().unwrap(), Start(BytesStart::new("root")));
 
+            assert_eq!(de.next().unwrap(), Text("\n                    ".into()));
             assert_eq!(
                 de.next().unwrap(),
                 Start(BytesStart::from_content(r#"tag a="1""#, 3))
             );
             assert_eq!(de.read_to_end(QName(b"tag")).unwrap(), ());
 
+            assert_eq!(de.next().unwrap(), Text("\n                    ".into()));
             assert_eq!(
                 de.next().unwrap(),
                 Start(BytesStart::from_content(r#"tag a="2""#, 3))
@@ -3844,10 +4122,13 @@ mod tests {
             assert_eq!(de.next().unwrap(), Text("cdata content".into()));
             assert_eq!(de.next().unwrap(), End(BytesEnd::new("tag")));
 
+            assert_eq!(de.next().unwrap(), Text("\n                    ".into()));
             assert_eq!(de.next().unwrap(), Start(BytesStart::new("self-closed")));
             assert_eq!(de.read_to_end(QName(b"self-closed")).unwrap(), ());
 
+            assert_eq!(de.next().unwrap(), Text("\n                ".into()));
             assert_eq!(de.next().unwrap(), End(BytesEnd::new("root")));
+            assert_eq!(de.next().unwrap(), Text("\n                ".into()));
             assert_eq!(de.next().unwrap(), Eof);
         }
 
@@ -3900,12 +4181,12 @@ mod tests {
 
         let mut reader1 = IoReader {
             reader: NsReader::from_reader(s.as_bytes()),
-            start_trimmer: StartTrimmer::default(),
             buf: Vec::new(),
+            version: XmlVersion::Implicit1_0,
         };
         let mut reader2 = SliceReader {
             reader: NsReader::from_str(s),
-            start_trimmer: StartTrimmer::default(),
+            version: XmlVersion::Implicit1_0,
         };
 
         loop {
@@ -3931,7 +4212,7 @@ mod tests {
 
         let mut reader = SliceReader {
             reader: NsReader::from_str(s),
-            start_trimmer: StartTrimmer::default(),
+            version: XmlVersion::Implicit1_0,
         };
 
         let config = reader.reader.config_mut();
@@ -3952,18 +4233,23 @@ mod tests {
         assert_eq!(
             events,
             vec![
+                Text(BytesText::from_escaped("\n            ")),
                 Start(BytesStart::from_content(
                     r#"item name="hello" source="world.rs""#,
                     4
                 )),
                 Text(BytesText::from_escaped("Some text")),
                 End(BytesEnd::new("item")),
+                Text(BytesText::from_escaped("\n            ")),
                 Start(BytesStart::from_content("item2", 5)),
                 End(BytesEnd::new("item2")),
+                Text(BytesText::from_escaped("\n            ")),
                 Start(BytesStart::from_content("item3", 5)),
                 End(BytesEnd::new("item3")),
+                Text(BytesText::from_escaped("\n            ")),
                 Start(BytesStart::from_content(r#"item4 value="world" "#, 5)),
                 End(BytesEnd::new("item4")),
+                Text(BytesText::from_escaped("\n        ")),
             ]
         )
     }
@@ -4113,7 +4399,7 @@ mod tests {
                         text \
                     ",
                 );
-                assert_eq!(de.next().unwrap(), DeEvent::Text("cdata  text".into()));
+                assert_eq!(de.next().unwrap(), DeEvent::Text("cdata  text ".into()));
             }
 
             #[test]
@@ -4125,7 +4411,7 @@ mod tests {
                         text \
                     ",
                 );
-                assert_eq!(de.next().unwrap(), DeEvent::Text(" text".into()));
+                assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
             }
 
             #[test]
@@ -4202,7 +4488,7 @@ mod tests {
                         text \
                     ",
                 );
-                assert_eq!(de.next().unwrap(), DeEvent::Text("cdata  text".into()));
+                assert_eq!(de.next().unwrap(), DeEvent::Text("cdata  text ".into()));
             }
 
             #[test]
@@ -4214,7 +4500,7 @@ mod tests {
                         text \
                     ",
                 );
-                assert_eq!(de.next().unwrap(), DeEvent::Text(" text".into()));
+                assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
             }
 
             #[test]
@@ -4243,6 +4529,8 @@ mod tests {
             use super::*;
 
             
+            
+            #[allow(clippy::module_inception)]
             mod start {
                 use super::*;
                 use pretty_assertions::assert_eq;
@@ -4271,8 +4559,7 @@ mod tests {
                     let mut de = make_de("<tag1><tag2> text ");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag1")));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag2")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
@@ -4331,8 +4618,7 @@ mod tests {
                     let mut de = make_de("<tag></tag> text ");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::End(BytesEnd::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
@@ -4364,8 +4650,7 @@ mod tests {
                 fn start() {
                     let mut de = make_de("<tag> text <tag2>");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag2")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4374,8 +4659,7 @@ mod tests {
                 fn end() {
                     let mut de = make_de("<tag> text </tag>");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::End(BytesEnd::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4386,8 +4670,7 @@ mod tests {
                 fn cdata() {
                     let mut de = make_de("<tag> text <![CDATA[ cdata ]]>");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text  cdata ".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text  cdata ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
@@ -4395,8 +4678,7 @@ mod tests {
                 fn eof() {
                     let mut de = make_de("<tag> text ");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4429,8 +4711,7 @@ mod tests {
                 fn text() {
                     let mut de = make_de("<tag><![CDATA[ cdata ]]> text ");
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
@@ -4480,8 +4761,7 @@ mod tests {
                 #[test]
                 fn start() {
                     let mut de = make_de(" text <tag1><tag2>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag1")));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag2")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
@@ -4491,8 +4771,7 @@ mod tests {
                 #[test]
                 fn end() {
                     let mut de = make_de(" text <tag></tag>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::End(BytesEnd::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
@@ -4501,19 +4780,16 @@ mod tests {
                 #[test]
                 fn text() {
                     let mut de = make_de(" text <tag> text2 ");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text2".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text2 ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
                 #[test]
                 fn cdata() {
                     let mut de = make_de(" text <tag><![CDATA[ cdata ]]>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
@@ -4521,9 +4797,8 @@ mod tests {
 
                 #[test]
                 fn eof() {
-                    
                     let mut de = make_de(" text <tag>");
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
@@ -4534,8 +4809,7 @@ mod tests {
             #[test]
             fn end() {
                 let mut de = make_de(" text </tag>");
-                
-                assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                 match de.next() {
                     Err(DeError::InvalidXml(Error::IllFormed(cause))) => {
                         assert_eq!(cause, IllFormedError::UnmatchedEndTag("tag".into()));
@@ -4557,8 +4831,7 @@ mod tests {
                 #[test]
                 fn start() {
                     let mut de = make_de(" text <![CDATA[ cdata ]]><tag>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text  cdata ".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text  cdata ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4566,8 +4839,7 @@ mod tests {
                 #[test]
                 fn end() {
                     let mut de = make_de(" text <![CDATA[ cdata ]]></tag>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text  cdata ".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text  cdata ".into()));
                     match de.next() {
                         Err(DeError::InvalidXml(Error::IllFormed(cause))) => {
                             assert_eq!(cause, IllFormedError::UnmatchedEndTag("tag".into()));
@@ -4583,10 +4855,9 @@ mod tests {
                 #[test]
                 fn text() {
                     let mut de = make_de(" text <![CDATA[ cdata ]]> text2 ");
-                    
                     assert_eq!(
                         de.next().unwrap(),
-                        DeEvent::Text("text  cdata  text2".into())
+                        DeEvent::Text(" text  cdata  text2 ".into())
                     );
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4594,10 +4865,9 @@ mod tests {
                 #[test]
                 fn cdata() {
                     let mut de = make_de(" text <![CDATA[ cdata ]]><![CDATA[ cdata2 ]]>");
-                    
                     assert_eq!(
                         de.next().unwrap(),
-                        DeEvent::Text("text  cdata  cdata2 ".into())
+                        DeEvent::Text(" text  cdata  cdata2 ".into())
                     );
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4605,8 +4875,7 @@ mod tests {
                 #[test]
                 fn eof() {
                     let mut de = make_de(" text <![CDATA[ cdata ]]>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text  cdata ".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text  cdata ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4645,8 +4914,7 @@ mod tests {
                     let mut de = make_de("<![CDATA[ cdata ]]><tag> text ");
                     assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text("text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
 
@@ -4693,8 +4961,7 @@ mod tests {
                 #[test]
                 fn start() {
                     let mut de = make_de("<![CDATA[ cdata ]]> text <tag>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Start(BytesStart::new("tag")));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
@@ -4702,8 +4969,7 @@ mod tests {
                 #[test]
                 fn end() {
                     let mut de = make_de("<![CDATA[ cdata ]]> text </tag>");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text ".into()));
                     match de.next() {
                         Err(DeError::InvalidXml(Error::IllFormed(cause))) => {
                             assert_eq!(cause, IllFormedError::UnmatchedEndTag("tag".into()));
@@ -4731,13 +4997,14 @@ mod tests {
                 #[test]
                 fn eof() {
                     let mut de = make_de("<![CDATA[ cdata ]]> text ");
-                    
-                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text".into()));
+                    assert_eq!(de.next().unwrap(), DeEvent::Text(" cdata  text ".into()));
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }
             }
 
+            
+            #[allow(clippy::module_inception)]
             mod cdata {
                 use super::*;
                 use pretty_assertions::assert_eq;
@@ -4769,10 +5036,9 @@ mod tests {
                 #[test]
                 fn text() {
                     let mut de = make_de("<![CDATA[ cdata ]]><![CDATA[ cdata2 ]]> text ");
-                    
                     assert_eq!(
                         de.next().unwrap(),
-                        DeEvent::Text(" cdata  cdata2  text".into())
+                        DeEvent::Text(" cdata  cdata2  text ".into())
                     );
                     assert_eq!(de.next().unwrap(), DeEvent::Eof);
                 }

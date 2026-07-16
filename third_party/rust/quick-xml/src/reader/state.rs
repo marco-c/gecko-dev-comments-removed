@@ -1,18 +1,21 @@
+use std::fmt::Debug;
+
 #[cfg(feature = "encoding")]
 use encoding_rs::UTF_8;
 
 use crate::encoding::Decoder;
-use crate::errors::{Error, IllFormedError, Result, SyntaxError};
+use crate::errors::{Error, IllFormedError, Result};
 use crate::events::{BytesCData, BytesDecl, BytesEnd, BytesPI, BytesStart, BytesText, Event};
+use crate::parser::{Parser, PiParser};
 #[cfg(feature = "encoding")]
 use crate::reader::EncodingRef;
-use crate::reader::{BangType, Config, ParseState};
-use crate::utils::{is_whitespace, name_len};
+use crate::reader::{BangType, Config, DtdParser, ParseState};
+use crate::utils::{is_whitespace, name_len, Bytes};
 
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(super) struct ReaderState {
     
     pub offset: u64,
@@ -79,10 +82,15 @@ impl ReaderState {
     
     
     pub fn emit_bang<'b>(&mut self, bang_type: BangType, buf: &'b [u8]) -> Result<Event<'b>> {
-        debug_assert_eq!(
-            buf.first(),
-            Some(&b'!'),
-            "CDATA, comment or DOCTYPE should start from '!'"
+        debug_assert!(
+            buf.starts_with(b"<!"),
+            "CDATA, comment or DOCTYPE must start from '<!':\n{:?}",
+            crate::utils::Bytes(buf)
+        );
+        debug_assert!(
+            buf.ends_with(b">"),
+            "CDATA, comment or DOCTYPE must end with '>':\n{:?}",
+            crate::utils::Bytes(buf)
         );
 
         let uncased_starts_with = |string: &[u8], prefix: &[u8]| {
@@ -91,16 +99,20 @@ impl ReaderState {
 
         let len = buf.len();
         match bang_type {
-            BangType::Comment if buf.starts_with(b"!--") => {
-                debug_assert!(buf.ends_with(b"--"));
+            BangType::Comment if buf.starts_with(b"<!--") => {
+                debug_assert!(
+                    buf.ends_with(b"-->"),
+                    "comment must end with '-->':\n{:?}",
+                    crate::utils::Bytes(buf)
+                );
                 if self.config.check_comments {
                     
-                    let mut haystack = &buf[3..len - 2];
+                    let mut haystack = &buf[4..len - 3];
                     let mut off = 0;
                     while let Some(p) = memchr::memchr(b'-', haystack) {
                         off += p + 1;
                         
-                        if buf[3 + off] == b'-' {
+                        if buf[4 + off] == b'-' {
                             
                             
                             
@@ -115,7 +127,7 @@ impl ReaderState {
                             
                             
                             
-                            self.last_error_offset = self.offset - len as u64 + 2 + p as u64;
+                            self.last_error_offset = self.offset - len as u64 + 4 + p as u64;
                             return Err(Error::IllFormed(IllFormedError::DoubleHyphenInComment));
                         }
                         
@@ -124,7 +136,7 @@ impl ReaderState {
                 }
                 Ok(Event::Comment(BytesText::wrap(
                     
-                    &buf[3..len - 2],
+                    &buf[4..len - 3],
                     self.decoder(),
                 )))
             }
@@ -132,11 +144,15 @@ impl ReaderState {
             
             
             
-            BangType::CData if buf.starts_with(b"![CDATA[") => {
-                debug_assert!(buf.ends_with(b"]]"));
+            BangType::CData if buf.starts_with(b"<![CDATA[") => {
+                debug_assert!(
+                    buf.ends_with(b"]]>"),
+                    "CDATA must end with ']]>':\n{:?}",
+                    crate::utils::Bytes(buf)
+                );
                 Ok(Event::CData(BytesCData::wrap(
                     
-                    &buf[8..len - 2],
+                    &buf[9..len - 3],
                     self.decoder(),
                 )))
             }
@@ -144,11 +160,11 @@ impl ReaderState {
             
             
             
-            BangType::DocType(0) if uncased_starts_with(buf, b"!DOCTYPE") => {
-                match buf[8..].iter().position(|&b| !is_whitespace(b)) {
+            BangType::DocType(DtdParser::Finished) if uncased_starts_with(buf, b"<!DOCTYPE") => {
+                match buf[9..len - 1].iter().position(|&b| !is_whitespace(b)) {
                     Some(start) => Ok(Event::DocType(BytesText::wrap(
                         
-                        &buf[8 + start..],
+                        &buf[9 + start..len - 1],
                         self.decoder(),
                     ))),
                     None => {
@@ -156,7 +172,7 @@ impl ReaderState {
                         
                         
                         self.last_error_offset = self.offset - 1;
-                        return Err(Error::IllFormed(IllFormedError::MissingDoctypeName));
+                        Err(Error::IllFormed(IllFormedError::MissingDoctypeName))
                     }
                 }
             }
@@ -164,8 +180,8 @@ impl ReaderState {
                 
                 
                 
-                self.last_error_offset = self.offset - len as u64 - 2;
-                Err(bang_type.to_err().into())
+                self.last_error_offset = self.offset - len as u64;
+                Err(Error::Syntax(bang_type.to_err()))
             }
         }
     }
@@ -175,14 +191,19 @@ impl ReaderState {
     
     
     pub fn emit_end<'b>(&mut self, buf: &'b [u8]) -> Result<Event<'b>> {
-        debug_assert_eq!(
-            buf.first(),
-            Some(&b'/'),
-            "closing tag should start from '/'"
+        debug_assert!(
+            buf.starts_with(b"</"),
+            "end tag must start from '</':\n{:?}",
+            crate::utils::Bytes(buf)
+        );
+        debug_assert!(
+            buf.ends_with(b">"),
+            "end tag must end with '>':\n{:?}",
+            crate::utils::Bytes(buf)
         );
 
         
-        let content = &buf[1..];
+        let content = &buf[2..buf.len() - 1];
         
         
         let name = if self.config.trim_markup_names_in_closing_tags {
@@ -208,8 +229,7 @@ impl ReaderState {
                         self.opened_buffer.truncate(start);
 
                         
-                        
-                        self.last_error_offset = self.offset - buf.len() as u64 - 2;
+                        self.last_error_offset = self.offset - buf.len() as u64;
                         return Err(Error::IllFormed(IllFormedError::MismatchedEndTag {
                             expected,
                             found: decoder.decode(name).unwrap_or_default().into_owned(),
@@ -222,8 +242,7 @@ impl ReaderState {
             None => {
                 if !self.config.allow_unmatched_ends {
                     
-                    
-                    self.last_error_offset = self.offset - buf.len() as u64 - 2;
+                    self.last_error_offset = self.offset - buf.len() as u64;
                     return Err(Error::IllFormed(IllFormedError::UnmatchedEndTag(
                         decoder.decode(name).unwrap_or_default().into_owned(),
                     )));
@@ -239,19 +258,27 @@ impl ReaderState {
     
     
     pub fn emit_question_mark<'b>(&mut self, buf: &'b [u8]) -> Result<Event<'b>> {
-        debug_assert!(buf.len() > 0);
-        debug_assert_eq!(buf[0], b'?');
+        debug_assert!(
+            buf.starts_with(b"<?"),
+            "processing instruction or XML declaration must start from '<?':\n{:?}",
+            crate::utils::Bytes(buf)
+        );
+        debug_assert!(
+            buf.ends_with(b"?>"),
+            "processing instruction or XML declaration must end with '?>':\n{:?}",
+            crate::utils::Bytes(buf)
+        );
 
         let len = buf.len();
         
         
-        if len > 1 && buf[len - 1] == b'?' {
+        if len > 3 {
             
-            let content = &buf[1..len - 1];
+            let content = &buf[2..len - 2];
             let len = content.len();
 
             if content.starts_with(b"xml") && (len == 3 || is_whitespace(content[3])) {
-                let event = BytesDecl::from_start(BytesStart::wrap(content, 3));
+                let event = BytesDecl::from_start(BytesStart::wrap(content, 3, self.decoder()));
 
                 
                 #[cfg(feature = "encoding")]
@@ -263,14 +290,18 @@ impl ReaderState {
 
                 Ok(Event::Decl(event))
             } else {
-                Ok(Event::PI(BytesPI::wrap(content, name_len(content))))
+                Ok(Event::PI(BytesPI::wrap(
+                    content,
+                    name_len(content),
+                    self.decoder(),
+                )))
             }
         } else {
             
             
             
-            self.last_error_offset = self.offset - len as u64 - 2;
-            Err(Error::Syntax(SyntaxError::UnclosedPIOrXmlDecl))
+            self.last_error_offset = self.offset - len as u64;
+            Err(Error::Syntax(PiParser(false).eof_error(buf)))
         }
     }
 
@@ -279,9 +310,22 @@ impl ReaderState {
     
     
     pub fn emit_start<'b>(&mut self, content: &'b [u8]) -> Event<'b> {
-        if let Some(content) = content.strip_suffix(b"/") {
+        debug_assert!(
+            content.starts_with(b"<"),
+            "start or empty tag must start from '<':\n{:?}",
+            crate::utils::Bytes(content)
+        );
+        debug_assert!(
+            content.ends_with(b">"),
+            "start or empty tag must end with '>':\n{:?}",
+            crate::utils::Bytes(content)
+        );
+
+        
+        let content = &content[1..];
+        if let Some(content) = content.strip_suffix(b"/>") {
             
-            let event = BytesStart::wrap(content, name_len(content));
+            let event = BytesStart::wrap(content, name_len(content), self.decoder());
 
             if self.config.expand_empty_elements {
                 self.state = ParseState::InsideEmpty;
@@ -292,7 +336,9 @@ impl ReaderState {
                 Event::Empty(event)
             }
         } else {
-            let event = BytesStart::wrap(content, name_len(content));
+            
+            let content = &content[..content.len() - 1];
+            let event = BytesStart::wrap(content, name_len(content), self.decoder());
 
             
             
@@ -342,5 +388,23 @@ impl Default for ReaderState {
             #[cfg(feature = "encoding")]
             encoding: EncodingRef::Implicit(UTF_8),
         }
+    }
+}
+
+impl Debug for ReaderState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut d = f.debug_struct("ReaderState");
+
+        d.field("offset", &self.offset);
+        d.field("last_error_offset", &self.last_error_offset);
+        d.field("state", &self.state);
+        d.field("config", &self.config);
+        d.field("opened_buffer", &Bytes(&self.opened_buffer));
+        d.field("opened_starts", &self.opened_starts);
+
+        #[cfg(feature = "encoding")]
+        d.field("encoding", &self.encoding);
+
+        d.finish()
     }
 }

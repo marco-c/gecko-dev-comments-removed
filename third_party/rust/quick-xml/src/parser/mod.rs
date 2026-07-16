@@ -2,9 +2,13 @@
 
 use crate::errors::SyntaxError;
 
+mod comment;
+mod dtd;
 mod element;
 mod pi;
 
+pub use comment::CommentParser;
+pub(crate) use dtd::DtdParser;
 pub use element::ElementParser;
 pub use pi::PiParser;
 
@@ -25,5 +29,9 @@ pub trait Parser {
 
     
     
-    fn eof_error() -> SyntaxError;
+    
+    
+    
+    
+    fn eof_error(self, content: &[u8]) -> SyntaxError;
 }

@@ -4,15 +4,14 @@
 
 
 
-use std::borrow::Cow;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Deref;
 use std::path::Path;
 
 use crate::errors::Result;
-use crate::events::Event;
-use crate::name::{LocalName, NamespaceResolver, PrefixIter, QName, ResolveResult};
+use crate::events::{BytesText, Event};
+use crate::name::{NamespaceResolver, QName, ResolveResult};
 use crate::reader::{Config, Reader, Span, XmlSource};
 
 
@@ -23,7 +22,7 @@ pub struct NsReader<R> {
     
     pub(super) reader: Reader<R>,
     
-    ns_resolver: NamespaceResolver,
+    pub(super) ns_resolver: NamespaceResolver,
     
     
     
@@ -48,90 +47,6 @@ impl<R> NsReader<R> {
     #[inline]
     pub fn config_mut(&mut self) -> &mut Config {
         self.reader.config_mut()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub const fn prefixes(&self) -> PrefixIter {
-        self.ns_resolver.iter()
     }
 }
 
@@ -184,19 +99,6 @@ impl<R> NsReader<R> {
             e => e,
         }
     }
-
-    pub(super) fn resolve_event<'i>(
-        &mut self,
-        event: Result<Event<'i>>,
-    ) -> Result<(ResolveResult, Event<'i>)> {
-        match event {
-            Ok(Event::Start(e)) => Ok((self.ns_resolver.find(e.name()), Event::Start(e))),
-            Ok(Event::Empty(e)) => Ok((self.ns_resolver.find(e.name()), Event::Empty(e))),
-            Ok(Event::End(e)) => Ok((self.ns_resolver.find(e.name()), Event::End(e))),
-            Ok(e) => Ok((ResolveResult::Unbound, e)),
-            Err(e) => Err(e),
-        }
-    }
 }
 
 
@@ -215,42 +117,9 @@ impl<R> NsReader<R> {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
-    pub fn resolve<'n>(&self, name: QName<'n>, attribute: bool) -> (ResolveResult, LocalName<'n>) {
-        self.ns_resolver.resolve(name, !attribute)
+    pub const fn resolver(&self) -> &NamespaceResolver {
+        &self.ns_resolver
     }
 
     
@@ -258,125 +127,9 @@ impl<R> NsReader<R> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
-    pub fn resolve_element<'n>(&self, name: QName<'n>) -> (ResolveResult, LocalName<'n>) {
-        self.ns_resolver.resolve(name, true)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn resolve_attribute<'n>(&self, name: QName<'n>) -> (ResolveResult, LocalName<'n>) {
-        self.ns_resolver.resolve(name, false)
+    pub fn resolver_mut(&mut self) -> &mut NamespaceResolver {
+        &mut self.ns_resolver
     }
 }
 
@@ -498,9 +251,9 @@ impl<R: BufRead> NsReader<R> {
     pub fn read_resolved_event_into<'b>(
         &mut self,
         buf: &'b mut Vec<u8>,
-    ) -> Result<(ResolveResult, Event<'b>)> {
-        let event = self.read_event_impl(buf);
-        self.resolve_event(event)
+    ) -> Result<(ResolveResult<'_>, Event<'b>)> {
+        let event = self.read_event_impl(buf)?;
+        Ok(self.ns_resolver.resolve_event(event))
     }
 
     
@@ -604,7 +357,91 @@ impl<R: BufRead> NsReader<R> {
     pub fn read_to_end_into(&mut self, end: QName, buf: &mut Vec<u8>) -> Result<Span> {
         
         
-        self.reader.read_to_end_into(end, buf)
+        let result = self.reader.read_to_end_into(end, buf)?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn read_text_into<'b>(
+        &mut self,
+        end: QName,
+        buf: &'b mut Vec<u8>,
+    ) -> Result<BytesText<'b>> {
+        
+        
+        let result = self.reader.read_text_into(end, buf)?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
     }
 }
 
@@ -742,9 +579,9 @@ impl<'i> NsReader<&'i [u8]> {
     
     
     #[inline]
-    pub fn read_resolved_event(&mut self) -> Result<(ResolveResult, Event<'i>)> {
-        let event = self.read_event_impl(());
-        self.resolve_event(event)
+    pub fn read_resolved_event(&mut self) -> Result<(ResolveResult<'_>, Event<'i>)> {
+        let event = self.read_event_impl(())?;
+        Ok(self.ns_resolver.resolve_event(event))
     }
 
     
@@ -840,7 +677,11 @@ impl<'i> NsReader<&'i [u8]> {
     pub fn read_to_end(&mut self, end: QName) -> Result<Span> {
         
         
-        self.reader.read_to_end(end)
+        let result = self.reader.read_to_end(end)?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
     }
 
     
@@ -908,9 +749,17 @@ impl<'i> NsReader<&'i [u8]> {
     
     
     
+    
+    
     #[inline]
-    pub fn read_text(&mut self, end: QName) -> Result<Cow<'i, str>> {
-        self.reader.read_text(end)
+    pub fn read_text(&mut self, end: QName) -> Result<BytesText<'i>> {
+        
+        
+        let result = self.reader.read_text(end)?;
+        
+        
+        self.ns_resolver.pop();
+        Ok(result)
     }
 }
 

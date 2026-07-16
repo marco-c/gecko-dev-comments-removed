@@ -21,6 +21,52 @@ use {crate::se::SeError, serde::Serialize};
 
 
 
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "serde-types", derive(serde::Deserialize, serde::Serialize))]
+#[non_exhaustive]
+pub struct Config {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub add_space_before_slash_in_empty_elements: bool,
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -62,6 +108,12 @@ use {crate::se::SeError, serde::Serialize};
 pub struct Writer<W> {
     
     writer: W,
+
+    
+    config: Config,
+
+    
+    
     indent: Option<Indentation>,
 }
 
@@ -70,6 +122,9 @@ impl<W> Writer<W> {
     pub const fn new(inner: W) -> Writer<W> {
         Writer {
             writer: inner,
+            config: Config {
+                add_space_before_slash_in_empty_elements: false,
+            },
             indent: None,
         }
     }
@@ -78,6 +133,9 @@ impl<W> Writer<W> {
     pub fn new_with_indent(inner: W, indent_char: u8, indent_size: usize) -> Writer<W> {
         Writer {
             writer: inner,
+            config: Config {
+                add_space_before_slash_in_empty_elements: false,
+            },
             indent: Some(Indentation::new(indent_char, indent_size)),
         }
     }
@@ -95,6 +153,16 @@ impl<W> Writer<W> {
     
     pub const fn get_ref(&self) -> &W {
         &self.writer
+    }
+
+    
+    pub const fn config(&self) -> &Config {
+        &self.config
+    }
+
+    
+    pub fn config_mut(&mut self) -> &mut Config {
+        &mut self.config
     }
 
     
@@ -206,7 +274,15 @@ impl<W: Write> Writer<W> {
                 }
                 self.write_wrapped(b"</", &e, b">")
             }
-            Event::Empty(e) => self.write_wrapped(b"<", &e, b"/>"),
+            Event::Empty(e) => self.write_wrapped(
+                b"<",
+                &e,
+                if self.config.add_space_before_slash_in_empty_elements {
+                    b" />"
+                } else {
+                    b"/>"
+                },
+            ),
             Event::Text(e) => {
                 next_should_line_break = false;
                 self.write(&e)
@@ -221,6 +297,7 @@ impl<W: Write> Writer<W> {
             Event::Decl(e) => self.write_wrapped(b"<?", &e, b"?>"),
             Event::PI(e) => self.write_wrapped(b"<?", &e, b"?>"),
             Event::DocType(e) => self.write_wrapped(b"<!DOCTYPE ", &e, b">"),
+            Event::GeneralRef(e) => self.write_wrapped(b"&", &e, b";"),
             Event::Eof => Ok(()),
         };
         if let Some(i) = self.indent.as_mut() {
@@ -232,7 +309,7 @@ impl<W: Write> Writer<W> {
     
     #[inline]
     pub(crate) fn write(&mut self, value: &[u8]) -> io::Result<()> {
-        self.writer.write_all(value).map_err(Into::into)
+        self.writer.write_all(value)
     }
 
     #[inline]
@@ -496,7 +573,7 @@ impl<'a, W> ElementWriter<'a, W> {
                         self.spaces.resize(indent, b' ');
                     }
                     self.start_tag.push_indent(&self.spaces[..indent]);
-                    self.start_tag.push_attr(attr.into());
+                    self.start_tag.push_attr(attr);
                     AttributeIndent::Spaces(indent)
                 }
                 
@@ -510,7 +587,7 @@ impl<'a, W> ElementWriter<'a, W> {
                 
                 AttributeIndent::WriteConfigured(indent) => {
                     self.start_tag.push_indent(i.additional(indent));
-                    self.start_tag.push_attr(attr.into());
+                    self.start_tag.push_attr(attr);
                     AttributeIndent::Configured(indent)
                 }
                 
@@ -589,7 +666,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct Indentation {
     
     
