@@ -193,8 +193,8 @@ class MOZ_NON_PARAM RInstruction {
   
   
   
-  static void readRecoverData(CompactBufferReader& reader,
-                              RInstructionStorage* raw);
+  static uint32_t readRecoverData(CompactBufferReader& reader,
+                                  RInstructionStorage* raw);
 };
 
 #define RINSTRUCTION_HEADER_(op)                                        \

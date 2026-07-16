@@ -583,6 +583,10 @@ class RecoverReader {
   
   RInstructionStorage rawData_;
 
+  
+  
+  uint32_t numOperands_;
+
  private:
   void readRecoverHeader();
   void readInstruction();
@@ -604,6 +608,8 @@ class RecoverReader {
   const RInstruction* instruction() const {
     return reinterpret_cast<const RInstruction*>(rawData_.addr());
   }
+
+  uint32_t numOperands() const { return numOperands_; }
 };
 
 }  
