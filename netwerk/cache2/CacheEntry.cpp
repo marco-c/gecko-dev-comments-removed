@@ -887,25 +887,13 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
       }
 
       if (bypass) {
-        if (!mBypassWriterLock) {
-          LOG(("  bypassing, entry data still being written"));
-          return false;
-        }
-        
-        
-        
-        
-        
-        
-        LOG(
-            ("  writer lock bypassed while data still in progress; delivering "
-             "as not-wanted so the consumer goes to the network"));
-        aCallback.mNotWanted = true;
-      } else {
-        
-        aCallback.mRecheckAfterWrite = false;
-        return InvokeCallback(aCallback);
+        LOG(("  bypassing, entry data still being written"));
+        return false;
       }
+
+      
+      aCallback.mRecheckAfterWrite = false;
+      return InvokeCallback(aCallback);
     }
 
     mozilla::MutexAutoUnlock unlock(mLock);
