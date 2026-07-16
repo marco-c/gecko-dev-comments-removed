@@ -9,11 +9,13 @@
 
 #include "common/angleutils.h"
 #include "common/debug.h"
+#include "common/span.h"
 
 #include "compiler/translator/BaseTypes.h"
 #include "compiler/translator/Common.h"
 #include "compiler/translator/ImmutableString.h"
 #include "compiler/translator/SymbolUniqueId.h"
+#include "compiler/translator/ir/src/builder.h"
 
 namespace sh
 {
@@ -63,6 +65,7 @@ class TFieldListCollection : angle::NonCopyable
     bool containsMatrices() const;
     bool containsType(TBasicType t) const;
     bool containsSamplers() const;
+    bool containsOnlySamplers() const;
 
     size_t objectSize() const;
     
@@ -108,13 +111,14 @@ class TType
                     TQualifier q,
                     uint8_t ps,
                     uint8_t ss,
-                    const TSpan<const unsigned int> arraySizes,
+                    const angle::Span<const unsigned int> arraySizes,
                     const char *mangledName)
         : type(t),
           precision(p),
           qualifier(q),
           invariant(false),
           precise(false),
+          interpolant(false),
           memoryQualifier(TMemoryQualifier::Create()),
           layoutQualifier(TLayoutQualifier::Create()),
           primarySize(ps),
@@ -134,6 +138,7 @@ class TType
           qualifier(t.qualifier),
           invariant(t.invariant),
           precise(t.precise),
+          interpolant(t.interpolant),
           memoryQualifier(t.memoryQualifier),
           layoutQualifier(t.layoutQualifier),
           primarySize(t.primarySize),
@@ -164,11 +169,14 @@ class TType
     bool isPrecise() const { return precise; }
     void setPrecise(bool i) { precise = i; }
 
-    TMemoryQualifier getMemoryQualifier() const { return memoryQualifier; }
+    bool isInterpolant() const { return interpolant; }
+    void setInterpolant(bool i) { interpolant = i; }
+
+    const TMemoryQualifier &getMemoryQualifier() const { return memoryQualifier; }
     void setMemoryQualifier(const TMemoryQualifier &mq) { memoryQualifier = mq; }
 
-    TLayoutQualifier getLayoutQualifier() const { return layoutQualifier; }
-    void setLayoutQualifier(TLayoutQualifier lq) { layoutQualifier = lq; }
+    const TLayoutQualifier &getLayoutQualifier() const { return layoutQualifier; }
+    void setLayoutQualifier(const TLayoutQualifier &lq) { layoutQualifier = lq; }
 
     uint8_t getNominalSize() const { return primarySize; }
     uint8_t getSecondarySize() const { return secondarySize; }
@@ -196,7 +204,7 @@ class TType
     bool isArray() const { return !mArraySizes.empty(); }
     bool isArrayOfArrays() const { return mArraySizes.size() > 1u; }
     size_t getNumArraySizes() const { return mArraySizes.size(); }
-    const TSpan<const unsigned int> &getArraySizes() const { return mArraySizes; }
+    const angle::Span<const unsigned int> &getArraySizes() const { return mArraySizes; }
     unsigned int getArraySizeProduct() const;
     bool isUnsizedArray() const;
     unsigned int getOutermostArraySize() const
@@ -207,14 +215,14 @@ class TType
     void makeArray(unsigned int s);
 
     
-    void makeArrays(const TSpan<const unsigned int> &sizes);
+    void makeArrays(const angle::Span<const unsigned int> &sizes);
     
     void setArraySize(size_t arrayDimension, unsigned int s);
 
     
     
     
-    void sizeUnsizedArrays(const TSpan<const unsigned int> &newArraySizes);
+    void sizeUnsizedArrays(const angle::Span<const unsigned int> &newArraySizes);
 
     
     void sizeOutermostUnsizedArray(unsigned int arraySize);
@@ -246,6 +254,7 @@ class TType
     {
         return primarySize == 1 && secondarySize == 1 && !mStructure && isArray();
     }
+    bool isScalarBool() const { return isScalar() && type == EbtBool; }
     bool isScalarFloat() const { return isScalar() && type == EbtFloat; }
     bool isScalarInt() const { return isScalar() && (type == EbtInt || type == EbtUInt); }
 
@@ -325,12 +334,11 @@ class TType
     
     int getDeepestStructNesting() const;
 
-    bool isNamelessStruct() const;
-
     bool isStructureContainingArrays() const;
     bool isStructureContainingMatrices() const;
     bool isStructureContainingType(TBasicType t) const;
     bool isStructureContainingSamplers() const;
+    bool isStructureContainingOnlySamplers() const;
     bool isInterfaceBlockContainingType(TBasicType t) const;
 
     bool isStructSpecifier() const { return mIsStructSpecifier; }
@@ -358,10 +366,14 @@ class TType
     bool isImage() const { return IsImage(type); }
     bool isPixelLocal() const { return IsPixelLocal(type); }
 
+    void setTypeId(ir::TypeId typeId) { mTypeId = typeId; }
+    ir::TypeId typeId() const { return mTypeId; }
+    bool isTypeIdSet() const { return ir::IsTypeIdValid(mTypeId); }
+
   private:
     constexpr void invalidateMangledName() { mMangledName = nullptr; }
     const char *buildMangledName() const;
-    constexpr void onArrayDimensionsChange(const TSpan<const unsigned int> &sizes)
+    constexpr void onArrayDimensionsChange(const angle::Span<const unsigned int> &sizes)
     {
         mArraySizes = sizes;
         invalidateMangledName();
@@ -372,6 +384,7 @@ class TType
     TQualifier qualifier;
     bool invariant;
     bool precise;
+    bool interpolant;
 
     TMemoryQualifier memoryQualifier;
     TLayoutQualifier layoutQualifier;
@@ -380,7 +393,7 @@ class TType
 
     
     
-    TSpan<const unsigned int> mArraySizes;
+    angle::Span<const unsigned int> mArraySizes;
     
     
     
@@ -402,6 +415,8 @@ class TType
     size_t mInterfaceBlockFieldIndex;
 
     mutable const char *mMangledName;
+
+    ir::TypeId mTypeId = ir::kInvalidTypeId;
 };
 
 
@@ -457,12 +472,6 @@ struct TTypeSpecifierNonArray
 
 
 
-
-
-
-
-
-
 struct TPublicType
 {
     
@@ -470,9 +479,14 @@ struct TPublicType
 
     void initialize(const TTypeSpecifierNonArray &typeSpecifier, TQualifier q);
     void initializeBasicType(TBasicType basicType);
+    const char *getBasicString() const { return sh::getBasicString(getBasicType()); }
 
     TBasicType getBasicType() const { return typeSpecifierNonArray.type; }
     void setBasicType(TBasicType basicType) { typeSpecifierNonArray.type = basicType; }
+    void setQualifier(TQualifier value) { qualifier = value; }
+    void setPrecision(TPrecision value) { precision = value; }
+    void setMemoryQualifier(const TMemoryQualifier &value) { memoryQualifier = value; }
+    void setPrecise(bool value) { precise = value; }
 
     uint8_t getPrimarySize() const { return typeSpecifierNonArray.primarySize; }
     uint8_t getSecondarySize() const { return typeSpecifierNonArray.secondarySize; }
@@ -488,6 +502,9 @@ struct TPublicType
     bool isArray() const;
     void clearArrayness();
     bool isAggregate() const;
+    bool isUnsizedArray() const;
+    void sizeUnsizedArrays();
+    void makeArrays(TVector<unsigned int> *sizes);
 
     TTypeSpecifierNonArray typeSpecifierNonArray;
     TLayoutQualifier layoutQualifier;

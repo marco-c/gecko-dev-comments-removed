@@ -11,7 +11,12 @@
 #ifndef LIBANGLE_PIXEL_LOCAL_STORAGE_H_
 #define LIBANGLE_PIXEL_LOCAL_STORAGE_H_
 
-#include "angle_gl.h"
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
+#include "GLSLANG/ShaderLang.h"
+#include "libANGLE/Caps.h"
 #include "libANGLE/ImageIndex.h"
 #include "libANGLE/angletypes.h"
 
@@ -27,46 +32,38 @@ class Texture;
 
 
 
-class PixelLocalStoragePlane : angle::NonCopyable
+class PixelLocalStoragePlane : angle::NonCopyable, public angle::ObserverInterface
 {
   public:
-    ~PixelLocalStoragePlane();
+    PixelLocalStoragePlane();
+    ~PixelLocalStoragePlane() override;
 
     
     
     void onContextObjectsLost();
 
-    
-    
-    void onFramebufferDestroyed(const Context *);
-
     void deinitialize(Context *);
-    void setMemoryless(Context *, GLenum internalformat);
-    void setTextureBacked(Context *, Texture *, int level, int layer);
+    void setMemoryless(Context *, GLenum internalformat, GLbitfield usage);
+    void setTextureBacked(Context *, Texture *, int level, int layer, GLbitfield usage);
+    void onSubjectStateChange(angle::SubjectIndex, angle::SubjectMessage) override;
 
-    bool isDeinitialized() const { return mInternalformat == GL_NONE; }
+    
+    
+    bool isDeinitialized() const;
 
     
-    
-    
-    
-    
-    
-    bool isTextureIDDeleted(const Context *) const;
-
-    bool isMemoryless() const
-    {
-        
-        ASSERT(!(isDeinitialized() && mMemoryless));
-        return mMemoryless;
-    }
-
     GLenum getInternalformat() const { return mInternalformat; }
+    GLuint getTextureName() const { return mMemoryless ? 0 : mTextureID.value; }
+    GLuint getTextureLevel() const { return mMemoryless ? 0 : mTextureImageIndex.getLevelIndex(); }
+    GLint getTextureLayer() const { return mMemoryless ? 0 : mTextureImageIndex.getLayerIndex(); }
+    GLbitfield getUsage() const { return mUsage; }
 
-    
-    
-    
-    GLint getIntegeri(const Context *, GLenum target, GLuint index) const;
+    bool isMemoryless() const { return mMemoryless; }
+    TextureID getTextureID() const { return mTextureID; }
+    bool isAlwaysNoncoherent() const
+    {
+        return mUsage & GL_PIXEL_LOCAL_USAGE_ALWAYS_NONCOHERENT_BIT_ANGLE;
+    }
 
     
     
@@ -74,33 +71,66 @@ class PixelLocalStoragePlane : angle::NonCopyable
     bool getTextureImageExtents(const Context *, Extents *extents) const;
 
     
-    void attachToDrawFramebuffer(Context *, Extents plsExtents, GLenum colorAttachment);
+    
+    void ensureBackingTextureIfMemoryless(Context *, Extents plsSize);
+
+    
+    void attachToDrawFramebuffer(Context *, GLenum colorAttachment) const;
+
+    
+    class ClearCommands
+    {
+      public:
+        virtual ~ClearCommands() {}
+        virtual void clearfv(int target, const GLfloat[]) const = 0;
+        virtual void cleariv(int target, const GLint[]) const   = 0;
+        virtual void clearuiv(int target, const GLuint[]) const = 0;
+    };
 
     
     
     
-    
-    
-    
-    
-    
-    void performLoadOperationClear(Context *, GLint drawbuffer, GLenum loadop, const void *data);
+    void issueClearCommand(ClearCommands *, int target, GLenum loadop) const;
 
     
-    void bindToImage(Context *, Extents plsExtents, GLuint unit, bool needsR32Packing);
+    void bindToImage(Context *, GLuint unit, bool needsR32Packing) const;
+
+    
+    const ImageIndex &getTextureImageIndex() const { return mTextureImageIndex; }
+    const Texture *getBackingTexture(const Context *context) const;
+
+    void setClearValuef(const GLfloat value[4]) { memcpy(mClearValuef.data(), value, 4 * 4); }
+    void setClearValuei(const GLint value[4]) { memcpy(mClearValuei.data(), value, 4 * 4); }
+    void setClearValueui(const GLuint value[4]) { memcpy(mClearValueui.data(), value, 4 * 4); }
+
+    void getClearValuef(GLfloat value[4]) const { memcpy(value, mClearValuef.data(), 4 * 4); }
+    void getClearValuei(GLint value[4]) const { memcpy(value, mClearValuei.data(), 4 * 4); }
+    void getClearValueui(GLuint value[4]) const { memcpy(value, mClearValueui.data(), 4 * 4); }
+
+    
+    bool isActive() const { return mActive; }
+    void markActive(bool active) { mActive = active; }
 
   private:
-    
-    
-    
-    void ensureBackingIfMemoryless(Context *, Extents plsSize);
-
     GLenum mInternalformat = GL_NONE;  
     bool mMemoryless       = false;
-    TextureID mMemorylessTextureID{};  
+    TextureID mTextureID   = TextureID();
     ImageIndex mTextureImageIndex;
-    Texture *mTextureRef = nullptr;
+    GLbitfield mUsage = GL_NONE;
+
+    
+    std::array<GLfloat, 4> mClearValuef{};
+    std::array<GLint, 4> mClearValuei{};
+    std::array<GLuint, 4> mClearValueui{};
+
+    
+    bool mActive = false;
+
+    angle::ObserverBinding mTextureObserver;
 };
+
+using PixelLocalStoragePlaneVector =
+    angle::FixedVector<PixelLocalStoragePlane, IMPLEMENTATION_MAX_PIXEL_LOCAL_STORAGE_PLANES>;
 
 
 
@@ -111,7 +141,6 @@ class PixelLocalStorage
   public:
     static std::unique_ptr<PixelLocalStorage> Make(const Context *);
 
-    PixelLocalStorage();
     virtual ~PixelLocalStorage();
 
     
@@ -127,27 +156,38 @@ class PixelLocalStorage
         return mPlanes[plane];
     }
 
-    PixelLocalStoragePlane &getPlane(GLint plane)
-    {
-        ASSERT(0 <= plane && plane < IMPLEMENTATION_MAX_PIXEL_LOCAL_STORAGE_PLANES);
-        return mPlanes[plane];
-    }
+    const PixelLocalStoragePlaneVector &getPlanes() { return mPlanes; }
+
+    size_t interruptCount() const { return mInterruptCount; }
+    GLsizei activePlanesAtInterrupt() const { return mActivePlanesAtInterrupt; }
 
     
     void deinitialize(Context *context, GLint plane) { mPlanes[plane].deinitialize(context); }
-    void setMemoryless(Context *context, GLint plane, GLenum internalformat)
+    void setMemoryless(Context *context, GLint plane, GLenum internalformat, GLbitfield usage)
     {
-        mPlanes[plane].setMemoryless(context, internalformat);
+        mPlanes[plane].setMemoryless(context, internalformat, usage);
     }
-    void setTextureBacked(Context *context, GLint plane, Texture *tex, int level, int layer)
+    void setTextureBacked(Context *context,
+                          GLint plane,
+                          Texture *tex,
+                          int level,
+                          int layer,
+                          GLbitfield usage)
     {
-        mPlanes[plane].setTextureBacked(context, tex, level, layer);
+        mPlanes[plane].setTextureBacked(context, tex, level, layer, usage);
     }
-    void begin(Context *, GLsizei n, const GLenum loadops[], const void *cleardata);
-    void end(Context *);
+    void setClearValuef(GLint plane, const GLfloat val[4]) { mPlanes[plane].setClearValuef(val); }
+    void setClearValuei(GLint plane, const GLint val[4]) { mPlanes[plane].setClearValuei(val); }
+    void setClearValueui(GLint plane, const GLuint val[4]) { mPlanes[plane].setClearValueui(val); }
+    void begin(Context *, GLsizei n, const GLenum loadops[]);
+    void end(Context *, GLsizei n, const GLenum storeops[]);
     void barrier(Context *);
+    void interrupt(Context *);
+    void restore(Context *);
 
   protected:
+    PixelLocalStorage(const ShPixelLocalStorageOptions &, const Caps &);
+
     
     
     virtual void onContextObjectsLost() = 0;
@@ -157,19 +197,16 @@ class PixelLocalStorage
     virtual void onDeleteContextObjects(Context *) = 0;
 
     
-    virtual void onBegin(Context *,
-                         GLsizei n,
-                         const GLenum loadops[],
-                         const char *cleardata,
-                         Extents plsSize)                     = 0;
-    virtual void onEnd(Context *, GLsizei numActivePLSPlanes) = 0;
-    virtual void onBarrier(Context *)                         = 0;
+    virtual void onBegin(Context *, GLsizei n, const GLenum loadops[], Extents plsSize) = 0;
+    virtual void onEnd(Context *, GLsizei n, const GLenum storeops[])                   = 0;
+    virtual void onBarrier(Context *)                                                   = 0;
+
+    const ShPixelLocalStorageOptions mPLSOptions;
 
   private:
-    std::array<PixelLocalStoragePlane, IMPLEMENTATION_MAX_PIXEL_LOCAL_STORAGE_PLANES> mPlanes;
-
-    
-    GLsizei mNumActivePLSPlanes = 0;
+    PixelLocalStoragePlaneVector mPlanes;
+    size_t mInterruptCount           = 0;
+    GLsizei mActivePlanesAtInterrupt = 0;
 };
 
 }  

@@ -7,21 +7,198 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_libc_calls
+#endif
+
 #include "gpu_info_util/SystemInfo_vulkan.h"
 
 #include <vulkan/vulkan.h>
 #include "gpu_info_util/SystemInfo_internal.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include "common/angleutils.h"
 #include "common/debug.h"
+#include "common/platform_helpers.h"
 #include "common/system_utils.h"
 #include "common/vulkan/libvulkan_loader.h"
 
 namespace angle
 {
+namespace
+{
+
+VersionInfo ParseGenericDriverVersion(uint32_t driverVersion)
+{
+    VersionInfo version = {};
+
+    version.major    = VK_API_VERSION_MAJOR(driverVersion);
+    version.minor    = VK_API_VERSION_MINOR(driverVersion);
+    version.subMinor = VK_API_VERSION_PATCH(driverVersion);
+
+    return version;
+}
+}  
+
+VersionInfo ParseAMDVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseArmVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseBroadcomVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseSwiftShaderVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseImaginationVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseIntelWindowsVulkanDriverVersion(uint32_t driverVersion)
+{
+    VersionInfo version = {};
+
+    
+    
+    
+    
+    version.major = driverVersion >> 14;
+    version.minor = driverVersion & 0x3FFF;
+
+    return version;
+}
+
+VersionInfo ParseKazanVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseNvidiaVulkanDriverVersion(uint32_t driverVersion)
+{
+    VersionInfo version = {};
+
+    version.major    = driverVersion >> 22;
+    version.minor    = driverVersion >> 14 & 0xFF;
+    version.subMinor = driverVersion >> 6 & 0xFF;
+    version.patch    = driverVersion & 0x3F;
+
+    return version;
+}
+
+VersionInfo ParseQualcommVulkanDriverVersion(uint32_t driverVersion)
+{
+    VersionInfo version = {};
+    if ((driverVersion & 0x80000000) != 0)
+    {
+        
+        
+        version       = ParseGenericDriverVersion(driverVersion);
+        version.major = 512;
+        return version;
+    }
+
+    
+    version.minor       = driverVersion;
+    return version;
+}
+
+VersionInfo ParseSamsungVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseVeriSiliconVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseVivanteVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseMesaVulkanDriverVersion(uint32_t driverVersion)
+{
+    return ParseGenericDriverVersion(driverVersion);
+}
+
+VersionInfo ParseMoltenVulkanDriverVersion(uint32_t driverVersion)
+{
+    
+    
+    VersionInfo version = {};
+
+    version.major = driverVersion / 10000;
+    version.minor = (driverVersion / 100) % 100;
+    version.patch = driverVersion % 100;
+
+    return version;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL
+VVLDebugUtilsMessenger(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                       VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                       const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+                       void *userData)
+{
+    
+    
+    ASSERT(callbackData->pMessage != nullptr);
+
+    
+    std::ostringstream log;
+    if (callbackData->pMessageIdName != nullptr)
+    {
+        log << "[ " << callbackData->pMessageIdName << " ] ";
+    }
+    log << callbackData->pMessage << std::endl;
+    std::string msg = log.str();
+    WARN() << msg;
+
+    bool triggerAssert = (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
+    if (triggerAssert)
+    {
+        
+        ASSERT(false);
+    }
+
+    return VK_FALSE;
+}
+
+constexpr const char *kVkKhronosValidationLayerName[] = {"VK_LAYER_KHRONOS_validation"};
+
+bool HasKhronosValidationLayer(const std::vector<VkLayerProperties> &layerProps)
+{
+    for (const auto &layerProp : layerProps)
+    {
+        std::string layerPropLayerName = std::string(layerProp.layerName);
+        if (layerPropLayerName == kVkKhronosValidationLayerName[0])
+        {
+            return true;
+        }
+    }
+
+    WARN() << "Vulkan validation layers are missing";
+
+    return false;
+}
+
 class VulkanLibrary final : NonCopyable
 {
   public:
@@ -29,16 +206,55 @@ class VulkanLibrary final : NonCopyable
 
     ~VulkanLibrary()
     {
+        if (mDebugUtilsMessenger)
+        {
+            mPfnDestroyDebugUtilsMessengerEXT(mInstance, mDebugUtilsMessenger, nullptr);
+        }
         if (mInstance != VK_NULL_HANDLE)
         {
-            auto pfnDestroyInstance = getProc<PFN_vkDestroyInstance>("vkDestroyInstance");
-            if (pfnDestroyInstance)
-            {
-                pfnDestroyInstance(mInstance, nullptr);
-            }
+            mPfnDestroyInstance(mInstance, nullptr);
         }
 
         CloseSystemLibrary(mLibVulkan);
+    }
+
+    std::vector<std::string> GetInstanceExtensionNames() const
+    {
+        std::vector<std::string> extensionNames;
+
+        if (!mPfnEnumerateInstanceExtensionProperties)
+        {
+            return extensionNames;
+        }
+
+        uint32_t extensionCount = 0;
+        if (mPfnEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) !=
+            VK_SUCCESS)
+        {
+            return extensionNames;
+        }
+
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        if (mPfnEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()) !=
+            VK_SUCCESS)
+        {
+            return extensionNames;
+        }
+
+        for (const auto &extension : extensions)
+        {
+            extensionNames.emplace_back(extension.extensionName);
+        }
+
+        std::sort(extensionNames.begin(), extensionNames.end());
+
+        return extensionNames;
+    }
+
+    bool ExtensionFound(std::string const &needle, const std::vector<std::string> &haystack)
+    {
+        
+        return std::binary_search(haystack.begin(), haystack.end(), needle);
     }
 
     VkInstance getVulkanInstance()
@@ -50,17 +266,84 @@ class VulkanLibrary final : NonCopyable
             return VK_NULL_HANDLE;
         }
 
+        mPfnGetInstanceProcAddr =
+            getProcWithDLSym<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+        if (!mPfnGetInstanceProcAddr)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        mPfnCreateInstance = getProcWithDLSym<PFN_vkCreateInstance>("vkCreateInstance");
+        if (!mPfnCreateInstance)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        mPfnEnumerateInstanceLayerProperties =
+            getProcWithDLSym<PFN_vkEnumerateInstanceLayerProperties>(
+                "vkEnumerateInstanceLayerProperties");
+        if (!mPfnEnumerateInstanceLayerProperties)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        mPfnEnumerateInstanceExtensionProperties =
+            getProcWithDLSym<PFN_vkEnumerateInstanceExtensionProperties>(
+                "vkEnumerateInstanceExtensionProperties");
+        if (!mPfnEnumerateInstanceExtensionProperties)
+        {
+            return VK_NULL_HANDLE;
+        }
+
         
         uint32_t instanceVersion = VK_API_VERSION_1_0;
 #if defined(VK_VERSION_1_1)
-        auto pfnEnumerateInstanceVersion =
-            getProc<PFN_vkEnumerateInstanceVersion>("vkEnumerateInstanceVersion");
+        PFN_vkEnumerateInstanceVersion pfnEnumerateInstanceVersion =
+            getProcWithDLSym<PFN_vkEnumerateInstanceVersion>("vkEnumerateInstanceVersion");
         if (!pfnEnumerateInstanceVersion ||
             pfnEnumerateInstanceVersion(&instanceVersion) != VK_SUCCESS)
         {
             instanceVersion = VK_API_VERSION_1_0;
         }
 #endif  
+
+        std::vector<std::string> availableInstanceExtensions = GetInstanceExtensionNames();
+        std::vector<const char *> enabledInstanceExtensions;
+
+        bool hasPortabilityEnumeration = false;
+
+        if (IsApple() && ExtensionFound(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                                        availableInstanceExtensions))
+        {
+            
+            
+            
+            enabledInstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            hasPortabilityEnumeration = true;
+        }
+
+        
+        bool enableValidationLayer = false;
+        
+#if !defined(NDEBUG) || defined(ANGLE_ASSERT_ALWAYS_ON)
+        uint32_t instanceLayerCount = 0;
+        {
+            mPfnEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+        }
+        std::vector<VkLayerProperties> instanceLayerProps(instanceLayerCount);
+        if (instanceLayerCount > 0)
+        {
+            mPfnEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayerProps.data());
+        }
+        enableValidationLayer = HasKhronosValidationLayer(instanceLayerProps);
+#endif
+        bool hasDebugMessengerExtension = false;
+        if (enableValidationLayer &&
+            ExtensionFound(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, availableInstanceExtensions))
+        {
+            enabledInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            hasDebugMessengerExtension = true;
+        }
 
         
         VkApplicationInfo appInfo;
@@ -71,36 +354,147 @@ class VulkanLibrary final : NonCopyable
         appInfo.pEngineName        = "";
         appInfo.engineVersion      = 1;
         appInfo.apiVersion         = instanceVersion;
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        VkInstanceCreateInfo createInstanceInfo{};
+        createInstanceInfo.sType               = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        if (enableValidationLayer)
+        {
+            createInstanceInfo.enabledLayerCount   = 1;
+            createInstanceInfo.ppEnabledLayerNames = kVkKhronosValidationLayerName;
 
-        VkInstanceCreateInfo createInstanceInfo;
-        createInstanceInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInstanceInfo.pNext                   = nullptr;
-        createInstanceInfo.flags                   = 0;
-        createInstanceInfo.pApplicationInfo        = &appInfo;
-        createInstanceInfo.enabledLayerCount       = 0;
-        createInstanceInfo.ppEnabledLayerNames     = nullptr;
-        createInstanceInfo.enabledExtensionCount   = 0;
-        createInstanceInfo.ppEnabledExtensionNames = nullptr;
+            if (hasDebugMessengerExtension)
+            {
+                constexpr VkDebugUtilsMessageSeverityFlagsEXT kSeveritiesToLog =
+                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
 
-        auto pfnCreateInstance = getProc<PFN_vkCreateInstance>("vkCreateInstance");
-        if (!pfnCreateInstance ||
-            pfnCreateInstance(&createInstanceInfo, nullptr, &mInstance) != VK_SUCCESS)
+                constexpr VkDebugUtilsMessageTypeFlagsEXT kMessagesToLog =
+                    VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+
+                debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+                debugCreateInfo.messageSeverity = kSeveritiesToLog;
+                debugCreateInfo.messageType     = kMessagesToLog;
+                debugCreateInfo.pfnUserCallback = &VVLDebugUtilsMessenger;
+                debugCreateInfo.pUserData       = nullptr;
+                createInstanceInfo.pNext        = &debugCreateInfo;
+            }
+        }
+        createInstanceInfo.pApplicationInfo    = &appInfo;
+        createInstanceInfo.enabledExtensionCount =
+            static_cast<uint32_t>(enabledInstanceExtensions.size());
+        createInstanceInfo.ppEnabledExtensionNames =
+            enabledInstanceExtensions.empty() ? nullptr : enabledInstanceExtensions.data();
+
+        if (hasPortabilityEnumeration)
+        {
+            createInstanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        }
+
+        if (mPfnCreateInstance(&createInstanceInfo, nullptr, &mInstance) != VK_SUCCESS)
         {
             return VK_NULL_HANDLE;
         }
 
+        mPfnDestroyInstance = getProcWithDLSym<PFN_vkDestroyInstance>("vkDestroyInstance");
+        if (!mPfnDestroyInstance)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        mPfnEnumeratePhysicalDevices =
+            getProcWithDLSym<PFN_vkEnumeratePhysicalDevices>("vkEnumeratePhysicalDevices");
+        if (!mPfnEnumeratePhysicalDevices)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        mPfnGetPhysicalDeviceProperties =
+            getProcWithDLSym<PFN_vkGetPhysicalDeviceProperties>("vkGetPhysicalDeviceProperties");
+        if (!mPfnGetPhysicalDeviceProperties)
+        {
+            return VK_NULL_HANDLE;
+        }
+
+        
+        
+        
+        
+        
+        mPfnGetPhysicalDeviceProperties2 =
+            getProcWithDLSym<PFN_vkGetPhysicalDeviceProperties2>("vkGetPhysicalDeviceProperties2");
+
+        if (hasDebugMessengerExtension)
+        {
+            mPfnCreateDebugUtilsMessengerEXT =
+                getProc<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+
+            mPfnDestroyDebugUtilsMessengerEXT =
+                getProc<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+        }
+
+        
+        
+        hasDebugMessengerExtension = hasDebugMessengerExtension &&
+                                     mPfnCreateDebugUtilsMessengerEXT &&
+                                     mPfnDestroyDebugUtilsMessengerEXT;
+        if (hasDebugMessengerExtension)
+        {
+            ASSERT(debugCreateInfo.sType ==
+                   VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT);
+            mPfnCreateDebugUtilsMessengerEXT(mInstance, &debugCreateInfo, nullptr,
+                                             &mDebugUtilsMessenger);
+        }
         return mInstance;
+    }
+
+    template <typename Func>
+    Func getProcWithDLSym(const char *fn) const
+    {
+        return reinterpret_cast<Func>(angle::GetLibrarySymbol(mLibVulkan, fn));
     }
 
     template <typename Func>
     Func getProc(const char *fn) const
     {
-        return reinterpret_cast<Func>(angle::GetLibrarySymbol(mLibVulkan, fn));
+        if (mInstance == VK_NULL_HANDLE)
+        {
+            return (Func)mPfnGetInstanceProcAddr(NULL, fn);
+        }
+        else
+        {
+            return (Func)mPfnGetInstanceProcAddr(mInstance, fn);
+        }
+    }
+
+    PFN_vkEnumeratePhysicalDevices getEnumeratePhysicalDevicesFunc()
+    {
+        return mPfnEnumeratePhysicalDevices;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties getPhysicalDevicePropertiesFunc()
+    {
+        return mPfnGetPhysicalDeviceProperties;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2 getPhysicalDeviceProperties2Func()
+    {
+        return mPfnGetPhysicalDeviceProperties2;
     }
 
   private:
     void *mLibVulkan     = nullptr;
     VkInstance mInstance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT mDebugUtilsMessenger = VK_NULL_HANDLE;
+    PFN_vkGetInstanceProcAddr mPfnGetInstanceProcAddr                           = nullptr;
+    PFN_vkCreateInstance mPfnCreateInstance                                     = nullptr;
+    PFN_vkDestroyInstance mPfnDestroyInstance                                   = nullptr;
+    PFN_vkEnumerateInstanceLayerProperties mPfnEnumerateInstanceLayerProperties = nullptr;
+    PFN_vkEnumerateInstanceExtensionProperties mPfnEnumerateInstanceExtensionProperties = nullptr;
+    PFN_vkEnumeratePhysicalDevices mPfnEnumeratePhysicalDevices                         = nullptr;
+    PFN_vkGetPhysicalDeviceProperties mPfnGetPhysicalDeviceProperties                   = nullptr;
+    PFN_vkGetPhysicalDeviceProperties2 mPfnGetPhysicalDeviceProperties2                 = nullptr;
+    PFN_vkCreateDebugUtilsMessengerEXT mPfnCreateDebugUtilsMessengerEXT                 = nullptr;
+    PFN_vkDestroyDebugUtilsMessengerEXT mPfnDestroyDebugUtilsMessengerEXT               = nullptr;
 };
 
 ANGLE_FORMAT_PRINTF(1, 2)
@@ -126,6 +520,8 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
     const bool enableValidationLayers = false;
     vk::ScopedVkLoaderEnvironment scopedEnvironment(enableValidationLayers, preferredICD);
 
+    static_assert(sizeof(GPUDeviceInfo::deviceUUID) == VK_UUID_SIZE);
+
     
     
     
@@ -139,15 +535,11 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
     }
 
     
-    auto pfnEnumeratePhysicalDevices =
-        vkLibrary.getProc<PFN_vkEnumeratePhysicalDevices>("vkEnumeratePhysicalDevices");
-    auto pfnGetPhysicalDeviceProperties =
-        vkLibrary.getProc<PFN_vkGetPhysicalDeviceProperties>("vkGetPhysicalDeviceProperties");
-    auto pfnGetPhysicalDeviceProperties2 =
-        vkLibrary.getProc<PFN_vkGetPhysicalDeviceProperties2>("vkGetPhysicalDeviceProperties2");
+    auto pfnEnumeratePhysicalDevices     = vkLibrary.getEnumeratePhysicalDevicesFunc();
+    auto pfnGetPhysicalDeviceProperties  = vkLibrary.getPhysicalDevicePropertiesFunc();
+    auto pfnGetPhysicalDeviceProperties2 = vkLibrary.getPhysicalDeviceProperties2Func();
     uint32_t physicalDeviceCount = 0;
-    if (!pfnEnumeratePhysicalDevices || !pfnGetPhysicalDeviceProperties ||
-        pfnEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr) != VK_SUCCESS)
+    if (pfnEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr) != VK_SUCCESS)
     {
         return false;
     }
@@ -166,9 +558,13 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
         VkPhysicalDeviceDriverProperties driverProperties = {};
         driverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
 
+        VkPhysicalDeviceIDProperties deviceIDProperties = {};
+        deviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        deviceIDProperties.pNext = &driverProperties;
+
         VkPhysicalDeviceProperties2 properties2 = {};
         properties2.sType                       = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        properties2.pNext                       = &driverProperties;
+        properties2.pNext                       = &deviceIDProperties;
 
         VkPhysicalDeviceProperties &properties = properties2.properties;
         pfnGetPhysicalDeviceProperties(physicalDevices[i], &properties);
@@ -184,101 +580,100 @@ bool GetSystemInfoVulkanWithICD(SystemInfo *info, vk::ICD preferredICD)
         GPUDeviceInfo &gpu = info->gpus[i];
         gpu.vendorId       = properties.vendorID;
         gpu.deviceId       = properties.deviceID;
-        
-        
-        
-        
+        gpu.deviceName     = properties.deviceName;
+        memcpy(gpu.deviceUUID, deviceIDProperties.deviceUUID, VK_UUID_SIZE);
+        memcpy(gpu.driverUUID, deviceIDProperties.driverUUID, VK_UUID_SIZE);
+
         
         
         switch (properties.vendorID)
         {
             case kVendorID_AMD:
                 gpu.driverVendor                = "Advanced Micro Devices, Inc";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion = ParseAMDVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_ARM:
                 gpu.driverVendor                = "Arm Holdings";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion = ParseArmVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_Broadcom:
                 gpu.driverVendor                = "Broadcom";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion =
+                    ParseBroadcomVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_GOOGLE:
                 gpu.driverVendor                = "Google";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion =
+                    ParseSwiftShaderVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_ImgTec:
                 gpu.driverVendor                = "Imagination Technologies Limited";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion =
+                    ParseImaginationVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_Intel:
                 gpu.driverVendor                = "Intel Corporation";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                if (IsWindows())
+                {
+                    gpu.detailedDriverVersion =
+                        ParseIntelWindowsVulkanDriverVersion(properties.driverVersion);
+                }
+                else
+                {
+                    gpu.detailedDriverVersion =
+                        ParseMesaVulkanDriverVersion(properties.driverVersion);
+                }
                 break;
             case kVendorID_Kazan:
                 gpu.driverVendor                = "Kazan Software";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion = ParseKazanVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_NVIDIA:
                 gpu.driverVendor  = "NVIDIA Corporation";
-                gpu.driverVersion = FormatString("%d.%d.%d.%d", properties.driverVersion >> 22,
-                                                 (properties.driverVersion >> 14) & 0XFF,
-                                                 (properties.driverVersion >> 6) & 0XFF,
-                                                 properties.driverVersion & 0x3F);
-                gpu.detailedDriverVersion.major    = properties.driverVersion >> 22;
-                gpu.detailedDriverVersion.minor    = (properties.driverVersion >> 14) & 0xFF;
-                gpu.detailedDriverVersion.subMinor = (properties.driverVersion >> 6) & 0xFF;
-                gpu.detailedDriverVersion.patch    = properties.driverVersion & 0x3F;
+                gpu.detailedDriverVersion =
+                    ParseNvidiaVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_Qualcomm:
             case kVendorID_Qualcomm_DXGI:
                 gpu.driverVendor = "Qualcomm Technologies, Inc";
-                if (properties.driverVersion & 0x80000000)
-                {
-                    gpu.driverVersion = FormatString("%d.%d.%d", properties.driverVersion >> 22,
-                                                     (properties.driverVersion >> 12) & 0X3FF,
-                                                     properties.driverVersion & 0xFFF);
-                    gpu.detailedDriverVersion.major    = properties.driverVersion >> 22;
-                    gpu.detailedDriverVersion.minor    = (properties.driverVersion >> 12) & 0x3FF;
-                    gpu.detailedDriverVersion.subMinor = properties.driverVersion & 0xFFF;
-                }
-                else
-                {
-                    gpu.driverVersion = FormatString("0x%x", properties.driverVersion);
-                    gpu.detailedDriverVersion.major = properties.driverVersion;
-                }
+                gpu.detailedDriverVersion =
+                    ParseQualcommVulkanDriverVersion(properties.driverVersion);
+                break;
+            case kVendorID_Samsung:
+                gpu.driverVendor                = "Samsung";
+                gpu.detailedDriverVersion =
+                    ParseSamsungVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_VeriSilicon:
                 gpu.driverVendor                = "VeriSilicon";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion =
+                    ParseVeriSiliconVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_Vivante:
                 gpu.driverVendor                = "Vivante";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion =
+                    ParseVivanteVulkanDriverVersion(properties.driverVersion);
                 break;
             case kVendorID_Mesa:
                 gpu.driverVendor                = "Mesa";
-                gpu.driverVersion               = FormatString("0x%x", properties.driverVersion);
-                gpu.detailedDriverVersion.major = properties.driverVersion;
+                gpu.detailedDriverVersion = ParseMesaVulkanDriverVersion(properties.driverVersion);
+                break;
+            case kVendorID_Apple:
+                
+                gpu.driverVendor                = "Apple";
+                gpu.detailedDriverVersion =
+                    ParseMoltenVulkanDriverVersion(properties.driverVersion);
                 break;
             default:
                 return false;
         }
+        gpu.driverVersion =
+            FormatString("%d.%d.%d", gpu.detailedDriverVersion.major,
+                         gpu.detailedDriverVersion.minor, gpu.detailedDriverVersion.subMinor);
         gpu.driverId         = static_cast<DriverID>(driverProperties.driverID);
         gpu.driverApiVersion = properties.apiVersion;
         gpu.driverDate       = "";
     }
-
     return true;
 }
 

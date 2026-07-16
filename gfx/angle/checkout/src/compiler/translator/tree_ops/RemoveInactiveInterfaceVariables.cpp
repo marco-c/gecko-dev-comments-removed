@@ -71,7 +71,20 @@ bool IsVariableActive(const std::vector<Variable> &mVars, const ImmutableString 
             return var.active;
         }
     }
-    UNREACHABLE();
+    ASSERT(false);
+    return true;
+}
+
+bool IsIoBlockVariableActive(const std::vector<ShaderVariable> &mVars, const ImmutableString &name)
+{
+    for (const ShaderVariable &var : mVars)
+    {
+        if (name == var.structOrBlockName)
+        {
+            return var.active;
+        }
+    }
+    ASSERT(false);
     return true;
 }
 
@@ -104,17 +117,9 @@ bool RemoveInactiveInterfaceVariablesTraverser::visitDeclaration(Visit visit,
     bool removeDeclaration     = false;
     const TQualifier qualifier = type.getQualifier();
 
-    if (type.isInterfaceBlock())
+    if (type.isInterfaceBlock() && !IsShaderIoBlock(type.getQualifier()))
     {
-        
-        
-        
-        if (!IsShaderIoBlock(type.getQualifier()) && type.getQualifier() != EvqPatchIn &&
-            type.getQualifier() != EvqPatchOut)
-        {
-            removeDeclaration =
-                !IsVariableActive(mInterfaceBlocks, type.getInterfaceBlock()->name());
-        }
+        removeDeclaration = !IsVariableActive(mInterfaceBlocks, type.getInterfaceBlock()->name());
     }
     else if (qualifier == EvqUniform)
     {
@@ -124,11 +129,22 @@ bool RemoveInactiveInterfaceVariablesTraverser::visitDeclaration(Visit visit,
     {
         removeDeclaration = !IsVariableActive(mAttributes, asSymbol->getName());
     }
-    else if (IsShaderIn(qualifier))
+    else if (IsShaderIn(qualifier) && qualifier != EvqPerVertexIn && qualifier != EvqPerVertexOut)
     {
-        removeDeclaration = !IsVariableActive(mInputVaryings, asSymbol->getName());
+        
+        
+        
+        if (type.getInterfaceBlock() != nullptr)
+        {
+            removeDeclaration =
+                !IsIoBlockVariableActive(mInputVaryings, type.getInterfaceBlock()->name());
+        }
+        else
+        {
+            removeDeclaration = !IsVariableActive(mInputVaryings, asSymbol->getName());
+        }
     }
-    else if (qualifier == EvqFragmentOut)
+    else if (qualifier == EvqFragmentOut || qualifier == EvqFragmentInOut)
     {
         removeDeclaration =
             !IsVariableActive(mOutputVariables, asSymbol->getName()) && mRemoveFragmentOutputs;

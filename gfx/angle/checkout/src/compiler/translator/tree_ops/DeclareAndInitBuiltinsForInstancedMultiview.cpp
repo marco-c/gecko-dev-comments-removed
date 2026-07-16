@@ -89,36 +89,13 @@ void SelectViewIndexInVertexShader(const TVariable *viewID,
         TType(EbtInt, EbpHigh, EvqTemporary), &viewIDSymbolCastArguments);
 
     
-    TIntermSymbol *viewportIndexSymbol = new TIntermSymbol(BuiltInVariable::gl_ViewportIndex());
-
-    
-    TIntermBlock *viewportIndexInitializerInBlock = new TIntermBlock();
-    viewportIndexInitializerInBlock->appendStatement(
-        new TIntermBinary(EOpAssign, viewportIndexSymbol, viewIDAsInt));
-
-    
     TIntermSymbol *layerSymbol = new TIntermSymbol(BuiltInVariable::gl_LayerVS());
 
     
     TIntermBinary *sumOfViewIDAndBaseViewIndex = new TIntermBinary(
         EOpAdd, viewIDAsInt->deepCopy(), new TIntermSymbol(multiviewBaseViewLayerIndex));
 
-    
-    TIntermBlock *layerInitializerInBlock = new TIntermBlock();
-    layerInitializerInBlock->appendStatement(
-        new TIntermBinary(EOpAssign, layerSymbol, sumOfViewIDAndBaseViewIndex));
-
-    
-    TIntermBinary *multiviewBaseViewLayerIndexZeroComparison =
-        new TIntermBinary(EOpLessThan, new TIntermSymbol(multiviewBaseViewLayerIndex),
-                          CreateZeroNode(TType(EbtInt, EbpHigh, EvqConst)));
-
-    
-    TIntermIfElse *multiviewBranch =
-        new TIntermIfElse(multiviewBaseViewLayerIndexZeroComparison,
-                          viewportIndexInitializerInBlock, layerInitializerInBlock);
-
-    initializers->push_back(multiviewBranch);
+    initializers->push_back(new TIntermBinary(EOpAssign, layerSymbol, sumOfViewIDAndBaseViewIndex));
 }
 
 }  
@@ -133,10 +110,9 @@ bool DeclareAndInitBuiltinsForInstancedMultiview(TCompiler *compiler,
 {
     ASSERT(shaderType == GL_VERTEX_SHADER || shaderType == GL_FRAGMENT_SHADER);
 
-    TQualifier viewIDQualifier = (shaderType == GL_VERTEX_SHADER) ? EvqFlatOut : EvqFlatIn;
     const TVariable *viewID =
         new TVariable(symbolTable, kViewIDVariableName,
-                      new TType(EbtUInt, EbpHigh, viewIDQualifier), SymbolType::AngleInternal);
+                      new TType(EbtUInt, EbpHigh, EvqEmulatedViewIDOVR), SymbolType::AngleInternal);
 
     DeclareGlobalVariable(root, viewID);
     if (!ReplaceVariable(compiler, root, BuiltInVariable::gl_ViewID_OVR(), viewID))
@@ -177,7 +153,6 @@ bool DeclareAndInitBuiltinsForInstancedMultiview(TCompiler *compiler,
                               baseLayerIndexVariableType, SymbolType::AngleInternal);
             DeclareGlobalVariable(root, multiviewBaseViewLayerIndex);
 
-            
             
             SelectViewIndexInVertexShader(viewID, multiviewBaseViewLayerIndex, &initializers,
                                           *symbolTable);

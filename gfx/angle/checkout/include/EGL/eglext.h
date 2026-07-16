@@ -19,7 +19,7 @@ extern "C" {
 
 #include <EGL/eglplatform.h>
 
-#define EGL_EGLEXT_VERSION 20220525
+#define EGL_EGLEXT_VERSION 20230622
 
 
 
@@ -727,6 +727,11 @@ EGLAPI EGLBoolean EGLAPIENTRY eglQueryDeviceBinaryEXT (EGLDeviceEXT device, EGLi
 #define EGL_EXT_explicit_device 1
 #endif 
 
+#ifndef EGL_EXT_gl_colorspace_bt2020_hlg
+#define EGL_EXT_gl_colorspace_bt2020_hlg 1
+#define EGL_GL_COLORSPACE_BT2020_HLG_EXT  0x3540
+#endif 
+
 #ifndef EGL_EXT_gl_colorspace_bt2020_linear
 #define EGL_EXT_gl_colorspace_bt2020_linear 1
 #define EGL_GL_COLORSPACE_BT2020_LINEAR_EXT 0x333F
@@ -1223,6 +1228,11 @@ EGLAPI EGLBoolean EGLAPIENTRY eglStreamReleaseImageNV (EGLDisplay dpy, EGLStream
 #endif
 #endif 
 
+#ifndef EGL_NV_stream_consumer_eglimage_use_scanout_attrib
+#define EGL_NV_stream_consumer_eglimage_use_scanout_attrib 1
+#define EGL_STREAM_CONSUMER_IMAGE_USE_SCANOUT_NV 0x3378
+#endif 
+
 #ifndef EGL_NV_stream_consumer_gltexture_yuv
 #define EGL_NV_stream_consumer_gltexture_yuv 1
 #define EGL_YUV_PLANE0_TEXTURE_UNIT_NV    0x332C
@@ -1430,6 +1440,16 @@ EGLAPI EGLuint64NV EGLAPIENTRY eglGetSystemTimeNV (void);
 #ifndef EGL_NV_triple_buffer
 #define EGL_NV_triple_buffer 1
 #define EGL_TRIPLE_BUFFER_NV              0x3230
+#endif 
+
+#ifndef EGL_QNX_image_native_buffer
+#define EGL_QNX_image_native_buffer 1
+#define EGL_NATIVE_BUFFER_QNX             0x3551
+#endif 
+
+#ifndef EGL_QNX_platform_screen
+#define EGL_QNX_platform_screen 1
+#define EGL_PLATFORM_SCREEN_QNX           0x3550
 #endif 
 
 #ifndef EGL_TIZEN_image_native_buffer

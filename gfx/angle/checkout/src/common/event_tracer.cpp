@@ -37,7 +37,11 @@ angle::TraceEventHandle AddTraceEvent(PlatformMethods *platform,
 {
     ASSERT(platform);
 
+#if defined(ANGLE_TRACE_EVENTS_IGNORE_TIMESTAMP)
+    double timestamp = 1.0;  
+#else
     double timestamp = platform->monotonicallyIncreasingTime(platform);
+#endif
 
     if (timestamp != 0)
     {

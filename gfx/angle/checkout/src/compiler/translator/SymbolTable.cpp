@@ -7,6 +7,10 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #if defined(_MSC_VER)
 #    pragma warning(disable : 4718)
 #endif
@@ -65,6 +69,10 @@ class TSymbolTable::TSymbolTableLevel
 
     bool insert(TSymbol *symbol);
 
+#ifdef ANGLE_IR
+    void redeclare(TSymbol *symbol);
+#endif
+
     
     void insertUnmangled(TFunction *function);
 
@@ -72,8 +80,8 @@ class TSymbolTable::TSymbolTableLevel
 
   private:
     using tLevel        = TUnorderedMap<ImmutableString,
-                                 TSymbol *,
-                                 ImmutableString::FowlerNollVoHash<sizeof(size_t)>>;
+                                        TSymbol *,
+                                        ImmutableString::FowlerNollVoHash<sizeof(size_t)>>;
     using tLevelPair    = const tLevel::value_type;
     using tInsertResult = std::pair<tLevel::iterator, bool>;
 
@@ -86,6 +94,14 @@ bool TSymbolTable::TSymbolTableLevel::insert(TSymbol *symbol)
     tInsertResult result = level.insert(tLevelPair(symbol->getMangledName(), symbol));
     return result.second;
 }
+
+#ifdef ANGLE_IR
+void TSymbolTable::TSymbolTableLevel::redeclare(TSymbol *symbol)
+{
+    
+    level.insert_or_assign(symbol->getMangledName(), symbol);
+}
+#endif
 
 void TSymbolTable::TSymbolTableLevel::insertUnmangled(TFunction *function)
 {
@@ -163,22 +179,60 @@ const TFunction *TSymbolTable::setFunctionParameterNamesFromDefinition(const TFu
     return firstDeclaration;
 }
 
-bool TSymbolTable::setGlInArraySize(unsigned int inputArraySize)
+bool TSymbolTable::setGlInArraySize(unsigned int inputArraySize, int shaderVersion)
 {
     if (mGlInVariableWithArraySize)
     {
         return mGlInVariableWithArraySize->getType().getOutermostArraySize() == inputArraySize;
     }
-    const TInterfaceBlock *glPerVertex = static_cast<const TInterfaceBlock *>(m_gl_PerVertex);
-    TType *glInType = new TType(glPerVertex, EvqPerVertexIn, TLayoutQualifier::Create());
-    glInType->makeArray(inputArraySize);
+    
+    const TSymbol *glPerVertexVar = find(ImmutableString("gl_in"), shaderVersion);
+    ASSERT(glPerVertexVar);
+
+    TType *glInType = new TType(static_cast<const TVariable *>(glPerVertexVar)->getType());
+    glInType->sizeOutermostUnsizedArray(inputArraySize);
     mGlInVariableWithArraySize =
-        new TVariable(this, ImmutableString("gl_in"), glInType, SymbolType::BuiltIn,
+        new TVariable(this, glPerVertexVar->name(), glInType, glPerVertexVar->symbolType(),
                       TExtension::EXT_geometry_shader);
     return true;
 }
 
-TVariable *TSymbolTable::getGlInVariableWithArraySize() const
+void TSymbolTable::onGlInVariableRedeclaration(const TVariable *redeclaredGlIn)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    ASSERT(mGlInVariableWithArraySize == nullptr ||
+           mGlInVariableWithArraySize->getType().getOutermostArraySize() ==
+               redeclaredGlIn->getType().getOutermostArraySize());
+    mGlInVariableWithArraySize = redeclaredGlIn;
+}
+
+const TVariable *TSymbolTable::getGlInVariableWithArraySize() const
 {
     return mGlInVariableWithArraySize;
 }
@@ -204,16 +258,10 @@ TSymbolTable::VariableMetadata *TSymbolTable::getOrCreateVariableMetadata(const 
     return &iter->second;
 }
 
-void TSymbolTable::markStaticWrite(const TVariable &variable)
+void TSymbolTable::markStaticUse(const TVariable &variable)
 {
-    auto metadata         = getOrCreateVariableMetadata(variable);
-    metadata->staticWrite = true;
-}
-
-void TSymbolTable::markStaticRead(const TVariable &variable)
-{
-    auto metadata        = getOrCreateVariableMetadata(variable);
-    metadata->staticRead = true;
+    auto metadata       = getOrCreateVariableMetadata(variable);
+    metadata->staticUse = true;
 }
 
 bool TSymbolTable::isStaticallyUsed(const TVariable &variable) const
@@ -221,7 +269,7 @@ bool TSymbolTable::isStaticallyUsed(const TVariable &variable) const
     ASSERT(!variable.getConstPointer());
     int id    = variable.uniqueId().get();
     auto iter = mVariableMetadata.find(id);
-    return iter != mVariableMetadata.end() && (iter->second.staticRead || iter->second.staticWrite);
+    return iter != mVariableMetadata.end() && iter->second.staticUse;
 }
 
 void TSymbolTable::addInvariantVarying(const TVariable &variable)
@@ -289,33 +337,11 @@ const TSymbol *TSymbolTable::findGlobal(const ImmutableString &name) const
     return mTable[0]->find(name);
 }
 
-const TSymbol *TSymbolTable::findGlobalWithConversion(
-    const std::vector<ImmutableString> &names) const
-{
-    for (const ImmutableString &name : names)
-    {
-        const TSymbol *target = findGlobal(name);
-        if (target != nullptr)
-            return target;
-    }
-    return nullptr;
-}
-
-const TSymbol *TSymbolTable::findBuiltInWithConversion(const std::vector<ImmutableString> &names,
-                                                       int shaderVersion) const
-{
-    for (const ImmutableString &name : names)
-    {
-        const TSymbol *target = findBuiltIn(name, shaderVersion);
-        if (target != nullptr)
-            return target;
-    }
-    return nullptr;
-}
-
 bool TSymbolTable::declare(TSymbol *symbol)
 {
     ASSERT(!mTable.empty());
+    
+    
     
     
     ASSERT(symbol->symbolType() == SymbolType::UserDefined ||
@@ -323,6 +349,17 @@ bool TSymbolTable::declare(TSymbol *symbol)
     ASSERT(!symbol->isFunction());
     return mTable.back()->insert(symbol);
 }
+
+#ifdef ANGLE_IR
+void TSymbolTable::redeclare(TSymbol *symbol)
+{
+    ASSERT(!mTable.empty());
+    ASSERT(symbol->symbolType() == SymbolType::UserDefined ||
+           (symbol->symbolType() == SymbolType::BuiltIn && IsRedeclarableBuiltIn(symbol->name())));
+    ASSERT(!symbol->isFunction());
+    mTable.back()->redeclare(symbol);
+}
+#endif
 
 bool TSymbolTable::declareInternal(TSymbol *symbol)
 {
@@ -378,7 +415,7 @@ TPrecision TSymbolTable::getDefaultPrecision(TBasicType type) const
 void TSymbolTable::clearCompilationResults()
 {
     mGlobalInvariant = false;
-    mUniqueIdCounter = kLastBuiltInId + 1;
+    mUniqueIdCounter = kFirstUserDefinedSymbolId;
     mVariableMetadata.clear();
     mGlInVariableWithArraySize = nullptr;
 
@@ -403,29 +440,21 @@ void TSymbolTable::initializeBuiltIns(sh::GLenum type,
     
     mPrecisionStack.emplace_back(new PrecisionStackLevel);
 
-    if (IsDesktopGLSpec(spec))
+    switch (type)
     {
-        setDefaultPrecision(EbtInt, EbpUndefined);
-        setDefaultPrecision(EbtFloat, EbpUndefined);
-    }
-    else
-    {
-        switch (type)
-        {
-            case GL_FRAGMENT_SHADER:
-                setDefaultPrecision(EbtInt, EbpMedium);
-                break;
-            case GL_VERTEX_SHADER:
-            case GL_COMPUTE_SHADER:
-            case GL_GEOMETRY_SHADER_EXT:
-            case GL_TESS_CONTROL_SHADER_EXT:
-            case GL_TESS_EVALUATION_SHADER_EXT:
-                setDefaultPrecision(EbtInt, EbpHigh);
-                setDefaultPrecision(EbtFloat, EbpHigh);
-                break;
-            default:
-                UNREACHABLE();
-        }
+        case GL_FRAGMENT_SHADER:
+            setDefaultPrecision(EbtInt, EbpMedium);
+            break;
+        case GL_VERTEX_SHADER:
+        case GL_COMPUTE_SHADER:
+        case GL_GEOMETRY_SHADER_EXT:
+        case GL_TESS_CONTROL_SHADER_EXT:
+        case GL_TESS_EVALUATION_SHADER_EXT:
+            setDefaultPrecision(EbtInt, EbpHigh);
+            setDefaultPrecision(EbtFloat, EbpHigh);
+            break;
+        default:
+            UNREACHABLE();
     }
 
     
@@ -450,7 +479,7 @@ void TSymbolTable::initializeBuiltIns(sh::GLenum type,
     setDefaultPrecision(EbtAtomicCounter, EbpHigh);
 
     initializeBuiltInVariables(type, spec, resources);
-    mUniqueIdCounter = kLastBuiltInId + 1;
+    mUniqueIdCounter = kFirstUserDefinedSymbolId;
 }
 
 void TSymbolTable::initSamplerDefaultPrecision(TBasicType samplerType)
@@ -459,9 +488,7 @@ void TSymbolTable::initSamplerDefaultPrecision(TBasicType samplerType)
     setDefaultPrecision(samplerType, EbpLow);
 }
 
-TSymbolTable::VariableMetadata::VariableMetadata()
-    : staticRead(false), staticWrite(false), invariant(false)
-{}
+TSymbolTable::VariableMetadata::VariableMetadata() : staticUse(false), invariant(false) {}
 
 const TSymbol *SymbolRule::get(ShShaderSpec shaderSpec,
                                int shaderVersion,
@@ -469,9 +496,6 @@ const TSymbol *SymbolRule::get(ShShaderSpec shaderSpec,
                                const ShBuiltInResources &resources,
                                const TSymbolTableBase &symbolTable) const
 {
-    if (IsDesktopGLSpec(shaderSpec) != (mIsDesktop == 1))
-        return nullptr;
-
     if (mVersion == kESSL1Only && shaderVersion != static_cast<int>(kESSL1Only))
         return nullptr;
 
@@ -521,39 +545,26 @@ bool UnmangledEntry::matches(const ImmutableString &name,
     if (!CheckShaderType(static_cast<Shader>(mShaderType), shaderType))
         return false;
 
-    if (IsDesktopGLSpec(shaderSpec))
+    if (mESSLVersion == kESSL1Only && shaderVersion != static_cast<int>(kESSL1Only))
+        return false;
+
+    if (mESSLVersion > shaderVersion)
+        return false;
+
+    bool anyExtension        = false;
+    bool anyExtensionEnabled = false;
+    for (TExtension ext : mESSLExtensions)
     {
-        if (mGLSLVersion > shaderVersion)
-            return false;
-
-        if (mGLSLExtension == TExtension::UNDEFINED)
-            return true;
-
-        return IsExtensionEnabled(extensions, mGLSLExtension);
-    }
-    else
-    {
-        if (mESSLVersion == kESSL1Only && shaderVersion != static_cast<int>(kESSL1Only))
-            return false;
-
-        if (mESSLVersion > shaderVersion)
-            return false;
-
-        bool anyExtension        = false;
-        bool anyExtensionEnabled = false;
-        for (TExtension ext : mESSLExtensions)
+        if (ext != TExtension::UNDEFINED)
         {
-            if (ext != TExtension::UNDEFINED)
-            {
-                anyExtension        = true;
-                anyExtensionEnabled = anyExtensionEnabled || IsExtensionEnabled(extensions, ext);
-            }
+            anyExtension        = true;
+            anyExtensionEnabled = anyExtensionEnabled || IsExtensionEnabled(extensions, ext);
         }
-
-        if (!anyExtension)
-            return true;
-
-        return anyExtensionEnabled;
     }
+
+    if (!anyExtension)
+        return true;
+
+    return anyExtensionEnabled;
 }
 }  

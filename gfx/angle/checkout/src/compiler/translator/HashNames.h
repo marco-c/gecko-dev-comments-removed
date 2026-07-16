@@ -21,12 +21,16 @@ class ImmutableString;
 class TSymbol;
 
 ImmutableString HashName(const ImmutableString &name,
+                         char prefix,
                          ShHashFunction64 hashFunction,
                          NameMap *nameMap);
 
 
 
-ImmutableString HashName(const TSymbol *symbol, ShHashFunction64 hashFunction, NameMap *nameMap);
+ImmutableString HashName(const TSymbol *symbol,
+                         char prefix,
+                         ShHashFunction64 hashFunction,
+                         NameMap *nameMap);
 
 }  
 

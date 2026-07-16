@@ -104,6 +104,17 @@ void WrapMainAndAppend(TIntermBlock *root,
     TIntermFunctionDefinition *newMainDefinition =
         new TIntermFunctionDefinition(newMainProto, newMainBody);
     root->appendStatement(newMainDefinition);
+
+    
+    
+    TIntermFunctionPrototype *oldMainProto = FindMainPrototype(root);
+    if (oldMainProto)
+    {
+        
+        
+        newMainProto = new TIntermFunctionPrototype(newMain);
+        replaced     = root->replaceChildNode(oldMainProto, newMainProto);
+    }
 }
 
 }  

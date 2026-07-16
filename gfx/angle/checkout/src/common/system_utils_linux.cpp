@@ -6,8 +6,14 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
+#include "common/debug.h"
 #include "system_utils.h"
 
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -52,4 +58,11 @@ double GetCurrentSystemTime()
     return currentTime.tv_sec + currentTime.tv_nsec * 1e-9;
 }
 
+void SetCurrentThreadName(const char *name)
+{
+    
+    
+    ASSERT(strlen(name) < 16);
+    pthread_setname_np(pthread_self(), name);
+}
 }  

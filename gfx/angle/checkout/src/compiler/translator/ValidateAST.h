@@ -31,6 +31,13 @@ struct ValidateASTOptions
     bool validateSpecConstReferences = false;
     
     
+    
+    
+    
+    
+    bool validateOps = true;
+    
+    
     bool validateBuiltInOps = true;
     
     
@@ -86,13 +93,15 @@ struct ValidateASTOptions
     
     bool validateExpressionTypes = true;
     
-    bool validateMultiDeclarations = false;
+    bool validateMultiDeclarations = true;
     
     
-    bool validateNoStatementsAfterBranch = false;
+    bool validateNoStatementsAfterBranch = true;
     
     
     bool validateNoSwizzleOfSwizzle = true;
+    
+    bool validateNoQualifiersOnConstructors = true;
 
     
     

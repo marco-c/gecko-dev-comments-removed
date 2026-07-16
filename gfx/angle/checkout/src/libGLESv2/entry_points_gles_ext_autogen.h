@@ -69,7 +69,7 @@ ANGLE_EXPORT void GL_APIENTRY
 GL_DrawElementsInstancedBaseVertexBaseInstanceANGLE(GLenum mode,
                                                     GLsizei count,
                                                     GLenum type,
-                                                    const GLvoid *indices,
+                                                    const void *indices,
                                                     GLsizei instanceCount,
                                                     GLint baseVertex,
                                                     GLuint baseInstance);
@@ -84,11 +84,21 @@ ANGLE_EXPORT void GL_APIENTRY
 GL_MultiDrawElementsInstancedBaseVertexBaseInstanceANGLE(GLenum mode,
                                                          const GLsizei *counts,
                                                          GLenum type,
-                                                         const GLvoid *const *indices,
+                                                         const void *const *indices,
                                                          const GLsizei *instanceCounts,
                                                          const GLint *baseVertices,
                                                          const GLuint *baseInstances,
                                                          GLsizei drawcount);
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_BlobCacheCallbacksANGLE(GLSETBLOBPROCANGLE set,
+                                                         GLGETBLOBPROCANGLE get,
+                                                         const void *userParam);
+ANGLE_EXPORT void GL_APIENTRY GL_GetPointervANGLE(GLenum pname, void **params);
+
+
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_CopyTexture3DANGLE(GLuint sourceId,
@@ -152,6 +162,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_GetRenderbufferImageANGLE(GLenum target,
                                                            void *pixels);
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_GetTexLevelParameterivANGLE(GLenum target,
                                                              GLint level,
                                                              GLenum pname,
@@ -175,6 +187,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_VertexAttribDivisorANGLE(GLuint index, GLuint d
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_LogicOpANGLE(GLenum opcode);
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorageMemFlags2DANGLE(GLenum target,
@@ -231,6 +245,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_ImportMemoryZirconHandleANGLE(GLuint memory,
                                                                GLuint handle);
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawArraysANGLE(GLenum mode,
                                                       const GLint *firsts,
                                                       const GLsizei *counts,
@@ -243,73 +259,83 @@ ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawArraysInstancedANGLE(GLenum mode,
 ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawElementsANGLE(GLenum mode,
                                                         const GLsizei *counts,
                                                         GLenum type,
-                                                        const GLvoid *const *indices,
+                                                        const void *const *indices,
                                                         GLsizei drawcount);
 ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawElementsInstancedANGLE(GLenum mode,
                                                                  const GLsizei *counts,
                                                                  GLenum type,
-                                                                 const GLvoid *const *indices,
+                                                                 const void *const *indices,
                                                                  const GLsizei *instanceCounts,
                                                                  GLsizei drawcount);
 
 
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_PolygonModeANGLE(GLenum face, GLenum mode);
 
 
-ANGLE_EXPORT void GL_APIENTRY GL_ProvokingVertexANGLE(GLenum mode);
+
+
+
+
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_ProvokingVertexANGLE(GLenum provokeMode);
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_RequestExtensionANGLE(const GLchar *name);
-ANGLE_EXPORT void GL_APIENTRY GL_DisableExtensionANGLE(const GLchar *name);
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_GetBooleanvRobustANGLE(GLenum pname,
-                                                        GLsizei bufSize,
+                                                        GLsizei paramCount,
                                                         GLsizei *length,
-                                                        GLboolean *params);
+                                                        GLboolean *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetBufferParameterivRobustANGLE(GLenum target,
                                                                  GLenum pname,
-                                                                 GLsizei bufSize,
+                                                                 GLsizei paramCount,
                                                                  GLsizei *length,
                                                                  GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetFloatvRobustANGLE(GLenum pname,
-                                                      GLsizei bufSize,
+                                                      GLsizei paramCount,
                                                       GLsizei *length,
-                                                      GLfloat *params);
+                                                      GLfloat *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferAttachmentParameterivRobustANGLE(GLenum target,
                                                                                 GLenum attachment,
                                                                                 GLenum pname,
-                                                                                GLsizei bufSize,
+                                                                                GLsizei paramCount,
                                                                                 GLsizei *length,
                                                                                 GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetIntegervRobustANGLE(GLenum pname,
-                                                        GLsizei bufSize,
+                                                        GLsizei paramCount,
                                                         GLsizei *length,
                                                         GLint *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetProgramivRobustANGLE(GLuint program,
                                                          GLenum pname,
-                                                         GLsizei bufSize,
+                                                         GLsizei paramCount,
                                                          GLsizei *length,
                                                          GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetRenderbufferParameterivRobustANGLE(GLenum target,
                                                                        GLenum pname,
-                                                                       GLsizei bufSize,
+                                                                       GLsizei paramCount,
                                                                        GLsizei *length,
                                                                        GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetShaderivRobustANGLE(GLuint shader,
                                                         GLenum pname,
-                                                        GLsizei bufSize,
+                                                        GLsizei paramCount,
                                                         GLsizei *length,
                                                         GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetTexParameterfvRobustANGLE(GLenum target,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               GLfloat *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetTexParameterivRobustANGLE(GLenum target,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetUniformfvRobustANGLE(GLuint program,
@@ -324,17 +350,17 @@ ANGLE_EXPORT void GL_APIENTRY GL_GetUniformivRobustANGLE(GLuint program,
                                                          GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetVertexAttribfvRobustANGLE(GLuint index,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               GLfloat *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetVertexAttribivRobustANGLE(GLuint index,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetVertexAttribPointervRobustANGLE(GLuint index,
                                                                     GLenum pname,
-                                                                    GLsizei bufSize,
+                                                                    GLsizei paramCount,
                                                                     GLsizei *length,
                                                                     void **pointer);
 ANGLE_EXPORT void GL_APIENTRY GL_ReadPixelsRobustANGLE(GLint x,
@@ -360,11 +386,11 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexImage2DRobustANGLE(GLenum target,
                                                        const void *pixels);
 ANGLE_EXPORT void GL_APIENTRY GL_TexParameterfvRobustANGLE(GLenum target,
                                                            GLenum pname,
-                                                           GLsizei bufSize,
+                                                           GLsizei paramCount,
                                                            const GLfloat *params);
 ANGLE_EXPORT void GL_APIENTRY GL_TexParameterivRobustANGLE(GLenum target,
                                                            GLenum pname,
-                                                           GLsizei bufSize,
+                                                           GLsizei paramCount,
                                                            const GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_TexSubImage2DRobustANGLE(GLenum target,
                                                           GLint level,
@@ -399,81 +425,40 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexSubImage3DRobustANGLE(GLenum target,
                                                           GLenum type,
                                                           GLsizei bufSize,
                                                           const void *pixels);
-ANGLE_EXPORT void GL_APIENTRY GL_CompressedTexImage2DRobustANGLE(GLenum target,
-                                                                 GLint level,
-                                                                 GLenum internalformat,
-                                                                 GLsizei width,
-                                                                 GLsizei height,
-                                                                 GLint border,
-                                                                 GLsizei imageSize,
-                                                                 GLsizei dataSize,
-                                                                 const GLvoid *data);
-ANGLE_EXPORT void GL_APIENTRY GL_CompressedTexSubImage2DRobustANGLE(GLenum target,
-                                                                    GLint level,
-                                                                    GLsizei xoffset,
-                                                                    GLsizei yoffset,
-                                                                    GLsizei width,
-                                                                    GLsizei height,
-                                                                    GLenum format,
-                                                                    GLsizei imageSize,
-                                                                    GLsizei dataSize,
-                                                                    const GLvoid *data);
-ANGLE_EXPORT void GL_APIENTRY GL_CompressedTexImage3DRobustANGLE(GLenum target,
-                                                                 GLint level,
-                                                                 GLenum internalformat,
-                                                                 GLsizei width,
-                                                                 GLsizei height,
-                                                                 GLsizei depth,
-                                                                 GLint border,
-                                                                 GLsizei imageSize,
-                                                                 GLsizei dataSize,
-                                                                 const GLvoid *data);
-ANGLE_EXPORT void GL_APIENTRY GL_CompressedTexSubImage3DRobustANGLE(GLenum target,
-                                                                    GLint level,
-                                                                    GLint xoffset,
-                                                                    GLint yoffset,
-                                                                    GLint zoffset,
-                                                                    GLsizei width,
-                                                                    GLsizei height,
-                                                                    GLsizei depth,
-                                                                    GLenum format,
-                                                                    GLsizei imageSize,
-                                                                    GLsizei dataSize,
-                                                                    const GLvoid *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetQueryivRobustANGLE(GLenum target,
                                                        GLenum pname,
-                                                       GLsizei bufSize,
+                                                       GLsizei paramCount,
                                                        GLsizei *length,
                                                        GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetQueryObjectuivRobustANGLE(GLuint id,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               GLuint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetBufferPointervRobustANGLE(GLenum target,
                                                               GLenum pname,
-                                                              GLsizei bufSize,
+                                                              GLsizei paramCount,
                                                               GLsizei *length,
                                                               void **params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetIntegeri_vRobustANGLE(GLenum target,
                                                           GLuint index,
-                                                          GLsizei bufSize,
+                                                          GLsizei paramCount,
                                                           GLsizei *length,
                                                           GLint *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetInternalformativRobustANGLE(GLenum target,
                                                                 GLenum internalformat,
                                                                 GLenum pname,
-                                                                GLsizei bufSize,
+                                                                GLsizei paramCount,
                                                                 GLsizei *length,
                                                                 GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetVertexAttribIivRobustANGLE(GLuint index,
                                                                GLenum pname,
-                                                               GLsizei bufSize,
+                                                               GLsizei paramCount,
                                                                GLsizei *length,
                                                                GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetVertexAttribIuivRobustANGLE(GLuint index,
                                                                 GLenum pname,
-                                                                GLsizei bufSize,
+                                                                GLsizei paramCount,
                                                                 GLsizei *length,
                                                                 GLuint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetUniformuivRobustANGLE(GLuint program,
@@ -484,155 +469,93 @@ ANGLE_EXPORT void GL_APIENTRY GL_GetUniformuivRobustANGLE(GLuint program,
 ANGLE_EXPORT void GL_APIENTRY GL_GetActiveUniformBlockivRobustANGLE(GLuint program,
                                                                     GLuint uniformBlockIndex,
                                                                     GLenum pname,
-                                                                    GLsizei bufSize,
+                                                                    GLsizei paramCount,
                                                                     GLsizei *length,
                                                                     GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetInteger64vRobustANGLE(GLenum pname,
-                                                          GLsizei bufSize,
+                                                          GLsizei paramCount,
                                                           GLsizei *length,
                                                           GLint64 *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetInteger64i_vRobustANGLE(GLenum target,
                                                             GLuint index,
-                                                            GLsizei bufSize,
+                                                            GLsizei paramCount,
                                                             GLsizei *length,
                                                             GLint64 *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetBufferParameteri64vRobustANGLE(GLenum target,
                                                                    GLenum pname,
-                                                                   GLsizei bufSize,
+                                                                   GLsizei paramCount,
                                                                    GLsizei *length,
                                                                    GLint64 *params);
 ANGLE_EXPORT void GL_APIENTRY GL_SamplerParameterivRobustANGLE(GLuint sampler,
                                                                GLuint pname,
-                                                               GLsizei bufSize,
+                                                               GLsizei paramCount,
                                                                const GLint *param);
 ANGLE_EXPORT void GL_APIENTRY GL_SamplerParameterfvRobustANGLE(GLuint sampler,
                                                                GLenum pname,
-                                                               GLsizei bufSize,
+                                                               GLsizei paramCount,
                                                                const GLfloat *param);
 ANGLE_EXPORT void GL_APIENTRY GL_GetSamplerParameterivRobustANGLE(GLuint sampler,
                                                                   GLenum pname,
-                                                                  GLsizei bufSize,
+                                                                  GLsizei paramCount,
                                                                   GLsizei *length,
                                                                   GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetSamplerParameterfvRobustANGLE(GLuint sampler,
                                                                   GLenum pname,
-                                                                  GLsizei bufSize,
+                                                                  GLsizei paramCount,
                                                                   GLsizei *length,
                                                                   GLfloat *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferParameterivRobustANGLE(GLenum target,
-                                                                      GLenum pname,
-                                                                      GLsizei bufSize,
-                                                                      GLsizei *length,
-                                                                      GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetProgramInterfaceivRobustANGLE(GLuint program,
-                                                                  GLenum programInterface,
-                                                                  GLenum pname,
-                                                                  GLsizei bufSize,
-                                                                  GLsizei *length,
-                                                                  GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetBooleani_vRobustANGLE(GLenum target,
-                                                          GLuint index,
-                                                          GLsizei bufSize,
-                                                          GLsizei *length,
-                                                          GLboolean *data);
 ANGLE_EXPORT void GL_APIENTRY GL_GetMultisamplefvRobustANGLE(GLenum pname,
                                                              GLuint index,
-                                                             GLsizei bufSize,
+                                                             GLsizei paramCount,
                                                              GLsizei *length,
                                                              GLfloat *val);
 ANGLE_EXPORT void GL_APIENTRY GL_GetTexLevelParameterivRobustANGLE(GLenum target,
                                                                    GLint level,
                                                                    GLenum pname,
-                                                                   GLsizei bufSize,
+                                                                   GLsizei paramCount,
                                                                    GLsizei *length,
                                                                    GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetTexLevelParameterfvRobustANGLE(GLenum target,
                                                                    GLint level,
                                                                    GLenum pname,
-                                                                   GLsizei bufSize,
+                                                                   GLsizei paramCount,
                                                                    GLsizei *length,
                                                                    GLfloat *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetPointervRobustANGLERobustANGLE(GLenum pname,
-                                                                   GLsizei bufSize,
-                                                                   GLsizei *length,
-                                                                   void **params);
-ANGLE_EXPORT void GL_APIENTRY GL_ReadnPixelsRobustANGLE(GLint x,
-                                                        GLint y,
-                                                        GLsizei width,
-                                                        GLsizei height,
-                                                        GLenum format,
-                                                        GLenum type,
-                                                        GLsizei bufSize,
-                                                        GLsizei *length,
-                                                        GLsizei *columns,
-                                                        GLsizei *rows,
-                                                        void *data);
-ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformfvRobustANGLE(GLuint program,
-                                                          GLint location,
-                                                          GLsizei bufSize,
-                                                          GLsizei *length,
-                                                          GLfloat *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformivRobustANGLE(GLuint program,
-                                                          GLint location,
-                                                          GLsizei bufSize,
-                                                          GLsizei *length,
-                                                          GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformuivRobustANGLE(GLuint program,
-                                                           GLint location,
-                                                           GLsizei bufSize,
-                                                           GLsizei *length,
-                                                           GLuint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_TexParameterIivRobustANGLE(GLenum target,
-                                                            GLenum pname,
-                                                            GLsizei bufSize,
-                                                            const GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_TexParameterIuivRobustANGLE(GLenum target,
-                                                             GLenum pname,
-                                                             GLsizei bufSize,
-                                                             const GLuint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetTexParameterIivRobustANGLE(GLenum target,
-                                                               GLenum pname,
-                                                               GLsizei bufSize,
-                                                               GLsizei *length,
-                                                               GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetTexParameterIuivRobustANGLE(GLenum target,
-                                                                GLenum pname,
-                                                                GLsizei bufSize,
-                                                                GLsizei *length,
-                                                                GLuint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_SamplerParameterIivRobustANGLE(GLuint sampler,
-                                                                GLenum pname,
-                                                                GLsizei bufSize,
-                                                                const GLint *param);
-ANGLE_EXPORT void GL_APIENTRY GL_SamplerParameterIuivRobustANGLE(GLuint sampler,
-                                                                 GLenum pname,
-                                                                 GLsizei bufSize,
-                                                                 const GLuint *param);
-ANGLE_EXPORT void GL_APIENTRY GL_GetSamplerParameterIivRobustANGLE(GLuint sampler,
-                                                                   GLenum pname,
-                                                                   GLsizei bufSize,
-                                                                   GLsizei *length,
-                                                                   GLint *params);
-ANGLE_EXPORT void GL_APIENTRY GL_GetSamplerParameterIuivRobustANGLE(GLuint sampler,
-                                                                    GLenum pname,
-                                                                    GLsizei bufSize,
-                                                                    GLsizei *length,
-                                                                    GLuint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetQueryObjectivRobustANGLE(GLuint id,
                                                              GLenum pname,
-                                                             GLsizei bufSize,
+                                                             GLsizei paramCount,
                                                              GLsizei *length,
                                                              GLint *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetQueryObjecti64vRobustANGLE(GLuint id,
                                                                GLenum pname,
-                                                               GLsizei bufSize,
+                                                               GLsizei paramCount,
                                                                GLsizei *length,
                                                                GLint64 *params);
 ANGLE_EXPORT void GL_APIENTRY GL_GetQueryObjectui64vRobustANGLE(GLuint id,
                                                                 GLenum pname,
-                                                                GLsizei bufSize,
+                                                                GLsizei paramCount,
                                                                 GLsizei *length,
                                                                 GLuint64 *params);
+ANGLE_EXPORT void GL_APIENTRY
+GL_GetFramebufferPixelLocalStorageParameterfvRobustANGLE(GLint plane,
+                                                         GLenum pname,
+                                                         GLsizei paramCount,
+                                                         GLsizei *length,
+                                                         GLfloat *params);
+ANGLE_EXPORT void GL_APIENTRY
+GL_GetFramebufferPixelLocalStorageParameterivRobustANGLE(GLint plane,
+                                                         GLenum pname,
+                                                         GLsizei paramCount,
+                                                         GLsizei *length,
+                                                         GLint *params);
+ANGLE_EXPORT void GL_APIENTRY
+GL_GetFramebufferPixelLocalStorageParameteruivRobustANGLE(GLint plane,
+                                                          GLenum pname,
+                                                          GLsizei paramCount,
+                                                          GLsizei *length,
+                                                          GLuint *params);
+
+
 
 
 
@@ -642,17 +565,39 @@ ANGLE_EXPORT void GL_APIENTRY GL_ImportSemaphoreZirconHandleANGLE(GLuint semapho
                                                                   GLuint handle);
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_FramebufferMemorylessPixelLocalStorageANGLE(GLint plane,
-                                                                             GLenum internalformat);
+                                                                             GLenum internalformat,
+                                                                             GLbitfield usage);
 ANGLE_EXPORT void GL_APIENTRY GL_FramebufferTexturePixelLocalStorageANGLE(GLint plane,
                                                                           GLuint backingtexture,
                                                                           GLint level,
-                                                                          GLint layer);
-ANGLE_EXPORT void GL_APIENTRY GL_BeginPixelLocalStorageANGLE(GLsizei planes,
-                                                             const GLenum *loadops,
-                                                             const void *cleardata);
-ANGLE_EXPORT void GL_APIENTRY GL_EndPixelLocalStorageANGLE();
+                                                                          GLint layer,
+                                                                          GLbitfield usage);
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferPixelLocalClearValuefvANGLE(GLint plane,
+                                                                        const GLfloat *value);
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferPixelLocalClearValueivANGLE(GLint plane,
+                                                                        const GLint *value);
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferPixelLocalClearValueuivANGLE(GLint plane,
+                                                                         const GLuint *value);
+ANGLE_EXPORT void GL_APIENTRY GL_BeginPixelLocalStorageANGLE(GLsizei n, const GLenum *loadops);
+ANGLE_EXPORT void GL_APIENTRY GL_EndPixelLocalStorageANGLE(GLsizei n, const GLenum *storeops);
+ANGLE_EXPORT void GL_APIENTRY GL_EndPixelLocalStorageImplicitANGLE();
 ANGLE_EXPORT void GL_APIENTRY GL_PixelLocalStorageBarrierANGLE();
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferPixelLocalStorageInterruptANGLE();
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferPixelLocalStorageRestoreANGLE();
+ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferPixelLocalStorageParameterfvANGLE(GLint plane,
+                                                                                 GLenum pname,
+                                                                                 GLfloat *params);
+ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferPixelLocalStorageParameterivANGLE(GLint plane,
+                                                                                 GLenum pname,
+                                                                                 GLint *params);
+ANGLE_EXPORT void GL_APIENTRY GL_GetFramebufferPixelLocalStorageParameteruivANGLE(GLint plane,
+                                                                                  GLenum pname,
+                                                                                  GLuint *params);
+
+
 
 
 
@@ -694,6 +639,14 @@ ANGLE_EXPORT void GL_APIENTRY GL_AcquireTexturesANGLE(GLuint numTextures,
 ANGLE_EXPORT void GL_APIENTRY GL_ReleaseTexturesANGLE(GLuint numTextures,
                                                       const GLuint *textures,
                                                       GLenum *layouts);
+
+
+
+
+
+
+
+
 
 
 
@@ -745,9 +698,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_LoseContextCHROMIUM(GLenum current, GLenum othe
 ANGLE_EXPORT void GL_APIENTRY GL_EGLImageTargetTexStorageEXT(GLenum target,
                                                              GLeglImageOES image,
                                                              const GLint *attrib_list);
-ANGLE_EXPORT void GL_APIENTRY GL_EGLImageTargetTextureStorageEXT(GLuint texture,
-                                                                 GLeglImageOES image,
-                                                                 const GLint *attrib_list);
+
+
 
 
 
@@ -794,7 +746,24 @@ ANGLE_EXPORT void GL_APIENTRY GL_BufferStorageEXT(GLenum target,
                                                   GLbitfield flags);
 
 
+ANGLE_EXPORT void GL_APIENTRY
+GL_ClearTexImageEXT(GLuint texture, GLint level, GLenum format, GLenum type, const void *data);
+ANGLE_EXPORT void GL_APIENTRY GL_ClearTexSubImageEXT(GLuint texture,
+                                                     GLint level,
+                                                     GLint xoffset,
+                                                     GLint yoffset,
+                                                     GLint zoffset,
+                                                     GLsizei width,
+                                                     GLsizei height,
+                                                     GLsizei depth,
+                                                     GLenum format,
+                                                     GLenum type,
+                                                     const void *data);
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_ClipControlEXT(GLenum origin, GLenum depth);
+
+
 
 
 
@@ -831,6 +800,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_LabelObjectEXT(GLenum type,
 ANGLE_EXPORT void GL_APIENTRY GL_InsertEventMarkerEXT(GLsizei length, const GLchar *marker);
 ANGLE_EXPORT void GL_APIENTRY GL_PopGroupMarkerEXT();
 ANGLE_EXPORT void GL_APIENTRY GL_PushGroupMarkerEXT(GLsizei length, const GLchar *marker);
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_DiscardFramebufferEXT(GLenum target,
@@ -898,18 +869,39 @@ ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawElementsBaseVertexEXT(GLenum mode,
                                                                 const GLint *basevertex);
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_DrawArraysInstancedEXT(GLenum mode,
+                                                        GLint start,
+                                                        GLsizei count,
+                                                        GLsizei primcount);
+ANGLE_EXPORT void GL_APIENTRY GL_DrawElementsInstancedEXT(GLenum mode,
+                                                          GLsizei count,
+                                                          GLenum type,
+                                                          const void *indices,
+                                                          GLsizei primcount);
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_BufferStorageExternalEXT(GLenum target,
                                                           GLintptr offset,
                                                           GLsizeiptr size,
                                                           GLeglClientBufferEXT clientBuffer,
                                                           GLbitfield flags);
-ANGLE_EXPORT void GL_APIENTRY GL_NamedBufferStorageExternalEXT(GLuint buffer,
-                                                               GLintptr offset,
-                                                               GLsizeiptr size,
-                                                               GLeglClientBufferEXT clientBuffer,
-                                                               GLbitfield flags);
 
 
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferShadingRateEXT(GLenum target,
+                                                           GLenum attachment,
+                                                           GLuint texture,
+                                                           GLint baseLayer,
+                                                           GLsizei numLayers,
+                                                           GLsizei texelWidth,
+                                                           GLsizei texelHeight);
+ANGLE_EXPORT void GL_APIENTRY GL_GetFragmentShadingRatesEXT(GLsizei samples,
+                                                            GLsizei maxCount,
+                                                            GLsizei *count,
+                                                            GLenum *shadingRates);
+ANGLE_EXPORT void GL_APIENTRY GL_ShadingRateEXT(GLenum rate);
+ANGLE_EXPORT void GL_APIENTRY GL_ShadingRateCombinerOpsEXT(GLenum combinerOp0, GLenum combinerOp1);
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_FramebufferTextureEXT(GLenum target,
@@ -920,15 +912,6 @@ ANGLE_EXPORT void GL_APIENTRY GL_FramebufferTextureEXT(GLenum target,
 
 
 
-ANGLE_EXPORT void GL_APIENTRY GL_DrawArraysInstancedEXT(GLenum mode,
-                                                        GLint start,
-                                                        GLsizei count,
-                                                        GLsizei primcount);
-ANGLE_EXPORT void GL_APIENTRY GL_DrawElementsInstancedEXT(GLenum mode,
-                                                          GLsizei count,
-                                                          GLenum type,
-                                                          const void *indices,
-                                                          GLsizei primcount);
 ANGLE_EXPORT void GL_APIENTRY GL_VertexAttribDivisorEXT(GLuint index, GLuint divisor);
 
 
@@ -996,6 +979,17 @@ ANGLE_EXPORT void GL_APIENTRY GL_ImportMemoryFdEXT(GLuint memory,
                                                    GLint fd);
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawArraysEXT(GLenum mode,
+                                                    const GLint *first,
+                                                    const GLsizei *count,
+                                                    GLsizei primcount);
+ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawElementsEXT(GLenum mode,
+                                                      const GLsizei *count,
+                                                      GLenum type,
+                                                      const void *const *indices,
+                                                      GLsizei primcount);
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_MultiDrawArraysIndirectEXT(GLenum mode,
                                                             const void *indirect,
                                                             GLsizei drawcount,
@@ -1024,6 +1018,11 @@ ANGLE_EXPORT void GL_APIENTRY GL_RenderbufferStorageMultisampleEXT(GLenum target
 
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_PolygonOffsetClampEXT(GLfloat factor,
+                                                       GLfloat units,
+                                                       GLfloat clamp);
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_PrimitiveBoundingBoxEXT(GLfloat minX,
                                                          GLfloat minY,
                                                          GLfloat minZ,
@@ -1032,6 +1031,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_PrimitiveBoundingBoxEXT(GLfloat minX,
                                                          GLfloat maxY,
                                                          GLfloat maxZ,
                                                          GLfloat maxW);
+
+
 
 
 
@@ -1091,11 +1092,13 @@ ANGLE_EXPORT void GL_APIENTRY GL_ImportSemaphoreFdEXT(GLuint semaphore,
                                                       GLint fd);
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_ActiveShaderProgramEXT(GLuint pipeline, GLuint program);
 ANGLE_EXPORT void GL_APIENTRY GL_BindProgramPipelineEXT(GLuint pipeline);
 ANGLE_EXPORT GLuint GL_APIENTRY GL_CreateShaderProgramvEXT(GLenum type,
                                                            GLsizei count,
-                                                           const GLchar **strings);
+                                                           const GLchar *const *strings);
 ANGLE_EXPORT void GL_APIENTRY GL_DeleteProgramPipelinesEXT(GLsizei n, const GLuint *pipelines);
 ANGLE_EXPORT void GL_APIENTRY GL_GenProgramPipelinesEXT(GLsizei n, GLuint *pipelines);
 ANGLE_EXPORT void GL_APIENTRY GL_GetProgramPipelineInfoLogEXT(GLuint pipeline,
@@ -1250,6 +1253,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_FramebufferFetchBarrierEXT();
 
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_PatchParameteriEXT(GLenum pname, GLint value);
 
 
@@ -1313,10 +1318,16 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexBufferRangeEXT(GLenum target,
 
 
 
-ANGLE_EXPORT void GL_APIENTRY GL_TexStorage1DEXT(GLenum target,
-                                                 GLsizei levels,
-                                                 GLenum internalformat,
-                                                 GLsizei width);
+
+
+
+
+
+
+
+
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorage2DEXT(GLenum target,
                                                  GLsizei levels,
                                                  GLenum internalformat,
@@ -1330,6 +1341,21 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexStorage3DEXT(GLenum target,
                                                  GLsizei depth);
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_TexStorageAttribs2DEXT(GLenum target,
+                                                        GLsizei levels,
+                                                        GLenum internalformat,
+                                                        GLsizei width,
+                                                        GLsizei height,
+                                                        const GLint *attrib_list);
+ANGLE_EXPORT void GL_APIENTRY GL_TexStorageAttribs3DEXT(GLenum target,
+                                                        GLsizei levels,
+                                                        GLenum internalformat,
+                                                        GLsizei width,
+                                                        GLsizei height,
+                                                        GLsizei depth,
+                                                        const GLint *attrib_list);
+
+
 
 
 
@@ -1339,6 +1365,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexStorage3DEXT(GLenum target,
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_BlendBarrierKHR();
+
+
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_DebugMessageCallbackKHR(GLDEBUGPROCKHR callback,
@@ -1394,6 +1422,29 @@ ANGLE_EXPORT void GL_APIENTRY GL_MaxShaderCompilerThreadsKHR(GLuint count);
 
 
 
+ANGLE_EXPORT GLenum GL_APIENTRY GL_GetGraphicsResetStatusKHR();
+ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformfvKHR(GLuint program,
+                                                  GLint location,
+                                                  GLsizei bufSize,
+                                                  GLfloat *params);
+ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformivKHR(GLuint program,
+                                                  GLint location,
+                                                  GLsizei bufSize,
+                                                  GLint *params);
+ANGLE_EXPORT void GL_APIENTRY GL_GetnUniformuivKHR(GLuint program,
+                                                   GLint location,
+                                                   GLsizei bufSize,
+                                                   GLuint *params);
+ANGLE_EXPORT void GL_APIENTRY GL_ReadnPixelsKHR(GLint x,
+                                                GLint y,
+                                                GLsizei width,
+                                                GLsizei height,
+                                                GLenum format,
+                                                GLenum type,
+                                                GLsizei bufSize,
+                                                void *data);
+
+
 
 
 
@@ -1433,6 +1484,11 @@ ANGLE_EXPORT void GL_APIENTRY GL_BlitFramebufferNV(GLint srcX0,
 
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_PolygonModeNV(GLenum face, GLenum mode);
+
+
+
+
 
 
 
@@ -1448,6 +1504,9 @@ ANGLE_EXPORT void GL_APIENTRY GL_EGLImageTargetTexture2DOES(GLenum target, GLegl
 
 
 
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_BlendEquationOES(GLenum mode);
 
 
 
@@ -1580,6 +1639,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_ProgramBinaryOES(GLuint program,
                                                   GLint length);
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_GetBufferPointervOES(GLenum target, GLenum pname, void **params);
 ANGLE_EXPORT void *GL_APIENTRY GL_MapBufferOES(GLenum target, GLenum access);
 ANGLE_EXPORT GLboolean GL_APIENTRY GL_UnmapBufferOES(GLenum target);
@@ -1621,6 +1682,8 @@ ANGLE_EXPORT GLbitfield GL_APIENTRY GL_QueryMatrixxOES(GLfixed *mantissa, GLint 
 
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_MinSampleShadingOES(GLfloat value);
 
 
@@ -1634,6 +1697,9 @@ ANGLE_EXPORT void GL_APIENTRY GL_MinSampleShadingOES(GLfloat value);
 
 
 
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_PatchParameteriOES(GLenum pname, GLint value);
 
 
 ANGLE_EXPORT void GL_APIENTRY GL_CompressedTexImage3DOES(GLenum target,
@@ -1753,6 +1819,8 @@ ANGLE_EXPORT void GL_APIENTRY GL_TexGenxvOES(GLenum coord, GLenum pname, const G
 
 
 
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_TexStorage3DMultisampleOES(GLenum target,
                                                             GLsizei samples,
                                                             GLenum internalformat,
@@ -1782,7 +1850,48 @@ ANGLE_EXPORT void GL_APIENTRY GL_FramebufferTextureMultiviewOVR(GLenum target,
 
 
 
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferTextureMultisampleMultiviewOVR(GLenum target,
+                                                                           GLenum attachment,
+                                                                           GLuint texture,
+                                                                           GLint level,
+                                                                           GLsizei samples,
+                                                                           GLint baseViewIndex,
+                                                                           GLsizei numViews);
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferFoveationConfigQCOM(GLuint framebuffer,
+                                                                GLuint numLayers,
+                                                                GLuint focalPointsPerLayer,
+                                                                GLuint requestedFeatures,
+                                                                GLuint *providedFeatures);
+ANGLE_EXPORT void GL_APIENTRY GL_FramebufferFoveationParametersQCOM(GLuint framebuffer,
+                                                                    GLuint layer,
+                                                                    GLuint focalPoint,
+                                                                    GLfloat focalX,
+                                                                    GLfloat focalY,
+                                                                    GLfloat gainX,
+                                                                    GLfloat gainY,
+                                                                    GLfloat foveaArea);
+
+
+
+
 ANGLE_EXPORT void GL_APIENTRY GL_ShadingRateQCOM(GLenum rate);
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_TextureFoveationParametersQCOM(GLuint texture,
+                                                                GLuint layer,
+                                                                GLuint focalPoint,
+                                                                GLfloat focalX,
+                                                                GLfloat focalY,
+                                                                GLfloat gainX,
+                                                                GLfloat gainY,
+                                                                GLfloat foveaArea);
+
+
+ANGLE_EXPORT void GL_APIENTRY GL_EndTilingQCOM(GLbitfield preserveMask);
+ANGLE_EXPORT void GL_APIENTRY
+GL_StartTilingQCOM(GLuint x, GLuint y, GLuint width, GLuint height, GLbitfield preserveMask);
 }  
 
 #endif  

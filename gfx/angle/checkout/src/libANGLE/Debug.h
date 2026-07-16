@@ -11,10 +11,12 @@
 
 #include "angle_gl.h"
 #include "common/PackedEnums.h"
+#include "common/SimpleMutex.h"
 #include "common/angleutils.h"
 #include "libANGLE/AttributeMap.h"
 #include "libANGLE/Error.h"
 
+#include <atomic>
 #include <deque>
 #include <string>
 #include <vector>
@@ -54,15 +56,13 @@ class Debug : angle::NonCopyable
                        GLuint id,
                        GLenum severity,
                        const std::string &message,
-                       gl::LogSeverity logSeverity,
-                       angle::EntryPoint entryPoint) const;
+                       gl::LogSeverity logSeverity) const;
     void insertMessage(GLenum source,
                        GLenum type,
                        GLuint id,
                        GLenum severity,
                        std::string &&message,
-                       gl::LogSeverity logSeverity,
-                       angle::EntryPoint entryPoint) const;
+                       gl::LogSeverity logSeverity) const;
 
     void setMessageControl(GLenum source,
                            GLenum type,
@@ -85,7 +85,7 @@ class Debug : angle::NonCopyable
     size_t getGroupStackDepth() const;
 
     
-    void insertPerfWarning(GLenum severity, const char *message, uint32_t *repeatCount) const;
+    void insertPerfWarning(GLenum severity, bool isLastRepeat, const char *message) const;
 
   private:
     bool isMessageEnabled(GLenum source, GLenum type, GLuint id, GLenum severity) const;
@@ -128,6 +128,7 @@ class Debug : angle::NonCopyable
     };
 
     bool mOutputEnabled;
+    mutable angle::SimpleMutex mMutex;
     GLDEBUGPROCKHR mCallbackFunction;
     const void *mCallbackUserParam;
     mutable std::deque<Message> mMessages;
@@ -169,12 +170,43 @@ class Debug : angle::NonCopyable
 };
 }  
 
+namespace
+{
+ANGLE_INLINE bool MessageCounterBelowMaxRepeat(std::atomic<uint32_t> *counter,
+                                               uint32_t maxRepeat,
+                                               bool *isLastRepeat)
+{
+    
+    if (counter->load(std::memory_order_relaxed) < maxRepeat)
+    {
+        uint32_t count = counter->fetch_add(1, std::memory_order_relaxed);
+        
+        if (count < maxRepeat)
+        {
+            if (count == maxRepeat - 1)
+            {
+                *isLastRepeat = true;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+}  
 
-#define ANGLE_PERF_WARNING(debug, severity, message)                 \
-    do                                                               \
-    {                                                                \
-        static uint32_t sRepeatCount = 0;                            \
-        (debug).insertPerfWarning(severity, message, &sRepeatCount); \
+
+#define ANGLE_PERF_WARNING(debug, severity, ...)                                        \
+    do                                                                                  \
+    {                                                                                   \
+        static std::atomic<uint32_t> sRepeatCount = 0;                                  \
+        bool isLastRepeat                         = false;                              \
+        constexpr uint32_t kMaxPerfRepeat         = 4;                                  \
+        if (MessageCounterBelowMaxRepeat(&sRepeatCount, kMaxPerfRepeat, &isLastRepeat)) \
+        {                                                                               \
+            char ANGLE_MESSAGE[200];                                                    \
+            snprintf(ANGLE_MESSAGE, sizeof(ANGLE_MESSAGE), __VA_ARGS__);                \
+            (debug).insertPerfWarning(severity, isLastRepeat, ANGLE_MESSAGE);           \
+        }                                                                               \
     } while (0)
 
 #endif  

@@ -6,6 +6,10 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_libc_calls
+#endif
+
 #include "common/vulkan/vulkan_icd.h"
 
 #include <functional>
@@ -15,8 +19,6 @@
 #include "common/bitset_utils.h"
 #include "common/debug.h"
 #include "common/system_utils.h"
-
-#include "common/vulkan/vk_google_filtering_precision.h"
 
 namespace
 {
@@ -50,7 +52,12 @@ namespace
 [[maybe_unused]] const std::string WrapICDEnvironment(const char *icdEnvironment)
 {
     
-    std::string ret = ConcatenatePath(angle::GetModuleDirectory(), icdEnvironment);
+    std::string moduleDir = angle::GetModuleDirectory();
+    std::string ret       = ConcatenatePath(moduleDir, icdEnvironment);
+#if defined(ANGLE_PLATFORM_MACOS)
+    std::string moduleDirWithLibraries = ConcatenatePath(moduleDir, "Libraries");
+    ret += ":" + ConcatenatePath(moduleDirWithLibraries, icdEnvironment);
+#endif
     return ret;
 }
 
@@ -103,8 +110,8 @@ ICDFilterFunc GetFilterForICD(vk::ICD preferredICD)
 
 
 
-ScopedVkLoaderEnvironment::ScopedVkLoaderEnvironment(bool enableValidationLayers, vk::ICD icd)
-    : mEnableValidationLayers(enableValidationLayers),
+ScopedVkLoaderEnvironment::ScopedVkLoaderEnvironment(bool enableDebugLayers, vk::ICD icd)
+    : mEnableDebugLayers(enableDebugLayers),
       mICD(icd),
       mChangedCWD(false),
       mChangedICDEnv(false),
@@ -113,7 +120,7 @@ ScopedVkLoaderEnvironment::ScopedVkLoaderEnvironment(bool enableValidationLayers
 
 
 
-#if !defined(ANGLE_PLATFORM_ANDROID) && !defined(ANGLE_PLATFORM_GGP)
+#if !defined(ANGLE_PLATFORM_ANDROID)
     if (icd == vk::ICD::Mock)
     {
         if (!setICDEnvironment(WrapICDEnvironment(ANGLE_VK_MOCK_ICD_JSON).c_str()))
@@ -132,14 +139,14 @@ ScopedVkLoaderEnvironment::ScopedVkLoaderEnvironment(bool enableValidationLayers
 #    endif  
 
 #    if !defined(ANGLE_PLATFORM_MACOS)
-    if (mEnableValidationLayers || icd != vk::ICD::Default)
+    if (mEnableDebugLayers || icd != vk::ICD::Default)
     {
         const auto &cwd = angle::GetCWD();
         if (!cwd.valid())
         {
             ERR() << "Error getting CWD for Vulkan layers init.";
-            mEnableValidationLayers = false;
-            mICD                    = vk::ICD::Default;
+            mEnableDebugLayers = false;
+            mICD               = vk::ICD::Default;
         }
         else
         {
@@ -149,36 +156,23 @@ ScopedVkLoaderEnvironment::ScopedVkLoaderEnvironment(bool enableValidationLayers
             if (!mChangedCWD)
             {
                 ERR() << "Error setting CWD for Vulkan layers init.";
-                mEnableValidationLayers = false;
-                mICD                    = vk::ICD::Default;
+                mEnableDebugLayers = false;
+                mICD               = vk::ICD::Default;
             }
         }
     }
 #    endif  
 
     
-    if (mEnableValidationLayers)
+    if (mEnableDebugLayers)
     {
 #    if defined(ANGLE_VK_LAYERS_DIR)
         if (!angle::PrependPathToEnvironmentVar(kLoaderLayersPathEnv, ANGLE_VK_LAYERS_DIR))
         {
             ERR() << "Error setting environment for Vulkan layers init.";
-            mEnableValidationLayers = false;
+            mEnableDebugLayers = false;
         }
 #    endif  
-
-        if (!angle::PrependPathToEnvironmentVar(
-                kLayerEnablesEnv, "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION"))
-        {
-            ERR() << "Error setting synchronization validation environment for Vulkan validation "
-                     "layers init.";
-        }
-
-        if (!setCustomExtensionsEnvironment())
-        {
-            ERR() << "Error setting custom list for custom extensions for Vulkan layers init.";
-            mEnableValidationLayers = false;
-        }
     }
 #endif  
 
@@ -228,76 +222,100 @@ bool ScopedVkLoaderEnvironment::setICDEnvironment(const char *icd)
     return mChangedICDEnv;
 }
 
-bool ScopedVkLoaderEnvironment::setCustomExtensionsEnvironment()
-{
-    struct CustomExtension
-    {
-        VkStructureType type;
-        size_t size;
-    };
-
-    CustomExtension customExtensions[] = {
-
-        {VK_STRUCTURE_TYPE_SAMPLER_FILTERING_PRECISION_GOOGLE,
-         sizeof(VkSamplerFilteringPrecisionGOOGLE)},
-
-    };
-
-    mPreviousCustomExtensionsEnv = angle::GetEnvironmentVar(kValidationLayersCustomSTypeListEnv);
-
-    std::stringstream strstr;
-    for (CustomExtension &extension : customExtensions)
-    {
-        if (strstr.tellp() != std::streampos(0))
-        {
-            strstr << angle::GetPathSeparatorForEnvironmentVar();
-        }
-
-        strstr << extension.type << angle::GetPathSeparatorForEnvironmentVar() << extension.size;
-    }
-
-    return angle::PrependPathToEnvironmentVar(kValidationLayersCustomSTypeListEnv,
-                                              strstr.str().c_str());
-}
-
-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDeviceProperties,
+void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
                           const std::vector<VkPhysicalDevice> &physicalDevices,
                           vk::ICD preferredICD,
                           uint32_t preferredVendorID,
                           uint32_t preferredDeviceID,
+                          const uint8_t *preferredDeviceUUID,
+                          const uint8_t *preferredDriverUUID,
+                          VkDriverId preferredDriverID,
                           VkPhysicalDevice *physicalDeviceOut,
-                          VkPhysicalDeviceProperties *physicalDevicePropertiesOut)
+                          VkPhysicalDeviceProperties2 *physicalDeviceProperties2Out,
+                          VkPhysicalDeviceIDProperties *physicalDeviceIDPropertiesOut,
+                          VkPhysicalDeviceDriverProperties *physicalDeviceDriverPropertiesOut)
 {
     ASSERT(!physicalDevices.empty());
 
+    VkPhysicalDeviceProperties const *deviceProps = &physicalDeviceProperties2Out->properties;
+
     ICDFilterFunc filter = GetFilterForICD(preferredICD);
 
-    const bool shouldChooseByID = (preferredVendorID != 0 || preferredDeviceID != 0);
+    const bool shouldChooseByPciId = (preferredVendorID != 0 || preferredDeviceID != 0);
+    const bool shouldChooseByUUIDs = (preferredDeviceUUID != nullptr ||
+                                      preferredDriverUUID != nullptr || preferredDriverID != 0);
 
     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
     {
-        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
-        if (filter(*physicalDevicePropertiesOut))
+        *physicalDeviceProperties2Out       = {};
+        physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+
+        *physicalDeviceIDPropertiesOut       = {};
+        physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+
+        *physicalDeviceDriverPropertiesOut = {};
+        physicalDeviceDriverPropertiesOut->sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+        pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+
+        if (deviceProps->apiVersion < kMinimumVulkanAPIVersion)
+        {
+            
+            
+            continue;
+        }
+
+        if (filter(*deviceProps))
         {
             *physicalDeviceOut = physicalDevice;
             return;
         }
 
-        if (shouldChooseByID)
+        if (shouldChooseByUUIDs)
+        {
+            bool matched = true;
+
+            if (preferredDriverID != 0 &&
+                preferredDriverID != physicalDeviceDriverPropertiesOut->driverID)
+            {
+                matched = false;
+            }
+            else if (preferredDeviceUUID != nullptr &&
+                     memcmp(preferredDeviceUUID, physicalDeviceIDPropertiesOut->deviceUUID,
+                            VK_UUID_SIZE) != 0)
+            {
+                matched = false;
+            }
+            else if (preferredDriverUUID != nullptr &&
+                     memcmp(preferredDriverUUID, physicalDeviceIDPropertiesOut->driverUUID,
+                            VK_UUID_SIZE) != 0)
+            {
+                matched = false;
+            }
+
+            if (matched)
+            {
+                *physicalDeviceOut = physicalDevice;
+                return;
+            }
+        }
+
+        if (shouldChooseByPciId)
         {
             
             
             bool matchVendorID = true;
             bool matchDeviceID = true;
 
-            if (preferredVendorID != 0 &&
-                preferredVendorID != physicalDevicePropertiesOut->vendorID)
+            if (preferredVendorID != 0 && preferredVendorID != deviceProps->vendorID)
             {
                 matchVendorID = false;
             }
 
-            if (preferredDeviceID != 0 &&
-                preferredDeviceID != physicalDevicePropertiesOut->deviceID)
+            if (preferredDeviceID != 0 && preferredDeviceID != deviceProps->deviceID)
             {
                 matchDeviceID = false;
             }
@@ -311,21 +329,49 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDevicePr
     }
 
     Optional<VkPhysicalDevice> integratedDevice;
-    VkPhysicalDeviceProperties integratedDeviceProperties;
+    VkPhysicalDeviceProperties2 integratedDeviceProperties2;
+    VkPhysicalDeviceIDProperties integratedDeviceIDProperties;
+    VkPhysicalDeviceDriverProperties integratedDeviceDriverProperties;
+
     for (const VkPhysicalDevice &physicalDevice : physicalDevices)
     {
-        pGetPhysicalDeviceProperties(physicalDevice, physicalDevicePropertiesOut);
+        *physicalDeviceProperties2Out       = {};
+        physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+
+        *physicalDeviceIDPropertiesOut       = {};
+        physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+
+        *physicalDeviceDriverPropertiesOut = {};
+        physicalDeviceDriverPropertiesOut->sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+        pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+
+        if (deviceProps->apiVersion < kMinimumVulkanAPIVersion)
+        {
+            
+            
+            continue;
+        }
+
         
-        if (physicalDevicePropertiesOut->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
             *physicalDeviceOut = physicalDevice;
             return;
         }
-        if (physicalDevicePropertiesOut->deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
+        if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
             !integratedDevice.valid())
         {
-            integratedDevice           = physicalDevice;
-            integratedDeviceProperties = *physicalDevicePropertiesOut;
+            integratedDevice                       = physicalDevice;
+            integratedDeviceProperties2            = *physicalDeviceProperties2Out;
+            integratedDeviceIDProperties           = *physicalDeviceIDPropertiesOut;
+            integratedDeviceDriverProperties       = *physicalDeviceDriverPropertiesOut;
+            integratedDeviceProperties2.pNext      = nullptr;
+            integratedDeviceIDProperties.pNext     = nullptr;
+            integratedDeviceDriverProperties.pNext = nullptr;
             continue;
         }
     }
@@ -333,15 +379,16 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties pGetPhysicalDevicePr
     
     if (integratedDevice.valid())
     {
-        *physicalDeviceOut           = integratedDevice.value();
-        *physicalDevicePropertiesOut = integratedDeviceProperties;
+        *physicalDeviceOut             = integratedDevice.value();
+        *physicalDeviceProperties2Out  = integratedDeviceProperties2;
+        *physicalDeviceIDPropertiesOut = integratedDeviceIDProperties;
         return;
     }
 
     WARN() << "Preferred device ICD not found. Using default physicalDevice instead.";
     
     *physicalDeviceOut = physicalDevices[0];
-    pGetPhysicalDeviceProperties(*physicalDeviceOut, physicalDevicePropertiesOut);
+    pGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
 }
 
 }  

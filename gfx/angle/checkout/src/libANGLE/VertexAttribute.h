@@ -21,6 +21,7 @@ class VertexArray;
 
 
 
+
 class VertexBinding final : angle::NonCopyable
 {
   public:
@@ -39,18 +40,6 @@ class VertexBinding final : angle::NonCopyable
     GLintptr getOffset() const { return mOffset; }
     void setOffset(GLintptr offsetIn) { mOffset = offsetIn; }
 
-    const BindingPointer<Buffer> &getBuffer() const { return mBuffer; }
-
-    ANGLE_INLINE void setBuffer(const gl::Context *context, Buffer *bufferIn)
-    {
-        mBuffer.set(context, bufferIn);
-    }
-
-    
-    ANGLE_INLINE void assignBuffer(Buffer *bufferIn) { mBuffer.assign(bufferIn); }
-
-    void onContainerBindingChanged(const Context *context, int incr) const;
-
     const AttributesMask &getBoundAttributesMask() const { return mBoundAttributesMask; }
 
     void setBoundAttribute(size_t index) { mBoundAttributesMask.set(index); }
@@ -61,8 +50,6 @@ class VertexBinding final : angle::NonCopyable
     GLuint mStride;
     GLuint mDivisor;
     GLintptr mOffset;
-
-    BindingPointer<Buffer> mBuffer;
 
     
     AttributesMask mBoundAttributesMask;
@@ -78,7 +65,7 @@ struct VertexAttribute final : private angle::NonCopyable
     VertexAttribute &operator=(VertexAttribute &&attrib);
 
     
-    void updateCachedElementLimit(const VertexBinding &binding);
+    void updateCachedElementLimit(const VertexBinding &binding, GLint64 bufferSize);
     GLint64 getCachedElementLimit() const { return mCachedElementLimit; }
 
     bool enabled;  
@@ -95,6 +82,9 @@ struct VertexAttribute final : private angle::NonCopyable
 
   private:
     
+    
+    
+    
     GLint64 mCachedElementLimit;
 };
 
@@ -110,7 +100,7 @@ size_t ComputeVertexAttributeStride(const VertexAttribute &attrib, const VertexB
 
 GLintptr ComputeVertexAttributeOffset(const VertexAttribute &attrib, const VertexBinding &binding);
 
-size_t ComputeVertexBindingElementCount(GLuint divisor, size_t drawCount, size_t instanceCount);
+size_t ComputeVertexBindingElementCount(GLuint divisor, uint64_t drawCount, size_t instanceCount);
 
 struct VertexAttribCurrentValueData
 {

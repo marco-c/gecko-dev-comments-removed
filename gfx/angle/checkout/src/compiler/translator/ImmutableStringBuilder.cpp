@@ -7,8 +7,13 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #include "compiler/translator/ImmutableStringBuilder.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 
 namespace sh
@@ -23,17 +28,7 @@ ImmutableStringBuilder &ImmutableStringBuilder::operator<<(const ImmutableString
     return *this;
 }
 
-ImmutableStringBuilder &ImmutableStringBuilder::operator<<(const char *str)
-{
-    ASSERT(mData != nullptr);
-    size_t len = strlen(str);
-    ASSERT(mPos + len <= mMaxLength);
-    memcpy(mData + mPos, str, len);
-    mPos += len;
-    return *this;
-}
-
-ImmutableStringBuilder &ImmutableStringBuilder::operator<<(const char &c)
+ImmutableStringBuilder &ImmutableStringBuilder::operator<<(char c)
 {
     ASSERT(mData != nullptr);
     ASSERT(mPos + 1 <= mMaxLength);
@@ -41,18 +36,32 @@ ImmutableStringBuilder &ImmutableStringBuilder::operator<<(const char &c)
     return *this;
 }
 
-void ImmutableStringBuilder::appendDecimal(const uint32_t &u)
+ImmutableStringBuilder &ImmutableStringBuilder::operator<<(uint64_t v)
 {
-    int numChars = snprintf(mData + mPos, mMaxLength - mPos, "%d", u);
+    
+    
+    int numChars = snprintf(mData + mPos, mMaxLength - mPos + 1, "%" PRIu64, v);
     ASSERT(numChars >= 0);
     ASSERT(mPos + numChars <= mMaxLength);
     mPos += numChars;
+    return *this;
+}
+
+ImmutableStringBuilder &ImmutableStringBuilder::operator<<(int64_t v)
+{
+    
+    
+    int numChars = snprintf(mData + mPos, mMaxLength - mPos + 1, "%" PRId64, v);
+    ASSERT(numChars >= 0);
+    ASSERT(mPos + numChars <= mMaxLength);
+    mPos += numChars;
+    return *this;
 }
 
 ImmutableStringBuilder::operator ImmutableString()
 {
     mData[mPos] = '\0';
-    ImmutableString str(static_cast<const char *>(mData), mPos);
+    ImmutableString str(mData, mPos);
 #if defined(ANGLE_ENABLE_ASSERTS)
     
     mData = nullptr;

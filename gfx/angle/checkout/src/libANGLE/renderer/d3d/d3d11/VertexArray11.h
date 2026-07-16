@@ -21,7 +21,8 @@ class Renderer11;
 class VertexArray11 : public VertexArrayImpl
 {
   public:
-    VertexArray11(const gl::VertexArrayState &data);
+    VertexArray11(const gl::VertexArrayState &data,
+                  const gl::VertexArrayBuffers &vertexArrayBuffers);
     ~VertexArray11() override;
     void destroy(const gl::Context *context) override;
 
@@ -48,7 +49,7 @@ class VertexArray11 : public VertexArrayImpl
 
     const std::vector<TranslatedAttribute> &getTranslatedAttribs() const;
 
-    Serial getCurrentStateSerial() const { return mCurrentStateSerial; }
+    UniqueSerial getCurrentStateSerial() const { return mCurrentStateSerial; }
 
     
     
@@ -93,7 +94,7 @@ class VertexArray11 : public VertexArrayImpl
     
     gl::AttributesMask mAttribsToTranslate;
 
-    Serial mCurrentStateSerial;
+    UniqueSerial mCurrentStateSerial;
 
     
     int mAppliedNumViewsToDivisor;

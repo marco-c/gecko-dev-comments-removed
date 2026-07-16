@@ -55,23 +55,21 @@ void AddToNameMapIfNotMapped(const ImmutableString &name,
 }  
 
 ImmutableString HashName(const ImmutableString &name,
+                         char prefix,
                          ShHashFunction64 hashFunction,
                          NameMap *nameMap)
 {
-    const ImmutableString kUnhashedNamePrefix(kUserDefinedNamePrefix);
-
     if (hashFunction == nullptr)
     {
-        if (name.length() + kUnhashedNamePrefix.length() > kESSLMaxIdentifierLength)
+        size_t kPrefixLength = 2;
+        if (!prefix || name.length() + kPrefixLength > kESSLMaxIdentifierLength)
         {
             
             
             
             return name;
         }
-        ImmutableStringBuilder prefixedName(kUnhashedNamePrefix.length() + name.length());
-        prefixedName << kUnhashedNamePrefix << name;
-        ImmutableString res = prefixedName;
+        ImmutableString res = BuildConcatenatedImmutableString('_', prefix, name);
         AddToNameMapIfNotMapped(name, res, nameMap);
         return res;
     }
@@ -82,7 +80,10 @@ ImmutableString HashName(const ImmutableString &name,
     return hashedName;
 }
 
-ImmutableString HashName(const TSymbol *symbol, ShHashFunction64 hashFunction, NameMap *nameMap)
+ImmutableString HashName(const TSymbol *symbol,
+                         char prefix,
+                         ShHashFunction64 hashFunction,
+                         NameMap *nameMap)
 {
     if (symbol->symbolType() == SymbolType::Empty)
     {
@@ -93,7 +94,7 @@ ImmutableString HashName(const TSymbol *symbol, ShHashFunction64 hashFunction, N
     {
         return symbol->name();
     }
-    return HashName(symbol->name(), hashFunction, nameMap);
+    return HashName(symbol->name(), prefix, hashFunction, nameMap);
 }
 
 }  
