@@ -3997,7 +3997,7 @@ pref("security.storage.encryption.sqlite.enabled", false, locked);
 
 pref("extensions.formautofill.available", "detect");
 
-#if defined(NIGHTLY_BUILD) && !defined(ANDROID)
+#if !defined(ANDROID)
 pref("extensions.formautofill.addresses.supported", "on");
 
 pref("extensions.formautofill.useml", true);
