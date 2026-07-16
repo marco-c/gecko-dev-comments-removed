@@ -128,6 +128,15 @@ function assert_style_value_equals(a, b, epsilon) {
       assert_equals(a, b);
       break;
   }
+
+  
+  
+  
+  
+  
+  if (a instanceof CSSNumericValue) {
+    assert_numeric_type_equals(a.type(), b.type());
+  }
 }
 
 

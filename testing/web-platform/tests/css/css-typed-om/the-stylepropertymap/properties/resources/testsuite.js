@@ -138,7 +138,10 @@ const gTestSyntaxExamples = {
         specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 'percent')),
         
         
-        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultSpecified: (input, result) => {
+          assert_is_calc_sum(result);
+          assert_numeric_type_equals(result.type(), input.type());
+        },
         defaultComputed: (_, result) => assert_is_unit('percent', result)
       }
     ],
@@ -168,7 +171,10 @@ const gTestSyntaxExamples = {
         
         
         specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 's')),
-        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultSpecified: (input, result) => {
+          assert_is_calc_sum(result);
+          assert_numeric_type_equals(result.type(), input.type());
+        },
         defaultComputed: (_, result) => assert_is_unit('s', result)
       }
     ],
@@ -199,7 +205,10 @@ const gTestSyntaxExamples = {
         specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 'deg')),
         
         
-        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultSpecified: (input, result) => {
+          assert_is_calc_sum(result);
+          assert_numeric_type_equals(result.type(), input.type());
+        },
         defaultComputed: (_, result) => assert_is_unit('deg', result)
       }
     ],
@@ -250,7 +259,10 @@ const gTestSyntaxExamples = {
         
         
         specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(5, 'number')),
-        defaultSpecified: (_, result) => assert_is_calc_sum(result),
+        defaultSpecified: (input, result) => {
+          assert_is_calc_sum(result);
+          assert_numeric_type_equals(result.type(), input.type());
+        },
         defaultComputed: (_, result) => {
           assert_style_value_equals(result, new CSSUnitValue(5, 'number'));
         }
@@ -340,15 +352,6 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
         (specified || example.defaultSpecified)(example.specifiedExpected || example.input, specifiedResult, example.specifiedAlternateExpected);
       } else {
         assert_style_value_equals(specifiedResult, example.input);
-
-        
-        
-        
-        
-        if (example.input instanceof CSSUnitValue ||
-            example.input instanceof CSSMathSum) {
-          assert_numeric_type_equals(specifiedResult.type(), example.input.type());
-        }
       }
 
       
@@ -362,15 +365,6 @@ function testPropertyValid(propertyName, examples, specified, computed, descript
         (computed || example.defaultComputed)(example.input, computedResult);
       } else {
         assert_style_value_equals(computedResult, example.input);
-
-        
-        
-        
-        
-        if (example.input instanceof CSSUnitValue ||
-            example.input instanceof CSSMathSum) {
-          assert_numeric_type_equals(computedResult.type(), example.input.type());
-        }
       }
     }, `Can set '${propertyName}' to ${description}: ${example.input}`);
   }
