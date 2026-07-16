@@ -340,7 +340,11 @@ impl_range!(FontWeightRange, AbsoluteFontWeight);
 
 #[repr(C)]
 #[allow(missing_docs)]
-pub struct ComputedFontWeightRange(FontWeight, FontWeight);
+#[cfg_attr(
+    feature = "servo",
+    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
+)]
+pub struct ComputedFontWeightRange(pub FontWeight, pub FontWeight);
 
 #[inline]
 fn sort_range<T: PartialOrd>(a: T, b: T) -> (T, T) {
@@ -370,7 +374,11 @@ impl_range!(FontStretchRange, SpecifiedFontStretch);
 
 #[repr(C)]
 #[allow(missing_docs)]
-pub struct ComputedFontStretchRange(FontStretch, FontStretch);
+#[cfg_attr(
+    feature = "servo",
+    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
+)]
+pub struct ComputedFontStretchRange(pub FontStretch, pub FontStretch);
 
 impl FontStretchRange {
     
@@ -405,7 +413,11 @@ pub enum FontStyleRange {
 
 #[repr(C)]
 #[allow(missing_docs)]
-pub struct ComputedFontStyleRange(FontStyle, FontStyle);
+#[cfg_attr(
+    feature = "servo",
+    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
+)]
+pub struct ComputedFontStyleRange(pub FontStyle, pub FontStyle);
 
 impl Parse for FontStyleRange {
     fn parse<'i, 't>(
