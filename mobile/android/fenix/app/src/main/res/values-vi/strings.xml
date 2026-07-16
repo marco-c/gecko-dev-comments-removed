@@ -149,6 +149,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">Thẻ riêng tư mới</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">Mật khẩu</string>
+  <!-- Shortcut action to open uninstall survey -->
+  <string name="home_screen_shortcut_uninstall_survey">Gỡ cài đặt, tại sao chứ?</string>
   <!--
     Recent Tabs
 
@@ -626,12 +628,12 @@
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho các kênh mà chúng tôi quảng bá Firefox rằng bạn là người dùng Firefox.</string>
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho các kênh mà chúng tôi quảng bá Firefox rằng bạn là người dùng Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
-  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho nền tảng bạn vừa sử dụng rằng bạn đang dùng Firefox.</string>
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage,UnusedResources">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho nền tảng bạn vừa sử dụng rằng bạn đang dùng Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
@@ -656,7 +658,7 @@
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text_1">Tìm hiểu thêm</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Giúp đỡ Firefox</string>
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage,UnusedResources">Giúp đỡ Firefox</string>
   <!-- Marketing onboarding primary button text. -->
   <string name="nova_onboarding_marketing_primary_button_text_2">Cho phép và tiếp tục</string>
   <!-- Marketing onboarding secondary button text. -->
@@ -2435,6 +2437,8 @@
   <string name="preferences_take_survey">Thực hiện khảo sát</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">Không, cảm ơn</string>
+  <!-- Error message shown in a Toast when the system fails to trigger the device uninstallation prompt. -->
+  <string name="uninstall_survey_error_failed">Không thể mở cửa sổ gỡ cài đặt hệ thống, vui lòng sử dụng trực tiếp chức năng gỡ cài đặt hệ thống.</string>
   <!--
     Snackbar
 
@@ -4044,6 +4048,8 @@
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Bạn hài lòng với trải nghiệm đồng bộ hóa trong Firefox như thế nào?</string>
   <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Giúp chúng tôi cải thiện Firefox. Trải nghiệm của bạn cho đến nay được mô tả như thế nào?</string>
+  <!-- Uninstall Survey -->
+  <string name="uninstall_survey_button_label">Gửi phản hồi và gỡ cài đặt</string>
   <!--
     Accessibility
 
