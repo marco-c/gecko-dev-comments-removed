@@ -257,7 +257,7 @@ var allowlist = [
   
   { file: "chrome://pippki/content/resetpassword.xhtml" },
   
-  { file: "resource://gre/modules/Manifest.sys.mjs" },
+  { file: "moz-src:///dom/manifest/Manifest.sys.mjs" },
   
   
   
@@ -314,6 +314,12 @@ var allowlist = [
 
   
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
+
+  
+  {
+    file: "resource://gre/localization/en-US/toolkit/global/rosettaNotification.ftl",
+    platforms: ["linux", "win"],
+  },
 
   
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },

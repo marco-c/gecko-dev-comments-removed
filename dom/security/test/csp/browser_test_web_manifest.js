@@ -8,7 +8,7 @@
 
 "use strict";
 const { ManifestObtainer } = ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestObtainer.sys.mjs"
+  "moz-src:///dom/manifest/ManifestObtainer.sys.mjs"
 );
 const path = "/tests/dom/security/test/csp/";
 const testFile = `${path}file_web_manifest.html`;
