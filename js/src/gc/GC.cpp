@@ -5318,12 +5318,15 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
   UnscheduleZones(this);
 }
 
-SliceBudget GCRuntime::defaultBudget(JS::GCReason reason, int64_t millis) {
+SliceBudget GCRuntime::defaultBudget(JS::GCReason reason) {
   
   
+  int64_t millis = defaultSliceBudgetMS();
+
   
-  if (millis == 0) {
-    millis = defaultSliceBudgetMS();
+  
+  if (reason == JS::GCReason::BG_TASK_FINISHED && millis != 0) {
+    millis = std::max(millis, int64_t(1));
   }
 
   
@@ -5575,7 +5578,7 @@ bool GCRuntime::gcIfRequestedImpl(bool eagerOk) {
     return false;
   }
 
-  SliceBudget budget = defaultBudget(reason, 0);
+  SliceBudget budget = defaultBudget(reason);
   if (!isIncrementalGCInProgress()) {
     startGC(JS::GCOptions::Normal, reason, budget);
   } else {
