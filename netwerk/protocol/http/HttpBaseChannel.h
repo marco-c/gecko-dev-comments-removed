@@ -934,6 +934,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
     
     
+    
+    
+    (uint32_t, AllRedirectsSameOriginIgnoringInternal, 1),
+
+    
+    
     (uint32_t, AllRedirectsPassTimingAllowCheck, 1),
 
     

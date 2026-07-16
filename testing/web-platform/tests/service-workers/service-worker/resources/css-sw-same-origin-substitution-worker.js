@@ -1,0 +1,14 @@
+importScripts('test-helpers.sub.js');
+
+const BASE_PATH = base_path();
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  
+  
+  if (url.pathname.endsWith('/css-sw-substitute-marker.css')) {
+    event.respondWith(fetch(
+        BASE_PATH + 'fetch-request-css-cross-origin-mime-check-same.css'));
+  }
+});
