@@ -333,12 +333,6 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
 bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
                                       const GCRunnerStep& aStep) {
   
-  JSContext* cx = dom::danger::GetJSContext();
-  if (InIncrementalGC() && !JS::IncrementalGCHasForegroundWork(cx)) {
-    return false;
-  }
-
-  
   nsJSContext::IsShrinking is_shrinking = nsJSContext::NonShrinkingGC;
   if (!InIncrementalGC() && aStep.mReason == JS::GCReason::USER_INACTIVE) {
     bool do_gc = mWantAtLeastRegularGC;
@@ -379,6 +373,7 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
   
   
   
+  JSContext* cx = dom::danger::GetJSContext();
   return JS::IncrementalGCHasForegroundWork(cx);
 }
 
