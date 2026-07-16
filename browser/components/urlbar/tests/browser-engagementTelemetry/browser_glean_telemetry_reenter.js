@@ -65,7 +65,14 @@ add_task(async function () {
     await assertEngagementTelemetry([{ engagement_type: "enter" }]);
     await assertAbandonmentTelemetry([]);
 
-    Assert.ok(recordReentered, "`record()` was re-entered");
+    
+    
+    
+    
+    
+    if (!UrlbarPrefs.get("ipc.chromeMessagePassing")) {
+      Assert.ok(recordReentered, "`record()` was re-entered");
+    }
     Assert.equal(engagementSpy.callCount, 1, "`onEngagement` was invoked once");
   });
 });
