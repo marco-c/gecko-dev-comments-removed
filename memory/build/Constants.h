@@ -104,7 +104,7 @@ static constexpr size_t kNumQuantumWideClasses =
 
 
 
-static constexpr size_t kChunkSize = 2_MiB;
+static constexpr size_t kChunkSize = 1_MiB;
 static constexpr size_t kChunkSizeMask = kChunkSize - 1;
 
 
