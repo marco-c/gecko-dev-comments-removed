@@ -782,8 +782,6 @@ STDMETHODIMP nsDataObj::GetData(LPFORMATETC aFormat, LPSTGMEDIUM pSTM) {
       if (format == fileFlavor) return GetFileContents(*aFormat, *pSTM);
       if (format == PreferredDropEffect)
         return GetPreferredDropEffect(*aFormat, *pSTM);
-      if (format == nsClipboard::GetWebCustomFormatMapClipboardFormat())
-        return GetText(df, *aFormat, *pSTM);
       
       
       return GetText(df, *aFormat, *pSTM);
@@ -1572,15 +1570,6 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
     return S_OK;
   };
 
-  
-  
-  
-  if (aDataFlavor.EqualsLiteral(kWebCustomFormatMapType)) {
-    MOZ_ASSERT(!mWebCustomFormatMapJson.IsEmpty());
-    return assignDataToStg(const_cast<char*>(mWebCustomFormatMapJson.get()),
-                           mWebCustomFormatMapJson.Length());
-  }
-
   const nsPromiseFlatCString& flavorStr = PromiseFlatCString(aDataFlavor);
 
   nsCOMPtr<nsISupports> genericDataWrapper;
@@ -1657,11 +1646,8 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
   
   
   
-  
-  
   bool const excludeNull =
-      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat() ||
-      StringBeginsWith(aDataFlavor, nsLiteralCString(kWebCustomFormatPrefix));
+      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat();
 
   return assignDataToStg(data, len + (excludeNull ? 0 : sizeof(char16_t)));
 }

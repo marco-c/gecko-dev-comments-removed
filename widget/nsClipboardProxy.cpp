@@ -18,7 +18,6 @@
 #include "nsArrayUtils.h"
 #include "nsBaseClipboard.h"
 #include "nsIContentAnalysis.h"
-#include "nsITransferable.h"
 #include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -77,15 +76,6 @@ nsClipboardProxy::GetData(nsITransferable* aTransferable,
   }
   nsTArray<nsCString> types;
   aTransferable->FlavorsTransferableCanImport(types);
-  
-  
-  
-  
-  for (const auto& type : types) {
-    if (type.EqualsLiteral(kWebCustomFormatMapType)) {
-      return NS_ERROR_FAILURE;
-    }
-  }
 
   IPCTransferableDataOrError transferableOrError;
   if (MOZ_UNLIKELY(nsIContentAnalysis::MightBeActive())) {

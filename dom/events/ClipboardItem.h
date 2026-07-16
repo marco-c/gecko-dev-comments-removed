@@ -33,11 +33,8 @@ class ClipboardItem final : public nsWrapperCache {
     NS_DECL_NSIASYNCCLIPBOARDREQUESTCALLBACK
     NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ItemEntry, PromiseNativeHandler)
 
-    explicit ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType,
-                       const bool aIsUnsupportedType = false)
-        : mGlobal(aGlobal),
-          mType(aType),
-          mIsUnsupportedType(aIsUnsupportedType) {
+    explicit ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType)
+        : mGlobal(aGlobal), mType(aType) {
       MOZ_ASSERT(mGlobal);
     }
     ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType,
@@ -66,8 +63,6 @@ class ClipboardItem final : public nsWrapperCache {
     
     void ReactGetTypePromise(Promise& aPromise);
 
-    const bool& IsUnsupportedType() const { return mIsUnsupportedType; }
-
    private:
     ~ItemEntry() {
       if (!mPendingGetDataRequests.IsEmpty()) {
@@ -84,9 +79,6 @@ class ClipboardItem final : public nsWrapperCache {
 
     
     nsString mType;
-    
-    
-    bool mIsUnsupportedType;
 
     
     OwningStringOrBlob mData;
@@ -105,8 +97,7 @@ class ClipboardItem final : public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(ClipboardItem)
 
   ClipboardItem(nsISupports* aOwner, dom::PresentationStyle aPresentationStyle,
-                nsTArray<RefPtr<ItemEntry>>&& aItems,
-                const uint32_t& aCustomFormatCount = 0);
+                nsTArray<RefPtr<ItemEntry>>&& aItems);
 
   static already_AddRefed<ClipboardItem> Constructor(
       const GlobalObject& aGlobal,
@@ -114,21 +105,6 @@ class ClipboardItem final : public nsWrapperCache {
       const ClipboardItemOptions& aOptions, ErrorResult& aRv);
 
   static bool Supports(const GlobalObject& aGlobal, const nsAString& aType);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static bool ParseMimeType(const nsAString& aInput, nsString& aMimeType,
-                            bool* aIsCustom, bool* aIsUnsupported);
 
   dom::PresentationStyle PresentationStyle() const {
     return mPresentationStyle;
@@ -144,18 +120,12 @@ class ClipboardItem final : public nsWrapperCache {
 
   const nsTArray<RefPtr<ItemEntry>>& Entries() const { return mItems; }
 
-  const uint32_t& CustomFormatCount() const { return mCustomFormatCount; }
-
  private:
   ~ClipboardItem() = default;
 
   nsCOMPtr<nsISupports> mOwner;
   dom::PresentationStyle mPresentationStyle;
   nsTArray<RefPtr<ItemEntry>> mItems;
-
-  
-  
-  uint32_t mCustomFormatCount;
 };
 
 }  

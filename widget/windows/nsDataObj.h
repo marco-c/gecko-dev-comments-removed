@@ -38,14 +38,6 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
   RefPtr<mozilla::LazyIdleThread> mIOThread;
 
  public:  
-  void SetWebCustomFormatMapJson(const nsACString& aJson) {
-    mWebCustomFormatMapJson = aJson;
-  }
-  const nsCString& WebCustomFormatMapJson() const {
-    return mWebCustomFormatMapJson;
-  }
-
- public:  
   explicit nsDataObj(nsIURI* uri = nullptr);
 
  protected:
@@ -174,12 +166,6 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
 
  private:
   nsTArray<nsCString> mDataFlavors;
-
-  
-  
-  
-  
-  nsCString mWebCustomFormatMapJson;
 
   
   RefPtr<nsITransferable> mTransferable;

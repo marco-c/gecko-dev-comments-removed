@@ -90,8 +90,6 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsTArray<nsCString>, nsresult>)>;
-  using GetWebCustomFormatsCallback = mozilla::MoveOnlyFunction<void(
-      mozilla::Result<nsTArray<nsCString>, nsresult>)>;
 
   mozilla::Maybe<uint64_t> GetClipboardCacheInnerWindowId(
       ClipboardType aClipboardType);
@@ -132,34 +130,7 @@ class nsBaseClipboard : public nsIClipboard {
       const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
       HasMatchingFlavorsCallback&& aCallback);
 
-  nsTArray<nsCString> GetWebCustomFormatsFromClipboard(
-      ClipboardType aWhichClipboard);
-
   void ClearClipboardCache(ClipboardType aClipboardType);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool IsValidFlavor(const nsACString& aFlavor);
 
  private:
   void RejectPendingAsyncSetDataRequestIfAny(ClipboardType aClipboardType);

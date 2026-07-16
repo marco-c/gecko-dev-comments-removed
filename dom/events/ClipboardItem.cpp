@@ -4,9 +4,7 @@
 
 #include "mozilla/dom/ClipboardItem.h"
 
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Clipboard.h"
-#include "mozilla/dom/MimeType.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Record.h"
 #include "nsComponentManagerUtils.h"
@@ -14,7 +12,6 @@
 #include "nsIInputStream.h"
 #include "nsISupportsPrimitives.h"
 #include "nsNetUtil.h"
-#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {
@@ -262,12 +259,10 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ClipboardItem, mOwner, mItems)
 
 ClipboardItem::ClipboardItem(nsISupports* aOwner,
                              const dom::PresentationStyle aPresentationStyle,
-                             nsTArray<RefPtr<ItemEntry>>&& aItems,
-                             const uint32_t& aCustomFormatCount)
+                             nsTArray<RefPtr<ItemEntry>>&& aItems)
     : mOwner(aOwner),
       mPresentationStyle(aPresentationStyle),
-      mItems(std::move(aItems)),
-      mCustomFormatCount(aCustomFormatCount) {}
+      mItems(std::move(aItems)) {}
 
 
 already_AddRefed<ClipboardItem> ClipboardItem::Constructor(
@@ -283,104 +278,26 @@ already_AddRefed<ClipboardItem> ClipboardItem::Constructor(
   MOZ_ASSERT(global);
 
   nsTArray<RefPtr<ItemEntry>> items;
-  uint32_t customFormatCount = 0;
   for (const auto& entry : aItems.Entries()) {
-    nsAutoString type;
-    bool isCustom = false;
-    bool isUnsupported = false;
-    
-    if (!ParseMimeType(entry.mKey, type, &isCustom, &isUnsupported)) {
-      aRv.ThrowTypeError("Type '"_ns + NS_ConvertUTF16toUTF8(entry.mKey) +
-                         "' is not a valid type"_ns);
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    (void)NS_WARN_IF(isUnsupported);
-
-    
-    for (const auto& item : items) {
-      if (item->Type() == type) {
-        aRv.ThrowTypeError("Re-define the item of the type '"_ns +
-                           NS_ConvertUTF16toUTF8(entry.mKey) + "'"_ns);
-        return nullptr;
-      }
-    }
-
-    RefPtr<ItemEntry> item = MakeRefPtr<ItemEntry>(global, type, isUnsupported);
+    RefPtr<ItemEntry> item = MakeRefPtr<ItemEntry>(global, entry.mKey);
     item->LoadDataFromDataPromise(*entry.mValue);
     items.AppendElement(std::move(item));
-
-    if (isCustom) {
-      customFormatCount++;
-    }
   }
 
   RefPtr<ClipboardItem> item = MakeRefPtr<ClipboardItem>(
-      global, aOptions.mPresentationStyle, std::move(items), customFormatCount);
+      global, aOptions.mPresentationStyle, std::move(items));
   return item.forget();
 }
 
 
 bool ClipboardItem::Supports(const GlobalObject& aGlobal,
                              const nsAString& aType) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString type;
-  bool isCustom = false;
-  bool isUnsupported = false;
-  bool result = ParseMimeType(aType, type, &isCustom, &isUnsupported);
-
-  return !isUnsupported && result;
-}
-
-
-bool ClipboardItem::ParseMimeType(const nsAString& aInput, nsString& aMimeType,
-                                  bool* aIsCustom, bool* aIsUnsupported) {
-  *aIsCustom = false;
-  *aIsUnsupported = false;
   for (const auto& mandatoryType : Clipboard::MandatoryDataTypes()) {
-    if (CompareUTF8toUTF16(mandatoryType, aInput) == 0) {
-      aMimeType = aInput;
+    if (CompareUTF8toUTF16(mandatoryType, aType) == 0) {
       return true;
     }
   }
-
-  nsString customPrefix(NS_LITERAL_STRING_FROM_CSTRING(kWebCustomFormatPrefix));
-  nsString mimeType;
-  bool maybeCustom = false;
-  if (StringBeginsWith(aInput, customPrefix)) {
-    if (!StaticPrefs::dom_clipboard_customFormatSupport_enabled()) {
-      return false;
-    }
-    mimeType = Substring(aInput, customPrefix.Length());
-    maybeCustom = true;
-  } else {
-    mimeType = aInput;
-  }
-
-  RefPtr<MimeType> parsedType = MimeType::Parse(mimeType);
-  if (!parsedType) {
-    return false;
-  }
-
-  *aIsCustom = maybeCustom;
-  *aIsUnsupported = !maybeCustom || parsedType->GetParameterCount();
-  parsedType->Serialize(aMimeType);
-  if (maybeCustom) {
-    aMimeType = customPrefix + aMimeType;
-  }
-  return true;
+  return false;
 }
 
 void ClipboardItem::GetTypes(nsTArray<nsString>& aTypes) const {
@@ -391,17 +308,6 @@ void ClipboardItem::GetTypes(nsTArray<nsString>& aTypes) const {
 
 already_AddRefed<Promise> ClipboardItem::GetType(const nsAString& aType,
                                                  ErrorResult& aRv) {
-  nsAutoString type;
-  bool isCustom;
-  bool isUnsupported;
-  
-  if (!ParseMimeType(aType, type, &isCustom, &isUnsupported)) {
-    aRv.ThrowTypeError("Type '"_ns + NS_ConvertUTF16toUTF8(aType) +
-                       "' is not a valid type"_ns);
-    return nullptr;
-  }
-
-  
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
   RefPtr<Promise> p = Promise::Create(global, aRv);
   if (aRv.Failed()) {
@@ -411,8 +317,8 @@ already_AddRefed<Promise> ClipboardItem::GetType(const nsAString& aType,
   for (auto& item : mItems) {
     MOZ_ASSERT(item);
 
-    
-    if (item->Type() == type) {
+    const nsAString& type = item->Type();
+    if (type == aType) {
       nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
       if (NS_WARN_IF(!global)) {
         p->MaybeReject(NS_ERROR_UNEXPECTED);

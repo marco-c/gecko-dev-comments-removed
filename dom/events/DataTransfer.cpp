@@ -839,11 +839,7 @@ void DataTransfer::GetExternalClipboardFormats(const bool& aPlainTextOnly,
           formats, *mClipboardType, wc, getter_AddRefs(clipboardDataSnapshot));
     }
   } else {
-    AutoTArray<nsCString, std::size(kNonPlainTextExternalFormats) + 5> formats;
-    if (StaticPrefs::dom_clipboard_customFormatSupport_enabled()) {
-      
-      formats.AppendElement(kWebCustomFormatMapType);
-    }
+    AutoTArray<nsCString, std::size(kNonPlainTextExternalFormats) + 4> formats;
     formats.AppendElements(
         Span<const nsLiteralCString>(kNonPlainTextExternalFormats));
     
@@ -877,14 +873,6 @@ void DataTransfer::GetExternalClipboardFormats(const bool& aPlainTextOnly,
   
   AutoTArray<nsCString, std::size(kNonPlainTextExternalFormats)> flavors;
   clipboardDataSnapshot->GetFlavorList(flavors);
-
-  
-  for (const auto& flavor : flavors) {
-    if (StringBeginsWith(flavor, nsLiteralCString(kWebCustomFormatPrefix))) {
-      aResult.AppendElement(flavor);
-    }
-  }
-  
   for (const auto& format : kNonPlainTextExternalFormats) {
     if (flavors.Contains(format)) {
       aResult.AppendElement(format);
@@ -1182,13 +1170,6 @@ already_AddRefed<nsITransferable> DataTransfer::GetTransferable(
         }
       }
 
-      
-      if (isCustomFormat &&
-          StringBeginsWith(
-              type, NS_LITERAL_STRING_FROM_CSTRING(kWebCustomFormatPrefix))) {
-        isCustomFormat = false;
-      }
-
       uint32_t lengthInBytes;
       nsCOMPtr<nsISupports> convertedData;
 
@@ -1392,23 +1373,6 @@ bool DataTransfer::ConvertFromVariant(nsIVariant* aVariant,
     }
 
     *aLength = sizeof(nsISupports*);
-    return true;
-  }
-
-  if (type == nsIDataType::VTYPE_CSTRING) {
-    nsAutoCString cStr;
-    if (NS_FAILED(aVariant->GetAsACString(cStr))) {
-      return false;
-    }
-    nsCOMPtr<nsISupportsCString> cStrSupports(
-        do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
-    if (!cStrSupports) {
-      return false;
-    }
-    cStrSupports->SetData(cStr);
-    cStrSupports.forget(aSupports);
-    *aLength = cStr.Length();
-
     return true;
   }
 
