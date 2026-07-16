@@ -589,20 +589,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   virtual bool IsVideo() const { return false; }
 
-  bool IsLazyLoading() const { return mLazyLoading; }
-
-  enum class StartLoad : bool { No, Yes };
-
-  
-  void SetLazyLoading();
-
-  
-  void StopLazyLoading(StartLoad);
-
-  void SetLoading(const nsAString& aLoading, ErrorResult& aError) {
-    SetHTMLAttr(nsGkAtoms::loading, aLoading, aError);
-  }
-
   bool HasVideo() const { return mMediaInfo.HasVideo(); }
 
   bool IsEncrypted() const override { return mIsEncrypted; }
@@ -1889,15 +1875,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mPendingTextTrackChanged = false;
 
   Visibility mVisibilityState = Visibility::Untracked;
-
-  
-  
-  
-  
-  bool mLazyLoading = false;
-  
-  
-  bool mLazyLoadingCompleted = false;
 
  public:
   
