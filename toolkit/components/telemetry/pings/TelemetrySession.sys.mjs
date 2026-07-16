@@ -1,4 +1,3 @@
-/* -*- js-indent-level: 2; indent-tabs-mode: nil -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -226,6 +225,9 @@ export var TelemetrySession = Object.freeze({
     Impl._subsessionStartActiveTicks = 0;
     Impl._sessionActiveTicks = 0;
     Impl._isUserActive = true;
+    Impl._isUserActiveNonSynthesized = true;
+    Impl._consecutiveActiveTicks = 0;
+    Impl._consecutiveActiveTicksNonSynthesized = 0;
     Impl._subsessionStartTimeMonotonic = 0;
     Impl._lastEnvironmentChangeDate = Policy.monotonicNow();
     this.testUninstall();
@@ -306,6 +308,16 @@ var Impl = {
   // The activity state for the user. If false, don't count the next
   // active tick. Otherwise, increment the active ticks as usual.
   _isUserActive: true,
+  // Like _isUserActive, but only tracks non-synthesized events. Used to record
+  // the corrected active tick (active_ticks_non_synthesized) side-by-side with
+  // the legacy active tick.
+  _isUserActiveNonSynthesized: true,
+  // Length of the current uninterrupted run of active ticks. Recorded as a
+  // sample into the consecutiveActiveTicks distribution when the run ends
+  // (i.e. the user goes inactive), then reset.
+  _consecutiveActiveTicks: 0,
+  // Like _consecutiveActiveTicks, but for the non-synthesized stream.
+  _consecutiveActiveTicksNonSynthesized: 0,
   _startupIO: {},
   // The previous build ID, if this is the first run with a new build.
   // Null if this is the first run, or the previous build ID is unknown.
@@ -842,6 +854,8 @@ var Impl = {
       // Attach the active-ticks related observers.
       this.addObserver("user-interaction-active");
       this.addObserver("user-interaction-inactive");
+      this.addObserver("user-interaction-active-non-synthesized");
+      this.addObserver("user-interaction-inactive-non-synthesized");
       this._earlyObserversRegistered = true;
     }
   },
@@ -1141,6 +1155,7 @@ var Impl = {
    */
   _onActiveTick(aUserActive) {
     const needsUpdate = aUserActive && this._isUserActive;
+    const wasActive = this._isUserActive;
     this._isUserActive = aUserActive;
 
     // Don't count the first active tick after we get out of
@@ -1148,6 +1163,38 @@ var Impl = {
     if (needsUpdate) {
       this._sessionActiveTicks++;
       Glean.browserEngagement.activeTicks.add(1);
+      this._consecutiveActiveTicks++;
+    } else if (wasActive && !aUserActive && this._consecutiveActiveTicks > 0) {
+      // The run of active ticks just ended: record its length and reset.
+      Glean.browserEngagement.consecutiveActiveTicks.active_ticks.accumulateSingleSample(
+        this._consecutiveActiveTicks
+      );
+      this._consecutiveActiveTicks = 0;
+    }
+  },
+
+  /**
+   * Like _onActiveTick, but only counts ticks driven by non-synthesized events.
+   * Recorded side-by-side with activeTicks for data continuity while the
+   * correction is evaluated.
+   */
+  _onActiveTickNonSynthesized(aUserActive) {
+    const needsUpdate = aUserActive && this._isUserActiveNonSynthesized;
+    const wasActive = this._isUserActiveNonSynthesized;
+    this._isUserActiveNonSynthesized = aUserActive;
+
+    if (needsUpdate) {
+      Glean.browserEngagement.activeTicksNonSynthesized.add(1);
+      this._consecutiveActiveTicksNonSynthesized++;
+    } else if (
+      wasActive &&
+      !aUserActive &&
+      this._consecutiveActiveTicksNonSynthesized > 0
+    ) {
+      Glean.browserEngagement.consecutiveActiveTicks.active_ticks_non_synthesized.accumulateSingleSample(
+        this._consecutiveActiveTicksNonSynthesized
+      );
+      this._consecutiveActiveTicksNonSynthesized = 0;
     }
   },
 
@@ -1218,6 +1265,12 @@ var Impl = {
         break;
       case "user-interaction-inactive":
         this._onActiveTick(false);
+        break;
+      case "user-interaction-active-non-synthesized":
+        this._onActiveTickNonSynthesized(true);
+        break;
+      case "user-interaction-inactive-non-synthesized":
+        this._onActiveTickNonSynthesized(false);
         break;
     }
     return undefined;
