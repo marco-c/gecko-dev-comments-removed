@@ -34,7 +34,7 @@ add_task(async function search_engine_serp() {
     await popupHidden;
 
     
-    assertEngagementTelemetry([{ search_mode: "search_engine" }]);
+    await assertEngagementTelemetry([{ search_mode: "search_engine" }]);
     await assertAbandonmentTelemetry([]);
   });
 });
@@ -60,7 +60,7 @@ add_task(async function search_engine_searchmode() {
     
     
     
-    assertEngagementTelemetry([{ search_mode: "search_engine" }]);
+    await assertEngagementTelemetry([{ search_mode: "search_engine" }]);
     await assertAbandonmentTelemetry([]);
   });
 });
@@ -90,7 +90,7 @@ add_task(async function bookmarks() {
     await selectRowByURL("https://example.com/bookmark");
 
     await doEnter();
-    assertEngagementTelemetry([{ search_mode: "bookmarks" }]);
+    await assertEngagementTelemetry([{ search_mode: "bookmarks" }]);
     await assertAbandonmentTelemetry([]);
   });
 });

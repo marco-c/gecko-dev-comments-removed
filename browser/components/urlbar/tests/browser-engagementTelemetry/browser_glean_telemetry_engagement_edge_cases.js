@@ -117,7 +117,7 @@ add_task(async function engagement_before_showing_results() {
     
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "input_field",
         provider: undefined,
@@ -165,12 +165,12 @@ add_task(async function engagement_after_closing_results() {
         "The inputted text remains even if closing the results"
       );
       
-      assertAbandonmentTelemetry([]);
+      await assertAbandonmentTelemetry([]);
 
       
       await doEnter();
 
-      assertEngagementTelemetry([
+      await assertEngagementTelemetry([
         {
           selected_result: "search_engine",
           provider: "UrlbarProviderHeuristicFallback",
@@ -197,7 +197,7 @@ add_task(async function enter_to_reload_current_url() {
     
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "url",
         provider: "UrlbarProviderHeuristicFallback",
