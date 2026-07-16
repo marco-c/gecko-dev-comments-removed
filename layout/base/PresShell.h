@@ -1556,6 +1556,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
   void FrameNeedsReflow(
       nsIFrame* aFrame, IntrinsicDirty aIntrinsicDirty, nsFrameState aBitToAdd,
       ReflowRootHandling aRootHandling = ReflowRootHandling::InferFromBitToAdd);
