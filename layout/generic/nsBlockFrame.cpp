@@ -8036,6 +8036,52 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
   collection.MoveTo(aLists);
 }
 
+
+
+
+
+static void WalkInlineDescendantsToDisplayAbsoluteFrames(
+    nsDisplayListBuilder* aBuilder, nsBlockFrame* aBlockFrame, nsIFrame* aFrame,
+    const nsDisplayListSet& aLists) {
+  if (!aFrame->IsLineParticipant() || aFrame->IsLeaf()) {
+    
+    
+    
+    return;
+  }
+
+  for (nsIFrame* kid : aFrame->PrincipalChildList()) {
+    WalkInlineDescendantsToDisplayAbsoluteFrames(aBuilder, aBlockFrame, kid,
+                                                 aLists);
+  }
+
+  for (nsIFrame* kid : aFrame->GetChildList(FrameChildListID::Absolute)) {
+    if (kid->GetPrevContinuation()) {
+      aBlockFrame->BuildDisplayListForChild(aBuilder, kid, aLists);
+    }
+  }
+}
+
+
+
+static void DisplayAbsoluteDescendantsInInlineFrame(
+    nsDisplayListBuilder* aBuilder, nsBlockFrame* aBlockFrame,
+    const nsDisplayListSet& aLists) {
+  if (!aBlockFrame->HasAnyStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT)) {
+    return;
+  }
+
+  for (auto& line : aBlockFrame->Lines()) {
+    if (line.IsBlock()) {
+      continue;
+    }
+    for (nsIFrame* kid : line.ChildFrames()) {
+      WalkInlineDescendantsToDisplayAbsoluteFrames(aBuilder, aBlockFrame, kid,
+                                                   aLists);
+    }
+  }
+}
+
 void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                     const nsDisplayListSet& aLists) {
   int32_t drawnLines;  
@@ -8252,6 +8298,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     if (GetPrevInFlow() || GetNextInFlow()) {
+      DisplayAbsoluteDescendantsInInlineFrame(aBuilder, this, aLists);
       DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
     }
 
