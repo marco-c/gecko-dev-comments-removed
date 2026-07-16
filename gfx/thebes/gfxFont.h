@@ -1028,6 +1028,22 @@ class gfxShapedText {
              (mValue & FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS);
     }
 
+    
+    
+    void ClearGlyph() {
+      if (IsSimpleGlyph()) {
+        
+        
+        mValue &= COMMON_FLAGS_MASK;
+      } else {
+        
+        
+        
+        mValue &= ~(GLYPH_COUNT_MASK | FLAG_NOT_MISSING |
+                    FLAG_NOT_LIGATURE_GROUP_START);
+      }
+    }
+
    private:
     uint32_t mValue;
   };
@@ -1145,6 +1161,10 @@ class gfxShapedText {
   uint32_t GetLength() const { return mLength; }
 
   bool FilterIfIgnorable(uint32_t aIndex, uint32_t aCh);
+
+  
+  
+  void ClearGlyphs();
 
  protected:
   
