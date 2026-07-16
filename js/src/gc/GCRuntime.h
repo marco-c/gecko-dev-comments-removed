@@ -247,17 +247,19 @@ class BufferAllocatorRuntime {
   
   
   
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> allocatorSweepCount;
+  
+  
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> offThreadAccessCount;
 
  public:
   BufferAllocatorRuntime();
 
   void checkGCStateNotInUse();
 
- private:
-  void incSweepCount();
-  void decSweepCount();
+  void incOffThreadCount();
+  void decOffThreadCount();
 
+ private:
   bool needLockToAccessBufferMap() const;
 
   
