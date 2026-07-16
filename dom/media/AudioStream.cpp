@@ -121,8 +121,27 @@ class FrameHistory {
     }
   }
 
+  
+  
+  
+  
+  
+  void Rebase(int64_t aBaseOffset) {
+    LOG("FrameHistory::Rebase to base offset {}", aBaseOffset);
+    mChunks.Clear();
+    mBaseOffset = aBaseOffset;
+    mBasePosition = 0;
+  }
+
  private:
   AutoTArray<Chunk, 7> mChunks;
+  
+  
+  
+  
+  
+  
+  
   int64_t mBaseOffset;
   double mBasePosition;
 };
@@ -715,6 +734,8 @@ AudioClock::AudioClock(uint32_t aInRate)
       mPreservesPitch(true),
       mFrameHistory(new FrameHistory()) {}
 
+AudioClock::~AudioClock() = default;
+
 
 void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
@@ -742,6 +763,24 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
 #else
   MutexAutoLock lock(mMutex);
   mFrameHistory->Append(aServiced, aUnderrun, mOutRate);
+#endif
+}
+
+void AudioClock::Rebase(int64_t aBaseOffset) {
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  CallbackInfo info;
+  while (mCallbackInfoQueue.Dequeue(&info, 1)) {
+  }
+  mFrameHistory->Rebase(aBaseOffset);
+#else
+  MutexAutoLock lock(mMutex);
+  mFrameHistory->Rebase(aBaseOffset);
 #endif
 }
 

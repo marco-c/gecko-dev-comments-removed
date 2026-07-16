@@ -1,8 +1,6 @@
 
 
 
-
-
 #if !defined(AudioStream_h_)
 #  define AudioStream_h_
 
@@ -50,11 +48,23 @@ struct CallbackInfo {
 class AudioClock {
  public:
   explicit AudioClock(uint32_t aInRate);
+  
+  
+  
+  ~AudioClock();
 
   
   
   void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                           bool aAudioThreadChanged);
+
+  
+  
+  
+  
+  
+  
+  void Rebase(int64_t aBaseOffset);
 
   
 
