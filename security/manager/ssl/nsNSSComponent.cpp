@@ -1742,7 +1742,13 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
     if (certVerifier) {
       certVerifier->ClearPrivateBrowsingOCSPCache();
     }
-    mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
+    
+    
+    
+    
+    SSL_ClearSessionCache();
+    
+    
     return NS_OK;
   }
 
