@@ -14,6 +14,7 @@
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/dom/HighlightBinding.h"
 #include "nsFrameSelection.h"
+#include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
@@ -190,7 +191,11 @@ struct PointHitCallback : public RectCallback {
 nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
     float aX, float aY,
     const Sequence<OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots,
-    ShadowRoot* aPointShadowRoot) const {
+    Element* aElementAtPoint) const {
+  if (!aElementAtPoint) {
+    return {};
+  }
+
   AutoTArray<RefPtr<AbstractRange>, 4> rangesAtPoint;
 
   
@@ -198,6 +203,18 @@ nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
   const nscoord yAppUnits = nsPresContext::CSSPixelsToAppUnits(aY);
 
   
+  ShadowRoot* const containingShadowAtPoint =
+      aElementAtPoint->GetContainingShadowForSelection();
+  ShadowRoot* const shadowRootCoveredByElementAtPoint = [&]() {
+    
+    
+    
+    ShadowRoot* const closestShadowRootInFlattenedTree =
+        aElementAtPoint->GetClosestShadowRootInFlattenedTreeForSelection();
+    return containingShadowAtPoint != closestShadowRootInFlattenedTree
+               ? closestShadowRootInFlattenedTree
+               : nullptr;
+  }();
   for (const auto& range : mRanges) {
     
     if (range->IsStaticRange() && !range->AsStaticRange()->IsValid()) {
@@ -216,18 +233,30 @@ nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
     
     
     
-    const nsINode* closestCommonAncestor =
+    const nsINode* const closestCommonAncestor =
         range->GetClosestCommonInclusiveAncestor();
     if (!closestCommonAncestor) {
       continue;
     }
-    if (aPointShadowRoot) {
-      if (closestCommonAncestor->GetContainingShadow() != aPointShadowRoot) {
+    const ShadowRoot* const containingShadow =
+        closestCommonAncestor->GetContainingShadow();
+    if (containingShadowAtPoint) {
+      if (containingShadow != containingShadowAtPoint) {
+        
         continue;
       }
     } else if (closestCommonAncestor->IsInShadowTree() &&
-               !aShadowRoots.Contains(
-                   closestCommonAncestor->GetContainingShadow())) {
+               !aShadowRoots.Contains(containingShadow)) {
+      
+      
+      continue;
+    }
+
+    
+    
+    
+    if (shadowRootCoveredByElementAtPoint &&
+        containingShadow == shadowRootCoveredByElementAtPoint) {
       continue;
     }
 

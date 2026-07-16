@@ -1926,6 +1926,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
+
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     return IsInShadowTree()
                ? reinterpret_cast<mozilla::dom::ShadowRoot*>(mSubtreeRoot)
@@ -1957,6 +1960,32 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   mozilla::dom::Element* GetContainingShadowHost() const;
+
+  
+
+
+
+
+  mozilla::dom::ShadowRoot* GetClosestShadowRootInFlattenedTree() const;
+
+  
+
+
+
+
+  mozilla::dom::ShadowRoot* GetClosestShadowRootInFlattenedTreeForSelection()
+      const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetClosestShadowRoot() const {
+    if constexpr (aKind == TreeKind::Flat) {
+      return GetClosestShadowRootInFlattenedTree();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetClosestShadowRootInFlattenedTreeForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   bool IsInSVGUseShadowTree() const {
     return !!GetContainingSVGUseShadowHost();

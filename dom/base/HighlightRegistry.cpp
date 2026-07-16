@@ -14,6 +14,7 @@
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsFrameSelection.h"
+#include "nsIContentInlines.h"
 
 namespace mozilla::dom {
 
@@ -283,13 +284,13 @@ void HighlightRegistry::HighlightsFromPoint(
   
   
   
-  ShadowRoot* pointShadowRoot = nullptr;
-  if (RefPtr<Element> topmostElement = mDocument->ElementFromPointHelper(
-          aX, aY,  false,
-           false, ViewportType::Layout,
-           false)) {
-    if (topmostElement->IsInShadowTree()) {
-      pointShadowRoot = topmostElement->GetContainingShadow();
+  const RefPtr<Element> topmostElement = mDocument->ElementFromPointHelper(
+      aX, aY,  false,
+       false, ViewportType::Layout,
+       false);
+  if (topmostElement) {
+    if (ShadowRoot* const pointShadowRoot =
+            topmostElement->GetContainingShadowForSelection()) {
       if (!aOptions.mShadowRoots.Contains(pointShadowRoot)) {
         return;
       }
@@ -301,8 +302,8 @@ void HighlightRegistry::HighlightsFromPoint(
   for (const auto& namedHighlight : Reversed(mHighlightsOrdered)) {
     const auto& highlight = namedHighlight.second();
     
-    nsTArray<RefPtr<AbstractRange>> rangesAtPoint = highlight->RangesAtPoint(
-        aX, aY, aOptions.mShadowRoots, pointShadowRoot);
+    nsTArray<RefPtr<AbstractRange>> rangesAtPoint =
+        highlight->RangesAtPoint(aX, aY, aOptions.mShadowRoots, topmostElement);
     if (!rangesAtPoint.IsEmpty()) {
       HighlightHitResult highlightHitResult;
       highlightHitResult.mHighlight.Construct(*highlight);

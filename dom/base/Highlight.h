@@ -23,6 +23,7 @@ class ErrorResult;
 namespace mozilla::dom {
 class AbstractRange;
 class Document;
+class Element;
 class HighlightRegistry;
 class Selection;
 class ShadowRoot;
@@ -179,11 +180,10 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-
   nsTArray<RefPtr<AbstractRange>> RangesAtPoint(
       float aX, float aY,
       const Sequence<OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots,
-      mozilla::dom::ShadowRoot* aPointShadowRoot = nullptr) const;
+      mozilla::dom::Element* aElementAtPoint) const;
 
  private:
   void Repaint();
