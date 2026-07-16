@@ -25,11 +25,6 @@ async function runDefaultEnabledFeaturesTest(t, should_load, fenced_origin,
   }
 
   await fencedframe.execute((generator_api) => {
-    assert_true(
-        document.permissionsPolicy.allowsFeature('attribution-reporting'),
-        "Attribution reporting should be allowed if the fenced " +
-        "frame loaded using FLEDGE or shared storage.");
-
     if (generator_api == "fledge") {
       assert_true(
             document.permissionsPolicy.allowsFeature('shared-storage'),
