@@ -17,8 +17,6 @@ namespace sh
 {
 
 class ImmutableString;
-class TField;
-class TSymbol;
 class TType;
 
 
@@ -74,8 +72,6 @@ class TInfoSinkBase
     TInfoSinkBase &operator<<(const ImmutableString &str);
 
     TInfoSinkBase &operator<<(const TType &type);
-    TInfoSinkBase &operator<<(const TSymbol &symbol);
-    TInfoSinkBase &operator<<(const TField &symbol);
 
     
     TInfoSinkBase &operator<<(float f)
@@ -94,7 +90,7 @@ class TInfoSinkBase
         {
             stream.unsetf(std::ios::fixed);
             stream.unsetf(std::ios::scientific);
-            stream.precision(9);
+            stream.precision(8);
             stream << f;
         }
         sink.append(stream.str());

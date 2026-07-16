@@ -10,25 +10,15 @@
 #include "compiler/preprocessor/SourceLocation.h"
 #include "compiler/translator/Common.h"
 #include "compiler/translator/InfoSink.h"
-#include "compiler/translator/ir/src/builder.h"
 
 namespace sh
 {
 
 TDiagnostics::TDiagnostics(TInfoSinkBase &infoSink)
-    : mInfoSink(infoSink), mNumErrors(0), mNumWarnings(0), mIRBuilder(nullptr)
+    : mInfoSink(infoSink), mNumErrors(0), mNumWarnings(0)
 {}
 
 TDiagnostics::~TDiagnostics() {}
-
-void TDiagnostics::onError()
-{
-    ++mNumErrors;
-    if (mIRBuilder != nullptr)
-    {
-        mIRBuilder->onError();
-    }
-}
 
 void TDiagnostics::writeInfo(Severity severity,
                              const angle::pp::SourceLocation &loc,
@@ -38,7 +28,7 @@ void TDiagnostics::writeInfo(Severity severity,
     switch (severity)
     {
         case SH_ERROR:
-            onError();
+            ++mNumErrors;
             break;
         case SH_WARNING:
             ++mNumWarnings;
@@ -50,17 +40,15 @@ void TDiagnostics::writeInfo(Severity severity,
 
     
     mInfoSink.prefix(severity);
-    if (token != nullptr)
-    {
-        mInfoSink.location(loc.file, loc.line);
-        mInfoSink << "'" << token << "' : ";
-    }
-    mInfoSink << reason << "\n";
+    mInfoSink.location(loc.file, loc.line);
+    mInfoSink << "'" << token << "' : " << reason << "\n";
 }
 
 void TDiagnostics::globalError(const char *message)
 {
-    writeInfo(SH_ERROR, {}, message, nullptr);
+    ++mNumErrors;
+    mInfoSink.prefix(SH_ERROR);
+    mInfoSink << message << "\n";
 }
 
 void TDiagnostics::error(const angle::pp::SourceLocation &loc,

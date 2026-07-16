@@ -24,13 +24,6 @@ struct ValidationContext;
 using AttributeValidationFunc =
     std::function<bool(const ValidationContext *, const Display *, EGLAttrib)>;
 
-enum AttributeMapType
-{
-    Invalid,
-    Attrib,
-    Int,
-};
-
 class AttributeMap final
 {
   public:
@@ -83,8 +76,6 @@ class AttributeMap final
     static AttributeMap CreateFromIntArray(const EGLint *attributes);
     static AttributeMap CreateFromAttribArray(const EGLAttrib *attributes);
 
-    AttributeMapType getType() const { return mMapType; }
-
   private:
     bool isValidated() const;
 
@@ -103,7 +94,6 @@ class AttributeMap final
     mutable const EGLint *mIntPointer       = nullptr;
     mutable const EGLAttrib *mAttribPointer = nullptr;
     mutable Map mValidatedAttributes;
-    mutable AttributeMapType mMapType = AttributeMapType::Invalid;
 };
 }  
 

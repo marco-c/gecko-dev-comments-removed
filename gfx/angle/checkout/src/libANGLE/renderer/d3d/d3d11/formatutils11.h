@@ -27,17 +27,11 @@ struct Renderer11DeviceCaps;
 namespace d3d11
 {
 
-struct Format;
-
 
 
 
 
 bool SupportsMipGen(DXGI_FORMAT dxgiFormat, D3D_FEATURE_LEVEL featureLevel);
-
-bool IsSupportedMultiplanarFormat(DXGI_FORMAT dxgiFormat);
-
-const Format &GetYUVPlaneFormat(DXGI_FORMAT dxgiFormat, int plane);
 
 struct DXGIFormatSize
 {

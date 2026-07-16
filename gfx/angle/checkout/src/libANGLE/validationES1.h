@@ -15,8 +15,6 @@
 namespace gl
 {
 
-void RecordVersionErrorES10(const Context *context, angle::EntryPoint entryPoint);
-
 }  
 
 #endif  

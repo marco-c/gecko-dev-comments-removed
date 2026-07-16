@@ -6,10 +6,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/d3d/d3d9/Blit9.h"
 
 #include "libANGLE/Context.h"

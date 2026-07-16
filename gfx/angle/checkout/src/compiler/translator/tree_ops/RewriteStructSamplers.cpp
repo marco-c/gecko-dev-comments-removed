@@ -8,11 +8,6 @@
 
 #include "compiler/translator/tree_ops/RewriteStructSamplers.h"
 
-#include "GLSLANG/ShaderVars.h"
-#include "common/hash_containers.h"
-#include "common/span.h"
-#include "compiler/translator/Compiler.h"
-#include "compiler/translator/ImmutableString.h"
 #include "compiler/translator/ImmutableStringBuilder.h"
 #include "compiler/translator/SymbolTable.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
@@ -28,11 +23,33 @@ struct StructureData
 {
     
     
-    
-    
-    
-    
     const TStructure *modified;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TVector<int> fieldMap;
 };
 
 using StructureMap        = angle::HashMap<const TStructure *, StructureData>;
@@ -53,22 +70,13 @@ TIntermTyped *RewriteExpressionVisitBinaryHelper(TCompiler *compiler,
                                                  const ExtractedSamplerMap &extractedSamplers)
 {
     
-    switch (node->getOp())
-    {
-        case EOpIndexDirectInterfaceBlock:
-        case EOpIndexIndirect:
-        case EOpIndexDirect:
-        case EOpIndexDirectStruct:
-            break;
-        default:
-            return nullptr;
-    }
-
-    const TStructure *structure = node->getLeft()->getType().getStruct();
-    if (structure == nullptr)
+    if (node->getOp() != EOpIndexDirectStruct)
     {
         return nullptr;
     }
+
+    const TStructure *structure = node->getLeft()->getType().getStruct();
+    ASSERT(structure);
 
     
     
@@ -179,6 +187,32 @@ void RewriteIndexExpression(TCompiler *compiler,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
     TCompiler *compiler,
     TIntermBinary *node,
@@ -186,6 +220,8 @@ TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
     const StructureUniformMap &structureUniformMap,
     const ExtractedSamplerMap &extractedSamplers)
 {
+    ASSERT(node->getOp() == EOpIndexDirectStruct);
+
     const bool isSampler = node->getType().isSampler();
 
     TIntermSymbol *baseUniform = nullptr;
@@ -245,8 +281,22 @@ TIntermTyped *RewriteModifiedStructFieldSelectionExpression(
             case EOpIndexDirectStruct:
                 if (!isSampler)
                 {
-                    rewritten =
-                        new TIntermBinary(EOpIndexDirectStruct, rewritten, indexNode->getRight());
+                    
+                    const TStructure *structure = indexNode->getLeft()->getType().getStruct();
+                    ASSERT(structureMap.find(structure) != structureMap.end());
+
+                    TIntermConstantUnion *asConstantUnion =
+                        indexNode->getRight()->getAsConstantUnion();
+                    ASSERT(asConstantUnion);
+
+                    const int fieldIndex = asConstantUnion->getIConst(0);
+                    ASSERT(fieldIndex <
+                           static_cast<int>(structureMap.at(structure).fieldMap.size()));
+
+                    const int mappedFieldIndex = structureMap.at(structure).fieldMap[fieldIndex];
+
+                    rewritten = new TIntermBinary(EOpIndexDirectStruct, rewritten,
+                                                  CreateIndexNode(mappedFieldIndex));
                 }
                 break;
 
@@ -361,32 +411,10 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     
     void visitSymbol(TIntermSymbol *node) override
     {
-        auto replacement = mStructureUniformMap.find(&node->variable());
-        if (replacement != mStructureUniformMap.end())
-        {
-            
-            queueReplacement(new TIntermSymbol(replacement->second), OriginalNode::IS_DROPPED);
-        }
+        ASSERT(mStructureUniformMap.find(&node->variable()) == mStructureUniformMap.end());
     }
 
   private:
-    bool isActiveUniform(const ImmutableString &rootStructureName)
-    {
-        if (!mActiveUniforms)
-        {
-            mActiveUniforms = new TSet<ImmutableString>();
-            for (const ShaderVariable &uniform : mCompiler->getUniforms())
-            {
-                if (uniform.active)
-                {
-                    mActiveUniforms->insert(uniform.name);
-                }
-            }
-        }
-
-        return mActiveUniforms->count(rootStructureName) > 0;
-    }
-
     
     void stripStructSpecifierSamplers(const TStructure *structure, TIntermSequence *newSequence)
     {
@@ -398,6 +426,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
         StructureData *modifiedData = &mStructureMap[structure];
 
         modifiedData->modified = nullptr;
+        modifiedData->fieldMap.resize(structure->fields().size(), std::numeric_limits<int>::max());
 
         for (size_t fieldIndex = 0; fieldIndex < structure->fields().size(); ++fieldIndex)
         {
@@ -431,6 +460,10 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
                     newType = new TType(fieldType);
                 }
 
+                
+                
+                modifiedData->fieldMap[fieldIndex] = static_cast<int>(newFieldList->size());
+
                 TField *newField =
                     new TField(newType, field->name(), field->line(), field->symbolType());
                 newFieldList->push_back(newField);
@@ -445,10 +478,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
         
         modifiedData->modified =
-            new TStructure(mSymbolTable,
-                           structure->symbolType() == SymbolType::Empty ? kEmptyImmutableString
-                                                                        : structure->name(),
-                           newFieldList, structure->symbolType());
+            new TStructure(mSymbolTable, structure->name(), newFieldList, structure->symbolType());
         TType *newStructType = new TType(modifiedData->modified, true);
         TVariable *newStructVar =
             new TVariable(mSymbolTable, kEmptyImmutableString, newStructType, SymbolType::Empty);
@@ -489,8 +519,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
         for (const TField *field : structure->fields())
         {
-            extractFieldSamplers(isActiveUniform(variable.name()), variable.name().data(), field,
-                                 newSequence);
+            extractFieldSamplers(variable.name().data(), field, newSequence);
         }
 
         
@@ -524,8 +553,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     }
 
     
-    void extractFieldSamplers(bool inActiveUniform,
-                              const std::string &prefix,
+    void extractFieldSamplers(const std::string &prefix,
                               const TField *field,
                               TIntermSequence *newSequence)
     {
@@ -536,10 +564,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
             if (fieldType.isSampler())
             {
-                if (inActiveUniform)
-                {
-                    extractSampler(newPrefix, fieldType, newSequence);
-                }
+                extractSampler(newPrefix, fieldType, newSequence);
             }
             else
             {
@@ -547,7 +572,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
                 const TStructure *structure = fieldType.getStruct();
                 for (const TField *nestedField : structure->fields())
                 {
-                    extractFieldSamplers(inActiveUniform, newPrefix, nestedField, newSequence);
+                    extractFieldSamplers(newPrefix, nestedField, newSequence);
                 }
                 exitArray(fieldType);
             }
@@ -603,7 +628,7 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
 
     void enterArray(const TType &arrayType)
     {
-        const angle::Span<const unsigned int> &arraySizes = arrayType.getArraySizes();
+        const TSpan<const unsigned int> &arraySizes = arrayType.getArraySizes();
         for (auto it = arraySizes.rbegin(); it != arraySizes.rend(); ++it)
         {
             unsigned int arraySize = *it;
@@ -632,9 +657,6 @@ class RewriteStructSamplersTraverser final : public TIntermTraverser
     
     
     TVector<unsigned int> mArraySizeStack;
-
-    
-    TSet<ImmutableString> *mActiveUniforms = nullptr;
 };
 }  
 

@@ -9,10 +9,6 @@
 #ifndef COMPILER_TRANSLATOR_SYMBOL_H_
 #define COMPILER_TRANSLATOR_SYMBOL_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "common/angleutils.h"
 #include "compiler/translator/ExtensionBehavior.h"
 #include "compiler/translator/ImmutableString.h"
@@ -50,10 +46,6 @@ class TSymbol : angle::NonCopyable
     ImmutableString name() const;
     
     ImmutableString getMangledName() const;
-
-    
-    
-    bool isNameless() const { return mSymbolType == SymbolType::AngleInternal && mName.empty(); }
 
     bool isFunction() const { return mSymbolClass == SymbolClass::Function; }
     bool isVariable() const { return mSymbolClass == SymbolClass::Variable; }
@@ -240,12 +232,6 @@ class TInterfaceBlock : public TSymbol, public TFieldListCollection
 
     TLayoutBlockStorage blockStorage() const { return mBlockStorage; }
     int blockBinding() const { return mBinding; }
-    bool isDefaultUniformBlock() const { return mIsDefaultUniformBlock; }
-    void setDefaultUniformBlock() { mIsDefaultUniformBlock = true; }
-
-    
-    void setBlockStorage(TLayoutBlockStorage blockStorage) { mBlockStorage = blockStorage; }
-    void setBlockBinding(int binding) { mBinding = binding; }
 
   private:
     friend class TSymbolTable;
@@ -277,7 +263,6 @@ class TInterfaceBlock : public TSymbol, public TFieldListCollection
 
     TLayoutBlockStorage mBlockStorage;
     int mBinding;
-    bool mIsDefaultUniformBlock;
 
     
 };
@@ -291,14 +276,15 @@ struct TParameter
     const TVariable *createVariable(TSymbolTable *symbolTable)
     {
         const ImmutableString constName(name);
-        const TType *constType = new TType(type);
+        const TType *constType = type;
         name                   = nullptr;
+        type                   = nullptr;
         return new TVariable(symbolTable, constName, constType,
                              constName.empty() ? SymbolType::Empty : SymbolType::UserDefined);
     }
 
     const char *name;  
-    TPublicType type;
+    TType *type;
 };
 
 

@@ -9,14 +9,12 @@
 #ifndef LIBANGLE_RENDERER_PROGRAMIMPL_H_
 #define LIBANGLE_RENDERER_PROGRAMIMPL_H_
 
-#include "common/BinaryStream.h"
-#include "common/WorkerThread.h"
 #include "common/angleutils.h"
+#include "libANGLE/BinaryStream.h"
 #include "libANGLE/Constants.h"
 #include "libANGLE/Program.h"
 #include "libANGLE/Shader.h"
 
-#include <functional>
 #include <map>
 
 namespace gl
@@ -34,48 +32,41 @@ namespace rx
 {
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LinkSubTask : public angle::Closure
+class LinkEvent : angle::NonCopyable
 {
   public:
-    ~LinkSubTask() override                                                           = default;
-    virtual angle::Result getResult(const gl::Context *context, gl::InfoLog &infoLog) = 0;
-};
-class LinkTask
-{
-  public:
-    virtual ~LinkTask() = default;
-    
-    
-    virtual void link(const gl::ProgramLinkedResources &resources,
-                      const gl::ProgramMergedVaryings &mergedVaryings,
-                      std::vector<std::shared_ptr<LinkSubTask>> *linkSubTasksOut,
-                      std::vector<std::shared_ptr<LinkSubTask>> *postLinkSubTasksOut);
-    
-    
-    virtual void load(std::vector<std::shared_ptr<LinkSubTask>> *linkSubTasksOut,
-                      std::vector<std::shared_ptr<LinkSubTask>> *postLinkSubTasksOut);
-    virtual angle::Result getResult(const gl::Context *context, gl::InfoLog &infoLog) = 0;
+    virtual ~LinkEvent() {}
 
     
-    virtual bool isLinkingInternally();
+    
+    
+    
+    
+    virtual angle::Result wait(const gl::Context *context) = 0;
+    
+    virtual bool isLinking() = 0;
 };
+
+
+class LinkEventDone final : public LinkEvent
+{
+  public:
+    LinkEventDone(angle::Result result) : mResult(result) {}
+    angle::Result wait(const gl::Context *context) override;
+    bool isLinking() override;
+
+  private:
+    angle::Result mResult;
+};
+
+inline angle::Result LinkEventDone::wait(const gl::Context *context)
+{
+    return mResult;
+}
+inline bool LinkEventDone::isLinking()
+{
+    return false;
+}
 
 class ProgramImpl : angle::NonCopyable
 {
@@ -84,23 +75,76 @@ class ProgramImpl : angle::NonCopyable
     virtual ~ProgramImpl() {}
     virtual void destroy(const gl::Context *context) {}
 
-    virtual angle::Result load(const gl::Context *context,
-                               gl::BinaryInputStream *stream,
-                               std::shared_ptr<LinkTask> *loadTaskOut,
-                               egl::CacheGetResult *resultOut)                    = 0;
+    virtual std::unique_ptr<LinkEvent> load(const gl::Context *context,
+                                            gl::BinaryInputStream *stream,
+                                            gl::InfoLog &infoLog)                 = 0;
     virtual void save(const gl::Context *context, gl::BinaryOutputStream *stream) = 0;
     virtual void setBinaryRetrievableHint(bool retrievable)                       = 0;
     virtual void setSeparable(bool separable)                                     = 0;
 
-    virtual void prepareForLink(const gl::ShaderMap<ShaderImpl *> &shaders) {}
-    virtual void prepareForPassthroughLink(
-        gl::ShaderMap<gl::SharedCompiledShaderState> *outAttachedShaders)
-    {
-        UNREACHABLE();
-    }
-    virtual angle::Result link(const gl::Context *context,
-                               std::shared_ptr<LinkTask> *linkTaskOut) = 0;
-    virtual GLboolean validate(const gl::Caps &caps)                   = 0;
+    virtual std::unique_ptr<LinkEvent> link(const gl::Context *context,
+                                            const gl::ProgramLinkedResources &resources,
+                                            gl::InfoLog &infoLog,
+                                            const gl::ProgramMergedVaryings &mergedVaryings) = 0;
+    virtual GLboolean validate(const gl::Caps &caps, gl::InfoLog *infoLog)                   = 0;
+
+    virtual void setUniform1fv(GLint location, GLsizei count, const GLfloat *v) = 0;
+    virtual void setUniform2fv(GLint location, GLsizei count, const GLfloat *v) = 0;
+    virtual void setUniform3fv(GLint location, GLsizei count, const GLfloat *v) = 0;
+    virtual void setUniform4fv(GLint location, GLsizei count, const GLfloat *v) = 0;
+    virtual void setUniform1iv(GLint location, GLsizei count, const GLint *v)   = 0;
+    virtual void setUniform2iv(GLint location, GLsizei count, const GLint *v)   = 0;
+    virtual void setUniform3iv(GLint location, GLsizei count, const GLint *v)   = 0;
+    virtual void setUniform4iv(GLint location, GLsizei count, const GLint *v)   = 0;
+    virtual void setUniform1uiv(GLint location, GLsizei count, const GLuint *v) = 0;
+    virtual void setUniform2uiv(GLint location, GLsizei count, const GLuint *v) = 0;
+    virtual void setUniform3uiv(GLint location, GLsizei count, const GLuint *v) = 0;
+    virtual void setUniform4uiv(GLint location, GLsizei count, const GLuint *v) = 0;
+    virtual void setUniformMatrix2fv(GLint location,
+                                     GLsizei count,
+                                     GLboolean transpose,
+                                     const GLfloat *value)                      = 0;
+    virtual void setUniformMatrix3fv(GLint location,
+                                     GLsizei count,
+                                     GLboolean transpose,
+                                     const GLfloat *value)                      = 0;
+    virtual void setUniformMatrix4fv(GLint location,
+                                     GLsizei count,
+                                     GLboolean transpose,
+                                     const GLfloat *value)                      = 0;
+    virtual void setUniformMatrix2x3fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+    virtual void setUniformMatrix3x2fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+    virtual void setUniformMatrix2x4fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+    virtual void setUniformMatrix4x2fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+    virtual void setUniformMatrix3x4fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+    virtual void setUniformMatrix4x3fv(GLint location,
+                                       GLsizei count,
+                                       GLboolean transpose,
+                                       const GLfloat *value)                    = 0;
+
+    
+    virtual void getUniformfv(const gl::Context *context,
+                              GLint location,
+                              GLfloat *params) const                                           = 0;
+    virtual void getUniformiv(const gl::Context *context, GLint location, GLint *params) const = 0;
+    virtual void getUniformuiv(const gl::Context *context,
+                               GLint location,
+                               GLuint *params) const                                           = 0;
 
     
     
@@ -112,14 +156,20 @@ class ProgramImpl : angle::NonCopyable
 
     const gl::ProgramState &getState() const { return mState; }
 
-    virtual angle::Result onLabelUpdate(const gl::Context *context);
+    virtual angle::Result syncState(const gl::Context *context,
+                                    const gl::Program::DirtyBits &dirtyBits);
 
-    
-    virtual void onUniformBlockBinding(gl::UniformBlockIndex uniformBlockIndex) {}
+    virtual angle::Result onLabelUpdate(const gl::Context *context);
 
   protected:
     const gl::ProgramState &mState;
 };
+
+inline angle::Result ProgramImpl::syncState(const gl::Context *context,
+                                            const gl::Program::DirtyBits &dirtyBits)
+{
+    return angle::Result::Continue;
+}
 
 }  
 

@@ -11,20 +11,40 @@
 #define LIBANGLE_RENDERER_VULKAN_VK_HEADERS_H_
 
 #if ANGLE_SHARED_LIBVULKAN
-#    include <volk.h>
+#    include "third_party/volk/volk.h"
 #else
 #    include <vulkan/vulkan.h>
 #endif
 
 
+#if !defined(VK_GOOGLEX_multisampled_render_to_single_sampled)
+#    define VK_GOOGLEX_multisampled_render_to_single_sampled 1
+#    define VK_GOOGLEX_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_SPEC_VERSION 1
+#    define VK_GOOGLEX_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME \
+        "VK_GOOGLEX_multisampled_render_to_single_sampled"
 
+#    define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_GOOGLEX \
+        ((VkStructureType)(1000376000))
+#    define VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_GOOGLEX \
+        ((VkStructureType)(1000376001))
 
+typedef struct VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesGOOGLEX
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkBool32 multisampledRenderToSingleSampled;
+} VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesGOOGLEX;
 
-#undef Always
-#undef Bool
-#undef None
-#undef Status
-#undef Success
+typedef struct VkMultisampledRenderToSingleSampledInfoGOOGLEX
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkBool32 multisampledRenderToSingleSampledEnable;
+    VkSampleCountFlagBits rasterizationSamples;
+    VkResolveModeFlagBits depthResolveMode;
+    VkResolveModeFlagBits stencilResolveMode;
+} VkMultisampledRenderToSingleSampledInfoGOOGLEX;
+#endif 
 
 #if !defined(ANGLE_SHARED_LIBVULKAN)
 
@@ -54,9 +74,6 @@ extern PFN_vkImportSemaphoreFdKHR vkImportSemaphoreFdKHR;
 extern PFN_vkGetMemoryHostPointerPropertiesEXT vkGetMemoryHostPointerPropertiesEXT;
 
 
-extern PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT;
-
-
 extern PFN_vkResetQueryPoolEXT vkResetQueryPoolEXT;
 
 
@@ -74,9 +91,6 @@ extern PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2KHR;
 
 extern PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR;
 extern PFN_vkBindImageMemory2KHR vkBindImageMemory2KHR;
-
-
-extern PFN_vkCmdBindIndexBuffer2KHR vkCmdBindIndexBuffer2KHR;
 
 
 extern PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR
@@ -107,6 +121,10 @@ extern PFN_vkGetAndroidHardwareBufferPropertiesANDROID vkGetAndroidHardwareBuffe
 extern PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID;
 #    endif
 
+#    if defined(ANGLE_PLATFORM_GGP)
+extern PFN_vkCreateStreamDescriptorSurfaceGGP vkCreateStreamDescriptorSurfaceGGP;
+#    endif  
+
 
 extern PFN_vkGetSwapchainStatusKHR vkGetSwapchainStatusKHR;
 
@@ -132,46 +150,11 @@ extern PFN_vkCmdSetPrimitiveRestartEnableEXT vkCmdSetPrimitiveRestartEnableEXT;
 extern PFN_vkCmdSetRasterizerDiscardEnableEXT vkCmdSetRasterizerDiscardEnableEXT;
 
 
-extern PFN_vkCmdSetVertexInputEXT vkCmdSetVertexInputEXT;
-
-
 extern PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR vkGetPhysicalDeviceFragmentShadingRatesKHR;
 extern PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR;
 
 
 extern PFN_vkGetPastPresentationTimingGOOGLE vkGetPastPresentationTimingGOOGLE;
-
-
-extern PFN_vkCopyImageToImageEXT vkCopyImageToImageEXT;
-extern PFN_vkCopyImageToMemoryEXT vkCopyImageToMemoryEXT;
-extern PFN_vkCopyMemoryToImageEXT vkCopyMemoryToImageEXT;
-extern PFN_vkTransitionImageLayoutEXT vkTransitionImageLayoutEXT;
-extern PFN_vkGetImageSubresourceLayout2EXT vkGetImageSubresourceLayout2EXT;
-
-
-extern PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
-extern PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
-
-
-extern PFN_vkCmdSetRenderingAttachmentLocationsKHR vkCmdSetRenderingAttachmentLocationsKHR;
-extern PFN_vkCmdSetRenderingInputAttachmentIndicesKHR vkCmdSetRenderingInputAttachmentIndicesKHR;
-
-
-extern PFN_vkCmdPipelineBarrier2KHR vkCmdPipelineBarrier2KHR;
-extern PFN_vkCmdWriteTimestamp2KHR vkCmdWriteTimestamp2KHR;
-
-
-extern PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR;
-extern PFN_vkGetMemoryFdPropertiesKHR vkGetMemoryFdPropertiesKHR;
-
-
-extern PFN_vkGetMemoryHostPointerPropertiesEXT vkGetMemoryHostPointerPropertiesEXT;
-
-
-extern PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR;
-
-
-extern PFN_vkCmdBindTileMemoryQCOM vkCmdBindTileMemoryQCOM;
 
 }  
 

@@ -16,14 +16,6 @@
 namespace sh
 {
 
-bool operator==(const BlockMemberInfo &lhs, const BlockMemberInfo &rhs)
-{
-    return lhs.type == rhs.type && lhs.offset == rhs.offset && lhs.arrayStride == rhs.arrayStride &&
-           lhs.matrixStride == rhs.matrixStride && lhs.arraySize == rhs.arraySize &&
-           lhs.isRowMajorMatrix == rhs.isRowMajorMatrix &&
-           lhs.topLevelArrayStride == rhs.topLevelArrayStride;
-}
-
 namespace
 {
 class BlockLayoutMapVisitor : public BlockEncoderVisitor
@@ -183,29 +175,26 @@ class BaseAlignmentVisitor : public ShaderVariableVisitor
   private:
     size_t mCurrentAlignment = 0;
 };
-
 }  
 
 
 BlockLayoutEncoder::BlockLayoutEncoder() : mCurrentOffset(0) {}
 
 BlockMemberInfo BlockLayoutEncoder::encodeType(GLenum type,
-                                               const size_t bytesPerComponent,
                                                const std::vector<unsigned int> &arraySizes,
                                                bool isRowMajorMatrix)
 {
     int arrayStride;
     int matrixStride;
 
-    getBlockLayoutInfo(type, bytesPerComponent, arraySizes, isRowMajorMatrix, &arrayStride,
-                       &matrixStride);
+    getBlockLayoutInfo(type, arraySizes, isRowMajorMatrix, &arrayStride, &matrixStride);
 
-    const BlockMemberInfo memberInfo(type, static_cast<int>(mCurrentOffset * kBytesPerComponent),
+    const BlockMemberInfo memberInfo(static_cast<int>(mCurrentOffset * kBytesPerComponent),
                                      static_cast<int>(arrayStride * kBytesPerComponent),
                                      static_cast<int>(matrixStride * kBytesPerComponent),
-                                     gl::ArraySizeProduct(arraySizes), isRowMajorMatrix);
+                                     isRowMajorMatrix);
 
-    advanceOffset(type, bytesPerComponent, arraySizes, isRowMajorMatrix, arrayStride, matrixStride);
+    advanceOffset(type, arraySizes, isRowMajorMatrix, arrayStride, matrixStride);
 
     return memberInfo;
 }
@@ -219,10 +208,9 @@ BlockMemberInfo BlockLayoutEncoder::encodeArrayOfPreEncodedStructs(
 
     
     const size_t arrayStride = size * innerArraySizeProduct;
-    GLenum type              = GL_INVALID_ENUM;
-    const BlockMemberInfo memberInfo(type, static_cast<int>(mCurrentOffset * kBytesPerComponent),
-                                     static_cast<int>(arrayStride), -1,
-                                     gl::ArraySizeProduct(arraySizes), false);
+
+    const BlockMemberInfo memberInfo(static_cast<int>(mCurrentOffset * kBytesPerComponent),
+                                     static_cast<int>(arrayStride), -1, false);
 
     angle::base::CheckedNumeric<size_t> checkedOffset(arrayStride);
     checkedOffset *= outermostArraySize;
@@ -267,10 +255,6 @@ size_t BlockLayoutEncoder::GetBlockRegisterElement(const BlockMemberInfo &info)
 
 void BlockLayoutEncoder::align(size_t baseAlignment)
 {
-    if (baseAlignment == 0)
-    {
-        return;
-    }
     angle::base::CheckedNumeric<size_t> checkedOffset(mCurrentOffset);
     checkedOffset += baseAlignment;
     checkedOffset -= 1;
@@ -278,12 +262,10 @@ void BlockLayoutEncoder::align(size_t baseAlignment)
     checkedAlignmentOffset %= baseAlignment;
     checkedOffset -= checkedAlignmentOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
     mCurrentOffset = checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-    assert(mCurrentOffset >= 0);
 }
 
 
 void StubBlockEncoder::getBlockLayoutInfo(GLenum type,
-                                          const size_t bytesPerComponent,
                                           const std::vector<unsigned int> &arraySizes,
                                           bool isRowMajorMatrix,
                                           int *arrayStrideOut,
@@ -291,207 +273,6 @@ void StubBlockEncoder::getBlockLayoutInfo(GLenum type,
 {
     *arrayStrideOut  = 0;
     *matrixStrideOut = 0;
-}
-
-
-PackedSPIRVBlockEncoder::PackedSPIRVBlockEncoder() {}
-
-BlockMemberInfo PackedSPIRVBlockEncoder::encodeType(GLenum type,
-                                                    const size_t bytesPerComponent,
-                                                    const std::vector<unsigned int> &arraySizes,
-                                                    bool isRowMajorMatrix)
-{
-    
-    
-    int arrayStride;
-    int matrixStride;
-
-    getBlockLayoutInfo(type, bytesPerComponent, arraySizes, isRowMajorMatrix, &arrayStride,
-                       &matrixStride);
-
-    const BlockMemberInfo memberInfo(type, static_cast<int>(mCurrentOffset), arrayStride,
-                                     matrixStride, gl::ArraySizeProduct(arraySizes),
-                                     isRowMajorMatrix);
-
-    advanceOffset(type, bytesPerComponent, arraySizes, isRowMajorMatrix, arrayStride, matrixStride);
-
-    return memberInfo;
-}
-
-BlockMemberInfo PackedSPIRVBlockEncoder::encodeArrayOfPreEncodedStructs(
-    size_t size,
-    const std::vector<unsigned int> &arraySizes)
-{
-    
-    
-    const unsigned int innerArraySizeProduct = gl::InnerArraySizeProduct(arraySizes);
-    const unsigned int outermostArraySize    = gl::OutermostArraySize(arraySizes);
-
-    
-    const size_t arrayStride = size * innerArraySizeProduct;
-    GLenum type              = GL_INVALID_ENUM;
-    const BlockMemberInfo memberInfo(type, static_cast<int>(mCurrentOffset),
-                                     static_cast<int>(arrayStride), -1,
-                                     gl::ArraySizeProduct(arraySizes), false);
-
-    angle::base::CheckedNumeric<size_t> checkedOffset(arrayStride);
-    checkedOffset *= outermostArraySize;
-    checkedOffset += mCurrentOffset;
-    mCurrentOffset = checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-
-    return memberInfo;
-}
-
-size_t PackedSPIRVBlockEncoder::getCurrentOffset() const
-{
-    
-    
-    angle::base::CheckedNumeric<size_t> checkedOffset(mCurrentOffset);
-    return checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-}
-
-void PackedSPIRVBlockEncoder::enterAggregateType(const ShaderVariable &structVar)
-{
-    
-    
-    align(getBaseAlignment(structVar));
-}
-
-void PackedSPIRVBlockEncoder::exitAggregateType(const ShaderVariable &structVar)
-{
-    
-    
-    align(getBaseAlignment(structVar));
-}
-
-void PackedSPIRVBlockEncoder::getBlockLayoutInfo(GLenum type,
-                                                 const size_t bytesPerComponent,
-                                                 const std::vector<unsigned int> &arraySizes,
-                                                 bool isRowMajorMatrix,
-                                                 int *arrayStrideOut,
-                                                 int *matrixStrideOut)
-{
-    
-    
-    ASSERT(bytesPerComponent == kBytesPer16BitComponent || bytesPerComponent == kBytesPerComponent);
-    size_t baseAlignment = 0;
-    int matrixStride     = 0;
-    int arrayStride      = 0;
-
-    if (gl::IsMatrixType(type))
-    {
-        baseAlignment = getTypeBaseAlignment(type, isRowMajorMatrix);
-        matrixStride  = static_cast<int>(getTypeBaseAlignment(type, isRowMajorMatrix));
-
-        if (!arraySizes.empty())
-        {
-            const int numRegisters = gl::MatrixRegisterCount(type, isRowMajorMatrix);
-            arrayStride =
-                static_cast<int>(getTypeBaseAlignment(type, isRowMajorMatrix) * numRegisters);
-        }
-    }
-    else if (!arraySizes.empty())
-    {
-        baseAlignment = static_cast<int>(getTypeBaseAlignment(type, false));
-        arrayStride   = static_cast<int>(getTypeBaseAlignment(type, false));
-    }
-    else
-    {
-        if (bytesPerComponent == kBytesPer16BitComponent)
-        {
-            ASSERT(gl::IsFloatScalarAndVectorType(type));
-            baseAlignment = bytesPerComponent;
-        }
-        else
-        {
-            ASSERT(bytesPerComponent == kBytesPerComponent);
-            const size_t numComponents = static_cast<size_t>(gl::VariableComponentCount(type));
-            baseAlignment              = ComponentAlignment(numComponents) * bytesPerComponent;
-        }
-    }
-
-    align(baseAlignment);
-
-    if (bytesPerComponent == kBytesPer16BitComponent && gl::IsFloatVectorType(type))
-    {
-        if (isVectorStraddle(type))
-        {
-            adjustAlignmentForStraddleVector();
-        }
-    }
-
-    *matrixStrideOut = matrixStride;
-    *arrayStrideOut  = arrayStride;
-}
-
-void PackedSPIRVBlockEncoder::advanceOffset(GLenum type,
-                                            const size_t bytesPerComponent,
-                                            const std::vector<unsigned int> &arraySizes,
-                                            bool isRowMajorMatrix,
-                                            int arrayStride,
-                                            int matrixStride)
-{
-    
-    
-    if (!arraySizes.empty())
-    {
-        angle::base::CheckedNumeric<size_t> checkedOffset(arrayStride);
-        checkedOffset *= gl::ArraySizeProduct(arraySizes);
-        checkedOffset += mCurrentOffset;
-        mCurrentOffset = checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-    }
-    else if (gl::IsMatrixType(type))
-    {
-        angle::base::CheckedNumeric<size_t> checkedOffset(matrixStride);
-        checkedOffset *= gl::MatrixRegisterCount(type, isRowMajorMatrix);
-        checkedOffset += mCurrentOffset;
-        mCurrentOffset = checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-    }
-    else
-    {
-        angle::base::CheckedNumeric<size_t> checkedOffset(mCurrentOffset);
-        checkedOffset += (gl::VariableComponentCount(type) * bytesPerComponent);
-        mCurrentOffset = checkedOffset.ValueOrDefault(std::numeric_limits<size_t>::max());
-    }
-}
-
-size_t PackedSPIRVBlockEncoder::getBaseAlignment(const ShaderVariable &variable) const
-{
-    
-    
-    return kComponentsPerRegister * kBytesPerComponent;
-}
-
-size_t PackedSPIRVBlockEncoder::getTypeBaseAlignment(GLenum type, bool isRowMajorMatrix) const
-{
-    
-    
-    return kComponentsPerRegister * kBytesPerComponent;
-}
-
-
-
-bool PackedSPIRVBlockEncoder::isVectorStraddle(GLenum type)
-{
-    angle::base::CheckedNumeric<size_t> checked16ByteOffset(mCurrentOffset);
-    checked16ByteOffset /= 16;
-    const size_t vectorSize =
-        kBytesPer16BitComponent * static_cast<size_t>(gl::VariableComponentCount(type));
-    angle::base::CheckedNumeric<size_t> checkedOffsetWithVector(mCurrentOffset);
-    checkedOffsetWithVector += vectorSize;
-    checkedOffsetWithVector /= 16;
-    if (checked16ByteOffset.ValueOrDefault(std::numeric_limits<size_t>::max()) !=
-        checkedOffsetWithVector.ValueOrDefault(std::numeric_limits<size_t>::max()))
-    {
-        return true;
-    }
-    return false;
-}
-
-void PackedSPIRVBlockEncoder::adjustAlignmentForStraddleVector()
-{
-    
-    align(16u);
 }
 
 
@@ -508,7 +289,6 @@ void Std140BlockEncoder::exitAggregateType(const ShaderVariable &structVar)
 }
 
 void Std140BlockEncoder::getBlockLayoutInfo(GLenum type,
-                                            const size_t bytesPerComponent,
                                             const std::vector<unsigned int> &arraySizes,
                                             bool isRowMajorMatrix,
                                             int *arrayStrideOut,
@@ -551,7 +331,6 @@ void Std140BlockEncoder::getBlockLayoutInfo(GLenum type,
 }
 
 void Std140BlockEncoder::advanceOffset(GLenum type,
-                                       const size_t bytesPerComponent,
                                        const std::vector<unsigned int> &arraySizes,
                                        bool isRowMajorMatrix,
                                        int arrayStride,
@@ -839,10 +618,7 @@ void BlockEncoderVisitor::visitNamedVariable(const ShaderVariable &variable,
         innermostArraySize.push_back(variable.getNestedArraySize(0));
     }
     BlockMemberInfo variableInfo =
-        mEncoder->encodeType(variable.type,
-                             variable.isFloat16 ? BlockLayoutEncoder::kBytesPer16BitComponent
-                                                : BlockLayoutEncoder::kBytesPerComponent,
-                             innermostArraySize, isRowMajor);
+        mEncoder->encodeType(variable.type, innermostArraySize, isRowMajor);
     if (!mIsTopLevelArrayStrideReady)
     {
         ASSERT(mTopLevelArrayStride);
@@ -887,5 +663,4 @@ void TraverseShaderVariable(const ShaderVariable &variable,
         visitor->visitVariable(variable, isRowMajor);
     }
 }
-
 }  

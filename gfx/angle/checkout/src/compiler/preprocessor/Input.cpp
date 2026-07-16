@@ -4,10 +4,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "compiler/preprocessor/Input.h"
 
 #include <algorithm>

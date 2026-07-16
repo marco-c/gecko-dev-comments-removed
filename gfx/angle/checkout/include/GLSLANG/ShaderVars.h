@@ -25,12 +25,10 @@ typedef unsigned int GLenum;
 enum InterpolationType
 {
     INTERPOLATION_SMOOTH,
-    INTERPOLATION_FLAT,
-    INTERPOLATION_NOPERSPECTIVE,
     INTERPOLATION_CENTROID,
     INTERPOLATION_SAMPLE,
-    INTERPOLATION_NOPERSPECTIVE_CENTROID,
-    INTERPOLATION_NOPERSPECTIVE_SAMPLE
+    INTERPOLATION_FLAT,
+    INTERPOLATION_NOPERSPECTIVE
 };
 
 const char *InterpolationTypeToString(InterpolationType type);
@@ -53,11 +51,13 @@ const char *BlockLayoutTypeToString(BlockLayoutType type);
 
 enum class BlockType
 {
-    kBlockUniform,
-    kBlockBuffer,
+    BLOCK_UNIFORM,
+    BLOCK_BUFFER,
 };
 
 const char *BlockTypeToString(BlockType type);
+
+
 
 
 
@@ -237,13 +237,6 @@ struct ShaderVariable
     
     bool texelFetchStaticUse;
 
-    
-    
-    
-    uint32_t id;
-
-    bool isFloat16;
-
   protected:
     bool isSameVariableAtLinkTime(const ShaderVariable &other,
                                   bool matchPrecision,
@@ -289,16 +282,15 @@ struct InterfaceBlock
     unsigned int arraySize;
     BlockLayoutType layout;
 
+    
+    
+    bool isRowMajorLayout;
+
     int binding;
     bool staticUse;
     bool active;
-    
-    bool isReadOnly;
     BlockType blockType;
     std::vector<ShaderVariable> fields;
-
-    
-    uint32_t id;
 };
 
 struct WorkGroupSize

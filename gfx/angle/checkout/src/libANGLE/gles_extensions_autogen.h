@@ -49,7 +49,6 @@ struct Extensions
     void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
 
     
-    bool clipCullDistanceAny() const { return (clipCullDistanceANGLE || clipCullDistanceEXT); }
     bool copyImageAny() const { return (copyImageEXT || copyImageOES); }
     bool depthTextureAny() const { return (depthTextureANGLE || depthTextureOES); }
     bool drawBuffersIndexedAny() const { return (drawBuffersIndexedEXT || drawBuffersIndexedOES); }
@@ -59,20 +58,12 @@ struct Extensions
     }
     bool framebufferBlitAny() const { return (framebufferBlitANGLE || framebufferBlitNV); }
     bool geometryShaderAny() const { return (geometryShaderEXT || geometryShaderOES); }
-    bool gpuShader5Any() const { return (gpuShader5EXT || gpuShader5OES); }
     bool instancedArraysAny() const { return (instancedArraysANGLE || instancedArraysEXT); }
-    bool polygonModeAny() const { return (polygonModeANGLE || polygonModeNV); }
     bool primitiveBoundingBoxAny() const
     {
         return (primitiveBoundingBoxEXT || primitiveBoundingBoxOES);
     }
-    bool robustnessAny() const { return (robustnessEXT || robustnessKHR); }
-    bool shaderFramebufferFetchAny() const
-    {
-        return (shaderFramebufferFetchARM || shaderFramebufferFetchEXT);
-    }
     bool shaderIoBlocksAny() const { return (shaderIoBlocksEXT || shaderIoBlocksOES); }
-    bool tessellationShaderAny() const { return (tessellationShaderEXT || tessellationShaderOES); }
     bool textureBorderClampAny() const { return (textureBorderClampEXT || textureBorderClampOES); }
     bool textureBufferAny() const { return (textureBufferEXT || textureBufferOES); }
     bool textureCubeMapArrayAny() const
@@ -90,9 +81,6 @@ struct Extensions
     bool blendEquationAdvancedKHR = false;
 
     
-    bool blendEquationAdvancedCoherentKHR = false;
-
-    
     bool blendFuncExtendedEXT = false;
 
     
@@ -100,9 +88,6 @@ struct Extensions
 
     
     bool bufferStorageEXT = false;
-
-    
-    bool clearTextureEXT = false;
 
     
     bool clipControlEXT = false;
@@ -159,9 +144,6 @@ struct Extensions
     bool compressedPalettedTextureOES = false;
 
     
-    bool conservativeDepthEXT = false;
-
-    
     bool copyImageEXT = false;
 
     
@@ -184,9 +166,6 @@ struct Extensions
 
     
     bool depthBufferFloat2NV = false;
-
-    
-    bool depthClampEXT = false;
 
     
     bool depthTextureANGLE = false;
@@ -219,9 +198,6 @@ struct Extensions
     bool drawElementsBaseVertexOES = false;
 
     
-    bool drawInstancedEXT = false;
-
-    
     bool EGLImageOES = false;
 
     
@@ -238,9 +214,6 @@ struct Extensions
 
     
     bool EGLImageStorageEXT = false;
-
-    
-    bool EGLImageStorageCompressionEXT = false;
 
     
     bool EGLStreamConsumerExternalNV = false;
@@ -270,15 +243,6 @@ struct Extensions
     bool fragDepthEXT = false;
 
     
-    bool fragmentShadingRateEXT = false;
-
-    
-    bool fragmentShadingRateAttachmentEXT = false;
-
-    
-    bool fragmentShadingRatePrimitiveEXT = false;
-
-    
     bool framebufferBlitANGLE = false;
 
     
@@ -286,9 +250,6 @@ struct Extensions
 
     
     bool framebufferFlipYMESA = false;
-
-    
-    bool framebufferFoveatedQCOM = false;
 
     
     bool geometryShaderEXT = false;
@@ -301,9 +262,6 @@ struct Extensions
 
     
     bool gpuShader5EXT = false;
-
-    
-    bool gpuShader5OES = false;
 
     
     bool instancedArraysANGLE = false;
@@ -324,9 +282,6 @@ struct Extensions
     bool memoryObjectFdEXT = false;
 
     
-    bool multiDrawArraysEXT = false;
-
-    
     bool multiDrawIndirectEXT = false;
 
     
@@ -343,9 +298,6 @@ struct Extensions
 
     
     bool multiview2OVR = false;
-
-    
-    bool multiviewMultisampledRenderToTextureOVR = false;
 
     
     bool noErrorKHR = false;
@@ -372,12 +324,6 @@ struct Extensions
     bool pixelBufferObjectNV = false;
 
     
-    bool polygonModeNV = false;
-
-    
-    bool polygonOffsetClampEXT = false;
-
-    
     bool primitiveBoundingBoxEXT = false;
 
     
@@ -402,28 +348,13 @@ struct Extensions
     bool readStencilNV = false;
 
     
-    bool renderSharedExponentQCOM = false;
-
-    
-    bool renderSnormEXT = false;
-
-    
-    bool requiredInternalformatOES = false;
-
-    
     bool rgb8Rgba8OES = false;
-
-    
-    bool rgba8ARM = false;
 
     
     bool robustBufferAccessBehaviorKHR = false;
 
     
     bool robustnessEXT = false;
-
-    
-    bool robustnessKHR = false;
 
     
     bool robustnessVideoMemoryPurgeNV = false;
@@ -441,19 +372,10 @@ struct Extensions
     bool semaphoreFdEXT = false;
 
     
-    bool separateDepthStencilEXT = false;
-
-    
     bool separateShaderObjectsEXT = false;
 
     
-    bool shaderFramebufferFetchARM = false;
-
-    
     bool shaderFramebufferFetchEXT = false;
-
-    
-    bool shaderFramebufferFetchDepthStencilARM = false;
 
     
     bool shaderFramebufferFetchNonCoherentEXT = false;
@@ -480,9 +402,6 @@ struct Extensions
     bool shaderTextureLodEXT = false;
 
     
-    bool shaderTextureSamplesEXT = false;
-
-    
     bool shadingRateQCOM = false;
 
     
@@ -501,10 +420,10 @@ struct Extensions
     bool surfacelessContextOES = false;
 
     
-    bool tessellationShaderEXT = false;
+    bool syncARB = false;
 
     
-    bool tessellationShaderOES = false;
+    bool tessellationShaderEXT = false;
 
     
     bool texture3DOES = false;
@@ -523,12 +442,6 @@ struct Extensions
 
     
     bool textureCompressionAstcOES = false;
-
-    
-    bool textureCompressionAstcDecodeModeEXT = false;
-
-    
-    bool textureCompressionAstcDecodeModeRgb9e5EXT = false;
 
     
     bool textureCompressionAstcHdrKHR = false;
@@ -570,9 +483,6 @@ struct Extensions
     bool textureFilterAnisotropicEXT = false;
 
     
-    bool textureFilterMinmaxEXT = false;
-
-    
     bool textureFloatOES = false;
 
     
@@ -585,16 +495,10 @@ struct Extensions
     bool textureFormatSRGBOverrideEXT = false;
 
     
-    bool textureFoveatedQCOM = false;
-
-    
     bool textureHalfFloatOES = false;
 
     
     bool textureHalfFloatLinearOES = false;
-
-    
-    bool textureMirrorClampToEdgeEXT = false;
 
     
     bool textureNorm16EXT = false;
@@ -603,13 +507,7 @@ struct Extensions
     bool textureNpotOES = false;
 
     
-    bool textureQueryLodEXT = false;
-
-    
     bool textureRgEXT = false;
-
-    
-    bool textureShadowLodEXT = false;
 
     
     bool textureSRGBDecodeEXT = false;
@@ -627,22 +525,13 @@ struct Extensions
     bool textureStorageEXT = false;
 
     
-    bool textureStorageCompressionEXT = false;
-
-    
     bool textureStorageMultisample2dArrayOES = false;
 
     
     bool textureType2101010REVEXT = false;
 
     
-    bool textureUnnormalizedCoordinatesARM = false;
-
-    
     bool textureUsageANGLE = false;
-
-    
-    bool tiledRenderingQCOM = false;
 
     
     bool translatedShaderSourceANGLE = false;
@@ -681,13 +570,7 @@ struct Extensions
     bool bindUniformLocationCHROMIUM = false;
 
     
-    bool blobCacheANGLE = false;
-
-    
     bool clientArraysANGLE = false;
-
-    
-    bool clipCullDistanceANGLE = false;
 
     
     bool colorBufferFloatRgbCHROMIUM = false;
@@ -747,13 +630,7 @@ struct Extensions
     bool multiviewMultisampleANGLE = false;
 
     
-    bool polygonModeANGLE = false;
-
-    
     bool programBinaryANGLE = false;
-
-    
-    bool programBinaryReadinessQueryANGLE = false;
 
     
     bool programCacheControlANGLE = false;
@@ -766,9 +643,6 @@ struct Extensions
 
     
     bool relaxedVertexAttributeTypeANGLE = false;
-
-    
-    bool renderabilityValidationANGLE = false;
 
     
     bool requestExtensionANGLE = false;
@@ -789,16 +663,13 @@ struct Extensions
     bool semaphoreFuchsiaANGLE = false;
 
     
-    bool shaderBinaryANGLE = false;
-
-    
     bool shaderPixelLocalStorageANGLE = false;
 
     
     bool shaderPixelLocalStorageCoherentANGLE = false;
 
     
-    bool stencilTexturingANGLE = false;
+    bool syncQueryCHROMIUM = false;
 
     
     bool textureCompressionDxt3ANGLE = false;
@@ -808,6 +679,9 @@ struct Extensions
 
     
     bool textureExternalUpdateANGLE = false;
+
+    
+    bool textureFilteringHintCHROMIUM = false;
 
     
     bool textureMultisampleANGLE = false;
@@ -826,9 +700,6 @@ struct Extensions
 
     
     
-
-    
-    bool blendSubtractOES = false;
 
     
     bool drawTextureOES = false;
@@ -850,9 +721,6 @@ struct Extensions
 
     
     bool textureCubeMapOES = false;
-
-    
-    bool textureMirroredRepeatOES = false;
 };
 }  
 

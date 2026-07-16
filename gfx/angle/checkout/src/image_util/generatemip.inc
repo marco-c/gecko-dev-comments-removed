@@ -7,10 +7,6 @@
 
 
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#pragma allow_unsafe_buffers
-#endif
-
 #include "common/mathutil.h"
 
 #include "image_util/imageformats.h"

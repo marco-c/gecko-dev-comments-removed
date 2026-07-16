@@ -20,6 +20,8 @@ namespace angle
 #if defined(ANGLE_USE_ANDROID_TLS_SLOT)
 extern bool gUseAndroidOpenGLTlsSlot;
 #endif
+
+void PthreadKeyDestructorCallback(void *ptr);
 }  
 
 namespace gl

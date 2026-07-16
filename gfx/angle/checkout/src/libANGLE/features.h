@@ -9,6 +9,9 @@
 
 #include "common/platform.h"
 
+#define ANGLE_DISABLED 0
+#define ANGLE_ENABLED 1
+
 
 
 
@@ -16,22 +19,22 @@
 
 
 #if !defined(ANGLE_D3D9EX)
-#    define ANGLE_D3D9EX 1
+#    define ANGLE_D3D9EX ANGLE_ENABLED
 #endif
 
 
 
 
 #if !defined(ANGLE_VSYNC)
-#    define ANGLE_VSYNC 1
+#    define ANGLE_VSYNC ANGLE_ENABLED
 #endif
 
 
 #if !defined(ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO)
 #    if !defined(NDEBUG)
-#        define ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO 1
+#        define ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO ANGLE_ENABLED
 #    else
-#        define ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO 0
+#        define ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO ANGLE_DISABLED
 #    endif  
 #endif      
 
@@ -41,7 +44,13 @@
 
 
 #if !defined(ANGLE_PROGRAM_LINK_VALIDATE_UNIFORM_PRECISION)
-#    define ANGLE_PROGRAM_LINK_VALIDATE_UNIFORM_PRECISION 1
+#    define ANGLE_PROGRAM_LINK_VALIDATE_UNIFORM_PRECISION ANGLE_ENABLED
 #endif
+
+
+
+#if !defined(ANGLE_STD_ASYNC_WORKERS) && !defined(ANGLE_ENABLE_WINDOWS_UWP)
+#    define ANGLE_STD_ASYNC_WORKERS ANGLE_ENABLED
+#endif  
 
 #endif  

@@ -43,10 +43,10 @@ class MemoryProgramCache final : angle::NonCopyable
     
     angle::Result putProgram(const egl::BlobCache::Key &programHash,
                              const Context *context,
-                             Program *program);
+                             const Program *program);
 
     
-    angle::Result updateProgram(const Context *context, Program *program);
+    angle::Result updateProgram(const Context *context, const Program *program);
 
     
     
@@ -58,8 +58,7 @@ class MemoryProgramCache final : angle::NonCopyable
     
     angle::Result getProgram(const Context *context,
                              Program *program,
-                             egl::BlobCache::Key *hashOut,
-                             egl::CacheGetResult *resultOut);
+                             egl::BlobCache::Key *hashOut);
 
     
     void clear();

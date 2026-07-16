@@ -130,24 +130,15 @@ angle::Result RenderTargetCache<RenderTargetT>::updateColorRenderTarget(
     const gl::FramebufferState &state,
     size_t colorIndex)
 {
-    const gl::FramebufferAttachment *colorAttachment = state.getColorAttachment(colorIndex);
-    ANGLE_TRY(updateCachedRenderTarget(context, colorAttachment, &mColorRenderTargets[colorIndex]));
-
     
     
     if (state.getReadBufferState() != GL_NONE && state.getReadIndex() == colorIndex)
     {
-        if (colorAttachment == state.getReadAttachment())
-        {
-            mReadRenderTarget = mColorRenderTargets[colorIndex];
-        }
-        else
-        {
-            ANGLE_TRY(updateReadColorRenderTarget(context, state));
-        }
+        ANGLE_TRY(updateReadColorRenderTarget(context, state));
     }
 
-    return angle::Result::Continue;
+    return updateCachedRenderTarget(context, state.getColorAttachment(colorIndex),
+                                    &mColorRenderTargets[colorIndex]);
 }
 
 template <typename RenderTargetT>

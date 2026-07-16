@@ -71,27 +71,10 @@ bool GetDevicesFromDXGI(std::vector<GPUDeviceInfo> *devices)
         device.vendorId      = desc.VendorId;
         device.deviceId      = desc.DeviceId;
         device.driverVersion = o.str();
+        device.systemDeviceId =
+            GetSystemDeviceIdFromParts(desc.AdapterLuid.HighPart, desc.AdapterLuid.LowPart);
 
-        
-        
-        bool isDuplicate = false;
-        for (const auto &existingDevice : *devices)
-        {
-            if (existingDevice.vendorId == device.vendorId &&
-                existingDevice.deviceId == device.deviceId &&
-                existingDevice.driverVersion == device.driverVersion)
-            {
-                isDuplicate = true;
-                break;
-            }
-        }
-
-        if (!isDuplicate)
-        {
-            device.systemDeviceId =
-                GetSystemDeviceIdFromParts(desc.AdapterLuid.HighPart, desc.AdapterLuid.LowPart);
-            devices->push_back(device);
-        }
+        devices->push_back(device);
 
         adapter->Release();
     }
@@ -121,20 +104,6 @@ bool GetSystemInfo(SystemInfo *info)
     
     
     info->activeGPUIndex = 0;
-
-    
-    
-    if (info->gpus.size() > 1 && IsMicrosoft(info->gpus[0].vendorId))
-    {
-        for (size_t i = 1; i < info->gpus.size(); ++i)
-        {
-            if (!IsMicrosoft(info->gpus[i].vendorId))
-            {
-                info->activeGPUIndex = static_cast<int>(i);
-                break;
-            }
-        }
-    }
 
 #if !defined(ANGLE_ENABLE_WINDOWS_UWP)
     

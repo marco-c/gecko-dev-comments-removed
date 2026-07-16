@@ -21,6 +21,8 @@ enum class WidgetId
     
     VulkanRenderPassCount,
     
+    VulkanRenderPassBufferCount,
+    
     VulkanSecondaryCommandBufferPoolWaste,
     
     VulkanWriteDescriptorSetCount,
@@ -61,6 +63,7 @@ enum class WidgetId
     PROC(VulkanLastValidationMessage)           \
     PROC(VulkanValidationMessageCount)          \
     PROC(VulkanRenderPassCount)                 \
+    PROC(VulkanRenderPassBufferCount)           \
     PROC(VulkanSecondaryCommandBufferPoolWaste) \
     PROC(VulkanWriteDescriptorSetCount)         \
     PROC(VulkanDescriptorSetAllocations)        \

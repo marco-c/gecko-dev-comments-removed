@@ -7,19 +7,15 @@
 #ifndef COMMON_MEMORYBUFFER_H_
 #define COMMON_MEMORYBUFFER_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "common/Optional.h"
 #include "common/angleutils.h"
 #include "common/debug.h"
-#include "common/span.h"
-#include "common/unsafe_buffers.h"
+
+#include <stdint.h>
+#include <cstddef>
 
 namespace angle
 {
-
-
 
 class MemoryBuffer final : NonCopyable
 {
@@ -30,34 +26,9 @@ class MemoryBuffer final : NonCopyable
     MemoryBuffer(MemoryBuffer &&other);
     MemoryBuffer &operator=(MemoryBuffer &&other);
 
-    
-    
-    void destroy();
-
-    
-    [[nodiscard]] bool resize(size_t newSize);
-
-    
-    
-    [[nodiscard]] bool reserve(size_t newCapacity);
-
-    
-    
-    [[nodiscard]] bool clearAndReserve(size_t newCapacity);
-
-    
-    void setSize(size_t size)
-    {
-        ASSERT(size <= mCapacity);
-        mSize = size;
-    }
-    void setSizeToCapacity() { setSize(mCapacity); }
-
-    
+    [[nodiscard]] bool resize(size_t size);
     void clear() { (void)resize(0); }
-
     size_t size() const { return mSize; }
-    size_t capacity() const { return mCapacity; }
     bool empty() const { return mSize == 0; }
 
     const uint8_t *data() const { return mData; }
@@ -67,79 +38,31 @@ class MemoryBuffer final : NonCopyable
         return mData;
     }
 
-    
-    
-    angle::Span<uint8_t> span()
-    {
-        
-        return ANGLE_UNSAFE_BUFFERS(angle::Span<uint8_t>(mData, mSize));
-    }
-    angle::Span<const uint8_t> span() const
-    {
-        
-        return ANGLE_UNSAFE_BUFFERS(angle::Span<uint8_t>(mData, mSize));
-    }
-
-    
-    angle::Span<uint8_t> first(size_t count) { return span().first(count); }
-    angle::Span<uint8_t> last(size_t count) { return span().last(count); }
-    angle::Span<uint8_t> subspan(size_t offset) { return span().subspan(offset); }
-    angle::Span<uint8_t> subspan(size_t offset, size_t count)
-    {
-        return span().subspan(offset, count);
-    }
-
     uint8_t &operator[](size_t pos)
     {
-        ASSERT(mData && pos < mSize);
-        
-        return ANGLE_UNSAFE_BUFFERS(mData[pos]);
+        ASSERT(pos < mSize);
+        return mData[pos];
     }
     const uint8_t &operator[](size_t pos) const
     {
-        ASSERT(mData && pos < mSize);
-        
-        return ANGLE_UNSAFE_BUFFERS(mData[pos]);
+        ASSERT(pos < mSize);
+        return mData[pos];
     }
 
     void fill(uint8_t datum);
 
-    
-    
-    void assertTotalAllocatedBytes(size_t totalAllocatedBytes) const
-    {
-#if defined(ANGLE_ENABLE_ASSERTS)
-        ASSERT(totalAllocatedBytes == mTotalAllocatedBytes);
-#endif  
-    }
-    
-    void assertTotalCopiedBytes(size_t totalCopiedBytes) const
-    {
-#if defined(ANGLE_ENABLE_ASSERTS)
-        ASSERT(totalCopiedBytes == mTotalCopiedBytes);
-#endif  
-    }
-    
-    
-    void assertDataBufferFreed() const { ASSERT(mData == nullptr); }
-
   private:
-    size_t mSize     = 0;
-    size_t mCapacity = 0;
-    uint8_t *mData   = nullptr;
-#if defined(ANGLE_ENABLE_ASSERTS)
-    size_t mTotalAllocatedBytes = 0;
-    size_t mTotalCopiedBytes    = 0;
-#endif  
+    size_t mSize   = 0;
+    uint8_t *mData = nullptr;
 };
 
 class ScratchBuffer final : NonCopyable
 {
   public:
+    
+    
+    
     ScratchBuffer();
-    
-    
-    
     ScratchBuffer(uint32_t lifetime);
     ~ScratchBuffer();
 
@@ -153,18 +76,9 @@ class ScratchBuffer final : NonCopyable
     bool getInitialized(size_t requestedSize, MemoryBuffer **memoryBufferOut, uint8_t initValue);
 
     
-    
     void tick();
 
-    
-    
     void clear();
-
-    
-    
-    void destroy();
-
-    MemoryBuffer *getMemoryBuffer() { return &mScratchMemory; }
 
   private:
     bool getImpl(size_t requestedSize, MemoryBuffer **memoryBufferOut, Optional<uint8_t> initValue);

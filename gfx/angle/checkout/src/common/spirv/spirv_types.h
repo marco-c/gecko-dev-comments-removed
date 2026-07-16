@@ -23,25 +23,18 @@ class BoxedUint32
 {
   public:
     BoxedUint32() : mValue{0} {}
-    explicit constexpr BoxedUint32(uint32_t value) : mValue{value} {}
+    explicit BoxedUint32(uint32_t value) : mValue{value} {}
     template <typename T>
-    constexpr T as() const
+    T as() const
     {
-        return static_cast<T>(mValue.value);
+        return T{mValue};
     }
-    constexpr BoxedUint32(const BoxedUint32 &other)            = default;
-    constexpr BoxedUint32 &operator=(const BoxedUint32 &other) = default;
-    constexpr operator uint32_t() const { return mValue.value; }
-    constexpr bool operator==(const BoxedUint32 &other) const
-    {
-        return mValue.value == other.mValue.value;
-    }
-    constexpr bool operator!=(const BoxedUint32 &other) const
-    {
-        return mValue.value != other.mValue.value;
-    }
+    BoxedUint32(const BoxedUint32 &other)            = default;
+    BoxedUint32 &operator=(const BoxedUint32 &other) = default;
+    operator uint32_t() const { return mValue.value; }
+    bool operator==(const BoxedUint32 &other) const { return mValue.value == other.mValue.value; }
     
-    constexpr bool valid() const { return static_cast<bool>(mValue.value); }
+    bool valid() const { return static_cast<bool>(mValue.value); }
 
   private:
     Helper mValue;
@@ -59,7 +52,7 @@ struct LiteralIntegerHelper
 using IdRef = BoxedUint32<IdRefHelper>;
 
 template <>
-inline constexpr BoxedUint32<IdRefHelper>::operator uint32_t() const
+inline BoxedUint32<IdRefHelper>::operator uint32_t() const
 {
     ASSERT(valid());
     return mValue.value;
@@ -128,11 +121,6 @@ enum HeaderIndex
     kHeaderIndexSchema       = 4,
     kHeaderIndexInstructions = 5,
 };
-
-
-constexpr uint32_t kVersion_1_0 = 0x00010000;
-constexpr uint32_t kVersion_1_3 = 0x00010300;
-constexpr uint32_t kVersion_1_4 = 0x00010400;
 
 
 

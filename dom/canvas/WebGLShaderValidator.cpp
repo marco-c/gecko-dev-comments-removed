@@ -4,7 +4,6 @@
 
 #include "WebGLShaderValidator.h"
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -30,6 +29,7 @@ uint64_t IdentifierHashFunc(const char* name, size_t len) {
 static ShCompileOptions ChooseValidatorCompileOptions(
     const ShBuiltInResources& resources, const mozilla::gl::GLContext* gl) {
   ShCompileOptions options = {};
+  options.variables = true;
   options.enforcePackingRestrictions = true;
   options.objectCode = true;
   options.initGLPosition = true;
@@ -191,8 +191,6 @@ std::unique_ptr<webgl::ShaderValidator> WebGLContext::CreateShaderValidator(
     return resources.MaxVariableSizeInBytes;
   }();
 
-  
-  
   resources.MaxPrivateVariableSizeInBytes = [&]() -> size_t {
     const auto bytes = StaticPrefs::webgl_glsl_max_private_var_size_in_bytes();
     if (bytes >= 0) {
@@ -200,44 +198,15 @@ std::unique_ptr<webgl::ShaderValidator> WebGLContext::CreateShaderValidator(
     }
 
     if (kIsMacOS) {
-      
-      
-      
-      
-      return std::min(
-          
-          static_cast<size_t>(128 * 1024),
-          resources.MaxPrivateVariableSizeInBytes);
+      return 128 * 1024;  
     }
 
     return resources.MaxPrivateVariableSizeInBytes;
   }();
 
   
-  
-  resources.MaxTotalPrivateVariableSizeInBytes = [&]() -> size_t {
-    const auto bytes = StaticPrefs::webgl_glsl_max_private_var_size_in_bytes();
-    if (bytes >= 0) {
-      return static_cast<size_t>(bytes);
-    }
-
-    if (kIsMacOS) {
-      
-      
-      return std::min(static_cast<size_t>(128 * 1024),
-                      resources.MaxTotalPrivateVariableSizeInBytes);
-    }
-
-    return resources.MaxTotalPrivateVariableSizeInBytes;
-  }();
-
-  
 
   auto compileOptions = webgl::ChooseValidatorCompileOptions(resources, gl);
-
-  
-  
-  compileOptions.rejectWebglShadersWithLargeVariables = true;
 
   if (IsWebGL2()) {
     compileOptions.validatePerStageMaxUniformBlocks = true;

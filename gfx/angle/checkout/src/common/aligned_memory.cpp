@@ -20,8 +20,6 @@
 namespace angle
 {
 
-
-
 void *AlignedAlloc(size_t size, size_t alignment)
 {
     ASSERT(size > 0);
@@ -45,8 +43,8 @@ void *AlignedAlloc(size_t size, size_t alignment)
     
     if (!ptr)
     {
-        ERR() << "If you crashed here, your aligned allocation is incorrect: " << "size=" << size
-              << ", alignment=" << alignment;
+        ERR() << "If you crashed here, your aligned allocation is incorrect: "
+              << "size=" << size << ", alignment=" << alignment;
         ASSERT(false);
     }
     

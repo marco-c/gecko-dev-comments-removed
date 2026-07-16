@@ -19,6 +19,8 @@ namespace sh
 namespace
 {
 
+constexpr ImmutableString kSurfaceRotationSpecConstVarName =
+    ImmutableString("ANGLESurfaceRotation");
 constexpr ImmutableString kDitherSpecConstVarName = ImmutableString("ANGLEDither");
 
 const TType *MakeSpecConst(const TType &type, vk::SpecializationConstantId id)
@@ -37,13 +39,22 @@ const TType *MakeSpecConst(const TType &type, vk::SpecializationConstantId id)
 }  
 
 SpecConst::SpecConst(TSymbolTable *symbolTable,
+                     const ShCompileOptions &compileOptions,
                      GLenum shaderType)
     : mSymbolTable(symbolTable),
+      mCompileOptions(compileOptions),
+      mSurfaceRotationVar(nullptr),
       mDitherVar(nullptr)
 {
     if (shaderType == GL_FRAGMENT_SHADER || shaderType == GL_COMPUTE_SHADER)
     {
         return;
+    }
+
+    
+    if (mCompileOptions.useSpecializationConstant)
+    {
+        mUsageBits.set(vk::SpecConstUsage::Rotation);
     }
 }
 
@@ -54,6 +65,15 @@ void SpecConst::declareSpecConsts(TIntermBlock *root)
     
     
     
+    if (mSurfaceRotationVar != nullptr)
+    {
+        TIntermDeclaration *decl = new TIntermDeclaration();
+        decl->appendDeclarator(
+            new TIntermBinary(EOpInitialize, getRotation(), CreateBoolNode(false)));
+
+        root->insertStatement(0, decl);
+    }
+
     if (mDitherVar != nullptr)
     {
         TIntermDeclaration *decl = new TIntermDeclaration();
@@ -61,6 +81,29 @@ void SpecConst::declareSpecConsts(TIntermBlock *root)
 
         root->insertStatement(0, decl);
     }
+}
+
+TIntermSymbol *SpecConst::getRotation()
+{
+    if (mSurfaceRotationVar == nullptr)
+    {
+        const TType *type = MakeSpecConst(*StaticType::GetBasic<EbtBool, EbpUndefined>(),
+                                          vk::SpecializationConstantId::SurfaceRotation);
+
+        mSurfaceRotationVar = new TVariable(mSymbolTable, kSurfaceRotationSpecConstVarName, type,
+                                            SymbolType::AngleInternal);
+    }
+    return new TIntermSymbol(mSurfaceRotationVar);
+}
+
+TIntermTyped *SpecConst::getSwapXY()
+{
+    if (!mCompileOptions.useSpecializationConstant)
+    {
+        return nullptr;
+    }
+    mUsageBits.set(vk::SpecConstUsage::Rotation);
+    return getRotation();
 }
 
 TIntermTyped *SpecConst::getDither()

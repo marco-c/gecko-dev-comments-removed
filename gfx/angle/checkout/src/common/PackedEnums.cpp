@@ -250,21 +250,6 @@ bool IsArrayTextureType(TextureType type)
     }
 }
 
-bool IsLayeredTextureType(TextureType type)
-{
-    switch (type)
-    {
-        case TextureType::_2DArray:
-        case TextureType::_2DMultisampleArray:
-        case TextureType::_3D:
-        case TextureType::CubeMap:
-        case TextureType::CubeMapArray:
-            return true;
-        default:
-            return false;
-    }
-}
-
 bool IsStaticBufferUsage(BufferUsage useage)
 {
     switch (useage)
@@ -597,7 +582,6 @@ bool operator<(const UniformLocation &lhs, const UniformLocation &rhs)
 
 bool IsEmulatedCompressedFormat(GLenum format)
 {
-    
     
     return format == GL_RGBA || format == GL_RG || format == GL_RED;
 }

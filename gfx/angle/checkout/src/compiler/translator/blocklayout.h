@@ -25,14 +25,12 @@ struct InterfaceBlock;
 struct BlockMemberInfo
 {
     constexpr BlockMemberInfo() = default;
-    
+
     constexpr BlockMemberInfo(int offset, int arrayStride, int matrixStride, bool isRowMajorMatrix)
-        : type(GL_INVALID_ENUM),
-          isRowMajorMatrix(isRowMajorMatrix),
-          offset(offset),
+        : offset(offset),
           arrayStride(arrayStride),
           matrixStride(matrixStride),
-          arraySize(-1)
+          isRowMajorMatrix(isRowMajorMatrix)
     {}
 
     constexpr BlockMemberInfo(int offset,
@@ -40,70 +38,30 @@ struct BlockMemberInfo
                               int matrixStride,
                               bool isRowMajorMatrix,
                               int topLevelArrayStride)
-        : type(GL_INVALID_ENUM),
-          isRowMajorMatrix(isRowMajorMatrix),
-          offset(offset),
+        : offset(offset),
           arrayStride(arrayStride),
           matrixStride(matrixStride),
-          arraySize(-1),
+          isRowMajorMatrix(isRowMajorMatrix),
           topLevelArrayStride(topLevelArrayStride)
     {}
 
-    constexpr BlockMemberInfo(GLenum type,
-                              int offset,
-                              int arrayStride,
-                              int matrixStride,
-                              int arraySize,
-                              bool isRowMajorMatrix)
-        : type(static_cast<uint16_t>(type)),
-          isRowMajorMatrix(isRowMajorMatrix),
-          offset(offset),
-          arrayStride(arrayStride),
-          matrixStride(matrixStride),
-          arraySize(arraySize)
-    {}
-
-    constexpr BlockMemberInfo(GLenum type,
-                              int offset,
-                              int arrayStride,
-                              int matrixStride,
-                              int arraySize,
-                              bool isRowMajorMatrix,
-                              int topLevelArrayStride)
-        : type(static_cast<uint16_t>(type)),
-          isRowMajorMatrix(isRowMajorMatrix),
-          offset(offset),
-          arrayStride(arrayStride),
-          matrixStride(matrixStride),
-          arraySize(arraySize),
-          topLevelArrayStride(topLevelArrayStride)
-    {}
-
-    uint16_t type = GL_INVALID_ENUM;
+    
+    int offset = -1;
 
     
-    uint8_t isRowMajorMatrix = false;
-    uint8_t pad              = 0;
-
-    
-    int32_t offset = -1;
-
-    
-    int32_t arrayStride = -1;
+    int arrayStride = -1;
 
     
     
-    int32_t matrixStride = -1;
+    int matrixStride = -1;
 
     
-    int32_t arraySize = -1;
+    bool isRowMajorMatrix = false;
 
     
     
-    int32_t topLevelArrayStride = -1;
+    int topLevelArrayStride = -1;
 };
-
-bool operator==(const BlockMemberInfo &lhs, const BlockMemberInfo &rhs);
 
 constexpr size_t ComponentAlignment(size_t numComponents)
 {
@@ -118,19 +76,17 @@ class BlockLayoutEncoder
     BlockLayoutEncoder();
     virtual ~BlockLayoutEncoder() {}
 
-    virtual BlockMemberInfo encodeType(GLenum type,
-                                       size_t bytesPerComponent,
-                                       const std::vector<unsigned int> &arraySizes,
-                                       bool isRowMajorMatrix);
+    BlockMemberInfo encodeType(GLenum type,
+                               const std::vector<unsigned int> &arraySizes,
+                               bool isRowMajorMatrix);
     
     
     
-    virtual BlockMemberInfo encodeArrayOfPreEncodedStructs(
-        size_t size,
-        const std::vector<unsigned int> &arraySizes);
+    BlockMemberInfo encodeArrayOfPreEncodedStructs(size_t size,
+                                                   const std::vector<unsigned int> &arraySizes);
 
-    virtual size_t getCurrentOffset() const;
-    virtual size_t getShaderVariableSize(const ShaderVariable &structVar, bool isRowMajor);
+    size_t getCurrentOffset() const;
+    size_t getShaderVariableSize(const ShaderVariable &structVar, bool isRowMajor);
 
     
     virtual void enterAggregateType(const ShaderVariable &structVar) = 0;
@@ -139,8 +95,6 @@ class BlockLayoutEncoder
     static constexpr size_t kBytesPerComponent           = 4u;
     static constexpr unsigned int kComponentsPerRegister = 4u;
 
-    static constexpr size_t kBytesPer16BitComponent = 2u;
-
     static size_t GetBlockRegister(const BlockMemberInfo &info);
     static size_t GetBlockRegisterElement(const BlockMemberInfo &info);
 
@@ -148,13 +102,11 @@ class BlockLayoutEncoder
     void align(size_t baseAlignment);
 
     virtual void getBlockLayoutInfo(GLenum type,
-                                    size_t bytesPerComponent,
                                     const std::vector<unsigned int> &arraySizes,
                                     bool isRowMajorMatrix,
                                     int *arrayStrideOut,
                                     int *matrixStrideOut) = 0;
     virtual void advanceOffset(GLenum type,
-                               size_t bytesPerComponent,
                                const std::vector<unsigned int> &arraySizes,
                                bool isRowMajorMatrix,
                                int arrayStride,
@@ -174,64 +126,17 @@ class StubBlockEncoder : public BlockLayoutEncoder
 
   protected:
     void getBlockLayoutInfo(GLenum type,
-                            size_t bytesPerComponent,
                             const std::vector<unsigned int> &arraySizes,
                             bool isRowMajorMatrix,
                             int *arrayStrideOut,
                             int *matrixStrideOut) override;
 
     void advanceOffset(GLenum type,
-                       size_t bytesPerComponent,
                        const std::vector<unsigned int> &arraySizes,
                        bool isRowMajorMatrix,
                        int arrayStride,
                        int matrixStride) override
     {}
-};
-
-
-
-
-
-class PackedSPIRVBlockEncoder : public BlockLayoutEncoder
-{
-  public:
-    PackedSPIRVBlockEncoder();
-
-    BlockMemberInfo encodeType(GLenum type,
-                               size_t bytesPerComponent,
-                               const std::vector<unsigned int> &arraySizes,
-                               bool isRowMajorMatrix) override;
-
-    BlockMemberInfo encodeArrayOfPreEncodedStructs(
-        size_t size,
-        const std::vector<unsigned int> &arraySizes) override;
-
-    size_t getCurrentOffset() const override;
-
-    void enterAggregateType(const ShaderVariable &structVar) override;
-    void exitAggregateType(const ShaderVariable &structVar) override;
-
-  protected:
-    void getBlockLayoutInfo(GLenum type,
-                            size_t bytesPerComponent,
-                            const std::vector<unsigned int> &arraySizes,
-                            bool isRowMajorMatrix,
-                            int *arrayStrideOut,
-                            int *matrixStrideOut) override;
-    void advanceOffset(GLenum type,
-                       size_t bytesPerComponent,
-                       const std::vector<unsigned int> &arraySizes,
-                       bool isRowMajorMatrix,
-                       int arrayStride,
-                       int matrixStride) override;
-
-    virtual size_t getBaseAlignment(const ShaderVariable &variable) const;
-    virtual size_t getTypeBaseAlignment(GLenum type, bool isRowMajorMatrix) const;
-
-  private:
-    bool isVectorStraddle(GLenum type);
-    void adjustAlignmentForStraddleVector();
 };
 
 
@@ -247,13 +152,11 @@ class Std140BlockEncoder : public BlockLayoutEncoder
 
   protected:
     void getBlockLayoutInfo(GLenum type,
-                            size_t bytesPerComponent,
                             const std::vector<unsigned int> &arraySizes,
                             bool isRowMajorMatrix,
                             int *arrayStrideOut,
                             int *matrixStrideOut) override;
     void advanceOffset(GLenum type,
-                       size_t bytesPerComponent,
                        const std::vector<unsigned int> &arraySizes,
                        bool isRowMajorMatrix,
                        int arrayStride,

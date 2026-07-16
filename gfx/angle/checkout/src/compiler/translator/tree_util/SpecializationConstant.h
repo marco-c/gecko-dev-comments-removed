@@ -24,8 +24,12 @@ namespace sh
 class SpecConst
 {
   public:
-    SpecConst(TSymbolTable *symbolTable, GLenum shaderType);
+    SpecConst(TSymbolTable *symbolTable, const ShCompileOptions &compileOptions, GLenum shaderType);
     virtual ~SpecConst();
+
+    
+    
+    TIntermTyped *getSwapXY();
 
     
     TIntermTyped *getDither();
@@ -34,9 +38,13 @@ class SpecConst
     SpecConstUsageBits getSpecConstUsageBits() const { return mUsageBits; }
 
   private:
+    TIntermSymbol *getRotation();
+
     
     TSymbolTable *mSymbolTable;
+    const ShCompileOptions &mCompileOptions;
 
+    TVariable *mSurfaceRotationVar;
     TVariable *mDitherVar;
 
     

@@ -2,9 +2,17 @@
 
 
 
+
+
+
+
 #ifndef COMPILER_TRANSLATOR_TREEUTIL_BUILTIN_H_
 #define COMPILER_TRANSLATOR_TREEUTIL_BUILTIN_H_
 
-#include "BuiltIn_autogen.h"
+#if defined(ANDROID)
+#    include "BuiltIn_ESSL_autogen.h"
+#else
+#    include "BuiltIn_complete_autogen.h"
+#endif
 
 #endif  
