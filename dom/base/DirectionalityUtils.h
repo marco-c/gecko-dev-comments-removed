@@ -50,11 +50,6 @@ Directionality RecomputeDirectionality(mozilla::dom::Element* aElement,
 
 
 
-Directionality GetParentDirectionality(const mozilla::dom::Element* aElement);
-
-
-
-
 
 
 
@@ -73,17 +68,6 @@ void SlotAssignedNodeAdded(dom::HTMLSlotElement* aSlot,
 
 void SlotAssignedNodeRemoved(dom::HTMLSlotElement* aSlot,
                              nsIContent& aUnassignedNode);
-
-
-
-
-
-
-
-
-
-void WalkDescendantsSetDirAuto(mozilla::dom::Element* aElement,
-                               bool aNotify = true);
 
 
 
@@ -112,7 +96,7 @@ void TextNodeChangedDirection(dom::Text* aTextNode, Directionality aOldDir,
 
 
 
-void SetDirectionFromNewTextNode(dom::Text* aTextNode);
+void SetDirectionFromNewTextNode(dom::Text* aTextNode, nsINode* aParent);
 
 
 
