@@ -5702,7 +5702,8 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
     }
   }
 
-  return getFarPseudo(aIter.Parent());
+  MOZ_ASSERT(aIter.ParentNode()->IsContent());
+  return getFarPseudo(aIter.ParentNode()->AsContent());
 }
 
 nsIFrame* nsCSSFrameConstructor::AdjustSiblingFrame(
@@ -5756,7 +5757,7 @@ nsIFrame* nsCSSFrameConstructor::FindSibling(
   
   
   
-  const nsIContent* current = aIter.Parent();
+  const nsIContent* current = aIter.ParentNode()->AsContent();
   while (IsDisplayContents(current)) {
     const nsIContent* parent = current->GetFlattenedTreeParent();
     MOZ_ASSERT(parent, "No display: contents on the root");
@@ -5789,7 +5790,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
     iter.Seek(aChild);
   } else {
     
-    iter.GetNextChild();
+    (void)iter.GetNextChild();
     MOZ_ASSERT(aChild->GetProperty(nsGkAtoms::restylableAnonymousNode),
                "Someone passed native anonymous content directly into frame "
                "construction.  Stop doing that!");
