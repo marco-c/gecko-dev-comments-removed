@@ -115,7 +115,9 @@ if (false) {
 
 
 
-wasmFailValidateText(`
+
+
+wasmValidateText(`
 (component
   (core module
     (func (export "f"))
@@ -124,4 +126,19 @@ wasmFailValidateText(`
   (alias core export 0 "f" (core func))
   (core instance (export "f" (func 0)))
 )
-`, /inline exports are not yet supported/);
+`);
+
+
+wasmFailValidateText(`
+(component
+  (core module
+    (func (export "f"))
+  )
+    (core instance (instantiate 0))
+    (alias core export 0 "f" (core func))
+    (core instance
+      (export "f" (func 0))
+      (export "f" (func 0))
+    )
+)
+`, /duplicate name of inline export/);
