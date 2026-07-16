@@ -24,6 +24,7 @@ function takeScreenshotDelayed(timeout) {
 
 
 
+
 function failIfNot(condition, msg) {
   const fail = () => {
     (document.body || document.documentElement).textContent = `Precondition Failed: ${msg}`;
@@ -35,5 +36,46 @@ function failIfNot(condition, msg) {
     } else {
       document.addEventListener("DOMContentLoaded", fail, false);
     }
+    return false;
   }
+  return true;
 }
+
+
+
+
+
+function waitForActiveCueAndTakeScreenshot() {
+    var videoElement = document.querySelector("video");
+    var trackElement = document.querySelector("track");
+
+    if (!failIfNot(videoElement, "Video element not found"))
+        return;
+
+    if (!failIfNot(trackElement, "Track element not found"))
+        return;
+
+    var textTrack = trackElement.track;
+
+    function pauseVideoAndTakeScreenshot() {
+        if (videoElement.paused)
+            requestAnimationFrame(() => takeScreenshot());
+        else {
+            videoElement.addEventListener("pause", function() {
+                requestAnimationFrame(() => takeScreenshot());
+            });
+            videoElement.pause();
+        }
+    }
+
+    textTrack.oncuechange = function() {
+        if (textTrack.activeCues && textTrack.activeCues.length) {
+            textTrack.oncuechange = null;
+            pauseVideoAndTakeScreenshot();
+        }
+    };
+
+    if (textTrack.activeCues && textTrack.activeCues.length)
+        pauseVideoAndTakeScreenshot();
+}
+
