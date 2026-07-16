@@ -2,8 +2,8 @@
 
 
 
-use api::{PropertyBinding, ColorF, Shadow, RasterSpace};
-use crate::scene_building::{CreateShadow, IsVisible};
+use api::{PropertyBinding, ColorF};
+use crate::scene_building::{IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
@@ -64,18 +64,6 @@ impl IsVisible for RectanglePrim {
     }
 }
 
-impl CreateShadow for RectanglePrim {
-    fn create_shadow(
-        &self,
-        shadow: &Shadow,
-        _: bool,
-        _: RasterSpace,
-    ) -> RectanglePrim {
-        RectanglePrim {
-            color: PropertyBinding::Value(shadow.color.into()),
-        }
-    }
-}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]

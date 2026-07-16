@@ -145,7 +145,6 @@ pub enum DisplayItem {
     Line(LineDisplayItem),
     Border(BorderDisplayItem),
     BoxShadow(BoxShadowDisplayItem),
-    PushShadow(PushShadowDisplayItem),
     Gradient(GradientDisplayItem),
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
@@ -175,7 +174,6 @@ pub enum DisplayItem {
     
     PopReferenceFrame,
     PopStackingContext,
-    PopAllShadows,
 
     
     DebugMarker(u32),
@@ -193,7 +191,6 @@ pub enum DebugDisplayItem {
     Line(LineDisplayItem),
     Border(BorderDisplayItem),
     BoxShadow(BoxShadowDisplayItem),
-    PushShadow(PushShadowDisplayItem),
     Gradient(GradientDisplayItem),
     RadialGradient(RadialGradientDisplayItem),
     ConicGradient(ConicGradientDisplayItem),
@@ -218,7 +215,6 @@ pub enum DebugDisplayItem {
 
     PopReferenceFrame,
     PopStackingContext,
-    PopAllShadows,
 
     DebugMarker(u32)
 }
@@ -372,6 +368,25 @@ pub enum LineStyle {
     Wavy,
 }
 
+
+
+
+
+
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, Eq, Hash, PeekPoke)]
+pub enum GlyphShadowMode {
+    
+    #[default]
+    None,
+    
+    Unblurred,
+    
+    Blurred,
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct TextDisplayItem {
     pub common: CommonItemProperties,
@@ -386,6 +401,9 @@ pub struct TextDisplayItem {
     pub font_key: font::FontInstanceKey,
     pub color: ColorF,
     pub glyph_options: Option<font::GlyphOptions>,
+    
+    
+    pub shadow: GlyphShadowMode,
 } 
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
@@ -403,6 +421,18 @@ pub struct NormalBorder {
 }
 
 impl NormalBorder {
+    
+    
+    
+    pub fn with_color(&self, color: ColorF) -> Self {
+        let mut b = *self;
+        b.left.color = color;
+        b.right.color = color;
+        b.top.color = color;
+        b.bottom.color = color;
+        b
+    }
+
     fn can_disable_antialiasing(&self) -> bool {
         fn is_valid(style: BorderStyle) -> bool {
             style == BorderStyle::Solid || style == BorderStyle::None
@@ -602,13 +632,6 @@ pub struct BoxShadowDisplayItem {
     pub border_radius: BorderRadius,
     pub shadow_radius: BorderRadius,
     pub clip_mode: BoxShadowClipMode,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct PushShadowDisplayItem {
-    pub space_and_clip: SpaceAndClipInfo,
-    pub shadow: Shadow,
-    pub should_inflate: bool,
 }
 
 #[repr(C)]
@@ -1260,7 +1283,10 @@ pub enum FilterOp {
     
     
     
-    Blur(f32, f32),
+    
+    
+    
+    Blur(f32, f32, bool),
     
     
     
@@ -2343,10 +2369,8 @@ impl DisplayItem {
             DisplayItem::Image(..) => "image",
             DisplayItem::RepeatingImage(..) => "repeating_image",
             DisplayItem::Line(..) => "line",
-            DisplayItem::PopAllShadows => "pop_all_shadows",
             DisplayItem::PopReferenceFrame => "pop_reference_frame",
             DisplayItem::PopStackingContext => "pop_stacking_context",
-            DisplayItem::PushShadow(..) => "push_shadow",
             DisplayItem::PushReferenceFrame(..) => "push_reference_frame",
             DisplayItem::PushStackingContext(..) => "push_stacking_context",
             DisplayItem::SetFilterOps => "set_filter_ops",
