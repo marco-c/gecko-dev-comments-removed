@@ -424,7 +424,8 @@ OriginAttributes SSLTokensCache::OAFromPeerId(const nsACString& aPeerId) {
   OriginAttributes oa;
   int32_t caretPos = aPeerId.FindChar('^');
   if (caretPos != kNotFound) {
-    nsAutoCString suffix(Substring(aPeerId, caretPos + 1));
+    
+    nsAutoCString suffix(Substring(aPeerId, caretPos));
     (void)oa.PopulateFromSuffix(suffix);
   }
   return oa;
