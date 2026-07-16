@@ -660,6 +660,15 @@ impl StreamOps for PulseStream<'_> {
                 stm.trigger_user_callback(std::ptr::null(), size);
             }
         }
+
+        
+        
+        
+        if !self.drain_timer.load(Ordering::Acquire).is_null() {
+            cubeb_log!("Rejecting start() on a draining stream");
+            return Err(Error::Error);
+        }
+
         self.shutdown = false;
         self.cork(CorkState::uncork() | CorkState::notify());
 
@@ -1205,7 +1214,10 @@ impl PulseStream<'_> {
 
                             
                             
-                            debug_assert!(self.drain_timer.load(Ordering::Acquire).is_null());
+                            assert!(
+                                self.drain_timer.load(Ordering::Acquire).is_null(),
+                                "drain timer already armed; stream restarted while draining"
+                            );
                             let stream_ptr = self as *const _ as *mut _;
                             if let Some(ref context) = self.context.context {
                                 self.drain_timer.store(
