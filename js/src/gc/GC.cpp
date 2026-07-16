@@ -3745,9 +3745,8 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       }
 
       
-      bool hadDelayed = delayedMarkingWorkAdded;
       marker().markOneObjectForTest(obj);
-      if (!hadDelayed && delayedMarkingWorkAdded) {
+      if (delayedMarkingWorkAdded) {
         
         
         MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
