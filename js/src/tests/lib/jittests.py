@@ -475,8 +475,9 @@ def check_output(out, err, rc, timed_out, test, options):
         
         if rc != 3:
             return OutputStatus.FAILED
-
-        return test.expect_error in err
+        if test.expect_error in err:
+            return OutputStatus.OK
+        return OutputStatus.FAILED
 
     for line in out.split("\n"):
         if line.startswith("Trace stats check failed"):
