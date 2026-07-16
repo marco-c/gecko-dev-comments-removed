@@ -175,7 +175,7 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request, nsIInputStream* aStream,
     
     
     
-    if (mBufferLen + aCount >= MAX_BUFFER_SIZE) {
+    if (aCount >= MAX_BUFFER_SIZE - mBufferLen) {
       count = MAX_BUFFER_SIZE - mBufferLen;
     } else {
       count = aCount;
