@@ -162,6 +162,10 @@ class TrustPanel {
 
   #lastEvent = null;
 
+  
+  
+  #blockerViewUpdateId = 0;
+
   #popupToggleDelayTimer = null;
   #openingReason = null;
 
@@ -553,12 +557,6 @@ class TrustPanel {
     );
 
     this.#updateAttribute(
-      document.getElementById("trustpanel-blocker-section"),
-      "hidden",
-      !this.anyDetected
-    );
-
-    this.#updateAttribute(
       document.getElementById("trustpanel-toggle-section"),
       "disabled",
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
@@ -595,17 +593,32 @@ class TrustPanel {
   }
 
   async #updateBlockerView() {
+    
+    
+    
+    
+    
+    
+    
+    const event = this.#lastEvent;
+    const updateId = ++this.#blockerViewUpdateId;
+
     let count = this.#fetchSmartBlocked().length;
     let blocked = [];
     let detected = [];
 
     for (let blocker of Object.values(this.#blockers)) {
-      if (blocker.isBlocking(this.#lastEvent)) {
+      if (blocker.isBlocking(event)) {
         blocked.push(blocker);
         count += await blocker.getBlockerCount();
-      } else if (blocker.isDetected(this.#lastEvent)) {
+      } else if (blocker.isDetected(event)) {
         detected.push(blocker);
       }
+    }
+
+    
+    if (updateId !== this.#blockerViewUpdateId) {
+      return;
     }
 
     this.#addButtons("trustpanel-blocked", blocked, true);
@@ -614,6 +627,15 @@ class TrustPanel {
     document
       .getElementById("trustpanel-smartblock-section")
       .toggleAttribute("hidden", !this.#addSmartblockEmbedToggles());
+
+    this.#updateAttribute(
+      document.getElementById("trustpanel-blocker-section"),
+      "hidden",
+      
+      
+      
+      count === 0
+    );
 
     
     
