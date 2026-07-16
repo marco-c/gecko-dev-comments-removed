@@ -346,15 +346,6 @@ var allowlist = [
   {
     file: "resource://app/modules/asrouter/MessagingTargetingConstants.sys.mjs",
   },
-
-  
-  
-  
-  
-  
-  {
-    file: "moz-src:///browser/themes/ThemesList.sys.mjs",
-  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
