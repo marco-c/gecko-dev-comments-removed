@@ -2122,6 +2122,8 @@ Maybe<RTCRtpSender::AudioConfig> RTCRtpSender::GetNewAudioConfig() {
         sendCodec.mEncodingConstraints.maxBitrateBps.emplace(
             encoding->mMaxBitrate.Value());
       }
+      
+      newConfig.mTransmitting = newConfig.mTransmitting && encoding->mActive;
     }
 
     std::vector<AudioCodecConfig> dtmfConfigs;
