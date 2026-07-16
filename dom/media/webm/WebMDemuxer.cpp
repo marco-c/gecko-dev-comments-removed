@@ -1041,11 +1041,11 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           
           
           MOZ_ASSERT(
-              ((size_t)(std::accumulate(writer->mCrypto.mPlainSizes.begin(),
-                                        writer->mCrypto.mPlainSizes.end(), 0) +
-                        std::accumulate(writer->mCrypto.mEncryptedSizes.begin(),
-                                        writer->mCrypto.mEncryptedSizes.end(),
-                                        0)) == length));
+              (std::accumulate(writer->mCrypto.mPlainSizes.begin(),
+                               writer->mCrypto.mPlainSizes.end(), size_t{0}) +
+               std::accumulate(writer->mCrypto.mEncryptedSizes.begin(),
+                               writer->mCrypto.mEncryptedSizes.end(),
+                               size_t{0})) == length);
         }
       }
     }
