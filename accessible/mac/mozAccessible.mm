@@ -432,11 +432,17 @@ static bool IsNonNativePopover(Accessible* aAccessible) {
     }
   }
 
+  
+  
+  
+  
+  
 #define ROLE(geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
              msaaRole, ia2Role, androidClass, iosIsElement, uiaControlType, \
              nameRule)                                                      \
   case roles::geckoRole:                                                    \
-    if (![macSubrole isEqualToString:NSAccessibilityUnknownSubrole]) {      \
+    if (![(NSString*)macSubrole                                             \
+            isEqualToString:NSAccessibilityUnknownSubrole]) {               \
       return macSubrole;                                                    \
     } else {                                                                \
       break;                                                                \
