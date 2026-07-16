@@ -8,7 +8,9 @@
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
+#include "nsIGeolocationService.h"
 #include "nsIObserver.h"
+#include "nscore.h"
 
 class nsIDOMGeoPosition;
 class nsITimer;
@@ -25,7 +27,8 @@ struct CachedPositionAndAccuracy {
 
 
 
-class nsGeolocationService final : public nsIGeolocationUpdate,
+class nsGeolocationService final : public nsIGeolocationService,
+                                   public nsIGeolocationUpdate,
                                    public nsIObserver {
  public:
   static already_AddRefed<nsGeolocationService> GetGeolocationService(
@@ -54,7 +57,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   MOZ_CAN_RUN_SCRIPT nsresult StartDevice();
 
   
-  void StopDevice();
+  NS_IMETHOD StopDevice() override;
 
   
   void SetDisconnectTimer();
