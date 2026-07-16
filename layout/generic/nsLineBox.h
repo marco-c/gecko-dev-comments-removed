@@ -164,6 +164,11 @@ class nsLineBox final : public nsLineLink {
   void ClearTextBoxTrimEndApplied() { mFlags.mTextBoxTrimEndApplied = false; }
   bool TextBoxTrimEndApplied() const { return mFlags.mTextBoxTrimEndApplied; }
 
+  
+  void SetTextBoxTrimEndForced() { mFlags.mTextBoxTrimEndForced = true; }
+  void ClearTextBoxTrimEndForced() { mFlags.mTextBoxTrimEndForced = false; }
+  bool TextBoxTrimEndForced() const { return mFlags.mTextBoxTrimEndForced; }
+
  private:
   
   static const uint32_t kMinChildCountForHashtable = 200;
@@ -599,6 +604,10 @@ class nsLineBox final : public nsLineLink {
     
     bool mTextBoxTrimStartApplied : 1;
     bool mTextBoxTrimEndApplied : 1;
+    
+    
+    
+    bool mTextBoxTrimEndForced : 1;
     
     
     mozilla::UsedClear mFloatClearType;

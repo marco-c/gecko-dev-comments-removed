@@ -1710,15 +1710,16 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   nscoord balanceStep = 0;
 
-  
   nsReflowStatus reflowStatus;
+  nsFloatManager::SavedState floatManagerState;
   TrialReflowState trialState(consumedBSize, effectiveContentBoxBSize,
                               needFloatManager);
+
+  
   while (true) {
     
     
     
-    nsFloatManager::SavedState floatManagerState;
     aReflowInput.mFloatManager->PushState(&floatManagerState);
 
     aMetrics = ReflowOutput(aMetrics.GetWritingMode());
@@ -1813,6 +1814,16 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     
     break;
   }  
+
+  
+  
+  if (aMetrics.mNeedsTextBoxTrimAtFragmentEndRetry) {
+    trialState.Reset();
+    aReflowInput.mFloatManager->PopState(&floatManagerState);
+    aMetrics = ReflowOutput(aMetrics.GetWritingMode());
+    reflowStatus =
+        TrialReflow(aPresContext, aMetrics, aReflowInput, trialState);
+  }
 
   
   
@@ -2201,6 +2212,11 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   }
 
   CheckFloats(state);
+
+  
+  
+  aMetrics.mNeedsTextBoxTrimAtFragmentEndRetry =
+      state.mNeedsTextBoxTrimAtFragmentEndRetry;
 
   
   aTrialState.mBlockEndEdgeOfChildren =
@@ -4057,7 +4073,8 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
     aState.mFlags.mShouldApplyTextBoxTrimStart = false;
   }
   if (aLine->TextBoxTrimEndApplied()) {
-    aState.mFlags.mShouldApplyTextBoxTrimEnd = false;
+    aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd = false;
+    aState.mFlags.mShouldApplyTextBoxTrimAtFragmentEnd = false;
   }
 
   return usedOverflowWrap;
@@ -4665,16 +4682,31 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     
     
     
-    
     const WritingMode childWM = frame->GetWritingMode();
     const LogicalMargin childBP =
         childReflowInput->ComputedLogicalBorderPadding(childWM);
+
+    
+    
+    
+    
+    
+    
+    const bool shouldPropagateTextBoxTrim =
+        !frame->HasAnyStateBits(NS_BLOCK_BFC) || IsColumnSetWrapperFrame();
+
     childReflowInput->mFlags.mShouldApplyTextBoxTrimStart =
+        shouldPropagateTextBoxTrim &&
         aState.mFlags.mShouldApplyTextBoxTrimStart &&
         childBP.BStart(childWM) == 0 && aState.mLineNumber == 0;
-    childReflowInput->mFlags.mShouldApplyTextBoxTrimEnd =
-        aState.mFlags.mShouldApplyTextBoxTrimEnd &&
+    childReflowInput->mFlags.mShouldApplyTextBoxTrimAtBlockEnd =
+        shouldPropagateTextBoxTrim &&
+        aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd &&
         childBP.BEnd(childWM) == 0 && IsLastFormattedLine(aLine);
+    childReflowInput->mFlags.mShouldApplyTextBoxTrimAtFragmentEnd =
+        (IsColumnSetWrapperFrame() &&
+         aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd) ||
+        aState.mFlags.mShouldApplyTextBoxTrimAtFragmentEnd;
 
     if (aLine->MovedFragments()) {
       
@@ -5770,8 +5802,8 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   
   
   
-  bool isLastFormattedLine =
-      aState.mFlags.mShouldApplyTextBoxTrimEnd && IsLastFormattedLine(aLine);
+  bool isLastFormattedLine = aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd &&
+                             IsLastFormattedLine(aLine);
   aLineLayout.VerticalAlignLine(&aFlowArea, isLastFormattedLine);
 
   
@@ -5935,6 +5967,23 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
       aState.ContentBSize() != NS_UNCONSTRAINEDSIZE &&
       newBCoord > aState.ContentBEnd()) {
     NS_ASSERTION(aState.mCurrentLine == aLine, "oops");
+
+    
+    
+    
+    
+    
+    if (aState.mFlags.mShouldApplyTextBoxTrimAtFragmentEnd &&
+        !aLine->TextBoxTrimEndApplied()) {
+      const nscoord potentialTrimEndAmount =
+          aLineLayout.PotentialTextBoxTrimEndAmount();
+      const bool doesLineFitWithTrimEnd =
+          newBCoord - potentialTrimEndAmount <= aState.ContentBEnd();
+      nsLineBox* targetLine = doesLineFitWithTrimEnd ? aLine : aLine.prev();
+      targetLine->SetTextBoxTrimEndForced();
+      aState.mNeedsTextBoxTrimAtFragmentEndRetry = true;
+    }
+
     if (ShouldAvoidBreakInside(aState.mReflowInput)) {
       
       SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);

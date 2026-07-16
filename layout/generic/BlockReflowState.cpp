@@ -69,26 +69,43 @@ BlockReflowState::BlockReflowState(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  const bool shouldPropagateTextBoxTrim =
-      !mBlock->HasAnyStateBits(NS_BLOCK_BFC) ||
-      mBlock->IsColumnSetWrapperFrame() ||
-      mBlock->Style()->GetPseudoType() == PseudoStyleType::MozColumnContent;
-  const StyleTextBoxTrim trim = mBlock->StyleTextReset()->mTextBoxTrim;
   mFlags.mShouldApplyTextBoxTrimStart =
-      (shouldPropagateTextBoxTrim &&
-       aReflowInput.mFlags.mShouldApplyTextBoxTrimStart) ||
-      !!(trim & StyleTextBoxTrim::TRIM_START);
-  mFlags.mShouldApplyTextBoxTrimEnd =
-      (shouldPropagateTextBoxTrim &&
-       aReflowInput.mFlags.mShouldApplyTextBoxTrimEnd) ||
-      !!(trim & StyleTextBoxTrim::TRIM_END);
+      aReflowInput.mFlags.mShouldApplyTextBoxTrimStart;
+  mFlags.mShouldApplyTextBoxTrimAtBlockEnd =
+      aReflowInput.mFlags.mShouldApplyTextBoxTrimAtBlockEnd;
+  mFlags.mShouldApplyTextBoxTrimAtFragmentEnd =
+      aReflowInput.mFlags.mShouldApplyTextBoxTrimAtFragmentEnd;
+
+  const StyleTextBoxTrim trim = mBlock->StyleTextReset()->mTextBoxTrim;
+  const bool selfTextBoxTrimStart = bool(trim & StyleTextBoxTrim::TRIM_START);
+  const bool selfTextBoxTrimEnd = bool(trim & StyleTextBoxTrim::TRIM_END);
+
+  
+  
+  
+  
+  
+  
+  const bool isBoxDecorationBreakClone =
+      aFrame->StyleBorder()->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone;
+
+  if (selfTextBoxTrimStart) {
+    
+    
+    
+    
+    mFlags.mShouldApplyTextBoxTrimStart =
+        !aFrame->GetPrevInFlow() || isBoxDecorationBreakClone;
+  }
+
+  if (selfTextBoxTrimEnd) {
+    
+    
+    
+    mFlags.mShouldApplyTextBoxTrimAtBlockEnd = true;
+    mFlags.mShouldApplyTextBoxTrimAtFragmentEnd = isBoxDecorationBreakClone;
+  }
 
   mFlags.mCanHaveOverflowMarkers = css::TextOverflow::CanHaveOverflowMarkers(
       mBlock, css::TextOverflow::BeforeReflow::Yes);

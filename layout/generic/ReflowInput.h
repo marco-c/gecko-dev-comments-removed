@@ -540,7 +540,16 @@ struct ReflowInput : public SizeComputationInput {
     
     
     bool mShouldApplyTextBoxTrimStart : 1;
-    bool mShouldApplyTextBoxTrimEnd : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
+    bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
   };
   Flags mFlags;
 

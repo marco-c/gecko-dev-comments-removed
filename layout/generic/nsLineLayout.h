@@ -341,6 +341,15 @@ class nsLineLayout {
 
   void SetUsedOverflowWrap() { mUsedOverflowWrap = true; }
 
+  
+
+
+
+
+  nscoord PotentialTextBoxTrimEndAmount() const {
+    return mPotentialTextBoxTrimEndAmount;
+  }
+
  protected:
   
 
@@ -566,6 +575,10 @@ class nsLineLayout {
   
   
   nscoord mFinalLineBSize = 0;
+
+  
+  
+  nscoord mPotentialTextBoxTrimEndAmount = 0;
 
   
   

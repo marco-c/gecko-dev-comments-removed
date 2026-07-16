@@ -37,7 +37,8 @@ class BlockReflowState {
           mIsLineLayoutEmpty(false),
           mCanHaveOverflowMarkers(false),
           mShouldApplyTextBoxTrimStart(false),
-          mShouldApplyTextBoxTrimEnd(false) {}
+          mShouldApplyTextBoxTrimAtBlockEnd(false),
+          mShouldApplyTextBoxTrimAtFragmentEnd(false) {}
 
     
     
@@ -90,8 +91,11 @@ class BlockReflowState {
 
     
     
+    
+    
     bool mShouldApplyTextBoxTrimStart : 1;
-    bool mShouldApplyTextBoxTrimEnd : 1;
+    bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
+    bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
   };
 
  public:
@@ -403,6 +407,12 @@ class BlockReflowState {
   const nscoord mMinLineHeight;
 
   int32_t mLineNumber;
+
+  
+  
+  
+  
+  bool mNeedsTextBoxTrimAtFragmentEndRetry = false;
 
   Flags mFlags;
 

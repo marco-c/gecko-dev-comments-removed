@@ -246,6 +246,10 @@ class ReflowOutput {
 
   
   
+  bool mNeedsTextBoxTrimAtFragmentEndRetry = false;
+
+  
+  
   
   
   

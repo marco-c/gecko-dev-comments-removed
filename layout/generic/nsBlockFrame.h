@@ -583,6 +583,11 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
+
+
+
   struct TrialReflowState {
     
     const nscoord mConsumedBSize;
@@ -608,22 +613,33 @@ class nsBlockFrame : public nsContainerFrame {
           mNeedFloatManager(aNeedFloatManager) {}
 
     
-    void ResetForBalance(nscoord aInsetDelta) {
-      
-      
-      mBalancing = true;
-      
-      mInset += aInsetDelta;
-      
+    void Reset() {
       mOcBounds.Clear();
       mFcBounds.Clear();
       mBlockEndEdgeOfChildren = 0;
       mContainerWidth = 0;
       mUsedOverflowWrap = false;
     }
+
+    
+    void ResetForBalance(nscoord aInsetDelta) {
+      
+      
+      mBalancing = true;
+      
+      mInset += aInsetDelta;
+      Reset();
+    }
   };
 
   
+
+
+
+
+
+
+
 
 
 

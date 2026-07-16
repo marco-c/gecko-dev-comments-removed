@@ -334,6 +334,11 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
                                                         true);
     }
   }
+
+  
+  
+  aState.mNeedsTextBoxTrimAtFragmentEndRetry |=
+      mMetrics.mNeedsTextBoxTrimAtFragmentEndRetry;
 }
 
 
