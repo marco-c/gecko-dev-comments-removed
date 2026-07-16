@@ -395,9 +395,6 @@ class InplaceEditor extends EventEmitter {
     this.elt.style.display = "none";
     this.elt.parentNode.insertBefore(this.input, this.elt);
 
-    
-    this.#autosize();
-
     this.inputCharDimensions = this.#getInputCharDimensions();
     
     
@@ -458,8 +455,6 @@ class InplaceEditor extends EventEmitter {
       this.input.addEventListener("keyup", this.#onKeyup, eventListenerConfig);
     }
 
-    this.#updateSize();
-
     if (options.start) {
       options.start(this, event);
     }
@@ -471,7 +466,6 @@ class InplaceEditor extends EventEmitter {
   #abortController;
   #advanceChars;
   #applied;
-  #measurement;
   #openPopupTimeout;
   #pressedKey;
   #preventSuggestions;
@@ -510,6 +504,11 @@ class InplaceEditor extends EventEmitter {
       this.input.style.padding = "0";
     }
 
+    this.input.style.setProperty("field-sizing", "content");
+    if (this.maxWidth) {
+      this.input.style.setProperty("max-width", `${this.maxWidth}px`);
+    }
+
     this.input.classList.add("styleinspector-propertyeditor");
     if (options.inputClass) {
       this.input.classList.add(options.inputClass);
@@ -540,7 +539,6 @@ class InplaceEditor extends EventEmitter {
     }
 
     this.#abortController.abort();
-    this.#stopAutosize();
 
     this.elt.style.display = this.originalDisplay;
 
@@ -563,102 +561,30 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  #autosize() {
-    
-    
-
-    
-    
-    
-    
-    this.#measurement = this.doc.createElementNS(
-      HTML_NS,
-      this.multiline ? "pre" : "span"
-    );
-    this.#measurement.className = "autosizer";
-    this.elt.parentNode.appendChild(this.#measurement);
-    const style = this.#measurement.style;
-    style.visibility = "hidden";
-    style.position = "absolute";
-    style.top = "0";
-    style.left = "0";
-
-    if (this.multiline) {
-      style.whiteSpace = "pre-wrap";
-      style.wordWrap = "break-word";
-      if (this.maxWidth) {
-        style.maxWidth = this.maxWidth + "px";
-        
-        
-        style.position = "fixed";
-      }
-    }
-
-    copyAllStyles(this.input, this.#measurement);
-    this.#updateSize();
-  }
-
-  
-
-
-  #stopAutosize() {
-    if (!this.#measurement) {
-      return;
-    }
-    this.#measurement.remove();
-    this.#measurement = null;
-  }
-
-  
-
-
-  #updateSize() {
-    
-    
-    
-    let content = this.input.value;
-    const unbreakableSpace = "\u00a0";
-
-    
-    if (content === "") {
-      content = unbreakableSpace;
-    }
-
-    
-    
-    if (content.lastIndexOf("\n") === content.length - 1) {
-      content = content + unbreakableSpace;
-    }
-
-    if (!this.multiline) {
-      content = content.replace(/ /g, unbreakableSpace);
-    }
-
-    this.#measurement.textContent = content;
-
-    
-    let width = this.#measurement.getBoundingClientRect().width;
-    if (this.multiline) {
-      if (this.maxWidth) {
-        width = Math.min(this.maxWidth, width);
-      }
-      const height = this.#measurement.getBoundingClientRect().height;
-      this.input.style.height = height + "px";
-    }
-    this.input.style.width = width + "px";
-  }
-
-  
-
-
-
   #getInputCharDimensions() {
     
     
-    this.#measurement.textContent = "x";
-    const width = this.#measurement.clientWidth;
-    const height = this.#measurement.clientHeight;
-    return { width, height };
+    
+    this.input.style.setProperty("--inplace-editor-char-width", "1ch");
+    this.input.style.setProperty("--inplace-editor-char-height", "1lh");
+
+    const inputComputedStyle = this.doc.defaultView.getComputedStyle(
+      this.input
+    );
+    const inplaceEditorCharWidthVariableValue =
+      inputComputedStyle.getPropertyValue("--inplace-editor-char-width");
+    const inplaceEditorCharHeightVariableValue =
+      inputComputedStyle.getPropertyValue("--inplace-editor-char-height");
+
+    const cssLengthStringToNumber = cssStr => {
+      const num = Number(cssStr.replace("px", ""));
+      return Number.isNaN(num) ? 0 : num;
+    };
+
+    return {
+      width: cssLengthStringToNumber(inplaceEditorCharWidthVariableValue),
+      height: cssLengthStringToNumber(inplaceEditorCharHeightVariableValue),
+    };
   }
 
   
@@ -1165,7 +1091,6 @@ class InplaceEditor extends EventEmitter {
       );
     }
 
-    this.#updateSize();
     
     this.emit("after-suggest");
   }
@@ -1303,7 +1228,7 @@ class InplaceEditor extends EventEmitter {
       pre.length + toComplete.length,
       pre.length + toComplete.length
     );
-    this.#updateSize();
+
     
     
     const onPopupHidden = () => {
@@ -1347,7 +1272,6 @@ class InplaceEditor extends EventEmitter {
 
     let cycling = false;
     if (increment && this.#incrementValue(increment)) {
-      this.#updateSize();
       prevent = true;
       cycling = true;
     }
@@ -1587,11 +1511,6 @@ class InplaceEditor extends EventEmitter {
     this.#doValidation();
 
     
-    if (this.#measurement) {
-      this.#updateSize();
-    }
-
-    
     if (this.change) {
       this.change(this.currentInputValue);
     }
@@ -1615,7 +1534,6 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (increment && this.#incrementValue(increment)) {
-      this.#updateSize();
       event.preventDefault();
     }
   };
@@ -1923,7 +1841,6 @@ class InplaceEditor extends EventEmitter {
           query.length,
           query.length + item.length - startCheckQuery.length
         );
-        this.#updateSize();
       }
 
       
@@ -2105,7 +2022,6 @@ class InplaceEditor extends EventEmitter {
     const start = this.input.selectionStart;
     this.input.value = str;
     this.input.setSelectionRange(start, start);
-    this.#updateSize();
   }
 
   
@@ -2224,60 +2140,6 @@ function copyTextStyles(from, to) {
   to.style.fontSize = style.fontSize;
   to.style.fontWeight = style.fontWeight;
   to.style.fontStyle = style.fontStyle;
-}
-
-
-
-
-function copyAllStyles(from, to) {
-  const win = from.ownerDocument.defaultView;
-  const style = win.getComputedStyle(from);
-
-  copyTextStyles(from, to);
-  to.style.lineHeight = style.lineHeight;
-
-  
-  
-  const boxSizing = style.boxSizing;
-  if (boxSizing === "border-box") {
-    to.style.boxSizing = boxSizing;
-    copyBoxModelStyles(from, to);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-function copyBoxModelStyles(from, to) {
-  const properties = [
-    
-    "paddingTop",
-    "paddingRight",
-    "paddingBottom",
-    "paddingLeft",
-    
-    "borderTopStyle",
-    "borderRightStyle",
-    "borderBottomStyle",
-    "borderLeftStyle",
-    
-    "borderTopWidth",
-    "borderRightWidth",
-    "borderBottomWidth",
-    "borderLeftWidth",
-  ];
-
-  const win = from.ownerDocument.defaultView;
-  const style = win.getComputedStyle(from);
-  for (const property of properties) {
-    to.style[property] = style[property];
-  }
 }
 
 
