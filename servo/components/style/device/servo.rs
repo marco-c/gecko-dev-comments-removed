@@ -60,6 +60,8 @@ pub(super) struct ExtraDeviceData {
     
     viewport_size: Size2D<f32, CSSPixel>,
     
+    device_size: Size2D<f32, DevicePixel>,
+    
     device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
     
     #[ignore_malloc_size_of = "Pure stack type"]
@@ -84,6 +86,7 @@ impl Device {
         media_type: MediaType,
         quirks_mode: QuirksMode,
         viewport_size: Size2D<f32, CSSPixel>,
+        device_size: Size2D<f32, DevicePixel>,
         device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
         font_metrics_provider: Box<dyn FontMetricsProvider>,
         default_values: Arc<ComputedValues>,
@@ -112,6 +115,7 @@ impl Device {
             extra: ExtraDeviceData {
                 media_type,
                 viewport_size,
+                device_size,
                 device_pixel_ratio,
                 quirks_mode,
                 prefers_color_scheme,
@@ -218,6 +222,21 @@ impl Device {
         device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
     ) {
         self.extra.device_pixel_ratio = device_pixel_ratio;
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_device_size(&mut self, device_size: Size2D<f32, DevicePixel>) {
+        self.extra.device_size = device_size;
+    }
+
+    
+    #[inline]
+    pub fn device_size(&self) -> Size2D<f32, DevicePixel> {
+        self.extra.device_size
     }
 
     
