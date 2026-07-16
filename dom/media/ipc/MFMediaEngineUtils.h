@@ -133,6 +133,23 @@ inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
 inline constexpr HRESULT MF_E_HARDWARE_DRM_UNSUPPORTED =
     static_cast<HRESULT>(0xC00D3706);
 #  endif
+
+
+
+
+
+#  ifndef MF_E_TOPO_UNSUPPORTED
+inline constexpr HRESULT MF_E_TOPO_UNSUPPORTED =
+    static_cast<HRESULT>(0xC00D5214);
+#  endif
+
+
+
+
+#  ifndef MF_E_INCOMPATIBLE_SAMPLE_PROTECTION
+inline constexpr HRESULT MF_E_INCOMPATIBLE_SAMPLE_PROTECTION =
+    static_cast<HRESULT>(0xC00D7176);
+#  endif
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);
