@@ -387,10 +387,16 @@ class MOZ_GSL_POINTER Span {
 
   
   
+  
+  
+  
+  
+  
 
 
-  template <std::same_as<Span> U = Span>
-    requires(U::extent == 0 || U::extent == dynamic_extent)
+  template <bool Dependent = false,
+            class = std::enable_if_t<(Dependent || Extent == 0 ||
+                                      Extent == dynamic_extent)>>
   constexpr Span() : storage_(nullptr, span_details::extent_type<0>()) {}
 
   
@@ -448,10 +454,12 @@ class MOZ_GSL_POINTER Span {
   
   
   
-  template <typename T>
-    requires(std::is_pointer_v<T> &&
-             (std::is_same_v<std::remove_const_t<std::decay_t<T>>, char*> ||
-              std::is_same_v<std::remove_const_t<std::decay_t<T>>, char16_t*>))
+  template <
+      typename T,
+      typename = std::enable_if_t<
+          std::is_pointer_v<T> &&
+          (std::is_same_v<std::remove_const_t<std::decay_t<T>>, char> ||
+           std::is_same_v<std::remove_const_t<std::decay_t<T>>, char16_t>)>>
   Span(T& aStr) = delete;
 
   
@@ -524,25 +532,30 @@ class MOZ_GSL_POINTER Span {
   
 
 
-  template <class Container>
-    requires(!std::is_const_v<Container> &&
-             !span_details::is_span<Container>::value &&
-             !span_details::is_std_array<Container>::value &&
-             std::is_convertible_v<typename Container::pointer, pointer> &&
-             std::is_convertible_v<typename Container::pointer,
-                                   decltype(std::declval<Container>().data())>)
-  constexpr MOZ_IMPLICIT Span(Container& cont)
+  template <
+      class Container,
+      class Dummy = std::enable_if_t<
+          !std::is_const_v<Container> &&
+              !span_details::is_span<Container>::value &&
+              !span_details::is_std_array<Container>::value &&
+              std::is_convertible_v<typename Container::pointer, pointer> &&
+              std::is_convertible_v<typename Container::pointer,
+                                    decltype(std::declval<Container>().data())>,
+          Container>>
+  constexpr MOZ_IMPLICIT Span(Container& cont, Dummy* = nullptr)
       : Span(cont.data(), ReleaseAssertedCast<index_type>(cont.size())) {}
 
   
 
 
-  template <class Container>
-    requires(std::is_const_v<element_type> &&
-             !span_details::is_span<Container>::value &&
-             std::is_convertible_v<typename Container::pointer, pointer> &&
-             std::is_convertible_v<typename Container::pointer,
-                                   decltype(std::declval<Container>().data())>)
+  template <
+      class Container,
+      class = std::enable_if_t<
+          std::is_const_v<element_type> &&
+          !span_details::is_span<Container>::value &&
+          std::is_convertible_v<typename Container::pointer, pointer> &&
+          std::is_convertible_v<typename Container::pointer,
+                                decltype(std::declval<Container>().data())>>>
   constexpr MOZ_IMPLICIT Span(const Container& cont)
       : Span(cont.data(), ReleaseAssertedCast<index_type>(cont.size())) {}
 
@@ -551,27 +564,31 @@ class MOZ_GSL_POINTER Span {
   
 
 
-  template <class Container>
-    requires(
-        !std::is_const_v<Container> &&
-        !span_details::is_span<Container>::value &&
-        !span_details::is_std_array<Container>::value &&
-        std::is_convertible_v<typename Container::value_type*, pointer> &&
-        std::is_convertible_v<typename Container::value_type*,
-                              decltype(std::declval<Container>().Elements())>)
+  template <
+      class Container,
+      class = std::enable_if_t<
+          !std::is_const_v<Container> &&
+          !span_details::is_span<Container>::value &&
+          !span_details::is_std_array<Container>::value &&
+          std::is_convertible_v<typename Container::value_type*, pointer> &&
+          std::is_convertible_v<
+              typename Container::value_type*,
+              decltype(std::declval<Container>().Elements())>>>
   constexpr MOZ_IMPLICIT Span(Container& cont, void* = nullptr)
       : Span(cont.Elements(), ReleaseAssertedCast<index_type>(cont.Length())) {}
 
   
 
 
-  template <class Container>
-    requires(
-        std::is_const_v<element_type> &&
-        !span_details::is_span<Container>::value &&
-        std::is_convertible_v<typename Container::value_type*, pointer> &&
-        std::is_convertible_v<typename Container::value_type*,
-                              decltype(std::declval<Container>().Elements())>)
+  template <
+      class Container,
+      class = std::enable_if_t<
+          std::is_const_v<element_type> &&
+          !span_details::is_span<Container>::value &&
+          std::is_convertible_v<typename Container::value_type*, pointer> &&
+          std::is_convertible_v<
+              typename Container::value_type*,
+              decltype(std::declval<Container>().Elements())>>>
   constexpr MOZ_IMPLICIT Span(const Container& cont, void* = nullptr)
       : Span(cont.Elements(), ReleaseAssertedCast<index_type>(cont.Length())) {}
 
@@ -588,11 +605,12 @@ class MOZ_GSL_POINTER Span {
   
 
 
-  template <class OtherElementType, size_t OtherExtent>
-    requires(span_details::is_allowed_extent_conversion<OtherExtent,
-                                                        Extent>::value &&
-             span_details::is_allowed_element_type_conversion<
-                 OtherElementType, element_type>::value)
+  template <
+      class OtherElementType, size_t OtherExtent,
+      class = std::enable_if_t<span_details::is_allowed_extent_conversion<
+                                   OtherExtent, Extent>::value &&
+                               span_details::is_allowed_element_type_conversion<
+                                   OtherElementType, element_type>::value>>
   constexpr MOZ_IMPLICIT Span(const Span<OtherElementType, OtherExtent>& other)
       : storage_(other.data(),
                  span_details::extent_type<OtherExtent>(other.size())) {}
@@ -600,11 +618,12 @@ class MOZ_GSL_POINTER Span {
   
 
 
-  template <class OtherElementType, size_t OtherExtent>
-    requires(span_details::is_allowed_extent_conversion<OtherExtent,
-                                                        Extent>::value &&
-             span_details::is_allowed_element_type_conversion<
-                 OtherElementType, element_type>::value)
+  template <
+      class OtherElementType, size_t OtherExtent,
+      class = std::enable_if_t<span_details::is_allowed_extent_conversion<
+                                   OtherExtent, Extent>::value &&
+                               span_details::is_allowed_element_type_conversion<
+                                   OtherElementType, element_type>::value>>
   constexpr MOZ_IMPLICIT Span(Span<OtherElementType, OtherExtent>&& other)
       : storage_(other.data(),
                  span_details::extent_type<OtherExtent>(other.size())) {}
@@ -960,8 +979,8 @@ AsBytes(Span<ElementType, Extent> s) {
 
 
 
-template <class ElementType, size_t Extent>
-  requires(!std::is_const_v<ElementType>)
+template <class ElementType, size_t Extent,
+          class = std::enable_if_t<!std::is_const_v<ElementType>>>
 Span<uint8_t, span_details::calculate_byte_size<ElementType, Extent>::value>
 AsWritableBytes(Span<ElementType, Extent> s) {
   return {reinterpret_cast<uint8_t*>(s.data()), s.size_bytes()};
