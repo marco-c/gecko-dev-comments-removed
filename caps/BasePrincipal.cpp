@@ -1254,12 +1254,13 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateContentPrincipal(
 
   
   
-  if (aURI->SchemeIs(BLOBURI_SCHEME)) {
+  nsCOMPtr<nsIURI> innermost = NS_GetInnermostURI(aURI);
+  if (innermost && innermost->SchemeIs(BLOBURI_SCHEME)) {
     MOZ_ASSERT(!aInitialDomain,
                "an initial domain for a blob URI makes no sense");
     nsCOMPtr<nsIPrincipal> blobPrincipal;
     if (!dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-            aURI, aAttrs, getter_AddRefs(blobPrincipal))) {
+            innermost, aAttrs, getter_AddRefs(blobPrincipal))) {
       
       return NullPrincipal::Create(aAttrs);
     }
