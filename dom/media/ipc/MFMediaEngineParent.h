@@ -94,6 +94,12 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 #ifdef MOZ_WMF_CDM
   
   void NotifyDisableHWDRM();
+
+  
+  
+  
+  
+  void RecoverProtectedPlayback(HRESULT aResult);
 #endif
 
   
