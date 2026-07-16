@@ -17508,8 +17508,6 @@ function SportsMatchRow({
     status: matchStatus,
     home_score,
     away_score,
-    home_extra,
-    away_extra,
     home_penalty,
     away_penalty,
     query
@@ -17519,9 +17517,8 @@ function SportsMatchRow({
   const homeTeamName = home_team ? localizedNames?.[home_team.key] ?? home_team.name : tbdTeamName;
   const awayTeamName = away_team ? localizedNames?.[away_team.key] ?? away_team.name : tbdTeamName;
   const dateTimestamp = new Date(date).getTime();
-  
-  const displayHomeScore = home_score + (home_extra || 0);
-  const displayAwayScore = away_score + (away_extra || 0);
+  const displayHomeScore = home_score || 0;
+  const displayAwayScore = away_score || 0;
   
   
   
@@ -18260,8 +18257,8 @@ const getMatchWinnerKey = match => {
   if (!match) {
     return null;
   }
-  const homeScore = (match.home_score || 0) + (match.home_extra || 0);
-  const awayScore = (match.away_score || 0) + (match.away_extra || 0);
+  const homeScore = match.home_score || 0;
+  const awayScore = match.away_score || 0;
   if (homeScore > awayScore) {
     return match.home_team.key;
   }

@@ -109,6 +109,9 @@ function MatchTeam({ team, isFollowed, localizedName }) {
     );
   }
   const displayName = localizedName ?? team.name;
+  // Display the ISO region to match other platforms; team.key stays the
+  // internal identity key. Fall back to key when region is absent.
+  const displayCode = team.region ?? team.key;
   return (
     <div className="sports-match-team">
       <span
@@ -125,7 +128,7 @@ function MatchTeam({ team, isFollowed, localizedName }) {
         )}
       </span>
       <span className="sports-match-code">
-        {isFollowed ? <strong>{team.key}</strong> : team.key}
+        {isFollowed ? <strong>{displayCode}</strong> : displayCode}
       </span>
     </div>
   );
@@ -186,8 +189,6 @@ function SportsMatchRow({
     status: matchStatus,
     home_score,
     away_score,
-    home_extra,
-    away_extra,
     home_penalty,
     away_penalty,
     query,
@@ -201,9 +202,8 @@ function SportsMatchRow({
     ? (localizedNames?.[away_team.key] ?? away_team.name)
     : tbdTeamName;
   const dateTimestamp = new Date(date).getTime();
-  // (developer note): Assumes home_score/away_score exclude extra time goals
-  const displayHomeScore = home_score + (home_extra || 0);
-  const displayAwayScore = away_score + (away_extra || 0);
+  const displayHomeScore = home_score || 0;
+  const displayAwayScore = away_score || 0;
   // A match went to a shootout only when both penalty scores are present.
   // Checking both guards against asymmetric/corrupt data where one side is
   // null — which would otherwise pass a `null` into the aria-label args.
