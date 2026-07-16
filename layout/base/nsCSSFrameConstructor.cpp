@@ -5014,9 +5014,10 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
     
     
     
+    
     if (aParentFrame && IsFrameForSVG(aParentFrame) &&
         !aParentFrame->IsSVGForeignObjectFrame() &&
-        !aElement.IsRootOfNativeAnonymousSubtree()) {
+        aStyle.GetPseudoType() != PseudoStyleType::Backdrop) {
       return nullptr;
     }
     if (aFlags.contains(ItemFlag::IsWithinSVGText)) {
