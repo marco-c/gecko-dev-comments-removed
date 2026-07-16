@@ -228,15 +228,23 @@ def add_additional_fetches_and_command(config, jobs):
                 )
             else:
                 identifier = info["previousVersion"]
+                
+                
+                
+                
+                
+                brand = info["product"].lower()
                 from_installer_url = _get_release_installer_url(
-                    info["product"],
+                    brand,
+                    product,
                     build_target,
                     locale,
                     info["previousVersion"],
                     archive_prefix,
                 )
                 linux64_installer_url = _get_release_installer_url(
-                    info["product"],
+                    brand,
+                    product,
                     "Linux_x86_64-gcc3",
                     linux_locale,
                     info["previousVersion"],
@@ -259,14 +267,19 @@ def add_additional_fetches_and_command(config, jobs):
 
 
 def _get_release_installer_url(
-    brand, build_target, locale, from_version, archive_prefix
+    brand, product, build_target, locale, from_version, archive_prefix
 ):
-    product = brand.lower()
     ftp_platform = updatePlatform2ftp(build_target)
     releases_dir = getReleasesDir(
-        product, from_version, protocol="https", server=archive_prefix
+        brand, from_version, protocol="https", server=archive_prefix
     )
     path = urllib.parse.quote(
-        getReleaseInstallerPath(product, brand, from_version, ftp_platform, locale)
+        
+        
+        
+        
+        getReleaseInstallerPath(
+            product, product.capitalize(), from_version, ftp_platform, locale
+        )
     )
     return f"{releases_dir}/{path}"
