@@ -214,9 +214,11 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have added the correct engines"
   );
 
+  
+  
   Assert.deepEqual(
     enginesModified.sort(),
-    ["hasParamsInFRRegion"],
+    ["appDefault", "defaultInFRRegion", "hasParamsInFRRegion"],
     "Should have modified the expected engines"
   );
 
