@@ -60,6 +60,10 @@ class ConnectionAttempt : public nsSupportsWeakReference {
   void SetAllow1918(bool val) { mAllow1918 = val; }
   bool HasConnected() { return mHasConnected; }
 
+  
+  
+  void ForgetRealTransaction() { mTransaction = nullptr; }
+
  protected:
   virtual ~ConnectionAttempt() = default;
 

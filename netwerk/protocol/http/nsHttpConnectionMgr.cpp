@@ -1101,6 +1101,17 @@ bool nsHttpConnectionMgr::DispatchPendingQ(
              "TryDispatchTransaction returning hard error %" PRIx32 "\n",
              static_cast<uint32_t>(rv)));
         if (rv == NS_ERROR_HTTP2_FALLBACK_TO_HTTP1) {
+          
+          
+          
+          nsWeakPtr weak =
+              pendingTransInfo->ForgetConnectionAttemptAndActiveConn();
+          if (RefPtr<ConnectionAttempt> attempt = do_QueryReferent(weak)) {
+            
+            
+            attempt->ForgetRealTransaction();
+            ent->RemoveConnectionAttempt(attempt,  true);
+          }
           pendingTransInfo->Transaction()->Close(
               NS_ERROR_HTTP2_FALLBACK_TO_HTTP1);
         }

@@ -141,7 +141,7 @@ class FakeConnectionEstablisher final : public ConnectionEstablisher {
     mCallback = std::move(aCallback);
     return true;
   }
-  void Close(nsresult) override {}
+  void Close(nsresult) override { ++mCloseCount; }
   void ResetSpeculativeFlags() override {}
   bool IsUDP() const override { return mIsUDP; }
 
@@ -150,6 +150,8 @@ class FakeConnectionEstablisher final : public ConnectionEstablisher {
     mCallback(RefPtr<HttpConnectionBase>(aConn));
   }
   void FireError(nsresult aError) { mCallback(Err(aError)); }
+
+  uint32_t mCloseCount = 0;
 
  private:
   ~FakeConnectionEstablisher() = default;
@@ -535,6 +537,78 @@ TEST(HappyEyeballsConnectionAttempt, ProcessTCPConnSkipsRequeueWhenConnected)
 
     realTrans->SetConnection(nullptr);
     delegate1->ResetHandles();
+  });
+}
+
+
+
+
+TEST(HappyEyeballsConnectionAttempt, AbandonClosesInFlightEstablisher)
+{
+  EnsureHttpHandler();
+  RunOnSocketThread([]() {
+    RefPtr<nsHttpConnectionInfo> ci =
+        new nsHttpConnectionInfo("127.0.0.1"_ns, 443, ""_ns, ""_ns, nullptr,
+                                 OriginAttributes(),  true);
+    RefPtr<nsHttpTransaction> realTrans = new nsHttpTransaction();
+    
+    realTrans->SetIsForWebTransport(true);
+    nsTHashSet<ConnectionEntry*> pendingQSet;
+
+    RefPtr<ConnectionEntry> entry = new ConnectionEntry(ci, pendingQSet);
+    RefPtr<FakeConnectionEstablisherFactory> factory =
+        new FakeConnectionEstablisherFactory();
+    RefPtr<RecordingConnMgrDelegate> delegate = new RecordingConnMgrDelegate();
+    RefPtr<HappyEyeballsConnectionAttempt> hca =
+        new HappyEyeballsConnectionAttempt(ci, realTrans,  0,
+                                            false,
+                                            false);
+    hca->SetConnectionEstablisherFactoryForTesting(factory);
+    hca->SetConnMgrDelegateForTesting(delegate);
+    hca->Init(entry);
+    ASSERT_GE(factory->mTCP.Length(), 1u);
+    EXPECT_FALSE(hca->IsTerminal());
+    EXPECT_EQ(factory->mTCP[0]->mCloseCount, 0u)
+        << "the establisher is still in flight before abandonment";
+
+    
+    hca->Abandon();
+
+    EXPECT_TRUE(hca->IsTerminal())
+        << "an abandoned attempt is terminal and cannot reach ProcessTCPConn";
+    EXPECT_EQ(factory->mTCP[0]->mCloseCount, 1u)
+        << "abandoning closes the in-flight establisher, so a late success "
+           "can't fire and re-queue the restarted transaction (bug 2051415)";
+    EXPECT_FALSE(realTrans->Closed())
+        << "abandoning the attempt must not close the restarted transaction";
+  });
+}
+
+
+
+
+TEST(HappyEyeballsConnectionAttempt,
+     ForgetRealTransactionPreventsAbandonRequeue)
+{
+  EnsureHttpHandler();
+  RunOnSocketThread([]() {
+    TestHarness h( 0,  true);
+    h.Init();
+    ASSERT_GE(h.mFactory->mTCP.Length(), 1u);
+
+    
+    h.mHE->ZeroRttHandleForTesting()->SetAnyStartedForTesting();
+
+    
+    h.mHE->ForgetRealTransaction();
+    h.mHE->Abandon();
+
+    EXPECT_TRUE(h.mHE->IsTerminal());
+    EXPECT_EQ(h.mDelegate->Count("AddTransaction"), 0)
+        << "a detached, abandoned attempt must not re-queue the transaction "
+           "the connection manager is restarting (bug 2051415)";
+    EXPECT_EQ(h.mFactory->mTCP[0]->mCloseCount, 1u)
+        << "abandoning still closes the in-flight establisher";
   });
 }
 
