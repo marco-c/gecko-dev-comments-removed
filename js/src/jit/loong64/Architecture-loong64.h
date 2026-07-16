@@ -179,6 +179,7 @@ class Registers {
 
   static const SetType NonAllocatableMask =
       (1U << Registers::zero) |  
+      (1U << Registers::t6) |    
       (1U << Registers::t7) |    
       (1U << Registers::t8) |    
       (1U << Registers::s8) |    
