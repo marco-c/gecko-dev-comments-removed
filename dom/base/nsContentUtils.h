@@ -3411,6 +3411,10 @@ class nsContentUtils {
 
   static uint64_t GenerateProcessSpecificId(uint64_t aId);
 
+  
+
+
+
   static std::tuple<uint64_t, uint64_t> SplitProcessSpecificId(uint64_t aId);
 
   
