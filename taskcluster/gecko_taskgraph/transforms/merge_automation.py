@@ -67,6 +67,17 @@ def add_payload_config(config, tasks):
         action_name = list(worker["actions"][0].keys())[0]
 
         
+        if "to-revision" in merge_config:
+            worker["actions"][0][action_name]["to-revision"] = merge_config[
+                "to-revision"
+            ]
+
+        if "from-revision" in merge_config:
+            worker["actions"][0][action_name]["from-revision"] = merge_config[
+                "from-revision"
+            ]
+
+        
         for field in [
             "from-repo",
             "from-branch",
