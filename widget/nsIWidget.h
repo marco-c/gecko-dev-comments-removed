@@ -1381,6 +1381,8 @@ class nsIWidget : public nsSupportsWeakReference {
   
   virtual bool UseExternalCompositingSurface() const { return false; }
 
+  void SetIsTiled(bool);
+
   
 
 

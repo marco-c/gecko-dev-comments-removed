@@ -329,6 +329,12 @@ void nsIWidget::QuitIME() {
   this->mIMEHasQuit = true;
 }
 
+void nsIWidget::SetIsTiled(bool aIsTiled) {
+  
+  
+  mIsTiled = aIsTiled;
+}
+
 void nsIWidget::DestroyCompositor() {
   RevokeTransactionIdAllocator();
 
