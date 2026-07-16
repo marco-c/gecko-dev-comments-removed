@@ -40,3 +40,8 @@
 #endif
 
 pref("pdfjs.enableOptimizedPartialRendering", true);
+
+
+
+
+pref("pdfjs.enableSignatureVerification", false);
