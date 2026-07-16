@@ -111,6 +111,9 @@ class DefaultHappyEyeballsConnMgrDelegate final
                                 uint16_t aFamily) override {
     aEntry->RecordIPFamilyPreference(aFamily);
   }
+  void ResetIPFamilyPreference(ConnectionEntry* aEntry) override {
+    aEntry->ResetIPFamilyPreference();
+  }
   bool MaybeProcessCoalescingKeys(ConnectionEntry* aEntry,
                                   nsIDNSAddrRecord* aRecord,
                                   bool aIsHttp3) override {
@@ -1417,6 +1420,16 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   RefPtr<ConnectionEntry> entry(mEntry);
   MOZ_ASSERT(entry);
 
+  
+  
+  
+  
+  
+  
+  if ((mAddrFamily == AF_INET && entry->mPreferIPv6) ||
+      (mAddrFamily == AF_INET6 && entry->mPreferIPv4)) {
+    mConnMgrDelegate->ResetIPFamilyPreference(entry);
+  }
   mConnMgrDelegate->RecordIPFamilyPreference(entry, mAddrFamily);
 
   TimeStamp dnsLookupStart, dnsLookupEnd;
