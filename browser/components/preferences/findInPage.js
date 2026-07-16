@@ -42,9 +42,6 @@ var gSearchResultsPane = {
   subItems: new Map(),
 
   searchResultsHighlighted: false,
-  
-  searchAbortController: null,
-  searchCompleted: true,
 
   searchableNodes: new Set([
     "button",
@@ -314,15 +311,7 @@ var gSearchResultsPane = {
       return;
     }
 
-    if (this.searchAbortController) {
-      this.searchAbortController.abort();
-    }
-    this.searchAbortController = new AbortController();
-    let signal = this.searchAbortController.signal;
-
-    let subQuery =
-      this.searchCompleted && this.query && query.includes(this.query);
-    this.searchCompleted = false;
+    let subQuery = this.query && query.includes(this.query);
     this.query = query;
 
     
@@ -334,9 +323,6 @@ var gSearchResultsPane = {
     let noResultsEl = document.getElementById("no-results-message");
     if (this.query) {
       await gotoPref("paneSearchResults");
-      if (signal.aborted) {
-        return;
-      }
       srHeader.hidden = false;
 
       let resultsFound = false;
@@ -385,7 +371,7 @@ var gSearchResultsPane = {
           ts = await new Promise(resolve =>
             window.requestAnimationFrame(resolve)
           );
-          if (signal.aborted) {
+          if (query !== this.query) {
             return;
           }
         }
@@ -406,9 +392,6 @@ var gSearchResultsPane = {
           let anyGroupMatched = false;
           for (let group of groups) {
             let matched = await this.searchWithinNode(group, this.query);
-            if (signal.aborted) {
-              return;
-            }
             if (matched) {
               group.classList.remove("visually-hidden");
               anyGroupMatched = true;
@@ -419,9 +402,6 @@ var gSearchResultsPane = {
           let paneMatched = anyGroupMatched;
           if (!paneMatched) {
             paneMatched = await this.searchWithinNode(child, this.query);
-            if (signal.aborted) {
-              return;
-            }
             if (paneMatched) {
               
               
@@ -442,18 +422,11 @@ var gSearchResultsPane = {
         }
 
         if (
-          child.classList.contains("header") ||
-          (child.classList.contains("subcategory") &&
-            child.localName !== "setting-group")
+          !child.classList.contains("header") &&
+          (!child.classList.contains("subcategory") ||
+            child.localName == "setting-group") &&
+          (await this.searchWithinNode(child, this.query))
         ) {
-          child.classList.add("visually-hidden");
-          continue;
-        }
-        let childMatched = await this.searchWithinNode(child, this.query);
-        if (signal.aborted) {
-          return;
-        }
-        if (childMatched) {
           child.classList.remove("visually-hidden");
 
           
@@ -496,7 +469,7 @@ var gSearchResultsPane = {
         
         
         await new Promise(resolve => requestAnimationFrame(resolve));
-        if (signal.aborted) {
+        if (query !== this.query) {
           return;
         }
         this._recomputeTooltipPositions();
@@ -528,9 +501,6 @@ var gSearchResultsPane = {
         let defaultPane = redesignEnabled ? "paneSync" : "paneGeneral";
         await gotoPref(defaultPane);
       }
-      if (signal.aborted) {
-        return;
-      }
       srHeader.hidden = true;
 
       
@@ -539,7 +509,6 @@ var gSearchResultsPane = {
       }
     }
 
-    this.searchCompleted = true;
     window.dispatchEvent(
       new CustomEvent("PreferencesSearchCompleted", { detail: query })
     );
@@ -556,10 +525,6 @@ var gSearchResultsPane = {
   },
 
   
-
-
-
-
 
 
 
