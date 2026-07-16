@@ -4,6 +4,13 @@
 
 "use strict";
 
+loader.lazyGetter(this, "logger", function () {
+  return console.createInstance({
+    prefix: "devtools_tabdescriptor",
+    maxLogLevel: "Warn",
+  });
+});
+
 
 
 
@@ -262,9 +269,27 @@ class TabDescriptorActor extends Actor {
 
     
     
+    const navUUID = Services.uuid.generateUUID().toString().slice(1, -1);
+    const navigationInfo = `context=${this._browser.browsingContext.id}, navUUID=${navUUID}`;
+    logger.debug(
+      `navigateTo starting with validURL=${validURL.spec} (${navigationInfo})`
+    );
+
+    
+    
     const deferred = Promise.withResolvers();
     const listener = {
-      onStateChange(webProgress, request, stateFlags) {
+      onStateChange(webProgress, request, stateFlags, status) {
+        
+        if (logger.shouldLog("Debug")) {
+          logger.debug(
+            `navigateTo onStateChange ` +
+              `isStart=${!!(stateFlags & Ci.nsIWebProgressListener.STATE_START)} ` +
+              `isStop=${!!(stateFlags & Ci.nsIWebProgressListener.STATE_STOP)} ` +
+              `isWindow=${!!(stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW)} ` +
+              `status=${status} (${navigationInfo})`
+          );
+        }
         if (
           webProgress.isTopLevel &&
           stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
@@ -276,7 +301,13 @@ class TabDescriptorActor extends Actor {
         ) {
           const loadedURL = request.QueryInterface(Ci.nsIChannel).originalURI
             .spec;
+          logger.debug(
+            `navigateTo onStateChange check loadedURL=${loadedURL}, expectedURL=${validURL.spec} (${navigationInfo})`
+          );
           if (loadedURL === validURL.spec) {
+            logger.debug(
+              `navigateTo onStateChange resolve (${navigationInfo})`
+            );
             deferred.resolve();
           }
         }
@@ -291,13 +322,13 @@ class TabDescriptorActor extends Actor {
       listener,
       Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
     );
-
     this._browser.browsingContext.loadURI(validURL, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
 
     await deferred.promise;
 
+    logger.debug(`navigateTo completed (${navigationInfo})`);
     this._browser.removeProgressListener(
       listener,
       Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
