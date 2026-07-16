@@ -3,24 +3,28 @@
 
 "use strict";
 
-let { Policies, setAndLockPref, PoliciesUtils } = ChromeUtils.importESModule(
+let { Policies } = ChromeUtils.importESModule(
   "resource:///modules/policies/Policies.sys.mjs"
+);
+
+let { PoliciesUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PoliciesHelpers.sys.mjs"
 );
 
 add_task(async function test_API_directly() {
   await setupPolicyEngineWithJson("");
-  setAndLockPref("policies.test.boolPref", true);
+  PoliciesUtils.setAndLockPref("policies.test.boolPref", true);
   checkLockedPref("policies.test.boolPref", true);
 
   
   
-  setAndLockPref("policies.test.boolPref", false);
+  PoliciesUtils.setAndLockPref("policies.test.boolPref", false);
   checkLockedPref("policies.test.boolPref", false);
 
-  setAndLockPref("policies.test.intPref", 2);
+  PoliciesUtils.setAndLockPref("policies.test.intPref", 2);
   checkLockedPref("policies.test.intPref", 2);
 
-  setAndLockPref("policies.test.stringPref", "policies test");
+  PoliciesUtils.setAndLockPref("policies.test.stringPref", "policies test");
   checkLockedPref("policies.test.stringPref", "policies test");
 
   PoliciesUtils.setDefaultPref(
@@ -44,7 +48,7 @@ add_task(async function test_API_directly() {
   try {
     
     
-    setAndLockPref("policies.test.intPref", 1.5);
+    PoliciesUtils.setAndLockPref("policies.test.intPref", 1.5);
     ok(false, "Integer value should be rejected");
   } catch (ex) {
     ok(true, "Integer value was rejected");
@@ -59,19 +63,19 @@ add_task(async function test_API_through_policies() {
   
   Policies.bool_policy = {
     onBeforeUIStartup(manager, param) {
-      setAndLockPref("policies.test2.boolPref", param);
+      PoliciesUtils.setAndLockPref("policies.test2.boolPref", param);
     },
   };
 
   Policies.int_policy = {
     onBeforeUIStartup(manager, param) {
-      setAndLockPref("policies.test2.intPref", param);
+      PoliciesUtils.setAndLockPref("policies.test2.intPref", param);
     },
   };
 
   Policies.string_policy = {
     onBeforeUIStartup(manager, param) {
-      setAndLockPref("policies.test2.stringPref", param);
+      PoliciesUtils.setAndLockPref("policies.test2.stringPref", param);
     },
   };
 
@@ -129,9 +133,9 @@ add_task(async function test_pref_tracker() {
   defaults.setIntPref("test1.pref1", 10);
   defaults.setStringPref("test1.pref2", "test");
 
-  setAndLockPref("test1.pref1", 20);
+  PoliciesUtils.setAndLockPref("test1.pref1", 20);
   PoliciesUtils.setDefaultPref("test1.pref2", "NEW VALUE");
-  setAndLockPref("test1.pref3", "NEW VALUE");
+  PoliciesUtils.setAndLockPref("test1.pref3", "NEW VALUE");
   PoliciesUtils.setDefaultPref("test1.pref4", 20);
 
   PoliciesPrefTracker.restoreDefaultValues();
@@ -165,7 +169,7 @@ add_task(async function test_pref_tracker() {
   defaults.setIntPref("test2.pref1", 10);
   Services.prefs.setIntPref("test2.pref1", 20);
 
-  setAndLockPref("test2.pref1", 20);
+  PoliciesUtils.setAndLockPref("test2.pref1", 20);
 
   PoliciesPrefTracker.restoreDefaultValues();
 
