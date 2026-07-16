@@ -434,16 +434,59 @@ class ComponentLiftedFuncDesc {
   const ComponentCanonOpts& canonOpts() const { return canonOpts_; }
 };
 
-class ComponentLoweredFuncDesc {
-  uint32_t funcIndex_;
-  SharedTypeDef flattenedType_;
+
+
+class ComponentResourceBuiltin {
+ public:
+  enum class Kind : uint8_t {
+    ResourceNew = 0x02,  
+    ResourceDrop = 0x03,
+    ResourceRep = 0x04,
+  };
+
+ private:
+  Kind kind_;
+  ComponentType resourceType_;
 
  public:
-  ComponentLoweredFuncDesc(uint32_t funcIndex, SharedTypeDef&& flattenedType)
-      : funcIndex_(funcIndex), flattenedType_(std::move(flattenedType)) {}
+  ComponentResourceBuiltin(Kind kind, ComponentType resourceType)
+      : kind_(kind), resourceType_(resourceType) {
+    MOZ_ASSERT(resourceType.kind() == ComponentTypeKind::Resource);
+  }
 
-  uint32_t funcIndex() const { return funcIndex_; }
-  const SharedTypeDef& flattenedType() const { return flattenedType_; }
+  Kind kind() const { return kind_; }
+  const ComponentType& resourceType() const { return resourceType_; }
+};
+
+
+
+
+class ComponentCoreFuncDesc {
+  using Payload = mozilla::Variant<uint32_t, ComponentResourceBuiltin>;
+
+ private:
+  SharedTypeDef coreFuncType_;
+  Payload payload_;
+
+  ComponentCoreFuncDesc(uint32_t funcIndex, SharedTypeDef&& flattenedType)
+      : coreFuncType_(std::move(flattenedType)), payload_(funcIndex) {}
+  ComponentCoreFuncDesc(ComponentResourceBuiltin&& builtinDesc,
+                        SharedTypeDef&& coreFuncType)
+      : coreFuncType_(std::move(coreFuncType)), payload_(builtinDesc) {}
+
+ public:
+  static ComponentCoreFuncDesc lowered(uint32_t funcIndex,
+                                       SharedTypeDef&& flattenedType) {
+    return ComponentCoreFuncDesc(funcIndex, std::move(flattenedType));
+  }
+  static ComponentCoreFuncDesc builtin(ComponentResourceBuiltin&& builtinDesc,
+                                       SharedTypeDef&& coreFuncType) {
+    return ComponentCoreFuncDesc(std::move(builtinDesc),
+                                 std::move(coreFuncType));
+  }
+
+  const Payload& payload() const { return payload_; }
+  const SharedTypeDef& coreFuncType() const { return coreFuncType_; }
 };
 
 
@@ -826,8 +869,8 @@ class Component : public JS::WasmComponent {
   using TypeVector = mozilla::Vector<ComponentType, 0, SystemAllocPolicy>;
   using FuncVector =
       mozilla::Vector<ComponentLiftedFuncDesc, 0, SystemAllocPolicy>;
-  using LoweredFuncVector =
-      mozilla::Vector<ComponentLoweredFuncDesc, 0, SystemAllocPolicy>;
+  using CoreFuncVector =
+      mozilla::Vector<ComponentCoreFuncDesc, 0, SystemAllocPolicy>;
   using ImportVector = mozilla::Vector<ComponentImport, 0, SystemAllocPolicy>;
   using ExportVector = mozilla::Vector<ComponentExport, 0, SystemAllocPolicy>;
   using ItemVector = mozilla::Vector<ComponentItem, 0, SystemAllocPolicy>;
@@ -840,7 +883,7 @@ class Component : public JS::WasmComponent {
   CoreInstanceVector definedCoreInstances_;
   TypeVector definedTypes_;
   FuncVector definedFuncs_;
-  LoweredFuncVector loweredFuncs_;
+  CoreFuncVector definedCoreFuncs_;
   ImportVector imports_;
   ExportVector exports_;
 
@@ -916,9 +959,9 @@ class Component : public JS::WasmComponent {
     MOZ_RELEASE_ASSERT(funcItem.sort() == ComponentSort::CoreFunction);
     return coreFuncs_.append(funcItem);
   }
-  [[nodiscard]] bool addLoweredFunc(ComponentLoweredFuncDesc&& loweredFunc) {
-    uint32_t funcIndex = loweredFuncs_.length();
-    if (!loweredFuncs_.append(std::move(loweredFunc))) {
+  [[nodiscard]] bool addDefinedCoreFunc(ComponentCoreFuncDesc&& coreFunc) {
+    uint32_t funcIndex = definedCoreFuncs_.length();
+    if (!definedCoreFuncs_.append(std::move(coreFunc))) {
       return false;
     }
     return coreFuncs_.append(
