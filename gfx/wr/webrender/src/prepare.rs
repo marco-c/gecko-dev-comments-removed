@@ -1810,6 +1810,9 @@ fn prepare_prim_for_render(
                     dirty_rect,
                     plane_split_anchor,
                 );
+
+                
+                return;
             }
         }
         PrimitiveKind::BackdropCapture { .. } => {
