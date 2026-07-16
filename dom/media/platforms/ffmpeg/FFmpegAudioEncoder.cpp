@@ -418,11 +418,13 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegAudioEncoder<
     FFMPEG_LOG("Encoding {} frames, pts: {}", mPacketizer->PacketSize(),
                pts.ToString().get());
     auto encodeResult = EncodeOnePacket(audio, pts);
-    if (encodeResult.isOk()) {
-      output.AppendElements(std::move(encodeResult.unwrap()));
-    } else {
+    if (encodeResult.isErr()) {
+      
+      
+      mPacketizer.reset();
       return encodeResult;
     }
+    output.AppendElements(std::move(encodeResult.unwrap()));
     pts += media::TimeUnit(mPacketizer->PacketSize(), mConfig.mSampleRate);
   }
   return std::move(output);
@@ -446,12 +448,13 @@ FFmpegAudioEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   auto audio =
       Span(mTempBuffer.Elements(), written * mPacketizer->ChannelCount());
   auto encodeResult = EncodeOnePacket(audio, pts);
-  if (encodeResult.isOk()) {
-    auto array = encodeResult.unwrap();
-    output.AppendElements(std::move(array));
-  } else {
+  if (encodeResult.isErr()) {
+    
+    mPacketizer.reset();
     return encodeResult;
   }
+  auto array = encodeResult.unwrap();
+  output.AppendElements(std::move(array));
   
   auto drainResult = FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs();
   if (drainResult.isOk()) {
