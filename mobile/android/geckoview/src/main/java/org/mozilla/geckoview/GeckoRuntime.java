@@ -329,6 +329,9 @@ public final class GeckoRuntime implements Parcelable {
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   private final BundleEventListener mEventListener =
       new BundleEventListener() {
+        
+        
+        @SuppressLint("ThreadConstraint")
         @Override
         public void handleMessage(
             final String event, final GeckoBundle message, final EventCallback callback) {
@@ -896,6 +899,8 @@ public final class GeckoRuntime implements Parcelable {
     return mNotificationDelegate;
   }
 
+  
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI
   @AnyThread
   private void notifyOnShow(final WebNotification notification) {
@@ -909,6 +914,8 @@ public final class GeckoRuntime implements Parcelable {
         });
   }
 
+  
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI
   @AnyThread
   private void notifyOnClose(final WebNotification notification) {

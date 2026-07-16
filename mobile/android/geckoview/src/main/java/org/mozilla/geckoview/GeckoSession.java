@@ -574,6 +574,9 @@ public class GeckoSession {
             "GeckoView:SavePdf",
             "GeckoView:GetNimbusFeature",
           }) {
+        
+        
+        @SuppressLint("ThreadConstraint")
         @Override
         public void handleMessage(
             final ContentDelegate delegate,
@@ -2371,6 +2374,8 @@ public class GeckoSession {
 
 
 
+  
+  @SuppressLint("ThreadConstraint")
   @AnyThread
   public void load(final @NonNull Loader request) {
     if (request.mUri == null) {
@@ -2827,6 +2832,8 @@ public class GeckoSession {
 
 
 
+  
+  @SuppressLint("ThreadConstraint")
   @AnyThread
   public void setActive(final boolean active) {
     final GeckoBundle msg = new GeckoBundle(1);
@@ -3549,7 +3556,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setHistoryDelegate(final @Nullable HistoryDelegate delegate) {
     mHistoryHandler.setDelegate(delegate, this);
   }
@@ -3567,7 +3574,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setContentBlockingDelegate(final @Nullable ContentBlocking.Delegate delegate) {
     mContentBlockingHandler.setDelegate(delegate, this);
   }
@@ -3627,7 +3634,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setMediaDelegate(final @Nullable MediaDelegate delegate) {
     mMediaHandler.setDelegate(delegate, this);
   }
@@ -3647,7 +3654,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setMediaSessionDelegate(final @Nullable MediaSession.Delegate delegate) {
     mMediaSessionHandler.setDelegate(delegate, this);
   }
@@ -3678,7 +3685,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setTranslationsSessionDelegate(
       final @Nullable TranslationsController.SessionTranslation.Delegate delegate) {
     mTranslationsHandler.setDelegate(delegate, this);
@@ -8592,7 +8599,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setPrintDelegate(final @Nullable PrintDelegate delegate) {
     mPrintHandler.setDelegate(delegate, this);
   }
@@ -8631,7 +8638,7 @@ public class GeckoSession {
 
 
 
-  @AnyThread
+  @UiThread
   public void setExperimentDelegate(final @Nullable ExperimentDelegate delegate) {
     mExperimentHandler.setDelegate(delegate, this);
   }

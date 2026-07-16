@@ -4,6 +4,7 @@
 
 package org.mozilla.geckoview;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.RectF;
 import android.os.Handler;
@@ -334,6 +335,9 @@ public final class SessionTextInput {
 
 
 
+  
+  
+  @SuppressLint("ThreadConstraint")
   @AnyThread
   public synchronized @Nullable InputConnection onCreateInputConnection(
       final @NonNull EditorInfo attrs) {

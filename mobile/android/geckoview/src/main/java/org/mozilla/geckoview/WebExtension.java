@@ -912,6 +912,9 @@ public class WebExtension {
 
 
 
+    
+    
+    @SuppressLint("ThreadConstraint")
     @AnyThread
     public void setMessageDelegate(
         final @NonNull WebExtension webExtension,

@@ -1064,6 +1064,9 @@ public class WebExtensionController {
     return webExtension;
   }
 
+  
+  
+  @SuppressLint("ThreadConstraint")
    void handleMessage(
       final String event,
       final GeckoBundle bundle,
@@ -1497,6 +1500,9 @@ public class WebExtensionController {
     message.callback.resolveTo(response);
   }
 
+  
+  
+  @SuppressLint("ThreadConstraint")
    void download(final Message message, final WebExtension extension) {
     final WebExtension.DownloadDelegate delegate = mListener.getDownloadDelegate(extension);
     if (delegate == null) {
