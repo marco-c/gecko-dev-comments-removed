@@ -387,6 +387,7 @@
 #include "nsQueryFrame.h"
 #include "nsQueryObject.h"
 #include "nsRange.h"
+#include "nsReadableUtils.h"
 #include "nsRefPtrHashtable.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
@@ -9714,6 +9715,18 @@ bool nsContentUtils::IPCTransferableDataItemHasKnownFlavor(
 
   for (const char* format : DataTransfer::kKnownFormats) {
     if (aItem.flavor().EqualsASCII(format)) {
+      return true;
+    }
+  }
+
+  
+  
+  
+  const nsCString& flavor = aItem.flavor();
+  if (StaticPrefs::dom_clipboard_customFormatSupport_enabled() &&
+      StringBeginsWith(flavor, nsLiteralCString(kWebCustomFormatPrefix))) {
+    if (RefPtr<CMimeType> parsedType = CMimeType::Parse(Substring(
+            flavor, strlen(kWebCustomFormatPrefix), flavor.Length()))) {
       return true;
     }
   }
