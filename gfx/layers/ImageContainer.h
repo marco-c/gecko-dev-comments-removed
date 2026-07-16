@@ -9,6 +9,7 @@
 #include "ImageTypes.h"  
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"      
+#include "mozilla/DataMutex.h"       
 #include "mozilla/Mutex.h"           
 #include "mozilla/RecursiveMutex.h"  
 #include "mozilla/ThreadSafeWeakPtr.h"
@@ -24,6 +25,7 @@
 #include "nsISupportsImpl.h"  
 #include "nsTArray.h"         
 #include "nsThreadUtils.h"    
+#include "nsProxyRelease.h"   
 #include "mozilla/Atomics.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/EnumeratedArray.h"
@@ -217,6 +219,46 @@ class Image {
   bool mIsDRM;
 
   static mozilla::Atomic<int32_t> sSerialCounter;
+};
+
+
+
+
+class CachedSurface final {
+ public:
+  CachedSurface() : mSurface("layers::CachedSurface") {}
+
+  ~CachedSurface() {
+    
+    
+    RefPtr<gfx::DataSourceSurface> surface;
+    {
+      auto guard = mSurface.Lock();
+      surface = guard->forget();
+    }
+    NS_ReleaseOnMainThread("layers::CachedSurface", surface.forget());
+  }
+
+  
+  already_AddRefed<gfx::DataSourceSurface> Get() {
+    auto guard = mSurface.Lock();
+    RefPtr<gfx::DataSourceSurface> surface = *guard;
+    return surface.forget();
+  }
+
+  
+  
+  
+  
+  void Set(gfx::DataSourceSurface* aSurface) {
+    auto guard = mSurface.Lock();
+    if (!*guard) {
+      *guard = aSurface;
+    }
+  }
+
+ private:
+  mozilla::DataMutex<RefPtr<gfx::DataSourceSurface>> mSurface;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(Image::BuildSdbFlags)
@@ -915,7 +957,7 @@ class PlanarYCbCrImage : public Image {
   gfx::IntSize mSize;
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
   gfxImageFormat mOffscreenFormat;
-  RefPtr<gfx::DataSourceSurface> mSourceSurface;
+  CachedSurface mSourceSurface;
   uint32_t mBufferSize;
 };
 
@@ -978,7 +1020,7 @@ class NVImage final : public Image {
   uint32_t mBufferSize;
   gfx::IntSize mSize;
   Data mData;
-  RefPtr<gfx::DataSourceSurface> mSourceSurface;
+  CachedSurface mSourceSurface;
 };
 
 
