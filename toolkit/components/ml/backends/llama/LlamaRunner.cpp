@@ -17,6 +17,7 @@
 #include "prsystem.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include <cstddef>
 #include "mozilla/dom/Promise.h"
 
@@ -673,28 +674,36 @@ void LlamaRunner::OnMetadataReceived() {
 
   MOZ_ASSERT(fileDesc);
 
+  
+  
+  
+  
+  
+  mozilla::UniqueFileHandle dupHandle = mozilla::DuplicateFileHandle(
+      mozilla::ipc::FileDescriptor::PlatformHandleType(
+          PR_FileDesc2NativeHandle(fileDesc)));
+  if (!dupHandle) {
+    LOGE_RUNNER("DuplicateFileHandle failed");
+    return;
+  }
+
 #ifdef XP_WIN
   
-  void* handle = mozilla::ipc::FileDescriptor::PlatformHandleType(
-      PR_FileDesc2NativeHandle(fileDesc));
-  int fd = _open_osfhandle(reinterpret_cast<intptr_t>(handle), _O_RDONLY);
+  
+  int fd = _open_osfhandle(dupHandle.release(), _O_RDONLY);
   if (fd == -1) {
     LOGE_RUNNER("Convertion to integer fd failed");
     return;
   }
   FILE* fp = fdopen(fd, "rb");
-  if (!fp) {
-    LOGE_RUNNER("Conversion to FILE* failed");
-    return;
-  }
 #else
-  PROsfd fd = PR_FileDesc2NativeHandle(fileDesc);
-  FILE* fp = fdopen(fd, "r");
+  
+  FILE* fp = fdopen(dupHandle.release(), "r");
+#endif
   if (!fp) {
     LOGE_RUNNER("Conversion to FILE* failed");
     return;
   }
-#endif
 
   auto closeFp = mozilla::MakeScopeExit([fp] { fclose(fp); });
 
