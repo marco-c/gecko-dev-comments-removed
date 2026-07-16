@@ -79,8 +79,18 @@ add_task(async function () {
   ok(!entries[0].children, "no children collected");
 
   
-  await BrowserTestUtils.synthesizeMouseAtCenter("#lnk", {}, browser);
-  await promiseBrowserLoaded(browser, false );
+  
+  
+  
+  
+  let loaded = promiseBrowserLoaded(
+    browser,
+    false 
+  );
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document.getElementById("lnk").click();
+  });
+  await loaded;
 
   await TabStateFlusher.flush(browser);
   ({ entries } = JSON.parse(ss.getTabState(tab)));
