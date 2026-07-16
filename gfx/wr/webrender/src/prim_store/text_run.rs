@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, ReferenceFrameKind, Shadow};
+use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow};
 use api::units::{LayoutToWorldTransform, DevicePixelScale};
 use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
@@ -17,7 +17,6 @@ use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveKind};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::spatial_node::SpatialNodeType;
 use std::ops;
 
 use super::storage;
@@ -186,6 +185,9 @@ impl intern::Internable for TextRun {
 }
 
 impl InternablePrimitive for TextRun {
+    
+    const SNAP_CLIPS: bool = false;
+
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -517,55 +519,22 @@ impl TextRunTemplate {
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let reference = match &spatial_tree.get_spatial_node(spatial_node_index).node_type {
-                SpatialNodeType::ReferenceFrame(info)
-                    if matches!(
-                        info.kind,
-                        ReferenceFrameKind::Transform { is_offset_only: true, .. }
-                    ) =>
-                {
-                    LayoutPoint::zero()
-                }
-                _ => {
-                    let root = spatial_tree.root_reference_frame_index();
-                    spatial_tree
-                        .get_relative_transform(spatial_node_index, root)
-                        .into_transform()
-                        .transform_point2d(LayoutPoint::zero())
-                        .unwrap_or(LayoutPoint::zero())
-                }
-            };
-            let reference_device = DevicePoint::new(reference.x * dps.0, reference.y * dps.0);
-            let snap_shift = reference_device.round() - reference_device;
             glyph_offsets.reserve(self.glyphs.len());
 
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
                 
-                
                 let glyph_world = transform
                     .transform_point2d(local_rect.min + src.point.to_vector())
                     .unwrap_or(anchor_world);
-                let device_pen = glyph_world * dps + snap_shift;
+                let device_pen = glyph_world * dps;
 
+                
                 
                 
                 
                 let snapped = (device_pen + snap_bias).floor();
                 glyph_offsets.push(snapped - anchor_device);
 
-                
-                
-                
                 GlyphKey::new(src.index, device_pen, subpx_dir)
             }))
         } else {

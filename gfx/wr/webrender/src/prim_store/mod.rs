@@ -861,6 +861,12 @@ impl Default for PrimitiveStore {
 
 pub trait InternablePrimitive: intern::Internable<InternData = ()> + Sized {
     
+    
+    
+    
+    const SNAP_CLIPS: bool = true;
+
+    
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,

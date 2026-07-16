@@ -765,13 +765,6 @@ pub enum ReferenceFrameKind {
         
         
         paired_with_perspective: bool,
-        
-        
-        
-        
-        
-        
-        is_offset_only: bool,
     },
     
     Perspective {
@@ -2401,7 +2394,6 @@ impl_default_for_enums! {
         is_2d_scale_translation: false,
         should_snap: false,
         paired_with_perspective: false,
-        is_offset_only: false,
     },
     Rotation => Degree0,
     TransformStyle => Flat,
