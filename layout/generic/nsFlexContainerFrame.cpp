@@ -2079,6 +2079,7 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
               aChildReflowInput, outerWM, dummyPosition, dummyContainerSize,
               flags, childStatus);
   aItem.SetHadMeasuringReflow();
+  MaybePropagateRelativeBSizeFlagFrom(aItem);
 
   
   
@@ -4668,6 +4669,8 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+  
+  
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* stylePos = StylePosition();
   const auto anchorResolutionParams =
@@ -6729,4 +6732,31 @@ nsFlexContainerFrame::FindFrameAt(int32_t aLineNumber, nsPoint aPos,
   }
   finder.Finish(aFrameFound, aPosIsBeforeFirstFrame, aPosIsAfterLastFrame);
   return NS_OK;
+}
+
+void nsFlexContainerFrame::MaybePropagateRelativeBSizeFlagFrom(
+    const FlexItem& aItem) {
+  const auto* itemFrame = aItem.Frame();
+  if (!itemFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    return;
+  }
+
+  if (HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE) || !IsFlexItem()) {
+    
+    
+    return;
+  }
+
+  if (!aItem.TreatBSizeAsIndefinite()) {
+    
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
 }

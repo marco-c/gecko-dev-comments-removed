@@ -682,6 +682,13 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   
 
 
+
+
+  void MaybePropagateRelativeBSizeFlagFrom(const FlexItem& aItem);
+
+  
+
+
   mozilla::IntrinsicISizesCache mCachedIntrinsicSizes;
 
   
