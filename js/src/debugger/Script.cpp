@@ -52,7 +52,7 @@
 #include "vm/BytecodeUtil-inl.h"  
 #include "vm/JSAtomUtils-inl.h"   
 #include "vm/JSObject-inl.h"  
-#include "vm/JSScript-inl.h"  
+#include "vm/JSScript-inl.h"          
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
 
@@ -106,8 +106,8 @@ NativeObject* DebuggerScript::initClass(JSContext* cx,
 DebuggerScript* DebuggerScript::create(JSContext* cx, HandleObject proto,
                                        Handle<DebuggerScriptReferent> referent,
                                        Handle<NativeObject*> debugger) {
-  DebuggerScript* scriptobj =
-      NewTenuredObjectWithGivenProto<DebuggerScript>(cx, proto);
+  DebuggerScript* scriptobj = NewObjectWithGivenProto<DebuggerScript>(
+      cx, proto, {.newKind = TenuredObject});
   if (!scriptobj) {
     return nullptr;
   }

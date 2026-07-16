@@ -126,8 +126,8 @@
 #include "vm/GeckoProfiler-inl.h"  
 #include "vm/JSAtomUtils-inl.h"    
 #include "vm/JSContext-inl.h"      
-#include "vm/JSObject-inl.h"  
-#include "vm/JSScript-inl.h"      
+#include "vm/JSObject-inl.h"       
+#include "vm/JSScript-inl.h"       
 #include "vm/NativeObject-inl.h"  
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
@@ -4966,7 +4966,8 @@ bool Debugger::construct(JSContext* cx, unsigned argc, Value* vp) {
   
   
   Rooted<DebuggerInstanceObject*> obj(
-      cx, NewTenuredObjectWithGivenProto<DebuggerInstanceObject>(cx, proto));
+      cx, NewObjectWithGivenProto<DebuggerInstanceObject>(
+              cx, proto, {.newKind = TenuredObject}));
   if (!obj) {
     return false;
   }

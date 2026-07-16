@@ -57,6 +57,14 @@ enum NewObjectKind {
 };
 
 
+struct NewObjectOptions {
+  NewObjectKind newKind = GenericObject;
+  ObjectFlags flags = {};
+  gc::AllocKind allocKind = gc::AllocKind::INVALID;
+  gc::AllocSite* site = nullptr;
+};
+
+
 bool PreventExtensions(JSContext* cx, JS::HandleObject obj,
                        JS::ObjectOpResult& result);
 bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,

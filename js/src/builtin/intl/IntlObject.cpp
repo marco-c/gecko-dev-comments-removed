@@ -538,7 +538,8 @@ static JSObject* CreateIntlObject(JSContext* cx, JSProtoKey key) {
 
   
   
-  return NewTenuredObjectWithGivenProto(cx, &IntlClass, proto);
+  return NewObjectWithGivenProto(cx, &IntlClass, proto,
+                                 {.newKind = TenuredObject});
 }
 
 

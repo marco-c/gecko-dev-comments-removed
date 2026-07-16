@@ -1376,7 +1376,8 @@ static JSObject* CreateTemporalObject(JSContext* cx, JSProtoKey key) {
 
   
   
-  return NewTenuredObjectWithGivenProto<TemporalObject>(cx, proto);
+  return NewObjectWithGivenProto<TemporalObject>(cx, proto,
+                                                 {.newKind = TenuredObject});
 }
 
 
