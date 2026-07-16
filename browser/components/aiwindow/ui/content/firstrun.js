@@ -9,6 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
 });
 const MODEL_PREF = "browser.smartwindow.firstrun.modelChoice";
 const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
@@ -28,33 +29,34 @@ const { getAllModelsData, getModelDisplayOrder } = ChromeUtils.importESModule(
 );
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
+const PROMOTED_BRAND_NAME = "Mistral";
+
+
+
+
+
+
+
+
+
+
 
 const isMistralRelease = Services.prefs.getBoolPref(
   MISTRAL_RELEASE_PREF,
   false
 );
-
-
-
-
-
-
-
-
-
-
 const MODEL_CARDS = {
-  fast: {
+  1: {
     label: "aiwindow-firstrun-model-fast-label",
     body: "aiwindow-firstrun-model-fast-body",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-1.svg",
   },
-  allpurpose: {
+  2: {
     label: "aiwindow-firstrun-model-allpurpose-label",
     body: "aiwindow-firstrun-model-allpurpose-body",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-2.svg",
   },
-  personal: {
+  3: {
     label: "aiwindow-firstrun-model-personal-label",
     body: "aiwindow-firstrun-model-personal-body",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-3.svg",
@@ -62,30 +64,93 @@ const MODEL_CARDS = {
 };
 
 const MODEL_CARDS_V2 = {
-  fast: {
+  1: {
     label: "aiwindow-firstrun-model-fast-label-v2",
     body: "aiwindow-firstrun-model-fast-body-v2",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-gemini.svg",
   },
-  allpurpose: {
+  2: {
     label: "aiwindow-firstrun-model-flexible-label",
     body: "aiwindow-firstrun-model-flexible-body",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-qwen.svg",
   },
-  personal: {
+  3: {
     label: "aiwindow-firstrun-model-personal-label-v2",
     body: "aiwindow-firstrun-model-personal-body-v2",
     icon: "chrome://browser/content/aiwindow/assets/model-choice-mistral.svg",
   },
 };
 
-function buildModelCards(modelData) {
+
+
+const EEA_REGIONS = new Set([
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
+  "IS",
+  "LI",
+  "NO",
+]);
+
+
+
+
+
+
+
+
+function isEuropePromotionRegion() {
+  return (
+    EEA_REGIONS.has(lazy.Region.home) || EEA_REGIONS.has(lazy.Region.current)
+  );
+}
+
+function getPromotedChoiceId(modelData) {
+  if (!isMistralRelease || !isEuropePromotionRegion()) {
+    return null;
+  }
+  return (
+    getModelDisplayOrder().find(
+      id => (modelData[id] ?? {}).brandName === PROMOTED_BRAND_NAME
+    ) ?? null
+  );
+}
+
+function buildModelCards(modelData, promotedChoiceId) {
   const cards = isMistralRelease ? MODEL_CARDS_V2 : MODEL_CARDS;
   return getModelDisplayOrder().map(choiceId => {
     const model = modelData[choiceId] ?? {};
-    const cardContent = cards[model.labelId] ?? {};
+    const cardContent = cards[choiceId] ?? {};
     const card = {
       id: `model_${choiceId}`,
+      flair:
+        choiceId === promotedChoiceId
+          ? { text: { string_id: "aiwindow-firstrun-model-recommended" } }
+          : undefined,
       label: {
         string_id: cardContent.label,
         fontSize: "17px",
@@ -113,6 +178,11 @@ function buildModelCards(modelData) {
 }
 
 function createAIWindowConfig(modelData) {
+  const promotedChoiceId = getPromotedChoiceId(modelData);
+  if (promotedChoiceId) {
+    Services.prefs.setStringPref(MODEL_PREF, promotedChoiceId);
+  }
+
   return {
     id: "AI_WINDOW_WELCOME",
     template: "spotlight",
@@ -180,12 +250,12 @@ function createAIWindowConfig(modelData) {
           },
           tiles: {
             type: "single-select",
-            selected: "none",
+            selected: promotedChoiceId ? `model_${promotedChoiceId}` : "none",
             autoTrigger: false,
             action: {
               picker: "<event>",
             },
-            data: buildModelCards(modelData),
+            data: buildModelCards(modelData, promotedChoiceId),
           },
           primary_button: {
             disabled: "hasActiveSingleSelect",
