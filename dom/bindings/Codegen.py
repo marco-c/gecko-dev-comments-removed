@@ -7996,7 +7996,7 @@ def getWrapTemplateForType(
         return _setValue(value, setter="setNumber")
 
     def setDouble(value):
-        return _setValue("JS_NumberValue(%s)" % value)
+        return _setValue("JS::NumberValue(%s)" % value)
 
     def setBoolean(value):
         return _setValue(value, setter="setBoolean")

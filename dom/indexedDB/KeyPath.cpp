@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "KeyPath.h"
 
 #include "IDBObjectStore.h"
@@ -123,7 +121,7 @@ nsresult GetJSValFromKeyPathString(
             uint64_t size = blob->GetSize(rv);
             MOZ_ALWAYS_TRUE(!rv.Failed());
 
-            intermediate = JS_NumberValue(size);
+            intermediate = JS::NumberValue(size);
             hasProp = true;
           } else if (token.EqualsLiteral("type")) {
             nsString type;
@@ -151,7 +149,7 @@ nsresult GetJSValFromKeyPathString(
                 int64_t lastModifiedDate = file->GetLastModified(rv);
                 MOZ_ALWAYS_TRUE(!rv.Failed());
 
-                intermediate = JS_NumberValue(lastModifiedDate);
+                intermediate = JS::NumberValue(lastModifiedDate);
                 hasProp = true;
               }
               
