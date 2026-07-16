@@ -106,13 +106,7 @@ ChromeUtils.defineLazyGetter(
 const node = {};
 
 function closeSidebar() {
-  const controller = topChromeWindow.SidebarController;
-  
-  
-  
-  controller.hide({
-    dismissPanel: !controller._state.launcherHiddenWithPanel,
-  });
+  topChromeWindow.SidebarController.hide();
 }
 
 function openLink(url) {

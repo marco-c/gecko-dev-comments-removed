@@ -5,7 +5,7 @@
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [[SIDEBAR_VISIBILITY_PREF, "hide-launcher"]],
+    set: [[SIDEBAR_VISIBILITY_PREF, "hide-sidebar"]],
   });
   await SidebarController.waitUntilStable();
   await SidebarController.updateUIState({
@@ -48,9 +48,7 @@ add_task(async function test_sidebar_view_commands() {
   bookmarkMenuItem.doCommand();
   await sidebar.updateComplete;
 
-  
-  
-  ok(BrowserTestUtils.isHidden(sidebar), "Sidebar launcher stays hidden");
+  ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is visible");
   ok(BrowserTestUtils.isVisible(sidebarBox), "Sidebar box is visible");
   is(
     SidebarController.currentID,
@@ -67,7 +65,7 @@ add_task(async function test_sidebar_view_commands() {
   
   document.getElementById("sidebar-button").doCommand();
   await sidebar.updateComplete;
-  ok(BrowserTestUtils.isHidden(sidebar), "Sidebar launcher stays hidden.");
+  ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is visible again.");
   ok(BrowserTestUtils.isVisible(sidebarBox), "Sidebar panel is visible.");
   is(
     SidebarController.currentID,
