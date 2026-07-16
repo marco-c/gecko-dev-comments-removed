@@ -131,6 +131,13 @@ class EditContext final : public DOMEventTargetHelper {
   
   
   Maybe<LayoutDeviceIntRect> GetSelectionBounds() const;
+  
+
+
+
+
+
+  LayoutDeviceIntRect FallbackBounds() const;
 
   bool WasTextNextToCaretChangedByTextUpdateHandler() const {
     return mTextNextToCaretChangedByTextUpdateHandler;

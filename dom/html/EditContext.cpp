@@ -499,11 +499,11 @@ nsresult EditContext::FireCharacterBoundsUpdateAndGetRects(
   };
   CollapseDirection collapse = CollapseDirection::None;
   if (aStart == aEnd) {
-    if (TextLength() == 0) {
-      
-      return NS_ERROR_FAILURE;
-    }
     
+    if (TextLength() == 0) {
+      aRects.AppendElement(FallbackBounds());
+      return NS_OK;
+    }
     if (aEnd < TextLength()) {
       
       
@@ -638,6 +638,33 @@ Maybe<LayoutDeviceIntRect> EditContext::GetSelectionBounds() const {
     return Nothing();
   }
   return Some(ToDeviceRect(*presContext, *mSelectionBounds));
+}
+
+LayoutDeviceIntRect EditContext::FallbackBounds() const {
+  if (Maybe<LayoutDeviceIntRect> bounds = GetSelectionBounds()) {
+    return *bounds;
+  }
+  if (Maybe<LayoutDeviceIntRect> bounds = GetControlBounds()) {
+    return *bounds;
+  }
+  if (NS_WARN_IF(!mAssociatedElement) ||
+      NS_WARN_IF(!mAssociatedElement->GetPrimaryFrame())) {
+    
+    return {0, 0, 1, 1};
+  }
+  nsPresContext* presContext =
+      mAssociatedElement->GetPrimaryFrame()->PresContext();
+  nsRect appUnitsRect = mAssociatedElement->GetPrimaryFrame()->GetRect();
+  LayoutDeviceIntRect deviceRect;
+  deviceRect.x = presContext->AppUnitsToDevPixels(appUnitsRect.x);
+  deviceRect.y = presContext->AppUnitsToDevPixels(appUnitsRect.y);
+  
+  
+  deviceRect.width =
+      std::max(1, presContext->AppUnitsToDevPixels(appUnitsRect.width));
+  deviceRect.height =
+      std::max(1, presContext->AppUnitsToDevPixels(appUnitsRect.height));
+  return deviceRect;
 }
 
 }  
