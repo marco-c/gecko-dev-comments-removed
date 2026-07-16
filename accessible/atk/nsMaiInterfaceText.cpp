@@ -2,22 +2,19 @@
 
 
 
+#include "AccAttributes.h"
+#include "DOMtoATK.h"
+#include "HyperTextAccessible-inl.h"
 #include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
+#include "RemoteAccessible.h"
+#include "mozilla/Likely.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "nsAccessibilityService.h"
-#include "LocalAccessible-inl.h"
-#include "HyperTextAccessible-inl.h"
-#include "nsMai.h"
-#include "RemoteAccessible.h"
-#include "AccAttributes.h"
-
 #include "nsIAccessibleTypes.h"
 #include "nsISimpleEnumerator.h"
+#include "nsMai.h"
 #include "nsUTF8Utils.h"
-
-#include "mozilla/Likely.h"
-
-#include "DOMtoATK.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

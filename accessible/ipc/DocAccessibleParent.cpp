@@ -2,28 +2,29 @@
 
 
 
+#include "DocAccessibleParent.h"
+
 #include "ARIAMap.h"
 #include "CacheConstants.h"
 #include "CachedTableAccessible.h"
-#include "DocAccessibleParent.h"
 #ifdef MOZ_ENABLE_SKIA_PDF
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
-#include "mozilla/a11y/Platform.h"
+#include "Relation.h"
+#include "RootAccessible.h"
+#include "TextRange.h"
 #include "mozilla/Components.h"  
+#include "mozilla/PerfStats.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/a11y/Platform.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/PerfStats.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "nsAccessibilityService.h"
-#include "xpcAccessibleDocument.h"
-#include "xpcAccEvents.h"
 #include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsIIOService.h"
-#include "TextRange.h"
-#include "Relation.h"
-#include "RootAccessible.h"
+#include "xpcAccEvents.h"
+#include "xpcAccessibleDocument.h"
 
 #if defined(XP_WIN)
 #  include "Compatibility.h"

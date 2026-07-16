@@ -8,7 +8,6 @@
 #include "ISimpleDOM.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
-
 #include "mozilla/NotNull.h"
 
 namespace mozilla {
@@ -60,29 +59,29 @@ class sdnAccessible final : public ISimpleDOMNode {
   virtual HRESULT STDMETHODCALLTYPE scrollTo( boolean aScrollTopLeft);
 
   virtual  HRESULT STDMETHODCALLTYPE get_parentNode(
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_firstChild(
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_lastChild(
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_previousSibling(
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_nextSibling(
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_childAt(
        unsigned aChildIndex,
-       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_innerHTML(
        BSTR __RPC_FAR* aInnerHTML);
 
   virtual  HRESULT STDMETHODCALLTYPE get_localInterface(
-       void __RPC_FAR* __RPC_FAR* aLocalInterface);
+       void __RPC_FAR * __RPC_FAR * aLocalInterface);
 
   virtual  HRESULT STDMETHODCALLTYPE get_language(
        BSTR __RPC_FAR* aLanguage);

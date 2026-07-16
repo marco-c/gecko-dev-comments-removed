@@ -3,13 +3,12 @@
 
 
 #include "InterfaceInitFuncs.h"
-
 #include "LocalAccessible-inl.h"
-#include "nsMai.h"
-#include "mozilla/Likely.h"
-#include "nsAccessibilityService.h"
 #include "Relation.h"
 #include "RemoteAccessible.h"
+#include "mozilla/Likely.h"
+#include "nsAccessibilityService.h"
+#include "nsMai.h"
 #include "nsString.h"
 
 using namespace mozilla;

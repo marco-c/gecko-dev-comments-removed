@@ -2,15 +2,13 @@
 
 
 
-#include "InterfaceInitFuncs.h"
+#include <atk/atk.h>
 
-#include "LocalAccessible-inl.h"
 #include "AccessibleWrap.h"
-#include "nsMai.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/Likely.h"
-
-#include <atk/atkobject.h>
-#include <atk/atkselection.h>
+#include "nsMai.h"
 
 using namespace mozilla::a11y;
 

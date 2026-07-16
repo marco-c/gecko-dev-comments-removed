@@ -2,14 +2,13 @@
 
 
 
-#include "InterfaceInitFuncs.h"
-
-#include "LocalAccessible-inl.h"
 #include "HyperTextAccessible.h"
-#include "nsMai.h"
-#include "nsMaiHyperlink.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
 #include "RemoteAccessible.h"
 #include "mozilla/Likely.h"
+#include "nsMai.h"
+#include "nsMaiHyperlink.h"
 
 using namespace mozilla::a11y;
 

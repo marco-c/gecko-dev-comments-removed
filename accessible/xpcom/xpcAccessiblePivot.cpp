@@ -3,9 +3,9 @@
 
 
 #include "xpcAccessiblePivot.h"
-#include "xpcAccessibleDocument.h"
 
 #include "Pivot.h"
+#include "xpcAccessibleDocument.h"
 
 using namespace mozilla::a11y;
 

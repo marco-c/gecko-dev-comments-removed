@@ -2,12 +2,11 @@
 
 
 
-#include "InterfaceInitFuncs.h"
-
 #include "AccessibleWrap.h"
-#include "nsMai.h"
+#include "InterfaceInitFuncs.h"
 #include "RemoteAccessible.h"
 #include "mozilla/Likely.h"
+#include "nsMai.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

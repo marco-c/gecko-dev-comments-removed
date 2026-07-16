@@ -5,12 +5,12 @@
 #ifndef mozilla_a11y_MsaaAccessible_h_
 #define mozilla_a11y_MsaaAccessible_h_
 
+#include "IUnknownImpl.h"
+#include "MsaaIdGenerator.h"
 #include "ia2Accessible.h"
 #include "ia2AccessibleComponent.h"
 #include "ia2AccessibleHyperlink.h"
 #include "ia2AccessibleValue.h"
-#include "IUnknownImpl.h"
-#include "MsaaIdGenerator.h"
 #include "nsXULAppAPI.h"
 #include "uiaRawElmProvider.h"
 
@@ -61,13 +61,14 @@ class MsaaAccessible : public ia2Accessible,
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accParent(
-       IDispatch __RPC_FAR* __RPC_FAR* ppdispParent)
-      override;
+       IDispatch __RPC_FAR * __RPC_FAR *
+      ppdispParent) override;
   virtual  HRESULT STDMETHODCALLTYPE get_accChildCount(
        long __RPC_FAR* pcountChildren) override;
   virtual  HRESULT STDMETHODCALLTYPE get_accChild(
        VARIANT varChild,
-       IDispatch __RPC_FAR* __RPC_FAR* ppdispChild) override;
+       IDispatch __RPC_FAR * __RPC_FAR *
+          ppdispChild) override;
   virtual  HRESULT STDMETHODCALLTYPE get_accName(
        VARIANT varChild,
        BSTR __RPC_FAR* pszName) override;

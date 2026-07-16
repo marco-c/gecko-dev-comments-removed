@@ -4,23 +4,23 @@
 
 #include "LazyInstantiator.h"
 
+#include <oaidl.h>
+
 #include "MainThreadUtils.h"
-#include "mozilla/a11y/LocalAccessible.h"
-#include "mozilla/a11y/Compatibility.h"
-#include "mozilla/a11y/Platform.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/mscom/ProcessRuntime.h"
-#include "mozilla/WinHeaderOnlyUtils.h"
 #include "MsaaRootAccessible.h"
+#include "WinUtils.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
+#include "mozilla/a11y/Compatibility.h"
+#include "mozilla/a11y/LocalAccessible.h"
+#include "mozilla/a11y/Platform.h"
+#include "mozilla/mscom/ProcessRuntime.h"
 #include "nsAccessibilityService.h"
-#include "nsWindowsHelpers.h"
 #include "nsCOMPtr.h"
 #include "nsIFile.h"
+#include "nsWindowsHelpers.h"
 #include "nsXPCOM.h"
-#include "WinUtils.h"
 #include "prenv.h"
-
-#include <oaidl.h>
 
 #if !defined(STATE_SYSTEM_NORMAL)
 #  define STATE_SYSTEM_NORMAL (0)
@@ -339,6 +339,7 @@ MsaaRootAccessible* LazyInstantiator::ResolveMsaaRoot() {
 void LazyInstantiator::TransplantRefCnt() {
   MOZ_ASSERT(mRefCnt > 0);
   MOZ_ASSERT(mRealRootUnk);
+  mTransplantLock.AssertCurrentThreadOwns();
 
   while (mRefCnt > 0) {
     mRealRootUnk.get()->AddRef();
@@ -359,14 +360,18 @@ LazyInstantiator::MaybeResolveRoot() {
     }
 
     
-    mRealRootUnk = mWeakMsaaRoot->Aggregate(static_cast<IAccessible*>(this));
-    if (!mRealRootUnk) {
+    RefPtr<IUnknown> realRootUnk =
+        mWeakMsaaRoot->Aggregate(static_cast<IAccessible*>(this));
+    if (!realRootUnk) {
       return E_FAIL;
     }
-
-    
-    
-    TransplantRefCnt();
+    {  
+      MutexAutoLock lock(mTransplantLock);
+      mRealRootUnk = std::move(realRootUnk);
+      
+      
+      TransplantRefCnt();
+    }
 
     
     
@@ -445,7 +450,9 @@ IMPL_IUNKNOWN_QUERY_TAIL_AGGREGATED(mRealRootUnk)
 
 ULONG
 LazyInstantiator::AddRef() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   
+  MutexAutoLock lock(mTransplantLock);
   if (mRealRootUnk) {
     return mRealRootUnk.get()->AddRef();
   }
@@ -455,20 +462,24 @@ LazyInstantiator::AddRef() {
 
 ULONG
 LazyInstantiator::Release() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   ULONG result;
 
   
-  if (mRealRootUnk) {
-    result = mRealRootUnk.get()->Release();
-    if (result == 1) {
-      
-      
-      
-      
-      --result;
+  {  
+    MutexAutoLock lock(mTransplantLock);
+    if (mRealRootUnk) {
+      result = mRealRootUnk.get()->Release();
+      if (result == 1) {
+        
+        
+        
+        
+        --result;
+      }
+    } else {
+      result = --mRefCnt;
     }
-  } else {
-    result = --mRefCnt;
   }
 
   if (!result) {

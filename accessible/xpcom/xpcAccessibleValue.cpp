@@ -2,9 +2,9 @@
 
 
 
-#include "xpcAccessibleGeneric.h"
-#include "LocalAccessible.h"
 #include "LocalAccessible-inl.h"
+#include "LocalAccessible.h"
+#include "xpcAccessibleGeneric.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

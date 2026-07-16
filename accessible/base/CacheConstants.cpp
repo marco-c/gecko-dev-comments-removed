@@ -3,6 +3,7 @@
 
 
 #include "CacheConstants.h"
+
 #include "nsAccessibilityService.h"
 
 namespace mozilla::a11y {

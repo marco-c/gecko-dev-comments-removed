@@ -2,19 +2,18 @@
 
 
 
-#include "InterfaceInitFuncs.h"
-
-#include "LocalAccessible-inl.h"
 #include "AccessibleWrap.h"
-#include "nsAccUtils.h"
-#include "nsMai.h"
-#include "nsWindow.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/Likely.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/RemoteAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
+#include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
+#include "nsMai.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

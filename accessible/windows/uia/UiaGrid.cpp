@@ -2,11 +2,12 @@
 
 
 
+#include "UiaGrid.h"
+
+#include "Pivot.h"
 #include "ia2AccessibleTable.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "nsIAccessiblePivot.h"
-#include "Pivot.h"
-#include "UiaGrid.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

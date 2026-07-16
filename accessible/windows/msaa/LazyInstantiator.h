@@ -5,13 +5,15 @@
 #ifndef mozilla_a11y_LazyInstantiator_h
 #define mozilla_a11y_LazyInstantiator_h
 
-#include "IUnknownImpl.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
-#include "nsString.h"
-
 #include <oleacc.h>
 #include <uiautomation.h>
+
+#include "IUnknownImpl.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsString.h"
 
 class nsIFile;
 
@@ -140,10 +142,11 @@ class LazyInstantiator final : public IAccessible,
   static already_AddRefed<T> GetRoot(HWND aHwnd);
 
  private:
-  mozilla::a11y::AutoRefCnt mRefCnt;
+  nsAutoRefCnt mRefCnt;
   HWND mHwnd;
   bool mAllowBlindAggregation;
   RefPtr<IUnknown> mRealRootUnk;
+  Mutex mTransplantLock{"a11y::LazyInstantiator::mTransplantLock"};
   RefPtr<IUnknown> mStdDispatch;
   
 

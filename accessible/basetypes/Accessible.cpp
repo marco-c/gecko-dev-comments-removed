@@ -3,18 +3,19 @@
 
 
 #include "Accessible.h"
+
 #include "ARIAMap.h"
-#include "nsAccUtils.h"
-#include "nsIURI.h"
 #include "Pivot.h"
 #include "Relation.h"
 #include "States.h"
-#include "mozilla/a11y/FocusManager.h"
-#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/Components.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/a11y/FocusManager.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
+#include "nsAccUtils.h"
 #include "nsIStringBundle.h"
+#include "nsIURI.h"
 
 #ifdef A11Y_LOG
 #  include "nsAccessibilityService.h"

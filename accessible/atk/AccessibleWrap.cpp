@@ -4,32 +4,30 @@
 
 #include "AccessibleWrap.h"
 
-#include "LocalAccessible-inl.h"
 #include "AccAttributes.h"
 #include "ApplicationAccessibleWrap.h"
-#include "InterfaceInitFuncs.h"
-#include "nsAccUtils.h"
-#include "mozilla/a11y/PDocAccessible.h"
-#include "OuterDocAccessible.h"
-#include "RemoteAccessible.h"
 #include "DocAccessibleParent.h"
-#include "RootAccessible.h"
-#include "mozilla/a11y/TableAccessible.h"
-#include "mozilla/a11y/TableCellAccessible.h"
-#include "nsMai.h"
-#include "nsMaiHyperlink.h"
-#include "nsString.h"
-#include "nsStateMap.h"
-#include "mozilla/a11y/Platform.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
+#include "OuterDocAccessible.h"
 #include "Relation.h"
+#include "RemoteAccessible.h"
 #include "RootAccessible.h"
 #include "States.h"
-#include "nsIAccessibleAnnouncementEvent.h"
-#include "nsISimpleEnumerator.h"
-
 #include "mozilla/Sprintf.h"
+#include "mozilla/a11y/PDocAccessible.h"
+#include "mozilla/a11y/Platform.h"
+#include "mozilla/a11y/TableAccessible.h"
+#include "mozilla/a11y/TableCellAccessible.h"
+#include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIAccessibleAnnouncementEvent.h"
+#include "nsISimpleEnumerator.h"
+#include "nsMai.h"
+#include "nsMaiHyperlink.h"
+#include "nsStateMap.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -757,15 +755,14 @@ static void TranslateStates(uint64_t aState, roles::Role aRole,
 
   
   uint64_t bitMask = 1;
-  for (auto stateIndex = 0U; stateIndex < gAtkStateMapLen; stateIndex++) {
-    if (gAtkStateMap[stateIndex]
-            .atkState) {  
+  for (auto stateIndex : gAtkStateMap) {
+    if (stateIndex.atkState) {  
       bool isStateOn = (aState & bitMask) != 0;
-      if (gAtkStateMap[stateIndex].stateMapEntryType == kMapOpposite) {
+      if (stateIndex.stateMapEntryType == kMapOpposite) {
         isStateOn = !isStateOn;
       }
       if (isStateOn) {
-        atk_state_set_add_state(aStateSet, gAtkStateMap[stateIndex].atkState);
+        atk_state_set_add_state(aStateSet, stateIndex.atkState);
       }
     }
     bitMask <<= 1;

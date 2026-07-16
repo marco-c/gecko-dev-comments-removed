@@ -2,27 +2,24 @@
 
 
 
-#include "AccessibleWrap.h"
-
-#include "Accessible2_i.c"
+#include "AccAttributes.h"
 #include "Accessible2_2_i.c"
+#include "Accessible2_i.c"
 #include "AccessibleRole.h"
 #include "AccessibleStates.h"
-
-#include "AccAttributes.h"
+#include "AccessibleWrap.h"
 #include "ApplicationAccessible.h"
 #include "Compatibility.h"
-#include "ia2AccessibleRelation.h"
 #include "IUnknownImpl.h"
-#include "nsAccUtils.h"
-#include "nsCoreUtils.h"
-#include "nsIAccessibleTypes.h"
-#include "mozilla/a11y/PDocAccessible.h"
 #include "Relation.h"
 #include "TextRange-inl.h"
-#include "nsAccessibilityService.h"
-
+#include "ia2AccessibleRelation.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/a11y/PDocAccessible.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
+#include "nsIAccessibleTypes.h"
 #include "nsISimpleEnumerator.h"
 
 using namespace mozilla;

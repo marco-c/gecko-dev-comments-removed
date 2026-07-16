@@ -3,9 +3,8 @@
 
 
 #include "InterfaceInitFuncs.h"
-
-#include "nsMaiHyperlink.h"
 #include "mozilla/Likely.h"
+#include "nsMaiHyperlink.h"
 
 using namespace mozilla::a11y;
 

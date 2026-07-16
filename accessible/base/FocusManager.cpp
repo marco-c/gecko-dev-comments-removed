@@ -4,17 +4,16 @@
 
 #include "FocusManager.h"
 
-#include "LocalAccessible-inl.h"
 #include "DocAccessible-inl.h"
+#include "LocalAccessible-inl.h"
+#include "mozilla/EventStateManager.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Element.h"
 #include "nsAccessibilityService.h"
 #include "nsEventShell.h"
-
 #include "nsFocusManager.h"
-#include "mozilla/a11y/DocAccessibleParent.h"
-#include "mozilla/EventStateManager.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/BrowserParent.h"
 
 namespace mozilla {
 namespace a11y {
@@ -200,8 +199,6 @@ void FocusManager::ActiveItemChanged(LocalAccessible* aItem,
   if (aItem && aItem == mActiveItem) {
     return;
   }
-
-  mActiveItem = nullptr;
 
   if (aItem && aCheckIfActive) {
     LocalAccessible* widget = aItem->ContainerWidget();

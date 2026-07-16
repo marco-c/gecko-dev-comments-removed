@@ -2,10 +2,9 @@
 
 
 
-#include "TextRange-inl.h"
-
-#include "LocalAccessible-inl.h"
 #include "HyperTextAccessible-inl.h"
+#include "LocalAccessible-inl.h"
+#include "TextRange-inl.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAccUtils.h"

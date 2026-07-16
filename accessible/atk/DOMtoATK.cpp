@@ -3,6 +3,7 @@
 
 
 #include "DOMtoATK.h"
+
 #include "nsUTF8Utils.h"
 
 namespace mozilla::a11y::DOMtoATK {

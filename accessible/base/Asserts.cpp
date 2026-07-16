@@ -2,10 +2,10 @@
 
 
 
-#include "nsIAccessibleRelation.h"
-#include "nsIAccessibleRole.h"
 #include "mozilla/a11y/RelationType.h"
 #include "mozilla/a11y/Role.h"
+#include "nsIAccessibleRelation.h"
+#include "nsIAccessibleRole.h"
 
 using namespace mozilla::a11y;
 

@@ -27,8 +27,8 @@ class MsaaDocAccessible : public ia2AccessibleHypertext {
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accParent(
-       IDispatch __RPC_FAR* __RPC_FAR* ppdispParent)
-      override;
+       IDispatch __RPC_FAR * __RPC_FAR *
+      ppdispParent) override;
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accValue(
