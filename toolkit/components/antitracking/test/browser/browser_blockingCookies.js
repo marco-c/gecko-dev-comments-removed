@@ -1,4 +1,4 @@
-requestLongerTimeout(4);
+requestLongerTimeout(2);
 
 
 Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);

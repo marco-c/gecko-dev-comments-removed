@@ -1,9 +1,5 @@
 "use strict";
 
-
-
-requestLongerTimeout(3);
-
 const COOKIE_BEHAVIORS = [
   Ci.nsICookieService.BEHAVIOR_ACCEPT,
   Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
