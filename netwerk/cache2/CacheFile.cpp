@@ -659,6 +659,35 @@ nsresult CacheFile::OnMetadataRead(nsresult aResult) {
         
         
         SetupEncryption();
+      } else if (mHandle && !mHandle->IsDoomed()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        uint32_t indexLastFetched = 0;
+        uint32_t indexFetchCount = 0;
+        bool haveIndexStats = false;
+        
+        
+        
+        
+        
+        CacheIndex::EntryStatus status;
+        (void)CacheIndex::HasEntry(
+            *mHandle->Hash(), &status, [&](const CacheIndexEntry* aIndexEntry) {
+              if (aIndexEntry->IsInitialized()) {
+                indexLastFetched = aIndexEntry->GetLastFetched();
+                indexFetchCount = aIndexEntry->GetFetchCount();
+                haveIndexStats = true;
+              }
+            });
+        if (haveIndexStats && indexFetchCount >= mMetadata->GetFetchCount()) {
+          mMetadata->RestoreAccessStats(indexLastFetched, indexFetchCount);
+        }
       }
 
       InitIndexEntry();

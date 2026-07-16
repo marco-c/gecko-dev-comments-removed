@@ -197,6 +197,13 @@ class CacheFileMetadata final : public CacheFileIOListener,
   uint32_t GetFetchCount() const { return mMetaHdr.mFetchCount; }
   
   
+  
+  void RestoreAccessStats(uint32_t aLastFetched, uint32_t aFetchCount) {
+    mMetaHdr.mLastFetched = aLastFetched;
+    mMetaHdr.mFetchCount = aFetchCount;
+  }
+  
+  
   void OnFetched();
 
   int64_t Offset() { return mOffset; }
