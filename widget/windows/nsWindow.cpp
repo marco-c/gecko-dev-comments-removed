@@ -6426,6 +6426,9 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
   }
 
   
+  SetIsTiled(mWnd && ::IsWindowArranged(mWnd));
+
+  
   if (!(wp->flags & SWP_NOACTIVATE) && NeedsToTrackWindowOcclusionState()) {
     WinWindowOcclusionTracker::Get()->OnWindowVisibilityChanged(
         this, mFrameState->GetSizeMode() != nsSizeMode_Minimized);
