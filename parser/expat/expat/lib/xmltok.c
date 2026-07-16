@@ -47,6 +47,7 @@
 
 
 
+
 #include "expat_config.h"
 
 #include <stddef.h>
@@ -58,6 +59,7 @@
 #endif
 
 #include "internal.h"
+#include "fallthrough.h"
 #include "xmltok.h"
 #include "nametab.h"
 
@@ -641,7 +643,7 @@ unicode_byte_type(char hi, char lo) {
           *(*toP)++ = lo;                                                      \
           break;                                                               \
         }                                                                      \
-        /* fall through */                                                     \
+        EXPAT_FALLTHROUGH;                                                     \
       case 0x1:                                                                \
       case 0x2:                                                                \
       case 0x3:                                                                \
@@ -1568,7 +1570,7 @@ initScan(const ENCODING *const *encodingTable, const INIT_ENCODING *enc,
     case 0xEF: 
       if (INIT_ENC_INDEX(enc) == ISO_8859_1_ENC && state == XML_CONTENT_STATE)
         break;
-      
+      EXPAT_FALLTHROUGH;
     case 0x00:
     case 0x3C:
       return XML_TOK_PARTIAL;
