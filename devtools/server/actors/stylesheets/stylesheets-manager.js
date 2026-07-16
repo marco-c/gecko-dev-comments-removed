@@ -70,6 +70,8 @@ const modifiedStyleSheets = new WeakMap();
 class StyleSheetsManager extends EventEmitter {
   #abortController;
   
+  #initialExternalStyleSheetTextMap = new Map();
+  
   #mqlChangeAbortControllerMap = new Map();
   #styleSheetCount = 0;
   #styleSheetMap = new Map();
@@ -398,6 +400,10 @@ class StyleSheetsManager extends EventEmitter {
 
 
   async getText(resourceId) {
+    if (!this.#styleSheetMap.has(resourceId)) {
+      return "";
+    }
+
     const styleSheet = this.#styleSheetMap.get(resourceId);
 
     const modifiedText = modifiedStyleSheets.get(styleSheet);
@@ -408,7 +414,29 @@ class StyleSheetsManager extends EventEmitter {
       return modifiedText;
     }
 
-    return getStyleSheetText(styleSheet);
+    if (
+      styleSheet.href &&
+      this.#initialExternalStyleSheetTextMap.has(resourceId)
+    ) {
+      return this.#initialExternalStyleSheetTextMap.get(resourceId);
+    }
+
+    const getTextPromise = getStyleSheetText(styleSheet);
+    
+    
+    
+    if (
+      styleSheet.href &&
+      !this.#initialExternalStyleSheetTextMap.has(resourceId)
+    ) {
+      this.#initialExternalStyleSheetTextMap.set(resourceId, getTextPromise);
+      
+      getTextPromise.catch(() => {
+        this.#initialExternalStyleSheetTextMap.delete(resourceId);
+      });
+    }
+
+    return getTextPromise;
   }
 
   
@@ -1011,6 +1039,9 @@ class StyleSheetsManager extends EventEmitter {
     if (this.#mqlChangeAbortControllerMap.has(existingResourceId)) {
       this.#mqlChangeAbortControllerMap.get(existingResourceId).abort();
       this.#mqlChangeAbortControllerMap.delete(existingResourceId);
+    }
+    if (this.#initialExternalStyleSheetTextMap.has(existingResourceId)) {
+      this.#initialExternalStyleSheetTextMap.delete(existingResourceId);
     }
 
     for (const onDestroyed of this.#watchListeners.onDestroyed) {
