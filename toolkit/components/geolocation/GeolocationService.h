@@ -2,15 +2,14 @@
 
 
 
-#ifndef TOOLKIT_COMPONENTS_GEOLOCATIONS_NSGEOLOCATIONSERVICE_H_
-#define TOOLKIT_COMPONENTS_GEOLOCATIONS_NSGEOLOCATIONSERVICE_H_
+#ifndef TOOLKIT_COMPONENTS_GEOLOCATIONS_GEOLOCATIONSERVICE_H_
+#define TOOLKIT_COMPONENTS_GEOLOCATIONS_GEOLOCATIONSERVICE_H_
 
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 #include "nsIGeolocationService.h"
 #include "nsIObserver.h"
-#include "nscore.h"
 
 class nsIDOMGeoPosition;
 class nsITimer;
@@ -24,22 +23,24 @@ struct CachedPositionAndAccuracy {
   bool isHighAccuracy;
 };
 
+namespace mozilla {
 
 
 
-class nsGeolocationService final : public nsIGeolocationService,
-                                   public nsIGeolocationUpdate,
-                                   public nsIObserver {
+
+class GeolocationService final : public nsIGeolocationService,
+                                 public nsIGeolocationUpdate,
+                                 public nsIObserver {
  public:
-  static already_AddRefed<nsGeolocationService> GetGeolocationService(
+  static already_AddRefed<GeolocationService> GetGeolocationService(
       mozilla::dom::BrowsingContext* browsingContext = nullptr);
-  static mozilla::StaticRefPtr<nsGeolocationService> sService;
+  static mozilla::StaticRefPtr<GeolocationService> sService;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIGEOLOCATIONUPDATE
   NS_DECL_NSIOBSERVER
 
-  nsGeolocationService() = default;
+  GeolocationService() = default;
 
   nsresult Init();
 
@@ -48,7 +49,7 @@ class nsGeolocationService final : public nsIGeolocationService,
   void RemoveLocator(mozilla::dom::Geolocation* aLocator);
 
   
-  void MoveLocators(nsGeolocationService* aService);
+  void MoveLocators(GeolocationService* aService);
 
   void SetCachedPosition(nsIDOMGeoPosition* aPosition);
   CachedPositionAndAccuracy GetCachedPosition();
@@ -67,7 +68,7 @@ class nsGeolocationService final : public nsIGeolocationService,
   bool HighAccuracyRequested();
 
  private:
-  ~nsGeolocationService();
+  ~GeolocationService();
 
   
   
@@ -93,5 +94,7 @@ class nsGeolocationService final : public nsIGeolocationService,
   
   mozilla::Maybe<bool> mStarting;
 };
+
+}  
 
 #endif  

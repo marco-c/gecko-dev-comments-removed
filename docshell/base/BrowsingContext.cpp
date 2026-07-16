@@ -59,6 +59,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/GeolocationService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MediaFeatureChange.h"
 #include "mozilla/Services.h"
@@ -72,7 +73,6 @@
 #include "mozilla/StartupTimeline.h"
 #include "GeckoProfiler.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "nsGeolocationService.h"
 #include "nsIURIFixup.h"
 #include "nsIXULRuntime.h"
 
@@ -3797,7 +3797,7 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
 }
 
-RefPtr<nsGeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
+RefPtr<GeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
   
   
   
@@ -3811,15 +3811,15 @@ void BrowsingContext::SetGeolocationServiceOverride(
       "Should only set GeolocationServiceOverride in the top browsing context");
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
-      mGeolocationServiceOverride = MakeRefPtr<nsGeolocationService>();
+      mGeolocationServiceOverride = MakeRefPtr<GeolocationService>();
       mGeolocationServiceOverride->Init();
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
-  } else if (RefPtr<nsGeolocationService> serviceOverride =
+  } else if (RefPtr<GeolocationService> serviceOverride =
                  mGeolocationServiceOverride.forget()) {
     
-    RefPtr<nsGeolocationService> service =
-        nsGeolocationService::GetGeolocationService();
+    RefPtr<GeolocationService> service =
+        GeolocationService::GetGeolocationService();
     serviceOverride->MoveLocators(service);
   }
 }
