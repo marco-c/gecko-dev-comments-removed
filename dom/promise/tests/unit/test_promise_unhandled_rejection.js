@@ -21,6 +21,10 @@ async function getSandboxMessages(sandbox, code) {
     Cu.evalInSandbox(code, sandbox, null, filename, 1);
 
     
+    
+    
+    
+    await new Promise(executeSoon);
     await new Promise(executeSoon);
     await new Promise(executeSoon);
   });

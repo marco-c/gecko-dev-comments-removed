@@ -2,10 +2,9 @@
 
 
 
-
-
 #include "mozilla/dom/PromiseDebugging.h"
 
+#include "js/Promise.h"
 #include "js/Value.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/RefPtr.h"
@@ -45,7 +44,7 @@ class FlushRejections : public DiscardableRunnable {
     NS_DispatchToCurrentThread(new FlushRejections());
   }
 
-  static void FlushSync() {
+  static void FlushSync(bool aDeferToEventPath = true) {
     sDispatched.set(false);
 
     
@@ -53,7 +52,7 @@ class FlushRejections : public DiscardableRunnable {
     
     
     
-    PromiseDebugging::FlushUncaughtRejectionsInternal();
+    PromiseDebugging::FlushUncaughtRejectionsInternal(aDeferToEventPath);
   }
 
   NS_IMETHOD Run() override {
@@ -158,7 +157,7 @@ void PromiseDebugging::GetFullfillmentStack(GlobalObject& aGlobal,
 }
 
 
-MOZ_RUNINIT nsString PromiseDebugging::sIDPrefix;
+constinit nsString PromiseDebugging::sIDPrefix;
 
 
 void PromiseDebugging::Init() {
@@ -180,7 +179,9 @@ void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
 
 void PromiseDebugging::FlushUncaughtRejections() {
   MOZ_ASSERT(!NS_IsMainThread());
-  FlushRejections::FlushSync();
+  
+  
+  FlushRejections::FlushSync( false);
 }
 
 
@@ -233,13 +234,21 @@ void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise) {
     }
   }
   
+  
+  
+  const uint64_t promiseID = JS::GetPromiseID(aPromise);
+  if (CycleCollectedJSContext::Get()->HasPendingUnhandledRejection(promiseID)) {
+    return;
+  }
+
+  
   if (CycleCollectedJSContext::Get()->mConsumedRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
 
 
-void PromiseDebugging::FlushUncaughtRejectionsInternal() {
+void PromiseDebugging::FlushUncaughtRejectionsInternal(bool aDeferToEventPath) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;
@@ -258,6 +267,15 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal() {
     
     if (!promise) {
       continue;
+    }
+
+    
+    
+    if (aDeferToEventPath) {
+      const uint64_t promiseID = JS::GetPromiseID(promise);
+      if (storage->HasPendingUnhandledRejection(promiseID)) {
+        continue;
+      }
     }
 
     bool suppressReporting = false;

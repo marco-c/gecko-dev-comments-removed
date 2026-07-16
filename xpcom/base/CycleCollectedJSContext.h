@@ -498,6 +498,10 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   nsTArray<nsCOMPtr<nsISupports >>
       mUncaughtRejectionObservers;
 
+  bool HasPendingUnhandledRejection(uint64_t aPromiseID) const {
+    return mPendingUnhandledRejections.Contains(aPromiseID);
+  }
+
   virtual bool IsSystemCaller() const = 0;
 
   
