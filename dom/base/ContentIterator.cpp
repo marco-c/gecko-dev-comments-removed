@@ -1179,11 +1179,14 @@ nsresult ContentSubtreeIterator::InitWithRange() {
       ShadowDOMSelectionHelpers::StartRef(mRange, mAllowCrossShadowBoundary);
   const RawRangeBoundary endRef =
       ShadowDOMSelectionHelpers::EndRef(mRange, mAllowCrossShadowBoundary);
-  MOZ_ASSERT(mClosestCommonInclusiveAncestor && startRef.IsSet() &&
-             endRef.IsSet());
-  
-  MOZ_ASSERT(startRef.IsSetAndValid());
-  MOZ_ASSERT(endRef.IsSetAndValid());
+  if (!mClosestCommonInclusiveAncestor) [[unlikely]] {
+    NS_WARNING(fmt::format("startRef:{}", startRef).c_str());
+    NS_WARNING(fmt::format("endRef:  {}", endRef).c_str());
+    MOZ_ASSERT_UNREACHABLE("mRange boundaries must be connected");
+    return NS_ERROR_FAILURE;
+  }
+  MOZ_ASSERT(startRef.IsSet());
+  MOZ_ASSERT(endRef.IsSet());
 
   
   if (startRef.GetContainer() == endRef.GetContainer()) {

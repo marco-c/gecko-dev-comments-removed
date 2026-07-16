@@ -169,8 +169,22 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
 
     if (auto* const shadowRoot =
             mozilla::dom::ShadowRoot::FromNode(parentAsContent)) {
-      if (aType != nsINode::eForSelection ||
-          !shadowRoot->IsUAShadowRootSlow()) {
+      if constexpr (aType != nsINode::eForSelection) {
+        return shadowRoot->GetHost();
+      } else {
+        
+        
+        
+        if (shadowRoot->IsUAWidget()) {
+          return shadowRoot;
+        }
+        
+        
+        
+        
+        MOZ_ASSERT_IF(shadowRoot->GetHost() &&
+                          !shadowRoot->GetHost()->CanAttachShadowDOM(),
+                      shadowRoot->GetHost()->IsSVGElement(nsGkAtoms::use));
         return shadowRoot->GetHost();
       }
     }
@@ -270,7 +284,7 @@ inline mozilla::dom::ShadowRoot* nsINode::GetContainingShadowForSelection()
   }
   mozilla::dom::ShadowRoot* const shadowRoot =
       AsContent()->GetContainingShadow();
-  return shadowRoot && !shadowRoot->IsUAShadowRootSlow() ? shadowRoot : nullptr;
+  return shadowRoot && !shadowRoot->IsUAWidget() ? shadowRoot : nullptr;
 }
 
 inline mozilla::dom::ShadowRoot* nsINode::GetClosestShadowRootInFlattenedTree()
@@ -296,7 +310,7 @@ nsINode::GetClosestShadowRootInFlattenedTreeForSelection() const {
        node = node->GetParentNode()) {
     
     if (auto* const shadowRoot = mozilla::dom::ShadowRoot::FromNode(node)) {
-      if (!shadowRoot->IsUAShadowRootSlow()) {
+      if (!shadowRoot->IsUAWidget()) {
         return shadowRoot;
       }
     }

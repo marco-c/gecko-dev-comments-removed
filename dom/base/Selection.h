@@ -1135,7 +1135,7 @@ class Selection final : public nsSupportsWeakReference,
     
     
     
-    void ReorderRangesIfNecessary();
+    [[nodiscard]] nsresult ReorderRangesIfNecessary();
 
     
     

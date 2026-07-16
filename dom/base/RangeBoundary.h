@@ -829,7 +829,7 @@ class RangeBoundaryBase {
     
     
     
-    if (!shadowRoot->IsUAShadowRootSlow()) {
+    if (!shadowRoot->IsUAWidget()) {
       return nullptr;
     }
     
