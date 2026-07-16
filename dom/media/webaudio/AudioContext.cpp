@@ -1110,19 +1110,13 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
     return promise.forget();
   }
 
+  
   mSuspendedByContent = false;
-  
-  
-  
-  
-  if (mSuspendedByMediaControl) {
-    MEDIA_CONTROL_LOG(
-        "AudioContext {} page resume() takes over an interruption suspend",
-        fmt::ptr(this));
-    mSuspendedByMediaControl = false;
-  }
   mPendingResumePromises.AppendElement(promise);
 
+  
+  
+  
   const bool isAllowedToPlay = media::AutoplayPolicy::IsAllowedToPlay(*this);
   AUTOPLAY_LOG("Trying to resume AudioContext {}, IsAllowedToPlay={}",
                fmt::ptr(this), isAllowedToPlay);
@@ -1219,6 +1213,14 @@ already_AddRefed<Promise> AudioContext::Close(ErrorResult& aRv) {
         "Can't close an AudioContext twice");
     return promise.forget();
   }
+
+  
+  
+  
+  for (const auto& p : mPendingResumePromises) {
+    p->MaybeRejectWithInvalidStateError("Closed before resume completed");
+  }
+  mPendingResumePromises.Clear();
 
   mPromiseGripArray.AppendElement(promise);
 
