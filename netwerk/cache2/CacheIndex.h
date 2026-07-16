@@ -746,6 +746,13 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   static nsresult Shutdown();
 
   
+  
+  
+  
+  
+  static void WriteIndexToDiskNow();
+
+  
 
   
   
@@ -925,6 +932,9 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   bool WriteIndexToDiskIfNeeded(const StaticMutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(sLock);
+  
+  
+  void WriteIndexToDiskNowInternal();
   
   void WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(sLock);
