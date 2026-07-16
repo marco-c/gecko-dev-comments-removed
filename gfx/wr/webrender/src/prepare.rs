@@ -1838,10 +1838,17 @@ fn prepare_prim_for_render(
                         }
                     };
                     let device_pixel_scale = info.device_pixel_scale;
-                    let surface_spatial_node_index = info.surface_spatial_node_index;
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    let raster_spatial_node_index = info.raster_spatial_node_index;
 
                     let map_prim_to_backdrop = SpaceMapper::new_with_target(
-                        surface_spatial_node_index,
+                        raster_spatial_node_index,
                         prim_spatial_node_index,
                         WorldRect::max_rect(),
                         frame_context.spatial_tree,

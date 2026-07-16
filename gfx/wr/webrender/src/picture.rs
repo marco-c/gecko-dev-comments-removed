@@ -521,8 +521,6 @@ bitflags! {
         /// This picture establishes a sub-graph, which affects how SurfaceBuilder will
         /// set up dependencies in the render task graph
         const IS_SUB_GRAPH = 1 << 1;
-        /// If set, this picture should not apply snapping via changing the raster root
-        const DISABLE_SNAPPING = 1 << 2;
     }
 }
 
@@ -1206,14 +1204,6 @@ impl PictureInstance {
                 
                 
                 
-                let allow_snapping = !self.flags.contains(PictureFlags::DISABLE_SNAPPING);
-
-                
-                
-                
-                
-                
-                
                 
                 
                 let force_scissor_rect = self.prim_list.needs_scissor_rect;
@@ -1275,7 +1265,6 @@ impl PictureInstance {
                         let surface_spatial_node = frame_context.spatial_tree.get_spatial_node(surface_spatial_node_index);
 
                         let enable_snapping =
-                            allow_snapping &&
                             surface_spatial_node.coordinate_system_id == CoordinateSystemId::root();
 
                         if enable_snapping {

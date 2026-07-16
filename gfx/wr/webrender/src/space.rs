@@ -259,9 +259,6 @@ impl SpaceSnapper {
     
     
     
-    
-    
-    
     pub fn new(
         surface: &SurfaceInfo,
         spatial_tree: &SpatialTree,
