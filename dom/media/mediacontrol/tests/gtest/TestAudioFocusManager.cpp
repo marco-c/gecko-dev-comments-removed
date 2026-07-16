@@ -6,29 +6,12 @@
 #include "MediaControlService.h"
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/gtest/ScopedPrefSetter.h"
 
 using namespace mozilla::dom;
 
 #define FIRST_CONTROLLER_ID 0
 #define SECOND_CONTROLLER_ID 1
-
-
-
-
-class AudioFocusManagmentPrefSetterRAII {
- public:
-  explicit AudioFocusManagmentPrefSetterRAII(bool aPrefValue) {
-    mOriginalValue = mozilla::Preferences::GetBool(mPrefName, false);
-    mozilla::Preferences::SetBool(mPrefName, aPrefValue);
-  }
-  ~AudioFocusManagmentPrefSetterRAII() {
-    mozilla::Preferences::SetBool(mPrefName, mOriginalValue);
-  }
-
- private:
-  const char* mPrefName = "media.audioFocus.management";
-  bool mOriginalValue;
-};
 
 TEST(AudioFocusManager, TestRequestAudioFocus)
 {
@@ -50,7 +33,7 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenEnableAudioFocusManagement)
   
   
   
-  AudioFocusManagmentPrefSetterRAII prefSetter(true);
+  mozilla::ScopedPrefSetter prefSetter("media.audioFocus.management", true);
 
   AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
@@ -77,7 +60,7 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenDisableAudioFocusManagement)
 {
   
   
-  AudioFocusManagmentPrefSetterRAII prefSetter(false);
+  mozilla::ScopedPrefSetter prefSetter("media.audioFocus.management", false);
 
   AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
