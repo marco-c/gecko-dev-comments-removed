@@ -2584,9 +2584,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
       
       
       if (!ExecuteAsyncModule(cx, m)) {
-        MOZ_ASSERT(!cx->isExceptionPending() || cx->isThrowingOutOfMemory() ||
-                   cx->isThrowingOverRecursed());
-        cx->clearPendingException();
+        RejectExecutionWithPendingException(cx, m);
       }
     } else {
       
