@@ -410,6 +410,7 @@ void ContentMediaController::HandleAudioFocusInterrupt(
       "num={}",
       EnumValueToString(aAction), mControllableReceivers.Length(),
       mUncontrollableReceivers.Length());
+  mAudioInterruptedByPlatform = suspend;
   
   
   

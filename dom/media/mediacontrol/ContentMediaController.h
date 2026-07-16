@@ -133,6 +133,10 @@ class ContentMediaController final : public ContentMediaAgent,
   
   void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) override;
 
+  bool IsAudioInterruptedByPlatform() const {
+    return mAudioInterruptedByPlatform;
+  }
+
  private:
   ~ContentMediaController() = default;
 
@@ -143,6 +147,11 @@ class ContentMediaController final : public ContentMediaAgent,
 
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mControllableReceivers;
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mUncontrollableReceivers;
+
+  
+  
+  
+  bool mAudioInterruptedByPlatform = false;
 };
 
 }  
