@@ -2185,10 +2185,12 @@ const PINNED = "pinned";
 const PinnableSitesList = ({
   tile,
   messageId,
-  handleAction
+  handleAction,
+  setPinnedSite
 }) => {
   const items = tile?.data;
   const pinButtonLabel = tile?.pinButtonLabel;
+  const alwaysShow = tile?.alwaysShowPinButton;
   const [itemStates, setItemStates] = (0,external_React_namespaceObject.useState)(() => Object.fromEntries((items ?? []).map(item => [item.id, IDLE])));
   if (!items?.length) {
     return null;
@@ -2223,9 +2225,15 @@ const PinnableSitesList = ({
 
     
     setItemState(item.id, result === false ? IDLE : PINNED);
+
+    
+    
+    if (result !== false) {
+      setPinnedSite?.();
+    }
   };
   return external_React_default().createElement("ul", {
-    className: "pinnable-sites-list"
+    className: `pinnable-sites-list${alwaysShow ? " always-visible" : ""}`
   }, items.map(item => {
     const nameId = `pinnable-site-name-${item.id}`;
     const state = itemStates[item.id] ?? IDLE;
@@ -2604,7 +2612,8 @@ const ContentTiles = props => {
     }), tile.type === "pinnable_sites" && tile.data && external_React_default().createElement(PinnableSitesList, {
       tile: tile,
       messageId: props.messageId,
-      handleAction: props.handleAction
+      handleAction: props.handleAction,
+      setPinnedSite: props.setPinnedSite
     }), tile.type === "content-toggle" && tile.data && external_React_default().createElement(ContentToggle, {
       content: {
         tiles: tile
@@ -2799,6 +2808,8 @@ const MultiStageProtonScreen = props => {
     setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
     textInputs: props.textInputs,
     setTextInput: props.setTextInput,
+    pinnedSites: props.pinnedSites,
+    setPinnedSite: props.setPinnedSite,
     contentToggleChecked: props.contentToggleChecked,
     setContentToggleChecked: props.setContentToggleChecked,
     totalNumberOfScreens: props.totalNumberOfScreens,
@@ -2839,6 +2850,7 @@ const ProtonScreenActionButtons = props => {
     activeMultiSelect,
     activeSingleSelectSelections,
     textInputs,
+    pinnedSites,
     installedAddons
   } = props;
   const defaultValue = content.checkbox?.defaultValue;
@@ -2888,6 +2900,10 @@ const ProtonScreenActionButtons = props => {
         return true;
       }
       return Object.values(textInputs).every(input => !input.isValid || input.value.trim().length === 0);
+    }
+    
+    if (disabledValue === "hasPinnedSite") {
+      return !pinnedSites;
     }
     return disabledValue;
   };
@@ -3301,7 +3317,8 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       handleAction: this.props.handleAction,
       activeMultiSelect: this.props.activeMultiSelect,
       activeSingleSelectSelections: this.props.activeSingleSelectSelections,
-      textInputs: this.props.textInputs
+      textInputs: this.props.textInputs,
+      pinnedSites: this.props.pinnedSites
     }) : null;
   }
 
@@ -3639,6 +3656,11 @@ const MultiStageAboutWelcome = props => {
   
   
   
+  const [pinnedSites, setPinnedSites] = (0,external_React_namespaceObject.useState)({});
+
+  
+  
+  
   
   const [animationsPaused, setAnimationsPaused] = (0,external_React_namespaceObject.useState)(() => typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false);
   const toggleAnimationsPaused = () => setAnimationsPaused(prev => !prev);
@@ -3721,6 +3743,12 @@ const MultiStageAboutWelcome = props => {
         };
       });
     };
+    const setPinnedSite = () => {
+      setPinnedSites(prevState => ({
+        ...prevState,
+        [currentScreen.id]: true
+      }));
+    };
     const setTextInput = (value, inputId) => {
       setTextInputs(prevState => {
         const currentScreenInputs = prevState[currentScreen.id] || {};
@@ -3761,6 +3789,8 @@ const MultiStageAboutWelcome = props => {
       setActiveSingleSelectSelection: setActiveSingleSelectSelection,
       textInputs: textInputs[currentScreen.id],
       setTextInput: setTextInput,
+      pinnedSites: pinnedSites[currentScreen.id],
+      setPinnedSite: setPinnedSite,
       contentToggleChecked: contentToggleChecked,
       setContentToggleChecked: setContentToggleChecked,
       negotiatedLanguage: negotiatedLanguage,
@@ -4280,6 +4310,8 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       setActiveSingleSelectSelection: this.props.setActiveSingleSelectSelection,
       textInputs: this.props.textInputs,
       setTextInput: this.props.setTextInput,
+      pinnedSites: this.props.pinnedSites,
+      setPinnedSite: this.props.setPinnedSite,
       contentToggleChecked: this.props.contentToggleChecked,
       setContentToggleChecked: this.props.setContentToggleChecked,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
