@@ -13,6 +13,7 @@
 #include "MFProtectedPathReadinessMonitor.h"
 #include "RemoteMediaManagerParent.h"
 #include "mozilla/EventTargetAndLockCapability.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFCDMParent.h"
 #include "mozilla/RefPtr.h"
@@ -99,6 +100,39 @@ class MFCDMParent final : public PMFCDMParent {
   
   
   RefPtr<GenericPromise> WaitForHDCPSettleAfterReset();
+
+  
+  
+  
+  using HDCPSupportPromise =
+      MozPromise<nsresult, nsresult,  false>;
+  static RefPtr<HDCPSupportPromise> QueryHDCPSupport(
+      const nsString& aKeySystem, dom::HDCPVersion aVersion,
+      nsISerialEventTarget* aManagerThread);
+
+  
+  
+  
+  
+  
+  
+  
+  void PrewarmHDCP(bool aIsHardwareDRM);
+
+  
+  
+  void MarkHDCPCondition(bool aSupported);
+
+  
+  
+  
+  
+  
+  static inline Maybe<bool> sHDCPSupported;
+  static inline RefPtr<HDCPSupportPromise> sHDCPPrewarmQuery;
+  
+  
+  static inline uint32_t sHDCPPrewarmGeneration = 0;
 
   
   
