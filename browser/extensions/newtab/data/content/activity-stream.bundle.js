@@ -22540,6 +22540,14 @@ function Stocks_Stocks({
 const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
 
 
+
+
+function resolveSetAsWallpaperEnabled(prefs) {
+  const override = prefs.trainhopConfig?.widgets?.pictureOfTheDaySetAsWallpaperEnabled;
+  return override !== undefined ? override : Boolean(prefs["widgets.pictureOfTheDay.setAsWallpaper.enabled"]);
+}
+
+
 const JUST_SET_CHECKMARK_MS = 2000;
 
 
@@ -22558,11 +22566,12 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const pictureData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PictureOfTheDay);
   const widgetSize = resolveWidgetSize(PICTURE_OF_THE_DAY_ENTRY, prefs);
-  const isSetAsWallpaper = Boolean(prefs["widgets.pictureOfTheDay.setAsWallpaper"]);
+  const isSetAsWallpaper = Boolean(prefs["widgets.pictureOfTheDay.wallpaperActive"]);
 
   
   
-  const canSetWallpaper = Boolean(prefs["newtabWallpapers.enabled"] && prefs["newtabWallpapers.customWallpaper.enabled"]);
+  
+  const canSetWallpaper = Boolean(resolveSetAsWallpaperEnabled(prefs) && prefs["newtabWallpapers.enabled"] && prefs["newtabWallpapers.customWallpaper.enabled"]);
 
   
   
