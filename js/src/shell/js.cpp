@@ -12606,6 +12606,12 @@ static bool SetGCParameterFromArg(JSContext* cx, char* arg) {
     return false;
   }
 
+  
+  
+  if (fuzzingSafe && !IsGCParameterFuzzingSafe(key)) {
+    return true;
+  }
+
   uint32_t paramValue = uint32_t(value);
   if (value == ULONG_MAX || value != paramValue ||
       !cx->runtime()->gc.setParameter(cx, key, paramValue)) {
