@@ -1729,7 +1729,7 @@ class MediaDecoderStateMachine::SeekingState
       
       
       
-      mMaster->StopPlayback();
+      mMaster->StopPlayback(MediaSink::StopReason::Seeking);
       mMaster->UpdatePlaybackPositionInternal(mSeekJob.mTarget->GetTime());
       mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::SeekStarted);
       mMaster->mOnNextFrameStatus.Notify(
@@ -1917,7 +1917,13 @@ class MediaDecoderStateMachine::AccurateSeekingState
 
     
     
-    mMaster->StopMediaSink();
+    
+    
+    if (mVisibility == EventVisibility::Observable) {
+      mMaster->StopMediaSink(MediaSink::StopReason::Seeking);
+    } else {
+      mMaster->StopMediaSink();
+    }
     mMaster->ResetDecode();
 
     DemuxerSeek();
@@ -2306,7 +2312,13 @@ class MediaDecoderStateMachine::NextFrameSeekingState
   }
 
   void DoSeek() override {
-    mMaster->StopMediaSink();
+    
+    
+    if (mVisibility == EventVisibility::Observable) {
+      mMaster->StopMediaSink(MediaSink::StopReason::Seeking);
+    } else {
+      mMaster->StopMediaSink();
+    }
 
     auto currentTime = mCurrentTime;
     DiscardFrames(VideoQueue(), [currentTime](int64_t aSampleTime) {
@@ -3664,14 +3676,14 @@ nsresult MediaDecoderStateMachine::Init(MediaDecoder* aDecoder) {
   return NS_OK;
 }
 
-void MediaDecoderStateMachine::StopPlayback() {
+void MediaDecoderStateMachine::StopPlayback(MediaSink::StopReason aReason) {
   MOZ_ASSERT(OnTaskQueue());
-  LOG("StopPlayback()");
+  LOG("StopPlayback(reason={})", MediaSink::EnumValueToString(aReason));
 
   if (IsPlaying()) {
     mOnPlaybackEvent.Notify(MediaPlaybackEvent{
         MediaPlaybackEvent::PlaybackStopped, mPlaybackOffset});
-    mMediaSink->SetPlaying(false);
+    mMediaSink->SetPlaying(false, aReason);
     MOZ_ASSERT(!IsPlaying());
   }
 }
@@ -3939,11 +3951,11 @@ RefPtr<MediaDecoder::SeekPromise> MediaDecoderStateMachine::Seek(
   return mStateObj->HandleSeek(aTarget);
 }
 
-void MediaDecoderStateMachine::StopMediaSink() {
+void MediaDecoderStateMachine::StopMediaSink(MediaSink::StopReason aReason) {
   MOZ_ASSERT(OnTaskQueue());
   if (mMediaSink->IsStarted()) {
-    LOG("Stop MediaSink");
-    mMediaSink->Stop();
+    LOG("Stop MediaSink (reason={})", MediaSink::EnumValueToString(aReason));
+    mMediaSink->Stop(aReason);
     mMediaSinkAudioEndedPromise.DisconnectIfExists();
     mMediaSinkVideoEndedPromise.DisconnectIfExists();
   }

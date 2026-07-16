@@ -24,9 +24,21 @@ using media::TimeUnit;
 
 AudioSinkWrapper::~AudioSinkWrapper() = default;
 
+void AudioSinkWrapper::DiscardStashedAudioSink() {
+  AssertOwnerThread();
+  if (mStashedAudioSink) {
+    LOG("{}: AudioSinkWrapper::DiscardStashedAudioSink: shutting down stashed "
+        "sink",
+        fmt::ptr(this));
+    mStashedAudioSink->ShutDown();
+    mStashedAudioSink = nullptr;
+  }
+}
+
 void AudioSinkWrapper::Shutdown() {
   AssertOwnerThread();
   MOZ_ASSERT(!mIsStarted, "Must be called after playback stopped.");
+  DiscardStashedAudioSink();
   mSinkCreator = nullptr;
   
   
@@ -294,10 +306,11 @@ void AudioSinkWrapper::SetPreservesPitch(bool aPreservesPitch) {
   }
 }
 
-void AudioSinkWrapper::SetPlaying(bool aPlaying) {
+void AudioSinkWrapper::SetPlaying(bool aPlaying, StopReason aReason) {
   AssertOwnerThread();
-  LOG("{}: AudioSinkWrapper::SetPlaying {}", fmt::ptr(this),
-      aPlaying ? "true" : "false");
+  LOG("{}: AudioSinkWrapper::SetPlaying {} (reason: {})", fmt::ptr(this),
+      aPlaying ? "true" : "false",
+      aReason == StopReason::Seeking ? "seeking" : "regular");
 
   
   if (!mIsStarted) {
@@ -305,6 +318,15 @@ void AudioSinkWrapper::SetPlaying(bool aPlaying) {
   }
 
   if (mAudioSink) {
+    if (!aPlaying) {
+      
+      
+      
+      
+      const bool keepRunning = aReason == StopReason::Seeking &&
+                               mReuseStreamOnSeek && !mAudioSink->IsErrored();
+      mAudioSink->SetStreamKeepRunning(keepRunning);
+    }
     mAudioSink->SetPlaying(aPlaying);
   }
 
@@ -360,8 +382,28 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
 
   mEndedPromise = mEndedPromiseHolder.Ensure(__func__);
   if (!NeedAudioSink()) {
+    
+    
+    DiscardStashedAudioSink();
     return NS_OK;
   }
+  if (mStashedAudioSink) {
+    
+    
+    
+    
+    
+    if (mStashedAudioSink->IsErrored() ||
+        mStashedAudioSink->IsStreamDrained()) {
+      LOG("{}: stashed stream unusable (errored={}, drained={}), discarding it",
+          fmt::ptr(this), mStashedAudioSink->IsErrored(),
+          mStashedAudioSink->IsStreamDrained());
+      DiscardStashedAudioSink();
+    } else {
+      return ResumeStashedAudioSink(aStartTime);
+    }
+  }
+  
   
   
   
@@ -522,6 +564,32 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
           });
 }
 
+nsresult AudioSinkWrapper::ResumeStashedAudioSink(const TimeUnit& aStartTime) {
+  AssertOwnerThread();
+  MOZ_ASSERT(mStashedAudioSink);
+  MOZ_ASSERT(!mAudioSink);
+  MOZ_ASSERT(!mAudioSinkEndedRequest.Exists(),
+             "ended-promise consumer must be disconnected before reuse");
+  LOG("{}: AudioSinkWrapper::ResumeStashedAudioSink({})", fmt::ptr(this),
+      aStartTime.ToSeconds());
+
+  mAudioSink = std::move(mStashedAudioSink);
+  
+  
+  
+  mLastClockSource = ClockSource::SystemClock;
+  mAudioSink->ResetForReuse(mParams, aStartTime)
+      ->Then(mOwnerThread.GetEventTarget(), __func__, this,
+             &AudioSinkWrapper::OnAudioEnded)
+      ->Track(mAudioSinkEndedRequest);
+  
+  
+  
+  
+  mAudioSink->SetStreamKeepRunning(false);
+  return NS_OK;
+}
+
 nsresult AudioSinkWrapper::SyncCreateAudioSink(const TimeUnit& aStartTime) {
   AssertOwnerThread();
   MOZ_ASSERT(!mAudioSink);
@@ -565,7 +633,7 @@ bool AudioSinkWrapper::IsAudioSourceEnded(const MediaInfo& aInfo) const {
          (mAudioQueue.IsFinished() && mAudioQueue.GetSize() == 0u);
 }
 
-void AudioSinkWrapper::Stop() {
+void AudioSinkWrapper::Stop(StopReason aReason) {
   AssertOwnerThread();
   MOZ_ASSERT(mIsStarted, "playback not started.");
 
@@ -576,7 +644,18 @@ void AudioSinkWrapper::Stop() {
   mPositionAtClockStart = TimeUnit::Invalid();
   mAudioEnded = true;
   if (mAudioSink) {
-    ShutDownAudioSink();
+    if (aReason == StopReason::Seeking && mReuseStreamOnSeek &&
+        !mAudioSink->IsErrored() && !mAudioSink->IsStreamDrained()) {
+      
+      
+      
+      LOG("{}: stashing AudioSink for seek reuse", fmt::ptr(this));
+      mAudioSinkEndedRequest.DisconnectIfExists();
+      mAudioSink->PrepareForReuse();
+      mStashedAudioSink = std::move(mAudioSink);
+    } else {
+      ShutDownAudioSink();
+    }
   }
 
   mEndedPromiseHolder.ResolveIfExists(true, __func__);

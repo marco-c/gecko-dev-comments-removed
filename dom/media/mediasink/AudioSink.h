@@ -69,6 +69,27 @@ class AudioSink : private AudioStream::DataSource {
   
   void ShutDown();
 
+  
+  
+  
+  
+  
+  void PrepareForReuse();
+  RefPtr<MediaSink::EndedPromise> ResetForReuse(
+      const PlaybackParams& aParams, const media::TimeUnit& aStartTime);
+
+  void SetStreamKeepRunning(bool aKeepRunning) {
+    if (mAudioStream) {
+      mAudioStream->SetKeepRunningMode(aKeepRunning);
+    }
+  }
+
+  bool IsErrored() const { return mErrored; }
+
+  bool IsStreamDrained() const {
+    return mAudioStream && mAudioStream->IsPlaybackCompleted();
+  }
+
   void SetVolume(double aVolume);
   void SetStreamName(const nsAString& aStreamName);
   void SetPlaybackRate(double aPlaybackRate);
@@ -131,6 +152,20 @@ class AudioSink : private AudioStream::DataSource {
 
   
   Atomic<bool> mErrored;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Atomic<int64_t> mDiscardUpToSampleCount{0};
+  int64_t mTotalSamplesPushed = 0;
+  int64_t mTotalSamplesPopped = 0;
 
   const RefPtr<AbstractThread> mOwnerThread;
 

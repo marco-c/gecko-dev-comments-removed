@@ -311,6 +311,62 @@ void AudioSink::ShutDown() {
   mProcessedQueueFinished = true;
 }
 
+void AudioSink::PrepareForReuse() {
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  MOZ_ASSERT(mAudioStream);
+  SINK_LOG("PrepareForReuse: detaching audio-queue listeners for seek reuse");
+
+  
+  
+  
+  
+  
+  mAudioQueueListener.DisconnectIfExists();
+  mAudioQueueFinishListener.DisconnectIfExists();
+  mProcessedQueueListener.DisconnectIfExists();
+}
+
+RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
+    const PlaybackParams& aParams, const media::TimeUnit& aStartTime) {
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  MOZ_ASSERT(mAudioStream);
+  SINK_LOG("ResetForReuse to start time {}", aStartTime.ToMicroseconds());
+
+  ApplyPlaybackParams(aParams);
+
+  
+  
+  
+  
+  InitPlaybackState();
+
+  
+  mStartTime = aStartTime;
+  mLastEndTime = TimeUnit::Zero();
+  mLastGoodPosition = TimeUnit::Zero();
+  mLastProcessedPacket = Nothing();
+  mConverter = nullptr;
+
+  
+  
+  mAudioStream->Resume();
+  ConnectAudioQueues();
+
+  
+  
+  
+  
+  mDiscardUpToSampleCount = mTotalSamplesPushed;
+
+  
+  NotifyAudioNeeded();
+
+  
+  
+  mAudioStream->RebaseLive();
+  return mAudioStream->ReinitEndedPromise();
+}
+
 void AudioSink::SetVolume(double aVolume) {
   if (mAudioStream) {
     mAudioStream->SetVolume(aVolume);
@@ -373,6 +429,24 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
     mProcessedSPSCQueue->ResetConsumerThreadId();
   }
 
+  
+  
+  
+  
+  
+  if (int64_t discardUntil = mDiscardUpToSampleCount;
+      mTotalSamplesPopped < discardUntil) {
+    
+    
+    
+    int toDrop = static_cast<int>(discardUntil - mTotalSamplesPopped);
+    int dropped = mProcessedSPSCQueue->Dequeue(nullptr, toDrop);
+    mTotalSamplesPopped += dropped;
+    SINK_LOG_V(
+        "Dropping stale pre-seek audio: requested {}, dropped {} samples",
+        toDrop, dropped);
+  }
+
   TRACE_COMMENT("AudioSink::PopFrames", "%u frames (ringbuffer: %u/%u)",
                 aFrames, SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
                 SampleToFrame(mProcessedSPSCQueue->Capacity()));
@@ -380,6 +454,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
   const int samplesToPop = static_cast<int>(aFrames * mOutputChannels);
   const int samplesRead = mProcessedSPSCQueue->Dequeue(aBuffer, samplesToPop);
   MOZ_ASSERT(samplesRead % mOutputChannels == 0);
+  mTotalSamplesPopped += samplesRead;
   mWritten += SampleToFrame(samplesRead);
   if (samplesRead != samplesToPop) {
     if (Ended()) {
@@ -395,9 +470,10 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
 
   mAudioPopped.Notify();
 
-  SINK_LOG_V("Popping {} frames. Remaining in ringbuffer {} / {}\n", aFrames,
-             SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
-             SampleToFrame(mProcessedSPSCQueue->Capacity()));
+  SINK_LOG_V(
+      "Popping {} frames. Remaining in ringbuffer {} / {}, total popped {}\n",
+      aFrames, SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
+      SampleToFrame(mProcessedSPSCQueue->Capacity()), mTotalSamplesPopped);
   CheckIsAudible(Span(aBuffer, samplesRead), mOutputChannels);
 
   return SampleToFrame(samplesRead);
@@ -598,11 +674,13 @@ uint32_t AudioSink::PushProcessedAudio(AudioData* aData) {
                 framesToEnqueue,
                 SampleToFrame(mProcessedSPSCQueue->AvailableWrite()),
                 SampleToFrame(mProcessedSPSCQueue->Capacity()));
-  DebugOnly<int> rv =
+  int enqueued =
       mProcessedSPSCQueue->Enqueue(aData->Data().Elements(), framesToEnqueue);
-  NS_WARNING_ASSERTION(
-      rv == static_cast<int>(aData->Frames() * aData->mChannels),
-      "AudioSink ring buffer over-run, can't push new data");
+  NS_WARNING_ASSERTION(enqueued == framesToEnqueue,
+                       "AudioSink ring buffer over-run, can't push new data");
+  
+  
+  mTotalSamplesPushed += enqueued;
   return aData->Frames();
 }
 

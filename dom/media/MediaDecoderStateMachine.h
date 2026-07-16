@@ -323,7 +323,10 @@ class MediaDecoderStateMachine
   
   
   
-  void StopMediaSink();
+  
+  
+  void StopMediaSink(
+      MediaSink::StopReason aReason = MediaSink::StopReason::Regular);
 
   
   
@@ -336,7 +339,10 @@ class MediaDecoderStateMachine
 
   
   
-  void StopPlayback();
+  
+  
+  void StopPlayback(
+      MediaSink::StopReason aReason = MediaSink::StopReason::Regular);
 
   
   

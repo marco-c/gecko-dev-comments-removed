@@ -207,6 +207,38 @@ class AudioBufferWriter : public AudioBufferCursor {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AudioStream final {
   virtual ~AudioStream();
 
@@ -252,6 +284,21 @@ class AudioStream final {
 
   
   void ShutDown();
+
+  
+  
+  void SetKeepRunningMode(bool aKeepRunning);
+
+  
+  
+  
+  void RebaseLive();
+
+  
+  
+  
+  
+  RefPtr<MediaSink::EndedPromise> ReinitEndedPromise();
 
   
   
@@ -384,6 +431,16 @@ class AudioStream final {
   
   bool mAudioThreadChanged = false;
   Atomic<bool> mCallbacksStarted;
+
+  
+  
+  
+  Atomic<bool> mKeepRunning{false};
+
+  
+  
+  
+  bool mCubebStarted = false;
 };
 
 }  

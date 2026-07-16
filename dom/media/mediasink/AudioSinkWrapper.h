@@ -11,6 +11,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/EventTargetCapability.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
@@ -34,6 +35,7 @@ class AudioSinkWrapper : public MediaSink {
       : mOwnerThread(aOwnerThread),
         mAsyncInitTaskQueue(CreateAsyncInitTaskQueue()),
         mSinkCreator(std::move(aFunc)),
+        mReuseStreamOnSeek(StaticPrefs::media_audio_reuse_stream_on_seek()),
         mAudioDevice(std::move(aAudioDevice)),
         mParams(aVolume, aPlaybackRate, aPreservesPitch),
         mAudioQueue(aAudioQueue),
@@ -52,7 +54,8 @@ class AudioSinkWrapper : public MediaSink {
   void SetStreamName(const nsAString& aStreamName) override;
   void SetPlaybackRate(double aPlaybackRate) override;
   void SetPreservesPitch(bool aPreservesPitch) override;
-  void SetPlaying(bool aPlaying) override;
+  void SetPlaying(bool aPlaying,
+                  StopReason aReason = StopReason::Regular) override;
   RefPtr<GenericPromise> SetAudioDevice(
       RefPtr<AudioDeviceInfo> aDevice) override;
 
@@ -60,7 +63,7 @@ class AudioSinkWrapper : public MediaSink {
 
   nsresult Start(const media::TimeUnit& aStartTime, const MediaInfo& aInfo,
                  StartType aStartType = StartType::Initial) override;
-  void Stop() override;
+  void Stop(StopReason aReason = StopReason::Regular) override;
   bool IsStarted() const override;
   bool IsPlaying() const override;
 
@@ -94,6 +97,11 @@ class AudioSinkWrapper : public MediaSink {
   void ShutDownAudioSink();
   
   
+  nsresult ResumeStashedAudioSink(const media::TimeUnit& aStartTime);
+  
+  void DiscardStashedAudioSink();
+  
+  
   
   
   
@@ -124,6 +132,15 @@ class AudioSinkWrapper : public MediaSink {
   const RefPtr<TaskQueue> mAsyncInitTaskQueue;
   SinkCreator mSinkCreator;
   UniquePtr<AudioSink> mAudioSink;
+
+  
+  
+  UniquePtr<AudioSink> mStashedAudioSink;
+
+  
+  
+  const bool mReuseStreamOnSeek;
+
   
   
   RefPtr<AudioDeviceInfo> mAudioDevice;

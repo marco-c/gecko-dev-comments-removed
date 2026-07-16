@@ -46,6 +46,12 @@ class MediaSink {
   
   
   
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(StopReason,
+                                                     (Regular, Seeking));
+
+  
+  
+  
   
   virtual RefPtr<EndedPromise> OnEnded(TrackType aType) = 0;
 
@@ -90,7 +96,9 @@ class MediaSink {
   virtual void SetPreservesPitch(bool aPreservesPitch) {}
 
   
-  virtual void SetPlaying(bool aPlaying) = 0;
+  
+  virtual void SetPlaying(bool aPlaying,
+                          StopReason aReason = StopReason::Regular) = 0;
 
   
   
@@ -129,7 +137,8 @@ class MediaSink {
 
   
   
-  virtual void Stop() = 0;
+  
+  virtual void Stop(StopReason aReason = StopReason::Regular) = 0;
 
   
   

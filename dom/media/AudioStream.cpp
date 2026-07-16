@@ -372,6 +372,8 @@ RefPtr<MediaSink::EndedPromise> AudioStream::Start() {
     if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
       mState = ERRORED;
       mEndedPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
+    } else {
+      mCubebStarted = true;
     }
 
     LOG("started, state {}", mState == STARTED   ? "STARTED"
@@ -384,7 +386,6 @@ RefPtr<MediaSink::EndedPromise> AudioStream::Start() {
 void AudioStream::Pause() {
   TRACE("AudioStream::Pause");
   MOZ_ASSERT(mState != INITIALIZED, "Must be Start()ed.");
-  MOZ_ASSERT(mState != STOPPED, "Already Pause()ed.");
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
   
@@ -392,7 +393,22 @@ void AudioStream::Pause() {
     return;
   }
 
+  
+  
+  
+  
+  
+  if (mKeepRunning && mCubebStarted) {
+    LOG("Pause: keep-running mode, tracking logical STOPPED without stopping "
+        "cubeb");
+    mState = STOPPED;
+    return;
+  }
+
+  MOZ_ASSERT(mState != STOPPED, "Already Pause()ed.");
+
   MonitorAutoLock mon(mMonitor);
+  mCubebStarted = false;
   if (InvokeCubeb(cubeb_stream_stop) != CUBEB_OK) {
     mState = ERRORED;
   } else if (mState != DRAINED && mState != ERRORED) {
@@ -405,7 +421,6 @@ void AudioStream::Pause() {
 void AudioStream::Resume() {
   TRACE("AudioStream::Resume");
   MOZ_ASSERT(mState != INITIALIZED, "Must be Start()ed.");
-  MOZ_ASSERT(mState != STARTED, "Already Start()ed.");
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
   
@@ -413,14 +428,36 @@ void AudioStream::Resume() {
     return;
   }
 
+  
+  
+  
+  
+  if (mKeepRunning && mCubebStarted) {
+    LOG("Resume: keep-running mode, tracking logical STARTED without starting "
+        "cubeb");
+    mState = STARTED;
+    return;
+  }
+
+  MOZ_ASSERT(mState != STARTED, "Already Start()ed.");
+
   MonitorAutoLock mon(mMonitor);
   if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
     mState = ERRORED;
   } else if (mState != DRAINED && mState != ERRORED) {
     
     
+    mCubebStarted = true;
     mState = STARTED;
   }
+}
+
+void AudioStream::SetKeepRunningMode(bool aKeepRunning) {
+  if (aKeepRunning == mKeepRunning) {
+    return;
+  }
+  LOG("SetKeepRunningMode: {}", aKeepRunning);
+  mKeepRunning = aKeepRunning;
 }
 
 void AudioStream::ShutDown() {
@@ -428,6 +465,7 @@ void AudioStream::ShutDown() {
   LOG("ShutDown, state {}", static_cast<int>(mState.load()));
 
   MonitorAutoLock mon(mMonitor);
+  mCubebStarted = false;
   if (mCubebStream) {
     
     InvokeCubeb(cubeb_stream_stop);
@@ -447,6 +485,36 @@ void AudioStream::ShutDown() {
 
   mState = SHUTDOWN;
   mEndedPromise.ResolveIfExists(true, __func__);
+}
+
+void AudioStream::RebaseLive() {
+  TRACE("AudioStream::RebaseLive");
+  
+  int64_t rawFrames;
+  {
+#ifndef XP_MACOSX
+    MonitorAutoLock mon(mMonitor);
+#endif
+    rawFrames = GetPositionInFramesUnlocked();
+  }
+  mAudioClock.Rebase(rawFrames >= 0 ? rawFrames : 0);
+}
+
+RefPtr<MediaSink::EndedPromise> AudioStream::ReinitEndedPromise() {
+  MonitorAutoLock mon(mMonitor);
+  
+  
+  
+  
+  
+  
+  
+  
+  mEndedPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
+  if (mState == ERRORED) {
+    return MediaSink::EndedPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  return mEndedPromise.Ensure(__func__);
 }
 
 int64_t AudioStream::GetPosition() {

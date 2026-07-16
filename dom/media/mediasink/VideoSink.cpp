@@ -192,7 +192,7 @@ void VideoSink::EnsureHighResTimersOnOnlyIfPlaying() {
 #endif
 }
 
-void VideoSink::SetPlaying(bool aPlaying) {
+void VideoSink::SetPlaying(bool aPlaying, StopReason aReason) {
   AssertOwnerThread();
   VSINK_LOG_V(" playing ({}) -> ({})", mAudioSink->IsPlaying(), aPlaying);
 
@@ -215,7 +215,7 @@ void VideoSink::SetPlaying(bool aPlaying) {
     }
   }
 
-  mAudioSink->SetPlaying(aPlaying);
+  mAudioSink->SetPlaying(aPlaying, aReason);
 
   if (mHasVideo && aPlaying) {
     
@@ -274,12 +274,12 @@ nsresult VideoSink::Start(const media::TimeUnit& aStartTime,
   return rv;
 }
 
-void VideoSink::Stop() {
+void VideoSink::Stop(StopReason aReason) {
   AssertOwnerThread();
   MOZ_ASSERT(mAudioSink->IsStarted(), "playback not started.");
   VSINK_LOG("[{}]", __func__);
 
-  mAudioSink->Stop();
+  mAudioSink->Stop(aReason);
 
   mUpdateScheduler.Reset();
   if (mHasVideo) {
