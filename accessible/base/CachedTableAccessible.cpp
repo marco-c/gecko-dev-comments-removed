@@ -19,29 +19,42 @@
 namespace mozilla::a11y {
 
 
-class TablePartRule : public PivotRule {
+class MOZ_STACK_CLASS TablePartRule : public PivotRule {
  public:
+  explicit TablePartRule(Accessible* aRoot) : mRoot(aRoot) {}
+
   virtual uint16_t Match(Accessible* aAcc) override {
-    role accRole = aAcc->Role();
-    if (accRole == roles::CAPTION || aAcc->IsTableCell()) {
-      return nsIAccessibleTraversalRule::FILTER_MATCH |
-             nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    if (aAcc == mRoot) {
+      
+      MOZ_ASSERT(aAcc->IsTable());
+      return nsIAccessibleTraversalRule::FILTER_IGNORE;
+    }
+    if (aAcc->IsTable()) {
+      
+      return nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     }
     if (aAcc->IsTableRow()) {
       return nsIAccessibleTraversalRule::FILTER_MATCH;
     }
-    if (aAcc->IsTable() ||
-        
-        accRole == roles::TEXT || accRole == roles::TEXT_CONTAINER ||
-        accRole == roles::SECTION ||
-        
-        accRole == roles::ROWGROUP) {
+    if (aAcc->IsTableCell()) {
+      return nsIAccessibleTraversalRule::FILTER_MATCH |
+             nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+    role accRole = aAcc->Role();
+    if (accRole == roles::CAPTION) {
+      return nsIAccessibleTraversalRule::FILTER_MATCH |
+             nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+    if (aAcc->IsGeneric() || accRole == roles::ROWGROUP) {
       
       return nsIAccessibleTraversalRule::FILTER_IGNORE;
     }
     return nsIAccessibleTraversalRule::FILTER_IGNORE |
            nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
+
+ private:
+  Accessible* mRoot;
 };
 
 
@@ -81,14 +94,10 @@ void CachedTableAccessible::Invalidate(Accessible* aAcc) {
     return;
   }
 
-  Accessible* table = nsAccUtils::TableFor(aAcc);
-  while (table && table->IsTable()) {
+  if (Accessible* table = nsAccUtils::TableFor(aAcc)) {
     
     
     sCachedTables->Remove(table);
-    
-    
-    table = table->Parent();
   }
 }
 
@@ -103,7 +112,7 @@ CachedTableAccessible::CachedTableAccessible(Accessible* aAcc) : mAcc(aAcc) {
   
   nsTHashMap<uint32_t, uint32_t> prevColHeaders;
   Pivot pivot(mAcc);
-  TablePartRule rule;
+  TablePartRule rule(mAcc);
   for (Accessible* part = pivot.Next(mAcc, rule); part;
        part = pivot.Next(part, rule)) {
     role partRole = part->Role();
