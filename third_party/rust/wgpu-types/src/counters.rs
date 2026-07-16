@@ -104,7 +104,7 @@ impl fmt::Debug for InternalCounter {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct HalCounters {
     
     pub buffers: InternalCounter,
@@ -114,6 +114,7 @@ pub struct HalCounters {
     pub bind_group_layouts: InternalCounter,
     pub render_pipelines: InternalCounter,
     pub compute_pipelines: InternalCounter,
+    pub ray_tracing_pipelines: InternalCounter,
     pub pipeline_layouts: InternalCounter,
     pub samplers: InternalCounter,
     pub command_encoders: InternalCounter,
@@ -133,7 +134,7 @@ pub struct HalCounters {
 }
 
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct CoreCounters {
     
 }
@@ -142,7 +143,7 @@ pub struct CoreCounters {
 
 
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct InternalCounters {
     
     pub core: CoreCounters,
@@ -162,7 +163,7 @@ pub struct AllocationReport {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MemoryBlockReport {
     
     pub size: u64,

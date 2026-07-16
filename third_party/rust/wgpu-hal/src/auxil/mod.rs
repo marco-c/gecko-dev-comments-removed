@@ -1,4 +1,7 @@
-#[cfg(dx12)]
+
+
+
+#[cfg(any(dx12, all(vulkan, windows)))]
 pub(super) mod dxgi;
 
 #[cfg(all(native, feature = "renderdoc"))]

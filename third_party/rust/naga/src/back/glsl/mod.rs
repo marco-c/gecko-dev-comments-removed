@@ -458,6 +458,10 @@ enum BinaryOperation {
     
     Modulo,
     
+    
+    
+    ModuloInt,
+    
     Other,
 }
 

@@ -1,6 +1,7 @@
 use super::*;
 
 
+#[expect(missing_debug_implementations, reason = "would be way too verbose?")]
 pub struct Writer<'a, W> {
     
     
@@ -927,6 +928,22 @@ impl<'a, W: Write> Writer<'a, W> {
                         }
                     }
                     _ => {}
+                }
+            }
+
+            if let Expression::Binary {
+                op: crate::BinaryOperator::Modulo,
+                left,
+                right,
+            } = *expr
+            {
+                
+                
+                
+                if let Some(crate::ScalarKind::Sint | crate::ScalarKind::Uint) = inner.scalar_kind()
+                {
+                    self.need_bake_expressions.insert(left);
+                    self.need_bake_expressions.insert(right);
                 }
             }
         }
@@ -2877,6 +2894,9 @@ impl<'a, W: Write> Writer<'a, W> {
                         | Bo::Equal
                         | Bo::NotEqual => BinaryOperation::VectorCompare,
                         Bo::Modulo if scalar.kind == Sk::Float => BinaryOperation::Modulo,
+                        Bo::Modulo if scalar.kind == Sk::Sint || scalar.kind == Sk::Uint => {
+                            BinaryOperation::ModuloInt
+                        }
                         Bo::And if scalar.kind == Sk::Bool => {
                             op = crate::BinaryOperator::LogicalAnd;
                             BinaryOperation::VectorComponentWise
@@ -2892,6 +2912,11 @@ impl<'a, W: Write> Writer<'a, W> {
                             Bo::Modulo => BinaryOperation::Modulo,
                             _ => BinaryOperation::Other,
                         },
+                        (Some(Sk::Sint | Sk::Uint), _) | (_, Some(Sk::Sint | Sk::Uint))
+                            if op == Bo::Modulo =>
+                        {
+                            BinaryOperation::ModuloInt
+                        }
                         (Some(Sk::Bool), Some(Sk::Bool)) => match op {
                             Bo::InclusiveOr => {
                                 op = crate::BinaryOperator::LogicalOr;
@@ -2954,13 +2979,6 @@ impl<'a, W: Write> Writer<'a, W> {
                     
                     
                     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     BinaryOperation::Modulo => {
                         write!(self.out, "(")?;
 
@@ -2976,6 +2994,23 @@ impl<'a, W: Write> Writer<'a, W> {
                         write!(self.out, ")")?;
 
                         write!(self.out, ")")?;
+                    }
+                    BinaryOperation::ModuloInt => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        write!(self.out, "(")?;
+                        self.write_expr(left, ctx)?;
+                        write!(self.out, " - ")?;
+                        self.write_expr(right, ctx)?;
+                        write!(self.out, " * (")?;
+                        self.write_expr(left, ctx)?;
+                        write!(self.out, " / ")?;
+                        self.write_expr(right, ctx)?;
+                        write!(self.out, "))")?;
                     }
                     BinaryOperation::Other => {
                         write!(self.out, "(")?;

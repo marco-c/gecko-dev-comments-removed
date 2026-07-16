@@ -193,6 +193,7 @@ impl EglContext {
 
 
 
+#[derive(Debug)]
 pub struct AdapterContext {
     glow: Mutex<ManuallyDrop<glow::Context>>,
     egl: Option<EglContext>,
@@ -266,6 +267,7 @@ struct EglContextLock<'a> {
 }
 
 
+#[expect(missing_debug_implementations)]
 pub struct AdapterContextLock<'a> {
     glow: MutexGuard<'a, ManuallyDrop<glow::Context>>,
     egl: Option<EglContextLock<'a>>,
@@ -680,6 +682,7 @@ struct WindowSystemInterface {
     kind: WindowKind,
 }
 
+#[derive(Debug)]
 pub struct Instance {
     wsi: WindowSystemInterface,
     flags: wgt::InstanceFlags,

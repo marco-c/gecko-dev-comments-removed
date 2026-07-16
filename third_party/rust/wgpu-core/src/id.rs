@@ -62,25 +62,6 @@ impl RawId {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[repr(transparent)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
@@ -229,7 +210,7 @@ where
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let (index, epoch) = self.unzip();
-        write!(formatter, "Id({index},{epoch})")?;
+        write!(formatter, "{}Id({index},{epoch})", T::TYPE)?;
         Ok(())
     }
 }
@@ -280,14 +261,18 @@ where
 
 
 
-pub trait Marker: 'static + WasmNotSendSync {}
+pub trait Marker: 'static + WasmNotSendSync {
+    const TYPE: &'static str;
+}
 
 
 
 
 
 #[cfg(test)]
-impl Marker for () {}
+impl Marker for () {
+    const TYPE: &'static str = "Untyped";
+}
 
 
 macro_rules! ids {
@@ -300,7 +285,9 @@ macro_rules! ids {
             $(
                 #[derive(Debug)]
                 pub enum $marker {}
-                impl super::Marker for $marker {}
+                impl super::Marker for $marker {
+                    const TYPE: &'static str = stringify!($marker);
+                }
             )*
         }
 

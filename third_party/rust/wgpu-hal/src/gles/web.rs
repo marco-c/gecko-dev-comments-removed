@@ -8,6 +8,7 @@ use super::TextureFormatDesc;
 
 
 
+#[derive(Debug)]
 pub struct AdapterContext {
     pub glow_context: glow::Context,
     pub webgl2_context: web_sys::WebGl2RenderingContext,
