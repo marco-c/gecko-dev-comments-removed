@@ -17,7 +17,11 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
+  MENTION_TYPE:
+    "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  SmartbarMentionsPanelSearch:
+    "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
@@ -235,9 +239,10 @@ async function waitForSidebarOpen(win) {
 
 
 
-async function openAIWindowWithSidebar() {
+
+async function openAIWindowWithSidebar(url = "about:blank") {
   const win = await openAIWindow();
-  return openAIWindowSidebar(win);
+  return openAIWindowSidebar(win, url);
 }
 
 
@@ -246,13 +251,11 @@ async function openAIWindowWithSidebar() {
 
 
 
-async function openAIWindowSidebar(win) {
-  BrowserTestUtils.startLoadingURIString(
-    win.gBrowser.selectedBrowser,
-    "about:blank"
-  );
+
+async function openAIWindowSidebar(win, url = "about:blank") {
+  BrowserTestUtils.startLoadingURIString(win.gBrowser.selectedBrowser, url);
   await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser, {
-    wantLoad: "about:blank",
+    wantLoad: url,
   });
   if (!AIWindowUI.isSidebarOpen(win)) {
     info("Opening sidebar");
