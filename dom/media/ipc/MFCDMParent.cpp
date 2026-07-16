@@ -463,6 +463,10 @@ void MFCDMParent::OnHardwareContextReset() {
   MFCDM_PARENT_LOG("OnHardwareContextReset");
   
   
+  
+  mReadinessMonitor.ResetEngineConditions();
+  
+  
   for (auto& iter : mSessions) {
     iter.second->Close(
         dom::MediaKeySessionClosedReason::Hardware_context_reset);
