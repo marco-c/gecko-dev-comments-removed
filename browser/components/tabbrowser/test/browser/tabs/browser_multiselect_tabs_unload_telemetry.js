@@ -1,6 +1,11 @@
 
 
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+
 
 
 
@@ -43,6 +48,7 @@ add_setup(async function () {
     uriString: "http://mochi.test:8888/#originalTab",
   });
   let originalTab = gBrowser.selectedTab;
+  FirefoxViewTestUtils.enableFirefoxViewButton(window);
   
   FirefoxViewHandler.openTab();
   

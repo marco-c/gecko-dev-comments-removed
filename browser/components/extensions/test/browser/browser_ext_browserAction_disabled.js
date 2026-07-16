@@ -1,6 +1,14 @@
-
-
 "use strict";
+
+
+
+
+
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+FirefoxViewTestUtils.enableFirefoxViewButton(window);
 
 add_task(async function testDisabled() {
   let extension = ExtensionTestUtils.loadExtension({
