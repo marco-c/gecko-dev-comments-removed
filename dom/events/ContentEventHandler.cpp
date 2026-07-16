@@ -1518,7 +1518,7 @@ nsresult ContentEventHandler::OnQueryTextContent(
     
     nsAutoString text;
     uint32_t start = aEvent->mInput.mOffset;
-    uint32_t end = aEvent->mInput.EndOffset();
+    uint32_t end = start + aEvent->mInput.mLength;
     editContext->GetTextSubstring(start, end, text);
     aEvent->mReply->mOffsetAndData.emplace(start, text);
     
@@ -2008,46 +2008,26 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   const uint32_t kEndOffset = aEvent->mInput.EndOffset();
   bool wasLineBreaker = false;
   if (RefPtr<EditContext> editContext = GetEditContext()) {
-    MOZ_ASSERT(offset <= kEndOffset);
-    
-    const uint32_t endOffset = std::max(kEndOffset, offset);
     
     nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
-    Maybe<LayoutDeviceIntRect> selectionBounds =
-        editContext->GetSelectionBounds();
-    if (selectionBounds && offset == endOffset &&
-        offset == editContext->SelectionStartClamped() &&
-        editContext->SelectionIsCollapsed()) {
-      
-      rects.AppendElement(*selectionBounds);
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
-    }
-    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, endOffset,
+    rv = editContext->FireCharacterBoundsUpdateAndGetRects(offset, kEndOffset,
                                                            rects);
     if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
       LayoutDeviceIntRect lastRect = rects.LastElement();
       
       
-      while (rects.Length() < endOffset - offset) {
+      while (rects.Length() < kEndOffset - offset) {
         rects.AppendElement(lastRect);
       }
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
+      return rv;
     }
     
     
     
     if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
-      nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
-      LayoutDeviceIntRect fallbackBounds = editContext->FallbackBounds();
-      const uint32_t rectCount = std::max(1u, endOffset - offset);
-      rects.SetCapacity(rectCount);
-      for ([[maybe_unused]] uint32_t i : IntegerRange(rectCount)) {
-        rects.AppendElement(fallbackBounds);
-      }
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
+      
+      
+      return NS_ERROR_FAILURE;
     }
   }
   
@@ -2458,26 +2438,11 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   }
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
-  RefPtr<EditContext> editContext = GetEditContext();
-  if (editContext) {
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
     
     const uint32_t start = aEvent->mInput.mOffset;
     const uint32_t end = start + aEvent->mInput.mLength;
     AutoTArray<LayoutDeviceIntRect, 8> rects;
-    aEvent->mReply->mWritingMode = editContext->WritingMode();
-    nsAutoString data;
-    editContext->GetTextSubstring(start, end, data);
-    aEvent->mReply->mOffsetAndData.emplace(start, data,
-                                           OffsetAndDataFor::EditorString);
-    Maybe<LayoutDeviceIntRect> selectionBounds =
-        editContext->GetSelectionBounds();
-    if (selectionBounds && start == editContext->SelectionMinClamped() &&
-        end == editContext->SelectionMaxClamped()) {
-      
-      aEvent->mReply->mRect = *selectionBounds;
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
-    }
     rv = editContext->FireCharacterBoundsUpdateAndGetRects(start, end, rects);
     
     if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
@@ -2486,17 +2451,20 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
       for (size_t i : IntegerRange(1u, rects.Length())) {
         boundingRect = boundingRect.Union(rects[i]);
       }
+      nsAutoString data;
+      editContext->GetTextSubstring(start, end, data);
+      aEvent->mReply->mOffsetAndData.emplace(start, data,
+                                             OffsetAndDataFor::EditorString);
       aEvent->mReply->mRect = boundingRect;
-      MOZ_ASSERT(aEvent->Succeeded());
       return NS_OK;
     }
     
     
     
     if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
-      aEvent->mReply->mRect = editContext->FallbackBounds();
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
+      
+      
+      return NS_ERROR_FAILURE;
     }
   }
 
@@ -2514,14 +2482,9 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
           GenerateFlatTextContent(domRangeAndAdjustedOffset.mRange, string)))) {
     return NS_ERROR_FAILURE;
   }
-  if (!editContext) {
-    aEvent->mReply->mOffsetAndData.emplace(
-        domRangeAndAdjustedOffset.mAdjustedOffset, string,
-        OffsetAndDataFor::EditorString);
-  } else {
-    MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isSome(),
-               "Should have been initialized above.");
-  }
+  aEvent->mReply->mOffsetAndData.emplace(
+      domRangeAndAdjustedOffset.mAdjustedOffset, string,
+      OffsetAndDataFor::EditorString);
 
   
   PostContentIterator postOrderIter;
@@ -2833,15 +2796,6 @@ nsresult ContentEventHandler::OnQueryEditorRect(
     return rv;
   }
 
-  if (EditContext* editContext = GetEditContext()) {
-    if (Maybe<LayoutDeviceIntRect> controlBounds =
-            editContext->GetControlBounds()) {
-      aEvent->mReply->mRect = *controlBounds;
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
-    }
-  }
-
   if (NS_WARN_IF(NS_FAILED(QueryContentRect(mRootElement, aEvent)))) {
     return NS_ERROR_FAILURE;
   }
@@ -2855,24 +2809,6 @@ nsresult ContentEventHandler::OnQueryCaretRect(
   nsresult rv = Init(aEvent);
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  EditContext* editContext = GetEditContext();
-  if (editContext && mSelection->GetType() == SelectionType::eNormal &&
-      editContext->SelectionIsCollapsed() &&
-      editContext->SelectionStartClamped() == aEvent->mInput.mOffset) {
-    if (Maybe<LayoutDeviceIntRect> selectionBounds =
-            editContext->GetSelectionBounds()) {
-      
-      
-      aEvent->mReply->mRect = *selectionBounds;
-      aEvent->mReply->mOffsetAndData.emplace(aEvent->mInput.mOffset,
-                                             EmptyString(),
-                                             OffsetAndDataFor::SelectedString);
-      aEvent->mReply->mWritingMode = editContext->WritingMode();
-      MOZ_ASSERT(aEvent->Succeeded());
-      return NS_OK;
-    }
   }
 
   

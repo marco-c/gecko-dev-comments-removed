@@ -56,20 +56,6 @@ class EditContext final : public DOMEventTargetHelper {
     
     return std::min(SelectionEnd(), TextLength());
   }
-
-  bool SelectionIsCollapsed() const {
-    return SelectionStartClamped() == SelectionEndClamped();
-  }
-
-  
-  uint32_t SelectionMinClamped() const {
-    return std::min(SelectionStartClamped(), SelectionEndClamped());
-  }
-  
-  uint32_t SelectionMaxClamped() const {
-    return std::max(SelectionStartClamped(), SelectionEndClamped());
-  }
-
   uint32_t CharacterBoundsRangeStart() const {
     return mCodepointRectsStartIndex;
   }
@@ -125,19 +111,6 @@ class EditContext final : public DOMEventTargetHelper {
                                                uint32_t aCompositionOffset);
   MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateAndGetRects(
       uint32_t aStart, uint32_t aEnd, nsTArray<LayoutDeviceIntRect>& aRects);
-  
-  
-  Maybe<LayoutDeviceIntRect> GetControlBounds() const;
-  
-  
-  Maybe<LayoutDeviceIntRect> GetSelectionBounds() const;
-  
-
-
-
-
-
-  LayoutDeviceIntRect FallbackBounds() const;
 
   bool WasTextNextToCaretChangedByTextUpdateHandler() const {
     return mTextNextToCaretChangedByTextUpdateHandler;
@@ -152,16 +125,14 @@ class EditContext final : public DOMEventTargetHelper {
 
   using Rect = gfx::RectTyped<CSSPixel, double>;
 
-  RefPtr<DOMRect> ToDOMRect(const Rect& aCopy) const;
-  Rect ToRect(const DOMRect& aRect) const;
-  static LayoutDeviceIntRect ToDeviceRect(const nsPresContext& aPresContext,
-                                          const Rect& aRect);
+  RefPtr<DOMRect> ToDOMRect(const Rect& copy) const;
+  Rect ToRect(const DOMRect& rect) const;
 
   RefPtr<nsGenericHTMLElement> mAssociatedElement;
   RefPtr<nsGenericHTMLElement> mTextContainer;
   nsTArray<Rect> mCodepointRects;
-  Maybe<Rect> mControlBounds;
-  Maybe<Rect> mSelectionBounds;
+  Rect mControlBounds;
+  Rect mSelectionBounds;
   RefPtr<nsTextNode> mText;
   uint32_t mSelectionStart = 0;
   uint32_t mSelectionEnd = 0;
