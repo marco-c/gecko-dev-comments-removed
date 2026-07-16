@@ -2,7 +2,6 @@
 
 
 
-
 var NonBrowserWindow = {
   delayedStartupTimeoutId: null,
   MAC_HIDDEN_WINDOW: "chrome://browser/content/hiddenWindowMac.xhtml",
@@ -102,7 +101,11 @@ var NonBrowserWindow = {
         document.getElementById("macDockMenuNewWindow").hidden = true;
       }
       if (!PrivateBrowsingUtils.enabled) {
+        
         document.getElementById("macDockMenuNewPrivateWindow").hidden = true;
+        
+        document.getElementById("Tools:PrivateBrowsing").hidden = true;
+        document.getElementById("key_privatebrowsing").remove();
       }
       if (BrowserUIUtils.quitShortcutDisabled) {
         document.getElementById("key_quitApplication").remove();
