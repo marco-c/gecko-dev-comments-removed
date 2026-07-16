@@ -16,6 +16,10 @@ enum class StyleScroller : uint8_t;
 enum class StyleOverflow : uint8_t;
 }  
 
+namespace mozilla::layers {
+enum class ScrollDirection : uint8_t;
+}  
+
 namespace mozilla::dom {
 enum class ScrollAxis : uint8_t;
 struct ScrollTimelineOptions;
@@ -149,36 +153,53 @@ class ScrollTimeline : public AnimationTimeline,
 
  public:
   
-  class State {
+  
+  
+  
+  class StateSnapshot {
     friend class ScrollTimeline;
     friend class ViewTimeline;
 
    public:
     
-    layers::ScrollDirection Axis() const;
-    StyleOverflow SourceScrollStyle() const;
-    bool APZIsActiveForSource() const;
+    StateSnapshot() = default;
+
+    
+    layers::ScrollDirection Axis() const { return mPhysicalAxis; }
+    StyleOverflow SourceScrollStyle() const { return mSourceScrollStyle; }
+    bool APZIsActiveForSource() const { return mAPZIsActiveForSource; }
     
     Element* SourceElement() const { return mSource.mElement; }
-    bool ScrollingDirectionIsAvailable() const;
+    bool ScrollingDirectionIsAvailable() const {
+      return mScrollingDirectionAvailable;
+    }
     
     
     
     
     
+    bool IsActive() const { return mActive; }
     
     
-    
-    bool IsActive() const { return GetScrollContainerFrame(); }
     const ScrollContainerFrame* GetScrollContainerFrame() const;
 
    private:
-    State(const NonOwningAnimationTarget& aResolvedSource,
-          StyleScrollAxis aAxis, bool aIsRoot)
-        : mSource{aResolvedSource}, mAxis{aAxis}, mIsRoot{aIsRoot} {}
+    StateSnapshot(const NonOwningAnimationTarget& aResolvedSource,
+                  StyleScrollAxis aAxis, bool aIsRoot);
+
+    layers::ScrollDirection ComputePhysicalAxis() const;
+
     NonOwningAnimationTarget mSource;
-    StyleScrollAxis mAxis;
-    bool mIsRoot;
+    StyleScrollAxis mAxis{};
+    bool mIsRoot = false;
+
+    
+    
+    bool mActive = false;
+    layers::ScrollDirection mPhysicalAxis{};
+    bool mScrollingDirectionAvailable = false;
+    StyleOverflow mSourceScrollStyle{};
+    bool mAPZIsActiveForSource = false;
   };
 
   ScrollTimeline() = delete;
@@ -207,7 +228,7 @@ class ScrollTimeline : public AnimationTimeline,
   Element* GetSource() const;
   dom::ScrollAxis GetScrollAxis() const;
 
-  State GetState() const;
+  StateSnapshot GetSnapshot() const;
 
   
   void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const override;

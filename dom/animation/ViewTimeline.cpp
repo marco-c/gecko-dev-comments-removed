@@ -254,18 +254,16 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
-  const auto state = GetState();
+  const auto state = GetSnapshot();
   
-  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
+  
+  if (!state.IsActive()) {
     return prevCachedCurrentTime.isSome();
   }
 
-  
   const ScrollContainerFrame* scrollContainerFrame =
       state.GetScrollContainerFrame();
-  if (!scrollContainerFrame) {
-    return prevCachedCurrentTime.isSome();
-  }
+  MOZ_ASSERT(scrollContainerFrame);
 
   
   if (scrollContainerFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {

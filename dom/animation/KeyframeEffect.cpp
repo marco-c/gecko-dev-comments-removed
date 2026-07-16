@@ -2086,7 +2086,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   if (mAnimation->UsingScrollTimeline()) {
     const ScrollTimeline* scrollTimeline =
         mAnimation->GetTimeline()->AsScrollTimeline();
-    const auto state = scrollTimeline->GetState();
+    const auto state = scrollTimeline->GetSnapshot();
     
     
     
