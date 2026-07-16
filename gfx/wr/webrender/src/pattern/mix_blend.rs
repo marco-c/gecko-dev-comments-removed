@@ -50,3 +50,24 @@ impl PatternBuilder for MixBlendPattern {
         }
     }
 }
+
+
+
+
+
+pub struct FixedFunctionMixBlendPattern {
+    pub src_task_id: RenderTaskId,
+    pub blend_mode: BlendMode,
+}
+
+impl PatternBuilder for FixedFunctionMixBlendPattern {
+    fn build(
+        &self,
+        _sub_rect: Option<DeviceRect>,
+        _offset: LayoutVector2D,
+        _ctx: &PatternBuilderContext,
+        _state: &mut PatternBuilderState,
+    ) -> Pattern {
+        Pattern::texture(self.src_task_id, false).with_blend_mode(self.blend_mode)
+    }
+}
