@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/StaticRange.h"
 
+#include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "mozilla/dom/StaticRangeBinding.h"
 #include "nsContentUtils.h"
 #include "nsINode.h"
@@ -135,6 +136,13 @@ void StaticRange::DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
   mAreStartAndEndInSameTree =
       RangeUtils::ComputeRootNode(mStart.GetContainer()) ==
       RangeUtils::ComputeRootNode(mEnd.GetContainer());
+
+  
+  
+  
+  if (IsCrossShadowBoundaryRange()) {
+    AsCrossShadowBoundaryRange()->UpdateCommonAncestor();
+  }
 }
 
 
