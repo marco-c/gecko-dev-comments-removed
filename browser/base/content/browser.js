@@ -2655,8 +2655,6 @@ var XULBrowserWindow = {
       FullZoom.onLocationChange(gBrowser.currentURI, true);
     }
 
-    CombinedStopReload.onTabSwitch();
-
     
     
     this.hideTooltip();
@@ -2815,11 +2813,6 @@ var CombinedStopReload = {
 
     this.reload = reload;
     this.stop = stop;
-    this.stopReloadContainer = this.reload.parentNode;
-    this.timeWhenSwitchedToStop = 0;
-
-    this.stopReloadContainer.addEventListener("animationend", this);
-    this.stopReloadContainer.addEventListener("animationcancel", this);
 
     return true;
   },
@@ -2833,9 +2826,6 @@ var CombinedStopReload = {
 
     this._cancelTransition();
     this.stop.removeEventListener("click", this);
-    this.stopReloadContainer.removeEventListener("animationend", this);
-    this.stopReloadContainer.removeEventListener("animationcancel", this);
-    this.stopReloadContainer = null;
     this.reload = null;
     this.stop = null;
   },
@@ -2847,24 +2837,7 @@ var CombinedStopReload = {
           this._stopClicked = true;
         }
         break;
-      case "animationcancel":
-      case "animationend": {
-        if (
-          event.target.classList.contains("toolbarbutton-animatable-image") &&
-          (event.animationName == "reload-to-stop" ||
-            event.animationName == "stop-to-reload")
-        ) {
-          this.stopReloadContainer.removeAttribute("animate");
-        }
-      }
     }
-  },
-
-  onTabSwitch() {
-    
-    
-    
-    this.timeWhenSwitchedToStop = window.performance.now();
   },
 
   switchToStop(aRequest, aWebProgress) {
@@ -2875,55 +2848,18 @@ var CombinedStopReload = {
       return;
     }
 
-    
-    
-    
-    if (aRequest instanceof Ci.nsIRequest) {
-      this.timeWhenSwitchedToStop = window.performance.now();
-    }
-
-    let shouldAnimate =
-      aRequest instanceof Ci.nsIRequest &&
-      aWebProgress.isTopLevel &&
-      aWebProgress.isLoadingDocument &&
-      !gBrowser.tabAnimationsInProgress &&
-      !gReduceMotion &&
-      this.stopReloadContainer.closest("#nav-bar-customization-target");
-
-    this._cancelTransition();
-    if (shouldAnimate) {
-      this.stopReloadContainer.setAttribute("animate", "true");
-    } else {
-      this.stopReloadContainer.removeAttribute("animate");
-    }
     this.reload.setAttribute("displaystop", "true");
   },
 
-  switchToReload(aRequest, aWebProgress) {
+  switchToReload() {
     if (!this.ensureInitialized() || !this.reload.hasAttribute("displaystop")) {
       return;
     }
 
-    let shouldAnimate =
-      aRequest instanceof Ci.nsIRequest &&
-      aWebProgress.isTopLevel &&
-      !aWebProgress.isLoadingDocument &&
-      !gBrowser.tabAnimationsInProgress &&
-      !gReduceMotion &&
-      this._loadTimeExceedsMinimumForAnimation() &&
-      this.stopReloadContainer.closest("#nav-bar-customization-target");
-
-    if (shouldAnimate) {
-      this.stopReloadContainer.setAttribute("animate", "true");
-    } else {
-      this.stopReloadContainer.removeAttribute("animate");
-    }
-
     this.reload.removeAttribute("displaystop");
 
-    if (!shouldAnimate || this._stopClicked) {
+    if (this._stopClicked) {
       this._stopClicked = false;
-      this._cancelTransition();
       this.reload.disabled =
         XULBrowserWindow.reloadCommand.hasAttribute("disabled");
       return;
@@ -2944,18 +2880,6 @@ var CombinedStopReload = {
       },
       650,
       this
-    );
-  },
-
-  _loadTimeExceedsMinimumForAnimation() {
-    
-    
-    
-    
-    
-    return (
-      this.timeWhenSwitchedToStop &&
-      window.performance.now() - this.timeWhenSwitchedToStop > 150
     );
   },
 
