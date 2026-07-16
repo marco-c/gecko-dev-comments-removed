@@ -65,6 +65,10 @@ static TimeStamp sHandlingInputStart;
 
 static TimeStamp sLatestUserInputStart;
 
+
+
+static bool sHandlingKeyboardEventHasAssociatedPasteCommands = false;
+
 }  
 
 
@@ -73,6 +77,12 @@ bool UserActivation::IsHandlingUserInput() { return sUserInputEventDepth > 0; }
 
 bool UserActivation::IsHandlingKeyboardInput() {
   return sUserKeyboardEventDepth > 0;
+}
+
+bool UserActivation::IsHandlingKeyboardInputWithPasteActions() {
+  MOZ_ASSERT_IF(sHandlingKeyboardEventHasAssociatedPasteCommands,
+                sUserKeyboardEventDepth > 0);
+  return sHandlingKeyboardEventHasAssociatedPasteCommands;
 }
 
 
@@ -146,7 +156,17 @@ TimeStamp UserActivation::LatestUserInputStart() {
 AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
     bool aIsHandlingUserInput, WidgetEvent* aEvent)
     : mMessage(aEvent ? aEvent->mMessage : eVoidEvent),
-      mIsHandlingUserInput(aIsHandlingUserInput) {
+      mIsHandlingUserInput(aIsHandlingUserInput),
+      
+      
+      mPreviousHandlingKeyboardEventHasAssociatedPasteCommands(
+          sHandlingKeyboardEventHasAssociatedPasteCommands) {
+  if (aEvent && aEvent->IsTrusted() && aEvent->AsKeyboardEvent()) {
+    mozilla::WidgetKeyboardEvent* keyboardEvent = aEvent->AsKeyboardEvent();
+    sHandlingKeyboardEventHasAssociatedPasteCommands =
+        keyboardEvent->HasRelevantCommand(Command::Paste) ||
+        keyboardEvent->HasRelevantCommand(Command::PasteWithoutFormat);
+  }
   if (!aIsHandlingUserInput) {
     return;
   }
@@ -154,6 +174,11 @@ AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
 }
 
 AutoHandlingUserInputStatePusher::~AutoHandlingUserInputStatePusher() {
+  
+  
+  sHandlingKeyboardEventHasAssociatedPasteCommands =
+      mPreviousHandlingKeyboardEventHasAssociatedPasteCommands;
+
   if (!mIsHandlingUserInput) {
     return;
   }

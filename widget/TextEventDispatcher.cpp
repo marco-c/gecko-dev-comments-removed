@@ -567,7 +567,7 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   if (XRE_IsContentProcess() && keyEvent.mIsSynthesizedByTIP) {
-    if (aMessage == eKeyPress) {
+    if (aMessage == eKeyPress || aMessage == eKeyDown) {
       keyEvent.AssignCommands(aKeyboardEvent);
     } else {
       

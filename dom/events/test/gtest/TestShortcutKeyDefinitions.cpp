@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "KeyEventHandler.h"
 #include "ShortcutKeys.h"
 #include "gtest/gtest.h"
@@ -59,7 +57,7 @@ static bool GetCommandFor(KeyEventHandler* aFirstHandler,
   for (KeyEventHandler* handler = aFirstHandler; handler;
        handler = handler->GetNextHandler()) {
     if (handler->KeyEventMatched(aDOMEvent, 0, IgnoreModifierState())) {
-      handler->GetCommand(aCommand);
+      handler->GetCommandStr(aCommand);
       return true;
     }
   }
