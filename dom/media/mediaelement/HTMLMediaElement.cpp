@@ -2563,6 +2563,9 @@ void HTMLMediaElement::AbortExistingLoads() {
   mLoadWaitStatus = NOT_WAITING;
 
   
+  mRecordedRuntimeContentAttrImpact = false;
+
+  
   
   mCurrentLoadID++;
 
@@ -3892,6 +3895,8 @@ void HTMLMediaElement::SetMuted(bool aMuted, MutedReasons aReason) {
   
   if (aReason == MUTED_BY_CONTENT) {
     mMutedState = aMuted ? MutedState::True : MutedState::False;
+    
+    mMutedByRuntimeContentAttr = false;
   }
 
   bool wasMuted = Muted();
@@ -5160,6 +5165,21 @@ void HTMLMediaElement::DispatchBlockEventForVideoControl() {
 #endif
 }
 
+void HTMLMediaElement::MaybeRecordRuntimeMutedContentAttrImpact() {
+  if (mRecordedRuntimeContentAttrImpact || !mMutedByRuntimeContentAttr) {
+    return;
+  }
+  
+  
+  
+  if (mPaused || !HasAudio() || mVolume == 0.0 ||
+      (mMuted & ~MUTED_BY_CONTENT)) {
+    return;
+  }
+  glean::media::muted_by_content_attribute_runtime.Add(1);
+  mRecordedRuntimeContentAttrImpact = true;
+}
+
 void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
 #if defined(MOZ_WIDGET_ANDROID)
   AUTOPLAY_LOG("Stop observing GV autoplay permission (PlayInternal starting)");
@@ -5279,6 +5299,8 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
 
   
   
+
+  MaybeRecordRuntimeMutedContentAttrImpact();
 }
 
 void HTMLMediaElement::MaybeDoLoad() {
@@ -5529,6 +5551,8 @@ void HTMLMediaElement::DoneCreatingElement() {
   if (HasAttr(nsGkAtoms::muted)) {
     mMuted |= MUTED_BY_CONTENT;
     SetStates(ElementState::MUTED, Muted());
+    
+    mMutedByRuntimeContentAttr = false;
   }
 }
 
@@ -5591,12 +5615,16 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       
       
-      if (StaticPrefs::dom_media_muted_state_enabled() &&
-          mMutedState == MutedState::Default) {
-        SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
-                                : (mMuted & ~MUTED_BY_CONTENT));
-        if (IsInComposedDoc()) {
-          NotifyUAWidgetSetupOrChange();
+      if (mMutedState == MutedState::Default) {
+        
+        
+        mMutedByRuntimeContentAttr = !!aValue;
+        if (StaticPrefs::dom_media_muted_state_enabled()) {
+          SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
+                                  : (mMuted & ~MUTED_BY_CONTENT));
+          if (IsInComposedDoc()) {
+            NotifyUAWidgetSetupOrChange();
+          }
         }
       }
     }
@@ -7064,6 +7092,8 @@ void HTMLMediaElement::RunAutoplay() {
   QueueEvent(u"playing"_ns);
 
   MaybeMarkSHEntryAsUserInteracted();
+
+  MaybeRecordRuntimeMutedContentAttrImpact();
 }
 
 bool HTMLMediaElement::IsActuallyInvisible() const {

@@ -1334,6 +1334,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void SetVolumeInternal();
 
   
+  
+  
+  void MaybeRecordRuntimeMutedContentAttrImpact();
+
+  
 
 
 
@@ -1624,6 +1629,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   enum class MutedState : uint8_t { Default, True, False };
   MutedState mMutedState = MutedState::Default;
+
+  
+  
+  
+  
+  bool mMutedByRuntimeContentAttr = false;
+  bool mRecordedRuntimeContentAttrImpact = false;
 
   UniquePtr<const MetadataTags> mTags;
 
