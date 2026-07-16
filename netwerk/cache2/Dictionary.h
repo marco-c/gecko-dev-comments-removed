@@ -345,6 +345,12 @@ class DictionaryCache final : public nsIObserver {
   nsresult Init();
   static void Shutdown();
 
+  
+  
+  
+  
+  static void ResetShutdownForTesting() { sShutdown = false; }
+
   nsresult AddEntry(nsIURI* aURI, const nsACString& aKey,
                     const nsACString& aPattern, nsTArray<nsCString>& aMatchDest,
                     const nsACString& aId, const Maybe<nsCString>& aHash,
