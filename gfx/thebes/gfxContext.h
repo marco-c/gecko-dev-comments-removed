@@ -2,17 +2,15 @@
 
 
 
-
 #ifndef GFX_CONTEXT_H
 #define GFX_CONTEXT_H
 
 #include "gfx2DGlue.h"
 #include "gfxPattern.h"
 #include "gfxUtils.h"
-#include "nsTArray.h"
-
 #include "mozilla/EnumSet.h"
 #include "mozilla/gfx/2D.h"
+#include "nsTArray.h"
 
 typedef struct _cairo cairo_t;
 class GlyphBufferAzure;

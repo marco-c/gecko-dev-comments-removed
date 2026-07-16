@@ -4,10 +4,9 @@
 
 #include "RenderExternalTextureHost.h"
 
+#include "GLContext.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/ImageDataSerializer.h"
-
-#include "GLContext.h"
 
 namespace mozilla {
 namespace wr {
@@ -214,6 +213,17 @@ gfx::YUVRangedColorSpace RenderExternalTextureHost::GetYUVColorSpace() const {
       return gfx::YUVRangedColorSpace::Default;
   }
 }
+
+gfx::TransferFunction RenderExternalTextureHost::GetTransferFunction() const {
+  switch (mDescriptor.type()) {
+    case layers::BufferDescriptor::TYCbCrDescriptor:
+      return mDescriptor.get_YCbCrDescriptor().transferFunction();
+    case layers::BufferDescriptor::TRGBDescriptor:
+      return mDescriptor.get_RGBDescriptor().transferFunction();
+    default:
+      return gfx::TransferFunction::BT709;
+  }
+};
 
 bool RenderExternalTextureHost::MapPlane(RenderCompositor* aCompositor,
                                          uint8_t aChannelIndex,

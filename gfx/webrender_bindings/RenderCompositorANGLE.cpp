@@ -2,34 +2,32 @@
 
 
 
-
-
 #include "RenderCompositorANGLE.h"
-
-#include "GLContext.h"
-#include "GLContextEGL.h"
-#include "GLContextProvider.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/gfx/StackArray.h"
-#include "mozilla/layers/FenceD3D11.h"
-#include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/layers/HelpersD3D11.h"
-#include "mozilla/layers/SyncObject.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/webrender/DCLayerTree.h"
-#include "mozilla/webrender/RenderThread.h"
-#include "mozilla/widget/CompositorWidget.h"
-#include "mozilla/widget/WinCompositorWidget.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "nsPrintfCString.h"
-#include "FxROutputHandler.h"
 
 #include <d3d11.h>
 #include <dcomp.h>
 #include <dxgi1_2.h>
+
+#include "FxROutputHandler.h"
+#include "GLContext.h"
+#include "GLContextEGL.h"
+#include "GLContextProvider.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/StackArray.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/layers/FenceD3D11.h"
+#include "mozilla/layers/HelpersD3D11.h"
+#include "mozilla/layers/SyncObject.h"
+#include "mozilla/layers/TextureD3D11.h"
+#include "mozilla/webrender/DCLayerTree.h"
+#include "mozilla/webrender/RenderThread.h"
+#include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/widget/WinCompositorWidget.h"
+#include "nsPrintfCString.h"
 
 
 
@@ -556,13 +554,6 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     mFirstPresent = false;
   }
 
-  if (mDisablingNativeCompositor) {
-    
-    
-    WaitForPreviousGraphicsCommandsFinishedQuery( true);
-    mDisablingNativeCompositor = false;
-  }
-
   if (mDCLayerTree) {
     mDCLayerTree->MaybeUpdateDebug();
     mDCLayerTree->MaybeCommit();
@@ -835,12 +826,10 @@ bool RenderCompositorANGLE::UseLayerCompositor() const {
 }
 
 bool RenderCompositorANGLE::SupportAsyncScreenshot() {
-  return !UseCompositor() && !mDisablingNativeCompositor;
+  return !UseCompositor();
 }
 
-bool RenderCompositorANGLE::ShouldUseNativeCompositor() {
-  return mDCLayerTree && mDCLayerTree->UseNativeCompositor();
-}
+bool RenderCompositorANGLE::ShouldUseNativeCompositor() { return false; }
 
 bool RenderCompositorANGLE::ShouldUseLayerCompositor() const {
   return UseLayerCompositor();
@@ -944,27 +933,6 @@ void RenderCompositorANGLE::GetWindowProperties(WindowProperties* aProperties) {
   const bool enable_screenshot =
       mDCLayerTree && mDCLayerTree->GetAsyncScreenshotEnabled();
   aProperties->enable_screenshot = enable_screenshot;
-}
-
-void RenderCompositorANGLE::EnableNativeCompositor(bool aEnable) {
-  
-  MOZ_RELEASE_ASSERT(!mDisablingNativeCompositor);
-  MOZ_RELEASE_ASSERT(!aEnable);
-  LOG("RenderCompositorANGLE::EnableNativeCompositor() aEnable %d", aEnable);
-
-  if (!UseCompositor()) {
-    return;
-  }
-
-  mDCLayerTree->DisableNativeCompositor();
-
-  if (!RecreateNonNativeCompositorSwapChain()) {
-    gfxCriticalNote << "Failed to re-create SwapChain";
-    RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    return;
-  }
-
-  mDisablingNativeCompositor = true;
 }
 
 bool RenderCompositorANGLE::EnableAsyncScreenshot() {

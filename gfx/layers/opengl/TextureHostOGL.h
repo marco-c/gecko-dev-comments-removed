@@ -7,13 +7,14 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
+
 #include "CompositableHost.h"
 #include "GLContextTypes.h"  
 #include "GLDefs.h"          
 #include "GLTextureImage.h"  
 #include "gfxTypes.h"
-#include "mozilla/GfxMessageUtils.h"         
 #include "mozilla/Assertions.h"              
+#include "mozilla/GfxMessageUtils.h"         
 #include "mozilla/RefPtr.h"                  
 #include "mozilla/gfx/Matrix.h"              
 #include "mozilla/gfx/Point.h"               

@@ -2,16 +2,15 @@
 
 
 
-#include "RecordedEventImpl.h"
-
-#include "PathRecording.h"
-#include "RecordingTypes.h"
-#include "Tools.h"
 #include "Filters.h"
-#include "Logging.h"
-#include "ScaledFontBase.h"
-#include "SFNTData.h"
 #include "InlineTranslator.h"
+#include "Logging.h"
+#include "PathRecording.h"
+#include "RecordedEventImpl.h"
+#include "RecordingTypes.h"
+#include "SFNTData.h"
+#include "ScaledFontBase.h"
+#include "Tools.h"
 
 namespace mozilla {
 namespace gfx {

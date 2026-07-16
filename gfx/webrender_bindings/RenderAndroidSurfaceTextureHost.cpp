@@ -2,15 +2,13 @@
 
 
 
-
-
 #include "RenderAndroidSurfaceTextureHost.h"
 
+#include "AndroidSurfaceTexture.h"
+#include "GLContext.h"
 #include "GLReadTexImageHelper.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "GLContext.h"
-#include "AndroidSurfaceTexture.h"
 
 namespace mozilla {
 namespace wr {

@@ -2,21 +2,20 @@
 
 
 
-
 #ifndef GFX_DWRITECOMMON_H
 #define GFX_DWRITECOMMON_H
 
 
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/FontPropertyTypes.h"
-#include "nscore.h"
-#include "nsCOMPtr.h"
-#include "gfxFontConstants.h"
-#include "nsTArray.h"
-#include "gfxWindowsPlatform.h"
-
-#include <windows.h>
 #include <dwrite.h>
+#include <windows.h>
+
+#include "gfxFontConstants.h"
+#include "gfxWindowsPlatform.h"
+#include "mozilla/FontPropertyTypes.h"
+#include "mozilla/MemoryReporting.h"
+#include "nsCOMPtr.h"
+#include "nsTArray.h"
+#include "nscore.h"
 
 #define GFX_CLEARTYPE_PARAMS "gfx.font_rendering.cleartype_params."
 #define GFX_CLEARTYPE_PARAMS_GAMMA "gfx.font_rendering.cleartype_params.gamma"

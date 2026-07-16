@@ -2,14 +2,13 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
 #include "apz/src/AsyncPanZoomController.h"
 #include "apz/src/InputBlockState.h"
 #include "apz/src/OverscrollHandoffState.h"
+#include "gtest/gtest.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 
 class APZCArePointerEventsConsumable : public APZCTreeManagerTester {

@@ -2,14 +2,18 @@
 
 
 
-
 #ifndef mozilla_gfx_thebes_DisplayConfigWindows_h
 #define mozilla_gfx_thebes_DisplayConfigWindows_h
+
+
+#include <windows.h>
+#include <wingdi.h>
+
 
 #include <optional>  
 #include <utility>   
 #include <vector>    
-#include <wingdi.h>
+
 #include "mozilla/gfx/Point.h"  
 #include "nsTArray.h"
 

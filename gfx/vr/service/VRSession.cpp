@@ -2,12 +2,9 @@
 
 
 
-
-
 #include "VRSession.h"
 
 #include "moz_external_vr.h"
-
 #include "mozilla/ipc/FileDescriptor.h"
 
 #if defined(XP_WIN)

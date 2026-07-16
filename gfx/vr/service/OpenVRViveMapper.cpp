@@ -2,12 +2,10 @@
 
 
 
-
-
 #include "OpenVRViveMapper.h"
 
-#include "moz_external_vr.h"
 #include "VRSession.h"
+#include "moz_external_vr.h"
 
 namespace mozilla::gfx {
 

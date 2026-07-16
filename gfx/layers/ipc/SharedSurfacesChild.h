@@ -5,7 +5,9 @@
 #ifndef MOZILLA_GFX_SHAREDSURFACESCHILD_H
 #define MOZILLA_GFX_SHAREDSURFACESCHILD_H
 
-#include <stdint.h>                            
+#include <stdint.h>  
+
+#include "ImageTypes.h"                        
 #include "mozilla/Maybe.h"                     
 #include "mozilla/RefPtr.h"                    
 #include "mozilla/StaticPtr.h"                 
@@ -14,7 +16,6 @@
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsTArray.h"                          
 #include "nsThreadUtils.h"                     
-#include "ImageTypes.h"                        
 
 namespace mozilla {
 namespace layers {
@@ -46,6 +47,9 @@ class RenderRootStateManager;
 
 class SharedSurfacesChild {
  public:
+  SharedSurfacesChild() = delete;
+  ~SharedSurfacesChild() = delete;
+
   
 
 
@@ -125,9 +129,6 @@ class SharedSurfacesChild {
   };
 
  private:
-  SharedSurfacesChild() = delete;
-  ~SharedSurfacesChild() = delete;
-
   friend class SharedSurfacesAnimation;
 
   class SharedUserData final : public Runnable {

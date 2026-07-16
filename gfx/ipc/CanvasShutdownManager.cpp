@@ -3,6 +3,7 @@
 
 
 #include "CanvasShutdownManager.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/dom/WorkerPrivate.h"

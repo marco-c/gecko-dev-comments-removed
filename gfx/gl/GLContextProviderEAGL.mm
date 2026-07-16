@@ -2,17 +2,17 @@
 
 
 
-#include "GLContextProvider.h"
 #include "GLContextEAGL.h"
+#include "GLContextProvider.h"
 #include "GLLibraryLoader.h"
-#include "nsDebug.h"
-#include "nsIWidget.h"
 #include "gfxFailure.h"
-#include "prenv.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "nsDebug.h"
+#include "nsIWidget.h"
+#include "prenv.h"
 
 #import <UIKit/UIKit.h>
 

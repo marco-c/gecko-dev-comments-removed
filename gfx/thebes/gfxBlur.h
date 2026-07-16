@@ -2,16 +2,15 @@
 
 
 
-
 #ifndef GFX_BLUR_H
 #define GFX_BLUR_H
 
-#include "gfxTypes.h"
-#include "gfxRect.h"
-#include "nsSize.h"
 #include "gfxPoint.h"
+#include "gfxRect.h"
+#include "gfxTypes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/Blur.h"
+#include "nsSize.h"
 
 class gfxContext;
 

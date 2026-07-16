@@ -5,8 +5,8 @@
 #ifndef GFX_2D_SSEHELPERS_H_
 #define GFX_2D_SSEHELPERS_H_
 
-#include <xmmintrin.h>
 #include <emmintrin.h>
+#include <xmmintrin.h>
 
 
 

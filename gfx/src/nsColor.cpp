@@ -2,16 +2,15 @@
 
 
 
+#include "nsColor.h"
 
+#include <sys/types.h>  
 
 #include "mozilla/mozalloc.h"  
-
-#include "nsColor.h"
-#include <sys/types.h>  
-#include "nsDebug.h"    
-#include "nsString.h"   
-#include "nscore.h"     
-#include "prtypes.h"    
+#include "nsDebug.h"           
+#include "nsString.h"          
+#include "nscore.h"            
+#include "prtypes.h"           
 
 using namespace mozilla;
 

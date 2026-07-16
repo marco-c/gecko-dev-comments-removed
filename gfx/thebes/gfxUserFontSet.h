@@ -6,6 +6,7 @@
 #define GFX_USER_FONT_SET_H
 
 #include <new>
+
 #include "PLDHashTable.h"
 #include "gfxFontEntry.h"
 #include "gfxFontUtils.h"
@@ -28,7 +29,8 @@
 #include "nscore.h"
 
 
-#include <utility>                
+#include <utility>  
+
 #include "MainThreadUtils.h"      
 #include "gfxFontFeatures.h"      
 #include "gfxFontSrcPrincipal.h"  

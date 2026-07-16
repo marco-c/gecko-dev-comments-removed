@@ -2,12 +2,13 @@
 
 
 
-#include "gfxPlatform.h"
+#include "TextureClientRecycleAllocator.h"
+
 #include "ImageContainer.h"
+#include "gfxPlatform.h"
 #include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/TextureForwarder.h"
-#include "TextureClientRecycleAllocator.h"
 
 namespace mozilla {
 namespace layers {

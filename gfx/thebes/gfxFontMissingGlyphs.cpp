@@ -2,19 +2,18 @@
 
 
 
-
 #include "gfxFontMissingGlyphs.h"
 
+#include "LayerUserData.h"
+#include "TextDrawTarget.h"
 #include "gfxUtils.h"
+#include "mozilla/LinkedList.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/RefPtr.h"
 #include "nsDeviceContext.h"
 #include "nsLayoutUtils.h"
-#include "TextDrawTarget.h"
-#include "LayerUserData.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -201,7 +200,7 @@ static void DestroyImageKey(void* aClosure) {
 }
 
 constinit static RefPtr<SourceSurface> gWRGlyphAtlas[8];
-MOZ_RUNINIT static LinkedList<WRUserData> gWRUsers;
+constinit static LinkedList<WRUserData> gWRUsers;
 UserDataKey WRUserData::sWRUserDataKey;
 
 
@@ -255,10 +254,10 @@ static void PurgeWRGlyphAtlas() {
   
   for (WRUserData* user : gWRUsers) {
     auto* manager = user->mManager;
-    for (size_t i = 0; i < 8; i++) {
-      if (gWRGlyphAtlas[i]) {
-        auto* key = static_cast<wr::ImageKey*>(gWRGlyphAtlas[i]->GetUserData(
-            reinterpret_cast<UserDataKey*>(manager)));
+    for (const auto& gWRGlyphAtla : gWRGlyphAtlas) {
+      if (gWRGlyphAtla) {
+        auto* key = static_cast<wr::ImageKey*>(
+            gWRGlyphAtla->GetUserData(reinterpret_cast<UserDataKey*>(manager)));
         if (key) {
           manager->GetRenderRootStateManager()->AddImageKeyForDiscard(*key);
         }
@@ -271,8 +270,8 @@ static void PurgeWRGlyphAtlas() {
     gWRUsers.popFirst()->Remove();
   }
   
-  for (size_t i = 0; i < 8; i++) {
-    gWRGlyphAtlas[i] = nullptr;
+  for (auto& gWRGlyphAtla : gWRGlyphAtlas) {
+    gWRGlyphAtla = nullptr;
   }
 }
 
@@ -285,10 +284,9 @@ WRUserData::~WRUserData() {
   
   
   if (isInList()) {
-    for (size_t i = 0; i < 8; i++) {
-      if (gWRGlyphAtlas[i]) {
-        gWRGlyphAtlas[i]->RemoveUserData(
-            reinterpret_cast<UserDataKey*>(mManager));
+    for (const auto& gWRGlyphAtla : gWRGlyphAtlas) {
+      if (gWRGlyphAtla) {
+        gWRGlyphAtla->RemoveUserData(reinterpret_cast<UserDataKey*>(mManager));
       }
     }
   }

@@ -2,9 +2,9 @@
 
 
 
-#include "Swizzle.h"
-
 #include <emmintrin.h>
+
+#include "Swizzle.h"
 
 namespace mozilla::gfx {
 

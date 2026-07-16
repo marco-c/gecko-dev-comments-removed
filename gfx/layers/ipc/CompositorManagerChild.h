@@ -5,8 +5,9 @@
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 #define MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 
-#include <stddef.h>                                
-#include <stdint.h>                                
+#include <stddef.h>  
+#include <stdint.h>  
+
 #include "mozilla/StaticPtr.h"                     
 #include "mozilla/layers/CompositableForwarder.h"  
 #include "mozilla/layers/PCompositorManagerChild.h"
@@ -32,14 +33,13 @@ class CompositorManagerChild : public PCompositorManagerChild {
   static bool CreateContentCompositorBridge(uint32_t aNamespace);
 
   static already_AddRefed<CompositorBridgeChild> CreateWidgetCompositorBridge(
-      uint64_t aProcessToken, WebRenderLayerManager* aLayerManager,
-      uint32_t aNamespace, CSSToLayoutDeviceScale aScale,
-      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-      const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId);
+      uint64_t aProcessToken, uint32_t aNamespace,
+      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+      uint64_t aInnerWindowId);
 
   static already_AddRefed<CompositorBridgeChild>
-  CreateSameProcessWidgetCompositorBridge(WebRenderLayerManager* aLayerManager,
-                                          uint32_t aNamespace);
+  CreateSameProcessWidgetCompositorBridge(uint32_t aNamespace);
 
   static CompositorManagerChild* GetInstance() {
     MOZ_ASSERT(NS_IsMainThread());

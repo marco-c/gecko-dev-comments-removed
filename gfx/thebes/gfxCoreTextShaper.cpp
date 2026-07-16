@@ -3,15 +3,16 @@
 
 
 #include "gfxCoreTextShaper.h"
-#include "gfxMacFont.h"
-#include "gfxFontUtils.h"
-#include "gfxTextRun.h"
-#include "mozilla/gfx/ScaledFontMac.h"
-#include "mozilla/UniquePtrExtensions.h"
+
+#include <dlfcn.h>
 
 #include <algorithm>
 
-#include <dlfcn.h>
+#include "gfxFontUtils.h"
+#include "gfxMacFont.h"
+#include "gfxTextRun.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/gfx/ScaledFontMac.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

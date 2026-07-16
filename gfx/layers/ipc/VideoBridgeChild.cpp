@@ -3,13 +3,14 @@
 
 
 #include "VideoBridgeChild.h"
-#include "VideoBridgeParent.h"
+
 #include "CompositorThread.h"
+#include "SynchronousTask.h"
+#include "VideoBridgeParent.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/StaticMutex.h"
 #include "transport/runnable_utils.h"
-#include "SynchronousTask.h"
 
 namespace mozilla {
 namespace layers {

@@ -5,21 +5,21 @@
 #ifndef mozilla_layers_CompositorBridgeChild_h
 #define mozilla_layers_CompositorBridgeChild_h
 
+#include <unordered_map>
+
 #include "base/basictypes.h"  
 #include "mozilla/Monitor.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/RefPtr.h"
-#include "nsClassHashtable.h"  
 #include "nsCOMPtr.h"          
+#include "nsClassHashtable.h"  
 #include "nsHashKeys.h"        
 #include "nsISupportsImpl.h"   
 #include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
-
-#include <unordered_map>
 
 class nsIWidget;
 
@@ -170,11 +170,9 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
-  PAPZCTreeManagerChild* AllocPAPZCTreeManagerChild(const LayersId& aLayersId);
-  bool DeallocPAPZCTreeManagerChild(PAPZCTreeManagerChild* aActor);
-
-  PAPZChild* AllocPAPZChild(const LayersId& aLayersId);
-  bool DeallocPAPZChild(PAPZChild* aActor);
+  already_AddRefed<PAPZCTreeManagerChild> AllocPAPZCTreeManagerChild(
+      const LayersId& aLayersId);
+  already_AddRefed<PAPZChild> AllocPAPZChild(const LayersId& aLayersId);
 
   wr::MaybeExternalImageId GetNextExternalImageId() override;
 

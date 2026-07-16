@@ -5,10 +5,10 @@
 #ifndef GFX_RENDERROOTTYPES_H
 #define GFX_RENDERROOTTYPES_H
 
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
+#include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
 
@@ -19,7 +19,6 @@ struct DisplayListData {
   LayoutDeviceRect mRect;
   nsTArray<WebRenderParentCommand> mCommands;
   Maybe<mozilla::ipc::ByteBuf> mDLItems;
-  Maybe<mozilla::ipc::ByteBuf> mDLCache;
   Maybe<mozilla::ipc::ByteBuf> mDLSpatialTree;
   wr::BuiltDisplayListDescriptor mDLDesc;
   nsTArray<OpUpdateResource> mResourceUpdates;

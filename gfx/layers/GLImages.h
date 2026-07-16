@@ -9,10 +9,10 @@
 #include "GLTypes.h"
 #include "ImageContainer.h"      
 #include "ImageTypes.h"          
-#include "nsCOMPtr.h"            
 #include "mozilla/Maybe.h"       
 #include "mozilla/gfx/Matrix.h"  
 #include "mozilla/gfx/Point.h"   
+#include "nsCOMPtr.h"            
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidSurfaceTexture.h"

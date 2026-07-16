@@ -5,8 +5,8 @@
 #define _include_mozilla_gfx_ipc_InProcessCompositorSession_h_
 
 #include "CompositorSession.h"
-#include "mozilla/gfx/Point.h"
 #include "Units.h"
+#include "mozilla/gfx/Point.h"
 
 class nsIWidget;
 
@@ -14,18 +14,16 @@ namespace mozilla {
 namespace layers {
 
 class CompositorOptions;
-class WebRenderLayerManager;
 
 
 
 class InProcessCompositorSession final : public CompositorSession {
  public:
   static RefPtr<InProcessCompositorSession> Create(
-      nsIWidget* baseWidget, WebRenderLayerManager* aLayerManager,
-      const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
-      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-      const gfx::IntSize& aSurfaceSize, uint32_t aNamespace,
-      uint64_t aInnerWindowId);
+      nsIWidget* baseWidget, const LayersId& aRootLayerTreeId,
+      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+      uint32_t aNamespace, uint64_t aInnerWindowId);
 
   CompositorBridgeParent* GetInProcessBridge() const override;
   void SetContentController(GeckoContentController* aController) override;

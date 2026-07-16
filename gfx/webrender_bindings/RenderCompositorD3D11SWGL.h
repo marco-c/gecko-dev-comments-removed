@@ -2,15 +2,13 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_D3D11_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_D3D11_H
 
 #include "mozilla/gfx/2D.h"
+#include "mozilla/layers/CompositorD3D11.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/layers/CompositorD3D11.h"
 #include "mozilla/webrender/RenderCompositorLayersSWGL.h"
 
 namespace mozilla {

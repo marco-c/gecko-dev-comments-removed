@@ -4,37 +4,42 @@
 
 #include "mozilla/layers/CompositorBridgeParent.h"
 
-#include <stdio.h>   
 #include <stdint.h>  
-#include <utility>   
+#include <stdio.h>   
 
+#include <utility>  
+
+#include "TreeTraversal.h"            
 #include "apz/src/APZCTreeManager.h"  
 #include "base/process.h"             
 #include "gfxContext.h"               
 #include "gfxPlatform.h"              
-#include "TreeTraversal.h"            
 #ifdef MOZ_WIDGET_GTK
 #  include "gfxPlatformGtk.h"  
 #endif
 #include "mozilla/AutoRestore.h"      
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/DebugOnly.h"        
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/gfx/2D.h"       
+#include "mozilla/gfx/2D.h"  
+#include "mozilla/gfx/GPUParent.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Point.h"    
 #include "mozilla/gfx/Rect.h"     
 #include "mozilla/gfx/gfxVars.h"  
-#include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZSampler.h"             
 #include "mozilla/layers/APZThreadUtils.h"         
 #include "mozilla/layers/APZUpdater.h"             
-#include "mozilla/layers/CompositionRecorder.h"    
-#include "mozilla/layers/Compositor.h"             
+#include "mozilla/layers/AsyncImagePipelineManager.h"
+#include "mozilla/layers/CompositionRecorder.h"  
+#include "mozilla/layers/Compositor.h"           
 #include "mozilla/layers/CompositorAnimationStorage.h"  
 #include "mozilla/layers/CompositorManagerParent.h"  
 #include "mozilla/layers/CompositorOGL.h"            
@@ -51,14 +56,10 @@
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
-#include "mozilla/layers/AsyncImagePipelineManager.h"
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/media/MediaSystemResourceService.h"  
 #include "mozilla/mozalloc.h"                          
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/webrender/RenderThread.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
@@ -69,11 +70,11 @@
 #  include "mozilla/layers/CompositorD3D11.h"
 #  include "mozilla/widget/WinCompositorWidget.h"
 #endif
-#include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/ipc/ProtocolTypes.h"
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 #  include "VsyncSource.h"
 #endif

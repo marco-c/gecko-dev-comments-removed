@@ -2,10 +2,7 @@
 
 
 
-
-
 #include "gtest/gtest.h"
-
 #include "nsCoord.h"
 
 namespace mozilla {

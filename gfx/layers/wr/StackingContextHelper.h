@@ -5,11 +5,11 @@
 #ifndef GFX_STACKINGCONTEXTHELPER_H
 #define GFX_STACKINGCONTEXTHELPER_H
 
+#include "Units.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "Units.h"
 
 namespace mozilla {
 
@@ -120,8 +120,6 @@ class MOZ_RAII StackingContextHelper {
   
   mutable nsDisplayTransform* mDeferredTransformItem;
   Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
-
-  bool mRasterizeLocally;
 };
 
 }  

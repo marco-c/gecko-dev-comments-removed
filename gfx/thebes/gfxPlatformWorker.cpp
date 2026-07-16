@@ -2,12 +2,12 @@
 
 
 
-
 #include "gfxPlatformWorker.h"
+
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/ThreadLocal.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

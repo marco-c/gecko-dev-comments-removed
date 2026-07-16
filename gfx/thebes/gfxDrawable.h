@@ -2,12 +2,11 @@
 
 
 
-
 #ifndef GFX_DRAWABLE_H
 #define GFX_DRAWABLE_H
 
-#include "gfxRect.h"
 #include "gfxMatrix.h"
+#include "gfxRect.h"
 #include "gfxTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"

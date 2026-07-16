@@ -2,24 +2,23 @@
 
 
 
-
-
 #include "VRParent.h"
+
 #include "VRGPUParent.h"
 #include "gfxConfig.h"
-#include "nsDebugImpl.h"
-#include "nsThreadManager.h"
-#include "nsPrintfCString.h"
-
+#include "mozilla/Preferences.h"
 #include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/Preferences.h"
+#include "nsDebugImpl.h"
+#include "nsPrintfCString.h"
+#include "nsThreadManager.h"
 
 #if defined(XP_WIN)
 #  include <process.h>
+
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #else
 #  include <unistd.h>

@@ -3,10 +3,11 @@
 
 
 #include "Quaternion.h"
+
+#include <ostream>
+
 #include "Matrix.h"
 #include "Tools.h"
-#include <ostream>
-#include <math.h>
 
 namespace mozilla {
 namespace gfx {

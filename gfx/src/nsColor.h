@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef nsColor_h_
 #define nsColor_h_
 
-#include <stdint.h>   
+#include <stdint.h>  
+
 #include "nsCoord.h"  
 #include "nsStringFwd.h"
 

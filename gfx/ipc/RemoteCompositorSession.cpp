@@ -3,11 +3,12 @@
 
 
 #include "RemoteCompositorSession.h"
+
 #include "gfxPlatform.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
+#include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "nsIWidget.h"
@@ -23,10 +24,10 @@ using namespace widget;
 
 RemoteCompositorSession::RemoteCompositorSession(
     nsIWidget* aWidget, CompositorBridgeChild* aChild,
-    CompositorWidgetDelegate* aWidgetDelegate, APZCTreeManagerChild* aAPZ,
-    const LayersId& aRootLayerTreeId)
+    CompositorWidgetDelegate* aWidgetDelegate,
+    RefPtr<APZCTreeManagerChild>&& aAPZ, const LayersId& aRootLayerTreeId)
     : CompositorSession(aWidget, aWidgetDelegate, aChild, aRootLayerTreeId),
-      mAPZ(aAPZ) {
+      mAPZ(std::move(aAPZ)) {
   MOZ_ASSERT(!gfxPlatform::IsHeadless());
   GPUProcessManager::Get()->RegisterRemoteProcessSession(this);
   if (mAPZ) {

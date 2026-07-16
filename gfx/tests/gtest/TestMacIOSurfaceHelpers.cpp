@@ -6,10 +6,10 @@
 
 
 
+#include "MacIOSurfaceHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/MacIOSurface.h"
-#include "MacIOSurfaceHelpers.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

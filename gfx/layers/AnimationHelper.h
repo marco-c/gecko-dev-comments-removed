@@ -5,13 +5,13 @@
 #ifndef mozilla_layers_AnimationHelper_h
 #define mozilla_layers_AnimationHelper_h
 
+#include "X11UndefineNone.h"
+#include "mozilla/TimeStamp.h"  
+#include "mozilla/TimingParams.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/LayersMessages.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
-#include "mozilla/TimeStamp.h"                 
-#include "mozilla/TimingParams.h"
-#include "X11UndefineNone.h"
 
 namespace mozilla::layers {
 class Animation;

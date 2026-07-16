@@ -5,14 +5,14 @@
 #ifndef GFXFCPLATFORMFONTLIST_H_
 #define GFXFCPLATFORMFONTLIST_H_
 
+#include <fontconfig/fontconfig.h>
+
+#include "ft2build.h"
 #include "gfxFT2FontBase.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
-
-#include <fontconfig/fontconfig.h>
-#include "ft2build.h"
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H
@@ -161,18 +161,17 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
     already_AddRefed<mozilla::gfx::UnscaledFontFontconfig> Lookup(
         const std::string& aFile, uint32_t aIndex);
 
-    void Add(
-        const RefPtr<mozilla::gfx::UnscaledFontFontconfig>& aUnscaledFont) {
-      mUnscaledFonts[kNumEntries - 1] = aUnscaledFont;
-      MoveToFront(kNumEntries - 1);
-    }
+    void Add(const RefPtr<mozilla::gfx::UnscaledFontFontconfig>& aUnscaledFont);
 
    private:
-    void MoveToFront(size_t aIndex);
-
+    
+    
+    
     static const size_t kNumEntries = 3;
     mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFontconfig>
         mUnscaledFonts[kNumEntries];
+    mozilla::Atomic<int32_t> mGenerations[kNumEntries];
+    mozilla::Atomic<int32_t> mLastGeneration{0};
   };
 
   UnscaledFontCache mUnscaledFontCache;

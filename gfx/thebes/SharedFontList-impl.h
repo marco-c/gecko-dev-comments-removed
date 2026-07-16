@@ -6,14 +6,13 @@
 #define SharedFontList_impl_h
 
 #include "SharedFontList.h"
-
 #include "base/process.h"
 #include "gfxFontUtils.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
 
 
 

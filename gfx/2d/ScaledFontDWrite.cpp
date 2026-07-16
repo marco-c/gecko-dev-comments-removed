@@ -3,26 +3,23 @@
 
 
 #include "ScaledFontDWrite.h"
-#include "gfxDWriteCommon.h"
-#include "UnscaledFontDWrite.h"
-#include "gfxFont.h"
-#include "Logging.h"
-#include "mozilla/FontPropertyTypes.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-#include "StackArray.h"
-
-#include "dwrite_3.h"
-
-#include "PathSkia.h"
-#include "skia/include/core/SkPaint.h"
-#include "skia/include/core/SkPath.h"
-#include "skia/include/ports/SkTypeface_win.h"
 
 #include <vector>
 
-#include "cairo-dwrite.h"
-
 #include "HelpersWinFonts.h"
+#include "Logging.h"
+#include "PathSkia.h"
+#include "StackArray.h"
+#include "UnscaledFontDWrite.h"
+#include "cairo-dwrite.h"
+#include "dwrite_3.h"
+#include "gfxDWriteCommon.h"
+#include "gfxFont.h"
+#include "mozilla/FontPropertyTypes.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "skia/include/core/SkPaint.h"
+#include "skia/include/core/SkPath.h"
+#include "skia/include/ports/SkTypeface_win.h"
 
 namespace mozilla {
 namespace gfx {
@@ -651,7 +648,10 @@ already_AddRefed<UnscaledFont> UnscaledFontDWrite::CreateFromFontDescriptor(
     const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex) {
   
   
-  if (aDataLength == 0) {
+  
+  const WCHAR* path = (const WCHAR*)aData;
+  size_t pathLen = aDataLength / sizeof(WCHAR);
+  if (pathLen < 1 || path[pathLen - 1] != 0) {
     gfxWarning() << "DWrite font descriptor is truncated.";
     return nullptr;
   }
@@ -663,7 +663,7 @@ already_AddRefed<UnscaledFont> UnscaledFontDWrite::CreateFromFontDescriptor(
 
   MOZ_SEH_TRY {
     RefPtr<IDWriteFontFile> fontFile;
-    HRESULT hr = factory->CreateFontFileReference((const WCHAR*)aData, nullptr,
+    HRESULT hr = factory->CreateFontFileReference(path, nullptr,
                                                   getter_AddRefs(fontFile));
     if (FAILED(hr)) {
       return nullptr;
@@ -688,8 +688,9 @@ already_AddRefed<UnscaledFont> UnscaledFontDWrite::CreateFromFontDescriptor(
     return unscaledFont.forget();
   }
   MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
-    gfxCriticalNote << "Exception occurred creating unscaledFont for "
-                    << NS_ConvertUTF16toUTF8((const char16_t*)aData).get();
+    gfxCriticalNote
+        << "Exception occurred creating UnscaledFont for "
+        << NS_ConvertUTF16toUTF8((const char16_t*)path, pathLen - 1).get();
     return nullptr;
   }
 }

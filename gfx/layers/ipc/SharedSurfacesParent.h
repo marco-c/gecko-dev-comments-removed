@@ -5,11 +5,12 @@
 #ifndef MOZILLA_GFX_SHAREDSURFACESPARENT_H
 #define MOZILLA_GFX_SHAREDSURFACESPARENT_H
 
-#include <stdint.h>                         
+#include <stdint.h>  
+
 #include "mozilla/Attributes.h"             
+#include "mozilla/RefPtr.h"                 
 #include "mozilla/StaticMutex.h"            
 #include "mozilla/StaticPtr.h"              
-#include "mozilla/RefPtr.h"                 
 #include "mozilla/gfx/2D.h"                 
 #include "mozilla/gfx/Point.h"              
 #include "mozilla/layers/LayersSurfaces.h"  

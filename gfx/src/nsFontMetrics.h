@@ -5,8 +5,9 @@
 #ifndef NSFONTMETRICS_H_
 #define NSFONTMETRICS_H_
 
-#include <stdint.h>          
-#include <sys/types.h>       
+#include <stdint.h>     
+#include <sys/types.h>  
+
 #include "mozilla/RefPtr.h"  
 #include "nsCoord.h"         
 #include "nsFont.h"          

@@ -3,8 +3,10 @@
 
 
 #include "TestBugs.h"
-#include "2D.h"
+
 #include <string.h>
+
+#include "2D.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

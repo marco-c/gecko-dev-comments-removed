@@ -2,18 +2,16 @@
 
 
 
-
-
 #include "RenderAndroidHardwareBufferTextureHost.h"
 
-#include "mozilla/layers/AndroidHardwareBuffer.h"
-#include "mozilla/layers/TextureHostOGL.h"
-#include "mozilla/webrender/RenderThread.h"
-#include "mozilla/gfx/2D.h"
 #include "GLContextEGL.h"
 #include "GLLibraryEGL.h"
 #include "GLReadTexImageHelper.h"
 #include "OGLShaderConfig.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/layers/AndroidHardwareBuffer.h"
+#include "mozilla/layers/TextureHostOGL.h"
+#include "mozilla/webrender/RenderThread.h"
 
 namespace mozilla {
 namespace wr {

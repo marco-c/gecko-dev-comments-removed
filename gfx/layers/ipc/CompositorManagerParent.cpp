@@ -3,17 +3,18 @@
 
 
 #include "mozilla/layers/CompositorManagerParent.h"
-#include "mozilla/gfx/GPUParent.h"
+
+#include "VsyncSource.h"
+#include "gfxPlatform.h"
 #include "mozilla/gfx/CanvasManagerParent.h"
-#include "mozilla/webrender/RenderThread.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/ContentCompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/ContentCompositorBridgeParent.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
-#include "gfxPlatform.h"
-#include "VsyncSource.h"
+#include "mozilla/webrender/RenderThread.h"
 
 namespace mozilla {
 namespace layers {

@@ -5,30 +5,30 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
-#include <cstddef>                    
-#include <cstdint>                    
-#include <string>                     
-#include "Units.h"                    
+#include <cstddef>  
+#include <cstdint>  
+#include <string>   
+
+#include "Units.h"  
+#include "WindowRenderer.h"
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"               
-#include "mozilla/RefPtr.h"                   
-#include "mozilla/TimeStamp.h"                
-#include "mozilla/gfx/Point.h"                
-#include "mozilla/gfx/Types.h"                
-#include "mozilla/layers/CompositorTypes.h"   
-#include "mozilla/layers/DisplayItemCache.h"  
-#include "mozilla/layers/FocusTarget.h"       
+#include "mozilla/Attributes.h"              
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/TimeStamp.h"               
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Types.h"               
+#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/FocusTarget.h"      
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/RenderRootStateManager.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/WebRenderCommandBuilder.h"  
 #include "mozilla/layers/WebRenderScrollData.h"      
-#include "WindowRenderer.h"
-#include "nsHashKeys.h"   
-#include "nsRegion.h"     
-#include "nsStringFwd.h"  
-#include "nsTArray.h"     
+#include "nsHashKeys.h"                              
+#include "nsRegion.h"                                
+#include "nsStringFwd.h"                             
+#include "nsTArray.h"                                
 #include "nsTHashSet.h"
 
 class gfxContext;
@@ -58,9 +58,12 @@ class WebRenderLayerManager final : public WindowRenderer {
   NS_INLINE_DECL_REFCOUNTING(WebRenderLayerManager, final)
 
  public:
-  explicit WebRenderLayerManager(nsIWidget* aWidget);
-  bool Initialize(PCompositorBridgeChild* aCBChild, wr::PipelineId aLayersId,
-                  TextureFactoryIdentifier* aTextureFactoryIdentifier,
+  static RefPtr<WebRenderLayerManager> Create(nsIWidget* aWidget,
+                                              PCompositorBridgeChild* aCBChild,
+                                              wr::PipelineId aPipelineId,
+                                              nsCString& aError);
+
+  bool Initialize(TextureFactoryIdentifier* aTextureFactoryIdentifier,
                   nsCString& aError);
 
   void Destroy() override;
@@ -211,6 +214,9 @@ class WebRenderLayerManager final : public WindowRenderer {
 #endif
 
  private:
+  explicit WebRenderLayerManager(
+      nsIWidget* aWidget, already_AddRefed<WebRenderBridgeChild> aWrChild);
+
   
 
 
@@ -265,12 +271,15 @@ class WebRenderLayerManager final : public WindowRenderer {
   WebRenderCommandBuilder mWebRenderCommandBuilder;
 
   RenderRootStateManager mStateManager;
-  DisplayItemCache mDisplayItemCache;
   UniquePtr<wr::DisplayListBuilder> mDLBuilder;
 
   ScrollUpdatesMap mPendingScrollUpdates;
 
   LayoutDeviceIntSize mFlushWidgetSize;
+
+  
+  
+  static bool sHasInitialized;
 };
 
 }  

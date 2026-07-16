@@ -3,17 +3,18 @@
 
 
 #include "COLRFonts.h"
-#include "gfxFontUtils.h"
-#include "gfxUtils.h"
-#include "harfbuzz/hb.h"
-#include "harfbuzz/hb-ot.h"
-#include "mozilla/gfx/Helpers.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "TextDrawTarget.h"
 
 #include <limits>
 #include <numbers>
+
+#include "TextDrawTarget.h"
+#include "gfxFontUtils.h"
+#include "gfxUtils.h"
+#include "harfbuzz/hb-ot.h"
+#include "harfbuzz/hb.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/gfx/Helpers.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef GFX_VR_SERVICE_VRSERVICE_H
 #define GFX_VR_SERVICE_VRSERVICE_H
 
-#include "moz_external_vr.h"
 #include "base/process.h"  
+#include "moz_external_vr.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -63,7 +62,7 @@ class VRService {
   
   UniquePtr<mozilla::BackgroundHangMonitor> mBackgroundHangMonitor;
 
-  bool mShutdownRequested;
+  Atomic<bool> mShutdownRequested;
 
   
   

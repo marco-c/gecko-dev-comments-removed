@@ -2,15 +2,14 @@
 
 
 
-
-
 #ifndef NSPOINT_H
 #define NSPOINT_H
 
 #include <cstdint>
-#include "nsCoord.h"
+
 #include "mozilla/gfx/BasePoint.h"
 #include "mozilla/gfx/Point.h"
+#include "nsCoord.h"
 
 
 

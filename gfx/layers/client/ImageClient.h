@@ -5,14 +5,15 @@
 #ifndef MOZILLA_GFX_IMAGECLIENT_H
 #define MOZILLA_GFX_IMAGECLIENT_H
 
-#include <stdint.h>                             
-#include <sys/types.h>                          
+#include <stdint.h>     
+#include <sys/types.h>  
+
+#include "ImageContainer.h"                     
 #include "mozilla/RefPtr.h"                     
 #include "mozilla/gfx/Types.h"                  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"     
 #include "mozilla/layers/LayersSurfaces.h"      
-#include "ImageContainer.h"                     
 #include "mozilla/layers/TextureClient.h"       
 #include "mozilla/mozalloc.h"                   
 #include "nsCOMPtr.h"                           

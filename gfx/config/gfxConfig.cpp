@@ -3,6 +3,7 @@
 
 
 #include "gfxConfig.h"
+
 #include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GraphicsMessages.h"

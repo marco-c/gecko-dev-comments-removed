@@ -10,24 +10,23 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "mozilla/layers/GeckoContentController.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/DoubleTapToZoom.h"
-#include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/MatrixMessage.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/TypedEnumBits.h"
-#include "mozilla/UniquePtr.h"
+#include "TestWRScrollData.h"
+#include "UnitTransforms.h"
 #include "apz/src/APZCTreeManager.h"
 #include "apz/src/AsyncPanZoomController.h"
 #include "apz/src/HitTestingTreeNode.h"
 #include "base/task.h"
 #include "gfxPlatform.h"
-#include "TestWRScrollData.h"
-#include "UnitTransforms.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TypedEnumBits.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/layers/APZThreadUtils.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/DoubleTapToZoom.h"
+#include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/MatrixMessage.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -122,6 +121,8 @@ static inline constexpr auto kDefaultTouchBehavior =
 
 class MockContentController : public GeckoContentController {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MockContentController, final);
+
   MOCK_METHOD1(NotifyLayerTransforms, void(nsTArray<MatrixMessage>&&));
   MOCK_METHOD1(RequestContentRepaint, void(const RepaintRequest&));
   MOCK_METHOD6(HandleTap, void(TapType, const LayoutDevicePoint&, Modifiers,
@@ -157,6 +158,9 @@ class MockContentController : public GeckoContentController {
                void(const ScrollableLayerGuid&, float, float, bool));
   MOCK_METHOD4(UpdateOverscrollOffset,
                void(const ScrollableLayerGuid&, float, float, bool));
+
+ protected:
+  virtual ~MockContentController() = default;
 };
 
 class MockContentControllerDelayed : public MockContentController {

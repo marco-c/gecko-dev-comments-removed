@@ -2,9 +2,9 @@
 
 
 
+#include "gfxFT2Utils.h"
 
 #include "gfxFT2FontBase.h"
-#include "gfxFT2Utils.h"
 #include "mozilla/Likely.h"
 
 #ifdef USE_FC_FREETYPE

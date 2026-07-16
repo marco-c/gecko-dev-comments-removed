@@ -3,8 +3,9 @@
 
 
 #include "KnowsCompositor.h"
-#include "mozilla/layers/ImageBridgeChild.h"
+
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 
 namespace mozilla::layers {
 

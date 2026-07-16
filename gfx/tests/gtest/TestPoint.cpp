@@ -2,14 +2,12 @@
 
 
 
-
-
-#include "gtest/gtest.h"
 #include <cmath>
 
 #include "BasePoint.h"
-#include "Units.h"
 #include "Point.h"
+#include "Units.h"
+#include "gtest/gtest.h"
 
 using mozilla::CSSCoord;
 using mozilla::CSSIntCoord;

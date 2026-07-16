@@ -2,21 +2,19 @@
 
 
 
+#include "gfxWindowsNativeDrawing.h"
 
 #include <windows.h>
 
-#include "nsMathUtils.h"
-
-#include "gfxWindowsNativeDrawing.h"
-#include "gfxWindowsSurface.h"
+#include "cairo-win32.h"
+#include "cairo.h"
+#include "gfx2DGlue.h"
 #include "gfxAlphaRecovery.h"
 #include "gfxPattern.h"
+#include "gfxWindowsSurface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
-#include "gfx2DGlue.h"
-
-#include "cairo.h"
-#include "cairo-win32.h"
+#include "nsMathUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

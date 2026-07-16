@@ -3,9 +3,8 @@
 
 
 #include "ImageScaling.h"
-#include "mozilla/Attributes.h"
-
 #include "SSEHelpers.h"
+#include "mozilla/Attributes.h"
 
 
 

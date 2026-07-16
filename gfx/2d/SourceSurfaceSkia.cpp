@@ -2,15 +2,16 @@
 
 
 
-#include "Logging.h"
 #include "SourceSurfaceSkia.h"
-#include "HelpersSkia.h"
+
 #include "DrawTargetSkia.h"
+#include "HelpersSkia.h"
+#include "Logging.h"
+#include "mozilla/CheckedInt.h"
 #include "skia/include/core/SkData.h"
 #include "skia/include/core/SkImage.h"
 #include "skia/include/core/SkSurface.h"
 #include "skia/include/private/base/SkMalloc.h"
-#include "mozilla/CheckedInt.h"
 
 namespace mozilla::gfx {
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_X11Util_h
 #define mozilla_X11Util_h
 
@@ -12,8 +10,9 @@
 #if defined(MOZ_WIDGET_GTK)
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
-#  include "mozilla/WidgetUtilsGtk.h"
+
 #  include "X11UndefineNone.h"
+#  include "mozilla/WidgetUtilsGtk.h"
 #else
 #  error Unknown toolkit
 #endif

@@ -2,9 +2,10 @@
 
 
 
+#include "ScopedGLHelpers.h"
+
 #include "GLContext.h"
 #include "GLContextEGL.h"
-#include "ScopedGLHelpers.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"

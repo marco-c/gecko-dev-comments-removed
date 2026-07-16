@@ -2,13 +2,11 @@
 
 
 
-
-
 #ifndef GFX_VR_PARENT_H
 #define GFX_VR_PARENT_H
 
-#include "mozilla/gfx/PVRParent.h"
 #include "VRGPUParent.h"
+#include "mozilla/gfx/PVRParent.h"
 
 namespace mozilla {
 namespace gfx {

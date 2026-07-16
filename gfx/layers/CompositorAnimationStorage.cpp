@@ -5,19 +5,19 @@
 #include "CompositorAnimationStorage.h"
 
 #include "AnimationHelper.h"
-#include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/layers/APZSampler.h"              
-#include "mozilla/layers/CompositorBridgeParent.h"  
-#include "mozilla/layers/CompositorThread.h"  
-#include "mozilla/layers/OMTAController.h"    
+#include "TreeTraversal.h"  
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/layers/APZSampler.h"              
+#include "mozilla/layers/CompositorBridgeParent.h"  
+#include "mozilla/layers/CompositorThread.h"   
+#include "mozilla/layers/OMTAController.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsDeviceContext.h"                   
 #include "nsDisplayList.h"                     
 #include "nsLayoutUtils.h"
-#include "TreeTraversal.h"  
 
 namespace geckoprofiler::markers {
 

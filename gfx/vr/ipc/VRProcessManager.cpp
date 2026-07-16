@@ -2,19 +2,17 @@
 
 
 
-
-
 #include "VRProcessManager.h"
 
-#include "VRProcessParent.h"
 #include "VRChild.h"
 #include "VRGPUChild.h"
 #include "VRGPUParent.h"
+#include "VRProcessParent.h"
+#include "mozilla/MemoryReportingProcess.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/MemoryReportingProcess.h"
-#include "mozilla/Preferences.h"
 
 namespace mozilla {
 namespace gfx {

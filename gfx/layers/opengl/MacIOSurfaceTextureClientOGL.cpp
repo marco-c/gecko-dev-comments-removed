@@ -3,9 +3,10 @@
 
 
 #include "MacIOSurfaceTextureClientOGL.h"
-#include "mozilla/gfx/MacIOSurface.h"
+
 #include "MacIOSurfaceHelpers.h"
 #include "gfxPlatform.h"
+#include "mozilla/gfx/MacIOSurface.h"
 
 namespace mozilla {
 namespace layers {

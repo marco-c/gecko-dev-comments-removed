@@ -5,8 +5,8 @@
 #ifndef MOZILLA_GFX_RENDEREXTERNALTEXTUREHOST_H
 #define MOZILLA_GFX_RENDEREXTERNALTEXTUREHOST_H
 
-#include "mozilla/layers/TextureHostOGL.h"
 #include "RenderTextureHostSWGL.h"
+#include "mozilla/layers/TextureHostOGL.h"
 
 namespace mozilla {
 namespace wr {
@@ -37,6 +37,8 @@ class RenderExternalTextureHost final : public RenderTextureHostSWGL {
   gfx::ColorDepth GetColorDepth() const override;
 
   gfx::YUVRangedColorSpace GetYUVColorSpace() const override;
+
+  gfx::TransferFunction GetTransferFunction() const override;
 
   bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,
                 PlaneInfo& aPlaneInfo) override;

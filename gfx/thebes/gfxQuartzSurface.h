@@ -2,13 +2,12 @@
 
 
 
-
 #ifndef GFX_QUARTZSURFACE_H
 #define GFX_QUARTZSURFACE_H
 
 #include "gfxASurface.h"
-#include "nsSize.h"
 #include "gfxPoint.h"
+#include "nsSize.h"
 
 #ifdef MOZ_WIDGET_COCOA
 #  include <Carbon/Carbon.h>

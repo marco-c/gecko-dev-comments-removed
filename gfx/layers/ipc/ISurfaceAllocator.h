@@ -7,12 +7,13 @@
 
 #include <stddef.h>  
 #include <stdint.h>  
+
 #include "gfxTypes.h"
+#include "mozilla/Atomics.h"  
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/ipc/Shmem.h"
 #include "mozilla/gfx/Point.h"  
+#include "mozilla/ipc/Shmem.h"
 #include "nsIMemoryReporter.h"  
-#include "mozilla/Atomics.h"    
 #include "nsTArray.h"
 
 class MessageLoop;

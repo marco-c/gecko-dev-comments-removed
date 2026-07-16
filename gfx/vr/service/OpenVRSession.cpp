@@ -2,17 +2,19 @@
 
 
 
+#include "OpenVRSession.h"
+
 #include <fstream>
-#include "mozilla/JSONStringWriteFuncs.h"
+
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/JSONStringWriteFuncs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsIThread.h"
 #include "nsString.h"
 
-#include "OpenVRSession.h"
-#include "mozilla/StaticPrefs_dom.h"
-
 #if defined(XP_WIN)
 #  include <d3d11.h>
+
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #elif defined(XP_MACOSX)
 #  include "mozilla/gfx/MacIOSurface.h"
@@ -22,15 +24,15 @@
 #  include <sys/stat.h>  
 #endif
 
-#include "mozilla/dom/GamepadEventTypes.h"
-#include "mozilla/dom/GamepadBinding.h"
-#include "binding/OpenVRCosmosBinding.h"
-#include "binding/OpenVRKnucklesBinding.h"
-#include "binding/OpenVRViveBinding.h"
 #include "OpenVRCosmosMapper.h"
 #include "OpenVRDefaultMapper.h"
 #include "OpenVRKnucklesMapper.h"
 #include "OpenVRViveMapper.h"
+#include "binding/OpenVRCosmosBinding.h"
+#include "binding/OpenVRKnucklesBinding.h"
+#include "binding/OpenVRViveBinding.h"
+#include "mozilla/dom/GamepadBinding.h"
+#include "mozilla/dom/GamepadEventTypes.h"
 #if defined(XP_WIN)  
 #  include "OpenVRWMRMapper.h"
 #  include "binding/OpenVRWMRBinding.h"
@@ -350,7 +352,7 @@ bool OpenVRSession::SetupContollerActions() {
     }
     if (vrParent->GetOpenVRControllerManifestPath(
             VRControllerType::HTCViveCosmos, &output)) {
-      cosmosManifest = output;
+      cosmosManifest = std::move(output);
     }
     if (!cosmosManifest.Length() || !FileIsExisting(cosmosManifest)) {
       if (!GenerateTempFileName(cosmosManifest)) {
@@ -559,8 +561,8 @@ bool OpenVRSession::SetupContollerActions() {
   rightContollerInfo.mActionHaptic =
       CreateControllerOutAction(R, haptic, vibration);
 
-  mControllerHand[OpenVRHand::Left] = leftContollerInfo;
-  mControllerHand[OpenVRHand::Right] = rightContollerInfo;
+  mControllerHand[OpenVRHand::Left] = std::move(leftContollerInfo);
+  mControllerHand[OpenVRHand::Right] = std::move(rightContollerInfo);
 
   if (!controllerAction.Length() || !FileIsExisting(controllerAction)) {
     if (!GenerateTempFileName(controllerAction)) {
@@ -647,8 +649,11 @@ bool OpenVRSession::SetupContollerActions() {
   if (StaticPrefs::dom_vr_process_enabled_AtStartup()) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SendOpenVRControllerActionPathToParent",
-        [controllerAction, viveManifest, WMRManifest, knucklesManifest,
-         cosmosManifest]() {
+        [controllerAction = std::move(controllerAction),
+         viveManifest = std::move(viveManifest),
+         WMRManifest = std::move(WMRManifest),
+         knucklesManifest = std::move(knucklesManifest),
+         cosmosManifest = std::move(cosmosManifest)]() {
           VRParent* vrParent = VRProcessChild::GetVRParent();
           (void)vrParent->SendOpenVRControllerActionPathToParent(
               controllerAction);

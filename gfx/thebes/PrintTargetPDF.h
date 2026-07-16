@@ -2,13 +2,12 @@
 
 
 
-
 #ifndef MOZILLA_GFX_PRINTTARGETPDF_H
 #define MOZILLA_GFX_PRINTTARGETPDF_H
 
+#include "PrintTarget.h"
 #include "nsCOMPtr.h"
 #include "nsIOutputStream.h"
-#include "PrintTarget.h"
 
 namespace mozilla {
 namespace gfx {

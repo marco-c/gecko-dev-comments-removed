@@ -5,17 +5,17 @@
 #ifndef GFX_OGLSHADERCONFIG_H
 #define GFX_OGLSHADERCONFIG_H
 
-#include "gfxTypes.h"
 #include "ImageTypes.h"
+#include "gfxTypes.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
 #include "mozilla/gfx/Matrix.h"  
 #include "mozilla/gfx/Rect.h"    
 #include "mozilla/gfx/Types.h"
+#include "mozilla/layers/CompositorTypes.h"
 #include "nsDebug.h"   
 #include "nsPoint.h"   
 #include "nsTArray.h"  
-#include "mozilla/layers/CompositorTypes.h"
 
 namespace mozilla {
 namespace layers {

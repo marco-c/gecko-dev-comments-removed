@@ -2,9 +2,10 @@
 
 
 
+#include <immintrin.h>
+
 #include "SkConvolver.h"
 #include "mozilla/Attributes.h"
-#include <immintrin.h>
 
 namespace skia {
 

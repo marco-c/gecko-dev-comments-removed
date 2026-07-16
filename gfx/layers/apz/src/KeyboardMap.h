@@ -8,9 +8,9 @@
 #include <stdint.h>  
 
 #include "InputData.h"             
-#include "nsTArray.h"              
-#include "mozilla/Maybe.h"         
 #include "KeyboardScrollAction.h"  
+#include "mozilla/Maybe.h"         
+#include "nsTArray.h"              
 
 namespace mozilla {
 

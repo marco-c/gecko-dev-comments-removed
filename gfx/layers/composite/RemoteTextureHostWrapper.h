@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_RemoteTextureHostWrapper_H
 #define MOZILLA_GFX_RemoteTextureHostWrapper_H
 
+#include "mozilla/Monitor.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/Monitor.h"
 
 namespace mozilla::layers {
 
@@ -33,6 +33,7 @@ class RemoteTextureHostWrapper : public TextureHost {
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorDepth GetColorDepth() const override;
   gfx::ColorRange GetColorRange() const override;
+  gfx::TransferFunction GetTransferFunction() const override;
 
   gfx::IntSize GetSize() const override;
 

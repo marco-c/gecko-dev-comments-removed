@@ -11,25 +11,25 @@
 #include <memory>
 #include <unordered_map>
 #include <variant>
+
 #include "Colorspaces.h"
 #include "GLConsts.h"
 #include "GLContextTypes.h"
 #include "GLTypes.h"
-#include "nsSize.h"
-#include "nsString.h"
-#include "nsTString.h"
-#include "mozilla/ipc/IPCTypes.h"
+#include "gfxTypes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
-#include "gfxTypes.h"
-
-#include <map>
+#include "mozilla/ipc/IPCTypes.h"
+#include "nsSize.h"
+#include "nsString.h"
+#include "nsTString.h"
 
 #ifdef XP_WIN
 #  include <windows.h>
+
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/ipc/IPCTypes.h"
 struct ID3D11Device;
@@ -200,11 +200,22 @@ class GLBlitHelper final {
 
  public:
   static std::optional<color::ColorProfileDesc> ToColorProfileDesc(
-      gfx::ColorSpace2);
+      gfx::ColorSpace2, gfx::TransferFunction tf);
+
+  struct CSTF : DeriveCmpOpMembers<CSTF> {
+    gfx::ColorSpace2 cs;
+    gfx::TransferFunction tf;
+
+    auto Members() const { return std::tie(cs, tf); }
+
+    MOZ_MIXIN_DERIVE_CMP_OPS_BY_MEMBERS(CSTF)
+
+    struct Hasher : mozilla::StdHashMembers<CSTF> {};
+  };
 
   struct ColorLutKey : DeriveCmpOpMembers<ColorLutKey> {
-    std::variant<gfx::ColorSpace2, gfx::YUVRangedColorSpace> src;
-    gfx::ColorSpace2 dst;
+    std::variant<CSTF, gfx::YUVRangedColorSpace> src;
+    CSTF dst;
 
     auto Members() const { return std::tie(src, dst); }
 
@@ -366,5 +377,9 @@ extern const char* const kFragMixin_AlphaOne;
 
 }  
 }  
+
+template <>
+struct std::hash<mozilla::gl::GLBlitHelper::CSTF>
+    : mozilla::gl::GLBlitHelper::CSTF::Hasher {};
 
 #endif  

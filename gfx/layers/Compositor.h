@@ -5,15 +5,16 @@
 #ifndef MOZILLA_GFX_COMPOSITOR_H
 #define MOZILLA_GFX_COMPOSITOR_H
 
-#include "Units.h"                           
-#include "mozilla/Assertions.h"              
+#include "Units.h"               
+#include "mozilla/Assertions.h"  
+#include "mozilla/WidgetUtils.h"
 #include "mozilla/gfx/2D.h"                  
 #include "mozilla/gfx/MatrixFwd.h"           
 #include "mozilla/gfx/Point.h"               
 #include "mozilla/gfx/Polygon.h"             
 #include "mozilla/gfx/Rect.h"                
-#include "mozilla/gfx/Types.h"               
 #include "mozilla/gfx/Triangle.h"            
+#include "mozilla/gfx/Types.h"               
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/SurfacePool.h"      
@@ -21,7 +22,6 @@
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"  
 #include "nsRegion.h"
-#include "mozilla/WidgetUtils.h"
 
 
 

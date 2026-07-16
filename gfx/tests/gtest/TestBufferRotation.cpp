@@ -2,11 +2,8 @@
 
 
 
-
-
-#include "gtest/gtest.h"
-
 #include "BufferUnrotate.h"
+#include "gtest/gtest.h"
 
 using mozilla::gfx::BufferUnrotate;
 

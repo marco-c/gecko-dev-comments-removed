@@ -2,16 +2,15 @@
 
 
 
-
 #ifndef GFX_ENV_H
 #define GFX_ENV_H
+
+#include <sstream>
+#include <string_view>
 
 #include "mozilla/Attributes.h"
 #include "nsDebug.h"
 #include "prenv.h"
-
-#include <sstream>
-#include <string_view>
 
 
 

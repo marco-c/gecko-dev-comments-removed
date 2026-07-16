@@ -3,16 +3,17 @@
 
 
 #include "CompositableHost.h"
-#include "Effects.h"  
+
+#include "Effects.h"      
+#include "gfxPlatform.h"  
 #include "gfxUtils.h"
+#include "mozilla/RefPtr.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"     
 #include "mozilla/layers/WebRenderImageHost.h"
-#include "mozilla/RefPtr.h"   
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
-#include "gfxPlatform.h"      
 
 namespace mozilla {
 

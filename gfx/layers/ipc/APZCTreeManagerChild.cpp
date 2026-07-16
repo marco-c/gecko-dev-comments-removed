@@ -4,12 +4,12 @@
 
 #include "mozilla/layers/APZCTreeManagerChild.h"
 
-#include "InputData.h"                              
-#include "mozilla/dom/BrowserParent.h"              
-#include "mozilla/layers/APZCCallbackHelper.h"      
-#include "mozilla/layers/APZInputBridgeChild.h"     
+#include "InputData.h"                           
+#include "mozilla/dom/BrowserParent.h"           
+#include "mozilla/layers/APZCCallbackHelper.h"   
+#include "mozilla/layers/APZInputBridgeChild.h"  
+#include "mozilla/layers/DoubleTapToZoom.h"      
 #include "mozilla/layers/GeckoContentController.h"  
-#include "mozilla/layers/DoubleTapToZoom.h"  
 #include "mozilla/layers/RemoteCompositorSession.h"  
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"  

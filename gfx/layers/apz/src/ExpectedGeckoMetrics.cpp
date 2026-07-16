@@ -3,6 +3,7 @@
 
 
 #include "ExpectedGeckoMetrics.h"
+
 #include "FrameMetrics.h"
 
 namespace mozilla {

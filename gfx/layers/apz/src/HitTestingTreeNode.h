@@ -5,14 +5,14 @@
 #ifndef mozilla_layers_HitTestingTreeNode_h
 #define mozilla_layers_HitTestingTreeNode_h
 
+#include "mozilla/Maybe.h"           
+#include "mozilla/RecursiveMutex.h"  
+#include "mozilla/RefPtr.h"          
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Matrix.h"                  
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/ScrollbarData.h"        
-#include "mozilla/Maybe.h"                       
-#include "mozilla/RecursiveMutex.h"              
-#include "mozilla/RefPtr.h"                      
 namespace mozilla {
 namespace layers {
 

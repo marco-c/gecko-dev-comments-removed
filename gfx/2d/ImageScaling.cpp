@@ -3,12 +3,12 @@
 
 
 #include "ImageScaling.h"
-#include "2D.h"
-#include "DataSurfaceHelpers.h"
-
-#include "mozilla/SSE.h"
 
 #include <algorithm>
+
+#include "2D.h"
+#include "DataSurfaceHelpers.h"
+#include "mozilla/SSE.h"
 
 namespace mozilla {
 namespace gfx {

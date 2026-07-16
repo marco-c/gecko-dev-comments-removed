@@ -2,12 +2,12 @@
 
 
 
-
 #ifndef NS_FONTCACHE_H_
 #define NS_FONTCACHE_H_
 
 #include <stdint.h>
 #include <sys/types.h>
+
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsFontMetrics.h"

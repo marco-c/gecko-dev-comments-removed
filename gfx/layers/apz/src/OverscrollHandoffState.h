@@ -6,11 +6,12 @@
 #define mozilla_layers_OverscrollHandoffChain_h
 
 #include <vector>
-#include "mozilla/RefPtr.h"   
-#include "nsISupportsImpl.h"  
-#include "APZUtils.h"         
-#include "mozilla/layers/LayersTypes.h"  
+
+#include "APZUtils.h"                    
 #include "Units.h"                       
+#include "mozilla/RefPtr.h"              
+#include "mozilla/layers/LayersTypes.h"  
+#include "nsISupportsImpl.h"  
 
 namespace mozilla {
 

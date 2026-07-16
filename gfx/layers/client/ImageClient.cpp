@@ -6,9 +6,9 @@
 
 #include <stdint.h>  
 
+#include "GLImages.h"            
 #include "ImageContainer.h"      
 #include "ImageTypes.h"          
-#include "GLImages.h"            
 #include "gfx2DGlue.h"           
 #include "gfxPlatform.h"         
 #include "mozilla/Assertions.h"  
@@ -21,15 +21,15 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/LayersSurfaces.h"    
 #include "mozilla/layers/TextureClient.h"     
 #include "mozilla/layers/TextureClientOGL.h"  
-#include "mozilla/mozalloc.h"                 
-#include "nsCOMPtr.h"                         
-#include "nsDebug.h"                          
-#include "nsISupportsImpl.h"                  
-#include "nsRect.h"                           
+#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/mozalloc.h"  
+#include "nsCOMPtr.h"          
+#include "nsDebug.h"           
+#include "nsISupportsImpl.h"   
+#include "nsRect.h"            
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidImageReader.h"

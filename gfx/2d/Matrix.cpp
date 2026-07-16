@@ -3,11 +3,12 @@
 
 
 #include "Matrix.h"
+
+#include <float.h>  
+#include <math.h>
+
 #include "Quaternion.h"
 #include "Tools.h"
-#include <math.h>
-#include <float.h>  
-
 #include "mozilla/FloatingPoint.h"  
 
 namespace mozilla {

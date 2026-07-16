@@ -2,15 +2,13 @@
 
 
 
-
-
 #include "VRGPUChild.h"
-#include "VRServiceHost.h"
 
+#include "VRManager.h"
+#include "VRServiceHost.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "VRManager.h"
 
 namespace mozilla {
 namespace gfx {

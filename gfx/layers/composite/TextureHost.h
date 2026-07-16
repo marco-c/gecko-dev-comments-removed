@@ -5,26 +5,28 @@
 #ifndef MOZILLA_GFX_TEXTUREHOST_H
 #define MOZILLA_GFX_TEXTUREHOST_H
 
-#include <stddef.h>              
-#include <stdint.h>              
+#include <stddef.h>  
+#include <stdint.h>  
+
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/RefPtr.h"      
+#include "mozilla/Range.h"
+#include "mozilla/RefPtr.h"               
+#include "mozilla/UniquePtr.h"            
+#include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/gfx/Types.h"               
+#include "mozilla/gfx/Types.h"  
+#include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/mozalloc.h"  
-#include "mozilla/Range.h"
-#include "mozilla/UniquePtr.h"            
-#include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
@@ -33,7 +35,6 @@
 #include "nsRegion.h"       
 #include "nsTraceRefcnt.h"  
 #include "nscore.h"         
-#include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 
 class MacIOSurface;
 namespace mozilla {

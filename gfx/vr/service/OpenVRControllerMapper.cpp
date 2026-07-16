@@ -2,12 +2,10 @@
 
 
 
-
-
 #include "OpenVRControllerMapper.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 #include "VRSession.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla::gfx {
 

@@ -2,13 +2,11 @@
 
 
 
-
-
 #include "RenderCompositor.h"
 
+#include "GLContext.h"
 #include "gfxConfig.h"
 #include "gfxPlatform.h"
-#include "GLContext.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -150,11 +148,6 @@ void wr_compositor_start_compositing(void* aCompositor, wr::ColorF aClearColor,
 void wr_compositor_end_frame(void* aCompositor) {
   RenderCompositor* compositor = static_cast<RenderCompositor*>(aCompositor);
   compositor->CompositorEndFrame();
-}
-
-void wr_compositor_enable_native_compositor(void* aCompositor, bool aEnable) {
-  RenderCompositor* compositor = static_cast<RenderCompositor*>(aCompositor);
-  compositor->EnableNativeCompositor(aEnable);
 }
 
 void wr_compositor_get_capabilities(void* aCompositor,

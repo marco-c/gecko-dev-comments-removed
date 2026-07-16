@@ -2,7 +2,6 @@
 
 
 
-
 #pragma once
 
 struct ID3D11Texture2D;
@@ -10,8 +9,8 @@ struct IDXGISwapChain;
 struct ID3D11DeviceContext;
 struct ID3D11Device;
 
-#include <windows.h>
 #include <d3d11_1.h>
+#include <windows.h>
 
 #include "mozilla/RefPtr.h"
 
