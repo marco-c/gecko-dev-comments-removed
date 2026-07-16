@@ -645,9 +645,17 @@ nsCertOverrideService::
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  bool changed;
   {
     MutexAutoLock lock(mMutex);
+    changed = (mDisableAllSecurityCheck != aDisable);
     mDisableAllSecurityCheck = aDisable;
+  }
+
+  
+  
+  if (!changed) {
+    return NS_OK;
   }
 
   mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
