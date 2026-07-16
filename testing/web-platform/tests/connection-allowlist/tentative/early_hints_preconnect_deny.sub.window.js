@@ -1,0 +1,6 @@
+
+
+
+test(() => {
+  navigateToTestCase('preconnect', 'false', token());
+}, 'Early Hints preconnect to a not-allow-listed URL fails.');

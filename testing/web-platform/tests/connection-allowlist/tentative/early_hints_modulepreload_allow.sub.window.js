@@ -1,0 +1,6 @@
+
+
+
+test(() => {
+  navigateToTestCase('modulepreload', 'true', token());
+}, 'Early Hints modulepreload to an allow-listed url succeeds.');

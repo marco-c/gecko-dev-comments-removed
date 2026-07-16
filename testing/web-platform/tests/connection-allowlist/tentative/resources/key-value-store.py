@@ -20,12 +20,24 @@ def main(request, response):
     value = request.GET.get(b"value", None)
 
     
+    
+    
+    headers = [
+        (b"Access-Control-Allow-Origin", b"*"),
+        (b"Access-Control-Allow-Methods", b"GET, POST, OPTIONS"),
+        (b"Access-Control-Allow-Headers", b"*"),
+    ]
+
+    if request.method == b"OPTIONS":
+        return (200, headers, b"")
+
+    
     if value:
         request.server.stash.put(key, value)
-        return (200, [], b"")
+        return (200, headers, b"")
 
     
     data = request.server.stash.take(key)
     if not data:
-        return (200, [], b"")
-    return (200, [], data)
+        return (200, headers, b"")
+    return (200, headers, data)

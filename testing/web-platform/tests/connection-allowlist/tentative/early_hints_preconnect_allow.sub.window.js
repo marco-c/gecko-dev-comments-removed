@@ -1,0 +1,6 @@
+
+
+
+test(() => {
+  navigateToTestCase('preconnect', 'true', token());
+}, 'Early Hints preconnect to an allow-listed URL succeeds.');
