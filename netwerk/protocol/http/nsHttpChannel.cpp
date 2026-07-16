@@ -1500,9 +1500,6 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
          this));
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Unexpected state");
 
-    
-    MaybeStartCacheWaitTimer();
-
     if (mNetworkTriggered && mWaitingForProxy) {
       
       
@@ -5573,20 +5570,7 @@ nsHttpChannel::OnCacheEntryAvailable(nsICacheEntry* entry, bool aNew,
 
   
   
-  CancelCacheWaitTimer();
-
-  
-  
   if (!LoadIsPending()) {
-    mCacheInputStream.CloseAndRelease();
-    return NS_OK;
-  }
-
-  
-  
-  if (mCacheWaitTimedOut) {
-    LOG(("  cache callback arrived after backstop timeout, ignoring [this=%p]",
-         this));
     mCacheInputStream.CloseAndRelease();
     return NS_OK;
   }
@@ -6034,7 +6018,6 @@ nsresult nsHttpChannel::ReadFromCache(void) {
 }
 
 void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
-  CancelCacheWaitTimer();
   mCacheInputStream.CloseAndRelease();
 
   if (!mCacheEntry) return;
@@ -7455,18 +7438,6 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     needAsyncAbort = false;
     (void)AsyncAbort(status);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CancelSuspendOrResumeAfterExamineResponse();
 
   
   
@@ -12201,67 +12172,9 @@ nsHttpChannel::TimerCallback::Notify(nsITimer* aTimer) {
   if (aTimer == mChannel->mSuspendTimer) {
     return mChannel->OnSuspendTimeout();
   }
-  if (aTimer == mChannel->mCacheWaitTimer) {
-    return mChannel->OnCacheWaitTimeout();
-  }
   MOZ_CRASH("Unknown timer");
 
   return NS_OK;
-}
-
-void nsHttpChannel::MaybeStartCacheWaitTimer() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  uint32_t delay = StaticPrefs::network_cache_entry_wait_timeout_ms();
-  if (!delay || mCacheWaitTimer || mCacheWaitTimedOut || mNetworkTriggered) {
-    return;
-  }
-
-  mCacheWaitTimer = NS_NewTimer();
-  if (mCacheWaitTimer) {
-    RefPtr<TimerCallback> timerCallback = new TimerCallback(this);
-    mCacheWaitTimer->InitWithCallback(timerCallback, delay,
-                                      nsITimer::TYPE_ONE_SHOT);
-    LOG(("nsHttpChannel::MaybeStartCacheWaitTimer [this=%p] fires in %ums",
-         this, delay));
-  }
-}
-
-void nsHttpChannel::CancelCacheWaitTimer() {
-  if (mCacheWaitTimer) {
-    mCacheWaitTimer->Cancel();
-    mCacheWaitTimer = nullptr;
-  }
-}
-
-nsresult nsHttpChannel::OnCacheWaitTimeout() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  LOG(("nsHttpChannel::OnCacheWaitTimeout [this=%p]\n", this));
-  mCacheWaitTimer = nullptr;
-
-  
-  
-  
-  
-  
-  if (!LoadIsPending() || !AwaitingCacheCallbacks()) {
-    return NS_OK;
-  }
-
-  LOG(("  cache entry wait timed out, forcing network [this=%p]", this));
-  mCacheWaitTimedOut = true;
-
-  
-  
-  StoreWaitForCacheEntry(LoadWaitForCacheEntry() & ~WAIT_FOR_CACHE_ENTRY);
-
-  nsresult rv = TriggerNetwork();
-  if (NS_FAILED(rv)) {
-    CloseCacheEntry(false);
-    (void)AsyncAbort(rv);
-  }
-  return rv;
 }
 
 bool nsHttpChannel::EligibleForTailing() {

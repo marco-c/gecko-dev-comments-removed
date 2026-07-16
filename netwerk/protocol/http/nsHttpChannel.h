@@ -839,14 +839,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult OnSuspendTimeout();
   void CancelNetworkRequest(nsresult aStatus);
 
-  
-  
-  
-  
-  void MaybeStartCacheWaitTimer();
-  void CancelCacheWaitTimer();
-  nsresult OnCacheWaitTimeout();
-
   nsresult LogConsoleError(const char* aTag);
 
   void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord> aRecord);
@@ -862,12 +854,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsITimer> mSuspendTimer;
-  
-  
-  nsCOMPtr<nsITimer> mCacheWaitTimer;
-  
-  
-  bool mCacheWaitTimedOut{false};
   
   
   
