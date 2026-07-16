@@ -6057,14 +6057,10 @@ bool nsDisplayStickyPosition::UpdateScrollData(
     }
 
     if (ShouldGetStickyAnimationId()) {
-      
-      
-      
       RefPtr<WebRenderAPZAnimationData> animationData =
           aData->GetManager()
               ->CommandBuilder()
-              .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(
-                  this);
+              .GetWebRenderUserData<WebRenderAPZAnimationData>(this);
       MOZ_ASSERT(animationData);
       aLayerData->SetStickyPositionAnimationId(animationData->GetAnimationId());
     }
@@ -6973,14 +6969,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   params.paired_with_perspective = mHasAssociatedPerspective;
   params.mDeferredTransformItem = deferredTransformItem;
   params.mAnimated = animated;
-  
-  
-  
-  
-  
-  
-  
-  params.mRasterizeLocally = false;
   params.SetPreserve3D(mFrame->Extend3DContext() && !mIsTransformSeparator);
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
