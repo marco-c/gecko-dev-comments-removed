@@ -753,6 +753,12 @@ if mozinfo.isWin:
 
         log.info(f"Writing a dump to {file_name} for [{pid}]")
 
+        
+        
+        dump_type = 0  
+        if os.environ.get("MINIDUMP_FULL_MEMORY"):
+            dump_type = 0x00000002  
+
         proc_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid)
         if not proc_handle:
             err = kernel32.GetLastError()
@@ -778,8 +784,7 @@ if mozinfo.isWin:
                 proc_handle,
                 pid,
                 file_handle,
-                
-                0,
+                dump_type,
                 
                 None,
                 
