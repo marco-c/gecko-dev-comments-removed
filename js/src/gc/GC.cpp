@@ -2372,7 +2372,7 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
 
       
       
-      for (AllZonesIter zone(gc->rt); !zone.done(); zone.next()) {
+      for (AllZonesIter zone(gc); !zone.done(); zone.next()) {
         zone->availableChunks(gcLock).sort();
       }
 
