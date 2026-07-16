@@ -61,16 +61,21 @@ async function addTopSites(url) {
   });
 }
 
+
+
+
+
+
 function assertAbandonmentTelemetry(expectedExtraList) {
-  assertGleanTelemetry("abandonment", expectedExtraList);
+  return waitForGleanTelemetry("abandonment", expectedExtraList);
 }
 
 function assertEngagementTelemetry(expectedExtraList) {
-  assertGleanTelemetry("engagement", expectedExtraList);
+  return waitForGleanTelemetry("engagement", expectedExtraList);
 }
 
 function assertExposureTelemetry(expectedExtraList) {
-  assertGleanTelemetry("exposure", expectedExtraList);
+  return waitForGleanTelemetry("exposure", expectedExtraList);
 }
 
 function assertDisableTelemetry(expectedExtraList) {
@@ -78,7 +83,34 @@ function assertDisableTelemetry(expectedExtraList) {
 }
 
 function assertBounceTelemetry(expectedExtraList) {
-  assertGleanTelemetry("bounce", expectedExtraList);
+  return waitForGleanTelemetry("bounce", expectedExtraList);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  await TestUtils.waitForCondition(
+    () =>
+      (Glean.urlbar[camelName].testGetValue() ?? []).length >=
+      expectedExtraList.length,
+    `Waiting for ${expectedExtraList.length} ${telemetryName} telemetry event(s)`
+  ).catch(() => {
+    
+  });
+  assertGleanTelemetry(telemetryName, expectedExtraList);
 }
 
 function assertGleanTelemetry(telemetryName, expectedExtraList) {
