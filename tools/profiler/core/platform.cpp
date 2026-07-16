@@ -462,8 +462,8 @@ static uint32_t AvailableFeatures() {
 
 static constexpr uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS |
-         ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization |
-         ProfilerFeature::Screenshots | ProfilerFeature::ProcessCPU;
+         ProfilerFeature::StackWalk | ProfilerFeature::Screenshots |
+         ProfilerFeature::ProcessCPU;
 }
 
 
@@ -1133,12 +1133,7 @@ class ActivePS {
       aFeatures |= ProfilerFeature::MainThreadIO;
     }
 
-    if (aFeatures & ProfilerFeature::CPUAllThreads) {
-      aFeatures |= ProfilerFeature::CPUUtilization;
-    }
-
     if (aFeatures & ProfilerFeature::Tracing) {
-      aFeatures &= ~ProfilerFeature::CPUUtilization;
       aFeatures &= ~ProfilerFeature::Memory;
       aFeatures |= ProfilerFeature::NoStackSampling;
       aFeatures |= ProfilerFeature::JS;
@@ -4667,8 +4662,6 @@ void SamplerThread::Run() {
   
   const bool stackSampling = !ProfilerFeature::HasNoStackSampling(features);
 
-  const bool cpuUtilization = ProfilerFeature::HasCPUUtilization(features);
-
   
   
   
@@ -4864,7 +4857,10 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::Now();
 
-        if (stackSampling || cpuUtilization) {
+        {
+          
+          
+          
           samplingState = SamplingState::SamplingCompleted;
 
           
@@ -4884,10 +4880,8 @@ void SamplerThread::Run() {
 
             const ThreadProfilingFeatures whatToProfile =
                 unlockedThreadData.ProfilingFeatures();
-            const bool threadCPUUtilization =
-                cpuUtilization &&
-                DoFeaturesIntersect(whatToProfile,
-                                    ThreadProfilingFeatures::CPUUtilization);
+            const bool threadCPUUtilization = DoFeaturesIntersect(
+                whatToProfile, ThreadProfilingFeatures::CPUUtilization);
             const bool threadStackSampling =
                 stackSampling &&
                 DoFeaturesIntersect(whatToProfile,
@@ -5163,7 +5157,7 @@ void SamplerThread::Run() {
                              currentEventRunning.ToMilliseconds());
                   });
 
-              if (cpuUtilization) {
+              if (threadCPUUtilization) {
                 
                 
                 
@@ -5216,8 +5210,6 @@ void SamplerThread::Run() {
             localBuffer.Clear();
             previousState = localBuffer.GetState();
           }
-        } else {
-          samplingState = SamplingState::NoStackSamplingCompleted;
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -5921,8 +5913,7 @@ void profiler_start_from_signal() {
     
     
     
-    uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk |
-                        ProfilerFeature::CPUUtilization;
+    uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk;
     
     
     const char* filters[] = {"*"};

@@ -202,8 +202,7 @@ static uint32_t AvailableFeatures() {
 
 static constexpr uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS |
-         ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization |
-         ProfilerFeature::ProcessCPU;
+         ProfilerFeature::StackWalk | ProfilerFeature::ProcessCPU;
 }
 
 
