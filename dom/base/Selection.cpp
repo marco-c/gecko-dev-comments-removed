@@ -954,7 +954,7 @@ void Selection::SetAnchorFocusRange(size_t aIndex) {
 
 template <TreeKind aKind, typename PT, typename RT,
           typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+                                      aKind == TreeKind::FlatForSelection>>
 static int32_t CompareToRangeStart(
     const RangeBoundaryBase<PT, RT>& aCompareBoundary,
     const AbstractRange& aRange, nsContentUtils::NodeIndexCache* aCache) {
@@ -978,7 +978,7 @@ static int32_t CompareToRangeStart(
 
 template <TreeKind aKind, typename PT, typename RT,
           typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+                                      aKind == TreeKind::FlatForSelection>>
 static int32_t CompareToRangeStart(
     const RangeBoundaryBase<PT, RT>& aCompareBoundary,
     const AbstractRange& aRange) {
@@ -987,7 +987,7 @@ static int32_t CompareToRangeStart(
 
 template <TreeKind aKind, typename PT, typename RT,
           typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+                                      aKind == TreeKind::FlatForSelection>>
 static int32_t CompareToRangeEnd(
     const RangeBoundaryBase<PT, RT>& aCompareBoundary,
     const AbstractRange& aRange) {
@@ -1005,7 +1005,7 @@ static int32_t CompareToRangeEnd(
 
   nsINode* end = aRange.GetMayCrossShadowBoundaryEndContainer();
   uint32_t endOffset = aRange.MayCrossShadowBoundaryEndOffset();
-  return *nsContentUtils::ComparePoints<TreeKind::Flat>(
+  return *nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
       aCompareBoundary, ConstRawRangeBoundary{end, endOffset});
 }
 
@@ -1088,12 +1088,12 @@ nsresult Selection::StyledRanges::SubtractRange(
   }
 
   
-  const int32_t cmp =
-      CompareToRangeStart<TreeKind::Flat>(range->StartRef(), aSubtract);
+  const int32_t cmp = CompareToRangeStart<TreeKind::FlatForSelection>(
+      range->StartRef(), aSubtract);
 
   
   const int32_t cmp2 =
-      CompareToRangeEnd<TreeKind::Flat>(range->EndRef(), aSubtract);
+      CompareToRangeEnd<TreeKind::FlatForSelection>(range->EndRef(), aSubtract);
 
   
   
@@ -1453,8 +1453,9 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 
   
   
-  const size_t insertionPoint = FindInsertionPoint(
-      temp, aRange->StartRef(), CompareToRangeStart<TreeKind::Flat>);
+  const size_t insertionPoint =
+      FindInsertionPoint(temp, aRange->StartRef(),
+                         CompareToRangeStart<TreeKind::FlatForSelection>);
 
   temp.InsertElementAt(insertionPoint, StyledRange(aRange));
 
@@ -1683,7 +1684,7 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
       
       
       const Maybe<int32_t> compareResult =
-          nsContentUtils::ComparePoints<TreeKind::Flat>(
+          nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
               range->StartRef(), previousStartRef, &cache);
       
       
@@ -1696,7 +1697,8 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
     }
     if (rangeOrderHasChanged) {
       const auto compare = [&cache](const auto& a, const auto& b) {
-        return CompareToRangeStart<TreeKind::Flat>(a->StartRef(), *b, &cache);
+        return CompareToRangeStart<TreeKind::FlatForSelection>(a->StartRef(),
+                                                               *b, &cache);
       };
       mRanges.Sort(compare);
     }
@@ -1734,7 +1736,7 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
   size_t endsBeforeIndex = FindInsertionPoint(
       mRanges.Ranges(),
       ConstRawRangeBoundary(aEndNode, aEndOffset, RangeBoundarySetBy::Offset),
-      &CompareToRangeStart<TreeKind::Flat>);
+      &CompareToRangeStart<TreeKind::FlatForSelection>);
 
   if (endsBeforeIndex == 0) {
     const AbstractRange* endRange = GetAbstractRangeAt(endsBeforeIndex);
@@ -1759,7 +1761,7 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
       FindInsertionPoint(mRanges.Ranges(),
                          ConstRawRangeBoundary(aBeginNode, aBeginOffset,
                                                RangeBoundarySetBy::Offset),
-                         &CompareToRangeEnd<TreeKind::Flat>);
+                         &CompareToRangeEnd<TreeKind::FlatForSelection>);
 
   if (beginsAfterIndex == mRanges.Length()) {
     return NS_OK;  
@@ -3191,7 +3193,7 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
 
   auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
                           const nsINode* aNode2, const uint32_t aOffset2) {
-    return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
+    return nsContentUtils::ComparePointsWithIndices<TreeKind::FlatForSelection>(
         aNode1, aOffset1, aNode2, aOffset2);
   };
   const Maybe<int32_t> anchorOldFocusOrder =
@@ -4336,8 +4338,8 @@ void Selection::SetBaseAndExtentInternal(InLimiter aInLimiter,
       IsEditorSelection()
           ? nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
                 aAnchorRef, aFocusRef)
-          : nsContentUtils::ComparePoints<TreeKind::Flat>(aAnchorRef,
-                                                          aFocusRef);
+          : nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+                aAnchorRef, aFocusRef);
   if (order && (*order <= 0)) {
     SetStartAndEndInternal(aInLimiter, aAnchorRef, aFocusRef, eDirNext, aRv);
     return;
