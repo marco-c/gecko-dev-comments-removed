@@ -77,6 +77,12 @@ class nsColumnSetFrame final : public nsContainerFrame {
       mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext aExportContext) const override;
 
+  
+  
+  
+  
+  bool IsEmpty() override;
+
  protected:
   nscoord mLastBalanceBSize;
   nsReflowStatus mLastFrameStatus;

@@ -4033,11 +4033,6 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   }
 
   
-  if (aState.mFlags.mShouldApplyTextBoxTrimStart && aState.mLineNumber > 0) {
-    aState.mFlags.mShouldApplyTextBoxTrimStart = false;
-  }
-
-  
   bool usedOverflowWrap = false;
   if (aLine->IsBlock()) {
     ReflowBlockFrame(aState, aLine, aKeepReflowGoing);
@@ -4370,6 +4365,34 @@ bool nsBlockFrame::ShouldApplyBStartMargin(BlockReflowState& aState,
   return false;
 }
 
+static bool IsFirstNonEmptyColumnSetOrSpanner(nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame->IsColumnSetFrame() || aFrame->IsColumnSpan());
+  if (aFrame->IsEmpty()) {
+    return false;
+  }
+  nsIFrame* curr = aFrame;
+  while ((curr = curr->GetPrevSibling())) {
+    if (!curr->IsEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool IsLastNonEmptyColumnSetOrSpanner(nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame->IsColumnSetFrame() || aFrame->IsColumnSpan());
+  if (aFrame->IsEmpty()) {
+    return false;
+  }
+  nsIFrame* curr = aFrame;
+  while ((curr = curr->GetNextSibling())) {
+    if (!curr->IsEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
                                     LineIterator aLine,
                                     bool* aKeepReflowGoing) {
@@ -4693,18 +4716,23 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     
     
     const bool shouldPropagateTextBoxTrim =
-        !frame->HasAnyStateBits(NS_BLOCK_BFC) || IsColumnSetWrapperFrame();
+        !frame->HasAnyStateBits(NS_BLOCK_BFC) || IsColumnSetWrapperFrame() ||
+        IsColumnSpan();
 
     childReflowInput->mFlags.mShouldApplyTextBoxTrimStart =
         shouldPropagateTextBoxTrim &&
         aState.mFlags.mShouldApplyTextBoxTrimStart &&
-        childBP.BStart(childWM) == 0 && aState.mLineNumber == 0;
+        childBP.BStart(childWM) == 0 &&
+        (IsColumnSetWrapperFrame() ? IsFirstNonEmptyColumnSetOrSpanner(frame)
+                                   : aState.mLineNumber == 0);
     childReflowInput->mFlags.mShouldApplyTextBoxTrimAtBlockEnd =
         shouldPropagateTextBoxTrim &&
         aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd &&
-        childBP.BEnd(childWM) == 0 && IsLastFormattedLine(aLine);
+        childBP.BEnd(childWM) == 0 &&
+        (IsColumnSetWrapperFrame() ? IsLastNonEmptyColumnSetOrSpanner(frame)
+                                   : IsLastFormattedLine(aLine));
     childReflowInput->mFlags.mShouldApplyTextBoxTrimAtFragmentEnd =
-        (IsColumnSetWrapperFrame() &&
+        (IsColumnSetWrapperFrame() && IsLastNonEmptyColumnSetOrSpanner(frame) &&
          aState.mFlags.mShouldApplyTextBoxTrimAtBlockEnd) ||
         aState.mFlags.mShouldApplyTextBoxTrimAtFragmentEnd;
 
