@@ -1116,7 +1116,13 @@ static bool ContainingBlockChangeAffectsDescendants(
   MOZ_ASSERT_IF(aIsFixedPosContainingBlock, aIsAbsPosContainingBlock);
 
   for (const auto& childList : aFrame->ChildLists()) {
+    
+    
+    if (childList.mID == FrameChildListID::Float) {
+      continue;
+    }
     for (nsIFrame* f : childList.mList) {
+      nsIFrame* frameToDiveInto = f;
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         
@@ -1151,6 +1157,12 @@ static bool ContainingBlockChangeAffectsDescendants(
             }
           }
         }
+
+        
+        
+        
+        
+        frameToDiveInto = outOfFlow->IsFloating() ? outOfFlow : nullptr;
       }
       
       
@@ -1160,9 +1172,10 @@ static bool ContainingBlockChangeAffectsDescendants(
       
       
       
-      if (ContainingBlockChangeAffectsDescendants(
-              aPossiblyChangingContainingBlock, f, aIsAbsPosContainingBlock,
-              aIsFixedPosContainingBlock)) {
+      if (frameToDiveInto &&
+          ContainingBlockChangeAffectsDescendants(
+              aPossiblyChangingContainingBlock, frameToDiveInto,
+              aIsAbsPosContainingBlock, aIsFixedPosContainingBlock)) {
         return true;
       }
     }
