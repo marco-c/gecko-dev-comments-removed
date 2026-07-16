@@ -53,10 +53,9 @@ function getRangeBoundariesForTest(trigger_start, trigger_end,
 
 
 
-const enter = (rangeBoundaries) => {
+function runAndWaitForTriggerResponse(callback) {
   return runAndWaitForFrameUpdate(() => {
-    rangeBoundaries.enterTriggerRange();
-    
+    callback();
   }).then(waitForNextFrame);
 }
 
@@ -65,15 +64,25 @@ const enter = (rangeBoundaries) => {
 
 
 
+const enter = (rangeBoundaries) => {
+  return runAndWaitForTriggerResponse(() => {
+    rangeBoundaries.enterTriggerRange();
+  });
+}
+
+
+
+
+
+
 const exit = (rangeBoundaries, exitAbove = true) => {
-  return runAndWaitForFrameUpdate(() => {
+  return runAndWaitForTriggerResponse(() => {
     if (exitAbove) {
       rangeBoundaries.exitExitRangeAbove();
     } else {
       rangeBoundaries.exitExitRangeBelow();
     }
-    
-  }).then(waitForNextFrame);
+  });
 }
 
 
@@ -122,7 +131,9 @@ function computeContainOffset(scroller, subject, pct) {
   return contain_start + (pct / 100) * (contain_end - contain_start);
 }
 
-function setupAnimationAndTrigger(target, subject, duration) {
+function setupAnimationAndTrigger(target, subject, duration,
+                                  rangeStart = "contain 0%",
+                                  rangeEnd = "contain 100%") {
   const animation = new Animation(
     new KeyframeEffect(
       target,
@@ -135,8 +146,8 @@ function setupAnimationAndTrigger(target, subject, duration) {
 
   let trigger = new TimelineTrigger([{
     timeline: new ViewTimeline({ subject: subject, axis: "y" }),
-    activationRangeStart: "contain 0%",
-    activationRangeEnd: "contain 100%"
+    activationRangeStart: rangeStart,
+    activationRangeEnd: rangeEnd
   }]);
 
   trigger.addAnimation(animation, "play-forwards", "play-backwards");
