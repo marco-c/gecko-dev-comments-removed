@@ -47,15 +47,16 @@ add_task(async function () {
   await waitUntil(() => findDebugTargetByText(WORKER_NAME, document));
 
   info("Go to This Firefox again");
+  const thisFirefoxString = getThisFirefoxString(window);
+  const thisFirefoxSidebarItem = findSidebarItemByText(
+    thisFirefoxString,
+    document
+  );
+  const thisFirefoxLink =
+    thisFirefoxSidebarItem.querySelector(".qa-sidebar-link");
+  info("Click on the ThisFirefox item in the sidebar");
   const requestsSuccess = waitForRequestsSuccess(window.AboutDebugging.store);
-  AccessibilityUtils.setEnv({
-    
-    
-    
-    nonNegativeTabIndexRule: false,
-  });
-  selectSidebarItemPage(getThisFirefoxString(window), document);
-  AccessibilityUtils.resetEnv();
+  thisFirefoxLink.click();
 
   info("Wait for all target requests to complete");
   await requestsSuccess;
