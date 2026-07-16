@@ -4,23 +4,29 @@
 
 
 
-
-
-
-
 "use strict";
 
-const MERINO_RESULT = {
+
+
+
+
+const SUGGESTION = {
   
   impression_url: undefined,
+  custom_details: {
+    amp: {
+      suggestion_id: undefined,
+    },
+  },
+
   
   advertiser: "",
+  click_url: "",
 
   block_id: 1,
   url: "https://example.com/sponsored",
   title: "Sponsored suggestion",
   keywords: ["sponsored"],
-  click_url: "https://example.com/click",
   iab_category: "22 - Shopping",
   provider: "adm",
   is_sponsored: true,
@@ -33,11 +39,12 @@ const position = index + 1;
 requestLongerTimeout(3);
 
 add_setup(async function () {
+  GleanPings.quickSuggest.setEnabled(true); 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.quickactions", false]],
   });
   await initQuickSuggestPingTest({
-    merinoSuggestions: [MERINO_RESULT],
+    merinoSuggestions: [SUGGESTION],
   });
 });
 
@@ -47,12 +54,15 @@ add_task(async function () {
 
   await doQuickSuggestPingTest({
     index,
-    suggestion: MERINO_RESULT,
+    suggestion: SUGGESTION,
     impressionOnly: {
+      reportingUrl: null, 
+      suggestionId: null,
+      advertiser: null,
+
       pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
       matchType,
-      advertiser: MERINO_RESULT.advertiser,
-      blockId: MERINO_RESULT.block_id.toString(),
+      blockId: SUGGESTION.block_id.toString(),
       improveSuggestExperience: true,
       position,
       suggestedIndex: "-1",
@@ -61,14 +71,16 @@ add_task(async function () {
       source,
       contextId: "",
       isClicked: false,
-      reportingUrl: MERINO_RESULT.impression_url,
     },
     click: [
       {
+        reportingUrl: null, 
+        suggestionId: null,
+        advertiser: null,
+
         pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
         matchType,
-        advertiser: MERINO_RESULT.advertiser,
-        blockId: MERINO_RESULT.block_id.toString(),
+        blockId: SUGGESTION.block_id.toString(),
         improveSuggestExperience: true,
         position,
         suggestedIndex: "-1",
@@ -77,13 +89,15 @@ add_task(async function () {
         source,
         contextId: "",
         isClicked: true,
-        reportingUrl: MERINO_RESULT.impression_url,
       },
       {
+        reportingUrl: null, 
+        suggestionId: null,
+        advertiser: null,
+
         pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
         matchType,
-        advertiser: MERINO_RESULT.advertiser,
-        blockId: MERINO_RESULT.block_id.toString(),
+        blockId: SUGGESTION.block_id.toString(),
         improveSuggestExperience: true,
         position,
         suggestedIndex: "-1",
@@ -91,7 +105,6 @@ add_task(async function () {
         requestId: MerinoTestUtils.server.response.body.request_id,
         source,
         contextId: "",
-        reportingUrl: MERINO_RESULT.click_url,
       },
     ],
     commands: [
@@ -99,10 +112,13 @@ add_task(async function () {
         command: "dismiss",
         pings: [
           {
+            reportingUrl: null, 
+            suggestionId: null,
+            advertiser: null,
+
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
             matchType,
-            advertiser: MERINO_RESULT.advertiser,
-            blockId: MERINO_RESULT.block_id.toString(),
+            blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,
             position,
             suggestedIndex: "-1",
@@ -111,13 +127,15 @@ add_task(async function () {
             source,
             contextId: "",
             isClicked: false,
-            reportingUrl: MERINO_RESULT.impression_url,
           },
           {
+            reportingUrl: null, 
+            suggestionId: null,
+            advertiser: null,
+
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
             matchType,
-            advertiser: MERINO_RESULT.advertiser,
-            blockId: MERINO_RESULT.block_id.toString(),
+            blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,
             position,
             suggestedIndex: "-1",
@@ -125,7 +143,7 @@ add_task(async function () {
             requestId: MerinoTestUtils.server.response.body.request_id,
             source,
             contextId: "",
-            iabCategory: MERINO_RESULT.iab_category,
+            iabCategory: SUGGESTION.iab_category,
           },
         ],
       },
@@ -133,10 +151,13 @@ add_task(async function () {
         command: "manage",
         pings: [
           {
+            reportingUrl: null, 
+            suggestionId: null,
+            advertiser: null,
+
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
             matchType,
-            advertiser: MERINO_RESULT.advertiser,
-            blockId: MERINO_RESULT.block_id.toString(),
+            blockId: SUGGESTION.block_id.toString(),
             improveSuggestExperience: true,
             position,
             suggestedIndex: "-1",
@@ -145,7 +166,6 @@ add_task(async function () {
             source,
             contextId: "",
             isClicked: false,
-            reportingUrl: MERINO_RESULT.impression_url,
           },
         ],
       },

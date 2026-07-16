@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 const SUGGESTION = QuickSuggestTestUtils.ampRemoteSettings();
@@ -14,6 +15,7 @@ const position = index + 1;
 requestLongerTimeout(3);
 
 add_setup(async function () {
+  GleanPings.quickSuggest.setEnabled(true); 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.quickactions", false]],
   });
@@ -60,6 +62,7 @@ add_task(async function amp() {
           contextId: "",
           isClicked: false,
           reportingUrl: SUGGESTION.impression_url,
+          suggestionId: null,
         },
         click: [
           {
@@ -76,6 +79,7 @@ add_task(async function amp() {
             contextId: "",
             isClicked: true,
             reportingUrl: SUGGESTION.impression_url,
+            suggestionId: null,
           },
           {
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
@@ -90,6 +94,7 @@ add_task(async function amp() {
             source,
             contextId: "",
             reportingUrl: SUGGESTION.click_url,
+            suggestionId: null,
           },
         ],
         commands: [
@@ -110,6 +115,7 @@ add_task(async function amp() {
                 contextId: "",
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
+                suggestionId: null,
               },
               {
                 pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
@@ -124,6 +130,7 @@ add_task(async function amp() {
                 source,
                 contextId: "",
                 iabCategory: SUGGESTION.iab_category,
+                suggestionId: null,
               },
             ],
           },
@@ -144,6 +151,7 @@ add_task(async function amp() {
                 contextId: "",
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
+                suggestionId: null,
               },
             ],
           },
@@ -180,6 +188,7 @@ add_task(async function sponsoredBestMatch() {
       contextId: "",
       isClicked: false,
       reportingUrl: SUGGESTION.impression_url,
+      suggestionId: null,
     },
     click: [
       {
@@ -196,6 +205,7 @@ add_task(async function sponsoredBestMatch() {
         contextId: "",
         isClicked: true,
         reportingUrl: SUGGESTION.impression_url,
+        suggestionId: null,
       },
       {
         pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
@@ -210,6 +220,7 @@ add_task(async function sponsoredBestMatch() {
         source,
         contextId: "",
         reportingUrl: SUGGESTION.click_url,
+        suggestionId: null,
       },
     ],
     commands: [
@@ -230,6 +241,7 @@ add_task(async function sponsoredBestMatch() {
             contextId: "",
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
+            suggestionId: null,
           },
           {
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
@@ -244,6 +256,7 @@ add_task(async function sponsoredBestMatch() {
             source,
             contextId: "",
             iabCategory: SUGGESTION.iab_category,
+            suggestionId: null,
           },
         ],
       },
@@ -264,6 +277,7 @@ add_task(async function sponsoredBestMatch() {
             contextId: "",
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
+            suggestionId: null,
           },
         ],
       },
