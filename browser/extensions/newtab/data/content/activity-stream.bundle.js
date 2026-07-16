@@ -312,6 +312,7 @@ for (const type of [
   "WIDGETS_LISTS_USER_EVENT",
   "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_OPT_IN",
+  "WIDGETS_PICTURE_SET_WALLPAPER",
   "WIDGETS_PRIVACY_UPDATE",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
@@ -22291,6 +22292,14 @@ function Stocks({
 const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
 
 
+const JUST_SET_CHECKMARK_MS = 2000;
+
+
+
+const SET_WALLPAPER_ICON = "chrome://browser/skin/canvas.svg";
+const SET_WALLPAPER_CHECK_ICON = "chrome://global/skin/icons/check.svg";
+
+
 
 
 
@@ -22302,6 +22311,11 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const pictureData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PictureOfTheDay);
   const widgetSize = resolveWidgetSize(PICTURE_OF_THE_DAY_ENTRY, prefs);
+  const isSetAsWallpaper = Boolean(prefs["widgets.pictureOfTheDay.setAsWallpaper"]);
+
+  
+  
+  const canSetWallpaper = Boolean(prefs["newtabWallpapers.enabled"] && prefs["newtabWallpapers.customWallpaper.enabled"]);
 
   
   
@@ -22311,6 +22325,22 @@ const PictureOfTheDay_PictureOfTheDay = ({
     setImageFailed(false);
   }, [pictureData.imageUrl]);
   const hasPicture = Boolean(pictureData.imageUrl) && !imageFailed;
+
+  
+  
+  const [justSet, setJustSet] = (0,external_React_namespaceObject.useState)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!justSet) {
+      return undefined;
+    }
+    const timer = setTimeout(() => setJustSet(false), JUST_SET_CHECKMARK_MS);
+    return () => clearTimeout(timer);
+  }, [justSet]);
+
+  
+  
+  
+  const [suppressExpand, setSuppressExpand] = (0,external_React_namespaceObject.useState)(false);
   const {
     impressionRef,
     recordUserAction,
@@ -22376,18 +22406,39 @@ const PictureOfTheDay_PictureOfTheDay = ({
       });
     });
   };
-
-  
-  
-  const handleManageWallpaper = () => recordUserAction("manage_wallpaper", {
-    source: "context_menu"
-  });
+  const handleManageWallpaper = () => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch({
+        type: actionTypes.SHOW_PERSONALIZE
+      });
+      recordUserAction("manage_wallpaper", {
+        source: "context_menu"
+      });
+    });
+  };
   const handleHidePhoto = () => recordUserAction("hide_photo", {
     source: "context_menu"
   });
   const handleShow = () => recordUserAction("show_picture", {
     source: "widget"
   });
+
+  
+  
+  
+  
+  const handleSetWallpaper = () => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_PICTURE_SET_WALLPAPER
+      }));
+      recordUserAction("set_wallpaper", {
+        source: "widget"
+      });
+    });
+    setJustSet(true);
+    setSuppressExpand(true);
+  };
 
   
   
@@ -22433,7 +22484,15 @@ const PictureOfTheDay_PictureOfTheDay = ({
   });
   return external_React_default().createElement("article", {
     className: `picture-of-the-day widget col-4 ${widgetSize}-widget${hasPicture ? " has-picture" : ""}`,
-    ref: impressionRef
+    ref: impressionRef,
+    onMouseLeave: () => setSuppressExpand(false),
+    onBlur: e => {
+      
+      
+      if (!e.currentTarget.contains(e.relatedTarget)) {
+        setSuppressExpand(false);
+      }
+    }
   }, external_React_default().createElement("div", {
     className: "picture-of-the-day-toolbar"
   }, hasPicture ? renderSourceText("picture-of-the-day-eyebrow", {
@@ -22487,6 +22546,12 @@ const PictureOfTheDay_PictureOfTheDay = ({
     className: "picture-of-the-day-details"
   }, pictureData.description ? renderSourceText("picture-of-the-day-description", {
     text: pictureData.description
+  }) : null, canSetWallpaper ? external_React_default().createElement("moz-button", {
+    className: `picture-of-the-day-set-wallpaper${justSet || isSetAsWallpaper ? " is-collapsed" : ""}${suppressExpand ? " no-expand" : ""}`,
+    type: "primary",
+    iconSrc: justSet ? SET_WALLPAPER_CHECK_ICON : SET_WALLPAPER_ICON,
+    onClick: handleSetWallpaper,
+    "data-l10n-id": "newtab-picture-set-wallpaper"
   }) : null)) : external_React_default().createElement("div", {
     className: "picture-of-the-day-footer"
   }, external_React_default().createElement("button", {
