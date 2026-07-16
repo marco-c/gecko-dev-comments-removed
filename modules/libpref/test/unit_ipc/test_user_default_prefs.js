@@ -2,18 +2,28 @@ const pb = Services.prefs;
 
 
 
-const kPrefName = "intl.accept_languages";
+const kPrefName1 = "intl.accept_languages";
+
+const kPrefName2 = "intl.hyphenation-alias.en";
 
 function check_child_pref_info_eq() {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     sendCommand(
       
-      `Services.prefs.getCharPref("${kPrefName}") + "," +
-       Services.prefs.prefHasUserValue("${kPrefName}");`,
+      `Services.prefs.getCharPref("${kPrefName1}") + "," +
+       Services.prefs.prefHasUserValue("${kPrefName1}") + "," +
+       Services.prefs.getCharPref("${kPrefName2}", "") + "," +
+       Services.prefs.prefHasUserValue("${kPrefName2}");`,
       function (info) {
-        let [value, isUser] = info.split(",");
-        Assert.equal(pb.getCharPref(kPrefName), value);
-        Assert.equal(pb.prefHasUserValue(kPrefName), isUser == "true");
+        let [value1, isUser1, value2, isUser2] = info.split(",");
+        try {
+          Assert.equal(pb.getCharPref(kPrefName1), value1);
+          Assert.equal(pb.prefHasUserValue(kPrefName1), isUser1 == "true");
+          Assert.equal(pb.getCharPref(kPrefName2, ""), value2);
+          Assert.equal(pb.prefHasUserValue(kPrefName2), isUser2 == "true");
+        } catch (ex) {
+          reject();
+        }
         resolve();
       }
     );
@@ -21,10 +31,10 @@ function check_child_pref_info_eq() {
 }
 
 add_setup(async () => {
-  let initialValue = pb.getCharPref(kPrefName);
+  let initialValue = pb.getCharPref(kPrefName1);
 
   registerCleanupFunction(async () => {
-    pb.setCharPref(kPrefName, initialValue);
+    pb.setCharPref(kPrefName1, initialValue);
     
     
     
@@ -36,18 +46,39 @@ add_task(async function test_setting_and_clearing_pref() {
   
   
   
-  pb.setCharPref(kPrefName, "i-imaginarylanguage");
+  pb.setCharPref(kPrefName1, "i-imaginarylanguage");
   
   
   
   await check_child_pref_info_eq();
-  Assert.equal(pb.prefHasUserValue(kPrefName), true);
+  Assert.equal(pb.prefHasUserValue(kPrefName1), true);
 
   
   
   
-  pb.clearUserPref(kPrefName);
+  pb.clearUserPref(kPrefName1);
   await check_child_pref_info_eq();
 
-  Assert.equal(pb.prefHasUserValue(kPrefName), false);
+  Assert.equal(pb.prefHasUserValue(kPrefName1), false);
+});
+
+add_task(async function test_setting_and_clearing_pref_branch() {
+  pb.setCharPref(kPrefName1, "i-imaginarylanguage");
+  
+  pb.setCharPref(kPrefName2, "i-imaginaryRandom");
+  
+  
+  
+  await check_child_pref_info_eq();
+  Assert.equal(pb.prefHasUserValue(kPrefName1), true);
+  Assert.equal(pb.prefHasUserValue(kPrefName2), true);
+
+  
+  
+  
+  pb.clearUserBranch("intl.");
+  await check_child_pref_info_eq();
+
+  Assert.equal(pb.prefHasUserValue(kPrefName1), false);
+  Assert.equal(pb.prefHasUserValue(kPrefName2), false);
 });
