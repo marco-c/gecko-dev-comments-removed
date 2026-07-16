@@ -3505,6 +3505,9 @@ class nsContentUtils {
   }
 
   
+  static nsresult AnonymizeURI(nsIURI* aURI, nsCString& aAnonymizedURI);
+
+  
 
 
 
