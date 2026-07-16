@@ -13147,9 +13147,6 @@ const DEFAULT_GRADIENT_STOPS = [{
   color: "var(--color-pink-40)"
 }];
 const DEFAULT_CONFETTI_COUNT = 42;
-
-
-
 const CONFETTI_SHAPES = [{
   radius: "1px",
   clip: "none"
@@ -13170,10 +13167,6 @@ const CONFETTI_SHAPES = [{
   clip: "polygon(50% 0%, 0% 100%, 100% 100%)"
 } 
 ];
-
-
-
-
 const SOCCER_POOL = [{
   ball: true
 }, {
@@ -13185,23 +13178,12 @@ const SOCCER_POOL = [{
 }, ...CONFETTI_SHAPES];
 
 
-
-
 const celebrationRandom = seed => {
   const value = Math.sin(seed) * 10000;
   return value - Math.floor(value);
 };
-
-
-
-
-
 const buildConfettiPieces = (run, colors, count, shapeMode) => {
   const pool = shapeMode === "soccer" ? SOCCER_POOL : CONFETTI_SHAPES;
-  
-  
-  
-  
   const spread = shapeMode === "soccer";
   return Array.from({
     length: count
@@ -13210,20 +13192,11 @@ const buildConfettiPieces = (run, colors, count, shapeMode) => {
     const color = colors[i % colors.length];
     const shape = pool[Math.floor(celebrationRandom(base + 6) * pool.length)];
     const isBall = !!shape.ball;
-    
-    
     const width = isBall ? Math.round(12 + celebrationRandom(base + 0.5) * 5) : Math.round(6 + celebrationRandom(base + 0.5) * 4);
     const height = isBall ? width : Math.round(width * (1.4 + celebrationRandom(base + 5) * 0.8));
-    
-    
     const left = spread ? `${Math.min((i + celebrationRandom(base + 7)) / count * 100, 98).toFixed(2)}%` : `${(celebrationRandom(base) * 100).toFixed(2)}%`;
-    
-    
     const delay = spread ? `${Math.round(celebrationRandom(base + 1) * 1100)}ms` : `${Math.round(celebrationRandom(base + 1) * 350)}ms`;
-    
-    
     const duration = spread ? `${Math.round(2600 + celebrationRandom(base + 2) * 800)}ms` : `${Math.round(3000 + celebrationRandom(base + 2) * 1200)}ms`;
-    
     const rotate = spread ? `${Math.round(celebrationRandom(base + 3) * 400 - 200)}deg` : `${Math.round(celebrationRandom(base + 3) * 720 - 360)}deg`;
     const drift = spread ? `${Math.round(celebrationRandom(base + 4) * 90 - 45)}px` : `${Math.round(celebrationRandom(base + 4) * 80 - 40)}px`;
     return {
@@ -13242,8 +13215,38 @@ const buildConfettiPieces = (run, colors, count, shapeMode) => {
     };
   });
 };
-
-
+const FIREWORK_SPARKS = 16;
+const buildFireworks = (run, colors, count) => Array.from({
+  length: count
+}, (_burst, b) => {
+  const base = (run + 1) * 1000 + b * 37;
+  const color = colors[b % colors.length];
+  const left = `${(10 + celebrationRandom(base) * 80).toFixed(1)}%`;
+  const topPct = `${(8 + celebrationRandom(base + 1) * 38).toFixed(1)}%`;
+  const burstDelay = Math.round(celebrationRandom(base + 2) * 2200);
+  const sizeScale = 0.7 + celebrationRandom(base + 4);
+  const radius = (24 + celebrationRandom(base + 3) * 14) * sizeScale;
+  const sparks = Array.from({
+    length: FIREWORK_SPARKS
+  }, (_spark, s) => {
+    const angle = s / FIREWORK_SPARKS * 2 * Math.PI + celebrationRandom(base + s) * 0.5;
+    const dist = radius * (0.7 + celebrationRandom(base + s + 0.5) * 0.6);
+    return {
+      id: s,
+      dx: `${Math.round(Math.cos(angle) * dist)}px`,
+      dy: `${Math.round(Math.sin(angle) * dist)}px`,
+      delay: `${burstDelay + Math.round(celebrationRandom(base + s + 0.7) * 40)}ms`
+    };
+  });
+  return {
+    id: b,
+    left,
+    top: topPct,
+    color,
+    scale: sizeScale,
+    sparks
+  };
+});
 const confettiPieceStyle = piece => ({
   "--confetti-x": piece.left,
   "--confetti-w": piece.width,
@@ -13263,6 +13266,7 @@ const WidgetCelebration = ({
   confettiColors,
   confettiCount = DEFAULT_CONFETTI_COUNT,
   confettiShape = "mixed",
+  fireworkBursts = 0,
   gradientStops = DEFAULT_GRADIENT_STOPS,
   headlineL10nId,
   illustrationSrc,
@@ -13271,10 +13275,9 @@ const WidgetCelebration = ({
 }) => {
   const className = suffix => suffix ? `${classNamePrefix}-${suffix}` : classNamePrefix;
   
-  
   const hasCopy = !!(headlineL10nId || subheadL10nId);
-  
   const confettiPieces = confettiColors?.length ? buildConfettiPieces(celebrationId, confettiColors, confettiCount, confettiShape) : [];
+  const fireworks = fireworkBursts && confettiColors?.length ? buildFireworks(celebrationId, confettiColors, fireworkBursts) : [];
   const ballSymbolId = `${classNamePrefix}-ball-${celebrationId}`;
   const resolvedIllustrationSrc = illustrationSrc?.endsWith(".svg") ? `${illustrationSrc}?run=${celebrationId}` : illustrationSrc;
   const strokeSize = celebrationFrame.strokeInset * 2;
@@ -13381,7 +13384,27 @@ const WidgetCelebration = ({
     key: piece.id,
     className: className("confetti-piece"),
     style: confettiPieceStyle(piece)
-  }))) : null, hasCopy ? external_React_default().createElement("div", {
+  }))) : null, fireworks.length ? external_React_default().createElement("div", {
+    className: className("fireworks"),
+    "aria-hidden": "true"
+  }, fireworks.map(burst => external_React_default().createElement("div", {
+    key: burst.id,
+    className: className("firework"),
+    style: {
+      "--fw-left": burst.left,
+      "--fw-top": burst.top,
+      "--fw-scale": burst.scale,
+      color: burst.color
+    }
+  }, burst.sparks.map(spark => external_React_default().createElement("i", {
+    key: spark.id,
+    className: className("firework-spark"),
+    style: {
+      "--fw-dx": spark.dx,
+      "--fw-dy": spark.dy,
+      "--fw-delay": spark.delay
+    }
+  }))))) : null, hasCopy ? external_React_default().createElement("div", {
     className: className("copy")
   }, external_React_default().createElement("span", {
     className: className("headline"),
@@ -18176,6 +18199,7 @@ const KNOCKOUT_STAGE_L10N_IDS = {
   "Round of 16": "newtab-sports-widget-round-16",
   "Quarter-finals": "newtab-sports-widget-quarter-finals",
   "Semi-finals": "newtab-sports-widget-semi-finals",
+  "3rd Place": "newtab-sports-widget-bronze-finals",
   "Bronze Final": "newtab-sports-widget-bronze-finals",
   Final: "newtab-sports-widget-final",
 };
@@ -18280,8 +18304,197 @@ const getMatchWinnerKey = match => {
   return null;
 };
 
+
+const FINAL_STAGES = new Set(["final"]);
+const BRONZE_FINAL_STAGES = new Set(["3rd place", "bronze final"]);
+
+const isFinalStage = stage => FINAL_STAGES.has(stage?.toLowerCase());
+
+const isBronzeFinalStage = stage =>
+  BRONZE_FINAL_STAGES.has(stage?.toLowerCase());
+
+
+const FINISHED_STATUS_TYPES = new Set(["past", "final", "ended"]);
+
+const resolveWinnerLoser = match => {
+  const winnerKey = getMatchWinnerKey(match);
+  if (!winnerKey) {
+    return null;
+  }
+  const homeWon = winnerKey === match.home_team.key;
+  return {
+    winner: homeWon ? match.home_team : match.away_team,
+    loser: homeWon ? match.away_team : match.home_team,
+  };
+};
+
+const getTournamentPlacements = matches => {
+  const placements = { champion: null, runnerUp: null, third: null };
+  if (!matches?.length) {
+    return placements;
+  }
+  const finalMatch = matches.find(match => isFinalStage(match?.stage));
+  const finalResult = resolveWinnerLoser(finalMatch);
+  if (finalResult) {
+    placements.champion = { team: finalResult.winner, match: finalMatch };
+    placements.runnerUp = { team: finalResult.loser, match: finalMatch };
+  }
+  const bronzeMatch = matches.find(match => isBronzeFinalStage(match?.stage));
+  const bronzeResult = resolveWinnerLoser(bronzeMatch);
+  if (bronzeResult) {
+    placements.third = { team: bronzeResult.winner, match: bronzeMatch };
+  }
+  return placements;
+};
+
+
+
+const getFinishedTournamentMatches = (rawMatches = {}) => {
+  const previous = rawMatches?.previous ?? [];
+  const current = rawMatches?.current ?? [];
+  return [
+    ...previous,
+    ...current.filter(match =>
+      FINISHED_STATUS_TYPES.has(match?.status_type?.toLowerCase())
+    ),
+  ];
+};
+
+;
+
+
+
+
+
+
+
+
+
+const CHAMPION_MASCOT = "chrome://newtab/content/data/content/assets/kit-champion.webm";
+const CHAMPION_MASCOT_POSTER = "chrome://newtab/content/data/content/assets/kit-champion.png";
+const DEFAULT_MASCOT = "chrome://newtab/content/data/content/assets/kit-default.webm";
+const DEFAULT_MASCOT_POSTER = "chrome://newtab/content/data/content/assets/kit-default.png";
+const SINGLE_PLACEMENT_LABELS = {
+  champion: {
+    large: "newtab-sports-widget-world-cup-champions",
+    medium: "newtab-sports-widget-world-cup-champions-short"
+  },
+  runnerUp: {
+    large: "newtab-sports-widget-runner-up",
+    medium: "newtab-sports-widget-runner-up"
+  },
+  third: {
+    large: "newtab-sports-widget-third-place",
+    medium: "newtab-sports-widget-third-place"
+  }
+};
+const PODIUM_LABELS = {
+  champion: "newtab-sports-widget-champions",
+  runnerUp: "newtab-sports-widget-runner-up",
+  third: "newtab-sports-widget-third-place"
+};
+const ResultTeam = ({
+  team,
+  teamName,
+  labelL10nId,
+  variant
+}) => external_React_default().createElement("div", {
+  className: `sports-result-team sports-result-team-${variant}`
+}, external_React_default().createElement("span", {
+  className: "sports-result-flag-wrapper"
+}, external_React_default().createElement("img", {
+  className: "sports-result-flag",
+  src: team.icon_url,
+  alt: teamName,
+  title: teamName
+})), external_React_default().createElement("span", {
+  className: "sports-result-text"
+}, external_React_default().createElement("span", {
+  className: "sports-result-name"
+}, teamName), external_React_default().createElement("span", {
+  className: "sports-result-placement",
+  "data-l10n-id": labelL10nId
+})));
+const displayName = (team, localizedNames) => localizedNames?.[team.key] ?? team.name;
+const SportsResultCard = ({
+  team,
+  type = "champion",
+  size = "large",
+  finalMatch = null,
+  finalMatchVariant = "upcoming",
+  tbdTeamName = "",
+  localizedNames = null
+}) => {
+  const labels = SINGLE_PLACEMENT_LABELS[type] ?? SINGLE_PLACEMENT_LABELS.champion;
+  return external_React_default().createElement("div", {
+    className: `sports-result-card sports-result-card-${type} sports-result-card-${size}`
+  }, external_React_default().createElement("div", {
+    className: "sports-result-surface"
+  }, external_React_default().createElement(ResultTeam, {
+    team: team,
+    teamName: displayName(team, localizedNames),
+    variant: type,
+    labelL10nId: labels[size] ?? labels.large
+  }), finalMatch ? external_React_default().createElement("div", {
+    className: "sports-result-final"
+  }, external_React_default().createElement("p", {
+    className: "sports-result-final-label",
+    "data-l10n-id": "newtab-sports-widget-final"
+  }), external_React_default().createElement(SportsMatchRow, {
+    match: finalMatch,
+    variant: finalMatchVariant,
+    size: size,
+    tbdTeamName: tbdTeamName
+  })) : null));
+};
+const SportsPodium = ({
+  placements,
+  localizedNames = null
+}) => external_React_default().createElement("div", {
+  className: "sports-podium"
+}, external_React_default().createElement("div", {
+  className: "sports-result-surface sports-podium-surface"
+}, external_React_default().createElement(ResultTeam, {
+  team: placements.champion.team,
+  teamName: displayName(placements.champion.team, localizedNames),
+  variant: "podium-champion",
+  labelL10nId: PODIUM_LABELS.champion
+}), external_React_default().createElement(ResultTeam, {
+  team: placements.runnerUp.team,
+  teamName: displayName(placements.runnerUp.team, localizedNames),
+  variant: "podium-runner-up",
+  labelL10nId: PODIUM_LABELS.runnerUp
+}), external_React_default().createElement(ResultTeam, {
+  team: placements.third.team,
+  teamName: displayName(placements.third.team, localizedNames),
+  variant: "podium-third",
+  labelL10nId: PODIUM_LABELS.third
+})));
+const SportsResultMascot = ({
+  animationId = 0,
+  view
+}) => {
+  const isChampion = view === "champion";
+  const src = isChampion ? CHAMPION_MASCOT : DEFAULT_MASCOT;
+  const poster = isChampion ? CHAMPION_MASCOT_POSTER : DEFAULT_MASCOT_POSTER;
+  
+  return external_React_default().createElement("video", {
+    key: animationId,
+    className: `sports-result-mascot sports-result-mascot-${view}`,
+    src: src,
+    poster: poster,
+    autoPlay: true,
+    loop: true,
+    muted: true,
+    playsInline: true,
+    preload: "auto",
+    "aria-hidden": "true",
+    tabIndex: -1
+  });
+};
 ;
 function SportsWidget_extends() { return SportsWidget_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsWidget_extends.apply(null, arguments); }
+
 
 
 
@@ -18313,6 +18526,7 @@ const MATCHES_TABS = {
   UPCOMING: "upcoming"
 };
 const SPORTS_CELEBRATION_ILLUSTRATION = "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg";
+const SPORTS_RESULT_CONFETTI_COLORS = ["var(--color-orange-30)", "var(--color-pink-30)", "var(--color-purple-30)", "var(--color-yellow-30)", "var(--color-green-30)", "var(--color-cyan-30)"];
 function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
   return Object.values(MATCHES_TABS)
   
@@ -18404,6 +18618,18 @@ function findCelebrationMatch(matches, celebrations, windowMs) {
     }
   }
   return best;
+}
+
+
+function shouldShowResultView({
+  celebrationsEnabled,
+  resultViewReady,
+  hasLiveGames,
+  isMatchesState,
+  isResultsTab,
+  showResultsList
+}) {
+  return celebrationsEnabled && resultViewReady && !hasLiveGames && isMatchesState && isResultsTab && !showResultsList;
 }
 
 
@@ -18583,6 +18809,12 @@ function SportsWidget_SportsWidget({
   } = sportsWidgetData;
   const celebrationWindowMs = prefs.trainhopConfig?.sportsCelebrations?.windowMs ?? prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
   const celebrationMatch = (0,external_React_namespaceObject.useMemo)(() => findCelebrationMatch([...(rawMatches?.previous ?? []), ...(rawMatches?.current ?? [])], celebrations, celebrationWindowMs), [rawMatches, celebrations, celebrationWindowMs]);
+  const placements = (0,external_React_namespaceObject.useMemo)(() => getTournamentPlacements(getFinishedTournamentMatches(rawMatches)), [rawMatches]);
+  const tournamentDecided = !!placements.champion;
+  const finalMatch = (0,external_React_namespaceObject.useMemo)(() => {
+    const all = [...(rawMatches?.next ?? []), ...(rawMatches?.current ?? []), ...(rawMatches?.previous ?? [])];
+    return all.find(match => isFinalStage(match?.stage)) ?? null;
+  }, [rawMatches]);
 
   
   
@@ -18697,6 +18929,13 @@ function SportsWidget_SportsWidget({
     triggerCelebration
   } = useWidgetCelebration(celebrationRef);
   const [celebrationColors, setCelebrationColors] = (0,external_React_namespaceObject.useState)(null);
+  const {
+    celebrationFrame: resultFrame,
+    celebrationId: resultCelebrationId,
+    completeCelebration: completeResultCelebration,
+    isCelebrating: isResultCelebrating,
+    triggerCelebration: triggerResultCelebration
+  } = useWidgetCelebration(celebrationRef);
   
   
   
@@ -18741,8 +18980,6 @@ function SportsWidget_SportsWidget({
   
   const [isWidgetVisible, setIsWidgetVisible] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
-    
-    
     if (!celebrationsEnabled || !liveEl) {
       return undefined;
     }
@@ -18758,6 +18995,10 @@ function SportsWidget_SportsWidget({
     }
     const match = celebrationMatch;
     if (!match || celebratedRef.current.has(match.global_event_id)) {
+      return;
+    }
+    
+    if (isFinalStage(match.stage) || isBronzeFinalStage(match.stage)) {
       return;
     }
     const id = match.global_event_id;
@@ -18796,6 +19037,42 @@ function SportsWidget_SportsWidget({
       celebrate("generic");
     }
   }, [celebrationsEnabled, isPageVisible, isWidgetVisible, widgetState, activeTab, showResultsList, celebrationMatch, selectedTeams, teamColorsByKey, celebrate, dispatch]);
+  const resultViewReady = tournamentDecided || !!placements.third;
+  let resultTriggerId = null;
+  if (tournamentDecided) {
+    const {
+      match,
+      team
+    } = placements.champion;
+    resultTriggerId = `final:${match.global_event_id}:${team.key}`;
+  } else if (placements.third) {
+    const {
+      match,
+      team
+    } = placements.third;
+    resultTriggerId = `third:${match.global_event_id}:${team.key}`;
+  }
+  const showResultView = shouldShowResultView({
+    celebrationsEnabled,
+    resultViewReady,
+    hasLiveGames,
+    isMatchesState: widgetState === WIDGET_STATES.MATCHES,
+    isResultsTab: activeTab === MATCHES_TABS.RESULTS,
+    showResultsList
+  });
+  
+  
+  
+  const prefersReducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  
+  const resultCelebratedRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!showResultView || !resultTriggerId || !isPageVisible || !isWidgetVisible || resultCelebratedRef.current === resultTriggerId) {
+      return;
+    }
+    resultCelebratedRef.current = resultTriggerId;
+    triggerResultCelebration();
+  }, [showResultView, resultTriggerId, isPageVisible, isWidgetVisible, triggerResultCelebration]);
 
   
   
@@ -19087,8 +19364,61 @@ function SportsWidget_SportsWidget({
       "--sports-celebration-border-gradient": celebrationBorderGradient
     })
   };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const pickResultView = () => {
+    if (!placements.champion) {
+      return placements.third ? "third" : null;
+    }
+    const followsRunnerUp = !!placements.runnerUp && selectedTeams.includes(placements.runnerUp.team.key);
+    if (followsRunnerUp && placements.third && displaySize === "large") {
+      return "podium";
+    }
+    return "champion";
+  };
+  const resultView = showResultView ? pickResultView() : null;
+  
+  
+  let resultHeroTeam = placements.champion?.team;
+  if (resultView === "third") {
+    resultHeroTeam = placements.third?.team;
+  } else if (resultView === "podium") {
+    resultHeroTeam = placements.runnerUp?.team;
+  }
+  const resultConfettiColors = resultHeroTeam && teamColorsByKey.get(resultHeroTeam.key) || SPORTS_RESULT_CONFETTI_COLORS;
+  let resultBody = null;
+  if (resultView === "podium") {
+    resultBody = external_React_default().createElement(SportsPodium, {
+      placements: placements,
+      localizedNames: localizedNames
+    });
+  } else if (resultView === "champion" && placements.champion) {
+    resultBody = external_React_default().createElement(SportsResultCard, {
+      team: placements.champion.team,
+      type: "champion",
+      size: displaySize,
+      localizedNames: localizedNames
+    });
+  } else if (resultView === "third" && placements.third) {
+    resultBody = external_React_default().createElement(SportsResultCard, {
+      team: placements.third.team,
+      type: "third",
+      size: displaySize,
+      finalMatch: displaySize === "large" ? finalMatch : null,
+      finalMatchVariant: "upcoming",
+      tbdTeamName: tbdTeamName,
+      localizedNames: localizedNames
+    });
+  }
   return external_React_default().createElement("article", SportsWidget_extends({
-    className: `sports widget col-4 ${displaySize}-widget ${widgetState}${followedGradient ? " is-followed-highlight" : ""}${isCelebrating ? " is-celebrating" : ""}${isFollowedCelebration ? " is-followed-celebration" : ""}`,
+    className: `sports widget col-4 ${displaySize}-widget ${widgetState}${followedGradient ? " is-followed-highlight" : ""}${isCelebrating ? " is-celebrating" : ""}${isFollowedCelebration ? " is-followed-celebration" : ""}${resultBody ? " is-result-view" : ""}`,
     style: widgetStyle,
     ref: el => {
       widgetRef.current = [el];
@@ -19113,6 +19443,18 @@ function SportsWidget_SportsWidget({
     confettiShape: "soccer",
     illustrationSrc: SPORTS_CELEBRATION_ILLUSTRATION,
     onComplete: completeCelebration
+  }) : null, isResultCelebrating && resultFrame ? external_React_default().createElement(WidgetCelebration, {
+    classNamePrefix: "sports-celebration",
+    celebrationFrame: resultFrame,
+    celebrationId: resultCelebrationId,
+    confettiColors: resultConfettiColors,
+    confettiShape: "soccer",
+    confettiCount: 84,
+    fireworkBursts: 10,
+    onComplete: completeResultCelebration
+  }) : null, resultBody && resultView && !prefersReducedMotion ? external_React_default().createElement(SportsResultMascot, {
+    view: resultView,
+    animationId: resultCelebrationId
   }) : null, widgetState === WIDGET_STATES.INTRO && external_React_default().createElement("video", {
     ref: introVideoRef,
     className: "sports-intro-video",
@@ -19143,7 +19485,7 @@ function SportsWidget_SportsWidget({
       visibility: tournamentStarted ? "hidden" : "visible"
     },
     "aria-hidden": tournamentStarted
-  }), widgetState === WIDGET_STATES.MATCHES && external_React_default().createElement("div", {
+  }), widgetState === WIDGET_STATES.MATCHES && !resultBody && external_React_default().createElement("div", {
     className: "sports-matches-tabs",
     role: "tablist"
   }, getVisibleMatchesTabs(hasLiveGames, hasPreviousResults).map(({
@@ -19230,7 +19572,7 @@ function SportsWidget_SportsWidget({
     initialSelectedTeams: selectedTeams,
     onSave: handleSaveSelection,
     localizedNames: localizedNames
-  }), widgetState === WIDGET_STATES.MATCHES && external_React_default().createElement(SportsMatchesView, {
+  }), widgetState === WIDGET_STATES.MATCHES && resultBody, widgetState === WIDGET_STATES.MATCHES && !resultBody && external_React_default().createElement(SportsMatchesView, {
     dispatch: dispatch,
     matchesTab: activeTab,
     hasLiveGames: hasLiveGames,
