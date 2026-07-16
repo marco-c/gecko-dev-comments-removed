@@ -1936,7 +1936,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
   }
 
   
-  if (aDocument->IsBeingUsedAsImage() || aDocument->IsLoadedAsData()) {
+  if (aDocument->IsResourceDoc() || aDocument->IsLoadedAsData()) {
     return;
   }
 
