@@ -6900,22 +6900,39 @@ public class GeckoSession {
     public @interface SourceType {}
 
     
-    public float scrollX;
+    public final float scrollX;
 
     
-    public float scrollY;
-
-    
-
-
-
-    public float zoom;
+    public final float scrollY;
 
     
 
 
 
-    public @SourceType int source;
+    public final float zoom;
+
+    
+
+
+
+    public final @SourceType int source;
+
+    
+
+
+
+
+
+
+
+
+    public ScrollPositionUpdate(
+        final float scrollX, final float scrollY, final float zoom, final @SourceType int source) {
+      this.scrollX = scrollX;
+      this.scrollY = scrollY;
+      this.zoom = zoom;
+      this.source = source;
+    }
   }
 
   
@@ -8038,11 +8055,7 @@ public class GeckoSession {
     mViewportTop = scrollY * zoom;
     mViewportZoom = zoom;
 
-    final ScrollPositionUpdate update = new ScrollPositionUpdate();
-    update.scrollX = scrollX;
-    update.scrollY = scrollY;
-    update.zoom = zoom;
-    update.source = source;
+    final ScrollPositionUpdate update = new ScrollPositionUpdate(scrollX, scrollY, zoom, source);
     mLastScrollPositionUpdate = update;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);
