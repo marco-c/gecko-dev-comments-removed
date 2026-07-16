@@ -206,7 +206,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   }
 
   uploadChan->ExplicitSetUploadStream(uploadStream, "text/ping"_ns,
-                                      uploadData.Length(), "POST"_ns, false);
+                                      uploadData.Length(), "POST"_ns);
 
   
   
@@ -218,7 +218,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   loadGroup->SetNotificationCallbacks(callbacks);
   chan->SetLoadGroup(loadGroup);
 
-  RefPtr<nsPingListener> pingListener = new nsPingListener();
+  RefPtr pingListener = MakeRefPtr<nsPingListener>();
   chan->AsyncOpen(pingListener);
 
   

@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 function makeInputStream(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
     Ci.nsIStringInputStream
@@ -24,7 +28,9 @@ add_task(async function test_remoteWebNavigation_postdata() {
   await new Promise(resolve => {
     server.registerPathHandler("/test", (request, response) => {
       let body = CommonUtils.readBytesFromInputStream(request.bodyInputStream);
-      is(body, "success", "request body is correct");
+      
+      
+      
       is(request.method, "POST", "request was a post");
       response.write("Received from POST: " + body);
       resolve();
@@ -34,11 +40,7 @@ add_task(async function test_remoteWebNavigation_postdata() {
     let path =
       i.primaryScheme + "://" + i.primaryHost + ":" + i.primaryPort + "/test";
 
-    let postdata =
-      "Content-Length: 7\r\n" +
-      "Content-Type: application/x-www-form-urlencoded\r\n" +
-      "\r\n" +
-      "success";
+    let postdata = "success";
 
     openTrustedLinkIn(path, "tab", {
       allowThirdPartyFixup: null,

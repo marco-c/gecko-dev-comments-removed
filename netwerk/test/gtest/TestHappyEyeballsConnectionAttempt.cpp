@@ -636,7 +636,7 @@ TEST(HappyEyeballsConnectionAttempt, ZeroRttWinnerUsesItsOwnStreamOffset)
     RefPtr<nsHttpTransaction> realTrans = new nsHttpTransaction();
     nsresult rv = realTrans->Init(
         NS_HTTP_USE_HAPPY_EYEBALLS, ci, &reqHead,  nullptr,
-         0,  false,
+         0,
          gSocketTransportService,  nullptr,
          nullptr,  0, HttpTrafficCategory::eInvalid,
          nullptr, ClassOfService(),  0,
