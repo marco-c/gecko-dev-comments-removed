@@ -2367,9 +2367,19 @@ class nsIFrame : public nsQueryFrame {
                                     int32_t* aContentOffset,
                                     mozilla::TableSelectionMode* aTarget);
 
+  enum class ForSelectionStart : bool {
+    No,
+    Yes,
+  };
   
   
-  bool ShouldHandleSelectionMovementEvents();
+  bool ShouldHandleSelectionMovementEvents(
+      ForSelectionStart aType = ForSelectionStart::No);
+
+  static mozilla::StyleUserSelect UsedUserSelect(const nsIFrame* aFrame,
+                                                 ForSelectionStart aType);
+  static Maybe<mozilla::StyleUserSelect> UsedUserSelectRecurse(
+      const nsIFrame* aFrame, ForSelectionStart aType);
 
  public:
   
@@ -2504,7 +2514,13 @@ class nsIFrame : public nsQueryFrame {
 
   void DisassociateImage(const mozilla::StyleImage&);
 
-  mozilla::StyleImageRendering UsedImageRendering() const;
+  const mozilla::ComputedStyle* UsedStyleForImages() const;
+  mozilla::StyleImageRendering UsedImageRendering() const {
+    return UsedStyleForImages()->StyleVisibility()->mImageRendering;
+  }
+  mozilla::StyleImageDecoding UsedImageDecoding() const {
+    return UsedStyleForImages()->StyleVisibility()->mImageDecoding;
+  }
   mozilla::StyleTouchAction UsedTouchAction() const;
 
   enum class AllowCustomCursorImage {
