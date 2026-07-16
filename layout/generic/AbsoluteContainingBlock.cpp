@@ -1858,12 +1858,15 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       } else {
         
         
-        kidPos = LogicalPoint(
-            outerWM, kidPrevInFlow->IStart(outerWM, cbBorderBoxSize), 0);
+        
+        kidPos =
+            *GetUnfragmentedPosition(aReflowInput, aKidFrame->FirstInFlow());
+        kidPos.B(outerWM) = 0;
       }
       const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
-      const LogicalRect kidRect(outerWM, kidPos, kidSize);
-      aKidFrame->SetRect(outerWM, kidRect, cbBorderBoxSize);
+      nsRect kidRect = LogicalRect(outerWM, kidPos, kidSize)
+                           .GetPhysicalRect(outerWM, cbBorderBoxSize);
+      aKidFrame->SetRect(kidRect);
     } else {
       
       const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
