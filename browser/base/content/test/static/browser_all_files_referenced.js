@@ -340,6 +340,12 @@ var allowlist = [
   
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
   { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
+
+  
+  
+  {
+    file: "resource://app/modules/asrouter/MessagingTargetingConstants.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
