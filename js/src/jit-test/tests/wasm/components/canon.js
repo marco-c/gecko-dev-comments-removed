@@ -606,6 +606,11 @@ wasmFailValidateText(`
 `, /invalid function index/);
 
 
+wasmFailValidateText(componentWithLower(
+  [`(type (func (param "a" u32) (result u32)))`], 0, ["i32", "i32"], ["i32"]),
+  /incompatible function type for import/);
+
+
 
 
 
