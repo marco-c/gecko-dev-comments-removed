@@ -1514,12 +1514,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  nsContainerFrame* ConstructFrameWithAnonymousChild(
+  nsContainerFrame* ConstructSVGFrameWithAnonymousChild(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
       nsContainerFrame* aParentFrame, nsFrameList& aFrameList,
       ContainerFrameCreationFunc aConstructor,
       ContainerFrameCreationFunc aInnerConstructor,
-      mozilla::PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
+      PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
 
   
 

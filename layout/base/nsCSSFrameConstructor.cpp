@@ -4546,7 +4546,7 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
   return &sMrowData;
 }
 
-nsContainerFrame* nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
+nsContainerFrame* nsCSSFrameConstructor::ConstructSVGFrameWithAnonymousChild(
     nsFrameConstructorState& aState, FrameConstructionItem& aItem,
     nsContainerFrame* aParentFrame, nsFrameList& aFrameList,
     ContainerFrameCreationFunc aConstructor,
@@ -4597,8 +4597,8 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
         aState, aItem.mChildItems, innerFrame,
         aItem.mFCData->mBits & FCDATA_IS_WRAPPER_ANON_BOX, childList);
   } else {
-    ProcessChildren(aState, content, computedStyle, innerFrame, true, childList,
-                    false);
+    ProcessChildren(aState, content, computedStyle, innerFrame,
+                     false, childList, false);
   }
 
   
@@ -4612,7 +4612,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructOuterSVG(
     nsFrameConstructorState& aState, FrameConstructionItem& aItem,
     nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
     nsFrameList& aFrameList) {
-  return ConstructFrameWithAnonymousChild(
+  return ConstructSVGFrameWithAnonymousChild(
       aState, aItem, aParentFrame, aFrameList, NS_NewSVGOuterSVGFrame,
       NS_NewSVGOuterSVGAnonChildFrame, PseudoStyleType::MozSvgOuterSvgAnonChild,
       true);
@@ -4622,7 +4622,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructMarker(
     nsFrameConstructorState& aState, FrameConstructionItem& aItem,
     nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
     nsFrameList& aFrameList) {
-  return ConstructFrameWithAnonymousChild(
+  return ConstructSVGFrameWithAnonymousChild(
       aState, aItem, aParentFrame, aFrameList, NS_NewSVGMarkerFrame,
       NS_NewSVGMarkerAnonChildFrame, PseudoStyleType::MozSvgMarkerAnonChild,
       false);
@@ -5014,10 +5014,9 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
     
     
     
-    
     if (aParentFrame && IsFrameForSVG(aParentFrame) &&
         !aParentFrame->IsSVGForeignObjectFrame() &&
-        aStyle.GetPseudoType() != PseudoStyleType::Backdrop) {
+        !aElement.IsRootOfNativeAnonymousSubtree()) {
       return nullptr;
     }
     if (aFlags.contains(ItemFlag::IsWithinSVGText)) {
