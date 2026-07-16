@@ -1156,6 +1156,15 @@ MOZ_NEVER_INLINE static void WlLogHandler_XdgSurfaceBufferMismatch(
 
 
 
+MOZ_NEVER_INLINE static void WlLogHandler_DisplayReadError(const char* error) {
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+                          GetDesktopEnvironmentIdentifier().get(), error,
+                          WaylandProxy::GetState());
+}
+
+
+
+
 
 static std::atomic<clock_t> sStillAttachedTime{0};
 static char sStillAttachedMessage[128];
@@ -1245,6 +1254,11 @@ static void WlLogHandler(const char* format, va_list args) {
   if (strstr(error, "xdg_surface") && strstr(error, "buffer") &&
       strstr(error, "fullscreen state")) {
     WlLogHandler_XdgSurfaceBufferMismatch(error);
+  }
+
+  
+  if (strstr(error, "Error reading events from display")) {
+    WlLogHandler_DisplayReadError(error);
   }
 
   
