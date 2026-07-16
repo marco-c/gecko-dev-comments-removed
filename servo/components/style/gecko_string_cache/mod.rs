@@ -255,7 +255,7 @@ impl WeakAtom {
 
     
     #[inline]
-    fn is_ascii_lowercase(&self) -> bool {
+    pub fn is_ascii_lowercase(&self) -> bool {
         self.0.mIsAsciiLowercase() != 0
     }
 
@@ -528,6 +528,6 @@ impl From<String> for Atom {
     }
 }
 
-malloc_size_of_is_0!(Atom);
+malloc_size_of::malloc_size_of_is_0!(Atom);
 
 impl SpecifiedValueInfo for Atom {}

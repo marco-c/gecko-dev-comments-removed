@@ -6,6 +6,7 @@
 
 #include "ActiveLayerTracker.h"
 #include "ScrollSnap.h"
+#include "ServoStyleSet.h"
 #include "StickyScrollContainer.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
@@ -3691,6 +3692,27 @@ void RestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
     
     
     restyleHint |= RestyleHint::RESTYLE_SELF | RestyleHint::RESTYLE_PSEUDOS;
+  }
+
+  
+  
+  
+  
+  
+  switch (StyleSet()->MightHaveAttributeDependencyInContainer(*aElement,
+                                                              aAttribute)) {
+    case StyleContainerAttributeDependencyKind::NamedContainer:
+      
+      
+      
+      
+      restyleHint |= RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER;
+      break;
+    case StyleContainerAttributeDependencyKind::UnnamedContainer:
+      restyleHint |= RestyleHint::RESTYLE_CHILD_IF_AFFECTED_BY_STYLE_QUERIES;
+      break;
+    case StyleContainerAttributeDependencyKind::None:
+      break;
   }
 
   if (nsIFrame* primaryFrame = aElement->GetPrimaryFrame()) {

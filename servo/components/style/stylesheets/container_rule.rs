@@ -7,7 +7,6 @@
 
 
 use crate::computed_value_flags::ComputedValueFlags;
-use crate::derives::*;
 use crate::dom::{AttributeTracker, TElement};
 use crate::logical_geometry::{LogicalSize, WritingMode};
 use crate::parser::ParserContext;
@@ -15,13 +14,17 @@ use crate::properties::ComputedValues;
 use crate::queries::feature::{AllowsRanges, Evaluator, FeatureFlags, QueryFeatureDescription};
 use crate::queries::values::Orientation;
 use crate::queries::{FeatureType, QueryCondition};
+use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
 use crate::shared_lock::{
     DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard,
 };
+use crate::stylesheets::bindings::nsAtom;
 use crate::stylesheets::{CssRules, CustomMediaEvaluator};
 use crate::stylist::Stylist;
 use crate::values::computed::{CSSPixelLength, ContainerType, Context, Ratio};
 use crate::values::specified::ContainerName;
+use crate::values::AtomIdent;
+use crate::{derives::*, LocalName};
 use app_units::Au;
 use cssparser::{Parser, SourceLocation};
 use euclid::default::Size2D;
@@ -85,6 +88,48 @@ impl ToCssWithGuard for ContainerRule {
 pub struct ContainerConditions(#[css(iterable)] pub ArcSlice<ContainerCondition>);
 
 
+
+pub type AttrReferenceSet = PrecomputedHashSet<LocalName>;
+
+
+
+
+#[derive(Debug, Clone, Copy, MallocSizeOf, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(C)]
+pub enum ContainerAttributeDependencyKind {
+    
+    None = 0,
+    
+    UnnamedContainer = 1,
+    
+    NamedContainer = 2,
+}
+
+impl ContainerAttributeDependencyKind {
+    
+    
+    
+    
+    pub fn element_container_dependency_kind<E: TElement>(
+        element: E,
+        local_name: *mut nsAtom,
+        stylist: &Stylist,
+    ) -> Self {
+        let mut name_kind = ContainerAttributeDependencyKind::None;
+        unsafe {
+            AtomIdent::with(local_name, |atom| {
+                stylist.any_applicable_rule_data(element, |data| {
+                    let value = data.might_have_attribute_dependency_in_container(atom);
+                    name_kind = std::cmp::max(name_kind, value);
+                    name_kind == ContainerAttributeDependencyKind::NamedContainer
+                });
+            })
+        }
+        name_kind
+    }
+}
+
+
 #[derive(Debug, ToShmem, ToCss)]
 pub struct ContainerCondition {
     #[css(skip_if = "ContainerName::is_none")]
@@ -92,6 +137,8 @@ pub struct ContainerCondition {
     condition: Option<QueryCondition>,
     #[css(skip)]
     flags: FeatureFlags,
+    #[css(skip)]
+    attributes_referenced: AttrReferenceSet,
 }
 
 
@@ -179,6 +226,10 @@ impl ContainerCondition {
         if condition.is_none() && name.is_none() {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
+        let mut attributes_referenced = AttrReferenceSet::default();
+        condition
+            .as_ref()
+            .map(|c| c.collect_attribute_references(&mut attributes_referenced));
         let flags = condition
             .as_ref()
             .map_or(FeatureFlags::empty(), |c| c.cumulative_flags());
@@ -186,6 +237,7 @@ impl ContainerCondition {
             name,
             condition,
             flags,
+            attributes_referenced,
         })
     }
 
@@ -341,6 +393,36 @@ impl ContainerCondition {
                 matches
             },
         )
+    }
+
+    
+    pub fn get_attributes_referenced(&self) -> &AttrReferenceSet {
+        &self.attributes_referenced
+    }
+
+    
+    
+    pub fn insert_attribute_references_in_dependency_map(
+        &self,
+        kind_map: &mut PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
+        attribute_dependencies: &mut AttrReferenceSet,
+    ) {
+        let name_kind = if self.name.is_none() {
+            ContainerAttributeDependencyKind::UnnamedContainer
+        } else {
+            ContainerAttributeDependencyKind::NamedContainer
+        };
+        for attr in self.get_attributes_referenced() {
+            kind_map
+                .entry(attr.clone())
+                .and_modify(|v| {
+                    if *v == ContainerAttributeDependencyKind::UnnamedContainer {
+                        *v = name_kind
+                    }
+                })
+                .or_insert(name_kind);
+            attribute_dependencies.insert(attr.clone());
+        }
     }
 }
 

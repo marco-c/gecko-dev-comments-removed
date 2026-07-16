@@ -18,6 +18,7 @@ use crate::properties_and_values::{
         SpecifiedValue as SpecifiedRegisteredValue,
     },
 };
+use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylesheets::UrlExtraData;
 use crate::stylist::Stylist;
 use crate::typed_om::{
@@ -1041,6 +1042,23 @@ impl VariableValue {
     
     pub fn has_references(&self) -> bool {
         self.references.has_references()
+    }
+
+    
+    pub fn collect_attribute_references(&self, references: &mut AttrReferenceSet) {
+        self.references.refs.iter().for_each(|r| {
+            if r.substitution_kind == SubstitutionFunctionKind::Attr {
+                
+                
+                
+                
+                
+                references.insert(LocalName::new(r.name.clone()));
+                if !r.name.is_ascii_lowercase() {
+                    references.insert(LocalName::new(r.name.to_ascii_lowercase()));
+                }
+            }
+        })
     }
 }
 

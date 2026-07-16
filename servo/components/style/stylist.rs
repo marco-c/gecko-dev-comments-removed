@@ -50,7 +50,7 @@ use crate::shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use crate::sharing::{RevalidationResult, ScopeRevalidationResult};
 use crate::stylesheet_set::{DataValidity, DocumentStylesheetSet, SheetRebuildKind};
 use crate::stylesheet_set::{DocumentStylesheetFlusher, SheetCollectionFlusher};
-use crate::stylesheets::container_rule::ContainerCondition;
+use crate::stylesheets::container_rule::{ContainerAttributeDependencyKind, ContainerCondition};
 use crate::stylesheets::import_rule::ImportLayer;
 use crate::stylesheets::keyframes_rule::KeyframesAnimation;
 use crate::stylesheets::layer_rule::{LayerName, LayerOrder};
@@ -3367,6 +3367,11 @@ pub struct CascadeData {
     container_conditions: SmallVec<[ContainerConditionReference; 1]>,
 
     
+    
+    
+    attr_function_dependencies: PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
+
+    
     scope_conditions: SmallVec<[ScopeConditionReference; 1]>,
 
     
@@ -3442,6 +3447,7 @@ impl CascadeData {
             layer_id: Default::default(),
             layers: smallvec::smallvec![CascadeLayer::root()],
             container_conditions: smallvec::smallvec![ContainerConditionReference::none()],
+            attr_function_dependencies: PrecomputedHashMap::default(),
             scope_conditions: smallvec::smallvec![ScopeConditionReference::none()],
             scope_subject_map: Default::default(),
             extra_data: ExtraStyleData::default(),
@@ -3558,6 +3564,22 @@ impl CascadeData {
     #[inline]
     pub fn might_have_attribute_dependency(&self, local_name: &LocalName) -> bool {
         self.attribute_dependencies.contains(local_name)
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn might_have_attribute_dependency_in_container(
+        &self,
+        local_name: &LocalName,
+    ) -> ContainerAttributeDependencyKind {
+        self.attr_function_dependencies
+            .get(local_name)
+            .copied()
+            .unwrap_or(ContainerAttributeDependencyKind::None)
     }
 
     
@@ -4328,6 +4350,15 @@ impl CascadeData {
                     };
                     self.container_conditions.push(condition);
                     containing_rule_state.container_condition_id = id;
+
+                    if rebuild_kind.should_rebuild_invalidation() {
+                        for condition in rule.conditions.0.iter() {
+                            condition.insert_attribute_references_in_dependency_map(
+                                &mut self.attr_function_dependencies,
+                                &mut self.attribute_dependencies,
+                            );
+                        }
+                    }
                 },
                 CssRule::StartingStyle(..) => {
                     containing_rule_state
@@ -4719,6 +4750,7 @@ impl CascadeData {
         self.relative_selector_invalidation_map.clear();
         self.additional_relative_selector_invalidation_map.clear();
         self.attribute_dependencies.clear();
+        self.attr_function_dependencies.clear();
         self.nth_of_attribute_dependencies.clear();
         self.nth_of_custom_state_dependencies.clear();
         self.nth_of_class_dependencies.clear();
