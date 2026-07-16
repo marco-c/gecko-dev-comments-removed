@@ -387,6 +387,25 @@ public class GeckoHlsPlayer
         suspendExoplayer();
       }
       
+      
+      
+      
+      if (!mIsDemuxerInitDone
+          && !isLiveStream()
+          && mPlayer != null
+          && mPlayer.getPlaybackState() == Player.STATE_BUFFERING) {
+        mIsPlayerInitDone = false;
+        if (!mReleasing) {
+          if (mResourceCallbacks != null) {
+            mResourceCallbacks.onError(ResourceError.UNSUPPORTED.code());
+          }
+          if (mDemuxerCallbacks != null) {
+            mDemuxerCallbacks.onError(DemuxerError.UNSUPPORTED.code());
+          }
+        }
+        return;
+      }
+      
       mComponentEventDispatcher.onDataArrived(C.TRACK_TYPE_DEFAULT);
     }
   }
