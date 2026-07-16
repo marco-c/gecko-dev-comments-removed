@@ -127,7 +127,12 @@ class IHistory : public nsISupports {
 
 
 
-    REDIRECT_SOURCE_UPGRADED = 1 << 6
+    REDIRECT_SOURCE_UPGRADED = 1 << 6,
+    
+
+
+
+    SOURCE_IS_POST_RESPONSE = 1 << 7
   };
 
   

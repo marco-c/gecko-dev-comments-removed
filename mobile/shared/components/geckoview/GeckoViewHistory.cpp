@@ -241,6 +241,12 @@ GeckoViewHistory::VisitURI(nsIWidget* aWidget, nsIURI* aURI,
     return NS_OK;
   }
 
+  
+  
+  if (aFlags & IHistory::SOURCE_IS_POST_RESPONSE) {
+    return NS_OK;
+  }
+
   if (XRE_IsContentProcess()) {
     
     
