@@ -4751,6 +4751,21 @@ bool IMEInputHandler::OnDestroyWidget(nsCocoaWindow* aDestroyingWidget) {
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (sFocusedIMEHandler == this) {
+    EnsureSecureEventInputDisabled();
+    
+    
+    
+    sFocusedIMEHandler = nullptr;
+  }
+
   if (IsIMEComposing()) {
     
     CancelIMEComposition();

@@ -3648,14 +3648,19 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (void)viewsWindowDidResignKey {
+  
+  
+  
+  
+  
+  TextInputHandler::EnsureSecureEventInputDisabled();
+
   if (!mGeckoChild) return;
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
   nsIWidgetListener* listener = mGeckoChild->GetWidgetListener();
   if (listener) listener->WindowDeactivated();
-
-  TextInputHandler::EnsureSecureEventInputDisabled();
 }
 
 
