@@ -5,13 +5,14 @@
 
 
 use crate::derives::*;
-use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
+use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
     GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin,
     GenericPerspective,
 };
+use crate::values::generics::GreaterThanOrEqualToOne;
 use crate::values::specified::box_ as specified;
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
@@ -45,20 +46,7 @@ impl ContainIntrinsicSize {
 }
 
 
-pub type LineClamp = GenericLineClamp<Integer>;
-
-impl Animate for LineClamp {
-    #[inline]
-    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        if self.is_none() != other.is_none() {
-            return Err(());
-        }
-        if self.is_none() {
-            return Ok(Self::none());
-        }
-        Ok(Self(self.0.animate(&other.0, procedure)?.max(1)))
-    }
-}
+pub type LineClamp = GenericLineClamp<GreaterThanOrEqualToOne<Integer>>;
 
 
 pub type Perspective = GenericPerspective<NonNegativeLength>;
