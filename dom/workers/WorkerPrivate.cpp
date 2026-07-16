@@ -314,7 +314,11 @@ class WorkerFinishedRunnable final : public WorkerControlRunnable {
     RuntimeService* runtime = RuntimeService::GetService();
     NS_ASSERTION(runtime, "This should never be null!");
 
-    mFinishedWorker->DisableDebugger();
+    
+    
+    if (!mFinishedWorker->UseRemoteDebugger()) {
+      mFinishedWorker->DisableDebugger();
+    }
 
     runtime->UnregisterWorker(*mFinishedWorker);
 
@@ -348,7 +352,11 @@ class TopLevelWorkerFinishedRunnable final : public Runnable {
     RuntimeService* runtime = RuntimeService::GetService();
     MOZ_ASSERT(runtime);
 
-    mFinishedWorker->DisableDebugger();
+    
+    
+    if (!mFinishedWorker->UseRemoteDebugger()) {
+      mFinishedWorker->DisableDebugger();
+    }
 
     runtime->UnregisterWorker(*mFinishedWorker);
 
@@ -1757,13 +1765,18 @@ void WorkerPrivate::BindRemoteWorkerDebuggerChild() {
   AssertIsOnWorkerThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(!mRemoteDebugger);
 
-  if (XRE_IsParentProcess()) {
+  if (!UseRemoteDebugger()) {
     return;
   }
 
   RefPtr<RemoteWorkerDebuggerChild> debugger =
       MakeRefPtr<RemoteWorkerDebuggerChild>(this);
-  mDebuggerChildEp.Bind(debugger);
+  
+  
+  
+  
+  
+  mDebuggerChildEp.Bind(debugger, mWorkerDebuggerEventTarget);
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT_DEBUG_OR_FUZZING(!mRemoteDebugger);
@@ -1775,7 +1788,7 @@ void WorkerPrivate::BindRemoteWorkerDebuggerChild() {
 void WorkerPrivate::CreateRemoteDebuggerEndpoints() {
   AssertIsOnParentThread();
 
-  if (XRE_IsParentProcess()) {
+  if (!UseRemoteDebugger()) {
     return;
   }
 
@@ -1790,10 +1803,6 @@ void WorkerPrivate::CreateRemoteDebuggerEndpoints() {
 
 void WorkerPrivate::SetIsRemoteDebuggerRegistered(const bool& aRegistered) {
   AssertIsOnWorkerThread();
-
-  if (XRE_IsParentProcess()) {
-    return;
-  }
 
   if (aRegistered) {
     MutexAutoLock lock(mMutex);
@@ -1846,10 +1855,6 @@ void WorkerPrivate::SetIsRemoteDebuggerReady(const bool& aReady) {
   AssertIsOnWorkerThread();
   MutexAutoLock lock(mMutex);
 
-  if (XRE_IsParentProcess()) {
-    return;
-  }
-
   if (mRemoteDebuggerReady == aReady) {
     return;
   }
@@ -1894,9 +1899,7 @@ bool WorkerPrivate::IsQueued() const {
 void WorkerPrivate::EnableRemoteDebugger() {
   AssertIsOnParentThread();
 
-  
-  
-  if (XRE_IsParentProcess()) {
+  if (!UseRemoteDebugger()) {
     return;
   }
 
@@ -1918,8 +1921,36 @@ void WorkerPrivate::EnableRemoteDebugger() {
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  nsString scriptURL(mScriptURL);
+  nsCOMPtr<nsIURI> baseURI;
+  if (NS_IsMainThread()) {
+    baseURI = GetBaseURI();
+  } else if (WorkerPrivate* parent = GetParent()) {
+    baseURI = parent->GetResolvedScriptURI();
+  }
+  if (baseURI) {
+    nsCOMPtr<nsIURI> scriptURI;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(scriptURI),
+                               NS_ConvertUTF16toUTF8(mScriptURL), nullptr,
+                               baseURI))) {
+      nsAutoCString spec;
+      if (NS_SUCCEEDED(scriptURI->GetSpec(spec))) {
+        CopyUTF8toUTF16(spec, scriptURL);
+      }
+    }
+  }
+
+  
   RemoteWorkerDebuggerInfo info(
-      mIsChromeWorker, mWorkerKind, mScriptURL, WindowID(),
+      mIsChromeWorker, mWorkerKind, scriptURL, WindowID(),
       WrapNotNull(GetPrincipal()), IsServiceWorker() ? ServiceWorkerID() : 0,
       Id(), mWorkerName,
       GetParent() ? nsAutoString(GetParent()->Id()) : EmptyString());
@@ -1942,7 +1973,7 @@ void WorkerPrivate::EnableRemoteDebugger() {
 void WorkerPrivate::DisableRemoteDebugger() {
   AssertIsOnParentThread();
 
-  if (XRE_IsParentProcess()) {
+  if (!UseRemoteDebugger()) {
     return;
   }
 
@@ -1961,7 +1992,7 @@ void WorkerPrivate::DisableRemoteDebuggerOnWorkerThread(
     const bool& aForShutdown) {
   AssertIsOnWorkerThread();
 
-  if (XRE_IsParentProcess()) {
+  if (!UseRemoteDebugger()) {
     return;
   }
   RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
@@ -2038,8 +2069,16 @@ nsresult WorkerPrivate::DispatchDebuggerRunnable(
 
   MOZ_ASSERT(runnable);
 
+  
+  
+  
+  
+  nsCOMPtr<nsITimer> oldTimer;
   MutexAutoLock lock(mMutex);
   if (!mDebuggerInterruptTimer) {
+    
+    
+    
     
     
     
@@ -2064,6 +2103,7 @@ nsresult WorkerPrivate::DispatchDebuggerRunnable(
 
     
     mDebuggerInterruptTimer.swap(timer);
+    oldTimer.swap(timer);
   }
 
   if (mStatus == Dead) {
@@ -2218,9 +2258,11 @@ bool WorkerPrivate::Freeze(const nsPIDOMWindowInner* aWindow) {
     return true;
   }
 
-  
+  DisableRemoteDebugger();
 
-  DisableDebugger();
+  if (!UseRemoteDebugger()) {
+    DisableDebugger();
+  }
 
   RefPtr<FreezeRunnable> runnable = new FreezeRunnable(this);
   return runnable->Dispatch(this);
@@ -2263,12 +2305,14 @@ bool WorkerPrivate::Thaw(const nsPIDOMWindowInner* aWindow) {
   }
 
   
-  
+  CreateRemoteDebuggerEndpoints();
   RefPtr<ThawRunnable> runnable = new ThawRunnable(this);
   bool rv = runnable->Dispatch(this);
-  
+  EnableRemoteDebugger();
 
-  EnableDebugger();
+  if (!UseRemoteDebugger()) {
+    EnableDebugger();
+  }
 
   return rv;
 }
@@ -2850,6 +2894,24 @@ WorkerPrivate::WorkerPrivate(
       mRemoteDebuggerRegistered(false),
       mRemoteDebuggerReady(true),
       mIsQueued(false),
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mUseRemoteDebugger(
+          StaticPrefs::dom_worker_remoteDebugger_enabled() &&
+          (!XRE_IsParentProcess() || RemoteWorkerService::IsInitialized())),
       mDebuggerBindingCondVar(mMutex,
                               "WorkerPrivate RemoteDebuggerBindingCondVar"),
       mWorkerDebuggerEventTarget(new WorkerEventTarget(
@@ -3206,7 +3268,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
 
   
   
-  
+  worker->CreateRemoteDebuggerEndpoints();
 
   if (!runtimeService->RegisterWorker(*worker)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -3221,12 +3283,14 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
 
   
   
-
-
-
-
-
-  worker->EnableDebugger();
+  
+  if (worker->UseRemoteDebugger()) {
+    if (!worker->mIsQueued) {
+      worker->EnableRemoteDebugger();
+    }
+  } else {
+    worker->EnableDebugger();
+  }
 
   MOZ_DIAGNOSTIC_ASSERT(worker->PrincipalIsValid());
 
@@ -4020,7 +4084,7 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
         
         PromiseDebugging::FlushUncaughtRejections();
 
-        
+        DisableRemoteDebuggerOnWorkerThread(true );
 
         ShutdownGCTimers();
 
@@ -4922,7 +4986,7 @@ bool WorkerPrivate::ThawInternal() {
   auto data = mWorkerThreadAccessible.Access();
   NS_ASSERTION(data->mFrozen, "Not yet frozen!");
 
-  
+  BindRemoteWorkerDebuggerChild();
 
   data->mFrozen = false;
 
@@ -5168,6 +5232,25 @@ nsresult WorkerPrivate::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mShutdownTasks.RemoveTask(aTask);
 }
 
+nsresult WorkerPrivate::RegisterDebuggerShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MutexAutoLock lock(mMutex);
+  if (mShutdownTasksRun) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mDebuggerShutdownTasks.AddTask(aTask);
+}
+
+nsresult WorkerPrivate::UnregisterDebuggerShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MutexAutoLock lock(mMutex);
+  return mDebuggerShutdownTasks.RemoveTask(aTask);
+}
+
 void WorkerPrivate::JSAsyncTaskStarted(JS::Dispatchable* aDispatchable) {
   RefPtr<StrongWorkerRef> ref = StrongWorkerRef::Create(this, "JSAsyncTask");
   MOZ_ASSERT_DEBUG_OR_FUZZING(ref);
@@ -5183,14 +5266,22 @@ void WorkerPrivate::JSAsyncTaskFinished(JS::Dispatchable* aDispatchable) {
 
 void WorkerPrivate::RunShutdownTasks() {
   TargetShutdownTaskSet::TasksArray shutdownTasks;
+  TargetShutdownTaskSet::TasksArray debuggerShutdownTasks;
 
   {
     MutexAutoLock lock(mMutex);
     mShutdownTasksRun = true;
     shutdownTasks = mShutdownTasks.Extract();
+    debuggerShutdownTasks = mDebuggerShutdownTasks.Extract();
   }
 
   for (const auto& task : shutdownTasks) {
+    task->TargetShutdown();
+  }
+  
+  
+  
+  for (const auto& task : debuggerShutdownTasks) {
     task->TargetShutdown();
   }
   mWorkerHybridEventTarget->ForgetWorkerPrivate(this);
@@ -5804,7 +5895,15 @@ void WorkerPrivate::LeaveDebuggerEventLoop() {
 void WorkerPrivate::PostMessageToDebugger(const nsAString& aMessage) {
   AssertIsOnWorkerThread();
 
-  mDebugger->PostMessageToDebugger(aMessage);
+  
+  
+  
+  
+  
+  if (mDebugger) {
+    mDebugger->PostMessageToDebugger(aMessage);
+    return;
+  }
   RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
   {
     MutexAutoLock lock(mMutex);
@@ -5832,7 +5931,13 @@ void WorkerPrivate::ReportErrorToDebugger(const nsACString& aFilename,
                                           uint32_t aLineno,
                                           const nsAString& aMessage) {
   AssertIsOnWorkerThread();
-  mDebugger->ReportErrorToDebugger(aFilename, aLineno, aMessage);
+  
+  
+  
+  if (mDebugger) {
+    mDebugger->ReportErrorToDebugger(aFilename, aLineno, aMessage);
+    return;
+  }
   RefPtr<RemoteWorkerDebuggerChild> remoteDebugger;
   {
     MutexAutoLock lock(mMutex);

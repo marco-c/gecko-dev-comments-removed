@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_RemoteWorkerService_h
 #define mozilla_dom_RemoteWorkerService_h
 
@@ -84,6 +82,15 @@ class RemoteWorkerService final : public nsIObserver {
   static void RegisterRemoteDebugger(
       RemoteWorkerDebuggerInfo aDebuggerInfo,
       mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> aDebuggerParentEp);
+
+  
+  
+  
+  
+  
+  
+  
+  static bool IsInitialized();
 
   
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WorkerEventTarget.h"
 
 #include "WorkerPrivate.h"
@@ -237,6 +235,13 @@ WorkerEventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  
+  
+  
+  if (mBehavior == Behavior::DebuggerOnly) {
+    return mWorkerPrivate->RegisterDebuggerShutdownTask(aTask);
+  }
+
   return mWorkerPrivate->RegisterShutdownTask(aTask);
 }
 
@@ -248,6 +253,10 @@ WorkerEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
 
   if (!mWorkerPrivate) {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  if (mBehavior == Behavior::DebuggerOnly) {
+    return mWorkerPrivate->UnregisterDebuggerShutdownTask(aTask);
   }
 
   return mWorkerPrivate->UnregisterShutdownTask(aTask);

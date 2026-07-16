@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "RemoteWorkerService.h"
 
 #include "RemoteWorkerController.h"
@@ -181,6 +179,12 @@ nsIThread* RemoteWorkerService::Thread() {
   MOZ_ASSERT(sRemoteWorkerService);
   MOZ_ASSERT(sRemoteWorkerService->mThread);
   return sRemoteWorkerService->mThread;
+}
+
+
+bool RemoteWorkerService::IsInitialized() {
+  StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
+  return sRemoteWorkerService && sRemoteWorkerService->mThread;
 }
 
 

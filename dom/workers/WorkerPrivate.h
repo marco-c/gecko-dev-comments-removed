@@ -1090,6 +1090,13 @@ class WorkerPrivate final
 
   void DisableRemoteDebuggerOnWorkerThread(const bool& aForShutdown = false);
 
+  
+  
+  
+  
+  
+  bool UseRemoteDebugger() const { return mUseRemoteDebugger; }
+
   void SetIsQueued(const bool& aQueued);
 
   bool IsQueued() const;
@@ -1387,6 +1394,16 @@ class WorkerPrivate final
 
   
   
+  
+  
+  
+  
+  nsresult RegisterDebuggerShutdownTask(nsITargetShutdownTask* aTask);
+
+  nsresult UnregisterDebuggerShutdownTask(nsITargetShutdownTask* aTask);
+
+  
+  
   nsresult DispatchLockHeld(already_AddRefed<WorkerRunnable> aRunnable,
                             nsIEventTarget* aSyncLoopTarget,
                             const MutexAutoLock& aProofOfLock)
@@ -1556,6 +1573,8 @@ class WorkerPrivate final
   bool mRemoteDebuggerRegistered MOZ_GUARDED_BY(mMutex);
   bool mRemoteDebuggerReady MOZ_GUARDED_BY(mMutex);
   bool mIsQueued;  
+  
+  const bool mUseRemoteDebugger;
   mozilla::CondVar mDebuggerBindingCondVar MOZ_GUARDED_BY(mMutex);
   RefPtr<WorkerEventTarget> mWorkerDebuggerEventTarget;
 
@@ -1754,6 +1773,10 @@ class WorkerPrivate final
   HashMap<JS::Dispatchable*, RefPtr<StrongWorkerRef>> mPendingJSAsyncTasks;
 
   TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
+  
+  
+  
+  TargetShutdownTaskSet mDebuggerShutdownTasks MOZ_GUARDED_BY(mMutex);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
 
   bool mCCFlagSaysEligible MOZ_GUARDED_BY(mMutex){true};

@@ -2304,7 +2304,7 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      
+      mWorkerPrivate->BindRemoteWorkerDebuggerChild();
 
       runLoopRan = true;
 
