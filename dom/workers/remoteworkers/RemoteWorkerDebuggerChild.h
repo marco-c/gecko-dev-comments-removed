@@ -6,6 +6,8 @@
 #define mozilla_dom_RemoteWorkerDebuggerChild_h
 
 #include "mozilla/dom/PRemoteWorkerDebuggerChild.h"
+#include "mozilla/Maybe.h"
+#include "nsTArray.h"
 
 using mozilla::ipc::IPCResult;
 
@@ -32,7 +34,22 @@ class RemoteWorkerDebuggerChild final : public PRemoteWorkerDebuggerChild {
  private:
   ~RemoteWorkerDebuggerChild();
 
+  void DispatchInitialize(const nsString& aURL);
+  void DispatchMessageEvent(const nsString& aMessage);
+
   bool mIsInitialized{false};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mRegisterDone{false};
+  mozilla::Maybe<nsString> mPendingInitialize;
+  nsTArray<nsString> mPendingMessages;
 };
 
 }  
