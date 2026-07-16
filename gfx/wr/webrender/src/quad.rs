@@ -750,8 +750,17 @@ fn prepare_quad_impl(
 
     if let Some(t) = transform.as_2d_scale_offset() {
         let clipped_local_rect = local_rect.intersection_unchecked(&local_clip_rect);
+        let prim_surface_rect = t.map_rect(&clipped_local_rect);
+        
+        let prim_surface_rect = round_edges.select(
+            
+            prim_surface_rect.round(),
+            
+            
+            prim_surface_rect.round_out()
+        );
         clipped_surface_rect = clipped_surface_rect.intersection_unchecked(
-            &t.map_rect(&clipped_local_rect).round_out(),
+            &prim_surface_rect,
         );
     }
 
