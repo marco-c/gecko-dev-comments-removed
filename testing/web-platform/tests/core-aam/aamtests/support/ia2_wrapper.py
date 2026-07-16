@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 import ctypes
 from ctypes import POINTER, byref
-from ctypes.wintypes import BOOL, HWND, LPARAM
+from ctypes.wintypes import BOOL, DWORD, HWND, LPARAM
 
 
 
@@ -48,8 +48,19 @@ def name_from_hwnd(hwnd: HWND) -> str:
     return buffer.value
 
 
-def get_browser_hwnd(product_name: str) -> HWND:
+def get_browser_hwnd(product_name: str, pid: int) -> HWND:
     found: List[HWND] = []
+
+    @ctypes.WINFUNCTYPE(BOOL, HWND, LPARAM)  
+    def check_pid(hwnd: HWND, lParam: LPARAM) -> bool:  
+        window_pid = DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(window_pid))
+        if window_pid.value != pid:
+            
+            return True
+        found.append(hwnd)
+        
+        return False
 
     @ctypes.WINFUNCTYPE(BOOL, HWND, LPARAM)  
     def check_window_name(hwnd: HWND, lParam: LPARAM) -> bool:  
@@ -61,7 +72,11 @@ def get_browser_hwnd(product_name: str) -> HWND:
         
         return False
 
-    user32.EnumWindows(check_window_name, LPARAM(0))
+    if pid:
+        user32.EnumWindows(check_pid, LPARAM(0))
+    else:
+        user32.EnumWindows(check_window_name, LPARAM(0))
+
     if not found:
         raise LookupError(f"Couldn't find {product_name} HWND")
     return found[0]
@@ -118,7 +133,7 @@ class Ia2Wrapper(ApiWrapper[IAccessible2Ptr]):
 
         :return: IAccessible2Ptr.
         """
-        hwnd = get_browser_hwnd(self.product_name)
+        hwnd = get_browser_hwnd(self.product_name, self.pid)
         root = accessible_object_from_window(hwnd)
         return to_ia2(root)
 
