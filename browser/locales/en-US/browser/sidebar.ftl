@@ -77,6 +77,8 @@ sidebar-settings2 =
   .label = Settings
 sidebar-hide-tabs-and-sidebar =
   .label = Hide tabs and sidebar
+sidebar-open-tools-from-sidebar =
+  .label = Open tools from sidebar
 sidebar-show-on-the-right =
   .label = Move sidebar to the right
 sidebar-show-on-the-left =
@@ -223,6 +225,7 @@ sidebar-bookmarks-folder-mobile = Mobile Bookmarks
 
 ## Titles for sidebar menu panels.
 
+sidebar-bookmarks-title = Bookmarks
 sidebar-customize-title = Customize sidebar
 sidebar-history-title = History
 sidebar-syncedtabs-title = Tabs from other devices

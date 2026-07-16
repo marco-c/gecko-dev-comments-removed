@@ -255,7 +255,7 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             return Services.prefs.getStringPref("sidebar.visibility", null);
         """
         )
-        self.assertEqual(pref_value, "hide-sidebar")
+        self.assertEqual(pref_value, "hide-on-close")
 
     def test_hide_drag_to_pin_promo_if_horizontal_tabs_pinned(self):
         
