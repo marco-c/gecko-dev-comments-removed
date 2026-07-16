@@ -2660,13 +2660,8 @@ pref("browser.protections_panel.infoMessage.seen", false);
 
 pref("privacy.usercontext.about_newtab_segregation.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-  pref("privacy.userContext.enabled", true);
-  pref("privacy.userContext.ui.enabled", true);
-#else
-  pref("privacy.userContext.enabled", false);
-  pref("privacy.userContext.ui.enabled", false);
-#endif
+pref("privacy.userContext.enabled", true);
+pref("privacy.userContext.ui.enabled", true);
 pref("privacy.userContext.extension", "");
 
 
