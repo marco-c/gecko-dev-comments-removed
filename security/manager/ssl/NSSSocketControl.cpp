@@ -41,8 +41,6 @@ NSSSocketControl::NSSSocketControl(
       mIsFullHandshake(false),
       mNotedTimeUntilReady(false),
       mEchExtensionStatus(EchExtensionStatus::kNotPresent),
-      mSentMlkemShare(false),
-      mHasTls13HandshakeSecrets(false),
       mIsShortWritePending(false),
       mShortWritePendingByte(0),
       mShortWriteOriginalAmount(-1),
@@ -120,18 +118,6 @@ void NSSSocketControl::NoteTimeUntilReady() {
 void NSSSocketControl::SetHandshakeCompleted() {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   if (!mHandshakeCompleted) {
-    enum HandshakeType {
-      Resumption = 1,
-      FalseStarted = 2,
-      ChoseNotToFalseStart = 3,
-      NotAllowedToFalseStart = 4,
-    };
-
-    HandshakeType handshakeType = !IsFullHandshake() ? Resumption
-                                  : mFalseStarted    ? FalseStarted
-                                  : mFalseStartCallbackCalled
-                                      ? ChoseNotToFalseStart
-                                      : NotAllowedToFalseStart;
     
     if (mKeaGroupName.isSome()) {
       glean::ssl::time_until_handshake_finished_keyed_by_ka.Get(*mKeaGroupName)
@@ -141,10 +127,17 @@ void NSSSocketControl::SetHandshakeCompleted() {
     
     
     glean::ssl::resumed_session
-        .EnumGet(static_cast<glean::ssl::ResumedSessionLabel>(handshakeType ==
-                                                              Resumption))
+        .EnumGet(
+            static_cast<glean::ssl::ResumedSessionLabel>(!IsFullHandshake()))
         .Add();
-    glean::ssl_handshake::completed.AccumulateSingleSample(handshakeType);
+
+    using glean::tls_handshake::CompletedLabel;
+    CompletedLabel handshakeType =
+        !IsFullHandshake()          ? CompletedLabel::eResumed
+        : mFalseStarted             ? CompletedLabel::eFalseStarted
+        : mFalseStartCallbackCalled ? CompletedLabel::eFalseStartNotChosen
+                                    : CompletedLabel::eFalseStartNotAllowed;
+    glean::tls_handshake::completed.EnumGet(handshakeType).Add();
   }
 
   
