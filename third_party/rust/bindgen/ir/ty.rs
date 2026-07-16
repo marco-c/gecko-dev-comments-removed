@@ -1068,6 +1068,39 @@ impl Type {
                 }
                 CXType_Typedef => {
                     let inner = cursor.typedef_type().expect("Not valid Type?");
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let same_underlying_decl = matches!(
+                        (cursor.usr(), inner.declaration().usr()),
+                        (Some(outer), Some(inner)) if outer == inner
+                    );
+                    if same_underlying_decl {
+                        return Self::from_clang_ty(
+                            potential_id,
+                            &inner,
+                            location,
+                            parent_id,
+                            ctx,
+                        );
+                    }
+
                     let inner_id =
                         Item::from_ty_or_ref(inner, location, None, ctx);
                     if inner_id == potential_id {
