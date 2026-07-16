@@ -413,12 +413,15 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
   MOZ_ASSERT(map->isMarkedAny());
   do {
     for (uint32_t i = 0; i < PropMap::Capacity; i++) {
-      if (map->hasKey(i)) {
-        markAndTraverseEdge(map, map->getKey(i));
+      PropertyKey key = map->keys_[i].getForTracing();
+      if (!key.isVoid()) {
+        markAndTraverseEdge(map, key);
       }
     }
 
-    if (map->canHaveTable()) {
+    uint32_t flags = map->getFlagsForTracing();
+
+    if (flags & PropMap::CanHaveTableFlag) {
       
       
       
@@ -426,15 +429,17 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
                     map->asLinked()->canSkipMarkingTable());
     }
 
-    if (map->isDictionary()) {
-      map = map->asDictionary()->previous();
+    if (flags & PropMap::IsDictionaryFlag) {
+      map = map->asDictionary()->linkedData_.previous.getForTracing();
     } else {
       
       
       
       
       
-      map = map->asShared()->treeDataRef().parent.maybeMap();
+
+      SharedPropMap::TreeData& treeData = map->asShared()->treeDataRef();
+      map = treeData.parent.maybeMapForTracing();
     }
   } while (map && mark(map));
 }
