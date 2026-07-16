@@ -122,10 +122,23 @@ add_task(async function toolbar_icon_status() {
   
   
   
-  let onImage = getComputedStyle(button).listStyleImage;
-  Assert.ok(
-    onImage.includes("ipprotection-states.svg#on"),
-    `On state should reference the sprite fragment, got: ${onImage}`
+  
+  let onLayer = button.querySelector(
+    ".ipprotection-icon-layer[data-state='on']"
+  );
+  let baseIcon = button.querySelector(
+    ".ipprotection-icon-stack > .toolbarbutton-icon"
+  );
+  Assert.ok(onLayer, "On-state overlay layer should exist");
+  Assert.equal(
+    getComputedStyle(onLayer).opacity,
+    "1",
+    "On layer should be revealed when connected"
+  );
+  Assert.equal(
+    getComputedStyle(baseIcon).opacity,
+    "0",
+    "Base (off) icon should be hidden when connected"
   );
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
@@ -141,10 +154,15 @@ add_task(async function toolbar_icon_status() {
     !button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show disconnected status"
   );
-  let offImage = getComputedStyle(button).listStyleImage;
-  Assert.ok(
-    offImage.includes("ipprotection-states.svg#off"),
-    `Off state should reference the sprite fragment, got: ${offImage}`
+  Assert.equal(
+    getComputedStyle(onLayer).opacity,
+    "0",
+    "On layer should be hidden when disconnected"
+  );
+  Assert.equal(
+    getComputedStyle(baseIcon).opacity,
+    "1",
+    "Base (off) icon should be shown when disconnected"
   );
 
   cleanupService();
