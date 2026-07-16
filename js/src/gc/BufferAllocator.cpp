@@ -1480,6 +1480,10 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
     
     
     
+    majorSweepingStartedWhileMinorSweeping = true;
+    
+    
+    
     majorFinishedWhileMinorSweeping = true;
   }
 
