@@ -292,7 +292,7 @@ impl NumericType {
             
             
             
-            (Optional::Some(h1), Optional::Some(h2)) if h1 as u8 != h2 as u8 => {
+            (Optional::Some(h1), Optional::Some(h2)) if h1 != h2 => {
                 
                 return Err(());
             },
@@ -384,16 +384,104 @@ impl NumericType {
 
     
     
-    pub fn add_types<'a, I>(mut types: I) -> Result<Self, ()>
+    
+    
+    fn multiply_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+        
+        
+        
+        let mut type1 = type1.clone();
+        let mut type2 = type2.clone();
+        
+        
+        
+        
+        
+
+        match (type1.percent_hint, type2.percent_hint) {
+            
+            
+            
+            (Optional::Some(h1), Optional::Some(h2)) if h1 != h2 => {
+                
+                return Err(());
+            },
+            
+            
+            (Optional::Some(hint), Optional::None) => {
+                
+                type2.apply_percent_hint(hint)
+            },
+            
+            
+            (Optional::None, Optional::Some(hint)) => type1.apply_percent_hint(hint),
+            _ => {},
+        }
+
+        
+        
+        
+        
+        
+        for &base_type in ALL_NUMERIC_BASE_TYPES.iter() {
+            let power = type2.exponent(base_type);
+
+            
+            
+            
+            if power == 0 {
+                continue;
+            }
+
+            
+            
+            
+            
+            
+            
+            type1.add_exponent(base_type, power);
+        }
+        
+        
+        
+        
+
+        
+        
+        Ok(type1)
+    }
+
+    fn combine_types<'a, I>(
+        mut types: I,
+        combine: fn(&NumericType, &NumericType) -> Result<NumericType, ()>,
+    ) -> Result<Self, ()>
     where
         I: Iterator<Item = &'a NumericType>,
     {
         let mut result = types.next().ok_or(())?.clone();
 
         for next in types {
-            result = NumericType::add_two_types(&result, next)?;
+            result = combine(&result, next)?;
         }
 
         Ok(result)
+    }
+
+    
+    
+    pub fn add_types<'a, I>(types: I) -> Result<Self, ()>
+    where
+        I: Iterator<Item = &'a NumericType>,
+    {
+        Self::combine_types(types, Self::add_two_types)
+    }
+
+    
+    
+    pub fn multiply_types<'a, I>(types: I) -> Result<Self, ()>
+    where
+        I: Iterator<Item = &'a NumericType>,
+    {
+        Self::combine_types(types, Self::multiply_two_types)
     }
 }
