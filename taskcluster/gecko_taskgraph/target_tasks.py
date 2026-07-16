@@ -1021,6 +1021,14 @@ def make_desktop_nightly_filter(platforms):
             
             task.attributes.get("shipping_product") in {None, "firefox", "thunderbird"},
             task.kind not in {"l10n"},  
+            task.kind
+            not in {
+                "browsertime",
+                "mochitest",
+                "reftest",
+                "test",
+                "web-platform-tests",
+            },  
         ])
 
     return filter
