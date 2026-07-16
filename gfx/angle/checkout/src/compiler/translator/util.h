@@ -24,22 +24,12 @@ bool atoi_clamp(const char *str, unsigned int *value);
 namespace sh
 {
 
-
-
-
-enum class ImplicitTypeConversion
-{
-    Same,
-    Left,
-    Right,
-    Invalid,
-};
-
 class TIntermBlock;
+class TIntermDeclaration;
 class TSymbolTable;
 class TIntermTyped;
 
-float NumericLexFloat32OutOfRangeToInfinity(const std::string &str);
+float NumericLexFloat32OutOfRangeToInfinity(const std::string &str, bool preserveDenorms);
 
 
 
@@ -47,10 +37,13 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str);
 
 
 
-bool strtof_clamp(const std::string &str, float *value);
+bool strtof_clamp(const std::string &str, float *value, bool preserveDenorms);
 
 GLenum GLVariableType(const TType &type);
 GLenum GLVariablePrecision(const TType &type);
+bool IsParam(TQualifier qualifier);
+
+bool IsParamOut(TQualifier qualifier);
 bool IsVaryingIn(TQualifier qualifier);
 bool IsVaryingOut(TQualifier qualifier);
 bool IsVarying(TQualifier qualifier);
@@ -66,7 +59,10 @@ InterpolationType GetFieldInterpolationType(TQualifier qualifier);
 
 ImmutableString ArrayString(const TType &type);
 
-ImmutableString GetTypeName(const TType &type, ShHashFunction64 hashFunction, NameMap *nameMap);
+ImmutableString GetTypeName(const TType &type,
+                            char prefix,
+                            ShHashFunction64 hashFunction,
+                            NameMap *nameMap);
 
 TType GetShaderVariableBasicType(const sh::ShaderVariable &var);
 
@@ -78,12 +74,13 @@ bool CanBeInvariantESSL1(TQualifier qualifier);
 bool CanBeInvariantESSL3OrGreater(TQualifier qualifier);
 bool IsShaderOutput(TQualifier qualifier);
 bool IsFragmentOutput(TQualifier qualifier);
+bool IsOutputNULL(ShShaderOutput output);
 bool IsOutputESSL(ShShaderOutput output);
 bool IsOutputGLSL(ShShaderOutput output);
 bool IsOutputHLSL(ShShaderOutput output);
-bool IsOutputVulkan(ShShaderOutput output);
-bool IsOutputMetal(ShShaderOutput output);
-bool IsOutputMetalDirect(ShShaderOutput output);
+bool IsOutputSPIRV(ShShaderOutput output);
+bool IsOutputMSL(ShShaderOutput output);
+bool IsOutputWGSL(ShShaderOutput output);
 
 bool IsInShaderStorageBlock(TIntermTyped *node);
 
@@ -92,17 +89,27 @@ GLenum GetImageInternalFormatType(TLayoutImageInternalFormat iifq);
 bool IsSpecWithFunctionBodyNewScope(ShShaderSpec shaderSpec, int shaderVersion);
 
 
-ImplicitTypeConversion GetConversion(TBasicType t1, TBasicType t2);
-
-bool IsValidImplicitConversion(ImplicitTypeConversion conversion, TOperator op);
-
-
 bool IsPrecisionApplicableToType(TBasicType type);
 
 
 bool IsRedeclarableBuiltIn(const ImmutableString &name);
 
 size_t FindFieldIndex(const TFieldList &fieldList, const char *fieldName);
+
+
+struct Declaration
+{
+    TIntermSymbol &symbol;
+    TIntermTyped *initExpr;  
+};
+
+
+
+Declaration ViewDeclaration(TIntermDeclaration &declNode, uint32_t index = 0);
+
+
+bool IsIndexOp(TOperator op);
+
 }  
 
 #endif  

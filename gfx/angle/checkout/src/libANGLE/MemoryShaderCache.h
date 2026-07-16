@@ -37,11 +37,10 @@ class MemoryShaderCache final : angle::NonCopyable
 
     
     
-    angle::Result getShader(const Context *context,
-                            Shader *shader,
-                            const ShCompileOptions &compileOptions,
-                            const ShCompilerInstance &compilerInstance,
-                            egl::BlobCache::Key *hashOut);
+    egl::CacheGetResult getShader(const Context *context,
+                                  Shader *shader,
+                                  const egl::BlobCache::Key &shaderHash,
+                                  angle::JobResultExpectancy resultExpectancy);
 
     
     void clear();
@@ -51,8 +50,6 @@ class MemoryShaderCache final : angle::NonCopyable
 
   private:
     egl::BlobCache &mBlobCache;
-
-    std::mutex mHistogramMutex;
 };
 
 }  

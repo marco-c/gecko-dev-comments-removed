@@ -7,17 +7,26 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #include "common/PoolAlloc.h"
 
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <utility>
 
-#include "common/angleutils.h"
-#include "common/debug.h"
+#include <utility>
+
 #include "common/mathutil.h"
 #include "common/platform.h"
 #include "common/tls.h"
+
+#if defined(ANGLE_WITH_ASAN)
+#    include <sanitizer/asan_interface.h>
+#endif
 
 namespace angle
 {
@@ -127,26 +136,13 @@ class PageHeader
     PageHeader(PageHeader *nextPage, size_t pageCount)
         : nextPage(nextPage),
           pageCount(pageCount)
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-          ,
-          lastAllocation(nullptr)
-#    endif
-    {}
-
-    ~PageHeader()
     {
-#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-        if (lastAllocation)
-        {
-            lastAllocation->checkAllocList();
-        }
-#    endif
     }
 
     PageHeader *nextPage;
     size_t pageCount;
 #    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-    Allocation *lastAllocation;
+    Allocation *lastAllocation = nullptr;
 #    endif
 };
 #endif
@@ -156,7 +152,7 @@ class PageHeader
 
 
 PoolAllocator::PoolAllocator(int growthIncrement, int allocationAlignment)
-    : mAlignment(allocationAlignment),
+    :
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
       mPageSize(growthIncrement),
       mFreeList(nullptr),
@@ -164,16 +160,9 @@ PoolAllocator::PoolAllocator(int growthIncrement, int allocationAlignment)
       mNumCalls(0),
       mTotalBytes(0),
 #endif
-      mLocked(false)
+      mAlignment(allocationAlignment)
 {
-    initialize(growthIncrement, allocationAlignment);
-}
-
-void PoolAllocator::initialize(int pageSize, int alignment)
-{
-    mAlignment = alignment;
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    mPageSize       = pageSize;
     mPageHeaderSkip = sizeof(PageHeader);
 
     
@@ -205,41 +194,19 @@ void PoolAllocator::initialize(int pageSize, int alignment)
     
     
     mCurrentPageOffset = mPageSize;
-
-#else  
-    mStack.push_back({});
 #endif
 }
 
 PoolAllocator::~PoolAllocator()
 {
+    reset();
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    while (mInUseList)
-    {
-        PageHeader *next = mInUseList->nextPage;
-        mInUseList->~PageHeader();
-        delete[] reinterpret_cast<char *>(mInUseList);
-        mInUseList = next;
-    }
-    
-    
-    
-    
     while (mFreeList)
     {
         PageHeader *next = mFreeList->nextPage;
         delete[] reinterpret_cast<char *>(mFreeList);
         mFreeList = next;
     }
-#else  
-    for (auto &allocs : mStack)
-    {
-        for (auto alloc : allocs)
-        {
-            free(alloc);
-        }
-    }
-    mStack.clear();
 #endif
 }
 
@@ -265,79 +232,50 @@ void Allocation::checkGuardBlock(unsigned char *blockMem,
 #endif
 }
 
-void PoolAllocator::push()
+void PoolAllocator::reset()
 {
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    AllocState state = {mCurrentPageOffset, mInUseList};
+    mNumCalls   = 0;
+    mTotalBytes = 0;
 
-    mStack.push_back(state);
-
-    
-    
-    
     mCurrentPageOffset = mPageSize;
-#else  
-    mStack.push_back({});
-#endif
-}
-
-
-
-
-
-void PoolAllocator::pop()
-{
-    if (mStack.size() < 1)
+    PageHeader *page   = std::exchange(mInUseList, nullptr);
+    while (page)
     {
-        return;
-    }
+        const size_t pageCount = page->pageCount;
+        PageHeader *nextInUse  = page->nextPage;
 
-#if !defined(ANGLE_DISABLE_POOL_ALLOC)
-    PageHeader *page   = mStack.back().page;
-    mCurrentPageOffset = mStack.back().offset;
-
-    while (mInUseList != page)
-    {
-        
-        mInUseList->~PageHeader();
-
-        PageHeader *nextInUse = mInUseList->nextPage;
-        if (mInUseList->pageCount > 1)
+#    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
+        if (page->lastAllocation)
         {
-            delete[] reinterpret_cast<char *>(mInUseList);
+            Allocation *allocations = std::exchange(page->lastAllocation, nullptr);
+            allocations->checkAllocList();
+        }
+#    endif
+
+        if (pageCount > 1)
+        {
+            delete[] reinterpret_cast<uint8_t *>(page);
         }
         else
         {
-            mInUseList->nextPage = mFreeList;
-            mFreeList            = mInUseList;
+#    if defined(ANGLE_WITH_ASAN)
+            
+            
+            __asan_unpoison_memory_region(page, mPageSize);
+#    endif
+            page->nextPage = mFreeList;
+            mFreeList      = page;
         }
-        mInUseList = nextInUse;
+        page = nextInUse;
     }
-
-    mStack.pop_back();
 #else  
-    for (auto &alloc : mStack.back())
-    {
-        free(alloc);
-    }
-    mStack.pop_back();
+    mStack.clear();
 #endif
-}
-
-
-
-
-
-void PoolAllocator::popAll()
-{
-    while (mStack.size() > 0)
-        pop();
 }
 
 void *PoolAllocator::allocate(size_t numBytes)
 {
-    ASSERT(!mLocked);
-
 #if !defined(ANGLE_DISABLE_POOL_ALLOC)
     
     
@@ -379,21 +317,19 @@ void *PoolAllocator::allocate(size_t numBytes)
         
         ASSERT(numBytesToAlloc >= allocationSize);
 
-        PageHeader *memory = reinterpret_cast<PageHeader *>(::new char[numBytesToAlloc]);
+        uint8_t *memory = new (std::nothrow) uint8_t[numBytesToAlloc];
         if (memory == nullptr)
         {
             return nullptr;
         }
-
-        
-        new (memory) PageHeader(mInUseList, (numBytesToAlloc + mPageSize - 1) / mPageSize);
-        mInUseList = memory;
+        mInUseList =
+            new (memory) PageHeader(mInUseList, (numBytesToAlloc + mPageSize - 1) / mPageSize);
 
         
         mCurrentPageOffset = mPageSize;
 
         
-        currentPagePtr = reinterpret_cast<uint8_t *>(memory) + mPageHeaderSkip;
+        currentPagePtr = reinterpret_cast<uint8_t *>(mInUseList) + mPageHeaderSkip;
         Allocation::AllocationSize(currentPagePtr, numBytes, mAlignment, &preAllocationPadding);
 
         return initializeAllocation(currentPagePtr + preAllocationPadding, numBytes);
@@ -404,8 +340,8 @@ void *PoolAllocator::allocate(size_t numBytes)
 
 #else  
 
-    void *alloc = malloc(numBytes + mAlignment - 1);
-    mStack.back().push_back(alloc);
+    uint8_t *alloc = new (std::nothrow) uint8_t[numBytes + mAlignment - 1];
+    mStack.emplace_back(std::unique_ptr<uint8_t[]>(alloc));
 
     intptr_t intAlloc = reinterpret_cast<intptr_t>(alloc);
     intAlloc          = rx::roundUpPow2<intptr_t>(intAlloc, mAlignment);
@@ -418,23 +354,22 @@ uint8_t *PoolAllocator::allocateNewPage(size_t numBytes)
 {
     
     
-    PageHeader *memory;
     if (mFreeList)
     {
-        memory    = mFreeList;
+        PageHeader *page = mFreeList;
         mFreeList = mFreeList->nextPage;
+        page->nextPage   = mInUseList;
+        mInUseList       = page;
     }
     else
     {
-        memory = reinterpret_cast<PageHeader *>(::new char[mPageSize]);
+        uint8_t *memory = new (std::nothrow) uint8_t[mPageSize];
         if (memory == nullptr)
         {
             return nullptr;
         }
+        mInUseList = new (memory) PageHeader(mInUseList, 1);
     }
-    
-    new (memory) PageHeader(mInUseList, 1);
-    mInUseList = memory;
 
     
     mCurrentPageOffset      = mPageHeaderSkip;
@@ -453,25 +388,13 @@ uint8_t *PoolAllocator::allocateNewPage(size_t numBytes)
 void *PoolAllocator::initializeAllocation(uint8_t *memory, size_t numBytes)
 {
 #    if defined(ANGLE_POOL_ALLOC_GUARD_BLOCKS)
-    new (memory) Allocation(numBytes, memory, mInUseList->lastAllocation);
-    mInUseList->lastAllocation = reinterpret_cast<Allocation *>(memory);
+    mInUseList->lastAllocation =
+        new (memory) Allocation(numBytes, memory, mInUseList->lastAllocation);
 #    endif
 
     return Allocation::GetDataPointer(memory, mAlignment);
 }
 #endif
-
-void PoolAllocator::lock()
-{
-    ASSERT(!mLocked);
-    mLocked = true;
-}
-
-void PoolAllocator::unlock()
-{
-    ASSERT(mLocked);
-    mLocked = false;
-}
 
 
 

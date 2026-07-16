@@ -4,6 +4,10 @@
 
 
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_libc_calls
+#endif
+
 
 
 #include "common/debug.h"
@@ -45,6 +49,17 @@ std::string GetModulePath(void *moduleOrSymbol)
     {
         return "";
     }
+
+#ifdef ANGLE_PLATFORM_LINUX
+    
+    
+    
+    struct stat buf;
+    if (stat(dlInfo.dli_fname, &buf) != 0)
+    {
+        return GetExecutablePath();
+    }
+#endif
 
     return dlInfo.dli_fname;
 }
@@ -186,7 +201,7 @@ void *OpenSystemLibraryWithExtensionAndGetError(const char *libraryName,
     std::string directory;
     if (searchType == SearchType::ModuleDir)
     {
-#if ANGLE_PLATFORM_IOS
+#if ANGLE_PLATFORM_IOS_FAMILY
         
         directory = GetExecutableDirectory() + "/Frameworks/";
 #elif ANGLE_PLATFORM_FUCHSIA
@@ -250,6 +265,23 @@ bool IsDebuggerAttached()
     return false;
 }
 
+bool IsSameFileDescriptor(int fd1, int fd2)
+{
+    struct stat stat1, stat2;
+    if (fstat(fd1, &stat1) < 0)
+    {
+        return false;
+    }
+    if (fstat(fd2, &stat2) < 0)
+    {
+        return false;
+    }
+    
+    
+    
+    return (stat1.st_dev == stat2.st_dev) && (stat1.st_ino == stat2.st_ino);
+}
+
 void BreakDebugger()
 {
     
@@ -272,6 +304,39 @@ std::string GetRootDirectory()
     return "/";
 }
 
+bool CreateDirectories(const std::string &path)
+{
+    
+    std::string sanitizedPath(path);
+    MakeForwardSlashThePathSeparator(sanitizedPath);
+
+    size_t pos = 0;
+    do
+    {
+        pos = sanitizedPath.find("/", pos);
+        std::string checkPath(sanitizedPath.substr(0, pos));
+        if (!checkPath.empty() && !IsDirectory(checkPath.c_str()))
+        {
+            if (mkdir(checkPath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) == -1)
+            {
+                return false;
+            }
+        }
+        if (pos == std::string::npos)
+        {
+            break;
+        }
+        ++pos;
+    } while (true);
+    return true;
+}
+
+void MakeForwardSlashThePathSeparator(std::string &path)
+{
+    
+    return;
+}
+
 Optional<std::string> GetTempDirectory()
 {
     const char *tmp = getenv("TMPDIR");
@@ -291,17 +356,20 @@ Optional<std::string> GetTempDirectory()
 
 Optional<std::string> CreateTemporaryFileInDirectory(const std::string &directory)
 {
-    std::string tempFileTemplate = directory + "/.angle.XXXXXX";
+    return CreateTemporaryFileInDirectoryWithExtension(directory, std::string());
+}
 
-    char tempFile[1000];
-    strcpy(tempFile, tempFileTemplate.c_str());
+Optional<std::string> CreateTemporaryFileInDirectoryWithExtension(const std::string &directory,
+                                                                  const std::string &extension)
+{
+    std::string tempFileTemplate = directory + "/.angle.XXXXXX" + extension;
 
-    int fd = mkstemp(tempFile);
+    int fd = mkstemps(&tempFileTemplate[0], static_cast<int>(extension.size()));
     close(fd);
 
     if (fd != -1)
     {
-        return std::string(tempFile);
+        return tempFileTemplate;
     }
 
     return Optional<std::string>::Invalid();
@@ -322,7 +390,7 @@ double GetCurrentProcessCpuTime()
     
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
-    double userTime = usage.ru_utime.tv_sec + usage.ru_utime.tv_usec * 1e-6;
+    double userTime   = usage.ru_utime.tv_sec + usage.ru_utime.tv_usec * 1e-6;
     double systemTime = usage.ru_stime.tv_sec + usage.ru_stime.tv_usec * 1e-6;
     return userTime + systemTime;
 #endif

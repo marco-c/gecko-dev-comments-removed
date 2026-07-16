@@ -54,6 +54,7 @@ TransformFeedbackState::TransformFeedbackState(size_t maxIndexedBuffers)
       mVerticesDrawn(0),
       mVertexCapacity(0),
       mProgram(nullptr),
+      mProgramPipeline(nullptr),
       mIndexedBuffers(maxIndexedBuffers)
 {}
 
@@ -138,7 +139,8 @@ const std::string &TransformFeedback::getLabel() const
 
 angle::Result TransformFeedback::begin(const Context *context,
                                        PrimitiveMode primitiveMode,
-                                       Program *program)
+                                       Program *program,
+                                       ProgramPipeline *programPipeline)
 {
     
     
@@ -148,30 +150,15 @@ angle::Result TransformFeedback::begin(const Context *context,
     mState.mPrimitiveMode = primitiveMode;
     mState.mPaused        = false;
     mState.mVerticesDrawn = 0;
-    bindProgram(context, program);
 
     
     
-    const ProgramExecutable *programExecutable =
-        context ? context->getState().getLinkedProgramExecutable(context) : nullptr;
-    if (programExecutable)
-    {
-        
-        auto strides = programExecutable->getTransformFeedbackStrides();
-        ASSERT(strides.size() <= mState.mIndexedBuffers.size() && !strides.empty());
-        GLsizeiptr minCapacity = std::numeric_limits<GLsizeiptr>::max();
-        for (size_t index = 0; index < strides.size(); index++)
-        {
-            GLsizeiptr capacity =
-                GetBoundBufferAvailableSize(mState.mIndexedBuffers[index]) / strides[index];
-            minCapacity = std::min(minCapacity, capacity);
-        }
-        mState.mVertexCapacity = minCapacity;
-    }
-    else
-    {
-        mState.mVertexCapacity = 0;
-    }
+    ASSERT(program == nullptr || programPipeline == nullptr);
+    bindProgram(context, program);
+    bindProgramPipeline(context, programPipeline);
+    bindPPOPrograms(programPipeline);
+
+    recomputeVertexCapacity(context);
     return angle::Result::Continue;
 }
 
@@ -183,10 +170,19 @@ angle::Result TransformFeedback::end(const Context *context)
     mState.mPaused         = false;
     mState.mVerticesDrawn  = 0;
     mState.mVertexCapacity = 0;
-    if (mState.mProgram)
+    if (mState.mProgram != nullptr)
     {
         mState.mProgram->release(context);
         mState.mProgram = nullptr;
+    }
+    if (mState.mProgramPipeline != nullptr)
+    {
+        mState.mProgramPipeline->release(context);
+        mState.mProgramPipeline = nullptr;
+    }
+    for (const ShaderType shaderType : gl::AllShaderTypes())
+    {
+        mState.mPPOPrograms[shaderType].value = 0;
     }
     return angle::Result::Continue;
 }
@@ -202,6 +198,7 @@ angle::Result TransformFeedback::resume(const Context *context)
 {
     ANGLE_TRY(mImplementation->resume(context));
     mState.mPaused = false;
+    recomputeVertexCapacity(context);
     return angle::Result::Continue;
 }
 
@@ -234,7 +231,7 @@ void TransformFeedback::onVerticesDrawn(const Context *context, GLsizei count, G
     {
         if (buffer.get() != nullptr)
         {
-            buffer->onDataChanged();
+            buffer->onDataChanged(context);
         }
     }
 }
@@ -255,9 +252,93 @@ void TransformFeedback::bindProgram(const Context *context, Program *program)
     }
 }
 
+void TransformFeedback::bindProgramPipeline(const Context *context,
+                                            ProgramPipeline *programPipeline)
+{
+    if (mState.mProgramPipeline != programPipeline)
+    {
+        if (mState.mProgramPipeline != nullptr)
+        {
+            mState.mProgramPipeline->release(context);
+        }
+        mState.mProgramPipeline = programPipeline;
+        if (mState.mProgramPipeline != nullptr)
+        {
+            mState.mProgramPipeline->addRef();
+        }
+    }
+}
+
+void TransformFeedback::bindPPOPrograms(ProgramPipeline *programPipeline)
+{
+    if (programPipeline == nullptr)
+    {
+        for (const ShaderType shaderType : gl::AllShaderTypes())
+        {
+            mState.mPPOPrograms[shaderType].value = 0;
+        }
+        return;
+    }
+
+    for (const ShaderType shaderType : gl::AllShaderTypes())
+    {
+        const Program *program                = programPipeline->getShaderProgram(shaderType);
+        mState.mPPOPrograms[shaderType].value = program != nullptr ? program->id().value : 0;
+    }
+}
+
+void TransformFeedback::recomputeVertexCapacity(const Context *context)
+{
+    
+    
+    const ProgramExecutable *programExecutable =
+        context ? context->getState().getLinkedProgramExecutable(context) : nullptr;
+    if (programExecutable)
+    {
+        
+        auto strides = programExecutable->getTransformFeedbackStrides();
+        ASSERT(strides.size() <= mState.mIndexedBuffers.size() && !strides.empty());
+        GLsizeiptr minCapacity = std::numeric_limits<GLsizeiptr>::max();
+        for (size_t index = 0; index < strides.size(); index++)
+        {
+            GLsizeiptr capacity =
+                GetBoundBufferAvailableSize(mState.mIndexedBuffers[index]) / strides[index];
+            minCapacity = std::min(minCapacity, capacity);
+        }
+        mState.mVertexCapacity = minCapacity;
+    }
+    else
+    {
+        mState.mVertexCapacity = 0;
+    }
+}
+
 bool TransformFeedback::hasBoundProgram(ShaderProgramID program) const
 {
     return mState.mProgram != nullptr && mState.mProgram->id().value == program.value;
+}
+
+bool TransformFeedback::hasBoundProgramPipeline(ProgramPipelineID programPipeline) const
+{
+    return mState.mProgramPipeline != nullptr &&
+           mState.mProgramPipeline->id().value == programPipeline.value;
+}
+
+bool TransformFeedback::hasSamePPOPrograms(ProgramPipeline *programPipeline) const
+{
+    for (const ShaderType shaderType : gl::AllShaderTypes())
+    {
+        GLuint shaderProgramIDValue =
+            (programPipeline != nullptr && programPipeline->getShaderProgram(shaderType) != nullptr)
+                ? programPipeline->getShaderProgram(shaderType)->id().value
+                : 0;
+        if (mState.mPPOPrograms[shaderType].value != shaderProgramIDValue)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 angle::Result TransformFeedback::detachBuffer(const Context *context, BufferID bufferID)
@@ -324,9 +405,16 @@ bool TransformFeedback::buffersBoundForOtherUseInWebGL() const
     return false;
 }
 
-rx::TransformFeedbackImpl *TransformFeedback::getImplementation() const
+bool TransformFeedback::isBufferBound(BufferID bufferID) const
 {
-    return mImplementation;
+    for (const auto &buffer : mState.mIndexedBuffers)
+    {
+        if (buffer.id() == bufferID)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void TransformFeedback::onBindingChanged(const Context *context, bool bound)

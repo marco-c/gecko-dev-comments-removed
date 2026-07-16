@@ -11,9 +11,10 @@
 
 #include <functional>
 
+#include "common/CompiledShaderState.h"
+#include "common/WorkerThread.h"
 #include "common/angleutils.h"
 #include "libANGLE/Shader.h"
-#include "libANGLE/WorkerThread.h"
 
 namespace gl
 {
@@ -23,26 +24,38 @@ class ShCompilerInstance;
 namespace rx
 {
 
-using UpdateShaderStateFunctor = std::function<void(bool compiled, ShHandle handle)>;
-class WaitableCompileEvent : public angle::WaitableEvent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ShaderTranslateTask
 {
   public:
-    WaitableCompileEvent(std::shared_ptr<angle::WaitableEvent> waitableEvent);
-    ~WaitableCompileEvent() override;
+    virtual ~ShaderTranslateTask() = default;
 
-    void wait() override;
+    
+    virtual bool translate(ShHandle compiler,
+                           const ShCompileOptions &options,
+                           const std::string &source);
+    virtual void postTranslate(ShHandle compiler, const gl::CompiledShaderState &compiledState) {}
 
-    bool isReady() override;
+    
+    virtual void load(const gl::CompiledShaderState &compiledState) {}
 
-    virtual bool getResult() = 0;
-
-    virtual bool postTranslate(std::string *infoLog) = 0;
-
-    const std::string &getInfoLog();
-
-  protected:
-    std::shared_ptr<angle::WaitableEvent> mWaitableEvent;
-    std::string mInfoLog;
+    
+    virtual bool isCompilingInternally() { return false; }
+    
+    virtual angle::Result getResult(std::string &infoLog) { return angle::Result::Continue; }
 };
 
 class ShaderImpl : angle::NonCopyable
@@ -51,11 +64,12 @@ class ShaderImpl : angle::NonCopyable
     ShaderImpl(const gl::ShaderState &state) : mState(state) {}
     virtual ~ShaderImpl() {}
 
-    virtual void destroy() {}
+    virtual void onDestroy(const gl::Context *context) {}
 
-    virtual std::shared_ptr<WaitableCompileEvent> compile(const gl::Context *context,
-                                                          gl::ShCompilerInstance *compilerInstance,
-                                                          ShCompileOptions *options) = 0;
+    virtual std::shared_ptr<ShaderTranslateTask> compile(const gl::Context *context,
+                                                         ShCompileOptions *options)  = 0;
+    virtual std::shared_ptr<ShaderTranslateTask> load(const gl::Context *context,
+                                                      gl::BinaryInputStream *stream) = 0;
 
     virtual std::string getDebugInfo() const = 0;
 
@@ -64,11 +78,6 @@ class ShaderImpl : angle::NonCopyable
     virtual angle::Result onLabelUpdate(const gl::Context *context);
 
   protected:
-    std::shared_ptr<WaitableCompileEvent> compileImpl(const gl::Context *context,
-                                                      gl::ShCompilerInstance *compilerInstance,
-                                                      const std::string &source,
-                                                      ShCompileOptions *compileOptions);
-
     const gl::ShaderState &mState;
 };
 

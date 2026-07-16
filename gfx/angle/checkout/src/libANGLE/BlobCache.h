@@ -13,11 +13,10 @@
 #include <array>
 #include <cstring>
 
-#include <anglebase/sha1.h>
-#include "common/MemoryBuffer.h"
-#include "common/hash_utils.h"
+#include "common/SimpleMutex.h"
 #include "libANGLE/Error.h"
 #include "libANGLE/SizedMRUCache.h"
+#include "libANGLE/angletypes.h"
 
 namespace gl
 {
@@ -28,61 +27,23 @@ namespace egl
 {
 
 
-static constexpr size_t kBlobCacheKeyLength = angle::base::kSHA1Length;
-using BlobCacheKey                          = std::array<uint8_t, kBlobCacheKeyLength>;
-}  
 
-namespace std
-{
-template <>
-struct hash<egl::BlobCacheKey>
+enum class CacheGetResult
 {
     
-    size_t operator()(const egl::BlobCacheKey &key) const
-    {
-        return angle::ComputeGenericHash(key.data(), key.size());
-    }
+    Success,
+    
+    NotFound,
+    
+    Rejected,
 };
-}  
-
-namespace egl
-{
-
-bool CompressBlobCacheData(const size_t cacheSize,
-                           const uint8_t *cacheData,
-                           angle::MemoryBuffer *compressedData);
-bool DecompressBlobCacheData(const uint8_t *compressedData,
-                             const size_t compressedSize,
-                             angle::MemoryBuffer *uncompressedData);
 
 class BlobCache final : angle::NonCopyable
 {
   public:
-    
-    
-    static constexpr size_t kKeyLength = kBlobCacheKeyLength;
-    using Key                          = BlobCacheKey;
-    class Value
-    {
-      public:
-        Value() : mPtr(nullptr), mSize(0) {}
-        Value(const uint8_t *ptr, size_t sz) : mPtr(ptr), mSize(sz) {}
-
-        
-        
-        const uint8_t *data() { return mPtr; }
-        size_t size() { return mSize; }
-
-        const uint8_t &operator[](size_t pos) const
-        {
-            ASSERT(pos < mSize);
-            return mPtr[pos];
-        }
-
-      private:
-        const uint8_t *mPtr;
-        size_t mSize;
-    };
+    static constexpr size_t kKeyLength = angle::kBlobCacheKeyLength;
+    using Key                          = angle::BlobCacheKey;
+    using Value                        = angle::BlobCacheValue;
     enum class CacheSource
     {
         Memory,
@@ -94,16 +55,19 @@ class BlobCache final : angle::NonCopyable
 
     
     
-    void put(const BlobCache::Key &key, angle::MemoryBuffer &&value);
+    void put(const gl::Context *context, const BlobCache::Key &key, angle::MemoryBuffer &&value);
 
     
     
-    bool compressAndPut(const BlobCache::Key &key,
+    bool compressAndPut(const gl::Context *context,
+                        const BlobCache::Key &key,
                         angle::MemoryBuffer &&uncompressedValue,
                         size_t *compressedSize);
 
     
-    void putApplication(const BlobCache::Key &key, const angle::MemoryBuffer &value);
+    void putApplication(const gl::Context *context,
+                        const BlobCache::Key &key,
+                        const angle::MemoryBuffer &value);
 
     
     
@@ -113,10 +77,10 @@ class BlobCache final : angle::NonCopyable
 
     
     
-    [[nodiscard]] bool get(angle::ScratchBuffer *scratchBuffer,
+    [[nodiscard]] bool get(const gl::Context *context,
+                           angle::ScratchBuffer *scratchBuffer,
                            const BlobCache::Key &key,
-                           BlobCache::Value *valueOut,
-                           size_t *bufferSizeOut);
+                           BlobCache::Value *valueOut);
 
     
     [[nodiscard]] bool getAt(size_t index,
@@ -125,13 +89,15 @@ class BlobCache final : angle::NonCopyable
 
     enum class GetAndDecompressResult
     {
-        GetSuccess,
+        Success,
         NotFound,
         DecompressFailure,
     };
     [[nodiscard]] GetAndDecompressResult getAndDecompress(
+        const gl::Context *context,
         angle::ScratchBuffer *scratchBuffer,
         const BlobCache::Key &key,
+        size_t maxUncompressedDataSize,
         angle::MemoryBuffer *uncompressedValueOut);
 
     
@@ -162,15 +128,21 @@ class BlobCache final : angle::NonCopyable
 
     bool areBlobCacheFuncsSet() const;
 
-    bool isCachingEnabled() const { return areBlobCacheFuncsSet() || maxSize() > 0; }
+    bool isCachingEnabled(const gl::Context *context) const;
 
-    std::mutex &getMutex() { return mBlobCacheMutex; }
+    angle::SimpleMutex &getMutex() { return mBlobCacheMutex; }
 
   private:
+    size_t callBlobGetCallback(const gl::Context *context,
+                               const void *key,
+                               size_t keySize,
+                               void *value,
+                               size_t valueSize);
+
     
     using CacheEntry = std::pair<angle::MemoryBuffer, CacheSource>;
 
-    mutable std::mutex mBlobCacheMutex;
+    mutable angle::SimpleMutex mBlobCacheMutex;
     angle::SizedMRUCache<BlobCache::Key, CacheEntry> mBlobCache;
 
     EGLSetBlobFuncANDROID mSetBlobFunc;

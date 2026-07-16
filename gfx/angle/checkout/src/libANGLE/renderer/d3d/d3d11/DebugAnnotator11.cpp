@@ -11,8 +11,7 @@
 #include "libANGLE/renderer/d3d/d3d11/Context11.h"
 #include "libANGLE/renderer/d3d/d3d11/Renderer11.h"
 #include "libANGLE/renderer/d3d/d3d11/renderer11_utils.h"
-
-#include <versionhelpers.h>
+#include "libANGLE/renderer/driver_utils.h"
 
 #include "common/system_utils.h"
 
@@ -125,14 +124,12 @@ bool DebugAnnotatorContext11::loggingEnabledForThisThread() const
 
 void DebugAnnotatorContext11::initialize(ID3D11DeviceContext *context)
 {
-#if !defined(ANGLE_ENABLE_WINDOWS_UWP)
     
     
     
     
     
-    if (IsWindows10OrGreater())
-#endif
+    if (IsWindows10OrLater())
     {
         mAnnotationThread = angle::GetCurrentThreadUniqueId();
         mUserDefinedAnnotation.Attach(

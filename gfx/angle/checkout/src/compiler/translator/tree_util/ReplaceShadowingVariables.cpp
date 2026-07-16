@@ -95,7 +95,8 @@ class ReplaceShadowingVariablesTraverser : public TIntermTraverser
                     
                     mReplacements.emplace_back(DeferredReplacementBlock{
                         &symNode->variable(),
-                        CreateTempVariable(mSymbolTable, &symNode->variable().getType()),
+                        CreateTempVariable(mSymbolTable, &symNode->variable().getType(),
+                                           EvqTemporary),
                         mFunctionBody});
                 }
             }

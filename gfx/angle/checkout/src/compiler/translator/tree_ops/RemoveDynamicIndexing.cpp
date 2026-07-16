@@ -492,7 +492,7 @@ bool RemoveDynamicIndexingTraverser::visitBinary(Visit visit, TIntermBinary *nod
                 TIntermTyped *indexInitializer               = EnsureSignedInt(node->getRight());
                 TIntermDeclaration *indexVariableDeclaration = nullptr;
                 TVariable *indexVariable                     = DeclareTempVariable(
-                                        mSymbolTable, indexInitializer, EvqTemporary, &indexVariableDeclaration);
+                    mSymbolTable, indexInitializer, EvqTemporary, &indexVariableDeclaration);
                 insertionsBefore.push_back(indexVariableDeclaration);
 
                 
@@ -500,7 +500,7 @@ bool RemoveDynamicIndexingTraverser::visitBinary(Visit visit, TIntermBinary *nod
                     node, CreateTempSymbolNode(indexVariable), indexingFunction);
                 TIntermDeclaration *fieldVariableDeclaration = nullptr;
                 TVariable *fieldVariable                     = DeclareTempVariable(
-                                        mSymbolTable, indexingCall, EvqTemporary, &fieldVariableDeclaration);
+                    mSymbolTable, indexingCall, EvqTemporary, &fieldVariableDeclaration);
                 insertionsBefore.push_back(fieldVariableDeclaration);
 
                 

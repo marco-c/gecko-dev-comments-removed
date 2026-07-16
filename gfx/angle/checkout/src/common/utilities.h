@@ -9,12 +9,17 @@
 #ifndef COMMON_UTILITIES_H_
 #define COMMON_UTILITIES_H_
 
+#ifdef UNSAFE_BUFFERS_BUILD
+#    pragma allow_unsafe_buffers
+#endif
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLSLANG/ShaderLang.h>
 
 #include <math.h>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "angle_gl.h"
@@ -26,12 +31,6 @@
 namespace sh
 {
 struct ShaderVariable;
-}
-
-constexpr bool ShPixelLocalStorageTypeUsesImages(ShPixelLocalStorageType type)
-{
-    return type == ShPixelLocalStorageType::ImageStoreR32PackedFormats ||
-           type == ShPixelLocalStorageType::ImageStoreNativeFormats;
 }
 
 namespace gl
@@ -52,6 +51,8 @@ bool IsImage2DType(GLenum type);
 bool IsAtomicCounterType(GLenum type);
 bool IsOpaqueType(GLenum type);
 bool IsMatrixType(GLenum type);
+bool IsFloatScalarAndVectorType(GLenum type);
+bool IsFloatVectorType(GLenum type);
 GLenum TransposeMatrixType(GLenum type);
 int VariableRegisterCount(GLenum type);
 int MatrixRegisterCount(GLenum type, bool isRowMajorMatrix);
@@ -211,7 +212,12 @@ inline constexpr UniformTypeInfo::UniformTypeInfo(GLenum type,
       isImageType(isImageType)
 {}
 
+struct UniformTypeIndex
+{
+    uint16_t value;
+};
 const UniformTypeInfo &GetUniformTypeInfo(GLenum uniformType);
+UniformTypeIndex GetUniformTypeIndex(GLenum uniformType);
 
 const char *GetGenericErrorMessage(GLenum error);
 
@@ -245,15 +251,25 @@ const char *GetDebugMessageSeverityString(GLenum severity);
 
 
 
+enum class SrgbDecode
+{
+    Default = 0,
+    Skip
+};
+
+
+
+
 
 
 
 enum class SrgbOverride
 {
     Default = 0,
-    SRGB,
-    Linear
+    SRGB
 };
+
+
 
 
 
@@ -285,6 +301,19 @@ ShaderType GetLastPreFragmentStage(ShaderBitSet shaderTypes);
 
 namespace egl
 {
+
+
+
+
+
+
+enum class ImageColorspace
+{
+    Default = 0,
+    SRGB,
+    Linear
+};
+
 static const EGLenum FirstCubeMapTextureTarget = EGL_GL_TEXTURE_CUBE_MAP_POSITIVE_X_KHR;
 static const EGLenum LastCubeMapTextureTarget  = EGL_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_KHR;
 bool IsCubeMapTextureTarget(EGLenum target);
@@ -310,19 +339,59 @@ EGLClientBuffer GLObjectHandleToEGLClientBuffer(GLuint handle);
 
 namespace angle
 {
+
+
+struct ColorspaceState
+{
+  public:
+    ColorspaceState() { reset(); }
+    void reset()
+    {
+        hasStaticTexelFetchAccess = false;
+        srgbDecode                = gl::SrgbDecode::Default;
+        srgbOverride              = gl::SrgbOverride::Default;
+        srgbWriteControl          = gl::SrgbWriteControlMode::Default;
+        eglImageColorspace        = egl::ImageColorspace::Default;
+    }
+
+    
+    bool hasStaticTexelFetchAccess;
+    gl::SrgbDecode srgbDecode;
+    gl::SrgbOverride srgbOverride;
+
+    
+    gl::SrgbWriteControlMode srgbWriteControl;
+
+    
+    egl::ImageColorspace eglImageColorspace;
+};
+
+template <typename T>
+constexpr size_t ConstStrLen(T s)
+{
+    if (s == nullptr)
+    {
+        return 0;
+    }
+    return std::char_traits<char>::length(s);
+}
+
 bool IsDrawEntryPoint(EntryPoint entryPoint);
 bool IsDispatchEntryPoint(EntryPoint entryPoint);
 bool IsClearEntryPoint(EntryPoint entryPoint);
 bool IsQueryEntryPoint(EntryPoint entryPoint);
+
+template <typename T>
+void FillWithNullptr(T *array)
+{
+    
+    memset(array->data(), 0, array->size() * sizeof(*array->data()));
+    
+    ASSERT(array->data()[0] == nullptr);
+}
 }  
 
-#if !defined(ANGLE_ENABLE_WINDOWS_UWP)
-void writeFile(const char *path, const void *data, size_t size);
-#endif
-
-#if defined(ANGLE_PLATFORM_WINDOWS)
-void ScheduleYield();
-#endif
+void writeFile(const char *path, std::string_view content);
 
 
 

@@ -10,9 +10,6 @@
 
 
 
-
-
-
 #ifndef COMPILER_TRANSLATOR_TREEOPS_EMULATEMULTIDRAWSHADERBUILTINS_H_
 #define COMPILER_TRANSLATOR_TREEOPS_EMULATEMULTIDRAWSHADERBUILTINS_H_
 
@@ -31,15 +28,11 @@ class TSymbolTable;
 
 [[nodiscard]] bool EmulateGLDrawID(TCompiler *compiler,
                                    TIntermBlock *root,
-                                   TSymbolTable *symbolTable,
-                                   std::vector<sh::ShaderVariable> *uniforms,
-                                   bool shouldCollect);
+                                   TSymbolTable *symbolTable);
 
 [[nodiscard]] bool EmulateGLBaseVertexBaseInstance(TCompiler *compiler,
                                                    TIntermBlock *root,
                                                    TSymbolTable *symbolTable,
-                                                   std::vector<sh::ShaderVariable> *uniforms,
-                                                   bool shouldCollect,
                                                    bool addBaseVertexToVertexID);
 
 }  

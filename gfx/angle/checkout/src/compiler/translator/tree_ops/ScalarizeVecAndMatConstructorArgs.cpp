@@ -9,215 +9,466 @@
 
 
 #include "compiler/translator/tree_ops/ScalarizeVecAndMatConstructorArgs.h"
-#include "common/debug.h"
 
-#include <algorithm>
+#if defined(ANGLE_ENABLE_GLSL) || defined(ANGLE_ENABLE_WGPU)
 
-#include "angle_gl.h"
-#include "common/angleutils.h"
-#include "compiler/translator/Compiler.h"
-#include "compiler/translator/tree_util/IntermNodePatternMatcher.h"
-#include "compiler/translator/tree_util/IntermNode_util.h"
-#include "compiler/translator/tree_util/IntermTraverse.h"
-#include "compiler/translator/util.h"
+#    include "angle_gl.h"
+#    include "common/angleutils.h"
+#    include "compiler/translator/Compiler.h"
+#    include "compiler/translator/IntermNode.h"
+#    include "compiler/translator/tree_util/IntermNode_util.h"
+#    include "compiler/translator/tree_util/IntermTraverse.h"
 
 namespace sh
 {
 
 namespace
 {
-
-TIntermBinary *ConstructVectorIndexBinaryNode(TIntermTyped *symbolNode, int index)
+const TType *GetHelperType(const TType &type, TQualifier qualifier)
 {
-    return new TIntermBinary(EOpIndexDirect, symbolNode, CreateIndexNode(index));
+    
+    
+    
+    
+    
+    constexpr TPrecision kDefaultPrecision = EbpHigh;
+
+    TType *newType = new TType(type.getBasicType(), type.getNominalSize(), type.getSecondarySize());
+    if (type.getBasicType() != EbtBool)
+    {
+        newType->setPrecision(type.getPrecision() != EbpUndefined ? type.getPrecision()
+                                                                  : kDefaultPrecision);
+    }
+    newType->setQualifier(qualifier);
+
+    return newType;
 }
 
-TIntermBinary *ConstructMatrixIndexBinaryNode(TIntermTyped *symbolNode, int colIndex, int rowIndex)
-{
-    TIntermBinary *colVectorNode = ConstructVectorIndexBinaryNode(symbolNode, colIndex);
 
-    return new TIntermBinary(EOpIndexDirect, colVectorNode, CreateIndexNode(rowIndex));
+TIntermNode *CastScalar(TIntermAggregate *node, TIntermTyped *scalar)
+{
+    const TType &nodeType          = node->getType();
+    const TBasicType nodeBasicType = nodeType.getBasicType();
+    if (scalar->getType().getBasicType() == nodeBasicType)
+    {
+        return scalar;
+    }
+
+    TType castDestType(nodeBasicType, nodeType.getPrecision());
+    return TIntermAggregate::CreateConstructor(castDestType, {scalar});
 }
 
-class ScalarizeArgsTraverser : public TIntermTraverser
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ScalarizeTraverser : public TIntermTraverser
 {
   public:
-    ScalarizeArgsTraverser(TSymbolTable *symbolTable)
-        : TIntermTraverser(true, false, false, symbolTable),
-          mNodesToScalarize(IntermNodePatternMatcher::kScalarizedVecOrMatConstructor)
+    ScalarizeTraverser(TSymbolTable *symbolTable)
+        : TIntermTraverser(true, false, false, symbolTable)
     {}
+
+    bool update(TCompiler *compiler, TIntermBlock *root);
 
   protected:
     bool visitAggregate(Visit visit, TIntermAggregate *node) override;
-    bool visitBlock(Visit visit, TIntermBlock *node) override;
 
   private:
-    void scalarizeArgs(TIntermAggregate *aggregate, bool scalarizeVector, bool scalarizeMatrix);
+    bool shouldScalarize(TIntermTyped *node);
+
+    
+    const TFunction *createHelper(TIntermAggregate *node);
+    TIntermTyped *createHelperCall(TIntermAggregate *node, const TFunction *helper);
+    void addHelperDefinition(const TFunction *helper, TIntermBlock *body);
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    TIntermTyped *createTempVariable(TIntermTyped *original);
+    TIntermTyped *createConstructor(TIntermTyped *node);
 
-    std::vector<TIntermSequence> mBlockStack;
+    void extractComponents(TIntermAggregate *node,
+                           const TFunction *helper,
+                           size_t componentCount,
+                           TIntermSequence *componentsOut);
 
-    IntermNodePatternMatcher mNodesToScalarize;
+    void createConstructorScalarFromVector(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           TIntermSequence *constructorArgsOut);
+    void createConstructorScalarFromMatrix(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           TIntermSequence *constructorArgsOut);
+    void createConstructorVectorFromScalar(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           TIntermSequence *constructorArgsOut);
+    void createConstructorVectorFromMultiple(TIntermAggregate *node,
+                                             const TFunction *helper,
+                                             TIntermSequence *constructorArgsOut);
+    void createConstructorMatrixFromScalar(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           TIntermSequence *constructorArgsOut);
+    void createConstructorMatrixFromVectors(TIntermAggregate *node,
+                                            const TFunction *helper,
+                                            TIntermSequence *constructorArgsOut);
+    void createConstructorMatrixFromMatrix(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           TIntermSequence *constructorArgsOut);
+
+    TIntermSequence mFunctionsToAdd;
 };
 
-bool ScalarizeArgsTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
+bool ScalarizeTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
 {
-    ASSERT(visit == PreVisit);
-    if (mNodesToScalarize.match(node, getParentNode()))
+    if (!shouldScalarize(node))
     {
-        if (node->getType().isVector())
-        {
-            scalarizeArgs(node, false, true);
-        }
-        else
-        {
-            ASSERT(node->getType().isMatrix());
-            scalarizeArgs(node, true, false);
-        }
+        return true;
     }
-    return true;
-}
 
-bool ScalarizeArgsTraverser::visitBlock(Visit visit, TIntermBlock *node)
-{
-    mBlockStack.push_back(TIntermSequence());
+    TIntermTyped *replacement = createConstructor(node);
+    if (replacement != node)
     {
-        for (TIntermNode *child : *node->getSequence())
-        {
-            ASSERT(child != nullptr);
-            child->traverse(this);
-            mBlockStack.back().push_back(child);
-        }
+        queueReplacement(replacement, OriginalNode::IS_DROPPED);
     }
-    if (mBlockStack.back().size() > node->getSequence()->size())
-    {
-        node->getSequence()->clear();
-        *(node->getSequence()) = mBlockStack.back();
-    }
-    mBlockStack.pop_back();
+    
     return false;
 }
 
-void ScalarizeArgsTraverser::scalarizeArgs(TIntermAggregate *aggregate,
-                                           bool scalarizeVector,
-                                           bool scalarizeMatrix)
+bool ScalarizeTraverser::shouldScalarize(TIntermTyped *typed)
 {
-    ASSERT(aggregate);
-    ASSERT(!aggregate->isArray());
-    int size                  = static_cast<int>(aggregate->getType().getObjectSize());
-    TIntermSequence *sequence = aggregate->getSequence();
-    TIntermSequence originalArgs(*sequence);
-    sequence->clear();
-    for (TIntermNode *originalArgNode : originalArgs)
+    TIntermAggregate *node = typed->getAsAggregate();
+    if (node == nullptr || node->getOp() != EOpConstruct)
     {
-        ASSERT(size > 0);
-        TIntermTyped *originalArg = originalArgNode->getAsTyped();
-        ASSERT(originalArg);
-        TIntermTyped *argVariable = createTempVariable(originalArg);
-        if (originalArg->isScalar())
+        return false;
+    }
+
+    const TType &type                = node->getType();
+    const TIntermSequence &arguments = *node->getSequence();
+    const TType &arg0Type            = arguments[0]->getAsTyped()->getType();
+
+    const bool isCastNonScalarToScalar =
+        arguments.size() == 1 && type.isScalar() && (arg0Type.isVector() || arg0Type.isMatrix());
+    
+    
+    const bool isInactionableScalar = type.isScalar() && !isCastNonScalarToScalar;
+    const bool isSingleVectorCast   = arguments.size() == 1 && type.isVector() &&
+                                    arg0Type.isVector() &&
+                                    type.getNominalSize() == arg0Type.getNominalSize();
+    const bool isSingleMatrixCast = arguments.size() == 1 && type.isMatrix() &&
+                                    arg0Type.isMatrix() && type.getCols() == arg0Type.getCols() &&
+                                    type.getRows() == arg0Type.getRows();
+
+    
+    if (type.isArray() || type.getStruct() != nullptr || isInactionableScalar ||
+        isSingleVectorCast || isSingleMatrixCast)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+const TFunction *ScalarizeTraverser::createHelper(TIntermAggregate *node)
+{
+    TFunction *helper =
+        new TFunction(mSymbolTable, kEmptyImmutableString, SymbolType::AngleInternal,
+                      GetHelperType(node->getType(), EvqTemporary), true);
+
+    const TIntermSequence &arguments = *node->getSequence();
+    for (TIntermNode *arg : arguments)
+    {
+        const TType *argType = GetHelperType(arg->getAsTyped()->getType(), EvqParamIn);
+
+        TVariable *argVar =
+            new TVariable(mSymbolTable, kEmptyImmutableString, argType, SymbolType::AngleInternal);
+        helper->addParameter(argVar);
+    }
+
+    return helper;
+}
+
+TIntermTyped *ScalarizeTraverser::createHelperCall(TIntermAggregate *node, const TFunction *helper)
+{
+    TIntermSequence callArgs;
+
+    const TIntermSequence &arguments = *node->getSequence();
+    for (TIntermNode *arg : arguments)
+    {
+        
+        callArgs.push_back(createConstructor(arg->getAsTyped()));
+    }
+
+    return TIntermAggregate::CreateFunctionCall(*helper, &callArgs);
+}
+
+void ScalarizeTraverser::addHelperDefinition(const TFunction *helper, TIntermBlock *body)
+{
+    mFunctionsToAdd.push_back(
+        new TIntermFunctionDefinition(new TIntermFunctionPrototype(helper), body));
+}
+
+TIntermTyped *ScalarizeTraverser::createConstructor(TIntermTyped *typed)
+{
+    if (!shouldScalarize(typed))
+    {
+        typed->traverse(this);
+        return typed;
+    }
+
+    TIntermAggregate *node           = typed->getAsAggregate();
+    const TType &type                = node->getType();
+    const TIntermSequence &arguments = *node->getSequence();
+    const TType &arg0Type            = arguments[0]->getAsTyped()->getType();
+
+    const TFunction *helper = createHelper(node);
+    TIntermSequence constructorArgs;
+
+    if (type.isScalar())
+    {
+        if (arg0Type.isVector())
         {
-            sequence->push_back(argVariable);
-            size--;
+            createConstructorScalarFromVector(node, helper, &constructorArgs);
         }
-        else if (originalArg->isVector())
+        else if (arg0Type.isMatrix())
         {
-            if (scalarizeVector)
-            {
-                int repeat = std::min<int>(size, originalArg->getNominalSize());
-                size -= repeat;
-                for (int index = 0; index < repeat; ++index)
-                {
-                    TIntermBinary *newNode =
-                        ConstructVectorIndexBinaryNode(argVariable->deepCopy(), index);
-                    sequence->push_back(newNode);
-                }
-            }
-            else
-            {
-                sequence->push_back(argVariable);
-                size -= originalArg->getNominalSize();
-            }
+            createConstructorScalarFromMatrix(node, helper, &constructorArgs);
         }
-        else
+    }
+    else if (type.isVector())
+    {
+        if (arguments.size() == 1 && arg0Type.isScalar())
         {
-            ASSERT(originalArg->isMatrix());
-            if (scalarizeMatrix)
+            createConstructorVectorFromScalar(node, helper, &constructorArgs);
+        }
+        createConstructorVectorFromMultiple(node, helper, &constructorArgs);
+    }
+    else
+    {
+        ASSERT(type.isMatrix());
+
+        if (arg0Type.isScalar() && arguments.size() == 1)
+        {
+            createConstructorMatrixFromScalar(node, helper, &constructorArgs);
+        }
+        if (arg0Type.isMatrix())
+        {
+            createConstructorMatrixFromMatrix(node, helper, &constructorArgs);
+        }
+        createConstructorMatrixFromVectors(node, helper, &constructorArgs);
+    }
+
+    TIntermBlock *body = new TIntermBlock;
+    body->appendStatement(
+        new TIntermBranch(EOpReturn, TIntermAggregate::CreateConstructor(type, &constructorArgs)));
+    addHelperDefinition(helper, body);
+
+    return createHelperCall(node, helper);
+}
+
+
+
+void ScalarizeTraverser::extractComponents(TIntermAggregate *node,
+                                           const TFunction *helper,
+                                           size_t componentCount,
+                                           TIntermSequence *componentsOut)
+{
+    for (size_t argumentIndex = 0;
+         argumentIndex < helper->getParamCount() && componentsOut->size() < componentCount;
+         ++argumentIndex)
+    {
+        TIntermTyped *argument    = new TIntermSymbol(helper->getParam(argumentIndex));
+        const TType &argumentType = argument->getType();
+
+        if (argumentType.isScalar())
+        {
+            
+            componentsOut->push_back(CastScalar(node, argument));
+            continue;
+        }
+        if (argumentType.isVector())
+        {
+            
+            for (uint8_t componentIndex = 0; componentIndex < argumentType.getNominalSize() &&
+                                             componentsOut->size() < componentCount;
+                 ++componentIndex)
             {
-                int colIndex = 0, rowIndex = 0;
-                int repeat = std::min<int>(size, originalArg->getCols() * originalArg->getRows());
-                size -= repeat;
-                while (repeat > 0)
-                {
-                    TIntermBinary *newNode =
-                        ConstructMatrixIndexBinaryNode(argVariable->deepCopy(), colIndex, rowIndex);
-                    sequence->push_back(newNode);
-                    rowIndex++;
-                    if (rowIndex >= originalArg->getRows())
-                    {
-                        rowIndex = 0;
-                        colIndex++;
-                    }
-                    repeat--;
-                }
+                componentsOut->push_back(
+                    CastScalar(node, new TIntermSwizzle(argument->deepCopy(), {componentIndex})));
             }
-            else
+            continue;
+        }
+
+        ASSERT(argumentType.isMatrix());
+
+        
+        
+        for (uint8_t columnIndex = 0;
+             columnIndex < argumentType.getCols() && componentsOut->size() < componentCount;
+             ++columnIndex)
+        {
+            TIntermTyped *col = new TIntermBinary(EOpIndexDirect, argument->deepCopy(),
+                                                  CreateIndexNode(columnIndex));
+
+            for (uint8_t componentIndex = 0;
+                 componentIndex < argumentType.getRows() && componentsOut->size() < componentCount;
+                 ++componentIndex)
             {
-                sequence->push_back(argVariable);
-                size -= originalArg->getCols() * originalArg->getRows();
+                componentsOut->push_back(
+                    CastScalar(node, new TIntermSwizzle(col->deepCopy(), {componentIndex})));
             }
         }
     }
 }
 
-TIntermTyped *ScalarizeArgsTraverser::createTempVariable(TIntermTyped *original)
+void ScalarizeTraverser::createConstructorScalarFromVector(TIntermAggregate *node,
+                                                           const TFunction *helper,
+                                                           TIntermSequence *constructorArgsOut)
 {
-    ASSERT(original);
-
-    TType *type = new TType(original->getType());
-    type->setQualifier(EvqTemporary);
-
+    TIntermTyped *vec = new TIntermSymbol(helper->getParam(0));
+    ASSERT(vec->getType().isVector());
     
-    
-    
-    
-    
-    
-    
-    if (IsPrecisionApplicableToType(type->getBasicType()) && type->getPrecision() == EbpUndefined)
-    {
-        return original;
-    }
-
-    TVariable *variable = CreateTempVariable(mSymbolTable, type);
-
-    ASSERT(mBlockStack.size() > 0);
-    TIntermSequence &sequence       = mBlockStack.back();
-    TIntermDeclaration *declaration = CreateTempInitDeclarationNode(variable, original);
-    sequence.push_back(declaration);
-
-    return CreateTempSymbolNode(variable);
+    constructorArgsOut->push_back(new TIntermSwizzle(vec, {0}));
 }
 
+void ScalarizeTraverser::createConstructorScalarFromMatrix(TIntermAggregate *node,
+                                                           const TFunction *helper,
+                                                           TIntermSequence *constructorArgsOut)
+{
+    TIntermTyped *matrix = new TIntermSymbol(helper->getParam(0));
+    ASSERT(matrix->getType().isMatrix());
+    TIntermTyped *col = new TIntermBinary(EOpIndexDirect, matrix, CreateIndexNode(0));
+    
+    constructorArgsOut->push_back(new TIntermSwizzle(col, {static_cast<uint32_t>(0)}));
+}
+
+void ScalarizeTraverser::createConstructorVectorFromScalar(TIntermAggregate *node,
+                                                           const TFunction *helper,
+                                                           TIntermSequence *constructorArgsOut)
+{
+    ASSERT(helper->getParamCount() == 1);
+    TIntermTyped *scalar = new TIntermSymbol(helper->getParam(0));
+    const TType &type    = node->getType();
+
+    
+    for (size_t index = 0; index < type.getNominalSize(); ++index)
+    {
+        constructorArgsOut->push_back(CastScalar(node, scalar->deepCopy()));
+    }
+}
+
+void ScalarizeTraverser::createConstructorVectorFromMultiple(TIntermAggregate *node,
+                                                             const TFunction *helper,
+                                                             TIntermSequence *constructorArgsOut)
+{
+    extractComponents(node, helper, node->getType().getNominalSize(), constructorArgsOut);
+}
+
+void ScalarizeTraverser::createConstructorMatrixFromScalar(TIntermAggregate *node,
+                                                           const TFunction *helper,
+                                                           TIntermSequence *constructorArgsOut)
+{
+    ASSERT(helper->getParamCount() == 1);
+    TIntermTyped *scalar = new TIntermSymbol(helper->getParam(0));
+    const TType &type    = node->getType();
+
+    
+    for (uint8_t columnIndex = 0; columnIndex < type.getCols(); ++columnIndex)
+    {
+        for (uint8_t rowIndex = 0; rowIndex < type.getRows(); ++rowIndex)
+        {
+            if (columnIndex == rowIndex)
+            {
+                constructorArgsOut->push_back(CastScalar(node, scalar->deepCopy()));
+            }
+            else
+            {
+                ASSERT(type.getBasicType() == EbtFloat);
+                constructorArgsOut->push_back(CreateFloatNode(0, type.getPrecision()));
+            }
+        }
+    }
+}
+
+void ScalarizeTraverser::createConstructorMatrixFromVectors(TIntermAggregate *node,
+                                                            const TFunction *helper,
+                                                            TIntermSequence *constructorArgsOut)
+{
+    const TType &type = node->getType();
+    extractComponents(node, helper, type.getCols() * type.getRows(), constructorArgsOut);
+}
+
+void ScalarizeTraverser::createConstructorMatrixFromMatrix(TIntermAggregate *node,
+                                                           const TFunction *helper,
+                                                           TIntermSequence *constructorArgsOut)
+{
+    ASSERT(helper->getParamCount() == 1);
+    TIntermTyped *matrix = new TIntermSymbol(helper->getParam(0));
+    const TType &type    = node->getType();
+
+    
+    for (uint8_t columnIndex = 0; columnIndex < type.getCols(); ++columnIndex)
+    {
+        for (uint8_t rowIndex = 0; rowIndex < type.getRows(); ++rowIndex)
+        {
+            if (columnIndex < matrix->getType().getCols() && rowIndex < matrix->getType().getRows())
+            {
+                TIntermTyped *col = new TIntermBinary(EOpIndexDirect, matrix->deepCopy(),
+                                                      CreateIndexNode(columnIndex));
+                constructorArgsOut->push_back(
+                    CastScalar(node, new TIntermSwizzle(col, {static_cast<uint32_t>(rowIndex)})));
+            }
+            else
+            {
+                ASSERT(type.getBasicType() == EbtFloat);
+                constructorArgsOut->push_back(
+                    CreateFloatNode(columnIndex == rowIndex ? 1.0f : 0.0f, type.getPrecision()));
+            }
+        }
+    }
+}
+
+bool ScalarizeTraverser::update(TCompiler *compiler, TIntermBlock *root)
+{
+    
+    root->insertChildNodes(0, mFunctionsToAdd);
+
+    
+    return updateTree(compiler, root);
+}
 }  
 
 bool ScalarizeVecAndMatConstructorArgs(TCompiler *compiler,
                                        TIntermBlock *root,
                                        TSymbolTable *symbolTable)
 {
-    ScalarizeArgsTraverser scalarizer(symbolTable);
+    ScalarizeTraverser scalarizer(symbolTable);
     root->traverse(&scalarizer);
-
-    return compiler->validateAST(root);
+    return scalarizer.update(compiler, root);
 }
-
 }  
+
+#else
+namespace sh
+{
+bool ScalarizeVecAndMatConstructorArgs(TCompiler *compiler,
+                                       TIntermBlock *root,
+                                       TSymbolTable *symbolTable)
+{
+    UNREACHABLE();
+    return false;
+}
+}  
+#endif  
