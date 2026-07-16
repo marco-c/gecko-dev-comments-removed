@@ -490,16 +490,14 @@ class Assembler : public AssemblerShared,
 
   
   void break_(uint32_t code, bool break_as_stop = false);
-  void RV_li(Register rd, int64_t imm);
-  static int RV_li_count(int64_t imm, bool is_get_temp_reg = false);
-  void GeneralLi(Register rd, int64_t imm);
-  static int GeneralLiCount(int64_t imm, bool is_get_temp_reg = false);
-  void RecursiveLiImpl(Register rd, int64_t imm);
-  void RecursiveLi(Register rd, int64_t imm);
-  static int RecursiveLiCount(int64_t imm);
-  static int RecursiveLiImplCount(int64_t imm);
+
   
-  static int li_estimate(int64_t imm, bool is_get_temp_reg = false);
+  
+  
+  
+  
+  
+  void RV_li(Register rd, int64_t imm);
 
   
   

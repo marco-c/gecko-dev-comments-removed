@@ -9,8 +9,13 @@
 
 
 
+#include "mozilla/Assertions.h"
+#include "mozilla/MathAlgorithms.h"
+
+#include <algorithm>
 #include <array>
 #include <bit>
+#include <type_traits>
 
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "jit/riscv64/base/Integer.h"
@@ -33,10 +38,11 @@ class InstSeq {
 
   auto* next() {
     MOZ_RELEASE_ASSERT(size_ < MaxLength);
-    return &instrs_[size_++];
+    return &insts_[size_++];
   }
 
  public:
+  bool empty() const { return size_ == 0; }
   size_t size() const { return size_; }
 
   auto begin() { return insts_.begin(); }
@@ -45,8 +51,42 @@ class InstSeq {
   auto end() { return std::next(insts_.begin(), size_); }
   auto end() const { return std::next(insts_.begin(), size_); }
 
+  auto& operator[](size_t i) {
+    MOZ_RELEASE_ASSERT(i < size_);
+    return insts_[i];
+  }
+
+  const auto& operator[](size_t i) const {
+    MOZ_RELEASE_ASSERT(i < size_);
+    return insts_[i];
+  }
+
+  
+  void clear() { size_ = 0; }
+
+  
+  void erase_front() {
+    MOZ_RELEASE_ASSERT(!empty());
+    std::move(std::next(insts_.begin()), insts_.end(), insts_.begin());
+    size_--;
+  }
+
+  
+  void append(const InstSeq& other) {
+    MOZ_RELEASE_ASSERT(size_ + other.size_ <= MaxLength);
+    std::copy(other.begin(), other.end(), end());
+    size_ += other.size_;
+  }
+
+  void assertRegisters(Register rd) const;
+
+  
+
   void lui(Register rd, int32_t imm20) {
     next()->SetUFormat(RO_LUI, rd.code(), imm20);
+  }
+  void add(Register rd, Register rs1, Register rs2) {
+    next()->SetRFormat(RO_ADD, rd.code(), rs1.code(), rs2.code());
   }
   void addi(Register rd, Register rs1, int16_t imm12) {
     next()->SetIFormat(RO_ADDI, rd.code(), rs1.code(), imm12);
@@ -54,20 +94,130 @@ class InstSeq {
   void addiw(Register rd, Register rs1, int16_t imm12) {
     next()->SetIFormat(RO_ADDIW, rd.code(), rs1.code(), imm12);
   }
+  void xori(Register rd, Register rs1, int16_t imm12) {
+    next()->SetIFormat(RO_XORI, rd.code(), rs1.code(), imm12);
+  }
   void slli(Register rd, Register rs1, uint8_t shamt) {
     next()->SetIShiftFormat(RO_SLLI, rd.code(), rs1.code(), shamt);
+  }
+  void slli_uw(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShift32Format(RO_SLLIUW, rd.code(), rs1.code(), shamt);
   }
   void srli(Register rd, Register rs1, uint8_t shamt) {
     next()->SetIShiftFormat(RO_SRLI, rd.code(), rs1.code(), shamt);
   }
+  void bseti(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShiftFormat(RO_BSETI, rd.code(), rs1.code(), shamt);
+  }
+  void bclri(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShiftFormat(RO_BCLRI, rd.code(), rs1.code(), shamt);
+  }
+  void add_uw(Register rd, Register rs1, Register rs2) {
+    next()->SetRFormat(RO_ADDUW, rd.code(), rs1.code(), rs2.code());
+  }
+  void zext_w(Register rd, Register rs1) { add_uw(rd, rs1, zero_reg); }
+  void sh1add(Register rd, Register rs1, Register rs2) {
+    next()->SetRFormat(RO_SH1ADD, rd.code(), rs1.code(), rs2.code());
+  }
+  void sh2add(Register rd, Register rs1, Register rs2) {
+    next()->SetRFormat(RO_SH2ADD, rd.code(), rs1.code(), rs2.code());
+  }
+  void sh3add(Register rd, Register rs1, Register rs2) {
+    next()->SetRFormat(RO_SH3ADD, rd.code(), rs1.code(), rs2.code());
+  }
+  void rori(Register rd, Register rs1, uint8_t shamt) {
+    next()->SetIShiftFormat(RO_RORI, rd.code(), rs1.code(), shamt);
+  }
 };
 
-static inline int64_t signExtend(uint64_t V, int N) {
-  return int64_t(V << (64 - N)) >> (64 - N);
+
+void InstSeq::assertRegisters(Register rd) const {
+#ifdef DEBUG
+  bool first = true;
+  for (auto inst : *this) {
+    
+    
+    Register src = first ? zero_reg : rd;
+    first = false;
+
+    switch (inst.InstructionType()) {
+      case Instruction::kRType:
+        MOZ_ASSERT(inst.Rs2Value() == src.code() ||
+                   inst.Rs2Value() == zero_reg.code());
+        [[fallthrough]];
+      case Instruction::kIType:
+        MOZ_ASSERT(inst.Rs1Value() == src.code());
+        [[fallthrough]];
+      case Instruction::kUType:
+        MOZ_ASSERT(inst.RdValue() == rd.code());
+        break;
+      default:
+        MOZ_CRASH("unexpected instruction type");
+    }
+  }
+#endif
 }
 
-static void RecursiveLiImpl(Register rd, int64_t imm, InstSeq& result) {
-  if (is_int32(imm)) {
+
+
+
+
+template <typename T>
+static constexpr T MaskTrailingOnes(unsigned N) {
+  static_assert(std::is_unsigned_v<T>, "Invalid type!");
+  const unsigned Bits = CHAR_BIT * sizeof(T);
+  MOZ_ASSERT(N <= Bits && "Invalid bit index");
+  if (N == 0) {
+    return 0;
+  }
+  return T(-1) >> (Bits - N);
+}
+
+
+
+template <typename T>
+static constexpr T MaskLeadingOnes(unsigned N) {
+  return ~MaskTrailingOnes<T>(CHAR_BIT * sizeof(T) - N);
+}
+
+
+
+template <typename T>
+static constexpr T MaskTrailingZeros(unsigned N) {
+  return MaskLeadingOnes<T>(CHAR_BIT * sizeof(T) - N);
+}
+
+
+
+template <unsigned B>
+static constexpr int64_t SignExtend64(uint64_t x) {
+  static_assert(B <= 64, "Bit width out of range.");
+  if constexpr (B == 0) {
+    return 0;
+  }
+  return int64_t(x << (64 - B)) >> (64 - B);
+}
+
+
+static constexpr uint32_t Hi_32(uint64_t Value) {
+  return static_cast<uint32_t>(Value >> 32);
+}
+
+
+static constexpr uint32_t Lo_32(uint64_t Value) {
+  return static_cast<uint32_t>(Value);
+}
+
+
+static void GenerateInstSeqImpl(Register rd, int64_t Val, InstSeq& result) {
+  
+  if (RVFlags::HasZbsExtension() && std::has_single_bit(uint64_t(Val)) &&
+      (!is_int32(Val) || Val == 0x800)) {
+    result.bseti(rd, zero_reg, mozilla::FindMostSignificantBit(uint64_t(Val)));
+    return;
+  }
+
+  if (is_int32(Val)) {
     
     
     
@@ -75,10 +225,10 @@ static void RecursiveLiImpl(Register rd, int64_t imm, InstSeq& result) {
     
     
     
-    auto [Hi20, Lo12] = ToHigh20Low12(int32_t(imm));
+    auto [Hi20, Lo12] = ToHigh20Low12(int32_t(Val));
 
     if (Hi20) {
-      result.lui(rd, (int32_t)Hi20);
+      result.lui(rd, Hi20);
     }
 
     if (Lo12 || Hi20 == 0) {
@@ -115,69 +265,451 @@ static void RecursiveLiImpl(Register rd, int64_t imm, InstSeq& result) {
   
   
 
-  int64_t Lo12 = imm << 52 >> 52;
-  int64_t Hi52 = ((uint64_t)imm + 0x800ull) >> 12;
-  int ShiftAmount = 12 + std::countr_zero((uint64_t)Hi52);
-  Hi52 = signExtend(Hi52 >> (ShiftAmount - 12), 64 - ShiftAmount);
+  int64_t Lo12 = SignExtend64<12>(Val);
+  int64_t Hi52 = uint64_t(Val) - uint64_t(Lo12);
+
+  int ShiftAmount = 0;
+  bool UnsignedShift = false;
 
   
-  
-  bool Unsigned = false;
-  if (ShiftAmount > 12 && !is_int12(Hi52)) {
-    if (is_int32((uint64_t)Hi52 << 12)) {
+  if (!is_int32(Hi52)) {
+    ShiftAmount = std::countr_zero(uint64_t(Hi52));
+    Hi52 >>= ShiftAmount;
+
+    
+    
+    
+    if (ShiftAmount > 12 && !is_int12(Hi52)) {
+      if (is_int32(uint64_t(Hi52) << 12)) {
+        
+        
+        ShiftAmount -= 12;
+        Hi52 = uint64_t(Hi52) << 12;
+      } else if (is_uint32(uint64_t(Hi52) << 12) &&
+                 RVFlags::HasZbaExtension()) {
+        
+        
+        ShiftAmount -= 12;
+        Hi52 = SignExtend64<32>(uint64_t(Hi52) << 12);
+        UnsignedShift = true;
+      }
+    }
+
+    
+    if (is_uint32(Hi52) && !is_int32(Hi52) && RVFlags::HasZbaExtension()) {
       
       
-      ShiftAmount -= 12;
-      Hi52 = (uint64_t)Hi52 << 12;
+      Hi52 = SignExtend64<32>(uint64_t(Hi52));
+      UnsignedShift = true;
     }
   }
-  RecursiveLiImpl(rd, Hi52, result);
 
-  if (Unsigned) {
-  } else {
-    result.slli(rd, rd, ShiftAmount);
+  GenerateInstSeqImpl(rd, Hi52, result);
+
+  
+  if (ShiftAmount) {
+    if (UnsignedShift) {
+      result.slli_uw(rd, rd, ShiftAmount);
+    } else {
+      result.slli(rd, rd, ShiftAmount);
+    }
   }
+
   if (Lo12) {
     result.addi(rd, rd, Lo12);
   }
 }
 
-static void RecursiveLi(Register rd, int64_t imm, InstSeq& result) {
-  MOZ_ASSERT(result.size() == 0);
+static unsigned ExtractRotateInfo(int64_t Val) {
+  
+  unsigned LeadingOnes = std::countl_one(uint64_t(Val));
+  unsigned TrailingOnes = std::countr_one(uint64_t(Val));
+  if (TrailingOnes > 0 && TrailingOnes < 64 &&
+      (LeadingOnes + TrailingOnes) > (64 - 12)) {
+    return 64 - TrailingOnes;
+  }
 
-  RecursiveLiImpl(rd, imm, result);
+  
+  unsigned UpperTrailingOnes = std::countr_one(Hi_32(Val));
+  unsigned LowerLeadingOnes = std::countl_one(Lo_32(Val));
+  if (UpperTrailingOnes < 32 &&
+      (UpperTrailingOnes + LowerLeadingOnes) > (64 - 12)) {
+    return 32 - UpperTrailingOnes;
+  }
 
-  if (imm > 0 && result.size() > 2) {
+  return 0;
+}
+
+static void GenerateInstSeqLeadingZeros(Register rd, int64_t Val,
+                                        InstSeq& result) {
+  MOZ_ASSERT(Val > 0, "Expected positive val");
+
+  unsigned LeadingZeros = std::countl_zero(uint64_t(Val));
+  uint64_t ShiftedVal = uint64_t(Val) << LeadingZeros;
+  
+  
+  
+  ShiftedVal |= MaskTrailingOnes<uint64_t>(LeadingZeros);
+
+  InstSeq tmpSeq;
+  GenerateInstSeqImpl(rd, ShiftedVal, tmpSeq);
+
+  
+  if ((tmpSeq.size() + 1) < result.size() ||
+      (result.empty() && tmpSeq.size() < 8)) {
+    tmpSeq.srli(rd, rd, LeadingZeros);
+    result = tmpSeq;
+  }
+
+  
+  ShiftedVal &= MaskTrailingZeros<uint64_t>(LeadingZeros);
+  tmpSeq.clear();
+  GenerateInstSeqImpl(rd, ShiftedVal, tmpSeq);
+
+  
+  if ((tmpSeq.size() + 1) < result.size() ||
+      (result.empty() && tmpSeq.size() < 8)) {
+    tmpSeq.srli(rd, rd, LeadingZeros);
+    result = tmpSeq;
+  }
+
+  
+  
+  if (LeadingZeros == 32 && RVFlags::HasZbaExtension()) {
     
-    
-    
-    unsigned LeadingZeros = std::countl_zero((uint64_t)imm);
-    uint64_t ShiftedVal = (uint64_t)imm << LeadingZeros;
+    uint64_t LeadingOnesVal = SignExtend64<32>(Val);
+    tmpSeq.clear();
+    GenerateInstSeqImpl(rd, LeadingOnesVal, tmpSeq);
 
-    InstSeq shifted;
-    ::RecursiveLi(shifted, rd, ShiftedVal);
-
-    size_t countFillZero = shifted.size() + 1;
-    if (countFillZero < result.size()) {
-      result = shifted;
-      result.srli(rd, rd, LeadingZeros);
+    
+    if ((tmpSeq.size() + 1) < result.size() ||
+        (result.empty() && tmpSeq.size() < 8)) {
+      tmpSeq.zext_w(rd, rd);
+      result = tmpSeq;
     }
   }
 }
 
-void js::jit::Assembler::RecursiveLi(Register rd, int64_t imm) {
-  InstSeq seq;
-  ::RecursiveLi(rd, imm, seq);
+static void GenerateInstSeq(Register rd, int64_t Val, InstSeq& result) {
+  MOZ_ASSERT(result.empty());
 
+  GenerateInstSeqImpl(rd, Val, result);
+
+  
+  
+  
+  
+  
+  
+  if ((Val & 0xfff) != 0 && (Val & 1) == 0 && result.size() > 2) {
+    unsigned TrailingZeros = std::countr_zero(uint64_t(Val));
+    int64_t ShiftedVal = Val >> TrailingZeros;
+
+    InstSeq tmpSeq;
+    GenerateInstSeqImpl(rd, ShiftedVal, tmpSeq);
+
+    
+    if ((tmpSeq.size() + 1) < result.size()) {
+      tmpSeq.slli(rd, rd, TrailingZeros);
+      result = tmpSeq;
+    }
+  }
+
+  
+  if (result.size() <= 2) {
+    result.assertRegisters(rd);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  if ((Val & 0xfff) != 0 && (Val & 0x1800) == 0x1000) {
+    int64_t Imm12 = -(0x800 - (Val & 0xfff));
+    int64_t AdjustedVal = Val - Imm12;
+    InstSeq tmpSeq;
+    GenerateInstSeqImpl(rd, AdjustedVal, tmpSeq);
+
+    
+    if ((tmpSeq.size() + 1) < result.size()) {
+      tmpSeq.addi(rd, rd, Imm12);
+      result = tmpSeq;
+    }
+  }
+
+  
+  
+  if (Val > 0 && result.size() > 2) {
+    GenerateInstSeqLeadingZeros(rd, Val, result);
+  }
+
+  
+  
+  if (Val < 0 && result.size() > 3) {
+    uint64_t InvertedVal = ~uint64_t(Val);
+    InstSeq tmpSeq;
+    GenerateInstSeqLeadingZeros(rd, InvertedVal, tmpSeq);
+
+    
+    if (!tmpSeq.empty() && (tmpSeq.size() + 1) < result.size()) {
+      tmpSeq.xori(rd, rd, -1);
+      result = tmpSeq;
+    }
+  }
+
+  
+  if (result.size() > 2 && RVFlags::HasZbsExtension()) {
+    
+    
+    
+    uint64_t Lo = Val & 0x7fffffff;
+    uint64_t Hi = Val ^ Lo;
+    MOZ_ASSERT(Hi != 0);
+    InstSeq tmpSeq;
+
+    if (Lo != 0) {
+      GenerateInstSeqImpl(rd, Lo, tmpSeq);
+    }
+
+    if (tmpSeq.size() + std::popcount(Hi) < result.size()) {
+      do {
+        Register src = tmpSeq.empty() ? zero_reg : rd;
+        tmpSeq.bseti(rd, src, std::countr_zero(Hi));
+        Hi &= (Hi - 1);  
+      } while (Hi != 0);
+      result = tmpSeq;
+    }
+
+    
+    if (result[0].IsAddi() && result[0].Imm12Value() == 1 &&
+        result[1].IsSlli()) {
+      result.erase_front();    
+      auto& slli = result[0];  
+      slli.SetIShiftFormat(RO_BSETI, slli.RdValue(), zero_reg.code(),
+                           slli.Shamt());
+    }
+  }
+
+  
+  if (result.size() > 2 && RVFlags::HasZbsExtension()) {
+    
+    
+    
+    uint64_t Lo = Val | 0xffffffff80000000;
+    uint64_t Hi = Val ^ Lo;
+    MOZ_ASSERT(Hi != 0);
+
+    InstSeq tmpSeq;
+    GenerateInstSeqImpl(rd, Lo, tmpSeq);
+
+    if (tmpSeq.size() + std::popcount(Hi) < result.size()) {
+      do {
+        tmpSeq.bclri(rd, rd, std::countr_zero(Hi));
+        Hi &= (Hi - 1);  
+      } while (Hi != 0);
+      result = tmpSeq;
+    }
+  }
+
+  
+  if (result.size() > 2 && RVFlags::HasZbaExtension()) {
+    int64_t Div = 0;
+    InstSeq tmpSeq;
+    
+    if ((Val % 3) == 0 && is_int32(Val / 3)) {
+      Div = 3;
+    } else if ((Val % 5) == 0 && is_int32(Val / 5)) {
+      Div = 5;
+    } else if ((Val % 9) == 0 && is_int32(Val / 9)) {
+      Div = 9;
+    }
+    
+    if (Div > 0) {
+      GenerateInstSeqImpl(rd, Val / Div, tmpSeq);
+      if ((tmpSeq.size() + 1) < result.size()) {
+        if (Div == 3) {
+          tmpSeq.sh1add(rd, rd, rd);
+        } else if (Div == 5) {
+          tmpSeq.sh2add(rd, rd, rd);
+        } else {
+          tmpSeq.sh3add(rd, rd, rd);
+        }
+        result = tmpSeq;
+      }
+    } else {
+      
+      int64_t Hi52 = (uint64_t(Val) + 0x800ull) & ~0xfffull;
+      int64_t Lo12 = SignExtend64<12>(Val);
+      Div = 0;
+      if (is_int32(Hi52 / 3) && (Hi52 % 3) == 0) {
+        Div = 3;
+      } else if (is_int32(Hi52 / 5) && (Hi52 % 5) == 0) {
+        Div = 5;
+      } else if (is_int32(Hi52 / 9) && (Hi52 % 9) == 0) {
+        Div = 9;
+      }
+      
+      if (Div > 0) {
+        
+        
+        MOZ_ASSERT(
+            Lo12 != 0,
+            "unexpected instruction sequence for immediate materialisation");
+        MOZ_ASSERT(tmpSeq.empty(), "Expected empty TmpSeq");
+        GenerateInstSeqImpl(rd, Hi52 / Div, tmpSeq);
+        if ((tmpSeq.size() + 2) < result.size()) {
+          if (Div == 3) {
+            tmpSeq.sh1add(rd, rd, rd);
+          } else if (Div == 5) {
+            tmpSeq.sh2add(rd, rd, rd);
+          } else {
+            tmpSeq.sh3add(rd, rd, rd);
+          }
+          tmpSeq.addi(rd, rd, Lo12);
+          result = tmpSeq;
+        }
+      }
+    }
+  }
+
+  
+  if (result.size() > 2 && RVFlags::HasZbbExtension()) {
+    if (unsigned Rotate = ExtractRotateInfo(Val)) {
+      InstSeq tmpSeq;
+      uint64_t NegImm12 = std::rotl<uint64_t>(Val, Rotate);
+      MOZ_ASSERT(is_int12(NegImm12));
+      tmpSeq.addi(rd, zero_reg, NegImm12);
+      tmpSeq.rori(rd, rd, Rotate);
+      result = tmpSeq;
+    }
+  }
+
+  result.assertRegisters(rd);
+}
+
+
+
+
+
+static void GenerateTwoRegInstSeq(Register rd, Register rt, int64_t Val,
+                                  InstSeq& result) {
+  MOZ_ASSERT(result.empty());
+
+  int64_t LoVal = SignExtend64<32>(Val);
+  if (LoVal == 0) {
+    return;
+  }
+
+  
+  uint64_t Tmp = uint64_t(Val) - uint64_t(LoVal);
+  MOZ_ASSERT(Tmp != 0);
+
+  
+  
+  
+  
+  unsigned TzLo = std::countr_zero(uint64_t(LoVal));
+  unsigned TzHi = std::countr_zero(Tmp);
+  MOZ_ASSERT(TzLo < 32 && TzHi >= 32);
+  unsigned ShiftAmt = TzHi - TzLo;
+
+  if (Tmp == (uint64_t(LoVal) << ShiftAmt)) {
+    GenerateInstSeq(rd, LoVal, result);
+    MOZ_ASSERT(result.size() <= 2);
+
+    result.slli(rt, rd, ShiftAmt);
+    result.add(rd, rd, rt);
+    return;
+  }
+
+  
+  if (RVFlags::HasZbaExtension() && Lo_32(Val) == Hi_32(Val)) {
+    GenerateInstSeq(rd, LoVal, result);
+    MOZ_ASSERT(result.size() <= 2);
+
+    result.slli(rt, rd, 32);
+    result.add_uw(rd, rd, rt);
+    return;
+  }
+
+  
+}
+
+
+
+
+
+
+
+
+static void GenerateTwoHalvesInstSeq(Register rd, Register temp, int64_t imm,
+                                     InstSeq& result) {
+  MOZ_ASSERT(!is_int32(imm));
+  MOZ_ASSERT(result.empty());
+
+  int64_t high_32 = imm >> 32;
+  int64_t low_32 = SignExtend64<32>(imm);
+
+  
+  if (low_32 < 0) {
+    high_32 = high_32 + 1;
+  }
+
+  
+  InstSeq lowSeq;
+  GenerateInstSeq(rd, low_32, lowSeq);
+  MOZ_ASSERT(lowSeq.size() <= 2);
+
+  
+  InstSeq highSeq;
+  GenerateInstSeq(temp, high_32, highSeq);
+  MOZ_ASSERT(highSeq.size() <= 2);
+
+  
+  result.append(lowSeq);
+  result.append(highSeq);
+  result.slli(temp, temp, 32);
+  result.add(rd, rd, temp);
+}
+
+void Assembler::RV_li(Register rd, int64_t imm) {
+  UseScratchRegisterScope temps(this);
+
+  InstSeq seq;
+  GenerateInstSeq(rd, imm, seq);
+
+  
+  
+  if (seq.size() > 3 && temps.hasAvailable()) {
+    Register temp = temps.Acquire();
+    InstSeq tmpSeq;
+
+    
+    GenerateTwoRegInstSeq(rd, temp, imm, tmpSeq);
+    MOZ_ASSERT_IF(!tmpSeq.empty(), 3 <= tmpSeq.size() && tmpSeq.size() <= 4);
+
+    
+    if (tmpSeq.empty() && seq.size() > 4) {
+      GenerateTwoHalvesInstSeq(rd, temp, imm, tmpSeq);
+      MOZ_ASSERT(4 <= tmpSeq.size() && tmpSeq.size() <= 6);
+    }
+
+    
+    if (!tmpSeq.empty() && tmpSeq.size() < seq.size()) {
+      seq = tmpSeq;
+    }
+  }
+
+  
+  
+  
+  
   AutoForbidPoolsAndNops afp(this, 8);
+
+  
   for (auto instr : seq) {
     emit(instr);
   }
-}
-
-int js::jit::Assembler::RecursiveLiCount(int64_t imm) {
-  InstSeq seq;
-  ::RecursiveLi(zero, imm, seq);
-
-  return seq.size();
 }
