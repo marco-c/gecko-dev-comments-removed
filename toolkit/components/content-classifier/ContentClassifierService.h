@@ -76,10 +76,21 @@ struct ContentClassifierFeature {
   
   
   bool mExceptionOnly;
+
   
   
   
   Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
+
+  
+  
+  
+  
+  bool (*mRequestFilter)(const ContentClassifierRequest&);
+
+  
+  
+  void (*mCancelChannelCallback)(nsIChannel*);
 };
 
 enum class InitPhase {

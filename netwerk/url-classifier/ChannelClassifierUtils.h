@@ -37,10 +37,12 @@ class ChannelClassifierUtils final {
   
   
   
+  
   static nsresult MaybeBlockChannel(
       nsIChannel* aChannel, const nsACString& aFeatureName,
       const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
-      uint32_t aAllowedEvent, ChannelBlockDecision* aOutDecision);
+      uint32_t aAllowedEvent, void (*aCancelCallback)(nsIChannel*),
+      ChannelBlockDecision* aOutDecision);
 
   
   static bool IsClassifierBlockingErrorCode(nsresult aError);
