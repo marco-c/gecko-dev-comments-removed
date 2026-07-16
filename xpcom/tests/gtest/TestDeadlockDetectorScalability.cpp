@@ -5,10 +5,9 @@
 
 #undef MOZ_DMD
 
-#include "nsIMemoryReporter.h"
-#include "mozilla/Mutex.h"
-
 #include "gtest/gtest.h"
+#include "mozilla/Mutex.h"
+#include "nsIMemoryReporter.h"
 
 
 

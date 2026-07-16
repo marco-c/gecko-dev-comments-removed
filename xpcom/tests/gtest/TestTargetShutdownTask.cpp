@@ -3,8 +3,8 @@
 
 
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
+#include "gtest/gtest.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"

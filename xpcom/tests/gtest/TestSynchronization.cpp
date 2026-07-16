@@ -2,11 +2,11 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Mutex.h"
-#include "gtest/gtest.h"
+#include "mozilla/ReentrantMonitor.h"
 
 using namespace mozilla;
 

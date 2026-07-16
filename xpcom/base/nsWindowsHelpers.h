@@ -8,13 +8,16 @@
 #ifndef nsWindowsHelpers_h
 #define nsWindowsHelpers_h
 
+
 #include <windows.h>
 #include <msi.h>
 #include <winternl.h>
-#include "nsAutoRef.h"
+
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAutoRef.h"
 
 
 

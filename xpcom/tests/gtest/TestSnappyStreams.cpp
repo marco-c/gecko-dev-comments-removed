@@ -2,17 +2,16 @@
 
 
 
-#include "gtest/gtest.h"
 #include "Helpers.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include "gtest/gtest.h"
 #include "mozilla/SnappyCompressOutputStream.h"
 #include "mozilla/SnappyUncompressInputStream.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsIPipe.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsStringStream.h"
 #include "nsTArray.h"
-
 #include "snappy/snappy.h"
 
 namespace {

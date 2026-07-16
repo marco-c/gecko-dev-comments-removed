@@ -5,10 +5,10 @@
 #ifndef SizeOfState_h
 #define SizeOfState_h
 
-#include "mozilla/fallible.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsTHashtable.h"
+#include "mozilla/fallible.h"
 #include "nsHashKeys.h"
+#include "nsTHashtable.h"
 
 
 

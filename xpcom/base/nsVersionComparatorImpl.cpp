@@ -3,8 +3,9 @@
 
 
 #include "nsVersionComparatorImpl.h"
-#include "nsVersionComparator.h"
+
 #include "nsString.h"
+#include "nsVersionComparator.h"
 
 NS_IMPL_ISUPPORTS(nsVersionComparatorImpl, nsIVersionComparator)
 

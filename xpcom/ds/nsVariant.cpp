@@ -3,16 +3,18 @@
 
 
 #include "nsVariant.h"
-#include "prprf.h"
-#include "prdtoa.h"
+
 #include <math.h>
-#include "nsCycleCollectionParticipant.h"
-#include "xptinfo.h"
-#include "nsReadableUtils.h"
-#include "nsString.h"
-#include "nsCRTGlue.h"
+
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
+#include "nsCRTGlue.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "prdtoa.h"
+#include "prprf.h"
+#include "xptinfo.h"
 
 
 

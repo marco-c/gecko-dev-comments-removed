@@ -2,18 +2,17 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "AvailableMemoryWatcher.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include "TelemetryFixture.h"
+#include "TelemetryTestHelpers.h"
+#include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/glean/XpcomMetrics.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsITimer.h"
 #include "nsMemoryPressure.h"
-#include "TelemetryFixture.h"
-#include "TelemetryTestHelpers.h"
-#include "mozilla/glean/XpcomMetrics.h"
 
 using namespace mozilla;
 

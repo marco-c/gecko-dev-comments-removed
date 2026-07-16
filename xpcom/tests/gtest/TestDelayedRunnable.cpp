@@ -2,16 +2,15 @@
 
 
 
-#include "mozilla/DelayedRunnable.h"
+#include "MediaTimer.h"
+#include "VideoUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/DelayedRunnable.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
-
-#include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
-#include "MediaTimer.h"
 #include "mozilla/media/MediaUtils.h"
-#include "VideoUtils.h"
 
 using mozilla::Atomic;
 using mozilla::MakeRefPtr;

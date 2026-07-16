@@ -2,12 +2,12 @@
 
 
 
-#include "mozilla/StopGapEventTarget.h"
+#include "Helpers.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StopGapEventTarget.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsIRunnable.h"
 #include "nsThreadUtils.h"
-#include "Helpers.h"
 
 using mozilla::CancelableRunnable;
 using mozilla::MakeRefPtr;

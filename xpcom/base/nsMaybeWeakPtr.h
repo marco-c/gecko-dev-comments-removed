@@ -8,9 +8,9 @@
 #include "mozilla/Try.h"
 #include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
+#include "nsCycleCollectionNoteChild.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsTArray.h"
-#include "nsCycleCollectionNoteChild.h"
 #include "xpcpublic.h"
 
 

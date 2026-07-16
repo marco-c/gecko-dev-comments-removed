@@ -3,10 +3,9 @@
 
 
 #include "LogCommandLineHandler.h"
-
+#include "gtest/gtest.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

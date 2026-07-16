@@ -5,11 +5,11 @@
 
 
 
+#include "perfprobe.h"
+
+#include <evntrace.h>
 #include <windows.h>
 #include <wmistr.h>
-#include <evntrace.h>
-
-#include "perfprobe.h"
 
 namespace mozilla {
 namespace probes {

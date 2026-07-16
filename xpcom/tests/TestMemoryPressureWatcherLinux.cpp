@@ -1,9 +1,9 @@
 
 
 
-#include "mozilla/AvailableMemoryWatcherUtils.h"
-
 #include <fstream>
+
+#include "mozilla/AvailableMemoryWatcherUtils.h"
 
 using namespace mozilla;
 

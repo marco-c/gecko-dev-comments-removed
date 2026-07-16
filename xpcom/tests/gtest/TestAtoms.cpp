@@ -2,14 +2,13 @@
 
 
 
-#include "nsAtom.h"
-#include "nsString.h"
 #include "UTFStrings.h"
-#include "nsIThread.h"
-#include "nsThreadUtils.h"
-
 #include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsAtom.h"
+#include "nsIThread.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 

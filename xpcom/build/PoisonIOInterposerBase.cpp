@@ -2,15 +2,13 @@
 
 
 
+#include <algorithm>
+
+#include "PoisonIOInterposer.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
-
-#include <algorithm>
-
-#include "PoisonIOInterposer.h"
-
 #include "prlock.h"
 
 #ifdef MOZ_REPLACE_MALLOC

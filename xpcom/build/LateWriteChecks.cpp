@@ -6,13 +6,13 @@
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/ProcessedStack.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/StackWalk.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsLocalFile.h"
 #include "nsPrintfCString.h"
-#include "mozilla/StackWalk.h"
 #include "prio.h"
 
 #ifdef XP_WIN
@@ -198,8 +198,8 @@ void LateWriteObserver::Observe(
   
   
   nsAutoString finalName(u"Telemetry.LateWriteFinal-"_ns);
-  for (int i = 0; i < 20; ++i) {
-    finalName.AppendPrintf("%02x", sha1[i]);
+  for (unsigned char c : sha1) {
+    finalName.AppendPrintf("%02x", c);
   }
   RefPtr<nsIFile> file;
   if (NS_SUCCEEDED(NS_NewPathStringLocalFile(nameAux, getter_AddRefs(file)))) {

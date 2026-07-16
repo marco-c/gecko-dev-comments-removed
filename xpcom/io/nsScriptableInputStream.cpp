@@ -3,6 +3,7 @@
 
 
 #include "nsScriptableInputStream.h"
+
 #include "nsString.h"
 
 NS_IMPL_ISUPPORTS(nsScriptableInputStream, nsIScriptableInputStream)

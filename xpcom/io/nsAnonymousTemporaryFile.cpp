@@ -3,21 +3,22 @@
 
 
 #include "nsAnonymousTemporaryFile.h"
-#include "nsXULAppAPI.h"
+
+#include "SpecialSystemDirectory.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
 #include "prio.h"
-#include "SpecialSystemDirectory.h"
 
 #ifdef XP_WIN
+#  include "mozilla/Services.h"
+#  include "nsCRT.h"
+#  include "nsIFile.h"
 #  include "nsIObserver.h"
 #  include "nsIObserverService.h"
-#  include "mozilla/Services.h"
-#  include "nsIUserIdleService.h"
 #  include "nsISimpleEnumerator.h"
-#  include "nsIFile.h"
 #  include "nsITimer.h"
-#  include "nsCRT.h"
+#  include "nsIUserIdleService.h"
 
 #endif
 

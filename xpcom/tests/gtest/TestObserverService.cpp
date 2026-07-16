@@ -2,20 +2,17 @@
 
 
 
-#include "nsISupports.h"
-#include "nsIObserverService.h"
-#include "nsIObserver.h"
-#include "nsISimpleEnumerator.h"
-#include "nsComponentManagerUtils.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsISimpleEnumerator.h"
+#include "nsISupports.h"
 #include "nsString.h"
 #include "nsWeakReference.h"
-
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/RefPtr.h"
-
-#include "gtest/gtest.h"
 
 static void testResult(nsresult rv) {
   EXPECT_TRUE(NS_SUCCEEDED(rv)) << "0x" << std::hex << (int)rv;

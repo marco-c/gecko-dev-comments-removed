@@ -2,9 +2,9 @@
 
 
 
+#include "gtest/gtest.h"
 #include "nsLiteralString.h"
 #include "nsTSubstringTuple.h"
-#include "gtest/gtest.h"
 
 namespace TestSubstringTuple {
 

@@ -2,9 +2,9 @@
 
 
 
-#include "nsTObserverArray.h"
 #include "gtest/gtest.h"
 #include "mozilla/UniquePtr.h"
+#include "nsTObserverArray.h"
 
 using namespace mozilla;
 

@@ -2,16 +2,15 @@
 
 
 
-#include "nsArrayEnumerator.h"
-#include "nsID.h"
-#include "nsCOMArray.h"
-#include "nsUnicharInputStream.h"
-#include "nsPrintfCString.h"
-
 #include "nsPersistentProperties.h"
-#include "nsIProperties.h"
 
 #include "mozilla/ArenaAllocatorExtensions.h"
+#include "nsArrayEnumerator.h"
+#include "nsCOMArray.h"
+#include "nsID.h"
+#include "nsIProperties.h"
+#include "nsPrintfCString.h"
+#include "nsUnicharInputStream.h"
 
 using mozilla::ArenaStrdup;
 

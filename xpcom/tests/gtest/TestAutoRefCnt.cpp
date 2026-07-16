@@ -2,14 +2,12 @@
 
 
 
-#include "nsISupportsImpl.h"
-
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsISupportsImpl.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
-
-#include "gtest/gtest.h"
-#include "mozilla/gtest/MozAssertions.h"
 
 using namespace mozilla;
 
@@ -41,6 +39,37 @@ ThreadSafeAutoRefCnt nsThreadSafeAutoRefCntRunner::sRefCnt;
 Atomic<uint32_t, Relaxed> nsThreadSafeAutoRefCntRunner::sIncToOne(0);
 Atomic<uint32_t, Relaxed> nsThreadSafeAutoRefCntRunner::sDecToZero(0);
 
+class nsThreadSafeAutoRefCntDecrementWithLimitRunner final : public Runnable {
+ public:
+  static constexpr size_t kDecrementsPerThread = 1000;
+
+  NS_IMETHOD Run() final {
+    for (size_t i = 0; i < kDecrementsPerThread; i++) {
+      auto [ok, count] = sRefCnt.DecrementWithLimit<1>();
+      if (!ok) {
+        sLimitHits++;
+        break;
+      }
+    }
+    return NS_OK;
+  }
+
+  static ThreadSafeAutoRefCnt sRefCnt;
+  
+  
+  static Atomic<uint32_t, Relaxed> sLimitHits;
+
+  nsThreadSafeAutoRefCntDecrementWithLimitRunner()
+      : Runnable("nsThreadSafeAutoRefCntDecrementWithLimitRunner") {}
+
+ private:
+  ~nsThreadSafeAutoRefCntDecrementWithLimitRunner() = default;
+};
+
+ThreadSafeAutoRefCnt nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt;
+Atomic<uint32_t, Relaxed>
+    nsThreadSafeAutoRefCntDecrementWithLimitRunner::sLimitHits(0);
+
 
 
 
@@ -49,16 +78,87 @@ TEST(AutoRefCnt, ThreadSafeAutoRefCntBalance)
 {
   static const size_t kThreadCount = 4;
   nsCOMPtr<nsIThread> threads[kThreadCount];
-  for (size_t i = 0; i < kThreadCount; i++) {
-    nsresult rv =
-        NS_NewNamedThread("AutoRefCnt Test", getter_AddRefs(threads[i]),
-                          new nsThreadSafeAutoRefCntRunner);
+  for (auto& thread : threads) {
+    nsresult rv = NS_NewNamedThread("AutoRefCnt Test", getter_AddRefs(thread),
+                                    new nsThreadSafeAutoRefCntRunner);
     EXPECT_NS_SUCCEEDED(rv);
   }
-  for (size_t i = 0; i < kThreadCount; i++) {
-    threads[i]->Shutdown();
+  for (const auto& thread : threads) {
+    thread->Shutdown();
   }
   EXPECT_EQ(nsThreadSafeAutoRefCntRunner::sRefCnt, nsrefcnt(0));
   EXPECT_EQ(nsThreadSafeAutoRefCntRunner::sIncToOne,
             nsThreadSafeAutoRefCntRunner::sDecToZero);
+}
+
+
+
+
+
+
+
+static void RunDecrementWithLimitThreaded(uint32_t aExpectedLimitHits) {
+  static const size_t kThreadCount = 4;
+  const nsrefcnt kInitial =
+      (kThreadCount - aExpectedLimitHits) *
+          nsThreadSafeAutoRefCntDecrementWithLimitRunner::kDecrementsPerThread +
+      1;
+  nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt = kInitial;
+  nsThreadSafeAutoRefCntDecrementWithLimitRunner::sLimitHits = 0;
+
+  nsCOMPtr<nsIThread> threads[kThreadCount];
+  for (auto& thread : threads) {
+    nsresult rv =
+        NS_NewNamedThread("AutoRefCnt Test", getter_AddRefs(thread),
+                          new nsThreadSafeAutoRefCntDecrementWithLimitRunner);
+    EXPECT_NS_SUCCEEDED(rv);
+  }
+  for (const auto& thread : threads) {
+    thread->Shutdown();
+  }
+  EXPECT_EQ(nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt,
+            nsrefcnt(1));
+  EXPECT_EQ(nsThreadSafeAutoRefCntDecrementWithLimitRunner::sLimitHits,
+            uint32_t(aExpectedLimitHits));
+}
+
+
+TEST(AutoRefCnt, ThreadSafeAutoRefCntDecrementWithLimitNoHit)
+{
+  RunDecrementWithLimitThreaded(0);
+}
+
+
+
+
+TEST(AutoRefCnt, ThreadSafeAutoRefCntDecrementWithLimitHit)
+{
+  static const size_t kThreadCount = 4;
+  RunDecrementWithLimitThreaded(kThreadCount);
+}
+
+
+
+TEST(AutoRefCnt, ThreadSafeAutoRefCntDecrementWithLimitSequential)
+{
+  const nsrefcnt kDecrementsPerThread =
+      nsThreadSafeAutoRefCntDecrementWithLimitRunner::kDecrementsPerThread;
+  
+  
+  nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt =
+      kDecrementsPerThread + 1;
+
+  size_t successes = 0;
+  while (true) {
+    auto [ok, count] = nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt
+                           .DecrementWithLimit<1>();
+    if (!ok) {
+      break;
+    }
+    successes++;
+  }
+
+  EXPECT_EQ(successes, size_t(kDecrementsPerThread));
+  EXPECT_EQ(nsThreadSafeAutoRefCntDecrementWithLimitRunner::sRefCnt,
+            nsrefcnt(1));
 }

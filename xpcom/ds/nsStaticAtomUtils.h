@@ -6,8 +6,9 @@
 #define nsStaticAtomUtils_h
 
 #include <stdint.h>
-#include "nsAtom.h"
+
 #include "mozilla/Maybe.h"
+#include "nsAtom.h"
 
 
 class nsStaticAtomUtils {

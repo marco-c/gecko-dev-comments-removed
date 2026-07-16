@@ -5,10 +5,10 @@
 #ifndef nsVariant_h
 #define nsVariant_h
 
-#include "nsIVariant.h"
-#include "nsStringFwd.h"
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIVariant.h"
+#include "nsStringFwd.h"
 
 
 

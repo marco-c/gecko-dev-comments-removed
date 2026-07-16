@@ -2,10 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "nsCRT.h"
 #include "nsString.h"
 #include "plstr.h"
-#include "gtest/gtest.h"
 
 namespace TestCRT {
 

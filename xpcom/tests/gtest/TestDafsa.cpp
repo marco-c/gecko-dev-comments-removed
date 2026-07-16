@@ -2,9 +2,8 @@
 
 
 
-#include "mozilla/Dafsa.h"
 #include "gtest/gtest.h"
-
+#include "mozilla/Dafsa.h"
 #include "nsString.h"
 
 using mozilla::Dafsa;

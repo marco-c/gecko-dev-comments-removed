@@ -2,11 +2,11 @@
 
 
 
-#include "nsASCIIMask.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
-#include "nsCRTGlue.h"
 #include "gtest/gtest.h"
+#include "nsASCIIMask.h"
+#include "nsCRTGlue.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 
 namespace TestMoveString {
 

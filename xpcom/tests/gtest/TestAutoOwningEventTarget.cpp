@@ -2,15 +2,15 @@
 
 
 
+#include "gtest/gtest.h"
+#include "mozilla/SyncRunnable.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
-#include "gtest/gtest.h"
-#include "mozilla/SyncRunnable.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/gtest/MozAssertions.h"
 
 namespace TestAutoOwningEventTarget {
 

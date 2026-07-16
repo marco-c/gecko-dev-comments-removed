@@ -3,9 +3,10 @@
 
 
 #include "SlicedInputStream.h"
-#include "mozilla/ipc/InputStreamUtils.h"
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "nsISeekableStream.h"
 #include "nsStreamUtils.h"
 

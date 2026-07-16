@@ -3,12 +3,13 @@
 
 
 #include "nsStringEnumerator.h"
-#include "nsSimpleEnumerator.h"
-#include "nsSupportsPrimitives.h"
+
 #include "mozilla/Try.h"
 #include "mozilla/dom/IteratorResultBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "nsSimpleEnumerator.h"
+#include "nsSupportsPrimitives.h"
 #include "nsTArray.h"
 
 using namespace mozilla;

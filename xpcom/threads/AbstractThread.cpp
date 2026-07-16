@@ -4,6 +4,8 @@
 
 #include "mozilla/AbstractThread.h"
 
+#include <memory>
+
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DelayedRunnable.h"
 #include "mozilla/MozPromise.h"  
@@ -18,7 +20,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
-#include <memory>
 
 namespace mozilla {
 

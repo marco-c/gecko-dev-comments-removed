@@ -2,14 +2,13 @@
 
 
 
-#include "prio.h"
-#include "prsystem.h"
-
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
 #include "nsILocalFileWin.h"
 #include "nsString.h"
+#include "prio.h"
+#include "prsystem.h"
 
 #define MAX_PATH 260
 

@@ -2,9 +2,9 @@
 
 
 
-#include "nsThreadUtils.h"
-#include "mozilla/RecursiveMutex.h"
 #include "gtest/gtest.h"
+#include "mozilla/RecursiveMutex.h"
+#include "nsThreadUtils.h"
 
 using mozilla::RecursiveMutex;
 using mozilla::RecursiveMutexAutoLock;

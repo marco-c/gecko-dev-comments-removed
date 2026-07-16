@@ -3,6 +3,7 @@
 
 
 #include "VsyncTaskManager.h"
+
 #include "InputTaskManager.h"
 
 namespace mozilla {

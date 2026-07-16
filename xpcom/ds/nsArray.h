@@ -5,10 +5,10 @@
 #ifndef nsArray_h_
 #define nsArray_h_
 
-#include "nsIMutableArray.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIMutableArray.h"
 
 
 #define NS_ARRAY_CID \

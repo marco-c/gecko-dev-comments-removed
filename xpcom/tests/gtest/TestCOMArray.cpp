@@ -2,10 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
-#include "gtest/gtest.h"
 
 
 #define NS_IFOO_IID \

@@ -3,14 +3,14 @@
 
 
 #include "mozilla/CPUUsageWatcher.h"
-#include "mozilla/Try.h"
 
+#include "mozilla/Try.h"
 #include "prsystem.h"
 
 #ifdef XP_MACOSX
-#  include <sys/resource.h>
 #  include <mach/clock.h>
 #  include <mach/mach_host.h>
+#  include <sys/resource.h>
 #endif
 
 #ifdef CPU_USAGE_WATCHER_ACTIVE

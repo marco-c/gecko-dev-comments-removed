@@ -2,9 +2,9 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
-#include "gtest/gtest.h"
 
 namespace mozilla::detail {
 bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,

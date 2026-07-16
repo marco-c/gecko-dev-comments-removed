@@ -2,8 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "Helpers.h"
+#include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsICloneableInputStream.h"

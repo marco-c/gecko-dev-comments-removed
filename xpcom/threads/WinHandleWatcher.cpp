@@ -2,8 +2,10 @@
 
 
 
-#include <windows.h>
+#include "mozilla/WinHandleWatcher.h"
+
 #include <threadpoolapiset.h>
+#include <windows.h>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
@@ -11,8 +13,6 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafety.h"
-#include "mozilla/WinHandleWatcher.h"
-
 #include "nsCOMPtr.h"
 #include "nsIRunnable.h"
 #include "nsISerialEventTarget.h"

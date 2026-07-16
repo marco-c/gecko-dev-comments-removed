@@ -2,8 +2,8 @@
 
 
 
-#include "nsTPriorityQueue.h"
 #include "gtest/gtest.h"
+#include "nsTPriorityQueue.h"
 
 template <class T, class Compare>
 void CheckPopSequence(const nsTPriorityQueue<T, Compare>& aQueue,

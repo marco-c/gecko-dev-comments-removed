@@ -2,10 +2,11 @@
 
 
 
-#include "nsThreadUtils.h"
+#include "mozilla/RLBoxSandboxPool.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/RLBoxSandboxPool.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_USING_WASM_SANDBOXING
 #  include "wasm2c_rt_mem.h"
 #endif

@@ -2,9 +2,9 @@
 
 
 
-#include "nsTArray.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
+#include "nsTArray.h"
 #include "nsTHashMap.h"
 
 using namespace mozilla;

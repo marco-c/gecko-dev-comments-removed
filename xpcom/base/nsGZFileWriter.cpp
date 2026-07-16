@@ -3,10 +3,11 @@
 
 
 #include "nsGZFileWriter.h"
+
+#include "mozilla/ScopeExit.h"
 #include "nsIFile.h"
 #include "nsString.h"
 #include "zlib.h"
-#include "mozilla/ScopeExit.h"
 
 #ifdef XP_WIN
 #  include <io.h>

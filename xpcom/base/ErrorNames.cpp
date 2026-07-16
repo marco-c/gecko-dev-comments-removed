@@ -3,9 +3,10 @@
 
 
 #include "mozilla/ErrorNames.h"
+
+#include "MainThreadUtils.h"
 #include "nsString.h"
 #include "prerror.h"
-#include "MainThreadUtils.h"
 
 
 #include "ErrorNamesInternal.h"

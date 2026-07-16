@@ -57,15 +57,15 @@
 #include <utility>
 
 #include "js/Debug.h"
-#include "js/RealmOptions.h"
-#include "js/friend/CycleCollector.h"
-#include "js/friend/DumpFunctions.h"  
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"  
 #include "js/PropertyAndElement.h"  
-#include "js/Warnings.h"            
+#include "js/RealmOptions.h"
 #include "js/SliceBudget.h"
+#include "js/Warnings.h"  
+#include "js/friend/CycleCollector.h"
+#include "js/friend/DumpFunctions.h"  
 #include "jsfriendapi.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -76,7 +76,6 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_javascript.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMJSClass.h"
@@ -85,6 +84,7 @@
 #include "mozilla/dom/PromiseBinding.h"
 #include "mozilla/dom/PromiseDebugging.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"
@@ -910,10 +910,11 @@ class JSLeakTracer : public JS::CallbackTracer {
                            JS::WeakMapTraceAction::TraceKeysAndValues) {}
 
  private:
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     const char* kindName = JS::GCTraceKindToAscii(thing.kind());
     size_t size = JS::GCTraceKindSize(thing.kind());
     MOZ_LOG_CTOR(thing.asCell(), kindName, size);
+    return true;
   }
 };
 #endif

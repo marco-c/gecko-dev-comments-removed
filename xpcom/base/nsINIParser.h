@@ -11,9 +11,9 @@
 #  define nsINIParser nsINIParser_internal
 #endif
 
-#include "nscore.h"
-#include "nsClassHashtable.h"
 #include "mozilla/UniquePtr.h"
+#include "nsClassHashtable.h"
+#include "nscore.h"
 
 class nsIFile;
 
@@ -28,9 +28,31 @@ class nsINIParser {
 
 
 
-  nsresult Init(nsIFile* aFile);
 
-  nsresult InitFromString(const nsCString& aStr);
+
+
+
+
+
+
+
+  nsresult Init(nsIFile* aFile, bool* aContainedErrors = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InitFromString(const nsCString& aStr,
+                          bool* aContainedErrors = nullptr);
 
   
 

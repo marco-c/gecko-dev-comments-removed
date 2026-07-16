@@ -24,7 +24,6 @@
 #endif
 
 #include "gtest/gtest.h"
-
 #include "mozilla/gtest/MozHelpers.h"
 
 

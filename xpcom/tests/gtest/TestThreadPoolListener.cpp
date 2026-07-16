@@ -2,9 +2,12 @@
 
 
 
-#include "nsIThread.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIThread.h"
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOMCIDInternal.h"
@@ -12,12 +15,6 @@
 #include "prinrval.h"
 #include "prmon.h"
 #include "prthread.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/gtest/MozAssertions.h"
-
-#include "mozilla/ReentrantMonitor.h"
-
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

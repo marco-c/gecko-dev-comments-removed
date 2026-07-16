@@ -5,10 +5,11 @@
 #ifndef nsGZFileWriter_h
 #define nsGZFileWriter_h
 
+#include <stdio.h>
+
+#include "nsDependentString.h"
 #include "nsISupportsImpl.h"
 #include "zlib.h"
-#include "nsDependentString.h"
-#include <stdio.h>
 
 
 

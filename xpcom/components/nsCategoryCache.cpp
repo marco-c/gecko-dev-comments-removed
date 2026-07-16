@@ -2,16 +2,14 @@
 
 
 
-#include "nsIObserverService.h"
+#include "nsCategoryCache.h"
+
 #include "mozilla/Services.h"
 #include "mozilla/SimpleEnumerator.h"
-
 #include "nsICategoryManager.h"
+#include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
-
 #include "nsXPCOMCID.h"
-
-#include "nsCategoryCache.h"
 
 using mozilla::SimpleEnumerator;
 

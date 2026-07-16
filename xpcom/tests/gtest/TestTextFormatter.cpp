@@ -2,9 +2,9 @@
 
 
 
-#include "nsTextFormatter.h"
-#include "nsString.h"
 #include "gtest/gtest.h"
+#include "nsString.h"
+#include "nsTextFormatter.h"
 
 TEST(TextFormatter, Tests)
 {

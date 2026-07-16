@@ -2,19 +2,15 @@
 
 
 
-#include "prthread.h"
-
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-
+#include "gtest/gtest.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/ReentrantMonitor.h"
-#include "mozilla/Mutex.h"
-
 #include "mozilla/gtest/MozHelpers.h"
-
-#include "gtest/gtest.h"
+#include "nsCOMPtr.h"
+#include "nsTArray.h"
+#include "prthread.h"
 
 using namespace mozilla;
 

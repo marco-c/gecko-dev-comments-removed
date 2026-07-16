@@ -2,16 +2,16 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/ThrottledEventQueue.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOM.h"
 #include "nsXPCOMCIDInternal.h"
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

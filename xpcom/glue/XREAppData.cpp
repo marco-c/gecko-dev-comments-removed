@@ -3,6 +3,7 @@
 
 
 #include "mozilla/XREAppData.h"
+
 #include "nsCRTGlue.h"
 
 namespace mozilla {

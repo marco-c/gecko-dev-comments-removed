@@ -2,12 +2,11 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include <minwindef.h>
 #include <handleapi.h>
+#include <minwindef.h>
 #include <synchapi.h>
 
+#include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Result.h"

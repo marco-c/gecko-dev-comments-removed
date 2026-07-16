@@ -2,15 +2,15 @@
 
 
 
+#include "VideoUtils.h"
 #include "gtest/gtest.h"
-#include "mozilla/gtest/WaitFor.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/SynchronizedEventQueue.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/gtest/WaitFor.h"
 #include "nsISupportsImpl.h"
 #include "nsThreadUtils.h"
-#include "VideoUtils.h"
 
 namespace TestStateMirroring {
 

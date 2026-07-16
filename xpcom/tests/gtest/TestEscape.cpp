@@ -2,8 +2,8 @@
 
 
 
-#include "nsEscape.h"
 #include "gtest/gtest.h"
+#include "nsEscape.h"
 #include "nsNetUtil.h"
 
 using namespace mozilla;

@@ -1,25 +1,26 @@
 
 
 
+#include <cstdio>
+#include <cstring>
+
 #include "AvailableMemoryWatcher.h"
 #include "AvailableMemoryWatcherUtils.h"
 #include "mozilla/FileUtils.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/TimeStamp.h"
 #include "nsAppRunner.h"
 #include "nsIAvailableMemoryWatcherTestingLinux.h"
 #include "nsIObserverService.h"
 #include "nsISupports.h"
-#include "nsITimer.h"
 #include "nsIThread.h"
+#include "nsITimer.h"
 #include "nsMemoryPressure.h"
 #include "nsString.h"
-#include <cstring>
-#include <cstdio>
 #if !defined(ANDROID)
-#  include "nsIPSIProvider.h"
 #  include "mozilla/glean/XpcomMetrics.h"
+#  include "nsIPSIProvider.h"
 #endif
 
 #define NON_OOM_DELAY_SEC 120

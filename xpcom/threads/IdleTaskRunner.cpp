@@ -3,6 +3,7 @@
 
 
 #include "IdleTaskRunner.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/TaskController.h"
 #include "nsRefreshDriver.h"

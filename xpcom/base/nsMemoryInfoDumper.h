@@ -5,8 +5,9 @@
 #ifndef mozilla_nsMemoryInfoDumper_h
 #define mozilla_nsMemoryInfoDumper_h
 
-#include "nsIMemoryInfoDumper.h"
 #include <stdio.h>
+
+#include "nsIMemoryInfoDumper.h"
 
 
 

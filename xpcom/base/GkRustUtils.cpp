@@ -2,8 +2,9 @@
 
 
 
-#include "gk_rust_utils_ffi_generated.h"
 #include "GkRustUtils.h"
+
+#include "gk_rust_utils_ffi_generated.h"
 
 using namespace mozilla;
 

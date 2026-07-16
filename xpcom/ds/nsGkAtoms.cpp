@@ -3,6 +3,7 @@
 
 
 #include "nsGkAtoms.h"
+
 #include "mozilla/HashFunctions.h"
 
 namespace mozilla::detail {

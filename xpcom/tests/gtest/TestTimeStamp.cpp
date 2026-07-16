@@ -2,12 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/TimeStamp.h"
-
 #include "prinrval.h"
 #include "prthread.h"
-
-#include "gtest/gtest.h"
 
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;

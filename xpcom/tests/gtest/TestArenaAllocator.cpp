@@ -2,11 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaAllocatorExtensions.h"
 #include "nsIMemoryReporter.h"  
-
-#include "gtest/gtest.h"
 
 using mozilla::ArenaAllocator;
 

@@ -2,11 +2,12 @@
 
 
 
-#include "mozilla/AppShutdown.h"
 #include "mozilla/IdlePeriodState.h"
+
+#include "mozilla/AppShutdown.h"
 #include "mozilla/StaticPrefs_idle_period.h"
-#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsIIdlePeriod.h"
 #include "nsThreadManager.h"
 #include "nsXPCOM.h"

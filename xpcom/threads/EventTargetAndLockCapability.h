@@ -6,8 +6,8 @@
 #define mozilla_EventTargetAndLockCapability_h
 
 #include "MainThreadUtils.h"
-#include "mozilla/ThreadSafety.h"
 #include "mozilla/EventTargetCapability.h"
+#include "mozilla/ThreadSafety.h"
 
 
 

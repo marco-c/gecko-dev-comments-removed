@@ -2,12 +2,11 @@
 
 
 
-#include "PoisonIOInterposer.h"
-
 #include <io.h>
 #include <windows.h>
 #include <winternl.h>
 
+#include "PoisonIOInterposer.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/FileUtilsWin.h"

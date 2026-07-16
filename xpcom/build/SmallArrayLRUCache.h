@@ -5,11 +5,11 @@
 #ifndef SmallArrayLRUCache_h
 #define SmallArrayLRUCache_h
 
-#include "mozilla/Mutex.h"
-
 #include <algorithm>
 #include <type_traits>
 #include <utility>
+
+#include "mozilla/Mutex.h"
 
 
 

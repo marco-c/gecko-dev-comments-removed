@@ -2,9 +2,10 @@
 
 
 
-#include "mozilla/Queue.h"
-#include "gtest/gtest.h"
 #include <array>
+
+#include "gtest/gtest.h"
+#include "mozilla/Queue.h"
 
 using namespace mozilla;
 

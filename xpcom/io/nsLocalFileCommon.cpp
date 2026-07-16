@@ -2,19 +2,19 @@
 
 
 
-#include "nsLocalFile.h"  
+#include "nsLocalFileCommon.h"
 
 #include "mozilla/Try.h"
 #include "mozilla/Utf16.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsReadableUtils.h"
-#include "nsPrintfCString.h"
-#include "nsCRT.h"
-#include "nsNativeCharsetUtils.h"
-#include "nsUTF8Utils.h"
 #include "nsArray.h"
-#include "nsLocalFileCommon.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsLocalFile.h"  
+#include "nsNativeCharsetUtils.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsUTF8Utils.h"
 
 #ifdef XP_WIN
 #  include <string.h>

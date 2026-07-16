@@ -2,13 +2,12 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include "mozilla/SmallArrayLRUCache.h"
-
 #include <algorithm>
 #include <cstring>
 #include <utility>
+
+#include "gtest/gtest.h"
+#include "mozilla/SmallArrayLRUCache.h"
 
 using Key = unsigned;
 

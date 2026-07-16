@@ -2,18 +2,16 @@
 
 
 
-#include "nsMemory.h"
-#include "nsThreadUtils.h"
-
+#include "mozilla/Atomics.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Services.h"
+#include "nsCOMPtr.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsIRunnable.h"
 #include "nsISimpleEnumerator.h"
-
-#include "nsCOMPtr.h"
-#include "mozilla/Services.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/IntegerPrintfMacros.h"
+#include "nsMemory.h"
+#include "nsThreadUtils.h"
 
 #ifdef ANDROID
 #  include <stdio.h>

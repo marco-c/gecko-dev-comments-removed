@@ -2,18 +2,15 @@
 
 
 
+#include "gtest/gtest.h"
+#include "js/GCAPI.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-
 #include "nsCycleCollectionParticipant.h"
 #include "nsCycleCollector.h"
-
-#include "js/GCAPI.h"
-
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

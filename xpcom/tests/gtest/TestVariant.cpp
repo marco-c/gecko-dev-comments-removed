@@ -3,8 +3,9 @@
 
 
 #include <math.h>
-#include "nsVariant.h"
+
 #include "gtest/gtest.h"
+#include "nsVariant.h"
 
 TEST(Variant, DoubleNaN)
 {

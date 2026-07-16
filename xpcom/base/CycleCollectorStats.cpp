@@ -2,18 +2,19 @@
 
 
 
+#include "CycleCollectorStats.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nsCycleCollector.h"
-#include "nsDebug.h"
-#include "CycleCollectorStats.h"
 #include "MainThreadUtils.h"
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/glean/XpcomMetrics.h"
+#include "nsCycleCollector.h"
+#include "nsDebug.h"
 
 using namespace mozilla;
 

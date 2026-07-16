@@ -2,14 +2,13 @@
 
 
 
-#include "nsString.h"
-#include "nsReadableUtils.h"
 #include "UTFStrings.h"
+#include "gtest/gtest.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Utf16.h"
 #include "nsHashKeys.h"
-
-#include "gtest/gtest.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 
 using namespace mozilla;
 

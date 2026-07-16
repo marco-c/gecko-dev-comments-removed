@@ -2,10 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

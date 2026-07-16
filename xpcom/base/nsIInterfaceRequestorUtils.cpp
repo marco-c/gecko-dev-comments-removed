@@ -2,8 +2,9 @@
 
 
 
-#include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
+
+#include "nsIInterfaceRequestor.h"
 
 nsresult nsGetInterface::operator()(const nsIID& aIID,
                                     void** aInstancePtr) const {

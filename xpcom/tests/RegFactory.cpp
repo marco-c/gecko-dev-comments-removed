@@ -3,12 +3,13 @@
 
 
 #include <iostream.h>
-#include "prlink.h"
-#include "nsIComponentRegistrar.h"
-#include "nsIServiceManager.h"
-#include "nsIFile.h"
+
 #include "nsCOMPtr.h"
+#include "nsIComponentRegistrar.h"
+#include "nsIFile.h"
+#include "nsIServiceManager.h"
 #include "nsString.h"
+#include "prlink.h"
 
 static bool gUnreg = false;
 

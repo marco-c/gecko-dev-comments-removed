@@ -2,17 +2,17 @@
 
 
 
-#include "gtest/gtest.h"
 #include "Helpers.h"
+#include "gtest/gtest.h"
+#include "mozilla/Span.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsCOMPtr.h"
 #include "nsICloneableInputStream.h"
+#include "nsIInputStream.h"
+#include "nsISeekableStream.h"
+#include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsTArray.h"
-#include "nsIInputStream.h"
-#include "nsCOMPtr.h"
-#include "nsStreamUtils.h"
-#include "mozilla/Span.h"
-#include "nsISeekableStream.h"
 
 namespace {
 

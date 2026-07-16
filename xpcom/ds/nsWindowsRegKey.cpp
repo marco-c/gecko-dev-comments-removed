@@ -2,11 +2,13 @@
 
 
 
-#include <windows.h>
-#include "nsCOMPtr.h"
 #include "nsWindowsRegKey.h"
+
+#include <windows.h>
+
 #include "mozilla/RefPtr.h"
 #include "mozilla/widget/WinRegistry.h"
+#include "nsCOMPtr.h"
 
 
 

@@ -2,18 +2,17 @@
 
 
 
+#include <iterator>
+
 #include "double-conversion/double-conversion.h"
+#include "fmt/format.h"
+#include "fmt/xchar.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Printf.h"
 #include "mozilla/ResultExtensions.h"
-
-#include <iterator>
-#include "fmt/format.h"
-#include "fmt/xchar.h"
-
 #include "nsASCIIMask.h"
 #include "nsCharTraits.h"
 #include "nsISupports.h"

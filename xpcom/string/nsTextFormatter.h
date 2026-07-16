@@ -29,9 +29,10 @@
 
 
 #include <stdio.h>
-#include "nscore.h"
-#include "nsString.h"
+
 #include "mozilla/Span.h"
+#include "nsString.h"
+#include "nscore.h"
 
 #ifdef XPCOM_GLUE
 #  error \

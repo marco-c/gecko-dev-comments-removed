@@ -2,12 +2,11 @@
 
 
 
+#include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsQueryObject.h"
-
-#include "gtest/gtest.h"
 
 namespace TestNsRefPtr {
 

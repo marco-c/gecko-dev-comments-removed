@@ -2,14 +2,14 @@
 
 
 
-#include "nsCOMPtr.h"
-#include "nsIRunnable.h"
-#include "nsXPCOM.h"
-#include "nsThreadUtils.h"
+#include <functional>
+
 #include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
-
-#include <functional>
+#include "nsCOMPtr.h"
+#include "nsIRunnable.h"
+#include "nsThreadUtils.h"
+#include "nsXPCOM.h"
 
 using namespace mozilla;
 

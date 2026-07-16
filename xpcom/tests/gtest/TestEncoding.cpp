@@ -3,8 +3,9 @@
 
 
 #include <stdlib.h>
-#include "nsString.h"
+
 #include "gtest/gtest.h"
+#include "nsString.h"
 
 TEST(Encoding, GoodSurrogatePair)
 {

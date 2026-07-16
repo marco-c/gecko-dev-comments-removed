@@ -5,9 +5,9 @@
 #ifndef nsObserverService_h_
 #define nsObserverService_h_
 
+#include "nsIMemoryReporter.h"
 #include "nsIObserverService.h"
 #include "nsObserverList.h"
-#include "nsIMemoryReporter.h"
 #include "nsTHashtable.h"
 
 

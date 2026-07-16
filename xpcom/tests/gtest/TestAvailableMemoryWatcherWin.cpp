@@ -2,29 +2,30 @@
 
 
 
-#include <algorithm>
-#include <windows.h>
 #include <memoryapi.h>
-#include "gtest/gtest.h"
+#include <windows.h>
+
+#include <algorithm>
 
 #include "AvailableMemoryWatcher.h"
+#include "TelemetryFixture.h"
+#include "TelemetryTestHelpers.h"
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Vector.h"
+#include "mozilla/glean/XpcomMetrics.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
-#include "nsServiceManagerUtils.h"
 #include "nsITimer.h"
-#include "nsMemoryPressure.h"
-#include "nsWindowsHelpers.h"
 #include "nsIWindowsRegKey.h"
+#include "nsMemoryPressure.h"
+#include "nsServiceManagerUtils.h"
+#include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
-#include "TelemetryFixture.h"
-#include "TelemetryTestHelpers.h"
-#include "mozilla/glean/XpcomMetrics.h"
 
 using namespace mozilla;
 

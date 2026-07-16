@@ -2,22 +2,20 @@
 
 
 
-#include "nsTHashtable.h"
-#include "nsBaseHashtable.h"
-#include "nsTHashMap.h"
-#include "nsInterfaceHashtable.h"
-#include "nsClassHashtable.h"
-#include "nsRefCountedHashtable.h"
-
-#include "nsCOMPtr.h"
-#include "nsIMemoryReporter.h"
-#include "nsISupports.h"
-#include "nsCOMArray.h"
-#include "mozilla/Attributes.h"
+#include <numeric>
 
 #include "gtest/gtest.h"
-
-#include <numeric>
+#include "mozilla/Attributes.h"
+#include "nsBaseHashtable.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsClassHashtable.h"
+#include "nsIMemoryReporter.h"
+#include "nsISupports.h"
+#include "nsInterfaceHashtable.h"
+#include "nsRefCountedHashtable.h"
+#include "nsTHashMap.h"
+#include "nsTHashtable.h"
 
 using mozilla::MakeRefPtr;
 using mozilla::MakeUnique;

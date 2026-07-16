@@ -3,8 +3,10 @@
 
 
 
+
 #include "nsTSubstring.h"
 #include "nsTDependentSubstring.h"
+
 
 template <typename T>
 void nsTDependentSubstring<T>::Rebind(const substring_type& str,

@@ -3,7 +3,6 @@
 
 
 #include "gtest/gtest.h"
-
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MruCache.h"
 #include "nsString.h"

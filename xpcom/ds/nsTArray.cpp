@@ -3,11 +3,12 @@
 
 
 #include "nsTArray.h"
-#include "nsXPCOM.h"
-#include "nsCycleCollectionNoteChild.h"
-#include "nsDebug.h"
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsCycleCollectionNoteChild.h"
+#include "nsDebug.h"
+#include "nsXPCOM.h"
 
 
 

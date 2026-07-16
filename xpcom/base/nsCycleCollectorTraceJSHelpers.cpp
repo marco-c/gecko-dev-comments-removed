@@ -2,11 +2,11 @@
 
 
 
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 #include "nsWrapperCacheInlines.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
 
 void CycleCollectionNoteEdgeNameImpl(
     nsCycleCollectionTraversalCallback& aCallback, const char* aName,

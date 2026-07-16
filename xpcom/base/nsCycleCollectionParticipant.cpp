@@ -3,6 +3,7 @@
 
 
 #include "nsCycleCollectionParticipant.h"
+
 #include "nsCOMPtr.h"
 
 NS_IMETHODIMP_(void)

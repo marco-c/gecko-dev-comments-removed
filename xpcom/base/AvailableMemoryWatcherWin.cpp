@@ -2,6 +2,8 @@
 
 
 
+#include <memoryapi.h>
+
 #include "AvailableMemoryWatcher.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Services.h"
@@ -15,8 +17,6 @@
 #include "nsMemoryPressure.h"
 #include "nsServiceManagerUtils.h"
 #include "nsWindowsHelpers.h"
-
-#include <memoryapi.h>
 
 extern mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed>
     sNumLowPhysicalMemEvents;

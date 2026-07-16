@@ -2,17 +2,16 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <stdint.h>  
 
-#include "nsString.h"                
-#include "nsThreadUtils.h"           
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"         
 #include "mozilla/EventQueue.h"      
 #include "mozilla/Mutex.h"           
 #include "mozilla/RefPtr.h"          
 #include "mozilla/TaskController.h"  
+#include "nsString.h"                
+#include "nsThreadUtils.h"           
 #include "prthread.h"                
 
 using namespace mozilla;

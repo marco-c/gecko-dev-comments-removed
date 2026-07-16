@@ -3,8 +3,8 @@
 
 
 
-#include <windows.h>
 #include <stdlib.h>
+#include <windows.h>
 #ifdef _MSC_VER
 #  include <strsafe.h>
 #endif
@@ -12,8 +12,8 @@
 
 
 
-#  include <stdio.h>
 #  include <shellapi.h>
+#  include <stdio.h>
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int);
 
 #  undef __argc
