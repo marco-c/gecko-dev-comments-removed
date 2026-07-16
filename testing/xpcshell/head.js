@@ -639,17 +639,13 @@ function _execute_test() {
   
   
   
-  
-  
   let scheduledProfileDump = false;
   let timeoutProfilePath = _Services.env.get("MOZ_TEST_TIMEOUT_PROFILE_PATH");
   if (timeoutProfilePath && _Services.profiler.IsActive()) {
-    let delaySeconds = parseInt(_Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL"));
-    _Services.profiler.scheduleDumpToFile(
-      delaySeconds,
-      timeoutProfilePath,
-       true
-    );
+    
+    let delaySeconds =
+      parseInt(_Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 0.9;
+    _Services.profiler.scheduleDumpToFile(delaySeconds, timeoutProfilePath);
     scheduledProfileDump = true;
   }
 

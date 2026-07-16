@@ -64,7 +64,6 @@
 #include "memory_counter.h"
 #include "memory_hooks.h"
 #include "memory_markers.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfiler.h"
@@ -114,7 +113,6 @@
 #include "nsSystemInfo.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
-#include "xpcpublic.h"
 #include "nsDirectoryServiceUtils.h"
 #include "Tracing.h"
 #include "prdtoa.h"
@@ -1003,16 +1001,11 @@ class CorePS {
     MOZ_ASSERT(sInstance);
     return sInstance->mScheduledDumpPath;
   }
-  static bool ScheduledDumpExitAfter(PSLockRef) {
-    MOZ_ASSERT(sInstance);
-    return sInstance->mScheduledDumpExitAfter;
-  }
   static void ScheduleDumpToFile(PSLockRef, const TimeStamp& aDeadline,
-                                 const nsACString& aPath, bool aExitAfterDump) {
+                                 const nsACString& aPath) {
     MOZ_ASSERT(sInstance);
     sInstance->mScheduledDumpDeadline = aDeadline;
     sInstance->mScheduledDumpPath = aPath;
-    sInstance->mScheduledDumpExitAfter = aExitAfterDump;
   }
   static void CancelScheduledDump(PSLockRef) {
     MOZ_ASSERT(sInstance);
@@ -1077,9 +1070,6 @@ class CorePS {
   
   TimeStamp mScheduledDumpDeadline;
   nsAutoCString mScheduledDumpPath;
-  
-  
-  bool mScheduledDumpExitAfter = false;
 
   
   
@@ -4654,51 +4644,6 @@ static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
 
 
 
-
-
-static mozilla::StaticMutex sScheduledDumpMutex;
-
-
-
-
-static void profiler_save_profile_to_file_with_progress(
-    const char* aFilename, RefPtr<ProgressLogger::SharedProgress> aProgress);
-
-
-
-
-
-
-
-
-
-
-struct ScheduledDumpProgressEmitter {
-  RefPtr<ProgressLogger::SharedProgress> mProgress;
-  nsCString mSidecarPath;
-  Atomic<bool, MemoryOrdering::Relaxed> mDone{false};
-};
-
-static void ScheduledDumpProgressEmitterThread(void* aArg) {
-  NS_SetCurrentThreadName("ProfilerDumpProgress");
-  auto* emitter = static_cast<ScheduledDumpProgressEmitter*>(aArg);
-  
-  
-  while (!emitter->mDone) {
-    {
-      std::ofstream stream(emitter->mSidecarPath.get());
-      stream << emitter->mProgress->Progress().ToDouble() << "\n";
-    }
-    
-    
-    for (int i = 0; i < 10 && !emitter->mDone; ++i) {
-      PR_Sleep(PR_MillisecondsToInterval(100));
-    }
-  }
-}
-
-
-
 void SamplerThread::Run() {
   NS_SetCurrentThreadName("SamplerThread");
 
@@ -4745,7 +4690,6 @@ void SamplerThread::Run() {
   
   bool scheduledDumpDue = false;
   nsAutoCString scheduledDumpPath;
-  bool scheduledDumpExitAfter = false;
 
   const TimeDuration sampleInterval =
       TimeDuration::FromMicroseconds(mIntervalMicroseconds);
@@ -4824,7 +4768,6 @@ void SamplerThread::Run() {
           !deadline.IsNull() && sampleStart >= deadline) {
         scheduledDumpDue = true;
         scheduledDumpPath = CorePS::ScheduledDumpPath(lock);
-        scheduledDumpExitAfter = CorePS::ScheduledDumpExitAfter(lock);
         CorePS::CancelScheduledDump(lock);
       }
 
@@ -5306,35 +5249,7 @@ void SamplerThread::Run() {
     
     if (scheduledDumpDue) {
       scheduledDumpDue = false;
-      
-      
-      
-      
-      mozilla::StaticMutexAutoLock dumpLock(sScheduledDumpMutex);
-
-      
-      
-      
-      auto dumpProgress = MakeRefPtr<ProgressLogger::SharedProgress>();
-      ScheduledDumpProgressEmitter emitter{dumpProgress};
-      emitter.mSidecarPath = scheduledDumpPath;
-      emitter.mSidecarPath.AppendLiteral(".progress");
-      PRThread* emitterThread = PR_CreateThread(
-          PR_USER_THREAD, ScheduledDumpProgressEmitterThread, &emitter,
-          PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
-
-      profiler_save_profile_to_file_with_progress(scheduledDumpPath.get(),
-                                                  dumpProgress);
-      emitter.mDone = true;
-      if (scheduledDumpExitAfter) {
-        
-        
-        
-        AppShutdown::DoImmediateExit();
-      }
-      if (emitterThread) {
-        PR_JoinThread(emitterThread);
-      }
+      profiler_save_profile_to_file(scheduledDumpPath.get());
     }
 
     ProfilerChild::ProcessPendingUpdate();
@@ -6385,8 +6300,7 @@ void profiler_init(void* aStackTop) {
 static void locked_profiler_save_profile_to_file(
     PSLockRef aLock, const char* aFilename,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation,
-    bool aIsShuttingDown = false,
-    RefPtr<ProgressLogger::SharedProgress> aProgress = nullptr);
+    bool aIsShuttingDown);
 
 static SamplerThread* locked_profiler_stop(PSLockRef aLock);
 
@@ -6670,7 +6584,7 @@ Vector<ProfileAndAdditionalInformation> profiler_move_exit_profiles() {
 static void locked_profiler_save_profile_to_file(
     PSLockRef aLock, const char* aFilename,
     const PreRecordedMetaInformation& aPreRecordedMetaInformation,
-    bool aIsShuttingDown, RefPtr<ProgressLogger::SharedProgress> aProgress) {
+    bool aIsShuttingDown = false) {
   nsAutoCString processedFilename(aFilename);
   const auto processInsertionIndex = processedFilename.Find("%p");
   if (processInsertionIndex != kNotFound) {
@@ -6695,7 +6609,7 @@ static void locked_profiler_save_profile_to_file(
     {
       (void)locked_profiler_stream_json_for_this_process(
           aLock, w,  0, aPreRecordedMetaInformation,
-          aIsShuttingDown, nullptr, ProgressLogger{std::move(aProgress)});
+          aIsShuttingDown, nullptr, ProgressLogger{});
 
       w.StartArrayProperty("processes");
       Vector<ProfileAndAdditionalInformation> exitProfiles =
@@ -6715,11 +6629,7 @@ static void locked_profiler_save_profile_to_file(
 
 void profiler_save_profile_to_file(const char* aFilename) {
   LOG("profiler_save_profile_to_file(%s)", aFilename);
-  profiler_save_profile_to_file_with_progress(aFilename, nullptr);
-}
 
-static void profiler_save_profile_to_file_with_progress(
-    const char* aFilename, RefPtr<ProgressLogger::SharedProgress> aProgress) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   const auto preRecordedMetaInformation = PreRecordMetaInformation();
@@ -6730,13 +6640,12 @@ static void profiler_save_profile_to_file_with_progress(
     return;
   }
 
-  locked_profiler_save_profile_to_file(
-      lock, aFilename, preRecordedMetaInformation,
-       false, std::move(aProgress));
+  locked_profiler_save_profile_to_file(lock, aFilename,
+                                       preRecordedMetaInformation);
 }
 
-void profiler_schedule_dump_to_file(double aDelaySeconds, const char* aFilename,
-                                    bool aExitAfterDump) {
+void profiler_schedule_dump_to_file(double aDelaySeconds,
+                                    const char* aFilename) {
   if (!aFilename || !CorePS::Exists()) {
     return;
   }
@@ -6747,8 +6656,7 @@ void profiler_schedule_dump_to_file(double aDelaySeconds, const char* aFilename,
       TimeStamp::Now() + TimeDuration::FromSeconds(aDelaySeconds);
 
   PSAutoLock lock;
-  CorePS::ScheduleDumpToFile(lock, deadline, nsDependentCString(aFilename),
-                             aExitAfterDump);
+  CorePS::ScheduleDumpToFile(lock, deadline, nsDependentCString(aFilename));
 }
 
 void profiler_cancel_scheduled_dump() {
@@ -6758,18 +6666,6 @@ void profiler_cancel_scheduled_dump() {
 
   PSAutoLock lock;
   CorePS::CancelScheduledDump(lock);
-}
-
-void profiler_wait_for_scheduled_dump() {
-  
-  
-  
-  
-  
-  if (!xpc::IsInAutomation()) {
-    return;
-  }
-  mozilla::StaticMutexAutoLock lock(sScheduledDumpMutex);
 }
 
 void profiler_request_dump_and_quit_for_test(const nsACString& aReason) {

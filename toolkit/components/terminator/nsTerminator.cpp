@@ -240,12 +240,6 @@ void RunWatchdog(void* arg) {
     }
 
     
-
-    
-    
-    
-    profiler_wait_for_scheduled_dump();
-
     NoteIntentionalCrash(XRE_GetProcessTypeString());
 
     MaybeSaveShutdownHangProfile();
