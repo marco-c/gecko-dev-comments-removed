@@ -27,9 +27,7 @@
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/FinalizationRegistryBinding.h"
 #include "mozilla/dom/CallbackObject.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseDebugging.h"
-#include "mozilla/dom/PromiseDebuggingBinding.h"
 #include "mozilla/dom/PromiseRejectionEvent.h"
 #include "mozilla/dom/PromiseRejectionEventBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -1319,7 +1317,6 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
 
     
     uint64_t promiseID = JS::GetPromiseID(promiseObj);
-    bool defaultPrevented = false;
     if (!JS::GetPromiseIsHandled(promiseObj)) {
       if (nsCOMPtr<EventTarget> target =
               do_QueryInterface(promise->GetParentObject())) {
@@ -1331,32 +1328,15 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
         RefPtr<PromiseRejectionEvent> event =
             PromiseRejectionEvent::Constructor(target, u"unhandledrejection"_ns,
                                                init);
+        
+        
         target->DispatchEvent(*event);
-        defaultPrevented = event->DefaultPrevented();
       }
     }
 
     cccx = CycleCollectedJSContext::Get();
     NS_ENSURE_STATE(cccx);
     if (!JS::GetPromiseIsHandled(promiseObj)) {
-      bool suppressReporting = defaultPrevented;
-
-      
-      
-      auto& observers = cccx->mUncaughtRejectionObservers;
-      for (size_t j = 0; j < observers.Length(); ++j) {
-        RefPtr<UncaughtRejectionObserver> obs =
-            static_cast<UncaughtRejectionObserver*>(observers[j].get());
-        if (obs->OnLeftUncaught(promiseObj, IgnoreErrors())) {
-          suppressReporting = true;
-        }
-      }
-
-      if (!suppressReporting) {
-        JSAutoRealm ar(cccx->Context(), promiseObj);
-        Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
-      }
-
       DebugOnly<bool> isFound =
           cccx->mPendingUnhandledRejections.Remove(promiseID);
       MOZ_ASSERT(isFound);
@@ -1374,10 +1354,6 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
   CycleCollectedJSContext* cccx = CycleCollectedJSContext::Get();
   NS_ENSURE_STATE(cccx);
 
-  
-  
-  
-  
   for (size_t i = 0; i < mUnhandledRejections.Length(); ++i) {
     RefPtr<Promise>& promise = mUnhandledRejections[i];
     if (!promise) {
@@ -1385,24 +1361,6 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
     }
 
     JS::RootedObject promiseObj(cccx->RootingCx(), promise->PromiseObj());
-
-    if (!JS::GetPromiseIsHandled(promiseObj)) {
-      bool suppressReporting = false;
-      auto& observers = cccx->mUncaughtRejectionObservers;
-      for (size_t j = 0; j < observers.Length(); ++j) {
-        RefPtr<UncaughtRejectionObserver> obs =
-            static_cast<UncaughtRejectionObserver*>(observers[j].get());
-        if (obs->OnLeftUncaught(promiseObj, IgnoreErrors())) {
-          suppressReporting = true;
-        }
-      }
-
-      if (!suppressReporting) {
-        JSAutoRealm ar(cccx->Context(), promiseObj);
-        Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
-      }
-    }
-
     cccx->mPendingUnhandledRejections.Remove(JS::GetPromiseID(promiseObj));
   }
   return NS_OK;

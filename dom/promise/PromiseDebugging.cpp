@@ -4,7 +4,6 @@
 
 #include "mozilla/dom/PromiseDebugging.h"
 
-#include "js/Promise.h"
 #include "js/Value.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/RefPtr.h"
@@ -44,7 +43,7 @@ class FlushRejections : public DiscardableRunnable {
     NS_DispatchToCurrentThread(new FlushRejections());
   }
 
-  static void FlushSync(bool aDeferToEventPath = true) {
+  static void FlushSync() {
     sDispatched.set(false);
 
     
@@ -52,7 +51,7 @@ class FlushRejections : public DiscardableRunnable {
     
     
     
-    PromiseDebugging::FlushUncaughtRejectionsInternal(aDeferToEventPath);
+    PromiseDebugging::FlushUncaughtRejectionsInternal();
   }
 
   NS_IMETHOD Run() override {
@@ -179,9 +178,7 @@ void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
 
 void PromiseDebugging::FlushUncaughtRejections() {
   MOZ_ASSERT(!NS_IsMainThread());
-  
-  
-  FlushRejections::FlushSync( false);
+  FlushRejections::FlushSync();
 }
 
 
@@ -234,21 +231,13 @@ void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise) {
     }
   }
   
-  
-  
-  const uint64_t promiseID = JS::GetPromiseID(aPromise);
-  if (CycleCollectedJSContext::Get()->HasPendingUnhandledRejection(promiseID)) {
-    return;
-  }
-
-  
   if (CycleCollectedJSContext::Get()->mConsumedRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
 
 
-void PromiseDebugging::FlushUncaughtRejectionsInternal(bool aDeferToEventPath) {
+void PromiseDebugging::FlushUncaughtRejectionsInternal() {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;
@@ -267,15 +256,6 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal(bool aDeferToEventPath) {
     
     if (!promise) {
       continue;
-    }
-
-    
-    
-    if (aDeferToEventPath) {
-      const uint64_t promiseID = JS::GetPromiseID(promise);
-      if (storage->HasPendingUnhandledRejection(promiseID)) {
-        continue;
-      }
     }
 
     bool suppressReporting = false;
