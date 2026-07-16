@@ -6855,6 +6855,7 @@ const INITIAL_STATE = {
   Stocks: {
     tickers: [],
     lastUpdated: null,
+    error: false,
   },
   PictureOfTheDay: {
     initialized: false,
@@ -7984,6 +7985,7 @@ function Stocks(prevState = INITIAL_STATE.Stocks, action) {
         ...prevState,
         tickers: action.data.tickers,
         lastUpdated: action.data.lastUpdated,
+        error: action.data.error ?? false,
       };
     default:
       return prevState;
@@ -22622,6 +22624,61 @@ function StockTicker({
 
 
 
+function StocksError({
+  widgetSize,
+  dispatch
+}) {
+  const errorFired = (0,external_React_namespaceObject.useRef)(false);
+  const handleErrorIntersection = (0,external_React_namespaceObject.useCallback)(() => {
+    if (errorFired.current) {
+      return;
+    }
+    errorFired.current = true;
+    
+    
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_ERROR,
+      data: {
+        widget_name: "stocks",
+        widget_size: widgetSize,
+        error_type: "load_error"
+      }
+    }));
+  }, [dispatch, widgetSize]);
+  const errorRef = useIntersectionObserver(handleErrorIntersection);
+  return (
+    
+    
+    
+    external_React_default().createElement("div", {
+      className: "stocks-error",
+      role: "alert",
+      ref: el => {
+        errorRef.current = [el];
+      }
+    }, external_React_default().createElement("span", {
+      className: "icon icon-info-warning",
+      "aria-hidden": "true"
+    }), external_React_default().createElement("p", {
+      className: "stocks-error-text",
+      "data-l10n-id": "newtab-stocks-error-not-available"
+    }))
+  );
+}
+
+;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const Stocks_USER_ACTION_TYPES = {
@@ -22638,12 +22695,14 @@ function Stocks_Stocks({
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
-    tickers
+    tickers,
+    error
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Stocks);
 
   
   
   const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
+  const showError = error && !tickers.length;
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -22748,7 +22807,10 @@ function Stocks_Stocks({
     }) : null
   })))), external_React_default().createElement("div", {
     className: "stocks-body"
-  }, widgetSize === "medium" && external_React_default().createElement("ul", {
+  }, showError && external_React_default().createElement(StocksError, {
+    widgetSize: widgetSize,
+    dispatch: dispatch
+  }), !showError && widgetSize === "medium" && external_React_default().createElement("ul", {
     className: `stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`
   }, tickers.length ? tickers.map(t => external_React_default().createElement(StockTicker, {
     key: t.ticker,
@@ -22761,7 +22823,7 @@ function Stocks_Stocks({
   }).map((_, i) => external_React_default().createElement(StockTicker, {
     key: i,
     loading: true
-  }))), widgetSize === "large" && external_React_default().createElement("ul", {
+  }))), !showError && widgetSize === "large" && external_React_default().createElement("ul", {
     className: `stocks-list${tickers.length ? "" : " stocks-list--loading"}`
   }, tickers.length ? tickers.map(t => external_React_default().createElement(StockTicker, {
     key: t.ticker,
