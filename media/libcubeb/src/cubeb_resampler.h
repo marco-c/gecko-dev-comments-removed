@@ -64,6 +64,7 @@ cubeb_resampler_create(cubeb_stream * stream,
 
 
 
+
 long
 cubeb_resampler_fill(cubeb_resampler * resampler, void * input_buffer,
                      long * input_frame_count, void * output_buffer,
@@ -83,6 +84,26 @@ cubeb_resampler_destroy(cubeb_resampler * resampler);
 
 long
 cubeb_resampler_latency(cubeb_resampler * resampler);
+
+
+
+
+
+
+long
+cubeb_resampler_input_latency(cubeb_resampler * resampler);
+
+
+
+
+
+
+
+
+
+long
+cubeb_resampler_input_needed_for_output(cubeb_resampler * resampler,
+                                        long output_frames);
 
 
 
