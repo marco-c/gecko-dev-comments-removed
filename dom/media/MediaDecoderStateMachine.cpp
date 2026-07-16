@@ -715,11 +715,28 @@ class MediaDecoderStateMachine::DecodingState
   
   
   TimeUnit AudioPrerollThreshold() const {
-    return (mMaster->mAmpleAudioThreshold / 2)
-        .MultDouble(mMaster->mPlaybackRate);
+    
+    
+    
+    
+    const TimeUnit threshold =
+        mMaster->mStartSinkAfterWarmSeek
+            ? TimeUnit::FromMicroseconds(
+                  StaticPrefs::media_seek_resume_audio_preroll_usecs())
+            : mMaster->mAmpleAudioThreshold / 2;
+    return threshold.MultDouble(mMaster->mPlaybackRate);
   }
 
   uint32_t VideoPrerollFrames() const {
+    if (mMaster->mStartSinkAfterWarmSeek) {
+      
+      
+      
+      
+      return mMaster->mReader->VideoIsHardwareAccelerated()
+                 ? StaticPrefs::media_seek_resume_video_preroll_frames_hw()
+                 : StaticPrefs::media_seek_resume_video_preroll_frames_sw();
+    }
     uint32_t preroll = static_cast<uint32_t>(
         mMaster->GetAmpleVideoFrames() / 2. * mMaster->mPlaybackRate + 1);
     
@@ -3207,15 +3224,25 @@ void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
 
 void MediaDecoderStateMachine::SeekingState::SeekCompleted() {
   MOZ_ASSERT(mMaster->OnTaskQueue());
-  
-  
-  mMaster->mStartSinkAfterSeek = true;
   const auto newCurrentTime = CalculateNewCurrentTime();
+  const bool seekingToEnd = (newCurrentTime == mMaster->Duration() ||
+                             newCurrentTime.EqualsAtLowestResolution(
+                                 mMaster->Duration().ToBase(USECS_PER_S))) &&
+                            !mMaster->IsLiveStream();
 
-  if ((newCurrentTime == mMaster->Duration() ||
-       newCurrentTime.EqualsAtLowestResolution(
-           mMaster->Duration().ToBase(USECS_PER_S))) &&
-      !mMaster->IsLiveStream()) {
+  
+  
+  
+  
+  
+  
+  
+  mMaster->mStartSinkAfterWarmSeek =
+      !seekingToEnd && mMaster->mPlayState == MediaDecoder::PLAY_STATE_PLAYING;
+  SLOG("SeekCompleted, startSinkAfterWarmSeek={}, seekingToEnd={}",
+       mMaster->mStartSinkAfterWarmSeek, seekingToEnd);
+
+  if (seekingToEnd) {
     SLOG("Seek completed, seeked to end: {}", newCurrentTime.ToString().get());
     
     
@@ -3778,6 +3805,9 @@ void MediaDecoderStateMachine::PlayStateChanged() {
 
   if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
     CancelSuspendTimer();
+    
+    
+    mStartSinkAfterWarmSeek = false;
   } else if (mMinimizePreroll) {
     
     
@@ -4095,10 +4125,10 @@ nsresult MediaDecoderStateMachine::StartMediaSink() {
 
   mAudioCompleted = false;
   const auto startTime = GetMediaTime();
-  const MediaSink::StartType startType = mStartSinkAfterSeek
+  const MediaSink::StartType startType = mStartSinkAfterWarmSeek
                                              ? MediaSink::StartType::SeekResume
                                              : MediaSink::StartType::Initial;
-  mStartSinkAfterSeek = false;
+  mStartSinkAfterWarmSeek = false;
   LOG("StartMediaSink, mediaTime={}, startType={}", startTime.ToMicroseconds(),
       MediaSink::EnumValueToString(startType));
   nsresult rv = mMediaSink->Start(startTime, Info(), startType);

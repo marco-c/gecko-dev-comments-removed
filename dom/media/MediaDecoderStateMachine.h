@@ -432,7 +432,10 @@ class MediaDecoderStateMachine
   
   
   
-  bool mStartSinkAfterSeek = false;
+  
+  
+  
+  bool mStartSinkAfterWarmSeek = false;
 
   
   
