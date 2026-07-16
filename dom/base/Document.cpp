@@ -561,20 +561,112 @@ static nsresult GetHttpChannelHelper(nsIChannel* aChannel,
   return NS_OK;
 }
 
-}  
+class IdentifierMapContentList final : public HTMLCollection {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IdentifierMapContentList,
+                                           HTMLCollection)
 
-#define NAME_NOT_VALID ((SimpleContentList*)1)
+  enum class Kind : uint8_t {
+    WindowName,
+    DocumentName,
+  };
+
+  explicit IdentifierMapContentList(Document* aDoc, nsAtom* aName, Kind aKind)
+      : mDocument(aDoc), mName(aName), mKind(aKind) {}
+
+  void BringSelfUpToDate() {
+    if (mValid) {
+      return;
+    }
+    MOZ_ASSERT(mElements.IsEmpty());
+    mValid = true;
+    auto* entry = mDocument->LookupIdentifierInMap(mName.get());
+    if (!entry) {
+      return;
+    }
+    AutoTArray<Element*, 8> elements;
+    if (mKind == Kind::DocumentName) {
+      entry->GetDocumentNameElements(elements);
+    } else {
+      entry->GetWindowNameElements(elements);
+    }
+    mElements.AppendElements(elements);
+  };
+
+  void Invalidate() {
+    Reset();
+    mValid = false;
+  }
+
+  void SetKnownContents(Span<Element* const> aElements) {
+    MOZ_ASSERT(!mValid);
+    MOZ_ASSERT(mElements.IsEmpty());
+    mElements.AppendElements(aElements);
+    mValid = true;
+  }
+
+  nsINode* GetParentObject() override { return mDocument; }
+
+  uint32_t Length() override {
+    BringSelfUpToDate();
+    return mElements.Length();
+  }
+
+  Element* Item(uint32_t aIndex) override {
+    BringSelfUpToDate();
+    nsIContent* content = mElements.SafeElementAt(aIndex);
+    return content ? content->AsElement() : nullptr;
+  }
+
+  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override {
+    BringSelfUpToDate();
+    return HTMLCollection::DefaultGetFirstNamedElement(aName, aFound);
+  }
+
+  void GetSupportedNames(nsTArray<nsString>& aNames) override {
+    BringSelfUpToDate();
+    HTMLCollection::GetSupportedNames(aNames, nullptr);
+  }
+
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
+    return HTMLCollection_Binding::Wrap(aCx, this, aGivenProto);
+  }
+
+ protected:
+  ~IdentifierMapContentList() override = default;
+
+  RefPtr<Document> mDocument;
+  RefPtr<nsAtom> mName;
+  bool mValid = false;
+  const Kind mKind;
+};
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(IdentifierMapContentList, HTMLCollection,
+                                   mDocument)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdentifierMapContentList)
+NS_INTERFACE_MAP_END_INHERITING(HTMLCollection)
+
+NS_IMPL_ADDREF_INHERITED(IdentifierMapContentList, HTMLCollection)
+NS_IMPL_RELEASE_INHERITED(IdentifierMapContentList, HTMLCollection)
+
+}  
 
 IdentifierMapEntry::IdentifierMapEntry(
     const IdentifierMapEntry::DependentAtomOrString* aKey)
-    : mKey(aKey ? *aKey : nullptr) {}
+    : mKey(aKey->mAtom ? do_AddRef(aKey->mAtom) : NS_Atomize(*aKey->mString)) {}
+
+IdentifierMapEntry::~IdentifierMapEntry() = default;
+IdentifierMapEntry::IdentifierMapEntry(IdentifierMapEntry&&) = default;
 
 void IdentifierMapEntry::Traverse(
     nsCycleCollectionTraversalCallback* aCallback) {
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback,
-                                     "mIdentifierMap mNameContentList");
+                                     "mIdentifierMap mWindowNameContentList");
   aCallback->NoteXPCOMChild(
-      static_cast<mozilla::dom::NodeList*>(mNameContentList));
+      static_cast<mozilla::dom::NodeList*>(mWindowNameContentList));
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback,
                                      "mIdentifierMap mDocumentNameContentList");
@@ -590,12 +682,17 @@ void IdentifierMapEntry::Traverse(
 }
 
 bool IdentifierMapEntry::IsEmpty() {
-  return mIdContentList.IsEmpty() && !mNameContentList &&
-         !mDocumentNameContentList && !mChangeCallbacks && !mImageElement;
+  return mIdList.IsEmpty() && mNameList.IsEmpty() && !mChangeCallbacks &&
+         !mImageElement;
 }
 
-bool IdentifierMapEntry::HasNameElement() const {
-  return mNameContentList && mNameContentList->Length() != 0;
+bool IdentifierMapEntry::HasWindowNameElement() const {
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(el)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void IdentifierMapEntry::AddContentChangeCallback(
@@ -639,13 +736,15 @@ void IdentifierMapEntry::FireChangeCallbacks(Element* aOldElement,
 
 void IdentifierMapEntry::AddIdElement(Element* aElement) {
   MOZ_ASSERT(aElement, "Must have element");
-  MOZ_ASSERT(!mIdContentList.Contains(nullptr), "Why is null in our list?");
+  MOZ_ASSERT(!mIdList.Contains(nullptr), "Why is null in our list?");
 
-  size_t index = mIdContentList.Insert(*aElement);
+  size_t index = mIdList.Insert(*aElement);
   if (index == 0) {
-    Element* oldElement = mIdContentList.SafeElementAt(1, nullptr);
+    Element* oldElement = mIdList.SafeElementAt(1, nullptr);
     FireChangeCallbacks(oldElement, aElement);
   }
+
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::RemoveIdElement(Element* aElement) {
@@ -657,18 +756,19 @@ void IdentifierMapEntry::RemoveIdElement(Element* aElement) {
   
   
   
-  NS_ASSERTION(!aElement->OwnerDoc()->IsHTMLDocument() ||
-                   mIdContentList.Contains(aElement),
-               "Removing id entry that doesn't exist");
+  NS_ASSERTION(
+      !aElement->OwnerDoc()->IsHTMLDocument() || mIdList.Contains(aElement),
+      "Removing id entry that doesn't exist");
 
   
   
-  Element* currentElement = mIdContentList.SafeElementAt(0, nullptr);
-  mIdContentList.RemoveElement(*aElement);
+  Element* currentElement = mIdList.SafeElementAt(0, nullptr);
+  mIdList.RemoveElement(*aElement);
   if (currentElement == aElement) {
-    FireChangeCallbacks(currentElement,
-                        mIdContentList.SafeElementAt(0, nullptr));
+    FireChangeCallbacks(currentElement, mIdList.SafeElementAt(0, nullptr));
   }
+
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::SetImageElement(Element* aElement) {
@@ -681,12 +781,13 @@ void IdentifierMapEntry::SetImageElement(Element* aElement) {
 }
 
 void IdentifierMapEntry::ClearAndNotify() {
-  Element* currentElement = mIdContentList.SafeElementAt(0, nullptr);
-  mIdContentList.Clear();
+  Element* currentElement = mIdList.SafeElementAt(0, nullptr);
+  mIdList.Clear();
   if (currentElement) {
     FireChangeCallbacks(currentElement, nullptr);
   }
-  mNameContentList = nullptr;
+  mNameList.Clear();
+  mWindowNameContentList = nullptr;
   mDocumentNameContentList = nullptr;
   if (mImageElement) {
     SetImageElement(nullptr);
@@ -694,38 +795,113 @@ void IdentifierMapEntry::ClearAndNotify() {
   mChangeCallbacks = nullptr;
 }
 
-void IdentifierMapEntry::AddNameElement(nsINode* aNode, Element* aElement) {
-  if (!mNameContentList) {
-    mNameContentList = new dom::SimpleHTMLCollection(aNode);
-  }
-
-  mNameContentList->AppendElement(aElement);
+void IdentifierMapEntry::AddNameElement(Element* aElement) {
+  mNameList.Insert(*aElement);
+  InvalidateWindowNameContentList();
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::RemoveNameElement(Element* aElement) {
-  if (mNameContentList) {
-    mNameContentList->RemoveElement(aElement);
-  }
-}
-
-void IdentifierMapEntry::AddDocumentNameElement(
-    Document* aDocument, nsGenericHTMLElement* aElement) {
-  if (!mDocumentNameContentList) {
-    mDocumentNameContentList = new dom::SimpleHTMLCollection(aDocument);
-  }
-
-  mDocumentNameContentList->AppendElement(aElement);
-}
-
-void IdentifierMapEntry::RemoveDocumentNameElement(
-    nsGenericHTMLElement* aElement) {
-  if (mDocumentNameContentList) {
-    mDocumentNameContentList->RemoveElement(aElement);
-  }
+  mNameList.RemoveElement(*aElement);
+  InvalidateWindowNameContentList();
+  InvalidateDocumentNameContentList();
 }
 
 bool IdentifierMapEntry::HasDocumentNameElement() const {
-  return mDocumentNameContentList && mDocumentNameContentList->Length() != 0;
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(el)) {
+      return true;
+    }
+  }
+  for (auto* el : mIdList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(el)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void IdentifierMapEntry::GetWindowNameElements(
+    nsTArray<Element*>& aElements) const {
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(el)) {
+      aElements.AppendElement(el);
+    }
+  }
+}
+
+void IdentifierMapEntry::GetDocumentNameElements(
+    nsTArray<Element*>& aElements) const {
+  bool hasName = false;
+  bool hasId = false;
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(el)) {
+      hasName = true;
+      aElements.AppendElement(el);
+    }
+  }
+  for (auto* el : mIdList.AsSpan()) {
+    if (!nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(el)) {
+      continue;
+    }
+    if (el->HasName() &&
+        el->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == el->GetID()) {
+      
+      continue;
+    }
+    hasId = true;
+    aElements.AppendElement(el);
+  }
+  
+  if (hasId && hasName) {
+    struct Comparator {
+      Comparator() = default;
+      mutable nsContentUtils::NodeIndexCache mCache;
+      int operator()(Element* aA, Element* aB) const {
+        return nsContentUtils::CompareTreePosition<TreeKind::DOM>(
+            aA, aB, nullptr, &mCache);
+      }
+    };
+    aElements.Sort(Comparator());
+  }
+}
+
+dom::HTMLCollection* IdentifierMapEntry::GetWindowNameContentList() const {
+  return mWindowNameContentList;
+}
+
+dom::HTMLCollection& IdentifierMapEntry::CreateWindowNameContentList(
+    Document* aDoc, Span<Element*> aKnownElements) {
+  MOZ_ASSERT(!mWindowNameContentList);
+  mWindowNameContentList = new dom::IdentifierMapContentList(
+      aDoc, mKey, dom::IdentifierMapContentList::Kind::WindowName);
+  mWindowNameContentList->SetKnownContents(aKnownElements);
+  return *mWindowNameContentList;
+}
+
+dom::HTMLCollection* IdentifierMapEntry::GetDocumentNameContentList() const {
+  return mDocumentNameContentList;
+}
+
+dom::HTMLCollection& IdentifierMapEntry::CreateDocumentNameContentList(
+    Document* aDoc, Span<Element*> aKnownElements) {
+  MOZ_ASSERT(!mDocumentNameContentList);
+  mDocumentNameContentList = new dom::IdentifierMapContentList(
+      aDoc, mKey, dom::IdentifierMapContentList::Kind::DocumentName);
+  mDocumentNameContentList->SetKnownContents(aKnownElements);
+  return *mDocumentNameContentList;
+}
+
+void IdentifierMapEntry::InvalidateWindowNameContentList() {
+  if (mWindowNameContentList) {
+    mWindowNameContentList->Invalidate();
+  }
+}
+
+void IdentifierMapEntry::InvalidateDocumentNameContentList() {
+  if (mDocumentNameContentList) {
+    mDocumentNameContentList->Invalidate();
+  }
 }
 
 bool IdentifierMapEntry::HasIdElementExposedAsHTMLDocumentProperty() const {
@@ -734,10 +910,7 @@ bool IdentifierMapEntry::HasIdElementExposedAsHTMLDocumentProperty() const {
          nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(idElement);
 }
 
-size_t IdentifierMapEntry::SizeOfExcludingThis(
-    MallocSizeOf aMallocSizeOf) const {
-  return mKey.mString.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-}
+size_t IdentifierMapEntry::SizeOfExcludingThis(MallocSizeOf) const { return 0; }
 
 class OnloadBlocker final : public nsIRequest {
  public:
@@ -4329,21 +4502,45 @@ static void IncrementExpandoGeneration(Document& aDoc) {
   ++aDoc.mExpandoAndGeneration.generation;
 }
 
+
+
+
+
+
+
+
+
+
+static void MaybeInvalidateDocumentNameListForImageElementName(
+    Document& aDoc, Element& aElement) {
+  if (!aElement.HasID() || !aElement.IsHTMLElement(nsGkAtoms::img)) {
+    return;
+  }
+  if (auto* entry = aDoc.LookupIdentifierInMap(aElement.GetID())) {
+    entry->InvalidateDocumentNameContentList();
+  }
+}
+
 void Document::AddToNameTable(Element* aElement, nsAtom* aName) {
-  MOZ_ASSERT(nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(aElement),
-             "Only put elements that need to be exposed as window['name'] in "
-             "the named table.");
+  MOZ_ASSERT(aElement->IsHTMLElement() && nsGenericHTMLElement::CanHaveName(
+                                              aElement->NodeInfo()->NameAtom()),
+             "Only put elements that need to be exposed as window['name'] or "
+             "document['name'] in the named table.");
 
   IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aName);
-
-  
-  if (entry) {
-    if (!entry->HasNameElement() &&
-        !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
-      IncrementExpandoGeneration(*this);
-    }
-    entry->AddNameElement(this, aElement);
+  if (!entry) {
+    
+    return;
   }
+  
+  
+  if (!entry->HasWindowNameElement() &&
+      !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
+    IncrementExpandoGeneration(*this);
+  }
+  entry->AddNameElement(aElement);
+
+  MaybeInvalidateDocumentNameListForImageElementName(*this, *aElement);
 }
 
 void Document::RemoveFromNameTable(Element* aElement, nsAtom* aName) {
@@ -4351,56 +4548,35 @@ void Document::RemoveFromNameTable(Element* aElement, nsAtom* aName) {
   if (mIdentifierMap.Count() == 0) return;
 
   IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName);
-  if (!entry)  
+  if (!entry) {
+    
     return;
+  }
 
   entry->RemoveNameElement(aElement);
-  if (!entry->HasNameElement() &&
+  
+  if (!entry->HasWindowNameElement() &&
       !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
     IncrementExpandoGeneration(*this);
   }
-}
 
-void Document::AddToDocumentNameTable(nsGenericHTMLElement* aElement,
-                                      nsAtom* aName) {
-  MOZ_ASSERT(
-      nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) ||
-          nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(
-              aElement),
-      "Only put elements that need to be exposed as document['name'] in "
-      "the document named table.");
-
-  if (IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aName)) {
-    entry->AddDocumentNameElement(this, aElement);
-  }
-}
-
-void Document::RemoveFromDocumentNameTable(nsGenericHTMLElement* aElement,
-                                           nsAtom* aName) {
-  if (mIdentifierMap.Count() == 0) {
-    return;
-  }
-
-  if (IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName)) {
-    entry->RemoveDocumentNameElement(aElement);
-    BaseContentList* list = entry->GetDocumentNameContentList();
-    if (!list || list->Length() == 0) {
-      IncrementExpandoGeneration(*this);
-    }
-  }
+  MaybeInvalidateDocumentNameListForImageElementName(*this, *aElement);
 }
 
 void Document::AddToIdTable(Element* aElement, nsAtom* aId) {
   IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aId);
-
-  if (entry) { 
-    if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
-        !entry->HasNameElement() &&
-        !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
-      IncrementExpandoGeneration(*this);
-    }
-    entry->AddIdElement(aElement);
+  if (!entry) {
+    return;  
   }
+
+  
+  if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
+      !entry->HasWindowNameElement() &&
+      !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
+    IncrementExpandoGeneration(*this);
+  }
+
+  entry->AddIdElement(aElement);
 }
 
 void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
@@ -4416,8 +4592,9 @@ void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
     return;
 
   entry->RemoveIdElement(aElement);
+  
   if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
-      !entry->HasNameElement() &&
+      !entry->HasWindowNameElement() &&
       !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
     IncrementExpandoGeneration(*this);
   }

@@ -716,13 +716,19 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   static bool LegacyTouchAPIEnabled(JSContext* aCx, JSObject* aObj);
 
   
+  
+  
   static inline bool CanHaveName(nsAtom* aTag) {
     return aTag == nsGkAtoms::img || aTag == nsGkAtoms::form ||
-           aTag == nsGkAtoms::embed || aTag == nsGkAtoms::object;
+           aTag == nsGkAtoms::embed || aTag == nsGkAtoms::object ||
+           aTag == nsGkAtoms::iframe;
   }
   static inline bool ShouldExposeNameAsWindowProperty(Element* aElement) {
-    return aElement->IsHTMLElement() &&
-           CanHaveName(aElement->NodeInfo()->NameAtom());
+    if (!aElement->IsHTMLElement()) {
+      return false;
+    }
+    auto* nodeName = aElement->NodeInfo()->NameAtom();
+    return CanHaveName(nodeName) && nodeName != nsGkAtoms::iframe;
   }
   
   static inline bool ShouldExposeIdAsHTMLDocumentProperty(Element* aElement) {
@@ -746,9 +752,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     }
     
     
-    return aElement->IsAnyOfHTMLElements(nsGkAtoms::embed, nsGkAtoms::form,
-                                         nsGkAtoms::iframe, nsGkAtoms::img,
-                                         nsGkAtoms::object);
+    return aElement->IsHTMLElement() &&
+           CanHaveName(aElement->NodeInfo()->NameAtom());
   }
 
   virtual inline void ResultForDialogSubmit(nsAString& aResult) {

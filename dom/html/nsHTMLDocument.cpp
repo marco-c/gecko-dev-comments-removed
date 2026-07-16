@@ -541,15 +541,6 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
                                  bool& aFound,
                                  JS::MutableHandle<JSObject*> aRetVal,
                                  mozilla::ErrorResult& aRv) {
-  if (!StaticPrefs::dom_document_name_getter_follow_spec_enabled()) {
-    JS::Rooted<JS::Value> v(aCx);
-    if ((aFound = ResolveNameForWindow(aCx, aName, &v, aRv))) {
-      SetUseCounter(mozilla::eUseCounter_custom_HTMLDocumentNamedGetterHit);
-      aRetVal.set(v.toObjectOrNull());
-    }
-    return;
-  }
-
   aFound = false;
   aRetVal.set(nullptr);
 
@@ -560,15 +551,9 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
     return;
   }
 
-  BaseContentList* list = entry->GetDocumentNameContentList();
-  if (!list || list->Length() == 0) {
-    return;
-  }
-
   JS::Rooted<JS::Value> v(aCx);
-  if (list->Length() == 1) {
-    nsIContent* element = list->Item(0);
-    if (auto iframe = HTMLIFrameElement::FromNode(element)) {
+  auto OnlyOneElement = [&](Element* aElement) {
+    if (auto iframe = HTMLIFrameElement::FromNode(aElement)) {
       
       
       
@@ -581,25 +566,51 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
         aRv.NoteJSContextException(aCx);
         return;
       }
-
-      if (v.isNullOrUndefined()) {
-        return;
-      }
     } else {
       
       
-      if (!ToJSValue(aCx, element, &v)) {
+      if (!ToJSValue(aCx, aElement, &v)) {
         aRv.NoteJSContextException(aCx);
         return;
       }
     }
-  } else {
+  };
+
+  
+  [&] {
+    HTMLCollection* list = entry->GetDocumentNameContentList();
+    if (!list) {
+      
+      AutoTArray<Element*, 8> elements;
+      entry->GetDocumentNameElements(elements);
+      if (elements.IsEmpty()) {
+        return;
+      }
+      if (elements.Length() == 1) {
+        return OnlyOneElement(elements[0]);
+      }
+      list = &entry->CreateDocumentNameContentList(this, elements);
+    }
+
+    uint32_t len = list->Length();
+    if (len == 0) {
+      return;
+    }
+
+    if (len == 1) {
+      return OnlyOneElement(list->Item(0));
+    }
+
     
     
     if (!ToJSValue(aCx, list, &v)) {
       aRv.NoteJSContextException(aCx);
       return;
     }
+  }();
+
+  if (v.isUndefined() || aRv.Failed()) {
+    return;
   }
 
   bool collect = false;
@@ -642,11 +653,6 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
 }
 
 void nsHTMLDocument::GetSupportedNames(nsTArray<nsString>& aNames) {
-  if (!StaticPrefs::dom_document_name_getter_follow_spec_enabled()) {
-    GetSupportedNamesForWindow(aNames);
-    return;
-  }
-
   for (const auto& entry : mIdentifierMap) {
     if (entry.HasDocumentNameElement()) {
       aNames.AppendElement(entry.GetKeyAsString());
@@ -663,12 +669,20 @@ bool nsHTMLDocument::ResolveNameForWindow(JSContext* aCx,
     return false;
   }
 
-  BaseContentList* list = entry->GetNameContentList();
-  uint32_t length = list ? list->Length() : 0;
-
-  nsIContent* node;
-  if (length > 0) {
-    if (length > 1) {
+  Element* singleElement = nullptr;
+  HTMLCollection* list = entry->GetWindowNameContentList();
+  if (!list) {
+    
+    AutoTArray<Element*, 8> elements;
+    entry->GetWindowNameElements(elements);
+    if (elements.Length() > 1) {
+      list = &entry->CreateWindowNameContentList(this, elements);
+    } else {
+      singleElement = elements.SafeElementAt(0);
+    }
+  }
+  if (list) {
+    if (list->Length() > 1) {
       
       if (!ToJSValue(aCx, list, aRetval)) {
         aError.NoteJSContextException(aCx);
@@ -676,32 +690,26 @@ bool nsHTMLDocument::ResolveNameForWindow(JSContext* aCx,
       }
       return true;
     }
-
-    
-    
-    node = list->Item(0);
-  } else {
+    singleElement = list->Item(0);
+  }
+  if (!singleElement) {
     
     Element* e = entry->GetIdElement();
-
     if (!e || !nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
       return false;
     }
-
-    node = e;
+    singleElement = e;
   }
-
-  if (!ToJSValue(aCx, node, aRetval)) {
+  if (!ToJSValue(aCx, singleElement, aRetval)) {
     aError.NoteJSContextException(aCx);
     return false;
   }
-
   return true;
 }
 
 void nsHTMLDocument::GetSupportedNamesForWindow(nsTArray<nsString>& aNames) {
   for (const auto& entry : mIdentifierMap) {
-    if (entry.HasNameElement() ||
+    if (entry.HasWindowNameElement() ||
         entry.HasIdElementExposedAsHTMLDocumentProperty()) {
       aNames.AppendElement(entry.GetKeyAsString());
     }

@@ -27,7 +27,8 @@ namespace mozilla {
 namespace dom {
 class Document;
 class Element;
-class SimpleHTMLCollection;
+class HTMLCollection;
+class IdentifierMapContentList;
 }  
 
 
@@ -70,31 +71,19 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   typedef const DependentAtomOrString* KeyTypePointer;
 
   explicit IdentifierMapEntry(const DependentAtomOrString* aKey);
-  IdentifierMapEntry(IdentifierMapEntry&& aOther) = default;
-  ~IdentifierMapEntry() = default;
+  IdentifierMapEntry(IdentifierMapEntry&& aOther);
+  ~IdentifierMapEntry();
 
-  nsString GetKeyAsString() const {
-    if (mKey.mAtom) {
-      return nsAtomString(mKey.mAtom);
-    }
-
-    return mKey.mString;
+  nsDependentAtomString GetKeyAsString() const {
+    return nsDependentAtomString(mKey);
   }
 
   bool KeyEquals(const KeyTypePointer aOtherKey) const {
-    if (mKey.mAtom) {
-      if (aOtherKey->mAtom) {
-        return mKey.mAtom == aOtherKey->mAtom;
-      }
-
-      return mKey.mAtom->Equals(*aOtherKey->mString);
-    }
-
     if (aOtherKey->mAtom) {
-      return aOtherKey->mAtom->Equals(mKey.mString);
+      return mKey == aOtherKey->mAtom;
     }
 
-    return mKey.mString.Equals(*aOtherKey->mString);
+    return mKey->Equals(*aOtherKey->mString);
   }
 
   static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
@@ -107,32 +96,32 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
   bool IsEmpty();
 
-  void AddNameElement(nsINode* aDocument, Element* aElement);
+  void AddNameElement(Element* aElement);
   void RemoveNameElement(Element* aElement);
-  dom::SimpleHTMLCollection* GetNameContentList() { return mNameContentList; }
-  bool HasNameElement() const;
+  Span<Element* const> GetNameElements() const { return mNameList.AsSpan(); }
 
-  void AddDocumentNameElement(Document* aDocument,
-                              nsGenericHTMLElement* aElement);
-  void RemoveDocumentNameElement(nsGenericHTMLElement* aElement);
+  void GetWindowNameElements(nsTArray<Element*>&) const;
+  dom::HTMLCollection* GetWindowNameContentList() const;
+  dom::HTMLCollection& CreateWindowNameContentList(
+      Document*, Span<Element*> aKnownElements);
+  void InvalidateWindowNameContentList();
+  bool HasWindowNameElement() const;
+
+  void GetDocumentNameElements(nsTArray<Element*>&) const;
+  dom::HTMLCollection* GetDocumentNameContentList() const;
+  dom::HTMLCollection& CreateDocumentNameContentList(
+      Document*, Span<Element*> aKnownElements);
+  void InvalidateDocumentNameContentList();
   bool HasDocumentNameElement() const;
-  dom::SimpleHTMLCollection* GetDocumentNameContentList() {
-    return mDocumentNameContentList;
-  }
 
   
-
-
-
   Element* GetIdElement() const {
-    auto span = mIdContentList.AsSpan();
+    auto span = mIdList.AsSpan();
     return span.IsEmpty() ? nullptr : span[0];
   }
 
   
-
-
-  Span<Element* const> GetIdElements() const { return mIdContentList.AsSpan(); }
+  Span<Element* const> GetIdElements() const { return mIdList.AsSpan(); }
 
   
 
@@ -143,12 +132,8 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   }
 
   
-
-
   void AddIdElement(Element* aElement);
   
-
-
   void RemoveIdElement(Element* aElement);
   
 
@@ -202,37 +187,19 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
  private:
-  
-  
-  struct OwningAtomOrString final {
-    OwningAtomOrString(const OwningAtomOrString& aOther) = delete;
-    OwningAtomOrString(OwningAtomOrString&& aOther) = default;
-
-    explicit OwningAtomOrString(const DependentAtomOrString& aOther)
-        
-        
-        
-        
-        
-        : mAtom(aOther.mAtom),
-          mString(aOther.mString ? *aOther.mString : u""_ns) {}
-
-    RefPtr<nsAtom> mAtom;
-    nsString mString;
-  };
-
   IdentifierMapEntry(const IdentifierMapEntry& aOther) = delete;
   IdentifierMapEntry& operator=(const IdentifierMapEntry& aOther) = delete;
 
   void FireChangeCallbacks(Element* aOldElement, Element* aNewElement,
                            bool aImageOnly = false);
 
-  OwningAtomOrString mKey;
-  dom::TreeOrderedArray<Element*> mIdContentList;
-  RefPtr<dom::SimpleHTMLCollection> mNameContentList;
   
-  RefPtr<dom::SimpleHTMLCollection> mDocumentNameContentList;
-  UniquePtr<nsTHashtable<ChangeCallbackEntry> > mChangeCallbacks;
+  RefPtr<nsAtom> mKey;
+  dom::TreeOrderedArray<Element*> mIdList;
+  dom::TreeOrderedArray<Element*> mNameList;
+  RefPtr<dom::IdentifierMapContentList> mWindowNameContentList;
+  RefPtr<dom::IdentifierMapContentList> mDocumentNameContentList;
+  UniquePtr<nsTHashtable<ChangeCallbackEntry>> mChangeCallbacks;
   RefPtr<Element> mImageElement;
 };
 
