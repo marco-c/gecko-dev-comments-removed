@@ -690,15 +690,7 @@ class RuleEditor extends EventEmitter {
       });
     }
 
-    let focusedElSelector;
     if (reset) {
-      
-      
-      
-      if (this.element.contains(this.doc.activeElement)) {
-        focusedElSelector = CssLogic.findCssSelector(this.doc.activeElement);
-      }
-
       this.propertyList.replaceChildren();
     }
 
@@ -756,19 +748,6 @@ class RuleEditor extends EventEmitter {
       this.#updateShowUnusedCustomCssPropertiesButtonText();
     } else if (this.#showUnusedCustomCssPropertiesButton) {
       this.#nullifyShowUnusedCustomCssProperties();
-    }
-
-    
-    
-    if (this.doc.hasFocus() && focusedElSelector) {
-      const elementToFocus = this.doc.querySelector(focusedElSelector);
-      if (elementToFocus && this.element.contains(elementToFocus)) {
-        
-        setTimeout(() => {
-          elementToFocus.focus();
-          this.ruleView.emitForTests("rule-editor-focus-reset");
-        }, 0);
-      }
     }
   }
 

@@ -24,6 +24,7 @@ const {
 } = require("resource://devtools/client/inspector/shared/utils.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
+const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 
 loader.lazyRequireGetter(
   this,
@@ -1405,15 +1406,48 @@ class CssRuleView extends EventEmitter {
 
   async #populate() {
     try {
-      const elementStyle = this.elementStyle;
+      let focusedElSelector;
+      
+      
+      
+      
+      
+      let focusedElement;
+      if (this.element.contains(this.styleDocument.activeElement)) {
+        focusedElement = this.styleDocument.activeElement;
+        focusedElSelector = CssLogic.findCssSelector(focusedElement);
+      }
 
+      const elementStyle = this.elementStyle;
       await this.elementStyle.populate();
 
       if (this.elementStyle !== elementStyle || this.isDestroyed) {
         return;
       }
 
+      
+      
+      
+      
+      if (
+        focusedElement &&
+        !focusedElement?.isConnected &&
+        !this.styleDocument.querySelector(focusedElSelector)
+      ) {
+        focusedElSelector = "";
+      }
+
       await this.#createEditors();
+
+      
+      
+      if (focusedElSelector && this.styleDocument.hasFocus()) {
+        const elementToFocus =
+          this.styleDocument.querySelector(focusedElSelector);
+        if (elementToFocus && this.element.contains(elementToFocus)) {
+          elementToFocus.focus();
+        }
+      }
 
       
       this.inspector.emit("rule-view-refreshed");

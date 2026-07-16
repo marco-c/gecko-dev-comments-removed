@@ -32,12 +32,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/css/parsing-utils.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "findCssSelector",
-  "resource://devtools/shared/inspector/css-logic.js",
-  true
-);
 loader.lazyGetter(this, "PROPERTY_NAME_INPUT_LABEL", function () {
   return l10n("rule.propertyName.label");
 });
@@ -670,12 +664,6 @@ class TextPropertyEditor {
       };
     }
 
-    
-    let focusedElSelector = null;
-    if (this.valueSpan.contains(this.doc.activeElement)) {
-      focusedElSelector = findCssSelector(this.doc.activeElement);
-    }
-
     this.valueSpan.innerHTML = "";
     this.valueSpan.appendChild(frag);
     if (
@@ -793,16 +781,6 @@ class TextPropertyEditor {
 
     
     this.ruleView.updatePropertyHighlight(this);
-
-    
-    
-    
-    if (this.doc.hasFocus() && focusedElSelector) {
-      const elementToFocus = this.doc.querySelector(focusedElSelector);
-      if (elementToFocus) {
-        elementToFocus.focus();
-      }
-    }
   };
 
   
