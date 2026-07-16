@@ -707,9 +707,6 @@ class GCMarker {
   
   MainThreadOrGCTaskData<MarkingState> state;
 
-  
-  MainThreadOrGCTaskData<bool> haveAllImplicitEdges;
-
  public:
   
 
