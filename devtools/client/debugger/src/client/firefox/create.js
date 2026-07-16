@@ -362,15 +362,17 @@ function createSourceObject({
 
 
 export function createSourceMapOriginalSource(id, url, generatedSource) {
-  return {
-    ...createSourceObject({
-      id,
-      url,
-      isOriginal: true,
-      generatedSource,
-    }),
-    type: ResourceCommand.TYPES.SOURCE,
-  };
+  const type = generatedSource.isStyleSheet
+    ? ResourceCommand.TYPES.STYLESHEET
+    : ResourceCommand.TYPES.SOURCE;
+  return createSourceObject({
+    id,
+    url,
+    isOriginal: true,
+    generatedSource,
+    isStyleSheet: generatedSource.isStyleSheet,
+    type,
+  });
 }
 
 

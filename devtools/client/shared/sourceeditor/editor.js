@@ -539,6 +539,32 @@ class Editor extends EventEmitter {
   }
 
   
+
+
+
+
+
+
+  isViewUpdateFromUserInput(viewUpdate) {
+    const {
+      codemirrorState: { Transaction },
+    } = this.#CodeMirror6;
+    
+    if (viewUpdate.docChanged) {
+      
+      for (const transaction of viewUpdate.transactions) {
+        
+        
+        const userEventType = transaction.annotation(Transaction.userEvent);
+        if (userEventType) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  
   
   setUpdateListener(listener = null) {
     this.#updateListener = listener;
@@ -4069,6 +4095,13 @@ class Editor extends EventEmitter {
     const offset = this.#positionToOffset(line);
     const el = this.#getElementAtOffset(offset);
     return el.closest(".cm-line");
+  }
+
+  
+  
+  isReadOnly() {
+    const cm = editors.get(this);
+    return cm.state.readOnly;
   }
 
   
