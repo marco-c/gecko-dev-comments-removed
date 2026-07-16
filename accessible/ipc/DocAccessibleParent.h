@@ -75,6 +75,8 @@ class DocAccessibleParent : public RemoteAccessible,
   
 
 
+
+
   void SetIsPrintDoc(bool aIsPrintDoc) { mIsPrintDoc = aIsPrintDoc; }
   bool IsPrintDoc() const { return mIsPrintDoc; }
 

@@ -1299,7 +1299,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     
     MOZ_ASSERT(!aParentDoc && !aParentID);
     doc->SetTopLevelInContentProcess();
-    a11y::ProxyCreated(doc);
+    if (!doc->IsPrintDoc()) {
+      a11y::ProxyCreated(doc);
+    }
     
     
     
@@ -1323,7 +1325,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     doc->SetTopLevel();
     a11y::DocManager::RemoteDocAdded(doc);
 #  ifdef XP_WIN
-    doc->MaybeInitWindowEmulation();
+    if (!aIsPrintDoc) {
+      doc->MaybeInitWindowEmulation();
+    }
 #  endif
   }
   return IPC_OK();
