@@ -183,7 +183,33 @@ impl MathSum {
 
 
 
-pub type MathProduct = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathProduct {
+    
+    pub numeric_type: NumericType,
+
+    
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathProduct {
+    
+    
+    
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        
+        
+        
+        let numeric_type =
+            NumericType::multiply_types(values.iter().filter_map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 
 
@@ -270,6 +296,7 @@ impl MathValue {
     pub fn numeric_type(&self) -> Option<&NumericType> {
         match self {
             Self::Sum(math_sum) => Some(&math_sum.numeric_type),
+            Self::Product(math_product) => Some(&math_product.numeric_type),
             _ => None,
         }
     }
