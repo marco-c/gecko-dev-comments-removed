@@ -119,6 +119,15 @@ class nsIGlobalObject : public nsISupports {
 
 
 
+  bool CanRunJSMicroTask(JSObject* aCallbackGlobal) const;
+
+  
+
+
+
+
+
+
   virtual JSObject* GetGlobalJSObject() = 0;
 
   
