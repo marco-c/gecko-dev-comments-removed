@@ -1784,7 +1784,7 @@ TEST(GeckoProfiler, EnsureStarted)
     
     
     
-    uint32_t differentFeatures = features | ProfilerFeature::CPUUtilization;
+    uint32_t differentFeatures = features | ProfilerFeature::IPCMessages;
     profiler_ensure_started(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
                             differentFeatures, filters, std::size(filters), 0);
 
@@ -4281,7 +4281,7 @@ void DoSuspendAndSample(ProfilerThreadId aTidToSample,
       "GeckoProfiler_SuspendAndSample_Test::TestBody"_ns, aSamplingThread,
       NS_NewRunnableFunction(
           "GeckoProfiler_SuspendAndSample_Test::TestBody", [&]() {
-            uint32_t features = ProfilerFeature::CPUUtilization;
+            uint32_t features = ProfilerFeature::StackWalk;
             GTestStackCollector collector;
             profiler_suspend_and_sample_thread(aTidToSample, features,
                                                collector,
@@ -4388,7 +4388,7 @@ TEST(GeckoProfiler, PostSamplingCallback)
   {
     
     AUTO_PROFILER_LABEL("PostSamplingCallback completed (no stacks)", OTHER);
-    ASSERT_EQ(WaitForSamplingState(), SamplingState::NoStackSamplingCompleted);
+    ASSERT_EQ(WaitForSamplingState(), SamplingState::SamplingCompleted);
   }
   UniquePtr<char[]> profileNoStacks = profiler_get_profile();
   JSONOutputCheck(profileNoStacks.get(), [](const Json::Value& aRoot) {});
@@ -4489,7 +4489,7 @@ TEST(GeckoProfiler, ProfilingStateCallback)
                  ProfilerFeature::StackWalk | ProfilerFeature::NoStackSampling,
                  filters, std::size(filters), 0);
   CheckStatesOnlyContains(ProfilingState::Started, 1);
-  ASSERT_EQ(WaitForSamplingState(), SamplingState::NoStackSamplingCompleted);
+  ASSERT_EQ(WaitForSamplingState(), SamplingState::SamplingCompleted);
   UniquePtr<char[]> profileNoStacks = profiler_get_profile();
   CheckStatesOnlyContains(ProfilingState::GeneratingProfile, 1);
   JSONOutputCheck(profileNoStacks.get(), [](const Json::Value& aRoot) {});
@@ -4621,7 +4621,6 @@ TEST(GeckoProfiler, FeatureCombinations)
                             ProfilerFeature::StackWalk,
                             ProfilerFeature::NoStackSampling,
                             ProfilerFeature::NativeAllocations,
-                            ProfilerFeature::CPUUtilization,
                             ProfilerFeature::CPUAllThreads,
                             ProfilerFeature::SamplingAllThreads,
                             ProfilerFeature::MarkersAllThreads,
@@ -4640,12 +4639,7 @@ TEST(GeckoProfiler, FeatureCombinations)
     ASSERT_TRUE(profiler_is_active());
 
     
-    EXPECT_EQ(WaitForSamplingState(),
-              (((features & ProfilerFeature::NoStackSampling) != 0) &&
-               ((features & (ProfilerFeature::CPUUtilization |
-                             ProfilerFeature::CPUAllThreads)) == 0))
-                  ? SamplingState::NoStackSamplingCompleted
-                  : SamplingState::SamplingCompleted);
+    EXPECT_EQ(WaitForSamplingState(), SamplingState::SamplingCompleted);
 
     
     
@@ -4778,7 +4772,7 @@ TEST(GeckoProfiler, CPUUsage)
 
     profiler_start(
         PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-        ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization |
+        ProfilerFeature::StackWalk |
             (testWithNoStackSampling ? ProfilerFeature::NoStackSampling : 0),
         filters, std::size(filters), 0);
     
@@ -4818,18 +4812,7 @@ TEST(GeckoProfiler, CPUUsage)
 
     JSONOutputCheck(profile.get(), [testWithNoStackSampling](
                                        const Json::Value& aRoot) {
-      
       GET_JSON(meta, aRoot["meta"], Object);
-      {
-        GET_JSON(configuration, meta["configuration"], Object);
-        {
-          GET_JSON(features, configuration["features"], Array);
-          {
-            EXPECT_JSON_ARRAY_CONTAINS(features, String, "cpu");
-          }
-        }
-      }
-
       {
         GET_JSON(sampleUnits, meta["sampleUnits"], Object);
         {
