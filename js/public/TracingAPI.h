@@ -124,6 +124,12 @@ class TracingContext {
   
   
   
+  size_t nesting() const { return nesting_; }
+
+  
+  
+  
+  
   
   void getEdgeName(const char* name, char* buffer, size_t bufferSize);
 
@@ -142,8 +148,14 @@ class TracingContext {
   friend class AutoTracingIndex;
   size_t index_ = InvalidIndex;
 
+  friend class AutoClearTracingContext;
+  size_t nesting_ = 0;
+
   friend class AutoTracingDetails;
   Functor* functor_ = nullptr;
+
+  friend class AutoTracingWeakEdge;
+  bool weak_ = false;
 };
 
 }  
@@ -272,6 +284,21 @@ class MOZ_RAII AutoTracingIndex {
 };
 
 
+class MOZ_RAII AutoTracingWeakEdge {
+  JSTracer* trc_;
+
+ public:
+  explicit AutoTracingWeakEdge(JSTracer* trc) : trc_(trc) {
+    MOZ_ASSERT(!trc_->context().weak_);
+    trc_->context().weak_ = true;
+  }
+  ~AutoTracingWeakEdge() {
+    MOZ_ASSERT(trc_->context().weak_);
+    trc_->context().weak_ = false;
+  }
+};
+
+
 
 class MOZ_RAII AutoTracingDetails {
   JSTracer* trc_;
@@ -296,6 +323,7 @@ class MOZ_RAII AutoClearTracingContext {
   explicit AutoClearTracingContext(JSTracer* trc)
       : trc_(trc), prev_(trc->context()) {
     trc_->context() = TracingContext();
+    trc_->context().nesting_ = prev_.nesting_ + 1;
   }
 
   ~AutoClearTracingContext() { trc_->context() = prev_; }
