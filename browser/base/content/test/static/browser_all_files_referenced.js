@@ -188,7 +188,7 @@ var allowlist = [
   },
 
   
-  { file: "resource://gre/modules/reflect.sys.mjs" },
+  { file: "moz-src:///toolkit/components/reflect/reflect.sys.mjs" },
 
   
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },

@@ -18,12 +18,14 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   Finder: "resource://gre/modules/Finder.sys.mjs",
   FinderParent: "resource://gre/modules/FinderParent.sys.mjs",
   PopupAndRedirectBlocker:
     "resource://gre/actors/PopupAndRedirectBlockingParent.sys.mjs",
   SelectParentHelper: "resource://gre/actors/SelectParent.sys.mjs",
-  RemoteWebNavigation: "resource://gre/modules/RemoteWebNavigation.sys.mjs",
+  RemoteWebNavigation:
+    "moz-src:///toolkit/components/remotebrowserutils/RemoteWebNavigation.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "blankURI", () =>
@@ -179,17 +181,21 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
             // Submit a content analysis request for the DataTransfer and
             // stop dispatching this drop event.  Reissue the drop if all
             // requests are permitted, otherwise issue a dragexit.
-            let request = {
-              analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-              dataTransfer: event.dataTransfer,
-              operationTypeForDisplay:
-                Ci.nsIContentAnalysisRequest.eDroppedText,
-              reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
-              resources: [],
-              sourceWindowGlobal: dragSession.sourceWindowContext,
-              uri: contentAnalysis.getURIForDropEvent(event),
-              windowGlobalParent: this.browsingContext.currentWindowContext,
-            };
+            let request =
+              lazy.ContentAnalysisUtils.createContentAnalysisRequest(
+                {
+                  analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+                  operationTypeForDisplay:
+                    Ci.nsIContentAnalysisRequest.eDroppedText,
+                  reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
+                  url: contentAnalysis.getURIForDropEvent(event),
+                  windowGlobalParent: this.browsingContext.currentWindowContext,
+                },
+                {
+                  dataTransfer: event.dataTransfer,
+                  sourceWindowGlobal: dragSession.sourceWindowContext,
+                }
+              );
 
             // Tell browser to record the event target and to delay EndDragSession
             // until the content analysis results are given.
