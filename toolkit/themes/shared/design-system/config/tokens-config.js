@@ -12,11 +12,6 @@ const { OVERRIDE_IDENTIFIERS } = require("./override-identifiers");
 
 
 
-const OUTPUT_DIR = process.env.STYLE_DICTIONARY_OUTPUT_DIR;
-
-
-
-
 
 
 
@@ -1218,7 +1213,6 @@ module.exports = {
   ],
   platforms: {
     css: {
-      ...(OUTPUT_DIR && { buildPath: OUTPUT_DIR }),
       options: {
         outputReferences: true,
         showFileHeader: false,
@@ -1256,7 +1250,6 @@ module.exports = {
       ],
     },
     tables: {
-      ...(OUTPUT_DIR && { buildPath: OUTPUT_DIR }),
       options: {
         outputReferences: true,
         showFileHeader: false,
@@ -1277,8 +1270,6 @@ module.exports = {
         },
       ],
     },
-    figma: OUTPUT_DIR
-      ? { ...figmaConfig.platform, buildPath: OUTPUT_DIR }
-      : figmaConfig.platform,
+    figma: figmaConfig.platform,
   },
 };

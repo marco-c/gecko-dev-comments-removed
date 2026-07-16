@@ -11,11 +11,11 @@
 
 
 
-const { execFileSync } = require("child_process");
-const { existsSync, readFileSync, readdirSync, rmSync } = require("fs");
+const { readFileSync, readdirSync, rmSync } = require("fs");
 const chalk = require("chalk");
 const path = require("path");
 const prettier = require("prettier");
+const StyleDictionary = require("style-dictionary");
 const config = require("../config/tokens-config.js");
 
 
@@ -28,12 +28,14 @@ const PROJECT_ROOT = path.resolve(__dirname, "../../../../../");
 function buildFilesWithTestConfig() {
   
   
+  let testConfig = Object.assign({}, config);
+  testConfig.platforms.css.buildPath = TEST_BUILD_PATH;
+  testConfig.platforms.tables.buildPath = TEST_BUILD_PATH;
+  testConfig.platforms.figma.buildPath = TEST_BUILD_PATH;
+
   
-  execFileSync(
-    path.resolve(PROJECT_ROOT, "mach"),
-    ["buildtokens", "--output-dir", TEST_BUILD_PATH],
-    { cwd: PROJECT_ROOT, stdio: "inherit" }
-  );
+  
+  StyleDictionary.extend(testConfig).buildAllPlatforms();
 }
 
 
@@ -50,28 +52,6 @@ function getBuiltCSSFiles() {
     path: destination,
     testPath: path.join(TEST_BUILD_PATH, destination),
   }));
-}
-
-
-
-
-const NOVA_TOKEN_DIRS = require("../config/token-dirs.js");
-
-
-
-
-
-
-
-function getNovaTokenFiles() {
-  return NOVA_TOKEN_DIRS.flatMap(dir =>
-    readdirSync(dir, { recursive: true })
-      .filter(f => typeof f === "string" && f.endsWith(".nova.tokens.json"))
-      .map(f => {
-        let name = path.join(dir, f);
-        return { name, path: name, testPath: path.join(TEST_BUILD_PATH, name) };
-      })
-  );
 }
 
 function logErrors(tool, errors) {
@@ -161,27 +141,17 @@ const tests = {
       );
     }
 
-    
-    
-    
-    for (let { name, path: currentPath, testPath } of getNovaTokenFiles()) {
-      let built = existsSync(testPath) ? readFileSync(testPath, "utf8") : null;
-      if (built !== readFileSync(currentPath, "utf8")) {
-        errors.push(`${name} is out of date`);
-      }
-    }
-
     logErrors("build CSS", errors);
     rmSync("tests/build", { recursive: true, force: true });
     return errors.length === 0;
   },
 };
 
-(async function runTests() {
+(function runTests() {
   let results = [];
 
   for (let testName of Object.keys(tests)) {
-    results.push([testName, await tests[testName]()]);
+    results.push([testName, tests[testName]()]);
   }
 
   for (const [name, result] of results) {
