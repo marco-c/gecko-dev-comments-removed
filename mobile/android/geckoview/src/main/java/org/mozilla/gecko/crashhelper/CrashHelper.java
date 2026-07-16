@@ -104,6 +104,17 @@ public final class CrashHelper extends Service {
           Log.e(LOGTAG, "The crash helper process died before we could start the service");
         } catch (final RemoteException e) {
           throw new RuntimeException(e);
+        } finally {
+          
+          
+          
+          
+          try {
+            mBreakpadFd.close();
+            mServerFd.close();
+          } catch (final IOException e) {
+            Log.e(LOGTAG, "Could not close the crash helper IPC endpoints");
+          }
         }
       }
 
