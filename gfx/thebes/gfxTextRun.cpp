@@ -947,7 +947,12 @@ uint32_t gfxTextRun::BreakAndMeasureText(
   
   
   const StyleHyphens hyphensOption = aProvider.GetHyphensOption();
+  
+  
+  
+  
   bool haveHyphenation =
+      aSuppressBreak != eSuppressAllBreaks &&
       (hyphensOption == StyleHyphens::Auto ||
        (hyphensOption == StyleHyphens::Manual &&
         !!(mFlags & gfx::ShapedTextFlags::TEXT_ENABLE_HYPHEN_BREAKS)));
