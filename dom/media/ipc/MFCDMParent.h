@@ -10,10 +10,8 @@
 #include "MFCDMExtra.h"
 #include "MFCDMSession.h"
 #include "MFPMPHostWrapper.h"
-#include "MFProtectedPathReadinessMonitor.h"
 #include "RemoteMediaManagerParent.h"
 #include "mozilla/EventTargetAndLockCapability.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFCDMParent.h"
 #include "mozilla/RefPtr.h"
@@ -54,19 +52,6 @@ class MFCDMParent final : public PMFCDMParent {
   uint64_t Id() const { return mId; }
   const nsString& GetKeySystem() const { return mKeySystem; }
 
-  
-  
-  
-  MFProtectedPathReadinessMonitor& ReadinessMonitor() {
-    return mReadinessMonitor;
-  }
-
-  bool IsHardwareDRM() const { return mIsHardwareDRM; }
-
-  
-  
-  bool IsClearLead() const;
-
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
@@ -106,39 +91,6 @@ class MFCDMParent final : public PMFCDMParent {
   
   
   RefPtr<GenericPromise> WaitForHDCPSettleAfterReset();
-
-  
-  
-  
-  using HDCPSupportPromise =
-      MozPromise<nsresult, nsresult,  false>;
-  static RefPtr<HDCPSupportPromise> QueryHDCPSupport(
-      const nsString& aKeySystem, dom::HDCPVersion aVersion,
-      nsISerialEventTarget* aManagerThread);
-
-  
-  
-  
-  
-  
-  
-  
-  void PrewarmHDCP(bool aIsHardwareDRM);
-
-  
-  
-  void MarkHDCPCondition(bool aSupported);
-
-  
-  
-  
-  
-  
-  static inline Maybe<bool> sHDCPSupported;
-  static inline RefPtr<HDCPSupportPromise> sHDCPPrewarmQuery;
-  
-  
-  static inline uint32_t sHDCPPrewarmGeneration = 0;
 
   
   
@@ -203,15 +155,12 @@ class MFCDMParent final : public PMFCDMParent {
   
   static inline StaticMutex sRegistryMutex;
 
-  MFProtectedPathReadinessMonitor mReadinessMonitor;
-
   constinit static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
       sRegisteredCDMs MOZ_GUARDED_BY(sRegistryMutex);
 
   static inline uint64_t sNextId = 1;
   const uint64_t mId;
   bool mIsInited = false;
-  bool mIsHardwareDRM = false;
 
   static inline BSTR sWidevineL1Path;
 
