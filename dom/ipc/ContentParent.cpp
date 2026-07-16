@@ -4846,14 +4846,16 @@ mozilla::ipc::IPCResult ContentParent::RecvExtProtocolChannelConnectParent(
 
   
   nsCOMPtr<nsIChannel> channel;
-  rv = NS_LinkRedirectChannels(registrarId, nullptr, getter_AddRefs(channel));
+  rv = NS_LinkRedirectChannels(registrarId, ChildID(), nullptr,
+                               getter_AddRefs(channel));
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   nsCOMPtr<nsIParentChannel> parent = do_QueryInterface(channel, &rv);
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   
-  rv = NS_LinkRedirectChannels(registrarId, parent, getter_AddRefs(channel));
+  rv = NS_LinkRedirectChannels(registrarId, ChildID(), parent,
+                               getter_AddRefs(channel));
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   

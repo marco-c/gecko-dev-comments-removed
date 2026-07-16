@@ -18,7 +18,8 @@ class ParentChannelWrapper : public nsIParentChannel {
 
   
   
-  void Register(uint64_t aRegistrarId);
+  
+  void Register(uint64_t aRegistrarId, uint64_t aContentParentId);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPARENTCHANNEL

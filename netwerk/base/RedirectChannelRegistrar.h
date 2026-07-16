@@ -10,6 +10,7 @@
 #include "nsIChannel.h"
 #include "nsIParentChannel.h"
 #include "nsInterfaceHashtable.h"
+#include "nsTHashMap.h"
 #include "mozilla/Mutex.h"
 
 namespace mozilla {
@@ -35,6 +36,13 @@ class RedirectChannelRegistrar final : public nsIRedirectChannelRegistrar {
 
   ChannelHashtable mRealChannels MOZ_GUARDED_BY(mLock);
   ParentChannelHashtable mParentChannels MOZ_GUARDED_BY(mLock);
+
+  
+  
+  
+  
+  nsTHashMap<nsUint64HashKey, uint64_t> mChannelOwners MOZ_GUARDED_BY(mLock);
+
   Mutex mLock;
 
   static StaticRefPtr<RedirectChannelRegistrar> gSingleton;

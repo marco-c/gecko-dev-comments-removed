@@ -126,7 +126,9 @@ ParentProcessDocumentChannel::OnRedirectVerifyCallback(nsresult aResult) {
       RefPtr<ParentChannelWrapper> wrapper =
           new ParentChannelWrapper(channel, mListener);
 
-      wrapper->Register(mDocumentLoadListener->GetRedirectChannelId());
+      
+      
+      wrapper->Register(mDocumentLoadListener->GetRedirectChannelId(), 0);
     }
   }
 
