@@ -238,6 +238,11 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     }
   }
   if (DocAccessibleChild* ipcDoc = topDocAcc->IPCDoc()) {
+    
+    
+    
+    
+    
     ipcDoc->SendPrinting();
   } else if (XRE_IsParentProcess()) {
     if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {

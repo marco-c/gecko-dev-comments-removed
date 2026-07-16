@@ -75,6 +75,12 @@ class DocAccessibleParent : public RemoteAccessible,
   
 
 
+  void SetIsPrintDoc(bool aIsPrintDoc) { mIsPrintDoc = aIsPrintDoc; }
+  bool IsPrintDoc() const { return mIsPrintDoc; }
+
+  
+
+
 
 
   void MarkAsShutdown() {
@@ -406,6 +412,7 @@ class DocAccessibleParent : public RemoteAccessible,
   bool mTopLevel : 1;
   bool mTopLevelInContentProcess : 1;
   bool mShutdown : 1;
+  bool mIsPrintDoc : 1 = false;
   bool mIsInitialTreeDone : 1 = false;
   RefPtr<dom::CanonicalBrowsingContext> mBrowsingContext;
 
