@@ -18,6 +18,7 @@ use crate::values::generics::color::{
     ColorMixFlags, GenericCaretColor, GenericColorMix, GenericColorMixItem, GenericColorOrAuto,
     GenericLightDark,
 };
+use crate::values::generics::Optional;
 use crate::values::specified::percentage::ToPercentage;
 use crate::values::specified::Percentage;
 use crate::values::{normalize, CustomIdent};
@@ -109,10 +110,22 @@ impl ColorMix {
                 }
             }
 
-            let default_for_missing_items = match missing {
-                0 => None,
-                m if m == items.len() => Some(Percentage::new(1.0 / items.len() as f32)),
-                m => Some(Percentage::new((1.0 - sum_specified) / m as f32)),
+            
+            
+            
+            
+            let any_calc = items
+                .iter()
+                .any(|(_, p)| matches!(p, Some(p) if p.is_calc()));
+
+            let default_for_missing_items = if any_calc {
+                None
+            } else {
+                match missing {
+                    0 => None,
+                    m if m == items.len() => Some(Percentage::new(1.0 / items.len() as f32)),
+                    m => Some(Percentage::new((1.0 - sum_specified) / m as f32)),
+                }
             };
 
             if let Some(default) = default_for_missing_items {
@@ -123,20 +136,13 @@ impl ColorMix {
                 }
             }
 
-            let mut total = 0.0;
             let finalized = items
                 .into_iter()
-                .map(|(color, percentage)| {
-                    let percentage = percentage.expect("percentage filled above");
-                    
-                    total += percentage.to_percentage().unwrap();
-                    GenericColorMixItem { color, percentage }
+                .map(|(color, percentage)| GenericColorMixItem {
+                    color,
+                    percentage: percentage.into(),
                 })
                 .collect::<ColorMixItemList<_>>();
-
-            if total <= 0.0 {
-                return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-            }
 
             
             
@@ -899,9 +905,12 @@ impl Color {
                 for item in mix.items.iter() {
                     items.push(GenericColorMixItem {
                         color: item.color.to_computed_color(context)?,
-                        percentage: match context {
-                            None => ComputedPercentage(item.percentage.to_percentage().ok_or(())?),
-                            Some(ctx) => item.percentage.to_computed_value(ctx),
+                        percentage: match item.percentage.as_ref() {
+                            None => Optional::None,
+                            Some(percentage) => Optional::Some(match context {
+                                None => ComputedPercentage(percentage.to_percentage().ok_or(())?),
+                                Some(ctx) => percentage.to_computed_value(ctx),
+                            }),
                         },
                     });
                 }
