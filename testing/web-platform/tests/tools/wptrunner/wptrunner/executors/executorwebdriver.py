@@ -985,7 +985,10 @@ class WebDriverBidiDigitalCredentialsProtocolPart(DigitalCredentialsProtocolPart
         if response is not None:
             params["response"] = response
 
-        return await self.webdriver.bidi_session.send_command("digitalCredentials.setVirtualWalletBehavior", params)
+        
+        
+        return await (await self.webdriver.bidi_session.send_command(
+            "digitalCredentials.setVirtualWalletBehavior", params))
 
 
 class WebDriverStorageProtocolPart(StorageProtocolPart):
