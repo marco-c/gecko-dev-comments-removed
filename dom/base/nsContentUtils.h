@@ -716,12 +716,8 @@ class nsContentUtils {
 
     void AssertTreeKind(TreeKind aKind) {
 #ifdef DEBUG
-      
-      
-      const TreeKind kind =
-          aKind == TreeKind::DOM ? TreeKind::ShadowIncludingDOM : aKind;
-      MOZ_ASSERT(!mTreeKind || mTreeKind.value() == kind, "Mixing queries");
-      mTreeKind = mozilla::Some(kind);
+      MOZ_ASSERT(!mTreeKind || mTreeKind.value() == aKind, "Mixing queries");
+      mTreeKind = mozilla::Some(aKind);
 #endif
     }
   };
@@ -3746,11 +3742,10 @@ class nsContentUtils {
 
 
 
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
+  template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildNodes(
-      const nsINode& aParent, const nsIContent* aChild1,
-      const nsIContent* aChild2, NodeIndexCache* aIndexCache = nullptr);
+      const nsIContent* aChild1, const nsIContent* aChild2,
+      NodeIndexCache* aIndexCache = nullptr);
 
   
 
@@ -3758,10 +3753,9 @@ class nsContentUtils {
 
 
 
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
+  template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildOffsetAndChildNode(
-      const nsINode& aParent, uint32_t aOffset1, const nsIContent& aChild2,
+      uint32_t aOffset1, const nsIContent& aChild2,
       NodeIndexCache* aIndexCache = nullptr);
 
   
@@ -3770,10 +3764,9 @@ class nsContentUtils {
 
 
 
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
+  template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareChildNodeAndChildOffset(
-      const nsINode& aParent, const nsIContent& aChild1, uint32_t aOffset2,
+      const nsIContent& aChild1, uint32_t aOffset2,
       NodeIndexCache* aIndexCache = nullptr);
 
   
@@ -3781,8 +3774,7 @@ class nsContentUtils {
 
 
 
-  template <TreeKind aKind,
-            typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
+  template <TreeKind aKind>
   static mozilla::Maybe<int32_t> CompareClosestCommonAncestorChildren(
       const nsINode&, const nsIContent*, const nsIContent*,
       NodeIndexCache* = nullptr);
