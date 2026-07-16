@@ -243,11 +243,7 @@ class EditorBase : public nsIEditor,
   Element* GetExposedRoot() const;
 
   
-
-
-
-
-  virtual dom::EditContext* ComputeEditContext() const { return nullptr; }
+  virtual dom::EditContext* GetEditContext() const { return nullptr; }
 
   
 
@@ -1159,11 +1155,6 @@ class EditorBase : public nsIEditor,
     nsIPrincipal* GetPrincipal() const { return mPrincipal; }
     EditAction GetEditAction() const { return mEditAction; }
 
-    dom::EditContext* GetEditContext() const { return mEditContext; }
-    bool EditContextHasBeenChanged() const {
-      return mEditContext != mEditorBase.ComputeEditContext();
-    }
-
     template <typename PT, typename CT>
     void SetSpellCheckRestartPoint(const EditorDOMPointBase<PT, CT>& aPoint) {
       MOZ_ASSERT(aPoint.IsSet());
@@ -1497,9 +1488,6 @@ class EditorBase : public nsIEditor,
     EditorDOMPoint mSpellCheckRestartPoint;
 
     
-    RefPtr<dom::EditContext> mEditContext;
-
-    
     
     
     TopLevelEditSubActionData mTopLevelEditSubActionData;
@@ -1649,16 +1637,6 @@ class EditorBase : public nsIEditor,
   nsIPrincipal* GetEditActionPrincipal() const {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->GetPrincipal();
-  }
-
-  dom::EditContext* GetEditActionEditContext() const {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->GetEditContext();
-  }
-
-  bool EditContextChangedSinceStartOfEditAction() const {
-    MOZ_ASSERT(mEditActionData);
-    return mEditActionData->EditContextHasBeenChanged();
   }
 
   

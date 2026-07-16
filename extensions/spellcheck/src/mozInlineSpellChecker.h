@@ -50,10 +50,8 @@ class mozInlineSpellStatus {
   static mozilla::UniquePtr<mozInlineSpellStatus> CreateForSelection(
       mozInlineSpellChecker& aSpellChecker);
 
-  enum class SetAnchorToCaret : bool { No, Yes };
   static mozilla::UniquePtr<mozInlineSpellStatus> CreateForRange(
-      mozInlineSpellChecker& aSpellChecker, nsRange* aRange,
-      SetAnchorToCaret aSetAnchorToCaret = SetAnchorToCaret::No);
+      mozInlineSpellChecker& aSpellChecker, nsRange* aRange);
 
   nsresult FinishInitOnEvent(mozInlineSpellWordUtil& aWordUtil);
 
@@ -93,12 +91,12 @@ class mozInlineSpellStatus {
   
   
   
-  explicit mozInlineSpellStatus(
-      mozInlineSpellChecker* aSpellChecker, Operation aOp,
-      RefPtr<nsRange>&& aRange, RefPtr<nsRange>&& aCreatedRange,
-      RefPtr<nsRange>&& aAnchorRange, bool aForceNavigationWordCheck,
-      int32_t aNewNavigationPositionOffset,
-      SetAnchorToCaret aSetAnchorToCaret = SetAnchorToCaret::No);
+  explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
+                                Operation aOp, RefPtr<nsRange>&& aRange,
+                                RefPtr<nsRange>&& aCreatedRange,
+                                RefPtr<nsRange>&& aAnchorRange,
+                                bool aForceNavigationWordCheck,
+                                int32_t aNewNavigationPositionOffset);
 
   
   const Operation mOp;
@@ -117,7 +115,7 @@ class mozInlineSpellStatus {
   
   
   
-  RefPtr<const nsRange> mAnchorRange;
+  const RefPtr<const nsRange> mAnchorRange;
 
   
   
@@ -131,10 +129,6 @@ class mozInlineSpellStatus {
   
   
   const bool mForceNavigationWordCheck;
-
-  
-  
-  const SetAnchorToCaret mSetAnchorToCaret;
 
   
   const int32_t mNewNavigationPositionOffset;
@@ -260,8 +254,6 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
                                      nsRange** aRange);
 
   nsresult CleanupRangesInSelection(mozilla::dom::Selection* aSelection);
-
-  nsresult SpellCheckRangeIgnoringWordAtCaret(nsRange* aRange);
 
   
 

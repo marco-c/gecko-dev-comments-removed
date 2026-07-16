@@ -374,10 +374,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
   }
 
   
-  
-  
-  if ((!GetTopLevelEditSubAction() || IsFiringTextUpdate()) &&
-      container->IsEditable()) {
+  if (!GetTopLevelEditSubAction() && container->IsEditable()) {
     if (EditorUtils::IsPaddingBRElementForEmptyEditor(*aChild)) {
       
       return;
@@ -414,7 +411,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
       RefPtr<nsRange> range = nsRange::Create(aChild);
       range->SelectNodesInContainer(container, aChild, endContent);
       DebugOnly<nsresult> rvIgnored =
-          mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);
+          mInlineSpellChecker->SpellCheckRange(range);
       NS_WARNING_ASSERTION(
           rvIgnored == NS_ERROR_NOT_INITIALIZED || NS_SUCCEEDED(rvIgnored),
           "mozInlineSpellChecker::SpellCheckRange() failed, but ignored");
@@ -488,12 +485,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
   if (MOZ_LOG_TEST(gHTMLEditorMutationLog, LogLevel::Info)) {
     MaybeLogCharacterDataChanged(aContent, aInfo);
   }
-  
-  
-  
   if (!mInlineSpellChecker || !aContent->IsEditable() ||
-      (GetTopLevelEditSubAction() != EditSubAction::eNone &&
-       !IsFiringTextUpdate())) {
+      GetTopLevelEditSubAction() != EditSubAction::eNone) {
     return;
   }
 
@@ -504,8 +497,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
 
   RefPtr<nsRange> range = nsRange::Create(aContent);
   range->SelectNodesInContainer(parent, aContent, aContent);
-  DebugOnly<nsresult> rvIgnored =
-      mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);
+  DebugOnly<nsresult> rvIgnored = mInlineSpellChecker->SpellCheckRange(range);
 }
 
 nsresult HTMLEditor::RunOrScheduleOnModifyDocument(

@@ -67,7 +67,7 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
-  if (GetEditActionEditContext()) {
+  if (GetEditContext()) {
     
     return NS_OK;
   }
