@@ -3499,6 +3499,37 @@ OpaqueResponse HttpBaseChannel::BlockOrFilterOpaqueResponse(
   return OpaqueResponse::Block;
 }
 
+dom::NoCorsMediaRequestState HttpBaseChannel::NoCorsMediaRequestState() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (!mLoadInfo->GetIsMediaRequest()) {
+    return dom::NoCorsMediaRequestState::NotAvailable;
+  }
+
+  RefPtr<dom::WindowGlobalParent> wgp =
+      dom::WindowGlobalParent::GetByInnerWindowId(
+          mLoadInfo->GetInnerWindowID());
+  if (!wgp || wgp->IsDiscarded()) {
+    return dom::NoCorsMediaRequestState::NotAvailable;
+  }
+
+  return wgp->NoCorsMediaRequestState(mURI);
+}
+
+void HttpBaseChannel::RecordSubsequentNoCorsRequestState() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(mLoadInfo->GetIsMediaRequest());
+
+  RefPtr<dom::WindowGlobalParent> wgp =
+      dom::WindowGlobalParent::GetByInnerWindowId(
+          mLoadInfo->GetInnerWindowID());
+  if (!wgp || wgp->IsDiscarded()) {
+    return;
+  }
+
+  wgp->RecordSubsequentNoCorsRequestState(mURI);
+}
+
 
 
 
@@ -3597,14 +3628,8 @@ HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
   
   
   
-  bool isMediaRequest;
-  mLoadInfo->GetIsMediaRequest(&isMediaRequest);
-  if (isMediaRequest) {
-    bool isMediaInitialRequest;
-    mLoadInfo->GetIsMediaInitialRequest(&isMediaInitialRequest);
-    if (!isMediaInitialRequest) {
-      return OpaqueResponse::Allow;
-    }
+  if (NoCorsMediaRequestState() == dom::NoCorsMediaRequestState::Subsequent) {
+    return OpaqueResponse::Allow;
   }
 
   
@@ -3665,9 +3690,7 @@ OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
   MOZ_ASSERT(mCachedOpaqueResponseBlockingPref);
 
   
-  bool isMediaRequest;
-  mLoadInfo->GetIsMediaRequest(&isMediaRequest);
-  if (isMediaRequest) {
+  if (NoCorsMediaRequestState() != dom::NoCorsMediaRequestState::NotAvailable) {
     return BlockOrFilterOpaqueResponse(
         mORB, u"after sniff: media request"_ns,
         OpaqueResponseBlockedTelemetryReason::eAfterSniffMedia,
