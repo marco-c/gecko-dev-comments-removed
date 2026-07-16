@@ -1,0 +1,8 @@
+
+
+
+
+
+Services.cpmm.addMessageListener("Test:SetSSLKeyLogFile", ({ data }) => {
+  Services.env.set("SSLKEYLOGFILE", data.value);
+});
