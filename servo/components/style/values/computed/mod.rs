@@ -81,7 +81,7 @@ pub use self::font::{
 pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
-pub use self::image::{Gradient, Image, ImageRendering, LineDirection};
+pub use self::image::{Gradient, Image, ImageDecoding, ImageRendering, LineDirection};
 pub use self::length::{CSSPixelLength, NonNegativeLength};
 pub use self::length::{Length, LengthOrNumber, LengthPercentage, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentageOrAuto, Margin, MaxSize, Size};
@@ -534,7 +534,6 @@ impl<'a> Context<'a> {
     }
 
     
-    #[cfg(feature = "gecko")]
     pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         if self
             .style()
@@ -546,12 +545,6 @@ impl<'a> Context<'a> {
         } else {
             size
         }
-    }
-
-    
-    #[cfg(feature = "servo")]
-    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
-        size
     }
 }
 

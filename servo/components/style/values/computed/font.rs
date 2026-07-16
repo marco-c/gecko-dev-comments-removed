@@ -1075,7 +1075,6 @@ impl ToComputedValue for specified::MozScriptMinSize {
 
 pub type MathDepth = i8;
 
-#[cfg(feature = "gecko")]
 impl ToComputedValue for specified::MathDepth {
     type ComputedValue = MathDepth;
 

@@ -386,6 +386,13 @@ impl Device {
     }
 
     
+    #[inline]
+    pub(super) fn text_zoom(&self) -> f32 {
+        
+        1.
+    }
+
+    
     pub fn safe_area_insets(&self) -> SideOffsets2D<f32, CSSPixel> {
         SideOffsets2D::zero()
     }
