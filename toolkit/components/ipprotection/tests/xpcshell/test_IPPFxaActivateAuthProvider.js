@@ -4,9 +4,9 @@
 
 "use strict";
 
-const { IPPFxaAuthProvider, IPPFxaAuthProviderSingleton } =
+const { IPPFxaActivateAuthProvider, IPPFxaActivateAuthProviderSingleton } =
   ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs"
   );
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
@@ -32,7 +32,7 @@ AddonTestUtils.createAppInfo(
 ExtensionTestUtils.init(this);
 
 add_setup(async function () {
-  IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
+  IPProtectionActivator.setAuthProvider(IPPFxaActivateAuthProvider);
   await putServerInRemoteSettings();
   IPProtectionService.uninit();
 
@@ -58,17 +58,13 @@ function useFxaAuthProvider(
     ...defaultStubOptions,
   }
 ) {
-  IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
+  IPProtectionActivator.setAuthProvider(IPPFxaActivateAuthProvider);
   const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
   sandbox
-    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .stub(IPPFxaActivateAuthProvider, "getEntitlement")
     .resolves({ entitlement: options.entitlement });
-  sandbox.stub(IPPFxaAuthProvider, "enrollAndEntitle").resolves({
-    isEnrolledAndEntitled: true,
-    entitlement: options.entitlement,
-  });
-  sandbox.stub(IPPFxaAuthProvider, "fetchProxyPass").resolves({
+  sandbox.stub(IPPFxaActivateAuthProvider, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
     pass: new ProxyPass(
@@ -79,12 +75,12 @@ function useFxaAuthProvider(
     usage: options.proxyUsage,
   });
   sandbox
-    .stub(IPPFxaAuthProvider, "fetchProxyUsage")
+    .stub(IPPFxaActivateAuthProvider, "fetchProxyUsage")
     .resolves(options.proxyUsage);
 }
 
 function makeProvider(sandbox) {
-  const provider = new IPPFxaAuthProviderSingleton();
+  const provider = new IPPFxaActivateAuthProviderSingleton();
   const removeToken = sandbox.spy();
   sandbox.stub(provider, "getToken").resolves({
     token: "fake-token",
@@ -134,14 +130,17 @@ add_task(
     useFxaAuthProvider(sandbox);
 
     IPProtectionService.init();
-    IPPFxaAuthProvider.resetEntitlement();
+    
+    
+    IPPFxaActivateAuthProvider._setEntitlement(null);
+    IPProtectionService.updateState();
 
     const refreshUsageStub = sandbox.stub(IPPProxyManager, "refreshUsage");
 
-    await IPPFxaAuthProvider.updateEntitlement();
+    await IPPFxaActivateAuthProvider.updateEntitlement();
 
     Assert.ok(
-      IPPFxaAuthProvider.entitlement,
+      IPPFxaActivateAuthProvider.entitlement,
       "Should be entitled after updateEntitlement"
     );
 
@@ -166,35 +165,27 @@ add_task(
     await IPProtectionService.init();
 
     const cachedEntitlement = createTestEntitlement({ subscribed: true });
-    IPPFxaAuthProvider.getEntitlement.resolves({
+    IPPFxaActivateAuthProvider.getEntitlement.resolves({
       entitlement: cachedEntitlement,
     });
-    IPPFxaAuthProvider.resetEntitlement();
-    await IPPFxaAuthProvider.updateEntitlement(true);
+    await IPPFxaActivateAuthProvider.updateEntitlement();
 
     Assert.equal(
-      IPPFxaAuthProvider.entitlement,
+      IPPFxaActivateAuthProvider.entitlement,
       cachedEntitlement,
       "Cached entitlement should be set before the failing refresh"
     );
 
-    IPPFxaAuthProvider.getEntitlement.resolves({ error: "network_error" });
+    IPPFxaActivateAuthProvider.getEntitlement.resolves({
+      error: "network_error",
+    });
 
-    const result = await IPPFxaAuthProvider.updateEntitlement(true);
+    await IPPFxaActivateAuthProvider.updateEntitlement();
 
     Assert.equal(
-      IPPFxaAuthProvider.entitlement,
+      IPPFxaActivateAuthProvider.entitlement,
       cachedEntitlement,
       "Cached entitlement should be preserved when refresh fails"
-    );
-    Assert.ok(
-      result.isEntitled,
-      "Result should still report isEntitled because the cache is valid"
-    );
-    Assert.equal(
-      result.error,
-      "network_error",
-      "Result should report the transient error"
     );
 
     IPProtectionService.uninit();
@@ -213,23 +204,22 @@ add_task(async function test_updateEntitlement_clears_cached_entitlement() {
   await IPProtectionService.init();
 
   const cachedEntitlement = createTestEntitlement({ subscribed: true });
-  IPPFxaAuthProvider.getEntitlement.resolves({
+  IPPFxaActivateAuthProvider.getEntitlement.resolves({
     entitlement: cachedEntitlement,
   });
-  IPPFxaAuthProvider.resetEntitlement();
-  await IPPFxaAuthProvider.updateEntitlement(true);
+  await IPPFxaActivateAuthProvider.updateEntitlement();
 
   Assert.ok(
-    IPPFxaAuthProvider.entitlement,
+    IPPFxaActivateAuthProvider.entitlement,
     "Cached entitlement should be set before the no-entitlement refresh"
   );
 
-  IPPFxaAuthProvider.getEntitlement.resolves({ entitlement: null });
+  IPPFxaActivateAuthProvider.getEntitlement.resolves({ entitlement: null });
 
-  await IPPFxaAuthProvider.updateEntitlement(true);
+  await IPPFxaActivateAuthProvider.updateEntitlement();
 
   Assert.equal(
-    IPPFxaAuthProvider.entitlement,
+    IPPFxaActivateAuthProvider.entitlement,
     null,
     "Cached entitlement should be cleared when the server confirms no entitlement"
   );
@@ -241,26 +231,25 @@ add_task(async function test_updateEntitlement_clears_cached_entitlement() {
 
 
 
+
 add_task(
   async function test_IPProtectionService_checkForUpgrade_has_vpn_linked() {
     const sandbox = sinon.createSandbox();
     useFxaAuthProvider(sandbox);
 
-    const waitForReady = waitForEvent(
-      IPProtectionService,
-      "IPProtectionService:StateChanged",
-      () => IPProtectionService.state === IPProtectionStates.READY
-    );
+    await IPProtectionService.init();
+    IPPFxaActivateAuthProvider._setEntitlement(null);
 
-    IPProtectionService.init();
-    await IPPFxaAuthProvider.enroll();
-    IPProtectionService.updateState();
-
-    await waitForReady;
-
-    IPPFxaAuthProvider.getEntitlement.resolves({
-      entitlement: createTestEntitlement({ subscribed: true }),
+    sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
+      token: "fake-token",
+      [Symbol.dispose]() {},
     });
+    sandbox
+      .stub(IPPFxaActivateAuthProvider.guardian, "fetchUserInfo")
+      .resolves({
+        status: 200,
+        entitlement: createTestEntitlement({ subscribed: true }),
+      });
 
     let hasUpgradedEventPromise = waitForEvent(
       IPProtectionService.authProvider,
@@ -290,26 +279,28 @@ add_task(
   async function test_IPProtectionService_checkForUpgrade_no_vpn_linked() {
     const sandbox = sinon.createSandbox();
     useFxaAuthProvider(sandbox);
-    IPPFxaAuthProvider.resetEntitlement();
 
     await IPProtectionService.init();
-    await IPPFxaAuthProvider.enroll();
-    IPProtectionService.updateState();
+    IPPFxaActivateAuthProvider._setEntitlement(null);
 
-    IPPFxaAuthProvider.getEntitlement.resolves({ error: "invalid_response" });
-
-    let hasUpgradedEventPromise = waitForEvent(
-      IPProtectionService.authProvider,
-      "IPPAuthProvider:StateChanged"
-    );
+    sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
+      token: "fake-token",
+      [Symbol.dispose]() {},
+    });
+    sandbox
+      .stub(IPPFxaActivateAuthProvider.guardian, "fetchUserInfo")
+      .resolves({ status: 200, error: "invalid_response" });
 
     await IPProtectionService.authProvider.checkForUpgrade();
-
-    await hasUpgradedEventPromise;
 
     Assert.ok(
       !IPProtectionService.authProvider.hasUpgraded,
       "hasUpgraded should be false"
+    );
+    Assert.equal(
+      IPPFxaActivateAuthProvider.entitlement,
+      null,
+      "Entitlement should remain unset when no VPN is linked"
     );
 
     IPProtectionService.uninit();
@@ -321,67 +312,29 @@ add_task(
 
 
 
-add_task(async function test_guardian_endpoint_updates_on_reinit() {
-  await IPProtectionService.init();
-
-  Assert.equal(
-    IPPFxaAuthProvider.guardian.guardianEndpoint,
-    "https://vpn.mozilla.org/",
-    "Guardian should have default endpoint"
-  );
-
-  Services.prefs.setCharPref(
-    "browser.ipProtection.guardian.endpoint",
-    "https://test.example.com/"
-  );
-
-  Assert.equal(
-    IPPFxaAuthProvider.guardian.guardianEndpoint,
-    "https://test.example.com/",
-    "Guardian should reflect updated endpoint after pref change"
-  );
-
-  IPProtectionService.uninit();
-  Services.prefs.clearUserPref("browser.ipProtection.guardian.endpoint");
-});
-
-
-
-
-
-add_task(async function test_isEnrolling_during_updateEntitlement() {
+add_task(async function test_enroll_success() {
   const sandbox = sinon.createSandbox();
   useFxaAuthProvider(sandbox);
 
   await IPProtectionService.init();
+  IPPFxaActivateAuthProvider._setEntitlement(null);
 
-  let resolveEntitlement;
-  
-  
-  IPPFxaAuthProvider.getEntitlement.returns(
-    new Promise(resolve => {
-      resolveEntitlement = resolve;
-    })
-  );
+  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
+    token: "fake-token",
+    [Symbol.dispose]() {},
+  });
+  const entitlement = createTestEntitlement({ subscribed: true });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider.guardian, "activate")
+    .resolves({ ok: true, entitlement });
 
-  Assert.ok(
-    !IPProtectionService.authProvider.isEnrolling,
-    "isEnrolling should be false before updateEntitlement"
-  );
+  const result = await IPPFxaActivateAuthProvider.enroll();
 
-  let updatePromise = IPPFxaAuthProvider.updateEntitlement(true);
-
-  Assert.ok(
-    IPProtectionService.authProvider.isEnrolling,
-    "isEnrolling should be true while updateEntitlement is in progress"
-  );
-
-  resolveEntitlement({ entitlement: createTestEntitlement() });
-  await updatePromise;
-
-  Assert.ok(
-    !IPProtectionService.authProvider.isEnrolling,
-    "isEnrolling should be false after updateEntitlement completes"
+  Assert.ok(result.isEnrolledAndEntitled, "enroll should report success");
+  Assert.equal(
+    IPPFxaActivateAuthProvider.entitlement,
+    entitlement,
+    "Entitlement should be set after a successful enroll"
   );
 
   IPProtectionService.uninit();
@@ -392,31 +345,109 @@ add_task(async function test_isEnrolling_during_updateEntitlement() {
 
 
 
-add_task(
-  async function test_updateEntitlement_fires_StateChanged_when_cached() {
-    const sandbox = sinon.createSandbox();
-    useFxaAuthProvider(sandbox);
+add_task(async function test_enroll_failure() {
+  const sandbox = sinon.createSandbox();
+  useFxaAuthProvider(sandbox);
 
-    await IPProtectionService.init();
-    await IPPFxaAuthProvider.updateEntitlement();
+  await IPProtectionService.init();
+  IPPFxaActivateAuthProvider._setEntitlement(null);
 
-    let stateChangedFired = false;
-    IPProtectionService.authProvider.addEventListener(
-      "IPPAuthProvider:StateChanged",
-      () => {
-        stateChangedFired = true;
-      },
-      { once: true }
-    );
+  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
+    token: "fake-token",
+    [Symbol.dispose]() {},
+  });
+  sandbox
+    .stub(IPPFxaActivateAuthProvider.guardian, "activate")
+    .resolves({ ok: false, error: "login_needed" });
 
-    await IPPFxaAuthProvider.updateEntitlement();
+  const result = await IPPFxaActivateAuthProvider.enroll();
 
-    Assert.ok(
-      stateChangedFired,
-      "StateChanged should fire even when entitlement is already cached"
-    );
+  Assert.ok(
+    !result.isEnrolledAndEntitled,
+    "enroll should report failure when activate fails"
+  );
+  Assert.equal(result.error, "login_needed", "enroll should surface the error");
+  Assert.equal(
+    IPPFxaActivateAuthProvider.entitlement,
+    null,
+    "Entitlement should remain unset after a failed enroll"
+  );
 
-    IPProtectionService.uninit();
-    sandbox.restore();
-  }
-);
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(async function test_isEnrolling_during_enroll() {
+  const sandbox = sinon.createSandbox();
+  useFxaAuthProvider(sandbox);
+
+  await IPProtectionService.init();
+  IPPFxaActivateAuthProvider._setEntitlement(null);
+
+  sandbox.stub(IPPFxaActivateAuthProvider, "getToken").resolves({
+    token: "fake-token",
+    [Symbol.dispose]() {},
+  });
+
+  let resolveActivate;
+  
+  
+  sandbox
+    .stub(IPPFxaActivateAuthProvider.guardian, "activate")
+    .returns(new Promise(resolve => (resolveActivate = resolve)));
+
+  Assert.ok(
+    !IPPFxaActivateAuthProvider.isEnrolling,
+    "isEnrolling should be false before enroll"
+  );
+
+  let enrollPromise = IPPFxaActivateAuthProvider.enroll();
+
+  Assert.ok(
+    IPPFxaActivateAuthProvider.isEnrolling,
+    "isEnrolling should be true while enroll is in progress"
+  );
+
+  resolveActivate({ ok: true, entitlement: createTestEntitlement() });
+  await enrollPromise;
+
+  Assert.ok(
+    !IPPFxaActivateAuthProvider.isEnrolling,
+    "isEnrolling should be false after enroll completes"
+  );
+
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(async function test_guardian_endpoint_updates_on_reinit() {
+  await IPProtectionService.init();
+
+  Assert.equal(
+    IPPFxaActivateAuthProvider.guardian.guardianEndpoint,
+    "https://vpn.mozilla.org/",
+    "Guardian should have default endpoint"
+  );
+
+  Services.prefs.setCharPref(
+    "browser.ipProtection.guardian.endpoint",
+    "https://test.example.com/"
+  );
+
+  Assert.equal(
+    IPPFxaActivateAuthProvider.guardian.guardianEndpoint,
+    "https://test.example.com/",
+    "Guardian should reflect updated endpoint after pref change"
+  );
+
+  IPProtectionService.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.guardian.endpoint");
+});
