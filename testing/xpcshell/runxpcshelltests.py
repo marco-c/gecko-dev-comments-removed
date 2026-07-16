@@ -1018,10 +1018,6 @@ class XPCShellTestThread(Thread):
 
         self.timeout_profile_name = None
         if not self.interactive and not self.debuggerInfo and not self.jsDebuggerInfo:
-            self.timer = Timer(testTimeoutInterval, lambda: self.testTimeout(proc))
-            self.timer.start()
-            self.env["MOZ_TEST_TIMEOUT_INTERVAL"] = str(testTimeoutInterval)
-
             
             
             
@@ -1033,11 +1029,12 @@ class XPCShellTestThread(Thread):
             
             
             upload_dir = self.env.get("MOZ_UPLOAD_DIR")
-            if (
+            timeout_dump_armed = (
                 upload_dir
                 and self.env.get("MOZ_PROFILER_STARTUP")
                 and "MOZ_PROFILER_SHUTDOWN" not in self.env
-            ):
+            )
+            if timeout_dump_armed:
                 root, ext = os.path.splitext(os.path.basename(name))
                 if self.is_retry:
                     root += "_retry"
@@ -1050,6 +1047,17 @@ class XPCShellTestThread(Thread):
                 self.env["MOZ_TEST_TIMEOUT_PROFILE_PATH"] = os.path.join(
                     upload_dir, filename
                 )
+
+            
+            
+            
+            
+            kill_interval = testTimeoutInterval
+            if timeout_dump_armed:
+                kill_interval = testTimeoutInterval * 1.5
+            self.timer = Timer(kill_interval, lambda: self.testTimeout(proc))
+            self.timer.start()
+            self.env["MOZ_TEST_TIMEOUT_INTERVAL"] = str(testTimeoutInterval)
 
         proc = None
         process_output = None
