@@ -191,6 +191,12 @@ var allowlist = [
   { file: "resource://gre/modules/reflect.sys.mjs" },
 
   
+  
+  {
+    file: "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs",
+  },
+
+  
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
 
   
