@@ -447,14 +447,9 @@ static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
 }
 
 void JSDependentString::setBase(JSLinearString* newBase) {
-  
-  if (isAtomRef()) {
-    MOZ_ASSERT(newBase->isAtom());
-    d.s.u3.atom = &newBase->asAtom();
-  } else {
-    MOZ_ASSERT(newBase->canOwnDependentChars());
-    d.s.u3.base = newBase;
-  }
+  MOZ_ASSERT_IF(isAtomRef(), newBase->isAtom());
+  MOZ_ASSERT_IF(!isAtomRef(), newBase->canOwnDependentChars());
+  d.s.u3.base = newBase;
 
   if (isTenured() && !newBase->isTenured()) {
     MOZ_ASSERT(!InCollectedNurseryRegion(newBase));
