@@ -9,6 +9,7 @@ pub mod image;
 pub mod cutout;
 pub mod yuv;
 pub mod backdrop;
+pub mod filter;
 
 use api::units::*;
 use api::ColorF;
@@ -48,9 +49,11 @@ pub enum PatternKind {
     
     Backdrop = 12,
     
+    Blend = 13,
+    
 }
 
-pub const NUM_PATTERNS: u32 = 13;
+pub const NUM_PATTERNS: u32 = 14;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
