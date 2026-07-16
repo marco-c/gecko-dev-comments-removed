@@ -96,7 +96,7 @@ impl<'a, T: ?Sized> WriteOnly<'a, T> {
     
     #[inline]
     #[must_use]
-    pub unsafe fn new(ptr: NonNull<T>) -> Self {
+    pub const unsafe fn new(ptr: NonNull<T>) -> Self {
         Self {
             ptr,
             _phantom: PhantomData,
@@ -124,7 +124,7 @@ impl<'a, T: ?Sized> WriteOnly<'a, T> {
     
     #[inline]
     #[must_use]
-    pub fn from_mut(reference: &mut T) -> Self {
+    pub const fn from_mut(reference: &mut T) -> Self {
         
         
         unsafe { Self::new(NonNull::new_unchecked(&raw mut *reference)) }
@@ -136,7 +136,7 @@ impl<'a, T: ?Sized> WriteOnly<'a, T> {
     
     
     #[inline]
-    pub fn write(self, value: T)
+    pub const fn write(self, value: T)
     where
         
         
@@ -170,7 +170,7 @@ impl<'a, T: ?Sized> WriteOnly<'a, T> {
     
     
     #[inline]
-    pub fn as_raw_ptr(&mut self) -> NonNull<T> {
+    pub const fn as_raw_ptr(&mut self) -> NonNull<T> {
         self.ptr
     }
 }
@@ -491,7 +491,7 @@ impl<'a, T> WriteOnly<'a, [T]> {
     
     
     #[inline]
-    pub fn split_at_checked(self, mid: usize) -> Result<(Self, Self), Self> {
+    pub const fn split_at_checked(self, mid: usize) -> Result<(Self, Self), Self> {
         if mid <= self.len() {
             let Self { ptr, _phantom: _ } = self;
             let element_ptr = ptr.cast::<T>();
@@ -584,7 +584,7 @@ impl<'a, T> WriteOnly<'a, [T]> {
     
     #[inline]
     #[must_use]
-    pub fn split_off_first(&mut self) -> Option<WriteOnly<'a, T>> {
+    pub const fn split_off_first(&mut self) -> Option<WriteOnly<'a, T>> {
         let len = self.len();
         if let Some(new_len) = len.checked_sub(1) {
             let ptr: NonNull<T> = self.as_raw_element_ptr();
@@ -605,7 +605,7 @@ impl<'a, T> WriteOnly<'a, [T]> {
     
     #[inline]
     #[must_use]
-    pub fn split_off_last(&mut self) -> Option<WriteOnly<'a, T>> {
+    pub const fn split_off_last(&mut self) -> Option<WriteOnly<'a, T>> {
         let len = self.len();
         if let Some(new_len) = len.checked_sub(1) {
             let ptr: NonNull<T> = self.as_raw_element_ptr();
@@ -675,7 +675,7 @@ impl<'a, T> WriteOnly<'a, [T]> {
     
     
     #[inline]
-    pub fn as_raw_element_ptr(&mut self) -> NonNull<T> {
+    pub const fn as_raw_element_ptr(&mut self) -> NonNull<T> {
         self.ptr.cast::<T>()
     }
 }
@@ -765,6 +765,17 @@ pub struct WriteOnlyIter<'a, T> {
     
     
     slice: WriteOnly<'a, [T]>,
+}
+
+impl<T> fmt::Debug for WriteOnlyIter<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "WriteOnlyIter([{ty}], len = {len})",
+            ty = core::any::type_name::<T>(),
+            len = self.len(),
+        )
+    }
 }
 
 impl<'a, T> Iterator for WriteOnlyIter<'a, T> {
@@ -889,6 +900,28 @@ mod tests {
         let wo = WriteOnly::from_mut(&mut val);
         wo.write(2);
         assert_eq!(val, 2);
+    }
+
+    
+    const _: WriteOnly<'static, [u8]> = WriteOnly::from_mut(&mut []);
+
+    
+    #[test]
+    fn const_write() {
+        let output = const {
+            let mut array = [0u8; 4];
+            let mut wo = WriteOnly::from_mut(array.as_mut_slice());
+
+            
+            wo.split_off_first().unwrap().write(1);
+            wo.split_off_first().unwrap().write(2);
+            wo.split_off_first().unwrap().write(3);
+            wo.split_off_first().unwrap().write(4);
+
+            array
+        };
+
+        assert_eq!(output, [1, 2, 3, 4]);
     }
 
     #[test]

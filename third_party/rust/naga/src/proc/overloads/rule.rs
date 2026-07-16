@@ -23,7 +23,7 @@ use core::fmt;
 use core::result::Result;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Rule {
     pub arguments: Vec<TypeResolution>,
     pub conclusion: Conclusion,

@@ -7,6 +7,21 @@ pub(super) use native::*;
 
 mod native;
 
+
+
+
+
+
+
+
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+pub(crate) struct WindowHandle(pub(crate) windows::Win32::Foundation::HWND);
+
+#[cfg(not(windows))]
+#[derive(Clone, Copy)]
+pub(crate) enum WindowHandle {}
+
 pub(super) trait Surface: Send + Sync + 'static {
     
     
@@ -24,6 +39,14 @@ pub(super) trait Surface: Send + Sync + 'static {
         config: &crate::SurfaceConfiguration,
         provided_old_swapchain: Option<Box<dyn Swapchain>>,
     ) -> Result<Box<dyn Swapchain>, crate::SurfaceError>;
+
+    
+    
+    
+    
+    fn display_hdr_info(&self) -> Option<wgt::DisplayHdrInfo> {
+        None
+    }
 
     
     fn as_any(&self) -> &dyn Any;

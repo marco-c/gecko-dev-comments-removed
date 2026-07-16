@@ -9,7 +9,7 @@ use crate::{
         DeviceError,
     },
     ray_tracing::BlasCompactReadyPendingClosure,
-    resource::{Blas, Buffer, DestroyedQuerySet, Texture, Trackable},
+    resource::{Blas, Buffer, QuerySet, Texture, Trackable},
     snatch::SnatchGuard,
     SubmissionIndex,
 };
@@ -52,9 +52,6 @@ struct ActiveSubmission {
     
     
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
-
-    
-    destroy_query_sets: Vec<DestroyedQuerySet>,
 }
 
 impl ActiveSubmission {
@@ -118,6 +115,16 @@ impl ActiveSubmission {
             }
 
             if encoder.pending_blas_s.contains_key(&blas.tracker_index()) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn contains_query_set(&self, query_set: &QuerySet) -> bool {
+        for encoder in &self.encoders {
+            if encoder.trackers.query_sets.contains(query_set) {
                 return true;
             }
         }
@@ -219,7 +226,6 @@ impl LifetimeTracker {
             compact_read_back: Vec::new(),
             encoders,
             work_done_closures: SmallVec::new(),
-            destroy_query_sets: Vec::new(),
         });
     }
 
@@ -289,6 +295,23 @@ impl LifetimeTracker {
 
     
     
+    pub fn get_query_set_latest_submission_index(
+        &self,
+        query_set: &QuerySet,
+    ) -> Option<SubmissionIndex> {
+        
+        
+        self.active.iter().rev().find_map(|submission| {
+            if submission.contains_query_set(query_set) {
+                Some(submission.index)
+            } else {
+                None
+            }
+        })
+    }
+
+    
+    
     
     
     
@@ -343,26 +366,6 @@ impl LifetimeTracker {
             });
         if let Some(resources) = resources {
             resources.push(temp_resource);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn schedule_query_set_destruction(&mut self, query_set: &mut Option<DestroyedQuerySet>) {
-        if let Some(submission) = self.active.last_mut() {
-            if let Some(query_set) = query_set.take() {
-                submission.destroy_query_sets.push(query_set);
-            }
         }
     }
 

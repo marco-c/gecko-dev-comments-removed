@@ -21,7 +21,7 @@ use crate::{
 };
 
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Options {
     
     pub cfg_only: bool,

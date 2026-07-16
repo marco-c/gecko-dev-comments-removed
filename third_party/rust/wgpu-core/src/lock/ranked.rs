@@ -80,6 +80,7 @@ pub struct Mutex<T> {
 
 pub struct MutexGuard<'a, T> {
     inner: parking_lot::MutexGuard<'a, T>,
+    #[cfg_attr(not(miri), expect(unused))] 
     saved: LockStateGuard,
 }
 
@@ -163,17 +164,53 @@ fn acquire(new_rank: LockRank, location: &'static Location<'static>) -> LockStat
 
 
 fn release(saved: LockState) {
+    let saved_info = saved.last_acquired;
+
     let prior = LOCK_STATE.replace(saved);
+
+    let (prior_rank, prior_location) = prior
+        .last_acquired
+        .expect("Releasing a lock, but no acquisition recorded");
 
     
     
     
     
-    assert_eq!(
-        prior.depth,
-        saved.depth + 1,
-        "Lock not released in stacking order"
-    );
+
+    match (saved.depth, saved_info) {
+        (saved_depth @ 0, None) => {
+            assert_eq!(
+                prior.depth,
+                saved_depth + 1,
+                "Lock not released in stacking order\n\
+                released {:<35} locked at {:?}\n\
+                when not expecting any locks to be held\n",
+                prior_rank.bit.member_name(),
+                prior_location,
+            );
+        }
+        (0, Some(_)) => {
+            panic!("Found previous lock acquisition information, but saved.depth = 0");
+        }
+        (saved_depth, Some((saved_rank, saved_location))) => {
+            assert_eq!(
+                prior.depth,
+                saved_depth + 1,
+                "Lock not released in stacking order\n\
+                expecting release of {:<35} locked at {:?}\n\
+                but instead released {:<35} locked at {:?}\n",
+                saved_rank.bit.member_name(),
+                saved_location,
+                prior_rank.bit.member_name(),
+                prior_location,
+            );
+        }
+        (saved_depth, None) => {
+            panic!(
+                "Found saved.depth = {saved_depth}, but no previous lock acquisition information"
+            );
+        }
+    }
 }
 
 impl<T> Mutex<T> {

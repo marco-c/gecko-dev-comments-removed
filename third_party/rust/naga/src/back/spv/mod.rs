@@ -908,6 +908,7 @@ impl BlockContext<'_> {
 
 
 
+#[derive(Debug)]
 pub struct Std140CompatTypeInfo {
     
     type_id: Word,
@@ -916,6 +917,7 @@ pub struct Std140CompatTypeInfo {
     member_indices: Vec<u32>,
 }
 
+#[expect(missing_debug_implementations, reason = "would be way too verbose?")]
 pub struct Writer {
     physical_layout: PhysicalLayout,
     logical_layout: LogicalLayout,
