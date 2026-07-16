@@ -839,12 +839,6 @@ bool TIntermAggregate::isConstantNullValue() const
 
 const TConstantUnion *TIntermAggregate::getConstantValue() const
 {
-    
-    
-    
-    
-    constexpr size_t kMaxConstantFoldElements = 256 * 1024;
-
     if (!hasConstantValue())
     {
         return nullptr;
@@ -856,25 +850,14 @@ const TConstantUnion *TIntermAggregate::getConstantValue() const
     if (isArray())
     {
         size_t elementSize = mArguments.front()->getAsTyped()->getType().getObjectSize();
-        angle::CheckedNumeric<size_t> checkedArraySize = elementSize;
-        checkedArraySize *= getOutermostArraySize();
-        if (!checkedArraySize.IsValid() ||
-            checkedArraySize.ValueOrDie() > kMaxConstantFoldElements)
-        {
-            return nullptr;
-        }
-        constArray = new TConstantUnion[checkedArraySize.ValueOrDie()];
+        constArray         = new TConstantUnion[elementSize * getOutermostArraySize()];
 
         size_t elementOffset = 0u;
         for (TIntermNode *constructorArg : mArguments)
         {
             const TConstantUnion *elementConstArray =
                 constructorArg->getAsTyped()->getConstantValue();
-            if (!elementConstArray)
-            {
-                delete[] constArray;
-                return nullptr;
-            }
+            ASSERT(elementConstArray);
             size_t elementSizeBytes = sizeof(TConstantUnion) * elementSize;
             memcpy(static_cast<void *>(&constArray[elementOffset]),
                    static_cast<const void *>(elementConstArray), elementSizeBytes);
@@ -883,12 +866,8 @@ const TConstantUnion *TIntermAggregate::getConstantValue() const
         return constArray;
     }
 
-    size_t resultSize = getType().getObjectSize();
-    if (resultSize > kMaxConstantFoldElements)
-    {
-        return nullptr;
-    }
-    constArray = new TConstantUnion[resultSize];
+    size_t resultSize    = getType().getObjectSize();
+    constArray           = new TConstantUnion[resultSize];
     TBasicType basicType = getBasicType();
 
     size_t resultIndex = 0u;
@@ -898,11 +877,6 @@ const TConstantUnion *TIntermAggregate::getConstantValue() const
         TIntermNode *argument                       = mArguments.front();
         TIntermTyped *argumentTyped                 = argument->getAsTyped();
         const TConstantUnion *argumentConstantValue = argumentTyped->getConstantValue();
-        if (!argumentConstantValue)
-        {
-            delete[] constArray;
-            return nullptr;
-        }
         
         
         if (argumentTyped->getType().getObjectSize() == 1u)
@@ -975,11 +949,6 @@ const TConstantUnion *TIntermAggregate::getConstantValue() const
         TIntermTyped *argumentTyped                 = argument->getAsTyped();
         size_t argumentSize                         = argumentTyped->getType().getObjectSize();
         const TConstantUnion *argumentConstantValue = argumentTyped->getConstantValue();
-        if (!argumentConstantValue)
-        {
-            delete[] constArray;
-            return nullptr;
-        }
         for (size_t i = 0u; i < argumentSize; ++i)
         {
             if (resultIndex >= resultSize)
@@ -2270,17 +2239,8 @@ const TConstantUnion *TIntermBinary::getConstantValue() const
         return nullptr;
     }
 
-    const TConstantUnion *leftConstantValue = mLeft->getConstantValue();
-    if (!leftConstantValue)
-    {
-        return nullptr;
-    }
-    const TConstantUnion *rightConstantValue = mRight->getConstantValue();
-    if (!rightConstantValue)
-    {
-        return nullptr;
-    }
-    int index = rightConstantValue->getIConst();
+    const TConstantUnion *leftConstantValue   = mLeft->getConstantValue();
+    int index                                 = mRight->getConstantValue()->getIConst();
     const TConstantUnion *constIndexingResult = nullptr;
     if (mOp == EOpIndexDirect)
     {
