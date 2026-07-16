@@ -139,8 +139,7 @@ class FunctionBox;
   F(YieldStarExpr, UnaryNode)                                             \
   F(LexicalScope, LexicalScopeNode)                                       \
   F(LetDecl, DeclarationListNode)                                         \
-  F(ImportDecl, BinaryNode)                                               \
-  F(ImportSourceDecl, BinaryNode)                                         \
+  F(ImportDecl, ImportDeclarationNode)                                    \
   F(ImportSpecList, ListNode)                                             \
   F(ImportSpec, BinaryNode)                                               \
   F(ImportNamespaceSpec, UnaryNode)                                       \
@@ -174,8 +173,7 @@ class FunctionBox;
   F(SuperCallExpr, CallNode)                                              \
   F(SetThis, BinaryNode)                                                  \
   F(ImportMetaExpr, BinaryNode)                                           \
-  F(CallImportExpr, BinaryNode)                                           \
-  F(CallImportSourceExpr, BinaryNode)                                     \
+  F(CallImportExpr, CallImportNode)                                       \
   F(CallImportSpec, BinaryNode)                                           \
   F(InitExpr, BinaryNode)                                                 \
                                                                           \
@@ -621,6 +619,8 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 #define FOR_EACH_PARSENODE_SUBCLASS(MACRO) \
   MACRO(BinaryNode)                        \
   MACRO(AssignmentNode)                    \
+  MACRO(ImportDeclarationNode)             \
+  MACRO(CallImportNode)                    \
   MACRO(CaseClause)                        \
   MACRO(ClassMethod)                       \
   MACRO(ClassField)                        \
@@ -1081,6 +1081,46 @@ class AssignmentNode : public BinaryNode {
     MOZ_ASSERT_IF(match, node.is<BinaryNode>());
     return match;
   }
+};
+
+
+
+
+class ImportDeclarationNode : public BinaryNode {
+  ImportPhase phase_;
+
+ public:
+  ImportDeclarationNode(const TokenPos& pos, ParseNode* importClause,
+                        ParseNode* moduleRequest, ImportPhase phase)
+      : BinaryNode(ParseNodeKind::ImportDecl, pos, importClause, moduleRequest),
+        phase_(phase) {}
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::ImportDecl);
+    MOZ_ASSERT_IF(match, node.is<BinaryNode>());
+    return match;
+  }
+
+  ImportPhase phase() const { return phase_; }
+};
+
+
+
+class CallImportNode : public BinaryNode {
+  ImportPhase phase_;
+
+ public:
+  CallImportNode(ParseNode* importHolder, ParseNode* spec, ImportPhase phase)
+      : BinaryNode(ParseNodeKind::CallImportExpr, importHolder, spec),
+        phase_(phase) {}
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::CallImportExpr);
+    MOZ_ASSERT_IF(match, node.is<BinaryNode>());
+    return match;
+  }
+
+  ImportPhase phase() const { return phase_; }
 };
 
 class ForNode : public BinaryNode {
