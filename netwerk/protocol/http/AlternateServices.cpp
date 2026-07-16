@@ -2,18 +2,18 @@
 
 
 
-#include "HttpLog.h"
-
 #include "AlternateServices.h"
+
 #include <algorithm>
+
+#include "HttpLog.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/net/AltSvcTransactionChild.h"
 #include "mozilla/net/AltSvcTransactionParent.h"
-#include "mozilla/SyncRunnable.h"
 #include "nsEscape.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpHandler.h"

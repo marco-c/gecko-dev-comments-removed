@@ -3,9 +3,9 @@
 
 
 
-#include "HttpLog.h"
-
 #include "PendingTransactionInfo.h"
+
+#include "HttpLog.h"
 #include "NullHttpTransaction.h"
 
 

@@ -2,13 +2,13 @@
 
 
 
-#include "WebSocketLog.h"
 #include "WebSocketConnectionChild.h"
 
 #include "WebSocketConnection.h"
+#include "WebSocketLog.h"
+#include "mozilla/Components.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/SocketProcessBackgroundChild.h"
-#include "mozilla/Components.h"
 #include "nsISerializable.h"
 #include "nsITLSSocketControl.h"
 #include "nsITransportSecurityInfo.h"

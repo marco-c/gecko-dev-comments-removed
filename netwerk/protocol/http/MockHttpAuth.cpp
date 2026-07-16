@@ -3,9 +3,9 @@
 
 
 
-#include "HttpLog.h"
-
 #include "MockHttpAuth.h"
+
+#include "HttpLog.h"
 
 namespace mozilla::net {
 

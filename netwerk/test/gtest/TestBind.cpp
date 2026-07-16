@@ -2,18 +2,18 @@
 
 
 
+#include "../../base/nsSocketTransportService2.h"
 #include "TestCommon.h"
 #include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
-#include "nsISocketTransportService.h"
-#include "nsISocketTransport.h"
-#include "nsIServerSocket.h"
-#include "nsIAsyncInputStream.h"
 #include "mozilla/net/DNS.h"
-#include "prerror.h"
-#include "../../base/nsSocketTransportService2.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIAsyncInputStream.h"
+#include "nsIServerSocket.h"
+#include "nsISocketTransport.h"
+#include "nsISocketTransportService.h"
 #include "nsServiceManagerUtils.h"
+#include "prerror.h"
 
 using namespace mozilla::net;
 using namespace mozilla;

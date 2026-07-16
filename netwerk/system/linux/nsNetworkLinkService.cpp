@@ -2,15 +2,15 @@
 
 
 
-#include "nsIObserverService.h"
 #include "nsNetworkLinkService.h"
-#include "nsString.h"
-#include "mozilla/Logging.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "nsNetAddr.h"
 
-#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "nsIObserverService.h"
+#include "nsNetAddr.h"
+#include "nsString.h"
 
 using namespace mozilla;
 

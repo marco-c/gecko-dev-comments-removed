@@ -3,12 +3,13 @@
 
 
 #include "TRRLoadInfo.h"
+
+#include "LoadInfo.h"
 #include "mozilla/dom/ClientSource.h"
-#include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/DOMTypes.h"
+#include "mozilla/dom/FeaturePolicy.h"
 #include "nsContentUtils.h"
 #include "nsIRedirectHistoryEntry.h"
-#include "LoadInfo.h"
 
 using namespace mozilla::dom;
 

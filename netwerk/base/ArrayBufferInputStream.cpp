@@ -2,14 +2,16 @@
 
 
 
-#include <algorithm>
 #include "ArrayBufferInputStream.h"
-#include "nsStreamUtils.h"
+
+#include <algorithm>
+
 #include "js/ArrayBuffer.h"  
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "nsStreamUtils.h"
 
 using mozilla::dom::RootingCx;
 

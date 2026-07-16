@@ -3,9 +3,10 @@
 
 
 #include "nsViewSourceHandler.h"
-#include "nsViewSourceChannel.h"
+
 #include "nsNetUtil.h"
 #include "nsSimpleNestedURI.h"
+#include "nsViewSourceChannel.h"
 
 #define VIEW_SOURCE "view-source"
 

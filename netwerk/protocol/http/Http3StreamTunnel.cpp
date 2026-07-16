@@ -3,12 +3,12 @@
 
 
 
-#include "HttpLog.h"
+#include "Http3StreamTunnel.h"
 
+#include "Http3Session.h"
+#include "HttpLog.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
-#include "Http3StreamTunnel.h"
-#include "Http3Session.h"
 #include "nsQueryObject.h"
 
 namespace mozilla::net {

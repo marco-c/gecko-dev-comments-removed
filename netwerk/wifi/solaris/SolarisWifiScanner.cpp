@@ -2,16 +2,15 @@
 
 
 
-#include "nsWifiMonitor.h"
-#include "nsWifiAccessPoint.h"
-
-#include "nsCRT.h"
-#include "nsServiceManagerUtils.h"
-#include "nsComponentManagerUtils.h"
-
 #include "SolarisWifiScanner.h"
 
 #include <glib.h>
+
+#include "nsCRT.h"
+#include "nsComponentManagerUtils.h"
+#include "nsServiceManagerUtils.h"
+#include "nsWifiAccessPoint.h"
+#include "nsWifiMonitor.h"
 
 #define DLADM_STRSIZE 256
 #define DLADM_SECTIONS 3

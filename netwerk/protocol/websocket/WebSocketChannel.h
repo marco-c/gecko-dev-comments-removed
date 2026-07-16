@@ -5,26 +5,25 @@
 #ifndef mozilla_net_WebSocketChannel_h
 #define mozilla_net_WebSocketChannel_h
 
-#include "nsISupports.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIStreamListener.h"
+#include "BaseWebSocketChannel.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/net/WebSocketConnectionListener.h"
+#include "nsCOMPtr.h"
+#include "nsDeque.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
-#include "nsITimer.h"
+#include "nsIChannelEventSink.h"
 #include "nsIDNSListener.h"
+#include "nsIHttpChannelInternal.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsINamed.h"
 #include "nsIObserver.h"
 #include "nsIProtocolProxyCallback.h"
-#include "nsIChannelEventSink.h"
-#include "nsIHttpChannelInternal.h"
-#include "mozilla/net/WebSocketConnectionListener.h"
-#include "mozilla/Mutex.h"
-#include "BaseWebSocketChannel.h"
-
-#include "nsCOMPtr.h"
+#include "nsIStreamListener.h"
+#include "nsISupports.h"
+#include "nsITimer.h"
 #include "nsString.h"
-#include "nsDeque.h"
-#include "mozilla/Atomics.h"
 
 class nsIAsyncVerifyRedirectCallback;
 class nsIDashboardEventNotifier;
@@ -177,6 +176,18 @@ class WebSocketChannel : public BaseWebSocketChannel,
 
   void StopSession(nsresult reason);
   void DoStopSession(nsresult reason);
+
+  
+  
+  already_AddRefed<BaseWebSocketChannel::ListenerAndContextContainer>
+  GetListenerMT() MOZ_EXCLUDES(mMutex);
+
+  
+  
+  
+  
+  already_AddRefed<BaseWebSocketChannel::ListenerAndContextContainer>
+  TakeListenerMT() MOZ_EXCLUDES(mMutex);
   void AbortSession(nsresult reason);
   void ReleaseSession();
   void CleanupConnection();
@@ -358,6 +369,8 @@ class WebSocketChannel : public BaseWebSocketChannel,
       mConnectionLogService;  
 
   mozilla::Mutex mMutex;
+  RefPtr<BaseWebSocketChannel::ListenerAndContextContainer> mListenerMT
+      MOZ_GUARDED_BY(mMutex);
 };
 
 class WebSocketSSLChannel : public WebSocketChannel {

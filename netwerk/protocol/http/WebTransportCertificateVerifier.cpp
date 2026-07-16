@@ -3,10 +3,11 @@
 
 
 #include "WebTransportCertificateVerifier.h"
+
 #include "ScopedNSSTypes.h"
-#include "nss/mozpkix/pkixutil.h"
-#include "nss/mozpkix/pkixcheck.h"
 #include "hasht.h"
+#include "nss/mozpkix/pkixcheck.h"
+#include "nss/mozpkix/pkixutil.h"
 
 namespace mozilla::psm {
 

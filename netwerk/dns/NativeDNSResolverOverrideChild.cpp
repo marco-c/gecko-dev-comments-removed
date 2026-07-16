@@ -3,6 +3,7 @@
 
 
 #include "NativeDNSResolverOverrideChild.h"
+
 #include "GetAddrInfo.h"
 
 namespace mozilla {

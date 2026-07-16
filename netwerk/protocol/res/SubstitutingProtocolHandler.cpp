@@ -2,25 +2,25 @@
 
 
 
+#include "SubstitutingProtocolHandler.h"
+
+#include "SubstitutingJARURI.h"
+#include "SubstitutingURL.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/chrome/RegistryMessageUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/URIUtils.h"
-
-#include "SubstitutingProtocolHandler.h"
-#include "SubstitutingURL.h"
-#include "SubstitutingJARURI.h"
+#include "nsEscape.h"
 #include "nsIChannel.h"
-#include "nsIIOService.h"
+#include "nsIClassInfoImpl.h"
 #include "nsIFile.h"
+#include "nsIIOService.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsURLHelper.h"
-#include "nsEscape.h"
-#include "nsIObjectInputStream.h"
-#include "nsIObjectOutputStream.h"
-#include "nsIClassInfoImpl.h"
 
 using mozilla::dom::ContentParent;
 

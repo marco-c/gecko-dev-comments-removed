@@ -3,15 +3,14 @@
 
 
 
-#include "HttpLog.h"
-
 #include "HttpBackgroundChannelChild.h"
 
 #include "HttpChannelChild.h"
+#include "HttpLog.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/net/BackgroundDataBridgeChild.h"
 #include "nsSocketTransportService2.h"
 

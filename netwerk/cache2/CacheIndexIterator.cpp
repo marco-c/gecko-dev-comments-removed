@@ -2,11 +2,12 @@
 
 
 
-#include "CacheLog.h"
 #include "CacheIndexIterator.h"
+
 #include "CacheIndex.h"
-#include "nsString.h"
+#include "CacheLog.h"
 #include "mozilla/DebugOnly.h"
+#include "nsString.h"
 
 namespace mozilla::net {
 

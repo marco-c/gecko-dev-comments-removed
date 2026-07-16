@@ -2,27 +2,28 @@
 
 
 
-#include "WebTransportLog.h"
+#include "WebTransportSessionProxy.h"
+
 #include "Http3WebTransportSession.h"
 #include "Http3WebTransportStream.h"
 #include "ScopedNSSTypes.h"
-#include "WebTransportSessionProxy.h"
-#include "WebTransportStreamProxy.h"
 #include "WebTransportEventService.h"
+#include "WebTransportLog.h"
+#include "WebTransportStreamProxy.h"
+#include "mozilla/LoadInfo.h"
+#include "mozilla/Logging.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsILoadInfo.h"
 #include "nsIRequest.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIX509Cert.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
-#include "nsILoadInfo.h"
 #include "nsSocketTransportService2.h"
-#include "mozilla/Logging.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/LoadInfo.h"
 
 namespace mozilla::net {
 

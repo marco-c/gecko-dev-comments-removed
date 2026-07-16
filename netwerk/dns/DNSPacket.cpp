@@ -8,7 +8,6 @@
 #include "mozilla/StaticPrefs_network.h"
 
 #include "DNSLogging.h"
-
 #include "nsIInputStream.h"
 
 namespace mozilla {

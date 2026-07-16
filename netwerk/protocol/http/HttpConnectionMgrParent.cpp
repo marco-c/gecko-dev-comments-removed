@@ -3,23 +3,23 @@
 
 
 
-#include "HttpLog.h"
-
 #include "HttpConnectionMgrParent.h"
+
 #include "AltSvcTransactionParent.h"
+#include "HttpLog.h"
 #include "mozilla/net/HttpTransactionParent.h"
 #include "mozilla/net/WebSocketConnectionParent.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsISpeculativeConnect.h"
 #include "nsIOService.h"
+#include "nsISpeculativeConnect.h"
 #include "nsQueryObject.h"
 
 namespace mozilla::net {
 
-MOZ_RUNINIT nsTHashMap<uint32_t, nsCOMPtr<nsIHttpUpgradeListener>>
+constinit nsTHashMap<uint32_t, nsCOMPtr<nsIHttpUpgradeListener>>
     HttpConnectionMgrParent::sHttpUpgradeListenerMap;
 uint32_t HttpConnectionMgrParent::sListenerId = 0;
 StaticMutex HttpConnectionMgrParent::sLock;

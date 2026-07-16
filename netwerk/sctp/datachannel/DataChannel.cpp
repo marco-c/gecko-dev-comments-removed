@@ -2,37 +2,38 @@
 
 
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 
 #ifdef XP_WIN
 #  include <winsock.h>  
 #endif
 
-#include "nsIInputStream.h"
-#include "nsIPrefBranch.h"
-#include "nsIPrefService.h"
-#include "mozilla/Sprintf.h"
-#include "nsProxyRelease.h"
-#include "nsThread.h"
-#include "nsThreadUtils.h"
-#include "nsNetUtil.h"
 #include "mozilla/Components.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/RTCDataChannel.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
+#include "nsIInputStream.h"
+#include "nsIPrefBranch.h"
+#include "nsIPrefService.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
+#include "nsThread.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_PEERCONNECTION
-#  include "transport/runnable_utils.h"
 #  include "jsapi/MediaTransportHandler.h"
 #  include "mediapacket.h"
+#  include "transport/runnable_utils.h"
 #endif
 
 #include "DataChannel.h"
 #include "DataChannelDcSctp.h"
-#include "DataChannelUsrsctp.h"
 #include "DataChannelLog.h"
 #include "DataChannelProtocol.h"
+#include "DataChannelUsrsctp.h"
 
 namespace mozilla {
 

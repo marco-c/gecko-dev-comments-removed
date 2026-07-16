@@ -3,8 +3,10 @@
 
 
 #include "SimpleBuffer.h"
-#include "mozilla/fallible.h"
+
 #include <algorithm>
+
+#include "mozilla/fallible.h"
 
 namespace mozilla {
 namespace net {

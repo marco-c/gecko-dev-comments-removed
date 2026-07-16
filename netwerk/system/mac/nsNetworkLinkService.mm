@@ -1,42 +1,42 @@
 
 
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <net/route.h>
-#include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <arpa/inet.h>
-#include <ifaddrs.h>
+#include <netinet/in.h>
 #include <resolv.h>
 
-#include "nsCOMPtr.h"
-#include "nsIObserverService.h"
-#include "nsServiceManagerUtils.h"
-#include "nsString.h"
-#include "nsCRT.h"
-#include "nsNetCID.h"
-#include "nsThreadUtils.h"
-#include "mozilla/AppShutdown.h"
-#include "mozilla/Components.h"
-#include "mozilla/Logging.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/SHA1.h"
-#include "mozilla/Base64.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/Services.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "nsNetworkLinkService.h"
 #include "../../base/IPv6Utils.h"
 #include "../LinkServiceCommon.h"
 #include "../NetworkLinkServiceDefines.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Base64.h"
+#include "mozilla/Components.h"
+#include "mozilla/Logging.h"
+#include "mozilla/SHA1.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsIObserverService.h"
+#include "nsNetCID.h"
+#include "nsNetworkLinkService.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 #import <Cocoa/Cocoa.h>
 #import <netinet/in.h>
@@ -539,7 +539,7 @@ bool nsNetworkLinkService::IPv6NetworkId(SHA1Sum* sha1) {
     bool hasNonLocalIPv6 = false;
     struct ifaddrs* ifa;
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-      if (ifa->ifa_addr == NULL) {
+      if (ifa->ifa_addr == nullptr) {
         continue;
       }
       if ((AF_INET6 == ifa->ifa_addr->sa_family) &&

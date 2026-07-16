@@ -3,10 +3,10 @@
 
 
 
-#include "HttpLog.h"
-
 #include "AltServiceParent.h"
+
 #include "AlternateServices.h"
+#include "HttpLog.h"
 #include "nsHttpHandler.h"
 
 namespace mozilla {

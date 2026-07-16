@@ -6,8 +6,8 @@
 #define ContentRange_h_
 
 #include "nsContentUtils.h"
-#include "nsString.h"
 #include "nsISupportsImpl.h"
+#include "nsString.h"
 
 
 

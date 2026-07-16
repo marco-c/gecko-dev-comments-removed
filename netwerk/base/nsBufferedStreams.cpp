@@ -3,14 +3,16 @@
 
 
 #include "nsBufferedStreams.h"
-#include "nsStreamUtils.h"
-#include "nsNetCID.h"
-#include "nsIClassInfoImpl.h"
-#include "nsIEventTarget.h"
-#include "nsThreadUtils.h"
+
+#include <algorithm>
+
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ipc/InputStreamUtils.h"
-#include <algorithm>
+#include "nsIClassInfoImpl.h"
+#include "nsIEventTarget.h"
+#include "nsNetCID.h"
+#include "nsStreamUtils.h"
+#include "nsThreadUtils.h"
 
 #ifdef DEBUG_brendan
 #  define METERING

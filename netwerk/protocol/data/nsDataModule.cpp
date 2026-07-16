@@ -2,8 +2,8 @@
 
 
 
-#include "nsIGenericFactory.h"
 #include "nsDataHandler.h"
+#include "nsIGenericFactory.h"
 
 
 static const nsModuleComponentInfo components[] = {

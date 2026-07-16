@@ -3,8 +3,9 @@
 
 
 #include "nsNetAddr.h"
-#include "nsString.h"
+
 #include "mozilla/net/DNS.h"
+#include "nsString.h"
 
 using namespace mozilla::net;
 

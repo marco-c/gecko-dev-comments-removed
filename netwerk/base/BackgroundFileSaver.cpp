@@ -6,8 +6,8 @@
 
 #include "ScopedNSSTypes.h"
 #include "mozilla/ArrayAlgorithm.h"
-#include "mozilla/Components.h"
 #include "mozilla/Casting.h"
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -25,9 +25,11 @@
 #include "secoidt.h"
 
 #ifdef XP_WIN
+
 #  include <windows.h>
 #  include <softpub.h>
 #  include <wintrust.h>
+
 #endif  
 
 namespace mozilla {

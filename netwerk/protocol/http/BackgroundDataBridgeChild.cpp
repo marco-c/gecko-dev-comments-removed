@@ -3,6 +3,7 @@
 
 
 #include "mozilla/net/BackgroundDataBridgeChild.h"
+
 #include "mozilla/net/HttpBackgroundChannelChild.h"
 
 namespace mozilla {

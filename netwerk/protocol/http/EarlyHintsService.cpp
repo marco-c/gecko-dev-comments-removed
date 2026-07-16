@@ -3,11 +3,12 @@
 
 
 #include "EarlyHintsService.h"
+
 #include "EarlyHintPreconnect.h"
 #include "EarlyHintPreloader.h"
-#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/PreloadHashKey.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsICookieJarSettings.h"

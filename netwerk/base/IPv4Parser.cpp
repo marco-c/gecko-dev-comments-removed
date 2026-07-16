@@ -3,6 +3,7 @@
 
 
 #include "IPv4Parser.h"
+
 #include "mozilla/EndianUtils.h"
 #include "nsPrintfCString.h"
 #include "nsTArray.h"
@@ -65,6 +66,12 @@ nsresult ParseIPv4Number10(const nsACString& input, uint32_t& number,
     MOZ_ASSERT(c >= '0' && c <= '9');
     value *= 10;
     value += c - '0';
+    
+    
+    if (value > 0xffffffffu) {
+      number = 0;
+      return NS_ERROR_FAILURE;
+    }
   }
   if (value <= maxNumber) {
     number = value;
@@ -105,6 +112,12 @@ nsresult ParseIPv4Number(const nsACString& input, int32_t base,
       value += c - 'a' + 10;
     } else if (c >= 'A' && c <= 'F') {
       value += c - 'A' + 10;
+    }
+    
+    
+    if (value > 0xffffffffu) {
+      number = 0;
+      return NS_ERROR_FAILURE;
     }
   }
 

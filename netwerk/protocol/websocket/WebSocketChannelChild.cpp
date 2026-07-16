@@ -2,20 +2,21 @@
 
 
 
+#include "WebSocketChannelChild.h"
+
+#include "SerializedLoadContext.h"
 #include "WebSocketLog.h"
 #include "mozilla/dom/BrowserChild.h"
-#include "mozilla/net/NeckoChild.h"
-#include "WebSocketChannelChild.h"
-#include "nsContentUtils.h"
-#include "nsIBrowserChild.h"
-#include "nsNetUtil.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/net/ChannelEventQueue.h"
-#include "SerializedLoadContext.h"
-#include "mozilla/dom/ContentChild.h"
+#include "mozilla/net/NeckoChild.h"
+#include "nsContentUtils.h"
+#include "nsIBrowserChild.h"
 #include "nsITransportProvider.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla::ipc;
 using mozilla::dom::ContentChild;

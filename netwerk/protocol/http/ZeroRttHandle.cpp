@@ -4,13 +4,12 @@
 
 
 
-#include "HttpLog.h"
-
 #include "ZeroRttHandle.h"
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "HappyEyeballsTransaction.h"
 #include "HttpConnectionBase.h"
+#include "HttpLog.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsAHttpTransaction.h"
 #include "nsHttpRequestHead.h"

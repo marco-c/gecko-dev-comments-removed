@@ -6,7 +6,6 @@
 
 
 #include "gtest/gtest.h"
-
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/gtest/MozAssertions.h"

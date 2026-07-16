@@ -3,11 +3,12 @@
 
 
 
-#include "nsNamedPipeIOLayer.h"
 #include "nsSOCKSSocketProvider.h"
-#include "nsSOCKSIOLayer.h"
+
 #include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsNamedPipeIOLayer.h"
+#include "nsSOCKSIOLayer.h"
 
 using mozilla::OriginAttributes;
 using namespace mozilla::net;

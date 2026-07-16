@@ -3,10 +3,10 @@
 
 
 
-#include "HttpLog.h"
-
 #include "AltSvcTransactionChild.h"
+
 #include "AlternateServices.h"
+#include "HttpLog.h"
 #include "nsHttpConnectionInfo.h"
 
 namespace mozilla {

@@ -3,18 +3,18 @@
 
 
 
-#include "HttpLog.h"
+#include "NullHttpTransaction.h"
 
-#include "mozilla/net/NeckoChannelParams.h"  
+#include "HttpLog.h"
 #include "mozilla/Components.h"
+#include "mozilla/net/NeckoChannelParams.h"  
 #include "nsAHttpConnection.h"
 #include "nsHttp.h"
-#include "NullHttpTransaction.h"
 #include "nsHttpHandler.h"
 #include "nsHttpRequestHead.h"
 #include "nsIHttpActivityObserver.h"
-#include "nsQueryObject.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 
 namespace mozilla {
 namespace net {

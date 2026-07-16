@@ -3,10 +3,11 @@
 
 
 #include "CachePurgeLock.h"
+
+#include "mozilla/MultiInstanceLock.h"
+#include "nsAppRunner.h"
 #include "nsCOMPtr.h"
 #include "nsIFile.h"
-#include "nsAppRunner.h"
-#include "mozilla/MultiInstanceLock.h"
 #include "nsLocalFile.h"
 
 namespace mozilla::net {

@@ -2,24 +2,26 @@
 
 
 
-#include "nsIOService.h"
 #include "nsInputStreamPump.h"
-#include "nsIInputStreamPriority.h"
-#include "nsIStreamTransportService.h"
-#include "nsIThreadRetargetableStreamListener.h"
-#include "nsThreadUtils.h"
-#include "nsCOMPtr.h"
+
+#include <algorithm>
+
 #include "mozilla/Logging.h"
 #include "mozilla/NonBlockingAsyncInputStream.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/SlicedInputStream.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "nsIStreamListener.h"
+#include "nsCOMPtr.h"
+#include "nsIInputStreamPriority.h"
 #include "nsILoadGroup.h"
+#include "nsIOService.h"
+#include "nsIStreamListener.h"
+#include "nsIStreamTransportService.h"
+#include "nsIThreadRetargetableStreamListener.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
-#include <algorithm>
+#include "nsThreadUtils.h"
 
 
 

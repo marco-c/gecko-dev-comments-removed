@@ -2,14 +2,13 @@
 
 
 
-#include "TestCommon.h"
-#include "gtest/gtest.h"
-
 #include <windows.h>
 
+#include "TestCommon.h"
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsNamedPipeService.h"
 #include "nsNetCID.h"
 

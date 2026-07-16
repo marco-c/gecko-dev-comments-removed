@@ -2,24 +2,25 @@
 
 
 
+#include "nsIDNService.h"
+
 #include "MainThreadUtils.h"
+#include "harfbuzz/hb.h"
+#include "mozilla/Casting.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
-#include "nsIDNService.h"
-#include "nsReadableUtils.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/intl/UnicodeProperties.h"
+#include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsCRT.h"
+#include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStandardURL.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
-#include "harfbuzz/hb.h"
-#include "mozilla/Casting.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/intl/UnicodeProperties.h"
-#include "mozilla/intl/UnicodeScriptCodes.h"
-#include "nsNetUtil.h"
-#include "nsStandardURL.h"
 
 using namespace mozilla;
 using namespace mozilla::intl;

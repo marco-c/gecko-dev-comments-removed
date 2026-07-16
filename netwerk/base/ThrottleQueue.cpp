@@ -3,14 +3,15 @@
 
 
 #include "ThrottleQueue.h"
+
 #include "mozilla/Components.h"
 #include "mozilla/net/InputChannelThrottleQueueParent.h"
-#include "nsISeekableStream.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIOService.h"
+#include "nsISeekableStream.h"
+#include "nsNetUtil.h"
 #include "nsSocketTransportService2.h"
 #include "nsStreamUtils.h"
-#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

@@ -5,8 +5,9 @@
 
 
 #include "SFV.h"
-#include "nsStringFwd.h"
+
 #include "nsError.h"
+#include "nsStringFwd.h"
 
 namespace mozilla {
 namespace net {

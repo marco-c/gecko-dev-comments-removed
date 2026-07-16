@@ -3,6 +3,7 @@
 
 
 #include "SimpleURIUnknownSchemes.h"
+
 #include "mozilla/StaticPrefs_network.h"
 
 static mozilla::LazyLogModule gURLLog("URL");

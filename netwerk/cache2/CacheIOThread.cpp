@@ -3,21 +3,21 @@
 
 
 #include "CacheIOThread.h"
+
 #include "CacheFileIOManager.h"
 #include "CacheLog.h"
 #include "CacheObserver.h"
 #include "GeckoProfiler.h"
-
+#include "mozilla/EventQueue.h"
+#include "mozilla/IOInterposer.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ThreadEventQueue.h"
 #include "nsIRunnable.h"
 #include "nsISupportsImpl.h"
 #include "nsPrintfCString.h"
 #include "nsThread.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
-#include "mozilla/EventQueue.h"
-#include "mozilla/IOInterposer.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ThreadEventQueue.h"
 
 #ifdef XP_WIN
 #  include <windows.h>

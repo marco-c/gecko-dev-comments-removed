@@ -3,11 +3,11 @@
 
 
 
-#include "nsURLHelper.h"
+#include "mozilla/Utf8.h"
 #include "nsEscape.h"
 #include "nsIFile.h"
 #include "nsNativeCharsetUtils.h"
-#include "mozilla/Utf8.h"
+#include "nsURLHelper.h"
 
 using mozilla::IsUtf8;
 

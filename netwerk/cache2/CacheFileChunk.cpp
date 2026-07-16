@@ -2,14 +2,13 @@
 
 
 
-#include "CacheLog.h"
 #include "CacheFileChunk.h"
 
 #include "CacheCrypto.h"
 #include "CacheFile.h"
-#include "nsThreadUtils.h"
-
+#include "CacheLog.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::net {
 

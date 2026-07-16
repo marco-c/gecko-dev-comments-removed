@@ -2,13 +2,15 @@
 
 
 
-#include <gio/gio.h>
 #include "DbusWifiScanner.h"
-#include "nsWifiAccessPoint.h"
+
+#include <gio/gio.h>
+
+#include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/GRefPtr.h"
 #include "nsAppShell.h"
+#include "nsWifiAccessPoint.h"
 
 namespace mozilla {
 

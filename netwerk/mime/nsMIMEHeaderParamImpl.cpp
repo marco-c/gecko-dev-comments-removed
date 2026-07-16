@@ -2,18 +2,20 @@
 
 
 
-#include <string.h>
-#include "prprf.h"
-#include "prmem.h"
-#include "plbase64.h"
-#include "nsCRT.h"
-#include "nsTArray.h"
-#include "nsEscape.h"
 #include "nsMIMEHeaderParamImpl.h"
-#include "nsNativeCharsetUtils.h"
+
+#include <string.h>
+
 #include "mozilla/Encoding.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
+#include "nsCRT.h"
+#include "nsEscape.h"
+#include "nsNativeCharsetUtils.h"
+#include "nsTArray.h"
+#include "plbase64.h"
+#include "prmem.h"
+#include "prprf.h"
 
 using mozilla::Encoding;
 using mozilla::IsAscii;

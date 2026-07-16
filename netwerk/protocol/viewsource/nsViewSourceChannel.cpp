@@ -3,6 +3,7 @@
 
 
 #include "nsViewSourceChannel.h"
+
 #include "mozilla/NullPrincipal.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"

@@ -2,8 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "gtest/MozGTestBench.h"  
+#include "gtest/gtest.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/net/URLPatternGlue.h"
 #include "mozilla/net/urlpattern_glue.h"

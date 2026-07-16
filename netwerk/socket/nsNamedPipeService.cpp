@@ -2,14 +2,15 @@
 
 
 
+#include "nsNamedPipeService.h"
+
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "nsCOMPtr.h"
 #include "nsIObserverService.h"
-#include "nsNamedPipeService.h"
 #include "nsNetCID.h"
 #include "nsThreadUtils.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Logging.h"
 
 namespace mozilla {
 namespace net {

@@ -2,25 +2,25 @@
 
 
 
-#include "nspr.h"
-#include "private/pprio.h"
-#include "nsString.h"
-#include "nsCRT.h"
-
-#include "nsIDNSService.h"
-#include "nsIDNSRecord.h"
-#include "nsISocketProvider.h"
-#include "nsNamedPipeIOLayer.h"
 #include "nsSOCKSIOLayer.h"
-#include "nsNetCID.h"
-#include "nsIDNSListener.h"
-#include "nsICancelable.h"
-#include "nsThreadUtils.h"
-#include "nsIFile.h"
-#include "nsIFileProtocolHandler.h"
+
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/DNS.h"
+#include "nsCRT.h"
+#include "nsICancelable.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSRecord.h"
+#include "nsIDNSService.h"
+#include "nsIFile.h"
+#include "nsIFileProtocolHandler.h"
+#include "nsISocketProvider.h"
+#include "nsNamedPipeIOLayer.h"
+#include "nsNetCID.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
+#include "nspr.h"
+#include "private/pprio.h"
 
 using mozilla::LogLevel;
 using namespace mozilla::net;

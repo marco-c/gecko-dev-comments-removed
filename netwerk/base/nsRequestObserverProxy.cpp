@@ -2,13 +2,13 @@
 
 
 
-#include "mozilla/DebugOnly.h"
-
-#include "nscore.h"
 #include "nsRequestObserverProxy.h"
-#include "nsIRequest.h"
-#include "mozilla/Logging.h"
+
+#include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
+#include "nsIRequest.h"
+#include "nscore.h"
 
 namespace mozilla {
 namespace net {

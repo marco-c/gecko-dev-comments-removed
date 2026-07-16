@@ -2,17 +2,17 @@
 
 
 
+#include "nsAsyncRedirectVerifyHelper.h"
+
 #include "mozilla/Logging.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "nsAsyncRedirectVerifyHelper.h"
-#include "nsThreadUtils.h"
-#include "nsNetUtil.h"
-
-#include "nsIOService.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
 #include "nsIHttpChannelInternal.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsILoadInfo.h"
+#include "nsIOService.h"
+#include "nsNetUtil.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

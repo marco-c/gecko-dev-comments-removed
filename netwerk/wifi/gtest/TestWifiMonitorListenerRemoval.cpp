@@ -2,13 +2,13 @@
 
 
 
+#include "WifiScanner.h"
 #include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
 #include "nsIWifiListener.h"
-#include "nsWifiMonitor.h"
 #include "nsWifiAccessPoint.h"
-#include "WifiScanner.h"
+#include "nsWifiMonitor.h"
 
 #if defined(XP_WIN) && defined(_M_IX86)
 #  include <objbase.h>  

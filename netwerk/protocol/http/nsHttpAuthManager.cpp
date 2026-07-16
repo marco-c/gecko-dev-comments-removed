@@ -3,12 +3,12 @@
 
 
 
-#include "HttpLog.h"
-
-#include "nsHttpHandler.h"
 #include "nsHttpAuthManager.h"
-#include "nsNetUtil.h"
+
+#include "HttpLog.h"
+#include "nsHttpHandler.h"
 #include "nsIPrincipal.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

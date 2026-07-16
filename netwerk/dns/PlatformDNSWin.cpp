@@ -3,12 +3,12 @@
 
 
 #include "GetAddrInfo.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/net/DNSPacket.h"
-#include "nsIDNSService.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/net/DNSPacket.h"
+#include "nsIDNSService.h"
 
 #ifdef DNSQUERY_AVAILABLE
 

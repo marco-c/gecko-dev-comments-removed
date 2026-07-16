@@ -5,8 +5,8 @@
 #ifndef mozilla_net_NullHttpTransaction_h
 #define mozilla_net_NullHttpTransaction_h
 
-#include "nsAHttpTransaction.h"
 #include "TimingStruct.h"
+#include "nsAHttpTransaction.h"
 
 
 
@@ -33,7 +33,8 @@ class NullHttpTransaction : public nsAHttpTransaction {
   NS_DECL_NSAHTTPTRANSACTION
 
   NullHttpTransaction(nsHttpConnectionInfo* ci,
-                      nsIInterfaceRequestor* callbacks, uint32_t caps);
+                      nsIInterfaceRequestor* callbacks, uint32_t caps,
+                      bool reportActivity = true);
 
   [[nodiscard]] bool Claim();
   void Unclaim();

@@ -2,8 +2,9 @@
 
 
 
-#include "nsWifiAccessPoint.h"
 #include "WinWifiScanner.h"
+
+#include "nsWifiAccessPoint.h"
 
 #define DOT11_BSS_TYPE_UNUSED static_cast<DOT11_BSS_TYPE>(0)
 

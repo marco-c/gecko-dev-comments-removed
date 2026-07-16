@@ -15,13 +15,13 @@
 #define TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED 1
 #define TLS_EARLY_DATA_AVAILABLE_AND_USED 2
 
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "ConnectionEntry.h"
 #include "HttpConnectionBase.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttpHandler.h"
 #include "nsIClassOfService.h"
 #include "nsIOService.h"
 #include "nsISocketTransport.h"
-#include "ConnectionEntry.h"
 #include "xpcpublic.h"
 
 namespace mozilla {
@@ -47,12 +47,19 @@ void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
   mBootstrappedTimings.domainLookupEnd = domainLookupEnd;
 }
 
-void HttpConnectionBase::SetConnectBootstrapTimings(TimeStamp connectStart,
-                                                    TimeStamp tcpConnectEnd) {
+void HttpConnectionBase::SetConnectBootstrapTimings(
+    TimeStamp connectStart, TimeStamp tcpConnectEnd,
+    TimeStamp secureConnectionStart, TimeStamp connectEnd) {
   mBootstrappedTimingsSet = true;
   mBootstrappedTimings.connectStart = connectStart;
   if (!tcpConnectEnd.IsNull()) {
     mBootstrappedTimings.tcpConnectEnd = tcpConnectEnd;
+  }
+  if (!secureConnectionStart.IsNull()) {
+    mBootstrappedTimings.secureConnectionStart = secureConnectionStart;
+  }
+  if (!connectEnd.IsNull()) {
+    mBootstrappedTimings.connectEnd = connectEnd;
   }
 }
 

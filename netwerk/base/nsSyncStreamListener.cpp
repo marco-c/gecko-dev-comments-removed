@@ -2,12 +2,14 @@
 
 
 
+#include "nsSyncStreamListener.h"
+
+#include <algorithm>
+
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIOService.h"
 #include "nsIPipe.h"
-#include "nsSyncStreamListener.h"
 #include "nsThreadUtils.h"
-#include <algorithm>
 
 using namespace mozilla::net;
 

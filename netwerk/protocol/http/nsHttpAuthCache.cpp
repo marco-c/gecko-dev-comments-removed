@@ -3,18 +3,17 @@
 
 
 
-#include "HttpLog.h"
-
 #include "nsHttpAuthCache.h"
 
 #include <algorithm>
 
-#include "nsString.h"
+#include "HttpLog.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/Services.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
-#include "mozilla/Services.h"
-#include "mozilla/DebugOnly.h"
 #include "nsNetUtil.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {

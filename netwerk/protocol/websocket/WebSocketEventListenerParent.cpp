@@ -2,8 +2,9 @@
 
 
 
-#include "WebSocketEventService.h"
 #include "WebSocketEventListenerParent.h"
+
+#include "WebSocketEventService.h"
 #include "WebSocketFrame.h"
 
 namespace mozilla {

@@ -5,26 +5,26 @@
 #ifndef CacheStorageService_h_
 #define CacheStorageService_h_
 
+#include "mozilla/AtomicBitfields.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
-#include "nsICacheStorageService.h"
-#include "nsIMemoryReporter.h"
-#include "nsINamed.h"
-#include "nsITimer.h"
-#include "nsICacheTesting.h"
-
-#include "nsClassHashtable.h"
-#include "nsTHashMap.h"
-#include "nsString.h"
-#include "nsThreadUtils.h"
-#include "nsProxyRelease.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
-#include "mozilla/AtomicBitfields.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "nsClassHashtable.h"
+#include "nsICacheStorageService.h"
+#include "nsICacheTesting.h"
+#include "nsIMemoryReporter.h"
+#include "nsINamed.h"
+#include "nsITimer.h"
+#include "nsProxyRelease.h"
+#include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nsThreadUtils.h"
 
+class nsICacheEntry;
 class nsIURI;
 class nsICacheEntryDoomCallback;
 class nsICacheStorageVisitor;
@@ -153,6 +153,11 @@ class CacheStorageService final : public nsICacheStorageService,
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
+
+  void NoteNoVarySearchEntry(const nsACString& aContextKey,
+                             const nsACString& aBasePath,
+                             const nsACString& aFullKey);
+  void NoteNoVarySearchEntry(nsICacheEntry* aEntry, nsIURI* aURI);
 
  private:
   virtual ~CacheStorageService();

@@ -2,9 +2,9 @@
 
 
 
-#include <algorithm>
-
 #include "nsAboutCacheEntry.h"
+
+#include <algorithm>
 
 #include "CacheFileUtils.h"
 #include "CacheObserver.h"

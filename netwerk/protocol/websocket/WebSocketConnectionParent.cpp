@@ -2,14 +2,14 @@
 
 
 
-#include "WebSocketLog.h"
 #include "WebSocketConnectionParent.h"
 
+#include "WebSocketConnectionListener.h"
+#include "WebSocketLog.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsSerializationHelper.h"
 #include "nsThreadUtils.h"
-#include "WebSocketConnectionListener.h"
 
 namespace mozilla {
 namespace net {

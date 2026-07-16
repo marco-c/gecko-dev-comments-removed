@@ -4,11 +4,11 @@
 
 #include "TRRQuery.h"
 
+#include "TRR.h"
+#include "TRRService.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkDnsMetrics.h"
 #include "nsQueryObject.h"
-#include "TRR.h"
-#include "TRRService.h"
 
 #include "DNSLogging.h"
 

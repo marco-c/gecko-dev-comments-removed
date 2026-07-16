@@ -2,10 +2,11 @@
 
 
 
+#include "SFVService.h"
+
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
-#include "SFVService.h"
 
 
 

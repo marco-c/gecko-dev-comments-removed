@@ -3,6 +3,7 @@
 
 
 #include "UrlClassifierFeatureCustomTables.h"
+
 #include "nsIUrlClassifierExceptionList.h"
 
 namespace mozilla {

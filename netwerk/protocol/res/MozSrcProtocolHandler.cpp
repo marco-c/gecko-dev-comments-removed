@@ -2,12 +2,12 @@
 
 
 
-#include "mozilla/ModuleUtils.h"
+#include "MozSrcProtocolHandler.h"
+
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ModuleUtils.h"
 #include "mozilla/Omnijar.h"
 #include "nsThreadUtils.h"
-
-#include "MozSrcProtocolHandler.h"
 
 #define MOZSRC_SCHEME "moz-src"
 

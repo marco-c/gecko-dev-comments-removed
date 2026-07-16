@@ -3,11 +3,11 @@
 
 
 
-#include "HttpLog.h"
-
 #include "nsHttpRequestHead.h"
-#include "nsIHttpHeaderVisitor.h"
+
+#include "HttpLog.h"
 #include "mozilla/net/Dictionary.h"
+#include "nsIHttpHeaderVisitor.h"
 
 
 

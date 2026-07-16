@@ -3,11 +3,11 @@
 
 
 
-#include "HttpLog.h"
-
-#include "nsHttpHandler.h"
-#include "nsHttpConnectionMgr.h"
 #include "HttpInfo.h"
+
+#include "HttpLog.h"
+#include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
 
 void mozilla::net::HttpInfo::GetHttpConnectionData(
     nsTArray<HttpRetParams>* args) {

@@ -3,6 +3,7 @@
 
 
 #include "mozilla/net/InterceptionInfo.h"
+
 #include "nsContentUtils.h"
 
 namespace mozilla::net {

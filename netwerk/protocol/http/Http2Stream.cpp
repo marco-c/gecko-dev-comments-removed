@@ -3,18 +3,18 @@
 
 
 
-#include "HttpLog.h"
-
 #include "Http2Stream.h"
+
+#include "Http2Session.h"
+#include "HttpLog.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttp.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpRequestHead.h"
-#include "nsISocketTransport.h"
-#include "Http2Session.h"
-#include "nsIRequestContext.h"
 #include "nsHttpTransaction.h"
+#include "nsIRequestContext.h"
+#include "nsISocketTransport.h"
 #include "nsSocketTransportService2.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 
 namespace mozilla::net {
 

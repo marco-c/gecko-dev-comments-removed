@@ -2,21 +2,22 @@
 
 
 
-#include "WebSocketLog.h"
 #include "WebSocketChannelParent.h"
-#include "nsIAuthPromptProvider.h"
-#include "nsIPrincipal.h"
-#include "nsICookieJarSettings.h"
+
+#include "IPCTransportProvider.h"
+#include "SerializedLoadContext.h"
+#include "WebSocketLog.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "SerializedLoadContext.h"
+#include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/WebSocketChannel.h"
 #include "nsComponentManagerUtils.h"
-#include "IPCTransportProvider.h"
-#include "mozilla/net/ChannelEventQueue.h"
+#include "nsIAuthPromptProvider.h"
+#include "nsICookieJarSettings.h"
+#include "nsIPrincipal.h"
 
 using namespace mozilla::ipc;
 

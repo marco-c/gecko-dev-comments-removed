@@ -3,18 +3,18 @@
 
 
 
-#include "HttpLog.h"
+#include "nsHttpActivityDistributor.h"
 
+#include "HttpLog.h"
+#include "NullHttpChannel.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
-#include "nsHttpActivityDistributor.h"
-#include "nsHttpHandler.h"
 #include "nsCOMPtr.h"
+#include "nsHttpHandler.h"
 #include "nsIOService.h"
 #include "nsNetUtil.h"
 #include "nsQueryObject.h"
 #include "nsThreadUtils.h"
-#include "NullHttpChannel.h"
 
 namespace mozilla {
 namespace net {

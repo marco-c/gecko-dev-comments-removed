@@ -3,8 +3,9 @@
 
 
 #include "nsWifiAccessPoint.h"
-#include "nsString.h"
+
 #include "mozilla/Logging.h"
+#include "nsString.h"
 
 extern mozilla::LazyLogModule gWifiMonitorLog;
 #define LOG(args) MOZ_LOG(gWifiMonitorLog, mozilla::LogLevel::Debug, args)

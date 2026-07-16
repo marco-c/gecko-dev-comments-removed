@@ -2,32 +2,32 @@
 
 
 
-#include "ipc/IPCMessageUtils.h"
-
 #include <algorithm>
+
+#include "ipc/IPCMessageUtils.h"
 
 #if defined(XP_UNIX)
 #  include <unistd.h>
 #elif defined(XP_WIN)
 #  include <windows.h>
+
 #  include "nsILocalFileWin.h"
 #else
 
 #endif
 
-#include "private/pprio.h"
-
-#include "nsFileStreams.h"
-#include "nsIFile.h"
-#include "nsReadLine.h"
-#include "nsIClassInfoImpl.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/ipc/RandomAccessStreamParams.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/RandomAccessStreamParams.h"
+#include "nsFileStreams.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIFile.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsReadLine.h"
 #include "nsXULAppAPI.h"
+#include "private/pprio.h"
 
 using FileHandleType = mozilla::ipc::FileDescriptor::PlatformHandleType;
 

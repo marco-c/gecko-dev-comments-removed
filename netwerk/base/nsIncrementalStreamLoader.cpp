@@ -3,12 +3,13 @@
 
 
 #include "nsIncrementalStreamLoader.h"
-#include "nsIInputStream.h"
-#include "nsIChannel.h"
-#include "nsError.h"
-#include "mozilla/ProfilerLabels.h"
 
 #include <limits>
+
+#include "mozilla/ProfilerLabels.h"
+#include "nsError.h"
+#include "nsIChannel.h"
+#include "nsIInputStream.h"
 
 nsIncrementalStreamLoader::nsIncrementalStreamLoader() = default;
 

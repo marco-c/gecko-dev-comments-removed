@@ -3,6 +3,7 @@
 
 
 #include "UrlClassifierFeatureBase.h"
+
 #include "Classifier.h"
 #include "mozilla/Preferences.h"
 #include "nsIUrlClassifierExceptionList.h"

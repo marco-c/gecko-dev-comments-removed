@@ -3,8 +3,8 @@
 
 
 #include "HttpTrafficAnalyzer.h"
-#include "HttpLog.h"
 
+#include "HttpLog.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsSocketTransportService2.h"

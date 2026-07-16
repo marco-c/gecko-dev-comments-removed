@@ -3,9 +3,10 @@
 
 
 #include "nsRedirectHistoryEntry.h"
+
 #include "nsCOMPtr.h"
-#include "nsIURI.h"
 #include "nsIPrincipal.h"
+#include "nsIURI.h"
 
 namespace mozilla {
 namespace net {

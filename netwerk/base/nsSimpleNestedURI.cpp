@@ -2,16 +2,15 @@
 
 
 
-#include "base/basictypes.h"
-
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
-#include "nsIClassInfoImpl.h"
 #include "nsSimpleNestedURI.h"
+
+#include "base/basictypes.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
-
-#include "mozilla/ipc/URIUtils.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

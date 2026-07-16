@@ -3,6 +3,7 @@
 
 
 #include "mozilla/net/BackgroundDataBridgeParent.h"
+
 #include "mozilla/net/SocketProcessChild.h"
 
 namespace mozilla {

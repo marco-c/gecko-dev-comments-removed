@@ -3,9 +3,9 @@
 
 
 
-#include "HttpLog.h"
-
 #include "AltServiceChild.h"
+
+#include "HttpLog.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/net/SocketProcessChild.h"

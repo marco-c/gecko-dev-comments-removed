@@ -3,6 +3,7 @@
 
 
 #include "UrlClassifierFeaturePhishingProtection.h"
+
 #include "mozilla/StaticPrefs_browser.h"
 #include "nsCOMPtr.h"
 

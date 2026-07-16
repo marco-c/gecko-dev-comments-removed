@@ -2,11 +2,11 @@
 
 
 
-#include "nsString.h"
-#include "nsTArray.h"
+#include "CapsuleEncoder.h"
 
 #include "Capsule.h"
-#include "CapsuleEncoder.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::net {
 

@@ -6,20 +6,20 @@
 
 
 
-#include "mozilla/Components.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/MemoryReporting.h"
+#include "nsEffectiveTLDService.h"
 
 #include "MainThreadUtils.h"
-#include "nsContentUtils.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/net/DNS.h"
 #include "nsCRT.h"
-#include "nsEffectiveTLDService.h"
+#include "nsContentUtils.h"
 #include "nsIFile.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/net/DNS.h"
 
 namespace etld_dafsa {
 

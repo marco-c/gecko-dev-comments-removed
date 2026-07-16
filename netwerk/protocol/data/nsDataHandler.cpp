@@ -2,18 +2,19 @@
 
 
 
-#include "nsDataChannel.h"
 #include "nsDataHandler.h"
-#include "nsNetCID.h"
+
+#include "DefaultURI.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Try.h"
+#include "mozilla/dom/MimeType.h"
+#include "nsDataChannel.h"
 #include "nsError.h"
 #include "nsIOService.h"
+#include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsSimpleURI.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/dom/MimeType.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Try.h"
-#include "DefaultURI.h"
 
 using namespace mozilla;
 

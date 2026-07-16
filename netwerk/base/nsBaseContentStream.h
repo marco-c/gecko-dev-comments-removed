@@ -5,9 +5,9 @@
 #ifndef nsBaseContentStream_h_
 #define nsBaseContentStream_h_
 
+#include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIEventTarget.h"
-#include "nsCOMPtr.h"
 
 
 

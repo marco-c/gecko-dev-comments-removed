@@ -2,17 +2,19 @@
 
 
 
+#include "CacheFileUtils.h"
+
+#include <algorithm>
+
 #include "CacheIndex.h"
 #include "CacheLog.h"
-#include "CacheFileUtils.h"
 #include "CacheObserver.h"
 #include "LoadContextInfo.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/Tokenizer.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include <algorithm>
 
 namespace mozilla::net::CacheFileUtils {
 
@@ -353,10 +355,8 @@ ValidityPair& ValidityMap::operator[](uint32_t aIdx) {
 
 StaticMutex DetailedCacheHitTelemetry::sLock;
 uint32_t DetailedCacheHitTelemetry::sRecordCnt = 0;
-MOZ_RUNINIT DetailedCacheHitTelemetry::HitRate
+constinit DetailedCacheHitTelemetry::HitRate
     DetailedCacheHitTelemetry::sHRStats[kNumOfRanges];
-
-DetailedCacheHitTelemetry::HitRate::HitRate() { Reset(); }
 
 void DetailedCacheHitTelemetry::HitRate::AddRecord(ERecType aType) {
   if (aType == HIT) {
@@ -460,162 +460,6 @@ void DetailedCacheHitTelemetry::AddRecord(ERecType aType,
       sHRStats[i].Reset();
     }
   }
-}
-
-StaticMutex CachePerfStats::sLock;
-MOZ_RUNINIT CachePerfStats::PerfData
-    CachePerfStats::sData[CachePerfStats::LAST];
-uint32_t CachePerfStats::sCacheSlowCnt = 0;
-uint32_t CachePerfStats::sCacheNotSlowCnt = 0;
-
-CachePerfStats::MMA::MMA(uint32_t aTotalWeight, bool aFilter)
-    : mSum(0), mSumSq(0), mCnt(0), mWeight(aTotalWeight), mFilter(aFilter) {}
-
-void CachePerfStats::MMA::AddValue(uint32_t aValue) {
-  if (mFilter) {
-    
-    uint32_t avg = GetAverage();
-    uint32_t stddev = GetStdDev();
-    uint32_t maxdiff = avg + (3 * stddev);
-    if (avg && aValue > avg + maxdiff) {
-      return;
-    }
-  }
-
-  if (mCnt < mWeight) {
-    
-    CheckedInt<uint64_t> newSumSq = CheckedInt<uint64_t>(aValue) * aValue;
-    newSumSq += mSumSq;
-    if (!newSumSq.isValid()) {
-      return;  
-    }
-    mSumSq = newSumSq.value();
-    mSum += aValue;
-    ++mCnt;
-  } else {
-    CheckedInt<uint64_t> newSumSq = mSumSq - mSumSq / mCnt;
-    newSumSq += static_cast<uint64_t>(aValue) * aValue;
-    if (!newSumSq.isValid()) {
-      return;  
-    }
-    mSumSq = newSumSq.value();
-
-    
-    
-    mSum -= GetAverage();
-    mSum += aValue;
-  }
-}
-
-uint32_t CachePerfStats::MMA::GetAverage() {
-  if (mCnt == 0) {
-    return 0;
-  }
-
-  return mSum / mCnt;
-}
-
-uint32_t CachePerfStats::MMA::GetStdDev() {
-  if (mCnt == 0) {
-    return 0;
-  }
-
-  uint32_t avg = GetAverage();
-  uint64_t avgSq = static_cast<uint64_t>(avg) * avg;
-  uint64_t variance = mSumSq / mCnt;
-  if (variance < avgSq) {
-    
-    
-    
-    variance = avgSq;
-    mSumSq = variance * mCnt;
-  }
-
-  variance -= avgSq;
-  return sqrt(static_cast<double>(variance));
-}
-
-CachePerfStats::PerfData::PerfData()
-    : mFilteredAvg(50, true), mShortAvg(3, false) {}
-
-void CachePerfStats::PerfData::AddValue(uint32_t aValue, bool aShortOnly) {
-  if (!aShortOnly) {
-    mFilteredAvg.AddValue(aValue);
-  }
-  mShortAvg.AddValue(aValue);
-}
-
-uint32_t CachePerfStats::PerfData::GetAverage(bool aFiltered) {
-  return aFiltered ? mFilteredAvg.GetAverage() : mShortAvg.GetAverage();
-}
-
-uint32_t CachePerfStats::PerfData::GetStdDev(bool aFiltered) {
-  return aFiltered ? mFilteredAvg.GetStdDev() : mShortAvg.GetStdDev();
-}
-
-
-void CachePerfStats::AddValue(EDataType aType, uint32_t aValue,
-                              bool aShortOnly) {
-  StaticMutexAutoLock lock(sLock);
-  sData[aType].AddValue(aValue, aShortOnly);
-}
-
-
-uint32_t CachePerfStats::GetAverage(EDataType aType, bool aFiltered) {
-  StaticMutexAutoLock lock(sLock);
-  return sData[aType].GetAverage(aFiltered);
-}
-
-
-uint32_t CachePerfStats::GetStdDev(EDataType aType, bool aFiltered) {
-  StaticMutexAutoLock lock(sLock);
-  return sData[aType].GetStdDev(aFiltered);
-}
-
-
-bool CachePerfStats::IsCacheSlow() {
-  StaticMutexAutoLock lock(sLock);
-
-  
-  
-  
-  for (uint32_t i = 0; i < ENTRY_OPEN; ++i) {
-    if (i == IO_WRITE) {
-      
-      
-      
-      
-      continue;
-    }
-
-    uint32_t avgLong = sData[i].GetAverage(true);
-    if (avgLong == 0) {
-      
-      continue;
-    }
-    uint32_t avgShort = sData[i].GetAverage(false);
-    uint32_t stddevLong = sData[i].GetStdDev(true);
-    uint32_t maxdiff = avgLong + (3 * stddevLong);
-
-    if (avgShort > avgLong + maxdiff) {
-      LOG(
-          ("CachePerfStats::IsCacheSlow() - result is slow based on perf "
-           "type %u [avgShort=%u, avgLong=%u, stddevLong=%u]",
-           i, avgShort, avgLong, stddevLong));
-      ++sCacheSlowCnt;
-      return true;
-    }
-  }
-
-  ++sCacheNotSlowCnt;
-  return false;
-}
-
-
-void CachePerfStats::GetSlowStats(uint32_t* aSlow, uint32_t* aNotSlow) {
-  StaticMutexAutoLock lock(sLock);
-  *aSlow = sCacheSlowCnt;
-  *aNotSlow = sCacheNotSlowCnt;
 }
 
 void FreeBuffer(void* aBuf) {

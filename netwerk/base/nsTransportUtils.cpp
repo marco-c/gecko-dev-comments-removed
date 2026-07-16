@@ -2,13 +2,14 @@
 
 
 
+#include "nsTransportUtils.h"
+
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
 #include "nsITransport.h"
 #include "nsProxyRelease.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
-#include "nsTransportUtils.h"
 
 using namespace mozilla;
 

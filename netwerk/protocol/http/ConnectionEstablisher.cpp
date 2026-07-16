@@ -3,17 +3,17 @@
 
 
 
-#include "HttpLog.h"
-
 #include "ConnectionEstablisher.h"
+
 #include "HappyEyeballsConnectionAttempt.h"
+#include "HttpConnectionUDP.h"
+#include "HttpLog.h"
 #include "mozilla/Components.h"
-#include "nsSocketTransportService2.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
-#include "nsIDNSRecord.h"
 #include "nsHttpTransaction.h"
-#include "HttpConnectionUDP.h"
+#include "nsIDNSRecord.h"
+#include "nsSocketTransportService2.h"
 
 
 #undef LOG

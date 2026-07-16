@@ -2,9 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "LoadContextInfo.h"
+#include "gtest/gtest.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/TimeStamp.h"

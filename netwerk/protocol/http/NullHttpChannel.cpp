@@ -3,8 +3,9 @@
 
 
 #include "NullHttpChannel.h"
-#include "nsContentUtils.h"
+
 #include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIStreamListener.h"
 

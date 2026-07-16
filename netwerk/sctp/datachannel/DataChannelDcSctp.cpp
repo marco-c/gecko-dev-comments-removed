@@ -3,9 +3,10 @@
 
 
 #include "DataChannelDcSctp.h"
+
+#include "DataChannelLog.h"
 #include "mozilla/Components.h"
 #include "mozilla/RandomNum.h"
-#include "DataChannelLog.h"
 #include "transport/runnable_utils.h"
 
 namespace mozilla {

@@ -2,19 +2,21 @@
 
 
 
-#include <algorithm>
+#include "CacheEntry.h"
+
 #include <math.h>
 
-#include "CacheEntry.h"
+#include <algorithm>
 
 #include "CacheFileUtils.h"
 #include "CacheIndex.h"
 #include "CacheLog.h"
 #include "CacheObserver.h"
 #include "CacheStorageService.h"
-#include "mozilla/net/NoVarySearchUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 #include "mozilla/psm/TransportSecurityInfo.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIAsyncOutputStream.h"
@@ -27,8 +29,6 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
-#include "mozilla/net/NoVarySearchUtils.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"

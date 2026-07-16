@@ -6,8 +6,8 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
-#include <algorithm>
-#include <vector>
+#include "nsNotifyAddrListener.h"
+
 
 #include <windef.h>
 #include <winbase.h>
@@ -23,27 +23,29 @@
 #include <netioapi.h>
 #include <netlistmgr.h>
 #include <iprtrmib.h>
-#include "mozilla/Logging.h"
-#include "nsComponentManagerUtils.h"
-#include "nsThreadUtils.h"
-#include "nsIObserverService.h"
-#include "nsServiceManagerUtils.h"
-#include "nsNetAddr.h"
-#include "nsNotifyAddrListener.h"
-#include "nsString.h"
-#include "nsPrintfCString.h"
-#include "mozilla/Services.h"
-#include "nsCRT.h"
-#include "nsThreadPool.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/SHA1.h"
+
+
+#include <algorithm>
+#include <vector>
+
+#include "../LinkServiceCommon.h"
 #include "mozilla/Base64.h"
+#include "mozilla/Logging.h"
+#include "mozilla/SHA1.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/widget/WinRegistry.h"
-#include "../LinkServiceCommon.h"
-#include <iptypes.h>
-#include <iphlpapi.h>
+#include "nsCRT.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIObserverService.h"
+#include "nsNetAddr.h"
+#include "nsPrintfCString.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nsThreadPool.h"
+#include "nsThreadUtils.h"
 
 #if defined(__MINGW32__) || defined(__MINGW64__)
 BOOLEAN IN6_IS_ADDR_LOOPBACK(const struct in6_addr* a) {

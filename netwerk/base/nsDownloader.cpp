@@ -3,12 +3,13 @@
 
 
 #include "nsDownloader.h"
+
+#include "nsCRTGlue.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
 #include "nsNetUtil.h"
-#include "nsCRTGlue.h"
 
 nsDownloader::~nsDownloader() {
   if (mLocation && mLocationIsTemp) {

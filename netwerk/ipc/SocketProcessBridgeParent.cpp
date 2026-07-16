@@ -3,14 +3,15 @@
 
 
 #include "SocketProcessBridgeParent.h"
+
 #include "SocketProcessLogging.h"
 
 #ifdef MOZ_WEBRTC
 #  include "mozilla/dom/MediaTransportParent.h"
 #endif
+#include "SocketProcessChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "SocketProcessChild.h"
 #include "mozilla/net/BackgroundDataBridgeParent.h"
 #include "nsThreadUtils.h"
 

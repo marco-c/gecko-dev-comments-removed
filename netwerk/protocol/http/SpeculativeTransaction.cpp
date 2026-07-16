@@ -3,21 +3,22 @@
 
 
 
-#include "HttpLog.h"
-
 #include "SpeculativeTransaction.h"
+
 #include "HTTPSRecordResolver.h"
-#include "nsICachingChannel.h"
+#include "HttpLog.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
+#include "nsICachingChannel.h"
 
 namespace mozilla {
 namespace net {
 
 SpeculativeTransaction::SpeculativeTransaction(
     nsHttpConnectionInfo* aConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, std::function<void(nsresult)>&& aCallback)
-    : NullHttpTransaction(aConnInfo, aCallbacks, aCaps),
+    uint32_t aCaps, std::function<void(nsresult)>&& aCallback,
+    bool reportActivity)
+    : NullHttpTransaction(aConnInfo, aCallbacks, aCaps, reportActivity),
       mCloseCallback(std::move(aCallback)) {}
 
 SpeculativeTransaction::~SpeculativeTransaction() = default;

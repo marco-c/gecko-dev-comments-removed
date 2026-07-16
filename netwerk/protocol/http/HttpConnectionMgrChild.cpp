@@ -3,12 +3,12 @@
 
 
 
-#include "HttpLog.h"
-
 #include "HttpConnectionMgrChild.h"
-#include "HttpTransactionChild.h"
+
 #include "AltSvcTransactionChild.h"
 #include "EventTokenBucket.h"
+#include "HttpLog.h"
+#include "HttpTransactionChild.h"
 #include "mozilla/net/WebSocketConnectionChild.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpConnectionMgr.h"

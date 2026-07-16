@@ -2,22 +2,24 @@
 
 
 
-#include "nsIFile.h"
 #include "nsFileProtocolHandler.h"
-#include "nsFileChannel.h"
-#include "nsStandardURL.h"
-#include "nsURLHelper.h"
-#include "nsIURIMutator.h"
-
-#include "nsNetUtil.h"
 
 #include "mozilla/net/NeckoCommon.h"
+#include "nsFileChannel.h"
+#include "nsIFile.h"
+#include "nsIURIMutator.h"
+#include "nsNetUtil.h"
+#include "nsStandardURL.h"
+#include "nsURLHelper.h"
 
 
 
 #ifdef XP_WIN
+
 #  include <shlobj.h>
 #  include <intshcut.h>
+
+
 #  include "nsIFileURL.h"
 #  ifdef CompareString
 #    undef CompareString

@@ -3,21 +3,22 @@
 
 
 
-#include "HttpLog.h"
-#include "Http3Session.h"
 #include "Http3Stream.h"
+
+#include <stdio.h>
+
+#include "Http3Session.h"
+#include "HttpLog.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "nsHttpHandler.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpTransaction.h"
 #include "nsIClassOfService.h"
+#include "nsIOService.h"
 #include "nsISocketTransport.h"
 #include "nsISupportsPriority.h"
 #include "nsSocketTransportService2.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "nsIOService.h"
-#include "nsHttpHandler.h"
-
-#include <stdio.h>
 
 namespace mozilla {
 namespace net {

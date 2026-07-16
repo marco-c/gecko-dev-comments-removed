@@ -3,13 +3,12 @@
 
 
 
-#include "HttpLog.h"
-
 #include "HttpBackgroundChannelParent.h"
 
 #include "HttpChannelParent.h"
-#include "mozilla/ipc/BackgroundParent.h"
+#include "HttpLog.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/net/BackgroundChannelRegistrar.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "nsNetCID.h"

@@ -3,9 +3,9 @@
 
 
 
-#include "HttpLog.h"
-
 #include "TLSTransportLayer.h"
+
+#include "HttpLog.h"
 #include "nsISocketProvider.h"
 #include "nsITLSSocketControl.h"
 #include "nsQueryObject.h"

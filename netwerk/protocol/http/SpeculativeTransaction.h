@@ -5,8 +5,8 @@
 #ifndef SpeculativeTransaction_h_
 #define SpeculativeTransaction_h_
 
-#include "mozilla/Maybe.h"
 #include "NullHttpTransaction.h"
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
 namespace net {
@@ -17,7 +17,8 @@ class SpeculativeTransaction : public NullHttpTransaction {
  public:
   SpeculativeTransaction(nsHttpConnectionInfo* aConnInfo,
                          nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
-                         std::function<void(nsresult)>&& aCallback = nullptr);
+                         std::function<void(nsresult)>&& aCallback = nullptr,
+                         bool reportActivity = true);
 
   already_AddRefed<SpeculativeTransaction> CreateWithNewConnInfo(
       nsHttpConnectionInfo* aConnInfo);

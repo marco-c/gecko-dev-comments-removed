@@ -2,18 +2,18 @@
 
 
 
+#include <netinet/in.h>
+#include <resolv.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "GetAddrInfo.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/net/DNSPacket.h"
-#include "nsIDNSService.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/ThreadLocal.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <resolv.h>
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/net/DNSPacket.h"
+#include "nsIDNSService.h"
 
 namespace mozilla::net {
 

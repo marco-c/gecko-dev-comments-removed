@@ -3,12 +3,14 @@
 
 
 
-#include "mozilla/Assertions.h"
 #include "ShutdownLayer.h"
+
+#include <winsock2.h>
+
+#include "mozilla/Assertions.h"
 #include "prerror.h"
 #include "private/pprio.h"
 #include "prmem.h"
-#include <winsock2.h>
 
 static PRDescIdentity sWinSockShutdownLayerIdentity;
 static PRIOMethods sWinSockShutdownLayerMethods;

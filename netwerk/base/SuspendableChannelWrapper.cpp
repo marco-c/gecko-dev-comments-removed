@@ -3,6 +3,7 @@
 
 
 #include "SuspendableChannelWrapper.h"
+
 #include "nsIStreamListener.h"
 
 namespace mozilla {

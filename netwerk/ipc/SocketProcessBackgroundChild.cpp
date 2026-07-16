@@ -3,8 +3,8 @@
 
 
 #include "SocketProcessBackgroundChild.h"
-#include "SocketProcessLogging.h"
 
+#include "SocketProcessLogging.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsThreadUtils.h"
 

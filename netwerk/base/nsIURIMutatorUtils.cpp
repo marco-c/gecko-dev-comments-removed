@@ -2,9 +2,9 @@
 
 
 
-#include "nsIURIMutator.h"
-#include "nsIURI.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIURI.h"
+#include "nsIURIMutator.h"
 
 static nsresult GetURIMutator(nsIURI* aURI, nsIURIMutator** aMutator) {
   if (NS_WARN_IF(!aURI)) {

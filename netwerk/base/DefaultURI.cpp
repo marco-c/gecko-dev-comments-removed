@@ -3,14 +3,14 @@
 
 
 #include "DefaultURI.h"
+
+#include "mozilla/ipc/URIParams.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsReadableUtils.h"
 #include "nsURLHelper.h"
 #include "urlpattern_glue/URLPatternGlue.h"
-
-#include "mozilla/ipc/URIParams.h"
 
 namespace mozilla {
 namespace net {

@@ -5,28 +5,27 @@
 #ifndef nsIOService_h_
 #define nsIOService_h_
 
-#include "nsStringFwd.h"
-#include "nsIIOService.h"
-#include "nsTArray.h"
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
-#include "nsIWeakReferenceUtils.h"
-#include "nsILoadInfo.h"
-#include "nsINetUtil.h"
-#include "nsIChannelEventSink.h"
-#include "nsCategoryCache.h"
-#include "nsISpeculativeConnect.h"
-#include "nsWeakReference.h"
+#include "SimpleURIUnknownSchemes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/net/ProtocolHandlerInfo.h"
-#include "prtime.h"
+#include "nsCOMPtr.h"
+#include "nsCategoryCache.h"
 #include "nsICaptivePortalService.h"
+#include "nsIChannelEventSink.h"
+#include "nsIIOService.h"
+#include "nsILoadInfo.h"
+#include "nsINetUtil.h"
+#include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsISpeculativeConnect.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsNetCID.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
-#include "nsNetCID.h"
-#include "SimpleURIUnknownSchemes.h"
+#include "prtime.h"
 
 
 
@@ -101,15 +100,6 @@ class nsIOService final : public nsIIOService,
   
   
   static already_AddRefed<nsIURI> CreateExposableURI(nsIURI*);
-
-  
-  void IncrementRequestNumber() { mTotalRequests++; }
-  uint32_t GetTotalRequestNumber() { return mTotalRequests; }
-  
-  void IncrementCacheWonRequestNumber() { mCacheWon++; }
-  uint32_t GetCacheWonRequestNumber() { return mCacheWon; }
-  void IncrementNetWonRequestNumber() { mNetWon++; }
-  uint32_t GetNetWonRequestNumber() { return mNetWon; }
 
   
   nsresult RecheckCaptivePortal();
@@ -253,9 +243,6 @@ class nsIOService final : public nsIIOService,
   nsTHashMap<nsCString, RuntimeProtocolHandler> mRuntimeProtocolHandlers
       MOZ_GUARDED_BY(mLock);
 
-  uint32_t mTotalRequests{0};
-  uint32_t mCacheWon{0};
-  uint32_t mNetWon{0};
   static uint32_t sSocketProcessCrashedCount;
 
   

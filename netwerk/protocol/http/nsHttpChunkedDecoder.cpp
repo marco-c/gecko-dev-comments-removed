@@ -3,12 +3,14 @@
 
 
 
-#include "HttpLog.h"
+#include "nsHttpChunkedDecoder.h"
 
 #include <errno.h>
-#include "nsHttpChunkedDecoder.h"
-#include <algorithm>
 #include <string.h>
+
+#include <algorithm>
+
+#include "HttpLog.h"
 
 namespace mozilla {
 namespace net {

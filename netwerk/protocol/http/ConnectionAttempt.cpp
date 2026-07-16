@@ -3,8 +3,9 @@
 
 
 #include "ConnectionAttempt.h"
-#include "nsHttpTransaction.h"
+
 #include "nsHttpConnectionInfo.h"
+#include "nsHttpTransaction.h"
 
 namespace mozilla::net {
 

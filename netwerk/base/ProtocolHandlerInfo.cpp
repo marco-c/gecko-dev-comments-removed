@@ -3,6 +3,7 @@
 
 
 #include "ProtocolHandlerInfo.h"
+
 #include "StaticComponents.h"
 #include "nsIProtocolHandler.h"
 

@@ -3,11 +3,10 @@
 
 
 
-#include "HttpLog.h"
-
 #include "ObliviousHttpChannel.h"
 
 #include "BinaryHttpRequest.h"
+#include "HttpLog.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsStringStream.h"
 

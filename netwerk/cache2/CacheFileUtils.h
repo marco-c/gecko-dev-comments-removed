@@ -5,13 +5,13 @@
 #ifndef CacheFileUtils_h_
 #define CacheFileUtils_h_
 
-#include "nsError.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsTArray.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsError.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsILoadContextInfo;
 
@@ -95,7 +95,7 @@ class DetailedCacheHitTelemetry {
  private:
   class HitRate {
    public:
-    HitRate();
+    HitRate() = default;
 
     void AddRecord(ERecType aType);
     uint32_t GetHitRateBucket() const;
@@ -138,76 +138,6 @@ class DetailedCacheHitTelemetry {
 
   
   static HitRate sHRStats[kNumOfRanges] MOZ_GUARDED_BY(sLock);
-};
-
-class CachePerfStats {
- public:
-  
-  
-  enum EDataType {
-    IO_OPEN = 0,
-    IO_READ = 1,
-    IO_WRITE = 2,
-    ENTRY_OPEN = 3,
-    LAST = 4
-  };
-
-  static void AddValue(EDataType aType, uint32_t aValue, bool aShortOnly);
-  static uint32_t GetAverage(EDataType aType, bool aFiltered);
-  static uint32_t GetStdDev(EDataType aType, bool aFiltered);
-  static bool IsCacheSlow();
-  static void GetSlowStats(uint32_t* aSlow, uint32_t* aNotSlow);
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  class MMA {
-   public:
-    MMA(uint32_t aTotalWeight, bool aFilter);
-
-    void AddValue(uint32_t aValue);
-    uint32_t GetAverage();
-    uint32_t GetStdDev();
-
-   private:
-    uint64_t mSum;
-    uint64_t mSumSq;
-    uint32_t mCnt;
-    uint32_t mWeight;
-    bool mFilter;
-  };
-
-  class PerfData {
-   public:
-    PerfData();
-
-    void AddValue(uint32_t aValue, bool aShortOnly);
-    uint32_t GetAverage(bool aFiltered);
-    uint32_t GetStdDev(bool aFiltered);
-
-   private:
-    
-    
-    MMA mFilteredAvg;
-
-    
-    MMA mShortAvg;
-  };
-
-  static StaticMutex sLock;
-
-  static PerfData sData[LAST] MOZ_GUARDED_BY(sLock);
-  static uint32_t sCacheSlowCnt MOZ_GUARDED_BY(sLock);
-  static uint32_t sCacheNotSlowCnt MOZ_GUARDED_BY(sLock);
 };
 
 void FreeBuffer(void* aBuf);

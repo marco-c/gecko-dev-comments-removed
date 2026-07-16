@@ -3,13 +3,14 @@
 
 
 #include "nsHostRecord.h"
+
 #include "TRRQuery.h"
 
 #include "DNSLogging.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkDnsMetrics.h"
 #include "TRRService.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkDnsMetrics.h"
 
 
 

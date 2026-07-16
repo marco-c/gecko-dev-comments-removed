@@ -3,9 +3,10 @@
 
 
 #include "NetworkDataCountLayer.h"
+
 #include "nsSocketTransportService2.h"
-#include "prmem.h"
 #include "prio.h"
+#include "prmem.h"
 
 namespace mozilla {
 namespace net {

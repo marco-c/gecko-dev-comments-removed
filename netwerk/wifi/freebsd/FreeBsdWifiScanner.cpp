@@ -8,11 +8,11 @@
 
 
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_media.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #ifdef __DragonFly__
 #  include <netproto/802_11/ieee80211_ioctl.h>
 #else
