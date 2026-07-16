@@ -14,7 +14,6 @@ type Inner<T> = OnceBox<T>;
 
 
 
-#[derive(Debug)]
 pub struct RacyLock<T: 'static> {
     inner: Inner<T>,
     #[cfg(no_std)]

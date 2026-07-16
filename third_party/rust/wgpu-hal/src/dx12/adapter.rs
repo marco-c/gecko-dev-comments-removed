@@ -207,7 +207,7 @@ impl super::Adapter {
             driver_info: String::new(),
             subgroup_min_size: features1.WaveLaneCountMin,
             subgroup_max_size: features1.WaveLaneCountMax,
-            transient_saves_memory: Some(false),
+            transient_saves_memory: false,
             limit_bucket: None,
         };
 
@@ -1013,14 +1013,9 @@ impl super::Adapter {
                         0
                     },
                     max_acceleration_structures_per_shader_stage,
-                    max_buffers_and_acceleration_structures_per_shader_stage: u32::MAX,
                     max_binding_array_acceleration_structure_elements_per_shader_stage:
                         max_acceleration_structures_per_shader_stage,
                     max_multiview_view_count,
-
-                    
-                    max_ray_dispatch_count: 0,
-                    max_ray_recursion_depth: 0,
                 }),
                 alignments: crate::Alignments {
                     buffer_copy_offset: wgt::BufferSize::new(
@@ -1040,10 +1035,6 @@ impl super::Adapter {
                     .unwrap(),
                     ray_tracing_scratch_buffer_alignment:
                         Direct3D12::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT,
-                    
-                    ray_tracing_pipeline_group_data_size: 0,
-                    ray_tracing_pipeline_group_data_alignment: 0,
-                    ray_tracing_pipeline_data_offset_alignment: 0,
                 },
                 downlevel,
                 cooperative_matrix_properties: Vec::new(),
@@ -1319,41 +1310,14 @@ impl crate::Adapter for super::Adapter {
         }
 
         Some(crate::SurfaceCapabilities {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            formats: [
+            formats: vec![
                 wgt::TextureFormat::Bgra8UnormSrgb,
                 wgt::TextureFormat::Bgra8Unorm,
                 wgt::TextureFormat::Rgba8UnormSrgb,
                 wgt::TextureFormat::Rgba8Unorm,
                 wgt::TextureFormat::Rgb10a2Unorm,
                 wgt::TextureFormat::Rgba16Float,
-            ]
-            .map(|format| wgt::SurfaceFormatCapabilities {
-                format,
-                color_spaces: match format {
-                    wgt::TextureFormat::Rgba16Float => {
-                        wgt::SurfaceColorSpaces::EXTENDED_SRGB_LINEAR
-                    }
-                    wgt::TextureFormat::Rgb10a2Unorm => {
-                        wgt::SurfaceColorSpaces::SRGB | wgt::SurfaceColorSpaces::BT2100_PQ
-                    }
-                    _ => wgt::SurfaceColorSpaces::SRGB,
-                },
-            })
-            .to_vec(),
+            ],
             
             maximum_frame_latency: 1..=16,
             current_extent,
@@ -1375,13 +1339,6 @@ impl crate::Adapter for super::Adapter {
                 ],
             },
         })
-    }
-
-    unsafe fn surface_display_hdr_info(
-        &self,
-        surface: &super::Surface,
-    ) -> Option<wgt::DisplayHdrInfo> {
-        surface.hdr_source.as_ref()?.display_hdr_info()
     }
 
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp {

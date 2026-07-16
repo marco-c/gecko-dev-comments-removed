@@ -8,10 +8,10 @@ use crate::{
     back::{
         self,
         msl::{
-            writer::{NameKeyExt, StatementContext, TypeContext, WrappedFunction},
-            BackendResult, Error, Writer, NAMESPACE,
+            writer::{StatementContext, TypeContext, WrappedFunction},
+            BackendResult, Error, Writer,
         },
-        Baked, INDENT,
+        Baked,
     },
     Handle,
 };
@@ -24,29 +24,8 @@ pub(super) fn metal_intersector_ty() -> String {
 }
 
 pub(super) const INTERSECTION_FUNCTION_NAME: &str = "ray_query_get_intersection";
-pub(crate) const RAY_QUERY_TRACKER_VARIABLE_PREFIX: &str = "naga_query_init_tracker_for_";
-pub(crate) const RAY_QUERY_T_MAX_TRACKER_VARIABLE_PREFIX: &str = "naga_query_tmax_tracker_for_";
 
 impl<W: Write> Writer<W> {
-    fn write_not_finite(&mut self, expr: &str) -> BackendResult {
-        self.write_contains_flags(&format!("as_type<uint>({expr})"), 0x7f800000)
-    }
-
-    
-    
-    
-    fn write_is_nan(&mut self, expr: &str) -> BackendResult {
-        write!(self.out, "(")?;
-        self.write_not_finite(expr)?;
-        write!(self.out, " && ((as_type<uint>({expr}) & 0x7fffff) != 0))")?;
-        Ok(())
-    }
-
-    fn write_contains_flags(&mut self, expr: &str, flags: u32) -> BackendResult {
-        write!(self.out, "(({expr} & {flags}) == {flags})")?;
-        Ok(())
-    }
-
     
     
     
@@ -56,7 +35,6 @@ impl<W: Write> Writer<W> {
         &mut self,
         module: &crate::Module,
         committed: bool,
-        options: &super::Options,
     ) -> BackendResult {
         let wrapped = WrappedFunction::RayQueryGetIntersection { committed };
         if !self.wrapped_functions.insert(wrapped) {
@@ -74,122 +52,90 @@ impl<W: Write> Writer<W> {
             access: crate::StorageAccess::empty(),
             first_time: false,
         };
-        let mut base_level = back::Level(1);
+        let level = back::Level(1);
         writeln!(
             self.out,
-            "{intersection} {INTERSECTION_FUNCTION_NAME}_{committed}({} intersector",
+            "{intersection} {INTERSECTION_FUNCTION_NAME}_{committed}({} intersector) {{",
             metal_intersector_ty()
         )?;
-        if options.ray_query_initialization_tracking {
-            writeln!(self.out, ", uint intersector_tracker")?;
-        }
-        writeln!(self.out, ") {{")?;
         
         writeln!(
             self.out,
-            "{base_level}{intersection} intersection = {intersection} {{}};"
+            "{level}{intersection} intersection = {intersection} {{}};"
         )?;
-
-        if options.ray_query_initialization_tracking {
-            write!(self.out, "{base_level}if (")?;
-            if committed {
-                self.write_contains_flags(
-                    "intersector_tracker",
-                    back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                )?;
-            } else {
-                self.write_contains_flags(
-                    "intersector_tracker",
-                    back::RayQueryPoint::PROCEED.bits(),
-                )?;
-                write!(self.out, " && !")?;
-                self.write_contains_flags(
-                    "intersector_tracker",
-                    back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                )?;
-            }
-            writeln!(self.out, ") {{")?;
-            base_level = base_level.next();
-        }
-
-        writeln!(self.out, "{base_level}{RT_NAMESPACE}::intersection_type ty = intersector.get_{ty}_intersection_type();")?;
+        writeln!(self.out, "{level}{RT_NAMESPACE}::intersection_type ty = intersector.get_{ty}_intersection_type();")?;
         
         writeln!(
             self.out,
-            "{base_level}if (ty == {RT_NAMESPACE}::intersection_type::triangle) {{"
+            "{level}if (ty == {RT_NAMESPACE}::intersection_type::triangle) {{"
         )?;
         writeln!(
             self.out,
-            "{base_level}{INDENT}intersection.kind = {};",
+            "{level}{level}intersection.kind = {};",
             crate::RayQueryIntersection::Triangle as u32
         )?;
         if !committed {
             writeln!(
                 self.out,
-                "{base_level}{INDENT}intersection.t = intersector.get_candidate_triangle_distance();"
+                "{level}{level}intersection.t = intersector.get_candidate_triangle_distance();"
             )?;
         }
-        writeln!(self.out, "{base_level}{INDENT}intersection.barycentrics = intersector.get_{ty}_triangle_barycentric_coord();")?;
+        writeln!(self.out, "{level}{level}intersection.barycentrics = intersector.get_{ty}_triangle_barycentric_coord();")?;
         writeln!(
             self.out,
-            "{base_level}{INDENT}intersection.front_face = intersector.is_{ty}_triangle_front_facing();"
+            "{level}{level}intersection.front_face = intersector.is_{ty}_triangle_front_facing();"
         )?;
         
         
         writeln!(
             self.out,
-            "{base_level}}} else if (ty == {RT_NAMESPACE}::intersection_type::bounding_box) {{"
+            "{level}}} else if (ty == {RT_NAMESPACE}::intersection_type::bounding_box) {{"
         )?;
         if committed {
             writeln!(
                 self.out,
-                "{base_level}{INDENT}intersection.kind = {};",
+                "{level}{level}intersection.kind = {};",
                 crate::RayQueryIntersection::Generated as u32
             )?;
         } else {
             writeln!(
                 self.out,
-                "{base_level}{INDENT}intersection.kind = {};",
+                "{level}{level}intersection.kind = {};",
                 crate::RayQueryIntersection::Aabb as u32
             )?;
         }
-        writeln!(self.out, "{base_level}}}")?;
+        writeln!(self.out, "{level}}}")?;
 
         
         writeln!(
             self.out,
-            "{base_level}if (ty != {RT_NAMESPACE}::intersection_type::none) {{"
+            "{level}if (ty != {RT_NAMESPACE}::intersection_type::none) {{"
         )?;
         if committed {
             writeln!(
                 self.out,
-                "{base_level}{INDENT}intersection.t = intersector.get_committed_distance();"
+                "{level}{level}intersection.t = intersector.get_committed_distance();"
             )?;
         }
-        writeln!(self.out, "{base_level}{INDENT}intersection.instance_custom_data = intersector.get_{ty}_user_instance_id();")?;
+        writeln!(self.out, "{level}{level}intersection.instance_custom_data = intersector.get_{ty}_user_instance_id();")?;
         writeln!(
             self.out,
-            "{base_level}{INDENT}intersection.instance_index = intersector.get_{ty}_instance_id();"
+            "{level}{level}intersection.instance_index = intersector.get_{ty}_instance_id();"
         )?;
         
         
         writeln!(
             self.out,
-            "{base_level}{INDENT}intersection.geometry_index = intersector.get_{ty}_geometry_id();"
+            "{level}{level}intersection.geometry_index = intersector.get_{ty}_geometry_id();"
         )?;
         writeln!(
             self.out,
-            "{base_level}{INDENT}intersection.primitive_index = intersector.get_{ty}_primitive_id();"
+            "{level}{level}intersection.primitive_index = intersector.get_{ty}_primitive_id();"
         )?;
-        writeln!(self.out, "{base_level}{INDENT}intersection.object_to_world = intersector.get_{ty}_object_to_world_transform();")?;
-        writeln!(self.out, "{base_level}{INDENT}intersection.world_to_object = intersector.get_{ty}_world_to_object_transform();")?;
-        writeln!(self.out, "{base_level}}}")?;
-
-        if options.ray_query_initialization_tracking {
-            writeln!(self.out, "{INDENT}}}")?;
-        }
-
-        writeln!(self.out, "{INDENT}return intersection;")?;
+        writeln!(self.out, "{level}{level}intersection.object_to_world = intersector.get_{ty}_object_to_world_transform();")?;
+        writeln!(self.out, "{level}{level}intersection.world_to_object = intersector.get_{ty}_world_to_object_transform();")?;
+        writeln!(self.out, "{level}}}")?;
+        writeln!(self.out, "{level}return intersection;")?;
         writeln!(self.out, "}}")?;
 
         Ok(())
@@ -205,33 +151,6 @@ impl<W: Write> Writer<W> {
         if context.expression.lang_version < (2, 4) {
             return Err(Error::UnsupportedRayTracing);
         }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let crate::Expression::LocalVariable(query_var) =
-            context.expression.function.expressions[query]
-        else {
-            unreachable!()
-        };
-
-        let tracker_expr_name = format!(
-            "{RAY_QUERY_TRACKER_VARIABLE_PREFIX}{}",
-            self.names[&crate::proc::NameKey::local(context.expression.origin, query_var)]
-        );
-
-        let tmax_tracker_expr_name = format!(
-            "{RAY_QUERY_T_MAX_TRACKER_VARIABLE_PREFIX}{}",
-            self.names[&crate::proc::NameKey::local(context.expression.origin, query_var)]
-        );
 
         
         match *fun {
@@ -274,37 +193,24 @@ impl<W: Write> Writer<W> {
                     
                     let f_opaque = back::RayFlag::CULL_OPAQUE.bits();
                     let f_no_opaque = back::RayFlag::CULL_NO_OPAQUE.bits();
-                    writeln!(self.out, "{inner_level}{RT_NAMESPACE}::opacity_cull_mode cull_mode = 
-{inner_level}{INDENT}(desc.flags & {f_opaque}) != 0 ? {RT_NAMESPACE}::opacity_cull_mode::opaque : (
-{inner_level}{INDENT}{INDENT}(desc.flags & {f_no_opaque}) != 0 ? {RT_NAMESPACE}::opacity_cull_mode::non_opaque : {RT_NAMESPACE}::opacity_cull_mode::none
-{inner_level}{INDENT});")?;
                     writeln!(
                         self.out,
-                        "{inner_level}params.set_opacity_cull_mode(cull_mode);"
+                        "{inner_level}params.set_opacity_cull_mode(
+{inner_level}    (desc.flags & {f_opaque}) != 0 ? {RT_NAMESPACE}::opacity_cull_mode::opaque : (
+{inner_level}        (desc.flags & {f_no_opaque}) != 0 ? {RT_NAMESPACE}::opacity_cull_mode::non_opaque : {RT_NAMESPACE}::opacity_cull_mode::none
+{inner_level}    )
+{inner_level});"
                     )?;
-
-                    if context.expression.ray_query_initialization_tracking {
-                        writeln!(self.out, "{inner_level}bool force_opacity = cull_mode == {RT_NAMESPACE}::opacity_cull_mode::none;")?;
-                    }
                 }
                 {
-                    let mut current_level = inner_level;
-                    if context.expression.ray_query_initialization_tracking {
-                        writeln!(self.out, "{inner_level}if (force_opacity) {{")?;
-                        current_level = current_level.next();
-                    }
                     
                     let f_opaque = back::RayFlag::OPAQUE.bits();
                     let f_no_opaque = back::RayFlag::NO_OPAQUE.bits();
-                    writeln!(self.out, "{current_level}params.force_opacity(
-{current_level}    (desc.flags & {f_opaque}) != 0 ? {RT_NAMESPACE}::forced_opacity::opaque : (
-{current_level}        (desc.flags & {f_no_opaque}) != 0 ? {RT_NAMESPACE}::forced_opacity::non_opaque : {RT_NAMESPACE}::forced_opacity::none
-{current_level}    )
-{current_level});")?;
-
-                    if context.expression.ray_query_initialization_tracking {
-                        writeln!(self.out, "{inner_level}}}")?;
-                    }
+                    writeln!(self.out, "{inner_level}params.force_opacity(
+{inner_level}    (desc.flags & {f_opaque}) != 0 ? {RT_NAMESPACE}::forced_opacity::opaque : (
+{inner_level}        (desc.flags & {f_no_opaque}) != 0 ? {RT_NAMESPACE}::forced_opacity::non_opaque : {RT_NAMESPACE}::forced_opacity::none
+{inner_level}    )
+{inner_level});")?;
                 }
                 {
                     let flag = back::RayFlag::TERMINATE_ON_FIRST_HIT.bits();
@@ -319,46 +225,7 @@ impl<W: Write> Writer<W> {
                     "{inner_level}{RT_NAMESPACE}::ray ray = {RT_NAMESPACE}::ray(desc.origin, desc.dir, desc.tmin, desc.tmax);"
                 )?;
 
-                let mut init_level = inner_level;
-
-                
-                
-                if context.expression.ray_query_initialization_tracking {
-                    write!(self.out, "{inner_level}bool invalid_nan_infs = ")?;
-                    
-                    for (idx, &field_access) in [
-                        "origin.x", "origin.y", "origin.z", "dir.x", "dir.y", "dir.z", "tmin",
-                    ]
-                    .iter()
-                    .enumerate()
-                    {
-                        if idx != 0 {
-                            write!(self.out, " || ")?;
-                        }
-
-                        self.write_not_finite(&format!("desc.{field_access}"))?;
-                    }
-
-                    write!(self.out, " || ")?;
-                    self.write_is_nan("desc.tmax")?;
-                    writeln!(self.out, ";")?;
-
-                    
-                    writeln!(self.out, "{inner_level}bool invalid_t = (desc.tmin > desc.tmax) || (desc.tmin < 0.0);")?;
-                    
-                    
-                    
-                    
-                    writeln!(self.out, "{inner_level}bool invalid_dir = {NAMESPACE}::all({NAMESPACE}::abs(desc.dir) == 0.0);")?;
-
-                    writeln!(
-                        self.out,
-                        "{inner_level}if (!(invalid_dir || invalid_t || invalid_nan_infs)) {{"
-                    )?;
-                    init_level = init_level.next();
-                }
-
-                write!(self.out, "{init_level}")?;
+                write!(self.out, "{inner_level}")?;
                 
                 
                 
@@ -366,165 +233,34 @@ impl<W: Write> Writer<W> {
                 write!(self.out, ".reset(ray,")?;
                 self.put_expression(acceleration_structure, &context.expression, true)?;
                 writeln!(self.out, ", desc.cull_mask, params);")?;
-                if context.expression.ray_query_initialization_tracking {
-                    
-                    
-                    
-                    writeln!(
-                        self.out,
-                        "{init_level}{tracker_expr_name} = {};",
-                        back::RayQueryPoint::INITIALIZED.bits()
-                    )?;
-                    writeln!(
-                        self.out,
-                        "{init_level}{tmax_tracker_expr_name} = desc.tmax;"
-                    )?;
-                    writeln!(self.out, "{inner_level}}}")?;
-                }
                 writeln!(self.out, "{level}}}")?;
             }
             crate::RayQueryFunction::Proceed { result } => {
-                let mut current_level = level;
-                write!(self.out, "{current_level}")?;
+                write!(self.out, "{level}")?;
                 let name = Baked(result).to_string();
                 self.start_baking_expression(result, &context.expression, &name)?;
-                self.named_expressions.insert(result, name.clone());
-
-                writeln!(self.out, "false;")?;
-
-                if context.expression.ray_query_initialization_tracking {
-                    write!(self.out, "{level}if (")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::INITIALIZED.bits(),
-                    )?;
-                    write!(self.out, " && !")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                    )?;
-                    write!(self.out, ")")?;
-                    writeln!(self.out, " {{")?;
-                    current_level = current_level.next();
-                }
-                write!(self.out, "{current_level}{name} = ")?;
+                self.named_expressions.insert(result, name);
                 self.put_expression(query, &context.expression, true)?;
                 writeln!(self.out, ".next();")?;
-                if context.expression.ray_query_initialization_tracking {
-                    writeln!(self.out, "{current_level}{tracker_expr_name} = {tracker_expr_name} | ({name} ? {}: {});", back::RayQueryPoint::PROCEED.bits(), (back::RayQueryPoint::PROCEED | back::RayQueryPoint::FINISHED_TRAVERSAL).bits())?;
-                    writeln!(self.out, "{level}}}")?;
-                }
             }
             crate::RayQueryFunction::GenerateIntersection { hit_t } => {
-                let mut current_level = level;
-                if context.expression.ray_query_initialization_tracking {
-                    write!(self.out, "{level}if (")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::PROCEED.bits(),
-                    )?;
-                    write!(self.out, " && !")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                    )?;
-                    write!(self.out, ")")?;
-                } else {
-                    
-                    write!(self.out, "{level}")?;
-                }
-                writeln!(self.out, "{{")?;
-                current_level = current_level.next();
-                write!(self.out, "{current_level}float t = ")?;
-                self.put_expression(hit_t, &context.expression, true)?;
-                writeln!(self.out, ";")?;
-                if context.expression.ray_query_initialization_tracking {
-                    write!(
-                        self.out,
-                        "{current_level}float current_max_t = {tmax_tracker_expr_name};
-{current_level}if ("
-                    )?;
-                    self.put_expression(query, &context.expression, true)?;
-                    write!(self.out, ".get_committed_intersection_type() != {RT_NAMESPACE}::intersection_type::none) {{
-{current_level}{INDENT}current_max_t = ")?;
-                    self.put_expression(query, &context.expression, true)?;
-                    write!(
-                        self.out,
-                        ".get_committed_distance();
-{current_level}}}
-{current_level}if ("
-                    )?;
-                    self.put_expression(query, &context.expression, true)?;
-                    write!(self.out, ".get_candidate_intersection_type() == {RT_NAMESPACE}::intersection_type::bounding_box && (")?;
-                    self.put_expression(query, &context.expression, true)?;
-                    write!(self.out, ".get_ray_min_distance()")?;
-                    writeln!(self.out, " <= t) && (t <= current_max_t)) {{")?;
-                    current_level = current_level.next();
-                }
-                write!(self.out, "{current_level}")?;
+                write!(self.out, "{level}")?;
                 self.put_expression(query, &context.expression, true)?;
-                writeln!(self.out, ".commit_bounding_box_intersection(t);")?;
-                if context.expression.ray_query_initialization_tracking {
-                    writeln!(self.out, "{level}{INDENT}}}")?;
-                }
-                writeln!(self.out, "{level}}}")?;
+                write!(self.out, ".commit_bounding_box_intersection(")?;
+                self.put_expression(hit_t, &context.expression, true)?;
+                writeln!(self.out, ");")?;
             }
             crate::RayQueryFunction::ConfirmIntersection => {
-                let mut current_level = level;
-                if context.expression.ray_query_initialization_tracking {
-                    write!(self.out, "{level}if (")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::PROCEED.bits(),
-                    )?;
-                    write!(self.out, " && !")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                    )?;
-                    writeln!(self.out, ") {{")?;
-                    current_level = current_level.next();
-                    write!(self.out, "{current_level}if (")?;
-                    self.put_expression(query, &context.expression, true)?;
-                    writeln!(self.out, ".get_candidate_intersection_type() == {RT_NAMESPACE}::intersection_type::triangle) {{")?;
-                }
                 write!(self.out, "{level}")?;
                 self.put_expression(query, &context.expression, true)?;
                 writeln!(self.out, ".commit_triangle_intersection();")?;
-                if context.expression.ray_query_initialization_tracking {
-                    writeln!(
-                        self.out,
-                        "{level}{INDENT}}}
-{level}}}"
-                    )?;
-                }
             }
             crate::RayQueryFunction::Terminate => {
-                let mut current_level = level;
-                if context.expression.ray_query_initialization_tracking {
-                    write!(self.out, "{level}if (")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::PROCEED.bits(),
-                    )?;
-                    write!(self.out, " && !")?;
-                    self.write_contains_flags(
-                        &tracker_expr_name,
-                        back::RayQueryPoint::FINISHED_TRAVERSAL.bits(),
-                    )?;
-                    writeln!(self.out, ") {{")?;
-                    current_level = current_level.next();
-                }
-                write!(self.out, "{current_level}")?;
+                write!(self.out, "{level}")?;
                 self.put_expression(query, &context.expression, true)?;
                 
                 
                 writeln!(self.out, ".abort();")?;
-                
-                
-                if context.expression.ray_query_initialization_tracking {
-                    writeln!(self.out, "{level}}}")?;
-                }
             }
         }
 

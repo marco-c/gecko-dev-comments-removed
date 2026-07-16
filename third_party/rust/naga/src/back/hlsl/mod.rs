@@ -629,7 +629,7 @@ impl Options {
 }
 
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct ReflectionInfo {
     
     
@@ -720,7 +720,6 @@ impl Wrapped {
 
 
 
-#[derive(Debug)]
 pub struct FragmentEntryPoint<'a> {
     module: &'a crate::Module,
     func: &'a crate::Function,
@@ -742,7 +741,6 @@ impl<'a> FragmentEntryPoint<'a> {
     }
 }
 
-#[expect(missing_debug_implementations, reason = "would be way too verbose?")]
 pub struct Writer<'a, W> {
     out: W,
     names: crate::FastHashMap<proc::NameKey, String>,

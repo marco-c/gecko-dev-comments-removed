@@ -21,7 +21,6 @@ pub static VALIDATION_CANARY: ValidationCanary = ValidationCanary {
 };
 
 
-#[derive(Debug)]
 pub struct ValidationCanary {
     inner: Mutex<Vec<String>>,
 }

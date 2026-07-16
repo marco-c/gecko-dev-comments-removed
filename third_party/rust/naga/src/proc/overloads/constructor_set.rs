@@ -125,7 +125,7 @@ impl ConstructorSet {
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum ConstructorSize {
     
     

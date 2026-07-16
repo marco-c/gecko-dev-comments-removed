@@ -86,7 +86,6 @@ impl crate::Api for Api {
     type ShaderModule = ShaderModule;
     type RenderPipeline = RenderPipeline;
     type ComputePipeline = ComputePipeline;
-    type RayTracingPipeline = RayTracingPipeline;
 }
 
 crate::impl_dyn_resource!(
@@ -106,7 +105,6 @@ crate::impl_dyn_resource!(
     QuerySet,
     Queue,
     RenderPipeline,
-    RayTracingPipeline,
     Sampler,
     ShaderModule,
     Surface,
@@ -128,7 +126,6 @@ struct DebugUtils {
     callback_data: Box<DebugUtilsMessengerUserData>,
 }
 
-#[derive(Debug)]
 pub struct DebugUtilsCreateInfo {
     severity: vk::DebugUtilsMessageSeverityFlagsEXT,
     message_type: vk::DebugUtilsMessageTypeFlagsEXT,
@@ -183,38 +180,10 @@ pub struct InstanceShared {
     drop_guard: Option<crate::DropGuard>,
 }
 
-impl fmt::Debug for InstanceShared {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self {
-            raw: _,
-            extensions,
-            flags,
-            memory_budget_thresholds,
-            debug_utils: _,
-            get_physical_device_properties: _,
-            entry: _,
-            has_nv_optimus,
-            android_sdk_version,
-            instance_api_version,
-            drop_guard: _,
-        } = self;
-        f.debug_struct("InstanceShared")
-            .field("extensions", extensions)
-            .field("flags", flags)
-            .field("memory_budget_thresholds", memory_budget_thresholds)
-            .field("has_nv_optimus", has_nv_optimus)
-            .field("android_sdk_version", android_sdk_version)
-            .field("instance_api_version", instance_api_version)
-            .finish_non_exhaustive()
-    }
-}
-
-#[derive(Debug)]
 pub struct Instance {
     shared: Arc<InstanceShared>,
 }
 
-#[expect(missing_debug_implementations, reason = "TODO?")]
 pub struct Surface {
     swapchain: RwLock<Option<Box<dyn swapchain::Swapchain>>>,
     inner: Box<dyn swapchain::Surface>,
@@ -298,7 +267,6 @@ impl Borrow<dyn crate::DynTexture> for SurfaceTexture {
     }
 }
 
-#[derive(Debug)]
 pub struct Adapter {
     raw: vk::PhysicalDevice,
     instance: Arc<InstanceShared>,
@@ -324,7 +292,6 @@ struct DeviceExtensionFunctions {
     draw_indirect_count: Option<khr::draw_indirect_count::Device>,
     timeline_semaphore: Option<ExtensionFn<khr::timeline_semaphore::Device>>,
     ray_tracing: Option<RayTracingDeviceExtensionFunctions>,
-    ray_tracing_pipelines: Option<khr::ray_tracing_pipeline::Device>,
     mesh_shading: Option<ext::mesh_shader::Device>,
     #[cfg_attr(not(unix), allow(dead_code))]
     external_memory_fd: Option<khr::external_memory_fd::Device>,
@@ -423,11 +390,6 @@ struct PrivateCapabilities {
     
     
     scratch_buffer_alignment: u32,
-
-    
-    
-    
-    ray_tracing_pipeline_group_data_size: u32,
 }
 
 bitflags::bitflags!(
@@ -551,10 +513,6 @@ impl Drop for DeviceShared {
     }
 }
 
-#[expect(
-    missing_debug_implementations,
-    reason = "needs work to not be disastrously verbose"
-)]
 pub struct Device {
     mem_allocator: Mutex<gpu_allocator::vulkan::Allocator>,
     desc_allocator: Mutex<descriptor::DescriptorAllocator>,
@@ -654,22 +612,6 @@ pub struct Queue {
     relay_semaphores: Mutex<RelaySemaphores>,
     signal_semaphores: Mutex<SemaphoreList>,
     wait_semaphores: Mutex<SemaphoreList>,
-}
-
-impl fmt::Debug for Queue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self {
-            raw: _,
-            device: _,
-            family_index,
-            relay_semaphores: _,
-            signal_semaphores: _,
-            wait_semaphores: _,
-        } = self;
-        f.debug_struct("Queue")
-            .field("family_index", family_index)
-            .finish_non_exhaustive()
-    }
 }
 
 impl Queue {
@@ -1042,8 +984,6 @@ struct TempTextureViewKey {
     depth_slice: u32,
 }
 
-
-
 pub struct CommandEncoder {
     raw: vk::CommandPool,
     device: Arc<DeviceShared>,
@@ -1168,13 +1108,6 @@ pub struct ComputePipeline {
 }
 
 impl crate::DynComputePipeline for ComputePipeline {}
-
-#[derive(Debug)]
-pub struct RayTracingPipeline {
-    raw: vk::Pipeline,
-}
-
-impl crate::DynRayTracingPipeline for RayTracingPipeline {}
 
 #[derive(Debug)]
 pub struct PipelineCache {
@@ -1699,7 +1632,6 @@ struct RawTlasInstance {
 }
 
 
-#[derive(Debug)]
 pub struct CreateDeviceCallbackArgs<'arg, 'pnext, 'this>
 where
     'this: 'pnext,
@@ -1732,7 +1664,6 @@ pub type CreateDeviceCallback<'this> =
     dyn for<'arg, 'pnext> FnOnce(CreateDeviceCallbackArgs<'arg, 'pnext, 'this>) + 'this;
 
 
-#[expect(missing_debug_implementations, reason = "TODO?")]
 pub struct CreateInstanceCallbackArgs<'arg, 'pnext, 'this>
 where
     'this: 'pnext,

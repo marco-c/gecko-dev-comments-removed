@@ -93,7 +93,7 @@ bitflags::bitflags! {
 pub type PipelineConstants = hashbrown::HashMap<String, f64>;
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Level(pub usize);
 
 impl Level {
@@ -174,7 +174,6 @@ impl FunctionType {
 }
 
 
-#[derive(Debug)]
 pub struct FunctionCtx<'a> {
     
     pub ty: FunctionType,
@@ -390,7 +389,6 @@ bitflags::bitflags! {
 }
 
 
-#[derive(Debug)]
 #[repr(u32)]
 pub enum RayIntersectionType {
     Triangle = 1,

@@ -6,31 +6,13 @@ use objc2::{
     runtime::ProtocolObject,
     ClassType, Message,
 };
-use objc2_core_foundation::{CFString, CGSize};
-use objc2_core_graphics::CGColorSpace;
+use objc2_core_foundation::CGSize;
 use objc2_foundation::NSObjectProtocol;
 use objc2_metal::MTLTextureType;
 use objc2_quartz_core::{CAMetalDrawable, CAMetalLayer};
 use parking_lot::{Mutex, RwLock};
 
 use super::OsFeatures;
-
-
-
-
-#[cfg(target_os = "macos")]
-fn hosting_window(
-    start: Retained<objc2_quartz_core::CALayer>,
-) -> Option<Retained<objc2::runtime::NSObject>> {
-    let mut current = Some(start);
-    while let Some(layer) = current {
-        if let Some(delegate) = layer.delegate() {
-            return unsafe { objc2::msg_send![&*delegate, window] };
-        }
-        current = layer.superlayer();
-    }
-    None
-}
 
 impl super::Surface {
     pub fn new(layer: Retained<CAMetalLayer>) -> Self {
@@ -48,137 +30,6 @@ impl super::Surface {
 
     pub fn render_layer(&self) -> &Mutex<Retained<CAMetalLayer>> {
         &self.render_layer
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(super) fn display_hdr_info(&self) -> Option<wgt::DisplayHdrInfo> {
-        #[cfg(target_os = "macos")]
-        {
-            use objc2::rc::Retained;
-            use objc2::runtime::NSObject;
-
-            
-            
-            
-            if objc2::MainThreadMarker::new().is_none() {
-                
-                
-                
-                
-                
-                static WARN_ONCE: std::sync::Once = std::sync::Once::new();
-                WARN_ONCE.call_once(|| {
-                    log::warn!(
-                        "Surface::display_hdr_info() was called from thread {:?} \
-                         and will return None. On the Metal backend, it must be \
-                         called from the main thread to succeed.",
-                        std::thread::current().id()
-                    );
-                });
-                return None;
-            }
-
-            
-            
-            
-            let render_layer = {
-                let guard = self.render_layer.lock();
-                guard.clone()
-            };
-
-            
-            
-            let screen: Retained<NSObject> = autoreleasepool(|_| {
-                hosting_window(Retained::into_super(render_layer))
-                    .and_then(|window| unsafe { objc2::msg_send![&*window, screen] })
-            })?;
-
-            
-            
-            
-            
-            
-            
-            
-            let finite = |v: f64| v.is_finite().then_some(v as f32);
-
-            
-            
-            let current: f64 = unsafe {
-                objc2::msg_send![&*screen, maximumExtendedDynamicRangeColorComponentValue]
-            };
-
-            
-            
-            
-            
-            let high_dynamic_range = current.is_finite().then_some(current > 1.0);
-
-            
-            
-            
-            
-            let (potential, reference) = if available!(macos = 10.15) {
-                let potential: f64 = unsafe {
-                    objc2::msg_send![
-                        &*screen,
-                        maximumPotentialExtendedDynamicRangeColorComponentValue
-                    ]
-                };
-                let reference: f64 = unsafe {
-                    objc2::msg_send![
-                        &*screen,
-                        maximumReferenceExtendedDynamicRangeColorComponentValue
-                    ]
-                };
-                
-                
-                (finite(potential), finite(reference).filter(|&v| v > 0.0))
-            } else {
-                (None, None)
-            };
-            let headroom = wgt::DisplayHeadroom {
-                current: finite(current),
-                potential,
-                reference,
-            };
-
-            
-            
-            
-            let coarse = wgt::DisplayCoarseRange {
-                high_dynamic_range,
-                gamut: None,
-            };
-
-            
-            
-            let info = wgt::DisplayHdrInfo {
-                luminance: None,
-                headroom: Some(headroom),
-                chromaticity: None,
-                coarse: Some(coarse),
-                bits_per_color: None,
-            };
-            Some(info)
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            
-            
-            None
-        }
     }
 
     
@@ -240,44 +91,10 @@ impl crate::Surface for super::Surface {
         render_layer.setFramebufferOnly(framebuffer_only);
         
         
-        let wants_edr = config.color_space.is_hdr();
+        let wants_edr = config.format == wgt::TextureFormat::Rgba16Float;
         if wants_edr != render_layer.wantsExtendedDynamicRangeContent() {
             render_layer.setWantsExtendedDynamicRangeContent(wants_edr);
         }
-
-        let colorspace_name: Option<&'static CFString> = match config.color_space {
-            wgt::SurfaceColorSpace::Auto => {
-                unreachable!("wgpu-core resolves `Auto` before configuring the surface")
-            }
-            
-            wgt::SurfaceColorSpace::Srgb => None,
-            wgt::SurfaceColorSpace::ExtendedSrgbLinear => {
-                Some(unsafe { objc2_core_graphics::kCGColorSpaceExtendedLinearSRGB })
-            }
-            wgt::SurfaceColorSpace::ExtendedSrgb => {
-                Some(unsafe { objc2_core_graphics::kCGColorSpaceExtendedSRGB })
-            }
-            wgt::SurfaceColorSpace::ExtendedDisplayP3 => {
-                Some(unsafe { objc2_core_graphics::kCGColorSpaceExtendedDisplayP3 })
-            }
-            wgt::SurfaceColorSpace::DisplayP3 => {
-                Some(unsafe { objc2_core_graphics::kCGColorSpaceDisplayP3 })
-            }
-            wgt::SurfaceColorSpace::Bt2100Pq | wgt::SurfaceColorSpace::Bt2100Hlg => {
-                
-                
-                if !available!(macos = 11.0, ios = 14.0, tvos = 14.0, visionos = 1.0) {
-                    unreachable!("BT.2100 PQ/HLG color spaces are only reported on macOS 11.0+/iOS 14.0+/tvOS 14.0+");
-                }
-                Some(if config.color_space == wgt::SurfaceColorSpace::Bt2100Pq {
-                    unsafe { objc2_core_graphics::kCGColorSpaceITUR_2100_PQ }
-                } else {
-                    unsafe { objc2_core_graphics::kCGColorSpaceITUR_2100_HLG }
-                })
-            }
-        };
-        let colorspace = colorspace_name.and_then(|name| CGColorSpace::with_name(Some(name)));
-        render_layer.setColorspace(colorspace.as_deref());
 
         
         render_layer.setMaximumDrawableCount(config.maximum_frame_latency as usize + 1);
@@ -311,15 +128,33 @@ impl crate::Surface for super::Surface {
             
             
             use objc2::rc::Retained;
+            use objc2::runtime::NSObject;
+            use objc2_quartz_core::CALayer;
 
             
             
-            if let Some(window) = hosting_window(Retained::into_super(render_layer.clone())) {
-                const NS_WINDOW_OCCLUSION_STATE_VISIBLE: usize = 1 << 1;
-                let occlusion_state: usize = unsafe { objc2::msg_send![&*window, occlusionState] };
-                if occlusion_state & NS_WINDOW_OCCLUSION_STATE_VISIBLE == 0 {
-                    return Err(crate::SurfaceError::Occluded);
+            let mut current_layer: Option<Retained<CALayer>> =
+                Some(Retained::into_super(render_layer.clone()));
+
+            while let Some(layer) = current_layer {
+                if let Some(delegate) = layer.delegate() {
+                    
+                    let window: Option<Retained<NSObject>> =
+                        unsafe { objc2::msg_send![&*delegate, window] };
+
+                    if let Some(window) = window {
+                        const NS_WINDOW_OCCLUSION_STATE_VISIBLE: usize = 1 << 1;
+                        let occlusion_state: usize =
+                            unsafe { objc2::msg_send![&*window, occlusionState] };
+                        let is_visible = (occlusion_state & NS_WINDOW_OCCLUSION_STATE_VISIBLE) != 0;
+
+                        if !is_visible {
+                            return Err(crate::SurfaceError::Occluded);
+                        }
+                    }
+                    break;
                 }
+                current_layer = layer.superlayer();
             }
         }
 

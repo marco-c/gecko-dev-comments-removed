@@ -391,8 +391,10 @@ impl crate::Function {
                 crate::Expression::Access { base, .. } => base,
                 crate::Expression::AccessIndex { base, .. } => base,
                 crate::Expression::GlobalVariable(handle) => return Some(handle),
+                crate::Expression::LocalVariable(_) => return None,
+                crate::Expression::FunctionArgument(_) => return None,
                 
-                _ => return None,
+                _ => unreachable!(),
             }
         }
     }
@@ -487,7 +489,7 @@ impl From<core::convert::Infallible> for ConstValueError {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct GlobalCtx<'a> {
     pub types: &'a crate::UniqueArena<crate::Type>,
     pub constants: &'a crate::Arena<crate::Constant>,
@@ -984,7 +986,7 @@ impl crate::Module {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Default, Copy, Clone)]
 pub struct RayTracingUses {
     pub pipelines: bool,
     pub queries: bool,

@@ -524,7 +524,7 @@ impl Writer {
     
     
     
-    pub(super) fn resolve_resource_binding(
+    fn resolve_resource_binding(
         &self,
         res_binding: &crate::ResourceBinding,
     ) -> Result<BindingInfo, Error> {
@@ -560,22 +560,10 @@ impl Writer {
                             
                             
                             
-                            
-                            
-                            
-                            
-                            
-                            
-                            
                             (
                                 crate::BinaryOperator::Divide | crate::BinaryOperator::Modulo,
                                 crate::ScalarKind::Sint | crate::ScalarKind::Uint,
-                            ) if self.emit_int_div_checks
-                                || matches!(
-                                    (op, expr_ty.scalar().kind),
-                                    (crate::BinaryOperator::Modulo, crate::ScalarKind::Sint)
-                                ) =>
-                            {
+                            ) if self.emit_int_div_checks => {
                                 self.write_wrapped_binary_op(
                                     op,
                                     expr_ty,
@@ -816,57 +804,21 @@ impl Writer {
             composite_one_id,
             rhs_id,
         ));
-        let return_id = if matches!(op, crate::BinaryOperator::Modulo)
-            && matches!(scalar.kind, crate::ScalarKind::Sint)
-        {
-            
-            
-            
-            
-            
-            let quotient_id = self.id_gen.next();
-            block.body.push(Instruction::binary(
-                spirv::Op::SDiv,
-                return_type_id,
-                quotient_id,
-                lhs_id,
-                divisor_id,
-            ));
-            let product_id = self.id_gen.next();
-            block.body.push(Instruction::binary(
-                spirv::Op::IMul,
-                return_type_id,
-                product_id,
-                quotient_id,
-                divisor_id,
-            ));
-            let remainder_id = self.id_gen.next();
-            block.body.push(Instruction::binary(
-                spirv::Op::ISub,
-                return_type_id,
-                remainder_id,
-                lhs_id,
-                product_id,
-            ));
-            remainder_id
-        } else {
-            let spv_op = match (op, scalar.kind) {
-                (crate::BinaryOperator::Divide, crate::ScalarKind::Sint) => spirv::Op::SDiv,
-                (crate::BinaryOperator::Divide, crate::ScalarKind::Uint) => spirv::Op::UDiv,
-                (crate::BinaryOperator::Modulo, crate::ScalarKind::Sint) => spirv::Op::SRem,
-                (crate::BinaryOperator::Modulo, crate::ScalarKind::Uint) => spirv::Op::UMod,
-                _ => unreachable!(),
-            };
-            let return_id = self.id_gen.next();
-            block.body.push(Instruction::binary(
-                spv_op,
-                return_type_id,
-                return_id,
-                lhs_id,
-                divisor_id,
-            ));
-            return_id
+        let op = match (op, scalar.kind) {
+            (crate::BinaryOperator::Divide, crate::ScalarKind::Sint) => spirv::Op::SDiv,
+            (crate::BinaryOperator::Divide, crate::ScalarKind::Uint) => spirv::Op::UDiv,
+            (crate::BinaryOperator::Modulo, crate::ScalarKind::Sint) => spirv::Op::SRem,
+            (crate::BinaryOperator::Modulo, crate::ScalarKind::Uint) => spirv::Op::UMod,
+            _ => unreachable!(),
         };
+        let return_id = self.id_gen.next();
+        block.body.push(Instruction::binary(
+            op,
+            return_type_id,
+            return_id,
+            lhs_id,
+            divisor_id,
+        ));
 
         function.consume(block, Instruction::return_value(return_id));
         function.to_words(&mut self.logical_layout.function_definitions);

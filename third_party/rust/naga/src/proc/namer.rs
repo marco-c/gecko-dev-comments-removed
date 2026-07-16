@@ -86,7 +86,7 @@ pub enum NameKey {
 
 
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Namer {
     
     unique: FastHashMap<String, u32>,

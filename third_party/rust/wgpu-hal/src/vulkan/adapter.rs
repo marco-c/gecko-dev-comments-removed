@@ -101,9 +101,6 @@ pub struct PhysicalDeviceFeatures {
     ray_query: Option<vk::PhysicalDeviceRayQueryFeaturesKHR<'static>>,
 
     
-    ray_tracing_pipeline: Option<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR<'static>>,
-
-    
     
     zero_initialize_workgroup_memory:
         Option<vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures<'static>>,
@@ -193,9 +190,6 @@ impl PhysicalDeviceFeatures {
             info = info.push_next(feature);
         }
         if let Some(ref mut feature) = self.ray_query {
-            info = info.push_next(feature);
-        }
-        if let Some(ref mut feature) = self.ray_tracing_pipeline {
             info = info.push_next(feature);
         }
         if let Some(ref mut feature) = self.shader_atomic_int64 {
@@ -482,14 +476,6 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            ray_tracing_pipeline: if enabled_extensions.contains(&khr::ray_tracing_pipeline::NAME) {
-                Some(
-                    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR::default()
-                        .ray_tracing_pipeline(true),
-                )
-            } else {
-                None
-            },
             zero_initialize_workgroup_memory: if device_api_version >= vk::API_VERSION_1_3
                 || enabled_extensions.contains(&khr::zero_initialize_workgroup_memory::NAME)
             {
@@ -628,13 +614,7 @@ impl PhysicalDeviceFeatures {
                     requested_features.contains(wgt::Features::EXPERIMENTAL_COOPERATIVE_MATRIX);
                 Some(
                     vk::PhysicalDeviceVulkanMemoryModelFeaturesKHR::default()
-                        .vulkan_memory_model(needed)
-                        
-                        
-                        
-                        
-                        
-                        .vulkan_memory_model_device_scope(needed),
+                        .vulkan_memory_model(needed),
                 )
             } else {
                 None
@@ -700,8 +680,7 @@ impl PhysicalDeviceFeatures {
 
         dl_flags.set(
             Df::SURFACE_VIEW_FORMATS,
-            caps.supports_extension(khr::swapchain_mutable_format::NAME)
-                || !caps.supports_extension(khr::swapchain::NAME),
+            caps.supports_extension(khr::swapchain_mutable_format::NAME),
         );
         dl_flags.set(Df::CUBE_ARRAY_TEXTURES, self.core.image_cube_array != 0);
         dl_flags.set(Df::ANISOTROPIC_FILTERING, self.core.sampler_anisotropy != 0);
@@ -980,16 +959,6 @@ impl PhysicalDeviceFeatures {
             supports_acceleration_structure_binding_array,
         );
 
-        if supports_acceleration_structures
-            && caps.supports_extension(khr::ray_tracing_pipeline::NAME)
-        {
-            features.insert(
-                F::EXPERIMENTAL_RAY_TRACING_PIPELINES
-                        
-                        | F::EXTENDED_ACCELERATION_STRUCTURE_VERTEX_FORMATS,
-            );
-        }
-
         let rg11b10ufloat_renderable = supports_format(
             instance,
             phd,
@@ -1026,7 +995,10 @@ impl PhysicalDeviceFeatures {
                     vk::FormatFeatureFlags::SAMPLED_IMAGE
                         | vk::FormatFeatureFlags::TRANSFER_SRC
                         | vk::FormatFeatureFlags::TRANSFER_DST,
-                ) && !caps.is_driver(vk::DriverId::MOLTENVK),
+                ) && !caps
+                    .driver
+                    .map(|driver| driver.driver_id == vk::DriverId::MOLTENVK)
+                    .unwrap_or_default(),
             );
         }
 
@@ -1041,7 +1013,10 @@ impl PhysicalDeviceFeatures {
                     vk::FormatFeatureFlags::SAMPLED_IMAGE
                         | vk::FormatFeatureFlags::TRANSFER_SRC
                         | vk::FormatFeatureFlags::TRANSFER_DST,
-                ) && !caps.is_driver(vk::DriverId::MOLTENVK),
+                ) && !caps
+                    .driver
+                    .map(|driver| driver.driver_id == vk::DriverId::MOLTENVK)
+                    .unwrap_or_default(),
             );
         }
 
@@ -1087,16 +1062,9 @@ impl PhysicalDeviceFeatures {
                 .unwrap_or(true),
         );
         
-        
-        
-        
         features.set(
             F::EXPERIMENTAL_COOPERATIVE_MATRIX,
-            !caps.cooperative_matrix_properties.is_empty()
-                && self.vulkan_memory_model.is_some_and(|m| {
-                    m.vulkan_memory_model == vk::TRUE
-                        && m.vulkan_memory_model_device_scope == vk::TRUE
-                }),
+            !caps.cooperative_matrix_properties.is_empty(),
         );
 
         features.set(
@@ -1158,10 +1126,6 @@ pub struct PhysicalDeviceProperties {
 
     
     
-    ray_tracing_pipeline: Option<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR<'static>>,
-
-    
-    
     driver: Option<vk::PhysicalDeviceDriverPropertiesKHR<'static>>,
 
     
@@ -1208,10 +1172,6 @@ impl PhysicalDeviceProperties {
         self.supported_extensions
             .iter()
             .any(|ep| ep.extension_name_as_c_str() == Ok(extension))
-    }
-
-    pub fn is_driver(&self, id: vk::DriverId) -> bool {
-        self.driver.is_some_and(|driver| driver.driver_id == id)
     }
 
     
@@ -1371,23 +1331,11 @@ impl PhysicalDeviceProperties {
         }
 
         
-        if requested_features.intersects(
-            wgt::Features::EXPERIMENTAL_RAY_QUERY
-                | wgt::Features::EXPERIMENTAL_RAY_TRACING_PIPELINES,
-        ) {
+        if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_QUERY) {
             extensions.push(khr::deferred_host_operations::NAME);
             extensions.push(khr::acceleration_structure::NAME);
             extensions.push(khr::buffer_device_address::NAME);
-        }
-
-        
-        if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_QUERY) {
             extensions.push(khr::ray_query::NAME);
-        }
-
-        
-        if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_TRACING_PIPELINES) {
-            extensions.push(khr::ray_tracing_pipeline::NAME);
         }
 
         if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN) {
@@ -1562,8 +1510,10 @@ impl PhysicalDeviceProperties {
             crate::auxil::db::imgtec::VENDOR,
         ]
         .contains(&self.properties.vendor_id);
-        let ignore_max_fragment_combined_output_resources_by_driver =
-            self.is_driver(vk::DriverId::MESA_AGXV);
+        let ignore_max_fragment_combined_output_resources_by_driver = self
+            .driver
+            .map(|driver| [vk::DriverId::MESA_AGXV].contains(&driver.driver_id))
+            .unwrap_or_default();
         let ignore_max_fragment_combined_output_resources =
             ignore_max_fragment_combined_output_resources_by_device
                 || ignore_max_fragment_combined_output_resources_by_driver;
@@ -1675,14 +1625,6 @@ impl PhysicalDeviceProperties {
         let max_color_attachment_bytes_per_sample =
             max_color_attachments * wgt::TextureFormat::MAX_TARGET_PIXEL_BYTE_COST;
 
-        let mut max_ray_dispatch_count = 0;
-        let mut max_ray_recursion_depth = 0;
-
-        if let Some(properties) = self.ray_tracing_pipeline {
-            max_ray_dispatch_count = properties.max_ray_dispatch_invocation_count;
-            max_ray_recursion_depth = properties.max_ray_recursion_depth;
-        }
-
         let max_multiview_view_count = self
             .multiview
             .map(|a| a.max_multiview_view_count.min(32))
@@ -1781,12 +1723,8 @@ impl PhysicalDeviceProperties {
             max_blas_geometry_count,
             max_tlas_instance_count,
             max_acceleration_structures_per_shader_stage,
-            max_buffers_and_acceleration_structures_per_shader_stage: u32::MAX,
 
             max_multiview_view_count,
-
-            max_ray_dispatch_count,
-            max_ray_recursion_depth,
         })
     }
 
@@ -1829,21 +1767,6 @@ impl PhysicalDeviceProperties {
                     acceleration_structure.min_acceleration_structure_scratch_offset_alignment
                 },
             ),
-            ray_tracing_pipeline_group_data_size: self
-                .ray_tracing_pipeline
-                .map_or(0, |ray_tracing_pipeline| {
-                    ray_tracing_pipeline.shader_group_handle_size
-                }),
-            ray_tracing_pipeline_group_data_alignment: self
-                .ray_tracing_pipeline
-                .map_or(0, |ray_tracing_pipeline| {
-                    ray_tracing_pipeline.shader_group_handle_alignment
-                }),
-            ray_tracing_pipeline_data_offset_alignment: self
-                .ray_tracing_pipeline
-                .map_or(0, |ray_tracing_pipeline| {
-                    ray_tracing_pipeline.shader_group_base_alignment
-                }),
         }
     }
 }
@@ -1885,9 +1808,6 @@ impl super::InstanceShared {
                 let supports_acceleration_structure =
                     capabilities.supports_extension(khr::acceleration_structure::NAME);
 
-                let supports_ray_tracing_pipeline =
-                    capabilities.supports_extension(khr::ray_tracing_pipeline::NAME);
-
                 let supports_mesh_shader = capabilities.supports_extension(ext::mesh_shader::NAME);
 
                 let mut properties2 = vk::PhysicalDeviceProperties2KHR::default();
@@ -1916,13 +1836,6 @@ impl super::InstanceShared {
                     let next = capabilities
                         .acceleration_structure
                         .insert(vk::PhysicalDeviceAccelerationStructurePropertiesKHR::default());
-                    properties2 = properties2.push_next(next);
-                }
-
-                if supports_ray_tracing_pipeline {
-                    let next = capabilities
-                        .ray_tracing_pipeline
-                        .insert(vk::PhysicalDeviceRayTracingPipelinePropertiesKHR::default());
                     properties2 = properties2.push_next(next);
                 }
 
@@ -1987,21 +1900,14 @@ impl super::InstanceShared {
                         query_cooperative_matrix_properties(&coop_matrix, phd);
                 }
 
-                
-                if is_intel_igpu_outdated_for_robustness2(&capabilities) {
+                if is_intel_igpu_outdated_for_robustness2(
+                    capabilities.properties,
+                    capabilities.driver,
+                ) {
                     capabilities
                         .supported_extensions
                         .retain(|&x| x.extension_name_as_c_str() != Ok(ext::robustness2::NAME));
                     capabilities.robustness2 = None;
-                }
-
-                
-                
-                
-                if capabilities.is_driver(vk::DriverId::MESA_RADV) {
-                    capabilities
-                        .supported_extensions
-                        .retain(|&x| x.extension_name_as_c_str() != Ok(ext::memory_budget::NAME));
                 }
             };
             capabilities
@@ -2189,15 +2095,6 @@ impl super::InstanceShared {
                 features2 = features2.push_next(next);
             }
 
-            if capabilities.device_api_version >= vk::API_VERSION_1_2
-                || capabilities.supports_extension(khr::vulkan_memory_model::NAME)
-            {
-                let next = features
-                    .vulkan_memory_model
-                    .insert(vk::PhysicalDeviceVulkanMemoryModelFeaturesKHR::default());
-                features2 = features2.push_next(next);
-            }
-
             if capabilities.device_api_version >= vk::API_VERSION_1_1 {
                 let next = features
                     .shader_draw_parameters
@@ -2290,7 +2187,7 @@ impl super::Instance {
                 .subgroup_size_control
                 .map(|subgroup_size| subgroup_size.max_subgroup_size)
                 .unwrap_or(wgt::MAXIMUM_SUBGROUP_MAX_SIZE),
-            transient_saves_memory: Some(supports_lazily_allocated),
+            transient_saves_memory: supports_lazily_allocated,
             ..wgt::AdapterInfo::new(device_type, wgt::Backend::Vulkan)
         };
         let mut workarounds = super::Workarounds::empty();
@@ -2364,7 +2261,7 @@ impl super::Instance {
             queue_family_properties,
         );
 
-        if phd_capabilities.is_driver(vk::DriverId::MESA_LLVMPIPE) {
+        if info.driver == "llvmpipe" {
             
             
             downlevel_flags.set(
@@ -2458,7 +2355,6 @@ impl super::Instance {
                 .map(|a| a.max_multiview_instance_index)
                 .unwrap_or(0),
             scratch_buffer_alignment: alignments.ray_tracing_scratch_buffer_alignment,
-            ray_tracing_pipeline_group_data_size: alignments.ray_tracing_pipeline_group_data_size,
         };
         let capabilities = crate::Capabilities {
             limits: phd_capabilities.to_wgpu_limits(),
@@ -2639,15 +2535,6 @@ impl super::Adapter {
         } else {
             None
         };
-        let ray_tracing_pipeline_fns =
-            if enabled_extensions.contains(&khr::ray_tracing_pipeline::NAME) {
-                Some(khr::ray_tracing_pipeline::Device::new(
-                    &self.instance.raw,
-                    &raw_device,
-                ))
-            } else {
-                None
-            };
         let mesh_shading_fns = if enabled_extensions.contains(&ext::mesh_shader::NAME) {
             Some(ext::mesh_shader::Device::new(
                 &self.instance.raw,
@@ -2787,17 +2674,13 @@ impl super::Adapter {
                 true, 
             );
             flags.set(
-                spv::WriterFlags::PRINT_ON_RAY_QUERY_INITIALIZATION_FAIL
-                    | spv::WriterFlags::PRINT_ON_TRACE_RAYS_FAIL,
+                spv::WriterFlags::PRINT_ON_RAY_QUERY_INITIALIZATION_FAIL,
                 self.instance.flags.contains(wgt::InstanceFlags::DEBUG)
                     && (self.instance.instance_api_version >= vk::API_VERSION_1_3
                         || enabled_extensions.contains(&khr::shader_non_semantic_info::NAME)),
             );
             if features.contains(wgt::Features::EXPERIMENTAL_RAY_QUERY) {
                 capabilities.push(spv::Capability::RayQueryKHR);
-            }
-            if features.contains(wgt::Features::EXPERIMENTAL_RAY_TRACING_PIPELINES) {
-                capabilities.push(spv::Capability::RayTracingKHR);
             }
             if features.contains(wgt::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN) {
                 capabilities.push(spv::Capability::RayQueryPositionFetchKHR)
@@ -2916,7 +2799,6 @@ impl super::Adapter {
                 draw_indirect_count: indirect_count_fn,
                 timeline_semaphore: timeline_semaphore_fn,
                 ray_tracing: ray_tracing_fns,
-                ray_tracing_pipelines: ray_tracing_pipeline_fns,
                 mesh_shading: mesh_shading_fns,
                 external_memory_fd: external_memory_fd_fn,
             },
@@ -3205,15 +3087,6 @@ impl crate::Adapter for super::Adapter {
         surface.inner.surface_capabilities(self)
     }
 
-    unsafe fn surface_display_hdr_info(
-        &self,
-        surface: &super::Surface,
-    ) -> Option<wgt::DisplayHdrInfo> {
-        
-        
-        surface.inner.display_hdr_info()
-    }
-
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp {
         
         
@@ -3221,7 +3094,10 @@ impl crate::Adapter for super::Adapter {
         
         #[cfg(unix)]
         {
-            let mut timespec = libc::timespec::default();
+            let mut timespec = libc::timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            };
             unsafe {
                 libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut timespec);
             }
@@ -3406,15 +3282,18 @@ fn supports_bgra8unorm_storage(
 
 
 
-fn is_intel_igpu_outdated_for_robustness2(capabilities: &PhysicalDeviceProperties) -> bool {
+fn is_intel_igpu_outdated_for_robustness2(
+    props: vk::PhysicalDeviceProperties,
+    driver: Option<vk::PhysicalDeviceDriverPropertiesKHR>,
+) -> bool {
     const DRIVER_VERSION_WORKING: u32 = (101 << 14) | 2115; 
-
-    let props = &capabilities.properties;
 
     let is_outdated = props.vendor_id == crate::auxil::db::intel::VENDOR
         && props.device_type == vk::PhysicalDeviceType::INTEGRATED_GPU
         && props.driver_version < DRIVER_VERSION_WORKING
-        && capabilities.is_driver(vk::DriverId::INTEL_PROPRIETARY_WINDOWS);
+        && driver
+            .map(|driver| driver.driver_id == vk::DriverId::INTEL_PROPRIETARY_WINDOWS)
+            .unwrap_or_default();
 
     if is_outdated {
         log::debug!(

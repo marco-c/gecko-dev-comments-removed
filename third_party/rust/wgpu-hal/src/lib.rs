@@ -288,9 +288,8 @@ pub use dynamic::{
     DynAccelerationStructure, DynAcquiredSurfaceTexture, DynAdapter, DynBindGroup,
     DynBindGroupLayout, DynBuffer, DynCommandBuffer, DynCommandEncoder, DynComputePipeline,
     DynDevice, DynExposedAdapter, DynFence, DynInstance, DynOpenDevice, DynPipelineCache,
-    DynPipelineLayout, DynQuerySet, DynQueue, DynRayTracingPipeline, DynRenderPipeline,
-    DynResource, DynSampler, DynShaderModule, DynSurface, DynSurfaceTexture, DynTexture,
-    DynTextureView,
+    DynPipelineLayout, DynQuerySet, DynQueue, DynRenderPipeline, DynResource, DynSampler,
+    DynShaderModule, DynSurface, DynSurfaceTexture, DynTexture, DynTextureView,
 };
 
 #[allow(unused)]
@@ -648,7 +647,6 @@ pub trait Api: Clone + fmt::Debug + Sized + WasmNotSendSync + 'static {
     type ShaderModule: DynShaderModule;
     type RenderPipeline: DynRenderPipeline;
     type ComputePipeline: DynComputePipeline;
-    type RayTracingPipeline: DynRayTracingPipeline;
     type PipelineCache: DynPipelineCache;
 
     type AccelerationStructure: DynAccelerationStructure + 'static;
@@ -800,23 +798,6 @@ pub trait Adapter: WasmNotSendSync {
         &self,
         surface: &<Self::A as Api>::Surface,
     ) -> Option<SurfaceCapabilities>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn surface_display_hdr_info(
-        &self,
-        surface: &<Self::A as Api>::Surface,
-    ) -> Option<wgt::DisplayHdrInfo> {
-        let _ = surface;
-        None
-    }
 
     
     
@@ -1091,24 +1072,6 @@ pub trait Device: WasmNotSendSync {
         >,
     ) -> Result<<Self::A as Api>::ComputePipeline, PipelineError>;
     unsafe fn destroy_compute_pipeline(&self, pipeline: <Self::A as Api>::ComputePipeline);
-
-    #[allow(clippy::type_complexity)]
-    unsafe fn create_ray_tracing_pipeline(
-        &self,
-        desc: &RayTracingPipelineDescriptor<
-            <Self::A as Api>::PipelineLayout,
-            <Self::A as Api>::ShaderModule,
-            <Self::A as Api>::PipelineCache,
-        >,
-    ) -> Result<<Self::A as Api>::RayTracingPipeline, PipelineError>;
-    unsafe fn destroy_ray_tracing_pipeline(&self, pipeline: <Self::A as Api>::RayTracingPipeline);
-    
-    
-    unsafe fn get_raytracing_pipeline_group_data(
-        &self,
-        pipeline: &<Self::A as Api>::RayTracingPipeline,
-        groups: Range<u32>,
-    ) -> Result<Vec<u8>, DeviceError>;
 
     unsafe fn create_pipeline_cache(
         &self,
@@ -1631,11 +1594,6 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
     
     
-    
-    
-    
-    
-    
     unsafe fn begin_render_pass(
         &mut self,
         desc: &RenderPassDescriptor<<Self::A as Api>::QuerySet, <Self::A as Api>::TextureView>,
@@ -1756,11 +1714,6 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
     
     
     
-    
-    
-    
-    
-    
     unsafe fn begin_compute_pass(
         &mut self,
         desc: &ComputePassDescriptor<<Self::A as Api>::QuerySet>,
@@ -1784,58 +1737,6 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
         &mut self,
         buffer: &<Self::A as Api>::Buffer,
         offset: wgt::BufferAddress,
-    );
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn begin_ray_tracing_pass(&mut self, desc: &RayTracingPassDescriptor);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn end_ray_tracing_pass(&mut self);
-
-    
-    
-    
-    unsafe fn set_ray_tracing_pipeline(&mut self, pipeline: &<Self::A as Api>::RayTracingPipeline);
-
-    unsafe fn trace_rays<'a>(
-        &mut self,
-        count: [u32; 3],
-        ray_generation_group_data: PipelineGroupData<'a, <Self::A as Api>::Buffer>,
-        miss_group_data: PipelineGroupData<'a, <Self::A as Api>::Buffer>,
-        intersection_group_data: PipelineGroupData<'a, <Self::A as Api>::Buffer>,
     );
 
     
@@ -2077,20 +1978,6 @@ pub struct Alignments {
 
     
     pub ray_tracing_scratch_buffer_alignment: u32,
-
-    
-    
-    
-    
-    pub ray_tracing_pipeline_group_data_size: u32,
-
-    
-    pub ray_tracing_pipeline_group_data_alignment: u32,
-
-    
-    
-    
-    pub ray_tracing_pipeline_data_offset_alignment: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -2123,9 +2010,7 @@ pub struct SurfaceCapabilities {
     
     
     
-    
-    
-    pub formats: Vec<wgt::SurfaceFormatCapabilities>,
+    pub formats: Vec<wgt::TextureFormat>,
 
     
     
@@ -2153,14 +2038,6 @@ pub struct SurfaceCapabilities {
     
     
     pub composite_alpha_modes: Vec<wgt::CompositeAlphaMode>,
-}
-
-impl SurfaceCapabilities {
-    
-    
-    pub fn texture_formats(&self) -> impl Iterator<Item = wgt::TextureFormat> + '_ {
-        self.formats.iter().map(|fc| fc.format)
-    }
 }
 
 #[derive(Debug)]
@@ -2545,23 +2422,6 @@ pub enum ShaderInput<'a> {
     },
 }
 
-impl fmt::Debug for ShaderInput<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            
-            
-            Self::Naga { .. } => f.debug_tuple("Naga").finish_non_exhaustive(),
-            Self::MetalLib { .. } => f.debug_tuple("MetalLib").finish_non_exhaustive(),
-            Self::Msl { .. } => f.debug_tuple("Msl").finish_non_exhaustive(),
-            Self::SpirV { .. } => f.debug_tuple("SpirV").finish_non_exhaustive(),
-            Self::Dxil { .. } => f.debug_tuple("Dxil").finish_non_exhaustive(),
-            Self::Hlsl { .. } => f.debug_tuple("Hlsl").finish_non_exhaustive(),
-            Self::Glsl { .. } => f.debug_tuple("Glsl").finish_non_exhaustive(),
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct ShaderModuleDescriptor<'a> {
     pub label: Label<'a>,
 
@@ -2624,7 +2484,6 @@ pub struct ComputePipelineDescriptor<
     pub cache: Option<&'a Pc>,
 }
 
-#[derive(Debug)]
 pub struct PipelineCacheDescriptor<'a> {
     pub label: Label<'a>,
     pub data: Option<&'a [u8]>,
@@ -2685,35 +2544,6 @@ pub struct RenderPipelineDescriptor<
     pub cache: Option<&'a Pc>,
 }
 
-#[derive(Clone, Debug)]
-pub struct RayObjectIntersectionState<'a, M: DynShaderModule + ?Sized> {
-    pub closest_hit: ProgrammableStage<'a, M>,
-    pub any_hit: Option<ProgrammableStage<'a, M>>,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct RayTracingPipelineDescriptor<
-    'a,
-    Pl: DynPipelineLayout + ?Sized,
-    M: DynShaderModule + ?Sized,
-    Pc: DynPipelineCache + ?Sized,
-> {
-    pub label: Label<'a>,
-    
-    pub layout: &'a Pl,
-    
-    pub ray_generation: ProgrammableStage<'a, M>,
-    
-    pub miss: ProgrammableStage<'a, M>,
-    
-    pub intersection: &'a [RayObjectIntersectionState<'a, M>],
-    
-    pub max_recursion_depth: u32,
-    
-    pub cache: Option<&'a Pc>,
-}
-
 #[derive(Debug, Clone)]
 pub struct SurfaceConfiguration {
     
@@ -2725,12 +2555,6 @@ pub struct SurfaceConfiguration {
     pub composite_alpha_mode: wgt::CompositeAlphaMode,
     
     pub format: wgt::TextureFormat,
-    
-    
-    
-    
-    
-    pub color_space: wgt::SurfaceColorSpace,
     
     
     pub extent: wgt::Extent3d,
@@ -2886,11 +2710,6 @@ pub struct ComputePassDescriptor<'a, Q: DynQuerySet + ?Sized> {
     pub timestamp_writes: Option<PassTimestampWrites<'a, Q>>,
 }
 
-#[derive(Clone, Debug)]
-pub struct RayTracingPassDescriptor<'a> {
-    pub label: Label<'a>,
-}
-
 #[test]
 fn test_default_limits() {
     let limits = wgt::Limits::default();
@@ -2989,7 +2808,6 @@ pub struct AccelerationStructureAABBs<'a, B: DynBuffer + ?Sized> {
     pub flags: AccelerationStructureGeometryFlags,
 }
 
-#[derive(Clone, Debug)]
 pub struct AccelerationStructureCopy {
     pub copy_flags: wgt::AccelerationStructureCopy,
     pub type_flags: wgt::AccelerationStructureType,
@@ -3051,13 +2869,9 @@ pub struct TlasInstance {
     pub custom_data: u32,
     pub mask: u8,
     pub blas_address: u64,
-    
-    
-    pub pipeline_intersection_data_offset: u32,
 }
 
 #[cfg(dx12)]
-#[derive(Debug)]
 pub enum D3D12ExposeAdapterResult {
     CreateDeviceError(dx12::CreateDeviceError),
     UnknownFeatureLevel(i32),
@@ -3075,12 +2889,4 @@ pub struct Telemetry {
         driver_version: Result<[u16; 4], windows_core::HRESULT>,
         result: D3D12ExposeAdapterResult,
     ),
-}
-
-#[derive(Debug)]
-pub struct PipelineGroupData<'a, B: DynBuffer + ?Sized> {
-    pub buffer: &'a B,
-    pub offset: wgt::BufferAddress,
-    pub stride: u64,
-    pub count: u64,
 }

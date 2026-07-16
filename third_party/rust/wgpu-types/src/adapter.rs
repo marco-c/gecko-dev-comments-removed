@@ -210,8 +210,7 @@ pub struct AdapterInfo {
     
     pub subgroup_max_size: u32,
     
-    
-    pub transient_saves_memory: Option<bool>,
+    pub transient_saves_memory: bool,
 
     
     
@@ -234,7 +233,7 @@ impl AdapterInfo {
             backend,
             subgroup_min_size: crate::MINIMUM_SUBGROUP_MIN_SIZE,
             subgroup_max_size: crate::MAXIMUM_SUBGROUP_MAX_SIZE,
-            transient_saves_memory: None,
+            transient_saves_memory: false,
             limit_bucket: None,
         }
     }

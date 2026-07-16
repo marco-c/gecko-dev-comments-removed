@@ -1180,13 +1180,8 @@ impl BlockContext<'_> {
                         crate::BinaryOperator::Modulo => match left_ty_inner.scalar_kind() {
                             Some(crate::ScalarKind::Float) => spirv::Op::FRem,
                             Some(crate::ScalarKind::Sint) => {
-                                
-                                
-                                
-                                
-                                
-                                
-                                unreachable!("signed modulo must be lowered via the wrapped path")
+                                assert!(!self.writer.emit_int_div_checks);
+                                spirv::Op::SRem
                             }
                             Some(crate::ScalarKind::Uint) => {
                                 assert!(!self.writer.emit_int_div_checks);
