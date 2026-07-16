@@ -32,8 +32,7 @@ use stylo_atoms::Atom;
 pub enum DevicePixel {}
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, MallocSizeOf))]
+#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub struct PinchZoomFactor(f32);
 
 impl PinchZoomFactor {

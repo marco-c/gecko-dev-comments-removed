@@ -5,6 +5,7 @@
 
 
 
+use crate::derives::*;
 use crate::Zero;
 use std::ops::Add;
 
@@ -59,7 +60,6 @@ pub mod url;
     ToTyped,
 )]
 #[repr(transparent)]
-#[typed_value(derive_fields)]
 pub struct NonNegative<T>(pub T);
 
 
@@ -93,16 +93,17 @@ impl<T: Zero> Zero for NonNegative<T> {
 }
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     PartialEq,
     PartialOrd,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,
@@ -114,17 +115,18 @@ impl<T: Zero> Zero for NonNegative<T> {
 pub struct GreaterThanOrEqualToOne<T>(pub T);
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     Hash,
     MallocSizeOf,
     PartialEq,
     PartialOrd,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,
@@ -184,6 +186,7 @@ pub use self::GenericClipRect as ClipRect;
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum GenericClipRectOrAuto<R> {
     Auto,
     Rect(R),

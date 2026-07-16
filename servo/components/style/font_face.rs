@@ -69,8 +69,9 @@ impl Parse for SourceList {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(
+    Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, Parse, PartialEq, Serialize, ToCss, ToShmem,
+)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum FontFaceSourceFormatKeyword {
@@ -89,8 +90,7 @@ pub enum FontFaceSourceFormatKeyword {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize, ToShmem)]
 #[repr(C)]
 pub struct FontFaceSourceTechFlags(u16);
 bitflags! {
@@ -236,8 +236,7 @@ pub enum FontFaceSourceListComponent {
     TechFlags(FontFaceSourceTechFlags),
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Debug, Deserialize, Eq, MallocSizeOf, PartialEq, Serialize, ToCss, ToShmem)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum FontFaceSourceFormat {
@@ -284,9 +283,19 @@ impl ToCss for UrlSource {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 #[repr(u8)]
 pub enum FontDisplay {
@@ -340,10 +349,7 @@ impl_range!(FontWeightRange, AbsoluteFontWeight);
 
 #[repr(C)]
 #[allow(missing_docs)]
-#[cfg_attr(
-    feature = "servo",
-    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
-)]
+#[derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct ComputedFontWeightRange(pub FontWeight, pub FontWeight);
 
 #[inline]
@@ -374,10 +380,7 @@ impl_range!(FontStretchRange, SpecifiedFontStretch);
 
 #[repr(C)]
 #[allow(missing_docs)]
-#[cfg_attr(
-    feature = "servo",
-    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
-)]
+#[derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct ComputedFontStretchRange(pub FontStretch, pub FontStretch);
 
 impl FontStretchRange {
@@ -413,10 +416,7 @@ pub enum FontStyleRange {
 
 #[repr(C)]
 #[allow(missing_docs)]
-#[cfg_attr(
-    feature = "servo",
-    derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)
-)]
+#[derive(Clone, Debug, Deserialize, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct ComputedFontStyleRange(pub FontStyle, pub FontStyle);
 
 impl Parse for FontStyleRange {

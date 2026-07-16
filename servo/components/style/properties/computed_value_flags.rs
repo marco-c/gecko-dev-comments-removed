@@ -4,6 +4,8 @@
 
 
 
+use crate::derives::MallocSizeOf;
+
 
 
 
@@ -11,8 +13,7 @@
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(crate::derives::MallocSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
 pub struct ComputedValueFlags(u32);
 
 bitflags! {

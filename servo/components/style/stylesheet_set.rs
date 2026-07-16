@@ -311,7 +311,7 @@ where
 }
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(MallocSizeOf)]
 pub struct DocumentStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,

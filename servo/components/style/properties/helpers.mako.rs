@@ -193,8 +193,26 @@ pub mod ${property.ident} {
     pub mod computed_value {
         #[allow(unused_imports)]
         use crate::derives::*;
-        #[cfg_attr(feature = "servo", derive(Deserialize, Hash, Serialize))]
-        #[derive(Clone, Copy, Debug, Eq, FromPrimitive, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss, ToResolvedValue, ToShmem, ToTyped)]
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            Deserialize,
+            Eq,
+            FromPrimitive,
+            Hash,
+            MallocSizeOf,
+            Parse,
+            PartialEq,
+            Serialize,
+            SpecifiedValueInfo,
+            ToAnimatedValue,
+            ToComputedValue,
+            ToCss,
+            ToResolvedValue,
+            ToShmem,
+            ToTyped,
+        )]
         pub enum T {
         % for variant in property.keyword.values_for(engine):
         <%
@@ -314,7 +332,6 @@ pub mod ${property.ident} {
         % if property.vector.separator == "Comma":
         #[css(comma)]
         % endif
-        #[typed_value(derive_fields)]
         pub struct OwnedList<T>(
             % if not allow_empty:
             #[css(iterable)]
@@ -335,7 +352,6 @@ pub mod ${property.ident} {
         % if property.vector.separator == "Comma":
         #[css(comma)]
         % endif
-        #[typed_value(derive_fields)]
         pub struct ComputedList(
             % if not allow_empty:
             #[css(iterable)]
@@ -453,7 +469,6 @@ pub mod ${property.ident} {
     % if property.vector.separator == "Comma":
     #[css(comma)]
     % endif
-    #[typed_value(derive_fields)]
     pub struct SpecifiedValue(
         % if not allow_empty:
         #[css(iterable)]

@@ -138,8 +138,7 @@ pub fn parse_line_names<'i, 't>(
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
 enum RepeatType {
     
     Auto,

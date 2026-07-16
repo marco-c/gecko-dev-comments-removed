@@ -29,8 +29,7 @@ pub struct PropertyRegistration {
 
 
 
-#[derive(Default)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Default, MallocSizeOf)]
 pub struct ScriptRegistry {
     properties: PrecomputedHashMap<Atom, PropertyRegistration>,
 }

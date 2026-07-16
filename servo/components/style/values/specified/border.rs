@@ -29,11 +29,11 @@ use thin_vec::ThinVec;
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     FromPrimitive,
     MallocSizeOf,
@@ -41,6 +41,7 @@ use thin_vec::ThinVec;
     Parse,
     PartialEq,
     PartialOrd,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -367,15 +368,16 @@ impl Parse for BorderSpacing {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,

@@ -6,6 +6,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -13,9 +14,18 @@ use style_traits::{CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo,
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct AlignFlags(u8);
 bitflags! {
@@ -80,6 +90,13 @@ impl AlignFlags {
 
     
     #[inline]
+    pub fn with_value(&self, value: AlignFlags) -> Self {
+        debug_assert!(!value.intersects(Self::FLAG_BITS));
+        value | self.flags()
+    }
+
+    
+    #[inline]
     pub fn flags(&self) -> Self {
         *self & AlignFlags::FLAG_BITS
     }
@@ -90,10 +107,9 @@ impl ToCss for AlignFlags {
     where
         W: Write,
     {
-        let extra_flags = *self & AlignFlags::FLAG_BITS;
+        let flags = self.flags();
         let value = self.value();
-
-        match extra_flags {
+        match flags {
             AlignFlags::LEGACY => {
                 dest.write_str("legacy")?;
                 if value.is_empty() {
@@ -104,7 +120,7 @@ impl ToCss for AlignFlags {
             AlignFlags::SAFE => dest.write_str("safe ")?,
             AlignFlags::UNSAFE => dest.write_str("unsafe ")?,
             _ => {
-                debug_assert_eq!(extra_flags, AlignFlags::empty());
+                debug_assert_eq!(flags, AlignFlags::empty());
             },
         }
 
@@ -145,20 +161,24 @@ pub enum AxisDirection {
 
 
 
+
 #[derive(
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct ContentDistribution {
     primary: AlignFlags,
     
@@ -199,7 +219,22 @@ impl ContentDistribution {
     }
 
     
-    pub fn parse<'i, 't>(
+    pub fn parse_block<'i>(
+        _: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Block)
+    }
+
+    
+    pub fn parse_inline<'i>(
+        _: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Inline)
+    }
+
+    fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
         axis: AxisDirection,
     ) -> Result<Self, ParseError<'i>> {
@@ -245,20 +280,19 @@ impl ContentDistribution {
             content_position | overflow_position,
         ))
     }
+}
 
-    fn list_keywords(f: KeywordsCollectFn, axis: AxisDirection) {
+impl SpecifiedValueInfo for ContentDistribution {
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
         f(&["normal"]);
-        if axis == AxisDirection::Block {
-            list_baseline_keywords(f);
-        }
+        list_baseline_keywords(f); 
         list_content_distribution_keywords(f);
         list_overflow_position_keywords(f);
         f(&["start", "end", "flex-start", "flex-end", "center"]);
-        if axis == AxisDirection::Inline {
-            f(&["left", "right"]);
-        }
+        f(&["left", "right"]); 
     }
 }
+
 
 
 
@@ -267,94 +301,20 @@ impl ContentDistribution {
     Clone,
     Copy,
     Debug,
+    Deref,
+    Deserialize,
     Eq,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(transparent)]
-pub struct AlignContent(pub ContentDistribution);
-
-impl Parse for AlignContent {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        
-        Ok(AlignContent(ContentDistribution::parse(
-            input,
-            AxisDirection::Block,
-        )?))
-    }
-}
-
-impl SpecifiedValueInfo for AlignContent {
-    fn collect_completion_keywords(f: KeywordsCollectFn) {
-        ContentDistribution::list_keywords(f, AxisDirection::Block);
-    }
-}
-
-
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-    ToTyped,
-)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(transparent)]
-pub struct JustifyContent(pub ContentDistribution);
-
-impl Parse for JustifyContent {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        
-        Ok(JustifyContent(ContentDistribution::parse(
-            input,
-            AxisDirection::Inline,
-        )?))
-    }
-}
-
-impl SpecifiedValueInfo for JustifyContent {
-    fn collect_completion_keywords(f: KeywordsCollectFn) {
-        ContentDistribution::list_keywords(f, AxisDirection::Inline);
-    }
-}
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(transparent)]
+#[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct SelfAlignment(pub AlignFlags);
 
 impl SelfAlignment {
@@ -375,7 +335,23 @@ impl SelfAlignment {
     }
 
     
-    pub fn parse<'i, 't>(
+    pub fn parse_block<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Block)
+    }
+
+    
+    pub fn parse_inline<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Inline)
+    }
+
+    
+    fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
         axis: AxisDirection,
     ) -> Result<Self, ParseError<'i>> {
@@ -409,47 +385,53 @@ impl SelfAlignment {
         list_overflow_position_keywords(f);
         list_self_position_keywords(f, axis);
     }
-}
 
+    
+    
+    pub fn flip_position(self) -> Self {
+        let flipped_value = match self.0.value() {
+            AlignFlags::START => AlignFlags::END,
+            AlignFlags::END => AlignFlags::START,
+            AlignFlags::FLEX_START => AlignFlags::FLEX_END,
+            AlignFlags::FLEX_END => AlignFlags::FLEX_START,
+            AlignFlags::LEFT => AlignFlags::RIGHT,
+            AlignFlags::RIGHT => AlignFlags::LEFT,
+            AlignFlags::SELF_START => AlignFlags::SELF_END,
+            AlignFlags::SELF_END => AlignFlags::SELF_START,
 
+            AlignFlags::AUTO
+            | AlignFlags::NORMAL
+            | AlignFlags::BASELINE
+            | AlignFlags::LAST_BASELINE
+            | AlignFlags::STRETCH
+            | AlignFlags::CENTER
+            | AlignFlags::SPACE_BETWEEN
+            | AlignFlags::SPACE_AROUND
+            | AlignFlags::SPACE_EVENLY
+            | AlignFlags::ANCHOR_CENTER => return self,
+            _ => {
+                debug_assert!(false, "Unexpected alignment enumeration value");
+                return self;
+            },
+        };
+        self.with_value(flipped_value)
+    }
 
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-    ToTyped,
-)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(C)]
-pub struct AlignSelf(pub SelfAlignment);
-
-impl Parse for AlignSelf {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        
-        Ok(AlignSelf(SelfAlignment::parse(
-            input,
-            AxisDirection::Block,
-        )?))
+    
+    #[inline]
+    pub fn with_value(self, value: AlignFlags) -> Self {
+        Self(self.0.with_value(value))
     }
 }
 
-impl SpecifiedValueInfo for AlignSelf {
+impl SpecifiedValueInfo for SelfAlignment {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
-        SelfAlignment::list_keywords(f, AxisDirection::Block);
+        
+        
+        Self::list_keywords(f, AxisDirection::Block);
     }
 }
+
 
 
 
@@ -458,96 +440,81 @@ impl SpecifiedValueInfo for AlignSelf {
     Clone,
     Copy,
     Debug,
+    Deref,
+    Deserialize,
     Eq,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
-pub struct JustifySelf(pub SelfAlignment);
+#[typed(todo_derive_fields)]
+pub struct ItemPlacement(pub AlignFlags);
 
-impl Parse for JustifySelf {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        
-        Ok(JustifySelf(SelfAlignment::parse(
-            input,
-            AxisDirection::Inline,
-        )?))
-    }
-}
-
-impl SpecifiedValueInfo for JustifySelf {
-    fn collect_completion_keywords(f: KeywordsCollectFn) {
-        SelfAlignment::list_keywords(f, AxisDirection::Inline);
-    }
-}
-
-
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-    ToTyped,
-)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(C)]
-pub struct AlignItems(pub AlignFlags);
-
-impl AlignItems {
+impl ItemPlacement {
     
     #[inline]
     pub fn normal() -> Self {
-        AlignItems(AlignFlags::NORMAL)
+        Self(AlignFlags::NORMAL)
     }
 }
 
-impl Parse for AlignItems {
+impl ItemPlacement {
     
-    
-    fn parse<'i, 't>(
+    pub fn parse_block<'i>(
         _: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Block)
+    }
+
+    
+    pub fn parse_inline<'i>(
+        _: &ParserContext,
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse(input, AxisDirection::Inline)
+    }
+
+    fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
+        axis: AxisDirection,
     ) -> Result<Self, ParseError<'i>> {
         
         
 
         
         if let Ok(baseline) = input.try_parse(parse_baseline) {
-            return Ok(AlignItems(baseline));
+            return Ok(Self(baseline));
         }
 
         
         if let Ok(value) = input.try_parse(parse_normal_stretch) {
-            return Ok(AlignItems(value));
+            return Ok(Self(value));
         }
+
+        if axis == AxisDirection::Inline {
+            
+            if let Ok(value) = input.try_parse(parse_legacy) {
+                return Ok(Self(value));
+            }
+        }
+
         
         let overflow = input
             .try_parse(parse_overflow_position)
             .unwrap_or(AlignFlags::empty());
-        let self_position = parse_self_position(input, AxisDirection::Block)?;
-        Ok(AlignItems(self_position | overflow))
+        let self_position = parse_self_position(input, axis)?;
+        Ok(ItemPlacement(self_position | overflow))
     }
 }
 
-impl SpecifiedValueInfo for AlignItems {
+impl SpecifiedValueInfo for ItemPlacement {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
         list_baseline_keywords(f);
         list_normal_stretch(f);
@@ -560,68 +527,50 @@ impl SpecifiedValueInfo for AlignItems {
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem, ToTyped,
+    Clone,
+    Copy,
+    Debug,
+    Deref,
+    Deserialize,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
-pub struct JustifyItems(pub AlignFlags);
+pub struct JustifyItems(pub ItemPlacement);
 
 impl JustifyItems {
     
     #[inline]
     pub fn legacy() -> Self {
-        JustifyItems(AlignFlags::LEGACY)
+        Self(ItemPlacement(AlignFlags::LEGACY))
     }
 
     
     #[inline]
     pub fn normal() -> Self {
-        JustifyItems(AlignFlags::NORMAL)
+        Self(ItemPlacement::normal())
     }
 }
 
 impl Parse for JustifyItems {
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
-        
-
-        
-        
-        
-        
-        if let Ok(baseline) = input.try_parse(parse_baseline) {
-            return Ok(JustifyItems(baseline));
-        }
-
-        
-        if let Ok(value) = input.try_parse(parse_normal_stretch) {
-            return Ok(JustifyItems(value));
-        }
-
-        
-        if let Ok(value) = input.try_parse(parse_legacy) {
-            return Ok(JustifyItems(value));
-        }
-
-        
-        let overflow = input
-            .try_parse(parse_overflow_position)
-            .unwrap_or(AlignFlags::empty());
-        let self_position = parse_self_position(input, AxisDirection::Inline)?;
-        Ok(JustifyItems(overflow | self_position))
+        ItemPlacement::parse_inline(context, input).map(Self)
     }
 }
 
 impl SpecifiedValueInfo for JustifyItems {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
-        list_baseline_keywords(f);
-        list_normal_stretch(f);
-        list_legacy_keywords(f);
-        list_overflow_position_keywords(f);
-        list_self_position_keywords(f, AxisDirection::Inline);
+        ItemPlacement::collect_completion_keywords(f);
+        list_legacy_keywords(f); 
     }
 }
 

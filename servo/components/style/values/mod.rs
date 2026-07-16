@@ -463,12 +463,14 @@ pub fn reify_percentage(value: CSSFloat, dest: &mut ThinVec<TypedValue>) -> Resu
 }
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, MallocSizeOf, Serialize))]
 #[derive(
     Clone,
     Copy,
     Debug,
+    Deserialize,
+    MallocSizeOf,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToComputedValue,

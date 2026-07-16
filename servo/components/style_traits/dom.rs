@@ -13,8 +13,7 @@
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct OpaqueNode(pub usize);
 
 impl OpaqueNode {

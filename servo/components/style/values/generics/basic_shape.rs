@@ -69,17 +69,18 @@ fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
     Clone,
     Copy,
     ComputeSquaredDistance,
     Debug,
+    Deserialize,
     Eq,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToComputedValue,

@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::properties::style_structs;
 use euclid::default::{Point2D, Rect, SideOffsets2D, Size2D};
 use euclid::num::Zero;
@@ -421,13 +422,11 @@ impl fmt::Display for WritingMode {
 
 
 #[cfg(not(debug_assertions))]
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 struct DebugWritingMode;
 
 #[cfg(debug_assertions)]
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 struct DebugWritingMode {
     mode: WritingMode,
 }
@@ -477,16 +476,14 @@ impl Debug for DebugWritingMode {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub enum Direction {
     Inline,
     Block,
 }
 
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 pub struct LogicalSize<T> {
     pub inline: T, 
     pub block: T,  
@@ -628,8 +625,7 @@ impl<T: Sub<T, Output = T>> Sub for LogicalSize<T> {
 }
 
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 pub struct LogicalPoint<T> {
     
     pub i: T,
@@ -866,8 +862,7 @@ impl<T: Copy + Sub<T, Output = T>> Sub<LogicalSize<T>> for LogicalPoint<T> {
 
 
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 pub struct LogicalMargin<T> {
     pub block_start: T,
     pub inline_end: T,
@@ -1229,8 +1224,7 @@ impl<T: Sub<T, Output = T>> Sub for LogicalMargin<T> {
 }
 
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Serialize))]
+#[derive(Clone, Copy, Eq, PartialEq, Serialize)]
 pub struct LogicalRect<T> {
     pub start: LogicalPoint<T>,
     pub size: LogicalSize<T>,

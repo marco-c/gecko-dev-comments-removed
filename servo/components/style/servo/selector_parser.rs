@@ -545,8 +545,7 @@ impl NonTSPseudoClass {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct SelectorImpl;
 
 
