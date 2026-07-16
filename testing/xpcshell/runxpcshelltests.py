@@ -448,6 +448,21 @@ class XPCShellTestThread(Thread):
         
         self.killTimeout(proc)
 
+        self.reportTimeoutResult()
+
+        self.log.info(f"xpcshell return code: {self.getReturnCode(proc)}")
+        self.postCheck(proc)
+        self.clean_temp_dirs(self.test_object["path"])
+
+        
+        
+        self.lock.release()
+
+    def reportTimeoutResult(self):
+        """Log the structured failure for a timed-out test: a FAIL test_status
+        pointing at the uploaded profile (when one was written), followed by a
+        TIMEOUT test_end. Shared by the harness timer (testTimeout) and the path
+        where a profiled test dumps its profile and exits on its own."""
         if self.test_object["expected"] == "pass":
             expected = "PASS"
         else:
@@ -503,14 +518,6 @@ class XPCShellTestThread(Thread):
                 extra=extra,
             )
             self.log_full_output()
-
-        self.log.info("xpcshell return code: %s" % self.getReturnCode(proc))
-        self.postCheck(proc)
-        self.clean_temp_dirs(self.test_object["path"])
-
-        
-        
-        self.lock.release()
 
     def updateTestPrefsFile(self):
         
@@ -1066,6 +1073,7 @@ class XPCShellTestThread(Thread):
             if self.verbose:
                 self.logCommand(name, self.command, test_dir)
 
+            launch_time = time.monotonic()
             proc = self.launchProcess(
                 self.command,
                 stdout=self.pStdout,
@@ -1088,6 +1096,7 @@ class XPCShellTestThread(Thread):
             
             
             process_output, _ = self.communicate(proc)
+            elapsed = time.monotonic() - launch_time
 
             if self.interactive:
                 
@@ -1104,6 +1113,25 @@ class XPCShellTestThread(Thread):
                 self.timer = None
 
             self.lock.release()
+
+            
+            
+            
+            
+            
+            
+            if (
+                not self.timedout
+                and self.timeout_profile_name
+                and self.env.get("MOZ_UPLOAD_DIR")
+                and elapsed > testTimeoutInterval
+                and os.path.isfile(
+                    os.path.join(self.env["MOZ_UPLOAD_DIR"], self.timeout_profile_name)
+                )
+            ):
+                self.timedout = True
+                self.reportTimeoutResult()
+                return
 
             if process_output:
                 
