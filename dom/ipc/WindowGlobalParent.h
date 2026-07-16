@@ -122,7 +122,14 @@ class WindowGlobalParent final : public WindowContext,
   
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
-  nsIPrincipal* DocumentStoragePrincipal() { return mDocumentStoragePrincipal; }
+  nsIPrincipal* DocumentPartitionedPrincipal() {
+    return mDocumentPartitionedPrincipal;
+  }
+
+  nsIPrincipal* DocumentStoragePrincipal() {
+    return mPartitionStoragePrincipal ? DocumentPartitionedPrincipal()
+                                      : DocumentPrincipal();
+  }
 
   
   
@@ -295,7 +302,9 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(NotNull<nsIURI*> aURI);
   mozilla::ipc::IPCResult RecvUpdateDocumentPrincipal(
       nsIPrincipal* aNewDocumentPrincipal,
-      nsIPrincipal* aNewDocumentStoragePrincipal);
+      nsIPrincipal* aNewDocumentPartitionedPrincipal);
+  mozilla::ipc::IPCResult RecvUpdatePrincipalPartitioning(
+      bool aPartitionStoragePrincipal);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasLoaded(bool aDocumentHasLoaded);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasUserInteracted(
       bool aDocumentHasUserInteracted);
@@ -428,14 +437,9 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  nsresult SetDocumentStoragePrincipal(
-      nsIPrincipal* aNewDocumentStoragePrincipal);
-
-  
-  
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
+  nsCOMPtr<nsIPrincipal> mDocumentPartitionedPrincipal;
 
   
   nsCOMPtr<nsIPrincipal> mDocContentBlockingAllowListPrincipal;
@@ -491,6 +495,7 @@ class WindowGlobalParent final : public WindowContext,
   bool mDocumentTreeWouldPreloadResources = false;
   bool mBlockAllMixedContent;
   bool mUpgradeInsecureRequests;
+  bool mPartitionStoragePrincipal;
 
   
   uint32_t mHttpsOnlyStatus;

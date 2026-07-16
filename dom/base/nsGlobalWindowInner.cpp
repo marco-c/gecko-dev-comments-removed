@@ -7851,9 +7851,8 @@ RefPtr<GenericPromise> nsGlobalWindowInner::StorageAccessPermissionChanged(
       
       
       
-      
-      mWindowGlobalChild->SetDocumentPrincipal(
-          mDoc->NodePrincipal(), mDoc->EffectiveStoragePrincipal());
+      mWindowGlobalChild->SendUpdatePrincipalPartitioning(
+          !mDoc->UseRegularPrincipal());
     }
   }
 

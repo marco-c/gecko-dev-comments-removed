@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_WindowGlobalActor_h
 #define mozilla_dom_WindowGlobalActor_h
 
@@ -34,6 +32,11 @@ class WindowGlobalActor : public JSActorManager {
   
   
   static WindowGlobalInit WindowInitializer(nsGlobalWindowInner* aWindow);
+
+  
+  
+  [[nodiscard]] static bool VerifyPartitionedPrincipalMatchesDocumentPrincipal(
+      nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal);
 
  protected:
   virtual ~WindowGlobalActor() = default;
