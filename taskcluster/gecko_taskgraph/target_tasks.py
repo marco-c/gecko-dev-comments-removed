@@ -1014,9 +1014,14 @@ def make_desktop_nightly_filter(platforms):
     """Returns a filter that gets all nightly tasks on the given platform."""
 
     def filter(task, parameters):
+        
+        
+        
+        filter_for_target_project = _filter_by_release_project(parameters)
+
         return all([
             filter_on_platforms(task, platforms),
-            filter_for_project(task, parameters),
+            filter_for_target_project(task),
             task.attributes.get("shippable", False),
             task.attributes.get("shipping_product") in {"firefox", "thunderbird"},
             task.kind not in {"l10n"},  
