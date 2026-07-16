@@ -117,7 +117,7 @@ async function doShowLessFrequentlyCapReachedManySearches() {
     `menuitem[data-command=${command}]`
   );
   Assert.ok(!menuitem, "Menuitem should be absent");
-  gURLBar.view.resultMenu.hidePopup(true);
+  gURLBar.view.resultMenu.removeAttribute("open");
 }
 
 
