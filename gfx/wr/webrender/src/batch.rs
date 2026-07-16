@@ -44,7 +44,6 @@ pub const INVALID_SEGMENT_INDEX: i32 = 0xffff;
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BrushBatchKind {
-    Solid,
     Image(ImageBufferKind),
     MixBlend {
         task_id: RenderTaskId,
@@ -1028,7 +1027,6 @@ impl BatchBuilder {
             
             
             PrimitiveKind::ImageBorder { .. } => true,
-            
             
             
             
