@@ -156,9 +156,6 @@
 - (NSArray* _Nullable)moxLinkedUIElements;
 
 
-- (NSArray* _Nullable)moxARIAControls;
-
-
 - (NSArray* _Nullable)moxDetailsElements;
 
 

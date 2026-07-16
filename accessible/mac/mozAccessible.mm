@@ -882,15 +882,23 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (NSArray*)moxLinkedUIElements {
-  return [self getRelationsByType:RelationType::FLOWS_TO];
+  
+  
+  NSArray* controls = [self getRelationsByType:RelationType::CONTROLLER_FOR];
+  NSArray* flows = [self getRelationsByType:RelationType::FLOWS_TO];
+
+  if ([controls count] && [flows count]) {
+    
+    NSArray* allLinkedElements = [controls arrayByAddingObjectsFromArray:flows];
+    
+    return [[NSSet setWithArray:allLinkedElements] allObjects];
+  }
+  
+  return [controls count] ? controls : flows;
 }
 
 - (NSArray*)moxDetailsElements {
   return [self getRelationsByType:RelationType::DETAILS];
-}
-
-- (NSArray*)moxARIAControls {
-  return [self getRelationsByType:RelationType::CONTROLLER_FOR];
 }
 
 - (mozAccessible*)topWebArea {

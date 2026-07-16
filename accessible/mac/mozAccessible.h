@@ -259,9 +259,6 @@ enum CheckedState {
 - (NSArray*)moxLinkedUIElements;
 
 
-- (NSArray*)moxARIAControls;
-
-
 - (NSArray*)moxDetailsElements;
 
 
