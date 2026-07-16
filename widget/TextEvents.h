@@ -308,8 +308,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
         mEditCommandsForMultiLineEditor.Clone();
     result->mEditCommandsForRichTextEditor =
         mEditCommandsForRichTextEditor.Clone();
-    
-    
     result->mFlags = mFlags;
     return result;
   }
@@ -454,11 +452,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
   
   
   bool mUseLegacyKeyCodeAndCharCodeValues;
-
-  
-  
-  
-  Maybe<CommandInt> mRelevantCommand;
 
   bool CanSkipInRemoteProcess() const {
     
@@ -849,34 +842,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
     } else {
       mEditCommandsForRichTextEditor.Clear();
     }
-  }
-
-  bool HasRelevantCommand(const Command& aCommand) const {
-    CommandInt targetCommandInt = static_cast<CommandInt>(aCommand);
-
-    for (CommandInt commandInt : mEditCommandsForSingleLineEditor) {
-      if (commandInt == targetCommandInt) {
-        return true;
-      }
-    }
-
-    for (CommandInt commandInt : mEditCommandsForMultiLineEditor) {
-      if (commandInt == targetCommandInt) {
-        return true;
-      }
-    }
-
-    for (CommandInt commandInt : mEditCommandsForRichTextEditor) {
-      if (commandInt == targetCommandInt) {
-        return true;
-      }
-    }
-
-    if (mRelevantCommand) {
-      return mRelevantCommand.value() == targetCommandInt;
-    }
-
-    return false;
   }
 
  private:

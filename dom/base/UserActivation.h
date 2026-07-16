@@ -145,12 +145,6 @@ class UserActivation final : public nsISupports, public nsWrapperCache {
 
 
 
-  static bool IsHandlingKeyboardInputWithPasteActions();
-
-  
-
-
-
   static bool IsUserInteractionEvent(const WidgetEvent* aEvent);
 
   
@@ -194,10 +188,6 @@ class MOZ_RAII AutoHandlingUserInputStatePusher final {
  protected:
   EventMessage mMessage;
   bool mIsHandlingUserInput;
-
-  
-  
-  bool mPreviousHandlingKeyboardEventHasAssociatedPasteCommands;
 };
 
 }  

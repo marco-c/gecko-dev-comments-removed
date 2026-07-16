@@ -2118,7 +2118,7 @@ void BrowserParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent) {
   
   
   
-  if (aEvent.mMessage == eKeyPress || aEvent.mMessage == eKeyDown) {
+  if (aEvent.mMessage == eKeyPress) {
     
     
     

@@ -528,7 +528,6 @@ struct ParamTraits<mozilla::WidgetKeyboardEvent> {
     WriteParam(aWriter, aParam.mUniqueId);
     WriteParam(aWriter, aParam.mIsSynthesizedByTIP);
     WriteParam(aWriter, aParam.mMaybeSkippableInRemoteProcess);
-    WriteParam(aWriter, aParam.mRelevantCommand);
 
     
     
@@ -557,7 +556,6 @@ struct ParamTraits<mozilla::WidgetKeyboardEvent> {
         ReadParam(aReader, &aResult->mUniqueId) &&
         ReadParam(aReader, &aResult->mIsSynthesizedByTIP) &&
         ReadParam(aReader, &aResult->mMaybeSkippableInRemoteProcess) &&
-        ReadParam(aReader, &aResult->mRelevantCommand) &&
         ReadParam(aReader, &aResult->mEditCommandsForSingleLineEditor) &&
         ReadParam(aReader, &aResult->mEditCommandsForMultiLineEditor) &&
         ReadParam(aReader, &aResult->mEditCommandsForRichTextEditor) &&

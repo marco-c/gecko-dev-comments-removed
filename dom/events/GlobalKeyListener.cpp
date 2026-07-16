@@ -202,22 +202,8 @@ void GlobalKeyListener::HandleEventOnCaptureInDefaultEventGroup(
     return;
   }
 
-  WalkHandlersResult result = HasHandlerForEvent(aEvent);
-  if (result.mReservedHandlerForChromeFound) {
+  if (HasHandlerForEvent(aEvent).mReservedHandlerForChromeFound) {
     widgetKeyboardEvent->MarkAsReservedByChrome();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!widgetKeyboardEvent->mRelevantCommand) {
-    widgetKeyboardEvent->mRelevantCommand.emplace(static_cast<CommandInt>(
-        result.mRelevantCommand.valueOr(Command::DoNothing)));
   }
 }
 
@@ -275,7 +261,6 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersInternal(
   }
 
   bool foundDisabledHandler = false;
-  Maybe<Command> relevantCommand;
   for (const ShortcutKeyCandidate& key : shortcutKeys) {
     const bool skipIfEarlierHandlerDisabled =
         key.mSkipIfEarlierHandlerDisabled ==
@@ -289,13 +274,6 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersInternal(
     WalkHandlersResult result = WalkHandlersAndExecute(
         aPurpose, aKeyEvent, key.mCharCode, ignoreModifierState);
     if (result.mMeaningfulHandlerFound) {
-      
-      
-      
-      
-      
-      
-      
       return result;
     }
     
@@ -307,13 +285,8 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersInternal(
     if (!skipIfEarlierHandlerDisabled && !foundDisabledHandler) {
       foundDisabledHandler = result.mDisabledHandlerFound;
     }
-    if (!relevantCommand) {
-      relevantCommand = result.mRelevantCommand;
-    }
   }
-  WalkHandlersResult result;
-  result.mRelevantCommand = std::move(relevantCommand);
-  return result;
+  return {};
 }
 
 GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
@@ -330,7 +303,6 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
 
   
   bool foundDisabledHandler = false;
-  Maybe<Command> relevantCommand;
   for (KeyEventHandler* handler = mHandler; handler;
        handler = handler->GetNextHandler()) {
     bool stopped = aKeyEvent->IsDispatchStopped();
@@ -380,11 +352,6 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
         result.mMeaningfulHandlerFound = true;
         result.mReservedHandlerForChromeFound =
             IsReservedKey(widgetKeyboardEvent, handler);
-        
-        
-        if (CanHandle(handler, true)) {
-          result.mRelevantCommand.emplace(handler->GetCommand());
-        }
         return result;
       }
 
@@ -397,17 +364,7 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
           WalkHandlersResult result;
           result.mMeaningfulHandlerFound = true;
           result.mReservedHandlerForChromeFound = true;
-          
-          
-          if (CanHandle(handler, true)) {
-            result.mRelevantCommand.emplace(handler->GetCommand());
-          }
           return result;
-        }
-        
-        
-        if (!relevantCommand && CanHandle(handler, true)) {
-          relevantCommand.emplace(handler->GetCommand());
         }
       }
       
@@ -444,7 +401,6 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
 
   WalkHandlersResult result;
   result.mDisabledHandlerFound = foundDisabledHandler;
-  result.mRelevantCommand = std::move(relevantCommand);
   return result;
 }
 
@@ -480,7 +436,11 @@ bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
   
   
   if (KeyboardLockEnabledAndIsReservedKey(reserved, mTarget)) {
-    return aHandler->IsCommand("View:FullScreen");
+    nsCOMPtr<dom::Element> handlerElement = aHandler->GetHandlerElement();
+    nsAutoString command;
+    return handlerElement &&
+           handlerElement->GetAttr(nsGkAtoms::command, command) &&
+           command.EqualsLiteral("View:FullScreen");
   }
 
   if (reserved != ReservedKey_True &&
