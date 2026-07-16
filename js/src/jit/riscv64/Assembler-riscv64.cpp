@@ -564,13 +564,13 @@ class LiPtr {
     at(1)->SetIFormat(RO_ADDI, rd.code(), rd.code(), low_12);
 
     
-    at(2)->SetIFormat(RO_SLLI, rd.code(), rd.code(), 11);
+    at(2)->SetIShiftFormat(RO_SLLI, rd.code(), rd.code(), 11);
 
     
     at(3)->SetIFormat(RO_ORI, rd.code(), rd.code(), b11);
 
     
-    at(4)->SetIFormat(RO_SLLI, rd.code(), rd.code(), 6);
+    at(4)->SetIShiftFormat(RO_SLLI, rd.code(), rd.code(), 6);
 
     
     at(5)->SetIFormat(RO_ORI, rd.code(), rd.code(), a6);
