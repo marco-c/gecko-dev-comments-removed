@@ -195,6 +195,7 @@ for (const type of [
   "OPEN_PRIVATE_WINDOW",
   "OPEN_WEBEXT_SETTINGS",
   "PARTNER_LINK_ATTRIBUTION",
+  "PICTURE_OF_THE_DAY_UPDATE",
   "PLACES_BOOKMARKS_REMOVED",
   "PLACES_BOOKMARK_ADDED",
   "PLACES_HISTORY_CLEARED",
@@ -6824,6 +6825,24 @@ const INITIAL_STATE = {
     suggestedLocations: [],
   },
   
+  Stocks: {
+    tickers: [],
+    lastUpdated: null,
+  },
+  PictureOfTheDay: {
+    initialized: false,
+    lastUpdated: null,
+    imageUrl: "",
+    thumbnailUrl: "",
+    title: "",
+    description: "",
+    publishedDate: "",
+    sourceUrl: "",
+    author: "",
+    licenseLabel: "",
+    licenseUrl: "",
+    error: null,
+  },
   ListsWidget: {
     
     selected: "taskList",
@@ -7771,6 +7790,29 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
   }
 }
 
+const PictureOfTheDay = (prevState = INITIAL_STATE.PictureOfTheDay, action) => {
+  switch (action.type) {
+    case actionTypes.PICTURE_OF_THE_DAY_UPDATE:
+      return {
+        ...prevState,
+        imageUrl: action.data.imageUrl ?? "",
+        thumbnailUrl: action.data.thumbnailUrl ?? "",
+        title: action.data.title ?? "",
+        description: action.data.description ?? "",
+        publishedDate: action.data.publishedDate ?? "",
+        sourceUrl: action.data.sourceUrl ?? "",
+        author: action.data.author ?? "",
+        licenseLabel: action.data.licenseLabel ?? "",
+        licenseUrl: action.data.licenseUrl ?? "",
+        lastUpdated: action.data.lastUpdated ?? null,
+        error: action.data.error ?? null,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+};
+
 function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
   switch (action.type) {
     case actionTypes.WIDGETS_PRIVACY_UPDATE:
@@ -8042,6 +8084,7 @@ const reducers = {
   ExternalComponents,
   SportsWidget,
   PrivacyWidget,
+  PictureOfTheDay,
 };
 
 ;
@@ -22250,16 +22293,23 @@ const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTh
 
 
 
-
-
-
-const PictureOfTheDay = ({
+const PictureOfTheDay_PictureOfTheDay = ({
   dispatch,
   widgetsMayBeMaximized,
   widgetEnabledMap
 }) => {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const pictureData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.PictureOfTheDay);
   const widgetSize = resolveWidgetSize(PICTURE_OF_THE_DAY_ENTRY, prefs);
+
+  
+  
+  
+  const [imageFailed, setImageFailed] = (0,external_React_namespaceObject.useState)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    setImageFailed(false);
+  }, [pictureData.imageUrl]);
+  const hasPicture = Boolean(pictureData.imageUrl) && !imageFailed;
   const {
     impressionRef,
     recordUserAction,
@@ -22327,11 +22377,14 @@ const PictureOfTheDay = ({
     source: "widget"
   });
   return external_React_default().createElement("article", {
-    className: `picture-of-the-day widget col-4 ${widgetSize}-widget`,
+    className: `picture-of-the-day widget col-4 ${widgetSize}-widget${hasPicture ? " has-picture" : ""}`,
     ref: impressionRef
   }, external_React_default().createElement("div", {
     className: "picture-of-the-day-toolbar"
-  }, external_React_default().createElement("div", {
+  }, hasPicture ? external_React_default().createElement("p", {
+    className: "picture-of-the-day-eyebrow",
+    "data-l10n-id": "newtab-picture-header"
+  }) : null, external_React_default().createElement("div", {
     className: "picture-of-the-day-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "picture-of-the-day-context-menu-button",
@@ -22370,7 +22423,14 @@ const PictureOfTheDay = ({
   }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-picture-menu-learn-more",
     onClick: handleLearnMore
-  })))), external_React_default().createElement("div", {
+  })))), hasPicture ? external_React_default().createElement("div", {
+    className: "picture-of-the-day-populated"
+  }, external_React_default().createElement("img", {
+    className: "picture-of-the-day-image",
+    src: pictureData.imageUrl,
+    alt: pictureData.title,
+    onError: () => setImageFailed(true)
+  })) : external_React_default().createElement("div", {
     className: "picture-of-the-day-footer"
   }, external_React_default().createElement("button", {
     type: "button",
@@ -22447,7 +22507,7 @@ const WIDGET_ROW_COMPONENTS = {
   privacy: Privacy,
   crossword: Crossword,
   stocks: Stocks,
-  pictureOfTheDay: PictureOfTheDay
+  pictureOfTheDay: PictureOfTheDay_PictureOfTheDay
 };
 const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
