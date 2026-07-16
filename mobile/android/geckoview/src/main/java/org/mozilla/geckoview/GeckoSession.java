@@ -3275,6 +3275,25 @@ public class GeckoSession {
 
 
   @HandlerThread
+  public @NonNull GeckoResult<JSONObject> getBrokenSiteReport() {
+    ThreadUtils.assertOnHandlerThread();
+    return mEventDispatcher
+        .queryString("GeckoView:GetBrokenSiteReport")
+        .map(
+            value -> {
+              if (value == null) {
+                throw new IllegalStateException("Unable to get broken site report");
+              }
+              return new JSONObject(value);
+            });
+  }
+
+  
+
+
+
+
+  @HandlerThread
   public @NonNull GeckoResult<JSONObject> getWebCompatInfo() {
     ThreadUtils.assertOnHandlerThread();
     return mEventDispatcher
