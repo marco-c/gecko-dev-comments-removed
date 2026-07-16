@@ -299,6 +299,10 @@ let propNameAllowlist = [
   
   
   { propName: "--sections-col-count", isFromDevTools: false },
+
+  
+  
+  { propName: "--fc-icon-success-color", isFromDevTools: false },
 ];
 
 
