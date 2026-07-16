@@ -63,7 +63,9 @@ async function do_test_timing(url) {
   
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
   
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
   
   await new Promise(resolve => setTimeout(resolve, 1000));
