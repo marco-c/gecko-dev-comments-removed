@@ -12860,6 +12860,7 @@ const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 const PREF_STOCKS_SIZE = "widgets.stocks.size";
 const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
   "widgets.system.stocks.enabled";
+const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
 
 
 
@@ -13163,6 +13164,22 @@ function resolveWidgetHasSidebar(widget, prefs) {
     }
   }
   return widget.hasSidebar;
+}
+
+
+
+
+
+
+
+
+
+
+function resolveCrosswordEndpoint(prefs) {
+  return (
+    prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
+    prefs[PREF_CROSSWORD_ENDPOINT]
+  );
 }
 
 
@@ -21732,6 +21749,7 @@ function Crossword({
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
+  const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -21851,7 +21869,15 @@ function Crossword({
     onClick: handleLearnMore
   }, "Learn more")))), external_React_default().createElement("div", {
     className: "crossword-body"
-  }));
+  }, external_React_default().createElement("iframe", {
+    className: "crossword-frame",
+    title: "Crossword",
+    src: crosswordEndpoint
+    
+    
+    ,
+    sandbox: "allow-scripts allow-same-origin"
+  })));
 }
 
 ;
