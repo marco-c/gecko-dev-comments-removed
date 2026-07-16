@@ -95,6 +95,8 @@ skip-if = [
 ["test_altsvc.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_altsvc_lna.js"]
+
 ["test_altsvc_pref.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix",
@@ -1396,6 +1398,8 @@ run-if = [
 ]
 
 ["test_no_cookies_after_last_pb_exit.js"]
+
+["test_no_vary_search_telemetry.js"]
 
 ["test_node_execute.js"]
 
