@@ -446,6 +446,31 @@ class ComponentLoweredFuncDesc {
   const SharedTypeDef& flattenedType() const { return flattenedType_; }
 };
 
+
+
+struct ComponentSortIndex {
+  ComponentSort sort = ComponentSort::Invalid;
+  uint32_t index = 0;
+
+  ComponentSortIndex() = default;
+  ComponentSortIndex(ComponentSort sort, uint32_t index)
+      : sort(sort), index(index) {}
+
+  bool operator==(const ComponentSortIndex& other) const {
+    return sort == other.sort && index == other.index;
+  }
+};
+
+struct ComponentSortIndexHasher {
+  using Lookup = ComponentSortIndex;
+  static HashNumber hash(const Lookup& l) {
+    return mozilla::HashGeneric(l.sort, l.index);
+  }
+  static bool match(const ComponentSortIndex& k, const Lookup& l) {
+    return k == l;
+  }
+};
+
 enum class ComponentAliasKind : uint8_t {
   CoreExport,
   Export,
@@ -498,6 +523,8 @@ class ComponentItem {
   static constexpr uint32_t AliasInstanceMask = (1 << AliasKindShift) - 1;
 
   enum class ItemKind : uint8_t {
+    Invalid = 0,
+
     
     
     
@@ -513,12 +540,6 @@ class ComponentItem {
     
     
     Alias,
-
-    
-    
-    
-    
-    Raw,
   };
 
   explicit ComponentItem(ItemKind kind, ComponentSort sort, uint32_t itemIndex)
@@ -547,6 +568,10 @@ class ComponentItem {
   }
 
  public:
+  ComponentItem() : whatAndWhere_(0), itemIndex_(0) {
+    MOZ_ASSERT(this->kind() == ItemKind::Invalid);
+  }
+
   static ComponentItem defined(ComponentSort sort, uint32_t itemIndex) {
     return ComponentItem(ItemKind::Defined, sort, itemIndex);
   }
@@ -559,9 +584,6 @@ class ComponentItem {
   static ComponentItem alias(ComponentAliasKind aliasKind, ComponentSort sort,
                              uint32_t instanceIndex, uint32_t itemIndex) {
     return ComponentItem(aliasKind, sort, instanceIndex, itemIndex);
-  }
-  static ComponentItem raw(ComponentSort sort, uint32_t itemIndex) {
-    return ComponentItem(ItemKind::Raw, sort, itemIndex);
   }
 
   ItemKind kind() const {
@@ -580,6 +602,17 @@ class ComponentItem {
   uint32_t aliasInstanceIndex() const {
     MOZ_RELEASE_ASSERT(kind() == ItemKind::Alias);
     return whatAndWhere_ & AliasInstanceMask;
+  }
+
+  
+  
+  bool isOuterAlias() const {
+    return kind() == ItemKind::Alias &&
+           aliasKind() == ComponentAliasKind::Outer;
+  }
+  ComponentSortIndex outerAliasSortIndex() const {
+    MOZ_RELEASE_ASSERT(isOuterAlias());
+    return ComponentSortIndex(sort(), itemIndex());
   }
 
   bool operator==(const ComponentItem& other) const {
@@ -620,10 +653,10 @@ struct CoreInstanceDescFromModule {
 };
 
 class ComponentInlineExports {
-  using ExportMap = mozilla::HashMap<CacheableName, ComponentItem,
+  using ExportMap = mozilla::HashMap<CacheableName, ComponentSortIndex,
                                      CacheableNameHasher, SystemAllocPolicy>;
   using OriginalIndexMap =
-      mozilla::HashMap<ComponentItem, uint32_t, ComponentItemHasher,
+      mozilla::HashMap<ComponentSortIndex, uint32_t, ComponentSortIndexHasher,
                        SystemAllocPolicy>;
 
   
@@ -652,13 +685,22 @@ class ComponentInlineExports {
     uint32_t trackItemOfSort(ComponentSort sort);
   };
 
-  bool addExport(Builder* builder, CacheableName&& name, ComponentSort sort,
-                 uint32_t index);
-  mozilla::Maybe<ComponentItem> getExport(const CacheableName& name) const;
+  bool addExport(Builder* builder, CacheableName&& name,
+                 ComponentSortIndex exported);
 
   
   
-  ComponentItem resolveOriginalItem(ComponentItem exp) const;
+  
+  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
+
+  
+  
+  ComponentSortIndex resolveOriginal(ComponentSortIndex expFromThis) const;
+
+  
+  
+  ComponentSortIndex mustResolveExportToOriginal(
+      const CacheableName& name) const;
 };
 
 
@@ -682,9 +724,7 @@ class CoreInstanceDesc {
   const CoreInstanceVariant& desc() const { return desc_; }
 
   
-  
-  
-  mozilla::Maybe<ComponentItem> getExport(const CacheableName& name) const;
+  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
 
   const TypeDef& getCoreFuncType(uint32_t coreFuncIndex) const;
   const TableDesc& getTable(uint32_t tableIndex) const;
@@ -873,6 +913,7 @@ class Component : public JS::WasmComponent {
   const ItemVector& coreTables() const { return coreTables_; }
   const TableDesc& getCoreTable(uint32_t tableIndex) const;
   [[nodiscard]] bool addCoreTable(ComponentItem tableItem) {
+    MOZ_RELEASE_ASSERT(tableItem.kind() == ComponentItem::ItemKind::Alias);
     MOZ_RELEASE_ASSERT(tableItem.sort() == ComponentSort::CoreTable);
     return coreTables_.append(tableItem);
   }
@@ -880,6 +921,7 @@ class Component : public JS::WasmComponent {
   const ItemVector& coreMemories() const { return coreMemories_; }
   const MemoryDesc& getCoreMemory(uint32_t memoryIndex) const;
   [[nodiscard]] bool addCoreMemory(ComponentItem memoryItem) {
+    MOZ_RELEASE_ASSERT(memoryItem.kind() == ComponentItem::ItemKind::Alias);
     MOZ_RELEASE_ASSERT(memoryItem.sort() == ComponentSort::CoreMemory);
     return coreMemories_.append(memoryItem);
   }
@@ -887,6 +929,7 @@ class Component : public JS::WasmComponent {
   const ItemVector& coreGlobals() const { return coreGlobals_; }
   const GlobalDesc& getCoreGlobal(uint32_t globalIndex) const;
   [[nodiscard]] bool addCoreGlobal(ComponentItem globalItem) {
+    MOZ_RELEASE_ASSERT(globalItem.kind() == ComponentItem::ItemKind::Alias);
     MOZ_RELEASE_ASSERT(globalItem.sort() == ComponentSort::CoreGlobal);
     return coreGlobals_.append(globalItem);
   }
@@ -894,6 +937,7 @@ class Component : public JS::WasmComponent {
   const ItemVector& coreTags() const { return coreTags_; }
   const TagDesc& getCoreTag(uint32_t tagIndex) const;
   bool addCoreTag(ComponentItem tagItem) {
+    MOZ_RELEASE_ASSERT(tagItem.kind() == ComponentItem::ItemKind::Alias);
     MOZ_RELEASE_ASSERT(tagItem.sort() == ComponentSort::CoreTag);
     return coreTags_.append(tagItem);
   }
@@ -950,6 +994,9 @@ class Component : public JS::WasmComponent {
 
 using MutableComponent = RefPtr<Component>;
 using SharedComponent = RefPtr<const Component>;
+
+UniqueChars ToString(ComponentItem item);
+UniqueChars ToString(ComponentSortIndex sortIndex);
 
 }  
 }  
