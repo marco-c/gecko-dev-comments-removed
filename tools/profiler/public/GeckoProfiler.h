@@ -330,8 +330,8 @@ void profiler_save_profile_to_file(const char* aFilename);
 
 
 
-void profiler_schedule_dump_to_file(double aDelaySeconds,
-                                    const char* aFilename);
+void profiler_schedule_dump_to_file(double aDelaySeconds, const char* aFilename,
+                                    bool aExitAfterDump);
 void profiler_cancel_scheduled_dump();
 
 
