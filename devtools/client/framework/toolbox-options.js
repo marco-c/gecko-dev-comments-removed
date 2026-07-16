@@ -579,23 +579,6 @@ class OptionsPanel extends EventEmitter {
       
       this.disableJSNode.parentNode.style.display = "none";
     }
-
-    
-    
-    const showCommentsOption = this.panelDoc.querySelector(
-      'label:has(> [data-pref="devtools.markup.showComments"])'
-    );
-    try {
-      if (
-        !this.commands.targetCommand.rootFront.traits
-          .supportsCommentNodesDisplayControl
-      ) {
-        showCommentsOption.style.display = "none";
-      }
-    } catch (e) {
-      
-      showCommentsOption.style.display = "none";
-    }
   }
 
   setupNetworkBodySizeLimit() {

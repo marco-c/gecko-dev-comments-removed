@@ -146,9 +146,6 @@ class RootActor extends Actor {
       
       
       supportsEnableWindowGlobalThreadActors: true,
-      
-      
-      supportsCommentNodesDisplayControl: true,
     };
   }
 
