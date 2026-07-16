@@ -57,6 +57,43 @@ function getPreloadsFromSearchParams() {
 
 
 
+
+
+
+
+
+
+function navigateToTestWithEarlyHintsPreconnects(test_url, preconnects) {
+    const params = new URLSearchParams();
+    params.set("test_url", test_url);
+    params.set("exclude_preloads_from_ok_response", "true");
+    for (const preconnect of preconnects) {
+        params.append("preconnects", JSON.stringify(preconnect));
+    }
+    const url = RESOURCES_PATH + "/early-hints-test-loader.h2.py?" +
+        params.toString();
+    window.location.replace(new URL(url, window.location));
+}
+
+
+
+
+
+
+
+
+function getPreconnectsFromSearchParams() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.getAll("preconnects");
+    return encoded.map(e => JSON.parse(e));
+}
+
+
+
+
+
+
+
 async function fetchResource(element, url) {
     return new Promise((resolve, reject) => {
         const el = document.createElement(element);
