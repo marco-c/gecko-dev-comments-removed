@@ -261,7 +261,7 @@ static const size_t kPhcPageSize =
 
 
 
-static const size_t kPhcAlign = 1024 * 1024;
+static const size_t kPhcAlign = 2 * 1024 * 1024;
 
 static_assert(std::has_single_bit(kPhcAlign));
 static_assert((kPhcAlign % kPhcPageSize) == 0);
