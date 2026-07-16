@@ -831,6 +831,9 @@ class Component : public JS::WasmComponent {
   using ImportVector = mozilla::Vector<ComponentImport, 0, SystemAllocPolicy>;
   using ExportVector = mozilla::Vector<ComponentExport, 0, SystemAllocPolicy>;
   using ItemVector = mozilla::Vector<ComponentItem, 0, SystemAllocPolicy>;
+  using AliasNameMap =
+      mozilla::HashMap<ComponentSortIndex, CacheableName,
+                       ComponentSortIndexHasher, SystemAllocPolicy>;
 
  private:
   CoreModuleVector definedCoreModules_;
@@ -853,6 +856,18 @@ class Component : public JS::WasmComponent {
   ItemVector coreTypes_;
   ItemVector coreModules_;
   ItemVector coreInstances_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  AliasNameMap aliasNames_;
 
   template <typename T>
   bool addDefinedItem(
@@ -955,6 +970,15 @@ class Component : public JS::WasmComponent {
     return addDefinedItem(ComponentSort::CoreInstance, std::move(instance),
                           definedCoreInstances_, coreInstances_);
   }
+
+  
+  
+  ComponentItem resolveSortIndex(ComponentSortIndex sortIndex) const;
+
+  [[nodiscard]] bool saveExportNameForAlias(ComponentSortIndex sortIndexOfAlias,
+                                            CacheableName&& name);
+  const CacheableName& getExportNameForAlias(
+      ComponentSortIndex sortIndexOfAlias) const;
 
   
   
