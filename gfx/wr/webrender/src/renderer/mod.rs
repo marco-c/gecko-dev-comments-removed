@@ -297,7 +297,6 @@ pub enum ShaderColorMode {
     BitmapShadow = 2,
     ColorBitmap = 3,
     Image = 4,
-    MultiplyDualSource = 5,
 }
 
 impl From<GlyphFormat> for ShaderColorMode {
@@ -638,7 +637,6 @@ pub enum BlendMode {
     PremultipliedDestOut,
     SubpixelDualSource,
     Advanced(MixBlendMode),
-    MultiplyDualSource,
     Screen,
     Exclusion,
     PlusLighter,
@@ -652,7 +650,6 @@ impl BlendMode {
         mode: MixBlendMode,
         advanced_blend: bool,
         coherent: bool,
-        dual_source: bool,
     ) -> Option<BlendMode> {
         
         
@@ -666,8 +663,6 @@ impl BlendMode {
             MixBlendMode::Exclusion => BlendMode::Exclusion,
             
             MixBlendMode::PlusLighter => BlendMode::PlusLighter,
-            
-            MixBlendMode::Multiply if dual_source => BlendMode::MultiplyDualSource,
             
             _ if advanced_blend => BlendMode::Advanced(mode),
             
@@ -3105,9 +3100,6 @@ impl Renderer {
                                 self.device.gl().blend_barrier_khr();
                             }
                             self.device.set_blend_mode_advanced(mode);
-                        }
-                        BlendMode::MultiplyDualSource => {
-                            self.device.set_blend_mode_multiply_dual_source();
                         }
                         BlendMode::Screen => {
                             self.device.set_blend_mode_screen();
