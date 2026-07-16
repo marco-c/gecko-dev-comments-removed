@@ -1478,11 +1478,6 @@ pref("browser.sessionstore.resume_session_once", false);
 pref("browser.sessionstore.resuming_after_os_restart", false);
 
 
-pref("browser.sessionstore.newTabOnRestore", false);
-
-pref("browser.sessionstore.newTabOnRestore.showSetting", false);
-
-
 
 pref("browser.sessionstore.closedTabsFromAllWindows", true);
 pref("browser.sessionstore.closedTabsFromClosedWindows", true);
