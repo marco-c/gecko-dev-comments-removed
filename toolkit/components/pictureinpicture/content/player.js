@@ -3,7 +3,7 @@
 
 
 const { PictureInPicture } = ChromeUtils.importESModule(
-  "resource://gre/modules/PictureInPicture.sys.mjs"
+  "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs"
 );
 const { ShortcutUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ShortcutUtils.sys.mjs"
