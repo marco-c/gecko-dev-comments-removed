@@ -59,7 +59,9 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
   bool success = sandbox->create_sandbox( false,
                                          &capacity, "rlbox_wasm2c_hunspell");
 #elif defined(MOZ_WASM_SANDBOXING_HUNSPELL)
-  bool success = sandbox->create_sandbox( false);
+  bool success =
+      sandbox->create_sandbox( false,
+                              nullptr , "rlbox_wasm2c_hunspell");
 #else
   sandbox->create_sandbox();
   const bool success = true;
