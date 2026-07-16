@@ -722,7 +722,8 @@ inline bool JSONFullParseHandlerAnyChar::finishObject(
   }
   
   JSObject* obj = NewPlainObjectWithMaybeDuplicateKeys(
-      cx, Handle<IdValueVector>::fromMarkedLocation(properties), newKind);
+      cx, Handle<IdValueVector>::fromMarkedLocation(properties),
+      {.newKind = newKind});
   if (!obj) {
     return false;
   }

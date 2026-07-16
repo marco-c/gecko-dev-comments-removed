@@ -1433,7 +1433,7 @@ static JSObject* NewIteratorRecord(JSContext* cx, HandleObject iterator,
                                    HandleValue nextMethod) {
   gc::AllocKind allocKind = gc::GetGCObjectKind(3);
   Rooted<PlainObject*> obj(
-      cx, NewPlainObjectWithProtoAndAllocKind(cx, nullptr, allocKind));
+      cx, NewPlainObjectWithProto(cx, nullptr, {.allocKind = allocKind}));
   if (!obj) {
     return nullptr;
   }
@@ -1865,15 +1865,17 @@ class CheckTenuredTracer : public JS::CallbackTracer {
       JS::TraceChildren(this, stack.popCopy());
     }
   }
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     gc::Cell* cell = thing.asCell();
     MOZ_RELEASE_ASSERT(cell->isTenured(), "Expected tenured cell");
     if (!visited.has(cell)) {
       if (!visited.put(cell) || !stack.append(thing)) {
         
-        return;
+        return true;
       }
     }
+
+    return true;
   }
 };
 
@@ -2352,7 +2354,7 @@ static bool GetComputedIntrinsic(JSContext* cx, Handle<PropertyName*> name,
     
     
     computedIntrinsicsHolder =
-        NewPlainObjectWithProto(cx, nullptr, TenuredObject);
+        NewPlainObjectWithProto(cx, nullptr, {.newKind = TenuredObject});
     if (!computedIntrinsicsHolder) {
       return false;
     }

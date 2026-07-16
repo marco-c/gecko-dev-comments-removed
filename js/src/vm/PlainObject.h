@@ -60,35 +60,23 @@ extern SharedShape* ThisShapeForFunction(JSContext* cx,
 
 
 extern PlainObject* NewPlainObject(JSContext* cx,
-                                   NewObjectKind newKind = GenericObject);
-
-
-
-extern PlainObject* NewPlainObjectWithAllocKind(
-    JSContext* cx, gc::AllocKind allocKind,
-    NewObjectKind newKind = GenericObject);
+                                   const NewObjectOptions& options = {});
 
 
 extern PlainObject* NewPlainObjectWithProto(
-    JSContext* cx, HandleObject proto, NewObjectKind newKind = GenericObject);
-
-
-
-extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
-    JSContext* cx, HandleObject proto, gc::AllocKind allocKind,
-    NewObjectKind newKind = GenericObject);
+    JSContext* cx, HandleObject proto, const NewObjectOptions& options = {});
 
 
 
 extern PlainObject* NewPlainObjectWithUniqueNames(
     JSContext* cx, Handle<IdValueVector> properties,
-    NewObjectKind newKind = GenericObject);
+    const NewObjectOptions& options = {});
 
 
 
 extern PlainObject* NewPlainObjectWithMaybeDuplicateKeys(
     JSContext* cx, Handle<IdValueVector> properties,
-    NewObjectKind newKind = GenericObject);
+    const NewObjectOptions& options = {});
 
 }  
 

@@ -12086,7 +12086,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
     }
 
     
-    templateObj = NewPlainObjectWithAllocKind(cx_, NewObjectGCKind());
+    templateObj = NewPlainObject(cx_, {.allocKind = NewObjectGCKind()});
     if (!templateObj) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
