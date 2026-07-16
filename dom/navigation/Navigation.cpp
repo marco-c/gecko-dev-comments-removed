@@ -1369,7 +1369,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
   
   nsID key{};
   const bool foundKey =
-      key.Parse(NS_ConvertUTF16toUTF8(aKey).get()) &&
+      key.Parse(NS_ConvertUTF16toUTF8(aKey)) &&
       std::find_if(mEntries.begin(), mEntries.end(), [&](const auto& aEntry) {
         return aEntry->Key() == key;
       }) != mEntries.end();

@@ -11,6 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/Sprintf.h"
+#include "nsTSubstring.h"
 #include "nss.h"
 
 [[nodiscard]] static bool GenerateRandomBytesFromNSS(void* aBuffer,
@@ -125,34 +126,46 @@ void nsID::Clear() {
 
 
 
-bool nsID::Parse(const char* aIDStr) {
-  
-  if (!aIDStr) {
+bool nsID::Parse(const nsACString& aIDStr) {
+  const nsACString::size_type length = aIDStr.Length();
+
+  if (aIDStr.IsEmpty()) {
+    
+    
     return false;
   }
 
-  bool expectFormat1 = (aIDStr[0] == '{');
-  if (expectFormat1) {
-    ++aIDStr;
+  const bool expectFormat1 = (aIDStr[0] == '{');
+  const nsACString::size_type minLength = expectFormat1 ? 38 : 36;
+  if (length < minLength) {
+    
+    return false;
   }
 
-  PARSE_CHARS_TO_NUM(aIDStr, m0, 8);
-  PARSE_HYPHEN(aIDStr);
-  PARSE_CHARS_TO_NUM(aIDStr, m1, 4);
-  PARSE_HYPHEN(aIDStr);
-  PARSE_CHARS_TO_NUM(aIDStr, m2, 4);
-  PARSE_HYPHEN(aIDStr);
+  const char* rawIdStr = aIDStr.BeginReading();
+
+  if (expectFormat1) {
+    
+    rawIdStr++;
+  }
+
+  PARSE_CHARS_TO_NUM(rawIdStr, m0, 8);
+  PARSE_HYPHEN(rawIdStr);
+  PARSE_CHARS_TO_NUM(rawIdStr, m1, 4);
+  PARSE_HYPHEN(rawIdStr);
+  PARSE_CHARS_TO_NUM(rawIdStr, m2, 4);
+  PARSE_HYPHEN(rawIdStr);
   int i;
   for (i = 0; i < 2; ++i) {
-    PARSE_CHARS_TO_NUM(aIDStr, m3[i], 2);
+    PARSE_CHARS_TO_NUM(rawIdStr, m3[i], 2);
   }
-  PARSE_HYPHEN(aIDStr);
+  PARSE_HYPHEN(rawIdStr);
   while (i < 8) {
-    PARSE_CHARS_TO_NUM(aIDStr, m3[i], 2);
+    PARSE_CHARS_TO_NUM(rawIdStr, m3[i], 2);
     i++;
   }
 
-  return expectFormat1 ? *aIDStr == '}' : true;
+  return expectFormat1 ? *rawIdStr == '}' : true;
 }
 
 #ifndef XPCOM_GLUE_AVOID_NSPR

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "Clients.h"
 
 #include "Client.h"
@@ -66,7 +64,7 @@ already_AddRefed<Promise> Clients::Get(const nsAString& aClientID,
   
   
   if (aClientID.IsEmpty() || aClientID.CharAt(0) == '{' ||
-      !id.Parse(NS_ConvertUTF16toUTF8(aClientID).get())) {
+      !id.Parse(NS_ConvertUTF16toUTF8(aClientID))) {
     
     
     outerPromise->MaybeResolveWithUndefined();
