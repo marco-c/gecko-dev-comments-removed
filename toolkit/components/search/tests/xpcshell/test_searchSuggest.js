@@ -420,34 +420,43 @@ add_task(async function fetch_twice_in_a_row() {
   Services.fog.testResetFOG();
 
   
-  await updateSearchHistory("bump", "delay local");
-  await updateSearchHistory("bump", "delayed local");
-
-  let controller = new SearchSuggestionController();
-  let resultPromise1 = controller.fetch({
-    searchString: "delay",
-    inPrivateBrowsing: false,
-    engine: getEngine,
-  });
-
-  
-  let resultPromise2 = controller.fetch({
-    searchString: "delayed ",
-    inPrivateBrowsing: false,
-    engine: getEngine,
-  });
-  await resultPromise1.then(results => Assert.equal(null, results));
-
-  let result = await resultPromise2;
-  Assert.equal(result.term, "delayed ");
-  Assert.equal(result.local.length, 1);
-  Assert.equal(result.local[0].value, "delayed local");
-  Assert.equal(result.remote.length, 1);
-  Assert.equal(result.remote[0].value, "delayed ");
-
   
   
-  assertLatencyCollection(getEngine, true);
+  
+  Services.prefs.setIntPref("browser.search.suggest.timeout", 5000);
+  try {
+    
+    await updateSearchHistory("bump", "delay local");
+    await updateSearchHistory("bump", "delayed local");
+
+    let controller = new SearchSuggestionController();
+    let resultPromise1 = controller.fetch({
+      searchString: "delay",
+      inPrivateBrowsing: false,
+      engine: getEngine,
+    });
+
+    
+    let resultPromise2 = controller.fetch({
+      searchString: "delayed ",
+      inPrivateBrowsing: false,
+      engine: getEngine,
+    });
+    await resultPromise1.then(results => Assert.equal(null, results));
+
+    let result = await resultPromise2;
+    Assert.equal(result.term, "delayed ");
+    Assert.equal(result.local.length, 1);
+    Assert.equal(result.local[0].value, "delayed local");
+    Assert.equal(result.remote.length, 1);
+    Assert.equal(result.remote[0].value, "delayed ");
+
+    
+    
+    assertLatencyCollection(getEngine, true);
+  } finally {
+    Services.prefs.clearUserPref("browser.search.suggest.timeout");
+  }
 });
 
 add_task(async function both_identical_with_more_than_max_results() {
@@ -728,7 +737,10 @@ add_task(async function slow_timeout() {
   assertLatencyCollection(getEngine, false);
 
   
-  await new Promise(r => setTimeout(r, delayMs));
+  await TestUtils.waitForCondition(
+    () => Glean.searchSuggestions.latency[getEngine.id].testGetValue() != null,
+    "Waiting for the remote fetch latency to be recorded"
+  );
 
   
   assertLatencyCollection(getEngine, true);
@@ -767,7 +779,10 @@ add_task(async function slow_timeout_2() {
   assertLatencyCollection(getEngine, false);
 
   
-  await new Promise(r => setTimeout(r, delayMs));
+  await TestUtils.waitForCondition(
+    () => Glean.searchSuggestions.latency[getEngine.id].testGetValue() != null,
+    "Waiting for the remote fetch latency to be recorded"
+  );
 
   
   
