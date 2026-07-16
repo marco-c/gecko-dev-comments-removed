@@ -93,11 +93,13 @@ struct AbstractBinding {
   enum class Lang {
     Cpp,
     Jvm,
+    Idl,
   };
-  static constexpr size_t LangLength = 2;
+  static constexpr size_t LangLength = 3;
   static constexpr std::array<StringRef, LangLength> langNames = {
       "cpp",
       "jvm",
+      "idl",
   };
 
   static std::optional<Lang> langFromString(StringRef langName) {
@@ -610,14 +612,6 @@ void findBindingToJavaMember(ASTContext &C, CXXMethodDecl &method) {
 
 
 
-
-
-
-
-
-
-
-
 void findBindingToJavaConstant(ASTContext &C, VarDecl &field) {
   const auto *parent = dyn_cast_or_null<CXXRecordDecl>(field.getDeclContext());
   if (!parent)
@@ -625,6 +619,9 @@ void findBindingToJavaConstant(ASTContext &C, VarDecl &field) {
 
   const auto classBinding = getBindingTo(*parent);
   if (!classBinding)
+    return;
+
+  if (classBinding->lang != BindingTo::Lang::Jvm)
     return;
 
   const auto symbol = javaScipSymbol(classBinding->symbol, field.getName(),
