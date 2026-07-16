@@ -2948,7 +2948,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
     
     
     
-    if (aParent && aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
+    if (aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
       mDoc->QueueCacheUpdateForPopoverInvokers(aParent->Elm());
     }
   }
