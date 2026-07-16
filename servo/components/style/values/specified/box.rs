@@ -43,6 +43,46 @@ fn appearance_base_select_enabled(_context: &ParserContext) -> bool {
     static_prefs::pref!("dom.select.customizable_select.enabled")
 }
 
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    ToCss,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[css(bitflags(
+    single = "none",
+    mixed = "block,block-start,block-end",
+    overlapping_bits
+))]
+#[repr(C)]
+
+
+
+
+
+pub struct MarginTrim(u8);
+bitflags! {
+    impl MarginTrim: u8 {
+        /// `none` variant, no margins are trimmed.
+        const NONE = 0;
+        /// Trim the block-start margin of the first child.
+        const BLOCK_START = 1 << 0;
+        /// Trim the block-end margin of the last child.
+        const BLOCK_END = 1 << 1;
+        /// `block` shorthand: both block-axis margins.
+        const BLOCK = MarginTrim::BLOCK_START.bits() | MarginTrim::BLOCK_END.bits();
+    }
+}
+
 
 pub type OverflowClipMargin = GenericOverflowClipMargin<NonNegativeLength>;
 

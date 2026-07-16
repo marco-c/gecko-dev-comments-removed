@@ -517,6 +517,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   
   
   mozilla::StyleOverflowClipMargin mOverflowClipMargin;
+
+  mozilla::StyleMarginTrim mMarginTrim;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {
@@ -1474,14 +1476,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   mozilla::StyleDirection mDirection;
   mozilla::StyleVisibility mVisible;
   mozilla::StyleImageRendering mImageRendering;
+
+ private:
+  mozilla::StyleImageOrientation mImageOrientation;
+
+ public:
+  mozilla::StyleImageDecoding mImageDecoding;
   mozilla::StyleWritingModeProperty mWritingMode;
   mozilla::StyleTextOrientation mTextOrientation;
   mozilla::StyleBoxCollapse mMozBoxCollapse;
   mozilla::StylePrintColorAdjust mPrintColorAdjust;
   mozilla::StyleDominantBaseline mDominantBaseline;
-
- private:
-  mozilla::StyleImageOrientation mImageOrientation;
 };
 
 namespace mozilla {
