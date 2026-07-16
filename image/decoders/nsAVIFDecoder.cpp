@@ -15,6 +15,7 @@
 #include "libyuv.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/glean/ImageDecodersMetrics.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla::gfx;
 
@@ -501,6 +502,19 @@ void AVIFDecodedData::SetCicpValues(
   mMatrixCoefficients = mc;
 }
 
+
+
+
+static int GetDav1dThreadCount(int32_t aWidth) {
+  size_t decoderThreads = 2;
+  if (aWidth >= 2048) {
+    decoderThreads = 8;
+  } else if (aWidth >= 1024) {
+    decoderThreads = 4;
+  }
+  return static_cast<int>(std::min(decoderThreads, GetNumberOfProcessors()));
+}
+
 class Dav1dDecoder final : AVIFDecoderInterface {
  public:
   ~Dav1dDecoder() {
@@ -518,9 +532,9 @@ class Dav1dDecoder final : AVIFDecoderInterface {
   }
 
   static DecodeResult Create(UniquePtr<AVIFDecoderInterface>& aDecoder,
-                             bool aHasAlpha) {
+                             bool aHasAlpha, int32_t aWidth) {
     UniquePtr<Dav1dDecoder> d(new Dav1dDecoder());
-    Dav1dResult r = d->Init(aHasAlpha);
+    Dav1dResult r = d->Init(aHasAlpha, aWidth);
     if (r == 0) {
       aDecoder.reset(d.release());
     }
@@ -581,7 +595,7 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     MOZ_LOG(sAVIFLog, LogLevel::Verbose, ("Create Dav1dDecoder=%p", this));
   }
 
-  Dav1dResult Init(bool aHasAlpha) {
+  Dav1dResult Init(bool aHasAlpha, int32_t aWidth) {
     MOZ_ASSERT(!mColorContext);
     MOZ_ASSERT(!mAlphaContext);
 
@@ -589,7 +603,7 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     dav1d_default_settings(&settings);
     settings.all_layers = 0;
     settings.max_frame_delay = 1;
-    
+    settings.n_threads = GetDav1dThreadCount(aWidth);
 
     Dav1dResult r = dav1d_open(&mColorContext, &settings);
     if (r != 0) {
@@ -1288,8 +1302,12 @@ Mp4parseStatus nsAVIFDecoder::CreateParser() {
 
 nsAVIFDecoder::DecodeResult nsAVIFDecoder::CreateDecoder() {
   if (!mDecoder) {
+    
+    
+    
+    int32_t width = HasSize() ? Size().width : 0;
     DecodeResult r = StaticPrefs::image_avif_use_dav1d()
-                         ? Dav1dDecoder::Create(mDecoder, mHasAlpha)
+                         ? Dav1dDecoder::Create(mDecoder, mHasAlpha, width)
                          : AOMDecoder::Create(mDecoder, mHasAlpha);
 
     MOZ_LOG(sAVIFLog, LogLevel::Debug,
