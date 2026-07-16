@@ -7,7 +7,7 @@
 use crate::derives::*;
 use crate::queries::feature::{AllowsRanges, Evaluator, FeatureFlags, QueryFeatureDescription};
 use crate::queries::values::PrefersColorScheme;
-use crate::values::computed::{CSSPixelLength, Context, Resolution};
+use crate::values::computed::{CSSPixelLength, Context, Ratio, Resolution};
 use std::fmt::Debug;
 
 
@@ -130,7 +130,13 @@ fn eval_any_hover(context: &Context, query_value: Option<Hover>) -> bool {
 }
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 10] = [
+fn eval_aspect_ratio(context: &Context) -> Ratio {
+    let size = context.device().au_viewport_size();
+    Ratio::new(size.width.0 as f32, size.height.0 as f32)
+}
+
+
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 11] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -160,6 +166,12 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 10] = [
         AllowsRanges::No,
         keyword_evaluator!(eval_any_hover, Hover),
         FeatureFlags::empty(),
+    ),
+    feature!(
+        atom!("aspect-ratio"),
+        AllowsRanges::Yes,
+        Evaluator::NumberRatio(eval_aspect_ratio),
+        FeatureFlags::VIEWPORT_DEPENDENT,
     ),
     feature!(
         atom!("scan"),
