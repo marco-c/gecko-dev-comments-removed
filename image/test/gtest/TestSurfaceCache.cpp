@@ -2,17 +2,16 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
-#include "imgIContainer.h"
 #include "ImageFactory.h"
-#include "mozilla/gfx/2D.h"
+#include "ProgressTracker.h"
+#include "gtest/gtest.h"
+#include "imgIContainer.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_image.h"
+#include "mozilla/gfx/2D.h"
 #include "nsIInputStream.h"
 #include "nsString.h"
-#include "ProgressTracker.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

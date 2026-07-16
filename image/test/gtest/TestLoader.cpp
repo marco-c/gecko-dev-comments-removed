@@ -2,9 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
+#include "gtest/gtest.h"
 #include "imgLoader.h"
 #include "nsMimeTypes.h"
 #include "nsString.h"

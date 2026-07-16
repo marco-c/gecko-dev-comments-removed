@@ -2,33 +2,32 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include "Common.h"
-#include "mozilla/Monitor.h"
 #include "AnimationSurfaceProvider.h"
+#include "Common.h"
 #include "DecodePool.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "decoders/nsBMPDecoder.h"
+#include "gtest/gtest.h"
+#include "mozilla/Monitor.h"
 #ifdef MOZ_JXL
 #  include "decoders/nsJXLDecoder.h"
 #endif
 #include "IDecodingTask.h"
-#include "ImageOps.h"
-#include "imgIContainer.h"
 #include "ImageFactory.h"
+#include "ImageOps.h"
+#include "ProgressTracker.h"
+#include "SourceBuffer.h"
+#include "imgIContainer.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/gfx/2D.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIInputStream.h"
-#include "mozilla/RefPtr.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
-#include "ProgressTracker.h"
-#include "SourceBuffer.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

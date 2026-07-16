@@ -3,9 +3,10 @@
 
 
 #include "ImageBlocker.h"
-#include "nsIPermissionManager.h"
-#include "nsContentUtils.h"
+
 #include "mozilla/StaticPrefs_permissions.h"
+#include "nsContentUtils.h"
+#include "nsIPermissionManager.h"
 #include "nsNetUtil.h"
 
 using namespace mozilla;

@@ -2,17 +2,18 @@
 
 
 
-#include "ImageLogging.h"
-#include "nsCRT.h"
 #include "nsPNGEncoder.h"
+
+#include <bit>
+#include <cstring>
+
+#include "ImageLogging.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "nsCRT.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "prprf.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/EndianUtils.h"
-
-#include <cstring>
 
 using namespace mozilla;
 
@@ -289,7 +290,7 @@ nsPNGEncoder::StartImageEncode(uint32_t aWidth, uint32_t aHeight,
   
   
   
-  if (mBitDepth == 16 && MOZ_LITTLE_ENDIAN()) {
+  if (mBitDepth == 16 && std::endian::native == std::endian::little) {
     png_set_swap(mPNG);
   }
 
@@ -571,6 +572,11 @@ nsresult nsPNGEncoder::MaybeAddCustomMetadata(
   nsresult rv = nsRFPService::GenerateRandomizationKeyFromHash(
       aRandomizationKey, mImageBufferHash, hex);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  if (setjmp(png_jmpbuf(mPNG))) {
+    png_destroy_write_struct(&mPNG, &mPNGinfo);
+    return NS_ERROR_FAILURE;
+  }
 
   png_size_t chunkLength = 16;
   png_unknown_chunk chunk;

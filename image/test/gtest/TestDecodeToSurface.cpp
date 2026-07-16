@@ -2,18 +2,17 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
-#include "imgIContainer.h"
 #include "ImageOps.h"
+#include "gtest/gtest.h"
+#include "imgIContainer.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIInputStream.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
-#include "mozilla/RefPtr.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 

@@ -4,9 +4,10 @@
 
 
 #include "ScriptedNotificationObserver.h"
+
 #include "imgIScriptedNotificationObserver.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsContentUtils.h"  
+#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 namespace image {

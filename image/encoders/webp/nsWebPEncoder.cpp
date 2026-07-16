@@ -3,13 +3,14 @@
 
 
 
-#include "nsCRT.h"
 #include "nsWebPEncoder.h"
+
+#include "mozilla/CheckedInt.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "nsCRT.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "prprf.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 using namespace mozilla;
 

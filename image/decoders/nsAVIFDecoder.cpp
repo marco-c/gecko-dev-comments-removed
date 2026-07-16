@@ -3,21 +3,18 @@
 
 
 
-#include "ImageLogging.h"  
-
 #include "nsAVIFDecoder.h"
 
 #include <aom/aomdx.h>
 
 #include "DAV1DDecoder.h"
-#include "gfxPlatform.h"
-#include "YCbCrUtils.h"
-#include "libyuv.h"
-
+#include "ImageLogging.h"  
 #include "SurfacePipeFactory.h"
-
-#include "mozilla/glean/ImageDecodersMetrics.h"
+#include "YCbCrUtils.h"
+#include "gfxPlatform.h"
+#include "libyuv.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/glean/ImageDecodersMetrics.h"
 
 using namespace mozilla::gfx;
 

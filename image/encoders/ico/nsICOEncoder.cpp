@@ -2,14 +2,15 @@
 
 
 
-#include "nsCRT.h"
+#include "nsICOEncoder.h"
+
+#include "BMPHeaders.h"
 #include "mozilla/EndianUtils.h"
 #include "nsBMPEncoder.h"
-#include "BMPHeaders.h"
+#include "nsCRT.h"
 #include "nsPNGEncoder.h"
-#include "nsICOEncoder.h"
-#include "nsString.h"
 #include "nsStreamUtils.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 using namespace mozilla;

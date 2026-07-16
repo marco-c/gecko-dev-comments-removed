@@ -6,6 +6,7 @@
 #define mozilla_image_ImgDrawResult_h
 
 #include <cstdint>  
+
 #include "mozilla/Likely.h"
 
 namespace mozilla {

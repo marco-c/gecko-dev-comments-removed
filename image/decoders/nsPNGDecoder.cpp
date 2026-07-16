@@ -3,25 +3,24 @@
 
 
 
-#include "ImageLogging.h"  
 #include "nsPNGDecoder.h"
 
 #include <algorithm>
 #include <cstdint>
 
 #include "EXIF.h"
+#include "ImageLogging.h"  
+#include "RasterImage.h"
+#include "SurfaceCache.h"
+#include "SurfacePipeFactory.h"
 #include "gfxColor.h"
 #include "gfxPlatform.h"
 #include "imgFrame.h"
+#include "mozilla/DebugOnly.h"
 #include "nsColor.h"
 #include "nsRect.h"
 #include "nspr.h"
 #include "png.h"
-
-#include "RasterImage.h"
-#include "SurfaceCache.h"
-#include "SurfacePipeFactory.h"
-#include "mozilla/DebugOnly.h"
 
 using namespace mozilla::gfx;
 

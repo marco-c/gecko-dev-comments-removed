@@ -2,11 +2,10 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
-#include "mozilla/Vector.h"
 #include "StreamingLexer.h"
+#include "gtest/gtest.h"
+#include "mozilla/Vector.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

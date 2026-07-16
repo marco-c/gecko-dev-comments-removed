@@ -2,9 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "CopyOnWrite.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

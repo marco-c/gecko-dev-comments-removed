@@ -3,6 +3,7 @@
 
 
 #include "nsIconDecoder.h"
+
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
 #include "gfxPlatform.h"

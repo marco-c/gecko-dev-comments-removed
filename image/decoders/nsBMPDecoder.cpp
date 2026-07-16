@@ -100,19 +100,19 @@
 
 
 
-#include "ImageLogging.h"
 #include "nsBMPDecoder.h"
 
 #include <stdlib.h>
 
-#include "mozilla/Attributes.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/UniquePtrExtensions.h"
+#include <algorithm>
 
+#include "ImageLogging.h"
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
 #include "gfxPlatform.h"
-#include <algorithm>
+#include "mozilla/Attributes.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 using namespace mozilla::gfx;
 

@@ -10,6 +10,11 @@
 #ifndef mozilla_image_SurfaceCache_h
 #define mozilla_image_SurfaceCache_h
 
+#include "ImageRegion.h"
+#include "PlaybackType.h"
+#include "SurfaceFlags.h"
+#include "gfx2DGlue.h"
+#include "gfxPoint.h"                 
 #include "mozilla/HashFunctions.h"    
 #include "mozilla/Maybe.h"            
 #include "mozilla/MemoryReporting.h"  
@@ -17,12 +22,7 @@
 #include "mozilla/SVGImageContext.h"  
 #include "mozilla/gfx/2D.h"           
 #include "mozilla/gfx/Point.h"        
-#include "gfx2DGlue.h"
-#include "gfxPoint.h"  
-#include "nsCOMPtr.h"  
-#include "ImageRegion.h"
-#include "PlaybackType.h"
-#include "SurfaceFlags.h"
+#include "nsCOMPtr.h"                 
 
 namespace mozilla {
 namespace image {

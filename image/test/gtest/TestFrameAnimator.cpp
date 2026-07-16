@@ -2,14 +2,13 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include "Common.h"
 #include "AnimationSurfaceProvider.h"
+#include "Common.h"
 #include "Decoder.h"
 #include "ImageFactory.h"
-#include "nsIInputStream.h"
 #include "RasterImage.h"
+#include "gtest/gtest.h"
+#include "nsIInputStream.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

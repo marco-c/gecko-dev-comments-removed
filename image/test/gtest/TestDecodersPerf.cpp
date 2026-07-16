@@ -2,16 +2,15 @@
 
 
 
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"
-
 #include "Common.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "IDecodingTask.h"
-#include "mozilla/RefPtr.h"
 #include "ProgressTracker.h"
 #include "SourceBuffer.h"
+#include "gtest/MozGTestBench.h"
+#include "gtest/gtest.h"
+#include "mozilla/RefPtr.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

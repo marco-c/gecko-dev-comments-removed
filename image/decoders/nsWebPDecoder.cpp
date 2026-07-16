@@ -3,13 +3,13 @@
 
 
 
-#include "ImageLogging.h"  
-#include "gfxPlatform.h"
-#include "mozilla/TelemetryHistogramEnums.h"
 #include "nsWebPDecoder.h"
 
+#include "ImageLogging.h"  
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
+#include "gfxPlatform.h"
+#include "mozilla/TelemetryHistogramEnums.h"
 
 using namespace mozilla::gfx;
 

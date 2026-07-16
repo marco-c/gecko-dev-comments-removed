@@ -3,15 +3,14 @@
 
 
 
-#include "ImageLogging.h"  
-
 #include "nsJXLDecoder.h"
 
 #include "AnimationParams.h"
-#include "mozilla/CheckedInt.h"
-#include "gfxPlatform.h"
+#include "ImageLogging.h"  
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
+#include "gfxPlatform.h"
+#include "mozilla/CheckedInt.h"
 
 using namespace mozilla::gfx;
 

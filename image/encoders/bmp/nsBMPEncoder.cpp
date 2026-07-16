@@ -2,15 +2,16 @@
 
 
 
-#include "nsCRT.h"
+#include "nsBMPEncoder.h"
+
+#include "BMPHeaders.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "nsBMPEncoder.h"
-#include "nsString.h"
+#include "nsCRT.h"
 #include "nsStreamUtils.h"
+#include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/CheckedInt.h"
-#include "BMPHeaders.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

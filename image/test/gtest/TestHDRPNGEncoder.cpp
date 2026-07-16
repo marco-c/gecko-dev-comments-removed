@@ -2,21 +2,20 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <cmath>
 
 #include "Common.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "IDecodingTask.h"
+#include "SourceBuffer.h"
+#include "gtest/gtest.h"
 #include "imgIEncoder.h"
 #include "mozilla/gfx/2D.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
-#include "SourceBuffer.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

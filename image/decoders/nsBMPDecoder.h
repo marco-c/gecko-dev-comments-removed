@@ -7,9 +7,9 @@
 
 #include "BMPHeaders.h"
 #include "Decoder.h"
-#include "gfxColor.h"
 #include "StreamingLexer.h"
 #include "SurfacePipe.h"
+#include "gfxColor.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
@@ -157,7 +157,7 @@ class nsBMPDecoder : public Decoder {
   size_t GetImageDataLength() const { return mImageDataLength; }
 
   
-  int32_t GetCompressedImageSize() const;
+  uint32_t GetCompressedImageSize() const;
 
   
   
@@ -203,7 +203,7 @@ class nsBMPDecoder : public Decoder {
   nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength,
                bool aForClipboard);
 
-  int32_t AbsoluteHeight() const { return abs(mH.mHeight); }
+  uint32_t AbsoluteHeight() const { return abs(mH.mHeight); }
 
   uint32_t* RowBuffer();
   void ClearRowBufferRemainder();

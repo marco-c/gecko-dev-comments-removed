@@ -3,28 +3,25 @@
 
 
 #include "imgFrame.h"
+
+#include <algorithm>  
+
 #include "ImageRegion.h"
+#include "MainThreadUtils.h"
 #include "SurfaceCache.h"
-
-#include "prenv.h"
-
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
-
 #include "gfxUtils.h"
-
-#include "MainThreadUtils.h"
-#include "mozilla/gfx/Tools.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/gfx/Tools.h"
 #include "nsMargin.h"
 #include "nsRefreshDriver.h"
 #include "nsThreadUtils.h"
-
-#include <algorithm>  
+#include "prenv.h"
 
 namespace mozilla {
 
