@@ -32,19 +32,21 @@ pub enum Eagerness {
     Conservative = 0,
 }
 
-#[derive(Debug, serde::Deserialize)]
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[repr(u8)]
 pub enum ReferrerPolicy {
     #[serde(rename = "")]
     Empty,
     NoReferrer,
     NoReferrerWhenDowngrade,
-    SameOrigin,
     Origin,
-    StrictOrigin,
     OriginWhenCrossOrigin,
-    StrictOriginWhenCrossOrigin,
     UnsafeUrl,
+    SameOrigin,
+    StrictOrigin,
+    StrictOriginWhenCrossOrigin,
 }
 
 #[derive(Debug, serde::Deserialize)]
