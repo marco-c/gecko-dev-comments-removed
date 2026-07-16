@@ -6,6 +6,7 @@
 
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PrefetchCandidates.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/speculationrules_ffi_generated.h"
@@ -110,6 +111,35 @@ void SpeculationRules::InnerConsiderLoads() {
   mConsiderSpeculativeLoadsMicrotaskQueued = false;
 
   
+  if (!mDocument || !mDocument->IsFullyActive()) {
+    return;
+  }
+
+  
+  UniquePtr<PrefetchCandidates> prefetchCandidates =
+      PrefetchCandidates::Create();
+  
+  for (auto& entry : mRuleSetsFromScript) {
+    entry.GetData()->ConsiderLoads(prefetchCandidates.get());
+  }
+
+  
+  
+  
+
+  
+  
+  prefetchCandidates->Group();
+
+  
+  
+  
+  
+  for ([[maybe_unused]] PrefetchCandidate& candidate :
+       prefetchCandidates->AsArray()) {
+    
+    
+  }
 }
 
 }  
