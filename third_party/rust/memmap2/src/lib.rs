@@ -1,3 +1,21 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(unsafe_op_in_unsafe_fn)]
+#![allow(
+    
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::doc_markdown,
+    clippy::explicit_deref_methods,
+    clippy::missing_errors_doc,
+    clippy::module_name_repetitions,
+    clippy::must_use_candidate,
+    clippy::needless_pass_by_value,
+    clippy::return_self_not_must_use,
+    clippy::unreadable_literal,
+    clippy::upper_case_acronyms,
+)]
+
 
 
 
@@ -53,8 +71,6 @@ use std::fmt;
 #[cfg(not(any(unix, windows)))]
 use std::fs::File;
 use std::io::{Error, ErrorKind, Result};
-use std::isize;
-use std::mem;
 use std::ops::{Deref, DerefMut};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, RawFd};
@@ -90,7 +106,7 @@ impl MmapAsRawDesc for RawFd {
 }
 
 #[cfg(unix)]
-impl<'a, T> MmapAsRawDesc for &'a T
+impl<T> MmapAsRawDesc for &T
 where
     T: AsRawFd,
 {
@@ -107,7 +123,7 @@ impl MmapAsRawDesc for RawHandle {
 }
 
 #[cfg(windows)]
-impl<'a, T> MmapAsRawDesc for &'a T
+impl<T> MmapAsRawDesc for &T
 where
     T: AsRawHandle,
 {
@@ -143,6 +159,7 @@ pub struct MmapOptions {
     huge: Option<u8>,
     stack: bool,
     populate: bool,
+    no_reserve_swap: bool,
 }
 
 impl MmapOptions {
@@ -227,9 +244,28 @@ impl MmapOptions {
         self
     }
 
+    fn validate_len(len: u64) -> Result<usize> {
+        
+        
+        
+        
+        
+        
+        if isize::try_from(len).is_err() {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "memory map length overflows isize",
+            ));
+        }
+        
+        Ok(len as usize)
+    }
+
     
     fn get_len<T: MmapAsRawDesc>(&self, file: &T) -> Result<usize> {
-        self.len.map(Ok).unwrap_or_else(|| {
+        let len = if let Some(len) = self.len {
+            len as u64
+        } else {
             let desc = file.as_raw_desc();
             let file_len = file_len(desc.0)?;
 
@@ -239,26 +275,10 @@ impl MmapOptions {
                     "memory map offset is larger than length",
                 ));
             }
-            let len = file_len - self.offset;
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if mem::size_of::<usize>() < 8 && len > isize::MAX as u64 {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "memory map length overflows isize",
-                ));
-            }
-
-            Ok(len as usize)
-        })
+            file_len - self.offset
+        };
+        Self::validate_len(len)
     }
 
     
@@ -302,10 +322,13 @@ impl MmapOptions {
     
     
     
+    
+    
     pub fn huge(&mut self, page_bits: Option<u8>) -> &mut Self {
         self.huge = Some(page_bits.unwrap_or(0));
         self
     }
+
     
     
     
@@ -362,13 +385,66 @@ impl MmapOptions {
     
     
     
+    
+    
+    pub fn no_reserve_swap(&mut self) -> &mut Self {
+        self.no_reserve_swap = true;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub unsafe fn map<T: MmapAsRawDesc>(&self, file: T) -> Result<Mmap> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| Mmap { inner })
+        MmapInner::map(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| Mmap { inner })
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -378,10 +454,19 @@ impl MmapOptions {
     pub unsafe fn map_exec<T: MmapAsRawDesc>(&self, file: T) -> Result<Mmap> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map_exec(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| Mmap { inner })
+        MmapInner::map_exec(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| Mmap { inner })
     }
 
+    
+    
+    
     
     
     
@@ -418,10 +503,22 @@ impl MmapOptions {
     pub unsafe fn map_mut<T: MmapAsRawDesc>(&self, file: T) -> Result<MmapMut> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map_mut(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| MmapMut { inner })
+        MmapInner::map_mut(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| MmapMut { inner })
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -449,10 +546,22 @@ impl MmapOptions {
     pub unsafe fn map_copy<T: MmapAsRawDesc>(&self, file: T) -> Result<MmapMut> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map_copy(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| MmapMut { inner })
+        MmapInner::map_copy(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| MmapMut { inner })
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -484,10 +593,18 @@ impl MmapOptions {
     pub unsafe fn map_copy_read_only<T: MmapAsRawDesc>(&self, file: T) -> Result<Mmap> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map_copy_read_only(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| Mmap { inner })
+        MmapInner::map_copy_read_only(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| Mmap { inner })
     }
 
+    
+    
     
     
     
@@ -502,17 +619,20 @@ impl MmapOptions {
         let len = self.len.unwrap_or(0);
 
         
-        if mem::size_of::<usize>() < 8 && len > isize::MAX as usize {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "memory map length overflows isize",
-            ));
-        }
+        let len = Self::validate_len(len as u64)?;
 
-        MmapInner::map_anon(len, self.stack, self.populate, self.huge)
-            .map(|inner| MmapMut { inner })
+        MmapInner::map_anon(
+            len,
+            self.stack,
+            self.populate,
+            self.huge,
+            self.no_reserve_swap,
+        )
+        .map(|inner| MmapMut { inner })
     }
 
+    
+    
     
     
     
@@ -522,10 +642,18 @@ impl MmapOptions {
     pub fn map_raw<T: MmapAsRawDesc>(&self, file: T) -> Result<MmapRaw> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map_mut(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| MmapRaw { inner })
+        MmapInner::map_mut(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| MmapRaw { inner })
     }
 
+    
+    
     
     
     
@@ -537,8 +665,14 @@ impl MmapOptions {
     pub fn map_raw_read_only<T: MmapAsRawDesc>(&self, file: T) -> Result<MmapRaw> {
         let desc = file.as_raw_desc();
 
-        MmapInner::map(self.get_len(&file)?, desc.0, self.offset, self.populate)
-            .map(|inner| MmapRaw { inner })
+        MmapInner::map(
+            self.get_len(&file)?,
+            desc.0,
+            self.offset,
+            self.populate,
+            self.no_reserve_swap,
+        )
+        .map(|inner| MmapRaw { inner })
     }
 }
 
@@ -619,12 +753,17 @@ impl Mmap {
     
     
     
+    
+    
+    
+    
+    
+    
     pub unsafe fn map<T: MmapAsRawDesc>(file: T) -> Result<Mmap> {
-        MmapOptions::new().map(file)
+        
+        unsafe { MmapOptions::new().map(file) }
     }
 
-    
-    
     
     
     
@@ -672,8 +811,11 @@ impl Mmap {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -681,10 +823,18 @@ impl Mmap {
     
     
     
+    
+    
+    
+    
+    
     #[cfg(unix)]
     pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -696,9 +846,15 @@ impl Mmap {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -713,7 +869,8 @@ impl Mmap {
         offset: usize,
         len: usize,
     ) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
     
@@ -787,11 +944,16 @@ impl fmt::Debug for Mmap {
 
 
 
+
+
+
 pub struct MmapRaw {
     inner: MmapInner,
 }
 
 impl MmapRaw {
+    
+    
     
     
     
@@ -823,7 +985,7 @@ impl MmapRaw {
     
     #[inline]
     pub fn as_mut_ptr(&self) -> *mut u8 {
-        self.inner.ptr() as _
+        self.inner.ptr().cast_mut()
     }
 
     
@@ -834,9 +996,6 @@ impl MmapRaw {
         self.inner.len()
     }
 
-    
-    
-    
     
     
     
@@ -916,8 +1075,11 @@ impl MmapRaw {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -925,10 +1087,18 @@ impl MmapRaw {
     
     
     
+    
+    
+    
+    
+    
     #[cfg(unix)]
     pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -940,9 +1110,15 @@ impl MmapRaw {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -957,7 +1133,8 @@ impl MmapRaw {
         offset: usize,
         len: usize,
     ) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
     
@@ -1089,10 +1266,17 @@ impl MmapMut {
     
     
     
+    
+    
+    
+    
     pub unsafe fn map_mut<T: MmapAsRawDesc>(file: T) -> Result<MmapMut> {
-        MmapOptions::new().map_mut(file)
+        
+        unsafe { MmapOptions::new().map_mut(file) }
     }
 
+    
+    
     
     
     
@@ -1105,9 +1289,6 @@ impl MmapMut {
         MmapOptions::new().len(length).map_anon()
     }
 
-    
-    
-    
     
     
     
@@ -1204,8 +1385,6 @@ impl MmapMut {
     
     
     
-    
-    
     pub fn make_read_only(mut self) -> Result<Mmap> {
         self.inner.make_read_only()?;
         Ok(Mmap { inner: self.inner })
@@ -1237,8 +1416,11 @@ impl MmapMut {
     
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -1248,8 +1430,11 @@ impl MmapMut {
     
     #[cfg(unix)]
     pub unsafe fn unchecked_advise(&self, advice: UncheckedAdvice) -> Result<()> {
-        self.inner
-            .advise(advice as libc::c_int, 0, self.inner.len())
+        
+        unsafe {
+            self.inner
+                .advise(advice as libc::c_int, 0, self.inner.len())
+        }
     }
 
     
@@ -1261,7 +1446,8 @@ impl MmapMut {
     
     #[cfg(unix)]
     pub fn advise_range(&self, advice: Advice, offset: usize, len: usize) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
     
@@ -1272,13 +1458,14 @@ impl MmapMut {
     
     
     #[cfg(unix)]
-    pub fn unchecked_advise_range(
+    pub unsafe fn unchecked_advise_range(
         &self,
         advice: UncheckedAdvice,
         offset: usize,
         len: usize,
     ) -> Result<()> {
-        self.inner.advise(advice as libc::c_int, offset, len)
+        
+        unsafe { self.inner.advise(advice as libc::c_int, offset, len) }
     }
 
     
@@ -1409,8 +1596,6 @@ impl RemapOptions {
 
 #[cfg(test)]
 mod test {
-    extern crate tempfile;
-
     #[cfg(unix)]
     use crate::advice::Advice;
     use std::fs::{File, OpenOptions};
@@ -1436,6 +1621,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
 
@@ -1469,6 +1655,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
 
@@ -1501,6 +1688,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         let mmap = unsafe { Mmap::map(&file).unwrap() };
@@ -1533,7 +1721,7 @@ mod test {
 
     #[test]
     fn map_anon_zero_len() {
-        assert!(MmapOptions::new().map_anon().unwrap().is_empty())
+        assert!(MmapOptions::new().map_anon().unwrap().is_empty());
     }
 
     #[test]
@@ -1556,6 +1744,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         file.set_len(128).unwrap();
@@ -1580,6 +1769,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         file.set_len(128).unwrap();
@@ -1606,6 +1796,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         file.set_len(128).unwrap();
@@ -1642,6 +1833,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         file.set_len(128).unwrap();
@@ -1667,10 +1859,11 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
 
-        let offset = u32::MAX as u64 + 2;
+        let offset = u64::from(u32::MAX) + 2;
         let len = 5432;
         file.set_len(offset + len as u64).unwrap();
 
@@ -1710,14 +1903,13 @@ mod test {
 
     #[test]
     fn sync_send() {
-        let mmap = MmapMut::map_anon(129).unwrap();
-
         fn is_sync_send<T>(_val: T)
         where
             T: Sync + Send,
         {
         }
 
+        let mmap = MmapMut::map_anon(129).unwrap();
         is_sync_send(mmap);
     }
 
@@ -1754,6 +1946,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(tempdir.path().join("jit_x86"))
             .expect("open");
 
@@ -1774,6 +1967,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .expect("open");
         file.set_len(256_u64).expect("set_len");
@@ -1820,6 +2014,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .expect("open");
         file.set_len(256_u64).expect("set_len");
@@ -1874,6 +2069,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .expect("open");
         file.write_all(b"abc123").unwrap();
@@ -1903,8 +2099,6 @@ mod test {
     #[test]
     #[cfg(feature = "stable_deref_trait")]
     fn owning_ref() {
-        extern crate owning_ref;
-
         let mut map = MmapMut::map_anon(128).unwrap();
         map[10] = 42;
         let owning = owning_ref::OwningRef::new(map);
@@ -1928,6 +2122,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
 
@@ -2034,6 +2229,7 @@ mod test {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(path)
             .unwrap();
         file.set_len(128).unwrap();
@@ -2082,8 +2278,8 @@ mod test {
 
         unsafe {
             mmap.remap(final_len, RemapOptions::new().may_move(true))
-                .unwrap()
-        };
+                .unwrap();
+        }
 
         
         assert_eq!(mmap.len(), final_len);
@@ -2164,8 +2360,8 @@ mod test {
 
         unsafe {
             mmap.remap(final_len, RemapOptions::new().may_move(true))
-                .unwrap()
-        };
+                .unwrap();
+        }
 
         
         assert_eq!(mmap.len(), final_len);

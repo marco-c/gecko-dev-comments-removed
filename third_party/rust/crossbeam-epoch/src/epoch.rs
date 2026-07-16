@@ -7,8 +7,23 @@
 
 
 
-use crate::primitive::sync::atomic::AtomicUsize;
-use core::sync::atomic::Ordering;
+use crate::primitive::sync::atomic::Ordering;
+
+
+
+
+#[cfg(target_has_atomic = "64")]
+type AtomicEpochRepr = crate::primitive::sync::atomic::AtomicU64;
+#[cfg(not(target_has_atomic = "64"))]
+type AtomicEpochRepr = crate::primitive::sync::atomic::AtomicUsize;
+#[cfg(target_has_atomic = "64")]
+type EpochRepr = u64;
+#[cfg(not(target_has_atomic = "64"))]
+type EpochRepr = usize;
+#[cfg(target_has_atomic = "64")]
+type EpochReprSigned = i64;
+#[cfg(not(target_has_atomic = "64"))]
+type EpochReprSigned = isize;
 
 
 
@@ -17,7 +32,7 @@ use core::sync::atomic::Ordering;
 #[derive(Copy, Clone, Default, Debug, Eq, PartialEq)]
 pub(crate) struct Epoch {
     
-    data: usize,
+    data: EpochRepr,
 }
 
 impl Epoch {
@@ -31,11 +46,11 @@ impl Epoch {
     
     
     
-    pub(crate) fn wrapping_sub(self, rhs: Self) -> isize {
+    pub(crate) fn wrapping_sub(self, rhs: Self) -> EpochReprSigned {
         
         
         
-        self.data.wrapping_sub(rhs.data & !1) as isize >> 1
+        self.data.wrapping_sub(rhs.data & !1) as EpochReprSigned >> 1
     }
 
     
@@ -76,15 +91,15 @@ impl Epoch {
 pub(crate) struct AtomicEpoch {
     
     
-    data: AtomicUsize,
+    data: AtomicEpochRepr,
 }
 
 impl AtomicEpoch {
     
     #[inline]
     pub(crate) fn new(epoch: Epoch) -> Self {
-        let data = AtomicUsize::new(epoch.data);
-        AtomicEpoch { data }
+        let data = AtomicEpochRepr::new(epoch.data);
+        Self { data }
     }
 
     

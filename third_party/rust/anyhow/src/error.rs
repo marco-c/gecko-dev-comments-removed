@@ -1,21 +1,20 @@
 use crate::backtrace::Backtrace;
 use crate::chain::Chain;
-#[cfg(any(feature = "std", anyhow_no_ptr_addr_of))]
+#[cfg(error_generic_member_access)]
+use crate::nightly::{self, Request};
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 use crate::ptr::Mut;
 use crate::ptr::{Own, Ref};
 use crate::{Error, StdError};
 use alloc::boxed::Box;
-#[cfg(backtrace)]
-use core::any::Demand;
 use core::any::TypeId;
 use core::fmt::{self, Debug, Display};
 use core::mem::ManuallyDrop;
-#[cfg(not(anyhow_no_ptr_addr_of))]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+use core::ops::{Deref, DerefMut};
+use core::panic::{RefUnwindSafe, UnwindSafe};
 use core::ptr;
 use core::ptr::NonNull;
-
-#[cfg(feature = "std")]
-use core::ops::{Deref, DerefMut};
 
 impl Error {
     
@@ -25,8 +24,7 @@ impl Error {
     
     
     
-    #[cfg(feature = "std")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     #[cold]
     #[must_use]
     pub fn new<E>(error: E) -> Self
@@ -34,7 +32,7 @@ impl Error {
         E: StdError + Send + Sync + 'static,
     {
         let backtrace = backtrace_if_absent!(&error);
-        Error::from_std(error, backtrace)
+        Error::construct_from_std(error, backtrace)
     }
 
     
@@ -80,26 +78,84 @@ impl Error {
     where
         M: Display + Debug + Send + Sync + 'static,
     {
-        Error::from_adhoc(message, backtrace!())
+        Error::construct_from_adhoc(message, backtrace!())
     }
 
-    #[cfg(feature = "std")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     #[cold]
-    pub(crate) fn from_std<E>(error: E, backtrace: Option<Backtrace>) -> Self
+    #[must_use]
+    pub fn from_boxed(boxed_error: Box<dyn StdError + Send + Sync + 'static>) -> Self {
+        let backtrace = backtrace_if_absent!(&*boxed_error);
+        Error::construct_from_boxed(boxed_error, backtrace)
+    }
+
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+    #[cold]
+    pub(crate) fn construct_from_std<E>(error: E, backtrace: Option<Backtrace>) -> Self
     where
         E: StdError + Send + Sync + 'static,
     {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<E>,
             object_ref: object_ref::<E>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut::<E>,
             object_boxed: object_boxed::<E>,
+            object_reallocate_boxed: object_reallocate_boxed::<E>,
             object_downcast: object_downcast::<E>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut::<E>,
             object_drop_rest: object_drop_front::<E>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: no_backtrace,
         };
 
@@ -108,7 +164,7 @@ impl Error {
     }
 
     #[cold]
-    pub(crate) fn from_adhoc<M>(message: M, backtrace: Option<Backtrace>) -> Self
+    pub(crate) fn construct_from_adhoc<M>(message: M, backtrace: Option<Backtrace>) -> Self
     where
         M: Display + Debug + Send + Sync + 'static,
     {
@@ -117,14 +173,13 @@ impl Error {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<MessageError<M>>,
             object_ref: object_ref::<MessageError<M>>,
-            #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut::<MessageError<M>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
             object_boxed: object_boxed::<MessageError<M>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+            object_reallocate_boxed: object_reallocate_boxed::<MessageError<M>>,
             object_downcast: object_downcast::<M>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut::<M>,
             object_drop_rest: object_drop_front::<M>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: no_backtrace,
         };
 
@@ -134,7 +189,7 @@ impl Error {
     }
 
     #[cold]
-    pub(crate) fn from_display<M>(message: M, backtrace: Option<Backtrace>) -> Self
+    pub(crate) fn construct_from_display<M>(message: M, backtrace: Option<Backtrace>) -> Self
     where
         M: Display + Send + Sync + 'static,
     {
@@ -143,14 +198,13 @@ impl Error {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<DisplayError<M>>,
             object_ref: object_ref::<DisplayError<M>>,
-            #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut::<DisplayError<M>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
             object_boxed: object_boxed::<DisplayError<M>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+            object_reallocate_boxed: object_reallocate_boxed::<DisplayError<M>>,
             object_downcast: object_downcast::<M>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut::<M>,
             object_drop_rest: object_drop_front::<M>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: no_backtrace,
         };
 
@@ -159,9 +213,13 @@ impl Error {
         unsafe { Error::construct(error, vtable, backtrace) }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     #[cold]
-    pub(crate) fn from_context<C, E>(context: C, error: E, backtrace: Option<Backtrace>) -> Self
+    pub(crate) fn construct_from_context<C, E>(
+        context: C,
+        error: E,
+        backtrace: Option<Backtrace>,
+    ) -> Self
     where
         C: Display + Send + Sync + 'static,
         E: StdError + Send + Sync + 'static,
@@ -171,14 +229,13 @@ impl Error {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<ContextError<C, E>>,
             object_ref: object_ref::<ContextError<C, E>>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut::<ContextError<C, E>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
             object_boxed: object_boxed::<ContextError<C, E>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+            object_reallocate_boxed: object_reallocate_boxed::<ContextError<C, E>>,
             object_downcast: context_downcast::<C, E>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: context_downcast_mut::<C, E>,
             object_drop_rest: context_drop_rest::<C, E>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: no_backtrace,
         };
 
@@ -186,9 +243,9 @@ impl Error {
         unsafe { Error::construct(error, vtable, backtrace) }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     #[cold]
-    pub(crate) fn from_boxed(
+    pub(crate) fn construct_from_boxed(
         error: Box<dyn StdError + Send + Sync>,
         backtrace: Option<Backtrace>,
     ) -> Self {
@@ -197,14 +254,13 @@ impl Error {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<BoxedError>,
             object_ref: object_ref::<BoxedError>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut::<BoxedError>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
             object_boxed: object_boxed::<BoxedError>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+            object_reallocate_boxed: object_reallocate_boxed::<BoxedError>,
             object_downcast: object_downcast::<Box<dyn StdError + Send + Sync>>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut::<Box<dyn StdError + Send + Sync>>,
             object_drop_rest: object_drop_front::<Box<dyn StdError + Send + Sync>>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: no_backtrace,
         };
 
@@ -310,14 +366,13 @@ impl Error {
         let vtable = &ErrorVTable {
             object_drop: object_drop::<ContextError<C, Error>>,
             object_ref: object_ref::<ContextError<C, Error>>,
-            #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut::<ContextError<C, Error>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
             object_boxed: object_boxed::<ContextError<C, Error>>,
+            #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+            object_reallocate_boxed: object_reallocate_boxed::<ContextError<C, Error>>,
             object_downcast: context_chain_downcast::<C>,
-            #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: context_chain_downcast_mut::<C>,
             object_drop_rest: context_chain_drop_rest::<C>,
-            #[cfg(all(not(backtrace), feature = "backtrace"))]
+            #[cfg(all(not(error_generic_member_access), feature = "std"))]
             object_backtrace: context_backtrace::<C>,
         };
 
@@ -355,12 +410,8 @@ impl Error {
     
     
     
-    
-    
-    
-    #[cfg(any(backtrace, feature = "backtrace"))]
-    #[cfg_attr(doc_cfg, doc(cfg(any(nightly, feature = "backtrace"))))]
-    pub fn backtrace(&self) -> &impl_backtrace!() {
+    #[cfg(feature = "std")]
+    pub fn backtrace(&self) -> &Backtrace {
         unsafe { ErrorImpl::backtrace(self.inner.by_ref()) }
     }
 
@@ -385,8 +436,7 @@ impl Error {
     
     
     
-    #[cfg(feature = "std")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     #[cold]
     pub fn chain(&self) -> Chain {
         unsafe { ErrorImpl::chain(self.inner.by_ref()) }
@@ -397,8 +447,8 @@ impl Error {
     
     
     
-    #[cfg(feature = "std")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+    #[allow(clippy::double_ended_iterator_last)]
     pub fn root_cause(&self) -> &(dyn StdError + 'static) {
         self.chain().last().unwrap()
     }
@@ -428,14 +478,8 @@ impl Error {
         unsafe {
             
             
-            #[cfg(not(anyhow_no_ptr_addr_of))]
             let addr = match (vtable(inner.ptr).object_downcast)(inner.by_ref(), target) {
                 Some(addr) => addr.by_mut().extend(),
-                None => return Err(self),
-            };
-            #[cfg(anyhow_no_ptr_addr_of)]
-            let addr = match (vtable(inner.ptr).object_downcast_mut)(inner, target) {
-                Some(addr) => addr.extend(),
                 None => return Err(self),
             };
 
@@ -511,33 +555,122 @@ impl Error {
         unsafe {
             
             
-
-            #[cfg(not(anyhow_no_ptr_addr_of))]
             let addr =
                 (vtable(self.inner.ptr).object_downcast)(self.inner.by_ref(), target)?.by_mut();
-
-            #[cfg(anyhow_no_ptr_addr_of)]
-            let addr = (vtable(self.inner.ptr).object_downcast_mut)(self.inner.by_mut(), target)?;
-
             Some(addr.cast::<E>().deref_mut())
         }
     }
-}
 
-#[cfg(backtrace)]
-impl std::any::Provider for Error {
     
     
     
     
     
-    fn provide<'a>(&'a self, demand: &mut Demand<'a>) {
-        unsafe { ErrorImpl::provide(self.inner.by_ref(), demand) }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(error_generic_member_access), doc = "# _ = stringify! {")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(error_generic_member_access), doc = "# };")]
+    
+    
+    
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+    #[must_use]
+    pub fn into_boxed_dyn_error(self) -> Box<dyn StdError + Send + Sync + 'static> {
+        let outer = ManuallyDrop::new(self);
+        unsafe {
+            
+            
+            (vtable(outer.inner.ptr).object_boxed)(outer.inner)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(error_generic_member_access), doc = "# _ = stringify!{")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(error_generic_member_access), doc = "# };")]
+    
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+    #[must_use]
+    pub fn reallocate_into_boxed_dyn_error_without_backtrace(
+        self,
+    ) -> Box<dyn StdError + Send + Sync + 'static> {
+        let outer = ManuallyDrop::new(self);
+        unsafe {
+            
+            
+            (vtable(outer.inner.ptr).object_reallocate_boxed)(outer.inner)
+        }
+    }
+
+    #[cfg(error_generic_member_access)]
+    pub(crate) fn provide<'a>(&'a self, request: &mut Request<'a>) {
+        unsafe { ErrorImpl::provide(self.inner.by_ref(), request) }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(error_generic_member_access)]
+    #[doc(hidden)]
+    pub fn thiserror_provide<'a>(&'a self, request: &mut Request<'a>) {
+        Self::provide(self, request);
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl<E> From<E> for Error
 where
     E: StdError + Send + Sync + 'static,
@@ -545,12 +678,11 @@ where
     #[cold]
     fn from(error: E) -> Self {
         let backtrace = backtrace_if_absent!(&error);
-        Error::from_std(error, backtrace)
+        Error::construct_from_std(error, backtrace)
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl Deref for Error {
     type Target = dyn StdError + Send + Sync + 'static;
 
@@ -559,8 +691,7 @@ impl Deref for Error {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl DerefMut for Error {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { ErrorImpl::error_mut(self.inner.by_mut()) }
@@ -591,14 +722,13 @@ impl Drop for Error {
 struct ErrorVTable {
     object_drop: unsafe fn(Own<ErrorImpl>),
     object_ref: unsafe fn(Ref<ErrorImpl>) -> Ref<dyn StdError + Send + Sync + 'static>,
-    #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-    object_mut: unsafe fn(Mut<ErrorImpl>) -> &mut (dyn StdError + Send + Sync + 'static),
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     object_boxed: unsafe fn(Own<ErrorImpl>) -> Box<dyn StdError + Send + Sync + 'static>,
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+    object_reallocate_boxed: unsafe fn(Own<ErrorImpl>) -> Box<dyn StdError + Send + Sync + 'static>,
     object_downcast: unsafe fn(Ref<ErrorImpl>, TypeId) -> Option<Ref<()>>,
-    #[cfg(anyhow_no_ptr_addr_of)]
-    object_downcast_mut: unsafe fn(Mut<ErrorImpl>, TypeId) -> Option<Mut<()>>,
     object_drop_rest: unsafe fn(Own<ErrorImpl>, TypeId),
-    #[cfg(all(not(backtrace), feature = "backtrace"))]
+    #[cfg(all(not(error_generic_member_access), feature = "std"))]
     object_backtrace: unsafe fn(Ref<ErrorImpl>) -> Option<&Backtrace>,
 }
 
@@ -606,8 +736,8 @@ struct ErrorVTable {
 unsafe fn object_drop<E>(e: Own<ErrorImpl>) {
     
     
-    let unerased = e.cast::<ErrorImpl<E>>().boxed();
-    drop(unerased);
+    let unerased_own = e.cast::<ErrorImpl<E>>();
+    drop(unsafe { unerased_own.boxed() });
 }
 
 
@@ -616,8 +746,8 @@ unsafe fn object_drop_front<E>(e: Own<ErrorImpl>, target: TypeId) {
     
     
     let _ = target;
-    let unerased = e.cast::<ErrorImpl<ManuallyDrop<E>>>().boxed();
-    drop(unerased);
+    let unerased_own = e.cast::<ErrorImpl<ManuallyDrop<E>>>();
+    drop(unsafe { unerased_own.boxed() });
 }
 
 
@@ -626,36 +756,32 @@ where
     E: StdError + Send + Sync + 'static,
 {
     
-
-    let unerased = e.cast::<ErrorImpl<E>>();
-
-    #[cfg(not(anyhow_no_ptr_addr_of))]
-    return Ref::from_raw(NonNull::new_unchecked(
-        ptr::addr_of!((*unerased.as_ptr())._object) as *mut E,
-    ));
-
-    #[cfg(anyhow_no_ptr_addr_of)]
-    return Ref::new(&unerased.deref()._object);
+    let unerased_ref = e.cast::<ErrorImpl<E>>();
+    Ref::from_raw(unsafe {
+        NonNull::new_unchecked(ptr::addr_of!((*unerased_ref.as_ptr())._object).cast_mut())
+    })
 }
 
 
-
-#[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-unsafe fn object_mut<E>(e: Mut<ErrorImpl>) -> &mut (dyn StdError + Send + Sync + 'static)
-where
-    E: StdError + Send + Sync + 'static,
-{
-    
-    &mut e.cast::<ErrorImpl<E>>().deref_mut()._object
-}
-
-
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 unsafe fn object_boxed<E>(e: Own<ErrorImpl>) -> Box<dyn StdError + Send + Sync + 'static>
 where
     E: StdError + Send + Sync + 'static,
 {
     
-    e.cast::<ErrorImpl<E>>().boxed()
+    let unerased_own = e.cast::<ErrorImpl<E>>();
+    unsafe { unerased_own.boxed() }
+}
+
+
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
+unsafe fn object_reallocate_boxed<E>(e: Own<ErrorImpl>) -> Box<dyn StdError + Send + Sync + 'static>
+where
+    E: StdError + Send + Sync + 'static,
+{
+    
+    let unerased_own = e.cast::<ErrorImpl<E>>();
+    Box::new(unsafe { unerased_own.boxed() }._object)
 }
 
 
@@ -666,84 +792,46 @@ where
     if TypeId::of::<E>() == target {
         
         
-
-        let unerased = e.cast::<ErrorImpl<E>>();
-
-        #[cfg(not(anyhow_no_ptr_addr_of))]
-        return Some(
-            Ref::from_raw(NonNull::new_unchecked(
-                ptr::addr_of!((*unerased.as_ptr())._object) as *mut E,
-            ))
+        let unerased_ref = e.cast::<ErrorImpl<E>>();
+        Some(
+            Ref::from_raw(unsafe {
+                NonNull::new_unchecked(ptr::addr_of!((*unerased_ref.as_ptr())._object).cast_mut())
+            })
             .cast::<()>(),
-        );
-
-        #[cfg(anyhow_no_ptr_addr_of)]
-        return Some(Ref::new(&unerased.deref()._object).cast::<()>());
+        )
     } else {
         None
     }
 }
 
-
-#[cfg(anyhow_no_ptr_addr_of)]
-unsafe fn object_downcast_mut<E>(e: Mut<ErrorImpl>, target: TypeId) -> Option<Mut<()>>
-where
-    E: 'static,
-{
-    if TypeId::of::<E>() == target {
-        
-        
-        let unerased = e.cast::<ErrorImpl<E>>().deref_mut();
-        Some(Mut::new(&mut unerased._object).cast::<()>())
-    } else {
-        None
-    }
-}
-
-#[cfg(all(not(backtrace), feature = "backtrace"))]
+#[cfg(all(not(error_generic_member_access), feature = "std"))]
 fn no_backtrace(e: Ref<ErrorImpl>) -> Option<&Backtrace> {
     let _ = e;
     None
 }
 
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 unsafe fn context_downcast<C, E>(e: Ref<ErrorImpl>, target: TypeId) -> Option<Ref<()>>
 where
     C: 'static,
     E: 'static,
 {
     if TypeId::of::<C>() == target {
-        let unerased = e.cast::<ErrorImpl<ContextError<C, E>>>().deref();
-        Some(Ref::new(&unerased._object.context).cast::<()>())
+        let unerased_ref = e.cast::<ErrorImpl<ContextError<C, E>>>();
+        let inner = unsafe { ptr::addr_of!((*unerased_ref.as_ptr())._object.context) };
+        Some(Ref::from_raw(unsafe { NonNull::new_unchecked(inner.cast_mut()) }).cast::<()>())
     } else if TypeId::of::<E>() == target {
-        let unerased = e.cast::<ErrorImpl<ContextError<C, E>>>().deref();
-        Some(Ref::new(&unerased._object.error).cast::<()>())
+        let unerased_ref = e.cast::<ErrorImpl<ContextError<C, E>>>();
+        let inner = unsafe { ptr::addr_of!((*unerased_ref.as_ptr())._object.error) };
+        Some(Ref::from_raw(unsafe { NonNull::new_unchecked(inner.cast_mut()) }).cast::<()>())
     } else {
         None
     }
 }
 
 
-#[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-unsafe fn context_downcast_mut<C, E>(e: Mut<ErrorImpl>, target: TypeId) -> Option<Mut<()>>
-where
-    C: 'static,
-    E: 'static,
-{
-    if TypeId::of::<C>() == target {
-        let unerased = e.cast::<ErrorImpl<ContextError<C, E>>>().deref_mut();
-        Some(Mut::new(&mut unerased._object.context).cast::<()>())
-    } else if TypeId::of::<E>() == target {
-        let unerased = e.cast::<ErrorImpl<ContextError<C, E>>>().deref_mut();
-        Some(Mut::new(&mut unerased._object.error).cast::<()>())
-    } else {
-        None
-    }
-}
-
-
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 unsafe fn context_drop_rest<C, E>(e: Own<ErrorImpl>, target: TypeId)
 where
     C: 'static,
@@ -752,15 +840,11 @@ where
     
     
     if TypeId::of::<C>() == target {
-        let unerased = e
-            .cast::<ErrorImpl<ContextError<ManuallyDrop<C>, E>>>()
-            .boxed();
-        drop(unerased);
+        let unerased_own = e.cast::<ErrorImpl<ContextError<ManuallyDrop<C>, E>>>();
+        drop(unsafe { unerased_own.boxed() });
     } else {
-        let unerased = e
-            .cast::<ErrorImpl<ContextError<C, ManuallyDrop<E>>>>()
-            .boxed();
-        drop(unerased);
+        let unerased_own = e.cast::<ErrorImpl<ContextError<C, ManuallyDrop<E>>>>();
+        drop(unsafe { unerased_own.boxed() });
     }
 }
 
@@ -769,29 +853,15 @@ unsafe fn context_chain_downcast<C>(e: Ref<ErrorImpl>, target: TypeId) -> Option
 where
     C: 'static,
 {
-    let unerased = e.cast::<ErrorImpl<ContextError<C, Error>>>().deref();
+    let unerased_ref = e.cast::<ErrorImpl<ContextError<C, Error>>>();
     if TypeId::of::<C>() == target {
-        Some(Ref::new(&unerased._object.context).cast::<()>())
+        let inner = unsafe { ptr::addr_of!((*unerased_ref.as_ptr())._object.context) };
+        Some(Ref::from_raw(unsafe { NonNull::new_unchecked(inner.cast_mut()) }).cast::<()>())
     } else {
         
+        let unerased = unsafe { unerased_ref.deref() };
         let source = &unerased._object.error;
-        (vtable(source.inner.ptr).object_downcast)(source.inner.by_ref(), target)
-    }
-}
-
-
-#[cfg(anyhow_no_ptr_addr_of)]
-unsafe fn context_chain_downcast_mut<C>(e: Mut<ErrorImpl>, target: TypeId) -> Option<Mut<()>>
-where
-    C: 'static,
-{
-    let unerased = e.cast::<ErrorImpl<ContextError<C, Error>>>().deref_mut();
-    if TypeId::of::<C>() == target {
-        Some(Mut::new(&mut unerased._object.context).cast::<()>())
-    } else {
-        
-        let source = &mut unerased._object.error;
-        (vtable(source.inner.ptr).object_downcast_mut)(source.inner.by_mut(), target)
+        unsafe { (vtable(source.inner.ptr).object_downcast)(source.inner.by_ref(), target) }
     }
 }
 
@@ -803,33 +873,31 @@ where
     
     
     if TypeId::of::<C>() == target {
-        let unerased = e
-            .cast::<ErrorImpl<ContextError<ManuallyDrop<C>, Error>>>()
-            .boxed();
+        let unerased_own = e.cast::<ErrorImpl<ContextError<ManuallyDrop<C>, Error>>>();
         
-        drop(unerased);
+        drop(unsafe { unerased_own.boxed() });
     } else {
-        let unerased = e
-            .cast::<ErrorImpl<ContextError<C, ManuallyDrop<Error>>>>()
-            .boxed();
+        let unerased_own = e.cast::<ErrorImpl<ContextError<C, ManuallyDrop<Error>>>>();
+        let unerased = unsafe { unerased_own.boxed() };
         
         let inner = unerased._object.error.inner;
         drop(unerased);
-        let vtable = vtable(inner.ptr);
+        let vtable = unsafe { vtable(inner.ptr) };
         
-        (vtable.object_drop_rest)(inner, target);
+        unsafe { (vtable.object_drop_rest)(inner, target) };
     }
 }
 
 
-#[cfg(all(not(backtrace), feature = "backtrace"))]
+#[cfg(all(not(error_generic_member_access), feature = "std"))]
 #[allow(clippy::unnecessary_wraps)]
 unsafe fn context_backtrace<C>(e: Ref<ErrorImpl>) -> Option<&Backtrace>
 where
     C: 'static,
 {
-    let unerased = e.cast::<ErrorImpl<ContextError<C, Error>>>().deref();
-    let backtrace = ErrorImpl::backtrace(unerased._object.error.inner.by_ref());
+    let unerased_ref = e.cast::<ErrorImpl<ContextError<C, Error>>>();
+    let unerased = unsafe { unerased_ref.deref() };
+    let backtrace = unsafe { ErrorImpl::backtrace(unerased._object.error.inner.by_ref()) };
     Some(backtrace)
 }
 
@@ -849,7 +917,7 @@ pub(crate) struct ErrorImpl<E = ()> {
 
 unsafe fn vtable(p: NonNull<ErrorImpl>) -> &'static ErrorVTable {
     
-    *(p.as_ptr() as *const &'static ErrorVTable)
+    unsafe { *(p.as_ptr() as *const &'static ErrorVTable) }
 }
 
 
@@ -873,51 +941,48 @@ impl ErrorImpl {
     pub(crate) unsafe fn error(this: Ref<Self>) -> &(dyn StdError + Send + Sync + 'static) {
         
         
-        (vtable(this.ptr).object_ref)(this).deref()
+        unsafe { (vtable(this.ptr).object_ref)(this).deref() }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", not(anyhow_no_core_error)))]
     pub(crate) unsafe fn error_mut(this: Mut<Self>) -> &mut (dyn StdError + Send + Sync + 'static) {
         
         
-
-        #[cfg(not(anyhow_no_ptr_addr_of))]
-        return (vtable(this.ptr).object_ref)(this.by_ref())
-            .by_mut()
-            .deref_mut();
-
-        #[cfg(anyhow_no_ptr_addr_of)]
-        return (vtable(this.ptr).object_mut)(this);
+        unsafe {
+            (vtable(this.ptr).object_ref)(this.by_ref())
+                .by_mut()
+                .deref_mut()
+        }
     }
 
-    #[cfg(any(backtrace, feature = "backtrace"))]
+    #[cfg(feature = "std")]
     pub(crate) unsafe fn backtrace(this: Ref<Self>) -> &Backtrace {
         
         
         
-        this.deref()
+        unsafe { this.deref() }
             .backtrace
             .as_ref()
             .or_else(|| {
-                #[cfg(backtrace)]
-                return Self::error(this).request_ref::<Backtrace>();
-                #[cfg(not(backtrace))]
-                return (vtable(this.ptr).object_backtrace)(this);
+                #[cfg(error_generic_member_access)]
+                return nightly::request_ref_backtrace(unsafe { Self::error(this) });
+                #[cfg(not(error_generic_member_access))]
+                return unsafe { (vtable(this.ptr).object_backtrace)(this) };
             })
             .expect("backtrace capture failed")
     }
 
-    #[cfg(backtrace)]
-    unsafe fn provide<'a>(this: Ref<'a, Self>, demand: &mut Demand<'a>) {
-        if let Some(backtrace) = &this.deref().backtrace {
-            demand.provide_ref(backtrace);
+    #[cfg(error_generic_member_access)]
+    unsafe fn provide<'a>(this: Ref<'a, Self>, request: &mut Request<'a>) {
+        if let Some(backtrace) = unsafe { &this.deref().backtrace } {
+            nightly::provide_ref_backtrace(request, backtrace);
         }
-        Self::error(this).provide(demand);
+        nightly::provide(unsafe { Self::error(this) }, request);
     }
 
     #[cold]
     pub(crate) unsafe fn chain(this: Ref<Self>) -> Chain {
-        Chain::new(Self::error(this))
+        Chain::new(unsafe { Self::error(this) })
     }
 }
 
@@ -929,9 +994,9 @@ where
         unsafe { ErrorImpl::error(self.erase()).source() }
     }
 
-    #[cfg(backtrace)]
-    fn provide<'a>(&'a self, demand: &mut Demand<'a>) {
-        unsafe { ErrorImpl::provide(self.erase(), demand) }
+    #[cfg(error_generic_member_access)]
+    fn provide<'a>(&'a self, request: &mut Request<'a>) {
+        unsafe { ErrorImpl::provide(self.erase(), request) }
     }
 }
 
@@ -953,40 +1018,43 @@ where
     }
 }
 
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl From<Error> for Box<dyn StdError + Send + Sync + 'static> {
     #[cold]
     fn from(error: Error) -> Self {
-        let outer = ManuallyDrop::new(error);
-        unsafe {
-            
-            
-            (vtable(outer.inner.ptr).object_boxed)(outer.inner)
-        }
+        error.into_boxed_dyn_error()
     }
 }
 
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl From<Error> for Box<dyn StdError + Send + 'static> {
+    #[cold]
     fn from(error: Error) -> Self {
-        Box::<dyn StdError + Send + Sync>::from(error)
+        error.into_boxed_dyn_error()
     }
 }
 
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl From<Error> for Box<dyn StdError + 'static> {
+    #[cold]
     fn from(error: Error) -> Self {
-        Box::<dyn StdError + Send + Sync>::from(error)
+        error.into_boxed_dyn_error()
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl AsRef<dyn StdError + Send + Sync> for Error {
     fn as_ref(&self) -> &(dyn StdError + Send + Sync + 'static) {
         &**self
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", not(anyhow_no_core_error)))]
 impl AsRef<dyn StdError> for Error {
     fn as_ref(&self) -> &(dyn StdError + 'static) {
         &**self
     }
 }
+
+impl UnwindSafe for Error {}
+impl RefUnwindSafe for Error {}

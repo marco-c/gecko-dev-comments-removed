@@ -1,9 +1,7 @@
 use core::fmt;
 use core::mem;
 
-use scopeguard::defer;
-
-use crate::atomic::Shared;
+use crate::atomic::{Pointable, Shared};
 use crate::collector::Collector;
 use crate::deferred::Deferred;
 use crate::internal::Local;
@@ -267,7 +265,7 @@ impl Guard {
     
     
     
-    pub unsafe fn defer_destroy<T>(&self, ptr: Shared<'_, T>) {
+    pub unsafe fn defer_destroy<T: ?Sized + Pointable>(&self, ptr: Shared<'_, T>) {
         self.defer_unchecked(move || ptr.into_owned());
     }
 
@@ -366,6 +364,17 @@ impl Guard {
     where
         F: FnOnce() -> R,
     {
+        
+        struct ScopeGuard(*const Local);
+        impl Drop for ScopeGuard {
+            fn drop(&mut self) {
+                if let Some(local) = unsafe { self.0.as_ref() } {
+                    mem::forget(local.pin());
+                    local.release_handle();
+                }
+            }
+        }
+
         if let Some(local) = unsafe { self.local.as_ref() } {
             
             
@@ -373,13 +382,7 @@ impl Guard {
             local.unpin();
         }
 
-        
-        defer! {
-            if let Some(local) = unsafe { self.local.as_ref() } {
-                mem::forget(local.pin());
-                local.release_handle();
-            }
-        }
+        let _guard = ScopeGuard(self.local);
 
         f()
     }

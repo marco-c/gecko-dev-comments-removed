@@ -36,15 +36,13 @@
 
 
 use crate::primitive::cell::UnsafeCell;
-use crate::primitive::sync::atomic;
+use crate::primitive::sync::atomic::{self, Ordering};
 use core::cell::Cell;
 use core::mem::{self, ManuallyDrop};
 use core::num::Wrapping;
-use core::sync::atomic::Ordering;
 use core::{fmt, ptr};
 
 use crossbeam_utils::CachePadded;
-use memoffset::offset_of;
 
 use crate::atomic::{Owned, Shared};
 use crate::collector::{Collector, LocalHandle};
@@ -234,6 +232,11 @@ impl Global {
         
         
         
+        #[cfg(crossbeam_sanitize_thread)]
+        let mut locals = alloc::vec![];
+        
+        
+        
         for local in self.locals.iter(guard) {
             match local {
                 Err(IterError::Stalled) => {
@@ -250,9 +253,17 @@ impl Global {
                     if local_epoch.is_pinned() && local_epoch.unpinned() != global_epoch {
                         return global_epoch;
                     }
+
+                    #[cfg(crossbeam_sanitize_thread)]
+                    locals.push(local);
                 }
             }
         }
+        #[cfg(crossbeam_sanitize_thread)]
+        for local in locals {
+            local.epoch.load(Ordering::Acquire);
+        }
+        #[cfg(not(crossbeam_sanitize_thread))]
         atomic::fence(Ordering::Acquire);
 
         
@@ -269,12 +280,10 @@ impl Global {
 }
 
 
+#[repr(C)] 
 pub(crate) struct Local {
     
     entry: Entry,
-
-    
-    epoch: AtomicEpoch,
 
     
     
@@ -294,6 +303,9 @@ pub(crate) struct Local {
     
     
     pin_count: Cell<Wrapping<usize>>,
+
+    
+    epoch: CachePadded<AtomicEpoch>,
 }
 
 
@@ -320,12 +332,12 @@ impl Local {
 
             let local = Owned::new(Local {
                 entry: Entry::default(),
-                epoch: AtomicEpoch::new(Epoch::starting()),
                 collector: UnsafeCell::new(ManuallyDrop::new(collector.clone())),
                 bag: UnsafeCell::new(Bag::new()),
                 guard_count: Cell::new(0),
                 handle_count: Cell::new(1),
                 pin_count: Cell::new(Wrapping(0)),
+                epoch: CachePadded::new(AtomicEpoch::new(Epoch::starting())),
             })
             .into_shared(unprotected());
             collector.global.locals.insert(local, unprotected());
@@ -535,16 +547,18 @@ impl Local {
     }
 }
 
-impl IsElement<Local> for Local {
-    fn entry_of(local: &Local) -> &Entry {
-        let entry_ptr = (local as *const Local as usize + offset_of!(Local, entry)) as *const Entry;
-        unsafe { &*entry_ptr }
+impl IsElement<Self> for Local {
+    fn entry_of(local: &Self) -> &Entry {
+        
+        unsafe {
+            let entry_ptr = (local as *const Self).cast::<Entry>();
+            &*entry_ptr
+        }
     }
 
-    unsafe fn element_of(entry: &Entry) -> &Local {
+    unsafe fn element_of(entry: &Entry) -> &Self {
         
-        #[allow(unused_unsafe)]
-        let local_ptr = (entry as *const Entry as usize - offset_of!(Local, entry)) as *const Local;
+        let local_ptr = (entry as *const Entry).cast::<Self>();
         &*local_ptr
     }
 
@@ -555,7 +569,7 @@ impl IsElement<Local> for Local {
 
 #[cfg(all(test, not(crossbeam_loom)))]
 mod tests {
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::AtomicUsize;
 
     use super::*;
 

@@ -1,57 +1,14 @@
 
 
-
-
-
-
-
-
-
-
-
-
-#![warn(rust_2018_idioms)]
-
 use std::env;
 
-include!("no_atomic.rs");
-include!("build-common.rs");
-
 fn main() {
-    let target = match env::var("TARGET") {
-        Ok(target) => convert_custom_linux_target(target),
-        Err(e) => {
-            println!(
-                "cargo:warning={}: unable to get TARGET environment variable: {}",
-                env!("CARGO_PKG_NAME"),
-                e
-            );
-            return;
-        }
-    };
-
-    let cfg = match autocfg::AutoCfg::new() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            println!(
-                "cargo:warning={}: unable to determine rustc version: {}",
-                env!("CARGO_PKG_NAME"),
-                e
-            );
-            return;
-        }
-    };
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rustc-check-cfg=cfg(crossbeam_sanitize_thread)");
 
     
-    
-    
-    if NO_ATOMIC_CAS.contains(&&*target) {
-        println!("cargo:rustc-cfg=crossbeam_no_atomic_cas");
+    let sanitize = env::var("CARGO_CFG_SANITIZE").unwrap_or_default();
+    if sanitize.contains("thread") {
+        println!("cargo:rustc-cfg=crossbeam_sanitize_thread");
     }
-
-    if !cfg.probe_rustc_version(1, 61) {
-        println!("cargo:rustc-cfg=crossbeam_no_const_fn_trait_bound");
-    }
-
-    println!("cargo:rerun-if-changed=no_atomic.rs");
 }

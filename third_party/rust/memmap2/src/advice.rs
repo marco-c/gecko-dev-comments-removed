@@ -230,7 +230,7 @@ pub enum Advice {
     
     
     
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(target_vendor = "apple")]
     ZeroWiredPages = libc::MADV_ZERO_WIRED_PAGES,
 }
 
@@ -319,7 +319,7 @@ pub enum UncheckedAdvice {
     
     
     
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "linux", target_vendor = "apple"))]
     Free = libc::MADV_FREE,
 
     
@@ -358,7 +358,7 @@ pub enum UncheckedAdvice {
     
     
     
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(target_vendor = "apple")]
     FreeReusable = libc::MADV_FREE_REUSABLE,
 
     
@@ -372,7 +372,7 @@ pub enum UncheckedAdvice {
     
     
     
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(target_vendor = "apple")]
     FreeReuse = libc::MADV_FREE_REUSE,
 }
 
@@ -382,3 +382,41 @@ pub enum UncheckedAdvice {
 
 
 
+
+#[cfg(target_os = "linux")]
+impl Advice {
+    
+    
+    
+    
+    pub fn is_supported(self) -> bool {
+        (unsafe { libc::madvise(std::ptr::null_mut(), 0, self as libc::c_int) }) == 0
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl UncheckedAdvice {
+    
+    
+    
+    
+    pub fn is_supported(self) -> bool {
+        (unsafe { libc::madvise(std::ptr::null_mut(), 0, self as libc::c_int) }) == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_is_supported() {
+        use super::*;
+
+        assert!(Advice::Normal.is_supported());
+        assert!(Advice::Random.is_supported());
+        assert!(Advice::Sequential.is_supported());
+        assert!(Advice::WillNeed.is_supported());
+
+        assert!(UncheckedAdvice::DontNeed.is_supported());
+    }
+}

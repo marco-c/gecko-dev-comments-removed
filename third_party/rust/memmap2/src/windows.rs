@@ -77,6 +77,7 @@ struct SYSTEM_INFO {
     wProcessorRevision: WORD,
 }
 
+#[allow(dead_code)]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FILETIME {
@@ -136,8 +137,7 @@ extern "system" {
 
 
 fn empty_slice_ptr() -> *mut c_void {
-    let align = allocation_granularity().max(1);
-    unsafe { mem::transmute(align) }
+    allocation_granularity().max(1) as *mut c_void
 }
 
 pub struct MmapInner {
@@ -160,7 +160,7 @@ impl MmapInner {
         copy: bool,
     ) -> io::Result<MmapInner> {
         let alignment = offset % allocation_granularity() as u64;
-        let aligned_offset = offset - alignment as u64;
+        let aligned_offset = offset - alignment;
         let aligned_len = len + alignment as usize;
         if aligned_len == 0 {
             
@@ -179,27 +179,30 @@ impl MmapInner {
             });
         }
 
-        unsafe {
-            let mapping = CreateFileMappingW(handle, ptr::null_mut(), protect, 0, 0, ptr::null());
-            if mapping.is_null() {
-                return Err(io::Error::last_os_error());
-            }
+        let mapping =
+            unsafe { CreateFileMappingW(handle, ptr::null_mut(), protect, 0, 0, ptr::null()) };
+        if mapping.is_null() {
+            return Err(io::Error::last_os_error());
+        }
 
-            let ptr = MapViewOfFile(
+        let ptr = unsafe {
+            MapViewOfFile(
                 mapping,
                 access,
                 (aligned_offset >> 16 >> 16) as DWORD,
                 (aligned_offset & 0xffffffff) as DWORD,
                 aligned_len as SIZE_T,
-            );
-            CloseHandle(mapping);
-            if ptr.is_null() {
-                return Err(io::Error::last_os_error());
-            }
+            )
+        };
+        unsafe { CloseHandle(mapping) };
+        if ptr.is_null() {
+            return Err(io::Error::last_os_error());
+        }
 
-            let mut new_handle = 0 as RawHandle;
-            let cur_proc = GetCurrentProcess();
-            let ok = DuplicateHandle(
+        let mut new_handle = 0 as RawHandle;
+        let cur_proc = unsafe { GetCurrentProcess() };
+        let ok = unsafe {
+            DuplicateHandle(
                 cur_proc,
                 handle,
                 cur_proc,
@@ -207,19 +210,22 @@ impl MmapInner {
                 0,
                 0,
                 DUPLICATE_SAME_ACCESS,
-            );
-            if ok == 0 {
-                UnmapViewOfFile(ptr);
-                return Err(io::Error::last_os_error());
-            }
-
-            Ok(MmapInner {
-                handle: Some(new_handle),
-                ptr: ptr.offset(alignment as isize),
-                len: len as usize,
-                copy,
-            })
+            )
+        };
+        if ok == 0 {
+            unsafe { UnmapViewOfFile(ptr) };
+            return Err(io::Error::last_os_error());
         }
+
+        
+        let ptr = unsafe { ptr.add(alignment as usize) };
+
+        Ok(MmapInner {
+            handle: Some(new_handle),
+            ptr,
+            len,
+            copy,
+        })
     }
 
     pub fn map(
@@ -227,6 +233,7 @@ impl MmapInner {
         handle: RawHandle,
         offset: u64,
         _populate: bool,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let write = protection_supported(handle, PAGE_READWRITE);
         let exec = protection_supported(handle, PAGE_EXECUTE_READ);
@@ -259,6 +266,7 @@ impl MmapInner {
         handle: RawHandle,
         offset: u64,
         _populate: bool,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let write = protection_supported(handle, PAGE_READWRITE);
         let mut access = FILE_MAP_READ | FILE_MAP_EXECUTE;
@@ -281,6 +289,7 @@ impl MmapInner {
         handle: RawHandle,
         offset: u64,
         _populate: bool,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let exec = protection_supported(handle, PAGE_EXECUTE_READ);
         let mut access = FILE_MAP_READ | FILE_MAP_WRITE;
@@ -303,6 +312,7 @@ impl MmapInner {
         handle: RawHandle,
         offset: u64,
         _populate: bool,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let exec = protection_supported(handle, PAGE_EXECUTE_READWRITE);
         let mut access = FILE_MAP_COPY;
@@ -325,6 +335,7 @@ impl MmapInner {
         handle: RawHandle,
         offset: u64,
         _populate: bool,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let write = protection_supported(handle, PAGE_READWRITE);
         let exec = protection_supported(handle, PAGE_EXECUTE_READ);
@@ -348,6 +359,7 @@ impl MmapInner {
         _stack: bool,
         _populate: bool,
         _huge: Option<u8>,
+        _no_reserve: bool,
     ) -> io::Result<MmapInner> {
         
         let mapped_len = len.max(1);
@@ -382,7 +394,7 @@ impl MmapInner {
                 Ok(MmapInner {
                     handle: None,
                     ptr,
-                    len: len as usize,
+                    len,
                     copy: false,
                 })
             } else {
@@ -405,10 +417,17 @@ impl MmapInner {
     }
 
     pub fn flush_async(&self, offset: usize, len: usize) -> io::Result<()> {
+        if offset > self.len || len > self.len - offset {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
         if self.ptr == empty_slice_ptr() {
             return Ok(());
         }
-        let result = unsafe { FlushViewOfFile(self.ptr.add(offset), len as SIZE_T) };
+        
+        let result = unsafe {
+            let ptr = self.ptr.add(offset);
+            FlushViewOfFile(ptr, len as SIZE_T)
+        };
         if result != 0 {
             Ok(())
         } else {
@@ -420,19 +439,19 @@ impl MmapInner {
         if self.ptr == empty_slice_ptr() {
             return Ok(());
         }
-        unsafe {
-            let alignment = self.ptr as usize % allocation_granularity();
-            let ptr = self.ptr.offset(-(alignment as isize));
-            let aligned_len = self.len as SIZE_T + alignment as SIZE_T;
+        let alignment = self.ptr as usize % allocation_granularity();
+        
+        
+        let ptr = unsafe { self.ptr.sub(alignment) };
+        let aligned_len = self.len as SIZE_T + alignment as SIZE_T;
 
-            let mut old = 0;
-            let result = VirtualProtect(ptr, aligned_len, protect, &mut old);
+        let mut old = 0;
+        let result = unsafe { VirtualProtect(ptr, aligned_len, protect, &mut old) };
 
-            if result != 0 {
-                Ok(())
-            } else {
-                Err(io::Error::last_os_error())
-            }
+        if result != 0 {
+            Ok(())
+        } else {
+            Err(io::Error::last_os_error())
         }
     }
 
@@ -463,7 +482,7 @@ impl MmapInner {
 
     #[inline]
     pub fn mut_ptr(&mut self) -> *mut u8 {
-        self.ptr as *mut u8
+        self.ptr.cast()
     }
 
     #[inline]
@@ -480,9 +499,11 @@ impl Drop for MmapInner {
         let alignment = self.ptr as usize % allocation_granularity();
         
         
+        let ptr = unsafe { self.ptr.sub(alignment) };
+        
+        
         
         unsafe {
-            let ptr = self.ptr.offset(-(alignment as isize));
             UnmapViewOfFile(ptr);
 
             if let Some(handle) = self.handle {

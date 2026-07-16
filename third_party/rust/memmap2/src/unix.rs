@@ -1,10 +1,8 @@
-extern crate libc;
-
 use std::fs::File;
+use std::io;
 use std::mem::ManuallyDrop;
 use std::os::unix::io::{FromRawFd, RawFd};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::{io, ptr};
 
 #[cfg(any(
     all(target_os = "linux", not(target_arch = "mips")),
@@ -45,6 +43,26 @@ const MAP_HUGE_MASK: libc::c_int = 0;
 const MAP_HUGE_SHIFT: libc::c_int = 0;
 
 #[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_vendor = "apple",
+    target_os = "netbsd",
+    target_os = "solaris",
+    target_os = "illumos",
+))]
+const MAP_NORESERVE: libc::c_int = libc::MAP_NORESERVE;
+
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "android",
+    target_vendor = "apple",
+    target_os = "netbsd",
+    target_os = "solaris",
+    target_os = "illumos",
+)))]
+const MAP_NORESERVE: libc::c_int = 0;
+
+#[cfg(any(
     target_os = "android",
     all(target_os = "linux", not(target_env = "musl"))
 ))]
@@ -77,27 +95,29 @@ impl MmapInner {
 
         let (map_len, map_offset) = Self::adjust_mmap_params(len, alignment as usize)?;
 
-        unsafe {
-            let ptr = mmap(
-                ptr::null_mut(),
+        
+        
+        let ptr = unsafe {
+            mmap(
+                std::ptr::null_mut(),
                 map_len as libc::size_t,
                 prot,
                 flags,
                 file,
                 aligned_offset as off_t,
-            );
+            )
+        };
 
-            if ptr == libc::MAP_FAILED {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(Self::from_raw_parts(ptr, len, map_offset))
-            }
+        if ptr == libc::MAP_FAILED {
+            Err(io::Error::last_os_error())
+        } else {
+            
+            
+            Ok(unsafe { Self::from_raw_parts(ptr, len, map_offset) })
         }
     }
 
     fn adjust_mmap_params(len: usize, alignment: usize) -> io::Result<(usize, usize)> {
-        use std::isize;
-
         
         
         
@@ -195,7 +215,11 @@ impl MmapInner {
         if len == 0 {
             (self.ptr, 1, 0)
         } else {
-            (unsafe { self.ptr.offset(-(offset as isize)) }, len, offset)
+            let offset = self.ptr as usize % page_size();
+            
+            
+            let ptr = unsafe { self.ptr.sub(offset) };
+            (ptr, len, offset)
         }
     }
 
@@ -213,50 +237,78 @@ impl MmapInner {
         debug_assert!(offset < page_size(), "offset larger than page size");
 
         Self {
-            ptr: ptr.add(offset),
+            ptr: unsafe { ptr.add(offset) },
             len,
         }
     }
 
-    pub fn map(len: usize, file: RawFd, offset: u64, populate: bool) -> io::Result<MmapInner> {
+    pub fn map(
+        len: usize,
+        file: RawFd,
+        offset: u64,
+        populate: bool,
+        no_reserve: bool,
+    ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ,
-            libc::MAP_SHARED | populate,
+            libc::MAP_SHARED | populate | no_reserve,
             file,
             offset,
         )
     }
 
-    pub fn map_exec(len: usize, file: RawFd, offset: u64, populate: bool) -> io::Result<MmapInner> {
+    pub fn map_exec(
+        len: usize,
+        file: RawFd,
+        offset: u64,
+        populate: bool,
+        no_reserve: bool,
+    ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ | libc::PROT_EXEC,
-            libc::MAP_SHARED | populate,
+            libc::MAP_SHARED | populate | no_reserve,
             file,
             offset,
         )
     }
 
-    pub fn map_mut(len: usize, file: RawFd, offset: u64, populate: bool) -> io::Result<MmapInner> {
+    pub fn map_mut(
+        len: usize,
+        file: RawFd,
+        offset: u64,
+        populate: bool,
+        no_reserve: bool,
+    ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ | libc::PROT_WRITE,
-            libc::MAP_SHARED | populate,
+            libc::MAP_SHARED | populate | no_reserve,
             file,
             offset,
         )
     }
 
-    pub fn map_copy(len: usize, file: RawFd, offset: u64, populate: bool) -> io::Result<MmapInner> {
+    pub fn map_copy(
+        len: usize,
+        file: RawFd,
+        offset: u64,
+        populate: bool,
+        no_reserve: bool,
+    ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ | libc::PROT_WRITE,
-            libc::MAP_PRIVATE | populate,
+            libc::MAP_PRIVATE | populate | no_reserve,
             file,
             offset,
         )
@@ -267,12 +319,14 @@ impl MmapInner {
         file: RawFd,
         offset: u64,
         populate: bool,
+        no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let populate = if populate { MAP_POPULATE } else { 0 };
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ,
-            libc::MAP_PRIVATE | populate,
+            libc::MAP_PRIVATE | populate | no_reserve,
             file,
             offset,
         )
@@ -284,27 +338,39 @@ impl MmapInner {
         stack: bool,
         populate: bool,
         huge: Option<u8>,
+        no_reserve: bool,
     ) -> io::Result<MmapInner> {
         let stack = if stack { MAP_STACK } else { 0 };
         let populate = if populate { MAP_POPULATE } else { 0 };
         let hugetlb = if huge.is_some() { MAP_HUGETLB } else { 0 };
-        let offset = huge
-            .map(|mask| ((mask as u64) & (MAP_HUGE_MASK as u64)) << MAP_HUGE_SHIFT)
-            .unwrap_or(0);
+        let hugetlb_size = huge.map_or(0, |mask| {
+            (u64::from(mask) & (MAP_HUGE_MASK as u64)) << MAP_HUGE_SHIFT
+        }) as i32;
+        let no_reserve = if no_reserve { MAP_NORESERVE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ | libc::PROT_WRITE,
-            libc::MAP_PRIVATE | libc::MAP_ANON | stack | populate | hugetlb,
+            libc::MAP_PRIVATE
+                | libc::MAP_ANON
+                | stack
+                | populate
+                | hugetlb
+                | hugetlb_size
+                | no_reserve,
             -1,
-            offset,
+            0,
         )
     }
 
     pub fn flush(&self, offset: usize, len: usize) -> io::Result<()> {
+        if offset > self.len || len > self.len - offset {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
         let alignment = (self.ptr as usize + offset) % page_size();
         let offset = offset as isize - alignment as isize;
         let len = len + alignment;
         let result =
+            
             unsafe { libc::msync(self.ptr.offset(offset), len as libc::size_t, libc::MS_SYNC) };
         if result == 0 {
             Ok(())
@@ -314,10 +380,14 @@ impl MmapInner {
     }
 
     pub fn flush_async(&self, offset: usize, len: usize) -> io::Result<()> {
+        if offset > self.len || len > self.len - offset {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
         let alignment = (self.ptr as usize + offset) % page_size();
         let offset = offset as isize - alignment as isize;
         let len = len + alignment;
         let result =
+            
             unsafe { libc::msync(self.ptr.offset(offset), len as libc::size_t, libc::MS_ASYNC) };
         if result == 0 {
             Ok(())
@@ -327,16 +397,17 @@ impl MmapInner {
     }
 
     fn mprotect(&mut self, prot: libc::c_int) -> io::Result<()> {
-        unsafe {
-            let alignment = self.ptr as usize % page_size();
-            let ptr = self.ptr.offset(-(alignment as isize));
-            let len = self.len + alignment;
-            let len = len.max(1);
-            if libc::mprotect(ptr, len, prot) == 0 {
-                Ok(())
-            } else {
-                Err(io::Error::last_os_error())
-            }
+        let alignment = self.ptr as usize % page_size();
+        
+        let ptr = unsafe { self.ptr.sub(alignment) };
+        let len = self.len + alignment;
+        let len = len.max(1);
+
+        
+        if unsafe { libc::mprotect(ptr, len, prot) } == 0 {
+            Ok(())
+        } else {
+            Err(io::Error::last_os_error())
         }
     }
 
@@ -359,7 +430,7 @@ impl MmapInner {
 
     #[inline]
     pub fn mut_ptr(&mut self) -> *mut u8 {
-        self.ptr as *mut u8
+        self.ptr.cast()
     }
 
     #[inline]
@@ -367,16 +438,34 @@ impl MmapInner {
         self.len
     }
 
-    pub fn advise(&self, advice: libc::c_int, offset: usize, len: usize) -> io::Result<()> {
+    
+    
+    
+    
+    
+    
+    pub unsafe fn advise(&self, advice: libc::c_int, offset: usize, len: usize) -> io::Result<()> {
+        if offset > self.len || len > self.len {
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
         let alignment = (self.ptr as usize + offset) % page_size();
         let offset = offset as isize - alignment as isize;
         let len = len + alignment;
-        unsafe {
-            if libc::madvise(self.ptr.offset(offset), len, advice) != 0 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(())
-            }
+
+        
+        let ptr = unsafe { self.ptr.offset(offset) };
+
+        
+        
+        
+        #[cfg(target_os = "aix")]
+        let ptr = self.ptr.offset(offset).cast();
+
+        
+        if unsafe { libc::madvise(ptr, len, advice) } != 0 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(())
         }
     }
 
@@ -385,16 +474,19 @@ impl MmapInner {
         let (old_ptr, old_len, offset) = self.as_mmap_params();
         let (map_len, offset) = Self::adjust_mmap_params(new_len, offset)?;
 
-        unsafe {
-            let new_ptr = libc::mremap(old_ptr, old_len, map_len, options.into_flags());
+        
+        let new_ptr = unsafe { libc::mremap(old_ptr, old_len, map_len, options.into_flags()) };
 
-            if new_ptr == libc::MAP_FAILED {
-                Err(io::Error::last_os_error())
-            } else {
-                
-                ptr::write(self, Self::from_raw_parts(new_ptr, new_len, offset));
-                Ok(())
-            }
+        if new_ptr == libc::MAP_FAILED {
+            Err(io::Error::last_os_error())
+        } else {
+            
+            let new_map = unsafe { Self::from_raw_parts(new_ptr, new_len, offset) };
+            
+            
+            let old_map = std::mem::replace(self, new_map);
+            std::mem::forget(old_map);
+            Ok(())
         }
     }
 
