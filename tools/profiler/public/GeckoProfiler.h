@@ -338,6 +338,15 @@ void profiler_cancel_scheduled_dump();
 
 
 
+
+
+
+void profiler_wait_for_scheduled_dump();
+
+
+
+
+
 namespace mozilla {
 
 

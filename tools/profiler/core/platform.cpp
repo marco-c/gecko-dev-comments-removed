@@ -114,6 +114,7 @@
 #include "nsSystemInfo.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "xpcpublic.h"
 #include "nsDirectoryServiceUtils.h"
 #include "Tracing.h"
 #include "prdtoa.h"
@@ -4653,6 +4654,12 @@ static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
 
 
 
+
+
+static mozilla::StaticMutex sScheduledDumpMutex;
+
+
+
 void SamplerThread::Run() {
   NS_SetCurrentThreadName("SamplerThread");
 
@@ -5260,8 +5267,15 @@ void SamplerThread::Run() {
     
     if (scheduledDumpDue) {
       scheduledDumpDue = false;
+      
+      
+      
+      
+      mozilla::StaticMutexAutoLock dumpLock(sScheduledDumpMutex);
       profiler_save_profile_to_file(scheduledDumpPath.get());
       if (scheduledDumpExitAfter) {
+        
+        
         
         AppShutdown::DoImmediateExit();
       }
@@ -6682,6 +6696,18 @@ void profiler_cancel_scheduled_dump() {
 
   PSAutoLock lock;
   CorePS::CancelScheduledDump(lock);
+}
+
+void profiler_wait_for_scheduled_dump() {
+  
+  
+  
+  
+  
+  if (!xpc::IsInAutomation()) {
+    return;
+  }
+  mozilla::StaticMutexAutoLock lock(sScheduledDumpMutex);
 }
 
 void profiler_request_dump_and_quit_for_test(const nsACString& aReason) {
