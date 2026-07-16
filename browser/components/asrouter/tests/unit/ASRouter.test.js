@@ -953,9 +953,7 @@ describe("ASRouter", () => {
               data: {
                 actions: [
                   { type: "CONFIRM_LAUNCH_ON_LOGIN" },
-                  
-                  
-                  { type: "CONFIRM_LAUNCH_ON_LOGIN" },
+                  { type: "PIN_FIREFOX_TO_TASKBAR" },
                 ],
               },
             },
