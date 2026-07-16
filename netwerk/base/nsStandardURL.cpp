@@ -1528,8 +1528,9 @@ nsresult nsStandardURL::SetScheme(const nsACString& input) {
   } else if (Scheme() == "https"_ns || Scheme() == "wss"_ns) {
     mDefaultPort = 443;
   }
-  if (mPort == mDefaultPort) {
-    MOZ_ALWAYS_SUCCEEDS(SetPort(-1));
+  if (mPort == mDefaultPort && mAuthority.mLen >= 0) {
+    nsresult rv = SetPort(-1);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return NS_OK;
@@ -2002,6 +2003,10 @@ nsresult nsStandardURL::SetPort(int32_t port) {
   if (mURLType == URLTYPE_NO_AUTHORITY) {
     NS_WARNING("cannot set port on no-auth url");
     return NS_ERROR_UNEXPECTED;
+  }
+  if (mAuthority.mLen < 0) {
+    NS_WARNING("uninitialized");
+    return NS_ERROR_NOT_INITIALIZED;
   }
   if (mAuthority.mLen == 0) {
     
@@ -3722,6 +3727,7 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   
   auto isSubSegment = [](const URLSegment& inner, const URLSegment& outer) {
     if (inner.mLen == -1) return true;
+    if (outer.mLen == -1) return false;
     return inner.mPos >= outer.mPos &&
            inner.mPos + inner.mLen <= outer.mPos + outer.mLen;
   };
@@ -3735,9 +3741,19 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   NS_ENSURE_TRUE(isSubSegment(mQuery, mPath), false);
   NS_ENSURE_TRUE(isSubSegment(mRef, mPath), false);
 
-  if (mAuthority.mLen >= 0 && mPath.mLen >= 0) {
-    NS_ENSURE_TRUE(mPath.mPos == mAuthority.mPos + mAuthority.mLen, false);
+  
+  
+  
+  
+  if (mPath.mLen >= 0) {
+    if (mAuthority.mLen >= 0) {
+      NS_ENSURE_TRUE(mPath.mPos == mAuthority.mPos + mAuthority.mLen, false);
+    } else {
+      NS_ENSURE_TRUE(mURLType == URLTYPE_NO_AUTHORITY, false);
+    }
   }
+
+  NS_ENSURE_TRUE(mAuthority.mLen >= 0 || mPort == -1, false);
 
   if (!IsValid()) {
     return false;
