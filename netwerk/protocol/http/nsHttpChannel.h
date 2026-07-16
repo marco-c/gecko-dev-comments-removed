@@ -874,6 +874,13 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   Maybe<Atomic<bool>> mSuspendAfterExamineResponse;
+  
+  
+  
+  
+  
+  
+  Atomic<bool> mSuspendedForExamineResponse{false};
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;

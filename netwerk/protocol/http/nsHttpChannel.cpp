@@ -610,8 +610,8 @@ void nsHttpChannel::CancelSuspendOrResumeAfterExamineResponse() {
   if (mSuspendAfterExamineResponse.isNothing()) {
     return;
   }
-  bool oldValue = mSuspendAfterExamineResponse.ref().exchange(false);
-  if (!oldValue) {
+  mSuspendAfterExamineResponse.ref() = false;
+  if (mSuspendedForExamineResponse.exchange(false)) {
     Resume();
   }
 }
@@ -622,6 +622,7 @@ void nsHttpChannel::MaybeSuspendAfterExamineResponse() {
   }
   bool oldValue = mSuspendAfterExamineResponse.ref().exchange(false);
   if (oldValue) {
+    mSuspendedForExamineResponse = true;
     Suspend();
   }
 }
@@ -7455,6 +7456,18 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     needAsyncAbort = false;
     (void)AsyncAbort(status);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CancelSuspendOrResumeAfterExamineResponse();
 
   
   
