@@ -660,6 +660,23 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   rv = mContentProtectionManager->SetCDMProxy(proxy);
   CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to set CDM proxy");
 
+  
+  
+  
+  
+  
+  
+  auto& readiness = cdmParent->ReadinessMonitor();
+  readiness.MarkReady(
+      MFProtectedPathReadinessMonitor::Condition::ContentProtectionManager);
+  if (mDXGIDeviceManager) {
+    readiness.MarkReady(
+        MFProtectedPathReadinessMonitor::Condition::HwDrmAdapter);
+  } else {
+    readiness.MarkFailed(
+        MFProtectedPathReadinessMonitor::Condition::HwDrmAdapter, E_FAIL);
+  }
+
   mContentProtectionManager->SetNotifyWaitingForKeyCallback(
       [self = RefPtr{this}]() {
         if (self->CanSend() && self->mMediaEngine) {
