@@ -210,6 +210,14 @@ nsresult GeckoViewStreamListener::HandleWebResponse(nsIRequest* aRequest) {
   }
 
   
+  nsString filename;
+  if (NS_SUCCEEDED(channel->GetContentDispositionFilename(filename))) {
+    builder->Header(jni::StringParam(u"content-disposition"_ns),
+                    nsPrintfCString("attachment; filename=\"%s\"",
+                                    NS_ConvertUTF16toUTF8(filename).get()));
+  }
+
+  
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
   builder->Redirected(!loadInfo->RedirectChain().IsEmpty());
 
@@ -237,12 +245,6 @@ nsresult GeckoViewStreamListener::HandleWebResponse(nsIRequest* aRequest) {
   } else {
     
     
-    nsString filename;
-    if (NS_SUCCEEDED(channel->GetContentDispositionFilename(filename))) {
-      builder->Header(jni::StringParam(u"content-disposition"_ns),
-                      nsPrintfCString("attachment; filename=\"%s\"",
-                                      NS_ConvertUTF16toUTF8(filename).get()));
-    }
 
     nsCString contentType;
     if (NS_SUCCEEDED(channel->GetContentType(contentType))) {
