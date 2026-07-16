@@ -140,6 +140,7 @@ add_task(async function test_archivedPings() {
 
   
   await TelemetryController.testReset();
+  Services.fog.testResetFOG();
 
   let pingList = await TelemetryArchive.promiseArchivedPingList();
   Assert.deepEqual(
@@ -246,33 +247,21 @@ add_task(async function test_archiveCleanup() {
   
   await IOUtils.remove(gPingsArchivePath, { recursive: true });
 
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SCAN_PING_COUNT").clear();
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_DIRECTORIES_COUNT").clear();
-  
-  Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_ARCHIVED").clear();
-  Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_ARCHIVED_PINGS_SIZE_MB"
-  ).clear();
+  Services.fog.testResetFOG();
 
   
   await TelemetryController.testReset();
   await TelemetryStorage.testCleanupTaskPromise();
   await TelemetryArchive.promiseArchivedPingList();
 
-  let h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_SCAN_PING_COUNT"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveScanPingCount.testGetValue().sum,
     0,
     "Telemetry must report 0 pings scanned if no archive dir exists."
   );
   
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTED_OLD_DIRS"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveEvictedOldDirs.testGetValue()?.sum ?? 0,
     0,
     "Telemetry must report 0 evicted dirs if no archive dir exists."
   );
@@ -308,8 +297,6 @@ add_task(async function test_archiveCleanup() {
     }
   };
 
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SESSION_PING_COUNT").clear();
-
   
   let date = fakeNow(2010, 1, 1, 1, 0, 0);
   let firstDate = date;
@@ -332,15 +319,13 @@ add_task(async function test_archiveCleanup() {
   }
 
   
-  h = Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SESSION_PING_COUNT");
   Assert.equal(
-    h.snapshot().sum,
+    Glean.telemetry.archiveSessionPingCount.testGetValue(),
     22,
     "All the pings must be live-accumulated in the histogram."
   );
   
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_EVICTED_OLD_DIRS").clear();
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_OLDEST_DIRECTORY_AGE").clear();
+  Services.fog.testResetFOG();
 
   
   fakeNow(futureDate(firstDate, 60 * MILLISECONDS_PER_DAY));
@@ -355,55 +340,39 @@ add_task(async function test_archiveCleanup() {
   await checkArchive();
 
   
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_SCAN_PING_COUNT"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveScanPingCount.testGetValue().sum,
     21,
     "The histogram must count all the pings in the archive."
   );
   
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTED_OLD_DIRS"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveEvictedOldDirs.testGetValue().sum,
     1,
     "Telemetry must correctly report removed archive directories."
   );
   
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_DIRECTORIES_COUNT"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveDirectoriesCount.testGetValue().sum,
     3,
     "Telemetry must correctly report the remaining archive directories."
   );
   
   const oldestAgeInMonths = 1;
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_OLDEST_DIRECTORY_AGE"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveOldestDirectoryAge.testGetValue().sum,
     oldestAgeInMonths,
     "Telemetry must correctly report age of the oldest directory in the archive."
   );
 
   
   
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SIZE_MB").clear();
-  Telemetry.getHistogramById("TELEMETRY_ARCHIVE_EVICTED_OVER_QUOTA").clear();
-  Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTING_OVER_QUOTA_MS"
-  ).clear();
 
   
   fakeNow(futureDate(oldestDirectoryDate, 60 * MILLISECONDS_PER_DAY));
   
   await TelemetryController.testReset();
+  Services.fog.testResetFOG();
   
   await TelemetryStorage.testCleanupTaskPromise();
   
@@ -422,26 +391,20 @@ add_task(async function test_archiveCleanup() {
   );
 
   
-  h = Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SIZE_MB").snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveSize.testGetValue().sum,
     Math.round(archiveSizeInBytes / 1024 / 1024),
     "Telemetry must report the correct archive size."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTED_OVER_QUOTA"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveEvictedOverQuota.testGetValue().sum,
     0,
     "Telemetry must report 0 evictions if quota is not hit."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTING_OVER_QUOTA_MS"
-  ).snapshot();
-  Assert.equal(
-    h.sum,
-    0,
+  
+  Assert.deepEqual(
+    Glean.telemetry.archiveEvictingOverQuota.testGetValue().sum,
+    1000000,
     "Telemetry must report a null elapsed time if quota is not hit."
   );
 
@@ -481,18 +444,14 @@ add_task(async function test_archiveCleanup() {
   
   await checkArchive();
 
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_ARCHIVE_EVICTED_OVER_QUOTA"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.archiveEvictedOverQuota.testGetValue().sum,
     pingsOutsideQuota.length,
     "Telemetry must correctly report the over quota pings evicted from the archive."
   );
-  h = Telemetry.getHistogramById("TELEMETRY_ARCHIVE_SIZE_MB").snapshot();
   Assert.equal(
-    h.sum,
-    300,
+    Glean.telemetry.archiveSize.testGetValue().sum,
+    300 * 1024 * 1024,
     "Archive quota was hit, a special size must be reported."
   );
 
@@ -538,20 +497,14 @@ add_task(async function test_archiveCleanup() {
   await checkArchive();
 
   
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PING_SIZE_EXCEEDED_ARCHIVED"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.pingSizeExceededArchived.testGetValue(),
     1,
     "Telemetry must report 1 oversized ping in the archive."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_ARCHIVED_PINGS_SIZE_MB"
-  ).snapshot();
   Assert.equal(
-    h.values[archivedPingSizeMB],
-    1,
+    Glean.telemetry.discardedArchivedPingsSize.testGetValue().sum,
+    archivedPingSizeMB * 1024 * 1024,
     "Telemetry must report the correct size for the oversized ping."
   );
 });
@@ -618,11 +571,8 @@ add_task(async function test_InvalidPingType() {
   ];
 
   for (let type of TYPES) {
-    let histogram = Telemetry.getKeyedHistogramById(
-      "TELEMETRY_INVALID_PING_TYPE_SUBMITTED"
-    );
     Assert.ok(
-      !(type in histogram.snapshot()),
+      !(type in Glean.telemetry.invalidPingTypeSubmitted.testGetValue()),
       "Should not have counted this invalid ping yet: " + type
     );
     Assert.ok(
@@ -630,7 +580,7 @@ add_task(async function test_InvalidPingType() {
       "Ping type should have been rejected."
     );
     Assert.equal(
-      histogram.snapshot()[type].sum,
+      Glean.telemetry.invalidPingTypeSubmitted.testGetValue()[type],
       1,
       "Should have counted this as an invalid ping type."
     );
@@ -640,14 +590,11 @@ add_task(async function test_InvalidPingType() {
 add_task(async function test_InvalidPayloadType() {
   const PAYLOAD_TYPES = [19, "string", [1, 2, 3, 4], null, undefined];
 
-  let histogram = Telemetry.getHistogramById(
-    "TELEMETRY_INVALID_PAYLOAD_SUBMITTED"
-  );
   for (let i = 0; i < PAYLOAD_TYPES.length; i++) {
-    histogram.clear();
+    Services.fog.testResetFOG();
     Assert.equal(
-      histogram.snapshot().sum,
-      0,
+      Glean.telemetry.invalidPayloadSubmitted.testGetValue(),
+      null,
       "Should not have counted this invalid payload yet: " +
         JSON.stringify(PAYLOAD_TYPES[i])
     );
@@ -658,7 +605,7 @@ add_task(async function test_InvalidPayloadType() {
       "Payload type should have been rejected."
     );
     Assert.equal(
-      histogram.snapshot().sum,
+      Glean.telemetry.invalidPayloadSubmitted.testGetValue(),
       1,
       "Should have counted this as an invalid payload type."
     );

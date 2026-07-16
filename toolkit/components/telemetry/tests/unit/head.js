@@ -518,16 +518,6 @@ function generateString(length) {
 }
 
 
-function getHistogram(histogramId) {
-  return Telemetry.getHistogramById(histogramId);
-}
-
-
-function getSnapshot(histogramId) {
-  return Telemetry.getHistogramById(histogramId).snapshot();
-}
-
-
 function setEmptyPrefWatchlist() {
   const { TelemetryEnvironment } = ChromeUtils.importESModule(
     "resource://gre/modules/TelemetryEnvironment.sys.mjs"

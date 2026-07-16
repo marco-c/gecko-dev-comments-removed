@@ -26,9 +26,6 @@ const { TelemetryArchive } = ChromeUtils.importESModule(
 const { TelemetryUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryUtils.sys.mjs"
 );
-const { ContentTaskUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/ContentTaskUtils.sys.mjs"
-);
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
@@ -119,6 +116,7 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
 add_task(async function test_setup() {
   
   do_get_profile();
+  Services.fog.initializeFOG();
   await loadAddonManager(
     "xpcshell@tests.mozilla.org",
     "XPCShell",
@@ -168,7 +166,6 @@ add_task(async function test_simplePing() {
 });
 
 add_task(async function test_disableDataUpload() {
-  const OPTIN_PROBE = "telemetry.data_upload_optin";
   const isUnified = Services.prefs.getBoolPref(
     TelemetryUtils.Preferences.Unified,
     false
@@ -179,11 +176,10 @@ add_task(async function test_disableDataUpload() {
   }
 
   
-  
-  let snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
-  Assert.ok(
-    !(OPTIN_PROBE in snapshot),
-    "Data optin scalar should not be set at start"
+  Assert.equal(
+    Glean.telemetry.dataUploadOptin.testGetValue(),
+    null,
+    "Data optin metric should not be set at start"
   );
 
   
@@ -224,9 +220,9 @@ add_task(async function test_disableDataUpload() {
   
   await TelemetrySend.testWaitOnOutgoingPings();
 
-  snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
-  Assert.ok(
-    !(OPTIN_PROBE in snapshot),
+  Assert.equal(
+    Glean.telemetry.dataUploadOptin.testGetValue(),
+    null,
     "Data optin scalar should not be set after opt out"
   );
 
@@ -234,19 +230,9 @@ add_task(async function test_disableDataUpload() {
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   
-  await ContentTaskUtils.waitForCondition(() => {
-    const scalarSnapshot = Telemetry.getSnapshotForScalars("main", false);
-    return (
-      Object.keys(scalarSnapshot).includes("parent") &&
-      OPTIN_PROBE in scalarSnapshot.parent
-    );
-  });
-
-  snapshot = Telemetry.getSnapshotForScalars("main", false).parent || {};
-  Assert.ok(
-    snapshot[OPTIN_PROBE],
-    "Enabling data upload should set optin probe"
-  );
+  await TestUtils.waitForCondition(() => {
+    return Glean.telemetry.dataUploadOptin.testGetValue();
+  }, "data optin metric set");
 
   
   let secondClientId = TelemetryController.getCurrentPingData().clientId;
@@ -362,17 +348,13 @@ add_task(async function test_pingHasClientId() {
   await TelemetryController.testShutdown();
   await ClientID._reset();
   await TelemetryStorage.testClearPendingPings();
-  
-  let h = Telemetry.getHistogramById(
-    "TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID"
-  );
-  h.clear();
+  Services.fog.testResetFOG();
 
   
   let promisePingSetup = TelemetryController.testReset();
   await sendPing(true, false);
   Assert.equal(
-    h.snapshot().sum,
+    Glean.telemetry.pingSubmissionWaitingClientid.testGetValue(),
     1,
     "We must have a ping waiting for the clientId early during startup."
   );
@@ -403,15 +385,17 @@ add_task(async function test_pingHasClientId() {
   await TelemetryController.testShutdown();
   await TelemetryStorage.testClearPendingPings();
 
-  
-  
-  h.clear();
+  Services.fog.testResetFOG();
   promisePingSetup = TelemetryController.testReset();
   await sendPing(true, false);
   await promisePingSetup;
 
   
-  Assert.equal(h.snapshot().sum, 0, "We must have used the cached clientId.");
+  Assert.equal(
+    Glean.telemetry.pingSubmissionWaitingClientid.testGetValue(),
+    null,
+    "We must have used the cached clientId."
+  );
   ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(
@@ -445,8 +429,8 @@ add_task(async function test_pingHasClientId() {
     "The correct profileGroupId must be reported."
   );
   Assert.equal(
-    h.snapshot().sum,
-    0,
+    Glean.telemetry.pingSubmissionWaitingClientid.testGetValue(),
+    null,
     "No ping should have been waiting for a clientId."
   );
 });
