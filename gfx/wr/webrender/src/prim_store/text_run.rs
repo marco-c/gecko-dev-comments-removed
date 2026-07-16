@@ -185,6 +185,9 @@ impl intern::Internable for TextRun {
 }
 
 impl InternablePrimitive for TextRun {
+    
+    const SNAP_CLIPS: bool = false;
+
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -516,48 +519,22 @@ impl TextRunTemplate {
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let root_index = spatial_tree.root_reference_frame_index();
-            let snap_shift = match spatial_tree
-                .get_relative_transform(spatial_node_index, root_index)
-                .into_transform()
-                .transform_point2d(LayoutPoint::zero())
-            {
-                Some(p) => {
-                    let reference_device = DevicePoint::new(p.x * dps.0, p.y * dps.0);
-                    reference_device.round() - reference_device
-                }
-                None => DeviceVector2D::zero(),
-            };
             glyph_offsets.reserve(self.glyphs.len());
 
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
                 
-                
                 let glyph_world = transform
                     .transform_point2d(local_rect.min + src.point.to_vector())
                     .unwrap_or(anchor_world);
-                let device_pen = glyph_world * dps + snap_shift;
+                let device_pen = glyph_world * dps;
 
+                
                 
                 
                 
                 let snapped = (device_pen + snap_bias).floor();
                 glyph_offsets.push(snapped - anchor_device);
 
-                
-                
-                
                 GlyphKey::new(src.index, device_pen, subpx_dir)
             }))
         } else {

@@ -1926,6 +1926,7 @@ impl<'a> SceneBuilder<'a> {
                 info,
                 &clip_items,
                 &mut self.interners,
+                P::SNAP_CLIPS,
             );
 
             self.add_prim_to_draw_list(
@@ -3072,6 +3073,7 @@ impl<'a> SceneBuilder<'a> {
             &info,
             &[],
             &mut self.interners,
+            P::SNAP_CLIPS,
         );
 
         
@@ -3103,6 +3105,7 @@ impl<'a> SceneBuilder<'a> {
                 &pending_primitive.info,
                 &[],
                 &mut self.interners,
+                P::SNAP_CLIPS,
             );
 
             self.add_prim_to_draw_list(
@@ -3603,6 +3606,7 @@ impl<'a> SceneBuilder<'a> {
             info,
             &[],
             &mut self.interners,
+            true,
         );
 
         
