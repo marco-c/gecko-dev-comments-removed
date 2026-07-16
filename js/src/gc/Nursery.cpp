@@ -1655,6 +1655,8 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
 
     
     
+    
+
     StoreBuffer sb(gc);
     {
       AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -1662,7 +1664,13 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
         oomUnsafe.crash("Nursery::traceRoots");
       }
     }
+
+    bool hadPointersToDeadCells =
+        gc->storeBuffer().mayHavePointersToDeadCells();
     std::swap(sb, gc->storeBuffer());
+    if (hadPointersToDeadCells && !tenuredEverything) {
+      gc->storeBuffer().setMayHavePointersToDeadCells();
+    }
     MOZ_ASSERT(gc->storeBuffer().isEnabled());
     MOZ_ASSERT(gc->storeBuffer().isEmpty());
 
