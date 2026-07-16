@@ -22289,6 +22289,7 @@ const PICTURE_OF_THE_DAY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "pictureOfTh
 
 
 
+
 const PictureOfTheDay_PictureOfTheDay = ({
   dispatch,
   widgetsMayBeMaximized,
@@ -22315,6 +22316,17 @@ const PictureOfTheDay_PictureOfTheDay = ({
     widget: PICTURE_OF_THE_DAY_ENTRY,
     widgetSize
   });
+
+  
+  
+  
+  const [fallbackAlt, setFallbackAlt] = (0,external_React_namespaceObject.useState)("");
+  (0,external_React_namespaceObject.useEffect)(() => {
+    document.l10n?.formatValues?.([{
+      id: "newtab-picture-image-alt"
+    }])?.then(([value]) => value && setFallbackAlt(value));
+  }, []);
+  const imageAlt = pictureData.description || fallbackAlt;
   const handleHide = () => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -22372,14 +22384,56 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const handleShow = () => recordUserAction("show_picture", {
     source: "widget"
   });
+
+  
+  
+  
+  const canOpenSource = Boolean(pictureData.sourceUrl);
+  const handleOpenSource = () => {
+    if (!pictureData.sourceUrl) {
+      return;
+    }
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.OPEN_LINK,
+        data: {
+          url: pictureData.sourceUrl,
+          where: "tab"
+        }
+      }));
+      recordUserAction("open_source", {
+        source: "widget"
+      });
+    });
+  };
+
+  
+  
+  const renderSourceText = (className, {
+    l10nId,
+    text
+  } = {}) => canOpenSource ? external_React_default().createElement("button", {
+    type: "button",
+    className: `${className} picture-of-the-day-source-link`,
+    "data-l10n-id": l10nId,
+    onClick: handleOpenSource
+  }, text) : external_React_default().createElement("p", {
+    className: className,
+    "data-l10n-id": l10nId
+  }, text);
+  const pictureImage = external_React_default().createElement("img", {
+    className: "picture-of-the-day-image",
+    src: pictureData.imageUrl,
+    alt: imageAlt,
+    onError: () => setImageFailed(true)
+  });
   return external_React_default().createElement("article", {
     className: `picture-of-the-day widget col-4 ${widgetSize}-widget${hasPicture ? " has-picture" : ""}`,
     ref: impressionRef
   }, external_React_default().createElement("div", {
     className: "picture-of-the-day-toolbar"
-  }, hasPicture ? external_React_default().createElement("p", {
-    className: "picture-of-the-day-eyebrow",
-    "data-l10n-id": "newtab-picture-header"
+  }, hasPicture ? renderSourceText("picture-of-the-day-eyebrow", {
+    l10nId: "newtab-picture-header"
   }) : null, external_React_default().createElement("div", {
     className: "picture-of-the-day-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
@@ -22421,12 +22475,15 @@ const PictureOfTheDay_PictureOfTheDay = ({
     onClick: handleLearnMore
   })))), hasPicture ? external_React_default().createElement("div", {
     className: "picture-of-the-day-populated"
-  }, external_React_default().createElement("img", {
-    className: "picture-of-the-day-image",
-    src: pictureData.imageUrl,
-    alt: pictureData.title,
-    onError: () => setImageFailed(true)
-  })) : external_React_default().createElement("div", {
+  }, canOpenSource ? external_React_default().createElement("button", {
+    type: "button",
+    className: "picture-of-the-day-image-link",
+    onClick: handleOpenSource
+  }, pictureImage) : pictureImage, external_React_default().createElement("div", {
+    className: "picture-of-the-day-details"
+  }, pictureData.description ? renderSourceText("picture-of-the-day-description", {
+    text: pictureData.description
+  }) : null)) : external_React_default().createElement("div", {
     className: "picture-of-the-day-footer"
   }, external_React_default().createElement("button", {
     type: "button",
