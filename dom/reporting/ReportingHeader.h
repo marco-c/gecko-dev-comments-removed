@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReportingHeader_h
 #define mozilla_dom_ReportingHeader_h
 
@@ -120,10 +118,6 @@ class ReportingHeader final : public nsIObserver,
 
   
   void ReportingFromChannel(nsIHttpChannel* aChannel);
-
-  
-  
-  static bool IsSecureURI(nsIURI* aURI);
 
   void RemoveOriginsFromHost(const nsAString& aHost);
 
