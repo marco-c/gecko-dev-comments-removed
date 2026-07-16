@@ -9,6 +9,7 @@
 
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/layers/Fence.h"
+#include "mozilla/Mutex.h"
 
 struct ID3D11Device;
 struct ID3D11Fence;
@@ -77,10 +78,13 @@ class FenceD3D11 final : public Fence {
   virtual ~FenceD3D11();
 
   uint64_t mFenceValue = 0;
+
+  Mutex mMutex{"FenceD3D11::mMutex"};
   
   
   
-  std::unordered_map<const ID3D11Device*, RefPtr<ID3D11Fence>> mWaitFenceMap;
+  std::unordered_map<const ID3D11Device*, RefPtr<ID3D11Fence>> mWaitFenceMap
+      MOZ_GUARDED_BY(mMutex);
 };
 
 }  
