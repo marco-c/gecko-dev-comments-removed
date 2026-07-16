@@ -15,21 +15,43 @@ function computedVar(className, varName) {
 
 
 
+function resolveColor(className, spec) {
+  let el = document.createElement("box");
+  if (className) {
+    el.className = className;
+  }
+  el.style.color = spec;
+  document.documentElement.appendChild(el);
+  let computed = window.getComputedStyle(el).color;
+  el.remove();
+
+  let { r, g, b, a } = InspectorUtils.colorToRGBA(computed);
+  return a == 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+
+
+
 
 add_task(async function container_color_codes_match_css() {
   const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
+  
+  
+  const cssVar = novaEnabled
+    ? "--identity-stroke-color"
+    : "--identity-icon-color";
   for (const color of ContextualIdentityService.containerColors) {
     if (color === "gray" && !novaEnabled) {
       continue;
     }
-    let cssColor = computedVar(
-      `identity-color-${color}`,
-      "--identity-icon-color"
+    let cssColor = resolveColor(`identity-color-${color}`, `var(${cssVar})`);
+    let apiColor = resolveColor(
+      null,
+      ContextualIdentityService.getContainerColorCode(color)
     );
-    let apiColor = ContextualIdentityService.getContainerColorCode(color);
     is(
-      cssColor.toLowerCase(),
-      apiColor.toLowerCase(),
+      cssColor,
+      apiColor,
       `Color "${color}": usercontext.css and getContainerColorCode() must match`
     );
   }
