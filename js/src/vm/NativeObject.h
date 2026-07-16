@@ -256,6 +256,8 @@ class ObjectElements {
   friend class ArrayObject;
   friend class NativeObject;
   friend class gc::TenuringTracer;
+  template <uint32_t>
+  friend class gc::MarkingTracerT;
 
   friend bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
                                     IntegrityLevel level);
@@ -411,6 +413,9 @@ class ObjectElements {
   }
 
   uint32_t numShiftedElements() const {
+    return numShiftedElementsFromFlags(flags);
+  }
+  static uint32_t numShiftedElementsFromFlags(uint32_t flags) {
     uint32_t numShifted = flags >> NumShiftedElementsShift;
     MOZ_ASSERT_IF(numShifted > 0,
                   !(flags & (NONWRITABLE_ARRAY_LENGTH | NOT_EXTENSIBLE |
@@ -435,6 +440,9 @@ class ObjectElements {
     return fromElements(unshiftedElements);
   }
 
+  uint32_t getFlags() const { return flags.get(); }
+  uint32_t getFlagsForTracing() const { return flags.getForTracing(); }
+
   
   
   static const size_t VALUES_PER_HEADER = 2;
@@ -456,6 +464,9 @@ class alignas(HeapSlot) ObjectSlots {
   GCData<uint32_t> capacity_;
   GCData<uint32_t> dictionarySlotSpan_;
   GCData<uint64_t> maybeUniqueId_;
+
+  template <uint32_t>
+  friend class gc::MarkingTracerT;
 
  public:
   
@@ -505,6 +516,9 @@ class alignas(HeapSlot) ObjectSlots {
   constexpr uint32_t capacity() const { return capacity_; }
 
   constexpr uint32_t dictionarySlotSpan() const { return dictionarySlotSpan_; }
+  uint32_t dictionarySlotSpanForTracing() const {
+    return dictionarySlotSpan_.getForTracing();
+  }
 
   bool isSharedEmptySlots() const {
     return maybeUniqueId_ == NoUniqueIdInSharedEmptySlots;
@@ -598,7 +612,14 @@ enum class CanReuseShape {
 
 
 
+
+
+
+
+
 inline uint32_t NativeObjectSlotSpan(Shape* shape, ObjectSlots* slotsHeader) {
+  
+
   if (shape->isDictionary()) {
     return slotsHeader->dictionarySlotSpan();
   }
@@ -607,14 +628,43 @@ inline uint32_t NativeObjectSlotSpan(Shape* shape, ObjectSlots* slotsHeader) {
   return shape->asShared().slotSpan();
 }
 
+
+inline uint32_t NativeObjectSmallSlotSpanForTracing(
+    Shape::ImmutableFlags shapeFlags, ObjectSlots* slotsHeader) {
+  Shape::Kind kind = Shape::kindFromImmutableFlags(shapeFlags);
+  if (kind == Shape::Kind::Dictionary) {
+    return slotsHeader->dictionarySlotSpanForTracing();
+  }
+
+  
+  return SharedShape::smallSlotSpanFromImmutableFlags(shapeFlags);
+}
+
 inline uint32_t NumNativeObjectFixedSlots(Shape* shape) {
   auto* shadowShape = reinterpret_cast<JS::shadow::Shape*>(shape);
-  return JS::shadow::NumObjectFixedSlots(shadowShape);
+  return JS::shadow::NumNativeObjectFixedSlots(shadowShape);
+}
+inline uint32_t NumNativeObjectFixedSlots(Shape::ImmutableFlags shapeFlags) {
+  return NativeShape::numFixedSlotsFromImmutableFlags(shapeFlags);
 }
 
 inline uint32_t NumNativeObjectUsedFixedSlots(Shape* shape) {
   uint32_t nslots = shape->asShared().slotSpan();
   return std::min(nslots, NumNativeObjectFixedSlots(shape));
+}
+inline uint32_t NumNativeObjectUsedFixedSlotsForTracing(
+    NativeObject* obj, Shape::ImmutableFlags shapeFlags,
+    ObjectSlots* slotsHeader) {
+  
+  
+  
+  static_assert(JS::shadow::NativeObject::MAX_FIXED_SLOTS <=
+                Shape::SMALL_SLOTSPAN_MAX);
+
+  uint32_t nfixed = NumNativeObjectFixedSlots(shapeFlags);
+  uint32_t minSlots =
+      NativeObjectSmallSlotSpanForTracing(shapeFlags, slotsHeader);
+  return std::min(nfixed, minSlots);
 }
 
 inline bool IsNativeObjectDynamicSlots(HeapSlot* slots) {
@@ -626,14 +676,24 @@ inline bool IsNativeObjectEmptyElements(HeapSlot* elements) {
          elements == emptyObjectElementsShared;
 }
 
+inline bool IsNativeObjectFixedElements(uint32_t elementFlags) {
+  return elementFlags & ObjectElements::FIXED;
+}
+
 inline bool IsNativeObjectFixedElements(HeapSlot* elements) {
-  ObjectElements* elementsHeader = ObjectElements::fromElements(elements);
-  return elementsHeader->isFixed();
+  return IsNativeObjectFixedElements(
+      ObjectElements::fromElements(elements)->getFlags());
 }
 
 inline bool IsNativeObjectDynamicElements(HeapSlot* elements) {
   return !IsNativeObjectEmptyElements(elements) &&
          !IsNativeObjectFixedElements(elements);
+}
+
+inline bool IsNativeObjectDynamicElements(HeapSlot* elements,
+                                          uint32_t elementFlags) {
+  return !IsNativeObjectEmptyElements(elements) &&
+         !IsNativeObjectFixedElements(elementFlags);
 }
 
 
