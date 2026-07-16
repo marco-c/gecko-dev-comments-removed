@@ -2,12 +2,9 @@
 
 
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "SiteCategory",
-  "@mozilla.org/site-category;1",
-  Ci.nsISiteCategory
-);
+ChromeUtils.defineESModuleGetters(this, {
+  PermissionUI: "resource:///modules/PermissionUI.sys.mjs",
+});
 
 
 
@@ -966,7 +963,9 @@ var gPermissionPanel = {
       
       if (idNoSuffix === "desktop-notification") {
         Glean.webNotificationPermission.permissionRevokedToolbar.record({
-          site_category: SiteCategory.getCategory(gBrowser.contentPrincipal),
+          site_category: PermissionUI.getSiteCategory(
+            gBrowser.contentPrincipal
+          ),
         });
       }
 
