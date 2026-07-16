@@ -17,11 +17,14 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ViewportFrame.h"
+#include "mozilla/WritingModes.h"
 #include "mozilla/dom/ViewTransition.h"
+#include "nsBlockFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsContainerFrame.h"
 #include "nsGridContainerFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
@@ -143,6 +146,89 @@ static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
              : aFrame->FirstInFlow()->GetProperty(UnfragmentedSizeProperty());
 }
 
+
+
+
+
+static nsIFrame* GetFirstInlineContinuationInPrevFragmentainer(
+    nsIFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
+  
+  
+  
+  const nsBlockFrame* myBlock =
+      nsLayoutUtils::FindNearestBlockAncestor(aInlineFrame);
+  nsIFrame* candidate = nullptr;
+  const nsBlockFrame* candidateBlock = nullptr;
+  for (nsIFrame* prev =
+           nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(aInlineFrame);
+       prev; prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev)) {
+    if (prev->IsBlockFrameOrSubclass()) {
+      
+      continue;
+    }
+    const nsBlockFrame* prevBlock =
+        nsLayoutUtils::FindNearestBlockAncestor(prev);
+    if (prevBlock == myBlock) {
+      continue;
+    }
+    if (!candidate) {
+      candidate = prev;
+      candidateBlock = prevBlock;
+    } else if (prevBlock == candidateBlock) {
+      
+      
+      candidate = prev;
+    } else {
+      
+      break;
+    }
+  }
+  return candidate;
+}
+
+
+
+
+static nsIFrame* GetFirstInlineContinuationInNextFragmentainer(
+    nsIFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
+  const nsBlockFrame* myBlock =
+      nsLayoutUtils::FindNearestBlockAncestor(aInlineFrame);
+  for (nsIFrame* next =
+           nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aInlineFrame);
+       next; next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next)) {
+    if (next->IsBlockFrameOrSubclass()) {
+      
+      continue;
+    }
+    if (nsLayoutUtils::FindNearestBlockAncestor(next) != myBlock) {
+      return next;
+    }
+  }
+  return nullptr;
+}
+
+
+
+
+
+
+static nsIFrame* GetFirstContinuationInPrevFragmentainer(nsIFrame* aFrame) {
+  return StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+                 aFrame->IsInlineFrameOrSubclass()
+             ? GetFirstInlineContinuationInPrevFragmentainer(aFrame)
+             : aFrame->GetPrevInFlow();
+}
+
+
+static nsIFrame* GetFirstContinuationInNextFragmentainer(nsIFrame* aFrame) {
+  return StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+                 aFrame->IsInlineFrameOrSubclass()
+             ? GetFirstInlineContinuationInNextFragmentainer(aFrame)
+             : aFrame->GetNextInFlow();
+}
+
 nsFrameList AbsoluteContainingBlock::StealPushedChildList() {
   return std::move(mPushedAbsoluteFrames);
 }
@@ -173,11 +259,11 @@ void AbsoluteContainingBlock::DrainPushedChildList(
 
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     nsContainerFrame* aDelegatingFrame) {
-  if (const nsIFrame* prevInFlow = aDelegatingFrame->GetPrevInFlow()) {
-    AbsoluteContainingBlock* prevAbsCB =
-        prevInFlow->GetAbsoluteContainingBlock();
+  if (const nsIFrame* prev =
+          GetFirstContinuationInPrevFragmentainer(aDelegatingFrame)) {
+    AbsoluteContainingBlock* prevAbsCB = prev->GetAbsoluteContainingBlock();
     MOZ_ASSERT(prevAbsCB,
-               "If this delegating frame has an absCB, its prev-in-flow must "
+               "If this delegating frame has an absCB, |prev| must "
                "have one, too!");
 
     
@@ -216,15 +302,16 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
   DrainPushedChildList(aDelegatingFrame);
 
   
-  for (const nsIFrame* nextInFlow = aDelegatingFrame->GetNextInFlow();
-       nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
-    AbsoluteContainingBlock* nextAbsCB =
-        nextInFlow->GetAbsoluteContainingBlock();
+  
+  for (nsIFrame* next =
+           GetFirstContinuationInNextFragmentainer(aDelegatingFrame);
+       next; next = GetFirstContinuationInNextFragmentainer(next)) {
+    AbsoluteContainingBlock* nextAbsCB = next->GetAbsoluteContainingBlock();
     MOZ_ASSERT(nextAbsCB,
-               "If this delegating frame has an absCB, its next-in-flow must "
+               "If this delegating frame has an absCB, |next| must "
                "have one, too!");
 
-    nextAbsCB->DrainPushedChildList(nextInFlow);
+    nextAbsCB->DrainPushedChildList(next);
 
     for (auto iter = nextAbsCB->GetChildList().begin();
          iter != nextAbsCB->GetChildList().end();) {
@@ -650,10 +737,11 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
   SanityCheckChildListsBeforeReflow(aDelegatingFrame);
 #endif
 
-  if (nsIFrame* prevInFlow = aDelegatingFrame->GetPrevInFlow()) {
-    const auto* prevAbsCB = prevInFlow->GetAbsoluteContainingBlock();
+  if (const nsIFrame* prev =
+          GetFirstContinuationInPrevFragmentainer(aDelegatingFrame)) {
+    const auto* prevAbsCB = prev->GetAbsoluteContainingBlock();
     MOZ_ASSERT(prevAbsCB,
-               "If this delegating frame has an absCB, its prev-in-flow must "
+               "If this delegating frame has an absCB, |prev| must "
                "have one, too!");
     mCumulativeContainingBlockBSize =
         prevAbsCB->mCumulativeContainingBlockBSize;
@@ -741,9 +829,26 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                             reuseUnfragmentedAnchorPosReferences);
 
         if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
-          kidFrame->SetOrUpdateDeletableProperty(
-              UnfragmentedPositionProperty(),
-              kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize));
+          LogicalPoint unfragPos(containerWM);
+          if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+              aDelegatingFrame->IsInlineFrameOrSubclass()) {
+            
+            
+            
+            nsIFrame* blockAncestor =
+                nsLayoutUtils::FindNearestBlockAncestor(aDelegatingFrame);
+            nsSize blockAncestorSize =
+                aReflowInput.mContainingBlockSize.GetPhysicalSize(containerWM);
+            nsRect kidRect = kidFrame->GetRectRelativeToSelf() +
+                             kidFrame->GetOffsetTo(blockAncestor);
+            unfragPos = LogicalRect(containerWM, kidRect, blockAncestorSize)
+                            .Origin(containerWM);
+          } else {
+            unfragPos =
+                kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize);
+          }
+          kidFrame->SetOrUpdateDeletableProperty(UnfragmentedPositionProperty(),
+                                                 unfragPos);
 
           const LogicalSize kidSize =
               kidFrame->StylePosition()->mBoxSizing == StyleBoxSizing::BorderBox
@@ -1729,7 +1834,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
         
         
-        !aDelegatingFrame->IsInlineFrame() &&
+        (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() ||
+         !aDelegatingFrame->IsInlineFrameOrSubclass()) &&
 
         
         
@@ -1835,18 +1941,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     if (aKidFrame->IsMenuPopupFrame()) {
       
     } else if (unfragmentedPosition || kidPrevInFlow) {
-      
-      const auto maybeFragmentedCbSize =
-          (aFragmentedContainingBlockRects ? *aFragmentedContainingBlockRects
-                                           : aContainingBlockRects)
-              .mLocal.Size();
-      
-      
-      
-      
-      const LogicalSize unmodifiedCBSize(outerWM, maybeFragmentedCbSize);
-      const nsSize cbBorderBoxSize =
-          (unmodifiedCBSize + border.Size(outerWM)).GetPhysicalSize(outerWM);
       LogicalPoint kidPos(outerWM);
       if (unfragmentedPosition) {
         MOZ_ASSERT(!kidPrevInFlow, "aKidFrame should be a first-in-flow!");
@@ -1859,13 +1953,48 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         
-        kidPos =
-            *GetUnfragmentedPosition(aReflowInput, aKidFrame->FirstInFlow());
-        kidPos.B(outerWM) = 0;
+        const LogicalPoint* unfragPos =
+            GetUnfragmentedPosition(aReflowInput, aKidFrame->FirstInFlow());
+        MOZ_ASSERT(unfragPos,
+                   "A first-in-flow should have stored an unfragmented "
+                   "position during a measuring reflow!");
+        if (unfragPos) [[likely]] {
+          kidPos = *unfragPos;
+          kidPos.B(outerWM) = 0;
+        }
       }
       const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
-      nsRect kidRect = LogicalRect(outerWM, kidPos, kidSize)
-                           .GetPhysicalRect(outerWM, cbBorderBoxSize);
+      nsRect kidRect;
+      if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+          aDelegatingFrame->IsInlineFrameOrSubclass()) {
+        nsIFrame* blockAncestor =
+            nsLayoutUtils::FindNearestBlockAncestor(aDelegatingFrame);
+
+        
+        
+        
+        
+        const nsSize blockAncestorSize =
+            aReflowInput.mContainingBlockSize.GetPhysicalSize(outerWM);
+        kidRect = LogicalRect(outerWM, kidPos, kidSize)
+                      .GetPhysicalRect(outerWM, blockAncestorSize) -
+                  aDelegatingFrame->GetOffsetTo(blockAncestor);
+      } else {
+        
+        const auto maybeFragmentedCbSize =
+            (aFragmentedContainingBlockRects ? *aFragmentedContainingBlockRects
+                                             : aContainingBlockRects)
+                .mLocal.Size();
+        
+        
+        
+        
+        const LogicalSize unmodifiedCBSize(outerWM, maybeFragmentedCbSize);
+        const nsSize cbBorderBoxSize =
+            (unmodifiedCBSize + border.Size(outerWM)).GetPhysicalSize(outerWM);
+        kidRect = LogicalRect(outerWM, kidPos, kidSize)
+                      .GetPhysicalRect(outerWM, cbBorderBoxSize);
+      }
       aKidFrame->SetRect(kidRect);
     } else {
       

@@ -1375,7 +1375,15 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
     }
   }
 
-  if (!foundAbspos) {
+  if (nsIFrame* prev = GetPrevInFlow()) {
+    
+    
+    
+    AddOrRemoveStateBits(
+        NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT,
+        prev->HasAnyStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT));
+  } else if (!foundAbspos) {
+    
     
     
     RemoveStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT);
@@ -1438,6 +1446,33 @@ Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
   return Some(absposOverflow);
 }
 
+
+
+static bool IsInlineFrameCompleteInCurrentFragmentainer(
+    const nsBlockFrame* aBlockFrame, const nsInlineFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->HasAbsolutelyPositionedChildren());
+
+  
+  
+  nsIFrame* lineLevel =
+      nsLayoutUtils::LastContinuationOrIBSplitSibling(aInlineFrame);
+  nsIFrame* blockAncestor = lineLevel->GetParent();
+  while (blockAncestor && !blockAncestor->IsBlockFrameOrSubclass()) {
+    lineLevel = lineLevel->GetParent();
+    blockAncestor = blockAncestor->GetParent();
+  }
+
+  if (aBlockFrame != blockAncestor) {
+    
+    return false;
+  }
+
+  
+  const nsBlockFrame::FrameLines* overflowLines =
+      aBlockFrame->GetOverflowLines();
+  return !overflowLines || !overflowLines->mFrames.ContainsFrame(lineLevel);
+}
+
 Maybe<OverflowAreas> nsBlockFrame::ReflowAbsoluteFramesInInlineFrame(
     nsInlineFrame* aInlineFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, const ReflowOutput& aReflowOutput,
@@ -1447,22 +1482,39 @@ Maybe<OverflowAreas> nsBlockFrame::ReflowAbsoluteFramesInInlineFrame(
     return Nothing();
   }
 
-  
-  
-  MOZ_ASSERT(!aInlineFrame->GetPrevInFlow(),
-             "Only the first inline continuation can have absolute kids!");
-
   const nsRect cbRect = ComputeInlineAbsoluteCBRect(aInlineFrame);
   const WritingMode cbwm = aInlineFrame->GetWritingMode();
 
   
   
-  const LogicalSize availSize(cbwm, aInlineFrame->ISize(cbwm),
-                              NS_UNCONSTRAINEDSIZE);
-  ReflowInput inlineRI(aPresContext, aReflowInput, aInlineFrame, availSize);
-
   
-  AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
+  
+  
+  
+  
+  LogicalSize availSize =
+      aReflowInput.AvailableSize().ConvertTo(cbwm, GetWritingMode());
+
+  if (availSize.BSize(cbwm) != NS_UNCONSTRAINEDSIZE &&
+      (HasColumnSpanSiblings() ||
+       IsInlineFrameCompleteInCurrentFragmentainer(this, aInlineFrame))) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    availSize.BSize(cbwm) = NS_UNCONSTRAINEDSIZE;
+  }
+  ReflowInput inlineRI(aPresContext, aReflowInput, aInlineFrame, availSize,
+                       Some(aReflowOutput.Size(cbwm)));
+
+  AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
+                          AbsPosReflowFlag::CBWidthChanged,
                           AbsPosReflowFlag::CBHeightChanged};
 
   
