@@ -218,6 +218,19 @@ already_AddRefed<CanonicalBrowsingContext> CanonicalBrowsingContext::Cast(
   return aContext.downcast<CanonicalBrowsingContext>();
 }
 
+bool CanonicalBrowsingContext::IsKnownSubInTree(uint64_t aProcessId) {
+  bool isKnownInTree = false;
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (aContext->Canonical()->IsOwnedByProcess(aProcessId)) {
+      isKnownInTree = true;
+      return WalkFlag::Stop;
+    }
+    return WalkFlag::Next;
+  });
+
+  return isKnownInTree;
+}
+
 ContentParent* CanonicalBrowsingContext::GetContentParent() const {
   if (mProcessId == 0) {
     return nullptr;
@@ -957,8 +970,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
 #ifndef NS_PRINTING
   return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
 #else
-
-#  if defined(XP_WIN)
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
@@ -1001,7 +1012,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
             });
     return done;
   }
-#  endif
   return PrintWithNoContentAnalysis(aPrintSettings, false, nullptr);
 #endif
 }
