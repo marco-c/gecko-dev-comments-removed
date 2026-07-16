@@ -238,9 +238,9 @@ nsCOMPtr<nsISerialEventTarget> RemoteMediaManagerChild::GetManagerThread() {
 }
 
 
-bool RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
-                                       const SupportDecoderParams& aParams,
-                                       DecoderDoctorDiagnostics* aDiagnostics) {
+media::DecodeSupportSet RemoteMediaManagerChild::Supports(
+    RemoteMediaIn aLocation, const SupportDecoderParams& aParams,
+    DecoderDoctorDiagnostics* aDiagnostics) {
   Maybe<media::MediaCodecsSupported> supported;
   switch (aLocation) {
     case RemoteMediaIn::GpuProcess:
@@ -254,7 +254,7 @@ bool RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
       break;
     }
     default:
-      return false;
+      return {};
   }
   if (!supported) {
     
@@ -273,6 +273,7 @@ bool RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
 
     
     
+    
     const bool isVideo = aParams.mConfig.IsVideo();
     const bool isAudio = aParams.mConfig.IsAudio();
     const auto trackSupport = GetTrackSupport(aLocation);
@@ -282,29 +283,39 @@ bool RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
       
       if (MP4Decoder::IsHEVC(aParams.mConfig.mMimeType)) {
         if (!StaticPrefs::media_hevc_enabled()) {
-          return false;
+          return {};
         }
 #if defined(XP_WIN)
-        return aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM ||
-               aLocation == RemoteMediaIn::GpuProcess;
+        if (aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM ||
+            aLocation == RemoteMediaIn::GpuProcess) {
+          
+          return {media::DecodeSupport::HardwareDecode};
+        }
+        return {};
 #else
-        return trackSupport.contains(TrackSupport::DecodeVideo);
+        return trackSupport.contains(TrackSupport::DecodeVideo)
+                   ? media::
+                         DecodeSupportSet{media::DecodeSupport::SoftwareDecode}
+                   : media::DecodeSupportSet{};
 #endif
       }
-      return trackSupport.contains(TrackSupport::DecodeVideo);
+      return trackSupport.contains(TrackSupport::DecodeVideo)
+                 ? media::DecodeSupportSet{media::DecodeSupport::SoftwareDecode}
+                 : media::DecodeSupportSet{};
     }
     if (isAudio) {
-      return trackSupport.contains(TrackSupport::DecodeAudio);
+      return trackSupport.contains(TrackSupport::DecodeAudio)
+                 ? media::DecodeSupportSet{media::DecodeSupport::SoftwareDecode}
+                 : media::DecodeSupportSet{};
     }
     MOZ_ASSERT_UNREACHABLE("Not audio and video?!");
-    return false;
+    return {};
   }
 
   
   
-  return !PDMFactory::SupportsMimeType(aParams.MimeType(), *supported,
-                                       aLocation)
-              .isEmpty();
+  return PDMFactory::SupportsMimeType(aParams.MimeType(), *supported,
+                                      aLocation);
 }
 
 
