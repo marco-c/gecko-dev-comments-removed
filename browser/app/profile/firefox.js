@@ -2236,6 +2236,11 @@ pref("sidebar.main.tools", "");
 pref("sidebar.installed.extensions", "");
 pref("sidebar.verticalTabs", false);
 pref("sidebar.verticalTabs.dragToPinPromo.dismissed", false);
+
+
+
+
+
 pref("sidebar.visibility", "always-show");
 
 
