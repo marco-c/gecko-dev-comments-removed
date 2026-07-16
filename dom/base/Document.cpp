@@ -3377,7 +3377,7 @@ bool Document::IsCallerChromeOrAddon(JSContext* aCx, JSObject* aObject) {
 
 static void CheckIsBadPolicy(nsILoadInfo::CrossOriginOpenerPolicy aPolicy,
                              BrowsingContext* aContext, nsIChannel* aChannel) {
-#if defined(EARLY_BETA_OR_EARLIER)
+#if defined(NIGHTLY_BUILD)
   auto requireCORP =
       nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
 
