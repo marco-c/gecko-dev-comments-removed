@@ -7787,6 +7787,7 @@ fn property_value_pair_for(id: &PropertyDeclarationId) -> structs::PropertyValue
 fn fill_in_missing_keyframe_values(
     all_properties: &PropertyDeclarationIdSet,
     timing_function: &ComputedTimingFunction,
+    composite: structs::CompositeOperationOrAuto,
     properties_at_offset: &PropertyDeclarationIdSet,
     offset: Offset,
     keyframes: &mut nsTArray<structs::Keyframe>,
@@ -7796,22 +7797,12 @@ fn fill_in_missing_keyframe_values(
         return;
     }
 
-    
-    
-    
-    
-    
-    let composition = structs::CompositeOperationOrAuto::Auto;
     let keyframe = match offset {
         Offset::Zero => unsafe {
-            &mut *bindings::Gecko_GetOrCreateInitialKeyframe(
-                keyframes,
-                timing_function,
-                composition,
-            )
+            &mut *bindings::Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function, composite)
         },
         Offset::One => unsafe {
-            &mut *bindings::Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function, composition)
+            &mut *bindings::Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function, composite)
         },
     };
 
@@ -7834,7 +7825,13 @@ fn remove_duplicated_property_value_entry(
         let k = &mut keyframes[idx];
         let mut set = HashSet::new();
         let mut values = nsTArray::new();
-        for pair in k.mPropertyValues.drain(..).rev() {
+        
+        
+        
+        
+        
+        
+        for pair in k.mPropertyValues.drain(..) {
             let property =
                 match OwnedPropertyDeclarationId::from_gecko_css_property_id(&pair.mProperty) {
                     Some(property) => property,
@@ -7856,6 +7853,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     style: &ComputedValues,
     name: *mut nsAtom,
     inherited_timing_function: &ComputedTimingFunction,
+    inherited_composite: computed::AnimationComposition,
     keyframes: &mut nsTArray<structs::Keyframe>,
 ) -> bool {
     use style::gecko_bindings::structs::CompositeOperationOrAuto;
@@ -7885,9 +7883,20 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let mut current_offset = -1.;
 
     let writing_mode = style.writing_mode;
+    let map_composite = |composite: AnimationComposition| match composite {
+        AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
+        AnimationComposition::Add => CompositeOperationOrAuto::Add,
+        AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
+    };
+    
+    
+    let mut initial_keyframe_composite = CompositeOperationOrAuto::Auto;
+    let mut final_keyframe_composite = CompositeOperationOrAuto::Auto;
 
     let get_timing_func_and_composition =
-        |step: &KeyframesStep| -> (ComputedTimingFunction, CompositeOperationOrAuto) {
+        |step: &KeyframesStep,
+         is_generated_missing_keyframe: bool|
+         -> (ComputedTimingFunction, CompositeOperationOrAuto) {
             
             let timing_function = match step.get_animation_timing_function(&guard) {
                 Some(val) => val.to_computed_value_without_context(),
@@ -7895,12 +7904,17 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
             };
             
             let composition = step.get_animation_composition(&guard).map_or(
-                CompositeOperationOrAuto::Auto,
-                |val| match val {
-                    AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
-                    AnimationComposition::Add => CompositeOperationOrAuto::Add,
-                    AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
+                
+                
+                
+                
+                
+                if is_generated_missing_keyframe {
+                    map_composite(inherited_composite)
+                } else {
+                    CompositeOperationOrAuto::Auto
                 },
+                |val| map_composite(val),
             );
             (timing_function, composition)
         };
@@ -7931,7 +7945,10 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
             properties_set_at_current_offset.clear();
             current_offset = step.start_offset.percentage.0;
         }
-        let (timing_function, composition) = get_timing_func_and_composition(step);
+        let (timing_function, composition) = get_timing_func_and_composition(
+            step,
+            matches!(step.value, KeyframesStepValue::ComputedValues),
+        );
         
         
         let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtStart(
@@ -7997,6 +8014,14 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                     }
                     properties_set_at_current_offset.insert(id);
                 }
+
+                
+                
+                if current_offset == 0.0 {
+                    initial_keyframe_composite = composition;
+                } else if current_offset == 1.0 {
+                    final_keyframe_composite = composition;
+                }
             },
         }
     }
@@ -8008,10 +8033,12 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
 
     
     
+    
     if !has_complete_initial_keyframe {
         fill_in_missing_keyframe_values(
             &properties_changed,
             inherited_timing_function,
+            initial_keyframe_composite,
             &properties_set_at_start,
             Offset::Zero,
             keyframes,
@@ -8021,6 +8048,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         fill_in_missing_keyframe_values(
             &properties_changed,
             inherited_timing_function,
+            final_keyframe_composite,
             &properties_set_at_end,
             Offset::One,
             keyframes,
@@ -8049,9 +8077,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     
     
     let mut grouped_keyframes_indexes = HashSet::new();
-    for step in animation.steps_with_range_name.iter() {
+    for step in animation.steps_with_range_name.iter().rev() {
         debug_assert!(!step.start_offset.range_name.is_none());
-        let (timing_function, composition) = get_timing_func_and_composition(step);
+        let (timing_function, composition) = get_timing_func_and_composition(step, false);
         let mut matched_idx = 0;
         let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeWithRangeName(
             &mut keyframes_with_range_names,
@@ -8092,7 +8120,8 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         &mut keyframes_with_range_names,
         grouped_keyframes_indexes,
     );
-    keyframes.append(&mut keyframes_with_range_names);
+    
+    keyframes.extend(&mut keyframes_with_range_names.drain(..).rev());
     true
 }
 
