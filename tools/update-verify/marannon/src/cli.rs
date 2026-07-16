@@ -54,7 +54,9 @@ pub struct Args {
     pub channel: String,
     
     
-    pub appname: String,
+    
+    
+    pub product: String,
     
     pub artifact_dir: PathBuf,
     
