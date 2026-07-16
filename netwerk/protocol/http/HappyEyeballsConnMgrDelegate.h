@@ -56,6 +56,12 @@ class HappyEyeballsConnMgrDelegate {
                                           bool aIsHttp3) = 0;
   virtual bool RemoveTransFromPendingQ(ConnectionEntry* aEntry,
                                        nsHttpTransaction* aTrans) = 0;
+  
+  
+  virtual nsresult StartRetryWithoutTRR(ConnectionEntry* aEntry,
+                                        nsHttpTransaction* aTrans,
+                                        uint32_t aCaps, bool aSpeculative,
+                                        bool aUrgentStart, bool aAllow1918) = 0;
 
  protected:
   virtual ~HappyEyeballsConnMgrDelegate() = default;

@@ -65,9 +65,13 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
+  
+  
+  
   HappyEyeballsConnectionAttempt(nsHttpConnectionInfo* ci,
                                  nsAHttpTransaction* trans, uint32_t caps,
-                                 bool speculative, bool urgentStart);
+                                 bool speculative, bool urgentStart,
+                                 bool retryWithoutTRR = false);
 
   nsresult Init(ConnectionEntry* ent) override;
   void Abandon() override;
@@ -222,6 +226,16 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   
+  bool ShouldRetryWithoutTRR(happy_eyeballs::FailureReason aReason) const;
+  
+  
+  void RetryWithoutTRR();
+
+  
+  
+  
+  
+  
   already_AddRefed<HappyEyeballsTransaction> CreateAttemptTransaction(
       nsHttpConnectionInfo* aInfo, uint64_t aEstablisherId);
 
@@ -289,6 +303,19 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   nsCOMPtr<nsIDNSAddrRecord> mWinnerAddrRecord;
+
+  
+  
+  
+  nsTHashSet<uint64_t> mOriginDnsLookupIds;
+  
+  
+  nsTArray<NetAddr> mOriginAddresses;
+
+  
+  
+  
+  bool mRetryWithoutTRR = false;
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;

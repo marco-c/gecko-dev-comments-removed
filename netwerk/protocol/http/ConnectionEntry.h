@@ -116,7 +116,8 @@ class ConnectionEntry : public SupportsWeakPtr {
   nsresult CreateDnsAndConnectSocket(nsAHttpTransaction* trans, uint32_t caps,
                                      bool speculative, bool urgentStart,
                                      bool allow1918,
-                                     PendingTransactionInfo* pendingTransInfo);
+                                     PendingTransactionInfo* pendingTransInfo,
+                                     bool retryWithoutTRR = false);
 
   
   
