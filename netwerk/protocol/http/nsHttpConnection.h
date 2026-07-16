@@ -206,7 +206,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   [[nodiscard]] static nsresult MakeConnectString(
       nsAHttpTransaction* trans, nsHttpRequestHead* request, nsACString& result,
-      bool h2ws, bool aShouldResistFingerprinting);
+      bool aShouldResistFingerprinting);
   [[nodiscard]] static nsresult ReadFromStream(nsIInputStream*, void*,
                                                const char*, uint32_t, uint32_t,
                                                uint32_t*);
