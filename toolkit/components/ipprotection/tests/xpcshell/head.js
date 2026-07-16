@@ -10,8 +10,8 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
 const { ERRORS, IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
-const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
+const { IPPExceptionsManager, IPPPrincipalRules } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
@@ -22,12 +22,12 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { IPProtectionActivator } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs"
 );
-const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+  "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs"
 );
-IPProtectionActivator.addHelpers(IPPFxaAuthProvider.helpers);
+IPProtectionActivator.addHelpers(IPPDummyAuthProvider.helpers);
 IPProtectionActivator.setupHelpers();
-IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
+IPProtectionActivator.setAuthProvider(IPPDummyAuthProvider);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -44,6 +44,34 @@ function waitForEvent(target, eventName, callback = () => true) {
     target.addEventListener(eventName, listener);
   });
 }
+
+
+
+
+async function initServiceToReady() {
+  const readyEvent = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+  IPProtectionService.init();
+  await readyEvent;
+}
+
+
+
+
+
+
+
+function waitForProxyState(state) {
+  return waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === state
+  );
+}
+
 
 async function putServerInRemoteSettings(
   server = {
@@ -84,22 +112,21 @@ const defaultStubOptions = {
 };
 Object.freeze(defaultStubOptions);
 
-function setupStubs(
-  sandbox,
-  aOptions = {
-    ...defaultStubOptions,
-  }
-) {
+
+
+
+function setupStubs(aOptions = {}) {
   const options = { ...defaultStubOptions, ...aOptions };
-  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
-  sandbox
-    .stub(IPPFxaAuthProvider, "getEntitlement")
-    .resolves({ entitlement: options.entitlement });
-  sandbox.stub(IPPFxaAuthProvider, "enrollAndEntitle").resolves({
+  IPPDummyAuthProvider.simulateSignIn(options.signedIn);
+  IPPDummyAuthProvider.setEntitlement(options.entitlement, { silent: true });
+  IPPDummyAuthProvider.setGetEntitlementResponse({
+    entitlement: options.entitlement,
+  });
+  IPPDummyAuthProvider.setEnrollResponse({
     isEnrolledAndEntitled: true,
     entitlement: options.entitlement,
   });
-  sandbox.stub(IPPFxaAuthProvider, "fetchProxyPass").resolves({
+  IPPDummyAuthProvider.setProxyPass({
     status: 200,
     error: undefined,
     pass: new ProxyPass(
@@ -109,9 +136,10 @@ function setupStubs(
     ),
     usage: options.proxyUsage,
   });
-  sandbox
-    .stub(IPPFxaAuthProvider, "fetchProxyUsage")
-    .resolves(options.proxyUsage);
+  IPPDummyAuthProvider.setProxyUsage(options.proxyUsage);
+  IPPDummyAuthProvider.setProxyPassError(null);
+  IPPDummyAuthProvider.setProxyPassHang(false);
+  IPPDummyAuthProvider.setProxyPassResolveOnAbort(null);
 }
 
 
