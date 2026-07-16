@@ -2761,6 +2761,16 @@ add_task(async function test_newtabAddonVersion() {
 });
 
 add_task(async function check_backupsInfo() {
+  if (AppConstants.platform === "macosx") {
+    
+    Assert.deepEqual(
+      await ASRouterTargeting.Environment.backupsInfo,
+      { found: false },
+      "Should return {found: false} on macOS"
+    );
+    return;
+  }
+
   const sandbox = sinon.createSandbox();
   registerCleanupFunction(() => sandbox.restore());
 
