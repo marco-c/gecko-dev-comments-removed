@@ -1087,9 +1087,12 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     }
 
     auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
+    
+    
+    
     if (mimeTypeUTF16.IsEmpty() ||
         !(nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16) ||
-          nsContentUtils::IsJsonMimeType(mimeTypeUTF16))) {
+          (!mIsMainScript && nsContentUtils::IsJsonMimeType(mimeTypeUTF16)))) {
       ServiceWorkerManager::LocalizeAndReportToAllClients(
           mRegistration->Scope(), "ServiceWorkerRegisterMimeTypeError2",
           nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),

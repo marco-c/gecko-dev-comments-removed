@@ -1,6 +1,11 @@
 const badMimeTypes = [
   null,  
   'text/plain',
+  
+  
+  'application/json',
+  'text/json',
+  'application/manifest+json',
 ];
 
 const validMimeTypes = [

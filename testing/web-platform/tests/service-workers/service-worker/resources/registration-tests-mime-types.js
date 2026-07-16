@@ -22,6 +22,32 @@ function registration_tests_mime_types(register_method) {
     }, 'Registering script with bad MIME type');
 
   
+  
+  
+  
+  const jsonMimeTypes = [
+    'application/json',
+    'text/json',
+    'application/manifest+json',
+  ];
+
+  for (const jsonMimeType of jsonMimeTypes) {
+    promise_test(function(t) {
+        
+        
+        var script =
+            `resources/mime-type-worker.py?mime=${encodeURIComponent(jsonMimeType)}`;
+        
+        
+        var scope = `resources/scope/json-mime-type-worker/${jsonMimeType}`;
+        return promise_rejects_dom(t,
+            'SecurityError',
+            register_method(script, {scope: scope}),
+            'Registration of JSON MIME type script should fail.');
+      }, `Registering script with JSON MIME type ${jsonMimeType}`);
+  }
+
+  
 
 
 

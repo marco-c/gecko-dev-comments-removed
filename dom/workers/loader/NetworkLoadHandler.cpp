@@ -354,7 +354,11 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
     auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
     if (!nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16)) {
       
+      
       if (!((!loadContext->IsTopLevel() &&
+             loadContext->mRequest->IsModuleRequest() &&
+             loadContext->mRequest->AsModuleRequest()->mModuleType ==
+                 JS::ModuleType::JSON &&
              nsContentUtils::IsJsonMimeType(mimeTypeUTF16))
 #ifdef NIGHTLY_BUILD
             
