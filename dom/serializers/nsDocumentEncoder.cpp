@@ -1975,7 +1975,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
     
     if (GetTreeKind() == TreeKind::FlatForSelection &&
         ref.GetTreeKind() == TreeKind::DOM) {
-      return ref.AsRaw().AsRangeBoundaryInFlatTree(
+      return ref.AsRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::Start);
     }
@@ -1985,7 +1985,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
     const auto& ref = inRange->MayCrossShadowBoundaryEndRef();
     if (GetTreeKind() == TreeKind::FlatForSelection &&
         ref.GetTreeKind() == TreeKind::DOM) {
-      return ref.AsRaw().AsRangeBoundaryInFlatTree(
+      return ref.AsRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
           inRange->Collapsed() ? RangeBoundaryFor::Collapsed
                                : RangeBoundaryFor::End);
     }
