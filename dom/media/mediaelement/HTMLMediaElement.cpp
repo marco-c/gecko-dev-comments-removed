@@ -404,6 +404,10 @@ class HTMLMediaElement::MediaControlKeyListener final
       NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
     }
     
+    
+    
+    Owner()->SetMuted(false, HTMLMediaElement::MUTED_BY_MEDIA_CONTROL);
+    
     mControlAgent->RemoveReceiver(this, mControlType);
     mControlAgent = nullptr;
   }
