@@ -748,9 +748,13 @@
         let firstURI = Array.isArray(uriToLoad) ? uriToLoad[0] : uriToLoad;
 
         if (!this._allowTransparentBrowser) {
+          
+          
+          
           browser.toggleAttribute(
             "transparent",
             !firstURI ||
+              typeof firstURI != "string" ||
               AIWindow.isAIWindowContentPage(Services.io.newURI(firstURI))
           );
         }
