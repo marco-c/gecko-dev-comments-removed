@@ -37,6 +37,16 @@ function defaultPref(prefName, value) {
   try {
     var prefBranch = Services.prefs.getDefaultBranch(null);
     if (typeof value == "string") {
+      
+      
+      
+      var legacyPrefix = "data:text/plain,browser.startup.homepage=";
+      if (
+        prefName == "browser.startup.homepage" &&
+        value.startsWith(legacyPrefix)
+      ) {
+        value = value.substring(legacyPrefix.length);
+      }
       if (gIsUTF8) {
         prefBranch.setStringPref(prefName, value);
         return;
