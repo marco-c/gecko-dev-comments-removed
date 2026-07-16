@@ -185,18 +185,18 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
     return NS_OK;
   }
 
-  if (mState != State::Open) {
+  if (mWinner) {
     
     
-    
-    
-    LOG(("ZeroRttHandle::Finish0RTT %p handle not Open (state=%d); ignoring",
-         this, static_cast<int>(mState)));
+    LOG(("ZeroRttHandle::Finish0RTT %p winner already declared; ignoring",
+         this));
     return NS_OK;
   }
 
   
   
+  MOZ_ASSERT(mState == State::Open,
+             "Finish0RTT declaring winner on a non-Open handle");
 
   
   
