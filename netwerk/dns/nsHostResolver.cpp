@@ -559,8 +559,24 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         rec->RecordReason(TRRSkippedReason::TRR_EXCLUDED);
       }
 
+      TimeStamp now = TimeStamp::NowLoRes();
+
+      
+      
+      
+      
+      
+      
+      
+      if (IS_ADDR_TYPE(type) && addrRec && addrRec->negative &&
+          (af == PR_AF_INET || af == PR_AF_INET6) && IsHighPriority(flags) &&
+          StaticPrefs::network_http_happy_eyeballs_enabled() &&
+          !OtherFamilyHasUsablePositiveResult(key, af, now, flags)) {
+        flags |= nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE;
+      }
+
       if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
-          rec->HasUsableResult(TimeStamp::NowLoRes(), flags)) {
+          rec->HasUsableResult(now, flags)) {
         result = FromCache(rec, host, type, status);
       } else if (addrRec && addrRec->addr) {
         
@@ -711,6 +727,30 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
   
   RefPtr<nsHostRecord> result = aAddrRec;
   return result.forget();
+}
+
+bool nsHostResolver::OtherFamilyHasUsablePositiveResult(
+    const nsHostKey& aKey, uint16_t aAf, const mozilla::TimeStamp& aNow,
+    nsIDNSService::DNSFlags aFlags) {
+  uint16_t otherAf;
+  if (aAf == PR_AF_INET) {
+    otherAf = PR_AF_INET6;
+  } else if (aAf == PR_AF_INET6) {
+    otherAf = PR_AF_INET;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("only called for per-family lookups");
+    return false;
+  }
+
+  const nsHostKey key(aKey.host, aKey.mTrrServer,
+                      nsIDNSService::RESOLVE_TYPE_DEFAULT, aFlags, otherAf,
+                      aKey.pb, aKey.originSuffix);
+  RefPtr<nsHostRecord> rec = mRecordDB.Get(key);
+  if (!rec) {
+    return false;
+  }
+  RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
+  return addrRec && !addrRec->negative && rec->HasUsableResult(aNow, aFlags);
 }
 
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
