@@ -130,10 +130,6 @@ function captureSearchVisibility(doc) {
 
 
 
-
-
-
-
 add_task(async function progressive_typing_matches_fresh_search() {
   let doc = await openSearchWithQuery("accessibility");
   let fresh = captureSearchVisibility(doc);
