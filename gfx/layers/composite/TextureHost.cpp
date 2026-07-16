@@ -550,8 +550,8 @@ void BufferTextureHost::PushResourceUpdates(
 
   
   
-  NativeTexturePolicy policy =
-      BackendNativeTexturePolicy(aResources.GetBackendType(), GetSize());
+  NativeTexturePolicy policy = BackendNativeTexturePolicy(
+      aResources.GetCapabilities().mBackendType, GetSize());
   bool useNativeTexture =
       (policy == REQUIRE) || (policy != FORBID && UseExternalTextures());
   auto imageType = useNativeTexture ? wr::ExternalImageType::TextureHandle(
