@@ -724,8 +724,13 @@ void Range::setDouble(double l, double h) {
   
   
   
-  const double doubleMin = mozilla::BitwiseCast<double>(
-      mozilla::SpecificFloatingPointBits<double, 0, 1, 0>::value);
+  
+  
+  
+  
+  
+  const double doubleMin = double(mozilla::BitwiseCast<float>(
+      mozilla::SpecificFloatingPointBits<float, 0, 1, 0>::value));
   bool includesNegative = std::isnan(l) || l < doubleMin;
   bool includesPositive = std::isnan(h) || h > -doubleMin;
   bool crossesZero = includesNegative && includesPositive;
