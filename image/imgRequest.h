@@ -165,6 +165,10 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
 
   nsITimedChannel* GetTimedChannel() const { return mTimedChannel; }
 
+  
+  
+  bool HadCrossOriginRedirects() const;
+
   imgCacheValidator* GetValidator() const { return mValidator; }
   void SetValidator(imgCacheValidator* aValidator) { mValidator = aValidator; }
 
@@ -285,6 +289,8 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   bool mIsCrossSiteNoCORSRequest;
 
   bool mShouldReportRenderTimeForLCP;
+  
+  bool mHadCrossOriginRedirects = false;
   
   bool mOffMainThreadData = false;
 

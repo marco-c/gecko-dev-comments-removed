@@ -622,6 +622,22 @@ bool imgRequest::HadInsecureRedirect() const {
   return mHadInsecureRedirect;
 }
 
+bool imgRequest::HadCrossOriginRedirects() const {
+  
+  
+  
+  
+  
+  if (mTimedChannel) {
+    bool allRedirectsSameOrigin = false;
+    return NS_SUCCEEDED(
+               mTimedChannel->GetAllRedirectsSameOriginIgnoringInternal(
+                   &allRedirectsSameOrigin)) &&
+           !allRedirectsSameOrigin;
+  }
+  return mHadCrossOriginRedirects;
+}
+
 
 
 NS_IMETHODIMP
@@ -815,6 +831,18 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsresult status) {
 
     RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
     progressTracker->SyncNotifyProgress(progress);
+  }
+
+  
+  
+  
+  
+  if (mTimedChannel) {
+    bool allRedirectsSameOrigin = false;
+    mHadCrossOriginRedirects =
+        NS_SUCCEEDED(mTimedChannel->GetAllRedirectsSameOriginIgnoringInternal(
+            &allRedirectsSameOrigin)) &&
+        !allRedirectsSameOrigin;
   }
 
   mTimedChannel = nullptr;
