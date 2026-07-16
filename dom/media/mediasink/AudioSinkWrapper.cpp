@@ -399,9 +399,12 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
           fmt::ptr(this), mStashedAudioSink->IsErrored(),
           mStashedAudioSink->IsStreamDrained());
       DiscardStashedAudioSink();
-    } else {
-      return ResumeStashedAudioSink(aStartTime);
+    } else if (NS_SUCCEEDED(ResumeStashedAudioSink(aStartTime))) {
+      return NS_OK;
     }
+    
+    
+    LOG("{}: reuse failed, creating a fresh audio sink", fmt::ptr(this));
   }
   
   
@@ -578,7 +581,20 @@ nsresult AudioSinkWrapper::ResumeStashedAudioSink(const TimeUnit& aStartTime) {
   
   
   mLastClockSource = ClockSource::SystemClock;
-  mAudioSink->ResetForReuse(mParams, aStartTime)
+  RefPtr<MediaSink::EndedPromise> ended =
+      mAudioSink->ResetForReuse(mParams, aStartTime);
+  
+  
+  
+  
+  
+  if (mAudioSink->IsErrored() || mAudioSink->IsStreamDrained()) {
+    LOG("{}: stashed stream died during resume, recreating instead of reusing",
+        fmt::ptr(this));
+    ShutDownAudioSink();
+    return NS_ERROR_FAILURE;
+  }
+  ended
       ->Then(mOwnerThread.GetEventTarget(), __func__, this,
              &AudioSinkWrapper::OnAudioEnded)
       ->Track(mAudioSinkEndedRequest);
