@@ -61,13 +61,19 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
   
   
   
+  
+  const bool canFireEvents = aData.mMustNotify;
+
+  
+  
+  
   AutoTArray<RefPtr<css::SheetLoadData>, 8> datasToNotify;
   LoadCompletedInternal(aCache, aData, datasToNotify);
 
   
   for (RefPtr<css::SheetLoadData>& data : datasToNotify) {
     auto status = data->IsCancelled() ? cancelledStatus : aStatus;
-    data->mLoader->NotifyObservers(*data, status);
+    data->mLoader->NotifyObservers(*data, status, canFireEvents);
   }
 }
 

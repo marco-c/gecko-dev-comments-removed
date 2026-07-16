@@ -591,7 +591,9 @@ class Loader final {
 
   
   
-  void NotifyObservers(SheetLoadData&, nsresult);
+  
+  
+  void NotifyObservers(SheetLoadData&, nsresult, bool aCanFireEvents);
 
   
   
