@@ -53,7 +53,7 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
                                             uint64_t aThreshold = 0);
   static nsresult GetNativeDataOffClipboard(IDataObject* aDataObject,
                                             UINT aIndex, UINT aFormat,
-                                            const char* aMIMEImageFormat,
+                                            const char* aMIMEFlavor,
                                             void** aData, uint32_t* aLen,
                                             uint64_t aThreshold = 0);
   static nsresult GetGlobalData(HGLOBAL aHGBL, void** aData, uint32_t* aLen);
@@ -79,6 +79,13 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   static UINT GetClipboardFileDescriptorFormatW();
   static UINT GetHtmlClipboardFormat();
   static UINT GetCustomClipboardFormat();
+
+  
+  
+  
+  
+  
+  static UINT GetWebCustomFormatMapClipboardFormat();
   mozilla::Result<int32_t, nsresult> GetNativeClipboardSequenceNumber(
       ClipboardType aWhichClipboard) override;
 
