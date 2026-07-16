@@ -22324,15 +22324,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   (0,external_React_namespaceObject.useEffect)(() => {
     setImageFailed(false);
   }, [pictureData.imageUrl]);
-
-  
-  
-  
-  
-  
-  const pictureDate = pictureData.publishedDate || new Date().toDateString();
-  const dismissed = pictureDate === prefs["widgets.pictureOfTheDay.dismissedDate"];
-  const hasPicture = Boolean(pictureData.imageUrl) && !dismissed && !imageFailed;
+  const hasPicture = Boolean(pictureData.imageUrl) && !imageFailed;
 
   
   
@@ -22424,29 +22416,12 @@ const PictureOfTheDay_PictureOfTheDay = ({
       });
     });
   };
-  const setDismissedDate = value => dispatch(actionCreators.OnlyToMain({
-    type: actionTypes.SET_PREF,
-    data: {
-      name: "widgets.pictureOfTheDay.dismissedDate",
-      value
-    }
-  }));
-  const handleHidePhoto = () => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      setDismissedDate(pictureDate);
-      recordUserAction("hide_photo", {
-        source: "context_menu"
-      });
-    });
-  };
-  const handleShow = (source = "widget") => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      setDismissedDate("");
-      recordUserAction("show_picture", {
-        source
-      });
-    });
-  };
+  const handleHidePhoto = () => recordUserAction("hide_photo", {
+    source: "context_menu"
+  });
+  const handleShow = () => recordUserAction("show_picture", {
+    source: "widget"
+  });
 
   
   
@@ -22535,10 +22510,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   }, external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-picture-menu-manage-wallpaper",
     onClick: handleManageWallpaper
-  }), dismissed ? external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-picture-menu-show-photo",
-    onClick: () => handleShow("context_menu")
-  }) : external_React_default().createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-picture-menu-hide-photo",
     onClick: handleHidePhoto
   }), external_React_default().createElement("hr", null), widgetsMayBeMaximized && external_React_default().createElement("panel-item", {
@@ -22585,7 +22557,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   }, external_React_default().createElement("button", {
     type: "button",
     className: "picture-of-the-day-show-button",
-    onClick: () => handleShow("widget"),
+    onClick: handleShow,
     "data-l10n-id": "newtab-picture-show-button"
   }), external_React_default().createElement("p", {
     className: "picture-of-the-day-message",
