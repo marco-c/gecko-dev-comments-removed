@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ImageContainer.h"
 #include "MediaFormatReader.h"
 #include "MockDecoderModule.h"
@@ -34,65 +32,98 @@ using testing::MockFunction;
 using testing::Return;
 using testing::StrEq;
 
-TEST(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek)
-{
-  RefPtr<MediaFormatReader> reader;
-  
-  
-  RefPtr<TaskQueue> demuxerThread;
-  RefPtr<TaskQueue> decoderThread;
+
+
+
+class TestMediaFormatReader : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    mDataDemuxer = new MockMediaDataDemuxer();
+    
+    mTrackDemuxer =
+        new MockMediaTrackDemuxer("video/x-test; width=640; height=360");
+
+    ON_CALL(*mDataDemuxer, GetNumberTracks(TrackType::kVideoTrack))
+        .WillByDefault(Return(1));
+    ON_CALL(*mDataDemuxer, GetTrackDemuxer)
+        .WillByDefault([this](TrackType aType, uint32_t aTrackNumber) {
+          EXPECT_EQ(aTrackNumber, 0u);
+          EXPECT_EQ(aType, TrackType::kVideoTrack);
+          if (!mDemuxerThread) {
+            mDemuxerThread = do_QueryObject(AbstractThread::GetCurrent());
+          }
+          return do_AddRef(mTrackDemuxer);
+        });
+
+    mPdm = new MockDecoderModule();
+  }
 
   
   
-  auto WaitForReaderOperations = [&](int aCount) {
+  void InitReader() {
+    mOwner = std::make_unique<MockMediaDecoderOwner>();
+    RefPtr container = new VideoFrameContainer(
+        mOwner.get(),
+        MakeAndAddRef<ImageContainer>(ImageUsageType::VideoFrameContainer,
+#ifdef MOZ_WIDGET_ANDROID
+                                      
+                                      ImageContainer::SYNCHRONOUS
+#else
+                                      ImageContainer::ASYNCHRONOUS
+#endif
+                                      ));
+    MediaFormatReaderInit init;
+    init.mVideoFrameContainer = container;
+    mReader = new MediaFormatReader(init, mDataDemuxer);
+    mProxy = new ReaderProxy(AbstractThread::MainThread(), mReader);
+    EXPECT_NS_SUCCEEDED(mReader->Init());
+  }
+
+  
+  
+  void WaitForReaderOperations(int aCount) {
     
     
     
     
     
     
-    MOZ_ASSERT(!demuxerThread->SupportsTailDispatch());
-    MOZ_ASSERT(!decoderThread->SupportsTailDispatch());
+    MOZ_ASSERT(!mDemuxerThread->SupportsTailDispatch());
+    MOZ_ASSERT(!mDecoderThread->SupportsTailDispatch());
     
     
-    reader->OwnerThread()->AwaitIdle();
+    mReader->OwnerThread()->AwaitIdle();
     for (int i = 0; i < aCount; ++i) {
-      demuxerThread->AwaitIdle();
-      decoderThread->AwaitIdle();
-      reader->OwnerThread()->AwaitIdle();
+      mDemuxerThread->AwaitIdle();
+      mDecoderThread->AwaitIdle();
+      mReader->OwnerThread()->AwaitIdle();
     }
-  };
+  }
 
-  RefPtr dataDemuxer = new MockMediaDataDemuxer();
-  RefPtr trackDemuxer =
-      
-      new MockMediaTrackDemuxer("video/x-test; width=640; height=360");
+  RefPtr<MockMediaDataDemuxer> mDataDemuxer;
+  RefPtr<MockMediaTrackDemuxer> mTrackDemuxer;
+  RefPtr<MockDecoderModule> mPdm;
+  std::unique_ptr<MockMediaDecoderOwner> mOwner;
+  RefPtr<MediaFormatReader> mReader;
+  RefPtr<ReaderProxy> mProxy;
+  
+  
+  RefPtr<TaskQueue> mDemuxerThread;
+  RefPtr<TaskQueue> mDecoderThread;
+};
 
-  ON_CALL(*dataDemuxer, GetNumberTracks(TrackType::kVideoTrack))
-      .WillByDefault(Return(1));
-
-  ON_CALL(*dataDemuxer, GetTrackDemuxer)
-      .WillByDefault([&](TrackType aType, uint32_t aTrackNumber) {
-        EXPECT_EQ(aTrackNumber, 0u);
-        EXPECT_EQ(aType, TrackType::kVideoTrack);
-        if (!demuxerThread) {
-          demuxerThread = do_QueryObject(AbstractThread::GetCurrent());
-        }
-        return do_AddRef(trackDemuxer);
-      });
-
-  RefPtr pdm = new MockDecoderModule();
-  PDMFactory::AutoForcePDM autoForcePDM(pdm);
+TEST_F(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek) {
+  PDMFactory::AutoForcePDM autoForcePDM(mPdm);
   RefPtr<MockVideoDataDecoder> decoder;
   MozPromiseHolder<DecodePromise> drainPromise;
-  EXPECT_CALL(*pdm, CreateVideoDecoder)
+  EXPECT_CALL(*mPdm, CreateVideoDecoder)
       .WillOnce([&](const CreateDecoderParams& aParams) {
         decoder = new MockVideoDataDecoder(aParams);
         InSequence s;
         
         EXPECT_CALL(*decoder, Drain).WillOnce([&] {
-          MOZ_ASSERT(!decoderThread);
-          decoderThread = do_QueryObject(AbstractThread::GetCurrent());
+          MOZ_ASSERT(!mDecoderThread);
+          mDecoderThread = do_QueryObject(AbstractThread::GetCurrent());
           return decoder->DummyMediaDataDecoder::Drain();
         });
         
@@ -109,7 +140,7 @@ TEST(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek)
   {
     InSequence s;
 
-    EXPECT_CALL(*trackDemuxer, MockGetSamples).Times(2).WillRepeatedly([]() {
+    EXPECT_CALL(*mTrackDemuxer, MockGetSamples).Times(2).WillRepeatedly([]() {
       static int count = 0;
       RefPtr sample = new MediaRawData;
       sample->mTime = TimeUnit(count, 30);
@@ -118,19 +149,19 @@ TEST(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek)
       samples->AppendSample(std::move(sample));
       return SamplesPromise::CreateAndResolve(samples, __func__);
     });
-    EXPECT_CALL(*trackDemuxer, MockGetSamples).WillOnce([]() {
+    EXPECT_CALL(*mTrackDemuxer, MockGetSamples).WillOnce([]() {
       return SamplesPromise::CreateAndReject(
           NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
     });
-    EXPECT_CALL(*trackDemuxer, Seek).WillOnce([&](const TimeUnit& aTime) {
+    EXPECT_CALL(*mTrackDemuxer, Seek).WillOnce([&](const TimeUnit& aTime) {
       
       
-      EXPECT_NS_SUCCEEDED(reader->OwnerThread()->Dispatch(
-          NewRunnableMethod("NotifyDataArrived", reader.get(),
+      EXPECT_NS_SUCCEEDED(mReader->OwnerThread()->Dispatch(
+          NewRunnableMethod("NotifyDataArrived", mReader.get(),
                             &MediaFormatReader::NotifyDataArrived)));
       return SeekPromise::CreateAndResolve(TimeUnit::Zero(), __func__);
     });
-    EXPECT_CALL(*trackDemuxer, MockGetSamples).WillOnce([]() {
+    EXPECT_CALL(*mTrackDemuxer, MockGetSamples).WillOnce([]() {
       RefPtr sample = new MediaRawData;
       
       sample->mTime = TimeUnit(0, 30);
@@ -138,45 +169,30 @@ TEST(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek)
       samples->AppendSample(std::move(sample));
       return SamplesPromise::CreateAndResolve(samples, __func__);
     });
-    EXPECT_CALL(*trackDemuxer, MockGetSamples).WillOnce([]() {
+    EXPECT_CALL(*mTrackDemuxer, MockGetSamples).WillOnce([]() {
       return SamplesPromise::CreateAndReject(
           NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
     });
     EXPECT_CALL(checkpoint, Call(StrEq("Internal seek waiting for data")));
 
-    EXPECT_CALL(*trackDemuxer, MockGetSamples).WillRepeatedly([]() {
+    EXPECT_CALL(*mTrackDemuxer, MockGetSamples).WillRepeatedly([]() {
       return SamplesPromise::CreateAndReject(
           NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
     });
   }
 
-  auto owner = std::make_unique<MockMediaDecoderOwner>();
-  RefPtr container = new VideoFrameContainer(
-      owner.get(),
-      MakeAndAddRef<ImageContainer>(ImageUsageType::VideoFrameContainer,
-#ifdef MOZ_WIDGET_ANDROID
-                                    
-                                    ImageContainer::SYNCHRONOUS
-#else
-                                    ImageContainer::ASYNCHRONOUS
-#endif
-                                    ));
-  MediaFormatReaderInit init;
-  init.mVideoFrameContainer = container;
-  reader = new MediaFormatReader(init, dataDemuxer);
-  RefPtr proxy = new ReaderProxy(AbstractThread::MainThread(), reader);
-  EXPECT_NS_SUCCEEDED(reader->Init());
+  InitReader();
 
   
-  (void)WaitForResolve(proxy->ReadMetadata());
+  (void)WaitForResolve(mProxy->ReadMetadata());
   
   
   for (int i = 0; i < 2; ++i) {
-    (void)WaitForResolve(proxy->RequestVideoData(TimeUnit(), false));
+    (void)WaitForResolve(mProxy->RequestVideoData(TimeUnit(), false));
   }
   
   MediaResult result =
-      WaitForReject(proxy->RequestVideoData(TimeUnit(), false));
+      WaitForReject(mProxy->RequestVideoData(TimeUnit(), false));
   EXPECT_EQ(result.Code(), NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA);
   
   
@@ -196,15 +212,15 @@ TEST(TestMediaFormatReader, WaitingForDemuxAfterInternalSeek)
   
   
   
-  (void)proxy->RequestVideoData(TimeUnit(), false);
+  (void)mProxy->RequestVideoData(TimeUnit(), false);
   
-  EXPECT_NS_SUCCEEDED(reader->OwnerThread()->Dispatch(
-      NewRunnableMethod("NotifyDataArrived", reader.get(),
+  EXPECT_NS_SUCCEEDED(mReader->OwnerThread()->Dispatch(
+      NewRunnableMethod("NotifyDataArrived", mReader.get(),
                         &MediaFormatReader::NotifyDataArrived)));
   
   
   WaitForReaderOperations(2);
   
-  WaitForResolve(proxy->Shutdown());
+  WaitForResolve(mProxy->Shutdown());
   drainPromise.Reject(NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
 }
