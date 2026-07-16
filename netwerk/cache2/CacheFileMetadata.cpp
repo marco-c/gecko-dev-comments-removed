@@ -710,13 +710,17 @@ void CacheFileMetadata::SetFrecency(uint32_t aFrecency) {
   LOG(("CacheFileMetadata::SetFrecency() [this=%p, frecency=%f]", this,
        (double)aFrecency));
 
-  MarkDirty(false);
+  
+  
+  
+  
+  
   mMetaHdr.mFrecency = aFrecency;
 }
 
 void CacheFileMetadata::OnFetched() {
-  MarkDirty(false);
-
+  
+  
   mMetaHdr.mLastFetched = NOW_SECONDS();
   ++mMetaHdr.mFetchCount;
 }

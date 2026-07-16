@@ -1204,8 +1204,9 @@ nsresult CacheFile::SetFrecency(uint32_t aFrecency) {
   MOZ_ASSERT(mMetadata);
   NS_ENSURE_TRUE(mMetadata, NS_ERROR_UNEXPECTED);
 
-  PostWriteTimer();
-
+  
+  
+  
   if (mHandle && !mHandle->IsDoomed()) {
     CacheFileIOManager::UpdateIndexEntry(mHandle, &aFrecency, nullptr, nullptr,
                                          nullptr, nullptr);
@@ -1394,8 +1395,7 @@ nsresult CacheFile::OnFetched() {
   MOZ_ASSERT(mMetadata);
   NS_ENSURE_TRUE(mMetadata, NS_ERROR_UNEXPECTED);
 
-  PostWriteTimer();
-
+  
   mMetadata->OnFetched();
   return NS_OK;
 }
