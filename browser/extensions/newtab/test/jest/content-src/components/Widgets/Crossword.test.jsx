@@ -39,7 +39,6 @@ function WrapWithProvider({ children, state = baseState }) {
 function renderCrossword({
   state = baseState,
   dispatch = jest.fn(),
-  handleUserInteraction = jest.fn(),
   widgetsMayBeMaximized = true,
 } = {}) {
   const widgetEnabledMap = { crossword: true };
@@ -47,13 +46,12 @@ function renderCrossword({
     <WrapWithProvider state={state}>
       <Crossword
         dispatch={dispatch}
-        handleUserInteraction={handleUserInteraction}
         widgetsMayBeMaximized={widgetsMayBeMaximized}
         widgetEnabledMap={widgetEnabledMap}
       />
     </WrapWithProvider>
   );
-  return { ...utils, dispatch, handleUserInteraction };
+  return { ...utils, dispatch };
 }
 
 // Dispatch a postMessage-style event at the window as if it came from the
@@ -239,7 +237,7 @@ describe("<Crossword>", () => {
       expect(frame).toBeInTheDocument();
       expect(frame).toHaveAttribute(
         "sandbox",
-        "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        "allow-scripts allow-same-origin"
       );
       expect(frame).toHaveAttribute(
         "src",
@@ -561,135 +559,6 @@ describe("<Crossword>", () => {
     });
   });
 
-  describe("puzzle_state sizing", () => {
-    function largeState() {
-      return {
-        ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            "widgets.crossword.size": "large",
-          },
-        },
-      };
-    }
-
-    it("forces the large layout while the puzzle is in_progress", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-      expect(root).toHaveClass("medium-widget");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", {
-          crosswordId: "gid",
-          state: "in_progress",
-          sourceLabel: "live",
-        }),
-      });
-
-      expect(root).toHaveClass("large-widget");
-      expect(root).not.toHaveClass("medium-widget");
-    });
-
-    it("stays large through the completed state after solving", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "in_progress" }),
-      });
-      expect(root).toHaveClass("large-widget");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "completed" }),
-      });
-      expect(root).toHaveClass("large-widget");
-      expect(root).not.toHaveClass("medium-widget");
-    });
-
-    it("stays large on puzzle_completed after solving", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "in_progress" }),
-      });
-      expect(root).toHaveClass("large-widget");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_completed", {
-          elapsedTimeSeconds: 42,
-          hintsTaken: 1,
-        }),
-      });
-      expect(root).toHaveClass("large-widget");
-    });
-
-    it("stays medium when loading directly into completed (returning card)", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "completed" }),
-      });
-
-      expect(root).toHaveClass("medium-widget");
-      expect(root).not.toHaveClass("large-widget");
-    });
-
-    it("returns to medium when a new puzzle goes back to the intro state", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "in_progress" }),
-      });
-      expect(root).toHaveClass("large-widget");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "intro" }),
-      });
-      expect(root).toHaveClass("medium-widget");
-    });
-
-    it("does not force large when widgetsMayBeMaximized is false", () => {
-      const { container } = renderCrossword({ widgetsMayBeMaximized: false });
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "in_progress" }),
-      });
-
-      expect(root).toHaveClass("medium-widget");
-      expect(root).not.toHaveClass("large-widget");
-    });
-
-    it("keeps a user-chosen large size on the intro state", () => {
-      const { container } = renderCrossword({ state: largeState() });
-      const root = container.querySelector("article.crossword");
-      expect(root).toHaveClass("large-widget");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "intro" }),
-      });
-
-      expect(root).toHaveClass("large-widget");
-    });
-
-    it("ignores a puzzle_state with an unknown state value", () => {
-      const { container } = renderCrossword();
-      const root = container.querySelector("article.crossword");
-
-      postWidgetMessage(container, {
-        data: validMessage("puzzle_state", { state: "bogus" }),
-      });
-
-      expect(root).toHaveClass("medium-widget");
-      expect(root).not.toHaveClass("large-widget");
-    });
-  });
-
   describe("powered by particle action", () => {
     it("dispatches OPEN_LINK to particle.news", () => {
       const { container, dispatch } = renderCrossword();
@@ -760,64 +629,6 @@ describe("<Crossword>", () => {
       ).toBeInTheDocument();
 
       expect(menu.querySelector("hr")).toBeInTheDocument();
-    });
-  });
-
-  describe("new badge", () => {
-    it("renders the New badge before the title when not interacted with", () => {
-      const { container } = renderCrossword();
-      const badge = container.querySelector("moz-badge.crossword-new-badge");
-      expect(badge).toBeInTheDocument();
-      // No type="new": that looks up the unregistered moz-badge-new2 string.
-      expect(badge).not.toHaveAttribute("type");
-      expect(badge).toHaveAttribute(
-        "data-l10n-id",
-        "newtab-widget-lists-label-new"
-      );
-      // The badge renders immediately before the title.
-      expect(badge.nextElementSibling).toBe(
-        container.querySelector("h3.newtab-crossword-title")
-      );
-    });
-
-    it("hides the New badge once the interaction pref is set", () => {
-      const state = {
-        ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            "widgets.crossword.interaction": true,
-          },
-        },
-      };
-      const { container } = renderCrossword({ state });
-      expect(
-        container.querySelector("moz-badge.crossword-new-badge")
-      ).not.toBeInTheDocument();
-      expect(
-        container.querySelector("h3.newtab-crossword-title")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("interaction pref", () => {
-    it("flips the interaction pref via handleUserInteraction on a menu action", () => {
-      const handleUserInteraction = jest.fn();
-      const { container } = renderCrossword({ handleUserInteraction });
-      fireEvent.click(container.querySelector("panel-item.learn-more"));
-      expect(handleUserInteraction).toHaveBeenCalledWith("crossword");
-    });
-
-    it("does NOT flip the interaction pref when hiding the widget", () => {
-      const handleUserInteraction = jest.fn();
-      const { container } = renderCrossword({ handleUserInteraction });
-      fireEvent.click(
-        container.querySelector(
-          "panel-item[data-l10n-id='newtab-widget-menu-hide']"
-        )
-      );
-      expect(handleUserInteraction).not.toHaveBeenCalled();
     });
   });
 });
