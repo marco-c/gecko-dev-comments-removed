@@ -2367,6 +2367,24 @@ class Toolbox extends EventEmitter {
 
 
 
+
+
+  async launchResponsiveMode(options = {}) {
+    const tab = this.commands.descriptorFront.localTab;
+    const win = tab.ownerDocument.defaultView;
+
+    await ResponsiveUIManager.openIfNeeded(win, tab, {
+      trigger: "debugger",
+    });
+    this.emit("responsive-mode-opened");
+
+    ResponsiveUIManager.getResponsiveUIForTab(tab).setViewportSize(options);
+  }
+
+  
+
+
+
   #buildPickerButton() {
     this.pickerButton = this.#createButtonState({
       id: "command-button-pick",
