@@ -7459,6 +7459,18 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  CancelSuspendOrResumeAfterExamineResponse();
+
+  
+  
+  
   if (mSuspendedForDictionary) {
     LOG(
         ("nsHttpChannel::CancelInternal resuming dictionary-suspended channel "
