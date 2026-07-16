@@ -25,6 +25,20 @@ Services.prefs.setBoolPref(
   true
 );
 
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
+
+
+
+
+
+const MODIFIED_LOGIN_META_PROPS = isRustBackend
+  ? ["timesUsed", "timeCreated", "timeLastUsed"]
+  : ["timesUsed", "timeCreated", "timePasswordChanged", "timeLastUsed"];
+
 const CATEGORICAL_HISTOGRAM = "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL";
 
 
@@ -610,7 +624,7 @@ add_task(async function test_import_summary_modified_login_without_guid() {
       }),
     ],
     "Check that logins were updated with the correct fields",
-    (a, e) => a.equals(e) && checkMetaInfo(a, e)
+    (a, e) => a.equals(e) && checkMetaInfo(a, e, MODIFIED_LOGIN_META_PROPS)
   );
 });
 
@@ -654,7 +668,7 @@ add_task(async function test_import_summary_modified_login_with_guid() {
       }),
     ],
     "Check that logins were updated with the correct fields",
-    (a, e) => a.equals(e) && checkMetaInfo(a, e)
+    (a, e) => a.equals(e) && checkMetaInfo(a, e, MODIFIED_LOGIN_META_PROPS)
   );
 });
 

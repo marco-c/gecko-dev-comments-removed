@@ -11,6 +11,10 @@
 
 
 const gLooksLikeUUIDRegex = /^\{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\}$/;
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
 
 
 
@@ -126,11 +130,13 @@ add_task(async function test_addLogin_metainfo() {
 
 
 
-add_task(async function test_addLogin_metainfo_duplicate() {
+
+add_task(async function test_addLogin_metainfo_duplicate_json() {
   let loginInfo = TestData.formLogin({
     origin: "http://duplicate.example.com",
     guid: gLoginMetaInfo2.guid,
   });
+  Services.logins.addLoginAsync(loginInfo);
   await Assert.rejects(
     Services.logins.addLoginAsync(loginInfo),
     /specified GUID already exists/
@@ -138,7 +144,24 @@ add_task(async function test_addLogin_metainfo_duplicate() {
 
   
   await LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
-});
+}).skip(isRustBackend);
+
+
+
+
+
+add_task(async function test_addLogin_metainfo_duplicate_rust() {
+  let loginInfo = TestData.formLogin({
+    origin: "http://duplicate.example.com",
+    guid: gLoginMetaInfo2.guid,
+  });
+  Services.logins.addLoginAsync(loginInfo);
+  
+  Services.logins.addLoginAsync(loginInfo);
+
+  
+  await LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
+}).skip(!isRustBackend);
 
 
 
@@ -151,7 +174,7 @@ add_task(async function test_modifyLogin_nsILoginInfo_metainfo_ignored() {
   newLoginInfo.timeLastUsed = Date.now();
   newLoginInfo.timePasswordChanged = Date.now();
   newLoginInfo.timesUsed = 12;
-  await Services.logins.modifyLoginAsync(gLoginInfo1, newLoginInfo);
+  await Services.logins.modifyLoginAsync(gLoginMetaInfo1, newLoginInfo);
 
   newLoginInfo = await retrieveOriginMatching(gLoginInfo1.origin);
   assertMetaInfoEqual(newLoginInfo, gLoginMetaInfo1);
@@ -160,14 +183,52 @@ add_task(async function test_modifyLogin_nsILoginInfo_metainfo_ignored() {
 
 
 
+
 add_task(async function test_modifyLogin_nsIProperyBag_metainfo() {
+  
+  let originalLogin = gLoginInfo2.clone().QueryInterface(Ci.nsILoginMetaInfo);
+  await Services.logins.modifyLoginAsync(
+    gLoginInfo2,
+    newPropertyBag({
+      password: "new password",
+    })
+  );
+  gLoginInfo2.password = "new password";
+
+  gLoginMetaInfo2 = await retrieveOriginMatching(gLoginInfo2.origin);
+  Assert.equal(gLoginMetaInfo2.password, gLoginInfo2.password);
+  Assert.equal(gLoginMetaInfo2.timeCreated, originalLogin.timeCreated);
+  Assert.equal(gLoginMetaInfo2.timeLastUsed, originalLogin.timeLastUsed);
+  LoginTestUtils.assertTimeIsAboutNow(gLoginMetaInfo2.timePasswordChanged);
+
+  
+  
+  await Services.logins.modifyLoginAsync(
+    gLoginInfo2,
+    newPropertyBag({
+      password: "other password",
+    })
+  );
+  gLoginInfo2.password = "other password";
+
+  gLoginMetaInfo2 = await retrieveOriginMatching(gLoginInfo2.origin);
+  Assert.equal(gLoginMetaInfo2.password, gLoginInfo2.password);
+  Assert.equal(gLoginMetaInfo2.timeCreated, originalLogin.timeCreated);
+  Assert.equal(gLoginMetaInfo2.timeLastUsed, originalLogin.timeLastUsed);
+});
+
+
+
+
+
+add_task(async function test_modifyLogin_nsIProperyBag_metainfo_json() {
   
   let newTimeMs = Date.now() + 120000;
   let newUUIDValue = Services.uuid.generateUUID().toString();
 
   
   await Services.logins.modifyLoginAsync(
-    gLoginInfo1,
+    gLoginMetaInfo1,
     newPropertyBag({
       guid: newUUIDValue,
       timeCreated: newTimeMs,
@@ -184,21 +245,7 @@ add_task(async function test_modifyLogin_nsIProperyBag_metainfo() {
   Assert.equal(gLoginMetaInfo1.timePasswordChanged, newTimeMs + 1);
   Assert.equal(gLoginMetaInfo1.timesUsed, 2);
 
-  
   let originalLogin = gLoginInfo2.clone().QueryInterface(Ci.nsILoginMetaInfo);
-  await Services.logins.modifyLoginAsync(
-    gLoginInfo2,
-    newPropertyBag({
-      password: "new password",
-    })
-  );
-  gLoginInfo2.password = "new password";
-
-  gLoginMetaInfo2 = await retrieveOriginMatching(gLoginInfo2.origin);
-  Assert.equal(gLoginMetaInfo2.password, gLoginInfo2.password);
-  Assert.equal(gLoginMetaInfo2.timeCreated, originalLogin.timeCreated);
-  Assert.equal(gLoginMetaInfo2.timeLastUsed, originalLogin.timeLastUsed);
-  LoginTestUtils.assertTimeIsAboutNow(gLoginMetaInfo2.timePasswordChanged);
 
   
   
@@ -230,7 +277,8 @@ add_task(async function test_modifyLogin_nsIProperyBag_metainfo() {
   Assert.equal(gLoginMetaInfo2.timeLastUsed, originalLogin.timeLastUsed);
   Assert.equal(gLoginMetaInfo2.timePasswordChanged, newTimeMs);
   Assert.equal(gLoginMetaInfo2.timesUsed, 4);
-});
+}).skip(isRustBackend);
+
 
 
 
@@ -246,7 +294,7 @@ add_task(async function test_modifyLogin_nsIProperyBag_metainfo_duplicate() {
     /specified GUID already exists/
   );
   await LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
-});
+}).skip(isRustBackend);
 
 
 

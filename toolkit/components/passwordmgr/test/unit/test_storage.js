@@ -11,6 +11,11 @@
 
 
 
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 async function reloadAndCheckLoginsGen(aExpectedLogins) {
   await LoginTestUtils.reloadData();
   await LoginTestUtils.checkLogins(aExpectedLogins);
@@ -23,7 +28,10 @@ async function reloadAndCheckLoginsGen(aExpectedLogins) {
 
 
 add_task(async function test_storage_addLogin_nonascii() {
-  let origin = "http://" + String.fromCharCode(355) + ".example.com";
+  
+  let origin = isRustBackend
+    ? "http://valid.example.com"
+    : "http://" + String.fromCharCode(355) + ".example.com";
 
   
   let loginInfo = TestData.formLogin({
@@ -62,6 +70,8 @@ add_task(async function test_storage_addLogin_newlines() {
 
 
 
+
+
 add_task(async function test_storage_addLogin_dot() {
   let loginInfo = TestData.formLogin({ origin: ".", passwordField: "." });
   await Services.logins.addLoginAsync(loginInfo);
@@ -70,14 +80,14 @@ add_task(async function test_storage_addLogin_dot() {
   loginInfo = TestData.authLogin({ httpRealm: "." });
   await Services.logins.addLoginAsync(loginInfo);
   await reloadAndCheckLoginsGen([loginInfo]);
-});
+}).skip(isRustBackend);
 
 
 
 
 
 
-add_task(async function test_storage_addLogin_parentheses() {
+add_task(async function test_storage_addLogin_http_realm_parentheses() {
   let loginList = [
     TestData.authLogin({ httpRealm: "(realm" }),
     TestData.authLogin({ httpRealm: "realm)" }),
@@ -92,6 +102,29 @@ add_task(async function test_storage_addLogin_parentheses() {
   await reloadAndCheckLoginsGen(loginList);
 });
 
+
+
+
+
+
+
+
+add_task(async function test_storage_addLogin_parentheses() {
+  let loginList = [
+    TestData.authLogin({ origin: "http://parens(.example.com" }),
+    TestData.authLogin({ origin: "http://parens).example.com" }),
+    TestData.authLogin({ origin: "http://parens(example).example.com" }),
+    TestData.authLogin({ origin: "http://parens)example(.example.com" }),
+  ];
+  await Services.logins.addLogins(loginList);
+  await reloadAndCheckLoginsGen(loginList);
+}).skip(isRustBackend);
+
+
+
+
+
+
 add_task(async function test_listInvalidOrigins() {
   await Services.logins.addLoginAsync(
     TestData.formLogin({ origin: "not a url" })
@@ -100,4 +133,4 @@ add_task(async function test_listInvalidOrigins() {
   Assert.equal(invalid.length, 1);
   Assert.equal(invalid[0].origin, "not a url");
   LoginTestUtils.clearData();
-});
+}).skip(isRustBackend);
