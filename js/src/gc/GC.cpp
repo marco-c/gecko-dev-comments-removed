@@ -3591,7 +3591,18 @@ IncrementalProgress GCRuntime::markPhase(SliceBudget& budget) {
     return NotFinished;
   }
 
-  return result;
+  if (result == NotFinished) {
+    return NotFinished;
+  }
+
+  
+  
+  if (isIncremental && sliceReason == JS::GCReason::BG_TASK_FINISHED &&
+      !budget.idle) {
+    return NotFinished;
+  }
+
+  return Finished;
 }
 
 IncrementalProgress GCRuntime::markSynchronously(
