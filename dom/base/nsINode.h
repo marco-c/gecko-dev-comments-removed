@@ -355,17 +355,20 @@ enum class TreeKind : uint8_t {
   
   
   
+  Flat,
+  
+  
+  
+  
+  
+  
+  
   
   
   
   
   
   FlatForSelection,
-  
-  
-  
-  
-  Flat,
 };
 
 template <TreeKind aKind>
@@ -382,8 +385,8 @@ inline auto format_as(const TreeKind& aTreeKind) {
   constexpr static const char* sNames[] = {
       "DOM",
       "ShadowIncludingDOM",
-      "FlatForSelection",
       "Flat",
+      "FlatForSelection",
   };
   return std::string(sNames[static_cast<uint8_t>(aTreeKind)]);
 }
@@ -1454,6 +1457,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
   [[nodiscard]] inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
 
   
@@ -1928,6 +1933,17 @@ class nsINode : public mozilla::dom::EventTarget {
 
   [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadowForSelection()
       const;
+
+  template <TreeKind aKind>
+  [[nodiscard]] mozilla::dom::ShadowRoot* GetContainingShadow() const {
+    if constexpr (aKind == TreeKind::Flat) {
+      return GetContainingShadow();
+    } else if constexpr (aKind == TreeKind::FlatForSelection) {
+      return GetContainingShadowForSelection();
+    } else {
+      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
+    }
+  }
 
   
 
@@ -2725,6 +2741,36 @@ class nsINode : public mozilla::dom::EventTarget {
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value");
     }
   }
+
+  
+
+
+
+
+
+
+
+
+  template <TreeKind aKind,
+            typename = std::enable_if_t<aKind == TreeKind::Flat ||
+                                        aKind == TreeKind::FlatForSelection>>
+  [[nodiscard]] mozilla::dom::Element*
+  GetClosestFlatTreeAncestorElementForNonFlatTreeNode() const;
+
+  
+
+
+
+
+
+
+
+
+  template <TreeKind aKind,
+            typename = std::enable_if_t<aKind == TreeKind::Flat ||
+                                        aKind == TreeKind::FlatForSelection>>
+  [[nodiscard]] mozilla::dom::Element*
+  GetFlatTreeAncestorElementForNonFlatTreeNode() const;
 
  protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }

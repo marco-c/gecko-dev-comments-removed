@@ -1143,6 +1143,22 @@ class MOZ_STACK_CLASS CommonAncestors final {
                                : nullptr})
                     .c_str())
                 .c_str());
+      } else if constexpr (aKind == TreeKind::FlatForSelection) {
+        if (child->GetParentNode() == mClosestCommonAncestor) {
+          
+          
+          
+          if (mClosestCommonAncestor->GetShadowRootForSelection()) {
+            return;
+          }
+          
+          
+          
+          if (mClosestCommonAncestor
+                  ->GetAsHTMLSlotElementIfFilledForSelection()) {
+            return;
+          }
+        }
       }
       const Maybe<size_t> index =
           GetClosestCommonAncestorChildIndex(aInclusiveAncestors);
@@ -3677,48 +3693,73 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
     return Some(-1);
   }
 
+  if constexpr (aKind == TreeKind::FlatForSelection) {
+    
+    
+    
+    
+    
+    if (aParent.GetAsHTMLSlotElementIfFilledForSelection()) {
+      if (aChild1->GetParentNode() == &aParent) {
+        if (aChild2->GetParentNode() == &aParent) {
+          
+          
+          return CompareChildNodes<TreeKind::DOM>(aParent, aChild1, aChild2);
+        }
+        
+        
+        return Some(1);
+      }
+      if (aChild2->GetParentNode() == &aParent) {
+        
+        
+        return Some(-1);
+      }
+    }
+  }
+
   if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
     HTMLSlotElement* const slot1 = aChild1->GetAssignedSlot<aKind>();
     HTMLSlotElement* const slot2 = aChild2->GetAssignedSlot<aKind>();
-    
-    if (slot1 && slot1 == slot2) {
-      const auto* slot = HTMLSlotElement::FromNode(aParent);
-      MOZ_ASSERT(slot);
+    if (slot1 || slot2) {
+      
+      if (slot1 == slot2) {
+        const auto* slot = HTMLSlotElement::FromNode(aParent);
+        MOZ_ASSERT(slot);
 
-      constexpr auto NoIndex = size_t(-1);
-      auto child1Index = NoIndex;
-      auto child2Index = NoIndex;
-      size_t index = 0;
-      for (nsINode* node : slot->AssignedNodes()) {
-        if (node == aChild1) {
-          child1Index = index;
-          if (child2Index != NoIndex) {
-            break;
+        constexpr auto NoIndex = size_t(-1);
+        auto child1Index = NoIndex;
+        auto child2Index = NoIndex;
+        size_t index = 0;
+        for (nsINode* node : slot->AssignedNodes()) {
+          if (node == aChild1) {
+            child1Index = index;
+            if (child2Index != NoIndex) {
+              break;
+            }
+          } else if (node == aChild2) {
+            child2Index = index;
+            if (child1Index != NoIndex) {
+              break;
+            }
           }
-        } else if (node == aChild2) {
-          child2Index = index;
-          if (child1Index != NoIndex) {
-            break;
-          }
+          index++;
         }
-        index++;
+
+        MOZ_ASSERT(child1Index != NoIndex);
+        MOZ_ASSERT(child2Index != NoIndex);
+
+        return Some(child1Index < child2Index ? -1 : 1);
       }
-
-      MOZ_ASSERT(child1Index != NoIndex);
-      MOZ_ASSERT(child2Index != NoIndex);
-
-      return Some(child1Index < child2Index ? -1 : 1);
-    }
-    NS_WARNING_ASSERTION(
-        !slot1 && !slot2,
-        fmt::format("aChild1 and aChild2 are not in same "
-                    "<slot>:\naChild1={}\nslot1={}\naChild2={}\nslot2={}\n",
-                    ToString(*aChild1).c_str(), ToString(RefPtr{slot1}).c_str(),
-                    ToString(*aChild2).c_str(), ToString(RefPtr{slot2}).c_str())
-            .c_str());
-    MOZ_ASSERT(!slot1);
-    MOZ_ASSERT(!slot2);
-    if (MOZ_UNLIKELY(slot1 || slot2)) {
+      NS_WARNING(
+          fmt::format(
+              "aChild1 and aChild2 are not in same "
+              "<slot>:\naChild1={}\nslot1={}\naChild2={}\nslot2={}\n",
+              ToString(*aChild1).c_str(), ToString(RefPtr{slot1}).c_str(),
+              ToString(*aChild2).c_str(), ToString(RefPtr{slot2}).c_str())
+              .c_str());
+      MOZ_ASSERT(!slot1);
+      MOZ_ASSERT(!slot2);
       return Nothing();
     }
   }
@@ -3868,32 +3909,78 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
     
     return Some(1);
   }
+#ifdef DEBUG
+  const auto NodeIsNullOrValidChild = [](const nsINode& aParent,
+                                         const nsIContent* aChild) {
+    if (!aChild || aParent.ComputeIndexOf<aKind>(aChild).isSome()) {
+      return true;
+    }
+    if constexpr (aKind == TreeKind::FlatForSelection) {
+      const Element* const excluderShadowHostOrSlotElement =
+          aChild->GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+              TreeKind::FlatForSelection>();
+      if (excluderShadowHostOrSlotElement &&
+          (excluderShadowHostOrSlotElement == &aParent ||
+           excluderShadowHostOrSlotElement->GetShadowRootForSelection() ==
+               &aParent)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const auto ChildrenHaveSameIndex = [](const nsIContent* aChild1,
+                                        const nsIContent* aChild2) {
+    if (aChild1 == aChild2) {
+      return true;
+    }
+    const bool child1IsAtEndOfParent =
+        !aChild1 ||
+        (aKind == TreeKind::FlatForSelection &&
+         aChild1->GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+             TreeKind::FlatForSelection>());
+    const bool child2IsAtEndOfParent =
+        !aChild2 ||
+        (aKind == TreeKind::FlatForSelection &&
+         aChild2->GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+             TreeKind::FlatForSelection>());
+    return child1IsAtEndOfParent && child2IsAtEndOfParent;
+  };
+  const auto ChildIndexIsLessThanTheOtherChildIndex =
+      [](const nsINode& aParent, const nsIContent* aChild1,
+         const nsIContent* aChild2) {
+        const uint32_t child1Index =
+            aChild1 ? aParent.ComputeIndexOf<aKind>(aChild1).valueOr(
+                          aParent.GetChildCount<aKind>())
+                    : aParent.GetChildCount<aKind>();
+        const uint32_t child2Index =
+            aChild2 ? aParent.ComputeIndexOf<aKind>(aChild2).valueOr(
+                          aParent.GetChildCount<aKind>())
+                    : aParent.GetChildCount<aKind>();
+        return child1Index < child2Index;
+      };
   NS_WARNING_ASSERTION(
-      !aChild1 || aParent.ComputeIndexOf<aKind>(aChild1).isSome(),
-      fmt::format("aKind={}: Failed to get index of:\n{}\nin:\n{}", aKind,
-                  ToString(*aChild1), ToString(aParent))
+      NodeIsNullOrValidChild(aParent, aChild1),
+      fmt::format("aKind={}: aChild1 is not a child of aParent:\n{}\nin:\n{}",
+                  aKind, ToString(*aChild1), ToString(aParent))
           .c_str());
   NS_WARNING_ASSERTION(
-      !aChild2 || aParent.ComputeIndexOf<aKind>(aChild2).isSome(),
-      fmt::format("aKind={}: Failed to get index of:\n{}\nin:\n{}", aKind,
-                  ToString(*aChild2), ToString(aParent))
+      NodeIsNullOrValidChild(aParent, aChild2),
+      fmt::format("aKind={}:aChild2 is not a child of aParent:\n{}\nin:\n{}",
+                  aKind, ToString(*aChild2), ToString(aParent))
           .c_str());
   MOZ_ASSERT_IF(!*comp, aChild1 == aChild2);
   const DebugOnly<bool> eitherIsNAC =
       (aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
       (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree());
+  MOZ_ASSERT_IF(!eitherIsNAC && !*comp,
+                ChildrenHaveSameIndex(aChild1, aChild2));
   MOZ_ASSERT_IF(
-      !eitherIsNAC && *comp < 0 && !AreNodesInSameSlot<aKind>(aChild1, aChild2),
-      (aChild1 ? *aParent.ComputeIndexOf<aKind>(aChild1)
-               : aParent.GetChildCount<aKind>()) <
-          (aChild2 ? *aParent.ComputeIndexOf<aKind>(aChild2)
-                   : aParent.GetChildCount<aKind>()));
+      !eitherIsNAC && *comp < 0,
+      ChildIndexIsLessThanTheOtherChildIndex(aParent, aChild1, aChild2));
   MOZ_ASSERT_IF(
-      !eitherIsNAC && *comp > 0 && !AreNodesInSameSlot<aKind>(aChild1, aChild2),
-      (aChild2 ? *aParent.ComputeIndexOf<aKind>(aChild2)
-               : aParent.GetChildCount<aKind>()) <
-          (aChild1 ? *aParent.ComputeIndexOf<aKind>(aChild1)
-                   : aParent.GetChildCount<aKind>()));
+      !eitherIsNAC && *comp > 0,
+      ChildIndexIsLessThanTheOtherChildIndex(aParent, aChild2, aChild1));
+#endif  
   return comp;
 }
 
@@ -3924,8 +4011,32 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
   MOZ_ASSERT(GetParentNodeForComparison<aKind>::Get(&aChild2) == &aParent);
 
   const uint32_t parentNodeChildCount = aParent.GetChildCount<aKind>();
-  if (aOffset1 >= parentNodeChildCount) {
+  if (NS_WARN_IF(aOffset1 > parentNodeChildCount)) {
+    
+    
+    
     return Some(1);
+  }
+
+  if constexpr (aKind == TreeKind::FlatForSelection) {
+    
+    
+    
+    
+    
+    if (aParent.GetAsHTMLSlotElementIfFilledForSelection() &&
+        aChild2.GetParentNode() == &aParent) {
+      
+      
+      
+      
+      
+      return aOffset1 == parentNodeChildCount ? Some(0) : Some(-1);
+    }
+  }
+
+  if (aOffset1 == parentNodeChildCount) {
+    return Some(1);  
   }
 
   MOZ_ASSERT(aParent.GetFirstChild<aKind>());
@@ -4115,7 +4226,7 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
                                           aOffset2, aIndexCache);
   if (NS_WARN_IF(comp.isNothing())) {
     NS_ASSERTION(comp.isSome(),
-                 "nsContentUtils::CompareChildOffsetAndChildNode() must return "
+                 "nsContentUtils::CompareChildNodeAndChildOffset() must return "
                  "Some here. It should've already checked before we call it.");
     
     return Some(-1);
@@ -4298,11 +4409,10 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
         TreeKindToCompareChildren<TreeKindToCompareChildren<aKind>()>()>(
         *closestCommonAncestor, aBoundary1.GetChildAtOffset(),
         closestCommonAncestorChild2, aIndexCache);
+    NS_ASSERTION(comp.isSome(),
+                 "nsContentUtils::CompareChildNodes() must return Some here. "
+                 "It should've already checked before we call it.");
     if (NS_WARN_IF(comp.isNothing())) {
-      NS_ASSERTION(
-          comp.isSome(),
-          "nsContentUtils::CompareChildOffsetAndChildNode() must return Some "
-          "here. It should've already checked before we call it.");
       
       return Some(1);
     }
@@ -4310,10 +4420,12 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
     
     
     if (!*comp) {
-      MOZ_ASSERT(*closestCommonAncestor
-                      ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                          closestCommonAncestorChild2) ==
-                 *aBoundary1.Offset(kValidOrInvalidOffsets1));
+      MOZ_ASSERT_IF(
+          aKind != TreeKind::FlatForSelection,
+          *closestCommonAncestor
+                  ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                      closestCommonAncestorChild2) ==
+              *aBoundary1.Offset(kValidOrInvalidOffsets1));
       return Some(-1);
     }
     
@@ -4322,16 +4434,18 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
     
     const DebugOnly<bool> child2IsNAC =
         closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree();
-    MOZ_ASSERT_IF(!child2IsNAC && *comp < 0,
-                  *aBoundary1.Offset(kValidOrInvalidOffsets1) <
-                      *closestCommonAncestor
-                           ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                               closestCommonAncestorChild2));
-    MOZ_ASSERT_IF(!child2IsNAC && *comp > 0,
-                  *closestCommonAncestor
-                          ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                              closestCommonAncestorChild2) <
-                      *aBoundary1.Offset(kValidOrInvalidOffsets1));
+    MOZ_ASSERT_IF(
+        !child2IsNAC && *comp < 0 && aKind != TreeKind::FlatForSelection,
+        *aBoundary1.Offset(kValidOrInvalidOffsets1) <
+            *closestCommonAncestor
+                 ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                     closestCommonAncestorChild2));
+    MOZ_ASSERT_IF(
+        !child2IsNAC && *comp > 0 && aKind != TreeKind::FlatForSelection,
+        *closestCommonAncestor
+                ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                    closestCommonAncestorChild2) <
+            *aBoundary1.Offset(kValidOrInvalidOffsets1));
     return comp;
   }
 
@@ -4362,10 +4476,10 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
       nsContentUtils::CompareChildNodes<TreeKindToCompareChildren<aKind>()>(
           *closestCommonAncestor, closestCommonAncestorChild1,
           aBoundary2.GetChildAtOffset(), aIndexCache);
+  NS_ASSERTION(comp.isSome(),
+               "nsContentUtils::CompareChildNodes() must return Some here. "
+               "It should've already checked before we call it.");
   if (NS_WARN_IF(comp.isNothing())) {
-    NS_ASSERTION(comp.isSome(),
-                 "nsContentUtils::CompareChildOffsetAndChildNode() must return "
-                 "Some here. It should've already checked before we call it.");
     
     return Some(-1);
   }
@@ -4373,10 +4487,11 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   
   
   if (!*comp) {
-    MOZ_ASSERT(*closestCommonAncestor
-                    ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                        closestCommonAncestorChild1) ==
-               *aBoundary2.Offset(kValidOrInvalidOffsets2));
+    MOZ_ASSERT_IF(aKind != TreeKind::FlatForSelection,
+                  *closestCommonAncestor
+                          ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                              closestCommonAncestorChild1) ==
+                      *aBoundary2.Offset(kValidOrInvalidOffsets2));
     return Some(1);
   }
   
@@ -4384,16 +4499,18 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   
   const DebugOnly<bool> child1IsNAC =
       closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree();
-  MOZ_ASSERT_IF(!child1IsNAC && *comp < 0,
-                *closestCommonAncestor
-                        ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                            closestCommonAncestorChild1) <
-                    *aBoundary2.Offset(kValidOrInvalidOffsets2));
-  MOZ_ASSERT_IF(!child1IsNAC && *comp > 0,
-                *aBoundary2.Offset(kValidOrInvalidOffsets2) <
-                    *closestCommonAncestor
-                         ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
-                             closestCommonAncestorChild1));
+  MOZ_ASSERT_IF(
+      !child1IsNAC && *comp < 0 && aKind != TreeKind::FlatForSelection,
+      *closestCommonAncestor
+              ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                  closestCommonAncestorChild1) <
+          *aBoundary2.Offset(kValidOrInvalidOffsets2));
+  MOZ_ASSERT_IF(
+      !child1IsNAC && *comp > 0 && aKind != TreeKind::FlatForSelection,
+      *aBoundary2.Offset(kValidOrInvalidOffsets2) <
+          *closestCommonAncestor
+               ->ComputeIndexOf<TreeKindToCompareChildren<aKind>()>(
+                   closestCommonAncestorChild1));
   return comp;
 }
 

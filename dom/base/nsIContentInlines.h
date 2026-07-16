@@ -74,6 +74,30 @@ inline void nsIContent::SetPrimaryFrame(nsIFrame* aFrame) {
   mPrimaryFrame = aFrame;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <nsINode::FlattenedParentType aType>
 static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
   if (!aNode->IsContent()) {
@@ -121,28 +145,24 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
     
     
     
-    
-    
-    
     return parent;
   }
 
   if (parentAsContent->IsInShadowTree()) {
-    
-    
-    
     if (auto* slot = mozilla::dom::HTMLSlotElement::FromNode(parentAsContent)) {
       if constexpr (aType == nsINode::eForSelection) {
-        const mozilla::dom::ShadowRoot* const shadowRoot =
-            slot->GetContainingShadow();
-        if (!shadowRoot || shadowRoot->IsUAShadowRootSlow()) {
-          
-          
-          
-          slot = nullptr;
-        }
-      }
-      if (slot) {
+        
+        
+        
+        
+        
+        
+        
+        return slot;
+      } else {
+        
+        
+        
         return slot->AssignedNodes().IsEmpty() ? slot : nullptr;
       }
     }

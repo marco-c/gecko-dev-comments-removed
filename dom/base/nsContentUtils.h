@@ -3730,6 +3730,23 @@ class nsContentUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   template <TreeKind aKind,
             typename = std::enable_if_t<aKind != TreeKind::ShadowIncludingDOM>>
   static mozilla::Maybe<int32_t> CompareChildNodes(
@@ -3737,6 +3754,20 @@ class nsContentUtils {
       const nsIContent* aChild2, NodeIndexCache* aIndexCache = nullptr);
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
