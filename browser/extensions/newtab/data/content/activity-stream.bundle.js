@@ -9149,7 +9149,9 @@ class _TopSiteList extends (external_React_default()).PureComponent {
         iconType: this.props.topSiteIconType(topSites[i])
       });
       const slotProps = {
-        key: link?.url || `hole-${holeIndex++}`,
+        
+        
+        key: link?.isAddButton ? "add-button" : link?.url || `hole-${holeIndex++}`,
         index: i
       };
       
@@ -9884,6 +9886,18 @@ function useZeroPinDrop({
 
   
   
+  
+  const prevBaseRef = (0,external_React_namespaceObject.useRef)(baseSites);
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    if (droppedRef.current && prevBaseRef.current !== baseSites) {
+      droppedRef.current = false;
+      resetDrag();
+    }
+    prevBaseRef.current = baseSites;
+  }, [baseSites, resetDrag]);
+
+  
+  
   const sites = draggedSite ? baseSites.map(site => site && site.url === draggedSite.url ? {
     ...site,
     isCollapsed: true
@@ -9974,17 +9988,22 @@ function useBaseSites(props) {
 }
 
 
-function ReorderTopSiteListContainer(props) {
+
+
+
+
+
+
+
+
+function GroupedTopSiteListContainer(props) {
   const baseSites = useBaseSites(props);
   const {
     onDragStart,
     onReorder
   } = useGroupedInsert();
-  const {
-    previewSites,
-    onDragEvent,
-    draggedSite
-  } = useTopSitesDnD({
+  const hasPins = props.TopSites.rows.some(site => site?.isPinned);
+  const reorder = useTopSitesDnD({
     baseSites,
     rows: props.TopSites.rows,
     isMovable: GroupedTopSiteListContainer_isMovable,
@@ -9993,50 +10012,32 @@ function ReorderTopSiteListContainer(props) {
     onReorder,
     pinInPlace: true
   });
-  return external_React_default().createElement(TopSiteList, GroupedTopSiteListContainer_extends({}, props, {
-    sites: previewSites || baseSites,
-    onDragEvent: onDragEvent,
-    draggedSite: draggedSite,
-    groupedPinsEnabled: true
-  }));
-}
-
-
-function ZeroPinTopSiteListContainer(props) {
-  const baseSites = useBaseSites(props);
-  const {
-    onDragStart,
-    onReorder
-  } = useGroupedInsert();
-  const {
-    sites,
-    onDragEvent,
-    draggedSite,
-    listProps,
-    decorations
-  } = useZeroPinDrop({
+  const zeroPin = useZeroPinDrop({
     baseSites,
     isSponsored: isSponsored,
     onDragStart,
     onReorder
   });
+
+  
+  
+  let active;
+  if (reorder.draggedSite) {
+    active = reorder;
+  } else if (zeroPin.draggedSite) {
+    active = zeroPin;
+  } else {
+    active = hasPins ? reorder : zeroPin;
+  }
+  const isZeroPin = active === zeroPin;
   return external_React_default().createElement(TopSiteList, GroupedTopSiteListContainer_extends({}, props, {
-    sites: sites,
-    onDragEvent: onDragEvent,
-    draggedSite: draggedSite,
+    sites: isZeroPin ? zeroPin.sites : reorder.previewSites || baseSites,
+    onDragEvent: active.onDragEvent,
+    draggedSite: active.draggedSite,
     groupedPinsEnabled: true,
-    listProps: listProps,
-    decorations: decorations
+    listProps: isZeroPin ? zeroPin.listProps : undefined,
+    decorations: isZeroPin ? zeroPin.decorations : undefined
   }));
-}
-
-
-
-
-
-function GroupedTopSiteListContainer(props) {
-  const hasPins = props.TopSites.rows.some(site => site?.isPinned);
-  return hasPins ? external_React_default().createElement(ReorderTopSiteListContainer, props) : external_React_default().createElement(ZeroPinTopSiteListContainer, props);
 }
 ;
 function TopSites_extends() { return TopSites_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSites_extends.apply(null, arguments); }
