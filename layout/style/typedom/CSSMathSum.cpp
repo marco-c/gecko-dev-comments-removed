@@ -80,7 +80,7 @@ already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
 
   
 
-  nsTArray<const StyleNumericType*> numericTypes;
+  AutoTArray<const StyleNumericType*, 8> numericTypes;
   numericTypes.SetCapacity(values.Length());
 
   for (const auto& value : values) {

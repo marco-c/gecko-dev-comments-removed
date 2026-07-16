@@ -65,6 +65,18 @@ already_AddRefed<CSSMathClamp> CSSMathClamp::Constructor(
 
   
 
+  AutoTArray<const StyleNumericType*, 3> numericTypes;
+
+  numericTypes.AppendElement(&lower->GetNumericType());
+  numericTypes.AppendElement(&value->GetNumericType());
+  numericTypes.AppendElement(&upper->GetNumericType());
+
+  StyleNumericType numericType;
+  if (!Servo_NumericType_AddTypes(&numericTypes, &numericType)) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
+
   
 
   return MakeAndAddRef<CSSMathClamp>(std::move(global), std::move(lower),
