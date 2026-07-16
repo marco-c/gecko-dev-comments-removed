@@ -2,6 +2,7 @@
 
 
 
+pub mod coverage;
 pub mod env;
 mod fetcher;
 pub mod load;
