@@ -186,6 +186,10 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
       const JsepVideoCodecDescription& aCodec,
       RTCRtpCodecParameters* aDomCodecParameters);
 
+  static void ToDomHeaderExtensions(
+      const JsepTrackNegotiatedDetails& aDetails,
+      Sequence<RTCRtpHeaderExtensionParameters>& aExtensions);
+
   
 
   void ChainToDomPromiseWithCodecStats(nsTArray<RefPtr<RTCStatsPromise>> aStats,
