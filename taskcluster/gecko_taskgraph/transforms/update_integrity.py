@@ -151,6 +151,7 @@ def add_additional_fetches_and_command(config, jobs):
         
         locale = job["attributes"].get("locale", "en-US")
         build_target = job["attributes"]["build_target"]
+        product = job.pop("product")
 
         cmd = [
             
@@ -174,7 +175,7 @@ def add_additional_fetches_and_command(config, jobs):
             
             job["attributes"]["update-channel"],
             
-            job["attributes"]["shipping_product"],
+            product,
             
             "/builds/worker/artifacts",
         ]
