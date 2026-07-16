@@ -7,11 +7,8 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/HTMLEditor.h"
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
-#include "mozilla/InputEventOptions.h"
-#include "mozilla/MiscEvents.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/CharacterBoundsUpdateEvent.h"
@@ -265,9 +262,8 @@ void EditContext::UpdateSelectionBounds(DOMRect& aSelectionBounds) {
   mSelectionBounds = ToRect(aSelectionBounds);
 }
 
-void EditContext::UpdateTextAndFireEvent(
-    uint32_t aStart, uint32_t aEnd, const nsAString& aString,
-    PreventSetSelection aPreventSetSelection) {
+void EditContext::UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
+                                         const nsAString& aString) {
   aStart = std::min(aStart, TextLength());
   aEnd = std::min(aEnd, TextLength());
   if (aStart == aEnd && aString.IsEmpty()) {
@@ -282,19 +278,7 @@ void EditContext::UpdateTextAndFireEvent(
   if (rv.Failed()) {
     return;
   }
-  if (aPreventSetSelection == PreventSetSelection::Yes) {
-    
-    
-    for (uint32_t* offset : {&mSelectionStart, &mSelectionEnd}) {
-      if (*offset >= aStart && *offset < aEnd) {
-        *offset = aStart;
-      } else if (*offset >= aEnd) {
-        *offset += aString.Length() - (aEnd - aStart);
-      }
-    }
-  } else {
-    mSelectionStart = mSelectionEnd = aStart + aString.Length();
-  }
+  mSelectionStart = mSelectionEnd = aStart + aString.Length();
   TextUpdateEventInit options;
   options.mText = aString;
   options.mSelectionStart = mSelectionStart;
@@ -328,53 +312,6 @@ void EditContext::EndComposition(const WidgetCompositionEvent& aEvent) {
   RefPtr presContext = mText->OwnerDoc()->GetPresContext();
   EventDispatcher::Dispatch(this, presContext, &event);
   mIsComposing = false;
-}
-
-void EditContext::DoContentCommandReplaceText(
-    WidgetContentCommandEvent& aEvent) {
-  MOZ_ASSERT(aEvent.mMessage == eContentCommandReplaceText);
-  MOZ_ASSERT(aEvent.mString);
-  if (!aEvent.mString) {
-    aEvent.mSucceeded = false;
-    return;
-  }
-  MOZ_ASSERT(IsActive(), "Should be the active EditContext.");
-  nsAutoString text;
-  const uint32_t replaceOffset = aEvent.mSelection.mOffset;
-  const uint32_t replaceLength = aEvent.mSelection.mReplaceSrcString.Length();
-  mText->SubstringData(replaceOffset, replaceLength, text, IgnoreErrors());
-  if (text != aEvent.mSelection.mReplaceSrcString) {
-    
-    aEvent.mSucceeded = false;
-    return;
-  }
-  
-  
-  
-  InputEventOptions options(*aEvent.mString,
-                            InputEventOptions::NeverCancelable::No);
-  nsEventStatus status = nsEventStatus_eIgnore;
-  RefPtr<nsGenericHTMLElement> associatedElement = GetAssociatedElement();
-  MOZ_ASSERT(associatedElement);
-  
-  
-  
-  
-  nsresult rv = nsContentUtils::DispatchInputEvent(
-      associatedElement, eEditorBeforeInput, EditorInputType::eInsertText,
-      associatedElement->OwnerDoc()->GetHTMLEditor(), std::move(options),
-      &status);
-  if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault ||
-      !IsActive()) {
-    aEvent.mSucceeded = false;
-    return;
-  }
-  
-  UpdateTextAndFireEvent(
-      replaceOffset, replaceOffset + replaceLength, *aEvent.mString,
-      aEvent.mSelection.mPreventSetSelection ? PreventSetSelection::Yes
-                                             : PreventSetSelection::No);
-  aEvent.mSucceeded = true;
 }
 
 static UnderlineStyle ToDOMStyle(LineStyle aStyle) {
