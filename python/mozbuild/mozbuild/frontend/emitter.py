@@ -1571,9 +1571,13 @@ class TreeMetadataEmitter(LoggingMixin):
                         
                         
                         
+                        source_basename = mozpath.basename(f.full_path)
                         
                         
-                        if f.target_basename not in generated_files and "/" not in f:
+                        
+                        
+                        
+                        if source_basename not in generated_files and "/" not in f:
                             raise SandboxValidationError(
                                 (
                                     "Objdir file listed in %s not in "
@@ -1586,7 +1590,7 @@ class TreeMetadataEmitter(LoggingMixin):
                         if var.startswith("LOCALIZED_"):
                             
                             
-                            if f.target_basename not in localized_generated_files:
+                            if source_basename not in localized_generated_files:
                                 raise SandboxValidationError(
                                     (
                                         "Objdir file listed in %s not in "
@@ -1597,7 +1601,7 @@ class TreeMetadataEmitter(LoggingMixin):
                                 )
                         
                         
-                        elif f.target_basename in localized_generated_files:
+                        elif source_basename in localized_generated_files:
                             raise SandboxValidationError(
                                 (
                                     "Outputs of LOCALIZED_GENERATED_FILES cannot "

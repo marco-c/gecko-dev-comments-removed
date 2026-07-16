@@ -663,6 +663,22 @@ class TestRecursiveMakeBackend(BackendTester):
         self.maxDiff = None
         self.assertEqual(lines, expected)
 
+    def test_objdir_files_rename(self):
+        """Ensure OBJDIR_FILES entries install with a copy rule that
+        preserves mode, renaming when a (source, target_basename) tuple
+        is given."""
+        env = self._consume("objdir-files-rename", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "backend.mk")
+        backend = open(backend_path).read()
+        
+        self.assertIn("misc:: $(topobjdir)/_tests/foo/renamed\n", backend)
+        self.assertIn("$(call py_action,install_objdir_file renamed,", backend)
+        self.assertIn(" $(topobjdir)/_tests/foo/renamed)\n", backend)
+        
+        self.assertIn("misc:: $(topobjdir)/_tests/foo/baz\n", backend)
+        self.assertIn("$(call py_action,install_objdir_file baz,", backend)
+
     def test_resources(self):
         """Ensure RESOURCE_FILES is handled properly."""
         env = self._consume("resources", RecursiveMakeBackend)
