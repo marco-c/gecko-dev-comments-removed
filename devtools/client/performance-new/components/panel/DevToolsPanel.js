@@ -27,7 +27,6 @@
 
 
 
-
 "use strict";
 
 const {
@@ -70,7 +69,6 @@ class DevToolsPanel extends PureComponent {
   render() {
     const {
       isSupportedPlatform,
-      pageContext,
       perfFront,
       onProfileReceived,
       onEditSettingsLinkClicked,
@@ -84,12 +82,7 @@ class DevToolsPanel extends PureComponent {
     return [
       OnboardingMessage(),
       div(
-        {
-          className:
-            pageContext === "devtools-remote"
-              ? `perf perf-devtools perf-devtools-remote`
-              : `perf perf-devtools`,
-        },
+        { className: `perf perf-devtools` },
         RecordingButton({ perfFront, onProfileReceived }),
         panelWindow.gToolbox
           ? ToolboxHighlightController({ toolbox: panelWindow.gToolbox })
@@ -109,7 +102,6 @@ class DevToolsPanel extends PureComponent {
 function mapStateToProps(state) {
   return {
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
-    pageContext: selectors.getPageContext(state),
   };
 }
 
