@@ -2,11 +2,10 @@
 
 
 
+#include "gtest/gtest.h"
 #include <stdint.h>
-
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "psshparser/PsshParser.h"
 
 using namespace std;
@@ -47,10 +46,7 @@ const uint8_t gW3SpecExampleCencInitData[] = {
 
 
 const uint8_t gOverflowBoxSize[] = {
-    0xff,
-    0xff,
-    0xff,
-    0xff,  
+    0xff, 0xff, 0xff, 0xff,  
 };
 
 
