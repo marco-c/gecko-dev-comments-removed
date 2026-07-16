@@ -81,6 +81,9 @@
 - (NSArray* _Nullable)moxUnignoredChildren;
 
 
+- (NSArray* _Nullable)moxChildrenInNavigationOrder;
+
+
 - (id _Nullable)moxUnignoredParent;
 
 
@@ -154,6 +157,9 @@
 
 
 - (NSArray* _Nullable)moxARIAControls;
+
+
+- (NSArray* _Nullable)moxDetailsElements;
 
 
 - (NSString* _Nullable)moxDOMIdentifier;

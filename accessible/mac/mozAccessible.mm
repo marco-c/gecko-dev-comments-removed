@@ -26,6 +26,7 @@
 #include "RootAccessible.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/Document.h"
 #include "OuterDocAccessible.h"
 #include "nsIAccessibleAnnouncementEvent.h"
 #include "nsChildView.h"
@@ -876,6 +877,10 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (NSArray*)moxLinkedUIElements {
   return [self getRelationsByType:RelationType::FLOWS_TO];
+}
+
+- (NSArray*)moxDetailsElements {
+  return [self getRelationsByType:RelationType::DETAILS];
 }
 
 - (NSArray*)moxARIAControls {
