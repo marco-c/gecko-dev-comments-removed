@@ -1,8 +1,6 @@
 
 
 
-
-
 #include "LargestContentfulPaint.h"
 
 #include "GeckoProfiler.h"
