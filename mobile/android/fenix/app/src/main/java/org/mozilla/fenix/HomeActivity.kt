@@ -158,6 +158,7 @@ import org.mozilla.fenix.home.topsites.DefaultTopSitesBinding
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessageNotificationWorker
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.onboarding.ensureMarketingChannelExists
 import org.mozilla.fenix.pbmlock.DefaultPrivateBrowsingLockStorage
 import org.mozilla.fenix.pbmlock.PrivateBrowsingLockFeature
 import org.mozilla.fenix.perf.DefaultStartupPathProvider
@@ -670,10 +671,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             onBackPressedCallback = onBackPressedCallback,
         )
 
+        lifecycleScope.launch(IO) {
+            uninstallSurveyManager.updateUninstallSurveyShortcut()
+        }
+
         if (components.settings.uninstallSurveyFeatureFlagEnabled) {
-            lifecycleScope.launch(IO) {
-                uninstallSurveyManager.updateUninstallSurveyShortcut()
-            }
             uninstallSurveyManager.showUninstallSurvey(intent.action, navHost.navController)
         }
 
@@ -776,6 +778,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         }
 
         lifecycleScope.launch(IO) {
+            // Register the [MARKETING_CHANNEL_ID] channel so that it appears in the Android Settings App.
+            ensureMarketingChannelExists(applicationContext)
             if (NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
                 MessageNotificationWorker.setMessageNotificationWorker(applicationContext)
             } else {
