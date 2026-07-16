@@ -1054,6 +1054,13 @@ class Component : public JS::WasmComponent {
     return total;
   }
 
+  
+  
+
+  [[nodiscard]] bool instantiate(
+      JSContext* cx, HandleObject instanceProto,
+      MutableHandle<WasmComponentInstanceObject*> instance) const;
+
  private:
   
   JSObject* createObject(JSContext* cx) const override;
@@ -1061,6 +1068,51 @@ class Component : public JS::WasmComponent {
 
 using MutableComponent = RefPtr<Component>;
 using SharedComponent = RefPtr<const Component>;
+
+class ComponentInstance {
+  
+  JS::Realm* realm_;
+
+  
+  JSContext* cx_;
+
+  
+  const SharedComponent component_;
+
+  using CoreInstanceVector =
+      GCVector<WasmInstanceObject*, 0, SystemAllocPolicy>;
+  
+  
+  
+  
+  CoreInstanceVector coreInstances_;
+
+  
+  friend class js::WasmComponentInstanceObject;
+  void tracePrivate(JSTracer* trc);
+
+ public:
+  ComponentInstance(JSContext* cx, Handle<WasmComponentInstanceObject*> object,
+                    const SharedComponent component);
+  ~ComponentInstance();
+
+  static ComponentInstance* create(JSContext* cx,
+                                   Handle<WasmComponentInstanceObject*> object,
+                                   const SharedComponent component);
+  static void destroy(ComponentInstance* instance);
+
+  [[nodiscard]] bool init(JSContext* cx);
+
+  
+  
+  
+  WasmInstanceObject* coreInstance(uint32_t index) const {
+    if (coreInstances_.length() <= index) {
+      return nullptr;
+    }
+    return coreInstances_[index];
+  }
+};
 
 UniqueChars ToString(ComponentItem item);
 UniqueChars ToString(ComponentSortIndex sortIndex);
