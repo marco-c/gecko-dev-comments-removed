@@ -10,7 +10,6 @@ pub mod cutout;
 pub mod yuv;
 pub mod backdrop;
 pub mod filter;
-pub mod mix_blend;
 
 use api::units::*;
 use api::ColorF;
@@ -52,12 +51,9 @@ pub enum PatternKind {
     
     Blend = 13,
     
-    
-    MixBlend = 14,
-    
 }
 
-pub const NUM_PATTERNS: u32 = 15;
+pub const NUM_PATTERNS: u32 = 14;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
@@ -75,13 +71,8 @@ impl PatternKind {
             | PatternKind::YuvTextureExternalBT709
             | PatternKind::YuvTextureRect
             => 3,
-            PatternKind::MixBlend => 2,
             _ => 1,
         }
-    }
-
-    pub fn requires_backdrop_readback(&self) -> bool {
-        *self == PatternKind::MixBlend
     }
 }
 
@@ -222,8 +213,6 @@ impl Pattern {
 
 pub const TEXTURED_SHADER_MODE_COLOR: i32 = 0;
 pub const TEXTURED_SHADER_MODE_TEXTURE: i32 = 1;
-
-pub const TEXTURED_SHADER_MODE_TEXTURE_ALPHA: i32 = 2;
 
 
 
