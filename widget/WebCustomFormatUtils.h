@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#ifndef WIDGET_WEBCUSTOMFORMATUTILS_H
+#define WIDGET_WEBCUSTOMFORMATUTILS_H
+
+#include "nsTHashMap.h"
+#include "nsString.h"
+
+namespace mozilla::widget {
+
+using WebCustomFormatMap = nsTHashMap<nsCStringHashKey, nsCString>;
+
+void WebCustomFormatMapToJSON(const WebCustomFormatMap& aMap,
+                              nsACString& aResult);
+
+bool JSONToWebCustomFormatMap(const nsACString& aJSON,
+                              WebCustomFormatMap& aResult);
+
+}  
+
+#endif
