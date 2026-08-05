@@ -888,11 +888,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     
     
     
-    
-    
-    
-    
-    MOZ_ASSERT(mDoc->HasLoadState(DocAccessible::eTreeConstructed));
+    MOZ_ASSERT(ipcDoc);
     if (ipcDoc) {
       uint64_t id = aEvent->GetAccessible()->ID();
 

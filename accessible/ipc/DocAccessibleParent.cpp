@@ -16,12 +16,10 @@
 #include "mozilla/Components.h"  
 #include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/ContentParent.h"
 #include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 #include "nsIIOService.h"
@@ -1566,47 +1564,6 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvPrinting() {
   return IPC_OK();
 }
 #endif
-
-DocAccessibleParent::AllowConstruction
-DocAccessibleParent::ShouldAllowConstruction() const {
-  if (IsPrintDoc()) {
-#ifdef MOZ_ENABLE_SKIA_PDF
-    if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
-      return AllowConstruction::Disallow;
-    }
-    
-    
-    
-    
-    auto* bp = static_cast<dom::BrowserParent*>(Manager());
-    while (bp) {
-      if (!bp->Manager()->ManagedPRemotePrintJobParent().IsEmpty()) {
-        return AllowConstruction::Allow;
-      }
-      dom::BrowserBridgeParent* bridge = bp->GetBrowserBridgeParent();
-      if (!bridge) {
-        break;
-      }
-      bp = bridge->Manager();
-    }
-#endif  
-    return AllowConstruction::Disallow;
-  }
-  
-  
-  if (GetAccService()) {
-    return AllowConstruction::Allow;
-  }
-  
-  
-  
-  
-  
-  if (Manager()->Manager()->WasA11yEverActivated()) {
-    return AllowConstruction::AllowButIgnore;
-  }
-  return AllowConstruction::Disallow;
-}
 
 }  
 }  
