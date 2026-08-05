@@ -9,6 +9,8 @@
 #include <synchapi.h>
 #include "base/message_loop.h"
 #include "base/object_watcher.h"
+#include "nsExceptionHandler.h"
+#include "nsString.h"
 #include "prenv.h"
 
 
@@ -56,11 +58,18 @@ class ChildReaper : public mozilla::Runnable,
   virtual void WillDestroyCurrentMessageLoop() {
     MOZ_ASSERT(!force_);
     if (process_) {
-      
-      if (!PR_GetEnv("MOZ_TEST_CHILD_EXIT_HANG")) {
-        CrashProcessIfHanging();
+      {
+        
+        
+        CrashReporter::AutoRecordAnnotation autoShutdownHangCrash(
+            CrashReporter::Annotation::CrashSignatureOverrideForTesting,
+            kShutdownHangCrashSignature);
+        
+        if (!PR_GetEnv("MOZ_TEST_CHILD_EXIT_HANG")) {
+          CrashProcessIfHanging();
+        }
+        WaitForSingleObject(process_, INFINITE);
       }
-      WaitForSingleObject(process_, INFINITE);
       base::CloseProcessHandle(process_);
       process_ = 0;
 

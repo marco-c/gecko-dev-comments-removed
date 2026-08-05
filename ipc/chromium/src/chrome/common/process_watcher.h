@@ -7,9 +7,17 @@
 
 #include "base/basictypes.h"
 #include "base/process_util.h"
+#include "nsLiteralString.h"
 #ifdef XP_UNIX
 #  include "mozilla/UniquePtrExtensions.h"
 #endif
+
+
+
+
+
+inline constexpr nsLiteralCString kShutdownHangCrashSignature =
+    "child process hang at shutdown"_ns;
 
 class ProcessWatcher {
  public:
