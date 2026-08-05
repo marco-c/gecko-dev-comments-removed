@@ -38,313 +38,318 @@ function define_key_tests() {
 
   variants.forEach(function (algorithmName) {
     sharedKeyConfigs.forEach(function (config) {
-      
-      promise_test(async function (test) {
+      [true, false].forEach(function (extractable) {
         
-        var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
-          'encapsulateKey',
-          'decapsulateKey',
-        ]);
+        promise_test(async function (test) {
+          
+          var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
+            'encapsulateKey',
+            'decapsulateKey',
+          ]);
 
-        
-        var encapsulatedKey = await subtle.encapsulateKey(
-          { name: algorithmName },
-          keyPair.publicKey,
-          config.algorithm,
-          true,
-          config.usages
-        );
+          
+          var encapsulatedKey = await subtle.encapsulateKey(
+            { name: algorithmName },
+            keyPair.publicKey,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
 
-        assert_true(
-          encapsulatedKey instanceof Object,
-          'encapsulateKey should return an object'
-        );
-        assert_true(
-          encapsulatedKey.hasOwnProperty('sharedKey'),
-          'Result should have sharedKey property'
-        );
-        assert_true(
-          encapsulatedKey.hasOwnProperty('ciphertext'),
-          'Result should have ciphertext property'
-        );
-        assert_true(
-          encapsulatedKey.sharedKey instanceof CryptoKey,
-          'sharedKey should be a CryptoKey'
-        );
-        assert_true(
-          encapsulatedKey.ciphertext instanceof ArrayBuffer,
-          'ciphertext should be ArrayBuffer'
-        );
+          assert_true(
+            encapsulatedKey instanceof Object,
+            'encapsulateKey should return an object'
+          );
+          assert_true(
+            Object.hasOwn(encapsulatedKey, 'sharedKey'),
+            'Result should have sharedKey property'
+          );
+          assert_true(
+            Object.hasOwn(encapsulatedKey, 'ciphertext'),
+            'Result should have ciphertext property'
+          );
+          assert_true(
+            encapsulatedKey.sharedKey instanceof CryptoKey,
+            'sharedKey should be a CryptoKey'
+          );
+          assert_true(
+            encapsulatedKey.ciphertext instanceof ArrayBuffer,
+            'ciphertext should be ArrayBuffer'
+          );
 
-        
-        assert_equals(
-          encapsulatedKey.sharedKey.type,
-          'secret',
-          'Shared key should be secret type'
-        );
-        assert_equals(
-          encapsulatedKey.sharedKey.algorithm.name,
-          config.algorithm.name,
-          'Shared key algorithm should match'
-        );
-        assert_true(
-          encapsulatedKey.sharedKey.extractable,
-          'Shared key should be extractable as specified'
-        );
-        assert_array_equals(
-          encapsulatedKey.sharedKey.usages,
-          config.usages,
-          'Shared key should have correct usages'
-        );
-
-        
-        if (config.algorithm.length) {
+          
           assert_equals(
-            encapsulatedKey.sharedKey.algorithm.length,
-            config.algorithm.length,
-            'Key length should be 256'
+            encapsulatedKey.sharedKey.type,
+            'secret',
+            'Shared key should be secret type'
           );
-        }
-        if (config.algorithm.hash) {
           assert_equals(
-            encapsulatedKey.sharedKey.algorithm.hash.name,
-            config.algorithm.hash,
-            'Hash algorithm should match'
+            encapsulatedKey.sharedKey.algorithm.name,
+            config.algorithm.name,
+            'Shared key algorithm should match'
           );
-        }
-
-        
-        var expectedCiphertextLength;
-        switch (algorithmName) {
-          case 'ML-KEM-512':
-            expectedCiphertextLength = 768;
-            break;
-          case 'ML-KEM-768':
-            expectedCiphertextLength = 1088;
-            break;
-          case 'ML-KEM-1024':
-            expectedCiphertextLength = 1568;
-            break;
-        }
-        assert_equals(
-          encapsulatedKey.ciphertext.byteLength,
-          expectedCiphertextLength,
-          'Ciphertext should be ' +
-            expectedCiphertextLength +
-            ' bytes for ' +
-            algorithmName
-        );
-      }, algorithmName + ' encapsulateKey with ' + config.description);
-
-      
-      promise_test(async function (test) {
-        
-        var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
-          'encapsulateKey',
-          'decapsulateKey',
-        ]);
-
-        
-        var encapsulatedKey = await subtle.encapsulateKey(
-          { name: algorithmName },
-          keyPair.publicKey,
-          config.algorithm,
-          true,
-          config.usages
-        );
-
-        
-        var decapsulatedKey = await subtle.decapsulateKey(
-          { name: algorithmName },
-          keyPair.privateKey,
-          encapsulatedKey.ciphertext,
-          config.algorithm,
-          true,
-          config.usages
-        );
-
-        assert_true(
-          decapsulatedKey instanceof CryptoKey,
-          'decapsulateKey should return a CryptoKey'
-        );
-        assert_equals(
-          decapsulatedKey.type,
-          'secret',
-          'Decapsulated key should be secret type'
-        );
-        assert_equals(
-          decapsulatedKey.algorithm.name,
-          config.algorithm.name,
-          'Decapsulated key algorithm should match'
-        );
-        assert_true(
-          decapsulatedKey.extractable,
-          'Decapsulated key should be extractable as specified'
-        );
-        assert_array_equals(
-          decapsulatedKey.usages,
-          config.usages,
-          'Decapsulated key should have correct usages'
-        );
-
-        
-        var originalKeyMaterial = await subtle.exportKey(
-          'raw',
-          encapsulatedKey.sharedKey
-        );
-        var decapsulatedKeyMaterial = await subtle.exportKey(
-          'raw',
-          decapsulatedKey
-        );
-
-        assert_true(
-          equalBuffers(originalKeyMaterial, decapsulatedKeyMaterial),
-          'Decapsulated key material should match original'
-        );
-
-        
-        assert_equals(
-          originalKeyMaterial.byteLength,
-          32,
-          'Shared key material should be 32 bytes'
-        );
-      }, algorithmName + ' decapsulateKey with ' + config.description);
-
-      
-      promise_test(async function (test) {
-        var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
-          'encapsulateKey',
-          'decapsulateKey',
-        ]);
-
-        var encapsulatedKey = await subtle.encapsulateKey(
-          { name: algorithmName },
-          keyPair.publicKey,
-          config.algorithm,
-          true,
-          config.usages
-        );
-
-        var decapsulatedKey = await subtle.decapsulateKey(
-          { name: algorithmName },
-          keyPair.privateKey,
-          encapsulatedKey.ciphertext,
-          config.algorithm,
-          true,
-          config.usages
-        );
-
-        
-        var originalKeyMaterial = await subtle.exportKey(
-          'raw',
-          encapsulatedKey.sharedKey
-        );
-        var decapsulatedKeyMaterial = await subtle.exportKey(
-          'raw',
-          decapsulatedKey
-        );
-
-        assert_true(
-          equalBuffers(originalKeyMaterial, decapsulatedKeyMaterial),
-          'Encapsulated and decapsulated keys should have the same material'
-        );
-
-        
-        if (
-          config.algorithm.name.startsWith('AES') &&
-          config.usages.includes('encrypt')
-        ) {
-          await testAESOperation(
-            encapsulatedKey.sharedKey,
-            decapsulatedKey,
-            config.algorithm
-          );
-        } else if (config.algorithm.name === 'HMAC') {
-          await testHMACOperation(encapsulatedKey.sharedKey, decapsulatedKey);
-        }
-      }, algorithmName +
-        ' encapsulateKey/decapsulateKey round-trip with ' +
-        config.description);
-    });
-
-    
-    sharedKeyConfigs.forEach(function (config) {
-      promise_test(async function (test) {
-        var vectors = ml_kem_vectors[algorithmName];
-
-        
-        var privateKey = await subtle.importKey(
-          'raw-seed',
-          vectors.privateSeed,
-          { name: algorithmName },
-          false,
-          ['decapsulateKey']
-        );
-
-        
-        var decapsulatedKey = await subtle.decapsulateKey(
-          { name: algorithmName },
-          privateKey,
-          vectors.sampleCiphertext,
-          config.algorithm,
-          true,
-          config.usages
-        );
-
-        assert_true(
-          decapsulatedKey instanceof CryptoKey,
-          'decapsulateKey should return a CryptoKey'
-        );
-        assert_equals(
-          decapsulatedKey.type,
-          'secret',
-          'Decapsulated key should be secret type'
-        );
-        assert_equals(
-          decapsulatedKey.algorithm.name,
-          config.algorithm.name,
-          'Decapsulated key algorithm should match'
-        );
-        assert_true(
-          decapsulatedKey.extractable,
-          'Decapsulated key should be extractable as specified'
-        );
-        assert_array_equals(
-          decapsulatedKey.usages,
-          config.usages,
-          'Decapsulated key should have correct usages'
-        );
-
-        
-        var keyMaterial = await subtle.exportKey('raw', decapsulatedKey);
-        assert_equals(
-          keyMaterial.byteLength,
-          32,
-          'Shared key material should be 32 bytes'
-        );
-        assert_true(
-          equalBuffers(keyMaterial, vectors.expectedSharedSecret),
-          "Decapsulated key material should match vector's expectedSharedSecret"
-        );
-
-        
-        if (config.algorithm.length) {
           assert_equals(
-            decapsulatedKey.algorithm.length,
-            config.algorithm.length,
-            'Key length should be 256'
+            encapsulatedKey.sharedKey.extractable,
+            extractable,
+            'Shared key should have correct extractable property'
           );
-        }
-        if (config.algorithm.hash) {
+          assert_array_equals(
+            encapsulatedKey.sharedKey.usages,
+            config.usages,
+            'Shared key should have correct usages'
+          );
+
+          
+          if (config.algorithm.length) {
+            assert_equals(
+              encapsulatedKey.sharedKey.algorithm.length,
+              config.algorithm.length,
+              'Key length should be 256'
+            );
+          }
+          if (config.algorithm.hash) {
+            assert_equals(
+              encapsulatedKey.sharedKey.algorithm.hash.name,
+              config.algorithm.hash,
+              'Hash algorithm should match'
+            );
+          }
+
+          
+          var expectedCiphertextLength;
+          switch (algorithmName) {
+            case 'ML-KEM-512':
+              expectedCiphertextLength = 768;
+              break;
+            case 'ML-KEM-768':
+              expectedCiphertextLength = 1088;
+              break;
+            case 'ML-KEM-1024':
+              expectedCiphertextLength = 1568;
+              break;
+          }
           assert_equals(
-            decapsulatedKey.algorithm.hash.name,
-            config.algorithm.hash,
-            'Hash algorithm should match'
+            encapsulatedKey.ciphertext.byteLength,
+            expectedCiphertextLength,
+            'Ciphertext should be ' +
+              expectedCiphertextLength +
+              ' bytes for ' +
+              algorithmName
           );
-        }
-      }, algorithmName +
-        ' vector-based sampleCiphertext decapsulation with ' +
-        config.description);
+        }, `${algorithmName} encapsulateKey with ${config.description} (extractable=${extractable})`);
+
+        
+        promise_test(async function (test) {
+          
+          var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
+            'encapsulateKey',
+            'decapsulateKey',
+          ]);
+
+          
+          var encapsulatedKey = await subtle.encapsulateKey(
+            { name: algorithmName },
+            keyPair.publicKey,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
+
+          
+          var decapsulatedKey = await subtle.decapsulateKey(
+            { name: algorithmName },
+            keyPair.privateKey,
+            encapsulatedKey.ciphertext,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
+
+          assert_true(
+            decapsulatedKey instanceof CryptoKey,
+            'decapsulateKey should return a CryptoKey'
+          );
+          assert_equals(
+            decapsulatedKey.type,
+            'secret',
+            'Decapsulated key should be secret type'
+          );
+          assert_equals(
+            decapsulatedKey.algorithm.name,
+            config.algorithm.name,
+            'Decapsulated key algorithm should match'
+          );
+          assert_equals(
+            decapsulatedKey.extractable,
+            extractable,
+            'Decapsulated key should have correct extractable property'
+          );
+          assert_array_equals(
+            decapsulatedKey.usages,
+            config.usages,
+            'Decapsulated key should have correct usages'
+          );
+
+          if (extractable) {
+            
+            var originalKeyMaterial = await subtle.exportKey(
+              'raw',
+              encapsulatedKey.sharedKey
+            );
+            var decapsulatedKeyMaterial = await subtle.exportKey(
+              'raw',
+              decapsulatedKey
+            );
+
+            assert_true(
+              equalBuffers(originalKeyMaterial, decapsulatedKeyMaterial),
+              'Decapsulated key material should match original'
+            );
+
+            
+            assert_equals(
+              originalKeyMaterial.byteLength,
+              32,
+              'Shared key material should be 32 bytes'
+            );
+          }
+        }, `${algorithmName} decapsulateKey with ${config.description} (extractable=${extractable})`);
+
+        
+        promise_test(async function (test) {
+          var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
+            'encapsulateKey',
+            'decapsulateKey',
+          ]);
+
+          var encapsulatedKey = await subtle.encapsulateKey(
+            { name: algorithmName },
+            keyPair.publicKey,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
+
+          var decapsulatedKey = await subtle.decapsulateKey(
+            { name: algorithmName },
+            keyPair.privateKey,
+            encapsulatedKey.ciphertext,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
+
+          if (extractable) {
+            
+            var originalKeyMaterial = await subtle.exportKey(
+              'raw',
+              encapsulatedKey.sharedKey
+            );
+            var decapsulatedKeyMaterial = await subtle.exportKey(
+              'raw',
+              decapsulatedKey
+            );
+
+            assert_true(
+              equalBuffers(originalKeyMaterial, decapsulatedKeyMaterial),
+              'Encapsulated and decapsulated keys should have the same material'
+            );
+          }
+
+          
+          if (
+            config.algorithm.name.startsWith('AES') &&
+            config.usages.includes('encrypt')
+          ) {
+            await testAESOperation(
+              encapsulatedKey.sharedKey,
+              decapsulatedKey,
+              config.algorithm
+            );
+          } else if (config.algorithm.name === 'HMAC') {
+            await testHMACOperation(encapsulatedKey.sharedKey, decapsulatedKey);
+          }
+        }, `${algorithmName} encapsulateKey/decapsulateKey round-trip with ${config.description} (extractable=${extractable})`);
+
+        
+        promise_test(async function (test) {
+          var vectors = ml_kem_vectors[algorithmName];
+
+          
+          var privateKey = await subtle.importKey(
+            'raw-seed',
+            vectors.privateSeed,
+            { name: algorithmName },
+            false,
+            ['decapsulateKey']
+          );
+
+          
+          var decapsulatedKey = await subtle.decapsulateKey(
+            { name: algorithmName },
+            privateKey,
+            vectors.sampleCiphertext,
+            config.algorithm,
+            extractable,
+            config.usages
+          );
+
+          assert_true(
+            decapsulatedKey instanceof CryptoKey,
+            'decapsulateKey should return a CryptoKey'
+          );
+          assert_equals(
+            decapsulatedKey.type,
+            'secret',
+            'Decapsulated key should be secret type'
+          );
+          assert_equals(
+            decapsulatedKey.algorithm.name,
+            config.algorithm.name,
+            'Decapsulated key algorithm should match'
+          );
+          assert_equals(
+            decapsulatedKey.extractable,
+            extractable,
+            'Decapsulated key should have correct extractable property'
+          );
+          assert_array_equals(
+            decapsulatedKey.usages,
+            config.usages,
+            'Decapsulated key should have correct usages'
+          );
+
+          if (extractable) {
+            
+            var keyMaterial = await subtle.exportKey('raw', decapsulatedKey);
+            assert_equals(
+              keyMaterial.byteLength,
+              32,
+              'Shared key material should be 32 bytes'
+            );
+            assert_true(
+              equalBuffers(keyMaterial, vectors.expectedSharedSecret),
+              "Decapsulated key material should match vector's expectedSharedSecret"
+            );
+          }
+
+          
+          if (config.algorithm.length) {
+            assert_equals(
+              decapsulatedKey.algorithm.length,
+              config.algorithm.length,
+              'Key length should be 256'
+            );
+          }
+          if (config.algorithm.hash) {
+            assert_equals(
+              decapsulatedKey.algorithm.hash.name,
+              config.algorithm.hash,
+              'Hash algorithm should match'
+            );
+          }
+        }, `${algorithmName} vector-based sampleCiphertext decapsulation with ${config.description} (extractable=${extractable})`);
+      });
     });
   });
 }
@@ -428,21 +433,6 @@ async function testHMACOperation(key1, key2) {
 
   assert_true(verified1, 'HMAC verification should succeed with key1');
   assert_true(verified2, 'HMAC verification should succeed with key2');
-}
-
-
-function equalBuffers(a, b) {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-  var aBytes = new Uint8Array(a);
-  var bBytes = new Uint8Array(b);
-  for (var i = 0; i < a.byteLength; i++) {
-    if (aBytes[i] !== bBytes[i]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 define_key_tests();

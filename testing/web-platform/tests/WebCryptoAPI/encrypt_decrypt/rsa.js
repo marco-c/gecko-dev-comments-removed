@@ -23,7 +23,7 @@ function run_test() {
             promise_test(function(test) {
                 return subtle.decrypt(vector.algorithm, vector.privateKey, vector.ciphertext)
                 .then(function(plaintext) {
-                    assert_true(equalBuffers(plaintext, vector.plaintext, "Decryption works"));
+                    assert_true(equalBuffers(plaintext, vector.plaintext), "Decryption works");
                 }, function(err) {
                     assert_unreached("Decryption should not throw error " + vector.name + ": '" + err.message + "'");
                 });
@@ -60,7 +60,7 @@ function run_test() {
                     }
                 }, vector.privateKey, ciphertext)
                 .then(function(plaintext) {
-                    assert_true(equalBuffers(plaintext, vector.plaintext, "Decryption works"));
+                    assert_true(equalBuffers(plaintext, vector.plaintext), "Decryption works");
                 }, function(err) {
                     assert_unreached("Decryption should not throw error " + vector.name + ": '" + err.message + "'");
                 });
@@ -91,7 +91,7 @@ function run_test() {
                 var ciphertext = copyBuffer(vector.ciphertext);
                 var operation = subtle.decrypt(vector.algorithm, vector.privateKey, ciphertext)
                 .then(function(plaintext) {
-                    assert_true(equalBuffers(plaintext, vector.plaintext, "Decryption works"));
+                    assert_true(equalBuffers(plaintext, vector.plaintext), "Decryption works");
                 }, function(err) {
                     assert_unreached("Decryption should not throw error " + vector.name + ": '" + err.message + "'");
                 });
@@ -160,7 +160,7 @@ function run_test() {
                 var ciphertext = copyBuffer(vector.ciphertext);
                 var operation = subtle.decrypt(vector.algorithm, vector.privateKey, ciphertext)
                 .then(function(plaintext) {
-                    assert_true(equalBuffers(plaintext, vector.plaintext, "Decryption works"));
+                    assert_true(equalBuffers(plaintext, vector.plaintext), "Decryption works");
                 }, function(err) {
                     assert_unreached("Decryption should not throw error " + vector.name + ": '" + err.message + "'");
                 });
@@ -538,9 +538,7 @@ function run_test() {
     });
 
     promise_test(function() {
-        return Promise.all(all_promises)
-            .then(function() {done();})
-            .catch(function() {done();})
+        return Promise.all(all_promises).finally(done);
     }, "setup");
 
     
@@ -552,32 +550,17 @@ function run_test() {
         var publicPromise, privatePromise;
 
         if (vector.publicKey !== null) {
-            publicPromise = new Promise(function(resolve, reject) {
-                resolve(vector);
-            });
+            publicPromise = Promise.resolve(vector);
         } else {
             publicPromise = subtle.importKey(vector.publicKeyFormat, vector.publicKeyBuffer, {name: vector.algorithm.name, hash: vector.hash}, false, publicKeyUsages)
             .then(function(key) {
                 vector.publicKey = key;
                 return vector;
-            });        
-        function copyBuffer(sourceBuffer) {
-            var source = new Uint8Array(sourceBuffer);
-            var copy = new Uint8Array(sourceBuffer.byteLength)
-
-            for (var i=0; i<source.byteLength; i++) {
-                copy[i] = source[i];
-            }
-
-            return copy;
-        }
-
+            });
         }
 
         if (vector.privateKey !== null) {
-            privatePromise = new Promise(function(resolve, reject) {
-                resolve(vector);
-            });
+            privatePromise = Promise.resolve(vector);
         } else {
             privatePromise = subtle.importKey(vector.privateKeyFormat, vector.privateKeyBuffer, {name: vector.algorithm.name, hash: vector.hash}, false, privateKeyUsages)
             .then(function(key) {
@@ -587,35 +570,6 @@ function run_test() {
         }
 
         return Promise.all([publicPromise, privatePromise]);
-    }
-
-    
-    function copyBuffer(sourceBuffer) {
-        var source = new Uint8Array(sourceBuffer);
-        var copy = new Uint8Array(sourceBuffer.byteLength)
-
-        for (var i=0; i<source.byteLength; i++) {
-            copy[i] = source[i];
-        }
-
-        return copy;
-    }
-
-    function equalBuffers(a, b) {
-        if (a.byteLength !== b.byteLength) {
-            return false;
-        }
-
-        var aBytes = new Uint8Array(a);
-        var bBytes = new Uint8Array(b);
-
-        for (var i=0; i<a.byteLength; i++) {
-            if (aBytes[i] !== bBytes[i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     return;

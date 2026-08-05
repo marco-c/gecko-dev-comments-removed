@@ -458,9 +458,7 @@ function run_test() {
     });
 
     promise_test(function() {
-        return Promise.all(all_promises)
-            .then(function() {done();})
-            .catch(function() {done();})
+        return Promise.all(all_promises).finally(done);
     }, "setup");
 
     
@@ -470,9 +468,7 @@ function run_test() {
     
     function importVectorKey(vector, usages) {
         if (vector.key !== null) {
-            return new Promise(function(resolve, reject) {
-                resolve(vector);
-            });
+            return Promise.resolve(vector);
         } else {
             return subtle.importKey(vector.algorithm.name.toUpperCase() === "AES-OCB" ? "raw-secret" : "raw", vector.keyBuffer, {name: vector.algorithm.name}, false, usages)
             .then(function(key) {
@@ -480,35 +476,6 @@ function run_test() {
                 return vector;
             });
         }
-    }
-
-    
-    function copyBuffer(sourceBuffer) {
-        var source = new Uint8Array(sourceBuffer);
-        var copy = new Uint8Array(sourceBuffer.byteLength)
-
-        for (var i=0; i<source.byteLength; i++) {
-            copy[i] = source[i];
-        }
-
-        return copy;
-    }
-
-    function equalBuffers(a, b) {
-        if (a.byteLength !== b.byteLength) {
-            return false;
-        }
-
-        var aBytes = new Uint8Array(a);
-        var bBytes = new Uint8Array(b);
-
-        for (var i=0; i<a.byteLength; i++) {
-            if (aBytes[i] !== bBytes[i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     return;

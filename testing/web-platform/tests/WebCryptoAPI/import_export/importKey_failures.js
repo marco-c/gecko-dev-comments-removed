@@ -1,8 +1,6 @@
 function run_test(algorithmNames) {
     var subtle = crypto.subtle; 
 
-    setup({explicit_timeout: true});
-
 
 
 
@@ -83,12 +81,11 @@ function run_test(algorithmNames) {
     
     
     
-    
     function invalidUsages(validUsages, mandatoryUsages) {
         var results = [];
 
         var illegalUsages = [];
-        ["encrypt", "decrypt", "sign", "verify", "wrapKey", "unwrapKey", "deriveKey", "deriveBits"].forEach(function(usage) {
+        allKeyUsages.forEach(function(usage) {
             if (!validUsages.includes(usage)) {
                 illegalUsages.push(usage);
             }

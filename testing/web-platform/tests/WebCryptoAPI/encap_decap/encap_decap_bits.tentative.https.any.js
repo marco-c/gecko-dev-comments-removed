@@ -27,11 +27,11 @@ function define_bits_tests() {
         'encapsulateBits should return an object'
       );
       assert_true(
-        encapsulatedBits.hasOwnProperty('sharedKey'),
+        Object.hasOwn(encapsulatedBits, 'sharedKey'),
         'Result should have sharedKey property'
       );
       assert_true(
-        encapsulatedBits.hasOwnProperty('ciphertext'),
+        Object.hasOwn(encapsulatedBits, 'ciphertext'),
         'Result should have ciphertext property'
       );
       assert_true(
@@ -109,30 +109,6 @@ function define_bits_tests() {
         equalBuffers(decapsulatedBits, encapsulatedBits.sharedKey),
         'Decapsulated shared secret should match original'
       );
-    }, algorithmName + ' decapsulateBits basic functionality');
-
-    
-    promise_test(async function (test) {
-      var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
-        'encapsulateBits',
-        'decapsulateBits',
-      ]);
-
-      var encapsulatedBits = await subtle.encapsulateBits(
-        { name: algorithmName },
-        keyPair.publicKey
-      );
-
-      var decapsulatedBits = await subtle.decapsulateBits(
-        { name: algorithmName },
-        keyPair.privateKey,
-        encapsulatedBits.ciphertext
-      );
-
-      assert_true(
-        equalBuffers(encapsulatedBits.sharedKey, decapsulatedBits),
-        'Encapsulated and decapsulated shared secrets should match'
-      );
     }, algorithmName +
       ' encapsulateBits/decapsulateBits round-trip compatibility');
 
@@ -173,21 +149,6 @@ function define_bits_tests() {
       );
     }, algorithmName + ' vector-based sampleCiphertext decapsulation');
   });
-}
-
-
-function equalBuffers(a, b) {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-  var aBytes = new Uint8Array(a);
-  var bBytes = new Uint8Array(b);
-  for (var i = 0; i < a.byteLength; i++) {
-    if (aBytes[i] !== bBytes[i]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 define_bits_tests();
