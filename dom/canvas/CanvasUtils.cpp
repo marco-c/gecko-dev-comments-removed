@@ -26,6 +26,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/webgpu/Instance.h"
 #include "nsContentUtils.h"
 #include "nsGfxCIID.h"
 #include "nsICanvasRenderingContextInternal.h"
@@ -358,7 +359,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
     nsPIDOMWindowOuter* win = aDocument->GetWindow();
     if (RefPtr<dom::BrowserChild> browserChild =
             dom::BrowserChild::GetFrom(win)) {
-      browserChild->SendShowCanvasPermissionPrompt(origin,
+      browserChild->SendShowCanvasPermissionPrompt(std::move(origin),
                                                    hidePermissionDoorhanger);
     }
   };
@@ -584,7 +585,7 @@ bool GetCanvasContextType(const nsAString& str,
     }
   }
 
-  if (gfxVars::AllowWebGPU()) {
+  if (webgpu::Instance::PrefEnabled() && gfxVars::AllowWebGPU()) {
     if (str.EqualsLiteral("webgpu")) {
       *out_type = dom::CanvasContextType::WebGPU;
       return true;
