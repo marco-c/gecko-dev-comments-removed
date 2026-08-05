@@ -583,8 +583,10 @@ void ShadowRoot::AppendBuiltInStyleSheet(BuiltInStyleSheet aSheet) {
   
   
   
-  RefPtr sheet = cache->BuiltInSheet(aSheet)->Clone(nullptr, nullptr);
-  AppendStyleSheet(*sheet);
+  if (auto* builtin = cache->GetBuiltInSheet(aSheet)) [[likely]] {
+    RefPtr sheet = builtin->Clone(nullptr, nullptr);
+    AppendStyleSheet(*sheet);
+  }
 }
 
 void ShadowRoot::RemoveSheetFromStyles(StyleSheet& aSheet) {
