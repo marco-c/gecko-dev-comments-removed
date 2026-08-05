@@ -59,12 +59,14 @@ async function openSettingsPopup() {
 
   info("Waiting for notification...");
   let notification;
-  await TestUtils.waitForCondition(
-    () =>
-      (notification = gBrowser
-        .getNotificationBox()
-        .getNotificationWithValue("popup-blocked"))
-  );
+  await TestUtils.waitForCondition(() => {
+    const notificationBox = gBrowser.getNotificationBox();
+    notification = notificationBox.getNotificationWithValue("popup-blocked");
+    
+    
+    
+    return notification && notificationBox.currentNotification == notification;
+  });
 
   info("Clicking button...");
   const promise = BrowserTestUtils.waitForEvent(
@@ -173,10 +175,15 @@ async function checkToolbarManageSettings() {
   const blockedPopupOptions = document.getElementById("blockedPopupOptions");
   const manageSettingsItem = blockedPopupOptions.children[1];
 
-  const promise = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "about:preferences#privacy"
-  );
+  
+  
+  const expectedUrl = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled",
+    false
+  )
+    ? "about:preferences#permissionsData"
+    : "about:preferences#privacy";
+  const promise = BrowserTestUtils.waitForLocationChange(gBrowser, expectedUrl);
 
   info("Clicking manage settings item...");
   manageSettingsItem.click();
