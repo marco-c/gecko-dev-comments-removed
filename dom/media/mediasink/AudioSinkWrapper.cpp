@@ -100,6 +100,71 @@ bool AudioSinkWrapper::IsMuted() const {
   return mParams.mVolume == 0.0;
 }
 
+TimeUnit AudioSinkWrapper::PositionFromAudioSink(TimeStamp aNow) {
+  AssertOwnerThread();
+  MOZ_ASSERT(mAudioSink);
+  TimeUnit audioPos = mAudioSink->GetPosition();
+  TimeUnit systemPos =
+      mClockStartTime.IsNull() ? audioPos : GetSystemClockPosition(aNow);
+  LOGV("{}: PositionFromAudioSink (audioPos {} sysPos {})", fmt::ptr(this),
+       audioPos.ToSeconds(), systemPos.ToSeconds());
+
+  
+  
+  
+  
+  if (mClockPausedDuringSeek) {
+    LOGV("{}: Following the audio stream from the seek target {}",
+         fmt::ptr(this), audioPos.ToSeconds());
+    if (mAudioSink->AudioStreamCallbackStarted()) {
+      mClockPausedDuringSeek = false;
+      LOG("{}: Seek-resume clock caught up; audio stream now driving at {}",
+          fmt::ptr(this), audioPos.ToSeconds());
+    }
+    mLastClockSource = ClockSource::AudioStream;
+    return audioPos;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mLastClockSource == ClockSource::SystemClock &&
+      !mAudioSink->AudioStreamCallbackStarted()) {
+    mAudioSink->UpdateStartTime(systemPos);
+    DropAudioPacketsIfNeeded(systemPos);
+    LOGV(
+        "{}: Getting position from the system clock, due to the audio stream "
+        "not having started yet {}",
+        fmt::ptr(this), systemPos.ToSeconds());
+    mLastClockSource = ClockSource::SystemClock;
+    return systemPos;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mLastClockSource == ClockSource::SystemClock &&
+      !mClockStartTime.IsNull()) {
+    mAudioSink->UpdateStartTime(systemPos);
+    audioPos = mAudioSink->GetPosition();
+    LOG("{}: Re-anchored the audio sink start time to the system clock {}",
+        fmt::ptr(this), audioPos.ToSeconds());
+  }
+  LOGV("{}: Getting position from the Audio Sink {}", fmt::ptr(this),
+       audioPos.ToSeconds());
+  mLastClockSource = ClockSource::AudioStream;
+  return audioPos;
+}
+
 TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
   AssertOwnerThread();
   MOZ_ASSERT(mIsStarted, "Must be called after playback starts.");
@@ -108,62 +173,26 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
   TimeStamp t = TimeStamp::Now();
 
   if (mAudioSink) {
-    TimeUnit audioPos = mAudioSink->GetPosition();
-    TimeUnit systemPos =
-        mClockStartTime.IsNull() ? audioPos : GetSystemClockPosition(t);
+    pos = PositionFromAudioSink(t);
+  } else if (!mClockStartTime.IsNull() && mClockPausedDuringSeek &&
+             mAsyncCreateCount > 0) {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mLastClockSource == ClockSource::SystemClock &&
-        !mAudioSink->AudioStreamCallbackStarted()) {
-      pos = systemPos;
-      mAudioSink->UpdateStartTime(systemPos);
-      DropAudioPacketsIfNeeded(systemPos);
-      LOGV(
-          "{}: Getting position from the system clock, due to the audio stream "
-          "not having started yet {}",
-          fmt::ptr(this), pos.ToSeconds());
-      mLastClockSource = ClockSource::SystemClock;
-    } else {
-      if (mLastClockSource == ClockSource::SystemClock &&
-          !mClockStartTime.IsNull()) {
-        
-        
-        
-        
-        
-        
-        
-        mAudioSink->UpdateStartTime(systemPos);
-        audioPos = mAudioSink->GetPosition();
-        LOG("{}: Re-anchored the audio sink start time to the system clock {}",
-            fmt::ptr(this), audioPos.ToSeconds());
-      }
-      pos = audioPos;
-      LOGV("{}: Getting position from the Audio Sink {}", fmt::ptr(this),
-           pos.ToSeconds());
-      mLastClockSource = ClockSource::AudioStream;
-    }
+    pos = mPositionAtClockStart;
+    LOGV("{}: Holding at the seek target while the sink initializes {}",
+         fmt::ptr(this), pos.ToSeconds());
+    mLastClockSource = ClockSource::SystemClock;
   } else if (!mClockStartTime.IsNull()) {
     
     
     pos = GetSystemClockPosition(t);
     LOGV("{}: Getting position from the system clock {}", fmt::ptr(this),
          pos.ToSeconds());
+    
+    
+    
+    mClockPausedDuringSeek = false;
     if (mAudioQueue.GetSize() > 0) {
       
       
@@ -361,7 +390,8 @@ double AudioSinkWrapper::PlaybackRate() const {
 
 nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
                                  const MediaInfo& aInfo, StartType aStartType) {
-  LOG("{} AudioSinkWrapper::Start", fmt::ptr(this));
+  LOG("{}: AudioSinkWrapper::Start(startTime={}, startType={})", fmt::ptr(this),
+      aStartTime.ToSeconds(), MediaSink::EnumValueToString(aStartType));
   AssertOwnerThread();
   MOZ_ASSERT(!mIsStarted, "playback already started.");
 
@@ -370,6 +400,10 @@ nsresult AudioSinkWrapper::Start(const TimeUnit& aStartTime,
   mClockStartTime = TimeStamp::Now();
   mAudioEnded = IsAudioSourceEnded(aInfo);
   mLastPacketEndTime = TimeUnit::Zero();
+  
+  
+  
+  mClockPausedDuringSeek = aStartType == StartType::SeekResume;
 
   if (mAudioEnded) {
     
@@ -557,12 +591,23 @@ RefPtr<GenericPromise> AudioSinkWrapper::MaybeAsyncCreateAudioSink(
             
             
             
-            TimeUnit switchTime = GetSystemClockPosition(TimeStamp::Now());
-            DropAudioPacketsIfNeeded(switchTime);
-            mLastClockSource = ClockSource::SystemClock;
+            TimeUnit startTime;
+            if (mClockPausedDuringSeek) {
+              
+              
+              
+              startTime = mPositionAtClockStart;
+              LOG("{}: AudioSink async start at the seek target {}",
+                  fmt::ptr(this), startTime.ToSeconds());
+            } else {
+              startTime = GetSystemClockPosition(TimeStamp::Now());
+              DropAudioPacketsIfNeeded(startTime);
+              mLastClockSource = ClockSource::SystemClock;
+              LOG("{}: AudioSink async start at the system clock {}",
+                  fmt::ptr(this), startTime.ToSeconds());
+            }
 
-            LOG("AudioSink async, start");
-            StartAudioSink(std::move(audioSink), switchTime);
+            StartAudioSink(std::move(audioSink), startTime);
             return GenericPromise::CreateAndResolve(true, __func__);
           });
 }
@@ -576,11 +621,10 @@ nsresult AudioSinkWrapper::ResumeStashedAudioSink(const TimeUnit& aStartTime) {
   LOG("{}: AudioSinkWrapper::ResumeStashedAudioSink({})", fmt::ptr(this),
       aStartTime.ToSeconds());
 
+  
+  
+  
   mAudioSink = std::move(mStashedAudioSink);
-  
-  
-  
-  mLastClockSource = ClockSource::SystemClock;
   RefPtr<MediaSink::EndedPromise> ended =
       mAudioSink->ResetForReuse(mParams, aStartTime);
   
@@ -659,6 +703,7 @@ void AudioSinkWrapper::Stop(StopReason aReason) {
   mClockStartTime = TimeStamp();
   mPositionAtClockStart = TimeUnit::Invalid();
   mAudioEnded = true;
+  mClockPausedDuringSeek = false;
   if (mAudioSink) {
     if (aReason == StopReason::Seeking && mReuseStreamOnSeek &&
         !mAudioSink->IsErrored() && !mAudioSink->IsStreamDrained()) {

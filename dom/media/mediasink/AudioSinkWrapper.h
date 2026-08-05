@@ -82,6 +82,13 @@ class AudioSinkWrapper : public MediaSink {
     
     Paused
   } mLastClockSource = ClockSource::Paused;
+
+  
+  
+  
+  
+  
+  bool mClockPausedDuringSeek = false;
   static already_AddRefed<TaskQueue> CreateAsyncInitTaskQueue();
   bool IsMuted() const;
   void OnMuted(bool aMuted);
@@ -122,6 +129,11 @@ class AudioSinkWrapper : public MediaSink {
   
   
   media::TimeUnit GetSystemClockPosition(TimeStamp aNow) const;
+
+  
+  
+  
+  media::TimeUnit PositionFromAudioSink(TimeStamp aNow);
   bool CheckIfEnded() const;
 
   void OnAudioEnded(const EndedPromise::ResolveOrRejectValue& aValue);
