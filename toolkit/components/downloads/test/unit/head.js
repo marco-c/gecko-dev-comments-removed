@@ -449,14 +449,16 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
 
 
 
-function promiseDownloadMidway(aDownload) {
+
+
+function promiseDownloadMidway(aDownload, aProgress = 50) {
   return new Promise(resolve => {
     
     let onchange = function () {
       if (
         !aDownload.stopped &&
         !aDownload.canceled &&
-        aDownload.progress == 50
+        aDownload.progress == aProgress
       ) {
         aDownload.onchange = null;
         resolve();
