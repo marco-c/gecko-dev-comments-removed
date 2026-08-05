@@ -6391,9 +6391,28 @@ enum class CanonDefKindRaw : uint8_t {
       if (c->types().length() <= resourceTypeIndex) {
         return d.failf("invalid type index %d", resourceTypeIndex);
       }
+
+      ComponentItem resourceTypeItem = c->types()[resourceTypeIndex];
       ComponentType resourceType = c->getType(resourceTypeIndex);
-      if (resourceType.kind() != ComponentTypeKind::Resource) {
-        return d.fail("expected a resource type");
+      switch (kind) {
+        case uint8_t(CanonDefKindRaw::ResourceNew):
+        case uint8_t(CanonDefKindRaw::ResourceRep): {
+          
+          
+          if (resourceTypeItem.kind() != ComponentItem::ItemKind::Defined) {
+            return d.fail("expected a defined resource type");
+          }
+          if (resourceType.kind() != ComponentTypeKind::Resource) {
+            return d.fail("expected a resource type");
+          }
+        } break;
+        case uint8_t(CanonDefKindRaw::ResourceDrop): {
+          
+          if (resourceType.kind() != ComponentTypeKind::Resource &&
+              resourceType.kind() != ComponentTypeKind::SubResource) {
+            return d.fail("expected a resource type");
+          }
+        } break;
       }
 
       
