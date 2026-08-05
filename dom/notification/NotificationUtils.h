@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_NOTIFICATION_NOTIFICATIONUTILS_H_
 #define DOM_NOTIFICATION_NOTIFICATIONUTILS_H_
 
@@ -15,6 +13,7 @@
 #include "nsStringFwd.h"
 
 enum class nsresult : uint32_t;
+class nsIAlertCallbacks;
 class nsIAlertNotification;
 class nsIPrincipal;
 class nsINotificationStorage;
@@ -97,7 +96,7 @@ void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId);
 
 
 nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
-                              nsIObserver* aAlertListener);
+                              nsIAlertCallbacks* aAlertCallbacks);
 
 nsresult RemovePermission(nsIPrincipal* aPrincipal);
 nsresult OpenSettings(nsIPrincipal* aPrincipal);
