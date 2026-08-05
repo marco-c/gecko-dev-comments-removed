@@ -5,7 +5,6 @@
 #ifndef mozJSModuleLoader_h
 #define mozJSModuleLoader_h
 
-#include "SyncModuleLoader.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FileLocation.h"
@@ -13,13 +12,16 @@
 #include "mozilla/RefPtr.h"  
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"  
-#include "nsIURI.h"
-#include "nsClassHashtable.h"
+
 #include "jsapi.h"
+#include "nsClassHashtable.h"
+#include "nsIURI.h"
+#include "nsTHashMap.h"
+#include "SyncModuleLoader.h"
+#include "xpcpublic.h"
+
 #include "js/CompileOptions.h"
 #include "js/experimental/JSStencil.h"
-
-#include "xpcpublic.h"
 
 class nsIFile;
 class ModuleLoaderInfo;
@@ -38,6 +40,7 @@ class ModuleLoadRequest;
 
 namespace mozilla::loader {
 
+class SyncModuleLoader;
 class NonSharedGlobalSyncModuleLoaderScope;
 
 }  
@@ -215,58 +218,5 @@ class mozJSModuleLoader final {
 
   RefPtr<mozilla::loader::SyncModuleLoader> mModuleLoader;
 };
-
-namespace mozilla::loader {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS NonSharedGlobalSyncModuleLoaderScope {
- public:
-  NonSharedGlobalSyncModuleLoaderScope(JSContext* aCx,
-                                       nsIGlobalObject* aGlobal);
-  ~NonSharedGlobalSyncModuleLoaderScope();
-
-  
-  
-  void Finish();
-
-  
-  
-  static bool IsActive();
-
-  static mozJSModuleLoader* ActiveLoader();
-
-  static void InitStatics();
-
- private:
-  RefPtr<mozJSModuleLoader> mLoader;
-
-  
-  
-  
-  static MOZ_THREAD_LOCAL(mozJSModuleLoader*) sTlsActiveLoader;
-
-  
-  RefPtr<JS::loader::ModuleLoaderBase> mAsyncModuleLoader;
-
-  mozilla::Maybe<JS::loader::AutoOverrideModuleLoader> mMaybeOverride;
-};
-
-}  
 
 #endif  
