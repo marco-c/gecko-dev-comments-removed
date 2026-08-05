@@ -516,11 +516,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_bitrate_priority_(encoder_config.bitrate_priority),
       encoder_av1_priority_bitrate_override_bps_(
           GetEncoderPriorityBitrate(config_.rtp.payload_name,
-                                    env_.field_trials())),
-      configured_pacing_factor_(
-          GetConfiguredPacingFactor(config_,
-                                    content_type_,
-                                    pacing_config_,
                                     env_.field_trials())) {
   RTC_DCHECK_GE(config_.rtp.payload_type, 0);
   RTC_DCHECK_LE(config_.rtp.payload_type, 127);
@@ -533,9 +528,14 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   std::optional<bool> enable_alr_bw_probing;
 
+  bool rfc8888_experiment_enabled =
+      env_.field_trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback");
+
   
   
-  if (configured_pacing_factor_) {
+  std::optional<float> pacing_factor_override = GetConfiguredPacingFactor(
+      config_, content_type_, pacing_config_, env_.field_trials());
+  if (pacing_factor_override.has_value() || rfc8888_experiment_enabled) {
     std::optional<AlrExperimentSettings> alr_settings =
         GetAlrSettings(env_.field_trials(), content_type_);
     int queue_time_limit_ms;
@@ -549,6 +549,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     }
 
     transport_->SetQueueTimeLimit(queue_time_limit_ms);
+    if (!rfc8888_experiment_enabled) {
+      
+      
+      transport_->SetPacingFactor(*pacing_factor_override);
+    }
   }
 
   if (config_.periodic_alr_bandwidth_probing) {
@@ -558,9 +563,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   if (enable_alr_bw_probing) {
     transport->EnablePeriodicAlrProbing(*enable_alr_bw_probing);
   }
-
-  if (configured_pacing_factor_)
-    transport_->SetPacingFactor(*configured_pacing_factor_);
 
   
   
@@ -645,11 +647,6 @@ void VideoSendStreamImpl::SetCsrcs(std::span<const uint32_t> csrcs) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   rtp_video_sender_->SetCsrcs(csrcs);
 }
-
-std::optional<float> VideoSendStreamImpl::GetPacingFactorOverride() const {
-  return configured_pacing_factor_;
-}
-
 void VideoSendStreamImpl::StopPermanentlyAndGetRtpStates(
     VideoSendStreamImpl::RtpStateMap* rtp_state_map,
     VideoSendStreamImpl::RtpPayloadStateMap* payload_state_map) {
