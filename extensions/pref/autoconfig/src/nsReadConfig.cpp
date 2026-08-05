@@ -243,7 +243,7 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
   nsCOMPtr<nsIInputStream> inStr;
   if (isBinDir) {
     nsCOMPtr<nsIFile> jsFile;
-#if defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_SYSTEM_PREFERENCES)
     bool exists;
 
     rv =
@@ -263,7 +263,7 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
 
       rv = jsFile->AppendNative(nsDependentCString(aFileName));
       if (NS_FAILED(rv)) return rv;
-#if defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_SYSTEM_PREFERENCES)
     }
 #endif  
 
