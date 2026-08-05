@@ -3265,8 +3265,15 @@ class nsContentUtils {
   
 
 
-  static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
-      nsINode*);
+
+
+
+
+
+
+
+  static mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+  GetCustomElementRegistry(nsINode*);
 
   
 

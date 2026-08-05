@@ -5585,11 +5585,8 @@ void Element::InsertAdjacentHTML(
   
   
   
-  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
-  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-    customElementRegistry.emplace(
-        nsContentUtils::GetCustomElementRegistry(destination));
-  }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
+      nsContentUtils::GetCustomElementRegistry(destination);
 
   
   

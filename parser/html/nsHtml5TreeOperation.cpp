@@ -598,12 +598,12 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
   
   
   
-  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
-  if (aIntendedParent && aIntendedParent->HasScopedRegistry()) {
-    if (auto* reg = nsContentUtils::GetCustomElementRegistry(aIntendedParent)) {
-      customElementRegistry.emplace(reg);
-    }
-  }
+  
+  
+  
+  
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
+      nsContentUtils::GetCustomElementRegistry(aIntendedParent);
   if (customElementRegistry.isNothing()) {
     customElementRegistry = std::move(aContextRegistry);
   }

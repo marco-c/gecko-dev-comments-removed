@@ -2091,11 +2091,8 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
   
   
   
-  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
-  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-    customElementRegistry.emplace(
-        nsContentUtils::GetCustomElementRegistry(this));
-  }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
+      nsContentUtils::GetCustomElementRegistry(this);
 
   if (doc->IsHTMLDocument()) {
     doc->SuspendDOMNotifications();

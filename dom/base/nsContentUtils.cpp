@@ -12325,28 +12325,48 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
 }
 
 
-CustomElementRegistry* nsContentUtils::GetCustomElementRegistry(
+Maybe<RefPtr<CustomElementRegistry>> nsContentUtils::GetCustomElementRegistry(
     nsINode* aNode) {
   if (!aNode || !StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-    return nullptr;
+    return Nothing();
   }
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  CustomElementRegistryState state = CustomElementRegistryState::Global;
   if (aNode->IsElement()) {
-    return aNode->AsElement()->GetCustomElementRegistry();
+    state = aNode->AsElement()->GetCustomElementRegistryState();
+  } else if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+    state = shadowRoot->GetCustomElementRegistryState();
+  } else if (aNode->IsDocument()) {
+    if (!aNode->AsDocument()->HasScopedCustomElementRegistry()) {
+      
+      return Nothing();
+    }
+    state = CustomElementRegistryState::Scoped;
+  } else {
+    
+    return Nothing();
   }
-  
-  
-  if (aNode->IsShadowRoot()) {
-    return ShadowRoot::FromNode(aNode)->GetCustomElementRegistry();
+  if (state == CustomElementRegistryState::Global) {
+    return Nothing();
   }
-  
-  
-  if (aNode->IsDocument()) {
-    return aNode->AsDocument()->GetEffectiveGlobalCustomElementRegistry();
+  RefPtr<CustomElementRegistry> registry;
+  if (aNode->IsElement()) {
+    registry = aNode->AsElement()->GetCustomElementRegistry();
+  } else if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+    registry = shadowRoot->GetCustomElementRegistry();
+  } else {
+    registry = aNode->AsDocument()->GetCustomElementRegistry();
   }
-  
-  return nullptr;
+  return Some(std::move(registry));
 }
 
 
