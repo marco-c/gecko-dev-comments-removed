@@ -27,7 +27,6 @@
 #include "js/SourceText.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/MicroTask.h"
-#include "js/loader/ModuleLoaderBase.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
