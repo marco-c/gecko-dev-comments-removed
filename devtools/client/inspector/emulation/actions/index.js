@@ -13,6 +13,9 @@ createEnum(
 
     
     "SET_PRINT_SIMULATION_ENABLED",
+
+    
+    "SET_REDUCED_MOTION_EMULATION",
   ],
   module.exports
 );

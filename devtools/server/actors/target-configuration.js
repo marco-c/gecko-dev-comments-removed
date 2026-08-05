@@ -60,6 +60,8 @@ const SUPPORTED_OPTIONS = {
   
   recordAllocations: true,
   
+  reducedMotionEmulation: true,
+  
   reloadOnTouchSimulationToggle: true,
   
   restoreFocus: true,
@@ -292,6 +294,9 @@ class TargetConfigurationActor extends Actor {
         case "printSimulationEnabled":
           this._setPrintSimulationEnabled(value);
           break;
+        case "reducedMotionEmulation":
+          this._setReducedMotionEmulation(value);
+          break;
         case "rdmPaneMaxTouchPoints":
           this._setRDMPaneMaxTouchPoints(value);
           break;
@@ -345,6 +350,12 @@ class TargetConfigurationActor extends Actor {
     }
 
     
+    
+    if (this._resetReducedMotionEmulationOnDestroy) {
+      this._setReducedMotionEmulation(null);
+    }
+
+    
     if (this._initialUserAgent !== undefined) {
       this._setCustomUserAgent(this._initialUserAgent);
     }
@@ -393,6 +404,17 @@ class TargetConfigurationActor extends Actor {
     if (this._browsingContext.prefersColorSchemeOverride != value) {
       this._browsingContext.prefersColorSchemeOverride = value;
       this._resetColorSchemeSimulationOnDestroy = true;
+    }
+  }
+
+  
+
+
+  _setReducedMotionEmulation(override) {
+    const value = override || "none";
+    if (this._browsingContext.prefersReducedMotionOverride != value) {
+      this._browsingContext.prefersReducedMotionOverride = value;
+      this._resetReducedMotionEmulationOnDestroy = true;
     }
   }
 

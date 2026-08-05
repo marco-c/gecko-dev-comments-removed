@@ -1693,6 +1693,18 @@ function getCurrentPrefersDark() {
 
 
 
+function getCurrentPrefersReducedMotionReduce() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const { matches } = content.matchMedia("(prefers-reduced-motion: reduce)");
+    return matches;
+  });
+}
+
+
+
+
+
+
 
 function _getRuleViewElements(view) {
   const elementsInView = [];
