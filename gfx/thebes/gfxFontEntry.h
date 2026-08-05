@@ -194,10 +194,10 @@ class gfxFontEntry {
   typedef mozilla::intl::Script Script;
   typedef mozilla::FontWeight FontWeight;
   typedef mozilla::FontSlantStyle FontSlantStyle;
-  typedef mozilla::FontWidth FontWidth;
+  typedef mozilla::FontStretch FontStretch;
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
-  typedef mozilla::WidthRange WidthRange;
+  typedef mozilla::StretchRange StretchRange;
   using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   
@@ -239,7 +239,7 @@ class gfxFontEntry {
   virtual nsCString RealFaceName();
 
   WeightRange Weight() const { return mWeightRange; }
-  WidthRange Width() const { return mWidthRange; }
+  StretchRange Stretch() const { return mStretchRange; }
   SlantStyleRange SlantStyle() const { return mStyleRange; }
 
   bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
@@ -265,8 +265,8 @@ class gfxFontEntry {
   bool IsNormalStyle() const {
     return IsUpright() && Weight().Min() <= FontWeight::NORMAL &&
            Weight().Max() >= FontWeight::NORMAL &&
-           Width().Min() <= FontWidth::NORMAL &&
-           Width().Max() >= FontWidth::NORMAL;
+           Stretch().Min() <= FontStretch::NORMAL &&
+           Stretch().Max() >= FontStretch::NORMAL;
   }
 
   
@@ -630,7 +630,7 @@ class gfxFontEntry {
   uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
 
   WeightRange mWeightRange = WeightRange(FontWeight::FromInt(500));
-  WidthRange mWidthRange = WidthRange(FontWidth::NORMAL);
+  StretchRange mStretchRange = StretchRange(FontStretch::NORMAL);
   SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::NORMAL);
 
   
@@ -651,7 +651,7 @@ class gfxFontEntry {
   enum class RangeFlags : uint16_t {
     eNoFlags = 0,
     eAutoWeight = (1 << 0),
-    eAutoWidth = (1 << 1),
+    eAutoStretch = (1 << 1),
     eAutoSlantStyle = (1 << 2),
 
     
@@ -668,7 +668,7 @@ class gfxFontEntry {
     
     
     eNonCSSWeight = (1 << 6),
-    eNonCSSWidth = (1 << 7),
+    eNonCSSStretch = (1 << 7),
 
     
     eOpticalSize = (1 << 8)
@@ -847,7 +847,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::SpaceFeatures)
 
 inline gfxFontEntry::RangeFlags gfxFontEntry::AutoRangeFlags() const {
-  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoWidth |
+  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoStretch |
                         RangeFlags::eAutoSlantStyle);
 }
 

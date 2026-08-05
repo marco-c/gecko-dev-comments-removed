@@ -236,8 +236,8 @@ class gfxUserFontEntry;
 class gfxOTSMessageContext;
 
 struct gfxUserFontAttributes {
-  using FontWidth = mozilla::FontWidth;
-  using WidthRange = mozilla::WidthRange;
+  using FontStretch = mozilla::FontStretch;
+  using StretchRange = mozilla::StretchRange;
   using FontSlantStyle = mozilla::FontSlantStyle;
   using SlantStyleRange = mozilla::SlantStyleRange;
   using FontWeight = mozilla::FontWeight;
@@ -247,9 +247,9 @@ struct gfxUserFontAttributes {
   using RangeFlags = gfxFontEntry::RangeFlags;
 
   WeightRange mWeight = WeightRange(FontWeight::NORMAL);
-  WidthRange mWidth = WidthRange(FontWidth::NORMAL);
+  StretchRange mStretch = StretchRange(FontStretch::NORMAL);
   SlantStyleRange mStyle = SlantStyleRange(FontSlantStyle::NORMAL);
-  RangeFlags mRangeFlags = RangeFlags::eAutoWeight | RangeFlags::eAutoWidth |
+  RangeFlags mRangeFlags = RangeFlags::eAutoWeight | RangeFlags::eAutoStretch |
                            RangeFlags::eAutoSlantStyle;
   mozilla::StyleFontDisplay mFontDisplay = mozilla::StyleFontDisplay::Auto;
   float mAscentOverride = -1.0;
@@ -270,8 +270,8 @@ class gfxUserFontSet {
   friend class gfxOTSMessageContext;
 
  public:
-  using FontWidth = mozilla::FontWidth;
-  using WidthRange = mozilla::WidthRange;
+  using FontStretch = mozilla::FontStretch;
+  using StretchRange = mozilla::StretchRange;
   using FontSlantStyle = mozilla::FontSlantStyle;
   using SlantStyleRange = mozilla::SlantStyleRange;
   using FontWeight = mozilla::FontWeight;
@@ -452,7 +452,7 @@ class gfxUserFontSet {
             mozilla::HashString(aKey->mFontEntry->FamilyName()),
             aKey->mFontEntry->Weight().AsScalar(),
             aKey->mFontEntry->SlantStyle().AsScalar(),
-            aKey->mFontEntry->Width().AsScalar(),
+            aKey->mFontEntry->Stretch().AsScalar(),
             aKey->mFontEntry->AutoRangeFlags(),
             aKey->mFontEntry->mLanguageOverride);
       }

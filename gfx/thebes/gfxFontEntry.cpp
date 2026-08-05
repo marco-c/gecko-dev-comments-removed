@@ -112,7 +112,7 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   mShmemFamily = aFamily;
   mStyleRange = aFace->mStyle;
   mWeightRange = aFace->mWeight;
-  mWidthRange = aFace->mWidth;
+  mStretchRange = aFace->mStretch;
   mFixedPitch = aFace->mFixedPitch;
   mIsBadUnderlineFont = aFamily->IsBadUnderlineFamily();
   auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
@@ -1081,14 +1081,14 @@ void gfxFontEntry::SetupVariationRanges() {
 
       case HB_TAG('w', 'd', 't', 'h'):
         if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0f &&
-            Width().Min() <= FontWidth::FromFloat(axis.mMaxValue)) {
-          if (FontWidth::FromFloat(axis.mDefaultValue) != Width().Min()) {
+            Stretch().Min() <= FontStretch::FromFloat(axis.mMaxValue)) {
+          if (FontStretch::FromFloat(axis.mDefaultValue) != Stretch().Min()) {
             mStandardFace = false;
           }
-          mWidthRange = WidthRange(FontWidth::FromFloat(axis.mMinValue),
-                                   FontWidth::FromFloat(axis.mMaxValue));
+          mStretchRange = StretchRange(FontStretch::FromFloat(axis.mMinValue),
+                                       FontStretch::FromFloat(axis.mMaxValue));
         } else {
-          mRangeFlags |= RangeFlags::eNonCSSWidth;
+          mRangeFlags |= RangeFlags::eNonCSSStretch;
         }
         break;
 
@@ -1203,11 +1203,12 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     aResult.AppendElement(gfxFontVariation{HB_TAG('w', 'g', 'h', 't'), weight});
   }
 
-  if (!(mRangeFlags & RangeFlags::eNonCSSWidth)) {
-    float width = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWidth))
-                      ? aStyle.width.ToFloat()
-                      : Width().Clamp(aStyle.width).ToFloat();
-    aResult.AppendElement(gfxFontVariation{HB_TAG('w', 'd', 't', 'h'), width});
+  if (!(mRangeFlags & RangeFlags::eNonCSSStretch)) {
+    float stretch = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoStretch))
+                        ? aStyle.stretch.ToFloat()
+                        : Stretch().Clamp(aStyle.stretch).ToFloat();
+    aResult.AppendElement(
+        gfxFontVariation{HB_TAG('w', 'd', 't', 'h'), stretch});
   }
 
   if (aStyle.style.IsItalic() && SupportsItalic()) {
@@ -1399,9 +1400,10 @@ gfxFontEntry* gfxFontFamily::FindFontForStyle(const gfxFontStyle& aFontStyle,
   return nullptr;
 }
 
-static inline double WeightStyleWidthDistance(
+static inline double WeightStyleStretchDistance(
     gfxFontEntry* aFontEntry, const gfxFontStyle& aTargetStyle) {
-  double widthDist = WidthDistance(aFontEntry->Width(), aTargetStyle.width);
+  double stretchDist =
+      StretchDistance(aFontEntry->Stretch(), aTargetStyle.stretch);
   double styleDist = StyleDistance(
       aFontEntry->SlantStyle(), aTargetStyle.style,
       aTargetStyle.synthesisStyle != StyleFontSynthesisStyle::ObliqueOnly);
@@ -1409,14 +1411,14 @@ static inline double WeightStyleWidthDistance(
 
   
   
-  MOZ_ASSERT(widthDist >= 0.0 && widthDist <= 2000.0);
+  MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
   MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 900.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
   
   
   
-  return widthDist * kWidthFactor + styleDist * kStyleFactor +
+  return stretchDist * kStretchFactor + styleDist * kStyleFactor +
          weightDist * kWeightFactor;
 }
 
@@ -1513,7 +1515,7 @@ void gfxFontFamily::FindAllFontsForStyle(
   for (uint32_t i = count; i > 0;) {
     fe = mAvailableFonts[--i];
     
-    double distance = WeightStyleWidthDistance(fe, aFontStyle);
+    double distance = WeightStyleStretchDistance(fe, aFontStyle);
     if (distance < minDistance) {
       matched = fe;
       if (!aFontEntryList.IsEmpty()) {
@@ -1553,15 +1555,15 @@ void gfxFontFamily::CheckForSimpleFamily() {
     return;
   }
 
-  WidthRange firstWidth = mAvailableFonts[0]->Width();
-  if (!firstWidth.IsSingle()) {
+  StretchRange firstStretch = mAvailableFonts[0]->Stretch();
+  if (!firstStretch.IsSingle()) {
     return;  
   }
 
   gfxFontEntry* faces[4] = {nullptr};
   for (uint8_t i = 0; i < count; ++i) {
     gfxFontEntry* fe = mAvailableFonts[i];
-    if (fe->Width() != firstWidth || fe->IsOblique()) {
+    if (fe->Stretch() != firstStretch || fe->IsOblique()) {
       
       return;
     }
@@ -1667,7 +1669,7 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
       }
 
       fe = e;
-      distance = WeightStyleWidthDistance(fe, aMatchData->mStyle);
+      distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
       if (aMatchData->mPresentation != FontPresentation::Any) {
         RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
         if (!font) {
@@ -1722,7 +1724,7 @@ void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {
   for (uint32_t i = numFonts; i > 0;) {
     gfxFontEntry* fe = mAvailableFonts[--i];
     if (fe && fe->HasCharacter(aMatchData->mCh)) {
-      float distance = WeightStyleWidthDistance(fe, aMatchData->mStyle);
+      float distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
       if (aMatchData->mPresentation != FontPresentation::Any) {
         RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
         if (!font) {

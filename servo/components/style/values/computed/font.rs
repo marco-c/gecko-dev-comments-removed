@@ -1304,13 +1304,11 @@ impl ToAnimatedValue for FontStyle {
 
 
 
-pub const FONT_WIDTH_FRACTION_BITS: u16 = 6;
+pub const FONT_STRETCH_FRACTION_BITS: u16 = 6;
 
 
 
-pub type FontWidthFixedPoint = FixedPoint<u16, FONT_WIDTH_FRACTION_BITS>;
-
-
+pub type FontStretchFixedPoint = FixedPoint<u16, FONT_STRETCH_FRACTION_BITS>;
 
 
 
@@ -1334,48 +1332,48 @@ pub type FontWidthFixedPoint = FixedPoint<u16, FONT_WIDTH_FRACTION_BITS>;
     ToResolvedValue,
 )]
 #[repr(C)]
-pub struct FontWidth(pub FontWidthFixedPoint);
+pub struct FontStretch(pub FontStretchFixedPoint);
 
-impl FontWidth {
+impl FontStretch {
     
-    pub const FRACTION_BITS: u16 = FONT_WIDTH_FRACTION_BITS;
+    pub const FRACTION_BITS: u16 = FONT_STRETCH_FRACTION_BITS;
     
     pub const HALF: u16 = 1 << (Self::FRACTION_BITS - 1);
 
     
-    pub const ULTRA_CONDENSED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const ULTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 50 << Self::FRACTION_BITS,
     });
     
-    pub const EXTRA_CONDENSED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const EXTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: (62 << Self::FRACTION_BITS) + Self::HALF,
     });
     
-    pub const CONDENSED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 75 << Self::FRACTION_BITS,
     });
     
-    pub const SEMI_CONDENSED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const SEMI_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: (87 << Self::FRACTION_BITS) + Self::HALF,
     });
     
-    pub const NORMAL: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const NORMAL: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 100 << Self::FRACTION_BITS,
     });
     
-    pub const SEMI_EXPANDED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const SEMI_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: (112 << Self::FRACTION_BITS) + Self::HALF,
     });
     
-    pub const EXPANDED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 125 << Self::FRACTION_BITS,
     });
     
-    pub const EXTRA_EXPANDED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const EXTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 150 << Self::FRACTION_BITS,
     });
     
-    pub const ULTRA_EXPANDED: FontWidth = FontWidth(FontWidthFixedPoint {
+    pub const ULTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
         value: 200 << Self::FRACTION_BITS,
     });
 
@@ -1397,8 +1395,8 @@ impl FontWidth {
 
     
     
-    pub fn from_keyword(kw: specified::FontWidthKeyword) -> Self {
-        use specified::FontWidthKeyword::*;
+    pub fn from_keyword(kw: specified::FontStretchKeyword) -> Self {
+        use specified::FontStretchKeyword::*;
         match kw {
             UltraCondensed => Self::ULTRA_CONDENSED,
             ExtraCondensed => Self::EXTRA_CONDENSED,
@@ -1413,8 +1411,8 @@ impl FontWidth {
     }
 
     
-    pub fn as_keyword(&self) -> Option<specified::FontWidthKeyword> {
-        use specified::FontWidthKeyword::*;
+    pub fn as_keyword(&self) -> Option<specified::FontStretchKeyword> {
+        use specified::FontStretchKeyword::*;
         
         if *self == Self::ULTRA_CONDENSED {
             return Some(UltraCondensed);
@@ -1447,7 +1445,7 @@ impl FontWidth {
     }
 }
 
-impl ToCss for FontWidth {
+impl ToCss for FontStretch {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
@@ -1456,7 +1454,7 @@ impl ToCss for FontWidth {
     }
 }
 
-impl ToTyped for FontWidth {
+impl ToTyped for FontStretch {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         match self.as_keyword() {
             Some(keyword) => keyword.to_typed(dest),
@@ -1465,7 +1463,7 @@ impl ToTyped for FontWidth {
     }
 }
 
-impl ToAnimatedValue for FontWidth {
+impl ToAnimatedValue for FontStretch {
     type AnimatedValue = Percentage;
 
     #[inline]

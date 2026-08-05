@@ -1274,7 +1274,7 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
       FontWeight::FromInt(pango_font_description_get_weight(desc));
 
   
-  aFontStyle->width = FontWidth::NORMAL;
+  aFontStyle->stretch = FontStretch::NORMAL;
 
   float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
 

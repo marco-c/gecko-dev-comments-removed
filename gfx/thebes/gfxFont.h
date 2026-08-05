@@ -91,13 +91,13 @@ typedef struct _cairo_scaled_font cairo_scaled_font_t;
 #endif
 
 struct gfxFontStyle {
-  using FontWidth = mozilla::FontWidth;
+  using FontStretch = mozilla::FontStretch;
   using FontSlantStyle = mozilla::FontSlantStyle;
   using FontWeight = mozilla::FontWeight;
   using FontSizeAdjust = mozilla::StyleFontSizeAdjust;
 
   gfxFontStyle();
-  gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontWidth aWidth,
+  gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
                gfxFloat aSize, const FontSizeAdjust& aSizeAdjust,
                bool aSystemFont, bool aPrinterFont,
 #ifdef XP_WIN
@@ -160,14 +160,14 @@ struct gfxFontStyle {
   FontWeight weight;
 
   
-  FontWidth width;
+  FontStretch stretch;
 
   
   FontSlantStyle style;
 
   
   bool IsNormalStyle() const {
-    return weight.IsNormal() && style.IsNormal() && width.IsNormal();
+    return weight.IsNormal() && style.IsNormal() && stretch.IsNormal();
   }
 
   
@@ -242,7 +242,7 @@ struct gfxFontStyle {
   bool Equals(const gfxFontStyle& other) const {
     return mozilla::NumbersAreBitwiseIdentical(size, other.size) &&
            (style == other.style) && (weight == other.weight) &&
-           (width == other.width) && (variantCaps == other.variantCaps) &&
+           (stretch == other.stretch) && (variantCaps == other.variantCaps) &&
            (variantSubSuper == other.variantSubSuper) &&
            (allowSyntheticWeight == other.allowSyntheticWeight) &&
            (synthesisStyle == other.synthesisStyle) &&
