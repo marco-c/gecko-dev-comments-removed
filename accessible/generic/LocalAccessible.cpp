@@ -881,7 +881,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     PROFILER_MARKER_UNTYPED(strMarker, A11Y);
   }
 
-  if (Document() && Document()->ShouldSendToParentProcess()) {
+  if (IPCAccessibilityActive() && Document()) {
     DocAccessibleChild* ipcDoc = mDoc->IPCDoc();
     
     
