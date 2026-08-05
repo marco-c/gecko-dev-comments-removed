@@ -742,7 +742,12 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   request->mURL = NS_ConvertUTF16toUTF8(aScriptURL);
 
-  request->NoCacheEntryFound(referrerPolicy, fetchOptions, uri);
+  
+  request->NoCacheEntryFound(
+      referrerPolicy, fetchOptions, uri,
+      request->IsModuleRequest()
+          ? nullptr
+          : static_cast<const mozilla::Encoding*>(UTF_8_ENCODING));
 
   return request.forget();
 }

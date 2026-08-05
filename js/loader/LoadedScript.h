@@ -6,6 +6,7 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  
+#include "mozilla/Encoding.h" 
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -133,7 +134,8 @@ class LoadedScript final : public nsISupports {
   ~LoadedScript() = default;
 
  public:
-  LoadedScript(ScriptKind aKind, nsIURI* aURI);
+  LoadedScript(ScriptKind aKind, nsIURI* aURI,
+               const mozilla::Encoding* aClassicScriptFallbackEncoding);
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  public:
@@ -471,6 +473,11 @@ class LoadedScript final : public nsISupports {
   
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
 
+  const mozilla::Encoding* ClassicScriptFallbackEncoding() const {
+    MOZ_ASSERT(!IsModuleScript());
+    return mClassicScriptFallbackEncoding;
+  }
+
  public:
   
 
@@ -582,6 +589,9 @@ class LoadedScript final : public nsISupports {
   
   
   nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
+
+  
+  const mozilla::Encoding* mClassicScriptFallbackEncoding = nullptr;
 };
 
 
@@ -682,6 +692,10 @@ class LoadedScriptDelegate {
   }
   bool TookLongInPreviousRuns() const {
     return GetLoadedScript()->TookLongInPreviousRuns();
+  }
+
+  const mozilla::Encoding* ClassicScriptFallbackEncoding() const {
+    return GetLoadedScript()->ClassicScriptFallbackEncoding();
   }
 };
 
