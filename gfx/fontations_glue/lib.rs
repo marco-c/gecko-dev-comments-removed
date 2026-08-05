@@ -4,8 +4,11 @@
 
 
 
+extern crate nsstring;
 extern crate skrifa;
+use nsstring::nsCString;
 use skrifa::prelude::*;
+use skrifa::string::StringId;
 use std::slice;
 
 
@@ -51,6 +54,25 @@ pub extern "C" fn skrifa_font_delete<'a>(font: *mut SkrifaFontRef) {
 pub extern "C" fn skrifa_font_map_char_to_glyph(font: &SkrifaFontRef, unicode: u32) -> u32 {
     let charmap = font.0.charmap();
     charmap.map(unicode).unwrap_or(GlyphId::NOTDEF).into()
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn skrifa_font_get_preferred_name(
+    font: &SkrifaFontRef,
+    name_id: u16,
+    ret_val: &mut nsCString,
+) -> bool {
+    if let Some(name) = font
+        .0
+        .localized_strings(StringId::new(name_id))
+        .english_or_first()
+    {
+        *ret_val = name.to_string().into();
+        return true;
+    }
+    false
 }
 
 
