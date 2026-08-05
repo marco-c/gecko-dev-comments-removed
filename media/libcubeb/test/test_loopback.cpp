@@ -29,6 +29,12 @@ const double OUTPUT_AMPLITUDE = 0.25;
 const int32_t NUM_FRAMES_TO_OUTPUT =
     SAMPLE_FREQUENCY / 20; 
 
+
+
+const int32_t CONTINUOUS_TONE_FRAMES = SAMPLE_FREQUENCY / 2; 
+const unsigned int LOOPBACK_PLAY_MS = 600;
+const unsigned int LOOPBACK_DRAIN_MS = 600;
+
 template <typename T>
 T
 ConvertSampleToOutput(double input);
@@ -267,10 +273,10 @@ data_cb_playback(cubeb_stream * stream, void * user, const void * inputbuffer,
 
   std::lock_guard<std::mutex> lock(u->user_state_mutex);
   
+
   for (int i = 0; i < nframes; i++) {
     double tone = 0.0;
-    if (u->position + i < NUM_FRAMES_TO_OUTPUT) {
-      
+    if (u->position + i < CONTINUOUS_TONE_FRAMES) {
       tone =
           sin(2 * M_PI * (i + u->position) * TONE_FREQUENCY / SAMPLE_FREQUENCY);
       tone *= OUTPUT_AMPLITUDE;
@@ -452,11 +458,26 @@ run_loopback_separate_streams_test(bool is_float)
   std::unique_ptr<cubeb_stream, decltype(&cubeb_stream_destroy)>
       cleanup_output_stream_at_exit(output_stream, cubeb_stream_destroy);
 
-  cubeb_stream_start(input_stream);
+  
+  
+  
+  
+  
   cubeb_stream_start(output_stream);
-  delay(300);
+  cubeb_stream_start(input_stream);
+  
+  
+  delay(LOOPBACK_PLAY_MS);
   cubeb_stream_stop(output_stream);
+  
+  
+  delay(LOOPBACK_DRAIN_MS);
   cubeb_stream_stop(input_stream);
+  
+  
+  cleanup_output_stream_at_exit.reset();
+  cleanup_input_stream_at_exit.reset();
+  cleanup_cubeb_at_exit.reset();
 
   
 
@@ -641,11 +662,26 @@ run_loopback_device_selection_test(bool is_float)
   std::unique_ptr<cubeb_stream, decltype(&cubeb_stream_destroy)>
       cleanup_output_stream_at_exit(output_stream, cubeb_stream_destroy);
 
-  cubeb_stream_start(input_stream);
+  
+  
+  
+  
+  
   cubeb_stream_start(output_stream);
-  delay(300);
+  cubeb_stream_start(input_stream);
+  
+  
+  delay(LOOPBACK_PLAY_MS);
   cubeb_stream_stop(output_stream);
+  
+  
+  delay(LOOPBACK_DRAIN_MS);
   cubeb_stream_stop(input_stream);
+  
+  
+  cleanup_output_stream_at_exit.reset();
+  cleanup_input_stream_at_exit.reset();
+  cleanup_cubeb_at_exit.reset();
 
   
 
