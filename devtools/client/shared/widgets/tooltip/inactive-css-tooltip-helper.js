@@ -58,6 +58,8 @@ class InactiveCssTooltipHelper {
 
 
 
+
+
   getTemplate(data, tooltip) {
     const XHTML_NS = "http://www.w3.org/1999/xhtml";
     const { fixId, msgId, property, display, lineCount, learnMoreURL } = data;
@@ -74,18 +76,23 @@ class InactiveCssTooltipHelper {
 
     const templateNode = doc.createElementNS(XHTML_NS, "template");
 
+    const isMdnUrl = documentUrl.hostname === "developer.mozilla.org";
+    const className = `link${isMdnUrl ? " learn-more-link mdn-link" : ""}`;
     
     templateNode.innerHTML = `
     <div class="devtools-tooltip-inactive-css">
       <p data-l10n-id="${msgId}"
          data-l10n-args='${JSON.stringify({ property, display, lineCount })}'>
       </p>
-      <p data-l10n-id="${fixId}">
-        <span data-l10n-name="link" class="link"></span>
+      ${fixId ? `<p data-l10n-id="${fixId}"></p>` : ""}
+      <p>
+        <a data-l10n-id="devtools-tooltip-learn-more" class="${className}"></a>
       </p>
     </div>`;
 
-    return doc.importNode(templateNode.content, true);
+    const fragment = doc.importNode(templateNode.content, true);
+    fragment.querySelector(".link").setAttribute("href", this._currentUrl);
+    return fragment;
   }
 
   
@@ -98,9 +105,10 @@ class InactiveCssTooltipHelper {
     
     
     
-    if (event.target.className !== "link") {
+    if (!event.target.classList.contains("link")) {
       return;
     }
+    event.preventDefault();
 
     const tooltip = this._currentTooltip;
     tooltip.hide();
