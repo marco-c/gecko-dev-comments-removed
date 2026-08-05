@@ -18,7 +18,8 @@ class DateObject : public NativeObject {
   
   
   
-  static const uint32_t UTC_TIME_SLOT = 0;
+  static constexpr auto UTC_TIME_SLOT =
+      TypedSlot<ValueType::Double, ValueType::Undefined>(0);
 
  private:
   
@@ -26,7 +27,8 @@ class DateObject : public NativeObject {
   
   
   
-  static const uint32_t TIME_ZONE_CACHE_KEY_SLOT = 1;
+  static constexpr auto TIME_ZONE_CACHE_KEY_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Undefined>(1);
 
   
 
@@ -36,14 +38,24 @@ class DateObject : public NativeObject {
 
 
 
-  static const uint32_t COMPONENTS_START_SLOT = 2;
+  static constexpr uint32_t COMPONENTS_START_SLOT = 2;
 
  public:
-  static const uint32_t LOCAL_TIME_SLOT = COMPONENTS_START_SLOT + 0;
-  static const uint32_t LOCAL_YEAR_SLOT = COMPONENTS_START_SLOT + 1;
-  static const uint32_t LOCAL_MONTH_SLOT = COMPONENTS_START_SLOT + 2;
-  static const uint32_t LOCAL_DATE_SLOT = COMPONENTS_START_SLOT + 3;
-  static const uint32_t LOCAL_DAY_SLOT = COMPONENTS_START_SLOT + 4;
+  static constexpr auto LOCAL_TIME_SLOT =
+      TypedSlot<ValueType::Double, ValueType::Undefined>(COMPONENTS_START_SLOT +
+                                                         0);
+  static constexpr auto LOCAL_YEAR_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Double, ValueType::Undefined>(
+          COMPONENTS_START_SLOT + 1);
+  static constexpr auto LOCAL_MONTH_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Double, ValueType::Undefined>(
+          COMPONENTS_START_SLOT + 2);
+  static constexpr auto LOCAL_DATE_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Double, ValueType::Undefined>(
+          COMPONENTS_START_SLOT + 3);
+  static constexpr auto LOCAL_DAY_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Double, ValueType::Undefined>(
+          COMPONENTS_START_SLOT + 4);
 
  private:
   
@@ -55,10 +67,11 @@ class DateObject : public NativeObject {
 
 
 
-  static const uint32_t LOCAL_SECONDS_INTO_YEAR_SLOT =
-      COMPONENTS_START_SLOT + 5;
+  static constexpr auto LOCAL_SECONDS_INTO_YEAR_SLOT =
+      TypedSlot<ValueType::Int32, ValueType::Double, ValueType::Undefined>(
+          COMPONENTS_START_SLOT + 5);
 
-  static const uint32_t RESERVED_SLOTS = LOCAL_SECONDS_INTO_YEAR_SLOT + 1;
+  static constexpr uint32_t RESERVED_SLOTS = COMPONENTS_START_SLOT + 6;
 
  public:
   static const JSClass class_;
@@ -70,13 +83,13 @@ class DateObject : public NativeObject {
 
 
 
-  const js::Value& UTCTime() const { return getFixedSlot(UTC_TIME_SLOT); }
+  const js::Value& UTCTime() const { return getFixedSlotTyped(UTC_TIME_SLOT); }
 
   
 
 
   const js::Value& localTime() const {
-    return getReservedSlot(LOCAL_TIME_SLOT);
+    return getReservedSlotTyped(LOCAL_TIME_SLOT);
   }
 
   
@@ -93,7 +106,7 @@ class DateObject : public NativeObject {
 
 
   const js::Value& localYear() const {
-    return getReservedSlot(LOCAL_YEAR_SLOT);
+    return getReservedSlotTyped(LOCAL_YEAR_SLOT);
   }
 
   
@@ -101,7 +114,7 @@ class DateObject : public NativeObject {
 
 
   const js::Value& localMonth() const {
-    return getReservedSlot(LOCAL_MONTH_SLOT);
+    return getReservedSlotTyped(LOCAL_MONTH_SLOT);
   }
 
   
@@ -109,48 +122,50 @@ class DateObject : public NativeObject {
 
 
   const js::Value& localDate() const {
-    return getReservedSlot(LOCAL_DATE_SLOT);
+    return getReservedSlotTyped(LOCAL_DATE_SLOT);
   }
 
   
 
 
 
-  const js::Value& localDay() const { return getReservedSlot(LOCAL_DAY_SLOT); }
+  const js::Value& localDay() const {
+    return getReservedSlotTyped(LOCAL_DAY_SLOT);
+  }
 
   
 
 
 
   const js::Value& localSecondsIntoYear() const {
-    return getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+    return getReservedSlotTyped(LOCAL_SECONDS_INTO_YEAR_SLOT);
   }
 
   static DateObject* createTemplateObject(JSContext* cx);
 
   static constexpr size_t offsetOfUTCTimeSlot() {
-    return getFixedSlotOffset(UTC_TIME_SLOT);
+    return getFixedSlotOffsetTyped(UTC_TIME_SLOT);
   }
   static constexpr size_t offsetOfTimeZoneCacheKeySlot() {
-    return getFixedSlotOffset(TIME_ZONE_CACHE_KEY_SLOT);
+    return getFixedSlotOffsetTyped(TIME_ZONE_CACHE_KEY_SLOT);
   }
   static constexpr size_t offsetOfLocalTimeSlot() {
-    return getFixedSlotOffset(LOCAL_TIME_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_TIME_SLOT);
   }
   static constexpr size_t offsetOfLocalYearSlot() {
-    return getFixedSlotOffset(LOCAL_YEAR_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_YEAR_SLOT);
   }
   static constexpr size_t offsetOfLocalMonthSlot() {
-    return getFixedSlotOffset(LOCAL_MONTH_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_MONTH_SLOT);
   }
   static constexpr size_t offsetOfLocalDateSlot() {
-    return getFixedSlotOffset(LOCAL_DATE_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_DATE_SLOT);
   }
   static constexpr size_t offsetOfLocalDaySlot() {
-    return getFixedSlotOffset(LOCAL_DAY_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_DAY_SLOT);
   }
   static constexpr size_t offsetOfLocalSecondsIntoYearSlot() {
-    return getFixedSlotOffset(LOCAL_SECONDS_INTO_YEAR_SLOT);
+    return getFixedSlotOffsetTyped(LOCAL_SECONDS_INTO_YEAR_SLOT);
   }
 };
 
