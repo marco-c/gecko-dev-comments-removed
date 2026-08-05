@@ -5,6 +5,7 @@
 #include "RenderCompositorNative.h"
 
 #include "GLContext.h"
+#include "GLContextEGL.h"
 #include "GLContextProvider.h"
 #include "RenderCompositorRecordedFrame.h"
 #include "mozilla/ProfilerLabels.h"
@@ -556,7 +557,42 @@ void RenderCompositorNativeOGL::DoSwap() {
   }
 }
 
-void RenderCompositorNativeOGL::DoFlush() { mGL->fFlush(); }
+void RenderCompositorNativeOGL::DoFlush() {
+  if (mGL->GetContextType() == gl::GLContextType::EGL) {
+    const auto* gle = gl::GLContextEGL::Cast(mGL);
+    const auto& egl = gle->mEgl;
+
+    
+    
+    
+    
+    if (egl->IsExtensionSupported(
+            gl::EGLExtension::ANGLE_metal_commands_scheduled_sync)) {
+      EGLSync sync = egl->fCreateSync(
+          LOCAL_EGL_SYNC_METAL_COMMANDS_SCHEDULED_ANGLE, nullptr);
+      if (!sync) {
+        gfxCriticalNote
+            << "Creating EGL_SYNC_METAL_COMMANDS_SCHEDULED sync failed";
+        mGL->fFinish();
+        return;
+      }
+
+      
+      
+      
+      const EGLint result = egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+      egl->fDestroySync(sync);
+      if (result != LOCAL_EGL_CONDITION_SATISFIED) {
+        gfxCriticalNote
+            << "Waiting for EGL_SYNC_METAL_COMMANDS_SCHEDULED sync failed";
+        mGL->fFinish();
+        return;
+      }
+      return;
+    }
+  }
+  mGL->fFlush();
+}
 
 void RenderCompositorNativeOGL::InsertFrameDoneSync() {
 #ifdef XP_DARWIN
