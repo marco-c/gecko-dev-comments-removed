@@ -1558,7 +1558,9 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
 	pen_style |= PS_USERSTYLE;
 	dash_array = _cairo_calloc_ab (sizeof (DWORD), style->num_dashes);
 	for (i = 0; i < style->num_dashes; i++) {
-	    dash_array[i] = (DWORD) (scale * style->dash[i]);
+      
+
+	    dash_array[i] = MAX(1, (DWORD) (scale * style->dash[i]));
 	}
     } else {
 	pen_style |= PS_SOLID;
