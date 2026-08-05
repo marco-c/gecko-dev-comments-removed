@@ -283,11 +283,38 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   
   
-  encoding = mRequest->ClassicScriptFallbackEncoding();
-  MOZ_ASSERT(encoding);
+  nsAutoString hintCharset;
+  if (!mRequest->GetScriptLoadContext()->IsPreload()) {
+    mRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
+  } else {
+    nsTArray<ScriptLoader::PreloadInfo>::index_type i =
+        mScriptLoader->mPreloads.IndexOf(
+            mRequest, 0, ScriptLoader::PreloadRequestComparator());
 
-  mDecoder =
-      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    NS_ASSERTION(i != mScriptLoader->mPreloads.NoIndex,
+                 "Incorrect preload bookkeeping");
+    hintCharset = mScriptLoader->mPreloads[i].mCharset;
+  }
+
+  if ((encoding = Encoding::ForLabel(hintCharset))) {
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  if (mScriptLoader->mDocument) {
+    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  
+  
+  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
+                                       ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 
@@ -358,9 +385,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
   if (nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aChannel)) {
     nsAutoCString altDataType;
     cic->GetAlternativeDataType(altDataType);
-    nsAutoCString mimeType;
-    ScriptLoader::BytecodeMimeTypeFor(mRequest->getLoadedScript(), mimeType);
-    if (altDataType.Equals(mimeType)) {
+    if (altDataType.Equals(ScriptLoader::BytecodeMimeTypeFor(mRequest))) {
       mRequest->SetSerializedStencil();
       TRACE_FOR_TEST(mRequest, "load:diskcache");
       return NS_OK;
