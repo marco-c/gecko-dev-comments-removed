@@ -235,6 +235,13 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   RefPtr<WebGLBuffer> mZeroBuffer;
   size_t mZeroSize = 0;
   
+  
+  
+  
+  RefPtr<WebGLBuffer> mUploadBuffer;
+  
+  size_t mUploadBufferOffset = 0;
+  
   RefPtr<WebGLTexture> mNoClipMask;
 
   uint32_t mMaxTextureSize = 0;
@@ -484,6 +491,7 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void RemoveTextureMemory(BackingTexture* aTexture);
 
   void ClearZeroBuffer();
+  void ClearUploadBuffer();
   void ClearAllTextures();
   void ClearEmptyTextureMemory();
   void ClearCachesIfNecessary();
