@@ -11,7 +11,6 @@ use crate::command_buffer::CommandBufferIndex;
 use crate::pattern::image::ImagePattern;
 use crate::quad::{self, QuadTransformState};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
-use crate::renderer::GpuBufferAddress;
 use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
 use crate::intern::{self, DataStore};
@@ -335,24 +334,6 @@ pub use api::interned_prims::ImageBorder;
 pub type ImageBorderKey = PrimKey<ImageBorder>;
 
 impl intern::InternDebug for ImageBorderKey {}
-
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct ImageBorderScratch {
-    
-    
-    
-    
-    pub gpu_address: GpuBufferAddress,
-    
-    
-    
-    pub src_color: Option<RenderTaskId>,
-    
-    
-    pub is_opaque: bool,
-}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
