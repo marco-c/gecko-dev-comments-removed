@@ -1,0 +1,14 @@
+
+
+
+
+
+#include "mozilla/dom/SpeculationRulesManager.h"
+
+namespace mozilla::dom {
+
+void SpeculationRulesManager::RemoveRecord(PrefetchRecordChild* aRecord) {
+  mPrefetchRecords.RemoveElement(aRecord);
+}
+
+}  
