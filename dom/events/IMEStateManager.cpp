@@ -476,12 +476,44 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "IMEStateManager::RecreateIMEContentObserverWhenContentRemoved",
         [presContext = OwningNonNull{aPresContext}]() {
-          MOZ_ASSERT(sFocusedPresContext == presContext);
-          MOZ_ASSERT(!sFocusedElement);
-          if (HTMLEditor* const htmlEditor =
-                  nsContentUtils::GetHTMLEditor(presContext)) {
-            CreateIMEContentObserver(*htmlEditor, nullptr);
+          
+          if (sFocusedPresContext != presContext || sFocusedElement)
+              [[unlikely]] {
+            return;
           }
+          
+          
+          const RefPtr<HTMLEditor> htmlEditor =
+              nsContentUtils::GetHTMLEditor(presContext);
+          if (!htmlEditor) [[unlikely]] {
+            return;
+          }
+          if (sActiveIMEContentObserver) {
+            
+            
+            if (sActiveIMEContentObserver->IsObserving(presContext, nullptr)) {
+              return;
+            }
+            NS_WARNING(
+                "There is unexpected IMEContentObserver, we'll recreate it...");
+            
+            DestroyIMEContentObserver();
+            
+            
+            
+            if (sFocusedPresContext != presContext || sFocusedElement)
+                [[unlikely]] {
+              MOZ_ASSERT(XRE_IsParentProcess());
+              return;
+            }
+            if (sActiveIMEContentObserver) {
+              MOZ_ASSERT(XRE_IsParentProcess());
+              MOZ_ASSERT(
+                  sActiveIMEContentObserver->IsObserving(presContext, nullptr));
+              return;
+            }
+          }
+          CreateIMEContentObserver(*htmlEditor, nullptr);
         }));
   }
 
