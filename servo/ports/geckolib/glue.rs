@@ -7957,7 +7957,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         );
         
         
-        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtStart(
+        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtEnd(
             keyframes,
             step.start_offset.percentage.0 as f32,
             &timing_function,
@@ -8031,6 +8031,10 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
             },
         }
     }
+
+    
+    
+    keyframes.reverse();
 
     let mut properties_changed = PropertyDeclarationIdSet::default();
     for property in animation.properties_changed.iter() {

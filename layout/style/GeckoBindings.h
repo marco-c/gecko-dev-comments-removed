@@ -409,8 +409,7 @@ void Gecko_EnsureStyleViewTimelineArrayLength(void* array, size_t len);
 
 
 
-
-mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtEnd(
     nsTArray<mozilla::Keyframe>* keyframes, float offset,
     const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
