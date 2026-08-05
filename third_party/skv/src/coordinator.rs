@@ -196,6 +196,19 @@ impl<'a> CoordinatorClient<'a> {
     
     
     
+    pub fn abort(&self) {
+        let state = self.coordinator.state.lock().unwrap();
+        let max_child_key = self.key.clone().appending(ClientKeyBud::MAX);
+        for (_, client) in state.clients.range(&self.key..=&max_child_key) {
+            client.controller.abort();
+        }
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -251,7 +264,11 @@ impl<'a> CoordinatorClient<'a> {
         for store in closeable_stores {
             
             let store = store.into_inner().expect("invariant violation");
-            store.close();
+            if store.has_bound_close_sink() {
+                
+            } else {
+                store.close();
+            }
         }
     }
 
