@@ -1583,15 +1583,6 @@ void gfxFT2FontList::FindFonts() {
       
       useSystemFontAPI = false;
     }
-
-    if (!StaticPrefs::gfx_font_rendering_colr_v1_enabled()) {
-      
-      
-      
-      nsAutoCString legacyEmojiFont(androidFontsRoot);
-      legacyEmojiFont.Append("/NotoColorEmojiLegacy.ttf");
-      AppendFacesFromFontFile(legacyEmojiFont, mFontNameCache.get(), kStandard);
-    }
   }
 
   if (!useSystemFontAPI)
