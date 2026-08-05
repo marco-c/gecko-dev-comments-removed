@@ -304,7 +304,8 @@ UniquePtr<MozFramebuffer> SurfacePoolWayland::CreateFramebufferForTexture(
   
   
   UniquePtr<MozFramebuffer> fb = MozFramebuffer::CreateForBacking(
-      aGL, aSize, 0, aNeedsDepthBuffer, LOCAL_GL_TEXTURE_2D, aTexture);
+      aGL, aSize, 0, aNeedsDepthBuffer, aNeedsDepthBuffer, LOCAL_GL_TEXTURE_2D,
+      aTexture);
   if (fb && fb->GetDepthAndStencilBuffer()) {
     mDepthBuffers.AppendElement(
         DepthBufferEntry{aGL, aSize, fb->GetDepthAndStencilBuffer().get()});
