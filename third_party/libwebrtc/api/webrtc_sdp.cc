@@ -2700,9 +2700,7 @@ bool ParseContent(absl::string_view message,
         ReportSdpBandwidth(kSdpBandwidthParseFailure);
         return false;
       }
-      if (b == -1) {
-        ReportSdpBandwidth(kSdpBandwidthNegativeOne);
-      } else if (b == 0) {
+      if (b == 0) {
         ReportSdpBandwidth(kSdpBandwidthZero);
       } else if (b > 0 && b <= INT_MAX / 1000) {
         ReportSdpBandwidth(kSdpBandwidthSmall);
@@ -2710,16 +2708,6 @@ bool ParseContent(absl::string_view message,
         ReportSdpBandwidth(kSdpBandwidthLarge);
       } else {
         ReportSdpBandwidth(kSdpBandwidthNegative);
-      }
-      
-      
-      
-      
-      
-      if (bandwidth_type == kApplicationSpecificBandwidth && b == -1) {
-        RTC_LOG(LS_WARNING) << "Ignoring \"b=AS:-1\"; will be treated as \"no "
-                               "bandwidth limit\".";
-        continue;
       }
       if (b < 0) {
         return ParseFailed(

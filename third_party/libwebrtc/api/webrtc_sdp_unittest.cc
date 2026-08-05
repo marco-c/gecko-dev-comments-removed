@@ -4021,29 +4021,6 @@ TEST_F(WebRtcSdpTest, DeserializingNegativeBandwidthLimitFails) {
   ExpectParseFailure(std::string(kSdpWithNegativeBandwidth), "b=AS:-1000");
 }
 
-
-
-
-
-
-TEST_F(WebRtcSdpTest, BandwidthLimitOfNegativeOneIgnored) {
-  static const char kSdpWithBandwidthOfNegativeOne[] =
-      "v=0\r\n"
-      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
-      "s=-\r\n"
-      "t=0 0\r\n"
-      "m=video 3457 RTP/SAVPF 120\r\n"
-      "b=AS:-1\r\n";
-
-  std::unique_ptr<SessionDescriptionInterface> jdesc_output =
-      SdpDeserialize(kSdpWithBandwidthOfNegativeOne);
-  ASSERT_THAT(jdesc_output, NotNull());
-  const VideoContentDescription* vcd =
-      GetFirstVideoContentDescription(jdesc_output->description());
-  ASSERT_THAT(vcd, NotNull());
-  EXPECT_EQ(kAutoBandwidth, vcd->bandwidth());
-}
-
 TEST_F(WebRtcSdpTest, SdpBandwidthMetrics) {
   metrics::Reset();
   auto get_sdp = [](absl::string_view value) {
@@ -4058,9 +4035,10 @@ TEST_F(WebRtcSdpTest, SdpBandwidthMetrics) {
   };
 
   
+  
   SdpDeserialize(get_sdp("-1"));
   EXPECT_METRIC_EQ(1, metrics::NumEvents("WebRTC.PeerConnection.SdpBandwidth",
-                                         kSdpBandwidthNegativeOne));
+                                         kSdpBandwidthNegative));
 
   
   SdpDeserialize(get_sdp("0"));
@@ -4079,7 +4057,7 @@ TEST_F(WebRtcSdpTest, SdpBandwidthMetrics) {
 
   
   SdpDeserialize(get_sdp("-1000"));
-  EXPECT_METRIC_EQ(1, metrics::NumEvents("WebRTC.PeerConnection.SdpBandwidth",
+  EXPECT_METRIC_EQ(2, metrics::NumEvents("WebRTC.PeerConnection.SdpBandwidth",
                                          kSdpBandwidthNegative));
 
   
