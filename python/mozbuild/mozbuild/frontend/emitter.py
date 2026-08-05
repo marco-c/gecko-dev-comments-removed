@@ -23,6 +23,7 @@ from mozbuild.util import HierarchicalStringList
 from ..testing import REFTEST_FLAVORS, TEST_MANIFESTS, SupportFilesConverter
 from .context import Context, ObjDirPath, Path, SourcePath, SubContext
 from .data import (
+    BaseRustLibrary,
     BaseRustProgram,
     ChromeManifestEntry,
     ComputedFlags,
@@ -267,7 +268,7 @@ class TreeMetadataEmitter(LoggingMixin):
             
             
             
-            if isinstance(lib, RustTests):
+            if isinstance(lib, (BaseRustLibrary, RustTests)):
                 continue
             if all(isinstance(o, StaticLibrary) for o in recurse_refs(lib)):
                 shared_libs = sorted(
