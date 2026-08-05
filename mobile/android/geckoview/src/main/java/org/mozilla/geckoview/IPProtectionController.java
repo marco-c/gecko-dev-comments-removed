@@ -516,6 +516,9 @@ public class IPProtectionController {
 
 
 
+
+
+
   @HandlerThread
   public @NonNull GeckoResult<Void> activate(
       final boolean userAction, final boolean inPrivateBrowsing, final @Nullable String country) {
