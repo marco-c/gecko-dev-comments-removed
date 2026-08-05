@@ -546,16 +546,9 @@ pref("toolkit.telemetry.debugSlowSql", false);
 pref("toolkit.telemetry.unified", true);
 
 
-pref("toolkit.telemetry.dap_enabled", false);
 pref("toolkit.telemetry.dap.logLevel", "Warn");
 
-pref("toolkit.telemetry.dap_task1_enabled", false);
-pref("toolkit.telemetry.dap_task1_taskid", "");
 
-pref("toolkit.telemetry.dap_visit_counting_enabled", false);
-
-
-pref("toolkit.telemetry.dap_visit_counting_experiment_list", "[]");
 
 
 pref("toolkit.telemetry.dap.leader.url", "https://dap-09-3.api.divviup.org");
