@@ -11,10 +11,13 @@ var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-var { uploadProfileArtifact, installProfilerDumpAndQuit } =
-  ChromeUtils.importESModule(
-    "resource://testing-common/TestProfilerArtifact.sys.mjs"
-  );
+var {
+  uploadProfileArtifact,
+  installProfilerDumpAndQuit,
+  shouldSaveFailureProfile,
+} = ChromeUtils.importESModule(
+  "resource://testing-common/TestProfilerArtifact.sys.mjs"
+);
 
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
@@ -963,12 +966,7 @@ Tester.prototype = {
     
     
     
-    if (
-      this.currentTest.failCount &&
-      Services.env.exists("MOZ_UPLOAD_DIR") &&
-      !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-      Services.profiler.IsActive()
-    ) {
+    if (this.currentTest.failCount && shouldSaveFailureProfile()) {
       await uploadProfileArtifact(this.currentTest.path, this.structuredLogger);
     }
   },

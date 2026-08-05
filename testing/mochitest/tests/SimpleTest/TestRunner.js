@@ -903,6 +903,23 @@ TestRunner.addAssertionCount = function (count) {
   }
 };
 
+
+
+
+
+
+TestRunner._saveFailureProfile = function (testURL) {
+  return SpecialPowers.spawnChrome([testURL], async profileName => {
+    const { shouldSaveFailureProfile, saveProfileToUploadDir } =
+      ChromeUtils.importESModule(
+        "resource://testing-common/TestProfilerArtifact.sys.mjs"
+      );
+    return shouldSaveFailureProfile()
+      ? await saveProfileToUploadDir(profileName)
+      : null;
+  });
+};
+
 TestRunner.testUnloaded = function (result, runtime) {
   
   
@@ -981,17 +998,43 @@ TestRunner.testUnloaded = function (result, runtime) {
       }
     }
 
-    TestRunner.structuredLogger.testEnd(
-      TestRunner.currentTestURL,
-      result,
-      "PASS",
-      TestRunner._currentTestTimedOut
-        ? "Test timed out"
-        : "Finished in " + runtime + "ms",
-      { runtime }
-    );
+    
+    
+    
+    (async function () {
+      try {
+        if (result != "PASS") {
+          let message = await TestRunner._saveFailureProfile(
+            TestRunner.currentTestURL
+          );
+          if (message) {
+            TestRunner.structuredLogger.testStatus(
+              TestRunner.currentTestURL,
+              null,
+              "FAIL",
+              "PASS",
+              message
+            );
+          }
+        }
+      } catch (e) {
+        TestRunner.structuredLogger.info(
+          "Failed to save failure profile: " + e
+        );
+      }
 
-    TestRunner.doNextTest();
+      TestRunner.structuredLogger.testEnd(
+        TestRunner.currentTestURL,
+        result,
+        "PASS",
+        TestRunner._currentTestTimedOut
+          ? "Test timed out"
+          : "Finished in " + runtime + "ms",
+        { runtime }
+      );
+
+      TestRunner.doNextTest();
+    })();
   });
 };
 
