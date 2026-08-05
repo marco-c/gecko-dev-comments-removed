@@ -2670,10 +2670,6 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   
   if (firstFrame->IsTextFrame()) {
     rect.SetRect(nsPoint(0, 0), firstFrame->GetRect().Size());
-    rv = ConvertToRootRelativeOffset(firstFrame, rect);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
     frameRect = rect;
     
     firstFrame->GetPointFromOffset(firstFrame.mOffsetInNode, &ptOffset);
@@ -2683,6 +2679,18 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
     } else {
       rect.x += ptOffset.x;
       rect.width -= ptOffset.x;
+    }
+    
+    
+    
+    
+    rv = ConvertToRootRelativeOffset(firstFrame, rect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = ConvertToRootRelativeOffset(firstFrame, frameRect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
   
@@ -2811,32 +2819,28 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   }
 
   
-  
-  
-  if (firstFrame.mFrame != lastFrame.mFrame) {
-    frameRect.SetRect(nsPoint(0, 0), lastFrame->GetRect().Size());
-    rv = ConvertToRootRelativeOffset(lastFrame, frameRect);
+  if (lastFrame->IsTextFrame()) {
+    nsRect lastFrameRect(nsPoint(0, 0), lastFrame->GetRect().Size());
+    lastFrame->GetPointFromOffset(lastFrame.mOffsetInNode, &ptOffset);
+    if (lastFrame->GetWritingMode().IsVertical()) {
+      lastFrameRect.height -= lastFrame->GetRect().height - ptOffset.y;
+    } else {
+      lastFrameRect.width -= lastFrame->GetRect().width - ptOffset.x;
+    }
+    
+    
+    EnsureNonEmptyRect(lastFrameRect);
+    
+    
+    rv = ConvertToRootRelativeOffset(lastFrame, lastFrameRect);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-
-  
-  if (lastFrame->IsTextFrame()) {
-    lastFrame->GetPointFromOffset(lastFrame.mOffsetInNode, &ptOffset);
-    if (lastFrame->GetWritingMode().IsVertical()) {
-      frameRect.height -= lastFrame->GetRect().height - ptOffset.y;
-    } else {
-      frameRect.width -= lastFrame->GetRect().width - ptOffset.x;
-    }
-    
-    
-    EnsureNonEmptyRect(frameRect);
 
     if (firstFrame.mFrame == lastFrame.mFrame) {
-      rect.IntersectRect(rect, frameRect);
+      rect.IntersectRect(rect, lastFrameRect);
     } else {
-      rect.UnionRect(rect, frameRect);
+      rect.UnionRect(rect, lastFrameRect);
     }
   }
 
@@ -3073,10 +3077,16 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
     MOZ_ASSERT(aEvent->Succeeded());
     return NS_OK;
   }
-  nsPoint ptInTarget = ptInRoot + rootFrame->GetOffsetToCrossDoc(targetFrame);
-  int32_t rootAPD = rootFrame->PresContext()->AppUnitsPerDevPixel();
-  int32_t targetAPD = targetFrame->PresContext()->AppUnitsPerDevPixel();
-  ptInTarget = ptInTarget.ScaleToOtherAppUnits(rootAPD, targetAPD);
+  
+  
+  
+  nsPoint ptInTarget = ptInRoot;
+  if (NS_WARN_IF(nsLayoutUtils::TransformPoint(
+                     RelativeTo{rootFrame}, RelativeTo{targetFrame},
+                     ptInTarget) != nsLayoutUtils::TRANSFORM_SUCCEEDED)) {
+    MOZ_ASSERT(aEvent->Succeeded());
+    return NS_OK;
+  }
 
   nsIFrame::ContentOffsets tentativeCaretOffsets =
       targetFrame->GetContentOffsetsFromPoint(ptInTarget);
