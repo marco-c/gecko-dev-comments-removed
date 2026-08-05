@@ -407,6 +407,16 @@ class VideoInfo : public TrackInfo {
   
   
   
+  void AdoptImageSize(const gfx::IntSize& aImage) {
+    if (mImage != aImage) {
+      ResetImageRect();
+    }
+    mImage = aImage;
+  }
+
+  
+  
+  
   
   
   
