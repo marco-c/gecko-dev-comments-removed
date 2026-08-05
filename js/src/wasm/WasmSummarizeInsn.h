@@ -5,8 +5,6 @@
 #ifndef wasm_WasmSummarizeInsn_h
 #define wasm_WasmSummarizeInsn_h
 
-#include "mozilla/Maybe.h"
-
 #include "wasm/WasmCodegenTypes.h"  
 
 namespace js {
@@ -98,7 +96,11 @@ class SummarizeResult {
 
 
 
-mozilla::Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn);
+
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn);
+
+
+SummarizeResult SummarizeTrapInstruction(const uint8_t* insn);
 
 }  
 }  

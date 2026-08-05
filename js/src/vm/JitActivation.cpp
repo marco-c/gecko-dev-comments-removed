@@ -23,6 +23,7 @@
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmInstance.h"  
 #include "wasm/WasmProcess.h"   
+#include "wasm/WasmSummarizeInsn.h"
 
 #include "vm/Realm-inl.h"  
 
@@ -260,10 +261,22 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   wasmTrapCode_ = wasm::LookupCode(state.pc);
   MOZ_RELEASE_ASSERT(wasmTrapCode_);
 
+  
+  
+  
+  
+  
+  
+  wasm::SummarizeResult summary =
+      wasm::SummarizeTrapInstruction((const uint8_t*)state.pc);
+  
+  
+  MOZ_RELEASE_ASSERT(summary.identified());
+  uint8_t* resumePC = ((uint8_t*)state.pc) + summary.length();
+
   setWasmExitFP(fp);
   wasmTrapData_.emplace();
-  wasmTrapData_->resumePC =
-      ((uint8_t*)state.pc) + jit::WasmTrapInstructionLength;
+  wasmTrapData_->resumePC = resumePC;
   wasmTrapData_->unwoundPC = pc;
   wasmTrapData_->trap = trap;
   

@@ -17,6 +17,7 @@
 #include "wasm/WasmCodegenTypes.h"
 
 #include "mozilla/PodOperations.h"
+
 #include "wasm/WasmExprType.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmSummarizeInsn.h"
@@ -153,6 +154,13 @@ void TrapSitesForKind::checkInvariants(const uint8_t* codeBase) const {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   for (uint32_t i = 0; i < length(); i++) {
     uint32_t pcOffset = pcOffsets_[i];
     TrapMachineInsn expected = machineInsns_[i];
@@ -160,8 +168,8 @@ void TrapSitesForKind::checkInvariants(const uint8_t* codeBase) const {
     const uint8_t* insnAddr = codeBase + uintptr_t(pcOffset);
     
     
-    mozilla::Maybe<TrapMachineInsn> actual = SummarizeTrapInstruction(insnAddr);
-    bool valid = actual.isSome() && actual.value() == expected;
+    SummarizeResult actual = SummarizeTrapInstruction(insnAddr);
+    bool valid = actual.identified() && actual.kind() == expected;
     
     
     

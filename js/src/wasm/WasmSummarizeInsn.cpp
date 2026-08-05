@@ -13,6 +13,8 @@
 #  include "jit/riscv64/constant/Constant-riscv64.h"
 #endif
 
+#include "jit/Assembler.h"  
+
 using namespace js::jit;
 
 using mozilla::Maybe;
@@ -74,8 +76,163 @@ static bool hasOnly(uint32_t set, uint32_t onlyTheseMayBePresent) {
 
 enum Escape { EscNone, Esc0F, Esc0F38, Esc0F3A };
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
+
+
+
+
+
+static uint32_t AddressModeLength(const InstructionBytes& insn,
+                                  uint32_t delta) {
+  MOZ_ASSERT(delta < 16);
+
+  const uint8_t modrm = insn.get(delta++);
+  MOZ_ASSERT(ModRMisM(modrm));
+
+  
+  
+  
+  
+
+  const uint8_t modrm_reduced =
+      ((modrm & 0b11'000'000) >> 3) | (modrm & 0b000'00'111);
+
+  switch (modrm_reduced) {
+    
+    
+    case 0x00:
+    case 0x01:
+    case 0x02:
+    case 0x03:
+    case 0x06:
+    case 0x07: {
+      return 1;
+    }
+    
+    
+    case 0x08:
+    case 0x09:
+    case 0x0A:
+    case 0x0B:
+    case 0x0D:
+    case 0x0E:
+    case 0x0F: {
+      return 2;
+    }
+    
+    
+    case 0x10:
+    case 0x11:
+    case 0x12:
+    case 0x13:
+    case 0x15:
+    case 0x16:
+    case 0x17: {
+      return 5;
+    }
+    
+    
+    case 0x18:
+    case 0x19:
+    case 0x1A:
+    case 0x1B:
+    case 0x1C:
+    case 0x1D:
+    case 0x1E:
+    case 0x1F: {
+      MOZ_CRASH();
+    }
+    
+    case 0x05: {
+      return 5;
+    }
+    
+    
+    case 0x04: {
+      const uint8_t sib = insn.get(delta++);
+      const uint8_t base_r = sib & 7;
+      
+      bool base_is_RBP_or_R13 = base_r == 5 ;
+      return base_is_RBP_or_R13 ? 6 : 2;
+    }
+    
+    case 0x0C: {
+      return 3;
+    }
+    
+    case 0x14: {
+      return 6;
+    }
+    default: {
+      MOZ_CRASH();
+    }
+  }
+}
+
+
+
+
+
+static uint8_t ImmediateSizeFromOperationSize(uint8_t opSizeInBytes) {
+  switch (opSizeInBytes) {
+    case 1:
+    case 2:
+    case 4:
+      return opSizeInBytes;
+    case 8:
+      
+      return 4;
+    default:
+      MOZ_CRASH();
+  }
+}
+
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   const bool is64bit = sizeof(void*) == 8;
+
+  
+  
+  uint32_t delta = 0;
 
   
   
@@ -88,36 +245,36 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   
   while (true) {
-    if (insn[0] >= 0x40 && insn[0] <= 0x4F && is64bit) {
+    if (insn.get(delta + 0) >= 0x40 && insn.get(delta + 0) <= 0x4F && is64bit) {
       hasREX = true;
       
-      if (insn[0] >= 0x48) {
+      if (insn.get(delta + 0) >= 0x48) {
         prefixes |= PfxRexW;
       }
-      insn++;
+      delta++;
       continue;
     }
-    if (insn[0] == 0x66) {
+    if (insn.get(delta + 0) == 0x66) {
       prefixes |= Pfx66;
-      insn++;
+      delta++;
       continue;
     }
-    if (insn[0] == 0xF0) {
+    if (insn.get(delta + 0) == 0xF0) {
       prefixes |= PfxLock;
-      insn++;
+      delta++;
       continue;
     }
-    if (insn[0] == 0xF2) {
+    if (insn.get(delta + 0) == 0xF2) {
       prefixes |= PfxF2;
-      insn++;
+      delta++;
       continue;
     }
-    if (insn[0] == 0xF3) {
+    if (insn.get(delta + 0) == 0xF3) {
       prefixes |= PfxF3;
-      insn++;
+      delta++;
       continue;
     }
-    if (insn[0] == 0xC4 || insn[0] == 0xC5) {
+    if (insn.get(delta + 0) == 0xC4 || insn.get(delta + 0) == 0xC5) {
       hasVEX = true;
       
       
@@ -126,8 +283,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   }
 
   
-  if (hasAllOf(prefixes, PfxF2 | PfxF3) || (hasREX && hasVEX)) {
-    return Nothing();
+  if (  
+      hasAllOf(prefixes, PfxF2 | PfxF3) ||
+      
+      (hasREX && hasVEX) ||
+      
+      (hasVEX && (prefixes & PfxLock))) {
+    return SummarizeResult();
   }
 
   if (!hasVEX) {
@@ -154,17 +316,143 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
     
     
     
-    if (insn[0] == 0x0F && insn[1] == 0x0B && isEmpty(prefixes)) {
-      return Some(TrapMachineInsn::OfficialUD);
+    if (insn.get(delta + 0) == 0x0F && insn.get(delta + 1) == 0x0B &&
+        isEmpty(prefixes)) {
+      static_assert(WasmTrapInstructionLength == 2);
+      return SummarizeResult(TrapMachineInsn::OfficialUD, 2);
     }
 
     
 
     
+    if (insn.get(delta + 0) == 0x0F && insn.get(delta + 1) == 0xC0 &&
+        ModRMisM(insn.get(delta + 2)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    if (insn.get(delta + 0) == 0x0F && insn.get(delta + 1) == 0xC1 &&
+        ModRMisM(insn.get(delta + 2)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock | Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    if (insn.get(delta + 0) == 0x0F && insn.get(delta + 1) == 0xB0 &&
+        ModRMisM(insn.get(delta + 2)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    if (insn.get(delta + 0) == 0x0F && insn.get(delta + 1) == 0xB1 &&
+        ModRMisM(insn.get(delta + 2)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock | Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    
+    
+    
+    
+    if (insn.get(delta + 0) == 0x80 && ModRMisM(insn.get(delta + 1)) &&
+        (ModRMmid3(insn.get(delta + 1)) == 0  ||
+         ModRMmid3(insn.get(delta + 1)) == 5  ||
+         ModRMmid3(insn.get(delta + 1)) == 4  ||
+         ModRMmid3(insn.get(delta + 1)) == 1  ||
+         ModRMmid3(insn.get(delta + 1)) == 6 
+         ) &&
+        (prefixes & PfxLock) && hasOnly(prefixes, PfxLock)) {
+      
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    
+    
+    
+    
+    if (insn.get(delta + 0) == 0x81 && ModRMisM(insn.get(delta + 1)) &&
+        (ModRMmid3(insn.get(delta + 1)) == 0  ||
+         ModRMmid3(insn.get(delta + 1)) == 5  ||
+         ModRMmid3(insn.get(delta + 1)) == 4  ||
+         ModRMmid3(insn.get(delta + 1)) == 1  ||
+         ModRMmid3(insn.get(delta + 1)) == 6 
+         ) &&
+        (prefixes & PfxLock) && hasOnly(prefixes, PfxLock | Pfx66)) {
+      
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) +
+                        ImmediateSizeFromOperationSize(opSize);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    
+    
+    
+    
+    if (insn.get(delta + 0) == 0x83 && ModRMisM(insn.get(delta + 1)) &&
+        (ModRMmid3(insn.get(delta + 1)) == 0  ||
+         ModRMmid3(insn.get(delta + 1)) == 5  ||
+         ModRMmid3(insn.get(delta + 1)) == 4  ||
+         ModRMmid3(insn.get(delta + 1)) == 1  ||
+         ModRMmid3(insn.get(delta + 1)) == 6 
+         ) &&
+        (prefixes & PfxLock) && hasOnly(prefixes, PfxLock | Pfx66)) {
+      
+      
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    
+    
+    
+    
+    if ((insn.get(delta + 0) == 0x00 || insn.get(delta + 0) == 0x28 ||
+         insn.get(delta + 0) == 0x20 || insn.get(delta + 0) == 0x08 ||
+         insn.get(delta + 0) == 0x30) &&
+        ModRMisM(insn.get(delta + 1)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    
+    
+    
+    
+    if ((insn.get(delta + 0) == 0x01 || insn.get(delta + 0) == 0x29 ||
+         insn.get(delta + 0) == 0x21 || insn.get(delta + 0) == 0x09 ||
+         insn.get(delta + 0) == 0x31) &&
+        ModRMisM(insn.get(delta + 1)) && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock | Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+    if (!is64bit && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0xC7 && ModRMisM(insn.get(delta + 2)) &&
+        ModRMmid3(insn.get(delta + 2)) == 1 && (prefixes & PfxLock) &&
+        hasOnly(prefixes, PfxLock)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
     
     
     if (prefixes & PfxLock) {
-      return Some(TrapMachineInsn::Atomic);
+      return SummarizeResult();
     }
     
 
@@ -173,73 +461,94 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
     
     
     
-    if (insn[0] == 0x86 && ModRMisM(insn[1]) && isEmpty(prefixes)) {
-      return Some(TrapMachineInsn::Atomic);
-    }
-    if (insn[0] == 0x87 && ModRMisM(insn[1]) &&
-        hasOnly(prefixes, Pfx66 | PfxRexW)) {
-      return Some(TrapMachineInsn::Atomic);
-    }
-
-    
-
-    
-    
-    
-    
-    if ((insn[0] == 0x88 || insn[0] == 0x8A) && ModRMisM(insn[1]) &&
+    if (insn.get(delta + 0) == 0x86 && ModRMisM(insn.get(delta + 1)) &&
         isEmpty(prefixes)) {
-      return Some(insn[0] == 0x88 ? TrapMachineInsn::Store8
-                                  : TrapMachineInsn::Load8);
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+    if (insn.get(delta + 0) == 0x87 && ModRMisM(insn.get(delta + 1)) &&
+        hasOnly(prefixes, Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(TrapMachineInsn::Atomic, length);  
+    }
+
+    
+
+    
+    
+    
+    
+    if ((insn.get(delta + 0) == 0x88 || insn.get(delta + 0) == 0x8A) &&
+        ModRMisM(insn.get(delta + 1)) && isEmpty(prefixes)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(insn.get(delta + 0) == 0x88
+                                 ? TrapMachineInsn::Store8
+                                 : TrapMachineInsn::Load8,
+                             length);
     }
 
     
     
     
     
-    if ((insn[0] == 0x89 || insn[0] == 0x8B) && ModRMisM(insn[1]) &&
-        hasOnly(prefixes, Pfx66 | PfxRexW)) {
-      return Some(insn[0] == 0x89 ? TrapMachineInsnForStore(opSize)
-                                  : TrapMachineInsnForLoad(opSize));
+    if ((insn.get(delta + 0) == 0x89 || insn.get(delta + 0) == 0x8B) &&
+        ModRMisM(insn.get(delta + 1)) && hasOnly(prefixes, Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(insn.get(delta + 0) == 0x89
+                                 ? TrapMachineInsnForStore(opSize)
+                                 : TrapMachineInsnForLoad(opSize),
+                             length);
     }
 
     
     
-    if (insn[0] == 0xC6 && ModRMisM(insn[1]) && ModRMmid3(insn[1]) == 0 &&
-        isEmpty(prefixes)) {
-      return Some(TrapMachineInsn::Store8);
+    if (insn.get(delta + 0) == 0xC6 && ModRMisM(insn.get(delta + 1)) &&
+        ModRMmid3(insn.get(delta + 1)) == 0 && isEmpty(prefixes)) {
+      
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+      return SummarizeResult(TrapMachineInsn::Store8, length);
     }
     
     
-    if (insn[0] == 0xC7 && ModRMisM(insn[1]) && ModRMmid3(insn[1]) == 0 &&
+    if (insn.get(delta + 0) == 0xC7 && ModRMisM(insn.get(delta + 1)) &&
+        ModRMmid3(insn.get(delta + 1)) == 0 &&
         hasOnly(prefixes, Pfx66 | PfxRexW)) {
-      return Some(TrapMachineInsnForStore(opSize));
+      
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) +
+                        ImmediateSizeFromOperationSize(opSize);
+      return SummarizeResult(TrapMachineInsnForStore(opSize), length);
     }
 
     
     
     
     
-    if (insn[0] == 0x0F && (insn[1] == 0xB6 || insn[1] == 0xBE) &&
-        ModRMisM(insn[2]) && (opSize == 2 || opSize == 4 || opSize == 8) &&
+    if (insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0xB6 || insn.get(delta + 1) == 0xBE) &&
+        ModRMisM(insn.get(delta + 2)) &&
+        (opSize == 2 || opSize == 4 || opSize == 8) &&
         hasOnly(prefixes, Pfx66 | PfxRexW)) {
-      return Some(TrapMachineInsn::Load8);
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Load8, length);
     }
     
     
     
     
-    if (insn[0] == 0x0F && (insn[1] == 0xB7 || insn[1] == 0xBF) &&
-        ModRMisM(insn[2]) && (opSize == 4 || opSize == 8) &&
+    if (insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0xB7 || insn.get(delta + 1) == 0xBF) &&
+        ModRMisM(insn.get(delta + 2)) && (opSize == 4 || opSize == 8) &&
         hasOnly(prefixes, PfxRexW)) {
-      return Some(TrapMachineInsn::Load16);
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Load16, length);
     }
 
     
     
-    if (hasAllOf(prefixes, PfxRexW) && insn[0] == 0x63 && ModRMisM(insn[1]) &&
-        hasOnly(prefixes, Pfx66 | PfxRexW)) {
-      return Some(TrapMachineInsn::Load32);
+    if (hasAllOf(prefixes, PfxRexW) && insn.get(delta + 0) == 0x63 &&
+        ModRMisM(insn.get(delta + 1)) && hasOnly(prefixes, Pfx66 | PfxRexW)) {
+      uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+      return SummarizeResult(TrapMachineInsn::Load32, length);
     }
 
     
@@ -248,105 +557,73 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
     
     
     
-    if (insn[0] == 0x0F && (insn[1] == 0x10 || insn[1] == 0x11) &&
-        ModRMisM(insn[2]) && hasOnly(prefixes, PfxRexW)) {
-      return Some(insn[1] == 0x10 ? TrapMachineInsn::Load128
-                                  : TrapMachineInsn::Store128);
-    }
-
-    
-    
-    
-    
-    if (insn[0] == 0x0F && (insn[1] == 0x12 || insn[1] == 0x16) &&
-        ModRMisM(insn[2]) && hasOnly(prefixes, PfxRexW)) {
-      return Some(TrapMachineInsn::Load64);
-    }
-
-    
-    
-    
-    
-    if (insn[0] == 0x0F && (insn[1] == 0x13 || insn[1] == 0x17) &&
-        ModRMisM(insn[2]) && hasOnly(prefixes, PfxRexW)) {
-      return Some(TrapMachineInsn::Store64);
+    if (insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0x10 || insn.get(delta + 1) == 0x11) &&
+        ModRMisM(insn.get(delta + 2)) && hasOnly(prefixes, PfxRexW)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(insn.get(delta + 1) == 0x10
+                                 ? TrapMachineInsn::Load128
+                                 : TrapMachineInsn::Store128,
+                             length);
     }
 
     
     
     
     
-    if (hasAllOf(prefixes, PfxF2) && insn[0] == 0x0F &&
-        (insn[1] == 0x10 || insn[1] == 0x11) && ModRMisM(insn[2]) &&
-        hasOnly(prefixes, PfxRexW | PfxF2)) {
-      return Some(insn[1] == 0x10 ? TrapMachineInsn::Load64
-                                  : TrapMachineInsn::Store64);
-    }
-
-    
-    
-    if (hasAllOf(prefixes, PfxF2) && insn[0] == 0x0F && insn[1] == 0x12 &&
-        ModRMisM(insn[2]) && hasOnly(prefixes, PfxF2)) {
-      return Some(TrapMachineInsn::Load64);
+    if (insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0x12 || insn.get(delta + 1) == 0x16) &&
+        ModRMisM(insn.get(delta + 2)) && hasOnly(prefixes, PfxRexW)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Load64, length);
     }
 
     
     
     
     
-    if (hasAllOf(prefixes, PfxF3) && insn[0] == 0x0F &&
-        (insn[1] == 0x10 || insn[1] == 0x11) && ModRMisM(insn[2]) &&
-        hasOnly(prefixes, PfxRexW | PfxF3)) {
-      return Some(insn[1] == 0x10 ? TrapMachineInsn::Load32
-                                  : TrapMachineInsn::Store32);
+    if (insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0x13 || insn.get(delta + 1) == 0x17) &&
+        ModRMisM(insn.get(delta + 2)) && hasOnly(prefixes, PfxRexW)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Store64, length);
     }
 
     
     
     
     
-    if (hasAllOf(prefixes, PfxF3) && insn[0] == 0x0F &&
-        (insn[1] == 0x6F || insn[1] == 0x7F) && ModRMisM(insn[2]) &&
-        hasOnly(prefixes, PfxF3)) {
-      return Some(insn[1] == 0x6F ? TrapMachineInsn::Load128
-                                  : TrapMachineInsn::Store128);
+    if (hasAllOf(prefixes, PfxF2) && insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0x10 || insn.get(delta + 1) == 0x11) &&
+        ModRMisM(insn.get(delta + 2)) && hasOnly(prefixes, PfxRexW | PfxF2)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(insn.get(delta + 1) == 0x10
+                                 ? TrapMachineInsn::Load64
+                                 : TrapMachineInsn::Store64,
+                             length);
     }
 
     
     
-    
-    if (hasAllOf(prefixes, Pfx66) && insn[0] == 0x0F && insn[1] == 0x3A &&
-        insn[2] == 0x20 && ModRMisM(insn[3]) && hasOnly(prefixes, Pfx66)) {
-      return Some(TrapMachineInsn::Load8);
-    }
-    
-    
-    
-    if (hasAllOf(prefixes, Pfx66) && insn[0] == 0x0F && insn[1] == 0xC4 &&
-        ModRMisM(insn[2]) && hasOnly(prefixes, Pfx66)) {
-      return Some(TrapMachineInsn::Load16);
-    }
-    
-    
-    
-    if (hasAllOf(prefixes, Pfx66) && insn[0] == 0x0F && insn[1] == 0x3A &&
-        insn[2] == 0x21 && ModRMisM(insn[3]) && hasOnly(prefixes, Pfx66)) {
-      return Some(TrapMachineInsn::Load32);
+    if (hasAllOf(prefixes, PfxF2) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0x12 && ModRMisM(insn.get(delta + 2)) &&
+        hasOnly(prefixes, PfxF2)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(TrapMachineInsn::Load64, length);
     }
 
     
     
     
     
-    
-    
-    
-    if (hasAllOf(prefixes, Pfx66) && insn[0] == 0x0F && insn[1] == 0x3A &&
-        (insn[2] == 0x14 || insn[2] == 0x15 || insn[2] == 0x17) &&
-        ModRMisM(insn[3]) && hasOnly(prefixes, Pfx66)) {
-      return Some(insn[2] == 0x14   ? TrapMachineInsn::Store8
-                  : insn[2] == 0x15 ? TrapMachineInsn::Store16
-                                    : TrapMachineInsn::Store32);
+    if (hasAllOf(prefixes, PfxF3) && insn.get(delta + 0) == 0x0F &&
+        (insn.get(delta + 1) == 0x10 || insn.get(delta + 1) == 0x11) &&
+        ModRMisM(insn.get(delta + 2)) && hasOnly(prefixes, PfxRexW | PfxF3)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2);
+      return SummarizeResult(insn.get(delta + 1) == 0x10
+                                 ? TrapMachineInsn::Load32
+                                 : TrapMachineInsn::Store32,
+                             length);
     }
 
     
@@ -361,15 +638,80 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
     
     
     
-    if (hasAllOf(prefixes, Pfx66) && insn[0] == 0x0F && insn[1] == 0x38 &&
-        (insn[2] == 0x20 || insn[2] == 0x23 || insn[2] == 0x25 ||
-         insn[2] == 0x30 || insn[2] == 0x33 || insn[2] == 0x35) &&
-        ModRMisM(insn[3]) && hasOnly(prefixes, Pfx66)) {
-      return Some(TrapMachineInsn::Load64);
+    
+
+    
+    
+    
+    if (hasAllOf(prefixes, Pfx66) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0x3A && insn.get(delta + 2) == 0x20 &&
+        ModRMisM(insn.get(delta + 3)) && hasOnly(prefixes, Pfx66)) {
+      uint32_t length = delta + 3 + AddressModeLength(insn, delta + 3) + 1;
+      return SummarizeResult(TrapMachineInsn::Load8, length);
+    }
+    
+    
+    
+    if (hasAllOf(prefixes, Pfx66) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0xC4 && ModRMisM(insn.get(delta + 2)) &&
+        hasOnly(prefixes, Pfx66)) {
+      uint32_t length = delta + 2 + AddressModeLength(insn, delta + 2) + 1;
+      return SummarizeResult(TrapMachineInsn::Load16, length);
+    }
+    
+    
+    
+    if (hasAllOf(prefixes, Pfx66) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0x3A && insn.get(delta + 2) == 0x21 &&
+        ModRMisM(insn.get(delta + 3)) && hasOnly(prefixes, Pfx66)) {
+      uint32_t length = delta + 3 + AddressModeLength(insn, delta + 3) + 1;
+      return SummarizeResult(TrapMachineInsn::Load32, length);
     }
 
     
-    return Nothing();
+    
+    
+    
+    
+    
+    
+    if (hasAllOf(prefixes, Pfx66) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0x3A &&
+        (insn.get(delta + 2) == 0x14 || insn.get(delta + 2) == 0x15 ||
+         insn.get(delta + 2) == 0x17) &&
+        ModRMisM(insn.get(delta + 3)) && hasOnly(prefixes, Pfx66)) {
+      uint32_t length = delta + 3 + AddressModeLength(insn, delta + 3) + 1;
+      return SummarizeResult(
+          insn.get(delta + 2) == 0x14   ? TrapMachineInsn::Store8
+          : insn.get(delta + 2) == 0x15 ? TrapMachineInsn::Store16
+                                        : TrapMachineInsn::Store32,
+          length);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (hasAllOf(prefixes, Pfx66) && insn.get(delta + 0) == 0x0F &&
+        insn.get(delta + 1) == 0x38 &&
+        (insn.get(delta + 2) == 0x20 || insn.get(delta + 2) == 0x23 ||
+         insn.get(delta + 2) == 0x25 || insn.get(delta + 2) == 0x30 ||
+         insn.get(delta + 2) == 0x33 || insn.get(delta + 2) == 0x35) &&
+        ModRMisM(insn.get(delta + 3)) && hasOnly(prefixes, Pfx66)) {
+      uint32_t length = delta + 3 + AddressModeLength(insn, delta + 3);
+      return SummarizeResult(TrapMachineInsn::Load64, length);
+    }
+
+    
+    return SummarizeResult();
   }
 
   
@@ -399,14 +741,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   
   MOZ_ASSERT(hasVEX && !hasREX);
-  MOZ_ASSERT(hasNoneOf(prefixes, PfxRexW));
-  MOZ_ASSERT(insn[0] == 0xC4 || insn[0] == 0xC5);
+  MOZ_ASSERT(hasNoneOf(prefixes, PfxRexW | PfxLock));
+  MOZ_ASSERT(insn.get(delta + 0) == 0xC4 || insn.get(delta + 0) == 0xC5);
 
   Escape esc = EscNone;
 
-  if (insn[0] == 0xC4) {
+  if (insn.get(delta + 0) == 0xC4) {
     
-    switch (insn[1] & 0x1F) {
+    switch (insn.get(delta + 1) & 0x1F) {
       case 1:
         esc = Esc0F;
         break;
@@ -417,9 +759,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
         esc = Esc0F3A;
         break;
       default:
-        return Nothing();
+        return SummarizeResult();
     }
-    switch (insn[2] & 3) {
+    switch (insn.get(delta + 2) & 3) {
       case 0:
         break;
       case 1:
@@ -432,12 +774,12 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
         prefixes |= PfxF2;
         break;
     }
-    if (insn[2] & 4) {
+    if (insn.get(delta + 2) & 4) {
       
       
       prefixes |= PfxVexL;
     }
-    if ((insn[2] & 0x80) && is64bit) {
+    if ((insn.get(delta + 2) & 0x80) && is64bit) {
       
       
       
@@ -446,13 +788,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
       prefixes |= PfxRexW;
     }
     
-    insn += 3;
-  } else if (insn[0] == 0xC5) {
+    delta += 3;
+  } else if (insn.get(delta + 0) == 0xC5) {
     
     
     
     esc = Esc0F;
-    switch (insn[1] & 3) {
+    switch (insn.get(delta + 1) & 3) {
       case 0:
         break;
       case 1:
@@ -465,15 +807,15 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
         prefixes |= PfxF2;
         break;
     }
-    if (insn[1] & 4) {
+    if (insn.get(delta + 1) & 4) {
       prefixes |= PfxVexL;
     }
-    insn += 2;
+    delta += 2;
   }
 
   
   if (hasAllOf(prefixes, PfxF2 | PfxF3)) {
-    return Nothing();
+    return SummarizeResult();
   }
 
   
@@ -494,10 +836,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   
   if (hasNoneOf(prefixes, Pfx66 | PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
-      esc == Esc0F && (insn[0] == 0x10 || insn[0] == 0x11) &&
-      ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x10 ? TrapMachineInsn::Load128
-                                : TrapMachineInsn::Store128);
+      esc == Esc0F &&
+      (insn.get(delta + 0) == 0x10 || insn.get(delta + 0) == 0x11) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(insn.get(delta + 0) == 0x10
+                               ? TrapMachineInsn::Load128
+                               : TrapMachineInsn::Store128,
+                           length);
   }
 
   
@@ -507,9 +853,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, PfxF2) &&
       hasNoneOf(prefixes, Pfx66 | PfxF3 | PfxRexW | PfxVexL) && esc == Esc0F &&
-      (insn[0] == 0x10 || insn[0] == 0x11) && ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x10 ? TrapMachineInsn::Load64
-                                : TrapMachineInsn::Store64);
+      (insn.get(delta + 0) == 0x10 || insn.get(delta + 0) == 0x11) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(insn.get(delta + 0) == 0x10
+                               ? TrapMachineInsn::Load64
+                               : TrapMachineInsn::Store64,
+                           length);
   }
 
   
@@ -519,9 +869,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, PfxF3) &&
       hasNoneOf(prefixes, Pfx66 | PfxF2 | PfxRexW | PfxVexL) && esc == Esc0F &&
-      (insn[0] == 0x10 || insn[0] == 0x11) && ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x10 ? TrapMachineInsn::Load32
-                                : TrapMachineInsn::Store32);
+      (insn.get(delta + 0) == 0x10 || insn.get(delta + 0) == 0x11) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(insn.get(delta + 0) == 0x10
+                               ? TrapMachineInsn::Load32
+                               : TrapMachineInsn::Store32,
+                           length);
   }
 
   
@@ -529,8 +883,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, PfxF2) &&
       hasNoneOf(prefixes, Pfx66 | PfxF3 | PfxRexW | PfxVexL) && esc == Esc0F &&
-      insn[0] == 0x12 && ModRMisM(insn[1])) {
-    return Some(TrapMachineInsn::Load64);
+      insn.get(delta + 0) == 0x12 && ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(TrapMachineInsn::Load64, length);
   }
 
   
@@ -540,9 +895,11 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   
   if (hasNoneOf(prefixes, Pfx66 | PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
-      esc == Esc0F && (insn[0] == 0x13 || insn[0] == 0x17) &&
-      ModRMisM(insn[1])) {
-    return Some(TrapMachineInsn::Store64);
+      esc == Esc0F &&
+      (insn.get(delta + 0) == 0x13 || insn.get(delta + 0) == 0x17) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(TrapMachineInsn::Store64, length);
   }
 
   
@@ -552,9 +909,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, PfxF3) &&
       hasNoneOf(prefixes, Pfx66 | PfxF2 | PfxRexW | PfxVexL) && esc == Esc0F &&
-      (insn[0] == 0x6F || insn[0] == 0x7F) && ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x6F ? TrapMachineInsn::Load128
-                                : TrapMachineInsn::Store128);
+      (insn.get(delta + 0) == 0x6F || insn.get(delta + 0) == 0x7F) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(insn.get(delta + 0) == 0x6F
+                               ? TrapMachineInsn::Load128
+                               : TrapMachineInsn::Store128,
+                           length);
   }
 
   
@@ -563,8 +924,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, Pfx66) &&
       hasNoneOf(prefixes, PfxF2 | PfxF3 | PfxRexW | PfxVexL) && esc == Esc0F &&
-      insn[0] == 0xC4 && ModRMisM(insn[1])) {
-    return Some(TrapMachineInsn::Load16);
+      insn.get(delta + 0) == 0xC4 && ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+    return SummarizeResult(TrapMachineInsn::Load16, length);
   }
 
   
@@ -583,10 +945,12 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   if (hasAllOf(prefixes, Pfx66) &&
       hasNoneOf(prefixes, PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
       esc == Esc0F38 &&
-      (insn[0] == 0x20 || insn[0] == 0x23 || insn[0] == 0x25 ||
-       insn[0] == 0x30 || insn[0] == 0x33 || insn[0] == 0x35) &&
-      ModRMisM(insn[1])) {
-    return Some(TrapMachineInsn::Load64);
+      (insn.get(delta + 0) == 0x20 || insn.get(delta + 0) == 0x23 ||
+       insn.get(delta + 0) == 0x25 || insn.get(delta + 0) == 0x30 ||
+       insn.get(delta + 0) == 0x33 || insn.get(delta + 0) == 0x35) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(TrapMachineInsn::Load64, length);
   }
 
   
@@ -602,13 +966,19 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   if (hasAllOf(prefixes, Pfx66) &&
       hasNoneOf(prefixes, PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
       esc == Esc0F38 &&
-      (insn[0] == 0x78 || insn[0] == 0x79 || insn[0] == 0x18) &&
-      ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x78   ? TrapMachineInsn::Load8
-                : insn[0] == 0x79 ? TrapMachineInsn::Load16
-                                  : TrapMachineInsn::Load32);
+      (insn.get(delta + 0) == 0x78 || insn.get(delta + 0) == 0x79 ||
+       insn.get(delta + 0) == 0x18) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1);
+    return SummarizeResult(insn.get(delta + 0) == 0x78 ? TrapMachineInsn::Load8
+                           : insn.get(delta + 0) == 0x79
+                               ? TrapMachineInsn::Load16
+                               : TrapMachineInsn::Load32,
+                           length);
   }
 
+  
+  
   
   
   
@@ -616,10 +986,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, Pfx66) &&
       hasNoneOf(prefixes, PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
-      esc == Esc0F3A && (insn[0] == 0x14 || insn[0] == 0x15) &&
-      ModRMisM(insn[1])) {
-    return Some(insn[0] == 0x14 ? TrapMachineInsn::Store8
-                                : TrapMachineInsn::Store16);
+      esc == Esc0F3A &&
+      (insn.get(delta + 0) == 0x14 || insn.get(delta + 0) == 0x15) &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+    return SummarizeResult(insn.get(delta + 0) == 0x14
+                               ? TrapMachineInsn::Store8
+                               : TrapMachineInsn::Store16,
+                           length);
   }
 
   
@@ -628,30 +1002,33 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn) {
   
   if (hasAllOf(prefixes, Pfx66) &&
       hasNoneOf(prefixes, PfxF2 | PfxF3 | PfxRexW | PfxVexL) &&
-      esc == Esc0F3A && insn[0] == 0x17 && ModRMisM(insn[1])) {
-    return Some(TrapMachineInsn::Store32);
+      esc == Esc0F3A && insn.get(delta + 0) == 0x17 &&
+      ModRMisM(insn.get(delta + 1))) {
+    uint32_t length = delta + 1 + AddressModeLength(insn, delta + 1) + 1;
+    return SummarizeResult(TrapMachineInsn::Store32, length);
   }
 
   
-  return Nothing();
+  return SummarizeResult();
 }
 
 
 
 #elif defined(JS_CODEGEN_ARM64)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
-  MOZ_ASSERT(0 == (uintptr_t(insnAddr) & 3));
+  MOZ_ASSERT(insn.isU32aligned());
 
-  const uint32_t insn = *(uint32_t*)insnAddr;
+  const uint32_t insnBits = insn.getU32LittleEndian(0);
 
 #  define INSN(_maxIx, _minIx) \
-    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+    ((insnBits >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
-  if (insn == 0xD4A00000) {
-    return Some(TrapMachineInsn::OfficialUD);
+  if (insnBits == 0xD4A00000) {
+    static_assert(WasmTrapInstructionLength == 4);
+    return SummarizeResult(TrapMachineInsn::OfficialUD, 4);
   }
 
   
@@ -675,28 +1052,28 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   switch (INSN(31, 22)) {
     
     case 0b11'111'00100:
-      return Some(TrapMachineInsn::Store64);
+      return SummarizeResult(TrapMachineInsn::Store64, 4);
     
     case 0b10'111'00100:
-      return Some(TrapMachineInsn::Store32);
+      return SummarizeResult(TrapMachineInsn::Store32, 4);
     
     case 0b01'111'00100:
-      return Some(TrapMachineInsn::Store16);
+      return SummarizeResult(TrapMachineInsn::Store16, 4);
     
     case 0b00'111'00100:
-      return Some(TrapMachineInsn::Store8);
+      return SummarizeResult(TrapMachineInsn::Store8, 4);
     
     case 0b11'111'00101:
-      return Some(TrapMachineInsn::Load64);
+      return SummarizeResult(TrapMachineInsn::Load64, 4);
     
     case 0b10'111'00101:
-      return Some(TrapMachineInsn::Load32);
+      return SummarizeResult(TrapMachineInsn::Load32, 4);
     
     case 0b01'111'00101:
-      return Some(TrapMachineInsn::Load16);
+      return SummarizeResult(TrapMachineInsn::Load16, 4);
     
     case 0b00'111'00101:
-      return Some(TrapMachineInsn::Load8);
+      return SummarizeResult(TrapMachineInsn::Load8, 4);
   }
 
   
@@ -705,33 +1082,33 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(31, 21)) {
       
       case 0b11'111'00001'0:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b10'111'00001'0:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b01'111'00001'0:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       
       case 0b11'111'00000'0:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b10'111'00000'0:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b01'111'00000'0:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       
       
       
       case 0b10'111'000'10'0:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       
       case 0b01'111'000'11'0:
       case 0b01'111'000'10'0:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
     }
   }
 
@@ -740,17 +1117,17 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   switch (INSN(31, 22)) {
     
     case 0b10'111'001'10:
-      return Some(TrapMachineInsn::Load32);
+      return SummarizeResult(TrapMachineInsn::Load32, 4);
     
     
     case 0b01'111'001'10:
     case 0b01'111'001'11:
-      return Some(TrapMachineInsn::Load16);
+      return SummarizeResult(TrapMachineInsn::Load16, 4);
     
     
     case 0b00'111'001'10:
     case 0b00'111'001'11:
-      return Some(TrapMachineInsn::Load8);
+      return SummarizeResult(TrapMachineInsn::Load8, 4);
   }
 
   
@@ -759,19 +1136,19 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(31, 21)) {
       
       case 0b10'1110001'01:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b01'1110001'01:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b01'1110001'11:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b00'1110001'01:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b00'1110001'11:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
     }
   }
 
@@ -781,28 +1158,28 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(31, 21)) {
       
       case 0b11'111000001:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b10'111000001:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b01'111000001:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       
       case 0b00'111000001:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       
       case 0b11'111000011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b10'111000011:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b01'111000011:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b00'111000011:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
     }
   }
 
@@ -811,32 +1188,32 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   switch (INSN(31, 22)) {
     
     case 0b11'111'101'00:
-      return Some(TrapMachineInsn::Store64);
+      return SummarizeResult(TrapMachineInsn::Store64, 4);
     
     case 0b10'111'101'00:
-      return Some(TrapMachineInsn::Store32);
+      return SummarizeResult(TrapMachineInsn::Store32, 4);
     
     case 0b11'111'101'01:
-      return Some(TrapMachineInsn::Load64);
+      return SummarizeResult(TrapMachineInsn::Load64, 4);
     
     case 0b10'111'101'01:
-      return Some(TrapMachineInsn::Load32);
+      return SummarizeResult(TrapMachineInsn::Load32, 4);
   }
 
   if (INSN(11, 10) == 0b00) {
     switch (INSN(31, 21)) {
       
       case 0b11'111'100'00'0:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b10'111'100'00'0:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b11'111'100'01'0:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b10'111'100'01'0:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
     }
   }
 
@@ -844,16 +1221,16 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(31, 21)) {
       
       case 0b11'111100'001:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b10'111100'001:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b11'111100'011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b10'111100'011:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
     }
   }
 
@@ -862,31 +1239,31 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   if (INSN(11, 10) == 0b00) {
     
     if (INSN(31, 21) == 0b00'111'100'10'0) {
-      return Some(TrapMachineInsn::Store128);
+      return SummarizeResult(TrapMachineInsn::Store128, 4);
     }
     
     if (INSN(31, 21) == 0b00'111'100'11'0) {
-      return Some(TrapMachineInsn::Load128);
+      return SummarizeResult(TrapMachineInsn::Load128, 4);
     }
   }
 
   
   if (INSN(31, 22) == 0b00'111'101'10) {
-    return Some(TrapMachineInsn::Store128);
+    return SummarizeResult(TrapMachineInsn::Store128, 4);
   }
   
   if (INSN(31, 22) == 0b00'111'101'11) {
-    return Some(TrapMachineInsn::Load128);
+    return SummarizeResult(TrapMachineInsn::Load128, 4);
   }
 
   if (INSN(11, 10) == 0b10) {
     
     if (INSN(31, 21) == 0b00'111100'101) {
-      return Some(TrapMachineInsn::Store128);
+      return SummarizeResult(TrapMachineInsn::Store128, 4);
     }
     
     if (INSN(31, 21) == 0b00'111100'111) {
-      return Some(TrapMachineInsn::Load128);
+      return SummarizeResult(TrapMachineInsn::Load128, 4);
     }
   }
 
@@ -895,16 +1272,16 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   switch (INSN(31, 10)) {
     
     case 0b11'001000'010'11111'0'11111:
-      return Some(TrapMachineInsn::Load64);
+      return SummarizeResult(TrapMachineInsn::Load64, 4);
     
     case 0b10'001000'010'11111'0'11111:
-      return Some(TrapMachineInsn::Load32);
+      return SummarizeResult(TrapMachineInsn::Load32, 4);
     
     case 0b01'001000'010'11111'0'11111:
-      return Some(TrapMachineInsn::Load16);
+      return SummarizeResult(TrapMachineInsn::Load16, 4);
     
     case 0b00'001000'010'11111'0'11111:
-      return Some(TrapMachineInsn::Load8);
+      return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       
       
@@ -928,7 +1305,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b0'001'00:  
       case 0b0'010'00:  
       case 0b0'011'00:  
-        return Some(TrapMachineInsn::Atomic);
+        return SummarizeResult(TrapMachineInsn::Atomic, 4);
     }
   }
 
@@ -946,7 +1323,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b0'001'00:  
       case 0b0'010'00:  
       case 0b0'011'00:  
-        return Some(TrapMachineInsn::Atomic);
+        return SummarizeResult(TrapMachineInsn::Atomic, 4);
     }
   }
 
@@ -957,7 +1334,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
   if (INSN(29, 21) == 0b001000111 && INSN(15, 10) == 0b111111) {
-    return Some(TrapMachineInsn::Atomic);
+    return SummarizeResult(TrapMachineInsn::Atomic, 4);
   }
 
   
@@ -965,7 +1342,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
   if (INSN(29, 21) == 0b11100011'1 && INSN(15, 10) == 0b100000) {
-    return Some(TrapMachineInsn::Atomic);
+    return SummarizeResult(TrapMachineInsn::Atomic, 4);
   }
 
 #  undef INSN
@@ -982,14 +1359,14 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
 
-  return Nothing();
+  return SummarizeResult();
 }
 
 
 
 #elif defined(JS_CODEGEN_ARM)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
   
   
@@ -998,16 +1375,17 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
 
   
-  MOZ_ASSERT(0 == (uintptr_t(insnAddr) & 3));
+  MOZ_ASSERT(insn.isU32aligned());
 
-  const uint32_t insn = *(uint32_t*)insnAddr;
+  const uint32_t insnBits = insn.getU32LittleEndian(0);
 
 #  define INSN(_maxIx, _minIx) \
-    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+    ((insnBits >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
-  if (insn == 0xE7F000F0) {
-    return Some(TrapMachineInsn::OfficialUD);
+  if (insnBits == 0xE7F000F0) {
+    static_assert(WasmTrapInstructionLength == 4);
+    return SummarizeResult(TrapMachineInsn::OfficialUD, 4);
   }
 
   
@@ -1021,13 +1399,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       && INSN(27, 24) == 0b0101 && INSN(19, 16) != 0b1111) {
     switch (INSN(22, 20)) {
       case 0b000:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       case 0b001:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       case 0b100:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       case 0b101:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       default:
         break;
     }
@@ -1043,13 +1421,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       && INSN(27, 24) == 0b0001 && INSN(22, 21) == 0b10) {
     switch ((INSN(20, 20) << 4) | INSN(7, 4)) {
       case 0b0'1011:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       case 0b1'1101:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       case 0b1'1111:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       case 0b1'1011:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       default:
         break;
     }
@@ -1070,13 +1448,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   ) {
     switch (INSN(22, 20)) {
       case 0b000:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       case 0b100:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       case 0b001:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       case 0b101:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       default:
         break;
     }
@@ -1092,13 +1470,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       INSN(11, 8) == 0b0000) {
     switch ((INSN(20, 20) << 4) | INSN(7, 4)) {
       case 0b0'1011:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       case 0b1'1011:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       case 0b1'1101:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       case 0b1'1111:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       default:
         break;
     }
@@ -1115,13 +1493,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       && INSN(27, 24) == 0b1101 && INSN(21, 21) == 0b0) {
     switch ((INSN(20, 20) << 4) | (INSN(11, 8))) {
       case 0b0'1010:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       case 0b0'1011:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       case 0b1'1010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       case 0b1'1011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       default:
         break;
     }
@@ -1132,8 +1510,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   if (INSN(31, 23) == 0b1111'0100'1 && INSN(20, 20) == 0 &&
       INSN(11, 0) == 0b1000'0000'1111) {
-    return INSN(21, 21) == 1 ? Some(TrapMachineInsn::Load32)
-                             : Some(TrapMachineInsn::Store32);
+    return INSN(21, 21) == 1 ? SummarizeResult(TrapMachineInsn::Load32, 4)
+                             : SummarizeResult(TrapMachineInsn::Store32, 4);
   }
 
   
@@ -1141,8 +1519,8 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   if (INSN(31, 23) == 0b1111'0100'0 && INSN(20, 20) == 0 &&
       INSN(11, 0) == 0b0111'1100'1111) {
-    return INSN(21, 21) == 1 ? Some(TrapMachineInsn::Load64)
-                             : Some(TrapMachineInsn::Store64);
+    return INSN(21, 21) == 1 ? SummarizeResult(TrapMachineInsn::Load64, 4)
+                             : SummarizeResult(TrapMachineInsn::Store64, 4);
   }
 
   
@@ -1153,13 +1531,13 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   if (INSN(31, 23) == 0b1110'0001'1 && INSN(11, 0) == 0b1111'1001'1111) {
     switch (INSN(22, 20)) {
       case 0b101:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       case 0b111:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       case 0b001:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       case 0b011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       default:
         break;
     }
@@ -1179,37 +1557,38 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
 
-  return Nothing();
+  return SummarizeResult();
 }
 
 
 
 #elif defined(JS_CODEGEN_RISCV64)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
-  MOZ_ASSERT(0 == (uintptr_t(insnAddr) & 3));
+  MOZ_ASSERT(insn.isU32aligned());
 
-  const uint32_t insn = *(uint32_t*)insnAddr;
+  const uint32_t insnBits = insn.getU32LittleEndian(0);
 
 #  define INSN(_maxIx, _minIx) \
-    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+    ((insnBits >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+
   
-  if (insn ==
-      (RO_CSRRWI | csr_cycle << kCsrShift | kWasmTrapCode << kRs1Shift)) {
-    return Some(TrapMachineInsn::OfficialUD);
+  if (insnBits == 0xc0035073) {  
+    static_assert(WasmTrapInstructionLength == 4);
+    return SummarizeResult(TrapMachineInsn::OfficialUD, 4);
   }
 
   if (INSN(6, 0) == STORE) {
     switch (INSN(14, 12)) {
-      case 0b011:
-        return Some(TrapMachineInsn::Load64);
-      case 0b010:
-        return Some(TrapMachineInsn::Load32);
-      case 0b001:
-        return Some(TrapMachineInsn::Load16);
-      case 0b000:
-        return Some(TrapMachineInsn::Load8);
+      case 0b011:  
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
+      case 0b010:  
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
+      case 0b001:  
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
+      case 0b000:  
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       default:
         break;
     }
@@ -1217,14 +1596,20 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   if (INSN(6, 0) == LOAD) {
     switch (INSN(14, 12)) {
-      case 0b011:
-        return Some(TrapMachineInsn::Store64);
-      case 0b010:
-        return Some(TrapMachineInsn::Store32);
-      case 0b001:
-        return Some(TrapMachineInsn::Store16);
-      case 0b000:
-        return Some(TrapMachineInsn::Store8);
+      case 0b110:  
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
+      case 0b101:  
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
+      case 0b100:  
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
+      case 0b011:  
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
+      case 0b010:  
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
+      case 0b001:  
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
+      case 0b000:  
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       default:
         break;
     }
@@ -1233,9 +1618,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   if (INSN(6, 0) == LOAD_FP) {
     switch (INSN(14, 12)) {
       case 0b011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       case 0b010:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       default:
         break;
     }
@@ -1244,31 +1629,33 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   if (INSN(6, 0) == STORE_FP) {
     switch (INSN(14, 12)) {
       case 0b011:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       case 0b010:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       default:
         break;
     }
   }
 
-  if (INSN(6, 0) == AMO && INSN(31, 27) == 00010) {
+  if (INSN(6, 0) == AMO && INSN(31, 27) == 0b00010) {
+    
     switch (INSN(14, 12)) {
-      case 0b011:
-        return Some(TrapMachineInsn::Load64);
-      case 0b010:
-        return Some(TrapMachineInsn::Load32);
+      case 0b011:  
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
+      case 0b010:  
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       default:
         break;
     }
   }
 
-  if (INSN(6, 0) == AMO && INSN(31, 27) == 00011) {
+  if (INSN(6, 0) == AMO && INSN(31, 27) == 0b00011) {
+    
     switch (INSN(14, 12)) {
       case 0b011:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       case 0b010:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       default:
         break;
     }
@@ -1276,7 +1663,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 #  undef INSN
 
-  return Nothing();
+  return SummarizeResult();
 }
 
 
@@ -1298,6 +1685,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
   if (insn == 0x002A0006) {
+    static_assert(WasmTrapInstructionLength == 4);
     return Some(TrapMachineInsn::OfficialUD);
   }
 
@@ -1475,6 +1863,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
   
   
   if (insn == 0x000001b4) {
+    static_assert(WasmTrapInstructionLength == 4);
     return Some(TrapMachineInsn::OfficialUD);
   }
 
@@ -1733,7 +2122,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
 #elif defined(JS_CODEGEN_NONE)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   MOZ_CRASH();
 }
 
@@ -1744,6 +2133,12 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 #  error "SummarizeTrapInstruction: not implemented on this architecture"
 
 #endif  
+
+
+SummarizeResult SummarizeTrapInstruction(const uint8_t* insn) {
+  const InstructionBytesAbsolute iba(insn);
+  return SummarizeTrapInstruction(iba);
+}
 
 }  
 }  
