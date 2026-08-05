@@ -4,8 +4,13 @@
 
 #include "ContentParent.h"
 
+#include <functional>
 #include <map>
 #include <utility>
+
+#ifdef MOZ_GECKOVIEW_HISTORY
+#  include "GeckoViewHistory.h"
+#endif
 
 #include "BrowserParent.h"
 #include "ContentProcessManager.h"
@@ -6307,10 +6312,12 @@ static bool WebdriverRunning() {
   return false;
 }
 
+#ifndef MOZ_GECKOVIEW_HISTORY
 
 
-static bool IsFirstDailyLoad(const nsACString& aDomain,
-                             const TimeStamp& aNavigationStartTime) {
+
+static bool FirstDailyLoadFromPlaces(const nsACString& aDomain,
+                                     const TimeStamp& aNavigationStartTime) {
   if (aNavigationStartTime.IsNull()) {
     return false;
   }
@@ -6367,6 +6374,65 @@ static bool IsFirstDailyLoad(const nsACString& aDomain,
   root->SetContainerOpen(false);
 
   return NS_SUCCEEDED(rv) && visitCount == 0;
+}
+#endif
+
+#ifdef MOZ_GECKOVIEW_HISTORY
+
+
+static int64_t LocalMidnightEpochMillis() {
+  PRExplodedTime exploded;
+  PR_ExplodeTime(PR_Now(), PR_LocalTimeParameters, &exploded);
+  exploded.tm_hour = 0;
+  exploded.tm_min = 0;
+  exploded.tm_sec = 0;
+  exploded.tm_usec = 0;
+  return PR_ImplodeTime(&exploded) / PR_USEC_PER_MSEC;
+}
+#endif
+
+
+
+
+
+
+static void QueryFirstDailyLoad(const nsACString& aDomain,
+                                const TimeStamp& aNavigationStartTime,
+                                const MaybeDiscarded<BrowsingContext>& aContext,
+                                std::function<void(bool)>&& aCallback) {
+#ifdef MOZ_GECKOVIEW_HISTORY
+  if (aNavigationStartTime.IsNull() || aContext.IsNullOrDiscarded()) {
+    aCallback(false);
+    return;
+  }
+
+  RefPtr<nsIWidget> widget =
+      aContext.get_canonical()->GetParentProcessWidgetContaining();
+  RefPtr<GeckoViewHistory> history = GeckoViewHistory::GetSingleton();
+  if (!widget || !history) {
+    aCallback(false);
+    return;
+  }
+
+  
+  
+  int64_t beforeEpochMillis =
+      (PR_Now() -
+       static_cast<PRTime>(
+           (TimeStamp::Now() - aNavigationStartTime).ToMicroseconds())) /
+      PR_USEC_PER_MSEC;
+
+  
+  
+  
+  history->QueryHostVisitedSince(
+      widget, aDomain, LocalMidnightEpochMillis(), beforeEpochMillis,
+      [callback = std::move(aCallback)](mozilla::Maybe<bool> aVisitedToday) {
+        callback(aVisitedToday.isSome() && !*aVisitedToday);
+      });
+#else
+  aCallback(FirstDailyLoadFromPlaces(aDomain, aNavigationStartTime));
+#endif
 }
 
 #ifdef ANDROID
@@ -6477,9 +6543,13 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   
   
   if (aPageloadEventData.HasDomain()) {
-    aPageloadEventData.SetIsFirstDailyLoad(
-        IsFirstDailyLoad(aPageloadEventData.GetDomain(), aNavigationStartTime));
-    aPageloadEventData.SendAsPageLoadDomainEvent();
+    nsCString domain(aPageloadEventData.GetDomain());
+    QueryFirstDailyLoad(
+        domain, aNavigationStartTime, aBrowsingContext,
+        [data = std::move(aPageloadEventData)](bool aIsFirstDailyLoad) mutable {
+          data.SetIsFirstDailyLoad(aIsFirstDailyLoad);
+          data.SendAsPageLoadDomainEvent();
+        });
   } else {
     aPageloadEventData.SendAsPageLoadEvent();
   }
