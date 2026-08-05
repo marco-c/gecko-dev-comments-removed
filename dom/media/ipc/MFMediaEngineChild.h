@@ -75,7 +75,9 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
 
   MozPromiseHolder<GenericNonExclusivePromise> mInitPromiseHolder;
   MozPromiseRequestHolder<InitMediaEnginePromise> mInitEngineRequest;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mLaunchProcessRequest;
 
+  
   
   NotNull<FrameStatistics*> const MOZ_NON_OWNING_REF mFrameStats;
 
