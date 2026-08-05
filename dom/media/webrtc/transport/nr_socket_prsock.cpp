@@ -88,7 +88,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "mozilla/IceServerParser.h"
 #include "mozilla/ProfilerBandwidthCounter.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/net/DNS.h"
@@ -745,17 +744,6 @@ int NrSocket::sendto(const void* msg, size_t len, int flags,
   }
 
   
-  
-  
-  
-  
-  if (IsForbiddenAddress(to)) {
-    
-    _status = 0;
-    goto abort;
-  }
-
-  
   status = PR_SendTo(fd_, msg, len, flags, &naddr, PR_INTERVAL_NO_WAIT);
   if (status < 0 || (size_t)status != len) {
     if (PR_GetError() == PR_WOULD_BLOCK_ERROR) ABORT(R_WOULDBLOCK);
@@ -819,12 +807,6 @@ int NrSocket::connect(const nr_transport_addr* addr) {
   if ((r = nr_transport_addr_to_praddr(addr, &naddr))) ABORT(r);
 
   if (!fd_) ABORT(R_EOD);
-
-  
-  
-  if (IsForbiddenAddress(addr)) {
-    ABORT(R_WOULDBLOCK);
-  }
 
   
   
@@ -1282,15 +1264,6 @@ int NrUdpSocketIpc::sendto(const void* msg, size_t len, int flags,
     return R_INTERNAL;
   }
 
-  
-  
-  
-  
-  
-  if (IsForbiddenAddress(to)) {
-    return 0;
-  }
-
   int r;
   net::NetAddr addr;
   if ((r = nr_transport_addr_to_netaddr(to, &addr))) {
@@ -1626,7 +1599,7 @@ abort:
 }
 
 
-bool NrSocketBase::IsForbiddenAddress(const nr_transport_addr* addr) {
+bool NrSocketBase::IsForbiddenAddress(nr_transport_addr* addr) {
   uint16_t port;
   int r;
 
@@ -1636,20 +1609,15 @@ bool NrSocketBase::IsForbiddenAddress(const nr_transport_addr* addr) {
   }
 
   
-  if (port == 0) {
-    return false;
-  }
-
-  
-  for (const auto good : IceServerParser::kGoodWebrtcPortList) {
-    if (port == good) {
-      return false;
+  if (port != 0) {
+    
+    nsresult rv = NS_CheckPortSafety(port, nullptr);
+    if (NS_FAILED(rv)) {
+      return true;
     }
   }
 
-  
-  
-  return NS_FAILED(NS_CheckPortSafety(port, nullptr));
+  return false;
 }
 
 static int nr_socket_local_destroy(void** objp) {

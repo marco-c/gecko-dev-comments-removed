@@ -4,11 +4,8 @@
 
 #include "WebrtcTCPSocketParent.h"
 
-#include <limits>
-
 #include "WebrtcTCPSocket.h"
 #include "WebrtcTCPSocketLog.h"
-#include "mozilla/IceServerParser.h"
 #include "mozilla/net/NeckoParent.h"
 
 using namespace mozilla::dom;
@@ -26,22 +23,6 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvAsyncOpen(
   MOZ_ASSERT(mChannel, "webrtc TCP socket should be non-null");
   if (!mChannel) {
     return IPC_FAIL(this, "Called with null channel.");
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (aPort < 0 || aPort > std::numeric_limits<uint16_t>::max() ||
-      !IsWebrtcPortAllowed(static_cast<uint16_t>(aPort))) {
-    LOG("WebrtcTCPSocketParent::RecvAsyncOpen {} dropping open to disallowed "
-        "port {}\n",
-        fmt::ptr(this), aPort);
-    CleanupChannel();
-    return IPC_OK();
   }
 
   mChannel->Open(aHost, aPort, aLocalAddress, aLocalPort, aUseTls,
