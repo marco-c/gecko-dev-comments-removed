@@ -170,6 +170,10 @@ class RendererOGL {
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
   TimeStamp mFrameStartTime;
+  
+  
+  
+  bool mPausedForResourceTrimming = false;
 
 #ifdef MOZ_WIDGET_ANDROID
   struct ScreenPixelsRequest {

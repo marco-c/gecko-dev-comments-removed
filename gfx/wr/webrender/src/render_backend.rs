@@ -1295,6 +1295,46 @@ impl RenderBackend {
                 debug_assert!(old.is_none());
                 self.document_to_window.insert(document_id, backend_id);
             }
+            ApiMsg::TrimTransientResources {
+                backend_id,
+                trim_upload_buffers,
+            } => {
+                
+                
+                
+                
+                let document_ids = self.documents_for_window(backend_id);
+                for document_id in document_ids {
+                    if let Some(doc) = self.documents.get_mut(&document_id) {
+                        
+                        
+                        
+                        
+                        doc.frame_is_valid = false;
+                    }
+                }
+
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    win.resource_cache.clear(ClearCache::RENDER_TARGETS);
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let resource_updates = win.resource_cache.pending_updates();
+                    let msg = ResultMsg::UpdateResources {
+                        resource_updates,
+                        memory_pressure: false,
+                        discard_active_documents: true,
+                        trim_upload_buffers,
+                    };
+                    win.result_tx.send(msg).unwrap();
+                    win.notifier.wake_up(false);
+                }
+            }
             ApiMsg::MemoryPressure => {
                 
                 
@@ -1319,6 +1359,8 @@ impl RenderBackend {
                     let msg = ResultMsg::UpdateResources {
                         resource_updates,
                         memory_pressure: true,
+                        discard_active_documents: false,
+                        trim_upload_buffers: false,
                     };
                     win.result_tx.send(msg).unwrap();
                     win.notifier.wake_up(false);
@@ -2239,6 +2281,8 @@ impl RenderBackend {
             let msg_update_resources = ResultMsg::UpdateResources {
                 resource_updates: win.resource_cache.pending_updates(),
                 memory_pressure: false,
+                discard_active_documents: false,
+                trim_upload_buffers: false,
             };
             win.result_tx.send(msg_update_resources).unwrap();
             

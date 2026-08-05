@@ -1084,6 +1084,14 @@ pub enum ApiMsg {
     
     UpdateDocuments(Vec<Box<TransactionMsg>>),
     
+    
+    TrimTransientResources {
+        
+        backend_id: RenderBackendId,
+        
+        trim_upload_buffers: bool,
+    },
+    
     MemoryPressure,
     
     ReportMemory(Sender<Box<MemoryReport>>),
@@ -1105,6 +1113,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::UnregisterWindow(..) => "ApiMsg::UnregisterWindow",
             ApiMsg::AddDocument(..) => "ApiMsg::AddDocument",
             ApiMsg::UpdateDocuments(..) => "ApiMsg::UpdateDocuments",
+            ApiMsg::TrimTransientResources { .. } => "ApiMsg::TrimTransientResources",
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
             ApiMsg::ReportMemory(..) => "ApiMsg::ReportMemory",
             ApiMsg::DebugCommand(..) => "ApiMsg::DebugCommand",

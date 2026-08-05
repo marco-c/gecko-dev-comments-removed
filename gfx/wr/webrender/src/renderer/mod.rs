@@ -37,7 +37,7 @@
 use api::{ColorF, MixBlendMode, TextureCacheCategory};
 use api::{DocumentId, Epoch, ExternalImageHandler, RenderReasons};
 use api::{PipelineId, Checkpoint, NotificationRequest, ImageBufferKind};
-use api::{FramePublishId, ImageFormat};
+use api::{FramePublishId, ImageFormat, RenderBackendId};
 #[cfg(any(feature = "capture", feature = "replay"))]
 use api::{ExternalImageSource, ExternalImageType};
 #[cfg(feature = "replay")]
@@ -709,6 +709,8 @@ pub struct Renderer {
     result_rx: Receiver<ResultMsg>,
     api_tx: Sender<ApiMsg>,
     
+    backend_id: RenderBackendId,
+    
     
     
     
@@ -1018,8 +1020,14 @@ impl Renderer {
                 ResultMsg::UpdateResources {
                     resource_updates,
                     memory_pressure,
+                    discard_active_documents,
+                    trim_upload_buffers,
                 } => {
-                    if memory_pressure {
+                    if memory_pressure || discard_active_documents {
+                        
+                        
+                        
+                        
                         
                         
                         
@@ -1057,19 +1065,8 @@ impl Renderer {
                     self.update_native_surfaces();
 
                     
-                    
-                    
-                    
-                    
-                    if memory_pressure {
-                        self.texture_upload_pbo_pool.on_memory_pressure(&mut self.device);
-                        self.staging_texture_pool.delete_textures(&mut self.device);
-                        if let Some(texture) = self.gpu_buffer_texture_f.take() {
-                            self.device.delete_texture(texture);
-                        }
-                        if let Some(texture) = self.gpu_buffer_texture_i.take() {
-                            self.device.delete_texture(texture);
-                        }
+                    if memory_pressure || trim_upload_buffers {
+                        self.trim_upload_buffers();
                     }
 
                     self.device.end_frame();
@@ -1281,9 +1278,28 @@ impl Renderer {
         }
     }
 
+    fn trim_upload_buffers(&mut self) {
+        self.texture_upload_pbo_pool.on_memory_pressure(&mut self.device);
+        self.staging_texture_pool.delete_textures(&mut self.device);
+        if let Some(texture) = self.gpu_buffer_texture_f.take() {
+            self.device.delete_texture(texture);
+        }
+        if let Some(texture) = self.gpu_buffer_texture_i.take() {
+            self.device.delete_texture(texture);
+        }
+    }
+
     
     pub fn set_external_image_handler(&mut self, handler: Box<dyn ExternalImageHandler>) {
         self.external_image_handler = Some(handler);
+    }
+
+    
+    pub fn trim_transient_resources(&self, trim_upload_buffers: bool) {
+        let _ = self.api_tx.send(ApiMsg::TrimTransientResources {
+            backend_id: self.backend_id,
+            trim_upload_buffers,
+        });
     }
 
     
