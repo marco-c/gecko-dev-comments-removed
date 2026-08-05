@@ -1564,6 +1564,13 @@ class BuildDriver(MozbuildObject):
             elif status is None:
                 
                 
+                
+                
+                
+                client_mk_env = dict(append_env or {})
+                sccache_basedirs = config.substs.get("SCCACHE_BASEDIRS")
+                if sccache_basedirs:
+                    client_mk_env["SCCACHE_BASEDIRS"] = sccache_basedirs
                 status = self._run_client_mk(
                     line_handler=output.on_stdout_line,
                     stderr_line_handler=output.on_stderr_line,
@@ -1571,7 +1578,7 @@ class BuildDriver(MozbuildObject):
                     job_size=job_size,
                     verbose=verbose,
                     keep_going=keep_going,
-                    append_env=append_env,
+                    append_env=client_mk_env,
                 )
 
             self.log(
