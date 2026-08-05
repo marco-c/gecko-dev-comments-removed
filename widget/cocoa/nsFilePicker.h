@@ -44,6 +44,11 @@ class nsFilePicker final : public nsBaseFilePicker {
 
   NSArray* GetFilterList();
 
+  
+  
+  
+  using nsBaseFilePicker::IsPickerInputProtected;
+
  protected:
   virtual ~nsFilePicker();
 
