@@ -201,6 +201,12 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
   }
 
   if (state.isGeneratorResume()) {
+    if (IsPortableBaselineInterpreterEnabled()) {
+      
+      
+      return EnterJitStatus::NotEntered;
+    }
+
     JSScript* script = state.script();
     if (!script->hasJitScript()) {
       
