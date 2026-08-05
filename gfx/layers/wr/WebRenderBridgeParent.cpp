@@ -1147,12 +1147,6 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvDeleteCompositorAnimations(
       wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
-  for (uint64_t id : aIds) {
-    if (!OwnsCompositorAnimationsId(id)) {
-      return IPC_FAIL(this, "DeleteCompositorAnimations bad id");
-    }
-  }
-
   
   mCompositorAnimationsToDelete.push(
       CompositorAnimationIdsForEpoch(mWrEpoch, std::move(aIds)));
@@ -1765,7 +1759,10 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
         const OpAddCompositorAnimations& op =
             cmd.get_OpAddCompositorAnimations();
         CompositorAnimations data(std::move(op.data()));
-        if (!OwnsCompositorAnimationsId(data.id())) {
+        
+        
+        
+        if ((data.id() >> 32) != (uint64_t)OtherPid()) {
           gfxCriticalNote << "TOpAddCompositorAnimations bad id";
           success = false;
           continue;
@@ -2436,10 +2433,6 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetAnimationValue(
     const uint64_t& aCompositorAnimationsId, OMTAValue* aValue) {
   if (!EnsureInitialized()) {
     return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!OwnsCompositorAnimationsId(aCompositorAnimationsId)) {
-    return IPC_FAIL(this, "GetAnimationValue bad id");
   }
 
   if (RefPtr<OMTASampler> sampler = GetOMTASampler()) {
