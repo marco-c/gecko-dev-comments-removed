@@ -5,13 +5,11 @@
 #include "nsIAlertsService.h"
 
 #include "nsIObserverService.h"
-#include "nsIPrincipal.h"
 #include "xpcpublic.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_alerts.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "nsServiceManagerUtils.h"
 #include "nsXULAlerts.h"
 
@@ -30,113 +28,6 @@
 #endif
 
 using namespace mozilla;
-
-namespace {
-
-
-
-constexpr char kWebNotificationShownTopic[] = "web-notification-shown";
-constexpr char kWebNotificationClosedTopic[] = "web-notification-closed";
-
-
-
-
-
-class AlertCaptureCallbacks final : public nsIAlertCallbacks {
- public:
-  NS_DECL_ISUPPORTS
-
-  AlertCaptureCallbacks(nsIAlertNotification* aAlert,
-                        nsIAlertCallbacks* aCallbacks)
-      : mAlert(aAlert), mCallbacks(aCallbacks) {}
-
-  NS_IMETHOD OnAlertShow() override {
-    mShown = true;
-    Notify(kWebNotificationShownTopic);
-    return mCallbacks ? mCallbacks->OnAlertShow() : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertClick(nsIAlertAction* aAction) override {
-    return mCallbacks ? mCallbacks->OnAlertClick(aAction) : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertDismissedFromForeground() override {
-    return mCallbacks ? mCallbacks->OnAlertDismissedFromForeground() : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertClosed() override {
-    ReportClosed();
-    return mCallbacks ? mCallbacks->OnAlertClosed() : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertFinished() override {
-    ReportClosed();
-    return mCallbacks ? mCallbacks->OnAlertFinished() : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertSettings() override {
-    return mCallbacks ? mCallbacks->OnAlertSettings() : NS_OK;
-  }
-
-  NS_IMETHOD OnAlertDisable() override {
-    return mCallbacks ? mCallbacks->OnAlertDisable() : NS_OK;
-  }
-
- private:
-  ~AlertCaptureCallbacks() = default;
-
-  void Notify(const char* aTopic) {
-    if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
-      obs->NotifyObservers(mAlert, aTopic, nullptr);
-    }
-  }
-
-  
-  
-  
-  
-  void ReportClosed() {
-    if (!mShown || mClosedReported) {
-      return;
-    }
-    mClosedReported = true;
-    Notify(kWebNotificationClosedTopic);
-  }
-
-  nsCOMPtr<nsIAlertNotification> mAlert;
-  nsCOMPtr<nsIAlertCallbacks> mCallbacks;
-  bool mShown = false;
-  bool mClosedReported = false;
-};
-
-NS_IMPL_ISUPPORTS(AlertCaptureCallbacks, nsIAlertCallbacks)
-
-
-bool ShouldCaptureAlert(nsIAlertNotification* aAlert) {
-  if (!StaticPrefs::browser_alerts_capture_enabled()) {
-    return false;
-  }
-
-  bool actionable = false;
-  if (NS_FAILED(aAlert->GetActionable(&actionable)) || !actionable) {
-    return false;
-  }
-
-  bool inPrivateBrowsing = false;
-  if (NS_FAILED(aAlert->GetInPrivateBrowsing(&inPrivateBrowsing)) ||
-      inPrivateBrowsing) {
-    return false;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal;
-  if (NS_FAILED(aAlert->GetPrincipal(getter_AddRefs(principal))) ||
-      !principal) {
-    return false;
-  }
-  return !principal->GetIsInPrivateBrowsing();
-}
-
-}  
 
 NS_IMPL_ISUPPORTS(nsAlertsService, nsIAlertsService, nsIAlertsDoNotDisturb,
                   nsIObserver)
@@ -261,24 +152,19 @@ NS_IMETHODIMP nsAlertsService::ShowAlertWithCallbacks(
     return NS_OK;
   }
 
-  nsCOMPtr<nsIAlertCallbacks> effectiveCallbacks(aAlertCallbacks);
-  if (ShouldCaptureAlert(aAlert)) {
-    effectiveCallbacks = new AlertCaptureCallbacks(aAlert, aAlertCallbacks);
-  }
-
   
   
   if (StaticPrefs::alerts_useSystemBackend()) {
     if (!mBackend) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-    return mBackend->ShowAlertWithCallbacks(aAlert, effectiveCallbacks);
+    return mBackend->ShowAlertWithCallbacks(aAlert, aAlertCallbacks);
   }
 
   if (!ShouldShowAlert()) {
     
-    if (effectiveCallbacks) {
-      effectiveCallbacks->OnAlertFinished();
+    if (aAlertCallbacks) {
+      aAlertCallbacks->OnAlertFinished();
     }
     return NS_OK;
   }
@@ -286,7 +172,7 @@ NS_IMETHODIMP nsAlertsService::ShowAlertWithCallbacks(
   
   nsCOMPtr<nsIAlertsService> xulBackend(nsXULAlerts::GetInstance());
   NS_ENSURE_TRUE(xulBackend, NS_ERROR_FAILURE);
-  return xulBackend->ShowAlertWithCallbacks(aAlert, effectiveCallbacks);
+  return xulBackend->ShowAlertWithCallbacks(aAlert, aAlertCallbacks);
 }
 
 NS_IMETHODIMP nsAlertsService::CloseAlert(const nsAString& aAlertName,

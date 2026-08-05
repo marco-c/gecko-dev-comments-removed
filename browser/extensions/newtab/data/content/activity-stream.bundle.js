@@ -301,12 +301,7 @@ for (const type of [
   "WEATHER_USER_OPT_IN_LOCATION",
   "WEBEXT_CLICK",
   "WEBEXT_DISMISS",
-  "WEB_NOTIFICATIONS_ADDED",
-  "WEB_NOTIFICATIONS_CLICK",
-  "WEB_NOTIFICATIONS_DISMISS",
-  "WEB_NOTIFICATIONS_DISMISS_ALL",
   "WEB_NOTIFICATIONS_ERROR",
-  "WEB_NOTIFICATIONS_REMOVED",
   "WEB_NOTIFICATIONS_REQUEST",
   "WEB_NOTIFICATIONS_UPDATED",
   "WIDGETS_CONTAINER_ACTION",
@@ -7477,6 +7472,17 @@ const INITIAL_STATE = {
     
     toastQueue: [],
   },
+  
+  
+  
+  
+  WebNotifications: {
+    initialized: false,
+    lastUpdated: null,
+    notifications: {},
+    byOrigin: {},
+    error: null,
+  },
   InferredPersonalization: {
     initialized: false,
     lastUpdated: null,
@@ -7504,16 +7510,6 @@ const INITIAL_STATE = {
   SectionsLayout: {
     configs: {},
     orderings: {},
-  },
-  
-  
-  
-  WebNotifications: {
-    initialized: false,
-    lastUpdated: null,
-    notifications: {},
-    byOrigin: {},
-    error: null,
   },
   Weather: {
     initialized: false,
@@ -8478,39 +8474,6 @@ function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   }
 }
 
-
-function addWebNotification(prevState, notification) {
-  const { id, origin } = notification;
-  const originIds = prevState.byOrigin[origin] || [];
-  return {
-    ...prevState,
-    initialized: true,
-    notifications: { ...prevState.notifications, [id]: notification },
-    byOrigin: {
-      ...prevState.byOrigin,
-      [origin]: originIds.includes(id) ? originIds : [...originIds, id],
-    },
-  };
-}
-
-
-function removeWebNotifications(prevState, removed) {
-  const notifications = { ...prevState.notifications };
-  const byOrigin = { ...prevState.byOrigin };
-  for (const { origin, id } of removed) {
-    delete notifications[id];
-    const remaining = (byOrigin[origin] || []).filter(
-      existing => existing !== id
-    );
-    if (remaining.length) {
-      byOrigin[origin] = remaining;
-    } else {
-      delete byOrigin[origin];
-    }
-  }
-  return { ...prevState, notifications, byOrigin };
-}
-
 function WebNotifications(prevState = INITIAL_STATE.WebNotifications, action) {
   switch (action.type) {
     case actionTypes.WEB_NOTIFICATIONS_UPDATED:
@@ -8522,12 +8485,11 @@ function WebNotifications(prevState = INITIAL_STATE.WebNotifications, action) {
         byOrigin: action.data.byOrigin,
         error: null,
       };
-    case actionTypes.WEB_NOTIFICATIONS_ADDED:
-      return addWebNotification(prevState, action.data.notification);
-    case actionTypes.WEB_NOTIFICATIONS_REMOVED:
-      return removeWebNotifications(prevState, action.data.removed);
     case actionTypes.WEB_NOTIFICATIONS_ERROR:
-      return { ...prevState, error: action.data };
+      return {
+        ...prevState,
+        error: action.data,
+      };
     default:
       return prevState;
   }
@@ -8853,6 +8815,7 @@ const reducers = {
   Sections,
   Messages,
   Notifications,
+  WebNotifications,
   Pocket,
   InferredPersonalization,
   DiscoveryStream,
@@ -8861,7 +8824,6 @@ const reducers = {
   ListsWidget,
   Wallpapers,
   SectionsLayout,
-  WebNotifications,
   Weather,
   Stocks,
   ExternalComponents,
@@ -9059,496 +9021,6 @@ function PinnedAreaOverlay({
 
 
 
-
-
-
-
-const ORIGIN_ALIASES = new Map([
-  ["https://gmail.com", "https://mail.google.com"],
-  ["https://www.gmail.com", "https://mail.google.com"],
-  ["https://slack.com", "https://app.slack.com"],
-  ["https://www.slack.com", "https://app.slack.com"],
-]);
-
-
-
-const EMPTY_IDS = Object.freeze([]);
-
-
-
-
-
-function originFromUrl(url) {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return null;
-    }
-    return parsed.origin;
-  } catch (e) {
-    return null;
-  }
-}
-
-
-
-
-
-
-
-
-
-function notificationKeyForUrl(url) {
-  const siteOrigin = originFromUrl(url);
-  if (!siteOrigin) {
-    return null;
-  }
-  return ORIGIN_ALIASES.get(siteOrigin) ?? siteOrigin;
-}
-
-
-
-
-
-
-
-
-function getNotificationIdsForUrl(state, url) {
-  const key = notificationKeyForUrl(url);
-  return (key && state.WebNotifications.byOrigin[key]) || EMPTY_IDS;
-}
-
-
-
-
-
-
-
-
-
-
-function isWebNotificationsEnabled(state) {
-  const prefs = state.Prefs.values;
-  return Boolean(
-    prefs["system.showWebNotifications"] && prefs.showWebNotifications
-  );
-}
-
-;
-
-
-
-
-
-
-
-
-const IMAGE_PROXY_ORIGIN = "https://img-getpocket.cdn.mozilla.net";
-
-
-
-const ICON_SIZE = 64;
-
-const PROXY_FILTERS =
-  "filters:format(webp):quality(75):no_upscale():strip_exif()";
-
-
-
-
-
-
-
-
-
-
-
-function proxiedIconUrl(url) {
-  if (!url) {
-    return null;
-  }
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch (e) {
-    return null;
-  }
-  if (parsed.protocol !== "https:") {
-    return null;
-  }
-  return `${IMAGE_PROXY_ORIGIN}/${ICON_SIZE}x${ICON_SIZE}/${PROXY_FILTERS}/${encodeURIComponent(
-    url
-  )}`;
-}
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
-const ICON_SUPPRESS_ORIGINS = new Set(["https://apnews.com"]);
-
-
-
-const RELATIVE_TIME_UNITS = [["year", 365 * 24 * 60 * 60 * 1000], ["month", 30 * 24 * 60 * 60 * 1000], ["week", 7 * 24 * 60 * 60 * 1000], ["day", 24 * 60 * 60 * 1000], ["hour", 60 * 60 * 1000], ["minute", 60 * 1000]];
-
-
-
-
-
-
-
-
-
-
-
-function formatRelativeTime(timestamp, locale, now) {
-  const delta = timestamp - now;
-  const abs = Math.abs(delta);
-  for (const [unit, ms] of RELATIVE_TIME_UNITS) {
-    if (abs >= ms) {
-      return new Intl.RelativeTimeFormat(locale || undefined, {
-        numeric: "auto"
-      }).format(Math.round(delta / ms), unit);
-    }
-  }
-  return null;
-}
-function NotificationTime({
-  timestamp,
-  locale,
-  now
-}) {
-  if (!timestamp) {
-    return null;
-  }
-  const relative = formatRelativeTime(timestamp, locale, now);
-  const dateTime = new Date(timestamp).toISOString();
-  
-  if (relative === null) {
-    return external_React_default().createElement("time", {
-      className: "top-sites-hover-card-notification-time",
-      dateTime: dateTime,
-      "data-l10n-id": "newtab-topsites-hover-card-just-now"
-    });
-  }
-  return external_React_default().createElement("time", {
-    className: "top-sites-hover-card-notification-time",
-    dateTime: dateTime
-  }, relative);
-}
-
-
-
-
-
-
-function NotificationIcon({
-  notification
-}) {
-  const [failed, setFailed] = external_React_default().useState(false);
-  if (ICON_SUPPRESS_ORIGINS.has(notification.origin)) {
-    return null;
-  }
-  const src = proxiedIconUrl(notification.icon);
-  if (!src || failed) {
-    return null;
-  }
-  return external_React_default().createElement("img", {
-    src: src,
-    alt: "",
-    className: "top-sites-hover-card-notification-icon",
-    onError: () => setFailed(true)
-  });
-}
-function NotificationList({
-  notifications,
-  locale,
-  now,
-  onActivate,
-  onDismiss
-}) {
-  return external_React_default().createElement("ul", {
-    className: "top-sites-hover-card-notifications"
-  }, notifications.map(notification => {
-    return external_React_default().createElement("li", {
-      className: "top-sites-hover-card-notification",
-      key: notification.id,
-      dir: notification.dir || "auto"
-    }, external_React_default().createElement("button", {
-      type: "button",
-      className: "top-sites-hover-card-notification-activate",
-      onClick: () => onActivate(notification)
-    }, external_React_default().createElement(NotificationIcon, {
-      notification: notification
-    }), external_React_default().createElement("div", {
-      className: "top-sites-hover-card-notification-text"
-    }, external_React_default().createElement("span", {
-      className: "top-sites-hover-card-notification-title"
-    }, notification.title), notification.body ? external_React_default().createElement("span", {
-      className: "top-sites-hover-card-notification-body"
-    }, notification.body) : null, external_React_default().createElement(NotificationTime, {
-      timestamp: notification.timestamp,
-      locale: locale,
-      now: now
-    }))), external_React_default().createElement("button", {
-      type: "button",
-      className: "top-sites-hover-card-notification-dismiss",
-      "data-l10n-id": "newtab-topsites-hover-card-dismiss",
-      onClick: () => onDismiss(notification)
-    }));
-  }));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function CardWebNotifications({
-  link
-}) {
-  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const locale = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.App.locale);
-  const byId = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.WebNotifications.notifications);
-  const ids = (0,external_ReactRedux_namespaceObject.useSelector)(state => getNotificationIdsForUrl(state, link?.url));
-  const notifications = ids.map(id => byId[id]).filter(Boolean).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-  if (!notifications.length) {
-    return null;
-  }
-  const site = link?.label || link?.hostname || originFromUrl(link?.url) || "";
-  const now = Date.now();
-  const openSettings = () => {
-    dispatch({
-      type: actionTypes.SHOW_PERSONALIZE
-    });
-    dispatch(actionCreators.UserEvent({
-      event: "SHOW_PERSONALIZE"
-    }));
-  };
-  const activate = notification => dispatch(actionCreators.AlsoToMain({
-    type: actionTypes.WEB_NOTIFICATIONS_CLICK,
-    data: {
-      origin: notification.origin,
-      id: notification.id
-    }
-  }));
-  const dismiss = notification => dispatch(actionCreators.AlsoToMain({
-    type: actionTypes.WEB_NOTIFICATIONS_DISMISS,
-    data: {
-      origin: notification.origin,
-      id: notification.id
-    }
-  }));
-  const dismissAll = () => dispatch(actionCreators.AlsoToMain({
-    type: actionTypes.WEB_NOTIFICATIONS_DISMISS_ALL,
-    data: {
-      origin: notifications[0].origin
-    }
-  }));
-  return external_React_default().createElement("div", {
-    className: "top-sites-hover-card",
-    role: "group"
-  }, external_React_default().createElement("div", {
-    className: "top-sites-hover-card-inner"
-  }, external_React_default().createElement("div", {
-    className: "top-sites-hover-card-header"
-  }, external_React_default().createElement("span", {
-    className: "top-sites-hover-card-header-title",
-    "data-l10n-id": "newtab-topsites-hover-card-header",
-    "data-l10n-args": JSON.stringify({
-      site
-    })
-  }), external_React_default().createElement("div", {
-    className: "top-sites-hover-card-header-actions"
-  }, external_React_default().createElement("button", {
-    type: "button",
-    className: "top-sites-hover-card-mark-read",
-    "data-l10n-id": "newtab-topsites-hover-card-mark-all-read",
-    onClick: dismissAll
-  }), external_React_default().createElement("button", {
-    type: "button",
-    className: "top-sites-hover-card-settings",
-    "data-l10n-id": "newtab-topsites-hover-card-settings",
-    onClick: openSettings
-  }))), external_React_default().createElement(NotificationList, {
-    notifications: notifications,
-    locale: locale,
-    now: now,
-    onActivate: activate,
-    onDismiss: dismiss
-  })));
-}
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
-function CardAd() {
-  return null;
-}
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const HOVER_CARD_CONTENT = [{
-  key: "ad",
-  match: link => Boolean(link?.isSponsored || link?.sponsored_tile_id || link?.show_sponsored_label || link?.sponsored_position),
-  Component: CardAd
-}, {
-  key: "notifications",
-  match: () => true,
-  Component: CardWebNotifications
-}];
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function HoverCardContent({
-  link
-}) {
-  const enabled = (0,external_ReactRedux_namespaceObject.useSelector)(isWebNotificationsEnabled);
-  if (!enabled) {
-    return null;
-  }
-  const variant = HOVER_CARD_CONTENT.find(entry => entry.match(link));
-  if (!variant) {
-    return null;
-  }
-  const {
-    Component
-  } = variant;
-  return external_React_default().createElement(Component, {
-    link: link
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function TopSitesHoverCard({
-  link
-}) {
-  const store = external_React_default().useContext(external_ReactRedux_namespaceObject.ReactReduxContext);
-  if (!store) {
-    return null;
-  }
-  return external_React_default().createElement(HoverCardContent, {
-    link: link
-  });
-}
-
-;
-
-
-
-
-
-
-
-function Badge({
-  link
-}) {
-  const enabled = (0,external_ReactRedux_namespaceObject.useSelector)(isWebNotificationsEnabled);
-  const count = (0,external_ReactRedux_namespaceObject.useSelector)(state => getNotificationIdsForUrl(state, link?.url).length);
-  if (!enabled || !count) {
-    return null;
-  }
-  return external_React_default().createElement("div", {
-    className: "top-site-web-notification"
-  }, count);
-}
-
-
-
-
-
-
-
-
-
-function TopSiteWebNotification({
-  link
-}) {
-  const store = external_React_default().useContext(external_ReactRedux_namespaceObject.ReactReduxContext);
-  if (!store) {
-    return null;
-  }
-  return external_React_default().createElement(Badge, {
-    link: link
-  });
-}
-
-;
-
-
-
-
-
-
 const TopSiteImpressionWrapper_VISIBLE = "visible";
 const TopSiteImpressionWrapper_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
@@ -9667,8 +9139,6 @@ TopSiteImpressionWrapper.defaultProps = {
 };
 ;
 function TopSite_extends() { return TopSite_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSite_extends.apply(null, arguments); }
-
-
 
 
 
@@ -10023,8 +9493,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "tile",
       "aria-hidden": true
     }, external_React_default().createElement("div", {
-      className: "icon-stack"
-    }, external_React_default().createElement("div", {
       className: selectedColor ? "icon-wrapper letter-fallback" : "icon-wrapper",
       "data-fallback": letterFallback,
       style: selectedColor ? {
@@ -10037,8 +9505,6 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "top-site-icon default-icon",
       "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
-    })), external_React_default().createElement(TopSiteWebNotification, {
-      link: link
     }))), link.isPinned && external_React_default().createElement("div", {
       className: "icon icon-pin-small"
     }), external_React_default().createElement("div", {
@@ -10051,9 +9517,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     }), title), external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
-    }))), children, impressionStats, external_React_default().createElement(TopSitesHoverCard, {
-      link: link
-    })), this.props.addButton);
+    }))), children, impressionStats), this.props.addButton);
   }
 }
 TopSiteLink.defaultProps = {
@@ -27281,7 +26745,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketRegion,
       mayHaveInferredPersonalization,
       mayHaveWeather,
-      mayHaveWebNotifications,
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
@@ -27317,8 +26780,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled,
       weatherEnabled,
       showInferredPersonalizationEnabled,
-      topSitesRowsCount,
-      webNotificationsEnabled
+      topSitesRowsCount
     } = enabledSections;
     const {
       timerEnabled,
@@ -27514,15 +26976,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       value: String(num),
       "data-l10n-id": "newtab-custom-row-selector2",
       "data-l10n-args": `{"num": ${num}}`
-    })))), mayHaveWebNotifications && external_React_default().createElement("div", {
-      className: "more-information"
-    }, external_React_default().createElement("moz-toggle", {
-      id: "web-notifications-toggle",
-      pressed: webNotificationsEnabled || null,
-      ontoggle: this.onPreferenceSelect,
-      "data-preference": "showWebNotifications",
-      "data-l10n-id": "newtab-custom-web-notifications-toggle"
-    })))))),
+    })))))))),
     
     novaEnabled && mayHaveWidgets && external_React_default().createElement("span", {
       className: "divider",
@@ -27806,7 +27260,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveTopicSections: this.props.mayHaveTopicSections,
       mayHaveInferredPersonalization: this.props.mayHaveInferredPersonalization,
       mayHaveWeather: this.props.mayHaveWeather,
-      mayHaveWebNotifications: this.props.mayHaveWebNotifications,
       mayHaveWidgets: this.props.mayHaveWidgets,
       mayHaveWeatherForecast: this.props.mayHaveWeatherForecast,
       weatherDisplay: this.props.weatherDisplay,
@@ -30121,7 +29574,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       pocketEnabled: prefs["feeds.section.topstories"],
       showInferredPersonalizationEnabled: prefs[Base_PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
-      webNotificationsEnabled: prefs.showWebNotifications,
       weatherEnabled: novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather
     };
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -30130,7 +29582,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     
     
     const mayHaveWeather = prefs["system.showWeather"] || prefs.trainhopConfig?.weather?.enabled || prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
-    const mayHaveWebNotifications = prefs["system.showWebNotifications"];
     const supportUrl = prefs["support.url"];
 
     
@@ -30286,7 +29737,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveTopicSections: mayHavePersonalizedTopicSections,
         mayHaveInferredPersonalization: mayHaveInferredPersonalization,
         mayHaveWeather: mayHaveWeather,
-        mayHaveWebNotifications: mayHaveWebNotifications,
         mayHaveWidgets: mayHaveWidgets,
         mayHaveTimerWidget: mayHaveTimerWidget,
         mayHaveListsWidget: mayHaveListsWidget,
@@ -30383,7 +29833,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveTopicSections: mayHavePersonalizedTopicSections,
       mayHaveInferredPersonalization: mayHaveInferredPersonalization,
       mayHaveWeather: mayHaveWeather,
-      mayHaveWebNotifications: mayHaveWebNotifications,
       mayHaveWidgets: mayHaveWidgets,
       mayHaveTimerWidget: mayHaveTimerWidget,
       mayHaveListsWidget: mayHaveListsWidget,
