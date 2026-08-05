@@ -2341,12 +2341,12 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
 
 TEST_P(WebRtcVoiceEngineTestFake,
        SupportsTransportSequenceNumberHeaderExtension) {
-  const std::vector<RtpExtension> header_extensions =
-      GetDefaultEnabledRtpHeaderExtensions(*engine_,
-                                            nullptr);
+  const std::vector<RtpHeaderExtensionCapability> header_extensions =
+      GetDefaultEnabledRtpHeaderCapabilities(*engine_,
+                                              nullptr);
   EXPECT_THAT(
       header_extensions,
-      Contains(::testing::Field("uri", &RtpExtension::uri,
+      Contains(::testing::Field("uri", &RtpHeaderExtensionCapability::uri,
                                 RtpExtension::kTransportSequenceNumberUri)));
 }
 
@@ -3364,9 +3364,15 @@ TEST_P(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   }
 
   
-  const std::vector<RtpExtension> header_extensions =
-      GetDefaultEnabledRtpHeaderExtensions(*engine_,
-                                            nullptr);
+  const auto header_extensions_caps =
+      GetDefaultEnabledRtpHeaderCapabilities(*engine_,
+                                              nullptr);
+  std::vector<RtpExtension> header_extensions;
+  for (const auto& cap : header_extensions_caps) {
+    header_extensions.emplace_back(
+        cap.uri, cap.preferred_id.value_or(RtpHeaderExtensionId::NotSet()),
+        cap.preferred_encrypt);
+  }
   AudioReceiverParameters recv_parameters;
   recv_parameters.extensions = header_extensions;
   receive_channel_->SetReceiverParameters(recv_parameters);
