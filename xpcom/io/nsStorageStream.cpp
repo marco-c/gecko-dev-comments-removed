@@ -362,14 +362,8 @@ class nsStorageInputStream final : public nsIInputStream,
                                    public nsIIPCSerializableInputStream,
                                    public nsICloneableInputStream {
  public:
-  nsStorageInputStream(nsStorageStream* aStorageStream, uint32_t aSegmentSize)
-      : mStorageStream(aStorageStream),
-        mReadCursor(0),
-        mSegmentEnd(0),
-        mSegmentNum(0),
-        mSegmentSize(aSegmentSize),
-        mLogicalCursor(0),
-        mStatus(NS_OK) {}
+  explicit nsStorageInputStream(nsStorageStream* aStorageStream)
+      : mStorageStream(aStorageStream), mLogicalCursor(0), mStatus(NS_OK) {}
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
@@ -388,19 +382,8 @@ class nsStorageInputStream final : public nsIInputStream,
 
  private:
   RefPtr<nsStorageStream> mStorageStream;
-  uint32_t mReadCursor;     
-  uint32_t mSegmentEnd;     
-  uint32_t mSegmentNum;     
-  uint32_t mSegmentSize;    
   uint32_t mLogicalCursor;  
   nsresult mStatus;
-
-  uint32_t SegNum(uint32_t aPosition) MOZ_REQUIRES(mStorageStream->mMutex) {
-    return aPosition >> mStorageStream->mSegmentSizeLog2;
-  }
-  uint32_t SegOffset(uint32_t aPosition) {
-    return aPosition & (mSegmentSize - 1);
-  }
 };
 
 NS_IMPL_ISUPPORTS(nsStorageInputStream, nsIInputStream, nsISeekableStream,
@@ -415,8 +398,7 @@ nsStorageStream::NewInputStream(int32_t aStartingOffset,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr inputStream =
-      mozilla::MakeRefPtr<nsStorageInputStream>(this, mSegmentSize);
+  RefPtr inputStream = mozilla::MakeRefPtr<nsStorageInputStream>(this);
 
   inputStream->mStorageStream->mMutex.AssertCurrentThreadOwns();
   nsresult rv = inputStream->Seek(aStartingOffset);
@@ -464,35 +446,27 @@ nsStorageInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
     return mStatus;
   }
 
-  uint32_t count, availableInSegment, remainingCapacity, bytesConsumed;
+  uint32_t count, remainingCapacity, bytesConsumed;
   nsresult rv;
 
   remainingCapacity = aCount;
   while (remainingCapacity) {
     const char* cur = nullptr;
+    uint32_t curLen = 0;
     {
       MutexAutoLock lock(mStorageStream->mMutex);
-      availableInSegment = mSegmentEnd - mReadCursor;
-      if (!availableInSegment) {
-        uint32_t available = mStorageStream->mLogicalLength - mLogicalCursor;
-        if (!available) {
-          break;
-        }
 
-        
-        
-        
-        
-        
-        
-        if (mSegmentEnd > 0) {
-          mSegmentNum++;
-        }
-        mReadCursor = 0;
-        mSegmentEnd = XPCOM_MIN(mSegmentSize, available);
-        availableInSegment = mSegmentEnd;
+      if (mLogicalCursor >= mStorageStream->mLogicalLength) {
+        break;
       }
-      cur = mStorageStream->mSegmentedBuffer->GetSegment(mSegmentNum);
+
+      uint32_t segmentNum = mStorageStream->SegNum(mLogicalCursor);
+      uint32_t offset = mStorageStream->SegOffset(mLogicalCursor);
+
+      cur = mStorageStream->mSegmentedBuffer->GetSegment(segmentNum) + offset;
+      curLen = XPCOM_MIN(mStorageStream->mSegmentSize - offset,
+                         mStorageStream->mLogicalLength - mLogicalCursor);
+
       mStorageStream->mActiveSegmentBorrows++;
     }
     auto dropBorrow = mozilla::MakeScopeExit([&] {
@@ -500,14 +474,13 @@ nsStorageInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
       mStorageStream->mActiveSegmentBorrows--;
     });
 
-    count = XPCOM_MIN(availableInSegment, remainingCapacity);
-    rv = aWriter(this, aClosure, cur + mReadCursor, aCount - remainingCapacity,
-                 count, &bytesConsumed);
+    count = XPCOM_MIN(curLen, remainingCapacity);
+    rv = aWriter(this, aClosure, cur, aCount - remainingCapacity, count,
+                 &bytesConsumed);
     if (NS_FAILED(rv) || (bytesConsumed == 0)) {
       break;
     }
     remainingCapacity -= bytesConsumed;
-    mReadCursor += bytesConsumed;
     mLogicalCursor += bytesConsumed;
   }
 
@@ -589,10 +562,6 @@ nsresult nsStorageInputStream::Seek(uint32_t aPosition) {
     return NS_OK;
   }
 
-  mSegmentNum = SegNum(aPosition);
-  mReadCursor = SegOffset(aPosition);
-  uint32_t available = length - aPosition;
-  mSegmentEnd = mReadCursor + XPCOM_MIN(mSegmentSize - mReadCursor, available);
   mLogicalCursor = aPosition;
   return NS_OK;
 }
