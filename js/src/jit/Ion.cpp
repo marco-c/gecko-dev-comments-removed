@@ -385,13 +385,24 @@ void jit::LinkIonScript(JSContext* cx, HandleScript calleeScript) {
 
 uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
                                     LazyLinkExitFrameLayout* frame) {
-  RootedScript calleeScript(
-      cx, ScriptFromCalleeToken(frame->jsFrame()->calleeToken()));
+  JitFrameLayout* jsFrame = frame->jsFrame();
+  RootedScript calleeScript(cx, ScriptFromCalleeToken(jsFrame->calleeToken()));
 
   LinkIonScript(cx, calleeScript);
 
   MOZ_ASSERT(calleeScript->hasBaselineScript());
   MOZ_ASSERT(calleeScript->jitCodeRaw());
+
+  
+  
+  
+  
+  
+  
+  FrameDescriptor descriptor = jsFrame->descriptor();
+  if (descriptor.isResumingGenerator() || descriptor.hasInlinedICScript()) {
+    return calleeScript->baselineScript()->method()->raw();
+  }
 
   return calleeScript->jitCodeRaw();
 }
