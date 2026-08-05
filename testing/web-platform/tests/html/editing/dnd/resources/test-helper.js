@@ -22,72 +22,79 @@ const getElemCenterInIframe = (element, iframe) => {
 
 
 
-const movePointerToPosition = (element, iframe, position, actions) => {
-  if (position === DropPosition.CENTER) {
-    return movePointerToCenter(element, iframe, actions);
-  } else {
-    return movePointerToScrollbar(element, iframe, position, actions);
-  }
-}
-
-
-
-const movePointerToCenter = (element, iframe, actions) => {
-  return (iframe == undefined) ? actions.pointerMove(0, 0, {
-    origin: element
-  }) : actions.pointerMove(...getElemCenterInIframe(element, iframe))
-}
-
-
-const movePointerToScrollbar = (element, iframe, scrollbarPosition, actions) => {
-
-  const thickness = calculateScrollbarThickness();
-  assert_greater_than(thickness, 0,
-    'movePointerToScrollbar should not be called when overlay scrollbars are enabled');
-
-  const hasVerticalScrollbar = (element, iframe) => {
-    if (iframe == undefined) {
-      return element.scrollHeight > element.clientHeight;
+const movePointerToPosition =
+    (element, iframe, position, actions) => {
+      if (position === DropPosition.CENTER) {
+        return movePointerToCenter(element, iframe, actions);
+      } else {
+        return movePointerToScrollbar(element, iframe, position, actions);
+      }
     }
-    
-    
-    return element.scrollHeight > iframe.clientHeight;
-  };
 
-  const hasHorizontalScrollbar = (element, iframe) => {
-    if (iframe == undefined) {
-      return element.scrollWidth > element.clientWidth;
+
+
+const movePointerToCenter =
+    (element, iframe, actions) => {
+      return (iframe == undefined) ?
+          actions.pointerMove(0, 0, {origin: element}) :
+          actions.pointerMove(...getElemCenterInIframe(element, iframe))
     }
-    
-    
-    return element.scrollWidth > iframe.clientWidth;
-  };
 
-  
-  
-  
-  const rect = iframe ? iframe.getBoundingClientRect() : element.getBoundingClientRect();
-  let x, y;
 
-  if (scrollbarPosition === DropPosition.LEFT_SCROLLBAR &&
-      hasVerticalScrollbar(element, iframe)) {
-    x = rect.left + thickness / 2;
-    y = rect.top + (rect.height / 2);
-  } else if (scrollbarPosition === DropPosition.RIGHT_SCROLLBAR &&
-      hasVerticalScrollbar(element, iframe)) {
-    x = rect.right - thickness / 2;
-    y = rect.top + (rect.height / 2);
-  } else if (scrollbarPosition === DropPosition.HORIZONTAL_SCROLLBAR &&
-      hasHorizontalScrollbar(element, iframe)) {
-    
-    x = rect.left + (rect.width / 2);
-    y = rect.bottom - thickness / 2;
-  } else {
-    throw new Error('Invalid position specified for scrollbar.');
-  }
+const movePointerToScrollbar =
+    (element, iframe, scrollbarPosition, actions) => {
+      const thickness = calculateScrollbarThickness();
+      assert_greater_than(
+          thickness, 0,
+          'movePointerToScrollbar should not be called when overlay scrollbars are enabled');
 
-  return actions.pointerMove(x, y);
-}
+      const hasVerticalScrollbar = (element, iframe) => {
+        if (iframe == undefined) {
+          return element.scrollHeight > element.clientHeight;
+        }
+        
+        
+        return element.scrollHeight > iframe.clientHeight;
+      };
+
+      const hasHorizontalScrollbar = (element, iframe) => {
+        if (iframe == undefined) {
+          return element.scrollWidth > element.clientWidth;
+        }
+        
+        
+        return element.scrollWidth > iframe.clientWidth;
+      };
+
+      
+      
+      
+      
+      const rect = iframe ? iframe.getBoundingClientRect() :
+                            element.getBoundingClientRect();
+      let x, y;
+
+      if (scrollbarPosition === DropPosition.LEFT_SCROLLBAR &&
+          hasVerticalScrollbar(element, iframe)) {
+        x = rect.left + thickness / 2;
+        y = rect.top + (rect.height / 2);
+      } else if (scrollbarPosition === DropPosition.RIGHT_SCROLLBAR &&
+                 hasVerticalScrollbar(element, iframe)) {
+        x = rect.right - thickness / 2;
+        y = rect.top + (rect.height / 2);
+      } else if (scrollbarPosition === DropPosition.HORIZONTAL_SCROLLBAR &&
+                 hasHorizontalScrollbar(element, iframe)) {
+        
+        x = rect.left + (rect.width / 2);
+        y = rect.bottom - thickness / 2;
+      } else {
+        throw new Error('Invalid position specified for scrollbar.');
+      }
+
+      return actions.pointerMove(x, y);
+    }
+
+
 
 
 
@@ -98,7 +105,8 @@ const movePointerToScrollbar = (element, iframe, scrollbarPosition, actions) => 
 
 
 function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
-  dragIframe = undefined, dropIframe = undefined, dropPosition = DropPosition.CENTER) {
+                      dragIframe = undefined, dropIframe = undefined,
+                      dropPosition = DropPosition.CENTER) {
   
   
   if (dropPosition !== DropPosition.CENTER && calculateScrollbarThickness() <= 0) {
@@ -130,7 +138,7 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
 
 
 function dragEndTest(dragElement, dropElement, onDropCallBack, testDescription,
-  dragIframe = undefined, dropIframe = undefined) {
+                     dragIframe = undefined, dropIframe = undefined) {
   promise_test((t) => new Promise(async (resolve, reject) => {
     dragElement.addEventListener('dragend', t.step_func((event) => {
       if (onDropCallBack(event) == true) {
@@ -158,7 +166,8 @@ function dragEndTest(dragElement, dropElement, onDropCallBack, testDescription,
 
 
 function dragDropTestNoDropEvent(dragElement, dropElement, testDescription,
-  dragIframe = undefined, dropIframe = undefined, dropPosition = DropPosition.CENTER) {
+                                 dragIframe = undefined, dropIframe = undefined,
+                                 dropPosition = DropPosition.CENTER) {
   
   
   if (dropPosition !== DropPosition.CENTER && calculateScrollbarThickness() <= 0) {
@@ -189,6 +198,39 @@ function dragDropTestNoDropEvent(dragElement, dropElement, testDescription,
       reject(e);
     }
   }, testDescription));
+}
+
+
+
+
+
+
+function dragDropTestWithLayoutShift(dragElement, dropElement, onDropCallBack,
+                                     testDescription) {
+  promise_test((t) => new Promise(async (resolve, reject) => {
+                 dropElement.addEventListener('drop', t.step_func((event) => {
+                   if (onDropCallBack(event) == true) {
+                     resolve();
+                   } else {
+                     reject();
+                   }
+                 }));
+                 try {
+                   var actions =
+                       movePointerToCenter(dragElement, null,
+                                           new test_driver.Actions())
+                           .pointerDown()
+                           .pointerMove(20, 20, {origin: dragElement})
+                           
+                           
+                           .pause(50, 'pointer');
+                   await movePointerToCenter(dropElement, null, actions)
+                       .pointerUp()
+                       .send();
+                 } catch (e) {
+                   reject(e);
+                 }
+               }, testDescription));
 }
 
 const calculateScrollbarThickness = () => {
