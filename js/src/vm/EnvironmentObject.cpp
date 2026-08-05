@@ -6,6 +6,7 @@
 
 #include "builtin/Array.h"
 #include "builtin/ModuleObject.h"
+#include "gc/PublicIterators.h"
 #include "js/EnvironmentChain.h"  
 #include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"  
@@ -3213,6 +3214,38 @@ void DebugEnvironments::onPopWasm(JSContext* cx, AbstractFramePtr frame) {
     envs->missingEnvs.remove(p);
   }
 }
+
+#ifdef ENABLE_WASM_JSPI
+static bool IsWasmFrameOnContStack(
+    AbstractFramePtr frame, mozilla::FunctionRef<bool(uintptr_t)> hasAddr) {
+  return frame.isWasmDebugFrame() &&
+         hasAddr(reinterpret_cast<uintptr_t>(frame.asWasmDebugFrame()));
+}
+
+
+void DebugEnvironments::onDiscardWasmCont(
+    JSRuntime* rt, mozilla::FunctionRef<bool(uintptr_t)> stackHasAddress) {
+  
+  
+  
+  for (RealmsIter realm(rt); !realm.done(); realm.next()) {
+    DebugEnvironments* envs = realm->debugEnvs();
+    if (!envs) {
+      continue;
+    }
+    for (auto iter = envs->missingEnvs.modIter(); !iter.done(); iter.next()) {
+      if (IsWasmFrameOnContStack(iter.get().key().frame(), stackHasAddress)) {
+        iter.remove();
+      }
+    }
+    for (auto iter = envs->liveEnvs.modIter(); !iter.done(); iter.next()) {
+      if (IsWasmFrameOnContStack(iter.get().value().frame(), stackHasAddress)) {
+        iter.remove();
+      }
+    }
+  }
+}
+#endif  
 
 void DebugEnvironments::onRealmUnsetIsDebuggee(Realm* realm) {
   if (DebugEnvironments* envs = realm->debugEnvs()) {

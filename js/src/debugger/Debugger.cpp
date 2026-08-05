@@ -2610,6 +2610,7 @@ static bool ContStackChainHasAddress(wasm::ContStack* resumeBase,
 
 void DebugAPI::onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase) {
   JS::GCContext* gcx = cx->gcContext();
+  size_t terminatedFrames = 0;
   JSRuntime* rt = cx->runtime();
   for (Debugger* dbg = rt->debuggerList().getFirst(); dbg;
        dbg = dbg->getNext()) {
@@ -2629,7 +2630,30 @@ void DebugAPI::onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase) {
         continue;
       }
       Debugger::terminateDebuggerFrame(gcx, dbg, frameObj, fp, &iter, nullptr);
+      terminatedFrames++;
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (terminatedFrames > 0) {
+    DebugEnvironments::onDiscardWasmCont(rt, [&](uintptr_t addr) {
+      return ContStackChainHasAddress(resumeBase, addr);
+    });
   }
 }
 #endif  
