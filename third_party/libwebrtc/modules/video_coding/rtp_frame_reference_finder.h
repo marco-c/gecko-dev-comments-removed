@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "absl/container/inlined_vector.h"
 #include "modules/rtp_rtcp/source/frame_object.h"
@@ -44,7 +45,9 @@ class RtpFrameReferenceFinder {
   ReturnVector PaddingReceived(uint16_t seq_num);
 
   
-  void ClearTo(uint16_t seq_num);
+  
+  void ClearTo(uint16_t seq_num,
+               std::optional<uint32_t> rtp_timestamp = std::nullopt);
 
  private:
   void AddPictureIdOffset(ReturnVector& frames);
@@ -53,6 +56,7 @@ class RtpFrameReferenceFinder {
   
   
   int cleared_to_seq_num_ = -1;
+  std::optional<uint32_t> cleared_to_timestamp_;
   const int64_t picture_id_offset_;
   std::unique_ptr<internal::RtpFrameReferenceFinderImpl> impl_;
 };

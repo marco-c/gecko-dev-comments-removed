@@ -29,17 +29,22 @@
 #include "modules/rtp_rtcp/source/frame_object.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/random.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
-
 namespace {
+
+using ::testing::IsEmpty;
+using ::testing::SizeIs;
+
 std::unique_ptr<RtpFrameObject> CreateFrame(
     uint16_t seq_num_start,
     uint16_t seq_num_end,
     bool keyframe,
     VideoCodecType codec,
-    const RTPVideoTypeHeader& video_type_header) {
+    const RTPVideoTypeHeader& video_type_header,
+    uint32_t rtp_timestamp) {
   RTPVideoHeader video_header;
   video_header.frame_type = keyframe ? VideoFrameType::kVideoFrameKey
                                      : VideoFrameType::kVideoFrameDelta;
@@ -53,7 +58,7 @@ std::unique_ptr<RtpFrameObject> CreateFrame(
       0,
       std::nullopt,
       std::nullopt,
-      0,
+      rtp_timestamp,
       0,
       VideoSendTiming(),
       0,
@@ -99,15 +104,24 @@ class TestRtpFrameReferenceFinder : public ::testing::Test {
                      bool keyframe) {
     std::unique_ptr<RtpFrameObject> frame =
         CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecGeneric,
-                    RTPVideoTypeHeader());
+                    RTPVideoTypeHeader(), 0);
 
     OnCompleteFrames(reference_finder_->ManageFrame(std::move(frame)));
+  }
+
+  void InsertGenericWithTimestamp(uint16_t seq_num_start,
+                                  uint16_t seq_num_end,
+                                  bool keyframe,
+                                  uint32_t rtp_timestamp) {
+    OnCompleteFrames(reference_finder_->ManageFrame(
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecGeneric,
+                    RTPVideoTypeHeader(), rtp_timestamp)));
   }
 
   void InsertH264(uint16_t seq_num_start, uint16_t seq_num_end, bool keyframe) {
     std::unique_ptr<RtpFrameObject> frame =
         CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecH264,
-                    RTPVideoTypeHeader());
+                    RTPVideoTypeHeader(), 0);
     OnCompleteFrames(reference_finder_->ManageFrame(std::move(frame)));
   }
 
@@ -242,6 +256,64 @@ TEST_F(TestRtpFrameReferenceFinder, ClearTo) {
   EXPECT_EQ(3UL, frames_from_callback_.size());
 }
 
+
+TEST_F(TestRtpFrameReferenceFinder, FrameNotDroppedWhenSeqWrapsButTsNewer) {
+  reference_finder_->ClearTo(50000, 1000000);
+  
+  InsertGenericWithTimestamp(49900, 49901,
+                             true, 910000);
+  EXPECT_THAT(frames_from_callback_, IsEmpty());
+  
+  InsertGenericWithTimestamp(24464, 24465,
+                             true, 1090000);
+  EXPECT_THAT(frames_from_callback_, SizeIs(1));
+}
+
+
+TEST_F(TestRtpFrameReferenceFinder, ClearToSeqNumOnlyWithoutTimestamp) {
+  reference_finder_->ClearTo(50000);
+  InsertGeneric(49900, 49901,
+                true);
+  EXPECT_THAT(frames_from_callback_, IsEmpty());
+}
+
+
+TEST_F(TestRtpFrameReferenceFinder, DeltasNotDroppedByStaleGopAfterSeqNumJump) {
+  InsertGeneric(60'000, 60'000,
+                true);
+  EXPECT_THAT(frames_from_callback_, SizeIs(1));
+  uint16_t seq_num = 34'464;
+  InsertGeneric(seq_num, seq_num,
+                true);
+  for (uint16_t i = 1; i <= 140; ++i) {
+    ++seq_num;
+    InsertGeneric(seq_num, seq_num,
+                  false);
+  }
+  EXPECT_THAT(frames_from_callback_, SizeIs(142));
+}
+
+
+
+
+
+TEST_F(TestRtpFrameReferenceFinder, NearFutureReorderedGopNotErased) {
+  
+  InsertGeneric(2000, 2000,
+                true);
+  
+  
+  
+  InsertGeneric(1800, 1800,
+                true);
+  
+  InsertGeneric(2001, 2001,
+                false);
+  InsertGeneric(2002, 2002,
+                false);
+  EXPECT_THAT(frames_from_callback_, SizeIs(4));
+}
+
 TEST_F(TestRtpFrameReferenceFinder, H264KeyFrameReferences) {
   uint16_t sn = Rand();
   InsertH264(sn, sn, true);
@@ -320,7 +392,7 @@ TEST_F(TestRtpFrameReferenceFinder, Av1FrameNoDependencyDescriptor) {
   uint16_t sn = 0xFFFF;
   std::unique_ptr<RtpFrameObject> frame =
       CreateFrame(sn, sn, true,
-                  kVideoCodecAV1, RTPVideoTypeHeader());
+                  kVideoCodecAV1, RTPVideoTypeHeader(), 0);
 
   OnCompleteFrames(reference_finder_->ManageFrame(std::move(frame)));
 

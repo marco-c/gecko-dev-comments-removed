@@ -48,6 +48,24 @@ RtpFrameReferenceFinder::ReturnVector RtpSeqNumOnlyRefFinder::ManageFrame(
 RtpSeqNumOnlyRefFinder::FrameDecision
 RtpSeqNumOnlyRefFinder::ManageFrameInternal(RtpFrameObject* frame) {
   if (frame->IsKey()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    constexpr uint16_t kMaxGopReorderingDistance = 0x2000;  
+    for (auto it = last_seq_num_gop_.begin(); it != last_seq_num_gop_.end();) {
+      if (AheadOf<uint16_t>(it->first, frame->last_seq_num()) &&
+          ForwardDiff<uint16_t>(frame->last_seq_num(), it->first) >
+              kMaxGopReorderingDistance) {
+        it = last_seq_num_gop_.erase(it);
+      } else {
+        ++it;
+      }
+    }
     last_seq_num_gop_.insert(std::make_pair(
         frame->last_seq_num(),
         std::make_pair(frame->last_seq_num(), frame->last_seq_num())));

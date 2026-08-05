@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <variant>
 
@@ -163,8 +164,13 @@ RtpFrameReferenceFinder::~RtpFrameReferenceFinder() = default;
 RtpFrameReferenceFinder::ReturnVector RtpFrameReferenceFinder::ManageFrame(
     std::unique_ptr<RtpFrameObject> frame) {
   
+  
+  
+  
   if (cleared_to_seq_num_ != -1 &&
-      AheadOf<uint16_t>(cleared_to_seq_num_, frame->first_seq_num())) {
+      AheadOf<uint16_t>(cleared_to_seq_num_, frame->first_seq_num()) &&
+      (!cleared_to_timestamp_.has_value() ||
+       AheadOf<uint32_t>(*cleared_to_timestamp_, frame->RtpTimestamp()))) {
     return {};
   }
 
@@ -180,8 +186,10 @@ RtpFrameReferenceFinder::ReturnVector RtpFrameReferenceFinder::PaddingReceived(
   return frames;
 }
 
-void RtpFrameReferenceFinder::ClearTo(uint16_t seq_num) {
+void RtpFrameReferenceFinder::ClearTo(uint16_t seq_num,
+                                      std::optional<uint32_t> rtp_timestamp) {
   cleared_to_seq_num_ = seq_num;
+  cleared_to_timestamp_ = rtp_timestamp;
   impl_->ClearTo(seq_num);
 }
 
