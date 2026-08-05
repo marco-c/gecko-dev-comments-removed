@@ -55,72 +55,7 @@ class LoadContextBase;
 class ModuleLoaderBase;
 class ModuleLoadRequest;
 class ModuleScript;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ScriptLoaderInterface : public nsISupports {
- public:
-  
-  using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
-  using ScriptKind = JS::loader::ScriptKind;
-  using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
-  using ScriptLoadRequestList = JS::loader::ScriptLoadRequestList;
-  using ModuleLoadRequest = JS::loader::ModuleLoadRequest;
-
-  virtual ~ScriptLoaderInterface() = default;
-
-  
-  virtual nsIURI* GetBaseURI() const = 0;
-
-  virtual void ReportErrorToConsole(ScriptLoadRequest* aRequest,
-                                    nsresult aResult) const = 0;
-
-  virtual void ReportWarningToConsole(
-      ScriptLoadRequest* aRequest, const char* aMessageName,
-      const nsTArray<nsString>& aParams = nsTArray<nsString>()) const = 0;
-
-  
-  
-  virtual nsIConsoleReportCollector* GetConsoleReportCollector() const {
-    return nullptr;
-  }
-
-  
-  
-  virtual nsresult FillCompileOptionsForRequest(
-      JSContext* cx, ScriptLoadRequest* aRequest, CompileOptions* aOptions,
-      MutableHandle<JSScript*> aIntroductionScript) = 0;
-
-  virtual nsresult MaybePrepareModuleForDiskCacheAfterExecute(
-      ModuleLoadRequest* aRequest, nsresult aRv) {
-    return NS_OK;
-  }
-
-  virtual void MaybeUpdateDiskCache() {}
-
-  
-  
-  virtual bool IsImportMapSupported() const { return false; }
-};
+class ScriptLoaderInterface;
 
 class ModuleMapKey : public PLDHashEntryHdr {
  public:
@@ -305,7 +240,7 @@ class ModuleLoaderBase : public nsISupports {
   
   void Shutdown();
 
-  virtual nsIURI* GetBaseURI() const { return mLoader->GetBaseURI(); };
+  virtual nsIURI* GetBaseURI() const;
 
   using MaybeSourceText =
       mozilla::MaybeOneOf<SourceText<char16_t>, SourceText<Utf8Unit>>;
