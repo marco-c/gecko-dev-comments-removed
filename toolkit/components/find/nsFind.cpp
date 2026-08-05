@@ -973,7 +973,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
 
           
           if (mWordEndBounded && nextChar && !BreakInBetween(c, nextChar)) {
-            matchAnchorNode = nullptr;
+            EndPartialMatch();
             continue;
           }
 
