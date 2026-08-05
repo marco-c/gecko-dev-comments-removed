@@ -365,10 +365,14 @@ size_t StyleSheetInfo::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 void StyleSheetInfo::AddSheet(StyleSheet* aSheet) {
+  aSheet->mInnerSheetIndex = mSheets.Length();
   mSheets.AppendElement(aSheet);
 }
 
 bool StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
+  const size_t index = aSheet->mInnerSheetIndex;
+  MOZ_ASSERT(mSheets[index] == aSheet, "mInnerSheetIndex out of sync?");
+
   
   StyleSheet* newParent =
       aSheet == mSheets[0] ? mSheets.SafeElementAt(1) : mSheets[0];
@@ -385,9 +389,16 @@ bool StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
     return true;
   }
 
-  mSheets.UnorderedRemoveElement(aSheet);
+  {
+    
+    
+    const size_t lastIndex = mSheets.Length() - 1;
+    mSheets[lastIndex]->mInnerSheetIndex = index;
+    mSheets.UnorderedRemoveElementAt(index);
+  }
+
   if (mSheets.Length() == 1 &&
-      !mSheets.ElementAt(0)->GetAssociatedDocumentOrShadowRoot()) {
+      !mSheets[0]->GetAssociatedDocumentOrShadowRoot()) {
     
     
     
@@ -489,13 +500,15 @@ void StyleSheet::EnsureUniqueInner() {
     return;
   }
 
-  StyleSheetInfo* clone = mInner->CloneFor(this);
-  MOZ_ASSERT(clone);
-
+  
+  
   DebugOnly<bool> last = mInner->RemoveSheet(this);
   MOZ_ASSERT(
       !last,
       "HasUniqueInner implies mInner should have pointed to more than this");
+
+  StyleSheetInfo* clone = mInner->CloneFor(this);
+  MOZ_ASSERT(clone);
   mInner = clone;
 
   

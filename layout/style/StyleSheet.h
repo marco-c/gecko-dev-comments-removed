@@ -576,26 +576,21 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   RefPtr<URLExtraData> mURLData;
   RefPtr<nsIURI> mOriginalSheetURI;
+
   State mState;
-
   Atomic<uint32_t, ReleaseAcquire> mAsyncParseBlockers{0};
+  
+  uint32_t mInnerSheetIndex = 0;
 
-  
-  
   
   
   StyleSheetInfo* mInner;
 
   nsTArray<ServoStyleSet*> mStyleSets;
-
   RefPtr<ServoCSSRuleList> mRuleList;
-
   MozPromiseHolder<StyleSheetParsePromise> mParsePromise;
-
   nsTArray<dom::DocumentOrShadowRoot*> mAdopters;
 
-  
-  
   friend struct StyleSheetInfo;
 };
 
