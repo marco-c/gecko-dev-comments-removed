@@ -98,6 +98,11 @@ pref("browser.cache.frecency_half_life_hours", 6);
 pref("browser.download.forbid_open_with", false);
 
 
+
+
+pref("dom.editcontext.suppress_notifying_ime_timeout", 300);
+
+
 pref("dom.indexedDB.logging.enabled", true);
 
 pref("dom.indexedDB.logging.details", true);

@@ -6,13 +6,14 @@
 #define mozilla_dom_EditContext_h
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/EditContextBinding.h"
 
 class nsTextNode;
 
 namespace mozilla::dom {
 
-class EditContext final : public DOMEventTargetHelper {
+class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(EditContext, DOMEventTargetHelper)
@@ -27,8 +28,8 @@ class EditContext final : public DOMEventTargetHelper {
   void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
                   const nsAString& aText, ErrorResult& aRv);
   void UpdateSelection(uint32_t aStart, uint32_t aEnd);
-  void UpdateControlBounds(DOMRect& aControlBounds);
-  void UpdateSelectionBounds(DOMRect& aSelectionBounds);
+  void UpdateControlBounds(const DOMRect& aControlBounds);
+  void UpdateSelectionBounds(const DOMRect& aSelectionBounds);
   void UpdateCharacterBounds(
       uint32_t aRangeStart,
       const Sequence<OwningNonNull<DOMRect>>& aCharacterBounds);
@@ -148,6 +149,8 @@ class EditContext final : public DOMEventTargetHelper {
   static MOZ_CAN_RUN_SCRIPT void NotifyActiveEditContextChanged(
       Document& aDocument);
 
+  void LastRelease() override { UnsuppressNotifyingIME(); }
+
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
               ErrorResult& aRv);
@@ -170,8 +173,21 @@ class EditContext final : public DOMEventTargetHelper {
   static LayoutDeviceIntRect ToRootRelativeDeviceRect(
       const nsPresContext& aPresContext, const nsRect& aRect);
 
+  class AutoSuppressIMENotifications;
+  MOZ_CAN_RUN_SCRIPT nsresult FireCharacterBoundsUpdateIfNeeded(
+      uint32_t aStart, uint32_t aEnd,
+      AutoSuppressIMENotifications* aSuppressIMENotifications);
+
+  
+  
+  void UnsuppressNotifyingIME();
+
   RefPtr<nsGenericHTMLElement> mAssociatedElement;
   RefPtr<nsGenericHTMLElement> mTextContainer;
+  
+  
+  
+  nsCOMPtr<nsITimer> mSuppressNotifyingIMETimer;
   nsTArray<Rect> mCodepointRects;
   Maybe<Rect> mControlBounds;
   Maybe<Rect> mSelectionBounds;
@@ -190,6 +206,9 @@ class EditContext final : public DOMEventTargetHelper {
   bool mIsFiringTextUpdate = false;
   
   bool mCodepointRectsTextChanged = false;
+  
+  
+  bool mWarnedAboutUpdateCharacterBoundsNotCalled = false;
 };
 
 }  
