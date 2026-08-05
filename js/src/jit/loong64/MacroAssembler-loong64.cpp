@@ -1125,6 +1125,7 @@ void MacroAssemblerLOONG64::ma_b(Address addr, ImmGCPtr imm, Label* label,
 }
 
 void MacroAssemblerLOONG64::ma_bl(Label* label) {
+  LabelDoc target = refLabel(label);
   spew("branch .Llabel %p\n", label);
   if (label->bound()) {
     
@@ -1133,7 +1134,7 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
     UseScratchRegisterScope temps(asMasm());
     Register scratch = temps.Acquire();
     ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-    as_jirl(ra, scratch, BOffImm16(0));
+    as_jirl(ra, scratch, BOffImm16(0), target);
     return;
   }
 
@@ -1146,7 +1147,7 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
   m_buffer.ensureSpace(5 * sizeof(uint32_t));
 
   spew("bal .Llabel %p\n", label);
-  BufferOffset bo = emit(getBranchCode(BranchIsCall).encode());
+  BufferOffset bo = emit(getBranchCode(BranchIsCall).encode(), target);
   writeInst(nextInChain);
   if (!oom()) {
     label->use(bo.getOffset());
@@ -1160,6 +1161,7 @@ void MacroAssemblerLOONG64::ma_bl(Label* label) {
 void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
                                            JumpKind jumpKind,
                                            Register scratch) {
+  LabelDoc target = refLabel(label);
   
   
   spew("branch .Llabel %p", label);
@@ -1183,7 +1185,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
       } else {
         code.setBOffImm16(BOffImm16(offset));
       }
-      emit(code.encode());
+      emit(code.encode(), target);
       return;
     }
 
@@ -1195,10 +1197,10 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
         UseScratchRegisterScope temps(asMasm());
         Register scratch = temps.Acquire();
         ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-        as_jirl(zero, scratch, BOffImm16(0));  
+        as_jirl(zero, scratch, BOffImm16(0), target);  
       } else {
         ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-        as_jirl(zero, scratch, BOffImm16(0));  
+        as_jirl(zero, scratch, BOffImm16(0), target);  
       }
       as_nop();
       return;
@@ -1215,10 +1217,10 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
       UseScratchRegisterScope temps(asMasm());
       Register scratch = temps.Acquire();
       ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-      as_jirl(zero, scratch, BOffImm16(0));  
+      as_jirl(zero, scratch, BOffImm16(0), target);  
     } else {
       ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
-      as_jirl(zero, scratch, BOffImm16(0));  
+      as_jirl(zero, scratch, BOffImm16(0), target);  
     }
     as_nop();
     return;
@@ -1236,7 +1238,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
 
     
     code.setBOffImm16(BOffImm16(4));
-    BufferOffset bo = emit(code.encode());
+    BufferOffset bo = emit(code.encode(), target);
     writeInst(nextInChain);
     if (!oom()) {
       label->use(bo.getOffset());
@@ -1250,7 +1252,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
   
   m_buffer.ensureSpace(5 * sizeof(uint32_t));
 
-  BufferOffset bo = emit(code.encode());  
+  BufferOffset bo = emit(code.encode(), target);  
   writeInst(nextInChain);
   if (!oom()) {
     label->use(bo.getOffset());

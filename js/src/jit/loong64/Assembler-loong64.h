@@ -19,6 +19,8 @@
 namespace js {
 namespace jit {
 
+using LabelDoc = DisassemblerSpew::LabelDoc;
+
 static constexpr Register zero{Registers::zero};
 static constexpr Register ra{Registers::ra};
 static constexpr Register tp{Registers::tp};
@@ -1063,9 +1065,13 @@ class AssemblerLOONG64 : public AssemblerShared {
   
   BufferOffset writeInst(uint32_t x, uint32_t* dest = nullptr);
   BufferOffset emit(uint32_t x);
+  BufferOffset emit(uint32_t x, LabelDoc target);
 #ifdef JS_DISASM_LOONG64
   void spewInstruction(Instruction* instruction);
+  void spewBranch(BufferOffset offset, Instruction* instruction,
+                  LabelDoc target);
 #endif
+  LabelDoc refLabel(Label*) { return {}; }
   
   
   static void WriteInstStatic(uint32_t x, uint32_t* dest);
@@ -1079,6 +1085,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_b(JOffImm26 off);
   BufferOffset as_bl(JOffImm26 off);
   BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off);
+  BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off, LabelDoc doc);
 
   InstImm getBranchCode(JumpOrCall jumpOrCall);  
   InstImm getBranchCode(Register rd, Register rj,
