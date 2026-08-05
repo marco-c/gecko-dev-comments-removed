@@ -10620,8 +10620,14 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
         mLastStatusReported, TimeStamp::Now(), size, mCacheDisposition,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus,
-        &mTransactionTimings, std::move(mSource), httpVersion, responseStatus,
-        Some(nsDependentCString(contentType.get())));
+        &mTransactionTimings, std::move(mSource),
+        
+        
+        (mCacheDisposition == kCacheHit ||
+         mCacheDisposition == kCacheHitViaReval)
+            ? Nothing()
+            : httpVersion,
+        responseStatus, Some(nsDependentCString(contentType.get())));
   }
 
   if (mAuthRetryPending &&

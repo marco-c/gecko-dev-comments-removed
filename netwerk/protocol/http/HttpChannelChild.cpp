@@ -999,7 +999,10 @@ void HttpChannelChild::OnStopRequest(
         mLastStatusReported, now, mTransferSize, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(),
         mLoadInfo->GetOriginAttributes().IsPrivateBrowsing(), this, mStatus,
-        &mTransactionTimings, std::move(mSource), httpVersion, responseStatus,
+        &mTransactionTimings, std::move(mSource),
+        
+        
+        mIsFromCache ? Nothing() : httpVersion, responseStatus,
         Some(nsDependentCString(contentType.get())));
   }
 
