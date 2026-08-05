@@ -82,6 +82,7 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
 use std::ptr::NonNull;
+use thin_vec::ThinVec;
 use uluru::LRUCache;
 
 mod checks;
@@ -163,22 +164,26 @@ impl PartialEq for RevalidationResult {
 
 
 
+const REASONABLE_CLASS_LIST_SIZE: usize = 5;
+
+
 #[derive(Debug, Default)]
 pub struct ValidationData {
     
     
     
     
-    class_list: Option<SmallVec<[AtomIdent; 5]>>,
+    
+    class_list: Option<SmallVec<[AtomIdent; REASONABLE_CLASS_LIST_SIZE]>>,
 
     
     
     
     
-    part_list: Option<SmallVec<[AtomIdent; 5]>>,
+    part_list: Option<ThinVec<AtomIdent>>,
 
     
-    pres_hints: Option<SmallVec<[ApplicableDeclarationBlock; 5]>>,
+    pres_hints: Option<ThinVec<ApplicableDeclarationBlock>>,
 
     
     parent_style_identity: Option<OpaqueComputedValues>,
@@ -201,12 +206,13 @@ impl ValidationData {
         E: TElement,
     {
         self.pres_hints.get_or_insert_with(|| {
-            let mut pres_hints = SmallVec::new();
+            
+            let mut pres_hints = SmallVec::<[_; 5]>::new();
             element.synthesize_presentational_hints_for_legacy_attributes(
                 VisitedHandlingMode::AllLinksUnvisited,
                 &mut pres_hints,
             );
-            pres_hints
+            ThinVec::from_iter(pres_hints.drain(..))
         })
     }
 
@@ -219,10 +225,10 @@ impl ValidationData {
             return &[];
         }
         self.part_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[_; 5]>::new();
+            let mut list = ThinVec::new();
             element.each_part(|p| list.push(p.clone()));
             
-            if !list.spilled() {
+            if list.len() <= REASONABLE_CLASS_LIST_SIZE {
                 list.sort_unstable_by_key(|a| a.get_hash());
             }
             list
@@ -235,13 +241,12 @@ impl ValidationData {
         E: TElement,
     {
         self.class_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[_; 5]>::new();
+            let mut list = SmallVec::<[_; REASONABLE_CLASS_LIST_SIZE]>::new();
             element.each_class(|c| list.push(c.clone()));
             
             
             
-            
-            if !list.spilled() {
+            if list.len() <= REASONABLE_CLASS_LIST_SIZE {
                 list.sort_unstable_by_key(|a| a.get_hash());
             }
             list
@@ -288,12 +293,10 @@ impl ValidationData {
             let bloom_to_use = if bloom_known_valid {
                 debug_assert_eq!(bloom.current_parent(), element.traversal_parent());
                 Some(bloom.filter())
+            } else if bloom.current_parent() == element.traversal_parent() {
+                Some(bloom.filter())
             } else {
-                if bloom.current_parent() == element.traversal_parent() {
-                    Some(bloom.filter())
-                } else {
-                    None
-                }
+                None
             };
             stylist.match_revalidation_selectors(
                 element,
