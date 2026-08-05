@@ -45,6 +45,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/genai/content/**/*.stories.mjs`,
+    
     `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     
     `${projectRoot}/browser/components/controlcenter/content/components/**/*.stories.mjs`,
