@@ -3,22 +3,22 @@
 
 
 #include "ScriptLoadRequest.h"
-#include "GeckoProfiler.h"
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ScriptLoadContext.h"
-#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WorkerLoadContext.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf8.h"  
-#include "mozilla/FlowMarkers.h"
 
-#include "js/SourceText.h"
-
+#include "GeckoProfiler.h"
 #include "ModuleLoadRequest.h"
 #include "nsContentUtils.h"
 #include "nsIClassOfService.h"
 #include "nsISupportsPriority.h"
+
+#include "js/SourceText.h"
 
 using JS::SourceText;
 
@@ -232,13 +232,14 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
 void ScriptLoadRequest::NoCacheEntryFound(
     mozilla::dom::ReferrerPolicy aReferrerPolicy,
-    ScriptFetchOptions* aFetchOptions, nsIURI* aURI) {
+    ScriptFetchOptions* aFetchOptions, nsIURI* aURI,
+    const mozilla::Encoding* aClassicScriptFallbackEncoding) {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mKind != ScriptKind::eEvent, "eEvent is only for ScriptFetchInfo");
   MOZ_ASSERT(!IsRetrievedFromMemoryCache());
 
   mFetchInfo = new ScriptFetchInfo(mKind, aReferrerPolicy, aFetchOptions, aURI);
-  mLoadedScript = new LoadedScript(mKind, aURI);
+  mLoadedScript = new LoadedScript(mKind, aURI, aClassicScriptFallbackEncoding);
   mState = State::Fetching;
 }
 

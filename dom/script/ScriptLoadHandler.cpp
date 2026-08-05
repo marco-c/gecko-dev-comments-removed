@@ -283,38 +283,11 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   
   
-  nsAutoString hintCharset;
-  if (!mRequest->GetScriptLoadContext()->IsPreload()) {
-    mRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
-  } else {
-    nsTArray<ScriptLoader::PreloadInfo>::index_type i =
-        mScriptLoader->mPreloads.IndexOf(
-            mRequest, 0, ScriptLoader::PreloadRequestComparator());
+  encoding = mRequest->ClassicScriptFallbackEncoding();
+  MOZ_ASSERT(encoding);
 
-    NS_ASSERTION(i != mScriptLoader->mPreloads.NoIndex,
-                 "Incorrect preload bookkeeping");
-    hintCharset = mScriptLoader->mPreloads[i].mCharset;
-  }
-
-  if ((encoding = Encoding::ForLabel(hintCharset))) {
-    mDecoder =
-        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  
-  if (mScriptLoader->mDocument) {
-    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
-    mDecoder =
-        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  
-  
-  
-  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
-                                       ScriptDecoder::BOMHandling::Ignore);
+  mDecoder =
+      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 

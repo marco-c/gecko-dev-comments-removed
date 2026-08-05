@@ -4,18 +4,19 @@
 
 #include "LoadedScript.h"
 
+#include "mozilla/dom/ScriptLoadContext.h"  
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"     
 #include "mozilla/Sprintf.h"    
 #include "mozilla/UniquePtr.h"  
-#include "nsIURI.h"             
 
-#include "mozilla/dom/ScriptLoadContext.h"  
 #include "jsfriendapi.h"
-#include "js/Modules.h"                 
+#include "LoadContextBase.h"  
+#include "nsIChannel.h"       
+#include "nsIURI.h"           
+
 #include "js/experimental/JSStencil.h"  
-#include "LoadContextBase.h"            
-#include "nsIChannel.h"                 
+#include "js/Modules.h"                 
 
 namespace JS::loader {
 
@@ -102,7 +103,8 @@ void HostReleaseScriptFetchInfo(const Value& aPrivate) {
 
 NS_IMPL_ISUPPORTS(LoadedScript, nsISupports)
 
-LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
+LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI,
+                           const mozilla::Encoding* aClassicScriptFallbackEncoding)
     : mDataType(DataType::eUnknown),
       mKind(aKind),
       mSerializedStencilOffset(0),
@@ -111,8 +113,13 @@ LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
       mTookLongInPreviousRuns(false),
       mIsEverHitFromMemoryCache(false),
       mURI(aURI),
-      mReceivedScriptTextLength(0) {
+      mReceivedScriptTextLength(0),
+      mClassicScriptFallbackEncoding(aClassicScriptFallbackEncoding) {
   MOZ_ASSERT(mURI);
+  MOZ_ASSERT_IF(mKind != ScriptKind::eModule,
+                mClassicScriptFallbackEncoding);
+  MOZ_ASSERT_IF(mKind == ScriptKind::eModule,
+                !mClassicScriptFallbackEncoding);
 }
 
 size_t LoadedScript::SizeOfIncludingThis(
