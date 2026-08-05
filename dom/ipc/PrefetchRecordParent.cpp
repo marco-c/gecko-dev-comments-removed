@@ -14,12 +14,13 @@ LazyLogModule gSpeculationRulesLog("SpeculationRules");
 
 mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
   
-  
+  LOG_SPECRULES(("PrefetchRecordParent::RecvCancel: this=%p", this));
   return IPC_OK();
 }
 
 void PrefetchRecordParent::ActorDestroy(ActorDestroyReason aReason) {
-  
+  LOG_SPECRULES(("PrefetchRecordParent::ActorDestroy: this=%p, reason=%d", this,
+                 static_cast<int>(aReason)));
 }
 
 }  
