@@ -15,6 +15,7 @@
 #include <iterator>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -367,34 +368,43 @@ std::vector<const Codec*> FindAllMatchingCodecs(
   return result;
 }
 
+std::optional<SdpVideoFormat> CreateH264ConstrainedBaselineProfile(
+    const SdpVideoFormat& format) {
+  if (format.name != kH264CodecName) {
+    return std::nullopt;
+  }
+  const std::optional<H264ProfileLevelId> profile_level_id =
+      ParseSdpForH264ProfileLevelId(format.parameters);
+  if (!profile_level_id ||
+      profile_level_id->profile == H264Profile::kProfileConstrainedBaseline) {
+    return std::nullopt;
+  }
+  SdpVideoFormat cbp_format = format;
+  H264ProfileLevelId cbp_profile = *profile_level_id;
+  cbp_profile.profile = H264Profile::kProfileConstrainedBaseline;
+  cbp_format.parameters[kH264FmtpProfileLevelId] =
+      *H264ProfileLevelIdToString(cbp_profile);
+  return cbp_format;
+}
+
 
 
 void AddH264ConstrainedBaselineProfileToSupportedFormats(
     std::vector<SdpVideoFormat>* supported_formats) {
-  std::vector<SdpVideoFormat> cbr_supported_formats;
+  std::vector<SdpVideoFormat> cbp_supported_formats;
 
   
   
-  for (auto it = supported_formats->cbegin(); it != supported_formats->cend();
-       ++it) {
-    if (it->name == kH264CodecName) {
-      const std::optional<H264ProfileLevelId> profile_level_id =
-          ParseSdpForH264ProfileLevelId(it->parameters);
-      if (profile_level_id && profile_level_id->profile !=
-                                  H264Profile::kProfileConstrainedBaseline) {
-        SdpVideoFormat cbp_format = *it;
-        H264ProfileLevelId cbp_profile = *profile_level_id;
-        cbp_profile.profile = H264Profile::kProfileConstrainedBaseline;
-        cbp_format.parameters[kH264FmtpProfileLevelId] =
-            *H264ProfileLevelIdToString(cbp_profile);
-        cbr_supported_formats.push_back(cbp_format);
-      }
+  for (const SdpVideoFormat& format : *supported_formats) {
+    if (std::optional<SdpVideoFormat> cbp_format =
+            CreateH264ConstrainedBaselineProfile(format)) {
+      cbp_supported_formats.push_back(std::move(*cbp_format));
     }
   }
 
   size_t original_size = supported_formats->size();
   
-  std::copy_if(cbr_supported_formats.begin(), cbr_supported_formats.end(),
+  std::copy_if(cbp_supported_formats.begin(), cbp_supported_formats.end(),
                std::back_inserter(*supported_formats),
                [supported_formats](const SdpVideoFormat& format) {
                  return !format.IsCodecInList(*supported_formats);

@@ -272,6 +272,12 @@ std::vector<const Codec*> FindAllMatchingCodecs(
     const std::vector<Codec>& supported_codecs,
     const Codec& codec);
 
+
+
+
+RTC_EXPORT std::optional<SdpVideoFormat> CreateH264ConstrainedBaselineProfile(
+    const SdpVideoFormat& format);
+
 RTC_EXPORT void AddH264ConstrainedBaselineProfileToSupportedFormats(
     std::vector<SdpVideoFormat>* supported_formats);
 
