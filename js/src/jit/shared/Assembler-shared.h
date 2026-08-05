@@ -640,6 +640,14 @@ class MemoryAccessDesc {
   }
 };
 
+
+
+
+
+
+
+enum class ZeroExtendIndex : bool { No, Yes };
+
 }  
 
 namespace jit {

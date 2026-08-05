@@ -1269,9 +1269,9 @@ struct BaseCompiler final {
 
   
   
-  void executeLoad(MemoryAccessDesc* access, AccessCheck* check,
-                   RegPtr instance, RegPtr memoryBase, RegI32 ptr, AnyReg dest,
-                   RegI32 temp);
+  void executeLoad(MemoryAccessDesc* access, RegPtr instance, RegPtr memoryBase,
+                   RegI32 ptr, AnyReg dest, RegI32 temp,
+                   ZeroExtendIndex zeroExtend);
   void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
             RegPtr memoryBase, RegI32 ptr, AnyReg dest, RegI32 temp);
   void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
@@ -1284,9 +1284,9 @@ struct BaseCompiler final {
 
   
   
-  void executeStore(MemoryAccessDesc* access, AccessCheck* check,
-                    RegPtr instance, RegPtr memoryBase, RegI32 ptr, AnyReg src,
-                    RegI32 temp);
+  void executeStore(MemoryAccessDesc* access, RegPtr instance,
+                    RegPtr memoryBase, RegI32 ptr, AnyReg src, RegI32 temp,
+                    ZeroExtendIndex zeroExtend);
   void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
              RegPtr memoryBase, RegI32 ptr, AnyReg src, RegI32 temp);
   void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,

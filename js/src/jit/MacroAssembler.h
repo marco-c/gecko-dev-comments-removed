@@ -3819,14 +3819,28 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, AnyRegister output) DEFINED_ON(arm64, riscv64);
+                Register ptr, AnyRegister output) DEFINED_ON(arm64);
   void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register64 output) DEFINED_ON(arm64, riscv64);
+                   Register ptr, Register64 output) DEFINED_ON(arm64);
   void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr) DEFINED_ON(arm64, riscv64);
+                 Register memoryBase, Register ptr) DEFINED_ON(arm64);
   void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr)
-      DEFINED_ON(arm64, riscv64);
+                    Register memoryBase, Register ptr) DEFINED_ON(arm64);
+
+  
+  
+  void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
+                Register ptr, AnyRegister output,
+                wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
+  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
+                   Register ptr, Register64 output,
+                   wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
+  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
+                 Register memoryBase, Register ptr,
+                 wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
+  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
+                    Register memoryBase, Register ptr,
+                    wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
 
   
   void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
