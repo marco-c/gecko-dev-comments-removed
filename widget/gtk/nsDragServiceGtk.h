@@ -10,14 +10,14 @@
 #include "GRefPtr.h"
 #include "GUniquePtr.h"
 #include "mozilla/RefPtr.h"
-#include "nsDragSessionSource.h"
+#include "nsDragService.h"
 
 namespace mozilla::widget {
 
 
 
 
-class nsDragSessionGtk : public nsDragSessionSource {
+class nsDragSessionGtk : public nsDragSession {
  public:
   void ReplyToDragMotion(GdkDragContext* aDragContext, guint aTime);
   void ReplyToDragMotion() override;
