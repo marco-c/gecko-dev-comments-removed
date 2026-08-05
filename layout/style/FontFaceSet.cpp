@@ -393,10 +393,9 @@ void FontFaceSet::DispatchLoadingEventAndReplaceReadyPromise() {
   (new AsyncEventDispatcher(this, u"loading"_ns, CanBubble::eNo))
       ->PostDOMEvent();
 
-  if (mReady && mReady->State() != Promise::PromiseState::Pending &&
-      GetParentObject()) {
-    IgnoredErrorResult rv;
-    mReady = Promise::Create(GetParentObject(), rv);
+  if (mReady && mReady->State() != Promise::PromiseState::Pending) {
+    
+    mReady = nullptr;
   }
 
   
