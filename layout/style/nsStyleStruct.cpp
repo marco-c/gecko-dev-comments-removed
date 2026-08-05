@@ -2934,15 +2934,49 @@ nsStyleContent::nsStyleContent(const nsStyleContent& aSource)
   MOZ_COUNT_CTOR(nsStyleContent);
 }
 
+
+bool nsStyleContent::CanUpdateGeneratedContentText(const nsStyleContent& aOld,
+                                                   const nsStyleContent& aNew) {
+  auto oldItems = aOld.NonAltContentItems();
+  auto newItems = aNew.NonAltContentItems();
+  if (oldItems.IsEmpty() || oldItems.Length() != newItems.Length() ||
+      aOld.AltContentItems() != aNew.AltContentItems()) {
+    return false;
+  }
+  auto isNonEmptyString = [](const auto& aItem) {
+    return aItem.IsString() && !aItem.AsString().AsString().IsEmpty();
+  };
+  for (size_t i = 0; i < oldItems.Length(); i++) {
+    if (oldItems[i] == newItems[i]) {
+      continue;
+    }
+    
+    
+    if (!isNonEmptyString(oldItems[i]) || !isNonEmptyString(newItems[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 nsChangeHint nsStyleContent::CalcDifference(
     const nsStyleContent& aNewData) const {
-  
-  
-  
-  if (mContent != aNewData.mContent ||
-      mCounterIncrement != aNewData.mCounterIncrement ||
+  if (mCounterIncrement != aNewData.mCounterIncrement ||
       mCounterReset != aNewData.mCounterReset ||
       mCounterSet != aNewData.mCounterSet) {
+    return nsChangeHint_ReconstructFrame;
+  }
+
+  if (mContent != aNewData.mContent) {
+    
+    
+    
+    
+    if (CanUpdateGeneratedContentText(*this, aNewData)) {
+      return nsChangeHint_NeutralChange;
+    }
+    
+    
     return nsChangeHint_ReconstructFrame;
   }
 
