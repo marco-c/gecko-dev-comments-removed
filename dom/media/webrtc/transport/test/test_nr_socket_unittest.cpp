@@ -4,8 +4,6 @@
 
 
 
-
-
 #include <cstddef>
 
 
@@ -424,6 +422,22 @@ TEST_F(TestNrSocketTest, SafePortAcceptedTCP) {
   ASSERT_FALSE(nr_str_port_to_transport_addr("127.0.0.1",
                                              
                                              5349, IPPROTO_TCP, &address));
+  ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
+}
+
+TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedUDP) {
+  nr_transport_addr address;
+  
+  
+  ASSERT_FALSE(
+      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_UDP, &address));
+  ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
+}
+
+TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedTCP) {
+  nr_transport_addr address;
+  ASSERT_FALSE(
+      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_TCP, &address));
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
 }
 
