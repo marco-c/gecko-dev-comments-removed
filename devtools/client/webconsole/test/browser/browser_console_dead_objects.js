@@ -35,7 +35,7 @@ add_task(async function () {
   
   
   const anchor = msg.node.querySelector("a");
-  is(anchor.textContent, "[Learn More]", "Link text is correct");
+  is(anchor.textContent, "Learn More", "Link text is correct");
 
   await executeAndWaitForResultMessage(
     hud,
