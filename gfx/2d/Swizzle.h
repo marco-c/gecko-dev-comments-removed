@@ -7,7 +7,6 @@
 
 #include "Point.h"
 #include "Rect.h"
-#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {
 namespace image {
@@ -15,17 +14,6 @@ struct Orientation;
 }
 
 namespace gfx {
-
-enum class SwizzleArch : uint8_t {
-  eFallback = 1 << 0,
-  eNEON = 1 << 1,
-  eSSE2 = 1 << 2,
-  eSSSE3 = 1 << 3,
-  eAVX2 = 1 << 4,
-  eAny = eFallback | eNEON | eSSE2 | eSSSE3 | eAVX2,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SwizzleArch)
 
 
 
@@ -35,8 +23,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SwizzleArch)
 GFX2D_API bool PremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
                                SurfaceFormat aSrcFormat, uint8_t* aDst,
                                int32_t aDstStride, SurfaceFormat aDstFormat,
-                               const IntSize& aSize,
-                               SwizzleArch aArch = SwizzleArch::eAny);
+                               const IntSize& aSize);
 
 
 
@@ -46,8 +33,7 @@ GFX2D_API bool PremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
 GFX2D_API bool UnpremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
                                  SurfaceFormat aSrcFormat, uint8_t* aDst,
                                  int32_t aDstStride, SurfaceFormat aDstFormat,
-                                 const IntSize& aSize,
-                                 SwizzleArch aArch = SwizzleArch::eAny);
+                                 const IntSize& aSize);
 
 
 
@@ -56,8 +42,7 @@ GFX2D_API bool UnpremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
 GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
                            SurfaceFormat aSrcFormat, uint8_t* aDst,
                            int32_t aDstStride, SurfaceFormat aDstFormat,
-                           const IntSize& aSize,
-                           SwizzleArch aArch = SwizzleArch::eAny);
+                           const IntSize& aSize);
 
 
 
@@ -67,8 +52,7 @@ GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
 GFX2D_API bool SwizzleYFlipData(const uint8_t* aSrc, int32_t aSrcStride,
                                 SurfaceFormat aSrcFormat, uint8_t* aDst,
                                 int32_t aDstStride, SurfaceFormat aDstFormat,
-                                const IntSize& aSize,
-                                SwizzleArch aArch = SwizzleArch::eAny);
+                                const IntSize& aSize);
 
 
 
@@ -79,8 +63,7 @@ GFX2D_API bool PremultiplyYFlipData(const uint8_t* aSrc, int32_t aSrcStride,
                                     SurfaceFormat aSrcFormat, uint8_t* aDst,
                                     int32_t aDstStride,
                                     SurfaceFormat aDstFormat,
-                                    const IntSize& aSize,
-                                    SwizzleArch aArch = SwizzleArch::eAny);
+                                    const IntSize& aSize);
 
 
 
@@ -93,22 +76,19 @@ typedef void (*SwizzleRowFn)(const uint8_t* aSrc, uint8_t* aDst,
 
 
 GFX2D_API SwizzleRowFn PremultiplyRow(SurfaceFormat aSrcFormat,
-                                      SurfaceFormat aDstFormat,
-                                      SwizzleArch aArch = SwizzleArch::eAny);
+                                      SurfaceFormat aDstFormat);
 
 
 
 
 GFX2D_API SwizzleRowFn UnpremultiplyRow(SurfaceFormat aSrcFormat,
-                                        SurfaceFormat aDstFormat,
-                                        SwizzleArch aArch = SwizzleArch::eAny);
+                                        SurfaceFormat aDstFormat);
 
 
 
 
 GFX2D_API SwizzleRowFn SwizzleRow(SurfaceFormat aSrcFormat,
-                                  SurfaceFormat aDstFormat,
-                                  SwizzleArch aArch = SwizzleArch::eAny);
+                                  SurfaceFormat aDstFormat);
 
 
 
