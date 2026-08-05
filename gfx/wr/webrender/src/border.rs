@@ -424,8 +424,15 @@ struct EdgeInfo {
     
     local_size: f32,
     
+    
+    
     stretch_size: f32,
 }
+
+
+
+
+const UNIFORM_EDGE_TASK_LENGTH: f32 = 8.0;
 
 impl EdgeInfo {
     fn new(
@@ -501,9 +508,20 @@ fn get_edge_info(
             EdgeInfo::new(offset, used_size, stretch_size)
         }
         _ => {
-            EdgeInfo::new(0.0, avail_size, avail_size)
+            
+            
+            
+            
+            EdgeInfo::new(0.0, avail_size, avail_size.min(UNIFORM_EDGE_TASK_LENGTH))
         }
     }
+}
+
+
+
+
+fn is_uniform_along_edge(style: BorderStyle) -> bool {
+    !matches!(style, BorderStyle::Dashed | BorderStyle::Dotted)
 }
 
 #[derive(Clone)]
@@ -1122,12 +1140,18 @@ fn add_edge_segment(
         return;
     }
 
+    let along_edge = if is_uniform_along_edge(side.style) {
+        RepeatMode::Stretch
+    } else {
+        RepeatMode::Repeat
+    };
+
     let (size, repeat_x, repeat_y) = match segment {
         BorderSegment::Left | BorderSegment::Right => {
-            (LayoutSize::new(width, edge_info.stretch_size), RepeatMode::Stretch, RepeatMode::Repeat)
+            (LayoutSize::new(width, edge_info.stretch_size), RepeatMode::Stretch, along_edge)
         }
         BorderSegment::Top | BorderSegment::Bottom => {
-            (LayoutSize::new(edge_info.stretch_size, width), RepeatMode::Repeat, RepeatMode::Stretch)
+            (LayoutSize::new(edge_info.stretch_size, width), along_edge, RepeatMode::Stretch)
         }
         _ => {
             unreachable!();
