@@ -4,6 +4,7 @@
 
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
+
 #include "js/Utility.h"
 
 #if defined(JS_ION_PERF) && defined(XP_UNIX)
@@ -58,8 +59,6 @@ pid_t gettid_pthread() {
 #  define gettid() gettid_pthread()
 #endif
 
-#include "jit/PerfSpewer.h"
-
 #include <atomic>
 
 #include "jit/BaselineFrameInfo.h"
@@ -69,6 +68,7 @@ pid_t gettid_pthread() {
 #include "jit/LIR.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
+#include "jit/PerfSpewer.h"
 #include "js/ColumnNumber.h"  
 #include "js/Exception.h"
 #include "js/JitCodeAPI.h"
@@ -77,8 +77,11 @@ pid_t gettid_pthread() {
 #include "vm/MutexIDs.h"
 
 #ifdef XP_WIN
+
 #  include "util/WindowsWrapper.h"
 #  include <evntprov.h>
+
+
 #  include <string>
 
 const GUID PROVIDER_JSCRIPT9 = {
@@ -1169,6 +1172,49 @@ void BaselinePerfSpewer::saveProfile(JSContext* cx, JSScript* script,
     return;
   }
   PerfSpewer::saveJSProfile(code, desc, script);
+}
+
+JitCodeSourceInfoVector PerfSpewer::extractSourceInfo() const {
+  JitCodeSourceInfoVector result;
+  if (debugInfo_.empty()) {
+    
+    return result;
+  }
+
+  
+  
+  if (!result.reserve(debugInfo_.length())) {
+    return JitCodeSourceInfoVector();
+  }
+
+  
+  
+  
+#ifdef DEBUG
+  uint32_t lastOffset = 0;
+#endif
+  uint32_t lastLine = 0;
+  uint32_t lastColumn = 0;
+  for (const DebugEntry& entry : debugInfo_) {
+    
+    
+    
+    MOZ_ASSERT(entry.offset >= lastOffset,
+               "debugInfo_ must be sorted by offset");
+#ifdef DEBUG
+    lastOffset = entry.offset;
+#endif
+    if (entry.line == lastLine && entry.column == lastColumn) {
+      continue;
+    }
+    result.infallibleEmplaceBack(
+        JitCodeSourceInfo{entry.offset, entry.line,
+                          JS::LimitedColumnNumberOneOrigin::fromUnlimited(
+                              entry.column == 0 ? 1 : entry.column)});
+    lastLine = entry.line;
+    lastColumn = entry.column;
+  }
+  return result;
 }
 
 void BaselineInterpreterPerfSpewer::saveProfile(JitCode* code) {

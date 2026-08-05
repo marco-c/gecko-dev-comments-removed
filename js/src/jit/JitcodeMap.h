@@ -11,8 +11,9 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "ds/AvlTree.h"         
-#include "jit/CompactBuffer.h"  
+#include "ds/AvlTree.h"             
+#include "jit/CompactBuffer.h"      
+#include "jit/JitCodeSourceInfo.h"  
 #include "jit/shared/Assembler-shared.h"  
 #include "js/AllocPolicy.h"               
 #include "js/ProfilingFrameIterator.h"    
@@ -227,9 +228,17 @@ bool IsRealmIndependentBaselineCode(JSScript* script);
 
 
 
-[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(JSContext* cx,
-                                                 JSScript* script,
-                                                 JitCode* code);
+
+
+
+
+
+
+
+
+[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(
+    JSContext* cx, JSScript* script, JitCode* code,
+    JitCodeSourceInfoVector&& sourceInfo = {});
 
 
 
@@ -372,15 +381,22 @@ class BaselineEntry : public JitcodeGlobalEntry {
   JitcodeScriptKey scriptKey_;
   UniqueChars str_;
   uint64_t realmId_;
+  
+  
+  
+  
+  JitCodeSourceInfoVector sourceInfo_;
 
  public:
   BaselineEntry(JitCode* code, void* nativeStartAddr, void* nativeEndAddr,
-                JSScript* script, UniqueChars str, uint64_t realmId)
+                JSScript* script, UniqueChars str, uint64_t realmId,
+                JitCodeSourceInfoVector&& sourceInfo)
       : JitcodeGlobalEntry(Kind::Baseline, code, nativeStartAddr,
                            nativeEndAddr),
         scriptKey_(script),
         str_(std::move(str)),
-        realmId_(realmId) {
+        realmId_(realmId),
+        sourceInfo_(std::move(sourceInfo)) {
     MOZ_ASSERT(str_);
   }
 

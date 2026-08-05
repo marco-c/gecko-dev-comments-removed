@@ -10,6 +10,7 @@
 #ifdef JS_ION_PERF
 #  include <stdio.h>
 #endif
+#include "jit/JitCodeSourceInfo.h"  
 #include "js/AllocPolicy.h"
 #include "js/ColumnNumber.h"
 #include "js/JitCodeAPI.h"
@@ -153,6 +154,13 @@ class PerfSpewer {
     debugInfo_.clearAndFree();
     irFileName_ = JS::UniqueChars();
   }
+
+  
+  
+  
+  
+  
+  JitCodeSourceInfoVector extractSourceInfo() const;
 };
 
 void CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg);
