@@ -23,6 +23,13 @@ namespace webrtc {
 
 class VideoJitterTimingInterface {
  public:
+  struct FrameInfo {
+    uint32_t rtp_timestamp = 0;
+    Timestamp time = Timestamp::PlusInfinity();
+    bool last_spatial_layer = false;
+    bool was_retransmitted = false;
+  };
+
   struct TemporalUnitInfo {
     uint32_t rtp_timestamp = 0;
     DataSize size = DataSize::Zero();
@@ -40,12 +47,7 @@ class VideoJitterTimingInterface {
   virtual void Reset() = 0;
 
   
-  virtual void OnCompleteFrame(uint32_t rtp_timestamp,
-                               Timestamp receive_time) = 0;
-
-  
-  
-  virtual std::optional<Timestamp> LocalTime(uint32_t rtp_timestamp) const = 0;
+  virtual void OnCompleteFrame(const FrameInfo& info) = 0;
 
   
   
@@ -54,6 +56,10 @@ class VideoJitterTimingInterface {
 
   
   virtual void OnNetworkUpdate(const NetworkInfo& info) = 0;
+
+  
+  
+  virtual std::optional<Timestamp> LocalTime(uint32_t rtp_timestamp) const = 0;
 };
 
 }  

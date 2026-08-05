@@ -37,7 +37,7 @@ class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
   void Reset() override;
 
   
-  void OnCompleteFrame(uint32_t rtp_timestamp, Timestamp receive_time) override;
+  void OnCompleteFrame(const FrameInfo& info) override;
 
   
   std::optional<Timestamp> LocalTime(uint32_t rtp_timestamp) const override;
@@ -55,6 +55,7 @@ class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
   TimestampExtrapolator ts_extrapolator_;
   JitterEstimator jitter_estimator_;
   InterFrameDelayVariationCalculator ifdv_calculator_;
+  const bool update_on_every_frame_;
 };
 
 }  

@@ -74,7 +74,7 @@ class VCMTiming {
             const FieldTrialsView& field_trials,
             TimeDelta render_delay,
             std::unique_ptr<VideoJitterTimingInterface> video_jitter_timing);
-  virtual ~VCMTiming() = default;
+  ~VCMTiming() = default;
 
   
   void Reset();
@@ -91,8 +91,7 @@ class VCMTiming {
   void set_playout_delay(const VideoPlayoutDelay& playout_delay);
 
   
-  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp,
-                                      Timestamp receive_time);
+  void OnCompleteFrame(const VideoJitterTimingInterface::FrameInfo& info);
   void OnDecodableTemporalUnit(uint32_t rtp_timestamp,
                                DataSize superframe_size,
                                Timestamp max_receive_time,
