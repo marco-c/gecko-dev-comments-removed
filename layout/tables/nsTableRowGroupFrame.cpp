@@ -1512,8 +1512,7 @@ void nsTableRowGroupFrame::RemoveFrame(DestroyContext& aContext,
   ClearRowCursor();
 
   
-  nsTableRowFrame* rowFrame = do_QueryFrame(aOldFrame);
-  if (rowFrame) {
+  if (nsTableRowFrame* rowFrame = do_QueryFrame(aOldFrame)) {
     nsTableFrame* tableFrame = GetTableFrame();
     
     tableFrame->RemoveRows(*rowFrame, 1, true);
@@ -1522,7 +1521,7 @@ void nsTableRowGroupFrame::RemoveFrame(DestroyContext& aContext,
                                   NS_FRAME_HAS_DIRTY_CHILDREN);
     tableFrame->SetGeometryDirty();
   }
-  mFrames.DestroyFrame(aContext, aOldFrame);
+  nsContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
 }
 
 

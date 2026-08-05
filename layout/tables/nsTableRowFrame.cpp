@@ -264,14 +264,13 @@ void nsTableRowFrame::RemoveFrame(DestroyContext& aContext, ChildListID aListID,
   
   nsTableFrame* tableFrame = GetTableFrame();
   tableFrame->RemoveCell(cellFrame, GetRowIndex());
-
-  
-  mFrames.DestroyFrame(aContext, aOldFrame);
+  tableFrame->SetGeometryDirty();
 
   PresShell()->FrameNeedsReflow(this, IntrinsicDirty::FrameAndAncestors,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
 
-  tableFrame->SetGeometryDirty();
+  
+  nsContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
 }
 
 
@@ -1222,19 +1221,37 @@ void nsTableRowFrame::InsertCellFrame(nsTableCellFrame* aFrame,
 }
 
 nsTableRowFrame* nsTableRowFrame::GetPrevRow() const {
-  nsIFrame* prevSibling = GetPrevSibling();
-  MOZ_ASSERT(
-      !prevSibling || static_cast<nsTableRowFrame*>(do_QueryFrame(prevSibling)),
-      "How do we have a non-row sibling?");
-  return static_cast<nsTableRowFrame*>(prevSibling);
+  if (nsIFrame* prevSibling = GetPrevSibling()) {
+    MOZ_ASSERT(static_cast<nsTableRowFrame*>(do_QueryFrame(prevSibling)),
+               "How do we have a non-row sibling?");
+    return static_cast<nsTableRowFrame*>(prevSibling);
+  }
+  for (auto* pif = GetParent()->GetPrevInFlow(); pif;
+       pif = pif->GetPrevInFlow()) {
+    if (auto* sibling = pif->PrincipalChildList().LastChild()) {
+      MOZ_ASSERT(static_cast<nsTableRowFrame*>(do_QueryFrame(sibling)),
+                 "How do we have a non-row sibling?");
+      return static_cast<nsTableRowFrame*>(sibling);
+    }
+  }
+  return nullptr;
 }
 
 nsTableRowFrame* nsTableRowFrame::GetNextRow() const {
-  nsIFrame* nextSibling = GetNextSibling();
-  MOZ_ASSERT(
-      !nextSibling || static_cast<nsTableRowFrame*>(do_QueryFrame(nextSibling)),
-      "How do we have a non-row sibling?");
-  return static_cast<nsTableRowFrame*>(nextSibling);
+  if (nsIFrame* sibling = GetNextSibling()) {
+    MOZ_ASSERT(static_cast<nsTableRowFrame*>(do_QueryFrame(sibling)),
+               "How do we have a non-row sibling?");
+    return static_cast<nsTableRowFrame*>(sibling);
+  }
+  for (auto* nif = GetParent()->GetNextInFlow(); nif;
+       nif = nif->GetNextInFlow()) {
+    if (auto* sibling = nif->PrincipalChildList().FirstChild()) {
+      MOZ_ASSERT(static_cast<nsTableRowFrame*>(do_QueryFrame(sibling)),
+                 "How do we have a non-row sibling?");
+      return static_cast<nsTableRowFrame*>(sibling);
+    }
+  }
+  return nullptr;
 }
 
 
