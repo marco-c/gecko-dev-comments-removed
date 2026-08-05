@@ -991,10 +991,13 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     }
 
     {
+      mozilla::Maybe<AutoHandlingUserInputStatePusher> userInputStateSwitcher;
       
       
-      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+      if (NS_IsMainThread()) {
+        bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+        userInputStateSwitcher.emplace(propagate);
+      }
 
       
       mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>
@@ -1103,8 +1106,11 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
         incumbentGlobal->SetWebTaskSchedulingState(peekedSchedulingState);
       }
 
-      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+      mozilla::Maybe<AutoHandlingUserInputStatePusher> userInputStateSwitcher;
+      if (NS_IsMainThread()) {
+        bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+        userInputStateSwitcher.emplace(propagate);
+      }
 
       
       
