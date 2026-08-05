@@ -163,7 +163,8 @@ std::vector<SdpVideoFormat> GetDefaultSupportedFormats(
     
     
     
-    flexfec_format.parameters = {{kFlexfecFmtpRepairWindow, "10000000"}};
+    flexfec_format.parameters = {
+        {std::string(kFlexfecFmtpRepairWindow), "10000000"}};
     supported_formats.push_back(flexfec_format);
   }
   return supported_formats;

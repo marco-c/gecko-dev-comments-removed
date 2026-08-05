@@ -13,36 +13,36 @@
 
 #include <stddef.h>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/system/rtc_export.h"
 
 
 
 namespace webrtc {
 
-extern const int kVideoCodecClockrate;
+inline constexpr int kVideoCodecClockrate = 90'000;
 
-extern const int kVideoMtu;
-extern const int kVideoRtpSendBufferSize;
-extern const int kVideoRtpRecvBufferSize;
+inline constexpr int kVideoMtu = 1200;
+inline constexpr int kVideoRtpSendBufferSize = 262'144;
+inline constexpr int kVideoRtpRecvBufferSize = 1'048'576;
 
 
-extern const float kHighSystemCpuThreshold;
-extern const float kLowSystemCpuThreshold;
-extern const float kProcessCpuThreshold;
+inline constexpr float kHighSystemCpuThreshold = 0.85f;
+inline constexpr float kLowSystemCpuThreshold = 0.65f;
+inline constexpr float kProcessCpuThreshold = 0.10f;
 
 extern const char kRedCodecName[];
 extern const char kUlpfecCodecName[];
 extern const char kFlexfecCodecName[];
-extern const char kMultiplexCodecName[];
 
-extern const char kFlexfecFmtpRepairWindow[];
+inline constexpr absl::string_view kFlexfecFmtpRepairWindow = "repair-window";
 
 extern const char kRtxCodecName[];
-extern const char kCodecParamRtxTime[];
+inline constexpr absl::string_view kCodecParamRtxTime = "rtx-time";
 extern const char kCodecParamAssociatedPayloadType[];
 
-extern const char kCodecParamAssociatedCodecName[];
-extern const char kCodecParamNotInNameValueFormat[];
+inline constexpr absl::string_view kCodecParamAssociatedCodecName = "acn";
+inline constexpr absl::string_view kCodecParamNotInNameValueFormat = "";
 
 extern const char kOpusCodecName[];
 extern const char kL16CodecName[];
@@ -53,70 +53,74 @@ extern const char kCnCodecName[];
 extern const char kDtmfCodecName[];
 
 
-extern const char kCodecParamPTime[];
-extern const char kCodecParamMaxPTime[];
+inline constexpr absl::string_view kCodecParamPTime = "ptime";
+inline constexpr absl::string_view kCodecParamMaxPTime = "maxptime";
 
-extern const char kCodecParamMinPTime[];
-extern const char kCodecParamSPropStereo[];
+inline constexpr absl::string_view kCodecParamMinPTime = "minptime";
+inline constexpr absl::string_view kCodecParamSPropStereo = "sprop-stereo";
 extern const char kCodecParamStereo[];
 extern const char kCodecParamUseInbandFec[];
 extern const char kCodecParamUseDtx[];
-extern const char kCodecParamCbr[];
-extern const char kCodecParamMaxAverageBitrate[];
-extern const char kCodecParamMaxPlaybackRate[];
-extern const char kCodecParamPerLayerPictureLossIndication[];
+inline constexpr absl::string_view kCodecParamCbr = "cbr";
+inline constexpr absl::string_view kCodecParamMaxAverageBitrate =
+    "maxaveragebitrate";
+inline constexpr absl::string_view kCodecParamMaxPlaybackRate =
+    "maxplaybackrate";
+inline constexpr absl::string_view kCodecParamPerLayerPictureLossIndication =
+    "x-google-per-layer-pli";
 
-extern const char kParamValueTrue[];
-
-
-extern const char kParamValueEmpty[];
-
-
+inline constexpr absl::string_view kParamValueTrue = "1";
 
 
-extern const int kOpusDefaultMaxPTime;
-extern const int kOpusDefaultPTime;
-extern const int kOpusDefaultMinPTime;
-extern const int kOpusDefaultSPropStereo;
-extern const int kOpusDefaultStereo;
-extern const int kOpusDefaultUseInbandFec;
-extern const int kOpusDefaultUseDtx;
-extern const int kOpusDefaultMaxPlaybackRate;
+inline constexpr absl::string_view kParamValueEmpty = "";
 
 
 
 
-
-extern const int kPreferredMaxPTime;
-extern const int kPreferredMinPTime;
-extern const int kPreferredSPropStereo;
-extern const int kPreferredStereo;
-extern const int kPreferredUseInbandFec;
-
-extern const char kPacketizationParamRaw[];
-
-
-extern const char kRtcpFbParamLntf[];
-
-extern const char kRtcpFbParamNack[];
-extern const char kRtcpFbNackParamPli[];
+inline constexpr int kOpusDefaultMaxPTime = 120;
+inline constexpr int kOpusDefaultPTime = 20;
+inline constexpr int kOpusDefaultMinPTime = 3;
+inline constexpr int kOpusDefaultSPropStereo = 0;
+inline constexpr int kOpusDefaultStereo = 0;
+inline constexpr int kOpusDefaultUseInbandFec = 0;
+inline constexpr int kOpusDefaultUseDtx = 0;
+inline constexpr int kOpusDefaultMaxPlaybackRate = 48000;
 
 
-extern const char kRtcpFbParamRemb[];
 
 
-extern const char kRtcpFbParamTransportCc[];
 
-extern const char kRtcpFbParamCcm[];
-extern const char kRtcpFbCcmParamFir[];
+inline constexpr int kPreferredMaxPTime = 120;
+inline constexpr int kPreferredMinPTime = 10;
+inline constexpr int kPreferredSPropStereo = 0;
+inline constexpr int kPreferredStereo = 0;
+inline constexpr int kPreferredUseInbandFec = 0;
+
+inline constexpr absl::string_view kPacketizationParamRaw = "raw";
 
 
-extern const char kRtcpFbParamRrtr[];
+inline constexpr absl::string_view kRtcpFbParamLntf = "goog-lntf";
+
+inline constexpr absl::string_view kRtcpFbParamNack = "nack";
+inline constexpr absl::string_view kRtcpFbNackParamPli = "pli";
+
+
+inline constexpr absl::string_view kRtcpFbParamRemb = "goog-remb";
+
+
+inline constexpr absl::string_view kRtcpFbParamTransportCc = "transport-cc";
+
+inline constexpr absl::string_view kRtcpFbParamCcm = "ccm";
+inline constexpr absl::string_view kRtcpFbCcmParamFir = "fir";
+
+
+inline constexpr absl::string_view kRtcpFbParamRrtr = "rrtr";
 
 extern const char kCodecParamMaxBitrate[];
 extern const char kCodecParamMinBitrate[];
 extern const char kCodecParamStartBitrate[];
-extern const char kCodecParamMaxQuantization[];
+inline constexpr absl::string_view kCodecParamMaxQuantization =
+    "x-google-max-quantization";
 
 extern const char kComfortNoiseCodecName[];
 
@@ -130,10 +134,13 @@ RTC_EXPORT extern const char kH265CodecName[];
 RTC_EXPORT extern const char kH264FmtpProfileLevelId[];
 RTC_EXPORT extern const char kH264FmtpLevelAsymmetryAllowed[];
 RTC_EXPORT extern const char kH264FmtpPacketizationMode[];
-extern const char kH264FmtpSpropParameterSets[];
-extern const char kH264FmtpSpsPpsIdrInKeyframe[];
-extern const char kH264ProfileLevelConstrainedBaseline[];
-extern const char kH264ProfileLevelConstrainedHigh[];
+inline constexpr absl::string_view kH264FmtpSpropParameterSets =
+    "sprop-parameter-sets";
+inline constexpr absl::string_view kH264FmtpSpsPpsIdrInKeyframe =
+    "sps-pps-idr-in-keyframe";
+inline constexpr absl::string_view kH264ProfileLevelConstrainedBaseline =
+    "42e01f";
+inline constexpr absl::string_view kH264ProfileLevelConstrainedHigh = "640c1f";
 
 
 
@@ -149,127 +156,26 @@ RTC_EXPORT extern const char kH265FmtpInteropConstraints[];
 RTC_EXPORT extern const char kH265FmtpTxMode[];
 
 
-extern const char kVP9ProfileId[];
+inline constexpr absl::string_view kVP9ProfileId = "profile-id";
 
 
-extern const char kAv1FmtpProfile[];
-extern const char kAv1FmtpLevelIdx[];
-extern const char kAv1FmtpTier[];
+inline constexpr absl::string_view kAv1FmtpProfile = "profile";
+inline constexpr absl::string_view kAv1FmtpLevelIdx = "level-idx";
+inline constexpr absl::string_view kAv1FmtpTier = "tier";
 
-extern const int kDefaultVideoMaxFramerate;
-extern const int kDefaultVideoMaxQpVpx;
-extern const int kDefaultVideoMaxQpAv1;
-extern const int kDefaultVideoMaxQpH26x;
+inline constexpr int kDefaultVideoMaxFramerate = 60;
+inline constexpr int kDefaultVideoMaxQpVpx = 56;
+inline constexpr int kDefaultVideoMaxQpAv1 = 52;
+inline constexpr int kDefaultVideoMaxQpH26x = 51;
 
-extern const size_t kConferenceMaxNumSpatialLayers;
-extern const size_t kConferenceMaxNumTemporalLayers;
-extern const size_t kConferenceDefaultNumTemporalLayers;
+inline constexpr size_t kConferenceMaxNumSpatialLayers = 3;
+inline constexpr size_t kConferenceMaxNumTemporalLayers = 3;
+inline constexpr size_t kConferenceDefaultNumTemporalLayers = 3;
 
-extern const char kApplicationSpecificBandwidth[];
-extern const char kTransportSpecificBandwidth[];
+inline constexpr absl::string_view kApplicationSpecificBandwidth = "AS";
+inline constexpr absl::string_view kTransportSpecificBandwidth = "TIAS";
+
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::kApplicationSpecificBandwidth;
-using ::webrtc::kAv1CodecName;
-using ::webrtc::kAv1FmtpLevelIdx;
-using ::webrtc::kAv1FmtpProfile;
-using ::webrtc::kAv1FmtpTier;
-using ::webrtc::kCnCodecName;
-using ::webrtc::kCodecParamAssociatedCodecName;
-using ::webrtc::kCodecParamAssociatedPayloadType;
-using ::webrtc::kCodecParamCbr;
-using ::webrtc::kCodecParamMaxAverageBitrate;
-using ::webrtc::kCodecParamMaxBitrate;
-using ::webrtc::kCodecParamMaxPlaybackRate;
-using ::webrtc::kCodecParamMaxPTime;
-using ::webrtc::kCodecParamMaxQuantization;
-using ::webrtc::kCodecParamMinBitrate;
-using ::webrtc::kCodecParamMinPTime;
-using ::webrtc::kCodecParamNotInNameValueFormat;
-using ::webrtc::kCodecParamPerLayerPictureLossIndication;
-using ::webrtc::kCodecParamPTime;
-using ::webrtc::kCodecParamRtxTime;
-using ::webrtc::kCodecParamSPropStereo;
-using ::webrtc::kCodecParamStartBitrate;
-using ::webrtc::kCodecParamStereo;
-using ::webrtc::kCodecParamUseDtx;
-using ::webrtc::kCodecParamUseInbandFec;
-using ::webrtc::kComfortNoiseCodecName;
-using ::webrtc::kConferenceDefaultNumTemporalLayers;
-using ::webrtc::kConferenceMaxNumSpatialLayers;
-using ::webrtc::kConferenceMaxNumTemporalLayers;
-using ::webrtc::kDefaultVideoMaxFramerate;
-using ::webrtc::kDefaultVideoMaxQpAv1;
-using ::webrtc::kDefaultVideoMaxQpH26x;
-using ::webrtc::kDefaultVideoMaxQpVpx;
-using ::webrtc::kDtmfCodecName;
-using ::webrtc::kFlexfecCodecName;
-using ::webrtc::kFlexfecFmtpRepairWindow;
-using ::webrtc::kG722CodecName;
-using ::webrtc::kH264CodecName;
-using ::webrtc::kH264FmtpLevelAsymmetryAllowed;
-using ::webrtc::kH264FmtpPacketizationMode;
-using ::webrtc::kH264FmtpProfileLevelId;
-using ::webrtc::kH264FmtpSpropParameterSets;
-using ::webrtc::kH264FmtpSpsPpsIdrInKeyframe;
-using ::webrtc::kH264ProfileLevelConstrainedBaseline;
-using ::webrtc::kH264ProfileLevelConstrainedHigh;
-using ::webrtc::kH265CodecName;
-using ::webrtc::kH265FmtpInteropConstraints;
-using ::webrtc::kH265FmtpLevelId;
-using ::webrtc::kH265FmtpProfileCompatibilityIndicator;
-using ::webrtc::kH265FmtpProfileId;
-using ::webrtc::kH265FmtpProfileSpace;
-using ::webrtc::kH265FmtpTierFlag;
-using ::webrtc::kH265FmtpTxMode;
-using ::webrtc::kHighSystemCpuThreshold;
-using ::webrtc::kL16CodecName;
-using ::webrtc::kLowSystemCpuThreshold;
-using ::webrtc::kMultiplexCodecName;
-using ::webrtc::kOpusCodecName;
-using ::webrtc::kOpusDefaultMaxPlaybackRate;
-using ::webrtc::kOpusDefaultMaxPTime;
-using ::webrtc::kOpusDefaultMinPTime;
-using ::webrtc::kOpusDefaultPTime;
-using ::webrtc::kOpusDefaultSPropStereo;
-using ::webrtc::kOpusDefaultStereo;
-using ::webrtc::kOpusDefaultUseDtx;
-using ::webrtc::kOpusDefaultUseInbandFec;
-using ::webrtc::kPacketizationParamRaw;
-using ::webrtc::kParamValueEmpty;
-using ::webrtc::kParamValueTrue;
-using ::webrtc::kPcmaCodecName;
-using ::webrtc::kPcmuCodecName;
-using ::webrtc::kPreferredMaxPTime;
-using ::webrtc::kPreferredMinPTime;
-using ::webrtc::kPreferredSPropStereo;
-using ::webrtc::kPreferredStereo;
-using ::webrtc::kPreferredUseInbandFec;
-using ::webrtc::kProcessCpuThreshold;
-using ::webrtc::kRedCodecName;
-using ::webrtc::kRtcpFbCcmParamFir;
-using ::webrtc::kRtcpFbNackParamPli;
-using ::webrtc::kRtcpFbParamCcm;
-using ::webrtc::kRtcpFbParamLntf;
-using ::webrtc::kRtcpFbParamNack;
-using ::webrtc::kRtcpFbParamRemb;
-using ::webrtc::kRtcpFbParamRrtr;
-using ::webrtc::kRtcpFbParamTransportCc;
-using ::webrtc::kRtxCodecName;
-using ::webrtc::kTransportSpecificBandwidth;
-using ::webrtc::kUlpfecCodecName;
-using ::webrtc::kVideoCodecClockrate;
-using ::webrtc::kVideoMtu;
-using ::webrtc::kVideoRtpRecvBufferSize;
-using ::webrtc::kVideoRtpSendBufferSize;
-using ::webrtc::kVp8CodecName;
-using ::webrtc::kVp9CodecName;
-using ::webrtc::kVP9ProfileId;
-}  
-#endif  
 
 #endif  

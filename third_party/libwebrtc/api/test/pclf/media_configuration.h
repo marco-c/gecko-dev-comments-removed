@@ -370,8 +370,7 @@ struct AudioConfig {
 
 struct VideoCodecConfig {
   explicit VideoCodecConfig(absl::string_view name);
-  VideoCodecConfig(absl::string_view name,
-                   std::map<std::string, std::string> required_params);
+  VideoCodecConfig(absl::string_view name, CodecParameterMap required_params);
   
   
   
@@ -384,7 +383,7 @@ struct VideoCodecConfig {
   
   
   
-  std::map<std::string, std::string> required_params;
+  CodecParameterMap required_params;
 };
 
 

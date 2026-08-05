@@ -23,9 +23,11 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <initializer_list>
 #include <map>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/base/macros.h"
@@ -46,7 +48,43 @@ namespace webrtc {
 class RTCError;
 class StringBuilder;
 
-using CodecParameterMap = std::map<std::string, std::string>;
+struct RTC_EXPORT CodecParameterMap
+    : public std::map<std::string, std::string> {
+  using std::map<std::string, std::string>::map;
+
+  CodecParameterMap() = default;
+  CodecParameterMap(const CodecParameterMap&) = default;
+  CodecParameterMap(CodecParameterMap&&) = default;
+  CodecParameterMap& operator=(const CodecParameterMap&) = default;
+  CodecParameterMap& operator=(CodecParameterMap&&) = default;
+
+  
+  
+  CodecParameterMap(
+      const std::map<std::string, std::string>& o)  
+      : std::map<std::string, std::string>(o) {}
+  CodecParameterMap(
+      std::map<std::string, std::string>&& o)  
+      : std::map<std::string, std::string>(std::move(o)) {}
+
+  CodecParameterMap(
+      std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+          il) {
+    for (const auto& p : il) {
+      emplace(p.first, p.second);
+    }
+  }
+
+  CodecParameterMap& operator=(
+      std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+          il) {
+    clear();
+    for (const auto& p : il) {
+      emplace(p.first, p.second);
+    }
+    return *this;
+  }
+};
 
 enum class FecMechanism {
   RED,
@@ -206,7 +244,7 @@ struct RTC_EXPORT RtpCodec {
   
   
   
-  std::map<std::string, std::string> parameters;
+  CodecParameterMap parameters;
 
   bool operator==(const RtpCodec& o) const {
     return name == o.name && kind == o.kind && clock_rate == o.clock_rate &&
