@@ -52,12 +52,12 @@ _EXTRA_ARGS = [
     "-I../../third_party/googletest/src/googlemock/include/",
     "-I../../third_party/googletest/src/googletest/include/",
 ]
-_GTEST_KEY = '"gtest/gtest.h"'
-_GTEST_VALUE = '"test/gtest.h"'
 _IWYU_MAPPING = {
     
     '"gmock/gmock.h"': '"test/gmock.h"',
-    _GTEST_KEY: _GTEST_VALUE,
+    '"gtest/gtest.h"': '"test/gtest.h"',
+    
+    '<asm-generic/errno.h>': '<cerrno>',
     '<sys/socket.h>': '"rtc_base/net_helpers.h"',
 }
 _IWYU_THIRD_PARTY = {
@@ -197,33 +197,39 @@ def _generate_compile_commands(work_dir: pathlib.Path) -> None:
 def _modified_output(output: str, content: str) -> str:
     """ Returns a modified output in case the cleaner made a mistake. For
     example gtest.h is included again when using features like TEST_P."""
-    if _GTEST_VALUE in content:
-        
-        return re.sub(rf'^\+ {_GTEST_KEY}$', '', output)
-    return output
+    result = output
+    for key, value in _IWYU_MAPPING.items():
+        if value in content:
+            
+            result = re.sub(rf'^\+ {re.escape(key)}$',
+                            '',
+                            result,
+                            flags=re.MULTILINE)
+    return result
 
 
 def _modified_content(content: str) -> str:
     """Returns a modified content based on the includes from _IWYU_MAPPING."""
-    modified_content = content
-    if _GTEST_VALUE in modified_content:
-        
-        modified_content = re.sub(rf'^#include {_GTEST_KEY}\n',
-                                  '',
-                                  modified_content,
-                                  flags=re.MULTILINE)
+    result = content
     for key, value in _IWYU_MAPPING.items():
         
-        modified_content = re.sub(rf'^#include {re.escape(key)}$',
-                                  f'#include {value}',
-                                  modified_content,
-                                  flags=re.MULTILINE)
+        
+        if value in result:
+            result = re.sub(rf'^#include {re.escape(key)}$',
+                            '',
+                            result,
+                            flags=re.MULTILINE)
+        else:
+            result = re.sub(rf'^#include {re.escape(key)}$',
+                            f'#include {value}',
+                            result,
+                            flags=re.MULTILINE)
     for key, value in _IWYU_THIRD_PARTY.items():
-        modified_content = re.sub(rf'^#include {re.escape(key)}',
-                                  f'#include {value}',
-                                  modified_content,
-                                  flags=re.MULTILINE)
-    return modified_content
+        result = re.sub(rf'^#include {re.escape(key)}',
+                        f'#include {value}',
+                        result,
+                        flags=re.MULTILINE)
+    return result
 
 
 def _fetch_modified_files(revision: str) -> List[pathlib.Path]:
