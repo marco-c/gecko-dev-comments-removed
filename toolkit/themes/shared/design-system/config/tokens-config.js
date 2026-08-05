@@ -576,14 +576,19 @@ function formatNovaNewtabTokens({ mediaQuery, args }) {
 
 const shouldSkipToken = ({ overrideIdentifier, componentName, token }) => {
   
-  if (
-    !overrideIdentifier &&
-    (OVERRIDE_IDENTIFIERS.some(({ name }) =>
-      token.name.includes(`-${name}-`)
-    ) ||
-      token.override)
-  ) {
-    return true;
+  try {
+    if (
+      !overrideIdentifier &&
+      (OVERRIDE_IDENTIFIERS.some(({ name }) =>
+        token.name.includes(`-${name}-`)
+      ) ||
+        token.override)
+    ) {
+      return true;
+    }
+  } catch (e) {
+    console.error(token);
+    throw e;
   }
 
   
