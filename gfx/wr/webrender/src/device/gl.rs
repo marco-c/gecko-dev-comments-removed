@@ -1200,6 +1200,11 @@ pub struct Device {
     
     pub textures_created: u32,
     pub textures_deleted: u32,
+
+    
+    
+    
+    initialize_color_targets_with_pink: bool,
 }
 
 
@@ -2004,11 +2009,19 @@ impl Device {
 
             textures_created: 0,
             textures_deleted: 0,
+
+            initialize_color_targets_with_pink: false,
         }
     }
 
     pub fn gl(&self) -> &dyn gl::Gl {
         &*self.gl
+    }
+
+    
+    
+    pub fn set_initialize_color_targets_with_pink(&mut self, enabled: bool) {
+        self.initialize_color_targets_with_pink = enabled;
     }
 
     pub fn rc_gl(&self) -> &Rc<dyn gl::Gl> {
@@ -2687,6 +2700,17 @@ impl Device {
         }
 
         self.textures_created += 1;
+
+        if self.initialize_color_targets_with_pink
+            && format == ImageFormat::BGRA8
+            && render_target.is_some()
+        {
+            self.bind_draw_target(DrawTarget::from_texture(
+                &texture,
+                false,
+            ));
+            self.clear_target(Some([1.0, 0.0, 1.0, 1.0]), None, None);
+        }
 
         texture
     }
