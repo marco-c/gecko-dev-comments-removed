@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "api/field_trials_view.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "modules/include/module_common_types_public.h"  
@@ -25,12 +26,22 @@ class DecoderDatabase;
 class StatisticsCalculator;
 class TickTimer;
 
+struct SmartFlushingConfig {
+  
+  
+  int target_level_threshold_ms = 600;
+  
+  
+  double target_level_multiplier = 1.0;
+};
+
 
 class PacketBuffer {
  public:
   enum BufferReturnCodes {
     kOK = 0,
     kFlushed,
+    kPartialFlush,
     kNotFound,
     kBufferEmpty,
     kInvalidPacket,
@@ -39,7 +50,8 @@ class PacketBuffer {
 
   
   
-  PacketBuffer(size_t max_number_of_packets,
+  PacketBuffer(const FieldTrialsView& field_trials,
+               size_t max_number_of_packets,
                const TickTimer* tick_timer,
                StatisticsCalculator* stats);
 
@@ -53,6 +65,11 @@ class PacketBuffer {
   virtual void Flush();
 
   
+  virtual void PartialFlush(int target_level_ms,
+                            size_t sample_rate,
+                            size_t last_decoded_length);
+
+  
   
   virtual void SetMaxNumberOfPackets(size_t max_number_of_packets);
 
@@ -63,7 +80,10 @@ class PacketBuffer {
   
   
   
-  virtual int InsertPacket(Packet&& packet);
+  virtual int InsertPacket(Packet&& packet,
+                           size_t last_decoded_length,
+                           size_t sample_rate,
+                           int target_level_ms);
 
   
   
@@ -141,6 +161,7 @@ class PacketBuffer {
  private:
   void LogPacketDiscarded(int codec_level);
 
+  std::optional<SmartFlushingConfig> smart_flushing_config_;
   size_t max_number_of_packets_;
   PacketList buffer_;
   const TickTimer* tick_timer_;
