@@ -2,34 +2,36 @@
 
 
 
+#include "mozilla/Assertions.h"  
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/CycleCollectedJSContext.h"  
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ScriptLoadContext.h"
+#include "mozilla/dom/ScriptSettings.h"  
+#include "mozilla/dom/ScriptTrace.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"  
+#include "mozilla/StaticPrefs_dom.h"
+
 #include "GeckoProfiler.h"
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"
+#include "nsContentUtils.h"
+#include "nsICacheInfoChannel.h"  
+#include "nsNetUtil.h"            
+#include "ScriptLoaderInterface.h"
 #include "ScriptLoadRequest.h"
-#include "mozilla/dom/ScriptSettings.h"  
-#include "mozilla/dom/ScriptTrace.h"
+#include "xpcpublic.h"
 
-#include "js/Array.h"  
+#include "js/Array.h"         
+#include "js/ColumnNumber.h"  
 #include "js/CompilationAndEvaluation.h"
-#include "js/ColumnNumber.h"          
 #include "js/ContextOptions.h"        
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/Modules.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"
-#include "mozilla/Assertions.h"  
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/ScriptLoadContext.h"
-#include "mozilla/CycleCollectedJSContext.h"  
-#include "mozilla/Preferences.h"
-#include "mozilla/RefPtr.h"  
-#include "mozilla/StaticPrefs_dom.h"
-#include "nsContentUtils.h"
-#include "nsICacheInfoChannel.h"  
-#include "nsNetUtil.h"            
-#include "xpcpublic.h"
 
 using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
@@ -1529,6 +1531,8 @@ ModuleLoaderBase::~ModuleLoaderBase() {
 
   LOG(("ModuleLoaderBase::~ModuleLoaderBase %p", this));
 }
+
+nsIURI* ModuleLoaderBase::GetBaseURI() const { return mLoader->GetBaseURI(); }
 
 void ModuleLoaderBase::CancelFetchingModules() {
   for (const auto& entry : mFetchingModules) {

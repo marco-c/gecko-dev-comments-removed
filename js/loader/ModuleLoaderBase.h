@@ -5,27 +5,28 @@
 #ifndef js_loader_ModuleLoaderBase_h
 #define js_loader_ModuleLoaderBase_h
 
-#include "LoadedScript.h"
-#include "ScriptLoadRequestList.h"
-
-#include "ImportMap.h"
-#include "js/ColumnNumber.h"  
-#include "js/TypeDecls.h"     
-#include "js/Modules.h"
-#include "nsRefPtrHashtable.h"
-#include "nsCOMArray.h"
-#include "nsCOMPtr.h"
-#include "nsILoadInfo.h"    
-#include "nsThreadUtils.h"  
-#include "nsURIHashKey.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/CORSMode.h"
-#include "mozilla/MaybeOneOf.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/MaybeOneOf.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/UniquePtr.h"
+
+#include "ImportMap.h"
+#include "LoadedScript.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsILoadInfo.h"  
+#include "nsRefPtrHashtable.h"
+#include "nsThreadUtils.h"  
+#include "nsURIHashKey.h"
 #include "ResolvedModuleSet.h"
 #include "ResolveResult.h"
+#include "ScriptLoadRequestList.h"
+
+#include "js/ColumnNumber.h"  
+#include "js/Modules.h"
+#include "js/TypeDecls.h"  
 
 class nsIConsoleReportCollector;
 class nsIURI;
@@ -54,72 +55,7 @@ class LoadContextBase;
 class ModuleLoaderBase;
 class ModuleLoadRequest;
 class ModuleScript;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ScriptLoaderInterface : public nsISupports {
- public:
-  
-  using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
-  using ScriptKind = JS::loader::ScriptKind;
-  using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
-  using ScriptLoadRequestList = JS::loader::ScriptLoadRequestList;
-  using ModuleLoadRequest = JS::loader::ModuleLoadRequest;
-
-  virtual ~ScriptLoaderInterface() = default;
-
-  
-  virtual nsIURI* GetBaseURI() const = 0;
-
-  virtual void ReportErrorToConsole(ScriptLoadRequest* aRequest,
-                                    nsresult aResult) const = 0;
-
-  virtual void ReportWarningToConsole(
-      ScriptLoadRequest* aRequest, const char* aMessageName,
-      const nsTArray<nsString>& aParams = nsTArray<nsString>()) const = 0;
-
-  
-  
-  virtual nsIConsoleReportCollector* GetConsoleReportCollector() const {
-    return nullptr;
-  }
-
-  
-  
-  virtual nsresult FillCompileOptionsForRequest(
-      JSContext* cx, ScriptLoadRequest* aRequest, CompileOptions* aOptions,
-      MutableHandle<JSScript*> aIntroductionScript) = 0;
-
-  virtual nsresult MaybePrepareModuleForDiskCacheAfterExecute(
-      ModuleLoadRequest* aRequest, nsresult aRv) {
-    return NS_OK;
-  }
-
-  virtual void MaybeUpdateDiskCache() {}
-
-  
-  
-  virtual bool IsImportMapSupported() const { return false; }
-};
+class ScriptLoaderInterface;
 
 class ModuleMapKey : public PLDHashEntryHdr {
  public:
@@ -304,7 +240,7 @@ class ModuleLoaderBase : public nsISupports {
   
   void Shutdown();
 
-  virtual nsIURI* GetBaseURI() const { return mLoader->GetBaseURI(); };
+  virtual nsIURI* GetBaseURI() const;
 
   using MaybeSourceText =
       mozilla::MaybeOneOf<SourceText<char16_t>, SourceText<Utf8Unit>>;
