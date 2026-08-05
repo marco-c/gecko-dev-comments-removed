@@ -115,13 +115,16 @@ projects:
     - components:support-test-libstate
     - components:support-utils
     - components:support-webextensions
+    - components:tooling-detekt
     - components:tooling-lint
+    - components:ui-animation
     - components:ui-autocomplete
     - components:ui-colors
     - components:ui-icons
     - components:ui-richtext
     - components:ui-tabcounter
     - components:ui-widgets
+    - mozilla-detekt-rules
 variants:
 - apks:
   - abi: arm64-v8a
