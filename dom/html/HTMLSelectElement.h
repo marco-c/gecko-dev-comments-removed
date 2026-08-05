@@ -548,13 +548,17 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   struct {
     RefPtr<HTMLOptionElement> mStart;
     RefPtr<HTMLOptionElement> mEnd;
+    
+    bool mStartIsLow = true;
 
     void SetTo(HTMLOptionElement* aOption) {
       mStart = mEnd = aOption;
+      mStartIsLow = true;
     }
 
     void Clear() {
       mStart = mEnd = nullptr;
+      mStartIsLow = true;
     }
   } mListBoxSelection;
 
