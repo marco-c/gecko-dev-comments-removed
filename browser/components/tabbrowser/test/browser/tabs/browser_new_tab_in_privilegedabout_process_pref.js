@@ -9,8 +9,6 @@
 
 
 
-
-
 const ABOUT_BLANK = "about:blank";
 const ABOUT_HOME = "about:home";
 const ABOUT_NEWTAB = "about:newtab";
@@ -21,6 +19,8 @@ const TEST_HTTP = "http://example.org/";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      
+      ["browser.navigation.requireUserInteraction", false],
       ["browser.newtab.preload", false],
       ["browser.tabs.remote.separatePrivilegedContentProcess", true],
       ["dom.ipc.processCount.privilegedabout", 1],
