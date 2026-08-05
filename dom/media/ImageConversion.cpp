@@ -2,7 +2,6 @@
 
 
 
-
 #include "ImageConversion.h"
 
 #include "ImageContainer.h"
@@ -730,6 +729,13 @@ nsresult ConvertToRGBA(Image* aImage, const SurfaceFormat& aDestFormat,
 
   DataSourceSurface::ScopedMap destMap(dest, gfx::DataSourceSurface::WRITE);
   if (!destMap.IsMapped()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (src->GetSize().width < dest->GetSize().width ||
+      src->GetSize().height < dest->GetSize().height) {
     return NS_ERROR_FAILURE;
   }
 
