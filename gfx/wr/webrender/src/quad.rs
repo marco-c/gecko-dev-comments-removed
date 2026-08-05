@@ -55,6 +55,25 @@ pub struct QuadCacheKey {
 }
 
 
+#[derive(Copy, Clone, Debug)]
+pub struct QuadDescriptor {
+    
+    pub local_rect: LayoutRect,
+    
+    pub local_clip_rect: LayoutRect,
+    
+    
+    
+    
+    
+    pub aligned_aa_edges: EdgeMask,
+    
+    
+    
+    pub transformed_aa_edges: EdgeMask,
+}
+
+
 
 pub struct QuadTransformState {
     map_prim_to_raster: CoordinateSpaceMapping<LayoutPixel, LayoutPixel>,
@@ -183,10 +202,7 @@ pub enum QuadRenderStrategy {
 
 pub fn prepare_quad(
     pattern_builder: &dyn PatternBuilder,
-    local_rect: &LayoutRect,
-    local_clip_rect: &LayoutRect,
-    aligned_aa_edges: EdgeMask,
-    transfomed_aa_edges: EdgeMask,
+    desc: &QuadDescriptor,
     prim_instance_index: PrimitiveInstanceIndex,
     cache_key: &Option<QuadCacheKey>,
     clip_chain: &ClipChainInstance,
@@ -203,7 +219,7 @@ pub fn prepare_quad(
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
         fb_config: frame_context.fb_config,
-        prim_origin: local_rect.min,
+        prim_origin: desc.local_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -231,10 +247,7 @@ pub fn prepare_quad(
     prepare_quad_impl(
         strategy,
         &pattern,
-        local_rect,
-        local_clip_rect,
-        aligned_aa_edges,
-        transfomed_aa_edges,
+        desc,
         prim_instance_index,
         cache_key,
         clip_chain,
@@ -252,12 +265,9 @@ pub fn prepare_quad(
 
 pub fn prepare_repeatable_quad(
     pattern_builder: &dyn PatternBuilder,
-    local_rect: &LayoutRect,
-    local_clip_rect: &LayoutRect,
+    desc: &QuadDescriptor,
     stretch_size: LayoutSize,
     tile_spacing: LayoutSize,
-    aligned_aa_edges: EdgeMask,
-    transfomed_aa_edges: EdgeMask,
     prim_instance_index: PrimitiveInstanceIndex,
     cache_key: &Option<QuadCacheKey>,
     clip_chain: &ClipChainInstance,
@@ -274,7 +284,7 @@ pub fn prepare_repeatable_quad(
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
         fb_config: frame_context.fb_config,
-        prim_origin: local_rect.min,
+        prim_origin: desc.local_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -303,8 +313,8 @@ pub fn prepare_repeatable_quad(
         ),
     };
 
-    let needs_repetition = stretch_size.width < local_rect.width()
-        || stretch_size.height < local_rect.height();
+    let needs_repetition = stretch_size.width < desc.local_rect.width()
+        || stretch_size.height < desc.local_rect.height();
 
     if !needs_repetition {
         
@@ -312,20 +322,20 @@ pub fn prepare_repeatable_quad(
         
         
         
-        let local_clip_rect = local_clip_rect.intersection_unchecked(&local_rect);
-        let local_rect = LayoutRect::from_origin_and_size(
-            local_rect.min,
-            stretch_size,
-        );
+        let stretched_desc = QuadDescriptor {
+            local_rect: LayoutRect::from_origin_and_size(
+                desc.local_rect.min,
+                stretch_size,
+            ),
+            local_clip_rect: desc.local_clip_rect.intersection_unchecked(&desc.local_rect),
+            ..*desc
+        };
 
         
         prepare_quad_impl(
             strategy,
             &pattern,
-            &local_rect,
-            &local_clip_rect,
-            aligned_aa_edges,
-            transfomed_aa_edges,
+            &stretched_desc,
             prim_instance_index,
             &cache_key,
             clip_chain,
@@ -342,7 +352,7 @@ pub fn prepare_repeatable_quad(
     }
 
     let pattern_rect = LayoutRect::from_origin_and_size(
-        local_rect.min,
+        desc.local_rect.min,
         stretch_size,
     );
 
@@ -356,7 +366,7 @@ pub fn prepare_repeatable_quad(
 
     
     
-    let num_repetitions = local_rect.area() / stretch_size.area();
+    let num_repetitions = desc.local_rect.area() / stretch_size.area();
     let repeat_using_a_shader = src_task_id.is_some()
         || (num_repetitions > 16.0 && surface_rect.width() < 1024.0 && surface_rect.height() < 1024.0)
         || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
@@ -422,10 +432,7 @@ pub fn prepare_repeatable_quad(
         prepare_quad_impl(
             strategy,
             &repeat_pattern,
-            local_rect,
-            local_clip_rect,
-            aligned_aa_edges,
-            transfomed_aa_edges,
+            desc,
             prim_instance_index,
             &None,
             clip_chain,
@@ -449,14 +456,14 @@ pub fn prepare_repeatable_quad(
         frame_state.current_dirty_region().visibility_spatial_node,
         transform.prim_spatial_node_index(),
         frame_context.spatial_tree,
-    ).intersection_unchecked(local_clip_rect);
+    ).intersection_unchecked(&desc.local_clip_rect);
 
     let stride = stretch_size + tile_spacing;
-    let repetitions = crate::image_tiling::repetitions(&local_rect, &visible_rect, stride);
+    let repetitions = crate::image_tiling::repetitions(&desc.local_rect, &visible_rect, stride);
     for tile in repetitions {
         let tile_rect = LayoutRect::from_origin_and_size(tile.origin, stretch_size);
-        let clip_rect = local_clip_rect.intersection_unchecked(&tile_rect);
-        let pattern_offset = tile.origin - local_rect.min;
+        let clip_rect = desc.local_clip_rect.intersection_unchecked(&tile_rect);
+        let pattern_offset = tile.origin - desc.local_rect.min;
         let pattern = pattern_builder.build(
             None,
             pattern_offset,
@@ -470,10 +477,12 @@ pub fn prepare_repeatable_quad(
         prepare_quad_impl(
             strategy,
             &pattern,
-            &tile_rect,
-            &clip_rect,
-            aligned_aa_edges & tile.edge_flags,
-            transfomed_aa_edges & tile.edge_flags,
+            &QuadDescriptor {
+                local_rect: tile_rect,
+                local_clip_rect: clip_rect,
+                aligned_aa_edges: desc.aligned_aa_edges & tile.edge_flags,
+                transformed_aa_edges: desc.transformed_aa_edges & tile.edge_flags,
+            },
             prim_instance_index,
             
             
@@ -493,10 +502,8 @@ pub fn prepare_repeatable_quad(
 pub fn prepare_border_nine_patch(
     nine_patch: &NinePatchDescriptor,
     pattern_builder: &dyn PatternBuilder,
-    local_rect: &LayoutRect,
+    desc: &QuadDescriptor,
     stretch_size: LayoutSize,
-    aligned_aa_edges: EdgeMask,
-    transfomed_aa_edges: EdgeMask,
     prim_instance_index: PrimitiveInstanceIndex,
     clip_chain: &ClipChainInstance,
     transform: &mut QuadTransformState,
@@ -512,7 +519,7 @@ pub fn prepare_border_nine_patch(
     let pattern_ctx = PatternBuilderContext {
         spatial_tree: frame_context.spatial_tree,
         fb_config: frame_context.fb_config,
-        prim_origin: local_rect.min,
+        prim_origin: desc.local_rect.min,
     };
 
     let pattern = pattern_builder.build(
@@ -539,12 +546,12 @@ pub fn prepare_border_nine_patch(
     let scales = transform.scale_factors();
     let base_indirect_transform = ScaleOffset::from_scale(scales.into());
 
-    nine_patch.for_each_segment(local_rect, &mut|dst_rect, src_rect, side, _repeat_h, _repeat_v| {
+    nine_patch.for_each_segment(&desc.local_rect, &mut|dst_rect, src_rect, side, _repeat_h, _repeat_v| {
         
-        let min_x = local_rect.min.x + stretch_size.width * src_rect.uv0.x;
-        let min_y = local_rect.min.y + stretch_size.height * src_rect.uv0.y;
-        let max_x = local_rect.min.x + stretch_size.width * src_rect.uv1.x;
-        let max_y = local_rect.min.y + stretch_size.height * src_rect.uv1.y;
+        let min_x = desc.local_rect.min.x + stretch_size.width * src_rect.uv0.x;
+        let min_y = desc.local_rect.min.y + stretch_size.height * src_rect.uv0.y;
+        let max_x = desc.local_rect.min.x + stretch_size.width * src_rect.uv1.x;
+        let max_y = desc.local_rect.min.y + stretch_size.height * src_rect.uv1.y;
         let pattern_rect = LayoutRect {
             min: point2(min_x, min_y),
             max: point2(max_x, max_y),
@@ -596,10 +603,12 @@ pub fn prepare_border_nine_patch(
         prepare_quad_impl(
             strategy,
             &img_pattern,
-            &dst_rect,
-            &clip_chain.local_clip_rect,
-            aligned_aa_edges & side,
-            transfomed_aa_edges & side,
+            &QuadDescriptor {
+                local_rect: *dst_rect,
+                local_clip_rect: desc.local_clip_rect,
+                aligned_aa_edges: desc.aligned_aa_edges & side,
+                transformed_aa_edges: desc.transformed_aa_edges & side,
+            },
             prim_instance_index,
             &None,
             clip_chain,
@@ -619,10 +628,7 @@ pub fn prepare_border_nine_patch(
 fn prepare_quad_impl(
     strategy: QuadRenderStrategy,
     pattern: &Pattern,
-    local_rect: &LayoutRect,
-    local_clip_rect: &LayoutRect,
-    aligned_aa_edges: EdgeMask,
-    transfomed_aa_edges: EdgeMask,
+    desc: &QuadDescriptor,
     prim_instance_index: PrimitiveInstanceIndex,
     cache_key: &Option<QuadCacheKey>,
     clip_chain: &ClipChainInstance,
@@ -658,7 +664,7 @@ fn prepare_quad_impl(
     let mut quad_flags = QuadFlags::empty();
 
     
-    let prim_size = local_rect.size();
+    let prim_size = desc.local_rect.size();
     if prim_size.width > MIN_AA_SEGMENTS_SIZE && prim_size.height > MIN_AA_SEGMENTS_SIZE {
         quad_flags |= QuadFlags::USE_AA_SEGMENTS;
     }
@@ -669,15 +675,15 @@ fn prepare_quad_impl(
     }
 
     let aa_flags = if prim_is_2d_axis_aligned {
-        aligned_aa_edges
+        desc.aligned_aa_edges
     } else {
-        transfomed_aa_edges
+        desc.transformed_aa_edges
     };
 
-    let local_bounds = local_clip_rect
-        .intersection_unchecked(local_rect)
+    let local_bounds = desc.local_clip_rect
+        .intersection_unchecked(&desc.local_rect)
         .intersection_unchecked(&clip_chain.local_clip_rect);
-    let local_pattern_rect = *local_rect;
+    let local_pattern_rect = desc.local_rect;
 
     
     
