@@ -23,10 +23,10 @@ namespace mozilla {
 class Encoding;
 class ServoStyleSet;
 class SlantStyleRange;
-class WidthRange;
+class StretchRange;
 class WeightRange;
 struct StyleFontStyle;
-struct StyleFontWidth;
+struct StyleFontStretch;
 struct StyleFontWeight;
 }  
 
@@ -725,7 +725,7 @@ class gfxFontUtils {
 
 
 constexpr double kPresentationMismatch = 1.0e12;
-constexpr double kWidthFactor = 1.0e8;
+constexpr double kStretchFactor = 1.0e8;
 constexpr double kStyleFactor = 1.0e4;
 constexpr double kWeightFactor = 1.0e0;
 
@@ -737,8 +737,8 @@ double StyleDistance(const mozilla::SlantStyleRange& aRange,
                      bool aItalicToObliqueFallback);
 
 
-double WidthDistance(const mozilla::WidthRange& aRange,
-                     const mozilla::StyleFontWidth& aTargetWidth);
+double StretchDistance(const mozilla::StretchRange& aRange,
+                       const mozilla::StyleFontStretch& aTargetStretch);
 
 
 double WeightDistance(const mozilla::WeightRange& aRange,
