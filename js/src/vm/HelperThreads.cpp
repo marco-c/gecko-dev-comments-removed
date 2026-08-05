@@ -1647,7 +1647,10 @@ void GlobalHelperThreadState::createAndSubmitCompressionTasks(
   size_t currentBatchLength = 0;
 
   rt->pendingCompressions().eraseIf([&](const auto& entry) {
-    MOZ_ASSERT(entry.source()->hasUncompressedSource());
+    ScriptSource::DataReader reader(entry.source());
+
+    MOZ_ASSERT(reader.hasSourceText());
+    MOZ_ASSERT(reader->hasUncompressedSource());
 
     
     
@@ -1664,7 +1667,7 @@ void GlobalHelperThreadState::createAndSubmitCompressionTasks(
 
     
     
-    size_t length = entry.source()->length();
+    size_t length = reader->length();
     if (currentBatch && currentBatchLength + length <= MaxBatchLength) {
       if (!currentBatch->addEntry(entry.source())) {
         return false;

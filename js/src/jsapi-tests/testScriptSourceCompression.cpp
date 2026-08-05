@@ -2,8 +2,7 @@
 
 
 
-
-
+#include "jsapi-tests/tests.h"
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
@@ -26,10 +25,9 @@
 #include "js/RootingAPI.h"              
 #include "js/SourceText.h"              
 #include "js/String.h"  
-#include "js/UniquePtr.h"  
-#include "js/Utility.h"    
-#include "js/Value.h"      
-#include "jsapi-tests/tests.h"
+#include "js/UniquePtr.h"      
+#include "js/Utility.h"        
+#include "js/Value.h"          
 #include "util/Text.h"         
 #include "vm/Compression.h"    
 #include "vm/HelperThreads.h"  
@@ -104,11 +102,18 @@ static JSFunction* EvaluateChars(JSContext* cx, Source<Unit> chars, size_t len,
 static void CompressSourceSync(JS::Handle<JSFunction*> fun, JSContext* cx) {
   JS::Rooted<JSScript*> script(cx, JSFunction::getOrCreateScript(cx, fun));
   MOZ_RELEASE_ASSERT(script);
-  MOZ_RELEASE_ASSERT(script->scriptSource()->hasSourceText());
+  {
+    js::ScriptSource::DataReader reader(script->scriptSource());
+    MOZ_RELEASE_ASSERT(reader.hasSourceText());
+  }
 
   MOZ_RELEASE_ASSERT(js::SynchronouslyCompressSource(cx, script));
 
-  MOZ_RELEASE_ASSERT(script->scriptSource()->hasCompressedSource());
+  {
+    js::ScriptSource::DataReader reader(script->scriptSource());
+    MOZ_RELEASE_ASSERT(reader.hasSourceText());
+    MOZ_RELEASE_ASSERT(reader->hasCompressedSource());
+  }
 }
 
 static constexpr char FunctionStart[] = "function @() {";
@@ -490,7 +495,8 @@ BEGIN_TEST(testScriptSourceCompression_automatic) {
   
   js::RunPendingSourceCompressions(cx->runtime());
   bool expected = js::IsOffThreadSourceCompressionEnabled();
-  CHECK(script->scriptSource()->hasCompressedSource() == expected);
+  js::ScriptSource::DataReader reader(script->scriptSource());
+  CHECK(reader->hasCompressedSource() == expected);
 
   return true;
 }
