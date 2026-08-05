@@ -14,6 +14,9 @@ const REMOTE_IFRAME_URL =
 
 add_task(async function () {
   
+  await pushPref("devtools.chrome.enabled", true);
+
+  
   
   
   await checkBreakpointBeforeWatchResources();

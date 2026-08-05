@@ -11,6 +11,11 @@
 
 _profileInitialized = true;
 
+Services.prefs.setBoolPref("devtools.chrome.enabled", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.chrome.enabled");
+});
+
 add_task(async function () {
   const testFile = do_get_file("xpcshell_debugging_script.js");
 

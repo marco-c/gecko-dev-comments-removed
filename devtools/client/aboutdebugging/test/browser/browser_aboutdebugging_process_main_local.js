@@ -15,6 +15,8 @@ Services.scriptloader.loadSubScript(
 
 
 add_task(async function () {
+  
+  await pushPref("devtools.chrome.enabled", true);
   await pushPref("devtools.aboutdebugging.process-debugging", true);
   await pushPref("devtools.aboutdebugging.test-local-process-debugging", true);
 

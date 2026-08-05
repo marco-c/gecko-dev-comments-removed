@@ -18,6 +18,8 @@ add_task(async function () {
 
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   const commands = await CommandsFactory.forMainProcess();
   const targetCommand = commands.targetCommand;

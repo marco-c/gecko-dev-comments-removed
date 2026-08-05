@@ -16,6 +16,9 @@ const INITIAL_MULTIPLIER = 1;
 const UPDATED_MULTIPLIER = 0.5;
 
 add_task(async function () {
+  
+  await pushPref("devtools.chrome.enabled", true);
+
   info("Open the bookmarks sidebar to get an in-process chrome subframe");
   await SidebarController.show("viewBookmarksSidebar");
   registerCleanupFunction(() => SidebarController.hide());

@@ -10,6 +10,8 @@ add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   await testPlatformMessagesResources();
   await testPlatformMessagesResourcesWithIgnoreExistingResources();

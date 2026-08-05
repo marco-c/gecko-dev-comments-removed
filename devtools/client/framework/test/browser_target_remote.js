@@ -2,14 +2,17 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
+add_task(async function () {
+  
+  await pushPref("devtools.chrome.enabled", true);
 
-  getParentProcessActors((client, target) => {
-    target.on("target-destroyed", () => {
-      ok(true, "Target was destroyed");
-      finish();
+  await new Promise(resolve => {
+    getParentProcessActors((client, target) => {
+      target.on("target-destroyed", () => {
+        ok(true, "Target was destroyed");
+        resolve();
+      });
+      client.close();
     });
-    client.close();
   });
-}
+});

@@ -11,6 +11,8 @@ add_task(async function () {
   
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   
   const tab = await addTab("data:text/html,Root Node tests");

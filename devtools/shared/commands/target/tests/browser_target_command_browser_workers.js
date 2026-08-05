@@ -13,6 +13,8 @@ const SERVICE_WORKER_URL = URL_ROOT_SSL + "test_service_worker.js";
 add_task(async function () {
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   
   

@@ -12,6 +12,8 @@ add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   info("Setup the test page with workers of all types");
 

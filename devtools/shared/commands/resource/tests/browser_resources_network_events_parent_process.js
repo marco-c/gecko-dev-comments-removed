@@ -36,6 +36,8 @@ add_task(async function testParentProcessRequests() {
   
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   const commands = await CommandsFactory.forMainProcess();
   await commands.targetCommand.startListening();
@@ -86,14 +88,10 @@ add_task(async function testParentProcessRequests() {
   );
 
   await createParentProcessRequests();
-
-  const img2 = new Image();
-  img2.src = IMAGE_URI;
-
   info("Wait for the network events");
-  await waitFor(() => receivedNetworkEvents.length == 3);
+  await waitFor(() => receivedNetworkEvents.length == 2);
+
   info("Wait for the network events stack traces");
-  
   await waitFor(() => receivedStacktraces.length == 2);
 
   info("Assert the fetch request");
@@ -142,6 +140,13 @@ add_task(async function testParentProcessRequests() {
     !!firstImageStacktrace,
     "After bug 1076583, image load is async and we can't get a stack trace"
   );
+
+  
+  const img2 = new Image();
+  img2.src = IMAGE_URI;
+
+  
+  await waitFor(() => receivedNetworkEvents.length == 3);
   
 
 

@@ -15,6 +15,9 @@ const {
 const STUB_FILE = "platformMessage.js";
 
 add_task(async function () {
+  
+  await pushPref("devtools.chrome.enabled", true);
+
   const isStubsUpdate = Services.env.get(STUBS_UPDATE_ENV) == "true";
   info(`${isStubsUpdate ? "Update" : "Check"} ${STUB_FILE}`);
 

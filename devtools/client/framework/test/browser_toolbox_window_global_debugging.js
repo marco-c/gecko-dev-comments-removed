@@ -8,6 +8,8 @@ const TEST_URL = `data:text/html,<script>window.someInlineSource${Date.now()} = 
 add_task(async function () {
   
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   
   

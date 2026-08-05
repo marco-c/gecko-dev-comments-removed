@@ -16,6 +16,8 @@ add_task(async function () {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
+  
+  await pushPref("devtools.chrome.enabled", true);
 
   const { client, resourceCommand, targetCommand } =
     await initMultiProcessResourceCommand();

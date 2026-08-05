@@ -6,6 +6,11 @@
 
 
 
+Services.prefs.setBoolPref("devtools.chrome.enabled", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.chrome.enabled");
+});
+
 add_task(async () => {
   const { memoryFront } = await createMainProcessMemoryFront();
 

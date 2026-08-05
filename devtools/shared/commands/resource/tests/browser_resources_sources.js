@@ -343,6 +343,9 @@ add_task(async function testGarbagedCollectedSources() {
 
 add_task(async function testParentProcessPrivilegedSources() {
   
+  await pushPref("devtools.chrome.enabled", true);
+
+  
   
   
   const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
