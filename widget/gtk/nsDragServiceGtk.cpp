@@ -65,9 +65,10 @@ void nsDragSessionGtk::ReplyToDragMotion() {
 
 void nsDragSessionGtk::ReplyToDragMotion(GdkDragContext* aDragContext,
                                          guint aTime) {
-  LOGDRAGSERVICE("nsDragSessionGtk::ReplyToDragMotion(%p) can drop %d"\
-                 " mDragAction %d",
-                 aDragContext, mCanDrop, mDragAction);
+  LOGDRAGSERVICE(
+      "nsDragSessionGtk::ReplyToDragMotion(%p) can drop %d"
+      " mDragAction %d",
+      aDragContext, mCanDrop, mDragAction);
 
   
   
@@ -412,7 +413,8 @@ void nsDragSessionGtk::DropFinish(bool aSucceed) {
   if (!task->mDragContext) {
     return;
   }
-  LOGDRAGSERVICE("nsDragSessionGtk::DropFinish() (gtk_drag_finish) aSucceed %d", aSucceed);
+  LOGDRAGSERVICE("nsDragSessionGtk::DropFinish() (gtk_drag_finish) aSucceed %d",
+                 aSucceed);
   gtk_drag_finish(task->mDragContext, aSucceed,
                    FALSE, task->mTime);
 }
