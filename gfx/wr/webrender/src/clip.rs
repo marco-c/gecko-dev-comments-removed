@@ -1012,8 +1012,6 @@ impl ClipTreeBuilder {
         &mut self,
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
-        extra_clips: &[ClipItemEntry],
-        interners: &mut Interners,
         
         
         snap_clips: bool,
@@ -1031,35 +1029,7 @@ impl ClipTreeBuilder {
             ClipNodeId::INVALID
         };
 
-        let node_id = if extra_clips.is_empty() {
-            clip_node_id
-        } else {
-            
-            
-            self.clip_handles_buffer.clear();
-
-            for clip_item_entry in extra_clips {
-                
-                
-                let handle = interners.clip.intern(&clip_item_entry.key, || {
-                    ClipInternData {
-                        key: clip_item_entry.key.clone(),
-                    }
-                });
-
-                self.clip_handles_buffer.push(ClipEntry {
-                    handle,
-                    spatial_node_index: clip_item_entry.spatial_node_index,
-                    clip_rect: clip_item_entry.clip_rect.into(),
-                    snap_outset: clip_item_entry.snap_outset,
-                });
-            }
-
-            self.tree.add(
-                clip_node_id,
-                &self.clip_handles_buffer,
-            )
-        };
+        let node_id = clip_node_id;
 
         
         
@@ -1938,16 +1908,6 @@ pub struct ClipItemKey {
 }
 
 
-#[derive(Copy, Clone)]
-pub struct ClipItemEntry {
-    pub key: ClipItemKey,
-    pub spatial_node_index: SpatialNodeIndex,
-    pub clip_rect: LayoutRect,
-    
-    pub snap_outset: Au,
-}
-
-
 #[derive(Debug, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -2578,7 +2538,6 @@ mod tests {
         );
 
         let mut builder = ClipTreeBuilder::new();
-        let mut interners = Interners::default();
         let info = LayoutPrimitiveInfo::with_clip_rect(
             lr(0.0, 0.0, 100.0, 100.0),
             lr(0.0, 0.0, 100.0, 100.0),
@@ -2586,7 +2545,7 @@ mod tests {
 
         
         let text_leaf =
-            builder.build_for_prim(ClipNodeId::NONE, &info, &[], &mut interners, TextRun::SNAP_CLIPS);
+            builder.build_for_prim(ClipNodeId::NONE, &info, TextRun::SNAP_CLIPS);
         assert_eq!(
             builder.get_leaf(text_leaf).prim_clip_root,
             ClipNodeId::INVALID,
@@ -2596,7 +2555,7 @@ mod tests {
         
         
         let snapping_leaf =
-            builder.build_for_prim(ClipNodeId::NONE, &info, &[], &mut interners, true);
+            builder.build_for_prim(ClipNodeId::NONE, &info, true);
         assert_ne!(
             builder.get_leaf(snapping_leaf).prim_clip_root,
             ClipNodeId::INVALID,
