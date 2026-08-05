@@ -122,7 +122,6 @@ class SourceSurface;
 namespace layers {
 class LayerManager;
 struct LayersId;
-struct KeyboardScrollAction;
 enum class ScrollOffsetUpdateType : uint8_t;
 }  
 
@@ -509,17 +508,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   ScrollContainerFrame* GetScrollContainerFrameToScroll(
       layers::ScrollDirections aDirections);
-
-  
-
-
-
-
-
-
-
-  ScrollContainerFrame* GetScrollContainerFrameForKeyboardScroll(
-      const layers::KeyboardScrollAction& aAction);
 
   
 
