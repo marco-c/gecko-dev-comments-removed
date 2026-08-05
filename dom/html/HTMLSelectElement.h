@@ -38,6 +38,8 @@ class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 class HTMLSelectedContentElement;
 
+enum class SelectedContentUpdateMode : uint8_t { MicroTask, ScriptRunner };
+
 
 
 
@@ -321,15 +323,13 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   
-  void ScheduleSelectedContentUpdate();
   
   
   
   
-  
-  
-  
-  void ScheduleSelectedContentUpdateScriptRunner(bool aForceUpdate = false);
+  void ScheduleSelectedContentUpdate(
+      SelectedContentUpdateMode aMode = SelectedContentUpdateMode::MicroTask,
+      bool aForceUpdate = false);
 
   
   MOZ_CAN_RUN_SCRIPT void UpdateDescendantSelectedContentElements();

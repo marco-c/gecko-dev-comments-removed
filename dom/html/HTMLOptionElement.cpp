@@ -114,7 +114,8 @@ void HTMLOptionElement::SetSelected(bool aValue) {
       
       
       
-      select->ScheduleSelectedContentUpdateScriptRunner(
+      select->ScheduleSelectedContentUpdate(
+          SelectedContentUpdateMode::ScriptRunner,
            true);
     }
   } else {
@@ -196,7 +197,8 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
     
     
     
-    select->ScheduleSelectedContentUpdateScriptRunner(
+    select->ScheduleSelectedContentUpdate(
+        SelectedContentUpdateMode::ScriptRunner,
          true);
   }
 
@@ -280,7 +282,8 @@ nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
   
   
   if (aContext.InComposedDoc() && mCachedNearestAncestorSelect && Selected()) {
-    mCachedNearestAncestorSelect->ScheduleSelectedContentUpdateScriptRunner();
+    mCachedNearestAncestorSelect->ScheduleSelectedContentUpdate(
+        SelectedContentUpdateMode::ScriptRunner);
   }
 
   return NS_OK;
