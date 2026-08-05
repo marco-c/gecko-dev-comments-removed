@@ -60,9 +60,6 @@ loader.lazyRequireGetter(
 loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
   return InspectorUtils.getCSSPseudoElementNames();
 });
-loader.lazyGetter(this, "FONT_VARIATIONS_ENABLED", () => {
-  return Services.prefs.getBoolPref("layout.css.font-variations.enabled");
-});
 
 const NORMAL_FONT_WEIGHT = 400;
 const BOLD_FONT_WEIGHT = 700;
@@ -147,7 +144,7 @@ class PageStyleActor extends Actor {
         fontStyleLevel4: CSS.supports("font-style: oblique 20deg"),
         
         
-        fontVariations: FONT_VARIATIONS_ENABLED,
+        fontVariations: CSS.supports("font-variation-settings: 'liga' 1"),
         
         
         
@@ -441,7 +438,7 @@ class PageStyleActor extends Actor {
         };
       }
 
-      if (options.includeVariations && FONT_VARIATIONS_ENABLED) {
+      if (options.includeVariations) {
         
         fontFace.variationAxes = font.getVariationAxes().map(axis => ({
           ...axis,
