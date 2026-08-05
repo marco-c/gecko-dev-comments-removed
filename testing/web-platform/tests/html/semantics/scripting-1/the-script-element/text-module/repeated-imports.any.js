@@ -45,10 +45,9 @@ promise_test(async test => {
     
     
     
-    await promise_rejects_js(test, TypeError,
-      import(`./serve-text-then-js.py?key=${uuid_token}`),
-      "import should always fail if the same specifier/type attribute pair failed previously");
-}, "An import should always fail if the same specifier/type attribute pair failed previously");
+    const result_js = await import(`./serve-text-then-js.py?key=${uuid_token}`);
+    assert_equals(result_js.default, "world");
+}, "An import should succeed even if the same specifier/type attribute pair previously failed due to a MIME type mismatch");
 
 promise_test(async test => {
     const uuid_token = token();
