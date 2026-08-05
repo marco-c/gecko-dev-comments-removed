@@ -44,6 +44,7 @@ pref("pdfjs.enableOptimizedPartialRendering", true);
 
 
 
+
 #ifdef NIGHTLY_BUILD
   pref("pdfjs.enableSignatureVerification", true);
 #else
