@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MLSFallback.h"
 
 #include "GeolocationPosition.h"
@@ -36,7 +34,13 @@ mozilla::glean::geolocation::FallbackLabel MapReasonToLabel(
 
 nsresult MLSFallback::Startup(nsIGeolocationUpdate* aWatcher,
                               FallbackReason aReason) {
-  if (mHandoffTimer || mMLSFallbackProvider) {
+  if (mMLSFallbackProvider) {
+    
+    
+    mMLSFallbackProvider->Startup();
+    return NS_OK;
+  }
+  if (mHandoffTimer) {
     return NS_OK;
   }
 
