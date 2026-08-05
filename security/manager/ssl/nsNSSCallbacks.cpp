@@ -974,8 +974,10 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
   
   
 
-  glean::ssl::reasons_for_not_false_starting.AccumulateSingleSample(
-      reasonsForNotFalseStarting);
+  glean::tls::reasons_for_not_false_starting
+      .EnumGet(static_cast<glean::tls::ReasonsForNotFalseStartingLabel>(
+          reasonsForNotFalseStarting))
+      .Add();
 
   if (reasonsForNotFalseStarting == 0) {
     *canFalseStart = PR_TRUE;
