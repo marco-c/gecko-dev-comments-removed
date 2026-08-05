@@ -138,8 +138,9 @@ nsresult nsFileControlFrame::CreateAnonymousContent(
   aElements.AppendElement(mTextContent);
 
   
-  mContent->AddSystemEventListener(u"drop"_ns, mMouseListener, false);
-  mContent->AddSystemEventListener(u"dragover"_ns, mMouseListener, false);
+  mContent->AddSystemEventListener(u"drop"_ns, mMouseListener, false, false);
+  mContent->AddSystemEventListener(u"dragover"_ns, mMouseListener, false,
+                                   false);
 
   SyncDisabledState();
 
