@@ -88,7 +88,7 @@ async function backspaces(
   
   
   
-  await UrlbarUtils._lastRecordAutofillBackspacePromise;
+  await UrlbarShared._lastRecordAutofillBackspacePromise;
 }
 
 async function adaptiveAutofillSetup() {
