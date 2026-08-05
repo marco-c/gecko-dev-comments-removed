@@ -87,7 +87,11 @@ pub unsafe extern "C" fn happy_eyeballs_create(
     let alt_svc_vec: Vec<_> = alt_svc
         .iter()
         .map(|a| happy_eyeballs::AltSvc {
-            host: None,
+            host: if a.host.is_empty() {
+                None
+            } else {
+                Some(a.host.to_utf8().to_string())
+            },
             port: if a.port != 0 { Some(a.port) } else { None },
             http_version: a.http_version.into(),
         })
@@ -97,8 +101,10 @@ pub unsafe extern "C" fn happy_eyeballs_create(
 
     
     
-    let resolution_delay_ms =
-        std::cmp::max(10, static_prefs::pref!("network.http.happy_eyeballs_resolution_delay"));
+    let resolution_delay_ms = std::cmp::max(
+        10,
+        static_prefs::pref!("network.http.happy_eyeballs_resolution_delay"),
+    );
     let connection_attempt_delay_ms = std::cmp::max(
         10,
         static_prefs::pref!("network.http.happy_eyeballs_connection_attempt_delay"),
@@ -521,11 +527,13 @@ impl HappyEyeballs {
     }
 }
 
-
 #[repr(C)]
 pub struct AltSvc {
     pub http_version: HttpVersion,
     pub port: u16,
+    
+    
+    pub host: nsCString,
 }
 
 #[repr(C)]
