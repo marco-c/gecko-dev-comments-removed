@@ -2292,3 +2292,12 @@ bool nsWindowWayland::ApplyEnterLeaveMutterWorkaround() {
   }
   return false;
 }
+
+void nsWindowWayland::OnUnmapNative() {
+  ClearPipResources();
+  
+  
+  if (IsInPopupHierarchy()) {
+    WaylandPopupMarkAsClosed();
+  }
+}
