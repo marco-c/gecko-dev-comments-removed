@@ -209,6 +209,17 @@ document.addEventListener(
             adoptedTabGroup.select();
           }
           break;
+        case "open-tab-group-context-menu_share":
+          {
+            let { triggerNode } = event.target.parentElement;
+            let { tabGroupId } = triggerNode.dataset;
+            let tabGroup = gBrowser.getTabGroupById(tabGroupId);
+            
+            
+            triggerNode.closest("panel")?.hidePopup();
+            lazy.ContentSharingUtils.handleShareTabGroup(tabGroup);
+          }
+          break;
         case "open-tab-group-context-menu_delete":
           {
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
@@ -671,6 +682,11 @@ document.addEventListener(
           event.target.querySelector(
             "#open-tab-group-context-menu_moveToNewWindow"
           ).disabled = groupAloneInWindow;
+
+          
+          event.target.querySelector(
+            "#open-tab-group-context-menu_share"
+          ).hidden = !lazy.ContentSharingUtils.isEnabled;
         }
       });
 
