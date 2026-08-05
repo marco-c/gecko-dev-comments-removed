@@ -316,8 +316,6 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                  ? nullptr
                  : net::WebTransportEventService::GetOrCreate();
   
-
-  
   
   
   
