@@ -13,6 +13,10 @@
 #include "nsNetUtil.h"
 #include "nsURLHelper.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/java/GeckoAppShellWrappers.h"
+#endif
+
 using mozilla::LogLevel;
 using mozilla::dom::ContentParent;
 
@@ -67,29 +71,12 @@ nsresult nsResProtocolHandler::Init() {
 
 #ifdef ANDROID
 nsresult nsResProtocolHandler::GetApkURI(nsACString& aResult) {
-  nsCString::const_iterator start, iter;
-  mGREURI.BeginReading(start);
-  mGREURI.EndReading(iter);
-  nsCString::const_iterator start_iter = start;
-
-  
-  bool found = FindInReadable("!/"_ns, start_iter, iter);
-  NS_ENSURE_TRUE(found, NS_ERROR_UNEXPECTED);
-
-  
-  const nsDependentCSubstring& withoutPath = Substring(start, iter);
-  NS_ENSURE_TRUE(withoutPath.Length() >= 4, NS_ERROR_UNEXPECTED);
-
-  
-  NS_ENSURE_TRUE(Substring(withoutPath, 0, 4).EqualsLiteral("jar:"),
-                 NS_ERROR_UNEXPECTED);
-
-  
-  aResult = ToNewCString(Substring(withoutPath, 4));
-
-  
-  NS_ENSURE_TRUE(aResult.Length() >= 1, NS_ERROR_UNEXPECTED);
-  aResult.Truncate(aResult.Length() - 1);
+  mozilla::jni::String::LocalRef path =
+      mozilla::java::GeckoAppShell::GetPackageResourcePath();
+  if (!path) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  aResult = "jar:file://"_ns + path->ToCString() + "!"_ns;
   return NS_OK;
 }
 #endif
