@@ -96,7 +96,7 @@ use api::{BorderRadius, ClipMode, ImageMask, ClipId, ClipChainId};
 use api::{FillRule, ImageKey, ImageRendering};
 use api::units::*;
 use crate::image_tiling::{self, Repetition};
-use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
+use crate::border::BorderRadiusAu;
 use crate::renderer::GpuBufferBuilderF;
 use crate::spatial_tree::{SceneSpatialTree, SpatialTree, SpatialNodeIndex};
 use crate::ellipse::Ellipse;
@@ -1990,9 +1990,51 @@ pub struct ClipItem {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn clamped_radius(radius: &BorderRadius, size: LayoutSize) -> BorderRadius {
     let mut r = *radius;
-    ensure_no_corner_overlap(&mut r, size);
+    let mut ratio: f32 = 1.0;
+
+    let mut constrain = |extent: f32, a: f32, b: f32| {
+        if a > 0.0 && b > 0.0 && extent < a + b {
+            ratio = f32::min(ratio, extent / (a + b));
+        }
+    };
+
+    if size.width > 0.0 {
+        constrain(size.width, r.top_left.width, r.top_right.width);
+        constrain(size.width, r.bottom_left.width, r.bottom_right.width);
+    }
+    if size.height > 0.0 {
+        constrain(size.height, r.top_left.height, r.bottom_left.height);
+        constrain(size.height, r.top_right.height, r.bottom_right.height);
+    }
+
+    if ratio < 1.0 {
+        for corner in [&mut r.top_left, &mut r.top_right,
+                       &mut r.bottom_left, &mut r.bottom_right] {
+            corner.width *= ratio;
+            corner.height *= ratio;
+        }
+    }
+
     r
 }
 

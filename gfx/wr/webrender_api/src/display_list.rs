@@ -1526,6 +1526,24 @@ impl DisplayListBuilder {
             .inflate(spread_amount, spread_amount);
         let spatial_id = common.spatial_id;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let normalized = |rect: &LayoutRect, radii: di::BorderRadius| {
+            let mut radii = radii;
+            crate::key_types::ensure_no_corner_overlap(&mut radii, rect.size());
+            radii
+        };
+        let border_radius = normalized(&box_bounds, border_radius);
+        let shadow_radius = normalized(&shadow_rect, shadow_radius);
+
         let mut clips: Vec<di::ClipId> = Vec::with_capacity(2);
         let (final_prim_rect, clip_radius) = match clip_mode {
             BoxShadowClipMode::Outset => {
