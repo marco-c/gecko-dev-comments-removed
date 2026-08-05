@@ -2059,6 +2059,13 @@ def validate_shipping_product(config, product):
 
 @transforms.add
 def validate(config, tasks):
+    
+    
+    
+    if taskgraph.fast:
+        yield from tasks
+        return
+
     for task in tasks:
         validate_schema(
             TaskDescriptionSchema,
