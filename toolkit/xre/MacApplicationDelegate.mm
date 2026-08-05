@@ -42,15 +42,7 @@
 #include "nsCocoaUtils.h"
 #include "nsMenuBarX.h"
 #include "mozilla/NeverDestroyed.h"
-
-class AutoAutoreleasePool {
- public:
-  AutoAutoreleasePool() { mLocalPool = [[NSAutoreleasePool alloc] init]; }
-  ~AutoAutoreleasePool() { [mLocalPool release]; }
-
- private:
-  NSAutoreleasePool* mLocalPool;
-};
+#include "MacAutoreleasePool.h"
 
 @interface MacApplicationDelegate : NSObject <NSApplicationDelegate> {
 }
@@ -118,7 +110,7 @@ void SetupMacApplicationDelegate(bool* gRestartedByOS) {
 
   
   
-  AutoAutoreleasePool pool;
+  mozilla::MacAutoreleasePool pool;
 
   
   [GeckoNSApplication sharedApplication];
