@@ -13,12 +13,14 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/media_types.h"
 #include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "modules/congestion_controller/remb_throttler.h"
 #include "modules/congestion_controller/rtp/congestion_controller_feedback_stats.h"
@@ -55,7 +57,14 @@ class ReceiveSideCongestionController : public CallStatsObserver {
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   
+  [[deprecated(
+      "Use the overload taking DataRate, is_bandwidth_limited, and "
+      "transport_overhead instead.")]]
   void OnBitrateChanged(int bitrate_bps);
+
+  void OnBitrateChanged(DataRate target_rate,
+                        bool is_bandwidth_limited,
+                        std::optional<DataSize> transport_overhead);
 
   
   

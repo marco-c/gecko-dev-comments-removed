@@ -153,6 +153,7 @@ class RtpTransportControllerSend final
   flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
   GetCongestionControlFeedbackStatsPerSsrc() const override;
   std::optional<int> ReceivedTransportCcFeedbackCount() const override;
+  DataSize GetTransportOverhead() const override;
 
   
   void NotifyBweOfSentPacketForTesting(const RtpPacketToSend& rtp_packet);

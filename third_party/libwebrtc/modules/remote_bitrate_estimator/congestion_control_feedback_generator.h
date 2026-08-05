@@ -26,8 +26,13 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
+
+
+
+
 
 
 
@@ -60,7 +65,10 @@ class CongestionControlFeedbackGenerator
 
   void OnReceivedPacket(const RtpPacketReceived& packet) override;
 
-  void OnSendBandwidthEstimateChanged(DataRate estimate) override {}
+  void OnSendBandwidthEstimateChanged(
+      DataRate estimate,
+      bool is_bandwidth_limited,
+      std::optional<DataSize> transport_overhead) override;
 
   TimeDelta Process(Timestamp now) override;
 
@@ -80,8 +88,14 @@ class CongestionControlFeedbackGenerator
   const RtcpSender rtcp_sender_;
 
   FieldTrialParameter<TimeDelta> min_time_between_feedback_;
+  FieldTrialParameter<double> max_feedback_fraction_;
   FieldTrialParameter<TimeDelta> max_time_to_wait_for_packet_with_marker_;
   FieldTrialParameter<TimeDelta> max_time_between_feedback_;
+
+  std::optional<DataRate> send_bandwidth_estimate_
+      RTC_GUARDED_BY(sequence_checker_);
+  bool is_bandwidth_limited_ RTC_GUARDED_BY(sequence_checker_) = true;
+  std::optional<DataSize> transport_overhead_ RTC_GUARDED_BY(sequence_checker_);
 
   DataSize packet_overhead_ = DataSize::Zero();
   DataSize send_rate_debt_ = DataSize::Zero();

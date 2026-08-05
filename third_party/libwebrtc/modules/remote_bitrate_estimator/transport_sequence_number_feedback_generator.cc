@@ -141,7 +141,9 @@ TimeDelta TransportSequenceNumberFeedbackGenenerator::Process(Timestamp now) {
 }
 
 void TransportSequenceNumberFeedbackGenenerator::OnSendBandwidthEstimateChanged(
-    DataRate estimate) {
+    DataRate estimate,
+    bool ,
+    std::optional<DataSize> ) {
   
   
   

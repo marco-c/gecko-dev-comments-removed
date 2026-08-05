@@ -456,7 +456,8 @@ TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
 TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
        TimeUntilNextProcessIsMinIntervalOn300kbps) {
   feedback_generator_.OnSendBandwidthEstimateChanged(
-      DataRate::BitsPerSec(300'000));
+      DataRate::BitsPerSec(300'000), true,
+      std::nullopt);
   EXPECT_EQ(feedback_generator_.Process(clock_.CurrentTime()),
             kMinSendInterval);
 }
@@ -466,7 +467,9 @@ TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
   
   
   
-  feedback_generator_.OnSendBandwidthEstimateChanged(DataRate::Zero());
+  feedback_generator_.OnSendBandwidthEstimateChanged(
+      DataRate::Zero(), true,
+      std::nullopt);
   EXPECT_EQ(feedback_generator_.Process(clock_.CurrentTime()),
             kMaxSendInterval);
 }
@@ -474,7 +477,8 @@ TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
 TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
        TimeUntilNextProcessIsMaxIntervalOn20kbps) {
   feedback_generator_.OnSendBandwidthEstimateChanged(
-      DataRate::BitsPerSec(20'000));
+      DataRate::BitsPerSec(20'000), true,
+      std::nullopt);
   EXPECT_EQ(feedback_generator_.Process(clock_.CurrentTime()),
             kMaxSendInterval);
 }
@@ -482,7 +486,8 @@ TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
 TEST_F(TransportSequenceNumberFeedbackGeneneratorTest,
        TwccReportsUse5PercentOfAvailableBandwidth) {
   feedback_generator_.OnSendBandwidthEstimateChanged(
-      DataRate::BitsPerSec(80'000));
+      DataRate::BitsPerSec(80'000), true,
+      std::nullopt);
   
   EXPECT_EQ(feedback_generator_.Process(clock_.CurrentTime()),
             TimeDelta::Millis(136));

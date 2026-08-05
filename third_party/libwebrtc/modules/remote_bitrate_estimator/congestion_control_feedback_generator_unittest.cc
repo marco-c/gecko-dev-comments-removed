@@ -14,9 +14,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "api/environment/environment_factory.h"
+#include "api/field_trials.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -26,7 +29,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/congestion_control_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/network/ecn_marking.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -168,11 +170,11 @@ TEST(CongestionControlFeedbackGeneratorTest,
 
   EXPECT_LE(total_feedback_size / TimeDelta::Seconds(1),
             DataRate::KilobitsPerSec(500));
-  EXPECT_EQ(number_of_feedback_packets, 40);
+  EXPECT_GE(number_of_feedback_packets, 39);
 }
 
 TEST(CongestionControlFeedbackGeneratorTest,
-     FeedbackFor60KPacketsUtilizeApproximately500kbitPerSecond) {
+     FeedbackFor200MbitSendsFeedbackEvery25ms) {
   MockFunction<void(std::vector<std::unique_ptr<rtcp::RtcpPacket>>)>
       rtcp_sender;
   SimulatedClock clock(123456);
@@ -180,26 +182,34 @@ TEST(CongestionControlFeedbackGeneratorTest,
                                                rtcp_sender.AsStdFunction());
 
   int number_of_feedback_packets = 0;
-  DataSize total_feedback_size;
-  DataSize last_feedback_size;
+  DataSize total_feedback_size = DataSize::Zero();
+  Timestamp last_feedback_time = Timestamp::MinusInfinity();
   EXPECT_CALL(rtcp_sender, Call)
       .WillRepeatedly(
           [&](std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
             ASSERT_THAT(rtcp_packets, SizeIs(1));
             number_of_feedback_packets++;
-            last_feedback_size =
-                DataSize::Bytes(rtcp_packets[0]->BlockLength());
-            total_feedback_size += last_feedback_size;
+            total_feedback_size +=
+                DataSize::Bytes(rtcp_packets[0]->BlockLength() + 42);
+            if (last_feedback_time.IsFinite()) {
+              EXPECT_EQ(clock.CurrentTime() - last_feedback_time,
+                        TimeDelta::Millis(25));
+            }
+            last_feedback_time = clock.CurrentTime();
           });
+
   Timestamp start_time = clock.CurrentTime();
   Timestamp last_process_time = clock.CurrentTime();
   TimeDelta time_to_next_process = generator.Process(clock.CurrentTime());
   uint16_t rtp_sequence_number = 0;
+
+  
+  
   
   while (clock.CurrentTime() < start_time + TimeDelta::Seconds(1)) {
-    for (int i = 0; i < 60; ++i) {
+    for (int i = 0; i < 25; ++i) {
       generator.OnReceivedPacket(CreatePacket(clock.CurrentTime(),
-                                              true, 1234,
+                                              i == 24, 1234,
                                               rtp_sequence_number++));
     }
     if (clock.CurrentTime() >= last_process_time + time_to_next_process) {
@@ -208,9 +218,16 @@ TEST(CongestionControlFeedbackGeneratorTest,
     }
     clock.AdvanceTime(TimeDelta::Millis(1));
   }
-  EXPECT_LE(total_feedback_size,
-            DataSize::Bytes(500'000 / 8) + last_feedback_size);
-  EXPECT_LT(number_of_feedback_packets, 40);
+
+  
+  EXPECT_EQ(number_of_feedback_packets, 40);
+
+  
+  
+  
+  TimeDelta duration = clock.CurrentTime() - start_time;
+  DataRate average_bitrate = total_feedback_size / duration;
+  EXPECT_NEAR(average_bitrate.kbps(), 420, 10);
 }
 
 TEST(CongestionControlFeedbackGeneratorTest,
@@ -315,6 +332,182 @@ TEST(CongestionControlFeedbackGeneratorTest,
   time_to_next_process = generator.Process(clock.CurrentTime());
   clock.AdvanceTime(time_to_next_process);
   generator.Process(clock.CurrentTime());
+}
+
+TEST(CongestionControlFeedbackGeneratorTest,
+     FeedbackCanBeLimitedToFractionOfSendBwe) {
+  MockFunction<void(std::vector<std::unique_ptr<rtcp::RtcpPacket>>)>
+      rtcp_sender;
+  SimulatedClock clock(123456);
+
+  
+  auto field_trials = std::make_unique<FieldTrials>(
+      "WebRTC-RFC8888CongestionControlFeedback/feedback_fraction:0.05/");
+  CongestionControlFeedbackGenerator generator(
+      CreateEnvironment(&clock, std::move(field_trials)),
+      rtcp_sender.AsStdFunction());
+
+  
+  
+  generator.OnSendBandwidthEstimateChanged(
+      DataRate::KilobitsPerSec(100),
+      true,
+      DataSize::Bytes(42));
+
+  int number_of_feedback_packets = 0;
+  DataSize total_feedback_size = DataSize::Zero();
+  EXPECT_CALL(rtcp_sender, Call)
+      .WillRepeatedly(
+          [&](std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+            ASSERT_THAT(rtcp_packets, SizeIs(1));
+            number_of_feedback_packets++;
+            total_feedback_size +=
+                DataSize::Bytes(rtcp_packets[0]->BlockLength() + 42);
+          });
+
+  Timestamp start_time = clock.CurrentTime();
+  Timestamp last_process_time = clock.CurrentTime();
+  TimeDelta time_to_next_process = generator.Process(clock.CurrentTime());
+  uint16_t rtp_sequence_number = 0;
+
+  
+  while (clock.CurrentTime() < start_time + TimeDelta::Seconds(10)) {
+    generator.OnReceivedPacket(CreatePacket(clock.CurrentTime(),
+                                            true, 1234,
+                                            rtp_sequence_number++));
+
+    if (clock.CurrentTime() >= last_process_time + time_to_next_process) {
+      last_process_time = clock.CurrentTime();
+      time_to_next_process = generator.Process(clock.CurrentTime());
+    }
+    clock.AdvanceTime(TimeDelta::Millis(20));
+  }
+
+  
+  
+  
+  EXPECT_LE(total_feedback_size / TimeDelta::Seconds(10),
+            DataRate::BitsPerSec(5500));
+  EXPECT_GE(number_of_feedback_packets, 1);
+}
+
+TEST(CongestionControlFeedbackGeneratorTest,
+     FeedbackSentAtLeastEvery250msDespiteFractionLimit) {
+  MockFunction<void(std::vector<std::unique_ptr<rtcp::RtcpPacket>>)>
+      rtcp_sender;
+  SimulatedClock clock(123456);
+
+  
+  auto field_trials = std::make_unique<FieldTrials>(
+      "WebRTC-RFC8888CongestionControlFeedback/feedback_fraction:0.05/");
+  CongestionControlFeedbackGenerator generator(
+      CreateEnvironment(&clock, std::move(field_trials)),
+      rtcp_sender.AsStdFunction());
+
+  
+  
+  generator.OnSendBandwidthEstimateChanged(
+      DataRate::KilobitsPerSec(10),
+      true,
+      DataSize::Bytes(42));
+
+  int number_of_feedback_packets = 0;
+  Timestamp last_feedback_time = Timestamp::MinusInfinity();
+  EXPECT_CALL(rtcp_sender, Call)
+      .WillRepeatedly(
+          [&](std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+            ASSERT_THAT(rtcp_packets, SizeIs(1));
+            number_of_feedback_packets++;
+            if (last_feedback_time.IsFinite()) {
+              
+              EXPECT_EQ(clock.CurrentTime() - last_feedback_time,
+                        TimeDelta::Millis(250));
+            }
+            last_feedback_time = clock.CurrentTime();
+          });
+
+  Timestamp start_time = clock.CurrentTime();
+  Timestamp last_process_time = clock.CurrentTime();
+  TimeDelta time_to_next_process = generator.Process(clock.CurrentTime());
+  uint16_t rtp_sequence_number = 0;
+
+  
+  while (clock.CurrentTime() < start_time + TimeDelta::Seconds(1)) {
+    if ((clock.CurrentTime() - start_time).ms() % 10 == 0) {
+      generator.OnReceivedPacket(CreatePacket(clock.CurrentTime(),
+                                              true, 1234,
+                                              rtp_sequence_number++));
+    }
+
+    if (clock.CurrentTime() >= last_process_time + time_to_next_process) {
+      last_process_time = clock.CurrentTime();
+      time_to_next_process = generator.Process(clock.CurrentTime());
+    }
+    clock.AdvanceTime(TimeDelta::Millis(1));
+  }
+
+  
+  EXPECT_EQ(number_of_feedback_packets, 4);
+}
+
+TEST(CongestionControlFeedbackGeneratorTest,
+     FractionLimitIgnoredWhenNotBandwidthLimited) {
+  MockFunction<void(std::vector<std::unique_ptr<rtcp::RtcpPacket>>)>
+      rtcp_sender;
+  SimulatedClock clock(123456);
+
+  
+  auto field_trials = std::make_unique<FieldTrials>(
+      "WebRTC-RFC8888CongestionControlFeedback/feedback_fraction:0.05/");
+  CongestionControlFeedbackGenerator generator(
+      CreateEnvironment(&clock, std::move(field_trials)),
+      rtcp_sender.AsStdFunction());
+
+  
+  
+  generator.OnSendBandwidthEstimateChanged(
+      DataRate::KilobitsPerSec(10),
+      false,
+      DataSize::Bytes(42));
+
+  int number_of_feedback_packets = 0;
+  Timestamp last_feedback_time = Timestamp::MinusInfinity();
+  EXPECT_CALL(rtcp_sender, Call)
+      .WillRepeatedly(
+          [&](std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+            ASSERT_THAT(rtcp_packets, SizeIs(1));
+            number_of_feedback_packets++;
+            if (last_feedback_time.IsFinite()) {
+              
+              
+              EXPECT_EQ(clock.CurrentTime() - last_feedback_time,
+                        TimeDelta::Millis(25));
+            }
+            last_feedback_time = clock.CurrentTime();
+          });
+
+  Timestamp start_time = clock.CurrentTime();
+  Timestamp last_process_time = clock.CurrentTime();
+  TimeDelta time_to_next_process = generator.Process(clock.CurrentTime());
+  uint16_t rtp_sequence_number = 0;
+
+  
+  while (clock.CurrentTime() < start_time + TimeDelta::Seconds(1)) {
+    if ((clock.CurrentTime() - start_time).ms() % 10 == 0) {
+      generator.OnReceivedPacket(CreatePacket(clock.CurrentTime(),
+                                              true, 1234,
+                                              rtp_sequence_number++));
+    }
+
+    if (clock.CurrentTime() >= last_process_time + time_to_next_process) {
+      last_process_time = clock.CurrentTime();
+      time_to_next_process = generator.Process(clock.CurrentTime());
+    }
+    clock.AdvanceTime(TimeDelta::Millis(1));
+  }
+
+  
+  EXPECT_EQ(number_of_feedback_packets, 40);
 }
 
 }  
