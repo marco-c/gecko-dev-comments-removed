@@ -254,6 +254,12 @@ pref("formhelper.autozoom", true);
 pref("geckoview.console.enabled", false);
 
 
+
+
+
+pref("geckoview.autocomplete.selection_dismiss_delay_ms", 150);
+
+
 pref("intl.locale.requested", "");
 
 
@@ -385,6 +391,6 @@ pref("xpinstall.whitelist.add", "https://addons.mozilla.org");
 pref("xpinstall.whitelist.fileRequest", false);
 
 
-pref("browser.ipProtection.enabled", false);
+pref("browser.ipProtection.enabled", true);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("toolkit.ipProtection.android.authProvider", "fxa");
