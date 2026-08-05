@@ -8,6 +8,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlUtils.h"
+#include "mozilla/glean/DomMediaMetrics.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsSynthVoiceRegistry.h"
 #include "nsXULAppAPI.h"
@@ -361,6 +362,7 @@ void SpeechTaskChild::ResumeFromMediaControl() {
     return;
   }
   mPausedByMediaControl = false;
+  glean::media_audio_focus::resume_decision.Get("web_speech"_ns).Add(1);
   
   
   

@@ -569,6 +569,38 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
   }
 
+  void SuspendForInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    
+    
+    if (!Owner() || Owner()->Paused() || !mIsOwnerAudible) {
+      return;
+    }
+    MEDIACONTROL_LOG("SuspendForInterrupt");
+    
+    
+    
+    Owner()->Pause();
+    mSuspendedByInterrupt = true;
+  }
+
+  void ResumeFromInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    const bool willResume =
+        mSuspendedByInterrupt && Owner() && Owner()->Paused();
+    MEDIACONTROL_LOG("ResumeFromInterrupt, resume={}", willResume);
+    if (willResume) {
+      Owner()->Play();
+      glean::media_audio_focus::resume_decision.Get("media"_ns).Add(1);
+    }
+    mSuspendedByInterrupt = false;
+  }
+
+  void NotifyPaused() {
+    MEDIACONTROL_LOG("NotifyPaused, clearing suspended-by-interrupt");
+    mSuspendedByInterrupt = false;
+  }
+
   void UpdateOwnerBrowsingContextIfNeeded() {
     
     if (!IsStarted()) {
@@ -672,6 +704,9 @@ class HTMLMediaElement::MediaControlKeyListener final
   
   
   ControlType mControlType = ControlType::eControllable;
+  
+  
+  bool mSuspendedByInterrupt = false;
   MOZ_INIT_OUTSIDE_CTOR uint64_t mOwnerBrowsingContextId = 0;
   const nsID mElementId;
 };
@@ -3759,6 +3794,10 @@ void HTMLMediaElement::PauseInternal() {
     FireTimeUpdate(TimeupdateType::eMandatory);
     QueueEvent(u"pause"_ns);
     AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_ABORT_ERR);
+  }
+
+  if (mMediaControlKeyListener) {
+    mMediaControlKeyListener->NotifyPaused();
   }
 }
 
