@@ -13,6 +13,8 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+import { WIN_OS_PIN_PROMPT_ENABLED } from "resource:///modules/asrouter/MessagingTargetingConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -362,8 +364,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_EASY_SETUP",
-      targeting:
-        "doesAppNeedPin && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || (!doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)",
+      targeting: `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`,
       content: {
         fullscreen: true,
         position: "split",
@@ -388,8 +389,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
             {
               id: "checkbox-1",
               defaultValue: true,
-              targeting:
-                "doesAppNeedPin && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')",
+              targeting: `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`,
               label: {
                 string_id: isMSIX
                   ? "mr2022-onboarding-pin-primary-button-label-msix"
@@ -617,6 +617,42 @@ const MR_ABOUT_WELCOME_DEFAULT = {
               "backupRestoreEnabled && isDefaultBrowser && !doesAppNeedPin",
           },
         ],
+      },
+    },
+    {
+      id: "AW_THEME_PICKER",
+      targeting: "'browser.nova.enabled'|preferenceValue",
+      content: {
+        fullscreen: true,
+        position: "split",
+        tiles: { type: "theme-picker" },
+        title: {
+          string_id: "onboarding-theme-picker-title",
+        },
+        subtitle: {
+          string_id: "onboarding-theme-picker-subtitle",
+        },
+        background:
+          "url('chrome://activity-stream/content/data/content/assets/br-amo-fox-paint.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
+        progress_bar: true,
+        hide_secondary_section: "responsive",
+        primary_button: {
+          label: {
+            string_id: "onboarding-theme-picker-button-label",
+          },
+          action: {
+            navigate: true,
+          },
+        },
+        secondary_button: {
+          label: {
+            string_id: "mr2022-onboarding-secondary-skip-button-label",
+          },
+          action: {
+            navigate: true,
+          },
+          has_arrow_icon: true,
+        },
       },
     },
     {

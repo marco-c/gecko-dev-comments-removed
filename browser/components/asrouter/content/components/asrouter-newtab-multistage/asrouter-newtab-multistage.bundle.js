@@ -1774,6 +1774,15 @@ const EmbeddedMigrationWizard = ({
 
 
 
+const EmbeddedThemePicker = () => {
+  return external_React_default().createElement("theme-picker", null);
+};
+;
+
+
+
+
+
 const EmbeddedFxBackupOptIn = ({
   handleAction,
   isEncryptedBackup,
@@ -2363,6 +2372,7 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
 
 
 
+
 const HEADER_STYLES = ["backgroundColor", "border", "padding", "margin", "width", "height"];
 const ContentTiles_TILE_STYLES = ["border", "borderRadius", "marginBlock", "marginInline", "paddingBlock", "paddingInline"];
 const CONTAINER_STYLES = ["padding", "margin", "marginBlock", "marginInline", "paddingBlock", "paddingInline", "flexDirection", "flexWrap", "flexFlow", "flexGrow", "flexShrink", "justifyContent", "alignItems", "gap"];
@@ -2606,6 +2616,8 @@ const ContentTiles = props => {
       content: {
         tiles: tile
       }
+    }), tile.type === "theme-picker" && external_React_default().createElement(EmbeddedThemePicker, {
+      handleAction: props.handleAction
     }), tile.type === "action_checklist" && tile.data && external_React_default().createElement(ActionChecklist, {
       content: content,
       message_id: props.messageId,
