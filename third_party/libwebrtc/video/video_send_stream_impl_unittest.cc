@@ -1507,5 +1507,17 @@ TEST_F(VideoSendStreamImplTest, TestElasticityForScreenshare) {
   vss_impl->Stop();
 }
 
+TEST_F(VideoSendStreamImplTest, GenerateKeyFrameWithMismatchedRids) {
+  
+  config_.rtp.rids = {"a", "b", "c"};
+  
+  auto vss_impl = CreateVideoSendStreamImpl(
+      TestVideoEncoderConfig(VideoEncoderConfig::ContentType::kRealtimeVideo));
+  vss_impl->Start();
+  
+  vss_impl->GenerateKeyFrame({"c"});
+  vss_impl->Stop();
+}
+
 }  
 }  
