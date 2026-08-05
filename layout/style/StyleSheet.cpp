@@ -878,6 +878,20 @@ void StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   }
 }
 
+bool StyleSheet::IsAdoptedBy(const dom::DocumentOrShadowRoot& aTree) const {
+  
+  
+  
+  
+  const auto& adopted = aTree.AdoptedStyleSheets();
+  const bool result = mAdopters.Length() <= adopted.Length()
+                          ? mAdopters.Contains(&aTree)
+                          : adopted.Contains(this);
+  MOZ_ASSERT(result == mAdopters.Contains(&aTree));
+  MOZ_ASSERT(result == adopted.Contains(this));
+  return result;
+}
+
 bool StyleSheet::IsDirectlyAssociatedTo(
     dom::DocumentOrShadowRoot& aTree) const {
   if (mParentSheet) {
@@ -888,11 +902,7 @@ bool StyleSheet::IsDirectlyAssociatedTo(
   }
   bool associated = false;
   if (IsConstructed()) {
-    
-    
-    
-    associated = aTree.AdoptedStyleSheets().Contains(this);
-    MOZ_ASSERT(associated == mAdopters.Contains(&aTree));
+    associated = IsAdoptedBy(aTree);
   } else {
     associated = GetAssociatedDocumentOrShadowRoot() == &aTree;
   }

@@ -386,6 +386,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
 
   
+  bool IsAdoptedBy(const dom::DocumentOrShadowRoot&) const;
+
+  
   
   void AddAdopter(dom::DocumentOrShadowRoot& aAdopter) {
     

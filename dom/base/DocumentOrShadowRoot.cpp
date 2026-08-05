@@ -139,7 +139,13 @@ void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
   auto* shadow = ShadowRoot::FromNode(AsNode());
   MOZ_ASSERT((mKind == Kind::ShadowRoot) == !!shadow);
 
-  auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+  
+  
+  auto existingIndex = mAdoptedStyleSheets.NoIndex;
+  if (aSheet.IsAdoptedBy(*this)) {
+    existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+    MOZ_ASSERT(existingIndex != mAdoptedStyleSheets.NoIndex);
+  }
   
   mAdoptedStyleSheets.InsertElementAt(aIndex, &aSheet);
   if (existingIndex == mAdoptedStyleSheets.NoIndex) {
