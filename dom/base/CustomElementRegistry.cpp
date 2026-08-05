@@ -805,6 +805,7 @@ nsTArray<nsCOMPtr<Element>> CandidateFinder::OrderedCandidates() {
 }  
 
 
+
 void CustomElementRegistry::UpgradeCandidates(
     nsAtom* aKey, CustomElementDefinition* aDefinition, ErrorResult& aRv) {
   DocGroup* docGroup = mWindow->GetDocGroup();
@@ -1302,21 +1303,16 @@ void CustomElementRegistry::Upgrade(nsINode& aRoot) {
     }
 
     
-    
-    
-    
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      if (element->GetCustomElementRegistry() != this) {
+        continue;
+      }
+    }
+
     CustomElementData* ceData = element->GetCustomElementData();
     if (ceData) {
       
-      NodeInfo* nodeInfo = element->NodeInfo();
-      nsAtom* typeAtom = ceData->GetCustomElementType();
-      CustomElementDefinition* definition =
-          nsContentUtils::LookupCustomElementDefinition(
-              nodeInfo->GetDocument(), nodeInfo->NameAtom(),
-              nodeInfo->NamespaceID(), typeAtom);
-      if (definition) {
-        nsContentUtils::EnqueueUpgradeReaction(element, definition);
-      }
+      nsContentUtils::TryToUpgradeElement(element);
     }
   }
 }
