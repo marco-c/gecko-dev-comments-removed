@@ -685,12 +685,6 @@ def repackage_msix(
         f'    <Resource Language="{locale}" />' for locale in locales
     )
 
-    
-    
-    background_task_clsid = next(
-        get_appconstants_sys_mjs_values(unpack_finder, "MOZ_BACKGROUNDTASK_CLSID")
-    )
-
     defines = {
         "APPX_ARCH": _MSIX_ARCH[arch],
         "APPX_DISPLAYNAME": brandFullName,
@@ -711,8 +705,6 @@ def repackage_msix(
         "MOZ_APP_NAME": app_name,
         
         "MOZ_INOTIFICATIONACTIVATION_CLSID": "916f9b5d-b5b2-4d36-b047-03c7a52f81c8",
-        "MOZ_BACKGROUNDTASK_CLSID": background_task_clsid,
-        "MOZ_MSIXCOMSERVER_APPID": "c9be1ae0-6994-4aff-85d3-d772d5c7a406",
     }
 
     m.add_preprocess(
