@@ -3,23 +3,29 @@
 
 
 
-promise_test(async (t) => {
-  let observer = new ReportingObserver(() => {});
-  observer.observe();
 
-  try {
-    const configuration = {};
-    const peerConnection = new RTCPeerConnection(configuration);
-    assert_unreached(
-        'In enforce mode, RTCPeerConnection creation should throw.');
-  } catch (err) {
-    assert_equals(err.name, 'NotAllowedError')
-  }
-  observer.disconnect();
+
+
+promise_test(async (t) => {
+  let local_reports = [];
+  let report_promise = new Promise((resolve) => {
+    let observer = new ReportingObserver((reports) => {
+      local_reports = local_reports.concat(reports);
+      if (local_reports.length >= 2) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+    observer.observe();
+  })
+  assert_equals(await tryConnect(), 'blocked');
 
   
-  const local_reports = observer.takeRecords();
-  assert_equals(local_reports.length, 1);
+  await report_promise;
+
+  assert_equals(local_reports.length, 2);
+  
+  assert_object_equals(local_reports[0].toJSON(), local_reports[1].toJSON());
   assert_equals(local_reports[0]['type'], 'connection-allowlist');
   assert_equals(local_reports[0]['url'], location.href);
 
@@ -36,7 +42,13 @@ promise_test(async (t) => {
   const id = 'ea5269e0-d728-4173-87a5-da9e6624f6be';
   await wait(5000);
   const remote_reports = await pollReports(endpoint, id);
-  assert_equals(remote_reports.length, 1);
+  assert_equals(remote_reports.length, 2);
+
+  
+  
+  remote_reports[0]['age'] = 0;
+  remote_reports[1]['age'] = 0;
+  assert_object_equals(remote_reports[0], remote_reports[1]);
   assert_equals(remote_reports[0]['type'], 'connection-allowlist');
   assert_equals(remote_reports[0]['url'], location.href);
 

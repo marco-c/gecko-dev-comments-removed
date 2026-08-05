@@ -2,15 +2,10 @@
 
 
 
+
 promise_test(async (t) => {
-  try {
-    const configuration = {};
-    const peerConnection = new RTCPeerConnection(configuration);
-    assert_unreached('RTCPeerConnection construction should fail.')
-  } catch (err) {
-    assert_equals(err.name, 'NotAllowedError');
-  }
-}, 'Test that setting Connection-Allowlist blocks WebRTC by default.');
+  assert_equals(await tryConnect(), 'blocked');
+}, 'Test that default Connection-Allowlist WebRTC blocking is respected.');
 
 promise_test(async (t) => {
   return fetch('/common/blank.html');

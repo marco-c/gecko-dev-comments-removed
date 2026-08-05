@@ -2,13 +2,9 @@
 
 
 
+
 promise_test(async (t) => {
-  try {
-    const configuration = {};
-    const peerConnection = new RTCPeerConnection(configuration);
-  } catch (err) {
-    assert_unreached('RTCPeerConnection construction should succeed');
-  }
+  assert_equals(await tryConnect(), 'allowed');
 }, 'Test that webrtc=allow Connection-Allowlist param is respected.');
 
 promise_test(async (t) => {

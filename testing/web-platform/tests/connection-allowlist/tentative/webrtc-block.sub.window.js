@@ -2,17 +2,9 @@
 
 
 
+
 promise_test(async (t) => {
-  try {
-    
-    const configuration = {
-      'iceServers': [{'urls': 'stun:stun.example.com:19302'}]
-    };
-    const peerConnection = new RTCPeerConnection(configuration);
-    assert_unreached('RTCPeerConnection construction should fail.')
-  } catch (err) {
-    assert_equals(err.name, 'NotAllowedError');
-  }
+  assert_equals(await tryConnect(), 'blocked');
 }, 'Test that webrtc=block Connection-Allowlist param is respected.');
 
 promise_test(async (t) => {
