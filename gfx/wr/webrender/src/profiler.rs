@@ -96,7 +96,7 @@ static PROFILER_PRESETS: &'static[(&'static str, &'static str)] = &[
     (&"GPU Memory", &"External image mem, Atlas textures mem, Standalone textures mem, Picture tiles mem, Render targets mem, Depth targets mem, Atlas items mem, GPU cache mem, GPU buffer mem, GPU total mem"),
     (&"CPU Memory", &"Image templates, Image templates mem, Font templates,Font templates mem, DisplayList mem"),
     (&"Memory", &"$CPU,CPU Memory, ,$GPU,GPU Memory"),
-    (&"Interners", "Intern insertions,Intern removals,Off-grid coords, ,Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrop renders, Interned backdrop captures"),
+    (&"Interners", "Interned primitives,Interned clips,Interned pictures,Interned text runs,Interned normal borders,Interned image borders,Interned images,Interned YUV images,Interned line decorations,Interned linear gradients,Interned radial gradients,Interned conic gradients,Interned filter data,Interned backdrop renders, Interned backdrop captures"),
     
     (&"GPU samplers", &"Alpha targets samplers,Transparent pass samplers,Opaque pass samplers,Total samplers"),
 
@@ -295,23 +295,7 @@ pub const PREPARE_CMD_TARGETS: usize = 136;
 
 pub const PREPARE_PICTURES: usize = 137;
 
-
-
-
-
-
-pub const INTERN_INSERTIONS: usize = 138;
-
-
-pub const INTERN_REMOVALS: usize = 139;
-
-
-
-
-
-pub const OFF_GRID_COORDS: usize = 140;
-
-pub const NUM_PROFILER_EVENTS: usize = 141;
+pub const NUM_PROFILER_EVENTS: usize = 138;
 
 pub struct Profiler {
     counters: Vec<Counter>,
@@ -529,10 +513,6 @@ impl Profiler {
             int("Prepare visited prims", "", PREPARE_VISITED_PRIMS, Expected::none()),
             int("Prepare cmd targets", "", PREPARE_CMD_TARGETS, Expected::none()),
             int("Prepare pictures", "", PREPARE_PICTURES, Expected::none()),
-
-            int("Intern insertions", "", INTERN_INSERTIONS, Expected::none()),
-            int("Intern removals", "", INTERN_REMOVALS, Expected::none()),
-            int("Off-grid coords", "", OFF_GRID_COORDS, expected(0..1)),
         ];
 
         let mut counters = Vec::with_capacity(profile_counters.len());

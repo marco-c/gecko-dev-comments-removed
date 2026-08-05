@@ -615,8 +615,14 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
   
   
   
-  LayoutDevicePoint scrollOffset = LayoutDevicePoint::FromAppUnits(
-      scrollContainerFrame->GetScrollPosition(), auPerDevPixel);
+  const bool useRoundedOffset =
+      StaticPrefs::apz_rounded_external_scroll_offset();
+  LayoutDevicePoint scrollOffset =
+      useRoundedOffset
+          ? LayoutDevicePoint::FromAppUnitsRounded(
+                scrollContainerFrame->GetScrollPosition(), auPerDevPixel)
+          : LayoutDevicePoint::FromAppUnits(
+                scrollContainerFrame->GetScrollPosition(), auPerDevPixel);
 
   
   

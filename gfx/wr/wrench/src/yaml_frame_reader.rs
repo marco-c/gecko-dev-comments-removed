@@ -2,7 +2,6 @@
 
 
 
-use crate::AU_PER_DEV_PX;
 use euclid::SideOffsets2D;
 use gleam::gl;
 use image::GenericImageView;
@@ -525,7 +524,7 @@ impl YamlFrameReader {
         self.spatial_id_stack.clear();
         self.spatial_id_stack.push(SpatialId::root_scroll_node(pipeline_id));
 
-        builder.begin(AU_PER_DEV_PX);
+        builder.begin();
 
         
         

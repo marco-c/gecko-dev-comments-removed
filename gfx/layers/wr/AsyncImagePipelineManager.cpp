@@ -452,8 +452,7 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
   }
 
   aPipeline->mIsChanged = false;
-  
-  aPipeline->mDLBuilder.Begin(AppUnitsPerCSSPixel());
+  aPipeline->mDLBuilder.Begin();
 
   float opacity = 1.0f;
   wr::StackingContextParams params;
@@ -608,8 +607,7 @@ void AsyncImagePipelineManager::SetEmptyDisplayList(
   wr::Epoch epoch = GetNextImageEpoch();
   wr::DisplayListBuilder builder(aPipelineId,
                                  mApi->GetCapabilities().mBackendType);
-  
-  builder.Begin(AppUnitsPerCSSPixel());
+  builder.Begin();
 
   wr::BuiltDisplayList dl;
   builder.End(dl);

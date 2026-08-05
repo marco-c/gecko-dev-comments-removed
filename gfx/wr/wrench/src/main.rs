@@ -11,13 +11,6 @@ extern crate serde;
 #[macro_use]
 extern crate tracy_rs;
 
-
-
-
-
-
-pub const AU_PER_DEV_PX: f32 = 60.0;
-
 mod angle;
 mod blob;
 #[cfg(target_os = "windows")]

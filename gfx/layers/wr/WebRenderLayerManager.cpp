@@ -351,15 +351,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     diplayListBuilder = offscreenBuilder.get();
   }
 
-  
-  
-  
-  const int32_t appUnitsPerDevPixel =
-      aDisplayListBuilder ? aDisplayListBuilder->RootReferenceFrame()
-                                ->PresContext()
-                                ->AppUnitsPerDevPixel()
-                          : AppUnitsPerCSSPixel();
-  diplayListBuilder->Begin(appUnitsPerDevPixel);
+  diplayListBuilder->Begin();
 
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge());
   wr::usize builderDumpIndex = 0;
