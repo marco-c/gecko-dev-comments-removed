@@ -2,7 +2,6 @@
 
 
 
-#include "vm/TypedArrayObject-inl.h"
 #include "vm/TypedArrayObject.h"
 
 #include "mozilla/Casting.h"
@@ -23,6 +22,8 @@
 #include <numeric>
 #include <string.h>
 #include <string_view>
+
+#include "vm/TypedArrayObject-inl.h"
 #if !defined(XP_WIN) && !defined(__wasi__)
 #  include <sys/mman.h>
 #endif
@@ -7548,10 +7549,6 @@ JS_PUBLIC_API JS::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj) {
     return Scalar::MaxTypedArrayViewType;
   }
   MOZ_CRASH("invalid ArrayBufferView type");
-}
-
-JS_PUBLIC_API size_t JS_MaxMovableTypedArraySize() {
-  return FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT;
 }
 
 namespace JS {
