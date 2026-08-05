@@ -3,6 +3,7 @@
 
 
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#include "mozilla/RoundedMulDiv.h"
 #include "mozilla/TimeStamp.h"
 #include <intrin.h>
 #include <windows.h>
@@ -25,6 +26,10 @@
 
 static double sTicksPerSecd;
 static double sTicksPerMsd;
+
+
+
+static uint64_t sQpcFrequency = 0;
 
 
 
@@ -52,6 +57,7 @@ static void InitConstants() {
   MOZ_RELEASE_ASSERT(hasQPC);
   sTicksPerSecd = double(freq.QuadPart);
   sTicksPerMsd = sTicksPerSecd / kMsPerSecd;
+  sQpcFrequency = static_cast<uint64_t>(freq.QuadPart);
 }
 
 
@@ -75,6 +81,14 @@ BaseTimeDurationPlatformUtils::TicksFromMilliseconds(double aMilliseconds) {
   }
 
   return (int64_t)result;
+}
+
+MFBT_API int64_t BaseTimeDurationPlatformUtils::ToTicksAtRate(int64_t aTicks,
+                                                              uint32_t aRate) {
+  
+  
+  
+  return RoundedMulDiv(aTicks, aRate, sQpcFrequency);
 }
 
 

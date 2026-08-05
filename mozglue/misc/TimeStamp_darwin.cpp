@@ -21,6 +21,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "mozilla/RoundedMulDiv.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Uptime.h"
 
@@ -30,6 +31,10 @@ static const double kNsPerSecd = 1000000000.0;
 
 static bool gInitialized = false;
 static double sNsPerTickd;
+
+
+static uint32_t sNumer = 0;
+static uint32_t sDenom = 0;
 
 static uint64_t ClockTime() {
   
@@ -64,6 +69,15 @@ int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
   return result;
 }
 
+int64_t BaseTimeDurationPlatformUtils::ToTicksAtRate(int64_t aTicks,
+                                                     uint32_t aRate) {
+  MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
+  
+  
+  return RoundedMulDiv(aTicks, static_cast<uint64_t>(sNumer) * aRate,
+                       static_cast<uint64_t>(sDenom) * 1000000000u);
+}
+
 void TimeStamp::Startup() {
   if (gInitialized) {
     return;
@@ -79,6 +93,8 @@ void TimeStamp::Startup() {
   }
 
   sNsPerTickd = double(timebaseInfo.numer) / timebaseInfo.denom;
+  sNumer = timebaseInfo.numer;
+  sDenom = timebaseInfo.denom;
 
   gInitialized = true;
 }
