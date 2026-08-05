@@ -99,7 +99,7 @@ class NrSocketBase {
   
   static int CreateSocket(nr_transport_addr* addr, RefPtr<NrSocketBase>* sock,
                           const std::shared_ptr<NrSocketProxyConfig>& config);
-  static bool IsForbiddenAddress(nr_transport_addr* addr);
+  static bool IsForbiddenAddress(const nr_transport_addr* addr);
 
   
   virtual int create(nr_transport_addr* addr) = 0;
