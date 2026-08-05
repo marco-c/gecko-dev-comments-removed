@@ -24,14 +24,15 @@ class FFmpegDecodeStats {
   void UpdateDecodeTimes(int64_t aDuration);
   bool IsDecodingSlow() const;
 
+  
+  static constexpr uint32_t kMaxLateDecodedFrames = 15;
+
  private:
   uint32_t mDecodedFrames = 0;
 
   double mAverageFrameDecodeTime = 0;  
   double mAverageFrameDuration = 0;    
 
-  
-  const uint32_t mMaxLateDecodedFrames = 15;
   
   uint32_t mDecodedFramesLate = 0;
 
