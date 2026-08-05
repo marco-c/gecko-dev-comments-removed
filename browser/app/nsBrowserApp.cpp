@@ -104,7 +104,9 @@ using namespace mozilla;
 
 #define kDesktopFolder "browser"
 
-#ifdef MOZ_BACKGROUNDTASKS
+
+
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
 static bool gIsBackgroundTask = false;
 #endif
 
@@ -179,7 +181,7 @@ static bool IsFlag(const char* arg, const char* s) {
   return false;
 }
 
-#ifdef MOZ_BACKGROUNDTASKS
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
 
 
 
@@ -340,7 +342,7 @@ int main(int argc, char* argv[], char* envp[]) {
   ReserveDefaultFileDescriptors();
 #endif
 
-#ifdef MOZ_BACKGROUNDTASKS
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
   
   
   gIsBackgroundTask = HasFlag(argc, argv, "backgroundtask");
