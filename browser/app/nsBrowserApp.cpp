@@ -518,6 +518,12 @@ int main(int argc, char* argv[], char* envp[]) {
   mozilla::freestanding::gSharedSection.ConvertToReadOnly();
 
   mozilla::CreateAndStorePreXULSkeletonUI(GetModuleHandle(nullptr), argc, argv);
+
+  
+  
+  
+  
+  ::LoadLibraryExW(L"cryptbase.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 #endif
 
   nsresult rv = InitXPCOMGlue(LibLoadingStrategy::ReadAhead);
