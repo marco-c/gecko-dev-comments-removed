@@ -2782,6 +2782,13 @@ void QuotaManager::UpdateOriginAccessed(const OriginMetadata& aOriginMetadata) {
 void QuotaManager::RemoveQuota() {
   AssertIsOnIOThread();
 
+  
+  
+  
+  
+  
+  mUsageModificationDisabled.store(true);
+
   MutexAutoLock lock(mQuotaMutex);
 
   for (const auto& entry : mGroupInfoPairs) {
@@ -2808,6 +2815,19 @@ void QuotaManager::RemoveQuota() {
   }
 
   mGroupInfoPairs.Clear();
+
+  
+  
+  
+  
+  
+  
+  RefPtr<OriginInfo> info;
+  while (true) {
+    if (!mDirtyOriginInfos.Pop(&info)) {
+      break;
+    }
+  }
 
   MOZ_ASSERT(mTemporaryStorageUsage == 0, "Should be zero!");
 }
@@ -7009,6 +7029,12 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitializedInternal() {
 }
 
 nsresult QuotaManager::InitializeFlushTimer() {
+  
+  
+  
+  
+  mUsageModificationDisabled.store(false);
+
   const uint32_t flushInterval = std::max(
       100u, StaticPrefs::dom_quotaManager_originMetadataFlushCheckIntervalMs());
   const auto originInfoFlushInterval =
@@ -7180,6 +7206,21 @@ nsresult QuotaManager::FlagOriginInfoAsDirtyOnDisk(
 
   const auto result = sharedState->WaitForResult();
   return result;
+}
+
+void QuotaManager::RegisterDirtyOriginInfo(
+    DirtyTrackingAutoLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(aProofOfLock.IsValid());
+
+  if (mUsageModificationDisabled.load()) {
+    return;
+  }
+
+  aProofOfLock.Touch();
+
+  auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
+  message->data = aProofOfLock.GetOriginInfo();
+  mDirtyOriginInfos.Push(message);
 }
 
 RefPtr<BoolPromise> QuotaManager::SaveOriginAccessTime(
@@ -7974,6 +8015,19 @@ void QuotaManager::LockedRemoveQuotaForRepository(
   mQuotaMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
 
+  nsTArray<RefPtr<OriginInfo>> remainingOriginInfos;
+  RefPtr<OriginInfo> originInfo;
+  while (mDirtyOriginInfos.Pop(&originInfo)) {
+    if (originInfo->GetGroupInfo()->GetPersistenceType() != aPersistenceType) {
+      remainingOriginInfos.AppendElement(std::move(originInfo));
+    }
+  }
+  for (auto& info : remainingOriginInfos) {
+    auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
+    message->data = std::move(info);
+    mDirtyOriginInfos.Push(message);
+  }
+
   for (auto iter = mGroupInfoPairs.Iter(); !iter.Done(); iter.Next()) {
     auto& pair = iter.Data();
 
@@ -8004,6 +8058,26 @@ void QuotaManager::LockedRemoveQuotaForOrigin(
 
   if (RefPtr<GroupInfo> groupInfo =
           pair->LockedGetGroupInfo(aOriginMetadata.mPersistenceType)) {
+    RefPtr<OriginInfo> originInfoToRemove =
+        groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
+
+    
+    
+    
+    nsTArray<RefPtr<OriginInfo>> skippedOriginInfos;
+    RefPtr<OriginInfo> originInfo;
+    while (mDirtyOriginInfos.Pop(&originInfo)) {
+      if (originInfo.get() == originInfoToRemove.get()) {
+        break;
+      }
+      skippedOriginInfos.AppendElement(std::move(originInfo));
+    }
+    for (auto& info : skippedOriginInfos) {
+      auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
+      message->data = std::move(info);
+      mDirtyOriginInfos.Push(message);
+    }
+
     groupInfo->LockedRemoveOriginInfo(aOriginMetadata.mOrigin);
 
     if (!groupInfo->LockedHasOriginInfos()) {
