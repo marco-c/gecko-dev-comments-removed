@@ -38,7 +38,7 @@ enum class SframeEncryptionLevel {
 
 
 
-struct SFrameDescriptor {
+struct SframeDescriptor {
   
   static constexpr size_t kSize = 1;
   

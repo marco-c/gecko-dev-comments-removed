@@ -27,14 +27,14 @@ namespace webrtc {
 class SframeRtpPacketReceived {
  public:
   SframeRtpPacketReceived(std::unique_ptr<RtpPacketReceived> packet,
-                          const SFrameDescriptor& descriptor)
+                          const SframeDescriptor& descriptor)
       : packet_(std::move(packet)), descriptor_(descriptor) {}
 
   const RtpPacketReceived& packet() const { return *packet_; }
   RtpPacketReceived& packet() { return *packet_; }
   std::unique_ptr<RtpPacketReceived> TakePacket() { return std::move(packet_); }
 
-  const SFrameDescriptor& descriptor() const { return descriptor_; }
+  const SframeDescriptor& descriptor() const { return descriptor_; }
 
   
   uint16_t SequenceNumber() const { return packet_->SequenceNumber(); }
@@ -43,7 +43,7 @@ class SframeRtpPacketReceived {
 
  private:
   std::unique_ptr<RtpPacketReceived> packet_;
-  SFrameDescriptor descriptor_;
+  SframeDescriptor descriptor_;
 };
 
 }  

@@ -31,9 +31,9 @@ using ::testing::ElementsAreArray;
 
 uint8_t MakeDescriptorByte(bool s, bool e, bool t) {
   std::bitset<8> bits;
-  bits.set(SFrameDescriptor::kSBit, s);
-  bits.set(SFrameDescriptor::kEBit, e);
-  bits.set(SFrameDescriptor::kTBit, t);
+  bits.set(SframeDescriptor::kSBit, s);
+  bits.set(SframeDescriptor::kEBit, e);
+  bits.set(SframeDescriptor::kTBit, t);
   return static_cast<uint8_t>(bits.to_ulong());
 }
 
