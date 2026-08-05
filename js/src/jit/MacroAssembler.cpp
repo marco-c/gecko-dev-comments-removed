@@ -5430,6 +5430,39 @@ void MacroAssembler::powPtr(Register base, Register power, Register dest,
   bind(&done);
 }
 
+void MacroAssembler::modDoubleIntegerFastPath(
+    FloatRegister lhs, FloatRegister rhs, FloatRegister output, Register temp1,
+    Register temp2, const LiveRegisterSet& volatileLiveRegs, Label* fail) {
+  MOZ_ASSERT(temp1 != temp2);
+
+  
+  
+  
+  
+  
+  
+  
+  convertDoubleToPtr(rhs, temp2, fail,  false);
+
+  
+  branchTestPtr(Assembler::Zero, temp2, temp2, fail);
+  branchPtr(Assembler::Equal, temp2, Imm32(-1), fail);
+
+  convertDoubleToPtr(lhs, temp1, fail,  false);
+
+  flexibleRemainderPtr(temp1, temp2, temp2,  false,
+                       volatileLiveRegs);
+
+  
+  
+  convertIntPtrToDouble(temp2, output);
+
+  
+  
+  
+  copySignDouble(output, lhs, output);
+}
+
 void MacroAssembler::signInt32(Register input, Register output) {
   MOZ_ASSERT(input != output);
 
