@@ -18,6 +18,7 @@
 
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/video/function_video_encoder_factory.h"
@@ -50,10 +51,7 @@
 
 namespace webrtc {
 namespace {
-enum : int {  
-  kVideoRotationExtensionId = 1,
-};
-}  
+constexpr RtpHeaderExtensionId kVideoRotationExtensionId(1);
 
 class RetransmissionEndToEndTest : public test::CallTest {
  public:
@@ -546,4 +544,5 @@ TEST_F(RetransmissionEndToEndTest, DecodesRetransmittedFrameByRedOverRtx) {
   DecodesRetransmittedFrame(true, true);
 }
 
+}  
 }  

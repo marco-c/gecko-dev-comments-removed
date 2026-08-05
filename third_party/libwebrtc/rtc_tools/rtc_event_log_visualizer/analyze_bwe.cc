@@ -30,6 +30,7 @@
 #include "api/field_trials.h"
 #include "api/function_view.h"
 #include "api/media_types.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/transport/bandwidth_usage.h"
 #include "api/transport/goog_cc_factory.h"
@@ -180,12 +181,13 @@ RtpPacketReceived RtpPacketForBWEFromHeader(const RTPHeader& header) {
   RtpHeaderExtensionMap rtp_header_extensions(true);
   
   
-  rtp_header_extensions.Register<TransmissionOffset>(1);
-  rtp_header_extensions.Register<AbsoluteSendTime>(2);
-  rtp_header_extensions.Register<TransportSequenceNumber>(3);
-  rtp_header_extensions.Register<FakeExtensionSmall>(4);
+  rtp_header_extensions.Register<TransmissionOffset>(RtpHeaderExtensionId(1));
+  rtp_header_extensions.Register<AbsoluteSendTime>(RtpHeaderExtensionId(2));
+  rtp_header_extensions.Register<TransportSequenceNumber>(
+      RtpHeaderExtensionId(3));
+  rtp_header_extensions.Register<FakeExtensionSmall>(RtpHeaderExtensionId(4));
   
-  rtp_header_extensions.Register<FakeExtensionLarge>(16);
+  rtp_header_extensions.Register<FakeExtensionLarge>(RtpHeaderExtensionId(16));
 
   RtpPacketReceived rtp_packet(&rtp_header_extensions);
   

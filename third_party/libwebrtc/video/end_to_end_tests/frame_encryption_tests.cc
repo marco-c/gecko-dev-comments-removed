@@ -13,6 +13,7 @@
 
 #include "api/environment/environment.h"
 #include "api/make_ref_counted.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "api/test/fake_frame_decryptor.h"
 #include "api/test/fake_frame_encryptor.h"
@@ -37,9 +38,7 @@ namespace {
 
 using FrameEncryptionEndToEndTest = test::CallTest;
 
-enum : int {  
-  kGenericDescriptorExtensionId = 1,
-};
+constexpr RtpHeaderExtensionId kGenericDescriptorExtensionId(1);
 
 class DecryptedFrameObserver : public test::EndToEndTest,
                                public VideoSinkInterface<VideoFrame> {
