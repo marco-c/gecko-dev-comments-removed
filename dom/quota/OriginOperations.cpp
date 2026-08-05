@@ -3652,8 +3652,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (created) {
     
 
-    const auto [timestamp, maintenanceDate, accessed] = [&aQuotaManager,
-                                                         &originMetadata]() {
+    FullOriginMetadata fullOriginMetadata =
+        [&aQuotaManager, &originMetadata]() -> FullOriginMetadata {
       
       if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
         if (aQuotaManager.IsTemporaryOriginInitializedInternal(
@@ -3663,33 +3663,28 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
           
           
 
-          return aQuotaManager.WithOriginInfo(
+          auto metadata = aQuotaManager.WithOriginInfo(
               originMetadata, [](const auto& originInfo) {
-                const int64_t timestamp = originInfo->LockedAccessTime();
-                const int32_t maintenanceDate =
-                    originInfo->LockedMaintenanceDate();
-                const bool accessed = originInfo->LockedAccessed();
-
+                auto metadata = originInfo->LockedFlattenToFullOriginMetadata();
                 originInfo->LockedDirectoryCreated();
-
-                return std::make_tuple(timestamp, maintenanceDate, accessed);
+                return metadata;
               });
+
+          metadata.mPersisted = true;
+          return metadata;
         }
       }
 
       const int64_t timestamp = PR_Now();
 
-      return std::make_tuple(
-           timestamp,
-           Date::FromTimestamp(timestamp).ToDays(),
-           false);
+      return FullOriginMetadata{
+          originMetadata,
+          OriginStateMetadata{timestamp,
+                              Date::FromTimestamp(timestamp).ToDays(),
+                               false,  true,
+                               false},
+          ClientUsageArray(),  0, kCurrentQuotaVersion};
     }();
-
-    FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
-        originMetadata,
-        OriginStateMetadata{timestamp, maintenanceDate, accessed,
-                             true,  false},
-        ClientUsageArray(),  0, kCurrentQuotaVersion};
 
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
       
