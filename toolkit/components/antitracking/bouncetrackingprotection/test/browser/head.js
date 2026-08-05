@@ -227,7 +227,60 @@ async function navigateLinkClick(
 
 
 
-async function waitForRecordBounces(browser) {
+
+
+async function navigateSystemPrincipalLoad(browser, targetURL) {
+  BrowserTestUtils.startLoadingURIString(browser, targetURL.href);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function navigateContentParentLoad(
+  browser,
+  targetURL,
+  hasUserActivation = true
+) {
+  await SpecialPowers.spawn(
+    browser,
+    [targetURL.href, hasUserActivation],
+    async (targetURL, hasUserActivation) => {
+      if (hasUserActivation) {
+        SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+        content.document.userInteractionForTesting();
+      }
+      content.location.href = targetURL;
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForRecordBounces(browser, minCandidateCount = 1) {
   let { browserId } = browser.browsingContext;
   info(
     `waitForRecordBounces: Waiting for record bounces for browser: ${browserId}.`
@@ -238,7 +291,12 @@ async function waitForRecordBounces(browser) {
     subject => {
       
       let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
-      return browserId == propBag.getProperty("browserId");
+      if (browserId != propBag.getProperty("browserId")) {
+        return false;
+      }
+      return (
+        propBag.getProperty("bounceTrackerCandidateCount") >= minCandidateCount
+      );
     }
   );
 
@@ -391,7 +449,14 @@ async function runTestBounce(options = {}) {
 
   let promiseRecordBounces;
   if (expectRecordBounces) {
-    promiseRecordBounces = waitForRecordBounces(browser);
+    
+    
+    
+    
+    promiseRecordBounces = waitForRecordBounces(
+      browser,
+      expectCandidate ? 1 : 0
+    );
   }
 
   

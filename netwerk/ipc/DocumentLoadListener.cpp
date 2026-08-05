@@ -941,6 +941,34 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   }
 
   
+  
+  
+  
+  
+  
+  
+  if (mIsDocumentLoad && documentContext && documentContext->IsTopContent()) {
+    RefPtr<BounceTrackingState> bounceTrackingState =
+        documentContext->GetBounceTrackingState();
+
+    
+    
+    if (bounceTrackingState) {
+      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+      nsresult rv = aLoadInfo->GetTriggeringPrincipal(
+          getter_AddRefs(triggeringPrincipal));
+
+      if (!NS_WARN_IF(NS_FAILED(rv))) {
+        DebugOnly<nsresult> rv = bounceTrackingState->OnStartNavigation(
+            triggeringPrincipal, aLoadInfo->GetHasValidUserGestureActivation(),
+            mLoadIdentifier);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "BounceTrackingState::OnStartNavigation failed");
+      }
+    }
+  }
+
+  
   MOZ_ASSERT(!aLoadState->GetPendingRedirectedChannel());
   uint32_t openFlags = nsDocShell::ComputeURILoaderFlags(
       loadingContext, aLoadState->LoadType(), mIsDocumentLoad);
@@ -1095,27 +1123,6 @@ auto DocumentLoadListener::OpenDocument(
   
   RefPtr<LoadInfo> loadInfo =
       CreateDocumentLoadInfo(browsingContext, aLoadState);
-
-  
-  if (browsingContext->IsTopContent()) {
-    RefPtr<BounceTrackingState> bounceTrackingState =
-        browsingContext->GetBounceTrackingState();
-
-    
-    
-    if (bounceTrackingState) {
-      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-      nsresult rv =
-          loadInfo->GetTriggeringPrincipal(getter_AddRefs(triggeringPrincipal));
-
-      if (!NS_WARN_IF(NS_FAILED(rv))) {
-        DebugOnly<nsresult> rv = bounceTrackingState->OnStartNavigation(
-            triggeringPrincipal, loadInfo->GetHasValidUserGestureActivation());
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "BounceTrackingState::OnStartNavigation failed");
-      }
-    }
-  }
 
   return Open(aLoadState, loadInfo, aLoadFlags, aCacheKey, aChannelId,
               aAsyncOpenTime, aTiming, std::move(aInfo), false, aContentParent,
@@ -2876,9 +2883,11 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     
     
     if (bounceTrackingState) {
-      
-      
-      (void)bounceTrackingState->OnDocumentStartRequest(mChannel);
+      DebugOnly<nsresult> rv =
+          bounceTrackingState->OnDocumentStartRequest(mChannel);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "BounceTrackingState::OnDocumentStartRequest failed");
 
       DynamicFpiNavigationHeuristic::MaybeGrantStorageAccess(loadingContext,
                                                              mChannel);

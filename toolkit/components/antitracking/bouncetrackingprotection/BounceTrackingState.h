@@ -6,6 +6,7 @@
 #define mozilla_BounceTrackingState_h
 
 #include "BounceTrackingRecord.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/OriginAttributes.h"
@@ -78,9 +79,14 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   
+  
+  
+  
+  
+  
   [[nodiscard]] nsresult OnStartNavigation(
       nsIPrincipal* aTriggeringPrincipal,
-      const bool aHasValidUserGestureActivation);
+      const bool aHasValidUserGestureActivation, uint64_t aLoadId);
 
   
   
@@ -129,6 +135,12 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   RefPtr<BounceTrackingRecord> mBounceTrackingRecord;
+
+  
+  
+  
+  
+  Maybe<uint64_t> mLastStartedLoadId;
 
   
   RefPtr<nsITimer> mClientBounceDetectionTimeout;

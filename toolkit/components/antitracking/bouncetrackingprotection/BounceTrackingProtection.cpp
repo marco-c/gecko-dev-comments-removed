@@ -402,6 +402,13 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
         u"browserId"_ns, aBounceTrackingState->GetBrowserId());
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    
+    
+    rv = props->SetPropertyAsUint32(u"bounceTrackerCandidateCount"_ns,
+                                    classifiedHosts.Length());
+    NS_ENSURE_SUCCESS(rv, rv);
+
     rv = obsSvc->NotifyObservers(
         ToSupports(props), TEST_OBSERVER_MSG_RECORD_BOUNCES_FINISHED, nullptr);
     NS_ENSURE_SUCCESS(rv, rv);

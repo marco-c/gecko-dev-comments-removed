@@ -633,8 +633,21 @@ BounceTrackingState::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
 
 nsresult BounceTrackingState::OnStartNavigation(
     nsIPrincipal* aTriggeringPrincipal,
-    const bool aHasValidUserGestureActivation) {
+    const bool aHasValidUserGestureActivation, uint64_t aLoadId) {
   NS_ENSURE_ARG_POINTER(aTriggeringPrincipal);
+
+  
+  
+  
+  
+  
+  if (aLoadId != 0 && mLastStartedLoadId == Some(aLoadId)) {
+    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                "{}: skipping duplicate call for load id {}", __FUNCTION__,
+                aLoadId);
+    return NS_OK;
+  }
+  mLastStartedLoadId = Some(aLoadId);
 
   
   if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Debug)) {
@@ -752,11 +765,10 @@ nsresult BounceTrackingState::OnResponseReceived(
 
   
   
-  if (!mBounceTrackingRecord) {
+  if (NS_WARN_IF(!mBounceTrackingRecord)) {
     return NS_ERROR_FAILURE;
   }
 
-  
   
   
   if (mClientBounceDetectionTimeout) {
@@ -841,7 +853,8 @@ nsresult BounceTrackingState::OnDocumentLoaded(
 
   
   
-  if (!mBounceTrackingRecord) {
+  
+  if (NS_WARN_IF(!mBounceTrackingRecord)) {
     return NS_ERROR_FAILURE;
   }
 
