@@ -195,7 +195,8 @@ class Pickle {
   bool WriteData(const char* data, uint32_t length);
 
   
-  bool WriteBytesZeroCopy(void* data, uint32_t data_len, uint32_t capacity);
+  
+  bool WriteBytesZeroCopy(void* data, size_t data_len, size_t capacity);
 
   bool WriteSentinel(uint32_t sentinel)
 #ifdef MOZ_PICKLE_SENTINEL_CHECKING
@@ -249,18 +250,19 @@ class Pickle {
   
   template <uint32_t alignment>
   struct ConstantAligner {
-    static uint32_t align(int bytes) {
+    static uint32_t align(size_t bytes) {
       static_assert((alignment & (alignment - 1)) == 0,
                     "alignment must be a power of two");
+      MOZ_RELEASE_ASSERT(bytes <= UINT32_MAX - (alignment - 1));
       return (bytes + (alignment - 1)) & ~static_cast<uint32_t>(alignment - 1);
     }
   };
 
-  static uint32_t AlignInt(int bytes) {
+  static uint32_t AlignInt(size_t bytes) {
     return ConstantAligner<sizeof(memberAlignmentType)>::align(bytes);
   }
 
-  static uint32_t AlignCapacity(int bytes) {
+  static uint32_t AlignCapacity(size_t bytes) {
     return ConstantAligner<kSegmentAlignment>::align(bytes);
   }
 

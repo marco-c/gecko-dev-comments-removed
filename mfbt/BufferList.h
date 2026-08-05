@@ -369,7 +369,7 @@ class BufferList : private AllocPolicy {
   [[nodiscard]] bool WriteBytesZeroCopy(char* aData, size_t aSize,
                                         size_t aCapacity) {
     MOZ_ASSERT(mOwning);
-    MOZ_ASSERT(aSize <= aCapacity);
+    MOZ_RELEASE_ASSERT(aSize <= aCapacity);
 
     
     
@@ -458,6 +458,7 @@ char* BufferList<AllocPolicy>::AllocateBytes(size_t aMaxSize, size_t* aSize) {
   if (!mSegments.empty()) {
     Segment& lastSegment = mSegments.back();
 
+    MOZ_RELEASE_ASSERT(lastSegment.mCapacity >= lastSegment.mSize);
     size_t capacity = lastSegment.mCapacity - lastSegment.mSize;
     if (capacity) {
       size_t size = std::min(aMaxSize, capacity);
