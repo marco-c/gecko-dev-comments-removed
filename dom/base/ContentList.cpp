@@ -983,7 +983,6 @@ LabelsNodeList::LabelsNodeList(nsGenericHTMLElement* aLabeledElement,
                                nsContentListMatchFunc aMatchFunc,
                                nsContentListDestroyFunc aDestroyFunc)
     : ContentList(aSubtreeRoot, aMatchFunc, aDestroyFunc, aLabeledElement) {
-  WatchLabeledDescendantsOfNearestAncestorLabel(aLabeledElement);
   if (auto* shadow = ShadowRoot::FromNodeOrNull(aSubtreeRoot)) {
     shadow->Host()->AddReferenceTargetChangeObserver(ResetRootsCallback, this);
   }
@@ -1079,35 +1078,6 @@ bool LabelsNodeList::ResetRootsCallback(void* aData) {
   return true;
 }
 
-
-bool LabelsNodeList::SetDirtyCallback(void* aData) {
-  auto* list = (LabelsNodeList*)aData;
-  list->SetDirty();
-  return true;
-}
-
-void LabelsNodeList::WatchLabeledDescendantsOfNearestAncestorLabel(
-    Element* aLabeledHost) {
-  MOZ_ASSERT(aLabeledHost);
-  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
-    return;
-  }
-  auto* label = aLabeledHost->FirstAncestorOfType<HTMLLabelElement>();
-  if (!label) {
-    return;
-  }
-  
-  
-  if (Element* labeledElement = label->GetControlForBindings()) {
-    if (labeledElement != aLabeledHost) {
-      
-      
-      
-      labeledElement->AddReferenceTargetChangeObserver(SetDirtyCallback, this);
-    }
-  }
-}
-
 void LabelsNodeList::ResetRoots() {
   MOZ_ASSERT(mIsLiveList, "LabelsNodeList is always a live list");
 
@@ -1128,7 +1098,6 @@ void LabelsNodeList::ResetRoots() {
       break;
     }
     labeledElementOrHost = shadowRoot->Host();
-    WatchLabeledDescendantsOfNearestAncestorLabel(labeledElementOrHost);
     shadowRoot = labeledElementOrHost->GetContainingShadow();
   }
 
