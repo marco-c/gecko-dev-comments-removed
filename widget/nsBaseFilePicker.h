@@ -6,7 +6,6 @@
 #ifndef nsBaseFilePicker_h_
 #define nsBaseFilePicker_h_
 
-#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsIFilePicker.h"
 #include "nsISupports.h"
@@ -57,13 +56,6 @@ class nsBaseFilePicker : public nsIFilePicker {
 
   nsIGlobalObject* GetRelevantGlobal() const;
 
-  
-  
-  
-  static bool IsWithinInputProtectionTimeRange(mozilla::TimeStamp aShowTime,
-                                               mozilla::TimeStamp aNow,
-                                               uint32_t aProtectionMs);
-
  protected:
   virtual ~nsBaseFilePicker();
 
@@ -71,24 +63,6 @@ class nsBaseFilePicker : public nsIFilePicker {
 
   virtual nsresult ResolveSpecialDirectory(const nsAString& aSpecialDirectory);
   bool MaybeBlockFilePicker(nsIFilePickerShownCallback* aCallback);
-
-  
-  
-  void RecordLastShownTime() { mShowTime = mozilla::TimeStamp::Now(); }
-
-  
-  
-  
-  
-  
-  bool IsPickerInputProtected() const;
-
-  
-  
-  
-  
-  
-  bool IsContentInitiated() const;
 
   bool mAddToRecentDocs = true;
   nsCOMPtr<nsIFile> mDisplayDirectory;
@@ -99,7 +73,6 @@ class nsBaseFilePicker : public nsIFilePicker {
   nsIFilePicker::Mode mMode = nsIFilePicker::modeOpen;
   nsString mOkButtonLabel;
   nsTArray<nsString> mRawFilters;
-  mozilla::TimeStamp mShowTime;
 };
 
 #endif  

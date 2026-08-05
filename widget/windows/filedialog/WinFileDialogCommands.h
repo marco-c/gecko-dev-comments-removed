@@ -258,18 +258,13 @@ void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
 }  
 
 
-
-
 RefPtr<Promise<Maybe<Results>>> SpawnFilePicker(HWND parent,
                                                 FileDialogType type,
-                                                nsTArray<Command> commands,
-                                                bool aNeedsInputProtection);
-
+                                                nsTArray<Command> commands);
 
 
 RefPtr<Promise<Maybe<nsString>>> SpawnFolderPicker(HWND parent,
-                                                   nsTArray<Command> commands,
-                                                   bool aNeedsInputProtection);
+                                                   nsTArray<Command> commands);
 
 }  
 
