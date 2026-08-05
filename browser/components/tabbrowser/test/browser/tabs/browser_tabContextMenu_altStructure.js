@@ -22,6 +22,13 @@ ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
 const ALT_PREF = "browser.tabs.contextmenu.altstructure.enabled";
 
 add_setup(async function () {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.openSidebarOnProviderChange", false]],
+  });
   await SpecialPowers.pushPrefEnv({
     set: [
       [ALT_PREF, true],
