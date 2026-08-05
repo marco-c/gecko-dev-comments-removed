@@ -1594,7 +1594,8 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
         if (!FindInReadable(accesskey, start, end)) {
           start = originalStart;
           
-          found = CaseInsensitiveFindInReadable(accesskey, start, end);
+          found = FindInReadable(accesskey, start, end,
+                                 nsCaseInsensitiveStringComparator);
         }
         if (!found) {
           return Nothing();

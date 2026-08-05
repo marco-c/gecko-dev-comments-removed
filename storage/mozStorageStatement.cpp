@@ -148,20 +148,21 @@ nsresult Statement::initialize(Connection* aDBConnection,
   
   
   
+  auto c = nsCaseInsensitiveCStringComparator;
   nsACString::const_iterator start, end, e;
   aSQLStatement.BeginReading(start);
   aSQLStatement.EndReading(end);
   e = end;
-  while (::CaseInsensitiveFindInReadable(" LIKE"_ns, start, e)) {
+  while (::FindInReadable(" LIKE"_ns, start, e, c)) {
     
     
     
     nsACString::const_iterator s1, s2, s3;
     s1 = s2 = s3 = start;
 
-    if (!(::CaseInsensitiveFindInReadable(" LIKE ?"_ns, s1, end) ||
-          ::CaseInsensitiveFindInReadable(" LIKE :"_ns, s2, end) ||
-          ::CaseInsensitiveFindInReadable(" LIKE @"_ns, s3, end))) {
+    if (!(::FindInReadable(" LIKE ?"_ns, s1, end, c) ||
+          ::FindInReadable(" LIKE :"_ns, s2, end, c) ||
+          ::FindInReadable(" LIKE @"_ns, s3, end, c))) {
       
       
       

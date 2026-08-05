@@ -100,7 +100,8 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
   nsAutoCString::const_iterator start, end;
   appBinaryPath.BeginReading(start);
   appBinaryPath.EndReading(end);
-  if (CaseInsensitiveRFindInReadable(pattern, start, end)) {
+  if (RFindInReadable(pattern, start, end,
+                      nsCaseInsensitiveCStringComparator)) {
     end = start;
     appBinaryPath.BeginReading(start);
 
@@ -108,7 +109,8 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
     
     
     if (!XRE_IsParentProcess()) {
-      if (CaseInsensitiveRFindInReadable(pattern, start, end)) {
+      if (RFindInReadable(pattern, start, end,
+                          nsCaseInsensitiveCStringComparator)) {
         end = start;
         appBinaryPath.BeginReading(start);
       } else {

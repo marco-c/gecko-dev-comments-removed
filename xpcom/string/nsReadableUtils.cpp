@@ -4,14 +4,11 @@
 
 #include "nsReadableUtils.h"
 
-#include <algorithm>
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Utf16.h"
 #include "mozilla/Utf8.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsUnicharUtils.h"
 #include "nscore.h"
 
 using mozilla::Span;
@@ -288,162 +285,163 @@ void ParseString(const nsACString& aSource, char aDelimiter,
   }
 }
 
-namespace {
+template <class StringT, class IteratorT>
+bool FindInReadable_Impl(
+    const StringT& aPattern, IteratorT& aSearchStart, IteratorT& aSearchEnd,
+    nsTStringComparator<typename StringT::char_type> aCompare) {
+  bool found_it = false;
 
-struct AsciiCaseInsensitiveComparator {
-  template <typename CharT>
-  bool operator()(CharT aLhs, CharT aRhs) const {
-    return nsCharTraits<CharT>::ASCIIToLower(aLhs) ==
-           nsCharTraits<CharT>::ASCIIToLower(aRhs);
+  
+  if (aSearchStart != aSearchEnd) {
+    IteratorT aPatternStart, aPatternEnd;
+    aPattern.BeginReading(aPatternStart);
+    aPattern.EndReading(aPatternEnd);
+
+    
+    while (!found_it) {
+      
+      
+      while (aSearchStart != aSearchEnd &&
+             aCompare(aPatternStart.get(), aSearchStart.get(), 1, 1)) {
+        ++aSearchStart;
+      }
+
+      
+      
+      if (aSearchStart == aSearchEnd) {
+        break;
+      }
+
+      
+      IteratorT testPattern(aPatternStart);
+      IteratorT testSearch(aSearchStart);
+
+      
+      
+      for (;;) {
+        
+        
+        ++testPattern;
+        ++testSearch;
+
+        
+        
+        if (testPattern == aPatternEnd) {
+          found_it = true;
+          aSearchEnd = testSearch;  
+                                    
+          break;
+        }
+
+        
+        
+        
+        if (testSearch == aSearchEnd) {
+          aSearchStart = aSearchEnd;
+          break;
+        }
+
+        
+        
+        
+        if (aCompare(testPattern.get(), testSearch.get(), 1, 1)) {
+          ++aSearchStart;
+          break;
+        }
+      }
+    }
   }
-};
 
-struct CaseInsensitiveComparator {
-  bool operator()(char16_t aLhs, char16_t aRhs) const {
-    return aLhs == aRhs || ToLowerCase(aLhs) == ToLowerCase(aRhs);
+  return found_it;
+}
+
+
+
+
+
+template <class StringT, class IteratorT>
+bool RFindInReadable_Impl(
+    const StringT& aPattern, IteratorT& aSearchStart, IteratorT& aSearchEnd,
+    nsTStringComparator<typename StringT::char_type> aCompare) {
+  IteratorT patternStart, patternEnd, searchEnd = aSearchEnd;
+  aPattern.BeginReading(patternStart);
+  aPattern.EndReading(patternEnd);
+
+  
+  --patternEnd;
+  
+  while (aSearchStart != searchEnd) {
+    
+    --searchEnd;
+
+    
+    if (aCompare(patternEnd.get(), searchEnd.get(), 1, 1) == 0) {
+      
+      IteratorT testPattern(patternEnd);
+      IteratorT testSearch(searchEnd);
+
+      
+      do {
+        
+        
+        if (testPattern == patternStart) {
+          aSearchStart = testSearch;  
+          aSearchEnd = ++searchEnd;   
+          return true;
+        }
+
+        
+        
+        
+        if (testSearch == aSearchStart) {
+          aSearchStart = aSearchEnd;
+          return false;
+        }
+
+        
+        --testPattern;
+        --testSearch;
+      } while (aCompare(testPattern.get(), testSearch.get(), 1, 1) == 0);
+    }
   }
-};
 
-
-
-
-
-template <typename StringT, typename Search>
-bool SearchInReadable(const StringT& aPattern,
-                      typename StringT::const_iterator& aSearchStart,
-                      typename StringT::const_iterator& aSearchEnd,
-                      Search aSearch) {
-  const auto* begin = aSearchStart.get();
-  const auto* end = aSearchEnd.get();
-  const auto* result = aSearch(begin, end);
-  if (result == end) {
-    aSearchStart = aSearchEnd;
-    return false;
-  }
-  aSearchStart.advance(result - begin);
-  aSearchEnd = aSearchStart;
-  aSearchEnd.advance(aPattern.Length());
-  return true;
+  aSearchStart = aSearchEnd;
+  return false;
 }
-
-template <typename StringT, typename Comparator>
-bool FindInReadableWith(const StringT& aPattern,
-                        typename StringT::const_iterator& aSearchStart,
-                        typename StringT::const_iterator& aSearchEnd,
-                        Comparator aComparator) {
-  return SearchInReadable(aPattern, aSearchStart, aSearchEnd,
-                          [&](const auto* aBegin, const auto* aEnd) {
-                            return std::search(
-                                aBegin, aEnd, aPattern.BeginReading(),
-                                aPattern.EndReading(), aComparator);
-                          });
-}
-
-template <typename StringT, typename Comparator>
-bool RFindInReadableWith(const StringT& aPattern,
-                         typename StringT::const_iterator& aSearchStart,
-                         typename StringT::const_iterator& aSearchEnd,
-                         Comparator aComparator) {
-  return SearchInReadable(aPattern, aSearchStart, aSearchEnd,
-                          [&](const auto* aBegin, const auto* aEnd) {
-                            return std::find_end(
-                                aBegin, aEnd, aPattern.BeginReading(),
-                                aPattern.EndReading(), aComparator);
-                          });
-}
-
-template <typename StringT>
-bool FindInReadableImpl(const StringT& aPattern,
-                        typename StringT::const_iterator& aSearchStart,
-                        typename StringT::const_iterator& aSearchEnd) {
-  using CharT = typename StringT::char_type;
-  return SearchInReadable(
-      aPattern, aSearchStart, aSearchEnd,
-      [&](const CharT* aBegin, const CharT* aEnd) {
-        std::basic_string_view<CharT> haystack(aBegin, aEnd - aBegin);
-        std::basic_string_view<CharT> needle(aPattern.BeginReading(),
-                                             aPattern.Length());
-        size_t index = haystack.find(needle);
-        return index == haystack.npos ? aEnd : aBegin + index;
-      });
-}
-
-template <typename StringT>
-bool RFindInReadableImpl(const StringT& aPattern,
-                         typename StringT::const_iterator& aSearchStart,
-                         typename StringT::const_iterator& aSearchEnd) {
-  using CharT = typename StringT::char_type;
-  return SearchInReadable(
-      aPattern, aSearchStart, aSearchEnd,
-      [&](const CharT* aBegin, const CharT* aEnd) {
-        std::basic_string_view<CharT> haystack(aBegin, aEnd - aBegin);
-        std::basic_string_view<CharT> needle(aPattern.BeginReading(),
-                                             aPattern.Length());
-        size_t index = haystack.rfind(needle);
-        return index == haystack.npos ? aEnd : aBegin + index;
-      });
-}
-
-}  
 
 bool FindInReadable(const nsAString& aPattern,
                     nsAString::const_iterator& aSearchStart,
-                    nsAString::const_iterator& aSearchEnd) {
-  return FindInReadableImpl(aPattern, aSearchStart, aSearchEnd);
+                    nsAString::const_iterator& aSearchEnd,
+                    nsStringComparator aComparator) {
+  return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
 bool FindInReadable(const nsACString& aPattern,
                     nsACString::const_iterator& aSearchStart,
-                    nsACString::const_iterator& aSearchEnd) {
-  return FindInReadableImpl(aPattern, aSearchStart, aSearchEnd);
+                    nsACString::const_iterator& aSearchEnd,
+                    nsCStringComparator aComparator) {
+  return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
 bool CaseInsensitiveFindInReadable(const nsACString& aPattern,
                                    nsACString::const_iterator& aSearchStart,
                                    nsACString::const_iterator& aSearchEnd) {
-  return FindInReadableWith(aPattern, aSearchStart, aSearchEnd,
-                            AsciiCaseInsensitiveComparator());
-}
-
-bool CaseInsensitiveFindInReadable(const nsAString& aPattern,
-                                   nsAString::const_iterator& aSearchStart,
-                                   nsAString::const_iterator& aSearchEnd) {
-  return FindInReadableWith(aPattern, aSearchStart, aSearchEnd,
-                            CaseInsensitiveComparator());
-}
-
-bool AsciiCaseInsensitiveFindInReadable(
-    const nsACString& aPattern, nsACString::const_iterator& aSearchStart,
-    nsACString::const_iterator& aSearchEnd) {
-  
-  return FindInReadableWith(aPattern, aSearchStart, aSearchEnd,
-                            AsciiCaseInsensitiveComparator());
-}
-
-bool AsciiCaseInsensitiveFindInReadable(const nsAString& aPattern,
-                                        nsAString::const_iterator& aSearchStart,
-                                        nsAString::const_iterator& aSearchEnd) {
-  return FindInReadableWith(aPattern, aSearchStart, aSearchEnd,
-                            AsciiCaseInsensitiveComparator());
+  return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd,
+                             nsCaseInsensitiveCStringComparator);
 }
 
 bool RFindInReadable(const nsAString& aPattern,
                      nsAString::const_iterator& aSearchStart,
-                     nsAString::const_iterator& aSearchEnd) {
-  return RFindInReadableImpl(aPattern, aSearchStart, aSearchEnd);
+                     nsAString::const_iterator& aSearchEnd,
+                     const nsStringComparator aComparator) {
+  return RFindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
 bool RFindInReadable(const nsACString& aPattern,
                      nsACString::const_iterator& aSearchStart,
-                     nsACString::const_iterator& aSearchEnd) {
-  return RFindInReadableImpl(aPattern, aSearchStart, aSearchEnd);
-}
-
-bool CaseInsensitiveRFindInReadable(const nsACString& aPattern,
-                                    nsACString::const_iterator& aSearchStart,
-                                    nsACString::const_iterator& aSearchEnd) {
-  return RFindInReadableWith(aPattern, aSearchStart, aSearchEnd,
-                             AsciiCaseInsensitiveComparator());
+                     nsACString::const_iterator& aSearchEnd,
+                     const nsCStringComparator aComparator) {
+  return RFindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
 bool FindCharInReadable(char16_t aChar, nsAString::const_iterator& aSearchStart,
