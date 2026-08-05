@@ -29,6 +29,7 @@ ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "aboutwelcome",
     "bounceTrackingProtection",
     "newtab",
+    "opaqueResponseBlocking",  
     "pocketNewtab",
     "preonboarding",
     "testFeature",
