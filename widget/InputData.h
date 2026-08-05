@@ -9,6 +9,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MouseEvents.h"  
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
@@ -204,6 +205,11 @@ class SingleTouchData {
   int32_t mTiltX = 0;
   int32_t mTiltY = 0;
   int32_t mTwist = 0;
+
+  
+  
+  
+  Maybe<WidgetPointerHelper::Angle> mAngle;
 };
 
 
