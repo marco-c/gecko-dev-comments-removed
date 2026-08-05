@@ -133,19 +133,16 @@ void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
 
 void SVGAnimatedViewBox::SetBaseField(float aValue, SVGElement* aSVGElement,
                                       float& aField) {
-  if (!mHasBaseVal) {
-    aField = aValue;
-    return;
-  }
   
   
   
-  if (!mBaseVal.none && aField == aValue) {
+  if (mHasBaseVal && !mBaseVal.none && aField == aValue) {
     return;
   }
   AutoChangeViewBoxNotifier notifier(this, aSVGElement);
   aField = aValue;
   mBaseVal.none = false;
+  mHasBaseVal = true;
 }
 
 void SVGAnimatedViewBox::SetBaseValue(const SVGViewBox& aRect,
