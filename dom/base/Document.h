@@ -3061,6 +3061,8 @@ class Document : public nsINode,
 
   
   
+  SpeculationRulesManager* EnsureSpeculationRulesManager();
+
   
   
   SpeculationRulesManager* GetSpeculationRulesManager() const {

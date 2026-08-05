@@ -11,10 +11,8 @@
 
 namespace mozilla::dom {
 
-
-
-
-
+class Document;
+struct PrefetchCandidate;
 
 
 
@@ -28,6 +26,16 @@ class SpeculationRulesManager final {
 
   
   void RemoveRecord(PrefetchRecordChild* aRecord);
+
+  
+  void StartPrefetch(Document* aDocument, const PrefetchCandidate& aCandidate);
+
+  
+  
+  
+  
+  void CancelStalePrefetches(
+      const nsTArray<PrefetchCandidate>& aStillSpeculated);
 
  private:
   

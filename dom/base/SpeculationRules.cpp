@@ -9,6 +9,7 @@
 #include "mozilla/dom/PrefetchCandidates.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/SpeculationRuleSet.h"
+#include "mozilla/dom/SpeculationRulesManager.h"
 #include "mozilla/dom/speculationrules_ffi_generated.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIScriptElement.h"
@@ -124,8 +125,9 @@ void SpeculationRules::InnerConsiderLoads() {
   }
 
   
-  
-  
+  if (SpeculationRulesManager* srm = mDocument->GetSpeculationRulesManager()) {
+    srm->CancelStalePrefetches(prefetchCandidates->AsArray());
+  }
 
   
   
@@ -135,10 +137,9 @@ void SpeculationRules::InnerConsiderLoads() {
   
   
   
-  for ([[maybe_unused]] PrefetchCandidate& candidate :
-       prefetchCandidates->AsArray()) {
-    
-    
+  SpeculationRulesManager* srm = mDocument->EnsureSpeculationRulesManager();
+  for (PrefetchCandidate& candidate : prefetchCandidates->AsArray()) {
+    srm->StartPrefetch(mDocument, candidate);
   }
 }
 
