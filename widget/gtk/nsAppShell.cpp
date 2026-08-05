@@ -70,9 +70,6 @@ LazyLogModule gWidgetCompositorLog("WidgetCompositor");
 static GPollFunc sPollFunc;
 
 nsAppShell* nsAppShell::sAppShell = nullptr;
-#ifdef MOZ_ENABLE_DBUS
-bool sNotificationDaemonRunning = false;
-#endif
 
 
 static gint PollWrapper(GPollFD* aUfds, guint aNfsd, gint aTimeout) {
@@ -324,10 +321,6 @@ void nsAppShell::SetSystemDBus(GDBusConnection* aDBusConnectionSystem) {
   }
 }
 
-bool nsAppShell::IsNotificationDaemonRunning() {
-  return sNotificationDaemonRunning;
-}
-
 
 
 
@@ -397,17 +390,6 @@ void nsAppShell::StartDBusListening() {
         },
         this);
   }
-
-  mNotificationDaemonWatchId = g_bus_watch_name(
-      G_BUS_TYPE_SESSION, "org.freedesktop.Notifications",
-      G_BUS_NAME_WATCHER_FLAGS_NONE,
-      [](GDBusConnection*, const gchar*, const gchar*, gpointer) -> void {
-        sNotificationDaemonRunning = true;
-      },
-      [](GDBusConnection*, const gchar*, gpointer) -> void {
-        sNotificationDaemonRunning = false;
-      },
-      nullptr, nullptr);
 }
 
 void nsAppShell::StopDBusListening() {
@@ -442,11 +424,6 @@ void nsAppShell::StopDBusListening() {
   }
   mDBusConnectionSession = nullptr;
   mDBusConnectionSystem = nullptr;
-
-  if (mNotificationDaemonWatchId) {
-    g_bus_unwatch_name(mNotificationDaemonWatchId);
-    mNotificationDaemonWatchId = 0;
-  }
 }
 #endif
 
