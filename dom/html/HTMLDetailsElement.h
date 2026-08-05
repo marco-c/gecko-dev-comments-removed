@@ -72,7 +72,7 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
   void OnChildUnslotted(ShadowRoot&, nsIContent&) override;
 
   
-  void CloseElementIfNeeded();
+  void CloseElementIfNeeded(nsAtom* aName);
 
   
   void CloseOtherElementsIfNeeded();
