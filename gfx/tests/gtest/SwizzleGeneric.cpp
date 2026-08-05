@@ -3,6 +3,7 @@
 
 
 #include "SwizzleGeneric.h"
+
 #include "SwizzleHelpers.h"
 
 namespace mozilla::gfx {
