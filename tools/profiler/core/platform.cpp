@@ -5996,8 +5996,6 @@ void profiler_start_from_signal() {
     
     
     
-    
-    
     uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk;
     
     
