@@ -71,12 +71,18 @@ bool WebGLTransformFeedback::PrepareTransformFeedback() {
       }
     }
 
-    const size_t vertCapacity = buffer->ByteLength() / 4 / componentsPerVert;
+    
+    
+    const size_t vertCapacity =
+        indexedBinding.ByteCount() / 4 / componentsPerVert;
     minVertCapacity = std::min(minVertCapacity, vertCapacity);
   }
 
+  
+  
+  
+  
   mActive_VertCapacity = minVertCapacity;
-  mActive_VertPosition = std::min(mActive_VertPosition, mActive_VertCapacity);
 
   return true;
 }
