@@ -137,6 +137,15 @@ async function doOptInTest(useKeyboard) {
     "The allow button should be primary"
   );
 
+  
+  
+  
+  
+  let promiseNewQuery = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryFinished"
+  );
+
   if (!useKeyboard) {
     info("Picking allow button with mouse");
     EventUtils.synthesizeMouseAtCenter(allowButton, {});
@@ -156,6 +165,7 @@ async function doOptInTest(useKeyboard) {
     EventUtils.synthesizeKey("KEY_Enter");
   }
 
+  await promiseNewQuery;
   await UrlbarTestUtils.promiseSearchComplete(window);
   let { result: merinoResult } = await UrlbarTestUtils.getDetailsOfResultAt(
     window,
