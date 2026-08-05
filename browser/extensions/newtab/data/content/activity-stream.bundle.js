@@ -26648,7 +26648,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel,
       
       novaEnabled,
-      browserNovaEnabled,
       wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
@@ -26684,17 +26683,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "home-section"
-    }, browserNovaEnabled && external_React_default().createElement("div", {
-      className: "appearance-section section"
-    }, external_React_default().createElement("h2", {
-      "data-l10n-id": "newtab-custom-appearance-section-title"
-    }), external_React_default().createElement("theme-picker", {
-      layout: "compact",
-      installsource: "about:newtab",
-      showLabels: false
-    }), external_React_default().createElement("moz-box-button", {
-      "data-l10n-id": "newtab-appearance-more-themes-button"
-    })), wallpapersEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
+    }, wallpapersEnabled && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("div", {
       className: "wallpapers-section"
     }, novaEnabled && external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
@@ -27029,10 +27018,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     const activationWindowClass = activationWindowVariant ? `activation-window-variant-${activationWindowVariant}` : "";
     
     const novaEnabled = this.props.Prefs.values[CustomizeMenu_PREF_NOVA_ENABLED];
-    
-    const {
-      browserNovaEnabled
-    } = this.props.Prefs.values;
     return external_React_default().createElement("span", null, external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.personalizeButtonRef,
       timeout: 300,
@@ -27118,7 +27103,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
       showSectionsMgmtPanel: this.props.showSectionsMgmtPanel,
       novaEnabled: novaEnabled,
-      browserNovaEnabled: browserNovaEnabled,
       toggleWidgetsManagementPanel: this.props.toggleWidgetsManagementPanel,
       showWidgetsManagementPanel: this.props.showWidgetsManagementPanel,
       widgetsEnabled: this.props.widgetsEnabled
