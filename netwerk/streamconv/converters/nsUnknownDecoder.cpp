@@ -414,10 +414,11 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
   
   nsAutoCString decodedData;
 
+  nsresult rv = NS_OK;
   if (channel) {
     
     
-    nsresult rv = ConvertEncodedData(aRequest, mBuffer, mBufferLen);
+    rv = ConvertEncodedData(aRequest, mBuffer, mBufferLen);
     if (NS_SUCCEEDED(rv)) {
       MutexAutoLock lock(mMutex);
       decodedData = mDecodedData;
@@ -428,10 +429,30 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
     }
   }
 
+  
   if (httpChannel) {
     nsAutoCString contentType;
     httpChannel->GetContentType(contentType);
     if (contentType.EqualsLiteral("text/plain")) {
+      auto isEncoded = [&]() -> bool {
+        nsAutoCString contentEncoding;
+        return NS_SUCCEEDED(httpChannel->GetResponseHeader(
+                   "Content-Encoding"_ns, contentEncoding)) &&
+               !contentEncoding.IsEmpty();
+      };
+
+      
+      
+      
+      
+      
+      
+      
+      if (decodedData.IsEmpty() && isEncoded() && NS_SUCCEEDED(rv)) {
+        MutexAutoLock lock(mMutex);
+        mContentType = TEXT_PLAIN;
+        return;
+      }
       SniffBinary(aRequest);
       return;
     }
