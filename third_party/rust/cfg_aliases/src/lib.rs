@@ -265,7 +265,7 @@ macro_rules! cfg_aliases {
             {$($current)+}
         ] [
             $($rest)*
-        ]);
+        ])
     };
 
     
@@ -284,7 +284,7 @@ macro_rules! cfg_aliases {
             )*
         ] [
             $($rest)*
-        ] $($current)* $tok);
+        ] $($current)* $tok)
     };
 
     
@@ -302,7 +302,7 @@ macro_rules! cfg_aliases {
                 {$($grouped)+}
             )*
             {$($current)+}
-        );
+        )
     };
 
 
