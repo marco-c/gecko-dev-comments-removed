@@ -25,9 +25,9 @@ Firefox Nightly, Firefox Beta, and Firefox Release.
 to the latest feature work still under active development. Released every 12 hours with all
 the changes that have {ref}`landed <landing>` on firefox-main for Desktop and Android.
 
-Every [4 weeks](https://whattrainisitnow.com/calendar/), we {ref}`merge <merge>` the code
+Every [2 weeks](https://whattrainisitnow.com/calendar/), we {ref}`merge <merge>` the code
 for Desktop and Android builds from firefox-main to the firefox-beta branch. New code or
-features can be added to firefox-beta outside of this 4 week cadence but are required to land
+features can be added to firefox-beta outside of this 2 week cadence but are required to land
 on firefox-main before being {ref}`uplifted <uplift>` to firefox-beta.
 
 [Firefox Beta](https://whattrainisitnow.com/release/?version=beta) is for developers and early
@@ -35,9 +35,7 @@ adopters who want to see and test what’s coming next in Firefox. We ship new D
 Beta builds three times a week.
 
 :::{note}
-The first and second beta builds of a new cycle are shipped to a
-subset of our Beta population. The full Beta population gets updated
-starting with Beta 3 only.
+The first beta build of a new cycle is shipped to a subset of our Beta population.
 :::
 
 :::{note}
@@ -45,13 +43,13 @@ starting with Beta 3 only.
 the firefox-beta branch and is specifically tailored for Web Developers.
 :::
 
-[Firefox Release](https://whattrainisitnow.com/release/?version=release) is updated every 4 weeks
+[Firefox Release](https://whattrainisitnow.com/release/?version=release) is updated every 2 weeks
 when a given version reaches the end of its Beta cycle. This is the primary product we ship to end users.
 While a release is live, interim updates (dot releases) are used to ship important bug fixes prior to
 the next major release. These can happen on an as-needed basis when there is an important-enough
 {ref}`driver <dot-release-drivers>` to do so (such as a critical bug severely impairing the usability
 of the product for some users). In order to provide better predictability, there is also a planned
-dot release scheduled for two weeks after the initial go-live for less-critical fixes and other
+dot release scheduled for one week after the initial go-live for less-critical fixes and other
 {ref}`ride-along fixes <ride-alongs>` deemed low-risk enough to include.
 
 :::{note}
@@ -85,7 +83,7 @@ main Firefox git repository.
 
 The standard process for code to be delivered to our users is by ‘riding the trains’, meaning that
 it’s landed in firefox-main to ship in Nightly builds while it waits for the next Beta cycle to
-begin. After merging to Beta, the code stabilizes over a 4 week period (along with everything else
+begin. After merging to Beta, the code stabilizes over a 2 week period (along with everything else
 that merged from firefox-main from that development cycle). At the end of the Beta cycle, a
 release candidate ({ref}`RC <rc>`) build is generated, tested thoroughly, and eventually is released
 as the next major version of Firefox.
@@ -100,23 +98,35 @@ Further Reading/Useful links:
 
 Not all code can simply wait for the normal train model to be included in a Firefox build.
 There are a variety of reasons for this; critical fixes, security concerns, stabilizing a feature
-that’s already in Beta, shipping high-priority features/enhancements faster, and so on.
+that’s already in Beta, and so on.
 
 In these situations, an uplift can be requested to take a recent landing in firefox-main and
 merge specific bits to the Beta or Release repository outside the standard train model. After the
 request is made, {ref}`Release Management <release-management>` will assess the potential risk and
 make a decision on whether it will be accepted or not.
 
-While uplifts are generally not the preferred way to ship new feature work, it is understood that there
-are times when business needs to do so justify the required effort. Our release process is designed to
-have the flexibility to accommodate these requests, though in general they need to be handled on a case
-by case basis to determine the suitability. Teams are encouraged to reach out to Release Management in
-the `#release-coordination` channel on Slack or `@relman` so their specific needs can be assessed.
+With Firefox shipping every two weeks, the next train is almost always close. As a
+result, uplift criteria are applied strictly and most fixes should simply ride the next
+release rather than being uplifted. Before requesting an uplift, ask two questions:
+
+- Can it wait one cycle? The next major release is rarely more than two weeks out. If
+  waiting is acceptable, ride the train.
+- Can it be disabled instead of fixed? If the problem can be mitigated by turning a
+  feature off via a pref or feature flag, that is preferred to uplifting a fix. This is
+  lower-risk and often needs no uplift at all.
+
+Uplifts are generally not the preferred way to ship new feature work. New or risky work
+should be gated behind a pref / feature flag and ride the trains, not accelerated to
+"catch" a release. Where a genuine business need exists, requests are handled case by
+case, reach out to Release Management in the `#release-coordination` channel on Slack
+or `@relman`.
 
 Factors that will need to be taken into account include:
 
 - Size and scope of patches to be uplifted
+- Whether the change has baked on firefox-main and is verified
 - QA availability to test prior to shipping and during development
+- If the feature could instead be disabled or the reverting the regressor
 - Engineering resources to resolve any conflicts between different development branches
 - String additions/changes which may impact available locales
 
@@ -136,31 +146,24 @@ version. See below for a detailed list of those milestones.
 ===================================================== ================ ================= =======================================================================================
 Milestone                                             Week             Day of Week
 ----------------------------------------------------- ---------------- ----------------- ---------------------------------------------------------------------------------------
-QA Request & Feature technical documentation deadline Nightly W0       Friday            QA feature testing should be requested prior to the start of the Nightly cycle
-Merge Day                                             Nightly W1       Monday            Day 1 of the new Nightly Cycle
-Feature Complete Milestone                            Nightly W2       Friday            Last day to land risky patches and/or enable new features
-QA Test Plan approval due                             Nightly W2       Friday            Last day to provide QA with feature Test Plan sign-offs
-Nightly features Go/No-Go decisions                   Nightly W4       Wednesday
-Beta release notes draft                              Nightly W4       Wednesday
-QA pre-merge regression testing completed             Nightly W4       Friday
-String freeze                                         Nightly W4       Friday            Modification or deletion of strings exposed to the end-users is not allowed
-Merge Day                                             Beta W1          Monday            Day 1 of the new Beta cycle
-User affecting changes identified & provided to SUMO  Beta W1          Friday
-End of Early Beta & intended pref state deadline      Beta W2          Friday            Post-B5
-Pre-release sign off                                  Beta W3          Wednesday         Final round of QA testing prior to Release
-Go/No-Go for features riding train                    Beta W3          Friday
-Deadline for security-approval requests               Beta W3          Friday
-Release note submission deadline                      Beta W4          Tuesday
-What’s new page & release notes ready                 Beta W4          Wednesday
-Firefox Release Candidate build creation              Beta W4          Wednesday         End of the current Beta cycle in preparation for the upcoming Firefox Release
+QA Request & Feature technical documentation deadline Nightly W-1      Thursday          QA feature testing should be requested prior to the start of the Nightly cycle
+Merge Day                                             Nightly W0       Thursday          Day 1 of the new Nightly Cycle
+Feature Complete Milestone                            Nightly W1       Friday            Last day to land risky patches and/or enable new features
+QA Test Plan approval due                             Nightly W1       Friday            Last day to provide QA with feature Test Plan sign-offs
+Nightly features Go/No-Go decisions                   Nightly W2       Wednesday
+String freeze                                         Nightly W2       Wednesday         Modification or deletion of strings exposed to the end-users is not allowed
+Beta release notes draft                              Nightly W2       Thursday
+Nightly QA sign-off.                                  Nightly W2       Thursday
+Merge Day                                             Nightly W2       Thursday          Day 1 of the new Beta cycle
+User affecting changes identified & provided to SUMO  Beta W1          Thursday
+Deadline for security-approval requests               Beta W2          Wednesday
+Release note submission deadline                      Beta W2          Wednesday
+What’s new page & release notes ready                 Beta W2          Thursday
+Firefox Release Candidate build creation              Beta W2          Thursday          End of the current Beta cycle in preparation for the upcoming Firefox Release
 Firefox go-live @ 6am PT                              Release W1       Tuesday           Day 1 of the new Firefox Release to 25% of Release users
 Firefox Release bump to 100%                          Release W1       Thursday          Increase deployment of new Firefox Release to 100% of Release users
 Scheduled dot release 1 approval requests due         Release W1       Friday            All requests required by EOD
 Scheduled dot release 1 go-live                       Release W2       Tuesday           By default, ships when ready. Specific time available upon request.
-Scheduled dot release 2 approval requests due         Release W2       Friday            All requests required by EOD
-Scheduled dot release 2 go-live                       Release W3       Tuesday           By default, ships when ready. Specific time available upon request.
-Scheduled dot release 3 approval requests due         Release W3       Friday            All requests required by EOD
-Scheduled dot release 3 go-live                       Release W4       Tuesday           By default, ships when ready. Specific time available upon request.
 ===================================================== ================ ================= =======================================================================================
 ```
 
@@ -180,7 +183,6 @@ Owner <reo>` (REO) to ensure a decision is made about each regression reported i
 Further Reading/Useful links:
 
 - [Release Tracking Rules](https://wiki.mozilla.org/Release_Management/Tracking_rules)
-- [Release Owners](https://wiki.mozilla.org/Release_Management/Release_owners)
 - [Commonly used Bugzilla queries for all Channels](https://trainqueries.herokuapp.com/)
 
 ### Enabling/Disabling code (Prefs)
@@ -228,7 +230,7 @@ release by submitting a new request in Jira. This process is kicked off by filin
 Jira ticket [here](https://mozilla-hub.atlassian.net/jira/software/c/projects/QA/boards/261)
 (detailed steps in [How to file a QA
 request](https://docs.google.com/document/d/1oz1YyaaBI-oHUDsktWA-dLtX7WzhYqs7C121yOPKo2w/edit?usp=sharing)).
-These are due by the end of week 4 of the previous Nightly cycle in which the feature needs testing.
+These are due by Nightly W-1 (the Thursday before the start of the Nightly cycle in which the feature needs testing).
 
 Further Reading/Useful links:
 
@@ -296,7 +298,7 @@ Firefox for Windows, Mac, Linux, and Android.
 (chemspill)=
 
 **Chemspill** - Short for Chemical Spill. A chemspill is a rapid
-security-driven or critical stsbility dot release of our product.
+security-driven or critical stability dot release of our product.
 
 (channel-meeting)=
 
@@ -308,11 +310,6 @@ of the active releases with the release team.
 **Dot Release Drivers** - Issues/Fixes that are significant enough to
 warrant a minor dot release to the Firefox Release Channel. Usually to
 fix a stability (top-crash) or Security (Chemspill) issue.
-
-(early-beta)=
-
-**Early Beta** - Beta releases with the features gated by EARLY_BETA_OR_EARLIER
-enabled. The first 2 weeks of Beta releases during the cycle are early beta releases.
 
 (feature-owner)=
 
