@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_WindowGlobalChild_h
 #define mozilla_dom_WindowGlobalChild_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/Document.h"
@@ -12,6 +13,7 @@
 #include "mozilla/dom/WindowGlobalActor.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsRefPtrHashtable.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 class nsGlobalWindowInner;
@@ -111,6 +113,12 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   
   void OnNewDocument(Document* aNewDocument);
+
+  
+  void OnDocumentLoaded();
+
+  
+  void OnDocumentUnloaded();
 
   
   
@@ -221,16 +229,26 @@ class WindowGlobalChild final : public WindowGlobalActor,
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
+  class DocumentLanguageMetadataRequest;
+
   WindowGlobalChild(dom::WindowContext* aWindowContext,
                     nsIPrincipal* aPrincipal, nsIURI* aURI);
 
   ~WindowGlobalChild();
+
+  bool CanCollectDocumentLanguageMetadata();
+  Maybe<DocumentLanguageMetadata> GetDocumentLanguageMetadata(
+      uint32_t aTextSampleTargetCodeUnits);
+  void RemoveCompletedDocumentLanguageMetadataRequests();
+  void CancelDocumentLanguageMetadataRequests();
 
   RefPtr<nsGlobalWindowInner> mWindowGlobal;
   RefPtr<dom::WindowContext> mWindowContext;
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   RefPtr<dom::FeaturePolicy> mContainerFeaturePolicy;
   nsCOMPtr<nsIURI> mDocumentURI;
+  nsTArray<RefPtr<DocumentLanguageMetadataRequest>>
+      mDocumentLanguageMetadataRequests;
   int64_t mBeforeUnloadListeners = 0;
 };
 
