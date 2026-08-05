@@ -202,6 +202,13 @@ class WritableStreamToOutputAlgorithms : public UnderlyingSinkAlgorithmsWrapper,
     }
   }
 
+  
+  
+  
+  
+  virtual nsresult BuildErrorStatus(
+      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason);
+
  private:
   void ClearData() {
     mData = Nothing();

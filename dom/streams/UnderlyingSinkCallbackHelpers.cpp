@@ -270,26 +270,30 @@ already_AddRefed<Promise> WritableStreamToOutputAlgorithms::AbortCallbackImpl(
   
   
 
+  
+  
+  mOutput->CloseWithStatus(BuildErrorStatus(aCx, aReason));
+
+  
+  
+  return nullptr;
+}
+
+nsresult WritableStreamToOutputAlgorithms::BuildErrorStatus(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason) {
   if (aReason.WasPassed() && aReason.Value().isObject()) {
     JS::Rooted<JSObject*> obj(aCx, &aReason.Value().toObject());
     RefPtr<WebTransportError> error;
     UnwrapObject<prototypes::id::WebTransportError, WebTransportError>(
         obj, error, nullptr);
     if (error) {
-      mOutput->CloseWithStatus(net::GetNSResultFromWebTransportError(
-          error->GetStreamErrorCode().Value()));
-      return nullptr;
+      return net::GetNSResultFromWebTransportError(
+          error->GetStreamErrorCode().Value());
     }
   }
 
   
-  
-  
-  mOutput->CloseWithStatus(NS_ERROR_WEBTRANSPORT_CODE_BASE);
-
-  
-  
-  return nullptr;
+  return NS_ERROR_WEBTRANSPORT_CODE_BASE;
 }
 
 void WritableStreamToOutputAlgorithms::ReleaseObjects() { mOutput->Close(); }

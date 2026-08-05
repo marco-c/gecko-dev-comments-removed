@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Streams")
@@ -57,7 +55,11 @@ UNIFIED_SOURCES += [
     "WritableStreamDefaultWriter.cpp",
 ]
 
-include("/ipc/chromium/chromium-config.mozbuild")  
+include("/ipc/chromium/chromium-config.mozbuild")  # to import MessagePort.h
+
+TEST_DIRS += [
+    "gtest",
+]
 
 FINAL_LIBRARY = "xul"
 
@@ -66,7 +68,7 @@ LOCAL_INCLUDES += [
     "/dom/ipc",
 ]
 
-
-
+# MOCHITEST_MANIFESTS += ["tests/mochitest.toml"]
+# ROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]

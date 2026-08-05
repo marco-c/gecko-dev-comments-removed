@@ -66,6 +66,12 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
   
   
   
+  virtual void SetInputStreamIfUnread(nsIInputStream* aInput) {}
+
+  
+  
+  
+  
   virtual bool IsNative() { return true; }
 
  protected:
@@ -266,6 +272,13 @@ class InputToReadableStreamAlgorithms
                         nsresult aError);
 
   
+  
+  
+  
+  virtual void BuildErrorValue(JSContext* aCx, nsresult aError,
+                               JS::MutableHandle<JS::Value> aErrorValue);
+
+  
 
   bool IsClosed() { return !mInput; }
 
@@ -310,6 +323,13 @@ class NonAsyncInputToReadableStreamAlgorithms
   nsIInputStream* MaybeGetInputStreamIfUnread() override {
     MOZ_ASSERT(mInput, "Should be only called on non-disturbed streams");
     return mInput;
+  }
+
+  void SetInputStreamIfUnread(nsIInputStream* aInput) override {
+    MOZ_ASSERT(mInput, "Should be only called on non-disturbed streams");
+    MOZ_ASSERT(!mAsyncAlgorithms,
+               "Should be only called before the stream is read");
+    mInput = aInput;
   }
 
  private:

@@ -543,15 +543,8 @@ void InputToReadableStreamAlgorithms::ErrorPropagation(JSContext* aCx,
     return;
   }
 
-  
-  ErrorResult rv;
-  
-  
-  rv.ThrowTypeError("Error in input stream");
-
   JS::Rooted<JS::Value> errorValue(aCx);
-  bool ok = ToJSValue(aCx, std::move(rv), &errorValue);
-  MOZ_RELEASE_ASSERT(ok, "ToJSValue never fails for ErrorResult");
+  BuildErrorValue(aCx, aError, &errorValue);
 
   {
     
@@ -561,6 +554,18 @@ void InputToReadableStreamAlgorithms::ErrorPropagation(JSContext* aCx,
   }
 
   MOZ_ASSERT(IsClosed());
+}
+
+void InputToReadableStreamAlgorithms::BuildErrorValue(
+    JSContext* aCx, nsresult aError, JS::MutableHandle<JS::Value> aErrorValue) {
+  
+  ErrorResult rv;
+  
+  
+  rv.ThrowTypeError("Error in input stream");
+
+  bool ok = ToJSValue(aCx, std::move(rv), aErrorValue);
+  MOZ_RELEASE_ASSERT(ok, "ToJSValue never fails for ErrorResult");
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
