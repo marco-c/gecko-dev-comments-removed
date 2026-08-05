@@ -10,17 +10,9 @@ use crate::prim_store::{
 };
 use crate::scene_building::IsVisible;
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash)]
-pub struct BackdropCapture {
-}
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash)]
-pub struct BackdropRender {
-}
+
+pub use api::interned_prims::{BackdropCapture, BackdropRender};
 
 impl From<BackdropCapture> for BackdropCaptureData {
     fn from(_backdrop: BackdropCapture) -> Self {
