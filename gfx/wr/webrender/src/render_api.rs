@@ -1402,10 +1402,17 @@ impl RenderApi {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn stop_render_backend(&self) {
         let (tx, rx) = single_msg_channel();
         if self.low_priority_scene_sender
-            .send(SceneBuilderRequest::Flush(tx))
+            .send(SceneBuilderRequest::StopWindow(self.backend_id, tx))
             .is_ok()
         {
             let _ = rx.recv();

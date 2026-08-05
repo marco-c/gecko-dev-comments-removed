@@ -574,15 +574,28 @@ void WebRenderAPI::FlushPendingWrTransactionEventsWithWait() {
 void WebRenderAPI::HandleWrTransactionEvents(RemoteTextureWaitType aType) {
   auto& events = mPendingWrTransactionEvents;
 
+  
+  
+  
+  
+  
+  const bool rendererDestroyed = mRootApi && mRootApi->mRendererDestroyed;
+  if (rendererDestroyed) {
+    aType = RemoteTextureWaitType::FlushWithoutWait;
+  }
+
   while (!events.empty()) {
     auto& front = events.front();
     switch (front.mTag) {
       case WrTransactionEvent::Tag::Transaction:
-        wr_api_send_transaction(mDocHandle, front.RawTransaction(),
-                                front.UseSceneBuilderThread());
-        if (front.GetTransactionBuilder()->mRemoteTextureTxnScheduler) {
-          front.GetTransactionBuilder()->mRemoteTextureTxnScheduler->NotifyTxn(
-              front.GetTransactionBuilder()->mRemoteTextureTxnId);
+        if (!rendererDestroyed) {
+          wr_api_send_transaction(mDocHandle, front.RawTransaction(),
+                                  front.UseSceneBuilderThread());
+          if (front.GetTransactionBuilder()->mRemoteTextureTxnScheduler) {
+            front.GetTransactionBuilder()
+                ->mRemoteTextureTxnScheduler->NotifyTxn(
+                    front.GetTransactionBuilder()->mRemoteTextureTxnId);
+          }
         }
         break;
       case WrTransactionEvent::Tag::PendingRemoteTextures: {
