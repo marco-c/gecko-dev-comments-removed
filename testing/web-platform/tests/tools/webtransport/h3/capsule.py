@@ -17,6 +17,9 @@ class CapsuleType(IntEnum):
     
     
     CLOSE_WEBTRANSPORT_SESSION = 0x2843
+    
+    
+    WT_DRAIN_SESSION = 0x78ae
 
 
 class H3Capsule:
