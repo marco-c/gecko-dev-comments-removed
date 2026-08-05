@@ -49,9 +49,19 @@ struct SVGViewBox {
            std::isfinite(height);
   }
 
-  bool IsEmpty() const { return !none && (width <= .0f || height <= .0f); }
+  bool IsNone() const { return none; }
 
-  bool IsValid() const { return IsFinite() && !IsEmpty(); }
+  
+
+
+  bool IsEmpty() const { return !none && (width <= 0.f || height <= 0.f); }
+
+  
+
+
+  bool IsValid() const {
+    return !none && IsFinite() && width >= 0.f && height >= 0.f;
+  }
 
   friend std::ostream& operator<<(std::ostream& stream,
                                   const SVGViewBox& aViewBox) {
@@ -89,7 +99,9 @@ class SVGAnimatedViewBox {
 
 
 
-  bool HasRect() const;
+  bool HasRect() const {
+    return (mAnimVal || mHasBaseVal) && GetAnimValue().IsValid();
+  }
 
   
 
@@ -97,9 +109,18 @@ class SVGAnimatedViewBox {
 
   bool IsExplicitlySet() const {
     if (mAnimVal || mHasBaseVal) {
-      return GetAnimValue().IsValid();
+      const SVGViewBox& viewBox = GetAnimValue();
+      return viewBox.IsNone() || viewBox.IsValid();
     }
     return false;
+  }
+
+  
+
+
+
+  bool IsEmpty() const {
+    return (mAnimVal || mHasBaseVal) && GetAnimValue().IsEmpty();
   }
 
   const SVGViewBox& GetBaseValue() const { return mBaseVal; }

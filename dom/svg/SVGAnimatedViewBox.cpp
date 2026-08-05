@@ -117,21 +117,6 @@ void SVGAnimatedViewBox::Init() {
   mAnimVal = nullptr;
 }
 
-bool SVGAnimatedViewBox::HasRect() const {
-  
-  
-  const SVGViewBox* rect = mAnimVal.get();
-  if (!rect) {
-    if (!mHasBaseVal) {
-      
-      return false;
-    }
-    rect = &mBaseVal;
-  }
-
-  return !rect->none && rect->width >= 0 && rect->height >= 0;
-}
-
 void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
                                       SVGElement* aSVGElement) {
   if (!mAnimVal) {
@@ -185,6 +170,12 @@ nsresult SVGAnimatedViewBox::SetBaseValueString(const nsAString& aValue,
   nsresult rv = SVGViewBox::FromString(aValue, &viewBox);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+  
+  
+  
+  if (!viewBox.IsNone() && !viewBox.IsValid()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
   }
   SetBaseValue(viewBox, aSVGElement, aDoSetAttr);
   return NS_OK;
