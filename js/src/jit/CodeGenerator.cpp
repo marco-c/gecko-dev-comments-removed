@@ -1611,15 +1611,17 @@ void CodeGenerator::visitCompare(LCompare* comp) {
 void CodeGenerator::visitStrictConstantCompareInt32(
     LStrictConstantCompareInt32* comp) {
   ValueOperand value = ToValue(comp->value());
-  int32_t constantVal = comp->mir()->constant();
-  JSOp op = comp->mir()->jsop();
   Register temp = ToRegister(comp->temp0());
   Register output = ToRegister(comp->output());
 
-  masm.cmp64Set(JSOpToCondition(op, false), value.toRegister64(),
-                Imm64(Int32Value(constantVal).asRawBits()), output);
-  masm.cmp64Set(JSOpToCondition(op, false), value.toRegister64(),
-                Imm64(DoubleValue(constantVal).asRawBits()), temp);
+  int32_t constantVal = comp->mir()->constant();
+  JSOp op = comp->mir()->jsop();
+  MOZ_ASSERT(IsStrictEqualityOp(op));
+
+  masm.testValueSet(JSOpToCondition(op, false), value, Int32Value(constantVal),
+                    output);
+  masm.testValueSet(JSOpToCondition(op, false), value, DoubleValue(constantVal),
+                    temp);
 
   if (op == JSOp::StrictEq) {
     masm.or32(temp, output);
@@ -1628,8 +1630,8 @@ void CodeGenerator::visitStrictConstantCompareInt32(
   }
 
   if (constantVal == 0) {
-    masm.cmp64Set(JSOpToCondition(op, false), value.toRegister64(),
-                  Imm64(DoubleValue(-0.0).asRawBits()), temp);
+    masm.testValueSet(JSOpToCondition(op, false), value, DoubleValue(-0.0),
+                      temp);
 
     if (op == JSOp::StrictEq) {
       masm.or32(temp, output);
@@ -1642,8 +1644,10 @@ void CodeGenerator::visitStrictConstantCompareInt32(
 void CodeGenerator::visitStrictConstantCompareInt32AndBranch(
     LStrictConstantCompareInt32AndBranch* comp) {
   ValueOperand value = ToValue(comp->value());
+
   int32_t constantVal = comp->cmpMir()->constant();
   JSOp op = comp->cmpMir()->jsop();
+  MOZ_ASSERT(IsStrictEqualityOp(op));
   Assembler::Condition cond = JSOpToCondition(op, false);
 
   MBasicBlock* ifTrue = comp->ifTrue();
@@ -1680,19 +1684,24 @@ void CodeGenerator::visitStrictConstantCompareInt32AndBranch(
 void CodeGenerator::visitStrictConstantCompareBoolean(
     LStrictConstantCompareBoolean* comp) {
   ValueOperand value = ToValue(comp->value());
-  bool constantVal = comp->mir()->constant();
-  JSOp op = comp->mir()->jsop();
   Register output = ToRegister(comp->output());
 
-  masm.cmp64Set(JSOpToCondition(op, false), value.toRegister64(),
-                Imm64(BooleanValue(constantVal).asRawBits()), output);
+  bool constantVal = comp->mir()->constant();
+  JSOp op = comp->mir()->jsop();
+  MOZ_ASSERT(IsStrictEqualityOp(op));
+
+  masm.testValueSet(JSOpToCondition(op, false), value,
+                    BooleanValue(constantVal), output);
 }
 
 void CodeGenerator::visitStrictConstantCompareBooleanAndBranch(
     LStrictConstantCompareBooleanAndBranch* comp) {
   ValueOperand value = ToValue(comp->value());
+
   bool constantVal = comp->cmpMir()->constant();
-  Assembler::Condition cond = JSOpToCondition(comp->cmpMir()->jsop(), false);
+  JSOp op = comp->cmpMir()->jsop();
+  MOZ_ASSERT(IsStrictEqualityOp(op));
+  Assembler::Condition cond = JSOpToCondition(op, false);
 
   MBasicBlock* ifTrue = comp->ifTrue();
   MBasicBlock* ifFalse = comp->ifFalse();
@@ -13882,33 +13891,50 @@ static void AllocateThinOrFatInlineString(MacroAssembler& masm, Register output,
 }
 
 static void ConcatInlineString(MacroAssembler& masm, Register lhs, Register rhs,
-                               Register output, Register temp1, Register temp2,
-                               Register temp3, gc::Heap initialStringHeap,
-                               Label* failure, CharEncoding encoding) {
+                               Register output, Register andedFlags,
+                               Register temp2, Register temp3,
+                               gc::Heap initialStringHeap, Label* failure,
+                               CharEncoding encoding) {
   JitSpew(JitSpew_Codegen, "# Emitting ConcatInlineString (encoding=%s)",
           (encoding == CharEncoding::Latin1 ? "Latin-1" : "Two-Byte"));
 
   
 
-  
-  masm.branchIfRope(lhs, failure);
-  masm.branchIfRope(rhs, failure);
+#ifdef DEBUG
+  Label skip, rope;
 
   
-  AllocateThinOrFatInlineString(masm, output, temp2, temp1, initialStringHeap,
+  masm.branchIfRope(lhs, &rope);
+  masm.branchIfRope(rhs, &rope);
+
+  masm.jump(&skip);
+  masm.bind(&rope);
+  masm.assertUnreachable("Ropes encountered in ConcatInlineString.");
+  masm.bind(&skip);
+#endif
+
+  
+  AllocateThinOrFatInlineString(masm, output, temp2, temp3, initialStringHeap,
                                 failure, encoding);
 
   
   masm.loadInlineStringCharsForStore(output, temp2);
 
+#if defined(JS_64BIT) && defined(ENABLE_WASM_SIMD)
+  Label fastPath, done;
+  masm.branchTest32(Assembler::NonZero, andedFlags,
+                    Imm32(StringFlags::INLINE_CHARS_BIT), &fastPath);
+#endif
+
+  Register temp1 = andedFlags;
   auto copyChars = [&](Register src) {
     if (encoding == CharEncoding::TwoByte) {
-      CopyStringCharsMaybeInflate(masm, src, temp2, temp1, temp3);
+      CopyStringCharsMaybeInflate(masm, src, temp2, temp3, temp1);
     } else {
-      masm.loadStringLength(src, temp3);
-      masm.loadStringChars(src, temp1, CharEncoding::Latin1);
-      masm.movePtr(temp1, src);
-      CopyStringChars(masm, temp2, src, temp3, temp1, CharEncoding::Latin1);
+      masm.loadStringLength(src, temp1);
+      masm.loadStringChars(src, temp3, CharEncoding::Latin1);
+      masm.movePtr(temp3, src);
+      CopyStringChars(masm, temp2, src, temp1, temp3, CharEncoding::Latin1);
     }
   };
 
@@ -13918,6 +13944,138 @@ static void ConcatInlineString(MacroAssembler& masm, Register lhs, Register rhs,
 
   
   copyChars(rhs);
+
+  
+  
+  
+  
+#if defined(JS_64BIT) && defined(ENABLE_WASM_SIMD)
+  masm.jump(&done);
+  masm.bind(&fastPath);
+
+  
+  
+  static_assert(JSThinInlineString::MAX_LENGTH_LATIN1 == 16);
+  static_assert(JSThinInlineString::MAX_LENGTH_TWO_BYTE == 8);
+  static_assert(JSFatInlineString::MAX_LENGTH_LATIN1 == 24);
+  static_assert(JSFatInlineString::MAX_LENGTH_TWO_BYTE == 12);
+
+  size_t thinInlineLength = encoding == CharEncoding::Latin1
+                                ? JSThinInlineString::MAX_LENGTH_LATIN1
+                                : JSThinInlineString::MAX_LENGTH_TWO_BYTE;
+
+  
+  
+  
+  auto copyLhsFast = [&]() {
+    masm.loadStringLength(lhs, temp1);
+    masm.loadInlineStringCharsForStore(lhs, temp3);
+
+    masm.loadUnalignedSimd128(Address(temp3, 0), ScratchSimd128Reg);
+    masm.storeUnalignedSimd128(ScratchSimd128Reg, Address(temp2, 0));
+
+    Label lhsDone;
+    masm.branch32(Assembler::BelowOrEqual, temp1, Imm32(thinInlineLength),
+                  &lhsDone);
+    masm.loadPtr(Address(temp3, 16), temp3);
+    masm.storePtr(temp3, Address(temp2, 16));
+    masm.bind(&lhsDone);
+
+    if (encoding == CharEncoding::Latin1) {
+      masm.addPtr(temp1, temp2);
+    } else {
+      masm.computeEffectiveAddress(BaseIndex(temp2, temp1, TimesTwo), temp2);
+    }
+  };
+
+  
+  
+  
+  auto copyRhsFast = [&]() {
+    masm.loadStringLength(rhs, temp1);
+    masm.loadInlineStringCharsForStore(rhs, temp3);
+
+    if (encoding == CharEncoding::TwoByte) {
+      masm.lshift32(Imm32(1), temp1);
+    }
+
+    Label rhsBelow8, rhsBelow4, rhsDone;
+
+    
+    masm.branch32(Assembler::Below, temp1, Imm32(8), &rhsBelow8);
+
+    masm.loadPtr(Address(temp3, 0), lhs);
+    masm.storePtr(lhs, Address(temp2, 0));
+
+    Label rhsTail;
+    masm.branch32(Assembler::BelowOrEqual, temp1,
+                  Imm32(JSThinInlineString::InlineBytes), &rhsTail);
+    masm.loadPtr(Address(temp3, 8), lhs);
+    masm.storePtr(lhs, Address(temp2, 8));
+
+    masm.bind(&rhsTail);
+    masm.loadPtr(BaseIndex(temp3, temp1, TimesOne, -8), lhs);
+    masm.storePtr(lhs, BaseIndex(temp2, temp1, TimesOne, -8));
+    masm.jump(&rhsDone);
+
+    
+    masm.bind(&rhsBelow8);
+    masm.branch32(Assembler::Below, temp1, Imm32(4), &rhsBelow4);
+    masm.load32(Address(temp3, 0), lhs);
+    masm.store32(lhs, Address(temp2, 0));
+    masm.load32(BaseIndex(temp3, temp1, TimesOne, -4), lhs);
+    masm.store32(lhs, BaseIndex(temp2, temp1, TimesOne, -4));
+    masm.jump(&rhsDone);
+
+    
+    masm.bind(&rhsBelow4);
+    masm.load8ZeroExtend(Address(temp3, 0), lhs);
+    masm.store8(lhs, Address(temp2, 0));
+    masm.branch32(Assembler::Below, temp1, Imm32(2), &rhsDone);
+    masm.load16ZeroExtend(BaseIndex(temp3, temp1, TimesOne, -2), lhs);
+    masm.store16(lhs, BaseIndex(temp2, temp1, TimesOne, -2));
+
+    masm.bind(&rhsDone);
+  };
+
+  
+  
+  
+  if (encoding == CharEncoding::Latin1) {
+    copyLhsFast();
+    copyRhsFast();
+  } else {
+    auto copyCharsInflate = [&](Register src) {
+      masm.loadStringLength(src, temp3);
+      masm.loadStringChars(src, temp1, CharEncoding::Latin1);
+      masm.movePtr(temp1, src);
+      CopyStringChars(masm, temp2, src, temp3, temp1, CharEncoding::Latin1,
+                      CharEncoding::TwoByte);
+    };
+
+    Label lhsInflate, beginRhs, rhsInflate;
+    masm.branchLatin1String(lhs, &lhsInflate);
+    copyLhsFast();
+    masm.jump(&beginRhs);
+
+    masm.bind(&lhsInflate);
+    copyCharsInflate(lhs);
+
+    
+    
+    copyRhsFast();
+    masm.jump(&done);
+
+    masm.bind(&beginRhs);
+    masm.branchLatin1String(rhs, &rhsInflate);
+    copyRhsFast();
+    masm.jump(&done);
+
+    masm.bind(&rhsInflate);
+    copyCharsInflate(rhs);
+  }
+  masm.bind(&done);
+#endif
 }
 
 void CodeGenerator::visitSubstr(LSubstr* lir) {
