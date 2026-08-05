@@ -2237,7 +2237,8 @@ nsresult CookiePersistentStorage::InitDBConnInternal() {
   mDBConn->SetGrowthIncrement(512 * 1024, ""_ns);
 
   
-  mDBConn->ExecuteSimpleSQL("PRAGMA synchronous = OFF"_ns);
+  
+  mDBConn->ExecuteSimpleSQL("PRAGMA synchronous = NORMAL"_ns);
 
   
   
