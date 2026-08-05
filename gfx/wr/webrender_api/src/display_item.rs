@@ -1354,175 +1354,175 @@ pub enum FilterOp {
     
     
     
-    SVGFESourceGraphic{node: FilterOpGraphNode},
+    SVGFESourceGraphic { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFESourceAlpha{node: FilterOpGraphNode},
+    SVGFESourceAlpha { node: FilterOpGraphNode },
     
     
-    SVGFEIdentity{node: FilterOpGraphNode},
+    SVGFEIdentity { node: FilterOpGraphNode },
     
     
     
     
-    SVGFEOpacity{node: FilterOpGraphNode, valuebinding: PropertyBinding<f32>, value: f32},
+    SVGFEOpacity { node: FilterOpGraphNode, valuebinding: PropertyBinding<f32>, value: f32 },
     
     
-    SVGFEToAlpha{node: FilterOpGraphNode},
+    SVGFEToAlpha { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendDarken{node: FilterOpGraphNode},
+    SVGFEBlendDarken { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendLighten{node: FilterOpGraphNode},
+    SVGFEBlendLighten { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendMultiply{node: FilterOpGraphNode},
+    SVGFEBlendMultiply { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendNormal{node: FilterOpGraphNode},
+    SVGFEBlendNormal { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendScreen{node: FilterOpGraphNode},
+    SVGFEBlendScreen { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendOverlay{node: FilterOpGraphNode},
+    SVGFEBlendOverlay { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendColorDodge{node: FilterOpGraphNode},
+    SVGFEBlendColorDodge { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendColorBurn{node: FilterOpGraphNode},
+    SVGFEBlendColorBurn { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendHardLight{node: FilterOpGraphNode},
+    SVGFEBlendHardLight { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendSoftLight{node: FilterOpGraphNode},
+    SVGFEBlendSoftLight { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendDifference{node: FilterOpGraphNode},
+    SVGFEBlendDifference { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendExclusion{node: FilterOpGraphNode},
+    SVGFEBlendExclusion { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendHue{node: FilterOpGraphNode},
+    SVGFEBlendHue { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendSaturation{node: FilterOpGraphNode},
+    SVGFEBlendSaturation { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendColor{node: FilterOpGraphNode},
+    SVGFEBlendColor { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEBlendLuminosity{node: FilterOpGraphNode},
+    SVGFEBlendLuminosity { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFEColorMatrix{node: FilterOpGraphNode, values: [f32; 20]},
+    SVGFEColorMatrix { node: FilterOpGraphNode, values: [f32; 20] },
     
     
     
     
     
-    SVGFEComponentTransfer{node: FilterOpGraphNode},
+    SVGFEComponentTransfer { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeArithmetic{node: FilterOpGraphNode, k1: f32, k2: f32, k3: f32,
-        k4: f32},
+    SVGFECompositeArithmetic { node: FilterOpGraphNode, k1: f32, k2: f32, k3: f32,
+        k4: f32 },
     
     
     
     
     
-    SVGFECompositeATop{node: FilterOpGraphNode},
+    SVGFECompositeATop { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeIn{node: FilterOpGraphNode},
+    SVGFECompositeIn { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeLighter{node: FilterOpGraphNode},
+    SVGFECompositeLighter { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeOut{node: FilterOpGraphNode},
+    SVGFECompositeOut { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeOver{node: FilterOpGraphNode},
+    SVGFECompositeOver { node: FilterOpGraphNode },
     
     
     
     
     
-    SVGFECompositeXOR{node: FilterOpGraphNode},
+    SVGFECompositeXOR { node: FilterOpGraphNode },
     
     
     
@@ -1531,10 +1531,10 @@ pub enum FilterOp {
     
     
     
-    SVGFEConvolveMatrixEdgeModeDuplicate{node: FilterOpGraphNode, order_x: i32,
+    SVGFEConvolveMatrixEdgeModeDuplicate { node: FilterOpGraphNode, order_x: i32,
         order_y: i32, kernel: [f32; 25], divisor: f32, bias: f32, target_x: i32,
         target_y: i32, kernel_unit_length_x: f32, kernel_unit_length_y: f32,
-        preserve_alpha: i32},
+        preserve_alpha: i32 },
     
     
     
@@ -1543,10 +1543,10 @@ pub enum FilterOp {
     
     
     
-    SVGFEConvolveMatrixEdgeModeNone{node: FilterOpGraphNode, order_x: i32,
+    SVGFEConvolveMatrixEdgeModeNone { node: FilterOpGraphNode, order_x: i32,
         order_y: i32, kernel: [f32; 25], divisor: f32, bias: f32, target_x: i32,
         target_y: i32, kernel_unit_length_x: f32, kernel_unit_length_y: f32,
-        preserve_alpha: i32},
+        preserve_alpha: i32 },
     
     
     
@@ -1555,10 +1555,10 @@ pub enum FilterOp {
     
     
     
-    SVGFEConvolveMatrixEdgeModeWrap{node: FilterOpGraphNode, order_x: i32,
+    SVGFEConvolveMatrixEdgeModeWrap { node: FilterOpGraphNode, order_x: i32,
         order_y: i32, kernel: [f32; 25], divisor: f32, bias: f32, target_x: i32,
         target_y: i32, kernel_unit_length_x: f32, kernel_unit_length_y: f32,
-        preserve_alpha: i32},
+        preserve_alpha: i32 },
     
     
     
@@ -1567,9 +1567,9 @@ pub enum FilterOp {
     
     
     
-    SVGFEDiffuseLightingDistant{node: FilterOpGraphNode, surface_scale: f32,
+    SVGFEDiffuseLightingDistant { node: FilterOpGraphNode, surface_scale: f32,
         diffuse_constant: f32, kernel_unit_length_x: f32,
-        kernel_unit_length_y: f32, azimuth: f32, elevation: f32},
+        kernel_unit_length_y: f32, azimuth: f32, elevation: f32 },
     
     
     
@@ -1578,9 +1578,9 @@ pub enum FilterOp {
     
     
     
-    SVGFEDiffuseLightingPoint{node: FilterOpGraphNode, surface_scale: f32,
+    SVGFEDiffuseLightingPoint { node: FilterOpGraphNode, surface_scale: f32,
         diffuse_constant: f32, kernel_unit_length_x: f32,
-        kernel_unit_length_y: f32, x: f32, y: f32, z: f32},
+        kernel_unit_length_y: f32, x: f32, y: f32, z: f32 },
     
     
     
@@ -1591,67 +1591,19 @@ pub enum FilterOp {
     
     
     
-    SVGFEDiffuseLightingSpot{node: FilterOpGraphNode, surface_scale: f32,
+    SVGFEDiffuseLightingSpot { node: FilterOpGraphNode, surface_scale: f32,
         diffuse_constant: f32, kernel_unit_length_x: f32,
         kernel_unit_length_y: f32, x: f32, y: f32, z: f32, points_at_x: f32,
         points_at_y: f32, points_at_z: f32, cone_exponent: f32,
-        limiting_cone_angle: f32},
+        limiting_cone_angle: f32 },
     
     
     
     
     
     
-    SVGFEDisplacementMap{node: FilterOpGraphNode, scale: f32,
-        x_channel_selector: u32, y_channel_selector: u32},
-    
-    
-    
-    
-    
-    
-    
-    SVGFEDropShadow{node: FilterOpGraphNode, color: ColorF, dx: f32, dy: f32,
-        std_deviation_x: f32, std_deviation_y: f32},
-    
-    
-    
-    
-    
-    SVGFEFlood{node: FilterOpGraphNode, color: ColorF},
-    
-    
-    
-    
-    
-    SVGFEGaussianBlur{node: FilterOpGraphNode, std_deviation_x: f32, std_deviation_y: f32},
-    
-    
-    
-    
-    
-    SVGFEImage{node: FilterOpGraphNode, sampling_filter: u32, matrix: [f32; 6]},
-    
-    
-    
-    
-    
-    
-    SVGFEMorphologyDilate{node: FilterOpGraphNode, radius_x: f32, radius_y: f32},
-    
-    
-    
-    
-    
-    
-    SVGFEMorphologyErode{node: FilterOpGraphNode, radius_x: f32, radius_y: f32},
-    
-    
-    
-    
-    
-    
-    SVGFEOffset{node: FilterOpGraphNode, offset_x: f32, offset_y: f32},
+    SVGFEDisplacementMap { node: FilterOpGraphNode, scale: f32,
+        x_channel_selector: u32, y_channel_selector: u32 },
     
     
     
@@ -1659,11 +1611,59 @@ pub enum FilterOp {
     
     
     
+    SVGFEDropShadow { node: FilterOpGraphNode, color: ColorF, dx: f32, dy: f32,
+        std_deviation_x: f32, std_deviation_y: f32 },
     
-    SVGFESpecularLightingDistant{node: FilterOpGraphNode, surface_scale: f32,
+    
+    
+    
+    
+    SVGFEFlood { node: FilterOpGraphNode, color: ColorF },
+    
+    
+    
+    
+    
+    SVGFEGaussianBlur { node: FilterOpGraphNode, std_deviation_x: f32, std_deviation_y: f32 },
+    
+    
+    
+    
+    
+    SVGFEImage { node: FilterOpGraphNode, sampling_filter: u32, matrix: [f32; 6] },
+    
+    
+    
+    
+    
+    
+    SVGFEMorphologyDilate { node: FilterOpGraphNode, radius_x: f32, radius_y: f32 },
+    
+    
+    
+    
+    
+    
+    SVGFEMorphologyErode { node: FilterOpGraphNode, radius_x: f32, radius_y: f32 },
+    
+    
+    
+    
+    
+    
+    SVGFEOffset { node: FilterOpGraphNode, offset_x: f32, offset_y: f32 },
+    
+    
+    
+    
+    
+    
+    
+    
+    SVGFESpecularLightingDistant { node: FilterOpGraphNode, surface_scale: f32,
         specular_constant: f32, specular_exponent: f32,
         kernel_unit_length_x: f32, kernel_unit_length_y: f32, azimuth: f32,
-        elevation: f32},
+        elevation: f32 },
     
     
     
@@ -1672,10 +1672,10 @@ pub enum FilterOp {
     
     
     
-    SVGFESpecularLightingPoint{node: FilterOpGraphNode, surface_scale: f32,
+    SVGFESpecularLightingPoint { node: FilterOpGraphNode, surface_scale: f32,
         specular_constant: f32, specular_exponent: f32,
         kernel_unit_length_x: f32, kernel_unit_length_y: f32, x: f32, y: f32,
-        z: f32},
+        z: f32 },
     
     
     
@@ -1686,18 +1686,18 @@ pub enum FilterOp {
     
     
     
-    SVGFESpecularLightingSpot{node: FilterOpGraphNode, surface_scale: f32,
+    SVGFESpecularLightingSpot { node: FilterOpGraphNode, surface_scale: f32,
         specular_constant: f32, specular_exponent: f32,
         kernel_unit_length_x: f32, kernel_unit_length_y: f32, x: f32, y: f32,
         z: f32, points_at_x: f32, points_at_y: f32, points_at_z: f32,
-        cone_exponent: f32, limiting_cone_angle: f32},
+        cone_exponent: f32, limiting_cone_angle: f32 },
     
     
     
     
     
     
-    SVGFETile{node: FilterOpGraphNode},
+    SVGFETile { node: FilterOpGraphNode },
     
     
     
@@ -1705,9 +1705,9 @@ pub enum FilterOp {
     
     
     
-    SVGFETurbulenceWithFractalNoiseWithNoStitching{node: FilterOpGraphNode,
+    SVGFETurbulenceWithFractalNoiseWithNoStitching { node: FilterOpGraphNode,
         base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32,
-        seed: u32},
+        seed: u32 },
     
     
     
@@ -1715,26 +1715,26 @@ pub enum FilterOp {
     
     
     
-    SVGFETurbulenceWithFractalNoiseWithStitching{node: FilterOpGraphNode,
+    SVGFETurbulenceWithFractalNoiseWithStitching { node: FilterOpGraphNode,
         base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32,
-        seed: u32},
+        seed: u32 },
     
     
     
     
     
     
-    SVGFETurbulenceWithTurbulenceNoiseWithNoStitching{node: FilterOpGraphNode,
+    SVGFETurbulenceWithTurbulenceNoiseWithNoStitching { node: FilterOpGraphNode,
         base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32,
-        seed: u32},
+        seed: u32 },
     
     
     
     
     
     
-    SVGFETurbulenceWithTurbulenceNoiseWithStitching{node: FilterOpGraphNode,
-        base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32, seed: u32},
+    SVGFETurbulenceWithTurbulenceNoiseWithStitching { node: FilterOpGraphNode,
+        base_frequency_x: f32, base_frequency_y: f32, num_octaves: u32, seed: u32 },
 }
 
 impl FilterOp {

@@ -531,7 +531,7 @@ impl PolygonKey {
         
         
         
-        let mut points: [PointKey; POLYGON_CLIP_VERTEX_MAX] = [PointKey { x: 0.0, y: 0.0}; POLYGON_CLIP_VERTEX_MAX];
+        let mut points: [PointKey; POLYGON_CLIP_VERTEX_MAX] = [PointKey { x: 0.0, y: 0.0 }; POLYGON_CLIP_VERTEX_MAX];
 
         let mut point_count: u8 = 0;
         for (src, dest) in points_layout.iter().zip(points.iter_mut()) {
