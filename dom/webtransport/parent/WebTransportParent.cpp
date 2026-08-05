@@ -408,6 +408,24 @@ IPCResult WebTransportParent::RecvSetSendOrder(uint64_t aStreamId,
   return IPC_OK();
 }
 
+IPCResult WebTransportParent::RecvExportKeyingMaterial(
+    nsTArray<uint8_t>&& aLabel, Maybe<nsTArray<uint8_t>>&& aContext,
+    ExportKeyingMaterialResolver&& aResolver) {
+  LOG(("ExportKeyingMaterial for %p, label length=%zu, has context=%d", this,
+       aLabel.Length(), aContext.isSome()));
+
+  if (!mWebTransport) {
+    aResolver(nsTArray<uint8_t>());
+    return IPC_OK();
+  }
+
+  
+  
+  
+  aResolver(nsTArray<uint8_t>());
+  return IPC_OK();
+}
+
 IPCResult WebTransportParent::RecvCreateUnidirectionalStream(
     Maybe<int64_t> aSendOrder, CreateUnidirectionalStreamResolver&& aResolver) {
   LOG(("%s for %p received, useSendOrder=%d, sendOrder=%" PRIi64, __func__,
