@@ -2,19 +2,26 @@
 
 
 
-#include "gc/AtomMarking-inl.h"
-
 #include <type_traits>
 
 #include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
 
+#include "gc/AtomMarking-inl.h"
 #include "gc/GC-inl.h"
 #include "gc/Heap-inl.h"
 #include "gc/PrivateIterators-inl.h"
 
 namespace js {
 namespace gc {
+
+
+
+
+
+
+
+
 
 
 
@@ -288,7 +295,7 @@ void AtomMarkingRuntime::refineZoneBitmapForCollectedZone(Zone* zone,
 
 
 template <typename Bitmap>
-static void BitwiseOrIntoChunkMarkBits(Zone* atomsZone, Bitmap& bitmap) {
+static void BitwiseOrIntoChunkMarkBits(Zone* atomsZone, const Bitmap& bitmap) {
   
   
   static_assert(ArenaBitmapBits == ArenaBitmapWords * JS_BITS_PER_WORD,

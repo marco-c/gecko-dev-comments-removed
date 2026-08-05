@@ -207,7 +207,6 @@ class alignas(ArenaSize) Arena {
 
 
 
-
     size_t atomBitmapStart_;
   };
 

@@ -712,7 +712,6 @@ void GCRuntime::markIncomingGraySymbolEdgesFromUncollectedZones() {
   
   
   
-  
 
   if (marker().markColor() != MarkColor::Gray || !atomsZone()->isGCMarking()) {
     return;

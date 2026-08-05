@@ -8,6 +8,7 @@
 #include "mozilla/Atomics.h"
 
 #include "NamespaceImports.h"
+
 #include "gc/Cell.h"
 #include "js/Vector.h"
 #include "threading/ProtectedData.h"
@@ -63,7 +64,6 @@ class AtomMarkingRuntime {
   void markAtomsUsedByUncollectedZones(GCRuntime* gc,
                                        UniquePtr<DenseBitmap> markedUnion);
 
-  
   
   
   
