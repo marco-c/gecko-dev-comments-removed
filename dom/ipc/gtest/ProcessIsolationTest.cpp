@@ -187,6 +187,17 @@ static nsCString ServiceWorkerIsolatedRemoteType(nsIPrincipal* aPrincipal,
   return SERVICEWORKER_REMOTE_TYPE + "="_ns + origin;
 }
 
+
+
+
+static Result<RemoteTypes, nsresult> FileWorkerOutsideFileProcessExpected(
+    const nsCString& aFileRemoteType) {
+  if (StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  return RemoteTypes{aFileRemoteType, aFileRemoteType};
+}
+
 TEST(ProcessIsolationTest, WorkerOptions)
 {
   
@@ -272,11 +283,16 @@ TEST(ProcessIsolationTest, WorkerOptions)
                        WEB_REMOTE_TYPE}},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType}},
+       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
+       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+      {.mPrincipal = privilegedMozillaPrincipal,
+       .mWorkerKind = WorkerKindService,
+       .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE}},
+                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
 
       
       
@@ -314,7 +330,6 @@ TEST(ProcessIsolationTest, WorkerOptions)
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
 
       
-      
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
@@ -329,14 +344,23 @@ TEST(ProcessIsolationTest, WorkerOptions)
                                 WEB_REMOTE_TYPE}},
       {.mPrincipal = filePrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{fileRemoteType, fileRemoteType}},
+       .mExpected = FileWorkerOutsideFileProcessExpected(fileRemoteType)},
+      {.mPrincipal = filePrincipal,
+       .mWorkerKind = WorkerKindShared,
+       .mExpected = RemoteTypes{fileRemoteType, fileRemoteType},
+       .mCurrentRemoteType = FILE_REMOTE_TYPE},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType}},
+       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
+       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+      {.mPrincipal = privilegedMozillaPrincipal,
+       .mWorkerKind = WorkerKindShared,
+       .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE}},
+                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
       {.mPrincipal = nullSecureComPrecursorPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
