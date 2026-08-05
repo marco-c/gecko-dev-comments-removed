@@ -726,8 +726,9 @@ void nsVideoFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!clipAxes.isEmpty()) {
     nsRect clipRect;
     nsRectCornerRadii radii;
+    nsMargin inset;
     const bool haveRadii =
-        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii);
+        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii, inset);
     
     
     
@@ -737,7 +738,7 @@ void nsVideoFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (haveRadii || canOverflowWithoutRadii) {
       clipState.ClipContainingBlockDescendants(
           clipRect + aBuilder->ToReferenceFrame(this),
-          haveRadii ? &radii : nullptr);
+          haveRadii ? &radii : nullptr, haveRadii ? &inset : nullptr);
     }
   }
 

@@ -2811,11 +2811,12 @@ static void ApplyOverflowClipping(
     DisplayListClipState::AutoClipMultiple& aClipState) {
   nsRect clipRect;
   nsRectCornerRadii radii;
-  bool haveRadii =
-      aFrame->ComputeOverflowClipRectRelativeToSelf(aClipAxes, clipRect, radii);
+  nsMargin inset;
+  bool haveRadii = aFrame->ComputeOverflowClipRectRelativeToSelf(
+      aClipAxes, clipRect, radii, inset);
   aClipState.ClipContainingBlockDescendantsExtra(
       clipRect + aBuilder->ToReferenceFrame(aFrame),
-      haveRadii ? &radii : nullptr);
+      haveRadii ? &radii : nullptr, haveRadii ? &inset : nullptr);
 }
 
 static Sides ToSkipSides(PhysicalAxes aClipAxes) {
@@ -2833,7 +2834,7 @@ static Sides ToSkipSides(PhysicalAxes aClipAxes) {
 
 bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     const PhysicalAxes aClipAxes, nsRect& aOutRect,
-    nsRectCornerRadii& aOutRadii) const {
+    nsRectCornerRadii& aOutRadii, nsMargin& aOutInset) const {
   
   
   
@@ -2842,6 +2843,7 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   MOZ_ASSERT(ShouldApplyOverflowClipping(StyleDisplay()) == aClipAxes);
   auto boxMargin = OverflowClipMargin(aClipAxes,  true);
   boxMargin.ApplySkipSides(GetSkipSides() | ToSkipSides(aClipAxes));
+  aOutInset = -boxMargin;
 
   aOutRect = nsRect(nsPoint(), GetSize());
   aOutRect.Inflate(boxMargin);

@@ -6,6 +6,7 @@
 #define DISPLAYITEMCLIP_H_
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "nsMargin.h"
 #include "nsRect.h"
 #include "nsTArray.h"
 
@@ -45,6 +46,13 @@ class DisplayItemClip {
     
     nsRectCornerRadii mRadii;
 
+    
+    
+    
+    
+    
+    nsMargin mInset;
+
     RoundedRect operator+(const nsPoint& aOffset) const {
       RoundedRect r = *this;
       r.mRect += aOffset;
@@ -68,7 +76,8 @@ class DisplayItemClip {
   DisplayItemClip() : mHaveClipRect(false) {}
 
   void SetTo(const nsRect& aRect);
-  void SetTo(const nsRect& aRect, const nsRectCornerRadii* aRadii);
+  void SetTo(const nsRect& aRect, const nsRectCornerRadii* aRadii,
+             const nsMargin* aInset = nullptr);
   void SetTo(const nsRect& aRect, const nsRect& aRoundedRect,
              const nsRectCornerRadii* aRadii);
   void IntersectWith(const DisplayItemClip& aOther);

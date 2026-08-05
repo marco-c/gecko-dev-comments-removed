@@ -3268,7 +3268,7 @@ class nsIFrame : public nsQueryFrame {
 
   bool ComputeOverflowClipRectRelativeToSelf(
       const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
-      nsRectCornerRadii& aOutRadii) const;
+      nsRectCornerRadii& aOutRadii, nsMargin& aOutInset) const;
 
   
   

@@ -2330,8 +2330,8 @@ void nsDisplayImage::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
       OldImageHasDifferentRatio(*frame, *image, prevImage);
 
   uint32_t flags = aBuilder->GetImageDecodeFlags();
-  if (aBuilder->ShouldSyncDecodeImages() || oldImageIsDifferent ||
-      frame->mForceSyncDecoding) {
+  if (oldImageIsDifferent || frame->mForceSyncDecoding ||
+      frame->UsedImageDecoding() == StyleImageDecoding::Sync) {
     flags |= imgIContainer::FLAG_SYNC_DECODE;
   }
 
@@ -2477,8 +2477,8 @@ bool nsDisplayImage::CreateWebRenderCommands(
       OldImageHasDifferentRatio(*frame, *image, prevImage);
 
   uint32_t flags = aDisplayListBuilder->GetImageDecodeFlags();
-  if (aDisplayListBuilder->ShouldSyncDecodeImages() || oldImageIsDifferent ||
-      frame->mForceSyncDecoding) {
+  if (oldImageIsDifferent || frame->mForceSyncDecoding ||
+      frame->UsedImageDecoding() == StyleImageDecoding::Sync) {
     flags |= imgIContainer::FLAG_SYNC_DECODE;
   }
   if (StaticPrefs::image_svg_blob_image() &&
@@ -2652,11 +2652,12 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!clipAxes.isEmpty()) {
     nsRect clipRect;
     nsRectCornerRadii radii;
+    nsMargin inset;
     bool haveRadii =
-        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii);
+        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii, inset);
     clipState.ClipContainingBlockDescendants(
         clipRect + aBuilder->ToReferenceFrame(this),
-        haveRadii ? &radii : nullptr);
+        haveRadii ? &radii : nullptr, haveRadii ? &inset : nullptr);
   }
 
   if (!mComputedSize.IsEmpty()) {

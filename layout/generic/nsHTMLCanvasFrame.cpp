@@ -284,12 +284,14 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
       aCtx->Multiply(transform);
     }
 
-    const auto& srcRect = surface->GetRect();
-    dt.DrawSurface(
-        surface, destRect,
-        Rect(float(srcRect.X()), float(srcRect.Y()), float(srcRect.Width()),
-             float(srcRect.Height())),
-        DrawSurfaceOptions(nsLayoutUtils::GetSamplingFilterForFrame(f)));
+    const Rect srcRect(surface->GetRect());
+    if (presContext->Type() != nsPresContext::eContext_Print ||
+        !canvas->GetMozPrintCallback() ||
+        !dt.TryToReplaySurface(surface, destRect, srcRect)) {
+      dt.DrawSurface(
+          surface, destRect, srcRect,
+          DrawSurfaceOptions(nsLayoutUtils::GetSamplingFilterForFrame(f)));
+    }
 
     renderer->FireDidTransactionCallback();
     renderer->ResetDirty();
@@ -444,13 +446,14 @@ void nsHTMLCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!clipAxes.isEmpty()) {
     nsRect clipRect;
     nsRectCornerRadii radii;
+    nsMargin inset;
     bool haveRadii =
-        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii);
+        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii, inset);
     if (haveRadii ||
         nsStyleUtil::ObjectPropsMightCauseOverflow(StylePosition())) {
       clipState.ClipContainingBlockDescendants(
           clipRect + aBuilder->ToReferenceFrame(this),
-          haveRadii ? &radii : nullptr);
+          haveRadii ? &radii : nullptr, haveRadii ? &inset : nullptr);
     }
   }
 
