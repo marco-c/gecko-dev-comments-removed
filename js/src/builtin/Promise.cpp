@@ -8338,42 +8338,9 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
 
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
 
-#ifdef DEBUG
-  bool isGenerator = iter.calleeTemplate()->isGenerator();
-#endif
-
-  ++iter;
-
   
   
-  if (iter.done()) {
-    return false;
-  }
-  
-  
-  
-  
-  
-  if (!iter.isFunctionFrame()) {
-    MOZ_ASSERT(!isGenerator);
-    return false;
-  }
-
-  
-  JSFunction* fun = iter.calleeTemplate();
-  if (IsSelfHostedFunctionWithName(fun, cx->names().InterpretGeneratorResume)) {
-    ++iter;
-
-    if (iter.done()) {
-      return false;
-    }
-
-    MOZ_ASSERT(iter.isFunctionFrame());
-    fun = iter.calleeTemplate();
-  }
-
-  if (!IsSelfHostedFunctionWithName(fun, cx->names().AsyncFunctionNext) &&
-      !IsSelfHostedFunctionWithName(fun, cx->names().AsyncGeneratorNext)) {
+  if (!cx->activation()->enteredForGeneratorResume()) {
     return false;
   }
 

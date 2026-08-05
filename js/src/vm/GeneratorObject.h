@@ -217,6 +217,16 @@ bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
 
 
 
+bool ResumeGenerator(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
+                     HandleValue value, GeneratorResumeKind kind,
+                     MutableHandleValue result);
+
+
+
+
+
+
+
 
 
 

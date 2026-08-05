@@ -14,6 +14,7 @@
 #include "vm/AsyncIteration.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GlobalObject.h"
+#include "vm/Interpreter.h"  
 #include "vm/JSObject.h"
 #include "vm/PlainObject.h"  
 
@@ -276,6 +277,18 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   MOZ_ASSERT(genObj->isSuspended());
 
   InterpreterFrame* fp = activation.regs().fp();
+  fp->setResumingGenerator();
+
+  
+  
+  if (fp->isFunctionFrame()) {
+    MOZ_ASSERT(fp->numActualArgs() == 0);
+    Value* resumeArgs = fp->resumeArgs();
+    resumeArgs[ResumeFrameArgs::ResumeValueSlot] = arg;
+    resumeArgs[ResumeFrameArgs::GeneratorSlot] = ObjectValue(*genObj);
+    resumeArgs[ResumeFrameArgs::ResumeKindSlot] =
+        Int32Value(int32_t(resumeKind));
+  }
 
   if (genObj->hasArgsObj()) {
     fp->initArgsObj(genObj->argsObj());
@@ -301,6 +314,16 @@ void AbstractGeneratorObject::resume(JSContext* cx,
   activation.regs().sp[-1] = Int32Value(int32_t(resumeKind));
 
   genObj->setRunning();
+}
+
+bool js::ResumeGenerator(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
+                         HandleValue value, GeneratorResumeKind kind,
+                         MutableHandleValue result) {
+  MOZ_ASSERT(genObj->isSuspended());
+  MOZ_ASSERT(cx->realm() == genObj->callee().nonLazyScript()->realm());
+
+  GeneratorResumeState state(cx, genObj, value, kind, result);
+  return RunScript(cx, state);
 }
 
 GeneratorObject* GeneratorObject::create(JSContext* cx, HandleFunction fun) {

@@ -406,6 +406,11 @@ class MOZ_STACK_CLASS Activation {
   
   bool asyncCallIsExplicit_;
 
+  
+  
+  
+  bool enteredForGeneratorResume_ = false;
+
   enum Kind : bool { Interpreter, Jit };
   Kind kind_;
 
@@ -450,6 +455,9 @@ class MOZ_STACK_CLASS Activation {
   const char* asyncCause() const { return asyncCause_; }
 
   bool asyncCallIsExplicit() const { return asyncCallIsExplicit_; }
+
+  bool enteredForGeneratorResume() const { return enteredForGeneratorResume_; }
+  void setEnteredForGeneratorResume() { enteredForGeneratorResume_ = true; }
 
   inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
   void clearLiveSavedFrameCache() { frameCache_.clear(); }

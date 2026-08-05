@@ -263,11 +263,38 @@ enum MaybeConstruct { NO_CONSTRUCT = false, CONSTRUCT = true };
 
 
 
+
+
+
+
+
+
+
+
+
+struct ResumeFrameArgs {
+  enum Slot : uint32_t {
+    ResumeValueSlot = 0,
+    GeneratorSlot,
+    ResumeKindSlot,
+    NumSlots
+  };
+
+  static constexpr size_t offsetOfSlot(uint32_t slot) {
+    MOZ_ASSERT(slot < NumSlots);
+    return slot * sizeof(Value);
+  }
+};
+
 class InterpreterFrame {
   enum Flags : uint32_t {
     CONSTRUCTING = 0x1, 
 
     
+
+
+
+    RESUMING_GENERATOR = 0x2,
 
     
     HAS_INITIAL_ENV =
@@ -474,6 +501,14 @@ class InterpreterFrame {
   }
 
   
+  
+  Value* resumeArgs() const {
+    MOZ_ASSERT(isResumingGenerator());
+    MOZ_ASSERT(isFunctionFrame());
+    return argv() + numFormalArgs();
+  }
+
+  
 
 
 
@@ -661,6 +696,16 @@ class InterpreterFrame {
 
 
   bool isConstructing() const { return !!(flags_ & CONSTRUCTING); }
+
+  void setResumingGenerator() {
+    MOZ_ASSERT(!isResumingGenerator());
+    flags_ |= RESUMING_GENERATOR;
+  }
+  void clearResumingGenerator() {
+    MOZ_ASSERT(isResumingGenerator());
+    flags_ &= ~RESUMING_GENERATOR;
+  }
+  bool isResumingGenerator() const { return !!(flags_ & RESUMING_GENERATOR); }
 
   
 
