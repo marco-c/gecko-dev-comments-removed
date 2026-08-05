@@ -5,4 +5,4 @@
 
 
 pub(crate) mod async_timer;
-pub(crate) mod thread;
+pub(crate) mod thread_guard;

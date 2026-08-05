@@ -7,7 +7,7 @@
 
 
 
-use crate::util::thread::{self, MainThreadGuard};
+use crate::util::thread_guard::{self, MainThreadGuard};
 use nserror::{
     NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_SAME_THREAD, NS_ERROR_UNEXPECTED, NS_OK, nsresult,
 };
