@@ -105,12 +105,12 @@ static PlainYearMonthObject* CreateTemporalYearMonth(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->initFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainYearMonthObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainYearMonthObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;
@@ -134,12 +134,12 @@ PlainYearMonthObject* js::temporal::CreateTemporalYearMonth(
 
   
   auto packedDate = PackedDate::pack(yearMonth);
-  object->initFixedSlot(PlainYearMonthObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainYearMonthObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainYearMonthObject::CALENDAR_SLOT,
-                        yearMonth.calendar().toSlotValue());
+  object->initFixedSlotTyped(PlainYearMonthObject::CALENDAR_SLOT,
+                             yearMonth.calendar().toSlotValue());
 
   
   return object;

@@ -77,12 +77,12 @@ static PlainMonthDayObject* CreateTemporalMonthDay(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->initFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainMonthDayObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainMonthDayObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;
@@ -106,12 +106,12 @@ PlainMonthDayObject* js::temporal::CreateTemporalMonthDay(
 
   
   auto packedDate = PackedDate::pack(monthDay);
-  object->initFixedSlot(PlainMonthDayObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainMonthDayObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainMonthDayObject::CALENDAR_SLOT,
-                        monthDay.calendar().toSlotValue());
+  object->initFixedSlotTyped(PlainMonthDayObject::CALENDAR_SLOT,
+                             monthDay.calendar().toSlotValue());
 
   
   return object;

@@ -368,10 +368,10 @@ InstantObject* js::temporal::CreateTemporalInstant(
   }
 
   
-  object->initFixedSlot(InstantObject::SECONDS_SLOT,
-                        NumberValue(epochNanoseconds.seconds));
-  object->initFixedSlot(InstantObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNanoseconds.nanoseconds));
+  object->initFixedSlotTyped(InstantObject::SECONDS_SLOT,
+                             NumberValue(epochNanoseconds.seconds));
+  object->initFixedSlotTyped(InstantObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNanoseconds.nanoseconds));
 
   
   return object;
@@ -398,10 +398,10 @@ static InstantObject* CreateTemporalInstant(JSContext* cx, const CallArgs& args,
 
   
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
-  object->initFixedSlot(InstantObject::SECONDS_SLOT,
-                        NumberValue(epochNs.seconds));
-  object->initFixedSlot(InstantObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNs.nanoseconds));
+  object->initFixedSlotTyped(InstantObject::SECONDS_SLOT,
+                             NumberValue(epochNs.seconds));
+  object->initFixedSlotTyped(InstantObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNs.nanoseconds));
 
   
   return object;

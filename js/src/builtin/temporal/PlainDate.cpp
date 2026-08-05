@@ -211,11 +211,12 @@ static PlainDateObject* CreateTemporalDate(JSContext* cx, const CallArgs& args,
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->initFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainDateObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainDateObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;
@@ -243,11 +244,12 @@ PlainDateObject* js::temporal::CreateTemporalDate(
 
   
   auto packedDate = PackedDate::pack(isoDate);
-  object->initFixedSlot(PlainDateObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(PlainDateObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
 
   
-  object->initFixedSlot(PlainDateObject::CALENDAR_SLOT, calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainDateObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;

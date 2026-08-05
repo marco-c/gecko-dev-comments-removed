@@ -524,18 +524,18 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
   
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
-  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                        NumberValue(epochNs.seconds));
-  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNs.nanoseconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
+                             NumberValue(epochNs.seconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNs.nanoseconds));
 
   
-  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                        timeZone.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::TIMEZONE_SLOT,
+                             timeZone.toSlotValue());
 
   
-  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;
@@ -558,18 +558,18 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   }
 
   
-  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                        NumberValue(epochNanoseconds.seconds));
-  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNanoseconds.nanoseconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
+                             NumberValue(epochNanoseconds.seconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNanoseconds.nanoseconds));
 
   
-  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                        timeZone.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::TIMEZONE_SLOT,
+                             timeZone.toSlotValue());
 
   
-  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   
   return object;
@@ -2576,7 +2576,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     }
 
     
-    MOZ_ASSERT(thisNs < endNs);
+    thisNs = std::min(thisNs, endNs - EpochDuration{0, 1});
 
     
     auto dayLengthNs = endNs - startNs;
