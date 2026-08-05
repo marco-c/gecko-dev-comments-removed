@@ -928,6 +928,7 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "crosswordVisible",
     widgetsSettingsEnabledKey: "crosswordEnabled",
+    trainhopNamespace: "widgetCrossword",
   },
   {
     id: "stocks",
@@ -1115,8 +1116,10 @@ function resolveWidgetHasSidebar(widget, prefs) {
 
 
 
+
 function resolveCrosswordEndpoint(prefs) {
   return (
+    prefs.trainhopConfig?.widgetCrossword?.endpoint ||
     prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
     prefs[PREF_CROSSWORD_ENDPOINT]
   );
