@@ -322,23 +322,6 @@ class ResponsiveUI extends EventEmitter {
 
     this.resizeHandleY = resizeHandleY;
     this.resizeHandleY.addEventListener("mousedown", this.onResizeStart);
-
-    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(
-      entries => {
-        for (const entry of entries) {
-          
-          
-          
-          
-          this.rdmFrame.classList.toggle(
-            "accomodate-ua",
-            entry.contentBoxSize[0].inlineSize <= 800
-          );
-        }
-      }
-    );
-
-    this.resizeToolbarObserver.observe(this.browserStackEl);
   }
 
   
@@ -402,9 +385,6 @@ class ResponsiveUI extends EventEmitter {
 
     
     this.rdmFrame.contentWindow?.removeEventListener("message", this);
-
-    
-    this.resizeToolbarObserver.unobserve(this.browserStackEl);
 
     
     this.rdmFrame.contentWindow?.destroy();
@@ -478,7 +458,6 @@ class ResponsiveUI extends EventEmitter {
     this.resizeHandleX = null;
     this.resizeHandleY = null;
     this.dynamicToolbar = null;
-    this.resizeToolbarObserver = null;
 
     
     
@@ -612,6 +591,9 @@ class ResponsiveUI extends EventEmitter {
         break;
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
+        break;
+      case "narrow-media-query-change":
+        this.onToolbarDocumentNarrowMediaQueryChange(event);
         break;
     }
   }
@@ -901,6 +883,14 @@ class ResponsiveUI extends EventEmitter {
 
   onUpdateDeviceModal(event) {
     this.rdmFrame.classList.toggle("device-modal-opened", event.data.isOpen);
+  }
+
+  onToolbarDocumentNarrowMediaQueryChange(event) {
+    
+    
+    
+    
+    this.rdmFrame.classList.toggle("accomodate-ua", event.data.isNarrowLayout);
   }
 
   async hasDeviceState() {
