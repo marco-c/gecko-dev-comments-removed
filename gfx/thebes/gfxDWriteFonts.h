@@ -101,12 +101,12 @@ class gfxDWriteFont final : public gfxFont {
 
   
   
-  mozilla::Atomic<bool> mAzureScaledFontUsedClearType;
-
-  
-  
   
   mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDI;
+
+  
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontClearType;
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDIClearType;
 
   bool UsingClearType() {
     return mozilla::gfx::gfxVars::SystemTextQuality() == CLEARTYPE_QUALITY;
