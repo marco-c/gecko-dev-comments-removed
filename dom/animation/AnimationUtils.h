@@ -26,6 +26,8 @@ namespace dom {
 class Animation;
 class Document;
 class Element;
+class OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String;
+struct AnimationRange;
 struct KeyframeAnimationOptions;
 }  
 
@@ -75,6 +77,19 @@ class AnimationUtils {
   static bool ApplyKeyframeAnimationRange(
       const dom::KeyframeAnimationOptions& aOptions, dom::Animation* aAnimation,
       ErrorResult& aRv);
+
+  
+  
+  static bool SetAnimationRangeStart(
+      const dom::
+          OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String&
+              aValue,
+      dom::AnimationRange& aRange, ErrorResult& aRv);
+  static bool SetAnimationRangeEnd(
+      const dom::
+          OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String&
+              aValue,
+      dom::AnimationRange& aRange, ErrorResult& aRv);
 
   
   

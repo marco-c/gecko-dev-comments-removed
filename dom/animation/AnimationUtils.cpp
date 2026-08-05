@@ -222,6 +222,9 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
 
 namespace {
 
+
+
+
 using TimelineRangeValue =
     OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String;
 
@@ -290,6 +293,42 @@ bool TimelineRangeValueToCss(const TimelineRangeValue& aValue,
 }  
 
 
+bool AnimationUtils::SetAnimationRangeStart(const TimelineRangeValue& aValue,
+                                            AnimationRange& aRange,
+                                            ErrorResult& aRv) {
+  if (IsNormalTimelineRange(aValue)) {
+    aRange.mStart = StyleAnimationRangeStart::DefaultStart();
+    return true;
+  }
+  
+  
+  nsAutoCString css;
+  if (!TimelineRangeValueToCss(aValue, css) ||
+      !Servo_ParseAnimationRangeStart(&css, &aRange.mStart)) {
+    aRv.ThrowTypeError("Invalid animation range start: "_ns + css);
+    return false;
+  }
+  return true;
+}
+
+
+bool AnimationUtils::SetAnimationRangeEnd(const TimelineRangeValue& aValue,
+                                          AnimationRange& aRange,
+                                          ErrorResult& aRv) {
+  if (IsNormalTimelineRange(aValue)) {
+    aRange.mEnd = StyleAnimationRangeEnd::DefaultEnd();
+    return true;
+  }
+  nsAutoCString css;
+  if (!TimelineRangeValueToCss(aValue, css) ||
+      !Servo_ParseAnimationRangeEnd(&css, &aRange.mEnd)) {
+    aRv.ThrowTypeError("Invalid animation range end: "_ns + css);
+    return false;
+  }
+  return true;
+}
+
+
 bool AnimationUtils::ApplyKeyframeAnimationRange(
     const KeyframeAnimationOptions& aOptions, Animation* aAnimation,
     ErrorResult& aRv) {
@@ -299,22 +338,10 @@ bool AnimationUtils::ApplyKeyframeAnimationRange(
     return true;
   }
 
-  
   AnimationRange range;
-  nsAutoCString css;
-  if (!startIsNormal) {
-    if (!TimelineRangeValueToCss(aOptions.mRangeStart, css) ||
-        !Servo_ParseAnimationRangeStart(&css, &range.mStart)) {
-      aRv.ThrowTypeError("Invalid animation range start");
-      return false;
-    }
-  }
-  if (!endIsNormal) {
-    if (!TimelineRangeValueToCss(aOptions.mRangeEnd, css) ||
-        !Servo_ParseAnimationRangeEnd(&css, &range.mEnd)) {
-      aRv.ThrowTypeError("Invalid animation range end");
-      return false;
-    }
+  if (!SetAnimationRangeStart(aOptions.mRangeStart, range, aRv) ||
+      !SetAnimationRangeEnd(aOptions.mRangeEnd, range, aRv)) {
+    return false;
   }
 
   aAnimation->SetTimelineRange(std::move(range));
