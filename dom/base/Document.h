@@ -4204,7 +4204,9 @@ class Document : public nsINode,
   void MaybeSkipTransitionAfterVisibilityChange();
 
   void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
-  MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
+
+  
+  MOZ_CAN_RUN_SCRIPT bool FlushViewTransitionUpdateCallbackQueue();
 
   
   

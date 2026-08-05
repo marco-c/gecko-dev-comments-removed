@@ -532,19 +532,26 @@ void ViewTransition::CallUpdateCallback(ErrorResult& aRv) {
           
           ucd->MaybeResolveWithUndefined();
         }
-        
-        
-        
-        
-        
-        aVt->mDocument->FlushPendingNotifications(FlushType::Layout);
+
         if (aVt->mPhase == Phase::Done) {
           
           
           if (Promise* finished = aVt->GetFinished(aRv)) {
             finished->MaybeResolveWithUndefined();
           }
+          
+          return;
         }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        aVt->mDocument->FlushPendingNotifications(FlushType::Layout);
         aVt->Activate();
       },
       [](JSContext*, JS::Handle<JS::Value> aReason, ErrorResult& aRv,
@@ -1134,7 +1141,11 @@ void ViewTransition::PerformPendingOperations() {
   
   
   RefPtr doc = mDocument;
-  doc->FlushViewTransitionUpdateCallbackQueue();
+  if (doc->FlushViewTransitionUpdateCallbackQueue()) {
+    
+    
+    doc->FlushPendingNotifications(FlushType::Layout);
+  }
 
   switch (mPhase) {
     case Phase::PendingCapture:

@@ -17429,19 +17429,20 @@ void Document::ScheduleViewTransitionUpdateCallback(ViewTransition* aVt) {
 }
 
 
-void Document::FlushViewTransitionUpdateCallbackQueue() {
+bool Document::FlushViewTransitionUpdateCallbackQueue() {
   
   
   
   
-  auto callbacks = std::move(mViewTransitionUpdateCallbacks);
+  const auto callbacks = std::move(mViewTransitionUpdateCallbacks);
   MOZ_ASSERT(mViewTransitionUpdateCallbacks.IsEmpty());
-  for (RefPtr<ViewTransition>& vt : callbacks) {
+  for (const RefPtr<ViewTransition>& vt : callbacks) {
     MOZ_KnownLive(vt)->CallUpdateCallback(IgnoreErrors());
   }
 
   
   
+  return !callbacks.IsEmpty();
 }
 
 
