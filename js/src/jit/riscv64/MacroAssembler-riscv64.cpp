@@ -2836,6 +2836,96 @@ uint32_t MacroAssembler::pushFakeReturnAddress(Register scratch) {
 
 
 
+static void AtomicOffset(MacroAssembler& masm, Register address,
+                         Register offsetTemp) {
+  
+  
+  
+  
+  
+  masm.slliw(offsetTemp, address, 3);
+
+  
+  masm.andi(address, address, ~3);
+}
+
+static void AtomicMask(MacroAssembler& masm, unsigned nbytes,
+                       Register offsetTemp, Register maskTemp) {
+  MOZ_ASSERT(nbytes == 1 || nbytes == 2);
+
+  
+  masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
+
+  
+  masm.sllw(maskTemp, maskTemp, offsetTemp);
+}
+
+template <typename... RegisterPairs>
+static void AtomicShiftToOffset(MacroAssembler& masm, unsigned nbytes,
+                                Register offsetTemp, Register maskTemp,
+                                RegisterPairs... registers) {
+  MOZ_ASSERT(nbytes == 1 || nbytes == 2);
+
+  
+  
+  if (nbytes == 1) {
+    
+    (masm.ZeroExtendByte(std::get<1>(registers), std::get<0>(registers)), ...);
+
+    
+    (masm.sllw(std::get<1>(registers), std::get<1>(registers), offsetTemp),
+     ...);
+  } else {
+    MOZ_ASSERT(nbytes == 2);
+
+    if (Assembler::HasZbbExtension()) {
+      
+      (masm.ZeroExtendShort(std::get<1>(registers), std::get<0>(registers)),
+       ...);
+
+      
+      (masm.sllw(std::get<1>(registers), std::get<1>(registers), offsetTemp),
+       ...);
+    } else {
+      
+      
+      (masm.sllw(std::get<1>(registers), std::get<1>(registers), offsetTemp),
+       ...);
+      (masm.and_(std::get<1>(registers), std::get<1>(registers), maskTemp),
+       ...);
+    }
+  }
+}
+
+
+static void AtomicExtendResult(MacroAssembler& masm, Scalar::Type type,
+                               Register output, Register offsetTemp) {
+  bool signExtend = Scalar::isSignedIntType(type);
+  unsigned nbytes = Scalar::byteSize(type);
+  MOZ_ASSERT(nbytes == 1 || nbytes == 2);
+
+  
+  masm.srlw(output, output, offsetTemp);
+
+  
+  switch (nbytes) {
+    case 1:
+      if (signExtend) {
+        masm.SignExtendByte(output, output);
+      } else {
+        masm.ZeroExtendByte(output, output);
+      }
+      break;
+    case 2:
+      if (signExtend) {
+        masm.SignExtendShort(output, output);
+      } else {
+        masm.ZeroExtendShort(output, output);
+      }
+      break;
+  }
+}
+
 template <typename T>
 static void AtomicExchange(MacroAssembler& masm,
                            const wasm::MemoryAccessDesc* access,
@@ -2843,7 +2933,6 @@ static void AtomicExchange(MacroAssembler& masm,
                            const T& mem, Register value, Register valueTemp,
                            Register offsetTemp, Register maskTemp,
                            Register output) {
-  bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
   UseScratchRegisterScope temps(&masm);
@@ -2861,112 +2950,80 @@ static void AtomicExchange(MacroAssembler& masm,
       MOZ_CRASH();
   }
 
-  Label again;
-
   Register scratch = temps.Acquire();
   masm.computeEffectiveAddress(mem, scratch);
 
-  Register scratch2 = temps.Acquire();
-
   if (nbytes == 4) {
-    masm.memoryBarrierBefore(sync);
-    masm.bind(&again);
-
-    
-    
-    
-    
-    
-    AutoForbidPoolsAndNops afp(&masm,  8, 1);
-
     if (access) {
+      AutoForbidPoolsAndNops afp(&masm,  1);
       masm.append(*access, wasm::TrapMachineInsn::Atomic,
                   FaultingCodeOffset(masm.currentOffset()));
     }
 
-    masm.lr_w(true, true, output, scratch);
-    masm.or_(scratch2, value, zero);
-    masm.sc_w(true, true, scratch2, scratch, scratch2);
-    masm.ma_b(scratch2, scratch2, &again, Assembler::NonZero, ShortJump);
-
-    masm.memoryBarrierAfter(sync);
+    masm.amoswap_w(true, true, output, scratch, value);
 
     return;
   }
 
-  masm.andi(offsetTemp, scratch, 3);
-  masm.subPtr(offsetTemp, scratch);
-  masm.slliw(offsetTemp, offsetTemp, 3);
-  masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
-  masm.sllw(maskTemp, maskTemp, offsetTemp);
-  if (masm.HasZbbExtension()) {
-    
-    ;
-  } else {
-    masm.not_(maskTemp, maskTemp);
-  }
+  
+  AtomicOffset(masm, scratch, offsetTemp);
 
-  switch (nbytes) {
-    case 1:
-      masm.ZeroExtendByte(valueTemp, value);
-      break;
-    case 2:
-      masm.ZeroExtendShort(valueTemp, value);
-      break;
-  }
-  masm.sllw(valueTemp, valueTemp, offsetTemp);
+  
+  AtomicMask(masm, nbytes, offsetTemp, maskTemp);
+
+  
+  AtomicShiftToOffset(masm, nbytes, offsetTemp, maskTemp,
+                      std::pair{value, valueTemp});
+
+  
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
-  masm.bind(&again);
+  {
+    
+    
+    
+    
+    
+    
+    
 
-  
-  
-  
-  
-  
-  AutoForbidPoolsAndNops afp(&masm,  12,
-                             1);
+    
+    
+    
+    
+    AutoForbidPoolsAndNops afp(&masm,  5);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Atomic,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
+    Register scratch2 = temps.Acquire();
 
-  masm.lr_w(true, true, output, scratch);
-  if (masm.HasZbbExtension()) {
-    masm.andn(scratch2, output, maskTemp);
-  } else {
+    
+    Label again;
+    masm.bind(&again);
+
+    if (access) {
+      
+      masm.append(*access, wasm::TrapMachineInsn::Atomic,
+                  FaultingCodeOffset(masm.currentOffset()));
+    }
+
+    
+    masm.lr_w(true, true, output, scratch);
+
     
     masm.and_(scratch2, output, maskTemp);
-  }
+    masm.or_(scratch2, scratch2, valueTemp);
 
-  masm.or_(scratch2, scratch2, valueTemp);
+    
+    masm.sc_w(true, true, scratch2, scratch, scratch2);
 
-  masm.sc_w(true, true, scratch2, scratch, scratch2);
-
-  masm.ma_b(scratch2, scratch2, &again, Assembler::NonZero, ShortJump);
-
-  masm.srlw(output, output, offsetTemp);
-
-  switch (nbytes) {
-    case 1:
-      if (signExtend) {
-        masm.SignExtendByte(output, output);
-      } else {
-        masm.ZeroExtendByte(output, output);
-      }
-      break;
-    case 2:
-      if (signExtend) {
-        masm.SignExtendShort(output, output);
-      } else {
-        masm.ma_and(output, output, Imm32(0xffff));
-      }
-      break;
+    
+    masm.ma_b(scratch2, scratch2, &again, Assembler::NonZero, ShortJump);
   }
 
   masm.memoryBarrierAfter(sync);
+
+  AtomicExtendResult(masm, type, output, offsetTemp);
 }
 
 template <typename T>
@@ -2974,36 +3031,18 @@ static void AtomicExchange64(MacroAssembler& masm,
                              const wasm::MemoryAccessDesc* access,
                              Synchronization sync, const T& mem,
                              Register64 value, Register64 output) {
-  MOZ_ASSERT(value != output);
   UseScratchRegisterScope temps(&masm);
+
   Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
-  masm.computeEffectiveAddress(mem, scratch2);
+  masm.computeEffectiveAddress(mem, scratch);
 
-  Label tryAgain;
-
-  masm.memoryBarrierBefore(sync);
-
-  masm.bind(&tryAgain);
-
-  
-  
-  
-  
-  
-  AutoForbidPoolsAndNops afp(&masm,
-                              8, 1);
   if (access) {
-    masm.append(*access, js::wasm::TrapMachineInsn::Load64,
+    AutoForbidPoolsAndNops afp(&masm,  1);
+    masm.append(*access, js::wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
   }
 
-  masm.lr_d(true, true, output.reg, scratch2);
-  masm.movePtr(value.reg, scratch);
-  masm.sc_d(true, true, scratch, scratch2, scratch);
-  masm.ma_b(scratch, scratch, &tryAgain, Assembler::NonZero, ShortJump);
-
-  masm.memoryBarrierAfter(sync);
+  masm.amoswap_d(true, true, output.reg, scratch, value.reg);
 }
 
 template <typename T>
