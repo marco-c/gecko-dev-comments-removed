@@ -478,14 +478,30 @@ Http3WebTransportSession::OnIncomingWebTransportStream(
 }
 
 void Http3WebTransportSession::SendDatagram(nsTArray<uint8_t>&& aData,
-                                            uint64_t aTrackingId) {
+                                            uint64_t aTrackingId,
+                                            uint64_t aSendGroupId,
+                                            int64_t aSendOrder) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("Http3WebTransportSession::SendDatagram this=%p", this));
+  LOG(("Http3WebTransportSession::SendDatagram this=%p, sendGroup=%" PRIu64
+       ", sendOrder=%" PRId64,
+       this, aSendGroupId, aSendOrder));
   if (mSendState != PROCESSING_DATAGRAM) {
     return;
   }
 
-  mSession->SendDatagram(this, aData, aTrackingId);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mSession->SendDatagram(this, aData, aTrackingId, aSendGroupId, aSendOrder);
   mSession->StreamHasDataToWrite(this);
 }
 
