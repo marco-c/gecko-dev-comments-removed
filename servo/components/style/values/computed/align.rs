@@ -6,13 +6,11 @@
 
 
 
+use crate::derives::*;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified;
 
-pub use super::specified::{
-    AlignContent, AlignItems, ContentDistribution, JustifyContent, SelfAlignment,
-};
-pub use super::specified::{AlignSelf, JustifySelf};
+pub use super::specified::{ContentDistribution, ItemPlacement, SelfAlignment};
 
 
 
@@ -37,6 +35,7 @@ pub use super::specified::{AlignSelf, JustifySelf};
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToTyped)]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct ComputedJustifyItems {
     
     
@@ -67,7 +66,7 @@ impl ToComputedValue for specified::JustifyItems {
     fn to_computed_value(&self, _context: &Context) -> JustifyItems {
         use crate::values::specified::align;
         let specified = *self;
-        let computed = if self.0 != align::AlignFlags::LEGACY {
+        let computed = if (self.0).0 != align::AlignFlags::LEGACY {
             *self
         } else {
             
@@ -85,6 +84,7 @@ impl ToComputedValue for specified::JustifyItems {
 
     #[inline]
     fn from_computed_value(computed: &JustifyItems) -> Self {
-        computed.specified
+        
+        computed.computed
     }
 }
