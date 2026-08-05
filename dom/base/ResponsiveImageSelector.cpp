@@ -290,10 +290,6 @@ bool ResponsiveImageSelector::SelectImage(bool aReselect) {
   if (overrideDPPX > 0) {
     displayDensity = overrideDPPX;
   }
-  if (doc->ShouldResistFingerprinting(RFPTarget::WindowDevicePixelRatio)) {
-    displayDensity =
-        nsRFPService::GetDevicePixelRatioAtZoom(pctx->GetFullZoom());
-  }
 
   
   
