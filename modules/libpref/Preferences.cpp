@@ -1989,6 +1989,11 @@ class PreferencesImpl {
   nsresult MakeBackupPrefFile(nsIFile* aFile);
   
   nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
+  
+  
+  
+  
+  
   nsresult WritePrefFile(
       nsIFile* aFile, SaveMethod aSaveMethod,
       UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
@@ -4085,6 +4090,7 @@ StaticMutex PreferencesWriter::sWritingToFile;
 
 class PWRunnable : public Runnable {
  public:
+  
   explicit PWRunnable(
       nsIFile* aFile,
       UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
@@ -4093,7 +4099,24 @@ class PWRunnable : public Runnable {
         mFile(aFile),
         mPromiseHolder(std::move(aPromiseHolder)) {}
 
+  
+  PWRunnable(nsIFile* aFile, UniquePtr<PrefSaveData> aData,
+             UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
+                 aPromiseHolder)
+      : Runnable("PWRunnableBackup"),
+        mFile(aFile),
+        mData(std::move(aData)),
+        mPromiseHolder(std::move(aPromiseHolder)) {}
+
   NS_IMETHOD Run() override {
+    
+    if (mData) {
+      nsresult rv = PreferencesWriter::Write(mFile, *mData);
+      DispatchWriteComplete(rv,  false);
+      PreferencesWriter::sPendingWriteCount--;
+      return rv;
+    }
+
     
     
     
@@ -4137,24 +4160,10 @@ class PWRunnable : public Runnable {
           PreferencesWriter::sPendingWriteData.exchange(nullptr));
       if (prefs) {
         rv = PreferencesWriter::Write(mFile, *prefs);
-        
-        
-        
-        nsresult rvCopy = rv;
-        nsCOMPtr<nsIFile> fileCopy(mFile);
-        SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-            "Preferences::WriterRunnable",
-            [fileCopy, rvCopy, promiseHolder = std::move(mPromiseHolder)] {
-              MOZ_RELEASE_ASSERT(NS_IsMainThread());
-              if (NS_FAILED(rvCopy)) {
-                Preferences::HandleDirty();
-              }
-              if (promiseHolder) {
-                promiseHolder->ResolveIfExists(true, __func__);
-              }
-            }));
+        DispatchWriteComplete(rv,  true);
       }
     }
+    
     
     
     
@@ -4165,6 +4174,31 @@ class PWRunnable : public Runnable {
   }
 
  private:
+  
+  
+  
+  
+  
+  void DispatchWriteComplete(nsresult aRv, bool aRetryOnFailure) {
+    nsCOMPtr<nsIFile> fileCopy(mFile);
+    SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+        "Preferences::WriterRunnable",
+        [fileCopy, aRv, aRetryOnFailure,
+         promiseHolder = std::move(mPromiseHolder)] {
+          MOZ_RELEASE_ASSERT(NS_IsMainThread());
+          if (NS_FAILED(aRv) && aRetryOnFailure) {
+            Preferences::HandleDirty();
+          }
+          if (promiseHolder) {
+            if (NS_SUCCEEDED(aRv) || aRetryOnFailure) {
+              promiseHolder->ResolveIfExists(true, __func__);
+            } else {
+              promiseHolder->RejectIfExists(aRv, __func__);
+            }
+          }
+        }));
+  }
+
   ~PWRunnable() {
     if (mPromiseHolder) {
       mPromiseHolder->RejectIfExists(NS_ERROR_ABORT, __func__);
@@ -4173,6 +4207,8 @@ class PWRunnable : public Runnable {
 
  protected:
   nsCOMPtr<nsIFile> mFile;
+  
+  UniquePtr<PrefSaveData> mData;
   UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
       mPromiseHolder;
 };
@@ -5509,6 +5545,24 @@ nsresult PreferencesImpl::WritePrefFile(
       if (NS_FAILED(rv)) {
         REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
       }
+    }
+
+    
+    
+    
+    if (aPromiseHolder) {
+      MOZ_ASSERT(aSaveMethod == SaveMethod::Asynchronous,
+                 "Backup writes are always asynchronous");
+      PreferencesWriter::sPendingWriteCount++;
+      rv = mAsyncTarget->Dispatch(
+          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder)),
+          nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+      if (NS_FAILED(rv)) {
+        PreferencesWriter::sPendingWriteCount--;
+        
+        return rv;
+      }
+      return NS_OK;
     }
 
     if (mCurrentFile) {
