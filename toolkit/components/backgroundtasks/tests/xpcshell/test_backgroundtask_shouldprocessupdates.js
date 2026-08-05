@@ -38,6 +38,18 @@ add_task(async function test_backgroundtask_shouldprocessupdates() {
 
   
   
+  
+  
+  
+  
+  exitCode = await do_backgroundtask("shouldprocessupdates", {
+    extraArgs: ["--test-should-not-process-updates"],
+    extraEnv: { MOZ_DISABLE_UPDATE_PROCESSING: "1" },
+  });
+  Assert.equal(77, exitCode);
+
+  
+  
   exitCode = await do_backgroundtask("shouldnotprocessupdates", {
     extraArgs: ["--test-should-not-process-updates"],
   });

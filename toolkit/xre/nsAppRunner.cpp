@@ -4887,7 +4887,8 @@ enum struct ShouldNotProcessUpdatesReason {
   DevToolsLaunching,
   NotAnUpdatingTask,
   OtherInstanceRunning,
-  FirstStartup
+  FirstStartup,
+  DisabledByEnvironment
 };
 
 const char* ShouldNotProcessUpdatesReasonAsString(
@@ -4899,6 +4900,8 @@ const char* ShouldNotProcessUpdatesReasonAsString(
       return "NotAnUpdatingTask";
     case ShouldNotProcessUpdatesReason::OtherInstanceRunning:
       return "OtherInstanceRunning";
+    case ShouldNotProcessUpdatesReason::DisabledByEnvironment:
+      return "DisabledByEnvironment";
     default:
       MOZ_CRASH("impossible value for ShouldNotProcessUpdatesReason");
   }
@@ -4912,6 +4915,13 @@ Maybe<ShouldNotProcessUpdatesReason> ShouldNotProcessUpdates(
   if (ARG_FOUND == CheckArgExists("first-startup")) {
     NS_WARNING("ShouldNotProcessUpdates(): FirstStartup");
     return Some(ShouldNotProcessUpdatesReason::FirstStartup);
+  }
+
+  
+  
+  if (EnvHasValue("MOZ_DISABLE_UPDATE_PROCESSING")) {
+    NS_WARNING("ShouldNotProcessUpdates(): DisabledByEnvironment");
+    return Some(ShouldNotProcessUpdatesReason::DisabledByEnvironment);
   }
 
   
