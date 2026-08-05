@@ -55,6 +55,25 @@ fn split_manifest_tokens(s: &str) -> Vec<&str> {
     tokens
 }
 
+
+
+
+
+fn scaled_reference_path(reference: &Path, device_pixel_scale: f32) -> PathBuf {
+    if device_pixel_scale == 1.0 ||
+        reference.extension().and_then(|e| e.to_str()) != Some("png") {
+        return reference.to_path_buf();
+    }
+
+    let stem = reference.file_stem().unwrap().to_str().unwrap();
+    let scaled = reference.with_file_name(format!("{}-scale{}.png", stem, device_pixel_scale));
+    if scaled.exists() {
+        scaled
+    } else {
+        reference.to_path_buf()
+    }
+}
+
 pub struct ReftestOptions {
     
     pub allow_max_difference: usize,
@@ -908,7 +927,8 @@ impl<'a> ReftestHarness<'a> {
             }
         };
         let test_paths: Vec<String> = t.test.iter().map(|p| with_scale(p)).collect();
-        let test_name = format!("{} {} {}", test_paths.join(", "), t.op, with_scale(&t.reference));
+        let reference_path = scaled_reference_path(&t.reference, device_pixel_scale);
+        let test_name = format!("{} {} {}", test_paths.join(", "), t.op, with_scale(&reference_path));
         println!("REFTEST {}", test_name);
         profile_scope!("wrench reftest", text: &test_name);
 
@@ -933,9 +953,11 @@ impl<'a> ReftestHarness<'a> {
         }
 
         let window_size = self.window.get_inner_size();
-        let reference_image = match t.reference.extension().unwrap().to_str().unwrap() {
+        
+        
+        let reference_image = match reference_path.extension().unwrap().to_str().unwrap() {
             "yaml" => None,
-            "png" => Some(self.load_image(t.reference.as_path(), ImageFormat::Png)),
+            "png" => Some(self.load_image(reference_path.as_path(), ImageFormat::Png)),
             other => panic!("Unknown reftest extension: {}", other),
         };
         let test_size = reference_image.as_ref().map_or(window_size, |img| img.size);
@@ -1004,7 +1026,7 @@ impl<'a> ReftestHarness<'a> {
             let save_all_png = false; 
             if save_all_png {
                 let img = images.last().unwrap();
-                save_flipped(&t.reference, img.data.clone(), img.size);
+                save_flipped(&reference_path, img.data.clone(), img.size);
             }
             image
         } else {
