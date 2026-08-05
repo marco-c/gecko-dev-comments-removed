@@ -88,6 +88,10 @@ class WasmFrameIter {
   bool currentFrameStackSwitched_ = false;
 #ifdef ENABLE_WASM_JSPI
   ContStack* contStack_ = nullptr;
+  
+  
+  
+  ContStack* unwoundContStack_ = nullptr;
 #endif
 
   
@@ -108,6 +112,13 @@ class WasmFrameIter {
   
   
   void popFrame(bool isLeavingFrame);
+
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  
+  void popContBaseFrame();
+#endif
 
  public:
   
@@ -190,6 +201,10 @@ class WasmFrameIter {
     MOZ_ASSERT(!done());
     return contStack_;
   }
+
+  
+  
+  ContStack* unwoundContStack() const { return unwoundContStack_; }
 #endif
 
   
