@@ -117,6 +117,7 @@ class PacingController {
     
     
     TimeDelta send_burst_interval = PacerConfig::kDefaultTimeInterval;
+    std::optional<PacerConfig> initial_pacer_config;
   };
 
   static Configuration DefaultConfiguration() { return Configuration{}; }
