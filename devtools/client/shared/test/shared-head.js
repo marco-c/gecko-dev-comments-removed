@@ -1598,6 +1598,14 @@ function createTestHTTPServer() {
 
 
 async function registerActorInContentProcess(url, options) {
+  function convertChromeToFile(uri) {
+    return Cc["@mozilla.org/chrome/chrome-registry;1"]
+      .getService(Ci.nsIChromeRegistry)
+      .convertChromeURL(Services.io.newURI(uri)).spec;
+  }
+  
+  
+  url = url.startsWith("chrome://mochitests") ? convertChromeToFile(url) : url;
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [{ url, options }],
