@@ -648,6 +648,11 @@ class DesktopInstance(GeckoInstance):
         "devtools.console.stdout.chrome": True,
         
         
+        
+        
+        "browser.download.focusPanelOnOpen": False,
+        
+        
         "browser.download.panel.shown": True,
         
         "browser.EULA.override": True,
