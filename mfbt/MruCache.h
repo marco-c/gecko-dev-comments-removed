@@ -11,6 +11,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/MathAlgorithms.h"
 
 namespace mozilla {
 
@@ -58,19 +60,11 @@ constexpr bool IsNotEmpty(const Value& aVal) {
 
 
 
-template <class Key, class Value, class Cache, size_t Size = 31>
-class MruCache {
-  
-  
-  
-  
-  static_assert(Size % 2 != 0, "Use a prime number");
 
-  
-  
-  
-  
-  
+template <class Key, class Value, class Cache, size_t Size = 32>
+class MruCache {
+  static_assert(Size >= 2 && (Size & (Size - 1)) == 0,
+                "Size must be a power of two");
 
  public:
   using KeyType = Key;
@@ -148,8 +142,13 @@ class MruCache {
   }
 
  private:
+  static constexpr uint32_t kShift = kHashNumberBits - CeilingLog2(Size);
+
   MOZ_ALWAYS_INLINE ValueType* RawEntry(const KeyType& aKey) {
-    return &mCache[Cache::Hash(aKey) % Size];
+    
+    
+    
+    return &mCache[ScrambleHashCode(Cache::Hash(aKey)) >> kShift];
   }
 
   ValueType mCache[Size] = {};

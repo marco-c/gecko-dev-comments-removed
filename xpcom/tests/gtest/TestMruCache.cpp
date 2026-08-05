@@ -40,6 +40,15 @@ struct StringStructMap
 };
 
 
+
+struct CollideMap : public MruCache<int, int, CollideMap> {
+  static HashNumber Hash(const KeyType&) { return 0; }
+  static bool Match(const KeyType& aKey, const ValueType& aVal) {
+    return aKey == aVal;
+  }
+};
+
+
 template <typename T>
 struct Convertable {
   T mItem;
@@ -101,15 +110,11 @@ TEST(MruCache, TestPut)
   IntMap mru;
 
   
-  for (int i = 1; i < 32; i++) {
-    mru.Put(i, i);
-  }
-
   
   for (int i = 1; i < 32; i++) {
-    auto p = mru.Lookup(i);
+    mru.Put(i, i);
 
-    
+    auto p = mru.Lookup(i);
     EXPECT_TRUE(p);
     EXPECT_EQ(p.Data(), i);
   }
@@ -119,17 +124,11 @@ TEST(MruCache, TestPutConvertable)
 {
   UintPtrMap mru;
 
-  
   for (uintptr_t i = 1; i < 32; i++) {
     Convertable<int*> val{(int*)i};
     mru.Put(i, val);
-  }
 
-  
-  for (uintptr_t i = 1; i < 32; i++) {
     auto p = mru.Lookup(i);
-
-    
     EXPECT_TRUE(p);
     EXPECT_EQ(p.Data(), (int*)i);
   }
@@ -138,21 +137,16 @@ TEST(MruCache, TestPutConvertable)
 TEST(MruCache, TestOverwriting)
 {
   
-  IntMap mru;
+  CollideMap mru;
 
-  
-  for (int i = 1; i < 63; i++) {
-    mru.Put(i, i);
-  }
+  mru.Put(1, 1);
+  mru.Put(2, 2);  
 
-  
-  for (int i = 32; i < 63; i++) {
-    auto p = mru.Lookup(i);
+  EXPECT_FALSE(mru.Lookup(1));
 
-    
-    EXPECT_TRUE(p);
-    EXPECT_EQ(p.Data(), i);
-  }
+  auto p = mru.Lookup(2);
+  EXPECT_TRUE(p);
+  EXPECT_EQ(p.Data(), 2);
 }
 
 TEST(MruCache, TestRemove)
@@ -161,12 +155,10 @@ TEST(MruCache, TestRemove)
     IntMap mru;
 
     
-    for (int i = 1; i < 32; i++) {
-      mru.Put(i, i);
-    }
-
     
     for (int i = 1; i < 32; i++) {
+      mru.Put(i, i);
+
       
       auto p = mru.Lookup(i);
       EXPECT_TRUE(p);
@@ -182,13 +174,9 @@ TEST(MruCache, TestRemove)
   {
     UintPtrMap mru;
 
-    
     for (uintptr_t i = 1; i < 32; i++) {
       mru.Put(i, (int*)i);
-    }
 
-    
-    for (uintptr_t i = 1; i < 32; i++) {
       
       auto p = mru.Lookup(i);
       EXPECT_TRUE(p);
@@ -204,15 +192,9 @@ TEST(MruCache, TestRemove)
   {
     StringStructMap mru;
 
-    
     for (char i = 1; i < 32; i++) {
       const nsCString key = MakeStringKey(i);
       mru.Put(key, StringStruct{key, "foo"_ns});
-    }
-
-    
-    for (char i = 1; i < 32; i++) {
-      const nsCString key = MakeStringKey(i);
 
       
       auto p = mru.Lookup(key);
@@ -284,28 +266,29 @@ TEST(MruCache, TestLookupMissingAndSet)
 
 TEST(MruCache, TestLookupAndOverwrite)
 {
-  IntMap mru;
+  
+  CollideMap mru;
 
   
   mru.Put(1, 1);
 
   
-  auto p = mru.Lookup(32);
+  auto p = mru.Lookup(2);
   EXPECT_FALSE(p);  
 
   
-  p.Set(32);
+  p.Set(2);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 32);
+  EXPECT_EQ(p.Data(), 2);
 
   
   p = mru.Lookup(1);
   EXPECT_FALSE(p);
 
   
-  p = mru.Lookup(32);
+  p = mru.Lookup(2);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 32);
+  EXPECT_EQ(p.Data(), 2);
 }
 
 TEST(MruCache, TestLookupAndRemove)
