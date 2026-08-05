@@ -6,241 +6,293 @@
 const { AutoTabGroupingSuggestions } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs"
 );
+const { SmartTabGroupingManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
+);
+
+function fakeTwoGroupManager() {
+  return {
+    async generateClusters(tabList) {
+      return {
+        clusterRepresentations: [
+          { tabs: tabList.slice(0, 2), cohesion: 0.9 },
+          { tabs: tabList.slice(2, 4), cohesion: 0.9 },
+        ],
+      };
+    },
+    async getPredictedLabelForGroup() {
+      return "Test Group";
+    },
+  };
+}
+
+async function addWebTabs(win, paths = ["a", "b", "c", "d"]) {
+  for (const path of paths) {
+    const url = `https://example.com/${path}`;
+    const tab = BrowserTestUtils.addTab(win.gBrowser, url, {
+      skipAnimation: true,
+    });
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
+  }
+}
+
+async function navigateToContent(win, url = "https://example.com/") {
+  const browser = win.gBrowser.selectedTab.linkedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, url);
+  BrowserTestUtils.startLoadingURIString(browser, url);
+  await loaded;
+}
+
+async function assertButtonHiddenOnContent(win, reason) {
+  
+  
+  
+  const askButton = win.document.getElementById("smartwindow-ask-button");
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(askButton),
+    "Left the immersive view (the Ask button is shown)"
+  );
+  const button = win.document.getElementById(
+    "smartwindow-group-tabs-button-inner"
+  );
+  Assert.ok(
+    !AutoTabGroupingSuggestions.isAvailable,
+    `Feature is unavailable: ${reason}`
+  );
+  Assert.ok(
+    BrowserTestUtils.isHidden(button),
+    `Group tabs button is hidden: ${reason}`
+  );
+}
 
 add_setup(async function setup() {
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
       ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.ml.enable", true],
+      ["browser.tabs.groups.smart.enabled", true],
+      ["browser.tabs.groups.smart.userEnabled", true],
+      ["browser.tabs.groups.smart.optin", true],
     ],
   });
+
+  const originalManager = AutoTabGroupingSuggestions._manager;
+  registerCleanupFunction(() => {
+    AutoTabGroupingSuggestions._manager = originalManager;
+  });
 });
 
-
-
-
-add_task(async function test_group_tabs_button_hidden_by_default() {
+describe("Auto Tab Grouping toolbar button", () => {
   let win;
-  try {
-    win = await openAIWindow();
-    const button = win.document.getElementById(
-      "smartwindow-group-tabs-button-inner"
-    );
-    Assert.ok(button, "Group tabs button exists in the toolbar");
-    Assert.ok(
-      BrowserTestUtils.isHidden(button),
-      "Group tabs button is hidden while the feature pref is off"
-    );
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
-  }
-});
 
-
-
-
-
-add_task(async function test_group_tabs_button_creates_groups() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+  beforeEach(() => {
+    AutoTabGroupingSuggestions._manager = fakeTwoGroupManager();
   });
 
-  
-  const fakeManager = {
-    async generateClusters(tabList) {
-      return {
-        clusterRepresentations: [
-          { tabs: tabList.slice(0, 2) },
-          { tabs: tabList.slice(2, 4) },
-        ],
-      };
-    },
-    async getPredictedLabelForGroup() {
-      return "Test Group";
-    },
-  };
-  const originalManager = AutoTabGroupingSuggestions._manager;
-  AutoTabGroupingSuggestions._manager = fakeManager;
-
-  let win;
-  try {
-    win = await openAIWindow();
-
-    
-    const browser = win.gBrowser.selectedTab.linkedBrowser;
-    const url = "https://example.com/";
-    let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
-    BrowserTestUtils.startLoadingURIString(browser, url);
-    await loaded;
-
-    
-    for (const path of ["a", "b", "c", "d"]) {
-      const tab = BrowserTestUtils.addTab(
-        win.gBrowser,
-        `https://example.com/${path}`,
-        { skipAnimation: true }
-      );
-      await BrowserTestUtils.browserLoaded(
-        tab.linkedBrowser,
-        false,
-        `https://example.com/${path}`
-      );
-    }
-
-    const button = win.document.getElementById(
-      "smartwindow-group-tabs-button-inner"
-    );
-    await TestUtils.waitForCondition(
-      () => BrowserTestUtils.isVisible(button),
-      "Group tabs button is visible on a content tab with the pref on"
-    );
-
-    AIWindowUI.toggleGroupTabsPanel(win);
-
-    const panel = await TestUtils.waitForCondition(() =>
-      win.document.getElementById("smartwindow-group-tabs-panel")
-    );
-    await TestUtils.waitForCondition(
-      () =>
-        panel.querySelectorAll(".swgt-row:not(.swgt-create-all)").length === 2,
-      "Two suggested group rows render once clustering finishes"
-    );
-
-    await TestUtils.waitForCondition(
-      () => button.getAttribute("aria-expanded") === "true",
-      "Button is marked expanded while the panel is open"
-    );
-
-    const createAll = panel.querySelector(".swgt-create-all");
-    Assert.ok(createAll, "'Create all suggested groups' row exists");
-
-    const groupsBefore = win.gBrowser.tabGroups.length;
-    createAll.click();
-
-    await TestUtils.waitForCondition(
-      () => win.gBrowser.tabGroups.length === groupsBefore + 2,
-      "Both suggested groups are created"
-    );
-    Assert.equal(
-      win.gBrowser.tabGroups.length,
-      groupsBefore + 2,
-      "Clicking 'Create all suggested groups' created both groups"
-    );
-
-    await TestUtils.waitForCondition(
-      () => !win.document.getElementById("smartwindow-group-tabs-panel"),
-      "Panel closes after creating groups"
-    );
-
-    await TestUtils.waitForCondition(
-      () => button.getAttribute("aria-expanded") === "false",
-      "Button is no longer expanded once the panel closes"
-    );
-  } finally {
-    AutoTabGroupingSuggestions._manager = originalManager;
+  afterEach(async () => {
     if (win) {
       await BrowserTestUtils.closeWindow(win);
+      win = null;
     }
     await SpecialPowers.popPrefEnv();
-  }
-});
-
-
-
-
-
-
-add_task(async function test_reopen_while_computing_renders() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
   });
 
-  
-  
-  let releaseClusters;
-  const clustersReady = new Promise(resolve => {
-    releaseClusters = resolve;
-  });
-  const fakeManager = {
-    async generateClusters(tabList) {
-      await clustersReady;
-      return {
-        clusterRepresentations: [
-          { tabs: tabList.slice(0, 2) },
-          { tabs: tabList.slice(2, 4) },
+  describe("visibility gating", () => {
+    it("is hidden when the feature pref is off", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.autoTabGrouping.enabled", false]],
+      });
+
+      win = await openAIWindow();
+      const button = win.document.getElementById(
+        "smartwindow-group-tabs-button-inner"
+      );
+      Assert.ok(button, "Group tabs button exists in the toolbar");
+      Assert.ok(
+        BrowserTestUtils.isHidden(button),
+        "Group tabs button is hidden while the feature pref is off"
+      );
+    });
+
+    describe("when the app locale is unsupported", () => {
+      let isAllowedDescriptor;
+
+      beforeEach(() => {
+        isAllowedDescriptor = Object.getOwnPropertyDescriptor(
+          SmartTabGroupingManager,
+          "isAllowed"
+        );
+        Object.defineProperty(SmartTabGroupingManager, "isAllowed", {
+          configurable: true,
+          get: () => false,
+        });
+      });
+
+      afterEach(() => {
+        Object.defineProperty(
+          SmartTabGroupingManager,
+          "isAllowed",
+          isAllowedDescriptor
+        );
+      });
+
+      it("stays hidden even with the feature pref on", async () => {
+        await SpecialPowers.pushPrefEnv({
+          set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+        });
+
+        win = await openAIWindow();
+        await navigateToContent(win);
+        await assertButtonHiddenOnContent(
+          win,
+          "the app locale is not supported"
+        );
+      });
+    });
+
+    it("stays hidden when on-device ML is disabled", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.smartwindow.autoTabGrouping.enabled", true],
+          ["browser.ml.enable", false],
         ],
+      });
+
+      win = await openAIWindow();
+      await navigateToContent(win);
+      await assertButtonHiddenOnContent(win, "on-device ML is disabled");
+    });
+  });
+
+  describe("creating groups", () => {
+    it("shows the button, lists suggestions, and creates all groups", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+      });
+
+      win = await openAIWindow();
+      await navigateToContent(win);
+      await addWebTabs(win);
+
+      const button = win.document.getElementById(
+        "smartwindow-group-tabs-button-inner"
+      );
+      await TestUtils.waitForCondition(
+        () => BrowserTestUtils.isVisible(button),
+        "Group tabs button is visible on a content tab with the pref on"
+      );
+
+      AIWindowUI.toggleGroupTabsPanel(win);
+
+      const panel = await TestUtils.waitForCondition(() =>
+        win.document.getElementById("smartwindow-group-tabs-panel")
+      );
+      await TestUtils.waitForCondition(
+        () =>
+          panel.querySelectorAll(".swgt-row:not(.swgt-create-all)").length ===
+          2,
+        "Two suggested group rows render once clustering finishes"
+      );
+
+      await TestUtils.waitForCondition(
+        () => button.getAttribute("aria-expanded") === "true",
+        "Button is marked expanded while the panel is open"
+      );
+
+      const createAll = panel.querySelector(".swgt-create-all");
+      Assert.ok(createAll, "'Create all suggested groups' row exists");
+
+      const groupsBefore = win.gBrowser.tabGroups.length;
+      createAll.click();
+
+      await TestUtils.waitForCondition(
+        () => win.gBrowser.tabGroups.length === groupsBefore + 2,
+        "Both suggested groups are created"
+      );
+      Assert.equal(
+        win.gBrowser.tabGroups.length,
+        groupsBefore + 2,
+        "Clicking 'Create all suggested groups' created both groups"
+      );
+
+      await TestUtils.waitForCondition(
+        () => !win.document.getElementById("smartwindow-group-tabs-panel"),
+        "Panel closes after creating groups"
+      );
+
+      await TestUtils.waitForCondition(
+        () => button.getAttribute("aria-expanded") === "false",
+        "Button is no longer expanded once the panel closes"
+      );
+    });
+  });
+
+  describe("clustering edge cases", () => {
+    it("renders suggestions when reopened while clustering is still running", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.autoTabGrouping.enabled", true]],
+      });
+
+      let releaseClusters;
+      const clustersReady = new Promise(resolve => {
+        releaseClusters = resolve;
+      });
+      AutoTabGroupingSuggestions._manager = {
+        async generateClusters(tabList) {
+          await clustersReady;
+          return {
+            clusterRepresentations: [
+              { tabs: tabList.slice(0, 2), cohesion: 0.9 },
+              { tabs: tabList.slice(2, 4), cohesion: 0.9 },
+            ],
+          };
+        },
+        async getPredictedLabelForGroup() {
+          return "Test Group";
+        },
       };
-    },
-    async getPredictedLabelForGroup() {
-      return "Test Group";
-    },
-  };
-  const originalManager = AutoTabGroupingSuggestions._manager;
-  AutoTabGroupingSuggestions._manager = fakeManager;
 
-  let win;
-  try {
-    win = await openAIWindow();
+      win = await openAIWindow();
+      await navigateToContent(win);
+      await addWebTabs(win);
 
-    const browser = win.gBrowser.selectedTab.linkedBrowser;
-    const url = "https://example.com/";
-    let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
-    BrowserTestUtils.startLoadingURIString(browser, url);
-    await loaded;
-
-    for (const path of ["a", "b", "c", "d"]) {
-      const tab = BrowserTestUtils.addTab(
-        win.gBrowser,
-        `https://example.com/${path}`,
-        { skipAnimation: true }
+      const button = win.document.getElementById(
+        "smartwindow-group-tabs-button-inner"
       );
-      await BrowserTestUtils.browserLoaded(
-        tab.linkedBrowser,
-        false,
-        `https://example.com/${path}`
+      await TestUtils.waitForCondition(() =>
+        BrowserTestUtils.isVisible(button)
       );
-    }
 
-    const button = win.document.getElementById(
-      "smartwindow-group-tabs-button-inner"
-    );
-    await TestUtils.waitForCondition(() => BrowserTestUtils.isVisible(button));
+      AIWindowUI.toggleGroupTabsPanel(win);
+      let panel = await TestUtils.waitForCondition(() =>
+        win.document.getElementById("smartwindow-group-tabs-panel")
+      );
+      await TestUtils.waitForCondition(
+        () => panel.querySelector(".swgt-message"),
+        "Panel shows the loading state while clustering is pending"
+      );
 
-    
-    AIWindowUI.toggleGroupTabsPanel(win);
-    let panel = await TestUtils.waitForCondition(() =>
-      win.document.getElementById("smartwindow-group-tabs-panel")
-    );
-    await TestUtils.waitForCondition(
-      () => panel.querySelector(".swgt-message"),
-      "Panel shows the loading state while clustering is pending"
-    );
+      AIWindowUI.toggleGroupTabsPanel(win);
+      await TestUtils.waitForCondition(
+        () => !win.document.getElementById("smartwindow-group-tabs-panel"),
+        "Panel closed while clustering was in flight"
+      );
 
-    
-    AIWindowUI.toggleGroupTabsPanel(win);
-    await TestUtils.waitForCondition(
-      () => !win.document.getElementById("smartwindow-group-tabs-panel"),
-      "Panel closed while clustering was in flight"
-    );
+      AIWindowUI.toggleGroupTabsPanel(win);
+      panel = await TestUtils.waitForCondition(() =>
+        win.document.getElementById("smartwindow-group-tabs-panel")
+      );
 
-    AIWindowUI.toggleGroupTabsPanel(win);
-    panel = await TestUtils.waitForCondition(() =>
-      win.document.getElementById("smartwindow-group-tabs-panel")
-    );
+      releaseClusters();
 
-    
-    releaseClusters();
-
-    await TestUtils.waitForCondition(
-      () =>
-        panel.querySelectorAll(".swgt-row:not(.swgt-create-all)").length === 2,
-      "Reopened panel renders suggestions once clustering settles"
-    );
-  } finally {
-    AutoTabGroupingSuggestions._manager = originalManager;
-    if (win) {
-      await BrowserTestUtils.closeWindow(win);
-    }
-    await SpecialPowers.popPrefEnv();
-  }
+      await TestUtils.waitForCondition(
+        () =>
+          panel.querySelectorAll(".swgt-row:not(.swgt-create-all)").length ===
+          2,
+        "Reopened panel renders suggestions once clustering settles"
+      );
+    });
+  });
 });
