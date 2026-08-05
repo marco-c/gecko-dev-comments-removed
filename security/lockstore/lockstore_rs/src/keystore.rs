@@ -93,7 +93,7 @@ fn unlock_deadline(timeout: Duration) -> Instant {
 struct WrappedDek {
     kek_type: KekType,
     kek_ref: String,
-    wrapped_dek: Vec<u8>,
+    dek: Vec<u8>,
 }
 
 fn default_key_size() -> usize {
@@ -141,7 +141,7 @@ pub struct ConnectionHandle<'a> {
     _guard: std::sync::MutexGuard<'a, ()>,
 }
 
-impl<'a> ConnectionHandle<'a> {
+impl ConnectionHandle<'_> {
     
     
     pub fn list_deks(&self) -> Result<Vec<String>, LockstoreError> {
@@ -162,7 +162,7 @@ impl<'a> ConnectionHandle<'a> {
                     )
                     .map_err(DatabaseError::from)?;
 
-                let dek_pattern = format!("{}%", DEK_PREFIX);
+                let dek_pattern = format!("{DEK_PREFIX}%");
                 let names: Result<Vec<String>, _> = stmt
                     .query_map([&db_name, &dek_pattern], |row| {
                         let key: String = row.get(0)?;
@@ -179,12 +179,12 @@ impl<'a> ConnectionHandle<'a> {
     }
 
     fn load_metadata(&self, collection_name: &str) -> Result<DekMetadata, LockstoreError> {
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let dek_key = format!("{DEK_PREFIX}{collection_name}");
         let db = Database::new(&self.keystore.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
 
         let metadata_value = db.get(&key, &GetOptions::default())?.ok_or_else(|| {
-            LockstoreError::NotFound(format!("DEK not found for collection: {}", collection_name))
+            LockstoreError::NotFound(format!("DEK not found for collection: {collection_name}"))
         })?;
 
         let metadata_bytes = utils::value_to_bytes(&metadata_value)?;
@@ -196,7 +196,7 @@ impl<'a> ConnectionHandle<'a> {
         collection_name: &str,
         metadata: &DekMetadata,
     ) -> Result<(), LockstoreError> {
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let dek_key = format!("{DEK_PREFIX}{collection_name}");
         let db = Database::new(&self.keystore.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
         let metadata_bytes = serde_json::to_vec(metadata)?;
@@ -348,8 +348,7 @@ impl Keystore {
         
         if key_size == 0 || key_size > 1024 {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "key_size {} is out of range (1..=1024 bytes)",
-                key_size
+                "key_size {key_size} is out of range (1..=1024 bytes)"
             )));
         }
 
@@ -359,15 +358,14 @@ impl Keystore {
         
         let conn = self.acquire_connection()?;
 
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let dek_key = format!("{DEK_PREFIX}{collection_name}");
         let db = Database::new(&self.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
         let existing = db.get(&key, &GetOptions::default())?;
 
         if existing.is_some() {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "DEK already exists for collection: {}",
-                collection_name
+                "DEK already exists for collection: {collection_name}"
             )));
         }
 
@@ -379,7 +377,7 @@ impl Keystore {
             wrapped_deks: vec![WrappedDek {
                 kek_type,
                 kek_ref: kek_ref.to_string(),
-                wrapped_dek: wrapped,
+                dek: wrapped,
             }],
             cipher_suite,
             extractable,
@@ -426,15 +424,14 @@ impl Keystore {
         
         let conn = self.acquire_connection()?;
 
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let dek_key = format!("{DEK_PREFIX}{collection_name}");
         let db = Database::new(&self.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
         let existing = db.get(&key, &GetOptions::default())?;
 
         if existing.is_some() {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "DEK already exists for collection: {}",
-                collection_name
+                "DEK already exists for collection: {collection_name}"
             )));
         }
 
@@ -445,7 +442,7 @@ impl Keystore {
             wrapped_deks: vec![WrappedDek {
                 kek_type,
                 kek_ref: kek_ref.to_string(),
-                wrapped_dek: wrapped,
+                dek: wrapped,
             }],
             cipher_suite,
             extractable,
@@ -476,13 +473,12 @@ impl Keystore {
             .find(|w| w.kek_ref == kek_ref)
             .ok_or_else(|| {
                 LockstoreError::NotFound(format!(
-                    "No DEK for collection '{}' with kek_ref '{}'",
-                    collection_name, kek_ref
+                    "No DEK for collection '{collection_name}' with kek_ref '{kek_ref}'"
                 ))
             })?;
 
         let kek = self.get_kek_symkey(metadata.cipher_suite, kek_ref)?;
-        let dek = crypto::decrypt_with_symkey(&entry.wrapped_dek, &kek)?;
+        let dek = crypto::decrypt_with_symkey(&entry.dek, &kek)?;
 
         
         
@@ -513,8 +509,7 @@ impl Keystore {
     ) -> Result<(Zeroizing<Vec<u8>>, CipherSuite), LockstoreError> {
         if !self.is_dek_extractable(collection_name)? {
             return Err(LockstoreError::NotExtractable(format!(
-                "DEK for '{}' is not extractable",
-                collection_name
+                "DEK for '{collection_name}' is not extractable"
             )));
         }
 
@@ -577,8 +572,7 @@ impl Keystore {
             .any(|w| w.kek_ref == new_kek_ref)
         {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "kek_ref '{}' already exists for collection '{}'",
-                new_kek_ref, collection_name
+                "kek_ref '{new_kek_ref}' already exists for collection '{collection_name}'"
             )));
         }
 
@@ -588,13 +582,12 @@ impl Keystore {
             .find(|w| w.kek_ref == source_kek_ref)
             .ok_or_else(|| {
                 LockstoreError::NotFound(format!(
-                    "No DEK for collection '{}' with kek_ref '{}'",
-                    collection_name, source_kek_ref
+                    "No DEK for collection '{collection_name}' with kek_ref '{source_kek_ref}'"
                 ))
             })?;
 
         let source_kek = self.get_kek_symkey(metadata.cipher_suite, source_kek_ref)?;
-        let dek = crypto::decrypt_with_symkey(&source_entry.wrapped_dek, &source_kek)?;
+        let dek = crypto::decrypt_with_symkey(&source_entry.dek, &source_kek)?;
 
         let new_kek = self.get_kek_symkey(metadata.cipher_suite, new_kek_ref)?;
         let new_wrapped = crypto::encrypt_with_symkey(&dek, &new_kek, metadata.cipher_suite)?;
@@ -602,7 +595,7 @@ impl Keystore {
         metadata.wrapped_deks.push(WrappedDek {
             kek_type: new_kek_type,
             kek_ref: new_kek_ref.to_string(),
-            wrapped_dek: new_wrapped,
+            dek: new_wrapped,
         });
 
         conn.save_metadata(collection_name, &metadata)
@@ -614,8 +607,7 @@ impl Keystore {
 
         if metadata.wrapped_deks.len() <= 1 {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "Cannot remove the last KEK from collection '{}'",
-                collection_name
+                "Cannot remove the last KEK from collection '{collection_name}'"
             )));
         }
 
@@ -625,13 +617,12 @@ impl Keystore {
             .find(|w| w.kek_ref == kek_ref)
             .ok_or_else(|| {
                 LockstoreError::NotFound(format!(
-                    "No DEK for collection '{}' with kek_ref '{}'",
-                    collection_name, kek_ref
+                    "No DEK for collection '{collection_name}' with kek_ref '{kek_ref}'"
                 ))
             })?;
 
         let kek = self.get_kek_symkey(metadata.cipher_suite, kek_ref)?;
-        crypto::decrypt_with_symkey(&entry.wrapped_dek, &kek)?;
+        crypto::decrypt_with_symkey(&entry.dek, &kek)?;
 
         metadata.wrapped_deks.retain(|w| w.kek_ref != kek_ref);
 
@@ -665,8 +656,7 @@ impl Keystore {
     ) -> Result<(), LockstoreError> {
         if old_kek_ref == new_kek_ref {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "old_kek_ref and new_kek_ref are the same: '{}'",
-                old_kek_ref
+                "old_kek_ref and new_kek_ref are the same: '{old_kek_ref}'"
             )));
         }
 
@@ -681,8 +671,7 @@ impl Keystore {
             .find(|w| w.kek_ref == old_kek_ref)
             .ok_or_else(|| {
                 LockstoreError::NotFound(format!(
-                    "No DEK for collection '{}' with kek_ref '{}'",
-                    collection_name, old_kek_ref
+                    "No DEK for collection '{collection_name}' with kek_ref '{old_kek_ref}'"
                 ))
             })?;
 
@@ -692,14 +681,13 @@ impl Keystore {
             .any(|w| w.kek_ref == new_kek_ref)
         {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "new_kek_ref '{}' already wraps collection '{}'",
-                new_kek_ref, collection_name
+                "new_kek_ref '{new_kek_ref}' already wraps collection '{collection_name}'"
             )));
         }
 
         let old_kek = self.get_kek_symkey(metadata.cipher_suite, old_kek_ref)?;
         
-        let dek = crypto::decrypt_with_symkey(&old_entry.wrapped_dek, &old_kek)?;
+        let dek = crypto::decrypt_with_symkey(&old_entry.dek, &old_kek)?;
 
         let new_kek = self.get_kek_symkey(metadata.cipher_suite, new_kek_ref)?;
         let new_wrapped = crypto::encrypt_with_symkey(&dek, &new_kek, metadata.cipher_suite)?;
@@ -707,11 +695,11 @@ impl Keystore {
         
         
         
-        for w in metadata.wrapped_deks.iter_mut() {
+        for w in &mut metadata.wrapped_deks {
             if w.kek_ref == old_kek_ref {
                 w.kek_type = new_kek_type;
                 w.kek_ref = new_kek_ref.to_string();
-                w.wrapped_dek = new_wrapped;
+                w.dek = new_wrapped;
                 break;
             }
         }
@@ -722,14 +710,13 @@ impl Keystore {
     pub fn delete_dek(&self, collection_name: &str) -> Result<(), LockstoreError> {
         let _conn = self.acquire_connection()?;
 
-        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let dek_key = format!("{DEK_PREFIX}{collection_name}");
         let db = Database::new(&self.store, DB_NAME);
         let key = Key::from(dek_key.as_str());
 
         if !db.has(&key, &GetOptions::default())? {
             return Err(LockstoreError::NotFound(format!(
-                "DEK not found for collection: {}",
-                collection_name
+                "DEK not found for collection: {collection_name}"
             )));
         }
 
@@ -767,16 +754,13 @@ impl Keystore {
         };
         if !exists {
             return Err(LockstoreError::NotFound(format!(
-                "No KEK record for kek_ref: {}",
-                kek_ref
+                "No KEK record for kek_ref: {kek_ref}"
             )));
         }
 
         if let Some(coll) = self.kek_ref_referenced_by_collection(&conn, kek_ref)? {
             return Err(LockstoreError::InvalidConfiguration(format!(
-                "kek_ref '{}' is still in use to wrap DEK '{}'; remove the wrapping before deleting the KEK",
-                kek_ref, coll
-            )));
+                "kek_ref '{kek_ref}' is still in use to wrap DEK '{coll}'; remove the wrapping before deleting the KEK")));
         }
 
         match kek_type {
@@ -1043,8 +1027,7 @@ impl Keystore {
             Ok(())
         } else {
             Err(LockstoreError::InvalidConfiguration(format!(
-                "KEK identifier must be base64url ([A-Za-z0-9_-]); got '{}'",
-                identifier
+                "KEK identifier must be base64url ([A-Za-z0-9_-]); got '{identifier}'"
             )))
         }
     }
@@ -1189,10 +1172,7 @@ impl Keystore {
             LockstoreError::InvalidConfiguration("PKCS#11 URI is not valid UTF-8".into())
         })?;
         let uri = nss_rs::pk11_utils::parse(uri_str).map_err(|_| {
-            LockstoreError::InvalidConfiguration(format!(
-                "Could not parse PKCS#11 URI: {}",
-                uri_str
-            ))
+            LockstoreError::InvalidConfiguration(format!("Could not parse PKCS#11 URI: {uri_str}"))
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
 
@@ -1218,8 +1198,7 @@ impl Keystore {
                 )
                 .map_err(|e| {
                     LockstoreError::TokenError(format!(
-                        "Failed to generate PKCS#11 wrapping key: {}",
-                        e
+                        "Failed to generate PKCS#11 wrapping key: {e}"
                     ))
                 })?,
         };
@@ -1301,7 +1280,7 @@ impl Keystore {
         timeout: Duration,
     ) -> Result<(), LockstoreError> {
         let record = self.load_password_record(kek_ref)?.ok_or_else(|| {
-            LockstoreError::InvalidKekRef(format!("no Password record for kek_ref: {}", kek_ref))
+            LockstoreError::InvalidKekRef(format!("no Password record for kek_ref: {kek_ref}"))
         })?;
 
         
@@ -1364,7 +1343,7 @@ impl Keystore {
         timeout: Duration,
     ) -> Result<(), LockstoreError> {
         let record = self.load_pkcs11_record(kek_ref)?.ok_or_else(|| {
-            LockstoreError::NotFound(format!("No PKCS#11 KEK record for kek_ref: {}", kek_ref))
+            LockstoreError::NotFound(format!("No PKCS#11 KEK record for kek_ref: {kek_ref}"))
         })?;
         let uri = nss_rs::pk11_utils::parse(&record.pkcs11_uri).map_err(|_| {
             LockstoreError::InvalidKekRef(format!(
@@ -1374,7 +1353,13 @@ impl Keystore {
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
 
-        if !secret.is_empty() {
+        if secret.is_empty() {
+            
+            
+            
+            slot.authenticate()
+                .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+        } else {
             
             
             
@@ -1389,12 +1374,6 @@ impl Keystore {
                 }
                 Err(_) => return Err(LockstoreError::AuthenticationFailed),
             }
-        } else {
-            
-            
-            
-            slot.authenticate()
-                .map_err(|_| LockstoreError::AuthenticationCancelled)?;
         }
 
         
@@ -1520,7 +1499,7 @@ impl Keystore {
         match kek_type {
             KekType::LocalKey => {
                 let record = self.load_local_record(kek_ref)?.ok_or_else(|| {
-                    LockstoreError::NotFound(format!("No LocalKey record for kek_ref: {}", kek_ref))
+                    LockstoreError::NotFound(format!("No LocalKey record for kek_ref: {kek_ref}"))
                 })?;
                 Aead::import_key(cipher_suite.to_nss_algorithm(), &record.kek_bytes)
                     .map_err(|e| LockstoreError::Encryption(e.to_string()))
@@ -1631,7 +1610,7 @@ impl Keystore {
         })?;
 
         let internal_slot = p11::Slot::internal_key_slot()
-            .map_err(|e| LockstoreError::TokenError(format!("Failed to get key slot: {}", e)))?;
+            .map_err(|e| LockstoreError::TokenError(format!("Failed to get key slot: {e}")))?;
         if internal_slot.token_name() == token_name {
             return Ok(internal_slot);
         }
@@ -1644,8 +1623,7 @@ impl Keystore {
         }
 
         Err(LockstoreError::TokenError(format!(
-            "Token not found: {}",
-            token_name
+            "Token not found: {token_name}"
         )))
     }
 
