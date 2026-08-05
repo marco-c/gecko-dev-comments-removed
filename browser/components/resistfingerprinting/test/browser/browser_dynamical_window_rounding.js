@@ -71,26 +71,20 @@ function checkForDefaultSetting(
   let targetWidth = RFPHelper.steppedSize(aRealWidth, true);
   let targetHeight = RFPHelper.steppedSize(aRealHeight);
 
-  
-  if (getPlatform() != "linux") {
-    ok(
-      handleOSFuzziness(aContentWidth, targetWidth),
-      `Default Dimensions: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetWidth}px`
-    );
-
-    ok(
-      handleOSFuzziness(aContentHeight, targetHeight),
-      `Default Dimensions: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetHeight}px`
-    );
-
-    
-    return true;
-  }
-  
-  return (
-    handleOSFuzziness(aContentWidth, targetWidth) &&
-    handleOSFuzziness(aContentHeight, targetHeight)
-  );
+  return {
+    widthMatches: handleOSFuzziness(aContentWidth, targetWidth),
+    heightMatches: handleOSFuzziness(aContentHeight, targetHeight),
+    assert() {
+      ok(
+        this.widthMatches,
+        `Default Dimensions: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetWidth}px`
+      );
+      ok(
+        this.heightMatches,
+        `Default Dimensions: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetHeight}px`
+      );
+    },
+  };
 }
 
 function test_letterboxing_css_rule() {
@@ -139,37 +133,21 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
         `${caseString} Resizing (currently ${containerWidth}x${containerHeight})`
       );
 
+      
+      
+      
+      
+      
+      
+      
+      
+      
       aWindow.onresize = () => {
         ({ containerWidth, containerHeight } = getContainerSize(tab));
         info(
           `${caseString} Resized (currently ${containerWidth}x${containerHeight})`
         );
-        if (getPlatform() == "linux" && containerWidth != width) {
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          info(`${caseString} We hit the weird resize bug. Resize it again.`);
-          aWindow.resizeTo(width, height);
-        } else {
-          resolve();
-        }
+        resolve();
       };
       aWindow.resizeTo(width, height);
     });
@@ -180,8 +158,17 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
     );
     await promiseRounding;
 
+    
+    
+    
+    
+    
+    
+    
     info(`${caseString} Get innerWidth/Height from the content.`);
+    let result;
     await TestUtils.waitForCondition(async () => {
+      ({ containerWidth, containerHeight } = getContainerSize(tab));
       let { contentWidth, contentHeight } = await SpecialPowers.spawn(
         tab.linkedBrowser,
         [],
@@ -193,14 +180,21 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
         }
       );
 
-      info(`${caseString} Check the result.`);
-      return aCheckFunc(
+      info(
+        `${caseString} Check the result (container ${containerWidth}x${containerHeight}, content ${contentWidth}x${contentHeight}).`
+      );
+      result = aCheckFunc(
         contentWidth,
         contentHeight,
         containerWidth,
         containerHeight
       );
-    }, "Default Dimensions: The content window width is correctly rounded into.");
+      return result.widthMatches && result.heightMatches;
+    }, "The content window is correctly rounded into.").catch(() => {});
+
+    
+    
+    result.assert();
   }
 
   BrowserTestUtils.removeTab(tab);
@@ -249,26 +243,20 @@ async function test_customize_width_and_height(aWindow, aURL) {
       }
     }
 
-    
-    if (getPlatform() != "linux") {
-      ok(
-        handleOSFuzziness(aContentWidth, targetDimensions.width),
-        `Custom Dimension: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetDimensions.width}`
-      );
-
-      ok(
-        handleOSFuzziness(aContentHeight, targetDimensions.height),
-        `Custom Dimension: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetDimensions.height}`
-      );
-
-      
-      return true;
-    }
-    
-    return (
-      handleOSFuzziness(aContentWidth, targetDimensions.width) &&
-      handleOSFuzziness(aContentHeight, targetDimensions.height)
-    );
+    return {
+      widthMatches: handleOSFuzziness(aContentWidth, targetDimensions.width),
+      heightMatches: handleOSFuzziness(aContentHeight, targetDimensions.height),
+      assert() {
+        ok(
+          this.widthMatches,
+          `Custom Dimension: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetDimensions.width}`
+        );
+        ok(
+          this.heightMatches,
+          `Custom Dimension: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetDimensions.height}`
+        );
+      },
+    };
   };
 
   await test_dynamical_window_rounding(aWindow, aURL, checkDimension);
