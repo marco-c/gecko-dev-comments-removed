@@ -3430,16 +3430,17 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
     return nullptr;
   }
 
-  auto buffer = MakeUnique<ProfileChunkedBuffer>(
+  ProfileChunkedBuffer captureBuffer(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
       MakeUnique<ProfileBufferChunkManagerSingle>(
           ProfileBufferChunkManager::scExpectedMaximumStackSize));
 
-  if (!profiler_capture_backtrace_into(*buffer, StackCaptureOptions::Full)) {
+  if (!profiler_capture_backtrace_into(captureBuffer,
+                                       StackCaptureOptions::Full)) {
     return nullptr;
   }
 
-  return buffer;
+  return mozilla::profiler::detail::CopyToRightSizedBuffer(captureBuffer);
 }
 
 UniqueProfilerBacktrace profiler_get_backtrace() {
@@ -3565,4 +3566,32 @@ void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
 
 
 }  
+}  
+
+
+
+
+namespace mozilla::profiler::detail {
+
+[[nodiscard]] MFBT_API UniquePtr<ProfileChunkedBuffer> CopyToRightSizedBuffer(
+    const ProfileChunkedBuffer& aSource) {
+  const ProfileChunkedBuffer::State state = aSource.GetState();
+  const auto usedBytes = static_cast<ProfileBufferChunk::Length>(
+      state.mRangeEnd - state.mRangeStart);
+  if (usedBytes == 0) {
+    return nullptr;
+  }
+
+  
+  
+  auto buffer = MakeUnique<ProfileChunkedBuffer>(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+      MakeUnique<ProfileBufferChunkManagerSingle>(usedBytes));
+  if (!buffer->AppendContents(aSource)) {
+    return nullptr;
+  }
+
+  return buffer;
+}
+
 }  
