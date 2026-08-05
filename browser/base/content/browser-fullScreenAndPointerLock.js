@@ -678,6 +678,7 @@ var FullScreen = {
 
   cleanup() {
     if (!window.fullScreen) {
+      this._mouseTargetRectObserver?.disconnect();
       MousePosTracker.removeListener(this);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
@@ -865,6 +866,39 @@ var FullScreen = {
   },
 
   
+  
+  
+  _mouseTargetRectFromBounds(rect) {
+    return {
+      top: rect.top + 50,
+      bottom: rect.bottom,
+      left: rect.left,
+      right: rect.right,
+    };
+  },
+
+  
+  
+  
+  
+  
+  
+  
+  _updateMouseTargetRect() {
+    return window
+      .promiseDocumentFlushed(() =>
+        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+      )
+      .then(rect => {
+        if (!window.fullScreen) {
+          return;
+        }
+        this._mouseTargetRect = this._mouseTargetRectFromBounds(rect);
+      })
+      .catch(() => {});
+  },
+
+  
   _expandCallback() {
     FullScreen.showNavToolbox();
   },
@@ -955,20 +989,30 @@ var FullScreen = {
       return;
     }
 
+    this._isChromeCollapsed = false;
+    document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
+
+    
+    
     
     if (trackMouse) {
-      let rect = gBrowser.tabpanels.getBoundingClientRect();
-      this._mouseTargetRect = {
-        top: rect.top + 50,
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-      };
+      
+      
+      
+      
+      this._mouseTargetRect = this._mouseTargetRectFromBounds(
+        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+      );
+      this._updateMouseTargetRect();
+      if (!this._mouseTargetRectObserver) {
+        this._mouseTargetRectObserver = new ResizeObserver(() =>
+          this._updateMouseTargetRect()
+        );
+      }
+      this._mouseTargetRectObserver.observe(gBrowser.tabpanels);
       MousePosTracker.addListener(this);
     }
 
-    this._isChromeCollapsed = false;
-    document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
     Services.obs.notifyObservers(
       gNavToolbox,
       "fullscreen-nav-toolbox",
@@ -1047,6 +1091,7 @@ var FullScreen = {
       "hidden"
     );
 
+    this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
   },
 };
