@@ -2440,11 +2440,11 @@ def set_task_and_artifact_expiry(config, jobs):
         yield job
 
 
-def group_name_variant(group_names, groupSymbol):
+@functools.cache
+def _variant_symbols():
     
     
-    
-    variant_symbols = sorted(
+    return sorted(
         [
             (
                 v,
@@ -2457,6 +2457,11 @@ def group_name_variant(group_names, groupSymbol):
         key=lambda tup: len(tup[1]),
         reverse=True,
     )
+
+
+def group_name_variant(group_names, groupSymbol):
+    
+    variant_symbols = _variant_symbols()
 
     
     
