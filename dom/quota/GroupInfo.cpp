@@ -96,6 +96,12 @@ void GroupInfo::LockedRemoveOriginInfo(const nsACString& aOrigin) {
   if (foundIt != mOriginInfos.cend()) {
     LockedAdjustUsageForRemovedOriginInfo(**foundIt);
 
+    
+    
+    
+    
+    
+    foundIt->get()->mGroupInfo = nullptr;
     mOriginInfos.RemoveElementAt(foundIt);
   }
 }
@@ -105,6 +111,7 @@ void GroupInfo::LockedRemoveOriginInfos() {
 
   for (const auto& originInfo : std::exchange(mOriginInfos, {})) {
     LockedAdjustUsageForRemovedOriginInfo(*originInfo);
+    originInfo->mGroupInfo = nullptr;
   }
 }
 
