@@ -451,23 +451,18 @@ async function processJob(job) {
 
 async function main() {
   try {
-    const results = [];
-
     
     parentPort.postMessage({ type: "ready" });
 
     
+    
+    
     parentPort.on("message", async message => {
       if (message.type === "job") {
         const result = await processJob(message.job);
-        if (result) {
-          results.push(result);
-        }
-        
         parentPort.postMessage({ type: "jobComplete", result });
       } else if (message.type === "shutdown") {
-        
-        parentPort.postMessage({ type: "finished", results });
+        parentPort.postMessage({ type: "finished" });
       }
     });
   } catch (error) {
