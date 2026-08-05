@@ -9,6 +9,7 @@
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
 #include "gtest/MozGtestFriend.h"
+#include "mozilla/CumulativeAverage.h"
 
 namespace mozilla {
 
@@ -161,7 +162,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   int64_t mFrameIndex;
 
   
-  int64_t mTotalFrameLen;
+  mozilla::CumulativeAverage<double> mMeanFrameLen;
 
   
   uint32_t mSamplesPerFrame;
