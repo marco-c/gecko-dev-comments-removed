@@ -3351,6 +3351,58 @@ bool WarpBuilder::build_ThrowMsg(BytecodeLocation loc) {
   return true;
 }
 
+static bool CanTruncateToInt32(MIRType type) {
+  
+  
+  
+  return IsTypeRepresentableAsDouble(type) || IsNullOrUndefined(type) ||
+         type == MIRType::Boolean;
+}
+
+
+static MInstruction* TryBitwise(TempAllocator& alloc, JSOp jsop,
+                                MDefinition* lhs, MDefinition* rhs) {
+  switch (jsop) {
+    case JSOp::BitOr:
+    case JSOp::BitXor:
+    case JSOp::BitAnd:
+    case JSOp::Lsh:
+    case JSOp::Rsh:
+      break;
+    case JSOp::Ursh:
+      
+      
+      return nullptr;
+    default:
+      return nullptr;
+  }
+
+  
+  if (!CanTruncateToInt32(lhs->type()) || !CanTruncateToInt32(rhs->type())) {
+    return nullptr;
+  }
+
+  
+  
+  MOZ_ASSERT(lhs->type() != MIRType::Value && rhs->type() != MIRType::Value);
+
+  switch (jsop) {
+    case JSOp::BitOr:
+      return MBitOr::New(alloc, lhs, rhs, MIRType::Int32);
+    case JSOp::BitXor:
+      return MBitXor::New(alloc, lhs, rhs, MIRType::Int32);
+    case JSOp::BitAnd:
+      return MBitAnd::New(alloc, lhs, rhs, MIRType::Int32);
+    case JSOp::Lsh:
+      return MLsh::New(alloc, lhs, rhs, MIRType::Int32);
+    case JSOp::Rsh:
+      return MRsh::New(alloc, lhs, rhs, MIRType::Int32);
+    default:
+      break;
+  }
+  MOZ_CRASH("unexpected jsop");
+}
+
 bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
                           std::initializer_list<MDefinition*> inputs) {
   MOZ_ASSERT(loc.opHasIC());
@@ -3412,8 +3464,22 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
     }
     case CacheKind::BinaryArith: {
       MOZ_ASSERT(numInputs == 2);
-      auto* ins =
-          MBinaryCache::New(alloc(), getInput(0), getInput(1), MIRType::Value);
+
+      auto* lhs = getInput(0);
+      auto* rhs = getInput(1);
+
+      
+      
+      
+      
+      
+      if (auto* ins = TryBitwise(alloc(), loc.getOp(), lhs, rhs)) {
+        current->add(ins);
+        current->push(ins);
+        return true;
+      }
+
+      auto* ins = MBinaryCache::New(alloc(), lhs, rhs, MIRType::Value);
       current->add(ins);
       current->push(ins);
       return resumeAfter(ins, loc);
