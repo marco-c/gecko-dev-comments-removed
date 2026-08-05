@@ -265,12 +265,27 @@ function assertNoMessageInMenuSource(source, win = window) {
       ),
       "Zap gradient separator is visible."
     );
-    Assert.ok(
-      BrowserTestUtils.isVisible(
-        win.PanelUI.mainView.querySelector("#appMenu-fxa-status2")
-      ),
-      "Default FxA sign-in button is visible."
+    
+    
+    
+    const updateBanner = win.PanelUI.mainView.querySelector(
+      "#appMenu-update-banner"
     );
+    if (updateBanner && BrowserTestUtils.isVisible(updateBanner)) {
+      Assert.ok(
+        BrowserTestUtils.isVisible(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-status2")
+        ),
+        "Compact FxA sign-in row is visible when an update banner is present."
+      );
+    } else {
+      Assert.ok(
+        BrowserTestUtils.isVisible(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-sign-in-promo")
+        ),
+        "Default FxA sign-in promo is visible."
+      );
+    }
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
     Assert.ok(
       BrowserTestUtils.isVisible(
