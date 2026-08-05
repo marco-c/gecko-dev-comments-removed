@@ -351,9 +351,14 @@ impl<T: ?Sized> Arc<T> {
     
     
     
+    
+    
+    
+    
     #[inline(always)]
     pub fn mark_as_intentionally_leaked(&self) {
         self.record_drop();
+        self.inner().count.store(STATIC_REFCOUNT, Relaxed);
     }
 
     
