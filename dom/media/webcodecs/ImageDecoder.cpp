@@ -589,6 +589,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
   mSourceBuffer = MakeRefPtr<image::SourceBuffer>();
 
   bool transferOwnership = false;
+  bool isBufferSource = false;
   const auto fnSourceBufferFromSpan = [&](const Span<uint8_t>& aData) {
     if (transferOwnership) {
       
@@ -628,11 +629,6 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
         return;
       }
     }
-    mSourceBuffer->Complete(NS_OK);
-
-    
-    
-    OnCompleteSuccess();
   };
 
   if (aInit.mData.IsReadableStream()) {
@@ -655,6 +651,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     }
   } else if (aInit.mData.IsArrayBufferView()) {
     
+    isBufferSource = true;
     const auto& view = aInit.mData.GetAsArrayBufferView();
     bool isShared;
     JS::Rooted<JSObject*> viewObj(aGlobal.Context(), view.Obj());
@@ -697,6 +694,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     }
   } else if (aInit.mData.IsArrayBuffer()) {
     
+    isBufferSource = true;
     const auto& buffer = aInit.mData.GetAsArrayBuffer();
     for (const auto& transferBuffer : aInit.mTransfer) {
       if (buffer.Obj() == transferBuffer.Obj()) {
@@ -729,6 +727,21 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     MOZ_ASSERT_UNREACHABLE("Unsupported data type!");
     aRv.ThrowNotSupportedError("Unsupported data type");
     return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isBufferSource) {
+    
+    
+    mSourceBuffer->Complete(NS_OK);
+    OnCompleteSuccess();
   }
 
   Maybe<gfx::IntSize> desiredSize;
