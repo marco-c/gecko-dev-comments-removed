@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ScriptLoadContext_h
 #define mozilla_dom_ScriptLoadContext_h
 
@@ -160,6 +158,28 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   void MaybeUnblockOnload();
 
+  
+  
+  
+  
+  void SetIsCoalescedModulePreload() { mIsCoalescedModulePreload = true; }
+
+  
+  
+  
+  void NotifyModuleWaitFinished() {
+    if (mIsCoalescedModulePreload) {
+      NotifyPreloadCoalescingResult();
+    }
+  }
+
+  
+  
+  
+  
+  
+  void NotifyPreloadCoalescingResult();
+
   enum class ScriptMode : uint8_t {
     eBlocking,
     eDeferred,
@@ -288,6 +308,12 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
                           
   
   bool mIsPreload;
+
+  
+  
+  
+  
+  bool mIsCoalescedModulePreload;
 
   
   

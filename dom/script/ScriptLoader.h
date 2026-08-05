@@ -615,6 +615,15 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
+
+
+  void NotifyPreloadCoalescing(ModuleLoadRequest* aRequest);
+
+  
+
+
+
+
   nsresult RestartLoad(ScriptLoadRequest* aRequest);
 
   void HandleLoadError(ScriptLoadRequest* aRequest, nsresult aResult);

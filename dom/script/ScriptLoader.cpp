@@ -36,6 +36,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"  
+#include "mozilla/PreloadHashKey.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -1052,6 +1053,20 @@ nsresult ScriptLoader::PrepareIncrementalStreamLoader(
   nsresult rv = NS_NewIncrementalStreamLoader(aOutLoader, handler);
   NS_ENSURE_SUCCESS(rv, rv);
   return rv;
+}
+
+void ScriptLoader::NotifyPreloadCoalescing(ModuleLoadRequest* aRequest) {
+  ScriptLoadContext* context = aRequest->GetScriptLoadContext();
+  MOZ_ASSERT(aRequest->IsTopLevel());
+  MOZ_ASSERT(context->IsLinkPreloadScript());
+  MOZ_ASSERT(!context->Channel());
+
+  auto key = PreloadHashKey::CreateAsScript(
+      aRequest->URI(), aRequest->CORSMode(), JS::loader::ScriptKind::eModule);
+  context->SetIsCoalescedModulePreload();
+  context->NotifyOpen(key, mDocument,  true,
+                       true);
+  context->NotifyPreloadCoalescingResult();
 }
 
 nsresult ScriptLoader::StartLoadInternal(
@@ -5379,6 +5394,23 @@ void ScriptLoader::PreloadURI(
   nsresult rv = StartLoad(request, Some(charset));
   if (NS_FAILED(rv)) {
     return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (request->IsModuleRequest()) {
+    ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+    ScriptLoadContext* context = moduleRequest->GetScriptLoadContext();
+    MOZ_ASSERT_IF(moduleRequest->IsRetrievedFromMemoryCache(),
+                  !context->Channel());
+    if (context->IsLinkPreloadScript() && !context->Channel()) {
+      NotifyPreloadCoalescing(moduleRequest);
+    }
   }
 
   PreloadInfo* pi = mPreloads.AppendElement();

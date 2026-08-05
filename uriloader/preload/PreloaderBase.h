@@ -79,6 +79,10 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   bool IsUsed() const { return mIsUsed; }
 
   
+  
+  bool HasStopped() const { return mOnStopStatus.isSome(); }
+
+  
   void RemoveSelf(dom::Document* aDocument);
 
   

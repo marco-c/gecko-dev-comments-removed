@@ -59,6 +59,7 @@ ScriptLoadContext::ScriptLoadContext(
       mInCompilingList(false),
       mWasCompiledOMT(false),
       mIsPreload(false),
+      mIsCoalescedModulePreload(false),
       mUnreportedPreloadError(NS_OK),
       mLineNo(1),
       mColumnNo(0),
@@ -89,6 +90,36 @@ void ScriptLoadContext::MaybeUnblockOnload() {
   if (mLoadBlockedDocument) {
     mLoadBlockedDocument->UnblockOnload(false);
     mLoadBlockedDocument = nullptr;
+  }
+}
+
+void ScriptLoadContext::NotifyPreloadCoalescingResult() {
+  MOZ_ASSERT(mIsCoalescedModulePreload);
+
+  if (HasStopped()) {
+    return;
+  }
+
+  MOZ_ASSERT(!Channel());
+
+  JS::loader::ModuleLoadRequest* request = mRequest->AsModuleRequest();
+  MOZ_ASSERT(request->IsTopLevel());
+
+  if (request->mModuleScript) {
+    
+    NotifyStop(NS_OK);
+    MOZ_ASSERT(HasStopped());
+  } else if (request->IsFinished()) {
+    
+    
+    
+    NotifyStop(NS_ERROR_FAILURE);
+    MOZ_ASSERT(HasStopped());
+  } else {
+    
+    
+    
+    MOZ_ASSERT(request->IsFetching());
   }
 }
 
