@@ -6855,7 +6855,6 @@ const INITIAL_STATE = {
   Stocks: {
     tickers: [],
     lastUpdated: null,
-    error: false,
   },
   PictureOfTheDay: {
     initialized: false,
@@ -7985,7 +7984,6 @@ function Stocks(prevState = INITIAL_STATE.Stocks, action) {
         ...prevState,
         tickers: action.data.tickers,
         lastUpdated: action.data.lastUpdated,
-        error: action.data.error ?? false,
       };
     default:
       return prevState;
@@ -16202,15 +16200,6 @@ const FocusTimer = ({
   
   
   const bodyShowsRunningLayout = hasProgressed || isCelebrating || isComplete;
-
-  
-  const showModeGroup = !bodyShowsRunningLayout && (widgetSize === "medium" || widgetSize === "large");
-
-  
-  let celebrationSubheadL10nId;
-  if (widgetSize !== "small") {
-    celebrationSubheadL10nId = timerType === "focus" ? "newtab-widget-timer-celebration-message-focus" : "newtab-widget-timer-celebration-message-break";
-  }
   return timerData ? external_React_default().createElement("article", {
     
     className: `focus-timer widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}${isComplete ? " is-complete" : ""}${isCelebrating ? " is-celebrating" : ""}${hasProgressed && !isComplete ? " is-active" : ""}`,
@@ -16228,7 +16217,7 @@ const FocusTimer = ({
     headlineL10nId: timerType === "focus" ? "newtab-widget-timer-celebration-heading-focus" : "newtab-widget-timer-celebration-heading-break",
     illustrationSrc: null,
     onComplete: handleCelebrationComplete,
-    subheadL10nId: celebrationSubheadL10nId
+    subheadL10nId: timerType === "focus" ? "newtab-widget-timer-celebration-message-focus" : "newtab-widget-timer-celebration-message-break"
   }) : null, external_React_default().createElement("div", {
     className: "newtab-widget-timer-notification-title-wrapper"
   }, external_React_default().createElement("h2", {
@@ -16357,7 +16346,7 @@ const FocusTimer = ({
     iconsrc: "chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg",
     "data-l10n-id": "newtab-widget-timer-reset",
     onClick: resetTimer
-  }), showModeGroup && external_React_default().createElement("div", {
+  }), !bodyShowsRunningLayout && external_React_default().createElement("div", {
     className: "focus-timer-mode-group",
     role: "radiogroup",
     "data-l10n-id": "newtab-widget-timer-mode-group",
@@ -22139,6 +22128,11 @@ const EVENT_TYPES = {
 
 
 const PUZZLE_STATES = ["intro", "in_progress", "completed"];
+
+
+
+
+const LARGE_LAYOUT_INTERACTIONS = new Set(["admire_crossword_clicked", "all_clues_opened", "reveal_grid_requested"]);
 const isNonNegativeNumber = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const isWholeCount = value => isNonNegativeNumber(value) && Number.isInteger(value);
 
@@ -22187,6 +22181,7 @@ function Crossword({
   
   const [puzzleCompleted, setPuzzleCompleted] = (0,external_React_namespaceObject.useState)(false);
 
+  
   
   
   
@@ -22252,6 +22247,12 @@ function Crossword({
         } else if (payload.state === "intro") {
           setShowLarge(false);
         }
+        
+        if (payload.state === "completed") {
+          setPuzzleCompleted(true);
+        } else if (payload.state === "intro") {
+          setPuzzleCompleted(false);
+        }
         break;
       case EVENT_TYPES.PUZZLE_COMPLETED:
         setPuzzleCompleted(true);
@@ -22267,6 +22268,11 @@ function Crossword({
         }));
         break;
       case EVENT_TYPES.INTERACTION:
+        
+        
+        if (LARGE_LAYOUT_INTERACTIONS.has(payload.action)) {
+          setShowLarge(true);
+        }
         handleInteraction();
         dispatch(actionCreators.AlsoToMain({
           type: actionTypes.WIDGETS_USER_EVENT,
@@ -22633,61 +22639,6 @@ function StockTicker({
 
 
 
-function StocksError({
-  widgetSize,
-  dispatch
-}) {
-  const errorFired = (0,external_React_namespaceObject.useRef)(false);
-  const handleErrorIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (errorFired.current) {
-      return;
-    }
-    errorFired.current = true;
-    
-    
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_ERROR,
-      data: {
-        widget_name: "stocks",
-        widget_size: widgetSize,
-        error_type: "load_error"
-      }
-    }));
-  }, [dispatch, widgetSize]);
-  const errorRef = useIntersectionObserver(handleErrorIntersection);
-  return (
-    
-    
-    
-    external_React_default().createElement("div", {
-      className: "stocks-error",
-      role: "alert",
-      ref: el => {
-        errorRef.current = [el];
-      }
-    }, external_React_default().createElement("span", {
-      className: "icon icon-info-warning",
-      "aria-hidden": "true"
-    }), external_React_default().createElement("p", {
-      className: "stocks-error-text",
-      "data-l10n-id": "newtab-stocks-error-not-available"
-    }))
-  );
-}
-
-;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 const Stocks_USER_ACTION_TYPES = {
@@ -22704,14 +22655,12 @@ function Stocks_Stocks({
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
-    tickers,
-    error
+    tickers
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Stocks);
 
   
   
   const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
-  const showError = error && !tickers.length;
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
@@ -22816,10 +22765,7 @@ function Stocks_Stocks({
     }) : null
   })))), external_React_default().createElement("div", {
     className: "stocks-body"
-  }, showError && external_React_default().createElement(StocksError, {
-    widgetSize: widgetSize,
-    dispatch: dispatch
-  }), !showError && widgetSize === "medium" && external_React_default().createElement("ul", {
+  }, widgetSize === "medium" && external_React_default().createElement("ul", {
     className: `stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`
   }, tickers.length ? tickers.map(t => external_React_default().createElement(StockTicker, {
     key: t.ticker,
@@ -22832,7 +22778,7 @@ function Stocks_Stocks({
   }).map((_, i) => external_React_default().createElement(StockTicker, {
     key: i,
     loading: true
-  }))), !showError && widgetSize === "large" && external_React_default().createElement("ul", {
+  }))), widgetSize === "large" && external_React_default().createElement("ul", {
     className: `stocks-list${tickers.length ? "" : " stocks-list--loading"}`
   }, tickers.length ? tickers.map(t => external_React_default().createElement(StockTicker, {
     key: t.ticker,
