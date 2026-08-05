@@ -214,6 +214,22 @@ class NotifyIconObservers final : public Runnable {
 
 
 
+
+class AsyncExpireFaviconsForPage final : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+
+  AsyncExpireFaviconsForPage(const nsCOMPtr<nsIURI>& aPageURI,
+                             dom::Promise* aPromise);
+
+ private:
+  nsCOMPtr<nsIURI> mPageURI;
+  nsMainThreadPtrHandle<dom::Promise> mPromise;
+};
+
+
+
+
 class AsyncTryCopyFaviconsRunnable final : public Runnable {
  public:
   NS_DECL_NSIRUNNABLE
