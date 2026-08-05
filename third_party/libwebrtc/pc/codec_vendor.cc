@@ -1223,9 +1223,24 @@ RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
       }
       if (payload_types_in_transport_) {
         
-        MergeCodecsByDirection(media_description_options.type, answer_rtd, mid,
-                               filtered_codecs, pt_suggester,
-                               false);
+        
+        
+        
+        const std::vector<CodecConfiguration>& send_configs =
+            (media_description_options.type == MediaType::AUDIO)
+                ? audio_send_codecs_.configurations()
+                : video_send_codecs_.configurations();
+        const std::vector<CodecConfiguration>& recv_configs =
+            (media_description_options.type == MediaType::AUDIO)
+                ? audio_recv_codecs_.configurations()
+                : video_recv_codecs_.configurations();
+
+        MergeCodecsFromConfigurations(send_configs, mid, filtered_codecs,
+                                      pt_suggester, trials_,
+                                      false);
+        MergeCodecsFromConfigurations(recv_configs, mid, filtered_codecs,
+                                      pt_suggester, trials_,
+                                      false);
       } else {
         
         MergeCodecsLegacy(supported_codecs, mid, filtered_codecs, pt_suggester);
