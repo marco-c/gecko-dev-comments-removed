@@ -1151,6 +1151,8 @@ pref("browser.tabs.groups.enabled", true);
 pref("browser.tabs.groups.hoverPreview.enabled", true);
 pref("browser.tabs.groups.alternateMenu", false);
 
+pref("browser.tabs.groups.onboardingCallouts.enabled", false);
+
 pref("browser.tabs.groups.smart.enabled", true);
 
 pref("browser.tabs.notes.enabled", false);
