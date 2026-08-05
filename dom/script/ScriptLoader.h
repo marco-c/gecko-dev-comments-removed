@@ -756,9 +756,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JS::MutableHandle<JSScript*> aScript,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
-  static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);
-  static nsCString& BytecodeMimeTypeFor(
-      const JS::loader::LoadedScript* aLoadedScript);
+  static void BytecodeMimeTypeFor(const JS::loader::LoadedScript* aLoadedScript,
+                                  nsAutoCString& aMIMEType);
 
   
   
