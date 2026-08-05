@@ -83,6 +83,11 @@ static AVIF_A1OP: &str = "tests/a1op.avif";
 static AVIF_A1LX: &str = "tests/a1lx.avif";
 static AVIF_LSEL: &str = "tests/lsel.avif";
 
+
+
+
+static AVIF_LSEL_LAYER_ID_FFFF: &str = "tests/lsel-layer-id-ffff.avif";
+
 static AVIF_CLAP: &str = "tests/clap-basic-1_3x3-to-1x1.avif";
 static AVIF_GRID: &str = "av1-avif/testFiles/Microsoft/Summer_in_Tomsk_720p_5x4_grid.avif";
 static AVIF_GRID_A1LX: &str =
@@ -236,6 +241,15 @@ static VIDEO_MP4V_MP4: &str = "tests/bbb_sunflower_QCIF_30fps_mp4v_noaudio_1f.mp
 
 
 static VIDEO_H264_PASP_MP4: &str = "tests/h264_white_frame_sar_16_9.mp4";
+
+
+
+
+static VIDEO_TWO_NCLX_COLR_MP4: &str = "tests/video_colr_nclx_two_colr.mp4";
+
+
+
+static VIDEO_NCLX_AND_ICC_COLR_MP4: &str = "tests/video_colr_nclx_and_icc.mp4";
 
 
 #[test]
@@ -890,6 +904,59 @@ fn public_mp4_ctts_overflow() {
     );
 }
 
+fn assert_video_nclx_colour_info(
+    result: mp4::Result<mp4::MediaContext>,
+    expected_transfer_characteristics: u8,
+) {
+    let context = result.expect("read_mp4 failed");
+    let track = context.tracks.first().expect("expected a track");
+    let stsd = track.stsd.as_ref().expect("expected an stsd");
+    let v = match stsd.descriptions.first().expect("expected a SampleEntry") {
+        mp4::SampleEntry::Video(v) => v,
+        _ => panic!("expected a VideoSampleEntry"),
+    };
+    match &v.colour_info {
+        Some(mp4::ColourInformation::Nclx(nclx)) => {
+            assert_eq!(
+                nclx.transfer_characteristics,
+                expected_transfer_characteristics
+            );
+        }
+        other => panic!("expected nclx colour info, got {:?}", other),
+    }
+}
+
+
+
+
+#[test]
+fn public_video_two_nclx_colr_boxes() {
+    for strictness in [ParseStrictness::Permissive, ParseStrictness::Normal] {
+        let input = &mut File::open(VIDEO_TWO_NCLX_COLR_MP4).expect("Unknown file");
+        assert_video_nclx_colour_info(mp4::read_mp4(input, strictness), 18);
+    }
+    let input = &mut File::open(VIDEO_TWO_NCLX_COLR_MP4).expect("Unknown file");
+    assert_eq!(
+        Status::from(mp4::read_mp4(input, ParseStrictness::Strict)),
+        Status::ColrBadQuantityBMFF
+    );
+}
+
+
+
+
+#[test]
+fn public_video_nclx_and_icc_colr_boxes() {
+    for strictness in [
+        ParseStrictness::Permissive,
+        ParseStrictness::Normal,
+        ParseStrictness::Strict,
+    ] {
+        let input = &mut File::open(VIDEO_NCLX_AND_ICC_COLR_MP4).expect("Unknown file");
+        assert_video_nclx_colour_info(mp4::read_mp4(input, strictness), 18);
+    }
+}
+
 #[test]
 fn public_avif_primary_item() {
     let input = &mut File::open(IMAGE_AVIF).expect("Unknown file");
@@ -1221,6 +1288,29 @@ fn public_avif_lsel() {
 #[test]
 fn public_avif_lsel_missing_essential() {
     assert_avif_shall(IMAGE_AVIF_LSEL_MISSING_ESSENTIAL, Status::LselNoEssential);
+}
+
+
+
+
+#[test]
+fn public_avif_lsel_no_layer_selection() {
+    for_strictness_result(
+        AVIF_LSEL_LAYER_ID_FFFF,
+        |_strictness, result| match result {
+            Ok(context) => {
+                assert!(
+                    !context.unsupported_features.contains(mp4::Feature::Lsel),
+                    "lsel with layer_id 0xffff should not be an unsupported feature"
+                );
+                assert!(
+                    context.primary_item_coded_data().is_some(),
+                    "primary item associated with an lsel of layer_id 0xffff should be decodable"
+                );
+            }
+            r => panic!("Expected Ok, found {:?}", r),
+        },
+    );
 }
 
 #[test]

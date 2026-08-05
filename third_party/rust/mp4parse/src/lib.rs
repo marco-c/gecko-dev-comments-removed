@@ -324,7 +324,7 @@ impl TryFrom<&ItemProperty> for Feature {
             ItemProperty::Colour(_) => Self::Colr,
             ItemProperty::ImageSpatialExtents(_) => Self::Ispe,
             ItemProperty::LayeredImageIndexing => Self::A1lx,
-            ItemProperty::LayerSelection => Self::Lsel,
+            ItemProperty::LayerSelection(_) => Self::Lsel,
             ItemProperty::Mirroring(_) => Self::Imir,
             ItemProperty::OperatingPointSelector => Self::A1op,
             ItemProperty::PixelAspectRatio(_) => Self::Pasp,
@@ -467,8 +467,8 @@ impl From<Status> for &str {
                  per HEIF (ISO/IEC DIS 23008-12) § 6.5.5.1"
             }
             Status::ColrBadQuantityBMFF => {
-                "Each sample entry shall have at most one ColourInformationBox (colr) \
-                 per ISOBMFF (ISO 14496-12:2020) § 12.1.5"
+                "Each sample entry should have at most one ColourInformationBox (colr) \
+                 for a given value of colour_type per ISOBMFF (ISO 14496-12:2020) § 12.1.5"
             }
             Status::ColrBadSize => {
                 "Unexpected size for colr box"
@@ -3024,6 +3024,14 @@ fn read_iprp<T: Read>(
     let mut association_entries = TryVec::<ItemPropertyAssociationEntry>::new();
     let mut forbidden_items = TryVec::new();
 
+    
+    
+    
+    
+    
+    
+    const LSEL_LAYER_ID_NO_SELECTION: u16 = 0xffff;
+
     while let Some(mut b) = iter.next_box()? {
         if b.head.name != BoxType::ItemPropertyAssociationBox {
             return Status::IprpBadChild.into();
@@ -3089,16 +3097,25 @@ fn read_iprp<T: Read>(
                     assert!(brand == MIF1_BRAND);
 
                     let feature = Feature::try_from(property);
-                    let property_supported = match feature {
-                        Ok(feature) => {
-                            if feature.supported() {
-                                true
-                            } else {
-                                unsupported_features.insert(feature);
-                                false
+                    let property_supported = if matches!(
+                        property,
+                        ItemProperty::LayerSelection(layer_id)
+                            if *layer_id == LSEL_LAYER_ID_NO_SELECTION
+                    ) {
+                        
+                        true
+                    } else {
+                        match feature {
+                            Ok(feature) => {
+                                if feature.supported() {
+                                    true
+                                } else {
+                                    unsupported_features.insert(feature);
+                                    false
+                                }
                             }
+                            Err(_) => false,
                         }
-                        Err(_) => false,
                     };
 
                     if !property_supported {
@@ -3169,18 +3186,22 @@ fn read_iprp<T: Read>(
                             }
                         }
 
-                        ItemProperty::LayerSelection => {
-                            assert!(feature.is_ok() && unsupported_features.contains(feature?));
-                            if a.essential {
-                                assert!(
-                                    forbidden_items.contains(&association_entry.item_id)
-                                        || strictness == ParseStrictness::Permissive
-                                );
-                            } else {
+                        ItemProperty::LayerSelection(layer_id) => {
+                            if !a.essential {
+                                
+                                
                                 fail_with_status_if(
                                     strictness != ParseStrictness::Permissive,
                                     Status::LselNoEssential,
                                 )?;
+                            } else if *layer_id != LSEL_LAYER_ID_NO_SELECTION {
+                                
+                                
+                                assert!(feature.is_ok() && unsupported_features.contains(feature?));
+                                assert!(
+                                    forbidden_items.contains(&association_entry.item_id)
+                                        || strictness == ParseStrictness::Permissive
+                                );
                             }
                         }
 
@@ -3266,7 +3287,7 @@ pub enum ItemProperty {
     Colour(ColourInformation),
     ImageSpatialExtents(ImageSpatialExtentsProperty),
     LayeredImageIndexing,
-    LayerSelection,
+    LayerSelection(u16),
     Mirroring(ImageMirror),
     OperatingPointSelector,
     PixelAspectRatio(PixelAspectRatio),
@@ -3283,7 +3304,7 @@ impl From<&ItemProperty> for BoxType {
             ItemProperty::CleanAperture => BoxType::CleanApertureBox,
             ItemProperty::Colour(_) => BoxType::ColourInformationBox,
             ItemProperty::LayeredImageIndexing => BoxType::AV1LayeredImageIndexingProperty,
-            ItemProperty::LayerSelection => BoxType::LayerSelectorProperty,
+            ItemProperty::LayerSelection(_) => BoxType::LayerSelectorProperty,
             ItemProperty::Mirroring(_) => BoxType::ImageMirror,
             ItemProperty::OperatingPointSelector => BoxType::OperatingPointSelectorProperty,
             ItemProperty::PixelAspectRatio(_) => BoxType::PixelAspectRatioBox,
@@ -3636,13 +3657,16 @@ fn read_ipco<T: Read>(
         let property = match b.head.name {
             BoxType::AuxiliaryTypeProperty => ItemProperty::AuxiliaryType(read_auxc(&mut b)?),
             BoxType::AV1CodecConfigurationBox => ItemProperty::AV1Config(read_av1c(&mut b)?),
-            BoxType::ColourInformationBox => match read_colr(&mut b, strictness)? {
-                ParsedColourInformation::Supported(colr) => ItemProperty::Colour(colr),
-                ParsedColourInformation::Unsupported(colour_type) => {
-                    error!("read_colr colour_type: {colour_type:?}");
-                    return Status::ColrBadType.into();
+            BoxType::ColourInformationBox => {
+                let colour_type = be_u32(&mut b)?.to_be_bytes();
+                match read_colr(&mut b, colour_type, strictness)? {
+                    ParsedColourInformation::Supported(colr) => ItemProperty::Colour(colr),
+                    ParsedColourInformation::Unsupported(colour_type) => {
+                        error!("read_colr colour_type: {colour_type:?}");
+                        return Status::ColrBadType.into();
+                    }
                 }
-            },
+            }
             BoxType::ImageMirror => ItemProperty::Mirroring(read_imir(&mut b)?),
             BoxType::ImageRotation => ItemProperty::Rotation(read_irot(&mut b)?),
             BoxType::ImageSpatialExtentsProperty => {
@@ -3650,6 +3674,7 @@ fn read_ipco<T: Read>(
             }
             BoxType::PixelAspectRatioBox => ItemProperty::PixelAspectRatio(read_pasp(&mut b)?),
             BoxType::PixelInformationBox => ItemProperty::Channels(read_pixi(&mut b)?),
+            BoxType::LayerSelectorProperty => ItemProperty::LayerSelection(read_lsel(&mut b)?),
 
             other_box_type => {
                 
@@ -3658,7 +3683,6 @@ fn read_ipco<T: Read>(
                 let item_property = match other_box_type {
                     BoxType::AV1LayeredImageIndexingProperty => ItemProperty::LayeredImageIndexing,
                     BoxType::CleanApertureBox => ItemProperty::CleanAperture,
-                    BoxType::LayerSelectorProperty => ItemProperty::LayerSelection,
                     BoxType::OperatingPointSelectorProperty => ItemProperty::OperatingPointSelector,
                     _ => {
                         warn!("No ItemProperty variant for {other_box_type:?}");
@@ -3682,6 +3706,14 @@ fn read_ipco<T: Read>(
     }
 
     Ok(properties)
+}
+
+
+
+
+fn read_lsel<T: Read>(src: &mut BMFFBox<T>) -> Result<u16> {
+    let layer_id = be_u16(src)?;
+    Ok(layer_id)
 }
 
 #[repr(C)]
@@ -3837,12 +3869,12 @@ enum ParsedColourInformation {
 
 
 
+
 fn read_colr<T: Read>(
     src: &mut BMFFBox<T>,
+    colour_type: [u8; 4],
     strictness: ParseStrictness,
 ) -> Result<ParsedColourInformation> {
-    let colour_type = be_u32(src)?.to_be_bytes();
-
     match &colour_type {
         b"nclx" => {
             const NUM_RESERVED_BITS: u8 = 7;
@@ -3850,22 +3882,31 @@ fn read_colr<T: Read>(
             let transfer_characteristics = be_u16(src)?.try_into()?;
             let matrix_coefficients = be_u16(src)?.try_into()?;
             let bytes = src.read_into_try_vec()?;
-            let mut bit_reader = BitReader::new(&bytes);
-            let full_range_flag = bit_reader.read_bool()?;
-            if bit_reader.remaining() != NUM_RESERVED_BITS.into() {
-                error!(
-                    "read_colr expected {} reserved bits, found {}",
-                    NUM_RESERVED_BITS,
-                    bit_reader.remaining()
-                );
-                return Status::ColrBadSize.into();
-            }
-            if bit_reader.read_u8(NUM_RESERVED_BITS)? != 0 {
-                fail_with_status_if(
-                    strictness != ParseStrictness::Permissive,
-                    Status::ColrReservedNonzero,
-                )?;
-            }
+            
+            
+            let full_range_flag = if bytes.is_empty() {
+                warn!("read_colr: nclx missing full_range_flag, assuming limited range");
+                fail_with_status_if(strictness == ParseStrictness::Strict, Status::ColrBadSize)?;
+                false
+            } else {
+                let mut bit_reader = BitReader::new(&bytes);
+                let full_range_flag = bit_reader.read_bool()?;
+                if bit_reader.remaining() != NUM_RESERVED_BITS.into() {
+                    error!(
+                        "read_colr expected {} reserved bits, found {}",
+                        NUM_RESERVED_BITS,
+                        bit_reader.remaining()
+                    );
+                    return Status::ColrBadSize.into();
+                }
+                if bit_reader.read_u8(NUM_RESERVED_BITS)? != 0 {
+                    fail_with_status_if(
+                        strictness != ParseStrictness::Permissive,
+                        Status::ColrReservedNonzero,
+                    )?;
+                }
+                full_range_flag
+            };
 
             Ok(ParsedColourInformation::Supported(ColourInformation::Nclx(
                 NclxColourInformation {
@@ -5151,6 +5192,20 @@ fn read_ds_descriptor(
     esds: &mut ES_Descriptor,
     strictness: ParseStrictness,
 ) -> Result<()> {
+    
+    
+    
+    
+    
+    
+    if !esds.decoder_specific_data.is_empty() {
+        fail_with_status_if(
+            strictness == ParseStrictness::Strict,
+            Status::EsdsDecSpecificInfoTagQuantity,
+        )?;
+        return Ok(());
+    }
+
     #[cfg(feature = "mp4v")]
     
     if esds.video_codec != CodecType::Unknown {
@@ -5253,6 +5308,32 @@ fn read_ds_descriptor(
                 _ => 96000,
             };
 
+            
+            
+            
+            
+            let channel_count_from_config = match channel_configuration {
+                0 => None,
+                1..=7 => Some(channel_configuration),
+                11 => Some(7),      
+                12 | 14 => Some(8), 
+                _ => return Err(Error::Unsupported("invalid channel configuration")),
+            };
+
+            
+            
+            
+            
+            
+            
+            esds.audio_object_type = Some(audio_object_type);
+            esds.extended_audio_object_type = extended_audio_object_type;
+            esds.audio_sample_rate = Some(sample_frequency_value);
+            if let Some(cc) = channel_count_from_config {
+                esds.audio_channel_count = Some(cc);
+                esds.decoder_specific_data.extend_from_slice(data)?;
+            }
+
             bit_reader.skip(1)?; 
             let depend_on_core_order: u8 = ReadInto::read(bit_reader, 1)?;
             if depend_on_core_order > 0 {
@@ -5260,63 +5341,45 @@ fn read_ds_descriptor(
             }
             bit_reader.skip(1)?; 
 
-            let channel_counts = match channel_configuration {
-                0 => {
-                    debug!("Parsing program_config_element for channel counts");
-
-                    bit_reader.skip(4)?; 
-                    bit_reader.skip(2)?; 
-                    bit_reader.skip(4)?; 
-                    let num_front_channel: u8 = ReadInto::read(bit_reader, 4)?;
-                    let num_side_channel: u8 = ReadInto::read(bit_reader, 4)?;
-                    let num_back_channel: u8 = ReadInto::read(bit_reader, 4)?;
-                    let num_lfe_channel: u8 = ReadInto::read(bit_reader, 2)?;
-                    bit_reader.skip(3)?; 
-                    bit_reader.skip(4)?; 
-
-                    let mono_mixdown_present: bool = ReadInto::read(bit_reader, 1)?;
-                    if mono_mixdown_present {
-                        bit_reader.skip(4)?; 
-                    }
-
-                    let stereo_mixdown_present: bool = ReadInto::read(bit_reader, 1)?;
-                    if stereo_mixdown_present {
-                        bit_reader.skip(4)?; 
-                    }
-
-                    let matrix_mixdown_idx_present: bool = ReadInto::read(bit_reader, 1)?;
-                    if matrix_mixdown_idx_present {
-                        bit_reader.skip(2)?; 
-                        bit_reader.skip(1)?; 
-                    }
-                    let mut _channel_counts = 0;
-                    _channel_counts += read_surround_channel_count(bit_reader, num_front_channel)?;
-                    _channel_counts += read_surround_channel_count(bit_reader, num_side_channel)?;
-                    _channel_counts += read_surround_channel_count(bit_reader, num_back_channel)?;
-                    _channel_counts += read_surround_channel_count(bit_reader, num_lfe_channel)?;
-                    _channel_counts
-                }
-                1..=7 => channel_configuration,
+            if channel_count_from_config.is_none() {
                 
-                11 => 7,      
-                12 | 14 => 8, 
-                _ => {
-                    return Err(Error::Unsupported("invalid channel configuration"));
+                
+                debug!("Parsing program_config_element for channel counts");
+
+                bit_reader.skip(4)?; 
+                bit_reader.skip(2)?; 
+                bit_reader.skip(4)?; 
+                let num_front_channel: u8 = ReadInto::read(bit_reader, 4)?;
+                let num_side_channel: u8 = ReadInto::read(bit_reader, 4)?;
+                let num_back_channel: u8 = ReadInto::read(bit_reader, 4)?;
+                let num_lfe_channel: u8 = ReadInto::read(bit_reader, 2)?;
+                bit_reader.skip(3)?; 
+                bit_reader.skip(4)?; 
+
+                let mono_mixdown_present: bool = ReadInto::read(bit_reader, 1)?;
+                if mono_mixdown_present {
+                    bit_reader.skip(4)?; 
                 }
-            };
 
-            esds.audio_object_type = Some(audio_object_type);
-            esds.extended_audio_object_type = extended_audio_object_type;
-            esds.audio_sample_rate = Some(sample_frequency_value);
-            esds.audio_channel_count = Some(channel_counts);
+                let stereo_mixdown_present: bool = ReadInto::read(bit_reader, 1)?;
+                if stereo_mixdown_present {
+                    bit_reader.skip(4)?; 
+                }
 
-            if !esds.decoder_specific_data.is_empty() {
-                fail_with_status_if(
-                    strictness == ParseStrictness::Strict,
-                    Status::EsdsDecSpecificInfoTagQuantity,
-                )?;
+                let matrix_mixdown_idx_present: bool = ReadInto::read(bit_reader, 1)?;
+                if matrix_mixdown_idx_present {
+                    bit_reader.skip(2)?; 
+                    bit_reader.skip(1)?; 
+                }
+                let mut channel_counts = 0;
+                channel_counts += read_surround_channel_count(bit_reader, num_front_channel)?;
+                channel_counts += read_surround_channel_count(bit_reader, num_side_channel)?;
+                channel_counts += read_surround_channel_count(bit_reader, num_back_channel)?;
+                channel_counts += read_surround_channel_count(bit_reader, num_lfe_channel)?;
+
+                esds.audio_channel_count = Some(channel_counts);
+                esds.decoder_specific_data.extend_from_slice(data)?;
             }
-            esds.decoder_specific_data.extend_from_slice(data)?;
 
             Ok(())
         }
@@ -5652,6 +5715,7 @@ fn read_video_sample_entry<T: Read>(
     let mut codec_specific = None;
     let mut pixel_aspect_ratio = None;
     let mut colour_info = None;
+    let mut colr_types_seen = TryVec::<FourCC>::new();
     let mut hdr_mastering_display = None;
     let mut hdr_content_light_level = None;
     let mut protection_info = TryVec::new();
@@ -5771,22 +5835,32 @@ fn read_video_sample_entry<T: Read>(
                 debug!("Parsed pasp box: {pasp:?}, PAR {pixel_aspect_ratio:?}");
             }
             BoxType::ColourInformationBox => {
-                if colour_info.is_some() {
-                    
-                    
-                    
-                    
-                    warn!("Multiple colr boxes in video sample entry, keeping first");
+                
+                
+                
+                
+                
+                let colour_type = FourCC::from(be_u32(&mut b)?.to_be_bytes());
+                if colr_types_seen.contains(&colour_type) {
+                    warn!(
+                        "Multiple {colour_type:?} colr boxes in video sample entry, keeping first"
+                    );
                     fail_with_status_if(
                         strictness == ParseStrictness::Strict,
                         Status::ColrBadQuantityBMFF,
                     )?;
-                    skip_box_content(&mut b)?;
-                } else if let ParsedColourInformation::Supported(colr) =
-                    read_colr(&mut b, strictness)?
-                {
-                    debug!("Parsed colr box: {colr:?}");
-                    colour_info = Some(colr);
+                    skip_box_remain(&mut b)?;
+                } else {
+                    colr_types_seen.push(colour_type.clone())?;
+                    if colour_info.is_some() {
+                        debug!("Already have colour info, skipping {colour_type:?} colr box");
+                        skip_box_remain(&mut b)?;
+                    } else if let ParsedColourInformation::Supported(colr) =
+                        read_colr(&mut b, colour_type.value, strictness)?
+                    {
+                        debug!("Parsed colr box: {colr:?}");
+                        colour_info = Some(colr);
+                    }
                 }
             }
             BoxType::MasteringDisplayColourVolumeBox => {
