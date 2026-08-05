@@ -90,9 +90,12 @@ function createNovaThemeXPI(themeId, themeName) {
 
 
 
+
 function setupAddonRepoServer(themeId, themeName, xpi) {
   const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
-  server.registerFile("/theme.xpi", xpi);
+  if (xpi) {
+    server.registerFile("/theme.xpi", xpi);
+  }
   AddonTestUtils.registerJSON(server, "/addons.json", {
     page_size: 1,
     page_count: 1,
@@ -576,6 +579,56 @@ add_task(async function test_picker_install_button_downloads_and_activates() {
   );
 
   await sunAddon.uninstall();
+  cleanupAddonRepoServer();
+  await closeView(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function test_picker_shows_error_on_install_failure() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_NOVA_ENABLED, true],
+      [PREF_NOVA_THEMES_PICKER, true],
+    ],
+  });
+
+  
+  const cleanupAddonRepoServer = setupAddonRepoServer(NOVA_SUN_ID, "Nova Sun");
+
+  const win = await loadInitialView("theme");
+  const picker = getThemesPicker(win.document);
+  await waitForThemesPickerReady(picker);
+
+  Assert.ok(
+    !picker.errorBar,
+    "no error message bar shown before attempting to install"
+  );
+
+  const sunCard = getThemeCard(picker, NOVA_SUN_ID_PREFIX);
+  getThemeButton(sunCard).click();
+
+  info("Waiting for the error message bar to be shown");
+  await TestUtils.waitForCondition(() => picker.errorBar);
+  await picker.updateComplete;
+
+  Assert.equal(
+    picker.errorBar.getAttribute("data-l10n-id"),
+    "aboutaddons-themes-picker-error-message",
+    "error message bar shows the expected l10n id"
+  );
+  Assert.equal(
+    getThemeButton(sunCard).getAttribute("data-l10n-id"),
+    "aboutaddons-themes-picker-install-button",
+    "theme card still shows the Install button after a failed install"
+  );
+
+  picker.errorBar.dismiss();
+  await picker.updateComplete;
+  Assert.ok(!picker.errorBar, "error message bar is dismissed");
+
   cleanupAddonRepoServer();
   await closeView(win);
   await SpecialPowers.popPrefEnv();
