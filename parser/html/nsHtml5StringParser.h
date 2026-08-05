@@ -14,9 +14,12 @@ class nsHtml5TreeBuilder;
 class nsHtml5Tokenizer;
 class nsIContent;
 namespace mozilla {
+template <typename T>
+class Maybe;
 namespace dom {
+class CustomElementRegistry;
 class Document;
-}
+}  
 }  
 
 class nsHtml5StringParser : public nsParserBase {
@@ -44,11 +47,13 @@ class nsHtml5StringParser : public nsParserBase {
 
 
 
-  nsresult ParseFragment(const nsAString& aSourceBuffer,
-                         nsIContent* aTargetNode, nsAtom* aContextLocalName,
-                         int32_t aContextNamespace, bool aQuirks,
-                         bool aPreventScriptExecution,
-                         bool aAllowDeclarativeShadowRoots);
+
+  nsresult ParseFragment(
+      const nsAString& aSourceBuffer, nsIContent* aTargetNode,
+      nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
+      bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry);
 
   
 

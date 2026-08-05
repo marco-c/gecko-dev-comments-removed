@@ -6788,7 +6788,9 @@ bool nsContentUtils::IsValidNodeName(nsAtom* aLocalName, nsAtom* aPrefix,
 
 already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
     nsINode* aContextNode, const nsAString& aFragment,
-    bool aPreventScriptExecution, ErrorResult& aRv) {
+    bool aPreventScriptExecution,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry,
+    ErrorResult& aRv) {
   if (!aContextNode) {
     aRv.Throw(NS_ERROR_INVALID_ARG);
     return nullptr;
@@ -6809,12 +6811,14 @@ already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
           aFragment, frag, element->NodeInfo()->NameAtom(),
           element->GetNameSpaceID(),
           (document->GetCompatibilityMode() == eCompatibility_NavQuirks),
-          aPreventScriptExecution);
+          aPreventScriptExecution, kParseFragmentPrivilegedDefaultSanitization,
+          std::move(aCustomElementRegistry));
     } else {
       aRv = ParseFragmentHTML(
           aFragment, frag, nsGkAtoms::body, kNameSpaceID_XHTML,
           (document->GetCompatibilityMode() == eCompatibility_NavQuirks),
-          aPreventScriptExecution);
+          aPreventScriptExecution, kParseFragmentPrivilegedDefaultSanitization,
+          std::move(aCustomElementRegistry));
     }
 
     return frag.forget();
@@ -6968,7 +6972,8 @@ static void SetAndFilterHTML(
             : nsContentUtils::kParseFragmentPrivilegedDefaultSanitization;
   aError = nsContentUtils::ParseFragmentHTML(
       aHTML, fragment, contextLocalName, contextNameSpaceID,
-       false,  true, flags);
+       false,  true, flags,
+      mozilla::Nothing());
   if (aError.Failed()) {
     return;
   }
@@ -7047,6 +7052,15 @@ void nsContentUtils::SetHTMLUnsafe(
     nsAtom* contextLocalName = aContext->NodeInfo()->NameAtom();
     int32_t contextNameSpaceID = aContext->GetNameSpaceID();
 
+    
+    
+    
+    
+    Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      customElementRegistry.emplace(aContext->GetCustomElementRegistry());
+    }
+
     RefPtr<Document> doc = aTarget->OwnerDoc();
     fragment = doc->CreateDocumentFragment();
 
@@ -7056,7 +7070,7 @@ void nsContentUtils::SetHTMLUnsafe(
         *compliantString, fragment, contextLocalName, contextNameSpaceID,
         fragment->OwnerDoc()->GetCompatibilityMode() ==
             eCompatibility_NavQuirks,
-        true, true);
+        true, true, std::move(customElementRegistry));
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to parse fragment for SetHTMLUnsafe");
     }
@@ -7128,7 +7142,9 @@ uint32_t ComputeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
 nsresult nsContentUtils::ParseFragmentHTML(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
-    bool aPreventScriptExecution, int32_t aFlags) {
+    bool aPreventScriptExecution, int32_t aFlags,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry) {
   if (nsContentUtils::sFragmentParsingActive) {
     MOZ_ASSERT_UNREACHABLE("Re-entrant fragment parsing attempted.");
     return NS_ERROR_DOM_INVALID_STATE_ERR;
@@ -7175,7 +7191,7 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   nsresult rv = sHTMLFragmentParser->ParseFragment(
       aSourceBuffer, target, aContextLocalName, aContextNamespace, aQuirks,
-      aPreventScriptExecution, false);
+      aPreventScriptExecution, false, std::move(aCustomElementRegistry));
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (fragment) {
@@ -11928,15 +11944,37 @@ void nsContentUtils::TryToUpgradeElement(Element* aElement) {
       aElement->GetCustomElementData()->GetCustomElementType();
 
   MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
-  CustomElementDefinition* definition =
-      nsContentUtils::LookupCustomElementDefinition(
-          nodeInfo->GetDocument(), nodeInfo->NameAtom(),
-          nodeInfo->NamespaceID(), typeAtom);
+
+  
+  
+  
+  CustomElementRegistry* registry = nullptr;
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    registry = aElement->GetCustomElementRegistry();
+    if (!registry) {
+      return;
+    }
+  }
+
+  CustomElementDefinition* definition = nullptr;
+  if (registry) {
+    definition = registry->LookupCustomElementDefinition(
+        nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+  } else {
+    MOZ_ASSERT(!StaticPrefs::dom_scoped_custom_element_registries_enabled());
+    definition = nsContentUtils::LookupCustomElementDefinition(
+        nodeInfo->GetDocument(), nodeInfo->NameAtom(), nodeInfo->NamespaceID(),
+        typeAtom);
+  }
+
   
   
   if (definition) {
     nsContentUtils::EnqueueUpgradeReaction(aElement, definition);
+  } else if (registry) {
+    registry->RegisterUnresolvedElement(aElement, typeAtom);
   } else {
+    MOZ_ASSERT(!StaticPrefs::dom_scoped_custom_element_registries_enabled());
     
     
     nsContentUtils::RegisterUnresolvedElement(aElement, typeAtom);
@@ -12044,12 +12082,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   RefPtr<CustomElementDefinition> definition = aDefinition;
   if (isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
+    
+    
     if (aCustomElementRegistry.isSome()) {
       if (RefPtr<CustomElementRegistry> registry =
               aCustomElementRegistry.value()) {
         definition = registry->LookupCustomElementDefinition(
             nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
       }
+      
     } else {
       definition = nsContentUtils::LookupCustomElementDefinition(
           nodeInfo->GetDocument(), nodeInfo->NameAtom(),
@@ -12057,9 +12098,23 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool synchronousCustomElements =
+      definition && aFromParser != dom::FROM_PARSER_FRAGMENT;
   auto setRegistryOnExit = MakeScopeExit([&]() {
     if (!*aResult ||
-        !StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        !StaticPrefs::dom_scoped_custom_element_registries_enabled() ||
+        synchronousCustomElements) {
       return;
     }
     if (aCustomElementRegistry.isSome()) {
@@ -12081,18 +12136,6 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   
   
   if (definition) {
-    
-
-
-
-
-
-
-
-
-
-
-    bool synchronousCustomElements = aFromParser != dom::FROM_PARSER_FRAGMENT;
     
     
     
@@ -12154,15 +12197,45 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     
     
     if (synchronousCustomElements) {
-      
-      
-      
-      
-      
-      RefPtr<Document> doc = nodeInfo->GetDocument();
-      DoCustomElementCreate(aResult, cx, doc, nodeInfo,
-                            MOZ_KnownLive(definition->mConstructor), rv,
-                            aFromParser);
+      {
+        
+        CustomElementConstructor* constructor = definition->mConstructor;
+
+        RefPtr<Document> doc = nodeInfo->GetDocument();
+        DocGroup* docGroup = doc->GetDocGroup();
+
+        
+        
+        
+        
+        
+        Maybe<DocGroup::AutoActiveConstructorRegistry>
+            activeConstructorRegistry;
+        if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+            constructor->CallableOrNull() && docGroup) {
+          if (aCustomElementRegistry.isSome()) {
+            activeConstructorRegistry.emplace(docGroup, constructor,
+                                              aCustomElementRegistry.ref());
+          } else {
+            activeConstructorRegistry.emplace(
+                docGroup, constructor,
+                doc->GetEffectiveGlobalCustomElementRegistry());
+          }
+        }
+
+        
+        DoCustomElementCreate(aResult, cx, doc, nodeInfo,
+                              MOZ_KnownLive(definition->mConstructor), rv,
+                              aFromParser);
+
+        
+        
+        
+        
+        
+        
+      }
+
       if (rv.MaybeSetPendingException(cx)) {
         
         
@@ -12174,6 +12247,18 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
           NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
         }
         (*aResult)->SetDefined(false);
+        
+        if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+            *aResult) {
+          if (aCustomElementRegistry.isSome()) {
+            if (CustomElementRegistry* registry =
+                    aCustomElementRegistry.ref()) {
+              (*aResult)->SetCustomElementRegistry(registry);
+            } else {
+              (*aResult)->SetKeepCustomElementRegistryNull();
+            }
+          }
+        }
       } else if (*aResult && nodeInfo->GetPrefixAtom()) {
         
         (*aResult)->SetNamespacePrefix(nodeInfo->GetPrefixAtom());
@@ -12224,7 +12309,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   
   if (isCustomElement) {
     (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
-    nsContentUtils::RegisterCallbackUpgradeElement(*aResult, typeAtom);
+    if (aCustomElementRegistry.isSome()) {
+      
+      
+      if (CustomElementRegistry* registry = aCustomElementRegistry.ref()) {
+        registry->RegisterCallbackUpgradeElement(*aResult, typeAtom);
+      }
+    } else {
+      nsContentUtils::RegisterCallbackUpgradeElement(*aResult, typeAtom);
+    }
   }
 
   

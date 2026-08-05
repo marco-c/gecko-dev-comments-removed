@@ -1536,6 +1536,11 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   CustomElementData* data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
 
+  DocGroup* docGroup = aElement->OwnerDoc()->GetDocGroup();
+  if (!docGroup) {
+    return;
+  }
+
   
   
   if (data->mState != CustomElementData::State::eUndefined) {
@@ -1591,13 +1596,33 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   AutoConstructionStackEntry acs(aDefinition->mConstructionStack, aElement);
 
   
+
   
   
   
   
+  {
+    Maybe<DocGroup::AutoActiveConstructorRegistry> activeRegistry;
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      activeRegistry.emplace(docGroup, aDefinition->mConstructor,
+                             aElement->GetCustomElementRegistry());
+    }
+
+    
+    DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
+              aRv);
+
+    
+    
+    
+    
+    
+    
+    
+    
+  }
+
   
-  DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
-            aRv);
   if (aRv.Failed()) {
     MOZ_ASSERT(data->mState == CustomElementData::State::eFailed ||
                data->mState == CustomElementData::State::ePrecustomized);

@@ -562,7 +562,8 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
 nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     nsAtom* aName, nsHtml5HtmlAttributes* aAttributes, FromParser aFromParser,
     nsNodeInfoManager* aNodeInfoManager, nsHtml5DocumentBuilder* aBuilder,
-    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent) {
+    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent,
+    Maybe<RefPtr<CustomElementRegistry>> aContextRegistry) {
   
   
   
@@ -594,11 +595,17 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
 
   
   
-  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry = Nothing();
+  
+  
+  
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
   if (aIntendedParent && aIntendedParent->HasScopedRegistry()) {
     if (auto* reg = nsContentUtils::GetCustomElementRegistry(aIntendedParent)) {
-      customElementRegistry = Some(reg);
+      customElementRegistry.emplace(reg);
     }
+  }
+  if (customElementRegistry.isNothing()) {
+    customElementRegistry = std::move(aContextRegistry);
   }
 
   
@@ -1078,9 +1085,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
-      *target =
-          CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
-                            nodeInfoManager, mBuilder, creator, intendedParent);
+      *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
+                                  nodeInfoManager, mBuilder, creator,
+                                  intendedParent, mozilla::Nothing());
       return NS_OK;
     }
 

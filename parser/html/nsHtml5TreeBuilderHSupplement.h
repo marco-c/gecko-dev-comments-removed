@@ -47,6 +47,16 @@ bool mPreventScriptExecution;
 bool mGenerateSpeculativeLoads;
 
 bool mHasSeenImportMap;
+
+
+
+
+
+
+
+mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+    mCustomElementRegistry;
+
 #ifdef DEBUG
 bool mActive;
 #endif
@@ -183,6 +193,11 @@ void DropHandles();
 
 void SetPreventScriptExecution(bool aPrevent) {
   mPreventScriptExecution = aPrevent;
+}
+
+void SetCustomElementRegistry(
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>> aRegistry) {
+  mCustomElementRegistry = std::move(aRegistry);
 }
 
 bool HasBuilder() { return mBuilder; }

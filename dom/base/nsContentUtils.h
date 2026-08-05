@@ -1957,10 +1957,15 @@ class nsContentUtils {
 
 
 
+
+
   static already_AddRefed<mozilla::dom::DocumentFragment>
-  CreateContextualFragment(nsINode* aContextNode, const nsAString& aFragment,
-                           bool aPreventScriptExecution,
-                           mozilla::ErrorResult& aRv);
+  CreateContextualFragment(
+      nsINode* aContextNode, const nsAString& aFragment,
+      bool aPreventScriptExecution,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry,
+      mozilla::ErrorResult& aRv);
 
   static void SetHTML(mozilla::dom::FragmentOrElement* aTarget,
                       Element* aContext, const nsAString& aHTML,
@@ -2009,11 +2014,14 @@ class nsContentUtils {
 
 
 
+
+
   static nsresult ParseFragmentHTML(
       const nsAString& aSourceBuffer, nsIContent* aTargetNode,
       nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
-      bool aPreventScriptExecution,
-      int32_t aFlags = kParseFragmentPrivilegedDefaultSanitization);
+      bool aPreventScriptExecution, int32_t aFlags,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry);
 
   
 

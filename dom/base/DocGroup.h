@@ -14,11 +14,15 @@
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 
+class JSObject;
+
 namespace mozilla {
 class AbstractThread;
 namespace dom {
 
+class CustomElementConstructor;
 class CustomElementReactionsStack;
+class CustomElementRegistry;
 class JSExecutionManager;
 class MediaSource;
 
@@ -64,6 +68,45 @@ class DocGroup final {
   mozilla::dom::DOMArena* ArenaAllocator() { return mArena; }
 
   mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack();
+
+  
+  
+  
+  
+  CustomElementRegistry* GetActiveConstructorRegistry(JSObject* aConstructor);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  class MOZ_STACK_CLASS AutoActiveConstructorRegistry final {
+   public:
+    
+    
+    
+    AutoActiveConstructorRegistry(DocGroup* aDocGroup,
+                                  CustomElementConstructor* aConstructor,
+                                  CustomElementRegistry* aRegistry);
+
+    
+    
+    
+    ~AutoActiveConstructorRegistry();
+
+    AutoActiveConstructorRegistry(const AutoActiveConstructorRegistry&) =
+        delete;
+    AutoActiveConstructorRegistry& operator=(
+        const AutoActiveConstructorRegistry&) = delete;
+
+   private:
+    DocGroup* mDocGroup;
+    RefPtr<CustomElementConstructor> mConstructor;
+    RefPtr<CustomElementRegistry> mPreviousRegistry;
+  };
 
   
   
@@ -115,6 +158,13 @@ class DocGroup final {
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
   RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
+
+  
+  struct ActiveConstructorEntry {
+    RefPtr<mozilla::dom::CustomElementConstructor> mConstructor;
+    RefPtr<mozilla::dom::CustomElementRegistry> mRegistry;
+  };
+  AutoTArray<ActiveConstructorEntry, 2> mActiveConstructorMap;
 
   
   

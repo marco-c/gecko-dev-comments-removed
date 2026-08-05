@@ -3657,17 +3657,6 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   auto scopeExit =
       MakeScopeExit([&]() { (void)rv.MaybeSetPendingException(aCx); });
 
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(global.GetAsSupports());
   if (!window) {
@@ -3676,8 +3665,6 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     rv.Throw(NS_ERROR_UNEXPECTED);
     return false;
   }
-  RefPtr<mozilla::dom::CustomElementRegistry> registry(
-      window->CustomElements());
 
   
   
@@ -3720,6 +3707,26 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       return false;
     }
     if (newTarget == constructor) {
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
+    }
+  }
+
+  
+  RefPtr<mozilla::dom::CustomElementRegistry> registry;
+  
+  
+  
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    if (DocGroup* docGroup = doc->GetDocGroup()) {
+      registry = docGroup->GetActiveConstructorRegistry(newTarget);
+    }
+  }
+  
+  
+  if (!registry) {
+    registry = doc->GetCustomElementRegistry();
+    if (!registry) {
       rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
       return false;
     }
@@ -3879,6 +3886,14 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
         definition->mType, CustomElementData::State::eCustom));
 
     element->SetCustomElementDefinition(definition);
+
+    
+    
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+        registry) {
+      element->SetCustomElementRegistry(registry);
+    }
+
     
   } else {
     

@@ -32,7 +32,9 @@ nsHtml5StringParser::~nsHtml5StringParser() { ClearCaches(); }
 nsresult nsHtml5StringParser::ParseFragment(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
-    bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots) {
+    bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry) {
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
 
   Document* doc = aTargetNode->OwnerDoc();
@@ -44,6 +46,11 @@ nsresult nsHtml5StringParser::ParseFragment(
   
   mTreeBuilder->setFragmentContext(aContextLocalName, aContextNamespace,
                                    aTargetNode, aQuirks);
+
+  
+  
+  
+  mTreeBuilder->SetCustomElementRegistry(std::move(aCustomElementRegistry));
 
 #ifdef DEBUG
   if (!aPreventScriptExecution) {
@@ -63,7 +70,14 @@ nsresult nsHtml5StringParser::ParseFragment(
   
   
   
-  return Tokenize(aSourceBuffer, doc, true, aAllowDeclarativeShadowRoots);
+  nsresult rv =
+      Tokenize(aSourceBuffer, doc, true, aAllowDeclarativeShadowRoots);
+
+  
+  
+  
+  mTreeBuilder->SetCustomElementRegistry(mozilla::Nothing());
+  return rv;
 }
 
 nsresult nsHtml5StringParser::ParseDocument(
@@ -74,6 +88,7 @@ nsresult nsHtml5StringParser::ParseDocument(
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
 
   mTreeBuilder->setFragmentContext(nullptr, kNameSpaceID_None, nullptr, false);
+  mTreeBuilder->SetCustomElementRegistry(mozilla::Nothing());
 
   mTreeBuilder->SetPreventScriptExecution(true);
 
