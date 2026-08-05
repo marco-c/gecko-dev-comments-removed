@@ -274,13 +274,42 @@ PrefetchRecordParent::OnDataAvailable(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 PrefetchRecordParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
-  LOG_SPECRULES(
-      ("PrefetchRecordParent::OnStopRequest: this=%p status=0x%" PRIx32, this,
-       static_cast<uint32_t>(aStatus)));
+  mChannel = nullptr;
+
   if (NS_FAILED(aStatus)) {
-    mState = PrefetchState::Canceled;
-    mChannel = nullptr;
+    LOG_SPECRULES_WARN(
+        ("PrefetchRecordParent::OnStopRequest: this=%p failed 0x%" PRIx32, this,
+         static_cast<uint32_t>(aStatus)));
+    MarkCanceled();
+    return NS_OK;
   }
+
+  auto* wgp = static_cast<WindowGlobalParent*>(Manager());
+
+  
+  
+  
+  
+  if (!wgp || wgp->IsClosed()) {
+    return NS_OK;
+  }
+
+  
+  
+  mExpiryTime = TimeStamp::Now() +
+                TimeDuration::FromMilliseconds(
+                    StaticPrefs::dom_speculation_rules_record_expiry_ms());
+
+  
+  wgp->DedupePrefetchRecords(this);
+  
+  mState = PrefetchState::Completed;
+  
+  FirePrefetchStatusUpdated(true);
+  wgp->NotifyPrefetchStateChanged(this);
+
+  LOG_SPECRULES(
+      ("PrefetchRecordParent::OnStopRequest: this=%p completed", this));
   return NS_OK;
 }
 
@@ -341,34 +370,40 @@ void PrefetchRecordParent::FirePrefetchStatusUpdated(bool aSuccess) {
   
 }
 
-
-
-mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
+void PrefetchRecordParent::MarkCanceled() {
+  
+  
+  
   
   if (mState == PrefetchState::Canceled) {
-    
-    return IPC_OK();
+    return;
   }
 
-  LOG_SPECRULES(("PrefetchRecordParent::RecvCancel: this=%p", this));
+  LOG_SPECRULES(("PrefetchRecordParent::MarkCanceled: this=%p", this));
 
-  
-  mState = PrefetchState::Canceled;
-  if (mChannel) {
-    
+  mState = PrefetchState::Canceled;  
+
+  if (mChannel) {  
     mChannel->Cancel(NS_BINDING_ABORTED);
     mChannel = nullptr;
   }
-  
-  
-  
-  
+
   
   FirePrefetchStatusUpdated(false);  
 
   if (auto* wgp = static_cast<WindowGlobalParent*>(Manager())) {
     wgp->NotifyPrefetchStateChanged(this);
   }
+}
+
+
+
+mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
+  LOG_SPECRULES(("PrefetchRecordParent::RecvCancel: this=%p", this));
+  MarkCanceled();
+  
+  
+  
   return IPC_OK();
 }
 
