@@ -12766,7 +12766,7 @@ function MessageWrapper({
     }));
     onDismiss?.();
   }, [dispatch, message, onDismiss]);
-  function handleDismiss() {
+  const handleDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     const {
       id
     } = message.messageData;
@@ -12779,8 +12779,8 @@ function MessageWrapper({
       }));
     }
     handleClose();
-  }
-  function handleBlock() {
+  }, [dispatch, message, handleClose]);
+  const handleBlock = (0,external_React_namespaceObject.useCallback)(() => {
     const {
       id
     } = message.messageData;
@@ -12790,8 +12790,8 @@ function MessageWrapper({
         data: id
       }));
     }
-  }
-  function handleClick(elementId) {
+  }, [dispatch, message]);
+  const handleClick = (0,external_React_namespaceObject.useCallback)(elementId => {
     const {
       id
     } = message.messageData;
@@ -12804,7 +12804,7 @@ function MessageWrapper({
         }
       }));
     }
-  }
+  }, [dispatch, message]);
   if (!message || !hiddenOverride && !message.isVisible) {
     return null;
   }
@@ -24603,6 +24603,20 @@ function Widgets() {
 
 
 const defaultImportModule = url => import(url);
+
+
+
+
+
+
+
+
+
+function applyProps(element, props) {
+  for (const [propName, propValue] of Object.entries(props)) {
+    element[propName] = propValue;
+  }
+}
 function ExternalComponentWrapper({
   type,
   className,
@@ -24617,6 +24631,10 @@ function ExternalComponentWrapper({
   const styleRef = external_React_default().useRef(null);
   const shadowRootRef = external_React_default().useRef(null);
   const l10nLinksRef = external_React_default().useRef([]);
+  
+  
+  
+  const latestPropsRef = external_React_default().useRef(props);
   const [error, setError] = external_React_default().useState(null);
   const {
     components
@@ -24683,11 +24701,7 @@ function ExternalComponentWrapper({
               element.style.setProperty(variable, style);
             }
           }
-          if (props) {
-            for (let [propName, propValue] of Object.entries(props)) {
-              element[propName] = propValue;
-            }
-          }
+          applyProps(element, latestPropsRef.current);
           customElementRef.current = element;
           containerRef.current.appendChild(element);
         }
@@ -24727,6 +24741,17 @@ function ExternalComponentWrapper({
     
     
   }, [type, components, importModule]);
+
+  
+  
+  
+  
+  external_React_default().useEffect(() => {
+    latestPropsRef.current = props;
+    if (customElementRef.current) {
+      applyProps(customElementRef.current, props);
+    }
+  });
   if (error) {
     return null;
   }
