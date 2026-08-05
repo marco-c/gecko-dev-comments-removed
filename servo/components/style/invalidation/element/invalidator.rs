@@ -777,10 +777,12 @@ where
             let mut child_invalidator =
                 TreeStyleInvalidator::new(child, self.stack_limit_checker, self.processor);
 
-            invalidated_child |= child_invalidator.process_sibling_invalidations(
-                &mut invalidations_for_descendants,
-                sibling_invalidations,
-            );
+            if !sibling_invalidations.is_empty() {
+                invalidated_child |= child_invalidator.process_sibling_invalidations(
+                    &mut invalidations_for_descendants,
+                    sibling_invalidations,
+                );
+            }
 
             invalidated_child |= child_invalidator.process_descendant_invalidations(
                 invalidations,
@@ -1011,6 +1013,9 @@ where
         any_descendant
     }
 
+    
+    
+    
     
     
     
