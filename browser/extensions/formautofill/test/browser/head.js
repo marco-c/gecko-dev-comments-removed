@@ -963,6 +963,10 @@ async function clickAddressDoorhangerButton(buttonType, subType) {
     return;
   }
 
+  
+  
+  await notification.ownerDocument.l10n.translateFragment(notification);
+
   EventUtils.synthesizeMouseAtCenter(button, {});
 }
 
