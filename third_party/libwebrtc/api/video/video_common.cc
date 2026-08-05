@@ -8,7 +8,7 @@
 
 
 
-#include "media/base/video_common.h"
+#include "api/video/video_common.h"
 
 #include <cstdint>
 #include <string>
