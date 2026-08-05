@@ -597,7 +597,6 @@ class TrustPanel {
     if (this.#isAboutNetErrorPage || this.#isCertUserOverridden) {
       targetClasses.add("warning");
     }
-    const browser = gBrowser.selectedBrowser;
     if (this.#isFirstVisit) {
       targetClasses.add("first-visit");
     }
@@ -633,6 +632,7 @@ class TrustPanel {
 
     
     if (targetClasses.has("breached")) {
+      let browser = gBrowser.selectedBrowser;
       if (browser.lastAnimatedBreachURI !== this.#uri?.spec) {
         
         targetClasses.add("breach-animating");
@@ -646,18 +646,6 @@ class TrustPanel {
     
     
     let appliedIconClasses = [...icon.classList];
-
-    if (
-      !icon.classList.contains("has-blocked-trackers") &&
-      targetClasses.has("has-blocked-trackers") &&
-      browser.lastTrackerCountShownURI !== this.#uri?.spec
-    ) {
-      browser.lastTrackerCountShownURI = this.#uri?.spec;
-      Glean.trustpanel.trackerCountShown.record({
-        first_visit: targetClasses.has("first-visit"),
-      });
-    }
-
     for (let cls of appliedIconClasses) {
       if (!targetClasses.has(cls)) {
         icon.classList.remove(cls);
@@ -834,13 +822,8 @@ class TrustPanel {
     }
     
     
-    const browser = gBrowser.selectedBrowser;
     this.#isFirstVisit =
-      (rows.length === 0 || !UrlbarPrefs.get("trackerCountShown")) &&
-      browser.lastFirstVisitURI !== uri.spec;
-    if (this.#isFirstVisit) {
-      browser.lastFirstVisitURI = uri.spec;
-    }
+      rows.length === 0 || !UrlbarPrefs.get("trackerCountShown");
     this.#updateUrlbarIcon();
   }
 
