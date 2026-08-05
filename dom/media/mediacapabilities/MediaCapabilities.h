@@ -76,8 +76,6 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
   
   
   
-  
-  
   static RefPtr<CapabilitiesPromise> CheckVideoDecodingInfo(
       RefPtr<TaskQueue> aTaskQueue, RefPtr<layers::KnowsCompositor> aCompositor,
       float aFrameRate, bool aShouldResistFingerprinting,

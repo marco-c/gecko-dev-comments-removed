@@ -957,12 +957,11 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
   }
 
   
+  
+  
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
                         "MediaCapabilities::TaskQueue");
-  
-  
-  
   RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
   const bool shouldResistFingerprinting =
       mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities);
@@ -1094,40 +1093,21 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
       
       
       
-      promises.AppendElement(InvokeAsync(
-          taskQueue, __func__,
-          [config = std::move(config)]() -> RefPtr<CapabilitiesPromise> {
+      promises.AppendElement(
+          InvokeAsync(taskQueue, __func__, [config = std::move(config)]() {
             SupportDecoderParams params{*config};
-            
-            
-            
-            
-            RefPtr<PDMSupportsDecoderPromise> promise =
-                StaticPrefs::
-                        media_mediacapabilities_codec_support_cache_enabled()
-                    ? PDMFactorySupport::IsSupportedAsync(params)
-                    : PDMSupportsDecoderPromise::CreateAndResolve(
-                          PDMFactorySupport::IsSupported(
-                              params, nullptr ),
-                          __func__);
-            return promise->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [](media::DecodeSupportSet aSupport) {
-                  if (aSupport.isEmpty()) {
-                    return CapabilitiesPromise::CreateAndReject(
-                        NS_ERROR_FAILURE, __func__);
-                  }
-                  MediaCapabilitiesDecodingInfo info;
-                  info.mSupported = true;
-                  info.mSmooth = true;
-                  info.mPowerEfficient = true;
-                  return CapabilitiesPromise::CreateAndResolve(std::move(info),
-                                                               __func__);
-                },
-                [](nsresult) -> RefPtr<CapabilitiesPromise> {
-                  return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                              __func__);
-                });
+            if (PDMFactorySupport::IsSupported(params,
+                                               nullptr )
+                    .isEmpty()) {
+              return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                          __func__);
+            }
+            MediaCapabilitiesDecodingInfo info;
+            info.mSupported = true;
+            info.mSmooth = true;
+            info.mPowerEfficient = true;
+            return CapabilitiesPromise::CreateAndResolve(std::move(info),
+                                                         __func__);
           }));
       continue;
     }
@@ -1199,51 +1179,8 @@ MediaCapabilities::CheckVideoDecodingInfo(
        frameRate = aFrameRate,
        shouldResistFingerprinting = aShouldResistFingerprinting,
        config = std::move(aConfig)]() mutable -> RefPtr<CapabilitiesPromise> {
-        if (StaticPrefs::
-                media_mediacapabilities_codec_support_cache_enabled()) {
-          
-          
-          
-          const nsCString type = config->mMimeType;
-          LOG("Using decoder support cache for codec mime type '{}'", type);
-          SupportDecoderParams params{*config,
-                                      media::VideoFrameRate(frameRate)};
-          return PDMFactorySupport::IsSupportedAsync(params)->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [config = std::move(config),
-               shouldResistFingerprinting](media::DecodeSupportSet aSupport)
-                  -> RefPtr<CapabilitiesPromise> {
-                LOG("Decoder support cache request for codec mime type '{}' "
-                    "resolved with sw={}, hw={}",
-                    config->mMimeType,
-                    aSupport.contains(media::DecodeSupport::SoftwareDecode),
-                    aSupport.contains(media::DecodeSupport::HardwareDecode));
-                if (aSupport.isEmpty()) {
-                  return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                              __func__);
-                }
-                bool hwAccel =
-                    aSupport.contains(media::DecodeSupport::HardwareDecode);
-                return CapabilitiesPromise::CreateAndResolve(
-                    CreateVideoDecodingInfo(*config, shouldResistFingerprinting,
-                                            hwAccel),
-                    __func__);
-              },
-              [type](nsresult aRv) -> RefPtr<CapabilitiesPromise> {
-                LOG("Decoder support cache request for codec mime type '{}' "
-                    "rejected with {}",
-                    type, aRv);
-                return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                            __func__);
-              });
-        }
-
         
         
-        
-        
-        LOG("Using strict decoder probing for codec mime type '{}'",
-            config->mMimeType);
         static Atomic<uint32_t> sTrackingIdCounter(0);
         TrackingId trackingId(TrackingId::Source::MediaCapabilities,
                               sTrackingIdCounter++,

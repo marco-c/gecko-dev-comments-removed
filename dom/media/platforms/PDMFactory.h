@@ -28,7 +28,6 @@ struct SupportDecoderParams;
 enum class RemoteMediaIn;
 
 using PDMCreateDecoderPromise = PlatformDecoderModule::CreateDecoderPromise;
-using PDMSupportsDecoderPromise = PlatformDecoderModule::SupportsDecoderPromise;
 
 class PDMFactory final {
  public:
@@ -45,13 +44,6 @@ class PDMFactory final {
   media::DecodeSupportSet Supports(
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const;
-
-  
-  
-  
-  
-  RefPtr<PDMSupportsDecoderPromise> SupportsAsync(
-      const SupportDecoderParams& aParams) const;
 
   
   
