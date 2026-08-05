@@ -24,6 +24,9 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(
   "devtools/shared/locales/styleinspector.properties"
 );
 
+const InactiveCssTooltipHelper = require("resource://devtools/client/shared/widgets/tooltip/inactive-css-tooltip-helper.js");
+const CssCompatibilityTooltipHelper = require("resource://devtools/client/shared/widgets/tooltip/css-compatibility-tooltip-helper.js");
+
 
 
 
@@ -1011,9 +1014,11 @@ async function checkInteractiveTooltip(view, type, ruleIndex, declaration) {
   
   let tooltipHelper;
   if (type === "inactive-css-tooltip") {
-    tooltipHelper = view.tooltips.inactiveCssTooltipHelper;
+    tooltipHelper = new InactiveCssTooltipHelper(data, tooltip);
+  } else if (type === "compatibility-tooltip") {
+    tooltipHelper = new CssCompatibilityTooltipHelper();
   } else {
-    tooltipHelper = view.tooltips.compatibilityTooltipHelper;
+    throw new Error(`Unsupported "${type}" tooltip`);
   }
 
   
