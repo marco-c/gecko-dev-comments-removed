@@ -1647,6 +1647,7 @@ void ContentParent::Init() {
   
   if (GetAccService() && !nsAccessibilityService::IsOnlyForPdfOutput()) {
     (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
+    mWasA11yEverActivated = true;
   }
 #endif  
 
@@ -4034,6 +4035,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
       
       MOZ_ASSERT(!nsAccessibilityService::IsOnlyForPdfOutput());
       (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
+      mWasA11yEverActivated = true;
     } else if (*aData == '0') {
       
       
