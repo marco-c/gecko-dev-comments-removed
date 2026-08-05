@@ -291,6 +291,16 @@ class IMContextWrapper final : public TextEventDispatcherListener {
       return mEvents[0].get();
     }
 
+    
+
+
+    GdkEventKey* GetLatestEvent() const {
+      if (mEvents.IsEmpty()) {
+        return nullptr;
+      }
+      return mEvents.LastElement().get();
+    }
+
     bool IsEmpty() const { return mEvents.IsEmpty(); }
 
     static size_t NoIndex() { return nsTArray<GdkEventKey*>::NoIndex; }
