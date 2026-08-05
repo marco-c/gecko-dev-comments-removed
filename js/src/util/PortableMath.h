@@ -37,19 +37,21 @@ inline double NumberMod(double a, double b) {
   }
 
   
-  int32_t ai, bi;
-  if (mozilla::NumberEqualsInt32(a, &ai) &&
-      mozilla::NumberEqualsInt32(b, &bi)) {
+  
+  
+  int64_t ai, bi;
+  if (mozilla::NumberEqualsInt64(a, &ai) &&
+      mozilla::NumberEqualsInt64(b, &bi)) {
     
     if (bi != -1) {
-      int32_t m = ai % bi;
+      int64_t m = ai % bi;
       if (m != 0) {
         return double(m);
       }
     }
 
     
-    return mozilla::IsNegative(a) ? -0.0 : 0.0;
+    return std::copysign(0.0, a);
   }
 
   double r = fmod(a, b);
