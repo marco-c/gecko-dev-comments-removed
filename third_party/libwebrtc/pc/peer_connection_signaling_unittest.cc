@@ -39,7 +39,6 @@
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
 #include "api/video_codecs/video_decoder_factory_template.h"
 #include "api/video_codecs/video_decoder_factory_template_dav1d_adapter.h"
@@ -590,10 +589,8 @@ TEST_P(PeerConnectionSignalingTest, CreateOffersAndShutdown) {
     
     
     
-    EXPECT_THAT(
-        WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                  {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-        IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                          {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   }
 }
 
@@ -607,9 +604,8 @@ TEST_P(PeerConnectionSignalingTest, CloseCreateOfferAndShutdown) {
   caller->pc()->Close();
   caller->pc()->CreateOffer(observer.get(), RTCOfferAnswerOptions());
   caller.reset(nullptr);
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
 }
 
 TEST_P(PeerConnectionSignalingTest,
@@ -703,9 +699,8 @@ TEST_P(PeerConnectionSignalingTest,
   bool checkpoint_reached = false;
   Thread::Current()->PostTask(
       [&checkpoint_reached] { checkpoint_reached = true; });
-  EXPECT_THAT(WaitUntil([&] { return checkpoint_reached; }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return checkpoint_reached; },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   
   EXPECT_TRUE(observer->called());
 }
@@ -749,10 +744,8 @@ TEST_P(PeerConnectionSignalingTest, CreateOfferBlocksSetRemoteDescription) {
   
   EXPECT_EQ(0u, callee->pc()->GetReceivers().size());
   
-  EXPECT_THAT(
-      WaitUntil([&] { return offer_observer->called(); }, ::testing::IsTrue(),
-                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return offer_observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   
   
   EXPECT_EQ(2u, callee->pc()->GetReceivers().size());
@@ -772,9 +765,8 @@ TEST_P(PeerConnectionSignalingTest,
   EXPECT_EQ(PeerConnection::kStable, caller->signaling_state());
 
   
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   EXPECT_TRUE(observer->result());
   EXPECT_TRUE(caller->pc()->pending_local_description());
   EXPECT_EQ(SdpType::kOffer,
@@ -799,9 +791,8 @@ TEST_P(PeerConnectionSignalingTest,
   EXPECT_FALSE(callee->pc()->current_local_description());
 
   
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   EXPECT_TRUE(observer->result());
   EXPECT_TRUE(callee->pc()->current_local_description());
   EXPECT_EQ(SdpType::kAnswer,
@@ -819,11 +810,9 @@ TEST_P(PeerConnectionSignalingTest,
       MockSetSessionDescriptionObserver::Create();
   caller->pc()->SetLocalDescription(
       caller_set_local_description_observer.get());
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil([&] { return caller_set_local_description_observer->called(); },
-                ::testing::IsTrue(),
-                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-      IsRtcOk());
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   ASSERT_TRUE(caller->pc()->pending_local_description());
 
   
@@ -838,11 +827,9 @@ TEST_P(PeerConnectionSignalingTest,
       MockSetSessionDescriptionObserver::Create();
   callee->pc()->SetLocalDescription(
       callee_set_local_description_observer.get());
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil([&] { return callee_set_local_description_observer->called(); },
-                ::testing::IsTrue(),
-                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-      IsRtcOk());
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   
   
   EXPECT_TRUE(callee_set_remote_description_observer->called());
@@ -854,11 +841,9 @@ TEST_P(PeerConnectionSignalingTest,
   caller->pc()->SetRemoteDescription(
       caller_set_remote_description_observer.get(),
       callee->pc()->current_local_description()->Clone().release());
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return caller_set_remote_description_observer->called(); },
-          ::testing::IsTrue(), {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] { return caller_set_remote_description_observer->called(); },
+      {.timeout = TimeDelta::Millis(kWaitTimeout)}));
 
   EXPECT_EQ(PeerConnection::kStable, caller->signaling_state());
   EXPECT_EQ(PeerConnection::kStable, callee->signaling_state());
@@ -874,9 +859,8 @@ TEST_P(PeerConnectionSignalingTest,
 
   
   EXPECT_FALSE(observer->called());
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   EXPECT_FALSE(observer->result());
   
   EXPECT_EQ(PeerConnection::kClosed, caller->pc()->signaling_state());
@@ -896,9 +880,8 @@ TEST_P(PeerConnectionSignalingTest,
 
   
   EXPECT_FALSE(observer->called());
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   EXPECT_FALSE(observer->result());
   
   EXPECT_EQ(PeerConnection::kClosed, caller->pc()->signaling_state());
@@ -1193,10 +1176,8 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
             EXPECT_TRUE(pc->GetTransceivers()[0]->mid().has_value());
           });
   caller->pc()->CreateOffer(offer_observer.get(), RTCOfferAnswerOptions());
-  EXPECT_THAT(WaitUntil([&] { return offer_observer->was_called(); },
-                        ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return offer_observer->was_called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
 }
 
 
@@ -1299,9 +1280,8 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
 
   
   
-  EXPECT_THAT(WaitUntil([&] { return observer->called(); }, ::testing::IsTrue(),
-                        {.timeout = TimeDelta::Millis(kWaitTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return observer->called(); },
+                        {.timeout = TimeDelta::Millis(kWaitTimeout)}));
   EXPECT_TRUE(caller->observer()->has_negotiation_needed_event());
   EXPECT_TRUE(caller->pc()->ShouldFireNegotiationNeededEvent(
       caller->observer()->latest_negotiation_needed_event()));

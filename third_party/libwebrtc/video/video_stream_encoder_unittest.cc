@@ -7201,10 +7201,9 @@ TEST_F(VideoStreamEncoderTest,
   
   
   
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil([&] { return stats_proxy_->GetStats().bw_limited_resolution; },
-                IsTrue(), {.timeout = TimeDelta::Millis(2000 * 2.5 * 2)}),
-      IsRtcOk());
+                {.timeout = TimeDelta::Millis(2000 * 2.5 * 2)}));
   timestamp_ms += kFrameInterval100Ms;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -8861,9 +8860,7 @@ TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Disabled) {
     time_controller_.AdvanceTime(TimeDelta::Millis(33));
   }
 
-  ASSERT_THAT(WaitUntil([&] { return fake_encoder_.GetNumEncodes() == 0; },
-                        ::testing::IsTrue()),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return fake_encoder_.GetNumEncodes() == 0; }));
 
   
   EXPECT_CALL(video_encoder, Release()).Times(1);

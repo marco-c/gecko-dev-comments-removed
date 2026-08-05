@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "api/scoped_refptr.h"
-#include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -416,9 +415,8 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
   
   unblock_async_operation_event0.Set();
   async_operation_completed_event0->Wait(Event::kForever);
-  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
-                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        {.timeout = kDefaultTimeout}));
 
   
   Event unblock_async_operation_event1;
@@ -430,22 +428,19 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
       operation_tracker_proxy.PostAsynchronousOperation(
           &unblock_async_operation_event2);
   
-  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
-                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        {.timeout = kDefaultTimeout}));
   
   
   unblock_async_operation_event1.Set();
   async_operation_completed_event1->Wait(Event::kForever);
-  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
-                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return on_empty_callback_counter == 1u; },
+                        {.timeout = kDefaultTimeout}));
   
   unblock_async_operation_event2.Set();
   async_operation_completed_event2->Wait(Event::kForever);
-  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 2u; },
-                        ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return on_empty_callback_counter == 2u; },
+                        {.timeout = kDefaultTimeout}));
 }
 
 TEST(OperationsChainTest,

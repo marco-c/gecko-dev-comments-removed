@@ -62,33 +62,29 @@ TEST_P(PeerConnectionIntegrationTest,
   callee()->AddAudioVideoTracks();
   
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
   
   EXPECT_EQ(2U, caller()->rtp_receiver_observers().size());
   EXPECT_EQ(2U, callee()->rtp_receiver_observers().size());
   
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return absl::c_all_of(
-                        caller()->rtp_receiver_observers(),
-                        [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                          return o->first_packet_received();
-                        });
-                  },
-                  ::testing::IsTrue(), {.timeout = kMaxWaitForFrames}),
-              IsRtcOk());
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return absl::c_all_of(
-                        callee()->rtp_receiver_observers(),
-                        [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                          return o->first_packet_received();
-                        });
-                  },
-                  ::testing::IsTrue(), {.timeout = kMaxWaitForFrames}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return absl::c_all_of(
+            caller()->rtp_receiver_observers(),
+            [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+              return o->first_packet_received();
+            });
+      },
+      {.timeout = kMaxWaitForFrames}));
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return absl::c_all_of(
+            callee()->rtp_receiver_observers(),
+            [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+              return o->first_packet_received();
+            });
+      },
+      {.timeout = kMaxWaitForFrames}));
   
   
   caller()->ResetRtpReceiverObservers();
@@ -202,9 +198,7 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   
   
@@ -365,9 +359,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCallee) {
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   
   
@@ -381,9 +373,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCallee) {
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
   
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();
@@ -398,9 +388,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   
   
@@ -415,9 +403,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   callee()->AddAudioVideoTracks();
   caller()->SetOfferAnswerOptions(IceRestartOfferAnswerOptions());
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
   
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();

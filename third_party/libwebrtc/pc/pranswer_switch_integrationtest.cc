@@ -232,13 +232,10 @@ TEST_F(PeerConnectionPrAnswerSwitchTest, SendMediaNoDataChannel) {
         SetSdpType(sdp, SdpType::kPrAnswer);
       });
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(WaitUntil(
-                  [&] {
-                    return caller()->pc()->signaling_state() ==
-                           PeerConnectionInterface::kHaveRemotePrAnswer;
-                  },
-                  IsTrue()),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] {
+    return caller()->pc()->signaling_state() ==
+           PeerConnectionInterface::kHaveRemotePrAnswer;
+  }));
   WaitConnected( true, caller(), callee());
   MediaExpectations media_expectations;
   media_expectations.CalleeExpectsSomeAudio();
@@ -246,9 +243,7 @@ TEST_F(PeerConnectionPrAnswerSwitchTest, SendMediaNoDataChannel) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
   
   second_callee->ReceiveSdpMessage(SdpType::kOffer, saved_offer);
-  EXPECT_THAT(
-      WaitUntil([&] { return caller()->SignalingStateStable(); }, IsTrue()),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return caller()->SignalingStateStable(); }));
   WaitConnected( false, caller(), second_callee.get());
   ASSERT_FALSE(HasFailure());
 }
@@ -270,13 +265,10 @@ TEST_F(PeerConnectionPrAnswerSwitchTest, MediaWithCcfbFirstThenTwcc) {
         SetSdpType(sdp, SdpType::kPrAnswer);
       });
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(WaitUntil(
-                  [&] {
-                    return caller()->pc()->signaling_state() ==
-                           PeerConnectionInterface::kHaveRemotePrAnswer;
-                  },
-                  IsTrue()),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] {
+    return caller()->pc()->signaling_state() ==
+           PeerConnectionInterface::kHaveRemotePrAnswer;
+  }));
   WaitConnected( true, caller(), callee());
   MediaExpectations media_expectations;
   media_expectations.CalleeExpectsSomeAudio();
@@ -297,9 +289,7 @@ TEST_F(PeerConnectionPrAnswerSwitchTest, MediaWithCcfbFirstThenTwcc) {
   
   second_callee->AddAudioVideoTracks();
   second_callee->ReceiveSdpMessage(SdpType::kOffer, saved_offer);
-  EXPECT_THAT(
-      WaitUntil([&] { return caller()->SignalingStateStable(); }, IsTrue()),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return caller()->SignalingStateStable(); }));
   WaitConnected( false, caller(), second_callee.get());
   ASSERT_FALSE(HasFailure());
 

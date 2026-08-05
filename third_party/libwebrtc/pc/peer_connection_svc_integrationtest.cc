@@ -11,8 +11,6 @@
 
 
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <vector>
 
@@ -24,10 +22,8 @@
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/test/rtc_error_matchers.h"
 #include "media/base/media_constants.h"
 #include "pc/test/integration_test_helpers.h"
-#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/wait_until.h"
 
@@ -137,9 +133,7 @@ TEST_F(PeerConnectionSVCIntegrationTest,
   EXPECT_TRUE(SetCodecPreferences(transceiver, kVp8CodecName).ok());
 
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   RtpParameters parameters = transceiver->sender()->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 1u);
@@ -163,9 +157,7 @@ TEST_F(PeerConnectionSVCIntegrationTest,
   EXPECT_TRUE(SetCodecPreferences(transceiver, kVp9CodecName).ok());
 
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   RtpParameters parameters = transceiver->sender()->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 1u);
@@ -189,9 +181,7 @@ TEST_F(PeerConnectionSVCIntegrationTest,
   EXPECT_TRUE(SetCodecPreferences(transceiver, kVp8CodecName).ok());
 
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   RtpParameters parameters = transceiver->sender()->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 1u);
@@ -216,9 +206,7 @@ TEST_F(PeerConnectionSVCIntegrationTest,
   EXPECT_TRUE(SetCodecPreferences(transceiver, kVp9CodecName).ok());
 
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   RtpParameters parameters = transceiver->sender()->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 1u);
@@ -260,9 +248,7 @@ TEST_F(PeerConnectionSVCIntegrationTest, FallbackToL1Tx) {
   EXPECT_TRUE(result.ok());
 
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   parameters = caller_transceiver->sender()->GetParameters();
   ASSERT_TRUE(parameters.encodings[0].scalability_mode.has_value());
@@ -281,9 +267,7 @@ TEST_F(PeerConnectionSVCIntegrationTest, FallbackToL1Tx) {
 
   
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(
-      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
 
   
   parameters = caller_transceiver->sender()->GetParameters();

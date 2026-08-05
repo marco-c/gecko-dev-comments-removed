@@ -48,18 +48,14 @@ class FuzzerTest : public PeerConnectionIntegrationBaseTest {
     caller()->pc()->SetRemoteDescription(std::move(sdp), srd_observer);
     
     
-    EXPECT_THAT(
-        WaitUntil([&] { return srd_observer->called(); }, ::testing::IsTrue()),
-        IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return srd_observer->called(); }));
 
     
     auto sld_observer =
         webrtc::make_ref_counted<FakeSetLocalDescriptionObserver>();
     if (srd_observer->error().ok()) {
       caller()->pc()->SetLocalDescription(sld_observer);
-      EXPECT_THAT(WaitUntil([&] { return sld_observer->called(); },
-                            ::testing::IsTrue()),
-                  IsRtcOk());
+      EXPECT_TRUE(WaitUntil([&] { return sld_observer->called(); }));
     }
     
     RTC_CHECK(!HasFailure());
