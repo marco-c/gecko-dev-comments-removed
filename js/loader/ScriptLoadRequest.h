@@ -234,10 +234,8 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
-  void NoCacheEntryFound(
-      mozilla::dom::ReferrerPolicy aReferrerPolicy,
-      ScriptFetchOptions* aFetchOptions, nsIURI* aURI,
-      const mozilla::Encoding* aClassicScriptFallbackEncoding = nullptr);
+  void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                         ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
  private:
   void SetCacheEntry(LoadedScript* aLoadedScript,
