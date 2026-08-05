@@ -15,7 +15,7 @@ namespace js {
 
 class SymbolObject : public NativeObject {
   
-  static constexpr auto PRIMITIVE_VALUE_SLOT = TypedSlot<ValueType::Symbol>(0);
+  JS_DEFINE_TYPED_SLOT(0, PRIMITIVE_VALUE_SLOT, Symbol);
 
  public:
   static const unsigned RESERVED_SLOTS = 1;

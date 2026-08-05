@@ -258,15 +258,13 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
  public:
   
   
-  static constexpr auto RAWBUF_SLOT =
-      TypedSlot<ValueType::Double, ValueType::Undefined>(0);
+  JS_DEFINE_TYPED_SLOT(0, RAWBUF_SLOT, Double, Undefined);
 
   
   
   
   
-  static constexpr auto LENGTH_SLOT =
-      TypedSlot<ValueType::Double, ValueType::Undefined>(1);
+  JS_DEFINE_TYPED_SLOT(1, LENGTH_SLOT, Double, Undefined);
 
   static_assert(LENGTH_SLOT.index() == ArrayBufferObject::BYTE_LENGTH_SLOT,
                 "JIT code assumes the same slot is used for the length");

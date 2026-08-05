@@ -530,8 +530,7 @@ class EnvironmentObject : public NativeObject {
  protected:
   
   
-  static constexpr auto ENCLOSING_ENV_SLOT =
-      TypedSlot<ValueType::Object, ValueType::Null>(0);
+  JS_DEFINE_TYPED_SLOT(0, ENCLOSING_ENV_SLOT, Object, Null);
 
   inline void setAliasedBinding(uint32_t slot, const Value& v);
 
@@ -588,8 +587,7 @@ class EnvironmentObject : public NativeObject {
 
 class DisposableEnvironmentObject : public EnvironmentObject {
  protected:
-  static constexpr auto DISPOSABLE_RESOURCE_STACK_SLOT =
-      TypedSlot<ValueType::Object, ValueType::Undefined>(1);
+  JS_DEFINE_TYPED_SLOT(1, DISPOSABLE_RESOURCE_STACK_SLOT, Object, Undefined);
 
  public:
   static constexpr uint32_t RESERVED_SLOTS = 2;
@@ -612,7 +610,7 @@ class DisposableEnvironmentObject : public EnvironmentObject {
 
 class CallObject : public EnvironmentObject {
  protected:
-  static constexpr auto CALLEE_SLOT = TypedSlot<ValueType::Object>(1);
+  JS_DEFINE_TYPED_SLOT(1, CALLEE_SLOT, Object);
 
   static CallObject* create(JSContext* cx, HandleScript script,
                             HandleObject enclosing, gc::Heap heap,
@@ -674,7 +672,7 @@ class CallObject : public EnvironmentObject {
 };
 
 class VarEnvironmentObject : public EnvironmentObject {
-  static constexpr auto SCOPE_SLOT = TypedSlot<ValueType::PrivateGCThing>(1);
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
   static VarEnvironmentObject* createInternal(JSContext* cx,
                                               Handle<SharedShape*> shape,
@@ -717,8 +715,8 @@ class VarEnvironmentObject : public EnvironmentObject {
 };
 
 class ModuleEnvironmentObject : public DisposableEnvironmentObject {
-  static constexpr auto MODULE_SLOT =
-      TypedSlot<ValueType::Object>(DisposableEnvironmentObject::RESERVED_SLOTS);
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS, MODULE_SLOT,
+                       Object);
 
   static const ObjectOps objectOps_;
   static const JSClassOps classOps_;
@@ -789,7 +787,7 @@ class WasmInstanceEnvironmentObject : public EnvironmentObject {
   
   
   
-  static constexpr auto SCOPE_SLOT = TypedSlot<ValueType::PrivateGCThing>(1);
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
  public:
   static const JSClass class_;
@@ -811,7 +809,7 @@ class WasmFunctionCallObject : public EnvironmentObject {
   
   
   
-  static constexpr auto SCOPE_SLOT = TypedSlot<ValueType::PrivateGCThing>(1);
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
  public:
   static const JSClass class_;
@@ -840,9 +838,8 @@ class LexicalEnvironmentObject : public DisposableEnvironmentObject {
   
   
   
-  static constexpr auto THIS_VALUE_OR_SCOPE_SLOT =
-      TypedSlot<ValueType::Object, ValueType::PrivateGCThing>(
-          DisposableEnvironmentObject::RESERVED_SLOTS);
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS,
+                       THIS_VALUE_OR_SCOPE_SLOT, Object, PrivateGCThing);
 
  public:
   static const JSClass class_;
@@ -1052,13 +1049,13 @@ NonSyntacticLexicalEnvironmentObject* CreateNonSyntacticEnvironmentChain(
 
 
 class WithEnvironmentObject : public EnvironmentObject {
-  static constexpr auto OBJECT_SLOT = TypedSlot<ValueType::Object>(1);
-  static constexpr auto THIS_SLOT = TypedSlot<ValueType::Object>(2);
+  JS_DEFINE_TYPED_SLOT(1, OBJECT_SLOT, Object);
+  JS_DEFINE_TYPED_SLOT(2, THIS_SLOT, Object);
   
   
   
-  static constexpr auto SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT =
-      TypedSlot<ValueType::PrivateGCThing, ValueType::Boolean>(3);
+  JS_DEFINE_TYPED_SLOT(3, SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT, PrivateGCThing,
+                       Boolean);
 
  public:
   static const JSClass class_;
@@ -1125,7 +1122,7 @@ class WithEnvironmentObject : public EnvironmentObject {
 
 
 class RuntimeLexicalErrorObject : public EnvironmentObject {
-  static constexpr auto ERROR_SLOT = TypedSlot<ValueType::Int32>(1);
+  JS_DEFINE_TYPED_SLOT(1, ERROR_SLOT, Int32);
 
  public:
   static const unsigned RESERVED_SLOTS = 2;
@@ -1397,15 +1394,13 @@ class DebugEnvironmentProxy : public ProxyObject {
 
 
 
-  static constexpr auto ENCLOSING_SLOT =
-      TypedSlot<ValueType::Object, ValueType::Undefined>(0);
+  JS_DEFINE_TYPED_SLOT(0, ENCLOSING_SLOT, Object, Undefined);
 
   
 
 
 
-  static constexpr auto SNAPSHOT_SLOT =
-      TypedSlot<ValueType::Object, ValueType::Null, ValueType::Undefined>(1);
+  JS_DEFINE_TYPED_SLOT(1, SNAPSHOT_SLOT, Object, Null, Undefined);
 
  public:
   static DebugEnvironmentProxy* create(JSContext* cx, EnvironmentObject& env,
