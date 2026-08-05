@@ -9,13 +9,9 @@
 #include "mozilla/AlertNotification.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/glean/DomNotificationMetrics.h"
-#include "mozilla/glean/bindings/Event.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIAlertsService.h"
 #include "nsIServiceWorkerManager.h"
-#include "nsISiteCategory.h"
 #include "nsIURIClassifier.h"
 #include "nsNetCID.h"
 #include "nsThreadUtils.h"
@@ -24,7 +20,10 @@ namespace mozilla::dom::notification {
 
 NS_IMPL_ISUPPORTS0(NotificationParent)
 
-class NotificationObserver final : public nsIAlertCallbacks {
+
+
+
+class NotificationObserver final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
 
@@ -34,112 +33,63 @@ class NotificationObserver final : public nsIAlertCallbacks {
       : mScope(aScope),
         mPrincipal(aPrincipal),
         mNotification(std::move(aNotification)),
-        mActor(&aParent) {
-    if (nsCOMPtr<nsISiteCategory> siteCategory =
-            do_GetService("@mozilla.org/site-category;1")) {
-      nsCString category;
-      if (NS_SUCCEEDED(siteCategory->GetCategory(mPrincipal, category))) {
-        mCategory = Some(category);
-      }
+        mActor(&aParent) {}
+
+  NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
+                        const char16_t* aData) override {
+    AlertTopic topic = ToAlertTopic(aTopic, aData);
+
+    
+    if (topic == AlertTopic::Disable) {
+      return RemovePermission(mPrincipal);
     }
-  }
+    if (topic == AlertTopic::Settings) {
+      return OpenSettings(mPrincipal);
+    }
 
-  NS_IMETHODIMP OnAlertDisable() override {
-    glean::web_notification::clicked.Record(
-        Some(glean::web_notification::ClickedExtra{.action = Some("disable"_ns),
-                                                   .siteCategory = mCategory}));
-    return RemovePermission(mPrincipal);
-  }
-
-  NS_IMETHODIMP OnAlertSettings() override {
-    glean::web_notification::clicked.Record(
-        Some(glean::web_notification::ClickedExtra{
-            .action = Some("settings"_ns), .siteCategory = mCategory}));
-    return OpenSettings(mPrincipal);
-  }
-
-  
-
-
-
-  template <typename T>
-  bool RunActor(T aFunc) {
     RefPtr<NotificationParent> actor(mActor);
+
     if (actor && actor->CanSend()) {
-      aFunc(actor.get());
-      return mScope.IsEmpty();
-    }
-    return false;
-  }
-
-  NS_IMETHODIMP OnAlertShow() override {
-    mShown = true;
-    glean::web_notification::shown.Record(
-        Some(glean::web_notification::ShownExtra{.siteCategory = mCategory}));
-
-    if (RunActor([](auto* actor) { actor->OnAlertShow(); })) {
-      return NS_OK;
-    }
-
-    (void)NS_WARN_IF(NS_FAILED(
-        AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
-    nsresult rv = PersistNotification(mPrincipal, mNotification, mScope);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Could not persist Notification");
-    }
-    return NS_OK;
-  }
-
-  NS_IMETHODIMP OnAlertClick(nsIAlertAction* aAction) override {
-    mClicked = true;
-    glean::web_notification::clicked.Record(
-        Some(glean::web_notification::ClickedExtra{
-            .action = Some(aAction ? "action-button"_ns : "body"_ns),
-            .siteCategory = mCategory}));
-
-    if (RunActor([](auto* actor) { actor->FireClickEvent(); })) {
-      return NS_OK;
-    } else if (mScope.IsEmpty()) {
       
-      return OpenWindowFor(mPrincipal);
-    }
-
-    nsAutoString actionName;
-    if (aAction) {
-      MOZ_TRY(aAction->GetAction(actionName));
-    }
-    return RespondOnClick(mPrincipal, mScope, mNotification, actionName);
-  }
-
-  NS_IMETHODIMP OnAlertDismissedFromForeground() override {
-    glean::web_notification::ignored.Record(
-        Some(glean::web_notification::IgnoredExtra{.siteCategory = mCategory}));
-    return NS_OK;
-  }
-
-  NS_IMETHODIMP OnAlertClosed() override {
-    if (mShown && !mClicked) {
-      glean::web_notification::dismissed.Record(Some(
-          glean::web_notification::DismissedExtra{.siteCategory = mCategory}));
-    }
-    if (RunActor([](auto* actor) { actor->OnAlertFinished(true); })) {
+      
+      actor->HandleAlertTopic(topic);
+      if (mScope.IsEmpty()) {
+        
+        return NS_OK;
+      }
+    } else if (mScope.IsEmpty()) {
+      if (topic == AlertTopic::Click) {
+        
+        return OpenWindowFor(mPrincipal);
+      }
+      
       return NS_OK;
     }
-    return OnAlertFinishedCommon();
-  }
 
-  NS_IMETHODIMP OnAlertFinished() override {
-    if (mShown && !mClicked) {
-      glean::web_notification::dismissed.Record(Some(
-          glean::web_notification::DismissedExtra{.siteCategory = mCategory}));
-    }
-    if (RunActor([](auto* actor) { actor->OnAlertFinished(false); })) {
+    
+    MOZ_ASSERT(!mScope.IsEmpty());
+    if (topic == AlertTopic::Show) {
+      (void)NS_WARN_IF(NS_FAILED(
+          AdjustPushQuota(mPrincipal, NotificationStatusChange::Shown)));
+      nsresult rv = PersistNotification(mPrincipal, mNotification, mScope);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Could not persist Notification");
+      }
       return NS_OK;
     }
-    return OnAlertFinishedCommon();
-  }
 
-  nsresult OnAlertFinishedCommon() {
+    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished ||
+               topic == AlertTopic::Closed);
+
+    if (topic == AlertTopic::Click) {
+      nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
+      nsAutoString actionName;
+      if (action) {
+        MOZ_TRY(action->GetAction(actionName));
+      }
+      return RespondOnClick(mPrincipal, mScope, mNotification, actionName);
+    }
+
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (!swm) {
       return NS_ERROR_FAILURE;
@@ -148,6 +98,7 @@ class NotificationObserver final : public nsIAlertCallbacks {
     nsAutoCString originSuffix;
     MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
 
+    MOZ_ASSERT(topic == AlertTopic::Finished || topic == AlertTopic::Closed);
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
     (void)NS_WARN_IF(
@@ -160,18 +111,42 @@ class NotificationObserver final : public nsIAlertCallbacks {
  private:
   virtual ~NotificationObserver() = default;
 
+  static AlertTopic ToAlertTopic(const char* aTopic, const char16_t* aData) {
+    if (!strcmp("alertdisablecallback", aTopic)) {
+      return AlertTopic::Disable;
+    }
+    if (!strcmp("alertsettingscallback", aTopic)) {
+      return AlertTopic::Settings;
+    }
+    if (!strcmp("alertclickcallback", aTopic)) {
+      return AlertTopic::Click;
+    }
+    if (!strcmp("alertshow", aTopic)) {
+      return AlertTopic::Show;
+    }
+    if (!strcmp("alertfinished", aTopic)) {
+      if (aData && nsDependentString(aData) == u"close"_ns) {
+        
+        
+        
+        
+        
+        return AlertTopic::Closed;
+      }
+      return AlertTopic::Finished;
+    }
+    MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
+    return AlertTopic::Finished;
+  }
+
   
   nsString mScope;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   IPCNotification mNotification;
   WeakPtr<NotificationParent> mActor;
-
-  Maybe<nsCString> mCategory;
-  bool mShown = false;
-  bool mClicked = false;
 };
 
-NS_IMPL_ISUPPORTS(NotificationObserver, nsIAlertCallbacks)
+NS_IMPL_ISUPPORTS(NotificationObserver, nsIObserver)
 
 using SafeBrowsingPromise = MozPromise<bool, nsresult, false>;
 
@@ -207,35 +182,37 @@ class SafeBrowsingClassificationCallback final
 
 NS_IMPL_ISUPPORTS(SafeBrowsingClassificationCallback, nsIURIClassifierCallback)
 
-nsresult NotificationParent::OnAlertShow() {
-  if (!mResolver) {
-#ifdef ANDROID
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return NS_OK;
-#else
-    MOZ_ASSERT_UNREACHABLE("Are we getting double show events?");
-    return NS_ERROR_FAILURE;
-#endif
+nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
+  if (aTopic == AlertTopic::Click) {
+    return FireClickEvent();
   }
-  mResolver.take().value()(CopyableErrorResult());
-  return NS_OK;
-}
-
-nsresult NotificationParent::OnAlertFinished(bool aIsClosed) {
+  if (aTopic == AlertTopic::Show) {
+    if (!mResolver) {
+#ifdef ANDROID
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return NS_OK;
+#else
+      MOZ_ASSERT_UNREACHABLE("Are we getting double show events?");
+      return NS_ERROR_FAILURE;
+#endif
+    }
+    mResolver.take().value()(CopyableErrorResult());
+    return NS_OK;
+  }
   if (mResolver) {
-    if (aIsClosed) {
+    if (aTopic == AlertTopic::Closed) {
       
       mResolver.take().value()(CopyableErrorResult());
-    } else {
+    } else if (aTopic == AlertTopic::Finished) {
       
       
       
@@ -250,9 +227,15 @@ nsresult NotificationParent::OnAlertFinished(bool aIsClosed) {
     }
   }
 
-  
-  mDangling = true;
-  Close();
+  if (aTopic == AlertTopic::Finished || aTopic == AlertTopic::Closed) {
+    
+    mDangling = true;
+    Close();
+
+    return NS_OK;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Unknown notification topic");
 
   return NS_OK;
 }

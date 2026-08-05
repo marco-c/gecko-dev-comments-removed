@@ -794,16 +794,16 @@ bool ToastNotificationHandler::CreateWindowsNotificationFromXml(
   hr = mNotifier->Show(mNotification.Get());
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  if (mAlertCallbacks) {
-    mAlertCallbacks->OnAlertShow();
+  if (mAlertListener) {
+    mAlertListener->Observe(nullptr, "alertshow", mCookie.get());
   }
 
   return true;
 }
 
 void ToastNotificationHandler::SendFinished() {
-  if (!mSentFinished && mAlertCallbacks) {
-    mAlertCallbacks->OnAlertFinished();
+  if (!mSentFinished && mAlertListener) {
+    mAlertListener->Observe(nullptr, "alertfinished", mCookie.get());
   }
 
   mSentFinished = true;
@@ -820,7 +820,7 @@ ToastNotificationHandler::OnActivate(
     const ComPtr<IInspectable>& inspectable) {
   MOZ_LOG(sWASLog, LogLevel::Info, ("OnActivate"));
 
-  if (mAlertCallbacks) {
+  if (mAlertListener) {
     
     nsAutoString argumentsString;
     nsAutoString actionString;
@@ -885,9 +885,9 @@ ToastNotificationHandler::OnActivate(
       
       SendFinished();
     } else if (actionValue && *actionValue == kAlertActionSettings) {
-      mAlertCallbacks->OnAlertSettings();
+      mAlertListener->Observe(nullptr, "alertsettingscallback", mCookie.get());
     } else if (actionValue && *actionValue == kAlertActionDisable) {
-      mAlertCallbacks->OnAlertDisable();
+      mAlertListener->Observe(nullptr, "alertdisablecallback", mCookie.get());
     } else if (mClickable) {
       
       
@@ -914,7 +914,7 @@ ToastNotificationHandler::OnActivate(
 
       
       
-      mAlertCallbacks->OnAlertClick(alertAction);
+      mAlertListener->Observe(alertAction, "alertclickcallback", mCookie.get());
     }
   }
   HandleCloseFromSystem();
@@ -984,32 +984,6 @@ ToastNotificationHandler::FindNotificationByTag(const nsAString& aWindowsTag,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 HRESULT
 ToastNotificationHandler::OnDismiss(
     const ComPtr<IToastNotification>& notification,
@@ -1027,9 +1001,6 @@ ToastNotificationHandler::OnDismiss(
   nsAutoString tag(tagPtr, len);
 
   if (FindNotificationByTag(tag, mAumid)) {
-    if (mAlertCallbacks) {
-      mAlertCallbacks->OnAlertDismissedFromForeground();
-    }
     return S_OK;
   }
 
