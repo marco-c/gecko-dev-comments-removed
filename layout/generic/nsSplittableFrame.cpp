@@ -214,7 +214,7 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
     if (oldCachedFirstContinuation != newFirstContinuation) {
       
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
         f->mFirstContinuation = newFirstContinuation;
       }
     }
@@ -227,7 +227,7 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       
       
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
         f->mFirstContinuation = nullptr;
       }
     }
@@ -239,7 +239,7 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
     if (oldCachedFirstInFlow != newFirstInFlow) {
       
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
         f->mFirstInFlow = newFirstInFlow;
       }
     }
@@ -251,7 +251,7 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       
       
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
         f->mFirstInFlow = nullptr;
       }
     }
