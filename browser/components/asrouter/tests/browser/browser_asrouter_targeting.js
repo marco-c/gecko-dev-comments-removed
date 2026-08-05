@@ -2489,10 +2489,6 @@ add_task(async function activeNotifications_default_prompt_shown() {
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
-  let visibilityChange = new Promise(res =>
-    win.document.addEventListener("visibilitychange", res, { once: true })
-  );
-
   sb.stub(DefaultBrowserCheck, "willCheckDefaultBrowser").returns(true);
   const promptSpy = sb.spy(DefaultBrowserCheck, "prompt");
 
@@ -2502,13 +2498,29 @@ add_task(async function activeNotifications_default_prompt_shown() {
 
   
   
-  await visibilityChange;
+  
+  const [promptWin] = promptSpy.firstCall.args;
+  await TestUtils.waitForCondition(
+    () => promptWin.gDialogBox?.isOpen,
+    "Waiting for the default browser prompt to open",
+    100,
+    100
+  );
+  
+  
+  await SimpleTest.promiseFocus(promptWin);
 
   is(
     await ASRouterTargeting.Environment.activeNotifications,
     true,
     "activeNotifications should be true if the set to default prompt is being shown"
   );
+  let dialogClosed = BrowserTestUtils.waitForEvent(
+    promptWin,
+    "DOMModalDialogClosed"
+  );
+  promptWin.gDialogBox.dialog?.close();
+  await dialogClosed;
   await BrowserTestUtils.closeWindow(win);
   sb.restore();
 });
