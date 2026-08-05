@@ -387,18 +387,13 @@ void IMEContentObserver::ObserveEditableNode() {
           ("0x%p ObserveEditableNode(), starting to observe 0x%p (%s)", this,
            mRootElement.get(), ToString(*mRootElement).c_str()));
 
+  mRootElement->AddMutationObserver(this);
   
   
-  
-  if (!mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
-    mRootElement->AddMutationObserver(this);
-    
-    
-    Document* doc = mRootElement->GetComposedDoc();
-    if (doc) {
-      RefPtr<DocumentObserver> documentObserver = mDocumentObserver;
-      documentObserver->Observe(doc);
-    }
+  Document* doc = mRootElement->GetComposedDoc();
+  if (doc) {
+    RefPtr<DocumentObserver> documentObserver = mDocumentObserver;
+    documentObserver->Observe(doc);
   }
 
   if (mDocShell) {
@@ -726,12 +721,6 @@ nsresult IMEContentObserver::GetSelectionAndRoot(Selection** aSelection,
 
 void IMEContentObserver::OnSelectionChange(Selection& aSelection) {
   if (!mIsObserving || !mWidget) {
-    return;
-  }
-  if (mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
-    
-    
-    
     return;
   }
 
