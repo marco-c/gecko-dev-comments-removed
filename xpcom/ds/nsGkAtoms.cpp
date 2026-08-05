@@ -15,13 +15,10 @@ extern constexpr GkAtoms gGkAtoms = {
 
 
 
-
-
-
-
-#define STATIC_ATOM(name_, value_, index_) u"" value_,
+#define STATIC_ATOM(name_, value_, index_, offset_) u"" value_ u"\0"
 #include "StaticAtomList.h"
 #undef STATIC_ATOM
+    ,
     {
 
 
@@ -38,11 +35,10 @@ extern constexpr GkAtoms gGkAtoms = {
 
 
 
-#define STATIC_ATOM(name_, value_, index_)                                   \
-  nsStaticAtom(                                                              \
-      sizeof(value_) - 1, mozilla::HashString(u"" value_),                   \
-      offsetof(GkAtoms, mAtoms[index_]) - offsetof(GkAtoms, name_##_string), \
-      nsAtom::ComputeIsAsciiLowercase(u"" value_)),
+#define STATIC_ATOM(name_, value_, index_, offset_)                 \
+  nsStaticAtom(sizeof(value_) - 1, mozilla::HashString(u"" value_), \
+               offsetof(GkAtoms, mAtoms[index_]) - offset_ * 2,     \
+               nsAtom::ComputeIsAsciiLowercase(u"" value_)),
 #include "StaticAtomList.h"
 #undef STATIC_ATOM
     }};
