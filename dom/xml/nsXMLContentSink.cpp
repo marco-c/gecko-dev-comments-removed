@@ -270,6 +270,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
       }
     }
 
+    mDocumentChildren.Clear();
     mXSLTProcessor->SetSourceContentModel(source);
     
     
