@@ -19,9 +19,6 @@
 #include "nsCRT.h"
 #include "nspr.h"
 
-static void cmyk_convert_bgra(uint32_t* aInput, uint32_t* aOutput,
-                              int32_t aWidth, bool aIsInverted);
-
 using mozilla::gfx::SurfaceFormat;
 
 namespace mozilla {
@@ -358,8 +355,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
 
       
       
-      if (mInfo.out_color_space == JCS_GRAYSCALE ||
-          mInfo.out_color_space == JCS_CMYK) {
+      if (mInfo.out_color_space == JCS_GRAYSCALE) {
         mCMSLine = new (std::nothrow) uint32_t[mInfo.image_width];
         if (!mCMSLine) {
           mState = JPEG_ERROR;
@@ -384,10 +380,15 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       qcms_transform* pipeTransform =
           mInfo.out_color_space != JCS_GRAYSCALE ? mTransform : nullptr;
 
+      
+      SurfaceFormat inFormat = SurfaceFormat::OS_RGBX;
+      if (mInfo.out_color_space == JCS_CMYK) {
+        inFormat = mIsPDF ? SurfaceFormat::InvertedCMYK : SurfaceFormat::CMYK;
+      }
+
       Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
-          this, Size(), OutputSize(), SurfaceFormat::OS_RGBX,
-          SurfaceFormat::OS_RGBX, pipeTransform, GetOrientation(),
-          SurfacePipeFlags());
+          this, Size(), OutputSize(), inFormat, SurfaceFormat::OS_RGBX,
+          pipeTransform, GetOrientation(), SurfacePipeFlags());
       if (!pipe) {
         mState = JPEG_ERROR;
         MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
@@ -661,25 +662,14 @@ WriteState nsJPEGDecoder::OutputScanlines() {
                                  Some(WriteState::NEED_MORE_DATA));
         }
 
-        switch (mInfo.out_color_space) {
-          default:
-            
-            MOZ_ASSERT(!mCMSLine);
-            break;
-          case JCS_GRAYSCALE:
-            
-            
-            
-            
-            MOZ_ASSERT(mCMSLine);
-            qcms_transform_data(mTransform, mCMSLine, aPixelBlock,
-                                mInfo.output_width);
-            break;
-          case JCS_CMYK:
-            
-            MOZ_ASSERT(mCMSLine);
-            cmyk_convert_bgra(mCMSLine, aPixelBlock, aBlockSize, mIsPDF);
-            break;
+        if (mInfo.out_color_space == JCS_GRAYSCALE) {
+          
+          
+          
+          
+          MOZ_ASSERT(mCMSLine);
+          qcms_transform_data(mTransform, mCMSLine, aPixelBlock,
+                              mInfo.output_width);
         }
 
         return std::make_tuple(aBlockSize, Maybe<WriteState>());
@@ -938,57 +928,3 @@ term_source(j_decompress_ptr jd) {
 
 }  
 }  
-
-
-
-
-
-
-
-
-static void cmyk_convert_bgra(uint32_t* aInput, uint32_t* aOutput,
-                              int32_t aWidth, bool aIsInverted) {
-  uint8_t* input = reinterpret_cast<uint8_t*>(aInput);
-
-  for (int32_t i = 0; i < aWidth; ++i) {
-    
-    
-    
-
-    
-    
-    
-    
-
-    
-    
-    
-
-    
-    
-    
-    
-
-    
-    uint32_t iC = input[0];
-    uint32_t iM = input[1];
-    uint32_t iY = input[2];
-    uint32_t iK = input[3];
-    if (MOZ_UNLIKELY(aIsInverted)) {
-      iC = 255 - iC;
-      iM = 255 - iM;
-      iY = 255 - iY;
-      iK = 255 - iK;
-    }
-
-    const uint8_t r = iC * iK / 255;
-    const uint8_t g = iM * iK / 255;
-    const uint8_t b = iY * iK / 255;
-
-    *aOutput++ = (0xFF << mozilla::gfx::SurfaceFormatBit::OS_A) |
-                 (r << mozilla::gfx::SurfaceFormatBit::OS_R) |
-                 (g << mozilla::gfx::SurfaceFormatBit::OS_G) |
-                 (b << mozilla::gfx::SurfaceFormatBit::OS_B);
-    input += 4;
-  }
-}
