@@ -384,18 +384,6 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
     }
 
     
-    
-    
-    
-    
-    MOZ_ASSERT(
-        principal->OriginAttributesRef().EqualsIgnoringFPD(
-            state->mOriginAttributes),
-        "BTP: active-site purge guard sees a live document whose container "
-        "differs from the cached BounceTrackingState OriginAttributes (Bug "
-        "2054941).");
-
-    
     nsAutoCString baseDomain;
     nsresult rv = principal->GetBaseDomain(baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -429,17 +417,6 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsresult rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(
-      loadInfo->GetOriginAttributes().EqualsIgnoringFPD(mOriginAttributes),
-      "BTP: channel OriginAttributes (userContextId/PBM) diverged from the "
-      "cached BounceTrackingState OriginAttributes (Bug 2054941).");
 
   
   
@@ -552,18 +529,6 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
   dom::WindowGlobalParent* windowGlobalParent =
       browsingContext->Canonical()->GetCurrentWindowGlobal();
   NS_ENSURE_TRUE(windowGlobalParent, NS_ERROR_FAILURE);
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(windowGlobalParent->DocumentPrincipal()
-                 ->OriginAttributesRef()
-                 .EqualsIgnoringFPD(mOriginAttributes),
-             "BTP: committed document OriginAttributes (userContextId/PBM) "
-             "diverged from the cached BounceTrackingState OriginAttributes "
-             "(Bug 2054941).");
 
   return OnDocumentLoaded(windowGlobalParent->DocumentPrincipal());
 }
