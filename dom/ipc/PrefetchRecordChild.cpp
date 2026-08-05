@@ -5,6 +5,11 @@
 
 #include "mozilla/dom/PrefetchRecordChild.h"
 
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SpeculationRulesManager.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "nsGlobalWindowInner.h"
+
 namespace mozilla::dom {
 
 PrefetchRecordChild::PrefetchRecordChild(nsIURI* aURL,
@@ -13,6 +18,25 @@ PrefetchRecordChild::PrefetchRecordChild(nsIURI* aURL,
 
 void PrefetchRecordChild::ActorDestroy(ActorDestroyReason aReason) {
   
+  
+  
+  WindowGlobalChild* wgc = static_cast<WindowGlobalChild*>(Manager());
+  if (!wgc) {
+    return;
+  }
+  nsGlobalWindowInner* window = wgc->GetWindowGlobal();
+  if (!window) {
+    return;
+  }
+  Document* doc = window->GetExtantDoc();
+  if (!doc) {
+    return;
+  }
+  SpeculationRulesManager* srm = doc->GetSpeculationRulesManager();
+  if (!srm) {
+    return;
+  }
+  srm->RemoveRecord(this);
 }
 
 }  
