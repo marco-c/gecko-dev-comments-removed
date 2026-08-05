@@ -656,3 +656,39 @@ add_task(
     await extension.unload();
   }
 );
+
+
+
+
+
+
+add_task(async function test_may_install_addon_tolerates_missing_permissions() {
+  let id = "syncshape@tests.mozilla.org";
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "*": { blocked_permissions: ["history"] },
+      },
+    },
+  });
+
+  equal(
+    Services.policies.mayInstallAddon({ id, type: "extension" }),
+    true,
+    "Object without permissions is not blocked by blocked_permissions"
+  );
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        [id]: { installation_mode: "blocked" },
+      },
+    },
+  });
+
+  equal(
+    Services.policies.mayInstallAddon({ id, type: "extension" }),
+    false,
+    "Object without permissions still honors installation_mode blocked"
+  );
+});

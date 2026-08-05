@@ -1610,7 +1610,11 @@ var gXPInstallObserver = {
           let messageString;
           if (
             install.addon &&
-            !Services.policies.mayInstallAddon(install.addon)
+            !Services.policies.mayInstallAddon({
+              id: install.addon.id,
+              type: install.addon.type,
+              permissions: install.addon.userPermissions?.permissions,
+            })
           ) {
             messageString = lazy.l10n.formatValueSync(
               "addon-installation-blocked-by-policy",
@@ -2483,11 +2487,11 @@ var gUnifiedExtensions = {
         } else if (!policies.length) {
           document.l10n.setAttributes(
             emptyStateBox.querySelector("h2"),
-            "unified-extensions-empty-reason-zero-extensions-onboarding"
+            "unified-extensions-empty-reason-zero-extensions-onboarding2"
           );
           document.l10n.setAttributes(
             emptyStateBox.querySelector("description"),
-            "unified-extensions-empty-content-explain-extensions-onboarding"
+            "unified-extensions-empty-content-explain-extensions-onboarding2"
           );
           emptyStateBox.hidden = false;
 
