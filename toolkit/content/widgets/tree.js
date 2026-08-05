@@ -1359,7 +1359,17 @@
       
       
       
-      let widthdiff = Math.abs(textRect.x - cellRect.x) - scrollbarWidth;
+      let widthdiff = Math.abs(textRect.x - cellRect.x);
+      
+      
+      
+      
+      
+      if (style.direction == "rtl") {
+        widthdiff -= scrollbarWidth;
+      } else {
+        widthdiff += scrollbarWidth;
+      }
 
       input.style.left = `${left}px`;
       input.style.height = `${
