@@ -310,6 +310,15 @@ add_task(async function test_notificationReshowTabSwitch() {
 
 
 add_task(async function test_notificationWindowMove() {
+  
+  
+  
+  
+  if (Services.appinfo.isWayland) {
+    ok(true, "Skipping test on Wayland because windows can't be moved.");
+    return;
+  }
+
   let screenX, screenY;
 
   await runPopupNotificationSecurityDelayTest({
