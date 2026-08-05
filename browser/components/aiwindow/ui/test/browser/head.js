@@ -1716,3 +1716,42 @@ async function withServer(serverOptions, task) {
     await stopMockOpenAI(server);
   }
 }
+
+
+
+
+
+
+
+async function getAichatBrowser(browser) {
+  const aiWindowEl = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element to exist"
+  );
+
+  await TestUtils.waitForCondition(
+    () => aiWindowEl.shadowRoot,
+    "Wait for ai-window shadowRoot to be ready"
+  );
+
+  const aichatBrowser = await TestUtils.waitForCondition(
+    () => aiWindowEl.shadowRoot.querySelector("#aichat-browser"),
+    "Wait for aichat-browser element"
+  );
+
+  if (aichatBrowser.currentURI?.spec !== "about:aichatcontent") {
+    await BrowserTestUtils.browserLoaded(
+      aichatBrowser,
+      false,
+      "about:aichatcontent"
+    );
+  }
+
+  Assert.equal(
+    aichatBrowser.currentURI.spec,
+    "about:aichatcontent",
+    "aichat-browser should be loaded with about:aichatcontent"
+  );
+
+  return aichatBrowser;
+}
