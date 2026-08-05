@@ -292,7 +292,7 @@ DXGI_HDR_METADATA_HDR10 DeviceManagerDx::OutputDESC1ToDXGI(
   metadata.MinMasteringLuminance = aDesc.MinLuminance * kMinLuminanceFixedPoint;
   
   
-  metadata.MaxContentLightLevel = aDesc.MaxFullFrameLuminance;
+  metadata.MaxContentLightLevel = aDesc.MaxLuminance;
   metadata.MaxFrameAverageLightLevel = aDesc.MaxFullFrameLuminance;
 
   return metadata;

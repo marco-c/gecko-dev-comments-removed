@@ -129,6 +129,11 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
   isHDR &= nsCocoaFeatures::OnBigSurOrLater();
 
   float dpi = 96.0f;
+  
+  
+  
+  float sdrContentBrightness = 100.0f;
+  float hdrPeakBrightness = componentValueMax * sdrContentBrightness;
   CGDirectDisplayID displayID =
       [[[aScreen deviceDescription] objectForKey:@"NSScreenNumber"] intValue];
   CGFloat heightMM = ::CGDisplayScreenSize(displayID).height;
@@ -144,10 +149,10 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
   
   
   
-  auto screen =
-      MakeRefPtr<Screen>(rect, availRect, pixelDepth, pixelDepth, 0,
-                         contentsScaleFactor, defaultCssScaleFactor, dpi,
-                         Screen::IsPseudoDisplay::No, Screen::IsHDR(isHDR));
+  auto screen = MakeRefPtr<Screen>(
+      rect, availRect, pixelDepth, pixelDepth, 0, contentsScaleFactor,
+      defaultCssScaleFactor, dpi, Screen::IsPseudoDisplay::No,
+      Screen::IsHDR(isHDR), sdrContentBrightness, hdrPeakBrightness);
   return screen.forget();
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
