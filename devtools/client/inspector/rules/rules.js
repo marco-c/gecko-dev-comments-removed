@@ -25,6 +25,10 @@ const {
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
+const {
+  setColorSchemeSimulation,
+  setPrintSimulationEnabled,
+} = require("resource://devtools/client/inspector/emulation/actions/emulation.js");
 
 loader.lazyRequireGetter(
   this,
@@ -69,10 +73,17 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/link.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "openDocLink",
+  "resource://devtools/client/shared/link.js",
+  true
+);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+  getMdnLinkParams: "resource://devtools/shared/mdn.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -100,6 +111,12 @@ const PSEUDO_ELEMENTS_CONTAINER_ID = "pseudo-elements-container";
 const ELEMENT_CONTAINER_ID = "element-container";
 const REGISTERED_PROPERTIES_CONTAINER_ID = "registered-properties-container";
 const POSITION_TRY_CONTAINER_ID = "position-try-container";
+
+
+const MDN_PRINT_MEDIA_URL =
+  "https://developer.mozilla.org/docs/Web/CSS/Reference/At-rules/@media";
+const MDN_PREFERS_COLOR_SCHEME_URL =
+  "https://developer.mozilla.org/docs/Web/CSS/@media/prefers-color-scheme";
 
 
 
@@ -201,13 +218,30 @@ class CssRuleView extends EventEmitter {
     );
     this.classPanel = doc.getElementById("ruleview-class-panel");
     this.classToggle = doc.getElementById("class-panel-toggle");
-    this.colorSchemeLightSimulationButton = doc.getElementById(
+    this.emulationPanel = doc.getElementById("emulation-panel");
+    this.emulationToggle = doc.getElementById("emulation-panel-toggle");
+    this.emulationPrintHeading = doc.getElementById("emulation-print-heading");
+    this.emulationColorSchemeHeading = doc.getElementById(
+      "emulation-color-scheme-heading"
+    );
+    this.#printSimulationCheckbox = doc.getElementById(
+      "print-simulation-enabled"
+    );
+    this.#colorSchemeLightRadio = doc.getElementById(
+      "color-scheme-simulation-light"
+    );
+    this.#colorSchemeDarkRadio = doc.getElementById(
+      "color-scheme-simulation-dark"
+    );
+    this.#colorSchemeNoneRadio = doc.getElementById(
+      "color-scheme-simulation-none"
+    );
+    this.#colorSchemeLightSimulationButton = doc.getElementById(
       "color-scheme-simulation-light-toggle"
     );
-    this.colorSchemeDarkSimulationButton = doc.getElementById(
+    this.#colorSchemeDarkSimulationButton = doc.getElementById(
       "color-scheme-simulation-dark-toggle"
     );
-    this.printSimulationButton = doc.getElementById("print-simulation-toggle");
 
     this.#initSimulationFeatures();
 
@@ -268,6 +302,17 @@ class CssRuleView extends EventEmitter {
     this.pseudoClassPanel.addEventListener(
       "change",
       this.#onTogglePseudoClass,
+      baseEventConfig
+    );
+    this.emulationToggle.addEventListener(
+      "click",
+      this.#onToggleEmulationPanel,
+      baseEventConfig
+    );
+    
+    this.emulationPanel.addEventListener(
+      "change",
+      this.#onEmulationPanelChange,
       baseEventConfig
     );
 
@@ -331,6 +376,13 @@ class CssRuleView extends EventEmitter {
   #elementsWithPendingClicks;
   #showUserAgentStyles;
   #focusNextUserAddedRule;
+
+  #colorSchemeLightSimulationButton;
+  #colorSchemeDarkSimulationButton;
+  #printSimulationCheckbox;
+  #colorSchemeLightRadio;
+  #colorSchemeDarkRadio;
+  #colorSchemeNoneRadio;
 
   
   
@@ -706,30 +758,44 @@ class CssRuleView extends EventEmitter {
     if (!this.inspector.commands.descriptorFront.isTabDescriptor) {
       return;
     }
-    this.colorSchemeLightSimulationButton.removeAttribute("hidden");
-    this.colorSchemeDarkSimulationButton.removeAttribute("hidden");
-    this.printSimulationButton.removeAttribute("hidden");
+    this.#colorSchemeLightSimulationButton.removeAttribute("hidden");
+    this.#colorSchemeDarkSimulationButton.removeAttribute("hidden");
+    this.emulationToggle.removeAttribute("hidden");
     const { signal } = this.#abortController;
     const baseEventConfig = { signal };
-    this.printSimulationButton.addEventListener(
+
+    const mdnLinkParams = lazy.getMdnLinkParams("inspector-emulation");
+
+    this.emulationPrintHeading.href = `${MDN_PRINT_MEDIA_URL}?${mdnLinkParams}`;
+    this.emulationPrintHeading.addEventListener(
       "click",
-      this.#onTogglePrintSimulation,
+      e => this.#onHeadingLinkClick(e),
       baseEventConfig
     );
-    this.colorSchemeLightSimulationButton.addEventListener(
+
+    this.emulationColorSchemeHeading.href = `${MDN_PREFERS_COLOR_SCHEME_URL}?${mdnLinkParams}`;
+    this.emulationColorSchemeHeading.addEventListener(
+      "click",
+      e => this.#onHeadingLinkClick(e),
+      baseEventConfig
+    );
+
+    this.#colorSchemeLightSimulationButton.addEventListener(
       "click",
       this.#onToggleLightColorSchemeSimulation,
       baseEventConfig
     );
-    this.colorSchemeDarkSimulationButton.addEventListener(
+    this.#colorSchemeDarkSimulationButton.addEventListener(
       "click",
       this.#onToggleDarkColorSchemeSimulation,
       baseEventConfig
     );
     const { rfpCSSColorScheme } = this.inspector.walker;
     if (rfpCSSColorScheme) {
-      this.colorSchemeLightSimulationButton.setAttribute("disabled", true);
-      this.colorSchemeDarkSimulationButton.setAttribute("disabled", true);
+      this.#colorSchemeLightSimulationButton.setAttribute("disabled", true);
+      this.#colorSchemeDarkSimulationButton.setAttribute("disabled", true);
+      this.#colorSchemeLightRadio.setAttribute("disabled", true);
+      this.#colorSchemeDarkRadio.setAttribute("disabled", true);
       console.warn("Color scheme simulation is disabled in RFP mode.");
     }
   }
@@ -1077,9 +1143,14 @@ class CssRuleView extends EventEmitter {
       this.#highlighters = null;
     }
 
-    this.colorSchemeLightSimulationButton = null;
-    this.colorSchemeDarkSimulationButton = null;
-    this.printSimulationButton = null;
+    this.#colorSchemeLightSimulationButton = null;
+    this.#colorSchemeDarkSimulationButton = null;
+    this.emulationPanel = null;
+    this.emulationToggle = null;
+    this.#printSimulationCheckbox = null;
+    this.#colorSchemeLightRadio = null;
+    this.#colorSchemeDarkRadio = null;
+    this.#colorSchemeNoneRadio = null;
 
     this.tooltips.destroy();
 
@@ -1599,25 +1670,19 @@ class CssRuleView extends EventEmitter {
 
     this.#containers.set(containerId, { header, container });
 
-    const isPseudo = containerId == PSEUDO_ELEMENTS_CONTAINER_ID;
     const { signal } = this.#abortController;
     toggleButton.addEventListener(
       "click",
-      this.#toggleContainerVisibility.bind(
-        this,
-        containerId,
-        isPseudo,
-        !this.showPseudoElements
-      ),
+      this.#toggleContainerVisibility.bind(this, containerId),
       { signal }
     );
 
-    if (isPseudo) {
-      this.#toggleContainerVisibility(
-        containerId,
-        isPseudo,
-        this.showPseudoElements
-      );
+    
+    
+    
+    const isPseudo = containerId == PSEUDO_ELEMENTS_CONTAINER_ID;
+    if (isPseudo && !this.showPseudoElements) {
+      this.#toggleContainerVisibility(containerId);
     }
 
     return { header, container };
@@ -1665,30 +1730,24 @@ class CssRuleView extends EventEmitter {
 
 
 
-
-
-
-
-  #toggleContainerVisibility(containerId, isPseudo, showPseudo) {
+  #toggleContainerVisibility(containerId) {
     const { header, container } = this.#containers.get(containerId);
     const toggleButton = header.querySelector("button");
-    let isOpen = toggleButton.getAttribute("aria-expanded") === "true";
+    const shouldExpand = toggleButton.getAttribute("aria-expanded") !== "true";
 
+    
+    const isPseudo = containerId == PSEUDO_ELEMENTS_CONTAINER_ID;
     if (isPseudo) {
-      this.#showPseudoElements = !!showPseudo;
-
+      this.#showPseudoElements = shouldExpand;
       Services.prefs.setBoolPref(
         "devtools.inspector.show_pseudo_elements",
-        this.showPseudoElements
+        this.#showPseudoElements
       );
-
-      container.hidden = !this.showPseudoElements;
-      isOpen = !this.showPseudoElements;
-    } else {
-      container.hidden = !container.hidden;
     }
 
-    toggleButton.setAttribute("aria-expanded", !isOpen);
+    container.hidden = !shouldExpand;
+
+    toggleButton.setAttribute("aria-expanded", shouldExpand);
   }
 
   
@@ -2323,6 +2382,113 @@ class CssRuleView extends EventEmitter {
     this.classPanel.hidden = true;
   }
 
+  #onToggleEmulationPanel = () => {
+    if (this.emulationPanel.hidden) {
+      this.showEmulationPanel();
+    } else {
+      this.hideEmulationPanel();
+    }
+  };
+
+  showEmulationPanel() {
+    this.hidePseudoClassPanel();
+    this.hideClassPanel();
+
+    this.emulationToggle.setAttribute("aria-pressed", "true");
+    this.emulationPanel.inert = false;
+    this.emulationPanel.hidden = false;
+  }
+
+  hideEmulationPanel() {
+    this.emulationToggle.setAttribute("aria-pressed", "false");
+    this.emulationPanel.inert = true;
+    this.emulationPanel.hidden = true;
+  }
+
+  
+
+
+
+
+
+
+  #onEmulationPanelChange = event => {
+    const { target } = event;
+    if (target.id === "print-simulation-enabled") {
+      this.#updatePrintSimulation(this.#printSimulationCheckbox.checked);
+    } else if (target.name === "color-scheme-simulation") {
+      this.#updateColorSchemeSimulation(target.value || null);
+    }
+  };
+
+  
+
+
+
+
+  async #updatePrintSimulation(enabled) {
+    setPrintSimulationEnabled(enabled);
+
+    await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
+      {
+        printSimulationEnabled: enabled,
+      }
+    );
+
+    this.refreshPanel();
+  }
+
+  
+
+
+
+
+  async #updateColorSchemeSimulation(colorScheme) {
+    setColorSchemeSimulation(colorScheme);
+
+    this.#syncColorSchemeUI(colorScheme);
+
+    await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
+      {
+        colorSchemeSimulation: colorScheme,
+      }
+    );
+
+    this.refreshPanel();
+  }
+
+  
+
+
+
+
+  #syncColorSchemeUI(colorScheme) {
+    this.#colorSchemeLightRadio.checked = colorScheme === "light";
+    this.#colorSchemeDarkRadio.checked = colorScheme === "dark";
+    this.#colorSchemeNoneRadio.checked = colorScheme === null;
+
+    this.#colorSchemeLightSimulationButton.setAttribute(
+      "aria-pressed",
+      colorScheme === "light"
+    );
+    this.#colorSchemeDarkSimulationButton.setAttribute(
+      "aria-pressed",
+      colorScheme === "dark"
+    );
+  }
+
+  #onHeadingLinkClick = e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const isMacOS = Services.appinfo.OS === "Darwin";
+
+    openDocLink(e.target.href, {
+      relatedToCurrent: true,
+      inBackground: isMacOS ? e.metaKey : e.ctrlKey,
+    });
+  };
+
   
 
 
@@ -2351,59 +2517,30 @@ class CssRuleView extends EventEmitter {
     }
   }
 
+  
+
+
   #onToggleLightColorSchemeSimulation = async () => {
-    const shouldSimulateLightScheme =
-      this.colorSchemeLightSimulationButton.getAttribute("aria-pressed") !==
-      "true";
+    const currentColorScheme =
+      this.#colorSchemeLightSimulationButton.getAttribute("aria-pressed") ===
+      "true"
+        ? null
+        : "light";
 
-    this.colorSchemeLightSimulationButton.setAttribute(
-      "aria-pressed",
-      shouldSimulateLightScheme
-    );
-
-    this.colorSchemeDarkSimulationButton.setAttribute("aria-pressed", "false");
-
-    await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
-      {
-        colorSchemeSimulation: shouldSimulateLightScheme ? "light" : null,
-      }
-    );
-    
-    this.refreshPanel();
+    await this.#updateColorSchemeSimulation(currentColorScheme);
   };
+
+  
+
 
   #onToggleDarkColorSchemeSimulation = async () => {
-    const shouldSimulateDarkScheme =
-      this.colorSchemeDarkSimulationButton.getAttribute("aria-pressed") !==
-      "true";
+    const currentColorScheme =
+      this.#colorSchemeDarkSimulationButton.getAttribute("aria-pressed") ===
+      "true"
+        ? null
+        : "dark";
 
-    this.colorSchemeDarkSimulationButton.setAttribute(
-      "aria-pressed",
-      shouldSimulateDarkScheme
-    );
-
-    this.colorSchemeLightSimulationButton.setAttribute("aria-pressed", "false");
-
-    await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
-      {
-        colorSchemeSimulation: shouldSimulateDarkScheme ? "dark" : null,
-      }
-    );
-    
-    this.refreshPanel();
-  };
-
-  #onTogglePrintSimulation = async () => {
-    const enabled =
-      this.printSimulationButton.getAttribute("aria-pressed") !== "true";
-    this.printSimulationButton.setAttribute("aria-pressed", enabled);
-    await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
-      {
-        printSimulationEnabled: enabled,
-      }
-    );
-    
-    this.refreshPanel();
+    await this.#updateColorSchemeSimulation(currentColorScheme);
   };
 
   
@@ -2624,7 +2761,7 @@ class CssRuleView extends EventEmitter {
       
       
       scrollBehavior = "instant";
-      this.#toggleContainerVisibility(PSEUDO_ELEMENTS_CONTAINER_ID, true, true);
+      this.#toggleContainerVisibility(PSEUDO_ELEMENTS_CONTAINER_ID);
     }
 
     const textProp = matchingTextPropComputed.textProp;

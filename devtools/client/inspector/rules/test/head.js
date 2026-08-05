@@ -1204,6 +1204,68 @@ function getPseudoClassCheckbox(view, pseudo) {
 
 
 
+async function openEmulationPanel(view) {
+  info("Check that the toggle button exists");
+  const button = view.inspector.panelDoc.getElementById(
+    "emulation-panel-toggle"
+  );
+  ok(button, "The emulation panel toggle button exists");
+  is(view.emulationToggle, button, "The rule-view refers to the right element");
+  is(
+    view.inspector.panelDoc.getElementById(
+      button.getAttribute("aria-controls")
+    ),
+    view.emulationPanel,
+    "The emulation panel toggle button has valid aria-controls attribute"
+  );
+
+  await assertEmulationPanelClosed(view);
+
+  info("Toggle the emulation panel open");
+  view.emulationToggle.click();
+  await assertEmulationPanelOpened(view);
+}
+
+
+
+
+
+
+
+async function assertEmulationPanelOpened(view) {
+  info("Check the opened state of the emulation panel");
+  ok(!view.emulationPanel.inert, "Emulation panel is not inert");
+  ok(!view.emulationPanel.hidden, "Emulation panel opened");
+  is(
+    view.emulationToggle.getAttribute("aria-pressed"),
+    "true",
+    "The toggle button is pressed"
+  );
+}
+
+
+
+
+
+
+
+async function assertEmulationPanelClosed(view) {
+  info("Check the closed state of the emulation panel");
+  ok(view.emulationPanel.inert, "Emulation panel is inert");
+  ok(view.emulationPanel.hidden, "Emulation panel hidden");
+  is(
+    view.emulationToggle.getAttribute("aria-pressed"),
+    "false",
+    "The toggle button is not pressed"
+  );
+}
+
+
+
+
+
+
+
 
 
 
@@ -1605,6 +1667,18 @@ function checkRuleViewContent(view, expectedElements) {
         `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.dirty ? "dirty" : "not dirty"}`
       );
     });
+  });
+}
+
+
+
+
+
+
+function getCurrentPrefersDark() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const { matches } = content.matchMedia("(prefers-color-scheme: dark)");
+    return matches;
   });
 }
 
