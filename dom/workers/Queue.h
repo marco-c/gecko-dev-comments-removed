@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workerinternal_Queue_h
 #define mozilla_dom_workerinternal_Queue_h
 
@@ -44,6 +42,16 @@ struct StorageWithTArray {
 
     aEntry = aStorage.PopLastElement();
     return true;
+  }
+
+  template <typename Pred>
+  static bool AnyElement(const StorageType& aStorage, Pred&& aPred) {
+    for (const T& entry : aStorage) {
+      if (aPred(entry)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static void Clear(StorageType& aStorage) { aStorage.Clear(); }
@@ -126,6 +134,15 @@ class Queue : public LockingPolicy {
       mBack = tmp;
     }
     return StoragePolicy::Pop(*mFront, aEntry);
+  }
+
+  
+  
+  template <typename Pred>
+  bool AnyElement(Pred&& aPred) {
+    AutoLock lock(*this);
+    return StoragePolicy::AnyElement(*mFront, aPred) ||
+           StoragePolicy::AnyElement(*mBack, aPred);
   }
 
   void Clear() {

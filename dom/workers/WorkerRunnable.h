@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_workerrunnable_h_
 #define mozilla_dom_workers_workerrunnable_h_
 
@@ -75,6 +73,16 @@ class WorkerRunnable : public nsIRunnable
   
   
   virtual bool IsDebuggerRunnable() const { return false; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool IsIPCMessageDebuggerRunnable() const { return false; }
 
   static WorkerRunnable* FromRunnable(nsIRunnable* aRunnable);
 
@@ -268,13 +276,25 @@ class WorkerThreadRunnable : public WorkerRunnable {
 
 class WorkerDebuggerRunnable : public WorkerThreadRunnable {
  protected:
-  explicit WorkerDebuggerRunnable(const char* aName = "WorkerDebuggerRunnable")
-      : WorkerThreadRunnable(aName) {}
+  
+  
+  
+  
+  
+  explicit WorkerDebuggerRunnable(const char* aName = "WorkerDebuggerRunnable",
+                                  bool aIsIPCMessage = false)
+      : WorkerThreadRunnable(aName), mIsIPCMessage(aIsIPCMessage) {}
 
   virtual ~WorkerDebuggerRunnable() = default;
 
  private:
+  const bool mIsIPCMessage;
+
   virtual bool IsDebuggerRunnable() const override { return true; }
+
+  virtual bool IsIPCMessageDebuggerRunnable() const override {
+    return mIsIPCMessage;
+  }
 
   virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override {
     AssertIsOnMainThread();

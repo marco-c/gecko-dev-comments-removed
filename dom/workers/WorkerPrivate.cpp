@@ -1962,9 +1962,16 @@ void WorkerPrivate::EnableRemoteDebugger() {
   
   {
     MutexAutoLock lock(mMutex);
+    
+    
+    
+    
+    
+    mProcessDebuggerIPCHandshake = true;
     if (!mRemoteDebuggerRegistered) {
       mDebuggerBindingCondVar.Wait();
     }
+    mProcessDebuggerIPCHandshake = false;
     
     
     (void)NS_WARN_IF(!mRemoteDebuggerRegistered);
@@ -1983,9 +1990,15 @@ void WorkerPrivate::DisableRemoteDebugger() {
 
   if (r->Dispatch(this)) {
     MutexAutoLock lock(mMutex);
+    
+    
+    
+    
+    mProcessDebuggerIPCHandshake = true;
     if (mRemoteDebuggerRegistered) {
       mDebuggerBindingCondVar.Wait();
     }
+    mProcessDebuggerIPCHandshake = false;
   }
 }
 
@@ -2894,6 +2907,7 @@ WorkerPrivate::WorkerPrivate(
       mChildEp(std::move(aChildEp)),
       mRemoteDebuggerRegistered(false),
       mRemoteDebuggerReady(true),
+      mProcessDebuggerIPCHandshake(false),
       mIsQueued(false),
       
       
@@ -4921,6 +4935,60 @@ void WorkerPrivate::ProcessSingleDebuggerRunnable() {
   ccjs->PerformDebuggerMicroTaskCheckpoint();
 }
 
+bool WorkerPrivate::HasPendingDebuggerIPCHandshakeRunnable() {
+  if (!mProcessDebuggerIPCHandshake || !UseRemoteDebugger()) {
+    return false;
+  }
+  return mDebuggerQueue.AnyElement([](WorkerRunnable* aRunnable) {
+    return aRunnable && aRunnable->IsIPCMessageDebuggerRunnable();
+  });
+}
+
+WorkerRunnable* WorkerPrivate::TakeFirstDebuggerIPCHandshakeRunnable() {
+  
+  
+  
+  
+  WorkerRunnable* ipcRunnable = nullptr;
+  AutoTArray<WorkerRunnable*, 8> others;
+  WorkerRunnable* runnable = nullptr;
+  while (mDebuggerQueue.Pop(runnable)) {
+    if (!ipcRunnable && runnable->IsIPCMessageDebuggerRunnable()) {
+      ipcRunnable = runnable;
+    } else {
+      others.AppendElement(runnable);
+    }
+  }
+  for (WorkerRunnable* other : others) {
+    mDebuggerQueue.Push(other);
+  }
+  return ipcRunnable;
+}
+
+void WorkerPrivate::ProcessNextDebuggerIPCHandshakeRunnable() {
+  AssertIsOnWorkerThread();
+
+  WorkerRunnable* runnable = nullptr;
+  
+  
+  nsCOMPtr<nsITimer> timer;
+  {
+    MutexAutoLock lock(mMutex);
+    runnable = TakeFirstDebuggerIPCHandshakeRunnable();
+    if (!runnable) {
+      return;
+    }
+    mDebuggerInterruptTimer.swap(timer);
+  }
+  timer = nullptr;
+
+  {
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
+    static_cast<nsIRunnable*>(runnable)->Run();
+  }
+  runnable->Release();
+}
+
 void WorkerPrivate::ClearDebuggerEventQueue() {
   bool debuggerRunnablesPending = false;
   {
@@ -5515,6 +5583,10 @@ nsresult WorkerPrivate::RunCurrentSyncLoop() {
   {
     while (!loopInfo->mCompleted) {
       bool normalRunnablesPending = false;
+      
+      
+      
+      bool debuggerHandshakePending = false;
 
       
       if (!NS_HasPendingEvents(thread)) {
@@ -5527,7 +5599,9 @@ nsresult WorkerPrivate::RunCurrentSyncLoop() {
 
         for (;;) {
           while (mControlQueue.IsEmpty() && !normalRunnablesPending &&
-                 !(normalRunnablesPending = NS_HasPendingEvents(thread))) {
+                 !(normalRunnablesPending = NS_HasPendingEvents(thread)) &&
+                 !(debuggerHandshakePending =
+                       HasPendingDebuggerIPCHandshakeRunnable())) {
             WaitForWorkerEvents();
           }
 
@@ -5550,10 +5624,22 @@ nsresult WorkerPrivate::RunCurrentSyncLoop() {
           
           MOZ_ASSERT(!loopInfo->mCompleted);
 
-          if (normalRunnablesPending) {
+          if (normalRunnablesPending || debuggerHandshakePending) {
             break;
           }
         }
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (debuggerHandshakePending) {
+        ProcessNextDebuggerIPCHandshakeRunnable();
       }
 
       if (normalRunnablesPending) {

@@ -587,6 +587,30 @@ class WorkerPrivate final
   MOZ_CAN_RUN_SCRIPT void ProcessSingleDebuggerRunnable();
   void ClearDebuggerEventQueue();
 
+  
+  
+  
+  
+  
+  
+  bool HasPendingDebuggerIPCHandshakeRunnable() MOZ_REQUIRES(mMutex);
+
+  
+  
+  
+  
+  WorkerRunnable* TakeFirstDebuggerIPCHandshakeRunnable() MOZ_REQUIRES(mMutex);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void ProcessNextDebuggerIPCHandshakeRunnable();
+
   void OnProcessNextEvent();
 
   void AfterProcessNextEvent();
@@ -1571,6 +1595,16 @@ class WorkerPrivate final
   mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> mDebuggerParentEp;
   bool mRemoteDebuggerRegistered MOZ_GUARDED_BY(mMutex);
   bool mRemoteDebuggerReady MOZ_GUARDED_BY(mMutex);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mProcessDebuggerIPCHandshake MOZ_GUARDED_BY(mMutex);
   bool mIsQueued;  
   
   const bool mUseRemoteDebugger;
