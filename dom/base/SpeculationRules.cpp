@@ -58,6 +58,7 @@ SpeculationRules::SpeculationRules(Document* aDocument)
 
 void SpeculationRules::RegisterFromScript(
     nsIScriptElement* aScriptElement, UniquePtr<SpeculationRuleSet> aRuleSet) {
+  aRuleSet->SetUseCounters(*mDocument);
   
   mRuleSetsFromScript.InsertOrUpdate(aScriptElement, std::move(aRuleSet));
   
