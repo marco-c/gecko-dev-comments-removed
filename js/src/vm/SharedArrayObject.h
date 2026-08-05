@@ -258,15 +258,17 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
  public:
   
   
-  static const uint8_t RAWBUF_SLOT = 0;
+  static constexpr auto RAWBUF_SLOT =
+      TypedSlot<ValueType::Double, ValueType::Undefined>(0);
 
   
   
   
   
-  static const uint8_t LENGTH_SLOT = 1;
+  static constexpr auto LENGTH_SLOT =
+      TypedSlot<ValueType::Double, ValueType::Undefined>(1);
 
-  static_assert(LENGTH_SLOT == ArrayBufferObject::BYTE_LENGTH_SLOT,
+  static_assert(LENGTH_SLOT.index() == ArrayBufferObject::BYTE_LENGTH_SLOT,
                 "JIT code assumes the same slot is used for the length");
 
   static const uint8_t RESERVED_SLOTS = 2;
@@ -350,8 +352,8 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
  private:
   bool isInitialized() const {
-    bool initialized = getFixedSlot(RAWBUF_SLOT).isDouble();
-    MOZ_ASSERT_IF(initialized, getFixedSlot(LENGTH_SLOT).isDouble());
+    bool initialized = getFixedSlotTyped(RAWBUF_SLOT).isDouble();
+    MOZ_ASSERT_IF(initialized, getFixedSlotTyped(LENGTH_SLOT).isDouble());
     return initialized;
   }
 
@@ -359,7 +361,7 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   
   
   size_t byteLengthOrMaxByteLength() const {
-    return size_t(getFixedSlot(LENGTH_SLOT).toPrivate());
+    return size_t(getFixedSlotTyped(LENGTH_SLOT).toPrivate());
   }
 
   size_t byteLength() const {
@@ -386,7 +388,7 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
   }
 
   static constexpr int rawBufferOffset() {
-    return NativeObject::getFixedSlotOffset(RAWBUF_SLOT);
+    return NativeObject::getFixedSlotOffsetTyped(RAWBUF_SLOT);
   }
 
   
