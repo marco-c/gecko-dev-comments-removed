@@ -90,7 +90,16 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    if (frame->HasOverflowAreas()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow &&
+        frame->HasOverflowAreas()) {
       
       
       nscoord xmost = kidReflowOutput.ScrollableOverflow().XMost();
