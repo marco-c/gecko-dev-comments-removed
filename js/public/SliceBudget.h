@@ -16,7 +16,10 @@
 
 namespace js {
 class GCMarker;
-};
+namespace gcstats {
+struct Statistics;
+}  
+}  
 
 namespace JS {
 
@@ -76,6 +79,7 @@ class JS_PUBLIC_API SliceBudget {
   
   
   bool interrupted = false;
+  friend struct js::gcstats::Statistics;
 
  public:
   

@@ -1250,7 +1250,7 @@ void Statistics::beginSlice(const ZoneGCStats& zoneStats, JS::GCOptions options,
   }
 }
 
-void Statistics::endSlice() {
+void Statistics::endSlice(const SliceBudget& budget) {
   MOZ_ASSERT(phaseStack.empty() ||
              (phaseStack.length() == 1 && phaseStack[0] == Phase::MUTATOR));
 
@@ -1259,6 +1259,9 @@ void Statistics::endSlice() {
     slice.end = TimeStamp::Now();
     slice.endFaults = GetPageFaultCount();
     slice.finalState = gc->state();
+
+    
+    slice.budget.interrupted = budget.interrupted;
 
     sendSliceTelemetry(slice);
 
