@@ -2,8 +2,6 @@
 
 
 
-#include "vm/GeckoProfiler-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Sprintf.h"
 
@@ -22,6 +20,7 @@
 
 #include "gc/Marking-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
+#include "vm/GeckoProfiler-inl.h"
 
 using namespace js;
 using mozilla::Utf8Unit;
@@ -679,6 +678,10 @@ JS_PUBLIC_API void js::SetContextProfilingStack(
 
 JS_PUBLIC_API void js::EnableContextProfilingStack(JSContext* cx,
                                                    bool enabled) {
+  
+  
+  
+  AutoSuppressProfilerSampling suppressSampling(cx);
   cx->geckoProfiler().enable(enabled);
   cx->runtime()->geckoProfiler().enable(enabled);
 }
