@@ -103,7 +103,8 @@ const appMenuSendTabClient = {
 
 
 
-async function openDeviceRecentTabsFromAppMenu() {
+
+async function renderDeviceSectionFromAppMenu() {
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
@@ -112,21 +113,10 @@ async function openDeviceRecentTabsFromAppMenu() {
   await openFxaPanelFromAppMenu();
 
   let panelview = PanelMultiView.getViewNode(document, "PanelUI-fxa");
-  let devicesListContainer = PanelMultiView.getViewNode(
-    document,
-    "PanelUI-fxa-menu-devices-list"
-  );
-  let subviewShown = BrowserTestUtils.waitForEvent(
-    PanelMultiView.getViewNode(document, "PanelUI-fxa-device-recent-tabs"),
-    "ViewShown"
-  );
-  panelview.syncedTabsPanelList._showDeviceRecentTabs(
+  panelview.syncedTabsPanelList._appendDeviceSection(
     appMenuSendTabClient,
-    fxaDevices[0],
-    devicesListContainer,
-    new PointerEvent("click")
+    fxaDevices[0]
   );
-  await subviewShown;
 }
 
 add_task(async function test_sendtab_exposed_app_menu() {
@@ -141,7 +131,7 @@ add_task(async function test_sendtab_exposed_app_menu() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
-  await openDeviceRecentTabsFromAppMenu();
+  await renderDeviceSectionFromAppMenu();
 
   await Services.fog.testFlushAllChildren();
   let appMenuExposed = Glean.fxaAppMenu.sendTabExposed.testGetValue();
@@ -172,7 +162,7 @@ add_task(async function test_sendtab_opened_app_menu() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
-  await openDeviceRecentTabsFromAppMenu();
+  await renderDeviceSectionFromAppMenu();
 
   await Services.fog.testFlushAllChildren();
   let appMenuOpened = Glean.fxaAppMenu.sendTabOpened.testGetValue();
@@ -204,13 +194,16 @@ add_task(async function test_sendtab_click_device_app_menu() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
-  await openDeviceRecentTabsFromAppMenu();
+  await renderDeviceSectionFromAppMenu();
 
-  let sendPageBtn = PanelMultiView.getViewNode(
+  let devicesList = PanelMultiView.getViewNode(
     document,
-    "PanelUI-fxa-device-send-current-page"
+    "PanelUI-fxa-menu-devices-list"
   );
-  ok(!sendPageBtn.hidden, "Send Current Page button is visible");
+  let sendPageBtn = devicesList.querySelector(
+    '[data-l10n-id="fxa-menu-device-send-current-page"]'
+  );
+  ok(sendPageBtn, "Send Current Page button rendered in the device section");
   sendPageBtn.click();
 
   await TestUtils.waitForCondition(async () => {

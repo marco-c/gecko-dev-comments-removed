@@ -540,6 +540,14 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       this.devicesList.lastChild.remove();
     }
 
+    
+    
+    
+    
+    let inAppMenu = document
+      .getElementById("appMenu-popup")
+      ?.contains(this.devicesList);
+
     for (let client of clients) {
       let device =
         fxAccounts.device.recentDeviceList &&
@@ -547,7 +555,16 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
           d =>
             d.id === Weave.Service.clientsEngine.getClientFxaDeviceId(client.id)
         );
-      this.devicesList.appendChild(this._createDeviceEntry(client, device));
+      if (inAppMenu) {
+        
+        
+        this.devicesList.appendChild(
+          document.createXULElement("toolbarseparator")
+        );
+        this._appendDeviceSection(client, device);
+      } else {
+        this.devicesList.appendChild(this._createDeviceEntry(client, device));
+      }
     }
 
     this.devicesList.hidden = false;
@@ -591,19 +608,17 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     return btn;
   }
 
-  _showDeviceRecentTabs(client, device, anchor, event) {
-    let panelNode = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-device-recent-tabs"
-    );
+  _getRecentTabs(client) {
+    return client.tabs
+      .filter(t => !t.inactive)
+      .slice(0, FxAMenuDeviceList.MAX_RECENT_TABS);
+  }
 
-    let tabsList = panelNode.querySelector(
-      "#PanelUI-fxa-device-recent-tabs-list"
-    );
-    tabsList.replaceChildren();
+  
 
-    let activeTabs = client.tabs.filter(t => !t.inactive);
-    let recentTabs = activeTabs.slice(0, FxAMenuDeviceList.MAX_RECENT_TABS);
+
+
+  _populateRecentTabs(tabsList, recentTabs, device) {
     let canCloseTabs =
       device && fxAccounts.commands.closeTab.isDeviceCompatible(device);
 
@@ -623,6 +638,86 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
         tabItem.append(closeBtn, undoBtn);
       }
     }
+  }
+
+  _configureViewAllTabsButton(viewAllBtn, client) {
+    let [viewAllMessage] = gSync.fluentStrings.formatMessagesSync([
+      {
+        id: "fxa-menu-device-view-all-synced-tabs",
+        args: { tabCount: client.tabs.length },
+      },
+    ]);
+    viewAllBtn.setAttribute(
+      "label",
+      viewAllMessage.attributes?.find(attr => attr.name === "label")?.value
+    );
+    viewAllBtn.onclick = () => {
+      CustomizableUI.hidePanelForNode(viewAllBtn);
+      SidebarController.show("viewTabsSidebar");
+    };
+  }
+
+  _canSendTabToDevice(device) {
+    return (
+      device &&
+      fxAccounts.commands.sendTab.isDeviceCompatible(device) &&
+      !!BrowserUtils.getShareableURL(gBrowser.selectedBrowser.currentURI)
+    );
+  }
+
+  
+
+
+
+
+
+  _configureSendPageButton(sendPageBtn, device, anchor) {
+    const targets = gSync.getSendTabTargets();
+    gSync.emitFxaToolbarTelemetry("send_tab_opened", anchor, {
+      device_count: String(targets.length),
+    });
+    gSync.emitFxaToolbarTelemetry("send_tab_exposed", anchor, {
+      device_count: String(targets.length),
+    });
+    sendPageBtn.onclick = () => {
+      gSync.emitFxaToolbarTelemetry("send_tab", anchor, {
+        device_count: String(targets.length),
+        action: "device",
+      });
+      CustomizableUI.hidePanelForNode(sendPageBtn);
+      let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(gBrowser);
+      let tabsToSend = gBrowser.selectedTab.multiselected
+        ? gBrowser.selectedTabs.map(t => ({
+            url: t.linkedBrowser.currentURI.spec,
+            title: t.linkedBrowser.contentTitle,
+            private: isPrivate,
+          }))
+        : [
+            {
+              url: BrowserUtils.getShareableURL(
+                gBrowser.selectedBrowser.currentURI
+              ).spec,
+              title: gBrowser.selectedBrowser.contentTitle,
+              private: isPrivate,
+            },
+          ];
+      gSync.sendTabsAndConfirm(tabsToSend, [device]);
+    };
+  }
+
+  _showDeviceRecentTabs(client, device, anchor, event) {
+    let panelNode = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-device-recent-tabs"
+    );
+
+    let tabsList = panelNode.querySelector(
+      "#PanelUI-fxa-device-recent-tabs-list"
+    );
+    tabsList.replaceChildren();
+
+    let recentTabs = this._getRecentTabs(client);
+    this._populateRecentTabs(tabsList, recentTabs, device);
 
     let hasTabs = !!recentTabs.length;
     let noTabsLabel = panelNode.querySelector(
@@ -639,63 +734,74 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     noTabsLabel.hidden = hasTabs;
     footerSeparator.hidden = !hasTabs;
     viewAllBtn.hidden = !hasTabs;
-
-    document.l10n.setAttributes(
-      viewAllBtn,
-      "fxa-menu-device-view-all-synced-tabs",
-      { tabCount: client.tabs.length }
-    );
-    viewAllBtn.onclick = () => {
-      CustomizableUI.hidePanelForNode(viewAllBtn);
-      SidebarController.show("viewTabsSidebar");
-    };
+    this._configureViewAllTabsButton(viewAllBtn, client);
 
     let sendPageBtn = panelNode.querySelector(
       "#PanelUI-fxa-device-send-current-page"
     );
-    let canSendTab =
-      device &&
-      fxAccounts.commands.sendTab.isDeviceCompatible(device) &&
-      !!BrowserUtils.getShareableURL(gBrowser.selectedBrowser.currentURI);
+    let canSendTab = this._canSendTabToDevice(device);
     sendPageBtn.hidden = !canSendTab;
     if (canSendTab) {
-      const targets = gSync.getSendTabTargets();
-      
-      
-      
-      gSync.emitFxaToolbarTelemetry("send_tab_opened", anchor, {
-        device_count: String(targets.length),
-      });
-      gSync.emitFxaToolbarTelemetry("send_tab_exposed", anchor, {
-        device_count: String(targets.length),
-      });
-      sendPageBtn.onclick = () => {
-        gSync.emitFxaToolbarTelemetry("send_tab", anchor, {
-          device_count: String(targets.length),
-          action: "device",
-        });
-        CustomizableUI.hidePanelForNode(sendPageBtn);
-        let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(gBrowser);
-        let tabsToSend = gBrowser.selectedTab.multiselected
-          ? gBrowser.selectedTabs.map(t => ({
-              url: t.linkedBrowser.currentURI.spec,
-              title: t.linkedBrowser.contentTitle,
-              private: isPrivate,
-            }))
-          : [
-              {
-                url: BrowserUtils.getShareableURL(
-                  gBrowser.selectedBrowser.currentURI
-                ).spec,
-                title: gBrowser.selectedBrowser.contentTitle,
-                private: isPrivate,
-              },
-            ];
-        gSync.sendTabsAndConfirm(tabsToSend, [device]);
-      };
+      this._configureSendPageButton(sendPageBtn, device, anchor);
     }
 
     PanelUI.showSubView("PanelUI-fxa-device-recent-tabs", anchor, event);
+  }
+
+  
+
+
+
+
+  _appendDeviceSection(client, device) {
+    let list = this.devicesList;
+
+    let header = document.createXULElement("label");
+    header.classList.add("subview-subheader", "PanelUI-fxa-menu-device-header");
+    header.setAttribute("itemtype", "client");
+    header.setAttribute(
+      "tooltiptext",
+      gSync.fluentStrings.formatValueSync("appmenu-fxa-last-sync", {
+        time: gSync.formatLastSyncDate(new Date(client.lastModified)),
+      })
+    );
+    header.textContent = client.name;
+    list.appendChild(header);
+
+    let recentTabs = this._getRecentTabs(client);
+    if (recentTabs.length) {
+      let tabsList = document.createXULElement("vbox");
+      tabsList.classList.add("PanelUI-fxa-menu-device-tabs-list");
+      this._populateRecentTabs(tabsList, recentTabs, device);
+      list.appendChild(tabsList);
+
+      let viewAllBtn = document.createXULElement("toolbarbutton");
+      viewAllBtn.classList.add("subviewbutton", "panel-subview-footer-button");
+      viewAllBtn.setAttribute("closemenu", "none");
+      this._configureViewAllTabsButton(viewAllBtn, client);
+      list.appendChild(viewAllBtn);
+    } else {
+      let noTabsLabel = document.createXULElement("label");
+      noTabsLabel.classList.add("PanelUI-remotetabs-notabsforclient-label");
+      noTabsLabel.setAttribute(
+        "value",
+        gSync.fluentStrings.formatValueSync("appmenu-remote-tabs-notabs")
+      );
+      list.appendChild(noTabsLabel);
+    }
+
+    if (this._canSendTabToDevice(device)) {
+      let sendPageBtn = document.createXULElement("toolbarbutton");
+      sendPageBtn.classList.add("subviewbutton", "panel-subview-footer-button");
+      sendPageBtn.setAttribute(
+        "data-l10n-id",
+        "fxa-menu-device-send-current-page"
+      );
+      list.appendChild(sendPageBtn);
+      
+      
+      this._configureSendPageButton(sendPageBtn, device, sendPageBtn);
+    }
   }
 
   
