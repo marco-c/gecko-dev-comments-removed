@@ -44,6 +44,11 @@ public interface VideoCapturer {
   
 
 
+  boolean isCapturing();
+
+  
+
+
   void dispose();
 
   

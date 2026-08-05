@@ -217,6 +217,12 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     return true;
   }
 
+  @Override
+  public boolean isCapturing() {
+    
+    return virtualDisplay != null;
+  }
+
   public long getNumCapturedFrames() {
     return numCapturedFrames;
   }
