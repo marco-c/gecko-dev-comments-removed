@@ -7902,6 +7902,8 @@ MDefinition* MTimeClip::foldsTo(TempAllocator& alloc) {
   return MConstant::NewDouble(alloc, JS::CanonicalizeNaN(clipped.toDouble()));
 }
 
+JSOp MBinaryCache::jsop() const { return JSOp(*resumePoint()->pc()); }
+
 
 
 
