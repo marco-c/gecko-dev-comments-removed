@@ -22,6 +22,14 @@ namespace mozilla {
 
 
 
+enum class JsepParseTimeExceptionType {
+  None,
+  Operation,
+  InvalidAccess,
+};
+
+
+
 class JsepSessionCopyableStuff {
  protected:
   struct JsepDtlsFingerprint {
@@ -208,17 +216,17 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   nsresult SetupIds();
   void SetState(JsepSignalingState state);
   
-  JsepSession::Result ParseSdp(const std::string& sdp, UniquePtr<Sdp>* parsedp);
+  JsepParseTimeExceptionType ParseSdp(const std::string& sdp,
+                                      UniquePtr<Sdp>* parsedp);
   nsresult SetLocalDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetLocalDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
   nsresult SetRemoteDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetRemoteDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
-  JsepSession::Result ValidateLocalDescription(const Sdp& description,
-                                               JsepSdpType type);
-  JsepSession::Result ValidateRemoteDescription(const Sdp& description);
-  JsepSession::Result ValidateOffer(const Sdp& offer);
-  JsepSession::Result ValidateAnswer(const Sdp& offer, const Sdp& answer);
-  JsepSession::Result CheckRtcpMux(const Sdp& description);
+  nsresult ValidateLocalDescription(const Sdp& description, JsepSdpType type);
+  nsresult ValidateRemoteDescription(const Sdp& description);
+  nsresult ValidateOffer(const Sdp& offer);
+  nsresult ValidateAnswer(const Sdp& offer, const Sdp& answer);
+  nsresult CheckRtcpMux(const Sdp& description);
   nsresult UpdateTransceiversFromRemoteDescription(const Sdp& remote);
   Maybe<JsepTransceiver> GetTransceiverForLevel(size_t level) const;
   Maybe<JsepTransceiver> GetTransceiverForMid(const std::string& mid) const;
