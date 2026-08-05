@@ -148,13 +148,6 @@ class TrustPanel {
   #trackerCountPromise = null;
   #isFirstVisit = false;
   
-  
-  #blockersChecked = false;
-  
-  #toolbarTrackerCountUpdateId = 0;
-  
-  #sameSiteNavigation = false;
-  
 
 
 
@@ -273,8 +266,7 @@ class TrustPanel {
     
     this.anyDetected = false;
     this.#lastEvent = event;
-    
-    
+    this.#trackerCount = null;
     this.#trackerCountPromise = null;
 
     
@@ -399,103 +391,6 @@ class TrustPanel {
     await hidden;
   }
 
-  
-
-
-
-
-
-
-  #isWebPage() {
-    return (
-      !!this.#uri && (this.#uri.schemeIs("http") || this.#uri.schemeIs("https"))
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-  #isSameSite(a, b) {
-    try {
-      return (
-        !!a &&
-        !!b &&
-        Services.eTLD.getBaseDomain(a) === Services.eTLD.getBaseDomain(b)
-      );
-    } catch (ex) {
-      return false;
-    }
-  }
-
-  
-
-
-
-
-  resetIconForNavigation(targetURI) {
-    if (!this.#enabled) {
-      return;
-    }
-    let sameSite = this.#isSameSite(targetURI, this.#uri);
-    
-    
-    if (targetURI) {
-      this.#sameSiteNavigation = sameSite;
-    }
-    
-    
-    if (sameSite) {
-      return;
-    }
-    this.#blockersChecked = false;
-    if (
-      !UrlbarPrefs.get("trackerCountFeatureGate") ||
-      !UrlbarPrefs.get("trackerCount.enabled")
-    ) {
-      return;
-    }
-    
-    
-    let icon = document.getElementById("trust-icon-container");
-    for (let cls of [...icon.classList]) {
-      icon.classList.remove(cls);
-    }
-    icon.classList.add("scanning");
-  }
-
-  
-
-
-
-
-
-  async onNavigationComplete() {
-    if (!this.#enabled || this.#blockersChecked) {
-      return;
-    }
-    if (
-      !UrlbarPrefs.get("trackerCountFeatureGate") ||
-      !UrlbarPrefs.get("trackerCount.enabled")
-    ) {
-      return;
-    }
-    
-    
-    const uri = this.#uri;
-    await this.#updateToolbarTrackerCount();
-    if (this.#uri !== uri || this.#blockersChecked) {
-      return;
-    }
-    this.#blockersChecked = true;
-    this.#updateUrlbarIcon();
-  }
-
   updateIdentity(state, uri) {
     if (!this.#enabled) {
       return;
@@ -506,9 +401,6 @@ class TrustPanel {
     } catch (ex) {
       this.#uriHasHost = false;
     }
-    
-    this.#sameSiteNavigation = this.#isSameSite(uri, this.#uri);
-
     this.#state = state;
     this.#uri = uri;
 
@@ -518,14 +410,10 @@ class TrustPanel {
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
     this.#breachedStatus = null;
-    if (this.#sameSiteNavigation) {
-      
-      this.#isFirstVisit = false;
-    } else {
-      this.#trackerCount = null;
-      this.#trackerCountPromise = null;
-      this.#isFirstVisit = false;
-    }
+    this.#trackerCount = null;
+    this.#trackerCountPromise = null;
+    this.#isFirstVisit = false;
+    
     
     
     this.#updateUrlbarIcon();
@@ -539,10 +427,7 @@ class TrustPanel {
     
     void this.#checkForBreaches(uri);
 
-    
-    if (!this.#sameSiteNavigation) {
-      this.#firstVisitPromise = this.#markFirstVisit();
-    }
+    this.#firstVisitPromise = this.#markFirstVisit();
     void this.#updateToolbarTrackerCount();
   }
 
@@ -603,31 +488,6 @@ class TrustPanel {
     
     if (this.#trackerCount > 0) {
       targetClasses.add("has-blocked-trackers");
-    }
-
-    
-    
-    if (
-      !this.#blockersChecked &&
-      this.#isWebPage() &&
-      targetClasses.has("secure") &&
-      !targetClasses.has("breached") &&
-      !targetClasses.has("warning") &&
-      UrlbarPrefs.get("trackerCountFeatureGate") &&
-      UrlbarPrefs.get("trackerCount.enabled")
-    ) {
-      targetClasses = new Set(["scanning"]);
-    }
-
-    
-    
-    if (this.#sameSiteNavigation && !targetClasses.has("scanning")) {
-      targetClasses.add("same-site-nav");
-    }
-
-    
-    if (targetClasses.has("breached")) {
-      this.#blockersChecked = true;
     }
 
     
@@ -835,27 +695,17 @@ class TrustPanel {
       return;
     }
     const uri = this.#uri;
-    
-    
-    const updateId = ++this.#toolbarTrackerCountUpdateId;
-    let [count] = await Promise.all([
+    const [count] = await Promise.all([
       this.#computeTrackerCount(),
       this.#firstVisitPromise,
     ]);
-    if (this.#uri !== uri || this.#toolbarTrackerCountUpdateId !== updateId) {
+    if (this.#uri !== uri) {
       return;
     }
-
     
     
-    if (this.#sameSiteNavigation && count === 0 && this.#trackerCount > 0) {
-      count = this.#trackerCount;
-    }
+    
     this.#trackerCount = count;
-    
-    if (count > 0) {
-      this.#blockersChecked = true;
-    }
     const iconContainer = document.getElementById("trust-icon-container");
     if (count > 0 && !UrlbarPrefs.get("trackerCountShown")) {
       
