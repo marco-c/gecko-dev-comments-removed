@@ -610,6 +610,14 @@ impl RenderTarget {
 pub struct ResolveOp {
     pub src_task_ids: Vec<RenderTaskId>,
     pub dest_task_id: RenderTaskId,
+    
+    
+    
+    
+    
+    
+    
+    pub dest_to_src_raster: ScaleOffset,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]

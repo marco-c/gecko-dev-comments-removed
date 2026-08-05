@@ -17,11 +17,71 @@ use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::render_target::ResolveOp;
 use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
 use crate::space::SpaceMapper;
-use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::util::MaxRect;
+use crate::spatial_tree::{CoordinateSpaceMapping, SpatialTree, SpatialNodeIndex};
+use crate::util::{MaxRect, ScaleOffset};
 use crate::visibility::{DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
 pub use crate::picture_composite_mode::get_surface_rects;
 
+
+
+fn raster_spatial_node(
+    rg_builder: &RenderTaskGraphBuilder,
+    task_id: RenderTaskId,
+) -> SpatialNodeIndex {
+    match rg_builder.get_task(task_id).kind {
+        RenderTaskKind::Picture(ref info) => info.raster_spatial_node_index,
+        _ => unreachable!("bug: resolve src/dest task is not a picture"),
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn resolve_dest_to_src_raster(
+    rg_builder: &RenderTaskGraphBuilder,
+    spatial_tree: &SpatialTree,
+    dest_task_id: RenderTaskId,
+    src_task_ids: &[RenderTaskId],
+) -> ScaleOffset {
+    
+    
+    let Some(&first_src) = src_task_ids.first() else {
+        return ScaleOffset::identity();
+    };
+
+    let dest_raster = raster_spatial_node(rg_builder, dest_task_id);
+    let src_raster = raster_spatial_node(rg_builder, first_src);
+
+    if src_raster == dest_raster {
+        return ScaleOffset::identity();
+    }
+
+    match spatial_tree.get_relative_transform(dest_raster, src_raster) {
+        CoordinateSpaceMapping::ScaleOffset(scale_offset) => scale_offset,
+        
+        CoordinateSpaceMapping::Local => ScaleOffset::identity(),
+        CoordinateSpaceMapping::Transform(..) => {
+            
+            
+            
+            debug_assert!(
+                false,
+                "resolve target and its backdrop source must share the root coordinate system",
+            );
+            ScaleOffset::identity()
+        }
+    }
+}
 
 
 const MAX_BLUR_RADIUS: f32 = 100.;
@@ -617,6 +677,7 @@ impl SurfaceBuilder {
         pic_index: PictureIndex,
         rg_builder: &mut RenderTaskGraphBuilder,
         cmd_buffers: &mut CommandBufferList,
+        spatial_tree: &SpatialTree,
     ) {
         let builder = self.builder_stack.pop().unwrap();
 
@@ -785,6 +846,20 @@ impl SurfaceBuilder {
                             }
                         }
 
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let dest_to_src_raster = resolve_dest_to_src_raster(
+                            rg_builder,
+                            spatial_tree,
+                            resolve_task_id,
+                            &src_task_ids,
+                        );
+
                         let dest_task = rg_builder.get_task_mut(resolve_task_id);
 
                         match dest_task.kind {
@@ -793,6 +868,7 @@ impl SurfaceBuilder {
                                 dest_task_info.resolve_op = Some(ResolveOp {
                                     src_task_ids,
                                     dest_task_id: resolve_task_id,
+                                    dest_to_src_raster,
                                 })
                             }
                             _ => {
