@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import org.jni_zero.NativeMethods;
+
 
 public class AudioTrack extends MediaStreamTrack {
   public AudioTrack(long nativeTrack) {
@@ -20,7 +22,7 @@ public class AudioTrack extends MediaStreamTrack {
 
 
   public void setVolume(double volume) {
-    nativeSetVolume(getNativeAudioTrack(), volume);
+    AudioTrackJni.get().setVolume(getNativeAudioTrack(), volume);
   }
 
   
@@ -28,5 +30,8 @@ public class AudioTrack extends MediaStreamTrack {
     return getNativeMediaStreamTrack();
   }
 
-  private static native void nativeSetVolume(long track, double volume);
+  @NativeMethods
+  interface Natives {
+    void setVolume(long track, double volume);
+  }
 }

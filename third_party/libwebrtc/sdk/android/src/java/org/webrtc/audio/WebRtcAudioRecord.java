@@ -23,7 +23,6 @@ import android.os.Build;
 import android.os.Process;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -36,6 +35,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jni_zero.NativeMethods;
 import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
@@ -130,7 +130,6 @@ class WebRtcAudioRecord {
       
       doAudioRecordStateCallback(AUDIO_RECORD_START);
 
-      long lastTime = System.nanoTime();
       AudioTimestamp audioTimestamp = null;
       if (Build.VERSION.SDK_INT >= 24) {
         audioTimestamp = new AudioTimestamp();
@@ -153,7 +152,9 @@ class WebRtcAudioRecord {
                 captureTimeNs = audioTimestamp.nanoTime;
               }
             }
-            nativeDataIsRecorded(nativeAudioRecord, bytesRead, captureTimeNs);
+            WebRtcAudioRecordJni.get()
+                .dataIsRecorded(
+                    nativeAudioRecord, WebRtcAudioRecord.this, bytesRead, captureTimeNs);
           }
           if (audioSamplesReadyCallback != null) {
             
@@ -292,7 +293,7 @@ class WebRtcAudioRecord {
     
     
     
-    nativeCacheDirectBufferAddress(nativeAudioRecord, byteBuffer);
+    WebRtcAudioRecordJni.get().cacheDirectBufferAddress(nativeAudioRecord, this, byteBuffer);
 
     
     
@@ -499,10 +500,14 @@ class WebRtcAudioRecord {
     return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
-  private native void nativeCacheDirectBufferAddress(
-      long nativeAudioRecordJni, ByteBuffer byteBuffer);
-  private native void nativeDataIsRecorded(
-      long nativeAudioRecordJni, int bytes, long captureTimestampNs);
+  @NativeMethods
+  interface Natives {
+    void cacheDirectBufferAddress(
+        long nativeAudioRecordJni, WebRtcAudioRecord caller, ByteBuffer byteBuffer);
+
+    void dataIsRecorded(
+        long nativeAudioRecordJni, WebRtcAudioRecord caller, int bytes, long captureTimestampNs);
+  }
 
   
   

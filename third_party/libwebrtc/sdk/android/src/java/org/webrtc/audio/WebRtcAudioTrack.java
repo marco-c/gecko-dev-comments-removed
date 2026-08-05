@@ -20,13 +20,13 @@ import android.os.Build;
 import android.os.Process;
 import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
+import org.jni_zero.NativeMethods;
 import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStartErrorCode;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
-import org.webrtc.audio.LowLatencyAudioBufferManager;
 
 class WebRtcAudioTrack {
   private static final String TAG = "WebRtcAudioTrackExternal";
@@ -109,7 +109,7 @@ class WebRtcAudioTrack {
         
         
         
-        nativeGetPlayoutData(nativeAudioTrack, sizeInBytes);
+        WebRtcAudioTrackJni.get().getPlayoutData(nativeAudioTrack, sizeInBytes);
         
         
         
@@ -190,7 +190,7 @@ class WebRtcAudioTrack {
     
     
     
-    nativeCacheDirectBufferAddress(nativeAudioTrack, byteBuffer);
+    WebRtcAudioTrackJni.get().cacheDirectBufferAddress(nativeAudioTrack, byteBuffer);
 
     
     
@@ -525,9 +525,12 @@ class WebRtcAudioTrack {
     return (channels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO);
   }
 
-  private static native void nativeCacheDirectBufferAddress(
-      long nativeAudioTrackJni, ByteBuffer byteBuffer);
-  private static native void nativeGetPlayoutData(long nativeAudioTrackJni, int bytes);
+  @NativeMethods
+  interface Natives {
+    void cacheDirectBufferAddress(long nativeAudioTrackJni, ByteBuffer byteBuffer);
+
+    void getPlayoutData(long nativeAudioTrackJni, int bytes);
+  }
 
   
   
