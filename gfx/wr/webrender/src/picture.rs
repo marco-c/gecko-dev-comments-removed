@@ -2306,19 +2306,17 @@ fn compute_subpixel_mode(
 
 pub fn prepare_picture_clips(
     pic: &PictureInstance,
-    prim_instance_index: PrimitiveInstanceIndex,
     clip_chain: &ClipChainInstance,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
     pic_scratch: &mut PictureScratch,
     clip_mask_instances: &mut Vec<ClipMaskKind>,
-    draws: &mut [PrimitiveDrawHeader],
     prim_spatial_node_index: SpatialNodeIndex,
     data_stores: &DataStores,
     use_quads: bool,
     composite_target_clip_range: &mut Option<ClipNodeRange>,
     pic_context: &PictureContext,
-) {
+) -> Option<ClipTaskIndex> {
     
     
 
@@ -2449,7 +2447,7 @@ pub fn prepare_picture_clips(
                 &coverage_rect,
                 frame_context.spatial_tree,
             ) else {
-                return;
+                return None;
             };
 
             let empty_task = EmptyTask {
@@ -2496,14 +2494,20 @@ pub fn prepare_picture_clips(
 
             let clip_task_index = ClipTaskIndex(clip_mask_instances.len() as _);
             clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
-            draws[prim_instance_index.0 as usize].clip_task_index = clip_task_index;
             frame_state.surface_builder.add_child_render_task(
                 clip_task_id,
                 frame_state.rg_builder,
             );
+
+            return Some(clip_task_index);
         }
     }
+
+    None
 }
+
+
+
 
 pub fn prepare_picture_primitive(
     pic: &PictureInstance,
@@ -2521,7 +2525,7 @@ pub fn prepare_picture_primitive(
     plane_split_anchor: PlaneSplitAnchor,
     quad_transform: &mut QuadTransformState,
     targets: &[CommandBufferIndex],
-) {
+) -> Option<ClipTaskIndex> {
     let pic_scratch = &mut scratch.frame.pictures[pic_scratch_handle];
 
     
@@ -2553,16 +2557,16 @@ pub fn prepare_picture_primitive(
     
     let mut composite_target_clip_range: Option<ClipNodeRange> = None;
 
+    let mut clip_task_index = None;
+
     if prim_info.clip_chain.needs_mask {
-        prepare_picture_clips(
+        clip_task_index = prepare_picture_clips(
             pic,
-            prim_instance_index,
             &prim_info.clip_chain,
             frame_context,
             frame_state,
             pic_scratch,
             &mut scratch.frame.clip_mask_instances,
-            &mut scratch.frame.draws,
             prim_spatial_node_index,
             data_stores,
             use_quads,
@@ -2593,17 +2597,17 @@ pub fn prepare_picture_primitive(
         );
 
         
-        return;
+        return clip_task_index;
     }
 
     if !use_quads {
-        return;
+        return clip_task_index;
     }
 
     
     let detached = pic.snapshot.map_or(false, |s| s.detached);
     if detached {
-        return;
+        return clip_task_index;
     }
 
     let pic_task_id = pic_scratch
@@ -2833,6 +2837,7 @@ pub fn prepare_picture_primitive(
         scratch,
     );
 
+    clip_task_index
 }
 
 #[test]
