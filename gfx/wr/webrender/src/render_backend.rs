@@ -812,6 +812,13 @@ pub struct RenderBackend {
     
     document_to_window: FastHashMap<DocumentId, RenderBackendId>,
 
+    
+    
+    
+    
+    
+    last_touched_window: Option<RenderBackendId>,
+
     size_of_ops: Option<MallocSizeOfOps>,
     namespace_alloc_by_client: bool,
 }
@@ -879,14 +886,12 @@ impl RenderBackend {
             documents: FastHashMap::default(),
             windows: FastHashMap::default(),
             document_to_window: FastHashMap::default(),
+            last_touched_window: None,
             size_of_ops,
             namespace_alloc_by_client,
         }
     }
 
-    
-    
-    
     
     
     
@@ -908,6 +913,11 @@ impl RenderBackend {
         if let Some(ref sampler) = sampler {
             sampler.register();
         }
+
+        
+        
+        
+        
 
         let resource_cache = build_resource_cache(resource_cache);
 
@@ -944,33 +954,36 @@ impl RenderBackend {
                 self.documents.remove(&doc_id);
                 self.document_to_window.remove(&doc_id);
             }
+            if self.last_touched_window == Some(id) {
+                self.last_touched_window = None;
+            }
 
             if let Some(ref sampler) = win.sampler {
                 sampler.deregister();
             }
+            
+            let _ = self.scene_tx.send(SceneBuilderRequest::SetSceneBuilderHooks(id, None));
             win.notifier.shut_down();
         }
     }
 
     
     
-    
-    
-    
-    fn window(&self) -> &WindowState {
-        self.windows.values().next()
-            .expect("RenderBackend has no registered windows")
+    fn documents_for_window(&self, win_id: RenderBackendId) -> Vec<DocumentId> {
+        self.document_to_window.iter()
+            .filter_map(|(d, w)| if *w == win_id { Some(*d) } else { None })
+            .collect()
     }
 
-    fn window_mut(&mut self) -> &mut WindowState {
-        self.windows.values_mut().next()
-            .expect("RenderBackend has no registered windows")
-    }
-
-    #[cfg(feature = "replay")]
-    fn the_only_window_id(&self) -> RenderBackendId {
-        *self.windows.keys().next()
-            .expect("RenderBackend has no registered windows")
+    
+    
+    
+    fn update_frame_builder_config_for(&self, win_id: RenderBackendId) {
+        if let Some(win) = self.windows.get(&win_id) {
+            self.send_backend_message(
+                SceneBuilderRequest::SetFrameBuilderConfig(win_id, win.frame_config.clone()),
+            );
+        }
     }
 
     pub fn next_namespace_id() -> IdNamespace {
@@ -985,18 +998,26 @@ impl RenderBackend {
 
         while let RenderBackendStatus::Continue = status {
             status = match self.api_rx.recv() {
-                Ok(msg) => {
-                    self.process_api_msg(msg, &mut frame_counter)
-                }
-                Err(..) => { RenderBackendStatus::ShutDown(None) }
+                Ok(msg) => self.process_api_msg(msg, &mut frame_counter),
+                Err(..) => RenderBackendStatus::ShutDown(None),
             };
+
+            
+            
+            
+            
+            
+            
+            
         }
 
         if let RenderBackendStatus::StopRenderBackend = status {
             while let Ok(msg) = self.api_rx.recv() {
                 match msg {
-                    ApiMsg::SceneBuilderResult(SceneBuilderResult::ExternalEvent(evt)) => {
-                        self.window_mut().notifier.external_event(evt);
+                    ApiMsg::SceneBuilderResult(SceneBuilderResult::ExternalEvent(backend_id, evt)) => {
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.notifier.external_event(evt);
+                        }
                     }
                     ApiMsg::SceneBuilderResult(SceneBuilderResult::FlushComplete(tx)) => {
                         
@@ -1019,16 +1040,20 @@ impl RenderBackend {
 
         
         
-        while let Ok(msg) = self.api_rx.try_recv() {
+        
+        
+        
+        
+        while let Ok(msg) = self.api_rx.recv() {
             match msg {
+                ApiMsg::SceneBuilderResult(SceneBuilderResult::ShutDown(_)) => break,
                 ApiMsg::SceneBuilderResult(SceneBuilderResult::FlushComplete(tx)) => {
-                    
-                    
-                    
-                    debug_assert!(false);
-                    tx.send(()).ok();
+                    let _ = tx.send(());
                 }
-                _ => {},
+                ApiMsg::UnregisterWindow(_, Some(ack)) => {
+                    let _ = ack.send(());
+                }
+                _ => {}
             }
         }
 
@@ -1062,7 +1087,20 @@ impl RenderBackend {
         for mut txn in txns.drain(..) {
            let has_built_scene = txn.built_scene.is_some();
 
-            let win = self.windows.values_mut().next().unwrap();
+            
+            
+            
+            
+            let win_id = match self.document_to_window.get(&txn.document_id) {
+                Some(id) => *id,
+                None => {
+                    if let Some(ref tx) = result_tx {
+                        tx.send(SceneSwapResult::Aborted).unwrap();
+                    }
+                    continue;
+                }
+            };
+            let win = self.windows.get_mut(&win_id).unwrap();
             if let Some(doc) = self.documents.get_mut(&txn.document_id) {
                 doc.removed_pipelines.append(&mut txn.removed_pipelines);
                 doc.view.scene = txn.view;
@@ -1196,7 +1234,7 @@ impl RenderBackend {
                 None,
             );
 
-            if self.window().debug_flags.contains(DebugFlags::DUMP_SPATIAL_TREE) {
+            if self.windows.get(&win_id).unwrap().debug_flags.contains(DebugFlags::DUMP_SPATIAL_TREE) {
                 if let Some(doc) = self.documents.get(&txn.document_id) {
                     let spatial_tree = doc.spatial_tree.print_to_string();
                     if !spatial_tree.is_empty() {
@@ -1226,8 +1264,14 @@ impl RenderBackend {
                 assert!(self.namespace_alloc_by_client);
                 debug_assert!(!self.documents.iter().any(|(did, _doc)| did.namespace_id == namespace_id));
             }
-            ApiMsg::UnregisterWindow(id) => {
+            ApiMsg::RegisterWindow(reg) => {
+                self.register_window(reg);
+            }
+            ApiMsg::UnregisterWindow(id, ack) => {
                 self.unregister_window(id);
+                if let Some(ack) = ack {
+                    let _ = ack.send(());
+                }
             }
             ApiMsg::AddDocument(document_id, initial_size, backend_id) => {
                 debug_assert!(self.windows.contains_key(&backend_id),
@@ -1274,24 +1318,26 @@ impl RenderBackend {
             ApiMsg::ReportMemory(tx) => {
                 self.report_memory(tx);
             }
-            ApiMsg::DebugCommand(option) => {
+            ApiMsg::DebugCommand(backend_id, option) => {
                 let msg = match option {
                     DebugCommand::SetPictureTileSize(tile_size) => {
-                        self.window_mut().frame_config.tile_size_override = tile_size;
-                        self.update_frame_builder_config();
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.frame_config.tile_size_override = tile_size;
+                        }
+                        self.update_frame_builder_config_for(backend_id);
 
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::SetMaximumSurfaceSize(surface_size) => {
-                        self.window_mut().frame_config.max_surface_override = surface_size;
-                        self.update_frame_builder_config();
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.frame_config.max_surface_override = surface_size;
+                        }
+                        self.update_frame_builder_config_for(backend_id);
 
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::GenerateFrame => {
-                        let documents: Vec<DocumentId> = self.documents.keys()
-                            .cloned()
-                            .collect();
+                        let documents = self.documents_for_window(backend_id);
                         for document_id in documents {
                             let mut invalidation_config = false;
                             if let Some(doc) = self.documents.get_mut(&document_id) {
@@ -1372,7 +1418,7 @@ impl RenderBackend {
                     }
                     #[cfg(feature = "capture")]
                     DebugCommand::SaveCapture(root, bits) => {
-                        let output = self.save_capture(root, bits);
+                        let output = self.save_capture(backend_id, root, bits);
                         ResultMsg::DebugOutput(output)
                     },
                     #[cfg(feature = "capture")]
@@ -1396,14 +1442,16 @@ impl RenderBackend {
                             config.frame_id = frame_id;
                         }
 
-                        self.load_capture(config);
+                        self.load_capture(backend_id, config);
 
-                        for (id, doc) in &self.documents {
-                            let captured = CapturedDocument {
-                                document_id: *id,
-                                root_pipeline_id: doc.loaded_scene.root_pipeline_id,
-                            };
-                            tx.send(captured).unwrap();
+                        for doc_id in self.documents_for_window(backend_id) {
+                            if let Some(doc) = self.documents.get(&doc_id) {
+                                let captured = CapturedDocument {
+                                    document_id: doc_id,
+                                    root_pipeline_id: doc.loaded_scene.root_pipeline_id,
+                                };
+                                tx.send(captured).unwrap();
+                            }
                         }
 
                         
@@ -1414,9 +1462,11 @@ impl RenderBackend {
                     DebugCommand::Query(ref query) => {
                         match query.kind {
                             DebugQueryKind::SpatialTree { .. } => {
-                                if let Some(doc) = self.documents.values().next() {
-                                    let result = doc.spatial_tree.print_to_string();
-                                    query.result.send(result).ok();
+                                if let Some(doc_id) = self.documents_for_window(backend_id).first() {
+                                    if let Some(doc) = self.documents.get(doc_id) {
+                                        let result = doc.spatial_tree.print_to_string();
+                                        query.result.send(result).ok();
+                                    }
                                 }
                                 return RenderBackendStatus::Continue;
                             }
@@ -1428,11 +1478,16 @@ impl RenderBackend {
                         }
                     }
                     DebugCommand::ClearCaches(mask) => {
-                        self.window_mut().resource_cache.clear(mask);
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.resource_cache.clear(mask);
+                        }
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::EnableNativeCompositor(enable) => {
-                        let default_kind = self.window().default_compositor_kind;
+                        let default_kind = match self.windows.get(&backend_id) {
+                            Some(w) => w.default_compositor_kind,
+                            None => return RenderBackendStatus::Continue,
+                        };
                         
                         if let CompositorKind::Draw { .. } = default_kind {
                             unreachable!();
@@ -1444,20 +1499,27 @@ impl RenderBackend {
                             CompositorKind::default()
                         };
 
-                        for (_, doc) in &mut self.documents {
-                            doc.scene.config.compositor_kind = compositor_kind;
-                            doc.frame_is_valid = false;
+                        let doc_ids = self.documents_for_window(backend_id);
+                        for doc_id in doc_ids {
+                            if let Some(doc) = self.documents.get_mut(&doc_id) {
+                                doc.scene.config.compositor_kind = compositor_kind;
+                                doc.frame_is_valid = false;
+                            }
                         }
 
-                        self.window_mut().frame_config.compositor_kind = compositor_kind;
-                        self.update_frame_builder_config();
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.frame_config.compositor_kind = compositor_kind;
+                        }
+                        self.update_frame_builder_config_for(backend_id);
 
                         
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::SetBatchingLookback(count) => {
-                        self.window_mut().frame_config.batch_lookback_count = count as usize;
-                        self.update_frame_builder_config();
+                        if let Some(win) = self.windows.get_mut(&backend_id) {
+                            win.frame_config.batch_lookback_count = count as usize;
+                        }
+                        self.update_frame_builder_config_for(backend_id);
 
                         return RenderBackendStatus::Continue;
                     }
@@ -1467,30 +1529,36 @@ impl RenderBackend {
                     }
                     DebugCommand::SetFlags(flags) => {
                         let force_invalidation = flags.contains(DebugFlags::FORCE_PICTURE_INVALIDATION);
-                        let needs_update = {
-                            let win = self.windows.values_mut().next().unwrap();
-                            win.resource_cache.set_debug_flags(flags);
-                            let needs_update = win.frame_config.force_invalidation != force_invalidation;
-                            if needs_update {
-                                win.frame_config.force_invalidation = force_invalidation;
+                        let needs_update = match self.windows.get_mut(&backend_id) {
+                            Some(win) => {
+                                win.resource_cache.set_debug_flags(flags);
+                                let needs_update = win.frame_config.force_invalidation != force_invalidation;
+                                if needs_update {
+                                    win.frame_config.force_invalidation = force_invalidation;
+                                }
+                                win.debug_flags = flags;
+                                needs_update
                             }
-                            win.debug_flags = flags;
-                            needs_update
+                            None => false,
                         };
                         if needs_update {
-                            for doc in self.documents.values_mut() {
-                                doc.scene.config.force_invalidation = force_invalidation;
+                            let doc_ids = self.documents_for_window(backend_id);
+                            for doc_id in doc_ids {
+                                if let Some(doc) = self.documents.get_mut(&doc_id) {
+                                    doc.scene.config.force_invalidation = force_invalidation;
+                                }
                             }
-                            self.update_frame_builder_config();
+                            self.update_frame_builder_config_for(backend_id);
                         }
 
                         ResultMsg::DebugCommand(option)
                     }
                     _ => ResultMsg::DebugCommand(option),
                 };
-                let win = self.windows.values_mut().next().unwrap();
-                win.result_tx.send(msg).unwrap();
-                win.notifier.wake_up(true);
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    win.result_tx.send(msg).unwrap();
+                    win.notifier.wake_up(true);
+                }
             }
             ApiMsg::UpdateDocuments(transaction_msgs) => {
                 self.prepare_transactions(
@@ -1507,7 +1575,14 @@ impl RenderBackend {
         
         
         
-        self.window().chunk_pool.purge_chunks(2, 3);
+        
+        
+        
+        
+        
+        if let Some(win) = self.last_touched_window.and_then(|id| self.windows.get(&id)) {
+            win.chunk_pool.purge_chunks(2, 3);
+        }
 
         RenderBackendStatus::Continue
     }
@@ -1529,8 +1604,11 @@ impl RenderBackend {
             },
             #[cfg(feature = "capture")]
             SceneBuilderResult::CapturedTransactions(txns, capture_config, result_tx) => {
-                {
-                    let win = self.windows.values_mut().next().unwrap();
+                
+                
+                let win_id = txns.first()
+                    .and_then(|txn| self.document_to_window.get(&txn.document_id).copied());
+                if let Some(win) = win_id.and_then(|id| self.windows.get_mut(&id)) {
                     if let Some(ref mut old_config) = win.capture_config {
                         assert!(old_config.scene_id <= capture_config.scene_id);
                         if old_config.scene_id < capture_config.scene_id {
@@ -1554,39 +1632,50 @@ impl RenderBackend {
             },
             #[cfg(feature = "capture")]
             SceneBuilderResult::StopCaptureSequence => {
-                self.window_mut().capture_config = None;
+                
+                
+                
+                for win in self.windows.values_mut() {
+                    win.capture_config = None;
+                }
             }
-            SceneBuilderResult::GetGlyphDimensions(request) => {
-                let win = self.windows.values_mut().next().unwrap();
+            SceneBuilderResult::GetGlyphDimensions(backend_id, request) => {
                 let mut glyph_dimensions = Vec::with_capacity(request.glyph_indices.len());
-                let instance_key = win.resource_cache.map_font_instance_key(request.key);
-                if let Some(base) = win.resource_cache.get_font_instance(instance_key) {
-                    let font = FontInstance::from_base(Arc::clone(&base));
-                    for glyph_index in &request.glyph_indices {
-                        let glyph_dim = win.resource_cache.get_glyph_dimensions(&font, *glyph_index);
-                        glyph_dimensions.push(glyph_dim);
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    let instance_key = win.resource_cache.map_font_instance_key(request.key);
+                    if let Some(base) = win.resource_cache.get_font_instance(instance_key) {
+                        let font = FontInstance::from_base(Arc::clone(&base));
+                        for glyph_index in &request.glyph_indices {
+                            let glyph_dim = win.resource_cache.get_glyph_dimensions(&font, *glyph_index);
+                            glyph_dimensions.push(glyph_dim);
+                        }
                     }
                 }
                 request.sender.send(glyph_dimensions).unwrap();
             }
-            SceneBuilderResult::GetGlyphIndices(request) => {
-                let win = self.windows.values_mut().next().unwrap();
+            SceneBuilderResult::GetGlyphIndices(backend_id, request) => {
                 let mut glyph_indices = Vec::with_capacity(request.text.len());
-                let font_key = win.resource_cache.map_font_key(request.key);
-                for ch in request.text.chars() {
-                    let index = win.resource_cache.get_glyph_index(font_key, ch);
-                    glyph_indices.push(index);
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    let font_key = win.resource_cache.map_font_key(request.key);
+                    for ch in request.text.chars() {
+                        let index = win.resource_cache.get_glyph_index(font_key, ch);
+                        glyph_indices.push(index);
+                    }
                 }
                 request.sender.send(glyph_indices).unwrap();
             }
             SceneBuilderResult::FlushComplete(tx) => {
                 tx.send(()).ok();
             }
-            SceneBuilderResult::ExternalEvent(evt) => {
-                self.window_mut().notifier.external_event(evt);
+            SceneBuilderResult::ExternalEvent(backend_id, evt) => {
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    win.notifier.external_event(evt);
+                }
             }
-            SceneBuilderResult::ClearNamespace(id) => {
-                self.window_mut().resource_cache.clear_namespace(id);
+            SceneBuilderResult::ClearNamespace(backend_id, id) => {
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    win.resource_cache.clear_namespace(id);
+                }
                 self.documents.retain(|doc_id, _doc| doc_id.namespace_id != id);
                 self.document_to_window.retain(|doc_id, _| doc_id.namespace_id != id);
             }
@@ -1594,12 +1683,13 @@ impl RenderBackend {
                 self.documents.remove(&document_id);
                 self.document_to_window.remove(&document_id);
             }
-            SceneBuilderResult::SetParameter(param) => {
-                let win = self.windows.values_mut().next().unwrap();
-                if let Parameter::Bool(BoolParameter::Multithreading, enabled) = param {
-                    win.resource_cache.enable_multithreading(enabled);
+            SceneBuilderResult::SetParameter(backend_id, param) => {
+                if let Some(win) = self.windows.get_mut(&backend_id) {
+                    if let Parameter::Bool(BoolParameter::Multithreading, enabled) = param {
+                        win.resource_cache.enable_multithreading(enabled);
+                    }
+                    let _ = win.result_tx.send(ResultMsg::SetParameter(param));
                 }
-                let _ = win.result_tx.send(ResultMsg::SetParameter(param));
             }
             SceneBuilderResult::StopRenderBackend => {
                 return RenderBackendStatus::StopRenderBackend;
@@ -1613,14 +1703,6 @@ impl RenderBackend {
         }
 
         RenderBackendStatus::Continue
-    }
-
-    fn update_frame_builder_config(&self) {
-        self.send_backend_message(
-            SceneBuilderRequest::SetFrameBuilderConfig(
-                self.window().frame_config.clone()
-            )
-        );
     }
 
     fn requires_frame_build(&mut self) -> bool {
@@ -1729,7 +1811,10 @@ impl RenderBackend {
 
         let requires_frame_build = self.requires_frame_build();
 
-        let win = self.windows.values_mut().next().unwrap();
+        let win_id = *self.document_to_window.get(&document_id)
+            .expect("update_document for unknown document");
+        self.last_touched_window = Some(win_id);
+        let win = self.windows.get_mut(&win_id).unwrap();
         let requested_frame = render_frame || win.frame_config.force_invalidation;
 
         let doc = self.documents.get_mut(&document_id).unwrap();
@@ -1979,23 +2064,32 @@ impl RenderBackend {
 
     #[cfg(feature = "capture")]
     fn save_capture_sequence(&mut self) {
-        let win = self.windows.values_mut().next().unwrap();
-        if let Some(ref mut config) = win.capture_config {
-            let deferred = win.resource_cache.save_capture_sequence(config);
+        
+        
+        
+        let active_windows: Vec<RenderBackendId> = self.windows.iter()
+            .filter_map(|(id, w)| if w.capture_config.is_some() { Some(*id) } else { None })
+            .collect();
+        for backend_id in active_windows {
+            let owned_doc_views: FastHashMap<DocumentId, DocumentView> = self.document_to_window.iter()
+                .filter(|(_, w)| **w == backend_id)
+                .filter_map(|(d, _)| self.documents.get(d).map(|doc| (*d, doc.view)))
+                .collect();
+            let win = self.windows.get_mut(&backend_id).unwrap();
+            if let Some(ref mut config) = win.capture_config {
+                let deferred = win.resource_cache.save_capture_sequence(config);
 
-            let backend = PlainRenderBackend {
-                frame_config: win.frame_config.clone(),
-                resource_sequence_id: config.resource_id,
-                documents: self.documents
-                    .iter()
-                    .map(|(id, doc)| (*id, doc.view))
-                    .collect(),
-            };
-            config.serialize_for_frame(&backend, "backend");
+                let backend = PlainRenderBackend {
+                    frame_config: win.frame_config.clone(),
+                    resource_sequence_id: config.resource_id,
+                    documents: owned_doc_views,
+                };
+                config.serialize_for_frame(&backend, "backend");
 
-            if !deferred.is_empty() {
-                let msg = ResultMsg::DebugOutput(DebugOutput::SaveCapture(config.clone(), deferred));
-                win.result_tx.send(msg).unwrap();
+                if !deferred.is_empty() {
+                    let msg = ResultMsg::DebugOutput(DebugOutput::SaveCapture(config.clone(), deferred));
+                    win.result_tx.send(msg).unwrap();
+                }
             }
         }
     }
@@ -2006,6 +2100,7 @@ impl RenderBackend {
     
     fn save_capture(
         &mut self,
+        backend_id: RenderBackendId,
         root: PathBuf,
         bits: CaptureBits,
     ) -> DebugOutput {
@@ -2020,8 +2115,16 @@ impl RenderBackend {
         }
         let config = CaptureConfig::new(root, bits);
 
-        let win = self.windows.values_mut().next().unwrap();
-        for (&id, doc) in &mut self.documents {
+        let win = self.windows.get_mut(&backend_id).unwrap();
+        
+        let doc_ids: Vec<DocumentId> = self.document_to_window.iter()
+            .filter_map(|(d, w)| if *w == backend_id { Some(*d) } else { None })
+            .collect();
+        for id in doc_ids.iter().copied() {
+            let doc = match self.documents.get_mut(&id) {
+                Some(d) => d,
+                None => continue,
+            };
             debug!("\tdocument {:?}", id);
             if config.bits.contains(CaptureBits::FRAME) {
                 
@@ -2103,17 +2206,17 @@ impl RenderBackend {
         );
 
         debug!("\tresource cache");
-        let win = self.windows.values_mut().next().unwrap();
+        let owned_doc_views: FastHashMap<DocumentId, DocumentView> = doc_ids.iter()
+            .filter_map(|id| self.documents.get(id).map(|d| (*id, d.view)))
+            .collect();
+        let win = self.windows.get_mut(&backend_id).unwrap();
         let (resources, deferred) = win.resource_cache.save_capture(&config.root);
 
         info!("\tbackend");
         let backend = PlainRenderBackend {
             frame_config: win.frame_config.clone(),
             resource_sequence_id: 0,
-            documents: self.documents
-                .iter()
-                .map(|(id, doc)| (*id, doc.view))
-                .collect(),
+            documents: owned_doc_views,
         };
 
         config.serialize_for_frame(&backend, "backend");
@@ -2157,6 +2260,7 @@ impl RenderBackend {
     #[cfg(feature = "replay")]
     fn load_capture(
         &mut self,
+        backend_id: RenderBackendId,
         mut config: CaptureConfig,
     ) {
         debug!("capture: loading {:?}", config.frame_root());
@@ -2166,9 +2270,10 @@ impl RenderBackend {
         
         
         let first_load = backend.resource_sequence_id == 0;
-        let backend_id = self.the_only_window_id();
-        let win = self.windows.values_mut().next().unwrap();
-        if win.loaded_resource_sequence_id != backend.resource_sequence_id || first_load {
+        let needs_reload = first_load
+            || self.windows.get(&backend_id).unwrap().loaded_resource_sequence_id
+                != backend.resource_sequence_id;
+        if needs_reload {
             
             
             
@@ -2181,9 +2286,17 @@ impl RenderBackend {
             
             
             
-            self.documents.clear();
-            self.document_to_window.clear();
+            let doomed: Vec<DocumentId> = self.document_to_window.iter()
+                .filter_map(|(d, w)| if *w == backend_id { Some(*d) } else { None })
+                .collect();
+            for d in doomed {
+                self.documents.remove(&d);
+                self.document_to_window.remove(&d);
+            }
+        }
 
+        let win = self.windows.get_mut(&backend_id).unwrap();
+        if needs_reload {
             config.resource_id = backend.resource_sequence_id;
             win.loaded_resource_sequence_id = backend.resource_sequence_id;
 

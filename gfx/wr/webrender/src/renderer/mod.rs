@@ -97,7 +97,6 @@ use euclid::{rect, Transform3D, Scale, default};
 use gleam::gl;
 use malloc_size_of::MallocSizeOfOps;
 
-#[cfg(feature = "replay")]
 use std::sync::Arc;
 
 use std::{
@@ -740,6 +739,13 @@ impl BufferDamageTracker {
 pub struct Renderer {
     result_rx: Receiver<ResultMsg>,
     api_tx: Sender<ApiMsg>,
+    
+    
+    
+    
+    
+    
+    _render_backend_pool: Arc<crate::render_backend_pool::RenderBackendPool>,
     pub device: Device,
     pending_texture_updates: Vec<TextureUpdateList>,
     

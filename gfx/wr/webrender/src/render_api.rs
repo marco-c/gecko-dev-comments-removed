@@ -1012,7 +1012,6 @@ pub enum DebugCommand {
 
 
 
-
 pub struct WindowRegistration {
     
     pub id: RenderBackendId,
@@ -1072,7 +1071,14 @@ pub enum ApiMsg {
     
     CloneApiByClient(IdNamespace),
     
-    UnregisterWindow(RenderBackendId),
+    
+    RegisterWindow(Box<WindowRegistration>),
+    
+    
+    
+    
+    
+    UnregisterWindow(RenderBackendId, Option<Sender<()>>),
     
     AddDocument(DocumentId, DeviceIntSize, RenderBackendId),
     
@@ -1082,7 +1088,10 @@ pub enum ApiMsg {
     
     ReportMemory(Sender<Box<MemoryReport>>),
     
-    DebugCommand(DebugCommand),
+    
+    
+    
+    DebugCommand(RenderBackendId, DebugCommand),
     
     SceneBuilderResult(SceneBuilderResult),
 }
@@ -1092,6 +1101,7 @@ impl fmt::Debug for ApiMsg {
         f.write_str(match *self {
             ApiMsg::CloneApi(..) => "ApiMsg::CloneApi",
             ApiMsg::CloneApiByClient(..) => "ApiMsg::CloneApiByClient",
+            ApiMsg::RegisterWindow(..) => "ApiMsg::RegisterWindow",
             ApiMsg::UnregisterWindow(..) => "ApiMsg::UnregisterWindow",
             ApiMsg::AddDocument(..) => "ApiMsg::AddDocument",
             ApiMsg::UpdateDocuments(..) => "ApiMsg::UpdateDocuments",
@@ -1116,6 +1126,14 @@ pub struct RenderApiSender {
     backend_id: RenderBackendId,
     blob_image_handler: Option<Box<dyn BlobImageHandler>>,
     fonts: SharedFontResources,
+    
+    
+    
+    
+    
+    
+    
+    render_backend_pool: Arc<crate::render_backend_pool::RenderBackendPool>,
 }
 
 impl RenderApiSender {
@@ -1127,6 +1145,7 @@ impl RenderApiSender {
         backend_id: RenderBackendId,
         blob_image_handler: Option<Box<dyn BlobImageHandler>>,
         fonts: SharedFontResources,
+        render_backend_pool: Arc<crate::render_backend_pool::RenderBackendPool>,
     ) -> Self {
         RenderApiSender {
             api_sender,
@@ -1135,6 +1154,7 @@ impl RenderApiSender {
             backend_id,
             blob_image_handler,
             fonts,
+            render_backend_pool,
         }
     }
 
@@ -1160,6 +1180,7 @@ impl RenderApiSender {
                 self.blob_image_handler.as_ref().map(|handler| handler.create_similar()),
                 self.fonts.clone(),
             ),
+            render_backend_pool: self.render_backend_pool.clone(),
         }
     }
 
@@ -1182,6 +1203,7 @@ impl RenderApiSender {
                 self.blob_image_handler.as_ref().map(|handler| handler.create_similar()),
                 self.fonts.clone(),
             ),
+            render_backend_pool: self.render_backend_pool.clone(),
         }
     }
 }
@@ -1195,6 +1217,12 @@ pub struct RenderApi {
     namespace_id: IdNamespace,
     next_id: Cell<ResourceId>,
     resources: ApiResources,
+    
+    
+    
+    
+    
+    render_backend_pool: Arc<crate::render_backend_pool::RenderBackendPool>,
 }
 
 impl RenderApi {
@@ -1223,6 +1251,7 @@ impl RenderApi {
             self.backend_id,
             self.resources.blob_image_handler.as_ref().map(|handler| handler.create_similar()),
             self.resources.get_fonts(),
+            self.render_backend_pool.clone(),
         )
     }
 
@@ -1253,7 +1282,7 @@ impl RenderApi {
             ApiMsg::AddDocument(document_id, initial_size, self.backend_id)
         ).unwrap();
         self.scene_sender.send(
-            SceneBuilderRequest::AddDocument(document_id, initial_size)
+            SceneBuilderRequest::AddDocument(document_id, initial_size, self.backend_id)
         ).unwrap();
 
         document_id
@@ -1289,7 +1318,7 @@ impl RenderApi {
         glyph_indices: Vec<GlyphIndex>,
     ) -> Vec<Option<GlyphDimensions>> {
         let (sender, rx) = single_msg_channel();
-        let msg = SceneBuilderRequest::GetGlyphDimensions(GlyphDimensionRequest {
+        let msg = SceneBuilderRequest::GetGlyphDimensions(self.backend_id, GlyphDimensionRequest {
             key,
             glyph_indices,
             sender
@@ -1302,7 +1331,7 @@ impl RenderApi {
     
     pub fn get_glyph_indices(&self, key: FontKey, text: &str) -> Vec<Option<u32>> {
         let (sender, rx) = single_msg_channel();
-        let msg = SceneBuilderRequest::GetGlyphIndices(GlyphIndexRequest {
+        let msg = SceneBuilderRequest::GetGlyphIndices(self.backend_id, GlyphIndexRequest {
             key,
             text: text.to_string(),
             sender,
@@ -1326,7 +1355,7 @@ impl RenderApi {
     
     
     pub fn send_external_event(&self, evt: ExternalEvent) {
-        let msg = SceneBuilderRequest::ExternalEvent(evt);
+        let msg = SceneBuilderRequest::ExternalEvent(self.backend_id, evt);
         self.low_priority_scene_sender.send(msg).unwrap();
     }
 
@@ -1347,24 +1376,57 @@ impl RenderApi {
     pub fn set_debug_flags(&mut self, flags: DebugFlags) {
         self.resources.set_debug_flags(flags);
         let cmd = DebugCommand::SetFlags(flags);
-        self.api_sender.send(ApiMsg::DebugCommand(cmd)).unwrap();
+        self.api_sender.send(ApiMsg::DebugCommand(self.backend_id, cmd)).unwrap();
         self.scene_sender.send(SceneBuilderRequest ::SetFlags(flags)).unwrap();
         self.low_priority_scene_sender.send(SceneBuilderRequest ::SetFlags(flags)).unwrap();
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn stop_render_backend(&self) {
-        self.low_priority_scene_sender.send(SceneBuilderRequest::StopRenderBackend).unwrap();
+        let (tx, rx) = single_msg_channel();
+        if self.low_priority_scene_sender
+            .send(SceneBuilderRequest::Flush(tx))
+            .is_ok()
+        {
+            let _ = rx.recv();
+        }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn shut_down(&self, synchronously: bool) {
         if synchronously {
             let (tx, rx) = single_msg_channel();
-            self.low_priority_scene_sender.send(SceneBuilderRequest::ShutDown(Some(tx))).unwrap();
-            rx.recv().unwrap();
+            if self.api_sender
+                .send(ApiMsg::UnregisterWindow(self.backend_id, Some(tx)))
+                .is_ok()
+            {
+                let _ = rx.recv();
+            }
         } else {
-            self.low_priority_scene_sender.send(SceneBuilderRequest::ShutDown(None)).unwrap();
+            
+            let _ = self.api_sender.send(
+                ApiMsg::UnregisterWindow(self.backend_id, None),
+            );
         }
     }
 
@@ -1498,7 +1560,7 @@ impl RenderApi {
 
     
     pub fn save_capture(&self, path: PathBuf, bits: CaptureBits) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::SaveCapture(path, bits));
+        let msg = ApiMsg::DebugCommand(self.backend_id, DebugCommand::SaveCapture(path, bits));
         self.send_message(msg);
     }
 
@@ -1509,7 +1571,7 @@ impl RenderApi {
         self.flush_scene_builder();
 
         let (tx, rx) = unbounded_channel();
-        let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, ids, tx));
+        let msg = ApiMsg::DebugCommand(self.backend_id, DebugCommand::LoadCapture(path, ids, tx));
         self.send_message(msg);
 
         let mut documents = Vec::new();
@@ -1521,27 +1583,27 @@ impl RenderApi {
 
     
     pub fn start_capture_sequence(&self, path: PathBuf, bits: CaptureBits) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::StartCaptureSequence(path, bits));
+        let msg = ApiMsg::DebugCommand(self.backend_id, DebugCommand::StartCaptureSequence(path, bits));
         self.send_message(msg);
     }
 
     
     pub fn stop_capture_sequence(&self) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::StopCaptureSequence);
+        let msg = ApiMsg::DebugCommand(self.backend_id, DebugCommand::StopCaptureSequence);
         self.send_message(msg);
     }
 
     
     pub fn get_debug_flags(&self) -> DebugFlags {
         let (tx, rx) = unbounded_channel();
-        let msg = ApiMsg::DebugCommand(DebugCommand::GetDebugFlags(tx));
+        let msg = ApiMsg::DebugCommand(self.backend_id, DebugCommand::GetDebugFlags(tx));
         self.send_message(msg);
         rx.recv().unwrap()
     }
 
     
     pub fn send_debug_cmd(&self, cmd: DebugCommand) {
-        let msg = ApiMsg::DebugCommand(cmd);
+        let msg = ApiMsg::DebugCommand(self.backend_id, cmd);
         self.send_message(msg);
     }
 
@@ -1552,14 +1614,14 @@ impl RenderApi {
         }
 
         let _ = self.low_priority_scene_sender.send(
-            SceneBuilderRequest::SetParameter(parameter)
+            SceneBuilderRequest::SetParameter(self.backend_id, parameter)
         );
     }
 }
 
 impl Drop for RenderApi {
     fn drop(&mut self) {
-        let msg = SceneBuilderRequest::ClearNamespace(self.namespace_id);
+        let msg = SceneBuilderRequest::ClearNamespace(self.backend_id, self.namespace_id);
         let _ = self.low_priority_scene_sender.send(msg);
     }
 }
