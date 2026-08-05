@@ -274,6 +274,10 @@ struct RTC_EXPORT TargetTransferRate {
   NetworkEstimate network_estimate;
   DataRate target_rate = DataRate::Zero();
   double cwnd_reduce_ratio = 0;
+
+  
+  
+  bool is_bandwidth_limited = true;
 };
 
 
