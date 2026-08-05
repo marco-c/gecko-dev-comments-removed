@@ -142,6 +142,12 @@ pub struct NeqoHttp3Conn {
     
     
     webtransport_send_groups: HashMap<u64, SendGroupId>,
+    
+    
+    
+    
+    #[cfg(not(target_os = "android"))]
+    close_reason_recorded: bool,
 }
 
 impl Drop for NeqoHttp3Conn {
@@ -614,8 +620,30 @@ impl NeqoHttp3Conn {
             buffered_outbound_datagram: None,
             would_block_counter: WouldBlockCounter::new(),
             webtransport_send_groups: HashMap::new(),
+            #[cfg(not(target_os = "android"))]
+            close_reason_recorded: false,
         }));
         unsafe { RefPtr::from_raw(conn).ok_or(NS_ERROR_NOT_CONNECTED) }
+    }
+
+    
+    
+    
+    
+    #[cfg(not(target_os = "android"))]
+    fn record_close_reason(&mut self, reason: &neqo_transport::CloseReason) {
+        if self.close_reason_recorded {
+            return;
+        }
+        self.close_reason_recorded = true;
+
+        let glean_label = match reason {
+            neqo_transport::CloseReason::Application(_) => "Application",
+            neqo_transport::CloseReason::Transport(r) => transport_error_to_glean_label(r),
+        };
+        networking::http_3_connection_close_reason
+            .get(glean_label)
+            .add(1);
     }
 
     fn record_stats_in_glean(&self) {
@@ -2274,17 +2302,7 @@ pub extern "C" fn neqo_http3conn_event(
                     }
 
                     #[cfg(not(target_os = "android"))]
-                    {
-                        let glean_label = match &reason {
-                            neqo_transport::CloseReason::Application(_) => "Application",
-                            neqo_transport::CloseReason::Transport(r) => {
-                                transport_error_to_glean_label(r)
-                            }
-                        };
-                        networking::http_3_connection_close_reason
-                            .get(glean_label)
-                            .add(1);
-                    }
+                    conn.record_close_reason(&reason);
 
                     Http3Event::ConnectionClosing {
                         error: reason.into(),
@@ -2298,6 +2316,10 @@ pub extern "C" fn neqo_http3conn_event(
                     {
                         data.extend_from_slice(c.as_ref());
                     }
+
+                    #[cfg(not(target_os = "android"))]
+                    conn.record_close_reason(&error_code);
+
                     Http3Event::ConnectionClosed {
                         error: error_code.into(),
                     }
