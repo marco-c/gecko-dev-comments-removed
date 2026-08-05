@@ -500,9 +500,12 @@ void LIRGeneratorLOONG64::lowerWasmSelectI64(MWasmSelect* select) {
 
 
 
+
+
 bool LIRGeneratorShared::canSpecializeWasmCompareAndSelect(
     MCompare::CompareType compTy, MIRType insTy) {
-  return (insTy == MIRType::Int32 || insTy == MIRType::Int64) &&
+  return (insTy == MIRType::Int32 || insTy == MIRType::Int64 ||
+          insTy == MIRType::Float32 || insTy == MIRType::Double) &&
          (compTy == MCompare::Compare_Int32 ||
           compTy == MCompare::Compare_UInt32 ||
           compTy == MCompare::Compare_Int64 ||
