@@ -10,9 +10,6 @@
 
 package org.webrtc;
 
-import org.jni_zero.CalledByNative;
-import org.jni_zero.NativeMethods;
-
 
 public class TurnCustomizer {
   private long nativeTurnCustomizer;
@@ -23,9 +20,11 @@ public class TurnCustomizer {
 
   public void dispose() {
     checkTurnCustomizerExists();
-    TurnCustomizerJni.get().freeTurnCustomizer(nativeTurnCustomizer);
+    nativeFreeTurnCustomizer(nativeTurnCustomizer);
     nativeTurnCustomizer = 0;
   }
+
+  private static native void nativeFreeTurnCustomizer(long turnCustomizer);
 
   
   @CalledByNative
@@ -38,10 +37,5 @@ public class TurnCustomizer {
     if (nativeTurnCustomizer == 0) {
       throw new IllegalStateException("TurnCustomizer has been disposed.");
     }
-  }
-
-  @NativeMethods
-  interface Natives {
-    void freeTurnCustomizer(long turnCustomizer);
   }
 }

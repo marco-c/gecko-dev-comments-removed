@@ -12,7 +12,7 @@ package org.webrtc;
 
 
 import androidx.annotation.Nullable;
-import org.jni_zero.NativeMethods;
+import org.webrtc.VideoEncoder;
 
 
 
@@ -37,12 +37,10 @@ class VideoEncoderWrapper {
 
   @CalledByNative
   static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
-    return (EncodedImage frame, VideoEncoder.CodecSpecificInfo info) ->
-               VideoEncoderWrapperJni.get().onEncodedFrame(nativeEncoder, frame);
+    return (EncodedImage frame,
+               VideoEncoder.CodecSpecificInfo info) -> nativeOnEncodedFrame(nativeEncoder, frame);
   }
 
-  @NativeMethods
-  interface Natives {
-    void onEncodedFrame(long nativeVideoEncoderWrapper, EncodedImage frame);
-  }
+  private static native void nativeOnEncodedFrame(
+      long nativeVideoEncoderWrapper, EncodedImage frame);
 }

@@ -21,7 +21,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@UsedReflectively
 public @interface CalledByNative {
   
 
