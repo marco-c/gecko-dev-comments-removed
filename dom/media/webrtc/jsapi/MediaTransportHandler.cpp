@@ -145,6 +145,10 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     
     uint32_t mSelectedCandidatePairChanges = 0;
     std::pair<std::string, std::string> mLastSelectedCandidatePair;
+    
+    
+    
+    dom::RTCIceTransportState mIceState = dom::RTCIceTransportState::New;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -1148,23 +1152,17 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                 transport.mIceLocalUsernameFragment.Construct(
                     NS_ConvertASCIItoUTF16(ufrag.c_str()));
               }
-              switch (stream->state()) {
-                case NrIceMediaStream::ICE_CONNECTING:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Checking);
-                  break;
-                case NrIceMediaStream::ICE_OPEN:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Connected);
-                  break;
-                case NrIceMediaStream::ICE_CLOSED:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Closed);
-                  break;
-              }
+              auto transportIt = mTransports.find(stream->GetId());
+              
+              
+              
+              
+              transport.mIceState.Construct(
+                  transportIt != mTransports.end()
+                      ? transportIt->second.mIceState
+                      : dom::RTCIceTransportState::New);
               
               transport.mDtlsState = dom::RTCDtlsTransportState::New;
-              auto transportIt = mTransports.find(stream->GetId());
               
               
               
@@ -1657,6 +1655,7 @@ void MediaTransportHandlerSTS::OnConnectionStateChange(
   }
   if (auto it = mTransports.find(aIceStream->GetId());
       it != mTransports.end()) {
+    it->second.mIceState = toDomIceTransportState(aState);
     auto newPair = std::make_pair(localAttr, remoteAttr);
     if (newPair != it->second.mLastSelectedCandidatePair) {
       it->second.mSelectedCandidatePairChanges += 1;
