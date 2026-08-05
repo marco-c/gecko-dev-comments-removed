@@ -40,6 +40,8 @@ function injectValues(queryMap) {
     queryMap.badCertGoBack;
   document.getElementById("advancedPanelAcceptButton").innerHTML =
     queryMap.badCertAcceptTemporary;
+  document.getElementById("advancedPanelAcceptButton").dataset.isPrivate =
+    queryMap.isPrivate;
 
   
   const errorImage = document.getElementById("errorImage");
@@ -62,6 +64,117 @@ function injectValues(queryMap) {
     const errorCode = document.getElementById("errorCode");
     errorCode.textContent = queryMap.errorCode;
   }
+
+  
+  
+  if (queryMap.archiveUrl) {
+    document.getElementById("viewArchivedButton").textContent =
+      queryMap.archiveCheckButtonLabel;
+    document.getElementById("viewArchivedButton").style.display = "block";
+    document.getElementById("archiveNotFoundText").textContent =
+      queryMap.archiveNotFoundMessage;
+    document.getElementById("archiveSearchWebLink").textContent =
+      queryMap.archiveSearchWebLabel;
+    document.getElementById("archiveUnreachableText").textContent =
+      queryMap.archiveUnreachableMessage;
+    document.getElementById("archiveRetryLink").textContent =
+      queryMap.archiveRetryLabel;
+  }
+}
+
+
+
+const ERROR_PAGE_ACTION_PREFIX = "firefox-error-action://";
+
+
+
+
+
+
+
+
+async function viewArchivedVersion(queryMap) {
+  const button = document.getElementById("viewArchivedButton");
+  button.disabled = true;
+  button.textContent = "";
+  const spinner = document.createElement("span");
+  spinner.className = "spinner";
+  button.appendChild(spinner);
+  button.appendChild(document.createTextNode(queryMap.archiveCheckingLabel));
+  let data;
+  try {
+    const response = await fetch(
+      "https://archive.org/wayback/available?url=" +
+        encodeURIComponent(queryMap.archiveUrl)
+    );
+    if (!response.ok) {
+      showArchiveError(queryMap);
+      return;
+    }
+    data = await response.json();
+  } catch (e) {
+    
+    showArchiveError(queryMap);
+    return;
+  }
+  const snapshot = data?.archived_snapshots?.closest;
+  if (snapshot?.available && snapshot.url) {
+    window.location.href =
+      ERROR_PAGE_ACTION_PREFIX + "open?url=" + encodeURIComponent(snapshot.url);
+    return;
+  }
+  showNoArchiveFound(queryMap.archiveUrl);
+}
+
+
+
+
+
+function showNoArchiveFound(archiveUrl) {
+  document.getElementById("viewArchivedButton").style.display = "none";
+  document.getElementById("archiveWarningContent").hidden = false;
+  document
+    .getElementById("archiveSearchWebLink")
+    .addEventListener("click", e => {
+      e.preventDefault();
+      searchTheWeb(archiveUrl);
+    });
+}
+
+
+
+
+
+
+function showArchiveError(queryMap) {
+  document.getElementById("viewArchivedButton").style.display = "none";
+  const errorContent = document.getElementById("archiveErrorContent");
+  errorContent.hidden = false;
+  document.getElementById("archiveRetryLink").onclick = e => {
+    e.preventDefault();
+    errorContent.hidden = true;
+    document.getElementById("viewArchivedButton").style.display = "block";
+    viewArchivedVersion(queryMap);
+  };
+}
+
+
+
+
+
+
+function recordArchiveButtonClicked() {
+  window.location.href = ERROR_PAGE_ACTION_PREFIX + "attempt";
+}
+
+
+
+
+
+function searchTheWeb(archiveUrl) {
+  const query = archiveUrl.replace(/^https?:\/\//, "");
+  window.location.href =
+    ERROR_PAGE_ACTION_PREFIX + "search?q=" + encodeURIComponent(query);
 }
 
 let advancedVisible = false;
@@ -156,10 +269,25 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", toggleAdvancedAndScroll);
   document
     .getElementById("advancedPanelAcceptButton")
-    .addEventListener("click", () => acceptAndContinue(true));
+    .addEventListener("click", e => {
+      const isPrivate = e.currentTarget.dataset.isPrivate;
+      acceptAndContinue(!isPrivate);
+    });
   document
     .getElementById("continueHttp")
     .addEventListener("click", () => document.reloadWithHttpsOnlyException());
+
+  const query = Object.fromEntries(
+    new URLSearchParams(document.documentURI.split("?")[1] || "").entries()
+  );
+  if (query.archiveUrl) {
+    document
+      .getElementById("viewArchivedButton")
+      .addEventListener("click", () => {
+        recordArchiveButtonClicked();
+        viewArchivedVersion(query);
+      });
+  }
 });
 
 parseQuery(document.documentURI);
