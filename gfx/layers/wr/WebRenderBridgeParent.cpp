@@ -1147,9 +1147,17 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvDeleteCompositorAnimations(
       wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
+  nsTArray<uint64_t> ids;
+  ids.SetCapacity(aIds.Length());
+  for (uint64_t id : aIds) {
+    if (OwnsCompositorAnimationsId(id)) {
+      ids.AppendElement(id);
+    }
+  }
+
   
   mCompositorAnimationsToDelete.push(
-      CompositorAnimationIdsForEpoch(mWrEpoch, std::move(aIds)));
+      CompositorAnimationIdsForEpoch(mWrEpoch, std::move(ids)));
   return IPC_OK();
 }
 
@@ -1759,10 +1767,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
         const OpAddCompositorAnimations& op =
             cmd.get_OpAddCompositorAnimations();
         CompositorAnimations data(std::move(op.data()));
-        
-        
-        
-        if ((data.id() >> 32) != (uint64_t)OtherPid()) {
+        if (!OwnsCompositorAnimationsId(data.id())) {
           gfxCriticalNote << "TOpAddCompositorAnimations bad id";
           success = false;
           continue;
@@ -2435,7 +2440,9 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetAnimationValue(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  if (RefPtr<OMTASampler> sampler = GetOMTASampler()) {
+  if (!OwnsCompositorAnimationsId(aCompositorAnimationsId)) {
+    *aValue = mozilla::null_t();
+  } else if (RefPtr<OMTASampler> sampler = GetOMTASampler()) {
     Maybe<TimeStamp> testingTimeStamp;
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       testingTimeStamp = cbp->GetTestingTimeStamp();
