@@ -423,16 +423,28 @@ var gSearchResultsPane = {
           }
           let paneMatched = anyGroupMatched;
           if (!paneMatched) {
-            paneMatched = await this.searchWithinNode(child, this.query);
-            if (signal.aborted) {
-              return;
-            }
-            if (paneMatched) {
-              
-              
-              
-              for (let group of child.querySelectorAll(BASE_SELECTOR)) {
-                group.classList.remove("visually-hidden");
+            let additionalSearchTargets = [
+              child.pageHeaderEl,
+              child.querySelector(".firefoxLabs-description"),
+            ].filter(el => el);
+            if (additionalSearchTargets.length) {
+              paneMatched = (
+                await Promise.all(
+                  additionalSearchTargets.map(target =>
+                    this.searchWithinNode(target, this.query)
+                  )
+                )
+              ).some(matched => matched);
+              if (signal.aborted) {
+                return;
+              }
+              if (paneMatched) {
+                
+                
+                
+                for (let group of child.querySelectorAll(BASE_SELECTOR)) {
+                  group.classList.remove("visually-hidden");
+                }
               }
             }
           }
