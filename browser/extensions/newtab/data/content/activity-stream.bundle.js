@@ -1741,6 +1741,32 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const feed = feeds.data[url].data;
     return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h4", null, "Feed url: ", url), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, feed.recommendations?.map(story => this.renderStoryData(story)))));
   }
+  renderTrainhop() {
+    const {
+      trainhopConfig = {},
+      trainhopVersion,
+      nimbusDebug
+    } = this.props.otherPrefs;
+    return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("table", {
+      className: "minimal-table trainhop-info"
+    }, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
+      className: "min"
+    }, "Installed version"), external_React_default().createElement("td", null, trainhopVersion ?? "unknown")), external_React_default().createElement(Row, null, external_React_default().createElement("td", {
+      className: "min"
+    }, "nimbus.debug"), external_React_default().createElement("td", null, nimbusDebug ? "true" : "false")))), external_React_default().createElement("p", null, "Manage the experiments and rollouts that populate this config in", " ", external_React_default().createElement("a", {
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: "about:studies"
+    }, "about:studies"), ", or install the", " ", external_React_default().createElement("a", {
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: "https://github.com/mozilla-extensions/nimbus-devtools/releases"
+    }, "Nimbus devtools extension"), "."), Object.keys(trainhopConfig || {}).length ? external_React_default().createElement("pre", {
+      className: "trainhop-config"
+    }, JSON.stringify(trainhopConfig, null, 2)) : external_React_default().createElement("p", {
+      className: "trainhop-empty"
+    }, "No train-hop config. This build isn't enrolled in any newtabTrainhop experiment or rollout."));
+  }
   renderFeedsData() {
     const {
       feeds
@@ -1926,6 +1952,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       ontoggle: this.handleSectionsToggle,
       label: "Toggle DS Sections"
     })), external_React_default().createElement("details", {
+      className: "details-section"
+    }, external_React_default().createElement("summary", null, "Train Hop"), this.renderTrainhop()), external_React_default().createElement("details", {
       className: "details-section"
     }, external_React_default().createElement("summary", null, "IAB Banner Ad Sizes"), external_React_default().createElement("div", {
       className: "toggle-wrapper"
