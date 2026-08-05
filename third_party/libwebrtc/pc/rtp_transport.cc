@@ -114,7 +114,8 @@ void RtpTransport::ChangePacketTransport(
     transport_to_change->UnsubscribeWritableState(this);
     transport_to_change->UnsubscribeSentPacket(this);
     
-    SendNetworkRouteChanged(std::optional<NetworkRoute>());
+    
+    NotifyNetworkRouteChanged(std::optional<NetworkRoute>());
   }
   if (new_packet_transport) {
     new_packet_transport->SubscribeReadyToSend(
@@ -141,11 +142,22 @@ void RtpTransport::ChangePacketTransport(
             OnSentPacket(transport, info);
           }
         });
-    
-    SendNetworkRouteChanged(new_packet_transport->network_route());
+    NotifyNetworkRouteChanged(new_packet_transport->network_route());
   }
 
   transport_to_change = new_packet_transport;
+}
+
+void RtpTransport::NotifyNetworkRouteChanged(
+    std::optional<NetworkRoute> network_route) {
+  if (update_network_route_on_srtp_activation_) {
+    
+    
+    
+    OnNetworkRouteChanged(network_route);
+  } else {
+    SendNetworkRouteChanged(network_route);
+  }
 }
 
 void RtpTransport::SetRtcpPacketTransportOwned(

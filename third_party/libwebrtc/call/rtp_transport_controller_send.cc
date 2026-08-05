@@ -336,6 +336,7 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     return;
   }
 
+  transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
   
   auto result = network_routes_.insert(
       
@@ -352,7 +353,6 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     }
   }
   if (inserted) {
-    transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
     
     return;
   }
@@ -371,7 +371,6 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
   bool is_controller_supporting_ecn = rfc_8888_feedback_negotiated_ &&
                                       controller_ &&
                                       controller_->SupportsEcnAdaptation();
-
   if (!restart_bwe && !is_controller_supporting_ecn) {
     
     return;
@@ -388,7 +387,6 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
 
   env_.event_log().Log(std::make_unique<RtcEventRouteChange>(
       network_route.connected, network_route.packet_overhead));
-  transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
   transport_feedback_adapter_.SetNetworkRoute(network_route);
 
   
