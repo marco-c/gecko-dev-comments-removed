@@ -98,15 +98,20 @@ async function setup({
 }
 
 function getDefaultWasmRecords(backend) {
+  
+  
+  
+  
+  
+  
+  const wasmBackend =
+    backend && MLEngineParent.WASM_FILENAME[backend]
+      ? backend
+      : MLEngineParent.DEFAULT_BACKEND;
   return [
     {
-      name: MLEngineParent.WASM_FILENAME[
-        backend || MLEngineParent.DEFAULT_BACKEND
-      ],
-      version:
-        MLEngineParent.WASM_MAJOR_VERSION[
-          backend || MLEngineParent.DEFAULT_BACKEND
-        ] + ".0",
+      name: MLEngineParent.WASM_FILENAME[wasmBackend],
+      version: MLEngineParent.WASM_MAJOR_VERSION[wasmBackend] + ".0",
     },
   ];
 }
