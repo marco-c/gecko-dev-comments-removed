@@ -1627,7 +1627,6 @@ var gSync = {
       case "PanelUI-fxa-menu-monitor-button":
         this.openMonitorLink(button);
         break;
-      case "PanelUI-services-menu-relay-button":
       case "PanelUI-fxa-menu-relay-button":
         this.openRelayLink(button);
         break;
@@ -3574,7 +3573,15 @@ var gSync = {
       "identity.fxaccounts.toolbar.pxiToolbarEnabled.monitorEnabled",
       false
     );
-    monitorPanelEl.hidden = !monitorEnabled;
+    let monitorInUse =
+      this.isSignedIn && this.hasClientForId(FX_MONITOR_OAUTH_CLIENT_ID);
+    monitorPanelEl.hidden = !(monitorEnabled || monitorInUse);
+    this.updateCTAButtonStrings(monitorPanelEl, {
+      inUse: monitorInUse,
+      titleId: "appmenuitem-monitor-title2",
+      inUseTitleId: "appmenuitem-monitor-title-signed-in",
+      descriptionId: "appmenuitem-monitor-description2",
+    });
 
     
     let relayPanelEl = PanelMultiView.getViewNode(
@@ -3587,26 +3594,15 @@ var gSync = {
         "identity.fxaccounts.toolbar.pxiToolbarEnabled.relayEnabled",
         false
       );
-    let myServicesRelayPanelEl = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-services-menu-relay-button"
-    );
-    let servicesContainerEl = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-services"
-    );
-    if (this.isSignedIn) {
-      const hasRelayClient = this.hasClientForId(FX_RELAY_OAUTH_CLIENT_ID);
-      relayPanelEl.hidden = hasRelayClient;
-      
-      myServicesRelayPanelEl.hidden = !hasRelayClient;
-      servicesContainerEl.hidden = !hasRelayClient;
-    } else {
-      relayPanelEl.hidden = !relayEnabled;
-      
-      myServicesRelayPanelEl.hidden = true;
-      servicesContainerEl.hidden = true;
-    }
+    let relayInUse =
+      this.isSignedIn && this.hasClientForId(FX_RELAY_OAUTH_CLIENT_ID);
+    relayPanelEl.hidden = !(relayEnabled || relayInUse);
+    this.updateCTAButtonStrings(relayPanelEl, {
+      inUse: relayInUse,
+      titleId: "appmenuitem-relay-title2",
+      inUseTitleId: "appmenuitem-relay-title-signed-in",
+      descriptionId: "appmenuitem-relay-description2",
+    });
 
     
     let VpnPanelEl = PanelMultiView.getViewNode(
@@ -3619,7 +3615,14 @@ var gSync = {
         "identity.fxaccounts.toolbar.pxiToolbarEnabled.vpnEnabled",
         false
       );
-    VpnPanelEl.hidden = !vpnEnabled;
+    let vpnInUse = this.isSignedIn && this.hasClientForId(VPN_OAUTH_CLIENT_ID);
+    VpnPanelEl.hidden = !(vpnEnabled || vpnInUse);
+    this.updateCTAButtonStrings(VpnPanelEl, {
+      inUse: vpnInUse,
+      titleId: "appmenuitem-vpn-title2",
+      inUseTitleId: "appmenuitem-vpn-title-signed-in",
+      descriptionId: "appmenuitem-vpn-description4",
+    });
 
     
     let shareFirefoxPanelEl = PanelMultiView.getViewNode(
@@ -3631,16 +3634,44 @@ var gSync = {
       false
     );
 
-    
-    
-    
     let privacyToolsSeparatorEl = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-privacy-tools-separator"
     );
-    privacyToolsSeparatorEl.hidden = !servicesContainerEl.hidden;
+    privacyToolsSeparatorEl.hidden = false;
 
     mainPanelEl.hidden = false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  updateCTAButtonStrings(
+    buttonEl,
+    { inUse, titleId, inUseTitleId, descriptionId }
+  ) {
+    let titleEl = buttonEl.querySelector(".cta-menu-title");
+    let descriptionEl = buttonEl.querySelector(".cta-menu-description");
+    document.l10n.setAttributes(titleEl, inUse ? inUseTitleId : titleId);
+    descriptionEl.hidden = inUse;
+    if (!inUse) {
+      document.l10n.setAttributes(descriptionEl, descriptionId);
+    }
   },
 
   async openMonitorLink(sourceElement) {
