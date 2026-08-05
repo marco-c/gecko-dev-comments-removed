@@ -81,12 +81,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   
 
 
-
-  MOZ_CAN_RUN_SCRIPT void ScrollToIndex(int32_t aIndex);
-
-  
-
-
   HTMLOptionElement* GetOption(uint32_t aIndex) const;
 
   
@@ -137,23 +131,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
  protected:
   mozilla::dom::HTMLSelectElement& Select() const;
-
-  
-
-
-  bool IsOptionInteractivelySelectable(int32_t aIndex) const;
-  
-
-
-  static bool IsOptionInteractivelySelectable(
-      mozilla::dom::HTMLSelectElement* aSelect,
-      mozilla::dom::HTMLOptionElement* aOption);
-
   MOZ_CAN_RUN_SCRIPT void ScrollToFrame(HTMLOptionElement& aOptElement);
-
- protected:
-  explicit nsListControlFrame(ComputedStyle* aStyle,
-                              nsPresContext* aPresContext);
+  nsListControlFrame(ComputedStyle*, nsPresContext*);
   virtual ~nsListControlFrame();
 
   bool CheckIfAllFramesHere();
@@ -169,10 +148,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   
   void SetComboboxItem(int32_t aIndex);
 
- public:
-  static constexpr int32_t kNothingSelected = -1;
-
- protected:
   nscoord BSizeOfARow() const { return mBSizeOfARow; }
 
   
