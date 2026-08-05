@@ -293,10 +293,7 @@ class DebugAPI {
 
   
   
-  
-  
-  
-  static inline bool onNewPromise(JSContext* cx,
+  static inline void onNewPromise(JSContext* cx,
                                   Handle<PromiseObject*> promise);
 
   static inline void onNewGlobalObject(JSContext* cx,
@@ -400,7 +397,7 @@ class DebugAPI {
                                                       AbstractFramePtr frame);
   static void slowPathOnNewWasmInstance(
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
-  static bool slowPathOnNewPromise(JSContext* cx,
+  static void slowPathOnNewPromise(JSContext* cx,
                                    Handle<PromiseObject*> promise);
   static bool inFrameMaps(AbstractFramePtr frame);
   static void slowPathTraceGeneratorFrame(JSTracer* tracer,
