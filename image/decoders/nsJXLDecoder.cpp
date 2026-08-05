@@ -540,110 +540,75 @@ nsresult nsJXLDecoder::EnsureSurfacePipe() {
 }
 
 void nsJXLDecoder::BuildCMSTransform() {
-  
-  
-  CICP::ColourPrimaries cicpPrimaries = CICP::ColourPrimaries::CP_UNSPECIFIED;
-  CICP::TransferCharacteristics cicpTransfer =
-      CICP::TransferCharacteristics::TC_UNSPECIFIED;
-  
-  
-  uint8_t cicpIntent = 0;
-  if ((mPixelFormat.value() == PixelFormat::Rgba8 ||
-       mPixelFormat.value() == PixelFormat::Rgba16f) &&
-      jxl_decoder_get_cicp(
-          mDecoder.get(), reinterpret_cast<uint8_t*>(&cicpPrimaries),
-          reinterpret_cast<uint8_t*>(&cicpTransfer), &cicpIntent)) {
-    
-    
-    
-    if (cicpTransfer != CICP::TC_SMPTE2084 && cicpTransfer != CICP::TC_HLG) {
-      mInProfile = qcms_profile_create_cicp_with_intent(
-          cicpPrimaries, cicpTransfer, static_cast<qcms_intent>(cicpIntent));
-      MOZ_LOG(sJXLLog, LogLevel::Debug,
-              ("[this=%p] nsJXLDecoder::BuildCMSTransform -- CICP profile %s "
-               "(primaries %u, transfer %u, intent %u)",
-               this, mInProfile ? "created" : "creation FAILED",
-               static_cast<unsigned>(cicpPrimaries),
-               static_cast<unsigned>(cicpTransfer),
-               static_cast<unsigned>(cicpIntent)));
-    }
-  }
-
-  
-  
-  
-  if (!mInProfile) {
-    size_t iccLen = 0;
-    const uint8_t* iccData =
-        jxl_decoder_get_icc_profile(mDecoder.get(), &iccLen);
-    if (iccData && iccLen) {
-      mInProfile = qcms_profile_from_memory(
-          reinterpret_cast<const char*>(iccData), iccLen);
-      if (!mInProfile) {
-        MOZ_LOG(sJXLLog, LogLevel::Debug,
-                ("[this=%p] nsJXLDecoder::BuildCMSTransform -- failed to parse "
-                 "%zu-byte ICC profile, skipping CMS",
-                 this, iccLen));
+  size_t iccLen = 0;
+  const uint8_t* iccData = jxl_decoder_get_icc_profile(mDecoder.get(), &iccLen);
+  if (iccData && iccLen) {
+    mInProfile = qcms_profile_from_memory(
+        reinterpret_cast<const char*>(iccData), iccLen);
+    if (mInProfile) {
+      auto intent = static_cast<qcms_intent>(gfxPlatform::GetRenderingIntent());
+      if (intent < QCMS_INTENT_MIN || intent > QCMS_INTENT_MAX) {
+        intent = qcms_profile_get_rendering_intent(mInProfile);
       }
-    }
-  }
 
-  if (!mInProfile) {
+      uint32_t profileSpace = qcms_profile_get_color_space(mInProfile);
+      qcms_data_type inType;
+      qcms_data_type outType;
+      bool compatible = true;
+
+      if (profileSpace == icSigGrayData) {
+        if (mPixelFormat.value() != PixelFormat::Gray8 &&
+            mPixelFormat.value() != PixelFormat::GrayAlpha8) {
+          compatible = false;
+        }
+        
+        inType = mPixelFormat.value() == PixelFormat::GrayAlpha8
+                     ? QCMS_DATA_GRAYA_8
+                     : QCMS_DATA_GRAY_8;
+        outType = QCMS_DATA_RGBA_8;
+      } else if (profileSpace == icSigCmykData) {
+        if (mPixelFormat.value() != PixelFormat::Cmyk8) {
+          compatible = false;
+        }
+        
+        
+        inType = QCMS_DATA_CMYK;
+        outType = QCMS_DATA_RGB_8;
+      } else {
+        if (mPixelFormat.value() != PixelFormat::Rgba8 &&
+            mPixelFormat.value() != PixelFormat::Rgba16f) {
+          compatible = false;
+        }
+        inType = QCMS_DATA_RGBA_8;
+        outType = QCMS_DATA_RGBA_8;
+      }
+
+      if (compatible) {
+        mTransform = qcms_transform_create(
+            mInProfile, inType, GetCMSOutputProfile(), outType, intent);
+        MOZ_LOG(
+            sJXLLog, LogLevel::Debug,
+            ("[this=%p] nsJXLDecoder::BuildCMSTransform -- CMS transform %s "
+             "(ICC %zu bytes, color space 0x%x)",
+             this, mTransform ? "created" : "creation FAILED", iccLen,
+             profileSpace));
+      } else {
+        MOZ_LOG(sJXLLog, LogLevel::Debug,
+                ("[this=%p] nsJXLDecoder::BuildCMSTransform -- ICC color space "
+                 "0x%x incompatible with pixel format, skipping CMS",
+                 this, profileSpace));
+      }
+    } else {
+      MOZ_LOG(sJXLLog, LogLevel::Debug,
+              ("[this=%p] nsJXLDecoder::BuildCMSTransform -- failed to parse "
+               "%zu-byte ICC profile, skipping CMS",
+               this, iccLen));
+    }
+  } else {
     MOZ_LOG(sJXLLog, LogLevel::Debug,
-            ("[this=%p] nsJXLDecoder::BuildCMSTransform -- no color profile "
+            ("[this=%p] nsJXLDecoder::BuildCMSTransform -- no ICC profile "
              "available, skipping CMS",
              this));
-    return;
-  }
-
-  auto intent = static_cast<qcms_intent>(gfxPlatform::GetRenderingIntent());
-  if (intent < QCMS_INTENT_MIN || intent > QCMS_INTENT_MAX) {
-    intent = qcms_profile_get_rendering_intent(mInProfile);
-  }
-
-  uint32_t profileSpace = qcms_profile_get_color_space(mInProfile);
-  qcms_data_type inType;
-  qcms_data_type outType;
-  bool compatible = true;
-
-  if (profileSpace == icSigGrayData) {
-    if (mPixelFormat.value() != PixelFormat::Gray8 &&
-        mPixelFormat.value() != PixelFormat::GrayAlpha8) {
-      compatible = false;
-    }
-    
-    inType = mPixelFormat.value() == PixelFormat::GrayAlpha8 ? QCMS_DATA_GRAYA_8
-                                                             : QCMS_DATA_GRAY_8;
-    outType = QCMS_DATA_RGBA_8;
-  } else if (profileSpace == icSigCmykData) {
-    if (mPixelFormat.value() != PixelFormat::Cmyk8) {
-      compatible = false;
-    }
-    
-    
-    inType = QCMS_DATA_CMYK;
-    outType = QCMS_DATA_RGB_8;
-  } else {
-    if (mPixelFormat.value() != PixelFormat::Rgba8 &&
-        mPixelFormat.value() != PixelFormat::Rgba16f) {
-      compatible = false;
-    }
-    inType = QCMS_DATA_RGBA_8;
-    outType = QCMS_DATA_RGBA_8;
-  }
-
-  if (compatible) {
-    mTransform = qcms_transform_create(mInProfile, inType,
-                                       GetCMSOutputProfile(), outType, intent);
-    MOZ_LOG(sJXLLog, LogLevel::Debug,
-            ("[this=%p] nsJXLDecoder::BuildCMSTransform -- CMS transform %s "
-             "(color space 0x%x)",
-             this, mTransform ? "created" : "creation FAILED", profileSpace));
-  } else {
-    MOZ_LOG(sJXLLog, LogLevel::Debug,
-            ("[this=%p] nsJXLDecoder::BuildCMSTransform -- color space 0x%x "
-             "incompatible with pixel format, skipping CMS",
-             this, profileSpace));
   }
 }
 
