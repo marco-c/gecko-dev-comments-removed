@@ -690,7 +690,11 @@ class DisplayListBuilder final {
                  bool aPremultipliedAlpha = true,
                  const wr::ColorF& aColor = wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
                  bool aPreferCompositorSurface = false,
-                 bool aSupportsExternalCompositing = false);
+                 bool aSupportsExternalCompositing = false,
+                 
+                 
+                 
+                 const Maybe<wr::DeviceIntRect>& aSubRect = Nothing());
 
   void PushRepeatingImage(
       const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,

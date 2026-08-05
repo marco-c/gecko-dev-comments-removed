@@ -92,6 +92,7 @@ pub struct ImageData {
     pub color: ColorF,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
+    pub sub_rect: Option<DeviceIntRect>,
 }
 
 impl From<Image> for ImageData {
@@ -103,6 +104,7 @@ impl From<Image> for ImageData {
             tile_spacing: image.tile_spacing.into(),
             image_rendering: image.image_rendering,
             alpha_type: image.alpha_type,
+            sub_rect: image.sub_rect,
         }
     }
 }
@@ -203,6 +205,43 @@ pub fn prepare_image_quads(
                 }
             }
 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let mut local_rect = prim_rect;
+            let mut stretch_size = stretch_size;
+            if let Some(sub_rect) = image_data.sub_rect {
+                src_task_id = frame_state.rg_builder.add_sub_rect(src_task_id, &sub_rect);
+
+                
+                
+                let image_dest = LayoutRect::from_origin_and_size(prim_rect.min, stretch_size);
+                let sx = image_dest.width() / size.width as f32;
+                let sy = image_dest.height() / size.height as f32;
+
+                local_rect = LayoutRect {
+                    min: point2(
+                        image_dest.min.x + sub_rect.min.x as f32 * sx,
+                        image_dest.min.y + sub_rect.min.y as f32 * sy,
+                    ),
+                    max: point2(
+                        image_dest.min.x + sub_rect.max.x as f32 * sx,
+                        image_dest.min.y + sub_rect.max.y as f32 * sy,
+                    ),
+                };
+                stretch_size = local_rect.size();
+            }
+
             let image_pattern = ImagePattern {
                 src_task_id,
                 src_is_opaque,
@@ -214,7 +253,7 @@ pub fn prepare_image_quads(
             quad::prepare_repeatable_quad(
                 &image_pattern,
                 &QuadDescriptor {
-                    local_rect: prim_rect,
+                    local_rect,
                     local_clip_rect: tight_clip_rect,
                     aligned_aa_edges: common_data.aligned_aa_edges,
                     transformed_aa_edges: common_data.transformed_aa_edges,
@@ -606,9 +645,9 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 52, "ImageTemplate size changed");
-    assert_eq!(mem::size_of::<ImageKey>(), 40, "ImageKey size changed");
+    assert_eq!(mem::size_of::<Image>(), 56, "Image size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 72, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageKey>(), 60, "ImageKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
     assert_eq!(mem::size_of::<YuvImageTemplate>(), 72, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImageKey>(), 36, "YuvImageKey size changed");

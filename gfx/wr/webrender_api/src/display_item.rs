@@ -1938,6 +1938,11 @@ pub struct ImageDisplayItem {
     pub alpha_type: AlphaType,
     
     pub color: ColorF,
+    
+    
+    
+    
+    pub sub_rect: Option<DeviceIntRect>,
 }
 
 

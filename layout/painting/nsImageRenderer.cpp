@@ -63,7 +63,11 @@ nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame, const StyleImage* aImage,
       mSize(0, 0),
       mFlags(aFlags),
       mExtendMode(ExtendMode::CLAMP),
-      mMaskOp(StyleMaskMode::MatchSource) {}
+      mMaskOp(StyleMaskMode::MatchSource) {
+  if (aForFrame->UsedImageDecoding() == StyleImageDecoding::Sync) {
+    mFlags |= FLAG_SYNC_DECODE_IMAGES;
+  }
+}
 
 using SymbolicImageKey = std::tuple<RefPtr<nsAtom>, int, nscolor>;
 struct SymbolicImageEntry {
@@ -714,9 +718,37 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
 
       if (extendMode == ExtendMode::CLAMP) {
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Maybe<wr::DeviceIntRect> subRect;
+        if (!region && !aDest.IsEmpty() && !decodeSize.IsEmpty()) {
+          const ImageIntRect imageRect(0, 0, decodeSize.width,
+                                       decodeSize.height);
+          const double sx = double(decodeSize.width) / aDest.Width();
+          const double sy = double(decodeSize.height) / aDest.Height();
+          const nsRect fill = aFill - aDest.TopLeft();
+          ImageIntRect sub = ImageIntRect::FromUnknownRect(
+              gfx::IntRect::RoundOut(fill.X() * sx, fill.Y() * sy,
+                                     fill.Width() * sx, fill.Height() * sy));
+          sub = sub.Intersect(imageRect);
+          if (!sub.IsEmpty() && !sub.IsEqualEdges(imageRect)) {
+            subRect = Some(wr::ToDeviceIntRect(sub));
+          }
+        }
+
         aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), false,
                            rendering, key.value(), true,
-                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity});
+                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity}, false, false,
+                           subRect);
       } else {
         nsPoint firstTilePos = nsLayoutUtils::GetBackgroundFirstTilePos(
             aDest.TopLeft(), aFill.TopLeft(), aRepeatSize);
