@@ -1196,10 +1196,8 @@ bool InterpretResume(JSContext* cx, HandleObject obj, Value* stackValues,
 bool DebugAfterYield(JSContext* cx, BaselineFrame* frame) {
   
   
-  
-  
-  
-  if (frame->script()->isDebuggee() && !frame->isDebuggee()) {
+  MOZ_ASSERT(!frame->isDebuggee());
+  if (frame->script()->isDebuggee()) {
     frame->setIsDebuggee();
     return DebugAPI::onResumeFrame(cx, frame);
   }
@@ -1300,16 +1298,7 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame,
     
     
     MOZ_ASSERT(!frame->isDebuggee());
-
-    if (!DebugAfterYield(cx, frame)) {
-      return false;
-    }
-
-    
-    
-    if (!frame->isDebuggee()) {
-      return true;
-    }
+    return true;
   }
 
   MOZ_ASSERT(frame->isDebuggee());

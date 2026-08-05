@@ -966,6 +966,8 @@ bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
   
   FrameIter iter(cx);
   MOZ_ASSERT(iter.abstractFramePtr() == frame);
+  jsbytecode* pc = iter.pc();
+  MOZ_ASSERT(JSOp(*pc) == JSOp::AfterYield);
   {
     JS::AutoAssertNoGC nogc;
     for (Realm::DebuggerVectorEntry& entry :
@@ -988,7 +990,23 @@ bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
 
   terminateDebuggerFramesGuard.release();
 
-  return slowPathOnEnterFrame(cx, frame);
+  if (!slowPathOnEnterFrame(cx, frame)) {
+    return false;
+  }
+
+  
+  if (DebugAPI::stepModeEnabled(frame.script())) {
+    if (!DebugAPI::onSingleStep(cx)) {
+      return false;
+    }
+  }
+  if (DebugAPI::hasBreakpointsAt(frame.script(), pc)) {
+    if (!DebugAPI::onTrap(cx)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 

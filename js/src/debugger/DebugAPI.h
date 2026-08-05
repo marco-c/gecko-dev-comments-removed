@@ -231,9 +231,6 @@ class DebugAPI {
 
 
 
-
-
-
   [[nodiscard]] static inline bool onResumeFrame(JSContext* cx,
                                                  AbstractFramePtr frame);
 
