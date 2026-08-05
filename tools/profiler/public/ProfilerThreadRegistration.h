@@ -349,6 +349,10 @@ class ThreadRegistration {
 
   static MOZ_THREAD_LOCAL(ThreadRegistration*) tlsThreadRegistration;
 
+  
+  
+  
+  
   [[nodiscard]] static decltype(tlsThreadRegistration)* GetTLS() {
     if (tlsThreadRegistration.init())
       return &tlsThreadRegistration;
