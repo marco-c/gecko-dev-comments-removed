@@ -6,8 +6,6 @@
 
 
 
-#include "vm/JSScript-inl.h"
-
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
@@ -74,6 +72,8 @@
 #include "vm/StringType.h"    
 #include "vm/Time.h"          
 #include "vm/ToSource.h"      
+
+#include "vm/JSScript-inl.h"
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
 #endif
@@ -899,21 +899,27 @@ bool ScriptSource::loadSource(JSContext* cx, ScriptSource* ss, bool* loaded) {
 class ScriptSource::SourcePropertiesGetter {
   bool* const hasSourceText_;
   bool* const retrievable_;
+  bool* const isTwoByteString_;
 
  public:
-  explicit SourcePropertiesGetter(bool* hasSourceText, bool* retrievable)
-      : hasSourceText_(hasSourceText), retrievable_(retrievable) {}
+  explicit SourcePropertiesGetter(bool* hasSourceText, bool* retrievable,
+                                  bool* isTwoByteString)
+      : hasSourceText_(hasSourceText),
+        retrievable_(retrievable),
+        isTwoByteString_(isTwoByteString) {}
 
   template <typename Unit, SourceRetrievable CanRetrieve>
   void operator()(const Compressed<Unit, CanRetrieve>&) const {
     *hasSourceText_ = true;
     *retrievable_ = false;
+    *isTwoByteString_ = std::is_same_v<Unit, char16_t>;
   }
 
   template <typename Unit, SourceRetrievable CanRetrieve>
   void operator()(const Uncompressed<Unit, CanRetrieve>&) const {
     *hasSourceText_ = true;
     *retrievable_ = false;
+    *isTwoByteString_ = std::is_same_v<Unit, char16_t>;
   }
 
   template <typename Unit>
@@ -921,17 +927,21 @@ class ScriptSource::SourcePropertiesGetter {
     
     *hasSourceText_ = false;
     *retrievable_ = true;
+    *isTwoByteString_ = std::is_same_v<Unit, char16_t>;
   }
 
   void operator()(const Missing&) const {
     *hasSourceText_ = false;
     *retrievable_ = false;
+    *isTwoByteString_ = false;
   }
 };
 
 void ScriptSource::getSourceProperties(ScriptSource* ss, bool* hasSourceText,
-                                       bool* retrievable) {
-  ss->data.match(SourcePropertiesGetter(hasSourceText, retrievable));
+                                       bool* retrievable,
+                                       bool* isTwoByteString) {
+  ss->data.match(
+      SourcePropertiesGetter(hasSourceText, retrievable, isTwoByteString));
 }
 
 
