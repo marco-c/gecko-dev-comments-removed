@@ -807,7 +807,8 @@ int32_t LibaomAv1Encoder::Encode(
         
         
         
-        if ((frame.rtp_timestamp() - it->second) > kVideoPayloadTypeFrequency) {
+        if ((frame.rtp_timestamp() - it->second) >
+            kVideoPayloadTypeFrequency / 2) {
           all_layers_droppable = false;
           break;
         }
