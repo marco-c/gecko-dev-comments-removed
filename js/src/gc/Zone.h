@@ -530,7 +530,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
 
   
-  js::MainThreadOrGCTaskData<js::SparseBitmap> markedAtoms_;
+  js::MainThreadOrGCTaskData<js::SparseBitmap> referencedAtoms_;
 
   
   js::MainThreadOrGCTaskData<js::UniquePtr<js::AtomCacheHashTable>> atomCache_;
@@ -661,7 +661,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
                               size_t* regexpZone, size_t* jitZone,
                               size_t* cacheIRStubs, size_t* objectFusesArg,
                               size_t* uniqueIdMap, size_t* initialPropMapTable,
-                              size_t* shapeTables, size_t* atomsMarkBitmaps,
+                              size_t* shapeTables, size_t* atomReferenceBitmaps,
                               size_t* compartmentObjects,
                               size_t* crossCompartmentWrappersTables,
                               size_t* compartmentsPrivateData,
@@ -968,7 +968,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   js::RegExpZone& regExps() { return *regExps_.ref(); }
 
-  js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
+  js::SparseBitmap& referencedAtoms() { return referencedAtoms_.ref(); }
 
   
   

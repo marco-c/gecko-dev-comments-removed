@@ -265,7 +265,8 @@ void AtomMarkingRuntime::refineZoneBitmapForCollectedZone(
   
   
   
-  zone->markedAtoms().bitwiseAndWith(bitmap);
+  
+  zone->referencedAtoms().bitwiseAndWith(bitmap);
 }
 
 void AtomMarkingRuntime::refineZoneBitmapForCollectedZone(Zone* zone,
@@ -284,13 +285,13 @@ void AtomMarkingRuntime::refineZoneBitmapForCollectedZone(Zone* zone,
     uintptr_t words[ArenaBitmapWords];
     memcpy(words, chunkWords, sizeof(words));
     PropagateBlackBitsToGrayOrBlackBits(words);
-    zone->markedAtoms().bitwiseAndRangeWith(arena->atomBitmapStart(),
-                                            ArenaBitmapWords, words);
+    zone->referencedAtoms().bitwiseAndRangeWith(arena->atomBitmapStart(),
+                                                ArenaBitmapWords, words);
     return;
   }
 
-  zone->markedAtoms().bitwiseAndRangeWith(arena->atomBitmapStart(),
-                                          ArenaBitmapWords, chunkWords);
+  zone->referencedAtoms().bitwiseAndRangeWith(arena->atomBitmapStart(),
+                                              ArenaBitmapWords, chunkWords);
 }
 
 
@@ -321,7 +322,7 @@ UniquePtr<DenseBitmap> AtomMarkingRuntime::getOrMarkAtomsUsedByUncollectedZones(
     
     for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
       if (!zone->isCollecting()) {
-        BitwiseOrIntoChunkMarkBits(gc->atomsZone(), zone->markedAtoms());
+        BitwiseOrIntoChunkMarkBits(gc->atomsZone(), zone->referencedAtoms());
       }
     }
     return nullptr;
@@ -329,7 +330,7 @@ UniquePtr<DenseBitmap> AtomMarkingRuntime::getOrMarkAtomsUsedByUncollectedZones(
 
   for (ZonesIter zone(gc, SkipAtoms); !zone.done(); zone.next()) {
     if (!zone->isCollecting()) {
-      zone->markedAtoms().bitwiseOrInto(*markedUnion);
+      zone->referencedAtoms().bitwiseOrInto(*markedUnion);
     }
   }
 
@@ -345,7 +346,7 @@ void AtomMarkingRuntime::unmarkAllGrayReferences(GCRuntime* gc) {
   for (ZonesIter sourceZone(gc, SkipAtoms); !sourceZone.done();
        sourceZone.next()) {
     MOZ_ASSERT(!sourceZone->isAtomsZone());
-    auto& bitmap = sourceZone->markedAtoms();
+    auto& bitmap = sourceZone->referencedAtoms();
     for (ArenaIter arena(gc->atomsZone(), AllocKind::SYMBOL); !arena.done();
          arena.next()) {
       PropagateGrayOrBlackBitsToBlackBits(bitmap, arena);
@@ -429,7 +430,7 @@ CellColor AtomMarkingRuntime::getAtomMarkColor(Zone* zone, T* thing) {
   size_t blackBit = bit + size_t(ColorBit::BlackBit);
   size_t grayOrBlackBit = bit + size_t(ColorBit::GrayOrBlackBit);
 
-  SparseBitmap& bitmap = zone->markedAtoms();
+  SparseBitmap& bitmap = zone->referencedAtoms();
 
   MOZ_ASSERT_IF((std::is_same_v<T, JSAtom>),
                 !bitmap.readonlyThreadsafeGetBit(grayOrBlackBit));
@@ -462,7 +463,7 @@ CellColor AtomMarkingRuntime::getAtomMarkColorForIndex(Zone* zone,
   size_t blackBit = bitIndex + size_t(ColorBit::BlackBit);
   size_t grayOrBlackBit = bitIndex + size_t(ColorBit::GrayOrBlackBit);
 
-  SparseBitmap& bitmap = zone->markedAtoms();
+  SparseBitmap& bitmap = zone->referencedAtoms();
   bool blackBitSet = bitmap.readonlyThreadsafeGetBit(blackBit);
   bool grayOrBlackBitSet = bitmap.readonlyThreadsafeGetBit(grayOrBlackBit);
 

@@ -3,7 +3,6 @@
 
 
 #include "gc/Zone.h"
-#include "js/shadow/Zone.h"  
 
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
@@ -16,6 +15,7 @@
 #include "jit/Invalidation.h"
 #include "jit/JitScript.h"
 #include "jit/JitZone.h"
+#include "js/shadow/Zone.h"  
 #include "vm/Runtime.h"
 #include "vm/Time.h"
 
@@ -574,9 +574,9 @@ void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, size_t* zoneObject, JS::CodeSizes* code,
     size_t* regexpZone, size_t* jitZone, size_t* cacheIRStubs,
     size_t* objectFusesArg, size_t* uniqueIdMap, size_t* initialPropMapTable,
-    size_t* shapeTables, size_t* atomsMarkBitmaps, size_t* compartmentObjects,
-    size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
-    size_t* scriptCountsMapArg) {
+    size_t* shapeTables, size_t* atomReferenceBitmaps,
+    size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
+    size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
   *zoneObject += mallocSizeOf(this);
   *regexpZone += regExps().sizeOfIncludingThis(mallocSizeOf);
   if (jitZone_) {
@@ -586,7 +586,7 @@ void Zone::addSizeOfIncludingThis(
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);
   shapeZone().addSizeOfExcludingThis(mallocSizeOf, initialPropMapTable,
                                      shapeTables);
-  *atomsMarkBitmaps += markedAtoms().sizeOfExcludingThis(mallocSizeOf);
+  *atomReferenceBitmaps += referencedAtoms().sizeOfExcludingThis(mallocSizeOf);
   *crossCompartmentWrappersTables +=
       crossZoneStringWrappers().sizeOfExcludingThis(mallocSizeOf);
 
