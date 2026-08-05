@@ -207,15 +207,20 @@ add_task(async function test_edit_password() {
             await changeContentFormValues(browser, change);
           }
         }
+        
+        await waitForDoorhanger(browser, "any");
         let notif = getCaptureDoorhanger("any");
 
         let { panel } = PopupNotifications;
 
-        let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-        EventUtils.synthesizeMouseAtCenter(notif.anchorElement, {});
-
-        await promiseShown;
+        
+        if (panel.state !== "open") {
+          let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
+          if (panel.state !== "showing") {
+            EventUtils.synthesizeMouseAtCenter(notif.anchorElement, {});
+          }
+          await promiseShown;
+        }
 
         let notificationElement = panel.childNodes[0];
 

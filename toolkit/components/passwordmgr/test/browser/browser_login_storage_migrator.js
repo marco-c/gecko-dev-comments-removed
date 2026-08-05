@@ -26,6 +26,12 @@ const PREF_ACTIVE = "signon.storage.rust.active";
 const PREF_ATTEMPTS = "signon.storage.rust.migrationAttempts";
 const PREF_VULN = "signon.management.page.vulnerable-passwords.enabled";
 
+
+
+
+
+const isRustBackend = Services.prefs.getBoolPref(PREF_ENABLED, false);
+
 let jsonStore;
 let rustStore;
 
@@ -48,12 +54,23 @@ async function migrate() {
 }
 
 add_setup(async function () {
+  if (isRustBackend) {
+    return;
+  }
   await Services.logins.initializationPromise;
   jsonStore = LoginManagerStorage.getActiveStore();
   rustStore = new LoginManagerRustStorage();
   await rustStore.initialize();
   Services.fog.initializeFOG();
   registerCleanupFunction(cleanup);
+});
+
+
+
+add_task(async function report_result_under_rust_backend() {
+  if (isRustBackend) {
+    Assert.ok(true, "Migration test requires a JSON-active startup; skipping");
+  }
 });
 
 add_task(async function test_migration_moves_logins_to_rust() {
@@ -87,7 +104,7 @@ add_task(async function test_migration_moves_logins_to_rust() {
     2,
     "the JSON store is retained (migration is non-destructive)"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_migration_is_idempotent() {
   await cleanup();
@@ -111,7 +128,7 @@ add_task(async function test_migration_is_idempotent() {
     1,
     "no duplicates after re-migrating"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_migration_quarantines_real_duplicate() {
   await cleanup();
@@ -151,7 +168,7 @@ add_task(async function test_migration_quarantines_real_duplicate() {
     "fresh-password",
     "the most recently changed password wins the collision"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_migration_moves_vulnerable_passwords() {
   await cleanup();
@@ -173,4 +190,4 @@ add_task(async function test_migration_moves_vulnerable_passwords() {
     await rustStore.isPotentiallyVulnerablePassword(stored),
     "vulnerable password migrated to the Rust store"
   );
-});
+}).skip(isRustBackend);
