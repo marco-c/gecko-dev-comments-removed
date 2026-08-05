@@ -8600,18 +8600,16 @@ bool nsContentUtils::MatchClassNames(Element* aElement, int32_t aNamespaceID,
 
   
   ClassMatchingInfo* info = static_cast<ClassMatchingInfo*>(aData);
-  uint32_t length = info->mClasses.Length();
-  if (!length) {
+  if (info->mClasses.IsEmpty()) {
     
     return false;
   }
-  uint32_t i;
-  for (i = 0; i < length; ++i) {
-    if (!classAttr->Contains(info->mClasses[i], info->mCaseTreatment)) {
+
+  for (nsAtom* cls : info->mClasses) {
+    if (!classAttr->Contains(cls, info->mCaseTreatment)) {
       return false;
     }
   }
-
   return true;
 }
 
@@ -8629,7 +8627,7 @@ void* nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   
   auto* info = new ClassMatchingInfo;
   if (attrValue.Type() == nsAttrValue::eAtomArray) {
-    info->mClasses = attrValue.GetAtomArrayValue()->mArray.Clone();
+    info->mClasses.AppendElements(attrValue.GetAtomArrayValue()->Array());
   } else if (attrValue.Type() == nsAttrValue::eAtom) {
     info->mClasses.AppendElement(attrValue.GetAtomValue());
   }
