@@ -15,7 +15,6 @@ use crate::gpu_types::{PrimitiveInstanceData, GlyphInstance};
 use crate::gpu_types::{PrimitiveHeader, PrimitiveHeaderIndex};
 use crate::gpu_types::MaskInstance;
 use crate::internal_types::{FastHashMap, FrameAllocator, FrameMemory, FrameVec, Swizzle, TextureSource};
-use crate::picture::PictureCompositeMode;
 use crate::prim_store::PrimitiveKind;
 use crate::prim_store::PrimitiveInstance;
 use crate::prim_store::{ClipMaskKind, ClipTaskIndex};
@@ -23,7 +22,7 @@ use crate::quad;
 use crate::render_target::RenderTargetContext;
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraph};
 use crate::render_task::RenderTaskAddress;
-use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBuilder, ShaderColorMode};
+use crate::renderer::{BlendMode, GpuBufferBuilder, ShaderColorMode};
 use crate::resource_cache::GlyphFetchResult;
 use crate::space::SpaceMapper;
 use crate::transform::TransformPalette;
@@ -928,9 +927,6 @@ impl BatchBuilder {
             }
         };
 
-        let prim_instance = &prim_instances[draw_index.0 as usize];
-        let is_anti_aliased = ctx.data_stores.prim_has_anti_aliasing(prim_instance);
-
         let vis_flags = match ctx.scratch.frame.draws[draw_index.0 as usize].state {
             DrawState::Culled => {
                 return;
@@ -944,6 +940,8 @@ impl BatchBuilder {
             }
         };
 
+        
+        
         
         
         
@@ -965,41 +963,7 @@ impl BatchBuilder {
 
         let z_id = z_generator.next();
 
-        let prim_rect = ctx.data_stores.get_local_prim_rect(
-            prim_instance,
-            prim_info.snapped_local_rect,
-            &ctx.prim_store.pictures,
-            ctx.surfaces,
-        );
-
         let mut batch_features = BatchFeatures::empty();
-        let may_need_repetition = match prim_instance.kind {
-            PrimitiveKind::Image { .. } => {
-                let idx = prim_info.kind_scratch.unwrap_image();
-                ctx.scratch.frame.images[idx].may_need_repetition
-            }
-            
-            
-            
-            PrimitiveKind::ImageBorder { .. } => true,
-            
-            
-            
-            
-            PrimitiveKind::LineDecoration { .. } => true,
-            
-            
-            
-            _ => false,
-        };
-        if may_need_repetition {
-            batch_features |= BatchFeatures::REPETITION;
-        }
-
-        if !transform_id.is_2d_axis_aligned() || is_anti_aliased {
-            batch_features |= BatchFeatures::ANTIALIASING;
-        }
-
         
         if prim_info.clip_task_index != ClipTaskIndex::INVALID {
             batch_features |= BatchFeatures::CLIP_MASK;
@@ -1010,44 +974,7 @@ impl BatchBuilder {
                 "The primitive's bounding box is specified in a different coordinate system from the current batch!");
         }
 
-        if let PrimitiveKind::Picture { pic_index, .. } = prim_instance.kind {
-            let picture = &ctx.prim_store.pictures[pic_index.0];
-
-            let Some(ref raster_config) = picture.raster_config else {
-                return;
-            };
-
-            
-            
-            
-            
-            
-            
-            
-            match raster_config.composite_mode {
-                PictureCompositeMode::TileCache { .. }
-                | PictureCompositeMode::IntermediateSurface { .. } => {}
-                PictureCompositeMode::Filter(..)
-                | PictureCompositeMode::ComponentTransferFilter(..)
-                | PictureCompositeMode::MixBlend(..)
-                | PictureCompositeMode::Blit(..)
-                | PictureCompositeMode::SVGFEGraph(..) => unreachable!(
-                    "picture composite modes are handled by the quad or split-composite paths, not the brush path"
-                ),
-            }
-
-            return;
-        }
-
-        let base_prim_header = PrimitiveHeader {
-            local_rect: prim_rect,
-            local_clip_rect: prim_info.clip_chain.local_clip_rect,
-            transform_id,
-            z: z_id,
-            render_task_address: self.batcher.render_task_address,
-            specific_prim_address: GpuBufferAddress::INVALID.as_int(), 
-            user_data: [0; 4], 
-        };
+        let prim_instance = &prim_instances[draw_index.0 as usize];
 
         match prim_instance.kind {
             PrimitiveKind::TextRun { data_handle, .. } => {
@@ -1066,6 +993,10 @@ impl BatchBuilder {
                 
                 let prim_header = PrimitiveHeader {
                     local_rect: run_scratch.local_rect,
+                    local_clip_rect: prim_info.clip_chain.local_clip_rect,
+                    transform_id,
+                    z: z_id,
+                    render_task_address: self.batcher.render_task_address,
                     specific_prim_address: run_scratch.gpu_address.as_int(),
                     user_data: [
                         (run_scratch.raster_scale * 65535.0).round() as i32,
@@ -1073,7 +1004,6 @@ impl BatchBuilder {
                         0,
                         0,
                     ],
-                    ..base_prim_header
                 };
                 let prim_header_index = prim_headers.push(&prim_header);
                 let base_instance = GlyphInstance::new(
