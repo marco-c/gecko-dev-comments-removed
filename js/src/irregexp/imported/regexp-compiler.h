@@ -224,7 +224,23 @@ class BoyerMooreLookahead : public ZoneObject {
   void SetRest(int from_map) {
     for (int i = from_map; i < length_; i++) SetAll(i);
   }
-  void EmitSkipInstructions(RegExpMacroAssembler* masm);
+  
+  
+  
+  
+  
+  
+  bool EmitSkipInstructions(RegExpMacroAssembler* masm);
+
+  
+  
+  
+  
+  
+  
+  bool BuildSkipTable(RegExpMacroAssembler* masm, int* offset, int* advance_by,
+                      Handle<ByteArray>* table,
+                      Handle<ByteArray>* nibble_table);
 
  private:
   

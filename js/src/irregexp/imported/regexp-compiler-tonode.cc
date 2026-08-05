@@ -1474,90 +1474,123 @@ class AssertionSequenceRewriter final {
  public:
   
   
-  static void MaybeRewrite(ZoneList<Tree*>* terms, Zone* zone) {
-    AssertionSequenceRewriter rewriter(terms, zone);
+  static ZoneList<Tree*>* MaybeRewrite(ZoneList<Tree*>* terms,
+                                       Compiler* compiler) {
+    Zone* zone = compiler->zone();
+    Flags flags = compiler->flags();
 
-    static constexpr int kNoIndex = -1;
-    int from = kNoIndex;
+    bool has_assertion = false;
+    bool needs_flattening = false;
 
     for (int i = 0; i < terms->length(); i++) {
       Tree* t = terms->at(i);
-      if (from == kNoIndex && t->IsAssertion()) {
-        from = i;  
-      } else if (from != kNoIndex && !t->IsAssertion()) {
-        
-        if (i - from > 1) rewriter.Rewrite(from, i);
-        from = kNoIndex;
+      if (t->IsAssertion()) {
+        has_assertion = true;
+      } else if (t->IsAlternative() ||
+                 (t->IsGroup() && t->AsGroup()->flags() == flags)) {
+        needs_flattening = true;
       }
     }
 
-    if (from != kNoIndex && terms->length() - from > 1) {
-      rewriter.Rewrite(from, terms->length());
-    }
-  }
+    if (!has_assertion && !needs_flattening) return terms;
 
-  
-  
-  
-  
-  
-  void Rewrite(int from, int to) {
-    DCHECK_GT(to, from + 1);
-
-    
+    ZoneList<Tree*>* flattened =
+        zone->New<ZoneList<Tree*>>(terms->length(), zone);
     uint32_t seen_assertions = 0;
-    static_assert(static_cast<int>(Assertion::Type::LAST_ASSERTION_TYPE) <
-                  kUInt32Size * kBitsPerByte);
+    int sequence_start_idx = -1;
 
-    for (int i = from; i < to; i++) {
-      Assertion* t = terms_->at(i)->AsAssertion();
-      const uint32_t bit = 1 << static_cast<int>(t->assertion_type());
-
-      if (seen_assertions & bit) {
-        
-        terms_->Set(i, zone_->New<Empty>());
-      }
-
-      seen_assertions |= bit;
+    for (int i = 0; i < terms->length(); i++) {
+      AppendFlattenedAndFold(flattened, terms->at(i), flags, zone,
+                             &seen_assertions, &sequence_start_idx);
     }
 
-    
-    const uint32_t always_fails_mask =
-        1 << static_cast<int>(Assertion::Type::BOUNDARY) |
-        1 << static_cast<int>(Assertion::Type::NON_BOUNDARY);
-    if ((seen_assertions & always_fails_mask) == always_fails_mask) {
-      ReplaceSequenceWithFailure(from, to);
-    }
-  }
-
-  void ReplaceSequenceWithFailure(int from, int to) {
-    
-    
-    
-    ZoneList<CharacterRange>* ranges =
-        zone_->New<ZoneList<CharacterRange>>(0, zone_);
-    ClassRanges* cc = zone_->New<ClassRanges>(zone_, ranges);
-    terms_->Set(from, cc);
-
-    
-    Empty* empty = zone_->New<Empty>();
-    for (int i = from + 1; i < to; i++) terms_->Set(i, empty);
+    return flattened;
   }
 
  private:
-  AssertionSequenceRewriter(ZoneList<Tree*>* terms, Zone* zone)
-      : zone_(zone), terms_(terms) {}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static void AppendFlattenedAndFold(ZoneList<Tree*>* list, Tree* term,
+                                     Flags flags, Zone* zone,
+                                     uint32_t* seen_assertions,
+                                     int* sequence_start_idx) {
+    if (term->IsAssertion()) {
+      Assertion* assertion = term->AsAssertion();
+      uint32_t bit = 1 << static_cast<int>(assertion->assertion_type());
 
-  Zone* zone_;
-  ZoneList<Tree*>* terms_;
+      if (*seen_assertions & bit) {
+        
+        return;
+      }
+
+      *seen_assertions |= bit;
+
+      const uint32_t always_fails_mask =
+          1 << static_cast<int>(Assertion::Type::BOUNDARY) |
+          1 << static_cast<int>(Assertion::Type::NON_BOUNDARY);
+
+      if ((*seen_assertions & always_fails_mask) == always_fails_mask) {
+        
+        
+        DCHECK_NE(*sequence_start_idx, -1);
+        list->Rewind(*sequence_start_idx);
+        ZoneList<CharacterRange>* ranges =
+            zone->New<ZoneList<CharacterRange>>(0, zone);
+        list->Add(zone->New<ClassRanges>(zone, ranges), zone);
+        return;
+      }
+
+      if (*sequence_start_idx == -1) {
+        *sequence_start_idx = list->length();
+      }
+      list->Add(term, zone);
+    } else if (term->IsAlternative()) {
+      Alternative* alternative = term->AsAlternative();
+      ZoneList<Tree*>* nodes = alternative->nodes();
+      for (int i = 0; i < nodes->length(); i++) {
+        AppendFlattenedAndFold(list, nodes->at(i), flags, zone, seen_assertions,
+                               sequence_start_idx);
+      }
+    } else if (term->IsGroup()) {
+      Group* group = term->AsGroup();
+      if (group->flags() == flags) {
+        AppendFlattenedAndFold(list, group->body(), flags, zone,
+                               seen_assertions, sequence_start_idx);
+      } else {
+        *seen_assertions = 0;
+        *sequence_start_idx = -1;
+        list->Add(term, zone);
+      }
+    } else {
+      *seen_assertions = 0;
+      *sequence_start_idx = -1;
+      list->Add(term, zone);
+    }
+  }
 };
 
 }  
 
 Node* Alternative::ToNodeImpl(Compiler* compiler, Node* on_success) {
-  ZoneList<Tree*>* children = nodes();
-
-  AssertionSequenceRewriter::MaybeRewrite(children, compiler->zone());
+  ZoneList<Tree*>* children =
+      AssertionSequenceRewriter::MaybeRewrite(nodes(), compiler);
   TRACE_WITH_NODE("* After assertion sequence rewrite: ", this);
 
   Node* current = on_success;

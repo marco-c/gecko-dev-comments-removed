@@ -5,6 +5,8 @@
 #ifndef V8_REGEXP_REGEXP_NODES_H_
 #define V8_REGEXP_REGEXP_NODES_H_
 
+#include <optional>
+
 #include "irregexp/imported/regexp-macro-assembler.h"
 
 namespace v8 {
@@ -717,8 +719,54 @@ class ChoiceNode : public Node {
   void SetUpPreLoad(Compiler* compiler, Trace* current_trace,
                     PreloadState* preloads);
   void AssertGuardsMentionRegisters(Trace* trace);
+  
+  
+  
   int EmitOptimizedUnanchoredSearch(Compiler* compiler, Trace* trace,
-                                    SpecialLoopState* search_loop_state);
+                                    SpecialLoopState* search_loop_state,
+                                    bool* bm_scan_emitted);
+  
+  
+  
+  
+  
+  
+  
+  
+  Node* MatchLazyStarLoopBody(Compiler* compiler,
+                              ActionNode** wrapper_out = nullptr);
+  
+  
+  
+  
+  
+  
+  
+  
+  V8_WARN_UNUSED_RESULT std::optional<EmitResult>
+  EmitSkipUntilOneOfMaskedSearch(Compiler* compiler, Trace* trace, Node* body,
+                                 ActionNode* wrapper);
+  
+  
+  
+  
+  
+  
+  
+  void EmitSkipUntilSearchPrelude(Compiler* compiler, Trace* trace, Node* body);
+  
+  
+  
+  
+  
+  
+  bool EmitOneOfMasked3Search(Compiler* compiler, BoyerMooreLookahead* bm);
+  
+  
+  
+  
+  bool MaybeEmitFixedLengthConsumeScan(Compiler* compiler, Label* exit,
+                                       int text_length);
   
   
   V8_WARN_UNUSED_RESULT Trace* EmitFixedLengthLoop(
@@ -728,6 +776,11 @@ class ChoiceNode : public Node {
   V8_WARN_UNUSED_RESULT EmitResult EmitChoices(
       Compiler* compiler, AlternativeGenerationList* alt_gens, int first_choice,
       Trace* trace, PreloadState* preloads, Flags flags);
+  
+  
+  std::optional<EmitResult> TryEmitMaskedValueDispatch(
+      Compiler* compiler, AlternativeGenerationList* alt_gens, Trace* trace,
+      PreloadState* preload, Flags flags);
 
   
   
