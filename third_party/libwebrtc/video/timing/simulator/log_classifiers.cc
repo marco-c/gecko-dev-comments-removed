@@ -40,6 +40,10 @@ std::optional<RtxOsnLoggingStatus> GetRtxOsnLoggingStatus(
       continue;
     }
     
+    if (stream.ssrc == 0) {
+      continue;
+    }
+    
     for (const LoggedRtpPacketIncoming& incoming_packet :
          stream.incoming_packets) {
       log_contained_video_rtx_packets = true;
