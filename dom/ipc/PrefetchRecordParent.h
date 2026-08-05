@@ -70,6 +70,11 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   mozilla::ipc::IPCResult RecvCancel();
 
+  
+  
+  
+  void FirePrefetchStatusUpdated(bool aSuccess);
+
   void ActorDestroy(ActorDestroyReason aReason) override;
 
  private:

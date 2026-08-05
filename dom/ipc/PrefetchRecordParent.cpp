@@ -331,17 +331,56 @@ PrefetchRecordParent::AsyncOnChannelRedirect(
   return NS_OK;
 }
 
+void PrefetchRecordParent::FirePrefetchStatusUpdated(bool aSuccess) {
+  LOG_SPECRULES(
+      ("PrefetchRecordParent::FirePrefetchStatusUpdated: this=%p success=%d",
+       this, static_cast<int>(aSuccess)));
+  
+  
+  
+  
+}
+
 
 
 mozilla::ipc::IPCResult PrefetchRecordParent::RecvCancel() {
   
+  if (mState == PrefetchState::Canceled) {
+    
+    return IPC_OK();
+  }
+
   LOG_SPECRULES(("PrefetchRecordParent::RecvCancel: this=%p", this));
+
+  
+  mState = PrefetchState::Canceled;
+  if (mChannel) {
+    
+    mChannel->Cancel(NS_BINDING_ABORTED);
+    mChannel = nullptr;
+  }
+  
+  
+  
+  
+  
+  FirePrefetchStatusUpdated(false);  
+
+  if (auto* wgp = static_cast<WindowGlobalParent*>(Manager())) {
+    wgp->NotifyPrefetchStateChanged(this);
+  }
   return IPC_OK();
 }
 
 void PrefetchRecordParent::ActorDestroy(ActorDestroyReason aReason) {
   LOG_SPECRULES(("PrefetchRecordParent::ActorDestroy: this=%p, reason=%d", this,
                  static_cast<int>(aReason)));
+  
+  
+  if (mChannel && mState == PrefetchState::Ongoing) {
+    mChannel->Cancel(NS_BINDING_ABORTED);
+    mChannel = nullptr;
+  }
 }
 
 }  
