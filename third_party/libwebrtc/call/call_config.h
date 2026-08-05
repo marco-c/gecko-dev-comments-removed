@@ -13,6 +13,7 @@
 #include <memory>
 #include <optional>
 
+#include "absl/base/nullability.h"
 #include "api/environment/environment.h"
 #include "api/fec_controller.h"
 #include "api/metronome/metronome.h"
@@ -31,11 +32,25 @@ namespace webrtc {
 class AudioProcessing;
 
 struct CallConfig {
-  
-  
-  
+  [[deprecated(
+      "Use CreateSingleThreaded or the multi-argument constructor instead.")]]
   explicit CallConfig(const Environment& env,
                       TaskQueueBase* network_task_queue = nullptr);
+
+  CallConfig(const Environment& env,
+             TaskQueueBase* absl_nonnull worker_task_queue,
+             TaskQueueBase* absl_nonnull network_task_queue);
+
+  static CallConfig CreateWithJoinedWorkerAndNetworkQueue(
+      const Environment& env,
+      TaskQueueBase* absl_nonnull worker_and_network_queue);
+
+  
+  
+  
+  
+  
+  static CallConfig CreateSingleThreaded(const Environment& env);
 
   
   CallConfig(CallConfig&&) = default;
@@ -76,6 +91,7 @@ struct CallConfig {
   NetEqFactory* neteq_factory = nullptr;
 
   TaskQueueBase* network_task_queue_ = nullptr;
+  TaskQueueBase* worker_task_queue = nullptr;
 
   Metronome* decode_metronome = nullptr;
   Metronome* encode_metronome = nullptr;

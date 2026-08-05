@@ -22,6 +22,7 @@
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
 #include "api/media_types.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -90,8 +91,8 @@ void RtpReplayer::Replay(
   
   
   Environment env = CreateTestEnvironment({.time = time_controller.GetClock()});
-  CallConfig call_config(env);
-  std::unique_ptr<Call> call = Call::Create(std::move(call_config));
+  std::unique_ptr<Call> call =
+      Call::Create(CallConfig::CreateSingleThreaded(env));
   SetupVideoStreams(&receive_stream_configs, stream_state.get(), call.get());
 
   
