@@ -17,6 +17,7 @@
 #include "wasm/WasmValidate.h"
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
 #include "mozilla/Utf8.h"
 
@@ -2752,6 +2753,12 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
 
     
     
+    
+    auto cancelRecGroup =
+        mozilla::MakeScopeExit([&] { codeMeta->types->cancelStartRecGroup(); });
+
+    
+    
     for (uint32_t recGroupTypeIndex = 0; recGroupTypeIndex < recGroupLength;
          recGroupTypeIndex++) {
       uint32_t typeIndex =
@@ -2898,6 +2905,7 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
     }
 
     
+    cancelRecGroup.release();
     if (!codeMeta->types->endRecGroup()) {
       return false;
     }

@@ -21,7 +21,6 @@
 #include "mozilla/HashTable.h"
 
 #include "js/RefCounted.h"
-
 #include "wasm/WasmCodegenConstants.h"
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
@@ -1261,6 +1260,20 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
 
   
   
+  
+  void cancelStartRecGroup() {
+    MOZ_ASSERT(pendingRecGroup_);
+    uint32_t numTypes = pendingRecGroup_->numTypes();
+    for (uint32_t i = 0; i < numTypes; i++) {
+      moduleIndices_.remove(&pendingRecGroup_->type(i));
+    }
+    types_.shrinkBy(numTypes);
+    recGroups_.popBack();
+    pendingRecGroup_ = nullptr;
+  }
+
+  
+  
   [[nodiscard]] bool endRecGroup() {
     
     MOZ_ASSERT(pendingRecGroup_);
@@ -1410,6 +1423,9 @@ inline HashNumber ContType::hash(const RecGroup* recGroup) const {
   
   
   
+  if (!funcTypeDef_->isFuncType()) {
+    return 0;
+  }
   return funcTypeDef_->hash();
 }
 
