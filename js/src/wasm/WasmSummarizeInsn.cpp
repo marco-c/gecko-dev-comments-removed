@@ -1843,14 +1843,14 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_MIPS64)
 
-Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
+SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   
-  MOZ_ASSERT(0 == (uintptr_t(insnAddr) & 3));
+  MOZ_ASSERT(insn.isU32aligned());
 
-  const uint32_t insn = *(uint32_t*)insnAddr;
+  const uint32_t insnBits = insn.getU32LittleEndian(0);
 
 #  define INSN(_maxIx, _minIx) \
-    ((insn >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
+    ((insnBits >> (_minIx)) & ((uint32_t(1) << ((_maxIx) - (_minIx) + 1)) - 1))
 
   
   
@@ -1862,9 +1862,9 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
 
   
   
-  if (insn == 0x000001b4) {
+  if (insnBits == 0x000001b4) {
     static_assert(WasmTrapInstructionLength == 4);
-    return Some(TrapMachineInsn::OfficialUD);
+    return SummarizeResult(TrapMachineInsn::OfficialUD, 4);
   }
 
   
@@ -1905,20 +1905,20 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(5, 0)) {
       
       case 0b000000:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b000001:
       
       case 0b000101:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b001000:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b001001:
       
       case 0b001101:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       default:
         break;
     }
@@ -1928,7 +1928,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b010:
       
       case 0b011:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       default:
         break;
     }
@@ -1936,48 +1936,48 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
     switch (INSN(28, 26)) {
       
       case 0b000:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b001:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b010:
       
       case 0b011:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b100:
-        return Some(TrapMachineInsn::Load8);
+        return SummarizeResult(TrapMachineInsn::Load8, 4);
       
       case 0b101:
-        return Some(TrapMachineInsn::Load16);
+        return SummarizeResult(TrapMachineInsn::Load16, 4);
       
       case 0b110:
       
       case 0b111:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
     }
   } else if (INSN(31, 29) == 0b101) {
     switch (INSN(28, 26)) {
       
       case 0b000:
-        return Some(TrapMachineInsn::Store8);
+        return SummarizeResult(TrapMachineInsn::Store8, 4);
       
       case 0b001:
-        return Some(TrapMachineInsn::Store16);
+        return SummarizeResult(TrapMachineInsn::Store16, 4);
       
       case 0b010:
       
       case 0b011:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b100:
       
       case 0b101:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b110:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b111:
         break;
@@ -1988,7 +1988,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b000:
       
       case 0b001:
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b010:
         if (jit::isLoongson()) {
@@ -1997,18 +1997,18 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
             case 0b100:
             
             case 0b101:
-              return Some(TrapMachineInsn::Load32);
+              return SummarizeResult(TrapMachineInsn::Load32, 4);
             
             case 0b110:
             
             case 0b111:
-              return Some(TrapMachineInsn::Load64);
+              return SummarizeResult(TrapMachineInsn::Load64, 4);
             
             default:
-              return Nothing();
+              return SummarizeResult();
           }
         }
-        return Some(TrapMachineInsn::Load32);
+        return SummarizeResult(TrapMachineInsn::Load32, 4);
       
       case 0b011:
         break;
@@ -2016,36 +2016,36 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b100:
       
       case 0b101:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b110:
         if (jit::isLoongson()) {
           switch (INSN(2, 0)) {
             
             case 0b000:
-              return Some(TrapMachineInsn::Load8);
+              return SummarizeResult(TrapMachineInsn::Load8, 4);
             
             case 0b001:
-              return Some(TrapMachineInsn::Load16);
+              return SummarizeResult(TrapMachineInsn::Load16, 4);
             
             case 0b010:
             
             case 0b110:
-              return Some(TrapMachineInsn::Load32);
+              return SummarizeResult(TrapMachineInsn::Load32, 4);
             
             case 0b011:
             
             case 0b111:
-              return Some(TrapMachineInsn::Load64);
+              return SummarizeResult(TrapMachineInsn::Load64, 4);
             
             default:
-              return Nothing();
+              return SummarizeResult();
           }
         }
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
       
       case 0b111:
-        return Some(TrapMachineInsn::Load64);
+        return SummarizeResult(TrapMachineInsn::Load64, 4);
     }
   } else if (INSN(31, 29) == 0b111) {
     switch (INSN(28, 26)) {
@@ -2053,7 +2053,7 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b000:
       
       case 0b001:
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b010:
         if (jit::isLoongson()) {
@@ -2062,18 +2062,18 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
             case 0b100:
             
             case 0b101:
-              return Some(TrapMachineInsn::Store32);
+              return SummarizeResult(TrapMachineInsn::Store32, 4);
             
             case 0b110:
             
             case 0b111:
-              return Some(TrapMachineInsn::Store64);
+              return SummarizeResult(TrapMachineInsn::Store64, 4);
             
             default:
-              return Nothing();
+              return SummarizeResult();
           }
         }
-        return Some(TrapMachineInsn::Store32);
+        return SummarizeResult(TrapMachineInsn::Store32, 4);
       
       case 0b011:
         break;
@@ -2081,41 +2081,41 @@ Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insnAddr) {
       case 0b100:
       
       case 0b101:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b110:
         if (jit::isLoongson()) {
           switch (INSN(2, 0)) {
             
             case 0b000:
-              return Some(TrapMachineInsn::Store8);
+              return SummarizeResult(TrapMachineInsn::Store8, 4);
             
             case 0b001:
-              return Some(TrapMachineInsn::Store16);
+              return SummarizeResult(TrapMachineInsn::Store16, 4);
             
             case 0b010:
             
             case 0b110:
-              return Some(TrapMachineInsn::Store32);
+              return SummarizeResult(TrapMachineInsn::Store32, 4);
             
             case 0b011:
             
             case 0b111:
-              return Some(TrapMachineInsn::Store64);
+              return SummarizeResult(TrapMachineInsn::Store64, 4);
             
             default:
-              return Nothing();
+              return SummarizeResult();
           }
         }
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
       
       case 0b111:
-        return Some(TrapMachineInsn::Store64);
+        return SummarizeResult(TrapMachineInsn::Store64, 4);
     }
   }
 
 #  undef INSN
-  return Nothing();
+  return SummarizeResult();
 }
 
 
