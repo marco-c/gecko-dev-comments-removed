@@ -110,41 +110,12 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     void* unwoundPC = trapData.unwoundPC;
 
     code_ = &instance_->code();
+    MOZ_ASSERT(code_ == LookupCode(unwoundPC));
 
-    const wasm::CodeRange* unwoundCodeRange = nullptr;
-    const wasm::Code* unwoundCode = LookupCode(unwoundPC, &unwoundCodeRange);
-    MOZ_RELEASE_ASSERT(unwoundCode);
-    MOZ_RELEASE_ASSERT(unwoundCodeRange);
-
-#ifdef ENABLE_WASM_JSPI
-    MOZ_RELEASE_ASSERT(unwoundCodeRange->isFunction() ||
-                       unwoundCodeRange->isContBaseFrame());
-    if (unwoundCodeRange->isContBaseFrame()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_RELEASE_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
-      MOZ_RELEASE_ASSERT(contStack_);
-      unwoundContStack_ = contStack_;
-      popContBaseFrame();
-      MOZ_ASSERT(!done());
-      return;
-    }
-#endif
-
-    
-    
-    MOZ_RELEASE_ASSERT(unwoundCode == code_);
+    const CodeRange* codeRange = code_->lookupFuncRange(unwoundPC);
     bytecodeOffset_ = trapData.trapSite.bytecodeOffset.offset();
     funcIndex_ =
-        FuncIndexForBytecodeOffset(*code_, bytecodeOffset_, *unwoundCodeRange);
+        FuncIndexForBytecodeOffset(*code_, bytecodeOffset_, *codeRange);
     inlinedCallerOffsets_ = trapData.trapSite.inlinedCallerOffsetsSpan();
     failedUnwindSignatureMismatch_ = trapData.failedUnwindSignatureMismatch;
 #ifdef ENABLE_WASM_JSPI
@@ -273,42 +244,7 @@ static inline void AssertDirectJitCall(const void* fp) {
   AssertJitExitFrame(fp, jit::ExitFrameType::DirectWasmJitCall);
 }
 
-#ifdef ENABLE_WASM_JSPI
-void WasmFrameIter::popContBaseFrame() {
-  ContStack* stack = ContStack::fromBaseFrameFP(fp_);
-  MOZ_ASSERT(cx()->wasm().findStackForAddress(
-                 cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
-  MOZ_ASSERT(stack == contStack_);
-
-  const Handlers* handlers = stack->handlers();
-  fp_ = (wasm::Frame*)handlers->returnTarget.framePointer;
-  uint8_t* returnAddress = (uint8_t*)handlers->returnTarget.resumePC;
-  instance_ = handlers->returnTarget.instance;
-  const CodeRange* codeRange;
-  code_ = LookupCode(returnAddress, &codeRange);
-  resumePCinCurrentFrame_ = returnAddress;
-
-  CallSite site;
-  MOZ_ALWAYS_TRUE(code_->lookupCallSite(returnAddress, &site));
-  MOZ_ASSERT(site.kind() == CallSiteKind::StackSwitch);
-
-  funcIndex_ =
-      FuncIndexForBytecodeOffset(*code_, site.bytecodeOffset(), *codeRange);
-  inlinedCallerOffsets_ = site.inlinedCallerOffsetsSpan();
-  failedUnwindSignatureMismatch_ = false;
-
-  
-  currentFrameStackSwitched_ = true;
-  contStack_ = handlers->returnTarget.stack->stack;
-
-  MOZ_ASSERT(!done());
-}
-#endif  
-
 void WasmFrameIter::popFrame(bool isLeavingFrame) {
-  
-  unwoundContStack_ = nullptr;
-
   
   if (enableInlinedFrames_ && inlinedCallerOffsets_.size() > 0) {
     
@@ -453,7 +389,30 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
 
 #ifdef ENABLE_WASM_JSPI
   if (codeRange->isContBaseFrame()) {
-    popContBaseFrame();
+    ContStack* stack = ContStack::fromBaseFrameFP(fp_);
+    MOZ_ASSERT(cx()->wasm().findStackForAddress(
+                   cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
+    MOZ_ASSERT(stack == contStack_);
+
+    const Handlers* handlers = stack->handlers();
+    fp_ = (wasm::Frame*)handlers->returnTarget.framePointer;
+    returnAddress = (uint8_t*)handlers->returnTarget.resumePC;
+    instance_ = handlers->returnTarget.instance;
+    code_ = LookupCode(returnAddress, &codeRange);
+    resumePCinCurrentFrame_ = returnAddress;
+
+    CallSite site;
+    MOZ_ALWAYS_TRUE(code_->lookupCallSite(returnAddress, &site));
+    MOZ_ASSERT(site.kind() == CallSiteKind::StackSwitch);
+
+    funcIndex_ =
+        FuncIndexForBytecodeOffset(*code_, site.bytecodeOffset(), *codeRange);
+    inlinedCallerOffsets_ = site.inlinedCallerOffsetsSpan();
+    failedUnwindSignatureMismatch_ = false;
+
+    
+    currentFrameStackSwitched_ = true;
+    contStack_ = handlers->returnTarget.stack->stack;
 
     if (isLeavingFrame) {
       

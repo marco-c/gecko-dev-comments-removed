@@ -815,11 +815,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 #ifdef ENABLE_WASM_JSPI
   
   
-  
-  
-  
-  
-  wasm::ContStack* wasmPreviousStack = iter.asWasm().unwoundContStack();
+  wasm::ContStack* wasmPreviousStack = nullptr;
 #endif
 
   for (; !iter.done() && iter.isWasm(); ++iter) {

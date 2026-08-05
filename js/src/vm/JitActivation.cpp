@@ -241,16 +241,8 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   void* pc = unwindState.pc;
   const wasm::Frame* fp = wasm::Frame::fromUntaggedWasmExitFP(unwindState.fp);
 
-  
-  
-  
-  
-  
-  
-  const wasm::Code* code = wasm::LookupCode(pc);
-  MOZ_RELEASE_ASSERT(code);
-  MOZ_ASSERT_IF(!unwound,
-                code == &wasm::GetNearestEffectiveInstance(fp)->code());
+  const wasm::Code& code = wasm::GetNearestEffectiveInstance(fp)->code();
+  MOZ_RELEASE_ASSERT(&code == wasm::LookupCode(pc));
 
   
   
@@ -270,7 +262,7 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   
   if (unwound) {
     wasm::CallSite site;
-    MOZ_ALWAYS_TRUE(code->lookupCallSite(pc, &site));
+    MOZ_ALWAYS_TRUE(code.lookupCallSite(pc, &site));
     wasmTrapData_->trapSite.bytecodeOffset =
         wasm::BytecodeOffset(site.bytecodeOffset());
     wasmTrapData_->trapSite.inlinedCallerOffsets = site.inlinedCallerOffsets();
