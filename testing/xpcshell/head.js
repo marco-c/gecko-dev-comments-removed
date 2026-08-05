@@ -27,6 +27,12 @@
 
 
 var _quit = false;
+
+
+
+
+
+const _abortMarker = Symbol("xpcshell abort after reported failure");
 var _passed = true;
 var _tests_pending = 0;
 var _cleanupFunctions = [];
@@ -675,11 +681,7 @@ function _execute_test() {
     _passed = false;
     
     
-    
-    
-    
-
-    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+    if (e !== _abortMarker) {
       let extra = {};
       if (e.fileName) {
         extra.source_file = e.fileName;
@@ -789,7 +791,7 @@ function _execute_test() {
     
     
     
-    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+    if (e !== _abortMarker) {
       throw e;
     }
   } finally {
@@ -903,10 +905,7 @@ function executeSoon(callback, aName) {
       } catch (e) {
         
         
-        
-        
-        
-        if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+        if (e !== _abortMarker) {
           let stack = e.stack ? _format_stack(e.stack) : null;
           _testLogger.testStatus(
             _TEST_NAME,
@@ -961,7 +960,7 @@ function _abort_failed_test() {
   
   _passed = false;
   _do_quit();
-  throw Components.Exception("", Cr.NS_ERROR_ABORT);
+  throw _abortMarker;
 }
 
 function _format_stack(stack) {
@@ -1014,7 +1013,7 @@ function do_report_unexpected_exception(ex, text) {
     stack: _format_stack(ex?.stack),
   });
   _do_quit();
-  throw Components.Exception("", Cr.NS_ERROR_ABORT);
+  throw _abortMarker;
 }
 
 function do_note_exception(ex, text) {
@@ -1902,6 +1901,11 @@ function run_next_test() {
               _gRunningTest.name || undefined
             );
             _setTaskPrefs(initialPrefsValues);
+            
+            
+            if (ex === _abortMarker) {
+              return;
+            }
             try {
               
               
@@ -1910,7 +1914,7 @@ function run_next_test() {
               
               
               
-              if (error.result != Cr.NS_ERROR_ABORT) {
+              if (error !== _abortMarker) {
                 let extra = {};
                 if (error.fileName) {
                   extra.source_file = error.fileName;
@@ -1925,7 +1929,7 @@ function run_next_test() {
                 }
                 _testLogger.error(_exception_message(error), extra);
                 _do_quit();
-                throw Components.Exception("", Cr.NS_ERROR_ABORT);
+                throw _abortMarker;
               }
             }
           }
