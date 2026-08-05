@@ -513,26 +513,22 @@ FontFaceSetImpl::FindOrCreateUserFontEntryFromFontFace(
                       StyleFontFaceSourceFormatKeyword::EmbeddedOpentype;
                 } else if (valueString.LowerCaseEqualsASCII("svg")) {
                   face->mFormatHint = StyleFontFaceSourceFormatKeyword::Svg;
-                } else if (StaticPrefs::layout_css_font_variations_enabled()) {
-                  
-                  
-                  if (valueString.LowerCaseEqualsASCII("woff-variations")) {
-                    face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "woff2-variations")) {
-                    face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff2;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "opentype-variations")) {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Opentype;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "truetype-variations")) {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Truetype;
-                  } else {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Unknown;
-                  }
+                }
+                
+                
+                else if (valueString.LowerCaseEqualsASCII("woff-variations")) {
+                  face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "woff2-variations")) {
+                  face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff2;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "opentype-variations")) {
+                  face->mFormatHint =
+                      StyleFontFaceSourceFormatKeyword::Opentype;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "truetype-variations")) {
+                  face->mFormatHint =
+                      StyleFontFaceSourceFormatKeyword::Truetype;
                 } else {
                   
                   
