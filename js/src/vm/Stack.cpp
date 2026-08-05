@@ -2,8 +2,6 @@
 
 
 
-#include "vm/Stack-inl.h"
-
 #include "mozilla/Maybe.h"  
 
 #include <algorithm>  
@@ -22,6 +20,7 @@
 
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/Probes-inl.h"
+#include "vm/Stack-inl.h"
 
 using namespace js;
 
@@ -433,6 +432,14 @@ InterpreterFrame* InterpreterStack::pushExecuteFrame(
   fp->initLocals();
 
   return fp;
+}
+
+InterpreterFrame* InterpreterStack::pushGeneratorResumeFrame(
+    JSContext* cx, HandleFunction callee, HandleObject envChain) {
+  
+  return createGeneratorResumeFrame(cx, callee, envChain,  nullptr,
+                                     nullptr,
+                                     nullptr);
 }
 
 

@@ -826,6 +826,12 @@ class InterpreterStack {
 
   
   
+  InterpreterFrame* pushGeneratorResumeFrame(JSContext* cx,
+                                             HandleFunction callee,
+                                             HandleObject envChain);
+
+  
+  
   bool pushInlineFrame(JSContext* cx, InterpreterRegs& regs,
                        const CallArgs& args, HandleScript script,
                        MaybeConstruct constructing);
