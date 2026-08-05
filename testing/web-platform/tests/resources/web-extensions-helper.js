@@ -28,10 +28,16 @@ globalThis.runTestsWithWebExtension = function(extensionPath) {
     test.done();
 
     if (data.remainingTests) {
+      
       return;
     }
 
-    cleanupListeners();
+    
+
+    browser.test.onTestStarted.removeListener(onTestStartedListener);
+    browser.test.onTestFinished.removeListener(onTestFinishedListener);
+
+    
     installPromise
         .then((extension_id) => {
           return test_driver.uninstall_web_extension(extension_id);
@@ -41,22 +47,13 @@ globalThis.runTestsWithWebExtension = function(extensionPath) {
         });
   }
 
-  function cleanupListeners() {
-    browser.test.onTestStarted.removeListener(onTestStartedListener);
-    browser.test.onTestFinished.removeListener(onTestFinishedListener);
-  }
-
-  
-  
-  
-  browser.test.onTestStarted.addListener(onTestStartedListener);
-  browser.test.onTestFinished.addListener(onTestFinishedListener);
-
   installPromise =
       test_driver.install_web_extension({type: 'path', path: extensionPath});
 
-  return installPromise.catch((error) => {
-    cleanupListeners();
-    throw error;
+  return installPromise.then(() => {
+    
+    
+    browser.test.onTestStarted.addListener(onTestStartedListener);
+    browser.test.onTestFinished.addListener(onTestFinishedListener);
   });
 }
