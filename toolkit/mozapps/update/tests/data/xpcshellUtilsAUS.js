@@ -960,6 +960,15 @@ gTestDirsPartialSuccess = gTestDirsCommon.concat(gTestDirsPartialSuccess);
 function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   debugDump("start - general test setup");
 
+  
+  
+  
+  
+  
+  Cc["@mozilla.org/network/protocol;1?name=moz-src"].getService(
+    Ci.nsIProtocolHandler
+  );
+
   Assert.strictEqual(
     gTestID,
     undefined,
