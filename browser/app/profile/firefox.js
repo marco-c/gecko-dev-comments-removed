@@ -2645,18 +2645,11 @@ pref("browser.vpn_promo.enabled", true);
 pref("browser.contentblocking.report.vpn_regions", "as,at,au,bd,be,bg,br,ca,ch,cl,co,cy,cz,de,dk,ee,eg,es,fi,fr,gb,gg,gr,hr,hu,id,ie,im,in,io,it,je,ke,kr,lt,lu,lv,ma,mp,mt,mx,my,ng,nl,no,nz,pl,pr,pt,ro,sa,se,sg,si,sk,sn,th,tr,tw,ua,ug,uk,um,us,vg,vi,vn,za");
 
 
-
-pref("browser.promo.focus.disallowed_regions", "cn");
-
-
-pref("browser.promo.focus.enabled", true);
-
-
 pref("browser.promo.pin.enabled", true);
 
 
 
-pref("browser.promo.cookiebanners.enabled", false);
+pref("browser.promo.cookiebanners.enabled", true);
 
 pref("browser.contentblocking.report.hide_vpn_banner", false);
 pref("browser.contentblocking.report.vpn_sub_id", "sub_HrfCZF7VPHzZkA");
