@@ -27,14 +27,16 @@ assertEq(gcstate(), "NotActive");
 
 
 gczeal(0);
-gcslice(1);
-waitForState("Mark");
-assertEq(gcstate(), "Mark");
-gcslice(1000000);
-assertEq(gcstate(), "Mark");
-gcslice(1000000);
-assert(gcstate() !== "Mark");
-finishgc();
+if (!gcparam("concurrentMarkingEnabled")) {
+  gcslice(1);
+  waitForState("Mark");
+  assertEq(gcstate(), "Mark");
+  gcslice(1000000);
+  assertEq(gcstate(), "Mark");
+  gcslice(1000000);
+  assert(gcstate() !== "Mark");
+  finishgc();
+}
 
 
 

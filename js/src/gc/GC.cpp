@@ -4635,6 +4635,12 @@ bool GCRuntime::shouldYieldAtEndOfMarkPhase() const {
 
   
   
+  if (useConcurrentMarking) {
+    return false;
+  }
+
+  
+  
   
   return markSliceCount > 1;
 }
