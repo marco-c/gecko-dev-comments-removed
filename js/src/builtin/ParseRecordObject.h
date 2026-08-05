@@ -14,7 +14,10 @@ namespace js {
 using JSONParseNode = JSString;
 
 class ParseRecordObject : public NativeObject {
-  enum { ParseNodeSlot, ValueSlot, SlotCount };
+  static constexpr auto PARSE_NODE_SLOT =
+      TypedSlot<ValueType::String, ValueType::Undefined>(0);
+  static constexpr uint32_t VALUE_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
 
  public:
   static const JSClass class_;
@@ -27,16 +30,16 @@ class ParseRecordObject : public NativeObject {
   
   
   JSONParseNode* getParseNode() const {
-    const Value& slot = getReservedSlot(ParseNodeSlot);
+    const Value& slot = getReservedSlotTyped(PARSE_NODE_SLOT);
     return slot.isUndefined() ? nullptr : slot.toString();
   }
 
   
   
-  const Value& getValue() const { return getReservedSlot(ValueSlot); }
+  const Value& getValue() const { return getReservedSlot(VALUE_SLOT); }
 
   void setValue(JS::Handle<JS::Value> value) {
-    setReservedSlot(ValueSlot, value);
+    setReservedSlot(VALUE_SLOT, value);
   }
 
   bool hasValue() const { return !getValue().isUndefined(); }
