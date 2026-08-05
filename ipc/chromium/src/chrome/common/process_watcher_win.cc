@@ -11,7 +11,6 @@
 #include "base/object_watcher.h"
 #include "nsExceptionHandler.h"
 #include "nsString.h"
-#include "prenv.h"
 
 
 static constexpr int kWaitInterval = 2000;
@@ -64,10 +63,7 @@ class ChildReaper : public mozilla::Runnable,
         CrashReporter::AutoRecordAnnotation autoShutdownHangCrash(
             CrashReporter::Annotation::CrashSignatureOverrideForTesting,
             kShutdownHangCrashSignature);
-        
-        if (!PR_GetEnv("MOZ_TEST_CHILD_EXIT_HANG")) {
-          CrashProcessIfHanging();
-        }
+        CrashProcessIfHanging();
         WaitForSingleObject(process_, INFINITE);
       }
       base::CloseProcessHandle(process_);

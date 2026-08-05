@@ -18,6 +18,7 @@
 #endif
 
 #include "nsAppRunner.h"
+#include "nsExceptionHandler.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ipc/IOThread.h"
 #include "mozilla/ipc/ProcessUtils.h"
@@ -80,7 +81,11 @@ static void ReallySleep(int aSeconds) { ::Sleep(aSeconds * 1000); }
 #  endif  
 static void SleepIfEnv(const char* aName) {
   if (auto* value = PR_GetEnv(aName)) {
+    CrashReporter::RecordAnnotationBool(
+        CrashReporter::Annotation::IntentionalCrashForTesting, true);
     ReallySleep(atoi(value));
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::IntentionalCrashForTesting);
   }
 }
 #else  
@@ -89,7 +94,6 @@ static void SleepIfEnv(const char* aName) {}
 
 ProcessChild::~ProcessChild() {
 #ifdef NS_FREE_PERMANENT_DATA
-  
   
   
   
@@ -109,7 +113,6 @@ void ProcessChild::NotifiedImpendingShutdown() {
 
 void ProcessChild::QuickExit() {
 #ifndef NS_FREE_PERMANENT_DATA
-  
   
   
   
