@@ -2176,11 +2176,7 @@ pref("browser.aboutwelcome.experimentsGate.minDisplayMs", 3000);
 pref("browser.aboutwelcome.experimentsGate.maxDisplayMs", 8000);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.nova.enabled", true);
-#else 
-  pref("browser.nova.enabled", false);
-#endif
+pref("browser.nova.enabled", false);
 
 
 pref("messaging-system.profile.singleProfileMessaging.disable", true);
