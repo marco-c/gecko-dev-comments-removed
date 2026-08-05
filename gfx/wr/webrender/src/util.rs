@@ -138,16 +138,6 @@ pub trait MatrixHelpers<Src, Dst> {
     
     
     fn is_2d_on_z_plane(&self) -> bool;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn coplanar_scale_factors(&self) -> Option<(f32, f32)>;
     fn has_2d_inverse(&self) -> bool;
     
     
@@ -228,25 +218,6 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
                     self.m43.abs() > NEARLY_ZERO;
 
         !z_in || !z_out
-    }
-
-    fn coplanar_scale_factors(&self) -> Option<(f32, f32)> {
-        
-        if self.m14.abs() > NEARLY_ZERO ||
-           self.m24.abs() > NEARLY_ZERO {
-            return None;
-        }
-
-        
-        
-        
-        if self.m44 < NEARLY_ZERO {
-            return None;
-        }
-
-        let (major, minor) = scale_factors(self);
-
-        Some((major / self.m44, minor / self.m44))
     }
 
     fn has_2d_inverse(&self) -> bool {

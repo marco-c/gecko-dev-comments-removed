@@ -1176,12 +1176,11 @@ impl PictureInstance {
                         
                         
                         
-                        
-                        
-                        
-                        let scale_factors = local_to_surface
-                            .coplanar_scale_factors()
-                            .unwrap_or((1.0, 1.0));
+                        let scale_factors = if local_to_surface.is_perspective() {
+                            (1.0, 1.0)
+                        } else {
+                            local_to_surface.scale_factors()
+                        };
 
                         let scale_factors = (
                             scale_factors.0 * parent_surface.world_scale_factors.0,
