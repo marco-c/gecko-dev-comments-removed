@@ -416,7 +416,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  
   void TryActivateFromPrefetch(nsIURI* aURI);
 
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);

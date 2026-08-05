@@ -36,13 +36,36 @@ NS_INTERFACE_MAP_END
 
 
 
-void PrefetchRecordParent::Init(const SpeculativePrefetchArgs& aArgs) {
-  auto* wgp = static_cast<WindowGlobalParent*>(Manager());
-  nsCOMPtr<nsIPrincipal> docPrincipal = wgp->DocumentPrincipal();
-  OriginAttributes sourceAttrs = docPrincipal->OriginAttributesRef();
+void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
+                                const SpeculativePrefetchArgs& aArgs) {
+  
+  
+  if (!aWGP) {
+    LOG_SPECRULES_WARN(
+        ("PrefetchRecordParent::Init: this=%p wgp is null", this));
+    mState = PrefetchState::Canceled;
+    return;
+  }
+  nsCOMPtr<nsIPrincipal> docPrincipal = aWGP->DocumentPrincipal();
+  if (!docPrincipal) {
+    LOG_SPECRULES_WARN(
+        ("PrefetchRecordParent::Init: this=%p docPrincipal is null", this));
+    mState = PrefetchState::Canceled;
+    return;
+  }
+  
+  
+  
+  OriginAttributes sourceAttrs;
+  aWGP->BrowsingContext()->GetOriginAttributes(sourceAttrs);
   mSourcePartitionKey = sourceAttrs.mPartitionKey;
 
   mURL = aArgs.uri();
+  if (!mURL) {
+    LOG_SPECRULES_WARN(("PrefetchRecordParent::Init: this=%p null URL", this));
+    mState = PrefetchState::Canceled;
+    return;
+  }
   mTags = aArgs.tags().Clone();
   mReferrerInfo = aArgs.referrerInfo();
   if (!mReferrerInfo) {
@@ -58,8 +81,14 @@ void PrefetchRecordParent::Init(const SpeculativePrefetchArgs& aArgs) {
           : PrefetchAnonymizationPolicy::None;
   mStartTime = TimeStamp::Now();
 
-  if (StaticPrefs::dom_speculation_rules_same_origin_only() &&
-      IsCrossOriginToDocument(mURL)) {
+  
+  
+  
+  bool isCrossOrigin = false;
+  docPrincipal->IsSameOrigin(mURL, &isCrossOrigin);
+  isCrossOrigin = !isCrossOrigin;
+
+  if (StaticPrefs::dom_speculation_rules_same_origin_only() && isCrossOrigin) {
     LOG_SPECRULES_WARN(
         ("PrefetchRecordParent::Init: this=%p cross-origin rejected "
          "(same_origin_only=true)",
@@ -79,10 +108,12 @@ void PrefetchRecordParent::Init(const SpeculativePrefetchArgs& aArgs) {
   
   
   OriginAttributes isolatedAttrs = sourceAttrs;
-  if (IsCrossOriginToDocument(mURL)) {
+  if (isCrossOrigin) {
     PopulateIsolatedPartitionKey(isolatedAttrs);
   }
   mIsolatedPartitionKey = isolatedAttrs.mPartitionKey;
+
+  nsICookieJarSettings* cjs = aWGP->CookieJarSettings();
 
   nsresult rv = NS_NewChannelInternal(
       getter_AddRefs(mChannel), mURL,
@@ -92,9 +123,11 @@ void PrefetchRecordParent::Init(const SpeculativePrefetchArgs& aArgs) {
       mozilla::Nothing(), mozilla::Nothing(),
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
       nsIContentPolicy::TYPE_OTHER,
+      cjs,      
       nullptr,  
+                
       nullptr,  
-      nullptr,  
+                
       this,     
       nsIRequest::LOAD_BACKGROUND);
 
@@ -108,6 +141,15 @@ void PrefetchRecordParent::Init(const SpeculativePrefetchArgs& aArgs) {
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  if (!loadInfo) {
+    LOG_SPECRULES_WARN(
+        ("PrefetchRecordParent::Init: this=%p mChannel->LoadInfo() returned "
+         "null",
+         this));
+    mState = PrefetchState::Canceled;
+    mChannel = nullptr;
+    return;
+  }
   loadInfo->SetOriginAttributes(isolatedAttrs);
 
   ConfigureSecPurpose(mChannel);
@@ -295,6 +337,7 @@ NS_IMETHODIMP
 PrefetchRecordParent::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIChannel> ch = do_QueryInterface(aRequest);
   FillResponseOnLastEntry(ch);
+
   if (LOG_SPECRULES_ENABLED()) {
     nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest);
     uint32_t status = 0;
@@ -318,7 +361,15 @@ PrefetchRecordParent::OnDataAvailable(nsIRequest* aRequest,
         ("PrefetchRecordParent::OnDataAvailable: this=%p body cap exceeded "
          "(%" PRIu64 " > %u); canceling",
          this, mBytesReceived, maxBytes));
-    mChannel->Cancel(NS_ERROR_FILE_TOO_BIG);
+    if (mChannel) {
+      mChannel->Cancel(NS_ERROR_FILE_TOO_BIG);
+    } else {
+      
+      LOG_SPECRULES_WARN(
+          ("PrefetchRecordParent::OnDataAvailable: this=%p mChannel is null "
+           "at body cap",
+           this));
+    }
     return NS_ERROR_FILE_TOO_BIG;
   }
   uint32_t consumed = 0;
@@ -408,6 +459,13 @@ PrefetchRecordParent::AsyncOnChannelRedirect(
 
   nsCOMPtr<nsIURI> newURI;
   aNewChannel->GetURI(getter_AddRefs(newURI));
+  if (!newURI) {
+    LOG_SPECRULES_WARN(
+        ("PrefetchRecordParent::AsyncOnChannelRedirect: this=%p newURI is null",
+         this));
+    aCb->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
+    return NS_OK;
+  }
   AppendRedirectChainEntry(newURI);
   aCb->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;

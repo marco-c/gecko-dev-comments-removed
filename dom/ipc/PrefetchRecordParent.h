@@ -6,6 +6,7 @@
 #ifndef mozilla_dom_PrefetchRecordParent_h
 #define mozilla_dom_PrefetchRecordParent_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PPrefetchRecordParent.h"
@@ -24,6 +25,8 @@
 #include "nsTArray.h"
 
 namespace mozilla::dom {
+
+class WindowGlobalParent;
 
 
 
@@ -46,7 +49,8 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   
   
-  void Init(const SpeculativePrefetchArgs& aArgs);
+  
+  void Init(WindowGlobalParent* aWGP, const SpeculativePrefetchArgs& aArgs);
 
   
   

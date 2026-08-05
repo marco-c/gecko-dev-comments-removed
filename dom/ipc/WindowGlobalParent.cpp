@@ -2210,7 +2210,7 @@ already_AddRefed<PPrefetchRecordParent>
 WindowGlobalParent::AllocPPrefetchRecordParent(
     const SpeculativePrefetchArgs& aArgs) {
   RefPtr<PrefetchRecordParent> actor = MakeRefPtr<PrefetchRecordParent>();
-  actor->Init(aArgs);
+  actor->Init(this, aArgs);
   return actor.forget();
 }
 
@@ -2324,11 +2324,12 @@ PrefetchRecordParent* WindowGlobalParent::FindMatchingPrefetchRecord(
   
   
   
+  nsTArray<PPrefetchRecordParent*> managed;
+  ManagedPPrefetchRecordParent(managed);
+
   PrefetchRecordParent* exact = nullptr;
   PrefetchRecordParent* inexact = nullptr;
 
-  nsTArray<PPrefetchRecordParent*> managed;
-  ManagedPPrefetchRecordParent(managed);
   
   for (auto* p : managed) {
     auto* rec = static_cast<PrefetchRecordParent*>(p);
@@ -2361,7 +2362,7 @@ PrefetchRecordParent* WindowGlobalParent::FindMatchingPrefetchRecord(
   
   
   if (!toUse) {
-    return nullptr;
+    return nullptr;  
   }
 
   
