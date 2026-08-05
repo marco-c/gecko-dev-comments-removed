@@ -685,10 +685,17 @@ class VendorManifest(MozbuildObject):
             for r in replacements:
                 if r[0] in l:
                     print("Found " + l)
-                    replaced += 1
-                    yaml[i] = re.sub(r[0] + r" [v\.a-f0-9]+.*$", r[0] + r[1], yaml[i])
+                    
+                    
+                    
+                    
+                    yaml[i], count = re.subn(r[0] + r".*$", r[0] + r[1], yaml[i])
+                    replaced += count
 
-        assert len(replacements) == replaced
+        assert len(replacements) == replaced, (
+            f"update_yaml expected to update {len(replacements)} fields "
+            f"but updated {replaced} in {self.yaml_file}"
+        )
 
         with open(self.yaml_file, "wb") as f:
             f.write(("".join(yaml)).encode("utf-8"))
