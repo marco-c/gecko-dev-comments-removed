@@ -933,6 +933,18 @@ struct IpcFailCustomRetVal {
 
 
 
+
+
+#define QM_SCOPED_CONTEXT(context)                                           \
+  const ::mozilla::dom::quota::ScopedLogExtraInfo MOZ_UNIQUE_VAR(            \
+      scopedLogExtraInfo) {                                                  \
+    ::mozilla::dom::quota::ScopedLogExtraInfo::kTagContextTainted, (context) \
+  }
+
+
+
+
+
 #define QM_OR_ELSE_REPORT(severity, expr, fallback)                \
   (expr).orElse([&](const auto& firstRes) {                        \
     mozilla::dom::quota::QM_HANDLE_ERROR(                          \
