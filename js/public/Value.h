@@ -319,6 +319,10 @@ constexpr uint64_t IsValidUserModePointer(uint64_t bits) {
 
 #endif 
 
+constexpr bool ValueTypeIsGCThing(JSValueType type) {
+  return ValueTypeToTag(type) >= ValueLowerInclGCThingTag;
+}
+
 }  
 }  
 
