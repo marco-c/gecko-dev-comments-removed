@@ -153,7 +153,7 @@ class AsyncFreeSnowWhite : public Runnable {
     auto timerId =
         glean::cycle_collector::async_snow_white_freeing.ProcessGet().Start();
     
-    SliceBudget budget = SliceBudget(TimeBudget(2));
+    SliceBudget budget = SliceBudget(TimeDuration::FromMilliseconds(2));
     bool hadSnowWhiteObjects =
         nsCycleCollector_doDeferredDeletionWithBudget(budget);
     glean::cycle_collector::async_snow_white_freeing.ProcessGet()

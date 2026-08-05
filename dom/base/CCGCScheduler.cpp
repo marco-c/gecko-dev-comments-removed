@@ -699,7 +699,7 @@ JS::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
   if (aPrevSliceEndTime.IsNull()) {
     
-    return JS::SliceBudget(JS::TimeBudget(baseBudget));
+    return JS::SliceBudget(baseBudget);
   }
 
   
@@ -728,8 +728,8 @@ JS::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   
   
   
-  return JS::SliceBudget(JS::TimeBudget(
-      std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
+  return JS::SliceBudget(
+      std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
 }
 
 JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
@@ -755,7 +755,7 @@ JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
   }
 
   
-  auto result = JS::SliceBudget(JS::TimeBudget(extendedBudget), nullptr);
+  auto result = JS::SliceBudget(extendedBudget, nullptr);
   result.idle = !aDeadline.IsNull();
   result.extended = true;
   return result;

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #include <algorithm>
 
 #include "gc/GCInternals.h"
@@ -284,7 +281,7 @@ bool TestJSWeakMapWithGrayUnmarking(MarkKeyOrDelegate markKey,
     
     
     JS::PrepareForFullGC(cx);
-    JS::SliceBudget budget(JS::TimeBudget(1000000));
+    JS::SliceBudget budget(mozilla::TimeDuration::FromMilliseconds(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
                            budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);
@@ -417,7 +414,7 @@ bool TestInternalWeakMapWithGrayUnmarking(CellColor keyMarkColor,
     
     
     JS::PrepareForFullGC(cx);
-    JS::SliceBudget budget(JS::TimeBudget(1000000));
+    JS::SliceBudget budget(mozilla::TimeDuration::FromMilliseconds(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
                            budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);

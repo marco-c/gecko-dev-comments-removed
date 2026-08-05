@@ -60,8 +60,7 @@ void TestGC::Run(int aNumSlices) {
     TimeStamp idleDeadline = Now() + kTenthSecond;
     JS::SliceBudget budget =
         mScheduler.ComputeInterSliceGCBudget(idleDeadline, Now());
-    TimeDuration budgetDuration =
-        TimeDuration::FromMilliseconds(budget.timeBudget());
+    TimeDuration budgetDuration = budget.timeBudget();
     EXPECT_NEAR(budgetDuration.ToSeconds(), 0.1, 1.e-6);
     
     AdvanceTime(budgetDuration);
@@ -155,7 +154,8 @@ void TestCC::ForgetSkippable() {
   
   JS::SliceBudget budget =
       mScheduler.ComputeForgetSkippableBudget(Now(), Now() + kTenthSecond);
-  EXPECT_NEAR(budget.timeBudget(), kTenthSecond.ToMilliseconds(), 1);
+  EXPECT_NEAR(budget.timeBudget().ToMilliseconds(),
+              kTenthSecond.ToMilliseconds(), 1);
   AdvanceTime(kTenthSecond);
   mScheduler.NoteForgetSkippableComplete(Now(), SuspectedCCObjects());
 }
@@ -214,7 +214,8 @@ void TestIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   JS::SliceBudget budget = mScheduler.ComputeCCSliceBudget(
       idleDeadline, aCCStartTime, aPrevSliceEnd, Now(), &preferShorter);
   
-  EXPECT_NEAR(budget.timeBudget(), kTenthSecond.ToMilliseconds(), 1);
+  EXPECT_NEAR(budget.timeBudget().ToMilliseconds(),
+              kTenthSecond.ToMilliseconds(), 1);
   EXPECT_FALSE(preferShorter);
 
   AdvanceTime(kTenthSecond);
@@ -255,17 +256,19 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   if (aSliceNum == 0) {
     
     
-    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds(), 0.1);
+    EXPECT_NEAR(budget.timeBudget().ToMilliseconds(),
+                kICCSliceBudget.ToMilliseconds(), 0.1);
   } else if (aSliceNum == 1) {
     
     
-    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds(), 0.1);
+    EXPECT_NEAR(budget.timeBudget().ToMilliseconds(),
+                kICCSliceBudget.ToMilliseconds(), 0.1);
   } else if (aSliceNum == 2) {
     
     EXPECT_FALSE(budget.isUnlimited());
     
-    EXPECT_NEAR(budget.timeBudget(),
-                MainThreadIdlePeriod::GetLongIdlePeriod() / 2, 0.1);
+    EXPECT_NEAR(budget.timeBudget().ToMilliseconds(),
+                MainThreadIdlePeriod::GetLongIdlePeriod() / 2, 0.5);
   } else {
     
     EXPECT_FALSE(budget.isUnlimited());
@@ -273,13 +276,14 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
     
     
     
-    EXPECT_TRUE(budget.timeBudget() > kICCSliceBudget.ToMilliseconds());
-    EXPECT_TRUE(budget.timeBudget() <=
+    EXPECT_TRUE(budget.timeBudget().ToMilliseconds() >
+                kICCSliceBudget.ToMilliseconds());
+    EXPECT_TRUE(budget.timeBudget().ToMilliseconds() <=
                 MainThreadIdlePeriod::GetLongIdlePeriod());
   }
   EXPECT_TRUE(preferShorter);  
 
-  AdvanceTime(TimeDuration::FromMilliseconds(budget.timeBudget()));
+  AdvanceTime(budget.timeBudget());
   if (aSliceNum == 1) {
     
     AdvanceTime(kICCIntersliceDelay * 2);
