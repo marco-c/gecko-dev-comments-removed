@@ -7,7 +7,7 @@
 
 enable_blocklist_v2_instead_of_useMLBF();
 
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(do_get_file("test_blocklistchange.js")).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
