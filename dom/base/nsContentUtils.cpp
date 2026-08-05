@@ -3701,7 +3701,9 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
     
     
     
-    if (aParent.GetAsHTMLSlotElementIfFilledForSelection()) {
+    
+    if (aParent.GetAsHTMLSlotElementIfFilledForSelection() ||
+        aParent.GetShadowRootForSelection()) {
       if (aChild1->GetParentNode() == &aParent) {
         if (aChild2->GetParentNode() == &aParent) {
           
@@ -3974,13 +3976,21 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
   const DebugOnly<bool> eitherIsNAC =
       (aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
       (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree());
+  const DebugOnly<bool> eitherIsNotPartOfTree =
+      ShouldHandleAssignedNodesOnSlot<aKind>() &&
+      ((aParent.GetShadowRoot<aKind>() &&
+        ((aChild1 && aChild1->GetParentNode() == &aParent) ||
+         (aChild2 && aChild2->GetParentNode() == &aParent))) ||
+       ((aParent.GetAsHTMLSlotElementIfFilled<aKind>() &&
+         ((aChild1 && !aChild1->GetAssignedSlot<aKind>()) ||
+          (aChild2 && !aChild2->GetAssignedSlot<aKind>())))));
   MOZ_ASSERT_IF(!eitherIsNAC && !*comp,
                 ChildrenHaveSameIndex(aChild1, aChild2));
   MOZ_ASSERT_IF(
-      !eitherIsNAC && *comp < 0,
+      !eitherIsNAC && !eitherIsNotPartOfTree && *comp < 0,
       ChildIndexIsLessThanTheOtherChildIndex(aParent, aChild1, aChild2));
   MOZ_ASSERT_IF(
-      !eitherIsNAC && *comp > 0,
+      !eitherIsNAC && !eitherIsNotPartOfTree && *comp > 0,
       ChildIndexIsLessThanTheOtherChildIndex(aParent, aChild2, aChild1));
 #endif  
   return comp;
@@ -4026,8 +4036,10 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
     
     
     
-    if (aParent.GetAsHTMLSlotElementIfFilledForSelection() &&
-        aChild2.GetParentNode() == &aParent) {
+    if (aChild2.GetParentNode() == &aParent &&
+        (aParent.GetAsHTMLSlotElementIfFilledForSelection() ||
+         aParent.GetShadowRootForSelection())) {
+      
       
       
       
