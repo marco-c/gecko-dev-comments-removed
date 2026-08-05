@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TRANSFRMX_TXMOZILLAXSLTPROCESSOR_H
 #define TRANSFRMX_TXMOZILLAXSLTPROCESSOR_H
 
@@ -55,7 +54,7 @@ class txMozillaXSLTProcessor final : public nsIDocumentTransformer,
   txMozillaXSLTProcessor();
 
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS_AMBIGUOUS(txMozillaXSLTProcessor,
                                                         nsIDocumentTransformer)
 

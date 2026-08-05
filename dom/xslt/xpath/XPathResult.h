@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_dom_XPathResult_h
 #define mozilla_dom_XPathResult_h
 
@@ -44,7 +43,7 @@ class XPathResult final : public nsStubMutationObserver, public nsWrapperCache {
   };
 
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(XPathResult)
 
   virtual JSObject* WrapObject(JSContext* aCx,
