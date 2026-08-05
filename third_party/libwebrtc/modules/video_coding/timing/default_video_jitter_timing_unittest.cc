@@ -14,6 +14,8 @@
 #include <optional>
 
 #include "api/field_trials.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "system_wrappers/include/clock.h"
 #include "test/create_test_field_trials.h"
@@ -24,6 +26,8 @@ namespace {
 
 constexpr uint32_t kRtpTimestamp = 12345;
 constexpr Timestamp kInitialTime = Timestamp::Millis(789);
+constexpr DataSize kFrameSize = DataSize::Bytes(1000);
+constexpr TimeDelta kRtt = TimeDelta::Millis(100);
 
 TEST(DefaultVideoJitterTimingTest, ExtrapolatorReturnsNulloptInitially) {
   FieldTrials field_trials = CreateTestFieldTrials();
@@ -52,6 +56,89 @@ TEST(DefaultVideoJitterTimingTest, ExtrapolatorReturnsNulloptAfterReset) {
 
   timing.Reset();
   EXPECT_EQ(timing.ExtrapolateLocalTime(kRtpTimestamp), std::nullopt);
+}
+
+TEST(DefaultVideoJitterTimingTest, OnDecodableTemporalUnitReturnsEstimate) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  SimulatedClock clock(kInitialTime);
+  DefaultVideoJitterTiming timing(&clock, field_trials);
+
+  EXPECT_NE(timing.OnDecodableTemporalUnit(kRtpTimestamp, kFrameSize,
+                                           clock.CurrentTime(),
+                                           false),
+            std::nullopt);
+}
+
+TEST(DefaultVideoJitterTimingTest,
+     OnDecodableTemporalUnitReturnsNulloptOnRetransmission) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  SimulatedClock clock(kInitialTime);
+  DefaultVideoJitterTiming timing(&clock, field_trials);
+
+  EXPECT_EQ(timing.OnDecodableTemporalUnit(kRtpTimestamp, kFrameSize,
+                                           clock.CurrentTime(),
+                                           true),
+            std::nullopt);
+}
+
+TEST(DefaultVideoJitterTimingTest, EstimateIncludesRttAfterRetransmission) {
+  constexpr double kMargin = 0.8;
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-JitterEstimatorConfig/nack_limit:1/");
+  SimulatedClock clock(kInitialTime);
+  DefaultVideoJitterTiming timing(&clock, field_trials);
+
+  timing.UpdateRtt(kRtt);
+
+  std::optional<TimeDelta> initial_estimate = timing.OnDecodableTemporalUnit(
+      3000, kFrameSize, clock.CurrentTime(),
+      false);
+  ASSERT_TRUE(initial_estimate.has_value());
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(33));
+  EXPECT_EQ(timing.OnDecodableTemporalUnit(6000, kFrameSize,
+                                           clock.CurrentTime(),
+                                           true),
+            std::nullopt);
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(33));
+  EXPECT_GT(timing.OnDecodableTemporalUnit(9000, kFrameSize,
+                                           clock.CurrentTime(),
+                                           false),
+            *initial_estimate + kMargin * kRtt);
+}
+
+TEST(DefaultVideoJitterTimingTest, ResetClearsJitterEstimator) {
+  constexpr double kMargin = 0.5;
+  FieldTrials field_trials =
+      CreateTestFieldTrials("WebRTC-JitterEstimatorConfig/nack_limit:1/");
+  SimulatedClock clock(kInitialTime);
+  DefaultVideoJitterTiming timing(&clock, field_trials);
+
+  timing.UpdateRtt(kRtt);
+
+  std::optional<TimeDelta> initial_estimate = timing.OnDecodableTemporalUnit(
+      3000, kFrameSize, clock.CurrentTime(),
+      false);
+  ASSERT_TRUE(initial_estimate.has_value());
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(33));
+  EXPECT_EQ(timing.OnDecodableTemporalUnit(6000, kFrameSize,
+                                           clock.CurrentTime(),
+                                           true),
+            std::nullopt);
+
+  timing.Reset();
+
+  
+  clock.AdvanceTime(TimeDelta::Millis(33));
+  EXPECT_LT(timing.OnDecodableTemporalUnit(9000, kFrameSize,
+                                           clock.CurrentTime(),
+                                           false),
+            *initial_estimate + kMargin * kRtt);
 }
 
 }  
