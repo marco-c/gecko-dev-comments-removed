@@ -438,8 +438,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   
   
-  
-  Maybe<int32_t> GetListBoxIndexFromEvent(const WidgetMouseEvent&);
+  HTMLOptionElement* GetListBoxOptionFromEvent(const WidgetMouseEvent&);
+
   
   void CaptureMouseEvents(bool aGrabMouseEvents);
 
@@ -462,7 +462,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   void UpdateListBoxSelectionAfterKeyEvent(int32_t aNewIndex,
                                            uint32_t aCharCode, bool aIsShift,
                                            bool aIsControlOrMeta);
-  void RemoveOptionFromListBoxSelection(int32_t aIndex);
+  void RemoveOptionFromListBoxSelection(HTMLOptionElement& aOption);
   void ScrollToOption(int32_t aIndex);
   MOZ_CAN_RUN_SCRIPT void DoScrollToOption(int32_t aIndex);
   void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& aNewIndex,
@@ -538,17 +538,24 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
 
   nsString mPreviewValue;
+
+  static constexpr int32_t kNothingSelected = -1;
+
   
 
 
 
-
-  static constexpr int32_t kNothingSelected = -1;
   struct {
-    int32_t mStart = -1;
-    int32_t mEnd = -1;
+    RefPtr<HTMLOptionElement> mStart;
+    RefPtr<HTMLOptionElement> mEnd;
 
-    void SetTo(int32_t aIndex) { mStart = mEnd = aIndex; }
+    void SetTo(HTMLOptionElement* aOption) {
+      mStart = mEnd = aOption;
+    }
+
+    void Clear() {
+      mStart = mEnd = nullptr;
+    }
   } mListBoxSelection;
 
  private:
