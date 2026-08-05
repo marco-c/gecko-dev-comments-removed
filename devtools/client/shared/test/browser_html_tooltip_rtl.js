@@ -159,7 +159,9 @@ async function testLtrAnchors(doc, tooltip) {
   
   is(
     panelRect.right,
-    TOOLBOX_WIDTH,
+    TOOLBOX_WIDTH -
+      
+      (Services.prefs.getBoolPref("browser.nova.enabled") ? 2 : 0),
     "Tooltip is aligned with right edge of toolbox"
   );
   is(

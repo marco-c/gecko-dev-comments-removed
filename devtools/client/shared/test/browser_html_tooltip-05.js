@@ -22,7 +22,9 @@ const TOOLTIP_WIDTH = 200;
 
 add_task(async function () {
   
-  await pushPref("devtools.toolbox.footer.height", 200);
+  const toolboxHeight =
+    200 + (Services.prefs.getBoolPref("browser.nova.enabled") ? 2 : 0);
+  await pushPref("devtools.toolbox.footer.height", toolboxHeight);
   await addTab("about:blank");
   const { doc } = await createHost("bottom", TEST_URI);
 

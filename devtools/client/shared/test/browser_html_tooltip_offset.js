@@ -17,7 +17,9 @@ loadHelperScript("helper_html_tooltip.js");
 
 add_task(async function () {
   
-  await pushPref("devtools.toolbox.footer.height", 200);
+  const toolboxHeight =
+    200 + (Services.prefs.getBoolPref("browser.nova.enabled") ? 2 : 0);
+  await pushPref("devtools.toolbox.footer.height", toolboxHeight);
 
   const { doc } = await createHost("bottom", TEST_URI);
 
