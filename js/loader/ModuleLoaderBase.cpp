@@ -310,11 +310,6 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
   MOZ_ASSERT_IF(aRequest->IsDynamicImport(),
                 !aRequest->mLoader->HasDynamicImport(aRequest));
 
-  
-  
-  
-  MOZ_ASSERT(!aRequest->IsErroredLoadingImports());
-
   Rooted<JSObject*> module(aCx);
   {
     ModuleScript* moduleScript = aRequest->mModuleScript;
@@ -1486,10 +1481,6 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
       FinishLoadingImportedModuleFailedWithPendingException(aCx, payload);
     }
     aRequest->SetErroredLoadingImports();
-
-    
-    
-    aRequest->ClearImport();
   } else if (moduleScript && !error.isUndefined()) {
     LOG(
         ("ScriptLoadRequest (%p): LoadRequestedModules rejected: set error to "
@@ -1679,24 +1670,19 @@ bool ModuleLoaderBase::InstantiateModuleGraph(ModuleLoadRequest* aRequest) {
 }
 
 void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
-  MOZ_ASSERT(aRequest->IsDynamicImport());
-
-  
-  
-  
-  
-  if (aRequest->IsErrored() || aRequest->IsErroredLoadingImports()) {
-    LOG(("ScriptLoadRequest (%p): ProcessDynamicImport, request has an error",
-         aRequest));
-    MOZ_ASSERT(aRequest->mPayload.isUndefined());
-    return;
-  }
-
   AutoJSAPI jsapi;
   if (!jsapi.Init(GetGlobalObject())) {
     return;
   }
   JSContext* cx = jsapi.cx();
+  MOZ_ASSERT(aRequest->IsDynamicImport());
+
+  if (aRequest->IsErrored()) {
+    LOG(("ScriptLoadRequest (%p): ProcessDynamicImport, request has an error",
+         aRequest));
+    
+    return;
+  }
 
   LOG(("ScriptLoadRequest (%p): ProcessDynamicImport", aRequest));
   FinishLoadingImportedModule(cx, aRequest);
