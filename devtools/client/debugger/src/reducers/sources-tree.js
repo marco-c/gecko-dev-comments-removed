@@ -815,13 +815,20 @@ function getSourceItemForSelectedLocation(state, selectedLocation) {
 
   
   
-  
   const sourceUrl = getRawSourceURL(source.url);
 
   const { displayURL } = source;
   function findSourceInItem(item, path) {
     if (item.type == "source") {
-      if (item.source.url == sourceUrl) {
+      
+      
+      
+      if (source.isPrettyPrinted && item.source.url == sourceUrl) {
+        return item;
+      }
+      
+      
+      if (item.source.url == sourceUrl && item.source.id == source.id) {
         return item;
       }
       return null;

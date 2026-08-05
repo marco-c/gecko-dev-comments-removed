@@ -211,7 +211,9 @@ export function makeScriptSourceId(sourceResource) {
 }
 
 export function makeStyleSheetSourceId(sourceResource) {
-  return `source-url-${sourceResource.href}`;
+  
+  
+  return `source-actor-${sourceResource.resourceId}`;
 }
 
 
