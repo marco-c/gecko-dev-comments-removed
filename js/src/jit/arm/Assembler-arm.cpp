@@ -1596,7 +1596,7 @@ BufferOffset Assembler::allocLiteralLoadEntry(size_t numInst,
 #ifdef JS_DISASM_ARM
   Instruction* instruction = m_buffer.getInstOrNull(offs);
   if (instruction) {
-    spewLiteralLoad(php, loadToPC, instruction, doc);
+    spewLiteralLoad(php, loadToPC, instruction, offs, doc);
   }
 #endif
   return offs;
@@ -1829,7 +1829,7 @@ BufferOffset Assembler::as_b(Label* l, Condition c) {
                        "Buffer size limit should prevent this");
     as_b(offset, c, ret);
 #ifdef JS_DISASM_ARM
-    spewBranch(m_buffer.getInstOrNull(ret), refLabel(l));
+    spewBranch(m_buffer.getInstOrNull(ret), ret, refLabel(l));
 #endif
     return ret;
   }
@@ -1895,7 +1895,7 @@ BufferOffset Assembler::as_bl(Label* l, Condition c) {
 
     as_bl(offset, c, ret);
 #ifdef JS_DISASM_ARM
-    spewBranch(m_buffer.getInstOrNull(ret), refLabel(l));
+    spewBranch(m_buffer.getInstOrNull(ret), ret, refLabel(l));
 #endif
     return ret;
   }
@@ -2778,8 +2778,8 @@ void Assembler::initDisassembler() {
   
   
 
-  spew_.setLabelIndent("          ");             
-  spew_.setTargetIndent("                    ");  
+  spew_.setLabelIndent("                  ");             
+  spew_.setTargetIndent("                            ");  
 }
 
 void Assembler::finishDisassembler() { spew_.spewOrphans(); }
@@ -2797,14 +2797,14 @@ void Assembler::finishDisassembler() { spew_.spewOrphans(); }
 
 
 
-void Assembler::spew(Instruction* i) {
+void Assembler::spew(Instruction* i, BufferOffset offs) {
   if (spew_.isDisabled() || !i) {
     return;
   }
 
   DisasmBuffer buffer;
   disassembleInstruction(i, buffer);
-  spew_.spew("%s", buffer.start());
+  spew_.spew("%06x  %s", offs.getOffset(), buffer.start());
 }
 
 
@@ -2812,7 +2812,8 @@ void Assembler::spew(Instruction* i) {
 
 
 
-void Assembler::spewBranch(Instruction* i, const LabelDoc& target) {
+void Assembler::spewBranch(Instruction* i, BufferOffset offs,
+                           const LabelDoc& target) {
   if (spew_.isDisabled() || !i) {
     return;
   }
@@ -2852,7 +2853,7 @@ void Assembler::spewBranch(Instruction* i, const LabelDoc& target) {
       }
     }
   }
-  spew_.spew("%s%s", buffer.start(), labelBuf);
+  spew_.spew("%06x  %s%s", offs.getOffset(), buffer.start(), labelBuf);
 
   if (haveTarget) {
     spew_.spewRef(target);
@@ -2860,7 +2861,8 @@ void Assembler::spewBranch(Instruction* i, const LabelDoc& target) {
 }
 
 void Assembler::spewLiteralLoad(PoolHintPun& php, bool loadToPC,
-                                const Instruction* i, const LiteralDoc& doc) {
+                                const Instruction* i, BufferOffset offs,
+                                const LiteralDoc& doc) {
   if (spew_.isDisabled()) {
     return;
   }
@@ -2900,7 +2902,8 @@ void Assembler::spewLiteralLoad(PoolHintPun& php, bool loadToPC,
   disasm::NameConverter converter;
   disasm::Disassembler dasm(converter);
   dasm.InstructionDecode(buffer, reinterpret_cast<uint8_t*>(&inst));
-  spew_.spew("%s    ; .const %s", buffer.start(), litbuf);
+  spew_.spew("%06x  %s    ; .const %s", offs.getOffset(), buffer.start(),
+             litbuf);
 }
 
 #endif  
