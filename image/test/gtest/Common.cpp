@@ -1087,6 +1087,16 @@ ImageTestCase PerfRgbAlphaLossyJXLTestCase() {
   return ImageTestCase("perf_srgb_alpha_lossy.jxl", "image/jxl",
                        IntSize(1000, 1000), TEST_CASE_IS_TRANSPARENT);
 }
+
+
+
+
+
+ImageTestCase ProgressiveAlphaMultiGroupJXLTestCase() {
+  return ImageTestCase("progressive_alpha_multigroup.jxl", "image/jxl",
+                       IntSize(257, 64),
+                       TEST_CASE_IGNORE_OUTPUT | TEST_CASE_IS_TRANSPARENT);
+}
 #endif
 
 ImageTestCase ExifResolutionTestCase() {

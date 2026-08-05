@@ -1031,7 +1031,19 @@ TEST_F(ImageDecoders, JXLLargeMultiChunkPipeWriteCount) {
                        });
 }
 #  endif 
-#endif   
+
+
+
+
+
+
+
+TEST_F(ImageDecoders, JXLProgressiveAlphaMultiGroupMultiChunk) {
+  for (uint64_t chunkSize : {8, 16, 32, 64, 128, 256}) {
+    CheckDecoderMultiChunk(ProgressiveAlphaMultiGroupJXLTestCase(), chunkSize);
+  }
+}
+#endif 
 
 TEST_F(ImageDecoders, AnimatedGIFSingleChunk) {
   CheckDecoderSingleChunk(GreenFirstFrameAnimatedGIFTestCase());
