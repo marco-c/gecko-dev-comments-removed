@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
 #include "mozilla/dom/WebTransport.h"
+#include "mozilla/dom/WebTransportSendGroup.h"
 #include "mozilla/dom/WebTransportSendReceiveStreamBinding.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/DataPipe.h"
@@ -15,7 +16,7 @@ using namespace mozilla::ipc;
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WebTransportSendStream, WritableStream,
-                                   mTransport)
+                                   mTransport, mSendGroup)
 NS_IMPL_ADDREF_INHERITED(WebTransportSendStream, WritableStream)
 NS_IMPL_RELEASE_INHERITED(WebTransportSendStream, WritableStream)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebTransportSendStream)
@@ -38,7 +39,8 @@ JSObject* WebTransportSendStream::WrapObject(
 
 already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
     WebTransport* aWebTransport, nsIGlobalObject* aGlobal, uint64_t aStreamId,
-    DataPipeSender* aSender, Maybe<int64_t> aSendOrder, ErrorResult& aRv) {
+    DataPipeSender* aSender, int64_t aSendOrder,
+    WebTransportSendGroup* aSendGroup, ErrorResult& aRv) {
   
   AutoJSAPI jsapi;
   if (!jsapi.Init(aGlobal)) {
@@ -53,10 +55,9 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
       stream->GetParentObject(), outputStream);
 
   stream->mStreamId = aStreamId;
+  stream->mSendGroup = aSendGroup;
 
-  if (aSendOrder.isSome()) {
-    stream->mSendOrder.SetValue(aSendOrder.value());
-  }
+  stream->mSendOrder = aSendOrder;
 
   
   RefPtr<QueuingStrategySize> writableSizeAlgorithm;
@@ -78,10 +79,29 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
   return stream.forget();
 }
 
-void WebTransportSendStream::SetSendOrder(Nullable<int64_t> aSendOrder) {
+void WebTransportSendStream::SetSendOrder(int64_t aSendOrder) {
   mSendOrder = aSendOrder;
-  mTransport->SendSetSendOrder(
-      mStreamId, aSendOrder.IsNull() ? Nothing() : Some(aSendOrder.Value()));
+  mTransport->SendSetSendOrder(mStreamId, aSendOrder);
+}
+
+void WebTransportSendStream::SetSendGroup(WebTransportSendGroup* aSendGroup,
+                                          ErrorResult& aRv) {
+  
+  
+
+  
+  
+  if (aSendGroup && aSendGroup->GetTransport() != mTransport) {
+    aRv.ThrowInvalidStateError("SendGroup belongs to different transport");
+    return;
+  }
+  
+  mSendGroup = aSendGroup;
+  
+  
+  
+  uint64_t groupId = aSendGroup ? aSendGroup->GetGroupId() : 0;
+  mTransport->SendSetSendGroup(mStreamId, groupId);
 }
 
 already_AddRefed<Promise> WebTransportSendStream::GetStats() {

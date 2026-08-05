@@ -868,7 +868,14 @@ already_AddRefed<WebTransportDatagramDuplexStream> WebTransport::GetDatagrams(
 
 already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
     const WebTransportSendStreamOptions& aOptions, ErrorResult& aRv) {
-  LOG(("CreateBidirectionalStream() called"));
+  return CreateBidirectionalStreamInternal(aOptions, aOptions.mSendGroup,
+                                           aOptions.mSendOrder, aRv);
+}
+
+already_AddRefed<Promise> WebTransport::CreateBidirectionalStreamInternal(
+    const WebTransportSendStreamOptions& aOptions,
+    WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv) {
+  LOG(("CreateBidirectionalStreamInternal() called"));
   
   RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
@@ -881,10 +888,8 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
   }
 
   
-  Maybe<int64_t> sendOrder;
-  if (!aOptions.mSendOrder.IsNull()) {
-    sendOrder = Some(aOptions.mSendOrder.Value());
-  }
+  RefPtr<WebTransportSendGroup> sendGroup = aSendGroup;
+  int64_t sendOrder = aSendOrder;
   
   
   
@@ -892,9 +897,13 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
 
   
   
+  Maybe<uint64_t> sendGroupId;
+  if (sendGroup) {
+    sendGroupId = Some(sendGroup->GetGroupId());
+  }
   mChild->SendCreateBidirectionalStream(
-      sendOrder,
-      [self = RefPtr{this}, sendOrder, promise](
+      sendOrder, sendGroupId,
+      [self = RefPtr{this}, sendOrder, sendGroup, promise](
           BidirectionalStreamResponse&& aPipes) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         LOG(("CreateBidirectionalStream response"));
         if (BidirectionalStreamResponse::Tnsresult == aPipes.type()) {
@@ -920,7 +929,8 @@ already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
             WebTransportBidirectionalStream::Create(
                 self, self->mGlobal, id,
                 aPipes.get_BidirectionalStream().inStream(),
-                aPipes.get_BidirectionalStream().outStream(), sendOrder, error);
+                aPipes.get_BidirectionalStream().outStream(), sendOrder,
+                sendGroup, error);
         LOG(("Returning a bidirectionalStream"));
         promise->MaybeResolve(newStream);
       },
@@ -940,7 +950,14 @@ already_AddRefed<ReadableStream> WebTransport::IncomingBidirectionalStreams() {
 
 already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
     const WebTransportSendStreamOptions& aOptions, ErrorResult& aRv) {
-  LOG(("CreateUnidirectionalStream() called"));
+  return CreateUnidirectionalStreamInternal(aOptions, aOptions.mSendGroup,
+                                            aOptions.mSendOrder, aRv);
+}
+
+already_AddRefed<Promise> WebTransport::CreateUnidirectionalStreamInternal(
+    const WebTransportSendStreamOptions& aOptions,
+    WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv) {
+  LOG(("CreateUnidirectionalStreamInternal() called"));
   
   
   
@@ -951,10 +968,9 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
   }
 
   
-  Maybe<int64_t> sendOrder;
-  if (!aOptions.mSendOrder.IsNull()) {
-    sendOrder = Some(aOptions.mSendOrder.Value());
-  }
+  RefPtr<WebTransportSendGroup> sendGroup = aSendGroup;
+  int64_t sendOrder = aSendOrder;
+
   
   RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
@@ -963,9 +979,13 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
   
 
   
+  Maybe<uint64_t> sendGroupId;
+  if (sendGroup) {
+    sendGroupId = Some(sendGroup->GetGroupId());
+  }
   mChild->SendCreateUnidirectionalStream(
-      sendOrder,
-      [self = RefPtr{this}, sendOrder,
+      sendOrder, sendGroupId,
+      [self = RefPtr{this}, sendOrder, sendGroup,
        promise](UnidirectionalStreamResponse&& aResponse)
           MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             LOG(("CreateUnidirectionalStream response"));
@@ -998,7 +1018,7 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
                 WebTransportSendStream::Create(
                     self, self->mGlobal, id,
                     aResponse.get_UnidirectionalStream().outStream(), sendOrder,
-                    error);
+                    sendGroup, error);
             if (!writableStream) {
               promise->MaybeReject(std::move(error));
               return;
@@ -1136,12 +1156,18 @@ void WebTransport::Cleanup(WebTransportError* aError,
   NotifyToWindow(false);
 }
 
-void WebTransport::SendSetSendOrder(uint64_t aStreamId,
-                                    Maybe<int64_t> aSendOrder) {
+void WebTransport::SendSetSendOrder(uint64_t aStreamId, int64_t aSendOrder) {
   if (!mChild || !mChild->CanSend()) {
     return;
   }
   mChild->SendSetSendOrder(aStreamId, aSendOrder);
+}
+
+void WebTransport::SendSetSendGroup(uint64_t aStreamId, uint64_t aGroupId) {
+  if (!mChild || !mChild->CanSend()) {
+    return;
+  }
+  mChild->SendSetSendGroup(aStreamId, aGroupId);
 }
 
 void WebTransport::NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
