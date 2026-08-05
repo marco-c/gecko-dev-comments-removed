@@ -222,12 +222,17 @@ class FinalizationQueueObject : public NativeObject {
   };
 
  public:
+  
+  
+  using QueuedRecordVector =
+      GCVector<HeapPtr<FinalizationRecordObject*>, 1, SystemAllocPolicy>;
+
   static const JSClass class_;
 
   JSObject* cleanupCallback() const;
   JSObject* getIncumbentGlobalRepresentative() const;
   bool hasRecordsToCleanUp() const;
-  FinalizationRecordVector* recordsToBeCleanedUp() const;
+  QueuedRecordVector* recordsToBeCleanedUp() const;
   bool isQueuedForCleanup() const;
   JSFunction* doCleanupFunction() const;
   bool hasRegistry() const;
