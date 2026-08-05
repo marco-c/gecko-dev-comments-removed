@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "mozilla/CumulativeAverage.h"
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {
@@ -28,10 +29,8 @@ class FFmpegDecodeStats {
   static constexpr uint32_t kMaxLateDecodedFrames = 15;
 
  private:
-  uint32_t mDecodedFrames = 0;
-
-  double mAverageFrameDecodeTime = 0;  
-  double mAverageFrameDuration = 0;    
+  CumulativeAverage<double> mAverageFrameDuration;    
+  CumulativeAverage<double> mAverageFrameDecodeTime;  
 
   
   uint32_t mDecodedFramesLate = 0;

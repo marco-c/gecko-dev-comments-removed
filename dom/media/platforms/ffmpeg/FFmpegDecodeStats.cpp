@@ -30,22 +30,15 @@ void FFmpegDecodeStats::UpdateDecodeTimes(int64_t aDuration) {
     return;
   }
 
-  mDecodedFrames++;
-  mAverageFrameDuration =
-      (mAverageFrameDuration * AssertedCast<double>(mDecodedFrames - 1) +
-       frameDuration) /
-      AssertedCast<double>(mDecodedFrames);
-  mAverageFrameDecodeTime =
-      (mAverageFrameDecodeTime * AssertedCast<double>(mDecodedFrames - 1) +
-       decodeTime) /
-      AssertedCast<double>(mDecodedFrames);
+  mAverageFrameDuration.insert(frameDuration);
+  mAverageFrameDecodeTime.insert(decodeTime);
 
   FFMPEGV_LOG(
       "Frame decode takes {:.2f} ms average decode time {:.2f} ms frame "
       "duration "
       "{:.2f} average frame duration {:.2f} decoded {} frames\n",
-      decodeTime, mAverageFrameDecodeTime, frameDuration, mAverageFrameDuration,
-      mDecodedFrames);
+      decodeTime, mAverageFrameDecodeTime.mean(), frameDuration,
+      mAverageFrameDuration.mean(), mAverageFrameDuration.count());
 
   
   
@@ -54,19 +47,20 @@ void FFmpegDecodeStats::UpdateDecodeTimes(int64_t aDuration) {
   
   
   
-  if (decodeTime > frameDuration && decodeTime > mAverageFrameDuration) {
+  if (decodeTime > frameDuration && decodeTime > mAverageFrameDuration.mean()) {
     PROFILER_MARKER_TEXT("FFmpegVideoDecoder::DoDecode", MEDIA_PLAYBACK, {},
                          "frame decode takes too long");
     mDecodedFramesLate++;
-    mLastDelayedFrameNum = mDecodedFrames;
+    mLastDelayedFrameNum = mAverageFrameDuration.count();
     FFMPEGV_LOG("  slow decode: failed to decode in time (decoded late {})",
                 mDecodedFramesLate);
   } else if (mLastDelayedFrameNum) {
     
     
     double correctPlaybackTime =
-        AssertedCast<double>(mDecodedFrames - mLastDelayedFrameNum) *
-        mAverageFrameDuration;
+        AssertedCast<double>(mAverageFrameDuration.count() -
+                             mLastDelayedFrameNum) *
+        mAverageFrameDuration.mean();
     if (correctPlaybackTime > mDelayedFrameReset) {
       FFMPEGV_LOG("  mLastFramePts reset due to seamless decode period");
       mDecodedFramesLate = 0;
