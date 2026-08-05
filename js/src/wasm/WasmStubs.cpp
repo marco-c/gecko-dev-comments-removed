@@ -3052,6 +3052,8 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 
+  
+  
   MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
   masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
 
