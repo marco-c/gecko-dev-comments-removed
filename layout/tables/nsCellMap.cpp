@@ -178,8 +178,7 @@ static nsCellMap* FindMapFor(const nsTableRowGroupFrame* aRowGroup,
 nsCellMap* nsTableCellMap::GetMapFor(const nsTableRowGroupFrame* aRowGroup,
                                      nsCellMap* aStartHint) const {
   MOZ_ASSERT(aRowGroup, "Must have a rowgroup");
-  NS_ASSERTION(!aRowGroup->GetPrevInFlow(),
-               "GetMapFor called with continuation");
+  aRowGroup = static_cast<nsTableRowGroupFrame*>(aRowGroup->FirstInFlow());
   if (aStartHint) {
     nsCellMap* map = FindMapFor(aRowGroup, aStartHint, nullptr);
     if (map) {
@@ -246,8 +245,7 @@ void nsTableCellMap::Synchronize(nsTableFrame* aTableFrame) {
   nsCellMap* map = nullptr;
   for (uint32_t rgX = 0; rgX < orderedRowGroups.Length(); rgX++) {
     nsTableRowGroupFrame* rgFrame = orderedRowGroups[rgX];
-    map = GetMapFor(static_cast<nsTableRowGroupFrame*>(rgFrame->FirstInFlow()),
-                    map);
+    map = GetMapFor(rgFrame, map);
     if (map) {
       
       
@@ -497,11 +495,11 @@ CellData* nsTableCellMap::AppendCell(nsTableCellFrame& aCellFrame,
              "invalid call on continuing frame");
   nsIFrame* rgFrame = aCellFrame.GetParent();  
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
   rgFrame = rgFrame->GetParent();  
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
 
   CellData* result = nullptr;
