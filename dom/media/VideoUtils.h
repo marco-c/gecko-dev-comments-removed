@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VideoUtils_h
 #define VideoUtils_h
 
@@ -162,6 +160,12 @@ bool IsVideoContentType(const nsCString& aContentType);
 bool IsValidVideoRegion(const gfx::IntSize& aFrame,
                         const gfx::IntRect& aPicture,
                         const gfx::IntSize& aDisplay);
+
+
+
+
+
+bool IsValidVideoDisplaySize(const gfx::IntSize& aDisplay);
 
 
 
