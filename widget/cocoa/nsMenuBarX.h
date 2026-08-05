@@ -30,12 +30,15 @@ class Element;
 
 
 @interface ApplicationMenuDelegate : NSObject <NSMenuDelegate> {
-  nsMenuBarX* mApplicationMenu;       
-  NSMenuItem* mSetAsDefaultMenuItem;  
+  nsMenuBarX* mApplicationMenu;        
+  NSMenuItem* mSetAsDefaultMenuItem;   
+  NSMenuItem* mReferralsPageMenuItem;  
 }
 - (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
 - (NSMenuItem*)setAsDefaultMenuItem;
 - (void)setSetAsDefaultMenuItem:(NSMenuItem*)menuItem;
+- (NSMenuItem*)referralsPageMenuItem;
+- (void)setReferralsPageMenuItem:(NSMenuItem*)menuItem;
 @end
 
 
@@ -91,6 +94,7 @@ class nsMenuBarX : public nsMenuParentX,
   RefPtr<nsIContent> mAboutItemContent;
   RefPtr<nsIContent> mPrefItemContent;
   RefPtr<nsIContent> mSetAsDefaultItemContent;
+  RefPtr<nsIContent> mReferralsPageItemContent;
   RefPtr<nsIContent> mAccountItemContent;
   RefPtr<nsIContent> mQuitItemContent;
 

@@ -115,6 +115,12 @@ document.addEventListener(
         case "aboutName":
           openAboutDialog();
           break;
+        case "menu_referralsPage":
+          
+          if (Services.prefs.getBoolPref("browser.referrals.enabled")) {
+            openReferralsPage();
+          }
+          break;
         case "helpPolicySupport":
           openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
           break;
