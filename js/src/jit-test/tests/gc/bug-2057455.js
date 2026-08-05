@@ -1,0 +1,3 @@
+
+
+evalInWorker(`a = Symbol.match\n    addMarkObservers([a])\n    getMarks()`);
