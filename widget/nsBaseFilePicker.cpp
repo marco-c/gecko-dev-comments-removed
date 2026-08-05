@@ -6,7 +6,9 @@
 #include "nsBaseFilePicker.h"
 
 #include "WidgetUtils.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -14,6 +16,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsArrayEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
@@ -378,6 +381,49 @@ bool nsBaseFilePicker::MaybeBlockFilePicker(
   }
 
   return true;
+}
+
+
+bool nsBaseFilePicker::IsWithinInputProtectionTimeRange(
+    mozilla::TimeStamp aShowTime, mozilla::TimeStamp aNow,
+    uint32_t aProtectionMs) {
+  if (!aProtectionMs || aShowTime.IsNull()) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(aNow >= aShowTime,
+                        "file picker shown time is in the future");
+  if (aNow < aShowTime) {
+    return false;
+  }
+  return (aNow - aShowTime).ToMilliseconds() < double(aProtectionMs);
+}
+
+bool nsBaseFilePicker::IsContentInitiated() const {
+  if (!mBrowsingContext || !mBrowsingContext->IsContent()) {
+    return false;
+  }
+  
+  
+  
+  if (mozilla::dom::WindowGlobalParent* wgp =
+          mBrowsingContext->Canonical()->GetCurrentWindowGlobal()) {
+    if (nsIPrincipal* principal = wgp->DocumentPrincipal()) {
+      return !principal->IsSystemPrincipal() && !principal->SchemeIs("about");
+    }
+  }
+  return true;
+}
+
+bool nsBaseFilePicker::IsPickerInputProtected() const {
+  return IsContentInitiated() &&
+         IsWithinInputProtectionTimeRange(
+             mShowTime, mozilla::TimeStamp::Now(),
+             mozilla::StaticPrefs::security_notification_enable_delay());
 }
 
 nsresult nsBaseFilePicker::ResolveSpecialDirectory(

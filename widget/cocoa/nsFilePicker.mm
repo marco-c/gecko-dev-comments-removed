@@ -49,6 +49,42 @@ const char kShowHiddenFilesPref[] = "filepicker.showHiddenFiles";
 - (void)menuChangedItem:(NSNotification*)aSender;
 @end
 
+
+
+
+
+
+
+
+
+@interface MOZFilePickerInputProtector : NSObject <NSOpenSavePanelDelegate> {
+  RefPtr<nsFilePicker> mFilePicker;
+}
+- (id)initWithFilePicker:(nsFilePicker*)aFilePicker;
+@end
+
+@implementation MOZFilePickerInputProtector
+- (id)initWithFilePicker:(nsFilePicker*)aFilePicker {
+  if ((self = [super init])) {
+    mFilePicker = aFilePicker;
+  }
+  return self;
+}
+
+- (BOOL)panel:(id)sender validateURL:(NSURL*)url error:(NSError**)outError {
+  
+  
+  
+  if (mFilePicker && mFilePicker->IsPickerInputProtected()) {
+    if (outError) {
+      *outError = nil;
+    }
+    return NO;
+  }
+  return YES;
+}
+@end
+
 NS_IMPL_ISUPPORTS(nsFilePicker, nsIFilePicker)
 
 static void SetShowHiddenFileState(NSSavePanel* panel) {
@@ -230,10 +266,25 @@ void nsFilePicker::BeginPanelAsync(NSSavePanel* aPanel,
     parentWindow =
         static_cast<NSWindow*>(mParentWidget->GetNativeData(NS_NATIVE_WINDOW));
   }
+
+  
+  
+  
+  MOZFilePickerInputProtector* protector =
+      [[MOZFilePickerInputProtector alloc] initWithFilePicker:this];
+  [aPanel setDelegate:protector];
+
+  void (^handler)(NSModalResponse) = ^(NSModalResponse result) {
+    aHandler(result);
+    [aPanel setDelegate:nil];
+    [protector release];
+  };
+
+  RecordLastShownTime();
   if (parentWindow) {
-    [aPanel beginSheetModalForWindow:parentWindow completionHandler:aHandler];
+    [aPanel beginSheetModalForWindow:parentWindow completionHandler:handler];
   } else {
-    [aPanel beginWithCompletionHandler:aHandler];
+    [aPanel beginWithCompletionHandler:handler];
   }
 }
 

@@ -1742,7 +1742,6 @@ pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU
 
 
 pref("security.dialog_enable_delay", 1000);
-pref("security.notification_enable_delay", 500);
 
 #ifdef NIGHTLY_BUILD
   
