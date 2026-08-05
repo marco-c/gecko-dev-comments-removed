@@ -10,12 +10,11 @@
 
 
 
-import re
 import math
+import re
 import textwrap
 
-from ipdl.cxx.ast import Node, Whitespace, GroupNode, VerbatimNode
-
+from ipdl.cxx.ast import GroupNode, Node, VerbatimNode, Whitespace
 
 
 

@@ -3,7 +3,8 @@
 
 
 import sys
-from ipdl.ast import Visitor, ASYNC
+
+from ipdl.ast import ASYNC, Visitor
 
 
 class SyncMessageChecker(Visitor):
