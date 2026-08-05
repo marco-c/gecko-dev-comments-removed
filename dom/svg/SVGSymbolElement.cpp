@@ -37,10 +37,6 @@ Focusable SVGSymbolElement::IsFocusableWithoutStyle(IsFocusableFlags aFlags) {
 
 bool SVGSymbolElement::CouldBeRendered() const {
   
-  if (OwnerDoc()->IsResourceDoc()) {
-    return true;
-  }
-  
   
   auto* shadowRoot = ShadowRoot::FromNodeOrNull(GetParentNode());
   return shadowRoot && shadowRoot->Host()->IsSVGElement(nsGkAtoms::use);
