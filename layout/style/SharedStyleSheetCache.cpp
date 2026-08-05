@@ -62,7 +62,14 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
   
   
   
-  const bool canFireEvents = aData.mMustNotify;
+  const bool canFireEvents = [&] {
+    for (auto* data = &aData; data; data = data->mParentData) {
+      if (!data->mMustNotify) {
+        return false;
+      }
+    }
+    return true;
+  }();
 
   
   
