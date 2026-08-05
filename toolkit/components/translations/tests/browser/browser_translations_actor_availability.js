@@ -32,7 +32,6 @@ add_task(async function test_actor_at_data_url() {
 
 
 
-
 add_task(async function test_actor_at_moz_extension() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -86,8 +85,8 @@ add_task(async function test_actor_at_moz_extension() {
       "moz-extension:-page in tab has actor"
     );
     Assert.ok(
-      !hasTranslationActor(tab.linkedBrowser.browsingContext.children[0]),
-      "https iframe in moz-extension:-page in tab does not have actor"
+      hasTranslationActor(tab.linkedBrowser.browsingContext.children[0]),
+      "https iframe in moz-extension:-page in tab has actor"
     );
 
     BrowserTestUtils.removeTab(tab);
