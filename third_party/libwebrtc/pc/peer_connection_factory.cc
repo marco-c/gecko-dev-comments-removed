@@ -147,15 +147,17 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
     case MediaType::AUDIO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.audio_send_codecs().codecs();
-      auto extensions = GetDefaultEnabledRtpHeaderExtensions(
-          media_engine()->voice(),  nullptr);
+      std::vector<RtpHeaderExtensionCapability> extensions =
+          GetDefaultEnabledRtpHeaderCapabilities(media_engine()->voice(),
+                                                  nullptr);
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
     case MediaType::VIDEO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.video_send_codecs().codecs();
-      auto extensions = GetDefaultEnabledRtpHeaderExtensions(
-          media_engine()->video(),  nullptr);
+      std::vector<RtpHeaderExtensionCapability> extensions =
+          GetDefaultEnabledRtpHeaderCapabilities(media_engine()->video(),
+                                                  nullptr);
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
     default:
@@ -172,14 +174,16 @@ RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
     case MediaType::AUDIO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.audio_recv_codecs().codecs();
-      auto extensions = GetDefaultEnabledRtpHeaderExtensions(
-          media_engine()->voice(),  nullptr);
+      std::vector<RtpHeaderExtensionCapability> extensions =
+          GetDefaultEnabledRtpHeaderCapabilities(media_engine()->voice(),
+                                                  nullptr);
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
     case MediaType::VIDEO: {
       Codecs cricket_codecs = codec_vendor_.video_recv_codecs().codecs();
-      auto extensions = GetDefaultEnabledRtpHeaderExtensions(
-          media_engine()->video(),  nullptr);
+      std::vector<RtpHeaderExtensionCapability> extensions =
+          GetDefaultEnabledRtpHeaderCapabilities(media_engine()->video(),
+                                                  nullptr);
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
     default:

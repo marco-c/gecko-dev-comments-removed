@@ -304,6 +304,11 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
   RtpHeaderExtensionCapability();
   explicit RtpHeaderExtensionCapability(absl::string_view uri);
   RtpHeaderExtensionCapability(absl::string_view uri,
+                               RtpTransceiverDirection direction);
+  RtpHeaderExtensionCapability(absl::string_view uri,
+                               bool preferred_encrypt,
+                               RtpTransceiverDirection direction);
+  RtpHeaderExtensionCapability(absl::string_view uri,
                                RtpHeaderExtensionId preferred_id);
   RtpHeaderExtensionCapability(absl::string_view uri,
                                RtpHeaderExtensionId preferred_id,
@@ -314,17 +319,13 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
                                RtpTransceiverDirection direction);
   
   
+  
+  
+  
   [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
       absl::string_view uri,
       int preferred_id)
       : RtpHeaderExtensionCapability(uri, RtpHeaderExtensionId(preferred_id)) {}
-  [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
-      absl::string_view uri,
-      int preferred_id,
-      RtpTransceiverDirection direction)
-      : RtpHeaderExtensionCapability(uri,
-                                     RtpHeaderExtensionId(preferred_id),
-                                     direction) {}
   [[deprecated]] ABSL_REFACTOR_INLINE RtpHeaderExtensionCapability(
       absl::string_view uri,
       int preferred_id,
