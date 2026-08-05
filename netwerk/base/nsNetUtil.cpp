@@ -4153,6 +4153,9 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   if (StringEndsWith(spec, "info-pages.css"_ns) ||
       StringEndsWith(spec, "aboutLicense.css"_ns) ||
       
+      StringEndsWith(spec, "in-content/common.css"_ns) ||
+      StringEndsWith(spec, "text-and-typography.css"_ns) ||
+      
       StringEndsWith(spec, "aboutNetError.css"_ns) ||
       StringEndsWith(spec, "aboutHttpsOnlyError.css"_ns) ||
       StringEndsWith(spec, "error-pages.css"_ns) ||
