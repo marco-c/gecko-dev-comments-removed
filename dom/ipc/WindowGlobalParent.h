@@ -40,6 +40,7 @@ class CrossProcessPaint;
 namespace dom {
 
 class BrowserParent;
+class PrefetchRecordParent;
 class WindowGlobalChild;
 class JSWindowActorParent;
 class JSActorMessageMeta;
@@ -424,6 +425,12 @@ class WindowGlobalParent final : public WindowContext,
   
   already_AddRefed<dom::PPrefetchRecordParent> AllocPPrefetchRecordParent(
       const dom::SpeculativePrefetchArgs& aArgs);
+
+  
+  
+  
+  
+  void NotifyPrefetchStateChanged(dom::PrefetchRecordParent* aRec);
 
   void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
