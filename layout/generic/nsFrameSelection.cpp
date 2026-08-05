@@ -790,6 +790,21 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
   }
 
   const RefPtr<Selection> sel = &NormalSelection();
+  if (const nsRange* anchorFocusRange = sel->GetAnchorFocusRange()) {
+    if (NS_WARN_IF(!anchorFocusRange->IsPositioned())) {
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    if (!mLimiters.RangeInLimiters(*anchorFocusRange)) [[unlikely]] {
+      
+      
+      return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+  } else {
+    
+    return NS_ERROR_FAILURE;
+  }
 
   auto scrollFlags = ScrollFlags::None;
   if (sel->IsEditorSelection()) {
