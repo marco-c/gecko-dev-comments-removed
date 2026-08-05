@@ -12,7 +12,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchTips:
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -106,10 +105,8 @@ add_task(async function pickButton_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -140,10 +137,8 @@ add_task(async function pickButton_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -169,10 +164,8 @@ add_task(async function clickInInput_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -199,10 +192,8 @@ add_task(async function openLocation_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -230,10 +221,8 @@ add_task(async function clickInInput_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -260,10 +249,8 @@ add_task(async function openLocation_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -289,10 +276,8 @@ add_task(async function pickingTipDoesNotDisableOtherKinds() {
   });
 
   gURLBar.blur();
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -369,12 +354,15 @@ add_task(async function ignoreEndsEngagement() {
         
         
         AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
-        await EventUtils.synthesizeMouseAtCenter(spring, {});
+        EventUtils.synthesizeMouseAtCenter(spring, {});
         AccessibilityUtils.resetEnv();
       });
-      Assert.equal(
-        tipsProviderInstance.showedTipTypeInCurrentEngagement,
-        UrlbarProviderSearchTips.TIP_TYPE.NONE,
+      
+      
+      await TestUtils.waitForCondition(
+        () =>
+          tipsProviderInstance.showedTipTypeInCurrentEngagement ==
+          UrlbarProviderSearchTips.TIP_TYPE.NONE,
         "The engagement should have ended after the tip was ignored."
       );
     });
