@@ -14,7 +14,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 assert.throws(TypeError, function() {
   stack.adopt(null, null);

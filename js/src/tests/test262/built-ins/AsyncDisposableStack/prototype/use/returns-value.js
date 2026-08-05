@@ -13,7 +13,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 var resource1 = { async [Symbol.asyncDispose]() { } };
 var resource2 = { [Symbol.dispose]() { } };

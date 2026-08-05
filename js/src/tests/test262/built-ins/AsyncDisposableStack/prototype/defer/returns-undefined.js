@@ -13,7 +13,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 assert.sameValue(stack.defer(_ => {}), undefined);
 

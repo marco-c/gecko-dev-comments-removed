@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(
     typeof AsyncDisposableStack, 'function',
     'The value of `typeof AsyncDisposableStack` is "function"');

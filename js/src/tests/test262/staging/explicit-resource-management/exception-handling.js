@@ -7,7 +7,6 @@
 
 
 
-
 function TestUserCodeThrowsBeforeUsingStatements() {
   {
     throw new Test262Error('User code is throwing!');

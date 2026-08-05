@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof SuppressedError.prototype, 'object');
 
 verifyProperty(SuppressedError, 'prototype', {

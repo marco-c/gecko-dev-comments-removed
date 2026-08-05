@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof DisposableStack.prototype.defer, 'function');
 
 verifyProperty(DisposableStack.prototype, 'defer', {

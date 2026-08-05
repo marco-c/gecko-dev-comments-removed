@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(AsyncDisposableStack.prototype.adopt),
   false,

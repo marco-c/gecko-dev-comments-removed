@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(typeof DisposableStack.prototype.defer, 'function');
 
 var defer = DisposableStack.prototype.defer;

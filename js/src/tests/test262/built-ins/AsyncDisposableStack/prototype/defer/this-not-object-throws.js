@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(typeof AsyncDisposableStack.prototype.defer, 'function');
 
 var defer = AsyncDisposableStack.prototype.defer;

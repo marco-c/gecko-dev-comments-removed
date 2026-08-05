@@ -55,7 +55,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 assert.throws(TypeError, function() {
   stack.use({ [Symbol.dispose]: true });

@@ -14,7 +14,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 stack.disposeAsync();
 assert.sameValue(stack.disposed, true);

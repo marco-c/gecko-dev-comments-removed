@@ -20,7 +20,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 var disposed = false;
 stack.defer(() => { disposed = true; });

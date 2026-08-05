@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(ReferenceError, function() {
   let x = { [Symbol.dispose]() { } };
   for (using x of [x]) {}

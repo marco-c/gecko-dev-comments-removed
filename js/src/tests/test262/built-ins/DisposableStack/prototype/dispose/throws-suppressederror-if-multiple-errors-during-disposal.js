@@ -40,7 +40,6 @@
 
 
 
-
 class MyError extends Error {}
 var error1 = new MyError();
 var error2 = new MyError();

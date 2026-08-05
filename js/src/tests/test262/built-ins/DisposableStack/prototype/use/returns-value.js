@@ -13,7 +13,6 @@
 
 
 
-
 var stack = new DisposableStack();
 var resource = { [Symbol.dispose]() { } };
 assert.sameValue(stack.use(resource), resource);

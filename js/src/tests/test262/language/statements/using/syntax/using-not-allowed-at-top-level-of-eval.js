@@ -15,7 +15,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   eval('using x = null;')
 });

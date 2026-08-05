@@ -71,7 +71,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   using x = { [Symbol.dispose]: true };
 }, 'true');

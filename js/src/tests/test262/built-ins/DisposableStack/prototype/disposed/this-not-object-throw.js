@@ -19,7 +19,6 @@
 
 
 
-
 var descriptor = Object.getOwnPropertyDescriptor(DisposableStack.prototype, 'disposed');
 
 assert.throws(TypeError, function() {

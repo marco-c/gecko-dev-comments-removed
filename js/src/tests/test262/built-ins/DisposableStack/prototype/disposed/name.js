@@ -16,7 +16,6 @@
 
 
 
-
 var descriptor = Object.getOwnPropertyDescriptor(DisposableStack.prototype, 'disposed');
 
 assert.sameValue(descriptor.get.name,

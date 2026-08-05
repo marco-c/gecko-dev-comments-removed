@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(this, 'DisposableStack', {
   enumerable: false,
   writable: true,

@@ -11,7 +11,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(SuppressedError.prototype);
 
 assert.sameValue(proto, Error.prototype);

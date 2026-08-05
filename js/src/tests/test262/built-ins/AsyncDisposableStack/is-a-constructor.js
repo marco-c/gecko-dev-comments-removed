@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(isConstructor(AsyncDisposableStack), true, 'isConstructor(AsyncDisposableStack) must return true');
 new AsyncDisposableStack();
 

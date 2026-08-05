@@ -7,7 +7,6 @@
 
 
 
-
 async function f() {
   for (await using of of []) { }
 }

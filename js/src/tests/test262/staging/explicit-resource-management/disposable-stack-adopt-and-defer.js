@@ -9,7 +9,6 @@
 
 
 
-
 function TestDisposableStackAdoptOnDisposedStack() {
     let stack = new DisposableStack();
     stack.dispose();

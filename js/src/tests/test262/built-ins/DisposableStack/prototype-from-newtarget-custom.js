@@ -30,7 +30,6 @@
 
 
 
-
 var stack;
 
 stack = Reflect.construct(DisposableStack, [], Object);

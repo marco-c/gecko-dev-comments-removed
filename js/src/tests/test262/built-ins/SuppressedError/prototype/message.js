@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(SuppressedError.prototype, 'message', {
   value: '',
   enumerable: false,

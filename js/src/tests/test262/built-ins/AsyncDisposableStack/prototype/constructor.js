@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype, 'constructor', {
   value: AsyncDisposableStack,
   writable: true,

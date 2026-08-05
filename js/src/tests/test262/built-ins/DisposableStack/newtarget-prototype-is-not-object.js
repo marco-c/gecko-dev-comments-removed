@@ -30,7 +30,6 @@
 
 
 
-
 var stack;
 function newTarget() {}
 

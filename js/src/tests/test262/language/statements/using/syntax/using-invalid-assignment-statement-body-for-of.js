@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   for (using x of [null]) { x = { [Symbol.dispose]() { } }; }
 });

@@ -8,7 +8,6 @@
 
 
 
-
 {
   using x = null, y = null;
 }

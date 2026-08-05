@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof AsyncDisposableStack.prototype.use, 'function');
 
 verifyProperty(AsyncDisposableStack.prototype, 'use', {

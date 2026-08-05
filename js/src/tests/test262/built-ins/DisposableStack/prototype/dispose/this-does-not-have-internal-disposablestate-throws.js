@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(typeof DisposableStack.prototype.dispose, 'function');
 
 var dispose = DisposableStack.prototype.dispose;

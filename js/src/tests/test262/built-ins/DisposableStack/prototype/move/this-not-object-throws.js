@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(typeof DisposableStack.prototype.move, 'function');
 
 var move = DisposableStack.prototype.move;

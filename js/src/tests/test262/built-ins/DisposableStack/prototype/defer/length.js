@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(DisposableStack.prototype.defer, 'length', {
   value: 1,
   writable: false,

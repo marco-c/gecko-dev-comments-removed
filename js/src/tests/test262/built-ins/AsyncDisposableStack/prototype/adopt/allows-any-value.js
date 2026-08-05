@@ -20,7 +20,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 stack.adopt(null, async _ => {});
 stack.adopt(undefined, async _ => {});

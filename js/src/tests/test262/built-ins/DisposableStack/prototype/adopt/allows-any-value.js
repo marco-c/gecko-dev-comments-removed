@@ -20,7 +20,6 @@
 
 
 
-
 var stack = new DisposableStack();
 stack.adopt(null, _ => {});
 stack.adopt(undefined, _ => {});

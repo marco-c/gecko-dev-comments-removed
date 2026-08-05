@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(typeof AsyncDisposableStack.prototype.move, 'function');
 
 var move = AsyncDisposableStack.prototype.move;

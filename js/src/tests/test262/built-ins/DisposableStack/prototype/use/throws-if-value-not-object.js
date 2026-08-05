@@ -25,7 +25,6 @@
 
 
 
-
 var stack = new DisposableStack();
 assert.throws(TypeError, function() {
   stack.use(true);

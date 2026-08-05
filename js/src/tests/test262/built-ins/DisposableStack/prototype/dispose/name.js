@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(DisposableStack.prototype.dispose, 'name', {
   value: 'dispose',
   writable: false,

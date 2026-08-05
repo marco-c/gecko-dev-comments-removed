@@ -34,7 +34,6 @@
 
 
 
-
 class MyError extends Error {}
 const error1 = new MyError();
 const error2 = new MyError();

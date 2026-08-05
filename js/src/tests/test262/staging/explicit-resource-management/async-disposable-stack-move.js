@@ -7,7 +7,6 @@
 
 
 
-
 (function TestAsyncDisposableStackMoveNotSameObjects() {
   let stack = new AsyncDisposableStack();
   const firstDisposable = {

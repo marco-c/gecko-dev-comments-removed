@@ -7,7 +7,6 @@
 
 
 
-
 let f = [undefined, undefined, undefined];
 
 const obj1 = { [Symbol.dispose]() { } };

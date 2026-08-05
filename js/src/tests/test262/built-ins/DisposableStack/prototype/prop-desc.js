@@ -11,7 +11,6 @@
 
 
 
-
 verifyProperty(DisposableStack, 'prototype', {
   writable: false,
   enumerable: false,

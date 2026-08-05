@@ -17,7 +17,6 @@
 
 
 
-
 let messageStringified = false;
 const message = {
   toString() {

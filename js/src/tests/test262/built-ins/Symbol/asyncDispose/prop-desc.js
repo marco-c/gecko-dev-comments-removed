@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Symbol.asyncDispose, 'symbol');
 verifyProperty(Symbol, 'asyncDispose', {
   writable: false,

@@ -20,7 +20,6 @@
 
 
 
-
 var stack = new DisposableStack();
 var wasDisposed = stack.disposed;
 stack.move();

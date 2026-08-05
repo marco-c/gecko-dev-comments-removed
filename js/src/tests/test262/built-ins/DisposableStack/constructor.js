@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   typeof DisposableStack, 'function',
   'typeof DisposableStack is function'

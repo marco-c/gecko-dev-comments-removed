@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype.disposeAsync, 'name', {
   value: 'disposeAsync',
   writable: false,

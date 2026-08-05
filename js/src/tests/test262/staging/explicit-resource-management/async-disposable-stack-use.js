@@ -8,7 +8,6 @@
 
 
 
-
 function TestAsyncDisposableStackUseWithNonObject() {
   let stack = new AsyncDisposableStack();
   stack.use(42);

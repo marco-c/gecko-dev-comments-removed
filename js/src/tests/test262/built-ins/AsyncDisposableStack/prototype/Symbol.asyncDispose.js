@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype, Symbol.asyncDispose, {
   value: AsyncDisposableStack.prototype.disposeAsync,
   enumerable: false,

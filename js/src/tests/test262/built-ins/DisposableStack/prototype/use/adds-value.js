@@ -27,7 +27,6 @@
 
 
 
-
 var stack = new DisposableStack();
 var resource = {
     disposed: false,

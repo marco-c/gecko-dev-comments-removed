@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new DisposableStack();
+stack.dispose();
+
+assert.throws(ReferenceError, function() {
+  stack.adopt(null, _ => {});
+});
+
+reportCompare(0, 0);

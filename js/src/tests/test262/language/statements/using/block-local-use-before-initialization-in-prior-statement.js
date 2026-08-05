@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(ReferenceError, function() {
   {
     x; using x = null;

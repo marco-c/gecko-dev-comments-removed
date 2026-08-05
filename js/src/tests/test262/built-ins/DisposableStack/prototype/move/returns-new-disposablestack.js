@@ -20,7 +20,6 @@
 
 
 
-
 var stack1 = new DisposableStack();
 var stack2 = stack1.move();
 assert(stack2 !== stack1, 'Expected stack2 to not be the same reference as stack1');

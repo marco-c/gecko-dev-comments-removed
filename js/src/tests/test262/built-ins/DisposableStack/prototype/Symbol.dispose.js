@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(DisposableStack.prototype[Symbol.dispose], DisposableStack.prototype.dispose);
 verifyProperty(DisposableStack.prototype, Symbol.dispose, {
   enumerable: false,

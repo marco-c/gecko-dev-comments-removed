@@ -13,7 +13,6 @@
 
 
 
-
 var obj = SuppressedError();
 
 assert.sameValue(Object.getPrototypeOf(obj), SuppressedError.prototype);

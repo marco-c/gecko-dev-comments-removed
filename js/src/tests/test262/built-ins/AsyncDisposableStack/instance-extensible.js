@@ -27,7 +27,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 assert.sameValue(Object.isExtensible(stack), true);
 

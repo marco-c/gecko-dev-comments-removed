@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack = new AsyncDisposableStack();
+var wasDisposed = stack.disposed;
+stack.move();
+var isDisposed = stack.disposed;
+assert.sameValue(wasDisposed, false);
+assert.sameValue(isDisposed, true);
+
+reportCompare(0, 0);

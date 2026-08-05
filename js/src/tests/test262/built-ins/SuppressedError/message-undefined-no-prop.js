@@ -16,7 +16,6 @@
 
 
 
-
 var case1 = new SuppressedError(undefined, undefined, undefined);
 
 assert.sameValue(

@@ -8,7 +8,6 @@
 
 
 
-
 function TestAsyncDisposableStackAdoptWithNonCallableOnDispose() {
   let stack = new AsyncDisposableStack();
   stack.adopt(42, 43);

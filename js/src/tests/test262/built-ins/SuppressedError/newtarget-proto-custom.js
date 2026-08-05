@@ -30,7 +30,6 @@
 
 
 
-
 var custom = { x: 42 };
 var newt = new Proxy(function() {}, {
   get(t, p) {

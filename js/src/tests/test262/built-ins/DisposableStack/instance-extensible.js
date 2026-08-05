@@ -27,7 +27,6 @@
 
 
 
-
 var stack = new DisposableStack();
 assert.sameValue(Object.isExtensible(stack), true);
 

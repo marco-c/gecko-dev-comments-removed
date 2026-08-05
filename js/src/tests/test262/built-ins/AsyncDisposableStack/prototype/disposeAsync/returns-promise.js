@@ -40,7 +40,6 @@
 
 
 
-
 var stack = new AsyncDisposableStack();
 assert.sameValue(Object.getPrototypeOf(stack.disposeAsync()), Promise.prototype);
 

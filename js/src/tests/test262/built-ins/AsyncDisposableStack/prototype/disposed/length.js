@@ -12,7 +12,6 @@
 
 
 
-
 var descriptor = Object.getOwnPropertyDescriptor(AsyncDisposableStack.prototype, 'disposed');
 
 verifyProperty(descriptor.get, 'length', {

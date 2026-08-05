@@ -7,7 +7,6 @@
 
 
 
-
 (function TestDisposableStackDisposedTrue() {
   let stack = new DisposableStack();
   const disposable = {

@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var stack = new AsyncDisposableStack();
+  var disposed = false;
+  stack.defer(async () => { disposed = true });
+  await stack.disposeAsync();
+  assert.sameValue(disposed, true, 'Expected callback to have been called');
+});

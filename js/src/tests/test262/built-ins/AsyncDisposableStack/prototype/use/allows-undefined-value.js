@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var stack = new AsyncDisposableStack();
+  stack.use(undefined);
+  await stack.disposeAsync();
+});

@@ -14,7 +14,6 @@
 
 
 
-
 var stack = new DisposableStack();
 stack.dispose();
 assert.sameValue(stack.disposed, true);

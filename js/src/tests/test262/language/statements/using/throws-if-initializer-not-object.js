@@ -49,7 +49,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   using x = true;
 }, 'true');

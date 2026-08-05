@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(ReferenceError, function() {
   {
     using x = x + 1;

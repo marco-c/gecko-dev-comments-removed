@@ -40,7 +40,6 @@
 
 
 
-
 var stack = new DisposableStack();
 var useCount = 0;
 var adoptCount = 0;

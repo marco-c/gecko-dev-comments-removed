@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype.defer, 'name', {
   value: 'defer',
   writable: false,

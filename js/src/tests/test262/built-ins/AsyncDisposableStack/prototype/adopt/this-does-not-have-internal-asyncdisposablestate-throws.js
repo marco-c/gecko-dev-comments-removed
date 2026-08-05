@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(typeof AsyncDisposableStack.prototype.adopt, 'function');
 
 var adopt = AsyncDisposableStack.prototype.adopt;

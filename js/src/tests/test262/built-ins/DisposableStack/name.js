@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(DisposableStack, 'name', {
   value: 'DisposableStack',
   writable: false,

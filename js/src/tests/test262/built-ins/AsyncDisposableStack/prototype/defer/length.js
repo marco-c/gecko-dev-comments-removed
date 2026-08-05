@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype.defer, 'length', {
   value: 1,
   writable: false,

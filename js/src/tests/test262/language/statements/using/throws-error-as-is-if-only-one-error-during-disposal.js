@@ -34,7 +34,6 @@
 
 
 
-
 class MyError extends Error {}
 assert.throws(MyError, function () {
   using _1 = { [Symbol.dispose]() { throw new MyError(); } };

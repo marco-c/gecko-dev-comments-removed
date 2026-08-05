@@ -13,7 +13,6 @@
 
 
 
-
 {
     using xCls = class x { static [Symbol.dispose]() {} };
     using cls = class { static [Symbol.dispose]() {} };

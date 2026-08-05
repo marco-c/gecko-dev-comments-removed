@@ -8,7 +8,6 @@
 
 
 
-
 function TestDisposableStackMoveOnDisposedStack() {
   let stack = new DisposableStack();
   stack.dispose();

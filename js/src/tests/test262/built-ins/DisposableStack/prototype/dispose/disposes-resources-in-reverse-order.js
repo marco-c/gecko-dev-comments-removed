@@ -54,7 +54,6 @@
 
 
 
-
 var stack = new DisposableStack();
 var disposed = [];
 var resource1 = { [Symbol.dispose]() { disposed.push(resource1); } };

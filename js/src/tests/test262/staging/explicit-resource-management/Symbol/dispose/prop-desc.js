@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Symbol.dispose, 'symbol');
 verifyProperty(Symbol, 'dispose', {
   writable: false,

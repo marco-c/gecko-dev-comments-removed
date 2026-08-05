@@ -16,7 +16,6 @@
 
 
 
-
 var case1 = {
   [Symbol.toPrimitive]() {
     throw new Test262Error();

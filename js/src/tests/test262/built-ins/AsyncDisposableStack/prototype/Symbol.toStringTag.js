@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(AsyncDisposableStack.prototype, Symbol.toStringTag, {
   value: 'AsyncDisposableStack',
   writable: false,

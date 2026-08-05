@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(
   eval('{using test262id1 = null;}'), undefined, 'Single declaration'
 );

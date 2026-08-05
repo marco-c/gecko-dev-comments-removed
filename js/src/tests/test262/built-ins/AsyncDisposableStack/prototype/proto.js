@@ -10,7 +10,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(AsyncDisposableStack.prototype);
 assert.sameValue(proto, Object.prototype);
 

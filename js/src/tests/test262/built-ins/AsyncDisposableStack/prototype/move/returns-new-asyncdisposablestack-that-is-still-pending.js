@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var stack1 = new AsyncDisposableStack();
+var stack2 = stack1.move();
+assert.sameValue(stack2.disposed, false);
+
+reportCompare(0, 0);

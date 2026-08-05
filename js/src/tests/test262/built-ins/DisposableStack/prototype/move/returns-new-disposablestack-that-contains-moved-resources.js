@@ -21,7 +21,6 @@
 
 
 
-
 var stack1 = new DisposableStack();
 var disposed = [];
 stack1.defer(() => { disposed.push(1); });

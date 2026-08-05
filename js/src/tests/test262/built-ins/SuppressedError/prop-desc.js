@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(typeof SuppressedError, 'function');
 
 verifyProperty(this, 'SuppressedError', {

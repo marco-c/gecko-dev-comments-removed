@@ -25,7 +25,6 @@ FEATURE_CHECK_NEEDED = {
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
-    "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  
     "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",  
     "Error.isError": "!Error.isError",  
     "iterator-sequencing": "!Iterator.concat",  
@@ -44,7 +43,6 @@ RELEASE_OR_BETA = set([
 ])
 SHELL_OPTIONS = {
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
-    "explicit-resource-management": "--enable-explicit-resource-management",
     "iterator-sequencing": "--enable-iterator-sequencing",
     "iterator-includes": "--enable-iterator-includes",
     "Iterator.prototype.join": "--enable-iterator-join",

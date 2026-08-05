@@ -23,7 +23,6 @@
 
 
 
-
 var case1 = new SuppressedError(undefined, undefined, 42);
 
 verifyProperty(case1, 'message', {

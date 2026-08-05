@@ -7,7 +7,6 @@
 
 
 
-
 (function TestDisposableStackDisposeReturnsUndefined() {
     let stack = new DisposableStack();
     assert.sameValue(stack.dispose(), undefined);

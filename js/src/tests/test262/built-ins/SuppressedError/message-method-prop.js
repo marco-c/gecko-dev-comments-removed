@@ -23,7 +23,6 @@
 
 
 
-
 var obj = new SuppressedError(undefined, undefined, '42');
 
 verifyProperty(obj, 'message', {

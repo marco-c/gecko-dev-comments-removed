@@ -60,7 +60,6 @@
 
 
 
-
 assert.throws(TypeError, function () {
     using x = {};
 });

@@ -22,7 +22,6 @@
 
 
 
-
 assert.sameValue(typeof DisposableStack.prototype.use, 'function');
 
 var use = DisposableStack.prototype.use;

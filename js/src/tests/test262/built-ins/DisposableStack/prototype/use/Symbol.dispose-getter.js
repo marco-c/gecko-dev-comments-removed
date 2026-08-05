@@ -27,7 +27,6 @@
 
 
 
-
 var resource = {
   disposed: false,
   get [Symbol.dispose]() {

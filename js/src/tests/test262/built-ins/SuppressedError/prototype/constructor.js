@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(SuppressedError.prototype, 'constructor', {
   value: SuppressedError,
   enumerable: false,

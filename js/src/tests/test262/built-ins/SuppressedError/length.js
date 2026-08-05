@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(SuppressedError, 'length', {
   value: 3,
   writable: false,
