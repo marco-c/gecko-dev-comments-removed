@@ -2331,6 +2331,13 @@ pref("places.semanticHistory.smartwindow.featureGate", false);
 pref("browser.smartwindow.mistralRelease", false);
 
 
+pref("browser.smartwindow.autoTabGrouping.enabled", false);
+pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
+pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
+pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 4);
+pref("browser.smartwindow.autoTabGrouping.loglevel", "Warn");
+
+
 pref("browser.smartwindow.worldcup.enabled", true);
 pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozilla.com");
 pref("browser.smartwindow.worldcup.timeoutMs", 2000);
