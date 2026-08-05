@@ -28,6 +28,10 @@
 #include <sched.h>
 #include <fstream>
 #include <ctime>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
+#include <mutex>
 
 #include "wayland-proxy.h"
 
@@ -53,6 +57,9 @@ CompositorSilentDisconnectHandler
     WaylandProxy::sCompositorSilentDisconnectHandler = nullptr;
 std::atomic<bool> WaylandProxy::sCompositorGone = false;
 std::atomic<unsigned> WaylandProxy::sProxyStateFlags = 0;
+bool WaylandProxy::sCaptureProtocolErrors = false;
+std::mutex WaylandProxy::sLastProtocolErrorMutex;
+std::string WaylandProxy::sLastProtocolError;
 
 
 #define MAX_LIBWAY_FDS 28
@@ -89,6 +96,11 @@ void ErrorPlain(const char* aFormat, ...) {
 class WaylandMessage {
  public:
   bool Write(int aSocket);
+
+  
+  
+  
+  const std::vector<unsigned char>& Data() const { return mData; }
 
   bool Loaded() const { return !mFailed && (mFds.size() || mData.size()); }
   bool Failed() const { return mFailed; }
@@ -136,10 +148,12 @@ class ProxiedConnection {
   bool TransferOrQueue(
       int aSourceSocket, int aSourcePollFlags, int aDestSocket,
       std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
-      int& aStatSent, int& aStatReceived);
+      int& aStatSent, int& aStatReceived, bool aScanProtocolErrors = false);
   bool FlushQueue(int aDestSocket, int aDestPollFlags,
                   std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue,
                   int& aStatSent);
+
+  void ScanToApplication(const unsigned char* aData, size_t aLen);
 
   
   
@@ -161,6 +175,25 @@ class ProxiedConnection {
   
   std::vector<std::unique_ptr<WaylandMessage>> mToCompositorQueue;
   std::vector<std::unique_ptr<WaylandMessage>> mToApplicationQueue;
+
+  
+  enum class WlParse { Header, Skip, Error, GiveUp };
+
+  
+  
+  
+  static constexpr size_t kWlHeaderSize = 2 * sizeof(uint32_t);
+
+  WlParse mToAppParseStep = WlParse::Header;
+  size_t mToAppNeed = kWlHeaderSize;
+  std::vector<unsigned char> mToAppBuf;
+
+  
+  void WaitForToAppHeader() {
+    mToAppParseStep = WlParse::Header;
+    mToAppNeed = kWlHeaderSize;
+    mToAppBuf.clear();
+  }
 
   int mStatRecvFromCompositor = 0;
   int mStatSentToCompositor = 0;
@@ -404,10 +437,101 @@ bool ProxiedConnection::ConnectToCompositor() {
 
 
 
+
+
+
+
+
+
+
+
+void ProxiedConnection::ScanToApplication(const unsigned char* aData,
+                                          size_t aLen) {
+  
+  
+  constexpr uint32_t kMaxErrorSize = 4096;
+
+  size_t pos = 0;
+  while (pos < aLen) {
+    switch (mToAppParseStep) {
+      case WlParse::GiveUp:
+        
+        
+        return;
+
+      case WlParse::Skip: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed == 0) {
+          WaitForToAppHeader();
+        }
+        break;
+      }
+
+      case WlParse::Header: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        mToAppBuf.insert(mToAppBuf.end(), aData + pos, aData + pos + n);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed > 0) {
+          break;  
+        }
+        uint32_t id, header;
+        memcpy(&id, mToAppBuf.data(), sizeof(id));
+        memcpy(&header, mToAppBuf.data() + 4, sizeof(header));
+        const uint32_t opcode = header & 0xffff;
+        
+        
+        
+        const uint32_t size = header >> 16;
+        if (size < kWlHeaderSize) {
+          mToAppParseStep = WlParse::GiveUp;
+          return;
+        }
+        
+        if (id == 1 && opcode == 0 && size <= kMaxErrorSize) {
+          mToAppParseStep = WlParse::Error;  
+          mToAppNeed = size - kWlHeaderSize;
+        } else {
+          mToAppParseStep = WlParse::Skip;
+          mToAppNeed = size - kWlHeaderSize;
+        }
+        break;
+      }
+
+      case WlParse::Error: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        mToAppBuf.insert(mToAppBuf.end(), aData + pos, aData + pos + n);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed > 0) {
+          break;  
+        }
+        
+        
+        
+        const size_t total = mToAppBuf.size();
+        if (total > 20) {
+          
+          mToAppBuf.push_back('\0');
+          WaylandProxy::SetLastProtocolError(
+              reinterpret_cast<const char*>(mToAppBuf.data() + 20));
+        }
+        WaitForToAppHeader();
+        break;
+      }
+    }
+  }
+}
+
+
+
+
 bool ProxiedConnection::TransferOrQueue(
     int aSourceSocket, int aSourcePollFlags, int aDestSocket,
     std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
-    int& aStatSent, int& aStatReceived) {
+    int& aStatSent, int& aStatReceived, bool aScanProtocolErrors) {
   
   if (!(aSourcePollFlags & POLLIN)) {
     return true;
@@ -434,6 +558,10 @@ bool ProxiedConnection::TransferOrQueue(
       return true;
     }
     aStatReceived++;
+
+    if (aScanProtocolErrors && WaylandProxy::CaptureProtocolErrors()) {
+      ScanToApplication(message->Data().data(), message->Data().size());
+    }
 
     if (message->Write(aDestSocket)) {
       aStatSent++;
@@ -554,7 +682,7 @@ bool ProxiedConnection::Process() {
 
   if (!TransferOrQueue(mCompositorSocket, mCompositorFlags, mApplicationSocket,
                        &mToApplicationQueue, mStatRecvFromCompositor,
-                       mStatSentToClient)) {
+                       mStatSentToClient,  true)) {
     Error("ProxiedConnection::Process(): Failed to read data from compositor!");
       WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
     mCompositorFailed = true;
@@ -1136,4 +1264,26 @@ const char* WaylandProxy::GetState() {
     }
   }
   return strdup(stateString.c_str());
+}
+
+void WaylandProxy::SetCaptureProtocolErrors(bool aEnable) {
+  sCaptureProtocolErrors = aEnable;
+}
+
+void WaylandProxy::SetLastProtocolError(const char* aMessage) {
+  
+  
+  
+  fprintf(stderr, "[%d] WaylandProxy: wl_display.error: %s\n", getpid(),
+          aMessage);
+
+  
+  std::lock_guard<std::mutex> guard(sLastProtocolErrorMutex);
+  sLastProtocolError = aMessage;
+}
+
+const char* WaylandProxy::GetLastProtocolError() {
+  
+  std::lock_guard<std::mutex> guard(sLastProtocolErrorMutex);
+  return strdup(sLastProtocolError.c_str());
 }

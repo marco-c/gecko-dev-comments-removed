@@ -1062,10 +1062,14 @@ void nsWaylandDisplay::SessionManagerInit() {
 
 
 
+
+
+
 MOZ_NEVER_INLINE static void WlLogHandler_UnknownObject(const char* error) {
-  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s Compositor error: %s",
                           GetDesktopEnvironmentIdentifier().get(), error,
-                          WaylandProxy::GetState());
+                          WaylandProxy::GetState(),
+                          WaylandProxy::GetLastProtocolError());
 }
 
 

@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <string>
 
 class ProxiedConnection;
 
@@ -63,6 +65,27 @@ class WaylandProxy {
   static void AddState(unsigned aState);
   static const char* GetState();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static void SetCaptureProtocolErrors(bool aEnable);
+  static bool CaptureProtocolErrors() { return sCaptureProtocolErrors; }
+  
+  
+  static void SetLastProtocolError(const char* aMessage);
+  
+  
+  
+  static const char* GetLastProtocolError();
+
   ~WaylandProxy();
 
  private:
@@ -112,6 +135,10 @@ class WaylandProxy {
   
   static std::atomic<bool> sCompositorGone;
   static std::atomic<unsigned> sProxyStateFlags;
+
+  static bool sCaptureProtocolErrors;
+  static std::mutex sLastProtocolErrorMutex;
+  static std::string sLastProtocolError;
 };
 
 #endif  
