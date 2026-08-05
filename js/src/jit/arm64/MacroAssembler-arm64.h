@@ -619,6 +619,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     Fcmp(scratch64, fsrc64);
     B(fail, Assembler::NotEqual);
 
+    
+    
+    
+    
+    Cmn(dest64, 1);  
+    B(fail, Assembler::Overflow);
+
     if (negativeZeroCheck) {
       Label nonzero;
       Cbnz(dest64, &nonzero);
