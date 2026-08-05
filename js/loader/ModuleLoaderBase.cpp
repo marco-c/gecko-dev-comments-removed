@@ -1175,6 +1175,12 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
 
   bool isPreloadModule = aFetchInfo && aFetchInfo->IsForModuleScript() &&
                          aFetchInfo->IsForModulePreload();
+
+  
+  
+  
+  
+  MOZ_ASSERT_IF(isPreloadModule, !aHostDefined.isUndefined());
   if (isPreloadModule) {
     RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
     AddToPreloadedResolvedSet(root, std::move(aRecord));
