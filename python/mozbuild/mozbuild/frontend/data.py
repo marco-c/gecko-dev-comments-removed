@@ -23,7 +23,7 @@ from mozpack.chrome.manifest import ManifestEntry
 from mozbuild.frontend.context import ObjDirPath, SourcePath
 
 from ..testing import all_test_flavors
-from ..util import get_rust_build_kind, group_unified_files
+from ..util import group_unified_files
 from .context import FinalTargetValue
 
 
@@ -554,10 +554,16 @@ def cargo_output_directory(context, target_var, libname=""):
     
     
     
-    return mozpath.join(
-        context.config.substs[target_var],
-        get_rust_build_kind(context.config.substs, megazord="megazord" in libname),
-    )
+    
+    if "megazord" in libname:
+        rust_build_kind = "release-megazord"
+        if context.config.substs.get("MOZ_DEBUG_RUST"):
+            rust_build_kind = "dev-megazord"
+    else:
+        rust_build_kind = "release"
+        if context.config.substs.get("MOZ_DEBUG_RUST"):
+            rust_build_kind = "debug"
+    return mozpath.join(context.config.substs[target_var], rust_build_kind)
 
 
 
