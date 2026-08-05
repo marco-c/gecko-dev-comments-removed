@@ -17,13 +17,15 @@
 #include <optional>
 
 #include "api/field_trials_view.h"
+#include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_timing.h"
 #include "modules/video_coding/timing/decode_time_percentile_filter.h"
-#include "modules/video_coding/timing/timestamp_extrapolator.h"
+#include "modules/video_coding/timing/default_video_jitter_timing.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
@@ -95,7 +97,8 @@ class VCMTiming {
 
   
   
-  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp, Timestamp now);
+  virtual void OnCompleteTemporalUnit(uint32_t rtp_timestamp,
+                                      Timestamp receive_time);
 
   
   
@@ -115,9 +118,10 @@ class VCMTiming {
 
  private:
   mutable Mutex mutex_;
-  Clock* const clock_;
-  const std::unique_ptr<TimestampExtrapolator> ts_extrapolator_
-      RTC_PT_GUARDED_BY(mutex_);
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
+  DefaultVideoJitterTiming video_jitter_timing_
+      RTC_GUARDED_BY(worker_sequence_checker_);
+
   std::unique_ptr<DecodeTimePercentileFilter> decode_time_filter_
       RTC_GUARDED_BY(mutex_) RTC_PT_GUARDED_BY(mutex_);
 
