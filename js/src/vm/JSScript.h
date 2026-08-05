@@ -539,23 +539,6 @@ class ScriptSource {
   
   
   
-
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refs = {};
-
-  
-  
-  
-  
-  
-  
-  uint32_t id_ = 0;
-
-  
-  SourceType data = SourceType(Missing());
-
-  
-  
-  
   
   
   
@@ -565,136 +548,12 @@ class ScriptSource {
                         CompressedData<char16_t>>
         pendingCompressed;
   };
-  ExclusiveData<ReaderInstances> readers_;
-
-  
-  SharedImmutableString filename_;
-
-  
-  HashNumber filenameHash_ = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  SharedImmutableString introducerFilename_;
-
-  SharedImmutableTwoByteString displayURL_;
-  SharedImmutableTwoByteString sourceMapURL_;
-
-  
-  
-  
-  
-  
-  const char* introductionType_ = nullptr;
-
-  
-  
-  
-  mozilla::Maybe<uint32_t> introductionOffset_;
-
-  
-  
-  
-  uint32_t parameterListEnd_ = 0;
-
-  
-  uint32_t startLine_ = 0;
-  
-  
-  JS::LimitedColumnNumberOneOrigin startColumn_;
-
-  
-  bool mutedErrors_ = false;
-
-  
-  JS::DelazificationOption delazificationMode_ =
-      JS::DelazificationOption::OnDemandOnly;
-
-  
-  bool hadCompressionTask_ = false;
-
-  
-  
-  
-
-  
-  static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> idCount_;
-
-  
-  
-  
-  
-  
-  template <typename Unit>
-  const Unit* chunkUnits(JSContext* maybeCx,
-                         UncompressedSourceCache::AutoHoldEntry& holder,
-                         size_t chunk);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename Unit>
-  const Unit* units(JSContext* maybeCx,
-                    UncompressedSourceCache::AutoHoldEntry& asp, size_t begin,
-                    size_t len);
-
-  template <typename Unit>
-  const Unit* uncompressedUnits(size_t begin, size_t len);
-
- public:
-  
-  
-  static const size_t SourceDeflateLimit = 100;
-
-  explicit ScriptSource()
-      : id_(++idCount_), readers_(js::mutexid::SourceCompression) {}
-  ~ScriptSource() { MOZ_ASSERT(refs == 0); }
-
-  void AddRef() { refs++; }
-  void Release() {
-    MOZ_ASSERT(refs != 0);
-    if (--refs == 0) {
-      js_delete(this);
-    }
-  }
-  [[nodiscard]] bool initFromOptions(FrontendContext* fc,
-                                     const JS::ReadOnlyCompileOptions& options);
 
   
 
-
-
-  static constexpr size_t MinimumCompressibleLength = 256;
-
-  SharedImmutableString getOrCreateStringZ(FrontendContext* fc,
-                                           UniqueChars&& str);
-  SharedImmutableTwoByteString getOrCreateStringZ(FrontendContext* fc,
-                                                  UniqueTwoByteChars&& str);
-
- private:
-  class LoadSourceMatcherBase;
-  class LoadSourceMatcher;
   class SourcePropertiesGetter;
 
  public:
-  
-  
-  
-  bool tryLoadSource(JSContext* cx, bool* loaded);
-
   
   
   
@@ -702,64 +561,6 @@ class ScriptSource {
   
   void getSourceProperties(bool* hasSourceText, bool* retrievable,
                            bool* isTwoByteString);
-
-  
-  template <typename Unit>
-  [[nodiscard]] bool assignSource(FrontendContext* fc,
-                                  const JS::ReadOnlyCompileOptions& options,
-                                  JS::SourceText<Unit>& srcBuf);
-
-  bool hasSourceText() const {
-    return hasUncompressedSource() || hasCompressedSource();
-  }
-
- private:
-  template <typename Unit>
-  struct UncompressedDataMatcher {
-    template <SourceRetrievable CanRetrieve>
-    const UncompressedData<Unit>* operator()(
-        const Uncompressed<Unit, CanRetrieve>& u) {
-      return &u;
-    }
-
-    template <typename T>
-    const UncompressedData<Unit>* operator()(const T&) {
-      MOZ_CRASH(
-          "attempting to access uncompressed data in a ScriptSource not "
-          "containing it");
-      return nullptr;
-    }
-  };
-
- public:
-  template <typename Unit>
-  const UncompressedData<Unit>* uncompressedData() {
-    return data.match(UncompressedDataMatcher<Unit>());
-  }
-
- private:
-  template <typename Unit>
-  struct CompressedDataMatcher {
-    template <SourceRetrievable CanRetrieve>
-    const CompressedData<Unit>* operator()(
-        const Compressed<Unit, CanRetrieve>& c) {
-      return &c;
-    }
-
-    template <typename T>
-    const CompressedData<Unit>* operator()(const T&) {
-      MOZ_CRASH(
-          "attempting to access compressed data in a ScriptSource not "
-          "containing it");
-      return nullptr;
-    }
-  };
-
- public:
-  template <typename Unit>
-  const CompressedData<Unit>* compressedData() {
-    return data.match(CompressedDataMatcher<Unit>());
-  }
 
  private:
   struct HasUncompressedSource {
@@ -821,6 +622,10 @@ class ScriptSource {
 
  public:
   bool hasCompressedSource() const { return data.match(HasCompressedSource()); }
+
+  bool hasSourceText() const {
+    return hasUncompressedSource() || hasCompressedSource();
+  }
 
  private:
   template <typename Unit>
@@ -909,6 +714,84 @@ class ScriptSource {
     return data.match(UncompressedLengthMatcher());
   }
 
+  
+
+ private:
+  template <typename Unit>
+  struct UncompressedDataMatcher {
+    template <SourceRetrievable CanRetrieve>
+    const UncompressedData<Unit>* operator()(
+        const Uncompressed<Unit, CanRetrieve>& u) {
+      return &u;
+    }
+
+    template <typename T>
+    const UncompressedData<Unit>* operator()(const T&) {
+      MOZ_CRASH(
+          "attempting to access uncompressed data in a ScriptSource not "
+          "containing it");
+      return nullptr;
+    }
+  };
+
+ public:
+  template <typename Unit>
+  const UncompressedData<Unit>* uncompressedData() {
+    return data.match(UncompressedDataMatcher<Unit>());
+  }
+
+ private:
+  template <typename Unit>
+  struct CompressedDataMatcher {
+    template <SourceRetrievable CanRetrieve>
+    const CompressedData<Unit>* operator()(
+        const Compressed<Unit, CanRetrieve>& c) {
+      return &c;
+    }
+
+    template <typename T>
+    const CompressedData<Unit>* operator()(const T&) {
+      MOZ_CRASH(
+          "attempting to access compressed data in a ScriptSource not "
+          "containing it");
+      return nullptr;
+    }
+  };
+
+ public:
+  template <typename Unit>
+  const CompressedData<Unit>* compressedData() {
+    return data.match(CompressedDataMatcher<Unit>());
+  }
+
+ private:
+  
+  
+  
+  
+  
+  template <typename Unit>
+  const Unit* chunkUnits(JSContext* maybeCx,
+                         UncompressedSourceCache::AutoHoldEntry& holder,
+                         size_t chunk);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Unit>
+  const Unit* units(JSContext* maybeCx,
+                    UncompressedSourceCache::AutoHoldEntry& asp, size_t begin,
+                    size_t len);
+
+  template <typename Unit>
+  const Unit* uncompressedUnits(size_t begin, size_t len);
+
+ public:
   JSLinearString* substring(JSContext* cx, size_t start, size_t stop);
   JSLinearString* substringDontDeflate(JSContext* cx, size_t start,
                                        size_t stop);
@@ -928,11 +811,6 @@ class ScriptSource {
   [[nodiscard]] bool appendSubstring(JSContext* cx, js::StringBuilder& buf,
                                      size_t start, size_t stop);
 
-  void setParameterListEnd(uint32_t parameterListEnd) {
-    parameterListEnd_ = parameterListEnd;
-  }
-
-  bool isFunctionBody() const { return parameterListEnd_ != 0; }
   JSLinearString* functionBodyString(JSContext* cx);
 
   
@@ -941,20 +819,12 @@ class ScriptSource {
   SubstringCharsResult functionBodyStringChars(size_t* outLength);
 
   
-  
-  
-  
-  
-  
-  
-  
-  bool shouldUnwrapEventHandlerBody() const {
-    return hasIntroductionType() &&
-           strcmp(introductionType(), "eventHandler") == 0 && isFunctionBody();
-  }
 
-  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                              JS::ScriptSourceInfo* info) const;
+  
+  template <typename Unit>
+  [[nodiscard]] bool assignSource(FrontendContext* fc,
+                                  const JS::ReadOnlyCompileOptions& options,
+                                  JS::SourceText<Unit>& srcBuf);
 
  private:
   
@@ -981,12 +851,6 @@ class ScriptSource {
                                         EntryUnits<Unit>&& source,
                                         size_t length);
 
-  [[nodiscard]] bool tryCompressOffThread(JSContext* cx);
-
-  
-  
-  void noteSourceCompressionTask() { hadCompressionTask_ = true; }
-
   
   
   
@@ -1008,6 +872,8 @@ class ScriptSource {
       size_t sourceLength);
 
  private:
+  
+
   void performTaskWork(SourceCompressionTaskEntry* task, Compressor& comp);
 
   struct TriggerConvertToCompressedSourceFromTask;
@@ -1023,7 +889,153 @@ class ScriptSource {
   void triggerConvertToCompressedSourceFromTask(
       SharedImmutableString compressed);
 
+  
+  
+  
+
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refs = {};
+
+  
+  
+  
+  
+  
+  
+  uint32_t id_ = 0;
+
+  
+  SourceType data = SourceType(Missing());
+
+  ExclusiveData<ReaderInstances> readers_;
+
+  
+  SharedImmutableString filename_;
+
+  
+  HashNumber filenameHash_ = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedImmutableString introducerFilename_;
+
+  SharedImmutableTwoByteString displayURL_;
+  SharedImmutableTwoByteString sourceMapURL_;
+
+  
+  
+  
+  
+  
+  const char* introductionType_ = nullptr;
+
+  
+  
+  
+  mozilla::Maybe<uint32_t> introductionOffset_;
+
+  
+  
+  
+  uint32_t parameterListEnd_ = 0;
+
+  
+  uint32_t startLine_ = 0;
+  
+  
+  JS::LimitedColumnNumberOneOrigin startColumn_;
+
+  
+  bool mutedErrors_ = false;
+
+  
+  JS::DelazificationOption delazificationMode_ =
+      JS::DelazificationOption::OnDemandOnly;
+
+  
+  bool hadCompressionTask_ = false;
+
+  
+  
+  
+
+  
+  static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> idCount_;
+
  public:
+  
+  
+  static const size_t SourceDeflateLimit = 100;
+
+  explicit ScriptSource()
+      : id_(++idCount_), readers_(js::mutexid::SourceCompression) {}
+  ~ScriptSource() { MOZ_ASSERT(refs == 0); }
+
+  void AddRef() { refs++; }
+  void Release() {
+    MOZ_ASSERT(refs != 0);
+    if (--refs == 0) {
+      js_delete(this);
+    }
+  }
+  [[nodiscard]] bool initFromOptions(FrontendContext* fc,
+                                     const JS::ReadOnlyCompileOptions& options);
+
+  
+
+
+
+  static constexpr size_t MinimumCompressibleLength = 256;
+
+  SharedImmutableString getOrCreateStringZ(FrontendContext* fc,
+                                           UniqueChars&& str);
+  SharedImmutableTwoByteString getOrCreateStringZ(FrontendContext* fc,
+                                                  UniqueTwoByteChars&& str);
+
+ private:
+  class LoadSourceMatcher;
+
+ public:
+  
+  
+  
+  bool tryLoadSource(JSContext* cx, bool* loaded);
+
+  void setParameterListEnd(uint32_t parameterListEnd) {
+    parameterListEnd_ = parameterListEnd;
+  }
+
+  bool isFunctionBody() const { return parameterListEnd_ != 0; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool shouldUnwrapEventHandlerBody() const {
+    return hasIntroductionType() &&
+           strcmp(introductionType(), "eventHandler") == 0 && isFunctionBody();
+  }
+
+  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              JS::ScriptSourceInfo* info) const;
+
+  [[nodiscard]] bool tryCompressOffThread(JSContext* cx);
+
+  
+  
+  void noteSourceCompressionTask() { hadCompressionTask_ = true; }
+
   HashNumber filenameHash() const { return filenameHash_; }
   const char* filename() const {
     return filename_ ? filename_.chars() : nullptr;
