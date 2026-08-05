@@ -146,12 +146,12 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.53.2"
-#define SQLITE_VERSION_NUMBER 3053002
-#define SQLITE_SOURCE_ID      "2026-06-03 19:12:13 d6e03d8c777cfa2d35e3b60d8ec3e0187f3e9f99d8e2ee9cac695fd6fcdf1a24"
+#define SQLITE_VERSION        "3.53.4"
+#define SQLITE_VERSION_NUMBER 3053004
+#define SQLITE_SOURCE_ID      "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc"
 #define SQLITE_SCM_BRANCH     "branch-3.53"
-#define SQLITE_SCM_TAGS       "release version-3.53.2"
-#define SQLITE_SCM_DATETIME   "2026-06-03T19:12:13.350Z"
+#define SQLITE_SCM_TAGS       "release version-3.53.4"
+#define SQLITE_SCM_DATETIME   "2026-07-24T19:02:57.525Z"
 
 
 
@@ -4343,6 +4343,8 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 
 
 SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
+
+
 
 
 
