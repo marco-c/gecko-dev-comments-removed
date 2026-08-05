@@ -1,8 +1,6 @@
 
 
 
-test(() => {
-    const early_hints_policy = "disallowed";
-    const final_policy = "allowed";
-    navigateToContentSecurityPolicyBasicTest(early_hints_policy, final_policy);
-});
+const early_hints_policy = "disallowed";
+const final_policy = "allowed";
+fetch_tests_from_window(navigateToContentSecurityPolicyBasicTest(early_hints_policy, final_policy));

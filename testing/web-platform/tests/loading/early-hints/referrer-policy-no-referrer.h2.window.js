@@ -1,4 +1,4 @@
 
 
 
-test(() => testReferrerPolicy("no-referrer"));
+fetch_tests_from_window(testReferrerPolicy("no-referrer"));
