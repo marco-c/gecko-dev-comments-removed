@@ -59,10 +59,11 @@ class HappyEyeballsConnMgrDelegate {
                                        nsHttpTransaction* aTrans) = 0;
   
   
-  virtual nsresult StartRetryWithoutTRR(ConnectionEntry* aEntry,
-                                        nsHttpTransaction* aTrans,
-                                        uint32_t aCaps, bool aSpeculative,
-                                        bool aUrgentStart, bool aAllow1918) = 0;
+  
+  virtual nsresult StartRetry(ConnectionEntry* aEntry,
+                              nsHttpTransaction* aTrans, uint32_t aCaps,
+                              bool aSpeculative, bool aUrgentStart,
+                              bool aAllow1918, bool aRetryWithoutTRR) = 0;
 
  protected:
   virtual ~HappyEyeballsConnMgrDelegate() = default;

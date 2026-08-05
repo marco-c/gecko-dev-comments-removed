@@ -236,6 +236,17 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   
   
+  void DoRetry(bool aRetryWithoutTRR, const char* aLogTag);
+  
+  
+  bool ShouldRetryForLocalAddress(happy_eyeballs::FailureReason aReason) const;
+  
+  
+  void RetryForLocalAddress();
+  
+  
+  
+  
   void MaybeBuildOriginCoalescingKeys();
 
   
@@ -364,6 +375,14 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   
   bool mPausedForClientAuth = false;
   uint64_t mClientAuthHolderId = 0;
+
+  
+  
+  bool mLocalAddrRefused = false;
+  
+  
+  
+  bool mAllAttemptsRefusedLocal = true;
 };
 
 }  

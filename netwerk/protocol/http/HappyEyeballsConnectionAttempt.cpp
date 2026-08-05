@@ -123,15 +123,14 @@ class DefaultHappyEyeballsConnMgrDelegate final
                                nsHttpTransaction* aTrans) override {
     return aEntry->RemoveTransFromPendingQ(aTrans);
   }
-  nsresult StartRetryWithoutTRR(ConnectionEntry* aEntry,
-                                nsHttpTransaction* aTrans, uint32_t aCaps,
-                                bool aSpeculative, bool aUrgentStart,
-                                bool aAllow1918) override {
+  nsresult StartRetry(ConnectionEntry* aEntry, nsHttpTransaction* aTrans,
+                      uint32_t aCaps, bool aSpeculative, bool aUrgentStart,
+                      bool aAllow1918, bool aRetryWithoutTRR) override {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         new PendingTransactionInfo(aTrans);
     return aEntry->CreateDnsAndConnectSocket(
         aTrans, aCaps, aSpeculative, aUrgentStart, aAllow1918, pendingTransInfo,
-         true);
+        aRetryWithoutTRR);
   }
 };
 
@@ -618,6 +617,10 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
           RetryWithoutTRR();
           return NS_OK;
         }
+        if (ShouldRetryForLocalAddress(event.failed.reason)) {
+          RetryForLocalAddress();
+          return NS_OK;
+        }
         TransitionPayload payload;
         payload.mFailureReason = Some(event.failed.reason);
         Transition(State::Failed, std::move(payload));
@@ -891,6 +894,10 @@ void HappyEyeballsConnectionAttempt::HandleConnectionResult(
   mConnectionEstablisherTable.Remove(aId);
   NetAddr addr = establisher->Addr();
 
+  
+  
+  mAllAttemptsRefusedLocal = false;
+
   LOG((
       "HappyEyeballsConnectionAttempt::HandleConnectionResult %p addr=[%s] "
       "family=[%d] id=%" PRIu64 " isUDP=%d",
@@ -1052,7 +1059,17 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   if (establisher->Start(std::move(callback))) {
     mConnectionEstablisherTable.InsertOrUpdate(aId, std::move(establisher));
   } else {
-    ProcessConnectionResult(aAddr, NS_ERROR_FAILURE, aId);
+    
+    
+    
+    nsresult reason = NS_ERROR_FAILURE;
+    if (establisher->RefusedForLocalAddress()) {
+      mLocalAddrRefused = true;
+      reason = NS_ERROR_CONNECTION_REFUSED;
+    } else {
+      mAllAttemptsRefusedLocal = false;
+    }
+    ProcessConnectionResult(aAddr, reason, aId);
   }
 
   return NS_OK;
@@ -1092,7 +1109,17 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   if (establisher->Start(std::move(callback))) {
     mConnectionEstablisherTable.InsertOrUpdate(aId, std::move(establisher));
   } else {
-    ProcessConnectionResult(aAddr, NS_ERROR_FAILURE, aId);
+    
+    
+    
+    nsresult reason = NS_ERROR_FAILURE;
+    if (establisher->RefusedForLocalAddress()) {
+      mLocalAddrRefused = true;
+      reason = NS_ERROR_CONNECTION_REFUSED;
+    } else {
+      mAllAttemptsRefusedLocal = false;
+    }
+    ProcessConnectionResult(aAddr, reason, aId);
   }
 
   return NS_OK;
@@ -1207,19 +1234,20 @@ bool HappyEyeballsConnectionAttempt::ShouldRetryWithoutTRR(
   return true;
 }
 
-void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
+void HappyEyeballsConnectionAttempt::DoRetry(bool aRetryWithoutTRR,
+                                             const char* aLogTag) {
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
   RefPtr<ConnectionEntry> entry(mEntry);
   RefPtr<nsHttpTransaction> realTrans = RealHttpTransaction();
-  LOG(("HappyEyeballsConnectionAttempt::RetryWithoutTRR %p trans=%p", this,
+  LOG(("HappyEyeballsConnectionAttempt::%s %p trans=%p", aLogTag, this,
        realTrans.get()));
   MOZ_ASSERT(entry && realTrans);
 
-  
-  nsresult rv = mConnMgrDelegate->StartRetryWithoutTRR(
-      entry, realTrans, mCaps, mSpeculative, mUrgentStart, mAllow1918);
+  nsresult rv =
+      mConnMgrDelegate->StartRetry(entry, realTrans, mCaps, mSpeculative,
+                                   mUrgentStart, mAllow1918, aRetryWithoutTRR);
   if (NS_FAILED(rv)) {
-    LOG(("  StartRetryWithoutTRR failed rv=%" PRIx32 "; failing normally",
+    LOG(("  %s: StartRetry failed rv=%" PRIx32 "; failing normally", aLogTag,
          static_cast<uint32_t>(rv)));
     TransitionPayload payload;
     payload.mFailureReason = Some(happy_eyeballs::FailureReason::Connection);
@@ -1231,6 +1259,38 @@ void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
   
   ForgetRealTransaction();
   mConnMgrDelegate->RemoveConnectionAttempt(entry, this,  true);
+}
+
+void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
+  
+  DoRetry( true, "RetryWithoutTRR");
+}
+
+bool HappyEyeballsConnectionAttempt::ShouldRetryForLocalAddress(
+    happy_eyeballs::FailureReason aReason) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return aReason == happy_eyeballs::FailureReason::Connection &&
+         mLocalAddrRefused && mAllAttemptsRefusedLocal && mAllow1918 &&
+         RealHttpTransaction();
+}
+
+void HappyEyeballsConnectionAttempt::RetryForLocalAddress() {
+  
+  
+  DoRetry( false, "RetryForLocalAddress");
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {
