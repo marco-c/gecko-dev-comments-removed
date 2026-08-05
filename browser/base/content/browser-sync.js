@@ -1041,42 +1041,6 @@ var gSync = {
     return this.getSendTabTargets().length === 0;
   },
 
-  
-  
-  
-  getSyncPromoState(requiredEngines) {
-    if (!this.FXA_ENABLED) {
-      return null;
-    }
-    const state = UIState.get();
-    switch (state.status) {
-      case UIState.STATUS_NOT_CONFIGURED:
-      case UIState.STATUS_NOT_VERIFIED:
-        return "signin";
-      case UIState.STATUS_SIGNED_IN: {
-        const engineDisabled = requiredEngines.some(
-          engine =>
-            !Services.prefs.getBoolPref(`services.sync.engine.${engine}`, true)
-        );
-        if (!state.syncEnabled || engineDisabled) {
-          return "turnonsync";
-        }
-        
-        
-        
-        
-        const devices = fxAccounts.device.recentDeviceList;
-        const hasOtherDevice = devices?.some(d => !d.isCurrentDevice);
-        if (devices && !hasOtherDevice) {
-          return "connectdevice";
-        }
-        return null;
-      }
-      default:
-        return null;
-    }
-  },
-
   shouldHideSendContextMenuItems(enabled) {
     return !enabled || !this.FXA_ENABLED;
   },
@@ -3196,25 +3160,25 @@ var gSync = {
     this.openPrefs(entryPoint, null, { action: "choose-what-to-sync" });
   },
 
-  openSyncSetup(type, sourceElement, extraParams = {}) {
-    this.emitFxaToolbarTelemetry(type, sourceElement);
-    const entryPoint = this._getEntryPointForElement(sourceElement);
-    return this.openSyncSetupForEntryPoint(entryPoint, extraParams);
-  },
-
   
 
 
 
 
+  async openSyncSetup(type, sourceElement, extraParams = {}) {
+    this.emitFxaToolbarTelemetry(type, sourceElement);
+    const entryPoint = this._getEntryPointForElement(sourceElement);
 
-  async openSyncSetupForEntryPoint(entryPoint, extraParams = {}) {
     try {
+      
       const hasKeys = await fxAccounts.keys.hasKeysForScope(SCOPE_APP_SYNC);
 
       if (hasKeys) {
+        
         this.openPrefs(entryPoint, null, { action: "choose-what-to-sync" });
       } else {
+        
+        
         if (!(await FxAccounts.canConnectAccount())) {
           return;
         }
@@ -3226,6 +3190,7 @@ var gSync = {
       }
     } catch (err) {
       this.log.error("Failed to determine sync setup flow", err);
+      
       this.openPrefs(entryPoint);
     }
   },
