@@ -333,6 +333,9 @@ class WebRenderMaskData : public WebRenderUserData {
   std::vector<RefPtr<gfx::ScaledFont>> mFonts;
   gfx::DrawEventRecorderPrivate_ExternalSurfacesHolder mExternalSurfaces;
   LayerIntRect mItemRect;
+  
+  
+  gfx::Point mResidual;
   nsPoint mMaskOffset;
   nsStyleImageLayers mMaskStyle;
   gfx::MatrixScales mScale;

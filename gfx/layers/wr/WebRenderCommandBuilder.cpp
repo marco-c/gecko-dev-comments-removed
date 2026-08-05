@@ -2800,13 +2800,31 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
 
   nsPoint maskOffset = aMaskItem->ToReferenceFrame() - bounds.TopLeft();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfx::Point residual(
+      NSAppUnitsToFloatPixels(bounds.x, appUnitsPerDevPixel) * scale.xScale -
+          itemRect.x,
+      NSAppUnitsToFloatPixels(bounds.y, appUnitsPerDevPixel) * scale.yScale -
+          itemRect.y);
+  bool sameResidual =
+      gfx::FuzzyEqual(residual.x, maskData->mResidual.x, 0.01f) &&
+      gfx::FuzzyEqual(residual.y, maskData->mResidual.y, 0.01f);
+
   bool shouldHandleOpacity = aBuilder.GetInheritedOpacity() != 1.0f;
 
   nsRect dirtyRect;
   
   
   if (aMaskItem->IsInvalid(dirtyRect) ||
-      !itemRect.IsEqualInterior(maskData->mItemRect) ||
+      !itemRect.IsEqualInterior(maskData->mItemRect) || !sameResidual ||
       !(aMaskItem->Frame()->StyleSVGReset()->mMask == maskData->mMaskStyle) ||
       maskOffset != maskData->mMaskOffset || !sameScale ||
       shouldHandleOpacity != maskData->mShouldHandleOpacity) {
@@ -2908,6 +2926,7 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
                          mManager->GetRenderRootStateManager(), aResources);
     if (maskIsComplete) {
       maskData->mItemRect = itemRect;
+      maskData->mResidual = residual;
       maskData->mMaskOffset = maskOffset;
       maskData->mScale = scale;
       maskData->mMaskStyle = aMaskItem->Frame()->StyleSVGReset()->mMask;
