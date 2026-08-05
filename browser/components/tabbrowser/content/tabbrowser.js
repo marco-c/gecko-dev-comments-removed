@@ -58,7 +58,8 @@
     if (!userContextId) {
       
       
-      if (window.gContainerCreation?.isPillPinned) {
+      let creationPanel = document.getElementById("containerCreation-panel");
+      if (creationPanel && creationPanel.state != "closed") {
         return;
       }
       replaceContainerClass("color", hbox, "");
