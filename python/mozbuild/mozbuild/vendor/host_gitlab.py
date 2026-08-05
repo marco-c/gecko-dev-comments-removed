@@ -2,8 +2,6 @@
 
 
 
-import requests
-
 from mozbuild.vendor.host_base import BaseHost
 
 
@@ -15,7 +13,7 @@ class GitLabHost(BaseHost):
         )
         gitlab_api += self.repo_url.path[1:].replace("/", "%2F")
         gitlab_api += "/repository/commits"
-        req = requests.get("/".join([gitlab_api, revision]))
+        req = self.session.get("/".join([gitlab_api, revision]))
         req.raise_for_status()
         info = req.json()
         return (info["id"], info["committed_date"])
