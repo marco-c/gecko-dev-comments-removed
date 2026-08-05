@@ -1,0 +1,38 @@
+
+
+
+
+#include "GpuFenceMTLSharedEvent.h"
+
+#import <Metal/Metal.h>
+
+#include "mozilla/gfx/Logging.h"
+
+namespace mozilla {
+namespace layers {
+
+
+RefPtr<GpuFenceMTLSharedEvent> GpuFenceMTLSharedEvent::Create(
+    void* aSharedEvent, const uint64_t aFenceValue) {
+  if (!aSharedEvent) {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    return nullptr;
+  }
+  return new GpuFenceMTLSharedEvent(aSharedEvent, aFenceValue);
+}
+
+GpuFenceMTLSharedEvent::GpuFenceMTLSharedEvent(void* aSharedEvent,
+                                               const uint64_t aFenceValue)
+    : mSharedEvent(aSharedEvent), mFenceValue(aFenceValue) {}
+
+GpuFenceMTLSharedEvent::~GpuFenceMTLSharedEvent() {
+  [(__bridge id<MTLSharedEvent>)mSharedEvent release];
+}
+
+bool GpuFenceMTLSharedEvent::HasCompleted() {
+  const auto sharedEvent = (__bridge id<MTLSharedEvent>)mSharedEvent;
+  return sharedEvent.signaledValue >= mFenceValue;
+}
+
+}  
+}  

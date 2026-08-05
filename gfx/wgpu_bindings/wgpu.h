@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WGPU_h
 #define WGPU_h
 
@@ -63,15 +61,6 @@ struct default_delete<mozilla::webgpu::ffi::WGPUGlobal> {
  public:
   void operator()(mozilla::webgpu::ffi::WGPUGlobal* aPtr) const {
     mozilla::webgpu::ffi::wgpu_server_delete(aPtr);
-  }
-};
-
-template <>
-struct default_delete<mozilla::webgpu::ffi::WGPUMetalSharedEventHandle> {
- public:
-  void operator()(
-      mozilla::webgpu::ffi::WGPUMetalSharedEventHandle* aPtr) const {
-    mozilla::webgpu::ffi::wgpu_server_delete_metal_shared_event(aPtr);
   }
 };
 
