@@ -9,6 +9,9 @@ const { SafariProfileMigrator } = ChromeUtils.importESModule(
 const { LoginCSVImport } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginCSVImport.sys.mjs"
 );
+const { MigrationWizardChild } = ChromeUtils.importESModule(
+  "resource:///actors/MigrationWizardChild.sys.mjs"
+);
 
 const TEST_FILE_PATH = getTestFilePath("dummy_file.csv");
 
@@ -68,16 +71,32 @@ add_setup(async function () {
 
 
 
+
+
+
+
+
+
+
 async function testSafariPasswordHelper(
   expectsFilePicker,
   migrateBookmarks,
   shouldPasswordImportFail,
-  taskFn
+  taskFn,
+  isSequoiaOrLater = true
 ) {
   let sandbox = sinon.createSandbox();
   registerCleanupFunction(() => {
     sandbox.restore();
   });
+
+  sandbox
+    .stub(MigrationWizardChild, "isMacOSSequoiaOrLater")
+    .returns(isSequoiaOrLater);
+
+  let expectedPage = isSequoiaOrLater
+    ? MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION
+    : MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA;
 
   let safariMigrator = new SafariProfileMigrator();
   sandbox.stub(MigrationUtils, "getMigrator").resolves(safariMigrator);
@@ -200,10 +219,7 @@ async function testSafariPasswordHelper(
         deck,
         { attributeFilter: ["selected-view"] },
         () => {
-          return (
-            deck.getAttribute("selected-view") ==
-            "page-" + MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION
-          );
+          return deck.getAttribute("selected-view") == "page-" + expectedPage;
         }
       );
 
@@ -218,7 +234,8 @@ async function testSafariPasswordHelper(
       importFromCSVStub,
       didMigration,
       migrateStub,
-      wizardDone
+      wizardDone,
+      expectedPage
     );
 
     let dialog = prefsWin.document.querySelector("#migrationWizardDialog");
@@ -407,4 +424,100 @@ add_task(async function test_safari_password_skip() {
       ]);
     }
   );
+});
+
+
+
+
+
+
+add_task(async function test_safari_password_pre_sequoia_instructions() {
+  await testSafariPasswordHelper(
+    true,
+    false,
+    false,
+    async (
+      wizard,
+      filePickerShownPromise,
+      importFromCSVStub,
+      didMigration,
+      migrateStub,
+      wizardDone,
+      expectedPage
+    ) => {
+      Assert.equal(
+        expectedPage,
+        MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA,
+        "Should have shown the pre-Sequoia Safari password instructions."
+      );
+
+      let shadow = wizard.openOrClosedShadowRoot;
+      let manualPasswordImportSelect = shadow.querySelector(
+        "div[name='page-safari-password-permission-pre-sequoia'] .manual-password-import-select"
+      );
+      manualPasswordImportSelect.click();
+      await filePickerShownPromise;
+      Assert.ok(true, "File picker was shown.");
+
+      await wizardDone;
+
+      assertQuantitiesShown(wizard, [
+        MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+      ]);
+
+      Assert.ok(importFromCSVStub.called, "Importing from CSV was called.");
+    },
+    false
+  );
+});
+
+
+
+
+
+
+add_task(async function test_launch_macos_passwords_app() {
+  let sandbox = sinon.createSandbox();
+
+  try {
+    let safariMigrator = new SafariProfileMigrator();
+    sandbox.stub(MigrationUtils, "getMigrator").resolves(safariMigrator);
+
+    
+    
+    sandbox
+      .stub(SafariProfileMigrator.prototype, "hasPermissions")
+      .resolves(true);
+
+    
+    sandbox
+      .stub(SafariProfileMigrator.prototype, "getMigrateData")
+      .resolves(MigrationUtils.resourceTypes.BOOKMARKS);
+
+    
+    
+    
+    let launched = Promise.withResolvers();
+    sandbox.stub(FileUtils, "File").returns({
+      
+      
+      
+      path: PathUtils.profileDir,
+      launch: () => launched.resolve(),
+    });
+
+    await withMigrationWizardDialog(async prefsWin => {
+      let wizard = prefsWin.document.body.querySelector("migration-wizard");
+      wizard.dispatchEvent(
+        new prefsWin.CustomEvent("MigrationWizard:LaunchMacOSPasswordsApp", {
+          bubbles: true,
+        })
+      );
+
+      await launched.promise;
+      Assert.ok(true, "Attempted to launch the Passwords app.");
+    });
+  } finally {
+    sandbox.restore();
+  }
 });
