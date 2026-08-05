@@ -715,7 +715,8 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool MaybeHasFloats() const;
+  bool HasAnyFloats() const;
+
   
 
 
@@ -834,7 +835,7 @@ class nsBlockFrame : public nsContainerFrame {
 
   void CollectFloats(nsIFrame* aFrame, nsFrameList& aList,
                      bool aCollectFromSiblings) {
-    if (MaybeHasFloats()) {
+    if (HasAnyFloats()) {
       DoCollectFloats(aFrame, aList, aCollectFromSiblings);
     }
   }
@@ -1068,6 +1069,9 @@ class nsBlockFrame : public nsContainerFrame {
     nsBlockFrame* const mBlock;
   };
   friend struct nsAutoOOFFrameList;
+
+  
+  bool HasOverflowFloats() const;
 
   nsFrameList* GetOverflowFloats() const;
 
