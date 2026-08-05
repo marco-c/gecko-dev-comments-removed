@@ -281,9 +281,7 @@ class RTC_EXPORT Port : public PortInterface {
   
   const std::vector<Candidate>& Candidates() const override;
   
-  [[deprecated("Use SubscribeCandidateError(const void* tag, ...)")]]
-  void SubscribeCandidateError(
-      std::function<void(Port*, const IceCandidateErrorEvent&)> callback);
+
   void SubscribeCandidateError(
       const void* tag,
       std::function<void(Port*, const IceCandidateErrorEvent&)> callback);

@@ -310,11 +310,7 @@ class RTC_EXPORT PortAllocatorSession {
   }
   
   
-  [[deprecated]] void SubscribeCandidatesRemoved(
-      absl::AnyInvocable<void(PortAllocatorSession*,
-                              const std::vector<Candidate>&)> callback) {
-    candidates_removed_callbacks_.AddReceiver(std::move(callback));
-  }
+
   void SubscribeCandidatesRemoved(
       void* tag,
       absl::AnyInvocable<void(PortAllocatorSession*,

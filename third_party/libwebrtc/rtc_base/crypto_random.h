@@ -25,8 +25,10 @@ namespace webrtc {
 
 class RandomGenerator {
  public:
-  virtual ~RandomGenerator() {}
-  virtual bool Init(const void* seed, size_t len) = 0;
+  virtual ~RandomGenerator() = default;
+  [[deprecated]] virtual bool Init(const void* seed, size_t len) {
+    return true;
+  }
   virtual bool Generate(void* buf, size_t len) = 0;
 };
 
@@ -41,10 +43,6 @@ void SetRandomGenerator(std::unique_ptr<RandomGenerator> generator);
 
 
 void SetRandomTestMode(bool test);
-
-
-bool InitRandom(int seed);
-bool InitRandom(const char* seed, size_t len);
 
 
 
@@ -85,23 +83,5 @@ double CreateRandomDouble();
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::CreateRandomData;
-using ::webrtc::CreateRandomDouble;
-using ::webrtc::CreateRandomId;
-using ::webrtc::CreateRandomId64;
-using ::webrtc::CreateRandomNonZeroId;
-using ::webrtc::CreateRandomString;
-using ::webrtc::CreateRandomUuid;
-using ::webrtc::InitRandom;
-using ::webrtc::RandomGenerator;
-using ::webrtc::SetDefaultRandomGenerator;
-using ::webrtc::SetRandomGenerator;
-using ::webrtc::SetRandomTestMode;
-}  
-#endif  
 
 #endif  

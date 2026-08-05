@@ -194,12 +194,13 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
   
   
+
   [[deprecated]] void SubscribeNetworksChanged(
       absl::AnyInvocable<void()> callback);
   void SubscribeNetworksChanged(void* tag, absl::AnyInvocable<void()> callback);
   void UnsubscribeNetworksChanged(void* tag);
   void NotifyNetworksChanged() { networks_changed_callbacks_.Send(); }
-  [[deprecated]] void SubscribeError(absl::AnyInvocable<void()> callback);
+
   void SubscribeError(void* tag, absl::AnyInvocable<void()> callback);
   void UnsubscribeError(void* tag);
   void NotifyError() { error_callbacks_.Send(); }
@@ -239,10 +240,7 @@ class RTC_EXPORT Network {
   std::unique_ptr<Network> Clone() const;
 
   
-  [[deprecated]] void SubscribeTypeChanged(
-      absl::AnyInvocable<void(const Network*)> callback) {
-    type_changed_callbacks_.AddReceiver(std::move(callback));
-  }
+
   void SubscribeTypeChanged(void* tag,
                             absl::AnyInvocable<void(const Network*)> callback) {
     type_changed_callbacks_.AddReceiver(tag, std::move(callback));
@@ -255,10 +253,7 @@ class RTC_EXPORT Network {
   }
 
   
-  [[deprecated]] void SubscribeNetworkPreferenceChanged(
-      absl::AnyInvocable<void(const Network*)> callback) {
-    network_preference_changed_callbacks_.AddReceiver(std::move(callback));
-  }
+
   void SubscribeNetworkPreferenceChanged(
       void* tag,
       absl::AnyInvocable<void(const Network*)> callback) {

@@ -34,9 +34,8 @@ namespace {
 
 class SecureRandomGenerator : public RandomGenerator {
  public:
-  SecureRandomGenerator() {}
-  ~SecureRandomGenerator() override {}
-  bool Init(const void* , size_t ) override { return true; }
+  SecureRandomGenerator() = default;
+  ~SecureRandomGenerator() override = default;
   bool Generate(void* buf, size_t len) override {
     return (RAND_bytes(reinterpret_cast<unsigned char*>(buf), len) > 0);
   }
@@ -46,8 +45,7 @@ class SecureRandomGenerator : public RandomGenerator {
 class TestRandomGenerator : public RandomGenerator {
  public:
   TestRandomGenerator() : seed_(7) {}
-  ~TestRandomGenerator() override {}
-  bool Init(const void* , size_t ) override { return true; }
+  ~TestRandomGenerator() override = default;
   bool Generate(void* buf, size_t len) override {
     for (size_t i = 0; i < len; ++i) {
       static_cast<uint8_t*>(buf)[i] = static_cast<uint8_t>(GetRandom());
@@ -116,17 +114,7 @@ void SetRandomTestMode(bool test) {
   }
 }
 
-bool InitRandom(int seed) {
-  return InitRandom(reinterpret_cast<const char*>(&seed), sizeof(seed));
-}
 
-bool InitRandom(const char* seed, size_t len) {
-  if (!Rng().Init(seed, len)) {
-    RTC_LOG(LS_ERROR) << "Failed to init random generator!";
-    return false;
-  }
-  return true;
-}
 
 std::string CreateRandomString(size_t len) {
   std::string str;
