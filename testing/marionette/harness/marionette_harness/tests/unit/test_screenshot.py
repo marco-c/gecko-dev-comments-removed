@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 import base64
 import hashlib
@@ -54,8 +54,8 @@ class ScreenCaptureTestCase(MarionetteTestCase):
 
         self._device_pixel_ratio = None
 
-        # Ensure that each screenshot test runs on a blank page to avoid left
-        # over elements or focus which could interfer with taking screenshots
+        
+        
         self.marionette.navigate("about:blank")
 
     @property
@@ -107,7 +107,7 @@ class ScreenCaptureTestCase(MarionetteTestCase):
         screenshot_hash1 = self.marionette.screenshot(element=element, format="hash")
         screenshot_hash2 = self.marionette.screenshot(element=element, format="hash")
 
-        # Valid data should have been returned
+        
         self.assert_png(image_base64)
         self.assert_png(image_binary1)
         self.assertEqual(image_base64, image_binary1)
@@ -116,12 +116,12 @@ class ScreenCaptureTestCase(MarionetteTestCase):
             hashlib.sha256(screenshot_base64.encode("utf-8")).hexdigest(),
         )
 
-        # Different formats produce different data
+        
         self.assertNotEqual(screenshot_base64, image_binary1)
         self.assertNotEqual(screenshot_base64, screenshot_hash1)
         self.assertNotEqual(image_binary1, screenshot_hash1)
 
-        # A second capture should be identical
+        
         self.assertEqual(image_base64, image_default)
         self.assertEqual(image_binary1, image_binary2)
         self.assertEqual(screenshot_hash1, screenshot_hash2)
@@ -251,10 +251,39 @@ class TestScreenCaptureContent(WindowManagerMixin, ScreenCaptureTestCase):
         self.assertNotEqual(before, after)
         self.assertGreater(self.page_y_offset, 0)
 
+    def assert_readback_viewport(self, screenshot):
+        
+        
+        width, height = self.get_image_dimensions(screenshot)
+        expected_width, expected_height = self.scale(self.viewport_dimensions)
+        self.assertAlmostEqual(width, expected_width, delta=2)
+        self.assertAlmostEqual(height, expected_height, delta=2)
+
+    def test_readback_viewport(self):
+        self.marionette.navigate(short)
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot(full=False)
+        self.assert_readback_viewport(screenshot)
+
+    def test_readback_full_page_degrades_to_viewport(self):
+        
+        
+        self.marionette.navigate(long)
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot()
+        self.assert_readback_viewport(screenshot)
+
+    def test_readback_element_degrades_to_viewport(self):
+        self.marionette.navigate(box)
+        el = self.marionette.find_element(By.TAG_NAME, "div")
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot(element=el)
+        self.assert_readback_viewport(screenshot)
+
     def test_formats(self):
         self.marionette.navigate(box)
 
-        # Use a smaller region to speed up the test
+        
         element = self.marionette.find_element(By.TAG_NAME, "div")
         self.assert_formats(element=element)
 
