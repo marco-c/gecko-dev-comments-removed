@@ -16,6 +16,7 @@
 #include "jsapi.h"
 #include "nsClassHashtable.h"
 #include "nsIURI.h"
+#include "nsTHashMap.h"
 #include "SyncModuleLoader.h"
 #include "xpcpublic.h"
 
@@ -39,6 +40,7 @@ class ModuleLoadRequest;
 
 namespace mozilla::loader {
 
+class SyncModuleLoader;
 class NonSharedGlobalSyncModuleLoaderScope;
 
 }  
@@ -216,58 +218,5 @@ class mozJSModuleLoader final {
 
   RefPtr<mozilla::loader::SyncModuleLoader> mModuleLoader;
 };
-
-namespace mozilla::loader {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS NonSharedGlobalSyncModuleLoaderScope {
- public:
-  NonSharedGlobalSyncModuleLoaderScope(JSContext* aCx,
-                                       nsIGlobalObject* aGlobal);
-  ~NonSharedGlobalSyncModuleLoaderScope();
-
-  
-  
-  void Finish();
-
-  
-  
-  static bool IsActive();
-
-  static mozJSModuleLoader* ActiveLoader();
-
-  static void InitStatics();
-
- private:
-  RefPtr<mozJSModuleLoader> mLoader;
-
-  
-  
-  
-  static MOZ_THREAD_LOCAL(mozJSModuleLoader*) sTlsActiveLoader;
-
-  
-  RefPtr<JS::loader::ModuleLoaderBase> mAsyncModuleLoader;
-
-  mozilla::Maybe<JS::loader::AutoOverrideModuleLoader> mMaybeOverride;
-};
-
-}  
 
 #endif  
