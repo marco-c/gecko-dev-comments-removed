@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.dom += [
     "WebTransport.h",
@@ -10,6 +8,7 @@ EXPORTS.mozilla.dom += [
     "WebTransportDatagramDuplexStream.h",
     "WebTransportError.h",
     "WebTransportReceiveStream.h",
+    "WebTransportSendGroup.h",
     "WebTransportSendStream.h",
     "WebTransportStreams.h",
 ]
@@ -20,6 +19,7 @@ UNIFIED_SOURCES += [
     "WebTransportDatagramDuplexStream.cpp",
     "WebTransportError.cpp",
     "WebTransportReceiveStream.cpp",
+    "WebTransportSendGroup.cpp",
     "WebTransportSendStream.cpp",
     "WebTransportStreams.cpp",
 ]
