@@ -3980,7 +3980,13 @@ void DebugAPI::traceWasmContFrame(JSTracer* tracer, JSObject* src,
   for (Realm::DebuggerVectorEntry& entry :
        instance->realm()->getDebuggers(nogc)) {
     Debugger* dbg = entry.dbg.unbarrieredGet();
-    auto p = dbg->frames.lookup(fp);
+    
+    
+    
+    
+    
+    
+    auto p = dbg->frames.readonlyThreadsafeLookup(fp);
     if (!p) {
       continue;
     }
