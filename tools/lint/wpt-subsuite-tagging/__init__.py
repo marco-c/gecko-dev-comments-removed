@@ -21,6 +21,7 @@ WPT_SUBSUITE_PATHS = {
         "media-source/mse-for-webcodecs",
     ],
     "eme": ["encrypted-media"],
+    "webrtc": ["webrtc"],
 }
 
 

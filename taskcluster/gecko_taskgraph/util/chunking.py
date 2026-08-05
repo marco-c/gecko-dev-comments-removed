@@ -52,6 +52,7 @@ WPT_SUBSUITES = {
         "media-source/mse-for-webcodecs",
     ],
     "eme": ["encrypted-media"],
+    "webrtc": ["webrtc"],
 }
 
 
@@ -146,11 +147,12 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
         info[tag] = value
 
     
-    for tag in WPT_SUBSUITES.keys():
-        if tag in task["test-name"]:
-            info[tag] = True
-        else:
-            info[tag] = False
+    if "web-platform-tests" in task["test-name"]:
+        for tag in WPT_SUBSUITES.keys():
+            if tag in task["test-name"]:
+                info[tag] = True
+            else:
+                info[tag] = False
 
     
     
