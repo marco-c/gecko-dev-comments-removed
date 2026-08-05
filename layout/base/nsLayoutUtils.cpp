@@ -5853,31 +5853,13 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const bool isLineClamped =
-      block->HasLineClampEllipsis() || block->HasLineClampEllipsisDescendant();
-  bool hitLineClampEllipsis = false;
-
-  for (const auto& line : Reversed(block->Lines())) {
-    hitLineClampEllipsis = hitLineClampEllipsis || line.HasLineClampEllipsis();
-    if (line.IsBlock()) {
-      if (isLineClamped && !hitLineClampEllipsis &&
-          !block->HasLineClampEllipsisDescendant()) {
-        
-        continue;
-      }
-      nsIFrame* kid = line.mFirstChild;
+  for (nsBlockFrame::ConstReverseLineIterator line = block->LinesRBegin(),
+                                              line_end = block->LinesREnd();
+       line != line_end; ++line) {
+    if (line->IsBlock()) {
+      nsIFrame* kid = line->mFirstChild;
       nscoord kidBaseline;
-      const nsSize& containerSize = line.mContainerSize;
+      const nsSize& containerSize = line->mContainerSize;
       if (GetLastLineBaseline(aWM, kid, &kidBaseline)) {
         
         *aResult = kidBaseline +
@@ -5893,14 +5875,10 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
         return true;
       }
     } else {
-      if (isLineClamped && !hitLineClampEllipsis) {
-        
-        continue;
-      }
       
       
-      if (line.BSize() != 0 || !line.IsEmpty()) {
-        *aResult = line.BStart() + line.GetLogicalAscent();
+      if (line->BSize() != 0 || !line->IsEmpty()) {
+        *aResult = line->BStart() + line->GetLogicalAscent();
         return true;
       }
     }
