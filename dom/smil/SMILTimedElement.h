@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SMIL_SMILTIMEDELEMENT_H_
 #define DOM_SMIL_SMILTIMEDELEMENT_H_
 
@@ -517,7 +515,9 @@ class SMILTimedElement {
   void SampleFillValue();
   void AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
                                       double aOffsetSeconds, bool aIsBegin);
-  void RegisterMilestone();
+  
+  
+  void RegisterMilestone(SMILTimeContainer* aContainer = nullptr);
   bool GetNextMilestone(SMILMilestone& aNextMilestone) const;
 
   

@@ -460,7 +460,12 @@ void SMILTimedElement::SampleEndAt(SMILTime aContainerTime) {
 void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   MOZ_ASSERT(mAnimationElement,
              "Got sample before being registered with an animation element");
-  MOZ_ASSERT(GetTimeContainer(),
+
+  
+  
+  
+  SMILTimeContainer* container = GetTimeContainer();
+  MOZ_ASSERT(container,
              "Got sample without being registered with a time container");
 
   
@@ -468,8 +473,7 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   
   
   
-  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PauseType::Begin))
-    return;
+  if (container->IsPausedByType(SMILTimeContainer::PauseType::Begin)) return;
 
   
   
@@ -487,13 +491,12 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   }
 
   bool finishedSeek = false;
-  if (GetTimeContainer()->IsSeeking() &&
-      mSeekState == SMILSeekState::NotSeeking) {
+  if (container->IsSeeking() && mSeekState == SMILSeekState::NotSeeking) {
     mSeekState = mElementState == SMILElementState::Active
                      ? SMILSeekState::ForwardFromActive
                      : SMILSeekState::ForwardFromInactive;
   } else if (mSeekState != SMILSeekState::NotSeeking &&
-             !GetTimeContainer()->IsSeeking()) {
+             !container->IsSeeking()) {
     finishedSeek = true;
   }
 
@@ -647,7 +650,7 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   if (finishedSeek) {
     DoPostSeek();
   }
-  RegisterMilestone();
+  RegisterMilestone(container);
 }
 
 void SMILTimedElement::HandleContainerTimeChange() {
@@ -1940,8 +1943,10 @@ void SMILTimedElement::AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
   AddInstanceTime(instanceTime, aIsBegin);
 }
 
-void SMILTimedElement::RegisterMilestone() {
-  SMILTimeContainer* container = GetTimeContainer();
+void SMILTimedElement::RegisterMilestone(SMILTimeContainer* aContainer) {
+  MOZ_ASSERT(!aContainer || aContainer == GetTimeContainer(),
+             "Caller passed a container that isn't the one we'd resolve");
+  SMILTimeContainer* container = aContainer ? aContainer : GetTimeContainer();
   if (!container) return;
   MOZ_ASSERT(mAnimationElement,
              "Got a time container without an owning animation element");
