@@ -71,6 +71,7 @@ Converter.prototype = {
 
   asyncConvertData(fromType, toType, listener) {
     this.listener = listener;
+    this.isJsonlines = fromType === "application/vnd.mozilla.jsonlines.view";
   },
   getConvertedType(_fromType, channel) {
     if (channel instanceof Ci.nsIMultiPartChannel) {
@@ -126,7 +127,7 @@ Converter.prototype = {
     this.decoder = new TextDecoder("UTF-8");
 
     
-    fixSave(request);
+    fixSave(request, this.isJsonlines);
 
     
     this.listener.onStartRequest(request);
@@ -146,7 +147,7 @@ Converter.prototype = {
       return;
     }
 
-    this.data = exportData(win, headers);
+    this.data = exportData(win, headers, this.isJsonlines);
     insertJsonData(win, this.data.json);
     win.addEventListener("contentMessage", onContentMessage, false, true);
     keepThemeUpdated(win);
@@ -184,24 +185,37 @@ Converter.prototype = {
 
 
 
-function fixSave(request) {
+
+
+
+
+
+
+
+
+
+function fixSave(request, isJsonlines) {
   let match;
   if (request instanceof Ci.nsIHttpChannel) {
     try {
       const header = request.getResponseHeader("Content-Type");
-      match = header.match(/^(application\/(?:[^;]+\+)?json)(?:;|$)/);
+      match = header.match(
+        /^(application\/(?:[^;]+\+)?json|application\/(?:jsonl|jsonlines|x-ndjson))(?:;|$)/
+      );
     } catch (err) {
       
     }
   } else {
     const uri = request.QueryInterface(Ci.nsIChannel).URI.spec;
-    match = uri.match(/^data:(application\/(?:[^;,]+\+)?json)[;,]/);
+    match = uri.match(
+      /^data:(application\/(?:[^;,]+\+)?json|application\/(?:jsonl|jsonlines|x-ndjson))[;,]/
+    );
   }
   let originalType;
   if (match) {
     originalType = match[1];
   } else {
-    originalType = "application/json";
+    originalType = isJsonlines ? "application/jsonl" : "application/json";
   }
   request.QueryInterface(Ci.nsIWritablePropertyBag);
   request.setProperty("contentType", originalType);
@@ -287,7 +301,7 @@ function getRequestLoadContext(request) {
 }
 
 
-function exportData(win, headers) {
+function exportData(win, headers, isJsonlines) {
   const json = new win.Text();
   
   
@@ -303,6 +317,7 @@ function exportData(win, headers) {
     {
       headers,
       json,
+      isJsonlines,
       readyState: "uninitialized",
       Locale: getAllStrings(),
       profilerUrl,
