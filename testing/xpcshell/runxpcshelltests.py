@@ -55,6 +55,10 @@ except ImportError:
     build = None
 
 HARNESS_TIMEOUT = 30
+
+
+
+TIMEOUT_MINIDUMP_WAIT = 30
 TBPL_RETRY = 4  
 
 
@@ -477,12 +481,38 @@ class XPCShellTestThread(Thread):
 
         
         
-        self.done = True
+        
+        
         self.timedout = True
 
         
         
         self.killTimeout(proc)
+
+        
+        
+        
+        
+        if proc is not None and hasattr(proc, "pid"):
+            deadline = time.time() + TIMEOUT_MINIDUMP_WAIT
+            while self.poll(proc) is None and time.time() < deadline:
+                time.sleep(0.1)
+        self.checkForCrashes(
+            self.tempDir, self.symbolsPath, test_name=self.test_object["id"]
+        )
+
+        
+        
+        
+        self.report_message({
+            "action": "log",
+            "level": "ERROR",
+            "message": (
+                f"{self.test_object['id']} | Timed out and was force-killed by "
+                "the harness; the crash dump reported for this test is that "
+                "force-killed process, not an actual crash."
+            ),
+        })
 
         self.reportTimeoutResult()
 
