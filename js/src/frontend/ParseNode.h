@@ -2092,7 +2092,7 @@ class PropertyAccessBase : public BinaryNode {
 
 
 
-class NonOptonalPropertyAccessBase : public PropertyAccessBase {
+class NonOptionalPropertyAccessBase : public PropertyAccessBase {
  public:
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::DotExpr) ||
@@ -2105,11 +2105,11 @@ class NonOptonalPropertyAccessBase : public PropertyAccessBase {
   using PropertyAccessBase::PropertyAccessBase;
 };
 
-class PropertyAccess : public NonOptonalPropertyAccessBase {
+class PropertyAccess : public NonOptionalPropertyAccessBase {
  public:
   PropertyAccess(ParseNode* lhs, NameNode* name, uint32_t begin, uint32_t end)
-      : NonOptonalPropertyAccessBase(ParseNodeKind::DotExpr, lhs, name, begin,
-                                     end) {
+      : NonOptionalPropertyAccessBase(ParseNodeKind::DotExpr, lhs, name, begin,
+                                      end) {
     MOZ_ASSERT(lhs);
     MOZ_ASSERT(name);
   }
@@ -2118,25 +2118,25 @@ class PropertyAccess : public NonOptonalPropertyAccessBase {
   
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::DotExpr);
-    MOZ_ASSERT_IF(match, node.is<NonOptonalPropertyAccessBase>());
+    MOZ_ASSERT_IF(match, node.is<NonOptionalPropertyAccessBase>());
     return match;
   }
 };
 
 
 
-class ArgumentsLength : public NonOptonalPropertyAccessBase {
+class ArgumentsLength : public NonOptionalPropertyAccessBase {
  public:
   ArgumentsLength(ParseNode* lhs, NameNode* name, uint32_t begin, uint32_t end)
-      : NonOptonalPropertyAccessBase(ParseNodeKind::ArgumentsLength, lhs, name,
-                                     begin, end) {
+      : NonOptionalPropertyAccessBase(ParseNodeKind::ArgumentsLength, lhs, name,
+                                      begin, end) {
     MOZ_ASSERT(lhs);
     MOZ_ASSERT(name);
   }
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ArgumentsLength);
-    MOZ_ASSERT_IF(match, node.is<NonOptonalPropertyAccessBase>());
+    MOZ_ASSERT_IF(match, node.is<NonOptionalPropertyAccessBase>());
     return match;
   }
 };
