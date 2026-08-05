@@ -31,6 +31,7 @@ struct CodeMetadata;
 
 namespace jit {
 
+class CompileRuntime;
 class JitCode;
 class BacktrackingAllocator;
 class CompilerFrameInfo;
@@ -40,12 +41,13 @@ class MIRGraph;
 class LInstruction;
 enum class CacheOp : uint16_t;
 
-void ResetPerfSpewer(bool enabled);
-
 struct AutoLockPerfSpewer {
   AutoLockPerfSpewer();
   ~AutoLockPerfSpewer();
 };
+
+
+
 
 bool PerfEnabled();
 
@@ -68,6 +70,10 @@ class PerfSpewer {
 
   
   uint32_t startOffset_ = 0;
+
+  
+  
+  bool runtimeProfilingEnabled_ = false;
 
   
   
@@ -116,7 +122,17 @@ class PerfSpewer {
   void markStartOffset(uint32_t offset) { startOffset_ = offset; }
 
   
-  virtual void startRecording(const wasm::CodeMetadata* wasmCodeMeta = nullptr);
+  
+  bool perfEnabled() const;
+
+  
+  
+  bool perfSrcEnabled() const;
+
+  
+  
+  virtual void startRecording(CompileRuntime* runtime = nullptr,
+                              const wasm::CodeMetadata* wasmCodeMeta = nullptr);
 
   
   
@@ -135,10 +151,12 @@ class PerfSpewer {
   
   
   
+  
   void reset() {
     endRecording();
     debugInfo_.clearAndFree();
     irFileName_ = JS::UniqueChars();
+    runtimeProfilingEnabled_ = false;
   }
 
   
@@ -173,6 +191,7 @@ class IonPerfSpewer : public PerfSpewer {
   IonPerfSpewer& operator=(IonPerfSpewer&&) = default;
 
   void startRecording(
+      CompileRuntime* runtime,
       const wasm::CodeMetadata* wasmCodeMeta = nullptr) override;
   void endRecording() override;
 
