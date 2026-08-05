@@ -588,6 +588,8 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
 
   
   
+  
+  
   if (aRestart == RestartRequest::No &&
       ModuleMapContainsURL(
           ModuleMapKey(aRequest->URI(), aRequest->mModuleType))) {
@@ -646,6 +648,9 @@ void ModuleLoaderBase::SetModuleFetchStarted(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsFetching());
   MOZ_ASSERT(!ModuleMapContainsURL(moduleMapKey));
 
+  
+  
+  
   RefPtr<LoadingRequest> loadingRequest = new LoadingRequest();
   loadingRequest->mRequest = aRequest;
   mFetchingModules.InsertOrUpdate(moduleMapKey, loadingRequest);
@@ -699,7 +704,9 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
   RefPtr<ModuleScript> moduleScript(aRequest->mModuleScript);
   MOZ_ASSERT(NS_FAILED(aResult) == !moduleScript);
 
-  mFetchedModules.InsertOrUpdate(moduleMapKey, RefPtr{moduleScript});
+  if (moduleScript) {
+    mFetchedModules.InsertOrUpdate(moduleMapKey, RefPtr{moduleScript});
+  }
 
   return loadingRequest.forget();
 }
@@ -728,16 +735,24 @@ void ModuleLoaderBase::WaitForModuleFetch(ModuleLoadRequest* aRequest) {
   ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
   MOZ_ASSERT(ModuleMapContainsURL(moduleMapKey));
 
+  
+  
   if (auto entry = mFetchingModules.Lookup(moduleMapKey)) {
-    RefPtr<LoadingRequest> loadingRequest = entry.Data();
+    const RefPtr<LoadingRequest>& loadingRequest = entry.Data();
     loadingRequest->mWaiting.AppendElement(aRequest);
     return;
   }
 
+  
+  
+  
+  
+  
   RefPtr<ModuleScript> ms;
   MOZ_ALWAYS_TRUE(mFetchedModules.Get(moduleMapKey, getter_AddRefs(ms)));
+  MOZ_ASSERT(ms);
 
-  ResumeWaitingRequest(aRequest, bool(ms));
+  ResumeWaitingRequest(aRequest, true);
 }
 
 ModuleScript* ModuleLoaderBase::GetFetchedModule(
@@ -1909,9 +1924,6 @@ void ModuleLoaderBase::CopyModulesTo(ModuleLoaderBase* aDest) {
 
   for (const auto& entry : mFetchedModules) {
     RefPtr<ModuleScript> moduleScript = entry.GetData();
-
-    
-    
     aDest->mFetchedModules.InsertOrUpdate(entry, moduleScript);
   }
 }
