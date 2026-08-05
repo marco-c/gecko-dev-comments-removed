@@ -10,6 +10,7 @@
 pub mod compare;
 pub mod quadtree;
 pub mod cached_surface;
+pub mod vert_buffer;
 
 use api::units::*;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
@@ -122,8 +123,6 @@ pub enum PrimitiveCompareResult {
     Descriptor,
     
     Clip,
-    
-    Transform,
     
     Image,
     
