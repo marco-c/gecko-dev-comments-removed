@@ -20,6 +20,8 @@ const consts = {
   
   backDisplay: isMac ? "⌘←" : "Alt+Left Arrow",
   backArgs: ["KEY_ArrowLeft", { accelKey: isMac, altKey: !isMac }],
+  
+  pasteDisplay: isMac ? "⌘V" : "Ctrl+V",
 
   
   

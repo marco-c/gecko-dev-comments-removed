@@ -41,10 +41,9 @@ async function buildTable() {
         
         
         keyLabelText = await document.l10n.formatValue(key.title);
-        row.dataset.label = keyLabelText;
       }
       row.role = "group";
-      row.ariaLabel = keyLabelText;
+      row.dataset.label = keyLabelText;
 
       
       
@@ -52,10 +51,24 @@ async function buildTable() {
       keyContent.className = "key-content";
 
       
+      const keyLabelContainer = document.createElement("div");
       const keyLabel = document.createElement("span");
+      const keyDescription = document.createElement("span");
+      keyLabelContainer.className = "key-label-container";
       keyLabel.className = "key-label";
       keyLabel.textContent = keyLabelText;
-      keyContent.append(keyLabel);
+      if (key.internal) {
+        row.classList.add("internal");
+        keyDescription.className = "text-deemphasized";
+        keyDescription.setAttribute(
+          "data-l10n-id",
+          "customkeys-key-unchangeable"
+        );
+      }
+      keyLabelContainer.append(keyLabel);
+      keyLabelContainer.append(keyDescription);
+      keyContent.append(keyLabelContainer);
+      row.ariaLabelledByElements = [keyLabel, keyDescription];
 
       
       const keyActions = document.createElement("div");
@@ -148,7 +161,21 @@ async function maybeHandleConflict(data) {
       
       return false;
     }
-    const conflictDesc = row.ariaLabel;
+    const conflictDesc = row.dataset.label;
+    if (row.classList.contains("internal")) {
+      const [title, body] = await document.l10n.formatValues([
+        { id: "customkeys-conflict-unusable-title" },
+        {
+          id: "customkeys-conflict-unusable-body",
+          args: { conflict: conflictDesc },
+        },
+      ]);
+      await RPMSendQuery("CustomKeys:Confirm", {
+        title,
+        body,
+      });
+      return false;
+    }
     const [title, body, buttonCancel, buttonConfirm] =
       await document.l10n.formatValues([
         { id: "customkeys-conflict-confirm-title" },
@@ -259,7 +286,7 @@ function onFocusLost(event) {
 function clearSearchHighlights(row) {
   const labelEl = row.querySelector(".key-label");
   if (labelEl.querySelector(".search-highlight")) {
-    labelEl.textContent = row.ariaLabel;
+    labelEl.textContent = row.dataset.label;
   }
 }
 
@@ -268,7 +295,7 @@ function applySearchHighlights(query, row) {
   if (!labelEl) {
     return;
   }
-  const text = row.ariaLabel;
+  const text = row.dataset.label;
   const lower = text.toLowerCase();
   const frag = document.createDocumentFragment();
   let lastIndex = 0;
@@ -294,7 +321,8 @@ function onSearchInput(event) {
   const cards = table.querySelectorAll(".category");
 
   for (const row of table.querySelectorAll(".key")) {
-    const isMatching = !query || row.ariaLabel.toLowerCase().includes(query);
+    const isMatching =
+      !query || row.dataset.label.toLowerCase().includes(query);
     row.hidden = !isMatching;
     
     row.classList.toggle("hidden", !isMatching);
