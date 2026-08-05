@@ -54,9 +54,13 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["extensions.formautofill.useml", true],
-      ["extensions.formautofill.useml.succeeded", false],
+      ["extensions.formautofill.useml.successful", false],
     ],
   });
+
+  
+  
+  await clearGleanTelemetry();
 });
 
 add_heuristic_tests([
@@ -76,11 +80,10 @@ add_heuristic_tests([
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
     onTestComplete: async () => {
       
-      Services.prefs.setBoolPref(
-        "extensions.formautofill.useml.successful",
-        true
-      );
-      assertTelemetry({
+      await SpecialPowers.pushPrefEnv({
+        set: [["extensions.formautofill.useml.successful", true]],
+      });
+      await assertTelemetry({
         given_name: "0",
         family_name: "0",
         organization: "true",
@@ -125,7 +128,7 @@ add_heuristic_tests([
       <p><label>tel: <input type="text" id="tel" name="tel" autocomplete="tel" /></label></p>
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
     onTestComplete: async () => {
-      assertTelemetry({
+      await assertTelemetry({
         given_name: "ml",
         family_name: "ml",
         organization: "true",
