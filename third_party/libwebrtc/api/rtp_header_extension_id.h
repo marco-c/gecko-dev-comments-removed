@@ -11,6 +11,7 @@
 #ifndef API_RTP_HEADER_EXTENSION_ID_H_
 #define API_RTP_HEADER_EXTENSION_ID_H_
 
+#include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
 #include "rtc_base/strong_alias.h"
 
@@ -48,7 +49,11 @@ class RtpHeaderExtensionId
     
   }
   
-  constexpr operator int() const& { return value(); }  
+  [[deprecated]] ABSL_REFACTOR_INLINE  
+      constexpr
+      operator int() const& {  
+    return value();
+  }
 
   
   constexpr bool Valid() const {
