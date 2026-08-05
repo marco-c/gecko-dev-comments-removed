@@ -5524,6 +5524,29 @@ pub extern "C" fn Servo_DeclarationBlock_GetAt(
     read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
         if let Some(decl) = decls.declarations().get(index as usize) {
             *result = decl.id().to_gecko_css_property_id();
+
+            
+            
+            
+            
+            
+            
+            if let PropertyDeclarationId::Longhand(longhand) = decl.id() {
+                if !NonCustomPropertyId::from_longhand(longhand)
+                    .to_property_id()
+                    .enabled_for_all_content()
+                {
+                    for shorthand in longhand.shorthands() {
+                        if shorthand.is_legacy_shorthand()
+                            && shorthand.allows_disabled_subproperties()
+                        {
+                            result.mId = shorthand.to_noncustomcsspropertyid();
+                            break;
+                        }
+                    }
+                }
+            }
+
             true
         } else {
             false
