@@ -331,13 +331,21 @@ impl SpatialNode {
         
         
         let self_has_animated_transform = match self.node_type {
-            SpatialNodeType::ReferenceFrame(ref info) => {
-                matches!(info.source_transform, PropertyBinding::Binding(..))
-                    && !matches!(
+            SpatialNodeType::ReferenceFrame(ref info) => match info.source_transform {
+                
+                
+                
+                
+                
+                
+                PropertyBinding::Binding(ref key, _) => {
+                    !matches!(
                         info.kind,
                         ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. }
-                    )
-            }
+                    ) && scene_properties.transform_binding_has_moved(key.id)
+                }
+                PropertyBinding::Value(..) => false,
+            },
             _ => false,
         };
         self.is_ancestor_or_self_animating =

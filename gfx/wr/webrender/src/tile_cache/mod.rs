@@ -2688,9 +2688,20 @@ impl TileCacheInstance {
             }
             PrimitiveKind::LineDecoration { .. } |
             PrimitiveKind::NormalBorder { .. } |
-            PrimitiveKind::BoxShadow { .. } |
+            PrimitiveKind::BoxShadow { .. } => {
+                
+            }
             PrimitiveKind::TextRun { .. } => {
                 
+                
+                
+                
+                
+                
+                
+                prim_info.raster_space_animating = frame_context.spatial_tree
+                    .get_spatial_node(prim_spatial_node_index)
+                    .is_ancestor_or_self_animating;
             }
         };
 

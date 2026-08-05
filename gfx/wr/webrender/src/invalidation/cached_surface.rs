@@ -6,18 +6,18 @@ use api::ColorF;
 use api::PropertyBindingId;
 use api::units::*;
 use smallvec::SmallVec;
-use crate::ItemUid;
 use crate::composite::CompositeState;
 use crate::internal_types::{FastHashMap, FrameId};
 use crate::invalidation::compare::ImageDependency;
 use crate::invalidation::compare::{ColorBinding, OpacityBinding, OpacityBindingInfo, PrimitiveComparisonKey};
-use crate::invalidation::compare::{SpatialNodeComparer, PrimitiveComparer, PrimitiveDependency, ColorBindingInfo};
+use crate::invalidation::compare::{PrimitiveComparer, PrimitiveDependency, ColorBindingInfo};
 use crate::invalidation::{InvalidationReason, PrimitiveCompareResult, quadtree::TileNode};
+use crate::invalidation::vert_buffer::{CornersCache, VertRange};
+use crate::intern::ItemUid;
 use crate::picture::{PictureCompositeMode, SurfaceIndex, clampf};
 use crate::print_tree::PrintTreePrinter;
 use crate::resource_cache::ResourceCache;
 use crate::space::SpaceMapper;
-use crate::spatial_tree::SpatialNodeIndex;
 use crate::visibility::FrameVisibilityContext;
 use peek_poke::poke_into_vec;
 use std::mem;
@@ -102,6 +102,9 @@ impl CachedSurface {
     pub fn add_prim_dependency(
         &mut self,
         info: &PrimitiveDependencyInfo,
+        corners_cache: &CornersCache,
+        prim_clamp_to_tile: bool,
+        local_raster_rect: &RasterRect,
         local_tile_rect: PictureRect,
     ) {
         
@@ -137,28 +140,30 @@ impl CachedSurface {
         );
 
         
+        let vert_data = &mut self.current_descriptor.vert_data;
+        let (prim_corners, coverage_corners) = if prim_clamp_to_tile {
+            (
+                corners_cache.push_verts_clamped(info.prim_scratch, local_raster_rect, vert_data),
+                corners_cache.push_verts_clamped(info.cov_scratch, local_raster_rect, vert_data),
+            )
+        } else {
+            (
+                corners_cache.push_verts(info.prim_scratch, vert_data),
+                corners_cache.push_verts(info.cov_scratch, vert_data),
+            )
+        };
+
+        
         let prim_index = PrimitiveDependencyIndex(self.current_descriptor.prims.len() as u32);
 
         
         let dep_offset = self.current_descriptor.dep_data.len() as u32;
         let mut dep_count = 0;
 
-        for clip in &info.clips {
+        for &(clip_uid, clip_scratch) in info.clips.iter() {
             dep_count += 1;
             poke_into_vec(
-                &PrimitiveDependency::Clip {
-                    clip: *clip,
-                },
-                &mut self.current_descriptor.dep_data,
-            );
-        }
-
-        for spatial_node_index in &info.spatial_nodes {
-            dep_count += 1;
-            poke_into_vec(
-                &PrimitiveDependency::SpatialNode {
-                    index: *spatial_node_index,
-                },
+                &PrimitiveDependency::Clip { prim_uid: clip_uid, vert_range: corners_cache.push_verts(clip_scratch, vert_data) },
                 &mut self.current_descriptor.dep_data,
             );
         }
@@ -193,11 +198,23 @@ impl CachedSurface {
             );
         }
 
+        if info.raster_space_animating {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::AnimatedRasterSpace {
+                    animating: true,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
+
         self.current_descriptor.prims.push(PrimitiveDescriptor {
-            prim_uid: info.prim_uid,
             prim_clip_box,
             dep_offset,
             dep_count,
+            prim_uid: info.prim_uid,
+            prim_corners,
+            coverage_corners,
         });
 
         
@@ -216,7 +233,6 @@ impl CachedSurface {
             &self.prev_descriptor,
             &self.current_descriptor,
             state.resource_cache,
-            state.spatial_node_comparer,
             ctx.opacity_bindings,
             ctx.color_bindings,
         );
@@ -329,48 +345,61 @@ pub struct TileUpdateDirtyState<'a> {
 
     
     pub compare_cache: &'a mut FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
-
-    
-    pub spatial_node_comparer: &'a mut SpatialNodeComparer,
 }
+
+
 
 
 pub struct PrimitiveDependencyInfo {
     
-    pub prim_uid: ItemUid,
-
     
     pub prim_clip_box: PictureBox2D,
-
     
     pub images: SmallVec<[ImageDependency; 8]>,
-
     
     pub opacity_bindings: SmallVec<[OpacityBinding; 4]>,
-
     
     pub color_binding: Option<ColorBinding>,
-
     
-    pub clips: SmallVec<[ItemUid; 8]>,
-
     
-    pub spatial_nodes: SmallVec<[SpatialNodeIndex; 4]>,
+    
+    
+    
+    
+    pub prim_uid: ItemUid,
+    
+    
+    pub prim_scratch: VertRange,
+    
+    
+    
+    
+    
+    
+    
+    pub cov_scratch: VertRange,
+    
+    
+    pub clips: SmallVec<[(ItemUid, VertRange); 4]>,
+    
+    
+    
+    
+    pub raster_space_animating: bool,
 }
 
 impl PrimitiveDependencyInfo {
-    pub fn new(
-        prim_uid: crate::intern::ItemUid,
-        prim_clip_box: PictureBox2D,
-    ) -> Self {
+    pub fn new(prim_uid: ItemUid, prim_clip_box: PictureBox2D) -> Self {
         PrimitiveDependencyInfo {
-            prim_uid,
             prim_clip_box,
             images: smallvec::SmallVec::new(),
             opacity_bindings: smallvec::SmallVec::new(),
             color_binding: None,
+            prim_uid,
+            prim_scratch: VertRange::INVALID,
+            cov_scratch: VertRange::INVALID,
             clips: smallvec::SmallVec::new(),
-            spatial_nodes: smallvec::SmallVec::new(),
+            raster_space_animating: false,
         }
     }
 }
@@ -380,48 +409,21 @@ impl PrimitiveDependencyInfo {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveDescriptor {
-    pub prim_uid: ItemUid,
+    
+    
     pub prim_clip_box: PictureBox2D,
     
     pub dep_offset: u32,
     pub dep_count: u32,
+    
+    
+    pub prim_uid: ItemUid,
+    
+    pub prim_corners: VertRange,
+    
+    pub coverage_corners: VertRange,
 }
 
-impl PartialEq for PrimitiveDescriptor {
-    fn eq(&self, other: &Self) -> bool {
-        const EPSILON: f32 = 0.001;
-
-        if self.prim_uid != other.prim_uid {
-            return false;
-        }
-
-        use euclid::approxeq::ApproxEq;
-        if !self.prim_clip_box.min.x.approx_eq_eps(&other.prim_clip_box.min.x, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.min.y.approx_eq_eps(&other.prim_clip_box.min.y, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.max.x.approx_eq_eps(&other.prim_clip_box.max.x, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.max.y.approx_eq_eps(&other.prim_clip_box.max.y, &EPSILON) {
-            return false;
-        }
-
-        if self.dep_count != other.dep_count {
-            return false;
-        }
-
-        true
-    }
-}
-
-impl PartialEq<PrimitiveDescriptor> for (&ItemUid, &PictureBox2D) {
-    fn eq(&self, other: &PrimitiveDescriptor) -> bool {
-        self.0 == &other.prim_uid && self.1 == &other.prim_clip_box
-    }
-}
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -449,6 +451,10 @@ pub struct CachedSurfaceDescriptor {
 
     
     pub dep_data: Vec<u8>,
+
+    
+    
+    pub vert_data: Vec<i32>,
 }
 
 impl CachedSurfaceDescriptor {
@@ -456,6 +462,7 @@ impl CachedSurfaceDescriptor {
         CachedSurfaceDescriptor {
             local_valid_rect: PictureRect::zero(),
             dep_data: Vec::new(),
+            vert_data: Vec::new(),
             prims: Vec::new(),
             last_updated_frame_id: FrameId::INVALID,
         }
@@ -487,5 +494,6 @@ impl CachedSurfaceDescriptor {
         self.local_valid_rect = PictureRect::zero();
         self.prims.clear();
         self.dep_data.clear();
+        self.vert_data.clear();
     }
 }

@@ -13,7 +13,7 @@ use crate::clip::{ClipStore, ClipTree};
 use crate::spatial_tree::SpatialTree;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::hit_test::{HitTester, HitTestingScene, HitTestingSceneStats};
-use crate::internal_types::FastHashMap;
+use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::picture::SurfaceInfo;
 use crate::picture_graph::PictureGraph;
 use crate::prim_store::{PrimitiveStore, PrimitiveStoreStats, PictureIndex, PrimitiveInstance};
@@ -29,6 +29,13 @@ pub struct SceneProperties {
     transform_properties: FastHashMap<PropertyBindingId, LayoutTransform>,
     float_properties: FastHashMap<PropertyBindingId, f32>,
     color_properties: FastHashMap<PropertyBindingId, ColorF>,
+    
+    
+    
+    
+    
+    
+    moved_transform_bindings: FastHashSet<PropertyBindingId>,
     current_properties: DynamicProperties,
     pending_properties: Option<DynamicProperties>,
 }
@@ -39,6 +46,7 @@ impl SceneProperties {
             transform_properties: FastHashMap::default(),
             float_properties: FastHashMap::default(),
             color_properties: FastHashMap::default(),
+            moved_transform_bindings: FastHashSet::default(),
             current_properties: DynamicProperties::default(),
             pending_properties: None,
         }
@@ -84,6 +92,23 @@ impl SceneProperties {
 
         if let Some(ref pending_properties) = self.pending_properties {
             if *pending_properties != self.current_properties {
+                
+                
+                
+                
+                
+                let mut moved = FastHashSet::default();
+                for property in &pending_properties.transforms {
+                    let id = property.key.id;
+                    let value_changed = self.transform_properties
+                        .get(&id)
+                        .map_or(false, |prev| *prev != property.value);
+                    if value_changed || self.moved_transform_bindings.contains(&id) {
+                        moved.insert(id);
+                    }
+                }
+                self.moved_transform_bindings = moved;
+
                 self.transform_properties.clear();
                 self.float_properties.clear();
                 self.color_properties.clear();
@@ -145,6 +170,13 @@ impl SceneProperties {
 
     pub fn float_properties(&self) -> &FastHashMap<PropertyBindingId, f32> {
         &self.float_properties
+    }
+
+    
+    
+    
+    pub fn transform_binding_has_moved(&self, id: PropertyBindingId) -> bool {
+        self.moved_transform_bindings.contains(&id)
     }
 
     

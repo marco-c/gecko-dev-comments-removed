@@ -1852,6 +1852,7 @@ fn test_is_ancestor_or_self_zooming() {
 
 
 
+
 #[test]
 fn test_is_ancestor_or_self_animating() {
     let mut cst = SceneSpatialTree::new();
@@ -1864,7 +1865,6 @@ fn test_is_ancestor_or_self_animating() {
         LayoutTransform::identity(),
         LayoutVector2D::zero(),
     );
-    
     
     let animated = cst.add_reference_frame(
         root,
@@ -1890,6 +1890,24 @@ fn test_is_ancestor_or_self_animating() {
     
     
     
+    let static_bound = cst.add_reference_frame(
+        root,
+        TransformStyle::Flat,
+        PropertyBinding::Binding(api::PropertyBindingKey::new(3), LayoutTransform::identity()),
+        ReferenceFrameKind::Transform {
+            is_2d_scale_translation: false,
+            should_snap: false,
+            paired_with_perspective: false,
+        },
+        LayoutVector2D::zero(),
+        PipelineId::dummy(),
+        false,
+    );
+
+    
+    
+    
+    
     let apz = cst.add_reference_frame(
         root,
         TransformStyle::Flat,
@@ -1912,7 +1930,22 @@ fn test_is_ancestor_or_self_animating() {
 
     let mut st = SpatialTree::new();
     st.apply_updates(cst.end_frame_and_get_pending_updates());
-    st.update_tree(&SceneProperties::new());
+
+    
+    
+    let mut props = SceneProperties::new();
+    let sample = |props: &mut SceneProperties, moving: LayoutTransform| {
+        props.reset_properties();
+        props.add_transforms(vec![
+            api::PropertyValue { key: api::PropertyBindingKey::new(1), value: moving },
+            api::PropertyValue { key: api::PropertyBindingKey::new(2), value: moving },
+            api::PropertyValue { key: api::PropertyBindingKey::new(3), value: LayoutTransform::identity() },
+        ]);
+        props.flush_pending_updates();
+    };
+    sample(&mut props, LayoutTransform::identity());
+    sample(&mut props, LayoutTransform::translation(10.0, 0.0, 0.0));
+    st.update_tree(&props);
 
     
     assert!(!st.get_spatial_node(root).is_ancestor_or_self_animating);
@@ -1920,6 +1953,16 @@ fn test_is_ancestor_or_self_animating() {
     assert!(st.get_spatial_node(animated).is_ancestor_or_self_animating);
     assert!(st.get_spatial_node(child).is_ancestor_or_self_animating);
     
+    assert!(!st.get_spatial_node(static_bound).is_ancestor_or_self_animating);
+    
+    
     assert!(!st.get_spatial_node(apz).is_ancestor_or_self_animating);
     assert!(!st.get_spatial_node(apz_child).is_ancestor_or_self_animating);
+
+    
+    
+    sample(&mut props, LayoutTransform::translation(10.0, 0.0, 0.0));
+    st.update_tree(&props);
+    assert!(st.get_spatial_node(animated).is_ancestor_or_self_animating);
+    assert!(!st.get_spatial_node(static_bound).is_ancestor_or_self_animating);
 }
