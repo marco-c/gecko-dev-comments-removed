@@ -2,14 +2,13 @@
 
 
 
-
-
 #ifndef ADTS_DEMUXER_H_
 #define ADTS_DEMUXER_H_
 
 #include "Adts.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
+#include "mozilla/CumulativeAverage.h"
 
 namespace mozilla {
 
@@ -115,13 +114,10 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   uint64_t mOffset;
 
   
-  uint64_t mNumParsedFrames;
-
-  
   int64_t mFrameIndex;
 
   
-  uint64_t mTotalFrameLen;
+  mozilla::CumulativeAverage<double> mMeanFrameLen;
 
   
   uint32_t mSamplesPerFrame;
