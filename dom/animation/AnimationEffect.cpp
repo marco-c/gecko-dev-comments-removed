@@ -364,6 +364,12 @@ void AnimationEffect::GetComputedTimingAsDict(
   }
   
   aRetVal.mFill = computedTiming.mFill;
+  
+  
+  
+  
+  AnimationUtils::DoubleToCSSNumberish(0.0, hasProgressTimeline, progressGlobal,
+                                       aRetVal.mStartTime.Construct());
   AnimationUtils::DoubleToCSSNumberish(
       computedTiming.mActiveDuration.ToMilliseconds(), hasProgressTimeline,
       progressGlobal, aRetVal.mActiveDuration.Construct());
