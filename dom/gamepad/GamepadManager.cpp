@@ -2,11 +2,7 @@
 
 
 
-
-
 #include "mozilla/dom/GamepadManager.h"
-
-#include <cstddef>
 
 #include "VRManagerChild.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -14,6 +10,8 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadAxisMoveEvent.h"
 #include "mozilla/dom/GamepadButtonEvent.h"
@@ -27,6 +25,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
@@ -397,6 +396,39 @@ bool GamepadManager::AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow,
   return true;
 }
 
+bool GamepadManager::EventContainsUserGesture(
+    Gamepad* aGamepad, const GamepadChangeEvent& aEvent) {
+  const GamepadChangeEventBody& body = aEvent.body();
+  switch (body.type()) {
+    case GamepadChangeEventBody::TGamepadButtonInformation: {
+      const GamepadButtonInformation& a = body.get_GamepadButtonInformation();
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      GamepadButton* button = aGamepad->GetButton(a.button());
+      return button && !button->Pressed() && a.pressed();
+    }
+    case GamepadChangeEventBody::TGamepadAxisInformation: {
+      const GamepadAxisInformation& a = body.get_GamepadAxisInformation();
+      double oldValue = 0.0;
+      return aGamepad->GetAxis(a.axis(), &oldValue) &&
+             abs(oldValue) < AXIS_FIRST_INTENT_THRESHOLD_VALUE &&
+             abs(a.value()) >= AXIS_FIRST_INTENT_THRESHOLD_VALUE;
+    }
+    default:
+      
+      
+      return false;
+  }
+}
+
 bool GamepadManager::MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
                                                GamepadHandle aHandle) {
   if (!WindowHasSeenGamepad(aWindow, aHandle)) {
@@ -459,6 +491,18 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Gamepad> canonicalGamepad = GetGamepad(handle);
+  bool containsUserGesture =
+      canonicalGamepad && EventContainsUserGesture(canonicalGamepad, aEvent);
+
   if (!SetGamepadByEvent(aEvent)) {
     return;
   }
@@ -475,7 +519,7 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
       continue;
     }
 
-    SetGamepadByEvent(aEvent, listeners[i]);
+    SetGamepadByEvent(aEvent, listeners[i], containsUserGesture);
     MaybeConvertToNonstandardGamepadEvent(aEvent, listeners[i]);
   }
 }
@@ -512,7 +556,8 @@ void GamepadManager::MaybeConvertToNonstandardGamepadEvent(
 }
 
 bool GamepadManager::SetGamepadByEvent(const GamepadChangeEvent& aEvent,
-                                       nsGlobalWindowInner* aWindow) {
+                                       nsGlobalWindowInner* aWindow,
+                                       bool aContainsUserGesture) {
   bool ret = false;
   bool firstTime = false;
 
@@ -575,6 +620,32 @@ bool GamepadManager::SetGamepadByEvent(const GamepadChangeEvent& aEvent,
         break;
     }
     ret = true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aWindow && aContainsUserGesture &&
+      aWindow->GetBrowsingContext()->Top()->GetIsActiveBrowserWindow()) {
+    if (Document* doc = aWindow->GetExtantDoc()) {
+      doc->NotifyUserGestureActivation();
+    }
   }
 
   if (aWindow && firstTime) {

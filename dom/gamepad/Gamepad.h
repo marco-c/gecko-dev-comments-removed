@@ -86,7 +86,22 @@ class Gamepad final : public nsISupports, public nsWrapperCache {
     aButtons = mButtons.Clone();
   }
 
+  
+  GamepadButton* GetButton(uint32_t aButton) const {
+    return aButton < mButtons.Length() ? mButtons[aButton].get() : nullptr;
+  }
+
   void GetAxes(nsTArray<double>& aAxes) const { aAxes = mAxes.Clone(); }
+
+  
+  
+  bool GetAxis(uint32_t aAxis, double* aOutValue) const {
+    if (aAxis >= mAxes.Length()) {
+      return false;
+    }
+    *aOutValue = mAxes[aAxis];
+    return true;
+  }
 
   GamepadPose* GetPose() const { return mPose; }
 

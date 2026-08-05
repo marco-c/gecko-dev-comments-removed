@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_GamepadManager_h_
 #define mozilla_dom_GamepadManager_h_
 
@@ -125,13 +123,22 @@ class GamepadManager final : public nsIObserver {
                                              nsGlobalWindowInner* aWindow);
 
   bool SetGamepadByEvent(const GamepadChangeEvent& aEvent,
-                         nsGlobalWindowInner* aWindow = nullptr);
+                         nsGlobalWindowInner* aWindow = nullptr,
+                         bool aContainsUserGesture = false);
   
   
   
   bool AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow,
                              GamepadHandle aHandle,
                              const GamepadChangeEvent& aEvent);
+  
+  
+  
+  
+  
+  
+  bool EventContainsUserGesture(Gamepad* aGamepad,
+                                const GamepadChangeEvent& aEvent);
   bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
                                  GamepadHandle aHandle);
   
