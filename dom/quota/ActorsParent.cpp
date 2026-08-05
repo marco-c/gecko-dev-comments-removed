@@ -2709,13 +2709,48 @@ void QuotaManager::InitQuotaForOrigin(
       aFullOriginMetadata.mPersistenceType, aFullOriginMetadata.mSuffix,
       aFullOriginMetadata.mGroup);
 
-  groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
+  auto originInfo = MakeRefPtr<OriginInfo>(
       groupInfo, aFullOriginMetadata.mOrigin,
       aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
       aFullOriginMetadata.mClientUsages, aFullOriginMetadata.mOriginUsage,
       aFullOriginMetadata.mLastAccessTime,
       aFullOriginMetadata.mLastMaintenanceDate, aFullOriginMetadata.mPersisted,
-      aDirectoryExists));
+      aDirectoryExists);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFullOriginMetadata.mDirty && aFullOriginMetadata.mOriginUsage > 0 &&
+      !mUsageModificationDisabled.load()) {
+    originInfo->mMetadataDirty = true;
+    auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
+    message->data = originInfo;
+    mDirtyOriginInfos.Push(message);
+  }
+
+  groupInfo->LockedAddOriginInfo(WrapNotNullUnchecked(std::move(originInfo)));
 }
 
 void QuotaManager::DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
@@ -3033,34 +3068,33 @@ nsresult QuotaManager::LoadQuota() {
     return NS_OK;
   };
 
-  QM_TRY_UNWRAP(
-      bool isCacheUseAllowed, ([this]() -> Result<bool, nsresult> {
-        if (!StaticPrefs::dom_quotaManager_loadQuotaFromCache()) {
-          return false;
-        }
+  QM_TRY_UNWRAP(bool isCacheUseAllowed, ([this]() -> Result<bool, nsresult> {
+                  if (!StaticPrefs::dom_quotaManager_loadQuotaFromCache()) {
+                    return false;
+                  }
 
-        if (mCacheUsable) {
-          QM_TRY_INSPECT(
-              const auto& stmt,
-              CreateAndExecuteSingleStepStatement<
-                  SingleStepResult::ReturnNullIfNoResult>(
-                  *mStorageConnection, "SELECT build_id FROM cache"_ns));
+                  if (mCacheUsable) {
+                    QM_TRY_INSPECT(const auto& stmt,
+                                   CreateAndExecuteSingleStepStatement<
+                                       SingleStepResult::ReturnNullIfNoResult>(
+                                       *mStorageConnection,
+                                       "SELECT build_id FROM cache"_ns));
 
-          QM_TRY(OkIf(stmt), Err(NS_ERROR_FILE_CORRUPTED));
+                    QM_TRY(OkIf(stmt), Err(NS_ERROR_FILE_CORRUPTED));
 
-          if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
-            return true;
-          }
+                    if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
+                      return true;
+                    }
 
-          QM_TRY_INSPECT(const auto& buildId,
-                         MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoCString, stmt,
-                                                           GetUTF8String, 0));
+                    QM_TRY_INSPECT(const auto& buildId,
+                                   MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                                       nsAutoCString, stmt, GetUTF8String, 0));
 
-          return buildId == *gBuildId;
-        }
+                    return buildId == *gBuildId;
+                  }
 
-        return false;
-      }()));
+                  return false;
+                }()));
 
   if (isCacheUseAllowed) {
     nsTArray<FullOriginMetadata> dirtyOrigins;
