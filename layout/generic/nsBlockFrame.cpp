@@ -6122,7 +6122,7 @@ void nsBlockFrame::PushLines(BlockReflowState& aState,
       }
 #endif
       
-      nsAutoOOFFrameList oofs(this);
+      AutoOverflowFloatsList oofs(this);
       oofs.mList.InsertFrames(nullptr, nullptr, std::move(floats));
     }
 
@@ -6239,7 +6239,7 @@ bool nsBlockFrame::DrainOverflowLines() {
       }
 
       
-      nsAutoOOFFrameList oofs(prevBlock);
+      AutoOverflowFloatsList oofs(prevBlock);
       if (oofs.mList.NotEmpty()) {
         
         
@@ -6291,7 +6291,7 @@ bool nsBlockFrame::DrainSelfOverflowList() {
   
   
   {
-    nsAutoOOFFrameList oofs(this);
+    AutoOverflowFloatsList oofs(this);
     if (oofs.mList.NotEmpty()) {
 #ifdef DEBUG
       for (nsIFrame* f : oofs.mList) {
@@ -6985,7 +6985,7 @@ void nsBlockFrame::RemoveFloat(nsIFrame* aFloat) {
   }
 
   {
-    nsAutoOOFFrameList oofs(this);
+    AutoOverflowFloatsList oofs(this);
     if (didStartRemovingFloat ? oofs.mList.ContinueRemoveFrame(aFloat)
                               : oofs.mList.StartRemoveFrame(aFloat)) {
       return;

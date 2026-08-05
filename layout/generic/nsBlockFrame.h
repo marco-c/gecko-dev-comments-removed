@@ -1050,17 +1050,16 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-
-  struct nsAutoOOFFrameList {
+  struct AutoOverflowFloatsList {
     nsFrameList mList;
 
-    explicit nsAutoOOFFrameList(nsBlockFrame* aBlock)
+    explicit AutoOverflowFloatsList(nsBlockFrame* aBlock)
         : mPropValue(aBlock->GetOverflowFloats()), mBlock(aBlock) {
       if (mPropValue) {
         mList = std::move(*mPropValue);
       }
     }
-    ~nsAutoOOFFrameList() {
+    ~AutoOverflowFloatsList() {
       mBlock->SetOverflowFloats(std::move(mList), mPropValue);
     }
 
@@ -1068,7 +1067,7 @@ class nsBlockFrame : public nsContainerFrame {
     nsFrameList* const mPropValue;
     nsBlockFrame* const mBlock;
   };
-  friend struct nsAutoOOFFrameList;
+  friend struct AutoOverflowFloatsList;
 
   
   bool HasOverflowFloats() const;
