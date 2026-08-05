@@ -4507,6 +4507,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
+  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                           const BaseIndex& mem, Register expected,
+                           Register replacement, Register valueTemp,
+                           Register offsetTemp, Register maskTemp,
+                           Register output, wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
+
   void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
                           const Address& mem, Register value, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
@@ -4526,6 +4533,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                           Register valueTemp, Register offsetTemp,
                           Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
+
+  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                          const BaseIndex& mem, Register value,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp, Register output,
+                          wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
 
   void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                          Register value, const Address& mem, Register temp,
@@ -4553,6 +4566,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                          Register valueTemp, Register offsetTemp,
                          Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
+
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Register value, const BaseIndex& mem,
+                         Register valueTemp, Register offsetTemp,
+                         Register maskTemp, Register output,
+                         wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
 
   
   
@@ -4586,6 +4605,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                           Register valueTemp, Register offsetTemp,
                           Register maskTemp)
       DEFINED_ON(mips64, loong64, riscv64);
+
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                          Register value, const BaseIndex& mem,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp, wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
 
   
 
@@ -4621,6 +4646,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Register64 replacement,
                              Register64 output) PER_ARCH;
 
+  void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
+                             const BaseIndex& mem, Register64 expected,
+                             Register64 replacement, Register64 output,
+                             wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
+
   
   
   
@@ -4633,6 +4664,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
                             const BaseIndex& mem, Register64 value,
                             Register64 output) PER_ARCH;
+
+  void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
+                            const BaseIndex& mem, Register64 value,
+                            Register64 output, wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
 
   
   
@@ -4649,6 +4685,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            Register64 value, const BaseIndex& mem,
                            Register64 temp, Register64 output)
       DEFINED_ON(arm, arm64, mips64, loong64, riscv64, x64);
+
+  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           Register64 value, const BaseIndex& mem,
+                           Register64 temp, Register64 output,
+                           wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
 
   void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
                            const Address& value, const Address& mem,
