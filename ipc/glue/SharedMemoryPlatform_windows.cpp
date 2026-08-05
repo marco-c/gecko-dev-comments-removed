@@ -246,11 +246,7 @@ size_t Platform::AllocationGranularity() {
   return si.dwAllocationGranularity;
 }
 
-bool Platform::IsSafeToMap(const PlatformHandle& aHandle, uint64_t) {
-  
-  
-  
-  
+bool Platform::IsSafeToMap(const PlatformHandle& aHandle) {
   return IsSectionSafeToMap(aHandle.get());
 }
 

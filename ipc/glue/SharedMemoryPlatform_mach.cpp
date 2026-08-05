@@ -223,10 +223,6 @@ size_t Platform::PageSize() {
 
 size_t Platform::AllocationGranularity() { return PageSize(); }
 
-bool Platform::IsSafeToMap(const PlatformHandle&, uint64_t) {
-  
-  
-  return true;
-}
+bool Platform::IsSafeToMap(const PlatformHandle&) { return true; }
 
 }  
