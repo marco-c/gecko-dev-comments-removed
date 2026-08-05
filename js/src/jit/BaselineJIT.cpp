@@ -253,7 +253,10 @@ static bool DispatchOffThreadBaselineCompile(JSContext* cx,
   BaselineCompileTask* task = alloc->new_<BaselineCompileTask>(
       realm, alloc.get(), std::move(snapshots));
   if (!task) {
-    snapshots.clear();
+    
+    
+    
+    snapshotCopy->remove();
     ReportOutOfMemory(cx);
     return false;
   }
