@@ -1564,6 +1564,9 @@ impl LengthPercentage {
     }
 
     
+    
+    
+    
     pub fn compute_without_context(&self) -> Option<computed::LengthPercentage> {
         use crate::values::normalize;
         match self {
@@ -1574,7 +1577,7 @@ impl LengthPercentage {
             Self::Percentage(ref pc) => Some(computed::LengthPercentage::new_percent(
                 computed::Percentage(normalize(pc.get())),
             )),
-            _ => None,
+            Self::Calc(ref calc) => calc.compute_without_context(),
         }
     }
 }
