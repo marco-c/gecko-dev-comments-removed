@@ -563,11 +563,10 @@ bool SharedSubResourceCache<Traits, Derived>::CoalesceLoad(
     return false;
   }
 
-  LoadingValue* data = existingLoad;
-  while (data->mNext) {
-    data = data->mNext;
-  }
-  data->mNext = &aNewLoad;
+  
+  
+  aNewLoad.mNext = std::move(existingLoad->mNext);
+  existingLoad->mNext = &aNewLoad;
 
   aNewLoad.OnCoalescedTo(*existingLoad);
   return true;
