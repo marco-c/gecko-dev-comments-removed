@@ -263,6 +263,10 @@ let propNameAllowlist = [
 
   
   
+  { propName: "--icon-stroke", isFromDevTools: false },
+
+  
+  
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
 
   
