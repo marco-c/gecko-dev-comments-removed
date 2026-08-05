@@ -158,6 +158,7 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
 
   nsresult ExtractShortcutURL(nsString& outURL);
   nsresult ExtractShortcutTitle(nsString& outTitle);
+  bool ShortcutUrlHasWebScheme();
 
   
   nsresult BuildPlatformHTML(const char* inOurHTML, char** outPlatformHTML);
