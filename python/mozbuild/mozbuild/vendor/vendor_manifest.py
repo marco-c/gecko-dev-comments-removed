@@ -945,6 +945,12 @@ class VendorManifest(MozbuildObject):
                         os.path.abspath(patch),
                         "--no-backup-if-mismatch",
                         "--batch",
+                        
+                        
+                        
+                        
+                        
+                        "--forward",
                     ]
                     self.run_process(
                         args=script,
